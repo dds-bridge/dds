@@ -1,0 +1,61 @@
+
+	Usage of the SolveBoard parameter option mode=2
+	-----------------------------------------------
+
+	When the score of a deal is to be calculated for different
+      hands leading the first trick, the mode parameter in
+      SolveBoard can be used to speed up the calculation.
+      The score of the first alternative leading hand is obtained
+      by setting mode=1. The parameter target can be set to -1 or
+      to a defined target value. The parameter solutions can be set
+      to either 1, 2 or 3.
+      The following calls to SolveBoard for the other alternative 
+	leading hands can all have parameter mode set to 2. 
+      When mode is set to 2, the transposition table contents is not 
+      cleared before making the alpha-beta search for the obtaining 
+      the score, giving a faster search.   
+      	
+	A function calculating the score for all possible leading hands
+      using mode=2 must be part of the application using DDS.
+
+	Below is source code for such function using C, assuming target
+      is set to -1 and solutions set to 1.
+      Setting target to a specific value and/or setting solutions different
+      to 1 can be done using a similar solution.  
+
+
+	Source code example using C
+      --------------------------- 
+
+void SolveCamps(int est) {
+/* est is estimated target.
+  dl is an externally declared struct of type deal.
+  fut is an externally declared structure of type
+  futureTricks.
+  SolveCamps needs to called for each of the suits
+  of the deal, i.e. for each dl.suit.
+  score[h] is an externally declared integer array
+  which will contain the score for each leading hand.
+  totalNodes[h] is an externally declared counter array
+  of type int that adds up the searched nodes for each
+  leading hand. */
+
+  int h, k;
+
+  for (h=0; h<=3; h++)
+    totalNodes[h]=0;
+  for (h=0; h<=3; h++) {
+    dl.first=h;
+    if (h==0)
+      k=SolveBoard(dl, -1, 1, 1, &fut);
+    else
+      k=SolveBoard(dl, -1, 1, 2, &fut);
+    score[h]=fut.score[0];
+    totalNodes[h]=totalNodes[h]+fut.nodes;
+  }
+}
+
+	
+
+
+ 
