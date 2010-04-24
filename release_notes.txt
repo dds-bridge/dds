@@ -247,167 +247,16 @@ A new function, CalcDDtable, has been added.
 CalcDDtable calls SolveBoard using parallel threads. The number of
 parallel threads is the same as the number of processor cores.
 CalcDDtable calculates the double dummy values of the initial 52 cards
-for all the 20 trump suit/leading hand combinations. 
+for all the 20 trump suit/leading hand combinations.   
 
 
-Release Notes DDS 2.0.1
------------------------
-In 2.0.0, the contents of the transposition table could be erronously
-be reused when the previous position contained a different number of
-cards. This was caused by an erroneous implementation of the
-deal similarity test. This bug was fixed by removing the similarity test.
-
-The DDS version number is defined by a #define statement in dll.h. 
 
 
-Release Notes DDS 2.1.0
------------------------
-Added OpenMP as multi-thread support for CalcDDtable when compiling with 
-gcc 4.4.0 or later.
-
-Added a similarity deals test function for reuse of the transposition
-table contents when the current deal is similar to the previous deal. 
 
 
-Release Notes DDS 2.1.1
------------------------
-The maximum number of threads is configurable depending on the size of the
-physical memory. The configuration is either done automatically by reading
-out the physical memory size by the operating system, or by supplying
-parameter values in InitStart.
 
+ 
 
-Release Notes DDS 2.1.2
------------------------
-2 new callable functions have been added:
-SolveBoardPBN and CalcDDtablePBN.
-They both accept PBN format for the remaining cards in the deal information
-instead of the bit codes.
-
-Code improvements have been done concerning quick tricks detection and move
-ordering. 2.1.2 is about 10% faster than 2.1.1.
-
-
-Release Notes DDS 1.1.12
-------------------------
-2 new callable functions have been added:
-SolveBoardPBN and CalcDDtablePBN.
-They both accept PBN format for the remaining cards in the deal information
-instead of the bit codes.
-
-Code improvements have been done concerning quick tricks detection and move
-ordering. 1.1.12 is about 15-20% faster than 1.1.11.
-
-
-Release Notes DDS 2.2.0
------------------------ 
-1 new callable function has been added:
-SolveAllBoards.
-
-Problems that have been fixed in 2.2.0:
-1)  DDS used a deficient function in Windows to detect RAM memory size, which
-    could cause too few threads to be allocated. DDS now uses a correct Windows
-    function to detect the RAM size.
-2)  Failure by DDS to detect PBN text coded card distributions with less than
-    52 cards.
-3)  DDS hanged when a faulty card distribution was provided in the CalcDDtable call.
-    This fault was not present in the openMP alternative though.
-
-2.2.0 is 10-15% faster than 2.1.2. 
-
-
-Release Notes DDS 1.1.13
-------------------------
-Problem that has been fixed in 1.1.13:
-DDS used a deficient function in Windows to detect RAM memory size, which
-could cause too few threads to be allocated. DDS now uses a correct Windows
-function to detect the RAM size. 
-
-1.1.13 is 5-10% faster than 1.1.12.
-
-
-Release Notes DDS 2.2.1
------------------------ 
-Problem fixed in 2.2.1:
-Fault in using the Windows function to detect RAM memory size that could
-cause DDS termination.
-
-Clarifying that DDS 2.2.1 is a 32-bit DLL not capable of using more than 4 GB.
-Max threads are 8. 
-
-
-Release Notes DDS 1.1.14
-------------------------
-Problem fixed in 1.1.14:
-Fault in using the Windows function to detect RAM memory size that could
-cause DDS termination.
-
-
-Release Notes DDS 2.2.2
------------------------ 
-DDS 2.2.2 is mainly a fault correction release.
-Problems fixed:
-1. An uninitialized variable used in move generation required that the compiler
-initialized it by setting it to zero. This is true for Visual C++ but might
-perhaps have caused a problem with some other compiler.
-2. The rel table missed initialization for absRank and relRank when all cards in
-a suit are missing. 
-
-DDS 2.2.2 is slightly faster than 2.2.1, about 4%.
-
-
-Release Notes DDS 1.1.15
-------------------------
-Problem fixed in 1.1.15:
-The rel table missed initialization for absRank and relRank when all cards in
-a suit are missing.
-
-DDS 1.1.15 is about 7% faster than 1.1.14.
-
-
-Release Notes DDS 2.2.3
------------------------ 
-DDS 2.2.3 add Mingw compiled DLLs and makes a number of code improvements.
-Maximum number of threads is increased to 16.
-The 2.2.3 Mingw DLLs are about 5% faster than the 2.2.2 DLLs. 
-
-Release Notes DDS 1.1.16
-------------------------
-DDS 1.1.16 add Mingw compiled DLLs and makes a number of code improvements.
-The 1.1.16 Mingw DLLs are about 5% faster than the 1.1.15 DLLs.
-
-
-Release Notes DDS 2.2.4
------------------------
-A newer port from GCC to Windows, the TDM-GCC 4.7.1 version is used. It gives
-faster DLLs and only requires one supporting DLL, which supports OpenMP.
-Also, the move ordering has been slighly improved.
-A total speed increase of 4% is achieved compared to 2.2.3.
-
-Release Notes DDS 1.1.17
-------------------------
-A newer port from GCC to Windows, the TDM-GCC 4.7.1 version is used. It gives
-faster DLLs and does not require any supporting DLLs.
-Also, the move ordering has been slighly improved.
-A total speed increase of 4% is achieved compared to 1.1.16.
-
-Release Notes DDS 1.1.18
-------------------------
-Change of license from GPL to Apache 2.0.
-Some minor changes in the WeightAlloc functions.
-
-
-Release Notes DDS 1.1.19
-------------------------
-New build of dds.lib for meeting requirements in Visual C++ 2013.
-Many code changes to improve performance.
-Added par calculation in the "plus" version.
-
-Release Notes DDS 1.1.20
------------------------- 
-A fault in the par calculation has been fixed. The fault could cause 
-presentation of wrongly extra par contracts in cases were the sides had different 
-vulnerability.
 
 
      

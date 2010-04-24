@@ -1,10 +1,15 @@
-DDS 1.1.17,  Bo Haglund 2012-11-07
+DDS 2.0.0,  Bo Haglund 2010-04-24
 
-For Win32, DDS compiles with Visual C++ 2010 Express edition 
-and the TDM-GCC/Mingw port of gcc.
+For Win32, DDS compiles with Visual C++ 2005 Express edition 
+and the Mingw port of gcc.
 
 When using Visual C++, the statement
 #include "stdafx.h" at the beginning of dds.cpp must be uncommented.
+
+When not using Visual C++, the compilation of DDS excludes function CalcDDtable
+and the multi-thread functions that CalcDDtable uses.
+This is done because the multi-thread primitives used are neither standardized
+in C++ nor between operating systems.
    
 
 Linking with an application using DDS
@@ -15,21 +20,30 @@ without the overhead of InitStart() at each call.
 For this purpose, the application code must have an include
 statement for the dll.h file in DDS.
 
+Setting up the maximum size of the transposition table
+------------------------------------------------------
+When compiling for Win32, the maximum size of the transposition table is automatically set depending on the physical memory size of
+the PC.
+
+When compiling with Linux, the maximum transposition table size
+(maxmem) is set as follows in dds.cpp (search for maxmem)in InitStart:
+
+maxmem=5000000*sizeof(struct nodeCardsType)+
+		   15000000*sizeof(struct winCardType)+
+		   200000*sizeof(struct posSearchType);
+
+If needed change the values, see examples later in the code for Win32 with different PC memory sizes.
+ 
+
 
 Options at DDS compilation
 --------------------------
-Compiling options:
+There are 3 compiling options:
 
 1) Compilation without definitions of STAT or TTDEBUG.
 This is the default case given in the distributed source
 where definitions of STAT and TTDEBUG are commented away.
 This compilation alternative gives the best performance.
-
-By default the PBN versions for remaning cards in the deal information 
-are included in SolveBoardPBN. Removing the PBN definition in dll.h
-will make a compilation without this function. This can be useful
-if this version is to replace an older version, and the application 
-using DDS cannot accept an interface change towards DDS.
 
 2) Compilation with definition STAT.
 Uncomment the definition of STAT.
