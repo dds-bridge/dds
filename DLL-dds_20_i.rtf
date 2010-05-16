@@ -5,7 +5,7 @@
 \red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\nowidctlpar\adjustright \f1\cgrid \snext0 Normal;}{
 \s1\nowidctlpar\outlinelevel0\adjustright \f1\cgrid \sbasedon0 \snext0 heading 1;}{\s2\keepn\nowidctlpar\outlinelevel1\adjustright \b\f1\fs20\ul\cf1\lang1053\cgrid \sbasedon0 \snext0 heading 2;}{\s3\keepn\nowidctlpar\outlinelevel2\adjustright 
 \b\f1\fs20\cf1\lang1053\cgrid \sbasedon0 \snext0 heading 3;}{\*\cs10 \additive Default Paragraph Font;}{\*\cs15 \additive \b \sbasedon10 Strong;}}{\info{\title Bo Haglund, Bob Richardson}{\author Bo Haglund}{\operator Bo Haglund}
-{\creatim\yr2007\mo4\dy23\hr19\min18}{\revtim\yr2010\mo4\dy24\hr8\min19}{\version29}{\edmins128}{\nofpages3}{\nofwords1128}{\nofchars6430}{\*\company  }{\nofcharsws0}{\vern89}}\margl1417\margr1417\margt1417\margb1417 
+{\creatim\yr2007\mo4\dy23\hr19\min18}{\revtim\yr2010\mo5\dy16\hr22\min6}{\version32}{\edmins156}{\nofpages3}{\nofwords1128}{\nofchars6430}{\*\company  }{\nofcharsws0}{\vern89}}\margl1417\margr1417\margt1417\margb1417 
 \widowctrl\ftnbj\aenddoc\hyphhotz425\noxlattoyen\expshrtn\noultrlspc\dntblnsbdb\nospaceforul\hyphcaps0\viewkind4\viewscale100 \fet0\sectd \linex0\headery709\footery709\colsx709\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}
 {\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}
 {\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9
@@ -51,9 +51,9 @@
 \par }{\fs20\cf1\lang1053    int first;      /* 0-3, 0=North, 1=East, 2=South, 3=West , Leading hand for the trick.*/}{\f0\fs20\cf1\lang1053  
 \par     }{\fs20\cf1\lang1053 int currentTrickSuit[3];  /* 0-2 for up to 3 cards in the order played */
 \par    int currentTrickRank[3];  /* 2-14 for up to 3 cards */}{\f0\fs20\cf1\lang1053 
-\par }{\fs20\cf1\lang1053    unsigned int remainCards[4][4]; /* 1}{\fs20\cf1\lang1053\super st}{\fs20\cf1\lang1053  index hand (0-3), 2}{\fs20\cf1\lang1053\super nd}{\fs20\cf1\lang1053  in
-dex suit (0-3), values as bitstring of ranks bit 0=0, bit 1=0, bit 2=rank 2, \'85\'85\'85. bit 14=rank 14, bit 15=0}{\f0\fs20\cf1\lang1053  }{\fs20\cf1\lang1053 
-for cards remaining after already played cards (cards already played to the current trick are not included in this bitstring).  \line  The decimal value for a card then range between 4 (=rank 2) and 16384  (Ace=rank 14). */}{\f0\fs20\cf1\lang1053  
+\par }{\fs20\cf1\lang1053    unsigned int remainCards[4][4]; /* 1}{\fs20\cf1\lang1053\super st}{\fs20\cf1\lang1053  index hand (0-3), 2}{\fs20\cf1\lang1053\super nd}{\fs20\cf1\lang1053 
+ index suit (0-3), values as bitstring of ranks bit 0=0, bit 1=0, bit 2=rank 2, \'85\'85\'85. bit 14=rank 14, bit 15=0}{\f0\fs20\cf1\lang1053  }{\fs20\cf1\lang1053 for cards remaining after already played cards (cards alread
+y played to the current trick are not included in this bitstring).  \line  The decimal value for a card then range between 4 (=rank 2) and 16384  (Ace=rank 14). */}{\f0\fs20\cf1\lang1053  
 \par }{\fs20\cf1\lang1053 \};}{\f0\fs20\cf1\lang1053  }{\fs20\cf1\lang1053 
 \par 
 \par Parameter \'94}{\b\fs20\cf1\lang1053 target}{\fs20\cf1\lang1053 \'94 is the number of tricks to be won by the side to play, -1 means that the program}{\f0\fs20\cf1\lang1053  }{\fs20\cf1\lang1053 
@@ -61,23 +61,23 @@ shall find the maximum number. For equivalent  cards only the highest is returne
 \par \line Parameter \'94}{\b\fs20\cf1\lang1053 solutions}{\fs20\cf1\lang1053 \'94 defines how many card solutions that SolveBoard must return:
 \par   target=1-13, solutions=1:  Returns only one of the cards. Its returned score is the same as target whentarget or higher tricks can be won. Otherwise, score \endash 1 is returned if target cannot be reached, or score 0 if no tricks can be won. \line 
   target=-1, solutions=1:  Returns only one of the optimum cards and its score.
-\par   }{\fs20\lang1053 target=0, solutions=1:  Returns only one of the cards legal to play with score set to 0.}{\fs20\cf1\lang1053 \line   target 1-13,
- solutions=2:  Return all cards meeting target. Their returned scores are the same as target when target or higher tricks can be won. Otherwise, only one card is returned with score \endash 
+\par   }{\fs20\lang1053 target=0, solutions=1:  Returns only one of the cards legal to play with score set to 0.}{\fs20\cf1\lang1053 \line 
+  target 1-13, solutions=2:  Return all cards meeting target. Their returned scores are the same as target when target or higher tricks can be won. Otherwise, only one card is returned with score \endash 
 1 if target cannot be reached, or score 0 for all cards legal to play if no tricks can be won.\line   target \endash 1, solutions=2:  Return all optimum cards with their scores.
-\par   }{\fs20\lang1053 target=0, solutions=2:  Return all cards legal to play with scores set to 0}{\fs20\cf6\lang1053 .}{\fs20\cf1\lang1053 \line   target irrelevant, solutions=3:  Return all cards that can be legally played with 
-their scores in descending  order.
+\par   }{\fs20\lang1053 target=0, solutions=2:  Return all cards legal to play with scores set to 0}{\fs20\cf6\lang1053 .}{\fs20\cf1\lang1053 \line 
+  target irrelevant, solutions=3:  Return all cards that can be legally played with their scores in descending  order.
 \par 
-\par Parameter \'94}{\b\fs20\cf1\lang1053 mode}{\fs20\cf1\lang1053 \'94
- defines the DLL mode of operation. This mode does not affect the DLL if there are multiple choices for cards to play. If there is just one card to play, or multiple cards that are all equivalent, this mo
-de determines  whether or not the DLL will search to find the score.\line   mode=0:  Do not search to find the score if the hand to play has only one card, including its equivalents, to play. Score is set to \endash 
-2 for this card, indicating that there are no alternative cards. This mode is very fast but you don\rquote t 
-\par   mode=1:  Always }{\fs20 search to find the score. Even when the hand to play has only one card,  with possible equivalents, to play.  For both mode=0 and mode=1: If the preceding SolveBoard call had the same tru
-mp suit and the same or similar deal, except for deal.first, then the transposition table contents is reused from the preceding SolveBoard call. Setting mode=2 is no longer needed, but can still be done for backwards
-\par compatibility.\line   mode=2:  As for mode=1, but the transposition table contents is reused from the preceding SolveBoard call. Deal must be the same, except for deal.first. Trump suit must be the same. Example:
-\par }\pard \fi720\nowidctlpar\adjustright {\fs20 1}{\fs20\super st}{\fs20  call:  SolveBoard(deal, -1, 1, 1, &fut),  deal.first=1, i.e. East leads.
-\par }\pard \nowidctlpar\adjustright {\fs20  \tab 2}{\fs20\super nd}{\fs20  call:  SolveBoard(deal, -1, 1, 2, &fut),  deal.first=2, i.e. South leads.
-\par  \tab 3rd call:  SolveBoard(deal, -1, 1, 2, &fut),  deal.first=3, i.e. West leads. 
-\par }\pard \fi720\nowidctlpar\adjustright {\fs20 4th call:  SolveBoard(deal, -1, 1, 2, &fut),  deal.first=0, i.e. North leads.   }{\fs20\cf1\lang1053 
+\par Parameter \'94}{\b\fs20\cf1\lang1053 mode}{\fs20\cf1\lang1053 \'94 defines the DLL mode of operation.\line   mode=0:  Do not search to find the score if the hand to play has only one card, including its equivalents, to play. Score is set to \endash 
+2 for this card, indicating that there are no alternative cards. If there are multiple choices for cards to play, search is done to find the score. This mode is very fast but you don\rquote t 
+\par   mode=1:  Always }{\fs20 search to find 
+the score. Even when the hand to play has only one card,  with possible equivalents, to play.  For both mode=0 and mode=1: If the preceding SolveBoard call had the same trump suit and the same deal, except for deal.first, then the transposition table cont
+ents is reused from the preceding SolveBoard call. Setting mode=2 is no longer needed in this case, but can still be done for backwards compatibility.\line 
+  mode=2:  As for mode=1, but the transposition table contents is reused from the preceding SolveBoard call. It is the responsibility of the programmer using the DLL to ensure that reusing the table is safe in the actual situation. Example
+: Deal is the same, except for deal.first. Trump suit is the same. 
+\par }\pard \fi720\nowidctlpar\adjustright {\fs20 1}{\fs20\super st}{\fs20  call:  SolveBoard(deal, -1, 1, 1, &fut, 0),  deal.first=1, i.e. East leads.
+\par }\pard \nowidctlpar\adjustright {\fs20  \tab 2}{\fs20\super nd}{\fs20  call:  SolveBoard(deal, -1, 1, 2, &fut, 0),  deal.first=2, i.e. South leads.
+\par  \tab 3rd call:  SolveBoard(deal, -1, 1, 2, &fut, 0),  deal.first=3, i.e. West leads. 
+\par }\pard \fi720\nowidctlpar\adjustright {\fs20 4th call:  SolveBoard(deal, -1, 1, 2, &fut, 0),  deal.first=0, i.e. North leads.   }{\fs20\cf1\lang1053 
 \par }\pard \nowidctlpar\adjustright {\fs20\cf1\lang1053 
 \par struct }{\b\fs20\cf1\lang1053 futureTricks}{\fs20\cf1\lang1053  \{ /* The DLL provides the score (number of tricks) that can be won by the card to play defined by its suit and rank. Array of all alternative cards. */}{\f0\fs20\cf1\lang1053  
 \par }{\fs20\cf1\lang1053   int nodes;     /* Number of searched nodes */

@@ -1,5 +1,5 @@
 
-/* DDS 2.0.0   A bridge double dummy solver.				      */
+/* DDS 2.0.1   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2010 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -17,7 +17,7 @@
 /* along with this program; if not, write to the Free Software                */
 /* Foundation, Inc, 51 Franklin Street, 5th Floor, Boston MA 02110-1301, USA. */
 
-/*#include "stdafx.h" */		/* Needed by Visual C++ */
+/*#include "stdafx.h"*/ 		/* Needed by Visual C++ */
 
 #include "dll.h"
 
@@ -102,8 +102,8 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   int STDCALL SolveBoard(struct deal dl, int target, 
     int solutions, int mode, struct futureTricks *futp, int thrId) {
 
-  int k, l, n, cardCount, found, totalTricks, tricks, last, checkRes;
-  int g, upperbound, lowerbound, first, i, j, h, forb, ind, flag, noMoves;
+  int k, n, cardCount, found, totalTricks, tricks, last, checkRes;
+  int g, upperbound, lowerbound, first, i, j, forb, ind, flag, noMoves;
   int mcurr;
   int noStartMoves;
   int handRelFirst;
@@ -111,7 +111,11 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   int latestTrickSuit[4];
   int latestTrickRank[4];
   int maxHand=0, maxSuit=0, maxRank;
-  unsigned short int aggrRemain; 
+  #ifdef SIMILARITYTEST
+  int playedHistory;
+  unsigned short int prevAggrRemain[4];
+  #endif
+  unsigned short int aggrRemain[4]; 
   struct movePlyType temp;
   struct moveType mv;
   
@@ -149,18 +153,36 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 
   for (k=0; k<=3; k++)
     noOfCardsPerHand[handId(dl.first, k)]=0;
+
+  #ifdef SIMILARITYTEST
+  playedHistory=TRUE;
+  #endif
+  for (j=0; j<=3; j++) {
+    aggrRemain[j]=0;
+    for (i=0; i<=3; i++) 
+      aggrRemain[j]|=(dl.remainCards[i][j]>>2);
+  }
+  #ifdef SIMILARITYTEST
+  for (j=0; j<=3; j++) {
+    prevAggrRemain[j]=0;
+    for (i=0; i<=3; i++) 
+      prevAggrRemain[j]|=localVar[thrId].game.suit[i][j];
+
+    if (aggrRemain[j]!=prevAggrRemain[j]) {
+      playedHistory=FALSE;
+      break;
+    }
+  }
+  #endif
   
   for (k=0; k<=2; k++) {
-	if (dl.currentTrickRank[k]!=0) {
-	  noOfCardsPerHand[handId(dl.first, k)]=1;
-      aggrRemain=0;
-	  for (h=0; h<=3; h++) 
-	    aggrRemain|=(dl.remainCards[h][dl.currentTrickSuit[k]]>>2);
-	  if ((aggrRemain & bitMapRank[dl.currentTrickRank[k]])!=0) {
-		DumpInput(-13, dl, target, solutions, mode);
-		return -13;
-	  }
-	}
+    if (dl.currentTrickRank[k]!=0) {
+      noOfCardsPerHand[handId(dl.first, k)]=1;
+      if ((aggrRemain[dl.currentTrickSuit[k]] & bitMapRank[dl.currentTrickRank[k]])!=0) {
+	DumpInput(-13, dl, target, solutions, mode);
+	return -13;
+      }
+    }
   }
   
   if (target==-1)
@@ -169,12 +191,18 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     localVar[thrId].tricksTarget=target;
 
   localVar[thrId].newDeal=FALSE; localVar[thrId].newTrump=FALSE;
+  #ifdef SIMILARITYTEST
   localVar[thrId].diffDeal=0; localVar[thrId].aggDeal=0;
+  #endif
+  cardCount=0; 
   for (i=0; i<=3; i++) {
     for (j=0; j<=3; j++) {
-	  localVar[thrId].diffDeal+=((dl.remainCards[i][j]>>2)^
+      cardCount+=counttable[dl.remainCards[i][j]>>2];
+      #ifdef SIMILARITYTEST
+      localVar[thrId].diffDeal+=((dl.remainCards[i][j]>>2)^
 	    (localVar[thrId].game.suit[i][j]));
       localVar[thrId].aggDeal+=(dl.remainCards[i][j]>>2);
+      #endif
       if (localVar[thrId].game.suit[i][j]!=dl.remainCards[i][j]>>2) {
         localVar[thrId].game.suit[i][j]=dl.remainCards[i][j]>>2;
 	    localVar[thrId].newDeal=TRUE;
@@ -182,15 +210,19 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     }
   }
 
+  #ifdef SIMILARITYTEST
   if (localVar[thrId].newDeal) {
-    if (localVar[thrId].diffDeal==0)
-	  localVar[thrId].similarDeal=TRUE;
+    if (!playedHistory)
+      localVar[thrId].similarDeal=FALSE;
+    else if (localVar[thrId].diffDeal==0)
+      localVar[thrId].similarDeal=TRUE;
     else if ((localVar[thrId].aggDeal/localVar[thrId].diffDeal)
        >SIMILARDEALLIMIT)
-	  localVar[thrId].similarDeal=TRUE;
-	else
-	  localVar[thrId].similarDeal=FALSE;
+      localVar[thrId].similarDeal=TRUE;
+    else
+      localVar[thrId].similarDeal=FALSE;
   }
+  #endif
 
   if (dl.trump!=localVar[thrId].trump)
     localVar[thrId].newTrump=TRUE;
@@ -200,16 +232,11 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       noOfCardsPerHand[i]+=counttable[localVar[thrId].game.suit[i][j]];
 
   for (i=1; i<=3; i++) {
-	if (noOfCardsPerHand[i]!=noOfCardsPerHand[0]) {
-	  DumpInput(-14, dl, target, solutions, mode);
-	  return -14;
-	}
+    if (noOfCardsPerHand[i]!=noOfCardsPerHand[0]) {
+      DumpInput(-14, dl, target, solutions, mode);
+      return -14;
+    }
   }
-
-  cardCount=0;
-  for (k=0; k<=3; k++)
-    for (l=0; l<=3; l++)
-      cardCount+=counttable[localVar[thrId].game.suit[k][l]];
 
   if (dl.currentTrickRank[2]) {
     if ((dl.currentTrickRank[2]<2)||(dl.currentTrickRank[2]>14)
@@ -443,21 +470,27 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 	
     return 1;
   }
-
+  
+  #ifdef SIMILARITYTEST
   if ((mode!=2)&&
-	  (((localVar[thrId].newDeal)&&(!localVar[thrId].similarDeal)) 
-	  || localVar[thrId].newTrump)) {
+    (((localVar[thrId].newDeal)&&(!localVar[thrId].similarDeal)) 
+      || localVar[thrId].newTrump)) {
+  #else
+    if ((mode!=2)&&
+      ((localVar[thrId].newDeal) 
+      || localVar[thrId].newTrump)) {
+  #endif
     Wipe(thrId);
 	localVar[thrId].winSetSizeLimit=WINIT;
     localVar[thrId].nodeSetSizeLimit=NINIT;
     localVar[thrId].lenSetSizeLimit=LINIT;
     localVar[thrId].allocmem=(WINIT+1)*sizeof(struct winCardType);
-	localVar[thrId].allocmem+=(NINIT+1)*sizeof(struct nodeCardsType);
-	localVar[thrId].allocmem+=(LINIT+1)*sizeof(struct posSearchType);
+    localVar[thrId].allocmem+=(NINIT+1)*sizeof(struct nodeCardsType);
+    localVar[thrId].allocmem+=(LINIT+1)*sizeof(struct posSearchType);
     localVar[thrId].winCards=localVar[thrId].pw[0];
-	localVar[thrId].nodeCards=localVar[thrId].pn[0];
-	localVar[thrId].posSearch=localVar[thrId].pl[0];
-	localVar[thrId].wcount=0; localVar[thrId].ncount=0; localVar[thrId].lcount=0;
+    localVar[thrId].nodeCards=localVar[thrId].pn[0];
+    localVar[thrId].posSearch=localVar[thrId].pl[0];
+    localVar[thrId].wcount=0; localVar[thrId].ncount=0; localVar[thrId].lcount=0;
     InitGame(0, FALSE, first, handRelFirst, thrId);
   }
   else {

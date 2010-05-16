@@ -247,7 +247,17 @@ A new function, CalcDDtable, has been added.
 CalcDDtable calls SolveBoard using parallel threads. The number of
 parallel threads is the same as the number of processor cores.
 CalcDDtable calculates the double dummy values of the initial 52 cards
-for all the 20 trump suit/leading hand combinations.   
+for all the 20 trump suit/leading hand combinations. 
+
+
+Release Notes DDS 2.0.1
+-----------------------
+In 2.0.0, the contents of the transposition table could be erronously
+be reused when the previous position contained a different number of
+cards. This was caused by an erroneous implementation of the
+deal similarity test. This bug was fixed by removing the similarity test.
+
+The DDS version number is defined by a #define statement in dll.h.   
 
 
 
