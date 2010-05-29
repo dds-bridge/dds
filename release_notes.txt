@@ -257,7 +257,18 @@ be reused when the previous position contained a different number of
 cards. This was caused by an erroneous implementation of the
 deal similarity test. This bug was fixed by removing the similarity test.
 
-The DDS version number is defined by a #define statement in dll.h.   
+The DDS version number is defined by a #define statement in dll.h. 
+
+
+Release Notes DDS 2.1.0
+-----------------------
+Added OpenMP as multi-thread support for CalcDDtable when compiling with 
+gcc 4.4.0 or later.
+
+Added a similarity deals test function for reuse of the transposition
+table contents when the current deal is similar to the previous deal. 
+
+   
 
 
 

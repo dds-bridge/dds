@@ -1,4 +1,4 @@
-DDS 2.0.1,  Bo Haglund 2010-05-15
+DDS 2.1.0,  Bo Haglund 2010-05-28
 
 For Win32, DDS compiles with Visual C++ 2005 Express edition 
 and the Mingw port of gcc.
@@ -6,10 +6,10 @@ and the Mingw port of gcc.
 When using Visual C++, the statement
 #include "stdafx.h" at the beginning of dds.cpp must be uncommented.
 
-When not using Visual C++, the compilation of DDS excludes function CalcDDtable
-and the multi-thread functions that CalcDDtable uses.
-This is done because the multi-thread primitives used are neither standardized
-in C++ nor between operating systems.
+When not using Visual C++, the compilation of DDS includes function CalcDDtable
+implemented using GCC/MingW OpenMP. When OpenMP is compiled with MingW and Windows,
+then for the program using dds.dll, the file phreadGC2.dll must be placed in 
+the same folder as dds.dll.
    
 
 Linking with an application using DDS

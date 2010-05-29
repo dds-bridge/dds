@@ -1,5 +1,5 @@
 
-/* DDS 2.0.1   A bridge double dummy solver.				      */
+/* DDS 2.1.0   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2010 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -17,7 +17,7 @@
 /* along with this program; if not, write to the Free Software                */
 /* Foundation, Inc, 51 Franklin Street, 5th Floor, Boston MA 02110-1301, USA. */
 
-/*#include "stdafx.h"*/ 		/* Needed by Visual C++ */
+/*#include "stdafx.h" */		/* Needed by Visual C++ */
 
 #include "dll.h"
 
@@ -103,7 +103,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     int solutions, int mode, struct futureTricks *futp, int thrId) {
 
   int k, n, cardCount, found, totalTricks, tricks, last, checkRes;
-  int g, upperbound, lowerbound, first, i, j, forb, ind, flag, noMoves;
+  int g, upperbound, lowerbound, first, i, j, h, forb, ind, flag, noMoves;
   int mcurr;
   int noStartMoves;
   int handRelFirst;
@@ -111,11 +111,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   int latestTrickSuit[4];
   int latestTrickRank[4];
   int maxHand=0, maxSuit=0, maxRank;
-  #ifdef SIMILARITYTEST
-  int playedHistory;
-  unsigned short int prevAggrRemain[4];
-  #endif
-  unsigned short int aggrRemain[4]; 
+  unsigned short int aggrRemain; 
   struct movePlyType temp;
   struct moveType mv;
   
@@ -154,31 +150,14 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   for (k=0; k<=3; k++)
     noOfCardsPerHand[handId(dl.first, k)]=0;
 
-  #ifdef SIMILARITYTEST
-  playedHistory=TRUE;
-  #endif
-  for (j=0; j<=3; j++) {
-    aggrRemain[j]=0;
-    for (i=0; i<=3; i++) 
-      aggrRemain[j]|=(dl.remainCards[i][j]>>2);
-  }
-  #ifdef SIMILARITYTEST
-  for (j=0; j<=3; j++) {
-    prevAggrRemain[j]=0;
-    for (i=0; i<=3; i++) 
-      prevAggrRemain[j]|=localVar[thrId].game.suit[i][j];
-
-    if (aggrRemain[j]!=prevAggrRemain[j]) {
-      playedHistory=FALSE;
-      break;
-    }
-  }
-  #endif
   
   for (k=0; k<=2; k++) {
     if (dl.currentTrickRank[k]!=0) {
       noOfCardsPerHand[handId(dl.first, k)]=1;
-      if ((aggrRemain[dl.currentTrickSuit[k]] & bitMapRank[dl.currentTrickRank[k]])!=0) {
+      aggrRemain=0;
+      for (h=0; h<=3; h++)
+        aggrRemain|=(dl.remainCards[h][dl.currentTrickSuit[k]]>>2);
+      if ((aggrRemain & bitMapRank[dl.currentTrickRank[k]])!=0) {
 	DumpInput(-13, dl, target, solutions, mode);
 	return -13;
       }
@@ -191,18 +170,14 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     localVar[thrId].tricksTarget=target;
 
   localVar[thrId].newDeal=FALSE; localVar[thrId].newTrump=FALSE;
-  #ifdef SIMILARITYTEST
   localVar[thrId].diffDeal=0; localVar[thrId].aggDeal=0;
-  #endif
   cardCount=0; 
   for (i=0; i<=3; i++) {
     for (j=0; j<=3; j++) {
       cardCount+=counttable[dl.remainCards[i][j]>>2];
-      #ifdef SIMILARITYTEST
       localVar[thrId].diffDeal+=((dl.remainCards[i][j]>>2)^
-	    (localVar[thrId].game.suit[i][j]));
+	      (localVar[thrId].game.suit[i][j]));
       localVar[thrId].aggDeal+=(dl.remainCards[i][j]>>2);
-      #endif
       if (localVar[thrId].game.suit[i][j]!=dl.remainCards[i][j]>>2) {
         localVar[thrId].game.suit[i][j]=dl.remainCards[i][j]>>2;
 	    localVar[thrId].newDeal=TRUE;
@@ -210,19 +185,17 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     }
   }
 
-  #ifdef SIMILARITYTEST
   if (localVar[thrId].newDeal) {
-    if (!playedHistory)
-      localVar[thrId].similarDeal=FALSE;
-    else if (localVar[thrId].diffDeal==0)
+    if (localVar[thrId].diffDeal==0)
       localVar[thrId].similarDeal=TRUE;
     else if ((localVar[thrId].aggDeal/localVar[thrId].diffDeal)
-       >SIMILARDEALLIMIT)
+       > SIMILARDEALLIMIT)
       localVar[thrId].similarDeal=TRUE;
     else
       localVar[thrId].similarDeal=FALSE;
   }
-  #endif
+  else
+    localVar[thrId].similarDeal=FALSE;
 
   if (dl.trump!=localVar[thrId].trump)
     localVar[thrId].newTrump=TRUE;
@@ -471,15 +444,11 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     return 1;
   }
   
-  #ifdef SIMILARITYTEST
   if ((mode!=2)&&
     (((localVar[thrId].newDeal)&&(!localVar[thrId].similarDeal)) 
-      || localVar[thrId].newTrump)) {
-  #else
-    if ((mode!=2)&&
-      ((localVar[thrId].newDeal) 
-      || localVar[thrId].newTrump)) {
-  #endif
+      || localVar[thrId].newTrump  || 
+	  (localVar[thrId].winSetSize > SIMILARMAXWINNODES))) {
+  
     Wipe(thrId);
 	localVar[thrId].winSetSizeLimit=WINIT;
     localVar[thrId].nodeSetSizeLimit=NINIT;
@@ -676,7 +645,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
           forb++;
         }
       }
-      if (1/*(winSetSize<winSetFill)&&(nodeSetSize<nodeSetFill)*/)
+      if (1/*(localVar[thrId].winSetSize<SIMILARMAXWINNODES)*/)
         InitSearch(&localVar[thrId].iniPosition, localVar[thrId].game.noOfCards-4,
           localVar[thrId].initialMoves, first, TRUE, thrId);
       else
@@ -739,7 +708,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       g=localVar[thrId].payOff;
       upperbound=localVar[thrId].payOff;
       lowerbound=0;
-      if (0/*(winSetSize>=winSetFill)||(nodeSetSize>=nodeSetFill)*/)
+      if (0/*(localVar[thrId].winSetSize>SIMILARMAXWINNODES)*/)
         InitSearch(&localVar[thrId].iniPosition, localVar[thrId].game.noOfCards-4,
           localVar[thrId].initialMoves, first, FALSE, thrId);
 	else 
@@ -774,7 +743,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 	    lowerbound=tricks;
 	    g=lowerbound;
 	  }
-        if (0/*(winSetSize>=winSetFill)||(nodeSetSize>=nodeSetFill)*/)
+        if (0/*(localVar[thrId].winSetSize>SIMILARMAXWINNODES)*/)
           InitSearch(&localVar[thrId].iniPosition, localVar[thrId].game.noOfCards-4,
             localVar[thrId].initialMoves, first, FALSE, thrId);
         else
@@ -913,7 +882,7 @@ void InitStart(void) {
 
 #ifdef _WIN32
 
-    localVar[k].maxmem = (LONGLONG)(pcmem-32678) * (700/MAXNOOFTHREADS);  
+    localVar[k].maxmem = (__int64)(pcmem-32678) * (700/MAXNOOFTHREADS);  
 	/* Linear calculation of maximum memory, formula by Michiel de Bondt */
 
     if (localVar[k].maxmem < 10485760) exit (1);
@@ -1860,6 +1829,7 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
 	k=target;
       else
 	k=target-1;
+    if (depth!=localVar[thrId].iniDepth)
       BuildSOP(posPoint, tricks, hand, target, depth,
         value, k, thrId);
       if (localVar[thrId].clearTTflag) {
@@ -4429,7 +4399,7 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
 
 
 struct posSearchType * SearchLenAndInsert(struct posSearchType
-	* rootp, LONGLONG key, int insertNode, int *result, int thrId) {
+	* rootp, __int64 key, int insertNode, int *result, int thrId) {
 /* Search for node which matches with the suit length combination 
    given by parameter key. If no such node is found, NULL is 
   returned if parameter insertNode is FALSE, otherwise a new 
@@ -5023,7 +4993,7 @@ DWORD CALLBACK SolveChunkDDtable (void *) {
   while ((j=_InterlockedExchangeAdd(&current, chunk))<param.noOfBoards) {
 
     for (int k=0; k<chunk && j+k<param.noOfBoards; k++) {
-      if ((param.remainTime!=-1)&&(param.solvedp->noOfBoards!=0)) {
+      if ((param.timeSupervision)&&(param.solvedp->noOfBoards!=0)) {
         tstop=clock();
         if (((int)tstop - param.tstart) > param.remainTime) {
 	  timeOut=TRUE;
@@ -5053,7 +5023,7 @@ DWORD CALLBACK SolveChunkDDtable (void *) {
 }
 
 int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp,
-  int remainTime) {
+  int timeSupervision, int remainTime) {
   int k, errCode;
   DWORD res;
   DWORD solveAllWaitResult;
@@ -5067,7 +5037,11 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp,
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return -4;
   
-  (int)param.tstart=clock(); param.remainTime=remainTime;
+  param.timeSupervision=timeSupervision;
+  if (timeSupervision) {
+    (int)param.tstart=clock(); param.remainTime=remainTime;
+  }
+
   for (k=0; k<noOfThreads; k++) {
     solveAllEvents[k]=CreateEvent(NULL, FALSE, FALSE, 0);
     if (solveAllEvents[k]==0) {
@@ -5115,6 +5089,46 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp,
     
   return 1;
 }
+#else 
+int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp,
+  int timeSupervision, int remainTime) {
+  int k, i, res, chunk, fail;
+  struct futureTricks fut[MAXNOOFBOARDS];
+
+  chunk=4; fail=FALSE;
+
+  for (i=0; i<MAXNOOFBOARDS; i++)
+      solvedp->solvedBoard[i].cards=0;
+
+  #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
+  {
+
+    #pragma omp for schedule(dynamic, chunk)
+
+    for (k=0; k<bop->noOfBoards; k++) {
+      res=SolveBoard(bop->deals[k], bop->target[k], bop->solutions[k],
+        bop->mode[k], &fut[k], omp_get_thread_num());
+      if (res==1) {
+        solvedp->solvedBoard[k]=fut[k];
+      }
+      else
+        fail=TRUE;
+    }
+  }
+
+  if (fail)
+    return 0;
+
+  solvedp->noOfBoards=0;
+  for (i=0; i<MAXNOOFBOARDS; i++) {
+    if (solvedp->solvedBoard[i].cards!=0)
+      solvedp->noOfBoards++;
+  }
+
+  return 1;
+}
+#endif
+
 
 int STDCALL CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * tablep) {
 
@@ -5145,7 +5159,7 @@ int STDCALL CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * ta
       ind++;
     }
 
-  res=SolveAllBoards4(&bo, &solved, -1);
+  res=SolveAllBoards4(&bo, &solved, FALSE, -1);
   if (res==1) {
     for (ind=0; ind<20; ind++) {
       tablep->resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
@@ -5156,7 +5170,8 @@ int STDCALL CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * ta
 
   return res;
 }
-#endif
+/*#endif*/
+
 
 
 
