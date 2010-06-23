@@ -30,6 +30,8 @@
 
 /*#define BENCH*/
 
+/*#define PLUSVER*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,6 +70,8 @@
 #define WINIT	700000/*1000000*/
 #define LINIT	50000
 
+/*#define SIMILARDEALLIMIT	5*/
+
 #define Max(x, y) (((x) >= (y)) ? (x) : (y))
 #define Min(x, y) (((x) <= (y)) ? (x) : (y))
 
@@ -93,9 +97,6 @@ struct gameInfo  {          /* All info of a particular deal */
     /* 1st index is hand id, 2nd index is suit id */
 };
 
-struct dealType {
-  unsigned short int deal[4][4];
-};  
 
 struct moveType {
   unsigned char suit;
@@ -136,9 +137,6 @@ struct deal {
   unsigned int remainCards[4][4];
 };
 
-struct makeType {
-  unsigned short int winRanks[4];
-};
 
 struct pos {
   unsigned short int rankInSuit[4][4];   /* 1st index is hand, 2nd index is
@@ -218,6 +216,14 @@ struct ttStoreType {
   unsigned short int suit[4][4];
 };
 
+struct ddTableDeal {
+  unsigned int cards[4][4];
+};
+
+struct ddTableResults {
+  int resTable[5][4];
+};
+
 
 extern struct gameInfo game;
 extern int newDeal;
@@ -294,15 +300,24 @@ extern unsigned char cardRank[15], cardSuit[5], cardHand[4];
 extern FILE * fp2, *fp7, *fp11;
   /* Pointers to logs */
 
+#ifdef PLUSVER
 EXTERN_C DLLEXPORT int STDCALL SolveBoard(struct deal dl, 
+  int target, int solutions, int mode, struct futureTricks *futp, int threadIndex);
+EXTERN_C DLLEXPORT int STDCALL CalcDDtable(struct ddTableDeal tableDeal, 
+  struct ddTableResults * tablep);
+#else
+  EXTERN_C DLLEXPORT int STDCALL SolveBoard(struct deal dl, 
   int target, int solutions, int mode, struct futureTricks *futp);
+#endif
+
 
 void InitStart(void);
 void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst);
 void InitSearch(struct pos * posPoint, int depth,
   struct moveType startMoves[], int first, int mtd);
 int ABsearch(struct pos * posPoint, int target, int depth);
-struct makeType Make(struct pos * posPoint, int depth);
+void Make(struct pos * posPoint, unsigned short int trickCards[4], 
+  int depth);
 int MoveGen(struct pos * posPoint, int depth);
 void InsertSort(int n, int depth);
 void UpdateWinner(struct pos * posPoint, int suit);
