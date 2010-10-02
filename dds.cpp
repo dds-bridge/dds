@@ -1,5 +1,5 @@
 
-/* DDS 2.1.0   A bridge double dummy solver.				      */
+/* DDS 2.1.1   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2010 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -17,7 +17,7 @@
 /* along with this program; if not, write to the Free Software                */
 /* Foundation, Inc, 51 Franklin Street, 5th Floor, Boston MA 02110-1301, USA. */
 
-/*#include "stdafx.h" */		/* Needed by Visual C++ */
+/*#include "stdafx.h"*/ 		/* Needed by Visual C++ */
 
 #include "dll.h"
 
@@ -38,9 +38,9 @@ int lastTTstore;
 int ttCollect;
 int suppressTTlog;
 
-#if defined(_WIN32)
-int noOfThreads;
-#endif
+int noOfThreads=MAXNOOFTHREADS;  /* The number of entries to the transposition tables. There is
+								 one entry per thread. */
+int noOfCores;					 /* The number of processor cores, however cannot be higher than noOfThreads. */
 
 #if defined(_MSC_VER)
 CRITICAL_SECTION solv_crit;
@@ -57,7 +57,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   int k;
 
   if (ul_reason_for_call==DLL_PROCESS_ATTACH) {
-    InitStart();
+    InitStart(0, 0); 
 #if defined(_MSC_VER)
 	InitializeCriticalSection(&solv_crit);
 #endif
@@ -66,7 +66,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 #if defined(_MSC_VER)
     DeleteCriticalSection(&solv_crit);
 #endif
-    for (k=0; k<MAXNOOFTHREADS; k++) {	
+    for (k=0; k<noOfThreads; k++) {	
       Wipe(k); 
       if (localVar[k].pw[0])
         free(localVar[k].pw[0]);
@@ -77,12 +77,24 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       if (localVar[k].pl[0])
         free(localVar[k].pl[0]);
       localVar[k].pl[0]=NULL;
+      if (localVar[k].pw)
+	free(localVar[k].pw);
+      localVar[k].pw=NULL;
+      if (localVar[k].pn)
+	free(localVar[k].pn);
+      localVar[k].pn=NULL;
+      if (localVar[k].pl)
+	free(localVar[k].pl);
+      localVar[k].pl=NULL;
       if (ttStore)
         free(ttStore);
       ttStore=NULL;
       if (localVar[k].rel)
         free(localVar[k].rel);
       localVar[k].rel=NULL;
+	  if (localVar[k].adaptWins)
+	    free(localVar[k].adaptWins);
+	  localVar[k].adaptWins=NULL;
     }
     if (highestRank)
       free(highestRank);
@@ -90,6 +102,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     if (counttable)
       free(counttable);
     counttable=NULL;
+	/*_CrtDumpMemoryLeaks();*/	/* MEMORY LEAK? */
   }
   return 1;
 }
@@ -116,7 +129,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   struct moveType mv;
   
   
-  /*InitStart();*/   /* Include InitStart() if inside SolveBoard,
+  /*InitStart(0,0);*/   /* Include InitStart() if inside SolveBoard,
 			   but preferable InitStart should be called outside
 					 SolveBoard like in DllMain for Windows. */
 
@@ -125,7 +138,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     localVar[thrId].forbiddenMoves[k].suit=0;
   }
 
-  if ((thrId<0)||(thrId>=MAXNOOFTHREADS)) {
+  if ((thrId<0)||(thrId>=noOfThreads)) {
     DumpInput(-15, dl, target, solutions, mode);
 	return -15;
   }
@@ -441,6 +454,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     else
       futp->score[0]=0;
 	
+	/*_CrtDumpMemoryLeaks();*/  /* MEMORY LEAK? */
     return 1;
   }
   
@@ -491,6 +505,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 	  localVar[thrId].movePly[localVar[thrId].iniDepth].move[0].sequence<<2;
 	futp->score[0]=-2;
 	
+	/*_CrtDumpMemoryLeaks();*/  /* MEMORY LEAK? */
 	return 1;
     }
   }
@@ -512,6 +527,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     else
 	futp->cards=localVar[thrId].movePly[localVar[thrId].iniDepth].last+1;
 	
+	/*_CrtDumpMemoryLeaks(); */ /* MEMORY LEAK? */
     return 1;
   }
 
@@ -814,16 +830,17 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     fclose(localVar[thrId].fp2);
   }*/
 
-
+  /*_CrtDumpMemoryLeaks();*/  /* MEMORY LEAK? */
   return 1;
 }
 
 
 int _initialized=0;
 
-void InitStart(void) {
+void InitStart(int gb_ram, int ncores) {
   int k, r, i, j, m;
   unsigned short int res;
+  long double pcmem;	/* kbytes */
 
   if (_initialized)
       return;
@@ -836,24 +853,42 @@ void InitStart(void) {
   if (ttStore==NULL)
     exit(1);
 
-#ifdef _WIN32
+  if ((gb_ram==0)||(ncores==0)) {		/* Autoconfig */
+    SYSTEM_INFO temp; 
 
-  SYSTEM_INFO temp;
+    MEMORYSTATUS stat;
 
-  GetSystemInfo(&temp);
-  noOfThreads=Min(MAXNOOFTHREADS, temp.dwNumberOfProcessors);
+    GlobalMemoryStatus (&stat);
 
-  long double pcmem;
-  /*FILE *fp;*/
+    pcmem=stat.dwTotalPhys/1024;
 
-  MEMORYSTATUS stat;
+    if (pcmem < 1500000.0)
+      noOfThreads=Min(MAXNOOFTHREADS, 4);
+    else if (pcmem < 4500000.0)
+      noOfThreads=Min(MAXNOOFTHREADS, 8); 
+    else
+      noOfThreads=Min(MAXNOOFTHREADS, 16); 
 
-  GlobalMemoryStatus (&stat);
+    GetSystemInfo(&temp);
+    noOfCores=Min(noOfThreads, (int)temp.dwNumberOfProcessors);
+	
+  }
+  else {
+    if (gb_ram < 2)
+      noOfThreads=Min(MAXNOOFTHREADS, 4);
+    else if (gb_ram < 5)
+      noOfThreads=Min(MAXNOOFTHREADS, 8);
+    else
+      noOfThreads=Min(MAXNOOFTHREADS, 16);
 
-  pcmem=stat.dwTotalPhys/1024;
-#endif
+    noOfCores=Min(noOfThreads, ncores);
 
-  for (k=0; k<MAXNOOFTHREADS; k++) {
+    pcmem=(long double)(1000000 * gb_ram);
+  }
+
+  /*printf("noOfThreads: %d   noOfCores: %d\n", noOfThreads, noOfCores);*/
+ 
+  for (k=0; k<noOfThreads; k++) {
     localVar[k].trump=-1;
     localVar[k].hiwinSetSize=0; 
     localVar[k].hinodeSetSize=0;
@@ -876,63 +911,18 @@ void InitStart(void) {
     localVar[k].winSetSizeLimit=WINIT;
     localVar[k].lenSetSizeLimit=LINIT;
 
-    localVar[k].maxmem=5000001*sizeof(struct nodeCardsType)+
-		   15000001*sizeof(struct winCardType)+
-		   200001*sizeof(struct posSearchType);
+    if ((gb_ram!=0)&&(ncores!=0)) 
+      localVar[k].maxmem=gb_ram * ((8000001*sizeof(struct nodeCardsType)+
+		   25000001*sizeof(struct winCardType)+
+		   400001*sizeof(struct posSearchType))/noOfThreads);
+    else {
+      localVar[k].maxmem = (__int64)(pcmem-32678) * (700/noOfThreads);  
+	  /* Linear calculation of maximum memory, formula by Michiel de Bondt */
 
-#ifdef _WIN32
+      if (localVar[k].maxmem < 10485760) exit (1);
+    }
 
-    localVar[k].maxmem = (__int64)(pcmem-32678) * (700/MAXNOOFTHREADS);  
-	/* Linear calculation of maximum memory, formula by Michiel de Bondt */
-
-    if (localVar[k].maxmem < 10485760) exit (1);
-  
-  /*if (pcmem > 450000) {
-	maxmem=5000000*sizeof(struct nodeCardsType)+
-		   15000000*sizeof(struct winCardType)+
-		   200000*sizeof(struct posSearchType);
-  }
-  else if (pcmem > 240000) {
-	maxmem=3200000*sizeof(struct nodeCardsType)+
-		   6400000*sizeof(struct winCardType)+
-		   200000*sizeof(struct posSearchType);
-  }
-  else if (pcmem > 100000) {
-	maxmem=800000*sizeof(struct nodeCardsType)+
-		   2000000*sizeof(struct winCardType)+
-		   100000*sizeof(struct posSearchType);
-  }
-  else {
-	maxmem=400000*sizeof(struct nodeCardsType)+
-		   1000000*sizeof(struct winCardType)+
-		   50000*sizeof(struct posSearchType);
-  }*/
-
-  /*fp=fopen("mem.txt", "w");
-
-  fprintf (fp, "The MEMORYSTATUS structure is %ld bytes long; it should be %d.\n\n", 
-	    stat.dwLength, sizeof (stat));
-  fprintf (fp, "There is  %ld percent of memory in use.\n",
-          stat.dwMemoryLoad);
-  fprintf (fp, "There are %*ld total Kbytes of physical memory.\n",
-          7, stat.dwTotalPhys/1024);
-  fprintf (fp, "There are %*ld free Kbytes of physical memory.\n",
-          7, stat.dwAvailPhys/1024);
-  fprintf (fp, "There are %*ld total Kbytes of paging file.\n",
-          7, stat.dwTotalPageFile/1024);
-  fprintf (fp, "There are %*ld free Kbytes of paging file.\n",
-          7, stat.dwAvailPageFile/1024);
-  fprintf (fp, "There are %*ld total Kbytes of virtual memory.\n",
-          7, stat.dwTotalVirtual/1024);
-  fprintf (fp, "There are %*ld free Kbytes of virtual memory.\n",
-          7, stat.dwAvailVirtual/1024);
-  fprintf(fp, "\n");
-  fprintf(fp, "nsize=%d wsize=%d lsize=%d\n", nodeSetSizeLimit, winSetSizeLimit,
-    lenSetSizeLimit);
-
-  fclose(fp);*/
-
-  #endif
+    /*printf("thread no: %d  maxmem: %ld\n", k, localVar[k].maxmem);*/ 
   }
 
   bitMapRank[15]=0x2000;
@@ -966,7 +956,7 @@ void InitStart(void) {
 
   cardHand[0]='N'; cardHand[1]='E'; cardHand[2]='S'; cardHand[3]='W';
 
-  for (k=0; k<MAXNOOFTHREADS; k++) {
+  for (k=0; k<noOfThreads; k++) {
     localVar[k].summem=(WINIT+1)*sizeof(struct winCardType)+
 	     (NINIT+1)*sizeof(struct nodeCardsType)+
 		 (LINIT+1)*sizeof(struct posSearchType);
@@ -1062,7 +1052,7 @@ void InitStart(void) {
     for (j=0; j<14; j++) {
       res=0;
       if (j==0) {
-	for (m=0; m<MAXNOOFTHREADS; m++)
+	for (m=0; m<noOfThreads; m++)
 	  localVar[m].adaptWins[i].winRanks[j]=0;
       }
       else {
@@ -1077,7 +1067,7 @@ void InitStart(void) {
 	      break;
 	  }
 	}
-	for (m=0; m<MAXNOOFTHREADS; m++)
+	for (m=0; m<noOfThreads; m++)
 	  localVar[m].adaptWins[i].winRanks[j]=res;
       }
     }
@@ -5042,7 +5032,7 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp,
     (int)param.tstart=clock(); param.remainTime=remainTime;
   }
 
-  for (k=0; k<noOfThreads; k++) {
+  for (k=0; k<noOfCores; k++) {
     solveAllEvents[k]=CreateEvent(NULL, FALSE, FALSE, 0);
     if (solveAllEvents[k]==0) {
       errCode=GetLastError();
@@ -5055,7 +5045,7 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp,
   for (k=0; k<MAXNOOFBOARDS; k++)
     solvedp->solvedBoard[k].cards=0;
 
-  for (k=0; k<noOfThreads; k++) {
+  for (k=0; k<noOfCores; k++) {
     res=QueueUserWorkItem(SolveChunkDDtable, NULL, WT_EXECUTELONGFUNCTION);
     if (res==0) { 
       errCode=GetLastError();
@@ -5063,14 +5053,14 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp,
     }
   }
 
-  solveAllWaitResult = WaitForMultipleObjects(noOfThreads, 
+  solveAllWaitResult = WaitForMultipleObjects(noOfCores, 
 	  solveAllEvents, TRUE, INFINITE);
   if (solveAllWaitResult!=WAIT_OBJECT_0) {
     errCode=GetLastError();
     return -3;
   }
 
-  for (k=0; k<noOfThreads; k++) {
+  for (k=0; k<noOfCores; k++) {
     CloseHandle(solveAllEvents[k]);
   }
 

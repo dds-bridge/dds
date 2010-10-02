@@ -21,19 +21,21 @@
 #    include <process.h>
 #endif
 #if defined(_MSC_VER)
-#	 include <intrin.h>
+#    include <intrin.h>
 #else
-#	include <omp.h>
+#    include <omp.h>
 #endif
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		20100	/* Version 2.1.0. Allowing for 2 digit
+#define DDS_VERSION		20101	/* Version 2.1.1. Allowing for 2 digit
 					minor versions */
 /*#define BENCH*/
 
 #include <stdio.h>
+/*#define _CRTDBG_MAP_ALLOC */ /* MEMORY LEAK? */
 #include <stdlib.h>
+/*#include <crtdbg.h> */  /* MEMORY LEAK? */
 #include <string.h>
 #include <time.h>
 #include <assert.h>
@@ -302,7 +304,7 @@ struct localVarType {
   int nodeSetSizeLimit;
   int winSetSizeLimit;
   int lenSetSizeLimit;
-  __int64 maxmem;
+  __int64 maxmem;		/* bytes */
   __int64 allocmem;
   __int64 summem;
   int wmem;
@@ -333,13 +335,14 @@ struct localVarType {
   int nodeSetSize; /* Index with range 0 to nodeSetSizeLimit */
   int winSetSize;  /* Index with range 0 to winSetSizeLimit */
   int lenSetSize;  /* Index with range 0 to lenSetSizeLimit */
-
 };
 
 #if defined(_WIN32)
 extern CRITICAL_SECTION solv_crit;
 #endif
 
+extern int noOfThreads;
+extern int noOfCores;
 extern struct localVarType localVar[MAXNOOFTHREADS];
 extern struct gameInfo game;
 extern int newDeal;
@@ -424,7 +427,7 @@ EXTERN_C DLLEXPORT int STDCALL SolveBoard(struct deal dl,
 EXTERN_C DLLEXPORT int STDCALL CalcDDtable(struct ddTableDeal tableDeal, 
   struct ddTableResults * tablep);
 
-void InitStart(void);
+void InitStart(int gb_ram, int ncores);
 void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst, int thrId);
 void InitSearch(struct pos * posPoint, int depth,
   struct moveType startMoves[], int first, int mtd, int thrId);

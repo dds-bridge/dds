@@ -1,4 +1,4 @@
-DDS 2.1.0,  Bo Haglund 2010-05-28
+DDS 2.1.1,  Bo Haglund 2010-08-02
 
 For Win32, DDS compiles with Visual C++ 2005 Express edition 
 and the Mingw port of gcc.
@@ -20,21 +20,27 @@ without the overhead of InitStart() at each call.
 For this purpose, the application code must have an include
 statement for the dll.h file in DDS.
 
-Setting up the maximum size of the transposition table
-------------------------------------------------------
-When compiling for Win32, the maximum size of the transposition table is automatically set depending on the physical memory size of
-the PC.
 
-When compiling with Linux, the maximum transposition table size
-(maxmem) is set as follows in dds.cpp (search for maxmem)in InitStart:
-
-maxmem=5000000*sizeof(struct nodeCardsType)+
-		   15000000*sizeof(struct winCardType)+
-		   200000*sizeof(struct posSearchType);
-
-If needed change the values, see examples later in the code for Win32 with different PC memory sizes.
+Maximum number of threads
+------------------------- 
+The maximum number of simultaneous threads depends on the PC physical memory size:
+1 GB or less, max 4 threads.
+2, 3 or 4 GB, max 8 threads.
+More than 4 GB, max 16 threads.
  
+For Windows, allocating memory for the maximum number of simultaneous threads can 
+be done by reading out the physical memory size from Windows. This is done in the DDS.DLL.
+Another alternative is to provide the physical memory size as a parameter (gb_ram) in the
+InitStart call. This alternative needs to be used when the operating system is not Windows.
 
+
+Setting the number of simultaneous threads when calling CalcDDtable.
+--------------------------------------------------------------------
+For Windows, this can be done either by reading out the number of processor cores from
+Windows and using this for setting the number of threads, or by supplying the number of
+threads (ncores) in InitStart. This latter alternative needs to be used when the operating 
+system is not Windows. 
+ 
 
 Options at DDS compilation
 --------------------------
