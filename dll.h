@@ -1,8 +1,5 @@
-/* portability-macros header prefix */
 
-#if !defined(_MSC_VER)
-#define LONGLONG long long
-#endif
+/* portability-macros header prefix */
 
 /* Windows requires a __declspec(dllexport) tag, etc */
 #if defined(_WIN32)
@@ -28,26 +25,30 @@
 
 /* end of portability-macros section */
 
+#define DDS_VERSION		111201	/* Version 1.1.12. Allowing for 2 digit
+					minor versions */
 /*#define BENCH*/
+
+#define PBN
 
 /*#define PLUSVER*/
 
 #include <stdio.h>
+/*#define _CRTDBG_MAP_ALLOC */ /* MEMORY LEAK? */
 #include <stdlib.h>
+/*#include <crtdbg.h> */ /* MEMORY LEAK? */
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 
 /*#define STAT*/	/* Define STAT to generate a statistics log, stat.txt */
 /*#define TTDEBUG*/     /* Define TTDEBUG to generate transposition table debug information */
-/*#define CANCEL*/    /* Define CANCEL to get support for cancelling ongoing search */
 
 #ifdef  TTDEBUG
 #define SEARCHSIZE  20000
 #else
 #define SEARCHSIZE  1
 #endif
-
-#define CANCELCHECK  200000
 
 #if defined(INFINITY)
 #    undef INFINITY
@@ -70,7 +71,8 @@
 #define WINIT	700000/*1000000*/
 #define LINIT	50000
 
-/*#define SIMILARDEALLIMIT	5*/
+#define SIMILARDEALLIMIT	5
+#define SIMILARMAXWINNODES  700000
 
 #define Max(x, y) (((x) >= (y)) ? (x) : (y))
 #define Min(x, y) (((x) <= (y)) ? (x) : (y))
@@ -137,6 +139,13 @@ struct deal {
   unsigned int remainCards[4][4];
 };
 
+struct dealPBN {
+  int trump;
+  int first;
+  int currentTrickSuit[3];
+  int currentTrickRank[3];
+  char remainCards[80];
+};
 
 struct pos {
   unsigned short int rankInSuit[4][4];   /* 1st index is hand, 2nd index is
@@ -199,6 +208,7 @@ struct evalType {
 struct relRanksType {
   int aggrRanks[4];
   int winMask[4];
+  char relRank[15][4];
 };
 
 struct adaptWinRanksType {
@@ -220,13 +230,17 @@ struct ddTableDeal {
   unsigned int cards[4][4];
 };
 
+struct ddTableDealPBN {
+  char cards[80];
+};
+
 struct ddTableResults {
   int resTable[5][4];
 };
 
 
 extern struct gameInfo game;
-extern int newDeal;
+/*extern int newDeal;*/
 extern struct gameInfo * gameStore;
 extern struct ttStoreType * ttStore;
 extern struct nodeCardsType * nodeCards;
@@ -240,7 +254,8 @@ extern struct moveType forbiddenMoves[14];  /* Initial depth moves that will be
 					       excluded from the search */
 extern struct moveType initialMoves[4];
 extern struct moveType highMove;
-extern struct moveType * bestMove;
+extern struct moveType bestMove[50];
+extern struct moveType bestMoveTT[50];
 extern struct relRanksType * rel;
 extern struct winCardType **pw;
 extern struct nodeCardsType **pn;
@@ -264,7 +279,6 @@ extern int trump;
 extern int nodes;                       /* Number of nodes searched */
 extern int no[50];                      /* Number of nodes searched on each
                                         depth level */
-extern int payOff;
 extern int iniDepth;
 extern int treeDepth;
 extern int tricksTarget;                /* No of tricks for MAX in order to
@@ -274,7 +288,6 @@ extern int tricksTargetOpp;             /* Target no of tricks for MAX
                                         opponent */
 extern int targetNS;
 extern int targetEW;
-extern int handToPlay;
 extern int nodeSetSize;
 extern int winSetSize;
 extern int lenSetSize;
@@ -286,15 +299,11 @@ extern int highHand;
 extern int nodeSetSizeLimit;
 extern int winSetSizeLimit;
 extern int lenSetSizeLimit;
-extern int estTricks[4];
-extern int recInd; 
+extern int estTricks[4]; 
 extern int suppressTTlog;
 extern unsigned char suitChar[4];
 extern unsigned char rankChar[15];
 extern unsigned char handChar[4];
-extern int cancelOrdered;
-extern int cancelStarted;
-extern int threshold;
 extern unsigned char cardRank[15], cardSuit[5], cardHand[4];
 
 extern FILE * fp2, *fp7, *fp11;
@@ -303,15 +312,23 @@ extern FILE * fp2, *fp7, *fp11;
 #ifdef PLUSVER
 EXTERN_C DLLEXPORT int STDCALL SolveBoard(struct deal dl, 
   int target, int solutions, int mode, struct futureTricks *futp, int threadIndex);
+EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target, 
+    int solutions, int mode, struct futureTricks *futp, int thrId);
 EXTERN_C DLLEXPORT int STDCALL CalcDDtable(struct ddTableDeal tableDeal, 
   struct ddTableResults * tablep);
-#else
+EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN, 
+  struct ddTableResults * tablep);
+#else 
   EXTERN_C DLLEXPORT int STDCALL SolveBoard(struct deal dl, 
   int target, int solutions, int mode, struct futureTricks *futp);
+#ifdef PBN
+  EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target, 
+    int solutions, int mode, struct futureTricks *futp);
+#endif
 #endif
 
 
-void InitStart(void);
+void InitStart(int gb_ram, int ncores);
 void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst);
 void InitSearch(struct pos * posPoint, int depth,
   struct moveType startMoves[], int first, int mtd);
@@ -325,9 +342,9 @@ void UpdateSecondBest(struct pos * posPoint, int suit);
 int WinningMove(struct moveType * mvp1, struct moveType * mvp2);
 int AdjustMoveList(void);
 int QuickTricks(struct pos * posPoint, int hand, 
-	int depth, int target, int *result);
-int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target); 
-int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target);
+	int depth, int target, int trump, int *result);
+int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target, int trump); 
+int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target, int trump);
 struct nodeCardsType * CheckSOP(struct pos * posPoint, struct nodeCardsType
   * nodep, int target, int tricks, int * result, int *value);
 struct nodeCardsType * UpdateSOP(struct pos * posPoint, struct nodeCardsType
@@ -338,10 +355,10 @@ struct nodeCardsType * FindSOP(struct pos * posPoint,
 struct cardType NextCard(struct cardType card);
 struct nodeCardsType * BuildPath(struct pos * posPoint, 
   struct posSearchType *nodep, int * result);
-void BuildSOP(struct pos * posPoint, int tricks, int firstHand, int target,
-  int depth, int scoreFlag, int score);
+void BuildSOP(struct pos * posPoint, __int64 suitLengths, int tricks, 
+	int firstHand, int target, int depth, int scoreFlag, int score);
 struct posSearchType * SearchLenAndInsert(struct posSearchType
-	* rootp, LONGLONG key, int insertNode, int *result);  
+	* rootp, __int64 key, int insertNode, int *result);  
 void Undo(struct pos * posPoint, int depth);
 int CheckDeal(struct moveType * cardp);
 int InvBitMapRank(unsigned short bitMap);
@@ -353,3 +370,4 @@ void Wipe(void);
 void AddNodeSet(void);
 void AddLenSet(void);
 void AddWinSet(void);
+void PrintDeal(FILE *fp, unsigned short ranks[][4]);

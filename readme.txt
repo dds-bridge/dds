@@ -1,10 +1,11 @@
-DDS 1.1.9,  Bo Haglund 2008-09-07
+DDS 1.1.12,  Bo Haglund 2011-10-21
 
-For Win32, DDS compiles with Visual C++ 2005 Express edition 
-and the Mingw port of gcc 3.4.2.
+For Win32, DDS compiles with Visual C++ 2010 Express edition 
+and the Mingw port of gcc.
 
 When using Visual C++, the statement
-#include "stdafx.h" at the beginning of dds.cpp must be uncommented.  
+#include "stdafx.h" at the beginning of dds.cpp must be uncommented.
+   
 
 Linking with an application using DDS
 -------------------------------------
@@ -14,30 +15,21 @@ without the overhead of InitStart() at each call.
 For this purpose, the application code must have an include
 statement for the dll.h file in DDS.
 
-Setting up the maximum size of the transposition table
-------------------------------------------------------
-When compiling for Win32, the maximum size of the transposition table is automatically set depending on the physical memory size of
-the PC.
-
-When compiling with Linux, the maximum transposition table size
-(maxmem) is set as follows in dds.cpp (search for maxmem)in InitStart:
-
-maxmem=5000000*sizeof(struct nodeCardsType)+
-		   15000000*sizeof(struct winCardType)+
-		   200000*sizeof(struct posSearchType);
-
-If needed change the values, see examples later in the code for Win32 with different PC memory sizes.
- 
-
 
 Options at DDS compilation
 --------------------------
-There are 3 compiling options:
+Compiling options:
 
 1) Compilation without definitions of STAT or TTDEBUG.
 This is the default case given in the distributed source
 where definitions of STAT and TTDEBUG are commented away.
 This compilation alternative gives the best performance.
+
+By default the PBN versions for remaning cards in the deal information 
+are included in SolveBoardPBN. Removing the PBN definition in dll.h
+will make a compilation without this function. This can be useful
+if DDS 1.1.12 is to replace 1.1.11, and the application using DDS cannot
+accept an interface change towards DDS.
 
 2) Compilation with definition STAT.
 Uncomment the definition of STAT.

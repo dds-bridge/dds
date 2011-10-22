@@ -232,6 +232,77 @@ and QuickTricks slightly faster.
 
 
 
+Release Notes DDS 2.0.0
+-----------------------
+A bug was fixed.
+SolveBoard is now thread-safe.
+The SolveBoard parameter "mode" no longer needs to be set to 2.
+DDS automatically detect situations when the transposition
+table contents can be reused.
+Used with a single thread, DDS 2.0.0 has about the same speed as DDS 1.1.9.
+Used with 2 parallel threads, DDS 2.0.0 is twice as fast as the single
+thread case. 
+
+A new function, CalcDDtable, has been added.
+CalcDDtable calls SolveBoard using parallel threads. The number of
+parallel threads is the same as the number of processor cores.
+CalcDDtable calculates the double dummy values of the initial 52 cards
+for all the 20 trump suit/leading hand combinations. 
+
+
+Release Notes DDS 2.0.1
+-----------------------
+In 2.0.0, the contents of the transposition table could be erronously
+be reused when the previous position contained a different number of
+cards. This was caused by an erroneous implementation of the
+deal similarity test. This bug was fixed by removing the similarity test.
+
+The DDS version number is defined by a #define statement in dll.h. 
+
+
+Release Notes DDS 2.1.0
+-----------------------
+Added OpenMP as multi-thread support for CalcDDtable when compiling with 
+gcc 4.4.0 or later.
+
+Added a similarity deals test function for reuse of the transposition
+table contents when the current deal is similar to the previous deal. 
+
+
+Release Notes DDS 2.1.1
+-----------------------
+The maximum number of threads is configurable depending on the size of the
+physical memory. The configuration is either done automatically by reading
+out the physical memory size by the operating system, or by supplying
+parameter values in InitStart.
+
+
+Release Notes DDS 2.1.2
+-----------------------
+2 new callable functions have been added:
+SolveBoardPBN and CalcDDtablePBN.
+They both accept PBN format for the remaining cards in the deal information
+instead of the bit codes.
+
+Code improvements have been done concerning quick tricks detection and move
+ordering. 2.1.2 is about 10% faster than 2.1.1.
+
+
+Release Notes DDS 1.1.12
+------------------------
+2 new callable functions have been added:
+SolveBoardPBN and CalcDDtablePBN.
+They both accept PBN format for the remaining cards in the deal information
+instead of the bit codes.
+
+Code improvements have been done concerning quick tricks detection and move
+ordering. 1.1.12 is about 15-20% faster than 1.1.11.
+
+
+   
+
+
+
 
 
 
