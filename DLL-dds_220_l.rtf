@@ -2,11 +2,11 @@
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red255\green0\blue0;}
 {\stylesheet{ Normal;}{\s1 heading 1;}{\s2 heading 2;}{\s3 heading 3;}}
 {\*\generator Msftedit 5.41.21.2510;}\viewkind4\uc1\pard\nowidctlpar\lang1053\f0\fs20 Bo Haglund, Bob Richardson\par
-Rev L, 2011-10-14\par
+Rev M, 2012-07-06\par
 Latest DLL issue with this description is available at {\field{\*\fldinst{HYPERLINK "http://www.bahnhof.se/wb758135/"}}{\fldrslt{\ul\cf1 http://www.bahnhof.se/wb758135/}}}\f0\fs20\par
 \par
 \par
-\pard\keepn\nowidctlpar\s2\cf2\ul\b Short description of the DLL functions supported in Double Dummy Problem Solver 2.1.2\par
+\pard\keepn\nowidctlpar\s2\cf2\ul\b Short description of the DLL functions supported in Double Dummy Problem Solver 2.2.0\par
 \pard\nowidctlpar\ulnone\b0\par
 \pard\keepn\nowidctlpar\s3\b Callable functions\par
 \pard\nowidctlpar\b0\par
@@ -19,6 +19,9 @@ extern "C" __declspec(dllimport) int __stdcall SolveBoardPBN(struct dealPBN, int
 extern "C" __declspec(dllimport) int __stdcall CalcDDtable(struct ddTableDeal tableDeal, \line     struct ddTableResults * tablep);\par
 \par
 extern "C" __declspec(dllimport) int __stdcall CalcDDtablePBN(struct ddTableDealPBN\line     tableDealPBN, struct ddTableResults * tablep);\par
+\par
+extern "C" __declspec(dllimport) int __stdcall SolveAllBoards(struct boardsPBN *bop,\par
+    struct solvedBoards *solvedp);             \par
 \par
 \par
 \pard\keepn\nowidctlpar\s3\b SolveBoard\par
@@ -120,6 +123,32 @@ struct ddTableDeal \{\par
 struct ddTableDealPBN \{\par
   char cards[80];\par
 \};\par
+\par
+\par
+\b SolveAllBoards\b0\par
+\par
+SolveAllBoards is called with a buffer containing a number of boards, maximum 100 boards per call. Each board is defined with the same input data as in SolveBoardPBN. The input data per board can be freely given independent of the settings for the other deals. SolveAllBoards uses multi-thread calls to SolveBoardPBN for solving the buffered boards.\par
+\par
+struct boardsPBN \{\par
+  int noOfBoards;\par
+  struct dealPBN deals[MAXNOOFBOARDS];\par
+  int target[MAXNOOFBOARDS];\par
+  int solutions[MAXNOOFBOARDS];\par
+  int mode[MAXNOOFBOARDS];\par
+\};\par
+\par
+struct solvedBoards \{\par
+  int noOfBoards;\par
+  struct futureTricks solvedBoard[MAXNOOFBOARDS];\par
+\};\par
+\par
+In the SolveAllBoards call, the cards are coded in PBN text format using the dealPBN structure. The number of boards to be solved must be defined in the boardsPBN structure, the number must not exceed MAXNOOFBOARDS which is 100. In the returned information in struct solvedBoards, the number of solved boards are given. The futureTricks information is provided for all solved boards with the same returned information per board as with SolveBoard. \par
+\par
+SolveAllBoards returns 1 if the call succeeds, otherwise an error code identical to the SolveBoard error codes is given when there is a problem in the input information.\par
+\par
+\b Note\b0\par
+\par
+SolveAllBoards is optimal when the input boards are dissimilar. Adjacent boards in the boards buffer that are similar (same trump, very minor difference between cards distribution between hands) typically means that transposition table information cannot be reused. That is because these boards typically use different threads. For this reason, the SolveAllBoards function should not be used as an alternative to the CalcDDtable function. \par
 \cf0\lang1033\fs24\par
 \par
 \pard\keepn\nowidctlpar\s1\cf2\lang1053\b\fs20 Revision History\par
@@ -151,6 +180,8 @@ Rev J, 2010-05-29\tab DDS release 2.1, OpenMP support, reuse of previous DD tran
 Rev K, 2010-10-27\tab Correction of fault in the description:  2nd index in resTable of the structure ddTableResults is declarer hand.\par
 \par
 Rev L, 2011-10-14\tab Added SolveBoardPBN and CalcDDtablePBN.\par
+\par
+Rev M, 2012-07-06\tab Added SolveAllBoards. \par
  \par
 \par
 }
