@@ -1,6 +1,10 @@
 
 /* portability-macros header prefix */
 
+#if !defined(_MSC_VER)
+#define LONGLONG long long
+#endif
+
 /* Windows requires a __declspec(dllexport) tag, etc */
 #if defined(_WIN32)
 #    define DLLEXPORT __declspec(dllexport)
@@ -25,7 +29,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		111201	/* Version 1.1.12. Allowing for 2 digit
+#define DDS_VERSION		10113	/* Version 1.1.13. Allowing for 2 digit
 					minor versions */
 /*#define BENCH*/
 
@@ -205,10 +209,16 @@ struct evalType {
   unsigned short int winRanks[4];
 };
 
+struct absRankType {
+  char rank;
+  char hand;
+};
+
 struct relRanksType {
   int aggrRanks[4];
   int winMask[4];
   char relRank[15][4];
+  struct absRankType absRank[15][4];
 };
 
 struct adaptWinRanksType {
@@ -274,7 +284,6 @@ extern int c1[50], c2[50], c3[50], c4[50], c5[50], c6[50], c7[50],
 extern int nodeTypeStore[4];            /* Look-up table for determining if
                                         node is MAXNODE or MINNODE */
 extern int lho[4], rho[4], partner[4];                                        
-extern int trumpContract;
 extern int trump;
 extern int nodes;                       /* Number of nodes searched */
 extern int no[50];                      /* Number of nodes searched on each
@@ -337,9 +346,9 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
   int depth);
 int MoveGen(struct pos * posPoint, int depth);
 void InsertSort(int n, int depth);
-void UpdateWinner(struct pos * posPoint, int suit);
-void UpdateSecondBest(struct pos * posPoint, int suit);
-int WinningMove(struct moveType * mvp1, struct moveType * mvp2);
+/*void UpdateWinner(struct pos * posPoint, int suit);*/
+/*void UpdateSecondBest(struct pos * posPoint, int suit);*/
+inline int WinningMove(struct moveType * mvp1, struct moveType * mvp2);
 int AdjustMoveList(void);
 int QuickTricks(struct pos * posPoint, int hand, 
 	int depth, int target, int trump, int *result);
@@ -371,3 +380,4 @@ void AddNodeSet(void);
 void AddLenSet(void);
 void AddWinSet(void);
 void PrintDeal(FILE *fp, unsigned short ranks[][4]);
+

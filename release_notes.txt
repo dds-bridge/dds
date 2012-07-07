@@ -299,7 +299,31 @@ Code improvements have been done concerning quick tricks detection and move
 ordering. 1.1.12 is about 15-20% faster than 1.1.11.
 
 
-   
+Release Notes DDS 2.2.0
+----------------------- 
+1 new callable function has been added:
+SolveAllBoards.
+
+Problems that have been fixed in 2.2.0:
+1)  DDS used a deficient function in Windows to detect RAM memory size, which
+    could cause too few threads to be allocated. DDS now uses a correct Windows
+    function to detect the RAM size.
+2)  Failure by DDS to detect PBN text coded card distributions with less than
+    52 cards.
+3)  DDS hanged when a faulty card distribution was provided in the CalcDDtable call.
+    This fault was not present in the openMP alternative though.
+
+2.2.0 is 10-15% faster than 2.1.2. 
+
+
+Release Notes DDS 1.1.13
+------------------------
+Problem that has been fixed in 1.1.13:
+DDS used a deficient function in Windows to detect RAM memory size, which
+could cause too few threads to be allocated. DDS now uses a correct Windows
+function to detect the RAM size. 
+
+1.1.13 is 5-10% faster than 1.1.12.
 
 
 
