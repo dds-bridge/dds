@@ -29,7 +29,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		10113	/* Version 1.1.13. Allowing for 2 digit
+#define DDS_VERSION		10114	/* Version 1.1.14. Allowing for 2 digit
 					minor versions */
 /*#define BENCH*/
 

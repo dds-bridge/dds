@@ -326,9 +326,21 @@ function to detect the RAM size.
 1.1.13 is 5-10% faster than 1.1.12.
 
 
+Release Notes DDS 2.2.1
+----------------------- 
+Problem fixed in 2.2.1:
+Fault in using the Windows function to detect RAM memory size that could
+cause DDS termination.
+
+Clarifying that DDS 2.2.1 is a 32-bit DLL not capable of using more than 4 GB.
+Max threads are 8. 
 
 
-
+Release Notes DDS 1.1.14
+------------------------
+Problem fixed in 1.1.14:
+Fault in using the Windows function to detect RAM memory size that could
+cause DDS termination.
 
 
  

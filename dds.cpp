@@ -1,5 +1,5 @@
 
-/* DDS 1.1.13   A bridge double dummy solver.				      */
+/* DDS 1.1.14   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2012 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -47,7 +47,7 @@ struct winCardType temp_win[5];
 int nodeSetSizeLimit=0;
 int winSetSizeLimit=0;
 int lenSetSizeLimit=0;
-__int64 maxmem, allocmem, summem;
+unsigned __int64 maxmem, allocmem, summem;
 int wmem, nmem, lmem;
 int maxIndex;
 int wcount, ncount, lcount;
@@ -827,7 +827,7 @@ int _initialized=0;
 void InitStart(int gb_ram, int ncores) {
   int k, r, i, j;
   unsigned short int res;
-  long double pcmem;	/* kbytes */
+  unsigned __int64 pcmem;	/* kbytes */
 
   if (_initialized)
       return;
@@ -842,15 +842,16 @@ void InitStart(int gb_ram, int ncores) {
     SYSTEM_INFO temp;
 
     MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof (statex);
 
     GlobalMemoryStatusEx (&statex);
 
-    pcmem=(long double)(statex.ullTotalPhys/1024);
+    pcmem=(unsigned __int64)(statex.ullTotalPhys/1024);
 
     GetSystemInfo(&temp);
   }
   else {
-    pcmem=(long double)(1000000 * gb_ram);
+    pcmem=(unsigned __int64)(1000000 * gb_ram);
   }
 
   nodeSetSizeLimit=NINIT;
@@ -862,7 +863,7 @@ void InitStart(int gb_ram, int ncores) {
 		   25000001*sizeof(struct winCardType)+
 		   400001*sizeof(struct posSearchType)));
   else {
-    maxmem = (__int64)(pcmem-32678) * 700;  
+    maxmem = (unsigned __int64)(pcmem-32678) * 700;  
 	  /* Linear calculation of maximum memory, formula by Michiel de Bondt */
 
     if (maxmem < 10485760) exit (1);
