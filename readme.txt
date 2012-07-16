@@ -1,4 +1,4 @@
-DDS 2.2.0,  Bo Haglund 2012-07-06
+DDS 2.2.1,  Bo Haglund 2012-07-16
 
 For Win32, DDS compiles with Visual C++ 2010 Express edition 
 and the Mingw port of gcc.
@@ -25,7 +25,6 @@ The maximum number of simultaneous threads depends on the PC physical memory siz
 1 GB or less, max 2 threads.
 2 GB, max 4 threads.
 3 or 4 GB, max 8 threads.
-More than 4 GB, max 16 threads.
  
 For Windows, allocating memory for the maximum number of simultaneous threads can 
 be done by reading out the physical memory size from Windows. This is done in the DDS.DLL.
@@ -55,7 +54,7 @@ The possible configurens thus are:
 2)  "PBN":  Support for SolveBoardPBN and CalcDDtablePBN.
 3) None of these definitions:  No support for any of the above 3 functions.
 
-Not including code might be necessary when 2.2.0 is to replace an older 2.x.y version,
+Not including code might be necessary when 2.2.1 is to replace an older 2.x.y version,
 and the application using DDS cannot handle a changed interface.
 
 

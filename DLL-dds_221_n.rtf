@@ -2,11 +2,11 @@
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red255\green0\blue0;}
 {\stylesheet{ Normal;}{\s1 heading 1;}{\s2 heading 2;}{\s3 heading 3;}}
 {\*\generator Msftedit 5.41.21.2510;}\viewkind4\uc1\pard\nowidctlpar\lang1053\f0\fs20 Bo Haglund, Bob Richardson\par
-Rev M, 2012-07-06\par
+Rev N, 2012-07-16\par
 Latest DLL issue with this description is available at {\field{\*\fldinst{HYPERLINK "http://www.bahnhof.se/wb758135/"}}{\fldrslt{\ul\cf1 http://www.bahnhof.se/wb758135/}}}\f0\fs20\par
 \par
 \par
-\pard\keepn\nowidctlpar\s2\cf2\ul\b Short description of the DLL functions supported in Double Dummy Problem Solver 2.2.0\par
+\pard\keepn\nowidctlpar\s2\cf2\ul\b Short description of the DLL functions supported in Double Dummy Problem Solver 2.2.1\par
 \pard\nowidctlpar\ulnone\b0\par
 \pard\keepn\nowidctlpar\s3\b Callable functions\par
 \pard\nowidctlpar\b0\par
@@ -26,7 +26,7 @@ extern "C" __declspec(dllimport) int __stdcall SolveAllBoards(struct boardsPBN *
 \par
 \pard\keepn\nowidctlpar\s3\b SolveBoard\par
 \pard\nowidctlpar\b0\par
-SolveBoard is thread-safe, so several threads (max 16) can call SolveBoard in parallel.\par
+SolveBoard is thread-safe, so several threads (max 8) can call SolveBoard in parallel.\par
 \par
 Before SolveBoard can be called, a structure of type "futureTricks" must be declared. \par
 \par
@@ -45,7 +45,7 @@ Before SolveBoard can be called, a structure of type "futureTricks" must be decl
 -12=Suit or rank value out of range for deal.currentTrickSuit or deal.currentTrickRank.\par
 -13=Card already played in the current trick is also defined as a remaining card to play.\par
 -14=Wrong number of remaining cards for a hand.\par
--15=threadIndex < 0 or > 15.\line   \line Structure \rdblquote\b deal\b0\rdblquote  defines all data needed to describe the deal to be analyzed.\par
+-15=threadIndex < 0 or > 7.\line   \line Structure \rdblquote\b deal\b0\rdblquote  defines all data needed to describe the deal to be analyzed.\par
 struct deal \{\f1  \par
 \f0    int trump;   /* I.e. which suit that is trump or if contract is NT, Spades=0, Hearts=1, Diamonds=2, Clubs=3,  NT=4 */\f1  \par
 \f0    int first;      /* 0-3, 0=North, 1=East, 2=South, 3=West , Leading hand for the trick.*/\f1  \par
@@ -77,7 +77,7 @@ struct \b futureTricks\b0  \{ /* The DLL provides the score (number of tricks) t
 \f0\} ; \par
 \par
 Parameter \rdblquote\b threadIndex\b0\rdblquote  defines the identity of the thread used when calling SolveBoard.\par
-Maximum 16 threads can call SolveBoard in parallel, threadIndex must be an integer of the range 0..15.\par
+Maximum 8 threads can call SolveBoard in parallel, threadIndex must be an integer of the range 0..7.\par
 \cf0\lang1033\fs24\par
 \pard\keepn\nowidctlpar\s3\cf2\lang1053\b\fs20\par
 SolveBoardPBN\par
@@ -182,6 +182,9 @@ Rev K, 2010-10-27\tab Correction of fault in the description:  2nd index in resT
 Rev L, 2011-10-14\tab Added SolveBoardPBN and CalcDDtablePBN.\par
 \par
 Rev M, 2012-07-06\tab Added SolveAllBoards. \par
+\par
+Rev N, 2012-07-16\tab Max number of threads is 8. \par
+\par
  \par
 \par
 }

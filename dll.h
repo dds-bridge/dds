@@ -28,7 +28,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		20200	/* Version 2.2.0. Allowing for 2 digit
+#define DDS_VERSION		20201	/* Version 2.2.1. Allowing for 2 digit
 					minor versions */
 
 #define PBN
@@ -61,7 +61,7 @@
 #endif
 #define INFINITY    32000
 
-#define MAXNOOFTHREADS	16
+#define MAXNOOFTHREADS	8/*16*/
 
 #define MAXNODE     1
 #define MINNODE     0
@@ -330,9 +330,9 @@ struct localVarType {
   int nodeSetSizeLimit;
   int winSetSizeLimit;
   int lenSetSizeLimit;
-  __int64 maxmem;		/* bytes */
-  __int64 allocmem;
-  __int64 summem;
+  unsigned __int64 maxmem;		/* bytes */
+  unsigned __int64 allocmem;
+  unsigned __int64 summem;
   int wmem;
   int nmem; 
   int lmem;

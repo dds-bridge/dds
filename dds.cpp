@@ -1,5 +1,5 @@
 
-/* DDS 2.2.0   A bridge double dummy solver.				      */
+/* DDS 2.2.1   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2011 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -17,7 +17,7 @@
 /* along with this program; if not, write to the Free Software                */
 /* Foundation, Inc, 51 Franklin Street, 5th Floor, Boston MA 02110-1301, USA. */
 
-/*#include "stdafx.h"*/ 	/* Needed by Visual C++ */
+#include "stdafx.h" 	/* Needed by Visual C++ */
 
 #include "dll.h"
 
@@ -837,7 +837,7 @@ int _initialized=0;
 void InitStart(int gb_ram, int ncores) {
   int k, r, i, j, m;
   unsigned short int res;
-  long double pcmem;	/* kbytes */
+  unsigned __int64 pcmem;	/* kbytes */
 
   if (_initialized)
       return;
@@ -854,19 +854,18 @@ void InitStart(int gb_ram, int ncores) {
     SYSTEM_INFO temp; 
 
     MEMORYSTATUSEX statex;
+	statex.dwLength = sizeof (statex);
 
     GlobalMemoryStatusEx (&statex);
 
-    pcmem=(long double)statex.ullTotalPhys/1024;
+    pcmem=(unsigned __int64)statex.ullTotalPhys/1024;
 
-    if (pcmem < 1500000.0)
+    if (pcmem < 1500000)
 	  noOfThreads=Min(MAXNOOFTHREADS, 2);
-    else if (pcmem < 2500000.0/*1500000.0*/)
+    else if (pcmem < 2500000)
       noOfThreads=Min(MAXNOOFTHREADS, 4);
-    else if (pcmem < 4500000.0)
+    else 
       noOfThreads=Min(MAXNOOFTHREADS, 8); 
-    else
-      noOfThreads=Min(MAXNOOFTHREADS, 16); 
 
     GetSystemInfo(&temp);
     noOfCores=Min(noOfThreads, (int)temp.dwNumberOfProcessors);
@@ -875,16 +874,14 @@ void InitStart(int gb_ram, int ncores) {
   else {
     if (gb_ram < 2)
       noOfThreads=Min(MAXNOOFTHREADS, 2);
-    else if (gb_ram < 3/*2*/)
+    else if (gb_ram < 3)
       noOfThreads=Min(MAXNOOFTHREADS, 4);
-    else if (gb_ram < 5)
+    else 
       noOfThreads=Min(MAXNOOFTHREADS, 8);
-    else
-      noOfThreads=Min(MAXNOOFTHREADS, 16);
 
     noOfCores=Min(noOfThreads, ncores);
 
-    pcmem=(long double)(1000000 * gb_ram);
+    pcmem=(unsigned __int64)(1000000 * gb_ram);
   }
 
   /*printf("noOfThreads: %d   noOfCores: %d\n", noOfThreads, noOfCores);*/
@@ -910,7 +907,7 @@ void InitStart(int gb_ram, int ncores) {
 		   25000001*sizeof(struct winCardType)+
 		   400001*sizeof(struct posSearchType))/noOfThreads);
     else {
-      localVar[k].maxmem = (__int64)(pcmem-32678) * (700/noOfThreads);  
+      localVar[k].maxmem = (unsigned __int64)(pcmem-32678) * (700/noOfThreads);  
 	  /* Linear calculation of maximum memory, formula by Michiel de Bondt */
 
       if (localVar[k].maxmem < 10485760) exit (1);
@@ -4621,7 +4618,9 @@ move 2 is the presently winning card of the trick */
       return TRUE;
     else
       return FALSE;
-  }    
+  } 
+  else
+    return FALSE;
 }
 
 
@@ -5573,7 +5572,7 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
   if (param.error==0)
     return 1;
   else
-    return param.error;
+	return param.error;
 }
 
 DWORD CALLBACK SolveChunk (void *) {
@@ -5600,7 +5599,7 @@ DWORD CALLBACK SolveChunk (void *) {
     param.bop->solutions[j], param.bop->mode[j], futp[j], thid);
     if (res==1) {
       param.solvedp->solvedBoard[j]=fut[j];
-      param.error=0;
+	  param.error=0;
     }
     else {
       param.error=res;
@@ -5671,7 +5670,7 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   if (param.error==0)
     return 1;
   else
-    return param.error;
+	return param.error;
 }
 #else 
 int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
