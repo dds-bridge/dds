@@ -343,7 +343,26 @@ Fault in using the Windows function to detect RAM memory size that could
 cause DDS termination.
 
 
- 
+Release Notes DDS 2.2.2
+----------------------- 
+DDS 2.2.2 is mainly a fault correction release.
+Problems fixed:
+1. An uninitialized variable used in move generation required that the compiler
+initialized it by setting it to zero. This is true for Visual C++ but might
+perhaps have caused a problem with some other compiler.
+2. The rel table missed initialization for absRank and relRank when all cards in
+a suit are missing. 
+
+DDS 2.2.2 is slightly faster than 2.2.1, about 4%.
+
+
+Release Notes DDS 1.1.15
+------------------------
+Problem fixed in 1.1.15:
+The rel table missed initialization for absRank and relRank when all cards in
+a suit are missing.
+
+DDS 1.1.15 is about 7% faster than 1.1.14.
 
 
 

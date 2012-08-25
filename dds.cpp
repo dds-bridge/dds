@@ -1,5 +1,5 @@
 
-/* DDS 1.1.14   A bridge double dummy solver.				      */
+/* DDS 1.1.15   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2012 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -47,7 +47,7 @@ struct winCardType temp_win[5];
 int nodeSetSizeLimit=0;
 int winSetSizeLimit=0;
 int lenSetSizeLimit=0;
-unsigned __int64 maxmem, allocmem, summem;
+unsigned long long maxmem, allocmem, summem;
 int wmem, nmem, lmem;
 int maxIndex;
 int wcount, ncount, lcount;
@@ -63,6 +63,9 @@ struct winCardType **pw;
 struct nodeCardsType **pn;
 struct posSearchType **pl;
 
+#ifdef _MANAGED
+#pragma managed(push, off)
+#endif
 
 #if defined(_WIN32)
 extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
@@ -82,14 +85,14 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     if (pl[0])
       free(pl[0]);
     pl[0]=NULL;
-	if (pw)
-	  free(pw);
+    if (pw)
+      free(pw);
     pw=NULL;
     if (pn)
-	  free(pn);
+      free(pn);
     pn=NULL;
     if (pl)
-	  free(pl);
+      free(pl);
     pl=NULL;
     if (ttStore)
       free(ttStore);
@@ -147,7 +150,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   
   /*InitStart(0,0);*/   /* Include InitStart() if inside SolveBoard,
 			   but preferable InitStart should be called outside
-					 SolveBoard like in DllMain for Windows. */
+			   SolveBoard like in DllMain for Windows. */
 
   for (k=0; k<=13; k++) {
     forbiddenMoves[k].rank=0;
@@ -197,7 +200,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   cardCount=0;
   for (i=0; i<=3; i++) {
     for (j=0; j<=3; j++) {
-	  cardCount+=counttable[dl.remainCards[i][j]>>2];
+      cardCount+=counttable[dl.remainCards[i][j]>>2];
       diffDeal+=((dl.remainCards[i][j]>>2)^
 	    (game.suit[i][j]));
       aggDeal+=(dl.remainCards[i][j]>>2);
@@ -500,18 +503,18 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   if (mode==0) {
     MoveGen(&lookAheadPos, iniDepth);
     if (movePly[iniDepth].last==0) {
-	futp->nodes=0;
+      futp->nodes=0;
     #ifdef BENCH
-        futp->totalNodes=0;
+      futp->totalNodes=0;
     #endif
-	futp->cards=1;
-	futp->suit[0]=movePly[iniDepth].move[0].suit;
-	futp->rank[0]=movePly[iniDepth].move[0].rank;
-	futp->equals[0]=
+      futp->cards=1;
+      futp->suit[0]=movePly[iniDepth].move[0].suit;
+      futp->rank[0]=movePly[iniDepth].move[0].rank;
+      futp->equals[0]=
 	  movePly[iniDepth].move[0].sequence<<2;
-	futp->score[0]=-2;
-	/*_CrtDumpMemoryLeaks();*/ /* MEMORY LEAK? */
-	return 1;
+      futp->score[0]=-2;
+      /*_CrtDumpMemoryLeaks();*/ /* MEMORY LEAK? */
+      return 1;
     }
   }
   if ((target==0)&&(solutions<3)) {
@@ -521,17 +524,17 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     futp->totalNodes=0;
     #endif
     for (k=0; k<=movePly[iniDepth].last; k++) {
-	futp->suit[k]=movePly[iniDepth].move[k].suit;
-	futp->rank[k]=movePly[iniDepth].move[k].rank;
-	futp->equals[k]=
+      futp->suit[k]=movePly[iniDepth].move[k].suit;
+      futp->rank[k]=movePly[iniDepth].move[k].rank;
+      futp->equals[k]=
 	  movePly[iniDepth].move[k].sequence<<2;
-	futp->score[k]=0;
+      futp->score[k]=0;
     }
     if (solutions==1)
-	futp->cards=1;
+      futp->cards=1;
     else
-	futp->cards=movePly[iniDepth].last+1;
-	/*_CrtDumpMemoryLeaks();*/  /* MEMORY LEAK? */
+      futp->cards=movePly[iniDepth].last+1;
+    /*_CrtDumpMemoryLeaks();*/  /* MEMORY LEAK? */
     return 1;
   }
 
@@ -714,8 +717,8 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       g=payOff;
       upperbound=payOff;
       lowerbound=0;
-	  InitSearch(&iniPosition, game.noOfCards-4,
-          initialMoves, first, TRUE);
+      InitSearch(&iniPosition, game.noOfCards-4,
+      initialMoves, first, TRUE);
       do {
         if (g==lowerbound)
           tricks=g+1;
@@ -731,7 +734,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
           MaxnodeSetSize=nodeSetSize;
         if (winSetSize>MaxwinSetSize)
           MaxwinSetSize=winSetSize;
-		if (lenSetSize>MaxlenSetSize)
+	if (lenSetSize>MaxlenSetSize)
           MaxlenSetSize=lenSetSize;
         if (val==FALSE) {
 	  upperbound=tricks-1;
@@ -827,7 +830,7 @@ int _initialized=0;
 void InitStart(int gb_ram, int ncores) {
   int k, r, i, j;
   unsigned short int res;
-  unsigned __int64 pcmem;	/* kbytes */
+  unsigned long long pcmem;	/* kbytes */
 
   if (_initialized)
       return;
@@ -838,20 +841,26 @@ void InitStart(int gb_ram, int ncores) {
     exit(1);
 
   if ((gb_ram==0)||(ncores==0)) {		/* Autoconfig */
+
+#ifdef _WIN32
   
     SYSTEM_INFO temp;
 
     MEMORYSTATUSEX statex;
+
     statex.dwLength = sizeof (statex);
 
     GlobalMemoryStatusEx (&statex);
 
-    pcmem=(unsigned __int64)(statex.ullTotalPhys/1024);
+    pcmem=(unsigned long long)(statex.ullTotalPhys/1024);
 
     GetSystemInfo(&temp);
+
+#endif
+
   }
   else {
-    pcmem=(unsigned __int64)(1000000 * gb_ram);
+    pcmem=(unsigned long long)(1000000 * gb_ram);
   }
 
   nodeSetSizeLimit=NINIT;
@@ -863,7 +872,7 @@ void InitStart(int gb_ram, int ncores) {
 		   25000001*sizeof(struct winCardType)+
 		   400001*sizeof(struct posSearchType)));
   else {
-    maxmem = (unsigned __int64)(pcmem-32678) * 700;  
+    maxmem = (unsigned long long)(pcmem-32678) * 700;  
 	  /* Linear calculation of maximum memory, formula by Michiel de Bondt */
 
     if (maxmem < 10485760) exit (1);
@@ -1055,6 +1064,12 @@ void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst) {
     for (s=0; s<4; s++) {
       rel[0].aggrRanks[s]=0;
       rel[0].winMask[s]=0;
+      for (ord=1; ord<=13; ord++) {
+	rel[0].absRank[ord][s].hand=-1;
+	rel[0].absRank[ord][s].rank=0;
+      }
+      for (r=2; r<=14; r++)
+        rel[0].relRank[r][s]=0;
     }
   
     for (ind=1; ind<8192; ind++) {
@@ -1145,7 +1160,7 @@ void InitSearch(struct pos * posPoint, int depth, struct moveType startMoves[], 
   for (d=0; d<=49; d++) {
     /*bestMove[d].suit=0;*/
     bestMove[d].rank=0;
-	bestMoveTT[d].rank=0;
+    bestMoveTT[d].rank=0;
     /*bestMove[d].weight=0;
     bestMove[d].sequence=0; 0315 */
   }
@@ -1314,7 +1329,7 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
   struct evalType evalData;
   struct winCardType * np;
   struct posSearchType * pp;
-  __int64 suitLengths;
+  long long suitLengths;
   struct nodeCardsType  * tempP;
   unsigned short int aggr[4];
   unsigned short int ranks;
@@ -1459,11 +1474,11 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
       }
     }	
 	
-	if ((found)&&(depth!=iniDepth)) {
-	  for (k=0; k<=3; k++)
-	     posPoint->winRanks[depth][k]=0;
-	  if (rr!=0)
-	     posPoint->winRanks[depth][ss]=bitMapRank[rr];
+    if ((found)&&(depth!=iniDepth)) {
+      for (k=0; k<=3; k++)
+	posPoint->winRanks[depth][k]=0;
+      if (rr!=0)
+	posPoint->winRanks[depth][ss]=bitMapRank[rr];
 
       if (nodeTypeStore[hand]==MAXNODE) {
         if (posPoint->tricksMAX+qtricks>=target) {
@@ -1619,8 +1634,8 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
             bestMoveTT[depth].suit=cardsP->bestMoveSuit;
             bestMoveTT[depth].rank=cardsP->bestMoveRank;
           }
-		  #ifdef STAT
-		  c6[depth]++;
+	  #ifdef STAT
+	  c6[depth]++;
           if (scoreFlag==1)
             score1Counts[depth]++;
           else
@@ -1761,7 +1776,7 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	  mexists=FALSE;
       }
       if (ready)
-	 InsertSort(movePly[depth].last+1, depth);
+	MergeSort(movePly[depth].last+1, movePly[depth].move);
     }
     /*#endif*/
 
@@ -1830,7 +1845,7 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	k=target;
       else
 	k=target-1;
-	  if (depth!=iniDepth)
+      if (depth!=iniDepth)
         BuildSOP(posPoint, suitLengths, tricks, hand, target, depth,
         value, k);
       if (clearTTflag) {
@@ -2881,8 +2896,8 @@ int QtricksLeadHandNT(int hand, struct pos *posPoint, int cutoff, int depth,
   if (qt>=cutoff) 
     return qt;
   if ((trump==suit) && ((!commPartner) || (suit!=commSuit))) {
-	(*lhoTrumpRanks)=Max(0, (*lhoTrumpRanks)-1);
-	(*rhoTrumpRanks)=Max(0, (*rhoTrumpRanks)-1);
+    (*lhoTrumpRanks)=Max(0, (*lhoTrumpRanks)-1);
+    (*rhoTrumpRanks)=Max(0, (*rhoTrumpRanks)-1);
   }
 
   if ((countLho<=1)&&(countRho<=1)&&(countPart<=1)) {
@@ -3024,6 +3039,8 @@ int QuickTricksPartnerHandTrump(int hand, struct pos *posPoint, int cutoff, int 
       posPoint->winRanks[depth][suit]|=bitMapRank[posPoint->secondBest[suit].rank];
       posPoint->winRanks[depth][commSuit]|=bitMapRank[commRank];
       qt++;
+	  if (qt>=cutoff) 
+        return qt;
       if ((countLho<=2)&&(countRho<=2)&&((countOwn<=2)||(countPart<=2))) { 
         qt+=Max(countPart-2,countOwn-2);
 	if (qt>=cutoff) 
@@ -3074,9 +3091,9 @@ int QuickTricksPartnerHandNT(int hand, struct pos *posPoint, int cutoff, int dep
     return qt;
   if ((countLho<=1)&&(countRho<=1)&&(countOwn<=1)) {
     qt+=countPart-1;
-	if (qt>=cutoff) 
+    if (qt>=cutoff) 
       return qt;
-	*res=2;
+    *res=2;
     return qt;
   }
 
@@ -3115,7 +3132,7 @@ int QuickTricksPartnerHandNT(int hand, struct pos *posPoint, int cutoff, int dep
   else if ((suit==commSuit)&&(posPoint->secondBest[suit].hand==lho[hand])) {
     ranks=0;
     for (k=0; k<=3; k++)
-      ranks=ranks | posPoint->rankInSuit[k][suit];
+      ranks|=posPoint->rankInSuit[k][suit];
     if (rel[ranks].absRank[3][suit].hand==partner[hand]) {
       posPoint->winRanks[depth][suit]|=bitMapRank[rel[ranks].absRank[3][suit].rank];
       /*posPoint->winRanks[depth][suit]=posPoint->winRanks[depth][suit] | bitMapRank[rr];*/
@@ -3124,7 +3141,7 @@ int QuickTricksPartnerHandNT(int hand, struct pos *posPoint, int cutoff, int dep
       if (qt>=cutoff)
 	return qt;
       if ((countOwn<=2)&&(countLho<=2)&&(countRho<=2)) { 
-        qtricks=qtricks+countPart-2;
+        qtricks+=countPart-2;
 	if (qt>=cutoff)
 	  return qt;
       } 
@@ -3360,10 +3377,9 @@ int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
 
 
 int MoveGen(struct pos * posPoint, int depth) {
-  int suit, k, m, n, r, s, t, state;
+  int suit, k, m, r, s, t, state;
   unsigned short ris;
   int q, first;
-  int scount[4]; 
   int WeightAllocTrump(struct pos *, struct moveType * mp, int depth,
     unsigned short notVoidInSuit, int trump);
   int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
@@ -3420,7 +3436,7 @@ int MoveGen(struct pos * posPoint, int depth) {
 
     movePly[depth].last=m-1;
     if (m!=1)
-      InsertSort(m, depth);
+      MergeSort(m, movePly[depth].move);
     if (depth!=iniDepth)
       return m;
     else {
@@ -3455,44 +3471,21 @@ int MoveGen(struct pos * posPoint, int depth) {
     }
 
     if (trump!=4) {
-      for (k=0; k<=m-1; k++) 
+      for (k=0; k<=m-1; k++) { 
         movePly[depth].move[k].weight=WeightAllocTrump(posPoint,
           &movePly[depth].move[k], depth, ris, trump);
+      }
     }
     else {
-      for (k=0; k<=m-1; k++) 
-      movePly[depth].move[k].weight=WeightAllocNT(posPoint,
+      for (k=0; k<=m-1; k++) { 
+        movePly[depth].move[k].weight=WeightAllocNT(posPoint,
           &movePly[depth].move[k], depth, ris);
+      }
     }
   
     movePly[depth].last=m-1;
-    InsertSort(m, depth);
-    if (r==0) {
-      for (n=0; n<=3; n++)
-        scount[n]=0;
-      for (k=0; k<=m-1; k++) {
-        if (scount[movePly[depth].move[k].suit]==1/*2*/) 
-          continue;
-        else {
-          movePly[depth].move[k].weight+=500;
-          scount[movePly[depth].move[k].suit]++;
-        }
-      }
-      InsertSort(m, depth);
-    }
-    else {
-      for (n=0; n<=3; n++)
-        scount[n]=0;
-      for (k=0; k<=m-1; k++) {
-        if (scount[movePly[depth].move[k].suit]==1) 
-          continue;
-        else {
-          movePly[depth].move[k].weight+=500;
-          scount[movePly[depth].move[k].suit]++;
-        }
-      }
-      InsertSort(m, depth);
-    }
+    if (m!=1)
+      MergeSort(m, movePly[depth].move);
     if (depth!=iniDepth)
      return m;
     else {
@@ -3501,6 +3494,7 @@ int MoveGen(struct pos * posPoint, int depth) {
     }  
   }
 }
+
 
 
 int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
@@ -3543,17 +3537,20 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 	(posPoint->winner[suit].hand==q)))
 	suitBonus+=14;
 
-      if (suitCountLH!=0)
-        countLH=(suitCountLH<<2);
+      if (suitCountLH!=0) {
+          countLH=(suitCountLH<<2);
+      }
       else
         countLH=depth+4;
-      if (suitCountRH!=0)
-        countRH=(suitCountRH<<2);
+
+      if (suitCountRH!=0) {
+          countRH=(suitCountRH<<2);
+      }
       else
         countRH=depth+4;
 
-      suitWeightDelta=suitBonus-((countLH+countRH)<<5)/(19/*20*//*15*/);		
-
+      suitWeightDelta=suitBonus-((countLH+countRH)<<5)/(19/*20*//*15*/);	
+	  
       if (posPoint->winner[suit].rank==mp->rank) 
         winMove=TRUE;			   
       else if (posPoint->rankInSuit[partner[first]][suit] >
@@ -3721,7 +3718,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
         }
         else { 
           weight=60+rRank;
-		}
+	}
       }
       else {
         if (!notVoidInSuit) {
@@ -4384,7 +4381,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
 
 /* Insert-1 */
-void InsertSort(int n, int depth) {
+/*void InsertSort(int n, int depth) {
   int i, j;
   struct moveType a, temp;
 
@@ -4416,7 +4413,152 @@ void InsertSort(int n, int depth) {
     }
     movePly[depth].move[j]=a;
   }
-}  
+}*/  
+
+
+void MergeSort(int n, struct moveType *a) {
+  
+  switch (n) {
+  case 12:
+	CMP_SWAP(0, 1); CMP_SWAP(2, 3); CMP_SWAP(4, 5); CMP_SWAP(6, 7); CMP_SWAP(8, 9); CMP_SWAP(10, 11);
+	CMP_SWAP(1, 3); CMP_SWAP(5, 7); CMP_SWAP(9, 11);
+	CMP_SWAP(0, 2); CMP_SWAP(4, 6); CMP_SWAP(8, 10);
+	CMP_SWAP(1, 2); CMP_SWAP(5, 6); CMP_SWAP(9, 10);
+	CMP_SWAP(1, 5); CMP_SWAP(6, 10);
+	CMP_SWAP(5, 9); 
+	CMP_SWAP(2, 6);
+	CMP_SWAP(1, 5); CMP_SWAP(6, 10);
+	CMP_SWAP(0, 4); CMP_SWAP(7, 11);
+	CMP_SWAP(3, 7); 
+	CMP_SWAP(4, 8);
+	CMP_SWAP(0, 4); CMP_SWAP(7, 11);
+	CMP_SWAP(1, 4); CMP_SWAP(7, 10);
+	CMP_SWAP(3, 8);
+	CMP_SWAP(2, 3); CMP_SWAP(8, 9);
+	CMP_SWAP(2, 4); CMP_SWAP(7, 9);
+	CMP_SWAP(3, 5); CMP_SWAP(6, 8);
+	CMP_SWAP(3, 4); CMP_SWAP(5, 6); CMP_SWAP(7, 8);
+  	break;
+  case 11:
+	CMP_SWAP(0, 1); CMP_SWAP(2, 3); CMP_SWAP(4, 5); CMP_SWAP(6, 7); CMP_SWAP(8, 9);
+	CMP_SWAP(1, 3); CMP_SWAP(5, 7); 
+	CMP_SWAP(0, 2); CMP_SWAP(4, 6); CMP_SWAP(8, 10);
+	CMP_SWAP(1, 2); CMP_SWAP(5, 6); CMP_SWAP(9, 10);
+	CMP_SWAP(1, 5); CMP_SWAP(6, 10);
+	CMP_SWAP(5, 9); 
+	CMP_SWAP(2, 6);
+	CMP_SWAP(1, 5); CMP_SWAP(6, 10);
+	CMP_SWAP(0, 4); 
+	CMP_SWAP(3, 7); 
+	CMP_SWAP(4, 8);
+	CMP_SWAP(0, 4); 
+	CMP_SWAP(1, 4); CMP_SWAP(7, 10);
+	CMP_SWAP(3, 8);
+	CMP_SWAP(2, 3); CMP_SWAP(8, 9);
+	CMP_SWAP(2, 4); CMP_SWAP(7, 9);
+	CMP_SWAP(3, 5); CMP_SWAP(6, 8);
+	CMP_SWAP(3, 4); CMP_SWAP(5, 6); CMP_SWAP(7, 8);
+  	break;
+  case 10:
+	CMP_SWAP(1, 8);
+	CMP_SWAP(0, 4); CMP_SWAP(5, 9);
+	CMP_SWAP(2, 6);
+	CMP_SWAP(3, 7);
+	CMP_SWAP(0, 3); CMP_SWAP(6, 9);
+	CMP_SWAP(2, 5);
+	CMP_SWAP(0, 1); CMP_SWAP(3, 6); CMP_SWAP(8, 9);
+	CMP_SWAP(4, 7);
+	CMP_SWAP(0, 2); CMP_SWAP(4, 8);
+        CMP_SWAP(1, 5); CMP_SWAP(7, 9);
+	CMP_SWAP(1, 2); CMP_SWAP(3, 4); CMP_SWAP(5, 6); CMP_SWAP(7, 8);
+	CMP_SWAP(1, 3); CMP_SWAP(6, 8);
+	CMP_SWAP(2, 4); CMP_SWAP(5, 7);
+	CMP_SWAP(2, 3); CMP_SWAP(6, 7);
+	CMP_SWAP(3, 5);
+	CMP_SWAP(4, 6);
+	CMP_SWAP(4, 5);
+	break;
+  case 9:
+	CMP_SWAP(0, 1); CMP_SWAP(3, 4); CMP_SWAP(6, 7); 
+	CMP_SWAP(1, 2); CMP_SWAP(4, 5); CMP_SWAP(7, 8);
+	CMP_SWAP(0, 1); CMP_SWAP(3, 4); CMP_SWAP(6, 7);
+	CMP_SWAP(0, 3); 
+	CMP_SWAP(3, 6); 
+	CMP_SWAP(0, 3);
+	CMP_SWAP(1, 4);
+	CMP_SWAP(4, 7);
+	CMP_SWAP(1, 4);
+	CMP_SWAP(2, 5);
+	CMP_SWAP(5, 8);
+	CMP_SWAP(2, 5);
+	CMP_SWAP(1, 3); CMP_SWAP(5, 7);
+	CMP_SWAP(2, 6);
+	CMP_SWAP(4, 6);
+	CMP_SWAP(2, 4);
+	CMP_SWAP(2, 3); CMP_SWAP(5, 6);
+    	break;
+  case 8:
+    	CMP_SWAP(0, 1); CMP_SWAP(2, 3); CMP_SWAP(4, 5); CMP_SWAP(6, 7); 
+    	CMP_SWAP(0, 2); CMP_SWAP(4, 6); CMP_SWAP(1, 3); CMP_SWAP(5, 7); 
+    	CMP_SWAP(1, 2); CMP_SWAP(5, 6); CMP_SWAP(0, 4); CMP_SWAP(1, 5); 
+    	CMP_SWAP(2, 6); CMP_SWAP(3, 7); CMP_SWAP(2, 4); CMP_SWAP(3, 5); 
+    	CMP_SWAP(1, 2); CMP_SWAP(3, 4); CMP_SWAP(5, 6); 
+	break;
+  case 7:
+	CMP_SWAP(0, 1); CMP_SWAP(2, 3); CMP_SWAP(4, 5);  
+    	CMP_SWAP(0, 2); CMP_SWAP(4, 6); 
+	CMP_SWAP(1, 3);   
+    	CMP_SWAP(1, 2); CMP_SWAP(5, 6); 
+	CMP_SWAP(0, 4); CMP_SWAP(1, 5); CMP_SWAP(2, 6); 
+	CMP_SWAP(2, 4); CMP_SWAP(3, 5); 
+    	CMP_SWAP(1, 2); CMP_SWAP(3, 4); CMP_SWAP(5, 6);
+	break;
+  case 6:
+	CMP_SWAP(0, 1); CMP_SWAP(2, 3); CMP_SWAP(4, 5);  
+    	CMP_SWAP(0, 2); 
+	CMP_SWAP(1, 3);  
+    	CMP_SWAP(1, 2); 
+	CMP_SWAP(0, 4); CMP_SWAP(1, 5); 
+    	CMP_SWAP(2, 4); CMP_SWAP(3, 5); 
+    	CMP_SWAP(1, 2); CMP_SWAP(3, 4);
+	break;
+  case 5:
+	CMP_SWAP(0, 1); CMP_SWAP(2, 3);  
+    	CMP_SWAP(0, 2); 
+	CMP_SWAP(1, 3);  
+    	CMP_SWAP(1, 2); 
+	CMP_SWAP(0, 4);  
+    	CMP_SWAP(2, 4);  
+    	CMP_SWAP(1, 2); CMP_SWAP(3, 4);
+	break;
+  case 4:
+	CMP_SWAP(0, 1); CMP_SWAP(2, 3);  
+    	CMP_SWAP(0, 2); 
+	CMP_SWAP(1, 3);  
+    	CMP_SWAP(1, 2);   
+	break;
+  case 3:
+	CMP_SWAP(0, 1);   
+    	CMP_SWAP(0, 2);   
+    	CMP_SWAP(1, 2);   
+	break;
+  case 2:
+	CMP_SWAP(0, 1);    
+	break;
+  default:
+    for (int i = 1; i < n; i++) 
+    { 
+        struct moveType tmp = a[i]; 
+        int j = i; 
+        for (; j && tmp.weight > a[j - 1].weight ; --j) 
+            a[j] = a[j - 1]; 
+        a[j] = tmp; 
+    } 
+  }
+
+  return;
+}
+
 
 /* Insert-2 */
 /*void InsertSort(int n, int depth) {
@@ -4803,7 +4945,7 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
 
 
 struct posSearchType * SearchLenAndInsert(struct posSearchType
-	* rootp, __int64 key, int insertNode, int *result) {
+	* rootp, long long key, int insertNode, int *result) {
 /* Search for node which matches with the suit length combination 
    given by parameter key. If no such node is found, NULL is 
   returned if parameter insertNode is FALSE, otherwise a new 
@@ -4865,7 +5007,7 @@ struct posSearchType * SearchLenAndInsert(struct posSearchType
 
 
 
-void BuildSOP(struct pos * posPoint, __int64 suitLengths, 
+void BuildSOP(struct pos * posPoint, long long suitLengths, 
   int tricks, int firstHand, int target, int depth, int scoreFlag, int score) {
   int ss, hh, res, wm;
   unsigned short int w;
@@ -5063,8 +5205,9 @@ int NextMove(struct pos *posPoint, int depth) {
         movePly[depth].current++;
         mcurrent=movePly[depth].current;
         if (bitMapRank[movePly[depth].move[mcurrent].rank] >=
-	    lowestWin[depth][movePly[depth].move[mcurrent].suit]) 
+	    lowestWin[depth][movePly[depth].move[mcurrent].suit]) { 
 	  return TRUE;
+	}
       }
       return FALSE;
     }
@@ -5075,8 +5218,9 @@ int NextMove(struct pos *posPoint, int depth) {
         suit=movePly[depth].move[mcurrent].suit;
         if ((currMove.suit==suit) ||
 	  (bitMapRank[movePly[depth].move[mcurrent].rank] >=
-	    lowestWin[depth][suit]))
+	    lowestWin[depth][suit])) {
 	  return TRUE;
+	}
       }
       return FALSE;
     }
@@ -5086,8 +5230,9 @@ int NextMove(struct pos *posPoint, int depth) {
       movePly[depth].current++;
       mcurrent=movePly[depth].current;
       if (bitMapRank[movePly[depth].move[mcurrent].rank] >=
-	    lowestWin[depth][movePly[depth].move[mcurrent].suit])
+	    lowestWin[depth][movePly[depth].move[mcurrent].suit]) {
 	return TRUE;
+      }
     }
     return FALSE;
   }  

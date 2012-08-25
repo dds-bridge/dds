@@ -1,10 +1,6 @@
 
 /* portability-macros header prefix */
 
-#if !defined(_MSC_VER)
-#define LONGLONG long long
-#endif
-
 /* Windows requires a __declspec(dllexport) tag, etc */
 #if defined(_WIN32)
 #    define DLLEXPORT __declspec(dllexport)
@@ -29,11 +25,11 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		10114	/* Version 1.1.14. Allowing for 2 digit
+#define DDS_VERSION		10115	/* Version 1.1.15. Allowing for 2 digit
 					minor versions */
 /*#define BENCH*/
 
-#define PBN
+/*#define PBN*/
 
 /*#define PLUSVER*/
 
@@ -89,6 +85,9 @@ All hand identities are given as
 0=NORTH, 1=EAST, 2=SOUTH, 3=WEST. */
 
 #define handId(hand, relative) (hand + relative) & 3
+#define CMP_SWAP(i, j) if (a[i].weight < a[j].weight)  \
+  { struct moveType tmp = a[i]; a[i] = a[j]; a[j] = tmp; } 
+
 
 struct gameInfo  {          /* All info of a particular deal */
   /*int vulnerable;*/
@@ -179,7 +178,7 @@ struct pos {
 
 struct posSearchType {
   struct winCardType * posSearchPoint; 
-  LONGLONG suitLengths;
+  long long suitLengths;
   struct posSearchType * left;
   struct posSearchType * right;
 };
@@ -345,9 +344,7 @@ int ABsearch(struct pos * posPoint, int target, int depth);
 void Make(struct pos * posPoint, unsigned short int trickCards[4], 
   int depth);
 int MoveGen(struct pos * posPoint, int depth);
-void InsertSort(int n, int depth);
-/*void UpdateWinner(struct pos * posPoint, int suit);*/
-/*void UpdateSecondBest(struct pos * posPoint, int suit);*/
+void MergeSort(int n, struct moveType *a);
 inline int WinningMove(struct moveType * mvp1, struct moveType * mvp2);
 int AdjustMoveList(void);
 int QuickTricks(struct pos * posPoint, int hand, 
@@ -364,10 +361,10 @@ struct nodeCardsType * FindSOP(struct pos * posPoint,
 struct cardType NextCard(struct cardType card);
 struct nodeCardsType * BuildPath(struct pos * posPoint, 
   struct posSearchType *nodep, int * result);
-void BuildSOP(struct pos * posPoint, __int64 suitLengths, int tricks, 
+void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, 
 	int firstHand, int target, int depth, int scoreFlag, int score);
 struct posSearchType * SearchLenAndInsert(struct posSearchType
-	* rootp, __int64 key, int insertNode, int *result);  
+	* rootp, long long key, int insertNode, int *result);  
 void Undo(struct pos * posPoint, int depth);
 int CheckDeal(struct moveType * cardp);
 int InvBitMapRank(unsigned short bitMap);
