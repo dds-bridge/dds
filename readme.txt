@@ -54,9 +54,8 @@ The possible configurens thus are:
 2)  "PBN":  Support for SolveBoardPBN and CalcDDtablePBN.
 3) None of these definitions:  No support for any of the above 3 functions.
 
-Not including code might be necessary when 2.2.1 is to replace an older 2.x.y version,
-and the application using DDS cannot handle a changed interface.
-
+Staying with the previous configuration might be needed when 2.2.2 is to replace an 
+older 2.x.y version, and the application using DDS cannot handle a changed interface.
 
 
 

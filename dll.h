@@ -16,10 +16,17 @@
 #    define EXTERN_C
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(__MINGW32__) 
+#define WINVER 0x500	/* Dirty trick, but it works. */
 #    include <windows.h>
 #    include <process.h>
 #endif
+
+#if defined(_WIN32) && !defined(__MINGW32__)
+#    include <windows.h>
+#    include <process.h>
+#endif
+
 #if defined(_MSC_VER)
 #    include <intrin.h>
 #else
@@ -28,7 +35,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		20201	/* Version 2.2.1. Allowing for 2 digit
+#define DDS_VERSION		20203	/* Version 2.2.3. Allowing for 2 digit
 					minor versions */
 
 #define PBN
@@ -61,7 +68,7 @@
 #endif
 #define INFINITY    32000
 
-#define MAXNOOFTHREADS	8/*16*/
+#define MAXNOOFTHREADS	16
 
 #define MAXNODE     1
 #define MINNODE     0
@@ -75,8 +82,8 @@
 #define NSIZE	100000
 #define WSIZE   100000
 #define LSIZE   20000
-#define NINIT	250000/*400000*/
-#define WINIT	700000/*1000000*/
+#define NINIT	250000
+#define WINIT	700000
 #define LINIT	50000
 
 #define SIMILARDEALLIMIT	5
@@ -95,6 +102,8 @@ All hand identities are given as
 0=NORTH, 1=EAST, 2=SOUTH, 3=WEST. */
 
 #define handId(hand, relative) (hand + relative) & 3
+#define CMP_SWAP(i, j) if (a[i].weight < a[j].weight)  \
+  { struct moveType tmp = a[i]; a[i] = a[j]; a[j] = tmp; } 
 
 
 struct gameInfo  {          /* All info of a particular deal */
@@ -186,7 +195,7 @@ struct pos {
 
 struct posSearchType {
   struct winCardType * posSearchPoint; 
-  __int64 suitLengths;
+  long long suitLengths;
   struct posSearchType * left;
   struct posSearchType * right;
 };
@@ -301,7 +310,7 @@ struct localVarType {
   int val;
   struct pos iniPosition;
   struct pos lookAheadPos; /* Is initialized for starting
-							alpha-beta search */
+			      alpha-beta search */
   struct moveType forbiddenMoves[14];
   struct moveType initialMoves[4];
   struct moveType cd;
@@ -321,18 +330,12 @@ struct localVarType {
   struct moveType bestMove[50];
   struct moveType bestMoveTT[50];
   struct winCardType temp_win[5];
-  /*int hiwinSetSize;
-  int hinodeSetSize;
-  int hilenSetSize;
-  int MaxnodeSetSize;
-  int MaxwinSetSize;
-  int MaxlenSetSize;*/
   int nodeSetSizeLimit;
   int winSetSizeLimit;
   int lenSetSizeLimit;
-  unsigned __int64 maxmem;		/* bytes */
-  unsigned __int64 allocmem;
-  unsigned __int64 summem;
+  unsigned long long maxmem;		/* bytes */
+  unsigned long long allocmem;
+  unsigned long long summem;
   int wmem;
   int nmem; 
   int lmem;
@@ -346,7 +349,6 @@ struct localVarType {
   int suppressTTlog;*/
   struct relRanksType * rel;
   struct adaptWinRanksType * adaptWins;
-  /*__int64 suitLengths;*/
   struct posSearchType *rootnp[14][4];
   struct winCardType **pw;
   struct nodeCardsType **pn;
@@ -363,9 +365,9 @@ struct localVarType {
   int lenSetSize;  /* Index with range 0 to lenSetSizeLimit */
 };
 
-#if defined(_WIN32)
+/*#if defined(_WIN32)
 extern CRITICAL_SECTION solv_crit;
-#endif
+#endif*/
 
 extern int noOfThreads;
 extern int noOfCores;
@@ -382,7 +384,6 @@ extern int c1[50], c2[50], c3[50], c4[50], c5[50], c6[50], c7[50],
 extern int nodeTypeStore[4];            /* Look-up table for determining if
                                         node is MAXNODE or MINNODE */
 extern int lho[4], rho[4], partner[4];                                        
-extern int trumpContract;
 extern int nodes;                       /* Number of nodes searched */
 extern int no[50];                      /* Number of nodes searched on each
                                         depth level */
@@ -411,8 +412,6 @@ extern unsigned char suitChar[4];
 extern unsigned char rankChar[15];
 extern unsigned char handChar[4];
 extern unsigned char cardRank[15], cardSuit[5], cardHand[4];
-extern unsigned char cardSuitSds[5];
-extern struct handStateType handState;
 extern int totalNodes;
 extern struct futureTricks fut, ft;
 extern struct futureTricks *futp;
@@ -453,7 +452,7 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId);
 void Make(struct pos * posPoint, unsigned short int trickCards[4], 
   int depth, int trump, struct movePlyType *mply, int thrId);
 int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mply, int thrId);
-void InsertSort(int n, int depth, struct movePlyType *mply, int thrId);
+void MergeSort(int n, struct moveType *a);
 inline int WinningMove(struct moveType * mvp1, struct moveType * mvp2, int trump, int thrId);
 inline int WinningMoveNT(struct moveType * mvp1, struct moveType * mvp2, int thrId);
 int AdjustMoveList(int thrId);
@@ -473,7 +472,7 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
 void BuildSOP(struct pos * posPoint, int tricks, int firstHand, int target,
   int depth, int scoreFlag, int score, int thrId);
 struct posSearchType * SearchLenAndInsert(struct posSearchType
-	* rootp, __int64 key, int insertNode, int *result, int thrId);  
+	* rootp, long long key, int insertNode, int *result, int thrId);  
 void Undo(struct pos * posPoint, int depth, int thrId);
 int CheckDeal(struct moveType * cardp, int thrId);
 int InvBitMapRank(unsigned short bitMap);
