@@ -365,6 +365,20 @@ a suit are missing.
 DDS 1.1.15 is about 7% faster than 1.1.14.
 
 
+Release Notes DDS 2.2.3
+----------------------- 
+DDS 2.2.3 add Mingw compiled DLLs and makes a number of code improvements.
+Maximum number of threads is increased to 16.
+The 2.2.3 Mingw DLLs are about 5% faster than the 2.2.2 DLLs. 
+
+
+Release Notes DDS 1.1.16
+----------------------- 
+DDS 1.1.16 add Mingw compiled DLLs and makes a number of code improvements.
+The 2.2.3 Mingw DLLs are about 5% faster than the 1.1.15 DLLs.
+
+
+
 
      
 

@@ -2,7 +2,7 @@
 /* portability-macros header prefix */
 
 /* Windows requires a __declspec(dllexport) tag, etc */
-#if defined(_WIN32)
+#if defined(_WIN32) 
 #    define DLLEXPORT __declspec(dllexport)
 #    define STDCALL __stdcall
 /*#    define INT8 __int8*/
@@ -18,14 +18,20 @@
 #    define EXTERN_C
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(__MINGW32__) 
+#define WINVER 0x500	/* Dirty trick, but it works. */
+#    include <windows.h>
+#    include <process.h>
+#endif
+
+#if defined(_WIN32) && !defined(__MINGW32__)
 #    include <windows.h>
 #    include <process.h>
 #endif
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		10115	/* Version 1.1.15. Allowing for 2 digit
+#define DDS_VERSION		10116	/* Version 1.1.16. Allowing for 2 digit
 					minor versions */
 /*#define BENCH*/
 
