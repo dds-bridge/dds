@@ -1,5 +1,5 @@
 
-/* DDS 2.2.3   A bridge double dummy solver.				      */
+/* DDS 2.2.4   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2012 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -42,10 +42,6 @@ int noOfThreads=MAXNOOFTHREADS;  /* The number of entries to the transposition t
 								 one entry per thread. */
 int noOfCores;			/* The number of processor cores, however cannot be higher than noOfThreads. */
 
-/*#if defined(_MSC_VER)
-CRITICAL_SECTION solv_crit;
-#endif*/
-
 #ifdef _MANAGED
 #pragma managed(push, off)
 #endif
@@ -59,14 +55,8 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 
   if (ul_reason_for_call==DLL_PROCESS_ATTACH) {
     InitStart(0, 0);
-/*#if defined(_MSC_VER)
-    InitializeCriticalSection(&solv_crit);
-#endif*/
   }
   else if (ul_reason_for_call==DLL_PROCESS_DETACH) {
-/*#if defined(_MSC_VER)
-    DeleteCriticalSection(&solv_crit);
-#endif*/
     for (k=0; k<noOfThreads; k++) {
       Wipe(k);
       if (localVar[k].pw[0])
@@ -139,7 +129,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 			   but preferable InitStart should be called outside
 					 SolveBoard like in DllMain for Windows. */
 
-  if ((thrId<0)||(thrId>=noOfThreads)) {
+  if ((thrId<0)||(thrId>=noOfThreads)) {	/* Fault corrected after suggestion by Dirk Willecke. */
     DumpInput(-15, dl, target, solutions, mode);
 	return -15;
   }
@@ -860,7 +850,8 @@ void InitStart(int gb_ram, int ncores) {
     MEMORYSTATUSEX statex;
 	statex.dwLength = sizeof (statex);
 
-    GlobalMemoryStatusEx (&statex);
+    GlobalMemoryStatusEx (&statex);	/* Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
+					was suggested by Lorne Anderson. */
 
     pcmem=(unsigned long long)statex.ullTotalPhys/1024;
 
@@ -875,7 +866,7 @@ void InitStart(int gb_ram, int ncores) {
     noOfCores=Min(noOfThreads, (int)temp.dwNumberOfProcessors);
 
   #endif
-  #ifdef __linux__
+  #ifdef __linux__   /* The code for linux was suggested by Antony Lee. */
     FILE* fifo = popen("free -k | tail -n+3 | head -n1 | awk '{print $NF}'", "r");
     fscanf(fifo, "%ld", &pcmem);
     fclose(fifo);
@@ -965,9 +956,7 @@ void InitStart(int gb_ram, int ncores) {
     localVar[k].wmem=(WSIZE+1)*sizeof(struct winCardType);
     localVar[k].nmem=(NSIZE+1)*sizeof(struct nodeCardsType);
     localVar[k].lmem=(LSIZE+1)*sizeof(struct posSearchType);
-    /*localVar[k].maxIndex=(int)(
-	  localVar[k].maxmem-localVar[k].summem)/((WSIZE+1) * sizeof(struct winCardType));*/
-	 localVar[k].maxIndex=(int)(
+	localVar[k].maxIndex=(int)(
        (localVar[k].maxmem-localVar[k].summem)/((WSIZE+1) * sizeof(struct winCardType)));
 
     localVar[k].pw = (struct winCardType **)calloc(localVar[k].maxIndex+1, sizeof(struct winCardType *));
@@ -2372,19 +2361,7 @@ int QuickTricks(struct pos * posPoint, int hand,
   commPartner=FALSE;
   for (s=0; s<=3; s++) {
     if ((trump!=4)&&(trump!=s)) {
-     /*if ((posPoint->rankInSuit[hand][s]!=0)&&((posPoint->rankInSuit[lho[hand]][s]!=0)||
-	(posPoint->rankInSuit[lho[hand]][trump]==0))&&
-	((posPoint->rankInSuit[rho[hand]][s]!=0)||(posPoint->rankInSuit[rho[hand]][trump]==0))&&
-	(posPoint->rankInSuit[partner[hand]][s]==0)&&(posPoint->rankInSuit[partner[hand]][trump]>0)
-	&&((posPoint->winner[s].hand==lho[hand])||(posPoint->winner[s].hand==rho[hand]))&&
-	((posPoint->winner[trump].hand==lho[hand])||(posPoint->winner[trump].hand==rho[hand]))) {
-	commPartner=TRUE;
-        commSuit=s;
-        commRank=0;
-	ruff=TRUE;
-        break;
-      }
-      else*/ if (posPoint->winner[s].hand==partner[hand]) {
+      if (posPoint->winner[s].hand==partner[hand]) {
         /* Partner has winning card */
         if (posPoint->rankInSuit[hand][s]!=0) {
         /* Own hand has card in suit */
@@ -2465,16 +2442,7 @@ int QuickTricks(struct pos * posPoint, int hand,
     countPart=posPoint->length[partner[hand]][suit];
     opps=countLho | countRho;
 
-    /*if ((ruff)&&(suit==commSuit)) {
-      qtricks++;
-      if (qtricks>=cutoff)
-	return qtricks;
-      suit++;
-      if ((trump!=4) && (suit==trump))
-        suit++;
-      continue;
-    }
-    else*/ if (!opps && (countPart==0)) {
+    if (!opps && (countPart==0)) {
       if (countOwn==0) {
 	/* Continue with next suit. */
 	if ((trump!=4)&&(trump!=suit)) {
@@ -3466,7 +3434,7 @@ int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mpl
         k--;
       }
       if (m!=1) {
-        if ((trump!=4)/*&&(posPoint->winner[trump].hand!=-1)*/) {
+        if ((trump!=4)&&(posPoint->winner[trump].rank!=0)) {
           for (k=0; k<=m-1; k++)
 	    mply->move[k].weight=WeightAllocTrump(posPoint,
               &(mply->move[k]), depth, ris, trump, thrId);
@@ -3516,7 +3484,7 @@ int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mpl
     }
   }
 
-  if ((trump!=4)/*&&(posPoint->winner[trump].hand!=-1)*/) {
+  if ((trump!=4)&&(posPoint->winner[trump].rank!=0)) {
     for (k=0; k<=m-1; k++)
       mply->move[k].weight=WeightAllocTrump(posPoint,
           &(mply->move[k]), depth, 0/*ris*/, trump, thrId);
@@ -3544,7 +3512,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
   unsigned short notVoidInSuit, int thrId) {
   int weight=0, k, l, kk, ll, suit, suitAdd=0, leadSuit;
   int suitWeightDelta, first, q;
-  int rRank;
+  int rRank, thirdBestHand;
   int suitBonus=0;
   int winMove=FALSE;
   unsigned short suitCount, suitCountLH, suitCountRH, aggr;
@@ -3560,6 +3528,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 
   switch (posPoint->handRelFirst) {
     case 0:
+      thirdBestHand=localVar[thrId].rel[aggr].absRank[3][suit].hand;
       suitCount=posPoint->length[q][suit];
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
@@ -3624,6 +3593,13 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
           weight+=20/*17*//*14*/;
       }
       else {
+	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
+	  suitWeightDelta+=22/*20*//*10*/;
+	else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
+	  (posPoint->length[partner[first]][suit]>1))||((posPoint->secondBest[suit].hand==partner[first])&&
+	  (first==thirdBestHand)&&(posPoint->length[partner[first]][suit]>1)))
+	   suitWeightDelta+=24/*20*//*10*/;
+
 	if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
           weight=suitWeightDelta+25/*23*//*22*/+rRank;
@@ -3826,7 +3802,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
   unsigned short notVoidInSuit, int trump, int thrId) {
   int weight=0, k, l, kk, ll, suit, suitAdd=0, leadSuit;
-  int suitWeightDelta, first, q, rRank;
+  int suitWeightDelta, first, q, rRank, thirdBestHand;
   int suitBonus=0;
   int winMove=FALSE;
   unsigned short suitCount, suitCountLH, suitCountRH, aggr;
@@ -3842,6 +3818,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
   switch (posPoint->handRelFirst) {
     case 0:
+      thirdBestHand=localVar[thrId].rel[aggr].absRank[3][suit].hand;
       suitCount=posPoint->length[q][suit];
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
@@ -3988,6 +3965,14 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
           weight+=14/*15*//*12*//*11*/;
       }
       else {
+	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
+	  suitWeightDelta+=20/*22*/;
+	else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
+	  (posPoint->length[partner[first]][suit]>1))||
+	  ((posPoint->secondBest[suit].hand==partner[first])&&
+	  (first==thirdBestHand)&&(posPoint->length[partner[first]][suit]>1)))
+	  suitWeightDelta+=20/*24*/;
+
         if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
           weight=suitWeightDelta+rRank-2;
@@ -5579,16 +5564,6 @@ DWORD CALLBACK SolveChunkDDtable (void *) {
   int thid;
   long j;
 
-  /*EnterCriticalSection(&solv_crit);
-  __try
-  {
-    threadIndex++;
-	thid=threadIndex;
-  }
-  __finally
-  {
-    LeaveCriticalSection(&solv_crit);
-  }*/
   thid=InterlockedIncrement(&threadIndex);
 
   while ((j=_InterlockedExchangeAdd(&current, chunk))<param.noOfBoards) {
@@ -5680,16 +5655,6 @@ DWORD CALLBACK SolveChunk (void *) {
   int thid;
   long j;
 
-  /*EnterCriticalSection(&solv_crit);
-  __try
-  {
-    threadIndex++;
-	thid=threadIndex;
-  }
-  __finally
-  {
-    LeaveCriticalSection(&solv_crit);
-  }*/
   thid=InterlockedIncrement(&threadIndex);
 
   while ((j=(InterlockedIncrement(&current)-1))<param.noOfBoards) {
@@ -5785,7 +5750,7 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
   for (i=0; i<MAXNOOFBOARDS; i++)
       solvedp->solvedBoard[i].cards=0;
 
-  omp_set_num_threads(noOfCores);
+  omp_set_num_threads(noOfCores);	/* Added after suggestion by Dirk Willecke. */
 
   #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
   {
@@ -5827,7 +5792,7 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   for (i=0; i<MAXNOOFBOARDS; i++)
     solvedp->solvedBoard[i].cards=0;
 
-  omp_set_num_threads(noOfCores);
+  omp_set_num_threads(noOfCores);	/* Added after suggestion by Dirk Willecke. */
 
   #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
   {

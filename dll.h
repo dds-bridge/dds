@@ -35,7 +35,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		20203	/* Version 2.2.3. Allowing for 2 digit
+#define DDS_VERSION		20204	/* Version 2.2.4. Allowing for 2 digit
 					minor versions */
 
 #define PBN
@@ -365,10 +365,6 @@ struct localVarType {
   int lenSetSize;  /* Index with range 0 to lenSetSizeLimit */
 };
 
-/*#if defined(_WIN32)
-extern CRITICAL_SECTION solv_crit;
-#endif*/
-
 extern int noOfThreads;
 extern int noOfCores;
 extern struct localVarType localVar[MAXNOOFTHREADS];
@@ -442,6 +438,11 @@ EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN
 #ifdef PBN_PLUS
 EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp);
 #endif
+#endif
+
+#ifdef __linux
+/*paul hide 2012-11-6 added the following as in previous version*/
+EXTERN_C void InitStart(int gb_ram, int ncores);   /* For usage with ctypes in Linux. */ 
 #endif
 
 void InitStart(int gb_ram, int ncores);
