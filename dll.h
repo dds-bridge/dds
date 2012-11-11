@@ -31,13 +31,13 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		10116	/* Version 1.1.16. Allowing for 2 digit
+#define DDS_VERSION		10117	/* Version 1.1.17. Allowing for 2 digit
 					minor versions */
 /*#define BENCH*/
 
 /*#define PBN*/
 
-/*#define PLUSVER*/
+#define PLUSVER
 
 #include <stdio.h>
 /*#define _CRTDBG_MAP_ALLOC */ /* MEMORY LEAK? */

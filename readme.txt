@@ -1,7 +1,7 @@
-DDS 1.1.12,  Bo Haglund 2011-10-21
+DDS 1.1.17,  Bo Haglund 2012-11-07
 
 For Win32, DDS compiles with Visual C++ 2010 Express edition 
-and the Mingw port of gcc.
+and the TDM-GCC/Mingw port of gcc.
 
 When using Visual C++, the statement
 #include "stdafx.h" at the beginning of dds.cpp must be uncommented.
@@ -28,8 +28,8 @@ This compilation alternative gives the best performance.
 By default the PBN versions for remaning cards in the deal information 
 are included in SolveBoardPBN. Removing the PBN definition in dll.h
 will make a compilation without this function. This can be useful
-if DDS 1.1.12 is to replace 1.1.11, and the application using DDS cannot
-accept an interface change towards DDS.
+if this version is to replace an older version, and the application 
+using DDS cannot accept an interface change towards DDS.
 
 2) Compilation with definition STAT.
 Uncomment the definition of STAT.

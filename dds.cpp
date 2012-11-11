@@ -1,5 +1,5 @@
 
-/* DDS 1.1.16   A bridge double dummy solver.				      */
+/* DDS 1.1.17   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2012 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -851,14 +851,15 @@ void InitStart(int gb_ram, int ncores) {
 
     statex.dwLength = sizeof (statex);
 
-    GlobalMemoryStatusEx (&statex);
+    GlobalMemoryStatusEx (&statex);	/* Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
+					was suggested by Lorne Anderson. */
 
     pcmem=(unsigned long long)(statex.ullTotalPhys/1024);
 
     GetSystemInfo(&temp);
 
 #endif
-#ifdef __linux__
+#ifdef __linux__	/* The code for linux was suggested by Antony Lee. */
 
 	FILE* fifo = popen("free -k | tail -n+3 | head -n1 | awk '{print $NF}'", "r");
 	fscanf(fifo, "%ld", &pcmem);
@@ -3387,12 +3388,6 @@ int MoveGen(struct pos * posPoint, int depth) {
         movePly[depth].move[m].suit=t;
         movePly[depth].move[m].rank=k;
         movePly[depth].move[m].sequence=0;
-		/*if (trump!=4)
-		  movePly[depth].move[m].weight=WeightAllocTrump(posPoint,
-            &movePly[depth].move[m], depth, ris, trump);
-		else
-		  movePly[depth].move[m].weight=WeightAllocNT(posPoint,
-            &movePly[depth].move[m], depth, ris);*/
         m++;
         state=MOVESLOCKED;
       }
@@ -3408,7 +3403,7 @@ int MoveGen(struct pos * posPoint, int depth) {
       k--;
     }
     if (m!=1) {
-      if (trump!=4) {
+      if ((trump!=4)&&(posPoint->winner[trump].rank!=0)) {
         for (k=0; k<=m-1; k++) 
           movePly[depth].move[k].weight=WeightAllocTrump(posPoint,
             &movePly[depth].move[k], depth, ris, trump);
@@ -3440,12 +3435,6 @@ int MoveGen(struct pos * posPoint, int depth) {
           movePly[depth].move[m].suit=suit;
           movePly[depth].move[m].rank=k;
           movePly[depth].move[m].sequence=0;
-	  /*if (trump!=4)
-	    movePly[depth].move[m].weight=WeightAllocTrump(posPoint,
-              &movePly[depth].move[m], depth, ris, trump);
-	  else 
-	    movePly[depth].move[m].weight=WeightAllocNT(posPoint,
-               &movePly[depth].move[m], depth, ris);*/
           m++;
           state=MOVESLOCKED;
         }
@@ -3462,7 +3451,7 @@ int MoveGen(struct pos * posPoint, int depth) {
       }
     }
 
-    if (trump!=4) {
+    if ((trump!=4)&&(posPoint->winner[trump].rank!=0)) {
       for (k=0; k<=m-1; k++) { 
         movePly[depth].move[k].weight=WeightAllocTrump(posPoint,
           &movePly[depth].move[k], depth, ris, trump);
@@ -3493,7 +3482,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
   unsigned short notVoidInSuit) {
   int weight=0, k, l, kk, ll, suit, suitAdd=0, leadSuit;
   int suitWeightDelta, first, q;
-  int rRank;
+  int rRank, thirdBestHand;
   int suitBonus=0;
   int winMove=FALSE;
   unsigned short suitCount, suitCountLH, suitCountRH, aggr;
@@ -3509,6 +3498,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 
   switch (posPoint->handRelFirst) {
     case 0:
+      thirdBestHand=rel[aggr].absRank[3][suit].hand;
       suitCount=posPoint->length[q][suit];
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
@@ -3576,6 +3566,13 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
           weight+=20/*17*//*14*/;
       }
       else {
+	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
+	  suitWeightDelta+=22/*10*/;
+	else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
+	  (posPoint->length[partner[first]][suit]>1))||((posPoint->secondBest[suit].hand==partner[first])&&
+	  (first==thirdBestHand)&&(posPoint->length[partner[first]][suit]>1)))
+	  suitWeightDelta+=24/*10*/;	
+
 	if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
           weight=suitWeightDelta+25/*23*//*22*/+rRank;
@@ -3778,7 +3775,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
   unsigned short notVoidInSuit, int trump) {
   int weight=0, k, l, kk, ll, suit, suitAdd=0, leadSuit;
-  int suitWeightDelta, first, q, rRank;
+  int suitWeightDelta, first, q, rRank, thirdBestHand;
   int suitBonus=0;
   int winMove=FALSE;
   unsigned short suitCount, suitCountLH, suitCountRH, aggr;
@@ -3794,6 +3791,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
   switch (posPoint->handRelFirst) {
     case 0:
+      thirdBestHand=rel[aggr].absRank[3][suit].hand;
       suitCount=posPoint->length[q][suit];
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
@@ -3940,6 +3938,14 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
           weight+=14/*15*//*12*//*11*/;
       }
       else {
+	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
+	   suitWeightDelta+=20/*22*/;
+	 else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
+	  (posPoint->length[partner[first]][suit]>1))||
+	  ((posPoint->secondBest[suit].hand==partner[first])&&
+	  (first==thirdBestHand)&&(posPoint->length[partner[first]][suit]>1)))
+	   suitWeightDelta+=20/*24*/;
+	
         if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
           weight=suitWeightDelta+rRank-2;
