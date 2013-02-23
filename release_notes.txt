@@ -391,6 +391,11 @@ faster DLLs and does not require any supporting DLLs.
 Also, the move ordering has been slighly improved.
 A total speed increase of 4% is achieved compared to 1.1.16.
 
+Release Notes DDS 1.1.18
+------------------------
+Change of license from GPL to Apache 2.0.
+Some minor changes in the WeightAlloc functions.
+
 
 
      

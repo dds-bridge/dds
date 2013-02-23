@@ -1,22 +1,18 @@
 
-/* DDS 1.1.17   A bridge double dummy solver.				      */
+/* DDS 1.1.18   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2012 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
-/* This program is free software; you can redistribute it and/or              */
-/* modify it under the terms of the GNU General Public License                */
-/* as published by the Free software Foundation; either version 2             */
-/* of the License, or (at your option) any later version.                     */ 
-/*								              */
-/* This program is distributed in the hope that it will be useful,            */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of             */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              */
-/* GNU General Public License for more details.                               */
-/*								              */
-/* You should have received a copy of the GNU General Public License          */
-/* along with this program; if not, write to the Free Software                */
-/* Foundation, Inc, 51 Franklin Street, 5th Floor, Boston MA 02110-1301, USA. */
+/* Licensed under the Apache License, Version 2.0 (the "License");	      */
+/* you may not use this file except in compliance with the License.	      */
+/* You may obtain a copy of the License at				      */
 
+/* http://www.apache.org/licenses/LICENSE-2.0				      */
+/* Unless required by applicable law or agreed to in writing, software	      */
+/* distributed under the License is distributed on an "AS IS" BASIS,	      */
+/* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   */
+/* See the License for the specific language governing permissions and	      */
+/* limitations under the License. 					      */
 
 /*#include "stdafx.h"*/			/* Needed by Visual C++ */
 
@@ -132,7 +128,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   int newTrump;
   unsigned short int diffDeal;
   unsigned short int aggDeal;
-  int mcurr, val, payOff, handToPlay;
+  int val, payOff, handToPlay;
   int noStartMoves;
   int handRelFirst;
   int noOfCardsPerHand[4];
@@ -641,7 +637,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       /* All moves before bestMove in the move list shall be
       moved to the forbidden moves list, since none of them reached
       the target */
-      mcurr=movePly[iniDepth].current;
+      /*mcurr=movePly[iniDepth].current;*/
       for (k=0; k<=movePly[iniDepth].last; k++)
         if ((bestMove[iniDepth].suit==movePly[iniDepth].move[k].suit)
           &&(bestMove[iniDepth].rank==movePly[iniDepth].move[k].rank))
@@ -2264,7 +2260,7 @@ int QuickTricks(struct pos * posPoint, int hand,
   int suit, sum, qtricks, commPartner, commRank=0, commSuit=-1, s;
   int opps, res;
   int countLho, countRho, countPart, countOwn, lhoTrumpRanks, rhoTrumpRanks;
-  int cutoff, ss, rr, lowestQtricks=0, count=0/*, ruff=FALSE*/;
+  int cutoff, ss, rr, lowestQtricks=0/*, count=0, ruff=FALSE*/;
 
   int QtricksLeadHandNT(int hand, struct pos *posPoint, int cutoff, int depth, 
 	int countLho, int countRho, int *lhoTrumpRanks, int *rhoTrumpRanks, int commPartner,
@@ -3483,8 +3479,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
   int weight=0, k, l, kk, ll, suit, suitAdd=0, leadSuit;
   int suitWeightDelta, first, q;
   int rRank, thirdBestHand;
-  int suitBonus=0;
-  int winMove=FALSE;
+  int winMove=FALSE;	/* If winMove is true, current move can win the current trick. */
   unsigned short suitCount, suitCountLH, suitCountRH, aggr;
   int countLH, countRH;
 
@@ -3503,22 +3498,6 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
 
-      if ((posPoint->winner[suit].hand==rho[q])||
-          (posPoint->secondBest[suit].hand==rho[q])) {
-	if (suitCountRH!=1)
-	  suitBonus-=7/*6*//*12*//*17*/;
-      }
-      else if ((posPoint->winner[suit].hand==lho[q])&&
-	(posPoint->secondBest[suit].hand==partner[q])) {
-	/* This case was suggested by Joël Bradmetz. */
-	if (posPoint->length[partner[q]][suit]!=1)
-	  suitBonus+=34/*37*//*32*//*20*/;
-      }
-      else if ((posPoint->secondBest[suit].hand==lho[q])&&
-	((posPoint->winner[suit].hand==partner[q])||
-	(posPoint->winner[suit].hand==q)))
-	suitBonus+=14;
-
       if (suitCountLH!=0) {
           countLH=(suitCountLH<<2);
       }
@@ -3531,7 +3510,11 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
       else
         countRH=depth+4;
 
-      suitWeightDelta=suitBonus-((countLH+countRH)<<5)/(19/*20*//*15*/);	
+      /* Discourage a suit selection where the search tree appears larger than for the
+      altenative suits: the search is estimated to be small when the added number of
+      alternative cards to play for the opponents is small. */ 
+
+      suitWeightDelta=-((countLH+countRH)<<5)/19;	
 	  
       if (posPoint->winner[suit].rank==mp->rank) 
         winMove=TRUE;			   
@@ -3542,30 +3525,71 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
       }			
               
       if (winMove) {
-	if (((posPoint->secondBest[suit].hand!=lho[first])
-	  ||(suitCountLH==1))&&
-	  ((posPoint->secondBest[suit].hand!=rho[first])
-	  ||(suitCountRH==1)))
-	  weight=suitWeightDelta+48+rRank;
-	/*else 
-	  weight=suitWeightDelta+35+rRank;*/
+	/* Discourage suit if RHO has second best card.
+	   Exception: RHO has singleton. */
+	if (posPoint->secondBest[suit].hand==rho[q]) {
+	  if (suitCountRH!=1)
+	    suitWeightDelta-=7;
+        }
+        /* Encourage playing suit if LHO has second highest rank. */
+        else if (posPoint->secondBest[suit].hand==lho[q]) 
+          suitWeightDelta+=14;
+	  
+        /* Higher weight if also second best rank is present on current side to play, or
+        if second best is a singleton at LHO or RHO. */
 
-	else if ((mp->sequence)&&
+        if (((posPoint->secondBest[suit].hand!=lho[first])
+           ||(suitCountLH==1))&&
+           ((posPoint->secondBest[suit].hand!=rho[first])
+           ||(suitCountRH==1)))
+          weight=suitWeightDelta+41/*48*/+rRank;
+
+        /* Encourage playing second highest rank if hand also has
+        third highest rank. */
+
+        else if ((mp->sequence)&&
           (mp->rank==posPoint->secondBest[suit].rank))			
           weight=suitWeightDelta+39;
-      /*else if (mp->sequence)
-	  weight=suitWeightDelta+25+rRank;*/
         else
           weight=suitWeightDelta+20+rRank;
 
-	if ((bestMove[depth].suit==suit)&&
+        /* Encourage playing cards that previously caused search cutoff
+        or was stored as the best move in a transposition table entry match. */
+
+        if ((bestMove[depth].suit==suit)&&
           (bestMove[depth].rank==mp->rank)) 
           weight+=123/*122*//*112*//*73*/;
-	else if ((bestMoveTT[depth].suit==suit)&&
+        else if ((bestMoveTT[depth].suit==suit)&&
           (bestMoveTT[depth].rank==mp->rank)) 
-          weight+=20/*17*//*14*/;
+          weight+=24/*20*//*17*//*14*/;
       }
       else {
+	/* Discourage suit if RHO has winning or second best card.
+	   Exception: RHO has singleton. */
+
+        if ((posPoint->winner[suit].hand==rho[q])||
+          (posPoint->secondBest[suit].hand==rho[q])) {
+	  if (suitCountRH!=1)
+	    suitWeightDelta-=7;	
+        }
+
+
+	/* Try suit if LHO has winning card and partner second best. 
+	     Exception: partner has singleton. */ 
+
+        else if ((posPoint->winner[suit].hand==lho[q])&&
+	  (posPoint->secondBest[suit].hand==partner[q])) {
+
+	/* This case was suggested by Joël Bradmetz. */
+
+	  if (posPoint->length[partner[q]][suit]!=1)
+	    suitWeightDelta+=31/*34*//*37*//*32*//*20*/;
+        }
+     
+	/* Encourage playing the suit if the hand together with partner have both the 2nd highest
+	and the 3rd highest cards such that the side of the hand has the highest card in the
+	next round playing this suit. */
+
 	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
 	  suitWeightDelta+=22/*10*/;
 	else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
@@ -3573,26 +3597,35 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 	  (first==thirdBestHand)&&(posPoint->length[partner[first]][suit]>1)))
 	  suitWeightDelta+=24/*10*/;	
 
+	/* Higher weight if LHO or RHO has the highest (winning) card as a singleton. */
+
 	if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
           weight=suitWeightDelta+25/*23*//*22*/+rRank;
         else if (posPoint->winner[suit].hand==first) {
-          weight=suitWeightDelta-24/*27*//*12*//*10*/+rRank;
+          weight=suitWeightDelta-20/*24*//*27*//*12*//*10*/+rRank;
         }
+
+	/* Encourage playing second highest rank if hand also has
+	third highest rank. */
+
         else if ((mp->sequence)&&
           (mp->rank==posPoint->secondBest[suit].rank)) 
-	  weight=suitWeightDelta+42;
+	  weight=suitWeightDelta+44/*42*/;
 	else if (mp->sequence)
-          weight=suitWeightDelta+32-rRank;
+          weight=suitWeightDelta+31/*32*/-rRank;
         else 
           weight=suitWeightDelta+12+rRank; 
 	
+	/* Encourage playing cards that previously caused search cutoff
+	or was stored as the best move in a transposition table entry match. */
+
 	if ((bestMove[depth].suit==suit)&&
             (bestMove[depth].rank==mp->rank)) 
           weight+=47/*45*//*39*//*38*/;
 	else if ((bestMoveTT[depth].suit==suit)&&
             (bestMoveTT[depth].rank==mp->rank)) 
-          weight+=15/*16*//*19*//*14*/;
+          weight+=13/*15*//*16*//*19*//*14*/;
       }
         
       break;
@@ -3601,8 +3634,8 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
       leadSuit=posPoint->move[depth+1].suit;
       if (leadSuit==suit) {
 	if (bitMapRank[mp->rank]>
-	   (bitMapRank[posPoint->move[depth+1].rank] |
-	   posPoint->rankInSuit[partner[first]][suit])) 
+	    (bitMapRank[posPoint->move[depth+1].rank] |
+	    posPoint->rankInSuit[partner[first]][suit])) 
           winMove=TRUE;
 	else if (posPoint->rankInSuit[rho[first]][suit]>
 	   (bitMapRank[posPoint->move[depth+1].rank] |
@@ -3610,57 +3643,67 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
           winMove=TRUE;
       }
       else {
-	 /* Side with
-	    highest rank in leadSuit wins */
+	/* Side with highest rank in leadSuit wins */
+
 	if (posPoint->rankInSuit[rho[first]][leadSuit] >
-            (posPoint->rankInSuit[partner[first]][leadSuit] |
-             bitMapRank[posPoint->move[depth+1].rank]))
+           (posPoint->rankInSuit[partner[first]][leadSuit] |
+            bitMapRank[posPoint->move[depth+1].rank]))
           winMove=TRUE;			   			  
       }
       
       if (winMove) {
         if (!notVoidInSuit) { 
 	  suitCount=posPoint->length[q][suit];
-          suitAdd=(suitCount<<6)/(23/*20*//*21*//*24*//*30*//*35*/);   
+          suitAdd=(suitCount<<6)/(23/*20*//*21*//*24*//*30*//*35*/);
 	  if (posPoint->secondBest[suit].hand==q) {
+	  /* Discourage suit discard if 2nd highest card becomes singleton. */
+ 
 	    if (suitCount==2)
 	      suitAdd-=3;
 	  }
+	  /* Discourage suit discard of highest card. */
+
 	  else if ((suitCount==1)&&(posPoint->winner[suit].hand==q)) 
 	    suitAdd-=3;
- 
-	  weight=/*60*/-(mp->rank)+suitAdd;		
+
+	  /*Encourage discard of low cards in long suits. */
+	    weight=/*60*/-(mp->rank)+suitAdd;		
         }
-	else {
+	else {	
 	  weight=80+rRank;
         } 
       }
       else {
         if (!notVoidInSuit) {
 	  suitCount=posPoint->length[q][suit];
-          suitAdd=(suitCount<<6)/33;   
+          suitAdd=(suitCount<<6)/33; 
+ 
+	  /* Discourage suit discard if 2nd highest card becomes singleton. */ 
           if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
-            suitAdd-=7;				
+            suitAdd-=7;	
+		  
+          /* Discourage suit discard of highest card. */
 	  else if ((suitCount==1)&&(posPoint->winner[suit].hand==q)) 
 	    suitAdd-=10;
 
+	  /*Encourage discard of low cards in long suits. */
           weight=-(mp->rank)+suitAdd; 
         }
         else {
+
+	  /* If lowest rank for either partner to leading hand 
+	  or rho is higher than played card for lho,
+	  lho should play as low card as possible */
+	
 	  kk=posPoint->rankInSuit[partner[first]][leadSuit];
           ll=posPoint->rankInSuit[rho[first]][leadSuit];
-          k=kk & (-kk); l=ll & (-ll);  /* Only least significant 1 bit */
-	  if ((k > bitMapRank[mp->rank])||
-            (l > bitMapRank[mp->rank])) 
-	      weight=-3+rRank;
-          /* If lowest rank for either partner to leading hand 
-	     or rho is higher than played card for lho,
-	     lho should play as low card as possible */			
+          k=kk & (-kk); l=ll & (-ll);  /* Only least significant 1 bit of
+					bit map ranks for partner and RHO. */
+
+	  if ((k > bitMapRank[mp->rank])||(l > bitMapRank[mp->rank])) 
+	    weight=-3+rRank;		
           else if (mp->rank > posPoint->move[depth+1].rank) {
-	    /*if ((mp->sequence)&&
-              (mp->rank==posPoint->secondBest[suit].rank))
-		weight=15+rRank;
-            else */if (mp->sequence) { 
+	    if (mp->sequence) { 
 	      weight=/*0*/10+rRank;	
 	    }
             else { 
@@ -3670,7 +3713,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
           }          
           else {
 	    weight=-15+rRank;		
-	  }			
+	  }	
         }
       }
 
@@ -3680,20 +3723,15 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
             
       leadSuit=posPoint->move[depth+2].suit;
       if (WinningMove(mp, &(posPoint->move[depth+1]))) {
-	if (1/*suit==leadSuit*/) {
-	  if (bitMapRank[mp->rank] >
-	    posPoint->rankInSuit[rho[first]][suit])
-	    winMove=TRUE;
-	}
+	if (bitMapRank[mp->rank] >
+	  posPoint->rankInSuit[rho[first]][suit])
+	  winMove=TRUE;
       }	
       else if (posPoint->high[depth+1]==first) {
-        if (1/*posPoint->length[rho[first]][leadSuit]!=0*/) {
-	  if (posPoint->rankInSuit[rho[first]][leadSuit]
+	if (posPoint->rankInSuit[rho[first]][leadSuit]
 	      < bitMapRank[posPoint->move[depth+2].rank])	
-	    winMove=TRUE;
-	}
-	else
 	  winMove=TRUE;
+	
       }
       
       if (winMove) {
@@ -3701,6 +3739,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
           suitCount=posPoint->length[q][suit];
           suitAdd=(suitCount<<6)/(17/*27*//*30*//*35*/);
 
+	  /* Discourage suit discard if 2nd highest card becomes singleton. */ 
           if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
             suitAdd-=(6/*2*//*5*/);	
           weight=-(mp->rank)+suitAdd;  
@@ -3714,15 +3753,15 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 	  suitCount=posPoint->length[q][suit];
           suitAdd=(suitCount<<6)/(24/*26*//*29*//*35*/);   
           if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
-            suitAdd-=(4/*5*/);				
+            suitAdd-=(4/*5*/);	
+	   /* Discourage suit discard of highest card. */
 	  else if ((suitCount==1)&&(posPoint->winner[suit].hand==q)) 
 	    suitAdd-=(4/*5*/);	
 
-          weight=-(mp->rank)+suitAdd;   /* Insensitive */
+          weight=-(mp->rank)+suitAdd;   
 
         }
         else {
-          /*weight=20-(mp->rank);*/
 		  
 	  k=posPoint->rankInSuit[rho[first]][suit];
 	  if ((k & (-k)) > bitMapRank[mp->rank])
@@ -3777,7 +3816,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
   int weight=0, k, l, kk, ll, suit, suitAdd=0, leadSuit;
   int suitWeightDelta, first, q, rRank, thirdBestHand;
   int suitBonus=0;
-  int winMove=FALSE;
+  int winMove=FALSE;	/* If winMove is true, current move can win the current trick. */
   unsigned short suitCount, suitCountLH, suitCountRH, aggr;
   int countLH, countRH;
 
@@ -3796,36 +3835,47 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
 
+      /* Discourage suit if LHO or RHO can ruff. */
+
       if ((suit!=trump) &&
-          (((posPoint->rankInSuit[lho[q]][suit]==0) &&
+        (((posPoint->rankInSuit[lho[q]][suit]==0) &&
           (posPoint->rankInSuit[lho[q]][trump]!=0)) ||
           ((posPoint->rankInSuit[rho[q]][suit]==0) &&
           (posPoint->rankInSuit[rho[q]][trump]!=0))))
         suitBonus=-17/*20*//*-10*/;
+	    
+      /* Encourage suit if partner can ruff. */
 
       if ((suit!=trump)&&(posPoint->length[partner[q]][suit]==0)&&
-	   (posPoint->length[partner[q]][trump]>0)&&(suitCountRH>0))
+	     (posPoint->length[partner[q]][trump]>0)&&(suitCountRH>0))
 	suitBonus+=26/*28*/;
+
+      /* Discourage suit if RHO has high card. */
 
       if ((posPoint->winner[suit].hand==rho[q])||
           (posPoint->secondBest[suit].hand==rho[q])) {
 	if (suitCountRH!=1)
 	  suitBonus-=11/*12*//*13*//*18*/;
       }
+
+      /* Try suit if LHO has winning card and partner second best. 
+      Exception: partner has singleton. */ 
+
       else if ((posPoint->winner[suit].hand==lho[q])&&
 	(posPoint->secondBest[suit].hand==partner[q])) {
+
 	/* This case was suggested by Joël Bradmetz. */
+
 	if (posPoint->length[partner[q]][suit]!=1) 
 	  suitBonus+=30/*28*//*22*/;
       }
-      /*else if ((posPoint->secondBest[suit].hand==lho[q])&&
-		(posPoint->winner[suit].hand==partner[q]))
-	   suitBonus+=10;*/
-
+ 
+      /* Encourage play of suit where partner wins and
+      returns the suit for a ruff. */
       if ((suit!=trump)&&(suitCount==1)&&
-	    (posPoint->length[q][trump]>0)&&
-	    (posPoint->length[partner[q]][suit]>1)&&
-	    (posPoint->winner[suit].hand==partner[q]))
+	(posPoint->length[q][trump]>0)&&
+	(posPoint->length[partner[q]][suit]>1)&&
+	(posPoint->winner[suit].hand==partner[q]))
 	suitBonus+=23/*24*//*19*//*16*/;
 
       if (suitCountLH!=0)
@@ -3836,6 +3886,10 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
         countRH=(suitCountRH<<2);
       else
         countRH=depth+4;
+
+      /* Discourage a suit selection where the search tree appears larger than for the
+	  altenative suits: the search is estimated to be small when the added number of
+	  alternative cards to play for the opponents is small. */ 
 
       suitWeightDelta=suitBonus-
 	((countLH+countRH)<<5)/(12/*15*/);
@@ -3904,24 +3958,39 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
       }
               
       if (winMove) {
-	if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
+
+	/* Encourage ruffing LHO or RHO singleton, highest card. */
+
+        if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
           weight=suitWeightDelta+39+rRank;
+
+	/* Lead hand has the highest card. */
+
         else if (posPoint->winner[suit].hand==first) {
+
+	/* Also, partner has second highest card. */
+
           if (posPoint->secondBest[suit].hand==partner[first])
             weight=suitWeightDelta+46+rRank;
-	  else if (posPoint->winner[suit].rank==mp->rank) 
+	  else if (posPoint->winner[suit].rank==mp->rank)
+
+	    /* If the current card to play is the highest card. */
+
             weight=suitWeightDelta+31;
           else
             weight=suitWeightDelta-2+rRank;
         }
         else if (posPoint->winner[suit].hand==partner[first]) {
-          /* If partner has winning card */
+          /* If partner has highest card */
           if (posPoint->secondBest[suit].hand==first)
             weight=suitWeightDelta+35/*35*//*46*//*50*/+rRank;
           else 
             weight=suitWeightDelta+24/*35*/+rRank;  
         } 
+	/* Encourage playing second highest rank if hand also has
+	third highest rank. */
+
         else if ((mp->sequence)&&
           (mp->rank==posPoint->secondBest[suit].rank))			
           weight=suitWeightDelta+41;
@@ -3929,6 +3998,9 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	  weight=suitWeightDelta+17+rRank;
         else
           weight=suitWeightDelta+11+rRank;
+
+	/* Encourage playing cards that previously caused search cutoff
+	or was stored as the best move in a transposition table entry match. */
 
 	if ((bestMove[depth].suit==suit)&&
             (bestMove[depth].rank==mp->rank)) 
@@ -3938,41 +4010,56 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
           weight+=14/*15*//*12*//*11*/;
       }
       else {
+
+	/* Encourage playing the suit if the hand together with partner have both the 2nd highest
+	and the 3rd highest cards such that the side of the hand has the highest card in the
+	next round playing this suit. */
+
 	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
 	   suitWeightDelta+=20/*22*/;
-	 else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
+	else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
 	  (posPoint->length[partner[first]][suit]>1))||
 	  ((posPoint->secondBest[suit].hand==partner[first])&&
 	  (first==thirdBestHand)&&(posPoint->length[partner[first]][suit]>1)))
 	   suitWeightDelta+=20/*24*/;
 	
+	/* Higher weight if LHO or RHO has the highest (winning) card as a singleton. */
+
         if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
           weight=suitWeightDelta+rRank-2;
         else if (posPoint->winner[suit].hand==first) {
-          if ((posPoint->secondBest[suit].rank!=0)&&
-	     (posPoint->secondBest[suit].hand==partner[first]))
+          if (posPoint->secondBest[suit].hand==partner[first])
+
+	  /* Opponents win by ruffing */
+
             weight=suitWeightDelta+33+rRank;
           else if (posPoint->winner[suit].rank==mp->rank) 
+
+	  /* Opponents win by ruffing */
+
             weight=suitWeightDelta+36;
           else
             weight=suitWeightDelta-17+rRank;
         }
         else if (posPoint->winner[suit].hand==partner[first]) {
-          /* If partner has winning card */
-          /*if (posPoint->secondBest[suit].hand==first)*/
+
+          /* Opponents win by ruffing */
+
           weight=suitWeightDelta+33+rRank;
-          /*else 
-	    weight=suitWeightDelta+28+rRank;*/
         } 
+	/* Encourage playing second highest rank if hand also has
+	third highest rank. */
+
         else if ((mp->sequence)&&
           (mp->rank==posPoint->secondBest[suit].rank)) 
           weight=suitWeightDelta+31;
-	/*else if (mp->sequence) 
-          weight=suitWeightDelta+25-rRank;*/
         else 
 	  weight=suitWeightDelta+13-(mp->rank);
 	
+	/* Encourage playing cards that previously caused search cutoff
+	or was stored as the best move in a transposition table entry match. */
+
 	if ((bestMove[depth].suit==suit)&&
             (bestMove[depth].rank==mp->rank)) 
           weight+=17;
@@ -4038,7 +4125,9 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	}
       }
       else {
+
 	 /* Leading suit differs from suit played by LHO */
+
 	if (suit==trump) {
 	  if (posPoint->length[partner[first]][leadSuit]!=0)
 	    winMove=TRUE;
@@ -4052,7 +4141,9 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
             winMove=TRUE;
         }	
         else if (leadSuit!=trump) {
+
           /* Neither suit nor leadSuit is trump */
+
           if (posPoint->length[partner[first]][leadSuit]!=0) {
             if (posPoint->rankInSuit[rho[first]][leadSuit] >
               (posPoint->rankInSuit[partner[first]][leadSuit] |
@@ -4062,7 +4153,9 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 		  &&(posPoint->length[rho[first]][trump]!=0))
 	      winMove=TRUE;
 	  }
+
 	  /* Partner to leading hand is void in leading suit */
+
 	  else if ((posPoint->length[rho[first]][leadSuit]==0)
 		&&(posPoint->rankInSuit[rho[first]][trump]>
 	      posPoint->rankInSuit[partner[first]][trump]))
@@ -4082,42 +4175,52 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
         }			  
       }
       
+	  
       kk=posPoint->rankInSuit[partner[first]][leadSuit];
       ll=posPoint->rankInSuit[rho[first]][leadSuit];
-      k=kk & (-kk); l=ll & (-ll);  /* Only least significant 1 bit */
+      k=kk & (-kk); l=ll & (-ll);  /* Only least significant 1 bit of
+				   bit map ranks for partner and RHO. */
+
       if (winMove) {
         if (!notVoidInSuit) { 
           suitCount=posPoint->length[q][suit];
           suitAdd=(suitCount<<6)/(43/*36*/);
+
+	  /* Discourage suit discard if 2nd highest card becomes singleton. */ 
+
           if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
             suitAdd-=2;
 
           if (suit==trump)  
-	    weight=25/*23*/-(mp->rank)+suitAdd;
+	        weight=25/*23*/-(mp->rank)+suitAdd;
           else
             weight=60-(mp->rank)+suitAdd;  /* Better discard than ruff since rho
 								wins anyway */		
-        }
+        } 
         else if (k > bitMapRank[mp->rank])
 	  weight=40/*41*/+rRank;
-            /* If lowest card for partner to leading hand 
-					is higher than lho played card, playing as low as 
-					possible will give the cheapest win */
+
+          /* If lowest card for partner to leading hand 
+	    is higher than lho played card, playing as low as 
+	    possible will give the cheapest win */
+
         else if ((ll > bitMapRank[posPoint->move[depth+1].rank])&&
           (posPoint->rankInSuit[first][leadSuit] > ll))
-	  weight=37/*40*/+rRank;
+	      weight=37/*40*/+rRank;
+
 	  /* If rho has a card in the leading suit that
              is higher than the trick leading card but lower
              than the highest rank of the leading hand, then
              lho playing the lowest card will be the cheapest
              win */
+
 	else if (mp->rank > posPoint->move[depth+1].rank) {
           if (bitMapRank[mp->rank] < ll) 
             weight=75-(mp->rank);  /* If played card is lower than any of the cards of
 					rho, it will be the cheapest win */		
           else if (bitMapRank[mp->rank] > kk)
             weight=70-(mp->rank);  /* If played card is higher than any cards at partner
-						of the leading hand, rho can play low, under the
+				    of the leading hand, rho can play low, under the
                                     condition that he has a lower card than lho played */    
           else {
             if (mp->sequence)
@@ -4134,12 +4237,15 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
             weight=45-(mp->rank);	
         }
         else
-          weight=43/*45*/-(mp->rank);		
+          weight=43/*45*/-(mp->rank);
       }
       else {
         if (!notVoidInSuit) { 
           suitCount=posPoint->length[q][suit];
-          suitAdd=(suitCount<<6)/(33/*36*/);		
+          suitAdd=(suitCount<<6)/(33/*36*/);
+	
+	  /* Discourage suit discard if 2nd highest card becomes singleton. */
+ 
           if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
             suitAdd-=(4/*2*/);
   
@@ -4153,9 +4259,11 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
         else if ((k > bitMapRank[mp->rank])||
           (l > bitMapRank[mp->rank]))
 	  weight=-7/*-9*/+rRank;
+
           /* If lowest rank for either partner to leading hand 
-				or rho is higher than played card for lho,
-				lho should play as low card as possible */			
+	  or rho is higher than played card for lho,
+	  lho should play as low card as possible */
+			
         else if (mp->rank > posPoint->move[depth+1].rank) {		  
           if (mp->sequence) 
             weight=19/*19*/-(mp->rank);	
@@ -4165,7 +4273,6 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
         else
 	  weight=-17+rRank;
       }
-
       break;
 
     case 2:
@@ -4175,7 +4282,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	if (suit==leadSuit) {
 	  if (leadSuit!=trump) {
 	    if (((posPoint->length[rho[first]][suit]!=0)||
-		  (posPoint->length[rho[first]][trump]==0))&&
+		(posPoint->length[rho[first]][trump]==0))&&
 		  (bitMapRank[mp->rank] >
 		   posPoint->rankInSuit[rho[first]][suit]))
 	      winMove=TRUE;
@@ -4211,6 +4318,9 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
         if (!notVoidInSuit) {
           suitCount=posPoint->length[q][suit];
           suitAdd=(suitCount<<6)/(48/*36*/);
+
+	  /* Discourage suit discard if 2nd highest card becomes singleton. */ 
+
           if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
             suitAdd-=(3/*2*/);
         
@@ -4221,7 +4331,9 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
               weight=60-(mp->rank)+suitAdd;  
           } 
           else if (WinningMove(mp, &(posPoint->move[depth+1])))
+
              /* Own hand on top by ruffing */
+
             weight=70-(mp->rank)+suitAdd;  
         }
         else 
@@ -4231,14 +4343,21 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
         if (!notVoidInSuit) {
           suitCount=posPoint->length[q][suit];
           suitAdd=(suitCount<<6)/36;
+
+	  /* Discourage suit discard if 2nd highest card becomes singleton. */
+ 
 	  if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
             suitAdd-=(4/*2*/);	
           
           if (WinningMove(mp, &(posPoint->move[depth+1])))
+
              /* Own hand on top by ruffing */
+
             weight=40-(mp->rank)+suitAdd;  
           else if (suit==trump)
+
             /* Discard a trump but still losing */
+
 	    weight=-/*33*/36+rRank+suitAdd;
           else
             weight=-(mp->rank)+suitAdd;
@@ -4247,9 +4366,15 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	  k=posPoint->rankInSuit[rho[first]][suit];
 	  if ((k & (-k)) > bitMapRank[mp->rank])
 
+	    /* If least bit map rank of RHO to lead hand is higher than bit map rank
+		of current card move. */
+
 	    weight=-(mp->rank);
 
           else if (WinningMove(mp, &(posPoint->move[depth+1]))) {
+
+	    /* If current card move is highest so far. */
+
             if (mp->rank==posPoint->secondBest[leadSuit].rank)
               weight=25;		
             else if (mp->sequence)
@@ -4272,15 +4397,21 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
           suitAdd-=(2/*0*//*2*/);
 
         if ((posPoint->high[depth+1])==lho[first]) {
+
           /* If the current winning move is given by the partner */
+
           if (suit==trump)
+
             /* Ruffing partners winner? */
+
             weight=2/*17*/-(mp->rank)+suitAdd;
           else 
             weight=25-(mp->rank)+suitAdd;
         }
         else if (WinningMove(mp, &(posPoint->move[depth+1]))) 
+
           /* Own hand ruffs */
+
 	  weight=33/*27*/+rRank+suitAdd;			
         else if (suit==trump) 
 	  weight=-13+rRank;					
@@ -4288,22 +4419,32 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
           weight=14-(mp->rank)+suitAdd;  
       }
       else if ((posPoint->high[depth+1])==(lho[first])) {
+
         /* If the current winning move is given by the partner */
+
         if (suit==trump)
+
         /* Ruffs partners winner */
+
 	  weight=11+rRank;					
         else 
 	  weight=17+rRank;
       }
       else if (WinningMove(mp, &(posPoint->move[depth+1])))
+
         /* If present move is superior to current winning move and the
         current winning move is not given by the partner */
+
 	weight=22+rRank;		
       else {
+
         /* If present move is not superior to current winning move and the
         current winning move is not given by the partner */
+
         if (suit==trump)
+
           /* Ruffs but still loses */
+
 	  weight=-13+rRank;			
         else 
 	  weight=1+rRank;			
