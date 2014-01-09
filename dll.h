@@ -33,9 +33,13 @@
 #    include <omp.h>
 #endif
 
+#ifdef __linux__   
+#    include <unistd.h>
+#endif
+
 /* end of portability-macros section */
 
-#define DDS_VERSION		20300	/* Version 2.3.0. Allowing for 2 digit
+#define DDS_VERSION		20400	/* Version 2.4.0. Allowing for 2 digit
 					minor versions */
 
 #define PBN
@@ -52,6 +56,10 @@
 #include <time.h>
 #include <assert.h>
 #include <math.h>
+
+#ifdef __linux__
+typedef long long __int64;
+#endif
 
 /*#define STAT*/	/* Define STAT to generate a statistics log, stat.txt */
 /*#define TTDEBUG*/     /* Define TTDEBUG to generate transposition table debug information.
@@ -89,7 +97,7 @@
 #define SIMILARDEALLIMIT	5
 #define SIMILARMAXWINNODES  700000
 
-#define MAXNOOFBOARDS		100
+#define MAXNOOFBOARDS		200/*100*/
 
 #define Max(x, y) (((x) >= (y)) ? (x) : (y))
 #define Min(x, y) (((x) <= (y)) ? (x) : (y))
@@ -289,19 +297,37 @@ struct ddTableDeal {
   unsigned int cards[4][4];
 };
 
+struct ddTableDeals {
+  struct ddTableDeal deals[MAXNOOFBOARDS / 20];
+};
+
 struct ddTableDealPBN {
   char cards[80];
+};
+
+struct ddTableDealsPBN {
+  struct ddTableDealPBN deals[MAXNOOFBOARDS / 20];
 };
 
 struct ddTableResults {
   int resTable[5][4];
 };
 
+struct ddTablesRes {
+  struct ddTableResults results[MAXNOOFBOARDS / 20];
+};
+
+
 struct parResults {
   char parScore[2][16];	/* index = 0 is NS view and index = 1 is EW view. */
   char parContractsString[2][128]; /* index = 0 is NS view and index = 1 
 				      is EW view. By “view” is here meant 
 				      which side that starts the bidding. */
+};
+
+
+struct allParResults {
+  struct parResults presults[MAXNOOFBOARDS / 20];
 };
 
 struct par_suits_type {
@@ -449,6 +475,10 @@ EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN
 
 #ifdef PBN_PLUS
 EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp);
+EXTERN_C DLLEXPORT int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter[5], 
+    struct ddTablesRes *resp, struct allParResults *presp);
+EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, int trumpFilter[5], 
+    struct ddTablesRes *resp, struct allParResults *presp);
 EXTERN_C DLLEXPORT int STDCALL CalcPar(struct ddTableDeal tableDeal, int vulnerable, 
     struct ddTableResults * tablep, struct parResults *presp);
 EXTERN_C DLLEXPORT int STDCALL CalcParPBN(struct ddTableDealPBN tableDealPBN, 
@@ -488,7 +518,7 @@ void BuildSOP(struct pos * posPoint, int tricks, int firstHand, int target,
   int depth, int scoreFlag, int score, int thrId);
 struct posSearchType * SearchLenAndInsert(struct posSearchType
 	* rootp, long long key, int insertNode, int *result, int thrId);  
-void Undo(struct pos * posPoint, int depth, int thrId);
+void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, int thrId);
 int CheckDeal(struct moveType * cardp, int thrId);
 int InvBitMapRank(unsigned short bitMap);
 int InvWinMask(int mask);
@@ -506,6 +536,8 @@ void PrintDeal(FILE *fp, unsigned short ranks[4][4]);
 int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp);
 int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp);
 
-
+int IsCard(char cardChar);
+void UpdateDealInfo(int card);
+int IsVal(char cardChar);
 
 

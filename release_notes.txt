@@ -415,6 +415,12 @@ The Mingw DLL now uses the Win API instead of OpenMP so no
 supporting DLL for pthreads is now needed.
 
 
-
+Release Notes DDS 2.4.0
+-----------------------
+Fixing a bug at calculation of par score contracts.
+Adding the new functions CalcAllTables and CalcAllTablesPBN.
+Numerous fixes for better adaptation to Linux.
+Cleaning the code to remove some warnings given at code compilation.
+For Windows users, adding readable version information of the DDS DLL file. 
      
 

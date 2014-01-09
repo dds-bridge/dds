@@ -1,13 +1,10 @@
-DDS 2.3.0,  Bo Haglund 2013-03-18
+DDS 2.4.0,  Bo Haglund 2014-01-09
 
-For Win32, DDS compiles with Visual C++ 2010 Express edition 
+For Win32, DDS compiles with Visual C++ 2010 and 2012 Express editions 
 and the TDM-GCC/Mingw port of gcc.
 
 When using Visual C++, the statement
 #include "stdafx.h" at the beginning of dds.cpp must be uncommented.
-
-When not using Visual C++, the compilation of DDS includes function CalcDDtable
-implemented using the Win API for Windows and TDM-GCC/MingW OpenMP otherwise. 
    
 
 Linking with an application using DDS
@@ -35,8 +32,8 @@ memory autoconfiguration.
 
 Setting the number of simultaneous threads when calling CalcDDtable.
 --------------------------------------------------------------------
-For Windows, this can be done either by reading out the number of processor cores from
-Windows and using this for setting the number of threads, or by supplying the number of
+For Windows, this can be done either by reading out the number of processor cores 
+and using this for setting the number of threads, or by supplying the number of
 threads (ncores) in InitStart. This latter alternative needs to be used when the operating 
 system does not support reading out of the number of processors. 
  
@@ -53,11 +50,11 @@ ParCalc and ParCalcPBN are supported.
 
 The possible configurens thus are:
 1)  "PBN" and "PBN_PLUS":  Support for SolveBoardPBN, CalcDDtablePBN, SolveAllBoards,
-   ParCalc and ParCalcPBN.
+     SolveAllTables, SolveAllTablesPBN, ParCalc and ParCalcPBN.
 2)  "PBN":  Support for SolveBoardPBN and CalcDDtablePBN.
 3) None of these definitions:  No support for any of the above 3 functions.
 
-Staying with the previous configuration might be needed when 2.3.0 is to replace an 
+Staying with the previous configuration might be needed when 2.4.0 is to replace an 
 older 2.x.y version, and the application using DDS cannot handle a changed interface.
 
 

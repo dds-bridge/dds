@@ -1,6 +1,6 @@
 
-/* DDS 2.3.0   A bridge double dummy solver.				      */
-/* Copyright (C) 2006-2012 by Bo Haglund                                      */
+/* DDS 2.4.0   A bridge double dummy solver.				      */
+/* Copyright (C) 2006-2014 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.        */
 /* The code for calculation of par score / contracts is based upon the	      */
 /* perl code written by Matthew Kidd for ACBLmerge. He has kindly given me    */
@@ -79,9 +79,9 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       if (localVar[k].pl)
 	free(localVar[k].pl);
       localVar[k].pl=NULL;
-      if (ttStore)
+      /*if (ttStore)
         free(ttStore);
-      ttStore=NULL;
+      ttStore=NULL;*/
       if (localVar[k].rel)
         free(localVar[k].rel);
       localVar[k].rel=NULL;
@@ -89,6 +89,9 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 	free(localVar[k].adaptWins);
       localVar[k].adaptWins=NULL;
     }
+    if (ttStore)
+      free(ttStore);
+    ttStore=NULL;
     if (highestRank)
       free(highestRank);
     highestRank=NULL;
@@ -110,7 +113,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 
   int k, n, cardCount, found, totalTricks, tricks, last, checkRes;
   int g, upperbound, lowerbound, first, i, j, h, forb, ind, flag, noMoves;
-  int mcurr;
+  /*int mcurr;*/
   int noStartMoves;
   int handRelFirst;
   int noOfCardsPerHand[4];
@@ -639,7 +642,7 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       /* All moves before bestMove in the move list shall be
       moved to the forbidden moves list, since none of them reached
       the target */
-      mcurr=localVar[thrId].movePly[localVar[thrId].iniDepth].current;
+      /*mcurr=localVar[thrId].movePly[localVar[thrId].iniDepth].current;*/
       for (k=0; k<=localVar[thrId].movePly[localVar[thrId].iniDepth].last; k++)
         if ((localVar[thrId].bestMove[localVar[thrId].iniDepth].suit==
 			localVar[thrId].movePly[localVar[thrId].iniDepth].move[k].suit)
@@ -869,8 +872,9 @@ void InitStart(int gb_ram, int ncores) {
 
   #endif
   #ifdef __linux__   /* The code for linux was suggested by Antony Lee. */
+    ncores = sysconf(_SC_NPROCESSORS_ONLN); 
     FILE* fifo = popen("free -k | tail -n+3 | head -n1 | awk '{print $NF}'", "r");
-    fscanf(fifo, "%ld", &pcmem);
+    fscanf(fifo, "%lld", &pcmem);
     fclose(fifo);
   #endif
 
@@ -2333,10 +2337,10 @@ struct evalType Evaluate(struct pos * posPoint, int trump, int thrId)  {
 
 int QuickTricks(struct pos * posPoint, int hand,
 	int depth, int target, int trump, int *result, int thrId) {
-  int suit, sum, qtricks, commPartner, commRank=0, commSuit=-1, s, found=FALSE;
+  int suit, sum, qtricks, commPartner, commRank=0, commSuit=-1, s/*, found=FALSE*/;
   int opps, res;
   int countLho, countRho, countPart, countOwn, lhoTrumpRanks, rhoTrumpRanks;
-  int cutoff, ss, rr, lowestQtricks=0, count=0/*, ruff=FALSE*/;
+  int cutoff, ss, rr, lowestQtricks=0/*, count=0*//*, ruff=FALSE*/;
 
   int QtricksLeadHandNT(int hand, struct pos *posPoint, int cutoff, int depth,
 	int countLho, int countRho, int *lhoTrumpRanks, int *rhoTrumpRanks, int commPartner,
@@ -5741,7 +5745,7 @@ DWORD CALLBACK SolveChunkDDtable (void *) {
   }
 
   if (SetEvent(solveAllEvents[thid])==0) {
-    int errCode=GetLastError();
+    /*int errCode=GetLastError();*/
     return 0;
   }
 
@@ -5750,7 +5754,7 @@ DWORD CALLBACK SolveChunkDDtable (void *) {
 }
 
 int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
-  int k, errCode;
+  int k/*, errCode*/;
   DWORD res;
   DWORD solveAllWaitResult;
 
@@ -5764,7 +5768,7 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
   for (k=0; k<noOfCores; k++) {
     solveAllEvents[k]=CreateEvent(NULL, FALSE, FALSE, 0);
     if (solveAllEvents[k]==0) {
-      errCode=GetLastError();
+      /*errCode=GetLastError();*/
       return -102;
     }
   }
@@ -5777,7 +5781,7 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
   for (k=0; k<noOfCores; k++) {
     res=QueueUserWorkItem(SolveChunkDDtable, NULL, WT_EXECUTELONGFUNCTION);
     if (res!=1) {
-      errCode=GetLastError();
+      /*errCode=GetLastError();*/
       return res;
     }
   }
@@ -5785,7 +5789,7 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
   solveAllWaitResult = WaitForMultipleObjects(noOfCores,
 	  solveAllEvents, TRUE, INFINITE);
   if (solveAllWaitResult!=WAIT_OBJECT_0) {
-    errCode=GetLastError();
+    /*errCode=GetLastError();*/
     return -103;
   }
 
@@ -5828,7 +5832,7 @@ DWORD CALLBACK SolveChunk (void *) {
   }
 
   if (SetEvent(solveAllEvents[thid])==0) {
-    int errCode=GetLastError();
+    /*int errCode=GetLastError();*/
     return 0;
   }
 
@@ -5837,7 +5841,7 @@ DWORD CALLBACK SolveChunk (void *) {
 }
 
 int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
-  int k, errCode;
+  int k/*, errCode*/;
   DWORD res;
   DWORD solveAllWaitResult;
 
@@ -5851,7 +5855,7 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   for (k=0; k<noOfCores; k++) {
     solveAllEvents[k]=CreateEvent(NULL, FALSE, FALSE, 0);
     if (solveAllEvents[k]==0) {
-      errCode=GetLastError();
+      /*errCode=GetLastError();*/
       return -202;
     }
   }
@@ -5864,7 +5868,7 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   for (k=0; k<noOfCores; k++) {
     res=QueueUserWorkItem(SolveChunk, NULL, WT_EXECUTELONGFUNCTION);
     if (res!=1) {
-      errCode=GetLastError();
+      /*errCode=GetLastError();*/
       return res;
     }
   }
@@ -5872,7 +5876,7 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   solveAllWaitResult = WaitForMultipleObjects(noOfCores,
 	  solveAllEvents, TRUE, INFINITE);
   if (solveAllWaitResult!=WAIT_OBJECT_0) {
-    errCode=GetLastError();
+    /*errCode=GetLastError();*/
     return -203;
   }
 
@@ -5906,7 +5910,9 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
   for (i=0; i<MAXNOOFBOARDS; i++)
       solvedp->solvedBoard[i].cards=0;
 
+#ifdef _OPENMP
   omp_set_num_threads(noOfCores);	/* Added after suggestion by Dirk Willecke. */
+#endif
 
   #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
   {
@@ -5915,7 +5921,13 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
 
     for (k=0; k<bop->noOfBoards; k++) {
       res=SolveBoard(bop->deals[k], bop->target[k], bop->solutions[k],
-        bop->mode[k], &fut[k], omp_get_thread_num());
+        bop->mode[k], &fut[k], 
+#ifdef _OPENMP
+		omp_get_thread_num()
+#else
+		0
+#endif
+		);
       if (res==1) {
         solvedp->solvedBoard[k]=fut[k];
       }
@@ -5948,7 +5960,9 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   for (i=0; i<MAXNOOFBOARDS; i++)
     solvedp->solvedBoard[i].cards=0;
 
+#ifdef _OPENMP
   omp_set_num_threads(noOfCores);	/* Added after suggestion by Dirk Willecke. */
+#endif
 
   #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
   {
@@ -5957,7 +5971,13 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
 
     for (k=0; k<bop->noOfBoards; k++) {
       res=SolveBoard(bop->deals[k], bop->target[k], bop->solutions[k],
-        bop->mode[k], &fut[k], omp_get_thread_num());
+        bop->mode[k], &fut[k], 
+#ifdef _OPENMP
+		omp_get_thread_num()
+#else
+		0
+#endif
+		);
       if (res==1) {
         solvedp->solvedBoard[k]=fut[k];
       }
@@ -6016,6 +6036,127 @@ int STDCALL CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * ta
     }
     return 1;
   }
+
+  return res;
+}
+
+const int tables = MAXNOOFBOARDS / 20;
+
+int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter[5], struct ddTablesRes *resp,
+	struct allParResults *presp) {
+  /* mode = 0:	par calculation, vulnerability None
+     mode = 1:	par calculation, vulnerability All
+     mode = 2:	par calculation, vulnerability NS
+     mode = 3:	par calculation, vulnerability EW  
+	 mode = -1:  no par calculation  */
+
+  int h, s, k, m, ind, tr, first, res, rs, lastIndex=0, 
+	  lastBoardIndex[tables], okey=FALSE;
+  struct boards bo;
+  struct solvedBoards solved;
+
+  int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable);
+
+  for (k=0; k<=5; k++) { 
+	if (!trumpFilter[k])
+	  okey=TRUE;
+  }
+
+  if (!okey)
+	return -201; 
+
+  ind=0; 
+
+  for (m=0; m<tables; m++) {
+	lastBoardIndex[tables]=ind;
+    for (tr=4; tr>=0; tr--) {
+	  if (!trumpFilter[tr]) {
+        for (first=0; first<=3; first++) {
+		  for (h=0; h<=3; h++)
+            for (s=0; s<=3; s++)
+		      bo.deals[ind].remainCards[h][s]=dealsp->deals[m].cards[h][s];
+		  bo.deals[ind].first=first;
+		  bo.deals[ind].trump=tr;
+		  for (k=0; k<=2; k++) {
+            bo.deals[ind].currentTrickRank[k]=0;
+            bo.deals[ind].currentTrickSuit[k]=0;
+          }
+
+          bo.target[ind]=-1;
+          bo.solutions[ind]=1;
+          bo.mode[ind]=1;
+		  lastIndex=ind;
+		  lastBoardIndex[m]=ind;
+          ind++;
+		}
+      }
+	}
+  }
+
+  bo.noOfBoards=lastIndex+1;
+
+  res=SolveAllBoards4(&bo, &solved);
+  if (res==1) {
+    for (ind=0; ind<=lastIndex; ind++) {
+	  if (ind<=lastBoardIndex[0])
+        resp->results[0].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else if (ind<=lastBoardIndex[1])
+	    resp->results[1].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else if (ind<=lastBoardIndex[2])
+	    resp->results[2].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else if (ind<=lastBoardIndex[3])
+	    resp->results[3].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else if (ind<=lastBoardIndex[4])
+		resp->results[4].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else if (ind<=lastBoardIndex[5])
+        resp->results[5].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else if (ind<=lastBoardIndex[6])
+	    resp->results[6].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else if (ind<=lastBoardIndex[7])
+	    resp->results[7].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else if (ind<=lastBoardIndex[8])
+	    resp->results[8].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	  else 
+		resp->results[9].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	      13-solved.solvedBoard[ind].score[0];
+	}
+
+	if ((mode > -1) && (mode < 4)) {
+	  /* Calculate par */
+	  for (k=0; k<tables; k++) {
+		rs=Par(&(resp->results[k]), &(presp->presults[k]), mode);
+	     /* vulnerable 0: None  1: Both  2: NS  3: EW */
+
+		if (rs!=1)
+		  return rs;
+	  }
+    }
+    return 1;
+  }
+  return res;
+}
+
+int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, int trumpFilter[5], 
+    struct ddTablesRes *resp, struct allParResults *presp) {
+  int res, k;
+  struct ddTableDeals dls;
+
+  int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]);
+
+  for (k=0; k<MAXNOOFBOARDS / 20; k++)
+    if (ConvertFromPBN(dealsp->deals[k].cards, dls.deals[k].cards)!=1)
+      return -99;
+
+  res=CalcAllTables(&dls, mode, trumpFilter, resp, presp);
 
   return res;
 }
@@ -6390,9 +6531,11 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
   presp->parScore[1][2]=' ';
   presp->parScore[1][3]='\0';
 
-  itoa(par_score[0], temp, 10);
+  /*itoa(par_score[0], temp, 10);*/
+  sprintf(temp, "%d", par_score[0]);
   strcat(presp->parScore[0], temp);
-  itoa(par_score[1], temp, 10);
+  /*itoa(par_score[1], temp, 10);*/
+  sprintf(temp, "%d", par_score[1]);
   strcat(presp->parScore[1], temp);
 
   for (i=0; i<=1; i++) {
@@ -6450,7 +6593,8 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 
 	strcat(presp->parContractsString[i], buff);
 
-	itoa(par_tricks[i]-6, temp, 10);
+	/*itoa(par_tricks[i]-6, temp, 10);*/
+	sprintf(temp, "%d", par_tricks[i]-6);
 	buff[0]=cardSuit[denom_conv[j]];
 	buff[1]='x';
 	buff[2]='\0';
@@ -6493,9 +6637,9 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	strcat(presp->parContractsString[i], buff);
 
 	if (denom_max < par_denom[i]) 
-	  max_lower = par_tricks[i] - tu_max - 2;
+	  max_lower = par_tricks[i] - tu_max - 1/*2*/;
 	else
-	  max_lower = par_tricks[i] - tu_max - 1;
+	  max_lower = par_tricks[i] - tu_max /*- 1*/;
 
 	/* max_lower is the maximal contract lowering, otherwise opponent contract is
 	higher. It is already known that par_score is high enough to make
@@ -6503,14 +6647,15 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	To find the actual contract lowering allowed, it must be checked that the
 	lowered contract still gets the score bonus points that is present in par score.*/
 
+	sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	/* Score for making the tentative lower par contract. */
 	while (max_lower > 0) {
 	  if (denom_max < par_denom[i]) 
 	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, isvul);
 	  else
 	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, isvul);
 	  /* Score for undertricks needed to beat the tentative lower par contract.*/
-	  sc2 = rawscore(par_denom[i], par_tricks[i] - max_lower, isvul);
-	  /* Score for making the tentative lower par contract. */
+	  /*sc2 = rawscore(par_denom[i], par_tricks[i] - max_lower, isvul);*/
 	  if (sc2 < sc1)
 	    break;
 	  else
@@ -6529,7 +6674,8 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 
 	n = CalcMultiContracts(max_lower, par_tricks[i]);
 
-	itoa(n, temp, 10);
+	/*itoa(n, temp, 10);*/
+	sprintf(temp, "%d", n);
 	buff[0]=cardSuit[denom_conv[j]];
 	buff[1]='\0';
 	strcat(temp, buff);
@@ -6556,7 +6702,8 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 
 	  strcat(presp->parContractsString[i], buff);
 
-	  itoa(5, temp, 10);
+	  /*itoa(5, temp, 10);*/
+	  sprintf(temp, "%d", 5);
 	  buff[0]=cardSuit[denom_conv[j]];
 	  buff[1]='\0';
 	  strcat(temp, buff);
@@ -6597,9 +6744,9 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  strcat(presp->parContractsString[i], buff);
 
 	  if (denom_max < par_denom[i]) 
-	    max_lower = 9 - tu_max - 2;
+	    max_lower = 9 - tu_max - 1/*2*/;
 	  else
-	    max_lower = 9 - tu_max - 1;
+	    max_lower = 9 - tu_max /*- 1*/;
 
 	  /* max_lower is the maximal contract lowering, otherwise opponent contract is
 	  higher. It is already known that par_score is high enough to make
@@ -6607,14 +6754,15 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  To find the actual contract lowering allowed, it must be checked that the
 	  lowered contract still gets the score bonus points that is present in par score.*/
 
+	  sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	  /* Score for making the tentative lower par contract. */
 	  while (max_lower > 0) {
 	    if (denom_max < par_denom[i]) 
 	      sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, isvul);
 	    else
 	      sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, isvul);
 	    /* Score for undertricks needed to beat the tentative lower par contract.*/
-	    sc2 = rawscore(par_denom[i], par_tricks[i] - max_lower, isvul);
-	    /* Score for making the tentative lower par contract. */
+	    /* sc2 = rawscore(par_denom[i], par_tricks[i] - max_lower, isvul);*/
 	    if (sc2 < sc1)
 	      break;
 	    else
@@ -6633,7 +6781,8 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 
 	  n = CalcMultiContracts(max_lower, 9);
 
-	  itoa(n, temp, 10);
+	  /*itoa(n, temp, 10);*/
+	  sprintf(temp, "%d", n);
 	  buff[0]=cardSuit[denom_conv[j]];
 	  buff[1]='\0';
 	  strcat(temp, buff);
@@ -6671,9 +6820,9 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  strcat(presp->parContractsString[i], buff);
 
 	  if (denom_max < par_denom[i]) 
-	    max_lower = 8 - tu_max - 2;
+	    max_lower = 8 - tu_max - 1/*2*/;
 	  else
-	    max_lower = 8 - tu_max - 1;
+	    max_lower = 8 - tu_max /*- 1*/;
 
 	  /* max_lower is the maximal contract lowering, otherwise opponent contract is
 	  higher. It is already known that par_score is high enough to make
@@ -6681,14 +6830,15 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  To find the actual contract lowering allowed, it must be checked that the
 	  lowered contract still gets the score bonus points that is present in par score.*/
 
+	  sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	  /* Score for making the tentative lower par contract. */
 	  while (max_lower > 0) {
 	    if (denom_max < par_denom[i]) 
 	      sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, isvul);
 	    else
 	      sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, isvul);
 	    /* Score for undertricks needed to beat the tentative lower par contract.*/
-	    sc2 = rawscore(par_denom[i], par_tricks[i] - max_lower, isvul);
-	    /* Score for making the tentative lower par contract. */
+	    
 	    if (sc2 < sc1)
 	      break;
 	    else
@@ -6707,7 +6857,8 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 
 	  n = CalcMultiContracts(max_lower, 8);
 
-	  itoa(n, temp, 10);
+	  /*itoa(n, temp, 10);*/
+	  sprintf(temp, "%d", n);
 	  buff[0]=cardSuit[denom_conv[j]];
 	  buff[1]='\0';
 	  strcat(temp, buff);
