@@ -1,5 +1,5 @@
 
-/* DDS 2.4.0   A bridge double dummy solver.				      */
+/* DDS 2.4.1   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2014 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.        */
 /* The code for calculation of par score / contracts is based upon the	      */
@@ -6040,9 +6040,9 @@ int STDCALL CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * ta
   return res;
 }
 
-const int tables = MAXNOOFBOARDS / 20;
 
-int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter[5], struct ddTablesRes *resp,
+int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter[5], 
+  struct ddTablesRes *resp,
 	struct allParResults *presp) {
   /* mode = 0:	par calculation, vulnerability None
      mode = 1:	par calculation, vulnerability All
@@ -6051,33 +6051,44 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
 	 mode = -1:  no par calculation  */
 
   int h, s, k, m, ind, tr, first, res, rs, lastIndex=0, 
-	  lastBoardIndex[tables], okey=FALSE;
+	  lastBoardIndex[MAXNOOFBOARDS>>2], okey=FALSE, count=0;
   struct boards bo;
   struct solvedBoards solved;
+  int tables;
 
   int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable);
 
-  for (k=0; k<=5; k++) { 
-	if (!trumpFilter[k])
-	  okey=TRUE;
+  for (k=0; k<5; k++) { 
+    if (!trumpFilter[k]) {
+      okey=TRUE; 
+      count++;
+    }
   }
 
   if (!okey)
-	return -201; 
+    return -201;
+
+  switch (count) {
+    case 1:  tables=50; break;
+    case 2:  tables=25; break;
+    case 3:  tables=16; break;
+    case 4:  tables=12; break;
+    case 5:  tables=10; break;
+    default: tables=10;
+  }
 
   ind=0; 
 
   for (m=0; m<tables; m++) {
-	lastBoardIndex[tables]=ind;
     for (tr=4; tr>=0; tr--) {
-	  if (!trumpFilter[tr]) {
+      if (!trumpFilter[tr]) {
         for (first=0; first<=3; first++) {
-		  for (h=0; h<=3; h++)
+	  for (h=0; h<=3; h++)
             for (s=0; s<=3; s++)
-		      bo.deals[ind].remainCards[h][s]=dealsp->deals[m].cards[h][s];
-		  bo.deals[ind].first=first;
-		  bo.deals[ind].trump=tr;
-		  for (k=0; k<=2; k++) {
+	      bo.deals[ind].remainCards[h][s]=dealsp->deals[m].cards[h][s];
+	  bo.deals[ind].first=first;
+	  bo.deals[ind].trump=tr;
+	  for (k=0; k<=2; k++) {
             bo.deals[ind].currentTrickRank[k]=0;
             bo.deals[ind].currentTrickSuit[k]=0;
           }
@@ -6085,12 +6096,12 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
           bo.target[ind]=-1;
           bo.solutions[ind]=1;
           bo.mode[ind]=1;
-		  lastIndex=ind;
-		  lastBoardIndex[m]=ind;
+	  lastIndex=ind;
+	  lastBoardIndex[m]=ind;
           ind++;
-		}
+        }
       }
-	}
+    }
   }
 
   bo.noOfBoards=lastIndex+1;
@@ -6098,47 +6109,24 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
   res=SolveAllBoards4(&bo, &solved);
   if (res==1) {
     for (ind=0; ind<=lastIndex; ind++) {
-	  if (ind<=lastBoardIndex[0])
-        resp->results[0].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else if (ind<=lastBoardIndex[1])
-	    resp->results[1].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else if (ind<=lastBoardIndex[2])
-	    resp->results[2].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else if (ind<=lastBoardIndex[3])
-	    resp->results[3].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else if (ind<=lastBoardIndex[4])
-		resp->results[4].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else if (ind<=lastBoardIndex[5])
-        resp->results[5].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else if (ind<=lastBoardIndex[6])
-	    resp->results[6].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else if (ind<=lastBoardIndex[7])
-	    resp->results[7].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else if (ind<=lastBoardIndex[8])
-	    resp->results[8].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
-	  else 
-		resp->results[9].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	      13-solved.solvedBoard[ind].score[0];
+      for (k=0; k<=lastIndex; k++) {
+	if (ind<=lastBoardIndex[k]) {
+	  resp->results[k].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
+	    13-solved.solvedBoard[ind].score[0];
+	  break;
 	}
+      }
+    }
 
-	if ((mode > -1) && (mode < 4)) {
-	  /* Calculate par */
-	  for (k=0; k<tables; k++) {
-		rs=Par(&(resp->results[k]), &(presp->presults[k]), mode);
-	     /* vulnerable 0: None  1: Both  2: NS  3: EW */
+    if ((mode > -1) && (mode < 4)) {
+      /* Calculate par */
+      for (k=0; k<tables; k++) {
+        rs=Par(&(resp->results[k]), &(presp->presults[k]), mode);
+        /* vulnerable 0: None  1: Both  2: NS  3: EW */
 
-		if (rs!=1)
-		  return rs;
-	  }
+        if (rs!=1)
+	  return rs;
+      }
     }
     return 1;
   }
@@ -6149,10 +6137,26 @@ int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, int trump
     struct ddTablesRes *resp, struct allParResults *presp) {
   int res, k;
   struct ddTableDeals dls;
+  int tables, count=0;
 
   int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]);
 
-  for (k=0; k<MAXNOOFBOARDS / 20; k++)
+  for (k=0; k<5; k++) { 
+    if (!trumpFilter[k]) { 
+      count++;
+    }
+  }
+
+  switch (count) {
+    case 1:  tables=50; break;
+    case 2:  tables=25; break;
+    case 3:  tables=16; break;
+    case 4:  tables=12; break;
+    case 5:  tables=10; break;
+    default: tables=10;
+  }
+
+  for (k=0; k<tables; k++)
     if (ConvertFromPBN(dealsp->deals[k].cards, dls.deals[k].cards)!=1)
       return -99;
 

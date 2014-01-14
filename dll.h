@@ -39,7 +39,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		20400	/* Version 2.4.0. Allowing for 2 digit
+#define DDS_VERSION		20401	/* Version 2.4.1. Allowing for 2 digit
 					minor versions */
 
 #define PBN
@@ -298,7 +298,7 @@ struct ddTableDeal {
 };
 
 struct ddTableDeals {
-  struct ddTableDeal deals[MAXNOOFBOARDS / 20];
+  struct ddTableDeal deals[MAXNOOFBOARDS>>2];
 };
 
 struct ddTableDealPBN {
@@ -306,7 +306,7 @@ struct ddTableDealPBN {
 };
 
 struct ddTableDealsPBN {
-  struct ddTableDealPBN deals[MAXNOOFBOARDS / 20];
+  struct ddTableDealPBN deals[MAXNOOFBOARDS>>2];
 };
 
 struct ddTableResults {
@@ -314,7 +314,7 @@ struct ddTableResults {
 };
 
 struct ddTablesRes {
-  struct ddTableResults results[MAXNOOFBOARDS / 20];
+  struct ddTableResults results[MAXNOOFBOARDS>>2];
 };
 
 
@@ -475,10 +475,10 @@ EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN
 
 #ifdef PBN_PLUS
 EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp);
-EXTERN_C DLLEXPORT int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter[5], 
-    struct ddTablesRes *resp, struct allParResults *presp);
-EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, int trumpFilter[5], 
-    struct ddTablesRes *resp, struct allParResults *presp);
+EXTERN_C DLLEXPORT int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, 
+	int trumpFilter[5], struct ddTablesRes *resp, struct allParResults *presp);
+EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, 
+	int trumpFilter[5], struct ddTablesRes *resp, struct allParResults *presp);
 EXTERN_C DLLEXPORT int STDCALL CalcPar(struct ddTableDeal tableDeal, int vulnerable, 
     struct ddTableResults * tablep, struct parResults *presp);
 EXTERN_C DLLEXPORT int STDCALL CalcParPBN(struct ddTableDealPBN tableDealPBN, 

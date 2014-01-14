@@ -422,5 +422,9 @@ Adding the new functions CalcAllTables and CalcAllTablesPBN.
 Numerous fixes for better adaptation to Linux.
 Cleaning the code to remove some warnings given at code compilation.
 For Windows users, adding readable version information of the DDS DLL file. 
-     
+
+
+Release Notes DDS 2.4.1
+-----------------------  
+Updates of functions CalcAllTables and CalcAllTablesPBN for improved performance.   
 
