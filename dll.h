@@ -39,7 +39,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		20401	/* Version 2.4.1. Allowing for 2 digit
+#define DDS_VERSION		20402	/* Version 2.4.2. Allowing for 2 digit
 					minor versions */
 
 #define PBN
@@ -298,6 +298,7 @@ struct ddTableDeal {
 };
 
 struct ddTableDeals {
+  int noOfTables;
   struct ddTableDeal deals[MAXNOOFBOARDS>>2];
 };
 
@@ -306,6 +307,7 @@ struct ddTableDealPBN {
 };
 
 struct ddTableDealsPBN {
+  int noOfTables;
   struct ddTableDealPBN deals[MAXNOOFBOARDS>>2];
 };
 
@@ -314,6 +316,7 @@ struct ddTableResults {
 };
 
 struct ddTablesRes {
+  int noOfBoards;
   struct ddTableResults results[MAXNOOFBOARDS>>2];
 };
 

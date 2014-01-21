@@ -426,5 +426,9 @@ For Windows users, adding readable version information of the DDS DLL file.
 
 Release Notes DDS 2.4.1
 -----------------------  
-Updates of functions CalcAllTables and CalcAllTablesPBN for improved performance.   
+Updates of functions CalcAllTables and CalcAllTablesPBN for improved performance. 
+ 
 
+Release Notes DDS 2.4.2
+-----------------------  
+Fixing bugs in CalcAllTables, CalcAllTablesPBN and CalcPar.

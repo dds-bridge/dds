@@ -1,4 +1,4 @@
-CFLAGS=-g -Wall -O2
+CFLAGS=-g -Wall -O2 -std=c99 -fopenmp
 PREFIX=/usr/local
 
 all: libdds.a python

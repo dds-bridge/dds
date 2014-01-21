@@ -1,5 +1,5 @@
 
-/* DDS 2.4.1   A bridge double dummy solver.				      */
+/* DDS 2.4.2   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2014 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.        */
 /* The code for calculation of par score / contracts is based upon the	      */
@@ -6054,14 +6054,13 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
 	  lastBoardIndex[MAXNOOFBOARDS>>2], okey=FALSE, count=0;
   struct boards bo;
   struct solvedBoards solved;
-  int tables;
 
   int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable);
 
   for (k=0; k<5; k++) { 
     if (!trumpFilter[k]) {
       okey=TRUE; 
-      count++;
+	count++;
     }
   }
 
@@ -6069,25 +6068,25 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
     return -201;
 
   switch (count) {
-    case 1:  tables=50; break;
-    case 2:  tables=25; break;
-    case 3:  tables=16; break;
-    case 4:  tables=12; break;
-    case 5:  tables=10; break;
-    default: tables=10;
+    case 1:  if (dealsp->noOfTables > 50) return 202; break;
+    case 2:  if (dealsp->noOfTables > 25) return 202; break;
+    case 3:  if (dealsp->noOfTables > 16) return 202; break;
+    case 4:  if (dealsp->noOfTables > 12) return 202; break;
+    case 5:  if (dealsp->noOfTables > 10) return 202; break;
   }
 
-  ind=0; 
+  ind=0;
+  resp->noOfBoards=0;
 
-  for (m=0; m<tables; m++) {
+  for (m=0; m<dealsp->noOfTables; m++) {
     for (tr=4; tr>=0; tr--) {
       if (!trumpFilter[tr]) {
         for (first=0; first<=3; first++) {
 	  for (h=0; h<=3; h++)
             for (s=0; s<=3; s++)
 	      bo.deals[ind].remainCards[h][s]=dealsp->deals[m].cards[h][s];
-	  bo.deals[ind].first=first;
-	  bo.deals[ind].trump=tr;
+	      bo.deals[ind].first=first;
+	      bo.deals[ind].trump=tr;
 	  for (k=0; k<=2; k++) {
             bo.deals[ind].currentTrickRank[k]=0;
             bo.deals[ind].currentTrickSuit[k]=0;
@@ -6099,7 +6098,7 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
 	  lastIndex=ind;
 	  lastBoardIndex[m]=ind;
           ind++;
-        }
+	}
       }
     }
   }
@@ -6108,11 +6107,12 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
 
   res=SolveAllBoards4(&bo, &solved);
   if (res==1) {
+    resp->noOfBoards+=solved.noOfBoards;
     for (ind=0; ind<=lastIndex; ind++) {
       for (k=0; k<=lastIndex; k++) {
 	if (ind<=lastBoardIndex[k]) {
 	  resp->results[k].resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
-	    13-solved.solvedBoard[ind].score[0];
+	     13-solved.solvedBoard[ind].score[0];
 	  break;
 	}
       }
@@ -6120,11 +6120,10 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
 
     if ((mode > -1) && (mode < 4)) {
       /* Calculate par */
-      for (k=0; k<tables; k++) {
-        rs=Par(&(resp->results[k]), &(presp->presults[k]), mode);
-        /* vulnerable 0: None  1: Both  2: NS  3: EW */
-
-        if (rs!=1)
+      for (k=0; k<dealsp->noOfTables; k++) {
+	rs=Par(&(resp->results[k]), &(presp->presults[k]), mode);
+	/* vulnerable 0: None  1: Both  2: NS  3: EW */
+	if (rs!=1)
 	  return rs;
       }
     }
@@ -6137,33 +6136,20 @@ int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, int trump
     struct ddTablesRes *resp, struct allParResults *presp) {
   int res, k;
   struct ddTableDeals dls;
-  int tables, count=0;
 
   int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]);
 
-  for (k=0; k<5; k++) { 
-    if (!trumpFilter[k]) { 
-      count++;
-    }
-  }
-
-  switch (count) {
-    case 1:  tables=50; break;
-    case 2:  tables=25; break;
-    case 3:  tables=16; break;
-    case 4:  tables=12; break;
-    case 5:  tables=10; break;
-    default: tables=10;
-  }
-
-  for (k=0; k<tables; k++)
+  for (k=0; k<dealsp->noOfTables; k++)
     if (ConvertFromPBN(dealsp->deals[k].cards, dls.deals[k].cards)!=1)
       return -99;
+
+  dls.noOfTables=dealsp->noOfTables;
 
   res=CalcAllTables(&dls, mode, trumpFilter, resp, presp);
 
   return res;
 }
+
 
 int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]) {
   int bp=0, first, card, hand, handRelFirst, suitInHand, h, s;
@@ -6239,6 +6225,7 @@ int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]) {
   }
   return 1;
 }
+
 
 int IsCard(char cardChar)   {
   switch (cardChar)  {
@@ -6336,7 +6323,7 @@ int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp) 
       bo.deals[k].currentTrickRank[i]=bop->deals[k].currentTrickRank[i];
     }
     if (ConvertFromPBN(bop->deals[k].remainCards, bo.deals[k].remainCards)!=1)
-	  return -99;
+      return -99;
   }
 
   res=SolveAllBoards1(&bo, solvedp);
@@ -6572,7 +6559,8 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
         tt = (t1 > t2) ? t1 : t2;
 
 	tu_max=0;
-	for (m=4; m>=0; m--) {
+	
+	for (m=0; m<=4; m++) {
 	  t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
           t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
 	  tu = (t3 > t4) ? t3 : t4;
@@ -6641,9 +6629,9 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	strcat(presp->parContractsString[i], buff);
 
 	if (denom_max < par_denom[i]) 
-	  max_lower = par_tricks[i] - tu_max - 1/*2*/;
+	  max_lower = par_tricks[i] - tu_max - 1;
 	else
-	  max_lower = par_tricks[i] - tu_max /*- 1*/;
+	  max_lower = par_tricks[i] - tu_max;
 
 	/* max_lower is the maximal contract lowering, otherwise opponent contract is
 	higher. It is already known that par_score is high enough to make
@@ -6659,7 +6647,6 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  else
 	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, isvul);
 	  /* Score for undertricks needed to beat the tentative lower par contract.*/
-	  /*sc2 = rawscore(par_denom[i], par_tricks[i] - max_lower, isvul);*/
 	  if (sc2 < sc1)
 	    break;
 	  else
@@ -6732,7 +6719,7 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 
 	  tu_max=0;
 
-	  for (m=4; m>=0; m--) {
+	  for (m=0; m<=4; m++) {
 	    t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
             t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
 	    tu = (t3 > t4) ? t3 : t4;
@@ -6747,10 +6734,10 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 
 	  strcat(presp->parContractsString[i], buff);
 
-	  if (denom_max < par_denom[i]) 
-	    max_lower = 9 - tu_max - 1/*2*/;
+	  if (denom_max < j) 
+	    max_lower = 9 - tu_max - 1;
 	  else
-	    max_lower = 9 - tu_max /*- 1*/;
+	    max_lower = 9 - tu_max;
 
 	  /* max_lower is the maximal contract lowering, otherwise opponent contract is
 	  higher. It is already known that par_score is high enough to make
@@ -6761,12 +6748,11 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
 	  /* Score for making the tentative lower par contract. */
 	  while (max_lower > 0) {
-	    if (denom_max < par_denom[i]) 
-	      sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, isvul);
+	    if (denom_max < j) 
+		  sc1 = -rawscore(-1, 9/*par_tricks[i] + 1*/ - max_lower - tu_max, isvul);
 	    else
-	      sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, isvul);
+		  sc1 = -rawscore(-1, 9 - max_lower - tu_max + 1, isvul);
 	    /* Score for undertricks needed to beat the tentative lower par contract.*/
-	    /* sc2 = rawscore(par_denom[i], par_tricks[i] - max_lower, isvul);*/
 	    if (sc2 < sc1)
 	      break;
 	    else
@@ -6808,7 +6794,8 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  IniSidesString(dr, i, t1, t2, buff);
 
 	  tu_max=0;
-	  for (m=4; m>=0; m--) {
+	  /*for (m=4; m>=0; m--) {*/
+	  for (m=0; m<=4; m++) {
 	    t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
             t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
 	    tu = (t3 > t4) ? t3 : t4;
@@ -6823,10 +6810,10 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 
 	  strcat(presp->parContractsString[i], buff);
 
-	  if (denom_max < par_denom[i]) 
-	    max_lower = 8 - tu_max - 1/*2*/;
+	  if (denom_max < j) 
+	    max_lower = 8 - tu_max - 1;
 	  else
-	    max_lower = 8 - tu_max /*- 1*/;
+	    max_lower = 8 - tu_max;
 
 	  /* max_lower is the maximal contract lowering, otherwise opponent contract is
 	  higher. It is already known that par_score is high enough to make
@@ -6837,10 +6824,10 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
 	  /* Score for making the tentative lower par contract. */
 	  while (max_lower > 0) {
-	    if (denom_max < par_denom[i]) 
-	      sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, isvul);
+	    if (denom_max < j) 
+	      sc1 = -rawscore(-1, 8 - max_lower - tu_max, isvul);
 	    else
-	      sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, isvul);
+	      sc1 = -rawscore(-1, 8 - max_lower - tu_max + 1, isvul);
 	    /* Score for undertricks needed to beat the tentative lower par contract.*/
 	    
 	    if (sc2 < sc1)

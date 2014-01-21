@@ -1,4 +1,4 @@
-DDS 2.4.0,  Bo Haglund 2014-01-09
+DDS 2.4.2,  Bo Haglund 2014-01-09
 
 For Win32, DDS compiles with Visual C++ 2010 and 2012 Express editions 
 and the TDM-GCC/Mingw port of gcc.
@@ -54,7 +54,7 @@ The possible configurens thus are:
 2)  "PBN":  Support for SolveBoardPBN and CalcDDtablePBN.
 3) None of these definitions:  No support for any of the above 3 functions.
 
-Staying with the previous configuration might be needed when 2.4.0 is to replace an 
+Staying with the previous configuration might be needed when 2.4.2 is to replace an 
 older 2.x.y version, and the application using DDS cannot handle a changed interface.
 
 
