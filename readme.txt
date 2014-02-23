@@ -1,4 +1,4 @@
-DDS 2.4.2,  Bo Haglund 2014-01-09
+DDS 2.4,  Bo Haglund 2014-01-09
 
 For Win32, DDS compiles with Visual C++ 2010 and 2012 Express editions 
 and the TDM-GCC/Mingw port of gcc.

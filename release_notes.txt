@@ -432,3 +432,12 @@ Updates of functions CalcAllTables and CalcAllTablesPBN for improved performance
 Release Notes DDS 2.4.2
 -----------------------  
 Fixing bugs in CalcAllTables, CalcAllTablesPBN and CalcPar.
+
+
+Release Notes DDS 2.4.3
+-----------------------  
+Problem pointed out by John Goacher with missing par contract has been corrected.
+Tuned code for increased performance, especially in function MoveGen and in
+the functions WeightAlloc.
+
+

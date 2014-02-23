@@ -39,7 +39,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		20402	/* Version 2.4.2. Allowing for 2 digit
+#define DDS_VERSION		20403	/* Version 2.4.3. Allowing for 2 digit
 					minor versions */
 
 #define PBN
@@ -90,12 +90,12 @@ typedef long long __int64;
 #define NSIZE	100000
 #define WSIZE   100000
 #define LSIZE   20000
-#define NINIT	250000
-#define WINIT	700000
-#define LINIT	50000
+#define NINIT	/*450000*/ 250000
+#define WINIT	/*1000000*/ 700000
+#define LINIT   /*80000*/ 50000
 
 #define SIMILARDEALLIMIT	5
-#define SIMILARMAXWINNODES  700000
+#define SIMILARMAXWINNODES  /*1000000*/ 700000
 
 #define MAXNOOFBOARDS		200/*100*/
 
@@ -127,8 +127,8 @@ struct gameInfo  {          /* All info of a particular deal */
 
 
 struct moveType {
-  unsigned char suit;
-  unsigned char rank;
+  int /*unsigned char*/ suit;
+  int /*unsigned char*/ rank;
   unsigned short int sequence;          /* Whether or not this move is
                                         the first in a sequence */
   short int weight;                     /* Weight used at sorting */
@@ -187,10 +187,10 @@ struct pos {
   unsigned short int winRanks[50][4];  /* Cards that win by rank,
                                        indices are depth and suit */
   unsigned char length[4][4];
-  char ubound;
-  char lbound;
-  char bestMoveSuit;
-  char bestMoveRank;
+  int /*char*/ ubound;
+  int /*char*/ lbound;
+  int /*char*/ bestMoveSuit;
+  int /*char*/ bestMoveRank;
   int first[50];                 /* Hand that leads the trick for each ply*/
   int high[50];                  /* Hand that is presently winning the trick */
   struct moveType move[50];      /* Presently winning move */              
@@ -344,7 +344,9 @@ struct localVarType {
   int nodeTypeStore[4];
   int trump;
   unsigned short int lowestWin[50][4];
+  #ifdef STAT
   int nodes;
+  #endif
   int trickNodes;
   int no[50];
   int iniDepth;
@@ -501,8 +503,8 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
   int depth, int trump, struct movePlyType *mply, int thrId);
 int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mply, int thrId);
 void MergeSort(int n, struct moveType *a);
-inline int WinningMove(struct moveType * mvp1, struct moveType * mvp2, int trump, int thrId);
-inline int WinningMoveNT(struct moveType * mvp1, struct moveType * mvp2, int thrId);
+inline int WinningMove(struct moveType * mvp1, struct moveType * mvp2, int trump);
+inline int WinningMoveNT(struct moveType * mvp1, struct moveType * mvp2);
 int AdjustMoveList(int thrId);
 int QuickTricks(struct pos * posPoint, int hand, 
 	int depth, int target, int trump, int *result, int thrId);
