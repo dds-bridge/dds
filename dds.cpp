@@ -1,5 +1,5 @@
 
-/* DDS 2.4.3   A bridge double dummy solver.				      */
+/* DDS 2.5.0   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2014 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.        */
 /* The code for calculation of par score / contracts is based upon the	      */
@@ -5695,13 +5695,13 @@ void ReceiveTTstore(struct pos *posPoint, struct nodeCardsType * cardsP,
 }
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(_OPENMP)
 HANDLE solveAllEvents[MAXNOOFTHREADS];
 struct paramType param;
 LONG volatile threadIndex;
 LONG volatile current;
 
-const long chunk = 4;
+long chunk = 4;
 
 DWORD CALLBACK SolveChunkDDtable (void *) {
   struct futureTricks fut[MAXNOOFBOARDS];
@@ -5793,6 +5793,64 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
     return param.error;
 }
 
+int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkSize) {
+  int k/*, errCode*/;
+  DWORD res;
+  DWORD solveAllWaitResult;
+
+  current = 0;
+  threadIndex = -1;
+  chunk = chunkSize;
+
+  if (bop->noOfBoards > MAXNOOFBOARDS)
+    return -101;
+
+    for (k = 0; k<noOfCores; k++) {
+      solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
+      if (solveAllEvents[k] == 0) {
+	/*errCode=GetLastError();*/
+	return -102;
+      }
+    }
+
+    param.bop = bop; param.solvedp = solvedp; param.noOfBoards = bop->noOfBoards;
+
+    for (k = 0; k<MAXNOOFBOARDS; k++)
+      solvedp->solvedBoard[k].cards = 0;
+
+    for (k = 0; k<noOfCores; k++) {
+      res = QueueUserWorkItem(SolveChunkDDtable, NULL, WT_EXECUTELONGFUNCTION);
+      if (res != 1) {
+	/*errCode=GetLastError();*/
+	return res;
+      }
+    }
+
+    solveAllWaitResult = WaitForMultipleObjects(noOfCores, solveAllEvents, TRUE, INFINITE);
+    if (solveAllWaitResult != WAIT_OBJECT_0) {
+      /*errCode=GetLastError();*/
+      return -103;
+    }
+
+    for (k = 0; k<noOfCores; k++) {
+      CloseHandle(solveAllEvents[k]);
+    }
+
+    /* Calculate number of solved boards. */
+
+    solvedp->noOfBoards = 0;
+    for (k = 0; k<MAXNOOFBOARDS; k++) {
+      if (solvedp->solvedBoard[k].cards != 0)
+	solvedp->noOfBoards++;
+    }
+
+    if (param.error == 0)
+      return 1;
+    else
+      return param.error;
+}
+
+
 DWORD CALLBACK SolveChunk (void *) {
   struct futureTricks fut[MAXNOOFBOARDS];
   int thid;
@@ -5821,6 +5879,8 @@ DWORD CALLBACK SolveChunk (void *) {
   return 1;
 
 }
+
+
 
 int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   int k/*, errCode*/;
@@ -5879,6 +5939,8 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   else
     return param.error;
 }
+
+
 #else
 int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
   int k, i, res, chunk, fail;
@@ -5930,6 +5992,59 @@ int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
   return 1;
 }
 
+
+int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkSize) {
+  int k, i, res, chunk, fail;
+  struct futureTricks fut[MAXNOOFBOARDS];
+
+  chunk=chunkSize; fail=1;
+
+  if (bop->noOfBoards > MAXNOOFBOARDS)
+    return -101;
+
+  for (i=0; i<MAXNOOFBOARDS; i++)
+      solvedp->solvedBoard[i].cards=0;
+
+#ifdef _OPENMP
+  omp_set_num_threads(noOfCores);	/* Added after suggestion by Dirk Willecke. */
+#endif
+
+  #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
+  {
+
+    #pragma omp for schedule(dynamic, chunk)
+
+    for (k=0; k<bop->noOfBoards; k++) {
+      res=SolveBoard(bop->deals[k], bop->target[k], bop->solutions[k],
+        bop->mode[k], &fut[k], 
+#ifdef _OPENMP
+		omp_get_thread_num()
+#else
+		0
+#endif
+		);
+      if (res==1) {
+        solvedp->solvedBoard[k]=fut[k];
+      }
+      else
+        fail=res;
+    }
+  }
+
+  if (fail!=1)
+    return fail;
+
+  solvedp->noOfBoards=0;
+  for (i=0; i<MAXNOOFBOARDS; i++) {
+    if (solvedp->solvedBoard[i].cards!=0)
+      solvedp->noOfBoards++;
+  }
+
+  return 1;
+}
+
+
+
 int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   int k, i, res, chunk, fail;
   struct futureTricks fut[MAXNOOFBOARDS];
@@ -5980,6 +6095,7 @@ int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
   return 1;
 }
 #endif
+
 
 int STDCALL CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * tablep) {
 
@@ -6312,6 +6428,32 @@ int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp) 
   res=SolveAllBoards1(&bo, solvedp);
 
   return res;
+}
+
+int STDCALL SolveAllChunks(struct boardsPBN *bop, struct solvedBoards *solvedp, int chunkSize) {
+  struct boards bo;
+  int k, i, res;
+
+  if (chunkSize < 1)
+    return -201;
+
+  bo.noOfBoards = bop->noOfBoards;
+  for (k = 0; k<bop->noOfBoards; k++) {
+    bo.mode[k] = bop->mode[k];
+    bo.solutions[k] = bop->solutions[k];
+    bo.target[k] = bop->target[k];
+    bo.deals[k].first = bop->deals[k].first;
+    bo.deals[k].trump = bop->deals[k].trump;
+    for (i = 0; i <= 2; i++) {
+      bo.deals[k].currentTrickSuit[i] = bop->deals[k].currentTrickSuit[i];
+      bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
+    }
+    if (ConvertFromPBN(bop->deals[k].remainCards, bo.deals[k].remainCards) != 1)
+      return -99;
+    }
+
+    res = SolveAllBoardsN(&bo, solvedp, chunkSize);
+    return res;
 }
 #endif
 

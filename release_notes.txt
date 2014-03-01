@@ -441,3 +441,8 @@ Tuned code for increased performance, especially in function MoveGen and in
 the functions WeightAlloc.
 
 
+Release Notes DDS 2.5.0
+-----------------------  
+Added function SolveAllChunks.
+
+

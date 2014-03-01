@@ -1,4 +1,4 @@
-DDS 2.4,  Bo Haglund 2014-01-09
+DDS 2.4,  Bo Haglund 2014-03-01
 
 For Win32, DDS compiles with Visual C++ 2010 and 2012 Express editions 
 and the TDM-GCC/Mingw port of gcc.
@@ -45,16 +45,18 @@ Compiling options:
 The SolveBoard and CalcDDtable are included in all DDS compilation options.
 The "PBN" and the "PBN_PLUS" definitions are included in the header fill dll.h.
 Defining "PBN" means that the functions SolveBoardPBN and CalcDDtablePBN are supported.
-Defining "PBN_PLUS" as well means that also the SolveAllBoards function,
-ParCalc and ParCalcPBN are supported.
+Defining "PBN_PLUS" as well means that also the functions SolveAllBoards,
+SolveAllChunks, ParCalc and ParCalcPBN are supported.
 
-The possible configurens thus are:
-1)  "PBN" and "PBN_PLUS":  Support for SolveBoardPBN, CalcDDtablePBN, SolveAllBoards,
-     SolveAllTables, SolveAllTablesPBN, ParCalc and ParCalcPBN.
-2)  "PBN":  Support for SolveBoardPBN and CalcDDtablePBN.
-3) None of these definitions:  No support for any of the above 3 functions.
+The possible configurations thus are:
 
-Staying with the previous configuration might be needed when 2.4.2 is to replace an 
+1)   None of the definitions "PBN" and "PBN_plus": 
+     only the basic functions SolveBoard and CalcDDtable are supported.
+2)  "PBN":  Also support for SolveBoardPBN and CalcDDtablePBN.
+3)  "PBN" and "PBN_PLUS":  As for "PBN" and also supporting SolveAllBoards,
+     SolveAllChunks, SolveAllTables, SolveAllTablesPBN, ParCalc and ParCalcPBN.
+
+Staying with the previous configuration might be needed when 2.5.0 is to replace an 
 older 2.x.y version, and the application using DDS cannot handle a changed interface.
 
 

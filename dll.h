@@ -17,7 +17,7 @@
 #endif
 
 #if defined(_WIN32) && defined(__MINGW32__) 
-#define WINVER 0x500	/* Dirty trick, but it works. */
+#define WINVER 0x500	
 #    include <windows.h>
 #    include <process.h>
 #endif
@@ -27,20 +27,23 @@
 #    include <process.h>
 #endif
 
-#if defined(_MSC_VER)
-#    include <intrin.h>
-#else
-#    include <omp.h>
-#endif
-
 #ifdef __linux__   
 #    include <unistd.h>
 #endif
 
+#define DDS_OPENMP   
+
+#if defined(DDS_OPENMP)
+#    include <omp.h>
+#endif
+
+#if defined(_MSC_VER)
+#    include <intrin.h>
+#endif
+
 /* end of portability-macros section */
 
-#define DDS_VERSION		20403	/* Version 2.4.3. Allowing for 2 digit
-					minor versions */
+#define DDS_VERSION	20500	/* Version 2.5.0. Allowing for 2 digit minor versions */
 
 #define PBN
 
@@ -90,12 +93,12 @@ typedef long long __int64;
 #define NSIZE	100000
 #define WSIZE   100000
 #define LSIZE   20000
-#define NINIT	/*450000*/ 250000
-#define WINIT	/*1000000*/ 700000
-#define LINIT   /*80000*/ 50000
+#define NINIT	250000
+#define WINIT	700000
+#define LINIT   50000
 
 #define SIMILARDEALLIMIT	5
-#define SIMILARMAXWINNODES  /*1000000*/ 700000
+#define SIMILARMAXWINNODES      700000
 
 #define MAXNOOFBOARDS		200/*100*/
 
@@ -127,8 +130,8 @@ struct gameInfo  {          /* All info of a particular deal */
 
 
 struct moveType {
-  int /*unsigned char*/ suit;
-  int /*unsigned char*/ rank;
+  int suit;
+  int rank;
   unsigned short int sequence;          /* Whether or not this move is
                                         the first in a sequence */
   short int weight;                     /* Weight used at sorting */
@@ -187,10 +190,10 @@ struct pos {
   unsigned short int winRanks[50][4];  /* Cards that win by rank,
                                        indices are depth and suit */
   unsigned char length[4][4];
-  int /*char*/ ubound;
-  int /*char*/ lbound;
-  int /*char*/ bestMoveSuit;
-  int /*char*/ bestMoveRank;
+  int ubound;
+  int lbound;
+  int bestMoveSuit;
+  int bestMoveRank;
   int first[50];                 /* Hand that leads the trick for each ply*/
   int high[50];                  /* Hand that is presently winning the trick */
   struct moveType move[50];      /* Presently winning move */              
@@ -480,6 +483,7 @@ EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN
 
 #ifdef PBN_PLUS
 EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp);
+EXTERN_C DLLEXPORT int STDCALL SolveAllChunks(struct boardsPBN *bop, struct solvedBoards *solvedp, int chunkSize);
 EXTERN_C DLLEXPORT int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, 
 	int trumpFilter[5], struct ddTablesRes *resp, struct allParResults *presp);
 EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, 
@@ -539,6 +543,7 @@ void AddWinSet(int thrId);
 void PrintDeal(FILE *fp, unsigned short ranks[4][4]);
 
 int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp);
+int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkSize);
 int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp);
 
 int IsCard(char cardChar);
