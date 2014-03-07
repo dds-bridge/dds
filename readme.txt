@@ -56,7 +56,7 @@ The possible configurations thus are:
 3)  "PBN" and "PBN_PLUS":  As for "PBN" and also supporting SolveAllBoards,
      SolveAllChunks, SolveAllTables, SolveAllTablesPBN, ParCalc and ParCalcPBN.
 
-Staying with the previous configuration might be needed when 2.5.0 is to replace an 
+Staying with the previous configuration might be needed when 2.5.1 is to replace an 
 older 2.x.y version, and the application using DDS cannot handle a changed interface.
 
 

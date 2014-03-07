@@ -31,19 +31,16 @@
 #    include <unistd.h>
 #endif
 
-#define DDS_OPENMP   
-
-#if defined(DDS_OPENMP)
-#    include <omp.h>
-#endif
 
 #if defined(_MSC_VER)
 #    include <intrin.h>
+#else
+#    include <omp.h>
 #endif
 
 /* end of portability-macros section */
 
-#define DDS_VERSION	20500	/* Version 2.5.0. Allowing for 2 digit minor versions */
+#define DDS_VERSION	20501	/* Version 2.5.1. Allowing for 2 digit minor versions */
 
 #define PBN
 
@@ -523,7 +520,7 @@ struct nodeCardsType * FindSOP(struct pos * posPoint,
 	int target, int tricks, int * valp, int thrId);  
 struct nodeCardsType * BuildPath(struct pos * posPoint, 
   struct posSearchType *nodep, int * result, int thrId);
-void BuildSOP(struct pos * posPoint, int tricks, int firstHand, int target,
+void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firstHand, int target,
   int depth, int scoreFlag, int score, int thrId);
 struct posSearchType * SearchLenAndInsert(struct posSearchType
 	* rootp, long long key, int insertNode, int *result, int thrId);  

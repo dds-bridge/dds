@@ -445,4 +445,9 @@ Release Notes DDS 2.5.0
 -----------------------  
 Added function SolveAllChunks.
 
+Release Notes DDS 2.5.1
+-----------------------  
+The Windows DDS DLL always uses the Windows API for implementing the multithread
+functions (i.e. OpenMP is not used for Windows).
+
 

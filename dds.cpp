@@ -1,5 +1,5 @@
 
-/* DDS 2.5.0   A bridge double dummy solver.				      */
+/* DDS 2.5.1   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2014 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.        */
 /* The code for calculation of par score / contracts is based upon the	      */
@@ -1395,13 +1395,13 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
   struct winCardType * np;
   struct posSearchType * pp;
   struct nodeCardsType  * tempP;
-  struct movePlyType *mply;
+  struct movePlyType *mply=&localVar[thrId].movePly[depth];
   unsigned short int aggr[4];
   long long suitLengths;
 
   struct evalType Evaluate(struct pos * posPoint, int trump, int thrId);
-  void Make(struct pos * posPoint, unsigned short int trickCards[4],
-    int depth, int trump, struct movePlyType *mply, int thrId);
+  /*void Make(struct pos * posPoint, unsigned short int trickCards[4],
+    int depth, int trump, struct movePlyType *mply, int thrId);*/
   void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, int thrId);
 
   /*cardsP=NULL;*/
@@ -1758,7 +1758,7 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
     return value;
   }
   else {
-    mply=&localVar[thrId].movePly[depth];
+    /*mply=&localVar[thrId].movePly[depth];*/
     moveExists=MoveGen(posPoint, depth, trump, mply, thrId);
 
 /*#if 0*/
@@ -1806,7 +1806,7 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
 	      }
 	      for (ss=0; ss<=3; ss++)
 		posPoint->winRanks[depth+1][ss]|=makeWinRank[ss];
-	      Undo(posPoint, depth+1, &localVar[thrId].movePly[depth+1],thrId);
+	      Undo(posPoint, depth+1, mply/*&localVar[thrId].movePly[depth+1]*/,thrId);
 	      return TRUE;
 	    }
 	    else if ((localVar[thrId].nodeTypeStore[hand]==MINNODE)&&(scoreFlag==0)) {
@@ -1819,11 +1819,12 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
 	      }
 	      for (ss=0; ss<=3; ss++)
 		posPoint->winRanks[depth+1][ss]|=makeWinRank[ss];
-	      Undo(posPoint, depth+1, &localVar[thrId].movePly[depth+1], thrId);
+	      Undo(posPoint, depth+1, mply/*&localVar[thrId].movePly[depth+1]*/, thrId);
 		return FALSE;
 	    }
 	    else {
-	      localVar[thrId].movePly[depth+1].move[localVar[thrId].movePly[depth+1].current].weight+=100;
+	      mply->move[mply->current].weight+=100;
+	      /*localVar[thrId].movePly[depth+1].move[localVar[thrId].movePly[depth+1].current].weight+=100;*/
 	      ready=TRUE;
 	    }
 	  }
@@ -1911,7 +1912,7 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
       else
 	k=target-1;
       if (depth!=localVar[thrId].iniDepth)
-        BuildSOP(posPoint, depth>>2, hand, target, depth,
+        BuildSOP(posPoint, suitLengths, depth>>2, hand, target, depth,
           value, k, thrId);
       if (localVar[thrId].clearTTflag) {
          /* Wipe out the TT dynamically allocated structures
@@ -3574,10 +3575,6 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
            ((posPoint->secondBest[suit].hand!=rho[first])
            ||(suitCountRH==1)))
           weight=suitWeightDelta+45+rRank;
-
-        /* Encourage playing second highest rank if hand also has
-        third highest rank. */
-
         else
           weight=suitWeightDelta+18+rRank;
 
@@ -3635,10 +3632,6 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
         else if (posPoint->winner[suit].hand==first) {
           weight=suitWeightDelta-17+rRank;
         }
-
-	/* Encourage playing second highest rank if hand also has
-	third highest rank. */
-
         else if ((mp->sequence)&&
           (mp->rank==posPoint->secondBest[suit].rank)) 
 	  weight=suitWeightDelta+48;
@@ -5197,7 +5190,7 @@ struct posSearchType * SearchLenAndInsert(struct posSearchType
 
 
 
-void BuildSOP(struct pos * posPoint, int tricks, int firstHand, int target,
+void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firstHand, int target,
   int depth, int scoreFlag, int score, int thrId) {
   int hh, res, wm;
   unsigned short int w;
@@ -5258,12 +5251,12 @@ void BuildSOP(struct pos * posPoint, int tricks, int firstHand, int target,
     }
   }
 
-  long long suitLengths=0;
+  /*long long suitLengths=0;
   for (int s=0; s<=2; s++)
     for (hh=0; hh<=3; hh++) {
       suitLengths<<=4;
       suitLengths|=posPoint->length[hh][s];
-    }
+    }*/
 
   np=SearchLenAndInsert(localVar[thrId].rootnp[tricks][firstHand],
 	 suitLengths, TRUE, &res, thrId);
@@ -5361,11 +5354,10 @@ int CheckDeal(struct moveType * cardp, int thrId) {
 int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrId) {
   /* Returns TRUE if at least one move remains to be
   searched, otherwise FALSE is returned. */
+
   unsigned short int lw;
   int suit;
-
-  int mcurrent=mply->current;
-  struct moveType currMove=mply->move[mcurrent];
+  struct moveType currMove=mply->move[mply->current];
 
   if (localVar[thrId].lowestWin[depth][currMove.suit]==0) {
     /* A small card has not yet been identified for this suit. */
@@ -5379,9 +5371,8 @@ int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrI
       localVar[thrId].lowestWin[depth][currMove.suit]=lw;
       while (mply->current <= (mply->last-1)) {
 	mply->current++;
-	mcurrent=mply->current;
-	if (bitMapRank[mply->move[mcurrent].rank] >=
-	  localVar[thrId].lowestWin[depth][mply->move[mcurrent].suit])
+	if (bitMapRank[mply->move[mply->current].rank] >=
+	  localVar[thrId].lowestWin[depth][mply->move[mply->current].suit])
 	  return TRUE;
       }
       return FALSE;
@@ -5389,9 +5380,8 @@ int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrI
     else {
       while (mply->current <= (mply->last-1)) {
 	mply->current++;
-	mcurrent=mply->current;
-	suit=mply->move[mcurrent].suit;
-	if ((currMove.suit==suit) || (bitMapRank[mply->move[mcurrent].rank] >=
+	suit=mply->move[mply->current].suit;
+	if ((currMove.suit==suit) || (bitMapRank[mply->move[mply->current].rank] >=
 		localVar[thrId].lowestWin[depth][suit]))
 	  return TRUE;
       }
@@ -5401,9 +5391,8 @@ int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrI
   else {
     while (mply->current<=(mply->last-1)) {
       mply->current++;
-      mcurrent=mply->current;
-      if (bitMapRank[mply->move[mcurrent].rank] >=
-	    localVar[thrId].lowestWin[depth][mply->move[mcurrent].suit])
+      if (bitMapRank[mply->move[mply->current].rank] >=
+	    localVar[thrId].lowestWin[depth][mply->move[mply->current].suit])
 	return TRUE;
     }
     return FALSE;
@@ -5695,7 +5684,7 @@ void ReceiveTTstore(struct pos *posPoint, struct nodeCardsType * cardsP,
 }
 #endif
 
-#if defined(_WIN32) && !defined(_OPENMP)
+#if defined(_WIN32)
 HANDLE solveAllEvents[MAXNOOFTHREADS];
 struct paramType param;
 LONG volatile threadIndex;
