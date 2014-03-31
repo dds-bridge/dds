@@ -31,11 +31,11 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		10118	/* Version 1.1.18. Allowing for 2 digit
+#define DDS_VERSION		10119	/* Version 1.1.19. Allowing for 2 digit
 					minor versions */
 /*#define BENCH*/
 
-/*#define PBN*/
+#define PBN
 
 #define PLUSVER
 
@@ -253,6 +253,19 @@ struct ddTableResults {
   int resTable[5][4];
 };
 
+struct parResults {
+  char parScore[2][16];	/* index = 0 is NS view and index = 1 is EW view. */
+  char parContractsString[2][128]; /* index = 0 is NS view and index = 1 
+				      is EW view. By “view” is here meant 
+				      which side that starts the bidding. */
+};
+
+struct par_suits_type {
+  int suit;
+  int tricks;
+  int score;
+}; 
+
 
 extern struct gameInfo game;
 /*extern int newDeal;*/
@@ -332,6 +345,10 @@ EXTERN_C DLLEXPORT int STDCALL CalcDDtable(struct ddTableDeal tableDeal,
   struct ddTableResults * tablep);
 EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN, 
   struct ddTableResults * tablep);
+EXTERN_C DLLEXPORT int STDCALL CalcPar(struct ddTableDeal tableDeal, int vulnerable, 
+    struct ddTableResults * tablep, struct parResults *presp);
+EXTERN_C DLLEXPORT int STDCALL CalcParPBN(struct ddTableDealPBN tableDealPBN, 
+  struct ddTableResults * tablep, int vulnerable, struct parResults *presp);
 #else 
   EXTERN_C DLLEXPORT int STDCALL SolveBoard(struct deal dl, 
   int target, int solutions, int mode, struct futureTricks *futp);
@@ -348,7 +365,7 @@ void InitSearch(struct pos * posPoint, int depth,
   struct moveType startMoves[], int first, int mtd);
 int ABsearch(struct pos * posPoint, int target, int depth);
 void Make(struct pos * posPoint, unsigned short int trickCards[4], 
-  int depth);
+  int depth, struct movePlyType *mply);
 int MoveGen(struct pos * posPoint, int depth);
 void MergeSort(int n, struct moveType *a);
 inline int WinningMove(struct moveType * mvp1, struct moveType * mvp2);
@@ -376,7 +393,8 @@ int CheckDeal(struct moveType * cardp);
 int InvBitMapRank(unsigned short bitMap);
 int InvWinMask(int mask);
 void ReceiveTTstore(struct pos *posPoint, struct nodeCardsType * cardsP, int target, int depth);
-int NextMove(struct pos *posPoint, int depth); 
+int NextMove(struct pos *posPoint, int depth);
+/*int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply);*/ 
 int DumpInput(int errCode, struct deal dl, int target, int solutions, int mode); 
 void Wipe(void);
 void AddNodeSet(void);

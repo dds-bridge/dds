@@ -1,6 +1,6 @@
 
-/* DDS 1.1.18   A bridge double dummy solver.				      */
-/* Copyright (C) 2006-2012 by Bo Haglund                                      */
+/* DDS 1.1.19   A bridge double dummy solver.				      */
+/* Copyright (C) 2006-2014 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
 /* Licensed under the Apache License, Version 2.0 (the "License");	      */
@@ -59,6 +59,10 @@ struct posSearchType *rootnp[14][4];
 struct winCardType **pw;
 struct nodeCardsType **pn;
 struct posSearchType **pl;
+
+int stat_contr[5]={0,0,0,0,0};
+int max_low[3][8];  /* index 1: 0=NT, 1=Major, 2=Minor  index 2: contract level 1-7 */
+
 
 #ifdef _MANAGED
 #pragma managed(push, off)
@@ -914,6 +918,14 @@ void InitStart(int gb_ram, int ncores) {
 
   cardHand[0]='N'; cardHand[1]='E'; cardHand[2]='S'; cardHand[3]='W';
 
+  max_low[0][0]=0; max_low[1][0]=0; max_low[2][0]=0;
+  max_low[0][1]=0; max_low[1][1]=0; max_low[2][1]=0;
+  max_low[0][2]=1; max_low[1][2]=1; max_low[2][2]=1;
+  max_low[0][3]=0; max_low[1][3]=2; max_low[2][3]=2;
+  max_low[0][4]=1; max_low[1][4]=0; max_low[2][4]=3;
+  max_low[0][5]=2; max_low[1][5]=1; max_low[2][5]=0;
+  max_low[0][6]=0; max_low[1][6]=0; max_low[2][6]=0;
+  max_low[0][7]=0; max_low[1][7]=0; max_low[2][7]=0;
 
   summem=(WINIT+1)*sizeof(struct winCardType)+
 	     (NINIT+1)*sizeof(struct nodeCardsType)+
@@ -1328,7 +1340,7 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
        the value of the subtree is returned.  */
 
   int moveExists, mexists, value, hand, scoreFlag, found;
-  int ready, hfirst, hh, ss, rr, mcurrent, qtricks, tricks, res, k;
+  int ready, hfirst, hh, ss, rr, /*mcurrent,*/ qtricks, /*tricks,*/ res, k;
   unsigned short int makeWinRank[4];
   struct nodeCardsType * cardsP;
   struct evalType evalData;
@@ -1338,10 +1350,9 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
   struct nodeCardsType  * tempP;
   unsigned short int aggr[4];
   unsigned short int ranks;
+  struct movePlyType *mply=&movePly[depth];
 
   struct evalType Evaluate(struct pos * posPoint);
-  void Make(struct pos * posPoint, unsigned short int trickCards[4], 
-    int depth);
   void Undo(struct pos * posPoint, int depth);
 
   /*cardsP=NULL;*/
@@ -1576,7 +1587,7 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	  /* New algo */
       posPoint->orderSet[ss]=rel[aggr[ss]].aggrRanks[ss];
     }
-    tricks=depth>>2;
+    /*tricks=depth>>2;*/
     suitLengths=0; 
     for (ss=0; ss<=2; ss++)
       for (hh=0; hh<=3; hh++) {
@@ -1584,14 +1595,14 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	suitLengths|=posPoint->length[hh][ss];
       }
     	
-    pp=SearchLenAndInsert(rootnp[tricks][hand], suitLengths, FALSE, &res);
+    pp=SearchLenAndInsert(rootnp[depth>>2][hand], suitLengths, FALSE, &res);
 	/* Find node that fits the suit lengths */
     if (pp!=NULL) {
       np=pp->posSearchPoint;
       if (np==NULL)
         cardsP=NULL;
       else 
-        cardsP=FindSOP(posPoint, np, hand, target, tricks, &scoreFlag);
+        cardsP=FindSOP(posPoint, np, hand, target, depth>>2, &scoreFlag);
       
       if ((cardsP!=NULL)/*&&(depth!=iniDepth)*/) {
         if (scoreFlag==1) {
@@ -1704,12 +1715,13 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
     moveExists=MoveGen(posPoint, depth);
 
     /*#if 0*/
-    if ((posPoint->handRelFirst==3)&&(depth>=/*29*/33/*37*/)&&(depth!=iniDepth)) {
-      movePly[depth].current=0;
+    if ((posPoint->handRelFirst==3)&&(depth>=33/*37*/)&&(depth!=iniDepth)) {
+      /*movePly[depth].current=0;*/
+      mply->current=0;
       mexists=TRUE;
       ready=FALSE;
       while (mexists) {
-      Make(posPoint, makeWinRank, depth);
+	Make(posPoint, makeWinRank, depth, mply/*&movePly[depth]*/);
       depth--;
 
       for (ss=0; ss<=3; ss++) {
@@ -1718,7 +1730,7 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	  aggr[ss]|=posPoint->rankInSuit[hh][ss];
 	  posPoint->orderSet[ss]=rel[aggr[ss]].aggrRanks[ss];
 	}
-	tricks=depth>>2;
+	/*tricks=depth>>2;*/
 	hfirst=posPoint->first[depth];
 	suitLengths=0;
 	for (ss=0; ss<=2; ss++)
@@ -1727,14 +1739,14 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	    suitLengths|=posPoint->length[hh][ss];
 	  }
 
-	  pp=SearchLenAndInsert(rootnp[tricks][hfirst], suitLengths, FALSE, &res);
+	  pp=SearchLenAndInsert(rootnp[depth>>2][hfirst], suitLengths, FALSE, &res);
 	    /* Find node that fits the suit lengths */
 	  if (pp!=NULL) {
 	  np=pp->posSearchPoint;
 	  if (np==NULL)
 	    tempP=NULL;
 	  else
-	    tempP=FindSOP(posPoint, np, hfirst, target, tricks, &scoreFlag);
+	    tempP=FindSOP(posPoint, np, hfirst, target, depth>>2, &scoreFlag);
 
 	  if (tempP!=NULL) {
 	    if ((nodeTypeStore[hand]==MAXNODE)&&(scoreFlag==1)) {
@@ -1764,7 +1776,7 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	      return FALSE;
 	    }
 	    else {
-	      movePly[depth+1].move[movePly[depth+1].current].weight+=100;
+	      mply->move[mply->current]/*movePly[depth+1].move[movePly[depth+1].current]*/.weight+=100;
 	      ready=TRUE;
 	    }
 	  }
@@ -1773,26 +1785,26 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
         Undo(posPoint, depth);
 	if (ready)
 	  break;
-	if (movePly[depth].current<=movePly[depth].last-1) {
-	  movePly[depth].current++;
+	if (/*movePly[depth].current*/mply->current<=(mply->last-1)/*movePly[depth].last-1*/) {
+	  /*movePly[depth].current++;*/mply->current++;
 	  mexists=TRUE;
 	}
 	else
 	  mexists=FALSE;
       }
       if (ready)
-	MergeSort(movePly[depth].last+1, movePly[depth].move);
+	MergeSort(mply->last+1/*movePly[depth].last+1*/, mply->move/*movePly[depth].move*/);
     }
     /*#endif*/
 
-    movePly[depth].current=0;
+    /*movePly[depth].current=0;*/mply->current=0;
     if (nodeTypeStore[hand]==MAXNODE) {
       value=FALSE;
       for (ss=0; ss<=3; ss++)
         posPoint->winRanks[depth][ss]=0;
 
       while (moveExists)  {
-        Make(posPoint, makeWinRank, depth);        /* Make current move */
+		  Make(posPoint, makeWinRank, depth, mply/*&movePly[depth]*/);        /* Make current move */
 
         value=ABsearch(posPoint, target, depth-1);
           
@@ -1802,15 +1814,15 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	    for (ss=0; ss<=3; ss++)
           posPoint->winRanks[depth][ss]=posPoint->winRanks[depth-1][ss] |
               makeWinRank[ss];
-	    mcurrent=movePly[depth].current;
-          bestMove[depth]=movePly[depth].move[mcurrent];
+	    /*mcurrent=movePly[depth].current;*/
+          bestMove[depth]=mply->move[mply->current]/*movePly[depth].move[mcurrent]*/;
           goto ABexit;
         }  
         for (ss=0; ss<=3; ss++)
           posPoint->winRanks[depth][ss]=posPoint->winRanks[depth][ss] |
            posPoint->winRanks[depth-1][ss] | makeWinRank[ss];
 
-        moveExists=NextMove(posPoint, depth);
+        moveExists=NextMove(posPoint, depth/*, mply*//*&movePly[depth]*/);
       }
     }
     else {                          /* A minnode */
@@ -1819,7 +1831,7 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
         posPoint->winRanks[depth][ss]=0;
         
       while (moveExists)  {
-        Make(posPoint, makeWinRank, depth);        /* Make current move */
+	Make(posPoint, makeWinRank, depth, mply/*&movePly[depth]*/);        /* Make current move */
         
         value=ABsearch(posPoint, target, depth-1);
 
@@ -1829,29 +1841,28 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
 	    for (ss=0; ss<=3; ss++)
           posPoint->winRanks[depth][ss]=posPoint->winRanks[depth-1][ss] |
               makeWinRank[ss];
-	    mcurrent=movePly[depth].current;
-          bestMove[depth]=movePly[depth].move[mcurrent];
+	    /*mcurrent=movePly[depth].current;*/
+          bestMove[depth]=mply->move[mply->current]/*movePly[depth].move[mcurrent]*/;
           goto ABexit;
         }
         for (ss=0; ss<=3; ss++)
           posPoint->winRanks[depth][ss]=posPoint->winRanks[depth][ss] |
            posPoint->winRanks[depth-1][ss] | makeWinRank[ss];
 
-        moveExists=NextMove(posPoint, depth);
+        moveExists=NextMove(posPoint, depth/*, mply*//*&movePly[depth]*/);
       }
     }
   }
   ABexit:
   if (depth>=4) {
     if(posPoint->handRelFirst==0) { 
-      tricks=depth>>2;
-      /*hand=posPoint->first[depth-1];*/
+      /*tricks=depth>>2;*/
       if (value)
 	k=target;
       else
 	k=target-1;
       if (depth!=iniDepth)
-        BuildSOP(posPoint, suitLengths, tricks, hand, target, depth,
+        BuildSOP(posPoint, suitLengths, depth>>2, hand, target, depth,
         value, k);
       if (clearTTflag) {
          /* Wipe out the TT dynamically allocated structures
@@ -1978,143 +1989,148 @@ int ABsearch(struct pos * posPoint, int target, int depth) {
   return value;
 }
 
-void Make(struct pos * posPoint, unsigned short int trickCards[4], 
-  int depth)  {
-  int r, s, t, u, w, firstHand;
-  int suit, count, mcurr, h, q, done;
-  struct moveType mo1, mo2;
-  unsigned short aggr;
 
-  for (suit=0; suit<=3; suit++)
-    trickCards[suit]=0;
 
-  firstHand=posPoint->first[depth];
-  r=movePly[depth].current;
+void Make(struct pos * posPoint, unsigned short int trickCards[4],
+  int depth, struct movePlyType *mply)  {
+  int t, u, w;
+  int mcurr, q;
 
-  if (posPoint->handRelFirst==3)  {         /* This hand is last hand */
-    mo1=movePly[depth].move[r];
-    mo2=posPoint->move[depth+1];
-    if (mo1.suit==mo2.suit) {
-      if (mo1.rank>mo2.rank) {
-	posPoint->move[depth]=mo1;
-        posPoint->high[depth]=handId(firstHand, 3);
+  assert((posPoint->handRelFirst >= 0) && (posPoint->handRelFirst <= 3));
+  for (int suit = 0; suit <= 3; suit++)
+    trickCards[suit] = 0;
+
+  int firstHand = posPoint->first[depth];
+  int r = mply->current;
+
+  if (posPoint->handRelFirst == 3)  {         /* This hand is last hand */
+    if (mply->move[r].suit == posPoint->move[depth + 1].suit) {
+      if (mply->move[r].rank>posPoint->move[depth + 1].rank) {
+	posPoint->move[depth] = mply->move[r];
+	posPoint->high[depth] = handId(firstHand, 3);
       }
       else {
-	posPoint->move[depth]=posPoint->move[depth+1];
-        posPoint->high[depth]=posPoint->high[depth+1];
+	posPoint->move[depth] = posPoint->move[depth + 1];
+	posPoint->high[depth] = posPoint->high[depth + 1];
       }
     }
-    else if (mo1.suit==trump) {
-      posPoint->move[depth]=mo1;
-      posPoint->high[depth]=handId(firstHand, 3);
-    }  
+    else if (mply->move[r].suit == trump) {
+      posPoint->move[depth] = mply->move[r];
+      posPoint->high[depth] = handId(firstHand, 3);
+    }
     else {
-      posPoint->move[depth]=posPoint->move[depth+1];
-      posPoint->high[depth]=posPoint->high[depth+1];
+      posPoint->move[depth] = posPoint->move[depth + 1];
+      posPoint->high[depth] = posPoint->high[depth + 1];
     }
 
     /* Is the trick won by rank? */
-    suit=posPoint->move[depth].suit;
-    count=0;
-    for (h=0; h<=3; h++) {
-      mcurr=movePly[depth+h].current;
-      if (movePly[depth+h].move[mcurr].suit==suit)
-        count++;
+    int s = posPoint->move[depth].suit;
+    int count = 0;
+    if (mply->move[r].suit == s)
+	count++;
+    for (int e = 1; e <= 3; e++) {
+      mcurr = movePly[depth + e].current;
+      if (movePly[depth + e].move[mcurr].suit == s) {
+	count++;
+	/*if (++count>1)
+	  break;*/
+      }
     }
 
-    if (nodeTypeStore[posPoint->high[depth]]==MAXNODE)
+
+    if (nodeTypeStore[posPoint->high[depth]] == MAXNODE)
       posPoint->tricksMAX++;
-    posPoint->first[depth-1]=posPoint->high[depth];   /* Defines who is first
-    in the next move */
+    posPoint->first[depth - 1] = posPoint->high[depth];   /* Defines who is first
+							       in the next move */
 
-    t=handId(firstHand, 3);
-    posPoint->handRelFirst=0;      /* Hand pointed to by posPoint->first
-                                    will lead the next trick */
+    t = handId(firstHand, 3);
+    posPoint->handRelFirst = 0;      /* Hand pointed to by posPoint->first
+					will lead the next trick */
 
-    done=FALSE;
-    for (s=3; s>=0; s--) {
-      q=handId(firstHand, 3-s);
-    /* Add the moves to removed ranks */
-      r=movePly[depth+s].current;
-      w=movePly[depth+s].move[r].rank;
-      u=movePly[depth+s].move[r].suit;
-      posPoint->removedRanks[u]|=bitMapRank[w];
+    int done = FALSE;
+    for (int d = 3; d >= 0; d--) {
+      q = handId(firstHand, 3 - d);
+      /* Add the moves to removed ranks */
+      r = movePly[depth + d].current;
+      w = movePly[depth + d].move[r].rank;
+      u = movePly[depth + d].move[r].suit;
+      posPoint->removedRanks[u] |= bitMapRank[w];
 
-      if (s==0)
-        posPoint->rankInSuit[t][u]&=(~bitMapRank[w]);
+      if (d == 0)
+	posPoint->rankInSuit[t][u] &= (~bitMapRank[w]);
 
-      if ((w==posPoint->winner[u].rank)||(w==posPoint->secondBest[u].rank)) {
-	aggr=0;
-        for (h=0; h<=3; h++)
-	  aggr|=posPoint->rankInSuit[h][u];
-        posPoint->winner[u].rank=rel[aggr].absRank[1][u].rank;
-        posPoint->winner[u].hand=rel[aggr].absRank[1][u].hand;
-        posPoint->secondBest[u].rank=rel[aggr].absRank[2][u].rank;
-        posPoint->secondBest[u].hand=rel[aggr].absRank[2][u].hand;
-      }  
+      if ((w == posPoint->winner[u].rank) || (w == posPoint->secondBest[u].rank)) {
+	int aggr = 0;
+	for (int h = 0; h <= 3; h++)
+	  aggr |= posPoint->rankInSuit[h][u];
+	posPoint->winner[u].rank = rel[aggr].absRank[1][u].rank;
+	posPoint->winner[u].hand = rel[aggr].absRank[1][u].hand;
+	posPoint->secondBest[u].rank = rel[aggr].absRank[2][u].rank;
+	posPoint->secondBest[u].hand = rel[aggr].absRank[2][u].hand;
+      }
 
-    /* Determine win-ranked cards */
-      if ((q==posPoint->high[depth])&&(!done)) {
-        done=TRUE;
-        if (count>=2) {
-          trickCards[u]=bitMapRank[w];
-          /* Mark ranks as winning if they are part of a sequence */
-          trickCards[u]|=movePly[depth+s].move[r].sequence; 
-        }
+
+      /* Determine win-ranked cards */
+      if ((q == posPoint->high[depth]) && (!done)) {
+	done = TRUE;
+	if (count >= 2) {
+	  trickCards[u] = bitMapRank[w];
+	  /* Mark ranks as winning if they are part of a sequence */
+	  trickCards[u] |= movePly[depth + d].move[r].sequence;
+	}
       }
     }
   }
-  else if (posPoint->handRelFirst==0) {   /* Is it the 1st hand? */
-    posPoint->first[depth-1]=firstHand;   /* First hand is not changed in
-                                            next move */
-    posPoint->high[depth]=firstHand;
-    posPoint->move[depth]=movePly[depth].move[r];
-    t=firstHand;
-    posPoint->handRelFirst=1;
-    r=movePly[depth].current;
-    u=movePly[depth].move[r].suit;
-    w=movePly[depth].move[r].rank;
-    posPoint->rankInSuit[t][u]&=(~bitMapRank[w]);
+  else if (posPoint->handRelFirst == 0) {   /* Is it the 1st hand? */
+    posPoint->first[depth - 1] = firstHand;   /* First hand is not changed in
+						next move */
+    posPoint->high[depth] = firstHand;
+    posPoint->move[depth] = mply->move[r];
+    t = firstHand;
+    posPoint->handRelFirst = 1;
+    r = mply->current;
+    u = mply->move[r].suit;
+    w = mply->move[r].rank;
+    posPoint->rankInSuit[t][u] &= (~bitMapRank[w]);
   }
   else {
-    mo1=movePly[depth].move[r];
-    mo2=posPoint->move[depth+1];
-    r=movePly[depth].current;
-    u=movePly[depth].move[r].suit;
-    w=movePly[depth].move[r].rank;
-    if (mo1.suit==mo2.suit) {
-      if (mo1.rank>mo2.rank) {
-	posPoint->move[depth]=mo1;
-        posPoint->high[depth]=handId(firstHand, posPoint->handRelFirst);
+    r = mply->current;
+    u = mply->move[r].suit;
+    w = mply->move[r].rank;
+    if (u == posPoint->move[depth + 1].suit) {
+      if (w>posPoint->move[depth + 1].rank) {
+	posPoint->move[depth] = mply->move[r];
+        posPoint->high[depth] = handId(firstHand, posPoint->handRelFirst);
       }
       else {
-	posPoint->move[depth]=posPoint->move[depth+1];
-        posPoint->high[depth]=posPoint->high[depth+1];
+	posPoint->move[depth] = posPoint->move[depth + 1];
+	posPoint->high[depth] = posPoint->high[depth + 1];
       }
     }
-    else if (mo1.suit==trump) {
-      posPoint->move[depth]=mo1;
-      posPoint->high[depth]=handId(firstHand, posPoint->handRelFirst);
-    }  
-    else {
-      posPoint->move[depth]=posPoint->move[depth+1];
-      posPoint->high[depth]=posPoint->high[depth+1];
+    else if (u == trump) {
+      posPoint->move[depth] = mply->move[r];
+      posPoint->high[depth] = handId(firstHand, posPoint->handRelFirst);
     }
-    
-    t=handId(firstHand, posPoint->handRelFirst);
+    else {
+      posPoint->move[depth] = posPoint->move[depth + 1];
+      posPoint->high[depth] = posPoint->high[depth + 1];
+    }
+
+    t = handId(firstHand, posPoint->handRelFirst);
     posPoint->handRelFirst++;               /* Current hand is stepped */
-    posPoint->first[depth-1]=firstHand;     /* First hand is not changed in
-                                            next move */
-    
-    posPoint->rankInSuit[t][u]&=(~bitMapRank[w]);
+    assert((posPoint->handRelFirst >= 0) && (posPoint->handRelFirst <= 3));
+    posPoint->first[depth - 1] = firstHand;     /* First hand is not changed in
+						next move */
+
+    posPoint->rankInSuit[t][u] &= (~bitMapRank[w]);
   }
 
-  posPoint->length[t][u]--;
+	posPoint->length[t][u]--;
 
 #ifdef STAT
-  no[depth]++;
+  localVar[thrId].no[depth]++;
 #endif
-    
+
   return;
 }
 
@@ -2183,26 +2199,25 @@ void Undo(struct pos * posPoint, int depth)  {
 }
 
 
-
-struct evalType Evaluate(struct pos * posPoint)  {
-  int s, smax=0, max, k, firstHand, count;
+  struct evalType Evaluate(struct pos * posPoint)  {
+  int m, hmax=0, max, k, firstHand, count;
   struct evalType eval;
 
   firstHand=posPoint->first[0];
 
-  for (s=0; s<=3; s++)
-    eval.winRanks[s]=0;
+  for (m=0; m<=3; m++)
+    eval.winRanks[m]=0;
 
   /* Who wins the last trick? */
   if (trump!=4)  {            /* Highest trump card wins */
     max=0;
     count=0;
-    for (s=0; s<=3; s++) {
-      if (posPoint->rankInSuit[s][trump]!=0)
+    for (m=0; m<=3; m++) {
+      if (posPoint->rankInSuit[m][trump]!=0)
         count++;
-      if (posPoint->rankInSuit[s][trump]>max) {
-        smax=s;
-        max=posPoint->rankInSuit[s][trump];
+      if (posPoint->rankInSuit[m][trump]>max) {
+        hmax=m;
+        max=posPoint->rankInSuit[m][trump];
       }
     }
 
@@ -2210,7 +2225,7 @@ struct evalType Evaluate(struct pos * posPoint)  {
       if (count>=2)
         eval.winRanks[trump]=max;
 
-      if (nodeTypeStore[smax]==MAXNODE)
+      if (nodeTypeStore[hmax]==MAXNODE)
         goto maxexit;
       else
         goto minexit;
@@ -2228,19 +2243,19 @@ struct evalType Evaluate(struct pos * posPoint)  {
 
   count=0;
   max=0; 
-  for (s=0; s<=3; s++)  {
-    if (posPoint->rankInSuit[s][k]!=0)
+  for (m=0; m<=3; m++)  {
+    if (posPoint->rankInSuit[m][k]!=0)
         count++;
-    if (posPoint->rankInSuit[s][k]>max)  {
-      smax=s;
-      max=posPoint->rankInSuit[s][k];
+    if (posPoint->rankInSuit[m][k]>max)  {
+      hmax=m;
+      max=posPoint->rankInSuit[m][k];
     }
   }
 
   if (count>=2)
     eval.winRanks[k]=max;
 
-  if (nodeTypeStore[smax]==MAXNODE)
+  if (nodeTypeStore[hmax]==MAXNODE)
     goto maxexit;
   else
     goto minexit;
@@ -3354,11 +3369,11 @@ int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
 
 
 int MoveGen(struct pos * posPoint, int depth) {
-  int suit, k, m, r, s, t, state;
+  int suit, k, m, r, curr, s, state=MOVESVALID;
   unsigned short ris;
   int q, first;
-  int WeightAllocTrump(struct pos *, struct moveType * mp, int depth,
-    unsigned short notVoidInSuit, int trump);
+  int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
+	  unsigned short notVoidInSuit);
   int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
     unsigned short notVoidInSuit);
 
@@ -3371,38 +3386,37 @@ int MoveGen(struct pos * posPoint, int depth) {
   first=posPoint->first[depth];
   q=handId(first, r);
   
-  s=movePly[depth+r].current;             /* Current move of first hand */
-  t=movePly[depth+r].move[s].suit;        /* Suit played by first hand */
-  ris=posPoint->rankInSuit[q][t];
+  curr=movePly[depth+r].current;             /* Current move of first hand */
+  s=movePly[depth+r].move[curr].suit;        /* Suit played by first hand */
+  ris=posPoint->rankInSuit[q][s];
 
   if ((r!=0)&&(ris!=0)) {
   /* Not first hand and not void in suit */
-    k=14;   state=MOVESVALID;
+    k=14;   /*state=MOVESVALID;*/
     while (k>=2) {
       if ((ris & bitMapRank[k])&&(state==MOVESVALID)) {
            /* Only first move in sequence is generated */
-        movePly[depth].move[m].suit=t;
+        movePly[depth].move[m].suit=s;
         movePly[depth].move[m].rank=k;
         movePly[depth].move[m].sequence=0;
         m++;
         state=MOVESLOCKED;
       }
-      else if (state==MOVESLOCKED)
-        if ((posPoint->removedRanks[t] & bitMapRank[k])==0) {
-          if ((ris & bitMapRank[k])==0)
-          /* If the card still exists and it is not in own hand */
-            state=MOVESVALID;
-          else
-          /* If the card still exists and it is in own hand */
-            movePly[depth].move[m-1].sequence|=bitMapRank[k];
-        }
+      else if (state==MOVESLOCKED) {
+	if (ris & bitMapRank[k])
+	/* If the card is in own hand */
+	  movePly[depth].move[m - 1].sequence |= bitMapRank[k];
+	else if ((posPoint->removedRanks[s] & bitMapRank[k]) == 0)
+	/* If the card still exists and it is not in own hand */
+	  state = MOVESVALID;
+      }
       k--;
     }
     if (m!=1) {
       if ((trump!=4)&&(posPoint->winner[trump].rank!=0)) {
         for (k=0; k<=m-1; k++) 
           movePly[depth].move[k].weight=WeightAllocTrump(posPoint,
-            &movePly[depth].move[k], depth, ris, trump);
+            &movePly[depth].move[k], depth, ris);
       }
       else {
 	for (k=0; k<=m-1; k++) 
@@ -3434,15 +3448,14 @@ int MoveGen(struct pos * posPoint, int depth) {
           m++;
           state=MOVESLOCKED;
         }
-        else if (state==MOVESLOCKED)
-          if ((posPoint->removedRanks[suit] & bitMapRank[k])==0) {
-            if ((posPoint->rankInSuit[q][suit] & bitMapRank[k])==0)
-            /* If the card still exists and it is not in own hand */
-              state=MOVESVALID;
-            else
-            /* If the card still exists and it is in own hand */
-              movePly[depth].move[m-1].sequence|=bitMapRank[k];
-          }
+	else if (state == MOVESLOCKED) {
+	  if (posPoint->rankInSuit[q][suit] & bitMapRank[k])
+	    /* If the card is in own hand */
+	    movePly[depth].move[m - 1].sequence |= bitMapRank[k];
+	  else if ((posPoint->removedRanks[suit] & bitMapRank[k]) == 0)
+	    /* If the card still exists and it is not in own hand */
+	    state = MOVESVALID;
+	}
         k--;
       }
     }
@@ -3450,7 +3463,7 @@ int MoveGen(struct pos * posPoint, int depth) {
     if ((trump!=4)&&(posPoint->winner[trump].rank!=0)) {
       for (k=0; k<=m-1; k++) { 
         movePly[depth].move[k].weight=WeightAllocTrump(posPoint,
-          &movePly[depth].move[k], depth, ris, trump);
+          &movePly[depth].move[k], depth, ris);
       }
     }
     else {
@@ -3472,162 +3485,158 @@ int MoveGen(struct pos * posPoint, int depth) {
   }
 }
 
-
-
 int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
   unsigned short notVoidInSuit) {
-  int weight=0, k, l, kk, ll, suit, suitAdd=0, leadSuit;
-  int suitWeightDelta, first, q;
-  int rRank, thirdBestHand;
-  int winMove=FALSE;	/* If winMove is true, current move can win the current trick. */
-  unsigned short suitCount, suitCountLH, suitCountRH, aggr;
+
+  int weight = 0, k, l, kk, ll, suitAdd = 0, leadSuit;
+  int suitWeightDelta;
+  int thirdBestHand;
+  int winMove = FALSE;  /* If winMove is TRUE, current move can win the current trick. */
+  unsigned short suitCount, suitCountLH, suitCountRH;
   int countLH, countRH;
+  int first = posPoint->first[depth];
+  int q = handId(first, posPoint->handRelFirst);
+  int suit = mp->suit;
+  unsigned short aggr = 0;
 
-  first=posPoint->first[depth];
-  q=handId(first, posPoint->handRelFirst);
-  suit=mp->suit;
-  aggr=0;
-  for (k=0; k<=3; k++)
-    aggr|=posPoint->rankInSuit[k][suit];
-  rRank=rel[aggr].relRank[mp->rank][suit];
+  for (int m = 0; m <= 3; m++)
+    aggr |= posPoint->rankInSuit[m][suit];
+    int rRank = rel[aggr].relRank[mp->rank][suit];
 
-  switch (posPoint->handRelFirst) {
-    case 0:
-      thirdBestHand=rel[aggr].absRank[3][suit].hand;
-      suitCount=posPoint->length[q][suit];
-      suitCountLH=posPoint->length[lho[q]][suit];
-      suitCountRH=posPoint->length[rho[q]][suit];
+    switch (posPoint->handRelFirst) {
+      case 0:
+	/*thirdBestHand=rel[aggr].absRank[3][suit].hand;*/
+	suitCount = posPoint->length[q][suit];
+	suitCountLH = posPoint->length[lho[q]][suit];
+	suitCountRH = posPoint->length[rho[q]][suit];
 
-      if (suitCountLH!=0) {
-          countLH=(suitCountLH<<2);
-      }
-      else
-        countLH=depth+4;
+	if (suitCountLH != 0) {
+	  countLH = (suitCountLH << 2);
+	}
+	else
+	  countLH = depth + 4;
 
-      if (suitCountRH!=0) {
-          countRH=(suitCountRH<<2);
-      }
-      else
-        countRH=depth+4;
+	if (suitCountRH != 0) {
+	  countRH = (suitCountRH << 2);
+	}
+	else
+	  countRH = depth + 4;
 
-      /* Discourage a suit selection where the search tree appears larger than for the
-      altenative suits: the search is estimated to be small when the added number of
-      alternative cards to play for the opponents is small. */ 
+	/* Discourage a suit selection where the search tree appears larger than for the
+	altenative suits: the search is estimated to be small when the added number of
+	alternative cards to play for the opponents is small. */
 
-      suitWeightDelta=-((countLH+countRH)<<5)/19;	
-	  
-      if (posPoint->winner[suit].rank==mp->rank) 
-        winMove=TRUE;			   
-      else if (posPoint->rankInSuit[partner[first]][suit] >
-	(posPoint->rankInSuit[lho[first]][suit] |
-	   posPoint->rankInSuit[rho[first]][suit])) {
-	winMove=TRUE;
-      }			
-              
-      if (winMove) {
-	/* Discourage suit if RHO has second best card.
-	   Exception: RHO has singleton. */
-	if (posPoint->secondBest[suit].hand==rho[q]) {
-	  if (suitCountRH!=1)
-	    suitWeightDelta-=7;
-        }
-        /* Encourage playing suit if LHO has second highest rank. */
-        else if (posPoint->secondBest[suit].hand==lho[q]) 
-          suitWeightDelta+=14;
-	  
-        /* Higher weight if also second best rank is present on current side to play, or
-        if second best is a singleton at LHO or RHO. */
+	suitWeightDelta = -((countLH + countRH) << 5) / 19;
 
-        if (((posPoint->secondBest[suit].hand!=lho[first])
-           ||(suitCountLH==1))&&
-           ((posPoint->secondBest[suit].hand!=rho[first])
-           ||(suitCountRH==1)))
-          weight=suitWeightDelta+41/*48*/+rRank;
+	if (posPoint->length[partner[q]][suit] == 0)
+	  suitWeightDelta += -9;
 
-        /* Encourage playing second highest rank if hand also has
-        third highest rank. */
+	if (posPoint->winner[suit].rank == mp->rank)
+	  winMove = TRUE;	/* May also have 2nd best, but this card will not be searched. */
+	else if (posPoint->rankInSuit[partner[first]][suit] >
+	  (posPoint->rankInSuit[lho[first]][suit] |
+	  posPoint->rankInSuit[rho[first]][suit])) {
+	  winMove = TRUE;
+	}
 
-        else if ((mp->sequence)&&
-          (mp->rank==posPoint->secondBest[suit].rank))			
-          weight=suitWeightDelta+39;
-        else
-          weight=suitWeightDelta+20+rRank;
+	if (winMove) {
+	  /* Discourage suit if RHO has second best card.
+	     Exception: RHO has singleton. */
+	  if (posPoint->secondBest[suit].hand == rho[q]) {
+	    if (suitCountRH != 1)
+	      suitWeightDelta += -1;
+	  }
+	  /* Encourage playing suit if LHO has second highest rank. */
+	  else if (posPoint->secondBest[suit].hand == lho[q]) {
+	    if (suitCountLH != 1)
+	      suitWeightDelta += 22;
+	    else
+	      suitWeightDelta += 16;
+	  }
 
-        /* Encourage playing cards that previously caused search cutoff
-        or was stored as the best move in a transposition table entry match. */
+	  /* Higher weight if also second best rank is present on current side to play, or
+	     if second best is a singleton at LHO or RHO. */
 
-        if ((bestMove[depth].suit==suit)&&
-          (bestMove[depth].rank==mp->rank)) 
-          weight+=123/*122*//*112*//*73*/;
-        else if ((bestMoveTT[depth].suit==suit)&&
-          (bestMoveTT[depth].rank==mp->rank)) 
-          weight+=24/*20*//*17*//*14*/;
-      }
-      else {
-	/* Discourage suit if RHO has winning or second best card.
-	   Exception: RHO has singleton. */
+	  if (((posPoint->secondBest[suit].hand != lho[first])
+	        || (suitCountLH == 1)) &&
+		((posPoint->secondBest[suit].hand != rho[first]) || (suitCountRH == 1)))
+	    weight = suitWeightDelta + 45 + rRank;
+	  else
+	    weight = suitWeightDelta + 18 + rRank;
 
-        if ((posPoint->winner[suit].hand==rho[q])||
-          (posPoint->secondBest[suit].hand==rho[q])) {
-	  if (suitCountRH!=1)
-	    suitWeightDelta-=7;	
-        }
+	  /* Encourage playing cards that previously caused search cutoff
+	     or was stored as the best move in a transposition table entry match. */
+
+	  if ((bestMove[depth].suit == suit) &&
+	    (bestMove[depth].rank == mp->rank))
+	    weight += 126;
+	  else if ((bestMoveTT[depth].suit == suit) &&
+	    (bestMoveTT[depth].rank == mp->rank))
+	    weight += 24;
+	}
+	else {
+	  /* Discourage suit if RHO has winning or second best card.
+	     Exception: RHO has singleton. */
+
+	  if ((posPoint->winner[suit].hand == rho[q]) ||
+	     (posPoint->secondBest[suit].hand == rho[q])) {
+	    if (suitCountRH != 1)
+	      suitWeightDelta += -10;
+	  }
 
 
-	/* Try suit if LHO has winning card and partner second best. 
-	     Exception: partner has singleton. */ 
+	  /* Try suit if LHO has winning card and partner second best.
+	     Exception: partner has singleton. */
 
-        else if ((posPoint->winner[suit].hand==lho[q])&&
-	  (posPoint->secondBest[suit].hand==partner[q])) {
+	  else if ((posPoint->winner[suit].hand == lho[q]) &&
+	    (posPoint->secondBest[suit].hand == partner[q])) {
 
-	/* This case was suggested by Joël Bradmetz. */
+	  /* This case was suggested by Joël Bradmetz. */
 
-	  if (posPoint->length[partner[q]][suit]!=1)
-	    suitWeightDelta+=31/*34*//*37*//*32*//*20*/;
-        }
-     
+	  if (posPoint->length[partner[q]][suit] != 1)
+	    suitWeightDelta += 31;
+	}
+
 	/* Encourage playing the suit if the hand together with partner have both the 2nd highest
 	and the 3rd highest cards such that the side of the hand has the highest card in the
 	next round playing this suit. */
 
-	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
-	  suitWeightDelta+=22/*10*/;
-	else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
-	  (posPoint->length[partner[first]][suit]>1))||((posPoint->secondBest[suit].hand==partner[first])&&
-	  (first==thirdBestHand)&&(posPoint->length[partner[first]][suit]>1)))
-	  suitWeightDelta+=24/*10*/;	
+	thirdBestHand = rel[aggr].absRank[3][suit].hand;
+
+	if ((posPoint->secondBest[suit].hand == partner[first]) && (partner[first] == thirdBestHand))
+	  suitWeightDelta += 35;
+	else if (((posPoint->secondBest[suit].hand == first) && (partner[first] == thirdBestHand) &&
+	  (posPoint->length[partner[first]][suit]>1)) || ((posPoint->secondBest[suit].hand == partner[first]) &&
+	  (first == thirdBestHand) && (posPoint->length[partner[first]][suit]>1)))
+	  suitWeightDelta += 25;
 
 	/* Higher weight if LHO or RHO has the highest (winning) card as a singleton. */
 
-	if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
-            ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
-          weight=suitWeightDelta+25/*23*//*22*/+rRank;
-        else if (posPoint->winner[suit].hand==first) {
-          weight=suitWeightDelta-20/*24*//*27*//*12*//*10*/+rRank;
-        }
-
-	/* Encourage playing second highest rank if hand also has
-	third highest rank. */
-
-        else if ((mp->sequence)&&
-          (mp->rank==posPoint->secondBest[suit].rank)) 
-	  weight=suitWeightDelta+44/*42*/;
+	if (((suitCountLH == 1) && (posPoint->winner[suit].hand == lho[first]))
+	   || ((suitCountRH == 1) && (posPoint->winner[suit].hand == rho[first])))
+	  weight = suitWeightDelta + 28 + rRank;
+	else if (posPoint->winner[suit].hand == first) {
+	  weight = suitWeightDelta - 17 + rRank;
+	}
+	else if ((mp->sequence) &&
+	  (mp->rank == posPoint->secondBest[suit].rank))
+	  weight = suitWeightDelta + 48;
 	else if (mp->sequence)
-          weight=suitWeightDelta+31/*32*/-rRank;
-        else 
-          weight=suitWeightDelta+12+rRank; 
-	
-	/* Encourage playing cards that previously caused search cutoff
-	or was stored as the best move in a transposition table entry match. */
+	  weight = suitWeightDelta + 29 - rRank;
+	else
+	  weight = suitWeightDelta + 12 + rRank;
 
-	if ((bestMove[depth].suit==suit)&&
-            (bestMove[depth].rank==mp->rank)) 
-          weight+=47/*45*//*39*//*38*/;
-	else if ((bestMoveTT[depth].suit==suit)&&
-            (bestMoveTT[depth].rank==mp->rank)) 
-          weight+=13/*15*//*16*//*19*//*14*/;
+	/* Encourage playing cards that previously caused search cutoff
+	   or was stored as the best move in a transposition table entry match. */
+
+	if ((bestMove[depth].suit == suit) &&
+	  (bestMove[depth].rank == mp->rank))
+	  weight += 47;
+	else if ((bestMoveTT[depth].suit == suit) &&
+	  (bestMoveTT[depth].rank == mp->rank))
+	  weight += 19;
       }
-        
+
       break;
 
     case 1:
@@ -3659,18 +3668,18 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 	  /* Discourage suit discard if 2nd highest card becomes singleton. */
  
 	    if (suitCount==2)
-	      suitAdd-=3;
+	      suitAdd+=-2;
 	  }
 	  /* Discourage suit discard of highest card. */
 
 	  else if ((suitCount==1)&&(posPoint->winner[suit].hand==q)) 
-	    suitAdd-=3;
+	    suitAdd+=-3;
 
 	  /*Encourage discard of low cards in long suits. */
-	    weight=/*60*/-(mp->rank)+suitAdd;		
+	    weight=-4-(mp->rank)+suitAdd;		
         }
 	else {	
-	  weight=80+rRank;
+	  weight=81/*80*/+rRank;
         } 
       }
       else {
@@ -3680,14 +3689,14 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
  
 	  /* Discourage suit discard if 2nd highest card becomes singleton. */ 
           if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
-            suitAdd-=7;	
+            suitAdd+=-6;	
 		  
           /* Discourage suit discard of highest card. */
 	  else if ((suitCount==1)&&(posPoint->winner[suit].hand==q)) 
-	    suitAdd-=10;
+	    suitAdd+=-8;
 
 	  /*Encourage discard of low cards in long suits. */
-          weight=-(mp->rank)+suitAdd; 
+          weight=2-(mp->rank)+suitAdd; 
         }
         else {
 
@@ -3712,7 +3721,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 	    }
           }          
           else {
-	    weight=-15+rRank;		
+	    weight=-11/*15*/+rRank;		
 	  }	
         }
       }
@@ -3812,25 +3821,25 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 
 
 int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
-  unsigned short notVoidInSuit, int trump) {
-  int weight=0, k, l, kk, ll, suit, suitAdd=0, leadSuit;
-  int suitWeightDelta, first, q, rRank, thirdBestHand;
+  unsigned short notVoidInSuit) {
+  int weight=0, k, l, kk, ll, suitAdd=0, leadSuit;
+  int suitWeightDelta, thirdBestHand;
   int suitBonus=0;
   int winMove=FALSE;	/* If winMove is true, current move can win the current trick. */
-  unsigned short suitCount, suitCountLH, suitCountRH, aggr;
+  unsigned short suitCount, suitCountLH, suitCountRH;
   int countLH, countRH;
 
-  first=posPoint->first[depth];
-  q=handId(first, posPoint->handRelFirst);
-  suit=mp->suit;
-  aggr=0;
-  for (k=0; k<=3; k++)
-    aggr|=posPoint->rankInSuit[k][suit];
-  rRank=rel[aggr].relRank[mp->rank][suit];
+  int first=posPoint->first[depth];
+  int q=handId(first, posPoint->handRelFirst);
+  int suit=mp->suit;
+  unsigned short aggr=0;
+  for (int m=0; m<=3; m++)
+    aggr|=posPoint->rankInSuit[m][suit];
+  int rRank=rel[aggr].relRank[mp->rank][suit];
 
   switch (posPoint->handRelFirst) {
     case 0:
-      thirdBestHand=rel[aggr].absRank[3][suit].hand;
+      /*thirdBestHand=rel[aggr].absRank[3][suit].hand;*/
       suitCount=posPoint->length[q][suit];
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
@@ -3842,20 +3851,20 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
           (posPoint->rankInSuit[lho[q]][trump]!=0)) ||
           ((posPoint->rankInSuit[rho[q]][suit]==0) &&
           (posPoint->rankInSuit[rho[q]][trump]!=0))))
-        suitBonus=-17/*20*//*-10*/;
+        suitBonus=-12/*9*//*17*/;
 	    
       /* Encourage suit if partner can ruff. */
 
       if ((suit!=trump)&&(posPoint->length[partner[q]][suit]==0)&&
 	     (posPoint->length[partner[q]][trump]>0)&&(suitCountRH>0))
-	suitBonus+=26/*28*/;
+	suitBonus+=17/*26*/;
 
       /* Discourage suit if RHO has high card. */
 
       if ((posPoint->winner[suit].hand==rho[q])||
           (posPoint->secondBest[suit].hand==rho[q])) {
 	if (suitCountRH!=1)
-	  suitBonus-=11/*12*//*13*//*18*/;
+	  suitBonus+=-12/*13*//*11*/;
       }
 
       /* Try suit if LHO has winning card and partner second best. 
@@ -3867,7 +3876,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	/* This case was suggested by Joël Bradmetz. */
 
 	if (posPoint->length[partner[q]][suit]!=1) 
-	  suitBonus+=30/*28*//*22*/;
+	  suitBonus+=27/*25*//*30*/;
       }
  
       /* Encourage play of suit where partner wins and
@@ -3876,7 +3885,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	(posPoint->length[q][trump]>0)&&
 	(posPoint->length[partner[q]][suit]>1)&&
 	(posPoint->winner[suit].hand==partner[q]))
-	suitBonus+=23/*24*//*19*//*16*/;
+	suitBonus+=19/*26*//*23*/;
 
       if (suitCountLH!=0)
         countLH=(suitCountLH<<2);
@@ -3892,7 +3901,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	  alternative cards to play for the opponents is small. */ 
 
       suitWeightDelta=suitBonus-
-	((countLH+countRH)<<5)/(12/*15*/);
+	((countLH+countRH)<<5)/13;
 
       if (posPoint->winner[suit].rank==mp->rank) {
         if ((suit!=trump)) {
@@ -3963,7 +3972,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
         if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
-          weight=suitWeightDelta+39+rRank;
+          weight=suitWeightDelta+35/*37*//*39*/+rRank;
 
 	/* Lead hand has the highest card. */
 
@@ -3972,30 +3981,30 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	/* Also, partner has second highest card. */
 
           if (posPoint->secondBest[suit].hand==partner[first])
-            weight=suitWeightDelta+46+rRank;
+            weight=suitWeightDelta+/*47*/48+rRank;
 	  else if (posPoint->winner[suit].rank==mp->rank)
 
 	    /* If the current card to play is the highest card. */
 
             weight=suitWeightDelta+31;
           else
-            weight=suitWeightDelta-2+rRank;
+            weight=suitWeightDelta-3+rRank;
         }
         else if (posPoint->winner[suit].hand==partner[first]) {
           /* If partner has highest card */
           if (posPoint->secondBest[suit].hand==first)
-            weight=suitWeightDelta+35/*35*//*46*//*50*/+rRank;
+            weight=suitWeightDelta+42/*35*//*46*//*50*/+rRank;
           else 
-            weight=suitWeightDelta+24/*35*/+rRank;  
+            weight=suitWeightDelta+28/*24*/+rRank;  
         } 
 	/* Encourage playing second highest rank if hand also has
 	third highest rank. */
 
         else if ((mp->sequence)&&
           (mp->rank==posPoint->secondBest[suit].rank))			
-          weight=suitWeightDelta+41;
+          weight=suitWeightDelta+40/*41*/;
 	else if (mp->sequence)
-	  weight=suitWeightDelta+17+rRank;
+	  weight=suitWeightDelta+22/*17*/+rRank;
         else
           weight=suitWeightDelta+11+rRank;
 
@@ -4004,10 +4013,10 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
 	if ((bestMove[depth].suit==suit)&&
             (bestMove[depth].rank==mp->rank)) 
-          weight+=53/*50*//*52*/;
+          weight+=55/*53*/;
 	else if ((bestMoveTT[depth].suit==suit)&&
             (bestMoveTT[depth].rank==mp->rank)) 
-          weight+=14/*15*//*12*//*11*/;
+          weight+=18/*14*/;
       }
       else {
 
@@ -4015,19 +4024,21 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	and the 3rd highest cards such that the side of the hand has the highest card in the
 	next round playing this suit. */
 
+	thirdBestHand=rel[aggr].absRank[3][suit].hand;
+
 	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
 	   suitWeightDelta+=20/*22*/;
 	else if(((posPoint->secondBest[suit].hand==first)&&(partner[first]==thirdBestHand)&&
 	  (posPoint->length[partner[first]][suit]>1))||
 	  ((posPoint->secondBest[suit].hand==partner[first])&&
 	  (first==thirdBestHand)&&(posPoint->length[partner[first]][suit]>1)))
-	   suitWeightDelta+=20/*24*/;
+	   suitWeightDelta+=13/*20*//*24*/;
 	
 	/* Higher weight if LHO or RHO has the highest (winning) card as a singleton. */
 
         if (((suitCountLH==1)&&(posPoint->winner[suit].hand==lho[first]))
             ||((suitCountRH==1)&&(posPoint->winner[suit].hand==rho[first])))
-          weight=suitWeightDelta+rRank-2;
+          weight=suitWeightDelta+rRank+2/*-2*/;
         else if (posPoint->winner[suit].hand==first) {
           if (posPoint->secondBest[suit].hand==partner[first])
 
@@ -4038,34 +4049,34 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
 	  /* Opponents win by ruffing */
 
-            weight=suitWeightDelta+36;
+            weight=suitWeightDelta+38/*36*/;
           else
-            weight=suitWeightDelta-17+rRank;
+            weight=suitWeightDelta-14/*17*/+rRank;
         }
         else if (posPoint->winner[suit].hand==partner[first]) {
 
           /* Opponents win by ruffing */
 
-          weight=suitWeightDelta+33+rRank;
+          weight=suitWeightDelta+34/*33*/+rRank;
         } 
 	/* Encourage playing second highest rank if hand also has
 	third highest rank. */
 
         else if ((mp->sequence)&&
           (mp->rank==posPoint->secondBest[suit].rank)) 
-          weight=suitWeightDelta+31;
+          weight=suitWeightDelta+35/*31*/;
         else 
-	  weight=suitWeightDelta+13-(mp->rank);
+	  weight=suitWeightDelta+17/*13*/-(mp->rank);
 	
 	/* Encourage playing cards that previously caused search cutoff
 	or was stored as the best move in a transposition table entry match. */
 
 	if ((bestMove[depth].suit==suit)&&
             (bestMove[depth].rank==mp->rank)) 
-          weight+=17;
-	else if ((bestMoveTT[depth].suit==suit)&&
+          weight+=18/*17*/;
+	/*else if ((bestMoveTT[depth].suit==suit)&&
             (bestMoveTT[depth].rank==mp->rank)) 
-          weight+=(3/*4*//*10*//*9*/);
+          weight+=4;*/
       }
         
       break;
@@ -4184,21 +4195,21 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
       if (winMove) {
         if (!notVoidInSuit) { 
           suitCount=posPoint->length[q][suit];
-          suitAdd=(suitCount<<6)/(43/*36*/);
+          suitAdd=(suitCount<<6)/(44/*36*/);
 
 	  /* Discourage suit discard if 2nd highest card becomes singleton. */ 
 
-          if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
-            suitAdd-=2;
+          /*if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
+            suitAdd-=2;*/
 
           if (suit==trump)  
-	        weight=25/*23*/-(mp->rank)+suitAdd;
+	        weight=24-(mp->rank)+suitAdd;
           else
             weight=60-(mp->rank)+suitAdd;  /* Better discard than ruff since rho
 								wins anyway */		
         } 
         else if (k > bitMapRank[mp->rank])
-	  weight=40/*41*/+rRank;
+	  weight=40+rRank;
 
           /* If lowest card for partner to leading hand 
 	    is higher than lho played card, playing as low as 
@@ -4206,7 +4217,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
         else if ((ll > bitMapRank[posPoint->move[depth+1].rank])&&
           (posPoint->rankInSuit[first][leadSuit] > ll))
-	      weight=37/*40*/+rRank;
+	      weight=41+rRank;
 
 	  /* If rho has a card in the leading suit that
              is higher than the trick leading card but lower
@@ -4216,49 +4227,49 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
 	else if (mp->rank > posPoint->move[depth+1].rank) {
           if (bitMapRank[mp->rank] < ll) 
-            weight=75-(mp->rank);  /* If played card is lower than any of the cards of
+            weight=78-(mp->rank);  /* If played card is lower than any of the cards of
 					rho, it will be the cheapest win */		
           else if (bitMapRank[mp->rank] > kk)
-            weight=70-(mp->rank);  /* If played card is higher than any cards at partner
+            weight=73-(mp->rank);  /* If played card is higher than any cards at partner
 				    of the leading hand, rho can play low, under the
                                     condition that he has a lower card than lho played */    
           else {
             if (mp->sequence)
-              weight=62/*63*//*60*/-(mp->rank);   
+              weight=62-(mp->rank);   
             else
-              weight=48/*45*/-(mp->rank);  
+              weight=49-(mp->rank);  
           }
         } 
         else if (posPoint->length[rho[first]][leadSuit]>0) {
-          if (mp->sequence)
-            weight=47/*50*/-(mp->rank);  /* Playing a card in a sequence may promote a winner */
+          /*if (mp->sequence)*/
+            weight=47-(mp->rank);  /* Playing a card in a sequence may promote a winner */
 												/* Insensistive */
-          else
-            weight=45-(mp->rank);	
+          /*else
+            weight=47-(mp->rank);*/	
         }
         else
-          weight=43/*45*/-(mp->rank);
+          weight=40-(mp->rank);
       }
       else {
         if (!notVoidInSuit) { 
           suitCount=posPoint->length[q][suit];
-          suitAdd=(suitCount<<6)/(33/*36*/);
+          suitAdd=(suitCount<<6)/36;
 	
 	  /* Discourage suit discard if 2nd highest card becomes singleton. */
  
           if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
-            suitAdd-=(4/*2*/);
+            suitAdd+=-4;
   
 	  if (suit==trump) {
-            weight=16/*15*/-(mp->rank)+suitAdd;  /* Ruffing is preferred, makes the trick
+            weight=15-(mp->rank)+suitAdd;  /* Ruffing is preferred, makes the trick
 						costly for the opponents */
 	  }
           else
-            weight=-6-(mp->rank)+suitAdd;
+            weight=-2-(mp->rank)+suitAdd;
         }
         else if ((k > bitMapRank[mp->rank])||
           (l > bitMapRank[mp->rank]))
-	  weight=-7/*-9*/+rRank;
+	  weight=-9+rRank;
 
           /* If lowest rank for either partner to leading hand 
 	  or rho is higher than played card for lho,
@@ -4266,12 +4277,12 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 			
         else if (mp->rank > posPoint->move[depth+1].rank) {		  
           if (mp->sequence) 
-            weight=19/*19*/-(mp->rank);	
+            weight=22-(mp->rank);	
           else 
             weight=10-(mp->rank);
         }          
         else
-	  weight=-17+rRank;
+	  weight=-16+rRank;
       }
       break;
 
@@ -4317,37 +4328,37 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
       if (winMove) {
         if (!notVoidInSuit) {
           suitCount=posPoint->length[q][suit];
-          suitAdd=(suitCount<<6)/(48/*36*/);
+          suitAdd=(suitCount<<6)/(50/*36*/);
 
 	  /* Discourage suit discard if 2nd highest card becomes singleton. */ 
 
-          if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
-            suitAdd-=(3/*2*/);
+          /*if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
+            suitAdd-=(3);*/
         
           if (posPoint->high[depth+1]==first) {
             if (suit==trump) 
-              weight=30-(mp->rank)+suitAdd;  /* Ruffs partner's winner */  
+              weight=48-(mp->rank)+suitAdd;  /* Ruffs partner's winner */  
 	    else 
-              weight=60-(mp->rank)+suitAdd;  
+              weight=61-(mp->rank)+suitAdd;  
           } 
           else if (WinningMove(mp, &(posPoint->move[depth+1])))
 
              /* Own hand on top by ruffing */
 
-            weight=70-(mp->rank)+suitAdd;  
+            weight=72-(mp->rank)+suitAdd;  
         }
         else 
-          weight=60-(mp->rank);	
+          weight=58-(mp->rank);	
       }
       else {
         if (!notVoidInSuit) {
           suitCount=posPoint->length[q][suit];
-          suitAdd=(suitCount<<6)/36;
+          suitAdd=(suitCount<<6)/40;
 
 	  /* Discourage suit discard if 2nd highest card becomes singleton. */
  
-	  if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
-            suitAdd-=(4/*2*/);	
+	  /*if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
+            suitAdd-=(4);*/	
           
           if (WinningMove(mp, &(posPoint->move[depth+1])))
 
@@ -4358,9 +4369,9 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 
             /* Discard a trump but still losing */
 
-	    weight=-/*33*/36+rRank+suitAdd;
+	    weight=-32+rRank+suitAdd;
           else
-            weight=-(mp->rank)+suitAdd;
+            weight=-2-(mp->rank)+suitAdd;
         }
         else {
 	  k=posPoint->rankInSuit[rho[first]][suit];
@@ -4369,21 +4380,21 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	    /* If least bit map rank of RHO to lead hand is higher than bit map rank
 		of current card move. */
 
-	    weight=-(mp->rank);
+	    weight=-3-(mp->rank);
 
           else if (WinningMove(mp, &(posPoint->move[depth+1]))) {
 
 	    /* If current card move is highest so far. */
 
             if (mp->rank==posPoint->secondBest[leadSuit].rank)
-              weight=25;		
+              weight=29;		
             else if (mp->sequence)
-              weight=21/*20*/-(mp->rank);
+              weight=26/*20*/-(mp->rank);
             else
-              weight=10-(mp->rank);
+              weight=18-(mp->rank);
           }
           else  
-            weight=-10-(mp->rank);  
+            weight=-12-(mp->rank);  
         } 
       }
             
@@ -4394,7 +4405,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
         suitCount=posPoint->length[q][suit];
         suitAdd=(suitCount<<6)/(24/*36*/);
         if ((suitCount==2)&&(posPoint->secondBest[suit].hand==q))
-          suitAdd-=(2/*0*//*2*/);
+          suitAdd-=(2);
 
         if ((posPoint->high[depth+1])==lho[first]) {
 
@@ -4452,6 +4463,8 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
   }
   return weight;
 }
+
+
 
 /* Shell-1 */
 /* K&R page 62: */
@@ -5207,12 +5220,12 @@ void BuildSOP(struct pos * posPoint, long long suitLengths,
     }
   }	
 
-  suitLengths=0; 
+  /*suitLengths=0; 
   for (ss=0; ss<=2; ss++)
     for (hh=0; hh<=3; hh++) {
       suitLengths=suitLengths<<4;
       suitLengths|=posPoint->length[hh][ss];
-    }
+    }*/
   
   np=SearchLenAndInsert(rootnp[tricks][firstHand], suitLengths, TRUE, &res);
   
@@ -5319,6 +5332,7 @@ int CheckDeal(struct moveType * cardp) {
 }
 
 
+
 int NextMove(struct pos *posPoint, int depth) {
   /* Returns TRUE if at least one move remains to be
   searched, otherwise FALSE is returned. */
@@ -5376,6 +5390,62 @@ int NextMove(struct pos *posPoint, int depth) {
     return FALSE;
   }  
 }
+
+
+#if 0
+int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply) {
+  /* Returns TRUE if at least one move remains to be
+  searched, otherwise FALSE is returned. */
+
+  unsigned short int lw;
+  unsigned char suit;
+  struct moveType currMove=mply->move[mply->current];
+  
+
+  if (lowestWin[depth][currMove.suit]==0) {
+    /* A small card has not yet been identified for this suit. */
+    lw=posPoint->winRanks[depth][currMove.suit];
+    if (lw!=0)
+      lw=lw & (-lw);  /* LSB */
+    else
+      lw=bitMapRank[15];
+    if (bitMapRank[currMove.rank]<lw) {
+       /* The current move has a small card. */
+      lowestWin[depth][currMove.suit]=lw;
+      while (mply->current<=(mply->last-1)) {
+        mply->current++;
+        if (bitMapRank[mply->move[mply->current].rank] >=
+	    lowestWin[depth][mply->move[mply->current].suit]) { 
+	  return TRUE;
+	}
+      }
+      return FALSE;
+    }
+    else {
+      while (mply->current<=(mply->last-1)) {
+        mply->current++;
+        suit=mply->move[mply->current].suit;
+        if ((currMove.suit==suit) ||
+	  (bitMapRank[mply->move[mply->current].rank] >=
+	    lowestWin[depth][suit])) {
+	  return TRUE;
+	}
+      }
+      return FALSE;
+    }
+  }
+  else {
+    while (mply->current<=(mply->last-1)) { 
+      mply->current++;
+      if (bitMapRank[mply->move[mply->current].rank] >=
+	    lowestWin[depth][mply->move[mply->current].suit]) {
+	return TRUE;
+      }
+    }
+    return FALSE;
+  }  
+}
+#endif
 
 
 int DumpInput(int errCode, struct deal dl, int target,
@@ -5886,6 +5956,671 @@ int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target,
 }
 #endif
 #endif
+
+#ifdef PLUSVER
+int STDCALL CalcParPBN(struct ddTableDealPBN tableDealPBN, 
+struct ddTableResults * tablep, int vulnerable, struct parResults *presp) {
+	int res;
+	struct ddTableDeal tableDeal;
+	int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]);
+	int STDCALL CalcPar(struct ddTableDeal tableDeal, int vulnerable, 
+	struct ddTableResults * tablep, struct parResults *presp);
+
+	if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards)!=1)
+		return -99;
+
+	res=CalcPar(tableDeal, vulnerable, tablep, presp);
+
+	return res;
+}
+
+int STDCALL CalcPar(struct ddTableDeal tableDeal, int vulnerable, 
+struct ddTableResults * tablep, struct parResults *presp) {
+
+	int res;
+
+	int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable);
+
+	res=CalcDDtable(tableDeal, tablep);
+
+	if (res!=1)
+		return res;
+
+	res=Par(tablep, presp, vulnerable);
+
+	return res;
+
+}
+#endif
+
+int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable) {
+	/* vulnerable 0: None  1: Both  2: NS  3: EW */
+
+/* The code for calculation of par score / contracts is based upon the
+   perl code written by Matthew Kidd ACBLmerge. He has kindly given me permission
+   to include a C++ adaptation in DDS. */ 
+
+/* The Par function computes the par result and contracts. */
+
+  
+  int denom_conv[5]={4, 0, 1, 2, 3};
+  /* Preallocate for efficiency. These hold result from last direction
+     (N-S or E-W) examined. */
+  int i, j, k, m, isvul;
+  int current_side, both_sides_once_flag, denom_max, max_lower;
+  int new_score_flag, sc1, sc2; 
+  int prev_par_denom=0, prev_par_tricks=0;
+   
+  int ut, t1, t2, tt, score, dr, ke, tu, tu_max, t3, t4, n;
+  struct par_suits_type par_suits[5];
+  char contr_sep[2]={',','\0'};
+  char temp[8], buff[4];
+
+  int par_denom[2] = {-1, -1};	 /* 0-4 = NT,S,H,D,C */
+  int par_tricks[2] = {6, 6};	 /* Initial "contract" beats 0 NT */
+  int par_score[2] = {0, 0};
+  int par_sacut[2] = {0, 0};     /* Undertricks for sacrifice (0 if not sac) */
+
+  int rawscore(int denom, int tricks, int isvul);
+  void IniSidesString(int dr, int i, int t1, int t2, char stri[]);
+  int CalcMultiContracts(int max_lower, int tricks);
+
+  /* Find best par result for N-S (i==0) or E-W (i==1). These will
+     nearly always be the same, but when we have a "hot" situation
+     they will not be. */
+
+  for (i=0; i<=1; i++) {
+    /* Start with the with the offensive side (current_side = 0) and alternate
+       between sides seeking the to improve the result for the current side.*/
+
+    current_side=0;  both_sides_once_flag=0;
+    while (1) {
+
+      /* Find best contract for current side that beats current contract.
+         Choose highest contract if results are equal. */
+
+      k=(i+current_side) % 2;
+
+      isvul=((vulnerable==1)||(k ? (vulnerable==3) : (vulnerable==2)));
+
+      new_score_flag=0;
+      prev_par_denom=par_denom[i];
+      prev_par_tricks=par_tricks[i];
+
+    /* Calculate tricks and score values and 
+       store them for each denomination in structure par_suits[5]. */
+
+      for (j=0; j<=4; j++) {
+        t1 = k ? tablep->resTable[denom_conv[j]][1] : tablep->resTable[denom_conv[j]][0];
+        t2 = k ? tablep->resTable[denom_conv[j]][3] : tablep->resTable[denom_conv[j]][2];
+        tt = Max(t1, t2);
+	/* tt is the maximum number of tricks current side can take in 
+           denomination.*/
+        par_suits[j].suit=j;
+        par_suits[j].tricks=tt;
+        if ((tt > par_tricks[i]) || ((tt == par_tricks[i]) &&
+	  (j < par_denom[i]))) 
+	  par_suits[j].score=rawscore(j, tt, isvul);
+        else
+	  par_suits[j].score=rawscore(-1, prev_par_tricks - tt, isvul);
+      }
+		
+       /* Sort the items in the par_suits structure with decreasing order of the 
+       values on the scores. */
+	  
+      for (int s = 1; s < 5; s++) { 
+        struct par_suits_type tmp = par_suits[s]; 
+        int r = s; 
+        for (; r && tmp.score > par_suits[r - 1].score ; --r) 
+          par_suits[r] = par_suits[r - 1]; 
+        par_suits[r] = tmp; 
+      }
+	  
+      /* Do the iteration as before but now in the order of the sorted denominations. */
+		
+      for (m=0; m<=4; m++) {
+	j=par_suits[m].suit;
+	tt=par_suits[m].tricks;
+ 
+	if ((tt > par_tricks[i]) || ((tt == par_tricks[i]) &&
+	  (j < par_denom[i]))) {
+	  /* Can bid higher and make contract.*/
+	  score=rawscore(j, tt, isvul);
+	}
+	else {
+	  /* Bidding higher in this denomination will not beat previous denomination
+             and may be a sacrifice. */
+	  ut=prev_par_tricks - tt;
+	  if (j >= prev_par_denom) {
+	    /* Sacrifices higher than 7N are not permitted (but long ago
+               the official rules did not prohibit bidding higher than 7N!) */
+	    if (prev_par_tricks == 13)
+	      continue;
+            /* It will be necessary to bid one level higher, resulting in
+               one more undertrick. */
+	    ut++;
+	  }
+	  /* Not a sacrifice (due to par_tricks > prev_par_tricks) */
+	  if (ut <= 0)
+	    continue;
+	  /* Compute sacrifice.*/
+	  score=rawscore(-1, ut, isvul);
+	}
+	if (current_side == 1)
+	  score=-score;
+
+	if (((current_side == 0)&&(score > par_score[i])) || 
+	  ((current_side == 1)&&(score < par_score[i]))) {
+	  new_score_flag = 1;
+	  par_score[i] = score;
+	  par_denom[i] = j;		
+
+	  if (((current_side == 0)&&(score > 0)) || 
+	    ((current_side == 1)&&(score < 0))) {
+	    /* New par score from a making contract. 
+	       Can immediately update since score at same level in higher
+	       ranking suit is always >= score in lower ranking suit and 
+               better than any sacrifice. */
+	    par_tricks[i] = tt;
+	    par_sacut[i] = 0;
+	  }
+	  else {
+	    par_tricks[i] = tt + ut;
+	    par_sacut[i] = ut;
+	  }
+	}
+      }
+
+      if (!new_score_flag && both_sides_once_flag)
+	break; 
+      both_sides_once_flag = 1;
+      current_side = 1 - current_side;
+    }
+  }
+
+  presp->parScore[0][0]='N';
+  presp->parScore[0][1]='S';
+  presp->parScore[0][2]=' ';
+  presp->parScore[0][3]='\0';
+  presp->parScore[1][0]='E';
+  presp->parScore[1][1]='W';
+  presp->parScore[1][2]=' ';
+  presp->parScore[1][3]='\0';
+
+  /*itoa(par_score[0], temp, 10);*/
+  sprintf(temp, "%d", par_score[0]);
+  strcat(presp->parScore[0], temp);
+  /*itoa(par_score[1], temp, 10);*/
+  sprintf(temp, "%d", par_score[1]);
+  strcat(presp->parScore[1], temp);
+
+  for (i=0; i<=1; i++) {
+    presp->parContractsString[0][0]='N';
+    presp->parContractsString[0][1]='S';
+    presp->parContractsString[0][2]=':';
+    presp->parContractsString[0][3]='\0';
+    presp->parContractsString[1][0]='E';
+    presp->parContractsString[1][1]='W';
+    presp->parContractsString[1][2]=':';
+    presp->parContractsString[1][3]='\0';
+  }
+
+  if (par_score[0] == 0) {
+    /* Neither side can make anything.*/
+    return 1;
+  }
+
+
+  for (i=0; i<=1; i++) {
+
+    if ( par_sacut[i] > 0 ) {
+	  
+      dr = (par_score[i] > 0) ? 0 : 1;
+    
+      for (j=0/*par_denom[i]*/; j<=4; j++) {
+
+        t1 = ((dr+i) % 2 ) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
+        t2 = ((dr+i) % 2 ) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
+        tt = (t1 > t2) ? t1 : t2;
+
+	tu_max=0;
+	
+	for (m=0; m<=4; m++) {
+	  t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
+          t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
+	  tu = (t3 > t4) ? t3 : t4;
+	  if (tu > tu_max) {
+	    tu_max=tu;
+	    denom_max=m;
+	  }
+	}
+
+	if (j >= par_denom[i]) {
+	  if (((par_tricks[i] - par_sacut[i]) != tt) || ((par_denom[i] < denom_max) && (j > denom_max)))
+	    continue;
+	}
+	else if ((denom_max < par_denom[i])&&(j < denom_max)) {
+	  if ((par_tricks[i] - 1 - par_sacut[i]) != tt)
+	    continue;
+	}
+	else {
+	  if ((par_tricks[i] - par_sacut[i]) != tt)
+	    continue;
+	}
+	
+
+	IniSidesString(dr, i, t1, t2, buff);
+
+	if (presp->parContractsString[i][3]!='\0')
+	  strcat(presp->parContractsString[i], contr_sep);
+
+	strcat(presp->parContractsString[i], buff);
+
+	/*itoa(par_tricks[i]-6, temp, 10);*/
+	if ((denom_max < par_denom[i]) && (j < denom_max))
+	  sprintf(temp, "%d", par_tricks[i]-7); 
+	else
+	  sprintf(temp, "%d", par_tricks[i]-6);
+	buff[0]=cardSuit[denom_conv[j]];
+	buff[1]='x';
+	buff[2]='\0';
+	strcat(temp, buff);
+	strcat(presp->parContractsString[i], temp);
+
+	stat_contr[0]++;
+      }
+    }
+    else {
+      /* Par contract is a makeable contract.*/
+      dr = (par_score[i] < 0) ? 0 : 1;
+
+      /* If spades or diamonds, lower major / minor may also be a par contract.*/
+      ke = (par_denom[i] == 1 || par_denom[i] == 3) ? 1 : 0;
+	  
+      for (j=par_denom[i]; j<=par_denom[i]+ke; j++) {
+        t1 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
+	t2 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
+	tt = (t1 > t2) ? t1 : t2;
+
+	if (tt < par_tricks[i]) { continue; }
+
+	IniSidesString(dr, i, t1, t2, buff);
+
+	tu_max=0;
+	for (m=0; m<=4; m++) {
+	  t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
+          t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
+	  tu = (t3 > t4) ? t3 : t4;
+	  if (tu > tu_max) {
+	    tu_max=tu;
+	    denom_max=m;  /* Lowest denomination if several denominations have max tricks. */
+	  }
+	}
+
+	if (presp->parContractsString[i][3]!='\0')
+	  strcat(presp->parContractsString[i], contr_sep);
+
+	strcat(presp->parContractsString[i], buff);
+
+	if (denom_max < par_denom[i]) 
+	  max_lower = par_tricks[i] - tu_max - 1;
+	else
+	  max_lower = par_tricks[i] - tu_max;
+
+	/* max_lower is the maximal contract lowering, otherwise opponent contract is
+	higher. It is already known that par_score is high enough to make
+	opponent sacrifices futile. 
+	To find the actual contract lowering allowed, it must be checked that the
+	lowered contract still gets the score bonus points that is present in par score.*/
+
+	sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	/* Score for making the tentative lower par contract. */
+	while (max_lower > 0) {
+	  if (denom_max < par_denom[i]) 
+	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, isvul);
+	  else
+	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, isvul);
+	  /* Score for undertricks needed to beat the tentative lower par contract.*/
+	  if (sc2 < sc1)
+	    break;
+	  else
+	    max_lower--;
+	  /* Tentative lower par contract must be 1 trick higher, since the cost
+	  for the sacrifice is too small. */
+	}
+
+	switch (par_denom[i]) {
+	  case 0:  k = 0; break;
+	  case 1:  case 2: k = 1; break;
+	  case 3:  case 4: k = 2;
+	}
+
+	max_lower = Min(max_low[k][par_tricks[i]-6], max_lower);
+
+	n = CalcMultiContracts(max_lower, par_tricks[i]);
+
+	/*itoa(n, temp, 10);*/
+	sprintf(temp, "%d", n);
+	buff[0]=cardSuit[denom_conv[j]];
+	buff[1]='\0';
+	strcat(temp, buff);
+	strcat(presp->parContractsString[i], temp);
+
+	stat_contr[1]++;
+      }
+
+
+      /* Deal with special case of 3N/5m (+400/600) */
+      if ((par_denom[i] == 0) && (par_tricks[i] == 9)) {
+	    
+	for (j=3; j<=4; j++) {
+	  t1 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
+	  t2 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
+	  tt = (t1 > t2) ? t1 : t2;
+
+	  if (tt != 11) { continue; }
+
+	  IniSidesString(dr, i, t1, t2, buff);
+
+	  if (presp->parContractsString[i][3]!='\0')
+	    strcat(presp->parContractsString[i], contr_sep);
+
+	  strcat(presp->parContractsString[i], buff);
+
+	  /*itoa(5, temp, 10);*/
+	  sprintf(temp, "%d", 5);
+	  buff[0]=cardSuit[denom_conv[j]];
+	  buff[1]='\0';
+	  strcat(temp, buff);
+	  strcat(presp->parContractsString[i], temp);
+
+	  stat_contr[2]++;
+	}
+	    
+      }
+      /* Deal with special case of 2S/2H (+110) which may have 3C and 3D
+         as additional par contract(s).*/
+      if ((par_denom[i] <=2) && (par_denom[i] != 0) && (par_tricks[i] == 8)) {
+	/* Check if 3C and 3D make.*/
+	for (j=3; j<=4; j++) {
+	  t1 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
+	  t2 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
+	  tt = (t1 > t2) ? t1 : t2;
+
+	  if (tt != 9) { continue; }
+
+	  IniSidesString(dr, i, t1, t2, buff);
+
+	  tu_max=0;
+
+	  for (m=0; m<=4; m++) {
+	    t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
+            t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
+	    tu = (t3 > t4) ? t3 : t4;
+	    if (tu > tu_max) {
+	      tu_max=tu;
+	      denom_max=m;
+	    }
+	  }
+
+	  if (presp->parContractsString[i][3]!='\0')
+	    strcat(presp->parContractsString[i], contr_sep);
+
+	  strcat(presp->parContractsString[i], buff);
+
+	  if (denom_max < j) 
+	    max_lower = 9 - tu_max - 1;
+	  else
+	    max_lower = 9 - tu_max;
+
+	  /* max_lower is the maximal contract lowering, otherwise opponent contract is
+	  higher. It is already known that par_score is high enough to make
+	  opponent sacrifices futile. 
+	  To find the actual contract lowering allowed, it must be checked that the
+	  lowered contract still gets the score bonus points that is present in par score.*/
+
+	  sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	  /* Score for making the tentative lower par contract. */
+	  while (max_lower > 0) {
+	    if (denom_max < j) 
+	      sc1 = -rawscore(-1, 9/*par_tricks[i] + 1*/ - max_lower - tu_max, isvul);
+	    else
+	      sc1 = -rawscore(-1, 9 - max_lower - tu_max + 1, isvul);
+	    /* Score for undertricks needed to beat the tentative lower par contract.*/
+	    if (sc2 < sc1)
+	      break;
+	    else
+	      max_lower--;
+	    /* Tentative lower par contract must be 1 trick higher, since the cost
+	    for the sacrifice is too small. */
+	  }
+
+	  switch (par_denom[i]) {
+	    case 0:  k = 0; break;
+	    case 1:  case 2: k = 1; break;
+	    case 3:  case 4: k = 2;
+	  }
+
+	  max_lower = Min(max_low[k][3], max_lower);
+
+	  n = CalcMultiContracts(max_lower, 9);
+
+	  /*itoa(n, temp, 10);*/
+	  sprintf(temp, "%d", n);
+	  buff[0]=cardSuit[denom_conv[j]];
+	  buff[1]='\0';
+	  strcat(temp, buff);
+	  strcat(presp->parContractsString[i], temp);
+
+	  stat_contr[3]++;
+	}
+      }
+      /* Deal with special case 1NT (+90) which may have 2C or 2D as additonal par
+         contracts(s). */
+      if ((par_denom[i] == 0) && (par_tricks[i] == 7)) {
+	for (j=3; j<=4; j++) {
+	  t1 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
+	  t2 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
+	  tt = (t1 > t2) ? t1 : t2;
+
+	  if (tt != 8) { continue; }
+
+	  IniSidesString(dr, i, t1, t2, buff);
+
+	  tu_max=0;
+	  for (m=0; m<=4; m++) {
+	    t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
+            t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
+	    tu = (t3 > t4) ? t3 : t4;
+	    if (tu > tu_max) {
+	      tu_max=tu;
+	      denom_max=m;
+	    }
+	  }
+
+	  if (presp->parContractsString[i][3]!='\0')
+	    strcat(presp->parContractsString[i], contr_sep);
+
+	  strcat(presp->parContractsString[i], buff);
+
+	  if (denom_max < j) 
+	    max_lower = 8 - tu_max - 1;
+	  else
+	    max_lower = 8 - tu_max;
+
+	  /* max_lower is the maximal contract lowering, otherwise opponent contract is
+	  higher. It is already known that par_score is high enough to make
+	  opponent sacrifices futile. 
+	  To find the actual contract lowering allowed, it must be checked that the
+	  lowered contract still gets the score bonus points that is present in par score.*/
+
+	  sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	  /* Score for making the tentative lower par contract. */
+	  while (max_lower > 0) {
+	    if (denom_max < j) 
+	      sc1 = -rawscore(-1, 8 - max_lower - tu_max, isvul);
+	    else
+	      sc1 = -rawscore(-1, 8 - max_lower - tu_max + 1, isvul);
+	    /* Score for undertricks needed to beat the tentative lower par contract.*/
+	    
+	    if (sc2 < sc1)
+	      break;
+	    else
+	      max_lower--;
+	    /* Tentative lower par contract must be 1 trick higher, since the cost
+	    for the sacrifice is too small. */
+	  }
+
+	  switch (par_denom[i]) {
+	    case 0:  k = 0; break;
+	    case 1:  case 2: k = 1; break;
+	    case 3:  case 4: k = 2;
+	  }
+
+	  max_lower = Min(max_low[k][3], max_lower);
+
+	  n = CalcMultiContracts(max_lower, 8);
+
+	  /*itoa(n, temp, 10);*/
+	  sprintf(temp, "%d", n);
+	  buff[0]=cardSuit[denom_conv[j]];
+	  buff[1]='\0';
+	  strcat(temp, buff);
+	  strcat(presp->parContractsString[i], temp);
+
+	  stat_contr[4]++;
+	}
+      }
+    }
+  }
+
+  return 1;
+}
+
+
+int rawscore(int denom, int tricks, int isvul) {
+  int game_bonus, level, score;
+
+  /* Computes score for undoubled contract or a doubled contract with
+     for a given number of undertricks. These are the only possibilities
+     for a par contract (aside from a passed out hand). 
+  
+     denom  - 0 = NT, 1 = Spades, 2 = Hearts, 3 = Diamonds, 4 = Clubs
+             (same order as results from double dummy solver); -1 undertricks
+     tricks - For making contracts (7-13); otherwise, number of undertricks.
+     isvul  - True if vulnerable */
+
+  if (denom==-1) {
+    if (isvul)
+      return -300 * tricks + 100;
+    if (tricks<=3)
+      return -200 * tricks + 100;
+    return -300 * tricks + 400;
+  }
+  else {
+    level=tricks-6;
+    game_bonus=0;
+    if (denom==0) {
+      score=10 + 30 * level;
+      if (level>=3)
+	game_bonus=1;
+    }
+    else if ((denom==1)||(denom==2)) {
+      score=30 * level;
+      if (level>=4)
+        game_bonus=1;
+    }
+    else {
+      score=20 * level;
+      if (level>=5)
+	game_bonus=1;
+    }
+    if (game_bonus) {
+      score+= (isvul ? 500 : 300);
+    }
+    else
+      score+=50;
+
+    if (level==6) {
+      score+= (isvul ? 750 : 500);
+    }
+    else if (level==7) {
+      score+= (isvul ? 1500 : 1000);
+    }
+  }
+
+  return score;
+}
+
+
+void IniSidesString(int dr, int i, int t1, int t2, char stri[]) {
+
+   if ((dr+i) % 2 ) {
+     if (t1==t2) {
+       stri[0]='N';
+       stri[1]='S';
+       stri[2]=' ';
+       stri[3]='\0';
+     }
+     else if (t1 > t2) {
+       stri[0]='N';
+       stri[1]=' ';
+       stri[2]='\0';
+     }
+     else {
+       stri[0]='S';
+       stri[1]=' ';
+       stri[2]='\0';
+     }
+   }
+   else {
+     if (t1==t2) {
+       stri[0]='E';
+       stri[1]='W';
+       stri[2]=' ';
+       stri[3]='\0';
+     }
+     else if (t1 > t2) {
+       stri[0]='E';
+       stri[1]=' ';
+       stri[2]='\0';
+     }
+     else {
+       stri[0]='W';
+       stri[1]=' ';
+       stri[2]='\0';
+     }
+   }
+   return;
+}
+
+
+int CalcMultiContracts(int max_lower, int tricks) {
+  int n;
+
+  switch (tricks-6) {
+    case 5: if (max_lower==3) {n = 2345;}
+	    else if (max_lower==2) {n = 345;}
+	    else if (max_lower==1) {n = 45;}
+	    else {n = 5;}
+	    break;
+    case 4: if (max_lower==3) {n = 1234;}
+	    else if (max_lower==2) {n = 234;}
+	    else if (max_lower==1) {n = 34;}
+	    else {n = 4;}
+	    break;
+    case 3: if (max_lower==2) {n = 123;}
+	    else if (max_lower==1) {n = 23;}
+	    else {n = 3;}
+	    break;
+    case 2: if (max_lower==1) {n = 12;}
+	    else {n = 2;}
+	    break;
+    default: n = tricks-6;
+  }
+  return n;
+}
+
 
 
 

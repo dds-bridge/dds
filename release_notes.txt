@@ -397,6 +397,11 @@ Change of license from GPL to Apache 2.0.
 Some minor changes in the WeightAlloc functions.
 
 
+Release Notes DDS 1.1.19
+------------------------
+New build of dds.lib for meeting requirements in Visual C++ 2013.
+Many code changes to improve performance.
+Added par calculation in the "plus" version.
 
      
 
