@@ -403,5 +403,12 @@ New build of dds.lib for meeting requirements in Visual C++ 2013.
 Many code changes to improve performance.
 Added par calculation in the "plus" version.
 
+Release Notes DDS 1.1.20
+------------------------ 
+A fault in the par calculation has been fixed. The fault could cause 
+presentation of wrongly extra par contracts in cases were the sides had different 
+vulnerability.
+
+
      
 

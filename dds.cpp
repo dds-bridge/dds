@@ -1,5 +1,5 @@
 
-/* DDS 1.1.19   A bridge double dummy solver.				      */
+/* DDS 1.1.20   A bridge double dummy solver.				      */
 /* Copyright (C) 2006-2014 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli         */
 /*								              */
@@ -6024,6 +6024,7 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
   int rawscore(int denom, int tricks, int isvul);
   void IniSidesString(int dr, int i, int t1, int t2, char stri[]);
   int CalcMultiContracts(int max_lower, int tricks);
+  int VulnerDefSide(int side, int vulnerable);
 
   /* Find best par result for N-S (i==0) or E-W (i==1). These will
      nearly always be the same, but when we have a "hot" situation
@@ -6273,13 +6274,15 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	To find the actual contract lowering allowed, it must be checked that the
 	lowered contract still gets the score bonus points that is present in par score.*/
 
-	sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	sc2 = abs(par_score[i]);
 	/* Score for making the tentative lower par contract. */
 	while (max_lower > 0) {
 	  if (denom_max < par_denom[i]) 
-	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, isvul);
+	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, 
+		VulnerDefSide(par_score[0]>0, vulnerable));
 	  else
-	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, isvul);
+	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, 
+		VulnerDefSide(par_score[0]>0, vulnerable));
 	  /* Score for undertricks needed to beat the tentative lower par contract.*/
 	  if (sc2 < sc1)
 	    break;
@@ -6379,13 +6382,15 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  To find the actual contract lowering allowed, it must be checked that the
 	  lowered contract still gets the score bonus points that is present in par score.*/
 
-	  sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	  sc2 = abs(par_score[i]);
 	  /* Score for making the tentative lower par contract. */
 	  while (max_lower > 0) {
 	    if (denom_max < j) 
-	      sc1 = -rawscore(-1, 9/*par_tricks[i] + 1*/ - max_lower - tu_max, isvul);
+	      sc1 = -rawscore(-1, 9 - max_lower - tu_max,
+		VulnerDefSide(par_score[0]>0, vulnerable));
 	    else
-	      sc1 = -rawscore(-1, 9 - max_lower - tu_max + 1, isvul);
+	      sc1 = -rawscore(-1, 9 - max_lower - tu_max + 1, 
+		VulnerDefSide(par_score[0]>0, vulnerable));
 	    /* Score for undertricks needed to beat the tentative lower par contract.*/
 	    if (sc2 < sc1)
 	      break;
@@ -6454,13 +6459,15 @@ int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable
 	  To find the actual contract lowering allowed, it must be checked that the
 	  lowered contract still gets the score bonus points that is present in par score.*/
 
-	  sc2 = rawscore(par_denom[i], par_tricks[i], isvul);
+	  sc2 = abs(par_score[i]);
 	  /* Score for making the tentative lower par contract. */
 	  while (max_lower > 0) {
 	    if (denom_max < j) 
-	      sc1 = -rawscore(-1, 8 - max_lower - tu_max, isvul);
+	      sc1 = -rawscore(-1, 8 - max_lower - tu_max, 
+		VulnerDefSide(par_score[0]>0, vulnerable));
 	    else
-	      sc1 = -rawscore(-1, 8 - max_lower - tu_max + 1, isvul);
+	      sc1 = -rawscore(-1, 8 - max_lower - tu_max + 1, 
+		VulnerDefSide(par_score[0]>0, vulnerable));
 	    /* Score for undertricks needed to beat the tentative lower par contract.*/
 	    
 	    if (sc2 < sc1)
@@ -6619,6 +6626,27 @@ int CalcMultiContracts(int max_lower, int tricks) {
     default: n = tricks-6;
   }
   return n;
+}
+
+
+int VulnerDefSide(int side, int vulnerable) {
+  if (vulnerable == 0)
+    return 0;
+  else if (vulnerable == 1)
+    return 1;
+  else if (side) {
+    /* N/S makes par contract. */
+    if (vulnerable == 2)
+      return 0;
+    else
+      return 1;
+  }
+  else {
+    if (vulnerable == 3)
+      return 0;
+    else
+      return 1;
+  }
 }
 
 

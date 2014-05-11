@@ -31,7 +31,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		10119	/* Version 1.1.19. Allowing for 2 digit
+#define DDS_VERSION		10120	/* Version 1.1.20. Allowing for 2 digit
 					minor versions */
 /*#define BENCH*/
 
