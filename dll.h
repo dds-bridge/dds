@@ -40,7 +40,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION	20501	/* Version 2.5.1. Allowing for 2 digit minor versions */
+#define DDS_VERSION	20502	/* Version 2.5.2. Allowing for 2 digit minor versions */
 
 #define PBN
 
