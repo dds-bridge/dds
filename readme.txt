@@ -1,4 +1,4 @@
-DDS 2.4,  Bo Haglund 2014-03-01
+DDS 2.6,  Bo Haglund 2014-09-15
 
 For Win32, DDS compiles with Visual C++ 2010 and 2012 Express editions 
 and the TDM-GCC/Mingw port of gcc.
@@ -40,24 +40,9 @@ system does not support reading out of the number of processors.
 
 Options at DDS compilation
 --------------------------
-Compiling options:
+Single thread operation can be invoked by
+defining DDS_THREADS_SINGLE in the dll.h file.
 
-The SolveBoard and CalcDDtable are included in all DDS compilation options.
-The "PBN" and the "PBN_PLUS" definitions are included in the header fill dll.h.
-Defining "PBN" means that the functions SolveBoardPBN and CalcDDtablePBN are supported.
-Defining "PBN_PLUS" as well means that also the functions SolveAllBoards,
-SolveAllChunks, ParCalc and ParCalcPBN are supported.
-
-The possible configurations thus are:
-
-1)   None of the definitions "PBN" and "PBN_plus": 
-     only the basic functions SolveBoard and CalcDDtable are supported.
-2)  "PBN":  Also support for SolveBoardPBN and CalcDDtablePBN.
-3)  "PBN" and "PBN_PLUS":  As for "PBN" and also supporting SolveAllBoards,
-     SolveAllChunks, SolveAllTables, SolveAllTablesPBN, ParCalc and ParCalcPBN.
-
-Staying with the previous configuration might be needed when 2.5.1 is to replace an 
-older 2.x.y version, and the application using DDS cannot handle a changed interface.
 
 
 

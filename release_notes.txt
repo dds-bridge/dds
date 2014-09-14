@@ -456,4 +456,10 @@ A fault in the par calculation has been fixed. The fault could cause
 presentation of wrongly extra par contracts in cases were the sides had different 
 vulnerability.
 
+Release Notes DDS 2.6.0
+-----------------------  
+The Par function has been corrected.
+The DealerPar and the PlayAnalyser functions has been added, written by Soren Hein.
+2.6.0 is 2% faster than 2.5.2. Soren Hein has contributed on numerous improvements.
+
 

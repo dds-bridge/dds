@@ -1,10 +1,17 @@
 
-/* DDS 2.5.2   A bridge double dummy solver.				      */
+/* DDS 2.6.0   A bridge double dummy solver.		      		      */
 /* Copyright (C) 2006-2014 by Bo Haglund                                      */
 /* Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.        */
 /* The code for calculation of par score / contracts is based upon the	      */
 /* perl code written by Matthew Kidd for ACBLmerge. He has kindly given me    */
-/* permission to include a C++ adaptation in DDS. 	      		      */ 
+/* permission to include a C++ adaptation in DDS. 	      		      */
+/* 									      */
+/* The PlayAnalyser analyses the played cards of the deal and presents their  */
+/* double dummy values. The par calculation function DealerPar provides an    */
+/* alternative way of calculating and presenting par results.      	      */				      
+/* Both these functions have been written by Soren Hein.                      */
+/* He has also made numerous contributions to the code, especially in the     */
+/* initialization part.							      */
 /*								              */
 /* Licensed under the Apache License, Version 2.0 (the "License");	      */
 /* you may not use this file except in compliance with the License.	      */
@@ -17,12 +24,16 @@
 /* limitations under the License.					      */
 
 
-/*#include "stdafx.h"*/ 	/* Needed by Visual C++ */
+/*#include "stdafx.h"*/ 
 
 #include "dll.h"
+#include "dds.h"
+#include "Par.h"
 
-struct localVarType localVar[MAXNOOFTHREADS];
+struct localVarType * localVar;
 
+int max_lower;
+struct relRanksType * relRanks;
 int * counttable;
 int * highestRank;
 int lho[4];
@@ -32,13 +43,12 @@ unsigned short int bitMapRank[16];
 unsigned char cardRank[15];
 unsigned char cardSuit[5];
 unsigned char cardHand[4];
-int stat_contr[5]={0,0,0,0,0};
-int max_low[3][8];  /* index 1: 0=NT, 1=Major, 2=Minor  index 2: contract level 1-7 */
+void InitStart(int gb_ram, int ncores);
 
-struct ttStoreType * ttStore;
-int lastTTstore;
-int ttCollect;
-int suppressTTlog;
+#ifdef STAT
+  FILE * fp2;
+#endif
+
 
 int noOfThreads=MAXNOOFTHREADS;  /* The number of entries to the transposition tables. There is
 				    one entry per thread. */
@@ -48,60 +58,62 @@ int noOfCores;			/* The number of processor cores, however cannot be higher than
 #pragma managed(push, off)
 #endif
 
+void FreeMem(void) {
 
-#if defined(_WIN32)
-extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
-				DWORD ul_reason_for_call,
-				LPVOID lpReserved) {
-  int k;
+  if (localVar)
+    free(localVar);
+  localVar=NULL;
+
+  #ifdef STAT
+    fclose(fp2);
+  #endif
+   
+  if (highestRank)
+    free(highestRank);
+  highestRank=NULL;
+  if (counttable)
+    free(counttable);
+  counttable=NULL;
+  if (relRanks)
+    free(relRanks);
+  relRanks=NULL;
+
+  return;
+}
+
+
+#if defined(_WIN32) || defined(USES_DLLMAIN)
+
+  extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
+	DWORD ul_reason_for_call, LPVOID lpReserved) {
 
   if (ul_reason_for_call==DLL_PROCESS_ATTACH) {
     InitStart(0, 0);
   }
   else if (ul_reason_for_call==DLL_PROCESS_DETACH) {
-    for (k=0; k<noOfThreads; k++) {
-      Wipe(k);
-      if (localVar[k].pw[0])
-        free(localVar[k].pw[0]);
-      localVar[k].pw[0]=NULL;
-      if (localVar[k].pn[0])
-        free(localVar[k].pn[0]);
-      localVar[k].pn[0]=NULL;
-      if (localVar[k].pl[0])
-        free(localVar[k].pl[0]);
-      localVar[k].pl[0]=NULL;
-      if (localVar[k].pw)
-	free(localVar[k].pw);
-      localVar[k].pw=NULL;
-      if (localVar[k].pn)
-	free(localVar[k].pn);
-      localVar[k].pn=NULL;
-      if (localVar[k].pl)
-	free(localVar[k].pl);
-      localVar[k].pl=NULL;
-      /*if (ttStore)
-        free(ttStore);
-      ttStore=NULL;*/
-      if (localVar[k].rel)
-        free(localVar[k].rel);
-      localVar[k].rel=NULL;
-      if (localVar[k].adaptWins)
-	free(localVar[k].adaptWins);
-      localVar[k].adaptWins=NULL;
-    }
-    if (ttStore)
-      free(ttStore);
-    ttStore=NULL;
-    if (highestRank)
-      free(highestRank);
-    highestRank=NULL;
-    if (counttable)
-      free(counttable);
-    counttable=NULL;
+
+    FreeMem();
+
 	/*_CrtDumpMemoryLeaks();*/	/* MEMORY LEAK? */
   }
   return 1;
 }
+
+#elif defined(USES_CONSTRUCTOR)
+
+void __attribute__ ((constructor)) libInit(void) {
+
+  InitStart(0, 0);
+
+}
+
+
+void __attribute__ ((destructor)) libEnd(void) {
+
+  FreeMem();
+  
+}
+
 #endif
 
 #ifdef _MANAGED
@@ -109,11 +121,10 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 #endif
 
   int STDCALL SolveBoard(struct deal dl, int target,
-    int solutions, int mode, struct futureTricks *futp, int thrId) {
+    int solutions, int mode, struct futureTricks *futp, int threadIndex) {
 
   int k, n, cardCount, found, totalTricks, tricks, last, checkRes;
   int g, upperbound, lowerbound, first, i, j, h, forb, ind, flag, noMoves;
-  /*int mcurr;*/
   int noStartMoves;
   int handRelFirst;
   int noOfCardsPerHand[4];
@@ -128,37 +139,38 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   int MaxnodeSetSize=0;
   int MaxwinSetSize=0;
   int MaxlenSetSize=0;
+  struct localVarType * thrp = &localVar[threadIndex];
 
+  void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst, 
+    struct localVarType * thrp);
+  void InitSearch(struct pos * posPoint, int depth, struct moveType startMoves[],
+    int first, int mtd, struct localVarType * thrp);
 
-  /*InitStart(0,0);*/   /* Include InitStart() if inside SolveBoard,
-			   but preferable InitStart should be called outside
-			   SolveBoard like in DllMain for Windows. */
-
-  if ((thrId<0)||(thrId>=noOfThreads)) {	/* Fault corrected after suggestion by Dirk Willecke. */
-    DumpInput(-15, dl, target, solutions, mode);
-	return -15;
+  if ((threadIndex<0)||(threadIndex>=noOfThreads)) {	/* Fault corrected after suggestion by Dirk Willecke. */
+    DumpInput(RETURN_THREAD_INDEX, dl, target, solutions, mode);
+	return RETURN_THREAD_INDEX;
   }
 
   for (k=0; k<=13; k++) {
-    localVar[thrId].forbiddenMoves[k].rank=0;
-    localVar[thrId].forbiddenMoves[k].suit=0;
+    thrp->forbiddenMoves[k].rank=0;
+    thrp->forbiddenMoves[k].suit=0;
   }
 
   if (target<-1) {
-    DumpInput(-5, dl, target, solutions, mode);
-    return -5;
+    DumpInput(RETURN_TARGET_WRONG_LO, dl, target, solutions, mode);
+    return RETURN_TARGET_WRONG_LO;
   }
   if (target>13) {
-    DumpInput(-7, dl, target, solutions, mode);
-    return -7;
+    DumpInput(RETURN_TARGET_WRONG_HI, dl, target, solutions, mode);
+    return RETURN_TARGET_WRONG_HI;
   }
   if (solutions<1) {
-    DumpInput(-8, dl, target, solutions, mode);
-    return -8;
+    DumpInput(RETURN_SOLNS_WRONG_LO, dl, target, solutions, mode);
+    return RETURN_SOLNS_WRONG_LO;
   }
   if (solutions>3) {
-    DumpInput(-9, dl, target, solutions, mode);
-    return -9;
+    DumpInput(RETURN_SOLNS_WRONG_HI, dl, target, solutions, mode);
+    return RETURN_SOLNS_WRONG_HI;
   }
 
   for (k=0; k<=3; k++)
@@ -172,74 +184,74 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       for (h=0; h<=3; h++)
         aggrRemain|=(dl.remainCards[h][dl.currentTrickSuit[k]]>>2);
       if ((aggrRemain & bitMapRank[dl.currentTrickRank[k]])!=0) {
-	DumpInput(-13, dl, target, solutions, mode);
-	return -13;
+	DumpInput(RETURN_PLAYED_CARD, dl, target, solutions, mode);
+	return RETURN_PLAYED_CARD;
       }
     }
   }
 
   if (target==-1)
-    localVar[thrId].tricksTarget=99;
+    thrp->tricksTarget=99;
   else
-    localVar[thrId].tricksTarget=target;
+    thrp->tricksTarget=target;
 
-  localVar[thrId].newDeal=FALSE; localVar[thrId].newTrump=FALSE;
-  localVar[thrId].diffDeal=0; localVar[thrId].aggDeal=0;
+  thrp->newDeal=FALSE; thrp->newTrump=FALSE;
+  thrp->diffDeal=0; thrp->aggDeal=0;
   cardCount=0;
   for (i=0; i<=3; i++) {
     for (j=0; j<=3; j++) {
       cardCount+=counttable[dl.remainCards[i][j]>>2];
-      localVar[thrId].diffDeal+=((dl.remainCards[i][j]>>2)^
-	      (localVar[thrId].game.suit[i][j]));
-      localVar[thrId].aggDeal+=(dl.remainCards[i][j]>>2);
-      if (localVar[thrId].game.suit[i][j]!=dl.remainCards[i][j]>>2) {
-        localVar[thrId].game.suit[i][j]=dl.remainCards[i][j]>>2;
-	localVar[thrId].newDeal=TRUE;
+      thrp->diffDeal+=((dl.remainCards[i][j]>>2)^
+	      (thrp->game.suit[i][j]));
+      thrp->aggDeal+=(dl.remainCards[i][j]>>2);
+      if (thrp->game.suit[i][j]!=dl.remainCards[i][j]>>2) {
+        thrp->game.suit[i][j]=dl.remainCards[i][j]>>2;
+	thrp->newDeal=TRUE;
       }
     }
   }
 
-  if (localVar[thrId].newDeal) {
-    if (localVar[thrId].diffDeal==0)
-      localVar[thrId].similarDeal=TRUE;
-    else if ((localVar[thrId].aggDeal/localVar[thrId].diffDeal)
+  if (thrp->newDeal) {
+    if (thrp->diffDeal==0)
+      thrp->similarDeal=TRUE;
+    else if ((thrp->aggDeal/thrp->diffDeal)
        > SIMILARDEALLIMIT)
-      localVar[thrId].similarDeal=TRUE;
+      thrp->similarDeal=TRUE;
     else
-      localVar[thrId].similarDeal=FALSE;
+      thrp->similarDeal=FALSE;
   }
   else
-    localVar[thrId].similarDeal=FALSE;
+    thrp->similarDeal=FALSE;
 
-  if (dl.trump!=localVar[thrId].trump)
-    localVar[thrId].newTrump=TRUE;
+  if (dl.trump!=thrp->trump)
+    thrp->newTrump=TRUE;
 
   for (i=0; i<=3; i++)
     for (j=0; j<=3; j++)
-      noOfCardsPerHand[i]+=counttable[localVar[thrId].game.suit[i][j]];
+      noOfCardsPerHand[i]+=counttable[thrp->game.suit[i][j]];
 
   for (i=1; i<=3; i++) {
     if (noOfCardsPerHand[i]!=noOfCardsPerHand[0]) {
-      DumpInput(-14, dl, target, solutions, mode);
-      return -14;
+      DumpInput(RETURN_CARD_COUNT, dl, target, solutions, mode);
+      return RETURN_CARD_COUNT;
     }
   }
 
   if (dl.currentTrickRank[2]) {
     if ((dl.currentTrickRank[2]<2)||(dl.currentTrickRank[2]>14)
       ||(dl.currentTrickSuit[2]<0)||(dl.currentTrickSuit[2]>3)) {
-      DumpInput(-12, dl, target, solutions, mode);
-      return -12;
+      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
+      return RETURN_SUIT_OR_RANK;
     }
-    localVar[thrId].handToPlay=handId(dl.first, 3);
+    thrp->handToPlay=handId(dl.first, 3);
     handRelFirst=3;
     noStartMoves=3;
     if (cardCount<=4) {
       for (k=0; k<=3; k++) {
-        if (localVar[thrId].game.suit[localVar[thrId].handToPlay][k]!=0) {
-          latestTrickSuit[localVar[thrId].handToPlay]=k;
-          latestTrickRank[localVar[thrId].handToPlay]=
-            InvBitMapRank(localVar[thrId].game.suit[localVar[thrId].handToPlay][k]);
+        if (thrp->game.suit[thrp->handToPlay][k]!=0) {
+          latestTrickSuit[thrp->handToPlay]=k;
+          latestTrickRank[thrp->handToPlay]=
+            InvBitMapRank(thrp->game.suit[thrp->handToPlay][k]);
           break;
         }
       }
@@ -254,26 +266,26 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   else if (dl.currentTrickRank[1]) {
     if ((dl.currentTrickRank[1]<2)||(dl.currentTrickRank[1]>14)
       ||(dl.currentTrickSuit[1]<0)||(dl.currentTrickSuit[1]>3)) {
-      DumpInput(-12, dl, target, solutions, mode);
-      return -12;
+      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
+      return RETURN_SUIT_OR_RANK;
     }
-    localVar[thrId].handToPlay=handId(dl.first, 2);
+    thrp->handToPlay=handId(dl.first, 2);
     handRelFirst=2;
     noStartMoves=2;
     if (cardCount<=4) {
       for (k=0; k<=3; k++) {
-        if (localVar[thrId].game.suit[localVar[thrId].handToPlay][k]!=0) {
-          latestTrickSuit[localVar[thrId].handToPlay]=k;
-          latestTrickRank[localVar[thrId].handToPlay]=
-            InvBitMapRank(localVar[thrId].game.suit[localVar[thrId].handToPlay][k]);
+        if (thrp->game.suit[thrp->handToPlay][k]!=0) {
+          latestTrickSuit[thrp->handToPlay]=k;
+          latestTrickRank[thrp->handToPlay]=
+            InvBitMapRank(thrp->game.suit[thrp->handToPlay][k]);
           break;
         }
       }
       for (k=0; k<=3; k++) {
-	if (localVar[thrId].game.suit[handId(dl.first, 3)][k]!=0) {
+	if (thrp->game.suit[handId(dl.first, 3)][k]!=0) {
           latestTrickSuit[handId(dl.first, 3)]=k;
           latestTrickRank[handId(dl.first, 3)]=
-            InvBitMapRank(localVar[thrId].game.suit[handId(dl.first, 3)][k]);
+            InvBitMapRank(thrp->game.suit[handId(dl.first, 3)][k]);
           break;
         }
       }
@@ -286,34 +298,34 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   else if (dl.currentTrickRank[0]) {
     if ((dl.currentTrickRank[0]<2)||(dl.currentTrickRank[0]>14)
       ||(dl.currentTrickSuit[0]<0)||(dl.currentTrickSuit[0]>3)) {
-      DumpInput(-12, dl, target, solutions, mode);
-      return -12;
+      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
+      return RETURN_SUIT_OR_RANK;
     }
-    localVar[thrId].handToPlay=handId(dl.first,1);
+    thrp->handToPlay=handId(dl.first,1);
     handRelFirst=1;
     noStartMoves=1;
     if (cardCount<=4) {
       for (k=0; k<=3; k++) {
-        if (localVar[thrId].game.suit[localVar[thrId].handToPlay][k]!=0) {
-          latestTrickSuit[localVar[thrId].handToPlay]=k;
-          latestTrickRank[localVar[thrId].handToPlay]=
-            InvBitMapRank(localVar[thrId].game.suit[localVar[thrId].handToPlay][k]);
+        if (thrp->game.suit[thrp->handToPlay][k]!=0) {
+          latestTrickSuit[thrp->handToPlay]=k;
+          latestTrickRank[thrp->handToPlay]=
+            InvBitMapRank(thrp->game.suit[thrp->handToPlay][k]);
           break;
         }
       }
       for (k=0; k<=3; k++) {
-	if (localVar[thrId].game.suit[handId(dl.first, 3)][k]!=0) {
+	if (thrp->game.suit[handId(dl.first, 3)][k]!=0) {
           latestTrickSuit[handId(dl.first, 3)]=k;
           latestTrickRank[handId(dl.first, 3)]=
-            InvBitMapRank(localVar[thrId].game.suit[handId(dl.first, 3)][k]);
+            InvBitMapRank(thrp->game.suit[handId(dl.first, 3)][k]);
           break;
         }
       }
       for (k=0; k<=3; k++) {
-        if (localVar[thrId].game.suit[handId(dl.first, 2)][k]!=0) {
+        if (thrp->game.suit[handId(dl.first, 2)][k]!=0) {
           latestTrickSuit[handId(dl.first, 2)]=k;
           latestTrickRank[handId(dl.first, 2)]=
-            InvBitMapRank(localVar[thrId].game.suit[handId(dl.first, 2)][k]);
+            InvBitMapRank(thrp->game.suit[handId(dl.first, 2)][k]);
           break;
         }
       }
@@ -322,90 +334,90 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     }
   }
   else {
-    localVar[thrId].handToPlay=dl.first;
+    thrp->handToPlay=dl.first;
     handRelFirst=0;
     noStartMoves=0;
     if (cardCount<=4) {
       for (k=0; k<=3; k++) {
-        if (localVar[thrId].game.suit[localVar[thrId].handToPlay][k]!=0) {
-          latestTrickSuit[localVar[thrId].handToPlay]=k;
-          latestTrickRank[localVar[thrId].handToPlay]=
-            InvBitMapRank(localVar[thrId].game.suit[localVar[thrId].handToPlay][k]);
+        if (thrp->game.suit[thrp->handToPlay][k]!=0) {
+          latestTrickSuit[thrp->handToPlay]=k;
+          latestTrickRank[thrp->handToPlay]=
+            InvBitMapRank(thrp->game.suit[thrp->handToPlay][k]);
           break;
         }
       }
       for (k=0; k<=3; k++) {
-        if (localVar[thrId].game.suit[handId(dl.first, 3)][k]!=0) {
+        if (thrp->game.suit[handId(dl.first, 3)][k]!=0) {
           latestTrickSuit[handId(dl.first, 3)]=k;
           latestTrickRank[handId(dl.first, 3)]=
-            InvBitMapRank(localVar[thrId].game.suit[handId(dl.first, 3)][k]);
+            InvBitMapRank(thrp->game.suit[handId(dl.first, 3)][k]);
           break;
         }
       }
       for (k=0; k<=3; k++) {
-        if (localVar[thrId].game.suit[handId(dl.first, 2)][k]!=0) {
+        if (thrp->game.suit[handId(dl.first, 2)][k]!=0) {
           latestTrickSuit[handId(dl.first, 2)]=k;
           latestTrickRank[handId(dl.first, 2)]=
-            InvBitMapRank(localVar[thrId].game.suit[handId(dl.first, 2)][k]);
+            InvBitMapRank(thrp->game.suit[handId(dl.first, 2)][k]);
           break;
         }
       }
       for (k=0; k<=3; k++) {
-        if (localVar[thrId].game.suit[handId(dl.first, 1)][k]!=0) {
+        if (thrp->game.suit[handId(dl.first, 1)][k]!=0) {
           latestTrickSuit[handId(dl.first, 1)]=k;
           latestTrickRank[handId(dl.first, 1)]=
-            InvBitMapRank(localVar[thrId].game.suit[handId(dl.first, 1)][k]);
+            InvBitMapRank(thrp->game.suit[handId(dl.first, 1)][k]);
           break;
         }
       }
     }
   }
 
-  localVar[thrId].trump=dl.trump;
-  localVar[thrId].game.first=dl.first;
+  thrp->trump=dl.trump;
+  thrp->game.first=dl.first;
   first=dl.first;
-  localVar[thrId].game.noOfCards=cardCount;
+  thrp->game.noOfCards=cardCount;
   if (dl.currentTrickRank[0]!=0) {
-    localVar[thrId].game.leadHand=dl.first;
-    localVar[thrId].game.leadSuit=dl.currentTrickSuit[0];
-    localVar[thrId].game.leadRank=dl.currentTrickRank[0];
+    thrp->game.leadHand=dl.first;
+    thrp->game.leadSuit=dl.currentTrickSuit[0];
+    thrp->game.leadRank=dl.currentTrickRank[0];
   }
   else {
-    localVar[thrId].game.leadHand=0;
-    localVar[thrId].game.leadSuit=0;
-    localVar[thrId].game.leadRank=0;
+    thrp->game.leadHand=0;
+    thrp->game.leadSuit=0;
+    thrp->game.leadRank=0;
   }
 
   for (k=0; k<=2; k++) {
-    localVar[thrId].initialMoves[k].suit=255;
-    localVar[thrId].initialMoves[k].rank=255;
+    thrp->initialMoves[k].suit=255;
+    thrp->initialMoves[k].rank=255;
   }
 
   for (k=0; k<noStartMoves; k++) {
-    localVar[thrId].initialMoves[noStartMoves-1-k].suit=dl.currentTrickSuit[k];
-    localVar[thrId].initialMoves[noStartMoves-1-k].rank=dl.currentTrickRank[k];
+    thrp->initialMoves[noStartMoves-1-k].suit=dl.currentTrickSuit[k];
+    thrp->initialMoves[noStartMoves-1-k].rank=dl.currentTrickRank[k];
   }
 
   if (cardCount % 4)
     totalTricks=((cardCount-4)>>2)+2;
   else
     totalTricks=((cardCount-4)>>2)+1;
-  checkRes=CheckDeal(&localVar[thrId].cd, thrId);
-  if (localVar[thrId].game.noOfCards<=0) {
-    DumpInput(-2, dl, target, solutions, mode);
-    return -2;
+  checkRes=CheckDeal(&localVar[threadIndex].cd, threadIndex);
+  if (thrp->game.noOfCards<=0) {
+    DumpInput(RETURN_ZERO_CARDS, dl, target, solutions, mode);
+    return RETURN_ZERO_CARDS;
   }
-  if (localVar[thrId].game.noOfCards>52) {
-    DumpInput(-10, dl, target, solutions, mode);
-    return -10;
+  if (thrp->game.noOfCards>52) {
+    DumpInput(RETURN_TOO_MANY_CARDS, dl, target, solutions, mode);
+    return RETURN_TOO_MANY_CARDS;
   }
   if (totalTricks<target) {
-    DumpInput(-3, dl, target, solutions, mode);
-    return -3;
+    DumpInput(RETURN_TARGET_TOO_HIGH, dl, target, solutions, mode);
+    return RETURN_TARGET_TOO_HIGH;
   }
   if (checkRes) {
-    DumpInput(-4, dl, target, solutions, mode);
-    return -4;
+    DumpInput(RETURN_DUPLICATE_CARDS, dl, target, solutions, mode);
+    return RETURN_DUPLICATE_CARDS;
   }
 
   if (cardCount<=4) {
@@ -440,144 +452,127 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
       }
     }
     futp->nodes=0;
-    #ifdef BENCH
-    futp->totalNodes=0;
-    #endif
     futp->cards=1;
-    futp->suit[0]=latestTrickSuit[localVar[thrId].handToPlay];
-    futp->rank[0]=latestTrickRank[localVar[thrId].handToPlay];
+    futp->suit[0]=latestTrickSuit[thrp->handToPlay];
+    futp->rank[0]=latestTrickRank[thrp->handToPlay];
     futp->equals[0]=0;
     if ((target==0)&&(solutions<3))
       futp->score[0]=0;
-    else if ((localVar[thrId].handToPlay==maxHand)||
-	(partner[localVar[thrId].handToPlay]==maxHand))
+    else if ((thrp->handToPlay==maxHand)||
+	(partner[thrp->handToPlay]==maxHand))
       futp->score[0]=1;
     else
       futp->score[0]=0;
 
 	/*_CrtDumpMemoryLeaks();*/  /* MEMORY LEAK? */
-    return 1;
+    return RETURN_NO_FAULT;
   }
 
   if ((mode!=2)&&
-    (((localVar[thrId].newDeal)&&(!localVar[thrId].similarDeal))
-      || localVar[thrId].newTrump  ||
-	  (localVar[thrId].winSetSize > SIMILARMAXWINNODES))) {
+    (((thrp->newDeal)&&(!(thrp->similarDeal)))
+      || thrp->newTrump  ||
+	  (thrp->winSetSize > SIMILARMAXWINNODES))) {
 
-    Wipe(thrId);
-    localVar[thrId].winSetSizeLimit=WINIT;
-    localVar[thrId].nodeSetSizeLimit=NINIT;
-    localVar[thrId].lenSetSizeLimit=LINIT;
-    localVar[thrId].allocmem=(WINIT+1)*sizeof(struct winCardType);
-    localVar[thrId].allocmem+=(NINIT+1)*sizeof(struct nodeCardsType);
-    localVar[thrId].allocmem+=(LINIT+1)*sizeof(struct posSearchType);
-    localVar[thrId].winCards=localVar[thrId].pw[0];
-    localVar[thrId].nodeCards=localVar[thrId].pn[0];
-    localVar[thrId].posSearch=localVar[thrId].pl[0];
-    localVar[thrId].wcount=0; localVar[thrId].ncount=0; localVar[thrId].lcount=0;
-    InitGame(0, FALSE, first, handRelFirst, thrId);
+    Wipe(&localVar[threadIndex]);
+    thrp->winSetSizeLimit=WINIT;
+    thrp->nodeSetSizeLimit=NINIT;
+    thrp->lenSetSizeLimit=LINIT;
+    thrp->allocmem=(WINIT+1)*sizeof(struct winCardType);
+    thrp->allocmem+=(NINIT+1)*sizeof(struct nodeCardsType);
+    thrp->allocmem+=(LINIT+1)*sizeof(struct posSearchType);
+    thrp->winCards=thrp->pw[0];
+    thrp->nodeCards=thrp->pn[0];
+    thrp->posSearch=thrp->pl[0];
+    thrp->wcount=0; thrp->ncount=0; thrp->lcount=0;
+    InitGame(0, FALSE, first, handRelFirst, thrp);
   }
   else {
-    InitGame(0, TRUE, first, handRelFirst, thrId);
-    /*localVar[thrId].fp2=fopen("dyn.txt", "a");
-	fprintf(localVar[thrId].fp2, "wcount=%d, ncount=%d, lcount=%d\n",
-	  wcount, ncount, lcount);
-    fprintf(localVar[thrId].fp2, "winSetSize=%d, nodeSetSize=%d, lenSetSize=%d\n",
-	  winSetSize, nodeSetSize, lenSetSize);
-    fclose(localVar[thrId].fp2);*/
+    InitGame(0, TRUE, first, handRelFirst, thrp);
   }
 
   #ifdef STAT
-  localVar[thrId].nodes=0;
+  thrp->nodes=0;
   #endif 
-  localVar[thrId].trickNodes=0;
-  localVar[thrId].iniDepth=cardCount-4;
+  thrp->trickNodes=0;
+  thrp->iniDepth=cardCount-4;
   hiwinSetSize=0;
   hinodeSetSize=0;
 
   if (mode==0) {
-    MoveGen(&localVar[thrId].lookAheadPos, localVar[thrId].iniDepth, localVar[thrId].trump,
-		&localVar[thrId].movePly[localVar[thrId].iniDepth], thrId);
-    if (localVar[thrId].movePly[localVar[thrId].iniDepth].last==0) {
+    MoveGen(&(thrp->lookAheadPos), thrp->iniDepth, thrp->trump,
+		&(thrp->movePly[thrp->iniDepth]), thrp);
+    if (thrp->movePly[thrp->iniDepth].last==0) {
 	futp->nodes=0;
-    #ifdef BENCH
-        futp->totalNodes=0;
-    #endif
 	futp->cards=1;
-	futp->suit[0]=localVar[thrId].movePly[localVar[thrId].iniDepth].move[0].suit;
-	futp->rank[0]=localVar[thrId].movePly[localVar[thrId].iniDepth].move[0].rank;
-	futp->equals[0]=
-	  localVar[thrId].movePly[localVar[thrId].iniDepth].move[0].sequence<<2;
+	futp->suit[0]=thrp->movePly[thrp->iniDepth].move[0].suit;
+	futp->rank[0]=thrp->movePly[thrp->iniDepth].move[0].rank;
+	futp->equals[0]=thrp->movePly[thrp->iniDepth].move[0].sequence<<2;
 	futp->score[0]=-2;
 
 	/*_CrtDumpMemoryLeaks();*/  /* MEMORY LEAK? */
-	return 1;
+	return RETURN_NO_FAULT;
     }
   }
   if ((target==0)&&(solutions<3)) {
-    MoveGen(&localVar[thrId].lookAheadPos, localVar[thrId].iniDepth, localVar[thrId].trump,
-		&localVar[thrId].movePly[localVar[thrId].iniDepth], thrId);
+    MoveGen(&(thrp->lookAheadPos), thrp->iniDepth, thrp->trump,
+		&(thrp->movePly[thrp->iniDepth]), thrp);
     futp->nodes=0;
-    #ifdef BENCH
-    futp->totalNodes=0;
-    #endif
-    for (k=0; k<=localVar[thrId].movePly[localVar[thrId].iniDepth].last; k++) {
-	futp->suit[k]=localVar[thrId].movePly[localVar[thrId].iniDepth].move[k].suit;
-	futp->rank[k]=localVar[thrId].movePly[localVar[thrId].iniDepth].move[k].rank;
-	futp->equals[k]=
-	  localVar[thrId].movePly[localVar[thrId].iniDepth].move[k].sequence<<2;
+    for (k=0; k<=thrp->movePly[thrp->iniDepth].last; k++) {
+	futp->suit[k]=thrp->movePly[thrp->iniDepth].move[k].suit;
+	futp->rank[k]=thrp->movePly[thrp->iniDepth].move[k].rank;
+	futp->equals[k]=thrp->movePly[thrp->iniDepth].move[k].sequence<<2;
 	futp->score[k]=0;
     }
     if (solutions==1)
 	futp->cards=1;
     else
-	futp->cards=localVar[thrId].movePly[localVar[thrId].iniDepth].last+1;
+	futp->cards=thrp->movePly[thrp->iniDepth].last+1;
 
 	/*_CrtDumpMemoryLeaks(); */ /* MEMORY LEAK? */
-    return 1;
+    return RETURN_NO_FAULT;
   }
 
   if ((target!=-1)&&(solutions!=3)) {
-    localVar[thrId].val=ABsearch(&localVar[thrId].lookAheadPos,
-		localVar[thrId].tricksTarget, localVar[thrId].iniDepth, thrId);
+    thrp->val=ABsearch(&(thrp->lookAheadPos),
+		thrp->tricksTarget, thrp->iniDepth, thrp);
 
-    temp=localVar[thrId].movePly[localVar[thrId].iniDepth];
-    last=localVar[thrId].movePly[localVar[thrId].iniDepth].last;
+    temp=thrp->movePly[thrp->iniDepth];
+    last=thrp->movePly[thrp->iniDepth].last;
     noMoves=last+1;
-    hiwinSetSize=localVar[thrId].winSetSize;
-    hinodeSetSize=localVar[thrId].nodeSetSize;
-    hilenSetSize=localVar[thrId].lenSetSize;
-    if (localVar[thrId].nodeSetSize>MaxnodeSetSize)
-      MaxnodeSetSize=localVar[thrId].nodeSetSize;
-    if (localVar[thrId].winSetSize>MaxwinSetSize)
-      MaxwinSetSize=localVar[thrId].winSetSize;
-    if (localVar[thrId].lenSetSize>MaxlenSetSize)
-      MaxlenSetSize=localVar[thrId].lenSetSize;
-    if (localVar[thrId].val==1)
-      localVar[thrId].payOff=localVar[thrId].tricksTarget;
+    hiwinSetSize=thrp->winSetSize;
+    hinodeSetSize=thrp->nodeSetSize;
+    hilenSetSize=thrp->lenSetSize;
+    if (thrp->nodeSetSize>MaxnodeSetSize)
+      MaxnodeSetSize=thrp->nodeSetSize;
+    if (thrp->winSetSize>MaxwinSetSize)
+      MaxwinSetSize=thrp->winSetSize;
+    if (thrp->lenSetSize>MaxlenSetSize)
+      MaxlenSetSize=thrp->lenSetSize;
+    if (thrp->val==1)
+      thrp->payOff=thrp->tricksTarget;
     else
-      localVar[thrId].payOff=0;
+      thrp->payOff=0;
     futp->cards=1;
     ind=2;
 
-    if (localVar[thrId].payOff<=0) {
-      futp->suit[0]=localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[0].suit;
-      futp->rank[0]=localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[0].rank;
-	futp->equals[0]=(localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[0].sequence)<<2;
-      if (localVar[thrId].tricksTarget>1)
+    if (thrp->payOff<=0) {
+      futp->suit[0]=thrp->movePly[thrp->game.noOfCards-4].move[0].suit;
+      futp->rank[0]=thrp->movePly[thrp->game.noOfCards-4].move[0].rank;
+	futp->equals[0]=(thrp->movePly[thrp->game.noOfCards-4].move[0].sequence)<<2;
+      if (thrp->tricksTarget>1)
         futp->score[0]=-1;
       else
 	futp->score[0]=0;
     }
     else {
-      futp->suit[0]=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].suit;
-      futp->rank[0]=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].rank;
-	futp->equals[0]=(localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].sequence)<<2;
-      futp->score[0]=localVar[thrId].payOff;
+      futp->suit[0]=thrp->bestMove[thrp->game.noOfCards-4].suit;
+      futp->rank[0]=thrp->bestMove[thrp->game.noOfCards-4].rank;
+	futp->equals[0]=(thrp->bestMove[thrp->game.noOfCards-4].sequence)<<2;
+      futp->score[0]=thrp->payOff;
     }
   }
   else {
-    g=localVar[thrId].estTricks[localVar[thrId].handToPlay];
+    g=thrp->estTricks[thrp->handToPlay];
     upperbound=13;
     lowerbound=0;
     do {
@@ -585,23 +580,22 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
         tricks=g+1;
       else
         tricks=g;
-	  assert((localVar[thrId].lookAheadPos.handRelFirst>=0)&&
-		(localVar[thrId].lookAheadPos.handRelFirst<=3));
-      localVar[thrId].val=ABsearch(&localVar[thrId].lookAheadPos, tricks,
-		  localVar[thrId].iniDepth, thrId);
+	  assert((thrp->lookAheadPos.handRelFirst>=0)&&
+		(thrp->lookAheadPos.handRelFirst<=3));
+      thrp->val=ABsearch(&(thrp->lookAheadPos), tricks, thrp->iniDepth, thrp);
 
-      if (localVar[thrId].val==TRUE)
-        mv=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4];
-      hiwinSetSize=Max(hiwinSetSize, localVar[thrId].winSetSize);
-      hinodeSetSize=Max(hinodeSetSize, localVar[thrId].nodeSetSize);
-	hilenSetSize=Max(hilenSetSize, localVar[thrId].lenSetSize);
-      if (localVar[thrId].nodeSetSize>MaxnodeSetSize)
-        MaxnodeSetSize=localVar[thrId].nodeSetSize;
-      if (localVar[thrId].winSetSize>MaxwinSetSize)
-        MaxwinSetSize=localVar[thrId].winSetSize;
-	if (localVar[thrId].lenSetSize>MaxlenSetSize)
-        MaxlenSetSize=localVar[thrId].lenSetSize;
-      if (localVar[thrId].val==FALSE) {
+      if (thrp->val==TRUE)
+        mv=thrp->bestMove[thrp->game.noOfCards-4];
+      hiwinSetSize=Max(hiwinSetSize, thrp->winSetSize);
+      hinodeSetSize=Max(hinodeSetSize, thrp->nodeSetSize);
+	hilenSetSize=Max(hilenSetSize, thrp->lenSetSize);
+      if (thrp->nodeSetSize>MaxnodeSetSize)
+        MaxnodeSetSize=thrp->nodeSetSize;
+      if (thrp->winSetSize>MaxwinSetSize)
+        MaxwinSetSize=thrp->winSetSize;
+	if (thrp->lenSetSize>MaxlenSetSize)
+        MaxlenSetSize=thrp->lenSetSize;
+      if (thrp->val==FALSE) {
 	upperbound=tricks-1;
 	g=upperbound;
       }
@@ -609,92 +603,91 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
         lowerbound=tricks;
         g=lowerbound;
       }
-      InitSearch(&localVar[thrId].iniPosition, localVar[thrId].game.noOfCards-4,
-        localVar[thrId].initialMoves, first, TRUE, thrId);
+      InitSearch(&(thrp->iniPosition), thrp->game.noOfCards-4,
+        thrp->initialMoves, first, TRUE, thrp);
     }
     while (lowerbound<upperbound);
-    localVar[thrId].payOff=g;
-    temp=localVar[thrId].movePly[localVar[thrId].iniDepth];
-    last=localVar[thrId].movePly[localVar[thrId].iniDepth].last;
+    thrp->payOff=g;
+    temp=thrp->movePly[thrp->iniDepth];
+    last=thrp->movePly[thrp->iniDepth].last;
     noMoves=last+1;
     ind=2;
-    localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4]=mv;
+    thrp->bestMove[thrp->game.noOfCards-4]=mv;
     futp->cards=1;
-    if (localVar[thrId].payOff<=0) {
+    if (thrp->payOff<=0) {
       futp->score[0]=0;
-      futp->suit[0]=localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[0].suit;
-      futp->rank[0]=localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[0].rank;
-      futp->equals[0]=(localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[0].sequence)<<2;
+      futp->suit[0]=thrp->movePly[thrp->game.noOfCards-4].move[0].suit;
+      futp->rank[0]=thrp->movePly[thrp->game.noOfCards-4].move[0].rank;
+      futp->equals[0]=(thrp->movePly[thrp->game.noOfCards-4].move[0].sequence)<<2;
     }
     else {
-      futp->score[0]=localVar[thrId].payOff;
-      futp->suit[0]=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].suit;
-      futp->rank[0]=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].rank;
-      futp->equals[0]=(localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].sequence)<<2;
+      futp->score[0]=thrp->payOff;
+      futp->suit[0]=thrp->bestMove[thrp->game.noOfCards-4].suit;
+      futp->rank[0]=thrp->bestMove[thrp->game.noOfCards-4].rank;
+      futp->equals[0]=(thrp->bestMove[thrp->game.noOfCards-4].sequence)<<2;
     }
-    localVar[thrId].tricksTarget=localVar[thrId].payOff;
+    thrp->tricksTarget=thrp->payOff;
   }
 
-  if ((solutions==2)&&(localVar[thrId].payOff>0)) {
+  if ((solutions==2)&&(thrp->payOff>0)) {
     forb=1;
     ind=forb;
-    while ((localVar[thrId].payOff==localVar[thrId].tricksTarget)&&(ind<(temp.last+1))) {
-      localVar[thrId].forbiddenMoves[forb].suit=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].suit;
-      localVar[thrId].forbiddenMoves[forb].rank=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].rank;
+    while ((thrp->payOff==thrp->tricksTarget)&&(ind<(temp.last+1))) {
+      thrp->forbiddenMoves[forb].suit=thrp->bestMove[thrp->game.noOfCards-4].suit;
+      thrp->forbiddenMoves[forb].rank=thrp->bestMove[thrp->game.noOfCards-4].rank;
       forb++; ind++;
       /* All moves before bestMove in the move list shall be
       moved to the forbidden moves list, since none of them reached
       the target */
-      /*mcurr=localVar[thrId].movePly[localVar[thrId].iniDepth].current;*/
-      for (k=0; k<=localVar[thrId].movePly[localVar[thrId].iniDepth].last; k++)
-        if ((localVar[thrId].bestMove[localVar[thrId].iniDepth].suit==
-			localVar[thrId].movePly[localVar[thrId].iniDepth].move[k].suit)
-          &&(localVar[thrId].bestMove[localVar[thrId].iniDepth].rank==
-		    localVar[thrId].movePly[localVar[thrId].iniDepth].move[k].rank))
+      for (k=0; k<=thrp->movePly[thrp->iniDepth].last; k++)
+        if ((thrp->bestMove[thrp->iniDepth].suit==
+			thrp->movePly[thrp->iniDepth].move[k].suit)
+          &&(thrp->bestMove[thrp->iniDepth].rank==
+		    thrp->movePly[thrp->iniDepth].move[k].rank))
           break;
       for (i=0; i<k; i++) {  /* All moves until best move */
         flag=FALSE;
         for (j=0; j<forb; j++) {
-          if ((localVar[thrId].movePly[localVar[thrId].iniDepth].move[i].suit==localVar[thrId].forbiddenMoves[j].suit)
-            &&(localVar[thrId].movePly[localVar[thrId].iniDepth].move[i].rank==localVar[thrId].forbiddenMoves[j].rank)) {
+          if ((thrp->movePly[thrp->iniDepth].move[i].suit==thrp->forbiddenMoves[j].suit)
+            &&(thrp->movePly[thrp->iniDepth].move[i].rank==thrp->forbiddenMoves[j].rank)) {
             /* If the move is already in the forbidden list */
             flag=TRUE;
             break;
           }
         }
         if (!flag) {
-          localVar[thrId].forbiddenMoves[forb]=localVar[thrId].movePly[localVar[thrId].iniDepth].move[i];
+          thrp->forbiddenMoves[forb]=thrp->movePly[thrp->iniDepth].move[i];
           forb++;
         }
       }
-      InitSearch(&localVar[thrId].iniPosition, localVar[thrId].game.noOfCards-4,
-          localVar[thrId].initialMoves, first, TRUE, thrId);
-      localVar[thrId].val=ABsearch(&localVar[thrId].lookAheadPos, localVar[thrId].tricksTarget,
-		  localVar[thrId].iniDepth, thrId);
+      InitSearch(&(thrp->iniPosition), thrp->game.noOfCards-4,
+          thrp->initialMoves, first, TRUE, thrp);
+      thrp->val=ABsearch(&(thrp->lookAheadPos), thrp->tricksTarget, 
+	thrp->iniDepth, thrp);
 
-      hiwinSetSize=localVar[thrId].winSetSize;
-      hinodeSetSize=localVar[thrId].nodeSetSize;
-      hilenSetSize=localVar[thrId].lenSetSize;
-      if (localVar[thrId].nodeSetSize>MaxnodeSetSize)
-        MaxnodeSetSize=localVar[thrId].nodeSetSize;
-      if (localVar[thrId].winSetSize>MaxwinSetSize)
-        MaxwinSetSize=localVar[thrId].winSetSize;
-      if (localVar[thrId].lenSetSize>MaxlenSetSize)
-        MaxlenSetSize=localVar[thrId].lenSetSize;
-      if (localVar[thrId].val==TRUE) {
-        localVar[thrId].payOff=localVar[thrId].tricksTarget;
+      hiwinSetSize=thrp->winSetSize;
+      hinodeSetSize=thrp->nodeSetSize;
+      hilenSetSize=thrp->lenSetSize;
+      if (thrp->nodeSetSize>MaxnodeSetSize)
+        MaxnodeSetSize=thrp->nodeSetSize;
+      if (thrp->winSetSize>MaxwinSetSize)
+        MaxwinSetSize=localVar[threadIndex].winSetSize;
+      if (thrp->lenSetSize>MaxlenSetSize)
+        MaxlenSetSize=localVar[threadIndex].lenSetSize;
+      if (thrp->val==TRUE) {
+        thrp->payOff=thrp->tricksTarget;
         futp->cards=ind;
-        futp->suit[ind-1]=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].suit;
-        futp->rank[ind-1]=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].rank;
-	futp->equals[ind-1]=(localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].sequence)<<2;
-        futp->score[ind-1]=localVar[thrId].payOff;
+        futp->suit[ind-1]=thrp->bestMove[thrp->game.noOfCards-4].suit;
+        futp->rank[ind-1]=thrp->bestMove[thrp->game.noOfCards-4].rank;
+	futp->equals[ind-1]=(thrp->bestMove[thrp->game.noOfCards-4].sequence)<<2;
+        futp->score[ind-1]=thrp->payOff;
       }
       else
-        localVar[thrId].payOff=0;
+        thrp->payOff=0;
     }
   }
-  else if ((solutions==2)&&(localVar[thrId].payOff==0)&&
-	((target==-1)||(localVar[thrId].tricksTarget==1))) {
+  else if ((solutions==2)&&(thrp->payOff==0)&&
+	((target==-1)||(thrp->tricksTarget==1))) {
     futp->cards=noMoves;
     /* Find the cards that were in the initial move list
     but have not been listed in the current result */
@@ -715,42 +708,41 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
     }
   }
 
-  if ((solutions==3)&&(localVar[thrId].payOff>0)) {
+  if ((solutions==3)&&(thrp->payOff>0)) {
     forb=1;
     ind=forb;
     for (i=0; i<last; i++) {
-      localVar[thrId].forbiddenMoves[forb].suit=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].suit;
-      localVar[thrId].forbiddenMoves[forb].rank=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].rank;
+      thrp->forbiddenMoves[forb].suit=thrp->bestMove[thrp->game.noOfCards-4].suit;
+      thrp->forbiddenMoves[forb].rank=thrp->bestMove[thrp->game.noOfCards-4].rank;
       forb++; ind++;
 
-      g=localVar[thrId].payOff;
-      upperbound=localVar[thrId].payOff;
+      g=thrp->payOff;
+      upperbound=thrp->payOff;
       lowerbound=0;
 
-      InitSearch(&localVar[thrId].iniPosition, localVar[thrId].game.noOfCards-4,
-          localVar[thrId].initialMoves, first, TRUE, thrId);
+      InitSearch(&(thrp->iniPosition), thrp->game.noOfCards-4,
+          thrp->initialMoves, first, TRUE, thrp);
       do {
         if (g==lowerbound)
           tricks=g+1;
         else
           tricks=g;
-	assert((localVar[thrId].lookAheadPos.handRelFirst>=0)&&
-		  (localVar[thrId].lookAheadPos.handRelFirst<=3));
-        localVar[thrId].val=ABsearch(&localVar[thrId].lookAheadPos, tricks,
-			localVar[thrId].iniDepth, thrId);
+	assert((thrp->lookAheadPos.handRelFirst>=0)&&
+		  (thrp->lookAheadPos.handRelFirst<=3));
+        thrp->val=ABsearch(&(thrp->lookAheadPos), tricks, thrp->iniDepth, thrp);
 
-        if (localVar[thrId].val==TRUE)
-          mv=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4];
-        hiwinSetSize=Max(hiwinSetSize, localVar[thrId].winSetSize);
-        hinodeSetSize=Max(hinodeSetSize, localVar[thrId].nodeSetSize);
-	hilenSetSize=Max(hilenSetSize, localVar[thrId].lenSetSize);
-        if (localVar[thrId].nodeSetSize>MaxnodeSetSize)
-          MaxnodeSetSize=localVar[thrId].nodeSetSize;
-        if (localVar[thrId].winSetSize>MaxwinSetSize)
-          MaxwinSetSize=localVar[thrId].winSetSize;
-	if (localVar[thrId].lenSetSize>MaxlenSetSize)
-          MaxlenSetSize=localVar[thrId].lenSetSize;
-        if (localVar[thrId].val==FALSE) {
+        if (thrp->val==TRUE)
+          mv=thrp->bestMove[thrp->game.noOfCards-4];
+        hiwinSetSize=Max(hiwinSetSize, thrp->winSetSize);
+        hinodeSetSize=Max(hinodeSetSize, thrp->nodeSetSize);
+	hilenSetSize=Max(hilenSetSize, thrp->lenSetSize);
+        if (thrp->nodeSetSize>MaxnodeSetSize)
+          MaxnodeSetSize=thrp->nodeSetSize;
+        if (thrp->winSetSize>MaxwinSetSize)
+          MaxwinSetSize=thrp->winSetSize;
+	if (thrp->lenSetSize>MaxlenSetSize)
+          MaxlenSetSize=thrp->lenSetSize;
+        if (thrp->val==FALSE) {
 	  upperbound=tricks-1;
 	  g=upperbound;
 	}
@@ -759,34 +751,34 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
 	  g=lowerbound;
 	}
 
-        InitSearch(&localVar[thrId].iniPosition, localVar[thrId].game.noOfCards-4,
-          localVar[thrId].initialMoves, first, TRUE, thrId);
+        InitSearch(&(thrp->iniPosition), thrp->game.noOfCards-4,
+          thrp->initialMoves, first, TRUE, thrp);
       }
       while (lowerbound<upperbound);
-      localVar[thrId].payOff=g;
-      if (localVar[thrId].payOff==0) {
-        last=localVar[thrId].movePly[localVar[thrId].iniDepth].last;
+      thrp->payOff=g;
+      if (thrp->payOff==0) {
+        last=thrp->movePly[thrp->iniDepth].last;
         futp->cards=temp.last+1;
         for (j=0; j<=last; j++) {
-          futp->suit[ind-1+j]=localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[j].suit;
-          futp->rank[ind-1+j]=localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[j].rank;
-	    futp->equals[ind-1+j]=(localVar[thrId].movePly[localVar[thrId].game.noOfCards-4].move[j].sequence)<<2;
-          futp->score[ind-1+j]=localVar[thrId].payOff;
+          futp->suit[ind-1+j]=thrp->movePly[thrp->game.noOfCards-4].move[j].suit;
+          futp->rank[ind-1+j]=thrp->movePly[thrp->game.noOfCards-4].move[j].rank;
+	    futp->equals[ind-1+j]=(thrp->movePly[thrp->game.noOfCards-4].move[j].sequence)<<2;
+          futp->score[ind-1+j]=thrp->payOff;
         }
         break;
       }
       else {
-        localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4]=mv;
+        thrp->bestMove[thrp->game.noOfCards-4]=mv;
 
         futp->cards=ind;
-        futp->suit[ind-1]=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].suit;
-        futp->rank[ind-1]=localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].rank;
-	  futp->equals[ind-1]=(localVar[thrId].bestMove[localVar[thrId].game.noOfCards-4].sequence)<<2;
-        futp->score[ind-1]=localVar[thrId].payOff;
+        futp->suit[ind-1]=thrp->bestMove[thrp->game.noOfCards-4].suit;
+        futp->rank[ind-1]=thrp->bestMove[thrp->game.noOfCards-4].rank;
+	  futp->equals[ind-1]=(thrp->bestMove[thrp->game.noOfCards-4].sequence)<<2;
+        futp->score[ind-1]=thrp->payOff;
       }
     }
   }
-  else if ((solutions==3)&&(localVar[thrId].payOff==0)) {
+  else if ((solutions==3)&&(thrp->payOff==0)) {
     futp->cards=noMoves;
     /* Find the cards that were in the initial move list
     but have not been listed in the current result */
@@ -808,51 +800,34 @@ extern "C" BOOL APIENTRY DllMain(HMODULE hModule,
   }
 
   for (k=0; k<=13; k++) {
-    localVar[thrId].forbiddenMoves[k].suit=0;
-    localVar[thrId].forbiddenMoves[k].rank=0;
+    thrp->forbiddenMoves[k].suit=0;
+    thrp->forbiddenMoves[k].rank=0;
   }
 
-  futp->nodes=localVar[thrId].trickNodes;
-  #ifdef BENCH
-  futp->totalNodes=localVar[thrId].nodes;
-  #endif
-  /*if ((wcount>0)||(ncount>0)||(lcount>0)) {
-    localVar[thrId].fp2=fopen("dyn.txt", "a");
-	fprintf(localVar[thrId].fp2, "wcount=%d, ncount=%d, lcount=%d\n",
-	  wcount, ncount, lcount);
-    fprintf(localVar[thrId].fp2, "winSetSize=%d, nodeSetSize=%d, lenSetSize=%d\n",
-	  winSetSize, nodeSetSize, lenSetSize);
-	fprintf(localVar[thrId].fp2, "\n");
-    fclose(localVar[thrId].fp2);
-  }*/
+  futp->nodes=thrp->trickNodes;
 
   /*_CrtDumpMemoryLeaks();*/  /* MEMORY LEAK? */
-  return 1;
+
+  return RETURN_NO_FAULT;
 }
 
 
 int _initialized=0;
 
 void InitStart(int gb_ram, int ncores) {
-  int k, r, i, j, m;
+  int k, r, i, j, m, ind;
   unsigned short int res;
+  unsigned int topBitRank = 1;
   unsigned long long pcmem;	/* kbytes */
 
   if (_initialized)
     return;
   _initialized = 1;
 
-  ttCollect=FALSE;
-  suppressTTlog=FALSE;
-  lastTTstore=0;
-  ttStore = (struct ttStoreType *)calloc(SEARCHSIZE, sizeof(struct ttStoreType));
-  if (ttStore==NULL)
-    exit(1);
-
   if (gb_ram==0) {		/* Autoconfig */
 
   #ifdef _WIN32
-
+    
     SYSTEM_INFO temp;
 
     MEMORYSTATUSEX statex;
@@ -862,6 +837,14 @@ void InitStart(int gb_ram, int ncores) {
 					was suggested by Lorne Anderson. */
 
     pcmem=(unsigned long long)statex.ullTotalPhys/1024;
+
+    #ifdef DDS_THREADS_SINGLE
+
+    noOfThreads = 1;
+
+    noOfCores = 1;
+
+    #else
 
     if (pcmem < 1500000)
       noOfThreads=Min(MAXNOOFTHREADS, 2);
@@ -873,16 +856,37 @@ void InitStart(int gb_ram, int ncores) {
     GetSystemInfo(&temp);
     noOfCores=Min(noOfThreads, (int)temp.dwNumberOfProcessors);
 
+    #endif
+
   #endif
   #ifdef __linux__   /* The code for linux was suggested by Antony Lee. */
+
+    #ifdef DDS_THREADS_SINGLE
+
+    noOfThreads = 1;
+
+    noOfCores = 1;
+
+    #else
+
     ncores = sysconf(_SC_NPROCESSORS_ONLN); 
     FILE* fifo = popen("free -k | tail -n+3 | head -n1 | awk '{print $NF}'", "r");
     fscanf(fifo, "%lld", &pcmem);
     fclose(fifo);
+
+    #endif
   #endif
 
   }
   else {
+    #ifdef DDS_THREADS_SINGLE 
+
+    noOfThreads = 1;
+
+    noOfCores = 1;
+
+    #else
+
     if (gb_ram < 2)
       noOfThreads=Min(MAXNOOFTHREADS, 2);
     else if (gb_ram < 3)
@@ -892,10 +896,14 @@ void InitStart(int gb_ram, int ncores) {
 
     noOfCores=Min(noOfThreads, ncores);
 
+    #endif
+
     pcmem=(unsigned long long)(1000000 * gb_ram);
   }
 
   /*printf("noOfThreads: %d   noOfCores: %d\n", noOfThreads, noOfCores);*/
+
+  localVar = (struct localVarType *)calloc(noOfThreads, sizeof(struct localVarType));
 
   for (k=0; k<noOfThreads; k++) {
     localVar[k].trump=-1;
@@ -920,6 +928,8 @@ void InitStart(int gb_ram, int ncores) {
     else {
       localVar[k].maxmem = (unsigned long long)(pcmem-32768) * (700/noOfThreads);
 	  /* Linear calculation of maximum memory, formula by Michiel de Bondt */
+
+      localVar[k].maxmem = Min(localVar[k].maxmem, TT_MAXMEM);
 
       if (localVar[k].maxmem < 10485760) exit (1);
     }
@@ -957,15 +967,6 @@ void InitStart(int gb_ram, int ncores) {
   cardSuit[4]='N';
 
   cardHand[0]='N'; cardHand[1]='E'; cardHand[2]='S'; cardHand[3]='W';
-
-  max_low[0][0]=0; max_low[1][0]=0; max_low[2][0]=0;
-  max_low[0][1]=0; max_low[1][1]=0; max_low[2][1]=0;
-  max_low[0][2]=1; max_low[1][2]=1; max_low[2][2]=1;
-  max_low[0][3]=0; max_low[1][3]=2; max_low[2][3]=2;
-  max_low[0][4]=1; max_low[1][4]=0; max_low[2][4]=3;
-  max_low[0][5]=2; max_low[1][5]=1; max_low[2][5]=0;
-  max_low[0][6]=0; max_low[1][6]=0; max_low[2][6]=0;
-  max_low[0][7]=0; max_low[1][7]=0; max_low[2][7]=0;
 
   for (k=0; k<noOfThreads; k++) {
     localVar[k].summem=(WINIT+1)*sizeof(struct winCardType)+
@@ -1020,8 +1021,9 @@ void InitStart(int gb_ram, int ncores) {
     localVar[k].posSearch=localVar[k].pl[0];
     localVar[k].wcount=0; localVar[k].ncount=0; localVar[k].lcount=0;
 
-    localVar[k].rel = (struct relRanksType *)calloc(8192, sizeof(struct relRanksType));
-    if (localVar[k].rel==NULL)
+
+    localVar[k].abs = (struct absRanksType *)calloc(8192, sizeof(struct absRanksType));
+    if (localVar[k].abs==NULL)
       exit(1);
 
     localVar[k].adaptWins = (struct adaptWinRanksType *)calloc(8192,
@@ -1029,6 +1031,10 @@ void InitStart(int gb_ram, int ncores) {
     if (localVar[k].adaptWins==NULL)
       exit(1);
   }
+
+  #ifdef STAT
+    fp2=fopen("stat.txt","w");
+  #endif
 
   highestRank = (int *)calloc(8192, sizeof(int));
   if (highestRank==NULL)
@@ -1043,6 +1049,8 @@ void InitStart(int gb_ram, int ncores) {
       }
     }
   }
+
+  relRanks = (relRanksType *)calloc(1, sizeof(relRanksType));
 
   /* The use of the counttable to give the number of bits set to
   one in an integer follows an implementation by Thomas Andrews. */
@@ -1083,119 +1091,133 @@ void InitStart(int gb_ram, int ncores) {
       }
     }
 
-  /*localVar[thrId].fp2=fopen("dyn.txt", "w");
-  fclose(localVar[thrId].fp2);*/
-  /*localVar[thrId].fp2=fopen("dyn.txt", "a");
-  fprintf(localVar[thrId].fp2, "maxIndex=%ld\n", maxIndex);
-  fclose(localVar[thrId].fp2);*/
+  /* Init rel */
+
+  /* Should not be necessary, as the memory was calloc'ed */ 
+
+  for (r = 2; r <= 14; r++)  
+    relRanks->relRank[0][r] = 0;
+
+  for (ind = 1; ind < 8192; ind++) {   
+    if (ind >= (topBitRank + topBitRank)) /* Next top bit */ 
+      topBitRank <<= 1;
+      
+    for (r = 0; r <= 14; r++)  
+      relRanks->relRank[ind][r] = relRanks->relRank[ind ^ topBitRank][r];
+      
+    int ord = 0;  
+    for (r = 14; r >= 2; r--) {
+   
+      if ((ind & bitMapRank[r]) != 0) {
+        ord++;	  
+        relRanks->relRank[ind][r] = ord;
+      }
+    }
+  }
+  
 
   return;
 }
 
 
-void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst, int thrId) {
+void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst, 
+  struct localVarType * thrp) {
 
-  int k, s, h, m, ord, r;
+  int k, s, h, m, ord, r, ind;
   unsigned int topBitRank=1;
-  unsigned short int ind;
+  unsigned int topBitNo=2;
+  void InitSearch(struct pos * posPoint, int depth, 
+    struct moveType startMoves[], int first, int mtd, 
+    struct localVarType * thrp);
 
-  #ifdef STAT
-    localVar[thrId].fp2=fopen("stat.txt","w");
-  #endif
+  if (thrp->newDeal) {
 
-  #ifdef TTDEBUG
-  if (!suppressTTlog) {
-    localVar[thrId].fp7=fopen("storett.txt","w");
-    localVar[thrId].fp11=fopen("rectt.txt", "w");
-    fclose(localVar[thrId].fp11);
-    ttCollect=TRUE;
-  }
-  #endif
-
-
-  if (localVar[thrId].newDeal) {
-
-    /* Initialization of the rel structure is implemented
+    /* Initialization of the abs structure is implemented
        according to a solution given by Thomas Andrews */
 
     for (k=0; k<=3; k++)
       for (m=0; m<=3; m++)
-        localVar[thrId].iniPosition.rankInSuit[k][m]=localVar[thrId].game.suit[k][m];
+        thrp->iniPosition.rankInSuit[k][m]=thrp->game.suit[k][m];
 
     for (s=0; s<4; s++) {
-      localVar[thrId].rel[0].aggrRanks[s]=0;
-      localVar[thrId].rel[0].winMask[s]=0;
+      thrp->abs[0].aggrRanks[s]=0;
+      thrp->abs[0].winMask[s]=0;
       for (ord=1; ord<=13; ord++) {
-	localVar[thrId].rel[0].absRank[ord][s].hand=-1;
-	localVar[thrId].rel[0].absRank[ord][s].rank=0;
+	thrp->abs[0].absRank[ord][s].hand=-1;
+	thrp->abs[0].absRank[ord][s].rank=0;
       }
-      for (r=2; r<=14; r++)
-        localVar[thrId].rel[0].relRank[r][s]=0;
     }
+
+    int hand_lookup[4][15];
+
+    /* credit Soren Hein */
+
+    for (s = 0; s < 4; s++) { 
+      for (r = 14; r >= 2; r--) {     
+        hand_lookup[s][r] = -1;
+        for (h = 0; h < 4; h++) {  
+          if ((thrp->game.suit[h][s] & bitMapRank[r]) != 0) {
+            hand_lookup[s][r] = h; 
+            break;
+          }
+        }
+      }
+    }
+
+    struct absRanksType * absp;
 
     for (ind=1; ind<8192; ind++) {
       if (ind>=(topBitRank+topBitRank)) {
        /* Next top bit */
         topBitRank <<=1;
+        topBitNo++;
       }
 
-      localVar[thrId].rel[ind]=localVar[thrId].rel[ind ^ topBitRank];
+      thrp->abs[ind] = thrp->abs[ind ^ topBitRank];      
+      absp = &thrp->abs[ind];
+      int weight = counttable[ind];
+      for (int c = weight; c >= 2; c--) { 
+        for (int s = 0; s < 4; s++) {    
+          absp->absRank[c][s].hand = absp->absRank[c-1][s].hand;
+          absp->absRank[c][s].rank = absp->absRank[c-1][s].rank;
+        }
+      }
+      
 
-      for (s=0; s<4; s++) {
-	ord=0;
-	for (r=14; r>=2; r--) {
-	  if ((ind & bitMapRank[r])!=0) {
-	    ord++;
-	    localVar[thrId].rel[ind].relRank[r][s]=ord;
-	    for (h=0; h<4; h++) {
-	      if ((localVar[thrId].game.suit[h][s] & bitMapRank[r])!=0) {
-		localVar[thrId].rel[ind].absRank[ord][s].hand=h;
-		localVar[thrId].rel[ind].absRank[ord][s].rank=r;
-		break;
-	      }
-	    }
-	  }
-	}
-	for (k=ord+1; k<=13; k++) {
-	  localVar[thrId].rel[ind].absRank[k][s].hand=-1;
-	  localVar[thrId].rel[ind].absRank[k][s].rank=0;
-	}
-	for (h=0; h<4; h++) {
-	  if (localVar[thrId].game.suit[h][s] & topBitRank) {
-	    localVar[thrId].rel[ind].aggrRanks[s]=
-	          (localVar[thrId].rel[ind].aggrRanks[s]>>2)|(h<<24);
-	    localVar[thrId].rel[ind].winMask[s]=
-	          (localVar[thrId].rel[ind].winMask[s]>>2)|(3<<24);
-	    break;
-	  }
-	}
+      for (s = 0; s < 4; s++) {
+        absp->absRank[1][s].hand = hand_lookup[s][topBitNo];
+        absp->absRank[1][s].rank = topBitNo;
+        absp->aggrRanks[s] = (absp->aggrRanks[s] >> 2) | 
+	                     (hand_lookup[s][topBitNo] << 24);
+	absp->winMask[s]   = (absp->winMask[s]   >> 2) | (3 << 24);
       }
     }
   }
 
-  localVar[thrId].iniPosition.first[localVar[thrId].game.noOfCards-4]=first;
-  localVar[thrId].iniPosition.handRelFirst=handRelFirst;
-  localVar[thrId].lookAheadPos=localVar[thrId].iniPosition;
 
-  localVar[thrId].estTricks[1]=6;
-  localVar[thrId].estTricks[3]=6;
-  localVar[thrId].estTricks[0]=7;
-  localVar[thrId].estTricks[2]=7;
+  thrp->iniPosition.first[thrp->game.noOfCards-4]=first;
+  thrp->iniPosition.handRelFirst=handRelFirst;
+  thrp->lookAheadPos=thrp->iniPosition;
+
+  thrp->estTricks[1]=6;
+  thrp->estTricks[3]=6;
+  thrp->estTricks[0]=7;
+  thrp->estTricks[2]=7;
 
   #ifdef STAT
-  fprintf(localVar[thrId].fp2, "Estimated tricks for hand to play:\n");
-  fprintf(localVar[thrId].fp2, "hand=%d  est tricks=%d\n",
-	  localVar[thrId].handToPlay, localVar[thrId].estTricks[localVar[thrId].handToPlay]);
+  fprintf(fp2, "Estimated tricks for hand to play:\n");
+  fprintf(fp2, "hand=%d  est tricks=%d\n",
+	  thrp->handToPlay, thrp->estTricks[thrp->handToPlay]);
   #endif
 
-  InitSearch(&localVar[thrId].lookAheadPos, localVar[thrId].game.noOfCards-4,
-	localVar[thrId].initialMoves, first, moveTreeFlag, thrId);
+  InitSearch(&(thrp->lookAheadPos), thrp->game.noOfCards-4,
+	thrp->initialMoves, first, moveTreeFlag, thrp);
   return;
 }
 
 
 void InitSearch(struct pos * posPoint, int depth, struct moveType startMoves[],
-	int first, int mtd, int thrId)  {
+	int first, int mtd, struct localVarType * thrp)  {
 
   int s, d, h, handRelFirst, maxAgg, maxHand=0;
   int k, noOfStartMoves;       /* Number of start moves in the 1st trick */
@@ -1220,22 +1242,22 @@ void InitSearch(struct pos * posPoint, int depth, struct moveType startMoves[],
   }
 
   for (d=0; d<=49; d++) {
-    localVar[thrId].bestMove[d].rank=0;
-    localVar[thrId].bestMoveTT[d].rank=0;
+    thrp->bestMove[d].rank=0;
+    thrp->bestMoveTT[d].rank=0;
   }
 
   if (((handId(first, handRelFirst))==0)||
     ((handId(first, handRelFirst))==2)) {
-    localVar[thrId].nodeTypeStore[0]=MAXNODE;
-    localVar[thrId].nodeTypeStore[1]=MINNODE;
-    localVar[thrId].nodeTypeStore[2]=MAXNODE;
-    localVar[thrId].nodeTypeStore[3]=MINNODE;
+    thrp->nodeTypeStore[0]=MAXNODE;
+    thrp->nodeTypeStore[1]=MINNODE;
+    thrp->nodeTypeStore[2]=MAXNODE;
+    thrp->nodeTypeStore[3]=MINNODE;
   }
   else {
-    localVar[thrId].nodeTypeStore[0]=MINNODE;
-    localVar[thrId].nodeTypeStore[1]=MAXNODE;
-    localVar[thrId].nodeTypeStore[2]=MINNODE;
-    localVar[thrId].nodeTypeStore[3]=MAXNODE;
+    thrp->nodeTypeStore[0]=MINNODE;
+    thrp->nodeTypeStore[1]=MAXNODE;
+    thrp->nodeTypeStore[2]=MINNODE;
+    thrp->nodeTypeStore[3]=MAXNODE;
   }
 
   k=noOfStartMoves;
@@ -1252,12 +1274,12 @@ void InitSearch(struct pos * posPoint, int depth, struct moveType startMoves[],
   posPoint->high[depth+k]=first;
 
   while (k>0) {
-    localVar[thrId].movePly[depth+k].current=0;
-    localVar[thrId].movePly[depth+k].last=0;
-    localVar[thrId].movePly[depth+k].move[0].suit=startMoves[k-1].suit;
-    localVar[thrId].movePly[depth+k].move[0].rank=startMoves[k-1].rank;
+    thrp->movePly[depth+k].current=0;
+    thrp->movePly[depth+k].last=0;
+    thrp->movePly[depth+k].move[0].suit=startMoves[k-1].suit;
+    thrp->movePly[depth+k].move[0].rank=startMoves[k-1].rank;
     if (k<noOfStartMoves) {     /* If there is more than one start move */
-      if (WinningMove(&startMoves[k-1], &move, localVar[thrId].trump)) {
+      if (WinningMove(&startMoves[k-1], &move, thrp->trump)) {
         posPoint->move[depth+k].suit=startMoves[k-1].suit;
         posPoint->move[depth+k].rank=startMoves[k-1].rank;
         posPoint->high[depth+k]=handId(first, noOfStartMoves-k);
@@ -1287,7 +1309,7 @@ void InitSearch(struct pos * posPoint, int depth, struct moveType startMoves[],
         (~startMovesBitMap[h][s]);
 
   for (s=0; s<=3; s++)
-    localVar[thrId].iniRemovedRanks[s]=posPoint->removedRanks[s];
+    thrp->iniRemovedRanks[s]=posPoint->removedRanks[s];
 
   /*for (d=0; d<=49; d++) {
     for (s=0; s<=3; s++)
@@ -1298,7 +1320,7 @@ void InitSearch(struct pos * posPoint, int depth, struct moveType startMoves[],
   for (s=0; s<=3; s++) {
     maxAgg=0;
     for (h=0; h<=3; h++) {
-      aggHand[h][s]=startMovesBitMap[h][s] | localVar[thrId].game.suit[h][s];
+      aggHand[h][s]=startMovesBitMap[h][s] | thrp->game.suit[h][s];
       if (aggHand[h][s]>maxAgg) {
 	 maxAgg=aggHand[h][s];
 	 maxHand=h;
@@ -1346,30 +1368,25 @@ void InitSearch(struct pos * posPoint, int depth, struct moveType startMoves[],
     score0Counts[d]=0;
     c1[d]=0;  c2[d]=0;  c3[d]=0;  c4[d]=0;  c5[d]=0;  c6[d]=0; c7[d]=0;
     c8[d]=0;
-    localVar[thrId].no[d]=0;
+    thrp->no[d]=0;
   }
   #endif
 
   if (!mtd) {
-    localVar[thrId].lenSetSize=0;
+    thrp->lenSetSize=0;
     for (k=0; k<=13; k++) {
       for (h=0; h<=3; h++) {
-	localVar[thrId].rootnp[k][h]=&localVar[thrId].posSearch[localVar[thrId].lenSetSize];
-	localVar[thrId].posSearch[localVar[thrId].lenSetSize].suitLengths=0;
-	localVar[thrId].posSearch[localVar[thrId].lenSetSize].posSearchPoint=NULL;
-	localVar[thrId].posSearch[localVar[thrId].lenSetSize].left=NULL;
-	localVar[thrId].posSearch[localVar[thrId].lenSetSize].right=NULL;
-	localVar[thrId].lenSetSize++;
+	thrp->rootnp[k][h]=&(thrp->posSearch[thrp->lenSetSize]);
+        thrp->posSearch[thrp->lenSetSize].suitLengths=0;
+        thrp->posSearch[thrp->lenSetSize].posSearchPoint=NULL;
+        thrp->posSearch[thrp->lenSetSize].left=NULL;
+        thrp->posSearch[thrp->lenSetSize].right=NULL;
+        thrp->lenSetSize++;
       }
     }
-    localVar[thrId].nodeSetSize=0;
-    localVar[thrId].winSetSize=0;
+    thrp->nodeSetSize=0;
+    thrp->winSetSize=0;
   }
-
-  #ifdef TTDEBUG
-  if (!suppressTTlog)
-    lastTTstore=0;
-  #endif
 
   return;
 }
@@ -1381,7 +1398,7 @@ int c1[50], c2[50], c3[50], c4[50], c5[50], c6[50], c7[50], c8[50], c9[50];
 int sumc1, sumc2, sumc3, sumc4, sumc5, sumc6, sumc7, sumc8, sumc9;
 #endif
 
-int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
+int ABsearch(struct pos * posPoint, int target, int depth, struct localVarType * thrp) {
     /* posPoint points to the current look-ahead position,
        target is number of tricks to take for the player,
        depth is the remaining search length, must be positive,
@@ -1395,24 +1412,24 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
   struct winCardType * np;
   struct posSearchType * pp;
   struct nodeCardsType  * tempP;
-  struct movePlyType *mply=&localVar[thrId].movePly[depth];
+  struct movePlyType *mply=&(thrp->movePly[depth]);
   unsigned short int aggr[4];
   long long suitLengths;
-
-  struct evalType Evaluate(struct pos * posPoint, int trump, int thrId);
-  /*void Make(struct pos * posPoint, unsigned short int trickCards[4],
-    int depth, int trump, struct movePlyType *mply, int thrId);*/
-  void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, int thrId);
+  
+  struct evalType Evaluate(struct pos * posPoint, int trump, 
+    struct localVarType * thrp);
+  void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, 
+    struct localVarType * thrp);
 
   /*cardsP=NULL;*/
   assert((posPoint->handRelFirst>=0)&&(posPoint->handRelFirst<=3));
-  int trump=localVar[thrId].trump;
+  int trump=thrp->trump;
   int hand=handId(posPoint->first[depth], posPoint->handRelFirst);
 #ifdef STAT
-  localVar[thrId].nodes++;
+  thrp->nodes++;
 #endif
   if (posPoint->handRelFirst==0) {
-    /*localVar[thrId].trickNodes++;*/
+    /*thrp->trickNodes++;*/
     if (posPoint->tricksMAX>=target) {
       for (ss=0; ss<=3; ss++)
         posPoint->winRanks[depth][ss]=0;
@@ -1421,13 +1438,13 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
         c1[depth]++;
 
         score1Counts[depth]++;
-        if (depth==localVar[thrId].iniDepth) {
-          fprintf(localVar[thrId].fp2, "score statistics:\n");
-          for (dd=localVar[thrId].iniDepth; dd>=0; dd--) {
-            fprintf(localVar[thrId].fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
+        if (depth==thrp->iniDepth) {
+          fprintf(fp2, "score statistics:\n");
+          for (dd=thrp->iniDepth; dd>=0; dd--) {
+            fprintf(fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
             score1Counts[dd], score0Counts[dd], c1[dd], c2[dd],
               c3[dd], c4[dd]);
-            fprintf(localVar[thrId].fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
+            fprintf(fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
               c6[dd], c7[dd], c8[dd]);
           }
         }
@@ -1442,13 +1459,13 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
  #ifdef STAT
         c2[depth]++;
         score0Counts[depth]++;
-        if (depth==localVar[thrId].iniDepth) {
-          fprintf(localVar[thrId].fp2, "score statistics:\n");
-          for (dd=localVar[thrId].iniDepth; dd>=0; dd--) {
-            fprintf(localVar[thrId].fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
+        if (depth==thrp->iniDepth) {
+          fprintf(fp2, "score statistics:\n");
+          for (dd=thrp->iniDepth; dd>=0; dd--) {
+            fprintf(fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
             score1Counts[dd], score0Counts[dd], c1[dd], c2[dd],
               c3[dd], c4[dd]);
-            fprintf(localVar[thrId].fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
+            fprintf(fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
               c6[dd], c7[dd], c8[dd]);
           }
         }
@@ -1457,8 +1474,8 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
       return FALSE;
     }
 
-    if (localVar[thrId].nodeTypeStore[hand]==MAXNODE) {
-      qtricks=QuickTricks(posPoint, hand, depth, target, trump, &res, thrId);
+    if (thrp->nodeTypeStore[hand]==MAXNODE) {
+      qtricks=QuickTricks(posPoint, hand, depth, target, trump, &res, thrp);
       if (res) {
 	if (qtricks==0)
 	  return FALSE;
@@ -1467,23 +1484,23 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
  #ifdef STAT
           c3[depth]++;
           score1Counts[depth]++;
-          if (depth==localVar[thrId].iniDepth) {
-            fprintf(localVar[thrId].fp2, "score statistics:\n");
-            for (dd=localVar[thrId].iniDepth; dd>=0; dd--) {
-              fprintf(localVar[thrId].fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
+          if (depth==thrp->iniDepth) {
+            fprintf(fp2, "score statistics:\n");
+            for (dd=thrp->iniDepth; dd>=0; dd--) {
+              fprintf(fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
               score1Counts[dd], score0Counts[dd], c1[dd], c2[dd],
                 c3[dd], c4[dd]);
-              fprintf(localVar[thrId].fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
+              fprintf(fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
                 c6[dd], c7[dd], c8[dd]);
             }
           }
  #endif
       }
-      if (!LaterTricksMIN(posPoint,hand,depth,target,trump,thrId))
+      if (!LaterTricksMIN(posPoint,hand,depth,target,trump,thrp))
 	return FALSE;
     }
     else {
-      qtricks=QuickTricks(posPoint, hand, depth, target, trump, &res, thrId);
+      qtricks=QuickTricks(posPoint, hand, depth, target, trump, &res, thrp);
       if (res) {
         if (qtricks==0)
 	  return TRUE;
@@ -1492,19 +1509,19 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
  #ifdef STAT
           c4[depth]++;
           score0Counts[depth]++;
-          if (depth==localVar[thrId].iniDepth) {
-            fprintf(localVar[thrId].fp2, "score statistics:\n");
-            for (dd=localVar[thrId].iniDepth; dd>=0; dd--) {
-              fprintf(localVar[thrId].fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
+          if (depth==thrp->iniDepth) {
+            fprintf(fp2, "score statistics:\n");
+            for (dd=thrp->iniDepth; dd>=0; dd--) {
+              fprintf(fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
               score1Counts[dd], score0Counts[dd], c1[dd], c2[dd],
                 c3[dd], c4[dd]);
-              fprintf(localVar[thrId].fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
+              fprintf(fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
                 c6[dd], c7[dd], c8[dd]);
             }
           }
  #endif
       }
-      if (LaterTricksMAX(posPoint,hand,depth,target,trump,thrId))
+      if (LaterTricksMAX(posPoint,hand,depth,target,trump,thrp))
 	return TRUE;
     }
   }
@@ -1544,13 +1561,13 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
       }
     }
 
-    if ((found)&&(depth!=localVar[thrId].iniDepth)) {
+    if ((found)&&(depth!=thrp->iniDepth)) {
       for (k=0; k<=3; k++)
 	posPoint->winRanks[depth][k]=0;
       if (rr!=0)
 	posPoint->winRanks[depth][ss]=bitMapRank[rr];
 
-      if (localVar[thrId].nodeTypeStore[hand]==MAXNODE) {
+      if (thrp->nodeTypeStore[hand]==MAXNODE) {
         if (posPoint->tricksMAX+qtricks>=target) {
           return TRUE;
 	}
@@ -1627,12 +1644,12 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
   }
 
   if ((posPoint->handRelFirst==0)&&
-    (depth!=localVar[thrId].iniDepth)) {
+    (depth!=thrp->iniDepth)) {
     for (ss=0; ss<=3; ss++) {
       aggr[ss]=0;
       for (hh=0; hh<=3; hh++)
 	aggr[ss]|=posPoint->rankInSuit[hh][ss];
-      posPoint->orderSet[ss]=localVar[thrId].rel[aggr[ss]].aggrRanks[ss];
+      posPoint->orderSet[ss]=thrp->abs[aggr[ss]].aggrRanks[ss];
     }
     suitLengths=0;
     for (ss=0; ss<=2; ss++)
@@ -1641,25 +1658,25 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
 	suitLengths|=posPoint->length[hh][ss];
       }
 
-    pp=SearchLenAndInsert(localVar[thrId].rootnp[depth>>2][hand],
-	 suitLengths, FALSE, &res, thrId);
+    pp=SearchLenAndInsert(thrp->rootnp[depth>>2][hand],
+	 suitLengths, FALSE, &res, thrp);
 	/* Find node that fits the suit lengths */
     if (pp!=NULL) {
       np=pp->posSearchPoint;
       if (np==NULL)
         cardsP=NULL;
       else
-        cardsP=FindSOP(posPoint, np, hand, target, depth>>2, &scoreFlag, thrId);
+        cardsP=FindSOP(posPoint, np, hand, target, depth>>2, &scoreFlag, thrp);
 
       if (cardsP!=NULL) {
         if (scoreFlag==1) {
 	  for (ss=0; ss<=3; ss++)
 	    posPoint->winRanks[depth][ss]=
-	      localVar[thrId].adaptWins[aggr[ss]].winRanks[(int)cardsP->leastWin[ss]];
+	      thrp->adaptWins[aggr[ss]].winRanks[(int)cardsP->leastWin[ss]];
 
           if (cardsP->bestMoveRank!=0) {
-            localVar[thrId].bestMoveTT[depth].suit=cardsP->bestMoveSuit;
-            localVar[thrId].bestMoveTT[depth].rank=cardsP->bestMoveRank;
+            thrp->bestMoveTT[depth].suit=cardsP->bestMoveSuit;
+            thrp->bestMoveTT[depth].rank=cardsP->bestMoveRank;
           }
  #ifdef STAT
           c5[depth]++;
@@ -1667,34 +1684,26 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
             score1Counts[depth]++;
           else
             score0Counts[depth]++;
-          if (depth==localVar[thrId].iniDepth) {
-            fprintf(localVar[thrId].fp2, "score statistics:\n");
-            for (dd=localVar[thrId].iniDepth; dd>=0; dd--) {
-              fprintf(localVar[thrId].fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
+          if (depth==thrp->iniDepth) {
+            fprintf(fp2, "score statistics:\n");
+            for (dd=thrp->iniDepth; dd>=0; dd--) {
+              fprintf(fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
                 score1Counts[dd], score0Counts[dd], c1[dd], c2[dd],c3[dd], c4[dd]);
-              fprintf(localVar[thrId].fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
+              fprintf(fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
                 c6[dd], c7[dd], c8[dd]);
             }
           }
- #endif
- #ifdef TTDEBUG
-          if (!suppressTTlog) {
-            if (lastTTstore<SEARCHSIZE)
-              ReceiveTTstore(posPoint, cardsP, target, depth, thrId);
-            else
-              ttCollect=FALSE;
-	  }
  #endif
           return TRUE;
 	}
         else {
 	  for (ss=0; ss<=3; ss++)
 	    posPoint->winRanks[depth][ss]=
-	      localVar[thrId].adaptWins[aggr[ss]].winRanks[(int)cardsP->leastWin[ss]];
+	      thrp->adaptWins[aggr[ss]].winRanks[(int)cardsP->leastWin[ss]];
 
           if (cardsP->bestMoveRank!=0) {
-            localVar[thrId].bestMoveTT[depth].suit=cardsP->bestMoveSuit;
-            localVar[thrId].bestMoveTT[depth].rank=cardsP->bestMoveRank;
+            thrp->bestMoveTT[depth].suit=cardsP->bestMoveSuit;
+            thrp->bestMoveTT[depth].rank=cardsP->bestMoveRank;
           }
  #ifdef STAT
           c6[depth]++;
@@ -1702,24 +1711,15 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
             score1Counts[depth]++;
           else
             score0Counts[depth]++;
-          if (depth==localVar[thrId].iniDepth) {
-            fprintf(localVar[thrId].fp2, "score statistics:\n");
-            for (dd=localVar[thrId].iniDepth; dd>=0; dd--) {
-              fprintf(localVar[thrId].fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
+          if (depth==thrp->iniDepth) {
+            fprintf(fp2, "score statistics:\n");
+            for (dd=thrp->iniDepth; dd>=0; dd--) {
+              fprintf(fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
                 score1Counts[dd], score0Counts[dd], c1[dd], c2[dd], c3[dd],
                   c4[dd]);
-              fprintf(localVar[thrId].fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
+              fprintf(fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
                   c6[dd], c7[dd], c8[dd]);
             }
-          }
- #endif
-
- #ifdef TTDEBUG
-          if (!suppressTTlog) {
-            if (lastTTstore<SEARCHSIZE)
-              ReceiveTTstore(posPoint, cardsP, target, depth, thrId);
-            else
-              ttCollect=FALSE;
           }
  #endif
           return FALSE;
@@ -1729,7 +1729,7 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
   }
 
   if (depth==0) {                    /* Maximum depth? */
-    evalData=Evaluate(posPoint, trump, thrId);        /* Leaf node */
+    evalData=Evaluate(posPoint, trump, thrp);        /* Leaf node */
     if (evalData.tricks>=target)
       value=TRUE;
     else
@@ -1743,13 +1743,13 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
           score1Counts[depth]++;
         else
           score0Counts[depth]++;
-        if (depth==localVar[thrId].iniDepth) {
-          fprintf(localVar[thrId].fp2, "score statistics:\n");
-          for (dd=localVar[thrId].iniDepth; dd>=0; dd--) {
-            fprintf(localVar[thrId].fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
+        if (depth==thrp->iniDepth) {
+          fprintf(fp2, "score statistics:\n");
+          for (dd=thrp->iniDepth; dd>=0; dd--) {
+            fprintf(fp2, "d=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
               score1Counts[dd], score0Counts[dd], c1[dd], c2[dd], c3[dd],
               c4[dd]);
-            fprintf(localVar[thrId].fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
+            fprintf(fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd],
               c6[dd], c7[dd], c8[dd]);
           }
         }
@@ -1758,24 +1758,24 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
     return value;
   }
   else {
-    /*mply=&localVar[thrId].movePly[depth];*/
-    moveExists=MoveGen(posPoint, depth, trump, mply, thrId);
+
+    moveExists=MoveGen(posPoint, depth, trump, mply, thrp);
 
 /*#if 0*/
     if ((posPoint->handRelFirst==3)&&(depth>=/*29*//*33*/37)
-	&&(depth!=localVar[thrId].iniDepth)) {
+	&&(depth!=thrp->iniDepth)) {
       mply->current=0;
       int mexists=TRUE;
       int ready=FALSE;
       while (mexists) {
-	Make(posPoint, makeWinRank, depth, trump, mply, thrId);
+	Make(posPoint, makeWinRank, depth, trump, mply, thrp);
 	depth--;
 
 	for (ss=0; ss<=3; ss++) {
 	  aggr[ss]=0;
 	  for (hh=0; hh<=3; hh++)
 	    aggr[ss]|=posPoint->rankInSuit[hh][ss];
-	  posPoint->orderSet[ss]=localVar[thrId].rel[aggr[ss]].aggrRanks[ss];
+	  posPoint->orderSet[ss]=thrp->abs[aggr[ss]].aggrRanks[ss];
 	}
 	int hfirst=posPoint->first[depth];
 	suitLengths=0;
@@ -1785,52 +1785,52 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
 	    suitLengths|=posPoint->length[hh][ss];
 	  }
 
-	pp=SearchLenAndInsert(localVar[thrId].rootnp[depth>>2][hfirst],
-	  suitLengths, FALSE, &res, thrId);
+	pp=SearchLenAndInsert(thrp->rootnp[depth>>2][hfirst],
+	  suitLengths, FALSE, &res, thrp);
 	/* Find node that fits the suit lengths */
 	if (pp!=NULL) {
 	  np=pp->posSearchPoint;
 	  if (np==NULL)
 	    tempP=NULL;
 	  else
-	    tempP=FindSOP(posPoint, np, hfirst, target, depth>>2, &scoreFlag, thrId);
+	    tempP=FindSOP(posPoint, np, hfirst, target, depth>>2, &scoreFlag, thrp);
 
 	  if (tempP!=NULL) {
-	    if ((localVar[thrId].nodeTypeStore[hand]==MAXNODE)&&(scoreFlag==1)) {
+	    if ((thrp->nodeTypeStore[hand]==MAXNODE)&&(scoreFlag==1)) {
 	      for (ss=0; ss<=3; ss++)
 		posPoint->winRanks[depth+1][ss]=
-		  localVar[thrId].adaptWins[aggr[ss]].winRanks[(int)tempP->leastWin[ss]];
+		  thrp->adaptWins[aggr[ss]].winRanks[(int)tempP->leastWin[ss]];
 	      if (tempP->bestMoveRank!=0) {
-		localVar[thrId].bestMoveTT[depth+1].suit=tempP->bestMoveSuit;
-		localVar[thrId].bestMoveTT[depth+1].rank=tempP->bestMoveRank;
+		thrp->bestMoveTT[depth+1].suit=tempP->bestMoveSuit;
+		thrp->bestMoveTT[depth+1].rank=tempP->bestMoveRank;
 	      }
 	      for (ss=0; ss<=3; ss++)
 		posPoint->winRanks[depth+1][ss]|=makeWinRank[ss];
-	      Undo(posPoint, depth+1, mply/*&localVar[thrId].movePly[depth+1]*/,thrId);
+	      Undo(posPoint, depth+1, mply/*&(thrp->movePly[depth+1])*/,thrp);
 	      return TRUE;
 	    }
-	    else if ((localVar[thrId].nodeTypeStore[hand]==MINNODE)&&(scoreFlag==0)) {
+	    else if ((thrp->nodeTypeStore[hand]==MINNODE)&&(scoreFlag==0)) {
 	      for (ss=0; ss<=3; ss++)
 		posPoint->winRanks[depth+1][ss]=
-		  localVar[thrId].adaptWins[aggr[ss]].winRanks[(int)tempP->leastWin[ss]];
+		  thrp->adaptWins[aggr[ss]].winRanks[(int)tempP->leastWin[ss]];
 	      if (tempP->bestMoveRank!=0) {
-		localVar[thrId].bestMoveTT[depth+1].suit=tempP->bestMoveSuit;
-		localVar[thrId].bestMoveTT[depth+1].rank=tempP->bestMoveRank;
+		thrp->bestMoveTT[depth+1].suit=tempP->bestMoveSuit;
+		thrp->bestMoveTT[depth+1].rank=tempP->bestMoveRank;
 	      }
 	      for (ss=0; ss<=3; ss++)
 		posPoint->winRanks[depth+1][ss]|=makeWinRank[ss];
-	      Undo(posPoint, depth+1, mply/*&localVar[thrId].movePly[depth+1]*/, thrId);
+	      Undo(posPoint, depth+1, mply/*&(thrp->movePly[depth+1])*/, thrp);
 		return FALSE;
 	    }
 	    else {
 	      mply->move[mply->current].weight+=100;
-	      /*localVar[thrId].movePly[depth+1].move[localVar[thrId].movePly[depth+1].current].weight+=100;*/
+	      /*thrp->movePly[depth+1].move[thrp->movePly[depth+1].current].weight+=100;*/
 	      ready=TRUE;
 	    }
 	  }
 	}
 	depth++;
-	Undo(posPoint, depth, mply, thrId);
+	Undo(posPoint, depth, mply, thrp);
 	if (ready)
 	  break;
 
@@ -1848,32 +1848,32 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
 
 
     mply->current=0;
-    if (localVar[thrId].nodeTypeStore[hand]==MAXNODE) {
+    if (thrp->nodeTypeStore[hand]==MAXNODE) {
       value=FALSE;
       for (ss=0; ss<=3; ss++)
         posPoint->winRanks[depth][ss]=0;
 
       while (moveExists)  {
-        Make(posPoint, makeWinRank, depth, trump, mply, thrId);        /* Make current move */
+        Make(posPoint, makeWinRank, depth, trump, mply, thrp);        /* Make current move */
 	if (posPoint->handRelFirst==0)
-	  localVar[thrId].trickNodes++;
+	  thrp->trickNodes++;
         assert((posPoint->handRelFirst>=0)&&(posPoint->handRelFirst<=3));
-	value=ABsearch(posPoint, target, depth-1, thrId);
+	value=ABsearch(posPoint, target, depth-1, thrp);
 
-        Undo(posPoint, depth, mply, thrId);      /* Retract current move */
+        Undo(posPoint, depth, mply, thrp);      /* Retract current move */
         if (value==TRUE) {
         /* A cut-off? */
 	  for (ss=0; ss<=3; ss++)
             posPoint->winRanks[depth][ss]=posPoint->winRanks[depth-1][ss] |
               makeWinRank[ss];
-	  localVar[thrId].bestMove[depth]=mply->move[mply->current];
+	  thrp->bestMove[depth]=mply->move[mply->current];
           goto ABexit;
         }
         for (ss=0; ss<=3; ss++)
           posPoint->winRanks[depth][ss]=posPoint->winRanks[depth][ss] |
             posPoint->winRanks[depth-1][ss] | makeWinRank[ss];
 
-        moveExists=NextMove(posPoint, depth, mply, thrId);
+        moveExists=NextMove(posPoint, depth, mply, thrp);
       }
     }
     else {                          /* A minnode */
@@ -1882,25 +1882,25 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
         posPoint->winRanks[depth][ss]=0;
 
       while (moveExists)  {
-        Make(posPoint, makeWinRank, depth, trump, mply, thrId);        /* Make current move */
+        Make(posPoint, makeWinRank, depth, trump, mply, thrp);        /* Make current move */
 	if (posPoint->handRelFirst==0)
-	  localVar[thrId].trickNodes++;
-        value=ABsearch(posPoint, target, depth-1, thrId);
+	  thrp->trickNodes++;
+        value=ABsearch(posPoint, target, depth-1, thrp);
 
-        Undo(posPoint, depth, mply, thrId);       /* Retract current move */
+        Undo(posPoint, depth, mply, thrp);       /* Retract current move */
         if (value==FALSE) {
         /* A cut-off? */
 	  for (ss=0; ss<=3; ss++)
             posPoint->winRanks[depth][ss]=posPoint->winRanks[depth-1][ss] |
               makeWinRank[ss];
-          localVar[thrId].bestMove[depth]=mply->move[mply->current];
+          thrp->bestMove[depth]=mply->move[mply->current];
           goto ABexit;
         }
         for (ss=0; ss<=3; ss++)
           posPoint->winRanks[depth][ss]=posPoint->winRanks[depth][ss] |
             posPoint->winRanks[depth-1][ss] | makeWinRank[ss];
 
-        moveExists=NextMove(posPoint, depth, mply, thrId);
+        moveExists=NextMove(posPoint, depth, mply, thrp);
       }
     }
   }
@@ -1911,52 +1911,52 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
 	k=target;
       else
 	k=target-1;
-      if (depth!=localVar[thrId].iniDepth)
+      if (depth!=thrp->iniDepth)
         BuildSOP(posPoint, suitLengths, depth>>2, hand, target, depth,
-          value, k, thrId);
-      if (localVar[thrId].clearTTflag) {
+          value, k, thrp);
+      if (thrp->clearTTflag) {
          /* Wipe out the TT dynamically allocated structures
 	    except for the initially allocated structures.
 	    Set the TT limits to the initial values.
 	    Reset TT array indices to zero.
 	    Reset memory chunk indices to zero.
 	    Set allocated memory to the initial value. */
-        /*localVar[thrId].fp2=fopen("dyn.txt", "a");
-	fprintf(localVar[thrId].fp2, "Clear TT:\n");
-	fprintf(localVar[thrId].fp2, "wcount=%d, ncount=%d, lcount=%d\n",
+        /*fp2=fopen("dyn.txt", "a");
+	fprintf(fp2, "Clear TT:\n");
+	fprintf(fp2, "wcount=%d, ncount=%d, lcount=%d\n",
 	       wcount, ncount, lcount);
-        fprintf(localVar[thrId].fp2, "winSetSize=%d, nodeSetSize=%d, lenSetSize=%d\n",
+        fprintf(fp2, "winSetSize=%d, nodeSetSize=%d, lenSetSize=%d\n",
 	       winSetSize, nodeSetSize, lenSetSize);
-	fprintf(localVar[thrId].fp2, "\n");
-        fclose(localVar[thrId].fp2);*/
+	fprintf(fp2, "\n");
+        fclose(fp2);*/
 
-        Wipe(thrId);
-	localVar[thrId].winSetSizeLimit=WINIT;
-	localVar[thrId].nodeSetSizeLimit=NINIT;
-	localVar[thrId].lenSetSizeLimit=LINIT;
-	localVar[thrId].lcount=0;
-	localVar[thrId].allocmem=(localVar[thrId].lenSetSizeLimit+1)*sizeof(struct posSearchType);
-	localVar[thrId].lenSetSize=0;
-	localVar[thrId].posSearch=localVar[thrId].pl[localVar[thrId].lcount];
+        Wipe(thrp);
+	thrp->winSetSizeLimit=WINIT;
+	thrp->nodeSetSizeLimit=NINIT;
+	thrp->lenSetSizeLimit=LINIT;
+	thrp->lcount=0;
+	thrp->allocmem=(thrp->lenSetSizeLimit+1)*sizeof(struct posSearchType);
+	thrp->lenSetSize=0;
+	thrp->posSearch=thrp->pl[thrp->lcount];
 	for (k=0; k<=13; k++) {
 	  for (hh=0; hh<=3; hh++) {
-	    localVar[thrId].rootnp[k][hh]=&localVar[thrId].posSearch[localVar[thrId].lenSetSize];
-	    localVar[thrId].posSearch[localVar[thrId].lenSetSize].suitLengths=0;
-	    localVar[thrId].posSearch[localVar[thrId].lenSetSize].posSearchPoint=NULL;
-	    localVar[thrId].posSearch[localVar[thrId].lenSetSize].left=NULL;
-	    localVar[thrId].posSearch[localVar[thrId].lenSetSize].right=NULL;
-	    localVar[thrId].lenSetSize++;
+	    thrp->rootnp[k][hh]=&(thrp->posSearch[thrp->lenSetSize]);
+	    thrp->posSearch[thrp->lenSetSize].suitLengths=0;
+	    thrp->posSearch[thrp->lenSetSize].posSearchPoint=NULL;
+	    thrp->posSearch[thrp->lenSetSize].left=NULL;
+	    thrp->posSearch[thrp->lenSetSize].right=NULL;
+	    thrp->lenSetSize++;
 	  }
 	}
-        localVar[thrId].nodeSetSize=0;
-        localVar[thrId].winSetSize=0;
-	localVar[thrId].wcount=0; localVar[thrId].ncount=0;
-	localVar[thrId].allocmem+=(localVar[thrId].winSetSizeLimit+1)*sizeof(struct winCardType);
-        localVar[thrId].winCards=localVar[thrId].pw[localVar[thrId].wcount];
-	localVar[thrId].allocmem+=(localVar[thrId].nodeSetSizeLimit+1)*sizeof(struct nodeCardsType);
-	localVar[thrId].nodeCards=localVar[thrId].pn[localVar[thrId].ncount];
-	localVar[thrId].clearTTflag=FALSE;
-	localVar[thrId].windex=-1;
+        thrp->nodeSetSize=0;
+        thrp->winSetSize=0;
+	thrp->wcount=0; thrp->ncount=0;
+	thrp->allocmem+=(thrp->winSetSizeLimit+1)*sizeof(struct winCardType);
+        thrp->winCards=thrp->pw[thrp->wcount];
+	thrp->allocmem+=(thrp->nodeSetSizeLimit+1)*sizeof(struct nodeCardsType);
+	thrp->nodeCards=thrp->pn[thrp->ncount];
+	thrp->clearTTflag=FALSE;
+	thrp->windex=-1;
       }
     }
   }
@@ -1967,42 +1967,42 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
     score1Counts[depth]++;
   else
     score0Counts[depth]++;
-  if (depth==localVar[thrId].iniDepth) {
-    if (localVar[thrId].fp2==NULL)
+  if (depth==thrp->iniDepth) {
+    if (fp2==NULL)
       exit(0);
-    fprintf(localVar[thrId].fp2, "\n");
-    fprintf(localVar[thrId].fp2, "top level cards:\n");
+    fprintf(fp2, "\n");
+    fprintf(fp2, "top level cards:\n");
     for (hh=0; hh<=3; hh++) {
-      fprintf(localVar[thrId].fp2, "hand=%c\n", cardHand[hh]);
+      fprintf(fp2, "hand=%c\n", cardHand[hh]);
       for (ss=0; ss<=3; ss++) {
-        fprintf(localVar[thrId].fp2, "suit=%c", cardSuit[ss]);
+        fprintf(fp2, "suit=%c", cardSuit[ss]);
         for (rr=14; rr>=2; rr--)
           if (posPoint->rankInSuit[hh][ss] & bitMapRank[rr])
-            fprintf(localVar[thrId].fp2, " %c", cardRank[rr]);
-        fprintf(localVar[thrId].fp2, "\n");
+            fprintf(fp2, " %c", cardRank[rr]);
+        fprintf(fp2, "\n");
       }
-      fprintf(localVar[thrId].fp2, "\n");
+      fprintf(fp2, "\n");
     }
-    fprintf(localVar[thrId].fp2, "top level winning cards:\n");
+    fprintf(fp2, "top level winning cards:\n");
     for (ss=0; ss<=3; ss++) {
-      fprintf(localVar[thrId].fp2, "suit=%c", cardSuit[ss]);
+      fprintf(fp2, "suit=%c", cardSuit[ss]);
       for (rr=14; rr>=2; rr--)
         if (posPoint->winRanks[depth][ss] & bitMapRank[rr])
-          fprintf(localVar[thrId].fp2, " %c", cardRank[rr]);
-      fprintf(localVar[thrId].fp2, "\n");
+          fprintf(fp2, " %c", cardRank[rr]);
+      fprintf(fp2, "\n");
     }
-    fprintf(localVar[thrId].fp2, "\n");
-    fprintf(localVar[thrId].fp2, "\n");
+    fprintf(fp2, "\n");
+    fprintf(fp2, "\n");
 
-    fprintf(localVar[thrId].fp2, "score statistics:\n");
+    fprintf(fp2, "score statistics:\n");
     sumScore0Counts=0;
     sumScore1Counts=0;
     sumc1=0; sumc2=0; sumc3=0; sumc4=0;
     sumc5=0; sumc6=0; sumc7=0; sumc8=0; sumc9=0;
-    for (dd=localVar[thrId].iniDepth; dd>=0; dd--) {
-      fprintf(localVar[thrId].fp2, "depth=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
+    for (dd=thrp->iniDepth; dd>=0; dd--) {
+      fprintf(fp2, "depth=%d s1=%d s0=%d c1=%d c2=%d c3=%d c4=%d", dd,
           score1Counts[dd], score0Counts[dd], c1[dd], c2[dd], c3[dd], c4[dd]);
-      fprintf(localVar[thrId].fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd], c6[dd],
+      fprintf(fp2, " c5=%d c6=%d c7=%d c8=%d\n", c5[dd], c6[dd],
           c7[dd], c8[dd]);
       sumScore0Counts=sumScore0Counts+score0Counts[dd];
       sumScore1Counts=sumScore1Counts+score1Counts[dd];
@@ -2016,24 +2016,24 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
       sumc8=sumc8+c8[dd];
       sumc9=sumc9+c9[dd];
     }
-    fprintf(localVar[thrId].fp2, "\n");
-    fprintf(localVar[thrId].fp2, "score sum statistics:\n");
-    fprintf(localVar[thrId].fp2, "\n");
-    fprintf(localVar[thrId].fp2, "sumScore0Counts=%d sumScore1Counts=%d\n",
+    fprintf(fp2, "\n");
+    fprintf(fp2, "score sum statistics:\n");
+    fprintf(fp2, "\n");
+    fprintf(fp2, "sumScore0Counts=%d sumScore1Counts=%d\n",
         sumScore0Counts, sumScore1Counts);
-    fprintf(localVar[thrId].fp2, "nodeSetSize=%d  winSetSize=%d\n", localVar[thrId].nodeSetSize,
-        localVar[thrId].winSetSize);
-    fprintf(localVar[thrId].fp2, "sumc1=%d sumc2=%d sumc3=%d sumc4=%d\n",
+    fprintf(fp2, "nodeSetSize=%d  winSetSize=%d\n", thrp->nodeSetSize,
+        thrp->winSetSize);
+    fprintf(fp2, "sumc1=%d sumc2=%d sumc3=%d sumc4=%d\n",
         sumc1, sumc2, sumc3, sumc4);
-    fprintf(localVar[thrId].fp2, "sumc5=%d sumc6=%d sumc7=%d sumc8=%d sumc9=%d\n",
+    fprintf(fp2, "sumc5=%d sumc6=%d sumc7=%d sumc8=%d sumc9=%d\n",
         sumc5, sumc6, sumc7, sumc8, sumc9);
-    fprintf(localVar[thrId].fp2, "\n");
-    fprintf(localVar[thrId].fp2, "\n");
-    fprintf(localVar[thrId].fp2, "No of searched nodes per depth:\n");
-    for (dd=localVar[thrId].iniDepth; dd>=0; dd--)
-      fprintf(localVar[thrId].fp2, "depth=%d  nodes=%d\n", dd, localVar[thrId].no[dd]);
-    fprintf(localVar[thrId].fp2, "\n");
-    fprintf(localVar[thrId].fp2, "Total nodes=%d\n", localVar[thrId].nodes);
+    fprintf(fp2, "\n");
+    fprintf(fp2, "\n");
+    fprintf(fp2, "No of searched nodes per depth:\n");
+    for (dd=thrp->iniDepth; dd>=0; dd--)
+      fprintf(fp2, "depth=%d  nodes=%d\n", dd, thrp->no[dd]);
+    fprintf(fp2, "\n");
+    fprintf(fp2, "Total nodes=%d\n", thrp->nodes);
   }
  #endif
 
@@ -2042,7 +2042,7 @@ int ABsearch(struct pos * posPoint, int target, int depth, int thrId) {
 
 
 void Make(struct pos * posPoint, unsigned short int trickCards[4],
-  int depth, int trump, struct movePlyType *mply, int thrId)  {
+  int depth, int trump, struct movePlyType *mply, struct localVarType * thrp)  {
   int t, u, w;
   int mcurr, q;
 
@@ -2079,8 +2079,8 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
     if (mply->move[r].suit==s)
       count++;
     for (int e=1; e<=3; e++) {
-      mcurr=localVar[thrId].movePly[depth+e].current;
-      if (localVar[thrId].movePly[depth+e].move[mcurr].suit==s) {
+      mcurr=thrp->movePly[depth+e].current;
+      if (thrp->movePly[depth+e].move[mcurr].suit==s) {
         count++;
         /*if (++count>1)
           break;*/
@@ -2088,7 +2088,7 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
     }
 
 
-    if (localVar[thrId].nodeTypeStore[posPoint->high[depth]]==MAXNODE)
+    if (thrp->nodeTypeStore[posPoint->high[depth]]==MAXNODE)
       posPoint->tricksMAX++;
     posPoint->first[depth-1]=posPoint->high[depth];   /* Defines who is first
         in the next move */
@@ -2102,9 +2102,9 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
     for (int d=3; d>=0; d--) {
       q=handId(firstHand, 3-d);
     /* Add the moves to removed ranks */
-      r=localVar[thrId].movePly[depth+d].current;
-      w=localVar[thrId].movePly[depth+d].move[r].rank;
-      u=localVar[thrId].movePly[depth+d].move[r].suit;
+      r=thrp->movePly[depth+d].current;
+      w=thrp->movePly[depth+d].move[r].rank;
+      u=thrp->movePly[depth+d].move[r].suit;
       posPoint->removedRanks[u]|=bitMapRank[w];
 
       if (d==0)
@@ -2114,10 +2114,10 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
 	int aggr=0;
         for (int h=0; h<=3; h++)
 	  aggr|=posPoint->rankInSuit[h][u];
-	posPoint->winner[u].rank=localVar[thrId].rel[aggr].absRank[1][u].rank;
-	posPoint->winner[u].hand=localVar[thrId].rel[aggr].absRank[1][u].hand;
-	posPoint->secondBest[u].rank=localVar[thrId].rel[aggr].absRank[2][u].rank;
-	posPoint->secondBest[u].hand=localVar[thrId].rel[aggr].absRank[2][u].hand;
+	posPoint->winner[u].rank=thrp->abs[aggr].absRank[1][u].rank;
+	posPoint->winner[u].hand=thrp->abs[aggr].absRank[1][u].hand;
+	posPoint->secondBest[u].rank=thrp->abs[aggr].absRank[2][u].rank;
+	posPoint->secondBest[u].hand=thrp->abs[aggr].absRank[2][u].hand;
       }
 
 
@@ -2127,7 +2127,7 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
         if (count>=2) {
           trickCards[u]=bitMapRank[w];
           /* Mark ranks as winning if they are part of a sequence */
-          trickCards[u]|=localVar[thrId].movePly[depth+d].move[r].sequence;
+          trickCards[u]|=thrp->movePly[depth+d].move[r].sequence;
         }
       }
     }
@@ -2179,7 +2179,7 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
   posPoint->length[t][u]--;
 
 #ifdef STAT
-  localVar[thrId].no[depth]++;
+  thrp->no[depth]++;
 #endif
 
   return;
@@ -2187,7 +2187,8 @@ void Make(struct pos * posPoint, unsigned short int trickCards[4],
 
 
 
-void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, int thrId)  {
+void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, 
+  struct localVarType * thrp)  {
   int r, t, u, w;
 
   assert((posPoint->handRelFirst>=0)&&(posPoint->handRelFirst<=3));
@@ -2212,9 +2213,9 @@ void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, int thrId)
   else if (posPoint->handRelFirst==3)  {    /* Last hand */
     for (int d=3; d>=0; d--) {
     /* Delete the moves from removed ranks */
-      r=localVar[thrId].movePly[depth+d].current;
-      w=localVar[thrId].movePly[depth+d].move[r].rank;
-      u=localVar[thrId].movePly[depth+d].move[r].suit;
+      r=thrp->movePly[depth+d].current;
+      w=thrp->movePly[depth+d].move[r].rank;
+      u=thrp->movePly[depth+d].move[r].suit;
 
       posPoint->removedRanks[u]&= (~bitMapRank[w]);
 
@@ -2234,7 +2235,7 @@ void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, int thrId)
     t=handId(firstHand, 3);
 
 
-    if (localVar[thrId].nodeTypeStore[posPoint->first[depth-1]]==MAXNODE)
+    if (thrp->nodeTypeStore[posPoint->first[depth-1]]==MAXNODE)
         /* First hand of next trick is winner of the current trick */
       posPoint->tricksMAX--;
   }
@@ -2254,7 +2255,8 @@ void Undo(struct pos * posPoint, int depth, struct movePlyType *mply, int thrId)
 
 
 
-struct evalType Evaluate(struct pos * posPoint, int trump, int thrId)  {
+struct evalType Evaluate(struct pos * posPoint, int trump, 
+  struct localVarType * thrp)  {
   int s, h, hmax=0, count=0, k=0;
   unsigned short rmax=0;
   struct evalType eval;
@@ -2280,7 +2282,7 @@ struct evalType Evaluate(struct pos * posPoint, int trump, int thrId)  {
       if (count>=2)
         eval.winRanks[trump]=rmax;
 
-      if (localVar[thrId].nodeTypeStore[hmax]==MAXNODE)
+      if (thrp->nodeTypeStore[hmax]==MAXNODE)
         goto maxexit;
       else
         goto minexit;
@@ -2310,7 +2312,7 @@ struct evalType Evaluate(struct pos * posPoint, int trump, int thrId)  {
   if (count>=2)
     eval.winRanks[k]=rmax;
 
-  if (localVar[thrId].nodeTypeStore[hmax]==MAXNODE)
+  if (thrp->nodeTypeStore[hmax]==MAXNODE)
     goto maxexit;
   else
     goto minexit;
@@ -2326,7 +2328,7 @@ struct evalType Evaluate(struct pos * posPoint, int trump, int thrId)  {
 
 
 int QuickTricks(struct pos * posPoint, int hand,
-	int depth, int target, int trump, int *result, int thrId) {
+	int depth, int target, int trump, int *result, struct localVarType * thrp) {
   int suit, sum, commRank=0, commSuit=-1, s;
   int opps, res;
   int countLho, countRho, countPart, countOwn, lhoTrumpRanks, rhoTrumpRanks;
@@ -2342,23 +2344,25 @@ int QuickTricks(struct pos * posPoint, int hand,
 
   int QuickTricksPartnerHandTrump(int hand, struct pos *posPoint, int cutoff, int depth,
 	int countLho, int countRho, int lhoTrumpRanks, int rhoTrumpRanks, int countOwn,
-	int countPart, int suit, int qtricks, int commSuit, int commRank, int trump, int *res, int thrId);
+	int countPart, int suit, int qtricks, int commSuit, int commRank, int trump, int *res, 
+        struct localVarType * thrp);
 
   int QuickTricksPartnerHandNT(int hand, struct pos *posPoint, int cutoff, int depth,
 	int countLho, int countRho, int countOwn,
-	int countPart, int suit, int qtricks, int commSuit, int commRank, int trump, int *res, int thrId);
+	int countPart, int suit, int qtricks, int commSuit, int commRank, int trump, int *res, 
+        struct localVarType * thrp);
 
   *result=TRUE;
   int qtricks=0;
   for (s=0; s<=3; s++)
     posPoint->winRanks[depth][s]=0;
 
-  if ((depth<=0)||(depth==localVar[thrId].iniDepth)) {
+  if ((depth<=0)||(depth==thrp->iniDepth)) {
     *result=FALSE;
     return qtricks;
   }
 
-  if (localVar[thrId].nodeTypeStore[hand]==MAXNODE)
+  if (thrp->nodeTypeStore[hand]==MAXNODE)
     cutoff=target-posPoint->tricksMAX;
   else
     cutoff=posPoint->tricksMAX-target+(depth>>2)+2;
@@ -2663,7 +2667,7 @@ int QuickTricks(struct pos * posPoint, int hand,
           if ((trump!=4)&&(trump!=suit)) {
 	    qtricks=QuickTricksPartnerHandTrump(hand, posPoint, cutoff, depth,
 	      countLho, countRho, lhoTrumpRanks, rhoTrumpRanks, countOwn,
-	      countPart, suit, qtricks, commSuit, commRank, trump, &res, thrId);
+	      countPart, suit, qtricks, commSuit, commRank, trump, &res, thrp);
 	    if (res==1)
 	      return qtricks;
 	    else if (res==2) {
@@ -2676,7 +2680,7 @@ int QuickTricks(struct pos * posPoint, int hand,
           else {
 	    qtricks=QuickTricksPartnerHandNT(hand, posPoint, cutoff, depth,
 	      countLho, countRho, countOwn,
-	      countPart, suit, qtricks, commSuit, commRank, trump, &res, thrId);
+	      countPart, suit, qtricks, commSuit, commRank, trump, &res, thrp);
 	    if (res==1)
 	      return qtricks;
 	    else if (res==2) {
@@ -2795,7 +2799,7 @@ int QuickTricks(struct pos * posPoint, int hand,
 	    bitMapRank[posPoint->winner[ss].rank];
 	}
       }
-      if (localVar[thrId].nodeTypeStore[hand]!=MAXNODE)
+      if (thrp->nodeTypeStore[hand]!=MAXNODE)
         cutoff=target-posPoint->tricksMAX;
       else
         cutoff=posPoint->tricksMAX-target+(depth>>2)+2;
@@ -3004,7 +3008,8 @@ int QtricksLeadHandNT(int hand, struct pos *posPoint, int cutoff, int depth,
 
 int QuickTricksPartnerHandTrump(int hand, struct pos *posPoint, int cutoff, int depth,
 	int countLho, int countRho, int lhoTrumpRanks, int rhoTrumpRanks, int countOwn,
-	int countPart, int suit, int qtricks, int commSuit, int commRank, int trump, int *res, int thrId) {
+	int countPart, int suit, int qtricks, int commSuit, int commRank, int trump, int *res, 
+        struct localVarType * thrp) {
 	/* res=0		Continue with same suit.
 	   res=1		Cutoff.
 	   res=2		Continue with next suit. */
@@ -3069,8 +3074,8 @@ int QuickTricksPartnerHandTrump(int hand, struct pos *posPoint, int cutoff, int 
     unsigned short ranks=0;
     for (int k=0; k<=3; k++)
       ranks|=posPoint->rankInSuit[k][suit];
-    if (localVar[thrId].rel[ranks].absRank[3][suit].hand==partner[hand]) {
-	  posPoint->winRanks[depth][suit]|=bitMapRank[localVar[thrId].rel[ranks].absRank[3][suit].rank];
+    if (thrp->abs[ranks].absRank[3][suit].hand==partner[hand]) {
+	  posPoint->winRanks[depth][suit]|=bitMapRank[thrp->abs[ranks].absRank[3][suit].rank];
       posPoint->winRanks[depth][commSuit]|=bitMapRank[commRank];
       qt++;
       if (qt>=cutoff)
@@ -3089,7 +3094,8 @@ int QuickTricksPartnerHandTrump(int hand, struct pos *posPoint, int cutoff, int 
 
 int QuickTricksPartnerHandNT(int hand, struct pos *posPoint, int cutoff, int depth,
 	int countLho, int countRho, int countOwn,
-	int countPart, int suit, int qtricks, int commSuit, int commRank, int trump, int *res, int thrId) {
+	int countPart, int suit, int qtricks, int commSuit, int commRank, int trump, 
+        int *res, struct localVarType * thrp) {
 
   *res=1;
   int qt=qtricks;
@@ -3141,8 +3147,8 @@ int QuickTricksPartnerHandNT(int hand, struct pos *posPoint, int cutoff, int dep
     unsigned short ranks=0;
     for (int k=0; k<=3; k++)
       ranks|=posPoint->rankInSuit[k][suit];
-    if (localVar[thrId].rel[ranks].absRank[3][suit].hand==partner[hand]) {
-      posPoint->winRanks[depth][suit]|=bitMapRank[localVar[thrId].rel[ranks].absRank[3][suit].rank];
+    if (thrp->abs[ranks].absRank[3][suit].hand==partner[hand]) {
+      posPoint->winRanks[depth][suit]|=bitMapRank[thrp->abs[ranks].absRank[3][suit].rank];
       qt++;
       if (qt>=cutoff)
 	return qt;
@@ -3159,7 +3165,7 @@ int QuickTricksPartnerHandNT(int hand, struct pos *posPoint, int cutoff, int dep
 
 
 int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target,
-	int trump, int thrId) {
+	int trump, struct localVarType * thrp) {
   int hh, ss, k, h, sum=0;
   /*unsigned short aggr;*/
 
@@ -3167,17 +3173,17 @@ int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target,
     for (ss=0; ss<=3; ss++) {
       hh=posPoint->winner[ss].hand;
       if (hh!=-1) {
-        if (localVar[thrId].nodeTypeStore[hh]==MAXNODE)
+        if (thrp->nodeTypeStore[hh]==MAXNODE)
           sum+=Max(posPoint->length[hh][ss], posPoint->length[partner[hh]][ss]);
       }
     }
     if ((posPoint->tricksMAX+sum<target)&&
-      (sum>0)&&(depth>0)&&(depth!=localVar[thrId].iniDepth)) {
+      (sum>0)&&(depth>0)&&(depth!=thrp->iniDepth)) {
       if ((posPoint->tricksMAX+(depth>>2)<target)) {
 	for (ss=0; ss<=3; ss++) {
 	  if (posPoint->winner[ss].hand==-1)
 	    posPoint->winRanks[depth][ss]=0;
-          else if (localVar[thrId].nodeTypeStore[posPoint->winner[ss].hand]==MINNODE) {
+          else if (thrp->nodeTypeStore[posPoint->winner[ss].hand]==MINNODE) {
             if ((posPoint->rankInSuit[partner[posPoint->winner[ss].hand]][ss]==0)&&
 		(posPoint->rankInSuit[lho[posPoint->winner[ss].hand]][ss]==0)&&
 		(posPoint->rankInSuit[rho[posPoint->winner[ss].hand]][ss]==0))
@@ -3193,20 +3199,20 @@ int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target,
     }
   }
   else if ((trump!=4) && (posPoint->winner[trump].rank!=0) &&
-    (localVar[thrId].nodeTypeStore[posPoint->winner[trump].hand]==MINNODE)) {
+    (thrp->nodeTypeStore[posPoint->winner[trump].hand]==MINNODE)) {
     if ((posPoint->length[hand][trump]==0)&&
       (posPoint->length[partner[hand]][trump]==0)) {
       if (((posPoint->tricksMAX+(depth>>2)+1-
 	  Max(posPoint->length[lho[hand]][trump],
 	  posPoint->length[rho[hand]][trump]))<target)
-          &&(depth>0)&&(depth!=localVar[thrId].iniDepth)) {
+          &&(depth>0)&&(depth!=thrp->iniDepth)) {
         for (ss=0; ss<=3; ss++)
           posPoint->winRanks[depth][ss]=0;
 	return FALSE;
       }
     }
     else if (((posPoint->tricksMAX+(depth>>2))<target)&&
-      (depth>0)&&(depth!=localVar[thrId].iniDepth)) {
+      (depth>0)&&(depth!=thrp->iniDepth)) {
       for (ss=0; ss<=3; ss++)
         posPoint->winRanks[depth][ss]=0;
       posPoint->winRanks[depth][trump]=
@@ -3216,11 +3222,11 @@ int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target,
     else {
       hh=posPoint->secondBest[trump].hand;
       if (hh!=-1) {
-        if ((localVar[thrId].nodeTypeStore[hh]==MINNODE)&&(posPoint->secondBest[trump].rank!=0))  {
+        if ((thrp->nodeTypeStore[hh]==MINNODE)&&(posPoint->secondBest[trump].rank!=0))  {
           if (((posPoint->length[hh][trump]>1) ||
             (posPoint->length[partner[hh]][trump]>1))&&
             ((posPoint->tricksMAX+(depth>>2)-1)<target)&&(depth>0)
-	     &&(depth!=localVar[thrId].iniDepth)) {
+	     &&(depth!=thrp->iniDepth)) {
             for (ss=0; ss<=3; ss++)
               posPoint->winRanks[depth][ss]=0;
 	    posPoint->winRanks[depth][trump]=
@@ -3234,11 +3240,11 @@ int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target,
   else if (trump!=4) {
     hh=posPoint->secondBest[trump].hand;
     if (hh!=-1) {
-      if ((localVar[thrId].nodeTypeStore[hh]==MINNODE)&&
+      if ((thrp->nodeTypeStore[hh]==MINNODE)&&
         (posPoint->length[hh][trump]>1)) {
 	if (posPoint->winner[trump].hand==rho[hh]) {
           if (((posPoint->tricksMAX+(depth>>2))<target)&&
-            (depth>0)&&(depth!=localVar[thrId].iniDepth)) {
+            (depth>0)&&(depth!=thrp->iniDepth)) {
             for (ss=0; ss<=3; ss++)
               posPoint->winRanks[depth][ss]=0;
 	        posPoint->winRanks[depth][trump]=
@@ -3250,15 +3256,15 @@ int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target,
 	  unsigned short aggr=0;
 	  for (k=0; k<=3; k++)
 	    aggr|=posPoint->rankInSuit[k][trump];
-	  h=localVar[thrId].rel[aggr].absRank[3][trump].hand;
+	  h=thrp->abs[aggr].absRank[3][trump].hand;
 	  if (h!=-1) {
-	    if ((localVar[thrId].nodeTypeStore[h]==MINNODE)&&
+	    if ((thrp->nodeTypeStore[h]==MINNODE)&&
 	      ((posPoint->tricksMAX+(depth>>2))<target)&&
-              (depth>0)&&(depth!=localVar[thrId].iniDepth)) {
+              (depth>0)&&(depth!=thrp->iniDepth)) {
               for (ss=0; ss<=3; ss++)
                 posPoint->winRanks[depth][ss]=0;
 	      posPoint->winRanks[depth][trump]=
-		bitMapRank[localVar[thrId].rel[aggr].absRank[3][trump].rank];
+		bitMapRank[thrp->abs[aggr].absRank[3][trump].rank];
               return FALSE;
 	    }
 	  }
@@ -3271,7 +3277,7 @@ int LaterTricksMIN(struct pos *posPoint, int hand, int depth, int target,
 
 
 int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
-	int trump, int thrId) {
+	int trump, struct localVarType * thrp) {
   int hh, ss, k, h, sum=0;
   /*unsigned short aggr;*/
 
@@ -3279,17 +3285,17 @@ int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
     for (ss=0; ss<=3; ss++) {
       hh=posPoint->winner[ss].hand;
       if (hh!=-1) {
-        if (localVar[thrId].nodeTypeStore[hh]==MINNODE)
+        if (thrp->nodeTypeStore[hh]==MINNODE)
           sum+=Max(posPoint->length[hh][ss], posPoint->length[partner[hh]][ss]);
       }
     }
     if ((posPoint->tricksMAX+(depth>>2)+1-sum>=target)&&
-	(sum>0)&&(depth>0)&&(depth!=localVar[thrId].iniDepth)) {
+	(sum>0)&&(depth>0)&&(depth!=thrp->iniDepth)) {
       if ((posPoint->tricksMAX+1>=target)) {
 	for (ss=0; ss<=3; ss++) {
 	  if (posPoint->winner[ss].hand==-1)
 	    posPoint->winRanks[depth][ss]=0;
-          else if (localVar[thrId].nodeTypeStore[posPoint->winner[ss].hand]==MAXNODE) {
+          else if (thrp->nodeTypeStore[posPoint->winner[ss].hand]==MAXNODE) {
 	    if ((posPoint->rankInSuit[partner[posPoint->winner[ss].hand]][ss]==0)&&
 		(posPoint->rankInSuit[lho[posPoint->winner[ss].hand]][ss]==0)&&
 		(posPoint->rankInSuit[rho[posPoint->winner[ss].hand]][ss]==0))
@@ -3305,19 +3311,19 @@ int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
     }
   }
   else if ((trump!=4) && (posPoint->winner[trump].rank!=0) &&
-    (localVar[thrId].nodeTypeStore[posPoint->winner[trump].hand]==MAXNODE)) {
+    (thrp->nodeTypeStore[posPoint->winner[trump].hand]==MAXNODE)) {
     if ((posPoint->length[hand][trump]==0)&&
       (posPoint->length[partner[hand]][trump]==0)) {
       if (((posPoint->tricksMAX+Max(posPoint->length[lho[hand]][trump],
         posPoint->length[rho[hand]][trump]))>=target)
-        &&(depth>0)&&(depth!=localVar[thrId].iniDepth)) {
+        &&(depth>0)&&(depth!=thrp->iniDepth)) {
         for (ss=0; ss<=3; ss++)
           posPoint->winRanks[depth][ss]=0;
 	return TRUE;
       }
     }
     else if (((posPoint->tricksMAX+1)>=target)
-      &&(depth>0)&&(depth!=localVar[thrId].iniDepth)) {
+      &&(depth>0)&&(depth!=thrp->iniDepth)) {
       for (ss=0; ss<=3; ss++)
         posPoint->winRanks[depth][ss]=0;
       posPoint->winRanks[depth][trump]=
@@ -3327,11 +3333,11 @@ int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
     else {
       hh=posPoint->secondBest[trump].hand;
       if (hh!=-1) {
-        if ((localVar[thrId].nodeTypeStore[hh]==MAXNODE)&&(posPoint->secondBest[trump].rank!=0))  {
+        if ((thrp->nodeTypeStore[hh]==MAXNODE)&&(posPoint->secondBest[trump].rank!=0))  {
           if (((posPoint->length[hh][trump]>1) ||
             (posPoint->length[partner[hh]][trump]>1))&&
             ((posPoint->tricksMAX+2)>=target)&&(depth>0)
-	    &&(depth!=localVar[thrId].iniDepth)) {
+	    &&(depth!=thrp->iniDepth)) {
             for (ss=0; ss<=3; ss++)
               posPoint->winRanks[depth][ss]=0;
 	    posPoint->winRanks[depth][trump]=
@@ -3346,11 +3352,11 @@ int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
   else if (trump!=4) {
     hh=posPoint->secondBest[trump].hand;
     if (hh!=-1) {
-      if ((localVar[thrId].nodeTypeStore[hh]==MAXNODE)&&
+      if ((thrp->nodeTypeStore[hh]==MAXNODE)&&
         (posPoint->length[hh][trump]>1)) {
 	if (posPoint->winner[trump].hand==rho[hh]) {
           if (((posPoint->tricksMAX+1)>=target)&&(depth>0)
-	     &&(depth!=localVar[thrId].iniDepth)) {
+	     &&(depth!=thrp->iniDepth)) {
             for (ss=0; ss<=3; ss++)
               posPoint->winRanks[depth][ss]=0;
 	    posPoint->winRanks[depth][trump]=
@@ -3362,15 +3368,15 @@ int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
 	  unsigned short aggr=0;
 	  for (k=0; k<=3; k++)
 	    aggr|=posPoint->rankInSuit[k][trump];
-	  h=localVar[thrId].rel[aggr].absRank[3][trump].hand;
+	  h=thrp->abs[aggr].absRank[3][trump].hand;
 	  if (h!=-1) {
-	    if ((localVar[thrId].nodeTypeStore[h]==MAXNODE)&&
+	    if ((thrp->nodeTypeStore[h]==MAXNODE)&&
 		((posPoint->tricksMAX+1)>=target)&&(depth>0)
-		&&(depth!=localVar[thrId].iniDepth)) {
+		&&(depth!=thrp->iniDepth)) {
               for (ss=0; ss<=3; ss++)
                 posPoint->winRanks[depth][ss]=0;
 	      posPoint->winRanks[depth][trump]=
-		bitMapRank[localVar[thrId].rel[aggr].absRank[3][trump].rank];
+		bitMapRank[thrp->abs[aggr].absRank[3][trump].rank];
               return TRUE;
 	    }
 	  }
@@ -3382,16 +3388,17 @@ int LaterTricksMAX(struct pos *posPoint, int hand, int depth, int target,
 }
 
 
-int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mply, int thrId) {
+int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mply, 
+  struct localVarType * thrp) {
   int k, state=MOVESVALID;
 
   int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
-    unsigned short notVoidInSuit, int trump, int thrId);
+    unsigned short notVoidInSuit, int trump, struct localVarType * thrp);
   int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
-    unsigned short notVoidInSuit, int thrId);
+    unsigned short notVoidInSuit, struct localVarType * thrp);
 
   for (k=0; k<4; k++)
-    localVar[thrId].lowestWin[depth][k]=0;
+    thrp->lowestWin[depth][k]=0;
 
   int m=0;
   int r=posPoint->handRelFirst;
@@ -3399,8 +3406,8 @@ int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mpl
   int q=handId(first, r);
 
   if (r!=0) {
-    int s=localVar[thrId].movePly[depth+r].current;             /* Current move of first hand */
-    int t=localVar[thrId].movePly[depth+r].move[s].suit;        /* Suit played by first hand */
+    int s=thrp->movePly[depth+r].current;             /* Current move of first hand */
+    int t=thrp->movePly[depth+r].move[s].suit;        /* Suit played by first hand */
     unsigned short ris=posPoint->rankInSuit[q][t];
 
     if (ris!=0) {
@@ -3429,22 +3436,22 @@ int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mpl
         if ((trump!=4)&&(posPoint->winner[trump].rank!=0)) {
           for (k=0; k<=m-1; k++)
 	    mply->move[k].weight=WeightAllocTrump(posPoint,
-              &(mply->move[k]), depth, ris, trump, thrId);
+              &(mply->move[k]), depth, ris, trump, thrp);
         }
         else {
 	  for (k=0; k<=m-1; k++)
 	    mply->move[k].weight=WeightAllocNT(posPoint,
-              &(mply->move[k]), depth, ris, thrId);
+              &(mply->move[k]), depth, ris, thrp);
         }
       }
 
       mply->last=m-1;
       if (m!=1)
         MergeSort(m, mply->move);
-      if (depth!=localVar[thrId].iniDepth)
+      if (depth!=thrp->iniDepth)
         return m;
       else {
-        m=AdjustMoveList(thrId);
+        m=AdjustMoveList(thrp);
         return m;
       }
     }
@@ -3478,29 +3485,29 @@ int MoveGen(struct pos * posPoint, int depth, int trump, struct movePlyType *mpl
   if ((trump!=4)&&(posPoint->winner[trump].rank!=0)) {
     for (k=0; k<=m-1; k++)
       mply->move[k].weight=WeightAllocTrump(posPoint,
-          &(mply->move[k]), depth, 0/*ris*/, trump, thrId);
+          &(mply->move[k]), depth, 0/*ris*/, trump, thrp);
   }
   else {
     for (k=0; k<=m-1; k++)
       mply->move[k].weight=WeightAllocNT(posPoint,
-          &(mply->move[k]), depth, 0/*ris*/, thrId);
+          &(mply->move[k]), depth, 0/*ris*/, thrp);
   }
 
   mply->last=m-1;
   if (m!=1)
     MergeSort(m, mply->move);
 
-  if (depth!=localVar[thrId].iniDepth)
+  if (depth!=thrp->iniDepth)
     return m;
   else {
-    m=AdjustMoveList(thrId);
+    m=AdjustMoveList(thrp);
     return m;
   }
 }
 
 
 int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
-  unsigned short notVoidInSuit, int thrId) {
+  unsigned short notVoidInSuit, struct localVarType * thrp) {
   int weight=0, k, l, kk, ll, suitAdd=0, leadSuit;
   int suitWeightDelta;
   int thirdBestHand;
@@ -3514,11 +3521,11 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
   unsigned short aggr=0;
   for (int m=0; m<=3; m++)
     aggr|=posPoint->rankInSuit[m][suit];
-  int rRank=localVar[thrId].rel[aggr].relRank[mp->rank][suit];
+  int rRank=relRanks->relRank[aggr][mp->rank];
+  
 
   switch (posPoint->handRelFirst) {
     case 0:
-      /*thirdBestHand=localVar[thrId].rel[aggr].absRank[3][suit].hand;*/
       suitCount=posPoint->length[q][suit];
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
@@ -3581,12 +3588,12 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
         /* Encourage playing cards that previously caused search cutoff
         or was stored as the best move in a transposition table entry match. */
 
-        if ((localVar[thrId].bestMove[depth].suit==suit)&&
-          (localVar[thrId].bestMove[depth].rank==mp->rank)) 
+        if ((thrp->bestMove[depth].suit==suit)&&
+          (thrp->bestMove[depth].rank==mp->rank)) 
           weight+=126;
-        else if ((localVar[thrId].bestMoveTT[depth].suit==suit)&&
-          (localVar[thrId].bestMoveTT[depth].rank==mp->rank)) 
-          weight+=24;
+        else if ((thrp->bestMoveTT[depth].suit==suit)&&
+          (thrp->bestMoveTT[depth].rank==mp->rank)) 
+          weight+=32/*24*/;
       }
       else {
 	/* Discourage suit if RHO has winning or second best card.
@@ -3615,7 +3622,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 	and the 3rd highest cards such that the side of the hand has the highest card in the
 	next round playing this suit. */
 
-	thirdBestHand=localVar[thrId].rel[aggr].absRank[3][suit].hand;
+	thirdBestHand=thrp->abs[aggr].absRank[3][suit].hand;
 
 	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
 	  suitWeightDelta+=35;
@@ -3643,11 +3650,11 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 	/* Encourage playing cards that previously caused search cutoff
 	or was stored as the best move in a transposition table entry match. */
 
-	if ((localVar[thrId].bestMove[depth].suit==suit)&&
-            (localVar[thrId].bestMove[depth].rank==mp->rank)) 
+	if ((thrp->bestMove[depth].suit==suit)&&
+            (thrp->bestMove[depth].rank==mp->rank)) 
           weight+=47;
-	else if ((localVar[thrId].bestMoveTT[depth].suit==suit)&&
-            (localVar[thrId].bestMoveTT[depth].rank==mp->rank)) 
+	else if ((thrp->bestMoveTT[depth].suit==suit)&&
+            (thrp->bestMoveTT[depth].rank==mp->rank)) 
           weight+=19;
       }
         
@@ -3836,7 +3843,7 @@ int WeightAllocNT(struct pos * posPoint, struct moveType * mp, int depth,
 
 
 int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
-  unsigned short notVoidInSuit, int trump, int thrId) {
+  unsigned short notVoidInSuit, int trump, struct localVarType * thrp) {
   int weight=0, k, l, kk, ll, suitAdd=0, leadSuit;
   int suitWeightDelta, thirdBestHand;
   int suitBonus=0;
@@ -3850,11 +3857,10 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
   unsigned short aggr=0;
   for (int m=0; m<=3; m++)
     aggr|=posPoint->rankInSuit[m][suit];
-  int rRank=localVar[thrId].rel[aggr].relRank[mp->rank][suit];
+  int rRank=relRanks->relRank[aggr][mp->rank];
 
   switch (posPoint->handRelFirst) {
     case 0:
-      /*thirdBestHand=localVar[thrId].rel[aggr].absRank[3][suit].hand;*/
       suitCount=posPoint->length[q][suit];
       suitCountLH=posPoint->length[lho[q]][suit];
       suitCountRH=posPoint->length[rho[q]][suit];
@@ -4026,12 +4032,12 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	/* Encourage playing cards that previously caused search cutoff
 	or was stored as the best move in a transposition table entry match. */
 
-	if ((localVar[thrId].bestMove[depth].suit==suit)&&
-            (localVar[thrId].bestMove[depth].rank==mp->rank)) 
+	if ((thrp->bestMove[depth].suit==suit)&&
+            (thrp->bestMove[depth].rank==mp->rank)) 
           weight+=55/*53*/;
-	else if ((localVar[thrId].bestMoveTT[depth].suit==suit)&&
-            (localVar[thrId].bestMoveTT[depth].rank==mp->rank)) 
-          weight+=18/*14*/;
+	else if ((thrp->bestMoveTT[depth].suit==suit)&&
+            (thrp->bestMoveTT[depth].rank==mp->rank)) 
+          weight+=/*25*/18/*14*/;
       }
       else {
 
@@ -4039,7 +4045,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	and the 3rd highest cards such that the side of the hand has the highest card in the
 	next round playing this suit. */
 
-	thirdBestHand=localVar[thrId].rel[aggr].absRank[3][suit].hand;
+	thirdBestHand=thrp->abs[aggr].absRank[3][suit].hand;
 
 	if ((posPoint->secondBest[suit].hand==partner[first])&&(partner[first]==thirdBestHand))
 	   suitWeightDelta+=20/*22*/;
@@ -4086,11 +4092,11 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
 	/* Encourage playing cards that previously caused search cutoff
 	or was stored as the best move in a transposition table entry match. */
 
-	if ((localVar[thrId].bestMove[depth].suit==suit)&&
-            (localVar[thrId].bestMove[depth].rank==mp->rank)) 
+	if ((thrp->bestMove[depth].suit==suit)&&
+            (thrp->bestMove[depth].rank==mp->rank)) 
           weight+=18/*17*/;
-	/*else if ((localVar[thrId].bestMoveTT[depth].suit==suit)&&
-            (localVar[thrId].bestMoveTT[depth].rank==mp->rank)) 
+	/*else if ((thrp->bestMoveTT[depth].suit==suit)&&
+            (thrp->bestMoveTT[depth].rank==mp->rank)) 
           weight+=4;*/
       }
         
@@ -4258,7 +4264,7 @@ int WeightAllocTrump(struct pos * posPoint, struct moveType * mp, int depth,
         else if (posPoint->length[rho[first]][leadSuit]>0) {
           /*if (mp->sequence)*/
             weight=47-(mp->rank);  /* Playing a card in a sequence may promote a winner */
-												/* Insensistive */
+												
           /*else
             weight=47-(mp->rank);*/	
         }
@@ -4738,8 +4744,7 @@ void MergeSort(int n, struct moveType *a) {
 	CMP_SWAP(0, 1);
 	break;
   default:
-    for (int i = 1; i < n; i++)
-    {
+    for (int i = 1; i < n; i++) {
         struct moveType tmp = a[i];
         int j = i;
         for (; j && tmp.weight > a[j - 1].weight ; --j)
@@ -4753,24 +4758,24 @@ void MergeSort(int n, struct moveType *a) {
 
 
 
-int AdjustMoveList(int thrId) {
+int AdjustMoveList(struct localVarType * thrp) {
   int k, r, n, rank, suit;
 
   for (k=1; k<=13; k++) {
-    suit=localVar[thrId].forbiddenMoves[k].suit;
-    rank=localVar[thrId].forbiddenMoves[k].rank;
-    for (r=0; r<=localVar[thrId].movePly[localVar[thrId].iniDepth].last; r++) {
-      if ((suit==localVar[thrId].movePly[localVar[thrId].iniDepth].move[r].suit)&&
-        (rank!=0)&&(rank==localVar[thrId].movePly[localVar[thrId].iniDepth].move[r].rank)) {
+    suit=thrp->forbiddenMoves[k].suit;
+    rank=thrp->forbiddenMoves[k].rank;
+    for (r=0; r<=thrp->movePly[thrp->iniDepth].last; r++) {
+      if ((suit==thrp->movePly[thrp->iniDepth].move[r].suit)&&
+        (rank!=0)&&(rank==thrp->movePly[thrp->iniDepth].move[r].rank)) {
         /* For the forbidden move r: */
-        for (n=r; n<=localVar[thrId].movePly[localVar[thrId].iniDepth].last; n++)
-          localVar[thrId].movePly[localVar[thrId].iniDepth].move[n]=
-		  localVar[thrId].movePly[localVar[thrId].iniDepth].move[n+1];
-        localVar[thrId].movePly[localVar[thrId].iniDepth].last--;
+        for (n=r; n<=thrp->movePly[thrp->iniDepth].last; n++)
+          thrp->movePly[thrp->iniDepth].move[n]=
+		  thrp->movePly[thrp->iniDepth].move[n+1];
+        thrp->movePly[thrp->iniDepth].last--;
       }
     }
   }
-  return localVar[thrId].movePly[localVar[thrId].iniDepth].last+1;
+  return thrp->movePly[thrp->iniDepth].last+1;
 }
 
 
@@ -4848,14 +4853,15 @@ move 2 is the presently winning card of the trick */
 
 
 struct nodeCardsType * CheckSOP(struct pos * posPoint, struct nodeCardsType
-  * nodep, int target, int tricks, int * result, int *value, int thrId) {
+  * nodep, int target, int tricks, int * result, int *value, 
+    struct localVarType * thrp) {
     /* Check SOP if it matches the
     current position. If match, pointer to the SOP node is returned and
     result is set to TRUE, otherwise pointer to SOP node is returned
     and result set to FALSE. */
 
   /* 07-04-22 */
-  if (localVar[thrId].nodeTypeStore[0]==MAXNODE) {
+  if (thrp->nodeTypeStore[0]==MAXNODE) {
     if (nodep->lbound==-1) {  /* This bound values for
       this leading hand has not yet been determined */
       *result=FALSE;
@@ -4907,80 +4913,66 @@ struct nodeCardsType * UpdateSOP(struct pos * posPoint, struct nodeCardsType
 		(nodep->ubound==-1))
     nodep->ubound=posPoint->ubound;
 
-  nodep->bestMoveSuit=posPoint->bestMoveSuit;
-    nodep->bestMoveRank=posPoint->bestMoveRank;
+  if (posPoint->bestMoveRank!=0) {
+    nodep->bestMoveSuit=posPoint->bestMoveSuit;
+      nodep->bestMoveRank=posPoint->bestMoveRank;
+  }
 
   return nodep;
 }
 
 
-struct nodeCardsType * FindSOP(struct pos * posPoint,
-  struct winCardType * nodeP, int firstHand,
-	int target, int tricks, int * valp, int thrId) {
+struct nodeCardsType * FindSOP(
+  struct pos 		* posPoint,
+  struct winCardType 	* nodeP, 
+  int 			firstHand,
+  int 			target, 
+  int 			tricks, 
+  int 			* valp, 
+  struct localVarType * thrp)
+{
+  /* credit Soren Hein */  
+
   struct nodeCardsType * sopP;
   struct winCardType * np;
   int res;
 
-  np=nodeP; 
-  int s=0;
-  while ((np!=NULL)&&(s<4)) {
-    if ((np->winMask & posPoint->orderSet[s])==
-       np->orderSet)  {
+  np = nodeP;
+  int s = 0;
+
+  while (np)
+  {
+    if ((np->winMask & posPoint->orderSet[s]) == np->orderSet)
+    {
       /* Winning rank set fits position */
-      if (s==3) {
-	sopP=CheckSOP(posPoint, np->first, target, tricks, &res, valp, thrId);
-	if (res) {
-	  return sopP;
-	}
-	else {
-	  if (np->next!=NULL) {
-	    np=np->next;
-	  }
-	  else {
-	    np=np->prevWin;
-	    s--;
-	    if (np==NULL)
-	      return NULL;
-	    while (np->next==NULL) {
-	      np=np->prevWin;
-	      s--;
-	      if (np==NULL)  /* Previous node is header node? */
-				return NULL;
-	    }
-	    np=np->next;
-	  }
-	}
+      if (s != 3)
+      {
+        np = np->nextWin;
+        s++;
+	continue;
       }
-      else if (s<4) {
-	np=np->nextWin;
-	s++;
-      }
+
+      sopP = CheckSOP(posPoint, np->first, target, tricks, 
+                      &res, valp, thrp);
+      if (res)
+        return sopP;
     }
-    else {
-      if (np->next!=NULL) {
-	np=np->next;
-      }
-      else {
-	np=np->prevWin;
-	s--;
-	if (np==NULL)
-	  return NULL;
-	while (np->next==NULL) {
-	  np=np->prevWin;
-	  s--;
-	  if (np==NULL)  /* Previous node is header node? */
-	    return NULL;
-	}
-	np=np->next;
-      }
+
+    while (np->next == NULL)
+    {
+      np = np->prevWin;
+      s--;
+      if (np == NULL) /* Previous node is header node? */
+        return NULL;
     }
+    np = np->next;
   }
   return NULL;
 }
 
 
 struct nodeCardsType * BuildPath(struct pos * posPoint,
-  struct posSearchType *nodep, int * result, int thrId) {
+  struct posSearchType *nodep, int * result, struct localVarType * thrp) {
   /* If result is TRUE, a new SOP has been created and BuildPath returns a
   pointer to it. If result is FALSE, an existing SOP is used and BuildPath
   returns a pointer to the SOP */
@@ -4999,8 +4991,8 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
 
   if (np==NULL) {   /* There is no winning list created yet */
    /* Create winning nodes */
-    p2=&localVar[thrId].winCards[localVar[thrId].winSetSize];
-    AddWinSet(thrId);
+    p2=&(thrp->winCards[thrp->winSetSize]);
+    AddWinSet(thrp);
     p2->next=NULL;
     p2->nextWin=NULL;
     p2->prevWin=NULL;
@@ -5011,8 +5003,8 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
     np=p2;           /* Latest winning node */
     suit++;
     while (suit<4) {
-      p2=&localVar[thrId].winCards[localVar[thrId].winSetSize];
-      AddWinSet(thrId);
+      p2=&(thrp->winCards[thrp->winSetSize]);
+      AddWinSet(thrp);
       np->nextWin=p2;
       p2->prevWin=np;
       p2->next=NULL;
@@ -5023,8 +5015,8 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
       np=p2;         /* Latest winning node */
       suit++;
     }
-    p=&localVar[thrId].nodeCards[localVar[thrId].nodeSetSize];
-    AddNodeSet(thrId);
+    p=&(thrp->nodeCards[thrp->nodeSetSize]);
+    AddNodeSet(thrp);
     np->first=p;
     *result=TRUE;
     return p;
@@ -5084,8 +5076,8 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
     }               /* End outer while */
 
     /* Create additional node, coupled to existing node(s) */
-    p2=&localVar[thrId].winCards[localVar[thrId].winSetSize];
-    AddWinSet(thrId);
+    p2=&(thrp->winCards[thrp->winSetSize]);
+    AddWinSet(thrp);
     p2->prevWin=nprev;
     if (nprev!=NULL) {
       p2->next=nprev->nextWin;
@@ -5104,8 +5096,8 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
 
     /* Rest of path must be created */
     while (suit<4) {
-      p2=&localVar[thrId].winCards[localVar[thrId].winSetSize];
-      AddWinSet(thrId);
+      p2=&(thrp->winCards[thrp->winSetSize]);
+      AddWinSet(thrp);
       np->nextWin=p2;
       p2->prevWin=np;
       p2->next=NULL;
@@ -5118,8 +5110,8 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
     }
 
   /* All winning nodes in SOP have been traversed and new nodes created */
-    p=&localVar[thrId].nodeCards[localVar[thrId].nodeSetSize];
-    AddNodeSet(thrId);
+    p=&(thrp->nodeCards[thrp->nodeSetSize]);
+    AddNodeSet(thrp);
     np->first=p;
     *result=TRUE;
     return p;
@@ -5128,7 +5120,8 @@ struct nodeCardsType * BuildPath(struct pos * posPoint,
 
 
 struct posSearchType * SearchLenAndInsert(struct posSearchType
-	* rootp, long long key, int insertNode, int *result, int thrId) {
+	* rootp, long long key, int insertNode, int *result, 
+       struct localVarType * thrp) {
 /* Search for node which matches with the suit length combination
    given by parameter key. If no such node is found, NULL is
   returned if parameter insertNode is FALSE, otherwise a new
@@ -5141,7 +5134,7 @@ struct posSearchType * SearchLenAndInsert(struct posSearchType
   struct posSearchType *np, *p, *sp;
 
   if (insertNode)
-    sp=&localVar[thrId].posSearch[localVar[thrId].lenSetSize];
+    sp=&(thrp->posSearch[thrp->lenSetSize]);
 
   np=rootp;
   while (1) {
@@ -5154,7 +5147,7 @@ struct posSearchType * SearchLenAndInsert(struct posSearchType
         np=np->left;
       else if (insertNode) {
 	p=sp;
-	AddLenSet(thrId);
+	AddLenSet(thrp);
 	np->left=p;
 	p->posSearchPoint=NULL;
 	p->suitLengths=key;
@@ -5172,7 +5165,7 @@ struct posSearchType * SearchLenAndInsert(struct posSearchType
         np=np->right;
       else if (insertNode) {
 	p=sp;
-	AddLenSet(thrId);
+	AddLenSet(thrp);
 	np->right=p;
 	p->posSearchPoint=NULL;
 	p->suitLengths=key;
@@ -5191,7 +5184,7 @@ struct posSearchType * SearchLenAndInsert(struct posSearchType
 
 
 void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firstHand, int target,
-  int depth, int scoreFlag, int score, int thrId) {
+  int depth, int scoreFlag, int score, struct localVarType * thrp) {
   int hh, res, wm;
   unsigned short int w;
   unsigned short int temp[4][4];
@@ -5199,10 +5192,6 @@ void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firs
   struct nodeCardsType * cardsP;
   struct posSearchType * np;
 
-#ifdef TTDEBUG
-  int k, mcurrent, rr;
-  mcurrent=localVar[thrId].movePly[depth].current;
-#endif
 
   for (int ss=0; ss<=3; ss++) {
     w=posPoint->winRanks[depth][ss];
@@ -5221,8 +5210,8 @@ void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firs
       aggr[ss]=0;
       for (hh=0; hh<=3; hh++)
 	aggr[ss]|=temp[hh][ss];
-      posPoint->winMask[ss]=localVar[thrId].rel[aggr[ss]].winMask[ss];
-      posPoint->winOrderSet[ss]=localVar[thrId].rel[aggr[ss]].aggrRanks[ss];
+      posPoint->winMask[ss]=thrp->abs[aggr[ss]].winMask[ss];
+      posPoint->winOrderSet[ss]=thrp->abs[aggr[ss]].aggrRanks[ss];
       wm=posPoint->winMask[ss];
       wm=wm & (-wm);
       posPoint->leastWin[ss]=InvWinMask(wm);
@@ -5231,7 +5220,7 @@ void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firs
 
   /* 07-04-22 */
   if (scoreFlag) {
-    if (localVar[thrId].nodeTypeStore[0]==MAXNODE) {
+    if (thrp->nodeTypeStore[0]==MAXNODE) {
       posPoint->ubound=tricks+1;
       posPoint->lbound=target-posPoint->tricksMAX;
     }
@@ -5241,7 +5230,7 @@ void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firs
     }
   }
   else {
-    if (localVar[thrId].nodeTypeStore[0]==MAXNODE) {
+    if (thrp->nodeTypeStore[0]==MAXNODE) {
       posPoint->ubound=target-posPoint->tricksMAX-1;
       posPoint->lbound=0;
     }
@@ -5258,24 +5247,24 @@ void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firs
       suitLengths|=posPoint->length[hh][s];
     }*/
 
-  np=SearchLenAndInsert(localVar[thrId].rootnp[tricks][firstHand],
-	 suitLengths, TRUE, &res, thrId);
+  np=SearchLenAndInsert(thrp->rootnp[tricks][firstHand],
+	 suitLengths, TRUE, &res, thrp);
 
-  cardsP=BuildPath(posPoint, np, &res, thrId);
+  cardsP=BuildPath(posPoint, np, &res, thrp);
   if (res) {
     cardsP->ubound=posPoint->ubound;
     cardsP->lbound=posPoint->lbound;
-    if (((localVar[thrId].nodeTypeStore[firstHand]==MAXNODE)&&(scoreFlag))||
-	((localVar[thrId].nodeTypeStore[firstHand]==MINNODE)&&(!scoreFlag))) {
-      cardsP->bestMoveSuit=localVar[thrId].bestMove[depth].suit;
-      cardsP->bestMoveRank=localVar[thrId].bestMove[depth].rank;
+    if (((thrp->nodeTypeStore[firstHand]==MAXNODE)&&(scoreFlag))||
+	((thrp->nodeTypeStore[firstHand]==MINNODE)&&(!scoreFlag))) {
+      cardsP->bestMoveSuit=thrp->bestMove[depth].suit;
+      cardsP->bestMoveRank=thrp->bestMove[depth].rank;
     }
     else {
       cardsP->bestMoveSuit=0;
       cardsP->bestMoveRank=0;
     }
-    posPoint->bestMoveSuit=localVar[thrId].bestMove[depth].suit;
-    posPoint->bestMoveRank=localVar[thrId].bestMove[depth].rank;
+    posPoint->bestMoveSuit=thrp->bestMove[depth].suit;
+    posPoint->bestMoveRank=thrp->bestMove[depth].rank;
     for (int k=0; k<=3; k++)
       cardsP->leastWin[k]=posPoint->leastWin[k];
   }
@@ -5284,41 +5273,6 @@ void BuildSOP(struct pos * posPoint, long long suitLengths, int tricks, int firs
     c9[depth]++;
   #endif
 
-  #ifdef TTDEBUG
-  if ((res) && (ttCollect) && (!suppressTTlog)) {
-    fprintf(localVar[thrId].fp7, "cardsP=%d\n", (int)cardsP);
-    fprintf(localVar[thrId].fp7, "nodeSetSize=%d\n", localVar[thrId].nodeSetSize);
-    fprintf(localVar[thrId].fp7, "ubound=%d\n", cardsP->ubound);
-    fprintf(localVar[thrId].fp7, "lbound=%d\n", cardsP->lbound);
-    fprintf(localVar[thrId].fp7, "target=%d\n", target);
-    fprintf(localVar[thrId].fp7, "first=%c nextFirst=%c\n",
-      cardHand[posPoint->first[depth]], cardHand[posPoint->first[depth-1]]);
-    fprintf(localVar[thrId].fp7, "bestMove:  suit=%c rank=%c\n", cardSuit[localVar[thrId].bestMove[depth].suit],
-      cardRank[localVar[thrId].bestMove[depth].rank]);
-    fprintf(localVar[thrId].fp7, "\n");
-    fprintf(localVar[thrId].fp7, "Last trick:\n");
-    fprintf(localVar[thrId].fp7, "1st hand=%c\n", cardHand[posPoint->first[depth+3]]);
-    for (k=3; k>=0; k--) {
-      mcurrent=localVar[thrId].movePly[depth+k+1].current;
-      fprintf(localVar[thrId].fp7, "suit=%c  rank=%c\n",
-        cardSuit[localVar[thrId].movePly[depth+k+1].move[mcurrent].suit],
-        cardRank[localVar[thrId].movePly[depth+k+1].move[mcurrent].rank]);
-    }
-    fprintf(localVar[thrId].fp7, "\n");
-    for (hh=0; hh<=3; hh++) {
-      fprintf(localVar[thrId].fp7, "hand=%c\n", cardHand[hh]);
-      for (ss=0; ss<=3; ss++) {
-	fprintf(localVar[thrId].fp7, "suit=%c", cardSuit[ss]);
-	for (rr=14; rr>=2; rr--)
-	  if (posPoint->rankInSuit[hh][ss] & bitMapRank[rr])
-	    fprintf(localVar[thrId].fp7, " %c", cardRank[rr]);
-	fprintf(localVar[thrId].fp7, "\n");
-      }
-      fprintf(localVar[thrId].fp7, "\n");
-    }
-    fprintf(localVar[thrId].fp7, "\n");
-  }
-  #endif
 }
 
 
@@ -5351,7 +5305,8 @@ int CheckDeal(struct moveType * cardp, int thrId) {
 }
 
 
-int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrId) {
+int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, 
+  struct localVarType * thrp) {
   /* Returns TRUE if at least one move remains to be
   searched, otherwise FALSE is returned. */
 
@@ -5359,7 +5314,7 @@ int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrI
   int suit;
   struct moveType currMove=mply->move[mply->current];
 
-  if (localVar[thrId].lowestWin[depth][currMove.suit]==0) {
+  if (thrp->lowestWin[depth][currMove.suit]==0) {
     /* A small card has not yet been identified for this suit. */
     lw=posPoint->winRanks[depth][currMove.suit];
     if (lw!=0)
@@ -5368,11 +5323,11 @@ int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrI
       lw=bitMapRank[15];
     if (bitMapRank[currMove.rank]<lw) {
        /* The current move has a small card. */
-      localVar[thrId].lowestWin[depth][currMove.suit]=lw;
+      thrp->lowestWin[depth][currMove.suit]=lw;
       while (mply->current <= (mply->last-1)) {
 	mply->current++;
 	if (bitMapRank[mply->move[mply->current].rank] >=
-	  localVar[thrId].lowestWin[depth][mply->move[mply->current].suit])
+	  thrp->lowestWin[depth][mply->move[mply->current].suit])
 	  return TRUE;
       }
       return FALSE;
@@ -5382,7 +5337,7 @@ int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrI
 	mply->current++;
 	suit=mply->move[mply->current].suit;
 	if ((currMove.suit==suit) || (bitMapRank[mply->move[mply->current].rank] >=
-		localVar[thrId].lowestWin[depth][suit]))
+		thrp->lowestWin[depth][suit]))
 	  return TRUE;
       }
       return FALSE;
@@ -5392,7 +5347,7 @@ int NextMove(struct pos *posPoint, int depth, struct movePlyType *mply, int thrI
     while (mply->current<=(mply->last-1)) {
       mply->current++;
       if (bitMapRank[mply->move[mply->current].rank] >=
-	    localVar[thrId].lowestWin[depth][mply->move[mply->current].suit])
+	    thrp->lowestWin[depth][mply->move[mply->current].suit])
 	return TRUE;
     }
     return FALSE;
@@ -5409,7 +5364,7 @@ int DumpInput(int errCode, struct deal dl, int target,
 
   fp=fopen("dump.txt", "w");
   if (fp==NULL)
-    return -1;
+    return RETURN_UNKNOWN_FAULT;
   fprintf(fp, "Error code=%d\n", errCode);
   fprintf(fp, "\n");
   fprintf(fp, "Deal data:\n");
@@ -5470,9 +5425,9 @@ void PrintDeal(FILE *fp, unsigned short ranks[][4]) {
           fprintf(fp, "%c", cardRank[r]);
     }
     if (ec[s])
-      fprintf(fp, "\t\%c ", cardSuit[s]);
+      fprintf(fp, "\t%c ", cardSuit[s]);
     else
-      fprintf(fp, "\t\t\%c ", cardSuit[s]);
+      fprintf(fp, "\t\t%c ", cardSuit[s]);
     if (!ranks[1][s])
       fprintf(fp, "--");
     else {
@@ -5499,198 +5454,159 @@ void PrintDeal(FILE *fp, unsigned short ranks[][4]) {
 
 
 
-void Wipe(int thrId) {
+void Wipe(struct localVarType * thrp) {
   int k;
 
-  for (k=1; k<=localVar[thrId].wcount; k++) {
-    if (localVar[thrId].pw[k])
-      free(localVar[thrId].pw[k]);
-    localVar[thrId].pw[k]=NULL;
+  for (k=1; k<=thrp->wcount; k++) {
+    if (thrp->pw[k])
+      free(thrp->pw[k]);
+    thrp->pw[k]=NULL;
   }
-  for (k=1; k<=localVar[thrId].ncount; k++) {
-    if (localVar[thrId].pn[k])
-      free(localVar[thrId].pn[k]);
-    localVar[thrId].pn[k]=NULL;
+  for (k=1; k<=thrp->ncount; k++) {
+    if (thrp->pn[k])
+      free(thrp->pn[k]);
+    thrp->pn[k]=NULL;
   }
-  for (k=1; k<=localVar[thrId].lcount; k++) {
-    if (localVar[thrId].pl[k])
-      free(localVar[thrId].pl[k]);
-    localVar[thrId].pl[k]=NULL;
+  for (k=1; k<=thrp->lcount; k++) {
+    if (thrp->pl[k])
+      free(thrp->pl[k]);
+    thrp->pl[k]=NULL;
   }
 
-  localVar[thrId].allocmem=localVar[thrId].summem;
+  thrp->allocmem=thrp->summem;
 
   return;
 }
 
 
-void AddWinSet(int thrId) {
-  if (localVar[thrId].clearTTflag) {
-    localVar[thrId].windex++;
-    localVar[thrId].winSetSize=localVar[thrId].windex;
-    /*localVar[thrId].fp2=fopen("dyn.txt", "a");
-    fprintf(localVar[thrId].fp2, "windex=%d\n", windex);
-    fclose(localVar[thrId].fp2);*/
-    localVar[thrId].winCards=&localVar[thrId].temp_win[localVar[thrId].windex];
+void AddWinSet(struct localVarType * thrp) {
+  if (thrp->clearTTflag) {
+    thrp->windex++;
+    thrp->winSetSize=thrp->windex;
+    thrp->winCards=&(thrp->temp_win[thrp->windex]);
   }
-  else if (localVar[thrId].winSetSize>=localVar[thrId].winSetSizeLimit) {
+  else if (thrp->winSetSize>=thrp->winSetSizeLimit) {
     /* The memory chunk for the winCards structure will be exceeded. */
-    if ((localVar[thrId].allocmem+localVar[thrId].wmem)>localVar[thrId].maxmem) {
+    if ((thrp->allocmem + thrp->wmem)>thrp->maxmem) {
       /* Already allocated memory plus needed allocation overshot maxmem */
-      localVar[thrId].windex++;
-      localVar[thrId].winSetSize=localVar[thrId].windex;
-      /*localVar[thrId].fp2=fopen("dyn.txt", "a");
-      fprintf(localVar[thrId].fp2, "windex=%d\n", windex);
-      fclose(localVar[thrId].fp2);*/
-      localVar[thrId].clearTTflag=TRUE;
-      localVar[thrId].winCards=&localVar[thrId].temp_win[localVar[thrId].windex];
+      thrp->windex++;
+      thrp->winSetSize=thrp->windex;
+      thrp->clearTTflag=TRUE;
+      thrp->winCards=&(thrp->temp_win[thrp->windex]);
     }
     else {
-      localVar[thrId].wcount++; localVar[thrId].winSetSizeLimit=WSIZE;
-      localVar[thrId].pw[localVar[thrId].wcount] =
-		  (struct winCardType *)calloc(localVar[thrId].winSetSizeLimit+1, sizeof(struct winCardType));
-      if (localVar[thrId].pw[localVar[thrId].wcount]==NULL) {
-        localVar[thrId].clearTTflag=TRUE;
-        localVar[thrId].windex++;
-	localVar[thrId].winSetSize=localVar[thrId].windex;
-	localVar[thrId].winCards=&localVar[thrId].temp_win[localVar[thrId].windex];
+      thrp->wcount++; thrp->winSetSizeLimit=WSIZE;
+      thrp->pw[thrp->wcount] =
+		  (struct winCardType *)calloc(thrp->winSetSizeLimit+1, 
+         sizeof(struct winCardType));
+      if (thrp->pw[thrp->wcount]==NULL) {
+        thrp->clearTTflag=TRUE;
+        thrp->windex++;
+	thrp->winSetSize=thrp->windex;
+	thrp->winCards=&(thrp->temp_win[thrp->windex]);
       }
       else {
-	localVar[thrId].allocmem+=(localVar[thrId].winSetSizeLimit+1)*sizeof(struct winCardType);
-	localVar[thrId].winSetSize=0;
-	localVar[thrId].winCards=localVar[thrId].pw[localVar[thrId].wcount];
+	thrp->allocmem += (thrp->winSetSizeLimit+1)*sizeof(struct winCardType);
+	thrp->winSetSize=0;
+	thrp->winCards=thrp->pw[thrp->wcount];
       }
     }
   }
   else
-    localVar[thrId].winSetSize++;
+    thrp->winSetSize++;
   return;
 }
 
-void AddNodeSet(int thrId) {
-  if (localVar[thrId].nodeSetSize>=localVar[thrId].nodeSetSizeLimit) {
+void AddNodeSet(struct localVarType * thrp) {
+  if (thrp->nodeSetSize>=thrp->nodeSetSizeLimit) {
     /* The memory chunk for the nodeCards structure will be exceeded. */
-    if ((localVar[thrId].allocmem+localVar[thrId].nmem)>localVar[thrId].maxmem) {
+    if ((thrp->allocmem + thrp->nmem)>thrp->maxmem) {
       /* Already allocated memory plus needed allocation overshot maxmem */
-      localVar[thrId].clearTTflag=TRUE;
+      thrp->clearTTflag=TRUE;
     }
     else {
-      localVar[thrId].ncount++; localVar[thrId].nodeSetSizeLimit=NSIZE;
-      localVar[thrId].pn[localVar[thrId].ncount] = (struct nodeCardsType *)calloc(localVar[thrId].nodeSetSizeLimit+1, sizeof(struct nodeCardsType));
-      if (localVar[thrId].pn[localVar[thrId].ncount]==NULL) {
-        localVar[thrId].clearTTflag=TRUE;
+      thrp->ncount++; thrp->nodeSetSizeLimit=NSIZE;
+      thrp->pn[thrp->ncount] = 
+	(struct nodeCardsType *)calloc(thrp->nodeSetSizeLimit+1, sizeof(struct nodeCardsType));
+      if (thrp->pn[thrp->ncount]==NULL) {
+        thrp->clearTTflag=TRUE;
       }
       else {
-	localVar[thrId].allocmem+=(localVar[thrId].nodeSetSizeLimit+1)*sizeof(struct nodeCardsType);
-	localVar[thrId].nodeSetSize=0;
-	localVar[thrId].nodeCards=localVar[thrId].pn[localVar[thrId].ncount];
+	thrp->allocmem+=(thrp->nodeSetSizeLimit+1)*sizeof(struct nodeCardsType);
+	thrp->nodeSetSize=0;
+	thrp->nodeCards=thrp->pn[thrp->ncount];
       }
     }
   }
   else
-    localVar[thrId].nodeSetSize++;
+    thrp->nodeSetSize++;
   return;
 }
 
-void AddLenSet(int thrId) {
-  if (localVar[thrId].lenSetSize>=localVar[thrId].lenSetSizeLimit) {
+void AddLenSet(struct localVarType * thrp) {
+  if (thrp->lenSetSize>=thrp->lenSetSizeLimit) {
       /* The memory chunk for the posSearchType structure will be exceeded. */
-    if ((localVar[thrId].allocmem+localVar[thrId].lmem)>localVar[thrId].maxmem) {
+    if ((thrp->allocmem + thrp->lmem)>thrp->maxmem) {
        /* Already allocated memory plus needed allocation overshot maxmem */
-      localVar[thrId].clearTTflag=TRUE;
+      thrp->clearTTflag=TRUE;
     }
     else {
-      localVar[thrId].lcount++; localVar[thrId].lenSetSizeLimit=LSIZE;
-      localVar[thrId].pl[localVar[thrId].lcount] = (struct posSearchType *)calloc(localVar[thrId].lenSetSizeLimit+1, sizeof(struct posSearchType));
-      if (localVar[thrId].pl[localVar[thrId].lcount]==NULL) {
-        localVar[thrId].clearTTflag=TRUE;
+      thrp->lcount++; thrp->lenSetSizeLimit=LSIZE;
+      thrp->pl[thrp->lcount] = 
+	(struct posSearchType *)calloc(thrp->lenSetSizeLimit+1, sizeof(struct posSearchType));
+      if (thrp->pl[thrp->lcount]==NULL) {
+        thrp->clearTTflag=TRUE;
       }
       else {
-	localVar[thrId].allocmem+=(localVar[thrId].lenSetSizeLimit+1)*sizeof(struct posSearchType);
-	localVar[thrId].lenSetSize=0;
-	localVar[thrId].posSearch=localVar[thrId].pl[localVar[thrId].lcount];
+	thrp->allocmem += (thrp->lenSetSizeLimit+1)*sizeof(struct posSearchType);
+	thrp->lenSetSize=0;
+	thrp->posSearch=thrp->pl[thrp->lcount];
       }
     }
   }
   else
-    localVar[thrId].lenSetSize++;
+    thrp->lenSetSize++;
   return;
 }
 
 
-
-#ifdef TTDEBUG
-
-void ReceiveTTstore(struct pos *posPoint, struct nodeCardsType * cardsP,
-  int target, int depth, int thrId) {
-  int tricksLeft, hh, ss, rr;
-/* Stores current position information and TT position value in table
-  ttStore with current entry lastTTStore. Also stores corresponding
-  information in log rectt.txt. */
-  tricksLeft=0;
-  for (hh=0; hh<=3; hh++)
-    for (ss=0; ss<=3; ss++)
-      tricksLeft+=posPoint->length[hh][ss];
-  tricksLeft=tricksLeft/4;
-  ttStore[lastTTstore].tricksLeft=tricksLeft;
-  ttStore[lastTTstore].cardsP=cardsP;
-  ttStore[lastTTstore].first=posPoint->first[depth];
-  if ((localVar[thrId].handToPlay==posPoint->first[depth])||
-    (localVar[thrId].handToPlay==partner[posPoint->first[depth]])) {
-    ttStore[lastTTstore].target=target-posPoint->tricksMAX;
-    ttStore[lastTTstore].ubound=cardsP->ubound;
-    ttStore[lastTTstore].lbound=cardsP->lbound;
-  }
-  else {
-    ttStore[lastTTstore].target=tricksLeft-
-      target+posPoint->tricksMAX+1;
-  }
-  for (hh=0; hh<=3; hh++)
-    for (ss=0; ss<=3; ss++)
-      ttStore[lastTTstore].suit[hh][ss]=
-        posPoint->rankInSuit[hh][ss];
-  localVar[thrId].fp11=fopen("rectt.txt", "a");
-  if (lastTTstore<SEARCHSIZE) {
-    fprintf(localVar[thrId].fp11, "lastTTstore=%d\n", lastTTstore);
-    fprintf(localVar[thrId].fp11, "tricksMAX=%d\n", posPoint->tricksMAX);
-    fprintf(localVar[thrId].fp11, "leftTricks=%d\n",
-      ttStore[lastTTstore].tricksLeft);
-    fprintf(localVar[thrId].fp11, "cardsP=%d\n",
-      ttStore[lastTTstore].cardsP);
-    fprintf(localVar[thrId].fp11, "ubound=%d\n",
-      ttStore[lastTTstore].ubound);
-    fprintf(localVar[thrId].fp11, "lbound=%d\n",
-      ttStore[lastTTstore].lbound);
-    fprintf(localVar[thrId].fp11, "first=%c\n",
-      cardHand[ttStore[lastTTstore].first]);
-    fprintf(localVar[thrId].fp11, "target=%d\n",
-      ttStore[lastTTstore].target);
-    fprintf(localVar[thrId].fp11, "\n");
-    for (hh=0; hh<=3; hh++) {
-      fprintf(localVar[thrId].fp11, "hand=%c\n", cardHand[hh]);
-      for (ss=0; ss<=3; ss++) {
-        fprintf(localVar[thrId].fp11, "suit=%c", cardSuit[ss]);
-        for (rr=14; rr>=2; rr--)
-          if (ttStore[lastTTstore].suit[hh][ss]
-            & bitMapRank[rr])
-            fprintf(localVar[thrId].fp11, " %c", cardRank[rr]);
-         fprintf(localVar[thrId].fp11, "\n");
-      }
-      fprintf(localVar[thrId].fp11, "\n");
-    }
-  }
-  fclose(localVar[thrId].fp11);
-  lastTTstore++;
-}
-#endif
-
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
 HANDLE solveAllEvents[MAXNOOFTHREADS];
 struct paramType param;
 LONG volatile threadIndex;
 LONG volatile current;
 
-long chunk = 4;
+long chunk;
+
+DWORD CALLBACK SolveChunk (void *) {
+  struct futureTricks fut[MAXNOOFBOARDS];
+  int thid;
+  long j;
+
+  thid=InterlockedIncrement(&threadIndex);
+
+  while ((j=(InterlockedIncrement(&current)-1))<param.noOfBoards) {
+
+    int res=SolveBoard(param.bop->deals[j], param.bop->target[j],
+    param.bop->solutions[j], param.bop->mode[j], &fut[j], thid);
+    if (res==1) {
+      param.solvedp->solvedBoard[j]=fut[j];
+      /*param.error=0;*/
+    }
+    else {
+      param.error=res;
+    }
+  }
+
+  if (SetEvent(solveAllEvents[thid])==0) {
+    /*int errCode=GetLastError();*/
+    return 0;
+  }
+
+  return 1;
+
+}
+
 
 DWORD CALLBACK SolveChunkDDtable (void *) {
   struct futureTricks fut[MAXNOOFBOARDS];
@@ -5707,7 +5623,7 @@ DWORD CALLBACK SolveChunkDDtable (void *) {
 	  &fut[j+k], thid);
       if (res==1) {
 	param.solvedp->solvedBoard[j+k]=fut[j+k];
-	param.error=0;
+	/*param.error=0;*/
       }
       else {
 	param.error=res;
@@ -5724,63 +5640,6 @@ DWORD CALLBACK SolveChunkDDtable (void *) {
 
 }
 
-int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
-  int k/*, errCode*/;
-  DWORD res;
-  DWORD solveAllWaitResult;
-
-  current=0;
-
-  threadIndex=-1;
-
-  if (bop->noOfBoards > MAXNOOFBOARDS)
-    return -101;
-
-  for (k=0; k<noOfCores; k++) {
-    solveAllEvents[k]=CreateEvent(NULL, FALSE, FALSE, 0);
-    if (solveAllEvents[k]==0) {
-      /*errCode=GetLastError();*/
-      return -102;
-    }
-  }
-
-  param.bop=bop; param.solvedp=solvedp; param.noOfBoards=bop->noOfBoards;
-
-  for (k=0; k<MAXNOOFBOARDS; k++)
-    solvedp->solvedBoard[k].cards=0;
-
-  for (k=0; k<noOfCores; k++) {
-    res=QueueUserWorkItem(SolveChunkDDtable, NULL, WT_EXECUTELONGFUNCTION);
-    if (res!=1) {
-      /*errCode=GetLastError();*/
-      return res;
-    }
-  }
-
-  solveAllWaitResult = WaitForMultipleObjects(noOfCores,
-	  solveAllEvents, TRUE, INFINITE);
-  if (solveAllWaitResult!=WAIT_OBJECT_0) {
-    /*errCode=GetLastError();*/
-    return -103;
-  }
-
-  for (k=0; k<noOfCores; k++) {
-    CloseHandle(solveAllEvents[k]);
-  }
-
-  /* Calculate number of solved boards. */
-
-  solvedp->noOfBoards=0;
-  for (k=0; k<MAXNOOFBOARDS; k++) {
-    if (solvedp->solvedBoard[k].cards!=0)
-      solvedp->noOfBoards++;
-  }
-
-  if (param.error==0)
-    return 1;
-  else
-    return param.error;
-}
 
 int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkSize) {
   int k/*, errCode*/;
@@ -5790,15 +5649,16 @@ int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkS
   current = 0;
   threadIndex = -1;
   chunk = chunkSize;
+  param.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
-    return -101;
+    return RETURN_TOO_MANY_BOARDS;
 
     for (k = 0; k<noOfCores; k++) {
       solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
       if (solveAllEvents[k] == 0) {
 	/*errCode=GetLastError();*/
-	return -102;
+	return RETURN_THREAD_CREATE;
       }
     }
 
@@ -5807,18 +5667,29 @@ int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkS
     for (k = 0; k<MAXNOOFBOARDS; k++)
       solvedp->solvedBoard[k].cards = 0;
 
-    for (k = 0; k<noOfCores; k++) {
-      res = QueueUserWorkItem(SolveChunkDDtable, NULL, WT_EXECUTELONGFUNCTION);
-      if (res != 1) {
-	/*errCode=GetLastError();*/
-	return res;
+    if (chunkSize != 1) {
+      for (k = 0; k<noOfCores; k++) {
+        res = QueueUserWorkItem(SolveChunkDDtable, NULL, WT_EXECUTELONGFUNCTION);
+        if (res != 1) {
+	  /*errCode=GetLastError();*/
+	  return res;
+        }
+      }
+    }
+    else {
+      for (k=0; k<noOfCores; k++) {
+        res=QueueUserWorkItem(SolveChunk, NULL, WT_EXECUTELONGFUNCTION);
+        if (res!=1) {
+          /*errCode=GetLastError();*/
+          return res;
+        }
       }
     }
 
     solveAllWaitResult = WaitForMultipleObjects(noOfCores, solveAllEvents, TRUE, INFINITE);
     if (solveAllWaitResult != WAIT_OBJECT_0) {
       /*errCode=GetLastError();*/
-      return -103;
+      return RETURN_THREAD_WAIT;
     }
 
     for (k = 0; k<noOfCores; k++) {
@@ -5839,148 +5710,7 @@ int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkS
       return param.error;
 }
 
-
-DWORD CALLBACK SolveChunk (void *) {
-  struct futureTricks fut[MAXNOOFBOARDS];
-  int thid;
-  long j;
-
-  thid=InterlockedIncrement(&threadIndex);
-
-  while ((j=(InterlockedIncrement(&current)-1))<param.noOfBoards) {
-
-    int res=SolveBoard(param.bop->deals[j], param.bop->target[j],
-    param.bop->solutions[j], param.bop->mode[j], &fut[j], thid);
-    if (res==1) {
-      param.solvedp->solvedBoard[j]=fut[j];
-      param.error=0;
-    }
-    else {
-      param.error=res;
-    }
-  }
-
-  if (SetEvent(solveAllEvents[thid])==0) {
-    /*int errCode=GetLastError();*/
-    return 0;
-  }
-
-  return 1;
-
-}
-
-
-
-int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
-  int k/*, errCode*/;
-  DWORD res;
-  DWORD solveAllWaitResult;
-
-  current=0;
-
-  threadIndex=-1;
-
-  if (bop->noOfBoards > MAXNOOFBOARDS)
-    return -201;
-
-  for (k=0; k<noOfCores; k++) {
-    solveAllEvents[k]=CreateEvent(NULL, FALSE, FALSE, 0);
-    if (solveAllEvents[k]==0) {
-      /*errCode=GetLastError();*/
-      return -202;
-    }
-  }
-
-  param.bop=bop; param.solvedp=solvedp; param.noOfBoards=bop->noOfBoards;
-
-  for (k=0; k<MAXNOOFBOARDS; k++)
-    solvedp->solvedBoard[k].cards=0;
-
-  for (k=0; k<noOfCores; k++) {
-    res=QueueUserWorkItem(SolveChunk, NULL, WT_EXECUTELONGFUNCTION);
-    if (res!=1) {
-      /*errCode=GetLastError();*/
-      return res;
-    }
-  }
-
-  solveAllWaitResult = WaitForMultipleObjects(noOfCores,
-	  solveAllEvents, TRUE, INFINITE);
-  if (solveAllWaitResult!=WAIT_OBJECT_0) {
-    /*errCode=GetLastError();*/
-    return -203;
-  }
-
-  for (k=0; k<noOfCores; k++) {
-    CloseHandle(solveAllEvents[k]);
-  }
-
-  /* Calculate number of solved boards. */
-
-  solvedp->noOfBoards=0;
-  for (k=0; k<MAXNOOFBOARDS; k++) {
-    if (solvedp->solvedBoard[k].cards!=0)
-      solvedp->noOfBoards++;
-  }
-
-  if (param.error==0)
-    return 1;
-  else
-    return param.error;
-}
-
-
 #else
-int SolveAllBoards4(struct boards *bop, struct solvedBoards *solvedp) {
-  int k, i, res, chunk, fail;
-  struct futureTricks fut[MAXNOOFBOARDS];
-
-  chunk=4; fail=1;
-
-  if (bop->noOfBoards > MAXNOOFBOARDS)
-    return -101;
-
-  for (i=0; i<MAXNOOFBOARDS; i++)
-      solvedp->solvedBoard[i].cards=0;
-
-#ifdef _OPENMP
-  omp_set_num_threads(noOfCores);	/* Added after suggestion by Dirk Willecke. */
-#endif
-
-  #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
-  {
-
-    #pragma omp for schedule(dynamic, chunk)
-
-    for (k=0; k<bop->noOfBoards; k++) {
-      res=SolveBoard(bop->deals[k], bop->target[k], bop->solutions[k],
-        bop->mode[k], &fut[k], 
-#ifdef _OPENMP
-		omp_get_thread_num()
-#else
-		0
-#endif
-		);
-      if (res==1) {
-        solvedp->solvedBoard[k]=fut[k];
-      }
-      else
-        fail=res;
-    }
-  }
-
-  if (fail!=1)
-    return fail;
-
-  solvedp->noOfBoards=0;
-  for (i=0; i<MAXNOOFBOARDS; i++) {
-    if (solvedp->solvedBoard[i].cards!=0)
-      solvedp->noOfBoards++;
-  }
-
-  return 1;
-}
-
 
 int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkSize) {
   int k, i, res, chunk, fail;
@@ -5989,13 +5719,17 @@ int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkS
   chunk=chunkSize; fail=1;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
-    return -101;
+    return RETURN_TOO_MANY_BOARDS;
 
   for (i=0; i<MAXNOOFBOARDS; i++)
       solvedp->solvedBoard[i].cards=0;
 
-#ifdef _OPENMP
+#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
+  if (omp_get_dynamic())
+    omp_set_dynamic(0);
   omp_set_num_threads(noOfCores);	/* Added after suggestion by Dirk Willecke. */
+#elif defined (_OPENMP)
+  omp_set_num_threads(1);
 #endif
 
   #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
@@ -6005,8 +5739,9 @@ int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkS
 
     for (k=0; k<bop->noOfBoards; k++) {
       res=SolveBoard(bop->deals[k], bop->target[k], bop->solutions[k],
-        bop->mode[k], &fut[k], 
-#ifdef _OPENMP
+        bop->mode[k], &fut[k],
+ 
+#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
 		omp_get_thread_num()
 #else
 		0
@@ -6032,57 +5767,6 @@ int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkS
   return 1;
 }
 
-
-
-int SolveAllBoards1(struct boards *bop, struct solvedBoards *solvedp) {
-  int k, i, res, chunk, fail;
-  struct futureTricks fut[MAXNOOFBOARDS];
-
-  chunk=1; fail=1;
-
-  if (bop->noOfBoards > MAXNOOFBOARDS)
-    return -101;
-
-  for (i=0; i<MAXNOOFBOARDS; i++)
-    solvedp->solvedBoard[i].cards=0;
-
-#ifdef _OPENMP
-  omp_set_num_threads(noOfCores);	/* Added after suggestion by Dirk Willecke. */
-#endif
-
-  #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
-  {
-
-    #pragma omp for schedule(dynamic, chunk)
-
-    for (k=0; k<bop->noOfBoards; k++) {
-      res=SolveBoard(bop->deals[k], bop->target[k], bop->solutions[k],
-        bop->mode[k], &fut[k], 
-#ifdef _OPENMP
-		omp_get_thread_num()
-#else
-		0
-#endif
-		);
-      if (res==1) {
-        solvedp->solvedBoard[k]=fut[k];
-      }
-      else
-        fail=res;
-    }
-  }
-
-  if (fail!=1)
-    return fail;
-
-  solvedp->noOfBoards=0;
-  for (i=0; i<MAXNOOFBOARDS; i++) {
-    if (solvedp->solvedBoard[i].cards!=0)
-      solvedp->noOfBoards++;
-  }
-
-  return 1;
-}
 #endif
 
 
@@ -6115,7 +5799,7 @@ int STDCALL CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * ta
       ind++;
     }
 
-  res=SolveAllBoards4(&bo, &solved);
+  res=SolveAllBoardsN(&bo, &solved, 4);
   if (res==1) {
     for (ind=0; ind<20; ind++) {
       tablep->resTable[bo.deals[ind].trump][rho[bo.deals[ind].first]]=
@@ -6127,10 +5811,10 @@ int STDCALL CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * ta
   return res;
 }
 
-#ifdef PBN_PLUS
+
 int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter[5], 
-  struct ddTablesRes *resp,
-	struct allParResults *presp) {
+  struct ddTablesRes *resp, struct allParResults *presp) {
+
   /* mode = 0:	par calculation, vulnerability None
      mode = 1:	par calculation, vulnerability All
      mode = 2:	par calculation, vulnerability NS
@@ -6142,24 +5826,24 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
   struct boards bo;
   struct solvedBoards solved;
 
-  int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable);
+  /*int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable);*/
 
   for (k=0; k<5; k++) { 
     if (!trumpFilter[k]) {
       okey=TRUE; 
-	count++;
+      count++;
     }
   }
 
   if (!okey)
-    return -201;
+    return RETURN_NO_SUIT;
 
   switch (count) {
-    case 1:  if (dealsp->noOfTables > 50) return 202; break;
-    case 2:  if (dealsp->noOfTables > 25) return 202; break;
-    case 3:  if (dealsp->noOfTables > 16) return 202; break;
-    case 4:  if (dealsp->noOfTables > 12) return 202; break;
-    case 5:  if (dealsp->noOfTables > 10) return 202; break;
+    case 1:  if (dealsp->noOfTables > 50) return RETURN_TOO_MANY_TABLES;break;
+    case 2:  if (dealsp->noOfTables > 25) return RETURN_TOO_MANY_TABLES;break;
+    case 3:  if (dealsp->noOfTables > 16) return RETURN_TOO_MANY_TABLES;break;
+    case 4:  if (dealsp->noOfTables > 12) return RETURN_TOO_MANY_TABLES;break;
+    case 5:  if (dealsp->noOfTables > 10) return RETURN_TOO_MANY_TABLES;break;
   }
 
   ind=0;
@@ -6192,7 +5876,7 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
 
   bo.noOfBoards=lastIndex+1;
 
-  res=SolveAllBoards4(&bo, &solved);
+  res=SolveAllBoardsN(&bo, &solved, 4);
   if (res==1) {
     resp->noOfBoards+=solved.noOfBoards;
     for (ind=0; ind<=lastIndex; ind++) {
@@ -6218,6 +5902,7 @@ int STDCALL CalcAllTables(struct ddTableDeals *dealsp, int mode, int trumpFilter
   }
   return res;
 }
+ 
 
 int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, int trumpFilter[5], 
     struct ddTablesRes *resp, struct allParResults *presp) {
@@ -6228,7 +5913,7 @@ int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, int trump
 
   for (k=0; k<dealsp->noOfTables; k++)
     if (ConvertFromPBN(dealsp->deals[k].cards, dls.deals[k].cards)!=1)
-      return -99;
+      return RETURN_PBN_FAULT;
 
   dls.noOfTables=dealsp->noOfTables;
 
@@ -6236,7 +5921,6 @@ int STDCALL CalcAllTablesPBN(struct ddTableDealsPBN *dealsp, int mode, int trump
 
   return res;
 }
-#endif
 
 
 int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]) {
@@ -6358,16 +6042,16 @@ int IsCard(char cardChar)   {
    }
  }
 
-#ifdef PBN 
+ 
 int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target,
-    int solutions, int mode, struct futureTricks *futp, int thrId) {
+    int solutions, int mode, struct futureTricks *futp, int threadIndex) {
 
   int res, k;
   struct deal dl;
   int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]);
 
-  if (ConvertFromPBN(dlpbn.remainCards, dl.remainCards)!=1)
-    return -99;
+  if (ConvertFromPBN(dlpbn.remainCards, dl.remainCards)!=RETURN_NO_FAULT)
+    return RETURN_PBN_FAULT;
 
   for (k=0; k<=2; k++) {
     dl.currentTrickRank[k]=dlpbn.currentTrickRank[k];
@@ -6376,7 +6060,7 @@ int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target,
   dl.first=dlpbn.first;
   dl.trump=dlpbn.trump;
 
-  res=SolveBoard(dl, target, solutions, mode, futp, thrId);
+  res=SolveBoard(dl, target, solutions, mode, futp, threadIndex);
 
   return res;
 }
@@ -6386,15 +6070,14 @@ int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN, struct ddTableRes
   int res;
 
   if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards)!=1)
-    return -99;
+    return RETURN_PBN_FAULT;
 
   res=CalcDDtable(tableDeal, tablep);
 
   return res;
 }
-#endif
 
-#ifdef PBN_PLUS
+
 int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp) {
   struct boards bo;
   int k, i, res;
@@ -6411,20 +6094,20 @@ int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp) 
       bo.deals[k].currentTrickRank[i]=bop->deals[k].currentTrickRank[i];
     }
     if (ConvertFromPBN(bop->deals[k].remainCards, bo.deals[k].remainCards)!=1)
-      return -99;
+      return RETURN_PBN_FAULT;
   }
 
-  res=SolveAllBoards1(&bo, solvedp);
+  res=SolveAllBoardsN(&bo, solvedp, 1);
 
   return res;
 }
 
-int STDCALL SolveAllChunks(struct boardsPBN *bop, struct solvedBoards *solvedp, int chunkSize) {
+int STDCALL SolveAllChunksPBN(struct boardsPBN *bop, struct solvedBoards *solvedp, int chunkSize) {
   struct boards bo;
   int k, i, res;
 
   if (chunkSize < 1)
-    return -201;
+    return RETURN_CHUNK_SIZE;
 
   bo.noOfBoards = bop->noOfBoards;
   for (k = 0; k<bop->noOfBoards; k++) {
@@ -6438,705 +6121,37 @@ int STDCALL SolveAllChunks(struct boardsPBN *bop, struct solvedBoards *solvedp, 
       bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
     }
     if (ConvertFromPBN(bop->deals[k].remainCards, bo.deals[k].remainCards) != 1)
-      return -99;
-    }
+      return RETURN_PBN_FAULT;
+  }
 
-    res = SolveAllBoardsN(&bo, solvedp, chunkSize);
-    return res;
-}
-#endif
-
-#ifdef PBN_PLUS
-int STDCALL CalcParPBN(struct ddTableDealPBN tableDealPBN, 
-  struct ddTableResults * tablep, int vulnerable, struct parResults *presp) {
-  int res;
-  struct ddTableDeal tableDeal;
-  int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]);
-  int STDCALL CalcPar(struct ddTableDeal tableDeal, int vulnerable, 
-    struct ddTableResults * tablep, struct parResults *presp);
-
-  if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards)!=1)
-    return -99;
-
-  res=CalcPar(tableDeal, vulnerable, tablep, presp);
-
+  res = SolveAllBoardsN(&bo, solvedp, chunkSize);
   return res;
 }
 
-int STDCALL CalcPar(struct ddTableDeal tableDeal, int vulnerable, 
-    struct ddTableResults * tablep, struct parResults *presp) {
 
-  int res;
+int STDCALL SolveAllChunks(struct boardsPBN *bop, struct solvedBoards *solvedp, int chunkSize) {
 
-  int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable);
-
-  res=CalcDDtable(tableDeal, tablep);
-
-  if (res!=1)
-    return res;
-
-  res=Par(tablep, presp, vulnerable);
+  int res = SolveAllChunksPBN(bop, solvedp, chunkSize);
 
   return res;
+} 
 
-}
-#endif
 
-int Par(struct ddTableResults * tablep, struct parResults *presp, int vulnerable) {
-	/* vulnerable 0: None  1: Both  2: NS  3: EW */
+int STDCALL SolveAllChunksBin(struct boards *bop, struct solvedBoards *solvedp, int chunkSize) {
+  int res;
 
-/* The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd ACBLmerge. He has kindly given me permission
-   to include a C++ adaptation in DDS. */ 
+  if (chunkSize < 1)
+    return RETURN_CHUNK_SIZE;
 
-/* The Par function computes the par result and contracts. */
-
-  
-  int denom_conv[5]={4, 0, 1, 2, 3};
-  /* Preallocate for efficiency. These hold result from last direction
-     (N-S or E-W) examined. */
-  int i, j, k, m, isvul;
-  int current_side, both_sides_once_flag, denom_max, max_lower;
-  int new_score_flag, sc1, sc2; 
-  int prev_par_denom=0, prev_par_tricks=0;
-   
-  int ut, t1, t2, tt, score, dr, ke, tu, tu_max, t3, t4, n;
-  struct par_suits_type par_suits[5];
-  char contr_sep[2]={',','\0'};
-  char temp[8], buff[4];
-
-  int par_denom[2] = {-1, -1};	 /* 0-4 = NT,S,H,D,C */
-  int par_tricks[2] = {6, 6};	 /* Initial "contract" beats 0 NT */
-  int par_score[2] = {0, 0};
-  int par_sacut[2] = {0, 0};     /* Undertricks for sacrifice (0 if not sac) */
-
-  int rawscore(int denom, int tricks, int isvul);
-  void IniSidesString(int dr, int i, int t1, int t2, char stri[]);
-  int CalcMultiContracts(int max_lower, int tricks);
-  int VulnerDefSide(int side, int vulnerable);
-
-  /* Find best par result for N-S (i==0) or E-W (i==1). These will
-     nearly always be the same, but when we have a "hot" situation
-     they will not be. */
-
-  for (i=0; i<=1; i++) {
-    /* Start with the with the offensive side (current_side = 0) and alternate
-       between sides seeking the to improve the result for the current side.*/
-
-    current_side=0;  both_sides_once_flag=0;
-    while (1) {
-
-      /* Find best contract for current side that beats current contract.
-         Choose highest contract if results are equal. */
-
-      k=(i+current_side) % 2;
-
-      isvul=((vulnerable==1)||(k ? (vulnerable==3) : (vulnerable==2)));
-
-      new_score_flag=0;
-      prev_par_denom=par_denom[i];
-      prev_par_tricks=par_tricks[i];
-
-    /* Calculate tricks and score values and 
-       store them for each denomination in structure par_suits[5]. */
-
-      for (j=0; j<=4; j++) {
-        t1 = k ? tablep->resTable[denom_conv[j]][1] : tablep->resTable[denom_conv[j]][0];
-        t2 = k ? tablep->resTable[denom_conv[j]][3] : tablep->resTable[denom_conv[j]][2];
-        tt = Max(t1, t2);
-	/* tt is the maximum number of tricks current side can take in 
-           denomination.*/
-        par_suits[j].suit=j;
-        par_suits[j].tricks=tt;
-        if ((tt > par_tricks[i]) || ((tt == par_tricks[i]) &&
-	  (j < par_denom[i]))) 
-	  par_suits[j].score=rawscore(j, tt, isvul);
-        else
-	  par_suits[j].score=rawscore(-1, prev_par_tricks - tt, isvul);
-      }
-		
-       /* Sort the items in the par_suits structure with decreasing order of the 
-       values on the scores. */
-	  
-      for (int s = 1; s < 5; s++) { 
-        struct par_suits_type tmp = par_suits[s]; 
-        int r = s; 
-        for (; r && tmp.score > par_suits[r - 1].score ; --r) 
-          par_suits[r] = par_suits[r - 1]; 
-        par_suits[r] = tmp; 
-      }
-	  
-      /* Do the iteration as before but now in the order of the sorted denominations. */
-		
-      for (m=0; m<=4; m++) {
-	j=par_suits[m].suit;
-	tt=par_suits[m].tricks;
- 
-	if ((tt > par_tricks[i]) || ((tt == par_tricks[i]) &&
-	  (j < par_denom[i]))) {
-	  /* Can bid higher and make contract.*/
-	  score=rawscore(j, tt, isvul);
-	}
-	else {
-	  /* Bidding higher in this denomination will not beat previous denomination
-             and may be a sacrifice. */
-	  ut=prev_par_tricks - tt;
-	  if (j >= prev_par_denom) {
-	    /* Sacrifices higher than 7N are not permitted (but long ago
-               the official rules did not prohibit bidding higher than 7N!) */
-	    if (prev_par_tricks == 13)
-	      continue;
-            /* It will be necessary to bid one level higher, resulting in
-               one more undertrick. */
-	    ut++;
-	  }
-	  /* Not a sacrifice (due to par_tricks > prev_par_tricks) */
-	  if (ut <= 0)
-	    continue;
-	  /* Compute sacrifice.*/
-	  score=rawscore(-1, ut, isvul);
-	}
-	if (current_side == 1)
-	  score=-score;
-
-	if (((current_side == 0)&&(score > par_score[i])) || 
-	  ((current_side == 1)&&(score < par_score[i]))) {
-	  new_score_flag = 1;
-	  par_score[i] = score;
-	  par_denom[i] = j;		
-
-	  if (((current_side == 0)&&(score > 0)) || 
-	    ((current_side == 1)&&(score < 0))) {
-	    /* New par score from a making contract. 
-	       Can immediately update since score at same level in higher
-	       ranking suit is always >= score in lower ranking suit and 
-               better than any sacrifice. */
-	    par_tricks[i] = tt;
-	    par_sacut[i] = 0;
-	  }
-	  else {
-	    par_tricks[i] = tt + ut;
-	    par_sacut[i] = ut;
-	  }
-	}
-      }
-
-      if (!new_score_flag && both_sides_once_flag)
-	break; 
-      both_sides_once_flag = 1;
-      current_side = 1 - current_side;
-    }
-  }
-
-  presp->parScore[0][0]='N';
-  presp->parScore[0][1]='S';
-  presp->parScore[0][2]=' ';
-  presp->parScore[0][3]='\0';
-  presp->parScore[1][0]='E';
-  presp->parScore[1][1]='W';
-  presp->parScore[1][2]=' ';
-  presp->parScore[1][3]='\0';
-
-  /*itoa(par_score[0], temp, 10);*/
-  sprintf(temp, "%d", par_score[0]);
-  strcat(presp->parScore[0], temp);
-  /*itoa(par_score[1], temp, 10);*/
-  sprintf(temp, "%d", par_score[1]);
-  strcat(presp->parScore[1], temp);
-
-  for (i=0; i<=1; i++) {
-    presp->parContractsString[0][0]='N';
-    presp->parContractsString[0][1]='S';
-    presp->parContractsString[0][2]=':';
-    presp->parContractsString[0][3]='\0';
-    presp->parContractsString[1][0]='E';
-    presp->parContractsString[1][1]='W';
-    presp->parContractsString[1][2]=':';
-    presp->parContractsString[1][3]='\0';
-  }
-
-  if (par_score[0] == 0) {
-    /* Neither side can make anything.*/
-    return 1;
-  }
-
-
-  for (i=0; i<=1; i++) {
-
-    if ( par_sacut[i] > 0 ) {
-	  
-      dr = (par_score[i] > 0) ? 0 : 1;
-    
-      for (j=0/*par_denom[i]*/; j<=4; j++) {
-
-        t1 = ((dr+i) % 2 ) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
-        t2 = ((dr+i) % 2 ) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
-        tt = (t1 > t2) ? t1 : t2;
-
-	tu_max=0;
-	
-	for (m=0; m<=4; m++) {
-	  t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
-          t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
-	  tu = (t3 > t4) ? t3 : t4;
-	  if (tu > tu_max) {
-	    tu_max=tu;
-	    denom_max=m;
-	  }
-	}
-
-	if (j >= par_denom[i]) {
-	  if (((par_tricks[i] - par_sacut[i]) != tt) || ((par_denom[i] < denom_max) && (j > denom_max)))
-	    continue;
-	}
-	else if ((denom_max < par_denom[i])&&(j < denom_max)) {
-	  if ((par_tricks[i] - 1 - par_sacut[i]) != tt)
-	    continue;
-	}
-	else {
-	  if ((par_tricks[i] - par_sacut[i]) != tt)
-	    continue;
-	}
-	
-
-	IniSidesString(dr, i, t1, t2, buff);
-
-	if (presp->parContractsString[i][3]!='\0')
-	  strcat(presp->parContractsString[i], contr_sep);
-
-	strcat(presp->parContractsString[i], buff);
-
-	/*itoa(par_tricks[i]-6, temp, 10);*/
-	if ((denom_max < par_denom[i]) && (j < denom_max))
-	  sprintf(temp, "%d", par_tricks[i]-7); 
-	else
-	  sprintf(temp, "%d", par_tricks[i]-6);
-	buff[0]=cardSuit[denom_conv[j]];
-	buff[1]='x';
-	buff[2]='\0';
-	strcat(temp, buff);
-	strcat(presp->parContractsString[i], temp);
-
-	stat_contr[0]++;
-      }
-    }
-    else {
-      /* Par contract is a makeable contract.*/
-      dr = (par_score[i] < 0) ? 0 : 1;
-
-      /* If spades or diamonds, lower major / minor may also be a par contract.*/
-      ke = (par_denom[i] == 1 || par_denom[i] == 3) ? 1 : 0;
-	  
-      for (j=par_denom[i]; j<=par_denom[i]+ke; j++) {
-        t1 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
-	t2 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
-	tt = (t1 > t2) ? t1 : t2;
-
-	if (tt < par_tricks[i]) { continue; }
-
-	IniSidesString(dr, i, t1, t2, buff);
-
-	tu_max=0;
-	for (m=0; m<=4; m++) {
-	  t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
-          t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
-	  tu = (t3 > t4) ? t3 : t4;
-	  if (tu > tu_max) {
-	    tu_max=tu;
-	    denom_max=m;  /* Lowest denomination if several denominations have max tricks. */
-	  }
-	}
-
-	if (presp->parContractsString[i][3]!='\0')
-	  strcat(presp->parContractsString[i], contr_sep);
-
-	strcat(presp->parContractsString[i], buff);
-
-	if (denom_max < par_denom[i]) 
-	  max_lower = par_tricks[i] - tu_max - 1;
-	else
-	  max_lower = par_tricks[i] - tu_max;
-
-	/* max_lower is the maximal contract lowering, otherwise opponent contract is
-	higher. It is already known that par_score is high enough to make
-	opponent sacrifices futile. 
-	To find the actual contract lowering allowed, it must be checked that the
-	lowered contract still gets the score bonus points that is present in par score.*/
-
-	sc2 = abs(par_score[i]);
-	/* Score for making the tentative lower par contract. */
-	while (max_lower > 0) {
-	  if (denom_max < par_denom[i]) 
-	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max, 
-		VulnerDefSide(par_score[0]>0, vulnerable));
-	  else
-	    sc1 = -rawscore(-1, par_tricks[i] - max_lower - tu_max + 1, 
-		VulnerDefSide(par_score[0]>0, vulnerable));
-	  /* Score for undertricks needed to beat the tentative lower par contract.*/
-	  if (sc2 < sc1)
-	    break;
-	  else
-	    max_lower--;
-	  /* Tentative lower par contract must be 1 trick higher, since the cost
-	  for the sacrifice is too small. */
-	}
-
-	switch (par_denom[i]) {
-	  case 0:  k = 0; break;
-	  case 1:  case 2: k = 1; break;
-	  case 3:  case 4: k = 2;
-	}
-
-	max_lower = Min(max_low[k][par_tricks[i]-6], max_lower);
-
-	n = CalcMultiContracts(max_lower, par_tricks[i]);
-
-	/*itoa(n, temp, 10);*/
-	sprintf(temp, "%d", n);
-	buff[0]=cardSuit[denom_conv[j]];
-	buff[1]='\0';
-	strcat(temp, buff);
-	strcat(presp->parContractsString[i], temp);
-
-	stat_contr[1]++;
-      }
-
-
-      /* Deal with special case of 3N/5m (+400/600) */
-      if ((par_denom[i] == 0) && (par_tricks[i] == 9)) {
-	    
-	for (j=3; j<=4; j++) {
-	  t1 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
-	  t2 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
-	  tt = (t1 > t2) ? t1 : t2;
-
-	  if (tt != 11) { continue; }
-
-	  IniSidesString(dr, i, t1, t2, buff);
-
-	  if (presp->parContractsString[i][3]!='\0')
-	    strcat(presp->parContractsString[i], contr_sep);
-
-	  strcat(presp->parContractsString[i], buff);
-
-	  /*itoa(5, temp, 10);*/
-	  sprintf(temp, "%d", 5);
-	  buff[0]=cardSuit[denom_conv[j]];
-	  buff[1]='\0';
-	  strcat(temp, buff);
-	  strcat(presp->parContractsString[i], temp);
-
-	  stat_contr[2]++;
-	}
-	    
-      }
-      /* Deal with special case of 2S/2H (+110) which may have 3C and 3D
-         as additional par contract(s).*/
-      if ((par_denom[i] <=2) && (par_denom[i] != 0) && (par_tricks[i] == 8)) {
-	/* Check if 3C and 3D make.*/
-	for (j=3; j<=4; j++) {
-	  t1 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
-	  t2 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
-	  tt = (t1 > t2) ? t1 : t2;
-
-	  if (tt != 9) { continue; }
-
-	  IniSidesString(dr, i, t1, t2, buff);
-
-	  tu_max=0;
-
-	  for (m=0; m<=4; m++) {
-	    t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
-            t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
-	    tu = (t3 > t4) ? t3 : t4;
-	    if (tu > tu_max) {
-	      tu_max=tu;
-	      denom_max=m;
-	    }
-	  }
-
-	  if (presp->parContractsString[i][3]!='\0')
-	    strcat(presp->parContractsString[i], contr_sep);
-
-	  strcat(presp->parContractsString[i], buff);
-
-	  if (denom_max < j) 
-	    max_lower = 9 - tu_max - 1;
-	  else
-	    max_lower = 9 - tu_max;
-
-	  /* max_lower is the maximal contract lowering, otherwise opponent contract is
-	  higher. It is already known that par_score is high enough to make
-	  opponent sacrifices futile. 
-	  To find the actual contract lowering allowed, it must be checked that the
-	  lowered contract still gets the score bonus points that is present in par score.*/
-
-	  sc2 = abs(par_score[i]);
-	  /* Score for making the tentative lower par contract. */
-	  while (max_lower > 0) {
-	    if (denom_max < j) 
-	      sc1 = -rawscore(-1, 9 - max_lower - tu_max,
-		VulnerDefSide(par_score[0]>0, vulnerable));
-	    else
-	      sc1 = -rawscore(-1, 9 - max_lower - tu_max + 1, 
-		VulnerDefSide(par_score[0]>0, vulnerable));
-	    /* Score for undertricks needed to beat the tentative lower par contract.*/
-	    if (sc2 < sc1)
-	      break;
-	    else
-	      max_lower--;
-	    /* Tentative lower par contract must be 1 trick higher, since the cost
-	    for the sacrifice is too small. */
-	  }
-
-	  switch (par_denom[i]) {
-	    case 0:  k = 0; break;
-	    case 1:  case 2: k = 1; break;
-	    case 3:  case 4: k = 2;
-	  }
-
-	  max_lower = Min(max_low[k][3], max_lower);
-
-	  n = CalcMultiContracts(max_lower, 9);
-
-	  /*itoa(n, temp, 10);*/
-	  sprintf(temp, "%d", n);
-	  buff[0]=cardSuit[denom_conv[j]];
-	  buff[1]='\0';
-	  strcat(temp, buff);
-	  strcat(presp->parContractsString[i], temp);
-
-	  stat_contr[3]++;
-	}
-      }
-      /* Deal with special case 1NT (+90) which may have 2C or 2D as additonal par
-         contracts(s). */
-      if ((par_denom[i] == 0) && (par_tricks[i] == 7)) {
-	for (j=3; j<=4; j++) {
-	  t1 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][0] : tablep->resTable[denom_conv[j]][1];
-	  t2 = ((dr+i) % 2) ? tablep->resTable[denom_conv[j]][2] : tablep->resTable[denom_conv[j]][3];
-	  tt = (t1 > t2) ? t1 : t2;
-
-	  if (tt != 8) { continue; }
-
-	  IniSidesString(dr, i, t1, t2, buff);
-
-	  tu_max=0;
-	  for (m=0; m<=4; m++) {
-	    t3 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] : tablep->resTable[denom_conv[m]][1];
-            t4 = ((dr+i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] : tablep->resTable[denom_conv[m]][3];
-	    tu = (t3 > t4) ? t3 : t4;
-	    if (tu > tu_max) {
-	      tu_max=tu;
-	      denom_max=m;
-	    }
-	  }
-
-	  if (presp->parContractsString[i][3]!='\0')
-	    strcat(presp->parContractsString[i], contr_sep);
-
-	  strcat(presp->parContractsString[i], buff);
-
-	  if (denom_max < j) 
-	    max_lower = 8 - tu_max - 1;
-	  else
-	    max_lower = 8 - tu_max;
-
-	  /* max_lower is the maximal contract lowering, otherwise opponent contract is
-	  higher. It is already known that par_score is high enough to make
-	  opponent sacrifices futile. 
-	  To find the actual contract lowering allowed, it must be checked that the
-	  lowered contract still gets the score bonus points that is present in par score.*/
-
-	  sc2 = abs(par_score[i]);
-	  /* Score for making the tentative lower par contract. */
-	  while (max_lower > 0) {
-	    if (denom_max < j) 
-	      sc1 = -rawscore(-1, 8 - max_lower - tu_max, 
-		VulnerDefSide(par_score[0]>0, vulnerable));
-	    else
-	      sc1 = -rawscore(-1, 8 - max_lower - tu_max + 1, 
-		VulnerDefSide(par_score[0]>0, vulnerable));
-	    /* Score for undertricks needed to beat the tentative lower par contract.*/
-	    
-	    if (sc2 < sc1)
-	      break;
-	    else
-	      max_lower--;
-	    /* Tentative lower par contract must be 1 trick higher, since the cost
-	    for the sacrifice is too small. */
-	  }
-
-	  switch (par_denom[i]) {
-	    case 0:  k = 0; break;
-	    case 1:  case 2: k = 1; break;
-	    case 3:  case 4: k = 2;
-	  }
-
-	  max_lower = Min(max_low[k][3], max_lower);
-
-	  n = CalcMultiContracts(max_lower, 8);
-
-	  /*itoa(n, temp, 10);*/
-	  sprintf(temp, "%d", n);
-	  buff[0]=cardSuit[denom_conv[j]];
-	  buff[1]='\0';
-	  strcat(temp, buff);
-	  strcat(presp->parContractsString[i], temp);
-
-	  stat_contr[4]++;
-	}
-      }
-    }
-  }
-
-  return 1;
+  res = SolveAllBoardsN(bop, solvedp, chunkSize);
+  return res;
 }
 
 
-int rawscore(int denom, int tricks, int isvul) {
-  int game_bonus, level, score;
-
-  /* Computes score for undoubled contract or a doubled contract with
-     for a given number of undertricks. These are the only possibilities
-     for a par contract (aside from a passed out hand). 
-  
-     denom  - 0 = NT, 1 = Spades, 2 = Hearts, 3 = Diamonds, 4 = Clubs
-             (same order as results from double dummy solver); -1 undertricks
-     tricks - For making contracts (7-13); otherwise, number of undertricks.
-     isvul  - True if vulnerable */
-
-  if (denom==-1) {
-    if (isvul)
-      return -300 * tricks + 100;
-    if (tricks<=3)
-      return -200 * tricks + 100;
-    return -300 * tricks + 400;
-  }
-  else {
-    level=tricks-6;
-    game_bonus=0;
-    if (denom==0) {
-      score=10 + 30 * level;
-      if (level>=3)
-	game_bonus=1;
-    }
-    else if ((denom==1)||(denom==2)) {
-      score=30 * level;
-      if (level>=4)
-        game_bonus=1;
-    }
-    else {
-      score=20 * level;
-      if (level>=5)
-	game_bonus=1;
-    }
-    if (game_bonus) {
-      score+= (isvul ? 500 : 300);
-    }
-    else
-      score+=50;
-
-    if (level==6) {
-      score+= (isvul ? 750 : 500);
-    }
-    else if (level==7) {
-      score+= (isvul ? 1500 : 1000);
-    }
-  }
-
-  return score;
-}
 
 
-void IniSidesString(int dr, int i, int t1, int t2, char stri[]) {
-
-   if ((dr+i) % 2 ) {
-     if (t1==t2) {
-       stri[0]='N';
-       stri[1]='S';
-       stri[2]=' ';
-       stri[3]='\0';
-     }
-     else if (t1 > t2) {
-       stri[0]='N';
-       stri[1]=' ';
-       stri[2]='\0';
-     }
-     else {
-       stri[0]='S';
-       stri[1]=' ';
-       stri[2]='\0';
-     }
-   }
-   else {
-     if (t1==t2) {
-       stri[0]='E';
-       stri[1]='W';
-       stri[2]=' ';
-       stri[3]='\0';
-     }
-     else if (t1 > t2) {
-       stri[0]='E';
-       stri[1]=' ';
-       stri[2]='\0';
-     }
-     else {
-       stri[0]='W';
-       stri[1]=' ';
-       stri[2]='\0';
-     }
-   }
-   return;
-}
 
 
-int CalcMultiContracts(int max_lower, int tricks) {
-  int n;
-
-  switch (tricks-6) {
-    case 5: if (max_lower==3) {n = 2345;}
-	    else if (max_lower==2) {n = 345;}
-	    else if (max_lower==1) {n = 45;}
-	    else {n = 5;}
-	    break;
-    case 4: if (max_lower==3) {n = 1234;}
-	    else if (max_lower==2) {n = 234;}
-	    else if (max_lower==1) {n = 34;}
-	    else {n = 4;}
-	    break;
-    case 3: if (max_lower==2) {n = 123;}
-	    else if (max_lower==1) {n = 23;}
-	    else {n = 3;}
-	    break;
-    case 2: if (max_lower==1) {n = 12;}
-	    else {n = 2;}
-	    break;
-    default: n = tricks-6;
-  }
-  return n;
-}
-
-
-int VulnerDefSide(int side, int vulnerable) {
-  if (vulnerable == 0)
-    return 0;
-  else if (vulnerable == 1)
-    return 1;
-  else if (side) {
-    /* N/S makes par contract. */
-    if (vulnerable == 2)
-      return 0;
-    else
-      return 1;
-  }
-  else {
-    if (vulnerable == 3)
-      return 0;
-    else
-      return 1;
-  }
-}
 
 
 
