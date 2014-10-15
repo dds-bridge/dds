@@ -1,40 +1,47 @@
-/*
-   DDS 2.6.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund
+/* 
+   DDS 2.7.0   A bridge double dummy solver.
+   Copyright (C) 2006-2014 by Bo Haglund   
    Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
    The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given 
-   me permission to include a C++ adaptation in DDS. 
-*/
+   perl code written by Matthew Kidd for ACBLmerge. He has kindly given
+   permission to include a C++ adaptation in DDS.
+   						
+   The PlayAnalyser analyses the played cards of the deal and presents 
+   their double dummy values. The par calculation function DealerPar 
+   provides an alternative way of calculating and presenting par 
+   results.  Both these functions have been written by Soren Hein.
+   He has also made numerous contributions to the code, especially in 
+   the initialization part.
 
-/*
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
-
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or 
-   implied.  See the License for the specific language governing 
-   permissions and limitations under the License.
+   implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 */
 
 
-/* The PlayAnalyser was written by Sören Hein. Many thanks for
-   allowing me to include it in DDS. */
-
-
-/*#include "stdafx.h"*/
-
-#include "PlayAnalyser.h"
-#include "dll.h"
 #include "dds.h"
+#include "PBN.h"
 
+// Only single-threaded debugging here.
 #define DEBUG 0
 
 FILE *fp;
+
+
+struct playparamType {
+  int			noOfBoards;
+  struct boards		* bop;
+  struct playTracesBin	* plp;
+  struct solvedPlays	* solvedp;
+  int			error;
+};
 
 
 int STDCALL AnalysePlayBin(
@@ -51,7 +58,7 @@ int STDCALL AnalysePlayBin(
   int last_card   = ((play.number+3) % 4) + 1;
   solvedp->number = 0;
 
-  ret = SolveBoard(dl, -1, 3, 1, &fut, thrId);
+  ret = SolveBoard(dl, -1, 1, 1, &fut, thrId);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -66,17 +73,16 @@ int STDCALL AnalysePlayBin(
   int declarer          = (dl.first + 3) % 4;
   int dummy             = (dl.first + 1) % 4;
   int initial_par       = solved_declarer;
-  if (DEBUG) 
-  {
-    fp = fopen("trace.txt", "a");
-    fprintf(fp, "Initial solve: %d\n", initial_par);
-    fprintf(fp, "no %d, Last trick %d, last card %d\n", 
-      play.number, last_trick, last_card);
-    fprintf(fp, "%5s %5s %5s %8s %6s %6s %5s %5s %5s\n",
-      "trick", "card", "rest", "declarer",
-      "player", "side", "soln0", "soln1", "diff");
-    fclose(fp);
-  }
+#if DEBUG
+  fp = fopen("trace.txt", "a");
+  fprintf(fp, "Initial solve: %d\n", initial_par);
+  fprintf(fp, "no %d, Last trick %d, last card %d\n", 
+    play.number, last_trick, last_card);
+  fprintf(fp, "%5s %5s %5s %8s %6s %6s %5s %5s %5s\n",
+    "trick", "card", "rest", "declarer",
+    "player", "side", "soln0", "soln1", "diff");
+  fclose(fp);
+#endif
 
   for (int trick = 1; trick <= last_trick; trick++)
   {
@@ -115,13 +121,12 @@ int STDCALL AnalysePlayBin(
 
       if ((dl.remainCards[running_player][suit] & hold) == 0)
       {
-	if (DEBUG)
-	{
-          fp = fopen("trace.txt", "a");
-          fprintf(fp, "ERR Trick %d card %d pl %d: suit %d hold %d\n",
-	    trick, card, running_player, suit, hold);
-	  fclose(fp);
-	}
+#if DEBUG
+        fp = fopen("trace.txt", "a");
+        fprintf(fp, "ERR Trick %d card %d pl %d: suit %d hold %d\n",
+          trick, card, running_player, suit, hold);
+        fclose(fp);
+#endif
         return RETURN_PLAY_FAULT;
       }
 
@@ -150,14 +155,13 @@ int STDCALL AnalysePlayBin(
         dl.currentTrickRank[card-1] = rr;
       }
 
-      if ((ret = SolveBoard(dl, -1, 2/*3*/, 1, &fut, thrId)) 
+      if ((ret = SolveBoard(dl, -1, 1, 1, &fut, thrId)) 
         != RETURN_NO_FAULT)
       {
-        if (DEBUG)
-	{
-	  fp = fopen("trace.txt", "a");
-	  fprintf(fp, "SolveBoard failed, ret %d\n", ret);
-	}
+#if DEBUG
+        fp = fopen("trace.txt", "a");
+        fprintf(fp, "SolveBoard failed, ret %d\n", ret);
+#endif
         return ret;
       }
 
@@ -166,16 +170,15 @@ int STDCALL AnalysePlayBin(
 
       solvedp->tricks[offset + card] = new_solved_decl;
 
-      if (DEBUG)
-      {
-        fp = fopen("trace.txt", "a");
-        fprintf(fp, "%5d %5d %5d %8d %6c %6d %5d %5d %5d\n",
-          trick, card, running_remainder, running_declarer,
-	  cardHand[resp_player], running_side,
-	  solved_declarer, new_solved_decl, 
-	  new_solved_decl - solved_declarer);
-	fclose(fp);
-      }
+#if DEBUG
+      fp = fopen("trace.txt", "a");
+      fprintf(fp, "%5d %5d %5d %8d %6c %6d %5d %5d %5d\n",
+        trick, card, running_remainder, running_declarer,
+        cardHand[resp_player], running_side,
+        solved_declarer, new_solved_decl, 
+        new_solved_decl - solved_declarer);
+      fclose(fp);
+#endif
 
       solved_declarer = new_solved_decl;
     }
@@ -192,10 +195,6 @@ int STDCALL AnalysePlayPBN(
   struct solvedPlay	* solvedp,
   int			thrId)
 {
-  int ConvertPlayFromPBN(
-  struct playTracePBN	*playPBN,
-  struct playTraceBin	*playBin);
-
   struct deal		dl;
   struct playTraceBin	play;
 
@@ -219,50 +218,12 @@ int STDCALL AnalysePlayPBN(
 }
 
 
-int ConvertPlayFromPBN(
-  struct playTracePBN	*playPBN,
-  struct playTraceBin	*playBin)
-{
-  int n = playPBN->number;
-
-  if (n < 0 || n > 52)
-    return RETURN_PLAY_FAULT;
-
-  playBin->number = n;
-
-  for (int i = 0; i < 2*n; i += 2)
-  {
-    char suit = playPBN->cards[i];
-    int s;
-
-    if (suit == 's' || suit == 'S')
-      s = 0;
-    else if (suit == 'h' || suit == 'H')
-      s = 1;
-    else if (suit == 'd' || suit == 'D')
-      s = 2;
-    else if (suit == 'c' || suit == 'C')
-      s = 3;
-    else
-      return RETURN_PLAY_FAULT;
-    playBin->suit[i >> 1] = s;
-
-    int rank = IsCard(playPBN->cards[i+1]);
-    if (rank == 0)
-      return RETURN_PLAY_FAULT;
-
-    // playBin->rank[i >> 1] = bitMapRank[rank];
-    playBin->rank[i >> 1] = rank;
-  }
-  return RETURN_NO_FAULT;
-}
-
-
 long 			pchunk = 0;
 int			pfail;
 
 
-#if defined(_WIN32) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
+#if (defined(_WIN32) || defined(__CYGWIN__)) && \
+    !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
 
 HANDLE 			solveAllPlayEvents[MAXNOOFTHREADS];
 LONG volatile 		pthreadIndex;
@@ -329,14 +290,14 @@ int STDCALL AnalyseAllPlaysBin(
   playparam.noOfBoards = bop->noOfBoards;
   playparam.solvedp = solvedp;
 
-  for (int k = 0; k < noOfCores; k++)
+  for (int k = 0; k < noOfThreads; k++)
   {
     solveAllPlayEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
     if (solveAllPlayEvents[k] == 0)
       return RETURN_THREAD_CREATE;
   }
 
-  for (int k = 0; k < noOfCores; k++)
+  for (int k = 0; k < noOfThreads; k++)
   {
     res = QueueUserWorkItem(SolveChunkTracePlay, NULL, 
                             WT_EXECUTELONGFUNCTION);
@@ -344,13 +305,13 @@ int STDCALL AnalyseAllPlaysBin(
       return res;
   }
 
-  solveAllWaitResult = WaitForMultipleObjects(noOfCores, 
+  solveAllWaitResult = WaitForMultipleObjects(noOfThreads, 
     solveAllPlayEvents, TRUE, INFINITE);
 
   if (solveAllWaitResult != WAIT_OBJECT_0)
     return RETURN_THREAD_WAIT;
 
-  for (int k = 0; k < noOfCores; k++)
+  for (int k = 0; k < noOfThreads; k++)
     CloseHandle(solveAllPlayEvents[k]);
 
   solvedp->noOfBoards = bop->noOfBoards;
@@ -381,7 +342,7 @@ int STDCALL AnalyseAllPlaysBin(
 #if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
   if (omp_get_dynamic())
     omp_set_dynamic(0);
-  omp_set_num_threads(noOfCores);	
+  omp_set_num_threads(noOfThreads);	
 #elif defined (_OPENMP)
   omp_set_num_threads(1);
 #endif

@@ -1,17 +1,15 @@
-DDS 2.6,  Bo Haglund 2014-09-15
+DDS 2.7,  Bo Haglund 2014-10-18
 
-For Win32, DDS compiles with Visual C++ 2010 and 2012 Express editions 
+For Win32, DDS compiles with Visual C++ 2010 Express editions or later editions 
 and the TDM-GCC/Mingw port of gcc.
 
-When using Visual C++, the statement
-#include "stdafx.h" at the beginning of dds.cpp must be uncommented.
    
 
 Linking with an application using DDS
 -------------------------------------
-The InitStart() function of DDS should be called from inside the
+The SetMaxThreads() function of DDS should be called from inside the
 application. Then SolveBoard in DDS can be called multiple times
-without the overhead of InitStart() at each call.
+without the overhead of SetMaxThreads() at each call.
 For this purpose, the application code must have an include
 statement for the dll.h file in DDS.
 
@@ -34,14 +32,10 @@ Setting the number of simultaneous threads when calling CalcDDtable.
 --------------------------------------------------------------------
 For Windows, this can be done either by reading out the number of processor cores 
 and using this for setting the number of threads, or by supplying the number of
-threads (ncores) in InitStart. This latter alternative needs to be used when the operating 
+threads (ncores) in SetMaxThreads. This latter alternative needs to be used when the operating 
 system does not support reading out of the number of processors. 
  
 
-Options at DDS compilation
---------------------------
-Single thread operation can be invoked by
-defining DDS_THREADS_SINGLE in the dll.h file.
 
 
 

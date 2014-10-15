@@ -462,4 +462,11 @@ The Par function has been corrected.
 The DealerPar and the PlayAnalyser functions has been added, written by Soren Hein.
 2.6.0 is 2% faster than 2.5.2. Soren Hein has contributed on numerous improvements.
 
-
+Release Notes DDS 2.7.0
+----------------------- 
+The transposition table solution has been replaced by a faster one.
+The new solution is 8-15% faster.
+Many thanks to Soren Hein for writing this part of the code. Soren has also
+improved the code at numerous places.  
+Additional Par functions have been added to ease the use of a DDS user specific 
+format.
