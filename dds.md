@@ -1,5 +1,7 @@
 Bo Haglund, Bob Richardson
+
 Rev V, 2014-10-14
+
 Latest DLL issue with this description is available at http://www.bahnhof.se/wb758135/
 
 # Description of the DLL functions supported in Double Dummy Problem Solver 2.7
@@ -47,3 +49,10 @@ The par calculation is executed using a single thread. But the calculation is ve
 ### Double Dummy Value Analyser Functions
 
 The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `AnalyseAllPlaysPBN` take the played cards in a game or games and calculate and present their double dummy values.
+
+-------------------------------------------------------------------
+Function | Arguments | Format | Comment
+-------------------------------------------------------------------
+| `SolveBoard` | struct deal dl, int target, int solutions, int mode, struct futureTricks *futp, int threadIndex | Binary | The most basic function, solves a single hand from the beginning or from later play |
+| `SolveBoardPBN` | struct dealPBN dlPBN, int target, int solutions, int mode, struct futureTricks *futp, int threadIndex | PBN |As SolveBoard, but with PBN deal format. |
+
