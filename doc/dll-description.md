@@ -50,18 +50,18 @@ The par calculation is executed using a single thread. But the calculation is ve
 
 The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `AnalyseAllPlaysPBN` take the played cards in a game or games and calculate and present their double dummy values.
 
-| Function        | Arguments                 | Format | Comment                   |
-------------------|---------------------------|--------|---------------------------|
-| `SolveBoard`    | struct deal dl            | Binary | The most basic function,  |
-|                 | int target                |        | solves a single hand from |
-|                 | int solutions             |        | the beginning or from     |
-|                 | int mode                  |        | later play                |
-|                 | struct futureTricks *futp |        |                           |
-|                 | int threadIndex           |        |                           |
-| `SolveBoardPBN` | struct dealPBN dlPBN      | PBN    | As SolveBoard, but with   |
-|                 | int target                |        | PBN deal format.          |
-|                 | int solutions             |        |                           |
-|                 | int mode                  |        |                           |
-|                 | struct futureTricks *futp |        |                           |
-|                 | int threadIndex           |        |                           |
-
+<table>
+<thead>
+<tr>
+<th>Function</th><th>Arguments</th><th>Format</th><th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`SolveBoard`</td><td><ul><li>struct deal dl</li><li>int target</li><li>int solutions</li><li>int mode</li><li>struct futureTricks *futp</li><li>int threadIndex</li></ul></td><td>Binary</td><td>The most basic function, solves a single hand from the beginning or from later play</td>
+</tr>
+<tr>
+<td>`SolveBoardPBN`</td><td><ul><li>struct dealPBN dlPBN</li><li>int target</li><li>int target</li><li>int solutions</li><li>int mode</li><li>struct futureTricks *futp</li><li>int threadIndex</li></ul></td><td>PBN</td><td>As SolveBoard, but with PBN deal format.</td>
+</tr>
+</tbody>
+</table>
