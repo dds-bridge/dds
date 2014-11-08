@@ -58,7 +58,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </thead>
 <tbody>
 <tr>
-<td rowspan="6">`SolveBoard`</td><td>struct deal dl</td><td>Binary</td><td>The most basic function, solves a single hand from the beginning or from later play</td>
+<td rowspan="6">`SolveBoard`</td><td>struct deal dl</td><td rowspan="6">Binary</td><td rowspan="6">The most basic function, solves a single hand from the beginning or from later play</td>
 </tr>
 <tr>
 <td>int target</td>
