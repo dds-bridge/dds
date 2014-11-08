@@ -81,9 +81,6 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <td>int target</td>
 </tr>
 <tr>
-<td>int target</td>
-</tr>
-<tr>
 <td>int solutions</td>
 </tr>
 <tr>
