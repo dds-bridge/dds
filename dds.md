@@ -58,10 +58,42 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </thead>
 <tbody>
 <tr>
-<td rowspan="6">`SolveBoard`</td><td>struct deal dl</td><td>int target</td><td>int solutions</td><td>int mode</td><td>struct futureTricks *futp</td><td>int threadIndex</td><td>Binary</td><td>The most basic function, solves a single hand from the beginning or from later play</td>
+<td rowspan="6">`SolveBoard`</td><td>struct deal dl</td><td>Binary</td><td>The most basic function, solves a single hand from the beginning or from later play</td>
 </tr>
 <tr>
-<td rowspan="6">`SolveBoardPBN`</td><td>struct dealPBN dlPBN</td><td>int target</td><td>int target</td><td>int solutions</td><td>int mode</td><td>struct futureTricks *futp</td><td>int threadIndex</td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
+<td>int target</td>
+</tr>
+<tr>
+<td>int solutions</td>
+</tr>
+<tr>
+<td>int mode</td>
+</tr>
+<tr>
+<td>struct futureTricks *futp</td>
+</tr>
+<tr><td>int threadIndex</td>
+</tr>
+<tr>
+<td rowspan="6">`SolveBoardPBN`</td><td>struct dealPBN dlPBN</td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
+</tr>
+<tr>
+<td>int target</td>
+</tr>
+<tr>
+<td>int target</td>
+</tr>
+<tr>
+<td>int solutions</td>
+</tr>
+<tr>
+<td>int mode</td>
+</tr>
+<tr>
+<td>struct futureTricks *futp</td>
+</tr>
+<tr>
+<td>int threadIndex</td>
 </tr>
 </tbody>
 </table>
