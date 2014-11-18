@@ -50,6 +50,7 @@ The par calculation is executed using a single thread. But the calculation is ve
 
 The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `AnalyseAllPlaysPBN` take the played cards in a game or games and calculate and present their double dummy values.
 
+
 <table>
 <thead>
 <tr>
@@ -75,6 +76,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <tr><td>int threadIndex</td>
 </tr>
 <tr>
+<tr><td colspan="4">&nbsp;</td></tr>
 <td rowspan="6">`SolveBoardPBN`</td><td>struct dealPBN dlPBN</td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
 </tr>
 <tr>
