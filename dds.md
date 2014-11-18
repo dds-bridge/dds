@@ -75,8 +75,8 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td>int threadIndex</td>
 </tr>
-<tr>
 <tr><td colspan="4">&nbsp;</td></tr>
+<tr>
 <td rowspan="6"><code>SolveBoardPBN</code></td><td>struct dealPBN dlPBN</td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
 </tr>
 <tr>
@@ -93,6 +93,89 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr>
 <td>int threadIndex</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="2"><code>CalcDDtable</code></td><td>struct ddTableDeal tableDeal</td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
+</tr>
+<tr>
+<td>struct ddTableResults * tablep</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="2"><code>CalcDDtablePBN</code></td><td>struct ddTableDealPBN tableDealPBN</td><td rowspan="2">PBN</td><td rowspan="2">As CalcDDtable, but with PBN deal format.</td>
+</tr>
+<tr>
+<td>struct ddTableResults * tablep</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="5"><code>CalcAllTables</code></td><td>struct ddTableDeals *dealsp</td><td rowspan="5">Binary</td><td rowspan="5">Solves a number of hands in parallel.  Multi-threaded.</td>
+</tr>
+<tr>
+<td>int mode</td>
+</tr>
+<tr>
+<td>int trumpFilter[5]</td>
+</tr>
+<tr>
+<td>struct ddTablesRes *resp</td>
+</tr>
+<tr>
+<td>struct allParResults *pres</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="5"><code>CalcAllTablesPBN</code></td><td>struct ddTableDealsPBN *dealsp</td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
+</tr>
+<tr>
+<td>int mode</td>
+</tr>
+<tr>
+<td>int trumpFilter[5]</td>
+</tr>
+<tr>
+<td>struct ddTablesRes *resp</td>
+</tr>
+<tr>
+<td>struct allParResults *pres</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="2"><code>SolveAllBoards</code></td><td>struct boardsPBN *bop</td><td rowspan="2">PBN</td><td rowspan="2">As CalcAllTables, but with PBN deal format.</td>
+</tr>
+<tr>
+<td>struct solvedBoards *solvedp</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="3"><code>SolveAllChunksBin</code></td><td>struct boards *bop</td><td rowspan="3">Binary</td><td rowspan="2">Solves a number of hands in parallel. Multi-threaded.</td>
+</tr>
+<tr>
+<td>struct solvedBoards *solvedp</td>
+</tr>
+<tr>
+<td>int chunkSize</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="3"><code>SolveAllChunks</code></td><td>struct boardsPBN *bop</td><td rowspan="3">PBN</td><td rowspan="2">Alias for SolveAllChunksPBN; don’t use!</td>
+</tr>
+<tr>
+<td>struct solvedBoards *solvedp</td>
+</tr>
+<tr>
+<td>int chunkSize</td>
+</tr>
+tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="3"><code>SolveAllChunksPBN</code></td><td>struct boardsPBN *bop</td><td rowspan="3">PBN</td><td rowspan="2">Solves a number of hands in parallel. Multi-threaded.</td>
+</tr>
+<tr>
+<td>struct solvedBoards *solvedp</td>
+</tr>
+<tr>
+<td>int chunkSize</td>
 </tr>
 </tbody>
 </table>
