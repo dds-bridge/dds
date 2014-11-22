@@ -30,6 +30,9 @@
 
 #define DDS_VERSION		20101	/* Version 2.1.1. Allowing for 2 digit
 					minor versions */
+
+#define PBN
+
 /*#define BENCH*/
 
 #include <stdio.h>
@@ -50,8 +53,6 @@
 #else
 #define SEARCHSIZE  1
 #endif
-
-#define CANCELCHECK  200000
 
 #if defined(INFINITY)
 #    undef INFINITY
@@ -95,9 +96,7 @@ All hand identities are given as
 
 
 struct gameInfo  {          /* All info of a particular deal */
-  /*int vulnerable;*/
   int declarer;
-  /*int contract;*/
   int leadHand;
   int leadSuit;
   int leadRank;
@@ -145,6 +144,15 @@ struct deal {
   int currentTrickSuit[3];
   int currentTrickRank[3];
   unsigned int remainCards[4][4];
+};
+
+
+struct dealPBN {
+  int trump;
+  int first;
+  int currentTrickSuit[3];
+  int currentTrickRank[3];
+  char remainCards[80];
 };
 
 
@@ -209,6 +217,7 @@ struct evalType {
 struct relRanksType {
   int aggrRanks[4];
   int winMask[4];
+  char relRank[15][4];
 };
 
 struct adaptWinRanksType {
@@ -258,6 +267,10 @@ struct ddTableDeal {
   unsigned int cards[4][4];
 };
 
+struct ddTableDealPBN {
+  char cards[80];
+};
+
 struct ddTableResults {
   int resTable[5][4];
 };
@@ -295,12 +308,12 @@ struct localVarType {
   struct moveType bestMove[50];
   struct moveType bestMoveTT[50];
   struct winCardType temp_win[5];
-  int hiwinSetSize;
+  /*int hiwinSetSize;
   int hinodeSetSize;
   int hilenSetSize;
   int MaxnodeSetSize;
   int MaxwinSetSize;
-  int MaxlenSetSize;
+  int MaxlenSetSize;*/
   int nodeSetSizeLimit;
   int winSetSizeLimit;
   int lenSetSizeLimit;
@@ -355,7 +368,6 @@ extern struct moveType forbiddenMoves[14];  /* Initial depth moves that will be
 					       excluded from the search */
 extern struct moveType initialMoves[4];
 extern struct moveType highMove;
-extern struct moveType * bestMove;
 extern struct winCardType **pw;
 extern struct nodeCardsType **pn;
 extern struct posSearchType **pl;
@@ -363,7 +375,6 @@ extern struct posSearchType **pl;
 extern int * highestRank;
 extern int * counttable;
 extern struct adaptWinRanksType * adaptWins;
-extern struct winCardType * temp_win;
 extern unsigned short int bitMapRank[16];
 extern unsigned short int relRankInSuit[4][4];
 extern int sum;
@@ -402,9 +413,6 @@ extern int suppressTTlog;
 extern unsigned char suitChar[4];
 extern unsigned char rankChar[15];
 extern unsigned char handChar[4];
-extern int cancelOrdered;
-extern int cancelStarted;
-extern int threshold;
 extern unsigned char cardRank[15], cardSuit[5], cardHand[4];
 extern unsigned char cardSuitSds[5];
 extern struct handStateType handState;
@@ -424,8 +432,19 @@ extern int suppressTTlog;
 EXTERN_C DLLEXPORT int STDCALL SolveBoard(struct deal dl, 
   int target, int solutions, int mode, struct futureTricks *futp, int threadIndex);
 
+#ifdef PBN
+EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target, 
+    int solutions, int mode, struct futureTricks *futp, int thrId);
+#endif
+
 EXTERN_C DLLEXPORT int STDCALL CalcDDtable(struct ddTableDeal tableDeal, 
   struct ddTableResults * tablep);
+
+#ifdef PBN
+EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN, 
+  struct ddTableResults * tablep);
+#endif
+
 
 void InitStart(int gb_ram, int ncores);
 void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst, int thrId);

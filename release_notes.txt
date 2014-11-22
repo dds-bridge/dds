@@ -276,6 +276,29 @@ physical memory. The configuration is either done automatically by reading
 out the physical memory size by the operating system, or by supplying
 parameter values in InitStart.
 
+
+Release Notes DDS 2.1.2
+-----------------------
+2 new callable functions have been added:
+SolveBoardPBN and CalcDDtablePBN.
+They both accept PBN format for the remaining cards in the deal information
+instead of the bit codes.
+
+Code improvements have been done concerning quick tricks detection and move
+ordering. 2.1.2 is about 10% faster than 2.1.1.
+
+
+Release Notes DDS 1.1.12
+------------------------
+2 new callable functions have been added:
+SolveBoardPBN and CalcDDtablePBN.
+They both accept PBN format for the remaining cards in the deal information
+instead of the bit codes.
+
+Code improvements have been done concerning quick tricks detection and move
+ordering. 1.1.12 is about 15-20% faster than 1.1.11.
+
+
    
 
 

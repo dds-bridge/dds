@@ -1,16 +1,23 @@
 ﻿Bo Haglund, Bob Richardson
-Rev J, 2010-05-29
+Rev L, 2011-10-14
 Latest DLL issue with this description is available at http://www.bahnhof.se/wb758135/
 
 
-Short description of the DLL functions supported in Double Dummy Problem Solver 2.1
+Short description of the DLL functions supported in Double Dummy Problem Solver 2.1.2
 
 Callable functions
 
 extern "C" __declspec(dllimport) int __stdcall SolveBoard(struct deal, int target,  
     int solutions,  int mode, struct futureTricks *futp, int threadIndex);
 
-extern "C" __declspec(dllimport) int __stdcall CalcDDtable(struct ddTableDeal tableDeal, struct ddTableResults * tablep);
+extern "C" __declspec(dllimport) int __stdcall SolveBoardPBN(struct dealPBN, int target,  
+    int solutions,  int mode, struct futureTricks *futp, int threadIndex);
+
+extern "C" __declspec(dllimport) int __stdcall CalcDDtable(struct ddTableDeal tableDeal, 
+    struct ddTableResults * tablep);
+
+extern "C" __declspec(dllimport) int __stdcall CalcDDtablePBN(struct ddTableDealPBN
+    tableDealPBN, struct ddTableResults * tablep);
 
 
 SolveBoard
@@ -80,9 +87,27 @@ Parameter ”threadIndex” defines the identity of the thread used when calling
 Maximum 16 threads can call SolveBoard in parallel, threadIndex must be an integer of the range 0..15.
 
 
+SolveBoardPBN
+
+In SolveBoardPBN the remaining cards in the deal information are given in PBN text
+format (e.g. 
+W:T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K) instead of using bits 2-14 in an integer array. Otherwise, SolveboardPBN is identical to SolveBoard.
+
+struct dealPBN {
+   int trump; 
+   int first; 
+   int currentTrickSuit[3];  
+   int currentTrickRank[3];  
+   char remainCards[80];   /* First character identifies the hand having the cards given first
+                                         in the string, then the cards of the other hands are given in a
+			     clock-wise order, see example above. Null characters fill out
+			     the character array at the end. */ 
+};
+
+
 CalcDDtable
 
-CalcDDtable calculates the double dummy values of the initial 52 cards for all the 20 trump suit/leading hand combinations.   
+CalcDDtable calculates the double dummy values of the initial 52 cards for all the 20 trump suit/declarer hand combinations.   
 
 Before CalcDDtable can be called, a structure of type " ddTableResults" must be declared.
 CalcDDtable returns a status integer, "no fault" means the DLL supplies the double dummy scores in the "ddTableResults" type structure.
@@ -95,11 +120,18 @@ struct ddTableDeal {
   unsigned int cards[4][4];   /* 1st index is hand, 2nd index is suit, same coding as for deal.remainCards for SolveBoard. */
 };
 
-struct ddTableResults { /* For each combination trump suit / leading hand, the DLL provides the double dummy score. */
-  int resTable[5][4];	/* 1st index is trump (0=Spades, 1=Hearts, 2=Diamonds, 3=Clubs, 4=No Trump 2nd index is leading hand, 0=North, 1=East, 2=South, 3=West */
+struct ddTableResults { /* For each combination trump suit / declarer hand, the DLL provides the double dummy score. */
+  int resTable[5][4];	/* 1st index is trump (0=Spades, 1=Hearts, 2=Diamonds, 3=Clubs, 4=No Trump 2nd index is declarer hand, 0=North, 1=East, 2=South, 3=West */
 };
 
 
+CalcDDtablePBN
+
+In CalcDDtablePBN the remaining cards in the deal information are given in PBN text format, see the description above for SolveBoardPBN. Otherwise, CalcDDtablePBN is identical to CalcDDtable.
+
+struct ddTableDealPBN {
+  char cards[80];
+};
 
 
 Revision History
@@ -127,4 +159,10 @@ Rev H, 2007-04-23	DDS release 1.4, changes for parameter mode=2.
 
 Rev I,  2010-04-10	DDS release 2.0, multi-thread support.
 
-Rec J, 2010-05-29	DDS release 2.1, OpenMP support, reuse of previous DD transposition table results of similar deals.
+Rev J, 2010-05-29	DDS release 2.1, OpenMP support, reuse of previous DD transposition table results of similar deals.
+
+Rev K, 2010-10-27	Correction of fault in the description:  2nd index in resTable of the structure ddTableResults is declarer hand.
+
+Rev L, 2011-10-14	Added SolveBoardPBN and CalcDDtablePBN.
+ 
+
