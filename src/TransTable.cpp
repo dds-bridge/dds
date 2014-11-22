@@ -1,40 +1,13 @@
-﻿/*
-   DDS 2.7.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund
-   Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
-   The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given 
-   me permission to include a C++ adaptation in DDS. 
+/* 
+   DDS, a bridge double dummy solver.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
 
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or 
-   implied.  See the License for the specific language governing 
-   permissions and limitations under the License.
-
-   This object, TransTable, was was written by Søren Hein. 
-   Many thanks for allowing me to include it in DDS. 
+   See LICENSE and README.
 */
 
-/*
-   This object arose out of Bo's implementation, but the
-   algorithm and data structures are completely different.
-   In the process of writing it, I found it necessary to
-   encapsulate the code that is specific to transposition
-   tables.  One side effect of this may be that others will
-   want to try to improve on my work.  I hope so!
-
-   The data structures in this object are heavily optimized.
-   Some explanation is included in the code.
-
-   Søren Hein, 2014-09-09.
-*/
+#include <stdexcept>
 
 #include "dds.h"
 #include "TransTable.h"
@@ -58,10 +31,11 @@ const char  * players[DDS_HANDS] = {
    remaining in a suit.  For example, 0x15a2 represents
    A(1) QT(5) 97(a) 3(2). 
 
-   lowestRank[aggr] gives the lowest rank that is in play in
-   aggr.  The ace is 14, the deuce is 2.  A void counts as
+   TTlowestRank[aggr] gives the lowest relative rank that is in
+   play in aggr.  The ace is 14, the deuce is 2.  A void counts as
    rank 15 ("not even the ace").  It would go horribly wrong
    if this rank were chosen to be 0, as might seem intuitive.
+   This is not the same as lowestRank, the lowest absolute rank.
 
    maskBytes[aggr][suit] is a set of 4 32-bit integers, 
    where suit is 0 ..3 (spades .. clubs).  Each integer only
@@ -117,8 +91,8 @@ const char  * players[DDS_HANDS] = {
 */
 
 bool			_constantsSet = false;
-int			maskBytes[8192][DDS_SUITS][TT_BYTES];
-int			lowestRank[8192];
+unsigned		maskBytes[8192][DDS_SUITS][TT_BYTES];
+int			TTlowestRank[8192];
 
 
 TransTable::TransTable()
@@ -129,7 +103,7 @@ TransTable::TransTable()
     TransTable::SetConstants();
   }
 
-  poolp        = NULL;
+  poolp        = nullptr;
   pagesDefault = NUM_PAGES_DEFAULT;
   pagesMaximum = NUM_PAGES_MAXIMUM;
   pagesCurrent = 0;
@@ -150,7 +124,7 @@ TransTable::TransTable()
 
   TTInUse = 0;
 
-  sprintf(fname, "");
+  strcpy(fname, "");
   fp = stdout;
 }
 
@@ -166,18 +140,16 @@ TransTable::~TransTable()
 
 void TransTable::SetConstants()
 {
-  int winMask[8192];
+  unsigned winMask[8192];
 
   unsigned int topBitRank = 1;
   winMask[0]    =  0;
-  lowestRank[0] = 15;  // Void
+  TTlowestRank[0] = 15;  // Void
 
-  for (int ind = 1; ind < 8192; ind++)
+  for (unsigned ind = 1; ind < 8192; ind++)
   {
     if (ind >= (topBitRank + topBitRank)) /* Next top bit */
       topBitRank <<= 1;
-
-    strncpy(relRank[ind], relRank[ind ^ topBitRank], 15);
 
     // winMask is a growing list of 11's.  In the end it will
     // have 26 bits, so 13 groups of two bits.  It always 
@@ -205,7 +177,7 @@ void TransTable::SetConstants()
     maskBytes[ind][3][2] = (winMask[ind] >>  2) & 0x000000ff;
     maskBytes[ind][3][3] = (winMask[ind] <<  6) & 0x000000ff;
 
-    lowestRank[ind] = lowestRank[ind ^ topBitRank] - 1;
+    TTlowestRank[ind] = TTlowestRank[ind ^ topBitRank] - 1;
   }
 }
 
@@ -222,9 +194,15 @@ void TransTable::Init(int handLookup[][15])
   aggrType 		* ap;
 
   for (int s = 0; s < DDS_SUITS; s++)
+  {
     aggr[0].aggrRanks[s] = 0;
+    aggr[0].aggrBytes[s][0] = 0;
+    aggr[0].aggrBytes[s][1] = 0;
+    aggr[0].aggrBytes[s][2] = 0;
+    aggr[0].aggrBytes[s][3] = 0;
+  }
 
-  for (int ind = 1; ind < 8192; ind++)
+  for (unsigned ind = 1; ind < 8192; ind++)
   {
     if (ind >= (topBitRank << 1))
     {
@@ -238,8 +216,8 @@ void TransTable::Init(int handLookup[][15])
 
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      ap->aggrRanks[s]  = (ap->aggrRanks[s] >> 2) | 
-                          (handLookup[s][topBitNo] << 24);
+      ap->aggrRanks[s]  = ap->aggrRanks[s] >> 2 | 
+        static_cast<unsigned>(handLookup[s][topBitNo] << 24);
     }
 
     ap->aggrBytes[0][0] = (ap->aggrRanks[0] <<  6) & 0xff000000;
@@ -268,18 +246,18 @@ void TransTable::Init(int handLookup[][15])
 void TransTable::SetMemoryDefault(int megabytes)
 {
   double blockMem = BLOCKS_PER_PAGE * sizeof(winBlockType) /
-    (double) 1024.;
+    static_cast<double>(1024.);
 
-  int pagesDefault = (int) (1024 * megabytes) / blockMem;
+  pagesDefault = static_cast<int>((1024 * megabytes) / blockMem);
 }
 
 
 void TransTable::SetMemoryMaximum(int megabytes)
 {
   double blockMem = BLOCKS_PER_PAGE * sizeof(winBlockType) /
-    (double) 1024.;
+    static_cast<double>(1024.);
 
-  int pagesMaximum = (int) (1024 * megabytes) / blockMem;
+  pagesMaximum = static_cast<int>((1024 * megabytes) / blockMem);
 }
 
 
@@ -293,10 +271,10 @@ void TransTable::MakeTT()
     {
       for (int h = 0; h < DDS_HANDS; h++)
       {
-        TTroot[t][h] = (distHashType *)
-          malloc(256 * sizeof(distHashType));
+        TTroot[t][h] = static_cast<distHashType *>
+          (malloc(256 * sizeof(distHashType)));
       
-        if (TTroot[t][h] == NULL)
+        if (TTroot[t][h] == nullptr)
           exit(1);
       }
     }
@@ -318,7 +296,7 @@ void TransTable::InitTT()
         TTroot[c][h][i].nextWriteNo = 0;
 
       }
-      lastBlockSeen[c][h] = NULL;
+      lastBlockSeen[c][h] = nullptr;
     }
   }
 }
@@ -334,7 +312,7 @@ void TransTable::ReleaseTT()
   {
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      if (TTroot[t][h] == NULL)
+      if (TTroot[t][h] == nullptr)
         continue;
       
       free(TTroot[t][h]);
@@ -345,7 +323,7 @@ void TransTable::ReleaseTT()
 
 void TransTable::ResetMemory()
 {
-  if (poolp == NULL)
+  if (poolp == nullptr)
     return;
 
   pageStats.numResets++;
@@ -358,7 +336,7 @@ void TransTable::ResetMemory()
     poolp = poolp->prev;
 
     free(poolp->next);
-    poolp->next = NULL;
+    poolp->next = nullptr;
 
     pagesCurrent--;
   }
@@ -386,13 +364,20 @@ void TransTable::ReturnAllMemory()
 {
   poolType * tmp; 
 
-  while (poolp)
+  if (poolp)
   {
-    free(poolp->list);
-    tmp = poolp;
-    poolp = poolp->prev;
-    free(tmp);
+    while (poolp->next)
+      poolp = poolp->next;
+
+    while (poolp)
+    {
+      free(poolp->list);
+      tmp = poolp;
+      poolp = poolp->prev;
+      free(tmp);
+    }
   }
+
   pagesCurrent = 0;
 
   pageStats.numResets   = 0;
@@ -425,11 +410,13 @@ int TransTable::BlocksInUse()
 
 double TransTable::MemoryInUse()
 {
-  int blockMem = BLOCKS_PER_PAGE * pagesCurrent * sizeof(winBlockType);
-  int aggrMem  = 8192 * sizeof(aggrType);
-  int rootMem  = TT_TRICKS * DDS_HANDS * 256 * sizeof(distHashType);
+  int blockMem = BLOCKS_PER_PAGE * pagesCurrent * 
+    static_cast<int>(sizeof(winBlockType));
+  int aggrMem  = 8192 * static_cast<int>(sizeof(aggrType));
+  int rootMem  = TT_TRICKS * DDS_HANDS * 256 * 
+    static_cast<int>(sizeof(distHashType));
 
-  return (blockMem + aggrMem + rootMem) / (double) 1024.;
+  return (blockMem + aggrMem + rootMem) / static_cast<double>(1024.);
 }
 
 
@@ -451,21 +438,21 @@ winBlockType * TransTable::GetNextCardBlock()
      continue with that.
   */
 
-  if (poolp == NULL)
+  if (poolp == nullptr)
   {
     // Have to be able to get at least one pool.
-    poolp = (poolType *) calloc(1, sizeof(poolType));
-    if (poolp == NULL)
+    poolp = static_cast<poolType *>(calloc(1, sizeof(poolType)));
+    if (poolp == nullptr)
       exit(1);
 
-    poolp->list = (winBlockType *)
-      malloc(BLOCKS_PER_PAGE * sizeof(winBlockType));
+    poolp->list = static_cast<winBlockType *>
+      (malloc(BLOCKS_PER_PAGE * sizeof(winBlockType)));
 
     if (! poolp->list)
       exit(1);
 
-    poolp->next        = NULL;
-    poolp->prev        = NULL;
+    poolp->next        = nullptr;
+    poolp->prev        = nullptr;
     poolp->nextBlockNo = 1;
 
     nextBlockp    = poolp->list;
@@ -520,9 +507,10 @@ winBlockType * TransTable::GetNextCardBlock()
     else
     {
       // Make a new pool.
-      poolType * newpoolp = (poolType *) calloc(1, sizeof(poolType));
+      poolType * newpoolp = static_cast<poolType *> 
+        (calloc(1, sizeof(poolType)));
 
-      if (newpoolp == NULL)
+      if (newpoolp == nullptr)
       {
         // Unexpected, but try harvesting before we give up
 	// and start over.
@@ -538,8 +526,8 @@ winBlockType * TransTable::GetNextCardBlock()
         return harvested.list[0];
       }
 
-      newpoolp->list = (winBlockType *)
-        malloc(BLOCKS_PER_PAGE * sizeof(winBlockType));
+      newpoolp->list = static_cast<winBlockType *>
+        (malloc(BLOCKS_PER_PAGE * sizeof(winBlockType)));
     
       if (! newpoolp->list)
       {
@@ -556,7 +544,7 @@ winBlockType * TransTable::GetNextCardBlock()
       }
 
       newpoolp->nextBlockNo = 1;
-      newpoolp->next        = NULL;
+      newpoolp->next        = nullptr;
       newpoolp->prev        = poolp;
 
       poolp->next = newpoolp;
@@ -674,6 +662,20 @@ int TransTable::hash8(int * handDist)
 }
 
 
+void TransTable::Top4Ranks(
+  unsigned short 	aggrTarget[],
+  unsigned		rr[DDS_SUITS])
+{
+  // This is just a service function to reuse some tables.
+  // It is not part of the transposition table as such.
+
+  rr[0] = (aggr[ aggrTarget[0] ].aggrBytes[0][0]) >> 24;
+  rr[1] = (aggr[ aggrTarget[1] ].aggrBytes[1][0]) >> 16;
+  rr[2] = (aggr[ aggrTarget[2] ].aggrBytes[2][0]) >>  8;
+  rr[3] = (aggr[ aggrTarget[3] ].aggrBytes[3][0]);
+}
+
+
 nodeCardsType * TransTable::Lookup(
   int			tricks,
   int			hand,
@@ -684,10 +686,10 @@ nodeCardsType * TransTable::Lookup(
 {
   // First look up distribution.
   long long suitLengths = 
-    (((long long) handDist[0]) << 36) |
-    (((long long) handDist[1]) << 24) |
-    (((long long) handDist[2]) << 12) |
-    (((long long) handDist[3])      );
+    (static_cast<long long>(handDist[0]) << 36) |
+    (static_cast<long long>(handDist[1]) << 24) |
+    (static_cast<long long>(handDist[2]) << 12) |
+    (static_cast<long long>(handDist[3])      );
 
   int hashkey = hash8(handDist);
 
@@ -696,13 +698,13 @@ nodeCardsType * TransTable::Lookup(
     LookupSuit(&TTroot[tricks][hand][hashkey], 
       suitLengths, &empty);
   if (empty)
-    return NULL;
+    return nullptr;
 
   // If that worked, look up cards.
-  int * ab0 = aggr[ aggrTarget[0] ].aggrBytes[0];
-  int * ab1 = aggr[ aggrTarget[1] ].aggrBytes[1];
-  int * ab2 = aggr[ aggrTarget[2] ].aggrBytes[2];
-  int * ab3 = aggr[ aggrTarget[3] ].aggrBytes[3];
+  unsigned * ab0 = aggr[ aggrTarget[0] ].aggrBytes[0];
+  unsigned * ab1 = aggr[ aggrTarget[1] ].aggrBytes[1];
+  unsigned * ab2 = aggr[ aggrTarget[2] ].aggrBytes[2];
+  unsigned * ab3 = aggr[ aggrTarget[3] ].aggrBytes[3];
 
   winMatchType TTentry;
   TTentry.topSet1 = ab0[0] | ab1[0] | ab2[0] | ab3[0];
@@ -862,7 +864,7 @@ nodeCardsType * TransTable::LookupCards(
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -922,11 +924,11 @@ void TransTable::Add(
   int			tricks,
   int			hand,
   unsigned short	* aggrTarget,
-  unsigned short	* winRanks,
+  unsigned short	* ourWinRanks,
   nodeCardsType		* first,
   bool			flag)
 {
-  if (lastBlockSeen[tricks][hand] == NULL)
+  if (lastBlockSeen[tricks][hand] == nullptr)
   {
     // We have recently reset the entire memory, and we were
     // in the middle of a recursion.  So we'll just have to
@@ -934,10 +936,11 @@ void TransTable::Add(
     return;
   }
 
-  int * ab[DDS_SUITS];
-  int * mb[DDS_SUITS];
+  unsigned * ab[DDS_SUITS];
+  unsigned * mb[DDS_SUITS];
   char low[DDS_SUITS];
-  unsigned short int w, ag;
+  unsigned short int ag;
+  int w;
   winMatchType TTentry;
 
   // Inefficient, as it also copies leastWin.
@@ -950,7 +953,7 @@ void TransTable::Add(
 
   for (int ss = 0; ss < DDS_SUITS; ss++)
   {
-    w = winRanks[ss];
+    w = static_cast<int>(ourWinRanks[ss]);
     if (w == 0)
     {
       ab[ss]   = aggr[0].aggrBytes[ss];
@@ -961,11 +964,11 @@ void TransTable::Add(
     else
     {
       w        = w & (-w);     /* Only lowest win */
-      ag       = aggrTarget[ss] & (-w);
+      ag       = static_cast<unsigned short>(aggrTarget[ss] & (-w));
 
       ab[ss]   = aggr[ag].aggrBytes[ss];
       mb[ss]   = maskBytes[ag][ss];
-      low[ss]  = lowestRank[ag];
+      low[ss]  = static_cast<char>(TTlowestRank[ag]);
 
       TTentry.first.leastWin[ss] = 15 - low[ss];
       TTentry.xorSet ^= aggr[ag].aggrRanks[ss];
@@ -1040,22 +1043,23 @@ void TransTable::PrintNodeValues(
 {
   if (!np)
   {
-    fprintf(fp, "np == NULL\n");
+    fprintf(fp, "np == nullptr\n");
     return;
   }
 
   fprintf(fp, "Lowest used\t%c%c, %c%c, %c%c, %c%c\n",
-    cardSuit[0], cardRank[ 15 - (int) np->leastWin[0] ],
-    cardSuit[1], cardRank[ 15 - (int) np->leastWin[1] ],
-    cardSuit[2], cardRank[ 15 - (int) np->leastWin[2] ],
-    cardSuit[3], cardRank[ 15 - (int) np->leastWin[3] ]);
+    cardSuit[0], cardRank[ 15 - static_cast<int>(np->leastWin[0]) ],
+    cardSuit[1], cardRank[ 15 - static_cast<int>(np->leastWin[1]) ],
+    cardSuit[2], cardRank[ 15 - static_cast<int>(np->leastWin[2]) ],
+    cardSuit[3], cardRank[ 15 - static_cast<int>(np->leastWin[3]) ]);
 
   fprintf(fp, "Bounds\t\t%d to %2d tricks\n",
-    (int) np->lbound, (int) np->ubound);
+    static_cast<int>(np->lbound), 
+    static_cast<int>(np->ubound));
 
   fprintf(fp, "Best move\t%c%c\n",
-    cardSuit[ (int) np->bestMoveSuit ],
-    cardRank[ (int) np->bestMoveRank ]);
+    cardSuit[ static_cast<int>(np->bestMoveSuit) ],
+    cardRank[ static_cast<int>(np->bestMoveRank) ]);
 
   fprintf(fp, "\n");
 }
@@ -1063,10 +1067,10 @@ void TransTable::PrintNodeValues(
 
 void TransTable::MakeHolding(
   char 			* high, 
-  int 			len, 
+  unsigned		len, 
   char 			* res)
 {
-  int l = strlen(high);
+  unsigned l = strlen(high);
   strcpy(res, high);
 
   if (len == 0 && (l == 0 || (l == 1 && high[0] == '\0')))
@@ -1076,7 +1080,7 @@ void TransTable::MakeHolding(
     return;
   }
 
-  for (int i = l; i < len; i++)
+  for (unsigned i = l; i < len; i++)
   {
     res[i] = 'x';
   }
@@ -1092,21 +1096,25 @@ void TransTable::DumpHands(
 
   for (int i = 0; i < DDS_SUITS; i++)
   {
-    TransTable::MakeHolding(hands[0][i], (int) lengths[0][i], res_a);
+    TransTable::MakeHolding(hands[0][i], 
+      static_cast<unsigned>(lengths[0][i]), res_a);
     fprintf(fp, "%16s%s\n", "", res_a);
   }
 
   for (int i = 0; i < DDS_SUITS; i++)
   {
-    TransTable::MakeHolding(hands[3][i], (int) lengths[3][i], res_a);
-    TransTable::MakeHolding(hands[1][i], (int) lengths[1][i], res_b);
+    TransTable::MakeHolding(hands[3][i], 
+      static_cast<unsigned>(lengths[3][i]), res_a);
+    TransTable::MakeHolding(hands[1][i], 
+      static_cast<unsigned>(lengths[1][i]), res_b);
     fprintf(fp, "%-16s%16s%-16s\n", res_a, "", res_b);
   }
 
   for (int i = 0; i < DDS_SUITS; i++)
   {
     char res[16];
-    TransTable::MakeHolding(hands[2][i], (int) lengths[2][i], res);
+    TransTable::MakeHolding(hands[2][i], 
+      static_cast<unsigned>(lengths[2][i]), res);
     fprintf(fp, "%16s%s\n", "", res);
   }
   fprintf(fp, "\n");
@@ -1114,8 +1122,8 @@ void TransTable::DumpHands(
 
 
 void TransTable::SetToPartialHands(
-  int			set,
-  int			mask,
+  unsigned		set,
+  unsigned		mask,
   int			maxRank,
   int			numRanks,
   char 			hands[DDS_HANDS][DDS_SUITS][TT_LINE_LEN],
@@ -1126,27 +1134,28 @@ void TransTable::SetToPartialHands(
     for (int rank = maxRank; rank > maxRank - numRanks; rank--)
     {
       int shift = 8*(3-s) + 2*(rank - maxRank + 3);
-      int maskCard = mask >> shift;
+      unsigned maskCard = mask >> shift;
 
       if (maskCard & 3)
       {
-        int player = (set >> shift) & 3;
-	hands[player][s][ used[player][s]++ ] = (char) cardRank[rank];
+        unsigned player = (set >> shift) & 3;
+	hands[player][s][ used[player][s]++ ] = 
+	  static_cast<char>(cardRank[rank]);
       }
     }
   }
 }
 
 
-void TransTable::SetFile(char * fname)
+void TransTable::SetFile(char * ourFname)
 {
-  if (strlen(fname) > TT_LINE_LEN)
+  if (strlen(ourFname) > TT_LINE_LEN)
     return;
   
   if (fp != stdout) // Already set
     return;
 
-  strncpy(this->fname, fname, strlen(fname));
+  strncpy(fname, ourFname, strlen(ourFname));
 
   fp = fopen(fname, "w");
   if (! fp)
@@ -1156,13 +1165,12 @@ void TransTable::SetFile(char * fname)
 
 void TransTable::KeyToDist(
   long long		key,
-  int			trick,
   int			handDist[])
 {
-  handDist[0] = (key >> 36) & 0x00000fff;
-  handDist[1] = (key >> 24) & 0x00000fff;
-  handDist[2] = (key >> 12) & 0x00000fff;
-  handDist[3] = (key      ) & 0x00000fff;
+  handDist[0] = static_cast<int>((key >> 36) & 0x00000fff);
+  handDist[1] = static_cast<int>((key >> 24) & 0x00000fff);
+  handDist[2] = static_cast<int>((key >> 12) & 0x00000fff);
+  handDist[3] = static_cast<int>((key      ) & 0x00000fff);
 }
 
 
@@ -1173,13 +1181,14 @@ void TransTable::DistToLengths(
 {
   for (int h = 0; h < DDS_HANDS; h++)
   {
-    lengths[h][0] = (handDist[h] >> 8) & 0xf;
-    lengths[h][1] = (handDist[h] >> 4) & 0xf;
-    lengths[h][2] = (handDist[h]     ) & 0xf;
-    lengths[h][3] = trick + 1 
+    lengths[h][0] = static_cast<unsigned char>((handDist[h] >> 8) & 0xf);
+    lengths[h][1] = static_cast<unsigned char>((handDist[h] >> 4) & 0xf);
+    lengths[h][2] = static_cast<unsigned char>((handDist[h]     ) & 0xf);
+    lengths[h][3] = static_cast<unsigned char>
+                    (trick + 1 
                   - lengths[h][0]
                   - lengths[h][1]
-                  - lengths[h][2];
+                  - lengths[h][2]);
   }
 }
 
@@ -1202,7 +1211,6 @@ void TransTable::PrintSuits(
   int			hand)
 {
   distHashType 		* dp;
-  long long		key;
   int			handDist[DDS_HANDS];
   unsigned char		len[DDS_HANDS][DDS_SUITS];
   char			line[40];
@@ -1228,7 +1236,7 @@ void TransTable::PrintSuits(
       else
         fprintf(fp, "%4s  %2s  "   , "", "");
 
-      TransTable::KeyToDist(dp->list[i].key, trick, handDist);
+      TransTable::KeyToDist(dp->list[i].key, handDist);
       TransTable::DistToLengths(trick, handDist, len);
 
       TransTable::LenToStr(len, line);
@@ -1319,10 +1327,11 @@ void TransTable::PrintHist(
   {
     fprintf(fp, "Full\t%5d\n", num_wraps);
     
-    double mean = prod_sum / (double) count;
+    double mean = prod_sum / static_cast<double>(count);
     fprintf(fp, "Average\t%5.2f\n", mean);
 
-    double var = prod_sumsq / (double) count - mean * mean;
+    double var = prod_sumsq / 
+                 static_cast<double>(count - mean * mean);
     if (var >= 0.)
       fprintf(fp, "Std.dev\t%5.2f\n", sqrt(var));
 
@@ -1425,11 +1434,12 @@ void TransTable::PrintSummarySuitStats()
       TransTable::MakeHistStats(hist,
         &count, &prod_sum, &prod_sumsq, &max_len, DISTS_PER_ENTRY);
 
-      double mean, var;
+      double mean = 0., var = 0.;
       if (count > 0)
       {
-        mean = prod_sum / (double) count;
-        var  = prod_sumsq / (double) count - mean * mean;
+        mean = prod_sum   / static_cast<double>(count);
+        var  = prod_sumsq / 
+	       static_cast<double>(count - mean * mean);
         if (var < 0.)
           var = 0.;
       }
@@ -1472,7 +1482,7 @@ winBlockType * TransTable::FindMatchingDist(
 {
   winBlockType 		* bp;
   distHashType		* dp;
-  int 			handDist[DDS_HANDS];
+  int			handDist[DDS_HANDS];
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
@@ -1480,7 +1490,7 @@ winBlockType * TransTable::FindMatchingDist(
     for (int i = 0; i < dp->nextNo; i++)
     {
       bp = dp->list[i].posBlock;
-      TransTable::KeyToDist(dp->list[i].key, trick, handDist);
+      TransTable::KeyToDist(dp->list[i].key, handDist);
 
       bool same = true;
       for (int h = 0; h < DDS_HANDS; h++)
@@ -1495,7 +1505,7 @@ winBlockType * TransTable::FindMatchingDist(
         return bp;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
@@ -1550,10 +1560,10 @@ void TransTable::PrintEntriesDistAndCards(
     return;
   }
 
-  int * ab0 = aggr[ aggrTarget[0] ].aggrBytes[0];
-  int * ab1 = aggr[ aggrTarget[1] ].aggrBytes[1];
-  int * ab2 = aggr[ aggrTarget[2] ].aggrBytes[2];
-  int * ab3 = aggr[ aggrTarget[3] ].aggrBytes[3];
+  unsigned * ab0 = aggr[ aggrTarget[0] ].aggrBytes[0];
+  unsigned * ab1 = aggr[ aggrTarget[1] ].aggrBytes[1];
+  unsigned * ab2 = aggr[ aggrTarget[2] ].aggrBytes[2];
+  unsigned * ab3 = aggr[ aggrTarget[3] ].aggrBytes[3];
 
   winMatchType TTentry;
   TTentry.topSet1 = ab0[0] | ab1[0] | ab2[0] | ab3[0];
@@ -1626,7 +1636,7 @@ void TransTable::PrintEntries(
 {
   winBlockType 		* bp;
   distHashType		* dp;
-  int 			handDist[DDS_HANDS];
+  int			handDist[DDS_HANDS];
   unsigned char		lengths[DDS_HANDS][DDS_SUITS];
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
@@ -1635,7 +1645,7 @@ void TransTable::PrintEntries(
     for (int i = 0; i < dp->nextNo; i++)
     {
       bp = dp->list[i].posBlock;
-      TransTable::KeyToDist(dp->list[i].key, trick, handDist);
+      TransTable::KeyToDist(dp->list[i].key, handDist);
       TransTable::DistToLengths(trick, handDist, lengths);
 
       TransTable::PrintEntriesBlock(bp, lengths);
@@ -1795,8 +1805,9 @@ void TransTable::PrintSummaryEntryStats()
       cumMemory += TransTable::EffectOfBlockBound(hist, 20);
 #endif
 
-      double mean = prod_sum / (double) count;
-      double var  = prod_sumsq / (double) count - mean * mean;
+      double mean = prod_sum   / static_cast<double>(count);
+      double var  = prod_sumsq / 
+                    static_cast<double>(count - mean * mean);
       if (var < 0.)
         var = 0.;
 
@@ -1824,7 +1835,8 @@ void TransTable::PrintSummaryEntryStats()
 
 #ifdef TT_MEMORY_SCENARIO
   fprintf(fp, "Mem scenario\t%7.2f%%\n", 
-    100. * cumMemory / ((double) BLOCKS_PER_ENTRY * cumCount));
+    100. * cumMemory / 
+      (static_cast<double>(BLOCKS_PER_ENTRY * cumCount)));
 #endif
   
   if (cumCount)
@@ -1850,13 +1862,13 @@ void TransTable::PrintPageSummary()
   fprintf(fp, "%-10s  %6d  %6.2f\n",
     "calloc", 
     pageStats.numCallocs,
-    pageStats.numCallocs / (double) pageStats.numResets);
+    pageStats.numCallocs / static_cast<double>(pageStats.numResets));
   fprintf(fp, "%-10s  %6d  %6.2f\n",
     "free", 
     pageStats.numFrees,
-    pageStats.numFrees / (double) pageStats.numResets);
+    pageStats.numFrees / static_cast<double>(pageStats.numResets));
   fprintf(fp, "%-10s  %6d  %6.2f\n\n",
     "harvest", 
     pageStats.numHarvests,
-    pageStats.numHarvests / (double) pageStats.numResets);
+    pageStats.numHarvests / static_cast<double>(pageStats.numResets));
 }

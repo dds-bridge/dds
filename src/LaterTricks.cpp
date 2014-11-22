@@ -1,48 +1,27 @@
-/*
-   DDS 2.7.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund
-   Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
-   The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given
-   permission to include a C++ adaptation in DDS.
+/* 
+   DDS, a bridge double dummy solver.
 
-   The PlayAnalyser analyses the played cards of the deal and presents
-   their double dummy values. The par calculation function DealerPar
-   provides an alternative way of calculating and presenting par
-   results.  Both these functions have been written by Soren Hein.
-   He has also made numerous contributions to the code, especially in
-   the initialization part.
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-   http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-   implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+   See LICENSE and README.
 */
 
 
 #include "dds.h"
+#include "threadmem.h"
+#include "LaterTricks.h"
 
 
 bool LaterTricksMIN(
-  struct pos		* posPoint, 
+  pos			* posPoint, 
   int 			hand, 
   int 			depth, 
   int 			target,
   int 			trump, 
-  struct localVarType	* thrp)
+  localVarType		* thrp)
 {
-  int		win_trump_rank, win_trump_hand;
-
-  win_trump_rank = posPoint->winner[trump].rank;
-  win_trump_hand = posPoint->winner[trump].hand;
-
-  if ((trump == DDS_NOTRUMP) || (win_trump_rank == 0))
+  if ((trump == DDS_NOTRUMP) || (posPoint->winner[trump].rank == 0))
   {
     int sum = 0;
     for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -83,8 +62,7 @@ bool LaterTricksMIN(
       return false;
     }
   }
-  else if ((trump != DDS_NOTRUMP) && (win_trump_rank != 0) &&
-           (thrp->nodeTypeStore[win_trump_hand] == MINNODE))
+  else if (thrp->nodeTypeStore[posPoint->winner[trump].hand] == MINNODE)
   {
     if ((posPoint->length[hand][trump] == 0) &&
         (posPoint->length[partner[hand]][trump] == 0))
@@ -102,10 +80,11 @@ bool LaterTricksMIN(
     {
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] = 0;
-      posPoint->winRanks[depth][trump] = bitMapRank[win_trump_rank];
+      posPoint->winRanks[depth][trump] = 
+        bitMapRank[posPoint->winner[trump].rank];
       return false;
     }
-    else
+    else if (posPoint->tricksMAX + (depth >> 2) == target)
     {
       int hh = posPoint->secondBest[trump].hand;
       if (hh == -1)
@@ -114,9 +93,8 @@ bool LaterTricksMIN(
       int r2 = posPoint->secondBest[trump].rank;
       if ((thrp->nodeTypeStore[hh] == MINNODE) && (r2 != 0))
       {
-        if (((posPoint->length[hh][trump] > 1) ||
-             (posPoint->length[partner[hh]][trump] > 1)) &&
-            ((posPoint->tricksMAX + (depth >> 2) - 1) < target))
+        if (posPoint->length[hh][trump] > 1 || 
+	    posPoint->length[partner[hh]][trump] > 1)
         {
           for (int ss = 0; ss < DDS_SUITS; ss++)
             posPoint->winRanks[depth][ss] = 0;
@@ -126,7 +104,7 @@ bool LaterTricksMIN(
       }
     }
   }
-  else if (trump != DDS_NOTRUMP)
+  else // Not NT
   {
     int hh = posPoint->secondBest[trump].hand;
     if (hh == -1)
@@ -159,8 +137,8 @@ bool LaterTricksMIN(
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
           posPoint->winRanks[depth][ss] = 0;
-        posPoint->winRanks[depth][trump] =
-          bitMapRank[thrp->rel[aggr].absRank[3][trump].rank];
+        posPoint->winRanks[depth][trump] = bitMapRank[ 
+	    static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
         return false; 
       }
     }
@@ -170,19 +148,14 @@ bool LaterTricksMIN(
 
 
 bool LaterTricksMAX(
-  struct pos 		* posPoint, 
+  pos 			* posPoint, 
   int 			hand, 
   int 			depth, 
   int 			target,
   int 			trump, 
-  struct localVarType	* thrp)
+  localVarType		* thrp)
 {
-  int		win_trump_rank, win_trump_hand;
-
-  win_trump_rank = posPoint->winner[trump].rank;
-  win_trump_hand = posPoint->winner[trump].hand;
-
-  if ((trump == DDS_NOTRUMP) || (win_trump_rank == 0))
+  if ((trump == DDS_NOTRUMP) || (posPoint->winner[trump].rank == 0))
   {
     int sum = 0;
     for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -223,8 +196,7 @@ bool LaterTricksMAX(
       return true;
     }
   }
-  else if ((trump != DDS_NOTRUMP) && (win_trump_rank != 0) &&
-           (thrp->nodeTypeStore[win_trump_hand] == MAXNODE))
+  else if (thrp->nodeTypeStore[posPoint->winner[trump].hand] == MAXNODE)
   {
     if ((posPoint->length[hand][trump] == 0) &&
         (posPoint->length[partner[hand]][trump] == 0))
@@ -270,7 +242,7 @@ bool LaterTricksMAX(
     }
   }
 
-  else if (trump != DDS_NOTRUMP)
+  else // trump != DDS_NOTRUMP)
   {
     int hh = posPoint->secondBest[trump].hand;
     if (hh == -1)
@@ -280,7 +252,7 @@ bool LaterTricksMAX(
         (posPoint->length[hh][trump] <= 1))
       return false;
 
-    if (win_trump_hand == rho[hh])
+    if (posPoint->winner[trump].hand == rho[hh])
     {
       if ((posPoint->tricksMAX + 1) >= target)
       {
@@ -303,8 +275,8 @@ bool LaterTricksMAX(
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
           posPoint->winRanks[depth][ss] = 0;
-        posPoint->winRanks[depth][trump] =
-          bitMapRank[thrp->rel[aggr].absRank[3][trump].rank];
+        posPoint->winRanks[depth][trump] = bitMapRank[
+	  static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
          return true;
       }
     }

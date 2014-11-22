@@ -1,30 +1,13 @@
 /* 
-   DDS 2.7.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund   
-   Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
-   The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given
-   permission to include a C++ adaptation in DDS.
-   						
-   The PlayAnalyser analyses the played cards of the deal and presents 
-   their double dummy values. The par calculation function DealerPar 
-   provides an alternative way of calculating and presenting par 
-   results.  Both these functions have been written by Soren Hein.
-   He has also made numerous contributions to the code, especially in 
-   the initialization part.
+   DDS, a bridge double dummy solver.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-   http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or 
-   implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
 */
 
+#include <stdexcept>
 
 #include "dds.h"
 #include "Stats.h"
@@ -62,10 +45,12 @@ int		timerNameSet;
 
 char		timerName[80];
 
-int     	timerUserCum, 
+long long     	timerUserCum, 
 		timerSysCum,
         	timerListUserCum[NUM_TIMERS], 
-		timerListSysCum[NUM_TIMERS];
+		timerListSysCum[NUM_TIMERS],
+		predError,
+		predAbsError;
 
 
 void InitTimer()
@@ -74,6 +59,9 @@ void InitTimer()
   timerUserCum = 0;
   timerSysCum  = 0;
   timerNameSet = 0;
+  
+  predError    = 0;
+  predAbsError = 0;
 }
 
 
@@ -92,7 +80,7 @@ void StartTimer()
 #ifdef _WIN32
   QueryPerformanceCounter(&timerUser0);
 #else
-  gettimeofday(&timerUser0, NULL);
+  gettimeofday(&timerUser0, nullptr);
 #endif
 }
 
@@ -105,16 +93,17 @@ void EndTimer()
   // To get "real" seconds we would have to divide by
   // timerFreq.QuadPart which needs to be initialized.
   QueryPerformanceCounter(&timerUser1);
-  int timeUser = (timerUser1.QuadPart - timerUser0.QuadPart);
+  int timeUser = static_cast<int>
+    ((timerUser1.QuadPart - timerUser0.QuadPart));
 #else
-  gettimeofday(&timerUser1, NULL);
+  gettimeofday(&timerUser1, nullptr);
   int timeUser = timevalDiff(timerUser1, timerUser0);
 #endif
   
   timerUserCum += timeUser;
 
-  timerSysCum += (int) (1000 * (timerSys1-timerSys0) / 
-                 (double) CLOCKS_PER_SEC);
+  timerSysCum += static_cast<int>((1000 * (timerSys1-timerSys0)) / 
+                 static_cast<double>(CLOCKS_PER_SEC));
 }
 
 
@@ -130,20 +119,20 @@ void PrintTimer()
     printf("%-18s : %s\n", "User time", "zero");
   else
   {
-    printf("%-18s : %10d\n", "User time/ticks", timerUserCum);
+    printf("%-18s : %10lld\n", "User time/ticks", timerUserCum);
     printf("%-18s : %10.2f\n", "User per call",  
-      (float) timerUserCum / timerCount);
+      static_cast<float>(timerUserCum / timerCount));
   }
 
   if (timerSysCum == 0)
     printf("%-18s : %s\n", "Sys time", "zero");
   else
   {
-    printf("%-18s : %10d\n", "Sys time/ticks", timerSysCum);
+    printf("%-18s : %10lld\n", "Sys time/ticks", timerSysCum);
     printf("%-18s : %10.2f\n", "Sys per call",  
-      (float) timerSysCum / timerCount);
+      static_cast<float>(timerSysCum / timerCount));
     printf("%-18s : %10.2f\n", "Ratio", 
-      (float) timerSysCum / timerUserCum);
+      static_cast<float>(timerSysCum / timerUserCum));
   }
   printf("\n");
 }
@@ -168,7 +157,7 @@ void StartTimerNo(int no)
 #ifdef _WIN32
   QueryPerformanceCounter(&timerListUser0[no]);
 #else
-  gettimeofday(&timerListUser0[no], NULL);
+  gettimeofday(&timerListUser0[no], nullptr);
 #endif
 }
 
@@ -179,40 +168,88 @@ void EndTimerNo(int no)
 
 #ifdef _WIN32
   QueryPerformanceCounter(&timerListUser1[no]);
-  int timeUser = (timerListUser1[no].QuadPart - 
-                  timerListUser0[no].QuadPart);
+  int timeUser = static_cast<int>
+    ((timerListUser1[no].QuadPart - timerListUser0[no].QuadPart));
 #else
-  gettimeofday(&timerListUser1[no], NULL);
+  gettimeofday(&timerListUser1[no], nullptr);
   int timeUser = timevalDiff(timerListUser1[no], 
                              timerListUser0[no]);
 #endif
   
-  timerListUserCum[no] += timeUser;
+  timerListUserCum[no] += static_cast<long long>(timeUser);
 
   timerListSysCum[no] += 
-    (int) (1000 * (timerListSys1[no] - timerListSys0[no]) / 
-    (double) CLOCKS_PER_SEC);
+    static_cast<long long>((1000 * 
+      (timerListSys1[no] - timerListSys0[no])) / 
+    static_cast<double>(CLOCKS_PER_SEC));
+}
+
+
+void EndTimerNoAndComp(int no, int pred)
+{
+  timerListSys1[no] = clock();
+
+#ifdef _WIN32
+  QueryPerformanceCounter(&timerListUser1[no]);
+  int timeUser = static_cast<int>
+    ((timerListUser1[no].QuadPart - timerListUser0[no].QuadPart));
+#else
+  gettimeofday(&timerListUser1[no], nullptr);
+  int timeUser = timevalDiff(timerListUser1[no], 
+                             timerListUser0[no]);
+#endif
+  
+  timerListUserCum[no] += static_cast<long long>(timeUser);
+
+  predError += timeUser - pred;
+
+  predAbsError += (timeUser >= pred ? 
+                   timeUser - pred : pred - timeUser);
+
+  timerListSysCum[no] += 
+    static_cast<long long>(
+      (1000 * (timerListSys1[no] - timerListSys0[no])) / 
+    static_cast<double>(CLOCKS_PER_SEC));
 }
 
 
 void PrintTimerList()
 {
-  printf("%5s  %10s  %10s  %8s  %10s\n",
+  printf("%5s  %10s  %12s    %10s  %10s\n",
     "n", "Number", "User ticks", "Avg", "Syst time");
 
+  int totNum = 0;
   for (int no = 0; no < NUM_TIMERS; no++)
   {
     if (timerListCount[no] == 0)
       continue;
 
-    printf("%5d  %10d  %10d  %8.2f  %10d\n",
+    totNum += timerListCount[no];
+
+    double avg = static_cast<double>(timerListUserCum[no]) / 
+                 static_cast<double>(timerListCount[no]);
+
+    // For some reason I have trouble when putting it on one line...
+    printf("%5d  %10d  %12lld  ",
       no, 
       timerListCount[no],
-      timerListUserCum[no],
-      timerListUserCum[no] / (double) timerListCount[no],
+      timerListUserCum[no]);
+    printf("  %10.2f  %10lld\n", 
+      avg,
       timerListSysCum[no]);
   }
   printf("\n");
+  if (predError != 0)
+  {
+    printf("Total number         %10d\n", totNum);
+    printf("Prediction mean      %10.0f\n",
+      static_cast<double>(predError) / 
+      static_cast<double>(totNum));
+    printf("Prediction abs mean  %10.0f\n",
+      static_cast<double>(predAbsError) / 
+      static_cast<double>(totNum));
+    printf("\n");
+  }
 }
 
 
@@ -240,7 +277,7 @@ void PrintCounter()
   for (int i = 0; i < COUNTER_SLOTS; i++)
   {
     if (counter[i])
-      printf("%d\t%12ld\n", i, counter[i]);
+      printf("%d\t%12lld\n", i, counter[i]);
   }
   printf("\n");
 }

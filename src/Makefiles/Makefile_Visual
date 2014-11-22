@@ -1,0 +1,140 @@
+# This the DDS Makefile for Windows and the Microsoft Visual C++
+# compiler.  It does assume a Unix-like setup for some commands,
+# but if you only want to call "make" with the default target,
+# you should be OK.
+
+# If you want to compile a single-threaded version, use
+# make DDS_THREADS=none
+
+# The "windres" and "cvtres" tools are used for putting version
+# information into the DLL in a way that Windows can see.
+# It is not mandatory, and if you don't have those tools,
+# You can remove $(VFILE).obj in the target line below.
+
+
+# If your Microsoft compiler is not called cl, change it here.
+CC		= cl
+CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL
+
+# These flags are not turned on by default, but DDS should pass them.
+# Turn them on below.
+WARN_FLAGS	=		\
+	/Wall			\
+	/wd4127			\
+	/wd4555			\
+	/wd4668			\
+	/wd4710			\
+	/wd4711			\
+	/wd4820			\
+	/wd4996			\
+	/WX
+
+# Here you can turn on warnings.
+# CC_FULL_FLAGS	= $(CC_FLAGS)
+CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
+
+LIB_FLAGS	= /link /DLL
+
+DLLBASE		= dds
+DLL 		= $(DLLBASE).dll
+DLIB 		= $(DLLBASE).lib
+EXPORTER	= Exports.def
+
+VFILE		= ddsres
+
+SOURCE_FILES 	=		\
+	dds.cpp 		\
+	ABsearch.cpp		\
+	ABstats.cpp		\
+	CalcTables.cpp		\
+	DealerPar.cpp 		\
+	Init.cpp		\
+	LaterTricks.cpp		\
+	Moves.cpp		\
+	Par.cpp 		\
+	PlayAnalyser.cpp	\
+	PBN.cpp			\
+	QuickTricks.cpp		\
+	Scheduler.cpp		\
+	SolveBoard.cpp		\
+	SolverIF.cpp		\
+	Stats.cpp		\
+	Timer.cpp		\
+	TransTable.cpp
+
+OBJ_FILES 	= $(subst .cpp,.obj,$(SOURCE_FILES)) $(VFILE).obj
+
+ifeq ($(DDS_THREADS),none)
+DDS_THR		= /DDDS_THREADS_SINGLE
+else
+DDS_THR		= 
+endif
+
+
+vs:	$(OBJ_FILES) $(VFILE).obj
+	$(CC) $(CC_FULL_FLAGS) $(OBJ_FILES) $(EXPORTER) $(LIB_FLAGS) /out:$(DLL)
+
+%.obj:	%.cpp
+	$(CC) $(CC_FULL_FLAGS) $(DDS_THR) /c $<
+
+$(DLLBASE).res:	$(DLLBASE).rc
+	windres $(DLLBASE).rc $(DLLBASE).res
+
+$(VFILE).obj:	$(DLLBASE).res
+	cvtres /MACHINE:X86 /OUT:$(VFILE).obj $(DLLBASE).res
+
+depend:
+	makedepend -Y -o.obj -- $(CC_FLAGS) -- $(SOURCE_FILES)
+
+clean:
+	rm -f $(OBJ_FILES) $(DLL) $(DLLBASE).{lib,exp,def,obj,res}
+
+install:
+	cp $(DLL) $(DLIB) ../lib
+	cp $(DLL) $(DLIB) ../test
+	cp $(DLL) $(DLIB) ../examples
+
+# DO NOT DELETE
+
+dds.obj: ../include/dll.h dds.h debug.h portab.h TransTable.h Timer.h
+dds.obj: ABstats.h Moves.h Stats.h Scheduler.h Init.h
+ABsearch.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+ABsearch.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h QuickTricks.h
+ABsearch.obj: LaterTricks.h ABsearch.h
+ABstats.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+ABstats.obj: ABstats.h Moves.h Stats.h Scheduler.h
+CalcTables.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+CalcTables.obj: ABstats.h Moves.h Stats.h Scheduler.h SolveBoard.h PBN.h
+DealerPar.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+DealerPar.obj: ABstats.h Moves.h Stats.h Scheduler.h
+Init.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+Init.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h Init.h ABsearch.h
+LaterTricks.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+LaterTricks.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
+LaterTricks.obj: LaterTricks.h
+Moves.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+Moves.obj: ABstats.h Moves.h Stats.h Scheduler.h ABsearch.h
+Par.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+Par.obj: ABstats.h Moves.h Stats.h Scheduler.h
+PlayAnalyser.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h
+PlayAnalyser.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
+PlayAnalyser.obj: SolverIF.h PBN.h
+PBN.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+PBN.obj: ABstats.h Moves.h Stats.h Scheduler.h PBN.h
+QuickTricks.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+QuickTricks.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
+QuickTricks.obj: QuickTricks.h
+Scheduler.obj: Scheduler.h dds.h debug.h portab.h TransTable.h
+Scheduler.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+SolveBoard.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h SolverIF.h
+SolveBoard.obj: SolveBoard.h PBN.h
+SolverIF.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+SolverIF.obj: ABstats.h Moves.h Stats.h Scheduler.h Init.h threadmem.h
+SolverIF.obj: ABsearch.h SolverIF.h
+Stats.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+Stats.obj: ABstats.h Moves.h Stats.h Scheduler.h
+Timer.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+Timer.obj: ABstats.h Moves.h Stats.h Scheduler.h
+TransTable.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
+TransTable.obj: ABstats.h Moves.h Stats.h Scheduler.h

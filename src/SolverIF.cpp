@@ -1,43 +1,49 @@
 /* 
-   DDS 2.7.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund   
-   Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
-   The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given
-   permission to include a C++ adaptation in DDS.
-   						
-   The PlayAnalyser analyses the played cards of the deal and presents 
-   their double dummy values. The par calculation function DealerPar 
-   provides an alternative way of calculating and presenting par 
-   results.  Both these functions have been written by Soren Hein.
-   He has also made numerous contributions to the code, especially in 
-   the initialization part.
+   DDS, a bridge double dummy solver.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-   http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or 
-   implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
 */
 
+#include <stdexcept>
 
 #include "dds.h"
 #include "Init.h"
 #include "Moves.h"
+#include "threadmem.h"
 #include "ABsearch.h"
+#include "Stats.h"
+#include "SolverIF.h"
 
 
-int CheckDeal(
-  struct gameInfo	* gamep);
+int BoardRangeChecks(
+  deal 			* dl, 
+  int 			target,
+  int 			solutions, 
+  int 			mode, 
+  int 			thrId);
+
+int BoardValueChecks(
+  deal 			* dl, 
+  int 			target,
+  int 			solutions, 
+  int 			mode, 
+  localVarType		* thrp);
+
+void LastTrickWinner(
+  deal 			* dl, 
+  localVarType		* thrp,
+  int			handToPlay,
+  int			handRelFirst,
+  int			* leadRank,
+  int			* leadSuit,
+  int			* leadSideWins);
 
 int DumpInput(
   int			errCode,
-  struct deal		dl,
+  deal			* dl,
   int			target,
   int			solutions,
   int			mode);
@@ -46,50 +52,114 @@ void PrintDeal(
   FILE 			* fp, 
   unsigned short 	ranks[][DDS_SUITS]);
 
-int InvBitMapRank(
-  unsigned short	bitMap);
 
-
-extern int noOfThreads;  /* The number of entries to the transposition tables. There is
-				    one entry per thread. */
-
+extern int noOfThreads;  
 
 
 bool (* AB_ptr_list[DDS_HANDS])( 
-  struct pos 		* posPoint, 
+  pos 			* posPoint, 
   int 			target, 
   int 			depth, 
-  struct localVarType	* thrp)
+  localVarType		* thrp)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
+
+bool (* AB_ptr_trace_list[DDS_HANDS])( 
+  pos 			* posPoint, 
+  int 			target, 
+  int 			depth, 
+  localVarType		* thrp)
+  = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
+
+void (* Make_ptr_list[3])( 
+  pos 			* posPoint, 
+  int 			depth, 
+  moveType		* mply)
+  = { Make0, Make1, Make2 };
 
 
 int STDCALL SolveBoard(
-  struct deal 		dl, 
+  deal 			dl, 
   int 			target,
   int 			solutions, 
   int 			mode, 
-  struct futureTricks 	* futp, 
+  futureTricks 		* futp, 
   int 			thrId)
 {
-  int noStartMoves, noMoves, cardCount, totalTricks, handRelFirst;
-  int noOfCardsPerHand[DDS_HANDS];
-  int latestTrickSuit[DDS_HANDS];
-  int latestTrickRank[DDS_HANDS];
-  int maxHand = 0, maxSuit = 0, maxRank;
-  int first, last;
-  struct movePlyType temp;
-  struct moveType mv;
-  struct localVarType * thrp = &localVar[thrId];
+  localVarType * thrp = &localVar[thrId];
 
-// printf("SolveBoard\n");
-// fflush(stdout);
+  // ----------------------------------------------------------
+  // Formal parameter checks.
+  // ----------------------------------------------------------
 
-  if ((thrId < 0) || (thrId >= noOfThreads))  	
-  /* Fault corrected after suggestion by Dirk Willecke. */
+  int ret = BoardRangeChecks(&dl, target, solutions, mode, thrId);
+  if (ret != RETURN_NO_FAULT)
+    return ret;
+
+  // ----------------------------------------------------------
+  // Count and classify deal.
+  // ----------------------------------------------------------
+
+  bool newDeal  = false;
+  bool newTrump = false;
+  unsigned diffDeal  = 0;
+  unsigned aggDeal   = 0;
+  bool similarDeal;
+  int cardCount = 0;
+  int ind,
+      forb,
+      noMoves;
+
+  for (int h = 0; h < DDS_HANDS; h++)
   {
-    DumpInput(RETURN_THREAD_INDEX, dl, target, solutions, mode);
-    return RETURN_THREAD_INDEX;
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+      unsigned int c = dl.remainCards[h][s] >> 2;
+
+      cardCount += counttable[c];
+      diffDeal  += (c ^ (thrp->suit[h][s]));
+      aggDeal   += c;
+
+      if (thrp->suit[h][s] != c)
+      {
+        thrp->suit[h][s] = static_cast<unsigned short>(c);
+        newDeal = true;
+      }
+    }
   }
+
+  if (newDeal)
+  {
+    if (diffDeal == 0)
+      similarDeal = true;
+    else if ((aggDeal / diffDeal) > SIMILARDEALLIMIT)
+      similarDeal = true;
+    else
+      similarDeal = false;
+  }
+  else
+    similarDeal = false;
+
+  if (dl.trump != thrp->trump)
+    newTrump = true;
+
+  // ----------------------------------------------------------
+  // Generic initialization.
+  // ----------------------------------------------------------
+
+  thrp->trump      = dl.trump;
+
+  thrp->iniDepth   = cardCount - 4;
+  int iniDepth     = thrp->iniDepth;
+  int trick        = (iniDepth + 3) >> 2;
+  int handRelFirst = (48 - iniDepth) % 4;
+  int handToPlay   = handId(dl.first, handRelFirst);
+  thrp->trickNodes = 0;
+
+  thrp->lookAheadPos.handRelFirst = handRelFirst;
+  thrp->lookAheadPos.first[iniDepth] = dl.first;
+  thrp->lookAheadPos.tricksMAX = 0;
+
+  moveType mv = {0, 0, 0, 0};
 
   for (int k = 0; k <= 13; k++)
   {
@@ -97,6 +167,710 @@ int STDCALL SolveBoard(
     thrp->forbiddenMoves[k].suit = 0;
   }
 
+  // ----------------------------------------------------------
+  // Consistency checks.
+  // ----------------------------------------------------------
+
+  ret = BoardValueChecks(&dl, target, solutions, mode, thrp);
+  if (ret != RETURN_NO_FAULT)
+    return ret;
+
+
+  // ----------------------------------------------------------
+  // Last trick, easy to solve.
+  // ----------------------------------------------------------
+
+  if (cardCount <= 4)
+  {
+    int leadRank, leadSuit, leadSideWins;
+
+    LastTrickWinner(&dl, thrp, handToPlay, handRelFirst,
+      &leadRank, &leadSuit, &leadSideWins);
+
+    futp->nodes     = 0;
+    futp->cards     = 1;
+    futp->suit[0]   = leadSuit;
+    futp->rank[0]   = leadRank;
+    futp->equals[0] = 0;
+    futp->score[0]  = (target == 0 && solutions < 3 ? 0 : leadSideWins);
+
+    goto SOLVER_DONE;
+  }
+
+
+  // ----------------------------------------------------------
+  // More detailed initialization.
+  // ----------------------------------------------------------
+
+  if ((mode != 2) &&
+      (((newDeal) && (! similarDeal)) || 
+         newTrump  ||
+        (thrp->nodes > SIMILARMAXWINNODES)))
+  {
+    thrp->transTable.ResetMemory();
+  }
+
+  if (newDeal)
+  {
+    SetDeal(thrp);
+    SetDealTables(thrp);
+  }
+  else if (thrp->analysisFlag)
+  {
+    SetDeal(thrp);
+  }
+    thrp->analysisFlag = false;
+
+  if (handToPlay == 0 || handToPlay == 2)
+  {
+    thrp->nodeTypeStore[0] = MAXNODE; thrp->nodeTypeStore[1] = MINNODE;
+    thrp->nodeTypeStore[2] = MAXNODE; thrp->nodeTypeStore[3] = MINNODE;
+  }
+  else
+  {
+    thrp->nodeTypeStore[0] = MINNODE; thrp->nodeTypeStore[1] = MAXNODE;
+    thrp->nodeTypeStore[2] = MINNODE; thrp->nodeTypeStore[3] = MAXNODE;
+  }
+
+  for (int k = 0; k < handRelFirst; k++)
+  {
+    mv.rank     = dl.currentTrickRank[k];
+    mv.suit     = dl.currentTrickSuit[k];
+    mv.sequence = dl.currentTrickSuit[k];
+
+    thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
+    thrp->moves.MakeSpecific(&mv, trick, k);
+  }
+
+  InitWinners(&dl, &thrp->lookAheadPos, thrp);
+
+#ifdef DDS_AB_STATS
+  thrp->ABstats.Reset();
+  thrp->ABstats.ResetCum();
+#endif
+
+#ifdef DDS_TOP_LEVEL
+  thrp->nodes = 0;
+#endif
+
+  thrp->moves.Init(
+    trick,
+    handRelFirst,
+    dl.currentTrickRank,
+    dl.currentTrickSuit,
+    thrp->lookAheadPos.rankInSuit,
+    thrp->trump,
+    thrp->lookAheadPos.first[iniDepth]);
+
+  if (handRelFirst == 0)
+    thrp->moves.MoveGen0( 
+      trick,
+      &thrp->lookAheadPos, 
+      &thrp->bestMove[iniDepth],
+      &thrp->bestMoveTT[iniDepth],
+      thrp->rel);
+  else
+    thrp->moves.MoveGen123(
+      trick, 
+      handRelFirst, 
+      &thrp->lookAheadPos);
+
+  noMoves = thrp->moves.GetLength(trick, handRelFirst);
+
+  // ----------------------------------------------------------
+  // mode == 0:  Check whether there is only one possible move
+  // ----------------------------------------------------------
+
+  if (mode == 0 && noMoves == 1)
+  {
+    moveType *mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+
+    futp->nodes      = 0;
+    futp->cards      = 1;
+
+    futp->suit[0]    = mp->suit;
+    futp->rank[0]    = mp->rank;
+    futp->equals[0]  = mp->sequence << 2;
+    futp->score[0]   = -2;
+
+    goto SOLVER_DONE;
+  }
+
+  // ----------------------------------------------------------
+  // solutions == 3:  Target and mode don't matter; all cards
+  // ----------------------------------------------------------
+
+  if (solutions == 3)
+  {
+    // 7 for hand 0 and 2, 6 for hand 1 and 3
+    int guess      = 7 - (handToPlay & 0x1);
+    int upperbound = 13;
+    int lowerbound = 0;
+    futp->cards    = noMoves;
+
+    for (int mno = 0; mno < noMoves; mno++)
+    {
+      do
+      {
+        ResetBestMoves(thrp);
+
+        TIMER_START(TIMER_AB + iniDepth);
+        thrp->val = (* AB_ptr_list[handRelFirst])(
+	  &thrp->lookAheadPos,
+          guess,
+          iniDepth, 
+	  thrp);
+        TIMER_END(TIMER_AB + iniDepth);
+
+#ifdef DDS_TOP_LEVEL
+        DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+#endif
+
+        if (thrp->val)
+        {
+          mv = thrp->bestMove[iniDepth];
+          lowerbound = guess++;
+        }
+        else
+          upperbound = --guess;
+      }
+      while (lowerbound < upperbound);
+
+      if (lowerbound)
+      {
+        thrp->bestMove[iniDepth] = mv;
+
+        futp->suit[mno]   = mv.suit;
+        futp->rank[mno]   = mv.rank;
+        futp->equals[mno] = mv.sequence << 2;
+        futp->score[mno]  = lowerbound;
+
+        thrp->forbiddenMoves[mno+1].suit = mv.suit;
+        thrp->forbiddenMoves[mno+1].rank = mv.rank;
+
+	guess      = lowerbound;
+	lowerbound = 0;
+      }
+      else
+      {
+        int noLeft  = thrp->moves.GetLength(trick, handRelFirst);
+
+	thrp->moves.Rewind(trick, handRelFirst);
+	moveType * mp;
+	for (int j = 0; j < noLeft; j++)
+	{
+	  mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+
+	  futp->suit[mno + j]   = mp->suit;
+	  futp->rank[mno + j]   = mp->rank;
+	  futp->equals[mno + j] = mp->sequence << 2;
+	  futp->score[mno + j]  = 0;
+	}
+
+	break;
+      }
+    }
+    goto SOLVER_STATS;
+  } 
+
+  // ----------------------------------------------------------
+  // target == 0:  Only cards required, no scoring
+  // ----------------------------------------------------------
+
+  else if (target == 0)
+  {
+    futp->nodes       = 0;
+    futp->cards       = (solutions == 1 ? 1 : noMoves);
+
+    for (int mno = 0; mno < noMoves; mno++)
+    {
+      moveType * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+      futp->suit[mno]   = mp->suit;
+      futp->rank[mno]   = mp->rank;
+      futp->equals[mno] = mp->sequence << 2;
+      futp->score[mno]  = 0;
+    }
+
+    goto SOLVER_DONE;
+  }
+
+  // ----------------------------------------------------------
+  // target == -1:  Find optimum score and 1 or more cards
+  // ----------------------------------------------------------
+
+  else if (target == -1)
+  {
+    // 7 for hand 0 and 2, 6 for hand 1 and 3
+    int guess      = 7 - (handToPlay & 0x1);
+    int upperbound = 13;
+    int lowerbound = 0;
+    do
+    {
+      ResetBestMoves(thrp);
+
+      TIMER_START(TIMER_AB + iniDepth);
+      thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
+                            guess,
+                            iniDepth, 
+			    thrp);
+      TIMER_END(TIMER_AB + iniDepth);
+
+#ifdef DDS_TOP_LEVEL
+    DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+#endif
+
+      if (thrp->val)
+      {
+        mv = thrp->bestMove[iniDepth];
+        lowerbound = guess++;
+      }
+      else
+        upperbound = --guess;
+
+    }
+    while (lowerbound < upperbound);
+
+    thrp->bestMove[iniDepth] = mv;
+
+    if (lowerbound == 0)
+    {
+      // ALL the other moves must also have payoff 0.
+
+      if (solutions == 1) // We only need one of them
+      {
+        futp->cards     = 1;
+        futp->score[0]  = 0;
+        futp->suit[0]   = mv.suit;
+        futp->rank[0]   = mv.rank;
+        futp->equals[0] = mv.sequence << 2;
+      }
+      else // solutions == 2, so return all cards
+      {
+        futp->cards = noMoves;
+
+        moveType * mp;
+        thrp->moves.Rewind(trick, handRelFirst);
+        for (int i = 0; i < noMoves; i++)
+        {
+          mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+
+          futp->score[i]  = 0;
+          futp->suit[i]   = mp->suit;
+          futp->rank[i]   = mp->rank;
+          futp->equals[i] = mp->sequence << 2;
+	}
+      }
+	
+      goto SOLVER_STATS;
+    }
+    else // payoff > 0
+    {
+      futp->cards     = 1;
+      futp->score[0]  = lowerbound;
+      futp->suit[0]   = mv.suit;
+      futp->rank[0]   = mv.rank;
+      futp->equals[0] = mv.sequence << 2;
+
+      if (solutions != 2)
+        goto SOLVER_STATS;
+    }
+  }
+
+  // ----------------------------------------------------------
+  // target >= 1:  Find optimum card(s) achieving user's target
+  // ----------------------------------------------------------
+
+  else
+  {
+    TIMER_START(TIMER_AB + iniDepth);
+    thrp->val = (* AB_ptr_list[handRelFirst])(
+      &thrp->lookAheadPos,
+      target, 
+      iniDepth, 
+      thrp);
+    TIMER_END(TIMER_AB + iniDepth);
+
+#ifdef DDS_TOP_LEVEL
+    DumpTopLevel(thrp, target, -1, -1, 0);
+#endif
+
+    if (! thrp->val)
+    {
+      // No move.  If target was 1, then we are sure that in
+      // fact no tricks can be won.  If target was > 1, then
+      // it is still possible that no tricks can't be won.
+      // We don't know.  So that's arguably a small bug.
+      futp->cards    = 0;
+      futp->score[0] = (target > 1 ? -1 : 0);
+
+      goto SOLVER_STATS;
+    }
+    else
+    {
+      futp->cards     = 1;
+      futp->suit[0]   = thrp->bestMove[iniDepth].suit;
+      futp->rank[0]   = thrp->bestMove[iniDepth].rank;
+      futp->equals[0] = thrp->bestMove[iniDepth].sequence << 2;
+      futp->score[0]  = target;
+
+      if (solutions != 2)
+        goto SOLVER_STATS;
+    }
+  }
+
+  // ----------------------------------------------------------
+  // solution == 2 && payoff > 0:  Find other cards with score.
+  // This applies both to target == -1 and target >= 1.
+  // ----------------------------------------------------------
+
+  moveType * mp;
+  forb = 1;
+  ind  = 1;
+
+  while (ind < noMoves)
+  {
+    // Moves up to and including bestMove are now forbidden.
+
+    thrp->moves.Rewind(trick, handRelFirst);
+    int num = thrp->moves.GetLength(trick, handRelFirst);
+
+    for (int k = 0; k < num; k++)
+    {
+      mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+      thrp->forbiddenMoves[forb] = * mp;
+      forb++;
+
+      if ((thrp->bestMove[iniDepth].suit == mp->suit) && 
+          (thrp->bestMove[iniDepth].rank == mp->rank))
+        break;
+    }
+
+    ResetBestMoves(thrp);
+
+    TIMER_START(TIMER_AB + iniDepth);
+    thrp->val = (* AB_ptr_list[handRelFirst])(
+      &thrp->lookAheadPos,
+      futp->score[0],
+      iniDepth, 
+      thrp);
+    TIMER_END(TIMER_AB + iniDepth);
+
+#ifdef DDS_TOP_LEVEL
+    DumpTopLevel(thrp, target, -1, -1, 2);
+#endif
+
+    if (! thrp->val)
+      break;
+
+    futp->cards       = ind+1;
+    futp->suit[ind]   = thrp->bestMove[iniDepth].suit;
+    futp->rank[ind]   = thrp->bestMove[iniDepth].rank;
+    futp->equals[ind] = thrp->bestMove[iniDepth].sequence << 2;
+    futp->score[ind]  = futp->score[0];
+    ind++;
+  }
+
+
+SOLVER_STATS:
+
+  for (int k = 0; k <= 13; k++)
+  {
+    thrp->forbiddenMoves[k].rank = 0;
+    thrp->forbiddenMoves[k].suit = 0;
+  }
+
+#ifdef DDS_TIMING
+  thrp->timer.PrintStats();
+#endif
+
+#ifdef DDS_TT_STATS
+  // thrp->transTable.PrintAllSuits();
+  // thrp->transTable.PrintEntries(10, 0);
+  thrp->transTable.PrintSummarySuitStats();
+  thrp->transTable.PrintSummaryEntryStats();
+  // thrp->transTable.PrintPageSummary();
+#endif
+
+#ifdef DDS_MOVES
+  thrp->moves.PrintTrickStats();
+  #ifdef DDS_MOVES_DETAILS
+    thrp->moves.PrintTrickDetails();
+  #endif
+  thrp->moves.PrintFunctionStats();
+#endif
+
+SOLVER_DONE:
+
+  thrp->memUsed = thrp->transTable.MemoryInUse() +
+    ThreadMemoryUsed();
+
+  futp->nodes = thrp->trickNodes;
+
+#ifdef DDS_MEMORY_LEAKS_WIN32
+  _CrtDumpMemoryLeaks();
+#endif
+
+  return RETURN_NO_FAULT;
+}
+
+
+int SolveSameBoard(
+  deal 			dl, 
+  futureTricks 		* futp, 
+  int			hint,
+  int 			thrId)
+{
+  // Specialized function for SolveChunkDDtable for repeat solves.
+  // No further parameter checks!  This function makes heavy reuse 
+  // of parameters that are already stored in various places.  It 
+  // corresponds to:
+  // target == -1, solutions == 1, mode == 2.
+  // The function only needs to return fut.score[0].
+
+  localVarType * thrp = &localVar[thrId];
+
+  int iniDepth     = thrp->iniDepth;
+  int trick        = (iniDepth + 3) >> 2;
+  thrp->trickNodes = 0;
+
+  thrp->lookAheadPos.first[iniDepth] = dl.first;
+
+  if (dl.first == 0 || dl.first == 2)
+  {
+    thrp->nodeTypeStore[0] = MAXNODE; thrp->nodeTypeStore[1] = MINNODE;
+    thrp->nodeTypeStore[2] = MAXNODE; thrp->nodeTypeStore[3] = MINNODE;
+  }
+  else
+  {
+    thrp->nodeTypeStore[0] = MINNODE; thrp->nodeTypeStore[1] = MAXNODE;
+    thrp->nodeTypeStore[2] = MINNODE; thrp->nodeTypeStore[3] = MAXNODE;
+  }
+
+#ifdef DDS_AB_STATS
+  thrp->ABstats.Reset();
+  thrp->ABstats.ResetCum();
+#endif
+
+#ifdef DDS_TOP_LEVEL
+  thrp->nodes = 0;
+#endif
+
+  thrp->moves.Reinit(trick, dl.first);
+
+  int guess      = hint;
+  int lowerbound = 0;
+  int upperbound = 13;
+
+  do
+  {
+    ResetBestMoves(thrp);
+
+    TIMER_START(TIMER_AB + iniDepth);
+    thrp->val = ABsearch(
+      &thrp->lookAheadPos,
+      guess,
+      iniDepth, 
+      thrp);
+    TIMER_END(TIMER_AB + iniDepth);
+
+#ifdef DDS_TOP_LEVEL
+    DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+#endif
+
+    if (thrp->val)
+      lowerbound = guess++;
+    else
+      upperbound = --guess;
+  }
+  while (lowerbound < upperbound);
+
+  futp->cards    = 1;
+  futp->score[0] = lowerbound;
+
+  thrp->memUsed = thrp->transTable.MemoryInUse() +
+    ThreadMemoryUsed();
+
+#ifdef DDS_TIMING
+  thrp->timer.PrintStats();
+#endif
+
+#ifdef DDS_TT_STATS
+  thrp->transTable.PrintSummarySuitStats();
+  thrp->transTable.PrintSummaryEntryStats();
+#endif
+
+#ifdef DDS_MOVES
+  thrp->moves.PrintTrickStats();
+  #ifdef DDS_MOVES_DETAILS
+    thrp->moves.PrintTrickDetails();
+  #endif
+  thrp->moves.PrintFunctionStats();
+#endif
+
+  futp->nodes = thrp->trickNodes;
+
+#ifdef DDS_MEMORY_LEAKS_WIN32
+  _CrtDumpMemoryLeaks();
+#endif
+
+  return RETURN_NO_FAULT;
+}
+
+
+int AnalyseLaterBoard(
+  int			leadHand,
+  moveType		* move,
+  int			hint,
+  int			hintDir,
+  futureTricks 		* futp, 
+  int 			thrId)
+{
+  // Specialized function for PlayAnalyser for cards after the
+  // opening lead.  No further parameter checks!  This function
+  // makes heavy reuse of parameters that are already stored in
+  // various places.  It corresponds to:
+  // target == -1, solutions == 1, mode == 2.
+  // The function only needs to return fut.score[0].
+
+  localVarType * thrp = &localVar[thrId];
+
+  int iniDepth         = --thrp->iniDepth;
+  int cardCount        = iniDepth + 4;
+  int trick            = (iniDepth + 3) >> 2;
+  int handRelFirst     = (48 - iniDepth) % 4;
+  thrp->trickNodes     = 0;
+  thrp->analysisFlag   = true;
+  int handToPlay       = handId(leadHand, handRelFirst);
+
+  if (handToPlay == 0 || handToPlay == 2)
+  {
+    thrp->nodeTypeStore[0] = MAXNODE; thrp->nodeTypeStore[1] = MINNODE;
+    thrp->nodeTypeStore[2] = MAXNODE; thrp->nodeTypeStore[3] = MINNODE;
+  }
+  else
+  {
+    thrp->nodeTypeStore[0] = MINNODE; thrp->nodeTypeStore[1] = MAXNODE;
+    thrp->nodeTypeStore[2] = MINNODE; thrp->nodeTypeStore[3] = MAXNODE;
+  }
+
+  if (handRelFirst == 0)
+  {
+    thrp->moves.MakeSpecific(move, trick+1, 3);
+    unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
+    Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, thrp);
+  }
+  else if (handRelFirst == 1)
+  {
+    thrp->moves.MakeSpecific(move, trick, 0);
+    Make0(&thrp->lookAheadPos, iniDepth + 1, move);
+  }
+  else if (handRelFirst == 2)
+  {
+    thrp->moves.MakeSpecific(move, trick, 1);
+    Make1(&thrp->lookAheadPos, iniDepth + 1, move);
+  }
+  else
+  {
+    thrp->moves.MakeSpecific(move, trick, 2);
+    Make2(&thrp->lookAheadPos, iniDepth + 1, move);
+  }
+
+  if (cardCount <= 4)
+  {
+    // Last trick.
+    evalType eval  = Evaluate(&thrp->lookAheadPos, thrp->trump, thrp);
+    futp->score[0] = eval.tricks;
+    futp->nodes    = 0;
+
+    return RETURN_NO_FAULT;
+  }
+
+#ifdef DDS_AB_STATS
+  thrp->ABstats.Reset();
+  thrp->ABstats.ResetCum();
+#endif
+
+#ifdef DDS_TOP_LEVEL
+  thrp->nodes = 0;
+#endif
+
+  int guess = hint,
+      lowerbound,
+      upperbound;
+
+  if (hintDir == 0)
+  {
+    lowerbound = hint;
+    upperbound = 13;
+  }
+  else
+  {
+    lowerbound = 0;
+    upperbound = hint;
+  }
+
+  do
+  {
+    ResetBestMoves(thrp);
+
+    TIMER_START(TIMER_AB + iniDepth);
+    thrp->val = (* AB_ptr_trace_list[handRelFirst])(
+      &thrp->lookAheadPos,
+      guess,
+      iniDepth, 
+      thrp);
+    TIMER_END(TIMER_AB + iniDepth);
+
+#ifdef DDS_TOP_LEVEL
+    DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+#endif
+
+    if (thrp->val)
+      lowerbound = guess++;
+    else
+      upperbound = --guess;
+
+  }
+  while (lowerbound < upperbound);
+
+  futp->score[0] = lowerbound;
+  futp->nodes    = thrp->trickNodes;
+
+  thrp->memUsed = thrp->transTable.MemoryInUse() +
+    ThreadMemoryUsed();
+
+#ifdef DDS_TIMING
+  thrp->timer.PrintStats();
+#endif
+
+#ifdef DDS_TT_STATS
+  thrp->transTable.PrintSummarySuitStats();
+  thrp->transTable.PrintSummaryEntryStats();
+#endif
+
+#ifdef DDS_MOVES
+  thrp->moves.PrintTrickStats();
+  #ifdef DDS_MOVES_DETAILS
+    thrp->moves.PrintTrickDetails();
+  #endif
+  thrp->moves.PrintFunctionStats();
+#endif
+
+#ifdef DDS_MEMORY_LEAKS_WIN32
+  _CrtDumpMemoryLeaks();
+#endif
+
+  return RETURN_NO_FAULT;
+}
+
+
+int BoardRangeChecks(
+  deal 			* dl, 
+  int 			target,
+  int 			solutions, 
+  int 			mode, 
+  int 			thrId)
+{
   if (target < -1)
   {
     DumpInput(RETURN_TARGET_WRONG_LO, dl, target, solutions, mode);
@@ -121,72 +895,124 @@ int STDCALL SolveBoard(
     return RETURN_SOLNS_WRONG_HI;
   }
 
-  for (int k = 0; k < DDS_HANDS; k++)
-    noOfCardsPerHand[handId(dl.first, k)] = 0;
-
-  for (int k = 0; k <= 2; k++)
+  if (mode < 0)
   {
-    if (dl.currentTrickRank[k] != 0)
+    DumpInput(RETURN_MODE_WRONG_LO, dl, target, solutions, mode);
+    return RETURN_MODE_WRONG_LO;
+  }
+
+  if (mode > 2)
+  {
+    DumpInput(RETURN_MODE_WRONG_HI, dl, target, solutions, mode);
+    return RETURN_MODE_WRONG_HI;
+  }
+
+  if (thrId < 0 || thrId >= noOfThreads)  	
+  /* Fault corrected after suggestion by Dirk Willecke. */
+  {
+    DumpInput(RETURN_THREAD_INDEX, dl, target, solutions, mode);
+    return RETURN_THREAD_INDEX;
+  }
+
+  if (dl->trump < 0 || dl->trump > 4)
+  {
+    DumpInput(RETURN_TRUMP_WRONG, dl, target, solutions, mode);
+    return RETURN_TRUMP_WRONG;
+  }
+
+  if (dl->first < 0 || dl->first > 3)
+  {
+    DumpInput(RETURN_FIRST_WRONG, dl, target, solutions, mode);
+    return RETURN_FIRST_WRONG;
+  }
+
+  int rankSeen[3] = {0, 0, 0};
+  for (int k = 0; k < 3; k++)
+  {
+    int r = dl->currentTrickRank[k];
+    if (r == 0)
+      continue;
+
+    rankSeen[k] = 1;
+
+    if (r < 2 || r > 14)
     {
-      noOfCardsPerHand[handId(dl.first, k)] = 1;
-      unsigned short int aggrRemain = 0;
-      for (int h = 0; h < DDS_HANDS; h++)
-        aggrRemain |= (dl.remainCards[h][dl.currentTrickSuit[k]] >> 2);
-      if ((aggrRemain & bitMapRank[dl.currentTrickRank[k]]) != 0)
-      {
-        DumpInput(RETURN_PLAYED_CARD, dl, target, solutions, mode);
-        return RETURN_PLAYED_CARD;
-      }
+      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
+      return RETURN_SUIT_OR_RANK;
+    }
+
+    if (dl->currentTrickSuit[k] < 0 || dl->currentTrickSuit[k] > 3)
+    {
+      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
+      return RETURN_SUIT_OR_RANK;
     }
   }
 
-  if (target == -1)
-    thrp->tricksTarget = 99;
-  else
-    thrp->tricksTarget = target;
-
-  thrp->newDeal  = false;
-  thrp->newTrump = false;
-  thrp->diffDeal = 0;
-  thrp->aggDeal  = 0;
-  cardCount      = 0;
+  if ((rankSeen[2] && (! rankSeen[1] || ! rankSeen[0])) ||
+      (rankSeen[1] && ! rankSeen[0]))
+  {
+    DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
+    return RETURN_SUIT_OR_RANK;
+  }
 
   for (int h = 0; h < DDS_HANDS; h++)
   {
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      int c = dl.remainCards[h][s] >> 2;
-
-      cardCount      += counttable[c];
-      thrp->diffDeal += (c ^ (thrp->game.suit[h][s]));
-      thrp->aggDeal  += c;
-
-      if (thrp->game.suit[h][s] != c)
+      unsigned c = dl->remainCards[h][s];
+      if (c != 0 && (c <  0x0004 || c >= 0x8000))
       {
-        thrp->game.suit[h][s] = c;
-        thrp->newDeal         = true;
+        DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
+        return RETURN_SUIT_OR_RANK;
       }
     }
   }
 
-  if (thrp->newDeal)
-  {
-    if (thrp->diffDeal == 0)
-      thrp->similarDeal = true;
-    else if ((thrp->aggDeal / thrp->diffDeal) > SIMILARDEALLIMIT)
-      thrp->similarDeal = true;
-    else
-      thrp->similarDeal = false;
-  }
-  else
-    thrp->similarDeal = false;
+  return RETURN_NO_FAULT;
+}
 
-  if (dl.trump != thrp->trump)
-    thrp->newTrump = true;
+
+int BoardValueChecks(
+  deal 			* dl, 
+  int 			target,
+  int 			solutions, 
+  int 			mode, 
+  localVarType		* thrp)
+{
+  int cardCount = thrp->iniDepth + 4;
+  if (cardCount <= 0)
+  {
+    DumpInput(RETURN_ZERO_CARDS, dl, target, solutions, mode);
+    return RETURN_ZERO_CARDS;
+  }
+
+  if (cardCount > 52)
+  {
+    DumpInput(RETURN_TOO_MANY_CARDS, dl, target, solutions, mode);
+    return RETURN_TOO_MANY_CARDS;
+  }
+
+  int totalTricks;
+  if (cardCount % 4)
+    totalTricks = ((cardCount - 4) >> 2) + 2;
+  else
+    totalTricks = ((cardCount - 4) >> 2) + 1;
+
+  if (totalTricks < target)
+  {
+    DumpInput(RETURN_TARGET_TOO_HIGH, dl, target, solutions, mode);
+    return RETURN_TARGET_TOO_HIGH;
+  }
+
+  int handRelFirst = thrp->lookAheadPos.handRelFirst;
+
+  int noOfCardsPerHand[DDS_HANDS] = {0, 0, 0, 0};
+  for (int k = 0; k < handRelFirst; k++)
+    noOfCardsPerHand[handId(dl->first, k)] = 1;
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
-      noOfCardsPerHand[h] += counttable[thrp->game.suit[h][s]];
+      noOfCardsPerHand[h] += counttable[thrp->suit[h][s]];
 
   for (int h = 1; h < DDS_HANDS; h++)
   {
@@ -197,831 +1023,126 @@ int STDCALL SolveBoard(
     }
   }
 
-  if (dl.currentTrickRank[2])
+  for (int k = 0; k < handRelFirst; k++)
   {
-    if ((dl.currentTrickRank[2] <  2) || 
-        (dl.currentTrickRank[2] > 14) || 
-	(dl.currentTrickSuit[2] <  0) || 
-	(dl.currentTrickSuit[2] >  3))
+    unsigned short int aggrRemain = 0;
+    for (int h = 0; h < DDS_HANDS; h++)
+      aggrRemain |= (dl->remainCards[h][dl->currentTrickSuit[k]] >> 2);
+	
+    if ((aggrRemain & bitMapRank[dl->currentTrickRank[k]]) != 0)
     {
-      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
-      return RETURN_SUIT_OR_RANK;
-    }
-
-    thrp->handToPlay = handId(dl.first, 3);
-    handRelFirst = 3;
-    noStartMoves = 3;
-
-    if (cardCount <= 4)
-    {
-      int htp = thrp->handToPlay;
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        if (thrp->game.suit[htp][s] != 0)
-        {
-          latestTrickSuit[htp] = s;
-          latestTrickRank[htp] = InvBitMapRank(thrp->game.suit[htp][s]);
-          break;
-        }
-      }
-      latestTrickSuit[handId(dl.first, 2)] = dl.currentTrickSuit[2];
-      latestTrickRank[handId(dl.first, 2)] = dl.currentTrickRank[2];
-      latestTrickSuit[handId(dl.first, 1)] = dl.currentTrickSuit[1];
-      latestTrickRank[handId(dl.first, 1)] = dl.currentTrickRank[1];
-      latestTrickSuit[dl.first] = dl.currentTrickSuit[0];
-      latestTrickRank[dl.first] = dl.currentTrickRank[0];
-    }
-  }
-  else if (dl.currentTrickRank[1])
-  {
-    if ((dl.currentTrickRank[1] <  2) || 
-        (dl.currentTrickRank[1] > 14) || 
-	(dl.currentTrickSuit[1] <  0) || 
-	(dl.currentTrickSuit[1] >  3))
-    {
-      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
-      return RETURN_SUIT_OR_RANK;
-    }
-
-    thrp->handToPlay = handId(dl.first, 2);
-    handRelFirst = 2;
-    noStartMoves = 2;
-
-    if (cardCount <= 4)
-    {
-      int htp = thrp->handToPlay;
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        if (thrp->game.suit[htp][s] != 0)
-        {
-          latestTrickSuit[htp] = s;
-          latestTrickRank[htp] = InvBitMapRank(thrp->game.suit[htp][s]);
-          break;
-        }
-      }
-
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        if (thrp->game.suit[handId(dl.first, 3)][s] != 0)
-        {
-          latestTrickSuit[handId(dl.first, 3)] = s;
-          latestTrickRank[handId(dl.first, 3)] =
-            InvBitMapRank(thrp->game.suit[handId(dl.first, 3)][s]);
-          break;
-        }
-      }
-
-      latestTrickSuit[handId(dl.first, 1)] = dl.currentTrickSuit[1];
-      latestTrickRank[handId(dl.first, 1)] = dl.currentTrickRank[1];
-      latestTrickSuit[dl.first] = dl.currentTrickSuit[0];
-      latestTrickRank[dl.first] = dl.currentTrickRank[0];
-    }
-  }
-  else if (dl.currentTrickRank[0])
-  {
-    if ((dl.currentTrickRank[0] <  2) || 
-        (dl.currentTrickRank[0] > 14) || 
-	(dl.currentTrickSuit[0] <  0) || 
-	(dl.currentTrickSuit[0] >  3))
-    {
-      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
-      return RETURN_SUIT_OR_RANK;
-    }
-
-    thrp->handToPlay = handId(dl.first, 1);
-    handRelFirst = 1;
-    noStartMoves = 1;
-    if (cardCount <= 4)
-    {
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        int htp = thrp->handToPlay;
-        if (thrp->game.suit[htp][s] != 0)
-        {
-          latestTrickSuit[htp] = s;
-          latestTrickRank[htp] = InvBitMapRank(thrp->game.suit[htp][s]);
-          break;
-        }
-      }
-
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        if (thrp->game.suit[handId(dl.first, 3)][s] != 0)
-        {
-          latestTrickSuit[handId(dl.first, 3)] = s;
-          latestTrickRank[handId(dl.first, 3)] =
-            InvBitMapRank(thrp->game.suit[handId(dl.first, 3)][s]);
-          break;
-        }
-      }
-
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        if (thrp->game.suit[handId(dl.first, 2)][s] != 0)
-        {
-          latestTrickSuit[handId(dl.first, 2)] = s;
-          latestTrickRank[handId(dl.first, 2)] =
-            InvBitMapRank(thrp->game.suit[handId(dl.first, 2)][s]);
-          break;
-        }
-      }
-
-      latestTrickSuit[dl.first] = dl.currentTrickSuit[0];
-      latestTrickRank[dl.first] = dl.currentTrickRank[0];
-    }
-  }
-  else
-  {
-    thrp->handToPlay = dl.first;
-    handRelFirst = 0;
-    noStartMoves = 0;
-    if (cardCount <= 4)
-    {
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        int htp = thrp->handToPlay;
-        if (thrp->game.suit[htp][s] != 0)
-        {
-          latestTrickSuit[htp] = s;
-          latestTrickRank[htp] = InvBitMapRank(thrp->game.suit[htp][s]);
-          break;
-        }
-      }
-
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        if (thrp->game.suit[handId(dl.first, 3)][s] != 0)
-        {
-          latestTrickSuit[handId(dl.first, 3)] = s;
-          latestTrickRank[handId(dl.first, 3)] =
-            InvBitMapRank(thrp->game.suit[handId(dl.first, 3)][s]);
-          break;
-        }
-      }
-
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        if (thrp->game.suit[handId(dl.first, 2)][s] != 0)
-        {
-          latestTrickSuit[handId(dl.first, 2)] = s;
-          latestTrickRank[handId(dl.first, 2)] =
-            InvBitMapRank(thrp->game.suit[handId(dl.first, 2)][s]);
-          break;
-        }
-      }
-
-      for (int s = 0; s < DDS_SUITS; s++)
-      {
-        if (thrp->game.suit[handId(dl.first, 1)][s] != 0)
-        {
-          latestTrickSuit[handId(dl.first, 1)] = s;
-          latestTrickRank[handId(dl.first, 1)] =
-            InvBitMapRank(thrp->game.suit[handId(dl.first, 1)][s]);
-          break;
-        }
-      }
+      DumpInput(RETURN_PLAYED_CARD, dl, target, solutions, mode);
+      return RETURN_PLAYED_CARD;
     }
   }
 
-  thrp->trump = dl.trump;
-  thrp->game.first = dl.first;
-  first = dl.first;
-  thrp->game.noOfCards = cardCount;
-  if (dl.currentTrickRank[0] != 0)
+  for (int s = 0; s < DDS_SUITS; s++)
   {
-    thrp->game.leadHand = dl.first;
-    thrp->game.leadSuit = dl.currentTrickSuit[0];
-    thrp->game.leadRank = dl.currentTrickRank[0];
-  }
-  else
-  {
-    thrp->game.leadHand = 0;
-    thrp->game.leadSuit = 0;
-    thrp->game.leadRank = 0;
-  }
-
-  for (int k = 0; k <= 2; k++)
-  {
-    thrp->initialMoves[k].suit = 255;
-    thrp->initialMoves[k].rank = 255;
-  }
-
-  for (int k = 0; k < noStartMoves; k++)
-  {
-    thrp->initialMoves[noStartMoves - 1 - k].suit = 
-      dl.currentTrickSuit[k];
-    thrp->initialMoves[noStartMoves - 1 - k].rank = 
-      dl.currentTrickRank[k];
-  }
-
-  if (cardCount % 4)
-    totalTricks = ((cardCount - 4) >> 2) + 2;
-  else
-    totalTricks = ((cardCount - 4) >> 2) + 1;
-
-  if (thrp->game.noOfCards <= 0)
-  {
-    DumpInput(RETURN_ZERO_CARDS, dl, target, solutions, mode);
-    return RETURN_ZERO_CARDS;
-  }
-
-  if (thrp->game.noOfCards > 52)
-  {
-    DumpInput(RETURN_TOO_MANY_CARDS, dl, target, solutions, mode);
-    return RETURN_TOO_MANY_CARDS;
-  }
-
-  if (totalTricks < target)
-  {
-    DumpInput(RETURN_TARGET_TOO_HIGH, dl, target, solutions, mode);
-    return RETURN_TARGET_TOO_HIGH;
-  }
-
-  if (CheckDeal(&thrp->game))
-  {
-    DumpInput(RETURN_DUPLICATE_CARDS, dl, target, solutions, mode);
-    return RETURN_DUPLICATE_CARDS;
-  }
-
-  if (cardCount <= 4)
-  {
-    maxRank = 0;
-    /* Highest trump? */
-    if (dl.trump != DDS_NOTRUMP)
+    for (int r = 2; r <= 14; r++) 
     {
-      for (int h = 0; h < DDS_HANDS; h++)
+      bool found = false;
+      for (int h = 0; h < DDS_HANDS; h++) 
       {
-        if ((latestTrickSuit[h] == dl.trump) &&
-            (latestTrickRank[h] > maxRank))
-        {
-          maxRank = latestTrickRank[h];
-          maxSuit = dl.trump;
-          maxHand = h;
-        }
-      }
-    }
-
-    /* Highest card in leading suit */
-    if (maxRank == 0)
-    {
-      for (int h = 0; h < DDS_HANDS; h++)
-      {
-        if (h == dl.first)
-        {
-          maxSuit = latestTrickSuit[dl.first];
-          maxHand = dl.first;
-          maxRank = latestTrickRank[dl.first];
-          break;
-        }
-      }
-      for (int h = 0; h < DDS_HANDS; h++)
-      {
-        if ((h != dl.first) && (latestTrickSuit[h] == maxSuit) &&
-            (latestTrickRank[h] > maxRank))
-        {
-          maxHand = h;
-          maxRank = latestTrickRank[h];
-        }
-      }
-    }
-    futp->nodes      = 0;
-    futp->cards      = 1;
-    futp->suit[0]    = latestTrickSuit[thrp->handToPlay];
-    futp->rank[0]    = latestTrickRank[thrp->handToPlay];
-    futp->equals[0]  = 0;
-
-    if ((target == 0) && (solutions < 3))
-      futp->score[0] = 0;
-    else if ((thrp->handToPlay == maxHand) ||
-             (partner[thrp->handToPlay] == maxHand))
-      futp->score[0] = 1;
-    else
-      futp->score[0] = 0;
-
-#ifdef DDS_MEMORY_LEAKS_WIN32
-  _CrtDumpMemoryLeaks();
-#endif
-    return RETURN_NO_FAULT;
-  }
-
-  if ((mode != 2) &&
-      (((thrp->newDeal) && (! thrp->similarDeal)) || 
-         thrp->newTrump  ||
-        (thrp->nodes > SIMILARMAXWINNODES)))
-  {
-    thrp->transTable.ResetMemory();
-
-    InitGame(0, false, first, handRelFirst, thrId);
-  }
-  else
-  {
-    InitGame(0, true, first, handRelFirst, thrId);
-  }
-
-#ifdef DDS_AB_STATS
-  thrp->ABstats.ResetCum();
-#endif
-
-#ifdef DDS_TOP_LEVEL
-  thrp->nodes = 0;
-#endif
-
-  thrp->trickNodes = 0;
-  thrp->iniDepth   = cardCount - 4;
-
-  if (mode == 0)
-  {
-    int iniDepth = thrp->iniDepth;
-    MoveGen(&thrp->lookAheadPos, 
-             thrp->iniDepth, 
-	     thrp->trump,
-            &thrp->movePly[iniDepth], 
-	    thrp);
-
-    if (thrp->movePly[iniDepth].last == 0)
-    {
-      futp->nodes      = 0;
-      futp->cards      = 1;
-      futp->suit[0]    = thrp->movePly[iniDepth].move[0].suit;
-      futp->rank[0]    = thrp->movePly[iniDepth].move[0].rank;
-      futp->equals[0]  = thrp->movePly[iniDepth].move[0].sequence << 2;
-      futp->score[0]   = -2;
-
-#ifdef DDS_MEMORY_LEAKS_WIN32
-  _CrtDumpMemoryLeaks();
-#endif
-      return RETURN_NO_FAULT;
-    }
-  }
-  if ((target == 0) && (solutions < 3))
-  {
-    MoveGen(&thrp->lookAheadPos, 
-             thrp->iniDepth, 
-	     thrp->trump,
-            &thrp->movePly[thrp->iniDepth], 
-	     thrp);
-
-    futp->nodes       = 0;
-    int iniDepth = thrp->iniDepth;
-    for (int k = 0; k <= thrp->movePly[iniDepth].last; k++)
-    {
-      futp->suit[k]   = thrp->movePly[iniDepth].move[k].suit;
-      futp->rank[k]   = thrp->movePly[iniDepth].move[k].rank;
-      futp->equals[k] = thrp->movePly[iniDepth].move[k].sequence << 2;
-      futp->score[k]  = 0;
-    }
-    if (solutions == 1)
-      futp->cards = 1;
-    else
-      futp->cards = thrp->movePly[iniDepth].last + 1;
-
-#ifdef DDS_MEMORY_LEAKS_WIN32
-  _CrtDumpMemoryLeaks();
-#endif
-    return RETURN_NO_FAULT;
-  }
-
-  if ((target != -1) && (solutions != 3))
-  {
-    int fnc = (48 - thrp->iniDepth) % 4;
-    TIMER_START(TIMER_AB + thrp->iniDepth);
-    thrp->val = (* AB_ptr_list[fnc])(&thrp->lookAheadPos,
-                          thrp->tricksTarget, 
-			  thrp->iniDepth, 
-			  thrp);
-    TIMER_END(TIMER_AB + thrp->iniDepth);
-
-#ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, thrp->tricksTarget, -1, -1, 0);
-#endif
-
-    temp = thrp->movePly[thrp->iniDepth];
-    last = thrp->movePly[thrp->iniDepth].last;
-    noMoves = last + 1;
-
-    if (thrp->val)
-      thrp->payOff = thrp->tricksTarget;
-    else
-      thrp->payOff = 0;
-    futp->cards = 1;
-
-    int n = thrp->game.noOfCards - 4;
-    if (thrp->payOff <= 0)
-    {
-      futp->suit[0]    = thrp->movePly[n].move[0].suit;
-      futp->rank[0]    = thrp->movePly[n].move[0].rank;
-      futp->equals[0]  = thrp->movePly[n].move[0].sequence << 2;
-
-      if (thrp->tricksTarget > 1)
-        futp->score[0] = -1;
-      else
-        futp->score[0] = 0;
-    }
-    else
-    {
-      futp->suit[0]   = thrp->bestMove[n].suit;
-      futp->rank[0]   = thrp->bestMove[n].rank;
-      futp->equals[0] = thrp->bestMove[n].sequence << 2;
-      futp->score[0]  = thrp->payOff;
-    }
-  }
-  else
-  {
-    int g = thrp->estTricks[thrp->handToPlay];
-    int upperbound = 13;
-    int lowerbound = 0;
-    do
-    {
-      int tricks;
-      if (g == lowerbound)
-        tricks = g + 1;
-      else
-        tricks = g;
-
-      assert((thrp->lookAheadPos.handRelFirst >= 0) &&
-             (thrp->lookAheadPos.handRelFirst <= 3));
-
-      int fnc = (48 - thrp->iniDepth) % 4;
-      TIMER_START(TIMER_AB + thrp->iniDepth);
-      thrp->val = (* AB_ptr_list[fnc])(&thrp->lookAheadPos,
-                            tricks,
-                            thrp->iniDepth, 
-			    thrp);
-      TIMER_END(TIMER_AB + thrp->iniDepth);
-
-      if (thrp->val)
-        mv = thrp->bestMove[thrp->game.noOfCards - 4];
-
-#ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, tricks, lowerbound, upperbound, 1);
-#endif
-
-      if (! thrp->val)
-      {
-        upperbound = tricks - 1;
-        g = upperbound;
-      }
-      else
-      {
-        lowerbound = tricks;
-        g = lowerbound;
-      }
-
-      InitSearch(&thrp->iniPosition, 
-                  thrp->game.noOfCards - 4,
-                  thrp->initialMoves, 
-		  first, 
-		  true, 
-		  thrId);
-    }
-    while (lowerbound < upperbound);
-
-    thrp->payOff = g;
-    temp = thrp->movePly[thrp->iniDepth];
-    last = thrp->movePly[thrp->iniDepth].last;
-    noMoves = last + 1;
-
-    int n = thrp->game.noOfCards - 4;
-
-    thrp->bestMove[n] = mv;
-    futp->cards = 1;
-
-    if (thrp->payOff <= 0)
-    {
-      futp->score[0]  = 0;
-      futp->suit[0]   = thrp->movePly[n].move[0].suit;
-      futp->rank[0]   = thrp->movePly[n].move[0].rank;
-      futp->equals[0] = thrp->movePly[n].move[0].sequence << 2;
-    }
-    else
-    {
-      futp->score[0]  = thrp->payOff;
-      futp->suit[0]   = thrp->bestMove[n].suit;
-      futp->rank[0]   = thrp->bestMove[n].rank;
-      futp->equals[0] = thrp->bestMove[n].sequence << 2;
-    }
-    thrp->tricksTarget = thrp->payOff;
-  }
-
-  if ((solutions == 2) && (thrp->payOff > 0))
-  {
-    int forb = 1;
-    int ind = forb;
-
-    while ((thrp->payOff == thrp->tricksTarget) && 
-           (ind < (temp.last + 1)))
-    {
-      int n = thrp->game.noOfCards - 4;
-      thrp->forbiddenMoves[forb].suit = thrp->bestMove[n].suit;
-      thrp->forbiddenMoves[forb].rank = thrp->bestMove[n].rank;
-      forb++;
-      ind++;
-
-      /* All moves before bestMove in the move list shall be
-      moved to the forbidden moves list, since none of them reached
-      the target */
-      int iniDepth = thrp->iniDepth;
-      int k;
-      for (k = 0; k <= thrp->movePly[iniDepth].last; k++)
-      {
-        if ((thrp->bestMove[iniDepth].suit ==
-             thrp->movePly[iniDepth].move[k].suit) && 
-	     (thrp->bestMove[iniDepth].rank ==
-                thrp->movePly[iniDepth].move[k].rank))
-          break;
-      }
-
-      for (int i = 0; i < k; i++) /* All moves until best move */
-      {
-        bool flag = false;
-        for (int j = 0; j < forb; j++)
-        {
-          if ((thrp->movePly[iniDepth].move[i].suit == 
-	       thrp->forbiddenMoves[j].suit) && 
-	      (thrp->movePly[iniDepth].move[i].rank == 
-	       thrp->forbiddenMoves[j].rank))
-          {
-            /* If the move is already in the forbidden list */
-            flag = true;
-            break;
+        if ((thrp->suit[h][s] & bitMapRank[r]) != 0) 
+	{
+          if (found) 
+	  {
+            DumpInput(RETURN_DUPLICATE_CARDS, dl, 
+	      target, solutions, mode);
+            return RETURN_DUPLICATE_CARDS;
           }
+          else
+            found = true;
         }
-
-        if (! flag)
-        {
-          thrp->forbiddenMoves[forb] = thrp->movePly[iniDepth].move[i];
-          forb++;
-        }
-      }
-
-      InitSearch(&thrp->iniPosition, 
-                  n,
-                  thrp->initialMoves, 
-		  first, 
-		  true, 
-		  thrId);
-
-      int fnc = (48 - thrp->iniDepth) % 4;
-      TIMER_START(TIMER_AB + thrp->iniDepth);
-      thrp->val = (* AB_ptr_list[fnc])(&thrp->lookAheadPos,
-                            thrp->tricksTarget,
-                            thrp->iniDepth, 
-			    thrp);
-      TIMER_END(TIMER_AB + thrp->iniDepth);
-
-#ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, thrp->tricksTarget, -1, -1, 2);
-#endif
-
-      if (thrp->val)
-      {
-        int n = thrp->game.noOfCards - 4;
-        thrp->payOff = thrp->tricksTarget;
-
-        futp->cards           = ind;
-        futp->suit[ind - 1]   = thrp->bestMove[n].suit;
-        futp->rank[ind - 1]   = thrp->bestMove[n].rank;
-        futp->equals[ind - 1] = thrp->bestMove[n].sequence << 2;
-        futp->score[ind - 1]  = thrp->payOff;
-      }
-      else
-        thrp->payOff = 0;
-    }
-  }
-  else if ((solutions == 2) && 
-           (thrp->payOff == 0) &&
-           ((target == -1) || (thrp->tricksTarget == 1)))
-  {
-    futp->cards = noMoves;
-    /* Find the cards that were in the initial move list
-    but have not been listed in the current result */
-    int n = 0;
-    for (int i = 0; i < noMoves; i++)
-    {
-      bool found = false;
-      if ((temp.move[i].suit == futp->suit[0]) &&
-          (temp.move[i].rank == futp->rank[0]))
-      {
-        found = true;
-      }
-      if (! found)
-      {
-        futp->suit[1 + n]   = temp.move[i].suit;
-        futp->rank[1 + n]   = temp.move[i].rank;
-        futp->equals[1 + n] = temp.move[i].sequence << 2;
-        futp->score[1 + n]  = 0;
-        n++;
       }
     }
   }
 
-  if ((solutions == 3) && (thrp->payOff > 0))
-  {
-    int forb = 1;
-    int ind = forb;
-    for (int i = 0; i < last; i++)
-    {
-      int n = thrp->game.noOfCards - 4;
-      thrp->forbiddenMoves[forb].suit = thrp->bestMove[n].suit;
-      thrp->forbiddenMoves[forb].rank = thrp->bestMove[n].rank;
-      forb++;
-      ind++;
-
-      int g = thrp->payOff;
-      int upperbound = g;
-      int lowerbound = 0;
-
-      InitSearch(&thrp->iniPosition, 
-                  n,
-                 thrp->initialMoves, 
-		 first, 
-		 true, 
-		 thrId);
-
-      do
-      {
-        int tricks;
-        if (g == lowerbound)
-          tricks = g + 1;
-        else
-          tricks = g;
-
-        assert((thrp->lookAheadPos.handRelFirst >= 0) &&
-               (thrp->lookAheadPos.handRelFirst <= 3));
-
-        int fnc = (48 - thrp->iniDepth) % 4;
-        TIMER_START(TIMER_AB + thrp->iniDepth);
-        thrp->val = (* AB_ptr_list[fnc])(&thrp->lookAheadPos,
-	                      tricks,
-                              thrp->iniDepth, 
-			      thrp);
-        TIMER_END(TIMER_AB + thrp->iniDepth);
-
-        if (thrp->val)
-          mv = thrp->bestMove[thrp->game.noOfCards - 4];
-
-#ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, tricks, lowerbound, upperbound, 1);
-#endif
-
-        if (! thrp->val)
-        {
-          upperbound = tricks - 1;
-          g = upperbound;
-        }
-        else
-        {
-          lowerbound = tricks;
-          g = lowerbound;
-        }
-
-        InitSearch(&thrp->iniPosition, 
-	            thrp->game.noOfCards - 4,
-                    thrp->initialMoves, 
-		    first, 
-		    true, 
-		    thrId);
-      }
-      while (lowerbound < upperbound);
-
-      thrp->payOff = g;
-      if (thrp->payOff == 0)
-      {
-        int n = thrp->game.noOfCards - 4;
-	int iniDepth = thrp->iniDepth;
-        last = thrp->movePly[iniDepth].last;
-        futp->cards = temp.last + 1;
-
-        for (int j = 0; j <= last; j++)
-        {
-          futp->suit[ind-1+j]   = thrp->movePly[n].move[j].suit;
-          futp->rank[ind-1+j]   = thrp->movePly[n].move[j].rank;
-          futp->equals[ind-1+j] = thrp->movePly[n].move[j].sequence << 2;
-          futp->score[ind-1+j]  = thrp->payOff;
-        }
-        break;
-      }
-      else
-      {
-        thrp->bestMove[thrp->game.noOfCards - 4] = mv;
-
-        futp->cards = ind;
-        futp->suit[ind - 1]   = mv.suit;
-        futp->rank[ind - 1]   = mv.rank;
-        futp->equals[ind - 1] = mv.sequence << 2;
-        futp->score[ind - 1]  = thrp->payOff;
-      }
-    }
-  }
-  else if ((solutions == 3) && (thrp->payOff == 0))
-  {
-    futp->cards = noMoves;
-    /* Find the cards that were in the initial move list
-       but have not been listed in the current result */
-    int n = 0;
-    for (int i = 0; i < noMoves; i++)
-    {
-      bool found = false;
-      if ((temp.move[i].suit == futp->suit[0]) &&
-          (temp.move[i].rank == futp->rank[0]))
-      {
-        found = true;
-      }
-
-      if (! found)
-      {
-        futp->suit[1 + n]   = temp.move[i].suit;
-        futp->rank[1 + n]   = temp.move[i].rank;
-        futp->equals[1 + n] = temp.move[i].sequence << 2;
-        futp->score[1 + n]  = 0;
-        n++;
-      }
-    }
-  }
-
-  for (int k = 0; k <= 13; k++)
-  {
-    thrp->forbiddenMoves[k].suit = 0;
-    thrp->forbiddenMoves[k].rank = 0;
-  }
-
-  futp->nodes = thrp->trickNodes;
-
-  // printf("%8d\n", tmp_cnt, thrp->transTable.BlocksInUse());
-  // thrp->memUsed = thrp->transTable.MemoryInUse() +
-    // ThreadMemoryUsed();
-
-#ifdef DDS_TIMING
-  thrp->timer.PrintStats();
-#endif
-
-#ifdef DDS_TT_STATS
-  // thrp->transTable.PrintAllSuits();
-  // thrp->transTable.PrintEntries(10, 0);
-  thrp->transTable.PrintSummarySuitStats();
-  thrp->transTable.PrintSummaryEntryStats();
-  // thrp->transTable.PrintPageSummary();
-#endif
-
-#ifdef DDS_MEMORY_LEAKS_WIN32
-  _CrtDumpMemoryLeaks();
-#endif
   return RETURN_NO_FAULT;
 }
 
 
+void LastTrickWinner(
+  deal 			* dl, 
+  localVarType		* thrp,
+  int			handToPlay,
+  int			handRelFirst,
+  int			* leadRank,
+  int			* leadSuit,
+  int			* leadSideWins)
+{
+  int lastTrickSuit[DDS_HANDS],
+      lastTrickRank[DDS_HANDS],
+      h,
+      hp;
 
-int InvBitMapRank(unsigned short bitMap) {
-
-  switch (bitMap) {
-    case 0x1000: return 14;
-    case 0x0800: return 13;
-    case 0x0400: return 12;
-    case 0x0200: return 11;
-    case 0x0100: return 10;
-    case 0x0080: return 9;
-    case 0x0040: return 8;
-    case 0x0020: return 7;
-    case 0x0010: return 6;
-    case 0x0008: return 5;
-    case 0x0004: return 4;
-    case 0x0002: return 3;
-    case 0x0001: return 2;
-    default: return 0;
+  for (h = 0; h < handRelFirst; h++)
+  {
+    hp = handId(dl->first, h);
+    lastTrickSuit[hp] = dl->currentTrickSuit[h];
+    lastTrickRank[hp] = dl->currentTrickRank[h];
   }
-}
 
-
-int CheckDeal(struct gameInfo *gamep) {
-  int h, s, k;
-  bool found;
-  unsigned short int temp[DDS_HANDS][DDS_SUITS];
-
-  for (h=0; h<DDS_HANDS; h++)
-    for (s=0; s<DDS_SUITS; s++)
-      temp[h][s]=gamep->suit[h][s];
-
-  /* Check that all ranks appear only once within the same suit. */
-  for (s=0; s<DDS_SUITS; s++)
-    for (k=2; k<=14; k++) {
-      found=false;
-      for (h=0; h<DDS_HANDS; h++) {
-        if ((temp[h][s] & bitMapRank[k])!=0) {
-          if (found) {
-            return 1;
-          }
-          else
-            found=true;
-        }
+  for (h = handRelFirst; h < DDS_HANDS; h++)
+  {
+    hp = handId(dl->first, h);
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+      if (thrp->suit[hp][s] != 0)
+      {
+        lastTrickSuit[hp] = s;
+        lastTrickRank[hp] = thrp->suit[hp][s];
+        break;
       }
     }
+  }
 
-  return 0;
+  int maxRank = 0,
+      maxSuit,
+      maxHand = -1;
+
+  /* Highest trump? */
+  if (dl->trump != DDS_NOTRUMP)
+  {
+    for (h = 0; h < DDS_HANDS; h++)
+    {
+      if ((lastTrickSuit[h] == dl->trump) &&
+          (lastTrickRank[h] > maxRank))
+      {
+        maxRank = lastTrickRank[h];
+        maxSuit = dl->trump;
+        maxHand = h;
+      }
+    }
+  }
+
+  /* Highest card in leading suit */
+  if (maxRank == 0)
+  {
+    maxRank = lastTrickRank[dl->first];
+    maxSuit = lastTrickSuit[dl->first];
+    maxHand = dl->first;
+
+    for (h = 0; h < DDS_HANDS; h++)
+    {
+      if (lastTrickSuit[h] == maxSuit &&
+          lastTrickRank[h] > maxRank)
+      {
+        maxHand = h;
+        maxRank = lastTrickRank[h];
+      }
+    }
+  }
+
+  * leadRank     = lastTrickRank[handRelFirst];
+  * leadSuit     = lastTrickSuit[handRelFirst];
+  * leadSideWins = ((handToPlay == maxHand ||
+                     partner[handToPlay] == maxHand) ? 1 : 0);
 }
 
 
 
-int DumpInput(int errCode, struct deal dl, int target,
+int DumpInput(int errCode, deal * dl, int target,
     int solutions, int mode) {
 
   FILE *fp;
@@ -1029,25 +1150,27 @@ int DumpInput(int errCode, struct deal dl, int target,
   unsigned short ranks[4][4];
 
   fp=fopen("dump.txt", "w");
-  if (fp==NULL)
+  if (fp==nullptr)
     return RETURN_UNKNOWN_FAULT;
   fprintf(fp, "Error code=%d\n", errCode);
   fprintf(fp, "\n");
   fprintf(fp, "Deal data:\n");
-  if (dl.trump!=4)
-    fprintf(fp, "trump=%c\n", cardSuit[dl.trump]);
+  if (dl->trump!=4)
+    fprintf(fp, "trump=%c\n", cardSuit[dl->trump]);
   else
     fprintf(fp, "trump=N\n");
-  fprintf(fp, "first=%c\n", cardHand[dl.first]);
+  fprintf(fp, "first=%c\n", cardHand[dl->first]);
   for (k=0; k<=2; k++)
-    if (dl.currentTrickRank[k]!=0)
+    if (dl->currentTrickRank[k]!=0)
       fprintf(fp, "index=%d currentTrickSuit=%c currentTrickRank=%c\n",
-        k, cardSuit[dl.currentTrickSuit[k]], cardRank[dl.currentTrickRank[k]]);
+        k, cardSuit[dl->currentTrickSuit[k]], 
+	cardRank[dl->currentTrickRank[k]]);
   for (i=0; i<=3; i++)
     for (j=0; j<=3; j++) {
       fprintf(fp, "index1=%d index2=%d remainCards=%d\n",
-        i, j, dl.remainCards[i][j]);
-      ranks[i][j]=dl.remainCards[i][/*3-*/j]>>2;
+        i, j, dl->remainCards[i][j]);
+      ranks[i][j]=static_cast<unsigned short>
+        (dl->remainCards[i][/*3-*/j]>>2);
     }
   fprintf(fp, "\n");
   fprintf(fp, "target=%d\n", target);

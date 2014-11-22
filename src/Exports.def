@@ -4,6 +4,8 @@ EXPORTS
    SetMaxThreads@4 = SetMaxThreads
    FreeMemory
    FreeMemory@0 = FreeMemory
+   ErrorMessage
+   ErrorMessage@8 = ErrorMessage
    SolveBoard
    SolveBoard@116 = SolveBoard
    SolveBoardPBN

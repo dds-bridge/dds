@@ -1,3 +1,13 @@
+/* 
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+
 /*
     A number of debug flags cause output files to be generated.
 
@@ -76,7 +86,18 @@
 #define DDS_TIMING_PREFIX 		"timer"
 
 // Enables extra detail.
-// #define DDS_TIMING_DETAILS
+#define DDS_TIMING_DETAILS
+
+// Enables statistics on move generation quality.
+// #define DDS_MOVES
+#define DDS_MOVES_PREFIX		"movestats"
+
+// #define DDS_MOVES_DETAILS
+
+// Enables timing in the scheduler.
+// #define DDS_SCHEDULER
+#define DDS_SCHEDULER_PREFIX 		"sched"
+
 
 #ifdef DDS_DEBUG_ALL
 #define DDS_TOP_LEVEL
@@ -97,6 +118,12 @@
   #endif
   #ifndef DDS_TIMING_DETAILS
     #define DDS_TIMING_DETAILS
+  #endif
+  #ifndef DDS_MOVES
+    #define DDS_MOVES
+  #endif
+  #ifndef DDS_MOVES_DETAILS
+    #define DDS_MOVES_DETAILS
   #endif
 #endif
 

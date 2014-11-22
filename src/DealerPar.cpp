@@ -1,28 +1,12 @@
-/*
-   DDS 2.7.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund
-   Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
-   The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given
-   me permission to include a C++ adaptation in DDS.
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-   implied.  See the License for the specific language governing
-   permissions and limitations under the License.
-*/
-
 /* 
-   The PlayAnalyser was written by Sören Hein. Many thanks for
-   allowing me to include it in DDS. 
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
 */
+
 
 
 #include "dds.h"
@@ -125,43 +109,42 @@ struct list_type
 
 
 void survey_scores(
-  struct ddTableResults * tablep,
+  ddTableResults 	* tablep,
   int 			dealer,
   int 			vul_by_side[2],
-  struct data_type	* data,
+  data_type		* data,
   int                   * num_candidates,
-  struct list_type	list[2][5]);
+  list_type		list[2][5]);
 
 void best_sacrifice(
-  struct ddTableResults * tablep,
+  ddTableResults 	* tablep,
   int                   side,
   int                   no,
   int                   dno,
   int 			dealer,
-  struct list_type	list[2][5],
+  list_type		list[2][5],
   int			sacr[5][5],
   int			* best_down);
 
 void sacrifices_as_text(
-  struct ddTableResults * tablep,
+  ddTableResults 	* tablep,
   int                   side,
   int 			dealer,
   int			best_down,
   int                   no_decl,
   int                   dno,
-  struct list_type	list[2][5],
+  list_type		list[2][5],
   int			sacr[5][5],
   char			results[10][10],
   int			* res_no);
 
 void reduce_contract(
   int			* no,
-  int			sac_vul,
   int			down,
   int			* plus);
 
 void contract_as_text(
-  struct ddTableResults * tablep,
+  ddTableResults 	* tablep,
   int			side,
   int			no,
   int			dno,
@@ -177,8 +160,8 @@ void sacrifice_as_text(
 
 
 int STDCALL DealerPar(
-  struct ddTableResults * tablep,
-  struct parResultsDealer * presp,
+  ddTableResults 	* tablep,
+  parResultsDealer 	* presp,
   int 			dealer,
   int 			vulnerable)
 {
@@ -186,8 +169,8 @@ int STDCALL DealerPar(
   /* vulnerable 0: None  1: Both  2: NS     3: EW   */
 
   int 			* vul_by_side = VUL_LOOKUP[vulnerable];
-  struct data_type 	data;
-  struct list_type 	list[2][5];
+  data_type 		data;
+  list_type 		list[2][5];
 
   /* First we find the side entitled to a plus score (primacy)
      and some statistics for each constructively bid (undoubled)
@@ -206,7 +189,7 @@ int STDCALL DealerPar(
   }
 
   /* Go through the contracts, starting from the highest one. */
-  struct list_type * lists = list[side];
+  list_type * lists = list[side];
   int vul_no    = data.vul_no;
   int best_plus = 0;
   int down      = 0;
@@ -214,7 +197,8 @@ int STDCALL DealerPar(
 
   int type[5], sac_gap[5];
   int best_down = 0;
-  int sacr[5][5] = { 0 };
+  int sacr[5][5] = { {0,0,0,0,0}, {0,0,0,0,0}, {0,0,0,0,0},
+                     {0,0,0,0,0}, {0,0,0,0,0} };
 
   for (int n = 0; n < num_cand; n++)
   {
@@ -258,13 +242,12 @@ int STDCALL DealerPar(
   {
     /* The primacy side bids. */
     presp->score = (side == 0 ? best_plus : -best_plus);
-    int sac_vul  = vul_by_side[1-side];
 
     for (int n = 0; n < num_cand; n++)
     {
       if (type[n] != 1 || lists[n].score != best_plus) continue;
       int no = lists[n].no, plus;
-      reduce_contract(&no, sac_vul, sac_gap[n], &plus);
+      reduce_contract(&no, sac_gap[n], &plus);
 
       contract_as_text(tablep, side, no, lists[n].dno, 
         plus, presp->contracts[res_no]);
@@ -292,12 +275,12 @@ int STDCALL DealerPar(
 
 
 void survey_scores(
-  struct ddTableResults * tablep,
+  ddTableResults 	* tablep,
   int 			dealer,
   int 			vul_by_side[2],
-  struct data_type	* data,
+  data_type		* data,
   int                   * num_candidates,
-  struct list_type	list[2][5])
+  list_type		list[2][5])
 {
   /*
     When this is done, data has added the following entries:
@@ -318,7 +301,7 @@ void survey_scores(
     order of the contract number (no).
   */
 
-  struct data_type	stats[2];
+  data_type stats[2];
 
   for (int side = 0; side <= 1; side++)
   {
@@ -328,7 +311,7 @@ void survey_scores(
 
     for (int dno = 0; dno <= 4; dno++)
     {
-      struct list_type * slist = &list[side][dno];
+      list_type * slist = &list[side][dno];
       int * t = tablep->resTable[ DENOM_ORDER[dno] ];
       int a    = t[side];
       int b    = t[side+2];
@@ -364,13 +347,13 @@ void survey_scores(
         highest_making_no = no;
       }
     }
-    struct data_type * sside = &stats[side];
+    data_type * sside = &stats[side];
     sside->highest_making_no = highest_making_no;
     sside->dearest_making_no = dearest_making_no;
     sside->dearest_score     = dearest_score;
   }
 
-  int primacy;
+  int primacy = 0;
   int s0 = stats[0].highest_making_no;
   int s1 = stats[1].highest_making_no;
   if (s0 > s1)
@@ -401,7 +384,7 @@ void survey_scores(
     }
   }
 
-  struct data_type * sside = &stats[primacy];
+  data_type * sside = &stats[primacy];
 
   int dm_no               = sside->dearest_making_no;
   data->primacy           = primacy;
@@ -420,11 +403,11 @@ void survey_scores(
   do
   {
     int new_n = 0;
-    for (int i = 1; i <= n-1; i++)
+    for (int i = 1; i < n; i++)
     {
       if (list[primacy][i-1].no > list[primacy][i].no) continue;
 
-      struct list_type temp = list[primacy][i-1];
+      list_type temp = list[primacy][i-1];
       list[primacy][i-1] = list[primacy][i];
       list[primacy][i] = temp;
 
@@ -435,7 +418,7 @@ void survey_scores(
   while (n > 0);
 
   *num_candidates = 5;
-  for (int n = 0; n <= 4; n++)
+  for (n = 0; n <= 4; n++)
   {
     if (list[primacy][n].no < dm_no) (*num_candidates)--;
   }
@@ -443,27 +426,27 @@ void survey_scores(
 
 
 void best_sacrifice(
-  struct ddTableResults * tablep,
+  ddTableResults 	* tablep,
   int                   side,
   int                   no,
   int                   dno,
   int 			dealer,
-  struct list_type	list[2][5],
+  list_type		list[2][5],
   int			sacr_table[5][5],
   int			* best_down)
 {
   int other = 1 - side;
-  struct list_type * sacr_list = list[other];
+  list_type * sacr_list = list[other];
   *best_down = BIGNUM;
 
   for (int eno = 0; eno <= 4; eno++)
   {
-    struct list_type sacr = sacr_list[eno];
+    list_type sacr = sacr_list[eno];
     int down = BIGNUM;
 
     if (eno == dno)
     {
-      int t_max     = (int) (no+34) / 5;
+      int t_max     = static_cast<int>((no+34) / 5);
       int * t       = tablep->resTable[ DENOM_ORDER[dno] ];
       int incr_flag = 0;
       for (int pno = dealer; pno <= dealer+3; pno++)
@@ -484,7 +467,7 @@ void best_sacrifice(
     }
     else
     {
-      down = (int) (no - sacr.no + 4) / 5;
+      down = static_cast<int>((no - sacr.no + 4) / 5);
       if (sacr.no + 5*down > 35) down = BIGNUM;
     }
     sacr_table[dno][eno] = down;
@@ -494,19 +477,19 @@ void best_sacrifice(
  
 
 void sacrifices_as_text(
-  struct ddTableResults * tablep,
+  ddTableResults 	* tablep,
   int                   side,
   int 			dealer,
   int			best_down,
   int                   no_decl,
   int                   dno,
-  struct list_type	list[2][5],
+  list_type		list[2][5],
   int			sacr[5][5],
   char			results[10][10],
   int			* res_no)
 {
   int other = 1 - side;
-  struct list_type * sacr_list = list[other];
+  list_type * sacr_list = list[other];
 
   for (int eno = 0; eno <= 4; eno++)
   {
@@ -522,7 +505,7 @@ void sacrifices_as_text(
       continue;
     }
 
-    int t_max     = (int) (no_decl + 34) / 5;
+    int t_max     = static_cast<int>((no_decl + 34) / 5);
     int * t       = tablep->resTable[ DENOM_ORDER[dno] ];
     int incr_flag = 0;
     int p_hit     = 0;
@@ -538,7 +521,7 @@ void sacrifices_as_text(
       }
       else
       {
-	int down = diff + incr_flag;
+	down = diff + incr_flag;
 	if (down != best_down) continue;
 	pno_list[p_hit] = pno_mod;
 	sac_list[p_hit] = no_decl + 5*incr_flag;
@@ -575,7 +558,6 @@ void sacrifices_as_text(
 
 void reduce_contract(
   int			* no,
-  int			sac_vul,
   int			sac_gap,
   int			* plus)
 {
@@ -607,7 +589,7 @@ void reduce_contract(
 
 
 void contract_as_text(
-  struct ddTableResults * tablep,
+  ddTableResults 	* tablep,
   int			side,
   int			no,
   int			dno,

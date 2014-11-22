@@ -1,230 +1,439 @@
 /* 
-   DDS 2.7.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund   
-   Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
-   The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given
-   permission to include a C++ adaptation in DDS.
-   						
-   The PlayAnalyser analyses the played cards of the deal and presents 
-   their double dummy values. The par calculation function DealerPar 
-   provides an alternative way of calculating and presenting par 
-   results.  Both these functions have been written by Soren Hein.
-   He has also made numerous contributions to the code, especially in 
-   the initialization part.
+   DDS, a bridge double dummy solver.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-   http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or 
-   implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
 */
 
 
 #include "dds.h"
+#include "threadmem.h"
+#include "SolverIF.h"
+#include "SolveBoard.h"
+#include "Scheduler.h"
 #include "PBN.h"
+#include "debug.h"
+
+#ifdef DDS_SCHEDULER
+  #define START_BLOCK_TIMER     scheduler.StartBlockTimer()
+  #define END_BLOCK_TIMER       scheduler.EndBlockTimer()
+  #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
+  #define END_THREAD_TIMER(a)   scheduler.EndThreadTimer(a)
+#else
+  #define START_BLOCK_TIMER  	1
+  #define END_BLOCK_TIMER    	1
+  #define START_THREAD_TIMER(a) 1
+  #define END_THREAD_TIMER(a)   1
+#endif
 
 extern int noOfThreads;
 
 #if (defined(_WIN32) || defined(__CYGWIN__)) && \
      !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
 HANDLE solveAllEvents[MAXNOOFTHREADS];
-struct paramType param;
+paramType param;
 LONG volatile threadIndex;
 LONG volatile current;
 
 long chunk;
 
-DWORD CALLBACK SolveChunk (void *) {
-  struct futureTricks fut[MAXNOOFBOARDS];
+DWORD CALLBACK SolveChunk (void *);
+DWORD CALLBACK SolveChunkDDtable (void *);
+
+DWORD CALLBACK SolveChunk (void *) 
+{
+  futureTricks fut[MAXNOOFBOARDS];
   int thid;
-  long j;
 
-  thid=InterlockedIncrement(&threadIndex);
+  thid = InterlockedIncrement(&threadIndex);
 
-  while ((j=(InterlockedIncrement(&current)-1))<param.noOfBoards) {
+  int index;
+  schedType st;
+  while (1)
+  {
+    st = scheduler.GetNumber(thid);
+    index = st.number;
+    if (index == -1)
+      break;
 
-    int res=SolveBoard(param.bop->deals[j], param.bop->target[j],
-    param.bop->solutions[j], param.bop->mode[j], &fut[j], thid);
-    if (res==1) {
-      param.solvedp->solvedBoard[j]=fut[j];
-      /*param.error=0;*/
+    // This is not a perfect repeat detector, as the hands in
+    // a group might have declarers N, S, N, N.  Then the second
+    // N would not reuse the first N.  However, must reuses are
+    // reasonably adjacent, and this is just an optimization anyway.
+
+    if (st.repeatOf != -1 &&
+        param.bop->deals[index      ].first ==
+	param.bop->deals[st.repeatOf].first)
+    {
+      START_THREAD_TIMER(thid);
+      param.solvedp->solvedBoard[index] = fut[ st.repeatOf ];
+      END_THREAD_TIMER(thid);
+      continue;
     }
-    else {
-      param.error=res;
+    else
+    {
+      START_THREAD_TIMER(thid);
+      int res = SolveBoard(
+        param.bop->deals[index], 
+        param.bop->target[index],
+        param.bop->solutions[index], 
+        param.bop->mode[index], 
+        &fut[index], 
+        thid);
+      END_THREAD_TIMER(thid);
+
+      if (res == 1)
+        param.solvedp->solvedBoard[index] = fut[index];
+      else
+        param.error = res;
     }
   }
 
-  if (SetEvent(solveAllEvents[thid])==0) {
-    /*int errCode=GetLastError();*/
+  if (SetEvent(solveAllEvents[thid]) == 0) 
     return 0;
-  }
 
   return 1;
 
 }
 
 
-DWORD CALLBACK SolveChunkDDtable (void *) {
-  struct futureTricks fut[MAXNOOFBOARDS];
+DWORD CALLBACK SolveChunkDDtable (void *) 
+{
+  futureTricks fut[MAXNOOFBOARDS];
   int thid;
-  long j;
 
-  thid=InterlockedIncrement(&threadIndex);
+  thid = InterlockedIncrement(&threadIndex);
 
-  while ((j=InterlockedExchangeAdd(&current, chunk))<param.noOfBoards) {
+  int index;
+  schedType st;
 
-    for (int k=0; k<chunk && j+k<param.noOfBoards; k++) {
-      int res=SolveBoard(param.bop->deals[j+k], param.bop->target[j+k],
-	  param.bop->solutions[j+k], param.bop->mode[j+k], 
-	  &fut[j+k], thid);
-      if (res==1) {
-	param.solvedp->solvedBoard[j+k]=fut[j+k];
-	/*param.error=0;*/
+  while (1)
+  {
+    st = scheduler.GetNumber(thid);
+    index = st.number;
+    if (index == -1)
+      break;
+
+    if (st.repeatOf != -1)
+    {
+      START_THREAD_TIMER(thid);
+      for (int k = 0; k < chunk; k++)
+      {
+        param.bop->deals[index].first = k;
+
+	param.solvedp->solvedBoard[index].score[k] =
+	  param.solvedp->solvedBoard[ st.repeatOf ].score[k];
       }
-      else {
-	param.error=res;
-      }
+      END_THREAD_TIMER(thid);
+      continue;
     }
+
+    param.bop->deals[index].first = 0;
+
+    START_THREAD_TIMER(thid);
+    int res = SolveBoard(
+        param.bop->deals[index], 
+	param.bop->target[index],
+        param.bop->solutions[index], 
+	param.bop->mode[index], 
+        &fut[index], 
+	thid);
+
+    // SH: I'm making a terrible use of the fut structure here.
+
+    if (res == 1)
+      param.solvedp->solvedBoard[index].score[0] = fut[index].score[0];
+    else
+      param.error = res;
+
+    for (int k = 1; k < chunk; k++) 
+    {
+      int hint = (k == 2 ? fut[index].score[0] : 
+                  13 - fut[index].score[0]);
+
+      param.bop->deals[index].first = k; // Next declarer
+
+      res = SolveSameBoard(
+        param.bop->deals[index], 
+        &fut[index], 
+	hint,
+	thid);
+
+      if (res == 1)
+	param.solvedp->solvedBoard[index].score[k] = 
+	  fut[index].score[0];
+      else
+	param.error = res;
+    }
+    END_THREAD_TIMER(thid);
   }
 
-  if (SetEvent(solveAllEvents[thid])==0) {
-    /*int errCode=GetLastError();*/
+  if (SetEvent(solveAllEvents[thid]) == 0)
     return 0;
-  }
 
   return 1;
-
 }
 
 
-int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkSize) {
-  int k/*, errCode*/;
-  DWORD res;
+int SolveAllBoardsN(
+  boards 		* bop, 
+  solvedBoards 		* solvedp, 
+  int 			chunkSize,
+  int			source) // 0 solve, 1 calc
+{
+  int k;
+  int res;
   DWORD solveAllWaitResult;
 
-  current = 0;
+  current     = 0;
   threadIndex = -1;
-  chunk = chunkSize;
+  chunk       = chunkSize;
   param.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-    for (k = 0; k<noOfThreads; k++) {
-      solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
-      if (solveAllEvents[k] == 0) {
-	/*errCode=GetLastError();*/
+  for (k = 0; k < noOfThreads; k++) 
+  {
+    solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
+    if (solveAllEvents[k] == 0) 
 	return RETURN_THREAD_CREATE;
-      }
+  }
+
+  param.bop        = bop; 
+  param.solvedp    = solvedp; 
+  param.noOfBoards = bop->noOfBoards;
+
+  if (source == 0)
+    scheduler.Register(bop, SCHEDULER_SOLVE);
+  else
+    scheduler.Register(bop, SCHEDULER_CALC);
+
+  for (k = 0; k < MAXNOOFBOARDS; k++)
+    solvedp->solvedBoard[k].cards = 0;
+
+  if (chunkSize != 1) 
+  {
+    for (k = 0; k<noOfThreads; k++) 
+    {
+      res = QueueUserWorkItem(SolveChunkDDtable, NULL, 
+        WT_EXECUTELONGFUNCTION);
+      if (res != 1) 
+        return res;
     }
-
-    param.bop = bop; param.solvedp = solvedp; param.noOfBoards = bop->noOfBoards;
-
-    for (k = 0; k<MAXNOOFBOARDS; k++)
-      solvedp->solvedBoard[k].cards = 0;
-
-    if (chunkSize != 1) {
-      for (k = 0; k<noOfThreads; k++) {
-        res = QueueUserWorkItem(SolveChunkDDtable, NULL, WT_EXECUTELONGFUNCTION);
-        if (res != 1) {
-	  /*errCode=GetLastError();*/
-	  return res;
-        }
-      }
+  }
+  else 
+  {
+    for (k = 0; k < noOfThreads; k++) 
+    {
+      res=QueueUserWorkItem(SolveChunk, NULL, 
+        WT_EXECUTELONGFUNCTION);
+      if (res != 1) 
+        return res;
     }
-    else {
-      for (k=0; k<noOfThreads; k++) {
-        res=QueueUserWorkItem(SolveChunk, NULL, WT_EXECUTELONGFUNCTION);
-        if (res!=1) {
-          /*errCode=GetLastError();*/
-          return res;
-        }
-      }
-    }
+  }
 
-    solveAllWaitResult = WaitForMultipleObjects(noOfThreads, solveAllEvents, TRUE, INFINITE);
-    if (solveAllWaitResult != WAIT_OBJECT_0) {
-      /*errCode=GetLastError();*/
-      return RETURN_THREAD_WAIT;
-    }
+  START_BLOCK_TIMER;
+  solveAllWaitResult = WaitForMultipleObjects(
+    static_cast<unsigned>(noOfThreads), 
+    solveAllEvents, TRUE, INFINITE);
+  END_BLOCK_TIMER;
 
-    for (k = 0; k<noOfThreads; k++) {
-      CloseHandle(solveAllEvents[k]);
-    }
+  if (solveAllWaitResult != WAIT_OBJECT_0)
+    return RETURN_THREAD_WAIT;
 
-    /* Calculate number of solved boards. */
+  for (k = 0; k<noOfThreads; k++)
+    CloseHandle(solveAllEvents[k]);
 
-    solvedp->noOfBoards = 0;
-    for (k = 0; k<MAXNOOFBOARDS; k++) {
-      if (solvedp->solvedBoard[k].cards != 0)
-	solvedp->noOfBoards++;
-    }
+  /* Calculate number of solved boards. */
 
-    if (param.error == 0)
-      return 1;
-    else
-      return param.error;
+  solvedp->noOfBoards = param.noOfBoards;
+
+  if (param.error == 0)
+    return 1;
+  else
+    return param.error;
 }
 
 #else
 
-int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkSize) {
+int SolveAllBoardsN(
+  boards 		* bop, 
+  solvedBoards 		* solvedp, 
+  int 			chunkSize,
+  int			source) // 0 solve, 1 calc
+{
   int k, i, res, chunk, fail;
-  struct futureTricks fut[MAXNOOFBOARDS];
+  futureTricks fut[MAXNOOFBOARDS];
 
   chunk=chunkSize; fail=1;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  for (i=0; i<MAXNOOFBOARDS; i++)
-      solvedp->solvedBoard[i].cards=0;
+  for (i = 0; i < MAXNOOFBOARDS; i++)
+      solvedp->solvedBoard[i].cards = 0;
 
 #if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
   if (omp_get_dynamic())
     omp_set_dynamic(0);
-  omp_set_num_threads(noOfThreads);	/* Added after suggestion by Dirk Willecke. */
+  omp_set_num_threads(noOfThreads);	
+  /* Added after suggestion by Dirk Willecke. */
 #elif defined (_OPENMP)
   omp_set_num_threads(1);
 #endif
 
-  #pragma omp parallel shared(bop, solvedp, chunk, fail) private(k)
+  int index, thid, hint;
+  schedType st;
+
+  START_BLOCK_TIMER;
+
+  if (source == 0)
+    scheduler.Register(bop, SCHEDULER_SOLVE);
+  else
+    scheduler.Register(bop, SCHEDULER_CALC);
+
+  if (chunkSize == 1)
   {
+    #pragma omp parallel default(none) shared(scheduler, fut, bop, solvedp, chunk, fail) private(st, index, thid, res)
+    {
+      #pragma omp while schedule(dynamic, chunk)
 
-    #pragma omp for schedule(dynamic, chunk)
-
-    for (k=0; k<bop->noOfBoards; k++) {
-      res=SolveBoard(bop->deals[k], bop->target[k], bop->solutions[k],
-        bop->mode[k], &fut[k],
- 
+      while (1)
+      {
 #if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
-		omp_get_thread_num()
+        thid = omp_get_thread_num();
 #else
-		0
+        thid = 0;
 #endif
-		);
-      if (res==1) {
-        solvedp->solvedBoard[k]=fut[k];
+
+        st = scheduler.GetNumber(thid);
+        index = st.number;
+        if (index == -1)
+          break;
+
+        // This is not a perfect repeat detector, as the hands in
+        // a group might have declarers N, S, N, N.  Then the second
+        // N would not reuse the first N.  However, must reuses are
+        // reasonably adjacent, and this is just an optimization anyway.
+
+        if (st.repeatOf != -1 &&
+            (bop->deals[index      ].first ==
+	     bop->deals[st.repeatOf].first))
+        {
+          START_THREAD_TIMER(thid);
+          solvedp->solvedBoard[index] = fut[ st.repeatOf ];
+          END_THREAD_TIMER(thid);
+          continue;
+        }
+        else
+        {
+          START_THREAD_TIMER(thid);
+          res = SolveBoard(
+            bop->deals[index], 
+            bop->target[index],
+            bop->solutions[index], 
+            bop->mode[index], 
+            &fut[index], 
+            thid);
+          END_THREAD_TIMER(thid);
+
+          if (res == 1)
+            solvedp->solvedBoard[index] = fut[index];
+          else
+	    fail = res;
+
+        }
       }
-      else
-        fail=res;
     }
   }
+  else
+  {
+    #pragma omp parallel default(none) shared(scheduler, bop, fut, solvedp, chunk, fail) private(st, index, thid, k, hint, res)
+    {
+      #pragma omp while schedule(dynamic, chunk)
 
-  if (fail!=1)
+      while (1)
+      {
+#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
+        thid = omp_get_thread_num();
+#else
+        thid = 0;
+#endif
+      
+        st = scheduler.GetNumber(thid);
+        index = st.number;
+        if (index == -1)
+          break;
+
+        if (st.repeatOf != -1)
+        {
+          START_THREAD_TIMER(thid);
+          for (k = 0; k < chunk; k++)
+          {
+            bop->deals[index].first = k;
+
+	    solvedp->solvedBoard[index].score[k] =
+	      solvedp->solvedBoard[ st.repeatOf ].score[k];
+          }
+          END_THREAD_TIMER(thid);
+          continue;
+        }
+
+        bop->deals[index].first = 0;
+
+        START_THREAD_TIMER(thid);
+        res = SolveBoard(
+            bop->deals[index], 
+	    bop->target[index],
+            bop->solutions[index], 
+	    bop->mode[index], 
+            &fut[index], 
+	    thid);
+
+        // SH: I'm making a terrible use of the fut structure here.
+
+        if (res == 1)
+          solvedp->solvedBoard[index].score[0] = fut[index].score[0];
+        else
+          fail = res;
+
+        for (k = 1; k < chunk; k++) 
+        {
+          hint = (k == 2 ? fut[index].score[0] : 
+                  13 - fut[index].score[0]);
+
+          bop->deals[index].first = k; // Next declarer
+
+          res = SolveSameBoard(
+            bop->deals[index], 
+            &fut[index], 
+	    hint,
+	    thid);
+
+          if (res == 1)
+	    solvedp->solvedBoard[index].score[k] = 
+	      fut[index].score[0];
+          else
+            fail = res;
+        }
+        END_THREAD_TIMER(thid);
+      }
+    }
+
+  }
+
+  END_BLOCK_TIMER;
+
+  if (fail != 1)
     return fail;
 
-  solvedp->noOfBoards=0;
-  for (i=0; i<MAXNOOFBOARDS; i++) {
-    if (solvedp->solvedBoard[i].cards!=0)
+  solvedp->noOfBoards = 0;
+  for (i = 0; i < MAXNOOFBOARDS; i++)
+    if (solvedp->solvedBoard[i].cards != 0)
       solvedp->noOfBoards++;
-  }
 
   return 1;
 }
@@ -232,11 +441,11 @@ int SolveAllBoardsN(struct boards *bop, struct solvedBoards *solvedp, int chunkS
 #endif
 
 
-int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target,
-    int solutions, int mode, struct futureTricks *futp, int threadIndex) {
+int STDCALL SolveBoardPBN(dealPBN dlpbn, int target,
+    int solutions, int mode, futureTricks *futp, int thrIndex) {
 
   int res, k;
-  struct deal dl;
+  deal dl;
 
   if (ConvertFromPBN(dlpbn.remainCards, dl.remainCards)!=RETURN_NO_FAULT)
     return RETURN_PBN_FAULT;
@@ -248,17 +457,20 @@ int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target,
   dl.first=dlpbn.first;
   dl.trump=dlpbn.trump;
 
-  res=SolveBoard(dl, target, solutions, mode, futp, threadIndex);
+  res=SolveBoard(dl, target, solutions, mode, futp, thrIndex);
 
   return res;
 }
 
 
-int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp) {
-  struct boards bo;
+int STDCALL SolveAllBoards(boardsPBN *bop, solvedBoards *solvedp) {
+  boards bo;
   int k, i, res;
 
   bo.noOfBoards=bop->noOfBoards;
+  if (bo.noOfBoards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
   for (k=0; k<bop->noOfBoards; k++) {
     bo.mode[k]=bop->mode[k];
     bo.solutions[k]=bop->solutions[k];
@@ -273,19 +485,22 @@ int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp) 
       return RETURN_PBN_FAULT;
   }
 
-  res=SolveAllBoardsN(&bo, solvedp, 1);
+  res=SolveAllBoardsN(&bo, solvedp, 1, 0);
 
   return res;
 }
 
-int STDCALL SolveAllChunksPBN(struct boardsPBN *bop, struct solvedBoards *solvedp, int chunkSize) {
-  struct boards bo;
+int STDCALL SolveAllChunksPBN(boardsPBN *bop, solvedBoards *solvedp, int chunkSize) {
+  boards bo;
   int k, i, res;
 
   if (chunkSize < 1)
     return RETURN_CHUNK_SIZE;
 
   bo.noOfBoards = bop->noOfBoards;
+  if (bo.noOfBoards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
   for (k = 0; k<bop->noOfBoards; k++) {
     bo.mode[k] = bop->mode[k];
     bo.solutions[k] = bop->solutions[k];
@@ -300,12 +515,12 @@ int STDCALL SolveAllChunksPBN(struct boardsPBN *bop, struct solvedBoards *solved
       return RETURN_PBN_FAULT;
   }
 
-  res = SolveAllBoardsN(&bo, solvedp, chunkSize);
+  res = SolveAllBoardsN(&bo, solvedp, chunkSize, 0);
   return res;
 }
 
 
-int STDCALL SolveAllChunks(struct boardsPBN *bop, struct solvedBoards *solvedp, int chunkSize) {
+int STDCALL SolveAllChunks(boardsPBN *bop, solvedBoards *solvedp, int chunkSize) {
 
   int res = SolveAllChunksPBN(bop, solvedp, chunkSize);
 
@@ -313,13 +528,13 @@ int STDCALL SolveAllChunks(struct boardsPBN *bop, struct solvedBoards *solvedp, 
 } 
 
 
-int STDCALL SolveAllChunksBin(struct boards *bop, struct solvedBoards *solvedp, int chunkSize) {
+int STDCALL SolveAllChunksBin(boards *bop, solvedBoards *solvedp, int chunkSize) {
   int res;
 
   if (chunkSize < 1)
     return RETURN_CHUNK_SIZE;
 
-  res = SolveAllBoardsN(bop, solvedp, chunkSize);
+  res = SolveAllBoardsN(bop, solvedp, chunkSize, 0);
   return res;
 }
 

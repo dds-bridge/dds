@@ -1,56 +1,48 @@
 /* 
-   DDS 2.7.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund   
-   Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
-   The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given
-   permission to include a C++ adaptation in DDS.
-   						
-   The PlayAnalyser analyses the played cards of the deal and presents 
-   their double dummy values. The par calculation function DealerPar 
-   provides an alternative way of calculating and presenting par 
-   results.  Both these functions have been written by Soren Hein.
-   He has also made numerous contributions to the code, especially in 
-   the initialization part.
+   DDS, a bridge double dummy solver.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-   http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or 
-   implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
 */
 
 
 #include "dds.h"
+#include "threadmem.h"
+#include "SolverIF.h"
 #include "PBN.h"
+#include "Scheduler.h"
 
 // Only single-threaded debugging here.
 #define DEBUG 0
 
+#ifdef DDS_SCHEDULER
+  #define START_BLOCK_TIMER     scheduler.StartBlockTimer()
+  #define END_BLOCK_TIMER       scheduler.EndBlockTimer()
+  #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
+  #define END_THREAD_TIMER(a)   scheduler.EndThreadTimer(a)
+#else
+  #define START_BLOCK_TIMER  	1
+  #define END_BLOCK_TIMER    	1
+  #define START_THREAD_TIMER(a) 1
+  #define END_THREAD_TIMER(a)   1
+#endif
+
+#if DEBUG
 FILE *fp;
+#endif
 
-
-struct playparamType {
-  int			noOfBoards;
-  struct boards		* bop;
-  struct playTracesBin	* plp;
-  struct solvedPlays	* solvedp;
-  int			error;
-};
 
 
 int STDCALL AnalysePlayBin(
-  struct deal		dl,
-  struct playTraceBin	play,
-  struct solvedPlay	* solvedp,
+  deal			dl,
+  playTraceBin		play,
+  solvedPlay		* solvedp,
   int			thrId)
 {
-  struct futureTricks fut;
+  moveType move;
+  futureTricks fut;
   int ret;
 
   int last_trick  = (play.number+3) / 4;
@@ -63,6 +55,8 @@ int STDCALL AnalysePlayBin(
     return ret;
 
   solvedp->tricks[0] = 13 - fut.score[0];
+  int hint = solvedp->tricks[0];
+  int hintDir;
 
   int running_remainder = 13;
   int running_declarer  =  0;
@@ -70,10 +64,8 @@ int STDCALL AnalysePlayBin(
   int running_side      = 1; /* defenders */
   int start_side        = running_player % 2;
   int solved_declarer   = running_remainder - fut.score[0];
-  int declarer          = (dl.first + 3) % 4;
-  int dummy             = (dl.first + 1) % 4;
-  int initial_par       = solved_declarer;
 #if DEBUG
+  int initial_par       = solved_declarer;
   fp = fopen("trace.txt", "a");
   fprintf(fp, "Initial solve: %d\n", initial_par);
   fprintf(fp, "no %d, Last trick %d, last card %d\n", 
@@ -88,14 +80,19 @@ int STDCALL AnalysePlayBin(
   {
     int offset = 4 * (trick-1);
     int lc = (trick == last_trick ? last_card : 4);
+    int best_card = 0, best_suit = 0, best_player = 0, trump_played = 0;
+
     for (int card = 1; card <= lc; card++)
     {
       int suit = play.suit[offset + card - 1];
       int rr   = play.rank[offset + card - 1];
-      int hold = bitMapRank[rr] << 2;
+      unsigned hold = static_cast<unsigned>(bitMapRank[rr] << 2);
+
+      move.suit     = suit;
+      move.rank     = rr;
+      move.sequence = rr;
 
       /* Keep track of the winner of the trick so far */
-      int best_card, best_suit, best_player, trump_played;
       if (card == 1)
       {
         best_card    = rr;
@@ -130,7 +127,9 @@ int STDCALL AnalysePlayBin(
         return RETURN_PLAY_FAULT;
       }
 
+#if DEBUG
       int resp_player = running_player;
+#endif
       dl.remainCards[running_player][suit] ^= hold;
 
       if (card == 4)
@@ -138,24 +137,31 @@ int STDCALL AnalysePlayBin(
         running_declarer +=  (best_player % 2 == start_side ? 0 : 1);
 	running_remainder--;
 
+	if ((dl.first + best_player) % 2 == 0)
+	{
+	  hintDir = 0; // Same side leads again; lower bound
+	  hint    = running_remainder - fut.score[0];
+	}
+	else
+	{
+	  hintDir = 1; // Other ("our") side wins trick; upper bound
+	  hint    = fut.score[0] - 1;
+	}
+
         dl.first = best_player;
 	running_side = (dl.first % 2 == start_side ? 1 : 0);
 	running_player = dl.first;
-        for (int i = 0; i <= 2; i++)
-        {
-          dl.currentTrickSuit[i] = 0;
-          dl.currentTrickRank[i] = 0;
-        }
       }
       else
       {
         running_player = (running_player + 1) % 4;
 	running_side   = 1 - running_side;
-        dl.currentTrickSuit[card-1] = suit;
-        dl.currentTrickRank[card-1] = rr;
+	hint           = running_remainder - fut.score[0];
+	hintDir        = 0;
       }
 
-      if ((ret = SolveBoard(dl, -1, 1, 1, &fut, thrId)) 
+      if ((ret = AnalyseLaterBoard(dl.first, 
+        &move, hint, hintDir, &fut, thrId)) 
         != RETURN_NO_FAULT)
       {
 #if DEBUG
@@ -190,13 +196,13 @@ int STDCALL AnalysePlayBin(
 
 
 int STDCALL AnalysePlayPBN(
-  struct dealPBN	dlPBN,
-  struct playTracePBN	playPBN,
-  struct solvedPlay	* solvedp,
+  dealPBN		dlPBN,
+  playTracePBN		playPBN,
+  solvedPlay		* solvedp,
   int			thrId)
 {
-  struct deal		dl;
-  struct playTraceBin	play;
+  deal			dl;
+  playTraceBin		play;
 
   if (ConvertFromPBN(dlPBN.remainCards, dl.remainCards) !=
     RETURN_NO_FAULT)
@@ -228,33 +234,40 @@ int			pfail;
 HANDLE 			solveAllPlayEvents[MAXNOOFTHREADS];
 LONG volatile 		pthreadIndex;
 LONG volatile 		pcurrent;
-struct playparamType 	playparam;
+paramType 		playparam;
+playparamType		traceparam;
+
+DWORD CALLBACK SolveChunkTracePlay (void *);
 
 DWORD CALLBACK SolveChunkTracePlay (void *)
 {
-  struct solvedPlay     solved[MAXNOOFBOARDS];
+  solvedPlay solved[MAXNOOFBOARDS];
   int thid;
-  long j;
 
   thid = InterlockedIncrement(&pthreadIndex);
 
-  while ((j = InterlockedExchangeAdd(&pcurrent, pchunk)) < 
-          playparam.noOfBoards)
+  int index;
+  schedType st;
+  while (1)
   {
+    st = scheduler.GetNumber(thid);
+    index = st.number;
+    if (index == -1)
+      break;
 
-    for (int k = 0; k < pchunk && j + k < playparam.noOfBoards; k++)
-    {
-      int res = AnalysePlayBin(playparam.bop->deals[j + k], 
-                             playparam.plp->plays[j + k],
-                             &solved[j + k],
-			     thid);
+    START_THREAD_TIMER(thid);
+    int res = AnalysePlayBin(
+      playparam.bop->deals[index], 
+      traceparam.plp->plays[index],
+      &solved[index],
+      thid);
+    END_THREAD_TIMER(thid);
 
-      if (res == 1)
-        playparam.solvedp->solved[j + k] = solved[j + k];
-      else
-        pfail = res;
-        /* If there are multiple errors, this will catch one of them */
-    }
+    if (res == 1)
+      traceparam.solvedp->solved[index] = solved[index];
+    else
+      pfail = res;
+      /* If there are multiple errors, this will catch one of them */
   }
 
   if (SetEvent(solveAllPlayEvents[thid]) == 0)
@@ -264,10 +277,11 @@ DWORD CALLBACK SolveChunkTracePlay (void *)
 }
 
 
+
 int STDCALL AnalyseAllPlaysBin(
-  struct boards		* bop,
-  struct playTracesBin	* plp,
-  struct solvedPlays	* solvedp,
+  boards		* bop,
+  playTracesBin		* plp,
+  solvedPlays		* solvedp,
   int			chunkSize)
 {
   if (bop->noOfBoards > MAXNOOFBOARDS)
@@ -279,16 +293,20 @@ int STDCALL AnalyseAllPlaysBin(
   pchunk = chunkSize;
   pfail  = 1;
 
-  DWORD res;
+  int res;
   DWORD solveAllWaitResult;
 
   pcurrent = 0;
   pthreadIndex = -1;
 
   playparam.bop = bop;
-  playparam.plp = plp;
+  traceparam.plp = plp;
   playparam.noOfBoards = bop->noOfBoards;
-  playparam.solvedp = solvedp;
+  traceparam.noOfBoards = bop->noOfBoards;
+  traceparam.solvedp = solvedp;
+
+  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
+  scheduler.Register(bop, SCHEDULER_TRACE);
 
   for (int k = 0; k < noOfThreads; k++)
   {
@@ -305,8 +323,11 @@ int STDCALL AnalyseAllPlaysBin(
       return res;
   }
 
-  solveAllWaitResult = WaitForMultipleObjects(noOfThreads, 
+  START_BLOCK_TIMER;
+  solveAllWaitResult = WaitForMultipleObjects(
+    static_cast<unsigned>(noOfThreads), 
     solveAllPlayEvents, TRUE, INFINITE);
+  END_BLOCK_TIMER;
 
   if (solveAllWaitResult != WAIT_OBJECT_0)
     return RETURN_THREAD_WAIT;
@@ -322,9 +343,9 @@ int STDCALL AnalyseAllPlaysBin(
 #else
 
 int STDCALL AnalyseAllPlaysBin(
-  struct boards		* bop,
-  struct playTracesBin	* plp,
-  struct solvedPlays	* solvedp,
+  boards		* bop,
+  playTracesBin		* plp,
+  solvedPlays		* solvedp,
   int			chunkSize)
 {
   if (bop->noOfBoards > MAXNOOFBOARDS)
@@ -337,7 +358,10 @@ int STDCALL AnalyseAllPlaysBin(
   pfail  = 1;
 
   int res;
-  struct solvedPlay     solved[MAXNOOFBOARDS];
+  solvedPlay solved[MAXNOOFBOARDS];
+
+  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
+  scheduler.Register(bop, SCHEDULER_TRACE);
 
 #if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
   if (omp_get_dynamic())
@@ -347,30 +371,43 @@ int STDCALL AnalyseAllPlaysBin(
   omp_set_num_threads(1);
 #endif
 
-  #pragma omp parallel shared(bop, plp, solvedp, pchunk, pfail)
+  int index, thid;
+  schedType st;
+
+  START_BLOCK_TIMER;
+
+  #pragma omp parallel default(none) shared(scheduler, bop, plp, solvedp, solved, pchunk, pfail) private(st, index, thid, res)
   {
-    #pragma omp for schedule(dynamic, pchunk)
+    #pragma omp while schedule(dynamic, pchunk)
 
-    for (int k = 0; k < bop->noOfBoards; k++)
+    while (1)
     {
-      res = AnalysePlayBin(bop->deals[k], 
-                         plp->plays[k],
-                         &solved[k],
-
 #if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE) 
-
-                         omp_get_thread_num()
+    thid = omp_get_thread_num();
 #else
-			 0
+    thid = 0;
 #endif
-			 );
+    
+      st = scheduler.GetNumber(thid);
+      index = st.number;
+      if (index == -1)
+        break;
+
+      START_THREAD_TIMER(thid);
+      res = AnalysePlayBin(bop->deals[index], 
+                         plp->plays[index],
+                         &solved[index],
+      			 thid);
+      END_THREAD_TIMER(thid);
 
       if (res == 1)
-        solvedp->solved[k] = solved[k];
+        solvedp->solved[index] = solved[index];
       else
         pfail = res;
     }
   }
+
+  END_BLOCK_TIMER;
 
   solvedp->noOfBoards = bop->noOfBoards;
 
@@ -379,20 +416,22 @@ int STDCALL AnalyseAllPlaysBin(
 #endif
 
 int STDCALL AnalyseAllPlaysPBN(
-  struct boardsPBN	* bopPBN,
-  struct playTracesPBN	* plpPBN,
-  struct solvedPlays	* solvedp,
+  boardsPBN		* bopPBN,
+  playTracesPBN		* plpPBN,
+  solvedPlays		* solvedp,
   int			chunkSize)
 {
-  struct boards		bd;
-  struct playTracesBin	pl;
+  boards	bd;
+  playTracesBin	pl;
 
   bd.noOfBoards = bopPBN->noOfBoards;
+  if (bd.noOfBoards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
 
   for (int k = 0; k < bopPBN->noOfBoards; k++)
   {
-    struct deal    * dl;
-    struct dealPBN * dlp;
+    deal    * dl;
+    dealPBN * dlp;
 
     dl  = &(bd.deals[k]);
     dlp = &(bopPBN->deals[k]);

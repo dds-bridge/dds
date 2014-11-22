@@ -1,37 +1,21 @@
-/*
-   DDS 2.7.0   A bridge double dummy solver.
-   Copyright (C) 2006-2014 by Bo Haglund
-   Cleanups and porting to Linux and MacOSX (C) 2006 by Alex Martelli.
-   The code for calculation of par score / contracts is based upon the
-   perl code written by Matthew Kidd for ACBLmerge. He has kindly given
-   permission to include a C++ adaptation in DDS.
+/* 
+   DDS, a bridge double dummy solver.
 
-   The PlayAnalyser analyses the played cards of the deal and presents
-   their double dummy values. The par calculation function DealerPar
-   provides an alternative way of calculating and presenting par
-   results.  Both these functions have been written by Soren Hein.
-   He has also made numerous contributions to the code, especially in
-   the initialization part.
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-   http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-   implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+   See LICENSE and README.
 */
 
 
 #include "dds.h"
+#include "threadmem.h"
+#include "QuickTricks.h"
 
 
 int QtricksLeadHandNT(
   int 			hand,
-  struct pos 		* posPoint,
+  pos 			* posPoint,
   int 			cutoff,
   int 			depth,
   int 			countLho,
@@ -44,13 +28,12 @@ int QtricksLeadHandNT(
   int 			countPart,
   int 			suit,
   int 			qtricks,
-  int 			trump,
-  int 			* res,
-  struct localVarType	* thrp);
+  int			trump,
+  int 			* res);
 
 int QtricksLeadHandTrump(
   int 			hand,
-  struct pos 		* posPoint,
+  pos 			* posPoint,
   int 			cutoff,
   int 			depth,
   int 			countLho,
@@ -61,13 +44,11 @@ int QtricksLeadHandTrump(
   int 			countPart,
   int 			suit,
   int 			qtricks,
-  int 			trump,
-  int 			* res,
-  struct localVarType	* thrp);
+  int 			* res);
 
 int QuickTricksPartnerHandTrump(
   int 			hand, 
-  struct pos 		* posPoint, 
+  pos 			* posPoint, 
   int 			cutoff, 
   int 			depth,
   int 			countLho, 
@@ -80,13 +61,12 @@ int QuickTricksPartnerHandTrump(
   int 			qtricks, 
   int 			commSuit, 
   int 			commRank, 
-  int 			trump, 
   int 			* res,
-  struct localVarType 	* thrp);
+  localVarType 		* thrp);
 
 int QuickTricksPartnerHandNT(
   int 			hand, 
-  struct pos 		* posPoint, 
+  pos 			* posPoint, 
   int 			cutoff, 
   int 			depth,
   int 			countLho, 
@@ -97,23 +77,22 @@ int QuickTricksPartnerHandNT(
   int 			qtricks, 
   int 			commSuit, 
   int 			commRank, 
-  int 			trump, 
   int 			* res,
-  struct localVarType 	* thrp);
+  localVarType 		* thrp);
 
 
 int QuickTricks(
-  struct pos 		* posPoint,
+  pos 			* posPoint,
   int 			hand,
   int 			depth,
   int 			target,
   int 			trump,
   bool 			* result,
-  struct localVarType	* thrp)
+  localVarType		* thrp)
 {
   int suit, commRank = 0, commSuit = -1;
   int res;
-  int lhoTrumpRanks, rhoTrumpRanks;
+  int lhoTrumpRanks = 0, rhoTrumpRanks = 0;
   int cutoff, lowestQtricks = 0;
 
   *result = true;
@@ -127,7 +106,7 @@ int QuickTricks(
   bool commPartner = false;
   unsigned short (* ris)[DDS_SUITS] = posPoint->rankInSuit;
   unsigned char  (* len)[DDS_SUITS] = posPoint->length;
-  struct highCardType * winner = posPoint->winner;
+  highCardType * winner = posPoint->winner;
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
@@ -454,7 +433,7 @@ int QuickTricks(
       {
         qtricks = QtricksLeadHandTrump(hand, posPoint, cutoff, depth,
           countLho, countRho, lhoTrumpRanks, rhoTrumpRanks,
-          countOwn, countPart, suit, qtricks, trump, &res, thrp);
+          countOwn, countPart, suit, qtricks, &res);
 
         if (res == 1)
           return qtricks;
@@ -471,7 +450,7 @@ int QuickTricks(
         qtricks = QtricksLeadHandNT(hand, posPoint, cutoff, depth,
           countLho, countRho, &lhoTrumpRanks, &rhoTrumpRanks,
           commPartner, commSuit, countOwn, countPart,
-          suit, qtricks, trump, &res, thrp);
+          suit, qtricks, trump, &res);
 
         if (res == 1)
           return qtricks;
@@ -496,7 +475,7 @@ int QuickTricks(
     else
     {
       /* Partner winning card? */
-      if ((winner[suit].hand == partner[hand]))
+      if (winner[suit].hand == partner[hand])
       {
         /* Winner found at partner*/
         if (commPartner)
@@ -508,7 +487,7 @@ int QuickTricks(
               cutoff, depth, countLho, countRho,
               lhoTrumpRanks, rhoTrumpRanks, countOwn,
               countPart, suit, qtricks, commSuit, commRank,
-              trump, &res, thrp);
+              &res, thrp);
 
             if (res == 1)
               return qtricks;
@@ -524,7 +503,7 @@ int QuickTricks(
           {
             qtricks = QuickTricksPartnerHandNT(hand, posPoint, cutoff, 
 	      depth, countLho, countRho, countOwn, countPart, 
-	      suit, qtricks, commSuit, commRank, trump, &res, thrp);
+	      suit, qtricks, commSuit, commRank, &res, thrp);
 
             if (res == 1)
               return qtricks;
@@ -686,7 +665,7 @@ int QuickTricks(
 
 int QtricksLeadHandTrump(
   int 			hand,
-  struct pos 		* posPoint,
+  pos 			* posPoint,
   int 			cutoff,
   int 			depth,
   int 			countLho,
@@ -697,9 +676,7 @@ int QtricksLeadHandTrump(
   int 			countPart,
   int 			suit,
   int 			qtricks,
-  int 			trump,
-  int 			* res,
-  struct localVarType	* thrp)
+  int 			* res)
 {
   /* res=0		Continue with same suit.
      res=1		Cutoff.
@@ -780,7 +757,7 @@ int QtricksLeadHandTrump(
 
 int QtricksLeadHandNT(
   int 			hand,
-  struct pos 		* posPoint,
+  pos 			* posPoint,
   int 			cutoff,
   int 			depth,
   int 			countLho,
@@ -793,9 +770,8 @@ int QtricksLeadHandNT(
   int 			countPart,
   int 			suit,
   int 			qtricks,
-  int 			trump,
-  int 			* res,
-  struct localVarType	* thrp)
+  int			trump,
+  int 			* res)
 {
   /* res=0		Continue with same suit.
      res=1		Cutoff.
@@ -879,7 +855,7 @@ int QtricksLeadHandNT(
 
 int QuickTricksPartnerHandTrump(
   int 			hand,
-  struct pos 		* posPoint,
+  pos 			* posPoint,
   int 			cutoff,
   int 			depth,
   int 			countLho,
@@ -892,9 +868,8 @@ int QuickTricksPartnerHandTrump(
   int 			qtricks,
   int 			commSuit,
   int 			commRank,
-  int 			trump,
   int 			* res,
-  struct localVarType	* thrp)
+  localVarType		* thrp)
 {
   /* res=0		Continue with same suit.
      res=1		Cutoff.
@@ -991,8 +966,8 @@ int QuickTricksPartnerHandTrump(
 
     if (thrp->rel[ranks].absRank[3][suit].hand == partner[hand])
     {
-      posPoint->winRanks[depth][suit] |= 
-        bitMapRank[thrp->rel[ranks].absRank[3][suit].rank];
+      posPoint->winRanks[depth][suit] |= bitMapRank[
+        static_cast<int>(thrp->rel[ranks].absRank[3][suit].rank) ];
 
       posPoint->winRanks[depth][commSuit] |= bitMapRank[commRank];
 
@@ -1018,7 +993,7 @@ int QuickTricksPartnerHandTrump(
 
 int QuickTricksPartnerHandNT(
   int 			hand,
-  struct pos 		* posPoint,
+  pos 			* posPoint,
   int 			cutoff,
   int 			depth,
   int 			countLho,
@@ -1029,9 +1004,8 @@ int QuickTricksPartnerHandNT(
   int 			qtricks,
   int 			commSuit,
   int 			commRank,
-  int 			trump,
   int 			* res,
-  struct localVarType	* thrp)
+  localVarType		* thrp)
 {
   *res = 1;
   int qt = qtricks;
@@ -1102,8 +1076,8 @@ int QuickTricksPartnerHandNT(
 
     if (thrp->rel[ranks].absRank[3][suit].hand == partner[hand])
     {
-      posPoint->winRanks[depth][suit] |= 
-        bitMapRank[thrp->rel[ranks].absRank[3][suit].rank];
+      posPoint->winRanks[depth][suit] |= bitMapRank[
+        static_cast<int>(thrp->rel[ranks].absRank[3][suit].rank) ];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -1121,19 +1095,20 @@ int QuickTricksPartnerHandNT(
 
 
 bool QuickTricksSecondHand(
-  struct pos 		* posPoint,
+  pos 			* posPoint,
   int 			hand,
   int 			depth,
   int 			target,
   int 			trump,
-  struct localVarType	* thrp)
+  localVarType		* thrp)
 {
   if (depth == thrp->iniDepth)
     return false;
 
   int ss = posPoint->move[depth + 1].suit;
   unsigned short (*ris)[DDS_SUITS] = posPoint->rankInSuit;
-  unsigned short ranks = ris[hand][ss] | ris[partner[hand]][ss];
+  unsigned short ranks = static_cast<unsigned short>
+    (ris[hand][ss] | ris[partner[hand]][ss]);
 
   for (int s = 0; s < DDS_SUITS; s++)
     posPoint->winRanks[depth][s] = 0;
