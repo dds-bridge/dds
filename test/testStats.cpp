@@ -16,44 +16,44 @@
 #include "../include/portab.h"
 #include "testStats.h"
 
-#define NUM_TIMERS	2000
-#define COUNTER_SLOTS	 200
+#define NUM_TIMERS      2000
+#define COUNTER_SLOTS    200
 
 
 #ifdef _WIN32
-LARGE_INTEGER 	ttimerFreq, 
-		ttimerUser0, 
-		ttimerUser1, 
-              	ttimerListUser0[NUM_TIMERS], 
-	      	ttimerListUser1[NUM_TIMERS];
+LARGE_INTEGER   ttimerFreq, 
+                ttimerUser0, 
+                ttimerUser1, 
+                ttimerListUser0[NUM_TIMERS], 
+                ttimerListUser1[NUM_TIMERS];
 #else
 #include <sys/time.h>
-int 		TesttimevalDiff(timeval x, timeval y);
+int             TesttimevalDiff(timeval x, timeval y);
 
-timeval 	ttimerUser0, 
-		ttimerUser1,
-              	ttimerListUser0[NUM_TIMERS], 
-	      	ttimerListUser1[NUM_TIMERS];
+timeval         ttimerUser0, 
+                ttimerUser1,
+                ttimerListUser0[NUM_TIMERS], 
+                ttimerListUser1[NUM_TIMERS];
 #endif
 
-clock_t 	ttimerSys0, 
-		ttimerSys1,
-		ttimerListSys0[NUM_TIMERS], 
-		ttimerListSys1[NUM_TIMERS];
+clock_t         ttimerSys0, 
+                ttimerSys1,
+                ttimerListSys0[NUM_TIMERS], 
+                ttimerListSys1[NUM_TIMERS];
 
-int		ttimerCount,
-		ttimerListCount[NUM_TIMERS];
+int             ttimerCount,
+                ttimerListCount[NUM_TIMERS];
 
-int		ttimerNameSet;
+int             ttimerNameSet;
 
-char		ttimerName[80];
+char            ttimerName[80];
 
-long long     	ttimerUserCum, 
-		ttimerSysCum,
-        	ttimerListUserCum[NUM_TIMERS], 
-		ttimerListSysCum[NUM_TIMERS],
-		tpredError,
-		tpredAbsError;
+long long       ttimerUserCum, 
+                ttimerSysCum,
+                ttimerListUserCum[NUM_TIMERS], 
+                ttimerListSysCum[NUM_TIMERS],
+                tpredError,
+                tpredAbsError;
 
 
 void TestInitTimer()
