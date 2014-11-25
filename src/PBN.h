@@ -9,10 +9,10 @@
 
 
 int ConvertFromPBN(
-  char			* dealBuff,
-  unsigned int		remainCards[DDS_HANDS][DDS_SUITS]);
+  char                  * dealBuff,
+  unsigned int          remainCards[DDS_HANDS][DDS_SUITS]);
 
 int ConvertPlayFromPBN(
-  struct playTracePBN	* playPBN,
-  struct playTraceBin	* playBin);
+  struct playTracePBN   * playPBN,
+  struct playTraceBin   * playBin);
 

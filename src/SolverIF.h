@@ -9,16 +9,16 @@
 
 
 int SolveSameBoard(
-  deal		dl,
-  futureTricks	* futp,
-  int		hint,
-  int		thrId);
+  deal          dl,
+  futureTricks  * futp,
+  int           hint,
+  int           thrId);
 
 int AnalyseLaterBoard(
-  int		leadHand,
-  moveType	* move,
-  int		hint,
-  int		hintDir,
-  futureTricks	* futp,
-  int		thrp);
+  int           leadHand,
+  moveType      * move,
+  int           hint,
+  int           hintDir,
+  futureTricks  * futp,
+  int           thrp);
 

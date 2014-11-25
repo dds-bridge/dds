@@ -17,91 +17,85 @@
 #include "ABsearch.h"
 
 
-#define DDS_POS_LINES	5
-#define DDS_HAND_LINES 	12
-#define DDS_NODE_LINES	4
-#define DDS_FULL_LINE	80
-#define DDS_HAND_OFFSET	16
+#define DDS_POS_LINES   5
+#define DDS_HAND_LINES  12
+#define DDS_NODE_LINES  4
+#define DDS_FULL_LINE   80
+#define DDS_HAND_OFFSET 16
 #define DDS_HAND_OFFSET2 12
 #define DDS_DIAG_WIDTH  34
 
 
 void Make3Simple(
-  pos 			* posPoint,
-  unsigned short int 	trickCards[DDS_SUITS],
-  int 			depth,
-  moveType 		* mply,
-  localVarType		* thrp);
+  pos                   * posPoint,
+  unsigned short int    trickCards[DDS_SUITS],
+  int                   depth,
+  moveType              * mply,
+  localVarType          * thrp);
 
 void Undo0(
-  pos 		* posPoint,
-  int 		depth,
-  moveType	* mply,
-  localVarType		* thrp);
+  pos           * posPoint,
+  int           depth,
+  moveType      * mply,
+  localVarType          * thrp);
 
 void Undo0Simple(
-  pos 		* posPoint,
-  int 		depth,
-  moveType 	* mply);
+  pos           * posPoint,
+  int           depth,
+  moveType      * mply);
 
 void Undo1(
-  pos 		* posPoint,
-  int 		depth,
-  moveType	* mply);
+  pos           * posPoint,
+  int           depth,
+  moveType      * mply);
 
 void Undo2(
-  pos 		* posPoint,
-  int 		depth,
-  moveType	* mply);
+  pos           * posPoint,
+  int           depth,
+  moveType      * mply);
 
 void Undo3(
-  pos 		* posPoint,
-  int 		depth,
-  moveType	* mply);
+  pos           * posPoint,
+  int           depth,
+  moveType      * mply);
 
 void RankToDiagrams(
-  unsigned short int	rankInSuit[DDS_HANDS][DDS_SUITS],
-  nodeCardsType	* np,
-  char		text[DDS_HAND_LINES][DDS_FULL_LINE]);
+  unsigned short int    rankInSuit[DDS_HANDS][DDS_SUITS],
+  nodeCardsType * np,
+  char          text[DDS_HAND_LINES][DDS_FULL_LINE]);
 
 void WinnersToText(
-  unsigned short int	winRanks[DDS_SUITS],
-  char		text[DDS_SUITS][DDS_FULL_LINE]);
-
-void PlyToText(
-  movePlyType	* mply,
-  int		depth,
-  int		firstHand,
-  char		text[DDS_FULL_LINE]);
+  unsigned short int    winRanks[DDS_SUITS],
+  char          text[DDS_SUITS][DDS_FULL_LINE]);
 
 void NodeToText(
-  nodeCardsType	* np,
-  char		text[DDS_NODE_LINES][DDS_FULL_LINE]);
+  nodeCardsType * np,
+  char          text[DDS_NODE_LINES][DDS_FULL_LINE]);
 
 void FullNodeToText(
-  nodeCardsType	* np,
-  char		text[DDS_NODE_LINES][DDS_FULL_LINE]);
+  nodeCardsType * np,
+  char          text[DDS_NODE_LINES][DDS_FULL_LINE]);
 
 void PosToText(
-  pos		* posPoint,
-  int		target,
-  int		depth,
-  char		text[DDS_POS_LINES][DDS_FULL_LINE]);
+  pos           * posPoint,
+  int           target,
+  int           depth,
+  char          text[DDS_POS_LINES][DDS_FULL_LINE]);
 
 void DumpRetrieved(
-  FILE		* fp,
-  pos		* posPoint,
-  nodeCardsType	* np,
-  int		target,
-  int		depth);
+  FILE          * fp,
+  pos           * posPoint,
+  nodeCardsType * np,
+  int           target,
+  int           depth);
 
 void DumpStored(
-  FILE		* fp,
-  pos		* posPoint,
-  movePlyType	mply[],
-  nodeCardsType	* np,
-  int		target,
-  int		depth);
+  FILE          * fp,
+  pos           * posPoint,
+  Moves         * moves,
+  nodeCardsType * np,
+  int           target,
+  int           depth);
 
 
 const int handDelta[DDS_SUITS] = {  256,  16,  1, 0 };
@@ -142,15 +136,15 @@ void InitFileABstats(int thrId)
     thrId,
     DDS_DEBUG_SUFFIX);
 
-  thrp->ABstats.SetFile(fname);
+  thrp->ABStats.SetFile(fname);
 
-  thrp->ABstats.SetName(AB_TARGET_REACHED, "Target decided");
-  thrp->ABstats.SetName(AB_DEPTH_ZERO    , "depth == 0");
-  thrp->ABstats.SetName(AB_QUICKTRICKS   , "QuickTricks");
-  thrp->ABstats.SetName(AB_LATERTRICKS   , "LaterTricks");
-  thrp->ABstats.SetName(AB_MAIN_LOOKUP   , "Main lookup");
-  thrp->ABstats.SetName(AB_SIDE_LOOKUP   , "Other lookup");
-  thrp->ABstats.SetName(AB_MOVE_LOOP     , "Move trial");
+  thrp->ABStats.SetName(AB_TARGET_REACHED, "Target decided");
+  thrp->ABStats.SetName(AB_DEPTH_ZERO    , "depth == 0");
+  thrp->ABStats.SetName(AB_QUICKTRICKS   , "QuickTricks");
+  thrp->ABStats.SetName(AB_LATERTRICKS   , "LaterTricks");
+  thrp->ABStats.SetName(AB_MAIN_LOOKUP   , "Main lookup");
+  thrp->ABStats.SetName(AB_SIDE_LOOKUP   , "Other lookup");
+  thrp->ABStats.SetName(AB_MOVE_LOOP     , "Move trial");
 #else
   UNUSED(thrId);
 #endif
@@ -259,7 +253,7 @@ void CloseFileTopLevel(int thrId)
 {
 #ifdef DDS_TOP_LEVEL
   localVarType * thrp = &localVar[thrId];
-  if (thrp->fpTopLevel != stdout)
+  if (thrp->fpTopLevel != stdout && thrp->fpTopLevel != nullptr)
     fclose(thrp->fpTopLevel);
 #else
   UNUSED(thrId);
@@ -271,7 +265,7 @@ void CloseFileABhits(int thrId)
 {
 #ifdef DDS_AB_HITS
   localVarType * thrp = &localVar[thrId];
-  if (thrp->fpStored != stdout)
+  if (thrp->fpStored != stdout && thrp->fpStored != nullptr)
     fclose(thrp->fpStored);
 #else
   UNUSED(thrId);
@@ -280,10 +274,10 @@ void CloseFileABhits(int thrId)
 
 
 bool ABsearch(
-  pos 			* posPoint, 
-  int 			target, 
-  int 			depth, 
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  int                   target, 
+  int                   depth, 
+  localVarType          * thrp)
 {
   /* posPoint points to the current look-ahead position,
      target is number of tricks to take for the player,
@@ -324,7 +318,7 @@ bool ABsearch(
     mply = thrp->moves.MakeNext(tricks, 0,
       posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
-  thrp->ABstats.IncrNode(depth);
+  thrp->ABStats.IncrNode(depth);
 #endif
     TIMER_END(TIMER_MAKE + depth);
 
@@ -345,7 +339,7 @@ bool ABsearch(
     {
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] = 
-	  posPoint->winRanks[depth - 1][ss];
+          posPoint->winRanks[depth - 1][ss];
 
       thrp->bestMove[depth] = * mply;
 #ifdef DDS_MOVES
@@ -365,7 +359,7 @@ ABexit:
 
   AB_COUNT(AB_MOVE_LOOP, value, depth);
 #ifdef DDS_AB_STATS
-  thrp->ABstats.PrintStats();
+  thrp->ABStats.PrintStats();
 #endif
 
   return value;
@@ -373,10 +367,10 @@ ABexit:
 
 
 bool ABsearch0(
-  pos 			* posPoint, 
-  int 			target, 
-  int 			depth, 
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  int                   target, 
+  int                   depth, 
+  localVarType          * thrp)
 {
   /* posPoint points to the current look-ahead position,
      target is number of tricks to take for the player,
@@ -421,7 +415,7 @@ bool ABsearch0(
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] =
           winRanks[ posPoint->aggr[ss] ]
-	  [ static_cast<int>(cardsP->leastWin[ss]) ];
+          [ static_cast<int>(cardsP->leastWin[ss]) ];
 
       if (cardsP->bestMoveRank != 0)
       {
@@ -465,7 +459,7 @@ bool ABsearch0(
   bool res;
   TIMER_START(TIMER_QT + depth);
   int qtricks = QuickTricks(posPoint, hand, depth, target, 
-		  trump, &res, thrp);
+                  trump, &res, thrp);
   TIMER_END(TIMER_QT + depth);
 
   if (thrp->nodeTypeStore[hand] == MAXNODE)
@@ -548,7 +542,7 @@ if (depth == 4)
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] =
           winRanks[ posPoint->aggr[ss] ]
-	    [ static_cast<int>(cardsP->leastWin[ss]) ];
+            [ static_cast<int>(cardsP->leastWin[ss]) ];
 
       if (cardsP->bestMoveRank != 0)
       {
@@ -590,7 +584,7 @@ if (depth == 4)
     mply = thrp->moves.MakeNext(tricks, 0,
       posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
-  thrp->ABstats.IncrNode(depth);
+  thrp->ABStats.IncrNode(depth);
 #endif
     TIMER_END(TIMER_MAKE + depth);
 
@@ -611,7 +605,7 @@ if (depth == 4)
     {
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] = 
-	  posPoint->winRanks[depth - 1][ss];
+          posPoint->winRanks[depth - 1][ss];
 
       thrp->bestMove[depth] = * mply;
 #ifdef DDS_MOVES
@@ -678,7 +672,7 @@ ABexit:
   TIMER_END(TIMER_BUILD + depth);
 
 #ifdef DDS_AB_HITS
-  DumpStored(thrp->fpStored, posPoint, thrp->movePly, 
+  DumpStored(thrp->fpStored, posPoint, &thrp->moves, 
     &first, target, depth);
 #endif
 
@@ -688,10 +682,10 @@ ABexit:
 
 
 bool ABsearch1(
-  pos 			* posPoint, 
-  int 			target, 
-  int 			depth, 
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  int                   target, 
+  int                   depth, 
+  localVarType          * thrp)
 {
   int  trump   = thrp->trump;
   int  hand    = handId(posPoint->first[depth], 1);
@@ -729,7 +723,7 @@ bool ABsearch1(
     mply = thrp->moves.MakeNext(tricks, 1,
       posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
-  thrp->ABstats.IncrNode(depth);
+  thrp->ABStats.IncrNode(depth);
 #endif
     TIMER_END(TIMER_MAKE + depth);
 
@@ -774,10 +768,10 @@ ABexit:
 
 
 bool ABsearch2(
-  pos 			* posPoint, 
-  int 			target, 
-  int 			depth, 
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  int                   target, 
+  int                   depth, 
+  localVarType          * thrp)
 {
   int  hand    = handId(posPoint->first[depth], 2);
   bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
@@ -814,7 +808,7 @@ bool ABsearch2(
     Make2(posPoint, depth, mply);
 
 #ifdef DDS_AB_STATS
-  thrp->ABstats.IncrNode(depth);
+  thrp->ABStats.IncrNode(depth);
 #endif
     TIMER_END(TIMER_MAKE + depth);
 
@@ -855,14 +849,14 @@ ABexit:
 
 
 bool ABsearch3(
-  pos 			* posPoint, 
-  int 			target, 
-  int 			depth, 
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  int                   target, 
+  int                   depth, 
+  localVarType          * thrp)
 {
   /* This is a specialized AB function for handRelFirst == 3. */
 
-  unsigned short int 	makeWinRank[DDS_SUITS];
+  unsigned short int    makeWinRank[DDS_SUITS];
 
   int  hand    = handId(posPoint->first[depth], 3);
   bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
@@ -894,7 +888,7 @@ bool ABsearch3(
     mply = thrp->moves.MakeNext(tricks, 3,
       posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
-  thrp->ABstats.IncrNode(depth);
+  thrp->ABStats.IncrNode(depth);
 #endif
     TIMER_END(TIMER_MAKE + depth);
 
@@ -947,9 +941,9 @@ ABexit:
 
 
 void Make0(
-  pos 			* posPoint, 
-  int 			depth, 
-  moveType		* mply)
+  pos                   * posPoint, 
+  int                   depth, 
+  moveType              * mply)
 {
   /* First hand is not changed in next move */
   int h = posPoint->first[depth];
@@ -967,9 +961,9 @@ void Make0(
 
 
 void Make1(
-  pos 			* posPoint, 
-  int 			depth, 
-  moveType		* mply)
+  pos                   * posPoint, 
+  int                   depth, 
+  moveType              * mply)
 {
   /* First hand is not changed in next move */
   int firstHand = posPoint->first[depth];
@@ -987,9 +981,9 @@ void Make1(
 
 
 void Make2(
-  pos 			* posPoint, 
-  int 			depth, 
-  moveType		* mply)
+  pos                   * posPoint, 
+  int                   depth, 
+  moveType              * mply)
 {
   /* First hand is not changed in next move */
   int firstHand = posPoint->first[depth];
@@ -1007,11 +1001,11 @@ void Make2(
 
 
 void Make3(
-  pos 			* posPoint, 
-  unsigned short int 	trickCards[DDS_SUITS],
-  int 			depth, 
-  moveType		* mply,
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  unsigned short int    trickCards[DDS_SUITS],
+  int                   depth, 
+  moveType              * mply,
+  localVarType          * thrp)
 {
   int firstHand = posPoint->first[depth];
 
@@ -1071,11 +1065,11 @@ void Make3(
 
 
 void Make3Simple(
-  pos 			* posPoint, 
-  unsigned short int 	trickCards[DDS_SUITS],
-  int 			depth, 
-  moveType 		* mply, 
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  unsigned short int    trickCards[DDS_SUITS],
+  int                   depth, 
+  moveType              * mply, 
+  localVarType          * thrp)
 {
   trickDataType * datap = thrp->moves.GetTrickData((depth+3) >> 2);
 
@@ -1106,10 +1100,10 @@ void Make3Simple(
 
 
 void Undo0(
-  pos 			* posPoint, 
-  int 			depth, 
-  moveType		* mply,
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  int                   depth, 
+  moveType              * mply,
+  localVarType          * thrp)
 {
   int h = handId(posPoint->first[depth], 3);
   int s = mply->suit;
@@ -1135,9 +1129,9 @@ void Undo0(
 
 
 void Undo0Simple(
-  pos 			* posPoint, 
-  int 			depth, 
-  moveType 		* mply)
+  pos                   * posPoint, 
+  int                   depth, 
+  moveType              * mply)
 {
   int h = handId(posPoint->first[depth], 3);
   int s = mply->suit;
@@ -1149,9 +1143,9 @@ void Undo0Simple(
 
 
 void Undo1(
-  pos 			* posPoint, 
-  int 			depth, 
-  moveType		* mply)
+  pos                   * posPoint, 
+  int                   depth, 
+  moveType              * mply)
 {
   int h   = posPoint->first[depth];
   int s   = mply->suit;
@@ -1165,9 +1159,9 @@ void Undo1(
 
 
 void Undo2(
-  pos 			* posPoint, 
-  int 			depth, 
-  moveType		* mply)
+  pos                   * posPoint, 
+  int                   depth, 
+  moveType              * mply)
 {
   int h   = handId(posPoint->first[depth], 1);
   int s   = mply->suit;
@@ -1181,9 +1175,9 @@ void Undo2(
 
 
 void Undo3(
-  pos 			* posPoint, 
-  int 			depth, 
-  moveType		* mply)
+  pos                   * posPoint, 
+  int                   depth, 
+  moveType              * mply)
 {
   int h   = handId(posPoint->first[depth], 2);
   int s   = mply->suit;
@@ -1197,9 +1191,9 @@ void Undo3(
 
 
 evalType Evaluate(
-  pos 			* posPoint,
-  int 			trump,
-  localVarType		* thrp)
+  pos                   * posPoint,
+  int                   trump,
+  localVarType          * thrp)
 {
   int s, h, hmax = 0, count = 0, k = 0;
   unsigned short rmax = 0;
@@ -1279,8 +1273,8 @@ minexit:
 
 
 void RankToText(
-  unsigned short int	rankInSuit[DDS_HANDS][DDS_SUITS],
-  char			text[DDS_HAND_LINES][DDS_FULL_LINE])
+  unsigned short int    rankInSuit[DDS_HANDS][DDS_SUITS],
+  char                  text[DDS_HAND_LINES][DDS_FULL_LINE])
 {
   int c, h, s, r;
 
@@ -1334,9 +1328,9 @@ void RankToText(
 
 
 void RankToDiagrams(
-  unsigned short int	rankInSuit[DDS_HANDS][DDS_SUITS],
-  nodeCardsType		* np,
-  char			text[DDS_HAND_LINES][DDS_FULL_LINE])
+  unsigned short int    rankInSuit[DDS_HANDS][DDS_SUITS],
+  nodeCardsType         * np,
+  char                  text[DDS_HAND_LINES][DDS_FULL_LINE])
 {
   int c, h, s, r;
 
@@ -1380,12 +1374,12 @@ void RankToDiagrams(
       for (r = 14; r >= 2; r--)
       {
         if (rankInSuit[h][s] & bitMapRank[r])
-	{
+        {
           text[line + s][c] = static_cast<char>(cardRank[r]);
           text[line + s][c + DDS_DIAG_WIDTH + 5] = 
-	    (r >= 15 - np->leastWin[s] ? 
-	      static_cast<char>(cardRank[r]) : 'x');
-	  c++;
+            (r >= 15 - np->leastWin[s] ? 
+              static_cast<char>(cardRank[r]) : 'x');
+          c++;
         }
       }
 
@@ -1393,7 +1387,7 @@ void RankToDiagrams(
       {
         text[line + s][c] = '-';
         text[line + s][c + DDS_DIAG_WIDTH + 5] = '-';
-	c++;
+        c++;
       }
 
       if (h != 3)
@@ -1404,8 +1398,8 @@ void RankToDiagrams(
 
 
 void WinnersToText(
-  unsigned short int	ourWinRanks[DDS_SUITS],
-  char			text[DDS_SUITS][DDS_FULL_LINE])
+  unsigned short int    ourWinRanks[DDS_SUITS],
+  char                  text[DDS_SUITS][DDS_FULL_LINE])
 {
   int c, s, r;
 
@@ -1427,31 +1421,9 @@ void WinnersToText(
 }
 
 
-void PlyToText(
-  movePlyType		mply[],
-  int			depth,
-  int			firstHand,
-  char			text[DDS_FULL_LINE])
-{
-  sprintf(text, "Last trick\t%c: %c%c - %c%c - %c%c - %c%c\n",
-    cardHand[firstHand],
-     cardSuit[ mply[depth+4].move[ mply[depth+4].current ].suit ],
-     cardRank[ mply[depth+4].move[ mply[depth+4].current ].rank ],
-
-     cardSuit[ mply[depth+3].move[ mply[depth+3].current ].suit ],
-     cardRank[ mply[depth+3].move[ mply[depth+3].current ].rank ],
-
-     cardSuit[ mply[depth+2].move[ mply[depth+2].current ].suit ],
-     cardRank[ mply[depth+2].move[ mply[depth+2].current ].rank ],
-    
-     cardSuit[ mply[depth+1].move[ mply[depth+1].current ].suit ],
-     cardRank[ mply[depth+1].move[ mply[depth+1].current ].rank ]);
-}
-
-
 void NodeToText(
-  nodeCardsType		* np,
-  char			text[DDS_NODE_LINES-1][DDS_FULL_LINE])
+  nodeCardsType         * np,
+  char                  text[DDS_NODE_LINES-1][DDS_FULL_LINE])
 
 {
   sprintf(text[0], "Address\t\t%p\n", static_cast<void *>(np));
@@ -1468,8 +1440,8 @@ void NodeToText(
 
 
 void FullNodeToText(
-  nodeCardsType		* np,
-  char			text[DDS_NODE_LINES][DDS_FULL_LINE])
+  nodeCardsType         * np,
+  char                  text[DDS_NODE_LINES][DDS_FULL_LINE])
 
 {
   sprintf(text[0], "Address\t\t%p\n", static_cast<void *>(np));
@@ -1492,10 +1464,10 @@ void FullNodeToText(
 
 
 void PosToText(
-  pos			* posPoint,
-  int			target,
-  int			depth,
-  char			text[DDS_POS_LINES][DDS_FULL_LINE])
+  pos                   * posPoint,
+  int                   target,
+  int                   depth,
+  char                  text[DDS_POS_LINES][DDS_FULL_LINE])
 {
   sprintf(text[0], "Target\t\t%d\n"  , target);
   sprintf(text[1], "Depth\t\t%d\n"   , depth);
@@ -1508,11 +1480,11 @@ void PosToText(
 
 
 void DumpRetrieved(
-  FILE			* fp,
-  pos			* posPoint,
-  nodeCardsType 	* np,
-  int			target,
-  int			depth)
+  FILE                  * fp,
+  pos                   * posPoint,
+  nodeCardsType         * np,
+  int                   target,
+  int                   depth)
 {
   // Big enough for all uses.
   char text[DDS_HAND_LINES][DDS_FULL_LINE];
@@ -1538,12 +1510,12 @@ void DumpRetrieved(
 
 
 void DumpStored(
-  FILE			* fp,
-  pos			* posPoint,
-  movePlyType		mply[],
-  nodeCardsType 	* np,
-  int			target,
-  int			depth)
+  FILE                  * fp,
+  pos                   * posPoint,
+  Moves                 * moves,
+  nodeCardsType         * np,
+  int                   target,
+  int                   depth)
 {
   // Big enough for all uses.
   char text[DDS_HAND_LINES][DDS_FULL_LINE];
@@ -1561,7 +1533,7 @@ void DumpStored(
     fprintf(fp, "%s", text[i]);
   fprintf(fp, "\n");
 
-  PlyToText(mply, depth, posPoint->first[depth+3], text[0]);
+  moves->TrickToText((depth >> 2) + 1, text[0]);
   fprintf(fp, "%s", text[0]);
   fprintf(fp, "\n");
 
@@ -1573,11 +1545,11 @@ void DumpStored(
 
 
 void DumpTopLevel(
-  localVarType		* thrp,
-  int			tricks,
-  int			lower,
-  int 			upper,
-  int			printMode)
+  localVarType          * thrp,
+  int                   tricks,
+  int                   lower,
+  int                   upper,
+  int                   printMode)
 {
 #ifdef DDS_TOP_LEVEL
   char text[DDS_HAND_LINES][DDS_FULL_LINE];
@@ -1632,7 +1604,7 @@ void DumpTopLevel(
     }
   }
 
-  int l = strlen(text[0]) - 1;
+  size_t l = strlen(text[0]) - 1;
 
   memset(text[1], '-', l);
   text[1][l] = '\0';

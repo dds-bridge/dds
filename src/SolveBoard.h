@@ -9,8 +9,8 @@
 
 
 int SolveAllBoardsN(
-  struct boards		* bop,
-  struct solvedBoards	* solvedp,
-  int			chunkSize,
-  int			source); // 0 source, 1 calc
+  struct boards         * bop,
+  struct solvedBoards   * solvedp,
+  int                   chunkSize,
+  int                   source); // 0 source, 1 calc
 

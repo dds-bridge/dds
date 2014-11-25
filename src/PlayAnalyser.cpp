@@ -23,8 +23,8 @@
   #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
   #define END_THREAD_TIMER(a)   scheduler.EndThreadTimer(a)
 #else
-  #define START_BLOCK_TIMER  	1
-  #define END_BLOCK_TIMER    	1
+  #define START_BLOCK_TIMER     1
+  #define END_BLOCK_TIMER       1
   #define START_THREAD_TIMER(a) 1
   #define END_THREAD_TIMER(a)   1
 #endif
@@ -36,10 +36,10 @@ FILE *fp;
 
 
 int STDCALL AnalysePlayBin(
-  deal			dl,
-  playTraceBin		play,
-  solvedPlay		* solvedp,
-  int			thrId)
+  deal                  dl,
+  playTraceBin          play,
+  solvedPlay            * solvedp,
+  int                   thrId)
 {
   moveType move;
   futureTricks fut;
@@ -103,17 +103,17 @@ int STDCALL AnalysePlayBin(
       else if (suit == dl.trump)
       {
         if (! trump_played || rr > best_card)
-	{
+        {
           best_card    = rr;
-	  best_suit    = suit;
-	  best_player  = running_player;
-	  trump_played = 1;
+          best_suit    = suit;
+          best_player  = running_player;
+          trump_played = 1;
         }
       }
       else if (! trump_played && suit == best_suit && rr > best_card)
       {
         best_card = rr;
-	best_player = running_player;
+        best_player = running_player;
       }
 
       if ((dl.remainCards[running_player][suit] & hold) == 0)
@@ -135,29 +135,29 @@ int STDCALL AnalysePlayBin(
       if (card == 4)
       {
         running_declarer +=  (best_player % 2 == start_side ? 0 : 1);
-	running_remainder--;
+        running_remainder--;
 
-	if ((dl.first + best_player) % 2 == 0)
-	{
-	  hintDir = 0; // Same side leads again; lower bound
-	  hint    = running_remainder - fut.score[0];
-	}
-	else
-	{
-	  hintDir = 1; // Other ("our") side wins trick; upper bound
-	  hint    = fut.score[0] - 1;
-	}
+        if ((dl.first + best_player) % 2 == 0)
+        {
+          hintDir = 0; // Same side leads again; lower bound
+          hint    = running_remainder - fut.score[0];
+        }
+        else
+        {
+          hintDir = 1; // Other ("our") side wins trick; upper bound
+          hint    = fut.score[0] - 1;
+        }
 
         dl.first = best_player;
-	running_side = (dl.first % 2 == start_side ? 1 : 0);
-	running_player = dl.first;
+        running_side = (dl.first % 2 == start_side ? 1 : 0);
+        running_player = dl.first;
       }
       else
       {
         running_player = (running_player + 1) % 4;
-	running_side   = 1 - running_side;
-	hint           = running_remainder - fut.score[0];
-	hintDir        = 0;
+        running_side   = 1 - running_side;
+        hint           = running_remainder - fut.score[0];
+        hintDir        = 0;
       }
 
       if ((ret = AnalyseLaterBoard(dl.first, 
@@ -196,13 +196,13 @@ int STDCALL AnalysePlayBin(
 
 
 int STDCALL AnalysePlayPBN(
-  dealPBN		dlPBN,
-  playTracePBN		playPBN,
-  solvedPlay		* solvedp,
-  int			thrId)
+  dealPBN               dlPBN,
+  playTracePBN          playPBN,
+  solvedPlay            * solvedp,
+  int                   thrId)
 {
-  deal			dl;
-  playTraceBin		play;
+  deal                  dl;
+  playTraceBin          play;
 
   if (ConvertFromPBN(dlPBN.remainCards, dl.remainCards) !=
     RETURN_NO_FAULT)
@@ -224,18 +224,18 @@ int STDCALL AnalysePlayPBN(
 }
 
 
-long 			pchunk = 0;
-int			pfail;
+long                    pchunk = 0;
+int                     pfail;
 
 
 #if (defined(_WIN32) || defined(__CYGWIN__)) && \
     !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
 
-HANDLE 			solveAllPlayEvents[MAXNOOFTHREADS];
-LONG volatile 		pthreadIndex;
-LONG volatile 		pcurrent;
-paramType 		playparam;
-playparamType		traceparam;
+HANDLE                  solveAllPlayEvents[MAXNOOFTHREADS];
+LONG volatile           pthreadIndex;
+LONG volatile           pcurrent;
+paramType               playparam;
+playparamType           traceparam;
 
 DWORD CALLBACK SolveChunkTracePlay (void *);
 
@@ -279,10 +279,10 @@ DWORD CALLBACK SolveChunkTracePlay (void *)
 
 
 int STDCALL AnalyseAllPlaysBin(
-  boards		* bop,
-  playTracesBin		* plp,
-  solvedPlays		* solvedp,
-  int			chunkSize)
+  boards                * bop,
+  playTracesBin         * plp,
+  solvedPlays           * solvedp,
+  int                   chunkSize)
 {
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
@@ -343,10 +343,10 @@ int STDCALL AnalyseAllPlaysBin(
 #else
 
 int STDCALL AnalyseAllPlaysBin(
-  boards		* bop,
-  playTracesBin		* plp,
-  solvedPlays		* solvedp,
-  int			chunkSize)
+  boards                * bop,
+  playTracesBin         * plp,
+  solvedPlays           * solvedp,
+  int                   chunkSize)
 {
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
@@ -366,7 +366,7 @@ int STDCALL AnalyseAllPlaysBin(
 #if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
   if (omp_get_dynamic())
     omp_set_dynamic(0);
-  omp_set_num_threads(noOfThreads);	
+  omp_set_num_threads(noOfThreads);     
 #elif defined (_OPENMP)
   omp_set_num_threads(1);
 #endif
@@ -397,7 +397,7 @@ int STDCALL AnalyseAllPlaysBin(
       res = AnalysePlayBin(bop->deals[index], 
                          plp->plays[index],
                          &solved[index],
-      			 thid);
+                         thid);
       END_THREAD_TIMER(thid);
 
       if (res == 1)
@@ -416,13 +416,13 @@ int STDCALL AnalyseAllPlaysBin(
 #endif
 
 int STDCALL AnalyseAllPlaysPBN(
-  boardsPBN		* bopPBN,
-  playTracesPBN		* plpPBN,
-  solvedPlays		* solvedp,
-  int			chunkSize)
+  boardsPBN             * bopPBN,
+  playTracesPBN         * plpPBN,
+  solvedPlays           * solvedp,
+  int                   chunkSize)
 {
-  boards	bd;
-  playTracesBin	pl;
+  boards        bd;
+  playTracesBin pl;
 
   bd.noOfBoards = bopPBN->noOfBoards;
   if (bd.noOfBoards > MAXNOOFBOARDS)

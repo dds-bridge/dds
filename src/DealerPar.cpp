@@ -88,20 +88,20 @@ int DENOM_ORDER[5] = { 3, 2, 1, 0, 4 };
   
 struct data_type 
 {
-  int			primacy;
-  int			highest_making_no;
-  int			dearest_making_no;
-  int			dearest_score;
-  int			vul_no;
+  int                   primacy;
+  int                   highest_making_no;
+  int                   dearest_making_no;
+  int                   dearest_score;
+  int                   vul_no;
 };
 
 struct list_type 
 {
-  int			score;
-  int			dno;
-  int			no;
-  int			tricks;
-  int			down;
+  int                   score;
+  int                   dno;
+  int                   no;
+  int                   tricks;
+  int                   down;
 };
 
 
@@ -109,68 +109,68 @@ struct list_type
 
 
 void survey_scores(
-  ddTableResults 	* tablep,
-  int 			dealer,
-  int 			vul_by_side[2],
-  data_type		* data,
+  ddTableResults        * tablep,
+  int                   dealer,
+  int                   vul_by_side[2],
+  data_type             * data,
   int                   * num_candidates,
-  list_type		list[2][5]);
+  list_type             list[2][5]);
 
 void best_sacrifice(
-  ddTableResults 	* tablep,
+  ddTableResults        * tablep,
   int                   side,
   int                   no,
   int                   dno,
-  int 			dealer,
-  list_type		list[2][5],
-  int			sacr[5][5],
-  int			* best_down);
+  int                   dealer,
+  list_type             list[2][5],
+  int                   sacr[5][5],
+  int                   * best_down);
 
 void sacrifices_as_text(
-  ddTableResults 	* tablep,
+  ddTableResults        * tablep,
   int                   side,
-  int 			dealer,
-  int			best_down,
+  int                   dealer,
+  int                   best_down,
   int                   no_decl,
   int                   dno,
-  list_type		list[2][5],
-  int			sacr[5][5],
-  char			results[10][10],
-  int			* res_no);
+  list_type             list[2][5],
+  int                   sacr[5][5],
+  char                  results[10][10],
+  int                   * res_no);
 
 void reduce_contract(
-  int			* no,
-  int			down,
-  int			* plus);
+  int                   * no,
+  int                   down,
+  int                   * plus);
 
 void contract_as_text(
-  ddTableResults 	* tablep,
-  int			side,
-  int			no,
-  int			dno,
-  int			down,
-  char			str[10]);
+  ddTableResults        * tablep,
+  int                   side,
+  int                   no,
+  int                   dno,
+  int                   down,
+  char                  str[10]);
 
 void sacrifice_as_text(
-  int			no,
-  int			pno,
-  int			down,
-  char			str[10]);
+  int                   no,
+  int                   pno,
+  int                   down,
+  char                  str[10]);
 
 
 
 int STDCALL DealerPar(
-  ddTableResults 	* tablep,
-  parResultsDealer 	* presp,
-  int 			dealer,
-  int 			vulnerable)
+  ddTableResults        * tablep,
+  parResultsDealer      * presp,
+  int                   dealer,
+  int                   vulnerable)
 {
   /* dealer     0: North 1: East  2: South  3: West */
   /* vulnerable 0: None  1: Both  2: NS     3: EW   */
 
-  int 			* vul_by_side = VUL_LOOKUP[vulnerable];
-  data_type 		data;
-  list_type 		list[2][5];
+  int                   * vul_by_side = VUL_LOOKUP[vulnerable];
+  data_type             data;
+  list_type             list[2][5];
 
   /* First we find the side entitled to a plus score (primacy)
      and some statistics for each constructively bid (undoubled)
@@ -215,14 +215,14 @@ int STDCALL DealerPar(
       {
         /* Declarer will never get a higher sacrifice by bidding
            less, so we can stop looking for sacrifices.  But it
-	   can't be a worthwhile contract to bid, either. */
+           can't be a worthwhile contract to bid, either. */
         type[n] = -1;
       }
       else
       {
         sac_found = 1;
-	type[n]   = 0;
-	lists[n].down = down;
+        type[n]   = 0;
+        lists[n].down = down;
       }
     }
     else
@@ -275,12 +275,12 @@ int STDCALL DealerPar(
 
 
 void survey_scores(
-  ddTableResults 	* tablep,
-  int 			dealer,
-  int 			vul_by_side[2],
-  data_type		* data,
+  ddTableResults        * tablep,
+  int                   dealer,
+  int                   vul_by_side[2],
+  data_type             * data,
   int                   * num_candidates,
-  list_type		list[2][5])
+  list_type             list[2][5])
 {
   /*
     When this is done, data has added the following entries:
@@ -323,7 +323,7 @@ void survey_scores(
       if (best < 7)
       {
         slist->score = 0;
-	continue;
+        continue;
       }
 
       int score     = SCORES[no][ vul_by_side[side] ];
@@ -334,12 +334,12 @@ void survey_scores(
       if (score > dearest_score)
       {
         dearest_score     = score;
-	dearest_making_no = no;
+        dearest_making_no = no;
       }
       else if (score == dearest_score && no < dearest_making_no)
       {
         /* The lowest such, e.g. 3NT and 5C. */
-	dearest_making_no = no;
+        dearest_making_no = no;
       }
 
       if (no > highest_making_no)
@@ -426,14 +426,14 @@ void survey_scores(
 
 
 void best_sacrifice(
-  ddTableResults 	* tablep,
+  ddTableResults        * tablep,
   int                   side,
   int                   no,
   int                   dno,
-  int 			dealer,
-  list_type		list[2][5],
-  int			sacr_table[5][5],
-  int			* best_down)
+  int                   dealer,
+  list_type             list[2][5],
+  int                   sacr_table[5][5],
+  int                   * best_down)
 {
   int other = 1 - side;
   list_type * sacr_list = list[other];
@@ -452,16 +452,16 @@ void best_sacrifice(
       for (int pno = dealer; pno <= dealer+3; pno++)
       {
         int diff = t_max - t[pno % 4];
-	int s    = pno % 2;
-	if (s == side)
-	{
-	  if (diff == 0) incr_flag = 1;
-	}
-	else
-	{
-	  int local = diff + incr_flag;
-	  if (local < down) down = local;
-	}
+        int s    = pno % 2;
+        if (s == side)
+        {
+          if (diff == 0) incr_flag = 1;
+        }
+        else
+        {
+          int local = diff + incr_flag;
+          if (local < down) down = local;
+        }
       }
       if (sacr.no + 5*down > 35) down = BIGNUM;
     }
@@ -477,16 +477,16 @@ void best_sacrifice(
  
 
 void sacrifices_as_text(
-  ddTableResults 	* tablep,
+  ddTableResults        * tablep,
   int                   side,
-  int 			dealer,
-  int			best_down,
+  int                   dealer,
+  int                   best_down,
   int                   no_decl,
   int                   dno,
-  list_type		list[2][5],
-  int			sacr[5][5],
-  char			results[10][10],
-  int			* res_no)
+  list_type             list[2][5],
+  int                   sacr[5][5],
+  char                  results[10][10],
+  int                   * res_no)
 {
   int other = 1 - side;
   list_type * sacr_list = list[other];
@@ -517,15 +517,15 @@ void sacrifices_as_text(
       int s       = pno % 2;
       if (s == side)
       {
-	if (diff == 0) incr_flag = 1;
+        if (diff == 0) incr_flag = 1;
       }
       else
       {
-	down = diff + incr_flag;
-	if (down != best_down) continue;
-	pno_list[p_hit] = pno_mod;
-	sac_list[p_hit] = no_decl + 5*incr_flag;
-	p_hit++;
+        down = diff + incr_flag;
+        if (down != best_down) continue;
+        pno_list[p_hit] = pno_mod;
+        sac_list[p_hit] = no_decl + 5*incr_flag;
+        p_hit++;
       }
     }
 
@@ -557,9 +557,9 @@ void sacrifices_as_text(
 
 
 void reduce_contract(
-  int			* no,
-  int			sac_gap,
-  int			* plus)
+  int                   * no,
+  int                   sac_gap,
+  int                   * plus)
 {
     /* Could be that we found 4C just making, but it would be
        enough to bid 2C +2.  But we don't want to bid so low that
@@ -589,12 +589,12 @@ void reduce_contract(
 
 
 void contract_as_text(
-  ddTableResults 	* tablep,
-  int			side,
-  int			no,
-  int			dno,
-  int			delta,
-  char			str[10])
+  ddTableResults        * tablep,
+  int                   side,
+  int                   no,
+  int                   dno,
+  int                   delta,
+  char                  str[10])
 {
   int * t   = tablep->resTable[ DENOM_ORDER[dno] ];
   int ta    = t[side];
@@ -615,10 +615,10 @@ void contract_as_text(
 
 
 void sacrifice_as_text(
-  int		no,
-  int		pno,
-  int		down,
-  char		str[10])
+  int           no,
+  int           pno,
+  int           down,
+  char          str[10])
 {
   sprintf(str, "%s*-%s-%d",
     NUMBER_TO_CONTRACT[no],

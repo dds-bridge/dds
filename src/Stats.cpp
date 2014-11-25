@@ -12,45 +12,45 @@
 #include "dds.h"
 #include "Stats.h"
 
-#define NUM_TIMERS	2000
-#define COUNTER_SLOTS	 200
+#define NUM_TIMERS      2000
+#define COUNTER_SLOTS    200
 
 #include <time.h>
 
 #ifdef _WIN32
-LARGE_INTEGER 	timerFreq, 
-		timerUser0, 
-		timerUser1, 
-              	timerListUser0[NUM_TIMERS], 
-	      	timerListUser1[NUM_TIMERS];
+LARGE_INTEGER   timerFreq, 
+                timerUser0, 
+                timerUser1, 
+                timerListUser0[NUM_TIMERS], 
+                timerListUser1[NUM_TIMERS];
 #else
 #include <sys/time.h>
-int 		timevalDiff(timeval x, timeval y);
+int             timevalDiff(timeval x, timeval y);
 
-timeval 	timerUser0, 
-		timerUser1,
-              	timerListUser0[NUM_TIMERS], 
-	      	timerListUser1[NUM_TIMERS];
+timeval         timerUser0, 
+                timerUser1,
+                timerListUser0[NUM_TIMERS], 
+                timerListUser1[NUM_TIMERS];
 #endif
 
-clock_t 	timerSys0, 
-		timerSys1,
-		timerListSys0[NUM_TIMERS], 
-		timerListSys1[NUM_TIMERS];
+clock_t         timerSys0, 
+                timerSys1,
+                timerListSys0[NUM_TIMERS], 
+                timerListSys1[NUM_TIMERS];
 
-int		timerCount,
-		timerListCount[NUM_TIMERS];
+int             timerCount,
+                timerListCount[NUM_TIMERS];
 
-int		timerNameSet;
+int             timerNameSet;
 
-char		timerName[80];
+char            timerName[80];
 
-long long     	timerUserCum, 
-		timerSysCum,
-        	timerListUserCum[NUM_TIMERS], 
-		timerListSysCum[NUM_TIMERS],
-		predError,
-		predAbsError;
+long long       timerUserCum, 
+                timerSysCum,
+                timerListUserCum[NUM_TIMERS], 
+                timerListSysCum[NUM_TIMERS],
+                predError,
+                predAbsError;
 
 
 void InitTimer()

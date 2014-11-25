@@ -15,8 +15,8 @@ int IsCard(char cardChar);
 
 
 int ConvertFromPBN(
-  char 		* dealBuff, 
-  unsigned int 	remainCards[DDS_HANDS][DDS_SUITS]) 
+  char          * dealBuff, 
+  unsigned int  remainCards[DDS_HANDS][DDS_SUITS]) 
 {
   int bp=0, first, card, hand, handRelFirst, suitInHand, h, s;
   int IsCard(char cardChar);
@@ -26,9 +26,9 @@ int ConvertFromPBN(
       remainCards[h][s]=0;
 
   while (((dealBuff[bp]!='W')&&(dealBuff[bp]!='N')&&
-	(dealBuff[bp]!='E')&&(dealBuff[bp]!='S')&&
+        (dealBuff[bp]!='E')&&(dealBuff[bp]!='S')&&
         (dealBuff[bp]!='w')&&(dealBuff[bp]!='n')&&
-	(dealBuff[bp]!='e')&&(dealBuff[bp]!='s'))&&(bp<3))
+        (dealBuff[bp]!='e')&&(dealBuff[bp]!='s'))&&(bp<3))
     bp++;
 
   if (bp>=3)
@@ -52,30 +52,30 @@ int ConvertFromPBN(
     card=IsCard(dealBuff[bp]);
     if (card) {
       switch (first) {
-	case 0:
-	  hand=handRelFirst;
-	  break;
-	case 1:
-	  if (handRelFirst==0)
-	    hand=1;
-	  else if (handRelFirst==3)
-	    hand=0;
-	  else
-	    hand=handRelFirst+1;
-	    break;
-	case 2:
-	  if (handRelFirst==0)
-	    hand=2;
-	  else if (handRelFirst==1)
-	    hand=3;
-	  else
-	    hand=handRelFirst-2;
-	  break;
-	default:
+        case 0:
+          hand=handRelFirst;
+          break;
+        case 1:
           if (handRelFirst==0)
-	    hand=3;
-	  else
-	    hand=handRelFirst-1;
+            hand=1;
+          else if (handRelFirst==3)
+            hand=0;
+          else
+            hand=handRelFirst+1;
+            break;
+        case 2:
+          if (handRelFirst==0)
+            hand=2;
+          else if (handRelFirst==1)
+            hand=3;
+          else
+            hand=handRelFirst-2;
+          break;
+        default:
+          if (handRelFirst==0)
+            hand=3;
+          else
+            hand=handRelFirst-1;
       }
 
       remainCards[hand][suitInHand] |= 
@@ -139,8 +139,8 @@ int IsCard(char cardChar)   {
 
 
 int ConvertPlayFromPBN(
-  playTracePBN	*playPBN,
-  playTraceBin	*playBin)
+  playTracePBN  *playPBN,
+  playTraceBin  *playBin)
 {
   int n = playPBN->number;
 

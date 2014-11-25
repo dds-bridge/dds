@@ -136,7 +136,7 @@ void Scheduler::InitTimes()
 Scheduler::~Scheduler()
 {
 #ifdef DDS_SCHEDULER
-  if (fp != stdout)
+  if (fp != stdout && fp != nullptr)
     fclose(fp);
 #endif
 
@@ -171,8 +171,8 @@ void Scheduler::Reset()
 
 
 void Scheduler::RegisterTraceDepth(
-  playTracesBin		* plp,
-  int			number)
+  playTracesBin         * plp,
+  int                   number)
 {
   // This is only used for traces, so it is entered separately.
 
@@ -187,8 +187,8 @@ void Scheduler::RegisterTraceDepth(
 
 
 void Scheduler::Register(
-  boards		* bop,
-  int			sortMode)
+  boards                * bop,
+  int                   sortMode)
 {
   Scheduler::Reset();
 
@@ -216,7 +216,7 @@ void Scheduler::Register(
 
 
 void Scheduler::MakeGroups(
-  boards		* bop)
+  boards                * bop)
 {
   deal     * dl;
   listType * lp;
@@ -331,7 +331,7 @@ void Scheduler::FinetuneGroups()
         sortList[i].number = index;
         sortList[i].value  = hands[index].spareKey;
 
-	index = hands[index].next;
+        index = hands[index].next;
       }
 
       // Sort the list.
@@ -363,7 +363,7 @@ void Scheduler::FinetuneGroups()
       for (int i = 0; i < l; i++)
       {
         hands[index].next = sortList[i+1].number;
-	index = hands[index].next;
+        index = hands[index].next;
       }
 
       hands[index].next = -1;
@@ -374,34 +374,34 @@ void Scheduler::FinetuneGroups()
       while (l < sortLen)
       {
         if (sortList[l].value == sortList[l-1].value)
-	{
-	  // Same group
-	  int nOld = sortList[l-1].number;
-	  int nNew = sortList[l].number;
-	  hands[nOld].next = nNew;
-	  hands[nNew].next = -1;
+        {
+          // Same group
+          int nOld = sortList[l-1].number;
+          int nNew = sortList[l].number;
+          hands[nOld].next = nNew;
+          hands[nNew].next = -1;
 
-	  lp->last = nNew;
-	  lp->length++;
-	}
-	else
-	{
-	  // New group
-	  int n = sortList[l].number;
-	  hands[n].next = -1;
+          lp->last = nNew;
+          lp->length++;
+        }
+        else
+        {
+          // New group
+          int n = sortList[l].number;
+          hands[n].next = -1;
 
           lp = &list[5][extraGroups];
-	  lp->first  = n;
-	  lp->last   = n;
-	  lp->length = 1;
+          lp->first  = n;
+          lp->last   = n;
+          lp->length = 1;
 
           group[numGroups].strain = 5;
           group[numGroups].hash   = extraGroups;
 
-	  numGroups++;
-	  extraGroups++;
-	}
-	l++;
+          numGroups++;
+          extraGroups++;
+        }
+        l++;
       }
     }
   }
@@ -460,7 +460,7 @@ void Scheduler::SortSolve()
       if (hands[index].first != firstPrev)
       {
         group[g].pred += SORT_SOLVE_TIMES[hp->NTflag][repeatNo];
-	if (repeatNo < 7)
+        if (repeatNo < 7)
           repeatNo++;
         firstPrev = hands[index].first;
       }
@@ -612,7 +612,7 @@ void Scheduler::SortTrace()
       if (hands[index].first != firstPrev)
       {
         group[g].pred += SORT_TRACE_TIMES[hp->NTflag][repeatNo];
-	if (repeatNo < 7)
+        if (repeatNo < 7)
           repeatNo++;
         firstPrev = hands[index].first;
       }
@@ -668,7 +668,7 @@ void Scheduler::SortTrace()
 
 
 int Scheduler::Strength(
-  deal		* dl)
+  deal          * dl)
 {
   // If the strength in all suits is evenly split, then the
   // "strength" returned is close to 0.  Maximum is 49.
@@ -695,7 +695,7 @@ int Scheduler::Strength(
 
 
 int Scheduler::Fanout(
-  deal		* dl)
+  deal          * dl)
 {
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups.  In a given suit the 
@@ -725,7 +725,7 @@ int Scheduler::Fanout(
 
 
 schedType Scheduler::GetNumber(
-  int			thrId)
+  int                   thrId)
 {
   int g = threadGroup[thrId];
   listType  * lp;
@@ -942,9 +942,9 @@ void Scheduler::EndBlockTimer()
 
 
 void Scheduler::PrintTimingList(
-  timeType	* tp,
-  int		length,
-  const char	title[])
+  timeType      * tp,
+  int           length,
+  const char    title[])
 {
   bool empty = true;
   for (int no = 0; no < length && empty; no++)
@@ -1033,8 +1033,8 @@ void Scheduler::PrintTiming()
 
 #ifndef _WIN32
 int Scheduler::timeDiff(
-  timeval 	x,
-  timeval 	y)
+  timeval       x,
+  timeval       y)
 {
   /* Elapsed time, x-y, in milliseconds */
   return 1000 * (x.tv_sec  - y.tv_sec )
@@ -1046,8 +1046,8 @@ int Scheduler::timeDiff(
 
 
 int Scheduler::PredictedTime(
-  deal		* dl,
-  int		number)
+  deal          * dl,
+  int           number)
 {
   int trump = dl->trump;
   int NT    = (trump == 4 ? 100 : 0);
