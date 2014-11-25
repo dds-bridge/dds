@@ -42,43 +42,37 @@
 #define HISTSIZE		100000
 
 
-struct nodeCardsType // 8 bytes
-{
-  char			ubound; // For N-S
-  char			lbound; // For N-S
-  char			bestMoveSuit;
-  char			bestMoveRank;
-  char			leastWin[DDS_SUITS];
-};
-
-
-// Not clear to me why I can't put the following structs in
-// the private part of the class as well.  But for some reason
-// compilation fails then.
-
-struct winMatchType // 52 bytes
-{
-  unsigned		xorSet;
-  unsigned		topSet1 , topSet2 , topSet3 , topSet4 ;
-  unsigned		topMask1, topMask2, topMask3, topMask4;
-  int			maskIndex;
-  int			lastMaskNo;
-  nodeCardsType 	first;
-};
-
-struct winBlockType // 6508 bytes when BLOCKS_PER_ENTRY == 125
-{
-  int			nextMatchNo;
-  int			nextWriteNo;
-  // int			timestampWrite;
-  int			timestampRead;
-  winMatchType		list[BLOCKS_PER_ENTRY];
-};
-
-
 class TransTable
 {
   private:
+
+    struct nodeCardsType // 8 bytes
+    {
+      char      ubound; // For N-S
+      char      lbound; // For N-S
+      char      bestMoveSuit;
+      char      bestMoveRank;
+      char      leastWin[DDS_SUITS];
+    };
+
+    struct winMatchType // 52 bytes
+    {
+      unsigned    xorSet;
+      unsigned    topSet1 , topSet2 , topSet3 , topSet4 ;
+      unsigned    topMask1, topMask2, topMask3, topMask4;
+      int     maskIndex;
+      int     lastMaskNo;
+      nodeCardsType   first;
+    };
+
+    struct winBlockType // 6508 bytes when BLOCKS_PER_ENTRY == 125
+    {
+      int     nextMatchNo;
+      int     nextWriteNo;
+      // int      timestampWrite;
+      int     timestampRead;
+      winMatchType    list[BLOCKS_PER_ENTRY];
+    };
 
     struct posSearchType // 16 bytes (inefficiency, 12 bytes enough)
     {
