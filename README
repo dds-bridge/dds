@@ -29,11 +29,16 @@ thank the following here.
 
 The code in Par.cpp for calculating par scores and contracts is
 based on Matthew Kidd's perl code for ACBLmerge.  He has kindly
-given permission to include a C++ adaptation in DDS.
+given permission to include a C++ adaptation in DDS.  He also
+tested the code on Visual C++ 2010.
 
 Alex Martelli cleaned up and ported code to Linux and to Mac OS X
 in 2006.  The code grew a bit outdated over time, and in 2014
 Matthew Kidd contributed updates.
+
+Brian Dickens found bugs in v2.7 and encouraged us to look at GitHub.  
+He also set up the entire historical archive and supervised our 
+first baby steps on GitHub.
 
 Soren Hein made a number of contributions before becoming a 
 co-author starting in v2.8 in 2014.
