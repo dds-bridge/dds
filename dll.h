@@ -35,7 +35,7 @@
 
 /* end of portability-macros section */
 
-#define DDS_VERSION		20204	/* Version 2.2.4. Allowing for 2 digit
+#define DDS_VERSION		20300	/* Version 2.3.0. Allowing for 2 digit
 					minor versions */
 
 #define PBN
@@ -297,6 +297,20 @@ struct ddTableResults {
   int resTable[5][4];
 };
 
+struct parResults {
+  char parScore[2][16];	/* index = 0 is NS view and index = 1 is EW view. */
+  char parContractsString[2][128]; /* index = 0 is NS view and index = 1 
+				      is EW view. By “view” is here meant 
+				      which side that starts the bidding. */
+};
+
+struct par_suits_type {
+  int suit;
+  int tricks;
+  int score;
+}; 
+
+
 struct localVarType {
   int nodeTypeStore[4];
   int trump;
@@ -423,25 +437,25 @@ extern int suppressTTlog;
 
 EXTERN_C DLLEXPORT int STDCALL SolveBoard(struct deal dl, 
   int target, int solutions, int mode, struct futureTricks *futp, int threadIndex);
-
-#ifdef PBN
-EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target, 
-    int solutions, int mode, struct futureTricks *futp, int thrId);
-#endif
-
 EXTERN_C DLLEXPORT int STDCALL CalcDDtable(struct ddTableDeal tableDeal, 
   struct ddTableResults * tablep);
 
 #ifdef PBN
+EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(struct dealPBN dlpbn, int target, 
+    int solutions, int mode, struct futureTricks *futp, int thrId);
 EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(struct ddTableDealPBN tableDealPBN, 
   struct ddTableResults * tablep);
+#endif
+
 #ifdef PBN_PLUS
 EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(struct boardsPBN *bop, struct solvedBoards *solvedp);
-#endif
+EXTERN_C DLLEXPORT int STDCALL CalcPar(struct ddTableDeal tableDeal, int vulnerable, 
+    struct ddTableResults * tablep, struct parResults *presp);
+EXTERN_C DLLEXPORT int STDCALL CalcParPBN(struct ddTableDealPBN tableDealPBN, 
+  struct ddTableResults * tablep, int vulnerable, struct parResults *presp);
 #endif
 
 #ifdef __linux
-/*paul hide 2012-11-6 added the following as in previous version*/
 EXTERN_C void InitStart(int gb_ram, int ncores);   /* For usage with ctypes in Linux. */ 
 #endif
 

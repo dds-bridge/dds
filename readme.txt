@@ -1,4 +1,4 @@
-DDS 2.2.4,  Bo Haglund 2012-11-07
+DDS 2.3.0,  Bo Haglund 2013-03-18
 
 For Win32, DDS compiles with Visual C++ 2010 Express edition 
 and the TDM-GCC/Mingw port of gcc.
@@ -7,7 +7,7 @@ When using Visual C++, the statement
 #include "stdafx.h" at the beginning of dds.cpp must be uncommented.
 
 When not using Visual C++, the compilation of DDS includes function CalcDDtable
-implemented using TDM-GCC/MingW OpenMP. 
+implemented using the Win API for Windows and TDM-GCC/MingW OpenMP otherwise. 
    
 
 Linking with an application using DDS
@@ -45,17 +45,19 @@ Options at DDS compilation
 --------------------------
 Compiling options:
 
+The SolveBoard and CalcDDtable are included in all DDS compilation options.
 The "PBN" and the "PBN_PLUS" definitions are included in the header fill dll.h.
 Defining "PBN" means that the functions SolveBoardPBN and CalcDDtablePBN are supported.
-Defining "PBN_PLUS" as well means that also the SolveAllBoards function is supported.
-By undefining one or both of those definitions means that the corresponding code in
-the compilation is not included.
+Defining "PBN_PLUS" as well means that also the SolveAllBoards function,
+ParCalc and ParCalcPBN are supported.
+
 The possible configurens thus are:
-1)  "PBN" and "PBN_PLUS":  Support for SolveBoardPBN, CalcDDtablePBN and SolveAllBoards.
+1)  "PBN" and "PBN_PLUS":  Support for SolveBoardPBN, CalcDDtablePBN, SolveAllBoards,
+   ParCalc and ParCalcPBN.
 2)  "PBN":  Support for SolveBoardPBN and CalcDDtablePBN.
 3) None of these definitions:  No support for any of the above 3 functions.
 
-Staying with the previous configuration might be needed when 2.2.4 is to replace an 
+Staying with the previous configuration might be needed when 2.3.0 is to replace an 
 older 2.x.y version, and the application using DDS cannot handle a changed interface.
 
 

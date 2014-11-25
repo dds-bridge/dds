@@ -384,12 +384,35 @@ faster DLLs and only requires one supporting DLL, which supports OpenMP.
 Also, the move ordering has been slighly improved.
 A total speed increase of 4% is achieved compared to 2.2.3.
 
+
 Release Notes DDS 1.1.17
 ------------------------
 A newer port from GCC to Windows, the TDM-GCC 4.7.1 version is used. It gives
 faster DLLs and does not require any supporting DLLs.
 Also, the move ordering has been slighly improved.
 A total speed increase of 4% is achieved compared to 1.1.16.
+
+
+Release Notes DDS 1.1.18
+------------------------
+The main news is that this release is licensed under Apache 2.0 instead
+of GPL for the previous releases.
+There is a slight change of the move ordering compared to 1.1.17.
+
+
+Release Notes DDS 2.2.4
+-----------------------
+A newer port from GCC to Windows, the TDM-GCC 4.7.1 version is used. It gives
+faster DLLs and only requires one supporting DLL, which supports OpenMP.
+Also, the move ordering has been slighly improved.
+A total speed increase of 4% is achieved compared to 2.2.3.
+
+
+Release Notes DDS 2.3.0
+-----------------------
+The main news is the support of calculation of par scores / contracts.
+The Mingw DLL now uses the Win API instead of OpenMP so no
+supporting DLL for pthreads is now needed.
 
 
 
