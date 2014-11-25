@@ -1,4 +1,4 @@
-# This the DDS Makefile for Linus and the GNU g++ compiler.
+# This the DDS Makefile for Mac and the GNU g++ compiler.
 # Only OpenMP works here.
 
 # If you want to compile a single-threaded version, use
