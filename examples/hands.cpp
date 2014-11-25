@@ -1,3 +1,13 @@
+/* 
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+
 // General initialization of three hands to be used in examples.
 
 #include <stdio.h>
@@ -200,7 +210,7 @@ int traceNo[3] = { 46, 49, 13 };
 int trace[3][53] = {
   {8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8, 
         8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8, 
-	8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 0, 0, 0,
+        8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 0, 0, 0,
         0, 0, 0, 0 },
   {9,  10,10,10,10,  10,10,10,10,  10,10,10,10,  10,10,10,10,
        10,10,10,10,  10,10,10,10,  10,10,10,10,  10,10,10,10,
@@ -296,7 +306,7 @@ void equals_to_string(int equals, char * res)
 }
 
 
-bool CompareFut(futureTricks * fut, int	handno, int solutions)
+bool CompareFut(futureTricks * fut, int handno, int solutions)
 {
   if (solutions == 2)
   {
@@ -477,9 +487,9 @@ void PrintPBNPlay(playTracePBN * playp, solvedPlay * solved)
 ////////////////////////////////////////////////
 
 
-#define DDS_FULL_LINE	80
+#define DDS_FULL_LINE   80
 #define DDS_HAND_OFFSET 12
-#define DDS_HAND_LINES 	12
+#define DDS_HAND_LINES  12
 
 void PrintHand(char title[],
   unsigned int remainCards[DDS_HANDS][DDS_SUITS])
@@ -548,14 +558,14 @@ void PrintHand(char title[],
 
 void PrintPBNHand(char title[], char remainCardsPBN[])
 {
-  unsigned int	remainCards[DDS_HANDS][DDS_SUITS];
+  unsigned int  remainCards[DDS_HANDS][DDS_SUITS];
   ConvertPBN(remainCardsPBN, remainCards);
   PrintHand(title, remainCards);
 }
 
 
-int ConvertPBN(char	* dealBuff, 
-  unsigned int 	remainCards[DDS_HANDS][DDS_SUITS]) 
+int ConvertPBN(char     * dealBuff, 
+  unsigned int  remainCards[DDS_HANDS][DDS_SUITS]) 
 {
   int bp=0, firstl, card, hand, handRelFirst, suitInHand, h, s;
 
@@ -564,9 +574,9 @@ int ConvertPBN(char	* dealBuff,
       remainCards[h][s] = 0;
 
   while (((dealBuff[bp] != 'W') && (dealBuff[bp] != 'N') &&
-	(dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
+        (dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
         (dealBuff[bp] != 'w') && (dealBuff[bp] != 'n') &&
-	(dealBuff[bp] != 'e') && (dealBuff[bp] != 's')) && (bp < 3))
+        (dealBuff[bp] != 'e') && (dealBuff[bp] != 's')) && (bp < 3))
     bp++;
 
   if (bp >= 3)
@@ -594,30 +604,30 @@ int ConvertPBN(char	* dealBuff,
     {
       switch (firstl) 
       {
-	case 0:
-	  hand = handRelFirst;
-	  break;
-	case 1:
-	  if (handRelFirst == 0)
-	    hand = 1;
-	  else if (handRelFirst == 3)
-	    hand = 0;
-	  else
-	    hand = handRelFirst + 1;
-	    break;
-	case 2:
-	  if (handRelFirst == 0)
-	    hand = 2;
-	  else if (handRelFirst == 1)
-	    hand = 3;
-	  else
-	    hand = handRelFirst - 2;
-	  break;
-	default:
+        case 0:
+          hand = handRelFirst;
+          break;
+        case 1:
           if (handRelFirst == 0)
-	    hand = 3;
-	  else
-	    hand = handRelFirst - 1;
+            hand = 1;
+          else if (handRelFirst == 3)
+            hand = 0;
+          else
+            hand = handRelFirst + 1;
+            break;
+        case 2:
+          if (handRelFirst == 0)
+            hand = 2;
+          else if (handRelFirst == 1)
+            hand = 3;
+          else
+            hand = handRelFirst - 2;
+          break;
+        default:
+          if (handRelFirst == 0)
+            hand = 3;
+          else
+            hand = handRelFirst - 1;
       }
 
       remainCards[hand][suitInHand] |= 

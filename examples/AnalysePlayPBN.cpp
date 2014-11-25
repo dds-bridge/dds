@@ -1,3 +1,13 @@
+/* 
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+
 // Test program for the AnalysePlayPBN function.
 // Uses the hands pre-set in hands.cpp.
 
@@ -10,14 +20,14 @@
 
 int main()
 {
-  dealPBN	dlPBN;
-  playTracePBN	DDplayPBN;
-  solvedPlay	solved;
+  dealPBN       dlPBN;
+  playTracePBN  DDplayPBN;
+  solvedPlay    solved;
 
-  int 		threadIndex = 0,
-		res;
-  char		line[80];
-  bool		match;
+  int           threadIndex = 0,
+                res;
+  char          line[80];
+  bool          match;
 
   for (int handno = 0; handno < 3; handno++)
 

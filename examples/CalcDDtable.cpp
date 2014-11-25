@@ -1,3 +1,13 @@
+/* 
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+
 // Test program for the CalcDDtable function.
 // Uses the hands pre-set in hands.cpp.
 
@@ -10,12 +20,12 @@
 
 int main()
 {
-  ddTableDeal	tableDeal;
+  ddTableDeal   tableDeal;
   ddTableResults table;
 
-  int 		res;
-  char		line[80];
-  bool		match;
+  int           res;
+  char          line[80];
+  bool          match;
 
 #if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);

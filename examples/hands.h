@@ -1,3 +1,13 @@
+/* 
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+
 // General initialization of three hands to be used in examples.
 
 extern int trump [3];
@@ -18,7 +28,7 @@ extern int playRank[3][52];
 
 void PrintFut(char title[], futureTricks * fut);
 void equals_to_string(int equals, char * res);
-bool CompareFut(futureTricks * fut, int	handno, int solutions);
+bool CompareFut(futureTricks * fut, int handno, int solutions);
 
 void SetTable(ddTableResults * table, int handno);
 bool CompareTable(ddTableResults * table, int handno);
@@ -39,7 +49,7 @@ void PrintHand(char title[],
 
 void PrintPBNHand(char title[], char remainCards[]);
 
-int ConvertPBN(char	* dealBuff, 
+int ConvertPBN(char     * dealBuff, 
   unsigned int remainCards[DDS_HANDS][DDS_SUITS]);
 
 int IsACard(char cardChar);
