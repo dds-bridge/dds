@@ -22,8 +22,8 @@
   #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
   #define END_THREAD_TIMER(a)   scheduler.EndThreadTimer(a)
 #else
-  #define START_BLOCK_TIMER  	1
-  #define END_BLOCK_TIMER    	1
+  #define START_BLOCK_TIMER     1
+  #define END_BLOCK_TIMER       1
   #define START_THREAD_TIMER(a) 1
   #define END_THREAD_TIMER(a)   1
 #endif
@@ -65,7 +65,7 @@ DWORD CALLBACK SolveChunk (void *)
 
     if (st.repeatOf != -1 &&
         param.bop->deals[index      ].first ==
-	param.bop->deals[st.repeatOf].first)
+        param.bop->deals[st.repeatOf].first)
     {
       START_THREAD_TIMER(thid);
       param.solvedp->solvedBoard[index] = fut[ st.repeatOf ];
@@ -123,8 +123,8 @@ DWORD CALLBACK SolveChunkDDtable (void *)
       {
         param.bop->deals[index].first = k;
 
-	param.solvedp->solvedBoard[index].score[k] =
-	  param.solvedp->solvedBoard[ st.repeatOf ].score[k];
+        param.solvedp->solvedBoard[index].score[k] =
+          param.solvedp->solvedBoard[ st.repeatOf ].score[k];
       }
       END_THREAD_TIMER(thid);
       continue;
@@ -135,11 +135,11 @@ DWORD CALLBACK SolveChunkDDtable (void *)
     START_THREAD_TIMER(thid);
     int res = SolveBoard(
         param.bop->deals[index], 
-	param.bop->target[index],
+        param.bop->target[index],
         param.bop->solutions[index], 
-	param.bop->mode[index], 
+        param.bop->mode[index], 
         &fut[index], 
-	thid);
+        thid);
 
     // SH: I'm making a terrible use of the fut structure here.
 
@@ -158,14 +158,14 @@ DWORD CALLBACK SolveChunkDDtable (void *)
       res = SolveSameBoard(
         param.bop->deals[index], 
         &fut[index], 
-	hint,
-	thid);
+        hint,
+        thid);
 
       if (res == 1)
-	param.solvedp->solvedBoard[index].score[k] = 
-	  fut[index].score[0];
+        param.solvedp->solvedBoard[index].score[k] = 
+          fut[index].score[0];
       else
-	param.error = res;
+        param.error = res;
     }
     END_THREAD_TIMER(thid);
   }
@@ -178,10 +178,10 @@ DWORD CALLBACK SolveChunkDDtable (void *)
 
 
 int SolveAllBoardsN(
-  boards 		* bop, 
-  solvedBoards 		* solvedp, 
-  int 			chunkSize,
-  int			source) // 0 solve, 1 calc
+  boards                * bop, 
+  solvedBoards          * solvedp, 
+  int                   chunkSize,
+  int                   source) // 0 solve, 1 calc
 {
   int k;
   int res;
@@ -199,7 +199,7 @@ int SolveAllBoardsN(
   {
     solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
     if (solveAllEvents[k] == 0) 
-	return RETURN_THREAD_CREATE;
+        return RETURN_THREAD_CREATE;
   }
 
   param.bop        = bop; 
@@ -260,10 +260,10 @@ int SolveAllBoardsN(
 #else
 
 int SolveAllBoardsN(
-  boards 		* bop, 
-  solvedBoards 		* solvedp, 
-  int 			chunkSize,
-  int			source) // 0 solve, 1 calc
+  boards                * bop, 
+  solvedBoards          * solvedp, 
+  int                   chunkSize,
+  int                   source) // 0 solve, 1 calc
 {
   int k, i, res, chunk, fail;
   futureTricks fut[MAXNOOFBOARDS];
@@ -279,7 +279,7 @@ int SolveAllBoardsN(
 #if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
   if (omp_get_dynamic())
     omp_set_dynamic(0);
-  omp_set_num_threads(noOfThreads);	
+  omp_set_num_threads(noOfThreads);     
   /* Added after suggestion by Dirk Willecke. */
 #elif defined (_OPENMP)
   omp_set_num_threads(1);
@@ -321,7 +321,7 @@ int SolveAllBoardsN(
 
         if (st.repeatOf != -1 &&
             (bop->deals[index      ].first ==
-	     bop->deals[st.repeatOf].first))
+             bop->deals[st.repeatOf].first))
         {
           START_THREAD_TIMER(thid);
           solvedp->solvedBoard[index] = fut[ st.repeatOf ];
@@ -343,7 +343,7 @@ int SolveAllBoardsN(
           if (res == 1)
             solvedp->solvedBoard[index] = fut[index];
           else
-	    fail = res;
+            fail = res;
 
         }
       }
@@ -375,8 +375,8 @@ int SolveAllBoardsN(
           {
             bop->deals[index].first = k;
 
-	    solvedp->solvedBoard[index].score[k] =
-	      solvedp->solvedBoard[ st.repeatOf ].score[k];
+            solvedp->solvedBoard[index].score[k] =
+              solvedp->solvedBoard[ st.repeatOf ].score[k];
           }
           END_THREAD_TIMER(thid);
           continue;
@@ -387,11 +387,11 @@ int SolveAllBoardsN(
         START_THREAD_TIMER(thid);
         res = SolveBoard(
             bop->deals[index], 
-	    bop->target[index],
+            bop->target[index],
             bop->solutions[index], 
-	    bop->mode[index], 
+            bop->mode[index], 
             &fut[index], 
-	    thid);
+            thid);
 
         // SH: I'm making a terrible use of the fut structure here.
 
@@ -410,12 +410,12 @@ int SolveAllBoardsN(
           res = SolveSameBoard(
             bop->deals[index], 
             &fut[index], 
-	    hint,
-	    thid);
+            hint,
+            thid);
 
           if (res == 1)
-	    solvedp->solvedBoard[index].score[k] = 
-	      fut[index].score[0];
+            solvedp->solvedBoard[index].score[k] = 
+              fut[index].score[0];
           else
             fail = res;
         }

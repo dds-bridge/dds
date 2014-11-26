@@ -29,7 +29,7 @@ ABstats::ABstats()
 ABstats::~ABstats()
 {
   // Nothing to do
-  if (fp != stdout)
+  if (fp != stdout && fp != nullptr)
     fclose(fp);
 }
 
@@ -86,7 +86,7 @@ void ABstats::SetFile(char * ourFname)
   if (fp != stdout) // Already set
     return;
 
-  strncpy(fname, ourFname, strlen(fname));
+  strncpy(fname, ourFname, strlen(ourFname));
 
   fp = fopen(fname, "w");
   if (! fp)
@@ -214,26 +214,26 @@ void ABstats::PrintStats()
       if (sum[p])
       {
         fprintf(fp, "%2d %-20s %8d %5.1f %5.1f %8d %5.1f %5.1f\n",
-	  p, 
+          p, 
           name[p], 
           sum[p],
-	  100. * sum[p] / static_cast<double>(s),
-	  psum[p] / static_cast<double>(sum[p]),
-	  counterCum[p],
-	  100. * counterCum[p] / static_cast<double>(cs),
-	  pcounterCum[p] / static_cast<double>(counterCum[p]));
+          100. * sum[p] / static_cast<double>(s),
+          psum[p] / static_cast<double>(sum[p]),
+          counterCum[p],
+          100. * counterCum[p] / static_cast<double>(cs),
+          pcounterCum[p] / static_cast<double>(counterCum[p]));
       }
       else if (counterCum[p])
       {
         fprintf(fp, "%2d %-20s %8d %5.1f %5s %8d %5.1f %5.1f\n",
-	  p, 
+          p, 
           name[p], 
           sum[p],
-	  100. * sum[p] / static_cast<double>(s),
-	  "",
-	  counterCum[p],
-	  100. * counterCum[p] / static_cast<double>(cs),
-	  pcounterCum[p] / static_cast<double>(counterCum[p]));
+          100. * sum[p] / static_cast<double>(s),
+          "",
+          counterCum[p],
+          100. * counterCum[p] / static_cast<double>(cs),
+          pcounterCum[p] / static_cast<double>(counterCum[p]));
       }
     }
   }
@@ -270,7 +270,7 @@ void ABstats::PrintStats()
     // the previous trick.
     if ((d % 4 == 1) && 
         (d < DDS_MAXDEPTH - 4) && 
-	(nodesCum[d+4] > 0))
+        (nodesCum[d+4] > 0))
       fprintf(fp, "  %5.2f",
         nodesCum[d] / static_cast<double>(nodesCum[d+4]));
     fprintf(fp, "\n");

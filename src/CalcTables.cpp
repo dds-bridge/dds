@@ -16,8 +16,8 @@
 
 
 int STDCALL CalcDDtable(
-  ddTableDeal 		tableDeal, 
-  ddTableResults 	* tablep) 
+  ddTableDeal           tableDeal, 
+  ddTableResults        * tablep) 
 {
   deal dl;
   boards bo;
@@ -58,7 +58,7 @@ int STDCALL CalcDDtable(
       for (int first = 0; first < DDS_HANDS; first++)
       {
         tablep->resTable[strain][ rho[first] ] =
-	  13 - solved.solvedBoard[index].score[first];
+          13 - solved.solvedBoard[index].score[first];
       }
     }
     return RETURN_NO_FAULT;
@@ -69,17 +69,17 @@ int STDCALL CalcDDtable(
 
 
 int STDCALL CalcAllTables(
-  ddTableDeals 		*dealsp, 
-  int 			mode, 
-  int 			trumpFilter[5], 
-  ddTablesRes 		* resp, 
-  allParResults 	* presp) 
+  ddTableDeals          *dealsp, 
+  int                   mode, 
+  int                   trumpFilter[5], 
+  ddTablesRes           * resp, 
+  allParResults         * presp) 
 {
-  /* mode = 0:	par calculation, vulnerability None
-     mode = 1:	par calculation, vulnerability All
-     mode = 2:	par calculation, vulnerability NS
-     mode = 3:	par calculation, vulnerability EW  
-	 mode = -1:  no par calculation  */
+  /* mode = 0:  par calculation, vulnerability None
+     mode = 1:  par calculation, vulnerability All
+     mode = 2:  par calculation, vulnerability NS
+     mode = 3:  par calculation, vulnerability EW  
+         mode = -1:  no par calculation  */
 
   boards bo;
   solvedBoards solved;
@@ -153,12 +153,12 @@ int STDCALL CalcAllTables(
       for (int first = 0; first < DDS_HANDS; first++)
       {
         resp->results[m].resTable[strain][ rho[first] ] =
-	  13 - solved.solvedBoard[index].score[first];
+          13 - solved.solvedBoard[index].score[first];
       }
     }
   }
 
-  if ((mode > -1) && (mode < 4)) 
+  if ((mode > -1) && (mode < 4) && (count == 5)) 
   {
     /* Calculate par */
     for (int k = 0; k < dealsp->noOfTables; k++) 
@@ -174,11 +174,11 @@ int STDCALL CalcAllTables(
  
 
 int STDCALL CalcAllTablesPBN(
-  ddTableDealsPBN 	* dealsp, 
-  int 			mode, 
-  int 			trumpFilter[5], 
-  ddTablesRes 		* resp, 
-  allParResults 	* presp) 
+  ddTableDealsPBN       * dealsp, 
+  int                   mode, 
+  int                   trumpFilter[5], 
+  ddTablesRes           * resp, 
+  allParResults         * presp) 
 {
   int res;
   ddTableDeals dls;
@@ -196,8 +196,8 @@ int STDCALL CalcAllTablesPBN(
 
 
 int STDCALL CalcDDtablePBN(
-  ddTableDealPBN 	tableDealPBN, 
-  ddTableResults 	* tablep) 
+  ddTableDealPBN        tableDealPBN, 
+  ddTableResults        * tablep) 
 {
   ddTableDeal tableDeal;
   int res;

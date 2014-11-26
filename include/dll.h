@@ -124,7 +124,7 @@
 #define RETURN_PLAY_FAULT	 -98
 #define TEXT_PLAY_FAULT	"AnalysePlay input error"
 
-// Returned from a number of places is a PBN string is faulty.
+// Returned from a number of places if a PBN string is faulty.
 #define RETURN_PBN_FAULT	 -99
 #define TEXT_PBN_FAULT "PBN string error"
 
@@ -240,7 +240,7 @@ struct parResults {
 
 
 struct allParResults {
-  struct parResults 	presults[MAXNOOFBOARDS / 20];
+  struct parResults 	presults[MAXNOOFTABLES];
 };
 
 struct parResultsDealer {

@@ -63,19 +63,19 @@ unsigned char cardHand[DDS_HANDS] =
 // other than historical ones.  They could all be char's for
 // memory reasons, or all be int's for performance reasons.
 
-int			highestRank[8192];
-int			lowestRank[8192];
-int			counttable[8192];
-char			relRank[8192][15];
-unsigned short int	winRanks[8192][14];
+int                     highestRank[8192];
+int                     lowestRank[8192];
+int                     counttable[8192];
+char                    relRank[8192][15];
+unsigned short int      winRanks[8192][14];
 
-moveGroupType 		groupData[8192];
+moveGroupType           groupData[8192];
 
 
 int _initialized = 0;
 
 void STDCALL SetMaxThreads(
-  int 			userThreads)
+  int                   userThreads)
 {
   if (! _initialized)
     noOfThreads = 0;
@@ -97,7 +97,7 @@ void STDCALL SetMaxThreads(
        was suggested by Lorne Anderson. */
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof(statex);
-    GlobalMemoryStatusEx(&statex);	
+    GlobalMemoryStatusEx(&statex);      
     kilobytesFree = static_cast<unsigned long long>(
       statex.ullTotalPhys / 1024);
 
@@ -271,7 +271,7 @@ void InitConstants()
       if (aggr & bitMapRank[r])
       {
         ord++;
-	relRank[aggr][r] = ord;
+        relRank[aggr][r] = ord;
       }
     }
   }
@@ -316,7 +316,7 @@ void InitConstants()
     0x0000, 0x0000, 0x0000, 0x0001, //       2, 3,
     0x0003, 0x0007, 0x000f, 0x001f, // 4, 5, 6, 7,
     0x003f, 0x007f, 0x00ff, 0x01ff, // 8, 9, T, J, 
-    0x03ff, 0x07ff, 0x0fff 	    // Q, K, A
+    0x03ff, 0x07ff, 0x0fff          // Q, K, A
   };
 
   int botside[15] =
@@ -429,7 +429,7 @@ void CloseDebugFiles()
 
 
 void SetDeal(
-  localVarType		* thrp)
+  localVarType          * thrp)
 {
   /* Initialization of the rel structure is inspired by
      a solution given by Thomas Andrews */
@@ -464,10 +464,10 @@ void SetDeal(
 
 
 void SetDealTables(
-  localVarType		* thrp)
+  localVarType          * thrp)
 {
-  unsigned int 		topBitRank = 1;
-  unsigned int		topBitNo   = 2;
+  unsigned int          topBitRank = 1;
+  unsigned int          topBitNo   = 2;
 
   /* Initialization of the rel structure is inspired by
      a solution given by Thomas Andrews */
@@ -500,8 +500,8 @@ void SetDealTables(
       {
         if (thrp->suit[h][s] & bitMapRank[r])
         {
-	  handLookup[s][r] = h;
-	  break;
+          handLookup[s][r] = h;
+          break;
         }
       }
     }
@@ -542,9 +542,9 @@ void SetDealTables(
 
 
 void InitWinners(
-  deal			* dl,
-  pos 			* posPoint, 
-  localVarType		* thrp)
+  deal                  * dl,
+  pos                   * posPoint, 
+  localVarType          * thrp)
 {
   int hand, suit, rank;
   unsigned short int startMovesBitMap[DDS_HANDS][DDS_SUITS]; 
@@ -577,7 +577,7 @@ void InitWinners(
 
 
 void ResetBestMoves(
-  localVarType		* thrp)
+  localVarType          * thrp)
 {
   for (int d = 0; d <= 49; d++)
   {
@@ -589,7 +589,7 @@ void ResetBestMoves(
     ThreadMemoryUsed();
 
 #ifdef DDS_AB_STATS
-  thrp->ABstats.Reset();
+  thrp->ABStats.Reset();
 #endif
 }
 
@@ -694,9 +694,9 @@ double ConstantMemoryUsed()
   double memUsed =
     8192 * ( sizeof(int) // highestRank
            + sizeof(int) // counttable
-	   + 15 * sizeof(char) // relRank
-	   + 14 * sizeof(unsigned short int))
-	   / static_cast<double>(1024.);
+           + 15 * sizeof(char) // relRank
+           + 14 * sizeof(unsigned short int))
+           / static_cast<double>(1024.);
 
   return memUsed;
 }

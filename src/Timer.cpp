@@ -41,7 +41,7 @@ Timer::Timer()
 
 Timer::~Timer()
 {
-  if (fp != stdout)
+  if (fp != stdout && fp != nullptr)
     fclose(fp);
 }
 
@@ -194,8 +194,8 @@ void Timer::PrintStats()
   // The other ones are subtracted out based on knowledge
   // of the functions.
 
-  __int64 	AB_userCum[TIMER_SPACING];
-  double 	AB_systCum[TIMER_SPACING];
+  __int64       AB_userCum[TIMER_SPACING];
+  double        AB_systCum[TIMER_SPACING];
 
   AB_userCum[0] = userCum[0];
   AB_systCum[0] = systCum[0];
@@ -306,11 +306,11 @@ void Timer::PrintStats()
         TIMER_NAMES[no],
         ct[no],
         ucum,
-	"-",
-	"-",
+        "-",
+        "-",
         1000. * scum,
-	"-",
-	"-");
+        "-",
+        "-");
     }
   }
   fprintf(fp, "----------------------------------");
@@ -354,9 +354,9 @@ void Timer::PrintStats()
     
       fprintf(fp, "%-14s %8d %10lld %6.2f %4.1f %10.0f %6.2f %4.1f\n",
         name[TIMER_AB + no],
-	count[no],
-	AB_userCum[no],
-	AB_userCum[no] / static_cast<double>(count[no]),
+        count[no],
+        AB_userCum[no],
+        AB_userCum[no] / static_cast<double>(count[no]),
         100. * AB_userCum[no] / AB_ucum,
         1000. * AB_systCum[no],
         1000. * AB_systCum[no] / static_cast<double>(count[no]),

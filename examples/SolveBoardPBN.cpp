@@ -1,3 +1,13 @@
+/* 
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+
 // Test program for the SolveBoardPBN function.
 // Uses the hands pre-set in hands.cpp.
 
@@ -10,18 +20,18 @@
 
 int main()
 {
-  dealPBN	dlPBN;
+  dealPBN       dlPBN;
   futureTricks  fut2, // solutions == 2
-  		fut3; // solutions == 3
+                fut3; // solutions == 3
 
-  int 		target, 
-  		solutions, 
-		mode, 
-		threadIndex = 0,
-		res;
-  char		line[80];
-  bool		match2,
-  		match3;
+  int           target, 
+                solutions, 
+                mode, 
+                threadIndex = 0,
+                res;
+  char          line[80];
+  bool          match2,
+                match3;
 
 #if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);

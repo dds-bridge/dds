@@ -7,6 +7,12 @@ know what you're doing and you'll figure it out :-).
 
 The first step is to compile the library.
 
+If you have trouble, read the Makefile.  They all have the compiler
+warning levels set rather high, and they are set to fail even on
+warnings.  You can turn this off.  The Visual C++ version also
+requires a couple of tools that you may not have, but this too is
+easy to turn off.
+
 If you want, the optional next step is to test the library.
 
 Generally speaking:
@@ -142,7 +148,11 @@ we are surprised -- please report it to us.
 ddd
 ---
 This program was written by Flip Cronje, and we have modified it
-minimally to support a multi-threaded DLL.
+minimally to support a multi-threaded DLL.  However, it doesn't
+use the full capabilities of DDS, as it was written at a time when
+functions such as CalcAllTables and SolveAllBoards were not yet
+available.  Therefore it is rather slow, but it does have a nice
+hand generator built in.
 
 
 examples

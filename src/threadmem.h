@@ -12,63 +12,63 @@
 #define DDS_DDSH
 
 struct WinnerEntryType {
-  int			suit,
-  			winnerRank,
-			winnerHand,
-			secondRank,
-			secondHand;
+  int                   suit,
+                        winnerRank,
+                        winnerHand,
+                        secondRank,
+                        secondHand;
 };
 
 struct WinnersType {
-  int			number;
-  WinnerEntryType	winner[4];
+  int                   number;
+  WinnerEntryType       winner[4];
 };
 
 
 struct localVarType 
 {
-  int 			nodeTypeStore[DDS_HANDS];
-  int 			iniDepth;
-  bool 			val;
+  int                   nodeTypeStore[DDS_HANDS];
+  int                   iniDepth;
+  bool                  val;
 
-  unsigned short int	suit[DDS_HANDS][DDS_SUITS];
-  int 			trump;
+  unsigned short int    suit[DDS_HANDS][DDS_SUITS];
+  int                   trump;
 
-  struct pos 		lookAheadPos; // Recursive alpha-beta data
-  bool			analysisFlag;
-  unsigned short int 	lowestWin[50][DDS_SUITS];
-  WinnersType		winners[13];
-  struct moveType 	forbiddenMoves[14];
-  struct moveType 	bestMove[50];
-  struct moveType 	bestMoveTT[50];
+  struct pos            lookAheadPos; // Recursive alpha-beta data
+  bool                  analysisFlag;
+  unsigned short int    lowestWin[50][DDS_SUITS];
+  WinnersType           winners[13];
+  struct moveType       forbiddenMoves[14];
+  struct moveType       bestMove[50];
+  struct moveType       bestMoveTT[50];
 
-  double		memUsed;
-  int 			nodes;
-  int 			trickNodes;
+  double                memUsed;
+  int                   nodes;
+  int                   trickNodes;
 
   // Constant for a given hand.
   // 960 KB
-  struct relRanksType 	rel[8192];
+  struct relRanksType   rel[8192];
 
-  TransTable		transTable; 	// Object
+  TransTable            transTable;     // Object
 
-  Moves			moves;		// Object
+  Moves                 moves;          // Object
 
 #ifdef DDS_AB_STATS
-  ABstats		ABstats; 	// Object
+  ABstats               ABStats;        // Object
 #endif
 
 #ifdef DDS_TIMING
-  Timer			timer; 		// Object
+  Timer                 timer;          // Object
 #endif
 
 #ifdef DDS_TOP_LEVEL
-  FILE			* fpTopLevel;
+  FILE                  * fpTopLevel;
 #endif
 
 #ifdef DDS_AB_HITS
-  FILE			* fpRetrieved;
-  FILE			* fpStored;
+  FILE                  * fpRetrieved;
+  FILE                  * fpStored;
 #endif
 
 };

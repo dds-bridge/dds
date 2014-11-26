@@ -1,3 +1,13 @@
+/* 
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund / 
+   2014 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+
 // Test program for the CalcAllTablesPBN function.
 // Uses the hands pre-set in hands.cpp.
 
@@ -11,14 +21,14 @@
 int main()
 {
   ddTableDealsPBN DDdealsPBN;
-  ddTablesRes 	tableRes;
+  ddTablesRes   tableRes;
   allParResults pres;
 
-  int		mode = 0, // No par calculation
-  		trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All 
-  int 		res;
-  char		line[80];
-  bool		match;
+  int           mode = 0, // No par calculation
+                trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All 
+  int           res;
+  char          line[80];
+  bool          match;
 
 #if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);

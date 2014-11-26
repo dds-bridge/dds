@@ -23,9 +23,12 @@ WARN_FLAGS	=		\
 	/wd4127			\
 	/wd4555			\
 	/wd4668			\
+	/wd4701			\
 	/wd4710			\
 	/wd4711			\
 	/wd4820			\
+	/wd4986			\
+	/wd4987			\
 	/wd4996			\
 	/WX
 
@@ -71,7 +74,7 @@ DDS_THR		=
 endif
 
 
-vs:	$(OBJ_FILES) $(VFILE).obj
+vs:	$(OBJ_FILES)
 	$(CC) $(CC_FULL_FLAGS) $(OBJ_FILES) $(EXPORTER) $(LIB_FLAGS) /out:$(DLL)
 
 %.obj:	%.cpp

@@ -14,12 +14,12 @@
 
 
 bool LaterTricksMIN(
-  pos			* posPoint, 
-  int 			hand, 
-  int 			depth, 
-  int 			target,
-  int 			trump, 
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  int                   hand, 
+  int                   depth, 
+  int                   target,
+  int                   trump, 
+  localVarType          * thrp)
 {
   if ((trump == DDS_NOTRUMP) || (posPoint->winner[trump].rank == 0))
   {
@@ -31,7 +31,7 @@ bool LaterTricksMIN(
       {
         if (thrp->nodeTypeStore[hh] == MAXNODE)
           sum += Max(posPoint->length[hh][ss], 
-	             posPoint->length[partner[hh]][ss]);
+                     posPoint->length[partner[hh]][ss]);
       }
     }
 
@@ -54,7 +54,7 @@ bool LaterTricksMIN(
             posPoint->winRanks[depth][ss] = 0;
           else
             posPoint->winRanks[depth][ss] = 
-	      bitMapRank[posPoint->winner[ss].rank];
+              bitMapRank[posPoint->winner[ss].rank];
         }
         else
           posPoint->winRanks[depth][ss] = 0;
@@ -94,7 +94,7 @@ bool LaterTricksMIN(
       if ((thrp->nodeTypeStore[hh] == MINNODE) && (r2 != 0))
       {
         if (posPoint->length[hh][trump] > 1 || 
-	    posPoint->length[partner[hh]][trump] > 1)
+            posPoint->length[partner[hh]][trump] > 1)
         {
           for (int ss = 0; ss < DDS_SUITS; ss++)
             posPoint->winRanks[depth][ss] = 0;
@@ -138,7 +138,7 @@ bool LaterTricksMIN(
         for (int ss = 0; ss < DDS_SUITS; ss++)
           posPoint->winRanks[depth][ss] = 0;
         posPoint->winRanks[depth][trump] = bitMapRank[ 
-	    static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
+            static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
         return false; 
       }
     }
@@ -148,12 +148,12 @@ bool LaterTricksMIN(
 
 
 bool LaterTricksMAX(
-  pos 			* posPoint, 
-  int 			hand, 
-  int 			depth, 
-  int 			target,
-  int 			trump, 
-  localVarType		* thrp)
+  pos                   * posPoint, 
+  int                   hand, 
+  int                   depth, 
+  int                   target,
+  int                   trump, 
+  localVarType          * thrp)
 {
   if ((trump == DDS_NOTRUMP) || (posPoint->winner[trump].rank == 0))
   {
@@ -165,7 +165,7 @@ bool LaterTricksMAX(
       {
         if (thrp->nodeTypeStore[hh] == MINNODE)
           sum += Max(posPoint->length[hh][ss], 
-	             posPoint->length[partner[hh]][ss]);
+                     posPoint->length[partner[hh]][ss]);
       }
     }
 
@@ -188,7 +188,7 @@ bool LaterTricksMAX(
             posPoint->winRanks[depth][ss] = 0;
           else
             posPoint->winRanks[depth][ss] = 
-	      bitMapRank[posPoint->winner[ss].rank];
+              bitMapRank[posPoint->winner[ss].rank];
         }
         else
           posPoint->winRanks[depth][ss] = 0;
@@ -276,7 +276,7 @@ bool LaterTricksMAX(
         for (int ss = 0; ss < DDS_SUITS; ss++)
           posPoint->winRanks[depth][ss] = 0;
         posPoint->winRanks[depth][trump] = bitMapRank[
-	  static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
+          static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
          return true;
       }
     }
