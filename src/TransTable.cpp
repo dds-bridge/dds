@@ -420,7 +420,7 @@ double TransTable::MemoryInUse()
 }
 
 
-winBlockType * TransTable::GetNextCardBlock()
+TransTable::winBlockType * TransTable::GetNextCardBlock()
 {
   /*
      Spaghetti code.  The basic idea is that there is a pool of
@@ -717,7 +717,7 @@ nodeCardsType * TransTable::Lookup(
 }
 
 
-winBlockType * TransTable::LookupSuit(
+TransTable::winBlockType * TransTable::LookupSuit(
   distHashType		* dp,
   long long 		key,
   bool			* empty)
@@ -1475,7 +1475,7 @@ void TransTable::PrintSummarySuitStats()
 }
 
 
-winBlockType * TransTable::FindMatchingDist(
+TransTable::winBlockType * TransTable::FindMatchingDist(
   int			trick,
   int			hand,
   int			handDistSought[DDS_HANDS])

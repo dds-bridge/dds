@@ -42,18 +42,20 @@
 #define HISTSIZE		100000
 
 
+// Also used in ABSearch
+struct nodeCardsType // 8 bytes
+{
+  char      ubound; // For N-S
+  char      lbound; // For N-S
+  char      bestMoveSuit;
+  char      bestMoveRank;
+  char      leastWin[DDS_SUITS];
+};
+
+
 class TransTable
 {
   private:
-
-    struct nodeCardsType // 8 bytes
-    {
-      char      ubound; // For N-S
-      char      lbound; // For N-S
-      char      bestMoveSuit;
-      char      bestMoveRank;
-      char      leastWin[DDS_SUITS];
-    };
 
     struct winMatchType // 52 bytes
     {
