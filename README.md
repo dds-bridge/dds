@@ -37,10 +37,12 @@ The distribution consists of the following directories.
 * **include**, where the public interface of the library is specified.
 * **lib**, the place where the library file is "installed" for test purposes.
 * **doc**, where the library interface is documented and the algorithms behind DDS are explained at a high level.
-* **ddd**, an old driver program for DDS contributed under the GPL (not under the Apache license) by Flip Cronje and updated by us to support the multi-threaded library file.
+* hands, a repository for input files to the test programs.
 * **test**, a test program.
 * **examples**, some minimal programs showing how to interface in practice with a number of library functions.
-* hands, a repository for input files to the test programs.
+
+There is a parallel distribution, **ddd**, consisting of an old driver program for DDS contributed under the GPL (not under the Apache license) by Flip Cronje and updated by us to support the multi-threaded library file.
+
 
 Supported systems
 =================
