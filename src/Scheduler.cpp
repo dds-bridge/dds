@@ -45,7 +45,7 @@ Scheduler::Scheduler()
   fp = stdout;
 #endif
 
-#if defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
+#if defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
   omp_init_lock(&lock);
 #endif
 }
@@ -140,7 +140,7 @@ Scheduler::~Scheduler()
     fclose(fp);
 #endif
 
-#if defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
+#if defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
   omp_destroy_lock(&lock);
 #endif
 }
@@ -746,7 +746,7 @@ schedType Scheduler::GetNumber(
 #if (defined(_WIN32) || defined(__CYGWIN__)) && \
        !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
     g = InterlockedIncrement(&currGroup);
-#elif defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
+#elif defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
     omp_set_lock(&lock);
     g = ++currGroup;
     omp_unset_lock(&lock);
