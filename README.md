@@ -37,11 +37,11 @@ The distribution consists of the following directories.
 * **include**, where the public interface of the library is specified.
 * **lib**, the place where the library file is "installed" for test purposes.
 * **doc**, where the library interface is documented and the algorithms behind DDS are explained at a high level.
-* hands, a repository for input files to the test programs.
+* **hands**, a repository for input files to the test programs.
 * **test**, a test program.
 * **examples**, some minimal programs showing how to interface in practice with a number of library functions.
 
-There is a parallel distribution, **ddd**, consisting of an old driver program for DDS contributed under the GPL (not under the Apache license) by Flip Cronje and updated by us to support the multi-threaded library file.
+There is a parallel distribution, [**ddd**](https://github.com/dds-bridge/ddd).  It consisting of an old driver program for DDS contributed under the GPL (not under the Apache license) by Flip Cronje, and updated by us to support the multi-threaded library file.
 
 
 Supported systems
@@ -59,17 +59,21 @@ We have also compiled the code and/or had help from other contributors on the fo
 * Linux Ubuntu with g++ and with OpenMP multi-threading.
 * Mac OS 10.9 with g++ and with OpenMP multi-threading.  Also with clang without multi-threading.
 
-Here the libraries are .a files, not DLLs.  We might also make .so libraries in the future.
+Here the libraries are `.a` files, not DLLs.  We might also make `.so` libraries in the future.
 
-Note that Apple stopped using g++ in Xcode a while back, DDS does compile using the clang compiler, but since DDS does not support pthreads multi-threading, DDS becomes single-threaded.  To get OpenMP multi-threading you need to use the Homebrew installer and do a "brew reinstall gcc --without-multilib".  The "without-multilib" is important because you won't get OpenMP otherwise, and that's the whole point.  Thanks for Matthew Kidd for these instructions.
+Note that Apple stopped using g++ in Xcode a while back, DDS does compile using the clang compiler, but since DDS does not support pthreads multi-threading, DDS becomes single-threaded.  To get OpenMP multi-threading you need to use the Homebrew installer and do:
+
+    brew reinstall gcc --without-multilib
+
+The `without-multilib` is important because you won't get OpenMP otherwise, and that's the whole point.  *(Thanks to Matthew Kidd for these instructions.)*
 
 
 Usage
 =====
 
-DDS tries to figure out the available number of cores and the available memory.  Based on this, DDS calculates a reasonable number of threads to use.  The user can override this by calling the SetMaxThreads() function.  In principle SetMaxThreads() can be called multiple times, but there is overhead associated with this, so only call it at the beginning of your program unless you really want to change the number of threads dynamically.
+DDS tries to figure out the available number of cores and the available memory.  Based on this, DDS calculates a reasonable number of threads to use.  The user can override this by calling the `SetMaxThreads()` function.  In principle SetMaxThreads can be called multiple times, but there is overhead associated with this, so only call it at the beginning of your program unless you really want to change the number of threads dynamically.
 
-DDS on Windows calls SetMaxThreads() itself when it is attached to a process, so you don't have to.  On Unix-like systems we use an equivalent mechanism, but we have had a report that this does not always happen in the right order of things, so you may want to call SetMaxThreads() explicitly.
+DDS on Windows calls SetMaxThreads itself when it is attached to a process, so you don't have to.  On Unix-like systems we use an equivalent mechanism, but we have had a report that this does not always happen in the right order of things, so you may want to call SetMaxThreads explicitly.
 
 
 Bugs
