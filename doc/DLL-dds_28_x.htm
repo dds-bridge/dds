@@ -16,16 +16,16 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <o:Template>Normal</o:Template>
   <o:LastAuthor>Soren Hein</o:LastAuthor>
   <o:Revision>2</o:Revision>
-  <o:LastPrinted>2014-11-22T16:09:00Z</o:LastPrinted>
-  <o:Created>2014-11-22T16:10:00Z</o:Created>
-  <o:LastSaved>2014-11-22T16:10:00Z</o:LastSaved>
+  <o:LastPrinted>2014-11-29T13:00:00Z</o:LastPrinted>
+  <o:Created>2014-11-29T13:01:00Z</o:Created>
+  <o:LastSaved>2014-11-29T13:01:00Z</o:LastSaved>
   <o:Pages>22</o:Pages>
-  <o:Words>5761</o:Words>
-  <o:Characters>36300</o:Characters>
+  <o:Words>5862</o:Words>
+  <o:Characters>36935</o:Characters>
   <o:Company>HP</o:Company>
-  <o:Lines>302</o:Lines>
-  <o:Paragraphs>83</o:Paragraphs>
-  <o:CharactersWithSpaces>41978</o:CharactersWithSpaces>
+  <o:Lines>307</o:Lines>
+  <o:Paragraphs>85</o:Paragraphs>
+  <o:CharactersWithSpaces>42712</o:CharactersWithSpaces>
   <o:Version>15.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -657,18 +657,18 @@ p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxS
 	mso-fareast-font-family:"Times New Roman";
 	mso-ansi-language:EN-US;
 	mso-fareast-language:SV;}
-span.berschrift3Zchn
-	{mso-style-name:"Überschrift 3 Zchn";
-	mso-style-noshow:yes;
+span.berschrift1Zchn
+	{mso-style-name:"Überschrift 1 Zchn";
 	mso-style-priority:9;
 	mso-style-unhide:no;
 	mso-style-locked:yes;
-	mso-style-link:"Überschrift 3";
-	mso-ansi-font-size:13.0pt;
+	mso-style-link:"Überschrift 1";
+	mso-ansi-font-size:16.0pt;
 	font-family:"Cambria",serif;
 	mso-ascii-font-family:Cambria;
 	mso-hansi-font-family:Cambria;
 	mso-bidi-font-family:"Times New Roman";
+	mso-font-kerning:16.0pt;
 	mso-ansi-language:EN-US;
 	mso-fareast-language:X-NONE;
 	font-weight:bold;
@@ -691,18 +691,18 @@ span.berschrift2Zchn
 	mso-bidi-font-weight:normal;
 	font-style:italic;
 	mso-bidi-font-style:normal;}
-span.berschrift1Zchn
-	{mso-style-name:"Überschrift 1 Zchn";
+span.berschrift3Zchn
+	{mso-style-name:"Überschrift 3 Zchn";
+	mso-style-noshow:yes;
 	mso-style-priority:9;
 	mso-style-unhide:no;
 	mso-style-locked:yes;
-	mso-style-link:"Überschrift 1";
-	mso-ansi-font-size:16.0pt;
+	mso-style-link:"Überschrift 3";
+	mso-ansi-font-size:13.0pt;
 	font-family:"Cambria",serif;
 	mso-ascii-font-family:Cambria;
 	mso-hansi-font-family:Cambria;
 	mso-bidi-font-family:"Times New Roman";
-	mso-font-kerning:16.0pt;
 	mso-ansi-language:EN-US;
 	mso-fareast-language:X-NONE;
 	font-weight:bold;
@@ -1466,8 +1466,8 @@ present in all versions of the DLL.<span style='mso-spacerun:yes'>  </span>For
 historical reasons, the function names are not entirely consistent with respect
 to the input format.<span style='mso-spacerun:yes'>  </span>Functions accepting
 binary deals will end on Bin, and those accepting PBN deals will end on PBN in
-the future.<span style='mso-spacerun:yes'>  </span>At some point existing function
-names may be changed as well, so use the new names!<o:p></o:p></span></p>
+the future.<span style='mso-spacerun:yes'>  </span>At some point existing
+function names may be changed as well, so use the new names!<o:p></o:p></span></p>
 
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
@@ -1520,18 +1520,20 @@ style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'>Solving hands can be done
 much more quickly using one of the multi-thread alternatives for calling SolveBoard.
-Then a number of hands are grouped for a single call to one of the functions SolveAllChunksBin
-and SolveAllChunksPBN.<span style='mso-spacerun:yes'>  </span>The hands are
-then solved in parallel using the available threads.<o:p></o:p></span></p>
+Then a number of hands are grouped for a single call to one of the functions SolveAllBoards,
+SolveAllChunksBin and SolveAllChunksPBN.<span style='mso-spacerun:yes'> 
+</span>The hands are then solved in parallel using the available threads.<o:p></o:p></span></p>
 
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'>The number of threads is
-automatically configured by DDS, taking into account the number of processor
-cores and available memory. <span style='mso-spacerun:yes'> </span>The number
-of threads can be influenced by calling SetMaxThreads.<o:p></o:p></span></p>
+automatically configured by DDS on Windows, taking into account the number of
+processor cores and available memory. <span style='mso-spacerun:yes'> </span>The
+number of threads can be influenced by calling SetMaxThreads.<span
+style='mso-spacerun:yes'>  </span>This function should probably always be called
+on Linux/Mac, with a zero argument for auto-configuration.<o:p></o:p></span></p>
 
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
@@ -6454,14 +6456,18 @@ color:black'><o:p>&nbsp;</o:p></span></p>
  </tr>
 </table>
 
-<h3 style='page-break-after:avoid'><span lang=EN-US style='font-family:"Calibri",sans-serif;
-color:black'>SolveBoardPBN is just like SolveBoard, except for the input
-format.<b><o:p></o:p></b></span></h3>
+<h3 style='text-align:justify;page-break-after:avoid'><span lang=EN-US
+style='font-family:"Calibri",sans-serif;color:black'>SolveBoardPBN is just like
+SolveBoard, except for the input format.<span style='mso-spacerun:yes'> 
+</span>Historically it was one of the first functions, and it exposes the
+thread index directly to the user. <span style='mso-spacerun:yes'> </span>Later
+functions generally don’t do that, and they also hide the implementation
+details such as transposition tables, see below.<o:p></o:p></span></h3>
 
-<p class=MsoNormal style='text-align:justify'><span lang=EN-US
-style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
+<h3 style='text-align:justify;page-break-after:avoid'><span lang=EN-US
+style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></h3>
 
-<p class=MsoNormal style='text-align:justify'><span lang=EN-US
+<h3 style='text-align:justify;page-break-after:avoid'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'>SolveBoard solves a single
 deal “</span><b style='mso-bidi-font-weight:normal'><span lang=EN-US
 style='font-size:11.0pt;font-family:"Courier New";color:black'>dl</span></b><span
@@ -6469,7 +6475,14 @@ lang=EN-US style='font-family:"Calibri",sans-serif;color:black'>” and returns
 the result in “</span><b style='mso-bidi-font-weight:normal'><span lang=EN-US
 style='font-size:11.0pt;font-family:"Courier New";color:black'>*futp”</span></b><span
 lang=EN-US style='font-family:"Calibri",sans-serif;color:black'> which must be
-declared before calling SolveBoard.<o:p></o:p></span></p>
+declared before calling SolveBoard.<o:p></o:p></span></h3>
+
+<p class=MsoNormal><span lang=EN-US><o:p>&nbsp;</o:p></span></p>
+
+<h3 style='text-align:justify;page-break-after:avoid'><span lang=EN-US
+style='font-family:"Calibri",sans-serif;color:black'>If you have multiple hands
+to solve, it is always better to group them together into a single function
+call than to use SolveBoard.<o:p></o:p></span></h3>
 
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
@@ -6871,6 +6884,21 @@ color:black'><o:p></o:p></span></p>
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
 
+<p class=MsoNormal style='text-align:justify'><u><span lang=EN-US
+style='font-family:"Calibri",sans-serif;color:black'>Note</span></u><span
+lang=EN-US style='font-family:"Calibri",sans-serif;color:black'>:<span
+style='mso-spacerun:yes'>  </span></span><span lang=EN-US style='font-size:
+10.0pt;font-family:"Courier New"'>mode</span><span lang=EN-US style='font-family:
+"Calibri",sans-serif;color:black'> no longer always has this effect internally
+in DDS. <span style='mso-spacerun:yes'> </span>We think </span><span
+lang=EN-US style='font-size:10.0pt;font-family:"Courier New"'>mode</span><span
+lang=EN-US style='font-family:"Calibri",sans-serif;color:black'> is no longer useful,
+and we may use it for something else in the future. <span
+style='mso-spacerun:yes'> </span>If you think you need it, let us know!<o:p></o:p></span></p>
+
+<p class=MsoNormal style='text-align:justify'><span lang=EN-US
+style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
+
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'>“Reuse” means “reuse the
 transposition table from the previous run with the same thread number”.<span
@@ -7148,8 +7176,6 @@ color:black'><o:p>&nbsp;</o:p></span></h3>
  </tr>
 </table>
 
-<p class=MsoNormal><span lang=EN-US style='mso-fareast-language:DE'><o:p>&nbsp;</o:p></span></p>
-
 <h3 style='page-break-after:avoid'><span lang=EN-US style='font-family:"Calibri",sans-serif;
 color:black'>CalcAllTablesPBN is just like CalcAllTables, except for the input
 format.<o:p></o:p></span></h3>
@@ -7189,9 +7215,12 @@ color:#0070C0'>Vulnerable<!--[if gte mso 9]><xml>
 </xml><![endif]--></span></u><!--[if supportFields]><u><span lang=EN-US
 style='font-family:"Calibri",sans-serif;mso-bidi-font-family:"Courier New";
 color:#0070C0'><span style='mso-element:field-end'></span></span></u><![endif]--><span
-lang=EN-US style='font-family:"Calibri",sans-serif;color:black'> encoding) for
-use in the par calculation.<span style='mso-spacerun:yes'>  </span>It is set to
--1 if no par calculation is to be performed.<o:p></o:p></span></p>
+lang=EN-US style='font-family:"Calibri",sans-serif;color:black'> encoding; not
+to be confused with the SolveBoard </span><b style='mso-bidi-font-weight:normal'><span
+lang=EN-US style='font-size:11.0pt;font-family:"Courier New";color:black'>mode</span></b><span
+lang=EN-US style='font-family:"Calibri",sans-serif;color:black'>) for use in
+the par calculation.<span style='mso-spacerun:yes'>  </span>It is set to -1 if
+no par calculation is to be performed.<o:p></o:p></span></p>
 
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
@@ -7477,8 +7506,8 @@ style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p
 style='font-family:"Calibri",sans-serif;color:black'>The SolveAll* functions
 invoke SolveBoard several times in parallel in multiple threads, rather than
 sequentially in a single thread.<span style='mso-spacerun:yes'>  </span>This
-increases execution speed.<span style='mso-spacerun:yes'>  </span>Up to 200
-boards are permitted per call.<o:p></o:p></span></p>
+increases execution speed.<span style='mso-spacerun:yes'>  </span>Up to 200 boards
+are permitted per call.<o:p></o:p></span></p>
 
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p>
@@ -7530,8 +7559,8 @@ style='font-family:"Calibri",sans-serif;color:black'><o:p>&nbsp;</o:p></span></p
 
 <p class=MsoNormal style='text-align:justify'><span lang=EN-US
 style='font-family:"Calibri",sans-serif;color:black'>If the chunk size is 2,
-then initially thread 0 gets boards 0 and 1, thread 1 gets boards 2 and 3,
-thread 2 gets boards 4 and 5, and thread 3 gets boards 6 and 7.<span
+then initially thread 0 gets boards 0 and 1, thread 1 gets boards 2 and 3, thread
+2 gets boards 4 and 5, and thread 3 gets boards 6 and 7.<span
 style='mso-spacerun:yes'>  </span>When a thread is finished, it gets two new
 boards in one go, for instance boards 8 and 9.<span style='mso-spacerun:yes'> 
 </span>The transposition table in a given thread is reused within a chunk.<o:p></o:p></span></p>
@@ -8665,9 +8694,9 @@ style='font-family:"Calibri",sans-serif;color:black;mso-bidi-font-weight:bold'>I
 is possible to ask DDS to give up its dynamically allocated memory by calling <b>FreeMemory</b>.<span
 style='mso-spacerun:yes'>  </span>This could be useful for instance if there is
 a long pause where DDS is not used within a session.<span
-style='mso-spacerun:yes'>  </span>DDS will free its memory when the DLL
-detaches from the user program, so there is no need for the user to call this
-function before detaching.<b><br clear=all style='page-break-before:always'>
+style='mso-spacerun:yes'>  </span>DDS will free its memory when the DLL detaches
+from the user program, so there is no need for the user to call this function
+before detaching.<b><br clear=all style='page-break-before:always'>
 <a name=Return>Return codes</a><o:p></o:p></b></span></h1>
 
 <h1 style='page-break-after:avoid'><b><span lang=EN-US style='font-family:"Calibri",sans-serif;
