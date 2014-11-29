@@ -1,0 +1,10 @@
+!.gitignore
+*.o
+*.a
+*.dll
+*.obj
+*.exe
+src/[Mm]akefile
+test/[Mm]akefile
+test/dtest
+test/itest
