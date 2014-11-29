@@ -31,11 +31,11 @@ int main()
   char          line[80];
   bool          match;
 
-  for (int handno = 0; handno < 3; handno++)
-
 #if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);
 #endif
+
+  for (int handno = 0; handno < 3; handno++)
   {
     dl.trump = trump[handno];
     dl.first = first[handno];

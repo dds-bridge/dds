@@ -57,7 +57,7 @@ int main()
     target    = -1;
     solutions = 3;
     mode      = 0;
-    res = SolveBoard(dl, target, solutions, mode, &fut3, 0);
+    res = SolveBoard(dl, target, solutions, mode, &fut3, threadIndex);
 
     if (res != RETURN_NO_FAULT)
     {
@@ -68,7 +68,7 @@ int main()
     match3 = CompareFut(&fut3, handno, solutions);
 
     solutions = 2;
-    res = SolveBoard(dl, target, solutions, mode, &fut2, 0);
+    res = SolveBoard(dl, target, solutions, mode, &fut2, threadIndex);
     if (res != RETURN_NO_FAULT)
     {
       ErrorMessage(res, line);
