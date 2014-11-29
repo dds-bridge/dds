@@ -43,6 +43,8 @@ The distribution consists of the following directories.
 
 There is a parallel distribution, **ddd**, consisting of an old driver program for DDS contributed under the GPL (not under the Apache license) by Flip Cronje and updated by us to support the multi-threaded library file.
 
+If you install ddd manually, put it in a directory parallel to these directories (src etc.) and then read the README file in that directory.  If you use GitHub, then dds is a sub-module.
+
 
 Supported systems
 =================
