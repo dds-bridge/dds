@@ -116,5 +116,5 @@ depend:
 	makedepend -Y -- $(cOMMON_SOURCE_FILES) $(ALL_EXAMPLE_FILES)
 
 clean:
-	rm -f $(OBJ_FILES) $(EX_OBJ_FILES) $(EX_EXE_FILES) 
+	rm -f $(OBJ_FILES) $(EX_OBJ_FILES) $(EX_EXE_FILES) $(STATIC_LIB)
 

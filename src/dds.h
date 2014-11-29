@@ -19,7 +19,7 @@
 #include <math.h>
 
 #include "debug.h"
-#include "portab.h"
+#include "../include/portab.h"
 
 #include "TransTable.h"
 #include "Timer.h"

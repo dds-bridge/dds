@@ -113,8 +113,8 @@ SolveAllBoards:	$(OBJ_FILES) SolveAllBoards.o
 	$(CC) $(CC_FULL_FLAGS) -c $< -o $*.o
 
 depend:
-	makedepend -Y -- $(cOMMON_SOURCE_FILES) $(ALL_EXAMPLE_FILES)
+	makedepend -Y -- $(COMMON_SOURCE_FILES) $(ALL_EXAMPLE_FILES)
 
 clean:
-	rm -f $(OBJ_FILES) $(EX_OBJ_FILES) $(EX_EXE_FILES) 
+	rm -f *.o $(EX_EXE_FILES) $(STATIC_LIB)
 

@@ -36,7 +36,7 @@ CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
 DTEST		= dtest
 ITEST		= itest
 
-DLLBASE		= ../lib/dds
+DLLBASE		= dds
 DLL 		= $(DLLBASE).dll
 DLIB 		= $(DLLBASE).lib
 EXPORTER	= Exports.def
@@ -109,7 +109,18 @@ depend:
 	makedepend -Y -o.obj -- $(cOMMON_SOURCE_FILES) $(ALL_EXAMPLE_FILES)
 
 clean:
-	rm -f $(OBJ_FILES) $(EX_OBJ_FILES) $(EX_EXE_FILES) 
+	rm -f $(OBJ_FILES) $(EX_OBJ_FILES) $(EX_EXE_FILES) $(DLL) $(DLIB)
 
 
 
+# DO NOT DELETE
+
+CalcDDtable.obj: ../include/dll.h hands.h
+CalcDDtablePBN.obj: ../include/dll.h hands.h
+CalcAllTables.obj: ../include/dll.h hands.h
+CalcAllTablesPBN.obj: ../include/dll.h hands.h
+DealerPar.obj: ../include/dll.h hands.h
+Par.obj: ../include/dll.h hands.h
+SolveBoard.obj: ../include/dll.h hands.h
+SolveBoardPBN.obj: ../include/dll.h hands.h
+SolveAllBoards.obj: ../include/dll.h hands.h
