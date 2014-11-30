@@ -270,24 +270,23 @@ unsigned char dcardHand[4] = { 'N', 'E', 'S', 'W' };
 
 
 
-
 void PrintFut(char title[], futureTricks * fut)
 {
   printf("%s\n", title);
 
-  printf("%6s  %-6s  %-6s  %-6s  %-6s\n",
-    "card", "suit", "rank", "equals", "score");
+  printf("%6s %-6s %-6s %-6s %-6s\n",
+         "card", "suit", "rank", "equals", "score");
 
   for (int i = 0; i < fut->cards; i++)
   {
     char res[15] = "";
     equals_to_string(fut->equals[i], res);
-    printf("%6d  %-6c  %-6c  %-6s  %-6d\n",
-      i, 
-      dcardSuit[ fut->suit[i] ],
-      dcardRank[ fut->rank[i] ],
-      res,
-      fut->score[i]);
+    printf("%6d %-6c %-6c %-6s %-6d\n",
+           i,
+           dcardSuit[ fut->suit[i] ],
+           dcardRank[ fut->rank[i] ],
+           res,
+           fut->score[i]);
   }
   printf("\n");
 }
@@ -318,8 +317,8 @@ bool CompareFut(futureTricks * fut, int handno, int solutions)
 
   for (int i = 0; i < fut->cards; i++)
   {
-    if (fut->suit  [i] != cardsSuits [handno][i]) return false; 
-    if (fut->rank  [i] != cardsRanks [handno][i]) return false;
+    if (fut->suit [i] != cardsSuits [handno][i]) return false;
+    if (fut->rank [i] != cardsRanks [handno][i]) return false;
     if (fut->equals[i] != cardsEquals[handno][i]) return false;
     if (fut->score [i] != cardsScores[handno][i]) return false;
   }
@@ -331,7 +330,7 @@ void SetTable(ddTableResults * table, int handno)
 {
   for (int suit = 0; suit < DDS_STRAINS; suit++)
     for (int pl = 0; pl <= 3; pl++)
-      table->resTable[suit][pl] = DDtable[handno][4*suit+pl];
+      table->resTable[suit][pl] = DDtable[handno][4 * suit + pl];
 }
 
 
@@ -341,7 +340,7 @@ bool CompareTable(ddTableResults * table, int handno)
   {
     for (int pl = 0; pl <= 3; pl++)
     {
-      if (table->resTable[suit][pl] != DDtable[handno][4*suit+pl])
+      if (table->resTable[suit][pl] != DDtable[handno][4 * suit + pl])
         return false;
     }
   }
@@ -351,24 +350,24 @@ bool CompareTable(ddTableResults * table, int handno)
 
 void PrintTable(ddTableResults * table)
 {
-  printf("%5s  %-5s  %-5s    %-5s  %-5s\n",
-    "", "North", "South", "East", "West");
+  printf("%5s %-5s %-5s %-5s %-5s\n",
+         "", "North", "South", "East", "West");
 
-  printf("%5s  %5d  %5d   %5d  %5d\n",
-    "NT", 
-    table->resTable[4][0],
-    table->resTable[4][2],
-    table->resTable[4][1],
-    table->resTable[4][3]);
+  printf("%5s %5d %5d %5d %5d\n",
+         "NT",
+         table->resTable[4][0],
+         table->resTable[4][2],
+         table->resTable[4][1],
+         table->resTable[4][3]);
 
   for (int suit = 0; suit < DDS_SUITS; suit++)
   {
-    printf("%5c  %5d  %5d   %5d  %5d\n",
-      dcardSuit[suit], 
-      table->resTable[suit][0],
-      table->resTable[suit][2],
-      table->resTable[suit][1],
-      table->resTable[suit][3]);
+    printf("%5c %5d %5d %5d %5d\n",
+           dcardSuit[suit],
+           table->resTable[suit][0],
+           table->resTable[suit][2],
+           table->resTable[suit][1],
+           table->resTable[suit][3]);
   }
   printf("\n");
 }
@@ -390,8 +389,8 @@ bool ComparePar(parResults * par, int handno)
 bool CompareDealerPar(parResultsDealer * par, int handno)
 {
   if (par->number != dealerParNo[handno]) return false;
-  if (par->score  != dealerScore[handno]) return false;
-  
+  if (par->score != dealerScore[handno]) return false;
+
   for (int i = 0; i < par->number; i++)
   {
     if (strcmp(par->contracts[i], dealerContract[handno][i]))
@@ -413,11 +412,11 @@ void PrintPar(parResults * par)
 
 void PrintDealerPar(parResultsDealer * par)
 {
-  printf("Score   : %d\n", par->score);
-  printf("Pars    : %d\n", par->number);
+  printf("Score : %d\n", par->score);
+  printf("Pars : %d\n", par->number);
 
   for (int i = 0; i < par->number; i++)
-    printf("Par %d   : %s\n", i, par->contracts[i]);
+    printf("Par %d : %s\n", i, par->contracts[i]);
 
   printf("\n");
 }
@@ -425,7 +424,7 @@ void PrintDealerPar(parResultsDealer * par)
 
 bool ComparePlay(solvedPlay * solved, int handno)
 {
-  if (solved->number != traceNo[handno]) 
+  if (solved->number != traceNo[handno])
   {
     printf("err %d %d\n", solved->number, traceNo[handno]);
     return false;
@@ -435,7 +434,7 @@ bool ComparePlay(solvedPlay * solved, int handno)
     if (solved->tricks[i] != trace[handno][i])
     {
       printf("error %d %d %d\n", i, solved->tricks[i],
-      trace[handno][i]);
+             trace[handno][i]);
       return false;
     }
 
@@ -445,18 +444,18 @@ bool ComparePlay(solvedPlay * solved, int handno)
 
 void PrintBinPlay(playTraceBin * playp, solvedPlay * solved)
 {
-  printf("Number :     %d\n", solved->number);
+  printf("Number : %d\n", solved->number);
 
-  printf("Play %2d: %s  %d\n", 
-    0, "--", solved->tricks[0]);
+  printf("Play %2d: %s %d\n",
+         0, "--", solved->tricks[0]);
 
   for (int i = 1; i < solved->number; i++)
   {
-    printf("Play %2d: %c%c  %d\n", 
-      i, 
-      dcardSuit[playp->suit[i-1]], 
-      dcardRank[playp->rank[i-1]],
-      solved->tricks[i]);
+    printf("Play %2d: %c%c %d\n",
+           i,
+           dcardSuit[playp->suit[i - 1]],
+           dcardRank[playp->rank[i - 1]],
+           solved->tricks[i]);
   }
   printf("\n");
 }
@@ -464,18 +463,18 @@ void PrintBinPlay(playTraceBin * playp, solvedPlay * solved)
 
 void PrintPBNPlay(playTracePBN * playp, solvedPlay * solved)
 {
-  printf("Number :     %d\n", solved->number);
+  printf("Number : %d\n", solved->number);
 
-  printf("Play %2d: %s  %d\n", 
-    0, "--", solved->tricks[0]);
+  printf("Play %2d: %s %d\n",
+         0, "--", solved->tricks[0]);
 
   for (int i = 1; i < solved->number; i++)
   {
-    printf("Play %2d: %c%c  %2d\n", 
-      i, 
-      playp->cards[2*(i-1)], 
-      playp->cards[2*i -1],
-      solved->tricks[i]);
+    printf("Play %2d: %c%c %2d\n",
+           i,
+           playp->cards[2 * (i - 1)],
+           playp->cards[2 * i - 1],
+           solved->tricks[i]);
   }
   printf("\n");
 }
@@ -487,12 +486,12 @@ void PrintPBNPlay(playTracePBN * playp, solvedPlay * solved)
 ////////////////////////////////////////////////
 
 
-#define DDS_FULL_LINE   80
+#define DDS_FULL_LINE 80
 #define DDS_HAND_OFFSET 12
-#define DDS_HAND_LINES  12
+#define DDS_HAND_LINES 12
 
 void PrintHand(char title[],
-  unsigned int remainCards[DDS_HANDS][DDS_SUITS])
+               unsigned int remainCards[DDS_HANDS][DDS_SUITS])
 {
   int c, h, s, r;
   char text[DDS_HAND_LINES][DDS_FULL_LINE];
@@ -500,7 +499,7 @@ void PrintHand(char title[],
   for (int l = 0; l < DDS_HAND_LINES; l++)
   {
     memset(text[l], ' ', DDS_FULL_LINE);
-    text[l][DDS_FULL_LINE-1] = '\0';
+    text[l][DDS_FULL_LINE - 1] = '\0';
   }
 
   for (h = 0; h < DDS_HANDS; h++)
@@ -509,22 +508,22 @@ void PrintHand(char title[],
     if (h == 0)
     {
       offset = DDS_HAND_OFFSET;
-      line   = 0;
+      line = 0;
     }
     else if (h == 1)
     {
       offset = 2 * DDS_HAND_OFFSET;
-      line   = 4;
+      line = 4;
     }
     else if (h == 2)
     {
       offset = DDS_HAND_OFFSET;
-      line   = 8;
+      line = 8;
     }
     else
     {
       offset = 0;
-      line   = 4;
+      line = 4;
     }
 
     for (s = 0; s < DDS_SUITS; s++)
@@ -558,25 +557,25 @@ void PrintHand(char title[],
 
 void PrintPBNHand(char title[], char remainCardsPBN[])
 {
-  unsigned int  remainCards[DDS_HANDS][DDS_SUITS];
+  unsigned int remainCards[DDS_HANDS][DDS_SUITS];
   ConvertPBN(remainCardsPBN, remainCards);
   PrintHand(title, remainCards);
 }
 
 
-int ConvertPBN(char     * dealBuff, 
-  unsigned int  remainCards[DDS_HANDS][DDS_SUITS]) 
+int ConvertPBN(char * dealBuff,
+               unsigned int remainCards[DDS_HANDS][DDS_SUITS])
 {
-  int bp=0, firstl, card, hand, handRelFirst, suitInHand, h, s;
+  int bp = 0, firstl, card, hand, handRelFirst, suitInHand, h, s;
 
   for (h = 0; h < DDS_HANDS; h++)
     for (s = 0; s < DDS_SUITS; s++)
       remainCards[h][s] = 0;
 
   while (((dealBuff[bp] != 'W') && (dealBuff[bp] != 'N') &&
-        (dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
-        (dealBuff[bp] != 'w') && (dealBuff[bp] != 'n') &&
-        (dealBuff[bp] != 'e') && (dealBuff[bp] != 's')) && (bp < 3))
+          (dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
+          (dealBuff[bp] != 'w') && (dealBuff[bp] != 'n') &&
+          (dealBuff[bp] != 'e') && (dealBuff[bp] != 's')) && (bp < 3))
     bp++;
 
   if (bp >= 3)
@@ -594,15 +593,15 @@ int ConvertPBN(char     * dealBuff,
   bp++;
   bp++;
 
-  handRelFirst = 0;  
-  suitInHand   = 0;
+  handRelFirst = 0;
+  suitInHand = 0;
 
-  while ((bp < 80) && (dealBuff[bp] != '\0')) 
+  while ((bp < 80) && (dealBuff[bp] != '\0'))
   {
     card = IsACard(dealBuff[bp]);
-    if (card) 
+    if (card)
     {
-      switch (firstl) 
+      switch (firstl)
       {
         case 0:
           hand = handRelFirst;
@@ -614,7 +613,7 @@ int ConvertPBN(char     * dealBuff,
             hand = 0;
           else
             hand = handRelFirst + 1;
-            break;
+          break;
         case 2:
           if (handRelFirst == 0)
             hand = 2;
@@ -630,13 +629,13 @@ int ConvertPBN(char     * dealBuff,
             hand = handRelFirst - 1;
       }
 
-      remainCards[hand][suitInHand] |= 
-        static_cast<unsigned>((dbitMapRank[card]<<2));
+      remainCards[hand][suitInHand] |=
+        static_cast<unsigned>((dbitMapRank[card] << 2));
 
     }
     else if (dealBuff[bp] == '.')
       suitInHand++;
-    else if (dealBuff[bp] == ' ') 
+    else if (dealBuff[bp] == ' ')
     {
       handRelFirst++;
       suitInHand = 0;
@@ -649,26 +648,46 @@ int ConvertPBN(char     * dealBuff,
 
 int IsACard(char cardChar)
 {
-  switch (cardChar)  {
-    case '2': return 2;
-    case '3': return 3;
-    case '4': return 4;
-    case '5': return 5;
-    case '6': return 6;
-    case '7': return 7;
-    case '8': return 8;
-    case '9': return 9;
-    case 'T': return 10;
-    case 'J': return 11;
-    case 'Q': return 12;
-    case 'K': return 13;
-    case 'A': return 14;
-    case 't': return 10;
-    case 'j': return 11; 
-    case 'q': return 12;
-    case 'k': return 13;
-    case 'a': return 14;
-    default : return 0;
-   }
- }
+  switch (cardChar)
+  {
+    case '2':
+      return 2;
+    case '3':
+      return 3;
+    case '4':
+      return 4;
+    case '5':
+      return 5;
+    case '6':
+      return 6;
+    case '7':
+      return 7;
+    case '8':
+      return 8;
+    case '9':
+      return 9;
+    case 'T':
+      return 10;
+    case 'J':
+      return 11;
+    case 'Q':
+      return 12;
+    case 'K':
+      return 13;
+    case 'A':
+      return 14;
+    case 't':
+      return 10;
+    case 'j':
+      return 11;
+    case 'q':
+      return 12;
+    case 'k':
+      return 13;
+    case 'a':
+      return 14;
+    default :
+      return 0;
+  }
+}
 

@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -15,42 +15,42 @@
 #include "ABsearch.h"
 
 #ifdef DDS_MOVES
-#define MG_REGISTER(a, b) lastCall[currTrick][b] = a
+  #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
 #else
-#define MG_REGISTER(a, b) 1;
+  #define MG_REGISTER(a, b) 1;
 #endif
 
 
 int RegisterList[16] =
 {
-  MG_NT0,               MG_TRUMP0,
-  -1,                   -1,
+  MG_NT0, MG_TRUMP0,
+  -1, -1,
 
-  MG_NT_NOTVOID1,       MG_TRUMP_NOTVOID1,
-  MG_NT_VOID1,          MG_TRUMP_VOID1,
+  MG_NT_NOTVOID1, MG_TRUMP_NOTVOID1,
+  MG_NT_VOID1, MG_TRUMP_VOID1,
 
-  MG_NT_NOTVOID2,       MG_TRUMP_NOTVOID2,
-  MG_NT_VOID2,          MG_TRUMP_VOID2,
+  MG_NT_NOTVOID2, MG_TRUMP_NOTVOID2,
+  MG_NT_VOID2, MG_TRUMP_VOID2,
 
-  MG_COMB_NOTVOID3,     MG_COMB_NOTVOID3,
-  MG_NT_VOID3,          MG_TRUMP_VOID3
+  MG_COMB_NOTVOID3, MG_COMB_NOTVOID3,
+  MG_NT_VOID3, MG_TRUMP_VOID3
 };
 
 
 Moves::Moves()
 {
-  sprintf(funcName[MG_NT0]           , "%s", "NT0");
-  sprintf(funcName[MG_TRUMP0]        , "%s", "Trump0");
-  sprintf(funcName[MG_NT_VOID1]      , "%s", "NT_Void1");
-  sprintf(funcName[MG_TRUMP_VOID1]   , "%s", "Trump_Void1");
-  sprintf(funcName[MG_NT_NOTVOID1]   , "%s", "NT_Notvoid1");
+  sprintf(funcName[MG_NT0] , "%s", "NT0");
+  sprintf(funcName[MG_TRUMP0] , "%s", "Trump0");
+  sprintf(funcName[MG_NT_VOID1] , "%s", "NT_Void1");
+  sprintf(funcName[MG_TRUMP_VOID1] , "%s", "Trump_Void1");
+  sprintf(funcName[MG_NT_NOTVOID1] , "%s", "NT_Notvoid1");
   sprintf(funcName[MG_TRUMP_NOTVOID1], "%s", "Trump_Notvoid1");
-  sprintf(funcName[MG_NT_VOID2]      , "%s", "NT_Void2");
-  sprintf(funcName[MG_TRUMP_VOID2]   , "%s", "Trump_Void2");
-  sprintf(funcName[MG_NT_NOTVOID2]   , "%s", "NT_Notvoid2");
+  sprintf(funcName[MG_NT_VOID2] , "%s", "NT_Void2");
+  sprintf(funcName[MG_TRUMP_VOID2] , "%s", "Trump_Void2");
+  sprintf(funcName[MG_NT_NOTVOID2] , "%s", "NT_Notvoid2");
   sprintf(funcName[MG_TRUMP_NOTVOID2], "%s", "Trump_Notvoid2");
-  sprintf(funcName[MG_NT_VOID3]      , "%s", "NT_Void3");
-  sprintf(funcName[MG_TRUMP_VOID3]   , "%s", "Trump_Void3");
+  sprintf(funcName[MG_NT_VOID3] , "%s", "NT_Void3");
+  sprintf(funcName[MG_TRUMP_VOID3] , "%s", "Trump_Void3");
   sprintf(funcName[MG_COMB_NOTVOID3] , "%s", "Comb_Notvoid3");
 
   for (int t = 0; t < 13; t++)
@@ -62,21 +62,21 @@ Moves::Moves()
       trickTable[t][h].count = 0;
       trickSuitTable[t][h].count = 0;
 
-      trickDetailTable    [t][h].nfuncs = 0;
+      trickDetailTable [t][h].nfuncs = 0;
       trickDetailSuitTable[t][h].nfuncs = 0;
       for (int i = 0; i < MG_NUM_FUNCTIONS; i++)
       {
-        trickDetailTable    [t][h].list[i].count = 0;
+        trickDetailTable [t][h].list[i].count = 0;
         trickDetailSuitTable[t][h].list[i].count = 0;
       }
     }
   }
 
-  trickFuncTable    .nfuncs = 0;
+  trickFuncTable .nfuncs = 0;
   trickFuncSuitTable.nfuncs = 0;
   for (int i = 0; i < MG_NUM_FUNCTIONS; i++)
   {
-    trickFuncTable    .list[i].count = 0;
+    trickFuncTable .list[i].count = 0;
     trickFuncSuitTable.list[i].count = 0;
   }
 
@@ -107,7 +107,7 @@ void Moves::SetFile(char * ourFname)
 
   if (fp != stdout) // Already set
     return;
-  
+
   strncpy(fname, ourFname, strlen(ourFname));
 
   fp = fopen(fname, "w");
@@ -124,16 +124,16 @@ Moves::~Moves()
 
 
 void Moves::Init(
-  int                   tricks,
-  int                   relStartHand,
-  int                   initialRanks[],
-  int                   initialSuits[],
-  unsigned short int    rankInSuit[DDS_HANDS][DDS_SUITS],
-  int                   ourTrump,
-  int                   ourLeadHand)
+  int tricks,
+  int relStartHand,
+  int initialRanks[],
+  int initialSuits[],
+  unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
+  int ourTrump,
+  int ourLeadHand)
 {
   currTrick = tricks;
-  trump     = ourTrump;
+  trump = ourTrump;
 
   if (relStartHand == 0)
     track[tricks].leadHand = ourLeadHand;
@@ -143,7 +143,7 @@ void Moves::Init(
     for (int h = 0; h < DDS_HANDS; h++)
     {
       moveList[m][h].current = 0;
-      moveList[m][h].last    = 0;
+      moveList[m][h].last = 0;
 
     }
   }
@@ -167,35 +167,35 @@ void Moves::Init(
 
 
 void Moves::Reinit(
-  int                   tricks,
-  int                   ourLeadHand)
+  int tricks,
+  int ourLeadHand)
 {
   track[tricks].leadHand = ourLeadHand;
 }
 
 
 int Moves::MoveGen0(
-  int                   tricks,
-  pos                   * posPoint,
-  moveType              * bestMove,
-  moveType              * bestMoveTT,
-  relRanksType          thrp_rel[])
+  int tricks,
+  pos * posPoint,
+  moveType * bestMove,
+  moveType * bestMoveTT,
+  relRanksType thrp_rel[])
 {
-  trackp    = &track[tricks];
-  leadHand  = trackp->leadHand;
-  currHand  = leadHand;
+  trackp = &track[tricks];
+  leadHand = trackp->leadHand;
+  currHand = leadHand;
   currTrick = tricks;
 
   moveGroupType * mp;
   int removed, g, rank, seq;
 
   movePlyType * listp = &moveList[tricks][0];
-  mply  = listp->move;
+  mply = listp->move;
   for (int s = 0; s < DDS_SUITS; s++)
     trackp->lowestWin[0][s] = 0;
   numMoves = 0;
 
-  bool ftest = ((trump != DDS_NOTRUMP) && 
+  bool ftest = ((trump != DDS_NOTRUMP) &&
                 (posPoint->winner[trump].rank != 0));
 
   for (suit = 0; suit < DDS_SUITS; suit++)
@@ -204,32 +204,32 @@ int Moves::MoveGen0(
     if (ris == 0) continue;
 
     lastNumMoves = numMoves;
-    mp      = &groupData[ris];
-    g       = mp->lastGroup;
+    mp = &groupData[ris];
+    g = mp->lastGroup;
     removed = trackp->removedRanks[suit];
 
     while (g >= 0)
     {
-      rank  = mp->rank[g];
-      seq   = mp->sequence[g];
-    
+      rank = mp->rank[g];
+      seq = mp->sequence[g];
+
       while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
         seq |= mp->fullseq[--g];
 
       mply[numMoves].sequence = seq;
-      mply[numMoves].suit     = suit;
-      mply[numMoves].rank     = rank;
+      mply[numMoves].suit = suit;
+      mply[numMoves].rank = rank;
 
       numMoves++;
       g--;
     }
 
     if (ftest)
-      Moves::WeightAllocTrump0(posPoint, 
-        bestMove, bestMoveTT, thrp_rel);
+      Moves::WeightAllocTrump0(posPoint,
+                               bestMove, bestMoveTT, thrp_rel);
     else
-      Moves::WeightAllocNT0(posPoint, 
-        bestMove, bestMoveTT, thrp_rel);
+      Moves::WeightAllocNT0(posPoint,
+                            bestMove, bestMoveTT, thrp_rel);
   }
 
 #ifdef DDS_MOVES
@@ -240,7 +240,7 @@ int Moves::MoveGen0(
 #endif
 
   listp->current = 0;
-  listp->last    = numMoves - 1;
+  listp->last = numMoves - 1;
   if (numMoves != 1)
     Moves::MergeSort();
   return numMoves;
@@ -248,62 +248,62 @@ int Moves::MoveGen0(
 
 
 int Moves::MoveGen123(
-  int                   tricks,
-  int                   handRel,
-  pos                   * posPoint)
+  int tricks,
+  int handRel,
+  pos * posPoint)
 {
-  trackp    = &track[tricks];
-  leadHand  = trackp->leadHand;
-  currHand  = handId(leadHand, handRel);
+  trackp = &track[tricks];
+  leadHand = trackp->leadHand;
+  currHand = handId(leadHand, handRel);
   currTrick = tricks;
-  leadSuit  = track[tricks].leadSuit;
+  leadSuit = track[tricks].leadSuit;
 
   moveGroupType * mp;
   int removed, g, rank, seq;
 
   movePlyType * listp = &moveList[tricks][handRel];
-  mply  = listp->move;
+  mply = listp->move;
 
   for (int s = 0; s < DDS_SUITS; s++)
     trackp->lowestWin[handRel][s] = 0;
-  numMoves = 0; 
+  numMoves = 0;
 
   WeightPtr WeightFnc;
   int findex;
-  int ftest = ((trump != DDS_NOTRUMP) && 
-              (posPoint->winner[trump].rank != 0) ? 1 : 0);
+  int ftest = ((trump != DDS_NOTRUMP) &&
+               (posPoint->winner[trump].rank != 0) ? 1 : 0);
 
   unsigned short ris = posPoint->rankInSuit[currHand][leadSuit];
 
   if (ris != 0)
   {
-    mp      = &groupData[ris];
-    g       = mp->lastGroup;
+    mp = &groupData[ris];
+    g = mp->lastGroup;
     removed = trackp->removedRanks[leadSuit];
 
     while (g >= 0)
     {
-      rank  = mp->rank[g];
-      seq   = mp->sequence[g];
-    
+      rank = mp->rank[g];
+      seq = mp->sequence[g];
+
       while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
         seq |= mp->fullseq[--g];
 
       mply[numMoves].sequence = seq;
-      mply[numMoves].suit     = leadSuit;
-      mply[numMoves].rank     = rank;
+      mply[numMoves].suit = leadSuit;
+      mply[numMoves].rank = rank;
 
       numMoves++;
       g--;
     }
 
-    findex = 4*handRel + ftest;
+    findex = 4 * handRel + ftest;
 #ifdef DDS_MOVES
     MG_REGISTER(RegisterList[findex], handRel);
 #endif
 
     listp->current = 0;
-    listp->last    = numMoves - 1;
+    listp->last = numMoves - 1;
     if (numMoves == 1)
       return numMoves;
 
@@ -315,7 +315,7 @@ int Moves::MoveGen123(
     return numMoves;
   }
 
-  findex = 4*handRel + ftest + 2;
+  findex = 4 * handRel + ftest + 2;
 
 #ifdef DDS_MOVES
   MG_REGISTER(RegisterList[findex], handRel);
@@ -328,31 +328,31 @@ int Moves::MoveGen123(
     if (ris == 0) continue;
 
     lastNumMoves = numMoves;
-    mp      = &groupData[ris];
-    g       = mp->lastGroup;
+    mp = &groupData[ris];
+    g = mp->lastGroup;
     removed = trackp->removedRanks[suit];
 
     while (g >= 0)
     {
-      rank  = mp->rank[g];
-      seq   = mp->sequence[g];
-    
+      rank = mp->rank[g];
+      seq = mp->sequence[g];
+
       while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
         seq |= mp->fullseq[--g];
 
       mply[numMoves].sequence = seq;
-      mply[numMoves].suit     = suit;
-      mply[numMoves].rank     = rank;
+      mply[numMoves].suit = suit;
+      mply[numMoves].rank = rank;
 
       numMoves++;
       g--;
     }
-    
+
     (this->*WeightFnc)(posPoint);
   }
 
   listp->current = 0;
-  listp->last    = numMoves - 1;
+  listp->last = numMoves - 1;
   if (numMoves != 1)
     Moves::MergeSort();
   return numMoves;
@@ -360,19 +360,19 @@ int Moves::MoveGen123(
 
 
 void Moves::WeightAllocTrump0(
-  pos                   * posPoint, 
-  moveType              * bestMove,
-  moveType              * bestMoveTT,
-  relRanksType          thrp_rel[])
+  pos * posPoint,
+  moveType * bestMove,
+  moveType * bestMoveTT,
+  relRanksType thrp_rel[])
 {
-  unsigned short suitCount   = posPoint->length[leadHand][suit];
+  unsigned short suitCount = posPoint->length[leadHand][suit];
   unsigned short suitCountLH = posPoint->length[lho[leadHand]][suit];
   unsigned short suitCountRH = posPoint->length[rho[leadHand]][suit];
-  unsigned short aggr        = posPoint->aggr[suit];
+  unsigned short aggr = posPoint->aggr[suit];
 
   // Why?
-  int countLH = (suitCountLH == 0 ? currTrick+1 : suitCountLH) << 2;
-  int countRH = (suitCountRH == 0 ? currTrick+1 : suitCountRH) << 2;
+  int countLH = (suitCountLH == 0 ? currTrick + 1 : suitCountLH) << 2;
+  int countRH = (suitCountRH == 0 ? currTrick + 1 : suitCountRH) << 2;
 
   int suitWeightD = - (((countLH + countRH) << 5) / 13);
 
@@ -392,9 +392,9 @@ void Moves::WeightAllocTrump0(
       suitBonus = -12;
 
     /* Encourage suit if partner can ruff. */
-    if ((suit != trump) && 
+    if ((suit != trump) &&
         (posPoint->length[partner[leadHand]][suit] == 0) &&
-        (posPoint->length[partner[leadHand]][trump] > 0) && 
+        (posPoint->length[partner[leadHand]][trump] > 0) &&
         (suitCountRH > 0))
       suitBonus += 17;
 
@@ -426,9 +426,9 @@ void Moves::WeightAllocTrump0(
       suitBonus += 19;
 
 
-    /* Discourage a suit selection where the search tree appears larger 
-       than for the altenative suits: the search is estimated to be 
-       small when the added number of alternative cards to play for 
+    /* Discourage a suit selection where the search tree appears larger
+       than for the altenative suits: the search is estimated to be
+       small when the added number of alternative cards to play for
        the opponents is small. */
 
     int suitWeightDelta = suitBonus + suitWeightD;
@@ -509,12 +509,12 @@ void Moves::WeightAllocTrump0(
     if (winMove)
     {
       /* Encourage ruffing LHO or RHO singleton, highest card. */
-      if (((suitCountLH == 1) && 
-          (posPoint->winner[suit].hand == lho[leadHand]))
-          || ((suitCountRH == 1) && 
+      if (((suitCountLH == 1) &&
+           (posPoint->winner[suit].hand == lho[leadHand]))
+          || ((suitCountRH == 1) &&
               (posPoint->winner[suit].hand == rho[leadHand])))
         mply[k].weight = suitWeightDelta + 35 + rRank;
-  
+
       /* Lead hand has the highest card. */
 
       else if (posPoint->winner[suit].hand == leadHand)
@@ -546,8 +546,8 @@ void Moves::WeightAllocTrump0(
       else
         mply[k].weight = suitWeightDelta + 11 + rRank;
 
-      /*  playing cards that previously caused search cutoff
-         or was stored as the best move in a transposition table entry 
+      /* playing cards that previously caused search cutoff
+         or was stored as the best move in a transposition table entry
          match. */
 
       if ((bestMove->suit == suit) &&
@@ -559,36 +559,36 @@ void Moves::WeightAllocTrump0(
     }
     else
     {
-      /* Encourage playing the suit if the hand together with partner 
-         have both the 2nd highest and the 3rd highest cards such that 
-         the side of the hand has the highest card in the next round 
+      /* Encourage playing the suit if the hand together with partner
+         have both the 2nd highest and the 3rd highest cards such that
+         the side of the hand has the highest card in the next round
          playing this suit. */
 
       int thirdBestHand = thrp_rel[aggr].absRank[3][suit].hand;
 
-      if ((posPoint->secondBest[suit].hand == partner[leadHand]) && 
+      if ((posPoint->secondBest[suit].hand == partner[leadHand]) &&
           (partner[leadHand] == thirdBestHand))
         suitWeightDelta += 20;
-      else if(((posPoint->secondBest[suit].hand == leadHand) && 
-              (partner[leadHand] == thirdBestHand) &&
-              (posPoint->length[partner[leadHand]][suit] > 1)) ||
-              ((posPoint->secondBest[suit].hand == partner[leadHand]) &&
-               (leadHand == thirdBestHand) && 
-               (posPoint->length[partner[leadHand]][suit] > 1)))
+      else if (((posPoint->secondBest[suit].hand == leadHand) &&
+                (partner[leadHand] == thirdBestHand) &&
+                (posPoint->length[partner[leadHand]][suit] > 1)) ||
+               ((posPoint->secondBest[suit].hand == partner[leadHand]) &&
+                (leadHand == thirdBestHand) &&
+                (posPoint->length[partner[leadHand]][suit] > 1)))
         suitWeightDelta += 13;
 
-      /* Higher weight if LHO or RHO has the highest (winning) card as 
+      /* Higher weight if LHO or RHO has the highest (winning) card as
          a singleton. */
 
-      if (((suitCountLH == 1) && 
-          (posPoint->winner[suit].hand == lho[leadHand]))
-          || ((suitCountRH == 1) && 
-          (posPoint->winner[suit].hand == rho[leadHand])))
+      if (((suitCountLH == 1) &&
+           (posPoint->winner[suit].hand == lho[leadHand]))
+          || ((suitCountRH == 1) &&
+              (posPoint->winner[suit].hand == rho[leadHand])))
         mply[k].weight = suitWeightDelta + rRank + 2;
       else if (posPoint->winner[suit].hand == leadHand)
       {
         if (posPoint->secondBest[suit].hand == partner[leadHand])
-            /* Opponents win by ruffing */
+          /* Opponents win by ruffing */
           mply[k].weight = suitWeightDelta + 33 + rRank;
         else if (posPoint->winner[suit].rank == mply[k].rank)
           /* Opponents win by ruffing */
@@ -610,7 +610,7 @@ void Moves::WeightAllocTrump0(
         mply[k].weight = suitWeightDelta + 17 - (mply[k].rank);
 
       /* Encourage playing cards that previously caused search cutoff
-         or was stored as the best move in a transposition table 
+         or was stored as the best move in a transposition table
          entry match. */
 
       if ((bestMove->suit == suit) &&
@@ -622,24 +622,24 @@ void Moves::WeightAllocTrump0(
 
 
 void Moves::WeightAllocNT0(
-  pos                   * posPoint, 
-  moveType              * bestMove,
-  moveType              * bestMoveTT,
-  relRanksType          thrp_rel[])
+  pos * posPoint,
+  moveType * bestMove,
+  moveType * bestMoveTT,
+  relRanksType thrp_rel[])
 {
-  int aggr  = posPoint->aggr[suit];
+  int aggr = posPoint->aggr[suit];
 
-  /* Discourage a suit selection where the search tree appears larger 
-     than for the alternative suits: the search is estimated to be 
-     small when the added number of alternative cards to play for 
+  /* Discourage a suit selection where the search tree appears larger
+     than for the alternative suits: the search is estimated to be
+     small when the added number of alternative cards to play for
      the opponents is small. */
 
   unsigned short suitCountLH = posPoint->length[lho[leadHand]][suit];
   unsigned short suitCountRH = posPoint->length[rho[leadHand]][suit];
 
   // Why?
-  int countLH = (suitCountLH == 0 ? currTrick+1 : suitCountLH) << 2;
-  int countRH = (suitCountRH == 0 ? currTrick+1 : suitCountRH) << 2;
+  int countLH = (suitCountLH == 0 ? currTrick + 1 : suitCountLH) << 2;
+  int countRH = (suitCountRH == 0 ? currTrick + 1 : suitCountRH) << 2;
 
   int suitWeightD = - (((countLH + countRH) << 5) / 19);
   if (posPoint->length[partner[leadHand]][suit] == 0)
@@ -651,9 +651,9 @@ void Moves::WeightAllocNT0(
     int rRank = relRank[aggr][mply[k].rank];
 
     if (posPoint->winner[suit].rank == mply[k].rank ||
-       (posPoint->rankInSuit[partner[leadHand]][suit] >
-             (posPoint->rankInSuit[lho[leadHand]][suit] |
-              posPoint->rankInSuit[rho[leadHand]][suit])))
+        (posPoint->rankInSuit[partner[leadHand]][suit] >
+         (posPoint->rankInSuit[lho[leadHand]][suit] |
+          posPoint->rankInSuit[rho[leadHand]][suit])))
     {
       // Can win trick, ourselves or partner.
       // FIX: No distinction?
@@ -673,8 +673,8 @@ void Moves::WeightAllocNT0(
           suitWeightDelta += 16;
       }
 
-      /* Higher weight if also second best rank is present on 
-         current side to play, or if second best is a singleton 
+      /* Higher weight if also second best rank is present on
+         current side to play, or if second best is a singleton
          at LHO or RHO. */
 
       if (((posPoint->secondBest[suit].hand != lho[leadHand])
@@ -686,7 +686,7 @@ void Moves::WeightAllocNT0(
         mply[k].weight = suitWeightDelta + 18 + rRank;
 
       /* Encourage playing cards that previously caused search cutoff
-         or was stored as the best move in a transposition table 
+         or was stored as the best move in a transposition table
          entry match. */
 
       if ((bestMove->suit == suit) &&
@@ -719,31 +719,31 @@ void Moves::WeightAllocNT0(
           suitWeightDelta += 31;
       }
 
-      /* Encourage playing the suit if the hand together with partner 
-         have both the 2nd highest and the 3rd highest cards such 
+      /* Encourage playing the suit if the hand together with partner
+         have both the 2nd highest and the 3rd highest cards such
          that the side of the hand has the highest card in the
          next round playing this suit. */
 
       int thirdBestHand = thrp_rel[aggr].absRank[3][suit].hand;
 
-      if ((posPoint->secondBest[suit].hand == partner[leadHand]) && 
+      if ((posPoint->secondBest[suit].hand == partner[leadHand]) &&
           (partner[leadHand] == thirdBestHand))
-          suitWeightDelta += 35;
-      else if (((posPoint->secondBest[suit].hand == leadHand) && 
-               (partner[leadHand] == thirdBestHand) &&
-               (posPoint->length[partner[leadHand]][suit] > 1)) || 
+        suitWeightDelta += 35;
+      else if (((posPoint->secondBest[suit].hand == leadHand) &&
+                (partner[leadHand] == thirdBestHand) &&
+                (posPoint->length[partner[leadHand]][suit] > 1)) ||
                ((posPoint->secondBest[suit].hand == partner[leadHand]) &&
-                 (leadHand == thirdBestHand) && 
-                 (posPoint->length[partner[leadHand]][suit] > 1)))
+                (leadHand == thirdBestHand) &&
+                (posPoint->length[partner[leadHand]][suit] > 1)))
         suitWeightDelta += 25;
 
-      /* Higher weight if LHO or RHO has the highest (winning) card 
+      /* Higher weight if LHO or RHO has the highest (winning) card
          as a singleton. */
 
-      if (((suitCountLH == 1) && 
-          (posPoint->winner[suit].hand == lho[leadHand]))
-          || ((suitCountRH == 1) && 
-          (posPoint->winner[suit].hand == rho[leadHand])))
+      if (((suitCountLH == 1) &&
+           (posPoint->winner[suit].hand == lho[leadHand]))
+          || ((suitCountRH == 1) &&
+              (posPoint->winner[suit].hand == rho[leadHand])))
         mply[k].weight = suitWeightDelta + 28 + rRank;
       else if (posPoint->winner[suit].hand == leadHand)
         mply[k].weight = suitWeightDelta - 17 + rRank;
@@ -755,7 +755,7 @@ void Moves::WeightAllocNT0(
         mply[k].weight = suitWeightDelta + 29 - rRank;
 
       /* Encourage playing cards that previously caused search cutoff
-         or was stored as the best move in a transposition table 
+         or was stored as the best move in a transposition table
          entry match. */
 
       if ((bestMove->suit == suit) && (bestMove->rank == mply[k].rank))
@@ -769,16 +769,16 @@ void Moves::WeightAllocNT0(
 
 
 void Moves::WeightAllocTrumpNotvoid1(
-  pos                   * posPoint)
+  pos * posPoint)
 {
   int max3rd = highestRank[
-    posPoint->rankInSuit[partner[leadHand]][leadSuit]];
-  int maxpd  = highestRank[
-    posPoint->rankInSuit[rho[leadHand]    ][leadSuit]];
+                 posPoint->rankInSuit[partner[leadHand]][leadSuit]];
+  int maxpd = highestRank[
+                 posPoint->rankInSuit[rho[leadHand] ][leadSuit]];
   int min3rd = lowestRank [
-    posPoint->rankInSuit[partner[leadHand]][leadSuit]];
-  int minpd  = lowestRank [
-    posPoint->rankInSuit[rho[leadHand]    ][leadSuit]];
+                 posPoint->rankInSuit[partner[leadHand]][leadSuit]];
+  int minpd = lowestRank [
+                 posPoint->rankInSuit[rho[leadHand] ][leadSuit]];
 
   for (int k = 0; k < numMoves; k++)
   {
@@ -789,8 +789,8 @@ void Moves::WeightAllocTrumpNotvoid1(
     {
       if (maxpd > trackp->move[0].rank && maxpd > max3rd)
         winMove = true;
-      else if (mply[k].rank > trackp->move[0].rank && 
-          mply[k].rank > max3rd)
+      else if (mply[k].rank > trackp->move[0].rank &&
+               mply[k].rank > max3rd)
         winMove = true;
     }
     else
@@ -803,7 +803,7 @@ void Moves::WeightAllocTrumpNotvoid1(
         else if ((maxpd == 0)
                  && (posPoint->length[rho[leadHand]][trump] != 0)
                  && (posPoint->rankInSuit[rho[leadHand]][trump] >
-                   posPoint->rankInSuit[partner[leadHand]][trump]))
+                     posPoint->rankInSuit[partner[leadHand]][trump]))
           winMove = true;
       }
       else if (maxpd > trackp->move[0].rank && maxpd > max3rd)
@@ -837,8 +837,8 @@ void Moves::WeightAllocTrumpNotvoid1(
         // Partner must be winning -- we can't.
         mply[k].weight = 40 + rRank;
       else if ((maxpd > trackp->move[0].rank) &&
-              (posPoint->rankInSuit[leadHand][leadSuit] > 
-               posPoint->rankInSuit[rho[leadHand]][leadSuit]))
+               (posPoint->rankInSuit[leadHand][leadSuit] >
+                posPoint->rankInSuit[rho[leadHand]][leadSuit]))
         mply[k].weight = 41 + rRank;
 
       /* If rho has a card in the leading suit that
@@ -851,21 +851,21 @@ void Moves::WeightAllocTrumpNotvoid1(
       else if (mply[k].rank > trackp->move[0].rank)
       {
         if (mply[k].rank < maxpd)
-          mply[k].weight = 78 - (mply[k].rank);  
-          /* If played card is lower than any of the cards of
-             rho, it will be the cheapest win */
+          mply[k].weight = 78 - (mply[k].rank);
+        /* If played card is lower than any of the cards of
+           rho, it will be the cheapest win */
         else if (mply[k].rank > max3rd)
-          mply[k].weight = 73 - (mply[k].rank);  
-          /* If played card is higher than any cards at partner
-             of the leading hand, rho can play low, under the
-             condition that he has a lower card than lho played */
+          mply[k].weight = 73 - (mply[k].rank);
+        /* If played card is higher than any cards at partner
+           of the leading hand, rho can play low, under the
+           condition that he has a lower card than lho played */
         else if (mply[k].sequence) // May establish a winner
           mply[k].weight = 62 - (mply[k].rank);
         else
           mply[k].weight = 49 - (mply[k].rank);
       }
       else if (maxpd > 0)
-        mply[k].weight = 47 - (mply[k].rank); 
+        mply[k].weight = 47 - (mply[k].rank);
       else
         mply[k].weight = 40 - (mply[k].rank);
     }
@@ -875,7 +875,7 @@ void Moves::WeightAllocTrumpNotvoid1(
     else if (mply[k].rank < trackp->move[0].rank)
       // Already beaten.
       mply[k].weight = -16 + rRank;
-    else if (mply[k].sequence) 
+    else if (mply[k].sequence)
       // May establish a winner
       mply[k].weight = 22 - (mply[k].rank);
     else
@@ -885,7 +885,7 @@ void Moves::WeightAllocTrumpNotvoid1(
 
 
 void Moves::WeightAllocNTNotvoid1(
-  pos                   * posPoint)
+  pos * posPoint)
 {
   // FIX: Second test should come first, and outside loop.
   // Why is better not to be able to beat later players than
@@ -893,9 +893,9 @@ void Moves::WeightAllocNTNotvoid1(
   // Why rRank?
 
   int max3rd = highestRank[
-    posPoint->rankInSuit[partner[leadHand]][leadSuit]];
-  int maxpd  = highestRank[ 
-    posPoint->rankInSuit[rho[leadHand]][leadSuit] ];
+                 posPoint->rankInSuit[partner[leadHand]][leadSuit]];
+  int maxpd = highestRank[
+                 posPoint->rankInSuit[rho[leadHand]][leadSuit] ];
 
   if (maxpd > trackp->move[0].rank && maxpd > max3rd)
   {
@@ -906,13 +906,13 @@ void Moves::WeightAllocNTNotvoid1(
   else
   {
     int min3rd = lowestRank [
-      posPoint->rankInSuit[partner[leadHand]][leadSuit]];
-    int minpd  = lowestRank [ 
-      posPoint->rankInSuit[rho[leadHand]][leadSuit] ];
+                   posPoint->rankInSuit[partner[leadHand]][leadSuit]];
+    int minpd = lowestRank [
+                   posPoint->rankInSuit[rho[leadHand]][leadSuit] ];
 
     for (int k = 0; k < numMoves; k++)
     {
-      int rRank  = relRank[ posPoint->aggr[leadSuit] ][mply[k].rank];
+      int rRank = relRank[ posPoint->aggr[leadSuit] ][mply[k].rank];
 
       if (mply[k].rank > trackp->move[0].rank && mply[k].rank > max3rd)
         // We can beat both opponents.
@@ -938,10 +938,10 @@ void Moves::WeightAllocNTNotvoid1(
 
 
 void Moves::WeightAllocTrumpVoid1(
-  pos                   * posPoint)
+  pos * posPoint)
 {
   // FIX:
-  // leadSuit == trump:  Why differentiate?
+  // leadSuit == trump: Why differentiate?
   // suit != trump: Same question.
   // Don't ruff ahead of partner?
 
@@ -959,7 +959,7 @@ void Moves::WeightAllocTrumpVoid1(
     {
       // Don't pitch from Kx.
       suitAdd = (suitCount << 6) / 36;
-      if ((suitCount == 2) && 
+      if ((suitCount == 2) &&
           (posPoint->secondBest[suit].hand == currHand))
         suitAdd += -4;
     }
@@ -988,7 +988,7 @@ void Moves::WeightAllocTrumpVoid1(
         // FIX: No reason to differentiate here?
         suitAdd = -2 + (suitCount << 6) / 36;
         // Don't pitch from Kx.
-        if ((suitCount == 2) && 
+        if ((suitCount == 2) &&
             (posPoint->secondBest[suit].hand == currHand))
           suitAdd += -4;
       }
@@ -1008,7 +1008,7 @@ void Moves::WeightAllocTrumpVoid1(
       // FIX: No reason to differentiate here?
       suitAdd = -2 + (suitCount << 6) / 36;
       // Don't pitch from Kx.
-      if ((suitCount == 2) && 
+      if ((suitCount == 2) &&
           (posPoint->secondBest[suit].hand == currHand))
         suitAdd += -4;
     }
@@ -1038,7 +1038,7 @@ void Moves::WeightAllocTrumpVoid1(
     for (int k = lastNumMoves; k < numMoves; k++)
     {
       if (bitMapRank[mply[k].rank] >
-             posPoint->rankInSuit[partner[leadHand]][trump])
+          posPoint->rankInSuit[partner[leadHand]][trump])
       {
         // We can ruff, 3rd hand is void but can't overruff.
         suitAdd = (suitCount << 6) / 44;
@@ -1046,13 +1046,13 @@ void Moves::WeightAllocTrumpVoid1(
       }
       else
       {
-        // We're getting overruffed.  Make trick costly for opponents.
+        // We're getting overruffed. Make trick costly for opponents.
         suitAdd = (suitCount << 6) / 36;
         // Don't ruff from Kx.
-        if ((suitCount == 2) && 
+        if ((suitCount == 2) &&
             (posPoint->secondBest[suit].hand == currHand))
           suitAdd += -4;
-        mply[k].weight = 15 - (mply[k].rank) + suitAdd;  
+        mply[k].weight = 15 - (mply[k].rank) + suitAdd;
       }
     }
   }
@@ -1060,14 +1060,14 @@ void Moves::WeightAllocTrumpVoid1(
 
 
 void Moves::WeightAllocNTVoid1(
-  pos                   * posPoint)
+  pos * posPoint)
 {
   // FIX:
   // Why the different penalties depending on partner?
 
-  if (posPoint->rankInSuit[rho[leadHand]    ][leadSuit] >
-     (posPoint->rankInSuit[partner[leadHand]][leadSuit] |
-      bitMapRank[ trackp->move[0].rank ]))
+  if (posPoint->rankInSuit[rho[leadHand] ][leadSuit] >
+      (posPoint->rankInSuit[partner[leadHand]][leadSuit] |
+       bitMapRank[ trackp->move[0].rank ]))
   {
     // Partner can win.
     unsigned short suitCount = posPoint->length[currHand][suit];
@@ -1075,7 +1075,7 @@ void Moves::WeightAllocNTVoid1(
     // Discourage pitch from Kx or A stiff.
     if (suitCount == 2 && posPoint->secondBest[suit].hand == currHand)
       suitAdd += -2;
-    else if ((suitCount == 1) && 
+    else if ((suitCount == 1) &&
              (posPoint->winner[suit].hand == currHand))
       suitAdd += -3;
 
@@ -1088,12 +1088,12 @@ void Moves::WeightAllocNTVoid1(
     int suitAdd = (suitCount << 6) / 33;
 
     // Discourage pitch from Kx.
-    if ((suitCount == 2) && 
+    if ((suitCount == 2) &&
         (posPoint->secondBest[suit].hand == currHand))
       suitAdd += -6;
 
     /* Discourage suit discard of highest card. */
-    else if ((suitCount == 1) && 
+    else if ((suitCount == 1) &&
              (posPoint->winner[suit].hand == currHand))
       suitAdd += -8;
 
@@ -1104,12 +1104,12 @@ void Moves::WeightAllocNTVoid1(
 
 
 void Moves::WeightAllocTrumpNotvoid2(
-  pos                   * posPoint)
+  pos * posPoint)
 {
   int cards4th = posPoint->rankInSuit[rho[leadHand]][leadSuit];
-  int max4th   = highestRank[cards4th]; 
-  int min4th   = lowestRank [cards4th];
-  int max3rd   = mply[0].rank;
+  int max4th = highestRank[cards4th];
+  int min4th = lowestRank [cards4th];
+  int max3rd = mply[0].rank;
 
   if (leadSuit == trump)
   {
@@ -1135,11 +1135,11 @@ void Moves::WeightAllocTrumpNotvoid2(
         if (mply[k].rank > max4th &&
             mply[k].rank > trackp->move[1].rank)
           mply[k].weight = 58 - mply[k].rank;
-        else 
+        else
           mply[k].weight = -mply[k].rank;
       }
     }
-    else 
+    else
     {
       // Figure out how high we have to play to force out the top.
       int kBonus = RankForcesAce(cards4th);
@@ -1189,7 +1189,7 @@ void Moves::WeightAllocTrumpNotvoid2(
         mply[k].weight = -mply[k].rank;
       return;
     }
-    
+
     // So 4th hand can beat partner in the suit.
     else if (max3rd > max4th)
     {
@@ -1198,7 +1198,7 @@ void Moves::WeightAllocTrumpNotvoid2(
       {
         if (mply[k].rank > max4th)
           mply[k].weight = 58 - mply[k].rank;
-        else 
+        else
           mply[k].weight = -mply[k].rank;
       }
     }
@@ -1210,10 +1210,10 @@ void Moves::WeightAllocTrumpNotvoid2(
 
       for (int k = 0; k < numMoves; k++)
       {
-        if (mply[k].rank > trackp->move[1].rank && 
+        if (mply[k].rank > trackp->move[1].rank &&
             mply[k].rank > max4th) // We will win
           mply[k].weight = 60 - mply[k].rank;
-      
+
         else
           mply[k].weight = -mply[k].rank;
       }
@@ -1224,7 +1224,7 @@ void Moves::WeightAllocTrumpNotvoid2(
   }
   else
   {
-    // 2nd hand is winning so far.  4th hand is either ruffing 
+    // 2nd hand is winning so far. 4th hand is either ruffing
     // or not -- play high enough to beat 2nd hand.
     if (max4th == 0)
     {
@@ -1238,7 +1238,7 @@ void Moves::WeightAllocTrumpNotvoid2(
       return;
     }
 
-      // Our cards are too low to matter.
+    // Our cards are too low to matter.
     else if (max3rd < min4th || max3rd < trackp->move[1].rank)
     {
       for (int k = 0; k < numMoves; k++)
@@ -1246,7 +1246,7 @@ void Moves::WeightAllocTrumpNotvoid2(
       return;
     }
 
-      // We can win the trick.
+    // We can win the trick.
     else if (max3rd > max4th)
     {
       for (int k = 0; k < numMoves; k++)
@@ -1254,7 +1254,7 @@ void Moves::WeightAllocTrumpNotvoid2(
         if (mply[k].rank > trackp->move[1].rank &&
             mply[k].rank > max4th)
           mply[k].weight = 58 - mply[k].rank;
-        else 
+        else
           mply[k].weight = -mply[k].rank;
       }
       return;
@@ -1265,10 +1265,10 @@ void Moves::WeightAllocTrumpNotvoid2(
 
     for (int k = 0; k < numMoves; k++)
     {
-      if (mply[k].rank > trackp->move[1].rank && 
+      if (mply[k].rank > trackp->move[1].rank &&
           mply[k].rank > max4th) // We will win
         mply[k].weight = 60 - mply[k].rank;
-      
+
       else
         mply[k].weight = -mply[k].rank;
     }
@@ -1280,12 +1280,12 @@ void Moves::WeightAllocTrumpNotvoid2(
 
 
 int Moves::RankForcesAce(
-  int           cards4th)
+  int cards4th)
 {
   // Figure out how high we have to play to force out the top.
   moveGroupType * mp = &groupData[cards4th];
 
-  int g       = mp->lastGroup;
+  int g = mp->lastGroup;
   int removed = static_cast<int>(trackp->removedRanks[leadSuit]);
 
   while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
@@ -1295,7 +1295,7 @@ int Moves::RankForcesAce(
     return -1;
 
   // RHO's second-highest rank.
-  int secondRHO = (g == 0 ? 0 : mp->rank[g-1]);
+  int secondRHO = (g == 0 ? 0 : mp->rank[g - 1]);
 
   if (secondRHO > trackp->move[1].rank)
   {
@@ -1305,7 +1305,7 @@ int Moves::RankForcesAce(
       k++;
 
     if (k)
-      return k-1;
+      return k - 1;
   }
   else if (trackp->high[1] == 1)
   {
@@ -1315,7 +1315,7 @@ int Moves::RankForcesAce(
       k++;
 
     if (k)
-      return k-1;
+      return k - 1;
   }
 
   return -1;
@@ -1323,24 +1323,24 @@ int Moves::RankForcesAce(
 
 
 void Moves::GetTopNumber(
-  int           ris,
-  int           prank,
-  int           * topNumber,
-  int           * mno)
+  int ris,
+  int prank,
+  int * topNumber,
+  int * mno)
 {
-* topNumber = -10;
+  * topNumber = -10;
 
   // Find the lowest move that still overtakes partner's card.
   *mno = 0;
-  while (*mno < numMoves-1 && mply[1 + *mno].rank > prank)
+  while (*mno < numMoves - 1 && mply[1 + *mno].rank > prank)
     (*mno)++;
 
   moveGroupType * mp = &groupData[ris];
-  int g       = mp->lastGroup;
+  int g = mp->lastGroup;
 
   // Remove partner's card as well.
   int removed = static_cast<int>(trackp->removedRanks[leadSuit] |
-                bitMapRank[prank]);
+                                 bitMapRank[prank]);
 
   int fullseq = mp->fullseq[g];
 
@@ -1353,18 +1353,18 @@ void Moves::GetTopNumber(
 
 
 void Moves::WeightAllocNTNotvoid2(
-  pos           * posPoint)
+  pos * posPoint)
 {
   // One of the main remaining issues here is cashing out long
-  // suits.  Examples:
+  // suits. Examples:
   // AKJ opposite Q, overtake.
   // KQx opposite Jxxxx, don't block on the ace.
   // KJTx opposite 9 with Qx in dummy, do win the T.
 
   int cards4th = posPoint->rankInSuit[rho[leadHand]][leadSuit];
-  int max4th   = highestRank[cards4th]; 
-  int min4th   = lowestRank [cards4th];
-  int max3rd   = mply[0].rank;
+  int max4th = highestRank[cards4th];
+  int min4th = lowestRank [cards4th];
+  int max3rd = mply[0].rank;
 
   if (trackp->high[1] == 0 && trackp->move[0].rank > max4th)
   {
@@ -1373,10 +1373,10 @@ void Moves::WeightAllocNTNotvoid2(
     for (int k = 0; k < numMoves; k++)
       mply[k].weight = -mply[k].rank;
 
-    // This doesn't help much, not sure why.  It does work.
+    // This doesn't help much, not sure why. It does work.
 
-    // if (0 && posPoint->length[leadHand][leadSuit] == 0 && 
-    if (posPoint->length[leadHand][leadSuit] == 0 && 
+    // if (0 && posPoint->length[leadHand][leadSuit] == 0 &&
+    if (posPoint->length[leadHand][leadSuit] == 0 &&
         posPoint->winner[leadSuit].hand == currHand)
     {
       // Partner has a singleton, and we have the ace.
@@ -1385,10 +1385,10 @@ void Moves::WeightAllocNTNotvoid2(
       int lhoLen = posPoint->length[lho[leadHand]][leadSuit];
       if (lhoLen > oppLen)
         oppLen = lhoLen;
-      
+
       int topNumber, mno;
       GetTopNumber(posPoint->rankInSuit[partner[leadHand]][leadSuit],
-        trackp->move[0].rank, &topNumber, &mno);
+                   trackp->move[0].rank, &topNumber, &mno);
 
       if (oppLen <= topNumber)
         mply[mno].weight += 20;
@@ -1409,10 +1409,10 @@ void Moves::WeightAllocNTNotvoid2(
 
   for (int k = 0; k < numMoves; k++)
   {
-    if (mply[k].rank > trackp->move[1].rank && 
+    if (mply[k].rank > trackp->move[1].rank &&
         mply[k].rank > max4th) // We will win
       mply[k].weight = 60 - mply[k].rank;
-      
+
     else
       mply[k].weight = -mply[k].rank;
   }
@@ -1423,15 +1423,15 @@ void Moves::WeightAllocNTNotvoid2(
 
 
 void Moves::WeightAllocTrumpVoid2(
-  pos                   * posPoint)
+  pos * posPoint)
 {
   // Compared to "v2.8":
   // Moved a test for partner's win out of the k loop.
 
   int suitAdd;
   unsigned short suitCount = posPoint->length[currHand][suit];
-  int max4th = highestRank[ 
-    posPoint->rankInSuit[rho[leadHand]][leadSuit] ];
+  int max4th = highestRank[
+                 posPoint->rankInSuit[rho[leadHand]][leadSuit] ];
 
   if (leadSuit == trump || suit != trump)
   {
@@ -1443,7 +1443,7 @@ void Moves::WeightAllocTrumpVoid2(
   }
 
   else if (trackp->high[1] == 0 && trackp->move[0].rank > max4th &&
-      (max4th != 0 || posPoint->length[rho[leadHand]][trump] == 0))
+           (max4th != 0 || posPoint->length[rho[leadHand]][trump] == 0))
   {
     // Partner already beat 2nd and 4th hands.
     // Don't overruff partner's sure winner.
@@ -1456,11 +1456,11 @@ void Moves::WeightAllocTrumpVoid2(
 
   for (int k = lastNumMoves; k < numMoves; k++)
   {
-    if (trackp->move[1].suit == trump && 
+    if (trackp->move[1].suit == trump &&
         mply[k].rank < trackp->move[1].rank)
     {
       // Don't underruff.
-      int rRank = relRank[  posPoint->aggr[suit] ][mply[k].rank];
+      int rRank = relRank[ posPoint->aggr[suit] ][mply[k].rank];
       suitAdd = (suitCount << 6) / 40;
       mply[k].weight = -32 + rRank + suitAdd;
     }
@@ -1473,7 +1473,7 @@ void Moves::WeightAllocTrumpVoid2(
         if (posPoint->secondBest[leadSuit].hand == leadHand)
         {
           // We'd like to know whether partner has KQ or just K,
-          // but that information takes a bit of diggging.  It's
+          // but that information takes a bit of diggging. It's
           // easier just not to ruff the king.
           suitAdd = (suitCount << 6) / 50;
           mply[k].weight = 36 - mply[k].rank + suitAdd;
@@ -1485,7 +1485,7 @@ void Moves::WeightAllocTrumpVoid2(
         }
       }
       else if (bitMapRank[mply[k].rank] >
-            posPoint->rankInSuit[rho[leadHand]][trump])
+               posPoint->rankInSuit[rho[leadHand]][trump])
       {
         // We ruff higher than 4th hand.
         suitAdd = (suitCount << 6) / 50;
@@ -1508,7 +1508,7 @@ void Moves::WeightAllocTrumpVoid2(
     }
 
     else if (bitMapRank[mply[k].rank] >
-          posPoint->rankInSuit[rho[leadHand]][trump])
+             posPoint->rankInSuit[rho[leadHand]][trump])
     {
       // Ruff higher than 4th hand can.
       suitAdd = (suitCount << 6) / 50;
@@ -1526,22 +1526,22 @@ void Moves::WeightAllocTrumpVoid2(
 
 
 void Moves::WeightAllocNTVoid2(
-  pos                   * posPoint)
+  pos * posPoint)
 {
   // Compared to "v2.8":
-  // Took only the second branch.  The first branch (partner
+  // Took only the second branch. The first branch (partner
   // has beat his LHO and will beat his RHO) was a bit different,
-  // for no reason that I could see.  This is the same or a tiny
+  // for no reason that I could see. This is the same or a tiny
   // bit better.
 
   unsigned short suitCount = posPoint->length[currHand][suit];
   int suitAdd = (suitCount << 6) / 24;
 
   // Try not to pitch from Kx or stiff ace.
-  if ((suitCount == 2) && 
+  if ((suitCount == 2) &&
       (posPoint->secondBest[suit].hand == currHand))
     suitAdd -= 4;
-  else if ((suitCount == 1) && 
+  else if ((suitCount == 1) &&
            (posPoint->winner[suit].hand == currHand))
     suitAdd -= 4;
 
@@ -1551,18 +1551,18 @@ void Moves::WeightAllocNTVoid2(
 
 
 void Moves::WeightAllocCombinedNotvoid3(
-  pos                   * posPoint)
-  // moveType           mply[])
+  pos * posPoint)
+// moveType mply[])
 {
   // We're always following suit.
   // This function is very good, but occasionally it is better
   // to beat partner's card in order to cash out a suit in NT.
 
   if (trackp->high[2] == 1 ||
-     (leadSuit != trump && trackp->move[2].suit == trump))
+      (leadSuit != trump && trackp->move[2].suit == trump))
   {
     // Partner is winning the trick so far, or an opponent
-    // has ruffed while we must follow.  Play low.
+    // has ruffed while we must follow. Play low.
 
     for (int k = 0; k < numMoves; k++)
       mply[k].weight = -mply[k].rank;
@@ -1586,8 +1586,8 @@ void Moves::WeightAllocCombinedNotvoid3(
 
 
 void Moves::WeightAllocTrumpVoid3(
-  pos                   * posPoint)
-  // moveType           mply[])
+  pos * posPoint)
+// moveType mply[])
 {
   // Compared to "v2.8":
   // val removed for trump plays (doesn't really matter, though).
@@ -1597,12 +1597,12 @@ void Moves::WeightAllocTrumpVoid3(
 
   // Don't pitch from Kx or stiff ace.
   int mylen = posPoint->length[currHand][suit];
-  int val   = (mylen << 6) / 24;
+  int val = (mylen << 6) / 24;
   if ((mylen == 2) && (posPoint->secondBest[suit].hand == currHand))
     val -= 2;
-  // else if ((mylen == 1) && 
-           // (posPoint->winner[suit].hand == currHand))
-    // val -= 4;
+  // else if ((mylen == 1) &&
+  // (posPoint->winner[suit].hand == currHand))
+  // val -= 4;
 
   if (leadSuit == trump)
   {
@@ -1628,7 +1628,7 @@ void Moves::WeightAllocTrumpVoid3(
       {
         int rRank = relRank[ posPoint->aggr[suit] ][mply[k].rank];
         if (mply[k].rank > trackp->move[2].rank)
-          mply[k].weight =  33 + rRank; // Overruff
+          mply[k].weight = 33 + rRank; // Overruff
         else
           mply[k].weight = -13 + rRank; // Underruff
       }
@@ -1654,11 +1654,11 @@ void Moves::WeightAllocTrumpVoid3(
 
 
 void Moves::WeightAllocNTVoid3(
-  pos                   * posPoint)
-  // moveType           mply[])
+  pos * posPoint)
+// moveType mply[])
 {
   int mylen = posPoint->length[currHand][suit];
-  int val   = (mylen << 6) / 27;
+  int val = (mylen << 6) / 27;
   // Try not to pitch from Kx, or to pitch a singleton winner.
   if ((mylen == 2) && (posPoint->secondBest[suit].hand == currHand))
     val -= 6;
@@ -1671,9 +1671,9 @@ void Moves::WeightAllocNTVoid3(
 
 
 inline bool Moves::WinningMove(
-  moveType              * mvp1, 
-  extCard               * mvp2, 
-  int                   ourTrump)
+  moveType * mvp1,
+  extCard * mvp2,
+  int ourTrump)
 {
   /* Return true if move 1 wins over move 2, with the assumption that
   move 2 is the presently winning card of the trick */
@@ -1694,55 +1694,55 @@ inline bool Moves::WinningMove(
 
 
 int Moves::GetLength(
-  int                   trick,
-  int                   relHand)
+  int trick,
+  int relHand)
 {
   return moveList[trick][relHand].last + 1;
 }
 
 
 void Moves::MakeSpecific(
-  moveType              * ourMply,
-  int                   trick,
-  int                   relHand)
+  moveType * ourMply,
+  int trick,
+  int relHand)
 {
   trackp = &track[trick];
 
   if (relHand == 0)
   {
-    trackp->move[0].suit     = ourMply->suit;
-    trackp->move[0].rank     = ourMply->rank;
+    trackp->move[0].suit = ourMply->suit;
+    trackp->move[0].rank = ourMply->rank;
     trackp->move[0].sequence = ourMply->sequence;
-    trackp->high[0]          = 0;
+    trackp->high[0] = 0;
 
     trackp->leadSuit = ourMply->suit;
   }
-  else if (ourMply->suit == trackp->move[relHand-1].suit)
+  else if (ourMply->suit == trackp->move[relHand - 1].suit)
   {
-    if (ourMply->rank > trackp->move[relHand-1].rank)
+    if (ourMply->rank > trackp->move[relHand - 1].rank)
     {
-      trackp->move[relHand].suit     = ourMply->suit;
-      trackp->move[relHand].rank     = ourMply->rank;
+      trackp->move[relHand].suit = ourMply->suit;
+      trackp->move[relHand].rank = ourMply->rank;
       trackp->move[relHand].sequence = ourMply->sequence;
-      trackp->high[relHand]          = relHand;
+      trackp->high[relHand] = relHand;
     }
     else
     {
-      trackp->move[relHand] = trackp->move[relHand-1];
-      trackp->high[relHand] = trackp->high[relHand-1];
+      trackp->move[relHand] = trackp->move[relHand - 1];
+      trackp->high[relHand] = trackp->high[relHand - 1];
     }
   }
   else if (ourMply->suit == trump)
   {
-    trackp->move[relHand].suit     = ourMply->suit;
-    trackp->move[relHand].rank     = ourMply->rank;
+    trackp->move[relHand].suit = ourMply->suit;
+    trackp->move[relHand].rank = ourMply->rank;
     trackp->move[relHand].sequence = ourMply->sequence;
-    trackp->high[relHand]          = relHand;
+    trackp->high[relHand] = relHand;
   }
   else
   {
-    trackp->move[relHand] = trackp->move[relHand-1];
-    trackp->high[relHand] = trackp->high[relHand-1];
+    trackp->move[relHand] = trackp->move[relHand - 1];
+    trackp->high[relHand] = trackp->high[relHand - 1];
   }
 
   trackp->playSuits[relHand] = ourMply->suit;
@@ -1750,7 +1750,7 @@ void Moves::MakeSpecific(
 
   if (relHand == 3)
   {
-    trackType * newp = &track[trick-1];
+    trackType * newp = &track[trick - 1];
 
     newp->leadHand = (trackp->leadHand + trackp->high[3]) % 4;
 
@@ -1769,8 +1769,8 @@ void Moves::MakeSpecific(
 
 
 moveType * Moves::MakeNext(
-  int           trick,
-  int           relHand,
+  int trick,
+  int relHand,
   unsigned short int ourWinRanks[DDS_SUITS])
 {
   // Find moves that are >= ourWinRanks[suit], but allow one
@@ -1792,7 +1792,7 @@ moveType * Moves::MakeNext(
   }
   else
   {
-    prevp = &listp->move[ listp->current-1 ];
+    prevp = &listp->move[ listp->current - 1 ];
     if (lwp[ prevp->suit ] == 0)
     {
       int low = lowestRank[ ourWinRanks[prevp->suit] ];
@@ -1817,39 +1817,39 @@ moveType * Moves::MakeNext(
 
   if (relHand == 0)
   {
-    trackp->move[0].suit     = currp->suit;
-    trackp->move[0].rank     = currp->rank;
+    trackp->move[0].suit = currp->suit;
+    trackp->move[0].rank = currp->rank;
     trackp->move[0].sequence = currp->sequence;
-    trackp->high[0]          = 0;
+    trackp->high[0] = 0;
 
     trackp->leadSuit = currp->suit;
   }
-  else if (currp->suit == trackp->move[relHand-1].suit)
+  else if (currp->suit == trackp->move[relHand - 1].suit)
   {
-    if (currp->rank > trackp->move[relHand-1].rank)
+    if (currp->rank > trackp->move[relHand - 1].rank)
     {
-      trackp->move[relHand].suit     = currp->suit;
-      trackp->move[relHand].rank     = currp->rank;
+      trackp->move[relHand].suit = currp->suit;
+      trackp->move[relHand].rank = currp->rank;
       trackp->move[relHand].sequence = currp->sequence;
-      trackp->high[relHand]          = relHand;
+      trackp->high[relHand] = relHand;
     }
     else
     {
-      trackp->move[relHand] = trackp->move[relHand-1];
-      trackp->high[relHand] = trackp->high[relHand-1];
+      trackp->move[relHand] = trackp->move[relHand - 1];
+      trackp->high[relHand] = trackp->high[relHand - 1];
     }
   }
   else if (currp->suit == trump)
   {
-    trackp->move[relHand].suit     = currp->suit;
-    trackp->move[relHand].rank     = currp->rank;
+    trackp->move[relHand].suit = currp->suit;
+    trackp->move[relHand].rank = currp->rank;
     trackp->move[relHand].sequence = currp->sequence;
-    trackp->high[relHand]          = relHand;
+    trackp->high[relHand] = relHand;
   }
   else
   {
-    trackp->move[relHand] = trackp->move[relHand-1];
-    trackp->high[relHand] = trackp->high[relHand-1];
+    trackp->move[relHand] = trackp->move[relHand - 1];
+    trackp->high[relHand] = trackp->high[relHand - 1];
   }
 
   trackp->playSuits[relHand] = currp->suit;
@@ -1857,7 +1857,7 @@ moveType * Moves::MakeNext(
 
   if (relHand == 3)
   {
-    trackType * newp = &track[trick-1];
+    trackType * newp = &track[trick - 1];
 
     newp->leadHand = (trackp->leadHand + trackp->high[3]) % 4;
 
@@ -1879,54 +1879,54 @@ moveType * Moves::MakeNext(
 
 
 moveType * Moves::MakeNextSimple(
-  int           trick,
-  int           relHand)
+  int trick,
+  int relHand)
 {
-  // Don't worry about small moves.  Why not, actually?
+  // Don't worry about small moves. Why not, actually?
 
   movePlyType * listp = &moveList[trick][relHand];
   if (listp->current > listp->last)
     return NULL;
 
   moveType * currp = &listp->move[ listp->current ];
-  
+
   trackp = &track[trick];
 
   if (relHand == 0)
   {
-    trackp->move[0].suit     = currp->suit;
-    trackp->move[0].rank     = currp->rank;
+    trackp->move[0].suit = currp->suit;
+    trackp->move[0].rank = currp->rank;
     trackp->move[0].sequence = currp->sequence;
-    trackp->high[0]          = 0;
+    trackp->high[0] = 0;
 
     trackp->leadSuit = currp->suit;
   }
-  else if (currp->suit == trackp->move[relHand-1].suit)
+  else if (currp->suit == trackp->move[relHand - 1].suit)
   {
-    if (currp->rank > trackp->move[relHand-1].rank)
+    if (currp->rank > trackp->move[relHand - 1].rank)
     {
-      trackp->move[relHand].suit     = currp->suit;
-      trackp->move[relHand].rank     = currp->rank;
+      trackp->move[relHand].suit = currp->suit;
+      trackp->move[relHand].rank = currp->rank;
       trackp->move[relHand].sequence = currp->sequence;
-      trackp->high[relHand]          = relHand;
+      trackp->high[relHand] = relHand;
     }
     else
     {
-      trackp->move[relHand] = trackp->move[relHand-1];
-      trackp->high[relHand] = trackp->high[relHand-1];
+      trackp->move[relHand] = trackp->move[relHand - 1];
+      trackp->high[relHand] = trackp->high[relHand - 1];
     }
   }
   else if (currp->suit == trump)
   {
-    trackp->move[relHand].suit     = currp->suit;
-    trackp->move[relHand].rank     = currp->rank;
+    trackp->move[relHand].suit = currp->suit;
+    trackp->move[relHand].rank = currp->rank;
     trackp->move[relHand].sequence = currp->sequence;
-    trackp->high[relHand]          = relHand;
+    trackp->high[relHand] = relHand;
   }
   else
   {
-    trackp->move[relHand] = trackp->move[relHand-1];
-    trackp->high[relHand] = trackp->high[relHand-1];
+    trackp->move[relHand] = trackp->move[relHand - 1];
+    trackp->high[relHand] = trackp->high[relHand - 1];
   }
 
   trackp->playSuits[relHand] = currp->suit;
@@ -1934,7 +1934,7 @@ moveType * Moves::MakeNextSimple(
 
   if (relHand == 3)
   {
-    trackType * newp = &track[trick-1];
+    trackType * newp = &track[trick - 1];
     newp->leadHand = (trackp->leadHand + trackp->high[3]) % 4;
   }
 
@@ -1944,37 +1944,37 @@ moveType * Moves::MakeNextSimple(
 
 
 void Moves::Step(
-  int           tricks,
-  int           relHand)
+  int tricks,
+  int relHand)
 {
   moveList[tricks][relHand].current++;
 }
 
 
 void Moves::Rewind(
-  int           tricks,
-  int           relHand)
+  int tricks,
+  int relHand)
 {
   moveList[tricks][relHand].current = 0;
 }
 
 
 void Moves::Purge(
-  int           trick,
-  int           ourLeadHand,
-  moveType      forbiddenMoves[])
+  int trick,
+  int ourLeadHand,
+  moveType forbiddenMoves[])
 {
   movePlyType * ourMply = &moveList[trick][ourLeadHand];
 
   for (int k = 1; k <= 13; k++)
   {
-    int s    = forbiddenMoves[k].suit;
+    int s = forbiddenMoves[k].suit;
     int rank = forbiddenMoves[k].rank;
     if (rank == 0) continue;
 
     for (int r = 0; r <= ourMply->last; r++)
     {
-      if (s    == ourMply->move[r].suit && 
+      if (s == ourMply->move[r].suit &&
           rank == ourMply->move[r].rank)
       {
         /* For the forbidden move r: */
@@ -1988,18 +1988,18 @@ void Moves::Purge(
 
 
 void Moves::Reward(
-  int           tricks,
-  int           relHand)
+  int tricks,
+  int relHand)
 {
   moveList[tricks][relHand].
-    move[ moveList[tricks][relHand].current-1 ].weight += 100;
+  move[ moveList[tricks][relHand].current - 1 ].weight += 100;
 }
 
 
 trickDataType * Moves::GetTrickData(
-  int           tricks)
+  int tricks)
 {
-  trickDataType *datap = &track[tricks].trickData;
+  trickDataType * datap = &track[tricks].trickData;
   for (int s = 0; s < DDS_SUITS; s++)
     datap->playCount[s] = 0;
   for (int relh = 0; relh < DDS_HANDS; relh++)
@@ -2014,20 +2014,20 @@ trickDataType * Moves::GetTrickData(
     exit(1);
   }
 
-  datap->bestRank     = trackp->move[3].rank;
-  datap->bestSuit     = trackp->move[3].suit;
+  datap->bestRank = trackp->move[3].rank;
+  datap->bestSuit = trackp->move[3].suit;
   datap->bestSequence = trackp->move[3].sequence;
-  datap->relWinner    = trackp->high[3];
+  datap->relWinner = trackp->high[3];
   return datap;
 }
 
 
 void Moves::Sort(
-  int           tricks,
-  int           relHand)
+  int tricks,
+  int relHand)
 {
   numMoves = moveList[tricks][relHand].last + 1;
-  mply     = moveList[tricks][relHand].move;
+  mply = moveList[tricks][relHand].move;
   Moves::MergeSort();
 }
 
@@ -2038,161 +2038,241 @@ void Moves::MergeSort()
 
   switch (numMoves)
   {
-  case 12:
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(2, 3); CMP_SWAP_NEW(4, 5);
-    CMP_SWAP_NEW(6, 7); CMP_SWAP_NEW(8, 9); CMP_SWAP_NEW(10, 11);
+    case 12:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(4, 5);
+      CMP_SWAP_NEW(6, 7);
+      CMP_SWAP_NEW(8, 9);
+      CMP_SWAP_NEW(10, 11);
 
-    CMP_SWAP_NEW(1, 3); CMP_SWAP_NEW(5, 7); CMP_SWAP_NEW(9, 11);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(5, 7);
+      CMP_SWAP_NEW(9, 11);
 
-    CMP_SWAP_NEW(0, 2); CMP_SWAP_NEW(4, 6); CMP_SWAP_NEW(8, 10);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(4, 6);
+      CMP_SWAP_NEW(8, 10);
 
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(5, 6); CMP_SWAP_NEW(9, 10);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP_NEW(9, 10);
 
-    CMP_SWAP_NEW(1, 5); CMP_SWAP_NEW(6, 10);
-    CMP_SWAP_NEW(5, 9);
-    CMP_SWAP_NEW(2, 6);
-    CMP_SWAP_NEW(1, 5); CMP_SWAP_NEW(6, 10);
-    CMP_SWAP_NEW(0, 4); CMP_SWAP_NEW(7, 11);
-    CMP_SWAP_NEW(3, 7);
-    CMP_SWAP_NEW(4, 8);
-    CMP_SWAP_NEW(0, 4); CMP_SWAP_NEW(7, 11);
-    CMP_SWAP_NEW(1, 4); CMP_SWAP_NEW(7, 10);
-    CMP_SWAP_NEW(3, 8);
-    CMP_SWAP_NEW(2, 3); CMP_SWAP_NEW(8, 9);
-    CMP_SWAP_NEW(2, 4); CMP_SWAP_NEW(7, 9);
-    CMP_SWAP_NEW(3, 5); CMP_SWAP_NEW(6, 8);
-    CMP_SWAP_NEW(3, 4); CMP_SWAP_NEW(5, 6); CMP_SWAP_NEW(7, 8);
-    break;
-  case 11:
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(2, 3); CMP_SWAP_NEW(4, 5);
-    CMP_SWAP_NEW(6, 7); CMP_SWAP_NEW(8, 9);
+      CMP_SWAP_NEW(1, 5);
+      CMP_SWAP_NEW(6, 10);
+      CMP_SWAP_NEW(5, 9);
+      CMP_SWAP_NEW(2, 6);
+      CMP_SWAP_NEW(1, 5);
+      CMP_SWAP_NEW(6, 10);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(7, 11);
+      CMP_SWAP_NEW(3, 7);
+      CMP_SWAP_NEW(4, 8);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(7, 11);
+      CMP_SWAP_NEW(1, 4);
+      CMP_SWAP_NEW(7, 10);
+      CMP_SWAP_NEW(3, 8);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(8, 9);
+      CMP_SWAP_NEW(2, 4);
+      CMP_SWAP_NEW(7, 9);
+      CMP_SWAP_NEW(3, 5);
+      CMP_SWAP_NEW(6, 8);
+      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP_NEW(7, 8);
+      break;
+    case 11:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(4, 5);
+      CMP_SWAP_NEW(6, 7);
+      CMP_SWAP_NEW(8, 9);
 
-    CMP_SWAP_NEW(1, 3); CMP_SWAP_NEW(5, 7);
-    CMP_SWAP_NEW(0, 2); CMP_SWAP_NEW(4, 6); CMP_SWAP_NEW(8, 10);
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(5, 6); CMP_SWAP_NEW(9, 10);
-    CMP_SWAP_NEW(1, 5); CMP_SWAP_NEW(6, 10);
-    CMP_SWAP_NEW(5, 9);
-    CMP_SWAP_NEW(2, 6);
-    CMP_SWAP_NEW(1, 5); CMP_SWAP_NEW(6, 10);
-    CMP_SWAP_NEW(0, 4);
-    CMP_SWAP_NEW(3, 7);
-    CMP_SWAP_NEW(4, 8);
-    CMP_SWAP_NEW(0, 4);
-    CMP_SWAP_NEW(1, 4); CMP_SWAP_NEW(7, 10);
-    CMP_SWAP_NEW(3, 8);
-    CMP_SWAP_NEW(2, 3); CMP_SWAP_NEW(8, 9);
-    CMP_SWAP_NEW(2, 4); CMP_SWAP_NEW(7, 9);
-    CMP_SWAP_NEW(3, 5); CMP_SWAP_NEW(6, 8);
-    CMP_SWAP_NEW(3, 4); CMP_SWAP_NEW(5, 6); CMP_SWAP_NEW(7, 8);
-    break;
-  case 10:
-    CMP_SWAP_NEW(1, 8);
-    CMP_SWAP_NEW(0, 4); CMP_SWAP_NEW(5, 9);
-    CMP_SWAP_NEW(2, 6);
-    CMP_SWAP_NEW(3, 7);
-    CMP_SWAP_NEW(0, 3); CMP_SWAP_NEW(6, 9);
-    CMP_SWAP_NEW(2, 5);
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(3, 6); CMP_SWAP_NEW(8, 9);
-    CMP_SWAP_NEW(4, 7);
-    CMP_SWAP_NEW(0, 2); CMP_SWAP_NEW(4, 8);
-    CMP_SWAP_NEW(1, 5); CMP_SWAP_NEW(7, 9);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(5, 7);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(4, 6);
+      CMP_SWAP_NEW(8, 10);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP_NEW(9, 10);
+      CMP_SWAP_NEW(1, 5);
+      CMP_SWAP_NEW(6, 10);
+      CMP_SWAP_NEW(5, 9);
+      CMP_SWAP_NEW(2, 6);
+      CMP_SWAP_NEW(1, 5);
+      CMP_SWAP_NEW(6, 10);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(3, 7);
+      CMP_SWAP_NEW(4, 8);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(1, 4);
+      CMP_SWAP_NEW(7, 10);
+      CMP_SWAP_NEW(3, 8);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(8, 9);
+      CMP_SWAP_NEW(2, 4);
+      CMP_SWAP_NEW(7, 9);
+      CMP_SWAP_NEW(3, 5);
+      CMP_SWAP_NEW(6, 8);
+      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP_NEW(7, 8);
+      break;
+    case 10:
+      CMP_SWAP_NEW(1, 8);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(5, 9);
+      CMP_SWAP_NEW(2, 6);
+      CMP_SWAP_NEW(3, 7);
+      CMP_SWAP_NEW(0, 3);
+      CMP_SWAP_NEW(6, 9);
+      CMP_SWAP_NEW(2, 5);
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(3, 6);
+      CMP_SWAP_NEW(8, 9);
+      CMP_SWAP_NEW(4, 7);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(4, 8);
+      CMP_SWAP_NEW(1, 5);
+      CMP_SWAP_NEW(7, 9);
 
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(3, 4);
-    CMP_SWAP_NEW(5, 6); CMP_SWAP_NEW(7, 8);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP_NEW(7, 8);
 
-    CMP_SWAP_NEW(1, 3); CMP_SWAP_NEW(6, 8);
-    CMP_SWAP_NEW(2, 4); CMP_SWAP_NEW(5, 7);
-    CMP_SWAP_NEW(2, 3); CMP_SWAP_NEW(6, 7);
-    CMP_SWAP_NEW(3, 5);
-    CMP_SWAP_NEW(4, 6);
-    CMP_SWAP_NEW(4, 5);
-    break;
-  case 9:
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(3, 4); CMP_SWAP_NEW(6, 7);
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(4, 5); CMP_SWAP_NEW(7, 8);
-    CMP_SWAP_NEW(0, 1);
-    CMP_SWAP_NEW(3, 4);
-    CMP_SWAP_NEW(6, 7);
-    CMP_SWAP_NEW(0, 3);
-    CMP_SWAP_NEW(3, 6);
-    CMP_SWAP_NEW(0, 3);
-    CMP_SWAP_NEW(1, 4);
-    CMP_SWAP_NEW(4, 7);
-    CMP_SWAP_NEW(1, 4);
-    CMP_SWAP_NEW(2, 5);
-    CMP_SWAP_NEW(5, 8);
-    CMP_SWAP_NEW(2, 5);
-    CMP_SWAP_NEW(1, 3); CMP_SWAP_NEW(5, 7);
-    CMP_SWAP_NEW(2, 6);
-    CMP_SWAP_NEW(4, 6);
-    CMP_SWAP_NEW(2, 4);
-    CMP_SWAP_NEW(2, 3); CMP_SWAP_NEW(5, 6);
-    break;
-  case 8:
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(2, 3);
-    CMP_SWAP_NEW(4, 5); CMP_SWAP_NEW(6, 7);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(6, 8);
+      CMP_SWAP_NEW(2, 4);
+      CMP_SWAP_NEW(5, 7);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(6, 7);
+      CMP_SWAP_NEW(3, 5);
+      CMP_SWAP_NEW(4, 6);
+      CMP_SWAP_NEW(4, 5);
+      break;
+    case 9:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP_NEW(6, 7);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(4, 5);
+      CMP_SWAP_NEW(7, 8);
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP_NEW(6, 7);
+      CMP_SWAP_NEW(0, 3);
+      CMP_SWAP_NEW(3, 6);
+      CMP_SWAP_NEW(0, 3);
+      CMP_SWAP_NEW(1, 4);
+      CMP_SWAP_NEW(4, 7);
+      CMP_SWAP_NEW(1, 4);
+      CMP_SWAP_NEW(2, 5);
+      CMP_SWAP_NEW(5, 8);
+      CMP_SWAP_NEW(2, 5);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(5, 7);
+      CMP_SWAP_NEW(2, 6);
+      CMP_SWAP_NEW(4, 6);
+      CMP_SWAP_NEW(2, 4);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(5, 6);
+      break;
+    case 8:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(4, 5);
+      CMP_SWAP_NEW(6, 7);
 
-    CMP_SWAP_NEW(0, 2); CMP_SWAP_NEW(4, 6);
-    CMP_SWAP_NEW(1, 3); CMP_SWAP_NEW(5, 7);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(4, 6);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(5, 7);
 
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(5, 6);
-    CMP_SWAP_NEW(0, 4); CMP_SWAP_NEW(1, 5);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(1, 5);
 
-    CMP_SWAP_NEW(2, 6); CMP_SWAP_NEW(3, 7);
-    CMP_SWAP_NEW(2, 4); CMP_SWAP_NEW(3, 5);
+      CMP_SWAP_NEW(2, 6);
+      CMP_SWAP_NEW(3, 7);
+      CMP_SWAP_NEW(2, 4);
+      CMP_SWAP_NEW(3, 5);
 
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(3, 4); CMP_SWAP_NEW(5, 6);
-    break;
-  case 7:
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(2, 3); CMP_SWAP_NEW(4, 5);
-    CMP_SWAP_NEW(0, 2); CMP_SWAP_NEW(4, 6);
-    CMP_SWAP_NEW(1, 3);
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(5, 6);
-    CMP_SWAP_NEW(0, 4); CMP_SWAP_NEW(1, 5); CMP_SWAP_NEW(2, 6);
-    CMP_SWAP_NEW(2, 4); CMP_SWAP_NEW(3, 5);
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(3, 4); CMP_SWAP_NEW(5, 6);
-    break;
-  case 6:
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(2, 3); CMP_SWAP_NEW(4, 5);
-    CMP_SWAP_NEW(0, 2);
-    CMP_SWAP_NEW(1, 3);
-    CMP_SWAP_NEW(1, 2);
-    CMP_SWAP_NEW(0, 4); CMP_SWAP_NEW(1, 5);
-    CMP_SWAP_NEW(2, 4); CMP_SWAP_NEW(3, 5);
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(3, 4);
-    break;
-  case 5:
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(2, 3);
-    CMP_SWAP_NEW(0, 2);
-    CMP_SWAP_NEW(1, 3);
-    CMP_SWAP_NEW(1, 2);
-    CMP_SWAP_NEW(0, 4);
-    CMP_SWAP_NEW(2, 4);
-    CMP_SWAP_NEW(1, 2); CMP_SWAP_NEW(3, 4);
-    break;
-  case 4:
-    CMP_SWAP_NEW(0, 1); CMP_SWAP_NEW(2, 3);
-    CMP_SWAP_NEW(0, 2);
-    CMP_SWAP_NEW(1, 3);
-    CMP_SWAP_NEW(1, 2);
-    break;
-  case 3:
-    CMP_SWAP_NEW(0, 1);
-    CMP_SWAP_NEW(0, 2);
-    CMP_SWAP_NEW(1, 2);
-    break;
-  case 2:
-    CMP_SWAP_NEW(0, 1);
-    break;
-  default:
-    for (int i = 1; i < numMoves; i++)
-    {
-      tmp = mply[i];
-      int j = i;
-      for (; j && tmp.weight > mply[j - 1].weight ; --j)
-        mply[j] = mply[j - 1];
-      mply[j] = tmp;
-    }
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP_NEW(5, 6);
+      break;
+    case 7:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(4, 5);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(4, 6);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(1, 5);
+      CMP_SWAP_NEW(2, 6);
+      CMP_SWAP_NEW(2, 4);
+      CMP_SWAP_NEW(3, 5);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP_NEW(5, 6);
+      break;
+    case 6:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(4, 5);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(1, 5);
+      CMP_SWAP_NEW(2, 4);
+      CMP_SWAP_NEW(3, 5);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(3, 4);
+      break;
+    case 5:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(0, 4);
+      CMP_SWAP_NEW(2, 4);
+      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP_NEW(3, 4);
+      break;
+    case 4:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(2, 3);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(1, 3);
+      CMP_SWAP_NEW(1, 2);
+      break;
+    case 3:
+      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP_NEW(0, 2);
+      CMP_SWAP_NEW(1, 2);
+      break;
+    case 2:
+      CMP_SWAP_NEW(0, 1);
+      break;
+    default:
+      for (int i = 1; i < numMoves; i++)
+      {
+        tmp = mply[i];
+        int j = i;
+        for (; j && tmp.weight > mply[j - 1].weight ; --j)
+          mply[j] = mply[j - 1];
+        mply[j] = tmp;
+      }
   }
 
   return;
@@ -2203,64 +2283,64 @@ void Moves::PrintMove(
   movePlyType * ourMply)
 {
   printf("current %d, last %d\n", ourMply->current, ourMply->last);
-  printf(" i  suit  sequence  rank  wgt\n");
+  printf(" i suit sequence rank wgt\n");
   for (int i = 0; i <= ourMply->last; i++)
   {
-    printf("%2d    %2c  %08x    %2c   %2d\n",
-      i, 
-      cardSuit[ ourMply->move[i].suit ],
-      ourMply->move[i].sequence,
-      cardRank[ ourMply->move[i].rank ],
-      ourMply->move[i].weight);
+    printf("%2d %2c %08x %2c %2d\n",
+           i,
+           cardSuit[ ourMply->move[i].suit ],
+           ourMply->move[i].sequence,
+           cardRank[ ourMply->move[i].rank ],
+           ourMply->move[i].weight);
   }
 }
 
 
 void Moves::PrintMoves(
-  int           trick,
-  int           relHand)
+  int trick,
+  int relHand)
 {
   movePlyType * listp = &moveList[trick][relHand];
-  printf("trick %d relHand %d last %d current %d\n", 
-    trick, relHand, listp->last, listp->current);
+  printf("trick %d relHand %d last %d current %d\n",
+         trick, relHand, listp->last, listp->current);
   Moves::PrintMove(listp);
 }
 
 
 void Moves::TrickToText(
-  int           trick,
-  char          line[])
+  int trick,
+  char line[])
 {
   movePlyType * listp0 = &moveList[trick][0],
-              * listp1 = &moveList[trick][1],
-              * listp2 = &moveList[trick][2],
-              * listp3 = &moveList[trick][3];
+                * listp1 = &moveList[trick][1],
+                  * listp2 = &moveList[trick][2],
+                    * listp3 = &moveList[trick][3];
 
   sprintf(line, "Last trick\t%c: %c%c - %c%c - %c%c - %c%c\n",
-    cardHand[ track[trick].leadHand ],
-     cardSuit[ listp0->move[listp0->current].suit ],
-     cardRank[ listp0->move[listp0->current].rank ],
+          cardHand[ track[trick].leadHand ],
+          cardSuit[ listp0->move[listp0->current].suit ],
+          cardRank[ listp0->move[listp0->current].rank ],
 
-     cardSuit[ listp1->move[listp1->current].suit ],
-     cardRank[ listp1->move[listp1->current].rank ],
+          cardSuit[ listp1->move[listp1->current].suit ],
+          cardRank[ listp1->move[listp1->current].rank ],
 
-     cardSuit[ listp2->move[listp2->current].suit ],
-     cardRank[ listp2->move[listp2->current].rank ],
+          cardSuit[ listp2->move[listp2->current].suit ],
+          cardRank[ listp2->move[listp2->current].rank ],
 
-     cardSuit[ listp3->move[listp3->current].suit ],
-     cardRank[ listp3->move[listp3->current].rank ]);
+          cardSuit[ listp3->move[listp3->current].suit ],
+          cardRank[ listp3->move[listp3->current].rank ]);
 }
 
 
 
 void Moves::UpdateStatsEntry(
   moveStatsType * statp,
-  int           findex,
-  int           hit,
-  int           len)
+  int findex,
+  int hit,
+  int len)
 {
   bool found = false;
-  int  fno = 0;
+  int fno = 0;
   for (int i = 0; i < statp->nfuncs; i++)
   {
     if (statp->list[i].findex == findex)
@@ -2276,7 +2356,7 @@ void Moves::UpdateStatsEntry(
   {
     funp = &statp->list[fno];
     funp->count++;
-    funp->sumHits    += hit;
+    funp->sumHits += hit;
     funp->sumLengths += len;
   }
   else
@@ -2285,35 +2365,35 @@ void Moves::UpdateStatsEntry(
     {
       printf("Shouldn't happen, %d\n", statp->nfuncs);
       for (int i = 0; i < statp->nfuncs; i++)
-        printf("%d  %d\n", i, statp->list[i].findex);
+        printf("%d %d\n", i, statp->list[i].findex);
       exit(1);
     }
-    
+
     funp = &statp->list[ statp->nfuncs++ ];
 
     funp->count++;
-    funp->findex      = findex;
-    funp->sumHits    += hit;
+    funp->findex = findex;
+    funp->sumHits += hit;
     funp->sumLengths += len;
   }
 }
 
 
 void Moves::RegisterHit(
-  int           trick,
-  int           relHand)
+  int trick,
+  int relHand)
 {
   movePlyType * listp = &moveList[trick][relHand];
 
   int findex = lastCall[trick][relHand];
-  int len    = listp->last + 1;
+  int len = listp->last + 1;
 
-if (findex == -1)
-{
-  printf("RegisterHit trick %d relHand %d: findex %d\n",
-    trick, relHand, -1);
-  exit(1);
-}
+  if (findex == -1)
+  {
+    printf("RegisterHit trick %d relHand %d: findex %d\n",
+           trick, relHand, -1);
+    exit(1);
+  }
 
   int curr = listp->current;
   if (curr < 1 || curr > len)
@@ -2322,16 +2402,16 @@ if (findex == -1)
     exit(1);
   }
 
-  int moveSuit = listp->move[curr-1].suit;
-  int numSuit  = 0;
-  int numSeen  = 0;
+  int moveSuit = listp->move[curr - 1].suit;
+  int numSuit = 0;
+  int numSeen = 0;
 
   for (int i = 0; i < len; i++)
   {
     if (listp->move[i].suit == moveSuit)
     {
       numSuit++;
-      if (i == curr-1)
+      if (i == curr - 1)
         numSeen = numSuit;
     }
   }
@@ -2339,7 +2419,7 @@ if (findex == -1)
 // Used for development
 #if 0
   if (findex == MG_COMB_NOTVOID3 && numSeen > 1 && trick >= 10)
-  // if (0 && findex == MG_TRUMP_VOID3 && numSeen == 1 && curr > 1)
+    // if (0 && findex == MG_TRUMP_VOID3 && numSeen == 1 && curr > 1)
   {
     char text[12][80];
     RankToText(posPoint->rankInSuit, text);
@@ -2348,20 +2428,20 @@ if (findex == -1)
       printf("%s\n", text[i]);
     printf("\n", text);
 
-    trackp    = &track[trick];
-    
+    trackp = &track[trick];
+
     printf("Trumps %c, Play %c: %c%c - %c%c - %c%c, best no. %d\n\n",
-    // printf("Trumps %c, Play %c: %c%c - %c%c, best no. %d\n\n",
-    // printf("Trumps %c, Play %c: %c%c, best no. %d\n\n",
-      cardSuit[trump],
-      cardHand[leadHand],
-      cardSuit[ trackp->playSuits[0] ],
-      cardRank[ trackp->playRanks[0] ],
-      cardSuit[ trackp->playSuits[1] ],
-      cardRank[ trackp->playRanks[1] ],
-      cardSuit[ trackp->playSuits[2] ],
-      cardRank[ trackp->playRanks[2] ],
-      curr-1);
+           // printf("Trumps %c, Play %c: %c%c - %c%c, best no. %d\n\n",
+           // printf("Trumps %c, Play %c: %c%c, best no. %d\n\n",
+           cardSuit[trump],
+           cardHand[leadHand],
+           cardSuit[ trackp->playSuits[0] ],
+           cardRank[ trackp->playRanks[0] ],
+           cardSuit[ trackp->playSuits[1] ],
+           cardRank[ trackp->playRanks[1] ],
+           cardSuit[ trackp->playSuits[2] ],
+           cardRank[ trackp->playRanks[2] ],
+           curr - 1);
 
     Moves::PrintMoves(trick, relHand);
     printf("\n---------------------------------------\n\n");
@@ -2371,59 +2451,59 @@ if (findex == -1)
   // Now we know enough to update the statistics tables.
 
   trickTable[trick][relHand].count++;
-  trickTable[trick][relHand].sumHits    += curr;
+  trickTable[trick][relHand].sumHits += curr;
   trickTable[trick][relHand].sumLengths += len;
 
   trickSuitTable[trick][relHand].count++;
-  trickSuitTable[trick][relHand].sumHits    += numSeen;
+  trickSuitTable[trick][relHand].sumHits += numSeen;
   trickSuitTable[trick][relHand].sumLengths += numSuit;
 
   Moves::UpdateStatsEntry(&trickDetailTable[trick][relHand],
-    findex, curr, len);
+                          findex, curr, len);
 
   Moves::UpdateStatsEntry(&trickDetailSuitTable[trick][relHand],
-    findex, numSeen, numSuit);
+                          findex, numSeen, numSuit);
 
   Moves::UpdateStatsEntry(&trickFuncTable,
-    findex, curr, len);
+                          findex, curr, len);
 
   Moves::UpdateStatsEntry(&trickFuncSuitTable,
-    findex, numSeen, numSuit);
+                          findex, numSeen, numSuit);
 }
 
 
 char * Moves::AverageString(
-  moveStatType  * statp,
-  char          str[])
+  moveStatType * statp,
+  char str[])
 {
   if (statp->count == 0)
-    sprintf(str, "%5s  %4s", "--", "--");
+    sprintf(str, "%5s %4s", "--", "--");
   else
-    sprintf(str, "%5.2f  %4.1f",
-      statp->sumHits / static_cast<double>(statp->count),
-      100. * statp->sumHits / static_cast<double>(statp->sumLengths));
+    sprintf(str, "%5.2f %4.1f",
+            statp->sumHits / static_cast<double>(statp->count),
+            100. * statp->sumHits / static_cast<double>(statp->sumLengths));
 
   return str;
 }
 
 
 char * Moves::FullAverageString(
-  moveStatType  * statp,
-  char          str[])
+  moveStatType * statp,
+  char str[])
 {
   if (statp->count == 0)
-    sprintf(str, "%5s  %5s  %4s  %8s  %8s", 
-      "--", "--", "--", "--", "--");
+    sprintf(str, "%5s %5s %4s %8s %8s",
+            "--", "--", "--", "--", "--");
   else
   {
     double avg = statp->sumHits / static_cast<double>(statp->count);
 
-    sprintf(str, "%5.3f  %5.2f  %4.1f  %8d  %8.0f",
-      avg,
-      statp->sumLengths / static_cast<double>(statp->count),
-      100. * statp->sumHits / static_cast<double>(statp->sumLengths),
-      statp->count,
-      (avg * avg * avg - 1) * statp->count);
+    sprintf(str, "%5.3f %5.2f %4.1f %8d %8.0f",
+            avg,
+            statp->sumLengths / static_cast<double>(statp->count),
+            100. * statp->sumHits / static_cast<double>(statp->sumLengths),
+            statp->count,
+            (avg * avg * avg - 1) * statp->count);
   }
 
   return str;
@@ -2431,31 +2511,31 @@ char * Moves::FullAverageString(
 
 
 void Moves::PrintTrickTable(
-  moveStatType  tablep[][DDS_HANDS])
+  moveStatType tablep[][DDS_HANDS])
 {
-  fprintf(fp, "%5s  %11s  %11s  %11s  %11s\n",
-    "Trick",
-    "Hand 0",
-    "Hand 1",
-    "Hand 2",
-    "Hand 3");
+  fprintf(fp, "%5s %11s %11s %11s %11s\n",
+          "Trick",
+          "Hand 0",
+          "Hand 1",
+          "Hand 2",
+          "Hand 3");
 
-  fprintf(fp, "%5s  %5s  %4s  %5s  %4s  %5s  %4s  %5s  %4s\n",
-    "",
-    "Avg", "%",
-    "Avg", "%",
-    "Avg", "%",
-    "Avg", "%");
+  fprintf(fp, "%5s %5s %4s %5s %4s %5s %4s %5s %4s\n",
+          "",
+          "Avg", "%",
+          "Avg", "%",
+          "Avg", "%",
+          "Avg", "%");
 
   char str[DDS_HANDS][16];
   for (int t = 12; t >= 0; t--)
   {
-    fprintf(fp, "%5d  %11s  %11s  %11s  %11s\n",
-      t,
-      Moves::AverageString(&tablep[t][0], str[0]),
-      Moves::AverageString(&tablep[t][1], str[1]),
-      Moves::AverageString(&tablep[t][2], str[2]),
-      Moves::AverageString(&tablep[t][3], str[3]));
+    fprintf(fp, "%5d %11s %11s %11s %11s\n",
+            t,
+            Moves::AverageString(&tablep[t][0], str[0]),
+            Moves::AverageString(&tablep[t][1], str[1]),
+            Moves::AverageString(&tablep[t][2], str[2]),
+            Moves::AverageString(&tablep[t][3], str[3]));
   }
 }
 
@@ -2479,8 +2559,8 @@ void Moves::PrintFunctionTable(
   if (statp->nfuncs == 0)
     return;
 
-  fprintf(fp, "%-15s  %5s  %5s  %4s  %8s  %8s\n",
-    "Function", "Avg", "Len", "%", "Count", "Imp");
+  fprintf(fp, "%-15s %5s %5s %4s %8s %8s\n",
+          "Function", "Avg", "Len", "%", "Count", "Imp");
 
   for (int fr = 0; fr < MG_NUM_FUNCTIONS; fr++)
   {
@@ -2491,9 +2571,9 @@ void Moves::PrintFunctionTable(
 
       sprintf(str[0], "%-15s", funcName[fr]);
 
-      fprintf(fp, "%s  %34s\n",
-        str[0], 
-        Moves::FullAverageString(&statp->list[f], str[1]));
+      fprintf(fp, "%s %34s\n",
+              str[0],
+              Moves::FullAverageString(&statp->list[f], str[1]));
     }
   }
 }

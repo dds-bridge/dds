@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -29,7 +29,7 @@ int main(int argc, char * argv[])
   DDSidentify(DDSid);
   printf("%s", DDSid);
   fflush(stdout);
-  
+
   realMain(argc, argv);
 
 #ifdef DDS_SCHEDULER
