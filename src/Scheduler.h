@@ -48,7 +48,7 @@ class Scheduler
     struct listType
     {
       int first;
-      int last,
+      int last;
       int length;
     };
 
@@ -59,7 +59,7 @@ class Scheduler
       int pred;
       int actual;
       int head;
-      int peatNo;
+      int repeatNo;
     };
 
     struct sortType
@@ -72,7 +72,7 @@ class Scheduler
     {
       int next;
       int spareKey;
-      int NTflag,
+      int NTflag;
       int first;
       int strain;
       int repeatNo;
