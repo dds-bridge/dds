@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -15,26 +15,26 @@
 
 
 #ifdef _MANAGED
-#pragma managed(push, off)
+  #pragma managed(push, off)
 #endif
 
 
 #if defined(_WIN32) || defined(USES_DLLMAIN)
 
 extern "C" BOOL APIENTRY DllMain(
-  HMODULE       hModule,
-  DWORD         ul_reason_for_call, 
-  LPVOID        lpReserved);
+  HMODULE hModule,
+  DWORD ul_reason_for_call,
+  LPVOID lpReserved);
 
 extern "C" BOOL APIENTRY DllMain(
-  HMODULE       hModule,
-  DWORD         ul_reason_for_call, 
-  LPVOID        lpReserved) 
+  HMODULE hModule,
+  DWORD ul_reason_for_call,
+  LPVOID lpReserved)
 {
 
-  if (ul_reason_for_call==DLL_PROCESS_ATTACH) 
+  if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     SetMaxThreads(0);
-  else if (ul_reason_for_call==DLL_PROCESS_DETACH) 
+  else if (ul_reason_for_call == DLL_PROCESS_DETACH)
   {
     CloseDebugFiles();
     FreeMemory();
@@ -51,13 +51,13 @@ extern "C" BOOL APIENTRY DllMain(
 
 #elif defined(USES_CONSTRUCTOR)
 
-static void __attribute__ ((constructor)) libInit(void) 
+static void __attribute__ ((constructor)) libInit(void)
 {
   SetMaxThreads(0);
 }
 
 
-static void __attribute__ ((destructor)) libEnd(void) 
+static void __attribute__ ((destructor)) libEnd(void)
 {
   CloseDebugFiles();
   FreeMemory();
@@ -66,6 +66,6 @@ static void __attribute__ ((destructor)) libEnd(void)
 #endif
 
 #ifdef _MANAGED
-#pragma managed(pop)
+  #pragma managed(pop)
 #endif
 

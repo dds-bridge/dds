@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -18,10 +18,10 @@
 
 
 #ifdef _WIN32
-LARGE_INTEGER frequency, tu0, tu1;
+  LARGE_INTEGER frequency, tu0, tu1;
 #else
 #include <sys/time.h>
-timeval tu0, tu1;
+  timeval tu0, tu1;
 #endif
 
 #include "dtest.h"
@@ -37,16 +37,16 @@ bool GIBmode = false;
 
 
 // #define DEBUG
-#define BATCHTIMES 
-#define ZERO  (static_cast<int>('0'))
-#define NINE  (static_cast<int>('9'))
+#define BATCHTIMES
+#define ZERO (static_cast<int>('0'))
+#define NINE (static_cast<int>('9'))
 #define SPACE (static_cast<int>(' '))
 #define QUOTE (static_cast<int>('"'))
 
 
 
 clock_t ts0, ts1;
-int     tu , ts, ctu, cts;
+int tu , ts, ctu, cts;
 
 
 int realMain(int argc, char * argv[]);
@@ -67,7 +67,7 @@ int realMain(int argc, char * argv[])
   }
 
   char * fname = argv[1];
-  char * type  = argv[2];
+  char * type = argv[2];
 
   if (! strcmp(type, "solve"))
     input_number = SOLVE_SIZE;
@@ -86,28 +86,28 @@ int realMain(int argc, char * argv[])
   QueryPerformanceFrequency(&frequency);
 #endif
 
-  boardsPBN             bop;
-  solvedBoards          solvedbdp;
-  ddTableDealsPBN       dealsp;
-  ddTablesRes           resp;
-  allParResults         parp;
-  playTracesPBN         playsp;
-  solvedPlays           solvedplp;
+  boardsPBN bop;
+  solvedBoards solvedbdp;
+  ddTableDealsPBN dealsp;
+  ddTablesRes resp;
+  allParResults parp;
+  playTracesPBN playsp;
+  solvedPlays solvedplp;
 
-  int                   * dealer_list;
-  int                   * vul_list;
-  dealPBN               * deal_list;
-  futureTricks          * fut_list;
-  ddTableResults        * table_list;
-  parResults            * par_list;
-  parResultsDealer      * dealerpar_list;
-  playTracePBN          * play_list;
-  solvedPlay            * trace_list;
-  int                   number;
+  int * dealer_list;
+  int * vul_list;
+  dealPBN * deal_list;
+  futureTricks * fut_list;
+  ddTableResults * table_list;
+  parResults * par_list;
+  parResultsDealer * dealerpar_list;
+  playTracePBN * play_list;
+  solvedPlay * trace_list;
+  int number;
 
   if (read_file(fname, &number, &dealer_list, &vul_list,
-    &deal_list, &fut_list, &table_list, &par_list, &dealerpar_list, 
-    &play_list, &trace_list) == false)
+        &deal_list, &fut_list, &table_list, &par_list, &dealerpar_list,
+        &play_list, &trace_list) == false)
   {
     printf("read_file failed.\n");
     exit(0);
@@ -124,8 +124,8 @@ int realMain(int argc, char * argv[])
   }
   else if (! strcmp(type, "calc"))
   {
-    loop_calc(&dealsp, &resp, &parp, 
-      deal_list, table_list, number);
+    loop_calc(&dealsp, &resp, &parp,
+              deal_list, table_list, number);
   }
   else if (! strcmp(type, "par"))
   {
@@ -143,8 +143,8 @@ int realMain(int argc, char * argv[])
       printf("GIB file does not work with solve\n");
       exit(0);
     }
-    loop_dealerpar(dealer_list, vul_list, table_list, 
-      dealerpar_list, number);
+    loop_dealerpar(dealer_list, vul_list, table_list,
+                   dealerpar_list, number);
   }
   else if (! strcmp(type, "play"))
   {
@@ -153,10 +153,10 @@ int realMain(int argc, char * argv[])
       printf("GIB file does not work with solve\n");
       exit(0);
     }
-    loop_play(&bop, &playsp, &solvedplp, 
-      deal_list, play_list, trace_list, number);
+    loop_play(&bop, &playsp, &solvedplp,
+              deal_list, play_list, trace_list, number);
   }
-  else 
+  else
   {
     printf("Unknown type %s\n", type);
     exit(0);
@@ -177,7 +177,7 @@ int realMain(int argc, char * argv[])
   free(play_list);
   free(trace_list);
 
-  return(0);
+  return (0);
 }
 
 
@@ -186,30 +186,30 @@ void main_identify()
   printf("dtest main\n----------\n");
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-  printf("%-12s  %20s\n", "System", "Windows");
-  #if defined(_MSC_VER)
-    printf("%-12s  %20s\n", "Compiler", "Microsoft Visual C++");
-  #elif defined(__MINGW32__)
-    printf("%-12s  %20s\n", "Compiler", "MinGW");
-  #else
-    printf("%-12s  %20s\n", "Compiler", "GNU g++");
-  #endif
+  printf("%-12s %20s\n", "System", "Windows");
+#if defined(_MSC_VER)
+  printf("%-12s %20s\n", "Compiler", "Microsoft Visual C++");
+#elif defined(__MINGW32__)
+  printf("%-12s %20s\n", "Compiler", "MinGW");
+#else
+  printf("%-12s %20s\n", "Compiler", "GNU g++");
+#endif
 
 #elif defined(__linux)
-  printf("%-12s  %20s\n", "System", "Linux");
-  printf("%-12s  %20s\n", "Compiler", "GNU g++");
+  printf("%-12s %20s\n", "System", "Linux");
+  printf("%-12s %20s\n", "Compiler", "GNU g++");
 
 #elif defined(__APPLE__)
-  printf("%-12s  %20s\n", "System", "Apple");
-  #if defined(__clang__)
-    printf("%-12s  %20s\n", "Compiler", "clang");
-  #else
-    printf("%-12s  %20s\n", "Compiler", "GNU g++");
-  #endif
+  printf("%-12s %20s\n", "System", "Apple");
+#if defined(__clang__)
+  printf("%-12s %20s\n", "Compiler", "clang");
+#else
+  printf("%-12s %20s\n", "Compiler", "GNU g++");
+#endif
 #endif
 
 #if defined(__cplusplus)
-  printf("%-12s  %20ld\n", "Dialect", __cplusplus);
+  printf("%-12s %20ld\n", "Dialect", __cplusplus);
 #endif
 
   printf("\n");
@@ -259,24 +259,24 @@ void set_constants()
 
 
 bool read_file(
-  char                  * fname, 
-  int                   * number,
-  int                   ** dealer_list,
-  int                   ** vul_list,
-  dealPBN               ** deal_list,
-  futureTricks          ** fut_list,
-  ddTableResults        ** table_list,
-  parResults            ** par_list,
-  parResultsDealer      ** dealerpar_list,
-  playTracePBN          ** play_list,
-  solvedPlay            ** trace_list)
+  char * fname,
+  int * number,
+  int ** dealer_list,
+  int ** vul_list,
+  dealPBN ** deal_list,
+  futureTricks ** fut_list,
+  ddTableResults ** table_list,
+  parResults ** par_list,
+  parResultsDealer ** dealerpar_list,
+  playTracePBN ** play_list,
+  solvedPlay ** trace_list)
 {
   char line[256];
   char * name;
-  
+
   FILE * fp;
   fp = fopen(fname, "r");
-  if (fp == nullptr) 
+  if (fp == nullptr)
   {
     char backup[80];
     sprintf(backup, "../hands/%s", fname);
@@ -323,48 +323,48 @@ bool read_file(
   size_t number_t = static_cast<size_t>(* number);
 
   if ((*dealer_list = static_cast<int *>
-    (calloc(number_t, sizeof(int)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(int)))) == nullptr)
+    return false;
 
   if ((*vul_list = static_cast<int *>
-    (calloc(number_t, sizeof(int)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(int)))) == nullptr)
+    return false;
 
   if ((*deal_list = static_cast<dealPBN *>
-    (calloc(number_t, sizeof(dealPBN)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(dealPBN)))) == nullptr)
+    return false;
 
   if ((*fut_list = static_cast<futureTricks *>
-    (calloc(number_t, sizeof(futureTricks)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(futureTricks)))) == nullptr)
+    return false;
 
   if ((*table_list = static_cast<ddTableResults *>
-    (calloc(number_t, sizeof(ddTableResults)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(ddTableResults)))) == nullptr)
+    return false;
 
   if ((*par_list = static_cast<parResults *>
-    (calloc(number_t, sizeof(parResults)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(parResults)))) == nullptr)
+    return false;
 
   if ((*dealerpar_list = static_cast<parResultsDealer *>
-    (calloc(number_t, sizeof(parResultsDealer)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(parResultsDealer)))) == nullptr)
+    return false;
 
   if ((*play_list = static_cast<playTracePBN *>
-    (calloc(number_t, sizeof(playTracePBN)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(playTracePBN)))) == nullptr)
+    return false;
 
   if ((*trace_list = static_cast<solvedPlay *>
-    (calloc(number_t, sizeof(solvedPlay)))) == nullptr)
-      return false;
+      (calloc(number_t, sizeof(solvedPlay)))) == nullptr)
+    return false;
 
   if (GIBmode)
   {
     int n = 0;
-    while (fgets(line, sizeof(line), fp)) 
+    while (fgets(line, sizeof(line), fp))
     {
       if (parse_GIB(line, &(*deal_list)[n], &(*table_list)[n])
-        == false)
+          == false)
         return false;
       n++;
     }
@@ -374,9 +374,9 @@ bool read_file(
     for (int n = 0; n < *number; n++)
     {
 #ifdef DEBUG
-    printf("Starting to read hand number %d\n", n);
-    printf("-------------------------------\n");
-    printf("play_list[%d].number = %d\n", n, (*play_list)[n].number);
+      printf("Starting to read hand number %d\n", n);
+      printf("-------------------------------\n");
+      printf("play_list[%d].number = %d\n", n, (*play_list)[n].number);
 #endif
 
       if (! fgets(line, sizeof(line), fp)) return false;
@@ -393,7 +393,7 @@ bool read_file(
       if (parse_PAR(line, &(*par_list)[n]) == false) return false;
 
       if (! fgets(line, sizeof(line), fp)) return false;
-      if (parse_DEALERPAR(line, &(*dealerpar_list)[n]) == false) 
+      if (parse_DEALERPAR(line, &(*dealerpar_list)[n]) == false)
         return false;
 
       if (! fgets(line, sizeof(line), fp)) return false;
@@ -403,13 +403,13 @@ bool read_file(
       if (parse_TRACE(line, &(*trace_list)[n]) == false) return false;
 
       /*
-      print_PBN      (&(*deal_list     )[n]);
-      print_FUT      (&(*fut_list      )[n]);
-      print_TABLE    (&(*table_list    )[n]);
-      print_PAR      (&(*par_list      )[n]);
+      print_PBN (&(*deal_list )[n]);
+      print_FUT (&(*fut_list )[n]);
+      print_TABLE (&(*table_list )[n]);
+      print_PAR (&(*par_list )[n]);
       print_DEALERPAR(&(*dealerpar_list)[n]);
-      print_PLAY     (&(*play_list     )[n]);
-      print_TRACE    (&(*trace_list    )[n]);
+      print_PLAY (&(*play_list )[n]);
+      print_TRACE (&(*trace_list )[n]);
       */
     }
   }
@@ -439,10 +439,10 @@ bool parse_NUMBER(char * line, int * number)
 
 
 bool parse_PBN(
-  char                  * line, 
-  int                   * dealer,
-  int                   * vul,
-  dealPBN               * dl)
+  char * line,
+  int * dealer,
+  int * vul,
+  dealPBN * dl)
 {
 #ifdef DEBUG
   printf("parse_PBN: Got line '%s'\n", line);
@@ -473,7 +473,7 @@ bool parse_PBN(
   printf("parse_PBN: Read first %d\n", dl->first);
 #endif
 
-  if (consume_string(line, &pos, dl->remainCards) == false) 
+  if (consume_string(line, &pos, dl->remainCards) == false)
     return false;
 #ifdef DEBUG
   printf("parse_PBN: Read string '%s'\n", dl->remainCards);
@@ -503,7 +503,7 @@ bool parse_FUT(char * line, futureTricks * fut)
   {
     if (consume_int(line, &pos, &fut->suit[c]) == false) return false;
 #ifdef DEBUG
-  printf("parse_FUT: Read suit[%d]: %d\n", c, fut->suit[c]);
+    printf("parse_FUT: Read suit[%d]: %d\n", c, fut->suit[c]);
 #endif
   }
 
@@ -511,7 +511,7 @@ bool parse_FUT(char * line, futureTricks * fut)
   {
     if (consume_int(line, &pos, &fut->rank[c]) == false) return false;
 #ifdef DEBUG
-  printf("parse_FUT: Read rank[%d]: %d\n", c, fut->rank[c]);
+    printf("parse_FUT: Read rank[%d]: %d\n", c, fut->rank[c]);
 #endif
   }
 
@@ -519,7 +519,7 @@ bool parse_FUT(char * line, futureTricks * fut)
   {
     if (consume_int(line, &pos, &fut->equals[c]) == false) return false;
 #ifdef DEBUG
-  printf("parse_FUT: Read equals[%d]: %d\n", c, fut->equals[c]);
+    printf("parse_FUT: Read equals[%d]: %d\n", c, fut->equals[c]);
 #endif
   }
 
@@ -527,7 +527,7 @@ bool parse_FUT(char * line, futureTricks * fut)
   {
     if (consume_int(line, &pos, &fut->score[c]) == false) return false;
 #ifdef DEBUG
-  printf("parse_FUT: Read score[%d]: %d\n", c, fut->score[c]);
+    printf("parse_FUT: Read score[%d]: %d\n", c, fut->score[c]);
 #endif
   }
 
@@ -547,11 +547,11 @@ bool parse_TABLE(char * line, ddTableResults * table)
   {
     for (int pl = 0; pl <= 3; pl++)
     {
-      if (consume_int(line, &pos, &table->resTable[suit][pl]) == false) 
+      if (consume_int(line, &pos, &table->resTable[suit][pl]) == false)
         return false;
 #ifdef DEBUG
-  printf("parse_TABLE: Read table[%d][%d] = %d\n", 
-    suit, pl, table->resTable[suit][pl]);
+      printf("parse_TABLE: Read table[%d][%d] = %d\n",
+             suit, pl, table->resTable[suit][pl]);
 #endif
     }
   }
@@ -571,25 +571,25 @@ bool parse_PAR(char * line, parResults * par)
   printf("parse_PAR: Got tag 'PAR'\n");
 #endif
 
-  if (consume_string(line, &pos, par->parScore[0]) == false) 
+  if (consume_string(line, &pos, par->parScore[0]) == false)
     return false;
 #ifdef DEBUG
   printf("parse_PAR: Read string '%s'\n", par->parScore[0]);
 #endif
 
-  if (consume_string(line, &pos, par->parScore[1]) == false) 
+  if (consume_string(line, &pos, par->parScore[1]) == false)
     return false;
 #ifdef DEBUG
   printf("parse_PAR: Read string '%s'\n", par->parScore[1]);
 #endif
 
-  if (consume_string(line, &pos, par->parContractsString[0]) == false) 
+  if (consume_string(line, &pos, par->parContractsString[0]) == false)
     return false;
 #ifdef DEBUG
   printf("parse_PAR: Read string '%s'\n", par->parContractsString[0]);
 #endif
 
-  if (consume_string(line, &pos, par->parContractsString[1]) == false) 
+  if (consume_string(line, &pos, par->parContractsString[1]) == false)
     return false;
 #ifdef DEBUG
   printf("parse_PAR: Read string '%s'\n", par->parContractsString[1]);
@@ -620,8 +620,8 @@ bool parse_DEALERPAR(char * line, parResultsDealer * par)
   if (sscanf(str, "%d", &par->score) != 1)
     return false;
 #ifdef DEBUG
-  printf("parse_DEALERPAR: Read string '%s', number %d\n", 
-    str, par->score);
+  printf("parse_DEALERPAR: Read string '%s', number %d\n",
+         str, par->score);
 #endif
 
   int no = 0;
@@ -630,15 +630,15 @@ bool parse_DEALERPAR(char * line, parResultsDealer * par)
     if (consume_string(line, &pos, par->contracts[no]) == false)
       break;
 #ifdef DEBUG
-    printf("parse_DEALERPAR: Read string number %d, '%s'\n", 
-      no, par->contracts[no]);
+    printf("parse_DEALERPAR: Read string number %d, '%s'\n",
+           no, par->contracts[no]);
 #endif
     no++;
   }
 
   par->number = no;
 #ifdef DEBUG
-    printf("parse_DEALERPAR: Read to number incl %d\n", no-1);
+  printf("parse_DEALERPAR: Read to number incl %d\n", no - 1);
 #endif
 
   return true;
@@ -672,7 +672,7 @@ bool parse_PLAY(char * line, playTracePBN * playp)
 }
 
 
-bool parse_TRACE(char * line, solvedPlay *solvedp)
+bool parse_TRACE(char * line, solvedPlay * solvedp)
 {
 #ifdef DEBUG
   printf("parse_TRACE: Got line '%s'\n", line);
@@ -691,10 +691,10 @@ bool parse_TRACE(char * line, solvedPlay *solvedp)
 
   for (int i = 0; i < solvedp->number; i++)
   {
-    if (consume_int(line, &pos, &solvedp->tricks[i]) == false) 
+    if (consume_int(line, &pos, &solvedp->tricks[i]) == false)
       return false;
 #ifdef DEBUG
-  printf("parse_TRACE: Read tricks[%d] = %d\n", i, solvedp->tricks[i]);
+    printf("parse_TRACE: Read tricks[%d] = %d\n", i, solvedp->tricks[i]);
 #endif
   }
   return true;
@@ -717,28 +717,28 @@ int GIB_TO_DDS[4] = {1, 0, 3, 2};
 bool parse_GIB(char line[], dealPBN * dl, ddTableResults * table)
 {
   strcpy(dl->remainCards, "W:");
-  strncpy(dl->remainCards+2, line, 67);
+  strncpy(dl->remainCards + 2, line, 67);
   dl->remainCards[69] = '\0';
-  
+
   int zero = static_cast<int>('0');
   int leta = static_cast<int>('A') - 10;
   int dds_strain, dds_hand;
 
   for (int s = 0; s < DDS_STRAINS; s++)
   {
-    dds_strain = (s == 0 ? 4 : s-1);
+    dds_strain = (s == 0 ? 4 : s - 1);
     for (int h = 0; h < DDS_HANDS; h++)
     {
       dds_hand = GIB_TO_DDS[h];
-      char c = line[68 + 4*s + h];
+      char c = line[68 + 4 * s + h];
       int d;
       if (c >= '0' && c <= '9')
-        d = static_cast<int> (line[68 + 4*s + h] - zero);
+        d = static_cast<int> (line[68 + 4 * s + h] - zero);
       else if (c >= 'A' && c <= 'F')
-        d = static_cast<int> (line[68 + 4*s + h] - leta);
+        d = static_cast<int> (line[68 + 4 * s + h] - leta);
       else
         return false;
-      
+
       if (dds_hand & 1)
         d = 13 - d;
 
@@ -764,11 +764,11 @@ bool compare_FUT(futureTricks * fut1, futureTricks * fut2)
     return false;
 
 // TEMPNODE
-// printf("  %8d\n", fut1->nodes);
+// printf(" %8d\n", fut1->nodes);
   for (int i = 0; i < fut1->cards; i++)
   {
-    if (fut1->suit  [i] != fut2->suit  [i]) return false;
-    if (fut1->rank  [i] != fut2->rank  [i]) return false;
+    if (fut1->suit [i] != fut2->suit [i]) return false;
+    if (fut1->rank [i] != fut2->rank [i]) return false;
     if (fut1->equals[i] != fut2->equals[i]) return false;
     if (fut1->score [i] != fut2->score [i]) return false;
   }
@@ -791,16 +791,16 @@ bool compare_TABLE(ddTableResults * table1, ddTableResults * table2)
 
 
 bool compare_PAR(
-  parResults            * par1, 
-  parResults            * par2)
+  parResults * par1,
+  parResults * par2)
 {
   if (strcmp(par1->parScore[0], par2->parScore[0])) return false;
   if (strcmp(par1->parScore[1], par2->parScore[1])) return false;
 
   if (strcmp(par1->parContractsString[0],
-             par2->parContractsString[0])) 
+             par2->parContractsString[0]))
     return false;
-  if (strcmp(par1->parContractsString[1], 
+  if (strcmp(par1->parContractsString[1],
              par2->parContractsString[1]))
     return false;
   return true;
@@ -808,14 +808,14 @@ bool compare_PAR(
 
 
 bool compare_DEALERPAR(
-  parResultsDealer      * par1, 
-  parResultsDealer      * par2)
+  parResultsDealer * par1,
+  parResultsDealer * par2)
 {
   if (par1->score != par2->score) return false;
-  
+
   for (int i = 0; i < par1->number; i++)
   {
-    if (strcmp(par1->contracts[i], par2->contracts[i])) 
+    if (strcmp(par1->contracts[i], par2->contracts[i]))
       return false;
   }
   return true;
@@ -823,28 +823,28 @@ bool compare_DEALERPAR(
 
 
 bool compare_TRACE(
-  solvedPlay            * trace1, 
-  solvedPlay            * trace2)
+  solvedPlay * trace1,
+  solvedPlay * trace2)
 {
   // In a buglet, Trace returned trace1 == -3 if there is
   // no input at all (trace2 is then 0).
   if (trace1->number != trace2->number &&
-      trace2->number > 0) 
+      trace2->number > 0)
   {
     printf("number %d != %d\n", trace1->number, trace2->number);
     return true;
   }
-  
+
   // Once that was fixed, the input file had length 0, not 1.
-  if (trace1->number == 1 && trace2->number == 0) 
+  if (trace1->number == 1 && trace2->number == 0)
     return true;
 
   for (int i = 0; i < trace1->number; i++)
   {
     if (trace1->tricks[i] != trace2->tricks[i])
     {
-       printf("i %d: %d != %d\n", i, trace1->tricks[i],
-         trace2->tricks[i]);
+      printf("i %d: %d != %d\n", i, trace1->tricks[i],
+             trace2->tricks[i]);
       return false;
     }
   }
@@ -854,29 +854,29 @@ bool compare_TRACE(
 
 bool print_PBN(dealPBN * dl)
 {
-  printf("%10s  %d\n", "trump", dl->trump);
-  printf("%10s  %d\n", "first", dl->first);
-  printf("%10s  %s\n", "cards", dl->remainCards);
+  printf("%10s %d\n", "trump", dl->trump);
+  printf("%10s %d\n", "first", dl->first);
+  printf("%10s %s\n", "cards", dl->remainCards);
   return true;
 }
 
 
 bool print_FUT(futureTricks * fut)
 {
-  printf("%6s  %d\n", "cards", fut->cards);
-  printf("%6s  %-6s  %-6s  %-6s  %-6s\n",
-    "", "suit", "rank", "equals", "score");
+  printf("%6s %d\n", "cards", fut->cards);
+  printf("%6s %-6s %-6s %-6s %-6s\n",
+         "", "suit", "rank", "equals", "score");
 
   for (int i = 0; i < fut->cards; i++)
   {
     char res[15] = "";
     equals_to_string(fut->equals[i], res);
-    printf("%6d  %-6c  %-6c  %-6s  %-6d\n",
-      i, 
-      dcardSuit[ fut->suit[i] ],
-      dcardRank[ fut->rank[i] ],
-      res,
-      fut->score[i]);
+    printf("%6d %-6c %-6c %-6s %-6d\n",
+           i,
+           dcardSuit[ fut->suit[i] ],
+           dcardRank[ fut->rank[i] ],
+           res,
+           fut->score[i]);
   }
   return true;
 }
@@ -888,7 +888,7 @@ void equals_to_string(int equals, char * res)
   for (int i = 15; i >= 2; i--)
   {
     if (equals & dbitMapRank[i])
-    res[p++] = static_cast<char>(dcardRank[i]);
+      res[p++] = static_cast<char>(dcardRank[i]);
   }
   res[p] = 0;
 }
@@ -896,24 +896,24 @@ void equals_to_string(int equals, char * res)
 
 bool print_TABLE(ddTableResults * table)
 {
-  printf("%5s  %-5s  %-5s    %-5s  %-5s\n",
-    "", "North", "South", "East", "West");
+  printf("%5s %-5s %-5s %-5s %-5s\n",
+         "", "North", "South", "East", "West");
 
-  printf("%5s  %5d  %5d    %5d  %5d\n",
-    "NT", 
-    table->resTable[4][0],
-    table->resTable[4][2],
-    table->resTable[4][1],
-    table->resTable[4][3]);
+  printf("%5s %5d %5d %5d %5d\n",
+         "NT",
+         table->resTable[4][0],
+         table->resTable[4][2],
+         table->resTable[4][1],
+         table->resTable[4][3]);
 
   for (int suit = 0; suit <= 3; suit++)
   {
-    printf("%5c  %5d  %5d    %5d  %5d\n",
-      dcardSuit[suit], 
-      table->resTable[suit][0],
-      table->resTable[suit][2],
-      table->resTable[suit][1],
-      table->resTable[suit][3]);
+    printf("%5c %5d %5d %5d %5d\n",
+           dcardSuit[suit],
+           table->resTable[suit][0],
+           table->resTable[suit][2],
+           table->resTable[suit][1],
+           table->resTable[suit][3]);
   }
   return true;
 }
@@ -931,8 +931,8 @@ bool print_PAR(parResults * par)
 
 bool print_DEALERPAR(parResultsDealer * par)
 {
-  printf("Score   : %d\n", par->score);
-  printf("Pars    : %d\n", par->number);
+  printf("Score : %d\n", par->score);
+  printf("Pars : %d\n", par->number);
 
   for (int i = 0; i < par->number; i++)
   {
@@ -944,19 +944,19 @@ bool print_DEALERPAR(parResultsDealer * par)
 
 bool print_PLAY(playTracePBN * play)
 {
-  printf("Number  : %d\n", play->number);
+  printf("Number : %d\n", play->number);
 
   for (int i = 0; i < play->number; i++)
   {
-    printf("Play %d: %c%c\n", i, play->cards[2*i], play->cards[2*i+1]);
+    printf("Play %d: %c%c\n", i, play->cards[2 * i], play->cards[2 * i + 1]);
   }
   return true;
 }
 
 
-bool print_TRACE(solvedPlay *solvedp)
+bool print_TRACE(solvedPlay * solvedp)
 {
-  printf("Number  : %d\n", solvedp->number);
+  printf("Number : %d\n", solvedp->number);
 
   for (int i = 0; i < solvedp->number; i++)
   {
@@ -967,33 +967,33 @@ bool print_TRACE(solvedPlay *solvedp)
 
 
 void loop_solve(
-  boardsPBN             * bop,
-  solvedBoards          * solvedbdp,
-  dealPBN               * deal_list,
-  futureTricks          * fut_list,
-  int                   number)
+  boardsPBN * bop,
+  solvedBoards * solvedbdp,
+  dealPBN * deal_list,
+  futureTricks * fut_list,
+  int number)
 {
 #ifdef BATCHTIMES
-  printf("%8s  %24s\n", "Hand no.", "Time");
+  printf("%8s %24s\n", "Hand no.", "Time");
 #endif
 
   for (int i = 0; i < number; i += input_number)
   {
-    int count = (i + input_number > number ? number-i : input_number);
+    int count = (i + input_number > number ? number - i : input_number);
 
     bop->noOfBoards = count;
     for (int j = 0; j < count; j++)
     {
-      bop->deals[j]     = deal_list[i+j];
-      bop->target[j]    = -1;
+      bop->deals[j] = deal_list[i + j];
+      bop->target[j] = -1;
       bop->solutions[j] = 3;
-      bop->mode[j]      = 1;
+      bop->mode[j] = 1;
     }
 
     timer_start();
     int ret;
     if ((ret = SolveAllChunks(bop, solvedbdp, 1))
-      != RETURN_NO_FAULT)
+        != RETURN_NO_FAULT)
     {
       printf("loop_solve i %i: Return %d\n", i, ret);
       exit(0);
@@ -1001,16 +1001,16 @@ void loop_solve(
     tu = timer_end();
 
 #ifdef BATCHTIMES
-    printf("%8d  (%5.1f%%) %15d\n", 
-      i+count, 
-      100. * (i+count) / static_cast<double>(number),
-      tu);
+    printf("%8d (%5.1f%%) %15d\n",
+           i + count,
+           100. * (i + count) / static_cast<double>(number),
+           tu);
     fflush(stdout);
 #endif
 
     for (int j = 0; j < count; j++)
     {
-      if (! compare_FUT(&solvedbdp->solvedBoard[j], &fut_list[i+j]))
+      if (! compare_FUT(&solvedbdp->solvedBoard[j], &fut_list[i + j]))
       {
         printf("loop_solve i %d, j %d: Difference\n", i, j);
       }
@@ -1025,32 +1025,32 @@ void loop_solve(
 
 
 bool loop_calc(
-  ddTableDealsPBN       * dealsp, 
-  ddTablesRes           * resp, 
-  allParResults         * parp, 
-  dealPBN               * deal_list,
-  ddTableResults        * table_list, 
-  int                   number)
+  ddTableDealsPBN * dealsp,
+  ddTablesRes * resp,
+  allParResults * parp,
+  dealPBN * deal_list,
+  ddTableResults * table_list,
+  int number)
 {
 #ifdef BATCHTIMES
-  printf("%8s  %24s\n", "Hand no.", "Time");
+  printf("%8s %24s\n", "Hand no.", "Time");
 #endif
 
   int filter[5] = {0, 0, 0, 0, 0};
 
   for (int i = 0; i < number; i += input_number)
   {
-    int count = (i + input_number > number ? number-i : input_number);
+    int count = (i + input_number > number ? number - i : input_number);
     dealsp->noOfTables = count;
     for (int j = 0; j < count; j++)
     {
-      strcpy(dealsp->deals[j].cards, deal_list[i+j].remainCards);
+      strcpy(dealsp->deals[j].cards, deal_list[i + j].remainCards);
     }
 
     timer_start();
     int ret;
     if ((ret = CalcAllTablesPBN(dealsp, -1, filter, resp, parp))
-      != RETURN_NO_FAULT)
+        != RETURN_NO_FAULT)
     {
       printf("loop_solve i %i: Return %d\n", i, ret);
       exit(0);
@@ -1058,19 +1058,19 @@ bool loop_calc(
     tu = timer_end();
 
 #ifdef BATCHTIMES
-    printf("%8d  (%5.1f%%) %15d\n", 
-      i+count, 
-      100. * (i+count) / static_cast<double>(number),
-      tu);
+    printf("%8d (%5.1f%%) %15d\n",
+           i + count,
+           100. * (i + count) / static_cast<double>(number),
+           tu);
     fflush(stdout);
 #endif
 
     for (int j = 0; j < count; j++)
-      if (! compare_TABLE(&resp->results[j], &table_list[i+j]))
+      if (! compare_TABLE(&resp->results[j], &table_list[i + j]))
       {
         printf("loop_calc table i %d, j %d: Difference\n", i, j);
         print_TABLE( &resp->results[j] );
-        print_TABLE( &table_list[i+j]) ;
+        print_TABLE( &table_list[i + j]) ;
       }
   }
 
@@ -1084,13 +1084,13 @@ bool loop_calc(
 
 
 bool loop_par(
-  int                   * vul_list,
-  ddTableResults        * table_list,
-  parResults            * par_list,
-  int                   number)
+  int * vul_list,
+  ddTableResults * table_list,
+  parResults * par_list,
+  int number)
 {
   /* This is so fast that there is no batch or multi-threaded
-     version.  We run it many times just to get meaningful times. */
+     version. We run it many times just to get meaningful times. */
 
   parResults presp;
 
@@ -1100,7 +1100,7 @@ bool loop_par(
     {
       int ret;
       if ((ret = Par(&table_list[i], &presp, vul_list[i]))
-        != RETURN_NO_FAULT)
+          != RETURN_NO_FAULT)
       {
         printf("loop_par i %i, j %d: Return %d\n", i, j, ret);
         exit(0);
@@ -1118,14 +1118,14 @@ bool loop_par(
 
 
 bool loop_dealerpar(
-  int                   * dealer_list,
-  int                   * vul_list,
-  ddTableResults        * table_list,
-  parResultsDealer      * dealerpar_list,
-  int                   number)
+  int * dealer_list,
+  int * vul_list,
+  ddTableResults * table_list,
+  parResultsDealer * dealerpar_list,
+  int number)
 {
   /* This is so fast that there is no batch or multi-threaded
-     version.  We run it many times just to get meaningful times. */
+     version. We run it many times just to get meaningful times. */
 
   parResultsDealer presp;
 
@@ -1134,9 +1134,9 @@ bool loop_dealerpar(
     for (int j = 0; j < input_number; j++)
     {
       int ret;
-      if ((ret = DealerPar(&table_list[i], &presp, 
-                      dealer_list[i], vul_list[i]))
-        != RETURN_NO_FAULT)
+      if ((ret = DealerPar(&table_list[i], &presp,
+                           dealer_list[i], vul_list[i]))
+          != RETURN_NO_FAULT)
       {
         printf("loop_dealerpar i %i, j %d: Return %d\n", i, j, ret);
         exit(0);
@@ -1154,39 +1154,39 @@ bool loop_dealerpar(
 
 
 bool loop_play(
-  boardsPBN             * bop,
-  playTracesPBN         * playsp,
-  solvedPlays           * solvedplp,
-  dealPBN               * deal_list,
-  playTracePBN          * play_list,
-  solvedPlay            * trace_list,
-  int                   number)
+  boardsPBN * bop,
+  playTracesPBN * playsp,
+  solvedPlays * solvedplp,
+  dealPBN * deal_list,
+  playTracePBN * play_list,
+  solvedPlay * trace_list,
+  int number)
 {
 #ifdef BATCHTIMES
-  printf("%8s  %24s\n", "Hand no.", "Time");
+  printf("%8s %24s\n", "Hand no.", "Time");
 #endif
 
   for (int i = 0; i < number; i += input_number)
   {
-    int count = (i+input_number > number ? number-i : input_number);
+    int count = (i + input_number > number ? number - i : input_number);
 
     bop->noOfBoards = count;
     playsp->noOfBoards = count;
 
     for (int j = 0; j < count; j++)
     {
-      bop->deals[j]     = deal_list[i+j];
-      bop->target[j]    = 0;
+      bop->deals[j] = deal_list[i + j];
+      bop->target[j] = 0;
       bop->solutions[j] = 3;
-      bop->mode[j]      = 1;
+      bop->mode[j] = 1;
 
-      playsp->plays[j]  = play_list[i+j];
+      playsp->plays[j] = play_list[i + j];
     }
 
     timer_start();
     int ret;
     if ((ret = AnalyseAllPlaysPBN(bop, playsp, solvedplp, 1))
-      != RETURN_NO_FAULT)
+        != RETURN_NO_FAULT)
     {
       printf("loop_play i %i: Return %d\n", i, ret);
       exit(0);
@@ -1194,16 +1194,16 @@ bool loop_play(
     tu = timer_end();
 
 #ifdef BATCHTIMES
-    printf("%8d  (%5.1f%%) %15d\n", 
-      i+count, 
-      100. * (i+count) / static_cast<double>(number),
-      tu);
+    printf("%8d (%5.1f%%) %15d\n",
+           i + count,
+           100. * (i + count) / static_cast<double>(number),
+           tu);
     fflush(stdout);
 #endif
 
     for (int j = 0; j < count; j++)
     {
-      if (! compare_TRACE(&solvedplp->solved[j], &trace_list[i+j]))
+      if (! compare_TRACE(&solvedplp->solved[j], &trace_list[i + j]))
       {
         printf("loop_play i %d, j %d: Difference\n", i, j);
         // printf("trace_list[%d]: \n", i+j);
@@ -1224,27 +1224,27 @@ bool loop_play(
 
 void print_times(int number)
 {
-  printf("%-20s  %12d\n", "Number of hands", number);
+  printf("%-20s %12d\n", "Number of hands", number);
   if (number == 0) return;
 
   if (ctu == 0)
-    printf("%-20s  %12s\n", "User time (ms)", "zero");
+    printf("%-20s %12s\n", "User time (ms)", "zero");
   else
   {
-    printf("%-20s  %12d\n", "User time (ms)", ctu);
-    printf("%-20s  %12.2f\n", "Avg user time (ms)", 
-      ctu / static_cast<float>(number));
+    printf("%-20s %12d\n", "User time (ms)", ctu);
+    printf("%-20s %12.2f\n", "Avg user time (ms)",
+           ctu / static_cast<float>(number));
   }
 
   if (cts == 0)
-    printf("%-20s  %12s\n", "Syst time", "zero");
+    printf("%-20s %12s\n", "Syst time", "zero");
   else
   {
-    printf("%-20s  %12d\n", "Syst time (ms)", cts);
-    printf("%-20s  %12.2f\n", "Avg syst time (ms)", 
-      cts / static_cast<float>(number));
-    printf("%-20s  %12.2f\n", "Ratio",
-      cts / static_cast<float>(ctu));
+    printf("%-20s %12d\n", "Syst time (ms)", cts);
+    printf("%-20s %12.2f\n", "Avg syst time (ms)",
+           cts / static_cast<float>(number));
+    printf("%-20s %12.2f\n", "Ratio",
+           cts / static_cast<float>(ctu));
   }
   printf("\n");
 }
@@ -1254,8 +1254,8 @@ void print_times(int number)
 int timeval_diff(timeval x, timeval y)
 {
   /* Elapsed time, x-y, in milliseconds */
-  return 1000 * (x.tv_sec  - y.tv_sec )
-       +        (x.tv_usec - y.tv_usec) / 1000;
+  return 1000 * (x.tv_sec - y.tv_sec )
+         + (x.tv_usec - y.tv_usec) / 1000;
 }
 #endif
 
@@ -1279,7 +1279,7 @@ int timer_end()
 #ifdef _WIN32
   QueryPerformanceCounter(&tu1);
   tu = static_cast<int>
-    ((tu1.QuadPart - tu0.QuadPart) * 1000. / frequency.QuadPart);
+       ((tu1.QuadPart - tu0.QuadPart) * 1000. / frequency.QuadPart);
 #else
   gettimeofday(&tu1, nullptr);
   tu = timeval_diff(tu1, tu0);
@@ -1287,8 +1287,9 @@ int timer_end()
   ctu += tu;
 
   ts = static_cast<int>
-    ( (1000 * 
-      static_cast<long long>(ts1-ts0) / static_cast<double>(CLOCKS_PER_SEC)));
+       ( (1000 *
+          static_cast<long long>(ts1 - ts0) / 
+          static_cast<double>(CLOCKS_PER_SEC)));
 // TEMPNODE
 // printf("%8d", ts);
   cts += ts;
@@ -1297,36 +1298,36 @@ int timer_end()
 
 
 bool consume_int(
-  char                  * line,
-  int                   * pos,
-  int                   * res)
+  char * line,
+  int * pos,
+  int * res)
 {
-  /* Too much Perl programming spoils one...  No doubt there
+  /* Too much Perl programming spoils one... No doubt there
      is a good way to do this in C. */
 
   int len = static_cast<int>(strlen(line));
   int i = * pos;
   int value = 0;
-  while (i < len && 
-         static_cast<int>(line[i]) >= ZERO && 
+  while (i < len &&
+         static_cast<int>(line[i]) >= ZERO &&
          static_cast<int>(line[i]) <= NINE)
   {
     value = 10 * value + static_cast<int>(line[i++]) - ZERO;
   }
-  if (static_cast<int>(line[i]) != SPACE) 
+  if (static_cast<int>(line[i]) != SPACE)
   {
     printf("Doesn't end on space\n");
     return false;
   }
-  *pos = i+1;
+  *pos = i + 1;
   *res = value;
   return true;
 }
 
 bool consume_string(
-  char                  * line,
-  int                   * pos,
-  char                  * res)
+  char * line,
+  int * pos,
+  char * res)
 {
   int len = static_cast<int>(strlen(line));
   int i = * pos;
@@ -1337,8 +1338,8 @@ bool consume_string(
   while (i < len && static_cast<int>(line[i]) != QUOTE)
     i++;
 
-  if (static_cast<int>(line[i]  ) != QUOTE) return false;
-  if (static_cast<int>(line[i+1]) != SPACE) return false;
+  if (static_cast<int>(line[i] ) != QUOTE) return false;
+  if (static_cast<int>(line[i + 1]) != SPACE) return false;
   i += 2;
 
   strncpy(res, line + *pos + 1, static_cast<size_t>(i - *pos - 3));
@@ -1349,9 +1350,9 @@ bool consume_string(
 
 
 bool consume_tag(
-  char                  * line,
-  int                   * pos,
-  const char            * tag)
+  char * line,
+  int * pos,
+  const char * tag)
 {
   int len = static_cast<int>(strlen(line));
   int i = * pos;
@@ -1372,13 +1373,13 @@ bool consume_tag(
 
 
 void dump_string(
-  const char                    *line)
+  const char * line)
 {
   int len = static_cast<int>(strlen(line));
   printf("Dumping len %d\n", len);
   for (int i = 0; i <= len; i++)
   {
-    printf("%2d  %c  %d\n", i, line[i], static_cast<int>(line[i]));
+    printf("%2d %c %d\n", i, line[i], static_cast<int>(line[i]));
   }
 }
 
