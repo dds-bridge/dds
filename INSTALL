@@ -1,0 +1,176 @@
+General
+=======
+
+These are all command-line instructions.  If you want to compile
+the code from an integrated development environment, you probably
+know what you're doing and you'll figure it out :-).
+
+The first step is to compile the library.
+
+If you have trouble, read the Makefile.  They all have the compiler
+warning levels set rather high, and they are set to fail even on
+warnings.  You can turn this off.  The Visual C++ version also
+requires a couple of tools that you may not have, but this too is
+easy to turn off.
+
+If you want, the optional next step is to test the library.
+
+Generally speaking:
+
+* Your paths and your system must be set up ahead of time.
+* You must have "make", or you will have to find a manual way
+  of compiling.
+* If your compiler does not have the name that we assume in 
+  the Makefile, then modify the Makefile.
+
+Once you've tested the source, you'll need the library file, the
+dll.h include from the include directory, and possibly other files
+such as dll.lib, depending on the exact system.  You don't need
+include/portab.h, although you're welcome to use it.  The library
+files needed are:
+
+Microsoft Visual C++: dds.dll, dds.lib
+mingw and cygwin: dds.dll, dds.def
+Mac and linux: libdds.a
+
+
+General instructions
+====================
+
+1. Go to the src directory.
+
+2. Copy the right Makefile_... from the Makefiles sub-directory
+to the src directory and call it Makefile, see below. (Or use make -f)
+
+3. If your compiler does not have the name assumed in the Makefile
+(see below), modify the Makefile.
+
+4. If you don't have the "windres" and "cvtres" programs,
+then you can also manage without.  These are just used for
+getting version information into the DLL.  Delete the corresponding
+lines.
+
+5. If you want OpenMP rather than Windows multi-threading for
+some reason, find the right place in the Makefile and uncomment
+one line and comment the other.
+
+6. make clean (not necessary if you're starting clean).
+
+7. make depend (ditto).
+
+8. make (produces dds.dll on Windows, libdds.a on Linux and Mac).
+
+9. make install (if you want to run tests; this is only a
+local install to ../lib, not a system-wide one).
+
+
+System-specific data
+====================
+
+Microsoft Visual C++
+--------------------
+Makefile: Makefile_Visual
+Compiler: cl
+
+
+Mingw
+-----
+Makefile: Makefile_mingw
+Compiler: i686-w64-mingw32-g++
+
+
+Cygwin
+------
+Makefile: Makefile_cygwin
+Compiler: g++
+
+
+Linux
+=====
+Makefile: Makefile_linux
+Compiler: g++
+
+
+Apple
+=====
+Makefile: Makefile_Mac_clang (for clang compiler, single-threaded)
+Makefile: Makefile_Mac_clang (for GNU g++ compiler, multi-threaded)
+Compiler: g++
+
+
+Testing
+=======
+
+The step "make install" above should have put the library file
+in ../lib.
+
+test
+----
+This program tests five main modes of DDS:
+
+* solve, the solution of a hand for a given declarer and strain.
+* calc, the solution of a hand for all 4 declarers * 5 strains.
+* play, the checking of play vs. double-dummy place.
+* par, the par calculation.
+* dealerpar, the dealer par calculation.
+
+The program can use a number of pre-defined input files in the
+../hands directory.
+
+To compile the program, you follow the same steps as for the library,
+except that you don't do a "make install".
+
+You now have a program called "dtest" or "dtest.exe".  Let us 
+assume dtest.exe.  Let us also assume that your system is set up
+in such a way that your path does not include the current working
+directory.
+
+You can invoke the program as
+
+./dtest.exe
+
+which should just give a brief usage message.  If that works, then
+you can invoke the program like this:
+
+./dtest.exe file.txt mode [number of threads]
+
+file.txt has to be the name of a file EITHER in the current 
+directory OR in ../hands.  The program checks first in the current
+directory.  A good starting example is list100.txt.
+
+mode has to be one of solve, calc, play, parand dealerpar.
+
+The number of threads is optional.  If it is not supplied, DDS
+figures one out itself.  If it is supplied, then it is passed to
+SetMaxThreads().
+
+Generally speaking, the test program first shows some information
+about how it was compiled.  Then it shows some ongoing timing
+information which can be useful to see that the program hasn't
+frozen in a long run.  Then it shows some timing information
+including an average per hand.
+
+The program compares results against expected values.  If something
+isn't right, you will see it.  If only specific hands fails, then
+we are surprised -- please report it to us.
+
+
+ddd
+---
+This program was written by Flip Cronje, and we have modified it
+minimally to support a multi-threaded DLL.  However, it doesn't
+use the full capabilities of DDS, as it was written at a time when
+functions such as CalcAllTables and SolveAllBoards were not yet
+available.  Therefore it is rather slow, but it does have a nice
+hand generator built in.
+
+
+examples
+--------
+The previous tests are intended for testing, not for teaching
+anybody how to interface with the DDS library.
+
+Here we show some minimal examples of using various DDS functions.
+These are short programs with only the minimum needed to get going.
+You can build on these for your own purposes.
+

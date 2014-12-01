@@ -1,0 +1,44 @@
+The text files in this directory are all input files for the
+test program.  Clearly large files take longer to run.
+
+For the curious, the hands are as below.
+
+masterDD.txt
+------------
+The superset of all text files other than thomas1.txt and 
+thomas2.txt.  It consists of Richard Pavlicek's collection of
+hands from top-level play (which in turn comes from another source), 
+as well as many of the hands that Soren Hein played with his 
+partner online over a five-year period.
+
+Of the 83,691 individual hands, by far most of them are from
+Pavlicek's archives.  About 5-6,000 of them are Soren's play,
+many of them with results from the other table as well.
+
+Overall this database has a fair amount of duplicated hands
+played at more than one table, though clearly less than 50%.
+In that sense it is a good test of the duplication recognition
+in DDS.
+
+
+list10000.txt
+list1000.txt
+list300.txt
+list100.txt
+list10.txt
+list1.txt
+-------------
+These are just excerpts from the larger masterDD.txt file.
+
+
+largest.txt
+-----------
+These are 21 hands from masterDD.txt that take a particularly
+long time to solve.
+
+thomas1.txt
+thomas2.txt
+-----------
+These are artificially constructed hands that take a very long
+time to solve.
+

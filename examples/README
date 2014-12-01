@@ -1,0 +1,12 @@
+There are a number of simple examples for individual DDS functions.
+
+Copy the Makefile for your system from the Makefiles folder.
+
+Then make the example you want,
+
+make CalcDDtable
+./CalcDDtable
+
+This requires the DLL to be in the directory.  It will get there
+when you do a "make install" in the src directory after compiling
+the DLL there.

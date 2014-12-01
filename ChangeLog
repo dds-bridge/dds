@@ -1,0 +1,578 @@
+Release Notes DDS 2.8.0
+----------------------- 
+2.8.0 is about 15% faster than 2.7.0.
+
+The move generation code has been re-implemented and is much faster.
+
+The CalcAllTables function now allows solving a larger number of
+DD tables in parallel (32 rather than 10).
+
+A scheduler module rearranges hands within a batch of hands to
+be solved.  This has two purposes:  
+
+1.  It detects duplicate hands and does not solve the same hand 
+twice.  So it a more general version of the "chunk" mechanism
+which requires the user to construct a batch in a specific way.
+
+2.  It attempts to solve hands first which are likely to be 
+difficult to solve.  When the hands are scheduled onto multiple
+threads, this reduces the average time wasted in the end while
+one thread is finishing up its last hand.
+
+The code for initialization and the SolveBoard interface functions 
+have been restructured. 
+
+Two bugs in the memory management of the transposition tables
+have been fixed.  Thanks for Brian Dickens for pointing them out.
+Brian also helped to make the code compile with fewer warnings
+at high warning levels.
+
+The directory structure of the distribution has been streamlined.
+
+The old algorithm document has been updated, particularly in
+the transposition table section.
+
+An ErrorMessage() function has been added to the interface.
+
+The old DDD program has been updated to work directly with the
+"modern" DDS; DDS had not been touched for many years.
+
+A more modern test program has been added, testing the main
+modes of the current DDS.
+
+The code has been cleaned up to compile with a very high level
+of compiler warnings on Microsoft Visual Studio, minGW, Cygwin
+g++, Ubuntu (and probably other Linux flavors with OpenMP),
+Mac OS with clang (single-threaded) and with g++ (OpenMP).
+
+There are Makefiles for each system and each program.
+
+Soren has become a co-author as of this version.
+
+
+
+Release Notes DDS 2.7.0
+----------------------- 
+The transposition table solution has been replaced by a faster one.
+The new solution is 8-15% faster.  Many thanks to Soren Hein for 
+writing this part of the code.  Soren has also improved the code 
+at numerous places.  
+
+Additional Par functions have been added to ease the use of a 
+DDS user specific format.
+
+
+Release Notes DDS 2.6.0
+-----------------------  
+2.6.0 is 2% faster than 2.5.2. 
+
+The Par function has been corrected.
+
+The DealerPar and the PlayAnalyser functions has been added, 
+written by Soren Hein.  Soren Hein has contributed numerous 
+improvements.
+
+
+Release Notes DDS 2.5.2
+-----------------------  
+A bug in the par calculation has been fixed. The fault could 
+wrongly cause presentation of extra par contracts in cases were 
+the sides had different vulnerability.
+
+
+Release Notes DDS 2.5.1
+-----------------------  
+The Windows DDS DLL now always uses the Windows API for implementing 
+the multithread functions (i.e. OpenMP is not used for Windows).
+
+
+Release Notes DDS 2.5.0
+-----------------------  
+Added function SolveAllChunks.
+
+
+Release Notes DDS 2.4.3
+-----------------------  
+Problem pointed out by John Goacher with missing par contract 
+has been corrected.  
+
+Tuned code for increased performance, especially in function 
+MoveGen and in the WeightAlloc function.
+
+
+Release Notes DDS 2.4.2
+-----------------------  
+Fixing bugs in CalcAllTables, CalcAllTablesPBN and CalcPar.
+
+
+Release Notes DDS 2.4.1
+-----------------------  
+Updates of functions CalcAllTables and CalcAllTablesPBN for 
+improved performance. 
+
+
+Release Notes DDS 2.4.0
+-----------------------
+Fixed a bug in the calculation of par score contracts.
+
+Added the new functions CalcAllTables and CalcAllTablesPBN.
+
+Numerous fixes for better adaptation to Linux.
+
+Cleaning the code to remove some warnings given at code 
+compilation.  
+
+For Windows users, adding readable version information of the 
+DDS DLL file. 
+
+
+Release Notes DDS 2.3.0
+-----------------------
+The main news is the support of calculation of par 
+scores / contracts.
+
+The Mingw DLL now uses the Win API instead of OpenMP, so no
+supporting DLL for pthreads is now needed.
+
+
+Release Notes DDS 2.2.4
+-----------------------
+A newer port from GCC to Windows, the TDM-GCC 4.7.1 version is 
+used.  It gives faster DLLs and only requires one supporting DLL, 
+which supports OpenMP.
+
+Also, the move ordering has been slighly improved.
+
+A total speed increase of 4% is achieved compared to 2.2.3.
+
+
+Release Notes DDS 1.1.18
+------------------------
+The main news is that this release is licensed under 
+Apache 2.0 instead of GPL for the previous releases.
+
+There is a slight change of the move ordering compared to 1.1.17.
+
+
+Release Notes DDS 1.1.17
+------------------------
+A newer port from GCC to Windows, the TDM-GCC 4.7.1 version is 
+used.  It gives faster DLLs and does not require any supporting DLLs.
+
+Also, the move ordering has been slighly improved.
+
+A total speed increase of 4% is achieved compared to 1.1.16.
+
+
+Release Notes DDS 2.2.3
+----------------------- 
+DDS 2.2.3 adds Mingw compiled DLLs and makes a number of code 
+improvements.
+
+Maximum number of threads is increased to 16.
+
+The 2.2.3 Mingw DLLs are about 5% faster than the 2.2.2 DLLs. 
+
+
+Release Notes DDS 1.1.16
+------------------------
+DDS 1.1.16 add Mingw compiled DLLs and makes a number of code 
+improvements.
+
+The 1.1.16 Mingw DLLs are about 5% faster than the 1.1.15 DLLs.
+
+
+Release Notes DDS 1.1.15
+------------------------
+The rel table missed initialization for absRank and relRank when 
+all cards in a suit are missing.
+
+DDS 1.1.15 is about 7% faster than 1.1.14.
+
+
+Release Notes DDS 2.2.2
+----------------------- 
+DDS 2.2.2 is mainly a bug fix release.
+
+1. An uninitialized variable used in move generation required that 
+the compiler initialized it by setting it to zero.  This is true 
+for Visual C++ but might perhaps have caused a problem with some 
+other compiler.
+
+2. The rel table missed initialization for absRank and relRank 
+when all cards in a suit are missing. 
+
+DDS 2.2.2 is slightly faster than 2.2.1, about 4%.
+
+
+Release Notes DDS 1.1.14
+------------------------
+Bug fixed in using the Windows function to detect RAM memory size 
+that could cause DDS termination.
+
+
+Release Notes DDS 2.2.1
+----------------------- 
+Bug fixed in using the Windows function to detect RAM memory size 
+that could cause DDS termination.
+
+Clarifying that DDS 2.2.1 is a 32-bit DLL not capable of using 
+more than 4 GB.
+
+The maximum number of threads is 8. 
+
+
+Release Notes DDS 1.1.13
+------------------------
+DDS used a deficient function in Windows to detect RAM memory size, 
+which could cause too few threads to be allocated. DDS now uses a 
+correct Windows function to detect the RAM size. 
+
+1.1.13 is 5-10% faster than 1.1.12.
+
+
+Release Notes DDS 2.2.0
+----------------------- 
+A new callable function, SolveAllBoards, has been added.
+
+Bug fixed:
+
+1. DDS used a deficient function in Windows to detect RAM memory 
+size, which could cause too few threads to be allocated. DDS now 
+uses a correct Windows function to detect the RAM size.
+
+2. DDS failed to detect PBN text coded card distributions with 
+less than 52 cards.
+
+3. DDS hanged when a faulty card distribution was provided in 
+the CalcDDtable call.  This fault was not present in the openMP 
+alternative, though.
+
+2.2.0 is 10-15% faster than 2.1.2. 
+
+
+Release Notes DDS 1.1.12
+------------------------
+Two new callable functions have been added: 
+SolveBoardPBN and CalcDDtablePBN.
+
+They both accept PBN format for the remaining cards in the 
+deal information instead of the bit codes.
+
+Code improvements have been done concerning quick tricks 
+detection and move ordering. 
+
+1.1.12 is about 15-20% faster than 1.1.11.
+
+
+Release Notes DDS 2.1.2
+-----------------------
+Two new callable functions have been added:
+SolveBoardPBN and CalcDDtablePBN.
+
+They both accept PBN format for the remaining cards in the 
+deal information instead of the bit codes.
+
+Code improvements have been done concerning quick tricks 
+detection and move ordering. 
+
+2.1.2 is about 10% faster than 2.1.1.
+
+
+Release Notes DDS 2.1.1
+-----------------------
+The maximum number of threads is now configurable depending on 
+the size of the physical memory. The configuration is either 
+done automatically by reading out the physical memory size by 
+the operating system, or by supplying parameter values in InitStart.
+
+
+Release Notes DDS 2.1.0
+-----------------------
+Added OpenMP as multi-thread support for CalcDDtable when 
+compiling with gcc 4.4.0 or later.
+
+Added a similarity deals test function for reuse of the 
+transposition table contents when the current deal is similar 
+to the previous deal. 
+
+
+Release Notes DDS 2.0.1
+-----------------------
+In 2.0.0, the contents of the transposition table could erronously
+be reused when the previous position contained a different number 
+of cards. This was caused by an erroneous implementation of the
+deal similarity test. This bug was fixed by removing the 
+similarity test.
+
+The DDS version number is defined by a #define statement in dll.h. 
+
+
+Release Notes DDS 2.0.0
+-----------------------
+A bug was fixed.
+
+SolveBoard is now thread-safe.
+
+The SolveBoard parameter "mode" no longer needs to be set to 2.
+DDS automatically detect situations when the transposition
+table contents can be reused.
+
+Used with a single thread, DDS 2.0.0 has about the same speed as 
+DDS 1.1.9.  Used with 2 parallel threads, DDS 2.0.0 is twice as 
+fast as the single thread case. 
+
+A new function, CalcDDtable, has been added.  CalcDDtable calls 
+SolveBoard using parallel threads. The number of parallel threads 
+is the same as the number of processor cores.  CalcDDtable 
+calculates the double dummy values of the initial 52 cards
+for all the 20 trump suit/leading hand combinations. 
+
+
+Release Notes DDS 1.1.9
+-----------------------
+1.1.9 is about 10-15% faster than 1.1.8.
+
+Main improvements come from 1) and 2) below.
+
+1.  Much faster initialization of variable rel (struct type 
+relRanksType).  Implementation done by Thomas Andrews.
+
+2.  Move generation: If the hand-to-play is trick leading hand, 
+the first positions in the move list now come each from a 
+different suit.  In 1.1.8, the first positions were groups of 
+2 cards from each suit.
+
+3.  DismissX renamed to NextMove. A bug was corrected
+in NextMove, increasing performance. (The bug did not give
+incorrect result.)  The bug was found by Joël Bradmetz.
+
+4.  The function CountOnes is replaced by a table look-up.
+Implementation by Thomas Andrews.
+
+5.  The handStore variable is replaced by a macro. Based on
+an implementation by Thomas Andrews.
+
+6.  The WinAdapt function is replaced by a table look-up.
+
+7.  A new table, highestRank, gives the highest rank from a
+bitmap of ranks. Makes functions UpdateWinner, UpdateSecondBest
+and QuickTricks slightly faster.
+
+
+
+Release Notes DDS 1.1.8
+--------------------------- 
+The transposition table solution has been redesigned.
+Each "winning ranks node" now contains all ranks for one suit.
+
+When a new transposition table entry is created, it is now
+positioned at the front of the alternative "winning ranks node"
+list rather than at the end as before.
+
+Each leading hand now has own root pointers pointing to
+the "suit lengths combination" tree.
+
+Some changes in QuickTricks.
+
+
+Release Notes DDS 1.1.7
+---------------------------
+A bug fix and recoding of the dynamic transposition table 
+implementation. 
+
+
+Release Notes DDS 1.1.6
+---------------------------  
+A bug has been fixed. It could show up (but hasn't as far as I know)
+after the transposition table became full. 
+
+Only a minor part of the maximum transposition table, about 30 MB, is 
+now allocated at initialization.  If more is needed it is dynamically 
+added as need arises. Each incremental addition is about 2 MB. 
+This continues until the maximum allowed space is reached, 
+for 512 MB PC this is about 400 MB.  Then the incrementally added 
+transposition table pieces are wiped out and the initially allocated 
+table is cleared. 
+
+
+Release Notes DDS 1.1.5
+---------------------------  
+A correction has been made removing a risk of DD value miscalculation.
+The fault has not however yet showed up as far as I know.
+
+A survival mechanism has been added to handle the situation if the
+transposition table becomess full: The transposition table is emptied.
+
+Before this, a full transposition table would in practise lock up 
+the program.  Therefore the present size of the transposition table 
+is quite large (393 MB) to handle the most difficult deals.
+
+This could lead to extensive memory swapping with the hard drive 
+if the PC RAM size is 256 MB or less, slowing down the program.
+
+With the new survival mechanism, the program will not lock up in
+case of a full transposition table.  The calculation time will 
+increase because of the extra time to build up stored positions in 
+the table, but the increase will be reasonable.  This means that 
+DDS should be possible to run with such small PC RAM sizes as 
+64 MB (this has not been tested, though).
+
+
+Release Notes DDS 1.1.4
+---------------------------
+Improvements when the SolveBoard parameter mode is set to 2.
+The mode parameter can now be set to 2 for SolveBoard calls 
+with parameter target set to -1 or a value 0-13,
+and solutions set to 1, 2 or 3.
+
+Following the first SolveBoard call with mode = 1, mode
+can be set to 2 for any further SolveBoard call for
+the same deal, also when an opponent hand leads the trick.
+
+If scores are to be calculated for all 4 possible leading hands
+of the deal, one SolveBoard call can be made with mode = 1, and 
+the other 3 SolveBoard calls for the other 3 leading hands can be
+made with mode = 2.
+
+Compared to dds 1.1.3, the better support of mode = 2 means improved
+calculation speed.  Compared to using only mode = 1 when calling 
+Solveboard 4 times, each time for each alternative leading hand, 
+the calculation time is roughly halved using mode = 2 as described 
+above. 
+
+
+Release Notes DDS 1.1.3
+---------------------------
+1.  Compiles with Visual C++ 2005 Express edition
+
+2.  Some improvements in move ordering, quick tricks and the new 
+later tricks algorithms.
+
+3.  Total improvement about 20% including the faster code 
+generated by Visual C++ and the algorithm improvements.
+
+
+Release Notes DDS 1.1.2
+---------------------------
+1.  Increased performance of about 15% due to improved algorithm 
+for move ordering. For more information, look in the algorithm 
+description.
+
+
+Release Notes DDS 1.1.1
+---------------------------
+1.  For target = -1 and solutions = 1/2/3, the transposition table 
+contents are now reused also when SolveBoard is called with a new 
+target value.
+
+2) Slight improvement of the QuickTricks algorithm.
+
+3) Moderate speed improvement compared to 1.1.1.
+
+
+Release Notes DDS 1.1.0
+---------------------------
+1.  Performance improvement giving a speed of about twice that 
+of 1.0.6.
+
+2.  Redesign of the transposition table solution, see algorithm 
+description.
+
+3.  Improvements in the Quicktricks algorithm, see algorithm 
+description.
+
+4.  Dump in text file of SolveBoard parameters if SolveBoard 
+returns with error code.
+
+
+Release Notes DDS 1.0.6
+--------------------------
+1.  A bug has been fixed in the DDS start up code.  The bug did 
+not affect the accuracy of the solver.  Thanks to Fabien Bradmetz 
+for spotting this!
+
+2.  About 10% increased speed due to improvements in Quick Tricks. 
+
+3.  An error code has been added for checking the input of of 
+cards earlier played in the trick.
+
+4.  A document (mode2.txt) describes source code examples of 
+calling SolveBoard using the parameter mode set to 2.
+
+
+Release Notes DDS 1.0.5
+--------------------------
+1.  About 25% speed improvement due to a search algorithm 
+improvement:  For moves generated in the search tree, only one 
+"small" card move per hand and suit is generated. By "small" 
+card is meant a card with a rank that is not winning due to its 
+rank value.  Earlier all "small" cards generated their own moves.
+This improvement comes from a tip by Hans Kuijf.
+
+2.  The size of the transposition table has been increased by 25%. 
+This was done after realizing that for some extreme deals, rarely 
+occurring, when solutions = 2 and 3 the transposition table could 
+get completely filled up, making the search time extremely long 
+for those cases.  The increased transposition table size should 
+still fit well inside a 256 MB machine.
+
+3.  Parameter mode = 2 indicates that the transposition table is 
+reused from an earlier SolveBoard call. It is restricted to the 
+case where the same conditions apply for the two calls, except 
+that the leading hand in the second call is the partner to the 
+leading hand in the first call.  I.e. same deal incl same trump 
+suit, same target (not equal to -1), solutions = 1. 
+
+
+Release Notes DDS 1.0.4
+-----------------------
+When introducing the possibility of reusing the transposition 
+table between subsequent searches in 1.0.1, unfortunately a bug 
+was introduced as well.  It occassionally gives wrong scores 
+when evaluating the last hand of the trick using 
+solutions = 2 or 3.  This bug is fixed in 1.0.4.
+
+
+Release Notes DDS 1.0.3
+----------------------- 
+Includes:
+1.  An improvement of the move ordering algorithm.  When LHO ruffs,
+this is now given a low weight if the highest rank of RHO beats both
+the rank of the leading card and the highest rank of the leading suit
+at the partner of the leading hand, assuming that the partner of the 
+leading hand is not void in the suit of the leading card.
+If these conditions do not hold, the weight for the LHO ruffing card 
+is high.
+
+2.  For the SolveBoard parameter solutions = 3, reuse of the 
+transposition table contents between card searches has been added.
+1 and 2 together give on average an improvement performance. 
+
+
+Release Notes DDS 1.0.2
+-----------------------
+Includes a bug fix for the case when the SolveBoard parameter
+"solutions" is set to 3.  SolveBoard did not correctly handle the 
+case when the scores of the alternative cards were a mix of zero 
+and non-zero. This is now fixed in 1.0.2.
+
+
+Release Notes DDS 1.0.1
+-----------------------
+Includes support for reuse of the transposition table contents 
+for a subsequent search. (This idea was brought forward 
+independently by Alex Martelli and Flip Cronje.)
+
+When setting the SolveBoard solutions to 2, the transposition 
+table contents will be reused when searching for alternative cards,
+giving a slightly decreased search time in most cases, in a few cases
+the decrease is substantial.  Earlier the contents of the 
+transposition table was always emptied between searches.
+
+The way to control whether or not to empty the transposition table
+is to properly set the parameter mtd in the InitSearch function:
+
+mtd = FALSE means that the transposition table is emptied, 
+mtd = TRUE that it is not emptied.
+

@@ -1,0 +1,152 @@
+# This is a Makefile for the examples,
+# for Windows and the minGW compiler.
+
+# It does assume a Unix-like setup for some commands,
+# but if you only want to call "make" with the default target,
+# you should be OK.
+
+# The test program itself does not use multi-threading, 
+# but the DLL might, depending on how it was compiled.
+
+# The Makefile also allows an "un-official" and ugly, but
+# sometimes practical compilation of a directly integrated
+# executable (i.e. not using the DLL).  For this the Makefile
+# uses the source and object files in the src directory...
+# Use "make itest" at your own risk.
+
+
+# If your exact compiler name is not given here, change it.
+# CC		= mingw32-g++
+CC		= i686-w64-mingw32-g++
+
+# Use this one to get Windows multi-threading
+# CC_FLAGS	= -O3 -flto -mtune=generic
+# Use this one to get OpenMP multi-threading
+CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic
+
+# These flags are not turned on by default, but DDS should pass them.
+# Turn them on below.
+WARN_FLAGS	= 		\
+	-Wshadow 		\
+	-Wsign-conversion 	\
+	-pedantic -Wall -Wextra  \
+	-Wcast-align -Wcast-qual \
+	-Wctor-dtor-privacy 	\
+	-Wdisabled-optimization \
+	-Winit-self 		\
+	-Wlogical-op 		\
+	-Wmissing-declarations 	\
+	-Wmissing-include-dirs 	\
+	-Wnoexcept 		\
+	-Wold-style-cast 	\
+	-Woverloaded-virtual 	\
+	-Wredundant-decls 	\
+	-Wsign-promo 		\
+	-Wstrict-null-sentinel 	\
+	-Wstrict-overflow=1 	\
+	-Wswitch-default -Wundef \
+	-Werror 		\
+	-Wno-unused 		\
+	-Wno-unknown-pragmas 	\
+	-Wno-long-long		\
+	-Wno-format
+
+# Here you can turn on warnings.
+# CC_FULL_FLAGS	= $(CC_FLAGS)
+CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
+
+DLLBASE		= dds
+DLL 		= $(DLLBASE).dll
+EXPORTER	= Exports.def
+
+COMMON_SOURCE_FILES 	=	\
+	hands.cpp
+
+ALL_EXAMPLE_FILES	=	\
+	AnalysePlayBin		\
+	AnalysePlayPBN		\
+	AnalyseAllPlaysBin	\
+	AnalyseAllPlaysPBN	\
+	CalcDDtable.cpp		\
+	CalcDDtablePBN.cpp	\
+	CalcAllTables.cpp	\
+	CalcAllTablesPBN.cpp	\
+	DealerPar.cpp		\
+	Par.cpp			\
+	SolveBoard.cpp		\
+	SolveBoardPBN.cpp	\
+	SolveAllBoards.cpp
+
+LD_FLAGS	= 		\
+	-Wl,--subsystem,windows \
+	-Wl,--output-def,$(DLLBASE).def	\
+	-Wl,--dynamicbase 	\
+	-Wl,--nxcompat 		\
+	-Wl,--no-seh 		\
+	-Wl,--enable-stdcall-fixup
+
+LIB_FLAGS	= -L. -l$(DLLBASE)
+
+OBJ_FILES	= $(subst .cpp,.o,$(COMMON_SOURCE_FILES))
+EX_OBJ_FILES	= $(subst .cpp,.o,$(ALL_EXAMPLE_FILES))
+EX_EXE_FILES	= $(subst .cpp,.exe,$(ALL_EXAMPLE_FILES))
+
+AnalysePlayBin:	$(OBJ_FILES) AnalysePlayBin.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalysePlayBin.o -o AnalysePlayBin
+
+AnalysePlayPBN:	$(OBJ_FILES) AnalysePlayPBN.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalysePlayPBN.o -o AnalysePlayPBN
+
+AnalyseAllPlaysBin:	$(OBJ_FILES) AnalyseAllPlaysBin.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalyseAllPlaysBin.o -o AnalyseAllPlaysBin
+
+AnalyseAllPlaysPBN:	$(OBJ_FILES) AnalyseAllPlaysPBN.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalyseAllPlaysPBN.o -o AnalyseAllPlaysPBN
+
+CalcDDtable:	$(OBJ_FILES) CalcDDtable.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) CalcDDtable.o -o CalcDDtable
+
+CalcDDtablePBN:	$(OBJ_FILES) CalcDDtablePBN.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) CalcDDtablePBN.o -o CalcDDtablePBN
+
+CalcAllTables:	$(OBJ_FILES) CalcAllTables.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) CalcAllTables.o -o CalcAllTables
+
+CalcAllTablesPBN:	$(OBJ_FILES) CalcAllTablesPBN.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) CalcAllTablesPBN.o -o CalcAllTablesPBN
+
+DealerPar:	$(OBJ_FILES) DealerPar.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) DealerPar.o -o DealerPar
+
+Par:	$(OBJ_FILES) Par.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) Par.o -o Par
+
+SolveBoard:	$(OBJ_FILES) SolveBoard.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveBoard.o -o SolveBoard
+
+SolveBoardPBN:	$(OBJ_FILES) SolveBoardPBN.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveBoardPBN.o -o SolveBoardPBN
+
+SolveAllBoards:	$(OBJ_FILES) SolveAllBoards.o
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveAllBoards.o -o SolveAllBoards
+
+%.o:	%.cpp
+	$(CC) $(CC_FULL_FLAGS) -c $< -o $*.o
+
+depend:
+	makedepend -Y -- $(cOMMON_SOURCE_FILES) $(ALL_EXAMPLE_FILES)
+
+clean:
+	rm -f *.o *.exe $(DLL) $(DLLBASE).def
+
+# DO NOT DELETE
+
+CalcDDtable.o: ../include/dll.h hands.h
+CalcDDtablePBN.o: ../include/dll.h hands.h
+CalcAllTables.o: ../include/dll.h hands.h
+CalcAllTablesPBN.o: ../include/dll.h hands.h
+DealerPar.o: ../include/dll.h hands.h
+Par.o: ../include/dll.h hands.h
+SolveBoard.o: ../include/dll.h hands.h
+SolveBoardPBN.o: ../include/dll.h hands.h
+SolveAllBoards.o: ../include/dll.h hands.h

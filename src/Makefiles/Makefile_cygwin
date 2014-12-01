@@ -1,0 +1,168 @@
+# This the DDS Makefile for Cygwin under Windows and the 
+# GNU g++ compiler.  It does assume a Unix-like setup for some 
+# commands, but if you only want to call "make" with the default 
+# target, you should be OK.
+
+# If you want to compile a single-threaded version, use
+# make DDS_THREADS=none
+
+# The "windres" and "cvtres" tools are used for putting version
+# information into the DLL in a way that Windows can see.
+# It is not mandatory, and if you don't have those tools,
+# You can remove $(VFILE).obj in the target line below.
+
+
+# If your compiler name is not given here, change it.
+CC		= g++
+
+# Use this one to get Windows multi-threading
+CC_FLAGS	= -O3 -flto -mtune=generic -fno-use-linker-plugin
+# Use this one to get OpenMP multi-threading
+# CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -fno-use-linker-plugin
+
+LD_FLAGS	= 		\
+	-Wl,--subsystem,windows \
+	-Wl,--output-def,$(DLLBASE).def	\
+	-Wl,--dynamicbase 	\
+	-Wl,--nxcompat 		\
+	-Wl,--no-seh 		\
+	-Wl,--enable-stdcall-fixup
+
+# These flags are not turned on be default, but DDS should pass them.
+# Turn them on below.
+WARN_FLAGS	= 		\
+	-Wshadow 		\
+	-Wsign-conversion 	\
+	-pedantic -Wall -Wextra  \
+	-Wcast-align -Wcast-qual \
+	-Wctor-dtor-privacy 	\
+	-Wdisabled-optimization \
+	-Wformat=2 		\
+	-Winit-self 		\
+	-Wlogical-op 		\
+	-Wmissing-declarations 	\
+	-Wmissing-include-dirs 	\
+	-Wnoexcept 		\
+	-Wold-style-cast 	\
+	-Woverloaded-virtual 	\
+	-Wredundant-decls 	\
+	-Wsign-promo 		\
+	-Wstrict-null-sentinel 	\
+	-Wstrict-overflow=1 	\
+	-Wswitch-default -Wundef \
+	-Werror 		\
+	-Wno-unused 		\
+	-Wno-unknown-pragmas 	\
+	-Wno-long-long
+
+# Here you can turn on warnings.
+# CC_FULL_FLAGS	= $(CC_FLAGS)
+CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
+
+LIB_FLAGS	= -shared
+
+DLLBASE		= dds
+DLL 		= $(DLLBASE).dll
+EXPORTER	= Exports.def
+
+VFILE		= ddsres
+WINDRES_FLAG	= 
+
+SOURCE_FILES 	=		\
+	dds.cpp 		\
+	ABsearch.cpp		\
+	ABstats.cpp		\
+	CalcTables.cpp		\
+	DealerPar.cpp 		\
+	Init.cpp		\
+	LaterTricks.cpp		\
+	Moves.cpp		\
+	Par.cpp 		\
+	PlayAnalyser.cpp	\
+	PBN.cpp			\
+	QuickTricks.cpp		\
+	Scheduler.cpp		\
+	SolveBoard.cpp		\
+	SolverIF.cpp		\
+	Stats.cpp		\
+	Timer.cpp		\
+	TransTable.cpp
+
+O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES)) $(VFILE).o
+
+ifeq ($(DDS_THREADS),none)
+DDS_THR		= -DDDS_THREADS_SINGLE
+else
+DDS_THR		= 
+endif
+
+
+cygwin:	$(O_FILES)
+	$(CC) $(LIB_FLAGS) $(CC_FULL_FLAGS) $(O_FILES) $(LD_FLAGS) $(EXPORTER) -o $(DLL)
+
+%.o:	%.cpp
+	$(CC) $(CC_FULL_FLAGS) $(DDS_THR) -c $<
+
+$(DLLBASE).res:	$(DLLBASE).rc
+	windres $(DLLBASE).rc $(DLLBASE).res
+
+$(VFILE).o:	$(DLLBASE).rc
+	windres $(WINDRES_FLAG) $(DLLBASE).rc $(VFILE).o
+
+depend:
+	makedepend -Y -- $(CC_FLAGS) -- $(SOURCE_FILES)
+
+clean:
+	rm -f $(O_FILES) $(DLL) $(DLLBASE).{lib,def,exp,res}
+
+install:
+	cp $(DLL) $(DLLBASE).def ../test
+	cp $(DLL) $(DLLBASE).def ../examples
+
+
+# DO NOT DELETE
+
+dds.o: ../include/dll.h dds.h debug.h ../include/portab.h TransTable.h
+dds.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h
+ABsearch.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+ABsearch.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
+ABsearch.o: QuickTricks.h LaterTricks.h ABsearch.h
+ABstats.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+ABstats.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+CalcTables.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+CalcTables.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h SolveBoard.h
+CalcTables.o: PBN.h
+DealerPar.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+DealerPar.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+Init.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Init.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h Init.h
+Init.o: ABsearch.h
+LaterTricks.o: dds.h debug.h ../include/portab.h TransTable.h
+LaterTricks.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+LaterTricks.o: threadmem.h LaterTricks.h
+Moves.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Moves.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h ABsearch.h
+Par.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Par.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+PlayAnalyser.o: dds.h debug.h ../include/portab.h TransTable.h
+PlayAnalyser.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+PlayAnalyser.o: Scheduler.h threadmem.h SolverIF.h PBN.h
+PBN.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+PBN.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h PBN.h
+QuickTricks.o: dds.h debug.h ../include/portab.h TransTable.h
+QuickTricks.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+QuickTricks.o: threadmem.h QuickTricks.h
+Scheduler.o: Scheduler.h dds.h debug.h ../include/portab.h TransTable.h
+Scheduler.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+SolveBoard.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
+SolveBoard.o: SolverIF.h SolveBoard.h PBN.h
+SolverIF.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+SolverIF.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h threadmem.h
+SolverIF.o: ABsearch.h SolverIF.h
+Stats.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Stats.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+Timer.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Timer.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+TransTable.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+TransTable.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
