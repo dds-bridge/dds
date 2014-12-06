@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_TIMING_H
+#define DDS_TIMING_H
+
 /*
    It is a simple object for timing functions or code pieces.
    As it stands, it is somewhat specific to AB searches,
@@ -34,9 +37,6 @@
    Evaluate(), which is a very fast function.
  */
 
-
-#ifndef _DDS_TIMING
-#define _DDS_TIMING
 
 #include <stdio.h>
 #include <string.h>

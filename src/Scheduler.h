@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#ifndef _DDS_SCHEDULER
-#define _DDS_SCHEDULER
+#ifndef DDS_SCHEDULER_H
+#define DDS_SCHEDULER_H
 
 #include <stdio.h>
 #include <stdlib.h>
