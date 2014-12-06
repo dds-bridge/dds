@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#ifndef _DDS_MOVES
-#define _DDS_MOVES
+#ifndef DDS_MOVES_H
+#define DDS_MOVES_H
 
 #include <stdio.h>
 #include <stdlib.h>

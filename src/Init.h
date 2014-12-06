@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_INIT_H
+#define DDS_INIT_H
+
 
 void SetDeal(
   struct localVarType * thrp);
@@ -28,3 +31,5 @@ void CloseDebugFiles();
 
 // Used by SH for stand-alone mode.
 void DDSidentify(char * s);
+
+#endif

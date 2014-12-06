@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#ifndef DDS_DDSH
-#define DDS_DDSH
+#ifndef DDS_DDS_H
+#define DDS_DDS_H
 
 #include <stdio.h>
 #include <stdlib.h>

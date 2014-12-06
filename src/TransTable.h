@@ -7,15 +7,14 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_TRANSTABLES_H
+#define DDS_TRANSTABLES_H
 
 /*
    This is an object for managing transposition tables and the
    associated memory.
 */
 
-
-#ifndef _DDS_TRANSTABLES
-#define _DDS_TRANSTABLES
 
 #include <stdio.h>
 #include <stdlib.h>

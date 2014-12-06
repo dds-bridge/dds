@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_PBN_H
+#define DDS_PBN_H
+
 
 int ConvertFromPBN(
   char * dealBuff,
@@ -16,3 +19,4 @@ int ConvertPlayFromPBN(
   struct playTracePBN * playPBN,
   struct playTraceBin * playBin);
 
+#endif
