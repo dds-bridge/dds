@@ -23,6 +23,16 @@ Generally speaking:
 * If your compiler does not have the name that we assume in 
   the Makefile, then modify the Makefile.
 
+Once you've tested the source, you'll need the library file, the
+dll.h include from the include directory, and possibly other files
+such as dll.lib, depending on the exact system.  You don't need
+include/portab.h, although you're welcome to use it.  The library
+files needed are:
+
+Microsoft Visual C++: dds.dll, dds.lib
+mingw and cygwin: dds.dll, dds.def
+Mac and linux: libdds.a
+
 
 General instructions
 ====================
@@ -30,7 +40,7 @@ General instructions
 1. Go to the src directory.
 
 2. Copy the right Makefile_... from the Makefiles sub-directory
-to the src directory and call it Makefile, see below.
+to the src directory and call it Makefile, see below. (Or use make -f)
 
 3. If your compiler does not have the name assumed in the Makefile
 (see below), modify the Makefile.

@@ -138,8 +138,17 @@ depend:
 	makedepend -Y -- $(cOMMON_SOURCE_FILES) $(ALL_EXAMPLE_FILES)
 
 clean:
-	rm -f $(OBJ_FILES) $(EX_OBJ_FILES) $(EX_EXE_FILES) 
+	rm -f $(OBJ_FILES) $(EX_OBJ_FILES) $(EX_EXE_FILES) $(DLL) $(DLLBASE).def
 
 
 # DO NOT DELETE
 
+CalcDDtable.o: ../include/dll.h hands.h
+CalcDDtablePBN.o: ../include/dll.h hands.h
+CalcAllTables.o: ../include/dll.h hands.h
+CalcAllTablesPBN.o: ../include/dll.h hands.h
+DealerPar.o: ../include/dll.h hands.h
+Par.o: ../include/dll.h hands.h
+SolveBoard.o: ../include/dll.h hands.h
+SolveBoardPBN.o: ../include/dll.h hands.h
+SolveAllBoards.o: ../include/dll.h hands.h

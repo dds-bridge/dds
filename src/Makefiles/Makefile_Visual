@@ -93,51 +93,53 @@ clean:
 	rm -f $(OBJ_FILES) $(DLL) $(DLLBASE).{lib,exp,def,obj,res}
 
 install:
-	cp $(DLL) $(DLIB) ../lib
 	cp $(DLL) $(DLIB) ../test
 	cp $(DLL) $(DLIB) ../examples
 
 # DO NOT DELETE
 
-dds.obj: ../include/dll.h dds.h debug.h portab.h TransTable.h Timer.h
-dds.obj: ABstats.h Moves.h Stats.h Scheduler.h Init.h
-ABsearch.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-ABsearch.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h QuickTricks.h
-ABsearch.obj: LaterTricks.h ABsearch.h
-ABstats.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-ABstats.obj: ABstats.h Moves.h Stats.h Scheduler.h
-CalcTables.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-CalcTables.obj: ABstats.h Moves.h Stats.h Scheduler.h SolveBoard.h PBN.h
-DealerPar.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-DealerPar.obj: ABstats.h Moves.h Stats.h Scheduler.h
-Init.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-Init.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h Init.h ABsearch.h
-LaterTricks.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-LaterTricks.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
-LaterTricks.obj: LaterTricks.h
-Moves.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-Moves.obj: ABstats.h Moves.h Stats.h Scheduler.h ABsearch.h
-Par.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-Par.obj: ABstats.h Moves.h Stats.h Scheduler.h
-PlayAnalyser.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h
-PlayAnalyser.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
-PlayAnalyser.obj: SolverIF.h PBN.h
-PBN.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-PBN.obj: ABstats.h Moves.h Stats.h Scheduler.h PBN.h
-QuickTricks.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-QuickTricks.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
-QuickTricks.obj: QuickTricks.h
-Scheduler.obj: Scheduler.h dds.h debug.h portab.h TransTable.h
+dds.obj: ../include/dll.h dds.h debug.h ../include/portab.h TransTable.h
+dds.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h
+ABsearch.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+ABsearch.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
+ABsearch.obj: QuickTricks.h LaterTricks.h ABsearch.h
+ABstats.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+ABstats.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+CalcTables.obj: dds.h debug.h ../include/portab.h TransTable.h
+CalcTables.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+CalcTables.obj: Scheduler.h SolveBoard.h PBN.h
+DealerPar.obj: dds.h debug.h ../include/portab.h TransTable.h
+DealerPar.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+Init.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Init.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h Init.h
+Init.obj: ABsearch.h
+LaterTricks.obj: dds.h debug.h ../include/portab.h TransTable.h
+LaterTricks.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+LaterTricks.obj: Scheduler.h threadmem.h LaterTricks.h
+Moves.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Moves.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h ABsearch.h
+Par.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Par.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+PlayAnalyser.obj: dds.h debug.h ../include/portab.h TransTable.h
+PlayAnalyser.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+PlayAnalyser.obj: Scheduler.h threadmem.h SolverIF.h PBN.h
+PBN.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+PBN.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h PBN.h
+QuickTricks.obj: dds.h debug.h ../include/portab.h TransTable.h
+QuickTricks.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+QuickTricks.obj: Scheduler.h threadmem.h QuickTricks.h
+Scheduler.obj: Scheduler.h dds.h debug.h ../include/portab.h TransTable.h
 Scheduler.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-SolveBoard.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-SolveBoard.obj: ABstats.h Moves.h Stats.h Scheduler.h threadmem.h SolverIF.h
-SolveBoard.obj: SolveBoard.h PBN.h
-SolverIF.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-SolverIF.obj: ABstats.h Moves.h Stats.h Scheduler.h Init.h threadmem.h
-SolverIF.obj: ABsearch.h SolverIF.h
-Stats.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-Stats.obj: ABstats.h Moves.h Stats.h Scheduler.h
-Timer.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-Timer.obj: ABstats.h Moves.h Stats.h Scheduler.h
-TransTable.obj: dds.h debug.h portab.h TransTable.h ../include/dll.h Timer.h
-TransTable.obj: ABstats.h Moves.h Stats.h Scheduler.h
+SolveBoard.obj: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard.obj: Scheduler.h threadmem.h SolverIF.h SolveBoard.h PBN.h
+SolverIF.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+SolverIF.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h
+SolverIF.obj: threadmem.h ABsearch.h SolverIF.h
+Stats.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Stats.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+Timer.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
+Timer.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+TransTable.obj: dds.h debug.h ../include/portab.h TransTable.h
+TransTable.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+TransTable.obj: Scheduler.h

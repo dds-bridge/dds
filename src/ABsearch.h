@@ -1,113 +1,117 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
+#ifndef DDS_ABSEARCH_H
+#define DDS_ABSEARCH_H
 
-#define DDS_POS_LINES   5
-#define DDS_HAND_LINES  12
-#define DDS_NODE_LINES  4
-#define DDS_FULL_LINE   80
+
+#define DDS_POS_LINES 5
+#define DDS_HAND_LINES 12
+#define DDS_NODE_LINES 4
+#define DDS_FULL_LINE 80
 #define DDS_HAND_OFFSET 16
 #define DDS_HAND_OFFSET2 12
-#define DDS_DIAG_WIDTH  34
+#define DDS_DIAG_WIDTH 34
 
 
 bool ABsearch(
-  struct pos            * posPoint, 
-  int                   target, 
-  int                   depth, 
-  struct localVarType   * thrp);
+  struct pos * posPoint,
+  int target,
+  int depth,
+  struct localVarType * thrp);
 
 bool ABsearch0(
-  struct pos            * posPoint,
-  int                   target,
-  int                   depth,
-  struct localVarType   * thrp);
+  struct pos * posPoint,
+  int target,
+  int depth,
+  struct localVarType * thrp);
 
 bool ABsearch1(
-  struct pos            * posPoint,
-  int                   target,
-  int                   depth,
-  struct localVarType   * thrp);
+  struct pos * posPoint,
+  int target,
+  int depth,
+  struct localVarType * thrp);
 
 bool ABsearch2(
-  struct pos            * posPoint,
-  int                   target,
-  int                   depth,
-  struct localVarType   * thrp);
+  struct pos * posPoint,
+  int target,
+  int depth,
+  struct localVarType * thrp);
 
 bool ABsearch3(
-  struct pos            * posPoint,
-  int                   target,
-  int                   depth,
-  struct localVarType   * thrp);
+  struct pos * posPoint,
+  int target,
+  int depth,
+  struct localVarType * thrp);
 
 void Make0(
-  struct pos            * posPoint,
-  int                   depth,
-  moveType              * mply);
+  struct pos * posPoint,
+  int depth,
+  moveType * mply);
 
 void Make1(
-  struct pos            * posPoint,
-  int                   depth,
-  moveType              * mply);
+  struct pos * posPoint,
+  int depth,
+  moveType * mply);
 
 void Make2(
-  struct pos            * posPoint,
-  int                   depth,
-  moveType              * mply);
+  struct pos * posPoint,
+  int depth,
+  moveType * mply);
 
 void Make3(
-  struct pos            * posPoint,
-  unsigned short int    trickCards[DDS_SUITS],
-  int                   depth,
-  moveType              * mply,
-  localVarType          * thrp);
+  struct pos * posPoint,
+  unsigned short int trickCards[DDS_SUITS],
+  int depth,
+  moveType * mply,
+  localVarType * thrp);
 
 evalType Evaluate(
-  pos                   * posPoint,
-  int                   trump,
-  localVarType          * thrp);
+  pos * posPoint,
+  int trump,
+  localVarType * thrp);
 
 void InitFileTopLevel(
-  int                   thrId);
+  int thrId);
 
 void InitFileABstats(
-  int                   thrId);
+  int thrId);
 
 void InitFileABhits(
-  int                   thrId);
+  int thrId);
 
 void InitFileTTstats(
-  int                   thrId);
+  int thrId);
 
 void InitFileTimer(
-  int                   thrId);
+  int thrId);
 
 void InitFileMoves(
-  int                   thrId);
+  int thrId);
 
 void InitFileScheduler();
 
 void CloseFileTopLevel(
-  int                   thrId);
+  int thrId);
 
 void CloseFileABhits(
-  int                   thrId);
+  int thrId);
 
 void DumpTopLevel(
-  struct localVarType   * thrp,
-  int                   tricks,
-  int                   lower,
-  int                   upper,
-  int                   printMode);
+  struct localVarType * thrp,
+  int tricks,
+  int lower,
+  int upper,
+  int printMode);
 
 void RankToText(
-  unsigned short int    rankInSuit[DDS_HANDS][DDS_SUITS],
-  char                  text[DDS_HAND_LINES][DDS_FULL_LINE]);
+  unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
+  char text[DDS_HAND_LINES][DDS_FULL_LINE]);
 
+#endif

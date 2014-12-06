@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -21,14 +21,14 @@
 int main()
 {
   ddTableDealsPBN DDdealsPBN;
-  ddTablesRes   tableRes;
+  ddTablesRes tableRes;
   allParResults pres;
 
-  int           mode = 0, // No par calculation
-                trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All 
-  int           res;
-  char          line[80];
-  bool          match;
+  int mode = 0: // No par calculation
+  int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All
+  int res;
+  char line[80];
+  bool match;
 
 #if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);
@@ -43,8 +43,8 @@ int main()
         strcpy(DDdealsPBN.deals[handno].cards, PBN[handno]);
   }
 
-  res = CalcAllTablesPBN(&DDdealsPBN, mode, trumpFilter, 
-    &tableRes, &pres);
+  res = CalcAllTablesPBN(&DDdealsPBN, mode, trumpFilter,
+                         &tableRes, &pres);
 
   if (res != RETURN_NO_FAULT)
   {
@@ -56,9 +56,9 @@ int main()
   {
     match = CompareTable(&tableRes.results[handno], handno);
 
-    sprintf(line, 
-      "CalcDDtable, hand %d: %s\n",
-      handno+1, (match ? "OK" : "ERROR"));
+    sprintf(line,
+            "CalcDDtable, hand %d: %s\n",
+            handno + 1, (match ? "OK" : "ERROR"));
 
     PrintPBNHand(line, DDdealsPBN.deals[handno].cards);
 

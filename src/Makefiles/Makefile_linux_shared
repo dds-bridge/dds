@@ -1,33 +1,21 @@
-# This the DDS Makefile for Windows and the MinGW compiler.
-# It does assume a Unix-like setup for some commands,
-# but if you only want to call "make" with the default target,
-# you should be OK.
+# This the DDS Makefile for Linux and the GNU g++ compiler.
+# Only OpenMP works here.
 
 # If you want to compile a single-threaded version, use
 # make DDS_THREADS=none
 
-# The "windres" and "cvtres" tools are used for putting version
-# information into the DLL in a way that Windows can see.
-# It is not mandatory, and if you don't have those tools,
-# You can remove $(VFILE).obj in the target line below.
+# If your compiler name is not given here, change it.
+CC		= g++
 
-
-# If your exact compiler name is not given here, change it.
-# CC		= mingw32-g++
-CC		= i686-w64-mingw32-g++
-
-# Use this one to get Windows multi-threading
-# CC_FLAGS	= -O3 -flto -mtune=generic
 # Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic
+CC_FLAGS	= -fPIC -g -O3 -flto -fopenmp -mtune=generic -Wno-write-strings
 
 LD_FLAGS	= 		\
-	-Wl,--subsystem,windows \
-	-Wl,--output-def,$(DLLBASE).def	\
-	-Wl,--dynamicbase 	\
-	-Wl,--nxcompat 		\
-	-Wl,--no-seh 		\
-	-Wl,--enable-stdcall-fixup
+	-Wl,-O1 \
+	-Wl,--sort-common \
+	-Wl,--as-needed \
+	-Wl,-z \
+	-Wl,relro
 
 
 # These flags are not turned on be default, but DDS should pass them.
@@ -58,17 +46,13 @@ WARN_FLAGS	= 		\
 	-Wno-format
 
 # Here you can turn on warnings.
-# CC_FULL_FLAGS	= $(CC_FLAGS)
 CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
 
-LIB_FLAGS	= -mdll
-
 DLLBASE		= dds
-DLL 		= $(DLLBASE).dll
-EXPORTER	= Exports.def
+SHARED_LIB  = lib$(DLLBASE).so
 
-VFILE		= ddsres
-WINDRES_FLAG	= -F pe-i386
+# Major version
+MAJOR = 2
 
 SOURCE_FILES 	=		\
 	dds.cpp 		\
@@ -90,7 +74,7 @@ SOURCE_FILES 	=		\
 	Timer.cpp		\
 	TransTable.cpp
 
-O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES)) $(VFILE).o
+O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES))
 
 ifeq ($(DDS_THREADS),none)
 DDS_THR		= -DDDS_THREADS_SINGLE
@@ -99,27 +83,26 @@ DDS_THR		=
 endif
 
 
-mingw:	$(O_FILES)
-	$(CC) $(LIB_FLAGS) $(CC_FULL_FLAGS) $(O_FILES) $(LD_FLAGS) $(EXPORTER) -o $(DLL)
+linux:	$(O_FILES)
+	$(CC) $(LD_FLAGS) -fopenmp \
+		-Wl,-soname,lib$(DLLBASE).so.$(MAJOR) \
+		-o $(SHARED_LIB) ABsearch.o ABstats.o CalcTables.o \
+		DealerPar.o Init.o LaterTricks.o Moves.o PBN.o Par.o \
+		PlayAnalyser.o QuickTricks.o SolveBoard.o \
+		SolverIF.o Stats.o Timer.o TransTable.o dds.o \
+		Scheduler.o -shared -fPIC
 
 %.o:	%.cpp
 	$(CC) $(CC_FULL_FLAGS) $(DDS_THR) -c $<
-
-$(DLLBASE).res:	$(DLLBASE).rc
-	windres $(DLLBASE).rc $(DLLBASE).res
-
-$(VFILE).o:	$(DLLBASE).rc
-	windres $(WINDRES_FLAG) $(DLLBASE).rc $(VFILE).o
 
 depend:
 	makedepend -Y -- $(CC_FLAGS) -- $(SOURCE_FILES)
 
 clean:
-	rm -f $(O_FILES) $(DLL) $(DLLBASE).{lib,def,exp,res}
+	rm -f $(O_FILES) $(SHARED_LIB)
 
 install:
-	cp $(DLL) $(DLLBASE).def ../test
-	cp $(DLL) $(DLLBASE).def ../examples
+	cp $(SHARED_LIB) /usr/lib
 
 
 # DO NOT DELETE

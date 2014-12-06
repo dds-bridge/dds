@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -10,10 +10,10 @@
 
 // General initialization of three hands to be used in examples.
 
-extern int trump [3];
-extern int first [3];
+extern int trump[3];
+extern int first[3];
 extern int dealer[3];
-extern int vul   [3];
+extern int vul[3];
 
 extern char PBN[3][80];
 
@@ -35,7 +35,7 @@ bool CompareTable(ddTableResults * table, int handno);
 void PrintTable(ddTableResults * table);
 
 bool ComparePar(parResults * par, int handno);
-bool CompareDealerPar(parResultsDealer * par,  int handno);
+bool CompareDealerPar(parResultsDealer * par, int handno);
 void PrintPar(parResults * par);
 void PrintDealerPar(parResultsDealer * par);
 
@@ -44,12 +44,12 @@ void PrintBinPlay(playTraceBin * play, solvedPlay * solved);
 void PrintPBNPlay(playTracePBN * play, solvedPlay * solved);
 
 
-void PrintHand(char title[],
+void PrintHand(char title[], 
   unsigned int rankInSuit[DDS_HANDS][DDS_SUITS]);
 
 void PrintPBNHand(char title[], char remainCards[]);
 
-int ConvertPBN(char     * dealBuff, 
+int ConvertPBN(char * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS]);
 
 int IsACard(char cardChar);

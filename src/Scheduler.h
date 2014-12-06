@@ -1,15 +1,14 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
-
-#ifndef _DDS_SCHEDULER
-#define _DDS_SCHEDULER
+#ifndef DDS_SCHEDULER_H
+#define DDS_SCHEDULER_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,20 +18,21 @@
 #include "../include/dll.h"
 
 #ifndef _WIN32
-#include <sys/time.h>
+  #include <sys/time.h>
 #endif
 
-#define SCHEDULER_NOSORT        0
-#define SCHEDULER_SOLVE         1
-#define SCHEDULER_CALC          2
-#define SCHEDULER_TRACE         3
+#define SCHEDULER_NOSORT 0
+#define SCHEDULER_SOLVE 1
+#define SCHEDULER_CALC 2
+#define SCHEDULER_TRACE 3
 
-#define HASH_MAX        128
+#define HASH_MAX 128
 
 
-struct schedType {
-  int                   number,
-                        repeatOf;
+struct schedType
+{
+  int number;
+  int repeatOf;
 };
 
 
@@ -41,141 +41,153 @@ class Scheduler
   private:
 
 #if defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
-    omp_lock_t          lock;
+    omp_lock_t lock;
 #endif
-    
-    struct listType {
-      int               first,
-                        last,
-                        length;
+
+    struct listType
+    {
+      int first;
+      int last;
+      int length;
     };
 
-    struct groupType {
-      int               strain,
-                        hash,
-                        pred,
-                        actual,
-                        head,
-                        repeatNo;
+    struct groupType
+    {
+      int strain;
+      int hash;
+      int pred;
+      int actual;
+      int head;
+      int repeatNo;
     };
 
-    struct sortType {
-      int               number,
-                        value;
+    struct sortType
+    {
+      int number;
+      int value;
     };
 
-    struct handType {
-      int               next,
-                        spareKey;
-      int               NTflag,
-                        first,
-                        strain,
-                        repeatNo,
-                        depth,
-                        strength,
-                        fanout,
-                        thread,
-                        selectFlag,
-                        time;
+    struct handType
+    {
+      int next;
+      int spareKey;
+      unsigned remainCards[DDS_HANDS][DDS_SUITS];
+      int NTflag;
+      int first;
+      int strain;
+      int repeatNo;
+      int depth;
+      int strength;
+      int fanout;
+      int thread;
+      int selectFlag;
+      int time;
     };
 
-    handType            hands[MAXNOOFBOARDS];
+    handType hands[MAXNOOFBOARDS];
 
-    groupType           group[MAXNOOFBOARDS];
-    int                 numGroups,
-                        extraGroups;
+    groupType group[MAXNOOFBOARDS];
+    int numGroups;
+    int extraGroups;
 #ifdef _WIN32
-    LONG volatile       currGroup;
+    LONG volatile currGroup;
 #else
-    int volatile        currGroup;
+    int volatile currGroup;
 #endif
 
-    listType            list[DDS_SUITS+2][HASH_MAX];
+    listType list[DDS_SUITS + 2][HASH_MAX];
 
-    sortType            sortList[MAXNOOFBOARDS];
-    int                 sortLen;
+    sortType sortList[MAXNOOFBOARDS];
+    int sortLen;
 
-    int                 threadGroup[MAXNOOFTHREADS],
-                        threadCurrGroup[MAXNOOFTHREADS];
+    int threadGroup[MAXNOOFTHREADS];
+    int threadCurrGroup[MAXNOOFTHREADS];
 
-    int                 threadToHand[MAXNOOFTHREADS];
+    int threadToHand[MAXNOOFTHREADS];
 
-    int                 numHands;
+    int numHands;
 
-    int                 highCards[8192];
+    int highCards[8192];
 
     int Strength(
-      deal              * dl);
+      deal * dl);
 
     int Fanout(
-      deal              * dl);
+      deal * dl);
 
     void Reset();
 
 #ifdef _WIN32
-    LARGE_INTEGER       timeStart[MAXNOOFTHREADS],
-                        timeEnd[MAXNOOFTHREADS],
-                        blockStart,
-                        blockEnd;
+    LARGE_INTEGER timeStart[MAXNOOFTHREADS];
+    LARGE_INTEGER timeEnd[MAXNOOFTHREADS];
+    LARGE_INTEGER blockStart;
+    LARGE_INTEGER blockEnd;
 #else
     int timeDiff(
-      timeval           x, 
-      timeval           y);
+      timeval x,
+      timeval y);
 
-    timeval             startTime[MAXNOOFTHREADS],
-                        endTime[MAXNOOFTHREADS],
-                        blockStart,
-                        blockEnd;
+    timeval startTime[MAXNOOFTHREADS];
+    timeval endTime[MAXNOOFTHREADS];
+    timeval blockStart;
+    timeval blockEnd;
 #endif
-    
+
     void MakeGroups(
-      boards            * bop);
+      boards * bop);
 
     void FinetuneGroups();
+
+    bool SameHand(
+      int hno1,
+      int hno2);
 
     void SortSolve(),
          SortCalc(),
          SortTrace();
 
 #ifdef DDS_SCHEDULER
-    FILE                * fp;
+    FILE * fp;
 
-    char                fname[80];
+    char fname[80];
 
-    int                 timeHist[10000],
-                        timeHistNT[10000],
-                        timeHistSuit[10000];
-    struct timeType {
-      long long         cum;
-      double            cumsq;
-      int               number;
+    int timeHist[10000];
+    int timeHistNT[10000];
+    int timeHistSuit[10000];
+
+    struct timeType
+    {
+      long long cum;
+      double cumsq;
+      int number;
     };
 
-    timeType            timeStrain[2],
-                        timeRepeat[16],
-                        timeDepth[60],
-                        timeStrength[60],
-                        timeFanout[100],
-                        timeThread[MAXNOOFTHREADS];
-    long long           timeMax,
-                        blockMax,
-                        timeBlock;
-    timeType            timeGroupActualStrain[2],
-                        timeGroupPredStrain[2],
-                        timeGroupDiffStrain[2];
+    timeType timeStrain[2];
+    timeType timeRepeat[16];
+    timeType timeDepth[60];
+    timeType timeStrength[60];
+    timeType timeFanout[100];
+    timeType timeThread[MAXNOOFTHREADS];
+
+    long long timeMax;
+    long long blockMax;
+    long long timeBlock;
+
+    timeType timeGroupActualStrain[2];
+    timeType timeGroupPredStrain[2];
+    timeType timeGroupDiffStrain[2];
 
     void InitTimes();
 
     void PrintTimingList(
-      timeType          * tp,
-      int               length,
-      const char        title[]);
+      timeType * tp,
+      int length,
+      const char title[]);
 #endif
 
     int PredictedTime(
-      deal              * dl,
-      int               number);
-
+      deal * dl,
+      int number);
 
 
   public:
@@ -187,22 +199,22 @@ class Scheduler
     void SetFile(char * fname);
 
     void RegisterTraceDepth(
-      playTracesBin     * plp,
-      int               number);
-    
+      playTracesBin * plp,
+      int number);
+
     void Register(
-      boards            * bop,
-      int               sortMode);
-    
+      boards * bop,
+      int sortMode);
+
     schedType GetNumber(
-      int               thrId);
-    
+      int thrId);
+
 #ifdef DDS_SCHEDULER
     void StartThreadTimer(
-      int               thrId);
+      int thrId);
 
     void EndThreadTimer(
-      int               thrId);
+      int thrId);
 
     void StartBlockTimer();
 

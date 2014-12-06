@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -23,9 +23,9 @@ int main()
   ddTableResults DDtable;
   parResultsDealer pres;
 
-  int           res;
-  char          line[80];
-  bool          match;
+  int res;
+  char line[80];
+  bool match;
 
 #if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);
@@ -46,7 +46,7 @@ int main()
     match = CompareDealerPar(&pres, handno);
 
     printf("DealerPar, hand %d: %s\n\n",
-      handno+1, (match ? "OK" : "ERROR"));
+           handno + 1, (match ? "OK" : "ERROR"));
 
     PrintTable(&DDtable);
 

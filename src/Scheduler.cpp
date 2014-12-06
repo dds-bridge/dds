@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -13,7 +13,7 @@
 
 Scheduler::Scheduler()
 {
-  // This can be HCP, for instance.  Currently it is close to
+  // This can be HCP, for instance. Currently it is close to
   // 6 - 4 - 2 - 1 - 0.5 for A-K-Q-J-T, but with 6.5 for the ace
   // in order to make the sum come out to 28, an even number, so
   // that the average number is an integer.
@@ -23,21 +23,21 @@ Scheduler::Scheduler()
     highCards[i] = 0;
 
     if (i & (1 << 12)) highCards[i] += 13;
-    if (i & (1 << 11)) highCards[i] +=  8;
-    if (i & (1 << 10)) highCards[i] +=  4;
-    if (i & (1 <<  9)) highCards[i] +=  2;
-    if (i & (1 <<  8)) highCards[i] +=  1;
+    if (i & (1 << 11)) highCards[i] += 8;
+    if (i & (1 << 10)) highCards[i] += 4;
+    if (i & (1 << 9)) highCards[i] += 2;
+    if (i & (1 << 8)) highCards[i] += 1;
   }
 
-  numHands  = 0;
+  numHands = 0;
 
 #ifdef DDS_SCHEDULER
   Scheduler::InitTimes();
 
   for (int i = 0; i < 10000; i++)
   {
-    timeHist[i]     = 0;
-    timeHistNT[i]   = 0;
+    timeHist[i] = 0;
+    timeHistNT[i] = 0;
     timeHistSuit[i] = 0;
   }
 
@@ -75,59 +75,59 @@ void Scheduler::InitTimes()
 {
   for (int s = 0; s < 2; s++)
   {
-    timeStrain[s].cum    = 0;
-    timeStrain[s].cumsq  = 0;
+    timeStrain[s].cum = 0;
+    timeStrain[s].cumsq = 0;
     timeStrain[s].number = 0;
 
-    timeGroupActualStrain[s].cum    = 0;
-    timeGroupActualStrain[s].cumsq  = 0;
+    timeGroupActualStrain[s].cum = 0;
+    timeGroupActualStrain[s].cumsq = 0;
     timeGroupActualStrain[s].number = 0;
 
-    timeGroupPredStrain[s].cum      = 0;
-    timeGroupPredStrain[s].cumsq    = 0;
-    timeGroupPredStrain[s].number   = 0;
+    timeGroupPredStrain[s].cum = 0;
+    timeGroupPredStrain[s].cumsq = 0;
+    timeGroupPredStrain[s].number = 0;
 
-    timeGroupDiffStrain[s].cum      = 0;
-    timeGroupDiffStrain[s].cumsq    = 0;
-    timeGroupDiffStrain[s].number   = 0;
+    timeGroupDiffStrain[s].cum = 0;
+    timeGroupDiffStrain[s].cumsq = 0;
+    timeGroupDiffStrain[s].number = 0;
   }
 
   for (int s = 0; s < 16; s++)
   {
-    timeRepeat[s].cum      = 0;
-    timeRepeat[s].cumsq    = 0;
-    timeRepeat[s].number   = 0;
+    timeRepeat[s].cum = 0;
+    timeRepeat[s].cumsq = 0;
+    timeRepeat[s].number = 0;
   }
 
   for (int s = 0; s < 60; s++)
   {
-    timeDepth[s].cum       = 0;
-    timeDepth[s].cumsq     = 0;
-    timeDepth[s].number    = 0;
+    timeDepth[s].cum = 0;
+    timeDepth[s].cumsq = 0;
+    timeDepth[s].number = 0;
   }
 
   for (int s = 0; s < 60; s++)
   {
-    timeStrength[s].cum    = 0;
-    timeStrength[s].cumsq  = 0;
+    timeStrength[s].cum = 0;
+    timeStrength[s].cumsq = 0;
     timeStrength[s].number = 0;
   }
 
   for (int s = 0; s < 100; s++)
   {
-    timeFanout[s].cum      = 0;
-    timeFanout[s].cumsq    = 0;
-    timeFanout[s].number   = 0;
+    timeFanout[s].cum = 0;
+    timeFanout[s].cumsq = 0;
+    timeFanout[s].number = 0;
   }
 
   for (int s = 0; s < MAXNOOFTHREADS; s++)
   {
-    timeThread[s].cum      = 0;
-    timeThread[s].cumsq    = 0;
-    timeThread[s].number   = 0;
+    timeThread[s].cum = 0;
+    timeThread[s].cumsq = 0;
+    timeThread[s].number = 0;
   }
 
-  blockMax  = 0;
+  blockMax = 0;
   timeBlock = 0;
 }
 #endif
@@ -151,18 +151,18 @@ void Scheduler::Reset()
   for (int b = 0; b < MAXNOOFBOARDS; b++)
     hands[b].next = -1;
 
-  numGroups   = 0;
+  numGroups = 0;
   extraGroups = 0;
 
   // One extra for NT, one extra for splitting collisions.
   for (int strain = 0; strain < DDS_SUITS + 2; strain++)
     for (int key = 0; key < HASH_MAX; key++)
-    list[strain][key].first = -1;
+      list[strain][key].first = -1;
 
 
   for (int t = 0; t < MAXNOOFTHREADS; t++)
   {
-    threadGroup[t]     = -1;
+    threadGroup[t] = -1;
     threadCurrGroup[t] = -1;
   }
 
@@ -171,8 +171,8 @@ void Scheduler::Reset()
 
 
 void Scheduler::RegisterTraceDepth(
-  playTracesBin         * plp,
-  int                   number)
+  playTracesBin * plp,
+  int number)
 {
   // This is only used for traces, so it is entered separately.
 
@@ -187,13 +187,13 @@ void Scheduler::RegisterTraceDepth(
 
 
 void Scheduler::Register(
-  boards                * bop,
-  int                   sortMode)
+  boards * bop,
+  int sortMode)
 {
   Scheduler::Reset();
 
   numHands = bop->noOfBoards;
-  
+
   // First split the hands according to strain and hash key.
   // This will lead to a few random collisions as well.
 
@@ -216,9 +216,9 @@ void Scheduler::Register(
 
 
 void Scheduler::MakeGroups(
-  boards                * bop)
+  boards * bop)
 {
-  deal     * dl;
+  deal * dl;
   listType * lp;
 
   for (int b = 0; b < numHands; b++)
@@ -227,36 +227,40 @@ void Scheduler::MakeGroups(
 
     int strain = dl->trump;
 
-    unsigned dlXor = 
+    unsigned dlXor =
       dl->remainCards[0][0] ^
-      dl->remainCards[0][1] ^
-      dl->remainCards[0][2] ^
-      dl->remainCards[0][3];
-    
+      dl->remainCards[1][1] ^
+      dl->remainCards[2][2] ^
+      dl->remainCards[3][3];
+
     int key = static_cast<int>(((dlXor >> 2) ^ (dlXor >> 6)) & 0x7f);
 
     hands[b].spareKey = static_cast<int>(
-      (dl->remainCards[1][0] << 17) ^
-      (dl->remainCards[1][1] << 11) ^
-      (dl->remainCards[1][2] <<  5) ^
-      (dl->remainCards[1][3] >>  2));
+                          (dl->remainCards[1][0] << 17) ^
+                          (dl->remainCards[2][1] << 11) ^
+                          (dl->remainCards[3][2] << 5) ^
+                          (dl->remainCards[0][3] >> 2));
 
-    hands[b].NTflag   = (strain == 4 ? 1 : 0);
-    hands[b].first    = dl->first;
-    hands[b].strain   = strain;
-    hands[b].fanout   = Scheduler::Fanout(dl);
+    for (int h = 0; h < DDS_HANDS; h++)
+      for (int s = 0; s < DDS_SUITS; s++)
+        hands[b].remainCards[h][s] = dl->remainCards[h][s];
+
+    hands[b].NTflag = (strain == 4 ? 1 : 0);
+    hands[b].first = dl->first;
+    hands[b].strain = strain;
+    hands[b].fanout = Scheduler::Fanout(dl);
     // hands[b].strength = Scheduler::Strength(dl);
 
     lp = &list[strain][key];
 
     if (lp->first == -1)
     {
-      lp->first  = b;
-      lp->last   = b;
+      lp->first = b;
+      lp->last = b;
       lp->length = 1;
 
       group[numGroups].strain = strain;
-      group[numGroups].hash   = key;
+      group[numGroups].hash = key;
       numGroups++;
     }
     else
@@ -280,9 +284,9 @@ void Scheduler::FinetuneGroups()
   for (int g = 0; g < numGroupsOrig; g++)
   {
     strain = group[g].strain;
-    key    = group[g].hash;
+    key = group[g].hash;
 
-    lp         = &list[strain][key];
+    lp = &list[strain][key];
 
     if (lp->length == 1)
       continue;
@@ -291,26 +295,38 @@ void Scheduler::FinetuneGroups()
     {
       // This happens quite often, so worth optimizing.
 
-      b1  = lp->first;
-      b2  = hands[lp->first].next;
+      b1 = lp->first;
+      b2 = hands[lp->first].next;
 
+      bool match = false;
       if (hands[b1].spareKey == hands[b2].spareKey)
+      {
+        // It is now extremely likely that it is a repeat hand,
+        // but we have to be sure.
+        match = true;
+        for (int h = 0; h < DDS_HANDS && match; h++)
+          for (int s = 0; s < DDS_SUITS && match; s++)
+            if (hands[b1].remainCards[h][s] != hands[b2].remainCards[h][s])
+              match = false;
+      }
+
+      if (match)
         continue;
 
       // Leave the first hand in place.
       hands[lp->first].next = -1;
-      lp->last   = lp->first;
+      lp->last = lp->first;
       lp->length = 1;
 
       // Move the second hand to the special list.
       lp = &list[5][extraGroups];
 
-      lp->first  = b2;
-      lp->last   = b2;
+      lp->first = b2;
+      lp->last = b2;
       lp->length = 1;
 
       group[numGroups].strain = 5;
-      group[numGroups].hash   = extraGroups;
+      group[numGroups].hash = extraGroups;
 
       numGroups++;
       extraGroups++;
@@ -318,7 +334,7 @@ void Scheduler::FinetuneGroups()
 
     else
     {
-      // This is the general case.  The comparison is not quite
+      // This is the general case. The comparison is not quite
       // as thorough here, but it's better than above and it uses
       // a different hand.
 
@@ -329,40 +345,44 @@ void Scheduler::FinetuneGroups()
       for (int i = 0; i < sortLen; i++)
       {
         sortList[i].number = index;
-        sortList[i].value  = hands[index].spareKey;
+        sortList[i].value = hands[index].spareKey;
 
         index = hands[index].next;
       }
 
-      // Sort the list.
+      // Sort the list heuristically by spareKey value.
 
       for (int i = 1; i < sortLen; i++)
       {
         st = sortList[i];
         int j = i;
-        for (; j && st.value > sortList[j-1].value; --j)
-          sortList[j] = sortList[j-1];
+        for (; j && st.value > sortList[j - 1].value; --j)
+          sortList[j] = sortList[j - 1];
         sortList[j] = st;
       }
 
-      if (sortList[0].value == sortList[sortLen-1].value)
-        continue;
-
       // First group stays where it is, but shorter and rejigged.
+      // From here on, hand comparisons are completely rigorous.
+      // We might miss duplicates, but we won't let different
+      // hands through as belonging to the same group.
 
       int l = 0;
-      while (l < sortLen && sortList[l].value == sortList[l+1].value)
+      while (l < sortLen-1 && 
+        Scheduler::SameHand(sortList[l].number, sortList[l+1].number))
         l++;
 
-      lp->first  = sortList[0].number;
-      lp->last   = sortList[l].number;
-      lp->length = l+1;
+      if (l == sortLen-1)
+        continue;
+
+      lp->first = sortList[0].number;
+      lp->last = sortList[l].number;
+      lp->length = l + 1;
 
       index = lp->first;
 
       for (int i = 0; i < l; i++)
       {
-        hands[index].next = sortList[i+1].number;
+        hands[index].next = sortList[i + 1].number;
         index = hands[index].next;
       }
 
@@ -373,10 +393,10 @@ void Scheduler::FinetuneGroups()
 
       while (l < sortLen)
       {
-        if (sortList[l].value == sortList[l-1].value)
+        if (Scheduler::SameHand(sortList[l].number, sortList[l-1].number))
         {
           // Same group
-          int nOld = sortList[l-1].number;
+          int nOld = sortList[l - 1].number;
           int nNew = sortList[l].number;
           hands[nOld].next = nNew;
           hands[nNew].next = -1;
@@ -391,12 +411,12 @@ void Scheduler::FinetuneGroups()
           hands[n].next = -1;
 
           lp = &list[5][extraGroups];
-          lp->first  = n;
-          lp->last   = n;
+          lp->first = n;
+          lp->last = n;
           lp->length = 1;
 
           group[numGroups].strain = 5;
-          group[numGroups].hash   = extraGroups;
+          group[numGroups].hash = extraGroups;
 
           numGroups++;
           extraGroups++;
@@ -408,14 +428,27 @@ void Scheduler::FinetuneGroups()
 }
 
 
-// These are specific times from a 12-core PC.  The hope is
+bool Scheduler::SameHand(
+  int hno1,
+  int hno2)
+{
+  for (int h = 0; h < DDS_HANDS; h++)
+    for (int s = 0; s < DDS_SUITS; s++)
+      if (hands[hno1].remainCards[h][s] != hands[hno2].remainCards[h][s])
+        return false;
+
+  return true;
+}
+
+
+// These are specific times from a 12-core PC. The hope is
 // that they scale somewhat proportionally to other cases.
 // The strength parameter is currently not used.
 
 int SORT_SOLVE_TIMES[2][8] =
 {
-  { 284000,  91000,  37000,  23000,  17000,  15000,  13000,   4000 },
-  { 388000, 140000,  60000,  40000,  30000,  23000,  18000,   6000 },
+  { 284000,  91000, 37000, 23000, 17000, 15000, 13000, 4000 },
+  { 388000, 140000, 60000, 40000, 30000, 23000, 18000, 6000 },
 };
 
 #define SORT_SOLVE_STRENGTH_CUTOFF 0
@@ -431,8 +464,8 @@ double SORT_SOLVE_STRENGTH[2][3] =
 
 double SORT_SOLVE_FANOUT[2][5] =
 {
-  { 30., 50., 0.07577,  1.515, 12. },
-  { 30., 50., 0.08144,  1.629, 12. }
+  { 30., 50., 0.07577, 1.515, 12. },
+  { 30., 50., 0.08144, 1.629, 12. }
 };
 
 void Scheduler::SortSolve()
@@ -444,14 +477,14 @@ void Scheduler::SortSolve()
   for (int g = 0; g < numGroups; g++)
   {
     strain = group[g].strain;
-    key    = group[g].hash;
-    lp     = &list[strain][key];
-    index  = lp->first;
-    hp     = &hands[index];
+    key = group[g].hash;
+    lp = &list[strain][key];
+    index = lp->first;
+    hp = &hands[index];
 
     // Taking into account repeat times saves 1-2%.
 
-    int repeatNo  = 0;
+    int repeatNo = 0;
     int firstPrev = -1;
     group[g].pred = 0;
     do
@@ -476,12 +509,12 @@ void Scheduler::SortSolve()
     double fanoutFactor;
 
     if (fanout < slist[0])
-      fanoutFactor = 0.;  // A bit extreme...
+      fanoutFactor = 0.; // A bit extreme...
     else if (fanout < slist[1])
       fanoutFactor = slist[2] * (fanout - slist[0]);
     else
       fanoutFactor = slist[3] * exp( (fanout - slist[1]) / slist[4] );
-    
+
     group[g].pred = static_cast<int>(
       (fanoutFactor * static_cast<double>(group[g].pred)));
   }
@@ -492,8 +525,8 @@ void Scheduler::SortSolve()
   {
     gp = group[g];
     int j = g;
-    for (; j && gp.pred > group[j-1].pred; --j)
-      group[j] = group[j-1];
+    for (; j && gp.pred > group[j - 1].pred; --j)
+      group[j] = group[j - 1];
     group[j] = gp;
   }
 }
@@ -507,8 +540,8 @@ void Scheduler::SortSolve()
 
 double SORT_CALC_FANOUT[2][5] =
 {
-  { 30., 50., 0.07812,  1.563, 13. },
-  { 30., 50., 0.07739,  1.548, 12. }
+  { 30., 50., 0.07812, 1.563, 13. },
+  { 30., 50., 0.07739, 1.548, 12. }
 };
 
 
@@ -521,10 +554,10 @@ void Scheduler::SortCalc()
   for (int g = 0; g < numGroups; g++)
   {
     strain = group[g].strain;
-    key    = group[g].hash;
-    lp     = &list[strain][key];
-    index  = lp->first;
-    hp     = &hands[index];
+    key = group[g].hash;
+    lp = &list[strain][key];
+    index = lp->first;
+    hp = &hands[index];
 
     // Taking into account repeat times saves 1-2%.
 
@@ -535,13 +568,13 @@ void Scheduler::SortCalc()
     double fanoutFactor;
 
     if (fanout < slist[0])
-      fanoutFactor = 0.;  // A bit extreme...
+      fanoutFactor = 0.; // A bit extreme...
     else if (fanout < slist[1])
       fanoutFactor = slist[2] * (fanout - slist[0]);
     else
       fanoutFactor = slist[3] * exp( (fanout - slist[1]) / slist[4] );
-    
-    group[g].pred = static_cast<int>( 
+
+    group[g].pred = static_cast<int>(
       (fanoutFactor * static_cast<double>(group[g].pred)));
   }
 
@@ -551,20 +584,20 @@ void Scheduler::SortCalc()
   {
     gp = group[g];
     int j = g;
-    for (; j && gp.pred > group[j-1].pred; --j)
-      group[j] = group[j-1];
+    for (; j && gp.pred > group[j - 1].pred; --j)
+      group[j] = group[j - 1];
     group[j] = gp;
   }
 }
 
 
-// These are specific times from a 12-core PC.  The hope is
+// These are specific times from a 12-core PC. The hope is
 // that they scale somewhat proportionally to other cases.
 
 int SORT_TRACE_TIMES[2][8] =
 {
-  { 157000,  47000,  26000,  18000,  16000,  14000,  10000,   6000 },
-  { 205000,  87000,  45000,  36000,  32000,  28000,  24000,  20000 },
+  { 157000, 47000, 26000, 18000, 16000, 14000, 10000,  6000 },
+  { 205000, 87000, 45000, 36000, 32000, 28000, 24000, 20000 },
 };
 
 // Initial value for 0 and 1 cards
@@ -583,8 +616,8 @@ double SORT_TRACE_DEPTH[2][4] =
 
 double SORT_TRACE_FANOUT[2][5] =
 {
-  { 30., 50., 0.07577,  1.515, 12. },
-  { 30., 50., 0.08166,  1.633, 13. }
+  { 30., 50., 0.07577, 1.515, 12. },
+  { 30., 50., 0.08166, 1.633, 13. }
 };
 
 void Scheduler::SortTrace()
@@ -596,14 +629,14 @@ void Scheduler::SortTrace()
   for (int g = 0; g < numGroups; g++)
   {
     strain = group[g].strain;
-    key    = group[g].hash;
-    lp     = &list[strain][key];
-    index  = lp->first;
-    hp     = &hands[index];
+    key = group[g].hash;
+    lp = &list[strain][key];
+    index = lp->first;
+    hp = &hands[index];
 
     // Taking into account repeat times.
 
-    int repeatNo  = 0;
+    int repeatNo = 0;
     int firstPrev = -1;
     group[g].pred = 0;
     do
@@ -634,7 +667,7 @@ void Scheduler::SortTrace()
     else
       depthFactor = slist[1] + (depth - 15) * slist[2];
 
-    group[g].pred = static_cast<int>( 
+    group[g].pred = static_cast<int>(
       (depthFactor * static_cast<double>(group[g].pred)));
 
     // Taking into account fanout.
@@ -644,13 +677,13 @@ void Scheduler::SortTrace()
     double fanoutFactor;
 
     if (fanout < slist[0])
-      fanoutFactor = 0.;  // A bit extreme...
+      fanoutFactor = 0.; // A bit extreme...
     else if (fanout < slist[1])
       fanoutFactor = slist[2] * (fanout - slist[0]);
     else
       fanoutFactor = slist[3] * exp( (fanout - slist[1]) / slist[4] );
-    
-    group[g].pred = static_cast<int>( 
+
+    group[g].pred = static_cast<int>(
       (fanoutFactor * static_cast<double>(group[g].pred)));
   }
 
@@ -660,22 +693,22 @@ void Scheduler::SortTrace()
   {
     gp = group[g];
     int j = g;
-    for (; j && gp.pred > group[j-1].pred; --j)
-      group[j] = group[j-1];
+    for (; j && gp.pred > group[j - 1].pred; --j)
+      group[j] = group[j - 1];
     group[j] = gp;
   }
 }
 
 
 int Scheduler::Strength(
-  deal          * dl)
+  deal * dl)
 {
   // If the strength in all suits is evenly split, then the
-  // "strength" returned is close to 0.  Maximum is 49.
+  // "strength" returned is close to 0. Maximum is 49.
 
   unsigned sp = (dl->remainCards[0][0] | dl->remainCards[2][0]) >> 2;
   unsigned he = (dl->remainCards[0][1] | dl->remainCards[2][1]) >> 2;
-  unsigned di  = (dl->remainCards[0][2] | dl->remainCards[2][2]) >> 2;
+  unsigned di = (dl->remainCards[0][2] | dl->remainCards[2][2]) >> 2;
   unsigned cl = (dl->remainCards[0][3] | dl->remainCards[2][3]) >> 2;
 
   int hsp = highCards[sp];
@@ -689,16 +722,16 @@ int Scheduler::Strength(
             (hcl >= 14 ? hcl - 14 : 14 - hcl);
 
   if (dev >= 50) dev = 49;
-  
+
   return dev;
 }
 
 
 int Scheduler::Fanout(
-  deal          * dl)
+  deal * dl)
 {
   // The fanout for a given suit and a given player is the number
-  // of bit groups, so KT982 has 3 groups.  In a given suit the 
+  // of bit groups, so KT982 has 3 groups. In a given suit the
   // maximum number over all four players is 13.
   // A void counts as the sum of the other players' groups.
 
@@ -708,7 +741,7 @@ int Scheduler::Fanout(
   for (int h = 0; h < DDS_HANDS; h++)
   {
     fanoutSuit = 0;
-    numVoids   = 0;
+    numVoids = 0;
     for (int s = 0; s < DDS_SUITS; s++)
     {
       c = static_cast<int>(dl->remainCards[h][s] >> 2);
@@ -725,10 +758,10 @@ int Scheduler::Fanout(
 
 
 schedType Scheduler::GetNumber(
-  int                   thrId)
+  int thrId)
 {
   int g = threadGroup[thrId];
-  listType  * lp;
+  listType * lp;
   schedType st;
 
   if (g == -1)
@@ -737,7 +770,7 @@ schedType Scheduler::GetNumber(
 
     if (currGroup >= numGroups - 1)
     {
-      // Out of groups.  Just an optimization not to touch the
+      // Out of groups. Just an optimization not to touch the
       // shared variable unnecessarily.
       st.number = -1;
       return st;
@@ -756,7 +789,7 @@ schedType Scheduler::GetNumber(
 
     if (g >= numGroups)
     {
-      // Out of groups.  currGroup could have changed in the 
+      // Out of groups. currGroup could have changed in the
       // meantime in another thread, so test again.
 
       st.number = -1;
@@ -766,28 +799,28 @@ schedType Scheduler::GetNumber(
     // A bit inelegant to duplicate this, but seems better than
     // the alternative, as threadGroup must get set to -1 in some
     // cases.
-    threadGroup[thrId]     = g;
+    threadGroup[thrId] = g;
     threadCurrGroup[thrId] = g;
-    group[g].repeatNo  = 0;
-    group[g].actual    = 0;
+    group[g].repeatNo = 0;
+    group[g].actual = 0;
   }
 
   // Continue with existing or new group
 
   int strain = group[g].strain;
-  int key    = group[g].hash;
+  int key = group[g].hash;
 
-  lp         = &list[strain][key];
-  st.number  = lp->first;
-  lp->first  = hands[lp->first].next;
+  lp = &list[strain][key];
+  st.number = lp->first;
+  lp->first = hands[lp->first].next;
 
   if (group[g].repeatNo == 0)
   {
     group[g].head = st.number;
-    st.repeatOf   = -1;
-    
+    st.repeatOf = -1;
+
     // Only first-solve suited hands for statistics right now.
-    hands[st.number].selectFlag = 
+    hands[st.number].selectFlag =
       (hands[st.number].strain == 4 ? 1 : 0);
   }
   else
@@ -797,8 +830,7 @@ schedType Scheduler::GetNumber(
 
     if (hands[st.number].first == hands[st.repeatOf].first)
       hands[st.number].selectFlag = 0;
-    else 
-    if (hands[st.number].strain == 4)
+    else if (hands[st.number].strain == 4)
       hands[st.number].selectFlag = 1;
     else
       hands[st.number].selectFlag = 0;
@@ -830,14 +862,14 @@ void Scheduler::EndThreadTimer(int thrId)
 {
 #ifdef _WIN32
   QueryPerformanceCounter(&timeEnd[thrId]);
-  int timeUser = (timeEnd  [thrId].QuadPart - 
+  int timeUser = (timeEnd [thrId].QuadPart -
                   timeStart[thrId].QuadPart);
 #else
   gettimeofday(&timerListUser1[no], NULL);
   int timeUser = Scheduler::timeDiff(timeEnd[thrId], timeStart[thrId]);
 #endif
 
-  hands[ threadToHand[thrId] ].time   = timeUser;
+  hands[ threadToHand[thrId] ].time = timeUser;
   hands[ threadToHand[thrId] ].thread = thrId;
 
   group[ threadCurrGroup[thrId] ].actual += timeUser;
@@ -858,7 +890,7 @@ void Scheduler::EndBlockTimer()
 {
 #ifdef _WIN32
   QueryPerformanceCounter(&blockEnd);
-  int timeUser = (blockEnd  .QuadPart - 
+  int timeUser = (blockEnd .QuadPart -
                   blockStart.QuadPart);
 #else
   gettimeofday(&blockEnd, NULL);
@@ -874,29 +906,29 @@ void Scheduler::EndBlockTimer()
 
     if (hp->selectFlag)
     {
-      timeStrain  [ hp->NTflag   ].number++;
-      timeStrain  [ hp->NTflag   ].cum += timeUser;
-      timeStrain  [ hp->NTflag   ].cumsq += timesq;
+      timeStrain [ hp->NTflag ].number++;
+      timeStrain [ hp->NTflag ].cum += timeUser;
+      timeStrain [ hp->NTflag ].cumsq += timesq;
 
-      timeRepeat  [ hp->repeatNo ].number++;
-      timeRepeat  [ hp->repeatNo ].cum += timeUser;
-      timeRepeat  [ hp->repeatNo ].cumsq += timesq;
+      timeRepeat [ hp->repeatNo ].number++;
+      timeRepeat [ hp->repeatNo ].cum += timeUser;
+      timeRepeat [ hp->repeatNo ].cumsq += timesq;
 
-      timeDepth   [ hp->depth    ].number++;
-      timeDepth   [ hp->depth    ].cum += timeUser;
-      timeDepth   [ hp->depth    ].cumsq += timesq;
+      timeDepth [ hp->depth ].number++;
+      timeDepth [ hp->depth ].cum += timeUser;
+      timeDepth [ hp->depth ].cumsq += timesq;
 
       timeStrength[ hp->strength ].number++;
       timeStrength[ hp->strength ].cum += timeUser;
       timeStrength[ hp->strength ].cumsq += timesq;
 
-      timeFanout  [ hp->fanout   ].number++;
-      timeFanout  [ hp->fanout   ].cum += timeUser;
-      timeFanout  [ hp->fanout   ].cumsq += timesq;
+      timeFanout [ hp->fanout ].number++;
+      timeFanout [ hp->fanout ].cum += timeUser;
+      timeFanout [ hp->fanout ].cumsq += timesq;
 
-      timeThread  [ hp->thread   ].number++;
-      timeThread  [ hp->thread   ].cum += timeUser;
-      timeThread  [ hp->thread   ].cumsq += timesq;
+      timeThread [ hp->thread ].number++;
+      timeThread [ hp->thread ].cum += timeUser;
+      timeThread [ hp->thread ].cumsq += timesq;
     }
 
     if (timeUser > blockMax)
@@ -915,36 +947,36 @@ void Scheduler::EndBlockTimer()
 
   for (int g = 0; g < numGroups; g++)
   {
-    int head   = group[g].head;
+    int head = group[g].head;
     int NTflag = (hands[head].strain == 4 ? 1 : 0);
 
     timeGroupActualStrain[NTflag].number++;
-    timeGroupActualStrain[NTflag].cum   += group[g].actual;
-    timeGroupActualStrain[NTflag].cumsq += 
+    timeGroupActualStrain[NTflag].cum += group[g].actual;
+    timeGroupActualStrain[NTflag].cumsq +=
       (double) group[g].actual * (double) group[g].actual;
 
-    timeGroupPredStrain  [NTflag].number++;
-    timeGroupPredStrain  [NTflag].cum   += group[g].pred;
-    timeGroupPredStrain  [NTflag].cumsq += 
+    timeGroupPredStrain [NTflag].number++;
+    timeGroupPredStrain [NTflag].cum += group[g].pred;
+    timeGroupPredStrain [NTflag].cumsq +=
       group[g].pred * group[g].pred;
 
     double diff = group[g].actual - group[g].pred;
 
-    timeGroupDiffStrain  [NTflag].number++;
-    timeGroupDiffStrain  [NTflag].cum   += diff;
-    timeGroupDiffStrain  [NTflag].cumsq += diff * diff;
+    timeGroupDiffStrain [NTflag].number++;
+    timeGroupDiffStrain [NTflag].cum += diff;
+    timeGroupDiffStrain [NTflag].cumsq += diff * diff;
   }
 
   timeBlock += timeUser;
-  timeMax   += blockMax;
+  timeMax += blockMax;
   blockMax = 0;
 }
 
 
 void Scheduler::PrintTimingList(
-  timeType      * tp,
-  int           length,
-  const char    title[])
+  timeType * tp,
+  int length,
+  const char title[])
 {
   bool empty = true;
   for (int no = 0; no < length && empty; no++)
@@ -956,8 +988,8 @@ void Scheduler::PrintTimingList(
     return;
 
   fprintf(fp, "%s\n\n", title);
-  fprintf(fp, "%5s  %8s  %12s  %12s  %12s  %12s\n", 
-    "n", "Number", "Cum time", "Average", "Sdev", "Sdev/mu");
+  fprintf(fp, "%5s %8s %12s %12s %12s %12s\n",
+          "n", "Number", "Cum time", "Average", "Sdev", "Sdev/mu");
 
   long long sn = 0, st = 0;
   double sq = 0;
@@ -971,25 +1003,25 @@ void Scheduler::PrintTimingList(
     st += tp[no].cum;
     sq += tp[no].cumsq;
 
-    double avg  = (double) tp[no].cum / (double) tp[no].number;
-    double arg  = (tp[no].cumsq / (double) tp[no].number) -
+    double avg = (double) tp[no].cum / (double) tp[no].number;
+    double arg = (tp[no].cumsq / (double) tp[no].number) -
                   (double) avg * (double) avg;
     double sdev = (arg >= 0. ? sqrt(arg) : 0.);
 
-    fprintf(fp, "%5d  %8d  %12lld  ",
-      no,
-      tp[no].number,
-      tp[no].cum);
-    fprintf(fp, "%12.0f  %12.0f  %12.2f\n", avg, sdev, sdev / avg);
+    fprintf(fp, "%5d %8d %12lld ",
+            no,
+            tp[no].number,
+            tp[no].cum);
+    fprintf(fp, "%12.0f %12.0f %12.2f\n", avg, sdev, sdev / avg);
   }
 
   if (sn)
   {
-    double avg  = (double) st / (double) sn;
-    double arg  = (sq / (double) sn) - (double) avg * (double) avg;
+    double avg = (double) st / (double) sn;
+    double arg = (sq / (double) sn) - (double) avg * (double) avg;
     double sdev = (arg >= 0. ? sqrt(arg) : 0.);
-    fprintf(fp, "  Avg  %8lld  %12lld  ", sn, st);
-    fprintf(fp, "%12.0f  %12.0f  %12.2f\n", avg, sdev, sdev / avg);
+    fprintf(fp, " Avg %8lld %12lld ", sn, st);
+    fprintf(fp, "%12.0f %12.0f %12.2f\n", avg, sdev, sdev / avg);
   }
 
   fprintf(fp, "\n");
@@ -998,25 +1030,25 @@ void Scheduler::PrintTimingList(
 
 void Scheduler::PrintTiming()
 {
-  Scheduler::PrintTimingList(timeStrain  ,   2, "Suit/NT");
-  Scheduler::PrintTimingList(timeRepeat  ,  16, "Repeat number");
-  Scheduler::PrintTimingList(timeDepth   ,  60, "Trace depth");
-  Scheduler::PrintTimingList(timeStrength,  60, "Evenness");
-  Scheduler::PrintTimingList(timeFanout  , 100, "Fanout");
-  Scheduler::PrintTimingList(timeThread  , MAXNOOFTHREADS, "Threads");
+  Scheduler::PrintTimingList(timeStrain , 2, "Suit/NT");
+  Scheduler::PrintTimingList(timeRepeat , 16, "Repeat number");
+  Scheduler::PrintTimingList(timeDepth , 60, "Trace depth");
+  Scheduler::PrintTimingList(timeStrength, 60, "Evenness");
+  Scheduler::PrintTimingList(timeFanout , 100, "Fanout");
+  Scheduler::PrintTimingList(timeThread , MAXNOOFTHREADS, "Threads");
 
-  Scheduler::PrintTimingList(timeGroupActualStrain,  2, 
-    "Group actual suit/NT");
-  Scheduler::PrintTimingList(timeGroupPredStrain  ,  2, 
-    "Group predicted suit/NT");
-  Scheduler::PrintTimingList(timeGroupDiffStrain  ,  2, 
-    "Group diff suit/NT");
+  Scheduler::PrintTimingList(timeGroupActualStrain, 2,
+                             "Group actual suit/NT");
+  Scheduler::PrintTimingList(timeGroupPredStrain , 2,
+                             "Group predicted suit/NT");
+  Scheduler::PrintTimingList(timeGroupDiffStrain , 2,
+                             "Group diff suit/NT");
 
 #if 0
   for (int i = 0; i < 10000; i++)
     if (timeHist[i] || timeHistSuit[i] || timeHistNT[i])
-      fprintf(fp, "%4d  %8d  %8d  %8d\n",
-        i, timeHist[i], timeHistSuit[i], timeHistNT[i]);
+      fprintf(fp, "%4d %8d %8d %8d\n",
+              i, timeHist[i], timeHistSuit[i], timeHistNT[i]);
   fprintf(fp, "\n");
 #endif
 
@@ -1025,20 +1057,20 @@ void Scheduler::PrintTiming()
 
   // Continuing problems with ld in long fprintf's...
   double avg = 100. * (double) timeMax / (double) timeBlock;
-  fprintf(fp, "Largest hand     %12lld  ", timeMax);
-  fprintf(fp, "%12lld     ", timeBlock);
+  fprintf(fp, "Largest hand %12lld ", timeMax);
+  fprintf(fp, "%12lld ", timeBlock);
   fprintf(fp, "%5.2f%%\n\n", avg);
 }
 
 
 #ifndef _WIN32
 int Scheduler::timeDiff(
-  timeval       x,
-  timeval       y)
+  timeval x,
+  timeval y)
 {
   /* Elapsed time, x-y, in milliseconds */
-  return 1000 * (x.tv_sec  - y.tv_sec )
-       +        (x.tv_usec - y.tv_usec) / 1000;
+  return 1000 * (x.tv_sec - y.tv_sec )
+         + (x.tv_usec - y.tv_usec) / 1000;
 }
 #endif
 
@@ -1046,11 +1078,11 @@ int Scheduler::timeDiff(
 
 
 int Scheduler::PredictedTime(
-  deal          * dl,
-  int           number)
+  deal * dl,
+  int number)
 {
   int trump = dl->trump;
-  int NT    = (trump == 4 ? 100 : 0);
+  int NT = (trump == 4 ? 100 : 0);
 
   int dev1 = Scheduler::Strength(dl);
 
@@ -1065,20 +1097,20 @@ int Scheduler::PredictedTime(
 
     if (number >= 1)
       pred = static_cast<int>(1.25 * pred);
-  
+
     if (number >= 2)
-      pred = static_cast<int> (pred * 
-        (1.185 - 0.185 * exp( -(number-1)/ 6.0)));
+      pred = static_cast<int> (pred *
+        (1.185 - 0.185 * exp( -(number - 1) / 6.0)));
   }
   else
   {
     pred = 125000 - 2500 * dev1;
     if (number >= 1)
       pred = static_cast<int>(1.2 * pred);
-  
+
     if (number >= 2)
-      pred = static_cast<int>(pred * 
-        (1.185 - 0.185 * exp( -(number-1)/ 5.5)));
+      pred = static_cast<int>(pred *
+        (1.185 - 0.185 * exp( -(number - 1) / 5.5)));
   }
 
   return pred;

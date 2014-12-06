@@ -1,7 +1,7 @@
-/* 
+/*
    DDS, a bridge double dummy solver.
 
-   Copyright (C) 2006-2014 by Bo Haglund / 
+   Copyright (C) 2006-2014 by Bo Haglund /
    2014 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
@@ -22,20 +22,19 @@ extern unsigned char dcardSuit[5], dcardRank[16];
 
 int main()
 {
-  deal          dl;
-  playTraceBin  DDplay;
-  solvedPlay    solved;
+  deal dl;
+  playTraceBin DDplay;
+  solvedPlay solved;
 
-  int           threadIndex = 0,
-                res;
-  char          line[80];
-  bool          match;
-
-  for (int handno = 0; handno < 3; handno++)
+  int threadIndex = 0, res;
+  char line[80];
+  bool match;
 
 #if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);
 #endif
+
+  for (int handno = 0; handno < 3; handno++)
   {
     dl.trump = trump[handno];
     dl.first = first[handno];
@@ -70,7 +69,7 @@ int main()
     match = ComparePlay(&solved, handno);
 
     sprintf(line, "AnalysePlayBin, hand %d: %s\n",
-      handno+1, (match ? "OK" : "ERROR"));
+            handno + 1, (match ? "OK" : "ERROR"));
 
     PrintHand(line, dl.remainCards);
 
