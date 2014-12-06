@@ -72,6 +72,7 @@ class Scheduler
     {
       int next;
       int spareKey;
+      unsigned remainCards[DDS_HANDS][DDS_SUITS];
       int NTflag;
       int first;
       int strain;
@@ -137,6 +138,10 @@ class Scheduler
       boards * bop);
 
     void FinetuneGroups();
+
+    bool SameHand(
+      int hno1,
+      int hno2);
 
     void SortSolve(),
          SortCalc(),
