@@ -749,3 +749,104 @@ Common encodings are as follows
 </tr>
 </tbody>
 </table>
+
+### Functions
+<table>
+<thead>
+<tr>
+<th>SolveBoard</th><th>SolveoardPBN</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>struct deal dl,</td><td>struct dealPBN dl,</td>
+</tr>
+<tr>
+<td>int target,</td><td>int target,</td>
+</tr>
+<tr>
+<td>int solutions,</td><td>int solutions,</td>
+</tr>
+<tr>
+<td>int mode,</td><td>int mode,</td>
+</tr>
+<tr>
+<td>struct futureTricks *futp,</td><td>struct futureTricks *futp,</td>
+</tr>
+<tr>
+<td>int threadIndex</td><td>int threadIndex</td>
+</tr>
+</tbody>
+</table>
+SolveBoardPBN is just like SolveBoard, except for the input format.
+
+SolveBoard solves a single deal “<code>dl</code>” and returns the result in “<code>*futp</code>” which must be declared before calling SolveBoard.
+
+SolveBoard is thread-safe, so several threads can call SolveBoard in parallel. Thus the user of DDS can create threads and call SolveBoard in parallel over them. The maximum number of threads is fixed in the DLL at compile time and is currently 16.  So “<code>threadIndex</code>” must be between 0 and 15 inclusive; see also the function SetMaxThreads.  Together with the PlayAnalyse functions, this is the only function that exposes the thread number to the user.
+
+There is a “<code>transposition table</code>” memory associated with each thread.  Each node in the table is effectively a position after certain cards have been played and other certain cards remain.  The table is not deleted automatically after each call to SolveBoard, so it can be reused from call to call.  However, it only really makes sense to reuse the table when the hand is very similar in the two calls.  The function will still run if this is not the case, but it won’t be as efficient.  The reuse of the transposition table can be controlled by the “<code>mode</code>” parameter, but normally this is not needed and should not be done.
+
+The three parameters “<code>target</code>”, “<code>solutions</code>” and “<code>mode</code>” together control the function.  Generally speaking, the target is the number of tricks to be won (at least) by the side to play; solutions controls how many solutions should be returned; and mode controls the search behavior.  See next page for definitions.
+
+For equivalent cards, only the highest is returned, and lower equivalent cards are encoded in the <code>futureTricks</code> structure (see “<code>equals</code>”).
+
+<table>
+<thead>
+<tr>
+<th>target</th><th>solutions</th><th>comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-1</td><td>1</td><td>Find the maximum number of tricks for the side to
+play.<br />Return only one of the optimum cards and its score.</td>
+</tr>
+<tr>
+<td>-1</td><td>2</td><td>Find the maximum number of tricks for the side to
+play.<td />Return all optimum cards and their scores.</td>
+</tr>
+<tr>
+<td>0</td><td>1</td><td>Return only one of the cards legal to play, with
+score set to 0.</td>
+</tr>
+<tr>
+<td>0</td><td>2</td><td>Return all cards that legal to play, with score set to
+0.</td>
+</tr>
+<tr>
+<td>1 .. 13</td><td>1</td><td>If score is -1: Target cannot be reached. <br />
+If score is 0: In fact no tricks at all can be won.<br />
+If score is > 0: score will always equal target, even if more tricks can be won.<br />
+One of the cards achieving the target is returned.</td>
+</tr>
+<tr>
+<td>1 .. 13</td><td>2</td><td>Return all cards meeting (at least) the target.<br />
+If the target cannot be achieved, only one card is returned with the score set as above.</td>
+</tr>
+<tr>
+<td>any</td><td>3</td><td>Return all cards that can be legally played, with their scores in descending order.</td>
+</tr>
+<tr>
+<td colspan="3">&nbsp;</td>
+</tr>
+<th>mode</th><th>Reuse TT?</th><th>comment</th>
+</tr>
+<tr>
+<td>0</td><td rowspan="2">Automatic if same trump suit and the same or nearly the same cards distribution, deal.first can be different.</td><td>Do not search to find the core if the hand to play has only one card, including its equivalents, to play. Score is set to –2 for this card, indicating that there are no alternative cards. If there are multiple choices for cards to play, search is done to find the score. This mode is very fast but you don’t always search to find the score.</td>
+</tr>
+<tr>
+<td>1</td><td rowspan="2">Always search to find the score. Even when the hand to play has only one card, with possible equivalents, to play.</td>
+</tr>
+<tr>
+<td>2</td><td>Always</td>
+</tr>
+</tbody>
+</table>
+“Reuse” means “reuse the transposition table from the previous run with the same thread number”.
+For mode = 2 it is the responsibility of the programmer using the DLL to ensure that reusing the table is safe in the actual situation. Example: Deal is the same, except for deal.first. Trump suit is the same.
+
+1 st call, East leads: `SolveBoard(deal, -1, 1, 1, &fut, 0), deal.first=1`
+2 nd call, South leads: `SolveBoard(deal, -1, 1, 2, &fut, 0), deal.first=2`
+3rd call, West leads: `SolveBoard(deal, -1, 1, 2, &fut, 0), deal.first=3`
+4th call, North leads: `SolveBoard(deal, -1, 1, 2, &fut, 0), deal.first=0`
+
