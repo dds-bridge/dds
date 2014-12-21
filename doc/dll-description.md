@@ -59,7 +59,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </thead>
 <tbody>
 <tr>
-<td rowspan="6"><code>SolveBoard</code></td><td>struct deal dl</td><td rowspan="6">Binary</td><td rowspan="6">The most basic function, solves a single hand from the beginning or from later play</td>
+<td rowspan="6"><code><a name="SolveBoard"></a>SolveBoard</code></td><td>struct deal dl</td><td rowspan="6">Binary</td><td rowspan="6">The most basic function, solves a single hand from the beginning or from later play</td>
 </tr>
 <tr>
 <td>int target</td>
@@ -77,7 +77,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="6"><code>SolveBoardPBN</code></td><td>struct dealPBN dlPBN</td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
+<td rowspan="6"><code><a name="SolveBoardPBN"></a>SolveBoardPBN</code></td><td>struct dealPBN dlPBN</td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
 </tr>
 <tr>
 <td>int target</td>
@@ -96,21 +96,21 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>CalcDDtable</code></td><td>struct ddTableDeal tableDeal</td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
+<td rowspan="2"><code><a name="CalcDDtable"</a>CalcDDtable</code></td><td>struct ddTableDeal tableDeal</td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
 </tr>
 <tr>
 <td>struct ddTableResults \* tablep</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>CalcDDtablePBN</code></td><td>struct ddTableDealPBN tableDealPBN</td><td rowspan="2">PBN</td><td rowspan="2">As CalcDDtable, but with PBN deal format.</td>
+<td rowspan="2"><code><a name="CalcDDtablePBN"></a>CalcDDtablePBN</code></td><td>struct ddTableDealPBN tableDealPBN</td><td rowspan="2">PBN</td><td rowspan="2">As CalcDDtable, but with PBN deal format.</td>
 </tr>
 <tr>
 <td>struct ddTableResults \* tablep</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="5"><code>CalcAllTables</code></td><td>struct ddTableDeals \*dealsp</td><td rowspan="5">Binary</td><td rowspan="5">Solves a number of hands in parallel.  Multi-threaded.</td>
+<td rowspan="5"><code><a name="CalcAllTables"></a>CalcAllTables</code></td><td>struct ddTableDeals \*dealsp</td><td rowspan="5">Binary</td><td rowspan="5">Solves a number of hands in parallel.  Multi-threaded.</td>
 </tr>
 <tr>
 <td>int mode</td>
@@ -126,7 +126,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="5"><code>CalcAllTablesPBN</code></td><td>struct ddTableDealsPBN \*dealsp</td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
+<td rowspan="5"><code><a name="CalcAllTablesPBN"></a>CalcAllTablesPBN</code></td><td>struct ddTableDealsPBN \*dealsp</td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
 </tr>
 <tr>
 <td>int mode</td>
@@ -142,14 +142,14 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>SolveAllBoards</code></td><td>struct boardsPBN \*bop</td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 “Chunk” functions”!</td>
+<td rowspan="2"><code><a name="SolveAllBoards"></a>SolveAllBoards</code></td><td>struct boardsPBN \*bop</td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 “Chunk” functions”!</td>
 </tr>
 <tr>
 <td>struct solvedBoards \*solvedp</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SolveAllChunksBin</code></td><td>struct boards \*bop</td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="3"><code><a name="SolveAllChunksBin"</a>SolveAllChunksBin</code></td><td>struct boards \*bop</td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
 </tr>
 <tr>
 <td>struct solvedBoards \*solvedp</td>
@@ -159,7 +159,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SolveAllChunks</code></td><td>struct boardsPBN \*bop</td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don’t use!</td>
+<td rowspan="3"><code><a name="SolveAllChunks"></a>SolveAllChunks</code></td><td>struct boardsPBN \*bop</td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don’t use!</td>
 </tr>
 <tr>
 <td>struct solvedBoards \*solvedp</td>
@@ -169,7 +169,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SolveAllChunksPBN</code></td><td>struct boardsPBN \*bop</td><td rowspan="3">PBN</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="3"><code><a name="SolveAllChunksPBN"></a>SolveAllChunksPBN</code></td><td>struct boardsPBN \*bop</td><td rowspan="3">PBN</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
 </tr>
 <tr>
 <td>struct solvedBoards \*solvedp</td>
@@ -179,7 +179,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>Par</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">No format</td><td rowspan="3">Solves for the par contracts given a DD result table.</td>
+<td rowspan="3"><code><a name="Par"></a>Par</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">No format</td><td rowspan="3">Solves for the par contracts given a DD result table.</td>
 </tr>
 <tr>
 <td>struct parResults \*presp</td>
@@ -189,7 +189,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>DealerPar</code></td><td>struct ddTableResults \*tablep</td><td rowspan="4">No format</td><td rowspan="4">Similar to Par(), but requires and uses knowledge
+<td rowspan="4"><code><a name="DealerPar"></a>DealerPar</code></td><td>struct ddTableResults \*tablep</td><td rowspan="4">No format</td><td rowspan="4">Similar to Par(), but requires and uses knowledge
 of the dealer.</td>
 </tr>
 <tr>
@@ -203,7 +203,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>DealerParBin</code></td><td>struct ddTableResults \*tablep</td><td rowspan="4">Binary</td><td rowspan="4">Similar to DealerPar, but with binary output.</td>
+<td rowspan="4"><code><a name="DealerParBin"></a>DealerParBin</code></td><td>struct ddTableResults \*tablep</td><td rowspan="4">Binary</td><td rowspan="4">Similar to DealerPar, but with binary output.</td>
 </tr>
 <tr>
 <td>struct parResultsMaster \* presp</td>
@@ -216,14 +216,14 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>ConvertToDealerTextFormat</code></td><td>struct parResultsMaster \*pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from DealerParBin.</td>
+<td rowspan="2"><code><a name="ConvertToDealerTextFormat"></a>ConvertToDealerTextFormat</code></td><td>struct parResultsMaster \*pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from DealerParBin.</td>
 </tr>
 <tr>
 <td>char \*resp</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SidesPar</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">No format</td><td rowspan="3">Par results are given for sides with the DealerPar output format.</td>
+<td rowspan="3"><code><a name="SidesPar"></a>SidesPar</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">No format</td><td rowspan="3">Par results are given for sides with the DealerPar output format.</td>
 </tr>
 <tr>
 <td>struct parResultsDealer \*presp</td>
@@ -233,7 +233,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SidesParBin</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">Binary</td><td rowspan="3">Similar to SidesPar, but with binary output.</td>
+<td rowspan="3"><code><a name="SidesParBin"></a>SidesParBin</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">Binary</td><td rowspan="3">Similar to SidesPar, but with binary output.</td>
 </tr>
 <tr>
 <td>struct parResultsMaster sidesRes[2]</td>
@@ -243,14 +243,14 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>ConvertToSidesTextFormat</code></td><td>struct parResultsMaster \*pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from SidesParBin.</td>
+<td rowspan="2"><code><a name="ConvertToSidesTextFormat"></a>ConvertToSidesTextFormat</code></td><td>struct parResultsMaster \*pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from SidesParBin.</td>
 </tr>
 <tr>
 <td>char \*resp</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>CalcPar</code></td><td>struct ddTableDeal tableDeal</td><td rowspan="4">Binary</td><td rowspan="4">Solves for both the DD result table and the par contracts. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
+<td rowspan="4"><code><a name="CalcPar"></a>CalcPar</code></td><td>struct ddTableDeal tableDeal</td><td rowspan="4">Binary</td><td rowspan="4">Solves for both the DD result table and the par contracts. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
 </tr>
 <tr>
 <td>int vulnerable</td>
@@ -263,7 +263,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>CalcParPBN</code></td><td>struct ddTableDealPBN tableDealPBN</td><td rowspan="4">PBN</td><td rowspan="4">As CalcPar, but with PBN input format. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
+<td rowspan="4"><code><a name="CalcParPBN"></a>CalcParPBN</code></td><td>struct ddTableDealPBN tableDealPBN</td><td rowspan="4">PBN</td><td rowspan="4">As CalcPar, but with PBN input format. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
 </tr>
 <tr>
 <td>struct ddTableResults \*tablep</td>
@@ -276,7 +276,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>AnalysePlayBin</code></td><td>struct deal dl</td><td rowspan="4">Binary</td><td rowspan="4">Returns the par result after each card in a particular play sequence.</td>
+<td rowspan="4"><code><a name="AnalysePlayBIn"></a>AnalysePlayBin</code></td><td>struct deal dl</td><td rowspan="4">Binary</td><td rowspan="4">Returns the par result after each card in a particular play sequence.</td>
 </tr>
 <tr>
 <td>struct playTraceBin play</td>
@@ -289,7 +289,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>AnalysePlayPBN</code></td><td>struct dealPBN dlPBN</td><td rowspan="4">PBN</td><td rowspan="4">As AnalysePlayBin, but with PBN deal format.</td>
+<td rowspan="4"><code><a name="AnalysePlayPBN"></a>AnalysePlayPBN</code></td><td>struct dealPBN dlPBN</td><td rowspan="4">PBN</td><td rowspan="4">As AnalysePlayBin, but with PBN deal format.</td>
 </tr>
 <tr>
 <td>struct playTracePBN playPBN</td>
@@ -302,7 +302,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>AnalyseAllPlaysBin</code></td><td>struct boards \*bop</td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
+<td rowspan="4"><code><a name="AnalyseAllPlaysPBN"></a>AnalyseAllPlaysBin</code></td><td>struct boards \*bop</td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
 </tr>
 <tr>
 <td>struct playTracesBin \*plp</td>
@@ -315,7 +315,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>AnalyseAllPlaysPBN</code></td><td>struct boardsPBN \*bopPBN</td><td rowspan="4">PBN</td><td rowspan="4">As AnalyseAllPlaysBin, but with PBN deal format.</td>
+<td rowspan="4"><code><a name="AnalyseAllPlaysPBN"></a>AnalyseAllPlaysPBN</code></td><td>struct boardsPBN \*bopPBN</td><td rowspan="4">PBN</td><td rowspan="4">As AnalyseAllPlaysBin, but with PBN deal format.</td>
 </tr>
 <tr>
 <td>struct playTracesPBN \*plpPBN</td>
@@ -328,15 +328,15 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td><code>SetMaxThreads</code></td><td>int userThreads</td><td>PBN</td><td>Used at initial start and can also be called with a request for allocating memory for a specified number of threads. Is apparently¸mandatory on Linux and Mac (optional on Windows)</td>
+<td><code><a name="SetMaxThreads"></a>SetMaxThreads</code></td><td>int userThreads</td><td>PBN</td><td>Used at initial start and can also be called with a request for allocating memory for a specified number of threads. Is apparently¸mandatory on Linux and Mac (optional on Windows)</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td><code>FreeMemory</code></td><td>void</td><td>&nbsp;</td><td>Frees DDS allocated dynamical memory.</td>
+<td><code><a name="FreeMemory"></a>FreeMemory</code></td><td>void</td><td>&nbsp;</td><td>Frees DDS allocated dynamical memory.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td roespan="2">ErrorMessage</td><td>int code</td><td>&nbsp;</td><td roenspan="2">Turns a return code into an error message string.</td>
+<td roespan="2"><code><a name="ErrorMessage"></a>ErrorMessage</code></td><td>int code</td><td>&nbsp;</td><td roenspan="2">Turns a return code into an error message string.</td>
 </tr>
 <tr>
 <td>
@@ -354,7 +354,7 @@ Common encodings are as follows
 </thead>
 <tbody>
 <tr>
-<td rowspan="5">Suit</td><td>Spades</td><td>0</td>
+<td rowspan="5"><a name="Suit"></a>Suit</td><td>Spades</td><td>0</td>
 </tr>
 <tr><td>Hearts</td><td>1</td>
 </tr>
@@ -368,7 +368,7 @@ Common encodings are as follows
 <td>NT</td><td>4</td>
 </tr>
 <tr><td colspan="3">&nbsp;</td></tr>
-<td rowspan="4">Hand</td><td>North</td><td>0</td>
+<td rowspan="4"><a name="Hand"></a>Hand</td><td>North</td><td>0</td>
 </tr>
 <tr><td>East</td><td>1</td>
 </tr>
@@ -379,12 +379,12 @@ Common encodings are as follows
 <td>West</td><td>3</td>
 </tr>
 <tr><td colspan="2">&nbsp;</td></tr>
-<td rowspan="2">Side</td><td>N-S</td><td>0</td>
+<td rowspan="2"><a name="Side"></a>Side</td><td>N-S</td><td>0</td>
 </tr>
 <tr><td>E-W</td><td>1</td>
 </tr>
 <tr><td colspan="3">&nbsp;</td></tr>
-<td rowspan="4">Card</td><td>Bit 2</td><td>Rank of deuce</td>
+<td rowspan="4"><a name="Card"></a>Card</td><td>Bit 2</td><td>Rank of deuce</td>
 </tr>
 <tr><td>...</td><td>&nbsp;</td>
 </tr>
@@ -395,13 +395,14 @@ Common encodings are as follows
 <td>Bit 14</td><td>Rank of ace</td>
 </tr>
 <tr><td colspan="3">&nbsp;</td></tr>
-<td>Holding</td><td colspan="2">A value of 16388 = 16384 + 4 is the encoding for the holding “A2” (ace and deuce).<br />The two lowest bits are always zero.</td>
+<td><a name="Holding"></a>Holding</td><td colspan="2">A value of 16388 = 16384 + 4 is the encoding for the holding “A2” (ace and deuce).<br />The two lowest bits are always zero.</td>
 </tr>
 <tr><td colspan="3">&nbsp;</td></tr>
-<td>PBN</td><td colspan="2">Example:<br />W:T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K</td>
+<td><a name="PBN"></a>PBN</td><td colspan="2">Example:<br />W:T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K</td>
 </tr>
 </tbody>
 </table>
+
 <table>
 <thead>
 <tr>
@@ -410,7 +411,7 @@ Common encodings are as follows
 </thead>
 <tbody>
 <tr>
-<td>deal</td><td>int trump;</td><td>Suit encoding</td>
+<td><a name="deal"></a>deal</td><td>int trump;</td><td>Suit encoding</td>
 </tr>
 <tr>
 <td></td><td>int first;</td><td>The hand leading to the trick. Hand encoding.</td>
@@ -431,7 +432,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>dealPBN</td><td>int trump;</td><td>Suit encoding</td>
+<td><a name="dealPBN"></a>dealPBN</td><td>int trump;</td><td>Suit encoding</td>
 </tr>
 <tr>
 <td></td><td>int first;</td><td>The hand leading to the trick. Hand encoding.</td>
@@ -453,7 +454,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>ddTableDeal</td><td>unsigned int cards[4][4];</td><td>Encodes a deal. First index is hand. Hand encoding. Second index is suit. Suit encoding. Holding</td>
+<td><a name="ddTableDeal"></a>ddTableDeal</td><td>unsigned int cards[4][4];</td><td>Encodes a deal. First index is hand. Hand encoding. Second index is suit. Suit encoding. Holding</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -463,7 +464,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
+<td><a name="ddTableDeals"><a/>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
 </tr>
 <tr>
 <td></td><td>struct ddTableDeal deals[X];</td><td>X = MAXNOOFTABLES \* DDS_STRAINS</td>
@@ -476,7 +477,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure</td>
+<td><a name="ddTableDeals"><a/>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure</td>
 </tr>
 <tr>
 <td></td><td>struct ddTableDealPBN deals[MAXNOOFBOARDS/4];</td><td></td>
@@ -489,7 +490,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>boards</td><td>int noOfBoards;</td><td>Number of boards</td>
+<td><a name="boards"></a>boards</td><td>int noOfBoards;</td><td>Number of boards</td>
 </tr>
 <tr>
 <td></td><td>struct deal[MAXNOOFBOARDS];</td><td></td>
@@ -511,7 +512,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>boardsPBN</td><td>int noOfBoards;</td><td>Number of boards</td>
+<td><a name="boardsPBN"></a>boardsPBN</td><td>int noOfBoards;</td><td>Number of boards</td>
 </tr>
 <tr>
 <td></td><td>struct dealPBN[MAXNOOFBOARDS];</td><td></td>
@@ -532,7 +533,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>futureTricks</td><td>int nodes;</td><td>Number of nodes searched by the DD solver.</td>
+<td><a name="futureTricks"></a>futureTricks</td><td>int nodes;</td><td>Number of nodes searched by the DD solver.</td>
 </tr>
 <tr>
 <td></td><td>int cards;</td><td>Number of cards for which a result is returned.  May be all the cards, but equivalent ranks are omitted, so for a holding of KQ76 only the cards K and 7 would be returned, and the “equals” field below would be 2048 (Q) for the king and 54 (6) for the 7.</td>
@@ -557,7 +558,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>solvedBoards</td><td>int noOfBoards;</td><td></td>
+<td><a name="solvedBoards"></a>solvedBoards</td><td>int noOfBoards;</td><td></td>
 </tr>
 <tr>
 <td></td><td>struct futureTricks solvedBoard [MAXNOOFBOARDS];</td><td></td>
@@ -570,7 +571,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>ddTableResults</td><td>int resTable[5][4];</td><td>Encodes the solution of a deal for combinations of denomination and declarer.  First index is denomination. Suit encoding.  Second index is declarer.  Hand encoding.  Each entry is a number of tricks.</td>
+<td><a name="ddTableResults"></a>ddTableResults</td><td>int resTable[5][4];</td><td>Encodes the solution of a deal for combinations of denomination and declarer.  First index is denomination. Suit encoding.  Second index is declarer.  Hand encoding.  Each entry is a number of tricks.</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -580,7 +581,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>ddTablesRes</td><td>int noOfBoards;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
+<td><a name="ddTablesRes"></a>ddTablesRes</td><td>int noOfBoards;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
 </tr>
 <tr>
 <td></td><td>struct ddTableResults results[X];</td><td>X = MAXNOOFTABLES \* DDS_STRAINS</td>
@@ -593,7 +594,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>parResults</td><td>char parScore[2][16];</td><td>First index is NS/EW. Side encoding.</td>
+<td><a name="parResults"></a>parResults</td><td>char parScore[2][16];</td><td>First index is NS/EW. Side encoding.</td>
 </tr>
 <tr>
 <td></td><td>char parContractsString[2][128];</td><td>First index is NS/EW.  Side encoding.</td>
@@ -606,7 +607,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>allParResults</td><td>struct parResults[MAXNOOFTABLES];</td><td>There are up to 20 declarer/strain combinations per DD table</td>
+<td><a name="allParResults"></a>allParResults</td><td>struct parResults[MAXNOOFTABLES];</td><td>There are up to 20 declarer/strain combinations per DD table</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -616,7 +617,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>parResultsDealer</td><td>int number;</td><td></td>
+<td><a name="parResultsDealer"></a>parResultsDealer</td><td>int number;</td><td></td>
 </tr>
 <tr>
 <td></td><td>int score;</td><td></td>
@@ -632,7 +633,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>parResultsMaster</td><td>int score;</td><td></td>
+<td><a name="parResultsMaster"></a>parResultsMaster</td><td>int score;</td><td></td>
 </tr>
 <tr>
 <td></td><td>int number;</td><td></td>
@@ -648,7 +649,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>contractType</td><td>int underTricks;</td><td></td>
+<td><a name="contractType"</a>contractType</td><td>int underTricks;</td><td></td>
 </tr>
 <tr>
 <td></td><td>int overTricks;</td><td></td>
@@ -670,7 +671,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>parTextResults</td><td>char parText[2][128];</td><td></td>
+<td><a name="parTextResults"></a>parTextResults</td><td>char parText[2][128];</td><td></td>
 </tr>
 <tr>
 <td></td><td>int equal;</td><td></td>
@@ -683,7 +684,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>playTraceBin</td><td>int number;</td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
+<td><a name="playTraceBin"></a>playTraceBin</td><td>int number;</td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
 </tr>
 <tr>
 <td></td><td>int suit[52];</td><td>Suit encoding.</td>
@@ -699,7 +700,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>playTracePBN</td><td>int number;</td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
+<td><a name="playTracePBN"></a>playTracePBN</td><td>int number;</td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
 </tr>
 <tr>
 <td></td><td>int cards[106];</td><td>String of cards with no space in between, also not between tricks.  Each card consists of a suit (C/D/H/S) and then a rank (2 .. A).  The string must be null-terminated.</td>
@@ -712,7 +713,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>playTracesBin</td><td>int noOfBoards;</td><td></td>
+<td><a name="playTracesBin"></a>playTracesBin</td><td>int noOfBoards;</td><td></td>
 </tr>
 <tr>
 <td></td><td>struct playTraceBin plays[MAXNOOFBOARDS / 10];</td><td></td>
@@ -725,7 +726,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>playTracesPBN</td><td>int noOfBoards;</td><td></td>
+<td><a name="playTracesPBN"></a>playTracesPBN</td><td>int noOfBoards;</td><td></td>
 </tr>
 <tr>
 <td></td><td>struct playTracePBN plays[MAXNOOFBOARDS / 10];</td><td></td>
@@ -738,7 +739,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>solvedPlay</td><td>int number;</td><td></td>
+<td><a name="solvedPlay"></a>solvedPlay</td><td>int number;</td><td></td>
 </tr>
 <tr>
 <td></td><td>int tricks[53];</td><td>Starting position and up to 52 cards</td>
@@ -751,7 +752,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td>solvedPlays</td><td>int noOfBoards;</td><td></td>
+<td><a name="solvedPlays"></a>solvedPlays</td><td>int noOfBoards;</td><td></td>
 </tr>
 <tr>
 <td></td><td>struct solvedPlay solved[MAXNOOFBOARDS];</td><td></td>
@@ -764,7 +765,7 @@ Common encodings are as follows
 <table>
 <thead>
 <tr>
-<th>SolveBoard</th><th>SolveoardPBN</th>
+<th>SolveBoard</th><th>SolveBoardPBN</th>
 </tr>
 </thead>
 <tbody>
