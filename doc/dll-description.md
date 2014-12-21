@@ -18,7 +18,7 @@ The basic functions `SolveBoard` and `SolveBoardPBN` each solve  a single hand a
 
 ### The Multi-Thread Double Dummy Solver Functions
 
-The double dummy trick values for all 5 * 4 = 20 possible combinations of a hand’s trump strain and declarer hand alternatives are solved by a single call to one of the functions `CalcDDtable` and `CalcDDtablePBN`. Threads are allocated per strain. in order to save computations.
+The double dummy trick values for all 5 \* 4 = 20 possible combinations of a hand’s trump strain and declarer hand alternatives are solved by a single call to one of the functions `CalcDDtable` and `CalcDDtablePBN`. Threads are allocated per strain. in order to save computations.
 
 To obtain better utilization of available threads, the double dummy (DD) tables can be grouped using one of the functions `CalcAllTables` and `CalcAllTablesPBN`.
 
@@ -51,7 +51,6 @@ The par calculation is executed using a single thread. But the calculation is ve
 
 The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `AnalyseAllPlaysPBN` take the played cards in a game or games and calculate and present their double dummy values.
 
-
 <table>
 <thead>
 <tr>
@@ -72,7 +71,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <td>int mode</td>
 </tr>
 <tr>
-<td>struct futureTricks *futp</td>
+<td>struct futureTricks \*futp</td>
 </tr>
 <tr><td>int threadIndex</td>
 </tr>
@@ -90,7 +89,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <td>int mode</td>
 </tr>
 <tr>
-<td>struct futureTricks *futp</td>
+<td>struct futureTricks \*futp</td>
 </tr>
 <tr>
 <td>int threadIndex</td>
@@ -100,18 +99,18 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <td rowspan="2"><code>CalcDDtable</code></td><td>struct ddTableDeal tableDeal</td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
 </tr>
 <tr>
-<td>struct ddTableResults * tablep</td>
+<td>struct ddTableResults \* tablep</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
 <td rowspan="2"><code>CalcDDtablePBN</code></td><td>struct ddTableDealPBN tableDealPBN</td><td rowspan="2">PBN</td><td rowspan="2">As CalcDDtable, but with PBN deal format.</td>
 </tr>
 <tr>
-<td>struct ddTableResults * tablep</td>
+<td>struct ddTableResults \* tablep</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="5"><code>CalcAllTables</code></td><td>struct ddTableDeals *dealsp</td><td rowspan="5">Binary</td><td rowspan="5">Solves a number of hands in parallel.  Multi-threaded.</td>
+<td rowspan="5"><code>CalcAllTables</code></td><td>struct ddTableDeals \*dealsp</td><td rowspan="5">Binary</td><td rowspan="5">Solves a number of hands in parallel.  Multi-threaded.</td>
 </tr>
 <tr>
 <td>int mode</td>
@@ -120,14 +119,14 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <td>int trumpFilter[5]</td>
 </tr>
 <tr>
-<td>struct ddTablesRes *resp</td>
+<td>struct ddTablesRes \*resp</td>
 </tr>
 <tr>
-<td>struct allParResults *pres</td>
+<td>struct allParResults \*pres</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="5"><code>CalcAllTablesPBN</code></td><td>struct ddTableDealsPBN *dealsp</td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
+<td rowspan="5"><code>CalcAllTablesPBN</code></td><td>struct ddTableDealsPBN \*dealsp</td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
 </tr>
 <tr>
 <td>int mode</td>
@@ -136,65 +135,65 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <td>int trumpFilter[5]</td>
 </tr>
 <tr>
-<td>struct ddTablesRes *resp</td>
+<td>struct ddTablesRes \*resp</td>
 </tr>
 <tr>
-<td>struct allParResults *pres</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="2"><code>SolveAllBoards</code></td><td>struct boardsPBN *bop</td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 “Chunk” functions”!</td>
-</tr>
-<tr>
-<td>struct solvedBoards *solvedp</td>
+<td>struct allParResults \*pres</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SolveAllChunksBin</code></td><td>struct boards *bop</td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="2"><code>SolveAllBoards</code></td><td>struct boardsPBN \*bop</td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 “Chunk” functions”!</td>
 </tr>
 <tr>
-<td>struct solvedBoards *solvedp</td>
+<td>struct solvedBoards \*solvedp</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="3"><code>SolveAllChunksBin</code></td><td>struct boards \*bop</td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+</tr>
+<tr>
+<td>struct solvedBoards \*solvedp</td>
 </tr>
 <tr>
 <td>int chunkSize</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SolveAllChunks</code></td><td>struct boardsPBN *bop</td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don’t use!</td>
+<td rowspan="3"><code>SolveAllChunks</code></td><td>struct boardsPBN \*bop</td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don’t use!</td>
 </tr>
 <tr>
-<td>struct solvedBoards *solvedp</td>
+<td>struct solvedBoards \*solvedp</td>
 </tr>
 <tr>
 <td>int chunkSize</td>
 </tr>
 <td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SolveAllChunksPBN</code></td><td>struct boardsPBN *bop</td><td rowspan="3">PBN</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="3"><code>SolveAllChunksPBN</code></td><td>struct boardsPBN \*bop</td><td rowspan="3">PBN</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
 </tr>
 <tr>
-<td>struct solvedBoards *solvedp</td>
+<td>struct solvedBoards \*solvedp</td>
 </tr>
 <tr>
 <td>int chunkSize</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>Par</code></td><td>struct ddTableResults *tablep</td><td rowspan="3">No format</td><td rowspan="3">Solves for the par contracts given a DD result table.</td>
+<td rowspan="3"><code>Par</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">No format</td><td rowspan="3">Solves for the par contracts given a DD result table.</td>
 </tr>
 <tr>
-<td>struct parResults *presp</td>
+<td>struct parResults \*presp</td>
 </tr>
 <tr>
 <td>int vulnerable</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>DealerPar</code></td><td>struct ddTableResults *tablep</td><td rowspan="4">No format</td><td rowspan="4">Similar to Par(), but requires and uses knowledge
+<td rowspan="4"><code>DealerPar</code></td><td>struct ddTableResults \*tablep</td><td rowspan="4">No format</td><td rowspan="4">Similar to Par(), but requires and uses knowledge
 of the dealer.</td>
 </tr>
 <tr>
-<td>struct parResultsDealer *presp</td>
+<td>struct parResultsDealer \*presp</td>
 </tr>
 <tr>
 <td>int dealer</td>
@@ -204,10 +203,10 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>DealerParBin</code></td><td>struct ddTableResults *tablep</td><td rowspan="4">Binary</td><td rowspan="4">Similar to DealerPar, but with binary output.</td>
+<td rowspan="4"><code>DealerParBin</code></td><td>struct ddTableResults \*tablep</td><td rowspan="4">Binary</td><td rowspan="4">Similar to DealerPar, but with binary output.</td>
 </tr>
 <tr>
-<td>struct parResultsMaster * presp</td>
+<td>struct parResultsMaster \* presp</td>
 </tr>
 <tr>
 <td>int dealer</td>
@@ -217,24 +216,24 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>ConvertToDealerTextFormat</code></td><td>struct parResultsMaster *pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from DealerParBin.</td>
+<td rowspan="2"><code>ConvertToDealerTextFormat</code></td><td>struct parResultsMaster \*pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from DealerParBin.</td>
 </tr>
 <tr>
-<td>char *resp</td>
+<td>char \*resp</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SidesPar</code></td><td>struct ddTableResults *tablep</td><td rowspan="3">No format</td><td rowspan="3">Par results are given for sides with the DealerPar output format.</td>
+<td rowspan="3"><code>SidesPar</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">No format</td><td rowspan="3">Par results are given for sides with the DealerPar output format.</td>
 </tr>
 <tr>
-<td>struct parResultsDealer *presp</td>
+<td>struct parResultsDealer \*presp</td>
 </tr>
 <tr>
 <td>int vulnerable</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>SidesParBin</code></td><td>struct ddTableResults *tablep</td><td rowspan="3">Binary</td><td rowspan="3">Similar to SidesPar, but with binary output.</td>
+<td rowspan="3"><code>SidesParBin</code></td><td>struct ddTableResults \*tablep</td><td rowspan="3">Binary</td><td rowspan="3">Similar to SidesPar, but with binary output.</td>
 </tr>
 <tr>
 <td>struct parResultsMaster sidesRes[2]</td>
@@ -244,10 +243,10 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>ConvertToSidesTextFormat</code></td><td>struct parResultsMaster *pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from SidesParBin.</td>
+<td rowspan="2"><code>ConvertToSidesTextFormat</code></td><td>struct parResultsMaster \*pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from SidesParBin.</td>
 </tr>
 <tr>
-<td>char *resp</td>
+<td>char \*resp</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
@@ -257,23 +256,23 @@ of the dealer.</td>
 <td>int vulnerable</td>
 </tr>
 <tr>
-<td>struct ddTableResults *tablep</td>
+<td>struct ddTableResults \*tablep</td>
 </tr>
 <tr>
-<td>struct parResults *presp</td>
+<td>struct parResults \*presp</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
 <td rowspan="4"><code>CalcParPBN</code></td><td>struct ddTableDealPBN tableDealPBN</td><td rowspan="4">PBN</td><td rowspan="4">As CalcPar, but with PBN input format. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
 </tr>
 <tr>
-<td>struct ddTableResults *tablep</td>
+<td>struct ddTableResults \*tablep</td>
 </tr>
 <tr>
 <td>int vulnerable</td>
 </tr>
 <tr>
-<td>struct parResults *presp</td>
+<td>struct parResults \*presp</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
@@ -283,7 +282,7 @@ of the dealer.</td>
 <td>struct playTraceBin play</td>
 </tr>
 <tr>
-<td>struct solvedPlay *solvedp</td>
+<td>struct solvedPlay \*solvedp</td>
 </tr>
 <tr>
 <td>int thrId</td>
@@ -296,33 +295,33 @@ of the dealer.</td>
 <td>struct playTracePBN playPBN</td>
 </tr>
 <tr>
-<td>struct solvedPlay *solvedp</td>
+<td>struct solvedPlay \*solvedp</td>
 </tr>
 <tr>
 <td>int thrId</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>AnalyseAllPlaysBin</code></td><td>struct boards *bop</td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
+<td rowspan="4"><code>AnalyseAllPlaysBin</code></td><td>struct boards \*bop</td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
 </tr>
 <tr>
-<td>struct playTracesBin *plp</td>
+<td>struct playTracesBin \*plp</td>
 </tr>
 <tr>
-<td>struct solvedPlays *solvedp</td>
+<td>struct solvedPlays \*solvedp</td>
 </tr>
 <tr>
 <td>int chunkSize</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>AnalyseAllPlaysPBN</code></td><td>struct boardsPBN *bopPBN</td><td rowspan="4">PBN</td><td rowspan="4">As AnalyseAllPlaysBin, but with PBN deal format.</td>
+<td rowspan="4"><code>AnalyseAllPlaysPBN</code></td><td>struct boardsPBN \*bopPBN</td><td rowspan="4">PBN</td><td rowspan="4">As AnalyseAllPlaysBin, but with PBN deal format.</td>
 </tr>
 <tr>
-<td>struct playTracesPBN *plpPBN</td>
+<td>struct playTracesPBN \*plpPBN</td>
 </tr>
 <tr>
-<td>struct solvedPlays *solvedp</td>
+<td>struct solvedPlays \*solvedp</td>
 </tr>
 <tr>
 <td>int chunkSize</td>
@@ -343,8 +342,10 @@ of the dealer.</td>
 <td>
 </tbody>
 </table>
-### Data sructure
+
+## Data structure
 Common encodings are as follows
+
 <table>
 <thead>
 <tr>
@@ -465,7 +466,7 @@ Common encodings are as follows
 <td>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
 </tr>
 <tr>
-<td></td><td>struct ddTableDeal deals[X];</td><td>X = MAXNOOFTABLES * DDS_STRAINS</td>
+<td></td><td>struct ddTableDeal deals[X];</td><td>X = MAXNOOFTABLES \* DDS_STRAINS</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -582,7 +583,7 @@ Common encodings are as follows
 <td>ddTablesRes</td><td>int noOfBoards;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
 </tr>
 <tr>
-<td></td><td>struct ddTableResults results[X];</td><td>X = MAXNOOFTABLES * DDS_STRAINS</td>
+<td></td><td>struct ddTableResults results[X];</td><td>X = MAXNOOFTABLES \* DDS_STRAINS</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -758,7 +759,8 @@ Common encodings are as follows
 </tbody>
 </table>
 
-### Functions
+## Functions
+
 <table>
 <thead>
 <tr>
@@ -779,16 +781,17 @@ Common encodings are as follows
 <td>int mode,</td><td>int mode,</td>
 </tr>
 <tr>
-<td>struct futureTricks *futp,</td><td>struct futureTricks *futp,</td>
+<td>struct futureTricks \*futp,</td><td>struct futureTricks \*futp,</td>
 </tr>
 <tr>
 <td>int threadIndex</td><td>int threadIndex</td>
 </tr>
 </tbody>
 </table>
+
 SolveBoardPBN is just like SolveBoard, except for the input format. Historically it was one of the first functions, and it exposes the thread index directly to the user. Later functions generally don’t do that, and they also hide the implementation details such as transposition tables, see below.
 
-SolveBoard solves a single deal “<code>dl</code>” and returns the result in “<code>*futp</code>” which must be declared before calling SolveBoard.
+SolveBoard solves a single deal “<code>dl</code>” and returns the result in “<code>\*futp</code>” which must be declared before calling SolveBoard.
 
 If you have multiple hands to solve, it is always better to group them together into a single function call than to use SolveBoard.
 
@@ -852,6 +855,7 @@ If the target cannot be achieved, only one card is returned with the score set a
 </tr>
 </tbody>
 </table>
+
 Note: mode no longer always has this effect internally in DDS. We think mode is no longer useful,
 and we may use it for something else in the future. If you think you need it, let us know!
 
@@ -877,12 +881,13 @@ For mode = 2 it is the responsibility of the programmer using the DLL to ensure 
 <td>struct ddTableDeal tableDeal</td><td>struct ddTableDealPBN tableDealPBN</td>
 </tr>
 <tr>
-<td>struct ddTableResults * tablep</td><td>struct ddTableResults * tablep</td>
+<td>struct ddTableResults \* tablep</td><td>struct ddTableResults \* tablep</td>
 </tr>
 </tbody>
 </table>
+
 CalcDDtablePBN is just like CalcDDtable, except for the input format. 
-CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy values for the initial 52 cards for all the 20 combinations of denomination and declarer in “ *tablep” , which must be declared before calling CalcDDtable.
+CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy values for the initial 52 cards for all the 20 combinations of denomination and declarer in “ \*tablep” , which must be declared before calling CalcDDtable.
 
 <table>
 <thead>
@@ -892,7 +897,7 @@ CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy 
 </thead>
 <tbody>
 <tr>
-<td>struct ddTableDeals *dealsp</td><td>struct ddTableDealsPBN *dealsp</td>
+<td>struct ddTableDeals \*dealsp</td><td>struct ddTableDealsPBN \*dealsp</td>
 </tr>
 <tr>
 <td>int mode</td><td>int mode</td>
@@ -901,16 +906,17 @@ CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy 
 <td>int trumpFilter[5]</td><td>int trumpFilter[5]</td>
 </tr>
 <tr>
-<td>struct ddTablesRes *resp</td><td>struct ddTablesRes *resp</td>
+<td>struct ddTablesRes \*resp</td><td>struct ddTablesRes \*resp</td>
 </tr>
 <tr>
-<td>struct allParResults *presp</td><td>struct allParResults *presp</td>
+<td>struct allParResults \*presp</td><td>struct allParResults \*presp</td>
 </tr>
 </tbody>
 </table>
+
 CalcAllTablesPBN is just like CalcAllTables, except for the input format.
 
-CallAllTables calculates the double dummy values of the denomination/declarer hand combinations in “*dealsp” for a number of DD tables in parallel. This increases the speed compared to calculating these values using a CalcDDtable call for each DD table. The results are returned in “*resp” which must be defined before CalcAllTables is called.
+CallAllTables calculates the double dummy values of the denomination/declarer hand combinations in “\*dealsp” for a number of DD tables in parallel. This increases the speed compared to calculating these values using a CalcDDtable call for each DD table. The results are returned in “\*resp” which must be defined before CalcAllTables is called.
 
 The “mode” parameter contains the vulnerability (Vulnerable encoding; not to be confused with the SolveBoard mode) for use in the par calculation. It is set to -1 if no par calculation is to be performed.
 
@@ -951,21 +957,22 @@ The maximum number of DD tables in a CallAllTables call depends on the number of
 </thead>
 <tbody>
 <tr>
-<td>struct boards *bop</td><td>struct boards *bop</td><td>struct boardsPBN *bop</td>
+<td>struct boards \*bop</td><td>struct boards \*bop</td><td>struct boardsPBN \*bop</td>
 </tr>
 <tr>
-<td>struct solvedBoards * solvedp</td><td>struct solvedBoards *solvedp</td><td>struct solvedBoards *solvedp</td>
+<td>struct solvedBoards \* solvedp</td><td>struct solvedBoards \*solvedp</td><td>struct solvedBoards \*solvedp</td>
 </tr>
 <tr>
 <td>int chunkSize</td><td>int chunkSize</td>
 </tr>
 </tbody>
 </table>
+
 `SolveAllChunks` is an alias for SolveAllChunksPBN; don’t use it.
 
 `SolveAllBoards` used to be an alias for SolveAllChunksPBN with a chunkSize of 1; however this has been changed in v2.8, and we now recommend only to use SolveAllBoards and not the chunk functions any more; explanation follows.
 
-The SolveAll* functions invoke SolveBoard several times in parallel in multiple threads, rather than sequentially in a single thread. This increases execution speed. Up to 200 boards are permitted per call.
+The SolveAll\* functions invoke SolveBoard several times in parallel in multiple threads, rather than sequentially in a single thread. This increases execution speed. Up to 200 boards are permitted per call.
 
 It is important to understand the parallelism and the concept of a chunk.
 
@@ -985,10 +992,10 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 </thead>
 <tbody>
 <tr>
-<td>struct ddTableResults *tablep</td><td>struct ddTableResults *tablep</td>
+<td>struct ddTableResults \*tablep</td><td>struct ddTableResults \*tablep</td>
 </tr>
 <tr>
-<td>struct parResults *presp</td><td>struct parResultsDealer *presp</td>
+<td>struct parResults \*presp</td><td>struct parResultsDealer \*presp</td>
 </tr>
 <tr>
 <td>int vulnerable</td><td>int dealer</td>
@@ -1003,10 +1010,10 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 <th>Sidespar</th><th>&nbsp;</th>
 </tr>
 <tr>
-<td>struct ddTableResults *tablep</td><td>&nbsp;</td>
+<td>struct ddTableResults \*tablep</td><td>&nbsp;</td>
 </tr>
 <tr>
-<td>struct parResultsDealer *sidesRes[2]</td><td>&nbsp;</td>
+<td>struct parResultsDealer \*sidesRes[2]</td><td>&nbsp;</td>
 </tr>
 <tr>
 <td>int vulnerable</td><td>&nbsp;</td>
@@ -1018,10 +1025,10 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 <th>DealerParBin</th><th>SidesParBin</th>
 </tr>
 <tr>
-<td>struct ddTableResults *tablep</td><td>struct ddTableResults *tablep</td>
+<td>struct ddTableResults \*tablep</td><td>struct ddTableResults \*tablep</td>
 </tr>
 <tr>
-<td>struct parResultsMaster * presp</td><td>struct parResultsMaster * presp</td>
+<td>struct parResultsMaster \* presp</td><td>struct parResultsMaster \* presp</td>
 </tr>
 <tr>
 <td>int vulnerable</td><td>int dealer</td>
@@ -1036,13 +1043,14 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 <th>ConvertToDealerTextForamat</th><th>ConvertToSidesTextFormat</th>
 </tr>
 <tr>
-<td>struct parResultsMaster *pres</td><td>struct parResultsMaster *pres</td>
+<td>struct parResultsMaster \*pres</td><td>struct parResultsMaster \*pres</td>
 </tr>
 <tr>
-<td>char *resp</td><td>struct parTextResults *resp</td>
+<td>char \*resp</td><td>struct parTextResults \*resp</td>
 </tr>
 </tbody>
 </table>
+
 The functions Par, DealerPar, SidesPar, DealerParBin and SidesParBin calculate the par score and par contracts of a given double-dummy solution matrix `*tablep` which would often be the solution of a call to CalcDDtable. Since the input is a table, there is no PBN and non-PBN version of these functions.
 
 Before the functions can be called, a structure of the type “parResults” , `parResultsDealer` or `parResultsMaster` must already have been defined. 
@@ -1061,8 +1069,7 @@ There may be several par contracts, for instance 3NT just making and 5C just mak
 
 Par() returns the par contracts separated by commas. Possible different trick levels of par score contracts are enumerated in the contract description, e.g the possible trick levels 3, 4 and 5 in no trump are given as 345N. Examples:
 
-* “NS:NS 23S,NS 23H”. North and South as declarer make 2 or 3 spades and hearts contracts, 2 spades and 2 hearts with an overtrick. This is from the NS view, shown by “NS:” meaning that NS made the first bid. Note that this information is actually not enough, as it may be that N and S can make a given contract and that either E or W can bid this same contract (for instance 1NT) before N but not before S. So in the rare cases where the NS and EW sides are not the same, the results will take some manual
-inspection.
+* “NS:NS 23S,NS 23H”. North and South as declarer make 2 or 3 spades and hearts contracts, 2 spades and 2 hearts with an overtrick. This is from the NS view, shown by “NS:” meaning that NS made the first bid. Note that this information is actually not enough, as it may be that N and S can make a given contract and that either E or W can bid this same contract (for instance 1NT) before N but not before S. So in the rare cases where the NS and EW sides are not the same, the results will take some manual inspection.
 * “NS:NS 23S,N 23H”: Only North makes 3 hearts.
 * “EW:NS 23S,N 23H”: This time the result is the same when EW open the bidding.
 
@@ -1070,7 +1077,7 @@ DealerPar() and SidesPar() give each par contract as a separate text string:
 
 * “4S*-EW-1” means that E and W can both sacrifice in four spades doubled, going down one trick.
 * “3N-EW” means that E and W can both make exactly 3NT.
-* “4N-W+1” means that only West can make 4NT +1. In the last example, 5NT just making can also be considered a par contract, but North-South don’t have a profitable sacrifice against 4NT, so the par contract is shown in this way. If North-South did indeed have a profitable sacrifice, perhaps 5C*_NS-2, then par contract would have been shown as “5N-W”. Par() would show “4N-W+1” as “W 45N”.
+* “4N-W+1” means that only West can make 4NT +1. In the last example, 5NT just making can also be considered a par contract, but North-South don’t have a profitable sacrifice against 4NT, so the par contract is shown in this way. If North-South did indeed have a profitable sacrifice, perhaps 5C\*_NS-2, then par contract would have been shown as “5N-W”. Par() would show “4N-W+1” as “W 45N”.
 * SidesPar() give the par contract text strings as described above for each side.
 
 DealerParBin and SidesParBin are similar to DealerPar and SidesPar, respectively, except that both functions give the output results in binary using the `parResultsMaster` structure. This simplifies the writing of a conversion program to get an own result output format. Examples of such programs are ConvertToDealerTextFormat and  ConvertToSidesTextFormat.
@@ -1100,7 +1107,7 @@ EW Par 120: W 1NT+1” when it matters who starts the bidding.
 <td>struct playTraceBin play</td><td>struct playTracePBN playPBN</td>
 </tr>
 <tr>
-<td>struct solvedPlay *solvedp</td><td>struct solvedPlay *solvedp</td>
+<td>struct solvedPlay \*solvedp</td><td>struct solvedPlay \*solvedp</td>
 </tr>
 <tr>
 <td>int thrId</td><td>int thrId</td>
@@ -1126,22 +1133,23 @@ The number of tricks are always seen from declarer’s viewpoint (he is the one 
 </thead>
 <thead>
 <tr>
-<td>struct boards *bop</td><td>struct boardsPBN *bopPBN</td>
+<td>struct boards \*bop</td><td>struct boardsPBN \*bopPBN</td>
 </tr>
 <tr>
-<td>struct playTracesBin *plp</td><td>struct playTracesPBN *plpPBN</td>
+<td>struct playTracesBin \*plp</td><td>struct playTracesPBN \*plpPBN</td>
 </tr>
 <tr>
-<td>struct solvedPlays *solvedp</td><td>struct solvedPlays *solvedp</td>
+<td>struct solvedPlays \*solvedp</td><td>struct solvedPlays \*solvedp</td>
 </tr>
 <tr>
 <td>int chunkSize</td><td>int chunkSize</td>
 </tr>
 </thead>
 </table>
+
 AnalyseAllPlaysPBN is just like AnalyseAllPlaysBin, except for the input format.
 
-The AnalyseAllPlays* functions invoke SolveBoard several times in parallel in multiple threads, rather than sequentially in a single thread. This increases execution speed. Up to 20 boards are permitted per call.
+The AnalyseAllPlays\* functions invoke SolveBoard several times in parallel in multiple threads, rather than sequentially in a single thread. This increases execution speed. Up to 20 boards are permitted per call.
 
 Concerning chunkSize, exactly the 21 same remarks apply as with SolveAllChunksBin.
 
@@ -1157,6 +1165,7 @@ Concerning chunkSize, exactly the 21 same remarks apply as with SolveAllChunksBi
 </tr>
 </tbody>
 </table>
+
 SetMaxThreads returns the actual number of threads.
 
 DDS has a preferred memory size per thread, currently about 95 MB, and a maximum memory size per thread, currently about 160 MB. It will also not use more than 70% of the available memory. It will not create more threads than there are processor cores, as this will only require more memory and will not improve performance. Within these constraints, DDS auto-configures the
@@ -1174,7 +1183,8 @@ SetMaxThreads can be called multiple times even within the same session. So it i
 
 It is possible to ask DDS to give up its dynamically allocated memory by calling FreeMemory. This could be useful for instance if there is a long pause where DDS is not used within a session. DDS will free its memory when the DLL detaches from the user program, so there is no need for the user to call this function before detaching.
 
-=== Return codes
+## Return codes
+
 <table>
 <thead>
 <tr>
@@ -1237,7 +1247,7 @@ different number of boards in its first two arguments.</td>
 <tr>
 <td>-19</td><td>RETURN_FIRST_WRONG</td><td>SolveBoard(), first is not one or 0, 1, 2</td>
 <tr>
-<td>-98</td><td>RETURN_PLAY_FAULT</td><td>AnalysePlay*() family of functions. (a) Less than 0 or more than 52 cards supplied. (b)
+<td>-98</td><td>RETURN_PLAY_FAULT</td><td>AnalysePlay\*() family of functions. (a) Less than 0 or more than 52 cards supplied. (b)
 Invalid suit or rank supplied. (c) A played card is not held by the right player.</td>
 </tr>
 <tr>
@@ -1252,13 +1262,13 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 <td>-103</td><td>RETURN_THREAD_WAIT</td><td>Returned from multi-threading functions when something went wrong while waiting for all threads to complete.</td>
 </tr>
 <tr>
-<td>-201</td><td>RETURN_NO_SUIT</td><td>CalcAllTables*(), returned when the denomination filter vector has no entries.</td>
+<td>-201</td><td>RETURN_NO_SUIT</td><td>CalcAllTables\*(), returned when the denomination filter vector has no entries.</td>
 </tr>
 <tr>
-<td>-202</td><td>RETURN_TOO_MANY_TABLES</td><td>CalcAllTables*(), returned when too many tables are requested.</td>
+<td>-202</td><td>RETURN_TOO_MANY_TABLES</td><td>CalcAllTables\*(), returned when too many tables are requested.</td>
 </tr>
 <tr>
-<td>-301</td><td>RETURN_CHUNK_SIZE</td><td>SolveAllChunks*(), returned when the chunk size is < 1.</td>
+<td>-301</td><td>RETURN_CHUNK_SIZE</td><td>SolveAllChunks\*(), returned when the chunk size is < 1.</td>
 </tr>
 </tbody>
 </table>
