@@ -334,7 +334,6 @@ of the dealer.</td>
 <tr>
 <td><code><a href="#FreeMemory">FreeMemory</a></code></td><td><code>void</code></td><td>&nbsp;</td><td>Frees DDS allocated dynamical memory.</td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
 </tbody>
 </table>
 
@@ -406,19 +405,19 @@ Common encodings are as follows
 </thead>
 <tbody>
 <tr>
-<td><a name="deal"></a>deal</td><td>int trump;</td><td>Suit encoding</td>
+<td><a name="deal"></a><code>deal</code></td><td><code>int trump</code></td><td>Suit encoding</td>
 </tr>
 <tr>
-<td></td><td>int first;</td><td>The hand leading to the trick. Hand encoding.</td>
+<td></td><td><code>int first</code></td><td>The hand leading to the trick. Hand encoding.</td>
 </tr>
 <tr>
-<td></td><td>int currentTrickSuit[3];</td><td>Up to 3 cards may already have been played to the trick. Suit encoding.</td>
+<td></td><td><code>int currentTrickSuit[3]</code></td><td>Up to 3 cards may already have been played to the trick. Suit encoding.</td>
 </tr>
 <tr>
-<td></td><td>int currentTrickRank[3];</td><td>Up to 3 cards may already have been played to the trick. Value range 2-14. Set to 0 if no card has been played.</td>
+<td></td><td><code>int currentTrickRank[3]</code></td><td>Up to 3 cards may already have been played to the trick. Value range 2-14. Set to 0 if no card has been played.</td>
 </tr>
 <tr>
-<td></td><td>unsigned int remainCards[4][4];</td><td>1st index is Hand, 2nd index is Suit. remainCards is Holding encoding.</td>
+<td></td><td><code>unsigned int remainCards[4][4]</code></td><td>1st index is Hand, 2nd index is Suit. remainCards is Holding encoding.</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -427,29 +426,19 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="dealPBN"></a>dealPBN</td><td>int trump;</td><td>Suit encoding</td>
+<td><a name="dealPBN"></a><code>dealPBN</code></td><td><code>int trump</code></td><td>Suit encoding</td>
 </tr>
 <tr>
-<td></td><td>int first;</td><td>The hand leading to the trick. Hand encoding.</td>
+<td></td><td><code>int first</code></td><td>The hand leading to the trick. Hand encoding.</td>
 </tr>
 <tr>
-<td></td><td>int currentTrickSuit[3];</td><td>Up to 3 cards may already have been played to the trick. Suit encoding. Set to 0 if no card has been played.</td>
+<td></td><td><code>int currentTrickSuit[3]</code></td><td>Up to 3 cards may already have been played to the trick. Suit encoding. Set to 0 if no card has been played.</td>
 </tr>
 <tr>
-<td></td><td>int currentTrickRank[3];</td><td>Up to 3 cards may already have been played to the trick. Value range 2-14. Set to 0 if no card has been played.</td>
+<td></td><td><code>int currentTrickRank[3]</code></td><td>Up to 3 cards may already have been played to the trick. Value range 2-14. Set to 0 if no card has been played.</td>
 </tr>
 <tr>
-<td></td><td>char remainCards[80];</td><td>Remaining cards. PBN encoding.</td>
-</tr>
-<tr>
-<td colspan="3"></td>
-</tr>
-<tr>
-<tr>
-<th>struct</th><th>Field</th><th>Comment</th>
-</tr>
-<tr>
-<td><a name="ddTableDeal"></a>ddTableDeal</td><td>unsigned int cards[4][4];</td><td>Encodes a deal. First index is hand. Hand encoding. Second index is suit. Suit encoding. Holding</td>
+<td></td><td><code>char remainCards[80]</code></td><td>Remaining cards. PBN encoding.</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -459,10 +448,7 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="ddTableDeals"><a/>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
-</tr>
-<tr>
-<td></td><td>struct ddTableDeal deals[X];</td><td>X = MAXNOOFTABLES \* DDS_STRAINS</td>
+<td><a name="ddTableDeal"></a><code>ddTableDeal</code></td><td><code>unsigned int cards[4][4]</code></td><td>Encodes a deal. First index is hand. Hand encoding. Second index is suit. Suit encoding. Holding</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -472,32 +458,10 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="ddTableDeals"><a/>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure</td>
+<td><a name="ddTableDeals"><a/><code>ddTableDeals</code></td><td><code>int noOfTables</code></td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
 </tr>
 <tr>
-<td></td><td>struct ddTableDealPBN deals[MAXNOOFBOARDS/4];</td><td></td>
-</tr>
-<tr>
-<td colspan="3"></td>
-</tr>
-<tr>
-<tr>
-<th>struct</th><th>Field</th><th>Comment</th>
-</tr>
-<tr>
-<td><a name="boards"></a>boards</td><td>int noOfBoards;</td><td>Number of boards</td>
-</tr>
-<tr>
-<td></td><td>struct deal[MAXNOOFBOARDS];</td><td></td>
-</tr>
-<tr>
-<td></td><td>int target[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
-</tr>
-<tr>
-<td></td><td>int solutions[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
-</tr>
-<tr>
-<td></td><td>int mode[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
+<td></td><td><code>struct ddTableDeal deals[X]</code></td><td>X = <code>MAXNOOFTABLES * DDS_STRAINS</code></td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -507,43 +471,10 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="boardsPBN"></a>boardsPBN</td><td>int noOfBoards;</td><td>Number of boards</td>
+<td><a name="ddTableDeals"><a/><code>ddTableDeals</code></td><td><code>int noOfTables</code></td><td>Number of DD table deals in structure</td>
 </tr>
 <tr>
-<td></td><td>struct dealPBN[MAXNOOFBOARDS];</td><td></td>
-</tr>
-<tr>
-<td></td><td>int target[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
-</tr>
-<tr>
-<td></td><td>int solutions[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
-</tr>
-<tr>
-<td></td><td>int mode[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
-</tr>
-<tr>
-<td colspan="3"></td>
-</tr>
-<tr>
-<th>struct</th><th>Field</th><th>Comment</th>
-</tr>
-<tr>
-<td><a name="futureTricks"></a>futureTricks</td><td>int nodes;</td><td>Number of nodes searched by the DD solver.</td>
-</tr>
-<tr>
-<td></td><td>int cards;</td><td>Number of cards for which a result is returned.  May be all the cards, but equivalent ranks are omitted, so for a holding of KQ76 only the cards K and 7 would be returned, and the “equals” field below would be 2048 (Q) for the king and 54 (6) for the 7.</td>
-</tr>
-<tr>
-<td></td><td>int suit[13];</td><td>Suit of the each returned card. Suit encoding.</td>
-</tr>
-<tr>
-<td></td><td>int rank[13];</td><td>Rank of the returned card. Value range 2-14.</td>
-</tr>
-<tr>
-<td></td><td>int equals[13];</td><td>Lower-ranked equals.  Holding encoding.</td>
-</tr>
-<tr>
-<td></td><td>int score[13];</td><td>-1: target not reached. Otherwise: Target of maximum number of tricks.</td>
+<td></td><td><code>struct ddTableDealPBN deals[MAXNOOFBOARDS/4]</code></td><td></td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -553,20 +484,19 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="solvedBoards"></a>solvedBoards</td><td>int noOfBoards;</td><td></td>
+<td><a name="boards"></a><code>boards</code></td><td><code>int noOfBoards</code></td><td>Number of boards</td>
 </tr>
 <tr>
-<td></td><td>struct futureTricks solvedBoard [MAXNOOFBOARDS];</td><td></td>
+<td></td><td><code>struct deal[MAXNOOFBOARDS]</code></td><td></td>
 </tr>
 <tr>
-<td colspan="3"></td>
+<td></td><td><code>int target[MAXNOOFBOARDS]</code></td><td>See SolveBoard</td>
 </tr>
 <tr>
-<tr>
-<th>Struct</th><th>Field</th><th>Comment</th>
+<td></td><td><code>int solutions[MAXNOOFBOARDS]</code></td><td>See SolveBoard</td>
 </tr>
 <tr>
-<td><a name="ddTableResults"></a>ddTableResults</td><td>int resTable[5][4];</td><td>Encodes the solution of a deal for combinations of denomination and declarer.  First index is denomination. Suit encoding.  Second index is declarer.  Hand encoding.  Each entry is a number of tricks.</td>
+<td></td><td><code>int mode[MAXNOOFBOARDS]</code></td><td>See SolveBoard</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -576,10 +506,56 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="ddTablesRes"></a>ddTablesRes</td><td>int noOfBoards;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
+<td><a name="boardsPBN"></a><code>boardsPBN</td><td>int noOfBoards</code></td><td>Number of boards</td>
 </tr>
 <tr>
-<td></td><td>struct ddTableResults results[X];</td><td>X = MAXNOOFTABLES \* DDS_STRAINS</td>
+<td></td><td><code>struct dealPBN[MAXNOOFBOARDS]</code></td><td></td>
+</tr>
+<tr>
+<td></td><td><code>int target[MAXNOOFBOARDS]</code></td><td>See SolveBoard</td>
+</tr>
+<tr>
+<td></td><td><code>int solutions[MAXNOOFBOARDS]</code></td><td>See SolveBoard</td>
+</tr>
+<tr>
+<td></td><td><code>int mode[MAXNOOFBOARDS]</code></td><td>See SolveBoard</td>
+</tr>
+<tr>
+<td colspan="3"></td>
+</tr>
+<tr>
+<th>struct</th><th>Field</th><th>Comment</th>
+</tr>
+<tr>
+<td><a name="futureTricks"></a><code>futureTricks</td><td><code>int nodes</code></td><td>Number of nodes searched by the DD solver.</td>
+</tr>
+<tr>
+<td></td><td><code>int cards</code></td><td>Number of cards for which a result is returned.  May be all the cards, but equivalent ranks are omitted, so for a holding of KQ76 only the cards K and 7 would be returned, and the “equals” field below would be 2048 (Q) for the king and 54 (6) for the 7.</td>
+</tr>
+<tr>
+<td></td><td><code>int suit[13]</code></td><td>Suit of the each returned card. Suit encoding.</td>
+</tr>
+<tr>
+<td></td><td><code>int rank[13]</code></td><td>Rank of the returned card. Value range 2-14.</td>
+</tr>
+<tr>
+<td></td><td><code>int equals[13]</code></td><td>Lower-ranked equals.  Holding encoding.</td>
+</tr>
+<tr>
+<td></td><td><code>int score[13]</code></td><td>-1: target not reached. Otherwise: Target of maximum number of tricks.</td>
+</tr>
+<tr>
+<td colspan="3"></td>
+</tr>
+<tr>
+<tr>
+<th>struct</th><th>Field</th><th>Comment</th>
+</tr>
+<tr>
+<td><a name="solvedBoards"></a><code>solvedBoards</td><td><code>int noOfBoards</code></td><td></td>
+</tr>
+<tr>
+<td></td><td><code>struct futureTricks solvedBoard [MAXNOOFBOARDS]</code></td><td></td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -589,10 +565,20 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="parResults"></a>parResults</td><td>char parScore[2][16];</td><td>First index is NS/EW. Side encoding.</td>
+<td><a name="ddTableResults"></a><code>ddTableResults</code></td><td><code>int resTable[5][4]</code></td><td>Encodes the solution of a deal for combinations of denomination and declarer.  First index is denomination. Suit encoding.  Second index is declarer.  Hand encoding.  Each entry is a number of tricks.</td>
 </tr>
 <tr>
-<td></td><td>char parContractsString[2][128];</td><td>First index is NS/EW.  Side encoding.</td>
+<td colspan="3"></td>
+</tr>
+<tr>
+<tr>
+<th>struct</th><th>Field</th><th>Comment</th>
+</tr>
+<tr>
+<td><a name="ddTablesRes"></a><code>ddTablesRes</code></td><td><code>int noOfBoards</code></td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
+</tr>
+<tr>
+<td></td><td><code>struct ddTableResults results[X]</code></td><td>X = <code>MAXNOOFTABLES \* DDS_STRAINS</code></td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -602,7 +588,10 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="allParResults"></a>allParResults</td><td>struct parResults[MAXNOOFTABLES];</td><td>There are up to 20 declarer/strain combinations per DD table</td>
+<td><a name="parResults"></a><code>parResults</code></td><td><code>char parScore[2][16]</code></td><td>First index is NS/EW. Side encoding.</td>
+</tr>
+<tr>
+<td></td><td><code>char parContractsString[2][128]</code></td><td>First index is NS/EW.  Side encoding.</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -612,13 +601,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="parResultsDealer"></a>parResultsDealer</td><td>int number;</td><td></td>
-</tr>
-<tr>
-<td></td><td>int score;</td><td></td>
-</tr>
-<tr>
-<td></td><td>char contracts[10][10];</td><td></td>
+<td><a name="allParResults"></a><code>allParResults</code></td><td><code>struct parResults[MAXNOOFTABLES]</code></td><td>There are up to 20 declarer/strain combinations per DD table</td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -628,35 +611,13 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="parResultsMaster"></a>parResultsMaster</td><td>int score;</td><td></td>
+<td><a name="parResultsDealer"></a><code>parResultsDealer</code></td><td><code>int number</code></td><td></td>
 </tr>
 <tr>
-<td></td><td>int number;</td><td></td>
+<td></td><td><code>int score</code></td><td></td>
 </tr>
 <tr>
-<td></td><td>struct contractType contracts[10];</td><td></td>
-</tr>
-<tr>
-<td colspan="3"></td>
-</tr>
-<tr>
-<tr>
-<th>Struct</th><th>Field</th><th>Comment</th>
-</tr>
-<tr>
-<td><a name="contractType"</a>contractType</td><td>int underTricks;</td><td></td>
-</tr>
-<tr>
-<td></td><td>int overTricks;</td><td></td>
-</tr>
-<tr>
-<td></td><td>int level;</td><td></td>
-</tr>
-<tr>
-<td></td><td>int denom;</td><td></td>
-</tr>
-<tr>
-<td></td><td>int seats;</td><td></td>
+<td></td><td><code>char contracts[10][10]</code></td><td></td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -666,26 +627,13 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="parTextResults"></a>parTextResults</td><td>char parText[2][128];</td><td></td>
+<td><a name="parResultsMaster"></a><code>parResultsMaster</code></td><td><code>int score</code></td><td></td>
 </tr>
 <tr>
-<td></td><td>int equal;</td><td></td>
+<td></td><td><code>int number</code></td><td></td>
 </tr>
 <tr>
-<td colspan="3"></td>
-</tr>
-<tr>
-<tr>
-<th>Struct</th><th>Field</th><th>Comment</th>
-</tr>
-<tr>
-<td><a name="playTraceBin"></a>playTraceBin</td><td>int number;</td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
-</tr>
-<tr>
-<td></td><td>int suit[52];</td><td>Suit encoding.</td>
-</tr>
-<tr>
-<td></td><td>int rank[52];</td><td>Encoding 2 .. 14 (not Card encoding).</td>
+<td></td><td><code>struct contractType contracts[10]</code></td><td></td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -695,23 +643,19 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="playTracePBN"></a>playTracePBN</td><td>int number;</td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
+<td><a name="contractType"</a><code>contractType</code></td><td><code>int underTricks</code></td><td></td>
 </tr>
 <tr>
-<td></td><td>int cards[106];</td><td>String of cards with no space in between, also not between tricks.  Each card consists of a suit (C/D/H/S) and then a rank (2 .. A).  The string must be null-terminated.</td>
+<td></td><td><code>int overTricks</code></td><td></td>
 </tr>
 <tr>
-<td colspan="3"></td>
+<td></td><td><code>int level</code></td><td></td>
 </tr>
 <tr>
-<tr>
-<th>Struct</th><th>Field</th><th>Comment</th>
+<td></td><td><code>int denom</code></td><td></td>
 </tr>
 <tr>
-<td><a name="playTracesBin"></a>playTracesBin</td><td>int noOfBoards;</td><td></td>
-</tr>
-<tr>
-<td></td><td>struct playTraceBin plays[MAXNOOFBOARDS / 10];</td><td></td>
+<td></td><td><code>int seats</code></td><td></td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -721,23 +665,10 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="playTracesPBN"></a>playTracesPBN</td><td>int noOfBoards;</td><td></td>
+<td><a name="parTextResults"></a><code>parTextResults</code></td><td><code>char parText[2][128]</code></td><td></td>
 </tr>
 <tr>
-<td></td><td>struct playTracePBN plays[MAXNOOFBOARDS / 10];</td><td></td>
-</tr>
-<tr>
-<td colspan="3"></td>
-</tr>
-<tr>
-<tr>
-<th>Struct</th><th>Field</th><th>Comment</th>
-</tr>
-<tr>
-<td><a name="solvedPlay"></a>solvedPlay</td><td>int number;</td><td></td>
-</tr>
-<tr>
-<td></td><td>int tricks[53];</td><td>Starting position and up to 52 cards</td>
+<td></td><td><code>int equal</code></td><td></td>
 </tr>
 <tr>
 <td colspan="3"></td>
@@ -747,10 +678,78 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="solvedPlays"></a>solvedPlays</td><td>int noOfBoards;</td><td></td>
+<td><a name="playTraceBin"></a><code>playTraceBin</code></td><td><code>int number</code></td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
 </tr>
 <tr>
-<td></td><td>struct solvedPlay solved[MAXNOOFBOARDS];</td><td></td>
+<td></td><td><code>int suit[52]</code></td><td>Suit encoding.</td>
+</tr>
+<tr>
+<td></td><td><code>int rank[52]</code></td><td>Encoding 2 .. 14 (not Card encoding).</td>
+</tr>
+<tr>
+<td colspan="3"></td>
+</tr>
+<tr>
+<tr>
+<th>Struct</th><th>Field</th><th>Comment</th>
+</tr>
+<tr>
+<td><a name="playTracePBN"></a><code>playTracePBN</code></td><td><code>int number</code></td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
+</tr>
+<tr>
+<td></td><td><code>int cards[106]</code></td><td>String of cards with no space in between, also not between tricks.  Each card consists of a suit (C/D/H/S) and then a rank (2 .. A).  The string must be null-terminated.</td>
+</tr>
+<tr>
+<td colspan="3"></td>
+</tr>
+<tr>
+<tr>
+<th>Struct</th><th>Field</th><th>Comment</th>
+</tr>
+<tr>
+<td><a name="playTracesBin"></a><code>playTracesBin</code></td><td><code>int noOfBoards</code></td><td></td>
+</tr>
+<tr>
+<td></td><td><code>struct playTraceBin plays[MAXNOOFBOARDS / 10]</code></td><td></td>
+</tr>
+<tr>
+<td colspan="3"></td>
+</tr>
+<tr>
+<tr>
+<th>Struct</th><th>Field</th><th>Comment</th>
+</tr>
+<tr>
+<td><a name="playTracesPBN"></a><code>playTracesPBN</code></td><td><code>int noOfBoards</code></td><td></td>
+</tr>
+<tr>
+<td></td><td><code>struct playTracePBN plays[MAXNOOFBOARDS / 10]</code></td><td></td>
+</tr>
+<tr>
+<td colspan="3"></td>
+</tr>
+<tr>
+<tr>
+<th>Struct</th><th>Field</th><th>Comment</th>
+</tr>
+<tr>
+<td><a name="solvedPlay"></a><code>solvedPlay</code></td><td><code>int number</code></td><td></td>
+</tr>
+<tr>
+<td></td><td><code>int tricks[53];</td><td>Starting position and up to 52 cards</td>
+</tr>
+<tr>
+<td colspan="3"></td>
+</tr>
+<tr>
+<tr>
+<th>Struct</th><th>Field</th><th>Comment</th>
+</tr>
+<tr>
+<td><a name="solvedPlays"></a><code>solvedPlays</code></td><td><code>int noOfBoards</code></td><td></td>
+</tr>
+<tr>
+<td></td><td><code>struct solvedPlay solved[MAXNOOFBOARDS]</code></td><td></td>
 </tr>
 </tbody>
 </table>
