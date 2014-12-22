@@ -54,7 +54,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <table>
 <thead>
 <tr>
-<th>Function</th><th style="white-space:nowrap;">Arguments</th><th>Format</th><th>Comment</th>
+<th>Function</th><th>Arguments</th><th>Format</th><th>Comment</th>
 </tr>
 </thead>
 <tbody>
@@ -335,9 +335,6 @@ of the dealer.</td>
 <td><code><a href="#FreeMemory">FreeMemory</a></code></td><td><code>void</code></td><td> </td><td>Frees DDS allocated dynamical memory.</td>
 </tr>
 <tr><td colspan="4"> </td></tr>
-<tr>
-</tr>
-<tr>
 </tbody>
 </table>
 
