@@ -53,291 +53,291 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th>Function</th><th style="white-space:nowrap;">Arguments</th><th>Format</th><th>Comment</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td rowspan="6"><code><a href="#SolveBoard">SolveBoard</a></code></td><td><code>struct&nbsp;<a href="#deal">deal</a>&nbsp;dl</code></td><td rowspan="6">Binary</td><td rowspan="6">The most basic function, solves a single hand from the beginning or from later play</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;target</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;solutions</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;mode</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#futureTricks">futureTricks</a>&nbsp;*futp</code></td>
 </tr>
-<tr><td><code>int&nbsp;threadIndex</code></td>
+<tr style="background-color: #fff;"><td><code>int&nbsp;threadIndex</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="6"><code></a><a href="#SolveBoardPBN">SolveBoardPBN</a></code></td><td><code>struct&nbsp;<a href="dealPBN">dealPBN</a>&nbsp;dlPBN</code></td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;target</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;solutions</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;mode</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#futureTricks">futureTricks</a>&nbsp;*futp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;threadIndex</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="2"><code><a href="#CalcDDtable">CalcDDtable</a></code></td><td><code>struct&nbsp;<a href="#ddTableDeal">ddTableDeal</a>&nbsp;tableDeal</code></td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#ddTableResults">ddTableResults</a>&nbsp;*tablep</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="2"><a href="#CalcDDtablePBN">CalcDDtablePBN</a></code></td><td><code>struct&nbsp;<a href="#ddTableDealPBN">ddTableDealPBN</a>&nbsp;tableDealPBN</code></td><td rowspan="2">PBN</td><td rowspan="2">As CalcDDtable, but with PBN deal format.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#ddTableResults">ddTableResults</a>&nbsp;*tablep</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="5"><code><a href="#CalcAllTables">CalcAllTables</a></code></td><td><code>struct&nbsp;<a href="#ddTableDeals">ddTableDeals</a>&nbsp;*dealsp</code></td><td rowspan="5">Binary</td><td rowspan="5">Solves a number of hands in parallel.  Multi-threaded.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;mode</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;trumpFilter[5]</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#ddTablesRes">ddtablesRes</a>&nbsp;*resp</code></td>
 </tr>
-<tr>
-<td><code>struct&nbsp;<a href="#allParResults">allParResults</a>a>&nbsp;*pres</code></td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="5"><code><a href="#CalcAllTablesPBN">CalcAllTablesPBN</a></code></td><td><code>struct&nbsp;<a href="ddTableDealsPBN">&nbsp;ddTableDealsPBN</a> *dealsp</code></td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
-</tr>
-<tr>
-<td><code>int&nbsp;mode</code></td>
-</tr>
-<tr>
-<td><code>int&nbsp;trumpFilter[5]</code></td>
-</tr>
-<tr>
-<td><code>struct&nbsp;<a href="#ddTablesRes">ddTablesRes</a>&nbsp;*resp</code></td>
-</tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#allParResults">allParResults</a>&nbsp;*pres</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
+<td rowspan="5"><code><a href="#CalcAllTablesPBN">CalcAllTablesPBN</a></code></td><td><code>struct&nbsp;<a href="ddTableDealsPBN">&nbsp;ddTableDealsPBN</a> *dealsp</code></td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
+</tr>
+<tr style="background-color: #fff;">
+<td><code>int&nbsp;mode</code></td>
+</tr>
+<tr style="background-color: #fff;">
+<td><code>int&nbsp;trumpFilter[5]</code></td>
+</tr>
+<tr style="background-color: #fff;">
+<td><code>struct&nbsp;<a href="#ddTablesRes">ddTablesRes</a>&nbsp;*resp</code></td>
+</tr>
+<tr style="background-color: #fff;">
+<td><code>struct&nbsp;<a href="#allParResults">allParResults</a>&nbsp;*pres</code></td>
+</tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="2"><code><a href="#SolveAllBoards">SolveAllBoards</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 “Chunk” functions”!</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="3"><code><a href="#SolveAllChunksBin">SolveAllChunksBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;chunkSize</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="3"><code><a href="#SolveAllChunks">SolveAllChunks</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don’t use!</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int chunkSize</code></td>
 </tr>
 <td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;">
 <td rowspan="3"><code><a href="#SolveAllChunksPBN">SolveAllChunksPBN</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN"</a>&nbsp;*bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int chunkSize</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="3"><code><a href="#Par">Par</a></code></td><td><code>struct&nbsp;<a href="#ddTableResults">ddTableResults</a>&nbsp;*tablep</code></td><td rowspan="3">No format</td><td rowspan="3">Solves for the par contracts given a DD result table.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href"#parResults">parResults</a>&nbsp;*presp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;vulnerable</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="4"><code><a href="#DealerPar">DealerPar</a></code></td><td><code>struct&nbsp;<a href"#ddTableResults">ddTableResults</a>&nbsp;*tablep</code></td><td rowspan="4">No format</td><td rowspan="4">Similar to Par(), but requires and uses knowledge
 of the dealer.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#parResultsDealer">parResultsDealer</a>&nbsp;*presp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;dealer</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;vulnerable</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="4"><code><a href="#DealerParBin">DealerParBin</a></code></td><td><code>struct&nbsp;<a href="#ddTableResults">ddTableResults</a>&nbsp;*tablep</code></td><td rowspan="4">Binary</td><td rowspan="4">Similar to DealerPar, but with binary output.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#parResultsMaster">parResultsMaster</a>&nbsp;*presp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;dealer</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;vulnerable</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="2"><code><a href="#ConvertToDealerTextFormat">ConvertToDealerTextFormat</a></code></td><td><code>struct&nbsp;<a href="#parResultsMaster">parResultsMaster</a>&nbsp;*pres</code></td><td rowspan="2">Text</td><td rowspan="2">Example of text output from DealerParBin.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>char&nbsp;*resp</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="3"><code><a href="#SidesPar">SidesPar</a></code></td><td><code>struct&nbsp;<a href="#ddTableResults">ddTableResults</a>&nbsp;*tablep</code></td><td rowspan="3">No format</td><td rowspan="3">Par results are given for sides with the DealerPar output format.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#parResultsDealer">parResultsDealer</a>&nbsp;*presp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;vulnerable</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="3"><code><a href="#SidesParBin">SidesParBin</a></code></td><td><code>struct&nbsp;<a href="#ddTableResults">ddTableResults</a>&nbsp;*tablep</code></td><td rowspan="3">Binary</td><td rowspan="3">Similar to SidesPar, but with binary output.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#parResultsMaster">parResultsMaster</a>&nbsp;sidesRes[2]</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int vulnerable</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="2"><code><a href="#ConvertToSidesTextFormat">ConvertToSidesTextFormat</a></code></td><td><code>struct&nbsp;<a href="#parResultsMaster">parResultsMaster</a>&nbsp;*pres</code></td><td rowspan="2">Text</td><td rowspan="2">Example of text output from SidesParBin.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>char&nbsp;*resp</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="4"><code><a href="#CalcPar">CalcPar</a></code></td><td><code>struct&nbsp;<a href="#ddTableDeal">ddTableDeal</a>&nbsp;tableDeal</code></td><td rowspan="4">Binary</td><td rowspan="4">Solves for both the DD result table and the par contracts. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;vulnerable</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#ddTableResults">ddTabeleResults</a>&nbsp;*tablep</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#parResults">parResults</a>&nbsp;*presp</td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="4"><code><a href="#CalcParPBN">CalcParPBN</a></code></td><td><code>struct&nbsp;<a href="#ddTableDealPBN">ddTableDealPBN</a>&nbsp;tableDealPBN</code></td><td rowspan="4">PBN</td><td rowspan="4">As CalcPar, but with PBN input format. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#ddTableResult">ddTableResults</a>&nbsp;*tablep</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;vulnerable</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#parResults">parResults</a>&nbsp;*presp</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="4"><code><a href="#AnalysePlayBin">AnalysePlayBin</a></code></td><td><code>struct&nbsp;<a href="deal">deal</a>&nbsp;dl</code></td><td rowspan="4">Binary</td><td rowspan="4">Returns the par result after each card in a particular play sequence.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#playTraceBin">playTraceBin</a>&nbsp;play</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#solvedPlay">solvedPlay</a>&nbsp;*solvedp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;thrId</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="4"><code><a href="#AnalysePlayPBN">AnalysePlayPBN</a></code></td><td><code>struct&nbsp;<a href="#dealPBN">dealPBN</a>&nbsp;dlPBN</code></td><td rowspan="4">PBN</td><td rowspan="4">As AnalysePlayBin, but with PBN deal format.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#playTracePBN">playTracePBN</a>&nbsp;playPBN</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#solvedPlay">solvedPlay</a>&nbsp;*solvedp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;thrId</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="4"><code><a href="#AnalyseAllPlaysBin">AnalyseAllPlaysBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#playTracesBin">playTracesBin</a>&nbsp;*plp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#solvedPlays">solvedPlays</a>&nbsp;*solvedp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;chunkSize</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td rowspan="4"><code><a href="#AnalyseAllPlaysPBN">AnalyseAllPlaysPBN</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bopPBN</code></td><td rowspan="4">PBN</td><td rowspan="4">As AnalyseAllPlaysBin, but with PBN deal format.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#playTracesPBN">playTracesPBN</a>&nbsp;*plpPBN</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>struct&nbsp;<a href="#solvedPlay">solvedPlays</a>&nbsp;*solvedp</code></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><code>int&nbsp;chunkSize</code></td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td><code><a href="#SetMaxThreads">SetMaxThreads</a></code></td><td><code>int&nbsp;userThreads</code></td><td>PBN</td><td>Used at initial start and can also be called with a request for allocating memory for a specified number of threads. Is apparently¸mandatory on Linux and Mac (optional on Windows)</td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 <td><code><a href="#FreeMemory">FreeMemory</a></code></td><td><code>void</code></td><td>&nbsp;</td><td>Frees DDS allocated dynamical memory.</td>
 </tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
+<tr style="background-color: #fff;"><td colspan="4">&nbsp;</td></tr>
+<tr style="background-color: #fff;">
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 </tbody>
 </table>
 
@@ -346,56 +346,56 @@ Common encodings are as follows
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th>Encoding</th><th>Element</th><th>Value</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td rowspan="5"><a name="Suit"></a>Suit</td><td>Spades</td><td>0</td>
 </tr>
-<tr><td>Hearts</td><td>1</td>
+<tr style="background-color: #fff;"><td>Hearts</td><td>1</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>Diamonds</td><td>2</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>Clubs</td><td>3</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>NT</td><td>4</td>
 </tr>
-<tr><td colspan="3">&nbsp;</td></tr>
+<tr style="background-color: #fff;"><td colspan="3">&nbsp;</td></tr>
 <td rowspan="4"><a name="Hand"></a>Hand</td><td>North</td><td>0</td>
 </tr>
-<tr><td>East</td><td>1</td>
+<tr style="background-color: #fff;"><td>East</td><td>1</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>South</td><td>2</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>West</td><td>3</td>
 </tr>
-<tr><td colspan="2">&nbsp;</td></tr>
+<tr style="background-color: #fff;"><td colspan="2">&nbsp;</td></tr>
 <td rowspan="2"><a name="Side"></a>Side</td><td>N-S</td><td>0</td>
 </tr>
-<tr><td>E-W</td><td>1</td>
+<tr style="background-color: #fff;"><td>E-W</td><td>1</td>
 </tr>
-<tr><td colspan="3">&nbsp;</td></tr>
+<tr style="background-color: #fff;"><td colspan="3">&nbsp;</td></tr>
 <td rowspan="4"><a name="Card"></a>Card</td><td>Bit 2</td><td>Rank of deuce</td>
 </tr>
-<tr><td>...</td><td>&nbsp;</td>
+<tr style="background-color: #fff;"><td>...</td><td>&nbsp;</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>Bit 13</td><td>Rank of king</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>Bit 14</td><td>Rank of ace</td>
 </tr>
-<tr><td colspan="3">&nbsp;</td></tr>
+<tr style="background-color: #fff;"><td colspan="3">&nbsp;</td></tr>
 <td><a name="Holding"></a>Holding</td><td colspan="2">A value of 16388 = 16384 + 4 is the encoding for the holding “A2” (ace and deuce).<br />The two lowest bits are always zero.</td>
 </tr>
-<tr><td colspan="3">&nbsp;</td></tr>
+<tr style="background-color: #fff;"><td colspan="3">&nbsp;</td></tr>
 <td><a name="PBN"></a>PBN</td><td colspan="2">Example:<br />W:T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K</td>
 </tr>
 </tbody>
@@ -403,356 +403,356 @@ Common encodings are as follows
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="deal"></a>deal</td><td>int trump;</td><td>Suit encoding</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int first;</td><td>The hand leading to the trick. Hand encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int currentTrickSuit[3];</td><td>Up to 3 cards may already have been played to the trick. Suit encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int currentTrickRank[3];</td><td>Up to 3 cards may already have been played to the trick. Value range 2-14. Set to 0 if no card has been played.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>unsigned int remainCards[4][4];</td><td>1st index is Hand, 2nd index is Suit. remainCards is Holding encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="dealPBN"></a>dealPBN</td><td>int trump;</td><td>Suit encoding</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int first;</td><td>The hand leading to the trick. Hand encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int currentTrickSuit[3];</td><td>Up to 3 cards may already have been played to the trick. Suit encoding. Set to 0 if no card has been played.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int currentTrickRank[3];</td><td>Up to 3 cards may already have been played to the trick. Value range 2-14. Set to 0 if no card has been played.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>char remainCards[80];</td><td>Remaining cards. PBN encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="ddTableDeal"></a>ddTableDeal</td><td>unsigned int cards[4][4];</td><td>Encodes a deal. First index is hand. Hand encoding. Second index is suit. Suit encoding. Holding</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="ddTableDeals"><a/>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct ddTableDeal deals[X];</td><td>X = MAXNOOFTABLES \* DDS_STRAINS</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="ddTableDeals"><a/>ddTableDeals</td><td>int noOfTables;</td><td>Number of DD table deals in structure</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct ddTableDealPBN deals[MAXNOOFBOARDS/4];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="boards"></a>boards</td><td>int noOfBoards;</td><td>Number of boards</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct deal[MAXNOOFBOARDS];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int target[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int solutions[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int mode[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="boardsPBN"></a>boardsPBN</td><td>int noOfBoards;</td><td>Number of boards</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct dealPBN[MAXNOOFBOARDS];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int target[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int solutions[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int mode[MAXNOOFBOARDS];</td><td>See SolveBoard</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="futureTricks"></a>futureTricks</td><td>int nodes;</td><td>Number of nodes searched by the DD solver.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int cards;</td><td>Number of cards for which a result is returned.  May be all the cards, but equivalent ranks are omitted, so for a holding of KQ76 only the cards K and 7 would be returned, and the “equals” field below would be 2048 (Q) for the king and 54 (6) for the 7.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int suit[13];</td><td>Suit of the each returned card. Suit encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int rank[13];</td><td>Rank of the returned card. Value range 2-14.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int equals[13];</td><td>Lower-ranked equals.  Holding encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int score[13];</td><td>-1: target not reached. Otherwise: Target of maximum number of tricks.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="solvedBoards"></a>solvedBoards</td><td>int noOfBoards;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct futureTricks solvedBoard [MAXNOOFBOARDS];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="ddTableResults"></a>ddTableResults</td><td>int resTable[5][4];</td><td>Encodes the solution of a deal for combinations of denomination and declarer.  First index is denomination. Suit encoding.  Second index is declarer.  Hand encoding.  Each entry is a number of tricks.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="ddTablesRes"></a>ddTablesRes</td><td>int noOfBoards;</td><td>Number of DD table deals in structure, at most MAXNOOFTABLES</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct ddTableResults results[X];</td><td>X = MAXNOOFTABLES \* DDS_STRAINS</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="parResults"></a>parResults</td><td>char parScore[2][16];</td><td>First index is NS/EW. Side encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>char parContractsString[2][128];</td><td>First index is NS/EW.  Side encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="allParResults"></a>allParResults</td><td>struct parResults[MAXNOOFTABLES];</td><td>There are up to 20 declarer/strain combinations per DD table</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="parResultsDealer"></a>parResultsDealer</td><td>int number;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int score;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>char contracts[10][10];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="parResultsMaster"></a>parResultsMaster</td><td>int score;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int number;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct contractType contracts[10];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="contractType"</a>contractType</td><td>int underTricks;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int overTricks;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int level;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int denom;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int seats;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="parTextResults"></a>parTextResults</td><td>char parText[2][128];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int equal;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="playTraceBin"></a>playTraceBin</td><td>int number;</td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int suit[52];</td><td>Suit encoding.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int rank[52];</td><td>Encoding 2 .. 14 (not Card encoding).</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="playTracePBN"></a>playTracePBN</td><td>int number;</td><td>Number of cards in the play trace, starting from the beginning of the hand.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int cards[106];</td><td>String of cards with no space in between, also not between tricks.  Each card consists of a suit (C/D/H/S) and then a rank (2 .. A).  The string must be null-terminated.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="playTracesBin"></a>playTracesBin</td><td>int noOfBoards;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct playTraceBin plays[MAXNOOFBOARDS / 10];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="playTracesPBN"></a>playTracesPBN</td><td>int noOfBoards;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct playTracePBN plays[MAXNOOFBOARDS / 10];</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="solvedPlay"></a>solvedPlay</td><td>int number;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>int tricks[53];</td><td>Starting position and up to 52 cards</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3"></td>
 </tr>
-<tr>
-<tr>
+<tr style="background-color: #fff;">
+<tr style="background-color: #fff;">
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td><a name="solvedPlays"></a>solvedPlays</td><td>int noOfBoards;</td><td></td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td></td><td>struct solvedPlay solved[MAXNOOFBOARDS];</td><td></td>
 </tr>
 </tbody>
@@ -762,27 +762,27 @@ Common encodings are as follows
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="SolveBoard"></a>SolveBoard</th><th><a name="SolveBoardPBN"></a>SolveBoardPBN</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct deal dl,</td><td>struct dealPBN dl,</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int target,</td><td>int target,</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int solutions,</td><td>int solutions,</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int mode,</td><td>int mode,</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct futureTricks \*futp,</td><td>struct futureTricks \*futp,</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int threadIndex</td><td>int threadIndex</td>
 </tr>
 </tbody>
@@ -804,52 +804,52 @@ For equivalent cards, only the highest is returned, and lower equivalent cards a
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th>target</th><th>solutions</th><th>comment</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>-1</td><td>1</td><td>Find the maximum number of tricks for the side to
 play.<br />Return only one of the optimum cards and its score.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-1</td><td>2</td><td>Find the maximum number of tricks for the side to
 play.<td />Return all optimum cards and their scores.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>0</td><td>1</td><td>Return only one of the cards legal to play, with
 score set to 0.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>0</td><td>2</td><td>Return all cards that legal to play, with score set to
 0.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>1 .. 13</td><td>1</td><td>If score is -1: Target cannot be reached. <br />
 If score is 0: In fact no tricks at all can be won.<br />
 If score is > 0: score will always equal target, even if more tricks can be won.<br />
 One of the cards achieving the target is returned.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>1 .. 13</td><td>2</td><td>Return all cards meeting (at least) the target.<br />
 If the target cannot be achieved, only one card is returned with the score set as above.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>any</td><td>3</td><td>Return all cards that can be legally played, with their scores in descending order.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="3">&nbsp;</td>
 </tr>
 <th>mode</th><th>Reuse TT?</th><th>comment</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>0</td><td rowspan="2">Automatic if same trump suit and the same or nearly the same cards distribution, deal.first can be different.</td><td>Do not search to find the core if the hand to play has only one card, including its equivalents, to play. Score is set to –2 for this card, indicating that there are no alternative cards. If there are multiple choices for cards to play, search is done to find the score. This mode is very fast but you don’t always search to find the score.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>1</td><td rowspan="2">Always search to find the score. Even when the hand to play has only one card, with possible equivalents, to play.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>2</td><td>Always</td>
 </tr>
 </tbody>
@@ -871,43 +871,43 @@ For mode = 2 it is the responsibility of the programmer using the DLL to ensure 
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="CalcDDtable"></a>CalcDDtable</th><th><a name="CalcDDtablePBN"></a>CalcDDtablePBN</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTableDeal tableDeal</td><td>struct ddTableDealPBN tableDealPBN</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTableResults \* tablep</td><td>struct ddTableResults \* tablep</td>
 </tr>
 </tbody>
 </table>
 
 CalcDDtablePBN is just like CalcDDtable, except for the input format. 
-CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy values for the initial 52 cards for all the 20 combinations of denomination and declarer in “ \*tablep” , which must be declared before calling CalcDDtable.
+CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy values for the initial 52 cards for all the 20 combinations of denomination and declarer in “\*tablep” , which must be declared before calling CalcDDtable.
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="CalcAllTables"></a>CalcAllTables</th><th><a name="CalcAllTablesPBN"></a>CalcAllTablesPBN</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTableDeals \*dealsp</td><td>struct ddTableDealsPBN \*dealsp</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int mode</td><td>int mode</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int trumpFilter[5]</td><td>int trumpFilter[5]</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTablesRes \*resp</td><td>struct ddTablesRes \*resp</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct allParResults \*presp</td><td>struct allParResults \*presp</td>
 </tr>
 </tbody>
@@ -925,24 +925,24 @@ The maximum number of DD tables in a CallAllTables call depends on the number of
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <td>Number of strains</td><td>Maximum number of DD tables</td>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>5</td><td>32</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>4</td><td>40</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>3</td><td>53</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>2</td><td>80</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>1</td><td>160</td>
 </tr>
 </tbody>
@@ -950,18 +950,18 @@ The maximum number of DD tables in a CallAllTables call depends on the number of
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="SolveAllBoards"></a>SolveAllBoards</th><th><a name="SolveAllChunksBin"></a>SolveAllChunksBin</th><th><a name="SolveAllChunksPBN"></a>SolveAllChunksPBN</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct boards \*bop</td><td>struct boards \*bop</td><td>struct boardsPBN \*bop</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct solvedBoards \* solvedp</td><td>struct solvedBoards \*solvedp</td><td>struct solvedBoards \*solvedp</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int chunkSize</td><td>int chunkSize</td>
 </tr>
 </tbody>
@@ -985,66 +985,66 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="Par"></a>Par</th><th><a name="DealerPar"></a>DealerPar</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTableResults \*tablep</td><td>struct ddTableResults \*tablep</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct parResults \*presp</td><td>struct parResultsDealer \*presp</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int vulnerable</td><td>int dealer</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>&nbsp;</td><td>int vulnerable</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="2">&nbsp;</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="SidesPar"><a/>SidesPar</th><th>&nbsp;</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTableResults \*tablep</td><td>&nbsp;</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct parResultsDealer \*sidesRes[2]</td><td>&nbsp;</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int vulnerable</td><td>&nbsp;</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="2">&nbsp;</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="DealerParBin"></a>DealerParBin</th><th><a name="SidesParBin"></A>SidesParBin</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTableResults \*tablep</td><td>struct ddTableResults \*tablep</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct parResultsMaster \* presp</td><td>struct parResultsMaster \* presp</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int vulnerable</td><td>int dealer</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>&nbsp;</td><td>int vulnerable</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td colspan="2">&nbsp;</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="ConvertToDealerTextForamat"></a>ConvertToDealerTextForamat</th><th><a name="ConvertToSidesTextFormat"></a>ConvertToSidesTextFormat</th>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct parResultsMaster \*pres</td><td>struct parResultsMaster \*pres</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>char \*resp</td><td>struct parTextResults \*resp</td>
 </tr>
 </tbody>
@@ -1094,21 +1094,21 @@ EW Par 120: W 1NT+1” when it matters who starts the bidding.
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="CalcPar"></a>CalcPar</th><th><a name="CalcParPBN"></a>CalcParPBN</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTableDeal dl</td><td>struct ddTableDealPBN dlN</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int vulnerable</td><td>struct ddTableResults * tp</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct ddTableResults * tp</td><td>int vulnerable</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct parResults *presp</td><td>struct parResults *presp</td>
 </tr>
 </tbody>
@@ -1122,21 +1122,21 @@ Both functions are deprecated. Instead use one of the CalcDDtable functions foll
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="AnalysePlayBin"></a>AnalysePlayBin</th><th><a name="AnalysePlayPBN"></a>AnalysePlayPBN</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct deal dl</td><td>struct dealPBN dlPBN</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct playTraceBin play</td><td>struct playTracePBN playPBN</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct solvedPlay \*solvedp</td><td>struct solvedPlay \*solvedp</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int thrId</td><td>int thrId</td>
 </tr>
 </tbody>
@@ -1154,21 +1154,21 @@ The number of tricks are always seen from declarer’s viewpoint (he is the one 
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="AnalyseAllPlaysBin"></a>AnalyseAllPlaysBin</th><th><a name="AnalyseAllPlaysPBN"></a>AnalyseAllPlaysPBN</th>
 </tr>
 </thead>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct boards \*bop</td><td>struct boardsPBN \*bopPBN</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct playTracesBin \*plp</td><td>struct playTracesPBN \*plpPBN</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>struct solvedPlays \*solvedp</td><td>struct solvedPlays \*solvedp</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>int chunkSize</td><td>int chunkSize</td>
 </tr>
 </thead>
@@ -1182,12 +1182,12 @@ Concerning chunkSize, exactly the 21 same remarks apply as with SolveAllChunksBi
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th><a name="SetMaxThreads"><a/>SetMaxThreads</th><th><a name="FreeMemory"></a>FreeMemory</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>int userThreads</td><td>void</td>
 </tr>
 </tbody>
@@ -1214,87 +1214,87 @@ It is possible to ask DDS to give up its dynamically allocated memory by calling
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th>Value</th><th>Code</th><th>Comment</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr style="background-color: #fff;">
 <td>1</td><td>RETURN_NO_FAULT</td><td>&nbsp;</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-1</td><td>RETURN_UNKNOWN_FAULT</td><td>Currently happens when fopen() returns an error or when AnalyseAllPlaysBin() gets a
 different number of boards in its first two arguments.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-2</td><td>RETURN_ZERO_CARDS</td><td>SolveBoard(), self-explanatory.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-3</td><td>RETURN_TARGET_TOO_HIGH</td><td>SolveBoard(), target is higher than the number of tricks remaining.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-4</td><td>RETURN_DUPLICATE_CARDS</td><td>SolveBoard(), self-explanatory.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-5</td><td>RETURN_TARGET_WRONG_LO</td><td>SolveBoard(), target is less than -1.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-7</td><td>RETURN_TARGET_WRONG_HI</td><td>SolveBoard(), target is higher than 13.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-8</td><td>RETURN_SOLNS_WRONG_LO</td><td>SolveBoard(), solutions is less than 1.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-10</td><td>RETURN_SOLNS_WRONG_HI</td><td>SolveBoard(), solutions is higher than 3.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-11</td><td>RETURN_TOO_MANY_CARDS</td><td>SolveBoard(), self-explanatory.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-12</td><td>RETURN_SUIT_OR_RANK</td><td>SolveBoard(), either currentTrickSuit or currentTrickRank have wrong data.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-13</td><td>RETURN_PLAYED_CARD</td><td>SolveBoard(), card already played is also a card still remaining to play.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-14</td><td>RETURN_CARD_COUNT</td><td>SolveBoard(), wrong number of remaining cards for a hand.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-15</td><td>RETURN_THREAD_INDEX</td><td>SolveBoard(), thread number is less than 0 or higher than the maximum permitted.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-16</td><td>RETURN_MODE_WRONG_LO</td><td>SolveBoard(), mode is less than 0</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-17</td><td>RETURN_MODE_WRONG_HI</td><td>SolveBoard(), mode is greater than 2</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-18</td><td>RETURN_TRUMP_WRONG</td><td>SolveBoard(), trump is not one or 0, 1, 2, 3, 4</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-19</td><td>RETURN_FIRST_WRONG</td><td>SolveBoard(), first is not one or 0, 1, 2</td>
-<tr>
+<tr style="background-color: #fff;">
 <td>-98</td><td>RETURN_PLAY_FAULT</td><td>AnalysePlay\*() family of functions. (a) Less than 0 or more than 52 cards supplied. (b)
 Invalid suit or rank supplied. (c) A played card is not held by the right player.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-99</td><td>RETURN_PBN_FAULT</td><td>Returned from a number of places if a PBN string is faulty.</td>
 </tr>
-<tr><td>-101</td><td>RETURN_TOO_MANY_THREADS</td><td>Currently never returned.</td>
+<tr style="background-color: #fff;"><td>-101</td><td>RETURN_TOO_MANY_THREADS</td><td>Currently never returned.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-102</td><td>RETURN_THREAD_CREATE</td><td>Returned from multi-threading functions.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-103</td><td>RETURN_THREAD_WAIT</td><td>Returned from multi-threading functions when something went wrong while waiting for all threads to complete.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-201</td><td>RETURN_NO_SUIT</td><td>CalcAllTables\*(), returned when the denomination filter vector has no entries.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-202</td><td>RETURN_TOO_MANY_TABLES</td><td>CalcAllTables\*(), returned when too many tables are requested.</td>
 </tr>
-<tr>
+<tr style="background-color: #fff;">
 <td>-301</td><td>RETURN_CHUNK_SIZE</td><td>SolveAllChunks\*(), returned when the chunk size is < 1.</td>
 </tr>
 </tbody>
@@ -1302,84 +1302,84 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 
 <table>
 <thead>
-<tr>
+<tr style="background-color: #fff;">
 <th colspan="3">Revision History</th>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>Rev&nbsp;A</td><td>2006-02-25</td><td>First issue</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;A</td><td>2006&#8209;02&#8209;25</td><td>First issue</td>
 </tr>
-<tr>
-<td>Rev&nbsp;B</td><td>2006-03-20</td><td>Updated issue</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;B</td><td>2006&#8209;03&#8209;20</td><td>Updated issue</td>
 </tr>
-<tr>
-<td>Rev&nbsp;C</td><td>2006-03-28</td><td>Updated issue. Addition of the SolveBoard parameter ”mode”</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;C</td><td>2006&#8209;03&#8209;28</td><td>Updated issue. Addition of the SolveBoard parameter ”mode”</td>
 </tr>
-<tr>
-<td>Rev&nbsp;D</td><td>2006-04-05</td><td>Updated issue. Usage of target=0 to list all cards that are legal to play</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;D</td><td>2006&#8209;04&#8209;05</td><td>Updated issue. Usage of target=0 to list all cards that are legal to play</td>
 </tr>
-<tr>
-<td>Rev&nbsp;E</td><td>2006-05-29</td><td>Updated issue. New error code –10 for number of cards > 52</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;E</td><td>2006&#8209;05&#8209;29</td><td>Updated issue. New error code –10 for number of cards > 52</td>
 </tr>
-<tr>
-<td>Rev&nbsp;F</td><td>2006-08-09</td><td>Updated issue. New mode parameter value = 2. New error code –11 for calling SolveBoard with mode = 2 and forbidden values of other parameters</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;F</td><td>2006&#8209;08&#8209;09</td><td>Updated issue. New mode parameter value = 2. New error code –11 for calling SolveBoard with mode = 2 and forbidden values of other parameters</td>
 </tr>
-<tr>
-<td>Rev&nbsp;F1</td><td>2006-08-14</td><td>Clarifications on conditions for returning scores for the different combinations of the values for target and solutions</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;F1</td><td>2006&#8209;08&#8209;14</td><td>Clarifications on conditions for returning scores for the different combinations of the values for target and solutions</td>
 </tr>
-<tr>
-<td>Rev&nbsp;F2</td><td>2006-08-26</td><td>New error code –12 for wrongly set values of deal.currentTrickSuit and deal.currentTrickRank</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;F2</td><td>2006&#8209;08&#8209;26</td><td>New error code –12 for wrongly set values of deal.currentTrickSuit and deal.currentTrickRank</td>
 </tr>
-<tr>
-<td>Rev&nbsp;G</td><td>2007-01-04</td><td>New DDS release 1.1, otherwise no change compared to isse F2</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;G</td><td>2007&#8209;01&#8209;04</td><td>New DDS release 1.1, otherwise no change compared to isse F2</td>
 </tr>
-<tr>
-<td>Rev&nbsp;H</td><td>2007-04-23</td><td>DDS release 1.4, changes for parameter mode=2.</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;H</td><td>2007&#8209;04&#8209;23</td><td>DDS release 1.4, changes for parameter mode=2.</td>
 </tr>
-<tr>
-<td>Rev&nbsp;I</td><td>2010-04-10</td><td>DDS release 2.0, multi-thread support</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;I</td><td>2010&#8209;04&#8209;10</td><td>DDS release 2.0, multi-thread support</td>
 </tr>
-<tr>
-<td>Rev&nbsp;J</td><td>2010-05-29</td><td>DDS release 2.1, OpenMP support, reuse of previous DD transposition table results of similar deals</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;J</td><td>2010&#8209;05&#8209;29</td><td>DDS release 2.1, OpenMP support, reuse of previous DD transposition table results of similar deals</td>
 </tr>
-<tr>
-<td>Rev&nbsp;K</td><td>2010-10-27</td><td>Correction of fault in the description: 2nd index in resTable of the structure ddTableResults is declarer hand</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;K</td><td>2010&#8209;10&#8209;27</td><td>Correction of fault in the description: 2nd index in resTable of the structure ddTableResults is declarer hand</td>
 </tr>
-<tr>
-<td>Rev&nbsp;L</td><td>2011-10-14</td><td>Added SolveBoardPBN and CalcDDtablePBN</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;L</td><td>2011&#8209;10&#8209;14</td><td>Added SolveBoardPBN and CalcDDtablePBN</td>
 </tr>
-<tr>
-<td>Rev&nbsp;M</td><td>2012-07-06</td><td>Added SolveAllBoards.
-Rev N, 2012-07-16 Max number of threads is 8</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;M</td><td>2012&#8209;07&#8209;06</td><td>Added SolveAllBoards.
+Rev N, 2012&#8209;07&#8209;16 Max number of threads is 8</td>
 </tr>
-<tr>
-<td>Rev&nbsp;O</td><td>2012-10-21</td><td>Max number of threads is configured at initial start-up, but never exceeds 16</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;O</td><td>2012&#8209;10&#8209;21</td><td>Max number of threads is configured at initial start-up, but never exceeds 16</td>
 </tr>
-<tr>
-<td>Rev&nbsp;P</td><td>2013-03-16</td><td>Added functions CalcPar and CalcParPBN</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;P</td><td>2013&#8209;03&#8209;16</td><td>Added functions CalcPar and CalcParPBN</td>
 </tr>
-<tr>
-<td>Rev&nbsp;Q</td><td>2014-01-09</td><td>Added functions CalcAllTables/CalcAllTablesPBN</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;Q</td><td>2014&#8209;01&#8209;09</td><td>Added functions CalcAllTables/CalcAllTablesPBN</td>
 </tr>
-<tr>
-<td>Rev&nbsp;R</td><td>2014-01-13</td><td>Updated functions CalcAllTables/CalcAllTablesPBN</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;R</td><td>2014&#8209;01&#8209;13</td><td>Updated functions CalcAllTables/CalcAllTablesPBN</td>
 </tr>
-<tr>
-<td>Rev&nbsp;S</td><td>2014-01-13</td><td>Updated functions CalcAllTables/CalcAllTablesPBN</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;S</td><td>2014&#8209;01&#8209;13</td><td>Updated functions CalcAllTables/CalcAllTablesPBN</td>
 </tr>
-<tr>
-<td>Rev&nbsp;T</td><td>2014-03-01</td><td>Added function SolveAllChunks</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;T</td><td>2014&#8209;03&#8209;01</td><td>Added function SolveAllChunks</td>
 </tr>
-<tr>
-<td>Rev&nbsp;U</td><td>2014-09-15</td><td>Added functions DealerPar, SidesPar, AnalysePlayBin, AnalysePlayPBN, AnalyseAllPlaysBin,
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;U</td><td>2014&#8209;09&#8209;15</td><td>Added functions DealerPar, SidesPar, AnalysePlayBin, AnalysePlayPBN, AnalyseAllPlaysBin,
 AnalyseAllPlaysPBN</td>
 </tr>
-<tr>
-<td>Rev&nbsp;V</td><td>2014-10-14</td><td>Added functions SetMaxThreads, FreeMemory, DealerParBin, SidesParBin,
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;V</td><td>2014&#8209;10&#8209;14</td><td>Added functions SetMaxThreads, FreeMemory, DealerParBin, SidesParBin,
 ConvertToDealerTextFormat, ConvertToSidesTextFormat</td>
 </tr>
-<tr>
-<td>Rev&nbsp;X</td><td>2014-11-16</td><td>Extended maximum number of tables when calling CalcAllTables.</td>
+<tr style="background-color: #fff;">
+<td>Rev&nbsp;X</td><td>2014&#8209;11&#8209;16</td><td>Extended maximum number of tables when calling CalcAllTables.</td>
 </tbody>
 </table>
