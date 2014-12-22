@@ -343,7 +343,7 @@ of the dealer.</td>
 </tbody>
 </table>
 
-## Data structure
+## Data structures
 Common encodings are as follows
 
 <table>
@@ -1310,7 +1310,7 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 </thead>
 <tbody>
 <tr>
-<td>Rev A</td><td>2006-02-25</td><td>First issue</td>
+<td>Rev&nbsp;A</td><td>2006-02-25</td><td>First issue</td>
 </tr>
 <tr>
 <td>Rev B</td><td>2006-03-20</td><td>Updated issue</td>
