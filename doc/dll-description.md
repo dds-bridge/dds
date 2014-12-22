@@ -643,7 +643,7 @@ Common encodings are as follows
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="contractType"</a><code>contractType</code></td><td><code>int underTricks</code></td><td></td>
+<td><a name="contractType"></a><code>contractType</code></td><td><code>int underTricks</code></td><td></td>
 </tr>
 <tr>
 <td></td><td><code>int overTricks</code></td><td></td>
