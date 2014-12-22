@@ -59,284 +59,284 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </thead>
 <tbody>
 <tr>
-<td rowspan="6"><code>[SolveBoard](#SolveBoard)</code></td><td>struct [deal](#deal) dl</td><td rowspan="6">Binary</td><td rowspan="6">The most basic function, solves a single hand from the beginning or from later play</td>
+<td rowspan="6"><code><a href="#SolveBoard">SolveBoard</a></code></td><td><code>struct <a href="#deal">deal</a> dl</code></td><td rowspan="6">Binary</td><td rowspan="6">The most basic function, solves a single hand from the beginning or from later play</td>
 </tr>
 <tr>
-<td>int target</td>
+<td><code>int target</code></td>
 </tr>
 <tr>
-<td>int solutions</td>
+<td><code>int solutions</code></td>
 </tr>
 <tr>
-<td>int mode</td>
+<td><code>int mode</code></td>
 </tr>
 <tr>
-<td>struct [futureTricks](#futureTricks) \*futp</td>
+<td><code>struct <a href="#futureTricks">futureTricks</a> *futp</code></td>
 </tr>
 <tr><td>int threadIndex</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="6"><code></a>[SolveBoardPBN](#SolveBoardPBN)</code></td><td>struct [dealPBN](#dealPBN) dlPBN</td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
+<td rowspan="6"><code></a><a href="#SolveBoardPBN">SolveBoardPBN</a></code></td><td><code>struct <a href="dealPBN">dealPBN</a> dlPBN</code></td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
 </tr>
 <tr>
-<td>int target</td>
+<td><code>int target</code></td>
 </tr>
 <tr>
-<td>int solutions</td>
+<td><code>int solutions</code></td>
 </tr>
 <tr>
-<td>int mode</td>
+<td><code>int mode</code></td>
 </tr>
 <tr>
-<td>struct [futureTricks](#futureTricks) \*futp</td>
+<td><code>struct <a href="#futureTricks">futureTricks</a> *futp</code></td>
 </tr>
 <tr>
-<td>int threadIndex</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="2"><code>[CalcDDtable](#CalcDDtable)</code></td><td>struct [ddTableDeal](#ddTableDeal) tableDeal</td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
-</tr>
-<tr>
-<td>struct [ddTableResults](#ddTableResults) \* tablep</td>
+<td><code>int threadIndex</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2">[CalcDDtablePBN](#CalcDDtablePBN)</code></td><td>struct [ddTableDealPBN](#ddTableDealPBN) tableDealPBN</td><td rowspan="2">PBN</td><td rowspan="2">As CalcDDtable, but with PBN deal format.</td>
+<td rowspan="2"><code><a href="CalcDDtable">CalcDDtable</a></code></td><td><code>struct <a href="#ddTableDeal">ddTableDeal</a> tableDeal</code></td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
 </tr>
 <tr>
-<td>struct [ddTableResults](#ddTableResults) \* tablep</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="5"><code>[CalcAllTables](#CalcAllTables)</code></td><td>struct [ddTableDeals](#ddTableDeals) \*dealsp</td><td rowspan="5">Binary</td><td rowspan="5">Solves a number of hands in parallel.  Multi-threaded.</td>
-</tr>
-<tr>
-<td>int mode</td>
-</tr>
-<tr>
-<td>int trumpFilter[5]</td>
-</tr>
-<tr>
-<td>struct [ddTablesRes](#ddtablesRes) \*resp</td>
-</tr>
-<tr>
-<td>struct [allParResults](#allParResults) \*pres</td>
+<td><code>struct <a href="#ddTableResults">ddTableResults</a> * tablep</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="5"><code>[CalcAllTablesPBN](#CalcAllTablesPBN)</code></td><td>struct [ddTableDealsPBN](#ddTableDealsPBN) \*dealsp</td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
+<td rowspan="2"><a href="#CalcDDtablePBN">CalcDDtablePBN</a></code></td><td><code>struct <a href="#ddTableDealPBN">ddTableDealPBN</a> tableDealPBN</code></td><td rowspan="2">PBN</td><td rowspan="2">As CalcDDtable, but with PBN deal format.</td>
 </tr>
 <tr>
-<td>int mode</td>
-</tr>
-<tr>
-<td>int trumpFilter[5]</td>
-</tr>
-<tr>
-<td>struct [ddTablesRes](#ddTablesRes) \*resp</td>
-</tr>
-<tr>
-<td>struct [allParResults](#allParResults) \*pres</td>
+<td><code>struct <a href="#ddTableResults">ddTableResults</a> * tablep</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>[SolveAllBoards](#SolveAllBoards)</code></td><td>struct [boardsPBN](#boardsPBN) \*bop</td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 “Chunk” functions”!</td>
+<td rowspan="5"><code><a href="#CalcAllTables">CalcAllTables</a></code></td><td><code>struct <a href="#ddTableDeals">ddTableDeals</a> *dealsp</code></td><td rowspan="5">Binary</td><td rowspan="5">Solves a number of hands in parallel.  Multi-threaded.</td>
 </tr>
 <tr>
-<td>struct [solvedBoards](#solvedBoards) \*solvedp</td>
+<td><code>int mode</code></td>
+</tr>
+<tr>
+<td><code>int trumpFilter[5]</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#ddTablesRes">ddtablesRes</a> *resp</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#allParResults">allParResults</a>a> *pres</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>[SolveAllChunksBin](#SolveAllChunksBin)</code></td><td>struct [boards](#boards) \*bop</td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="5"><code><a href="#CalcAllTablesPBN">CalcAllTablesPBN</a></code></td><td><code>struct <a href="ddTableDealsPBN">ddTableDealsPBN</a> *dealsp</code></td><td rowspan="5">PBN</td><td rowspan="5">As CalcAllTables, but with PBN deal format.</td>
 </tr>
 <tr>
-<td>struct [solvedBoards](#solvedBoards) \*solvedp</td>
+<td><code>int mode</code></td>
 </tr>
 <tr>
-<td>int chunkSize</td>
+<td><code>int trumpFilter[5]</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#ddTablesRes">ddTablesRes</a> *resp</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#allParResults">allParResults</a> *pres</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>[SolveAllChunks](#SolveAllChunks)</code></td><td>struct [boardsPBN](#boardsPBN) \*bop</td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don’t use!</td>
+<td rowspan="2"><code><a href="#SolveAllBoards">SolveAllBoards</a></code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 “Chunk” functions”!</td>
 </tr>
 <tr>
-<td>struct [solvedBoards](#solvedBoards) \*solvedp</td>
+<td><code>struct <a href="solvedBoards">solvedBoards</a> *solvedp</code></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="3"><code><a href="#SolveAllChunksBin">SolveAllChunksBin</a></code></td><td><code>struct <a href="#boards">boards</a> *bop</td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
 </tr>
 <tr>
-<td>int chunkSize</td>
+<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
+</tr>
+<tr>
+<td><code>int chunkSize</code></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="3"><code><a href="#SolveAllChunks">SolveAllChunks</a></code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don’t use!</td>
+</tr>
+<tr>
+<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
+</tr>
+<tr>
+<td><code>int chunkSize</code></td>
 </tr>
 <td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>[SolveAllChunksPBN](#SolveAllChunksPBN)</code></td><td>struct [boardsPBN](#boardsPBN) \*bop</td><td rowspan="3">PBN</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="3"><code><a href="#SolveAllChunksPBN">SolveAllChunksPBN</a></code></td><td><code>struct <a href="#boardsPBN">boardsPBN"</a> *bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
 </tr>
 <tr>
-<td>struct [solvedBoards](#solvedBoards) \*solvedp</td>
+<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
 </tr>
 <tr>
-<td>int chunkSize</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="3"><code>[Par](#Par)</code></td><td>struct [ddTableResults](#ddTableResults) \*tablep</td><td rowspan="3">No format</td><td rowspan="3">Solves for the par contracts given a DD result table.</td>
-</tr>
-<tr>
-<td>struct [parResults](#parResults) \*presp</td>
-</tr>
-<tr>
-<td>int vulnerable</td>
+<td><code>int chunkSize</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>[DealerPar](#DealerPar)</code></td><td>struct [ddTableResults](#ddTableResults) \*tablep</td><td rowspan="4">No format</td><td rowspan="4">Similar to Par(), but requires and uses knowledge
+<td rowspan="3"><code><a href="#Par">Par</a></code></td><td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td><td rowspan="3">No format</td><td rowspan="3">Solves for the par contracts given a DD result table.</td>
+</tr>
+<tr>
+<td><code>struct <a href"#parResults">parResults</a> *presp</code></td>
+</tr>
+<tr>
+<td><code>int vulnerable</code></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="4"><code><a href="#DealerPar">DealerPar</a></code></td><td><code>struct <a href"#ddTableResults">ddTableResults</a> *tablep</code></td><td rowspan="4">No format</td><td rowspan="4">Similar to Par(), but requires and uses knowledge
 of the dealer.</td>
 </tr>
 <tr>
-<td>struct [parResultsDealer](#parResultsDealer) \*presp</td>
+<td><code>struct <a href="#parResultsDealer">parResultsDealer</a> *presp</code></td>
 </tr>
 <tr>
-<td>int dealer</td>
+<td><code>int dealer</code></td>
 </tr>
 <tr>
-<td>int vulnerable</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="4"><code>[DealerParBin](#DealerParBin)</code></td><td>struct [ddTableResults](#ddTableResults) \*tablep</td><td rowspan="4">Binary</td><td rowspan="4">Similar to DealerPar, but with binary output.</td>
-</tr>
-<tr>
-<td>struct [parResultsMaster](#parResultsMaster) \* presp</td>
-</tr>
-<tr>
-<td>int dealer</td>
-</tr>
-<tr>
-<td>int vulnerable</td>
+<td><code>int vulnerable</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>[ConvertToDealerTextFormat](#ConvertToDealerTextFormat)</code></td><td>struct [parResultsMaster](#parResultsMaster) \*pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from DealerParBin.</td>
+<td rowspan="4"><code><a href="#DealerParBin">DealerParBin</a></code></td><td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td><td rowspan="4">Binary</td><td rowspan="4">Similar to DealerPar, but with binary output.</td>
 </tr>
 <tr>
-<td>char \*resp</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="3"><code>[SidesPar](#SidesPar)</code></td><td>struct [ddTableResults](#ddTableResults) \*tablep</td><td rowspan="3">No format</td><td rowspan="3">Par results are given for sides with the DealerPar output format.</td>
+<td><code>struct <a href="#parResultsMaster">parResultsMaster</a> * presp</code></td>
 </tr>
 <tr>
-<td>struct [parResultsDealer](#parResultsDealer) \*presp</td>
+<td><code>int dealer</code></td>
 </tr>
 <tr>
-<td>int vulnerable</td>
+<td><code>int vulnerable</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code>[SidesParBin](#SidesParBin)</code></td><td>struct [ddTableResults](#ddTableResults) \*tablep</td><td rowspan="3">Binary</td><td rowspan="3">Similar to SidesPar, but with binary output.</td>
+<td rowspan="2"><code><a href="#ConvertToDealerTextFormat">ConvertToDealerTextFormat</a></code></td><td><code>struct <a href="#parResultsMaster">parResultsMaster</a> *pres</code></td><td rowspan="2">Text</td><td rowspan="2">Example of text output from DealerParBin.</td>
 </tr>
 <tr>
-<td>struct [parResultsMaster](#parResultsMaster) sidesRes[2]</td>
-</tr>
-<tr>
-<td>int vulnerable</td>
+<td><code>char *resp</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code>[ConvertToSidesTextFormat](#ConvertToSidesTextFormat)</code></td><td>struct [parResultsMaster](#parResultsMaster) \*pres</td><td rowspan="2">Text</td><td rowspan="2">Example of text output from SidesParBin.</td>
+<td rowspan="3"><code><a href="#SidesPar">SidesPar</a></code></td><td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td><td rowspan="3">No format</td><td rowspan="3">Par results are given for sides with the DealerPar output format.</td>
 </tr>
 <tr>
-<td>char \*resp</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="4"><code>[CalcPar](#CalcPar)</code></td><td>struct [ddTableDeal](#ddTableDeal) tableDeal</td><td rowspan="4">Binary</td><td rowspan="4">Solves for both the DD result table and the par contracts. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
+<td><code>struct <a href="#parResultsDealer">parResultsDealer</a> *presp</code></td>
 </tr>
 <tr>
-<td>int vulnerable</td>
-</tr>
-<tr>
-<td>struct [ddTableResults](#ddTabeleResults) \*tablep</td>
-</tr>
-<tr>
-<td>struct [parResults](#parResults) \*presp</td>
+<td><code>int vulnerable</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>[CalcParPBN](#CalcParPBN)</code></td><td>struct [ddTableDealPBN](#ddTableDealPBN) tableDealPBN</td><td rowspan="4">PBN</td><td rowspan="4">As CalcPar, but with PBN input format. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
+<td rowspan="3"><code><a href="#SidesParBin">SidesParBin</a></code></td><td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td><td rowspan="3">Binary</td><td rowspan="3">Similar to SidesPar, but with binary output.</td>
 </tr>
 <tr>
-<td>struct [ddTableResult](#ddTableResults)s \*tablep</td>
+<td><code>struct <a href="#parResultsMaster">parResultsMaster</a> sidesRes[2]</code></td>
 </tr>
 <tr>
-<td>int vulnerable</td>
-</tr>
-<tr>
-<td>struct [parResults](#parResults) \*presp</td>
+<td><code>int vulnerable</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>[AnalysePlayBin](#AnalysePlayBin)</code></td><td>struct [deal](#deal) dl</td><td rowspan="4">Binary</td><td rowspan="4">Returns the par result after each card in a particular play sequence.</td>
+<td rowspan="2"><code><a href="#ConvertToSidesTextFormat">ConvertToSidesTextFormat</a></code></td><td><code>struct <a href="#parResultsMaster">parResultsMaster</a> *pres</code></td><td rowspan="2">Text</td><td rowspan="2">Example of text output from SidesParBin.</td>
 </tr>
 <tr>
-<td>struct [playTraceBin](#playTraceBin) play</td>
-</tr>
-<tr>
-<td>struct [solvedPlay](#solvedPlay) \*solvedp</td>
-</tr>
-<tr>
-<td>int thrId</td>
+<td><code>char *resp</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>[AnalysePlayPBN](#AnalysePlayPBN)</code></td><td>struct [dealPBN](#dealPBN) dlPBN</td><td rowspan="4">PBN</td><td rowspan="4">As AnalysePlayBin, but with PBN deal format.</td>
+<td rowspan="4"><code><a href="#CalcPar">CalcPar</a></code></td><td><code>struct <a href="#ddTableDeal">ddTableDeal</a> tableDeal</code></td><td rowspan="4">Binary</td><td rowspan="4">Solves for both the DD result table and the par contracts. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
 </tr>
 <tr>
-<td>struct [playTracePBN](#playTracePBN) playPBN</td>
+<td><code>int vulnerable</code></td>
 </tr>
 <tr>
-<td>struct solvedPlay \*solvedp</td>
+<td><code>struct <a href="#ddTableResults">ddTabeleResults</a> *tablep</code></td>
 </tr>
 <tr>
-<td>int thrId</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td rowspan="4"><code>[AnalyseAllPlaysBin](#AnalyseAllPlaysBin)</code></td><td>struct [boards](#boards) \*bop</td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
-</tr>
-<tr>
-<td>struct [playTracesBi](#playTracesBin)n \*plp</td>
-</tr>
-<tr>
-<td>struct [solvedPlays](#solvedPlays) \*solvedp</td>
-</tr>
-<tr>
-<td>int chunkSize</td>
+<td><code>struct <a href="#parResults">parResults</a> *presp</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code>[AnalyseAllPlaysPBN](#AnalyseAllPlaysPBN)</code></td><td>struct [boardsPBN](#boardsPBN) \*bopPBN</td><td rowspan="4">PBN</td><td rowspan="4">As AnalyseAllPlaysBin, but with PBN deal format.</td>
+<td rowspan="4"><code><a href="#CalcParPBN">CalcParPBN</a></code></td><td><code>struct <a href="#ddTableDealPBN">ddTableDealPBN</a> tableDealPBN</code></td><td rowspan="4">PBN</td><td rowspan="4">As CalcPar, but with PBN input format. Is deprecated, use a CalcDDtable function plus Par() instead!</td>
 </tr>
 <tr>
-<td>struct [playTracesPBN](#playTracesPBN) \*plpPBN</td>
+<td><code>struct <a href="#ddTableResult">ddTableResults</a> *tablep</code></td>
 </tr>
 <tr>
-<td>struct [solvedPlay](#solvedPlay)s \*solvedp</td>
+<td><code>int vulnerable</code></td>
 </tr>
 <tr>
-<td>int chunkSize</td>
-</tr>
-<tr><td colspan="4">&nbsp;</td></tr>
-<tr>
-<td><code>[SetMaxThreads](#SetMaxThreads)</code></td><td>int userThreads</td><td>PBN</td><td>Used at initial start and can also be called with a request for allocating memory for a specified number of threads. Is apparently¸mandatory on Linux and Mac (optional on Windows)</td>
+<td><code>struct <a href="#parResults">parResults</a> *presp</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td><code>[FreeMemory](#FreeMemory)</code></td><td>void</td><td>&nbsp;</td><td>Frees DDS allocated dynamical memory.</td>
+<td rowspan="4"><code><a href="#AnalysePlayBin">AnalysePlayBin</a></code></td><td><code>struct <a href="deal">deal</a> dl</code></td><td rowspan="4">Binary</td><td rowspan="4">Returns the par result after each card in a particular play sequence.</td>
+</tr>
+<tr>
+<td><code>struct <a href="#playTraceBin">playTraceBin</a> play</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#solvedPlay">solvedPlay</a> *solvedp</code></td>
+</tr>
+<tr>
+<td><code>int thrId</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td roespan="2"><code>[ErrorMessage](#ErrorMessage)</code></td><td>int code</td><td>&nbsp;</td><td roenspan="2">Turns a return code into an error message string.</td>
+<td rowspan="4"><code><a href="#AnalysePlayPBN">AnalysePlayPBN</a></code></td><td><code>struct <a href="#dealPBN">dealPBN</a> dlPBN</code></td><td rowspan="4">PBN</td><td rowspan="4">As AnalysePlayBin, but with PBN deal format.</td>
+</tr>
+<tr>
+<td><code>struct <a href="#playTracePBN">playTracePBN</a> playPBN</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#solvedPlay">solvedPlay</a> *solvedp</code></td>
+</tr>
+<tr>
+<td><code>int thrId</code></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="4"><code><a href="#AnalyseAllPlaysBin">AnalyseAllPlaysBin</a></code></td><td><code>struct <a href="#boards">boards</a> *bop</td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
+</tr>
+<tr>
+<td><code>struct <a href="#playTracesBin">playTracesBin</a> *plp</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#solvedPlays">solvedPlays</a> *solvedp</code></td>
+</tr>
+<tr>
+<td><code>int chunkSize</code></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="4"><code><a href="#AnalyseAllPlaysPBN">AnalyseAllPlaysPBN</a></code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bopPBN</code></td><td rowspan="4">PBN</td><td rowspan="4">As AnalyseAllPlaysBin, but with PBN deal format.</td>
+</tr>
+<tr>
+<td><code>struct <a href="#playTracesPBN">playTracesPBN</a> *plpPBN</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#solvedPlay">solvedPlays</a> *solvedp</code></td>
+</tr>
+<tr>
+<td><code>int chunkSize</code></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td><code><a href="#SetMaxThreads">SetMaxThreads</a></code></td><td><code>int userThreads</code></td><td>PBN</td><td>Used at initial start and can also be called with a request for allocating memory for a specified number of threads. Is apparently¸mandatory on Linux and Mac (optional on Windows)</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td><code><a href="#FreeMemory">FreeMemory</a></code></td><td><code>void</code></td><td>&nbsp;</td><td>Frees DDS allocated dynamical memory.</td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td roespan="2"><code><a href="#ErrorMessage">ErrorMessage</a></code></td><td>int code</td><td>&nbsp;</td><td roenspan="2">Turns a return code into an error message string.</td>
 </tr>
 <tr>
 <td>
