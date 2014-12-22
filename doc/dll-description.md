@@ -59,40 +59,40 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </thead>
 <tbody>
 <tr>
-<td rowspan="6"><code><a href="#SolveBoard">SolveBoard</a></code></td><td><code>struct <a href="#deal">deal</a> dl</code></td><td rowspan="6">Binary</td><td rowspan="6">The most basic function, solves a single hand from the beginning or from later play</td>
+<td rowspan="6"><code><a href="#SolveBoard">SolveBoard</a></code></td><td><code>struct&nbsp;<a href="#deal">deal</a>&nbsp;dl</code></td><td rowspan="6">Binary</td><td rowspan="6">The most basic function, solves a single hand from the beginning or from later play</td>
 </tr>
 <tr>
-<td><code>int target</code></td>
+<td><code>int&nbsp;target</code></td>
 </tr>
 <tr>
-<td><code>int solutions</code></td>
+<td><code>int&nbsp;solutions</code></td>
 </tr>
 <tr>
-<td><code>int mode</code></td>
+<td><code>int&nbsp;mode</code></td>
 </tr>
 <tr>
-<td><code>struct <a href="#futureTricks">futureTricks</a> *futp</code></td>
+<td><code>struct&nbsp;<a href="#futureTricks">futureTricks</a>&nbsp;*futp</code></td>
 </tr>
-<tr><td>int threadIndex</td>
+<tr><td>int&nbsp;threadIndex</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="6"><code></a><a href="#SolveBoardPBN">SolveBoardPBN</a></code></td><td><code>struct <a href="dealPBN">dealPBN</a> dlPBN</code></td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
+<td rowspan="6"><code></a><a href="#SolveBoardPBN">SolveBoardPBN</a></code></td><td><code>struct&nbsp;<a href="dealPBN">dealPBN</a>&nbsp;dlPBN</code></td><td rowspan="6">PBN</td><td rowspan="6">As SolveBoard, but with PBN deal format.</td>
 </tr>
 <tr>
-<td><code>int target</code></td>
+<td><code>int&nbsp;target</code></td>
 </tr>
 <tr>
-<td><code>int solutions</code></td>
+<td><code>int&nbsp;solutions</code></td>
 </tr>
 <tr>
-<td><code>int mode</code></td>
+<td><code>int&nbsp;mode</code></td>
 </tr>
 <tr>
-<td><code>struct <a href="#futureTricks">futureTricks</a> *futp</code></td>
+<td><code>struct&nbsp;<a href="#futureTricks">futureTricks</a>&nbsp;*futp</code></td>
 </tr>
 <tr>
-<td><code>int threadIndex</code></td>
+<td><code>int&nbsp;threadIndex</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
@@ -1312,75 +1312,75 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 <td>Rev&nbsp;A</td><td>2006-02-25</td><td>First issue</td>
 </tr>
 <tr>
-<td>Rev B</td><td>2006-03-20</td><td>Updated issue</td>
+<td>Rev&nbsp;B</td><td>2006-03-20</td><td>Updated issue</td>
 </tr>
 <tr>
-<td>Rev C</td><td>2006-03-28</td><td>Updated issue. Addition of the SolveBoard parameter ”mode”</td>
+<td>Rev&nbsp;C</td><td>2006-03-28</td><td>Updated issue. Addition of the SolveBoard parameter ”mode”</td>
 </tr>
 <tr>
-<td>Rev D</td><td>2006-04-05</td><td>Updated issue. Usage of target=0 to list all cards that are legal to play</td>
+<td>Rev&nbsp;D</td><td>2006-04-05</td><td>Updated issue. Usage of target=0 to list all cards that are legal to play</td>
 </tr>
 <tr>
-<td>Rev E</td><td>2006-05-29</td><td>Updated issue. New error code –10 for number of cards > 52</td>
+<td>Rev&nbsp;E</td><td>2006-05-29</td><td>Updated issue. New error code –10 for number of cards > 52</td>
 </tr>
 <tr>
-<td>Rev F</td><td>2006-08-09</td><td>Updated issue. New mode parameter value = 2. New error code –11 for calling SolveBoard with mode = 2 and forbidden values of other parameters</td>
+<td>Rev&nbsp;F</td><td>2006-08-09</td><td>Updated issue. New mode parameter value = 2. New error code –11 for calling SolveBoard with mode = 2 and forbidden values of other parameters</td>
 </tr>
 <tr>
-<td>Rev F1</td><td>2006-08-14</td><td>Clarifications on conditions for returning scores for the different combinations of the values for target and solutions</td>
+<td>Rev&nbsp;F1</td><td>2006-08-14</td><td>Clarifications on conditions for returning scores for the different combinations of the values for target and solutions</td>
 </tr>
 <tr>
-<td>Rev F2</td><td>2006-08-26</td><td>New error code –12 for wrongly set values of deal.currentTrickSuit and deal.currentTrickRank</td>
+<td>Rev&nbsp;F2</td><td>2006-08-26</td><td>New error code –12 for wrongly set values of deal.currentTrickSuit and deal.currentTrickRank</td>
 </tr>
 <tr>
-<td>Rev G</td><td>2007-01-04</td><td>New DDS release 1.1, otherwise no change compared to isse F2</td>
+<td>Rev&nbsp;G</td><td>2007-01-04</td><td>New DDS release 1.1, otherwise no change compared to isse F2</td>
 </tr>
 <tr>
-<td>Rev H</td><td>2007-04-23</td><td>DDS release 1.4, changes for parameter mode=2.</td>
+<td>Rev&nbsp;H</td><td>2007-04-23</td><td>DDS release 1.4, changes for parameter mode=2.</td>
 </tr>
 <tr>
-<td>Rev I</td><td>2010-04-10</td><td>DDS release 2.0, multi-thread support</td>
+<td>Rev&nbsp;I</td><td>2010-04-10</td><td>DDS release 2.0, multi-thread support</td>
 </tr>
 <tr>
-<td>Rev J</td><td>2010-05-29</td><td>DDS release 2.1, OpenMP support, reuse of previous DD transposition table results of similar deals</td>
+<td>Rev&nbsp;J</td><td>2010-05-29</td><td>DDS release 2.1, OpenMP support, reuse of previous DD transposition table results of similar deals</td>
 </tr>
 <tr>
-<td>Rev K</td><td>2010-10-27</td><td>Correction of fault in the description: 2nd index in resTable of the structure ddTableResults is declarer hand</td>
+<td>Rev&nbsp;K</td><td>2010-10-27</td><td>Correction of fault in the description: 2nd index in resTable of the structure ddTableResults is declarer hand</td>
 </tr>
 <tr>
-<td>Rev L</td><td>2011-10-14</td><td>Added SolveBoardPBN and CalcDDtablePBN</td>
+<td>Rev&nbsp;L</td><td>2011-10-14</td><td>Added SolveBoardPBN and CalcDDtablePBN</td>
 </tr>
 <tr>
-<td>Rev M</td><td>2012-07-06</td><td>Added SolveAllBoards.
+<td>Rev&nbsp;M</td><td>2012-07-06</td><td>Added SolveAllBoards.
 Rev N, 2012-07-16 Max number of threads is 8</td>
 </tr>
 <tr>
-<td>Rev O</td><td>2012-10-21</td><td>Max number of threads is configured at initial start-up, but never exceeds 16</td>
+<td>Rev&nbsp;O</td><td>2012-10-21</td><td>Max number of threads is configured at initial start-up, but never exceeds 16</td>
 </tr>
 <tr>
-<td>Rev P</td><td>2013-03-16</td><td>Added functions CalcPar and CalcParPBN</td>
+<td>Rev&nbsp;P</td><td>2013-03-16</td><td>Added functions CalcPar and CalcParPBN</td>
 </tr>
 <tr>
-<td>Rev Q</td><td>2014-01-09</td><td>Added functions CalcAllTables/CalcAllTablesPBN</td>
+<td>Rev&nbsp;Q</td><td>2014-01-09</td><td>Added functions CalcAllTables/CalcAllTablesPBN</td>
 </tr>
 <tr>
-<td>Rev R</td><td>2014-01-13</td><td>Updated functions CalcAllTables/CalcAllTablesPBN</td>
+<td>Rev&nbsp;R</td><td>2014-01-13</td><td>Updated functions CalcAllTables/CalcAllTablesPBN</td>
 </tr>
 <tr>
-<td>Rev S</td><td>2014-01-13</td><td>Updated functions CalcAllTables/CalcAllTablesPBN</td>
+<td>Rev&nbsp;S</td><td>2014-01-13</td><td>Updated functions CalcAllTables/CalcAllTablesPBN</td>
 </tr>
 <tr>
-<td>Rev T</td><td>2014-03-01</td><td>Added function SolveAllChunks</td>
+<td>Rev&nbsp;T</td><td>2014-03-01</td><td>Added function SolveAllChunks</td>
 </tr>
 <tr>
-<td>Rev U</td><td>2014-09-15</td><td>Added functions DealerPar, SidesPar, AnalysePlayBin, AnalysePlayPBN, AnalyseAllPlaysBin,
+<td>Rev&nbsp;U</td><td>2014-09-15</td><td>Added functions DealerPar, SidesPar, AnalysePlayBin, AnalysePlayPBN, AnalyseAllPlaysBin,
 AnalyseAllPlaysPBN</td>
 </tr>
 <tr>
-<td>Rev V</td><td>2014-10-14</td><td>Added functions SetMaxThreads, FreeMemory, DealerParBin, SidesParBin,
+<td>Rev&nbsp;V</td><td>2014-10-14</td><td>Added functions SetMaxThreads, FreeMemory, DealerParBin, SidesParBin,
 ConvertToDealerTextFormat, ConvertToSidesTextFormat</td>
 </tr>
 <tr>
-<td>Rev X</td><td>2014-11-16</td><td>Extended maximum number of tables when calling CalcAllTables.</td>
+<td>Rev&nbsp;X</td><td>2014-11-16</td><td>Extended maximum number of tables when calling CalcAllTables.</td>
 </tbody>
 </table>
