@@ -54,7 +54,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <table>
 <thead>
 <tr>
-<th>Function</th><th style="width: 100%">Arguments</th><th>Format</th><th>Comment</th>
+<th>Function</th><th style="white-space:nowrap;">Arguments</th><th>Format</th><th>Comment</th>
 </tr>
 </thead>
 <tbody>
