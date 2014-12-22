@@ -759,27 +759,27 @@ Common encodings are as follows
 <table>
 <thead>
 <tr>
-<th><a name="SolveBoard"></a>SolveBoard</th><th><a name="SolveBoardPBN"></a>SolveBoardPBN</th>
+<th><a name="SolveBoard"></a><code>SolveBoard</code></th><th><a name="SolveBoardPBN"></a><code>SolveBoardPBN</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>struct deal dl,</td><td>struct dealPBN dl,</td>
+<td><code>struct deal dl</code></td><td><code>struct dealPBN dl</code></td>
 </tr>
 <tr>
-<td>int target,</td><td>int target,</td>
+<td><code>int target</code></td><td><code>int target</code></td>
 </tr>
 <tr>
-<td>int solutions,</td><td>int solutions,</td>
+<td><code>int solutions</code></td><td><code>int solutions</code></td>
 </tr>
 <tr>
-<td>int mode,</td><td>int mode,</td>
+<td><code>int mode</code></td><td><code>int mode</code></td>
 </tr>
 <tr>
-<td>struct futureTricks \*futp,</td><td>struct futureTricks \*futp,</td>
+<td><code>struct futureTricks *futp</code></td><td><code>struct futureTricks *futp</code></td>
 </tr>
 <tr>
-<td>int threadIndex</td><td>int threadIndex</td>
+<td><code>int threadIndex</code></td><td><code>int threadIndex</code></td>
 </tr>
 </tbody>
 </table>
@@ -868,15 +868,15 @@ For mode = 2 it is the responsibility of the programmer using the DLL to ensure 
 <table>
 <thead>
 <tr>
-<th><a name="CalcDDtable"></a>CalcDDtable</th><th><a name="CalcDDtablePBN"></a>CalcDDtablePBN</th>
+<th><a name="CalcDDtable"></a><code>CalcDDtable</code></th><th><a name="CalcDDtablePBN"></a><code>CalcDDtablePBN</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>struct ddTableDeal tableDeal</td><td>struct ddTableDealPBN tableDealPBN</td>
+<td><code>struct ddTableDeal tableDeal</code></td><td><code>struct ddTableDealPBN tableDealPBN</code></td>
 </tr>
 <tr>
-<td>struct ddTableResults \* tablep</td><td>struct ddTableResults \* tablep</td>
+<td><code>struct ddTableResults *tablep</code></td><td><code>struct ddTableResults *tablep</code></td>
 </tr>
 </tbody>
 </table>
@@ -887,24 +887,24 @@ CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy 
 <table>
 <thead>
 <tr>
-<th><a name="CalcAllTables"></a>CalcAllTables</th><th><a name="CalcAllTablesPBN"></a>CalcAllTablesPBN</th>
+<th><a name="CalcAllTables"></a><code>CalcAllTables</code></th><th><a name="CalcAllTablesPBN"></a><code>CalcAllTablesPBN</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>struct ddTableDeals \*dealsp</td><td>struct ddTableDealsPBN \*dealsp</td>
+<td><code>struct ddTableDeals *dealsp</code></td><td><code>struct ddTableDealsPBN *dealsp</code></td>
 </tr>
 <tr>
-<td>int mode</td><td>int mode</td>
+<td><code>int mode</code></td><td><code>int mode</code></td>
 </tr>
 <tr>
-<td>int trumpFilter[5]</td><td>int trumpFilter[5]</td>
+<td><code>int trumpFilter[5]</code></td><td><code>int trumpFilter[5]</code></td>
 </tr>
 <tr>
-<td>struct ddTablesRes \*resp</td><td>struct ddTablesRes \*resp</td>
+<td><code>struct ddTablesRes *resp</code></td><td><code>struct ddTablesRes *resp</code></td>
 </tr>
 <tr>
-<td>struct allParResults \*presp</td><td>struct allParResults \*presp</td>
+<td><code>struct allParResults *presp</code></td><td><code>struct allParResults *presp</code></td>
 </tr>
 </tbody>
 </table>
@@ -947,18 +947,18 @@ The maximum number of DD tables in a CallAllTables call depends on the number of
 <table>
 <thead>
 <tr>
-<th><a name="SolveAllBoards"></a>SolveAllBoards</th><th><a name="SolveAllChunksBin"></a>SolveAllChunksBin</th><th><a name="SolveAllChunksPBN"></a>SolveAllChunksPBN</th>
+<th><a name="SolveAllBoards"></a><code>SolveAllBoards</code></th><th><a name="SolveAllChunksBin"></a><code>SolveAllChunksBin</code></th><th><a name="SolveAllChunksPBN"></a><code>SolveAllChunksPBN</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>struct boards \*bop</td><td>struct boards \*bop</td><td>struct boardsPBN \*bop</td>
+<td><code>struct boards *bop</code></td><td><code>struct boards *bop</code></td><td><code>struct boardsPBN *bop</code></td>
 </tr>
 <tr>
-<td>struct solvedBoards \* solvedp</td><td>struct solvedBoards \*solvedp</td><td>struct solvedBoards \*solvedp</td>
+<td><code>struct solvedBoards *solvedp</code></td><td><code>struct solvedBoards *solvedp</code></td><td><code>struct solvedBoards *solvedp</code></td>
 </tr>
 <tr>
-<td>int chunkSize</td><td>int chunkSize</td>
+<td><code>int chunkSize</code></td><td><code>int chunkSize</code></td>
 </tr>
 </tbody>
 </table>
@@ -982,66 +982,66 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 <table>
 <thead>
 <tr>
-<th><a name="Par"></a>Par</th><th><a name="DealerPar"></a>DealerPar</th>
+<th><a name="Par"></a><code>Par</code></th><th><a name="DealerPar"></a><code>DealerPar</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>struct ddTableResults \*tablep</td><td>struct ddTableResults \*tablep</td>
+<td><code>struct ddTableResults *tablep</code></td><td><code>struct ddTableResults *tablep</code></td>
 </tr>
 <tr>
-<td>struct parResults \*presp</td><td>struct parResultsDealer \*presp</td>
+<td><code>struct parResults *presp</code></td><td><code>struct parResultsDealer *presp</code></td>
 </tr>
 <tr>
-<td>int vulnerable</td><td>int dealer</td>
+<td><code>int vulnerable</code></td><td><code>int dealer</code></td>
 </tr>
 <tr>
-<td>&nbsp;</td><td>int vulnerable</td>
-</tr>
-<tr>
-<td colspan="2">&nbsp;</td>
-</tr>
-<tr>
-<th><a name="SidesPar"><a/>SidesPar</th><th>&nbsp;</th>
-</tr>
-<tr>
-<td>struct ddTableResults \*tablep</td><td>&nbsp;</td>
-</tr>
-<tr>
-<td>struct parResultsDealer \*sidesRes[2]</td><td>&nbsp;</td>
-</tr>
-<tr>
-<td>int vulnerable</td><td>&nbsp;</td>
+<td>&nbsp;</td><td><code>int vulnerable</code></td>
 </tr>
 <tr>
 <td colspan="2">&nbsp;</td>
 </tr>
 <tr>
-<th><a name="DealerParBin"></a>DealerParBin</th><th><a name="SidesParBin"></A>SidesParBin</th>
+<th><a name="SidesPar"><a/><code>SidesPar</code></th><th>&nbsp;</th>
 </tr>
 <tr>
-<td>struct ddTableResults \*tablep</td><td>struct ddTableResults \*tablep</td>
+<td><code>struct ddTableResults *tablep</code></td><td>&nbsp;</td>
 </tr>
 <tr>
-<td>struct parResultsMaster \* presp</td><td>struct parResultsMaster \* presp</td>
+<td><code>struct parResultsDealer *sidesRes[2]</code></td><td>&nbsp;</td>
 </tr>
 <tr>
-<td>int vulnerable</td><td>int dealer</td>
-</tr>
-<tr>
-<td>&nbsp;</td><td>int vulnerable</td>
+<td><code>int vulnerable</code></td><td>&nbsp;</td>
 </tr>
 <tr>
 <td colspan="2">&nbsp;</td>
 </tr>
 <tr>
-<th><a name="ConvertToDealerTextForamat"></a>ConvertToDealerTextForamat</th><th><a name="ConvertToSidesTextFormat"></a>ConvertToSidesTextFormat</th>
+<th><a name="DealerParBin"></a><code>DealerParBin</code></th><th><a name="SidesParBin"></A><code>SidesParBin</code></th>
 </tr>
 <tr>
-<td>struct parResultsMaster \*pres</td><td>struct parResultsMaster \*pres</td>
+<td><code>struct ddTableResults *tablep</code></td><td><code>struct ddTableResults *tablep</code></td>
 </tr>
 <tr>
-<td>char \*resp</td><td>struct parTextResults \*resp</td>
+<td><code>struct parResultsMaster *presp</code></td><td><code>struct parResultsMaster *presp</code></td>
+</tr>
+<tr>
+<td><code>int vulnerable</code></td><td><code>int dealer</code></td>
+</tr>
+<tr>
+<td>&nbsp;</td><td><code>int vulnerable</code></td>
+</tr>
+<tr>
+<td colspan="2">&nbsp;</td>
+</tr>
+<tr>
+<th><a name="ConvertToDealerTextForamat"></a><code>ConvertToDealerTextForamat</code></th><th><a name="ConvertToSidesTextFormat"></a><code>ConvertToSidesTextFormat</code></th>
+</tr>
+<tr>
+<td><code>struct parResultsMaster *pres</code></td><td><code>struct parResultsMaster *pres</code></td>
+</tr>
+<tr>
+<td><code>char *resp</code></td><td><code>struct parTextResults *resp</code></td>
 </tr>
 </tbody>
 </table>
@@ -1091,21 +1091,21 @@ EW Par 120: W 1NT+1” when it matters who starts the bidding.
 <table>
 <thead>
 <tr>
-<th><a name="CalcPar"></a>CalcPar</th><th><a name="CalcParPBN"></a>CalcParPBN</th>
+<th><a name="CalcPar"></a><code>CalcPar</code></th><th><a name="CalcParPBN"></a><code>CalcParPBN</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>struct ddTableDeal dl</td><td>struct ddTableDealPBN dlN</td>
+<td><code>struct ddTableDeal dl</code></td><td><code>struct ddTableDealPBN dlN</code></td>
 </tr>
 <tr>
-<td>int vulnerable</td><td>struct ddTableResults * tp</td>
+<td><code>int vulnerable</code></td><td><code>struct ddTableResults *tp</code></td>
 </tr>
 <tr>
-<td>struct ddTableResults * tp</td><td>int vulnerable</td>
+<td><code>struct ddTableResults *tp</code></td><td><code>int vulnerable</code></td>
 </tr>
 <tr>
-<td>struct parResults *presp</td><td>struct parResults *presp</td>
+<td><code>struct parResults *presp</code></td><td><code>struct parResults *presp</code></td>
 </tr>
 </tbody>
 </table>
@@ -1119,21 +1119,21 @@ Both functions are deprecated. Instead use one of the CalcDDtable functions foll
 <table>
 <thead>
 <tr>
-<th><a name="AnalysePlayBin"></a>AnalysePlayBin</th><th><a name="AnalysePlayPBN"></a>AnalysePlayPBN</th>
+<th><a name="AnalysePlayBin"></a><code>AnalysePlayBin</code></th><th><a name="AnalysePlayPBN"></a><code>AnalysePlayPBN</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>struct deal dl</td><td>struct dealPBN dlPBN</td>
+<td><code>struct deal dl</code></td><td><code>struct dealPBN dlPBN</code></td>
 </tr>
 <tr>
-<td>struct playTraceBin play</td><td>struct playTracePBN playPBN</td>
+<td><code>struct playTraceBin play</code></td><td><code>struct playTracePBN playPBN</code></td>
 </tr>
 <tr>
-<td>struct solvedPlay \*solvedp</td><td>struct solvedPlay \*solvedp</td>
+<td><code>struct solvedPlay *solvedp</code></td><td><code>struct solvedPlay *solvedp</code></td>
 </tr>
 <tr>
-<td>int thrId</td><td>int thrId</td>
+<td><code>int thrId</code></td><td><code>int thrId</code></td>
 </tr>
 </tbody>
 </table>
@@ -1151,21 +1151,21 @@ The number of tricks are always seen from declarer’s viewpoint (he is the one 
 <table>
 <thead>
 <tr>
-<th><a name="AnalyseAllPlaysBin"></a>AnalyseAllPlaysBin</th><th><a name="AnalyseAllPlaysPBN"></a>AnalyseAllPlaysPBN</th>
+<th><a name="AnalyseAllPlaysBin"></a><code>AnalyseAllPlaysBin</code></th><th><a name="AnalyseAllPlaysPBN"></a><code>AnalyseAllPlaysPBN</code></th>
 </tr>
 </thead>
 <thead>
 <tr>
-<td>struct boards \*bop</td><td>struct boardsPBN \*bopPBN</td>
+<td><code>struct boards *bop</code></td><td><code>struct boardsPBN *bopPBN</code></td>
 </tr>
 <tr>
-<td>struct playTracesBin \*plp</td><td>struct playTracesPBN \*plpPBN</td>
+<td><code>struct playTracesBin *plp</code></td><td><code>struct playTracesPBN *plpPBN</code></td>
 </tr>
 <tr>
-<td>struct solvedPlays \*solvedp</td><td>struct solvedPlays \*solvedp</td>
+<td><code>struct solvedPlays *solvedp</code></td><td><code>struct solvedPlays *solvedp</code></td>
 </tr>
 <tr>
-<td>int chunkSize</td><td>int chunkSize</td>
+<td><code>int chunkSize</code></td><td><code>int chunkSize</code></td>
 </tr>
 </thead>
 </table>
@@ -1179,12 +1179,12 @@ Concerning chunkSize, exactly the 21 same remarks apply as with SolveAllChunksBi
 <table>
 <thead>
 <tr>
-<th><a name="SetMaxThreads"><a/>SetMaxThreads</th><th><a name="FreeMemory"></a>FreeMemory</th>
+<th><a name="SetMaxThreads"><a/><code>SetMaxThreads</code></th><th><a name="FreeMemory"></a><code>FreeMemory</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>int userThreads</td><td>void</td>
+<td><code>int userThreads</code></td><td><code>void</code></td>
 </tr>
 </tbody>
 </table>
