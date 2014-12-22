@@ -96,7 +96,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code><a href="CalcDDtable">CalcDDtable</a></code></td><td><code>struct <a href="#ddTableDeal">ddTableDeal</a> tableDeal</code></td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
+<td rowspan="2"><code><a href="#CalcDDtable">CalcDDtable</a></code></td><td><code>struct <a href="#ddTableDeal">ddTableDeal</a> tableDeal</code></td><td rowspan="2">Binary</td><td rowspan="2">Solves an initial hand for all possible declarers and denominations (up to 20 combinations.)</td>
 </tr>
 <tr>
 <td><code>struct <a href="#ddTableResults">ddTableResults</a> * tablep</code></td>
@@ -336,10 +336,9 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td roespan="2"><code><a href="#ErrorMessage">ErrorMessage</a></code></td><td>int code</td><td>&nbsp;</td><td roenspan="2">Turns a return code into an error message string.</td>
+<td roespan="2"><code><a href="#ErrorMessage">ErrorMessage</a></code></td><td><code>int code</code></td><td>&nbsp;</td><td roenspan="2">Turns a return code into an error message string.</td>
 </tr>
 <tr>
-<td>
 </tbody>
 </table>
 
