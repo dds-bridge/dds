@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_SOLVEBOARD_H
+#define DDS_SOLVEBOARD_H
+
 
 int SolveAllBoardsN(
   struct boards * bop,
@@ -14,3 +17,4 @@ int SolveAllBoardsN(
   int chunkSize,
   int source); // 0 source, 1 calc
 
+#endif

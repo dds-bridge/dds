@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#ifndef _DDS_SCHEDULER
-#define _DDS_SCHEDULER
+#ifndef DDS_SCHEDULER_H
+#define DDS_SCHEDULER_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,6 +71,7 @@ class Scheduler
     {
       int next;
       int spareKey;
+      unsigned remainCards[DDS_HANDS][DDS_SUITS];
       int NTflag;
       int first;
       int strain;
@@ -137,6 +137,10 @@ class Scheduler
       boards * bop);
 
     void FinetuneGroups();
+
+    bool SameHand(
+      int hno1,
+      int hno2);
 
     void SortSolve(),
          SortCalc(),
