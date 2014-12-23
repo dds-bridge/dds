@@ -2,7 +2,7 @@ Bo Haglund, Soren Hein, Bob Richardson
 
 Rev X, 2014-11-16
 
-Latest DLL issue with this description is available at http://www.bahnhof.se/wb758135/
+Latest DLL issue with this description is available at [http://www.bahnhof.se/wb758135/](http://www.bahnhof.se/wb758135/)
 
 # Description of the DLL functions supported in Double Dummy Problem Solver 2.8
 ## Callable functions
@@ -18,7 +18,7 @@ The basic functions `SolveBoard` and `SolveBoardPBN` each solve  a single hand a
 
 ### The Multi-Thread Double Dummy Solver Functions
 
-The double dummy trick values for all 5 \* 4 = 20 possible combinations of a hand’s trump strain and declarer hand alternatives are solved by a single call to one of the functions `CalcDDtable` and `CalcDDtablePBN`. Threads are allocated per strain. in order to save computations.
+The double dummy trick values for all 5 \* 4 = 20 possible combinations of a hand's trump strain and declarer hand alternatives are solved by a single call to one of the functions `CalcDDtable` and `CalcDDtablePBN`. Threads are allocated per strain. in order to save computations.
 
 To obtain better utilization of available threads, the double dummy (DD) tables can be grouped using one of the functions `CalcAllTables` and `CalcAllTablesPBN`.
 
@@ -34,8 +34,8 @@ The PAR calculation functions find the optimal contract(s) assuming open cards a
 
 Two alternatives are given:
 
-1. The PAR scores / contracts are calculated separately for each side. In almost all cases the results will be identical for both sides, but in rare cases the result is dependent on which side that “starts the bidding”, i.e. that first finds the bid that is most beneficial for the own side. One example is when both sides can make 1 NT.
-2. The dealer hand is assumed to “start the bidding”. 
+1. The PAR scores / contracts are calculated separately for each side. In almost all cases the results will be identical for both sides, but in rare cases the result is dependent on which side that &#8220;starts the bidding&#8221;, i.e. that first finds the bid that is most beneficial for the own side. One example is when both sides can make 1 NT.
+2. The dealer hand is assumed to &#8220;start the bidding&#8221;. 
 
 The presentation of the par score and contracts are given in alternative formats.
 
@@ -142,14 +142,14 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code><a href="#SolveAllBoards">SolveAllBoards</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 “Chunk” functions”!</td>
+<td rowspan="2"><code><a href="#SolveAllBoards">SolveAllBoards</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 &#8220;Chunk&#8221; functions&#8221;!</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code><a href="#SolveAllChunksBin">SolveAllChunksBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="3"><code><a href="#SolveAllChunksBin">SolveAllChunksBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</code></td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
@@ -159,7 +159,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code><a href="#SolveAllChunks">SolveAllChunks</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don’t use!</td>
+<td rowspan="3"><code><a href="#SolveAllChunks">SolveAllChunks</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don't use!</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
@@ -259,7 +259,7 @@ of the dealer.</td>
 <td><code>struct&nbsp;<a href="#ddTableResults">ddTabeleResults</a>&nbsp;*tablep</code></td>
 </tr>
 <tr>
-<td><code>struct&nbsp;<a href="#parResults">parResults</a>&nbsp;*presp</td>
+<td><code>struct&nbsp;<a href="#parResults">parResults</a>&nbsp;*presp</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
@@ -302,7 +302,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="4"><code><a href="#AnalyseAllPlaysBin">AnalyseAllPlaysBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
+<td rowspan="4"><code><a href="#AnalyseAllPlaysBin">AnalyseAllPlaysBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</code></td><td rowspan="4">Binary</td><td rowspan="4">Solves a number of hands with play sequences in parallel.  Multi-threaded.</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="#playTracesBin">playTracesBin</a>&nbsp;*plp</code></td>
@@ -341,6 +341,7 @@ of the dealer.</td>
 <tr>
 <td><code>char line[80]</code>
 </td>
+</tr>
 </tbody>
 </table>
 
@@ -396,7 +397,7 @@ Common encodings are as follows
 <td>Bit 14</td><td>Rank of ace</td>
 </tr>
 <tr><td colspan="3">&nbsp;</td></tr>
-<td><a name="Holding"></a>Holding</td><td colspan="2">A value of 16388 = 16384 + 4 is the encoding for the holding “A2” (ace and deuce).<br />The two lowest bits are always zero.</td>
+<td><a name="Holding"></a>Holding</td><td colspan="2">A value of 16388 = 16384 + 4 is the encoding for the holding &#8220;A2&#8221; (ace and deuce).<br />The two lowest bits are always zero.</td>
 </tr>
 <tr><td colspan="3">&nbsp;</td></tr>
 <td><a name="PBN"></a>PBN</td><td colspan="2">Example:<br />W:T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K</td>
@@ -451,7 +452,6 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
@@ -460,7 +460,6 @@ Common encodings are as follows
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -471,11 +470,10 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="ddTableDeals"><a/><code>ddTableDeals</code></td><td><code>int noOfTables</code></td><td>Number of DD table deals in structure, at most <code>MAXNOOFTABLES</code></td>
+<td><a name="ddTableDeals"></a><code>ddTableDeals</code></td><td><code>int noOfTables</code></td><td>Number of DD table deals in structure, at most <code>MAXNOOFTABLES</code></td>
 </tr>
 <tr>
 <td></td><td><code>struct ddTableDeal deals[X]</code></td><td>X = <code>MAXNOOFTABLES * DDS_STRAINS</code></td>
@@ -484,11 +482,10 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="ddTableDealsPBN"><a/><code>ddTableDealsPBN</code></td><td><code>int noOfTables</code></td><td>Number of DD table deals in structure</td>
+<td><a name="ddTableDealsPBN"></a><code>ddTableDealsPBN</code></td><td><code>int noOfTables</code></td><td>Number of DD table deals in structure</td>
 </tr>
 <tr>
 <td></td><td><code>struct ddTableDealPBN deals[X]</code></td><td>X = <code>MAXNOOFTABLES * DDS_STRAINS</code></td>
@@ -496,7 +493,6 @@ Common encodings are as follows
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -519,11 +515,10 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="boardsPBN"></a><code>boardsPBN</td><td>int noOfBoards</code></td><td>Number of boards</td>
+<td><a name="boardsPBN"></a><code>boardsPBN</code></td><td><code>int noOfBoards</code></td><td>Number of boards</td>
 </tr>
 <tr>
 <td></td><td><code>struct dealPBN[MAXNOOFBOARDS]</code></td><td></td>
@@ -544,10 +539,10 @@ Common encodings are as follows
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="futureTricks"></a><code>futureTricks</td><td><code>int nodes</code></td><td>Number of nodes searched by the DD solver.</td>
+<td><a name="futureTricks"></a><code>futureTricks</code></td><td><code>int nodes</code></td><td>Number of nodes searched by the DD solver.</td>
 </tr>
 <tr>
-<td></td><td><code>int cards</code></td><td>Number of cards for which a result is returned.  May be all the cards, but equivalent ranks are omitted, so for a holding of KQ76 only the cards K and 7 would be returned, and the “equals” field below would be 2048 (Q) for the king and 54 (6) for the 7.</td>
+<td></td><td><code>int cards</code></td><td>Number of cards for which a result is returned.  May be all the cards, but equivalent ranks are omitted, so for a holding of KQ76 only the cards K and 7 would be returned, and the &#8220;equals&#8221; field below would be 2048 (Q) for the king and 54 (6) for the 7.</td>
 </tr>
 <tr>
 <td></td><td><code>int suit[13]</code></td><td>Suit of the each returned card. <a href="#Suit">Suit</a> encoding.</td>
@@ -565,11 +560,10 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
-<td><a name="solvedBoards"></a><code>solvedBoards</td><td><code>int noOfBoards</code></td><td></td>
+<td><a name="solvedBoards"></a><code>solvedBoards</code></td><td><code>int noOfBoards</code></td><td></td>
 </tr>
 <tr>
 <td></td><td><code>struct futureTricks solvedBoard [MAXNOOFBOARDS]</code></td><td></td>
@@ -577,7 +571,6 @@ Common encodings are as follows
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -587,7 +580,6 @@ Common encodings are as follows
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -601,19 +593,17 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
 <td><a name="parResults"></a><code>parResults</code></td><td><code>char parScore[2][16]</code></td><td>First index is NS/EW. <a href="#Side">Side</a> encoding.</td>
 </tr>
 <tr>
-<td></td><td><code>char parContractsString[2][128]</code></td><td>First index is NS/EW.  <a href="#Side">Side</a> encoding.</td>
+<td></td><td><code>char parContractsString[2][128]</code></td><td>First index is NS/EW. <a href="#Side">Side</a> encoding.</td>
 </tr>
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -623,7 +613,6 @@ Common encodings are as follows
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -640,7 +629,6 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
@@ -655,7 +643,6 @@ Common encodings are as follows
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -678,7 +665,6 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
@@ -690,7 +676,6 @@ Common encodings are as follows
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -707,7 +692,6 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
@@ -719,7 +703,6 @@ Common encodings are as follows
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -733,7 +716,6 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
@@ -746,19 +728,17 @@ Common encodings are as follows
 <td colspan="3"></td>
 </tr>
 <tr>
-<tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
 <tr>
 <td><a name="solvedPlay"></a><code>solvedPlay</code></td><td><code>int number</code></td><td></td>
 </tr>
 <tr>
-<td></td><td><code>int tricks[53];</td><td>Starting position and up to 52 cards</td>
+<td></td><td><code>int tricks[53]</code></td><td>Starting position and up to 52 cards</td>
 </tr>
 <tr>
 <td colspan="3"></td>
 </tr>
-<tr>
 <tr>
 <th>Struct</th><th>Field</th><th>Comment</th>
 </tr>
@@ -801,19 +781,19 @@ Common encodings are as follows
 </tbody>
 </table>
 
-SolveBoardPBN is just like SolveBoard, except for the input format. Historically it was one of the first functions, and it exposes the thread index directly to the user. Later functions generally don’t do that, and they also hide the implementation details such as transposition tables, see below.
+SolveBoardPBN is just like SolveBoard, except for the input format. Historically it was one of the first functions, and it exposes the thread index directly to the user. Later functions generally don't do that, and they also hide the implementation details such as transposition tables, see below.
 
-SolveBoard solves a single deal “<code>dl</code>” and returns the result in “<code>\*futp</code>” which must be declared before calling SolveBoard.
+SolveBoard solves a single deal &#8220;<code>dl</code>&#8221; and returns the result in &#8220;<code>\*futp</code>&#8221; which must be declared before calling SolveBoard.
 
 If you have multiple hands to solve, it is always better to group them together into a single function call than to use SolveBoard.
 
-SolveBoard is thread-safe, so several threads can call SolveBoard in parallel. Thus the user of DDS can create threads and call SolveBoard in parallel over them. The maximum number of threads is fixed in the DLL at compile time and is currently 16.  So “<code>threadIndex</code>” must be between 0 and 15 inclusive; see also the function SetMaxThreads.  Together with the PlayAnalyse functions, this is the only function that exposes the thread number to the user.
+SolveBoard is thread-safe, so several threads can call SolveBoard in parallel. Thus the user of DDS can create threads and call SolveBoard in parallel over them. The maximum number of threads is fixed in the DLL at compile time and is currently 16.  So &#8220;<code>threadIndex</code>&#8221; must be between 0 and 15 inclusive; see also the function SetMaxThreads.  Together with the PlayAnalyse functions, this is the only function that exposes the thread number to the user.
 
-There is a “<code>transposition table</code>” memory associated with each thread.  Each node in the table is effectively a position after certain cards have been played and other certain cards remain.  The table is not deleted automatically after each call to SolveBoard, so it can be reused from call to call.  However, it only really makes sense to reuse the table when the hand is very similar in the two calls.  The function will still run if this is not the case, but it won’t be as efficient.  The reuse of the transposition table can be controlled by the “<code>mode</code>” parameter, but normally this is not needed and should not be done.
+There is a &#8220;<code>transposition table</code>&#8221; memory associated with each thread.  Each node in the table is effectively a position after certain cards have been played and other certain cards remain.  The table is not deleted automatically after each call to SolveBoard, so it can be reused from call to call.  However, it only really makes sense to reuse the table when the hand is very similar in the two calls.  The function will still run if this is not the case, but it won't be as efficient.  The reuse of the transposition table can be controlled by the &#8220;<code>mode</code>&#8221; parameter, but normally this is not needed and should not be done.
 
-The three parameters “<code>target</code>”, “<code>solutions</code>” and “<code>mode</code>” together control the function.  Generally speaking, the target is the number of tricks to be won (at least) by the side to play; solutions controls how many solutions should be returned; and mode controls the search behavior.  See next page for definitions.
+The three parameters &#8220;<code>target</code>&#8221;, &#8220;<code>solutions</code>&#8221; and &#8220;<code>mode</code>&#8221; together control the function.  Generally speaking, the target is the number of tricks to be won (at least) by the side to play; solutions controls how many solutions should be returned; and mode controls the search behavior.  See next page for definitions.
 
-For equivalent cards, only the highest is returned, and lower equivalent cards are encoded in the <code><a href="#futureTricks">futureTricks</a></code> structure (see “<code>equals</code>”).
+For equivalent cards, only the highest is returned, and lower equivalent cards are encoded in the <code><a href="#futureTricks">futureTricks</a></code> structure (see &#8220;<code>equals</code>&#8221;).
 
 <table>
 <thead>
@@ -857,7 +837,7 @@ If the target cannot be achieved, only one card is returned with the score set a
 <th>mode</th><th>Reuse TT?</th><th>comment</th>
 </tr>
 <tr>
-<td>0</td><td rowspan="2">Automatic if same trump suit and the same or nearly the same cards distribution, deal.first can be different.</td><td>Do not search to find the core if the hand to play has only one card, including its equivalents, to play. Score is set to –2 for this card, indicating that there are no alternative cards. If there are multiple choices for cards to play, search is done to find the score. This mode is very fast but you don’t always search to find the score.</td>
+<td>0</td><td rowspan="2">Automatic if same trump suit and the same or nearly the same cards distribution, deal.first can be different.</td><td>Do not search to find the core if the hand to play has only one card, including its equivalents, to play. Score is set to –2 for this card, indicating that there are no alternative cards. If there are multiple choices for cards to play, search is done to find the score. This mode is very fast but you don't always search to find the score.</td>
 </tr>
 <tr>
 <td>1</td><td rowspan="2">Always search to find the score. Even when the hand to play has only one card, with possible equivalents, to play.</td>
@@ -871,7 +851,7 @@ If the target cannot be achieved, only one card is returned with the score set a
 Note: mode no longer always has this effect internally in DDS. We think mode is no longer useful,
 and we may use it for something else in the future. If you think you need it, let us know!
 
-“Reuse” means “reuse the transposition table from the previous run with the same thread number”.
+&#8220;Reuse&#8221; means &#8220;reuse the transposition table from the previous run with the same thread number&#8221;.
 For mode = 2 it is the responsibility of the programmer using the DLL to ensure that reusing the table is safe in the actual situation. Example: Deal is the same, except for `deal.first`. The Trump suit is the same.
 
 1<sup>st</sup> call, East leads: `SolveBoard(deal, -1, 1, 1, &fut, 0), deal.first=1`
@@ -899,7 +879,7 @@ For mode = 2 it is the responsibility of the programmer using the DLL to ensure 
 </table>
 
 CalcDDtablePBN is just like CalcDDtable, except for the input format. 
-CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy values for the initial 52 cards for all the 20 combinations of denomination and declarer in “\*tablep” , which must be declared before calling CalcDDtable.
+CalcDDtable solves a single deal &#8220; tableDeal &#8221; and returns the double-dummy values for the initial 52 cards for all the 20 combinations of denomination and declarer in &#8220;\*tablep&#8221; , which must be declared before calling CalcDDtable.
 
 <table>
 <thead>
@@ -928,11 +908,11 @@ CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy 
 
 CalcAllTablesPBN is just like CalcAllTables, except for the input format.
 
-CallAllTables calculates the double dummy values of the denomination/declarer hand combinations in “\*dealsp” for a number of DD tables in parallel. This increases the speed compared to calculating these values using a CalcDDtable call for each DD table. The results are returned in “\*resp” which must be defined before CalcAllTables is called.
+CallAllTables calculates the double dummy values of the denomination/declarer hand combinations in &#8220;\*dealsp&#8221; for a number of DD tables in parallel. This increases the speed compared to calculating these values using a CalcDDtable call for each DD table. The results are returned in &#8220;\*resp&#8221; which must be defined before CalcAllTables is called.
 
-The “mode” parameter contains the vulnerability (<a href="#Vulnerable">Vulnerable</a> encoding; not to be confused with the SolveBoard mode) for use in the par calculation. It is set to -1 if no par calculation is to be performed.
+The &#8220;mode&#8221; parameter contains the vulnerability (<a href="#Vulnerable">Vulnerable</a> encoding; not to be confused with the SolveBoard mode) for use in the par calculation. It is set to -1 if no par calculation is to be performed.
 
-There are 5 possible denominations or strains (the four trump suits and no trump). The parameter “trumpFilter” describes which, if any, of the 5 possibilities that will be excluded from the calculations. They are defined in <a href="#Suit">Suit</a> encoding order, so setting trumpFilter to {FALSE, FALSE, TRUE, TRUE, TRUE} means that values will only be calculated for the trump suits spades and hearts.
+There are 5 possible denominations or strains (the four trump suits and no trump). The parameter &#8220;trumpFilter&#8221; describes which, if any, of the 5 possibilities that will be excluded from the calculations. They are defined in <a href="#Suit">Suit</a> encoding order, so setting trumpFilter to {FALSE, FALSE, TRUE, TRUE, TRUE} means that values will only be calculated for the trump suits spades and hearts.
 
 The maximum number of DD tables in a CallAllTables call depends on the number of strains required, see the following table:
 
@@ -980,7 +960,7 @@ The maximum number of DD tables in a CallAllTables call depends on the number of
 </tbody>
 </table>
 
-`SolveAllChunks` is an alias for SolveAllChunksPBN; don’t use it.
+`SolveAllChunks` is an alias for SolveAllChunksPBN; don't use it.
 
 `SolveAllBoards` used to be an alias for SolveAllChunksPBN with a chunkSize of 1; however this has been changed in v2.8, and we now recommend only to use SolveAllBoards and not the chunk functions any more; explanation follows.
 
@@ -1019,7 +999,7 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 <td colspan="2">&nbsp;</td>
 </tr>
 <tr>
-<th><a name="SidesPar"><a/><code>SidesPar</code></th><th>&nbsp;</th>
+<th><a name="SidesPar"></a><code>SidesPar</code></th><th>&nbsp;</th>
 </tr>
 <tr>
 <td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td><td>&nbsp;</td>
@@ -1034,7 +1014,7 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 <td colspan="2">&nbsp;</td>
 </tr>
 <tr>
-<th><a name="DealerParBin"></a><code>DealerParBin</code></th><th><a name="SidesParBin"></A><code>SidesParBin</code></th>
+<th><a name="DealerParBin"></a><code>DealerParBin</code></th><th><a name="SidesParBin"></a><code>SidesParBin</code></th>
 </tr>
 <tr>
 <td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td><td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td>
@@ -1065,7 +1045,7 @@ SolveAllBoards now detects repetitions automatically within a batch, whether or 
 
 The functions Par, DealerPar, SidesPar, DealerParBin and SidesParBin calculate the par score and par contracts of a given double-dummy solution matrix `*tablep` which would often be the solution of a call to [CalcDDtable](#CalcDDtable). Since the input is a table, there is no PBN and non-PBN version of these functions.
 
-Before the functions can be called, a structure of the type “parResults” , `parResultsDealer` or `parResultsMaster` must already have been defined. 
+Before the functions can be called, a structure of the type &#8220;parResults&#8221; , `parResultsDealer` or `parResultsMaster` must already have been defined. 
 
 The `vulnerable` parameter is given using [Vulnerable](#Vulnerable) encoding.
 
@@ -1075,21 +1055,21 @@ The DealerPar() function also uses knowledge of the `dealer` using [Hand](#Hand)
 
 The SidesPar() function is similar to the Par() function, the only difference is that the par results are given in the same format as for DealerPar().
 
-In Par() and SidesPar() there may be more than one par score; in DealerPar() that is not the case. Par() returns the scores as a text string, for instance “NS -460”, while DealerPar() and SidesPar() use an integer, -460.
+In Par() and SidesPar() there may be more than one par score; in DealerPar() that is not the case. Par() returns the scores as a text string, for instance &#8220;NS -460&#8221;, while DealerPar() and SidesPar() use an integer, -460.
 
 There may be several par contracts, for instance 3NT just making and 5C just making. Each par contract is returned as a text string. The formats are a bit different betweeen the two output format alternatives.
 
 Par() returns the par contracts separated by commas. Possible different trick levels of par score contracts are enumerated in the contract description, e.g the possible trick levels 3, 4 and 5 in no trump are given as 345N. Examples:
 
-* “NS:NS 23S,NS 23H”. North and South as declarer make 2 or 3 spades and hearts contracts, 2 spades and 2 hearts with an overtrick. This is from the NS view, shown by “NS:” meaning that NS made the first bid. Note that this information is actually not enough, as it may be that N and S can make a given contract and that either E or W can bid this same contract (for instance 1NT) before N but not before S. So in the rare cases where the NS and EW sides are not the same, the results will take some manual inspection.
-* “NS:NS 23S,N 23H”: Only North makes 3 hearts.
-* “EW:NS 23S,N 23H”: This time the result is the same when EW open the bidding.
+* &#8220;NS:NS 23S,NS 23H&#8221;. North and South as declarer make 2 or 3 spades and hearts contracts, 2 spades and 2 hearts with an overtrick. This is from the NS view, shown by &#8220;NS:&#8221; meaning that NS made the first bid. Note that this information is actually not enough, as it may be that N and S can make a given contract and that either E or W can bid this same contract (for instance 1NT) before N but not before S. So in the rare cases where the NS and EW sides are not the same, the results will take some manual inspection.
+* &#8220;NS:NS 23S,N 23H&#8221;: Only North makes 3 hearts.
+* &#8220;EW:NS 23S,N 23H&#8221;: This time the result is the same when EW open the bidding.
 
 DealerPar() and SidesPar() give each par contract as a separate text string:
 
-* “4S*-EW-1” means that E and W can both sacrifice in four spades doubled, going down one trick.
-* “3N-EW” means that E and W can both make exactly 3NT.
-* “4N-W+1” means that only West can make 4NT +1. In the last example, 5NT just making can also be considered a par contract, but North-South don’t have a profitable sacrifice against 4NT, so the par contract is shown in this way. If North-South did indeed have a profitable sacrifice, perhaps 5C\*_NS-2, then par contract would have been shown as “5N-W”. Par() would show “4N-W+1” as “W 45N”.
+* &#8220;4S*-EW-1&#8221; means that E and W can both sacrifice in four spades doubled, going down one trick.
+* &#8220;3N-EW&#8221; means that E and W can both make exactly 3NT.
+* &#8220;4N-W+1&#8221; means that only West can make 4NT +1. In the last example, 5NT just making can also be considered a par contract, but North-South don't have a profitable sacrifice against 4NT, so the par contract is shown in this way. If North-South did indeed have a profitable sacrifice, perhaps 5C\*_NS-2, then par contract would have been shown as &#8220;5N-W&#8221;. Par() would show &#8220;4N-W+1&#8221; as &#8220;W 45N&#8221;.
 * SidesPar() give the par contract text strings as described above for each side.
 
 DealerParBin and SidesParBin are similar to DealerPar and SidesPar, respectively, except that both functions give the output results in binary using the [`parResultsMaster`](#parResultsMaster) structure. This simplifies the writing of a conversion program to get an own result output format. Examples of such programs are ConvertToDealerTextFormat and  ConvertToSidesTextFormat.
@@ -1097,12 +1077,12 @@ DealerParBin and SidesParBin are similar to DealerPar and SidesPar, respectively
 After DealerParBin or SidesParBin is called, the results in parResultsMaster are used when calling ConvertToDealerTextFormat resp. ConvertToSidesTextFormat.
 
 Output example from ConvertToDealerTextFormat:  
-“Par 110: NS 2S NS 2H”
+&#8220;Par 110: NS 2S NS 2H&#8221;
 
 Output examples from ConvertToSidesTextFormat:  
-“NS Par 130: NS 2D+2 NS 2C+2” when it does not matter who starts the bidding.  
-”NS Par -120: W 2NT  
-EW Par 120: W 1NT+1” when it matters who starts the bidding.
+&#8220;NS Par 130: NS 2D+2 NS 2C+2&#8221; when it does not matter who starts the bidding.  
+&#8221;NS Par -120: W 2NT  
+EW Par 120: W 1NT+1&#8221; when it matters who starts the bidding.
 
 <table>
 <thead>
@@ -1158,11 +1138,11 @@ AnalysePlayPBN is just like AnalysePlayBin, except for the input format.
 
 The function returns a list of double-dummy values after each specific played card in a hand. Since the function uses [SolveBoard](#SolveBoard), the same comments apply concerning the thread number `thrId` and the transposition tables.
 
-As an example, let us say the DD result in a given contract is 9 tricks for declarer. The play consists of the first trick, two cards from the second trick, and then declarer claims. The lead and declarer’s play to the second trick (he wins the first trick) are sub-optimal. Then the trace would look like this, assuming each sub-optimal costs 1 trick:
+As an example, let us say the DD result in a given contract is 9 tricks for declarer. The play consists of the first trick, two cards from the second trick, and then declarer claims. The lead and declarer's play to the second trick (he wins the first trick) are sub-optimal. Then the trace would look like this, assuming each sub-optimal costs 1 trick:
 
 9 10 10 10 10 9 9
 
-The number of tricks are always seen from declarer’s viewpoint (he is the one to the right of the opening leader). There is one more result in the trace than there are cards played, because there is a DD value before any card is played, and one DD value after each card played.
+The number of tricks are always seen from declarer's viewpoint (he is the one to the right of the opening leader). There is one more result in the trace than there are cards played, because there is a DD value before any card is played, and one DD value after each card played.
 
 <table>
 <thead>
@@ -1195,7 +1175,7 @@ Concerning chunkSize, exactly the 21 same remarks apply as with [SolveAllChunksB
 <table>
 <thead>
 <tr>
-<th><a name="SetMaxThreads"><a/><code>SetMaxThreads</code></th><th><a name="FreeMemory"></a><code>FreeMemory</code></th>
+<th><a name="SetMaxThreads"></a><code>SetMaxThreads</code></th><th><a name="FreeMemory"></a><code>FreeMemory</code></th>
 </tr>
 </thead>
 <tbody>
@@ -1285,6 +1265,7 @@ different number of boards in its first two arguments.</td>
 </tr>
 <tr>
 <td>-19</td><td>RETURN_FIRST_WRONG</td><td>SolveBoard(), first is not one or 0, 1, 2</td>
+</tr>
 <tr>
 <td>-98</td><td>RETURN_PLAY_FAULT</td><td>AnalysePlay\*() family of functions. (a) Less than 0 or more than 52 cards supplied. (b)
 Invalid suit or rank supplied. (c) A played card is not held by the right player.</td>
@@ -1326,7 +1307,7 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 <td>Rev&nbsp;B</td><td>2006&#8209;03&#8209;20</td><td>Updated issue</td>
 </tr>
 <tr>
-<td>Rev&nbsp;C</td><td>2006&#8209;03&#8209;28</td><td>Updated issue. Addition of the SolveBoard parameter ”mode”</td>
+<td>Rev&nbsp;C</td><td>2006&#8209;03&#8209;28</td><td>Updated issue. Addition of the SolveBoard parameter &#8221;mode&#8221;</td>
 </tr>
 <tr>
 <td>Rev&nbsp;D</td><td>2006&#8209;04&#8209;05</td><td>Updated issue. Usage of target=0 to list all cards that are legal to play</td>
@@ -1393,5 +1374,6 @@ ConvertToDealerTextFormat, ConvertToSidesTextFormat</td>
 </tr>
 <tr>
 <td>Rev&nbsp;X</td><td>2014&#8209;11&#8209;16</td><td>Extended maximum number of tables when calling CalcAllTables.</td>
+</tr>
 </tbody>
 </table>
