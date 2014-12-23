@@ -77,6 +77,9 @@ DDS tries to figure out the available number of cores and the available memory. 
 
 DDS on Windows calls SetMaxThreads itself when it is attached to a process, so you don't have to.  On Unix-like systems we use an equivalent mechanism, but we have had a report that this does not always happen in the right order of things, so you may want to call SetMaxThreads explicitly.
 
+Docs
+====
+The DDS library interface is very well documented. You find the docs, including a Markdown version which you can read online, in the /doc folder.
 
 Bugs
 ====
