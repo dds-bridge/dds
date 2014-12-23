@@ -334,6 +334,13 @@ of the dealer.</td>
 <tr>
 <td><code><a href="#FreeMemory">FreeMemory</a></code></td><td><code>void</code></td><td>&nbsp;</td><td>Frees DDS allocated dynamical memory.</td>
 </tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="2"><code>ErrorMessage</code></td><td><code>int code</code></td><td rowspan="2">Turns a return code into an error message string.</td>
+</tr>
+<tr>
+<td><code>char line[80]</code>
+</td>
 </tbody>
 </table>
 
@@ -821,7 +828,7 @@ play.<br />Return only one of the optimum cards and its score.</td>
 </tr>
 <tr>
 <td>-1</td><td>2</td><td>Find the maximum number of tricks for the side to
-play.<td />Return all optimum cards and their scores.</td>
+play.<br />Return all optimum cards and their scores.</td>
 </tr>
 <tr>
 <td>0</td><td>1</td><td>Return only one of the cards legal to play, with
@@ -883,7 +890,7 @@ For mode = 2 it is the responsibility of the programmer using the DLL to ensure 
 </thead>
 <tbody>
 <tr>
-<td><code>struct <a href="#ddTableDeal">ddTableDeal</a> tableDeal</code></td><td><code>struct <a href="#ddTableDealPBN">ddTableDealPBN</a> tableDealPBN</code></td>ddTableDealPBN">
+<td><code>struct <a href="#ddTableDeal">ddTableDeal</a> tableDeal</code></td><td><code>struct <a href="#ddTableDealPBN">ddTableDealPBN</a> tableDealPBN</code></td>
 </tr>
 <tr>
 <td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td><td><code>struct <a href="#ddTableResults">ddTableResults</a> *tablep</code></td>
@@ -912,7 +919,7 @@ CalcDDtable solves a single deal “ tableDeal ” and returns the double-dummy 
 </tr>
 <tr>
 <td><code>struct <a href="#ddTablesRes">ddTablesRes</a> *resp</code></td><td><code>struct <a href="#ddTablesRes">ddTablesRes</a> *resp</code></td>
-</tr>ddTablesRes">
+</tr>
 <tr>
 <td><</code>struct <a href="#allParResults">allParResults</a> *presp</code></td><td><code>struct <a href="#allParResults">allParResults</a> *presp</code></td>
 </tr>
@@ -957,7 +964,7 @@ The maximum number of DD tables in a CallAllTables call depends on the number of
 <table>
 <thead>
 <tr>
-<th><a name="SolveAllBoards"></a><code>SolveAllBoards</code></th><th><a name="SolveAllChunksBin"></a><code>SolveAllChunksBin</code></th><th><a name="SolveAllChunksPBN"></a><code><a href="#SolveAllChunksPBN">SolveAllChunksPBN</a></code></th>
+<th><a name="SolveAllBoards"></a><code>SolveAllBoards</code></th><th><a name="SolveAllChunksBin"></a><code>SolveAllChunksBin</code></th><th><a name="SolveAllChunksPBN"></a><code>SolveAllChunksPBN</code></th>
 </tr>
 </thead>
 <tbody>
@@ -1088,14 +1095,13 @@ DealerPar() and SidesPar() give each par contract as a separate text string:
 DealerParBin and SidesParBin are similar to DealerPar and SidesPar, respectively, except that both functions give the output results in binary using the [`parResultsMaster`](#parResultsMaster) structure. This simplifies the writing of a conversion program to get an own result output format. Examples of such programs are ConvertToDealerTextFormat and  ConvertToSidesTextFormat.
 
 After DealerParBin or SidesParBin is called, the results in parResultsMaster are used when calling ConvertToDealerTextFormat resp. ConvertToSidesTextFormat.
-Output example from ConvertToDealerTextFormat:
 
+Output example from ConvertToDealerTextFormat:  
 “Par 110: NS 2S NS 2H”
 
-Output examples from ConvertToSidesTextFormat:
-
-“NS Par 130: NS 2D+2 NS 2C+2” when it does not matter who starts the bidding.
-”NS Par -120: W 2NT<br />
+Output examples from ConvertToSidesTextFormat:  
+“NS Par 130: NS 2D+2 NS 2C+2” when it does not matter who starts the bidding.  
+”NS Par -120: W 2NT  
 EW Par 120: W 1NT+1” when it matters who starts the bidding.
 
 <table>
