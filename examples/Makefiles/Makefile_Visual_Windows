@@ -1,0 +1,151 @@
+# This is a Makefile for the examples,
+# for Windows and the Microsoft Visual C++ compiler.
+# Contributed by Philippe Capron in December 2014.
+
+# Unlike the other Makefiles, it does not assume Unix-like commands.
+
+# The test program itself does not use multi-threading, 
+# but the DLL might, depending on how it was compiled.
+
+# If your Microsoft compiler is not called cl, change it here.
+CC		= cl
+CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL
+LINK_FLAGS	= /LTCG
+
+# These flags are not turned on by default, but DDS should pass them.
+# Turn them on below.
+WARN_FLAGS	=		\
+	/Wall			\
+	/wd4127			\
+	/wd4514			\
+	/wd4555			\
+	/wd4668			\
+	/wd4701			\
+	/wd4711			\
+	/wd4820			\
+	/wd4986			\
+	/wd4987			\
+	/wd4996			\
+	/WX
+
+# Here you can turn on warnings.
+# CC_FULL_FLAGS	= $(CC_FLAGS)
+CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
+
+DTEST		= dtest
+ITEST		= itest
+
+DLLBASE		= dds
+DLL 		= $(DLLBASE).dll
+DLIB 		= $(DLLBASE).lib
+EXPORTER	= Exports.def
+
+COMMON_SOURCE_FILES 	=	\
+	hands.cpp
+
+ALL_EXAMPLE_FILES	=	\
+	AnalysePlayBin.cpp	\
+	AnalysePlayPBN.cpp	\
+	AnalyseAllPlaysBin.cpp	\
+	AnalyseAllPlaysPBN.cpp	\
+	CalcDDtable.cpp		\
+	CalcDDtablePBN.cpp	\
+	CalcAllTables.cpp	\
+	CalcAllTablesPBN.cpp	\
+	DealerPar.cpp		\
+	Par.cpp			\
+	SolveBoard.cpp		\
+	SolveBoardPBN.cpp	\
+	SolveAllBoards.cpp
+	
+OBJ_FILES 	=		\
+	hands.obj
+
+EX_OBJ_FILES	=		\
+	AnalysePlayBin.obj	\
+	AnalysePlayPBN.obj	\
+	AnalyseAllPlaysBin.obj	\
+	AnalyseAllPlaysPBN.obj	\
+	CalcDDtable.obj		\
+	CalcDDtablePBN.obj	\
+	CalcAllTables.obj	\
+	CalcAllTablesPBN.obj	\
+	DealerPar.obj		\
+	Par.obj			\
+	SolveBoard.obj		\
+	SolveBoardPBN.obj	\
+	SolveAllBoards.obj
+
+EX_EXE_FILES	=		\
+	AnalysePlayBin.exe	\
+	AnalysePlayPBN.exe	\
+	AnalyseAllPlaysBin.exe	\
+	AnalyseAllPlaysPBN.exe	\
+	CalcDDtable.exe		\
+	CalcDDtablePBN.exe	\
+	CalcAllTables.exe	\
+	CalcAllTablesPBN.exe	\
+	DealerPar.exe		\
+	Par.exe			\
+	SolveBoard.exe		\
+	SolveBoardPBN.exe	\
+	SolveAllBoards.exe
+
+AnalysePlayBin:	$(OBJ_FILES) AnalysePlayBin.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) AnalysePlayBin.obj /out:AnalysePlayBin.exe
+
+AnalysePlayPBN:	$(OBJ_FILES) AnalysePlayPBN.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) AnalysePlayPBN.obj /out:AnalysePlayPBN.exe
+
+AnalyseAllPlaysBin:	$(OBJ_FILES) AnalyseAllPlaysBin.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) AnalyseAllPlaysBin.obj /out:AnalyseAllPlaysBin.exe
+
+AnalyseAllPlaysPBN:	$(OBJ_FILES) AnalyseAllPlaysPBN.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) AnalyseAllPlaysPBN.obj /out:AnalyseAllPlaysPBN.exe
+
+CalcDDtable:	$(OBJ_FILES) CalcDDtable.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) CalcDDtable.obj /out:CalcDDtable.exe
+
+CalcDDtablePBN:	$(OBJ_FILES) CalcDDtablePBN.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) CalcDDtablePBN.obj /out:CalcDDtablePBN.exe
+
+CalcAllTables:	$(OBJ_FILES) CalcAllTables.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) CalcAllTables.obj /out:CalcAllTables.exe
+
+CalcAllTablesPBN:	$(OBJ_FILES) CalcAllTablesPBN.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) CalcAllTablesPBN.obj /out:CalcAllTablesPBN.exe
+
+DealerPar:	$(OBJ_FILES) DealerPar.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) DealerPar.obj /out:DealerPar.exe
+
+Par:	$(OBJ_FILES) Par.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) Par.obj /out:Par.exe
+
+SolveBoard:	$(OBJ_FILES) SolveBoard.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) SolveBoard.obj /out:SolveBoard.exe
+
+SolveBoardPBN:	$(OBJ_FILES) SolveBoardPBN.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) SolveBoardPBN.obj /out:SolveBoardPBN.exe
+
+SolveAllBoards:	$(OBJ_FILES) SolveAllBoards.obj
+	link /LTCG $(OBJ_FILES) $(DLIB) SolveAllBoards.obj /out:SolveAllBoards.exe
+
+%.obj:	%.cpp
+	$(CC) $(CC_FULL_FLAGS) /c $< /Fo$*.obj
+
+clean:
+	del $(OBJ_FILES) $(EX_OBJ_FILES) $(EX_EXE_FILES) $(DLL) $(DLIB)
+
+
+
+# DO NOT DELETE
+
+CalcDDtable.obj: ../include/dll.h hands.h
+CalcDDtablePBN.obj: ../include/dll.h hands.h
+CalcAllTables.obj: ../include/dll.h hands.h
+CalcAllTablesPBN.obj: ../include/dll.h hands.h
+DealerPar.obj: ../include/dll.h hands.h
+Par.obj: ../include/dll.h hands.h
+SolveBoard.obj: ../include/dll.h hands.h
+SolveBoardPBN.obj: ../include/dll.h hands.h
+SolveAllBoards.obj: ../include/dll.h hands.h
