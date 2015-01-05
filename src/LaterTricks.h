@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_LATERTRICKS_H
+#define DDS_LATERTRICKS_H
+
 
 bool LaterTricksMIN(
   struct pos * posPoint,
@@ -23,3 +26,5 @@ bool LaterTricksMAX(
   int target,
   int trump,
   struct localVarType * thrp);
+
+#endif

@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_DEBUG_H
+#define DDS_DEBUG_H
+
 
 /*
     A number of debug flags cause output files to be generated.
@@ -140,3 +143,4 @@
 
 extern long long counter[COUNTER_SLOTS];
 
+#endif

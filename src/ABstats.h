@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#ifndef _DDS_AB_STATS
-#define _DDS_AB_STATS
+#ifndef DDS_ABSTATS_H
+#define DDS_ABSTATS_H
 
 #include <stdio.h>
 #include <stdlib.h>

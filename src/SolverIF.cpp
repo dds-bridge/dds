@@ -238,7 +238,29 @@ int STDCALL SolveBoard(
   {
     mv.rank = dl.currentTrickRank[k];
     mv.suit = dl.currentTrickSuit[k];
-    mv.sequence = dl.currentTrickSuit[k];
+    mv.sequence = 0;
+
+    thrp->moves.Init(
+      trick,
+      k,
+      dl.currentTrickRank,
+      dl.currentTrickSuit,
+      thrp->lookAheadPos.rankInSuit,
+      thrp->trump,
+      thrp->lookAheadPos.first[iniDepth]);
+
+    if (k == 0)
+      thrp->moves.MoveGen0(
+        trick,
+        &thrp->lookAheadPos,
+        &thrp->bestMove[iniDepth],
+        &thrp->bestMoveTT[iniDepth],
+        thrp->rel);
+    else
+      thrp->moves.MoveGen123(
+        trick,
+        k,
+        &thrp->lookAheadPos);
 
     thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
     thrp->moves.MakeSpecific(&mv, trick, k);
@@ -1081,7 +1103,7 @@ void LastTrickWinner(
   {
     hp = handId(dl->first, h);
     lastTrickSuit[hp] = dl->currentTrickSuit[h];
-    lastTrickRank[hp] = dl->currentTrickRank[h];
+    lastTrickRank[hp] = bitMapRank[dl->currentTrickRank[h]];
   }
 
   for (h = handRelFirst; h < DDS_HANDS; h++)
@@ -1135,8 +1157,8 @@ void LastTrickWinner(
     }
   }
 
-  * leadRank = lastTrickRank[handRelFirst];
-  * leadSuit = lastTrickSuit[handRelFirst];
+  * leadRank = highestRank[maxRank];
+  * leadSuit = maxSuit;
   * leadSideWins = ((handToPlay == maxHand ||
                      partner[handToPlay] == maxHand) ? 1 : 0);
 }

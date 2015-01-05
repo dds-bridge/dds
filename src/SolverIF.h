@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_SOLVERIF_H
+#define DDS_SOLVERIF_H
+
 
 int SolveSameBoard(
   deal dl,
@@ -22,3 +25,4 @@ int AnalyseLaterBoard(
   futureTricks * futp,
   int thrp);
 
+#endif

@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_ABSEARCH_H
+#define DDS_ABSEARCH_H
+
 
 #define DDS_POS_LINES 5
 #define DDS_HAND_LINES 12
@@ -111,3 +114,4 @@ void RankToText(
   unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
   char text[DDS_HAND_LINES][DDS_FULL_LINE]);
 
+#endif

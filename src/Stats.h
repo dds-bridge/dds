@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#ifndef DDS_STATSH
-#define DDS_STATSH
+#ifndef DDS_STATS_H
+#define DDS_STATS_H
 
 void InitTimer();
 

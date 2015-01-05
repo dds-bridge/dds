@@ -1,3 +1,24 @@
+Release Notes DDS 2.8.1
+-----------------------
+Added Makefile for shared library (.d) under Linux.  Contributed
+by Foppe Hemminga and Paul Hide.
+
+Added Makefile for Visual C++ using Windows command-line tools,
+so the Windows make and no "mv" etc.  Contributed by Philippe Capron.
+
+Fixed bug in scheduler that caused some hands to be considered
+identical when they aren't.  Alexis Maugat found the bug and
+contributed a simple test case.
+
+Fixed bug in initialization that affected some cases when initial
+moves are given.  Alexis Maugat found the bug and contributed a
+simple test case.
+
+Added in Foppe Hemminga's version of the documentation, written
+entirely in .md markup format (looks great on Github) and capable 
+of being converted into html and pdf.
+
+
 Release Notes DDS 2.8.0
 ----------------------- 
 2.8.0 is about 15% faster than 2.7.0.
