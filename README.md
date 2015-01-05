@@ -23,7 +23,7 @@ Alex Martelli cleaned up and ported code to Linux and to Mac OS X in 2006.  The 
 
 Brian Dickens found bugs in v2.7 and encouraged us to look at GitHub.  He also set up the entire historical archive and supervised our first baby steps on GitHub.
 
-Foppe Hemminga maintains DDS on ArchLinux.
+Foppe Hemminga maintains DDS on ArchLinux.  He also contributed a version of the documentation file completely in .md mark-up language.
 
 Soren Hein made a number of contributions before becoming a co-author starting in v2.8 in 2014.
 
