@@ -1103,7 +1103,7 @@ void LastTrickWinner(
   {
     hp = handId(dl->first, h);
     lastTrickSuit[hp] = dl->currentTrickSuit[h];
-    lastTrickRank[hp] = dl->currentTrickRank[h];
+    lastTrickRank[hp] = bitMapRank[dl->currentTrickRank[h]];
   }
 
   for (h = handRelFirst; h < DDS_HANDS; h++)
@@ -1157,8 +1157,8 @@ void LastTrickWinner(
     }
   }
 
-  * leadRank = lastTrickRank[handRelFirst];
-  * leadSuit = lastTrickSuit[handRelFirst];
+  * leadRank = highestRank[maxRank];
+  * leadSuit = maxSuit;
   * leadSideWins = ((handToPlay == maxHand ||
                      partner[handToPlay] == maxHand) ? 1 : 0);
 }
