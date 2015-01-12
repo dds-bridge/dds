@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_QUICKTRICKS_H
+#define DDS_QUICKTRICKS_H
+
 
 int QuickTricks(
   struct pos * posPoint,
@@ -25,3 +28,4 @@ bool QuickTricksSecondHand(
   int trump,
   struct localVarType * thrp);
 
+#endif

@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#ifndef DDS_PORTAB_H
+#define DDS_PORTAB_H
+
 
 #if defined(_WIN32)
   #if defined(__MINGW32__) && !defined(WINVER)
@@ -68,4 +71,6 @@
   #ifndef nullptr
     #define nullptr NULL
   #endif
+#endif
+
 #endif

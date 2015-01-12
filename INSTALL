@@ -67,11 +67,16 @@ local install to ../lib, not a system-wide one).
 System-specific data
 ====================
 
-Microsoft Visual C++
+Microsoft Visual C++ (Unix-like, so Cygwin and mingw)
 --------------------
 Makefile: Makefile_Visual
 Compiler: cl
 
+
+Microsoft Visual C++ (Windows-like, so no "mV", different "make")
+--------------------
+Makefile: Makefile_Visual_Windows
+Compiler: cl
 
 Mingw
 -----
@@ -85,9 +90,15 @@ Makefile: Makefile_cygwin
 Compiler: g++
 
 
-Linux
+Linux (static library .a)
 =====
 Makefile: Makefile_linux
+Compiler: g++
+
+
+Linux (dynamic library .ld)
+=====
+Makefile: Makefile_linux_shared
 Compiler: g++
 
 

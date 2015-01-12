@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#ifndef DDS_THREADMEMH
-#define DDS_DDSH
+#ifndef DDS_THREADMEM_H
+#define DDS_THREADMEM_H
 
 struct WinnerEntryType
 {

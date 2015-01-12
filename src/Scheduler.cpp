@@ -229,17 +229,21 @@ void Scheduler::MakeGroups(
 
     unsigned dlXor =
       dl->remainCards[0][0] ^
-      dl->remainCards[0][1] ^
-      dl->remainCards[0][2] ^
-      dl->remainCards[0][3];
+      dl->remainCards[1][1] ^
+      dl->remainCards[2][2] ^
+      dl->remainCards[3][3];
 
     int key = static_cast<int>(((dlXor >> 2) ^ (dlXor >> 6)) & 0x7f);
 
     hands[b].spareKey = static_cast<int>(
                           (dl->remainCards[1][0] << 17) ^
-                          (dl->remainCards[1][1] << 11) ^
-                          (dl->remainCards[1][2] << 5) ^
-                          (dl->remainCards[1][3] >> 2));
+                          (dl->remainCards[2][1] << 11) ^
+                          (dl->remainCards[3][2] << 5) ^
+                          (dl->remainCards[0][3] >> 2));
+
+    for (int h = 0; h < DDS_HANDS; h++)
+      for (int s = 0; s < DDS_SUITS; s++)
+        hands[b].remainCards[h][s] = dl->remainCards[h][s];
 
     hands[b].NTflag = (strain == 4 ? 1 : 0);
     hands[b].first = dl->first;
@@ -294,7 +298,19 @@ void Scheduler::FinetuneGroups()
       b1 = lp->first;
       b2 = hands[lp->first].next;
 
+      bool match = false;
       if (hands[b1].spareKey == hands[b2].spareKey)
+      {
+        // It is now extremely likely that it is a repeat hand,
+        // but we have to be sure.
+        match = true;
+        for (int h = 0; h < DDS_HANDS && match; h++)
+          for (int s = 0; s < DDS_SUITS && match; s++)
+            if (hands[b1].remainCards[h][s] != hands[b2].remainCards[h][s])
+              match = false;
+      }
+
+      if (match)
         continue;
 
       // Leave the first hand in place.
@@ -334,7 +350,7 @@ void Scheduler::FinetuneGroups()
         index = hands[index].next;
       }
 
-      // Sort the list.
+      // Sort the list heuristically by spareKey value.
 
       for (int i = 1; i < sortLen; i++)
       {
@@ -345,14 +361,18 @@ void Scheduler::FinetuneGroups()
         sortList[j] = st;
       }
 
-      if (sortList[0].value == sortList[sortLen - 1].value)
-        continue;
-
       // First group stays where it is, but shorter and rejigged.
+      // From here on, hand comparisons are completely rigorous.
+      // We might miss duplicates, but we won't let different
+      // hands through as belonging to the same group.
 
       int l = 0;
-      while (l < sortLen && sortList[l].value == sortList[l + 1].value)
+      while (l < sortLen-1 && 
+        Scheduler::SameHand(sortList[l].number, sortList[l+1].number))
         l++;
+
+      if (l == sortLen-1)
+        continue;
 
       lp->first = sortList[0].number;
       lp->last = sortList[l].number;
@@ -373,7 +393,7 @@ void Scheduler::FinetuneGroups()
 
       while (l < sortLen)
       {
-        if (sortList[l].value == sortList[l - 1].value)
+        if (Scheduler::SameHand(sortList[l].number, sortList[l-1].number))
         {
           // Same group
           int nOld = sortList[l - 1].number;
@@ -405,6 +425,19 @@ void Scheduler::FinetuneGroups()
       }
     }
   }
+}
+
+
+bool Scheduler::SameHand(
+  int hno1,
+  int hno2)
+{
+  for (int h = 0; h < DDS_HANDS; h++)
+    for (int s = 0; s < DDS_SUITS; s++)
+      if (hands[hno1].remainCards[h][s] != hands[hno2].remainCards[h][s])
+        return false;
+
+  return true;
 }
 
 

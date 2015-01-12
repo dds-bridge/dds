@@ -8,8 +8,8 @@
 */
 
 
-#ifndef DDS_DLLH
-#define DDS_DLLH
+#ifndef DDS_DLL_H
+#define DDS_DLL_H
 
 #if defined(_WIN32) || defined(__CYGWIN__)
   #define DLLEXPORT __declspec(dllexport)
