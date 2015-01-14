@@ -1157,8 +1157,8 @@ void LastTrickWinner(
     }
   }
 
-  * leadRank = highestRank[maxRank];
-  * leadSuit = maxSuit;
+  * leadRank = lastTrickRank[handRelFirst];
+  * leadSuit = lastTrickSuit[handRelFirst];
   * leadSideWins = ((handToPlay == maxHand ||
                      partner[handToPlay] == maxHand) ? 1 : 0);
 }
