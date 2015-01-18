@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014 by Bo Haglund & Soren Hein.
+   2014-2015 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -26,8 +26,8 @@
   #define EXTERN_C
 #endif
 
-/* Version 2.8.0. Allowing for 2 digit minor versions */
-#define DDS_VERSION 20800
+/* Version 2.8.1. Allowing for 2 digit minor versions */
+#define DDS_VERSION 20801
 
 
 #define DDS_HANDS 4
