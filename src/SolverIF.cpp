@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014 by Bo Haglund & Soren Hein.
+   2014-2015 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -1103,7 +1103,7 @@ void LastTrickWinner(
   {
     hp = handId(dl->first, h);
     lastTrickSuit[hp] = dl->currentTrickSuit[h];
-    lastTrickRank[hp] = bitMapRank[dl->currentTrickRank[h]];
+    lastTrickRank[hp] = dl->currentTrickRank[h];
   }
 
   for (h = handRelFirst; h < DDS_HANDS; h++)
@@ -1114,7 +1114,7 @@ void LastTrickWinner(
       if (thrp->suit[hp][s] != 0)
       {
         lastTrickSuit[hp] = s;
-        lastTrickRank[hp] = thrp->suit[hp][s];
+        lastTrickRank[hp] = highestRank[thrp->suit[hp][s]];
         break;
       }
     }
@@ -1157,8 +1157,9 @@ void LastTrickWinner(
     }
   }
 
-  * leadRank = lastTrickRank[handRelFirst];
-  * leadSuit = lastTrickSuit[handRelFirst];
+  hp = handId(dl->first, handRelFirst);
+  * leadRank = lastTrickRank[hp];
+  * leadSuit = lastTrickSuit[hp];
   * leadSideWins = ((handToPlay == maxHand ||
                      partner[handToPlay] == maxHand) ? 1 : 0);
 }
