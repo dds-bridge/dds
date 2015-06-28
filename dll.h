@@ -46,6 +46,8 @@
 
 #define PBN_PLUS
 
+#define RETURN_NO_FAULT  1
+
 /*#define BENCH*/
 
 #include <stdio.h>
@@ -333,11 +335,29 @@ struct allParResults {
   struct parResults presults[MAXNOOFBOARDS / 20];
 };
 
-struct par_suits_type {
+struct contractType
+{
+	int underTricks; /* 0 = make 1-13 = sacrifice */
+	int overTricks; /* 0-3, e.g. 1 for 4S + 1. */
+	int level; /* 1-7 */
+	int denom; /* 0 = No Trumps, 1 = trump Spades, 2 = trump Hearts,
+			   3 = trump Diamonds, 4 = trump Clubs */
+	int seats; /* One of the cases N, E, W, S, NS, EW;
+			   0 = N 1 = E, 2 = S, 3 = W, 4 = NS, 5 = EW */
+};
+
+struct parResultsMaster
+{
+	int score; /* Sign according to the NS view */
+	int number; /* Number of contracts giving the par score */
+	struct contractType contracts[10]; /* Par contracts */
+};
+
+/*struct par_suits_type {
   int suit;
   int tricks;
   int score;
-}; 
+};*/ 
 
 
 struct localVarType {
@@ -536,6 +556,33 @@ void Wipe(int thrId);
 void AddNodeSet(int thrId);
 void AddLenSet(int thrId);
 void AddWinSet(int thrId);
+int rawscore(
+int denom,
+int tricks,
+int isvul);
+
+void SideSeats(
+int dr,
+int i,
+int t1,
+int t2,
+int order,
+parResultsMaster sidesRes[2]);
+
+void CalcOverTricks(
+int i,
+int max_lower,
+int tricks,
+int order,
+parResultsMaster sidesRes[2]);
+
+int CalcMultiContracts(
+int max_lower,
+int tricks);
+
+int VulnerDefSide(
+int side,
+int vulnerable);
 
 void PrintDeal(FILE *fp, unsigned short ranks[4][4]);
 

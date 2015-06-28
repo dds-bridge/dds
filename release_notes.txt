@@ -456,4 +456,8 @@ A fault in the par calculation has been fixed. The fault could cause
 presentation of wrongly extra par contracts in cases were the sides had different 
 vulnerability.
 
+Release Notes DDS 2.5.3
+-----------------------  
+Par calculation faults have been fixed. 
+
 
