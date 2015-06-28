@@ -6,11 +6,11 @@ DDS offers a wide range of functions, including par-score calculations.
 
 Please refer to the [home page](http://privat.bahnhof.se/wb758135) for details.
 
-The current version is DDS 2.8.0 released in November 2014 and licensed under the Apache 2.0 license in the LICENSE FILE.
+The current version is DDS 2.8.1 released in January 2015 and licensed under the Apache 2.0 license in the LICENSE FILE.
 
 Release notes are in the ChangeLog file.
 
-(c) Bo Haglund 2006-2014, (c) Bo Haglund / Soren Hein 2014.
+(c) Bo Haglund 2006-2014, (c) Bo Haglund / Soren Hein 2014-2015.
 
 
 Credits
@@ -83,7 +83,7 @@ The DDS library interface is very well documented. You find the docs, including 
 
 Bugs
 ====
-Version 2.8.0 has no known bugs.
+Version 2.8.1 has no known bugs.
 
 Please report bugs to bo.haglund@bahnhof.se and soren.hein@gmail.com.
 
