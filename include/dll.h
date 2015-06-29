@@ -26,8 +26,8 @@
   #define EXTERN_C
 #endif
 
-/* Version 2.8.1. Allowing for 2 digit minor versions */
-#define DDS_VERSION 20801
+/* Version 2.8.2. Allowing for 2 digit minor versions */
+#define DDS_VERSION 20802
 
 
 #define DDS_HANDS 4
@@ -259,6 +259,13 @@ struct allParResults
 
 struct parResultsDealer
 {
+  /* number: Number of contracts yielding the par score.
+     score: Par score for the specified dealer hand.
+     contracts:  Par contract text strings.  The first contract
+       is in contracts[0], the last one in contracts[number-1].
+       The detailed text format is is given in the DLL interface
+       document.
+  */
   int number;
   int score;
   char contracts[10][10];
