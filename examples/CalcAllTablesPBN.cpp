@@ -24,7 +24,7 @@ int main()
   ddTablesRes tableRes;
   allParResults pres;
 
-  int mode = 0: // No par calculation
+  int mode = 0; // No par calculation
   int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All
   int res;
   char line[80];
