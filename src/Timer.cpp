@@ -194,14 +194,14 @@ void Timer::PrintStats()
   // The other ones are subtracted out based on knowledge
   // of the functions.
 
-  __int64 AB_userCum[TIMER_SPACING];
+  int64_t AB_userCum[TIMER_SPACING];
   double AB_systCum[TIMER_SPACING];
 
   AB_userCum[0] = userCum[0];
   AB_systCum[0] = systCum[0];
 
-  __int64 AB_ct = count[0];
-  __int64 AB_ucum = AB_userCum[0];
+  int64_t AB_ct = count[0];
+  int64_t AB_ucum = AB_userCum[0];
   double AB_scum = AB_systCum[0];
 
   for (int d = 1; d < TIMER_SPACING; d++)
@@ -229,7 +229,7 @@ void Timer::PrintStats()
     AB_scum += AB_systCum[d];
   }
 
-  __int64 all_ucum = AB_ucum;
+  int64_t all_ucum = AB_ucum;
   double all_scum = AB_scum;
   for (int no = TIMER_SPACING; no < DDS_TIMERS; no++)
   {
@@ -272,12 +272,12 @@ void Timer::PrintStats()
             "-");
   }
 
-  __int64 ct[TIMER_GROUPS];
+  int64_t ct[TIMER_GROUPS];
   for (int no = 1; no < TIMER_GROUPS; no++)
   {
     int offset = no * TIMER_SPACING;
 
-    __int64 ucum = 0;
+    int64_t ucum = 0;
     double scum = 0;
     ct[no] = 0;
 
