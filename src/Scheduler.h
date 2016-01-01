@@ -26,7 +26,7 @@
 #define SCHEDULER_CALC 2
 #define SCHEDULER_TRACE 3
 
-#define HASH_MAX 128
+#define HASH_MAX 200
 
 
 struct schedType
