@@ -27,7 +27,7 @@
 #endif
 
 /* Version 2.8.2. Allowing for 2 digit minor versions */
-#define DDS_VERSION 20802
+#define DDS_VERSION 20803
 
 
 #define DDS_HANDS 4
