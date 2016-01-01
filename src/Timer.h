@@ -41,6 +41,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>
 
 #ifdef _WIN32
   #include <windows.h>
@@ -115,7 +116,7 @@ class Timer
 #endif
 
     int count[DDS_TIMERS];
-    __int64 userCum[DDS_TIMERS];
+    int64_t userCum[DDS_TIMERS];
     double systCum[DDS_TIMERS];
 
     void OutputStats(char * t);
