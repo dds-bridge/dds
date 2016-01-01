@@ -7,5 +7,6 @@
 *.def
 src/[Mm]akefile
 test/[Mm]akefile
+examples/[Mm]akefile
 test/dtest
 test/itest
