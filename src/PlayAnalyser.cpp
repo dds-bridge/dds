@@ -340,6 +340,69 @@ int STDCALL AnalyseAllPlaysBin(
   return pfail;
 }
 
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
+
+// This code for LLVM multi-threading on the Mac was kindly 
+// contributed by Pierre Cossard.
+
+int STDCALL AnalyseAllPlaysBin(
+  boards * bop,
+  playTracesBin * plp,
+  solvedPlays * solvedp,
+  int chunkSize)
+{
+  if (bop->noOfBoards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+    
+  if (bop->noOfBoards != plp->noOfBoards)
+    return RETURN_UNKNOWN_FAULT;
+    
+  pchunk = chunkSize;
+  pfail = 1;
+    
+  solvedPlay *solved = static_cast<solvedPlay *> 
+    (calloc(MAXNOOFBOARDS, sizeof(solvedPlay)));
+    
+  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
+  scheduler.Register(bop, SCHEDULER_TRACE);
+    
+    
+    START_BLOCK_TIMER;
+    dispatch_apply(static_cast<size_t>(noOfThreads), 
+      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), 
+        ^(size_t t)
+    {
+      while (1)
+      {
+        int thid = static_cast<int>(t);
+            
+        schedType st = scheduler.GetNumber(thid);
+        int index = st.number;
+        if (index == -1)
+          break;
+            
+        START_THREAD_TIMER(thid);
+        int res = AnalysePlayBin(bop->deals[index],
+          plp->plays[index],
+          &solved[index],
+          thid);
+          END_THREAD_TIMER(thid);
+            
+        if (res == 1)
+          solvedp->solved[index] = solved[index];
+        else
+          pfail = res;
+      }
+    });
+    
+    END_BLOCK_TIMER;
+    free(solved);
+    
+    solvedp->noOfBoards = bop->noOfBoards;
+    
+    return pfail;
+}
+
 #else
 
 int STDCALL AnalyseAllPlaysBin(

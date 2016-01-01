@@ -29,6 +29,11 @@
 #define HASH_MAX 200
 
 
+#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
+  #include <dispatch/dispatch.h>
+#endif
+
+
 struct schedType
 {
   int number;
@@ -42,6 +47,8 @@ class Scheduler
 
 #if defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
     omp_lock_t lock;
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
+    dispatch_semaphore_t lock;
 #endif
 
     struct listType

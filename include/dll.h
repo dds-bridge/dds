@@ -351,7 +351,7 @@ struct DDSInfo
   // Currently 0 = none, 1 = DllMain, 2 = Unix-style
   int constructor;
 
-  // Currently 0 = none, 1 = Windows, 2 = OpenMP
+  // Currently 0 = none, 1 = Windows, 2 = OpenMP, 3 = GCD
   int threading;
 
   // The actual number of threads configured

@@ -49,6 +49,20 @@ extern "C" BOOL APIENTRY DllMain(
   return 1;
 }
 
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
+
+void DDSInitialize(void) 
+{
+  SetMaxThreads(0);
+}
+
+
+void DDSFinalize(void) 
+{
+  CloseDebugFiles();
+  FreeMemory();
+}
+
 #elif defined(USES_CONSTRUCTOR)
 
 static void __attribute__ ((constructor)) libInit(void)

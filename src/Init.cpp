@@ -671,6 +671,10 @@ void STDCALL GetDDSInfo(DDSInfo * info)
   info->threading = 2;
   sprintf(t, "%-12s %20s\n", "Threading", "OpenMP");
   strcat(info->systemString, t);
+#elif defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
+  info->threading = 3;
+  sprintf(t, "%-12s %20s\n", "Threading", "GCD");
+  strcat(info->systemString, t);
 #else
   info->threading = 1;
   sprintf(t, "%-12s %20s\n", "Threading", "Windows");
