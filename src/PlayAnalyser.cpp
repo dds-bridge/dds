@@ -43,27 +43,34 @@ int STDCALL AnalysePlayBin(
 {
   moveType move;
   futureTricks fut;
-  int ret;
 
-  int last_trick = (play.number + 3) / 4;
-  if (last_trick > 12) last_trick = 12;
-  int last_card = ((play.number + 3) % 4) + 1;
-  solvedp->number = 0;
-
-  ret = SolveBoard(dl, -1, 1, 1, &fut, thrId);
+  int ret = SolveBoard(dl, -1, 1, 1, &fut, thrId);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
-  solvedp->tricks[0] = 13 - fut.score[0];
+  const int numTricks = ((localVar[thrId].iniDepth + 3) >> 2) + 1;
+  const int numCardsPlayed = ((48 - localVar[thrId].iniDepth) % 4) + 1;
+
+  int last_trick = (play.number + 3) / 4;
+  int last_card = ((play.number + 3) % 4) + 1;
+  if (last_trick >= numTricks) 
+  {
+    last_trick = numTricks-1;
+    last_card = 4;
+  }
+  solvedp->number = 0;
+
+  solvedp->tricks[0] = (numCardsPlayed % 2 == 1 ? 
+    numTricks - fut.score[0] : fut.score[0]);
   int hint = solvedp->tricks[0];
   int hintDir;
 
-  int running_remainder = 13;
+  int running_remainder = numTricks;
   int running_declarer = 0;
   int running_player = dl.first;
   int running_side = 1; /* defenders */
   int start_side = running_player % 2;
-  int solved_declarer = running_remainder - fut.score[0];
+  int solved_declarer = solvedp->tricks[0];
 #if DEBUG
   int initial_par = solved_declarer;
   fp = fopen("trace.txt", "a");
@@ -78,14 +85,26 @@ int STDCALL AnalysePlayBin(
 
   for (int trick = 1; trick <= last_trick; trick++)
   {
-    int offset = 4 * (trick - 1);
-    int lc = (trick == last_trick ? last_card : 4);
     int best_card = 0, best_suit = 0, best_player = 0, trump_played = 0;
+    int lc = (trick == last_trick ? last_card : 4);
+
+    bool haveCurrent = (numCardsPlayed > 1 && trick == 1);
+    int offset = 4 * (trick - 1) - (numCardsPlayed - 1);
 
     for (int card = 1; card <= lc; card++)
     {
-      int suit = play.suit[offset + card - 1];
-      int rr = play.rank[offset + card - 1];
+      int suit, rr;
+      bool usingCurrent = (haveCurrent && card < numCardsPlayed);
+      if (usingCurrent)
+      {
+        suit = dl.currentTrickSuit[card - 1];
+        rr = dl.currentTrickRank[card - 1];
+      }
+      else
+      {
+        suit = play.suit[offset + card - 1];
+        rr = play.rank[offset + card - 1];
+      }
       unsigned hold = static_cast<unsigned>(bitMapRank[rr] << 2);
 
       move.suit = suit;
@@ -118,19 +137,23 @@ int STDCALL AnalysePlayBin(
 
       if ((dl.remainCards[running_player][suit] & hold) == 0)
       {
+        if (! usingCurrent)
+        {
 #if DEBUG
-        fp = fopen("trace.txt", "a");
-        fprintf(fp, "ERR Trick %d card %d pl %d: suit %d hold %d\n",
-                trick, card, running_player, suit, hold);
-        fclose(fp);
+          fp = fopen("trace.txt", "a");
+          fprintf(fp, "ERR Trick %d card %d pl %d: suit %d hold %d\n",
+                  trick, card, running_player, suit, hold);
+          fclose(fp);
 #endif
-        return RETURN_PLAY_FAULT;
+          return RETURN_PLAY_FAULT;
+        }
       }
+      else
+        dl.remainCards[running_player][suit] ^= hold;
 
 #if DEBUG
       int resp_player = running_player;
 #endif
-      dl.remainCards[running_player][suit] ^= hold;
 
       if (card == 4)
       {
@@ -159,6 +182,9 @@ int STDCALL AnalysePlayBin(
         hint = running_remainder - fut.score[0];
         hintDir = 0;
       }
+
+      if (usingCurrent)
+        continue;
 
       if ((ret = AnalyseLaterBoard(dl.first,
                                    &move, hint, hintDir, &fut, thrId))
@@ -189,7 +215,7 @@ int STDCALL AnalysePlayBin(
       solved_declarer = new_solved_decl;
     }
   }
-  solvedp->number = 4 * last_trick + last_card - 3;
+  solvedp->number = 4 * last_trick + last_card - 3 - (numCardsPlayed - 1);
 
   return RETURN_NO_FAULT;
 }
