@@ -21,6 +21,12 @@ int main(int argc, char * argv[])
 
   SetMaxThreads(ncores);
 
+  DDSInfo info;
+  GetDDSInfo(&info);
+  printf("%s", info.systemString);
+  printf("%-12s %20s\n\n", "Version", info.versionString);
+  fflush(stdout);
+
   realMain(argc, argv);
 
   exit(0);
