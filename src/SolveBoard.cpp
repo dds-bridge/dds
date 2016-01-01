@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2015 by Bo Haglund & Soren Hein.
+   2014-2016 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -255,6 +255,175 @@ int SolveAllBoardsN(
     return 1;
   else
     return param.error;
+}
+
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
+
+// This code for LLVM multi-threading on the Mac was kindly
+/// contributed by Pierre Cossard.
+
+int SolveAllBoardsN(
+  boards * bop,
+  solvedBoards * solvedp,
+  int chunkSize,
+  int source) // 0 solve, 1 calc
+{
+  __block int chunk;
+  __block int fail;
+    
+  chunk = chunkSize;
+  fail = 1;
+    
+  if (bop->noOfBoards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+    
+  futureTricks *fut = static_cast<futureTricks *>
+    (calloc(MAXNOOFBOARDS, sizeof(futureTricks)));
+    
+  for (int i = 0; i < MAXNOOFBOARDS; i++)
+      solvedp->solvedBoard[i].cards = 0;
+    
+  START_BLOCK_TIMER;
+    
+  if (source == 0)
+    scheduler.Register(bop, SCHEDULER_SOLVE);
+  else
+    scheduler.Register(bop, SCHEDULER_CALC);
+    
+  if (chunkSize == 1)
+  {
+    dispatch_apply(static_cast<size_t>(noOfThreads),
+      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), 
+      ^(size_t t)
+    {
+      while (1)
+      {
+        int thid = static_cast<int>(t);
+        schedType st = scheduler.GetNumber(thid);
+        int index = st.number;
+        if (index == -1)
+          break;
+                
+        // This is not a perfect repeat detector, as the hands in
+        // a group might have declarers N, S, N, N. Then the second
+        // N would not reuse the first N. However, most reuses are
+        // reasonably adjacent, and this is just an optimization anyway.
+                
+        if (st.repeatOf != -1 &&
+          (bop->deals[index ].first ==
+          bop->deals[st.repeatOf].first))
+        {
+          START_THREAD_TIMER(thid);
+          solvedp->solvedBoard[index] = fut[ st.repeatOf ];
+          END_THREAD_TIMER(thid);
+          continue;
+        }
+        else
+        {
+          START_THREAD_TIMER(thid);
+          int res = SolveBoard(
+            bop->deals[index],
+            bop->target[index],
+            bop->solutions[index],
+            bop->mode[index],
+            &fut[index],
+            thid);
+          END_THREAD_TIMER(thid);
+                    
+          if (res == 1)
+            solvedp->solvedBoard[index] = fut[index];
+          else
+            fail = res;
+             
+        }
+      }
+    });
+        
+  }
+  else
+  {
+    dispatch_apply(static_cast<size_t>(noOfThreads),
+      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), 
+      ^(size_t t)
+    {
+      while (1)
+      {
+        int thid = static_cast<int>(t);
+               
+        schedType st = scheduler.GetNumber(thid);
+        int index = st.number;
+        if (index == -1)
+          break;
+                
+        if (st.repeatOf != -1)
+        {
+          START_THREAD_TIMER(thid);
+          for (int k = 0; k < chunk; k++)
+          {
+            bop->deals[index].first = k;
+                       
+            solvedp->solvedBoard[index].score[k] =
+            solvedp->solvedBoard[ st.repeatOf ].score[k];
+          }
+          END_THREAD_TIMER(thid);
+          continue;
+        }
+                
+        bop->deals[index].first = 0;
+                
+        START_THREAD_TIMER(thid);
+        int res = SolveBoard(
+          bop->deals[index],
+          bop->target[index],
+          bop->solutions[index],
+          bop->mode[index],
+          &fut[index],
+          thid);
+                
+        // SH: I'm making a terrible use of the fut structure here.
+                
+        if (res == 1)
+          solvedp->solvedBoard[index].score[0] = fut[index].score[0];
+        else
+          fail = res;
+                
+        for (int k = 1; k < chunk; k++)
+        {
+          int hint = (k == 2 ? fut[index].score[0] :
+            13 - fut[index].score[0]);
+                    
+          bop->deals[index].first = k; // Next declarer
+                    
+          res = SolveSameBoard(
+            bop->deals[index],
+            &fut[index],
+            hint,
+            thid);
+                    
+          if (res == 1)
+            solvedp->solvedBoard[index].score[k] =
+            fut[index].score[0];
+          else
+            fail = res;
+        }
+        END_THREAD_TIMER(thid);
+      }
+    });
+  }
+    
+  END_BLOCK_TIMER;
+    
+  free(fut);
+    
+  if (fail != 1)
+    return fail;
+    
+  solvedp->noOfBoards = 0;
+  for (int i = 0; i < MAXNOOFBOARDS; i++)
+    if (solvedp->solvedBoard[i].cards != 0)
+      solvedp->noOfBoards++;
+    
+  return 1;
 }
 
 #else

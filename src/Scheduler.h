@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2015 by Bo Haglund & Soren Hein.
+   2014-2016 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -26,7 +26,12 @@
 #define SCHEDULER_CALC 2
 #define SCHEDULER_TRACE 3
 
-#define HASH_MAX 128
+#define HASH_MAX 200
+
+
+#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
+  #include <dispatch/dispatch.h>
+#endif
 
 
 struct schedType
@@ -42,6 +47,8 @@ class Scheduler
 
 #if defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
     omp_lock_t lock;
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
+    dispatch_semaphore_t lock;
 #endif
 
     struct listType

@@ -1,3 +1,30 @@
+Release Notes DDS 2.8.3
+-----------------------
+Fixed bug in Scheduler that caused a crash in case 200 very similar
+hands were solved in one invocation.  If you didn't experience
+crashes, you don't have to upgrade for this bug fix.
+
+Generalized the AnalysePlay functions.  Previously they required
+a complete 13-trick hand with no cards played in a partial trick.
+Now they work for any number of remaining tricks and for partial
+tricks as well.
+
+Included Pierre Cossard's code for using GDC multi-threading with
+Apple's LLVM compiler on the Mac.
+
+Added a Makefile for compiling a shared library on the Mac.
+
+Added a GetDDSInfo interface function that can be used to ask the
+DLL how it was compiled and how many threads it is using.
+
+Modified the documentation names not to include the version number
+in the file names (easier to maintain).
+
+Updated the documentation to fix an error (the playTracePBN
+structure uses an array of chars, not an array of ints; this was
+correct in dll.h).  Also described pass as a valid par score.
+
+
 Release Notes DDS 2.8.2
 -----------------------
 Fixed bug in the calculation of par score contracts (par score
