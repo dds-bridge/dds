@@ -6,11 +6,11 @@ DDS offers a wide range of functions, including par-score calculations.
 
 Please refer to the [home page](http://privat.bahnhof.se/wb758135) for details.
 
-The current version is DDS 2.8.2 released in June 2015 and licensed under the Apache 2.0 license in the LICENSE FILE.
+The current version is DDS 2.8.3 released in January 2016 and licensed under the Apache 2.0 license in the LICENSE FILE.
 
 Release notes are in the ChangeLog file.
 
-(c) Bo Haglund 2006-2014, (c) Bo Haglund / Soren Hein 2014-2015.
+(c) Bo Haglund 2006-2014, (c) Bo Haglund / Soren Hein 2014-2016.
 
 
 Credits
@@ -24,6 +24,8 @@ Alex Martelli cleaned up and ported code to Linux and to Mac OS X in 2006.  The 
 Brian Dickens found bugs in v2.7 and encouraged us to look at GitHub.  He also set up the entire historical archive and supervised our first baby steps on GitHub.
 
 Foppe Hemminga maintains DDS on ArchLinux.  He also contributed a version of the documentation file completely in .md mark-up language.
+
+Pierre Cossard contributed the code for multi-threading on the Mac using GDS.
 
 Soren Hein made a number of contributions before becoming a co-author starting in v2.8 in 2014.
 
@@ -59,9 +61,9 @@ The Windows versions use the Windows multi-threading.  The code compiles on wind
 We have also compiled the code and/or had help from other contributors on the following systems.
 
 * Linux Ubuntu with g++ and with OpenMP multi-threading.
-* Mac OS 10.9 with g++ and with OpenMP multi-threading.  Also with clang without multi-threading.
+* Mac OS 10.9 with g++ and with OpenMP multi-threading.  Also with clang without multi-threading.  Also with GCD multi-threading compiling with LLVM.
 
-Here the libraries are `.a` files, not DLLs.  We might also make `.so` libraries in the future.
+Here the libraries are `.a` files, not DLLs.  There are also Makefiles for shared libraries available.
 
 Note that Apple stopped using g++ in Xcode a while back, DDS does compile using the clang compiler, but since DDS does not support pthreads multi-threading, DDS becomes single-threaded.  To get OpenMP multi-threading you need to use the Homebrew installer and do:
 
@@ -69,6 +71,7 @@ Note that Apple stopped using g++ in Xcode a while back, DDS does compile using 
 
 The `without-multilib` is important because you won't get OpenMP otherwise, and that's the whole point.  *(Thanks to Matthew Kidd for these instructions.)*
 
+Thanks for Pierre Cossard's contribution, the Mac port now also supports GCD multi-threading with LLVM.
 
 Usage
 =====
@@ -83,7 +86,7 @@ The DDS library interface is very well documented. You find the docs, including 
 
 Bugs
 ====
-Version 2.8.2 has no known bugs.
+Version 2.8.3 has no known bugs.
 
 Please report bugs to bo.haglund@bahnhof.se and soren.hein@gmail.com.
 
