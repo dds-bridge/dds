@@ -33,10 +33,7 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-
-    for (int h = 0; h < DDS_HANDS; h++)
-      for (int s = 0; s < DDS_SUITS; s++)
-        strcpy(tableDealPBN.cards, PBN[handno]);
+    strcpy(tableDealPBN.cards, PBN[handno]);
 
     res = CalcDDtablePBN(tableDealPBN, &table);
 
