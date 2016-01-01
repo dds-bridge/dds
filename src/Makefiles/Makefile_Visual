@@ -14,7 +14,7 @@
 
 # If your Microsoft compiler is not called cl, change it here.
 CC		= cl
-CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL
+CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL /EHs
 
 # These flags are not turned on by default, but DDS should pass them.
 # Turn them on below.

@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014 by Bo Haglund & Soren Hein.
+   2014-2016 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -14,8 +14,6 @@
 #include "testcommon.h"
 
 
-void DDSidentify(char * s);
-
 
 int main(int argc, char * argv[])
 {
@@ -25,9 +23,10 @@ int main(int argc, char * argv[])
 
   SetMaxThreads(ncores);
 
-  char DDSid[400];
-  DDSidentify(DDSid);
-  printf("%s", DDSid);
+  DDSInfo info;
+  GetDDSInfo(&info);
+  printf("%s", info.systemString);
+  printf("%-12s %20s\n\n", "Version", info.versionString);
   fflush(stdout);
 
   realMain(argc, argv);

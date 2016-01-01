@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2015 by Bo Haglund & Soren Hein.
+   2014-2016 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -47,6 +47,20 @@ extern "C" BOOL APIENTRY DllMain(
   UNUSED(lpReserved);
 
   return 1;
+}
+
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
+
+void DDSInitialize(void) 
+{
+  SetMaxThreads(0);
+}
+
+
+void DDSFinalize(void) 
+{
+  CloseDebugFiles();
+  FreeMemory();
 }
 
 #elif defined(USES_CONSTRUCTOR)

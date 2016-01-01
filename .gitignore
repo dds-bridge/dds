@@ -3,10 +3,13 @@
 *.a
 *.dll
 *.obj
-*.exe
 *.def
 src/[Mm]akefile
 test/[Mm]akefile
 examples/[Mm]akefile
 test/dtest
 test/itest
+
+*.exe
+*.swp
+*.bak

@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2015 by Bo Haglund & Soren Hein.
+   2014-2016 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -47,6 +47,8 @@ Scheduler::Scheduler()
 
 #if defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
   omp_init_lock(&lock);
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
+  lock = dispatch_semaphore_create(1);
 #endif
 }
 
@@ -142,6 +144,8 @@ Scheduler::~Scheduler()
 
 #if defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
   omp_destroy_lock(&lock);
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
+  dispatch_release(lock);
 #endif
 }
 
@@ -783,6 +787,10 @@ schedType Scheduler::GetNumber(
     omp_set_lock(&lock);
     g = ++currGroup;
     omp_unset_lock(&lock);
+#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
+    dispatch_semaphore_wait(lock, DISPATCH_TIME_FOREVER);
+    g = ++currGroup;
+    dispatch_semaphore_signal(lock);
 #else
     g = ++currGroup;
 #endif

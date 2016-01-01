@@ -105,8 +105,11 @@ Compiler: g++
 Apple
 =====
 Makefile: Makefile_Mac_clang (for clang compiler, single-threaded)
-Makefile: Makefile_Mac_clang (for GNU g++ compiler, multi-threaded)
 Compiler: g++
+Supports both OpenMP and GDD multi-threading.
+
+Makefile: Makefile_Mac_gcc (for GNU g++ compiler, multi-threaded)
+Makefile: Makefile_Mac_shared (for GNU g++ compiler, multi-threaded)
 
 
 Testing
