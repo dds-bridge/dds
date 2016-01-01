@@ -4,7 +4,7 @@ Rev X, 2014-11-16
 
 Latest DLL issue with this description is available at [http://www.bahnhof.se/wb758135/](http://www.bahnhof.se/wb758135/)
 
-# Description of the DLL functions supported in Double Dummy Problem Solver 2.8
+# Description of the DLL functions supported in Double Dummy Problem Solver 2.8.2
 ## Callable functions
 The callable functions are all preceded with `extern "C" __declspec(dllimport) int __stdcall`.  The prototypes are available in `dll.h`, in the include directory.
 
