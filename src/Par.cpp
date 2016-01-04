@@ -605,7 +605,7 @@ int STDCALL SidesParBin(
 
   int dom_denom[2] = { -1, -1 };	/* Dominating denom */
 
-  int dom_level[2];				/* Dominating level */
+  int dom_level[2] = { -1, -1 };	/* Dominating level */
 
   for (int i = 0; i < 2; i++)
   {
