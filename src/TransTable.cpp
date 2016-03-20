@@ -23,6 +23,12 @@ const char * players[DDS_HANDS] =
 
 
 /*
+   This combines a small-memory and a full-memory version that
+   are implemented completely differently, but they share a common
+   interface.
+
+   Explanation of full memory version:
+
    There are some constants that only need to be calculated
    once. In fact they are the same for all instances of the
    object. In order to save time and memory, they share a
@@ -92,8 +98,10 @@ const char * players[DDS_HANDS] =
 */
 
 bool _constantsSet = false;
-unsigned maskBytes[8192][DDS_SUITS][TT_BYTES];
 int TTlowestRank[8192];
+#ifndef SMALL_MEMORY_OPTION
+  unsigned maskBytes[8192][DDS_SUITS][TT_BYTES];
+#endif
 
 
 TransTable::TransTable()
@@ -104,6 +112,7 @@ TransTable::TransTable()
     TransTable::SetConstants();
   }
 
+#ifndef SMALL_MEMORY_OPTION
   poolp = nullptr;
   pagesDefault = NUM_PAGES_DEFAULT;
   pagesMaximum = NUM_PAGES_MAXIMUM;
@@ -122,6 +131,7 @@ TransTable::TransTable()
   pageStats.numFrees = 0;
   pageStats.numHarvests = 0;
   pageStats.lastCurrent = 0;
+#endif
 
   TTInUse = 0;
 
@@ -141,17 +151,19 @@ TransTable::~TransTable()
 
 void TransTable::SetConstants()
 {
-  unsigned winMask[8192];
-
   unsigned int topBitRank = 1;
-  winMask[0] = 0;
   TTlowestRank[0] = 15; // Void
+#ifndef SMALL_MEMORY_OPTION
+  unsigned winMask[8192];
+  winMask[0] = 0;
+#endif
 
   for (unsigned ind = 1; ind < 8192; ind++)
   {
     if (ind >= (topBitRank + topBitRank)) /* Next top bit */
       topBitRank <<= 1;
 
+#ifndef SMALL_MEMORY_OPTION
     // winMask is a growing list of 11's. In the end it will
     // have 26 bits, so 13 groups of two bits. It always
     // consists of all 11's, then all 00's.
@@ -177,12 +189,50 @@ void TransTable::SetConstants()
     maskBytes[ind][3][1] = (winMask[ind] >> 10) & 0x000000ff;
     maskBytes[ind][3][2] = (winMask[ind] >> 2) & 0x000000ff;
     maskBytes[ind][3][3] = (winMask[ind] << 6) & 0x000000ff;
+#endif
 
     TTlowestRank[ind] = TTlowestRank[ind ^ topBitRank] - 1;
   }
 }
 
 
+#ifdef SMALL_MEMORY_OPTION
+void TransTable::Init(int handLookup[][15])
+{
+  unsigned int topBitRank = 1;
+  unsigned int topBitNo = 2;
+
+  for (int s = 0; s < DDS_SUITS; s++)
+  {
+    aggp[0].aggrRanks[s] = 0;
+    aggp[0].winMask[s] = 0;
+  }
+
+  for (unsigned int ind = 1; ind < 8192; ind++)
+  {
+    if (ind >= (topBitRank + topBitRank))
+    {
+      /* Next top bit */
+      topBitRank <<= 1;
+      topBitNo++;
+    }
+    aggp[ind] = aggp[ind ^ topBitRank];
+
+    for (int s = 0; s < 4; s++)
+    {
+      aggp[ind].aggrRanks[s] =
+        (aggp[ind].aggrRanks[s] >> 2) |
+        (handLookup[s][topBitNo] << 24);
+
+      aggp[ind].winMask[s] =
+        (aggp[ind].winMask[s] >> 2) | (3 << 24);
+    }
+  }
+
+  return;
+}
+
+#else
 void TransTable::Init(int handLookup[][15])
 {
   // This is very similar to SetConstants, except that it
@@ -242,26 +292,305 @@ void TransTable::Init(int handLookup[][15])
     ap->aggrBytes[3][3] = (ap->aggrRanks[3] << 6) & 0x000000ff;
   }
 }
+#endif
 
 
 void TransTable::SetMemoryDefault(int megabytes)
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(megabytes);
+#else
   double blockMem = BLOCKS_PER_PAGE * sizeof(winBlockType) /
                     static_cast<double>(1024.);
 
   pagesDefault = static_cast<int>((1024 * megabytes) / blockMem);
+#endif
 }
 
 
 void TransTable::SetMemoryMaximum(int megabytes)
 {
+#ifdef SMALL_MEMORY_OPTION
+  maxmem = static_cast<unsigned long long>(1000000 * megabytes);
+#else
   double blockMem = BLOCKS_PER_PAGE * sizeof(winBlockType) /
                     static_cast<double>(1024.);
 
   pagesMaximum = static_cast<int>((1024 * megabytes) / blockMem);
+#endif
 }
 
 
+/////////////////////////////////////////////////////////////
+//                                                         //
+// Small memory TT functions.                              //
+//                                                         //
+/////////////////////////////////////////////////////////////
+
+#ifdef SMALL_MEMORY_OPTION
+void TransTable::MakeTT()
+{
+  int i;
+
+  if (!TTInUse)
+  {
+    TTInUse = 1;
+
+    summem = (WINIT + 1) * sizeof(winCardType) +
+             (NINIT + 1) * sizeof(nodeCardsType) +
+             (LSIZE + 1) * 52 * sizeof(posSearchTypeSmall);
+    wmem = static_cast<int>((WSIZE + 1) * sizeof(winCardType));
+    nmem = static_cast<int>((NSIZE + 1) * sizeof(nodeCardsType));
+
+    maxIndex = static_cast<int>(
+      (maxmem - summem) / ((WSIZE + 1) * sizeof(winCardType)));
+
+    pw = static_cast<winCardType **>(calloc(static_cast<unsigned int>(maxIndex + 1), sizeof(struct winCardType *)));
+    if (pw == NULL)
+      exit(1);
+
+
+    pn = static_cast<struct nodeCardsType **>(calloc(static_cast<unsigned int>(maxIndex + 1), sizeof(struct nodeCardsType *)));
+    if (pn == NULL)
+      exit(1);
+
+
+    for (int k = 1; k <= 13; k++)
+      for (int h = 0; h < DDS_HANDS; h++)
+      {
+        pl[k][h] = static_cast
+                   <posSearchTypeSmall **>(calloc(static_cast<unsigned int>(maxIndex + 1),
+                                             sizeof(posSearchTypeSmall *)));
+        if (pl[k][h] == NULL)
+          exit(1);
+      }
+
+
+    for (i = 0; i <= maxIndex; i++)
+    {
+      if (pw[i])
+        free(pw[i]);
+      pw[i] = NULL;
+    }
+
+    for (i = 0; i <= maxIndex; i++)
+    {
+      if (pn[i])
+        free(pn[i]);
+      pn[i] = NULL;
+    }
+
+    for (int k = 1; k <= 13; k++)
+    {
+      for (int h = 0; h < DDS_HANDS; h++)
+      {
+        for (i = 0; i <= maxIndex; i++)
+        {
+          if (pl[k][h][i])
+            free(pl[k][h][i]);
+          pl[k][h][i] = NULL;
+        }
+      }
+    }
+
+    pw[0] = static_cast<struct winCardType *>(calloc(WINIT + 1, sizeof(struct winCardType)));
+    if (pw[0] == NULL)
+      exit(1);
+
+    pn[0] = static_cast<struct nodeCardsType *>(calloc(NINIT + 1, sizeof(struct nodeCardsType)));
+    if (pn[0] == NULL)
+      exit(1);
+
+    for (int k = 1; k <= 13; k++)
+      for (int h = 0; h < DDS_HANDS; h++)
+      {
+        pl[k][h][0] = static_cast<struct posSearchTypeSmall *>(calloc((LSIZE + 1),
+                      sizeof(struct posSearchTypeSmall)));
+        if (pl[k][h][0] == NULL)
+          exit(1);
+      }
+
+    aggp = static_cast<struct ttAggrType *>(calloc(8192, sizeof(struct ttAggrType)));
+    if (aggp == NULL)
+      exit(1);
+
+    InitTT();
+
+    for (int k = 1; k <= 13; k++)
+      aggrLenSets[k] = 0;
+#if defined(DDS_TT_STATS)
+    fprintf(fp, "Report of generated PosSearch nodes per trick level.\n");
+    fprintf(fp, "Trick level 13 is highest level with all 52 cards.\n");
+    fprintf(fp, "---------------------------------------------------\n");
+#endif
+    statsResets.noOfResets = 0;
+    for (int k = 0; k <= 5; k++)
+      statsResets.aggrResets[k] = 0;
+    resetText[0] = "Unknown reason";
+    resetText[1] = "Too many nodes";
+    resetText[2] = "New deal";
+    resetText[3] = "New trump";
+    resetText[4] = "Memory exhausted";
+    resetText[5] = "Free thread memory";
+  }
+
+  return;
+}
+
+
+void TransTable::Wipe()
+{
+  int m;
+
+  for (m = 1; m <= wcount; m++)
+  {
+    if (pw[m])
+      free(pw[m]);
+    pw[m] = NULL;
+  }
+  for (m = 1; m <= ncount; m++)
+  {
+    if (pn[m])
+      free(pn[m]);
+    pn[m] = NULL;
+  }
+
+  for (int k = 1; k <= 13; k++)
+  {
+    for (int h = 0; h < DDS_HANDS; h++)
+    {
+      for (m = 1; m <= lcount[k][h]; m++)
+      {
+        if (pl[k][h][m])
+          free(pl[k][h][m]);
+        pl[k][h][m] = NULL;
+      }
+    }
+  }
+
+  allocmem = summem;
+
+  return;
+}
+
+
+
+void TransTable::InitTT()
+{
+  winSetSizeLimit = WINIT;
+  nodeSetSizeLimit = NINIT;
+  allocmem = (WINIT + 1) * sizeof(struct winCardType);
+  allocmem += (NINIT + 1) * sizeof(struct nodeCardsType);
+  allocmem += (LSIZE + 1) * 52 * sizeof(struct posSearchTypeSmall);
+  winCards = pw[0];
+  nodeCards = pn[0];
+  wcount = 0;
+  ncount = 0;
+
+  nodeSetSize = 0;
+  winSetSize = 0;
+
+  clearTTflag = false;
+  windex = -1;
+
+  for (int k = 1; k <= 13; k++)
+    for (int h = 0; h < DDS_HANDS; h++)
+    {
+      posSearch[k][h] = pl[k][h][0];
+      lenSetInd[k][h] = 0;
+      lcount[k][h] = 0;
+    }
+}
+
+
+void TransTable::ResetMemory(int reason)
+{
+  Wipe();
+
+  InitTT();
+
+  for (int k = 1; k <= 13; k++)
+  {
+    for (int h = 0; h < DDS_HANDS; h++)
+    {
+      rootnp[k][h] = &(posSearch[k][h][0]);
+      posSearch[k][h][0].suitLengths = 0;
+      posSearch[k][h][0].posSearchPoint = NULL;
+      posSearch[k][h][0].left = NULL;
+      posSearch[k][h][0].right = NULL;
+
+      lenSetInd[k][h] = 1;
+    }
+  }
+
+#if defined(DDS_TT_STATS)
+  statsResets.noOfResets++;
+  statsResets.aggrResets[reason]++;
+#else
+  UNUSED(reason);
+#endif
+
+  return;
+}
+
+void TransTable::ReturnAllMemory()
+{
+
+  if (!TTInUse)
+    return;
+  TTInUse = 0;
+
+#if defined(DDS_TT_STATS)
+  PrintResetStats();
+  PrintNodeStats();
+#endif
+
+
+  Wipe();
+
+  if (pw[0])
+    free(pw[0]);
+  pw[0] = NULL;
+
+  if (pn[0])
+    free(pn[0]);
+  pn[0] = NULL;
+
+  for (int k = 1; k <= 13; k++)
+  {
+    for (int h = 0; h < DDS_HANDS; h++)
+    {
+      if (pl[k][h][0])
+        free(pl[k][h][0]);
+      pl[k][h][0] = NULL;
+    }
+  }
+
+  if (pw)
+    free(pw);
+  pw = NULL;
+
+  if (pn)
+    free(pn);
+  pn = NULL;
+
+  if (aggp)
+    free(aggp);
+  aggp = NULL;
+
+  return;
+}
+#endif
+
+
+
+/////////////////////////////////////////////////////////////
+//                                                         //
+// Full memory TT functions.                               //
+//                                                         //
+/////////////////////////////////////////////////////////////
+
+#ifndef SMALL_MEMORY_OPTION
 void TransTable::MakeTT()
 {
   if (! TTInUse)
@@ -322,8 +651,9 @@ void TransTable::ReleaseTT()
 }
 
 
-void TransTable::ResetMemory()
+void TransTable::ResetMemory(int reason)
 {
+  UNUSED(reason);
   if (poolp == nullptr)
     return;
 
@@ -391,10 +721,12 @@ void TransTable::ReturnAllMemory()
 
   return;
 }
+#endif
 
 
 int TransTable::BlocksInUse()
 {
+#ifndef SMALL_MEMORY_OPTION
   poolType * pp = poolp;
   int count = 0;
 
@@ -406,11 +738,19 @@ int TransTable::BlocksInUse()
   while (pp);
 
   return count;
+#else
+  return 0;
+#endif
 }
 
 
 double TransTable::MemoryInUse()
 {
+#ifdef SMALL_MEMORY_OPTION
+  int ttMem = static_cast<int>(allocmem);
+  int aggrMem = 8192 * static_cast<int>(sizeof(ttAggrType));
+  return (ttMem + aggrMem) / static_cast<double>(1024.);
+#else
   int blockMem = BLOCKS_PER_PAGE * pagesCurrent *
                  static_cast<int>(sizeof(winBlockType));
   int aggrMem = 8192 * static_cast<int>(sizeof(aggrType));
@@ -418,6 +758,8 @@ double TransTable::MemoryInUse()
                  static_cast<int>(sizeof(distHashType));
 
   return (blockMem + aggrMem + rootMem) / static_cast<double>(1024.);
+#endif
+
 }
 
 
@@ -439,6 +781,9 @@ TransTable::winBlockType * TransTable::GetNextCardBlock()
      continue with that.
   */
 
+#ifdef SMALL_MEMORY_OPTION
+  return NULL;
+#else
   if (poolp == nullptr)
   {
     // Have to be able to get at least one pool.
@@ -470,7 +815,7 @@ TransTable::winBlockType * TransTable::GetNextCardBlock()
     {
       if (! TransTable::Harvest())
       {
-        TransTable::ResetMemory();
+        TransTable::ResetMemory(UNKNOWN_REASON);
         poolp->nextBlockNo++;
         return nextBlockp++;
       }
@@ -496,7 +841,7 @@ TransTable::winBlockType * TransTable::GetNextCardBlock()
       // Have to try to reclaim memory.
       if (! TransTable::Harvest())
       {
-        TransTable::ResetMemory();
+        TransTable::ResetMemory(UNKNOWN_REASON);
         poolp->nextBlockNo++;
         return nextBlockp++;
       }
@@ -517,7 +862,7 @@ TransTable::winBlockType * TransTable::GetNextCardBlock()
         // and start over.
         if (! TransTable::Harvest())
         {
-          TransTable::ResetMemory();
+          TransTable::ResetMemory(UNKNOWN_REASON);
           poolp->nextBlockNo++;
           return nextBlockp++;
         }
@@ -534,7 +879,7 @@ TransTable::winBlockType * TransTable::GetNextCardBlock()
       {
         if (! TransTable::Harvest())
         {
-          TransTable::ResetMemory();
+          TransTable::ResetMemory(UNKNOWN_REASON);
           poolp->nextBlockNo++;
           return nextBlockp++;
         }
@@ -561,11 +906,15 @@ TransTable::winBlockType * TransTable::GetNextCardBlock()
 
   poolp->nextBlockNo++;
   return nextBlockp++;
+#endif
 }
 
 
 bool TransTable::Harvest()
 {
+#ifdef SMALL_MEMORY_OPTION
+  return false;
+#else
   distHashType * rootptr = TTroot[harvestTrick][harvestHand];
   distHashType * ptr;
   winBlockType * bp;
@@ -626,6 +975,7 @@ bool TransTable::Harvest()
 
     rootptr = TTroot[harvestTrick][harvestHand];
   }
+#endif
 }
 
 
@@ -663,20 +1013,669 @@ int TransTable::hash8(int * handDist)
 }
 
 
-void TransTable::Top4Ranks(
-  unsigned short aggrTarget[],
-  unsigned rr[DDS_SUITS])
-{
-  // This is just a service function to reuse some tables.
-  // It is not part of the transposition table as such.
+/////////////////////////////////////////////////////////////
+//                                                         //
+// Small memory TT functions.                              //
+//                                                         //
+/////////////////////////////////////////////////////////////
 
-  rr[0] = (aggr[ aggrTarget[0] ].aggrBytes[0][0]) >> 24;
-  rr[1] = (aggr[ aggrTarget[1] ].aggrBytes[1][0]) >> 16;
-  rr[2] = (aggr[ aggrTarget[2] ].aggrBytes[2][0]) >> 8;
-  rr[3] = (aggr[ aggrTarget[3] ].aggrBytes[3][0]);
+
+#ifdef SMALL_MEMORY_OPTION
+nodeCardsType * TransTable::Lookup(
+  int trick,
+  int hand,
+  unsigned short * aggrTarget,
+  int * handDist,
+  int limit,
+  bool * lowerFlag)
+{
+  bool res;
+  struct posSearchTypeSmall * pp;
+  int orderSet[DDS_SUITS];
+  struct nodeCardsType * cardsP;
+
+  suitLengths[trick] =
+    (static_cast<long long>(handDist[0]) << 36) |
+    (static_cast<long long>(handDist[1]) << 24) |
+    (static_cast<long long>(handDist[2]) << 12) |
+    (static_cast<long long>(handDist[3]));
+
+  pp = SearchLenAndInsert(rootnp[trick][hand],
+                          suitLengths[trick], false, trick, hand, &res);
+
+  /* Find node that fits the suit lengths */
+  if ((pp != NULL) && res)
+  {
+    for (int ss = 0; ss < DDS_SUITS; ss++)
+    {
+      orderSet[ss] =
+        aggp[aggrTarget[ss]].aggrRanks[ss];
+    }
+
+    if (pp->posSearchPoint == NULL)
+      cardsP = NULL;
+    else
+    {
+      cardsP = FindSOP(orderSet, limit, pp->posSearchPoint,
+                       hand, lowerFlag);
+
+      if (cardsP == NULL)
+        return cardsP;
+    }
+  }
+  else
+  {
+    cardsP = NULL;
+  }
+  return cardsP;
 }
 
 
+void TransTable::Add(
+  int tricks,
+  int hand,
+  unsigned short * aggrTarget,
+  unsigned short * ourWinRanks,
+  nodeCardsType * first,
+  bool flag)
+{
+  BuildSOP(ourWinRanks, aggrTarget, first, suitLengths[tricks],
+           tricks, hand, tricks, flag);
+
+  if (clearTTflag)
+  {
+    ResetMemory(MEMORY_EXHAUSTED);
+  }
+
+  return;
+}
+#endif
+
+
+void TransTable::AddWinSet()
+{
+#ifdef SMALL_MEMORY_OPTION
+  if (clearTTflag)
+  {
+    windex++;
+    winSetSize = windex;
+    winCards = &(temp_win[windex]);
+  }
+  else if (winSetSize >= winSetSizeLimit)
+  {
+    /* The memory chunk for the winCards structure will be exceeded. */
+    if (((allocmem + static_cast<unsigned long long>(wmem)) > maxmem) || (wcount >= maxIndex) ||
+        (winSetSize > SIMILARMAXWINNODES))
+    {
+      /* Already allocated memory plus needed allocation overshot maxmem */
+      windex++;
+      winSetSize = windex;
+      clearTTflag = true;
+      winCards = &(temp_win[windex]);
+    }
+    else
+    {
+      wcount++;
+      winSetSizeLimit = WSIZE;
+      pw[wcount] =
+        static_cast<struct winCardType *>(calloc((WSIZE + 1), sizeof(struct winCardType)));
+      if (pw[wcount] == NULL)
+      {
+        clearTTflag = true;
+        windex++;
+        winSetSize = windex;
+        winCards = &(temp_win[windex]);
+      }
+      else
+      {
+        allocmem += (WSIZE + 1) * sizeof(struct winCardType);
+        winSetSize = 0;
+        winCards = pw[wcount];
+      }
+    }
+  }
+  else
+    winSetSize++;
+  return;
+#endif
+}
+
+void TransTable::AddNodeSet()
+{
+#ifdef SMALL_MEMORY_OPTION
+  if (nodeSetSize >= nodeSetSizeLimit)
+  {
+    /* The memory chunk for the nodeCards structure will be exceeded. */
+    if (((allocmem + static_cast<unsigned long long>(nmem)) > maxmem) || (ncount >= maxIndex))
+    {
+      /* Already allocated memory plus needed allocation overshot maxmem */
+      clearTTflag = true;
+    }
+    else
+    {
+      ncount++;
+      nodeSetSizeLimit = NSIZE;
+      pn[ncount] =
+        static_cast<struct nodeCardsType *>(calloc((NSIZE + 1), sizeof(struct nodeCardsType)));
+      if (pn[ncount] == NULL)
+      {
+        clearTTflag = true;
+      }
+      else
+      {
+        allocmem += (NSIZE + 1) * sizeof(struct nodeCardsType);
+        nodeSetSize = 0;
+        nodeCards = pn[ncount];
+      }
+    }
+  }
+  else
+    nodeSetSize++;
+  return;
+#endif
+}
+
+void TransTable::AddLenSet(int trick, int firstHand)
+{
+#ifndef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(firstHand);
+#else
+  if (lenSetInd[trick][firstHand] >= LSIZE)
+  {
+    /* The memory chunk for the posSearchTypeSmall structure will be exceeded. */
+    if (((allocmem + (LSIZE + 1) * sizeof(struct posSearchTypeSmall)) > maxmem)
+        || (lcount[trick][firstHand] >= maxIndex))
+    {
+      /* Already allocated memory plus needed allocation overshot maxmem */
+      clearTTflag = true;
+
+      return;
+    }
+
+    /* Obtain another memory chunk LSIZE.*/
+
+    lcount[trick][firstHand]++;
+
+    pl[trick][firstHand][lcount[trick][firstHand]] =
+      static_cast<struct posSearchTypeSmall *>(calloc(LSIZE + 1, sizeof(struct posSearchTypeSmall)));
+
+    if (pl[trick][firstHand][lcount[trick][firstHand]] == NULL)
+
+    {
+      clearTTflag = true;
+
+      return;
+    }
+    else
+    {
+      allocmem += (LSIZE + 1) * sizeof(struct posSearchTypeSmall);
+      lenSetInd[trick][firstHand] = 0;
+      posSearch[trick][firstHand] =
+        pl[trick][firstHand][lcount[trick][firstHand]];
+
+#if defined(DDS_TT_STATS)
+      aggrLenSets[trick]++;
+#endif
+    }
+  }
+  else
+  {
+    lenSetInd[trick][firstHand]++;
+#if defined(DDS_TT_STATS)
+    aggrLenSets[trick]++;
+#endif
+  }
+  return;
+#endif
+}
+
+
+void TransTable::BuildSOP(
+  unsigned short ourWinRanks[DDS_SUITS],
+  unsigned short aggrArg[DDS_SUITS],
+  struct nodeCardsType * first,
+  long long lengths,
+  int tricks,
+  int firstHand,
+  int depth,
+  bool flag)
+{
+  UNUSED(depth);
+#ifndef SMALL_MEMORY_OPTION
+  UNUSED(ourWinRanks);
+  UNUSED(aggrArg);
+  UNUSED(first);
+  UNUSED(lengths);
+  UNUSED(tricks);
+  UNUSED(firstHand);
+  UNUSED(flag);
+#else
+  bool res;
+  int w;
+  unsigned short int temp;
+  struct nodeCardsType * cardsP;
+  struct posSearchTypeSmall * np;
+
+  int winMask[DDS_SUITS];
+  int winOrderSet[DDS_SUITS];
+  char low[DDS_SUITS];
+
+  for (int ss = 0; ss < DDS_SUITS; ss++)
+  {
+    w = ourWinRanks[ss];
+    if (w == 0)
+    {
+      winMask[ss] = 0;
+      winOrderSet[ss] = 0;
+      low[ss] = 15;
+    }
+    else
+    {
+      w = w & (-w);       /* Only lowest win */
+      temp = static_cast<unsigned short>(aggrArg[ss] & (-w));
+      low[ss] = static_cast<char>(TTlowestRank[temp]);
+
+      winMask[ss] = aggp[temp].winMask[ss];
+      winOrderSet[ss] = aggp[temp].aggrRanks[ss];
+    }
+  }
+
+  np = SearchLenAndInsert(rootnp[tricks][firstHand],
+                          lengths, true, tricks, firstHand, &res);
+
+  cardsP = BuildPath(winMask, winOrderSet,
+                     static_cast<int>(first->ubound), static_cast<int>(first->lbound),
+                     static_cast<char>(first->bestMoveSuit), static_cast<char>(first->bestMoveRank),
+                     np, &res);
+
+
+  if (res)
+  {
+    cardsP->ubound = static_cast<char>(first->ubound);
+    cardsP->lbound = static_cast<char>(first->lbound);
+
+    if (flag)
+    {
+      cardsP->bestMoveSuit = static_cast<char>(first->bestMoveSuit);
+      cardsP->bestMoveRank = static_cast<char>(first->bestMoveRank);
+    }
+    else
+    {
+      cardsP->bestMoveSuit = 0;
+      cardsP->bestMoveRank = 0;
+    }
+
+    for (int k = 0; k < DDS_SUITS; k++)
+      cardsP->leastWin[k] = 15 - low[k];
+  }
+#endif
+}
+
+
+struct nodeCardsType * TransTable::BuildPath(
+  int * winMask,
+  int * winOrderSet,
+  int ubound,
+  int lbound,
+  char bestMoveSuit,
+  char bestMoveRank,
+  struct posSearchTypeSmall * nodep,
+  bool * result)
+{
+  /* If result is TRUE, a new SOP has been created and BuildPath returns a
+  pointer to it. If result is FALSE, an existing SOP is used and BuildPath
+  returns a pointer to the SOP */
+
+#ifndef SMALL_MEMORY_OPTION
+  UNUSED(winMask);
+  UNUSED(winOrderSet);
+  UNUSED(ubound);
+  UNUSED(lbound);
+  UNUSED(bestMoveSuit);
+  UNUSED(bestMoveRank);
+  UNUSED(nodep);
+  UNUSED(result);
+  return NULL;
+#else
+  bool found;
+  struct winCardType * np, *p2, *nprev, *fnp, *pnp;
+  struct winCardType temp;
+  struct nodeCardsType * sopP = 0, *p;
+
+  np = nodep->posSearchPoint;
+  nprev = NULL;
+  int suit = 0;
+
+  /* If winning node has a card that equals the next winning card deduced
+  from the position, then there already exists a (partial) path */
+
+  if (np == NULL)
+  {
+    /* There is no winning list created yet */
+    /* Create winning nodes */
+    p2 = &(winCards[winSetSize]);
+    AddWinSet();
+    p2->next = NULL;
+    p2->nextWin = NULL;
+    p2->prevWin = NULL;
+    nodep->posSearchPoint = p2;
+    p2->winMask = winMask[suit];
+    p2->orderSet = winOrderSet[suit];
+    p2->first = NULL;
+    np = p2;           /* Latest winning node */
+    suit++;
+    while (suit < 4)
+    {
+      p2 = &(winCards[winSetSize]);
+      AddWinSet();
+      np->nextWin = p2;
+      p2->prevWin = np;
+      p2->next = NULL;
+      p2->nextWin = NULL;
+      p2->winMask = winMask[suit];
+      p2->orderSet = winOrderSet[suit];
+      p2->first = NULL;
+      np = p2;         /* Latest winning node */
+      suit++;
+    }
+    p = &(nodeCards[nodeSetSize]);
+    AddNodeSet();
+    np->first = p;
+    *result = true;
+    return p;
+  }
+  else
+  {
+    /* Winning list exists */
+    while (1)
+    {
+      /* Find all winning nodes that correspond to current
+      position */
+      found = false;
+      while (1)      /* Find node amongst alternatives */
+      {
+        if ((np->winMask == winMask[suit]) &&
+            (np->orderSet == winOrderSet[suit]))
+        {
+          /* Part of path found */
+          found = true;
+          nprev = np;
+          break;
+        }
+        if (np->next != NULL)
+          np = np->next;
+        else
+          break;
+      }
+      if (found)
+      {
+        suit++;
+        if (suit > 3)
+        {
+          sopP = UpdateSOP(ubound, lbound, bestMoveSuit, bestMoveRank,
+                           np->first);
+
+          if (np->prevWin != NULL)
+          {
+            pnp = np->prevWin;
+            fnp = pnp->nextWin;
+          }
+          else
+            fnp = nodep->posSearchPoint;
+
+          temp.orderSet = np->orderSet;
+          temp.winMask = np->winMask;
+          temp.first = np->first;
+          temp.nextWin = np->nextWin;
+          np->orderSet = fnp->orderSet;
+          np->winMask = fnp->winMask;
+          np->first = fnp->first;
+          np->nextWin = fnp->nextWin;
+          fnp->orderSet = temp.orderSet;
+          fnp->winMask = temp.winMask;
+          fnp->first = temp.first;
+          fnp->nextWin = temp.nextWin;
+
+          *result = false;
+          return sopP;
+        }
+        else
+        {
+          np = np->nextWin;       /* Find next winning node  */
+          continue;
+        }
+      }
+      else
+        break;                    /* Node was not found */
+    }               /* End outer while */
+
+    /* Create additional node, coupled to existing node(s) */
+    p2 = &(winCards[winSetSize]);
+    AddWinSet();
+    p2->prevWin = nprev;
+    if (nprev != NULL)
+    {
+      p2->next = nprev->nextWin;
+      nprev->nextWin = p2;
+    }
+    else
+    {
+      p2->next = nodep->posSearchPoint;
+      nodep->posSearchPoint = p2;
+    }
+    p2->nextWin = NULL;
+    p2->winMask = winMask[suit];
+    p2->orderSet = winOrderSet[suit];
+    p2->first = NULL;
+    np = p2;          /* Latest winning node */
+    suit++;
+
+    /* Rest of path must be created */
+    while (suit < 4)
+    {
+      p2 = &(winCards[winSetSize]);
+      AddWinSet();
+      np->nextWin = p2;
+      p2->prevWin = np;
+      p2->next = NULL;
+      p2->winMask = winMask[suit];
+      p2->orderSet = winOrderSet[suit];
+      p2->first = NULL;
+      p2->nextWin = NULL;
+      np = p2;         /* Latest winning node */
+      suit++;
+    }
+
+    /* All winning nodes in SOP have been traversed and new nodes created */
+    p = &(nodeCards[nodeSetSize]);
+    AddNodeSet();
+    np->first = p;
+    *result = true;
+    return p;
+  }
+#endif
+}
+
+struct TransTable::posSearchTypeSmall * TransTable::SearchLenAndInsert(
+  struct posSearchTypeSmall * rootp,
+  long long key,
+  bool insertNode,
+  int trick,
+  int firstHand,
+  bool * result)
+{
+  /* Search for node which matches with the suit length combination
+  given by parameter key. If no such node is found, NULL is
+  returned if parameter insertNode is FALSE, otherwise a new
+  node is inserted with suitLengths set to key, the pointer to
+  this node is returned.
+  The algorithm used is defined in Knuth "The art of computer
+  programming", vol.3 "Sorting and searching", 6.2.2 Algorithm T,
+  page 424. */
+
+#ifndef SMALL_MEMORY_OPTION
+  UNUSED(rootp);
+  UNUSED(key);
+  UNUSED(insertNode);
+  UNUSED(trick);
+  UNUSED(firstHand);
+  UNUSED(result);
+  return NULL;
+#else
+  struct posSearchTypeSmall * np, *p, *sp;
+
+  sp = NULL;
+  if (insertNode)
+    sp = &(posSearch[trick][firstHand][lenSetInd[trick][firstHand]]);
+
+  np = rootp;
+  while (1)
+  {
+    if (key == np->suitLengths)
+    {
+      *result = true;
+      return np;
+    }
+    else if (key < np->suitLengths)
+    {
+      if (np->left != NULL)
+        np = np->left;
+      else if (insertNode)
+      {
+        p = sp;
+        AddLenSet(trick, firstHand);
+        np->left = p;
+        p->posSearchPoint = NULL;
+        p->suitLengths = key;
+        p->left = NULL;
+        p->right = NULL;
+        *result = true;
+        return p;
+      }
+      else
+      {
+        *result = false;
+        return NULL;
+      }
+    }
+    else        /* key > suitLengths */
+    {
+      if (np->right != NULL)
+        np = np->right;
+      else if (insertNode)
+      {
+        p = sp;
+        AddLenSet(trick, firstHand);
+        np->right = p;
+        p->posSearchPoint = NULL;
+        p->suitLengths = key;
+        p->left = NULL;
+        p->right = NULL;
+        *result = true;
+        return p;
+      }
+      else
+      {
+        *result = false;
+        return NULL;
+      }
+    }
+  }
+#endif
+}
+
+
+struct nodeCardsType * TransTable::UpdateSOP(
+  int ubound,
+  int lbound,
+  char bestMoveSuit,
+  char bestMoveRank,
+  nodeCardsType * nodep)
+{
+  /* Update SOP node with new values for upper and lower
+  bounds. */
+#ifndef SMALL_MEMORY_OPTION
+  UNUSED(ubound);
+  UNUSED(lbound);
+  UNUSED(bestMoveSuit);
+  UNUSED(bestMoveRank);
+  UNUSED(nodep);
+  return NULL;
+#else
+  if ((lbound > nodep->lbound) ||
+      (nodep->lbound == -1))
+    nodep->lbound = static_cast<char>(lbound);
+  if ((ubound < nodep->ubound) ||
+      (nodep->ubound == -1))
+    nodep->ubound = static_cast<char>(ubound);
+
+  nodep->bestMoveSuit = bestMoveSuit;
+  nodep->bestMoveRank = bestMoveRank;
+
+  return nodep;
+#endif
+}
+
+
+struct nodeCardsType * TransTable::FindSOP(
+  int orderSet[],
+  int limit,
+  winCardType * nodeP,
+  int firstHand,
+  bool	* lowerFlag)
+{
+  struct winCardType * np;
+  UNUSED(firstHand);
+
+  np = nodeP;
+  int s = 0;
+
+  while (np)
+  {
+    if ((np->winMask & orderSet[s]) == np->orderSet)
+    {
+      /* Winning rank set fits position */
+      if (s != 3)
+      {
+        np = np->nextWin;
+        s++;
+        continue;
+      }
+
+      if (np->first->lbound > limit)
+      {
+        *lowerFlag = true;
+        return np->first;
+      }
+      else if (np->first->ubound <= limit)
+      {
+        *lowerFlag = false;
+        return np->first;
+      }
+    }
+
+    while (np->next == NULL)
+    {
+      np = np->prevWin;
+      s--;
+      if (np == NULL) /* Previous node is header node? */
+        return NULL;
+    }
+    np = np->next;
+  }
+  return NULL;
+}
+
+
+
+/////////////////////////////////////////////////////////////
+//                                                         //
+// Full memory TT functions.                               //
+//                                                         //
+/////////////////////////////////////////////////////////////
+
+#ifndef SMALL_MEMORY_OPTION
 nodeCardsType * TransTable::Lookup(
   int tricks,
   int hand,
@@ -716,6 +1715,7 @@ nodeCardsType * TransTable::Lookup(
   return TransTable::LookupCards(&TTentry,
     lastBlockSeen[tricks][hand], limit, lowerFlag);
 }
+#endif
 
 
 TransTable::winBlockType * TransTable::LookupSuit(
@@ -921,6 +1921,7 @@ void TransTable::CreateOrUpdate(
 }
 
 
+#ifndef SMALL_MEMORY_OPTION
 void TransTable::Add(
   int tricks,
   int hand,
@@ -1004,6 +2005,7 @@ void TransTable::Add(
   TransTable::CreateOrUpdate(lastBlockSeen[tricks][hand],
                              &TTentry, flag);
 }
+#endif
 
 
 
@@ -1211,6 +2213,10 @@ void TransTable::PrintSuits(
   int trick,
   int hand)
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+#else
   distHashType * dp;
   int handDist[DDS_HANDS];
   unsigned char len[DDS_HANDS][DDS_SUITS];
@@ -1245,11 +2251,13 @@ void TransTable::PrintSuits(
     }
   }
   fprintf(fp, "\n");
+#endif
 }
 
 
 void TransTable::PrintAllSuits()
 {
+#ifndef SMALL_MEMORY_OPTION
   for (int trick = 11; trick >= 1; trick--)
   {
     for (int hand = 0; hand < DDS_HANDS; hand++)
@@ -1260,6 +2268,7 @@ void TransTable::PrintAllSuits()
       TransTable::PrintSuits(trick, hand);
     }
   }
+#endif
 }
 
 
@@ -1348,6 +2357,12 @@ void TransTable::UpdateSuitHist(
   int hist[],
   int * num_wraps)
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+  UNUSED(hist);
+  UNUSED(num_wraps);
+#else
   distHashType * dp;
 
   * num_wraps = 0;
@@ -1366,6 +2381,7 @@ void TransTable::UpdateSuitHist(
       suitWraps++;
     }
   }
+#endif
 }
 
 
@@ -1373,6 +2389,10 @@ void TransTable::PrintSuitStats(
   int trick,
   int hand)
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+#else
   int hist[DISTS_PER_ENTRY + 1];
   int num_wraps;
 
@@ -1381,11 +2401,13 @@ void TransTable::PrintSuitStats(
   fprintf(fp, "Suit histogram for trick %d, hand %s\n",
           trick, players[hand]);
   TransTable::PrintHist(hist, num_wraps, DISTS_PER_ENTRY);
+#endif
 }
 
 
 void TransTable::PrintAllSuitStats()
 {
+#ifndef SMALL_MEMORY_OPTION
   suitWraps = 0;
   for (int i = 0; i <= DISTS_PER_ENTRY; i++)
     suitHist[i] = 0;
@@ -1402,11 +2424,13 @@ void TransTable::PrintAllSuitStats()
 
   fprintf(fp, "Overall suit histogram\n");
   TransTable::PrintHist(suitHist, suitWraps, DISTS_PER_ENTRY);
+#endif
 }
 
 
 void TransTable::PrintSummarySuitStats()
 {
+#ifndef SMALL_MEMORY_OPTION
   int hist[DISTS_PER_ENTRY + 1];
   int count, prod_sum, prod_sumsq,
                         max_len, num_wraps;
@@ -1473,6 +2497,7 @@ void TransTable::PrintSummarySuitStats()
     fprintf(fp, "\n");
   }
   fprintf(fp, "\n");
+#endif
 }
 
 
@@ -1481,6 +2506,12 @@ TransTable::winBlockType * TransTable::FindMatchingDist(
   int hand,
   int handDistSought[DDS_HANDS])
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+  UNUSED(handDistSought);
+  return NULL;
+#else
   winBlockType * bp;
   distHashType * dp;
   int handDist[DDS_HANDS];
@@ -1507,6 +2538,7 @@ TransTable::winBlockType * TransTable::FindMatchingDist(
     }
   }
   return nullptr;
+#endif
 }
 
 
@@ -1542,6 +2574,12 @@ void TransTable::PrintEntriesDistAndCards(
   unsigned short * aggrTarget,
   int handDist[DDS_HANDS])
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+  UNUSED(aggrTarget);
+  UNUSED(handDist);
+#else
   char line[40];
   unsigned char len[DDS_HANDS][DDS_SUITS];
 
@@ -1602,6 +2640,7 @@ void TransTable::PrintEntriesDistAndCards(
     fprintf(fp, "%d matches for suit, none for cards\n\n", n);
   else
     fprintf(fp, "\n");
+#endif
 }
 
 
@@ -1610,6 +2649,11 @@ void TransTable::PrintEntriesDist(
   int hand,
   int handDist[DDS_HANDS])
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+  UNUSED(handDist);
+#else
   unsigned char len[DDS_HANDS][DDS_SUITS];
 
   winBlockType * bp =
@@ -1628,6 +2672,7 @@ void TransTable::PrintEntriesDist(
   }
 
   TransTable::PrintEntriesBlock(bp, len);
+#endif
 }
 
 
@@ -1635,6 +2680,10 @@ void TransTable::PrintEntries(
   int trick,
   int hand)
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+#else
   winBlockType * bp;
   distHashType * dp;
   int handDist[DDS_HANDS];
@@ -1652,11 +2701,13 @@ void TransTable::PrintEntries(
       TransTable::PrintEntriesBlock(bp, lengths);
     }
   }
+#endif
 }
 
 
 void TransTable::PrintAllEntries()
 {
+#ifndef SMALL_MEMORY_OPTION
   for (int trick = 11; trick >= 1; trick--)
   {
     for (int hand = 0; hand < DDS_HANDS; hand++)
@@ -1667,6 +2718,7 @@ void TransTable::PrintAllEntries()
     }
   }
   fprintf(fp, "\n");
+#endif
 }
 
 
@@ -1676,6 +2728,12 @@ void TransTable::UpdateEntryHist(
   int hist[],
   int * num_wraps)
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+  UNUSED(hist);
+  UNUSED(num_wraps);
+#else
   distHashType * dp;
 
   * num_wraps = 0;
@@ -1698,6 +2756,7 @@ void TransTable::UpdateEntryHist(
       }
     }
   }
+#endif
 }
 
 
@@ -1705,6 +2764,10 @@ void TransTable::PrintEntryStats(
   int trick,
   int hand)
 {
+#ifdef SMALL_MEMORY_OPTION
+  UNUSED(trick);
+  UNUSED(hand);
+#else
   int hist[BLOCKS_PER_ENTRY + 1];
   int num_wraps;
 
@@ -1713,11 +2776,13 @@ void TransTable::PrintEntryStats(
   fprintf(fp, "Entry histogram for trick %d, hand %s\n",
           trick, players[hand]);
   TransTable::PrintHist(hist, num_wraps, BLOCKS_PER_ENTRY);
+#endif
 }
 
 
 void TransTable::PrintAllEntryStats()
 {
+#ifndef SMALL_MEMORY_OPTION
   suitWraps = 0;
   for (int i = 0; i <= BLOCKS_PER_ENTRY; i++)
     suitHist[i] = 0;
@@ -1734,6 +2799,7 @@ void TransTable::PrintAllEntryStats()
 
   fprintf(fp, "Overall entry histogram\n");
   TransTable::PrintHist(suitHist, suitWraps, BLOCKS_PER_ENTRY);
+#endif
 }
 
 
@@ -1766,6 +2832,7 @@ int TransTable::EffectOfBlockBound(
 
 void TransTable::PrintSummaryEntryStats()
 {
+#ifndef SMALL_MEMORY_OPTION
   int hist[BLOCKS_PER_ENTRY + 1];
   int count, prod_sum, prod_sumsq,
                         max_len, num_wraps;
@@ -1844,11 +2911,13 @@ void TransTable::PrintSummaryEntryStats()
     fprintf(fp, "Fullness\t%7.2f%%\n",
             100. * cumProd / (BLOCKS_PER_ENTRY * cumCount));
   fprintf(fp, "\n");
+#endif
 }
 
 
 void TransTable::PrintPageSummary()
 {
+#ifndef SMALL_MEMORY_OPTION
   if (pageStats.numResets == 0)
     return;
 
@@ -1872,4 +2941,28 @@ void TransTable::PrintPageSummary()
           "harvest",
           pageStats.numHarvests,
           pageStats.numHarvests / static_cast<double>(pageStats.numResets));
+#endif
 }
+
+void TransTable::PrintNodeStats()
+{
+#ifdef SMALL_MEMORY_OPTION
+  for (int k = 13; k > 0; k--)
+    fprintf(fp, "Trick %d: Created nodes: %ld\n", k, 
+      static_cast<long>(aggrLenSets[k - 1]));
+  fprintf(fp, "\n");
+#endif
+}
+
+void TransTable::PrintResetStats()
+{
+#ifdef SMALL_MEMORY_OPTION
+  fprintf(fp, "Total no of Resets: %d\n", statsResets.noOfResets);
+  fprintf(fp, "\n");
+
+  for (int k = 0; k <= 5; k++)
+    fprintf(fp, "%s: %d\n", resetText[k], statsResets.aggrResets[k]);
+  fprintf(fp, "\n");
+#endif
+}
+

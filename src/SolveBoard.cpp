@@ -640,7 +640,9 @@ int STDCALL SolveBoardPBN(
 }
 
 
-int STDCALL SolveAllBoards(boardsPBN * bop, solvedBoards * solvedp)
+int STDCALL SolveAllBoards(
+  boardsPBN * bop, 
+  solvedBoards * solvedp)
 {
   boards bo;
   int k, i, res;
@@ -675,34 +677,11 @@ int STDCALL SolveAllChunksPBN(
   solvedBoards * solvedp, 
   int chunkSize)
 {
-  boards bo;
-  int k, i, res;
-
+  // Historical aliases.  Don't use -- they may go away.
   if (chunkSize < 1)
     return RETURN_CHUNK_SIZE;
 
-  bo.noOfBoards = bop->noOfBoards;
-  if (bo.noOfBoards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
-
-  for (k = 0; k < bop->noOfBoards; k++)
-  {
-    bo.mode[k] = bop->mode[k];
-    bo.solutions[k] = bop->solutions[k];
-    bo.target[k] = bop->target[k];
-    bo.deals[k].first = bop->deals[k].first;
-    bo.deals[k].trump = bop->deals[k].trump;
-    for (i = 0; i <= 2; i++)
-    {
-      bo.deals[k].currentTrickSuit[i] = bop->deals[k].currentTrickSuit[i];
-      bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
-    }
-    if (ConvertFromPBN(bop->deals[k].remainCards, bo.deals[k].remainCards) != 1)
-      return RETURN_PBN_FAULT;
-  }
-
-  res = SolveAllBoardsN(&bo, solvedp, chunkSize, 0);
-  return res;
+  return SolveAllBoards(bop, solvedp);
 }
 
 
@@ -711,10 +690,11 @@ int STDCALL SolveAllChunks(
   solvedBoards * solvedp, 
   int chunkSize)
 {
+  // Historical aliases.  Don't use -- they may go away.
+  if (chunkSize < 1)
+    return RETURN_CHUNK_SIZE;
 
-  int res = SolveAllChunksPBN(bop, solvedp, chunkSize);
-
-  return res;
+  return SolveAllBoards(bop, solvedp);
 }
 
 
@@ -723,13 +703,11 @@ int STDCALL SolveAllChunksBin(
   solvedBoards * solvedp, 
   int chunkSize)
 {
-  int res;
-
+  // Historical aliases.  Don't use -- they may go away.
   if (chunkSize < 1)
     return RETURN_CHUNK_SIZE;
 
-  res = SolveAllBoardsN(bop, solvedp, chunkSize, 0);
-  return res;
+  return SolveAllBoardsN(bop, solvedp, 1, 0);
 }
 
 

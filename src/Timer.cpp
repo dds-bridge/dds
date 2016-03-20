@@ -162,7 +162,7 @@ void Timer::OutputDetails()
     fprintf(fp, "%-14s %10d %10lld %10.2f %10.0f %10.2f\n",
             name[no],
             count[no],
-            userCum[no],
+            static_cast<long long>(userCum[no]),
             static_cast<double>(userCum[no]) /
             static_cast<double>(count[no]),
             1000. * systCum[no],
@@ -251,8 +251,8 @@ void Timer::PrintStats()
   {
     fprintf(fp, "%-14s %8lld %10lld %6.2f %4.1f %10.0f %6.2f %4.1f\n",
             TIMER_NAMES[0],
-            AB_ct,
-            AB_ucum,
+            static_cast<long long>(AB_ct),
+            static_cast<long long>(AB_ucum),
             AB_ucum / static_cast<double>(AB_ct),
             100. * AB_ucum / all_ucum,
             1000. * AB_scum,
@@ -263,8 +263,8 @@ void Timer::PrintStats()
   {
     fprintf(fp, "%-14s %8lld %10lld %6s %4s %10.0f %6s %4s\n",
             TIMER_NAMES[0],
-            AB_ct,
-            AB_ucum,
+            static_cast<long long>(AB_ct),
+            static_cast<long long>(AB_ucum),
             "-",
             "-",
             1000. * AB_scum,
@@ -292,8 +292,8 @@ void Timer::PrintStats()
     {
       fprintf(fp, "%-14s %8lld %10lld %6.2f %4.1f %10.0f %6.2f %4.1f\n",
               TIMER_NAMES[no],
-              ct[no],
-              ucum,
+              static_cast<long long>(ct[no]),
+              static_cast<long long>(ucum),
               ucum / static_cast<double>(ct[no]),
               100. * ucum / all_ucum,
               1000. * scum,
@@ -304,8 +304,8 @@ void Timer::PrintStats()
     {
       fprintf(fp, "%-14s %8lld %10lld %6s %4s %10.0f %6s %4s\n",
               TIMER_NAMES[no],
-              ct[no],
-              ucum,
+              static_cast<long long>(ct[no]),
+              static_cast<long long>(ucum),
               "-",
               "-",
               1000. * scum,
@@ -318,7 +318,7 @@ void Timer::PrintStats()
   fprintf(fp, "%-14s %8s %10lld %6s %4s %10.0f\n\n\n",
           "Sum",
           "",
-          all_ucum,
+          static_cast<long long>(all_ucum),
           "",
           "",
           1000. * all_scum);
@@ -355,7 +355,7 @@ void Timer::PrintStats()
       fprintf(fp, "%-14s %8d %10lld %6.2f %4.1f %10.0f %6.2f %4.1f\n",
               name[TIMER_AB + no],
               count[no],
-              AB_userCum[no],
+              static_cast<long long>(AB_userCum[no]),
               AB_userCum[no] / static_cast<double>(count[no]),
               100. * AB_userCum[no] / AB_ucum,
               1000. * AB_systCum[no],
@@ -367,8 +367,8 @@ void Timer::PrintStats()
     fprintf(fp, "-----------------------------------\n");
     fprintf(fp, "%-14s %8lld %10lld %6s %4s %10.0f\n\n\n",
             "Sum",
-            AB_ct,
-            AB_ucum,
+            static_cast<long long>(AB_ct),
+            static_cast<long long>(AB_ucum),
             "",
             "",
             1000. * AB_scum);
