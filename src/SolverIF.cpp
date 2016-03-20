@@ -205,7 +205,14 @@ int STDCALL SolveBoard(
        newTrump ||
        (thrp->nodes > SIMILARMAXWINNODES)))
   {
-    thrp->transTable.ResetMemory();
+    int reason = UNKNOWN_REASON;
+    if (thrp->nodes > SIMILARMAXWINNODES)
+      reason = TOO_MANY_NODES;
+    else if (newDeal && ! similarDeal)
+      reason = NEW_DEAL;
+    else if (newTrump)
+      reason = NEW_TRUMP;
+    thrp->transTable.ResetMemory(reason);
   }
 
   if (newDeal)

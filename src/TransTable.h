@@ -22,7 +22,23 @@
 #include "dds.h"
 #include "../include/dll.h"
 
+// ResetMemory reasons
+#define UNKNOWN_REASON 0
+#define TOO_MANY_NODES 1
+#define NEW_DEAL 2
+#define NEW_TRUMP 3
+#define MEMORY_EXHAUSTED 4
+#define FREE_THREAD_MEM 5
 
+
+// For SMALL_MEMORY_OPTION
+#define NSIZE 50000
+#define WSIZE 50000
+#define NINIT 60000
+#define WINIT 170000
+#define LSIZE 200 // Per trick and first hand
+
+// For full memory option
 #define NUM_PAGES_DEFAULT 15
 #define NUM_PAGES_MAXIMUM 25
 #define BLOCKS_PER_PAGE 1000
@@ -52,9 +68,45 @@ struct nodeCardsType // 8 bytes
 };
 
 
+
 class TransTable
 {
   private:
+
+    // Structures for the small memory option.
+
+    struct winCardType
+    {
+      int orderSet;
+      int winMask;
+      struct nodeCardsType * first;
+      struct winCardType * prevWin;
+      struct winCardType * nextWin;
+      struct winCardType * next;
+    };
+
+    struct posSearchTypeSmall
+    {
+      struct winCardType * posSearchPoint;
+      long long suitLengths;
+      struct posSearchTypeSmall * left;
+      struct posSearchTypeSmall * right;
+    };
+
+    struct ttAggrType
+    {
+      int aggrRanks[DDS_SUITS];
+      int winMask[DDS_SUITS];
+    };
+
+    struct statsResetsType
+    {
+      int noOfResets;
+      int aggrResets[6];
+    };
+
+
+    // Structures for the full memory option.
 
     struct winMatchType // 52 bytes
     {
@@ -123,9 +175,46 @@ class TransTable
       FROM_HARVEST
     };
 
-    memStateType memState;
 
-    int timestamp;
+#ifdef SMALL_MEMORY_OPTION
+    // Private data for the small memory version.
+
+    long long aggrLenSets[14];
+    struct statsResetsType statsResets;
+
+    struct winCardType temp_win[5];
+    int nodeSetSizeLimit;
+    int winSetSizeLimit;
+    unsigned long long maxmem;
+    unsigned long long allocmem;
+    unsigned long long summem;
+    int wmem;
+    int nmem;
+    int maxIndex;
+    int wcount;
+    int ncount;
+    bool clearTTflag;
+    int windex;
+    struct ttAggrType * aggp;
+
+    struct posSearchTypeSmall * rootnp[14][DDS_HANDS];
+    struct winCardType ** pw;
+    struct nodeCardsType ** pn;
+    struct posSearchTypeSmall ** pl[14][DDS_HANDS];
+    struct nodeCardsType * nodeCards;
+    struct winCardType * winCards;
+    struct posSearchTypeSmall * posSearch[14][DDS_HANDS];
+    int nodeSetSize; /* Index with range 0 to nodeSetSizeLimit */
+    int winSetSize;  /* Index with range 0 to winSetSizeLimit */
+    int lenSetInd[14][DDS_HANDS];
+    int lcount[14][DDS_HANDS];
+
+    const char * resetText[6];
+
+    long long suitLengths[14];
+#else
+    // Private data for the full memory version.
+    memStateType memState;
 
     int pagesDefault,
                         pagesCurrent,
@@ -146,8 +235,6 @@ class TransTable
     // distHashType TTroot[TT_TRICKS][DDS_HANDS][256];
     distHashType * TTroot[TT_TRICKS][DDS_HANDS];
 
-    int TTInUse;
-
     // It is useful to remember the last block we looked at.
     winBlockType * lastBlockSeen[TT_TRICKS][DDS_HANDS];
 
@@ -155,7 +242,65 @@ class TransTable
     poolType * poolp;
     winBlockType * nextBlockp;
     harvestedType harvested;
+#endif
 
+    int timestamp;
+    int TTInUse;
+
+    // Private functions for small memory option.
+
+    void Wipe();
+
+    void AddWinSet();
+
+    void AddNodeSet();
+
+    void AddLenSet(int trick, int firstHand);
+
+    void BuildSOP(
+      unsigned short ourWinRanks[DDS_SUITS],
+      unsigned short aggr[DDS_SUITS],
+      nodeCardsType * first,
+      long long suitLengths,
+      int tricks,
+      int firstHand,
+      int depth,
+      bool flag);
+
+    struct nodeCardsType * BuildPath(
+      int * winMask,
+      int * winOrderSet,
+      int ubound,
+      int lbound,
+      char bestMoveSuit,
+      char bestMoveRank,
+      struct posSearchTypeSmall * nodep,
+      bool * result);
+
+    struct posSearchTypeSmall * SearchLenAndInsert(
+      struct posSearchTypeSmall * rootp,
+      long long key,
+      bool insertNode,
+      int trick,
+      int firstHand,
+      bool * result);
+
+    struct nodeCardsType * UpdateSOP(
+      int ubound,
+      int lbound,
+      char bestMoveSuit,
+      char bestMoveRank,
+      struct nodeCardsType * nodep);
+
+    struct nodeCardsType * FindSOP(
+      int orderSet[],
+      int limit,
+      struct winCardType * nodeP,
+      int firstHand,
+      bool * lowerFlag);
+
+
+    // Full memory private functions, and common functions.
 
     void InitTT();
 
@@ -164,8 +309,6 @@ class TransTable
     void SetConstants();
 
     int hash8(int * handDist);
-
-    // int BlocksInUse();
 
     winBlockType * GetNextCardBlock();
 
@@ -278,6 +421,7 @@ class TransTable
       char hands[DDS_SUITS][DDS_HANDS][TT_LINE_LEN],
       int used[DDS_SUITS][DDS_HANDS]);
 
+    int BlocksInUse();
 
   public:
     TransTable();
@@ -292,15 +436,11 @@ class TransTable
 
     void MakeTT();
 
-    void ResetMemory();
+    void ResetMemory(int reason);
 
     void ReturnAllMemory();
 
     double MemoryInUse();
-
-    void Top4Ranks(
-      unsigned short aggrTarget[],
-      unsigned rr[DDS_SUITS]);
 
     nodeCardsType * Lookup(
       int trick,
@@ -371,9 +511,9 @@ class TransTable
 
     void PrintPageSummary();
 
+    void PrintNodeStats();
 
-    // Could also be made private, see above.
-    int BlocksInUse();
+    void PrintResetStats();
 };
 
 #endif

@@ -32,7 +32,7 @@ WARN_FLAGS	=		\
 	/wd4996			\
 	/WX
 
-# Here you can turn on warnings.
+# Here you can turn on warnings and add /DSMALL_MEMORY_OPTION.
 # CC_FULL_FLAGS	= $(CC_FLAGS)
 CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
 

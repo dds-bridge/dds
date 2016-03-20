@@ -1,25 +1,20 @@
-# This the DDS Makefile for Windows and the MinGW compiler.
+# This is the DDS Makefile for Windows and the tdm-gcc compiler:
+# http://tdm-gcc.tdragon.net/
 # It does assume a Unix-like setup for some commands,
 # but if you only want to call "make" with the default target,
 # you should be OK.
+# Changes relative to the MinGW Makefile contributed by Sergio Polini.
 
 # If you want to compile a single-threaded version, use
 # make DDS_THREADS=none
 
-# The "windres" and "cvtres" tools are used for putting version
-# information into the DLL in a way that Windows can see.
-# It is not mandatory, and if you don't have those tools,
-# You can remove $(VFILE).obj in the target line below.
-
-
 # If your exact compiler name is not given here, change it.
-# CC		= mingw32-g++
-CC		= i686-w64-mingw32-g++
+CC		= x86_64-w64-mingw32-g++
 
 # Use this one to get Windows multi-threading
 # CC_FLAGS	= -O3 -flto -mtune=generic
 # Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic
+CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -m32
 
 LD_FLAGS	= 		\
 	-Wl,--subsystem,windows \
@@ -57,11 +52,11 @@ WARN_FLAGS	= 		\
 	-Wno-long-long		\
 	-Wno-format
 
-# Here you can turn on warnings and add -DSMALL_MEMORY_OPTION
+# Here you can turn on warnings.
 # CC_FULL_FLAGS	= $(CC_FLAGS)
 CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
 
-LIB_FLAGS	= -mdll
+LIB_FLAGS	= -mdll -m32
 
 DLLBASE		= dds
 DLL 		= $(DLLBASE).dll

@@ -78,10 +78,13 @@ Microsoft Visual C++ (Windows-like, so no "mV", different "make")
 Makefile: Makefile_Visual_Windows
 Compiler: cl
 
+
 Mingw
 -----
 Makefile: Makefile_mingw
 Compiler: i686-w64-mingw32-g++
+
+32-bit and 64-bit variants for the tdc compiler are available.
 
 
 Cygwin
