@@ -1,3 +1,12 @@
+Release Notes DDS 2.8.4
+-----------------------
+Added a lower-memory DLL version with a compile flag.
+
+Added TDC 32-bit and 64-bit Makefiles contributed by Sergio Polini.
+
+Made the SolveAllChunks functions aliases to SolveAllBoards.
+
+
 Release Notes DDS 2.8.3
 -----------------------
 Fixed bug in Scheduler that caused a crash in case 200 very similar
