@@ -1,6 +1,9 @@
 Release Notes DDS 2.8.4
 -----------------------
-Added a lower-memory DLL version with a compile flag.
+Added a lower-memory DLL version with a compile flag.  This is about
+11-14% slower, but uses a lot less memory.  For example, for a 
+single thread on one PC, the memory usage was 24 MB rather than 110 MB.
+For 12 threads, the numbers were 89 MB rather than 1.1 GB.
 
 Added TDC 32-bit and 64-bit Makefiles contributed by Sergio Polini.
 

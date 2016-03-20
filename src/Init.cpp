@@ -690,7 +690,7 @@ void FreeThreadMem()
 {
   for (int k = 0; k < noOfThreads; k++)
   {
-    localVar[k].transTable.ResetMemory();
+    localVar[k].transTable.ResetMemory(FREE_THREAD_MEM);
     localVar[k].memUsed = localVar[k].transTable.MemoryInUse() +
                           ThreadMemoryUsed();
   }

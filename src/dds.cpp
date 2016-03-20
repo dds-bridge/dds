@@ -51,6 +51,8 @@ extern "C" BOOL APIENTRY DllMain(
 
 #elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
 
+void DDSInitialize(), DDSFinalize();
+
 void DDSInitialize(void) 
 {
   SetMaxThreads(0);
