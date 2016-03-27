@@ -2,6 +2,7 @@
 *.o
 *.a
 *.dll
+*.so
 *.obj
 *.def
 src/[Mm]akefile

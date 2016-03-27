@@ -11,10 +11,11 @@
 # It is not mandatory, and if you don't have those tools,
 # You can remove $(VFILE).obj in the target line below.
 
+HOST = i686-w64-mingw32-
 
 # If your exact compiler name is not given here, change it.
 # CC		= mingw32-g++
-CC		= i686-w64-mingw32-g++
+CC		= $(HOST)g++
 
 # Use this one to get Windows multi-threading
 # CC_FLAGS	= -O3 -flto -mtune=generic
@@ -106,10 +107,10 @@ mingw:	$(O_FILES)
 	$(CC) $(CC_FULL_FLAGS) $(DDS_THR) -c $<
 
 $(DLLBASE).res:	$(DLLBASE).rc
-	windres $(DLLBASE).rc $(DLLBASE).res
+	$(HOST)windres $(DLLBASE).rc $(DLLBASE).res
 
 $(VFILE).o:	$(DLLBASE).rc
-	windres $(WINDRES_FLAG) $(DLLBASE).rc $(VFILE).o
+	$(HOST)windres $(WINDRES_FLAG) $(DLLBASE).rc $(VFILE).o
 
 depend:
 	makedepend -Y -- $(CC_FLAGS) -- $(SOURCE_FILES)
