@@ -4,7 +4,7 @@
 # target, you should be OK.
 
 # If you want to compile a single-threaded version, use
-# make DDS_THREADS=none
+# DDS_THREADS=none
 
 # The "windres" and "cvtres" tools are used for putting version
 # information into the DLL in a way that Windows can see.
@@ -16,9 +16,9 @@
 CC		= g++
 
 # Use this one to get Windows multi-threading
-CC_FLAGS	= -O3 -flto -mtune=generic -fno-use-linker-plugin
+# CC_FLAGS	= -O3 -flto -mtune=generic -fno-use-linker-plugin
 # Use this one to get OpenMP multi-threading
-# CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -fno-use-linker-plugin
+CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -fno-use-linker-plugin
 
 LD_FLAGS	= 		\
 	-Wl,--subsystem,windows \

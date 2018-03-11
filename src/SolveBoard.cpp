@@ -10,7 +10,7 @@
 
 // Disable some boost header warnings.
 #ifdef DDS_THREADS_BOOST
-  #ifdef _WIN32
+  #if (defined(_WIN32) && !defined(__CYGWIN__))
     #pragma warning(push)
     #pragma warning(disable: 4061 4191 4365 4571 4619 4625 4626 5026 5027 5031)
   #endif
@@ -26,6 +26,7 @@
 #include <vector>
 using namespace std;
 
+
 #include "dds.h"
 #include "threadmem.h"
 #include "SolverIF.h"
@@ -33,6 +34,7 @@ using namespace std;
 #include "Scheduler.h"
 #include "PBN.h"
 #include "debug.h"
+
 
 #ifdef DDS_SCHEDULER
   #define START_BLOCK_TIMER scheduler.StartBlockTimer()
@@ -49,6 +51,10 @@ using namespace std;
 extern int noOfThreads;
 long chunk;
 paramType param;
+
+
+void SolveChunkCommon(const int thid);
+void SolveChunkDDtableCommon(const int thid);
 
 
 void SolveChunkCommon(
@@ -169,17 +175,86 @@ void SolveChunkDDtableCommon(
   }
 }
 
+#if (defined(DDS_THREADS_SINGLE))
 
-#if (defined(_WIN32) || defined(__CYGWIN__)) && \
+int SolveInitThreadsNone();
+int SolveRunThreadsNone(const int chunkSize);
+
+
+int SolveInitThreadsNone()
+{
+  return RETURN_NO_FAULT;
+}
+
+
+int SolveRunThreadsNone(
+  const int chunkSize)
+{
+  START_BLOCK_TIMER;
+
+  if (chunkSize == 1)
+    SolveChunkCommon(0);
+  else
+    SolveChunkDDtableCommon(0);
+  END_BLOCK_TIMER;
+
+  return RETURN_NO_FAULT;
+}
+
+
+int SolveAllBoardsN(
+  boards * bop,
+  solvedBoards * solvedp,
+  int chunkSize,
+  int source) // 0 solve, 1 calc
+{
+  chunk = chunkSize;
+  param.error = 0;
+
+  if (bop->noOfBoards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
+  int retInit = SolveInitThreadsNone();
+  if (retInit != RETURN_NO_FAULT)
+    return retInit;
+
+  param.bop = bop;
+  param.solvedp = solvedp;
+  param.noOfBoards = bop->noOfBoards;
+
+  if (source == 0)
+    scheduler.Register(bop, SCHEDULER_SOLVE);
+  else
+    scheduler.Register(bop, SCHEDULER_CALC);
+
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
+    solvedp->solvedBoard[k].cards = 0;
+
+  int retRun = SolveRunThreadsNone(chunkSize);
+  if (retRun != RETURN_NO_FAULT)
+    return retRun;
+
+  /* Calculate number of solved boards. */
+  solvedp->noOfBoards = param.noOfBoards;
+
+  if (param.error == 0)
+    return 1;
+  else
+    return param.error;
+}
+
+
+#elif (defined(_WIN32) || defined(__CYGWIN__)) && \
      (!defined(_OPENMP)) && \
-     !defined(DDS_THREADS_BOOST) && \
-     !defined(DDS_THREADS_SINGLE)
+     !defined(DDS_THREADS_BOOST)
 
 HANDLE solveAllEvents[MAXNOOFTHREADS];
 LONG volatile threadIndex;
 
 DWORD CALLBACK SolveChunk (void *);
 DWORD CALLBACK SolveChunkDDtable (void *);
+int SolveInitThreadsWindows();
+int SolveRunThreadsWindows(const int chunkSize);
 
 DWORD CALLBACK SolveChunk (void *)
 {
@@ -554,7 +629,53 @@ int SolveAllBoardsN(
   return 1;
 }
 
-#else
+#elif (defined(_OPENMP))
+
+int SolveInitThreadsOpenMP();
+int SolveRunThreadsOpenMP(const int chunkSize);
+
+
+int SolveInitThreadsOpenMP()
+{
+  /* Added after suggestion by Dirk Willecke. */
+  if (omp_get_dynamic())
+    omp_set_dynamic(0);
+
+  omp_set_num_threads(noOfThreads);
+
+  return RETURN_NO_FAULT;
+}
+
+
+int SolveRunThreadsOpenMP(
+  const int chunkSize)
+{
+  int thid;
+
+  START_BLOCK_TIMER;
+  if (chunkSize == 1)
+  {
+    #pragma omp parallel default(none) shared(scheduler) private(thid)
+    {
+      #pragma omp while schedule(dynamic, chunk)
+      thid = omp_get_thread_num();
+      SolveChunkCommon(thid);
+    }
+  }
+  else
+  {
+    #pragma omp parallel default(none) shared(scheduler) private(thid)
+    {
+      #pragma omp while schedule(dynamic, chunk)
+      thid = omp_get_thread_num();
+      SolveChunkDDtableCommon(thid);
+    }
+  }
+  END_BLOCK_TIMER;
+
+  return RETURN_NO_FAULT;
+}
+
 
 int SolveAllBoardsN(
   boards * bop,
@@ -562,178 +683,39 @@ int SolveAllBoardsN(
   int chunkSize,
   int source) // 0 solve, 1 calc
 {
-  int k, i, res, chunk, fail;
-  futureTricks fut[MAXNOOFBOARDS];
-
   chunk = chunkSize;
-  fail = 1;
+  param.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  for (i = 0; i < MAXNOOFBOARDS; i++)
-    solvedp->solvedBoard[i].cards = 0;
+  int retInit = SolveInitThreadsOpenMP();
+  if (retInit != RETURN_NO_FAULT)
+    return retInit;
 
-#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
-  if (omp_get_dynamic())
-    omp_set_dynamic(0);
-  omp_set_num_threads(noOfThreads);
-  /* Added after suggestion by Dirk Willecke. */
-#elif defined (_OPENMP)
-  omp_set_num_threads(1);
-#endif
-
-  int index, thid, hint;
-  schedType st;
-
-  START_BLOCK_TIMER;
+  param.bop = bop;
+  param.solvedp = solvedp;
+  param.noOfBoards = bop->noOfBoards;
 
   if (source == 0)
     scheduler.Register(bop, SCHEDULER_SOLVE);
   else
     scheduler.Register(bop, SCHEDULER_CALC);
 
-  if (chunkSize == 1)
-  {
-    #pragma omp parallel default(none) shared(scheduler, fut, bop, solvedp, chunk, fail) private(st, index, thid, res)
-    {
-      #pragma omp while schedule(dynamic, chunk)
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
+    solvedp->solvedBoard[k].cards = 0;
 
-      while (1)
-      {
-#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
-        thid = omp_get_thread_num();
-#else
-        thid = 0;
-#endif
+  int retRun = SolveRunThreadsOpenMP(chunkSize);
+  if (retRun != RETURN_NO_FAULT)
+    return retRun;
 
-        st = scheduler.GetNumber(thid);
-        index = st.number;
-        if (index == -1)
-          break;
+  /* Calculate number of solved boards. */
+  solvedp->noOfBoards = param.noOfBoards;
 
-        // This is not a perfect repeat detector, as the hands in
-        // a group might have declarers N, S, N, N. Then the second
-        // N would not reuse the first N. However, must reuses are
-        // reasonably adjacent, and this is just an optimization anyway.
-
-        if (st.repeatOf != -1 &&
-        (bop->deals[index ].first ==
-        bop->deals[st.repeatOf].first))
-        {
-          START_THREAD_TIMER(thid);
-          solvedp->solvedBoard[index] = fut[ st.repeatOf ];
-          END_THREAD_TIMER(thid);
-          continue;
-        }
-        else
-        {
-          START_THREAD_TIMER(thid);
-          res = SolveBoard(
-                  bop->deals[index],
-                  bop->target[index],
-                  bop->solutions[index],
-                  bop->mode[index],
-                  &fut[index],
-                  thid);
-          END_THREAD_TIMER(thid);
-
-          if (res == 1)
-            solvedp->solvedBoard[index] = fut[index];
-          else
-            fail = res;
-
-        }
-      }
-    }
-  }
+  if (param.error == 0)
+    return 1;
   else
-  {
-    #pragma omp parallel default(none) shared(scheduler, bop, fut, solvedp, chunk, fail) private(st, index, thid, k, hint, res)
-    {
-      #pragma omp while schedule(dynamic, chunk)
-
-      while (1)
-      {
-#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
-        thid = omp_get_thread_num();
-#else
-        thid = 0;
-#endif
-
-        st = scheduler.GetNumber(thid);
-        index = st.number;
-        if (index == -1)
-          break;
-
-        if (st.repeatOf != -1)
-        {
-          START_THREAD_TIMER(thid);
-          for (k = 0; k < chunk; k++)
-          {
-            bop->deals[index].first = k;
-
-            solvedp->solvedBoard[index].score[k] =
-            solvedp->solvedBoard[ st.repeatOf ].score[k];
-          }
-          END_THREAD_TIMER(thid);
-          continue;
-        }
-
-        bop->deals[index].first = 0;
-
-        START_THREAD_TIMER(thid);
-        res = SolveBoard(
-                bop->deals[index],
-                bop->target[index],
-                bop->solutions[index],
-                bop->mode[index],
-                &fut[index],
-                thid);
-
-        // SH: I'm making a terrible use of the fut structure here.
-
-        if (res == 1)
-          solvedp->solvedBoard[index].score[0] = fut[index].score[0];
-        else
-          fail = res;
-
-        for (k = 1; k < chunk; k++)
-        {
-          hint = (k == 2 ? fut[index].score[0] :
-                  13 - fut[index].score[0]);
-
-          bop->deals[index].first = k; // Next declarer
-
-          res = SolveSameBoard(
-                  bop->deals[index],
-                  &fut[index],
-                  hint,
-                  thid);
-
-          if (res == 1)
-            solvedp->solvedBoard[index].score[k] =
-              fut[index].score[0];
-          else
-            fail = res;
-        }
-        END_THREAD_TIMER(thid);
-      }
-    }
-
-  }
-
-  END_BLOCK_TIMER;
-
-  if (fail != 1)
-    return fail;
-
-  solvedp->noOfBoards = 0;
-  for (i = 0; i < MAXNOOFBOARDS; i++)
-    if (solvedp->solvedBoard[i].cards != 0)
-      solvedp->noOfBoards++;
-
-  return 1;
+    return param.error;
 }
 
 #endif
