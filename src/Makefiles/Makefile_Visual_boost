@@ -1,10 +1,17 @@
 # This the DDS Makefile for Windows and the Microsoft Visual C++
 # compiler.  It does assume a Unix-like setup for some commands,
 # but if you only want to call "make" with the default target,
-# you should be OK.
+# you should be OK.  If not, see Makefile_Visual_Windows.
 
-# If you want to compile a single-threaded version, use
+# Unlike Makefile_Visual, this Makefile uses Boost for 
+# multi-threading.  You can still set
 # make DDS_THREADS=none
+
+BOOST32_PATH	= \User\sheins\boost_1_66_0_x32
+BOOST32_LIB	= $(BOOST32_PATH)\lib32-msvc-14.0
+
+CC_BOOST_INCL	= /I$(BOOST32_PATH)
+CC_BOOST_LINK	= /link /LIBPATH:$(BOOST32_LIB)
 
 # The "windres" and "cvtres" tools are used for putting version
 # information into the DLL in a way that Windows can see.
@@ -37,7 +44,7 @@ WARN_FLAGS	=		\
 # CC_FULL_FLAGS	= $(CC_FLAGS)
 CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
 
-LIB_FLAGS	= /link /DLL
+LIB_FLAGS	= $(CC_BOOST_LINK)
 
 DLLBASE		= dds
 DLL 		= $(DLLBASE).dll
@@ -71,15 +78,15 @@ OBJ_FILES 	= $(subst .cpp,.obj,$(SOURCE_FILES)) $(VFILE).obj
 ifeq ($(DDS_THREADS),none)
 DDS_THR		= /DDDS_THREADS_SINGLE
 else
-DDS_THR		= 
+DDS_THR		= /DDDS_THREADS_BOOST
 endif
 
 
 vs:	$(OBJ_FILES)
-	$(CC) $(CC_FULL_FLAGS) $(OBJ_FILES) $(EXPORTER) $(LIB_FLAGS) /out:$(DLL)
+	$(CC) $(CC_FULL_FLAGS) $(OBJ_FILES) $(EXPORTER) $(LIB_FLAGS) /DLL /out:$(DLL)
 
 %.obj:	%.cpp
-	$(CC) $(CC_FULL_FLAGS) $(DDS_THR) /c $<
+	$(CC) $(CC_FULL_FLAGS) $(DDS_THR) $(CC_BOOST_INCL) /c $<
 
 $(DLLBASE).res:	$(DLLBASE).rc
 	windres $(DLLBASE).rc $(DLLBASE).res

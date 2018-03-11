@@ -8,6 +8,24 @@
 */
 
 
+// Disable some boost header warnings.
+#ifdef DDS_THREADS_BOOST
+  #ifdef _WIN32
+    #pragma warning(push)
+    #pragma warning(disable: 4061 4191 4365 4571 4619 4625 4626 5026 5027 5031)
+  #endif
+
+  #include <boost/thread.hpp>
+  using boost::thread;
+
+  #ifdef _WIN32
+    #pragma warning(pop)
+  #endif
+#endif
+
+#include <vector>
+using namespace std;
+
 #include "dds.h"
 #include "threadmem.h"
 #include "SolverIF.h"
@@ -29,28 +47,17 @@
 #endif
 
 extern int noOfThreads;
-
-#if (defined(_WIN32) || defined(__CYGWIN__)) && \
-     !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-HANDLE solveAllEvents[MAXNOOFTHREADS];
-paramType param;
-LONG volatile threadIndex;
-LONG volatile current;
-
 long chunk;
+paramType param;
 
-DWORD CALLBACK SolveChunk (void *);
-DWORD CALLBACK SolveChunkDDtable (void *);
 
-DWORD CALLBACK SolveChunk (void *)
+void SolveChunkCommon(
+  const int thid)
 {
   futureTricks fut[MAXNOOFBOARDS];
-  int thid;
-
-  thid = InterlockedIncrement(&threadIndex);
-
   int index;
   schedType st;
+
   while (1)
   {
     st = scheduler.GetNumber(thid);
@@ -90,22 +97,13 @@ DWORD CALLBACK SolveChunk (void *)
         param.error = res;
     }
   }
-
-  if (SetEvent(solveAllEvents[thid]) == 0)
-    return 0;
-
-  return 1;
-
 }
 
 
-DWORD CALLBACK SolveChunkDDtable (void *)
+void SolveChunkDDtableCommon(
+  const int thid)
 {
   futureTricks fut[MAXNOOFBOARDS];
-  int thid;
-
-  thid = InterlockedIncrement(&threadIndex);
-
   int index;
   schedType st;
 
@@ -169,11 +167,98 @@ DWORD CALLBACK SolveChunkDDtable (void *)
     }
     END_THREAD_TIMER(thid);
   }
+}
+
+
+#if (defined(_WIN32) || defined(__CYGWIN__)) && \
+     (!defined(_OPENMP)) && \
+     !defined(DDS_THREADS_BOOST) && \
+     !defined(DDS_THREADS_SINGLE)
+
+HANDLE solveAllEvents[MAXNOOFTHREADS];
+LONG volatile threadIndex;
+
+DWORD CALLBACK SolveChunk (void *);
+DWORD CALLBACK SolveChunkDDtable (void *);
+
+DWORD CALLBACK SolveChunk (void *)
+{
+  int thid;
+  thid = InterlockedIncrement(&threadIndex);
+
+  SolveChunkCommon(thid);
 
   if (SetEvent(solveAllEvents[thid]) == 0)
     return 0;
 
   return 1;
+}
+
+
+DWORD CALLBACK SolveChunkDDtable (void *)
+{
+  int thid;
+  thid = InterlockedIncrement(&threadIndex);
+
+  SolveChunkDDtableCommon(thid);
+
+  if (SetEvent(solveAllEvents[thid]) == 0)
+    return 0;
+
+  return 1;
+}
+
+
+int SolveInitThreadsWindows()
+{
+  for (int k = 0; k < noOfThreads; k++)
+  {
+    solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
+    if (solveAllEvents[k] == 0)
+      return RETURN_THREAD_CREATE;
+  }
+  return RETURN_NO_FAULT;
+}
+
+
+int SolveRunThreadsWindows(
+  const int chunkSize)
+{
+  if (chunkSize == 1)
+  {
+    for (int k = 0; k < noOfThreads; k++)
+    {
+      int res = QueueUserWorkItem(SolveChunk, NULL,
+                              WT_EXECUTELONGFUNCTION);
+      if (res != 1)
+        return res;
+    }
+  }
+  else
+  {
+    for (int k = 0; k < noOfThreads; k++)
+    {
+      int res = QueueUserWorkItem(SolveChunkDDtable, NULL,
+                              WT_EXECUTELONGFUNCTION);
+      if (res != 1)
+        return res;
+    }
+  }
+
+  START_BLOCK_TIMER;
+  DWORD solveAllWaitResult;
+  solveAllWaitResult = WaitForMultipleObjects(
+                         static_cast<unsigned>(noOfThreads),
+                         solveAllEvents, TRUE, INFINITE);
+  END_BLOCK_TIMER;
+
+  if (solveAllWaitResult != WAIT_OBJECT_0)
+    return RETURN_THREAD_WAIT;
+
+  for (int k = 0; k < noOfThreads; k++)
+    CloseHandle(solveAllEvents[k]);
+
+  return RETURN_NO_FAULT;
 }
 
 
@@ -183,11 +268,6 @@ int SolveAllBoardsN(
   int chunkSize,
   int source) // 0 solve, 1 calc
 {
-  int k;
-  int res;
-  DWORD solveAllWaitResult;
-
-  current = 0;
   threadIndex = -1;
   chunk = chunkSize;
   param.error = 0;
@@ -195,12 +275,9 @@ int SolveAllBoardsN(
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  for (k = 0; k < noOfThreads; k++)
-  {
-    solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
-    if (solveAllEvents[k] == 0)
-      return RETURN_THREAD_CREATE;
-  }
+  int retInit = SolveInitThreadsWindows();
+  if (retInit != RETURN_NO_FAULT)
+    return retInit;
 
   param.bop = bop;
   param.solvedp = solvedp;
@@ -211,44 +288,14 @@ int SolveAllBoardsN(
   else
     scheduler.Register(bop, SCHEDULER_CALC);
 
-  for (k = 0; k < MAXNOOFBOARDS; k++)
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solvedBoard[k].cards = 0;
 
-  if (chunkSize != 1)
-  {
-    for (k = 0; k < noOfThreads; k++)
-    {
-      res = QueueUserWorkItem(SolveChunkDDtable, NULL,
-                              WT_EXECUTELONGFUNCTION);
-      if (res != 1)
-        return res;
-    }
-  }
-  else
-  {
-    for (k = 0; k < noOfThreads; k++)
-    {
-      res = QueueUserWorkItem(SolveChunk, NULL,
-                              WT_EXECUTELONGFUNCTION);
-      if (res != 1)
-        return res;
-    }
-  }
-
-  START_BLOCK_TIMER;
-  solveAllWaitResult = WaitForMultipleObjects(
-                         static_cast<unsigned>(noOfThreads),
-                         solveAllEvents, TRUE, INFINITE);
-  END_BLOCK_TIMER;
-
-  if (solveAllWaitResult != WAIT_OBJECT_0)
-    return RETURN_THREAD_WAIT;
-
-  for (k = 0; k < noOfThreads; k++)
-    CloseHandle(solveAllEvents[k]);
+  int retRun = SolveRunThreadsWindows(chunkSize);
+  if (retRun != RETURN_NO_FAULT)
+    return retRun;
 
   /* Calculate number of solved boards. */
-
   solvedp->noOfBoards = param.noOfBoards;
 
   if (param.error == 0)
@@ -256,6 +303,87 @@ int SolveAllBoardsN(
   else
     return param.error;
 }
+
+#elif (defined(DDS_THREADS_BOOST))
+
+// TODO
+
+vector<thread *> threads;
+
+int SolveInitThreadsBoost()
+{
+  threads.resize(static_cast<unsigned>(noOfThreads));
+  return RETURN_NO_FAULT;
+}
+
+
+int SolveRunThreadsBoost(
+  const int chunkSize)
+{
+  const unsigned noth = static_cast<unsigned>(noOfThreads);
+  START_BLOCK_TIMER;
+  if (chunkSize == 1)
+  {
+    for (unsigned k = 0; k < noth; k++)
+      threads[k] = new thread(SolveChunkCommon, k);
+  }
+  else
+  {
+    for (unsigned k = 0; k < noth; k++)
+      threads[k] = new thread(SolveChunkDDtableCommon, k);
+  }
+  END_BLOCK_TIMER;
+
+  for (unsigned k = 0; k < noth; k++)
+  {
+   threads[k]->join();
+   delete threads[k];
+  }
+  return RETURN_NO_FAULT;
+}
+
+
+int SolveAllBoardsN(
+  boards * bop,
+  solvedBoards * solvedp,
+  int chunkSize,
+  int source) // 0 solve, 1 calc
+{
+  chunk = chunkSize;
+  param.error = 0;
+
+  if (bop->noOfBoards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
+  int retInit = SolveInitThreadsBoost();
+  if (retInit != RETURN_NO_FAULT)
+    return retInit;
+
+  param.bop = bop;
+  param.solvedp = solvedp;
+  param.noOfBoards = bop->noOfBoards;
+
+  if (source == 0)
+    scheduler.Register(bop, SCHEDULER_SOLVE);
+  else
+    scheduler.Register(bop, SCHEDULER_CALC);
+
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
+    solvedp->solvedBoard[k].cards = 0;
+
+  int retRun = SolveRunThreadsBoost(chunkSize);
+  if (retRun != RETURN_NO_FAULT)
+    return retRun;
+
+  /* Calculate number of solved boards. */
+  solvedp->noOfBoards = param.noOfBoards;
+
+  if (param.error == 0)
+    return 1;
+  else
+    return param.error;
+}
+
 
 #elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
 

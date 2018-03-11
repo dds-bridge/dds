@@ -667,6 +667,10 @@ void STDCALL GetDDSInfo(DDSInfo * info)
   info->threading = 0;
   sprintf(t, "%-12s %20s\n", "Threading", "None");
   strcat(info->systemString, t);
+#elif defined(DDS_THREADS_BOOST)
+  info->threading = 4;
+  sprintf(t, "%-12s %20s\n", "Threading", "Boost");
+  strcat(info->systemString, t);
 #elif defined(_OPENMP)
   info->threading = 2;
   sprintf(t, "%-12s %20s\n", "Threading", "OpenMP");
