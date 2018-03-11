@@ -17,7 +17,8 @@
 
 # If your exact compiler name is not given here, change it.
 # CC		= mingw32-g++
-CC		= i686-w64-mingw32-g++
+# CC		= i686-w64-mingw32-g++
+CC		= g++
 
 # Use this one to get Windows multi-threading
 # CC_FLAGS	= -O3 -flto -mtune=generic
@@ -69,7 +70,6 @@ DTEST_SOURCE_FILES 	=	\
 	testStats.cpp
 
 LD_FLAGS	= 		\
-	-Wl,--subsystem,windows \
 	-Wl,--output-def,$(DLLBASE).def	\
 	-Wl,--dynamicbase 	\
 	-Wl,--nxcompat 		\
@@ -97,6 +97,11 @@ STOLEN_SOURCE_FILES 	=	\
 	$(SRC)/QuickTricks.cpp	\
 	$(SRC)/Scheduler.cpp	\
 	$(SRC)/SolveBoard.cpp	\
+	$(SRC)/SolveBoard_basic.cpp	\
+	$(SRC)/SolveBoard_boost.cpp	\
+	$(SRC)/SolveBoard_GCD.cpp	\
+	$(SRC)/SolveBoard_OpenMP.cpp	\
+	$(SRC)/SolveBoard_WinAPI.cpp	\
 	$(SRC)/SolverIF.cpp	\
 	$(SRC)/Stats.cpp	\
 	$(SRC)/Timer.cpp	\
@@ -111,6 +116,7 @@ ITEST_OBJ_FILES	= $(subst .cpp,.o,$(ITEST_SOURCE_FILES))
 
 dtest:	$(DTEST_OBJ_FILES)
 	$(CC) $(CC_FULL_FLAGS) $(DTEST_OBJ_FILES) $(LD_FLAGS) $(LIB_FLAGS) -o $(DTEST)
+# $(CC) $(CC_FULL_FLAGS) $(DTEST_OBJ_FILES) $(LD_FLAGS) $(LIB_FLAGS) -o $(DTEST)
 
 itest:	$(ITEST_OBJ_FILES)
 	$(CC) $(CC_FULL_FLAGS) $(ITEST_OBJ_FILES) $(LD_FLAGS) -o $(ITEST)
@@ -189,6 +195,34 @@ clean:
 ../src/SolveBoard.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
 ../src/SolveBoard.o: ../src/Scheduler.h ../src/threadmem.h ../src/SolverIF.h
 ../src/SolveBoard.o: ../src/SolveBoard.h ../src/PBN.h
+../src/SolveBoard.o: ../src/SolveBoard_basic.h ../src/SolveBoard_boost.h
+../src/SolveBoard.o: ../src/SolveBoard_GCD.h ../src/SolveBoard_OpenMP.h
+../src/SolveBoard.o: ../src/SolveBoard_WinAPI.h
+../src/SolveBoard_basic.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/SolveBoard_basic.o: ../src/TransTable.h ../include/dll.h
+../src/SolveBoard_basic.o: ../src/Timer.h ../src/ABstats.h ../src/Moves.h
+../src/SolveBoard_basic.o: ../src/Stats.h ../src/Scheduler.h
+../src/SolveBoard_basic.o: ../src/SolveBoard.h ../src/SolveBoard_basic.h
+../src/SolveBoard_boost.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/SolveBoard_boost.o: ../src/TransTable.h ../include/dll.h
+../src/SolveBoard_boost.o: ../src/Timer.h ../src/ABstats.h ../src/Moves.h
+../src/SolveBoard_boost.o: ../src/Stats.h ../src/Scheduler.h
+../src/SolveBoard_boost.o: ../src/SolveBoard.h ../src/SolveBoard_boost.h
+../src/SolveBoard_GCD.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/SolveBoard_GCD.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
+../src/SolveBoard_GCD.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
+../src/SolveBoard_GCD.o: ../src/Scheduler.h ../src/SolveBoard.h
+../src/SolveBoard_GCD.o: ../src/SolveBoard_GCD.h
+../src/SolveBoard_OpenMP.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/SolveBoard_OpenMP.o: ../src/TransTable.h ../include/dll.h
+../src/SolveBoard_OpenMP.o: ../src/Timer.h ../src/ABstats.h ../src/Moves.h
+../src/SolveBoard_OpenMP.o: ../src/Stats.h ../src/Scheduler.h
+../src/SolveBoard_OpenMP.o: ../src/SolveBoard.h ../src/SolveBoard_OpenMP.h
+../src/SolveBoard_WinAPI.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/SolveBoard_WinAPI.o: ../src/TransTable.h ../include/dll.h
+../src/SolveBoard_WinAPI.o: ../src/Timer.h ../src/ABstats.h ../src/Moves.h
+../src/SolveBoard_WinAPI.o: ../src/Stats.h ../src/Scheduler.h
+../src/SolveBoard_WinAPI.o: ../src/SolveBoard.h ../src/SolveBoard_WinAPI.h
 ../src/SolverIF.o: ../src/dds.h ../src/debug.h ../include/portab.h
 ../src/SolverIF.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
 ../src/SolverIF.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h

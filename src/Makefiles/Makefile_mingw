@@ -4,7 +4,7 @@
 # you should be OK.
 
 # If you want to compile a single-threaded version, use
-# make DDS_THREADS=none
+# DDS_THREADS=none
 
 # The "windres" and "cvtres" tools are used for putting version
 # information into the DLL in a way that Windows can see.
@@ -14,7 +14,8 @@
 
 # If your exact compiler name is not given here, change it.
 # CC		= mingw32-g++
-CC		= i686-w64-mingw32-g++
+# CC		= i686-w64-mingw32-g++
+CC		= g++
 
 # Use this one to get Windows multi-threading
 # CC_FLAGS	= -O3 -flto -mtune=generic
@@ -27,7 +28,8 @@ LD_FLAGS	= 		\
 	-Wl,--dynamicbase 	\
 	-Wl,--nxcompat 		\
 	-Wl,--no-seh 		\
-	-Wl,--enable-stdcall-fixup
+	-Wl,--enable-stdcall-fixup \
+	-lpthread
 
 
 # These flags are not turned on be default, but DDS should pass them.
@@ -68,7 +70,7 @@ DLL 		= $(DLLBASE).dll
 EXPORTER	= Exports.def
 
 VFILE		= ddsres
-WINDRES_FLAG	= -F pe-i386
+WINDRES_FLAG	= -F pe-x86-64
 
 SOURCE_FILES 	=		\
 	dds.cpp 		\
@@ -85,6 +87,11 @@ SOURCE_FILES 	=		\
 	QuickTricks.cpp		\
 	Scheduler.cpp		\
 	SolveBoard.cpp		\
+	SolveBoard_basic.cpp	\
+	SolveBoard_boost.cpp	\
+	SolveBoard_GCD.cpp	\
+	SolveBoard_OpenMP.cpp	\
+	SolveBoard_WinAPI.cpp	\
 	SolverIF.cpp		\
 	Stats.cpp		\
 	Timer.cpp		\
@@ -160,7 +167,24 @@ Scheduler.o: Scheduler.h dds.h debug.h ../include/portab.h TransTable.h
 Scheduler.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
 SolveBoard.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 SolveBoard.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
-SolveBoard.o: SolverIF.h SolveBoard.h PBN.h
+SolveBoard.o: SolverIF.h SolveBoard.h PBN.h SolveBoard_basic.h
+SolveBoard.o: SolveBoard_boost.h SolveBoard_GCD.h SolveBoard_OpenMP.h
+SolveBoard.o: SolveBoard_WinAPI.h
+SolveBoard_basic.o: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_basic.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_basic.o: Scheduler.h SolveBoard.h SolveBoard_basic.h
+SolveBoard_boost.o: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_boost.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_boost.o: Scheduler.h SolveBoard.h SolveBoard_boost.h
+SolveBoard_GCD.o: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_GCD.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_GCD.o: Scheduler.h SolveBoard.h SolveBoard_GCD.h
+SolveBoard_OpenMP.o: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_OpenMP.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_OpenMP.o: Scheduler.h SolveBoard.h SolveBoard_OpenMP.h
+SolveBoard_WinAPI.o: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_WinAPI.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_WinAPI.o: Scheduler.h SolveBoard.h SolveBoard_WinAPI.h
 SolverIF.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 SolverIF.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h threadmem.h
 SolverIF.o: ABsearch.h SolverIF.h
