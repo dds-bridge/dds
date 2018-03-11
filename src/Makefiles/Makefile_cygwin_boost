@@ -1,10 +1,13 @@
 # This the DDS Makefile for Cygwin under Windows and the 
-# GNU g++ compiler.  It does assume a Unix-like setup for some 
-# commands, but if you only want to call "make" with the default 
-# target, you should be OK.
+# GNU g++ compiler, using Boost for multi-threading.  
+# It does assume a Unix-like setup for some commands, but if you 
+# only want to call "make" with the default target, you should be OK.
 
 # If you want to compile a single-threaded version, use
 # DDS_THREADS=none
+
+# BOOST32_PATH    = /cygdrive/c/User/sheins/boost_1_66_0_unix
+# BOOST32_LIB     = $(BOOST32_PATH)\lib32-msvc-14.0
 
 # The "windres" and "cvtres" tools are used for putting version
 # information into the DLL in a way that Windows can see.
@@ -15,10 +18,7 @@
 # If your compiler name is not given here, change it.
 CC		= g++
 
-# Use this one to get Windows multi-threading
-# CC_FLAGS	= -O3 -flto -mtune=generic -fno-use-linker-plugin
-# Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -fno-use-linker-plugin
+CC_FLAGS	= -O3 -flto -mtune=generic -fno-use-linker-plugin
 
 LD_FLAGS	= 		\
 	-Wl,--subsystem,windows \
@@ -26,7 +26,9 @@ LD_FLAGS	= 		\
 	-Wl,--dynamicbase 	\
 	-Wl,--nxcompat 		\
 	-Wl,--no-seh 		\
-	-Wl,--enable-stdcall-fixup
+	-Wl,--enable-stdcall-fixup \
+	-lboost_system \
+	-lboost_thread
 
 # These flags are not turned on be default, but DDS should pass them.
 # Turn them on below.
@@ -98,7 +100,7 @@ O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES)) $(VFILE).o
 ifeq ($(DDS_THREADS),none)
 DDS_THR		= -DDDS_THREADS_SINGLE
 else
-DDS_THR		= 
+DDS_THR		= -DDDS_THREADS_BOOST
 endif
 
 

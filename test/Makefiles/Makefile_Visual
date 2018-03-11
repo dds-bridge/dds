@@ -24,6 +24,7 @@ LINK_FLAGS	= /LTCG
 WARN_FLAGS	=		\
 	/Wall			\
 	/wd4127			\
+	/wd4464			\
 	/wd4514			\
 	/wd4555			\
 	/wd4668			\

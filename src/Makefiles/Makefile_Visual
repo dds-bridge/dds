@@ -4,7 +4,7 @@
 # you should be OK.
 
 # If you want to compile a single-threaded version, use
-# make DDS_THREADS=none
+# DDS_THREADS=none
 
 # The "windres" and "cvtres" tools are used for putting version
 # information into the DLL in a way that Windows can see.
@@ -61,6 +61,11 @@ SOURCE_FILES 	=		\
 	QuickTricks.cpp		\
 	Scheduler.cpp		\
 	SolveBoard.cpp		\
+	SolveBoard_basic.cpp	\
+	SolveBoard_boost.cpp	\
+	SolveBoard_GCD.cpp	\
+	SolveBoard_OpenMP.cpp	\
+	SolveBoard_WinAPI.cpp	\
 	SolverIF.cpp		\
 	Stats.cpp		\
 	Timer.cpp		\
@@ -136,6 +141,23 @@ Scheduler.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
 SolveBoard.obj: dds.h debug.h ../include/portab.h TransTable.h
 SolveBoard.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
 SolveBoard.obj: Scheduler.h threadmem.h SolverIF.h SolveBoard.h PBN.h
+SolveBoard.obj: SolveBoard_basic.h SolveBoard_boost.h SolveBoard_GCD.h
+SolveBoard.obj: SolveBoard_OpenMP.h SolveBoard_WinAPI.h
+SolveBoard_basic.obj: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_basic.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_basic.obj: Scheduler.h SolveBoard.h SolveBoard_basic.h
+SolveBoard_boost.obj: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_boost.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_boost.obj: Scheduler.h SolveBoard.h SolveBoard_boost.h
+SolveBoard_GCD.obj: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_GCD.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_GCD.obj: Scheduler.h SolveBoard.h SolveBoard_GCD.h
+SolveBoard_OpenMP.obj: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_OpenMP.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_OpenMP.obj: Scheduler.h SolveBoard.h SolveBoard_OpenMP.h
+SolveBoard_WinAPI.obj: dds.h debug.h ../include/portab.h TransTable.h
+SolveBoard_WinAPI.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+SolveBoard_WinAPI.obj: Scheduler.h SolveBoard.h SolveBoard_WinAPI.h
 SolverIF.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 SolverIF.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h
 SolverIF.obj: threadmem.h ABsearch.h SolverIF.h
