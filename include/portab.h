@@ -69,7 +69,8 @@
 
 #if __cplusplus <= 199711L
   #ifndef nullptr
-    #define nullptr NULL
+    // TODO
+    // #define nullptr NULL
   #endif
 #endif
 

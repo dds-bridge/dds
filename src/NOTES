@@ -1,0 +1,19 @@
+11.03.2018
+
+Scheduler.cpp and .h
+---
+No lock at all anymore
+Use atomic<int> increments where available (C++11)
+Timer functions do not go by _WIN32 alone
+- _WIN32: Yes
+- __CYGWIN__
+- MAC
+- __MINGW32__, maybe also __MINGW64__?
+
+PlayAnalyser
+---
+- Check all _WIN32
+- Same structure as usual: Boost, OpenMP, ...
+
+
+More modular Makefiles

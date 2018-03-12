@@ -87,7 +87,7 @@ ITEST_SOURCE_FILES	=	\
 ITEST_OBJ_FILES	= $(subst .cpp,.obj,$(ITEST_SOURCE_FILES))
 
 dtest:	$(DTEST_OBJ_FILES)
-	link $(DTEST_OBJ_FILES) $(DLIB) /out:$(DTEST).exe
+	link /LTCG $(DTEST_OBJ_FILES) $(DLIB) /out:$(DTEST).exe
 
 itest:	$(ITEST_OBJ_FILES)
 	link /LTCG $(ITEST_OBJ_FILES) /out:$(ITEST).exe

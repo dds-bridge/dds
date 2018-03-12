@@ -27,6 +27,18 @@ int main(int argc, char * argv[])
   printf("%-12s %20s\n\n", "Version", info.versionString);
   fflush(stdout);
 
+// TODO
+#if defined(_WIN32)
+  printf("_WIN32\n");
+  fflush(stdout);
+#elif defined(_WIN64)
+  printf("_WIN32\n");
+  fflush(stdout);
+#else
+  printf("No WIN\n");
+  fflush(stdout);
+#endif
+
   realMain(argc, argv);
 
   exit(0);

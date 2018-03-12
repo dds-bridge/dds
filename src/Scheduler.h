@@ -10,6 +10,8 @@
 #ifndef DDS_SCHEDULER_H
 #define DDS_SCHEDULER_H
 
+#include <atomic>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,8 +30,8 @@
 
 #define HASH_MAX 200
 
-
-#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
+// TODO Can probably be deleted
+#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
   #include <dispatch/dispatch.h>
 #endif
 
@@ -44,12 +46,6 @@ struct schedType
 class Scheduler
 {
   private:
-
-#if defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
-    omp_lock_t lock;
-#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
-    dispatch_semaphore_t lock;
-#endif
 
     struct listType
     {
@@ -96,11 +92,8 @@ class Scheduler
     groupType group[MAXNOOFBOARDS];
     int numGroups;
     int extraGroups;
-#ifdef _WIN32
-    LONG volatile currGroup;
-#else
-    int volatile currGroup;
-#endif
+
+    std::atomic<int> currGroup;
 
     listType list[DDS_SUITS + 2][HASH_MAX];
 
@@ -139,6 +132,10 @@ class Scheduler
     timeval blockStart;
     timeval blockEnd;
 #endif
+
+    void CreateLock();
+
+    void DestroyLock();
 
     void MakeGroups(
       boards * bop);
