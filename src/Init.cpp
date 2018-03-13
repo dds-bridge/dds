@@ -14,6 +14,7 @@
 #include "Stats.h"
 #include "ABsearch.h"
 #include "Scheduler.h"
+#include "System.h"
 
 void InitConstants();
 
@@ -24,6 +25,7 @@ double ConstantMemoryUsed();
 void FreeThreadMem();
 
 localVarType localVar[MAXNOOFTHREADS];
+System sysdep;
 Scheduler scheduler;
 int noOfThreads;
 
@@ -216,6 +218,13 @@ void STDCALL SetMaxThreads(
     InitConstants();
     InitDebugFiles();
   }
+}
+
+
+int STDCALL SetThreading(
+  int code)
+{
+  return sysdep.PreferThreading(static_cast<unsigned>(code));
 }
 
 
@@ -600,93 +609,7 @@ void ResetBestMoves(
 
 void STDCALL GetDDSInfo(DDSInfo * info)
 {
-  char t[80];
-
-  info->major = DDS_VERSION / 10000;
-  info->minor = (DDS_VERSION - info->major * 10000) / 100;
-  info->patch = DDS_VERSION % 100;
-
-  sprintf(info->versionString, "%d.%d.%d",
-    info->major, info->minor, info->patch);
-
-  info->system = 0;
-  info->compiler = 0;
-  info->constructor = 0;
-  info->threading = 0;
-  info->noOfThreads = noOfThreads;
-
-  sprintf(info->systemString, "DDS DLL\n-------\n");
-
-#if defined(_WIN32)
-  info->system = 1;
-  sprintf(t, "%-12s %20s\n", "System", "Windows");
-  strcat(info->systemString, t);
-#elif defined(__CYGWIN__)
-  info->system = 2;
-  sprintf(t, "%-12s %20s\n", "System", "Cygwin");
-  strcat(info->systemString, t);
-#elif defined(__linux)
-  info->system = 3;
-  sprintf(t, "%-12s %20s\n", "System", "Linux");
-  strcat(info->systemString, t);
-#elif defined(__APPLE__)
-  info->system = 4;
-  sprintf(t, "%-12s %20s\n", "System", "Apple");
-  strcat(info->systemString, t);
-#endif
-
-#if defined(_MSC_VER)
-  info->compiler = 1;
-  sprintf(t, "%-12s %20s\n", "Compiler", "Microsoft Visual C++");
-  strcat(info->systemString, t);
-#elif defined(__MINGW32__)
-  info->compiler = 2;
-  sprintf(t, "%-12s %20s\n", "Compiler", "MinGW");
-  strcat(info->systemString, t);
-#elif defined(__GNUC__)
-  info->compiler = 3;
-  sprintf(t, "%-12s %20s\n", "Compiler", "GNU g++");
-  strcat(info->systemString, t);
-#elif defined(__clang__)
-  info->compiler = 4;
-  sprintf(t, "%-12s %20s\n", "Compiler", "clang");
-  strcat(info->systemString, t);
-#endif
-
-#if defined(USES_DLLMAIN)
-  info->constructor = 1;
-  sprintf(t, "%-12s %20s\n", "Constructor", "DllMain");
-  strcat(info->systemString, t);
-#elif defined(USES_CONSTRUCTOR)
-  info->constructor = 2;
-  sprintf(t, "%-12s %20s\n", "Constructor", "Unix-style");
-  strcat(info->systemString, t);
-#endif
-
-#if defined(DDS_THREADS_SINGLE)
-  info->threading = 0;
-  sprintf(t, "%-12s %20s\n", "Threading", "None");
-  strcat(info->systemString, t);
-#elif defined(DDS_THREADS_BOOST)
-  info->threading = 4;
-  sprintf(t, "%-12s %20s\n", "Threading", "Boost");
-  strcat(info->systemString, t);
-#elif defined(_OPENMP)
-  info->threading = 2;
-  sprintf(t, "%-12s %20s\n", "Threading", "OpenMP");
-  strcat(info->systemString, t);
-#elif defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
-  info->threading = 3;
-  sprintf(t, "%-12s %20s\n", "Threading", "GCD");
-  strcat(info->systemString, t);
-#else
-  info->threading = 1;
-  sprintf(t, "%-12s %20s\n", "Threading", "Windows");
-  strcat(info->systemString, t);
-#endif
-
-  sprintf(t, "%-12s %20d\n", "Threads", noOfThreads);
-  strcat(info->systemString, t);
+  (void) sysdep.str(info);
 }
 
 
@@ -807,6 +730,9 @@ void STDCALL ErrorMessage(int code, char line[80])
       break;
     case RETURN_THREAD_WAIT:
       strcpy(line, TEXT_THREAD_WAIT);
+      break;
+    case RETURN_THREAD_MISSING:
+      strcpy(line, TEXT_THREAD_MISSING);
       break;
     case RETURN_NO_SUIT:
       strcpy(line, TEXT_NO_SUIT);

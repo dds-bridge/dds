@@ -1,9 +1,12 @@
 11.03.2018
 
+Move away from SolveBoard_*.cpp to System.cpp
+- Move Init.cpp (ncores, kilobytesfree) to System
+
+Death to all ifdef's that are not for debug and timing
+
 Scheduler.cpp and .h
 ---
-No lock at all anymore
-Use atomic<int> increments where available (C++11)
 Timer functions do not go by _WIN32 alone
 - _WIN32: Yes
 - __CYGWIN__
@@ -15,5 +18,9 @@ PlayAnalyser
 - Check all _WIN32
 - Same structure as usual: Boost, OpenMP, ...
 
+On laptop, fold dtest timing functions back into dtest
+
+Use SetThreading() from dtest and itest
+Read from *test command line, recognize right number
 
 More modular Makefiles

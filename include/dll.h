@@ -141,6 +141,10 @@
 #define RETURN_THREAD_WAIT -103
 #define TEXT_THREAD_WAIT "Something failed waiting for thread to end"
 
+// Tried to set a multi-threading system that is not present in DLL.
+#define RETURN_THREAD_MISSING -104
+#define TEXT_THREAD_MISSING "Multi-threading system not present"
+
 // CalcAllTables*()
 #define RETURN_NO_SUIT -201
 #define TEXT_NO_SUIT "Denomination filter vector has no entries"
@@ -369,6 +373,9 @@ struct DDSInfo
 
 EXTERN_C DLLEXPORT void STDCALL SetMaxThreads(
   int userThreads);
+
+EXTERN_C DLLEXPORT int STDCALL SetThreading(
+  int code);
 
 EXTERN_C DLLEXPORT void STDCALL FreeMemory();
 

@@ -90,6 +90,7 @@ SOURCE_FILES 	=		\
 	SolveBoard_WinAPI.cpp	\
 	SolverIF.cpp		\
 	Stats.cpp		\
+	System.cpp		\
 	Timer.cpp		\
 	TransTable.cpp
 
@@ -186,6 +187,8 @@ SolverIF.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h threadmem.h
 SolverIF.o: ABsearch.h SolverIF.h
 Stats.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 Stats.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+System.o: ../include/dll.h dds.h debug.h ../include/portab.h TransTable.h
+System.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
 Timer.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 Timer.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
 TransTable.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
