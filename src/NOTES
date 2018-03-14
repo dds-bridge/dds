@@ -1,9 +1,15 @@
+14.03.2018
+
+Do we need System: Init and Run, or can we combine?
+
+Cygwin works on laptop for Solve with boost, openmp, basic.
+VC++ does not compile with boost version, try 14.1?
+mingw has undefined symbols, eliminate system defines as
+much as possible.
+Move Init.cpp (ncores, kilobytesfree) to System
+Localize the boost warnings from the Makefile to System.cpp list
+
 11.03.2018
-
-Move away from SolveBoard_*.cpp to System.cpp
-- Move Init.cpp (ncores, kilobytesfree) to System
-
-Death to all ifdef's that are not for debug and timing
 
 Scheduler.cpp and .h
 ---
@@ -20,7 +26,10 @@ PlayAnalyser
 
 On laptop, fold dtest timing functions back into dtest
 
-Use SetThreading() from dtest and itest
-Read from *test command line, recognize right number
-
 More modular Makefiles
+
+Scheduler: Do a really simple user Timer like in dtest.
+Timer becomes TimerList.
+Timer (new) gets used in Scheduler and for debugging.
+Generate output timing files first for comparison.
+Diff.

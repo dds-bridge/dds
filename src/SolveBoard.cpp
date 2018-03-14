@@ -17,12 +17,6 @@
 #include "PBN.h"
 #include "debug.h"
 
-#include "SolveBoard_basic.h"
-#include "SolveBoard_boost.h"
-#include "SolveBoard_GCD.h"
-#include "SolveBoard_OpenMP.h"
-#include "SolveBoard_WinAPI.h"
-
 
 extern int noOfThreads;
 long chunk;

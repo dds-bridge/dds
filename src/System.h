@@ -17,22 +17,6 @@
 #include <string>
 #include <vector>
 
-// Boost: Disable some header warnings.
-
-#ifdef DDS_THREADS_BOOST
-  #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable: 4061 4191 4365 4571 4619 4625 4626 5026 5027 50    31)
-  #endif
-
-  #include <boost/thread.hpp>
-  using boost::thread;
-
-  #ifdef _MSC_VER
-    #pragma warning(pop)
-  #endif
-#endif
-
 #include "dds.h"
 
 using namespace std;
@@ -67,10 +51,6 @@ class System
     vector<RunPtr> RunPtrList;
 
     fptrType fptr;
-
-#ifdef DDS_THREADS_BOOST
-    vector<thread *> threads;
-#endif
 
 #ifdef _MSC_VER
     HANDLE solveAllEvents[MAXNOOFTHREADS];

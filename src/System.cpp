@@ -12,6 +12,21 @@
 #include <iomanip>
 #include <sstream>
 
+// Boost: Disable some header warnings.
+
+#ifdef DDS_THREADS_BOOST
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4061 4191 4365 4571 4619 4625 4626 5026 5027 50    31)
+  #endif
+
+  #include <boost/thread.hpp>
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
+#endif
+
 #include "../include/dll.h"
 #include "dds.h"
 
@@ -189,7 +204,7 @@ int System::RunThreadsBasic()
 
 int System::InitThreadsWinAPI()
 {
-#if (defined(_WIN32) && !defined(DDS_THREADS_SINGLE))
+#if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
   threadIndex = -1;
   for (int k = 0; k < numThreads; k++)
   {
@@ -203,7 +218,7 @@ int System::InitThreadsWinAPI()
 }
 
 
-#if (defined(_WIN32) && !defined(DDS_THREADS_SINGLE))
+#if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
 struct WinWrapType
 {
   int thid;
@@ -226,7 +241,7 @@ DWORD CALLBACK WinCallback(void * p)
 
 int System::RunThreadsWinAPI()
 {
-#if (defined(_WIN32) && !defined(DDS_THREADS_SINGLE))
+#if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
   vector<WinWrapType> winWrap;
   winWrap.resize(numThreads);
 
@@ -328,9 +343,6 @@ int System::RunThreadsGCD()
 
 int System::InitThreadsBoost()
 {
-#if (defined(DDS_THREADS_BOOST) && !defined(DDS_THREADS_SINGLE))
-  threads.resize(static_cast<unsigned>(numThreads));
-#endif
   return RETURN_NO_FAULT;
 }
 
@@ -338,9 +350,12 @@ int System::InitThreadsBoost()
 int System::RunThreadsBoost()
 {
 #if (defined(DDS_THREADS_BOOST) && !defined(DDS_THREADS_SINGLE))
+  vector<boost::thread *> threads;
+  threads.resize(static_cast<unsigned>(numThreads));
+
   const unsigned nu = static_cast<unsigned>(numThreads);
   for (unsigned k = 0; k < nu; k++)
-    threads[k] = new thread(fptr, k);
+    threads[k] = new boost::thread(fptr, k);
 
   for (unsigned k = 0; k < nu; k++)
   {
