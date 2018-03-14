@@ -66,7 +66,7 @@ int realMain(int argc, char * argv[])
   if (argc != 3 && argc != 4 && argc != 5)
   {
     printf(
-      "Usage: dtest file.txt solve|calc|par|dealerpar|play [ncores]\n");
+      "Usage: dtest file.txt solve|calc|par|dealerpar|play [ncores [threading]]\n");
     return 1;
   }
 
@@ -261,6 +261,8 @@ void set_constants()
   dcardSuit[4] = 'N';
 }
 
+
+int threadingCode(char * arg);
 
 int threadingCode(char * arg)
 {

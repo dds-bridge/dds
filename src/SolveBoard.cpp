@@ -30,27 +30,6 @@ paramType param;
 extern System sysdep;
 
 
-#if (defined(DDS_THREADS_SINGLE))
-  auto initPtr = SolveInitThreadsNone;
-  auto runPtr = SolveRunThreadsNone;
-#elif (defined(DDS_THREADS_BOOST))
-  auto initPtr = SolveInitThreadsBoost;
-  auto runPtr = SolveRunThreadsBoost;
-#elif (defined(_OPENMP))
-  auto initPtr = SolveInitThreadsOpenMP;
-  auto runPtr = SolveRunThreadsOpenMP;
-#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
-  auto initPtr = SolveInitThreadsGCD;
-  auto runPtr = SolveRunThreadsGCD;
-#elif (defined(_WIN32) || defined(__CYGWIN__))
-  auto initPtr = SolveInitThreadsWinAPI;
-  auto runPtr = SolveRunThreadsWinAPI;
-#else
-  auto initPtr = nullptr;
-  auto runPtr = nullptr;
-#endif
-
-
 void SolveChunkCommon(
   const int thid)
 {
@@ -200,14 +179,12 @@ int SolveAllBoardsN(
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solvedBoard[k].cards = 0;
 
-  // int retInit = (* initPtr)();
   int retInit = sysdep.InitThreads();
   if (retInit != RETURN_NO_FAULT)
     return retInit;
 
 
   START_BLOCK_TIMER;
-  // int retRun = (* runPtr)(chunkSize);
   int retRun = sysdep.RunThreads(chunkSize);
   END_BLOCK_TIMER;
 

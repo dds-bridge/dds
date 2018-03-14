@@ -19,13 +19,14 @@
 
 // Boost: Disable some header warnings.
 
-#ifdef BOOST_VERSION
+#ifdef DDS_THREADS_BOOST
   #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable: 4061 4191 4365 4571 4619 4625 4626 5026 5027 50    31)
   #endif
 
   #include <boost/thread.hpp>
+  using boost::thread;
 
   #ifdef _MSC_VER
     #pragma warning(pop)
@@ -67,8 +68,7 @@ class System
 
     fptrType fptr;
 
-#ifdef BOOST_VERSION
-    using boost::thread;
+#ifdef DDS_THREADS_BOOST
     vector<thread *> threads;
 #endif
 

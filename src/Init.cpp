@@ -91,9 +91,6 @@ void STDCALL SetMaxThreads(
   unsigned long long kilobytesFree = 0;
   int ncores = 1;
 
-#ifdef DDS_THREADS_SINGLE
-  noOfThreads = 1;
-#else
 #if defined(_WIN32) || defined(__CYGWIN__)
   /* Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
      was suggested by Lorne Anderson. */
@@ -138,7 +135,6 @@ void STDCALL SetMaxThreads(
   fclose(fifo);
 
   ncores = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
 #endif
 
   // 70%, capped at 2 GB.

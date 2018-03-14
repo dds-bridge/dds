@@ -83,25 +83,27 @@ void System::Reset()
 
   availableSystem[DDS_SYSTEM_THREAD_BASIC] = true;
 
-#ifdef _MSC_VER
+#if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
   availableSystem[DDS_SYSTEM_THREAD_WINAPI] = true;
 #else
   availableSystem[DDS_SYSTEM_THREAD_WINAPI] = false;
 #endif
 
-#ifdef _OPENMP
+#if (defined(_OPENMP) && !defined(DDS_THREADS_SINGLE))
   availableSystem[DDS_SYSTEM_THREAD_OPENMP] = true;
 #else
   availableSystem[DDS_SYSTEM_THREAD_OPENMP] = false;
 #endif
 
-#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
+#if ((defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || \
+      defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && \
+      !defined(DDS_THREADS_SINGLE))
   availableSystem[DDS_SYSTEM_THREAD_GCD] = true;
 #else
   availableSystem[DDS_SYSTEM_THREAD_GCD] = false;
 #endif
 
-#ifdef BOOST_VERSION
+#if (defined(DDS_THREADS_BOOST) && !defined(DDS_THREADS_SINGLE))
   availableSystem[DDS_SYSTEM_THREAD_BOOST] = true;
 #else
   availableSystem[DDS_SYSTEM_THREAD_BOOST] = false;
@@ -187,7 +189,7 @@ int System::RunThreadsBasic()
 
 int System::InitThreadsWinAPI()
 {
-#ifdef _WIN32
+#if (defined(_WIN32) && !defined(DDS_THREADS_SINGLE))
   threadIndex = -1;
   for (int k = 0; k < numThreads; k++)
   {
@@ -201,8 +203,7 @@ int System::InitThreadsWinAPI()
 }
 
 
-#ifdef _WIN32
-
+#if (defined(_WIN32) && !defined(DDS_THREADS_SINGLE))
 struct WinWrapType
 {
   int thid;
@@ -225,7 +226,7 @@ DWORD CALLBACK WinCallback(void * p)
 
 int System::RunThreadsWinAPI()
 {
-#ifdef _WIN32
+#if (defined(_WIN32) && !defined(DDS_THREADS_SINGLE))
   vector<WinWrapType> winWrap;
   winWrap.resize(numThreads);
 
@@ -263,7 +264,7 @@ int System::RunThreadsWinAPI()
 int System::InitThreadsOpenMP()
 {
   // Added after suggestion by Dirk Willecke.
-#ifdef _OPENMP
+#if (defined(_OPENMP) && !defined(DDS_THREADS_SINGLE))
   if (omp_get_dynamic())
     omp_set_dynamic(0);
 
@@ -276,12 +277,12 @@ int System::InitThreadsOpenMP()
 
 int System::RunThreadsOpenMP()
 {
-#ifdef _OPENMP
+#if (defined(_OPENMP) && !defined(DDS_THREADS_SINGLE))
   int thid;
   #pragma omp parallel default(none) private(thid)
   {
-    #pragma omp while schedule(dynamic, chunk)
-    while (1)
+    #pragma omp for schedule(dynamic)
+    for (int k = 0; k < numThreads; k++)
     {
       thid = omp_get_thread_num();
       (*fptr)(thid);
@@ -305,7 +306,9 @@ int System::InitThreadsGCD()
 
 int System::RunThreadsGCD()
 {
-#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
+#if ((defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || \
+      defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && \
+      !defined(DDS_THREADS_SINGLE))
   dispatch_apply(static_cast<size_t>(noOfThreads),
     dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0),
     ^(size_t t)
@@ -325,7 +328,7 @@ int System::RunThreadsGCD()
 
 int System::InitThreadsBoost()
 {
-#ifdef BOOST_VERSION
+#if (defined(DDS_THREADS_BOOST) && !defined(DDS_THREADS_SINGLE))
   threads.resize(static_cast<unsigned>(numThreads));
 #endif
   return RETURN_NO_FAULT;
@@ -334,7 +337,7 @@ int System::InitThreadsBoost()
 
 int System::RunThreadsBoost()
 {
-#ifdef BOOST_VERSION
+#if (defined(DDS_THREADS_BOOST) && !defined(DDS_THREADS_SINGLE))
   const unsigned nu = static_cast<unsigned>(numThreads);
   for (unsigned k = 0; k < nu; k++)
     threads[k] = new thread(fptr, k);

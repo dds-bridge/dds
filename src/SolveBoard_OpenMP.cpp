@@ -38,18 +38,26 @@ int SolveRunThreadsOpenMP(
   {
     #pragma omp parallel default(none) private(thid)
     {
-      #pragma omp while schedule(dynamic, chunk)
-      thid = omp_get_thread_num();
-      SolveChunkCommon(thid);
+      #pragma omp for schedule(dynamic)
+      // TODO
+      for (int k = 0; k < 999; k++)
+      {
+        thid = omp_get_thread_num();
+        SolveChunkCommon(thid);
+      }
     }
   }
   else
   {
     #pragma omp parallel default(none) private(thid)
     {
-      #pragma omp while schedule(dynamic, chunk)
-      thid = omp_get_thread_num();
-      SolveChunkDDtableCommon(thid);
+      #pragma omp for schedule(dynamic)
+      for (int k = 0; k < 999; k++)
+      {
+      // TODO
+        thid = omp_get_thread_num();
+        SolveChunkDDtableCommon(thid);
+      }
     }
   }
   END_BLOCK_TIMER;

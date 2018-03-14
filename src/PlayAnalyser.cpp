@@ -465,10 +465,15 @@ int STDCALL AnalyseAllPlaysBin(
 
   START_BLOCK_TIMER;
 
+  const int n = noOfThreads;
   #pragma omp parallel default(none) shared(scheduler, bop, plp, solvedp, solved, pchunk, pfail) private(st, index, thid, res)
   {
-    #pragma omp while schedule(dynamic, pchunk)
+    // #pragma omp while schedule(dynamic, pchunk)
+    #pragma omp for schedule(dynamic, pchunk)
 
+    // TODO
+    for (int nt = 0; nt < 999; nt++)
+    {
     while (1)
     {
 #if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
@@ -493,6 +498,7 @@ int STDCALL AnalyseAllPlaysBin(
         solvedp->solved[index] = solved[index];
       else
         pfail = res;
+    }
     }
   }
 
