@@ -12,9 +12,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <string>
+#include <algorithm>
 #include "../include/dll.h"
 #include "../include/portab.h"
 #include "testStats.h"
+
+using namespace std;
 
 
 #ifdef _WIN32
@@ -59,7 +63,7 @@ int realMain(int argc, char * argv[])
 
   TestSetTimerName("Timer title");
 
-  if (argc != 3 && argc != 4)
+  if (argc != 3 && argc != 4 && argc != 5)
   {
     printf(
       "Usage: dtest file.txt solve|calc|par|dealerpar|play [ncores]\n");
@@ -255,6 +259,25 @@ void set_constants()
   dcardSuit[2] = 'D';
   dcardSuit[3] = 'C';
   dcardSuit[4] = 'N';
+}
+
+
+int threadingCode(char * arg)
+{
+  string str(arg);
+  transform(str.begin(), str.end(), str.begin(), ::tolower);
+  if (str == "basic")
+    return 0;
+  else if (str == "winapi")
+    return 1;
+  else if (str == "openmp")
+    return 2;
+  else if (str == "gcd")
+    return 3;
+  else if (str == "boost")
+    return 4;
+  else
+    return 5;
 }
 
 

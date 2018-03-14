@@ -16,10 +16,12 @@
 int main(int argc, char * argv[])
 {
   int ncores = 0;
-  if (argc == 4)
+  if (argc >= 4)
     ncores = atoi(argv[3]);
-
   SetMaxThreads(ncores);
+
+  if (argc >= 5)
+    SetThreading(threadingCode(argv[4]));
 
   DDSInfo info;
   GetDDSInfo(&info);
@@ -32,7 +34,7 @@ int main(int argc, char * argv[])
   printf("_WIN32\n");
   fflush(stdout);
 #elif defined(_WIN64)
-  printf("_WIN32\n");
+  printf("_WIN64\n");
   fflush(stdout);
 #else
   printf("No WIN\n");

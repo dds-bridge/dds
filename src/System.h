@@ -41,6 +41,8 @@ using namespace std;
 #define DDS_SYSTEM_PLAY 2
 #define DDS_SYSTEM_SIZE 3
 
+typedef void (*fptrType)(const int thid);
+
 
 class System
 {
@@ -54,7 +56,6 @@ class System
 
     vector<bool> availableSystem;
 
-    typedef void (*fptrType)(const int thid);
     vector<fptrType> CallbackSimpleList;
     vector<fptrType> CallbackComplexList;
 
@@ -74,7 +75,6 @@ class System
 #ifdef _MSC_VER
     HANDLE solveAllEvents[MAXNOOFTHREADS];
     LONG threadIndex;
-    DWORD CALLBACK WinCallback(void *);
 #endif
 
     int InitThreadsBasic();

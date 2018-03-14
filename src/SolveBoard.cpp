@@ -13,6 +13,7 @@
 #include "SolverIF.h"
 #include "SolveBoard.h"
 #include "Scheduler.h"
+#include "System.h"
 #include "PBN.h"
 #include "debug.h"
 
@@ -26,6 +27,7 @@
 extern int noOfThreads;
 long chunk;
 paramType param;
+extern System sysdep;
 
 
 #if (defined(DDS_THREADS_SINGLE))
@@ -180,23 +182,35 @@ int SolveAllBoardsN(
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  int retInit = (* initPtr)();
-  if (retInit != RETURN_NO_FAULT)
-    return retInit;
-
   param.bop = bop;
   param.solvedp = solvedp;
   param.noOfBoards = bop->noOfBoards;
 
   if (source == 0)
+  {
     scheduler.Register(bop, SCHEDULER_SOLVE);
+    sysdep.Register(DDS_SYSTEM_SOLVE, noOfThreads);
+  }
   else
+  {
     scheduler.Register(bop, SCHEDULER_CALC);
+    sysdep.Register(DDS_SYSTEM_CALC, noOfThreads);
+  }
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solvedBoard[k].cards = 0;
 
-  int retRun = (* runPtr)(chunkSize);
+  // int retInit = (* initPtr)();
+  int retInit = sysdep.InitThreads();
+  if (retInit != RETURN_NO_FAULT)
+    return retInit;
+
+
+  START_BLOCK_TIMER;
+  // int retRun = (* runPtr)(chunkSize);
+  int retRun = sysdep.RunThreads(chunkSize);
+  END_BLOCK_TIMER;
+
   if (retRun != RETURN_NO_FAULT)
     return retRun;
 

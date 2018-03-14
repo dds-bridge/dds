@@ -24,17 +24,27 @@ LINK_FLAGS	= /LTCG
 WARN_FLAGS	=		\
 	/Wall			\
 	/wd4127			\
+	/wd4242			\
+	/wd4244			\
+	/wd4365			\
 	/wd4464			\
 	/wd4514			\
+	/wd4530			\
 	/wd4555			\
+	/wd4577			\
+	/wd4625			\
+	/wd4626			\
 	/wd4668			\
 	/wd4701			\
 	/wd4710			\
 	/wd4711			\
+	/wd4774			\
 	/wd4820			\
 	/wd4986			\
 	/wd4987			\
 	/wd4996			\
+	/wd5026			\
+	/wd5027			\
 	/WX
 
 # Here you can turn on warnings.

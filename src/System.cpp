@@ -18,6 +18,8 @@
 #include "System.h"
 #include "SolveBoard.h"
 
+extern int noOfThreads;
+
 #define DDS_SYSTEM_THREAD_BASIC 0
 #define DDS_SYSTEM_THREAD_WINAPI 1
 #define DDS_SYSTEM_THREAD_OPENMP 2
@@ -200,13 +202,20 @@ int System::InitThreadsWinAPI()
 
 
 #ifdef _WIN32
-DWORD CALLBACK System::WinCallback(void *)
+
+struct WinWrapType
 {
   int thid;
-  thid = InterlockedIncrement(&threadIndex);
-  (*fptr)(thid);
+  fptrType fptr;
+  HANDLE *waitPtr;
+};
 
-  if (SetEvent(solveAllEvents[thid]) == 0)
+DWORD CALLBACK WinCallback(void * p)
+{
+  WinWrapType * winWrap = static_cast<WinWrapType *>(p);
+  (*(winWrap->fptr))(winWrap->thid);
+
+  if (SetEvent(winWrap->waitPtr[winWrap->thid]) == 0)
     return 0;
 
   return 1;
@@ -217,11 +226,17 @@ DWORD CALLBACK System::WinCallback(void *)
 int System::RunThreadsWinAPI()
 {
 #ifdef _WIN32
-  
+  vector<WinWrapType> winWrap;
+  winWrap.resize(numThreads);
+
   for (int k = 0; k < numThreads; k++)
   {
-    int res = QueueUserWorkItem(&System::WinCallback, &k, 
-      WT_EXECUTELONGFUNCTION);
+    winWrap[k].thid = k;
+    winWrap[k].fptr = fptr;
+    winWrap[k].waitPtr = solveAllEvents;
+
+    int res = QueueUserWorkItem(WinCallback,
+      static_cast<void *>(&winWrap[k]), WT_EXECUTELONGFUNCTION);
     if (res != 1)
       return res;
   }
@@ -418,6 +433,9 @@ string System::str(DDSInfo * info) const
     }
   }
   ss << setw(24) << right << sy << "\n";
+
+  ss << left << setw(17) << "Number of threads" <<
+    setw(16) << right << noOfThreads << "\n";
 
   strcpy(info->systemString, ss.str().c_str());
   return ss.str();

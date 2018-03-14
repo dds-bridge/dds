@@ -10,3 +10,4 @@
 
 int realMain(int argc, char * argv[]);
 
+int threadingCode(char * arg);
