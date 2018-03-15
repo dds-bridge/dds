@@ -2,11 +2,13 @@
 
 Do we need System: Init and Run, or can we combine?
 
-Cygwin works on laptop for Solve with boost, openmp, basic.
-VC++ does not compile with boost version, try 14.1?
+Do we need System globals at all?
+
 mingw has undefined symbols, eliminate system defines as
 much as possible.
+
 Move Init.cpp (ncores, kilobytesfree) to System
+
 Localize the boost warnings from the Makefile to System.cpp list
 
 11.03.2018
@@ -22,7 +24,6 @@ Timer functions do not go by _WIN32 alone
 PlayAnalyser
 ---
 - Check all _WIN32
-- Same structure as usual: Boost, OpenMP, ...
 
 On laptop, fold dtest timing functions back into dtest
 

@@ -11,28 +11,21 @@
 #include "dds.h"
 #include "threadmem.h"
 #include "SolverIF.h"
-#include "PBN.h"
 #include "Scheduler.h"
+#include "System.h"
+#include "PBN.h"
+#include "debug.h"
 
 // Only single-threaded debugging here.
 #define DEBUG 0
-
-#ifdef DDS_SCHEDULER
-  #define START_BLOCK_TIMER scheduler.StartBlockTimer()
-  #define END_BLOCK_TIMER scheduler.EndBlockTimer()
-  #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
-  #define END_THREAD_TIMER(a) scheduler.EndThreadTimer(a)
-#else
-  #define START_BLOCK_TIMER 1
-  #define END_BLOCK_TIMER 1
-  #define START_THREAD_TIMER(a) 1
-  #define END_THREAD_TIMER(a) 1
-#endif
 
 #if DEBUG
 FILE * fp;
 #endif
 
+paramType playparam;
+playparamType traceparam;
+extern System sysdep;
 
 
 int STDCALL AnalysePlayBin(
@@ -250,30 +243,12 @@ int STDCALL AnalysePlayPBN(
 }
 
 
-long pchunk = 0;
-int pfail;
-
-
-#if (defined(_WIN32) || defined(__CYGWIN__)) && \
-    !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-
-HANDLE solveAllPlayEvents[MAXNOOFTHREADS];
-LONG volatile pthreadIndex;
-LONG volatile pcurrent;
-paramType playparam;
-playparamType traceparam;
-
-DWORD CALLBACK SolveChunkTracePlay (void *);
-
-DWORD CALLBACK SolveChunkTracePlay (void *)
+void PlayChunkCommon(const int thid)
 {
   solvedPlay solved[MAXNOOFBOARDS];
-  int thid;
-
-  thid = InterlockedIncrement(&pthreadIndex);
-
   int index;
   schedType st;
+
   while (1)
   {
     st = scheduler.GetNumber(thid);
@@ -281,27 +256,19 @@ DWORD CALLBACK SolveChunkTracePlay (void *)
     if (index == -1)
       break;
 
-    START_THREAD_TIMER(thid);
     int res = AnalysePlayBin(
                 playparam.bop->deals[index],
                 traceparam.plp->plays[index],
                 &solved[index],
                 thid);
-    END_THREAD_TIMER(thid);
 
+    // If there are multiple errors, this will catch one of them.
     if (res == 1)
       traceparam.solvedp->solved[index] = solved[index];
     else
-      pfail = res;
-    /* If there are multiple errors, this will catch one of them */
+      playparam.error = res;
   }
-
-  if (SetEvent(solveAllPlayEvents[thid]) == 0)
-    return 0;
-
-  return 1;
 }
-
 
 
 int STDCALL AnalyseAllPlaysBin(
@@ -310,20 +277,13 @@ int STDCALL AnalyseAllPlaysBin(
   solvedPlays * solvedp,
   int chunkSize)
 {
+  playparam.error = 0;
+
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
   if (bop->noOfBoards != plp->noOfBoards)
     return RETURN_UNKNOWN_FAULT;
-
-  pchunk = chunkSize;
-  pfail = 1;
-
-  int res;
-  DWORD solveAllWaitResult;
-
-  pcurrent = 0;
-  pthreadIndex = -1;
 
   playparam.bop = bop;
   traceparam.plp = plp;
@@ -333,182 +293,27 @@ int STDCALL AnalyseAllPlaysBin(
 
   scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
   scheduler.Register(bop, SCHEDULER_TRACE);
+  sysdep.Register(DDS_SYSTEM_PLAY, noOfThreads);
 
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    solveAllPlayEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
-    if (solveAllPlayEvents[k] == 0)
-      return RETURN_THREAD_CREATE;
-  }
-
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    res = QueueUserWorkItem(SolveChunkTracePlay, NULL,
-                            WT_EXECUTELONGFUNCTION);
-    if (res != 1)
-      return res;
-  }
+  int retInit = sysdep.InitThreads();
+  if (retInit != RETURN_NO_FAULT)
+    return retInit;
 
   START_BLOCK_TIMER;
-  solveAllWaitResult = WaitForMultipleObjects(
-    static_cast<unsigned>(noOfThreads),
-    solveAllPlayEvents, TRUE, INFINITE);
+  int retRun = sysdep.RunThreads(chunkSize);
   END_BLOCK_TIMER;
 
-  if (solveAllWaitResult != WAIT_OBJECT_0)
-    return RETURN_THREAD_WAIT;
-
-  for (int k = 0; k < noOfThreads; k++)
-    CloseHandle(solveAllPlayEvents[k]);
+  if (retRun != RETURN_NO_FAULT)
+    return retRun;
 
   solvedp->noOfBoards = bop->noOfBoards;
 
-  return pfail;
+  if (playparam.error == 0)
+    return RETURN_NO_FAULT;
+  else
+    return playparam.error;
 }
 
-#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
-
-// This code for LLVM multi-threading on the Mac was kindly 
-// contributed by Pierre Cossard.
-
-int STDCALL AnalyseAllPlaysBin(
-  boards * bop,
-  playTracesBin * plp,
-  solvedPlays * solvedp,
-  int chunkSize)
-{
-  if (bop->noOfBoards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
-    
-  if (bop->noOfBoards != plp->noOfBoards)
-    return RETURN_UNKNOWN_FAULT;
-    
-  pchunk = chunkSize;
-  pfail = 1;
-    
-  solvedPlay *solved = static_cast<solvedPlay *> 
-    (calloc(MAXNOOFBOARDS, sizeof(solvedPlay)));
-    
-  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
-  scheduler.Register(bop, SCHEDULER_TRACE);
-    
-    
-    START_BLOCK_TIMER;
-    dispatch_apply(static_cast<size_t>(noOfThreads), 
-      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), 
-        ^(size_t t)
-    {
-      while (1)
-      {
-        int thid = static_cast<int>(t);
-            
-        schedType st = scheduler.GetNumber(thid);
-        int index = st.number;
-        if (index == -1)
-          break;
-            
-        START_THREAD_TIMER(thid);
-        int res = AnalysePlayBin(bop->deals[index],
-          plp->plays[index],
-          &solved[index],
-          thid);
-          END_THREAD_TIMER(thid);
-            
-        if (res == 1)
-          solvedp->solved[index] = solved[index];
-        else
-          pfail = res;
-      }
-    });
-    
-    END_BLOCK_TIMER;
-    free(solved);
-    
-    solvedp->noOfBoards = bop->noOfBoards;
-    
-    return pfail;
-}
-
-#else
-
-int STDCALL AnalyseAllPlaysBin(
-  boards * bop,
-  playTracesBin * plp,
-  solvedPlays * solvedp,
-  int chunkSize)
-{
-  if (bop->noOfBoards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
-
-  if (bop->noOfBoards != plp->noOfBoards)
-    return RETURN_UNKNOWN_FAULT;
-
-  pchunk = chunkSize;
-  pfail = 1;
-
-  int res;
-  solvedPlay solved[MAXNOOFBOARDS];
-
-  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
-  scheduler.Register(bop, SCHEDULER_TRACE);
-
-#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
-  if (omp_get_dynamic())
-    omp_set_dynamic(0);
-  omp_set_num_threads(noOfThreads);
-#elif defined (_OPENMP)
-  omp_set_num_threads(1);
-#endif
-
-  int index, thid;
-  schedType st;
-
-  START_BLOCK_TIMER;
-
-  const int n = noOfThreads;
-  #pragma omp parallel default(none) shared(scheduler, bop, plp, solvedp, solved, pchunk, pfail) private(st, index, thid, res)
-  {
-    // #pragma omp while schedule(dynamic, pchunk)
-    #pragma omp for schedule(dynamic, pchunk)
-
-    // TODO
-    for (int nt = 0; nt < 999; nt++)
-    {
-    while (1)
-    {
-#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
-      thid = omp_get_thread_num();
-#else
-      thid = 0;
-#endif
-
-      st = scheduler.GetNumber(thid);
-      index = st.number;
-      if (index == -1)
-        break;
-
-      START_THREAD_TIMER(thid);
-      res = AnalysePlayBin(bop->deals[index],
-                           plp->plays[index],
-                           &solved[index],
-                           thid);
-      END_THREAD_TIMER(thid);
-
-      if (res == 1)
-        solvedp->solved[index] = solved[index];
-      else
-        pfail = res;
-    }
-    }
-  }
-
-  END_BLOCK_TIMER;
-
-  solvedp->noOfBoards = bop->noOfBoards;
-
-  return pfail;
-}
-#endif
 
 int STDCALL AnalyseAllPlaysPBN(
   boardsPBN * bopPBN,

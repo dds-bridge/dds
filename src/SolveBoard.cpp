@@ -189,7 +189,7 @@ int SolveAllBoardsN(
   solvedp->noOfBoards = param.noOfBoards;
 
   if (param.error == 0)
-    return 1;
+    return RETURN_NO_FAULT;
   else
     return param.error;
 }

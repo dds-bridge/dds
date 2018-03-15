@@ -32,6 +32,7 @@
 
 #include "System.h"
 #include "SolveBoard.h"
+#include "PlayAnalyser.h"
 
 extern int noOfThreads;
 
@@ -142,12 +143,12 @@ void System::Reset()
   CallbackSimpleList.resize(DDS_SYSTEM_SIZE);
   CallbackSimpleList[DDS_SYSTEM_SOLVE] = SolveChunkCommon;
   CallbackSimpleList[DDS_SYSTEM_CALC] = SolveChunkCommon;
-  CallbackSimpleList[DDS_SYSTEM_PLAY] = SolveChunkCommon;
+  CallbackSimpleList[DDS_SYSTEM_PLAY] = PlayChunkCommon;
 
   CallbackComplexList.resize(DDS_SYSTEM_SIZE);
   CallbackComplexList[DDS_SYSTEM_SOLVE] = SolveChunkDDtableCommon;
   CallbackComplexList[DDS_SYSTEM_CALC] = SolveChunkDDtableCommon;
-  CallbackComplexList[DDS_SYSTEM_PLAY] = SolveChunkDDtableCommon;
+  CallbackComplexList[DDS_SYSTEM_PLAY] = PlayChunkCommon;
 }
 
 
@@ -293,13 +294,12 @@ int System::InitThreadsOpenMP()
 int System::RunThreadsOpenMP()
 {
 #if (defined(_OPENMP) && !defined(DDS_THREADS_SINGLE))
-  int thid;
-  #pragma omp parallel default(none) private(thid)
+  #pragma omp parallel default(none)
   {
     #pragma omp for schedule(dynamic)
     for (int k = 0; k < numThreads; k++)
     {
-      thid = omp_get_thread_num();
+      int thid = omp_get_thread_num();
       (*fptr)(thid);
     }
   }
@@ -328,7 +328,7 @@ int System::RunThreadsGCD()
     dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0),
     ^(size_t t)
   {
-    thid = omp_get_thread_num();
+    thid = static_cast<int>(t);
     (*fptr)(thid);
   }
 #endif

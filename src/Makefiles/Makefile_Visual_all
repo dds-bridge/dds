@@ -136,7 +136,7 @@ Par.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 Par.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
 PlayAnalyser.obj: dds.h debug.h ../include/portab.h TransTable.h
 PlayAnalyser.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-PlayAnalyser.obj: Scheduler.h threadmem.h SolverIF.h PBN.h
+PlayAnalyser.obj: Scheduler.h threadmem.h SolverIF.h System.h PBN.h
 PBN.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 PBN.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h PBN.h
 QuickTricks.obj: dds.h debug.h ../include/portab.h TransTable.h
@@ -155,7 +155,7 @@ Stats.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 Stats.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
 System.obj: ../include/dll.h dds.h debug.h ../include/portab.h TransTable.h
 System.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h System.h
-System.obj: SolveBoard.h
+System.obj: SolveBoard.h PlayAnalyser.h
 Timer.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 Timer.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
 TransTable.obj: dds.h debug.h ../include/portab.h TransTable.h

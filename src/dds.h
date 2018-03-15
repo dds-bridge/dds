@@ -91,6 +91,7 @@ struct playparamType
   int noOfBoards;
   struct playTracesBin * plp;
   struct solvedPlays * solvedp;
+  int error;
 };
 
 

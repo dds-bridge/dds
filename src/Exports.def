@@ -2,6 +2,8 @@ LIBRARY   dds
 EXPORTS
    SetMaxThreads
    SetMaxThreads@4 = SetMaxThreads
+   PreferThreading
+   PreferThreading@4 = PreferThreading
    FreeMemory
    FreeMemory@0 = FreeMemory
    ErrorMessage
