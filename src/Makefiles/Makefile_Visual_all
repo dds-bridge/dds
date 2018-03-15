@@ -14,8 +14,8 @@
 BOOST32_PATH1	= \User\sheins\boost_1_66_0_x32
 BOOST32_LIB1	= $(BOOST32_PATH1)\lib32-msvc-14.0
 
-BOOST32_PATH2	= \Users\s.hein\Documents\Programs\boost_1_66_0_x32
-BOOST32_LIB2	= $(BOOST32_PATH2)\lib32-msvc-14.0
+BOOST32_PATH2	= \Users\s.hein\Documents\Programs\boost_1_66_0_x32_14_1
+BOOST32_LIB2	= $(BOOST32_PATH2)\lib32-msvc-14.1
 
 CC_BOOST_INCL	= /I$(BOOST32_PATH1) /I$(BOOST32_PATH2)
 CC_BOOST_LINK	= /link /LIBPATH:$(BOOST32_LIB1) /LIBPATH:$(BOOST32_LIB2)
@@ -147,8 +147,7 @@ Scheduler.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
 SolveBoard.obj: dds.h debug.h ../include/portab.h TransTable.h
 SolveBoard.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
 SolveBoard.obj: Scheduler.h threadmem.h SolverIF.h SolveBoard.h System.h
-SolveBoard.obj: PBN.h SolveBoard_basic.h SolveBoard_boost.h SolveBoard_GCD.h
-SolveBoard.obj: SolveBoard_OpenMP.h SolveBoard_WinAPI.h
+SolveBoard.obj: PBN.h
 SolverIF.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
 SolverIF.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h
 SolverIF.obj: threadmem.h ABsearch.h SolverIF.h

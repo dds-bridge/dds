@@ -1,18 +1,23 @@
-# This the DDS Makefile for Cygwin under Windows and the 
-# GNU g++ compiler.  It assumes a Unix-like setup for some commands.
+# This the DDS Makefile for Windows and the MinGW compiler.
+# It assumes a Unix-like setup for some commands.
 
 # The "windres" and "cvtres" tools are used for putting version
 # information into the DLL in a way that Windows can see.
 # It is not mandatory, and if you don't have those tools,
 # You can remove $(VFILE).obj in the target line below.
+#
+# If you want to compile a single-threaded version, use
+# DDS_THREADS=none
 
-# If you want to compile a single-threaded version or a small-memory
-# version, change flags below.
-
-# If your compiler name is not given here, change it.
+# If your exact compiler name is not given here, change it.
+# CC		= mingw32-g++
+# CC		= i686-w64-mingw32-g++
 CC		= g++
 
-CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -fno-use-linker-plugin
+# Use this one to get Windows multi-threading
+# CC_FLAGS	= -O3 -flto -mtune=generic
+# Use this one to get OpenMP multi-threading
+CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic
 
 LD_FLAGS	= 		\
 	-Wl,--subsystem,windows \
@@ -21,8 +26,10 @@ LD_FLAGS	= 		\
 	-Wl,--nxcompat 		\
 	-Wl,--no-seh 		\
 	-Wl,--enable-stdcall-fixup \
-	-lboost_system 		\
+	-lpthread		\
+	-lboost_system		\
 	-lboost_thread
+
 
 # These flags are not turned on be default, but DDS should pass them.
 # Turn them on below.
@@ -33,7 +40,6 @@ WARN_FLAGS	= 		\
 	-Wcast-align -Wcast-qual \
 	-Wctor-dtor-privacy 	\
 	-Wdisabled-optimization \
-	-Wformat=2 		\
 	-Winit-self 		\
 	-Wlogical-op 		\
 	-Wmissing-declarations 	\
@@ -41,7 +47,6 @@ WARN_FLAGS	= 		\
 	-Wnoexcept 		\
 	-Wold-style-cast 	\
 	-Woverloaded-virtual 	\
-	-Wredundant-decls 	\
 	-Wsign-promo 		\
 	-Wstrict-null-sentinel 	\
 	-Wstrict-overflow=1 	\
@@ -49,20 +54,21 @@ WARN_FLAGS	= 		\
 	-Werror 		\
 	-Wno-unused 		\
 	-Wno-unknown-pragmas 	\
-	-Wno-long-long
+	-Wno-long-long		\
+	-Wno-format
 
 # Here you can turn on warnings and add -DSMALL_MEMORY_OPTION
-# and/or -DDDS_THREADS_SINGLE.
+# -DDDS_THREADS_SINGLE
 CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS) -DDDS_THREADS_BOOST
 
-LIB_FLAGS	= -shared 
+LIB_FLAGS	= -mdll
 
 DLLBASE		= dds
 DLL 		= $(DLLBASE).dll
 EXPORTER	= Exports.def
 
 VFILE		= ddsres
-WINDRES_FLAG	= 
+WINDRES_FLAG	= -F pe-x86-64
 
 SOURCE_FILES 	=		\
 	dds.cpp 		\
@@ -88,7 +94,8 @@ SOURCE_FILES 	=		\
 O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES)) $(VFILE).o
 
 
-cygwin:	$(O_FILES)
+
+mingw:	$(O_FILES)
 	$(CC) $(LIB_FLAGS) $(CC_FULL_FLAGS) $(O_FILES) $(LD_FLAGS) $(EXPORTER) -o $(DLL)
 
 %.o:	%.cpp
