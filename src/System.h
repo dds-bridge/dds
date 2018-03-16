@@ -17,10 +17,12 @@
 #include <string>
 #include <vector>
 
+// TODO not needed?
 #include "dds.h"
 
 using namespace std;
 
+// TODO enum
 #define DDS_SYSTEM_SOLVE 0
 #define DDS_SYSTEM_CALC 1
 #define DDS_SYSTEM_PLAY 2
@@ -44,6 +46,7 @@ class System
     vector<fptrType> CallbackSimpleList;
     vector<fptrType> CallbackComplexList;
 
+    // TODO no inits?
     typedef int (System::*InitPtr)();
     vector<InitPtr> InitPtrList;
 
@@ -53,10 +56,12 @@ class System
     fptrType fptr;
 
 #ifdef _MSC_VER
+    // TODO not needed?
     HANDLE solveAllEvents[MAXNOOFTHREADS];
     LONG threadIndex;
 #endif
 
+    // TODO no inits?
     int InitThreadsBasic();
     int InitThreadsBoost();
     int InitThreadsOpenMP();
@@ -80,6 +85,10 @@ class System
     int Register(
       const unsigned code,
       const int noOfThreads = 1);
+
+    void GetHardware(
+      int& ncores,
+      unsigned long long& kilobytesFree) const;
 
     int PreferThreading(const unsigned code);
 

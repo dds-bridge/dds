@@ -1,7 +1,3 @@
-Init.cpp:#if defined(_WIN32) || defined(__CYGWIN__)
-Init.cpp:#ifdef __APPLE__
-Init.cpp:#ifdef __linux__
-PlayAnalyser.cpp:#if (defined(_WIN32) || defined(__CYGWIN__)) && \
 Scheduler.cpp:#ifdef _WIN32
 Scheduler.cpp:#ifdef _WIN32
 Scheduler.cpp:#ifdef _WIN32

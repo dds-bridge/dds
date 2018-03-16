@@ -1,13 +1,13 @@
 14.03.2018
 
+Do we need extern int noOfThreads in System at all?
+
 Do we need System: Init and Run, or can we combine?
 
 Do we need System globals at all?
 
 mingw has undefined symbols, eliminate system defines as
 much as possible.
-
-Move Init.cpp (ncores, kilobytesfree) to System
 
 Localize the boost warnings from the Makefile to System.cpp list
 
@@ -20,10 +20,6 @@ Timer functions do not go by _WIN32 alone
 - __CYGWIN__
 - MAC
 - __MINGW32__, maybe also __MINGW64__?
-
-PlayAnalyser
----
-- Check all _WIN32
 
 On laptop, fold dtest timing functions back into dtest
 

@@ -76,81 +76,13 @@ moveGroupType groupData[8192];
 
 int _initialized = 0;
 
-void STDCALL SetMaxThreads(
-  int userThreads)
+void CalcThreadMemory(
+  const int oldNoOfThreads,
+  const int kilobytesUsable,
+  int& mem_def,
+  int& mem_max)
 {
-  if (! _initialized)
-    noOfThreads = 0;
-
-  InitTimer();
-  InitTimerList();
-
-  // First figure out how much memory we have available
-  // and how many cores the system has.
-  int oldNoOfThreads = noOfThreads;
-  unsigned long long kilobytesFree = 0;
-  int ncores = 1;
-
-#if defined(_WIN32) || defined(__CYGWIN__)
-  /* Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
-     was suggested by Lorne Anderson. */
-  MEMORYSTATUSEX statex;
-  statex.dwLength = sizeof(statex);
-  GlobalMemoryStatusEx(&statex);
-  kilobytesFree = static_cast<unsigned long long>(
-                    statex.ullTotalPhys / 1024);
-
-  SYSTEM_INFO sysinfo;
-  GetSystemInfo(&sysinfo);
-  ncores = static_cast<int>(sysinfo.dwNumberOfProcessors);
-#endif
-
-#ifdef __APPLE__
-  // The code for Mac OS X was suggested by Matthew Kidd.
-
-  // This is physical memory, rather than "free" memory as below for Linux.
-  // Always leave 0.5 GB for the OS and other stuff. It would be better to
-  // find free memory (how?) but in practice the number of cores rather than
-  // free memory is almost certainly the limit for Macs which have 
-  // standardized hardware (whereas say a 32 core Linux server is hardly 
-  // unusual).
-  FILE * fifo = popen("sysctl -n hw.memsize", "r");
-  fscanf(fifo, "%lld", &kilobytesFree);
-  fclose(fifo);
-
-  kilobytesFree /= 1024;
-  if (kilobytesFree > 500000)
-  {
-    kilobytesFree -= 500000;
-  }
-
-  ncores = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
-
-#ifdef __linux__
-  /* The code for linux was suggested by Antony Lee. */
-  FILE * fifo = popen(
-                "free -k | tail -n+3 | head -n1 | awk '{print $NF}'", "r");
-  int ignore = fscanf(fifo, "%llu", &kilobytesFree);
-  fclose(fifo);
-
-  ncores = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
-
-  // 70%, capped at 2 GB.
-  int kilobytesUsable = static_cast<int>(0.70 * kilobytesFree);
-  if (kilobytesUsable > 2000000)
-    kilobytesUsable = 2000000;
-
-  if (userThreads)
-    noOfThreads = Min(ncores, userThreads);
-  else
-    noOfThreads = ncores;
-
-  int deltaThreads = noOfThreads - oldNoOfThreads;
-
-  int mem_def, mem_max;
-
+  const int deltaThreads = noOfThreads - oldNoOfThreads;
   if (deltaThreads <= 0)
   {
     // We already have the memory.
@@ -186,6 +118,36 @@ void STDCALL SetMaxThreads(
     mem_def = THREADMEM_DEF_MB;
     mem_max = THREADMEM_DEF_MB;
   }
+}
+
+void STDCALL SetMaxThreads(
+  int userThreads)
+{
+  if (! _initialized)
+    noOfThreads = 0;
+
+  InitTimer();
+  InitTimerList();
+
+  // First figure out how much memory we have available
+  // and how many cores the system has.
+  int ncores;
+  unsigned long long kilobytesFree;
+  sysdep.GetHardware(ncores, kilobytesFree);
+
+  // 70%, capped at 2 GB.
+  int kilobytesUsable = static_cast<int>(0.70 * kilobytesFree);
+  if (kilobytesUsable > 2000000)
+    kilobytesUsable = 2000000;
+
+  int oldNoOfThreads = noOfThreads;
+  if (userThreads)
+    noOfThreads = Min(ncores, userThreads);
+  else
+    noOfThreads = ncores;
+
+  int mem_def, mem_max;
+  CalcThreadMemory(oldNoOfThreads, kilobytesUsable, mem_def, mem_max);
 
   for (int k = 0; k < noOfThreads; k++)
   {
