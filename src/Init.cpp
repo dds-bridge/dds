@@ -11,7 +11,6 @@
 #include "dds.h"
 #include "threadmem.h"
 #include "Init.h"
-#include "Stats.h"
 #include "ABsearch.h"
 #include "Scheduler.h"
 #include "System.h"
@@ -169,9 +168,6 @@ void STDCALL SetMaxThreads(
     for (int k = noOfThreads; k < oldNoOfThreads; k++)
       localVar[k].transTable.ReturnAllMemory();
   }
-
-  InitTimer();
-  InitTimerList();
 
   if (! _initialized)
   {

@@ -30,3 +30,7 @@ are created.  Probably generate at the end, like with TimerList.
 
 Makefile: One -D for each option, all user-controlled.  Modify
 System.cpp accordingly.
+
+Eliminate portab.h?
+
+Put now timer in System as well

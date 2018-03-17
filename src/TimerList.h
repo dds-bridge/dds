@@ -97,7 +97,7 @@ class TimerList
 
     bool Used() const;
 
-    void PrintStats(const int thrId);
+    void PrintStats(const int thrId) const;
 };
 
 #endif

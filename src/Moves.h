@@ -15,7 +15,6 @@
 #include <string.h>
 #include "dds.h"
 #include "../include/dll.h"
-#include "Stats.h"
 
 #define CMP_SWAP(i, j) if (a[i].weight < a[j].weight) \
   { moveType tmp = a[i]; a[i] = a[j]; a[j] = tmp; }

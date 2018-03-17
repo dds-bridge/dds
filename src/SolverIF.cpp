@@ -14,7 +14,6 @@
 #include "Moves.h"
 #include "threadmem.h"
 #include "ABsearch.h"
-#include "Stats.h"
 #include "SolverIF.h"
 
 

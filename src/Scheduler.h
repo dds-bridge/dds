@@ -30,11 +30,6 @@
 
 #define HASH_MAX 200
 
-// TODO Can probably be deleted
-#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
-  #include <dispatch/dispatch.h>
-#endif
-
 
 struct schedType
 {

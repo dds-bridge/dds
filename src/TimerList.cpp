@@ -79,7 +79,7 @@ bool TimerList::Used() const
 }
 
 
-void TimerList::PrintStats(const int thrId)
+void TimerList::PrintStats(const int thrId) const
 {
   if (! TimerList::Used())
     return;
