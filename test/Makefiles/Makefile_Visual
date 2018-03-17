@@ -14,6 +14,15 @@
 # uses the source and object files in the src directory...
 # Use "make itest" at your own risk.
 
+BOOST32_PATH1   = \User\sheins\boost_1_66_0_x32
+BOOST32_LIB1    = $(BOOST32_PATH1)\lib32-msvc-14.0
+
+BOOST32_PATH2   = \Users\s.hein\Documents\Programs\boost_1_66_0_x32_14_1
+BOOST32_LIB2    = $(BOOST32_PATH2)\lib32-msvc-14.1
+
+CC_BOOST_INCL	= /I$(BOOST32_PATH1) /I$(BOOST32_PATH2)
+CC_BOOST_LINK	= /LIBPATH:$(BOOST32_LIB1) /LIBPATH:$(BOOST32_LIB2)
+
 # If your Microsoft compiler is not called cl, change it here.
 CC		= cl
 CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL
@@ -86,7 +95,10 @@ STOLEN_SOURCE_FILES 	=	\
 	$(SRC)/SolveBoard.cpp	\
 	$(SRC)/SolverIF.cpp	\
 	$(SRC)/Stats.cpp	\
+	$(SRC)/System.cpp	\
 	$(SRC)/Timer.cpp	\
+	$(SRC)/TimerGroup.cpp	\
+	$(SRC)/TimerList.cpp	\
 	$(SRC)/TransTable.cpp
 
 ITEST_SOURCE_FILES	=	\
@@ -97,13 +109,13 @@ ITEST_SOURCE_FILES	=	\
 ITEST_OBJ_FILES	= $(subst .cpp,.obj,$(ITEST_SOURCE_FILES))
 
 dtest:	$(DTEST_OBJ_FILES)
-	link /LTCG $(DTEST_OBJ_FILES) $(DLIB) /out:$(DTEST).exe
+	link /LTCG $(DTEST_OBJ_FILES) $(DLIB) $(CC_BOOST_LINK) /out:$(DTEST).exe
 
 itest:	$(ITEST_OBJ_FILES)
-	link /LTCG $(ITEST_OBJ_FILES) /out:$(ITEST).exe
+	link /LTCG $(ITEST_OBJ_FILES) $(CC_BOOST_LINK) /out:$(ITEST).exe
 
 %.obj:	%.cpp
-	$(CC) $(CC_FULL_FLAGS) /c $< /Fo$*.obj
+	$(CC) $(CC_FULL_FLAGS) $(CC_BOOST_INCL) /c $< /Fo$*.obj
 
 depend:
 	makedepend -Y -o.obj -- $(ITEST_SOURCE_FILES) $(DTEST).cpp

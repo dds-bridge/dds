@@ -23,6 +23,7 @@ CC_BOOST_LINK	= /link /LIBPATH:$(BOOST32_LIB1) /LIBPATH:$(BOOST32_LIB2)
 # If your Microsoft compiler is not called cl, change it here.
 CC		= cl
 CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL /EHs /openmp /DDDS_THREADS_BOOST
+# CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL /EHs /openmp /DDDS_THREADS_BOOST /DDDS_DEBUG_ALL /DDDS_TIMING
 
 # These flags are not turned on by default, but DDS should pass them.
 # Turn them on below.
@@ -79,9 +80,10 @@ SOURCE_FILES 	=		\
 	Scheduler.cpp		\
 	SolveBoard.cpp		\
 	SolverIF.cpp		\
-	Stats.cpp		\
 	System.cpp		\
 	Timer.cpp		\
+	TimerGroup.cpp		\
+	TimerList.cpp		\
 	TransTable.cpp
 
 OBJ_FILES 	= $(subst .cpp,.obj,$(SOURCE_FILES)) $(VFILE).obj
@@ -113,51 +115,58 @@ install:
 # DO NOT DELETE
 
 dds.obj: ../include/dll.h dds.h debug.h ../include/portab.h TransTable.h
-dds.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h
+dds.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h
+dds.obj: Init.h
 ABsearch.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-ABsearch.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
-ABsearch.obj: QuickTricks.h LaterTricks.h ABsearch.h
+ABsearch.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h
+ABsearch.obj: threadmem.h QuickTricks.h LaterTricks.h ABsearch.h
 ABstats.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-ABstats.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+ABstats.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h
 CalcTables.obj: dds.h debug.h ../include/portab.h TransTable.h
-CalcTables.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-CalcTables.obj: Scheduler.h SolveBoard.h PBN.h
+CalcTables.obj: ../include/dll.h TimerList.h TimerGroup.h Timer.h ABstats.h
+CalcTables.obj: Moves.h Scheduler.h SolveBoard.h PBN.h
 DealerPar.obj: dds.h debug.h ../include/portab.h TransTable.h
-DealerPar.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+DealerPar.obj: ../include/dll.h TimerList.h TimerGroup.h Timer.h ABstats.h
+DealerPar.obj: Moves.h Scheduler.h
 Init.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Init.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h Init.h
-Init.obj: ABsearch.h System.h
+Init.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h
+Init.obj: threadmem.h Init.h ABsearch.h System.h
 LaterTricks.obj: dds.h debug.h ../include/portab.h TransTable.h
-LaterTricks.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-LaterTricks.obj: Scheduler.h threadmem.h LaterTricks.h
+LaterTricks.obj: ../include/dll.h TimerList.h TimerGroup.h Timer.h ABstats.h
+LaterTricks.obj: Moves.h Scheduler.h threadmem.h LaterTricks.h
 Moves.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Moves.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h ABsearch.h
+Moves.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h
+Moves.obj: ABsearch.h
 Par.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Par.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+Par.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h
 PlayAnalyser.obj: dds.h debug.h ../include/portab.h TransTable.h
-PlayAnalyser.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-PlayAnalyser.obj: Scheduler.h threadmem.h SolverIF.h System.h PBN.h
+PlayAnalyser.obj: ../include/dll.h TimerList.h TimerGroup.h Timer.h ABstats.h
+PlayAnalyser.obj: Moves.h Scheduler.h threadmem.h SolverIF.h System.h PBN.h
 PBN.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-PBN.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h PBN.h
+PBN.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h PBN.h
 QuickTricks.obj: dds.h debug.h ../include/portab.h TransTable.h
-QuickTricks.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-QuickTricks.obj: Scheduler.h threadmem.h QuickTricks.h
+QuickTricks.obj: ../include/dll.h TimerList.h TimerGroup.h Timer.h ABstats.h
+QuickTricks.obj: Moves.h Scheduler.h threadmem.h QuickTricks.h
 Scheduler.obj: Scheduler.h dds.h debug.h ../include/portab.h TransTable.h
-Scheduler.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
+Scheduler.obj: ../include/dll.h TimerList.h TimerGroup.h Timer.h ABstats.h
+Scheduler.obj: Moves.h
 SolveBoard.obj: dds.h debug.h ../include/portab.h TransTable.h
-SolveBoard.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-SolveBoard.obj: Scheduler.h threadmem.h SolverIF.h SolveBoard.h System.h
-SolveBoard.obj: PBN.h
+SolveBoard.obj: ../include/dll.h TimerList.h TimerGroup.h Timer.h ABstats.h
+SolveBoard.obj: Moves.h Scheduler.h threadmem.h SolverIF.h SolveBoard.h
+SolveBoard.obj: System.h PBN.h
 SolverIF.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-SolverIF.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h
-SolverIF.obj: threadmem.h ABsearch.h SolverIF.h
-Stats.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Stats.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+SolverIF.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h
+SolverIF.obj: Init.h threadmem.h ABsearch.h SolverIF.h
 System.obj: ../include/dll.h dds.h debug.h ../include/portab.h TransTable.h
-System.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h System.h
-System.obj: SolveBoard.h PlayAnalyser.h
-Timer.obj: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Timer.obj: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
+System.obj: TimerList.h TimerGroup.h Timer.h ABstats.h Moves.h Scheduler.h
+System.obj: System.h SolveBoard.h PlayAnalyser.h
+Timer.obj: Timer.h
+TimerGroup.obj: TimerGroup.h Timer.h dds.h debug.h ../include/portab.h
+TimerGroup.obj: TransTable.h ../include/dll.h TimerList.h ABstats.h Moves.h
+TimerGroup.obj: Scheduler.h
+TimerList.obj: TimerList.h TimerGroup.h Timer.h dds.h debug.h
+TimerList.obj: ../include/portab.h TransTable.h ../include/dll.h ABstats.h
+TimerList.obj: Moves.h Scheduler.h
 TransTable.obj: dds.h debug.h ../include/portab.h TransTable.h
-TransTable.obj: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-TransTable.obj: Scheduler.h
+TransTable.obj: ../include/dll.h TimerList.h TimerGroup.h Timer.h ABstats.h
+TransTable.obj: Moves.h Scheduler.h
