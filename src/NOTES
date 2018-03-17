@@ -15,18 +15,18 @@ Localize the boost warnings from the Makefile to System.cpp list
 
 Scheduler.cpp and .h
 ---
-Timer functions do not go by _WIN32 alone
-- _WIN32: Yes
-- __CYGWIN__
-- MAC
-- __MINGW32__, maybe also __MINGW64__?
-
 On laptop, fold dtest timing functions back into dtest
 
 More modular Makefiles
 
 Scheduler: Do a really simple user Timer like in dtest.
-Timer becomes TimerList.
 Timer (new) gets used in Scheduler and for debugging.
-Generate output timing files first for comparison.
-Diff.
+
+Move away from printf etc to out.
+
+It's a bit annoying that SetMaxThreads() gets called once with 0
+automatically, once with 1 from dtest.  So lots of debug text files
+are created.  Probably generate at the end, like with TimerList.
+
+Makefile: One -D for each option, all user-controlled.  Modify
+System.cpp accordingly.

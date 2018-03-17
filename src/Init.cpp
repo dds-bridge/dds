@@ -120,14 +120,14 @@ void CalcThreadMemory(
   }
 }
 
+#include <iostream>
+#include <iomanip>
+#include <fstream>
 void STDCALL SetMaxThreads(
   int userThreads)
 {
   if (! _initialized)
     noOfThreads = 0;
-
-  InitTimer();
-  InitTimerList();
 
   // First figure out how much memory we have available
   // and how many cores the system has.
@@ -169,6 +169,9 @@ void STDCALL SetMaxThreads(
     for (int k = noOfThreads; k < oldNoOfThreads; k++)
       localVar[k].transTable.ReturnAllMemory();
   }
+
+  InitTimer();
+  InitTimerList();
 
   if (! _initialized)
   {

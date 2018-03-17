@@ -345,13 +345,13 @@ int STDCALL SolveBoard(
       {
         ResetBestMoves(thrp);
 
-        TIMER_START(TIMER_AB + iniDepth);
+        TIMER_START(TIMER_NO_AB, iniDepth);
         thrp->val = (* AB_ptr_list[handRelFirst])(
                       &thrp->lookAheadPos,
                       guess,
                       iniDepth,
                       thrp);
-        TIMER_END(TIMER_AB + iniDepth);
+        TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
         DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
@@ -439,12 +439,12 @@ int STDCALL SolveBoard(
     {
       ResetBestMoves(thrp);
 
-      TIMER_START(TIMER_AB + iniDepth);
+      TIMER_START(TIMER_NO_AB, iniDepth);
       thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
                   guess,
                   iniDepth,
                   thrp);
-      TIMER_END(TIMER_AB + iniDepth);
+      TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
       DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
@@ -504,13 +504,13 @@ int STDCALL SolveBoard(
 
   else
   {
-    TIMER_START(TIMER_AB + iniDepth);
+    TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   target,
                   iniDepth,
                   thrp);
-    TIMER_END(TIMER_AB + iniDepth);
+    TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp, target, -1, -1, 0);
@@ -569,13 +569,13 @@ int STDCALL SolveBoard(
 
     ResetBestMoves(thrp);
 
-    TIMER_START(TIMER_AB + iniDepth);
+    TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   futp->score[0],
                   iniDepth,
                   thrp);
-    TIMER_END(TIMER_AB + iniDepth);
+    TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp, target, -1, -1, 2);
@@ -602,7 +602,7 @@ SOLVER_STATS:
   }
 
 #ifdef DDS_TIMING
-  thrp->timer.PrintStats();
+  thrp->timerList.PrintStats(thrId);
 #endif
 
 #ifdef DDS_TT_STATS
@@ -691,13 +691,13 @@ int SolveSameBoard(
   {
     ResetBestMoves(thrp);
 
-    TIMER_START(TIMER_AB + iniDepth);
+    TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = ABsearch(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
                   thrp);
-    TIMER_END(TIMER_AB + iniDepth);
+    TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
@@ -717,7 +717,7 @@ int SolveSameBoard(
                   ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
-  thrp->timer.PrintStats();
+  thrp->timerList.PrintStats(thrId);
 #endif
 
 #ifdef DDS_TT_STATS
@@ -843,13 +843,13 @@ int AnalyseLaterBoard(
   {
     ResetBestMoves(thrp);
 
-    TIMER_START(TIMER_AB + iniDepth);
+    TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_trace_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
                   thrp);
-    TIMER_END(TIMER_AB + iniDepth);
+    TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
@@ -870,7 +870,7 @@ int AnalyseLaterBoard(
                   ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
-  thrp->timer.PrintStats();
+  thrp->timerList.PrintStats(thrId);
 #endif
 
 #ifdef DDS_TT_STATS

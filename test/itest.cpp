@@ -18,10 +18,13 @@
 int main(int argc, char * argv[])
 {
   int ncores = 0;
-  if (argc == 4)
+  if (argc >= 4)
     ncores = atoi(argv[3]);
 
   SetMaxThreads(ncores);
+
+  if (argc >= 5)
+    SetThreading(threadingCode(argv[4]));
 
   DDSInfo info;
   GetDDSInfo(&info);

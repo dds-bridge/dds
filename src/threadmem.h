@@ -60,7 +60,7 @@ struct localVarType
 #endif
 
 #ifdef DDS_TIMING
-  Timer timer; // Object
+  TimerList timerList; // Object
 #endif
 
 #ifdef DDS_TOP_LEVEL

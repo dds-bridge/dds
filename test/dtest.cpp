@@ -8,10 +8,14 @@
 */
 
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <iomanip>
+
 #include "../include/dll.h"
 #include "testcommon.h"
+
+using namespace std;
+
 
 int main(int argc, char * argv[])
 {
@@ -25,21 +29,10 @@ int main(int argc, char * argv[])
 
   DDSInfo info;
   GetDDSInfo(&info);
-  printf("%s", info.systemString);
-  printf("%-12s %20s\n\n", "Version", info.versionString);
-  fflush(stdout);
-
-// TODO
-#if defined(_WIN32)
-  printf("_WIN32\n");
-  fflush(stdout);
-#elif defined(_WIN64)
-  printf("_WIN64\n");
-  fflush(stdout);
-#else
-  printf("No WIN\n");
-  fflush(stdout);
-#endif
+  cout << info.systemString;
+  cout << setw(12) << left << "Version" <<
+    setw(20) << right << info.versionString << "\n\n";
+  cout.flush();
 
   realMain(argc, argv);
 

@@ -21,7 +21,7 @@
 #include "../include/portab.h"
 
 #include "TransTable.h"
-#include "Timer.h"
+#include "TimerList.h"
 #include "ABstats.h"
 
 
@@ -53,6 +53,9 @@
 
 #define Max(x, y) (((x) >= (y)) ? (x) : (y))
 #define Min(x, y) (((x) <= (y)) ? (x) : (y))
+
+#define STR(x) \
+  static_cast<ostringstream*>(&(ostringstream() << x))->str()
 
 #define DDS_NOTRUMP 4
 
