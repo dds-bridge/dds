@@ -52,6 +52,7 @@ class System
     int RunThreadsOpenMP();
     int RunThreadsGCD();
     int RunThreadsWinAPI();
+    int RunThreadsSTL();
 
     string GetVersion(
       int& major,

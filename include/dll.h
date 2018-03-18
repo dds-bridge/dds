@@ -360,7 +360,8 @@ struct DDSInfo
   // 1 = Windows (native), 
   // 2 = OpenMP, 
   // 3 = GCD,
-  // 4 = Boost
+  // 4 = Boost,
+  // 5 = STL
   int threading;
 
   // The actual number of threads configured

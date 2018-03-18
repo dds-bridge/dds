@@ -27,6 +27,10 @@
    #endif
 #endif
 
+#ifdef DDS_THREADS_STL
+  #include <thread>
+#endif
+
 #include "../include/dll.h"
 #include "dds.h"
 
@@ -65,7 +69,8 @@ const vector<string> DDS_SYSTEM_THREADING =
   "Windows",
   "OpenMP",
   "GCD",
-  "Boost"
+  "Boost",
+  "STL"
 };
 
 #define DDS_SYSTEM_THREAD_BASIC 0
@@ -73,7 +78,8 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_OPENMP 2
 #define DDS_SYSTEM_THREAD_GCD 3
 #define DDS_SYSTEM_THREAD_BOOST 4
-#define DDS_SYSTEM_THREAD_SIZE 5
+#define DDS_SYSTEM_THREAD_STL 5
+#define DDS_SYSTEM_THREAD_SIZE 6
 
 
 System::System()
@@ -121,6 +127,12 @@ void System::Reset()
   availableSystem[DDS_SYSTEM_THREAD_BOOST] = false;
 #endif
 
+#ifdef DDS_THREADS_STL
+  availableSystem[DDS_SYSTEM_THREAD_STL] = true;
+#else
+  availableSystem[DDS_SYSTEM_THREAD_STL] = false;
+#endif
+
   // Take the first of any multi-threading system defined.
   for (unsigned k = 1; k < availableSystem.size(); k++)
   {
@@ -137,6 +149,7 @@ void System::Reset()
   RunPtrList[DDS_SYSTEM_THREAD_OPENMP] = &System::RunThreadsOpenMP; 
   RunPtrList[DDS_SYSTEM_THREAD_GCD] = &System::RunThreadsGCD; 
   RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
+  RunPtrList[DDS_SYSTEM_THREAD_STL] = &System::RunThreadsSTL; 
 
   // DDS_SYSTEM_CALC_ doesn't happen.
   CallbackSimpleList.resize(DDS_SYSTEM_SIZE);
@@ -381,6 +394,31 @@ int System::RunThreadsBoost()
   const unsigned nu = static_cast<unsigned>(numThreads);
   for (unsigned k = 0; k < nu; k++)
     threads[k] = new boost::thread(fptr, k);
+
+  for (unsigned k = 0; k < nu; k++)
+  {
+    threads[k]->join();
+    delete threads[k];
+  }
+#endif
+
+  return RETURN_NO_FAULT;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//                            STL                                   //
+//////////////////////////////////////////////////////////////////////
+
+int System::RunThreadsSTL()
+{
+#ifdef DDS_THREADS_STL
+  vector<thread *> threads;
+  threads.resize(static_cast<unsigned>(numThreads));
+
+  const unsigned nu = static_cast<unsigned>(numThreads);
+  for (unsigned k = 0; k < nu; k++)
+    threads[k] = new thread(fptr, k);
 
   for (unsigned k = 0; k < nu; k++)
   {
