@@ -120,6 +120,16 @@ void System::Reset()
 #else
   availableSystem[DDS_SYSTEM_THREAD_BOOST] = false;
 #endif
+
+  // Take the first of any multi-threading system defined.
+  for (unsigned k = 1; k < availableSystem.size(); k++)
+  {
+    if (availableSystem[k])
+    {
+      preferredSystem = k;
+      break;
+    }
+  }
   
   RunPtrList.resize(DDS_SYSTEM_THREAD_SIZE);
   RunPtrList[DDS_SYSTEM_THREAD_BASIC] = &System::RunThreadsBasic; 

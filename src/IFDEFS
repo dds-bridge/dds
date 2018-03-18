@@ -1,9 +1,0 @@
-Scheduler.cpp:#ifdef _WIN32
-Scheduler.cpp:#ifdef _WIN32
-Scheduler.cpp:#ifdef _WIN32
-Scheduler.cpp:#ifdef _WIN32
-Scheduler.cpp:#ifndef _WIN32
-
-Scheduler.h:#ifndef _WIN32
-Scheduler.h:#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
-Scheduler.h:#ifdef _WIN32

@@ -1,0 +1,23 @@
+SOURCE_FILES    =               \
+        dds.cpp                 \
+        ABsearch.cpp            \
+        ABstats.cpp             \
+        CalcTables.cpp          \
+        DealerPar.cpp           \
+        Init.cpp                \
+        LaterTricks.cpp         \
+        Moves.cpp               \
+        Par.cpp                 \
+        PlayAnalyser.cpp        \
+        PBN.cpp                 \
+        QuickTricks.cpp         \
+        Scheduler.cpp           \
+        SolveBoard.cpp          \
+        SolverIF.cpp            \
+        System.cpp              \
+        Timer.cpp               \
+        TimerGroup.cpp          \
+        TimerList.cpp           \
+        TimeStat.cpp            \
+        TimeStatList.cpp        \
+        TransTable.cpp

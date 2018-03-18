@@ -2,9 +2,6 @@
 
 Makefile
 - One for each system
-- Clean define's, WE control what gets compiled, not compiler
-- Source files centrally
-- Depends centrally
 
 dtest
 - Get laptop changes, no more time function calls

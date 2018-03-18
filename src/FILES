@@ -12,7 +12,6 @@
   1209   3449  30221 QuickTricks.cpp
    297    665   6655 SolveBoard.cpp
   1291   3194  30732 SolverIF.cpp
-   519   1126  12679 System.cpp
   2968   8140  72454 TransTable.cpp
    117    239   1985 ABsearch.h
     76    165   1517 ABstats.h
@@ -26,7 +25,6 @@
     31     70    530 QuickTricks.h
     29     62    494 SolveBoard.h
     28     58    444 SolverIF.h
-   102    186   1866 System.h
     81    155   1390 threadmem.h
    519   1108  11141 TransTable.h
  19052  51196 458259 insgesamt
@@ -37,6 +35,7 @@ Scheduler
 
 Final:
 
+System
 Timer
 TimerGroup
 TimerList
