@@ -1,0 +1,117 @@
+# This the DDS Makefile for Windows and the MinGW compiler.
+# It assumes a Unix-like setup for some commands.
+
+# The "windres" and "cvtres" tools are used for putting version
+# information into the DLL in a way that Windows can see.
+# It is not mandatory, and if you don't have those tools,
+# You can remove $(VFILE).obj in the target line below.
+#
+# If you want to compile a single-threaded version, use
+# DDS_THREADS=none
+
+INCL_SOURCE	= Makefiles/sources.txt
+INCL_DEPENDS	= Makefiles/depends_o.txt
+
+
+# If your exact compiler name is not given here, change it.
+# CC		= mingw32-g++
+# CC		= i686-w64-mingw32-g++
+CC		= g++
+
+# Use this one to get Windows multi-threading
+# CC_FLAGS	= -O3 -flto -mtune=generic
+# Use this one to get OpenMP multi-threading
+CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -DBUILDING_EXAMPLE_DLL
+
+LD_FLAGS	= 		\
+	-Wl,--subsystem,windows \
+	-Wl,--output-def,$(DLLBASE).def	\
+	-Wl,--dynamicbase 	\
+	-Wl,--nxcompat 		\
+	-Wl,--no-seh 		\
+	-Wl,--enable-stdcall-fixup \
+	-lpthread		\
+	-lboost_system		\
+	-lboost_thread
+
+
+# These flags are not turned on be default, but DDS should pass them.
+# Turn them on below.
+WARN_FLAGS	= 		\
+	-Wshadow 		\
+	-Wsign-conversion 	\
+	-pedantic -Wall -Wextra  \
+	-Wcast-align -Wcast-qual \
+	-Wctor-dtor-privacy 	\
+	-Wdisabled-optimization \
+	-Winit-self 		\
+	-Wlogical-op 		\
+	-Wmissing-declarations 	\
+	-Wmissing-include-dirs 	\
+	-Wnoexcept 		\
+	-Wold-style-cast 	\
+	-Woverloaded-virtual 	\
+	-Wsign-promo 		\
+	-Wstrict-null-sentinel 	\
+	-Wstrict-overflow=1 	\
+	-Wswitch-default -Wundef \
+	-Werror 		\
+	-Wno-unused 		\
+	-Wno-unknown-pragmas 	\
+	-Wno-long-long		\
+	-Wno-format
+
+# Here you can turn on warnings and add -DSMALL_MEMORY_OPTION
+# -DDDS_THREADS_SINGLE
+CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS) -DDDS_THREADS_BOOST
+
+LIB_FLAGS	= -mdll
+
+DLLBASE		= dds
+DLL 		= $(DLLBASE).dll
+EXPORTER	= Exports.def
+
+VFILE		= ddsres
+WINDRES_FLAG	= -F pe-x86-64
+
+include $(INCL_SOURCE)
+
+O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES)) $(VFILE).o
+
+
+	# -O3 -flto -fopenmp -mtune=generic -DBUILDING_EXAMPLE_DLL \
+	# -Wl,--out-implib,libdds.dll.a \
+	# $(CC) $(LIB_FLAGS) $(CC_FULL_FLAGS) $(O_FILES) $(LD_FLAGS) $(EXPORTER) -o $(DLL)
+
+mingw:	$(O_FILES)
+	$(CC) -shared \
+	-o $(DLL) \
+	$(O_FILES) \
+	-Wl,--out-implib,libdds.a \
+	-lboost_system -lboost_thread
+
+
+%.o:	%.cpp
+	$(CC) $(CC_FULL_FLAGS) -c $<
+
+$(DLLBASE).res:	$(DLLBASE).rc
+	windres $(DLLBASE).rc $(DLLBASE).res
+
+$(VFILE).o:	$(DLLBASE).rc
+	windres $(WINDRES_FLAG) $(DLLBASE).rc $(VFILE).o
+
+depend:
+	makedepend -Y -- $(CC_FLAGS) -- $(SOURCE_FILES)
+
+clean:
+	rm -f $(O_FILES) $(DLL) $(DLLBASE).{lib,def,exp,res}
+
+install:
+	test -d ../test || mkdir ../test
+	test -d ../examples || mkdir ../examples
+	cp $(DLL) $(DLLBASE).def ../test
+	cp $(DLL) $(DLLBASE).def ../examples
+
+
+include $(INCL_DEPENDS)
+
