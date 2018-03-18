@@ -62,7 +62,8 @@ void Timer::End()
 
   count++;
   userCum += tuser;
-  systCum += syst1 - syst0;
+  systCum += static_cast<long>(syst1) - 
+    static_cast<long>(syst0);
 }
 
 

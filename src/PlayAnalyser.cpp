@@ -27,6 +27,8 @@ paramType playparam;
 playparamType traceparam;
 extern System sysdep;
 
+void PlayChunkCommon(const int thid);
+
 
 int STDCALL AnalysePlayBin(
   deal dl,

@@ -262,6 +262,8 @@ struct WinWrapType
   HANDLE *waitPtr;
 };
 
+DWORD CALLBACK WinCallback(void * p);
+
 DWORD CALLBACK WinCallback(void * p)
 {
   WinWrapType * winWrap = static_cast<WinWrapType *>(p);
@@ -480,7 +482,7 @@ string System::GetThreading(int& thr) const
       if (k == preferredSystem)
       {
         st += "(*)";
-        thr = k;
+        thr = static_cast<int>(k);
       }
     }
   }

@@ -29,8 +29,7 @@ int main(int argc, char * argv[])
 
   DDSInfo info;
   GetDDSInfo(&info);
-  cout << info.systemString;
-  cout.flush();
+  cout << info.systemString << endl;
 
   realMain(argc, argv);
 

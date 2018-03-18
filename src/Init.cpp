@@ -23,6 +23,12 @@ double ConstantMemoryUsed();
 
 void FreeThreadMem();
 
+void CalcThreadMemory(
+  const int oldNoOfThreads,
+  const int kilobytesUsable,
+  int& mem_def,
+  int& mem_max);
+
 localVarType localVar[MAXNOOFTHREADS];
 System sysdep;
 Scheduler scheduler;
