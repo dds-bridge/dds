@@ -1,9 +1,7 @@
 17.03.2018
 
 System
-- Combine Init and Run
 - No more globals?
-- Move boost errors from Makefile to here
 - Do we need noOfThreads at all here?
 
 Makefile

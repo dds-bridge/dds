@@ -173,11 +173,6 @@ int SolveAllBoardsN(
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solvedBoard[k].cards = 0;
 
-  int retInit = sysdep.InitThreads();
-  if (retInit != RETURN_NO_FAULT)
-    return retInit;
-
-
   START_BLOCK_TIMER;
   int retRun = sysdep.RunThreads(chunkSize);
   END_BLOCK_TIMER;

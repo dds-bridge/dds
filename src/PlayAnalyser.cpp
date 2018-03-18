@@ -295,10 +295,6 @@ int STDCALL AnalyseAllPlaysBin(
   scheduler.Register(bop, SCHEDULER_TRACE);
   sysdep.Register(DDS_SYSTEM_PLAY, noOfThreads);
 
-  int retInit = sysdep.InitThreads();
-  if (retInit != RETURN_NO_FAULT)
-    return retInit;
-
   START_BLOCK_TIMER;
   int retRun = sysdep.RunThreads(chunkSize);
   END_BLOCK_TIMER;

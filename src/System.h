@@ -18,7 +18,7 @@
 #include <vector>
 
 // TODO not needed?
-#include "dds.h"
+// #include "dds.h"
 
 using namespace std;
 
@@ -46,28 +46,11 @@ class System
     vector<fptrType> CallbackSimpleList;
     vector<fptrType> CallbackComplexList;
 
-    // TODO no inits?
-    typedef int (System::*InitPtr)();
-    vector<InitPtr> InitPtrList;
-
     typedef int (System::*RunPtr)();
     vector<RunPtr> RunPtrList;
 
     fptrType fptr;
 
-#ifdef _MSC_VER
-    // TODO not needed?
-    HANDLE solveAllEvents[MAXNOOFTHREADS];
-    LONG threadIndex;
-#endif
-
-    // TODO no inits?
-    int InitThreadsBasic();
-    int InitThreadsBoost();
-    int InitThreadsOpenMP();
-    int InitThreadsGCD();
-    int InitThreadsWinAPI();
-  
     int RunThreadsBasic();
     int RunThreadsBoost();
     int RunThreadsOpenMP();
@@ -91,8 +74,6 @@ class System
       unsigned long long& kilobytesFree) const;
 
     int PreferThreading(const unsigned code);
-
-    int InitThreads();
 
     int RunThreads(const int chunkSize);
 

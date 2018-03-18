@@ -125,13 +125,6 @@ void System::Reset()
   availableSystem[DDS_SYSTEM_THREAD_BOOST] = false;
 #endif
   
-  InitPtrList.resize(DDS_SYSTEM_THREAD_SIZE);
-  InitPtrList[DDS_SYSTEM_THREAD_BASIC] = &System::InitThreadsBasic; 
-  InitPtrList[DDS_SYSTEM_THREAD_WINAPI] = &System::InitThreadsWinAPI; 
-  InitPtrList[DDS_SYSTEM_THREAD_OPENMP] = &System::InitThreadsOpenMP; 
-  InitPtrList[DDS_SYSTEM_THREAD_GCD] = &System::InitThreadsGCD; 
-  InitPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::InitThreadsBoost; 
-  
   RunPtrList.resize(DDS_SYSTEM_THREAD_SIZE);
   RunPtrList[DDS_SYSTEM_THREAD_BASIC] = &System::RunThreadsBasic; 
   RunPtrList[DDS_SYSTEM_THREAD_WINAPI] = &System::RunThreadsWinAPI; 
@@ -244,12 +237,6 @@ int System::PreferThreading(const unsigned code)
 //                           Basic                                  //
 //////////////////////////////////////////////////////////////////////
 
-int System::InitThreadsBasic()
-{
-  return RETURN_NO_FAULT;
-}
-
-
 int System::RunThreadsBasic()
 {
   (*fptr)(0);
@@ -260,22 +247,6 @@ int System::RunThreadsBasic()
 //////////////////////////////////////////////////////////////////////
 //                           WinAPI                                 //
 //////////////////////////////////////////////////////////////////////
-
-int System::InitThreadsWinAPI()
-{
-#if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
-  threadIndex = -1;
-  for (int k = 0; k < numThreads; k++)
-  {
-    solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
-    if (solveAllEvents[k] == 0)
-      return RETURN_THREAD_CREATE;
-  }
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
 
 #if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
 struct WinWrapType
@@ -301,6 +272,15 @@ DWORD CALLBACK WinCallback(void * p)
 int System::RunThreadsWinAPI()
 {
 #if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
+  HANDLE solveAllEvents[MAXNOOFTHREADS];
+
+  for (int k = 0; k < numThreads; k++)
+  {
+    solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
+    if (solveAllEvents[k] == 0)
+      return RETURN_THREAD_CREATE;
+  }
+
   vector<WinWrapType> winWrap;
   const unsigned nt = static_cast<unsigned>(numThreads);
   winWrap.resize(nt);
@@ -336,23 +316,15 @@ int System::RunThreadsWinAPI()
 //                           OpenMP                                 //
 //////////////////////////////////////////////////////////////////////
 
-int System::InitThreadsOpenMP()
+int System::RunThreadsOpenMP()
 {
-  // Added after suggestion by Dirk Willecke.
 #if (defined(_OPENMP) && !defined(DDS_THREADS_SINGLE))
+  // Added after suggestion by Dirk Willecke.
   if (omp_get_dynamic())
     omp_set_dynamic(0);
 
   omp_set_num_threads(numThreads);
-#endif
 
-  return RETURN_NO_FAULT;
-}
-
-
-int System::RunThreadsOpenMP()
-{
-#if (defined(_OPENMP) && !defined(DDS_THREADS_SINGLE))
   #pragma omp parallel default(none)
   {
     #pragma omp for schedule(dynamic)
@@ -371,12 +343,6 @@ int System::RunThreadsOpenMP()
 //////////////////////////////////////////////////////////////////////
 //                            GCD                                   //
 //////////////////////////////////////////////////////////////////////
-
-int System::InitThreadsGCD()
-{
-  return RETURN_NO_FAULT;
-}
-
 
 int System::RunThreadsGCD()
 {
@@ -400,12 +366,6 @@ int System::RunThreadsGCD()
 //                           Boost                                  //
 //////////////////////////////////////////////////////////////////////
 
-int System::InitThreadsBoost()
-{
-  return RETURN_NO_FAULT;
-}
-
-
 int System::RunThreadsBoost()
 {
 #if (defined(DDS_THREADS_BOOST) && !defined(DDS_THREADS_SINGLE))
@@ -424,12 +384,6 @@ int System::RunThreadsBoost()
 #endif
 
   return RETURN_NO_FAULT;
-}
-
-
-int System::InitThreads()
-{
-  return (this->*InitPtrList[preferredSystem])();
 }
 
 
