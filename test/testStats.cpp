@@ -84,7 +84,7 @@ void TestStartTimer()
 #ifdef _WIN32
   QueryPerformanceCounter(&ttimerUser0);
 #else
-  gettimeofday(&ttimerUser0, nullptr);
+  gettimeofday(&ttimerUser0, NULL);
 #endif
 }
 
@@ -100,7 +100,7 @@ void TestEndTimer()
   int ttimeUser = static_cast<int>
                   ((ttimerUser1.QuadPart - ttimerUser0.QuadPart));
 #else
-  gettimeofday(&ttimerUser1, nullptr);
+  gettimeofday(&ttimerUser1, NULL);
   int ttimeUser = TesttimevalDiff(ttimerUser1, ttimerUser0);
 #endif
 
@@ -162,7 +162,7 @@ void TestStartTimerNo(int no)
 #ifdef _WIN32
   QueryPerformanceCounter(&ttimerListUser0[no]);
 #else
-  gettimeofday(&ttimerListUser0[no], nullptr);
+  gettimeofday(&ttimerListUser0[no], NULL);
 #endif
 }
 
@@ -176,7 +176,7 @@ void TestEndTimerNo(int no)
   int timeUser = static_cast<int>
                  ((ttimerListUser1[no].QuadPart - ttimerListUser0[no].QuadPart));
 #else
-  gettimeofday(&ttimerListUser1[no], nullptr);
+  gettimeofday(&ttimerListUser1[no], NULL);
   int timeUser = TesttimevalDiff(ttimerListUser1[no],
                                  ttimerListUser0[no]);
 #endif
@@ -199,7 +199,7 @@ void TestEndTimerNoAndComp(int no, int pred)
   int timeUser = static_cast<int>
                  ((ttimerListUser1[no].QuadPart - ttimerListUser0[no].QuadPart));
 #else
-  gettimeofday(&ttimerListUser1[no], nullptr);
+  gettimeofday(&ttimerListUser1[no], NULL);
   int timeUser = TesttimevalDiff(ttimerListUser1[no],
                                  ttimerListUser0[no]);
 #endif

@@ -37,7 +37,7 @@
 
 #define MAXNOOFBOARDS 200
 
-#define MAXNOOFTABLES 32
+#define MAXNOOFTABLES 40
 
 
 // Error codes. See interface document for more detail.

@@ -48,6 +48,7 @@ WARN_FLAGS	= 		\
 	-Wno-unused 		\
 	-Wno-unknown-pragmas 	\
 	-Wno-long-long		\
+        -Wno-odr                \
 	-Wno-format
 
 # Here you can turn on warnings.
@@ -66,9 +67,11 @@ DTEST_SOURCE_FILES 	=	\
 	testcommon.cpp		\
 	testStats.cpp
 
-LD_FLAGS	=
+LD_FLAGS	= 
 
-LIB_FLAGS	= -L. -l$(DLLBASE)
+THREAD_LINK     = -lboost_system -lboost_thread
+        
+LIB_FLAGS	= -Wl,-rpath=. -L. -l$(DLLBASE) $(THREAD_LINK)
 
 DTEST_OBJ_FILES	= $(subst .cpp,.o,$(DTEST_SOURCE_FILES)) $(DTEST).o
 
@@ -202,3 +205,5 @@ testcommon.o: ../include/dll.h ../include/portab.h testStats.h dtest.h
 testStats.o: ../include/portab.h testStats.h
 itest.o: ../include/dll.h testcommon.h
 dtest.o: ../include/dll.h testcommon.h
+
+

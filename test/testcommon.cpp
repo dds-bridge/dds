@@ -278,8 +278,10 @@ int threadingCode(char * arg)
     return 3;
   else if (str == "boost")
     return 4;
-  else
+  else if (str == "stl")
     return 5;
+  else
+    return 6;
 }
 
 
@@ -301,13 +303,13 @@ bool read_file(
 
   FILE * fp;
   fp = fopen(fname, "r");
-  if (fp == nullptr)
+  if (fp == NULL)
   {
     char backup[80];
     sprintf(backup, "../hands/%s", fname);
     fp = fopen(backup, "r");
     name = backup;
-    if (fp == nullptr)
+    if (fp == NULL)
       return false;
   }
   else
@@ -332,7 +334,7 @@ bool read_file(
 
       fclose(fp);
       fp = fopen(name, "r");
-      if (fp == nullptr)
+      if (fp == NULL)
         return false;
     }
     else
@@ -348,39 +350,39 @@ bool read_file(
   size_t number_t = static_cast<size_t>(* number);
 
   if ((*dealer_list = static_cast<int *>
-      (calloc(number_t, sizeof(int)))) == nullptr)
+      (calloc(number_t, sizeof(int)))) == NULL)
     return false;
 
   if ((*vul_list = static_cast<int *>
-      (calloc(number_t, sizeof(int)))) == nullptr)
+      (calloc(number_t, sizeof(int)))) == NULL)
     return false;
 
   if ((*deal_list = static_cast<dealPBN *>
-      (calloc(number_t, sizeof(dealPBN)))) == nullptr)
+      (calloc(number_t, sizeof(dealPBN)))) == NULL)
     return false;
 
   if ((*fut_list = static_cast<futureTricks *>
-      (calloc(number_t, sizeof(futureTricks)))) == nullptr)
+      (calloc(number_t, sizeof(futureTricks)))) == NULL)
     return false;
 
   if ((*table_list = static_cast<ddTableResults *>
-      (calloc(number_t, sizeof(ddTableResults)))) == nullptr)
+      (calloc(number_t, sizeof(ddTableResults)))) == NULL)
     return false;
 
   if ((*par_list = static_cast<parResults *>
-      (calloc(number_t, sizeof(parResults)))) == nullptr)
+      (calloc(number_t, sizeof(parResults)))) == NULL)
     return false;
 
   if ((*dealerpar_list = static_cast<parResultsDealer *>
-      (calloc(number_t, sizeof(parResultsDealer)))) == nullptr)
+      (calloc(number_t, sizeof(parResultsDealer)))) == NULL)
     return false;
 
   if ((*play_list = static_cast<playTracePBN *>
-      (calloc(number_t, sizeof(playTracePBN)))) == nullptr)
+      (calloc(number_t, sizeof(playTracePBN)))) == NULL)
     return false;
 
   if ((*trace_list = static_cast<solvedPlay *>
-      (calloc(number_t, sizeof(solvedPlay)))) == nullptr)
+      (calloc(number_t, sizeof(solvedPlay)))) == NULL)
     return false;
 
   if (GIBmode)
@@ -1292,7 +1294,7 @@ void timer_start()
 #ifdef _WIN32
   QueryPerformanceCounter(&tu0);
 #else
-  gettimeofday(&tu0, nullptr);
+  gettimeofday(&tu0, NULL);
 #endif
 }
 
@@ -1306,7 +1308,7 @@ int timer_end()
   tu = static_cast<int>
        ((tu1.QuadPart - tu0.QuadPart) * 1000. / frequency.QuadPart);
 #else
-  gettimeofday(&tu1, nullptr);
+  gettimeofday(&tu1, NULL);
   tu = timeval_diff(tu1, tu0);
 #endif
   ctu += tu;
