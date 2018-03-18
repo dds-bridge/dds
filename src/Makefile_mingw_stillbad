@@ -21,7 +21,7 @@ CC		= g++
 # Use this one to get Windows multi-threading
 # CC_FLAGS	= -O3 -flto -mtune=generic
 # Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -DBUILDING_EXAMPLE_DLL
+CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -DBUILDING_EXAMPLE_DLL -std=c++11
 
 LD_FLAGS	= 		\
 	-Wl,--subsystem,windows \
