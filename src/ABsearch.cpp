@@ -7,18 +7,17 @@
    See LICENSE and README.
 */
 
-
 #include <iostream>
 #include <sstream>
 
 #include "dds.h"
+
 #include "TransTable.h"
 #include "Moves.h"
 #include "threadmem.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"
 #include "ABsearch.h"
-
 
 #define DDS_POS_LINES 5
 #define DDS_HAND_LINES 12

@@ -27,34 +27,24 @@ CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL /EHs /openmp /DDDS_THREADS_BOOST
 
 # These flags are not turned on by default, but DDS should pass them.
 # Turn them on below.
-# WARN_FLAGS	=		\
-	# /Wall			\
-	# /wd4127			\
-	# /wd4365			\
-	# /wd4571			\
-	# /wd4623			\
-	# /wd4701			\
-	# /wd4774			\
-	# /wd4986			\
-	# /wd4987			\
-	# /wd5026			\
-	# /wd5027			\
-	# /wd5031			\
-	# /WX
-
-# TODO: 4996 is strncpy, sprintf etc.  Shouldn't use anyway.
 
 WARN_FLAGS	=		\
 	/Wall			\
+	/wd4365			\
 	/wd4464			\
+	/wd4514			\
 	/wd4555			\
+	/wd4571			\
 	/wd4625			\
 	/wd4626			\
 	/wd4668			\
 	/wd4710			\
 	/wd4711			\
+	/wd4774			\
 	/wd4820			\
 	/wd4996			\
+	/wd5026			\
+	/wd5027			\
 	/WX
 
 # Here you can turn on/off warnings.

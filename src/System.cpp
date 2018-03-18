@@ -17,7 +17,7 @@
 #ifdef DDS_THREADS_BOOST
    #ifdef _MSC_VER
      #pragma warning(push)
-     #pragma warning(disable: 4061 4191 4365 4571 4619 5026 5027 5031)
+     #pragma warning(disable: 4061 4191 4619 4623 5031)
    #endif
 
   #include <boost/thread.hpp>

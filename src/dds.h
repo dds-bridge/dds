@@ -17,13 +17,13 @@
 #include <assert.h>
 #include <math.h>
 
+
 #include "debug.h"
 #include "../include/portab.h"
 
 #include "TransTable.h"
 #include "TimerList.h"
 #include "ABstats.h"
-
 
 #if defined(DDS_MEMORY_LEAKS) && defined(_MSC_VER)
   #define DDS_MEMORY_LEAKS_WIN32
