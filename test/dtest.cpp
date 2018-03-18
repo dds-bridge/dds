@@ -30,7 +30,7 @@ int main(int argc, char * argv[])
   DDSInfo info;
   GetDDSInfo(&info);
   cout << info.systemString;
-  cout << setw(12) << left << "Version" <<
+  cout << setw(13) << left << "Version" <<
     setw(20) << right << info.versionString << "\n\n";
   cout.flush();
 

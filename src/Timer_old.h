@@ -11,10 +11,15 @@
 #define DDS_TIMING_H
 
 #include <string>
-#include <chrono>
 
-using Clock = std::chrono::steady_clock;
-using std::chrono::time_point;
+#include <time.h>
+#include <inttypes.h>
+
+#ifdef _MSC_VER
+  #include <windows.h>
+#else
+  #include <sys/time.h>
+#endif
 
 using namespace std;
 
@@ -23,13 +28,21 @@ class Timer
 {
   private:
 
+    clock_t systTimes0;
+    clock_t systTimes1;
+
+#ifdef _MSC_VER
+    LARGE_INTEGER userTimes0;
+    LARGE_INTEGER userTimes1;
+#else
+    timeval userTimes0;
+    timeval userTimes1;
+#endif
+
     string name;
     int count;
-    long userCum;
-    long systCum;
-
-    time_point<Clock> user0;
-    clock_t syst0;
+    int64_t userCum;
+    double systCum;
 
   public:
 

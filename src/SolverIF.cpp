@@ -16,6 +16,8 @@
 #include "ABsearch.h"
 #include "SolverIF.h"
 
+extern Scheduler scheduler;
+
 
 int BoardRangeChecks(
   deal * dl,

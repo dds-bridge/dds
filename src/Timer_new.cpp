@@ -59,10 +59,12 @@ void Timer::End()
 
   chrono::duration<double, micro> d = user1 - user0;
   int tuser = static_cast<int>(d.count());
+  // int tuser = static_cast<int>(1000. * d.count());
 
   count++;
   userCum += tuser;
-  systCum += syst1 - syst0;
+  systCum += static_cast<long>((1000 * (syst1 - syst0)) /
+    static_cast<double>(CLOCKS_PER_SEC));
 }
 
 
@@ -114,10 +116,9 @@ string Timer::SumLine(
         userCum / static_cast<double>(count) <<
       setw(5) << setprecision(1) << fixed << 
         100. * userCum / divisor.userCum <<
-      setw(11) << setprecision(0) << fixed << 
-        1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+      setw(11) << setprecision(0) << fixed << 1000. * systCum <<
       setw(7) << setprecision(2) << fixed <<
-        1000000 * systCum / static_cast<double>(count * CLOCKS_PER_SEC) <<
+        1000. * systCum / static_cast<double>(count) <<
       setw(5) << setprecision(1) << fixed << 
         100. * systCum / divisor.systCum << "\n";
   }
@@ -128,7 +129,7 @@ string Timer::SumLine(
       setw(11) << userCum <<
       setw(7) << "-" <<
       setw(5) << "-" <<
-      setw(11) << 1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+      setw(11) << 1000 * systCum <<
       setw(7) << "-" <<
       setw(5) << "-" << "\n";
   }
@@ -145,10 +146,9 @@ string Timer::DetailLine() const
     setw(11) << setprecision(2) << fixed << 
       userCum / static_cast<double>(count) <<
     setw(11) << setprecision(0) << fixed <<
-      1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+      1000. * systCum <<
     setw(11) << setprecision(2) << fixed <<
-      1000000 * systCum / 
-        static_cast<double>(count * CLOCKS_PER_SEC) << "\n";
+      1000. * systCum / static_cast<double>(count) << "\n";
 
   return ss.str();
 }

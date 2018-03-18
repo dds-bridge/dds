@@ -188,6 +188,10 @@ int SolveAllBoardsN(
   /* Calculate number of solved boards. */
   solvedp->noOfBoards = param.noOfBoards;
 
+#ifdef DDS_SCHEDULER 
+  scheduler.PrintTiming();
+#endif
+
   if (param.error == 0)
     return RETURN_NO_FAULT;
   else

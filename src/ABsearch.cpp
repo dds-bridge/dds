@@ -203,6 +203,7 @@ void InitFileTTstats(int thrId)
 
 void InitFileTimer(int thrId)
 {
+  // TODO: Remove
   UNUSED(thrId);
 }
 
@@ -227,14 +228,7 @@ void InitFileMoves(int thrId)
 
 void InitFileScheduler()
 {
-#ifdef DDS_SCHEDULER
-  char fname[DDS_FNAME_LEN];
-  sprintf(fname, "%s%s\0",
-          DDS_SCHEDULER_PREFIX,
-          DDS_DEBUG_SUFFIX);
-
-  scheduler.SetFile(fname);
-#endif
+  // TODO: Remove
 }
 
 

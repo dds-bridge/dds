@@ -308,6 +308,10 @@ int STDCALL AnalyseAllPlaysBin(
 
   solvedp->noOfBoards = bop->noOfBoards;
 
+#ifdef DDS_SCHEDULER
+  scheduler.PrintTiming();
+#endif
+
   if (playparam.error == 0)
     return RETURN_NO_FAULT;
   else

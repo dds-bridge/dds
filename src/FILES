@@ -10,7 +10,6 @@
    184    487   3660 PBN.cpp
    364   1016   9116 PlayAnalyser.cpp
   1209   3449  30221 QuickTricks.cpp
-  1103   3334  26153 Scheduler.cpp
    297    665   6655 SolveBoard.cpp
   1291   3194  30732 SolverIF.cpp
    519   1126  12679 System.cpp
@@ -25,7 +24,6 @@
     22     49    408 PBN.h
     20     38    288 PlayAnalyser.h
     31     70    530 QuickTricks.h
-   232    355   3954 Scheduler.h
     29     62    494 SolveBoard.h
     28     58    444 SolverIF.h
    102    186   1866 System.h
@@ -33,14 +31,14 @@
    519   1108  11141 TransTable.h
  19052  51196 458259 insgesamt
 
+For now:
 
- Final:
+Scheduler
 
-   164    441   3323 Timer.cpp
-    74    119   1094 Timer.h
+Final:
 
-   183    421   3171 TimerGroup.cpp
-    58    103    966 TimerGroup.h
-
-   139    276   2928 TimerList.cpp
-   112    339   2553 TimerList.h
+Timer
+TimerGroup
+TimerList
+TimeStat
+TimeStatList

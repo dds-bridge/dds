@@ -12,16 +12,11 @@
 
 #include <atomic>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include "TimeStatList.h"
 #include "dds.h"
-#include "../include/dll.h"
 
-#ifndef _WIN32
-  #include <sys/time.h>
-#endif
+using namespace std;
+
 
 #define SCHEDULER_NOSORT 0
 #define SCHEDULER_SOLVE 1
@@ -88,7 +83,7 @@ class Scheduler
     int numGroups;
     int extraGroups;
 
-    std::atomic<int> currGroup;
+    atomic<int> currGroup;
 
     listType list[DDS_SUITS + 2][HASH_MAX];
 
@@ -112,25 +107,8 @@ class Scheduler
 
     void Reset();
 
-#ifdef _WIN32
-    LARGE_INTEGER timeStart[MAXNOOFTHREADS];
-    LARGE_INTEGER timeEnd[MAXNOOFTHREADS];
-    LARGE_INTEGER blockStart;
-    LARGE_INTEGER blockEnd;
-#else
-    int timeDiff(
-      timeval x,
-      timeval y);
-
-    timeval startTime[MAXNOOFTHREADS];
-    timeval endTime[MAXNOOFTHREADS];
-    timeval blockStart;
-    timeval blockEnd;
-#endif
-
-    void CreateLock();
-
-    void DestroyLock();
+    vector<Timer> timersThread;
+    Timer timerBlock;
 
     void MakeGroups(
       boards * bop);
@@ -146,42 +124,26 @@ class Scheduler
          SortTrace();
 
 #ifdef DDS_SCHEDULER
-    FILE * fp;
-
-    char fname[80];
 
     int timeHist[10000];
     int timeHistNT[10000];
     int timeHistSuit[10000];
 
-    struct timeType
-    {
-      long long cum;
-      double cumsq;
-      int number;
-    };
-
-    timeType timeStrain[2];
-    timeType timeRepeat[16];
-    timeType timeDepth[60];
-    timeType timeStrength[60];
-    timeType timeFanout[100];
-    timeType timeThread[MAXNOOFTHREADS];
+    TimeStatList timeStrain;
+    TimeStatList timeRepeat;
+    TimeStatList timeDepth;
+    TimeStatList timeStrength;
+    TimeStatList timeFanout;
+    TimeStatList timeThread;
+    TimeStatList timeGroupActualStrain;
+    TimeStatList timeGroupPredStrain;
+    TimeStatList timeGroupDiffStrain;
 
     long long timeMax;
     long long blockMax;
     long long timeBlock;
 
-    timeType timeGroupActualStrain[2];
-    timeType timeGroupPredStrain[2];
-    timeType timeGroupDiffStrain[2];
-
     void InitTimes();
-
-    void PrintTimingList(
-      timeType * tp,
-      int length,
-      const char title[]);
 #endif
 
     int PredictedTime(
@@ -194,8 +156,6 @@ class Scheduler
     Scheduler();
 
     ~Scheduler();
-
-    void SetFile(char * fname);
 
     void RegisterTraceDepth(
       playTracesBin * plp,

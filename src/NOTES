@@ -1,36 +1,25 @@
-14.03.2018
+17.03.2018
 
-Do we need extern int noOfThreads in System at all?
+System
+- Combine Init and Run
+- No more globals?
+- Move boost errors from Makefile to here
+- Do we need noOfThreads at all here?
 
-Do we need System: Init and Run, or can we combine?
+Makefile
+- One for each system
+- Clean define's, WE control what gets compiled, not compiler
+- Source files centrally
+- Depends centrally
 
-Do we need System globals at all?
+dtest
+- Get laptop changes, no more time function calls
 
-mingw has undefined symbols, eliminate system defines as
-much as possible.
-
-Localize the boost warnings from the Makefile to System.cpp list
-
-11.03.2018
-
-Scheduler.cpp and .h
----
-On laptop, fold dtest timing functions back into dtest
-
-More modular Makefiles
-
-Scheduler: Do a really simple user Timer like in dtest.
-Timer (new) gets used in Scheduler and for debugging.
-
-Move away from printf etc to out.
-
-It's a bit annoying that SetMaxThreads() gets called once with 0
-automatically, once with 1 from dtest.  So lots of debug text files
-are created.  Probably generate at the end, like with TimerList.
-
-Makefile: One -D for each option, all user-controlled.  Modify
-System.cpp accordingly.
-
-Eliminate portab.h?
-
-Put now timer in System as well
+General
+- Need Stats.cpp after all?! (in #ifdef's...)
+- Move away from printf etc to out.
+- It's a bit annoying that SetMaxThreads() gets called once with 0
+  automatically, once with 1 from dtest.  So lots of debug text files
+  are created.  Probably generate at the end, like with TimerList.
+- mingw has undefined symbols, eliminate system defines as
+- much as possible.

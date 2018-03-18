@@ -8,6 +8,10 @@
 */
 
 
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
 #include "Scheduler.h"
 
 
@@ -41,27 +45,7 @@ Scheduler::Scheduler()
     timeHistSuit[i] = 0;
   }
 
-  sprintf(fname, "");
-  fp = stdout;
-#endif
-}
-
-
-void Scheduler::SetFile(char * ourFname)
-{
-#ifdef DDS_SCHEDULER
-  if (strlen(ourFname) > 80)
-    return;
-
-  if (fp != stdout) // Already set
-    return;
-  strncpy(fname, ourFname, strlen(ourFname));
-
-  fp = fopen(fname, "w");
-  if (! fp)
-    fp = stdout;
-#else
-  UNUSED(ourFname);
+  timersThread.resize(MAXNOOFTHREADS);
 #endif
 }
 
@@ -69,59 +53,16 @@ void Scheduler::SetFile(char * ourFname)
 #ifdef DDS_SCHEDULER
 void Scheduler::InitTimes()
 {
-  for (int s = 0; s < 2; s++)
-  {
-    timeStrain[s].cum = 0;
-    timeStrain[s].cumsq = 0;
-    timeStrain[s].number = 0;
+  timeStrain.Init("Suit/NT", 2);
+  timeRepeat.Init("Repeat number", 16);
+  timeDepth.Init("Trace depth", 60);
+  timeStrength.Init("Evenness", 60);
+  timeFanout.Init("Fanout", 100);
+  timeThread.Init("Threads", MAXNOOFTHREADS);
 
-    timeGroupActualStrain[s].cum = 0;
-    timeGroupActualStrain[s].cumsq = 0;
-    timeGroupActualStrain[s].number = 0;
-
-    timeGroupPredStrain[s].cum = 0;
-    timeGroupPredStrain[s].cumsq = 0;
-    timeGroupPredStrain[s].number = 0;
-
-    timeGroupDiffStrain[s].cum = 0;
-    timeGroupDiffStrain[s].cumsq = 0;
-    timeGroupDiffStrain[s].number = 0;
-  }
-
-  for (int s = 0; s < 16; s++)
-  {
-    timeRepeat[s].cum = 0;
-    timeRepeat[s].cumsq = 0;
-    timeRepeat[s].number = 0;
-  }
-
-  for (int s = 0; s < 60; s++)
-  {
-    timeDepth[s].cum = 0;
-    timeDepth[s].cumsq = 0;
-    timeDepth[s].number = 0;
-  }
-
-  for (int s = 0; s < 60; s++)
-  {
-    timeStrength[s].cum = 0;
-    timeStrength[s].cumsq = 0;
-    timeStrength[s].number = 0;
-  }
-
-  for (int s = 0; s < 100; s++)
-  {
-    timeFanout[s].cum = 0;
-    timeFanout[s].cumsq = 0;
-    timeFanout[s].number = 0;
-  }
-
-  for (int s = 0; s < MAXNOOFTHREADS; s++)
-  {
-    timeThread[s].cum = 0;
-    timeThread[s].cumsq = 0;
-    timeThread[s].number = 0;
-  }
+  timeGroupActualStrain.Init("Group actual suit/NT", 2);
+  timeGroupPredStrain.Init("Group predicted suit/NT", 2);
+  timeGroupDiffStrain.Init("Group diff suit/NT", 2);
 
   blockMax = 0;
   timeBlock = 0;
@@ -131,10 +72,6 @@ void Scheduler::InitTimes()
 
 Scheduler::~Scheduler()
 {
-#ifdef DDS_SCHEDULER
-  if (fp != stdout && fp != nullptr)
-    fclose(fp);
-#endif
 }
 
 
@@ -834,24 +771,15 @@ schedType Scheduler::GetNumber(
 #ifdef DDS_SCHEDULER
 void Scheduler::StartThreadTimer(int thrId)
 {
-#ifdef _WIN32
-  QueryPerformanceCounter(&timeStart[thrId]);
-#else
-  gettimeofday(&timeStart[thrId], NULL);
-#endif
+  timersThread[thrId].Reset();
+  timersThread[thrId].Start();
 }
 
 
 void Scheduler::EndThreadTimer(int thrId)
 {
-#ifdef _WIN32
-  QueryPerformanceCounter(&timeEnd[thrId]);
-  int timeUser = (timeEnd [thrId].QuadPart -
-                  timeStart[thrId].QuadPart);
-#else
-  gettimeofday(&timerListUser1[no], NULL);
-  int timeUser = Scheduler::timeDiff(timeEnd[thrId], timeStart[thrId]);
-#endif
+  timersThread[thrId].End();
+  int timeUser = timersThread[thrId].UserTime();
 
   hands[ threadToHand[thrId] ].time = timeUser;
   hands[ threadToHand[thrId] ].thread = thrId;
@@ -862,24 +790,15 @@ void Scheduler::EndThreadTimer(int thrId)
 
 void Scheduler::StartBlockTimer()
 {
-#ifdef _WIN32
-  QueryPerformanceCounter(&blockStart);
-#else
-  gettimeofday(&blockStart, NULL);
-#endif
+  timerBlock.Reset();
+  timerBlock.Start();
 }
 
 
 void Scheduler::EndBlockTimer()
 {
-#ifdef _WIN32
-  QueryPerformanceCounter(&blockEnd);
-  int timeUser = (blockEnd .QuadPart -
-                  blockStart.QuadPart);
-#else
-  gettimeofday(&blockEnd, NULL);
-  int timeUser = Scheduler::timeDiff(blockEnd, blockStart);
-#endif
+  timerBlock.End();
+  const int timeUserBlock = timerBlock.UserTime();
 
   handType * hp;
   for (int b = 0; b < numHands; b++)
@@ -890,29 +809,15 @@ void Scheduler::EndBlockTimer()
 
     if (hp->selectFlag)
     {
-      timeStrain [ hp->NTflag ].number++;
-      timeStrain [ hp->NTflag ].cum += timeUser;
-      timeStrain [ hp->NTflag ].cumsq += timesq;
+      TimeStat ts;
+      ts.Set(timeUser, timesq);
 
-      timeRepeat [ hp->repeatNo ].number++;
-      timeRepeat [ hp->repeatNo ].cum += timeUser;
-      timeRepeat [ hp->repeatNo ].cumsq += timesq;
-
-      timeDepth [ hp->depth ].number++;
-      timeDepth [ hp->depth ].cum += timeUser;
-      timeDepth [ hp->depth ].cumsq += timesq;
-
-      timeStrength[ hp->strength ].number++;
-      timeStrength[ hp->strength ].cum += timeUser;
-      timeStrength[ hp->strength ].cumsq += timesq;
-
-      timeFanout [ hp->fanout ].number++;
-      timeFanout [ hp->fanout ].cum += timeUser;
-      timeFanout [ hp->fanout ].cumsq += timesq;
-
-      timeThread [ hp->thread ].number++;
-      timeThread [ hp->thread ].cum += timeUser;
-      timeThread [ hp->thread ].cumsq += timesq;
+      timeStrain.Add(hp->NTflag, ts);
+      timeRepeat.Add(hp->repeatNo, ts);
+      timeDepth.Add(hp->depth, ts);
+      timeStrength.Add(hp->strength, ts);
+      timeFanout.Add(hp->fanout, ts);
+      timeThread.Add(hp->thread, ts);
     }
 
     if (timeUser > blockMax)
@@ -934,129 +839,70 @@ void Scheduler::EndBlockTimer()
     int head = group[g].head;
     int NTflag = (hands[head].strain == 4 ? 1 : 0);
 
-    timeGroupActualStrain[NTflag].number++;
-    timeGroupActualStrain[NTflag].cum += group[g].actual;
-    timeGroupActualStrain[NTflag].cumsq +=
-      (double) group[g].actual * (double) group[g].actual;
+    TimeStat ts;
 
-    timeGroupPredStrain [NTflag].number++;
-    timeGroupPredStrain [NTflag].cum += group[g].pred;
-    timeGroupPredStrain [NTflag].cumsq +=
-      group[g].pred * group[g].pred;
+    ts.Set(group[g].actual);
+    timeGroupActualStrain.Add(NTflag, ts);
 
-    double diff = group[g].actual - group[g].pred;
+    ts.Set(group[g].pred);
+    timeGroupPredStrain.Add(NTflag, ts);
 
-    timeGroupDiffStrain [NTflag].number++;
-    timeGroupDiffStrain [NTflag].cum += diff;
-    timeGroupDiffStrain [NTflag].cumsq += diff * diff;
+    int diff = group[g].actual - group[g].pred;
+    ts.Set(diff);
+    timeGroupDiffStrain.Add(NTflag, ts);
   }
 
-  timeBlock += timeUser;
+
+  timeBlock += timeUserBlock;
   timeMax += blockMax;
   blockMax = 0;
 }
 
 
-void Scheduler::PrintTimingList(
-  timeType * tp,
-  int length,
-  const char title[])
-{
-  bool empty = true;
-  for (int no = 0; no < length && empty; no++)
-  {
-    if (tp[no].number)
-      empty = false;
-  }
-  if (empty)
-    return;
-
-  fprintf(fp, "%s\n\n", title);
-  fprintf(fp, "%5s %8s %12s %12s %12s %12s\n",
-          "n", "Number", "Cum time", "Average", "Sdev", "Sdev/mu");
-
-  long long sn = 0, st = 0;
-  double sq = 0;
-
-  for (int no = 0; no < length; no++)
-  {
-    if (tp[no].number == 0)
-      continue;
-
-    sn += tp[no].number;
-    st += tp[no].cum;
-    sq += tp[no].cumsq;
-
-    double avg = (double) tp[no].cum / (double) tp[no].number;
-    double arg = (tp[no].cumsq / (double) tp[no].number) -
-                  (double) avg * (double) avg;
-    double sdev = (arg >= 0. ? sqrt(arg) : 0.);
-
-    fprintf(fp, "%5d %8d %12lld ",
-            no,
-            tp[no].number,
-            tp[no].cum);
-    fprintf(fp, "%12.0f %12.0f %12.2f\n", avg, sdev, sdev / avg);
-  }
-
-  if (sn)
-  {
-    double avg = (double) st / (double) sn;
-    double arg = (sq / (double) sn) - (double) avg * (double) avg;
-    double sdev = (arg >= 0. ? sqrt(arg) : 0.);
-    fprintf(fp, " Avg %8lld %12lld ", sn, st);
-    fprintf(fp, "%12.0f %12.0f %12.2f\n", avg, sdev, sdev / avg);
-  }
-
-  fprintf(fp, "\n");
-}
-
-
 void Scheduler::PrintTiming()
 {
-  Scheduler::PrintTimingList(timeStrain , 2, "Suit/NT");
-  Scheduler::PrintTimingList(timeRepeat , 16, "Repeat number");
-  Scheduler::PrintTimingList(timeDepth , 60, "Trace depth");
-  Scheduler::PrintTimingList(timeStrength, 60, "Evenness");
-  Scheduler::PrintTimingList(timeFanout , 100, "Fanout");
-  Scheduler::PrintTimingList(timeThread , MAXNOOFTHREADS, "Threads");
+  const string fname = string(DDS_SCHEDULER_PREFIX) + DDS_DEBUG_SUFFIX;
+  ofstream fout;
+  fout.open(fname);
 
-  Scheduler::PrintTimingList(timeGroupActualStrain, 2,
-                             "Group actual suit/NT");
-  Scheduler::PrintTimingList(timeGroupPredStrain , 2,
-                             "Group predicted suit/NT");
-  Scheduler::PrintTimingList(timeGroupDiffStrain , 2,
-                             "Group diff suit/NT");
+  fout << timeStrain.List();
+  fout << timeRepeat.List();
+  fout << timeDepth.List();
+  fout << timeStrength.List();
+  fout << timeFanout.List();
+  fout << timeThread.List();
+  fout << timeGroupActualStrain.List();
+  fout << timeGroupPredStrain.List();
+  fout << timeGroupDiffStrain.List();
 
 #if 0
+  fout << setw(13) << "Hist" <<
+    setw(10) << "Hist suit" <<
+    setw(10) << "Hist NT" << "\n";
   for (int i = 0; i < 10000; i++)
+  {
     if (timeHist[i] || timeHistSuit[i] || timeHistNT[i])
-      fprintf(fp, "%4d %8d %8d %8d\n",
-              i, timeHist[i], timeHistSuit[i], timeHistNT[i]);
-  fprintf(fp, "\n");
+    {
+      fout << setw(4) << i <<
+        setw(9) << timeHist[i] <<
+        setw(10) << timeHistSuit[i] <<
+        setw(10) << timeHistNT[i] << "\n";
+    }
+  }
+  fout << endl;
 #endif
 
   if (timeBlock == 0)
     return;
 
-  // Continuing problems with ld in long fprintf's...
-  double avg = 100. * (double) timeMax / (double) timeBlock;
-  fprintf(fp, "Largest hand %12lld ", timeMax);
-  fprintf(fp, "%12lld ", timeBlock);
-  fprintf(fp, "%5.2f%%\n\n", avg);
-}
+  const double avg = 100. * (double) timeMax / (double) timeBlock;
+  fout << "Largest hand" <<
+    setw(13) << timeMax << 
+    setw(13) << timeBlock <<
+    setw(6) << setprecision(2) << fixed << avg << "%\n\n";
 
-
-#ifndef _WIN32
-int Scheduler::timeDiff(
-  timeval x,
-  timeval y)
-{
-  /* Elapsed time, x-y, in milliseconds */
-  return 1000 * (x.tv_sec - y.tv_sec )
-         + (x.tv_usec - y.tv_usec) / 1000;
+  fout.close();
 }
-#endif
 
 #endif // DDS_SCHEDULER
 
@@ -1099,5 +945,4 @@ int Scheduler::PredictedTime(
 
   return pred;
 }
-
 

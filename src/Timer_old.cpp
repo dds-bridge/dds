@@ -8,15 +8,17 @@
 */
 
 
+/*
+   See Timer.h for some description.
+*/
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
 #include "Timer.h"
-#include "../include/portab.h"
 
-using std::chrono::duration_cast;
-using std::chrono::microseconds;
+using namespace std;
 
 
 Timer::Timer()
@@ -32,10 +34,9 @@ Timer::~Timer()
 
 void Timer::Reset()
 {
-  name = "";
   count = 0;
   userCum = 0;
-  systCum = 0;
+  systCum = 0.;
 }
 
 
@@ -47,22 +48,39 @@ void Timer::SetName(const string& s)
 
 void Timer::Start()
 {
-  user0 = Clock::now();
-  syst0 = clock();
+  systTimes0 = clock();
+
+#ifdef _MSC_VER
+  QueryPerformanceCounter(&userTimes0);
+#else
+  gettimeofday(&userTimes0, nullptr);
+#endif
 }
 
 
 void Timer::End()
 {
-  time_point<Clock> user1 = Clock::now();
-  clock_t syst1 = clock();
+  systTimes1 = clock();
 
-  chrono::duration<double, micro> d = user1 - user0;
-  int tuser = static_cast<int>(d.count());
+#ifdef _MSC_VER
+  QueryPerformanceCounter(&userTimes1);
+  int timeUser = static_cast<int>
+    (userTimes1.QuadPart - userTimes0.QuadPart);
+#else
+  gettimeofday(&userTimes1, nullptr);
+  return 1000 * (userTimes1.tv_sec - userTimer0.tv_sec )
+         + (userTimes1.tv_usec - userTimer0.tv_usec) / 1000;
+#endif
 
   count++;
-  userCum += tuser;
-  systCum += syst1 - syst0;
+
+  // This is more or less in milli-seconds except on Windows,
+  // where it is in "wall ticks". It is possible to convert
+  // to milli-seconds, but the resolution is so poor for fast
+  // functions that I leave it in integer form.
+
+  userCum += timeUser;
+  systCum += systTimes1 - systTimes0;
 }
 
 
@@ -114,10 +132,9 @@ string Timer::SumLine(
         userCum / static_cast<double>(count) <<
       setw(5) << setprecision(1) << fixed << 
         100. * userCum / divisor.userCum <<
-      setw(11) << setprecision(0) << fixed << 
-        1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+      setw(11) << setprecision(0) << fixed << 1000. * systCum <<
       setw(7) << setprecision(2) << fixed <<
-        1000000 * systCum / static_cast<double>(count * CLOCKS_PER_SEC) <<
+        1000. * systCum / static_cast<double>(count) <<
       setw(5) << setprecision(1) << fixed << 
         100. * systCum / divisor.systCum << "\n";
   }
@@ -128,7 +145,7 @@ string Timer::SumLine(
       setw(11) << userCum <<
       setw(7) << "-" <<
       setw(5) << "-" <<
-      setw(11) << 1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+      setw(11) << 1000 * systCum <<
       setw(7) << "-" <<
       setw(5) << "-" << "\n";
   }
@@ -145,10 +162,9 @@ string Timer::DetailLine() const
     setw(11) << setprecision(2) << fixed << 
       userCum / static_cast<double>(count) <<
     setw(11) << setprecision(0) << fixed <<
-      1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+      1000. * systCum <<
     setw(11) << setprecision(2) << fixed <<
-      1000000 * systCum / 
-        static_cast<double>(count * CLOCKS_PER_SEC) << "\n";
+      1000. * systCum / static_cast<double>(count) << "\n";
 
   return ss.str();
 }
