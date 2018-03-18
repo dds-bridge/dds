@@ -34,15 +34,6 @@
 #include "SolveBoard.h"
 #include "PlayAnalyser.h"
 
-extern int noOfThreads;
-
-#define DDS_SYSTEM_THREAD_BASIC 0
-#define DDS_SYSTEM_THREAD_WINAPI 1
-#define DDS_SYSTEM_THREAD_OPENMP 2
-#define DDS_SYSTEM_THREAD_GCD 3
-#define DDS_SYSTEM_THREAD_BOOST 4
-#define DDS_SYSTEM_THREAD_SIZE 5
-
 const vector<string> DDS_SYSTEM_PLATFORM =
 {
   "",
@@ -77,6 +68,13 @@ const vector<string> DDS_SYSTEM_THREADING =
   "Boost"
 };
 
+#define DDS_SYSTEM_THREAD_BASIC 0
+#define DDS_SYSTEM_THREAD_WINAPI 1
+#define DDS_SYSTEM_THREAD_OPENMP 2
+#define DDS_SYSTEM_THREAD_GCD 3
+#define DDS_SYSTEM_THREAD_BOOST 4
+#define DDS_SYSTEM_THREAD_SIZE 5
+
 
 System::System()
 {
@@ -99,27 +97,25 @@ void System::Reset()
 
   availableSystem[DDS_SYSTEM_THREAD_BASIC] = true;
 
-#if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
+#ifdef DDS_THREADS_WINAPI
   availableSystem[DDS_SYSTEM_THREAD_WINAPI] = true;
 #else
   availableSystem[DDS_SYSTEM_THREAD_WINAPI] = false;
 #endif
 
-#if (defined(_OPENMP) && !defined(DDS_THREADS_SINGLE))
+#ifdef DDS_THREADS_OPENMP
   availableSystem[DDS_SYSTEM_THREAD_OPENMP] = true;
 #else
   availableSystem[DDS_SYSTEM_THREAD_OPENMP] = false;
 #endif
 
-#if ((defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || \
-      defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && \
-      !defined(DDS_THREADS_SINGLE))
+#ifdef DDS_THREADS_GCD
   availableSystem[DDS_SYSTEM_THREAD_GCD] = true;
 #else
   availableSystem[DDS_SYSTEM_THREAD_GCD] = false;
 #endif
 
-#if (defined(DDS_THREADS_BOOST) && !defined(DDS_THREADS_SINGLE))
+#ifdef DDS_THREADS_BOOST
   availableSystem[DDS_SYSTEM_THREAD_BOOST] = true;
 #else
   availableSystem[DDS_SYSTEM_THREAD_BOOST] = false;
@@ -132,7 +128,7 @@ void System::Reset()
   RunPtrList[DDS_SYSTEM_THREAD_GCD] = &System::RunThreadsGCD; 
   RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
 
-  // TODO Correct functions
+  // DDS_SYSTEM_CALC_ doesn't happen.
   CallbackSimpleList.resize(DDS_SYSTEM_SIZE);
   CallbackSimpleList[DDS_SYSTEM_SOLVE] = SolveChunkCommon;
   CallbackSimpleList[DDS_SYSTEM_CALC] = SolveChunkCommon;
@@ -248,7 +244,7 @@ int System::RunThreadsBasic()
 //                           WinAPI                                 //
 //////////////////////////////////////////////////////////////////////
 
-#if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
+#ifdef DDS_THREADS_WINAPI
 struct WinWrapType
 {
   int thid;
@@ -271,7 +267,7 @@ DWORD CALLBACK WinCallback(void * p)
 
 int System::RunThreadsWinAPI()
 {
-#if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
+#ifdef DDS_THREADS_WINAPI
   HANDLE solveAllEvents[MAXNOOFTHREADS];
 
   for (int k = 0; k < numThreads; k++)
@@ -304,7 +300,7 @@ int System::RunThreadsWinAPI()
   if (solveAllWaitResult != WAIT_OBJECT_0)
     return RETURN_THREAD_WAIT;
 
-  for (int k = 0; k < noOfThreads; k++)
+  for (int k = 0; k < numThreads; k++)
     CloseHandle(solveAllEvents[k]);
 #endif
 
@@ -318,7 +314,7 @@ int System::RunThreadsWinAPI()
 
 int System::RunThreadsOpenMP()
 {
-#if (defined(_OPENMP) && !defined(DDS_THREADS_SINGLE))
+#ifdef DDS_THREADS_OPENMP
   // Added after suggestion by Dirk Willecke.
   if (omp_get_dynamic())
     omp_set_dynamic(0);
@@ -346,10 +342,8 @@ int System::RunThreadsOpenMP()
 
 int System::RunThreadsGCD()
 {
-#if ((defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || \
-      defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && \
-      !defined(DDS_THREADS_SINGLE))
-  dispatch_apply(static_cast<size_t>(noOfThreads),
+#ifdef DDS_THREADS_GCD
+  dispatch_apply(static_cast<size_t>(numThreads),
     dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0),
     ^(size_t t)
   {
@@ -368,7 +362,7 @@ int System::RunThreadsGCD()
 
 int System::RunThreadsBoost()
 {
-#if (defined(DDS_THREADS_BOOST) && !defined(DDS_THREADS_SINGLE))
+#ifdef DDS_THREADS_BOOST
   vector<boost::thread *> threads;
   threads.resize(static_cast<unsigned>(numThreads));
 
@@ -389,8 +383,6 @@ int System::RunThreadsBoost()
 
 int System::RunThreads(const int chunkSize)
 {
-  // TODO Add timing on the caller side, not here in System
-
   fptr = (chunkSize == 1 ? 
     CallbackSimpleList[runCat] : CallbackComplexList[runCat]);
 
@@ -398,77 +390,127 @@ int System::RunThreads(const int chunkSize)
 }
 
 
-string System::str(DDSInfo * info) const
+//////////////////////////////////////////////////////////////////////
+//                     Self-identification                          //
+//////////////////////////////////////////////////////////////////////
+
+string System::GetVersion(
+  int& major,
+  int& minor,
+  int& patch) const
 {
-  info->major = DDS_VERSION / 10000;
-  info->minor = (DDS_VERSION - info->major * 10000) / 100;
-  info->patch = DDS_VERSION % 100;
+  major = DDS_VERSION / 10000;
+  minor = (DDS_VERSION - major * 10000) / 100;
+  patch = DDS_VERSION % 100;
 
-  sprintf(info->versionString, "%d.%d.%d",
-    info->major, info->minor, info->patch);
+  string st = STR(major) + "." + STR(minor) + "." + STR(patch);
+  return st;
+}
 
-  info->system = 0;
-  info->compiler = 0;
-  info->constructor = 0;
-  info->threading = 0;
-  info->noOfThreads = numThreads;
 
+string System::GetSystem(int& sys) const
+{
 #if defined(_WIN32)
-  info->system = 1;
+  sys = 1;
 #elif defined(__CYGWIN__)
-  info->system = 2;
+  sys = 2;
 #elif defined(__linux)
-  info->system = 3;
+  sys = 3;
 #elif defined(__APPLE__)
-  info->system = 4;
+  sys = 4;
+#elif
+  sys = 0;
 #endif
+  
+  return DDS_SYSTEM_PLATFORM[static_cast<unsigned>(sys)];
+}
 
-  stringstream ss;
-  ss << "DDS DLL\n-------\n";
-  ss << left << setw(13) << "System" <<
-    setw(20) << right << 
-      DDS_SYSTEM_PLATFORM[static_cast<unsigned>(info->system)] << "\n";
 
+string System::GetCompiler(int& comp) const
+{
 #if defined(_MSC_VER)
-  info->compiler = 1;
+  comp = 1;
 #elif defined(__MINGW32__)
-  info->compiler = 2;
+  comp = 2;
 #elif defined(__GNUC__)
-  info->compiler = 3;
+  comp = 3;
 #elif defined(__clang__)
-  info->compiler = 4;
+  comp = 4;
+#elif
+  comp = 0;
 #endif
-  ss << left << setw(13) << "Compiler" <<
-    setw(20) << right << 
-      DDS_SYSTEM_COMPILER[static_cast<unsigned>(info->compiler)] << "\n";
 
+  return DDS_SYSTEM_COMPILER[static_cast<unsigned>(comp)];
+}
+
+
+string System::GetConstructor(int& cons) const
+{
 #if defined(USES_DLLMAIN)
-  info->constructor = 1;
+  cons = 1;
 #elif defined(USES_CONSTRUCTOR)
-  info->constructor = 2;
+  cons = 2;
+#elif
+  cons = 0;
 #endif
-  ss << left << setw(13) << "Constructor" <<
-    setw(20) << right << 
-      DDS_SYSTEM_CONSTRUCTOR[static_cast<unsigned>(info->constructor)] << 
-      "\n";
 
-  ss << left << setw(9) << "Threading";
-  string sy = "";
+  return DDS_SYSTEM_CONSTRUCTOR[static_cast<unsigned>(cons)];
+}
+
+
+string System::GetThreading(int& thr) const
+{
+  string st = "";
+  thr = 0;
   for (unsigned k = 0; k < DDS_SYSTEM_THREAD_SIZE; k++)
   {
     if (availableSystem[k])
     {
-      sy += " " + DDS_SYSTEM_THREADING[k];
+      st += " " + DDS_SYSTEM_THREADING[k];
       if (k == preferredSystem)
-        sy += "(*)";
+      {
+        st += "(*)";
+        thr = k;
+      }
     }
   }
-  ss << setw(24) << right << sy << "\n";
+  return st;
+}
 
+
+string System::str(DDSInfo * info) const
+{
+  stringstream ss;
+  ss << "DDS DLL\n-------\n";
+
+  const string strSystem = System::GetSystem(info->system);
+  ss << left << setw(13) << "System" <<
+    setw(20) << right << strSystem << "\n";
+
+  const string strCompiler = System::GetCompiler(info->compiler);
+  ss << left << setw(13) << "Compiler" <<
+    setw(20) << right << strCompiler << "\n";
+
+  const string strConstructor = System::GetCompiler(info->constructor);
+  ss << left << setw(13) << "Constructor" <<
+    setw(20) << right << strConstructor << "\n";
+
+  const string strThreading = System::GetThreading(info->threading);
+  ss << left << setw(9) << "Threading" <<
+    setw(24) << right << strThreading << "\n";
+
+  info->noOfThreads = numThreads;
   ss << left << setw(17) << "Number of threads" <<
-    setw(16) << right << noOfThreads << "\n";
+    setw(16) << right << numThreads << "\n";
 
-  strcpy(info->systemString, ss.str().c_str());
-  return ss.str();
+  const string strVersion = System::GetVersion(info->major,
+    info->minor, info->patch);
+  ss << left << setw(13) << "Version" <<
+    setw(20) << right << strVersion << "\n";
+  strcpy(info->versionString, strVersion.c_str());
+
+  const string st = ss.str();
+  strcpy(info->systemString, st.c_str());
+  return st;
 }
 

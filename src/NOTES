@@ -1,9 +1,5 @@
 17.03.2018
 
-System
-- No more globals?
-- Do we need noOfThreads at all here?
-
 Makefile
 - One for each system
 - Clean define's, WE control what gets compiled, not compiler

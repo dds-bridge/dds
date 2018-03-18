@@ -11,18 +11,14 @@
 #define DDS_SYSTEM_H
 
 /*
-   This class encapsulates all(?) the system-dependent stuff.
+   This class encapsulates all the system-dependent stuff.
  */
 
 #include <string>
 #include <vector>
 
-// TODO not needed?
-// #include "dds.h"
-
 using namespace std;
 
-// TODO enum
 #define DDS_SYSTEM_SOLVE 0
 #define DDS_SYSTEM_CALC 1
 #define DDS_SYSTEM_PLAY 2
@@ -57,6 +53,15 @@ class System
     int RunThreadsGCD();
     int RunThreadsWinAPI();
 
+    string GetVersion(
+      int& major,
+      int& minor,
+      int& patch) const;
+    string GetSystem(int& sys) const;
+    string GetCompiler(int& comp) const;
+    string GetConstructor(int& cons) const;
+    string GetThreading(int &thr) const;
+
 
   public:
     System();
@@ -81,3 +86,4 @@ class System
 };
 
 #endif
+
