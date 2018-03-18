@@ -15,16 +15,16 @@
 // Boost: Disable some header warnings.
 
 #ifdef DDS_THREADS_BOOST
-  #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable: 4061 4191 4365 4571 4619 4625 4626 5026 5027 50    31)
-  #endif
+   #ifdef _MSC_VER
+     #pragma warning(push)
+     #pragma warning(disable: 4061 4191 4365 4571 4619 5026 5027 5031)
+   #endif
 
   #include <boost/thread.hpp>
 
-  #ifdef _MSC_VER
-    #pragma warning(pop)
-  #endif
+   #ifdef _MSC_VER
+     #pragma warning(pop)
+   #endif
 #endif
 
 #include "../include/dll.h"
@@ -302,11 +302,12 @@ int System::RunThreadsWinAPI()
 {
 #if (defined(_MSC_VER) && !defined(DDS_THREADS_SINGLE))
   vector<WinWrapType> winWrap;
-  winWrap.resize(numThreads);
+  const unsigned nt = static_cast<unsigned>(numThreads);
+  winWrap.resize(nt);
 
-  for (int k = 0; k < numThreads; k++)
+  for (unsigned k = 0; k < nt; k++)
   {
-    winWrap[k].thid = k;
+    winWrap[k].thid = static_cast<int>(k);
     winWrap[k].fptr = fptr;
     winWrap[k].waitPtr = solveAllEvents;
 

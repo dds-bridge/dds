@@ -23,32 +23,38 @@ CC_BOOST_LINK	= /link /LIBPATH:$(BOOST32_LIB1) /LIBPATH:$(BOOST32_LIB2)
 # If your Microsoft compiler is not called cl, change it here.
 CC		= cl
 CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL /EHs /openmp /DDDS_THREADS_BOOST
-# CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL /EHs /openmp /DDDS_THREADS_BOOST /DDDS_DEBUG_ALL /DDDS_TIMING
+# CC_FLAGS     	= /O2 /Oi /Ot /Oy /GL /EHs /openmp /DDDS_THREADS_BOOST /DDDS_DEBUG_ALL /DDDS_TIMING /DDDS_SCHEDULER
 
 # These flags are not turned on by default, but DDS should pass them.
 # Turn them on below.
+# WARN_FLAGS	=		\
+	# /Wall			\
+	# /wd4127			\
+	# /wd4365			\
+	# /wd4571			\
+	# /wd4623			\
+	# /wd4701			\
+	# /wd4774			\
+	# /wd4986			\
+	# /wd4987			\
+	# /wd5026			\
+	# /wd5027			\
+	# /wd5031			\
+	# /WX
+
+# TODO: 4996 is strncpy, sprintf etc.  Shouldn't use anyway.
+
 WARN_FLAGS	=		\
 	/Wall			\
-	/wd4127			\
-	/wd4365			\
 	/wd4464			\
 	/wd4555			\
-	/wd4571			\
-	/wd4623			\
 	/wd4625			\
 	/wd4626			\
 	/wd4668			\
-	/wd4701			\
 	/wd4710			\
 	/wd4711			\
-	/wd4774			\
 	/wd4820			\
-	/wd4986			\
-	/wd4987			\
 	/wd4996			\
-	/wd5026			\
-	/wd5027			\
-	/wd5031			\
 	/WX
 
 # Here you can turn on/off warnings.
@@ -84,6 +90,8 @@ SOURCE_FILES 	=		\
 	Timer.cpp		\
 	TimerGroup.cpp		\
 	TimerList.cpp		\
+	TimeStat.cpp		\
+	TimeStatList.cpp	\
 	TransTable.cpp
 
 OBJ_FILES 	= $(subst .cpp,.obj,$(SOURCE_FILES)) $(VFILE).obj

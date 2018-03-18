@@ -16,7 +16,6 @@ dtest
 - Get laptop changes, no more time function calls
 
 General
-- Need Stats.cpp after all?! (in #ifdef's...)
 - Move away from printf etc to out.
 - It's a bit annoying that SetMaxThreads() gets called once with 0
   automatically, once with 1 from dtest.  So lots of debug text files
