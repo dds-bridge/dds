@@ -54,9 +54,6 @@
 #define Max(x, y) (((x) >= (y)) ? (x) : (y))
 #define Min(x, y) (((x) <= (y)) ? (x) : (y))
 
-#define STR(x) \
-  static_cast<ostringstream*>(&(ostringstream() << x))->str()
-
 #define DDS_NOTRUMP 4
 
 /* "hand" is leading hand, "relative" is hand relative leading

@@ -109,7 +109,8 @@ void TimerList::PrintStats(const int thrId) const
     sumTotal += t;
   }
 
-  const string fname = DDS_TIMING_PREFIX + STR(thrId) + DDS_DEBUG_SUFFIX;
+  const string fname = DDS_TIMING_PREFIX + to_string(thrId) + 
+    DDS_DEBUG_SUFFIX;
   ofstream fout;
   fout.open(fname);
 

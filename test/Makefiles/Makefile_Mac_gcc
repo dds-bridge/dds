@@ -66,7 +66,11 @@ DTEST_SOURCE_FILES 	=	\
 	testcommon.cpp		\
 	testStats.cpp
 
-LIB_FLAGS	= -L. -l$(DLLBASE)
+#TODO: This is only for the .a static library.
+CC_BOOST	= /usr/local/Cellar/boost/1.56.0
+CC_BOOST_LINK	= -L$(CC_BOOST)/lib -lboost_system -lboost_thread-mt
+
+LIB_FLAGS	= -L. -l$(DLLBASE) $(CC_BOOST_LINK)
 LD_FLAGS	= -lgomp -lstdc++
 
 DTEST_OBJ_FILES	= $(subst .cpp,.o,$(DTEST_SOURCE_FILES)) $(DTEST).o

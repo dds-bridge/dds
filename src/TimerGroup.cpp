@@ -44,7 +44,7 @@ void TimerGroup::SetNames(const string& s)
     // Special format emphasizing the card number within the trick.
     for (unsigned i = 0; i < timers.size(); i++)
     {
-      st = s + STR(i % 4) + " " + STR(i);
+      st = s + to_string(i % 4) + " " + to_string(i);
       timers[i].SetName(st);
     }
   }
@@ -52,7 +52,7 @@ void TimerGroup::SetNames(const string& s)
   {
     for (unsigned i = 0; i < timers.size(); i++)
     {
-      st = s + STR(i);
+      st = s + to_string(i);
       timers[i].SetName(st);
     }
   }

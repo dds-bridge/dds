@@ -27,6 +27,10 @@
    #endif
 #endif
 
+#ifdef DDS_THREADS_GCD
+  #include <dispatch/dispatch.h>
+#endif
+
 #ifdef DDS_THREADS_STL
   #include <thread>
 #endif
@@ -372,9 +376,9 @@ int System::RunThreadsGCD()
     dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0),
     ^(size_t t)
   {
-    thid = static_cast<int>(t);
+    int thid = static_cast<int>(t);
     (*fptr)(thid);
-  }
+  });
 #endif
 
   return RETURN_NO_FAULT;
@@ -453,7 +457,8 @@ string System::GetVersion(
   minor = (DDS_VERSION - major * 10000) / 100;
   patch = DDS_VERSION % 100;
 
-  string st = STR(major) + "." + STR(minor) + "." + STR(patch);
+  string st = to_string(major) + "." + to_string(minor) + 
+    "." + to_string(patch);
   return st;
 }
 
@@ -468,7 +473,7 @@ string System::GetSystem(int& sys) const
   sys = 3;
 #elif defined(__APPLE__)
   sys = 4;
-#elif
+#ellse
   sys = 0;
 #endif
   
@@ -482,11 +487,11 @@ string System::GetCompiler(int& comp) const
   comp = 1;
 #elif defined(__MINGW32__)
   comp = 2;
+#elif defined(__clang__)
+  comp = 4; // Out-of-order on purpose
 #elif defined(__GNUC__)
   comp = 3;
-#elif defined(__clang__)
-  comp = 4;
-#elif
+#else
   comp = 0;
 #endif
 
@@ -500,7 +505,7 @@ string System::GetConstructor(int& cons) const
   cons = 1;
 #elif defined(USES_CONSTRUCTOR)
   cons = 2;
-#elif
+#else
   cons = 0;
 #endif
 
@@ -541,7 +546,7 @@ string System::str(DDSInfo * info) const
   ss << left << setw(13) << "Compiler" <<
     setw(20) << right << strCompiler << "\n";
 
-  const string strConstructor = System::GetCompiler(info->constructor);
+  const string strConstructor = System::GetConstructor(info->constructor);
   ss << left << setw(13) << "Constructor" <<
     setw(20) << right << strConstructor << "\n";
 
