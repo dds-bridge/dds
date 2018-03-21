@@ -23,7 +23,7 @@ CC		= g++
 # Use this one to get Windows multi-threading
 # CC_FLAGS	= -O3 -flto -mtune=generic
 # Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -mtune=generic
+CC_FLAGS	= -O3
 
 # These flags are not turned on by default, but DDS should pass them.
 # Turn them on below.
@@ -80,25 +80,47 @@ LIB_FLAGS	= -L. -l$(DLLBASE)
 DTEST_OBJ_FILES	= $(subst .cpp,.o,$(DTEST_SOURCE_FILES)) $(DTEST).o
 
 # These are the files that we steal from the src directory.
-include Makefiles/sources.txt
-
-# $(CC) $(CC_FULL_FLAGS) $(DTEST_OBJ_FILES) $(LD_FLAGS) $(LIB_FLAGS) -o $(DTEST)
+SRC		= ../src
+STOLEN_SOURCE_FILES 	=	\
+	$(SRC)/dds.cpp 		\
+	$(SRC)/ABsearch.cpp	\
+	$(SRC)/ABstats.cpp	\
+	$(SRC)/CalcTables.cpp	\
+	$(SRC)/DealerPar.cpp 	\
+	$(SRC)/Init.cpp		\
+	$(SRC)/LaterTricks.cpp	\
+	$(SRC)/Moves.cpp	\
+	$(SRC)/Par.cpp 		\
+	$(SRC)/PlayAnalyser.cpp	\
+	$(SRC)/PBN.cpp		\
+	$(SRC)/QuickTricks.cpp	\
+	$(SRC)/Scheduler.cpp	\
+	$(SRC)/SolveBoard.cpp	\
+	$(SRC)/SolveBoard_basic.cpp	\
+	$(SRC)/SolveBoard_boost.cpp	\
+	$(SRC)/SolveBoard_GCD.cpp	\
+	$(SRC)/SolveBoard_OpenMP.cpp	\
+	$(SRC)/SolveBoard_WinAPI.cpp	\
+	$(SRC)/SolverIF.cpp	\
+	$(SRC)/Stats.cpp	\
+	$(SRC)/Timer.cpp	\
+	$(SRC)/TransTable.cpp
 
 ITEST_SOURCE_FILES	=	\
-	$(SOURCE_FILES)	\
+	$(STOLEN_SOURCE_FILES)	\
 	$(DTEST_SOURCE_FILES)	\
 	itest.cpp
 
 ITEST_OBJ_FILES	= $(subst .cpp,.o,$(ITEST_SOURCE_FILES))
 
 dtest:	$(DTEST_OBJ_FILES)
-	$(CC) -o $(DTEST) $(DTEST_OBJ_FILES) -L. -ldds
+	$(CC) $(CC_FLAGS) $(DTEST_OBJ_FILES) $(LIB_FLAGS) -o $(DTEST)
 
 itest:	$(ITEST_OBJ_FILES)
 	$(CC) $(CC_FULL_FLAGS) $(ITEST_OBJ_FILES) $(LD_FLAGS) -o $(ITEST)
 
 %.o:	%.cpp
-	$(CC) $(CC_FULL_FLAGS) -c $< -o $*.o
+	$(CC) $(CC_FLAGS) -c $< -o $*.o
 
 depend:
 	makedepend -Y -- $(ITEST_SOURCE_FILES) $(DTEST).cpp

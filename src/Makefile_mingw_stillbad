@@ -87,8 +87,8 @@ mingw:	$(O_FILES)
 	$(CC) -shared \
 	-o $(DLL) \
 	$(O_FILES) \
-	-Wl,--out-implib,libdds.a \
-	-lboost_system -lboost_thread
+	-lboost_system -lboost_thread \
+	-Wl,--out-implib,libdds.a
 
 
 %.o:	%.cpp

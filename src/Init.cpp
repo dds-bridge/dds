@@ -151,6 +151,8 @@ void STDCALL SetMaxThreads(
   else
     noOfThreads = ncores;
 
+  sysdep.Register(DDS_SYSTEM_SOLVE, noOfThreads);
+
   int mem_def, mem_max;
   CalcThreadMemory(oldNoOfThreads, kilobytesUsable, mem_def, mem_max);
 
