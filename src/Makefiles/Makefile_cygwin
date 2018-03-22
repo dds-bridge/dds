@@ -144,8 +144,3 @@ install:
 
 include $(INCL_DEPENDS)
 
-
-
-vs:	$(OBJ_FILES)
-	$(CC) $(LINK_FLAGS1) $(OBJ_FILES) $(EXPORTER) \
-	$(LINK_FLAGS2) /out:$(DLL)

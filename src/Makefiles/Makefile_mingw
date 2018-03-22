@@ -1,39 +1,71 @@
-# This the DDS Makefile for Windows and the MinGW compiler.
-# It does assume a Unix-like setup for some commands,
-# but if you only want to call "make" with the default target,
-# you should be OK.
+# --------------------- INFORMATION --------------------------------
 
-# If you want to compile a single-threaded version, use
-# DDS_THREADS=none
+# This the DDS Makefile for Windows and the mingw GNU g++
+# compiler.  It assumes a Unix-like setup for some commands.
 
 # The "windres" and "cvtres" tools are used for putting version
 # information into the DLL in a way that Windows can see.
 # It is not mandatory, and if you don't have those tools,
 # You can remove $(VFILE).obj in the target line below.
 
+# --------------------- CONFIGURATION ------------------------------
 
-# If your exact compiler name is not given here, change it.
-# CC		= mingw32-g++
-# CC		= i686-w64-mingw32-g++
+# You can configure the following:
+
+# 1. The threading systems that you want in the DLL/executable.
+# You will always get single-threading.  If you have multiple
+# threading systems, the default will be the multi-threading one
+# with the lowest number (see System.cpp).  All that matters is
+# CC_THREADING.
+
+# GCD doesn't work on Windows.
+THR_BOOST	= -DDDS_THREADS_BOOST
+THR_GCD		= -DDDS_THREADS_GCD
+THR_OPENMP	= -DDDS_THREADS_OPENMP
+THR_WINAPI	= -DDDS_THREADS_WINAPI
+THR_STL		= -DDDS_THREADS_STL
+
+THREADING	= $(THR_BOOST) $(THR_OPENMP) $(THR_STL)
+
+# If you need to add something for a threading system, this is
+# the place.
+
+CC_BOOST_LINK	= -lboost_system -lboost_thread
+
+THREAD_COMPILE	= -fopenmp
+THREAD_LINK	= -lgomp $(CC_BOOST_LINK)
+
+# 2. The small memory option, which causes DDS to consume a lot less
+# memory and to run somewhat more slowly.
+
+SMALL_MEMORY	= -DSMALL_MEMORY_OPTION
+
+# 3. Debugging options.  (There are more granular options in debug.h.)
+
+DEBUG_ALL	= -DDDS_DEBUG_ALL 
+TIMING		= -DDDS_TIMING
+SCHEDULER	= -DDDS_SCHEDULER
+
+# All that matters from no. 2 and no. 3 is the following.  Here you
+# can add $(SMALL_MEMORY) etc.
+
+DDS_BEHAVIOR	=
+
+# ----------------------- OFTEN OK    ------------------------------
+
+# From here on you you don't have to change anything to CONFIGURE
+# the compilation.  But you may well have to change something to 
+# get it to compile.
+
+INCL_SOURCE	= Makefiles/sources.txt
+INCL_DEPENDS	= Makefiles/depends_obj.txt
+
+# If your compiler name is not given here, change it.
 CC		= g++
 
-# Use this one to get Windows multi-threading
-# CC_FLAGS	= -O3 -flto -mtune=generic
-# Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic
+# We compile with aggressive warnings, but we have to turn off some
+# of them as they appear in libraries in great numbers...
 
-LD_FLAGS	= 		\
-	-Wl,--subsystem,windows \
-	-Wl,--output-def,$(DLLBASE).def	\
-	-Wl,--dynamicbase 	\
-	-Wl,--nxcompat 		\
-	-Wl,--no-seh 		\
-	-Wl,--enable-stdcall-fixup \
-	-lpthread
-
-
-# These flags are not turned on be default, but DDS should pass them.
-# Turn them on below.
 WARN_FLAGS	= 		\
 	-Wshadow 		\
 	-Wsign-conversion 	\
@@ -41,6 +73,7 @@ WARN_FLAGS	= 		\
 	-Wcast-align -Wcast-qual \
 	-Wctor-dtor-privacy 	\
 	-Wdisabled-optimization \
+	-Wformat=2 		\
 	-Winit-self 		\
 	-Wlogical-op 		\
 	-Wmissing-declarations 	\
@@ -48,7 +81,6 @@ WARN_FLAGS	= 		\
 	-Wnoexcept 		\
 	-Wold-style-cast 	\
 	-Woverloaded-virtual 	\
-	-Wredundant-decls 	\
 	-Wsign-promo 		\
 	-Wstrict-null-sentinel 	\
 	-Wstrict-overflow=1 	\
@@ -56,61 +88,36 @@ WARN_FLAGS	= 		\
 	-Werror 		\
 	-Wno-unused 		\
 	-Wno-unknown-pragmas 	\
-	-Wno-long-long		\
-	-Wno-format
+	-Wno-long-long
 
-# Here you can turn on warnings and add -DSMALL_MEMORY_OPTION
-# CC_FULL_FLAGS	= $(CC_FLAGS)
-CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
+COMPILE_FLAGS	= -O3 -DBUILDING_EXAMPLE_DLL -fopenmp \
+		$(WARN_FLAGS) \
+		$(DDS_BEHAVIOR) $(THREAD_COMPILE) $(THREADING)
 
-LIB_FLAGS	= -mdll
+LINK1_FLAGS	= -shared
+LINK2_FLAGS	= 		\
+	$(THREAD_LINK)		\
+	-Wl,--out-implib,libdds.a \
+	-Wl,--no-undefined
 
 DLLBASE		= dds
 DLL 		= $(DLLBASE).dll
+DLIB 		= $(DLLBASE).lib
 EXPORTER	= Exports.def
 
 VFILE		= ddsres
 WINDRES_FLAG	= -F pe-x86-64
 
-SOURCE_FILES 	=		\
-	dds.cpp 		\
-	ABsearch.cpp		\
-	ABstats.cpp		\
-	CalcTables.cpp		\
-	DealerPar.cpp 		\
-	Init.cpp		\
-	LaterTricks.cpp		\
-	Moves.cpp		\
-	Par.cpp 		\
-	PlayAnalyser.cpp	\
-	PBN.cpp			\
-	QuickTricks.cpp		\
-	Scheduler.cpp		\
-	SolveBoard.cpp		\
-	SolveBoard_basic.cpp	\
-	SolveBoard_boost.cpp	\
-	SolveBoard_GCD.cpp	\
-	SolveBoard_OpenMP.cpp	\
-	SolveBoard_WinAPI.cpp	\
-	SolverIF.cpp		\
-	Stats.cpp		\
-	Timer.cpp		\
-	TransTable.cpp
+include $(INCL_SOURCE)
 
 O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES)) $(VFILE).o
 
-ifeq ($(DDS_THREADS),none)
-DDS_THR		= -DDDS_THREADS_SINGLE
-else
-DDS_THR		= 
-endif
-
-
 mingw:	$(O_FILES)
-	$(CC) $(LIB_FLAGS) $(CC_FULL_FLAGS) $(O_FILES) $(LD_FLAGS) $(EXPORTER) -o $(DLL)
+	$(CC) $(LINK1_FLAGS) $(O_FILES) \
+	-o $(DLL) $(LINK2_FLAGS)
 
 %.o:	%.cpp
-	$(CC) $(CC_FULL_FLAGS) $(DDS_THR) -c $<
+	$(CC) $(COMPILE_FLAGS) -c $<
 
 $(DLLBASE).res:	$(DLLBASE).rc
 	windres $(DLLBASE).rc $(DLLBASE).res
@@ -119,7 +126,7 @@ $(VFILE).o:	$(DLLBASE).rc
 	windres $(WINDRES_FLAG) $(DLLBASE).rc $(VFILE).o
 
 depend:
-	makedepend -Y -- $(CC_FLAGS) -- $(SOURCE_FILES)
+	makedepend -Y -- $(SOURCE_FILES)
 
 clean:
 	rm -f $(O_FILES) $(DLL) $(DLLBASE).{lib,def,exp,res}
@@ -130,67 +137,5 @@ install:
 	cp $(DLL) $(DLLBASE).def ../test
 	cp $(DLL) $(DLLBASE).def ../examples
 
+include $(INCL_DEPENDS)
 
-# DO NOT DELETE
-
-dds.o: ../include/dll.h dds.h debug.h ../include/portab.h TransTable.h
-dds.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h
-ABsearch.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-ABsearch.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
-ABsearch.o: QuickTricks.h LaterTricks.h ABsearch.h
-ABstats.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-ABstats.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
-CalcTables.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-CalcTables.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h SolveBoard.h
-CalcTables.o: PBN.h
-DealerPar.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-DealerPar.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
-Init.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Init.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h Init.h
-Init.o: ABsearch.h
-LaterTricks.o: dds.h debug.h ../include/portab.h TransTable.h
-LaterTricks.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h Scheduler.h
-LaterTricks.o: threadmem.h LaterTricks.h
-Moves.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Moves.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h ABsearch.h
-Par.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Par.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
-PlayAnalyser.o: dds.h debug.h ../include/portab.h TransTable.h
-PlayAnalyser.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-PlayAnalyser.o: Scheduler.h threadmem.h SolverIF.h PBN.h
-PBN.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-PBN.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h PBN.h
-QuickTricks.o: dds.h debug.h ../include/portab.h TransTable.h
-QuickTricks.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h Scheduler.h
-QuickTricks.o: threadmem.h QuickTricks.h
-Scheduler.o: Scheduler.h dds.h debug.h ../include/portab.h TransTable.h
-Scheduler.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-SolveBoard.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-SolveBoard.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h threadmem.h
-SolveBoard.o: SolverIF.h SolveBoard.h PBN.h SolveBoard_basic.h
-SolveBoard.o: SolveBoard_boost.h SolveBoard_GCD.h SolveBoard_OpenMP.h
-SolveBoard.o: SolveBoard_WinAPI.h
-SolveBoard_basic.o: dds.h debug.h ../include/portab.h TransTable.h
-SolveBoard_basic.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-SolveBoard_basic.o: Scheduler.h SolveBoard.h SolveBoard_basic.h
-SolveBoard_boost.o: dds.h debug.h ../include/portab.h TransTable.h
-SolveBoard_boost.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-SolveBoard_boost.o: Scheduler.h SolveBoard.h SolveBoard_boost.h
-SolveBoard_GCD.o: dds.h debug.h ../include/portab.h TransTable.h
-SolveBoard_GCD.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-SolveBoard_GCD.o: Scheduler.h SolveBoard.h SolveBoard_GCD.h
-SolveBoard_OpenMP.o: dds.h debug.h ../include/portab.h TransTable.h
-SolveBoard_OpenMP.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-SolveBoard_OpenMP.o: Scheduler.h SolveBoard.h SolveBoard_OpenMP.h
-SolveBoard_WinAPI.o: dds.h debug.h ../include/portab.h TransTable.h
-SolveBoard_WinAPI.o: ../include/dll.h Timer.h ABstats.h Moves.h Stats.h
-SolveBoard_WinAPI.o: Scheduler.h SolveBoard.h SolveBoard_WinAPI.h
-SolverIF.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-SolverIF.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h Init.h threadmem.h
-SolverIF.o: ABsearch.h SolverIF.h
-Stats.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Stats.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
-Timer.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-Timer.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
-TransTable.o: dds.h debug.h ../include/portab.h TransTable.h ../include/dll.h
-TransTable.o: Timer.h ABstats.h Moves.h Stats.h Scheduler.h
