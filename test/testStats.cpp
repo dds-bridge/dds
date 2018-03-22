@@ -13,29 +13,25 @@
 #include <string.h>
 #include <time.h>
 
+#include <chrono>
+
+using Clock = std::chrono::steady_clock;
+using std::chrono::time_point;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
+using namespace std;
+
 #include "../include/portab.h"
 #include "testStats.h"
 
 #define NUM_TIMERS 2000
 #define COUNTER_SLOTS 200
 
-
-#ifdef _WIN32
-  LARGE_INTEGER ttimerFreq;
-  LARGE_INTEGER ttimerUser0;
-  LARGE_INTEGER ttimerUser1;
-  LARGE_INTEGER ttimerListUser0[NUM_TIMERS];
-  LARGE_INTEGER ttimerListUser1[NUM_TIMERS];
-#else
-  #include <sys/time.h>
-
-  int TesttimevalDiff(timeval x, timeval y);
-
-  timeval ttimerUser0;
-  timeval ttimerUser1;
-  timeval ttimerListUser0[NUM_TIMERS];
-  timeval ttimerListUser1[NUM_TIMERS];
-#endif
+time_point<chrono::steady_clock> ttimerUser0;
+time_point<chrono::steady_clock> ttimerUser1;
+time_point<chrono::steady_clock> ttimerListUser0[NUM_TIMERS];
+time_point<chrono::steady_clock> ttimerListUser1[NUM_TIMERS];
 
 clock_t ttimerSys0;
 clock_t ttimerSys1;
@@ -81,11 +77,7 @@ void TestStartTimer()
   ttimerCount++;
   ttimerSys0 = clock();
 
-#ifdef _WIN32
-  QueryPerformanceCounter(&ttimerUser0);
-#else
-  gettimeofday(&ttimerUser0, NULL);
-#endif
+  ttimerUser0 = Clock::now();
 }
 
 
@@ -93,16 +85,11 @@ void TestEndTimer()
 {
   ttimerSys1 = clock();
 
-#ifdef _WIN32
-  // To get "real" seconds we would have to divide by
-  // timerFreq.QuadPart which needs to be initialized.
-  QueryPerformanceCounter(&ttimerUser1);
-  int ttimeUser = static_cast<int>
-                  ((ttimerUser1.QuadPart - ttimerUser0.QuadPart));
-#else
-  gettimeofday(&ttimerUser1, NULL);
-  int ttimeUser = TesttimevalDiff(ttimerUser1, ttimerUser0);
-#endif
+  ttimerUser1 = Clock::now();
+
+  chrono::duration<double, milli> d = ttimerUser1 - ttimerUser0;
+
+  int ttimeUser = static_cast<int>(1000. * d.count());
 
   ttimerUserCum += ttimeUser;
 
@@ -159,11 +146,7 @@ void TestStartTimerNo(int no)
   ttimerListCount[no]++;
   ttimerListSys0[no] = clock();
 
-#ifdef _WIN32
-  QueryPerformanceCounter(&ttimerListUser0[no]);
-#else
-  gettimeofday(&ttimerListUser0[no], NULL);
-#endif
+  ttimerListUser0[no] = Clock::now();
 }
 
 
@@ -171,15 +154,12 @@ void TestEndTimerNo(int no)
 {
   ttimerListSys1[no] = clock();
 
-#ifdef _WIN32
-  QueryPerformanceCounter(&ttimerListUser1[no]);
-  int timeUser = static_cast<int>
-                 ((ttimerListUser1[no].QuadPart - ttimerListUser0[no].QuadPart));
-#else
-  gettimeofday(&ttimerListUser1[no], NULL);
-  int timeUser = TesttimevalDiff(ttimerListUser1[no],
-                                 ttimerListUser0[no]);
-#endif
+  ttimerListUser1[no] = Clock::now();
+
+  chrono::duration<double, milli> d = ttimerListUser1[no] - 
+    ttimerListUser0[no];
+
+  int timeUser = static_cast<int>(1000. * d.count());
 
   ttimerListUserCum[no] += static_cast<long long>(timeUser);
 
@@ -194,15 +174,12 @@ void TestEndTimerNoAndComp(int no, int pred)
 {
   ttimerListSys1[no] = clock();
 
-#ifdef _WIN32
-  QueryPerformanceCounter(&ttimerListUser1[no]);
-  int timeUser = static_cast<int>
-                 ((ttimerListUser1[no].QuadPart - ttimerListUser0[no].QuadPart));
-#else
-  gettimeofday(&ttimerListUser1[no], NULL);
-  int timeUser = TesttimevalDiff(ttimerListUser1[no],
-                                 ttimerListUser0[no]);
-#endif
+  ttimerListUser1[no] = Clock::now();
+
+  chrono::duration<double, milli> d = ttimerListUser1[no] - 
+    ttimerListUser0[no];
+
+  int timeUser = static_cast<int>(1000. * d.count());
 
   ttimerListUserCum[no] += static_cast<long long>(timeUser);
 
@@ -262,35 +239,4 @@ void TestPrintTimerList()
     printf("\n");
   }
 }
-
-
-#ifndef _WIN32
-int TesttimevalDiff(timeval x, timeval y)
-{
-  /* Elapsed time, x-y, in milliseconds */
-  return 1000 * (x.tv_sec - y.tv_sec )
-         + (x.tv_usec - y.tv_usec) / 1000;
-}
-#endif
-
-
-long long tcounter[COUNTER_SLOTS];
-
-void TestInitCounter()
-{
-  for (int i = 0; i < COUNTER_SLOTS; i++)
-    tcounter[i] = 0;
-}
-
-
-void TestPrintCounter()
-{
-  for (int i = 0; i < COUNTER_SLOTS; i++)
-  {
-    if (tcounter[i])
-      printf("%d\t%12lld\n", i, tcounter[i]);
-  }
-  printf("\n");
-}
-
 

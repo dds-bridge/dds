@@ -23,7 +23,7 @@ CC		= g++
 # Use this one to get Windows multi-threading
 # CC_FLAGS	= -O3 -flto -mtune=generic
 # Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -mtune=generic
+CC_FLAGS	= -O3
 
 # These flags are not turned on by default, but DDS should pass them.
 # Turn them on below.
@@ -114,13 +114,13 @@ ITEST_SOURCE_FILES	=	\
 ITEST_OBJ_FILES	= $(subst .cpp,.o,$(ITEST_SOURCE_FILES))
 
 dtest:	$(DTEST_OBJ_FILES)
-	$(CC) $(CC_FULL_FLAGS) $(DTEST_OBJ_FILES) $(LD_FLAGS) $(LIB_FLAGS) -o $(DTEST)
+	$(CC) $(CC_FLAGS) $(DTEST_OBJ_FILES) $(LIB_FLAGS) -o $(DTEST)
 
 itest:	$(ITEST_OBJ_FILES)
 	$(CC) $(CC_FULL_FLAGS) $(ITEST_OBJ_FILES) $(LD_FLAGS) -o $(ITEST)
 
 %.o:	%.cpp
-	$(CC) $(CC_FULL_FLAGS) -c $< -o $*.o
+	$(CC) $(CC_FLAGS) -c $< -o $*.o
 
 depend:
 	makedepend -Y -- $(ITEST_SOURCE_FILES) $(DTEST).cpp

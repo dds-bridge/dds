@@ -11,25 +11,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <string>
 #include <algorithm>
+
 #include "../include/dll.h"
 #include "../include/portab.h"
 #include "testStats.h"
+#include "TestTimer.h"
+#include "dtest.h"
 
 using namespace std;
 
-
-#ifdef _WIN32
-  LARGE_INTEGER frequency, tu0, tu1;
-#else
-#include <sys/time.h>
-  timeval tu0, tu1;
-#endif
-
-#include "dtest.h"
-
+TestTimer timer;
 
 #define SOLVE_SIZE MAXNOOFBOARDS
 #define BOARD_SIZE MAXNOOFTABLES
@@ -48,18 +40,13 @@ bool GIBmode = false;
 #define QUOTE (static_cast<int>('"'))
 
 
-
-clock_t ts0, ts1;
-int tu , ts, ctu, cts;
-
-
 int realMain(int argc, char * argv[]);
 
 int realMain(int argc, char * argv[])
 {
   input_number = 0;
-  ctu = 0;
-  cts = 0;
+  timer.reset();
+  timer.setname("Hand stats");
 
   TestSetTimerName("Timer title");
 
@@ -86,9 +73,6 @@ int realMain(int argc, char * argv[])
 
   set_constants();
   main_identify();
-#ifdef _WIN32
-  QueryPerformanceFrequency(&frequency);
-#endif
 
   boardsPBN bop;
   solvedBoards solvedbdp;
@@ -166,10 +150,9 @@ int realMain(int argc, char * argv[])
     exit(0);
   }
 
-  print_times(number);
+  timer.printHands();
   TestPrintTimer();
   TestPrintTimerList();
-  TestPrintCounter();
 
   free(dealer_list);
   free(vul_list);
@@ -790,8 +773,6 @@ bool compare_FUT(futureTricks * fut1, futureTricks * fut2)
   if (fut1->cards != fut2->cards)
     return false;
 
-// TEMPNODE
-// printf(" %8d\n", fut1->nodes);
   for (int i = 0; i < fut1->cards; i++)
   {
     if (fut1->suit [i] != fut2->suit [i]) return false;
@@ -1017,7 +998,7 @@ void loop_solve(
       bop->mode[j] = 1;
     }
 
-    timer_start();
+    timer.start(count);
     int ret;
     if ((ret = SolveAllChunks(bop, solvedbdp, 1))
         != RETURN_NO_FAULT)
@@ -1025,14 +1006,10 @@ void loop_solve(
       printf("loop_solve i %i: Return %d\n", i, ret);
       exit(0);
     }
-    tu = timer_end();
+    timer.end();
 
 #ifdef BATCHTIMES
-    printf("%8d (%5.1f%%) %15d\n",
-           i + count,
-           100. * (i + count) / static_cast<double>(number),
-           tu);
-    fflush(stdout);
+    timer.printRunning(i+count, number);
 #endif
 
     for (int j = 0; j < count; j++)
@@ -1074,7 +1051,7 @@ bool loop_calc(
       strcpy(dealsp->deals[j].cards, deal_list[i + j].remainCards);
     }
 
-    timer_start();
+    timer.start(count);
     int ret;
     if ((ret = CalcAllTablesPBN(dealsp, -1, filter, resp, parp))
         != RETURN_NO_FAULT)
@@ -1082,14 +1059,10 @@ bool loop_calc(
       printf("loop_solve i %i: Return %d\n", i, ret);
       exit(0);
     }
-    tu = timer_end();
+    timer.end();
 
 #ifdef BATCHTIMES
-    printf("%8d (%5.1f%%) %15d\n",
-           i + count,
-           100. * (i + count) / static_cast<double>(number),
-           tu);
-    fflush(stdout);
+    timer.printRunning(i+count, number);
 #endif
 
     for (int j = 0; j < count; j++)
@@ -1210,7 +1183,7 @@ bool loop_play(
       playsp->plays[j] = play_list[i + j];
     }
 
-    timer_start();
+    timer.start(count);
     int ret;
     if ((ret = AnalyseAllPlaysPBN(bop, playsp, solvedplp, 1))
         != RETURN_NO_FAULT)
@@ -1218,14 +1191,10 @@ bool loop_play(
       printf("loop_play i %i: Return %d\n", i, ret);
       exit(0);
     }
-    tu = timer_end();
+    timer.end();
 
 #ifdef BATCHTIMES
-    printf("%8d (%5.1f%%) %15d\n",
-           i + count,
-           100. * (i + count) / static_cast<double>(number),
-           tu);
-    fflush(stdout);
+    timer.printRunning(i+count, number);
 #endif
 
     for (int j = 0; j < count; j++)
@@ -1246,81 +1215,6 @@ bool loop_play(
 #endif
 
   return true;
-}
-
-
-void print_times(int number)
-{
-  printf("%-20s %12d\n", "Number of hands", number);
-  if (number == 0) return;
-
-  if (ctu == 0)
-    printf("%-20s %12s\n", "User time (ms)", "zero");
-  else
-  {
-    printf("%-20s %12d\n", "User time (ms)", ctu);
-    printf("%-20s %12.2f\n", "Avg user time (ms)",
-           ctu / static_cast<float>(number));
-  }
-
-  if (cts == 0)
-    printf("%-20s %12s\n", "Syst time", "zero");
-  else
-  {
-    printf("%-20s %12d\n", "Syst time (ms)", cts);
-    printf("%-20s %12.2f\n", "Avg syst time (ms)",
-           cts / static_cast<float>(number));
-    printf("%-20s %12.2f\n", "Ratio",
-           cts / static_cast<float>(ctu));
-  }
-  printf("\n");
-}
-
-
-#ifndef _WIN32
-int timeval_diff(timeval x, timeval y)
-{
-  /* Elapsed time, x-y, in milliseconds */
-  return 1000 * (x.tv_sec - y.tv_sec )
-         + (x.tv_usec - y.tv_usec) / 1000;
-}
-#endif
-
-
-void timer_start()
-{
-  ts0 = clock();
-
-#ifdef _WIN32
-  QueryPerformanceCounter(&tu0);
-#else
-  gettimeofday(&tu0, NULL);
-#endif
-}
-
-
-int timer_end()
-{
-  ts1 = clock();
-
-#ifdef _WIN32
-  QueryPerformanceCounter(&tu1);
-  tu = static_cast<int>
-       ((tu1.QuadPart - tu0.QuadPart) * 1000. / frequency.QuadPart);
-#else
-  gettimeofday(&tu1, NULL);
-  tu = timeval_diff(tu1, tu0);
-#endif
-  ctu += tu;
-
-  ts = static_cast<int>
-       ( (1000 *
-          static_cast<long long>(ts1 - ts0) / 
-          static_cast<double>(CLOCKS_PER_SEC)));
-// TEMPNODE
-// printf("%8d", ts);
-  cts += ts;
-  return tu;
 }
 
 
