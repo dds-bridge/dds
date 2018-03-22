@@ -1,4 +1,4 @@
-SOURCE_FILES    =               \
+DDS_SOURCE_FILES    =           \
         ../src/dds.cpp          \
         ../src/ABsearch.cpp     \
         ../src/ABstats.cpp      \

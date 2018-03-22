@@ -1,0 +1,114 @@
+../src/dds.o: ../include/dll.h ../src/dds.h ../src/debug.h
+../src/dds.o: ../include/portab.h ../src/TransTable.h ../src/TimerList.h
+../src/dds.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/dds.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/dds.o: ../src/TimeStat.h ../src/Init.h
+../src/ABsearch.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/ABsearch.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/ABsearch.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/ABsearch.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/ABsearch.o: ../src/TimeStat.h ../src/threadmem.h ../src/QuickTricks.h
+../src/ABsearch.o: ../src/LaterTricks.h ../src/ABsearch.h
+../src/ABstats.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/ABstats.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/ABstats.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/ABstats.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/ABstats.o: ../src/TimeStat.h
+../src/CalcTables.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/CalcTables.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/CalcTables.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/CalcTables.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/CalcTables.o: ../src/TimeStat.h ../src/SolveBoard.h ../src/PBN.h
+../src/DealerPar.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/DealerPar.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/DealerPar.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/DealerPar.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/DealerPar.o: ../src/TimeStat.h
+../src/Init.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/Init.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/Init.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/Init.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/Init.o: ../src/TimeStat.h ../src/threadmem.h ../src/Init.h
+../src/Init.o: ../src/ABsearch.h ../src/System.h
+../src/LaterTricks.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/LaterTricks.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/LaterTricks.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/LaterTricks.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/LaterTricks.o: ../src/TimeStat.h ../src/threadmem.h
+../src/LaterTricks.o: ../src/LaterTricks.h
+../src/Moves.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/Moves.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/Moves.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/Moves.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/Moves.o: ../src/TimeStat.h ../src/ABsearch.h
+../src/Par.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/Par.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/Par.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/Par.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/Par.o: ../src/TimeStat.h
+../src/PlayAnalyser.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/PlayAnalyser.o: ../src/TransTable.h ../include/dll.h
+../src/PlayAnalyser.o: ../src/TimerList.h ../src/TimerGroup.h ../src/Timer.h
+../src/PlayAnalyser.o: ../src/ABstats.h ../src/Moves.h ../src/Scheduler.h
+../src/PlayAnalyser.o: ../src/TimeStatList.h ../src/TimeStat.h
+../src/PlayAnalyser.o: ../src/threadmem.h ../src/SolverIF.h ../src/System.h
+../src/PlayAnalyser.o: ../src/PBN.h
+../src/PBN.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/PBN.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/PBN.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/PBN.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/PBN.o: ../src/TimeStat.h ../src/PBN.h
+../src/QuickTricks.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/QuickTricks.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/QuickTricks.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/QuickTricks.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/QuickTricks.o: ../src/TimeStat.h ../src/threadmem.h
+../src/QuickTricks.o: ../src/QuickTricks.h
+../src/Scheduler.o: ../src/Scheduler.h ../src/TimeStatList.h
+../src/Scheduler.o: ../src/TimeStat.h ../src/dds.h ../src/debug.h
+../src/Scheduler.o: ../include/portab.h ../src/TransTable.h ../include/dll.h
+../src/Scheduler.o: ../src/TimerList.h ../src/TimerGroup.h ../src/Timer.h
+../src/Scheduler.o: ../src/ABstats.h ../src/Moves.h
+../src/SolveBoard.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/SolveBoard.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/SolveBoard.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/SolveBoard.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/SolveBoard.o: ../src/TimeStat.h ../src/threadmem.h ../src/SolverIF.h
+../src/SolveBoard.o: ../src/SolveBoard.h ../src/System.h ../src/PBN.h
+../src/SolverIF.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/SolverIF.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/SolverIF.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/SolverIF.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/SolverIF.o: ../src/TimeStat.h ../src/Init.h ../src/threadmem.h
+../src/SolverIF.o: ../src/ABsearch.h ../src/SolverIF.h
+../src/System.o: ../include/dll.h ../src/dds.h ../src/debug.h
+../src/System.o: ../include/portab.h ../src/TransTable.h ../src/TimerList.h
+../src/System.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/System.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/System.o: ../src/TimeStat.h ../src/System.h ../src/SolveBoard.h
+../src/System.o: ../src/PlayAnalyser.h
+../src/Timer.o: ../src/Timer.h ../include/portab.h
+../src/TimerGroup.o: ../src/TimerGroup.h ../src/Timer.h ../src/dds.h
+../src/TimerGroup.o: ../src/debug.h ../include/portab.h ../src/TransTable.h
+../src/TimerGroup.o: ../include/dll.h ../src/TimerList.h ../src/ABstats.h
+../src/TimerGroup.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/TimerGroup.o: ../src/TimeStat.h
+../src/TimerList.o: ../src/TimerList.h ../src/TimerGroup.h ../src/Timer.h
+../src/TimerList.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/TimerList.o: ../src/TransTable.h ../include/dll.h ../src/ABstats.h
+../src/TimerList.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/TimerList.o: ../src/TimeStat.h
+../src/TimeStat.o: ../include/portab.h ../src/TimeStat.h
+../src/TimeStatList.o: ../src/TimeStatList.h ../src/TimeStat.h
+../src/TimeStatList.o: ../include/portab.h
+../src/TransTable.o: ../src/dds.h ../src/debug.h ../include/portab.h
+../src/TransTable.o: ../src/TransTable.h ../include/dll.h ../src/TimerList.h
+../src/TransTable.o: ../src/TimerGroup.h ../src/Timer.h ../src/ABstats.h
+../src/TransTable.o: ../src/Moves.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/TransTable.o: ../src/TimeStat.h
+testcommon.o: ../include/dll.h ../include/portab.h testStats.h TestTimer.h
+testcommon.o: dtest.h
+TestTimer.o: TestTimer.h
+testStats.o: ../include/portab.h testStats.h
+itest.o: ../include/dll.h testcommon.h
+dtest.o: ../include/dll.h testcommon.h

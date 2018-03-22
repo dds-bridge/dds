@@ -46,7 +46,7 @@ DEBUG_ALL	= -DDDS_DEBUG_ALL
 TIMING		= -DDDS_TIMING
 SCHEDULER	= -DDDS_SCHEDULER
 
-# All that matters from no. 3 and no. 4 is the following.  Here you
+# All that matters from no. 2 and no. 3 is the following.  Here you
 # can add $(SMALL_MEMORY) etc.
 
 DDS_BEHAVIOR	=
@@ -141,6 +141,9 @@ install:
 	test -d ../examples || mkdir ../examples
 	cp $(DLL) $(DLLBASE).def ../test
 	cp $(DLL) $(DLLBASE).def ../examples
+
+# If you don't have a Linux-like setup, use "del" instead of "rm
+# and "copy" instead of "cp".
 
 include $(INCL_DEPENDS)
 

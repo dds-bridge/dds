@@ -137,5 +137,8 @@ install:
 	cp $(DLL) $(DLLBASE).def ../test
 	cp $(DLL) $(DLLBASE).def ../examples
 
+# If you don't have a Linux-like setup, use "del" instead of "rm"
+# and "copy" instead of "cp".
+
 include $(INCL_DEPENDS)
 

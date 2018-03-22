@@ -39,7 +39,7 @@ DEBUG_ALL	= -DDDS_DEBUG_ALL
 TIMING		= -DDDS_TIMING
 SCHEDULER	= -DDDS_SCHEDULER
 
-# All that matters from no. 3 and no. 4 is the following.  Here you
+# All that matters from no. 2 and no. 3 is the following.  Here you
 # can add $(SMALL_MEMORY) etc.
 
 DDS_BEHAVIOR	=

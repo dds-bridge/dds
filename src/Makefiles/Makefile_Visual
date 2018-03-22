@@ -140,5 +140,8 @@ install:
 	cp $(DLL) $(DLIB) ../test
 	cp $(DLL) $(DLIB) ../examples
 
+# If you don't have a Linux-like setup, use "del" instead of "rm"
+# and "copy" instead of "cp".
+
 include $(INCL_DEPENDS)
 
