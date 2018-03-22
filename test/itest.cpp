@@ -17,11 +17,11 @@
 
 int main(int argc, char * argv[])
 {
-  int ncores = 0;
+  int nthreads = 0;
   if (argc >= 4)
-    ncores = atoi(argv[3]);
+    nthreads = atoi(argv[3]);
 
-  SetMaxThreads(ncores);
+  SetMaxThreads(nthreads);
 
   if (argc >= 5)
     SetThreading(threadingCode(argv[4]));

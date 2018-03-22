@@ -60,6 +60,7 @@ class System
       int& patch) const;
     string GetSystem(int& sys) const;
     string GetCompiler(int& comp) const;
+    string GetCores(int& comp) const;
     string GetConstructor(int& cons) const;
     string GetThreading(int &thr) const;
 

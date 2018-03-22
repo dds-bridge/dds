@@ -174,6 +174,7 @@ void System::GetHardware(
 {
   kilobytesFree = 0;
   ncores = 1;
+  (void) System::GetCores(ncores);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
   // Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
@@ -513,6 +514,23 @@ string System::GetConstructor(int& cons) const
 }
 
 
+string System::GetCores(int& cores) const
+{
+#if defined(_WIN32) || defined(__CYGWIN__)
+  SYSTEM_INFO sysinfo;
+  GetSystemInfo(&sysinfo);
+  cores = static_cast<int>(sysinfo.dwNumberOfProcessors);
+#elif defined(__APPLE__) || defined(__linux__)
+  cores = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
+
+  // TODO Think about thread::hardware_concurrency().
+  // This should be standard in C++11.
+
+  return to_string(cores);
+}
+
+
 string System::GetThreading(int& thr) const
 {
   string st = "";
@@ -550,19 +568,23 @@ string System::str(DDSInfo * info) const
   ss << left << setw(13) << "Constructor" <<
     setw(20) << right << strConstructor << "\n";
 
-  const string strThreading = System::GetThreading(info->threading);
-  ss << left << setw(9) << "Threading" <<
-    setw(24) << right << strThreading << "\n";
-
-  info->noOfThreads = numThreads;
-  ss << left << setw(17) << "Number of threads" <<
-    setw(16) << right << numThreads << "\n";
-
   const string strVersion = System::GetVersion(info->major,
     info->minor, info->patch);
   ss << left << setw(13) << "Version" <<
     setw(20) << right << strVersion << "\n";
   strcpy(info->versionString, strVersion.c_str());
+
+  const string strCores = System::GetCores(info->numCores);
+  ss << left << setw(17) << "Number of cores" <<
+    setw(16) << right << strCores << "\n";
+
+  info->noOfThreads = numThreads;
+  ss << left << setw(17) << "Number of threads" <<
+    setw(16) << right << numThreads << "\n";
+
+  const string strThreading = System::GetThreading(info->threading);
+  ss << left << setw(9) << "Threading" <<
+    setw(24) << right << strThreading << "\n";
 
   const string st = ss.str();
   strcpy(info->systemString, st.c_str());

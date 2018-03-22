@@ -1,7 +1,7 @@
 # --------------------- INFORMATION --------------------------------
 
-# This the test Makefile for Windows and the mingw GNU g++
-# compiler.  It assumes a Unix-like setup for some commands.
+# This the test Makefile for MacOS and the clang compiler.
+# It assumes a Unix-like setup for some commands.
 
 # The dtest program itself does not use multi-threading, 
 # but the library might, depending on how it was compiled.
@@ -15,7 +15,12 @@
 # If you need to add something for the threading system, this is
 # the place.
 
-THREAD_LINK	= 
+# This is only necessary for the .a static library, actually.
+
+CC_BOOST	= /usr/local/Cellar/boost/1.56.0
+CC_BOOST_LINK	= -L$(CC_BOOST)/lib -lboost_system -lboost_thread-mt
+
+THREAD_LINK	= $(CC_BOOST_LINK)
 
 # ----------------------- OFTEN OK    ------------------------------
 
@@ -41,15 +46,13 @@ WARN_FLAGS	= 		\
 	-Wctor-dtor-privacy 	\
 	-Wdisabled-optimization \
 	-Winit-self 		\
-	-Wlogical-op 		\
 	-Wmissing-declarations 	\
 	-Wmissing-include-dirs 	\
-	-Wnoexcept 		\
+	-Wcomment 		\
 	-Wold-style-cast 	\
 	-Woverloaded-virtual 	\
 	-Wredundant-decls 	\
 	-Wsign-promo 		\
-	-Wstrict-null-sentinel 	\
 	-Wstrict-overflow=1 	\
 	-Wswitch-default -Wundef \
 	-Werror 		\
@@ -58,21 +61,16 @@ WARN_FLAGS	= 		\
 	-Wno-long-long		\
 	-Wno-format
 
-COMPILE_FLAGS	= -O3 $(WARN_FLAGS)
+COMPILE_FLAGS	= -O3 -flto -mtune=generic \
+		$(WARN_FLAGS)
 
 DLLBASE		= dds
-DLL 		= $(DLLBASE).dll
+STATIC_LIB	= lib$(DLLBASE).a
 DLIB 		= $(DLLBASE).lib
-EXPORTER	= Exports.def
 
 LINK1_FLAGS	= 
-LINK2_FLAGS	= 		\
-	-Wl,--dynamicbase 	\
-	-Wl,--nxcompat 		\
-	-Wl,--no-seh 		\
-	-Wl,--enable-stdcall-fixup \
-	$(THREAD_LINK) \
-	-L. -l$(DLLBASE)
+LINK2_FLAGS	= - $(THREAD_LINK) \
+		-L. -l$(DLLBASE)
 
 # This is in addition to $(DTEST).cpp
 
@@ -96,7 +94,7 @@ ITEST_OBJ_FILES	= $(subst .cpp,.o,$(ITEST_SOURCE_FILES))
 
 dtest:	$(DTEST_OBJ_FILES)
 	$(CC) $(COMPILE_FLAGS) $(LINK1_FLAGS) $(DTEST_OBJ_FILES) \
-	$(LINK2_FLAGS) -o $(DTEST)
+	$(LINK2_FLAGS)) -o $(DTEST)
 
 itest:	$(ITEST_OBJ_FILES)
 	$(CC) $(COMPILE_FLAGS) $(LINK1_FLAGS) $(ITEST_OBJ_FILES) \
@@ -109,11 +107,8 @@ depend:
 	makedepend -Y -- $(ITEST_SOURCE_FILES) $(DTEST).cpp
 
 clean:
-	rm -f *.o *.exe $(DLLBASE).def $(DLL)
-
-# If you don't have a Linux-like setup, use "del" instead of "rm".
+	rm -f $(ITEST_OBJ_FILES) $(DTEST).o \
+	$(DTEST) $(ITEST) $(STATIC_LIB)
 
 include $(INCL_DEPENDS)
-
-# DO NOT DELETE
 

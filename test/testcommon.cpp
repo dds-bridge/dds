@@ -53,7 +53,7 @@ int realMain(int argc, char * argv[])
   if (argc != 3 && argc != 4 && argc != 5)
   {
     printf(
-      "Usage: dtest file.txt solve|calc|par|dealerpar|play [ncores [threading]]\n");
+      "Usage: dtest file.txt solve|calc|par|dealerpar|play [nthreads [threading]]\n");
     return 1;
   }
 

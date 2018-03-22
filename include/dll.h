@@ -355,6 +355,8 @@ struct DDSInfo
   // Currently 0 = none, 1 = DllMain, 2 = Unix-style
   int constructor;
 
+  int numCores;
+
   // Currently 
   // 0 = none, 
   // 1 = Windows (native), 

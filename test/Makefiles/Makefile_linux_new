@@ -1,7 +1,7 @@
 # --------------------- INFORMATION --------------------------------
 
-# This the test Makefile for Windows and the mingw GNU g++
-# compiler.  It assumes a Unix-like setup for some commands.
+# This the test Makefile for Linux and the GNU g++ compiler.
+# It assumes a Unix-like setup for some commands.
 
 # The dtest program itself does not use multi-threading, 
 # but the library might, depending on how it was compiled.
@@ -15,7 +15,9 @@
 # If you need to add something for the threading system, this is
 # the place.
 
-THREAD_LINK	= 
+CC_BOOST_LINK	= -lboost_system -lboost_thread
+
+THREAD_LINK	= $(CC_BOOST_LINK)
 
 # ----------------------- OFTEN OK    ------------------------------
 
@@ -56,23 +58,20 @@ WARN_FLAGS	= 		\
 	-Wno-unused 		\
 	-Wno-unknown-pragmas 	\
 	-Wno-long-long		\
+        -Wno-odr                \
 	-Wno-format
 
-COMPILE_FLAGS	= -O3 $(WARN_FLAGS)
+COMPILE_FLAGS	= -O3 -flto -fopenmp -mtune=generic \
+		$(WARN_FLAGS)
 
 DLLBASE		= dds
-DLL 		= $(DLLBASE).dll
+STATIC_LIB	= lib$(DLLBASE).a
 DLIB 		= $(DLLBASE).lib
-EXPORTER	= Exports.def
 
 LINK1_FLAGS	= 
-LINK2_FLAGS	= 		\
-	-Wl,--dynamicbase 	\
-	-Wl,--nxcompat 		\
-	-Wl,--no-seh 		\
-	-Wl,--enable-stdcall-fixup \
-	$(THREAD_LINK) \
-	-L. -l$(DLLBASE)
+LINK2_FLAGS	= -Wl,-rpath=. 	\
+		$(THREAD_LINK) \
+		-L. -l$(DLLBASE)
 
 # This is in addition to $(DTEST).cpp
 
@@ -109,11 +108,8 @@ depend:
 	makedepend -Y -- $(ITEST_SOURCE_FILES) $(DTEST).cpp
 
 clean:
-	rm -f *.o *.exe $(DLLBASE).def $(DLL)
-
-# If you don't have a Linux-like setup, use "del" instead of "rm".
+	rm -f $(ITEST_OBJ_FILES) $(DTEST).o \
+	$(DTEST) $(ITEST) $(STATIC_LIB)
 
 include $(INCL_DEPENDS)
-
-# DO NOT DELETE
 
