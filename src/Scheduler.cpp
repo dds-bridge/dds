@@ -17,23 +17,9 @@
 
 Scheduler::Scheduler()
 {
-  // This can be HCP, for instance. Currently it is close to
-  // 6 - 4 - 2 - 1 - 0.5 for A-K-Q-J-T, but with 6.5 for the ace
-  // in order to make the sum come out to 28, an even number, so
-  // that the average number is an integer.
-
-  for (int i = 0; i < 8192; i++)
-  {
-    highCards[i] = 0;
-
-    if (i & (1 << 12)) highCards[i] += 13;
-    if (i & (1 << 11)) highCards[i] += 8;
-    if (i & (1 << 10)) highCards[i] += 4;
-    if (i & (1 << 9)) highCards[i] += 2;
-    if (i & (1 << 8)) highCards[i] += 1;
-  }
-
   numHands = 0;
+
+  Scheduler::InitHighCards();
 
 #ifdef DDS_SCHEDULER
   Scheduler::InitTimes();
@@ -47,6 +33,34 @@ Scheduler::Scheduler()
 
   timersThread.resize(MAXNOOFTHREADS);
 #endif
+}
+
+
+void Scheduler::InitHighCards()
+{
+  // highCards[i] is a point value of a given suit holding i.
+  // This can be HCP, for instance. Currently it is close to
+  // 6 - 4 - 2 - 1 - 0.5 for A-K-Q-J-T, but with 6.5 for the ace
+  // in order to make the sum come out to 28, an even number, so
+  // that the average number is an integer.
+
+  highCards.resize(1 << 13);
+  const unsigned pA = 1 << 12;
+  const unsigned pK = 1 << 11;
+  const unsigned pQ = 1 << 10;
+  const unsigned pJ = 1 << 9;
+  const unsigned pT = 1 << 8;
+
+  for (unsigned suit = 0; suit < (1 << 13); suit++)
+  {
+    int j = 0;
+    if (suit & pA) j += 13;
+    if (suit & pK) j += 8;
+    if (suit & pQ) j += 4;
+    if (suit & pJ) j += 2;
+    if (suit & pT) j += 1;
+    highCards[suit] = j;
+  }
 }
 
 
@@ -96,6 +110,13 @@ void Scheduler::Reset()
   }
 
   currGroup = -1;
+}
+
+
+void Scheduler::RegisterThreads(
+  const int n)
+{
+  UNUSED(n);
 }
 
 

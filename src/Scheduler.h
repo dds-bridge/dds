@@ -97,7 +97,9 @@ class Scheduler
 
     int numHands;
 
-    int highCards[8192];
+    vector<int> highCards;
+
+    void InitHighCards();
 
     int Strength(
       deal * dl);
@@ -156,6 +158,8 @@ class Scheduler
     Scheduler();
 
     ~Scheduler();
+
+    void RegisterThreads(const int n);
 
     void RegisterTraceDepth(
       playTracesBin * plp,
