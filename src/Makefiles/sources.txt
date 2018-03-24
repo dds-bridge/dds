@@ -6,6 +6,7 @@ SOURCE_FILES    =               \
         DealerPar.cpp           \
         Init.cpp                \
         LaterTricks.cpp         \
+        Memory.cpp              \
         Moves.cpp               \
         Par.cpp                 \
         PlayAnalyser.cpp        \
