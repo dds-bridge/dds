@@ -135,7 +135,6 @@ TransTable::TransTable()
 
   TTInUse = 0;
 
-  strcpy(fname, "");
   fp = stdout;
 }
 
@@ -2150,17 +2149,12 @@ void TransTable::SetToPartialHands(
 }
 
 
-void TransTable::SetFile(char * ourFname)
+void TransTable::SetFile(const string& ourFname)
 {
-  if (strlen(ourFname) > TT_LINE_LEN)
-    return;
-
   if (fp != stdout) // Already set
     return;
 
-  strncpy(fname, ourFname, strlen(ourFname));
-
-  fp = fopen(fname, "w");
+  fp = fopen(ourFname.c_str(), "w");
   if (! fp)
     fp = stdout;
 }

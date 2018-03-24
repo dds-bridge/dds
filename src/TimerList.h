@@ -78,6 +78,8 @@ class TimerList
 {
   private:
 
+    string fname;
+
     vector<TimerGroup> timerGroups;
 
   public:
@@ -86,6 +88,8 @@ class TimerList
     ~TimerList();
 
     void Reset();
+
+    void SetFile(const string& fnameIn);
 
     void Start(
       const unsigned groupno,
@@ -97,7 +101,7 @@ class TimerList
 
     bool Used() const;
 
-    void PrintStats(const int thrId) const;
+    void PrintStats() const;
 };
 
 #endif

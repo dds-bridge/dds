@@ -369,28 +369,56 @@ void InitDebugFiles()
   {
     localVarType * thrp = &localVar[thrId];
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
+
 #ifdef DDS_TOP_LEVEL
-    InitFileTopLevel(thrp, DDS_TOP_LEVEL_PREFIX + send);
+    const string stop = DDS_TOP_LEVEL_PREFIX + send;
+    thrp->fpTopLevel = fopen(stop.c_str(), "w");
+    if (! thrp->fpTopLevel)
+      thrp->fpTopLevel = stdout;
 #endif
 
 #ifdef DDS_AB_STATS
-    InitFileABstats(thrp, DDS_AB_STATS_PREFIX + send);
+    thrp->ABStats.SetFile(DDS_AB_STATS_PREFIX + send);
+    thrp->ABStats.SetName(AB_TARGET_REACHED, "Target decided");
+    thrp->ABStats.SetName(AB_DEPTH_ZERO , "depth == 0");
+    thrp->ABStats.SetName(AB_QUICKTRICKS , "QuickTricks");
+    thrp->ABStats.SetName(AB_LATERTRICKS , "LaterTricks");
+    thrp->ABStats.SetName(AB_MAIN_LOOKUP , "Main lookup");
+    thrp->ABStats.SetName(AB_SIDE_LOOKUP , "Other lookup");
+    thrp->ABStats.SetName(AB_MOVE_LOOP , "Move trial");
 #endif
 
 #ifdef DDS_AB_HITS
-    InitFileABhits(thrId);
-#endif
+    char fname[DDS_FNAME_LEN];
+    sprintf(fname, "%s%d%s",
+            DDS_AB_HITS_RETRIEVED_PREFIX,
+            thrId,
+            DDS_DEBUG_SUFFIX);
 
-#ifdef DDS_TT_STATS
-    InitFileTTstats(thrId);
+    thrp->fpRetrieved = fopen(fname, "w");
+    if (! thrp->fpRetrieved)
+      thrp->fpRetrieved = stdout;
+
+    sprintf(fname, "%s%d%s",
+            DDS_AB_HITS_STORED_PREFIX,
+            thrId,
+            DDS_DEBUG_SUFFIX);
+
+    thrp->fpStored = fopen(fname, "w");
+    if (! thrp->fpStored)
+      thrp->fpStored = stdout;
 #endif
 
 #ifdef DDS_TIMING
-    InitFileTimer(thrId);
+    thrp->timerList.SetFile(DDS_TIMING_PREFIX + send);
+#endif
+
+#ifdef DDS_TT_STATS
+    thrp->transTable.SetFile(DDS_TT_STATS_PREFIX + send);
 #endif
 
 #ifdef DDS_MOVES
-    InitFileMoves(thrId);
+    thrp->moves.SetFile(DDS_MOVES_PREFIX + send);
 #endif
   }
 
@@ -402,14 +430,20 @@ void InitDebugFiles()
 
 void CloseDebugFiles()
 {
-  for (int k = 0; k < noOfThreads; k++)
+  for (int thrId = 0; thrId < noOfThreads; thrId++)
   {
+    localVarType * thrp = &localVar[thrId];
 #ifdef DDS_TOP_LEVEL
-    CloseFileTopLevel(k);
+    if (thrp->fpTopLevel != stdout && thrp->fpTopLevel != nullptr)
+      fclose(thrp->fpTopLevel);
 #endif
 
 #ifdef DDS_AB_HITS
-    CloseFileABhits(k);
+    if (thrp->fpRetrieved != stdout && thrp->fpRetrieved != nullptr)
+      fclose(thrp->fpRetrieved);
+
+    if (thrp->fpStored != stdout && thrp->fpStored != nullptr)
+      fclose(thrp->fpStored);
 #endif
   }
 }

@@ -77,34 +77,6 @@ evalType Evaluate(
   int trump,
   localVarType * thrp);
 
-void InitFileTopLevel(
-  localVarType * thrp,
-  const string& fname);
-
-void InitFileABstats(
-  localVarType * thrp,
-  const string& fname);
-
-void InitFileABhits(
-  int thrId);
-
-void InitFileTTstats(
-  int thrId);
-
-void InitFileTimer(
-  int thrId);
-
-void InitFileMoves(
-  int thrId);
-
-void InitFileScheduler();
-
-void CloseFileTopLevel(
-  int thrId);
-
-void CloseFileABhits(
-  int thrId);
-
 void DumpTopLevel(
   struct localVarType * thrp,
   int tricks,

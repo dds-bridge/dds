@@ -601,7 +601,7 @@ SOLVER_STATS:
   }
 
 #ifdef DDS_TIMING
-  thrp->timerList.PrintStats(thrId);
+  thrp->timerList.PrintStats();
 #endif
 
 #ifdef DDS_TT_STATS
@@ -716,7 +716,7 @@ int SolveSameBoard(
                   ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
-  thrp->timerList.PrintStats(thrId);
+  thrp->timerList.PrintStats();
 #endif
 
 #ifdef DDS_TT_STATS
@@ -869,7 +869,7 @@ int AnalyseLaterBoard(
                   ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
-  thrp->timerList.PrintStats(thrId);
+  thrp->timerList.PrintStats();
 #endif
 
 #ifdef DDS_TT_STATS

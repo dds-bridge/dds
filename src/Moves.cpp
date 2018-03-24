@@ -80,7 +80,6 @@ Moves::Moves()
     trickFuncSuitTable.list[i].count = 0;
   }
 
-  strcpy(fname, "");
   fp = stdout;
 
   WeightList[ 4] = &Moves::WeightAllocNTNotvoid1;
@@ -100,17 +99,12 @@ Moves::Moves()
 }
 
 
-void Moves::SetFile(char * ourFname)
+void Moves::SetFile(const string& ourFname)
 {
-  if (strlen(ourFname) > 80)
-    return;
-
   if (fp != stdout) // Already set
     return;
 
-  strncpy(fname, ourFname, strlen(ourFname));
-
-  fp = fopen(fname, "w");
+  fp = fopen(ourFname.c_str(), "w");
   if (! fp)
     fp = stdout;
 }

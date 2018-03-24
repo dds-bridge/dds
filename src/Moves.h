@@ -115,8 +115,6 @@ class Moves
 
     FILE * fp;
 
-    char fname[80];
-
 
     void WeightAllocTrump0(
       pos * posPoint,
@@ -211,7 +209,7 @@ class Moves
 
     ~Moves();
 
-    void SetFile(char * fname);
+    void SetFile(const string& fname);
 
     void Init(
       int tricks,

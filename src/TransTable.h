@@ -19,8 +19,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include "dds.h"
 #include "../include/dll.h"
+
+using namespace std;
 
 // ResetMemory reasons
 #define UNKNOWN_REASON 0
@@ -335,8 +338,6 @@ class TransTable
 
     FILE * fp;
 
-    char fname[TT_LINE_LEN];
-
     // Really the maximum of BLOCKS_PER_ENTRY and DISTS_PER_ENTRY
     int suitHist[BLOCKS_PER_ENTRY + 1],
                         suitWraps;
@@ -460,8 +461,7 @@ class TransTable
 
     // Debug functions
 
-    void SetFile(
-      char * fname);
+    void SetFile(const string& fname);
 
     void PrintSuits(
       int trick,

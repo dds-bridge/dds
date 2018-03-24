@@ -33,6 +33,8 @@ TimerList::~TimerList()
 
 void TimerList::Reset()
 {
+  fname = "";
+
   timerGroups.resize(TIMER_GROUPS);
 
   timerGroups[TIMER_NO_AB].SetNames("AB");
@@ -45,6 +47,12 @@ void TimerList::Reset()
   timerGroups[TIMER_NO_MOVEGEN].SetNames("MoveGen");
   timerGroups[TIMER_NO_LOOKUP].SetNames("Lookup");
   timerGroups[TIMER_NO_BUILD].SetNames("Build");
+}
+
+
+void TimerList::SetFile(const string& fnameIn)
+{
+  fname = fnameIn;
 }
 
 
@@ -79,7 +87,7 @@ bool TimerList::Used() const
 }
 
 
-void TimerList::PrintStats(const int thrId) const
+void TimerList::PrintStats() const
 {
   if (! TimerList::Used())
     return;
@@ -109,8 +117,6 @@ void TimerList::PrintStats(const int thrId) const
     sumTotal += t;
   }
 
-  const string fname = DDS_TIMING_PREFIX + to_string(thrId) + 
-    DDS_DEBUG_SUFFIX;
   ofstream fout;
   fout.open(fname);
 
