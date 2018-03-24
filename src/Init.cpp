@@ -368,13 +368,13 @@ void InitDebugFiles()
   for (int thrId = 0; thrId < noOfThreads; thrId++)
   {
     localVarType * thrp = &localVar[thrId];
+    const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 #ifdef DDS_TOP_LEVEL
-    InitFileTopLevel(thrId);
+    InitFileTopLevel(thrp, DDS_TOP_LEVEL_PREFIX + send);
 #endif
 
 #ifdef DDS_AB_STATS
-    InitFileABstats(thrp, 
-      DDS_AB_STATS_PREFIX + to_string(thrId) + DDS_DEBUG_SUFFIX);
+    InitFileABstats(thrp, DDS_AB_STATS_PREFIX + send);
 #endif
 
 #ifdef DDS_AB_HITS

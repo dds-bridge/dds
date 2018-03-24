@@ -18,7 +18,10 @@
 
 ABstats::ABstats()
 {
+  fname = "";
+  fileSet = false;
   fp = stdout;
+
   ABstats::Reset();
   ABstats::ResetCum();
 }
@@ -76,14 +79,9 @@ void ABstats::ResetCum()
 }
 
 
-void ABstats::SetFile(const string& fname)
+void ABstats::SetFile(const string& fnameIn)
 {
-  if (fp != stdout) // Already set
-    return;
-
-  fp = fopen(fname.c_str(), "w");
-  if (! fp)
-    fp = stdout;
+  fname = fnameIn;
 }
 
 
@@ -127,6 +125,17 @@ int ABstats::GetNodes()
 
 void ABstats::PrintStats()
 {
+  if (! fileSet)
+  {
+    if (fname != "")
+    {
+      fp = fopen(fname.c_str(), "w");
+      if (! fp)
+        fp = stdout;
+    }
+    fileSet = true;
+  }
+
   int sumScore1 = 0 , sumScore0 = 0;
   int psumScore1 = 0 , psumScore0 = 0;
   int sum[DDS_AB_POS], psum[DDS_AB_POS];

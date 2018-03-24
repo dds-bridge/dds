@@ -107,18 +107,12 @@ const int handDelta[DDS_SUITS] = { 256, 16, 1, 0 };
 // at some point, but it's so similar to the code here that I
 // leave it in this file for now.
 
-void InitFileTopLevel(int thrId)
+void InitFileTopLevel(
+  localVarType * thrp,
+  const string& fname)
 {
 #ifdef DDS_TOP_LEVEL
-  localVarType * thrp = &localVar[thrId];
-
-  char fname[DDS_FNAME_LEN];
-  sprintf(fname, "%s%d%s",
-          DDS_TOP_LEVEL_PREFIX,
-          thrId,
-          DDS_DEBUG_SUFFIX);
-
-  thrp->fpTopLevel = fopen(fname, "w");
+  thrp->fpTopLevel = fopen(fname.c_str(), "w");
   if (! thrp->fpTopLevel)
     thrp->fpTopLevel = stdout;
 #else

@@ -50,6 +50,9 @@ class ABstats
 {
   private:
     FILE * fp;
+    string fname;
+    bool fileSet;
+
     char name[DDS_AB_POS][40];
     int counter[DDS_AB_POS][DDS_MAXDEPTH];
     int counterCum[DDS_AB_POS];
@@ -68,7 +71,7 @@ class ABstats
     ~ABstats();
     void Reset();
     void ResetCum();
-    void SetFile(const string& fname);
+    void SetFile(const string& fnameIn);
     void SetName(int no, char * name);
     void IncrPos(int no, bool side, int depth);
     void IncrNode(int depth);

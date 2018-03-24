@@ -78,7 +78,8 @@ evalType Evaluate(
   localVarType * thrp);
 
 void InitFileTopLevel(
-  int thrId);
+  localVarType * thrp,
+  const string& fname);
 
 void InitFileABstats(
   localVarType * thrp,
