@@ -83,6 +83,9 @@ int STDCALL SolveBoard(
   futureTricks * futp,
   int thrId)
 {
+  if (! sysdep.ThreadOK(thrId))
+    return RETURN_THREAD_INDEX;
+
   return SolveBoardInternal(&localVar[thrId], dl, target,
     solutions, mode, futp);
 }
@@ -646,10 +649,10 @@ SOLVER_DONE:
 
 
 int SolveSameBoard(
+  struct localVarType * thrp,
   deal dl,
   futureTricks * futp,
-  int hint,
-  int thrId)
+  int hint)
 {
   // Specialized function for SolveChunkDDtable for repeat solves.
   // No further parameter checks! This function makes heavy reuse
@@ -657,8 +660,6 @@ int SolveSameBoard(
   // corresponds to:
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
-
-  localVarType * thrp = &localVar[thrId];
 
   int iniDepth = thrp->iniDepth;
   int trick = (iniDepth + 3) >> 2;
@@ -753,12 +754,12 @@ int SolveSameBoard(
 
 
 int AnalyseLaterBoard(
+  localVarType * thrp,
   int leadHand,
   moveType * move,
   int hint,
   int hintDir,
-  futureTricks * futp,
-  int thrId)
+  futureTricks * futp)
 {
   // Specialized function for PlayAnalyser for cards after the
   // opening lead. No further parameter checks! This function
@@ -766,8 +767,6 @@ int AnalyseLaterBoard(
   // various places. It corresponds to:
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
-
-  localVarType * thrp = &localVar[thrId];
 
   int iniDepth = --thrp->iniDepth;
   int cardCount = iniDepth + 4;

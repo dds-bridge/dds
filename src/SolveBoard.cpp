@@ -24,7 +24,7 @@ extern System sysdep;
 
 
 void SolveChunkCommon(
-  const int thid)
+  const int thrId)
 {
   futureTricks fut[MAXNOOFBOARDS];
   int index;
@@ -32,7 +32,7 @@ void SolveChunkCommon(
 
   while (1)
   {
-    st = scheduler.GetNumber(thid);
+    st = scheduler.GetNumber(thrId);
     index = st.number;
     if (index == -1)
       break;
@@ -46,22 +46,22 @@ void SolveChunkCommon(
         param.bop->deals[index ].first ==
         param.bop->deals[st.repeatOf].first)
     {
-      START_THREAD_TIMER(thid);
+      START_THREAD_TIMER(thrId);
       param.solvedp->solvedBoard[index] = fut[ st.repeatOf ];
-      END_THREAD_TIMER(thid);
+      END_THREAD_TIMER(thrId);
       continue;
     }
     else
     {
-      START_THREAD_TIMER(thid);
+      START_THREAD_TIMER(thrId);
       int res = SolveBoard(
                   param.bop->deals[index],
                   param.bop->target[index],
                   param.bop->solutions[index],
                   param.bop->mode[index],
                   &fut[index],
-                  thid);
-      END_THREAD_TIMER(thid);
+                  thrId);
+      END_THREAD_TIMER(thrId);
 
       if (res == 1)
         param.solvedp->solvedBoard[index] = fut[index];
@@ -73,22 +73,23 @@ void SolveChunkCommon(
 
 
 void SolveChunkDDtableCommon(
-  const int thid)
+  const int thrId)
 {
+  struct localVarType * thrp = &localVar[thrId];
   futureTricks fut[MAXNOOFBOARDS];
   int index;
   schedType st;
 
   while (1)
   {
-    st = scheduler.GetNumber(thid);
+    st = scheduler.GetNumber(thrId);
     index = st.number;
     if (index == -1)
       break;
 
     if (st.repeatOf != -1)
     {
-      START_THREAD_TIMER(thid);
+      START_THREAD_TIMER(thrId);
       for (int k = 0; k < chunk; k++)
       {
         param.bop->deals[index].first = k;
@@ -96,20 +97,20 @@ void SolveChunkDDtableCommon(
         param.solvedp->solvedBoard[index].score[k] =
           param.solvedp->solvedBoard[ st.repeatOf ].score[k];
       }
-      END_THREAD_TIMER(thid);
+      END_THREAD_TIMER(thrId);
       continue;
     }
 
     param.bop->deals[index].first = 0;
 
-    START_THREAD_TIMER(thid);
+    START_THREAD_TIMER(thrId);
     int res = SolveBoard(
                 param.bop->deals[index],
                 param.bop->target[index],
                 param.bop->solutions[index],
                 param.bop->mode[index],
                 &fut[index],
-                thid);
+                thrId);
 
     // SH: I'm making a terrible use of the fut structure here.
 
@@ -126,10 +127,10 @@ void SolveChunkDDtableCommon(
       param.bop->deals[index].first = k; // Next declarer
 
       res = SolveSameBoard(
+              thrp,
               param.bop->deals[index],
               &fut[index],
-              hint,
-              thid);
+              hint);
 
       if (res == 1)
         param.solvedp->solvedBoard[index].score[k] =
@@ -137,7 +138,7 @@ void SolveChunkDDtableCommon(
       else
         param.error = res;
     }
-    END_THREAD_TIMER(thid);
+    END_THREAD_TIMER(thrId);
   }
 }
 

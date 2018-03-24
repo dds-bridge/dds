@@ -20,17 +20,17 @@ int SolveBoardInternal(
   futureTricks * futp);
 
 int SolveSameBoard(
+  struct localVarType * thrp,
   deal dl,
   futureTricks * futp,
-  int hint,
-  int thrId);
+  int hint);
 
 int AnalyseLaterBoard(
+  struct localVarType * thrp,
   int leadHand,
   moveType * move,
   int hint,
   int hintDir,
-  futureTricks * futp,
-  int thrp);
+  futureTricks * futp);
 
 #endif

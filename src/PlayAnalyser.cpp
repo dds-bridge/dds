@@ -27,7 +27,7 @@ paramType playparam;
 playparamType traceparam;
 extern System sysdep;
 
-void PlayChunkCommon(const int thid);
+void PlayChunkCommon(const int thrId);
 
 
 int STDCALL AnalysePlayBin(
@@ -36,17 +36,20 @@ int STDCALL AnalysePlayBin(
   solvedPlay * solvedp,
   int thrId)
 {
-  moveType move;
-  futureTricks fut;
+  if (! sysdep.ThreadOK(thrId))
+    return RETURN_THREAD_INDEX;
 
   struct localVarType * thrp = &localVar[thrId];
+
+  moveType move;
+  futureTricks fut;
 
   int ret = SolveBoardInternal(thrp, dl, -1, 1, 1, &fut);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
-  const int numTricks = ((localVar[thrId].iniDepth + 3) >> 2) + 1;
-  const int numCardsPlayed = ((48 - localVar[thrId].iniDepth) % 4) + 1;
+  const int numTricks = ((thrp->iniDepth + 3) >> 2) + 1;
+  const int numCardsPlayed = ((48 - thrp->iniDepth) % 4) + 1;
 
   int last_trick = (play.number + 3) / 4;
   int last_card = ((play.number + 3) % 4) + 1;
@@ -183,8 +186,8 @@ int STDCALL AnalysePlayBin(
       if (usingCurrent)
         continue;
 
-      if ((ret = AnalyseLaterBoard(dl.first,
-                                   &move, hint, hintDir, &fut, thrId))
+      if ((ret = AnalyseLaterBoard(thrp, dl.first, &move, hint, 
+        hintDir, &fut))
           != RETURN_NO_FAULT)
       {
 #if DEBUG
@@ -247,7 +250,7 @@ int STDCALL AnalysePlayPBN(
 }
 
 
-void PlayChunkCommon(const int thid)
+void PlayChunkCommon(const int thrId)
 {
   solvedPlay solved[MAXNOOFBOARDS];
   int index;
@@ -255,7 +258,7 @@ void PlayChunkCommon(const int thid)
 
   while (1)
   {
-    st = scheduler.GetNumber(thid);
+    st = scheduler.GetNumber(thrId);
     index = st.number;
     if (index == -1)
       break;
@@ -264,7 +267,7 @@ void PlayChunkCommon(const int thid)
                 playparam.bop->deals[index],
                 traceparam.plp->plays[index],
                 &solved[index],
-                thid);
+                thrId);
 
     // If there are multiple errors, this will catch one of them.
     if (res == 1)

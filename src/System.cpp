@@ -293,7 +293,7 @@ int System::RunThreadsBasic()
 #ifdef DDS_THREADS_WINAPI
 struct WinWrapType
 {
-  int thid;
+  int thrId;
   fptrType fptr;
   HANDLE *waitPtr;
 };
@@ -303,9 +303,9 @@ DWORD CALLBACK WinCallback(void * p);
 DWORD CALLBACK WinCallback(void * p)
 {
   WinWrapType * winWrap = static_cast<WinWrapType *>(p);
-  (*(winWrap->fptr))(winWrap->thid);
+  (*(winWrap->fptr))(winWrap->thrId);
 
-  if (SetEvent(winWrap->waitPtr[winWrap->thid]) == 0)
+  if (SetEvent(winWrap->waitPtr[winWrap->thrId]) == 0)
     return 0;
 
   return 1;
@@ -331,7 +331,7 @@ int System::RunThreadsWinAPI()
 
   for (unsigned k = 0; k < nt; k++)
   {
-    winWrap[k].thid = static_cast<int>(k);
+    winWrap[k].thrId = static_cast<int>(k);
     winWrap[k].fptr = fptr;
     winWrap[k].waitPtr = solveAllEvents;
 
@@ -374,8 +374,8 @@ int System::RunThreadsOpenMP()
     #pragma omp for schedule(dynamic)
     for (int k = 0; k < numThreads; k++)
     {
-      int thid = omp_get_thread_num();
-      (*fptr)(thid);
+      int thrId = omp_get_thread_num();
+      (*fptr)(thrId);
     }
   }
 #endif
@@ -395,8 +395,8 @@ int System::RunThreadsGCD()
     dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0),
     ^(size_t t)
   {
-    int thid = static_cast<int>(t);
-    (*fptr)(thid);
+    int thrId = static_cast<int>(t);
+    (*fptr)(thrId);
   });
 #endif
 
