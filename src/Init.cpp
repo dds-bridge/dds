@@ -19,8 +19,6 @@ void InitConstants();
 
 void InitDebugFiles();
 
-double ConstantMemoryUsed();
-
 void FreeThreadMem();
 
 void CalcThreadMemory(
@@ -115,11 +113,8 @@ void CalcThreadMemory(
   }
   else
   {
+    // Even less comfortable.  Thread number will be limited later.
     // Limit the number of threads to the available memory.
-    int fittingThreads = static_cast<int>( kilobytesUsable /
-                       ( static_cast<double>(1024. * THREADMEM_DEF_MB) ) );
-
-    noOfThreads = Max(fittingThreads, 1);
     mem_def = THREADMEM_DEF_MB;
     mem_max = THREADMEM_DEF_MB;
   }
@@ -151,10 +146,22 @@ void STDCALL SetMaxThreads(
   else
     noOfThreads = ncores;
 
-  sysdep.Register(DDS_SYSTEM_SOLVE, noOfThreads);
-
   int mem_def, mem_max;
   CalcThreadMemory(oldNoOfThreads, kilobytesUsable, mem_def, mem_max);
+
+  if (kilobytesUsable > 0 && noOfThreads > 1)
+  {
+    if (kilobytesUsable < 1024 * mem_max * noOfThreads)
+    {
+      int fittingThreads = static_cast<int>( kilobytesUsable /
+        ( static_cast<double>(1024. * mem_max) ) );
+
+      noOfThreads = Max(fittingThreads, 1);
+    }
+  }
+
+  sysdep.RegisterParams(noOfThreads, 
+    kilobytesUsable >> 10, mem_def, mem_max);
 
   for (int k = 0; k < noOfThreads; k++)
   {
@@ -597,19 +604,6 @@ void STDCALL FreeMemory()
     localVar[k].memUsed = localVar[k].transTable.MemoryInUse() +
                           ThreadMemoryUsed();
   }
-}
-
-
-double ConstantMemoryUsed()
-{
-  double memUsed =
-    8192 * ( sizeof(int) // highestRank
-             + sizeof(int) // counttable
-             + 15 * sizeof(char) // relRank
-             + 14 * sizeof(unsigned short int))
-    / static_cast<double>(1024.);
-
-  return memUsed;
 }
 
 

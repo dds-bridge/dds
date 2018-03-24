@@ -15,7 +15,9 @@
 #include "threadmem.h"
 #include "ABsearch.h"
 #include "SolverIF.h"
+#include "System.h"
 
+extern System sysdep;
 extern Scheduler scheduler;
 
 
@@ -52,10 +54,6 @@ int DumpInput(
 void PrintDeal(
   FILE * fp,
   unsigned short ranks[][DDS_SUITS]);
-
-
-extern int noOfThreads;
-
 
 bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
@@ -938,7 +936,7 @@ int BoardRangeChecks(
     return RETURN_MODE_WRONG_HI;
   }
 
-  if (thrId < 0 || thrId >= noOfThreads)
+  if (! sysdep.ThreadOK(thrId))
     /* Fault corrected after suggestion by Dirk Willecke. */
   {
     DumpInput(RETURN_THREAD_INDEX, dl, target, solutions, mode);

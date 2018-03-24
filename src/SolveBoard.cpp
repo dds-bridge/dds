@@ -18,7 +18,6 @@
 #include "debug.h"
 
 
-extern int noOfThreads;
 long chunk;
 paramType param;
 extern System sysdep;
@@ -162,12 +161,12 @@ int SolveAllBoardsN(
   if (source == 0)
   {
     scheduler.RegisterRun(SCHEDULER_SOLVE, bop);
-    sysdep.Register(DDS_SYSTEM_SOLVE, noOfThreads);
+    sysdep.RegisterRun(DDS_SYSTEM_SOLVE);
   }
   else
   {
     scheduler.RegisterRun(SCHEDULER_CALC, bop);
-    sysdep.Register(DDS_SYSTEM_CALC, noOfThreads);
+    sysdep.RegisterRun(DDS_SYSTEM_CALC);
   }
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)

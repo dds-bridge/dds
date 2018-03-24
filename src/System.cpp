@@ -227,20 +227,38 @@ void System::GetHardware(
 }
 
 
-int System::Register(
-  const unsigned code,
-  const int nThreads)
+int System::RegisterParams(
+  const int nThreads,
+  const int mem_usable_MB,
+  const int mem_def_MB,
+  const int mem_max_MB)
 {
-  if (code >= DDS_SYSTEM_SIZE)
-    return RETURN_THREAD_MISSING; // Not quite right;
-
-  runCat = code;
-
   if (nThreads < 1 || nThreads >= MAXNOOFTHREADS)
     return RETURN_THREAD_INDEX;
 
   numThreads = nThreads;
+  sysMem_MB = mem_usable_MB;
+  thrDef_MB = mem_def_MB;
+  thrMax_MB = mem_max_MB;
   return RETURN_NO_FAULT;
+}
+
+
+int System::RegisterRun(const unsigned code)
+{
+  // TODO Use same code as in Scheduler, put in dds.h
+
+  if (code >= DDS_SYSTEM_SIZE)
+    return RETURN_THREAD_MISSING; // Not quite right;
+
+  runCat = code;
+  return RETURN_NO_FAULT;
+}
+
+
+bool System::ThreadOK(const int thrId) const
+{
+  return (thrId >= 0 && thrId < numThreads);
 }
 
 
@@ -574,9 +592,16 @@ string System::str(DDSInfo * info) const
     setw(20) << right << strVersion << "\n";
   strcpy(info->versionString, strVersion.c_str());
 
-  const string strCores = System::GetCores(info->numCores);
+  ss << left << setw(17) << "Memory max (MB)" <<
+    setw(16) << right << sysMem_MB << "\n";
+
+  const string stm = to_string(thrDef_MB) + " to " + to_string(thrMax_MB);
+  ss << left << setw(17) << "Thread def (MB)" <<
+    setw(16) << right << stm << "\n";
+
+  System::GetCores(info->numCores);
   ss << left << setw(17) << "Number of cores" <<
-    setw(16) << right << strCores << "\n";
+    setw(16) << right << info->numCores << "\n";
 
   info->noOfThreads = numThreads;
   ss << left << setw(17) << "Number of threads" <<

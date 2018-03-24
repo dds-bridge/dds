@@ -34,6 +34,9 @@ class System
     unsigned runCat; // SOLVE / CALC / PLAY
 
     int numThreads;
+    int sysMem_MB;
+    int thrDef_MB;
+    int thrMax_MB;
 
     unsigned preferredSystem;
 
@@ -72,9 +75,15 @@ class System
 
     void Reset();
 
-    int Register(
-      const unsigned code,
-      const int noOfThreads = 1);
+    int RegisterParams(
+      const int nThreads,
+      const int mem_usable_MB,
+      const int mem_def_MB,
+      const int mem_max_MB);
+
+    int RegisterRun(const unsigned code);
+
+    bool ThreadOK(const int thrId) const;
 
     void GetHardware(
       int& ncores,

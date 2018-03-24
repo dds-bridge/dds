@@ -84,8 +84,6 @@ extern char relRank[8192][15];
 extern unsigned short int winRanks[8192][14];
 
 
-extern int noOfThreads;
-
 struct playparamType
 {
   int noOfBoards;
