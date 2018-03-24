@@ -13,9 +13,7 @@
 #include <vector>
 
 #include "TransTable.h"
-#include "Moves.h"
 #include "debug.h"
-#include "../include/dll.h"
 
 #ifdef DDS_AB_STATS
   include "ABstats.h"
@@ -101,7 +99,7 @@ class Memory
     int maxThrMB;
 
     vector<ThreadData *> memory;
-    int nThreads;
+    unsigned nThreads;
 
   public:
 
@@ -111,19 +109,19 @@ class Memory
 
     void Reset();
 
-    void ResetThread(const int thrId);
+    void ResetThread(const unsigned thrId);
 
-    void ReturnThread(const int thrId);
+    void ReturnThread(const unsigned thrId);
 
     void SetThreadSize(
       const int memDefault_MB,
       const int memMaximum_MB);
 
-    void Resize(const int n);
+    void Resize(const unsigned n);
 
-    ThreadData * GetPtr(const int thrId);
+    ThreadData * GetPtr(const unsigned thrId);
 
-    double MemoryInUseMB(const int thrId) const;
+    double MemoryInUseMB(const unsigned thrId) const;
 
     void ReturnAllMemory();
 

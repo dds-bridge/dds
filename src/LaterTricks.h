@@ -10,6 +10,8 @@
 #ifndef DDS_LATERTRICKS_H
 #define DDS_LATERTRICKS_H
 
+#include "Memory.h"
+
 
 bool LaterTricksMIN(
   struct pos * posPoint,
@@ -17,7 +19,7 @@ bool LaterTricksMIN(
   int depth,
   int target,
   int trump,
-  struct localVarType * thrp);
+  ThreadData  * thrp);
 
 bool LaterTricksMAX(
   struct pos * posPoint,
@@ -25,6 +27,6 @@ bool LaterTricksMAX(
   int depth,
   int target,
   int trump,
-  struct localVarType * thrp);
+  ThreadData * thrp);
 
 #endif

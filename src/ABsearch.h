@@ -24,31 +24,31 @@ bool ABsearch(
   struct pos * posPoint,
   int target,
   int depth,
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 bool ABsearch0(
   struct pos * posPoint,
   int target,
   int depth,
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 bool ABsearch1(
   struct pos * posPoint,
   int target,
   int depth,
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 bool ABsearch2(
   struct pos * posPoint,
   int target,
   int depth,
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 bool ABsearch3(
   struct pos * posPoint,
   int target,
   int depth,
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 void Make0(
   struct pos * posPoint,
@@ -70,15 +70,15 @@ void Make3(
   unsigned short int trickCards[DDS_SUITS],
   int depth,
   moveType * mply,
-  localVarType * thrp);
+  ThreadData * thrp);
 
 evalType Evaluate(
   pos * posPoint,
   int trump,
-  localVarType * thrp);
+  ThreadData * thrp);
 
 void DumpTopLevel(
-  struct localVarType * thrp,
+  struct ThreadData * thrp,
   int tricks,
   int lower,
   int upper,

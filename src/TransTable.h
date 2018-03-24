@@ -20,8 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include "dds.h"
 #include "../include/dll.h"
+#include "dds.h"
 
 using namespace std;
 

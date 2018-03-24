@@ -12,18 +12,18 @@
 
 
 void SetDeal(
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 void SetDealTables(
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 void InitWinners(
   deal * dl,
   struct pos * posPoint,
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 void ResetBestMoves(
-  struct localVarType * thrp);
+  struct ThreadData * thrp);
 
 double ThreadMemoryUsed();
 

@@ -9,8 +9,8 @@
 
 
 #include "dds.h"
-#include "threadmem.h"
 #include "LaterTricks.h"
+#include "Memory.h"
 
 
 bool LaterTricksMIN(
@@ -19,7 +19,7 @@ bool LaterTricksMIN(
   int depth,
   int target,
   int trump,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   if ((trump == DDS_NOTRUMP) || (posPoint->winner[trump].rank == 0))
   {
@@ -153,7 +153,7 @@ bool LaterTricksMAX(
   int depth,
   int target,
   int trump,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   if ((trump == DDS_NOTRUMP) || (posPoint->winner[trump].rank == 0))
   {

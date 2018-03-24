@@ -9,8 +9,8 @@
 
 
 #include "dds.h"
-#include "threadmem.h"
 #include "QuickTricks.h"
+#include "Memory.h"
 
 
 int QtricksLeadHandNT(
@@ -62,7 +62,7 @@ int QuickTricksPartnerHandTrump(
   int commSuit,
   int commRank,
   int * res,
-  localVarType * thrp);
+  ThreadData * thrp);
 
 int QuickTricksPartnerHandNT(
   int hand,
@@ -78,7 +78,7 @@ int QuickTricksPartnerHandNT(
   int commSuit,
   int commRank,
   int * res,
-  localVarType * thrp);
+  ThreadData * thrp);
 
 
 int QuickTricks(
@@ -88,7 +88,7 @@ int QuickTricks(
   int target,
   int trump,
   bool * result,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   int suit, commRank = 0, commSuit = -1;
   int res;
@@ -868,7 +868,7 @@ int QuickTricksPartnerHandTrump(
   int commSuit,
   int commRank,
   int * res,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
@@ -1004,7 +1004,7 @@ int QuickTricksPartnerHandNT(
   int commSuit,
   int commRank,
   int * res,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   *res = 1;
   int qt = qtricks;
@@ -1099,7 +1099,7 @@ bool QuickTricksSecondHand(
   int depth,
   int target,
   int trump,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   if (depth == thrp->iniDepth)
     return false;

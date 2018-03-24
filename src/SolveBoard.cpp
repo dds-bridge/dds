@@ -9,11 +9,11 @@
 
 
 #include "dds.h"
-#include "threadmem.h"
 #include "SolverIF.h"
 #include "SolveBoard.h"
 #include "Scheduler.h"
 #include "System.h"
+#include "Memory.h"
 #include "PBN.h"
 #include "debug.h"
 
@@ -21,6 +21,8 @@
 long chunk;
 paramType param;
 extern System sysdep;
+extern Memory memory;
+extern Scheduler scheduler;
 
 
 void SolveChunkCommon(
@@ -75,7 +77,7 @@ void SolveChunkCommon(
 void SolveChunkDDtableCommon(
   const int thrId)
 {
-  struct localVarType * thrp = &localVar[thrId];
+  struct ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
   futureTricks fut[MAXNOOFBOARDS];
   int index;
   schedType st;

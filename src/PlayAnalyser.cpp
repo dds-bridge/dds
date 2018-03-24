@@ -9,7 +9,6 @@
 
 
 #include "dds.h"
-#include "threadmem.h"
 #include "SolverIF.h"
 #include "Scheduler.h"
 #include "System.h"
@@ -26,6 +25,8 @@ FILE * fp;
 paramType playparam;
 playparamType traceparam;
 extern System sysdep;
+extern Memory memory;
+extern Scheduler scheduler;
 
 void PlayChunkCommon(const int thrId);
 
@@ -39,7 +40,7 @@ int STDCALL AnalysePlayBin(
   if (! sysdep.ThreadOK(thrId))
     return RETURN_THREAD_INDEX;
 
-  struct localVarType * thrp = &localVar[thrId];
+  struct ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
 
   moveType move;
   futureTricks fut;

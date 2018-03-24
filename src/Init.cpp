@@ -9,11 +9,11 @@
 
 
 #include "dds.h"
-#include "threadmem.h"
 #include "Init.h"
 #include "ABsearch.h"
 #include "Scheduler.h"
 #include "System.h"
+#include "Memory.h"
 
 void InitConstants();
 
@@ -27,8 +27,8 @@ void CalcThreadMemory(
   int& mem_def,
   int& mem_max);
 
-localVarType localVar[MAXNOOFTHREADS];
 System sysdep;
+Memory memory;
 Scheduler scheduler;
 int noOfThreads;
 
@@ -163,26 +163,8 @@ void STDCALL SetMaxThreads(
   sysdep.RegisterParams(noOfThreads, 
     kilobytesUsable >> 10, mem_def, mem_max);
 
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    localVar[k].transTable.SetMemoryDefault(mem_def);
-    localVar[k].transTable.SetMemoryMaximum(mem_max);
-  }
-
-  if (noOfThreads == oldNoOfThreads)
-  {
-    // Must already have TT allocated.
-  }
-  else if (noOfThreads > oldNoOfThreads)
-  {
-    for (int k = oldNoOfThreads; k < noOfThreads; k++)
-      localVar[k].transTable.MakeTT();
-  }
-  else
-  {
-    for (int k = noOfThreads; k < oldNoOfThreads; k++)
-      localVar[k].transTable.ReturnAllMemory();
-  }
+  memory.Resize(static_cast<unsigned>(noOfThreads));
+  memory.SetThreadSize(mem_def, mem_max);
 
   if (! _initialized)
   {
@@ -367,7 +349,7 @@ void InitDebugFiles()
 {
   for (int thrId = 0; thrId < noOfThreads; thrId++)
   {
-    localVarType * thrp = &localVar[thrId];
+    ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
     UNUSED(thrp); // To avoid compile errors
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 
@@ -433,7 +415,7 @@ void CloseDebugFiles()
 {
   for (int thrId = 0; thrId < noOfThreads; thrId++)
   {
-    localVarType * thrp = &localVar[thrId];
+    ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
     UNUSED(thrp); // To avoid compile errors
 #ifdef DDS_TOP_LEVEL
     if (thrp->fpTopLevel != stdout && thrp->fpTopLevel != nullptr)
@@ -452,7 +434,7 @@ void CloseDebugFiles()
 
 
 void SetDeal(
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   /* Initialization of the rel structure is inspired by
      a solution given by Thomas Andrews */
@@ -487,7 +469,7 @@ void SetDeal(
 
 
 void SetDealTables(
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   unsigned int topBitRank = 1;
   unsigned int topBitNo = 2;
@@ -567,7 +549,7 @@ void SetDealTables(
 void InitWinners(
   deal * dl,
   pos * posPoint,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   int hand, suit, rank;
   unsigned short int startMovesBitMap[DDS_HANDS][DDS_SUITS];
@@ -600,7 +582,7 @@ void InitWinners(
 
 
 void ResetBestMoves(
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   for (int d = 0; d <= 49; d++)
   {
@@ -625,28 +607,21 @@ void STDCALL GetDDSInfo(DDSInfo * info)
 
 void FreeThreadMem()
 {
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    localVar[k].transTable.ResetMemory(FREE_THREAD_MEM);
-    localVar[k].memUsed = localVar[k].transTable.MemoryInUse() +
-                          ThreadMemoryUsed();
-  }
+  for (unsigned k = 0; k < static_cast<unsigned>(noOfThreads); k++)
+    memory.ResetThread(k);
 }
 
 
 void STDCALL FreeMemory()
 {
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    localVar[k].transTable.ReturnAllMemory();
-    localVar[k].memUsed = localVar[k].transTable.MemoryInUse() +
-                          ThreadMemoryUsed();
-  }
+  for (unsigned k = 0; k < static_cast<unsigned>(noOfThreads); k++)
+    memory.ReturnThread(k);
 }
 
 
 double ThreadMemoryUsed()
 {
+  // TODO:  Only needed because SolverIF wants to set it. Avoid?
   double memUsed =
     8192 * sizeof(relRanksType)
     / static_cast<double>(1024.);

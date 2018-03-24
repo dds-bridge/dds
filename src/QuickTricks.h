@@ -10,6 +10,7 @@
 #ifndef DDS_QUICKTRICKS_H
 #define DDS_QUICKTRICKS_H
 
+#include "Memory.h"
 
 int QuickTricks(
   struct pos * posPoint,
@@ -18,7 +19,7 @@ int QuickTricks(
   int target,
   int trump,
   bool * result,
-  struct localVarType * thrp);
+  ThreadData * thrp);
 
 bool QuickTricksSecondHand(
   struct pos * posPoint,
@@ -26,6 +27,6 @@ bool QuickTricksSecondHand(
   int depth,
   int target,
   int trump,
-  struct localVarType * thrp);
+  ThreadData * thrp);
 
 #endif

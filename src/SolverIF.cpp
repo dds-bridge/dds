@@ -12,12 +12,13 @@
 #include "dds.h"
 #include "Init.h"
 #include "Moves.h"
-#include "threadmem.h"
 #include "ABsearch.h"
 #include "SolverIF.h"
 #include "System.h"
+#include "Memory.h"
 
 extern System sysdep;
+extern Memory memory;
 extern Scheduler scheduler;
 
 
@@ -32,11 +33,11 @@ int BoardValueChecks(
   int target,
   int solutions,
   int mode,
-  localVarType * thrp);
+  ThreadData * thrp);
 
 void LastTrickWinner(
   deal * dl,
-  localVarType * thrp,
+  ThreadData * thrp,
   int handToPlay,
   int handRelFirst,
   int * leadRank,
@@ -58,14 +59,14 @@ bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
   int target,
   int depth,
-  localVarType * thrp)
+  ThreadData * thrp)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
   pos * posPoint,
   int target,
   int depth,
-  localVarType * thrp)
+  ThreadData * thrp)
   = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
 
 void (* Make_ptr_list[3])(
@@ -86,13 +87,13 @@ int STDCALL SolveBoard(
   if (! sysdep.ThreadOK(thrId))
     return RETURN_THREAD_INDEX;
 
-  return SolveBoardInternal(&localVar[thrId], dl, target,
-    solutions, mode, futp);
+  return SolveBoardInternal(memory.GetPtr(static_cast<unsigned>(thrId)), 
+    dl, target, solutions, mode, futp);
 }
 
 
 int SolveBoardInternal(
-  struct localVarType * thrp,
+  struct ThreadData * thrp,
   deal& dl,
   int target,
   int solutions,
@@ -649,7 +650,7 @@ SOLVER_DONE:
 
 
 int SolveSameBoard(
-  struct localVarType * thrp,
+  struct ThreadData * thrp,
   deal dl,
   futureTricks * futp,
   int hint)
@@ -754,7 +755,7 @@ int SolveSameBoard(
 
 
 int AnalyseLaterBoard(
-  localVarType * thrp,
+  ThreadData * thrp,
   int leadHand,
   moveType * move,
   int hint,
@@ -1007,7 +1008,7 @@ int BoardValueChecks(
   int target,
   int solutions,
   int mode,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   int cardCount = thrp->iniDepth + 4;
   if (cardCount <= 0)
@@ -1094,7 +1095,7 @@ int BoardValueChecks(
 
 void LastTrickWinner(
   deal * dl,
-  localVarType * thrp,
+  ThreadData * thrp,
   int handToPlay,
   int handRelFirst,
   int * leadRank,

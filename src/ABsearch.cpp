@@ -14,10 +14,10 @@
 
 #include "TransTable.h"
 #include "Moves.h"
-#include "threadmem.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"
 #include "ABsearch.h"
+#include "Memory.h"
 
 #define DDS_POS_LINES 5
 #define DDS_HAND_LINES 12
@@ -33,13 +33,13 @@ void Make3Simple(
   unsigned short int trickCards[DDS_SUITS],
   int depth,
   moveType * mply,
-  localVarType * thrp);
+  ThreadData * thrp);
 
 void Undo0(
   pos * posPoint,
   int depth,
   moveType * mply,
-  localVarType * thrp);
+  ThreadData * thrp);
 
 void Undo0Simple(
   pos * posPoint,
@@ -107,7 +107,7 @@ bool ABsearch(
   pos * posPoint,
   int target,
   int depth,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   /* posPoint points to the current look-ahead position,
      target is number of tricks to take for the player,
@@ -200,7 +200,7 @@ bool ABsearch0(
   pos * posPoint,
   int target,
   int depth,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   /* posPoint points to the current look-ahead position,
      target is number of tricks to take for the player,
@@ -515,7 +515,7 @@ bool ABsearch1(
   pos * posPoint,
   int target,
   int depth,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   int trump = thrp->trump;
   int hand = handId(posPoint->first[depth], 1);
@@ -601,7 +601,7 @@ bool ABsearch2(
   pos * posPoint,
   int target,
   int depth,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   int hand = handId(posPoint->first[depth], 2);
   bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
@@ -682,7 +682,7 @@ bool ABsearch3(
   pos * posPoint,
   int target,
   int depth,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   /* This is a specialized AB function for handRelFirst == 3. */
 
@@ -835,7 +835,7 @@ void Make3(
   unsigned short int trickCards[DDS_SUITS],
   int depth,
   moveType * mply,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   int firstHand = posPoint->first[depth];
 
@@ -899,7 +899,7 @@ void Make3Simple(
   unsigned short int trickCards[DDS_SUITS],
   int depth,
   moveType * mply,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   trickDataType * datap = thrp->moves.GetTrickData((depth + 3) >> 2);
 
@@ -933,7 +933,7 @@ void Undo0(
   pos * posPoint,
   int depth,
   moveType * mply,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   int h = handId(posPoint->first[depth], 3);
   int s = mply->suit;
@@ -1023,7 +1023,7 @@ void Undo3(
 evalType Evaluate(
   pos * posPoint,
   int trump,
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   int s, h, hmax = 0, count = 0, k = 0;
   unsigned short rmax = 0;
@@ -1375,7 +1375,7 @@ void DumpStored(
 
 
 void DumpTopLevel(
-  localVarType * thrp,
+  ThreadData * thrp,
   int tricks,
   int lower,
   int upper,

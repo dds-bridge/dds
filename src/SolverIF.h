@@ -10,9 +10,11 @@
 #ifndef DDS_SOLVERIF_H
 #define DDS_SOLVERIF_H
 
+#include "Memory.h"
+
 
 int SolveBoardInternal(
-  struct localVarType * thrp,
+  ThreadData * thrp,
   deal& dl,
   int target,
   int solutions,
@@ -20,13 +22,13 @@ int SolveBoardInternal(
   futureTricks * futp);
 
 int SolveSameBoard(
-  struct localVarType * thrp,
+  ThreadData * thrp,
   deal dl,
   futureTricks * futp,
   int hint);
 
 int AnalyseLaterBoard(
-  struct localVarType * thrp,
+  ThreadData * thrp,
   int leadHand,
   moveType * move,
   int hint,
