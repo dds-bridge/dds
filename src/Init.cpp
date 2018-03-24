@@ -368,6 +368,7 @@ void InitDebugFiles()
   for (int thrId = 0; thrId < noOfThreads; thrId++)
   {
     localVarType * thrp = &localVar[thrId];
+    UNUSED(thrp); // To avoid compile errors
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 
 #ifdef DDS_TOP_LEVEL
@@ -433,6 +434,7 @@ void CloseDebugFiles()
   for (int thrId = 0; thrId < noOfThreads; thrId++)
   {
     localVarType * thrp = &localVar[thrId];
+    UNUSED(thrp); // To avoid compile errors
 #ifdef DDS_TOP_LEVEL
     if (thrp->fpTopLevel != stdout && thrp->fpTopLevel != nullptr)
       fclose(thrp->fpTopLevel);

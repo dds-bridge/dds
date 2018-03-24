@@ -39,7 +39,9 @@ int STDCALL AnalysePlayBin(
   moveType move;
   futureTricks fut;
 
-  int ret = SolveBoard(dl, -1, 1, 1, &fut, thrId);
+  struct localVarType * thrp = &localVar[thrId];
+
+  int ret = SolveBoardInternal(thrp, dl, -1, 1, 1, &fut);
   if (ret != RETURN_NO_FAULT)
     return ret;
 

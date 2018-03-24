@@ -22,14 +22,13 @@ extern Scheduler scheduler;
 
 
 int BoardRangeChecks(
-  deal * dl,
+  deal& dl,
   int target,
   int solutions,
-  int mode,
-  int thrId);
+  int mode);
 
 int BoardValueChecks(
-  deal * dl,
+  deal& dl,
   int target,
   int solutions,
   int mode,
@@ -46,7 +45,7 @@ void LastTrickWinner(
 
 int DumpInput(
   int errCode,
-  deal * dl,
+  deal& dl,
   int target,
   int solutions,
   int mode);
@@ -84,13 +83,24 @@ int STDCALL SolveBoard(
   futureTricks * futp,
   int thrId)
 {
-  localVarType * thrp = &localVar[thrId];
+  return SolveBoardInternal(&localVar[thrId], dl, target,
+    solutions, mode, futp);
+}
 
+
+int SolveBoardInternal(
+  struct localVarType * thrp,
+  deal& dl,
+  int target,
+  int solutions,
+  int mode,
+  futureTricks * futp)
+{
   // ----------------------------------------------------------
   // Formal parameter checks.
   // ----------------------------------------------------------
 
-  int ret = BoardRangeChecks(&dl, target, solutions, mode, thrId);
+  int ret = BoardRangeChecks(dl, target, solutions, mode);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -168,7 +178,7 @@ int STDCALL SolveBoard(
   // Consistency checks.
   // ----------------------------------------------------------
 
-  ret = BoardValueChecks(&dl, target, solutions, mode, thrp);
+  ret = BoardValueChecks(dl, target, solutions, mode, thrp);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -894,11 +904,10 @@ int AnalyseLaterBoard(
 
 
 int BoardRangeChecks(
-  deal * dl,
+  deal& dl,
   int target,
   int solutions,
-  int mode,
-  int thrId)
+  int mode)
 {
   if (target < -1)
   {
@@ -936,20 +945,13 @@ int BoardRangeChecks(
     return RETURN_MODE_WRONG_HI;
   }
 
-  if (! sysdep.ThreadOK(thrId))
-    /* Fault corrected after suggestion by Dirk Willecke. */
-  {
-    DumpInput(RETURN_THREAD_INDEX, dl, target, solutions, mode);
-    return RETURN_THREAD_INDEX;
-  }
-
-  if (dl->trump < 0 || dl->trump > 4)
+  if (dl.trump < 0 || dl.trump > 4)
   {
     DumpInput(RETURN_TRUMP_WRONG, dl, target, solutions, mode);
     return RETURN_TRUMP_WRONG;
   }
 
-  if (dl->first < 0 || dl->first > 3)
+  if (dl.first < 0 || dl.first > 3)
   {
     DumpInput(RETURN_FIRST_WRONG, dl, target, solutions, mode);
     return RETURN_FIRST_WRONG;
@@ -958,7 +960,7 @@ int BoardRangeChecks(
   int rankSeen[3] = {0, 0, 0};
   for (int k = 0; k < 3; k++)
   {
-    int r = dl->currentTrickRank[k];
+    int r = dl.currentTrickRank[k];
     if (r == 0)
       continue;
 
@@ -970,7 +972,7 @@ int BoardRangeChecks(
       return RETURN_SUIT_OR_RANK;
     }
 
-    if (dl->currentTrickSuit[k] < 0 || dl->currentTrickSuit[k] > 3)
+    if (dl.currentTrickSuit[k] < 0 || dl.currentTrickSuit[k] > 3)
     {
       DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
       return RETURN_SUIT_OR_RANK;
@@ -988,7 +990,7 @@ int BoardRangeChecks(
   {
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      unsigned c = dl->remainCards[h][s];
+      unsigned c = dl.remainCards[h][s];
       if (c != 0 && (c < 0x0004 || c >= 0x8000))
       {
         DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
@@ -1002,7 +1004,7 @@ int BoardRangeChecks(
 
 
 int BoardValueChecks(
-  deal * dl,
+  deal& dl,
   int target,
   int solutions,
   int mode,
@@ -1037,7 +1039,7 @@ int BoardValueChecks(
 
   int noOfCardsPerHand[DDS_HANDS] = {0, 0, 0, 0};
   for (int k = 0; k < handRelFirst; k++)
-    noOfCardsPerHand[handId(dl->first, k)] = 1;
+    noOfCardsPerHand[handId(dl.first, k)] = 1;
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -1056,9 +1058,9 @@ int BoardValueChecks(
   {
     unsigned short int aggrRemain = 0;
     for (int h = 0; h < DDS_HANDS; h++)
-      aggrRemain |= (dl->remainCards[h][dl->currentTrickSuit[k]] >> 2);
+      aggrRemain |= (dl.remainCards[h][dl.currentTrickSuit[k]] >> 2);
 
-    if ((aggrRemain & bitMapRank[dl->currentTrickRank[k]]) != 0)
+    if ((aggrRemain & bitMapRank[dl.currentTrickRank[k]]) != 0)
     {
       DumpInput(RETURN_PLAYED_CARD, dl, target, solutions, mode);
       return RETURN_PLAYED_CARD;
@@ -1174,12 +1176,11 @@ void LastTrickWinner(
 
 int DumpInput(
   int errCode, 
-  deal * dl, 
+  deal& dl, 
   int target,
   int solutions, 
   int mode)
 {
-
   FILE * fp;
   int i, j, k;
   unsigned short ranks[4][4];
@@ -1190,23 +1191,23 @@ int DumpInput(
   fprintf(fp, "Error code=%d\n", errCode);
   fprintf(fp, "\n");
   fprintf(fp, "Deal data:\n");
-  if (dl->trump != 4)
-    fprintf(fp, "trump=%c\n", cardSuit[dl->trump]);
+  if (dl.trump != 4)
+    fprintf(fp, "trump=%c\n", cardSuit[dl.trump]);
   else
     fprintf(fp, "trump=N\n");
-  fprintf(fp, "first=%c\n", cardHand[dl->first]);
+  fprintf(fp, "first=%c\n", cardHand[dl.first]);
   for (k = 0; k <= 2; k++)
-    if (dl->currentTrickRank[k] != 0)
+    if (dl.currentTrickRank[k] != 0)
       fprintf(fp, "index=%d currentTrickSuit=%c currentTrickRank=%c\n",
-              k, cardSuit[dl->currentTrickSuit[k]],
-              cardRank[dl->currentTrickRank[k]]);
+              k, cardSuit[dl.currentTrickSuit[k]],
+              cardRank[dl.currentTrickRank[k]]);
   for (i = 0; i <= 3; i++)
     for (j = 0; j <= 3; j++)
     {
       fprintf(fp, "index1=%d index2=%d remainCards=%d\n",
-              i, j, dl->remainCards[i][j]);
+              i, j, dl.remainCards[i][j]);
       ranks[i][j] = static_cast<unsigned short>
-                    (dl->remainCards[i][/*3-*/j] >> 2);
+                    (dl.remainCards[i][/*3-*/j] >> 2);
     }
   fprintf(fp, "\n");
   fprintf(fp, "target=%d\n", target);

@@ -11,6 +11,14 @@
 #define DDS_SOLVERIF_H
 
 
+int SolveBoardInternal(
+  struct localVarType * thrp,
+  deal& dl,
+  int target,
+  int solutions,
+  int mode,
+  futureTricks * futp);
+
 int SolveSameBoard(
   deal dl,
   futureTricks * futp,
