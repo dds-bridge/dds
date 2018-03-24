@@ -99,7 +99,7 @@ System::~System()
 
 void System::Reset()
 {
-  runCat = DDS_SYSTEM_SOLVE;
+  runCat = DDS_RUN_SOLVE;
   numThreads = 1;
   preferredSystem = DDS_SYSTEM_THREAD_BASIC;
 
@@ -155,16 +155,16 @@ void System::Reset()
   RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
   RunPtrList[DDS_SYSTEM_THREAD_STL] = &System::RunThreadsSTL; 
 
-  // DDS_SYSTEM_CALC_ doesn't happen.
-  CallbackSimpleList.resize(DDS_SYSTEM_SIZE);
-  CallbackSimpleList[DDS_SYSTEM_SOLVE] = SolveChunkCommon;
-  CallbackSimpleList[DDS_SYSTEM_CALC] = SolveChunkCommon;
-  CallbackSimpleList[DDS_SYSTEM_PLAY] = PlayChunkCommon;
+  // DDS_RUN_CALC doesn't happen.
+  CallbackSimpleList.resize(DDS_RUN_SIZE);
+  CallbackSimpleList[DDS_RUN_SOLVE] = SolveChunkCommon;
+  CallbackSimpleList[DDS_RUN_CALC] = SolveChunkCommon;
+  CallbackSimpleList[DDS_RUN_TRACE] = PlayChunkCommon;
 
-  CallbackComplexList.resize(DDS_SYSTEM_SIZE);
-  CallbackComplexList[DDS_SYSTEM_SOLVE] = SolveChunkDDtableCommon;
-  CallbackComplexList[DDS_SYSTEM_CALC] = SolveChunkDDtableCommon;
-  CallbackComplexList[DDS_SYSTEM_PLAY] = PlayChunkCommon;
+  CallbackComplexList.resize(DDS_RUN_SIZE);
+  CallbackComplexList[DDS_RUN_SOLVE] = SolveChunkDDtableCommon;
+  CallbackComplexList[DDS_RUN_CALC] = SolveChunkDDtableCommon;
+  CallbackComplexList[DDS_RUN_TRACE] = PlayChunkCommon;
 }
 
 
@@ -244,14 +244,12 @@ int System::RegisterParams(
 }
 
 
-int System::RegisterRun(const unsigned code)
+int System::RegisterRun(const RunMode mode)
 {
-  // TODO Use same code as in Scheduler, put in dds.h
-
-  if (code >= DDS_SYSTEM_SIZE)
+  if (mode >= DDS_RUN_SIZE)
     return RETURN_THREAD_MISSING; // Not quite right;
 
-  runCat = code;
+  runCat = mode;
   return RETURN_NO_FAULT;
 }
 

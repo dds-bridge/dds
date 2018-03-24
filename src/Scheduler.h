@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -17,14 +17,6 @@
 
 using namespace std;
 
-
-enum SchedulerMode
-{
-  SCHEDULER_NOSORT,
-  SCHEDULER_SOLVE,
-  SCHEDULER_CALC,
-  SCHEDULER_TRACE
-};
 
 #define HASH_MAX 200
 
@@ -104,7 +96,7 @@ class Scheduler
 
     void InitHighCards();
 
-    void SortHands(const enum SchedulerMode mode);
+    void SortHands(const enum RunMode mode);
 
     int Strength(
       deal const * dl);
@@ -168,12 +160,12 @@ class Scheduler
       const int n);
 
     void RegisterRun(
-      const enum SchedulerMode mode,
+      const enum RunMode mode,
       boards const * bop,
       playTracesBin const * plp);
 
     void RegisterRun(
-      const enum SchedulerMode mode,
+      const enum RunMode mode,
       boards const * bop);
 
     schedType GetNumber(

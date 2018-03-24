@@ -193,6 +193,14 @@ struct relRanksType // 120 bytes
   struct absRankType absRank[15][DDS_SUITS];
 };
 
+enum RunMode
+{
+  DDS_RUN_SOLVE = 0,
+  DDS_RUN_CALC = 1,
+  DDS_RUN_TRACE = 2,
+  DDS_RUN_SIZE = 3
+};
+
 #include "Moves.h"
 #include "Scheduler.h"
 

@@ -163,13 +163,13 @@ int SolveAllBoardsN(
 
   if (source == 0)
   {
-    scheduler.RegisterRun(SCHEDULER_SOLVE, bop);
-    sysdep.RegisterRun(DDS_SYSTEM_SOLVE);
+    scheduler.RegisterRun(DDS_RUN_SOLVE, bop);
+    sysdep.RegisterRun(DDS_RUN_SOLVE);
   }
   else
   {
-    scheduler.RegisterRun(SCHEDULER_CALC, bop);
-    sysdep.RegisterRun(DDS_SYSTEM_CALC);
+    scheduler.RegisterRun(DDS_RUN_CALC, bop);
+    sysdep.RegisterRun(DDS_RUN_CALC);
   }
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)

@@ -121,7 +121,7 @@ void Scheduler::RegisterThreads(
 
 
 void Scheduler::RegisterRun(
-  const enum SchedulerMode mode,
+  const enum RunMode mode,
   boards const * bop,
   playTracesBin const * plp)
 {
@@ -133,7 +133,7 @@ void Scheduler::RegisterRun(
 
 
 void Scheduler::RegisterRun(
-  const enum SchedulerMode mode,
+  const enum RunMode mode,
   boards const * bop)
 {
   Scheduler::Reset();
@@ -155,15 +155,15 @@ void Scheduler::RegisterRun(
 }
 
 
-void Scheduler::SortHands(const enum SchedulerMode mode)
+void Scheduler::SortHands(const enum RunMode mode)
 {
   // Make predictions per group.
 
-  if (mode == SCHEDULER_SOLVE)
+  if (mode == DDS_RUN_SOLVE)
     Scheduler::SortSolve();
-  else if (mode == SCHEDULER_CALC)
+  else if (mode == DDS_RUN_CALC)
     Scheduler::SortCalc();
-  else if (mode == SCHEDULER_TRACE)
+  else if (mode == DDS_RUN_TRACE)
     Scheduler::SortTrace();
 }
 

@@ -17,12 +17,9 @@
 #include <string>
 #include <vector>
 
-using namespace std;
+#include "dds.h"
 
-#define DDS_SYSTEM_SOLVE 0
-#define DDS_SYSTEM_CALC 1
-#define DDS_SYSTEM_PLAY 2
-#define DDS_SYSTEM_SIZE 3
+using namespace std;
 
 typedef void (*fptrType)(const int thid);
 
@@ -31,7 +28,7 @@ class System
 {
   private:
 
-    unsigned runCat; // SOLVE / CALC / PLAY
+    RunMode runCat; // SOLVE / CALC / PLAY
 
     int numThreads;
     int sysMem_MB;
@@ -81,7 +78,7 @@ class System
       const int mem_def_MB,
       const int mem_max_MB);
 
-    int RegisterRun(const unsigned code);
+    int RegisterRun(const RunMode r);
 
     bool ThreadOK(const int thrId) const;
 

@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -18,13 +18,11 @@ int ConvertFromPBN(
   char * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS])
 {
-  int bp = 0, first, card, hand, handRelFirst, suitInHand, h, s;
-  int IsCard(char cardChar);
-
-  for (h = 0; h < DDS_HANDS; h++)
-    for (s = 0; s < DDS_SUITS; s++)
+  for (int h = 0; h < DDS_HANDS; h++)
+    for (int s = 0; s < DDS_SUITS; s++)
       remainCards[h][s] = 0;
 
+  int bp = 0;
   while (((dealBuff[bp] != 'W') && (dealBuff[bp] != 'N') &&
           (dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
           (dealBuff[bp] != 'w') && (dealBuff[bp] != 'n') &&
@@ -34,6 +32,7 @@ int ConvertFromPBN(
   if (bp >= 3)
     return 0;
 
+  int first;
   if ((dealBuff[bp] == 'N') || (dealBuff[bp] == 'n'))
     first = 0;
   else if ((dealBuff[bp] == 'E') || (dealBuff[bp] == 'e'))
@@ -46,8 +45,9 @@ int ConvertFromPBN(
   bp++;
   bp++;
 
-  handRelFirst = 0;
-  suitInHand = 0;
+  int handRelFirst = 0;
+  int suitInHand = 0;
+  int card, hand;
 
   while ((bp < 80) && (dealBuff[bp] != '\0'))
   {
