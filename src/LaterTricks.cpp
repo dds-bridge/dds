@@ -2,24 +2,21 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
-
-#include "dds.h"
 #include "LaterTricks.h"
-#include "Memory.h"
 
 
 bool LaterTricksMIN(
   pos * posPoint,
-  int hand,
-  int depth,
-  int target,
-  int trump,
-  ThreadData * thrp)
+  const int hand,
+  const int depth,
+  const int target,
+  const int trump,
+  ThreadData const * thrp)
 {
   if ((trump == DDS_NOTRUMP) || (posPoint->winner[trump].rank == 0))
   {
@@ -149,11 +146,11 @@ bool LaterTricksMIN(
 
 bool LaterTricksMAX(
   pos * posPoint,
-  int hand,
-  int depth,
-  int target,
-  int trump,
-  ThreadData * thrp)
+  const int hand,
+  const int depth,
+  const int target,
+  const int trump,
+  ThreadData const * thrp)
 {
   if ((trump == DDS_NOTRUMP) || (posPoint->winner[trump].rank == 0))
   {
