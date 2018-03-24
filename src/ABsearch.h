@@ -81,7 +81,8 @@ void InitFileTopLevel(
   int thrId);
 
 void InitFileABstats(
-  int thrId);
+  localVarType * thrp,
+  const string& fname);
 
 void InitFileABhits(
   int thrId);

@@ -127,17 +127,11 @@ void InitFileTopLevel(int thrId)
 }
 
 
-void InitFileABstats(int thrId)
+void InitFileABstats(
+  localVarType * thrp,
+  const string& fname)
 {
 #ifdef DDS_AB_STATS
-  localVarType * thrp = &localVar[thrId];
-
-  char fname[DDS_FNAME_LEN];
-  sprintf(fname, "%s%d%s",
-          DDS_AB_STATS_PREFIX,
-          thrId,
-          DDS_DEBUG_SUFFIX);
-
   thrp->ABStats.SetFile(fname);
 
   thrp->ABStats.SetName(AB_TARGET_REACHED, "Target decided");

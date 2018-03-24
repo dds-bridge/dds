@@ -365,30 +365,32 @@ void InitConstants()
 
 void InitDebugFiles()
 {
-  for (int k = 0; k < noOfThreads; k++)
+  for (int thrId = 0; thrId < noOfThreads; thrId++)
   {
+    localVarType * thrp = &localVar[thrId];
 #ifdef DDS_TOP_LEVEL
-    InitFileTopLevel(k);
+    InitFileTopLevel(thrId);
 #endif
 
 #ifdef DDS_AB_STATS
-    InitFileABstats(k);
+    InitFileABstats(thrp, 
+      DDS_AB_STATS_PREFIX + to_string(thrId) + DDS_DEBUG_SUFFIX);
 #endif
 
 #ifdef DDS_AB_HITS
-    InitFileABhits(k);
+    InitFileABhits(thrId);
 #endif
 
 #ifdef DDS_TT_STATS
-    InitFileTTstats(k);
+    InitFileTTstats(thrId);
 #endif
 
 #ifdef DDS_TIMING
-    InitFileTimer(k);
+    InitFileTimer(thrId);
 #endif
 
 #ifdef DDS_MOVES
-    InitFileMoves(k);
+    InitFileMoves(thrId);
 #endif
   }
 

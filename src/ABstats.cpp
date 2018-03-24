@@ -2,14 +2,13 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 /*
-   This object, ABstats, is a simple object for AB statistics
-   and return values.
+   ABstats is a simple object for AB statistics and return values.
 */
 
 
@@ -19,7 +18,6 @@
 
 ABstats::ABstats()
 {
-  strcpy(fname, "");
   fp = stdout;
   ABstats::Reset();
   ABstats::ResetCum();
@@ -78,17 +76,12 @@ void ABstats::ResetCum()
 }
 
 
-void ABstats::SetFile(char * ourFname)
+void ABstats::SetFile(const string& fname)
 {
-  if (strlen(ourFname) > DDS_LINE_LEN)
-    return;
-
   if (fp != stdout) // Already set
     return;
 
-  strncpy(fname, ourFname, strlen(ourFname));
-
-  fp = fopen(fname, "w");
+  fp = fopen(fname.c_str(), "w");
   if (! fp)
     fp = stdout;
 }
@@ -103,7 +96,10 @@ void ABstats::SetName(int no, char * ourName)
 }
 
 
-void ABstats::IncrPos(int no, bool side, int depth)
+void ABstats::IncrPos(
+  int no, 
+  bool side, 
+  int depth)
 {
   if (no < 0 || no >= DDS_AB_POS)
     return;

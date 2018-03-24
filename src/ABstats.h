@@ -13,6 +13,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
+
+using namespace std;
+
 
 /*
    AB_COUNT is a macro that avoids the tedious #ifdef's at
@@ -46,7 +50,6 @@ class ABstats
 {
   private:
     FILE * fp;
-    char fname[DDS_LINE_LEN];
     char name[DDS_AB_POS][40];
     int counter[DDS_AB_POS][DDS_MAXDEPTH];
     int counterCum[DDS_AB_POS];
@@ -65,7 +68,7 @@ class ABstats
     ~ABstats();
     void Reset();
     void ResetCum();
-    void SetFile(char * fname);
+    void SetFile(const string& fname);
     void SetName(int no, char * name);
     void IncrPos(int no, bool side, int depth);
     void IncrNode(int depth);
