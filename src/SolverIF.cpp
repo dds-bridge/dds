@@ -286,7 +286,7 @@ int SolveBoardInternal(
     thrp->moves.MakeSpecific(&mv, trick, k);
   }
 
-  InitWinners(&dl, &thrp->lookAheadPos, thrp);
+  InitWinners(dl, thrp->lookAheadPos, thrp);
 
 #ifdef DDS_AB_STATS
   thrp->ABStats.Reset();

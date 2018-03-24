@@ -11,11 +11,11 @@
 #include "dds.h"
 #include "PBN.h"
 
-int IsCard(char cardChar);
+int IsCard(const char cardChar);
 
 
 int ConvertFromPBN(
-  char * dealBuff,
+  char const * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS])
 {
   for (int h = 0; h < DDS_HANDS; h++)
@@ -99,7 +99,7 @@ int ConvertFromPBN(
 }
 
 
-int IsCard(char cardChar)
+int IsCard(const char cardChar)
 {
   switch (cardChar)
   {
@@ -146,7 +146,7 @@ int IsCard(char cardChar)
 
 
 int ConvertPlayFromPBN(
-  playTracePBN * playPBN,
+  playTracePBN const * playPBN,
   playTraceBin * playBin)
 {
   int n = playPBN->number;

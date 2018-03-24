@@ -12,11 +12,11 @@
 
 
 int ConvertFromPBN(
-  char * dealBuff,
+  char const * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS]);
 
 int ConvertPlayFromPBN(
-  playTracePBN * playPBN,
+  playTracePBN const * playPBN,
   playTraceBin * playBin);
 
 #endif

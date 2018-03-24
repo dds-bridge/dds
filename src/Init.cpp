@@ -2,18 +2,22 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
-#include "dds.h"
 #include "Init.h"
-#include "ABsearch.h"
-#include "Scheduler.h"
 #include "System.h"
-#include "Memory.h"
+#include "Scheduler.h"
+
+
+System sysdep;
+Memory memory;
+Scheduler scheduler;
+int noOfThreads;
+
 
 void InitConstants();
 
@@ -27,10 +31,6 @@ void CalcThreadMemory(
   int& mem_def,
   int& mem_max);
 
-System sysdep;
-Memory memory;
-Scheduler scheduler;
-int noOfThreads;
 
 int lho[DDS_HANDS] = { 1, 2, 3, 0 };
 int rho[DDS_HANDS] = { 3, 0, 1, 2 };
@@ -547,9 +547,9 @@ void SetDealTables(
 
 
 void InitWinners(
-  deal * dl,
-  pos * posPoint,
-  ThreadData * thrp)
+  const deal& dl,
+  pos& posPoint,
+  ThreadData const * thrp)
 {
   int hand, suit, rank;
   unsigned short int startMovesBitMap[DDS_HANDS][DDS_SUITS];
@@ -558,11 +558,11 @@ void InitWinners(
     for (int s = 0; s < DDS_SUITS; s++)
       startMovesBitMap[h][s] = 0;
 
-  for (int k = 0; k < posPoint->handRelFirst; k++)
+  for (int k = 0; k < posPoint.handRelFirst; k++)
   {
-    hand = handId(dl->first, k);
-    suit = dl->currentTrickSuit[k];
-    rank = dl->currentTrickRank[k];
+    hand = handId(dl.first, k);
+    suit = dl.currentTrickSuit[k];
+    rank = dl.currentTrickRank[k];
     startMovesBitMap[hand][suit] |= bitMapRank[rank];
   }
 
@@ -573,10 +573,10 @@ void InitWinners(
     for (int h = 0; h < DDS_HANDS; h++)
       aggr |= startMovesBitMap[h][s] | thrp->suit[h][s];
 
-    posPoint->winner[s].rank = thrp->rel[aggr].absRank[1][s].rank;
-    posPoint->winner[s].hand = thrp->rel[aggr].absRank[1][s].hand;
-    posPoint->secondBest[s].rank = thrp->rel[aggr].absRank[2][s].rank;
-    posPoint->secondBest[s].hand = thrp->rel[aggr].absRank[2][s].hand;
+    posPoint.winner[s].rank = thrp->rel[aggr].absRank[1][s].rank;
+    posPoint.winner[s].hand = thrp->rel[aggr].absRank[1][s].hand;
+    posPoint.secondBest[s].rank = thrp->rel[aggr].absRank[2][s].rank;
+    posPoint.secondBest[s].hand = thrp->rel[aggr].absRank[2][s].hand;
   }
 }
 

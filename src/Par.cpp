@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include "dds.h"
+#include "PBN.h"
 
 struct par_suits_type
 {
@@ -49,7 +50,6 @@ int STDCALL CalcParPBN(
 {
   int res;
   ddTableDeal tableDeal;
-  int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]);
   int STDCALL CalcPar(ddTableDeal tableDeal, int vulnerable,
                       ddTableResults * tablep, parResults * presp);
 
