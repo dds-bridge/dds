@@ -120,25 +120,21 @@ void Scheduler::RegisterThreads(
 }
 
 
-void Scheduler::RegisterTraceDepth(
-  playTracesBin * plp,
-  int number)
+void Scheduler::RegisterRun(
+  const enum SchedulerMode mode,
+  boards const * bop,
+  playTracesBin const * plp)
 {
-  // This is only used for traces, so it is entered separately.
-
-#ifdef DDS_SCHEDULER
-  for (int b = 0; b < number; b++)
+  for (int b = 0; b < bop->noOfBoards; b++)
     hands[b].depth = plp->plays[b].number;
-#else
-  UNUSED(plp);
-  UNUSED(number);
-#endif
+  
+  Scheduler::RegisterRun(mode, bop);
 }
 
 
-void Scheduler::Register(
-  boards * bop,
-  int sortMode)
+void Scheduler::RegisterRun(
+  const enum SchedulerMode mode,
+  boards const * bop)
 {
   Scheduler::Reset();
 
@@ -154,21 +150,28 @@ void Scheduler::Register(
 
   Scheduler::FinetuneGroups();
 
+  Scheduler::SortHands(mode);
+
+}
+
+
+void Scheduler::SortHands(const enum SchedulerMode mode)
+{
   // Make predictions per group.
 
-  if (sortMode == SCHEDULER_SOLVE)
+  if (mode == SCHEDULER_SOLVE)
     Scheduler::SortSolve();
-  else if (sortMode == SCHEDULER_CALC)
+  else if (mode == SCHEDULER_CALC)
     Scheduler::SortCalc();
-  else if (sortMode == SCHEDULER_TRACE)
+  else if (mode == SCHEDULER_TRACE)
     Scheduler::SortTrace();
 }
 
 
 void Scheduler::MakeGroups(
-  boards * bop)
+  boards const * bop)
 {
-  deal * dl;
+  deal const * dl;
   listType * lp;
 
   for (int b = 0; b < numHands; b++)
@@ -651,7 +654,7 @@ void Scheduler::SortTrace()
 
 
 int Scheduler::Strength(
-  deal * dl)
+  deal const * dl)
 {
   // If the strength in all suits is evenly split, then the
   // "strength" returned is close to 0. Maximum is 49.
@@ -678,7 +681,7 @@ int Scheduler::Strength(
 
 
 int Scheduler::Fanout(
-  deal * dl)
+  deal const * dl)
 {
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups. In a given suit the

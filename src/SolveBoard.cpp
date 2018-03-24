@@ -161,12 +161,12 @@ int SolveAllBoardsN(
 
   if (source == 0)
   {
-    scheduler.Register(bop, SCHEDULER_SOLVE);
+    scheduler.RegisterRun(SCHEDULER_SOLVE, bop);
     sysdep.Register(DDS_SYSTEM_SOLVE, noOfThreads);
   }
   else
   {
-    scheduler.Register(bop, SCHEDULER_CALC);
+    scheduler.RegisterRun(SCHEDULER_CALC, bop);
     sysdep.Register(DDS_SYSTEM_CALC, noOfThreads);
   }
 

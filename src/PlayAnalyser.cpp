@@ -293,8 +293,7 @@ int STDCALL AnalyseAllPlaysBin(
   traceparam.noOfBoards = bop->noOfBoards;
   traceparam.solvedp = solvedp;
 
-  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
-  scheduler.Register(bop, SCHEDULER_TRACE);
+  scheduler.RegisterRun(SCHEDULER_TRACE, bop, plp);
   sysdep.Register(DDS_SYSTEM_PLAY, noOfThreads);
 
   START_BLOCK_TIMER;

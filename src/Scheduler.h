@@ -18,10 +18,13 @@
 using namespace std;
 
 
-#define SCHEDULER_NOSORT 0
-#define SCHEDULER_SOLVE 1
-#define SCHEDULER_CALC 2
-#define SCHEDULER_TRACE 3
+enum SchedulerMode
+{
+  SCHEDULER_NOSORT,
+  SCHEDULER_SOLVE,
+  SCHEDULER_CALC,
+  SCHEDULER_TRACE
+};
 
 #define HASH_MAX 200
 
@@ -101,11 +104,13 @@ class Scheduler
 
     void InitHighCards();
 
+    void SortHands(const enum SchedulerMode mode);
+
     int Strength(
-      deal * dl);
+      deal const * dl);
 
     int Fanout(
-      deal * dl);
+      deal const * dl);
 
     void Reset();
 
@@ -113,7 +118,7 @@ class Scheduler
     Timer timerBlock;
 
     void MakeGroups(
-      boards * bop);
+      boards const * bop);
 
     void FinetuneGroups();
 
@@ -159,15 +164,17 @@ class Scheduler
 
     ~Scheduler();
 
-    void RegisterThreads(const int n);
+    void RegisterThreads(
+      const int n);
 
-    void RegisterTraceDepth(
-      playTracesBin * plp,
-      int number);
+    void RegisterRun(
+      const enum SchedulerMode mode,
+      boards const * bop,
+      playTracesBin const * plp);
 
-    void Register(
-      boards * bop,
-      int sortMode);
+    void RegisterRun(
+      const enum SchedulerMode mode,
+      boards const * bop);
 
     schedType GetNumber(
       int thrId);
