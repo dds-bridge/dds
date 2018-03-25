@@ -68,15 +68,6 @@ extern char relRank[8192][15];
 extern unsigned short int winRanks[8192][14];
 
 
-struct playparamType
-{
-  int noOfBoards;
-  playTracesBin * plp;
-  solvedPlays * solvedp;
-  int error;
-};
-
-
 struct moveGroupType
 {
   // There are at most 7 groups of bit "runs" in a 13-bit vector
@@ -89,8 +80,6 @@ struct moveGroupType
 
 extern moveGroupType groupData[8192];
 
-
-extern int stat_contr[DDS_STRAINS];
 
 struct moveType
 {
@@ -158,14 +147,6 @@ struct extCard
   int sequence;
 };
 
-struct paramType
-{
-  int noOfBoards;
-  boards * bop;
-  solvedBoards * solvedp;
-  int error;
-};
-
 struct absRankType // 2 bytes
 {
   char rank;
@@ -175,6 +156,14 @@ struct absRankType // 2 bytes
 struct relRanksType // 120 bytes
 {
   struct absRankType absRank[15][DDS_SUITS];
+};
+
+struct paramType
+{
+  int noOfBoards;
+  boards * bop;
+  solvedBoards * solvedp;
+  int error;
 };
 
 enum RunMode

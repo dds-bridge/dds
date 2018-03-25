@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -52,24 +52,24 @@ bool ABsearch3(
 
 void Make0(
   struct pos * posPoint,
-  int depth,
-  moveType * mply);
+  const int depth,
+  moveType const * mply);
 
 void Make1(
   struct pos * posPoint,
-  int depth,
-  moveType * mply);
+  const int depth,
+  moveType const * mply);
 
 void Make2(
   struct pos * posPoint,
-  int depth,
-  moveType * mply);
+  const int depth,
+  moveType const * mply);
 
 void Make3(
   struct pos * posPoint,
   unsigned short int trickCards[DDS_SUITS],
-  int depth,
-  moveType * mply,
+  const int depth,
+  moveType const * mply,
   ThreadData * thrp);
 
 evalType Evaluate(

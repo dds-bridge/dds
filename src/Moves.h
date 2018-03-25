@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -218,9 +218,9 @@ class Moves
     void Init(
       int tricks,
       int relStartHand,
-      int initialRanks[],
-      int initialSuits[],
-      unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
+      const int initialRanks[],
+      const int initialSuits[],
+      const unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
       int trump,
       int leadHand);
 
@@ -245,9 +245,9 @@ class Moves
       int relHand);
 
     void MakeSpecific(
-      moveType * mply,
-      int trick,
-      int relHand);
+      moveType const * mply,
+      const int trick,
+      const int relHand);
 
     moveType * MakeNext(
       int trick,

@@ -19,6 +19,7 @@
 
 long chunk;
 paramType param;
+
 extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;

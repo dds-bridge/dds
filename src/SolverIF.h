@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -15,24 +15,24 @@
 
 int SolveBoardInternal(
   ThreadData * thrp,
-  deal& dl,
-  int target,
-  int solutions,
-  int mode,
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode,
   futureTricks * futp);
 
 int SolveSameBoard(
   ThreadData * thrp,
-  deal dl,
+  const deal& dl,
   futureTricks * futp,
-  int hint);
+  const int hint);
 
 int AnalyseLaterBoard(
   ThreadData * thrp,
-  int leadHand,
-  moveType * move,
-  int hint,
-  int hintDir,
+  const int leadHand,
+  moveType const * move,
+  const int hint,
+  const int hintDir,
   futureTricks * futp);
 
 #endif

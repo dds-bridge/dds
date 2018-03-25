@@ -2,21 +2,17 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
-#include <stdexcept>
-
 #include "dds.h"
 #include "Init.h"
-#include "Moves.h"
 #include "ABsearch.h"
 #include "SolverIF.h"
 #include "TimerList.h"
 #include "System.h"
-#include "Memory.h"
 #include "Scheduler.h"
 
 extern System sysdep;
@@ -25,37 +21,37 @@ extern Scheduler scheduler;
 
 
 int BoardRangeChecks(
-  deal& dl,
-  int target,
-  int solutions,
-  int mode);
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode);
 
 int BoardValueChecks(
-  deal& dl,
-  int target,
-  int solutions,
-  int mode,
-  ThreadData * thrp);
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode,
+  ThreadData const * thrp);
 
 void LastTrickWinner(
-  deal * dl,
-  ThreadData * thrp,
-  int handToPlay,
-  int handRelFirst,
-  int * leadRank,
-  int * leadSuit,
-  int * leadSideWins);
+  const deal& dl,
+  ThreadData const * thrp,
+  const int handToPlay,
+  const int handRelFirst,
+  int& leadRank,
+  int& leadSuit,
+  int& leadSideWins);
 
 int DumpInput(
-  int errCode,
-  deal& dl,
-  int target,
-  int solutions,
-  int mode);
+  const int errCode,
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode);
 
 void PrintDeal(
   FILE * fp,
-  unsigned short ranks[][DDS_SUITS]);
+  const unsigned short ranks[][DDS_SUITS]);
 
 bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
@@ -73,8 +69,8 @@ bool (* AB_ptr_trace_list[DDS_HANDS])(
 
 void (* Make_ptr_list[3])(
   pos * posPoint,
-  int depth,
-  moveType * mply)
+  const int depth,
+  moveType const * mply)
   = { Make0, Make1, Make2 };
 
 
@@ -96,10 +92,10 @@ int STDCALL SolveBoard(
 
 int SolveBoardInternal(
   struct ThreadData * thrp,
-  deal& dl,
-  int target,
-  int solutions,
-  int mode,
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode,
   futureTricks * futp)
 {
   // ----------------------------------------------------------
@@ -197,8 +193,8 @@ int SolveBoardInternal(
   {
     int leadRank, leadSuit, leadSideWins;
 
-    LastTrickWinner(&dl, thrp, handToPlay, handRelFirst,
-                    &leadRank, &leadSuit, &leadSideWins);
+    LastTrickWinner(dl, thrp, handToPlay, handRelFirst,
+      leadRank, leadSuit, leadSideWins);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -653,9 +649,9 @@ SOLVER_DONE:
 
 int SolveSameBoard(
   struct ThreadData * thrp,
-  deal dl,
+  const deal& dl,
   futureTricks * futp,
-  int hint)
+  const int hint)
 {
   // Specialized function for SolveChunkDDtable for repeat solves.
   // No further parameter checks! This function makes heavy reuse
@@ -758,10 +754,10 @@ int SolveSameBoard(
 
 int AnalyseLaterBoard(
   ThreadData * thrp,
-  int leadHand,
-  moveType * move,
-  int hint,
-  int hintDir,
+  const int leadHand,
+  moveType const * move,
+  const int hint,
+  const int hintDir,
   futureTricks * futp)
 {
   // Specialized function for PlayAnalyser for cards after the
@@ -906,10 +902,10 @@ int AnalyseLaterBoard(
 
 
 int BoardRangeChecks(
-  deal& dl,
-  int target,
-  int solutions,
-  int mode)
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode)
 {
   if (target < -1)
   {
@@ -1006,11 +1002,11 @@ int BoardRangeChecks(
 
 
 int BoardValueChecks(
-  deal& dl,
-  int target,
-  int solutions,
-  int mode,
-  ThreadData * thrp)
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode,
+  ThreadData const * thrp)
 {
   int cardCount = thrp->iniDepth + 4;
   if (cardCount <= 0)
@@ -1096,13 +1092,13 @@ int BoardValueChecks(
 
 
 void LastTrickWinner(
-  deal * dl,
-  ThreadData * thrp,
-  int handToPlay,
-  int handRelFirst,
-  int * leadRank,
-  int * leadSuit,
-  int * leadSideWins)
+  const deal& dl,
+  ThreadData const * thrp,
+  const int handToPlay,
+  const int handRelFirst,
+  int& leadRank,
+  int& leadSuit,
+  int& leadSideWins)
 {
   int lastTrickSuit[DDS_HANDS],
       lastTrickRank[DDS_HANDS],
@@ -1111,14 +1107,14 @@ void LastTrickWinner(
 
   for (h = 0; h < handRelFirst; h++)
   {
-    hp = handId(dl->first, h);
-    lastTrickSuit[hp] = dl->currentTrickSuit[h];
-    lastTrickRank[hp] = dl->currentTrickRank[h];
+    hp = handId(dl.first, h);
+    lastTrickSuit[hp] = dl.currentTrickSuit[h];
+    lastTrickRank[hp] = dl.currentTrickRank[h];
   }
 
   for (h = handRelFirst; h < DDS_HANDS; h++)
   {
-    hp = handId(dl->first, h);
+    hp = handId(dl.first, h);
     for (int s = 0; s < DDS_SUITS; s++)
     {
       if (thrp->suit[hp][s] != 0)
@@ -1135,15 +1131,15 @@ void LastTrickWinner(
       maxHand = -1;
 
   /* Highest trump? */
-  if (dl->trump != DDS_NOTRUMP)
+  if (dl.trump != DDS_NOTRUMP)
   {
     for (h = 0; h < DDS_HANDS; h++)
     {
-      if ((lastTrickSuit[h] == dl->trump) &&
+      if ((lastTrickSuit[h] == dl.trump) &&
           (lastTrickRank[h] > maxRank))
       {
         maxRank = lastTrickRank[h];
-        maxSuit = dl->trump;
+        maxSuit = dl.trump;
         maxHand = h;
       }
     }
@@ -1152,9 +1148,9 @@ void LastTrickWinner(
   /* Highest card in leading suit */
   if (maxRank == 0)
   {
-    maxRank = lastTrickRank[dl->first];
-    maxSuit = lastTrickSuit[dl->first];
-    maxHand = dl->first;
+    maxRank = lastTrickRank[dl.first];
+    maxSuit = lastTrickSuit[dl.first];
+    maxHand = dl.first;
 
     for (h = 0; h < DDS_HANDS; h++)
     {
@@ -1167,21 +1163,21 @@ void LastTrickWinner(
     }
   }
 
-  hp = handId(dl->first, handRelFirst);
-  * leadRank = lastTrickRank[hp];
-  * leadSuit = lastTrickSuit[hp];
-  * leadSideWins = ((handToPlay == maxHand ||
-                     partner[handToPlay] == maxHand) ? 1 : 0);
+  hp = handId(dl.first, handRelFirst);
+  leadRank = lastTrickRank[hp];
+  leadSuit = lastTrickSuit[hp];
+  leadSideWins = ((handToPlay == maxHand ||
+    partner[handToPlay] == maxHand) ? 1 : 0);
 }
 
 
 
 int DumpInput(
-  int errCode, 
-  deal& dl, 
-  int target,
-  int solutions, 
-  int mode)
+  const int errCode, 
+  const deal& dl, 
+  const int target,
+  const int solutions, 
+  const int mode)
 {
   FILE * fp;
   int i, j, k;
@@ -1222,7 +1218,9 @@ int DumpInput(
 }
 
 
-void PrintDeal(FILE * fp, unsigned short ranks[][4])
+void PrintDeal(
+  FILE * fp, 
+  const unsigned short ranks[][4])
 {
   int i, count, trickCount = 0, s, r;
   bool ec[4];

@@ -23,6 +23,14 @@
 FILE * fp;
 #endif
 
+struct playparamType
+{
+  int noOfBoards;
+  playTracesBin * plp;
+  solvedPlays * solvedp;
+  int error;
+};
+
 paramType playparam;
 playparamType traceparam;
 
