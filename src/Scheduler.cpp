@@ -17,7 +17,7 @@
 
 Scheduler::Scheduler()
 {
-  numThreads = 1;
+  numThreads = 0;
   numHands = 0;
 
   Scheduler::InitHighCards();
@@ -32,7 +32,7 @@ Scheduler::Scheduler()
   }
 #endif
 
-  Scheduler::RegisterThreads(numThreads);
+  Scheduler::RegisterThreads(1);
 }
 
 
@@ -102,7 +102,6 @@ void Scheduler::Reset()
     for (int key = 0; key < HASH_MAX; key++)
       list[strain][key].first = -1;
 
-
   for (int t = 0; t < numThreads; t++)
   {
     threadGroup[t] = -1;
@@ -162,7 +161,6 @@ void Scheduler::RegisterRun(
   Scheduler::FinetuneGroups();
 
   Scheduler::SortHands(mode);
-
 }
 
 

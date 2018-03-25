@@ -6,6 +6,7 @@ DDS_SOURCE_FILES    =           \
         ../src/DealerPar.cpp    \
         ../src/Init.cpp         \
         ../src/LaterTricks.cpp  \
+        ../src/Memory.cpp       \
         ../src/Moves.cpp        \
         ../src/Par.cpp          \
         ../src/PlayAnalyser.cpp \

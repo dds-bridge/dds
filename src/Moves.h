@@ -117,7 +117,7 @@ class Moves
 
     moveStatsType trickFuncSuitTable;
 
-    FILE * fp;
+    string fname;
 
 
     void WeightAllocTrump0(
@@ -203,9 +203,11 @@ class Moves
       char str[]);
 
     void PrintTrickTable(
+      FILE * fp,
       moveStatType tablep[][DDS_HANDS]);
 
     void PrintFunctionTable(
+      FILE * fp,
       moveStatsType * tablep);
 
   public:

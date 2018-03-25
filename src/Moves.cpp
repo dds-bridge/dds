@@ -10,7 +10,6 @@
 
 #include "dds.h"
 #include "Moves.h"
-#include "ABsearch.h"
 #include "debug.h"
 
 #ifdef DDS_MOVES
@@ -52,6 +51,8 @@ Moves::Moves()
   funcName[MG_TRUMP_VOID3] = "Trump_Void3";
   funcName[MG_COMB_NOTVOID3] = "Comb_Notvoid3";
 
+  fname = "";
+
   for (int t = 0; t < 13; t++)
   {
     for (int h = 0; h < DDS_HANDS; h++)
@@ -71,15 +72,13 @@ Moves::Moves()
     }
   }
 
-  trickFuncTable .nfuncs = 0;
+  trickFuncTable.nfuncs = 0;
   trickFuncSuitTable.nfuncs = 0;
   for (int i = 0; i < MG_NUM_FUNCTIONS; i++)
   {
     trickFuncTable .list[i].count = 0;
     trickFuncSuitTable.list[i].count = 0;
   }
-
-  fp = stdout;
 
   WeightList[ 4] = &Moves::WeightAllocNTNotvoid1;
   WeightList[ 5] = &Moves::WeightAllocTrumpNotvoid1;
@@ -100,19 +99,13 @@ Moves::Moves()
 
 void Moves::SetFile(const string& ourFname)
 {
-  if (fp != stdout) // Already set
-    return;
-
-  fp = fopen(ourFname.c_str(), "w");
-  if (! fp)
-    fp = stdout;
+  fname = ourFname;
+  remove(fname.c_str());  // May fail -- that's OK
 }
 
 
 Moves::~Moves()
 {
-  if (fp != stdout && fp != nullptr)
-    fclose(fp);
 }
 
 
@@ -2504,6 +2497,7 @@ char * Moves::FullAverageString(
 
 
 void Moves::PrintTrickTable(
+  FILE * fp,
   moveStatType tablep[][DDS_HANDS])
 {
   fprintf(fp, "%5s %11s %11s %11s %11s\n",
@@ -2535,16 +2529,20 @@ void Moves::PrintTrickTable(
 
 void Moves::PrintTrickStats()
 {
+  FILE * fp;
+  fp = fopen(fname.c_str(), "a");
   fprintf(fp, "Overall statistics\n\n");
-  Moves::PrintTrickTable(trickTable);
+  Moves::PrintTrickTable(fp, trickTable);
 
   fprintf(fp, "\n\nStatistics for winning suit\n\n");
-  Moves::PrintTrickTable(trickSuitTable);
+  Moves::PrintTrickTable(fp, trickSuitTable);
   fprintf(fp, "\n\n");
+  fclose(fp);
 }
 
 
 void Moves::PrintFunctionTable(
+  FILE * fp,
   moveStatsType * statp)
 {
   char str[2][40];
@@ -2573,6 +2571,8 @@ void Moves::PrintFunctionTable(
 
 void Moves::PrintTrickDetails()
 {
+  FILE * fp;
+  fp = fopen(fname.c_str(), "a");
   fprintf(fp, "Trick detail statistics\n\n");
 
   for (int t = 12; t >= 0; t--)
@@ -2580,7 +2580,7 @@ void Moves::PrintTrickDetails()
     for (int h = 0; h < DDS_HANDS; h++)
     {
       fprintf(fp, "Trick %d, relative hand %d\n", t, h);
-      Moves::PrintFunctionTable(&trickDetailTable[t][h]);
+      Moves::PrintFunctionTable(fp, &trickDetailTable[t][h]);
       fprintf(fp, "\n");
     }
   }
@@ -2592,23 +2592,29 @@ void Moves::PrintTrickDetails()
     for (int h = 0; h < DDS_HANDS; h++)
     {
       fprintf(fp, "Trick %d, relative hand %d\n", t, h);
-      Moves::PrintFunctionTable(&trickDetailSuitTable[t][h]);
+      Moves::PrintFunctionTable(fp, &trickDetailSuitTable[t][h]);
       fprintf(fp, "\n");
     }
   }
 
   fprintf(fp, "\n\n");
+  fclose(fp);
 }
 
 
 void Moves::PrintFunctionStats()
 {
+  FILE * fp;
+  fp = fopen(fname.c_str(), "a");
+
   fprintf(fp, "Function statistics\n\n");
-  Moves::PrintFunctionTable(&trickFuncTable);
+  Moves::PrintFunctionTable(fp, &trickFuncTable);
 
   fprintf(fp, "\n\nFunction statistics for winning suit\n\n");
-  Moves::PrintFunctionTable(&trickFuncSuitTable);
+  Moves::PrintFunctionTable(fp, &trickFuncSuitTable);
   fprintf(fp, "\n\n");
+
+  fclose(fp);
 }
 
 
