@@ -76,7 +76,8 @@ class ABstats
     int sumNew[DDS_AB_POS];
     int psumNew[DDS_AB_POS];
 
-    ABtracker ABscores[2];
+    ABtracker ABsides[2];
+    ABtracker ABplaces[DDS_AB_POS];
 
 
     int allnodes;

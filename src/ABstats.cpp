@@ -62,11 +62,19 @@ void ABstats::Reset()
   for (int side = 0; side < 2; side++)
   {
     for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
-      ABscores[side].list[depth] = 0;
+      ABsides[side].list[depth] = 0;
 
-    ABscores[side].sum = 0;
-    ABscores[side].sumWeighted = 0;
+    ABsides[side].sum = 0;
+    ABsides[side].sumWeighted = 0;
+  }
 
+  for (int place = 0; place < DDS_AB_POS; place++)
+  {
+    for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
+      ABplaces[place].list[depth] = 0;
+
+    ABplaces[place].sum = 0;
+    ABplaces[place].sumWeighted = 0;
   }
 }
 
@@ -92,8 +100,14 @@ void ABstats::ResetCum()
 
   for (int side = 0; side < 2; side++)
   {
-    ABscores[side].sumCum = 0;
-    ABscores[side].sumCumWeighted = 0;
+    ABsides[side].sumCum = 0;
+    ABsides[side].sumCumWeighted = 0;
+  }
+
+  for (int place = 0; place < DDS_AB_POS; place++)
+  {
+    ABplaces[place].sumCum = 0;
+    ABplaces[place].sumCumWeighted = 0;
   }
 }
 
@@ -125,15 +139,21 @@ void ABstats::IncrPos(
   sumNew[no]++;
   psumNew[no] += depth;
 
+  ABplaces[no].list[depth]++;
+  ABplaces[no].sum++;
+  ABplaces[no].sumWeighted += depth;
+  ABplaces[no].sumCum++;
+  ABplaces[no].sumCumWeighted += depth;
+
   const int iside = (side ? 1 : 0);
 
   score[iside][depth]++;
 
-  ABscores[iside].list[depth]++;
-  ABscores[iside].sum++;
-  ABscores[iside].sumWeighted += depth;
-  ABscores[iside].sumCum++;
-  ABscores[iside].sumCumWeighted += depth;
+  ABsides[iside].list[depth]++;
+  ABsides[iside].sum++;
+  ABsides[iside].sumWeighted += depth;
+  ABsides[iside].sumCum++;
+  ABsides[iside].sumCumWeighted += depth;
 
 }
 
@@ -174,14 +194,35 @@ void ABstats::PrintStats()
 
   allnodesCum += allnodes;
 
+  // sumNew[p], ABplaces[p].sum
+  // psumNew[p], ABplaces[p].sumWeighted
+  // counterCum[p], ABplaces[p].sumCum
+  // pcounterCum[p], ABplaces[p].sumCumWeighted
+
   for (int p = 0; p < DDS_AB_POS; p++)
   {
     counterCum[p] += sumNew[p];
     pcounterCum[p] += psumNew[p];
   }
 
-  int s = ABscores[1].sum + ABscores[0].sum;
-  int cs = ABscores[1].sumCum + ABscores[0].sumCum;
+for (int p = 0; p < DDS_AB_POS; p++)
+{
+  if (ABplaces[p].sum != sumNew[p])
+    fprintf(fp, "sum %d: %d %d\n", p, ABplaces[p].sum, sumNew[p]);
+
+  if (ABplaces[p].sumWeighted != psumNew[p])
+    fprintf(fp, "sumw %d: %d %d\n", p, ABplaces[p].sumWeighted, psumNew[p]);
+
+  if (ABplaces[p].sumCum != counterCum[p])
+    fprintf(fp, "sumc %d: %d %d\n", p, ABplaces[p].sumCum, counterCum[p]);
+
+  if (ABplaces[p].sumCumWeighted != pcounterCum[p])
+    fprintf(fp, "sumcw %d: %d %d\n", p, ABplaces[p].sumCumWeighted, pcounterCum[p]);
+
+}
+
+  int s = ABsides[1].sum + ABsides[0].sum;
+  int cs = ABsides[1].sumCum + ABsides[0].sumCum;
   if (s)
   {
     fprintf(fp, "%2s %-20s %8s %5s %5s %8s %5s %5s\n",
@@ -200,22 +241,22 @@ void ABstats::PrintStats()
     fprintf(fp, "%2s %-20s %8d %5.1f %5.1f %8d %5.1f %5.1f\n",
             "",
             "Side1",
-            ABscores[1].sum,
-            100. * ABscores[1].sum / static_cast<double>(s),
-            ABscores[1].sumWeighted / static_cast<double>(s),
-            ABscores[1].sumCum,
-            100. * ABscores[1].sumCum / static_cast<double>(cs),
-            ABscores[1].sumCumWeighted / static_cast<double>(cs));
+            ABsides[1].sum,
+            100. * ABsides[1].sum / static_cast<double>(s),
+            ABsides[1].sumWeighted / static_cast<double>(s),
+            ABsides[1].sumCum,
+            100. * ABsides[1].sumCum / static_cast<double>(cs),
+            ABsides[1].sumCumWeighted / static_cast<double>(cs));
 
     fprintf(fp, "%2s %-20s %8d %5.1f %5.1f %8d %5.1f %5.1f\n\n",
             "",
             "Side0",
-            ABscores[0].sum,
-            100. * ABscores[0].sum / static_cast<double>(s),
-            ABscores[0].sumWeighted / static_cast<double>(s),
-            ABscores[0].sumCum,
-            100. * ABscores[0].sumCum / static_cast<double>(cs),
-            ABscores[0].sumCumWeighted / static_cast<double>(cs));
+            ABsides[0].sum,
+            100. * ABsides[0].sum / static_cast<double>(s),
+            ABsides[0].sumWeighted / static_cast<double>(s),
+            ABsides[0].sumCum,
+            100. * ABsides[0].sumCum / static_cast<double>(cs),
+            ABsides[0].sumCumWeighted / static_cast<double>(cs));
 
     for (int p = 0; p < DDS_AB_POS; p++)
     {
@@ -303,7 +344,7 @@ void ABstats::PrintStats()
   }
 
   fprintf(fp, "%-5s %6d\n\n\n", "Diff",
-          allnodes - ABscores[1].sum - ABscores[0].sum);
+          allnodes - ABsides[1].sum - ABsides[0].sum);
 
 #ifdef DDS_AB_DETAILS
   fprintf(fp, "%2s %6s %6s",
@@ -334,7 +375,7 @@ void ABstats::PrintStats()
   fprintf(fp, "---------------------------\n");
 
   fprintf(fp, "%2s %6d %6d",
-          "S", ABscores[1].sum, ABscores[0].sum);
+          "S", ABsides[1].sum, ABsides[0].sum);
 
   for (int p = 0; p < DDS_AB_POS; p++)
     fprintf(fp, " %5d", sumNew[p]);
