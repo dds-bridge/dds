@@ -8,9 +8,7 @@
 */
 
 
-#include "dds.h"
 #include "QuickTricks.h"
-#include "Memory.h"
 
 
 int QtricksLeadHandNT(
@@ -62,7 +60,7 @@ int QuickTricksPartnerHandTrump(
   int commSuit,
   int commRank,
   int * res,
-  ThreadData * thrp);
+  ThreadData const * thrp);
 
 int QuickTricksPartnerHandNT(
   int hand,
@@ -78,24 +76,24 @@ int QuickTricksPartnerHandNT(
   int commSuit,
   int commRank,
   int * res,
-  ThreadData * thrp);
+  ThreadData const * thrp);
 
 
 int QuickTricks(
   pos * posPoint,
-  int hand,
-  int depth,
-  int target,
-  int trump,
-  bool * result,
-  ThreadData * thrp)
+  const int hand,
+  const int depth,
+  const int target,
+  const int trump,
+  bool& result,
+  ThreadData const * thrp)
 {
   int suit, commRank = 0, commSuit = -1;
   int res;
   int lhoTrumpRanks = 0, rhoTrumpRanks = 0;
   int cutoff, lowestQtricks = 0;
 
-  *result = true;
+  result = true;
   int qtricks = 0;
 
   if (thrp->nodeTypeStore[hand] == MAXNODE)
@@ -104,9 +102,9 @@ int QuickTricks(
     cutoff = posPoint->tricksMAX - target + (depth >> 2) + 2;
 
   bool commPartner = false;
-  unsigned short (* ris)[DDS_SUITS] = posPoint->rankInSuit;
-  unsigned char (* len)[DDS_SUITS] = posPoint->length;
-  highCardType * winner = posPoint->winner;
+  const unsigned short (* ris)[DDS_SUITS] = posPoint->rankInSuit;
+  const unsigned char (* len)[DDS_SUITS] = posPoint->length;
+  highCardType const * winner = posPoint->winner;
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
@@ -657,7 +655,7 @@ int QuickTricks(
     }
   }
 
-  *result = false;
+  result = false;
   return qtricks;
 }
 
@@ -868,7 +866,7 @@ int QuickTricksPartnerHandTrump(
   int commSuit,
   int commRank,
   int * res,
-  ThreadData * thrp)
+  ThreadData const * thrp)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
@@ -1004,7 +1002,7 @@ int QuickTricksPartnerHandNT(
   int commSuit,
   int commRank,
   int * res,
-  ThreadData * thrp)
+  ThreadData const * thrp)
 {
   *res = 1;
   int qt = qtricks;
@@ -1099,7 +1097,7 @@ bool QuickTricksSecondHand(
   int depth,
   int target,
   int trump,
-  ThreadData * thrp)
+  ThreadData const * thrp)
 {
   if (depth == thrp->iniDepth)
     return false;
