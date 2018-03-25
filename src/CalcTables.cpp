@@ -8,8 +8,6 @@
 */
 
 
-#include <stdexcept>
-
 #include "dds.h"
 #include "SolveBoard.h"
 #include "PBN.h"

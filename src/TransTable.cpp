@@ -7,8 +7,6 @@
    See LICENSE and README.
 */
 
-#include <stdexcept>
-
 #include "dds.h"
 #include "TransTable.h"
 #include "debug.h"
