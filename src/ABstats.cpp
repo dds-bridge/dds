@@ -39,18 +39,6 @@ ABstats::~ABstats()
 
 void ABstats::Reset()
 {
-  for (int p = 0; p < DDS_AB_POS; p++)
-  {
-    for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
-      counter[p][depth] = 0;
-  }
-
-  for (int side = 0; side < 2; side++)
-  {
-    for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
-      score[side][depth] = 0;
-  }
-
   for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
     nodes[depth] = 0;
 
@@ -120,8 +108,6 @@ void ABstats::IncrPos(
   if (no < 0 || no >= DDS_AB_POS)
     return;
 
-  counter[no][depth]++;
-
   ABplaces[no].list[depth]++;
   ABplaces[no].sum++;
   ABplaces[no].sumWeighted += depth;
@@ -129,8 +115,6 @@ void ABstats::IncrPos(
   ABplaces[no].sumCumWeighted += depth;
 
   const int iside = (side ? 1 : 0);
-
-  score[iside][depth]++;
 
   ABsides[iside].list[depth]++;
   ABsides[iside].sum++;
@@ -316,14 +300,14 @@ void ABstats::PrintStats()
 
   for (int d = DDS_MAXDEPTH - 1; d >= 0; d--)
   {
-    if (score[1][d] == 0 && score[0][d] == 0)
+    if (ABsides[1].list[d] == 0 && ABsides[0].list[d] == 0)
       continue;
 
     fprintf(fp, "%2d %6d %6d",
-            d, score[1][d], score[0][d]);
+            d, ABsides[1].list[d], ABsides[0].list[d]);
 
     for (int p = 0; p < DDS_AB_POS; p++)
-      fprintf(fp, " %5d", counter[p][d]);
+      fprintf(fp, " %5d", ABplaces[p].list[d]);
     fprintf(fp, "\n");
   }
 

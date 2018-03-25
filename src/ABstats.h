@@ -65,8 +65,6 @@ class ABstats
     bool fileSet;
 
     char name[DDS_AB_POS][40];
-    int counter[DDS_AB_POS][DDS_MAXDEPTH];
-    int score[2][DDS_MAXDEPTH];
     int nodes[DDS_MAXDEPTH];
     int nodesCum[DDS_MAXDEPTH];
 
