@@ -48,6 +48,7 @@
 #include <vector>
 
 #include "TimerGroup.h"
+#include "debug.h"
 
 using namespace std;
 

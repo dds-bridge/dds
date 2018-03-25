@@ -18,6 +18,7 @@
 #include "TimerList.h"
 #include "System.h"
 #include "Scheduler.h"
+#include "debug.h"
 
 extern System sysdep;
 extern Memory memory;

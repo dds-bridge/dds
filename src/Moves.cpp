@@ -11,6 +11,7 @@
 #include "dds.h"
 #include "Moves.h"
 #include "ABsearch.h"
+#include "debug.h"
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
@@ -19,7 +20,7 @@
 #endif
 
 
-int RegisterList[16] =
+const int RegisterList[16] =
 {
   MG_NT0, MG_TRUMP0,
   -1, -1,
@@ -37,19 +38,19 @@ int RegisterList[16] =
 
 Moves::Moves()
 {
-  sprintf(funcName[MG_NT0] , "%s", "NT0");
-  sprintf(funcName[MG_TRUMP0] , "%s", "Trump0");
-  sprintf(funcName[MG_NT_VOID1] , "%s", "NT_Void1");
-  sprintf(funcName[MG_TRUMP_VOID1] , "%s", "Trump_Void1");
-  sprintf(funcName[MG_NT_NOTVOID1] , "%s", "NT_Notvoid1");
-  sprintf(funcName[MG_TRUMP_NOTVOID1], "%s", "Trump_Notvoid1");
-  sprintf(funcName[MG_NT_VOID2] , "%s", "NT_Void2");
-  sprintf(funcName[MG_TRUMP_VOID2] , "%s", "Trump_Void2");
-  sprintf(funcName[MG_NT_NOTVOID2] , "%s", "NT_Notvoid2");
-  sprintf(funcName[MG_TRUMP_NOTVOID2], "%s", "Trump_Notvoid2");
-  sprintf(funcName[MG_NT_VOID3] , "%s", "NT_Void3");
-  sprintf(funcName[MG_TRUMP_VOID3] , "%s", "Trump_Void3");
-  sprintf(funcName[MG_COMB_NOTVOID3] , "%s", "Comb_Notvoid3");
+  funcName[MG_NT0] = "NT0";
+  funcName[MG_TRUMP0] = "Trump0";
+  funcName[MG_NT_VOID1] = "NT_Void1";
+  funcName[MG_TRUMP_VOID1] = "Trump_Void1";
+  funcName[MG_NT_NOTVOID1] = "NT_Notvoid1";
+  funcName[MG_TRUMP_NOTVOID1] = "Trump_Notvoid1";
+  funcName[MG_NT_VOID2] = "NT_Void2";
+  funcName[MG_TRUMP_VOID2] = "Trump_Void2";
+  funcName[MG_NT_NOTVOID2] = "NT_Notvoid2";
+  funcName[MG_TRUMP_NOTVOID2] = "Trump_Notvoid2";
+  funcName[MG_NT_VOID3] = "NT_Void3";
+  funcName[MG_TRUMP_VOID3] = "Trump_Void3";
+  funcName[MG_COMB_NOTVOID3] = "Comb_Notvoid3";
 
   for (int t = 0; t < 13; t++)
   {
@@ -2561,7 +2562,7 @@ void Moves::PrintFunctionTable(
       if (statp->list[f].findex != fr)
         continue;
 
-      sprintf(str[0], "%-15s", funcName[fr]);
+      sprintf(str[0], "%-15s", funcName[fr].c_str());
 
       fprintf(fp, "%s %34s\n",
               str[0],

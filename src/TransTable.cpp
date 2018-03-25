@@ -11,6 +11,7 @@
 
 #include "dds.h"
 #include "TransTable.h"
+#include "debug.h"
 
 extern unsigned char cardRank[16];
 extern char relRank[8192][15];

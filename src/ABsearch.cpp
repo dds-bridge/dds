@@ -21,6 +21,7 @@
 #include "ABstats.h"
 #include "TimerList.h"
 #include "Memory.h"
+#include "debug.h"
 
 #define DDS_POS_LINES 5
 #define DDS_HAND_LINES 12

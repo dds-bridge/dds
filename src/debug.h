@@ -88,14 +88,9 @@
 // #define DDS_TIMING
 #define DDS_TIMING_PREFIX "timer"
 
-// Enables extra detail.
-#define DDS_TIMING_DETAILS
-
 // Enables statistics on move generation quality.
 // #define DDS_MOVES
 #define DDS_MOVES_PREFIX "movestats"
-
-// #define DDS_MOVES_DETAILS
 
 // Enables timing in the scheduler.
 // #define DDS_SCHEDULER

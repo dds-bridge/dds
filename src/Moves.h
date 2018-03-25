@@ -89,7 +89,7 @@ class Moves
 
     int lastCall[13][DDS_HANDS];
 
-    char funcName[13][40];
+    string funcName[MG_NUM_FUNCTIONS];
 
     struct moveStatType
     {

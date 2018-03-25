@@ -11,6 +11,7 @@
 #include "Init.h"
 #include "System.h"
 #include "Scheduler.h"
+#include "debug.h"
 
 
 System sysdep;
