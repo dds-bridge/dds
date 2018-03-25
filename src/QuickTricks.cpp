@@ -12,70 +12,70 @@
 
 
 int QtricksLeadHandNT(
-  int hand,
+  const int hand,
   pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int * lhoTrumpRanks,
-  int * rhoTrumpRanks,
-  bool commPartner,
-  int commSuit,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int trump,
-  int * res);
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  int& lhoTrumpRanks,
+  int& rhoTrumpRanks,
+  const bool commPartner,
+  const int commSuit,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int trump,
+  int& res);
 
 int QtricksLeadHandTrump(
-  int hand,
+  const int hand,
   pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int lhoTrumpRanks,
-  int rhoTrumpRanks,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int * res);
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  int& res);
 
 int QuickTricksPartnerHandTrump(
-  int hand,
+  const int hand,
   pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int lhoTrumpRanks,
-  int rhoTrumpRanks,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int commSuit,
-  int commRank,
-  int * res,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
   ThreadData const * thrp);
 
 int QuickTricksPartnerHandNT(
-  int hand,
+  const int hand,
   pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int commSuit,
-  int commRank,
-  int * res,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
   ThreadData const * thrp);
 
 
@@ -431,7 +431,7 @@ int QuickTricks(
       {
         qtricks = QtricksLeadHandTrump(hand, posPoint, cutoff, depth,
           countLho, countRho, lhoTrumpRanks, rhoTrumpRanks,
-          countOwn, countPart, suit, qtricks, &res);
+          countOwn, countPart, suit, qtricks, res);
 
         if (res == 1)
           return qtricks;
@@ -446,9 +446,9 @@ int QuickTricks(
       else
       {
         qtricks = QtricksLeadHandNT(hand, posPoint, cutoff, depth,
-          countLho, countRho, &lhoTrumpRanks, &rhoTrumpRanks,
+          countLho, countRho, lhoTrumpRanks, rhoTrumpRanks,
           commPartner, commSuit, countOwn, countPart,
-          suit, qtricks, trump, &res);
+          suit, qtricks, trump, res);
 
         if (res == 1)
           return qtricks;
@@ -484,7 +484,7 @@ int QuickTricks(
             qtricks = QuickTricksPartnerHandTrump(hand, posPoint,
               cutoff, depth, countLho, countRho,
               lhoTrumpRanks, rhoTrumpRanks, countOwn,
-              countPart, suit, qtricks, commSuit, commRank, &res, thrp);
+              countPart, suit, qtricks, commSuit, commRank, res, thrp);
 
             if (res == 1)
               return qtricks;
@@ -500,7 +500,7 @@ int QuickTricks(
           {
             qtricks = QuickTricksPartnerHandNT(hand, posPoint, cutoff,
               depth, countLho, countRho, countOwn, countPart,
-              suit, qtricks, commSuit, commRank, &res, thrp);
+              suit, qtricks, commSuit, commRank, res, thrp);
 
             if (res == 1)
               return qtricks;
@@ -661,25 +661,25 @@ int QuickTricks(
 
 
 int QtricksLeadHandTrump(
-  int hand,
+  const int hand,
   pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int lhoTrumpRanks,
-  int rhoTrumpRanks,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int * res)
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  int& res)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
      res=2 Continue with next suit. */
 
-  *res = 1;
+  res = 1;
   int qt = qtricks;
   if (((countLho != 0) ||
        (lhoTrumpRanks == 0)) &&
@@ -700,7 +700,7 @@ int QtricksLeadHandTrump(
       qt += countOwn - 1;
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
@@ -719,7 +719,7 @@ int QtricksLeadHandTrump(
         qt += countOwn - 2;
         if (qt >= cutoff)
           return qt;
-        *res = 2;
+        res = 2;
         return qt;
       }
     }
@@ -743,38 +743,38 @@ int QtricksLeadHandTrump(
         qt += Max(countOwn - 2, countPart - 2);
         if (qt >= cutoff)
           return qt;
-        *res = 2;
+        res = 2;
         return qt;
       }
     }
   }
-  *res = 0;
+  res = 0;
   return qt;
 }
 
 int QtricksLeadHandNT(
-  int hand,
+  const int hand,
   pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int * lhoTrumpRanks,
-  int * rhoTrumpRanks,
-  bool commPartner,
-  int commSuit,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int trump,
-  int * res)
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  int& lhoTrumpRanks,
+  int& rhoTrumpRanks,
+  const bool commPartner,
+  const int commSuit,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int trump,
+  int& res)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
      res=2 Continue with next suit. */
 
-  *res = 1;
+  res = 1;
   int qt = qtricks;
   posPoint->winRanks[depth][suit] |=
     bitMapRank[posPoint->winner[suit].rank];
@@ -784,8 +784,8 @@ int QtricksLeadHandNT(
     return qt;
   if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
   {
-    (*lhoTrumpRanks) = Max(0, (*lhoTrumpRanks) - 1);
-    (*rhoTrumpRanks) = Max(0, (*rhoTrumpRanks) - 1);
+    lhoTrumpRanks = Max(0, lhoTrumpRanks - 1);
+    rhoTrumpRanks = Max(0, rhoTrumpRanks - 1);
   }
 
   if ((countLho <= 1) && (countRho <= 1) && (countPart <= 1))
@@ -793,7 +793,7 @@ int QtricksLeadHandNT(
     qt += countOwn - 1;
     if (qt >= cutoff)
       return qt;
-    *res = 2;
+    res = 2;
     return qt;
   }
 
@@ -806,15 +806,15 @@ int QtricksLeadHandNT(
       return qt;
     if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
     {
-      (*lhoTrumpRanks) = Max(0, (*lhoTrumpRanks) - 1);
-      (*rhoTrumpRanks) = Max(0, (*rhoTrumpRanks) - 1);
+      lhoTrumpRanks = Max(0, lhoTrumpRanks - 1);
+      rhoTrumpRanks = Max(0, rhoTrumpRanks - 1);
     }
     if ((countLho <= 2) && (countRho <= 2) && (countPart <= 2))
     {
       qt += countOwn - 2;
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
@@ -830,8 +830,8 @@ int QtricksLeadHandNT(
       return qt;
     if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
     {
-      (*lhoTrumpRanks) = Max(0, (*lhoTrumpRanks) - 1);
-      (*rhoTrumpRanks) = Max(0, (*rhoTrumpRanks) - 1);
+      lhoTrumpRanks = Max(0, lhoTrumpRanks - 1);
+      rhoTrumpRanks = Max(0, rhoTrumpRanks - 1);
     }
     if ((countLho <= 2) &&
         (countRho <= 2) &&
@@ -840,39 +840,39 @@ int QtricksLeadHandNT(
       qt += Max(countOwn - 2, countPart - 2);
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
 
-  *res = 0;
+  res = 0;
   return qt;
 }
 
 
 int QuickTricksPartnerHandTrump(
-  int hand,
+  const int hand,
   pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int lhoTrumpRanks,
-  int rhoTrumpRanks,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int commSuit,
-  int commRank,
-  int * res,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
   ThreadData const * thrp)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
      res=2 Continue with next suit. */
 
-  *res = 1;
+  res = 1;
   int qt = qtricks;
   if (((countLho != 0) || (lhoTrumpRanks == 0)) &&
       ((countRho != 0) || (rhoTrumpRanks == 0)))
@@ -894,7 +894,7 @@ int QuickTricksPartnerHandTrump(
       qt += countPart - 1;
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
@@ -917,7 +917,7 @@ int QuickTricksPartnerHandTrump(
         qt += countPart - 2;
         if (qt >= cutoff)
           return qt;
-        *res = 2;
+        res = 2;
         return qt;
       }
     }
@@ -947,7 +947,7 @@ int QuickTricksPartnerHandTrump(
         qt += Max(countPart - 2, countOwn - 2);
         if (qt >= cutoff)
           return qt;
-        *res = 2;
+        res = 2;
         return qt;
       }
     }
@@ -983,28 +983,28 @@ int QuickTricksPartnerHandTrump(
       }
     }
   }
-  *res = 0;
+  res = 0;
   return qt;
 }
 
 
 int QuickTricksPartnerHandNT(
-  int hand,
+  const int hand,
   pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int commSuit,
-  int commRank,
-  int * res,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
   ThreadData const * thrp)
 {
-  *res = 1;
+  res = 1;
   int qt = qtricks;
 
   posPoint->winRanks[depth][suit] |=
@@ -1020,7 +1020,7 @@ int QuickTricksPartnerHandNT(
     qt += countPart - 1;
     if (qt >= cutoff)
       return qt;
-    *res = 2;
+    res = 2;
     return qt;
   }
 
@@ -1038,7 +1038,7 @@ int QuickTricksPartnerHandNT(
       qt += countPart - 2;
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
@@ -1060,7 +1060,7 @@ int QuickTricksPartnerHandNT(
       qt += Max(countPart - 2, countOwn - 2);
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
@@ -1080,23 +1080,25 @@ int QuickTricksPartnerHandNT(
         return qt;
       if ((countOwn <= 2) && (countLho <= 2) && (countRho <= 2))
       {
-        qtricks += countPart - 2;
+        // TODO: Is the fix to qt correct?
+        // qtricks += countPart - 2;
+        qt += countPart - 2;
         if (qt >= cutoff)
           return qt;
       }
     }
   }
-  *res = 0;
+  res = 0;
   return qt;
 }
 
 
 bool QuickTricksSecondHand(
   pos * posPoint,
-  int hand,
-  int depth,
-  int target,
-  int trump,
+  const int hand,
+  const int depth,
+  const int target,
+  const int trump,
   ThreadData const * thrp)
 {
   if (depth == thrp->iniDepth)
