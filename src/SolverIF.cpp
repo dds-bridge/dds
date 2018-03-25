@@ -108,8 +108,6 @@ int SolveBoardInternal(
   // Formal parameter checks.
   // ----------------------------------------------------------
 
-DumpInput(RETURN_TARGET_WRONG_LO, dl, target, solutions, mode);
-
   int ret = BoardRangeChecks(dl, target, solutions, mode);
   if (ret != RETURN_NO_FAULT)
     return ret;

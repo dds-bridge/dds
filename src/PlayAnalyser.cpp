@@ -7,6 +7,10 @@
    See LICENSE and README.
 */
 
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <vector>
 
 #include "dds.h"
 #include "SolverIF.h"
@@ -16,11 +20,14 @@
 #include "PBN.h"
 #include "debug.h"
 
+using namespace std;
+
+
 // Only single-threaded debugging here.
 #define DEBUG 0
 
 #if DEBUG
-FILE * fp;
+  ofstream fout;
 #endif
 
 struct playparamType
@@ -82,14 +89,14 @@ int STDCALL AnalysePlayBin(
   int solved_declarer = solvedp->tricks[0];
 #if DEBUG
   int initial_par = solved_declarer;
-  fp = fopen("trace.txt", "a");
-  fprintf(fp, "Initial solve: %d\n", initial_par);
-  fprintf(fp, "no %d, Last trick %d, last card %d\n",
-          play.number, last_trick, last_card);
-  fprintf(fp, "%5s %5s %5s %8s %6s %6s %5s %5s %5s\n",
-          "trick", "card", "rest", "declarer",
-          "player", "side", "soln0", "soln1", "diff");
-  fclose(fp);
+  fout.open("trace.txt", ofstream::out | ofstream::app);
+  fout << "Initial solve: " << initial_par << "\n";
+  fout << "no " << play.number << ", Last trick " << last_trick <<
+    ", last card " << last_card << "\n";
+  fout << setw(5) << "trick" << setw(6) << "card" << 
+    setw(6) << "rest" << setw(9) << "declarer" <<
+    setw(7) << "player" << setw(7) << "side" <<
+    setw(6) << "soln0" << setw(6) << "soln1" << setw(6) << "diff" << "\n";
 #endif
 
   for (int trick = 1; trick <= last_trick; trick++)
@@ -149,10 +156,10 @@ int STDCALL AnalysePlayBin(
         if (! usingCurrent)
         {
 #if DEBUG
-          fp = fopen("trace.txt", "a");
-          fprintf(fp, "ERR Trick %d card %d pl %d: suit %d hold %d\n",
-                  trick, card, running_player, suit, hold);
-          fclose(fp);
+          fout << "ERR Trick " << trick << " card " << card <<
+            " pl " << running_player << ": suit " << suit <<
+            " hold " << hold << "\n";
+          fout.close();
 #endif
           return RETURN_PLAY_FAULT;
         }
@@ -200,8 +207,8 @@ int STDCALL AnalysePlayBin(
           != RETURN_NO_FAULT)
       {
 #if DEBUG
-        fp = fopen("trace.txt", "a");
-        fprintf(fp, "SolveBoard failed, ret %d\n", ret);
+        fout << "SolveBoard failed, ret " << ret << "\n";
+        fout.close();
 #endif
         return ret;
       }
@@ -212,13 +219,15 @@ int STDCALL AnalysePlayBin(
       solvedp->tricks[offset + card] = new_solved_decl;
 
 #if DEBUG
-      fp = fopen("trace.txt", "a");
-      fprintf(fp, "%5d %5d %5d %8d %6c %6d %5d %5d %5d\n",
-              trick, card, running_remainder, running_declarer,
-              cardHand[resp_player], running_side,
-              solved_declarer, new_solved_decl,
-              new_solved_decl - solved_declarer);
-      fclose(fp);
+      fout << setw(5) << trick << 
+        setw(6) << card << 
+        setw(6) << running_remainder << 
+        setw(9) << running_declarer <<
+        setw(7) << cardHand[resp_player] << 
+        setw(7) << running_side <<
+        setw(6) << solved_declarer << 
+        setw(6) << new_solved_decl << 
+        setw(6) << new_solved_decl - solved_declarer << "\n";
 #endif
 
       solved_declarer = new_solved_decl;
@@ -226,6 +235,9 @@ int STDCALL AnalysePlayBin(
   }
   solvedp->number = 4 * last_trick + last_card - 3 - (numCardsPlayed - 1);
 
+#if DEBUG
+  fout.close();
+#endif
   return RETURN_NO_FAULT;
 }
 
@@ -261,7 +273,9 @@ int STDCALL AnalysePlayPBN(
 
 void PlayChunkCommon(const int thrId)
 {
-  solvedPlay solved[MAXNOOFBOARDS];
+  vector<solvedPlay> solved;
+  solved.resize(playparam.noOfBoards);
+  // solvedPlay solved[MAXNOOFBOARDS];
   int index;
   schedType st;
 
