@@ -194,33 +194,6 @@ void ABstats::PrintStats()
 
   allnodesCum += allnodes;
 
-  // sumNew[p], ABplaces[p].sum
-  // psumNew[p], ABplaces[p].sumWeighted
-  // counterCum[p], ABplaces[p].sumCum
-  // pcounterCum[p], ABplaces[p].sumCumWeighted
-
-  for (int p = 0; p < DDS_AB_POS; p++)
-  {
-    counterCum[p] += sumNew[p];
-    pcounterCum[p] += psumNew[p];
-  }
-
-for (int p = 0; p < DDS_AB_POS; p++)
-{
-  if (ABplaces[p].sum != sumNew[p])
-    fprintf(fp, "sum %d: %d %d\n", p, ABplaces[p].sum, sumNew[p]);
-
-  if (ABplaces[p].sumWeighted != psumNew[p])
-    fprintf(fp, "sumw %d: %d %d\n", p, ABplaces[p].sumWeighted, psumNew[p]);
-
-  if (ABplaces[p].sumCum != counterCum[p])
-    fprintf(fp, "sumc %d: %d %d\n", p, ABplaces[p].sumCum, counterCum[p]);
-
-  if (ABplaces[p].sumCumWeighted != pcounterCum[p])
-    fprintf(fp, "sumcw %d: %d %d\n", p, ABplaces[p].sumCumWeighted, pcounterCum[p]);
-
-}
-
   int s = ABsides[1].sum + ABsides[0].sum;
   int cs = ABsides[1].sumCum + ABsides[0].sumCum;
   if (s)
@@ -260,29 +233,29 @@ for (int p = 0; p < DDS_AB_POS; p++)
 
     for (int p = 0; p < DDS_AB_POS; p++)
     {
-      if (sumNew[p])
+      if (ABplaces[p].sum)
       {
         fprintf(fp, "%2d %-20s %8d %5.1f %5.1f %8d %5.1f %5.1f\n",
                 p,
                 name[p],
-                sumNew[p],
-                100. * sumNew[p] / static_cast<double>(s),
-                psumNew[p] / static_cast<double>(sumNew[p]),
-                counterCum[p],
-                100. * counterCum[p] / static_cast<double>(cs),
-                pcounterCum[p] / static_cast<double>(counterCum[p]));
+                ABplaces[p].sum,
+                100. * ABplaces[p].sum / static_cast<double>(s),
+                ABplaces[p].sumWeighted / static_cast<double>(ABplaces[p].sum),
+                ABplaces[p].sumCum,
+                100. * ABplaces[p].sumCum / static_cast<double>(cs),
+                ABplaces[p].sumCumWeighted / static_cast<double>(ABplaces[p].sumCum));
       }
-      else if (counterCum[p])
+      else if (ABplaces[p].sumCum)
       {
         fprintf(fp, "%2d %-20s %8d %5.1f %5s %8d %5.1f %5.1f\n",
                 p,
                 name[p],
-                sumNew[p],
-                100. * sumNew[p] / static_cast<double>(s),
+                ABplaces[p].sum,
+                100. * ABplaces[p].sum / static_cast<double>(s),
                 "",
-                counterCum[p],
-                100. * counterCum[p] / static_cast<double>(cs),
-                pcounterCum[p] / static_cast<double>(counterCum[p]));
+                ABplaces[p].sumCum,
+                100. * ABplaces[p].sumCum / static_cast<double>(cs),
+                ABplaces[p].sumCumWeighted / static_cast<double>(ABplaces[p].sumCum));
       }
     }
   }
@@ -378,7 +351,7 @@ for (int p = 0; p < DDS_AB_POS; p++)
           "S", ABsides[1].sum, ABsides[0].sum);
 
   for (int p = 0; p < DDS_AB_POS; p++)
-    fprintf(fp, " %5d", sumNew[p]);
+    fprintf(fp, " %5d", ABplaces[p].sum);
   fprintf(fp, "\n\n");
 #endif
 
