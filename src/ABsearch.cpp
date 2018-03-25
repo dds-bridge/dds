@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <assert.h>
 
 #include "dds.h"
 
@@ -17,6 +18,8 @@
 #include "QuickTricks.h"
 #include "LaterTricks.h"
 #include "ABsearch.h"
+#include "ABstats.h"
+#include "TimerList.h"
 #include "Memory.h"
 
 #define DDS_POS_LINES 5

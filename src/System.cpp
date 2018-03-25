@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <stdlib.h>
 
 // Boost: Disable some header warnings.
 
@@ -95,7 +96,8 @@ const vector<string> DDS_SYSTEM_THREADING =
   "OpenMP",
   "GCD",
   "Boost",
-  "STL"
+  "STL",
+  "TBB"
 };
 
 #define DDS_SYSTEM_THREAD_BASIC 0
@@ -126,43 +128,32 @@ void System::Reset()
   preferredSystem = DDS_SYSTEM_THREAD_BASIC;
 
   availableSystem.resize(DDS_SYSTEM_THREAD_SIZE);
-
   availableSystem[DDS_SYSTEM_THREAD_BASIC] = true;
+  for (unsigned i = 1; i < DDS_SYSTEM_THREAD_SIZE; i++)
+    availableSystem[i] = false;
 
 #ifdef DDS_THREADS_WINAPI
   availableSystem[DDS_SYSTEM_THREAD_WINAPI] = true;
-#else
-  availableSystem[DDS_SYSTEM_THREAD_WINAPI] = false;
 #endif
 
 #ifdef DDS_THREADS_OPENMP
   availableSystem[DDS_SYSTEM_THREAD_OPENMP] = true;
-#else
-  availableSystem[DDS_SYSTEM_THREAD_OPENMP] = false;
 #endif
 
 #ifdef DDS_THREADS_GCD
   availableSystem[DDS_SYSTEM_THREAD_GCD] = true;
-#else
-  availableSystem[DDS_SYSTEM_THREAD_GCD] = false;
 #endif
 
 #ifdef DDS_THREADS_BOOST
   availableSystem[DDS_SYSTEM_THREAD_BOOST] = true;
-#else
-  availableSystem[DDS_SYSTEM_THREAD_BOOST] = false;
 #endif
 
 #ifdef DDS_THREADS_STL
   availableSystem[DDS_SYSTEM_THREAD_STL] = true;
-#else
-  availableSystem[DDS_SYSTEM_THREAD_STL] = false;
 #endif
 
 #ifdef DDS_THREADS_TBB
   availableSystem[DDS_SYSTEM_THREAD_TBB] = true;
-#else
-  availableSystem[DDS_SYSTEM_THREAD_TBB] = false;
 #endif
 
   // Take the first of any multi-threading system defined.
@@ -262,7 +253,8 @@ int System::RegisterParams(
   const int mem_def_MB,
   const int mem_max_MB)
 {
-  if (nThreads < 1 || nThreads >= MAXNOOFTHREADS)
+  // No upper limit -- caveat emptor.
+  if (nThreads < 1)
     return RETURN_THREAD_INDEX;
 
   numThreads = nThreads;
@@ -343,7 +335,8 @@ DWORD CALLBACK WinCallback(void * p)
 int System::RunThreadsWinAPI()
 {
 #ifdef DDS_THREADS_WINAPI
-  HANDLE solveAllEvents[MAXNOOFTHREADS];
+  HANDLE * solveAllEvents = static_cast<HANDLE * >(
+    malloc(numThreads * sizeof(HANDLE)));
 
   for (int k = 0; k < numThreads; k++)
   {
@@ -377,6 +370,8 @@ int System::RunThreadsWinAPI()
 
   for (int k = 0; k < numThreads; k++)
     CloseHandle(solveAllEvents[k]);
+
+  free(solveAllEvents);
 #endif
 
   return RETURN_NO_FAULT;
@@ -439,9 +434,10 @@ int System::RunThreadsBoost()
 {
 #ifdef DDS_THREADS_BOOST
   vector<boost::thread *> threads;
-  threads.resize(static_cast<unsigned>(numThreads));
 
   const unsigned nu = static_cast<unsigned>(numThreads);
+  threads.resize(nu);
+
   for (unsigned k = 0; k < nu; k++)
     threads[k] = new boost::thread(fptr, k);
 
@@ -464,9 +460,10 @@ int System::RunThreadsSTL()
 {
 #ifdef DDS_THREADS_STL
   vector<thread *> threads;
-  threads.resize(static_cast<unsigned>(numThreads));
 
   const unsigned nu = static_cast<unsigned>(numThreads);
+  threads.resize(nu);
+
   for (unsigned k = 0; k < nu; k++)
     threads[k] = new thread(fptr, k);
 
@@ -489,9 +486,10 @@ int System::RunThreadsTBB()
 {
 #ifdef DDS_THREADS_TBB
   vector<tbb::tbb_thread *> threads;
-  threads.resize(static_cast<unsigned>(numThreads));
 
   const unsigned nu = static_cast<unsigned>(numThreads);
+  threads.resize(nu);
+
   for (unsigned k = 0; k < nu; k++)
     threads[k] = new tbb::tbb_thread(fptr, k);
 

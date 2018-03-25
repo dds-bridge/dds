@@ -13,6 +13,7 @@
 #include <atomic>
 
 #include "TimeStatList.h"
+#include "Timer.h"
 #include "dds.h"
 
 using namespace std;

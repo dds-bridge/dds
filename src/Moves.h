@@ -10,11 +10,15 @@
 #ifndef DDS_MOVES_H
 #define DDS_MOVES_H
 
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "dds.h"
 #include "../include/dll.h"
+
+using namespace std;
+
 
 #define CMP_SWAP(i, j) if (a[i].weight < a[j].weight) \
   { moveType tmp = a[i]; a[i] = a[j]; a[j] = tmp; }

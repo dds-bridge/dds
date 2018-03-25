@@ -8,8 +8,6 @@
 */
 
 
-#include <stdexcept>
-
 #include "dds.h"
 #include "Moves.h"
 #include "ABsearch.h"

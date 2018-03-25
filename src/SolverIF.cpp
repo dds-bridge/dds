@@ -14,8 +14,10 @@
 #include "Moves.h"
 #include "ABsearch.h"
 #include "SolverIF.h"
+#include "TimerList.h"
 #include "System.h"
 #include "Memory.h"
+#include "Scheduler.h"
 
 extern System sysdep;
 extern Memory memory;

@@ -27,7 +27,8 @@ extern Scheduler scheduler;
 void SolveChunkCommon(
   const int thrId)
 {
-  futureTricks fut[MAXNOOFBOARDS];
+  vector<futureTricks> fut;
+  fut.resize(param.noOfBoards);
   int index;
   schedType st;
 
@@ -77,7 +78,10 @@ void SolveChunkDDtableCommon(
   const int thrId)
 {
   ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
-  futureTricks fut[MAXNOOFBOARDS];
+
+  vector<futureTricks> fut;
+  fut.resize(param.noOfBoards);
+
   int index;
   schedType st;
 
