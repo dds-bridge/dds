@@ -135,8 +135,8 @@ bool ABsearch(
   thrp->moves.MoveGen0(
     tricks,
     posPoint,
-    &thrp->bestMove[depth],
-    &thrp->bestMoveTT[depth],
+    thrp->bestMove[depth],
+    thrp->bestMoveTT[depth],
     thrp->rel);
   thrp->moves.Purge(tricks, 0, thrp->forbiddenMoves);
 
@@ -402,8 +402,8 @@ bool ABsearch0(
   thrp->moves.MoveGen0(
     tricks,
     posPoint,
-    &thrp->bestMove[depth],
-    &thrp->bestMoveTT[depth],
+    thrp->bestMove[depth],
+    thrp->bestMoveTT[depth],
     thrp->rel);
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);

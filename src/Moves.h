@@ -122,14 +122,14 @@ class Moves
 
     void WeightAllocTrump0(
       pos const * posPoint,
-      moveType const * bestMove,
-      moveType const * bestMoveTT,
+      const moveType& bestMove,
+      const moveType& bestMoveTT,
       const relRanksType thrp_rel[]);
 
     void WeightAllocNT0(
       pos const * posPoint,
-      moveType const * bestMove,
-      moveType const * bestMoveTT,
+      const moveType& bestMove,
+      const moveType& bestMoveTT,
       const relRanksType thrp_rel[]);
 
     void WeightAllocTrumpNotvoid1(
@@ -233,8 +233,8 @@ class Moves
     int MoveGen0(
       const int tricks,
       pos const * posPoint,
-      moveType const * bestMove,
-      moveType const * bestMoveTT,
+      const moveType& bestMove,
+      const moveType& bestMoveTT,
       const relRanksType thrp_rel[]);
 
     int MoveGen123(

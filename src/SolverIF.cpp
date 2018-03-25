@@ -278,8 +278,8 @@ int SolveBoardInternal(
       thrp->moves.MoveGen0(
         trick,
         &thrp->lookAheadPos,
-        &thrp->bestMove[iniDepth],
-        &thrp->bestMoveTT[iniDepth],
+        thrp->bestMove[iniDepth],
+        thrp->bestMoveTT[iniDepth],
         thrp->rel);
     else
       thrp->moves.MoveGen123(
@@ -315,8 +315,8 @@ int SolveBoardInternal(
     thrp->moves.MoveGen0(
       trick,
       &thrp->lookAheadPos,
-      &thrp->bestMove[iniDepth],
-      &thrp->bestMoveTT[iniDepth],
+      thrp->bestMove[iniDepth],
+      thrp->bestMoveTT[iniDepth],
       thrp->rel);
   else
     thrp->moves.MoveGen123(

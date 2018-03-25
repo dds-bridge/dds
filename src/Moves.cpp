@@ -163,8 +163,8 @@ void Moves::Reinit(
 int Moves::MoveGen0(
   const int tricks,
   pos const * posPoint,
-  moveType const * bestMove,
-  moveType const * bestMoveTT,
+  const moveType& bestMove,
+  const moveType& bestMoveTT,
   const relRanksType thrp_rel[])
 {
   trackp = &track[tricks];
@@ -345,8 +345,8 @@ int Moves::MoveGen123(
 
 void Moves::WeightAllocTrump0(
   pos const * posPoint,
-  moveType const * bestMove,
-  moveType const * bestMoveTT,
+  const moveType& bestMove,
+  const moveType& bestMoveTT,
   const relRanksType thrp_rel[])
 {
   unsigned short suitCount = posPoint->length[leadHand][suit];
@@ -534,11 +534,11 @@ void Moves::WeightAllocTrump0(
          or was stored as the best move in a transposition table entry
          match. */
 
-      if ((bestMove->suit == suit) &&
-          (bestMove->rank == mply[k].rank))
+      if ((bestMove.suit == suit) &&
+          (bestMove.rank == mply[k].rank))
         mply[k].weight += 55;
-      else if ((bestMoveTT->suit == suit) &&
-               (bestMoveTT->rank == mply[k].rank))
+      else if ((bestMoveTT.suit == suit) &&
+               (bestMoveTT.rank == mply[k].rank))
         mply[k].weight += 18;
     }
     else
@@ -597,8 +597,8 @@ void Moves::WeightAllocTrump0(
          or was stored as the best move in a transposition table
          entry match. */
 
-      if ((bestMove->suit == suit) &&
-          (bestMove->rank == mply[k].rank))
+      if ((bestMove.suit == suit) &&
+          (bestMove.rank == mply[k].rank))
         mply[k].weight += 18;
     }
   }
@@ -607,8 +607,8 @@ void Moves::WeightAllocTrump0(
 
 void Moves::WeightAllocNT0(
   pos const * posPoint,
-  moveType const * bestMove,
-  moveType const * bestMoveTT,
+  const moveType& bestMove,
+  const moveType& bestMoveTT,
   const relRanksType thrp_rel[])
 {
   int aggr = posPoint->aggr[suit];
@@ -673,11 +673,11 @@ void Moves::WeightAllocNT0(
          or was stored as the best move in a transposition table
          entry match. */
 
-      if ((bestMove->suit == suit) &&
-          (bestMove->rank == mply[k].rank))
+      if ((bestMove.suit == suit) &&
+          (bestMove.rank == mply[k].rank))
         mply[k].weight += 126;
-      else if ((bestMoveTT->suit == suit) &&
-               (bestMoveTT->rank == mply[k].rank))
+      else if ((bestMoveTT.suit == suit) &&
+               (bestMoveTT.rank == mply[k].rank))
         mply[k].weight += 32;
     }
     else
@@ -742,10 +742,10 @@ void Moves::WeightAllocNT0(
          or was stored as the best move in a transposition table
          entry match. */
 
-      if ((bestMove->suit == suit) && (bestMove->rank == mply[k].rank))
+      if ((bestMove.suit == suit) && (bestMove.rank == mply[k].rank))
         mply[k].weight += 47;
-      else if ((bestMoveTT->suit == suit) &&
-               (bestMoveTT->rank == mply[k].rank))
+      else if ((bestMoveTT.suit == suit) &&
+               (bestMoveTT.rank == mply[k].rank))
         mply[k].weight += 19;
     }
   }
