@@ -108,8 +108,8 @@ const int handDelta[DDS_SUITS] = { 256, 16, 1, 0 };
 
 bool ABsearch(
   pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   ThreadData * thrp)
 {
   /* posPoint points to the current look-ahead position,
@@ -201,8 +201,8 @@ ABexit:
 
 bool ABsearch0(
   pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   ThreadData * thrp)
 {
   /* posPoint points to the current look-ahead position,
@@ -516,8 +516,8 @@ ABexit:
 
 bool ABsearch1(
   pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   ThreadData * thrp)
 {
   int trump = thrp->trump;
@@ -602,8 +602,8 @@ ABexit:
 
 bool ABsearch2(
   pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   ThreadData * thrp)
 {
   int hand = handId(posPoint->first[depth], 2);
@@ -683,8 +683,8 @@ ABexit:
 
 bool ABsearch3(
   pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   ThreadData * thrp)
 {
   /* This is a specialized AB function for handRelFirst == 3. */

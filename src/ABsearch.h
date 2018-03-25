@@ -22,32 +22,32 @@
 
 bool ABsearch(
   struct pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   struct ThreadData * thrp);
 
 bool ABsearch0(
   struct pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   struct ThreadData * thrp);
 
 bool ABsearch1(
   struct pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   struct ThreadData * thrp);
 
 bool ABsearch2(
   struct pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   struct ThreadData * thrp);
 
 bool ABsearch3(
   struct pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   struct ThreadData * thrp);
 
 void Make0(

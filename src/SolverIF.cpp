@@ -7,6 +7,10 @@
    See LICENSE and README.
 */
 
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
 #include "dds.h"
 #include "Init.h"
 #include "ABsearch.h"
@@ -49,21 +53,23 @@ int DumpInput(
   const int solutions,
   const int mode);
 
+string PrintSuit(const unsigned short suitCode);
+
 void PrintDeal(
-  FILE * fp,
+  ofstream& fout,
   const unsigned short ranks[][DDS_SUITS]);
 
 bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   ThreadData * thrp)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
   pos * posPoint,
-  int target,
-  int depth,
+  const int target,
+  const int depth,
   ThreadData * thrp)
   = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
 
@@ -101,6 +107,8 @@ int SolveBoardInternal(
   // ----------------------------------------------------------
   // Formal parameter checks.
   // ----------------------------------------------------------
+
+DumpInput(RETURN_TARGET_WRONG_LO, dl, target, solutions, mode);
 
   int ret = BoardRangeChecks(dl, target, solutions, mode);
   if (ret != RETURN_NO_FAULT)
@@ -1179,113 +1187,87 @@ int DumpInput(
   const int solutions, 
   const int mode)
 {
-  FILE * fp;
-  int i, j, k;
+  ofstream fout;
+  fout.open("dump.txt");
+
+  fout << "Error code=" << errCode << "\n\n";
+  fout << "Deal data:\n";
+  fout << "trump=";
+
+  if (dl.trump == DDS_NOTRUMP)
+    fout << "N\n";
+  else
+    fout << cardSuit[dl.trump] << "\n";
+  fout << "first=" << cardHand[dl.first] << "\n";
+
   unsigned short ranks[4][4];
 
-  fp = fopen("dump.txt", "w");
-  if (fp == nullptr)
-    return RETURN_UNKNOWN_FAULT;
-  fprintf(fp, "Error code=%d\n", errCode);
-  fprintf(fp, "\n");
-  fprintf(fp, "Deal data:\n");
-  if (dl.trump != 4)
-    fprintf(fp, "trump=%c\n", cardSuit[dl.trump]);
-  else
-    fprintf(fp, "trump=N\n");
-  fprintf(fp, "first=%c\n", cardHand[dl.first]);
-  for (k = 0; k <= 2; k++)
+  for (int k = 0; k <= 2; k++)
     if (dl.currentTrickRank[k] != 0)
-      fprintf(fp, "index=%d currentTrickSuit=%c currentTrickRank=%c\n",
-              k, cardSuit[dl.currentTrickSuit[k]],
-              cardRank[dl.currentTrickRank[k]]);
-  for (i = 0; i <= 3; i++)
-    for (j = 0; j <= 3; j++)
     {
-      fprintf(fp, "index1=%d index2=%d remainCards=%d\n",
-              i, j, dl.remainCards[i][j]);
-      ranks[i][j] = static_cast<unsigned short>
-                    (dl.remainCards[i][/*3-*/j] >> 2);
+      fout << "index=" << k << 
+        " currentTrickSuit=" << cardSuit[dl.currentTrickSuit[k]] <<
+        " currentTrickRank= " << cardRank[dl.currentTrickRank[k]] << "\n";
     }
-  fprintf(fp, "\n");
-  fprintf(fp, "target=%d\n", target);
-  fprintf(fp, "solutions=%d\n", solutions);
-  fprintf(fp, "mode=%d\n", mode);
-  fprintf(fp, "\n");
-  PrintDeal(fp, ranks);
-  fclose(fp);
+
+  for (int h = 0; h < DDS_HANDS; h++)
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+      fout << "index1=" << h << " index2=" << s <<
+        " remainCards=" << dl.remainCards[h][s] << "\n";
+      ranks[h][s] = static_cast<unsigned short>
+                    (dl.remainCards[h][s] >> 2);
+    }
+
+  fout << "\ntarget=" << target << "\n";
+  fout << "solutions=" << solutions << "\n";
+  fout << "mode=" << mode << "\n\n\n";
+  PrintDeal(fout, ranks);
+  fout.close();
   return 0;
 }
 
 
-void PrintDeal(
-  FILE * fp, 
-  const unsigned short ranks[][4])
+string PrintSuit(const unsigned short suitCode)
 {
-  int i, count, trickCount = 0, s, r;
-  bool ec[4];
-  for (i = 0; i <= 3; i++)
+  if (! suitCode)
+    return "--";
+
+  string st;
+  for (int r = 14; r >= 2; r--)
+    if ((suitCode & bitMapRank[r]))
+      st += cardRank[r];
+  return st;
+}
+
+
+void PrintDeal(
+  ofstream& fout,
+  const unsigned short ranks[][DDS_SUITS])
+{
+  for (int s = 0; s < DDS_SUITS; s++)
   {
-    count = counttable[ranks[3][i]];
-    if (count > 5)
-      ec[i] = true;
-    else
-      ec[i] = false;
-    trickCount = trickCount + count;
+    fout << setw(8) << "" << 
+      cardSuit[s] << " " <<
+      PrintSuit(ranks[0][s]) << "\n";
   }
-  fprintf(fp, "\n");
-  for (s = 0; s < DDS_SUITS; s++)
+
+  for (int s = 0; s < DDS_SUITS; s++)
   {
-    fprintf(fp, "\t%c ", cardSuit[s]);
-    if (!ranks[0][s])
-      fprintf(fp, "--");
-    else
-    {
-      for (r = 14; r >= 2; r--)
-        if ((ranks[0][s] & bitMapRank[r]) != 0)
-          fprintf(fp, "%c", cardRank[r]);
-    }
-    fprintf(fp, "\n");
+    fout << cardSuit[s] << " " <<
+      setw(14) << left << PrintSuit(ranks[3][s]) <<
+      cardSuit[s] << " " <<
+      PrintSuit(ranks[1][s]) << "\n";
   }
-  for (s = 0; s < DDS_SUITS; s++)
+
+  for (int s = 0; s < DDS_SUITS; s++)
   {
-    fprintf(fp, "%c ", cardSuit[s]);
-    if (!ranks[3][s])
-      fprintf(fp, "--");
-    else
-    {
-      for (r = 14; r >= 2; r--)
-        if ((ranks[3][s] & bitMapRank[r]) != 0)
-          fprintf(fp, "%c", cardRank[r]);
-    }
-    if (ec[s])
-      fprintf(fp, "\t%c ", cardSuit[s]);
-    else
-      fprintf(fp, "\t\t%c ", cardSuit[s]);
-    if (!ranks[1][s])
-      fprintf(fp, "--");
-    else
-    {
-      for (r = 14; r >= 2; r--)
-        if ((ranks[1][s] & bitMapRank[r]) != 0)
-          fprintf(fp, "%c", cardRank[r]);
-    }
-    fprintf(fp, "\n");
+    fout << setw(8) << "" << 
+      cardSuit[s] << " " <<
+      PrintSuit(ranks[2][s]) << "\n";
   }
-  for (s = 0; s < DDS_SUITS; s++)
-  {
-    fprintf(fp, "\t%c ", cardSuit[s]);
-    if (!ranks[2][s])
-      fprintf(fp, "--");
-    else
-    {
-      for (r = 14; r >= 2; r--)
-        if ((ranks[2][s] & bitMapRank[r]) != 0)
-          fprintf(fp, "%c", cardRank[r]);
-    }
-    fprintf(fp, "\n");
-  }
-  fprintf(fp, "\n");
+
+  fout << "\n";
   return;
 }
 
