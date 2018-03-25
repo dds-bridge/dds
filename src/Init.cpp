@@ -162,6 +162,7 @@ void STDCALL SetMaxThreads(
 
   sysdep.RegisterParams(noOfThreads, 
     kilobytesUsable >> 10, mem_def, mem_max);
+  scheduler.RegisterThreads(noOfThreads);
 
   memory.Resize(static_cast<unsigned>(noOfThreads));
   memory.SetThreadSize(mem_def, mem_max);

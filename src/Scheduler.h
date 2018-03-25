@@ -86,11 +86,11 @@ class Scheduler
     sortType sortList[MAXNOOFBOARDS];
     int sortLen;
 
-    int threadGroup[MAXNOOFTHREADS];
-    int threadCurrGroup[MAXNOOFTHREADS];
+    vector<int> threadGroup;
+    vector<int> threadCurrGroup;
+    vector<int> threadToHand;
 
-    int threadToHand[MAXNOOFTHREADS];
-
+    int numThreads;
     int numHands;
 
     vector<int> highCards;

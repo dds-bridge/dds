@@ -29,13 +29,8 @@
   #define THREADMEM_DEF_MB 95
 #endif
 
-#define MAXNOOFTHREADS 16
-
 #define MAXNODE 1
 #define MINNODE 0
-
-#define MOVESVALID 1
-#define MOVESLOCKED 2
 
 #define SIMILARDEALLIMIT 5
 #define SIMILARMAXWINNODES 700000
