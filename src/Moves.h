@@ -135,52 +135,31 @@ class Moves
     void WeightAllocTrumpNotvoid1(
       pos const * posPoint);
 
-    void WeightAllocNTNotvoid1(
-      pos const * posPoint);
-
-    void WeightAllocTrumpVoid1(
-      pos const * posPoint);
-
-    void WeightAllocNTVoid1(
-      pos const * posPoint);
-
-    void WeightAllocTrumpNotvoid2(
-      pos const * posPoint);
-
-    void WeightAllocNTNotvoid2(
-      pos const * posPoint);
-
-    void WeightAllocTrumpVoid2(
-      pos const * posPoint);
-
-    void WeightAllocNTVoid2(
-      pos const * posPoint);
-
-    void WeightAllocCombinedNotvoid3(
-      pos const * posPoint);
-
-    void WeightAllocTrumpVoid3(
-      pos const * posPoint);
-
-    void WeightAllocNTVoid3(
-      pos const * posPoint);
+    void WeightAllocNTNotvoid1(pos const * posPoint);
+    void WeightAllocTrumpVoid1(pos const * posPoint);
+    void WeightAllocNTVoid1(pos const * posPoint);
+    void WeightAllocTrumpNotvoid2(pos const * posPoint);
+    void WeightAllocNTNotvoid2(pos const * posPoint);
+    void WeightAllocTrumpVoid2(pos const * posPoint);
+    void WeightAllocNTVoid2(pos const * posPoint);
+    void WeightAllocCombinedNotvoid3(pos const * posPoint);
+    void WeightAllocTrumpVoid3(pos const * posPoint);
+    void WeightAllocNTVoid3(pos const * posPoint);
 
     void GetTopNumber(
       const int ris,
       const int prank,
       int& topNumber,
-      int& mno);
+      int& mno) const;
 
-    int RankForcesAce(
-      int cards4th);
+    int RankForcesAce(int cards4th) const;
 
     typedef void (Moves::*WeightPtr)(pos const * posPoint);
-
     WeightPtr WeightList[16];
 
     inline bool WinningMove(
-      moveType const * mvp1,
-      extCard const * mvp2,
+      const moveType& mvp1,
+      const extCard& mvp2,
       const int trump) const;
 
     void PrintMove(

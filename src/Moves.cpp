@@ -349,10 +349,10 @@ void Moves::WeightAllocTrump0(
   const moveType& bestMoveTT,
   const relRanksType thrp_rel[])
 {
-  unsigned short suitCount = posPoint->length[leadHand][suit];
-  unsigned short suitCountLH = posPoint->length[lho[leadHand]][suit];
-  unsigned short suitCountRH = posPoint->length[rho[leadHand]][suit];
-  unsigned short aggr = posPoint->aggr[suit];
+  const unsigned short suitCount = posPoint->length[leadHand][suit];
+  const unsigned short suitCountLH = posPoint->length[lho[leadHand]][suit];
+  const unsigned short suitCountRH = posPoint->length[rho[leadHand]][suit];
+  const unsigned short aggr = posPoint->aggr[suit];
 
   // Why?
   int countLH = (suitCountLH == 0 ? currTrick + 1 : suitCountLH) << 2;
@@ -755,13 +755,13 @@ void Moves::WeightAllocNT0(
 void Moves::WeightAllocTrumpNotvoid1(
   pos const * posPoint)
 {
-  int max3rd = highestRank[
+  const int max3rd = highestRank[
                  posPoint->rankInSuit[partner[leadHand]][leadSuit]];
-  int maxpd = highestRank[
+  const int maxpd = highestRank[
                  posPoint->rankInSuit[rho[leadHand] ][leadSuit]];
-  int min3rd = lowestRank [
+  const int min3rd = lowestRank [
                  posPoint->rankInSuit[partner[leadHand]][leadSuit]];
-  int minpd = lowestRank [
+  const int minpd = lowestRank [
                  posPoint->rankInSuit[rho[leadHand] ][leadSuit]];
 
   for (int k = 0; k < numMoves; k++)
@@ -876,9 +876,9 @@ void Moves::WeightAllocNTNotvoid1(
   // not to be able to beat the lead?
   // Why rRank?
 
-  int max3rd = highestRank[
+  const int max3rd = highestRank[
                  posPoint->rankInSuit[partner[leadHand]][leadSuit]];
-  int maxpd = highestRank[
+  const int maxpd = highestRank[
                  posPoint->rankInSuit[rho[leadHand]][leadSuit] ];
 
   if (maxpd > trackp->move[0].rank && maxpd > max3rd)
@@ -929,7 +929,7 @@ void Moves::WeightAllocTrumpVoid1(
   // suit != trump: Same question.
   // Don't ruff ahead of partner?
 
-  unsigned short suitCount = posPoint->length[currHand][suit];
+  const unsigned short suitCount = posPoint->length[currHand][suit];
   int suitAdd;
 
   if (leadSuit == trump) // We pitch
@@ -1090,10 +1090,10 @@ void Moves::WeightAllocNTVoid1(
 void Moves::WeightAllocTrumpNotvoid2(
   pos const * posPoint)
 {
-  int cards4th = posPoint->rankInSuit[rho[leadHand]][leadSuit];
-  int max4th = highestRank[cards4th];
-  int min4th = lowestRank [cards4th];
-  int max3rd = mply[0].rank;
+  const int cards4th = posPoint->rankInSuit[rho[leadHand]][leadSuit];
+  const int max4th = highestRank[cards4th];
+  const int min4th = lowestRank [cards4th];
+  const int max3rd = mply[0].rank;
 
   if (leadSuit == trump)
   {
@@ -1264,22 +1264,22 @@ void Moves::WeightAllocTrumpNotvoid2(
 
 
 int Moves::RankForcesAce(
-  const int cards4th)
+  const int cards4th) const
 {
   // Figure out how high we have to play to force out the top.
-  moveGroupType * mp = &groupData[cards4th];
+  const moveGroupType& mp = groupData[cards4th];
 
-  int g = mp->lastGroup;
+  int g = mp.lastGroup;
   int removed = static_cast<int>(trackp->removedRanks[leadSuit]);
 
-  while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
+  while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
     g--;
 
   if (! g)
     return -1;
 
   // RHO's second-highest rank.
-  int secondRHO = (g == 0 ? 0 : mp->rank[g - 1]);
+  int secondRHO = (g == 0 ? 0 : mp.rank[g-1]);
 
   if (secondRHO > trackp->move[1].rank)
   {
@@ -1310,7 +1310,7 @@ void Moves::GetTopNumber(
   const int ris,
   const int prank,
   int& topNumber,
-  int& mno)
+  int& mno) const
 {
   topNumber = -10;
 
@@ -1319,17 +1319,17 @@ void Moves::GetTopNumber(
   while (mno < numMoves - 1 && mply[1 + mno].rank > prank)
     mno++;
 
-  moveGroupType * mp = &groupData[ris];
-  int g = mp->lastGroup;
+  const moveGroupType& mp = groupData[ris];
+  int g = mp.lastGroup;
 
   // Remove partner's card as well.
   int removed = static_cast<int>(trackp->removedRanks[leadSuit] |
                                  bitMapRank[prank]);
 
-  int fullseq = mp->fullseq[g];
+  int fullseq = mp.fullseq[g];
 
-  while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
-    fullseq |= mp->fullseq[--g];
+  while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
+    fullseq |= mp.fullseq[--g];
 
   topNumber = counttable[fullseq] - 1;
 }
@@ -1345,10 +1345,10 @@ void Moves::WeightAllocNTNotvoid2(
   // KQx opposite Jxxxx, don't block on the ace.
   // KJTx opposite 9 with Qx in dummy, do win the T.
 
-  int cards4th = posPoint->rankInSuit[rho[leadHand]][leadSuit];
-  int max4th = highestRank[cards4th];
-  int min4th = lowestRank [cards4th];
-  int max3rd = mply[0].rank;
+  const int cards4th = posPoint->rankInSuit[rho[leadHand]][leadSuit];
+  const int max4th = highestRank[cards4th];
+  const int min4th = lowestRank [cards4th];
+  const int max3rd = mply[0].rank;
 
   if (trackp->high[1] == 0 && trackp->move[0].rank > max4th)
   {
@@ -1413,8 +1413,8 @@ void Moves::WeightAllocTrumpVoid2(
   // Moved a test for partner's win out of the k loop.
 
   int suitAdd;
-  unsigned short suitCount = posPoint->length[currHand][suit];
-  int max4th = highestRank[
+  const unsigned short suitCount = posPoint->length[currHand][suit];
+  const int max4th = highestRank[
                  posPoint->rankInSuit[rho[leadHand]][leadSuit] ];
 
   if (leadSuit == trump || suit != trump)
@@ -1518,7 +1518,7 @@ void Moves::WeightAllocNTVoid2(
   // for no reason that I could see. This is the same or a tiny
   // bit better.
 
-  unsigned short suitCount = posPoint->length[currHand][suit];
+  const unsigned short suitCount = posPoint->length[currHand][suit];
   int suitAdd = (suitCount << 6) / 24;
 
   // Try not to pitch from Kx or stiff ace.
@@ -1536,7 +1536,6 @@ void Moves::WeightAllocNTVoid2(
 
 void Moves::WeightAllocCombinedNotvoid3(
   pos const * posPoint)
-// moveType mply[])
 {
   // We're always following suit.
   // This function is very good, but occasionally it is better
@@ -1579,7 +1578,7 @@ void Moves::WeightAllocTrumpVoid3(
   // rRank vs rank
 
   // Don't pitch from Kx or stiff ace.
-  int mylen = posPoint->length[currHand][suit];
+  const int mylen = posPoint->length[currHand][suit];
   int val = (mylen << 6) / 24;
   if ((mylen == 2) && (posPoint->secondBest[suit].hand == currHand))
     val -= 2;
@@ -1653,26 +1652,25 @@ void Moves::WeightAllocNTVoid3(
 
 
 inline bool Moves::WinningMove(
-  moveType const * mvp1,
-  extCard const * mvp2,
+  const moveType& mvp1,
+  const extCard& mvp2,
   const int ourTrump) const
 {
   /* Return true if move 1 wins over move 2, with the assumption that
   move 2 is the presently winning card of the trick */
 
-  if (mvp1->suit == mvp2->suit)
+  if (mvp1.suit == mvp2.suit)
   {
-    if ((mvp1->rank) > (mvp2->rank))
+    if (mvp1.rank > mvp2.rank)
       return true;
     else
       return false;
   }
-  else if ((mvp1->suit) == ourTrump)
+  else if (mvp1.suit == ourTrump)
     return true;
   else
     return false;
 }
-
 
 
 int Moves::GetLength(
