@@ -149,7 +149,6 @@ void SolveChunkDDtableCommon(
 }
 
 
-#include <iostream>
 int SolveAllBoardsN(
   boards * bop,
   solvedBoards * solvedp,

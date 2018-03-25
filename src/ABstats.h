@@ -64,20 +64,32 @@ class ABstats
     int pscoreCum[2];
     int nodes[DDS_MAXDEPTH];
     int nodesCum[DDS_MAXDEPTH];
-    int allnodes,
-                        allnodesCum;
+    int sumNew[DDS_AB_POS];
+    int psumNew[DDS_AB_POS];
+    int allnodes;
+    int allnodesCum;
     int iniDepth;
+
+    void PrintStatsPosition(FILE * fpl) const;
 
   public:
     ABstats();
     ~ABstats();
+
     void Reset();
+
     void ResetCum();
+
     void SetFile(const string& fnameIn);
+
     void SetName(int no, char * name);
+
     void IncrPos(int no, bool side, int depth);
+
     void IncrNode(int depth);
-    int GetNodes();
+
+    int GetNodes() const;
+
     void PrintStats();
 };
 

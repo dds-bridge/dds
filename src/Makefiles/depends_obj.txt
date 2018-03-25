@@ -13,17 +13,16 @@ LaterTricks.obj: LaterTricks.h dds.h ../include/portab.h ../include/dll.h
 LaterTricks.obj: Memory.h TransTable.h Moves.h debug.h
 Memory.obj: Memory.h TransTable.h ../include/dll.h dds.h ../include/portab.h
 Memory.obj: Moves.h debug.h
-Moves.obj: dds.h ../include/portab.h ../include/dll.h Moves.h ABsearch.h
-Moves.obj: debug.h
+Moves.obj: dds.h ../include/portab.h ../include/dll.h Moves.h debug.h
 Par.obj: dds.h ../include/portab.h ../include/dll.h PBN.h
 PlayAnalyser.obj: dds.h ../include/portab.h ../include/dll.h SolverIF.h
 PlayAnalyser.obj: Memory.h TransTable.h Moves.h debug.h System.h Scheduler.h
 PlayAnalyser.obj: TimeStatList.h TimeStat.h Timer.h PBN.h
 PBN.obj: dds.h ../include/portab.h ../include/dll.h PBN.h
-QuickTricks.obj: dds.h ../include/portab.h ../include/dll.h QuickTricks.h
+QuickTricks.obj: QuickTricks.h dds.h ../include/portab.h ../include/dll.h
 QuickTricks.obj: Memory.h TransTable.h Moves.h debug.h
-Scheduler.obj: Scheduler.h TimeStatList.h TimeStat.h Timer.h dds.h
-Scheduler.obj: ../include/portab.h ../include/dll.h
+Scheduler.obj: Scheduler.h dds.h ../include/portab.h ../include/dll.h
+Scheduler.obj: TimeStatList.h TimeStat.h Timer.h
 SolveBoard.obj: SolverIF.h Memory.h TransTable.h ../include/dll.h dds.h
 SolveBoard.obj: ../include/portab.h Moves.h debug.h SolveBoard.h System.h
 SolveBoard.obj: Scheduler.h TimeStatList.h TimeStat.h Timer.h PBN.h

@@ -22,8 +22,10 @@ ABstats::ABstats()
   fileSet = false;
   fp = stdout;
 
+  for (int p = 0; p < DDS_AB_POS; p++)
+    sprintf(name[p], "Position %4d", p);
+
   ABstats::Reset();
-  ABstats::ResetCum();
 }
 
 
@@ -39,7 +41,8 @@ void ABstats::Reset()
 {
   for (int p = 0; p < DDS_AB_POS; p++)
   {
-    sprintf(name[p], "Position %4d", p);
+    sumNew[p] = 0;
+    psumNew[p] = 0;
 
     for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
       counter[p][depth] = 0;
@@ -103,6 +106,9 @@ void ABstats::IncrPos(
     return;
 
   counter[no][depth]++;
+  sumNew[no]++;
+  psumNew[no] += depth;
+
   if (side)
     score[1][depth]++;
   else
@@ -113,13 +119,21 @@ void ABstats::IncrPos(
 void ABstats::IncrNode(int depth)
 {
   nodes[depth]++;
+  nodesCum[depth]++;
   allnodes++;
 }
 
 
-int ABstats::GetNodes()
+int ABstats::GetNodes() const
 {
   return allnodes;
+}
+
+
+#include "../include/portab.h"
+void ABstats::PrintStatsPosition(FILE * fpl) const
+{
+  UNUSED(fpl);
 }
 
 
@@ -136,15 +150,9 @@ void ABstats::PrintStats()
     fileSet = true;
   }
 
+
   int sumScore1 = 0 , sumScore0 = 0;
   int psumScore1 = 0 , psumScore0 = 0;
-  int sum[DDS_AB_POS], psum[DDS_AB_POS];
-
-  for (int p = 0; p < DDS_AB_POS; p++)
-  {
-    sum[p] = 0;
-    psum[p] = 0;
-  }
 
   for (int d = 0; d < DDS_MAXDEPTH; d++)
   {
@@ -153,14 +161,6 @@ void ABstats::PrintStats()
 
     psumScore1 += d * score[1][d];
     psumScore0 += d * score[0][d];
-
-    for (int p = 0; p < DDS_AB_POS; p++)
-    {
-      sum[p] += counter[p][d];
-      psum[p] += d * counter[p][d];
-    }
-
-    nodesCum[d] += nodes[d];
   }
 
   allnodesCum += allnodes;
@@ -173,8 +173,8 @@ void ABstats::PrintStats()
 
   for (int p = 0; p < DDS_AB_POS; p++)
   {
-    counterCum[p] += sum[p];
-    pcounterCum[p] += psum[p];
+    counterCum[p] += sumNew[p];
+    pcounterCum[p] += psumNew[p];
   }
 
   int s = sumScore1 + sumScore0;
@@ -216,14 +216,14 @@ void ABstats::PrintStats()
 
     for (int p = 0; p < DDS_AB_POS; p++)
     {
-      if (sum[p])
+      if (sumNew[p])
       {
         fprintf(fp, "%2d %-20s %8d %5.1f %5.1f %8d %5.1f %5.1f\n",
                 p,
                 name[p],
-                sum[p],
-                100. * sum[p] / static_cast<double>(s),
-                psum[p] / static_cast<double>(sum[p]),
+                sumNew[p],
+                100. * sumNew[p] / static_cast<double>(s),
+                psumNew[p] / static_cast<double>(sumNew[p]),
                 counterCum[p],
                 100. * counterCum[p] / static_cast<double>(cs),
                 pcounterCum[p] / static_cast<double>(counterCum[p]));
@@ -233,8 +233,8 @@ void ABstats::PrintStats()
         fprintf(fp, "%2d %-20s %8d %5.1f %5s %8d %5.1f %5.1f\n",
                 p,
                 name[p],
-                sum[p],
-                100. * sum[p] / static_cast<double>(s),
+                sumNew[p],
+                100. * sumNew[p] / static_cast<double>(s),
                 "",
                 counterCum[p],
                 100. * counterCum[p] / static_cast<double>(cs),
@@ -334,7 +334,7 @@ void ABstats::PrintStats()
           "S", sumScore1, sumScore0);
 
   for (int p = 0; p < DDS_AB_POS; p++)
-    fprintf(fp, " %5d", sum[p]);
+    fprintf(fp, " %5d", sumNew[p]);
   fprintf(fp, "\n\n");
 #endif
 

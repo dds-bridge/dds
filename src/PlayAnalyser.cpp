@@ -275,7 +275,6 @@ void PlayChunkCommon(const int thrId)
 {
   vector<solvedPlay> solved;
   solved.resize(playparam.noOfBoards);
-  // solvedPlay solved[MAXNOOFBOARDS];
   int index;
   schedType st;
 
