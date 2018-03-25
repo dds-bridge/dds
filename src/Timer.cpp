@@ -13,7 +13,6 @@
 #include <sstream>
 
 #include "Timer.h"
-#include "../include/portab.h"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;

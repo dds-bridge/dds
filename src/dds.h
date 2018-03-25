@@ -87,8 +87,8 @@ extern unsigned short int winRanks[8192][14];
 struct playparamType
 {
   int noOfBoards;
-  struct playTracesBin * plp;
-  struct solvedPlays * solvedp;
+  playTracesBin * plp;
+  solvedPlays * solvedp;
   int error;
 };
 
@@ -177,8 +177,8 @@ struct extCard
 struct paramType
 {
   int noOfBoards;
-  struct boards * bop;
-  struct solvedBoards * solvedp;
+  boards * bop;
+  solvedBoards * solvedp;
   int error;
 };
 

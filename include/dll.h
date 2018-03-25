@@ -364,6 +364,7 @@ struct DDSInfo
   // 3 = GCD,
   // 4 = Boost,
   // 5 = STL
+  // 6 = TBB
   int threading;
 
   // The actual number of threads configured

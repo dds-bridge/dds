@@ -2,14 +2,13 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
 #include "../include/dll.h"
-#include "dds.h"
 #include "Init.h"
 
 #ifdef _MANAGED

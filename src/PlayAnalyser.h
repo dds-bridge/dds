@@ -11,10 +11,7 @@
 #define DDS_PLAYANALYSER_H
 
 
-#include "Scheduler.h"
-
-
 void PlayChunkCommon(
-  const int thid);
+  const int thrId);
 
 #endif

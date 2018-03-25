@@ -263,8 +263,10 @@ int threadingCode(char * arg)
     return 4;
   else if (str == "stl")
     return 5;
-  else
+  else if (str == "tbb")
     return 6;
+  else
+    return 7;
 }
 
 

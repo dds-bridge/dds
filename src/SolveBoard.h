@@ -10,20 +10,19 @@
 #ifndef DDS_SOLVEBOARD_H
 #define DDS_SOLVEBOARD_H
 
-
-#include "Scheduler.h"
+#include "dds.h"
 
 
 void SolveChunkCommon(
-  const int thid);
+  const int thrId);
 
 void SolveChunkDDtableCommon(
-  const int thid);
+  const int thrId);
 
 int SolveAllBoardsN(
-  struct boards * bop,
-  struct solvedBoards * solvedp,
-  int chunkSize,
-  int source); // 0 source, 1 calc
+  boards * bop,
+  solvedBoards * solvedp,
+  const int chunkSize,
+  const int source); // 0 source, 1 calc
 
 #endif

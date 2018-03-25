@@ -35,6 +35,27 @@
   #include <thread>
 #endif
 
+#ifdef DDS_THREADS_TBB
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4574)
+  #endif 
+
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wold-style-cast"
+  #pragma GCC diagnostic ignored "-Wsign-conversion"
+  #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+
+  #include "tbb/tbb.h"
+  #include "tbb/tbb_thread.h"
+
+  #pragma GCC diagnostic pop
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
+#endif
+
 #include "../include/dll.h"
 #include "dds.h"
 
@@ -83,7 +104,8 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_GCD 3
 #define DDS_SYSTEM_THREAD_BOOST 4
 #define DDS_SYSTEM_THREAD_STL 5
-#define DDS_SYSTEM_THREAD_SIZE 6
+#define DDS_SYSTEM_THREAD_TBB 6
+#define DDS_SYSTEM_THREAD_SIZE 7
 
 
 System::System()
@@ -137,6 +159,12 @@ void System::Reset()
   availableSystem[DDS_SYSTEM_THREAD_STL] = false;
 #endif
 
+#ifdef DDS_THREADS_TBB
+  availableSystem[DDS_SYSTEM_THREAD_TBB] = true;
+#else
+  availableSystem[DDS_SYSTEM_THREAD_TBB] = false;
+#endif
+
   // Take the first of any multi-threading system defined.
   for (unsigned k = 1; k < availableSystem.size(); k++)
   {
@@ -154,6 +182,7 @@ void System::Reset()
   RunPtrList[DDS_SYSTEM_THREAD_GCD] = &System::RunThreadsGCD; 
   RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
   RunPtrList[DDS_SYSTEM_THREAD_STL] = &System::RunThreadsSTL; 
+  RunPtrList[DDS_SYSTEM_THREAD_TBB] = &System::RunThreadsTBB; 
 
   // DDS_RUN_CALC doesn't happen.
   CallbackSimpleList.resize(DDS_RUN_SIZE);
@@ -440,6 +469,31 @@ int System::RunThreadsSTL()
   const unsigned nu = static_cast<unsigned>(numThreads);
   for (unsigned k = 0; k < nu; k++)
     threads[k] = new thread(fptr, k);
+
+  for (unsigned k = 0; k < nu; k++)
+  {
+    threads[k]->join();
+    delete threads[k];
+  }
+#endif
+
+  return RETURN_NO_FAULT;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//                            TBB                                   //
+//////////////////////////////////////////////////////////////////////
+
+int System::RunThreadsTBB()
+{
+#ifdef DDS_THREADS_TBB
+  vector<tbb::tbb_thread *> threads;
+  threads.resize(static_cast<unsigned>(numThreads));
+
+  const unsigned nu = static_cast<unsigned>(numThreads);
+  for (unsigned k = 0; k < nu; k++)
+    threads[k] = new tbb::tbb_thread(fptr, k);
 
   for (unsigned k = 0; k < nu; k++)
   {

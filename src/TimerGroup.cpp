@@ -14,7 +14,6 @@
 #include <sstream>
 
 #include "TimerGroup.h"
-#include "dds.h"
 
 
 TimerGroup::TimerGroup()

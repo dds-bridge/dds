@@ -2,18 +2,17 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
-#include "dds.h"
 #include "SolverIF.h"
 #include "SolveBoard.h"
-#include "Scheduler.h"
 #include "System.h"
 #include "Memory.h"
+#include "Scheduler.h"
 #include "PBN.h"
 #include "debug.h"
 
@@ -77,7 +76,7 @@ void SolveChunkCommon(
 void SolveChunkDDtableCommon(
   const int thrId)
 {
-  struct ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
   futureTricks fut[MAXNOOFBOARDS];
   int index;
   schedType st;
@@ -148,8 +147,8 @@ void SolveChunkDDtableCommon(
 int SolveAllBoardsN(
   boards * bop,
   solvedBoards * solvedp,
-  int chunkSize,
-  int source) // 0 solve, 1 calc
+  const int chunkSize,
+  const int source) // 0 solve, 1 calc
 {
   chunk = chunkSize;
   param.error = 0;
@@ -202,16 +201,13 @@ int STDCALL SolveBoardPBN(
   int solutions, 
   int mode, 
   futureTricks * futp, 
-  int thrIndex)
+  int thrId)
 {
-
-  int res, k;
   deal dl;
-
   if (ConvertFromPBN(dlpbn.remainCards, dl.remainCards) != RETURN_NO_FAULT)
     return RETURN_PBN_FAULT;
 
-  for (k = 0; k <= 2; k++)
+  for (int k = 0; k <= 2; k++)
   {
     dl.currentTrickRank[k] = dlpbn.currentTrickRank[k];
     dl.currentTrickSuit[k] = dlpbn.currentTrickSuit[k];
@@ -219,8 +215,7 @@ int STDCALL SolveBoardPBN(
   dl.first = dlpbn.first;
   dl.trump = dlpbn.trump;
 
-  res = SolveBoard(dl, target, solutions, mode, futp, thrIndex);
-
+  int res = SolveBoard(dl, target, solutions, mode, futp, thrId);
   return res;
 }
 
@@ -230,32 +225,33 @@ int STDCALL SolveAllBoards(
   solvedBoards * solvedp)
 {
   boards bo;
-  int k, i, res;
-
   bo.noOfBoards = bop->noOfBoards;
   if (bo.noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  for (k = 0; k < bop->noOfBoards; k++)
+  for (int k = 0; k < bop->noOfBoards; k++)
   {
     bo.mode[k] = bop->mode[k];
     bo.solutions[k] = bop->solutions[k];
     bo.target[k] = bop->target[k];
     bo.deals[k].first = bop->deals[k].first;
     bo.deals[k].trump = bop->deals[k].trump;
-    for (i = 0; i <= 2; i++)
+
+    for (int i = 0; i <= 2; i++)
     {
       bo.deals[k].currentTrickSuit[i] = bop->deals[k].currentTrickSuit[i];
       bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
     }
-    if (ConvertFromPBN(bop->deals[k].remainCards, bo.deals[k].remainCards) != 1)
+
+    if (ConvertFromPBN(bop->deals[k].remainCards, bo.deals[k].remainCards) 
+        != 1)
       return RETURN_PBN_FAULT;
   }
 
-  res = SolveAllBoardsN(&bo, solvedp, 1, 0);
-
+  int res = SolveAllBoardsN(&bo, solvedp, 1, 0);
   return res;
 }
+
 
 int STDCALL SolveAllChunksPBN(
   boardsPBN * bop, 
@@ -294,5 +290,4 @@ int STDCALL SolveAllChunksBin(
 
   return SolveAllBoardsN(bop, solvedp, 1, 0);
 }
-
 

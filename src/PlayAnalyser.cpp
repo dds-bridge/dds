@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -10,8 +10,9 @@
 
 #include "dds.h"
 #include "SolverIF.h"
-#include "Scheduler.h"
 #include "System.h"
+#include "Memory.h"
+#include "Scheduler.h"
 #include "PBN.h"
 #include "debug.h"
 
@@ -24,11 +25,10 @@ FILE * fp;
 
 paramType playparam;
 playparamType traceparam;
+
 extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
-
-void PlayChunkCommon(const int thrId);
 
 
 int STDCALL AnalysePlayBin(

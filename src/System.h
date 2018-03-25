@@ -53,6 +53,7 @@ class System
     int RunThreadsGCD();
     int RunThreadsWinAPI();
     int RunThreadsSTL();
+    int RunThreadsTBB();
 
     string GetVersion(
       int& major,
