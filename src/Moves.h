@@ -121,94 +121,94 @@ class Moves
 
 
     void WeightAllocTrump0(
-      pos * posPoint,
-      moveType * bestMove,
-      moveType * bestMoveTT,
-      relRanksType thrp_rel[]);
+      pos const * posPoint,
+      moveType const * bestMove,
+      moveType const * bestMoveTT,
+      const relRanksType thrp_rel[]);
 
     void WeightAllocNT0(
-      pos * posPoint,
-      moveType * bestMove,
-      moveType * bestMoveTT,
-      relRanksType thrp_rel[]);
+      pos const * posPoint,
+      moveType const * bestMove,
+      moveType const * bestMoveTT,
+      const relRanksType thrp_rel[]);
 
     void WeightAllocTrumpNotvoid1(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocNTNotvoid1(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocTrumpVoid1(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocNTVoid1(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocTrumpNotvoid2(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocNTNotvoid2(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocTrumpVoid2(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocNTVoid2(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocCombinedNotvoid3(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocTrumpVoid3(
-      pos * posPoint);
+      pos const * posPoint);
 
     void WeightAllocNTVoid3(
-      pos * posPoint);
+      pos const * posPoint);
 
     void GetTopNumber(
-      int ris,
-      int prank,
-      int * topNumber,
-      int * mno);
+      const int ris,
+      const int prank,
+      int& topNumber,
+      int& mno);
 
     int RankForcesAce(
       int cards4th);
 
-    typedef void (Moves::*WeightPtr)(pos * posPoint);
+    typedef void (Moves::*WeightPtr)(pos const * posPoint);
 
     WeightPtr WeightList[16];
 
     inline bool WinningMove(
-      moveType * mvp1,
-      extCard * mvp2,
-      int trump);
+      moveType const * mvp1,
+      extCard const * mvp2,
+      const int trump) const;
 
     void PrintMove(
-      movePlyType * mply);
+      movePlyType const * mply) const;
 
     void MergeSort();
 
     void UpdateStatsEntry(
       moveStatsType * statp,
-      int findex,
-      int hit,
-      int len);
+      const int findex,
+      const int hit,
+      const int len) const;
 
     char * AverageString(
-      moveStatType * statp,
-      char str[]);
+      const moveStatType * statp,
+      char str[]) const;
 
     char * FullAverageString(
-      moveStatType * statp,
-      char str[]);
+      const moveStatType * statp,
+      char str[]) const;
 
     void PrintTrickTable(
       FILE * fp,
-      moveStatType tablep[][DDS_HANDS]);
+      const moveStatType tablep[][DDS_HANDS]) const ;
 
     void PrintFunctionTable(
       FILE * fp,
-      moveStatsType * tablep);
+      moveStatsType const * tablep) const;
 
   public:
     Moves();
@@ -218,33 +218,33 @@ class Moves
     void SetFile(const string& fname);
 
     void Init(
-      int tricks,
-      int relStartHand,
+      const int tricks,
+      const int relStartHand,
       const int initialRanks[],
       const int initialSuits[],
       const unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
-      int trump,
-      int leadHand);
+      const int trump,
+      const int leadHand);
 
     void Reinit(
-      int tricks,
-      int leadHand);
+      const int tricks,
+      const int leadHand);
 
     int MoveGen0(
-      int tricks,
-      pos * posPoint,
-      moveType * bestMove,
-      moveType * bestMoveTT,
-      relRanksType thrp_rel[]);
+      const int tricks,
+      pos const * posPoint,
+      moveType const * bestMove,
+      moveType const * bestMoveTT,
+      const relRanksType thrp_rel[]);
 
     int MoveGen123(
-      int tricks,
-      int relHand,
-      pos * posPoint);
+      const int tricks,
+      const int relHand,
+      pos const * posPoint);
 
     int GetLength(
-      int trick,
-      int relHand);
+      const int trick,
+      const int relHand) const;
 
     void MakeSpecific(
       moveType const * mply,
@@ -252,55 +252,55 @@ class Moves
       const int relHand);
 
     moveType * MakeNext(
-      int trick,
-      int relHand,
-      unsigned short int winRanks[DDS_SUITS]);
+      const int trick,
+      const int relHand,
+      const unsigned short int winRanks[DDS_SUITS]);
 
     moveType * MakeNextSimple(
-      int trick,
-      int relHand);
+      const int trick,
+      const int relHand);
 
     void Step(
-      int tricks,
-      int relHand);
+      const int tricks,
+      const int relHand);
 
     void Rewind(
-      int tricks,
-      int relHand);
+      const int tricks,
+      const int relHand);
 
     void Purge(
-      int tricks,
-      int relHand,
-      moveType forbiddenMoves[]);
+      const int tricks,
+      const int relHand,
+      const moveType forbiddenMoves[]);
 
     void Reward(
-      int trick,
-      int relHand);
+      const int trick,
+      const int relHand);
 
     trickDataType * GetTrickData(
-      int tricks);
+      const int tricks);
 
     void Sort(
-      int tricks,
-      int relHand);
+      const int tricks,
+      const int relHand);
 
     void PrintMoves(
-      int trick,
-      int relHand);
+      const int trick,
+      const int relHand) const;
 
     void RegisterHit(
-      int tricks,
-      int relHand);
+      const int tricks,
+      const int relHand);
 
     void TrickToText(
-      int trick,
-      char text[]);
+      const int trick,
+      char text[]) const;
 
-    void PrintTrickStats();
+    void PrintTrickStats() const;
 
-    void PrintTrickDetails();
+    void PrintTrickDetails() const;
 
-    void PrintFunctionStats();
+    void PrintFunctionStats() const;
 
 };
 

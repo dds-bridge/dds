@@ -110,13 +110,13 @@ Moves::~Moves()
 
 
 void Moves::Init(
-  int tricks,
-  int relStartHand,
+  const int tricks,
+  const int relStartHand,
   const int initialRanks[],
   const int initialSuits[],
   const unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
-  int ourTrump,
-  int ourLeadHand)
+  const int ourTrump,
+  const int ourLeadHand)
 {
   currTrick = tricks;
   trump = ourTrump;
@@ -153,19 +153,19 @@ void Moves::Init(
 
 
 void Moves::Reinit(
-  int tricks,
-  int ourLeadHand)
+  const int tricks,
+  const int ourLeadHand)
 {
   track[tricks].leadHand = ourLeadHand;
 }
 
 
 int Moves::MoveGen0(
-  int tricks,
-  pos * posPoint,
-  moveType * bestMove,
-  moveType * bestMoveTT,
-  relRanksType thrp_rel[])
+  const int tricks,
+  pos const * posPoint,
+  moveType const * bestMove,
+  moveType const * bestMoveTT,
+  const relRanksType thrp_rel[])
 {
   trackp = &track[tricks];
   leadHand = trackp->leadHand;
@@ -234,9 +234,9 @@ int Moves::MoveGen0(
 
 
 int Moves::MoveGen123(
-  int tricks,
-  int handRel,
-  pos * posPoint)
+  const int tricks,
+  const int handRel,
+  pos const * posPoint)
 {
   trackp = &track[tricks];
   leadHand = trackp->leadHand;
@@ -293,8 +293,6 @@ int Moves::MoveGen123(
     if (numMoves == 1)
       return numMoves;
 
-    // WeightFnc = WeightList[findex];
-    // (this->*WeightFnc)(posPoint);
     (this->*WeightList[findex])(posPoint);
 
     Moves::MergeSort();
@@ -346,10 +344,10 @@ int Moves::MoveGen123(
 
 
 void Moves::WeightAllocTrump0(
-  pos * posPoint,
-  moveType * bestMove,
-  moveType * bestMoveTT,
-  relRanksType thrp_rel[])
+  pos const * posPoint,
+  moveType const * bestMove,
+  moveType const * bestMoveTT,
+  const relRanksType thrp_rel[])
 {
   unsigned short suitCount = posPoint->length[leadHand][suit];
   unsigned short suitCountLH = posPoint->length[lho[leadHand]][suit];
@@ -608,10 +606,10 @@ void Moves::WeightAllocTrump0(
 
 
 void Moves::WeightAllocNT0(
-  pos * posPoint,
-  moveType * bestMove,
-  moveType * bestMoveTT,
-  relRanksType thrp_rel[])
+  pos const * posPoint,
+  moveType const * bestMove,
+  moveType const * bestMoveTT,
+  const relRanksType thrp_rel[])
 {
   int aggr = posPoint->aggr[suit];
 
@@ -755,7 +753,7 @@ void Moves::WeightAllocNT0(
 
 
 void Moves::WeightAllocTrumpNotvoid1(
-  pos * posPoint)
+  pos const * posPoint)
 {
   int max3rd = highestRank[
                  posPoint->rankInSuit[partner[leadHand]][leadSuit]];
@@ -871,7 +869,7 @@ void Moves::WeightAllocTrumpNotvoid1(
 
 
 void Moves::WeightAllocNTNotvoid1(
-  pos * posPoint)
+  pos const * posPoint)
 {
   // FIX: Second test should come first, and outside loop.
   // Why is better not to be able to beat later players than
@@ -924,7 +922,7 @@ void Moves::WeightAllocNTNotvoid1(
 
 
 void Moves::WeightAllocTrumpVoid1(
-  pos * posPoint)
+  pos const * posPoint)
 {
   // FIX:
   // leadSuit == trump: Why differentiate?
@@ -1046,7 +1044,7 @@ void Moves::WeightAllocTrumpVoid1(
 
 
 void Moves::WeightAllocNTVoid1(
-  pos * posPoint)
+  pos const * posPoint)
 {
   // FIX:
   // Why the different penalties depending on partner?
@@ -1090,7 +1088,7 @@ void Moves::WeightAllocNTVoid1(
 
 
 void Moves::WeightAllocTrumpNotvoid2(
-  pos * posPoint)
+  pos const * posPoint)
 {
   int cards4th = posPoint->rankInSuit[rho[leadHand]][leadSuit];
   int max4th = highestRank[cards4th];
@@ -1266,7 +1264,7 @@ void Moves::WeightAllocTrumpNotvoid2(
 
 
 int Moves::RankForcesAce(
-  int cards4th)
+  const int cards4th)
 {
   // Figure out how high we have to play to force out the top.
   moveGroupType * mp = &groupData[cards4th];
@@ -1309,17 +1307,17 @@ int Moves::RankForcesAce(
 
 
 void Moves::GetTopNumber(
-  int ris,
-  int prank,
-  int * topNumber,
-  int * mno)
+  const int ris,
+  const int prank,
+  int& topNumber,
+  int& mno)
 {
-  * topNumber = -10;
+  topNumber = -10;
 
   // Find the lowest move that still overtakes partner's card.
-  *mno = 0;
-  while (*mno < numMoves - 1 && mply[1 + *mno].rank > prank)
-    (*mno)++;
+  mno = 0;
+  while (mno < numMoves - 1 && mply[1 + mno].rank > prank)
+    mno++;
 
   moveGroupType * mp = &groupData[ris];
   int g = mp->lastGroup;
@@ -1333,13 +1331,13 @@ void Moves::GetTopNumber(
   while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
     fullseq |= mp->fullseq[--g];
 
-  *topNumber = counttable[fullseq] - 1;
+  topNumber = counttable[fullseq] - 1;
 }
 
 
 
 void Moves::WeightAllocNTNotvoid2(
-  pos * posPoint)
+  pos const * posPoint)
 {
   // One of the main remaining issues here is cashing out long
   // suits. Examples:
@@ -1374,7 +1372,7 @@ void Moves::WeightAllocNTNotvoid2(
 
       int topNumber, mno;
       GetTopNumber(posPoint->rankInSuit[partner[leadHand]][leadSuit],
-                   trackp->move[0].rank, &topNumber, &mno);
+                   trackp->move[0].rank, topNumber, mno);
 
       if (oppLen <= topNumber)
         mply[mno].weight += 20;
@@ -1409,7 +1407,7 @@ void Moves::WeightAllocNTNotvoid2(
 
 
 void Moves::WeightAllocTrumpVoid2(
-  pos * posPoint)
+  pos const * posPoint)
 {
   // Compared to "v2.8":
   // Moved a test for partner's win out of the k loop.
@@ -1512,7 +1510,7 @@ void Moves::WeightAllocTrumpVoid2(
 
 
 void Moves::WeightAllocNTVoid2(
-  pos * posPoint)
+  pos const * posPoint)
 {
   // Compared to "v2.8":
   // Took only the second branch. The first branch (partner
@@ -1537,7 +1535,7 @@ void Moves::WeightAllocNTVoid2(
 
 
 void Moves::WeightAllocCombinedNotvoid3(
-  pos * posPoint)
+  pos const * posPoint)
 // moveType mply[])
 {
   // We're always following suit.
@@ -1572,8 +1570,7 @@ void Moves::WeightAllocCombinedNotvoid3(
 
 
 void Moves::WeightAllocTrumpVoid3(
-  pos * posPoint)
-// moveType mply[])
+  pos const * posPoint)
 {
   // Compared to "v2.8":
   // val removed for trump plays (doesn't really matter, though).
@@ -1640,8 +1637,7 @@ void Moves::WeightAllocTrumpVoid3(
 
 
 void Moves::WeightAllocNTVoid3(
-  pos * posPoint)
-// moveType mply[])
+  pos const * posPoint)
 {
   int mylen = posPoint->length[currHand][suit];
   int val = (mylen << 6) / 27;
@@ -1657,9 +1653,9 @@ void Moves::WeightAllocNTVoid3(
 
 
 inline bool Moves::WinningMove(
-  moveType * mvp1,
-  extCard * mvp2,
-  int ourTrump)
+  moveType const * mvp1,
+  extCard const * mvp2,
+  const int ourTrump) const
 {
   /* Return true if move 1 wins over move 2, with the assumption that
   move 2 is the presently winning card of the trick */
@@ -1680,8 +1676,8 @@ inline bool Moves::WinningMove(
 
 
 int Moves::GetLength(
-  int trick,
-  int relHand)
+  const int trick,
+  const int relHand) const
 {
   return moveList[trick][relHand].last + 1;
 }
@@ -1755,9 +1751,9 @@ void Moves::MakeSpecific(
 
 
 moveType * Moves::MakeNext(
-  int trick,
-  int relHand,
-  unsigned short int ourWinRanks[DDS_SUITS])
+  const int trick,
+  const int relHand,
+  const unsigned short int ourWinRanks[DDS_SUITS])
 {
   // Find moves that are >= ourWinRanks[suit], but allow one
   // "small" move per suit.
@@ -1865,8 +1861,8 @@ moveType * Moves::MakeNext(
 
 
 moveType * Moves::MakeNextSimple(
-  int trick,
-  int relHand)
+  const int trick,
+  const int relHand)
 {
   // Don't worry about small moves. Why not, actually?
 
@@ -1930,25 +1926,25 @@ moveType * Moves::MakeNextSimple(
 
 
 void Moves::Step(
-  int tricks,
-  int relHand)
+  const int tricks,
+  const int relHand)
 {
   moveList[tricks][relHand].current++;
 }
 
 
 void Moves::Rewind(
-  int tricks,
-  int relHand)
+  const int tricks,
+  const int relHand)
 {
   moveList[tricks][relHand].current = 0;
 }
 
 
 void Moves::Purge(
-  int trick,
-  int ourLeadHand,
-  moveType forbiddenMoves[])
+  const int trick,
+  const int ourLeadHand,
+  const moveType forbiddenMoves[])
 {
   movePlyType * ourMply = &moveList[trick][ourLeadHand];
 
@@ -1974,8 +1970,8 @@ void Moves::Purge(
 
 
 void Moves::Reward(
-  int tricks,
-  int relHand)
+  const int tricks,
+  const int relHand)
 {
   moveList[tricks][relHand].
   move[ moveList[tricks][relHand].current - 1 ].weight += 100;
@@ -1983,7 +1979,7 @@ void Moves::Reward(
 
 
 trickDataType * Moves::GetTrickData(
-  int tricks)
+  const int tricks)
 {
   trickDataType * datap = &track[tricks].trickData;
   for (int s = 0; s < DDS_SUITS; s++)
@@ -2009,8 +2005,8 @@ trickDataType * Moves::GetTrickData(
 
 
 void Moves::Sort(
-  int tricks,
-  int relHand)
+  const int tricks,
+  const int relHand)
 {
   numMoves = moveList[tricks][relHand].last + 1;
   mply = moveList[tricks][relHand].move;
@@ -2266,7 +2262,7 @@ void Moves::MergeSort()
 
 
 void Moves::PrintMove(
-  movePlyType * ourMply)
+  movePlyType const * ourMply) const
 {
   printf("current %d, last %d\n", ourMply->current, ourMply->last);
   printf(" i suit sequence rank wgt\n");
@@ -2283,10 +2279,10 @@ void Moves::PrintMove(
 
 
 void Moves::PrintMoves(
-  int trick,
-  int relHand)
+  const int trick,
+  const int relHand) const
 {
-  movePlyType * listp = &moveList[trick][relHand];
+  movePlyType const * listp = &moveList[trick][relHand];
   printf("trick %d relHand %d last %d current %d\n",
          trick, relHand, listp->last, listp->current);
   Moves::PrintMove(listp);
@@ -2294,36 +2290,36 @@ void Moves::PrintMoves(
 
 
 void Moves::TrickToText(
-  int trick,
-  char line[])
+  const int trick,
+  char line[]) const
 {
-  movePlyType * listp0 = &moveList[trick][0],
-                * listp1 = &moveList[trick][1],
-                  * listp2 = &moveList[trick][2],
-                    * listp3 = &moveList[trick][3];
+  const movePlyType& listp0 = moveList[trick][0];
+  const movePlyType& listp1 = moveList[trick][1];
+  const movePlyType& listp2 = moveList[trick][2];
+  const movePlyType& listp3 = moveList[trick][3];
 
   sprintf(line, "Last trick\t%c: %c%c - %c%c - %c%c - %c%c\n",
           cardHand[ track[trick].leadHand ],
-          cardSuit[ listp0->move[listp0->current].suit ],
-          cardRank[ listp0->move[listp0->current].rank ],
+          cardSuit[ listp0.move[listp0.current].suit ],
+          cardRank[ listp0.move[listp0.current].rank ],
 
-          cardSuit[ listp1->move[listp1->current].suit ],
-          cardRank[ listp1->move[listp1->current].rank ],
+          cardSuit[ listp1.move[listp1.current].suit ],
+          cardRank[ listp1.move[listp1.current].rank ],
 
-          cardSuit[ listp2->move[listp2->current].suit ],
-          cardRank[ listp2->move[listp2->current].rank ],
+          cardSuit[ listp2.move[listp2.current].suit ],
+          cardRank[ listp2.move[listp2.current].rank ],
 
-          cardSuit[ listp3->move[listp3->current].suit ],
-          cardRank[ listp3->move[listp3->current].rank ]);
+          cardSuit[ listp3.move[listp3.current].suit ],
+          cardRank[ listp3.move[listp3.current].rank ]);
 }
 
 
 
 void Moves::UpdateStatsEntry(
   moveStatsType * statp,
-  int findex,
-  int hit,
-  int len)
+  const int findex,
+  const int hit,
+  const int len) const
 {
   bool found = false;
   int fno = 0;
@@ -2366,8 +2362,8 @@ void Moves::UpdateStatsEntry(
 
 
 void Moves::RegisterHit(
-  int trick,
-  int relHand)
+  const int trick,
+  const int relHand)
 {
   movePlyType * listp = &moveList[trick][relHand];
 
@@ -2459,8 +2455,8 @@ void Moves::RegisterHit(
 
 
 char * Moves::AverageString(
-  moveStatType * statp,
-  char str[])
+  moveStatType const * statp,
+  char str[]) const
 {
   if (statp->count == 0)
     sprintf(str, "%5s %4s", "--", "--");
@@ -2474,8 +2470,8 @@ char * Moves::AverageString(
 
 
 char * Moves::FullAverageString(
-  moveStatType * statp,
-  char str[])
+  moveStatType const * statp,
+  char str[]) const
 {
   if (statp->count == 0)
     sprintf(str, "%5s %5s %4s %8s %8s",
@@ -2498,7 +2494,7 @@ char * Moves::FullAverageString(
 
 void Moves::PrintTrickTable(
   FILE * fp,
-  moveStatType tablep[][DDS_HANDS])
+  const moveStatType tablep[][DDS_HANDS]) const
 {
   fprintf(fp, "%5s %11s %11s %11s %11s\n",
           "Trick",
@@ -2527,7 +2523,7 @@ void Moves::PrintTrickTable(
 }
 
 
-void Moves::PrintTrickStats()
+void Moves::PrintTrickStats() const
 {
   FILE * fp;
   fp = fopen(fname.c_str(), "a");
@@ -2543,7 +2539,7 @@ void Moves::PrintTrickStats()
 
 void Moves::PrintFunctionTable(
   FILE * fp,
-  moveStatsType * statp)
+  moveStatsType const * statp) const
 {
   char str[2][40];
 
@@ -2569,7 +2565,7 @@ void Moves::PrintFunctionTable(
   }
 }
 
-void Moves::PrintTrickDetails()
+void Moves::PrintTrickDetails() const
 {
   FILE * fp;
   fp = fopen(fname.c_str(), "a");
@@ -2602,7 +2598,7 @@ void Moves::PrintTrickDetails()
 }
 
 
-void Moves::PrintFunctionStats()
+void Moves::PrintFunctionStats() const
 {
   FILE * fp;
   fp = fopen(fname.c_str(), "a");
