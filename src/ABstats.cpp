@@ -172,26 +172,7 @@ void ABstats::PrintStats()
     fileSet = true;
   }
 
-
-  int sumScore1 = 0 , sumScore0 = 0;
-  int psumScore1 = 0 , psumScore0 = 0;
-
-  for (int d = 0; d < DDS_MAXDEPTH; d++)
-  {
-    sumScore1 += score[1][d]; // ABscores[1].sum
-    sumScore0 += score[0][d];
-
-    psumScore1 += d * score[1][d]; // ABscores[1].sumWeighted;
-    psumScore0 += d * score[0][d];
-  }
-
   allnodesCum += allnodes;
-
-  scoreCum[1] += sumScore1; // ABscores[1].sumCum;
-  scoreCum[0] += sumScore0;
-
-  pscoreCum[1] += psumScore1; // ABscores[1].sumCumWeighted
-  pscoreCum[0] += psumScore0;
 
   for (int p = 0; p < DDS_AB_POS; p++)
   {
@@ -199,33 +180,8 @@ void ABstats::PrintStats()
     pcounterCum[p] += psumNew[p];
   }
 
-if (ABscores[1].sum != sumScore1)
-  fprintf(fp, "1sum %d %d\n", ABscores[1].sum, sumScore1);
-
-if (ABscores[0].sum != sumScore0)
-  fprintf(fp, "0sum %d %d\n", ABscores[0].sum, sumScore0);
-
-if (ABscores[1].sumWeighted != psumScore1)
-  fprintf(fp, "1sumw %d %d\n", ABscores[1].sumWeighted, psumScore1);
-
-if (ABscores[0].sumWeighted != psumScore0)
-  fprintf(fp, "0sumw %d %d\n", ABscores[0].sumWeighted, psumScore0);
-
-if (ABscores[1].sumCum != scoreCum[1])
-  fprintf(fp, "1sumc %d %d\n", ABscores[1].sumCum, scoreCum[1]);
-
-if (ABscores[0].sumCum != scoreCum[0])
-  fprintf(fp, "0sumc %d %d\n", ABscores[0].sumCum, scoreCum[0]);
-
-if (ABscores[1].sumCumWeighted != pscoreCum[1])
-  fprintf(fp, "1sumcw %d %d\n", ABscores[1].sumCumWeighted, pscoreCum[1]);
-
-if (ABscores[0].sumCumWeighted != pscoreCum[0])
-  fprintf(fp, "0sumcw %d %d\n", ABscores[0].sumCumWeighted, pscoreCum[0]);
-
-
-  int s = sumScore1 + sumScore0;
-  int cs = scoreCum[1] + scoreCum[0];
+  int s = ABscores[1].sum + ABscores[0].sum;
+  int cs = ABscores[1].sumCum + ABscores[0].sumCum;
   if (s)
   {
     fprintf(fp, "%2s %-20s %8s %5s %5s %8s %5s %5s\n",
@@ -244,22 +200,22 @@ if (ABscores[0].sumCumWeighted != pscoreCum[0])
     fprintf(fp, "%2s %-20s %8d %5.1f %5.1f %8d %5.1f %5.1f\n",
             "",
             "Side1",
-            sumScore1,
-            100. * sumScore1 / static_cast<double>(s),
-            psumScore1 / static_cast<double>(s),
-            scoreCum[1],
-            100. * scoreCum[1] / static_cast<double>(cs),
-            pscoreCum[1] / static_cast<double>(cs));
+            ABscores[1].sum,
+            100. * ABscores[1].sum / static_cast<double>(s),
+            ABscores[1].sumWeighted / static_cast<double>(s),
+            ABscores[1].sumCum,
+            100. * ABscores[1].sumCum / static_cast<double>(cs),
+            ABscores[1].sumCumWeighted / static_cast<double>(cs));
 
     fprintf(fp, "%2s %-20s %8d %5.1f %5.1f %8d %5.1f %5.1f\n\n",
             "",
             "Side0",
-            sumScore0,
-            100. * sumScore0 / static_cast<double>(s),
-            psumScore0 / static_cast<double>(s),
-            scoreCum[0],
-            100. * scoreCum[0] / static_cast<double>(cs),
-            pscoreCum[0] / static_cast<double>(cs));
+            ABscores[0].sum,
+            100. * ABscores[0].sum / static_cast<double>(s),
+            ABscores[0].sumWeighted / static_cast<double>(s),
+            ABscores[0].sumCum,
+            100. * ABscores[0].sumCum / static_cast<double>(cs),
+            ABscores[0].sumCumWeighted / static_cast<double>(cs));
 
     for (int p = 0; p < DDS_AB_POS; p++)
     {
@@ -347,7 +303,7 @@ if (ABscores[0].sumCumWeighted != pscoreCum[0])
   }
 
   fprintf(fp, "%-5s %6d\n\n\n", "Diff",
-          allnodes - sumScore1 - sumScore0);
+          allnodes - ABscores[1].sum - ABscores[0].sum);
 
 #ifdef DDS_AB_DETAILS
   fprintf(fp, "%2s %6s %6s",
@@ -378,7 +334,7 @@ if (ABscores[0].sumCumWeighted != pscoreCum[0])
   fprintf(fp, "---------------------------\n");
 
   fprintf(fp, "%2s %6d %6d",
-          "S", sumScore1, sumScore0);
+          "S", ABscores[1].sum, ABscores[0].sum);
 
   for (int p = 0; p < DDS_AB_POS; p++)
     fprintf(fp, " %5d", sumNew[p]);
