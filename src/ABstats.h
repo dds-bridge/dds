@@ -66,19 +66,12 @@ class ABstats
 
     char name[DDS_AB_POS][40];
     int counter[DDS_AB_POS][DDS_MAXDEPTH];
-    int counterCum[DDS_AB_POS];
-    int pcounterCum[DDS_AB_POS];
     int score[2][DDS_MAXDEPTH];
-    int scoreCum[2];
-    int pscoreCum[2];
     int nodes[DDS_MAXDEPTH];
     int nodesCum[DDS_MAXDEPTH];
-    int sumNew[DDS_AB_POS];
-    int psumNew[DDS_AB_POS];
 
     ABtracker ABsides[2];
     ABtracker ABplaces[DDS_AB_POS];
-
 
     int allnodes;
     int allnodesCum;

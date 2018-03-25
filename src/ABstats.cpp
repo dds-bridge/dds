@@ -41,9 +41,6 @@ void ABstats::Reset()
 {
   for (int p = 0; p < DDS_AB_POS; p++)
   {
-    sumNew[p] = 0;
-    psumNew[p] = 0;
-
     for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
       counter[p][depth] = 0;
   }
@@ -86,18 +83,6 @@ void ABstats::ResetCum()
 
   allnodesCum = 0;
 
-  scoreCum[1] = 0;
-  scoreCum[0] = 0;
-
-  pscoreCum[1] = 0;
-  pscoreCum[0] = 0;
-
-  for (int p = 0; p < DDS_AB_POS; p++)
-  {
-    counterCum[p] = 0;
-    pcounterCum[p] = 0;
-  }
-
   for (int side = 0; side < 2; side++)
   {
     ABsides[side].sumCum = 0;
@@ -136,8 +121,6 @@ void ABstats::IncrPos(
     return;
 
   counter[no][depth]++;
-  sumNew[no]++;
-  psumNew[no] += depth;
 
   ABplaces[no].list[depth]++;
   ABplaces[no].sum++;
