@@ -47,6 +47,15 @@ using namespace std;
 #define DDS_AB_POS 7
 
 
+struct ABtracker
+{
+  int list[DDS_MAXDEPTH];
+  int sum;
+  int sumWeighted;
+  int sumCum;
+  int sumCumWeighted;
+};
+
 
 class ABstats
 {
@@ -66,6 +75,10 @@ class ABstats
     int nodesCum[DDS_MAXDEPTH];
     int sumNew[DDS_AB_POS];
     int psumNew[DDS_AB_POS];
+
+    ABtracker ABscores[2];
+
+
     int allnodes;
     int allnodesCum;
     int iniDepth;

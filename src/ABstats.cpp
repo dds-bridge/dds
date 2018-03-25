@@ -58,6 +58,16 @@ void ABstats::Reset()
     nodes[depth] = 0;
 
   allnodes = 0;
+
+  for (int side = 0; side < 2; side++)
+  {
+    for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
+      ABscores[side].list[depth] = 0;
+
+    ABscores[side].sum = 0;
+    ABscores[side].sumWeighted = 0;
+
+  }
 }
 
 
@@ -78,6 +88,12 @@ void ABstats::ResetCum()
   {
     counterCum[p] = 0;
     pcounterCum[p] = 0;
+  }
+
+  for (int side = 0; side < 2; side++)
+  {
+    ABscores[side].sumCum = 0;
+    ABscores[side].sumCumWeighted = 0;
   }
 }
 
@@ -109,10 +125,16 @@ void ABstats::IncrPos(
   sumNew[no]++;
   psumNew[no] += depth;
 
-  if (side)
-    score[1][depth]++;
-  else
-    score[0][depth]++;
+  const int iside = (side ? 1 : 0);
+
+  score[iside][depth]++;
+
+  ABscores[iside].list[depth]++;
+  ABscores[iside].sum++;
+  ABscores[iside].sumWeighted += depth;
+  ABscores[iside].sumCum++;
+  ABscores[iside].sumCumWeighted += depth;
+
 }
 
 
@@ -156,19 +178,19 @@ void ABstats::PrintStats()
 
   for (int d = 0; d < DDS_MAXDEPTH; d++)
   {
-    sumScore1 += score[1][d];
+    sumScore1 += score[1][d]; // ABscores[1].sum
     sumScore0 += score[0][d];
 
-    psumScore1 += d * score[1][d];
+    psumScore1 += d * score[1][d]; // ABscores[1].sumWeighted;
     psumScore0 += d * score[0][d];
   }
 
   allnodesCum += allnodes;
 
-  scoreCum[1] += sumScore1;
+  scoreCum[1] += sumScore1; // ABscores[1].sumCum;
   scoreCum[0] += sumScore0;
 
-  pscoreCum[1] += psumScore1;
+  pscoreCum[1] += psumScore1; // ABscores[1].sumCumWeighted
   pscoreCum[0] += psumScore0;
 
   for (int p = 0; p < DDS_AB_POS; p++)
@@ -176,6 +198,31 @@ void ABstats::PrintStats()
     counterCum[p] += sumNew[p];
     pcounterCum[p] += psumNew[p];
   }
+
+if (ABscores[1].sum != sumScore1)
+  fprintf(fp, "1sum %d %d\n", ABscores[1].sum, sumScore1);
+
+if (ABscores[0].sum != sumScore0)
+  fprintf(fp, "0sum %d %d\n", ABscores[0].sum, sumScore0);
+
+if (ABscores[1].sumWeighted != psumScore1)
+  fprintf(fp, "1sumw %d %d\n", ABscores[1].sumWeighted, psumScore1);
+
+if (ABscores[0].sumWeighted != psumScore0)
+  fprintf(fp, "0sumw %d %d\n", ABscores[0].sumWeighted, psumScore0);
+
+if (ABscores[1].sumCum != scoreCum[1])
+  fprintf(fp, "1sumc %d %d\n", ABscores[1].sumCum, scoreCum[1]);
+
+if (ABscores[0].sumCum != scoreCum[0])
+  fprintf(fp, "0sumc %d %d\n", ABscores[0].sumCum, scoreCum[0]);
+
+if (ABscores[1].sumCumWeighted != pscoreCum[1])
+  fprintf(fp, "1sumcw %d %d\n", ABscores[1].sumCumWeighted, pscoreCum[1]);
+
+if (ABscores[0].sumCumWeighted != pscoreCum[0])
+  fprintf(fp, "0sumcw %d %d\n", ABscores[0].sumCumWeighted, pscoreCum[0]);
+
 
   int s = sumScore1 + sumScore0;
   int cs = scoreCum[1] + scoreCum[0];
