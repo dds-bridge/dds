@@ -12,9 +12,9 @@
 
 #include <atomic>
 
+#include "dds.h"
 #include "TimeStatList.h"
 #include "Timer.h"
-#include "dds.h"
 
 using namespace std;
 
@@ -99,11 +99,8 @@ class Scheduler
 
     void SortHands(const enum RunMode mode);
 
-    int Strength(
-      deal const * dl);
-
-    int Fanout(
-      deal const * dl);
+    int Strength(deal const * dl) const;
+    int Fanout(deal const * dl) const;
 
     void Reset();
 
@@ -116,8 +113,8 @@ class Scheduler
     void FinetuneGroups();
 
     bool SameHand(
-      int hno1,
-      int hno2);
+      const int hno1,
+      const int hno2) const;
 
     void SortSolve(),
          SortCalc(),
@@ -148,7 +145,7 @@ class Scheduler
 
     int PredictedTime(
       deal * dl,
-      int number);
+      int number) const;
 
 
   public:
@@ -169,21 +166,18 @@ class Scheduler
       const enum RunMode mode,
       boards const * bop);
 
-    schedType GetNumber(
-      int thrId);
+    schedType GetNumber(const int thrId);
 
 #ifdef DDS_SCHEDULER
-    void StartThreadTimer(
-      int thrId);
+    void StartThreadTimer(const int thrId);
 
-    void EndThreadTimer(
-      int thrId);
+    void EndThreadTimer(const int thrId);
 
     void StartBlockTimer();
 
     void EndBlockTimer();
 
-    void PrintTiming();
+    void PrintTiming() const;
 #endif
 
 };

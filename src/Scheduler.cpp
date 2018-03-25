@@ -391,8 +391,8 @@ void Scheduler::FinetuneGroups()
 
 
 bool Scheduler::SameHand(
-  int hno1,
-  int hno2)
+  const int hno1,
+  const int hno2) const
 {
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -663,25 +663,25 @@ void Scheduler::SortTrace()
 
 
 int Scheduler::Strength(
-  deal const * dl)
+  deal const * dl) const
 {
   // If the strength in all suits is evenly split, then the
   // "strength" returned is close to 0. Maximum is 49.
 
-  unsigned sp = (dl->remainCards[0][0] | dl->remainCards[2][0]) >> 2;
-  unsigned he = (dl->remainCards[0][1] | dl->remainCards[2][1]) >> 2;
-  unsigned di = (dl->remainCards[0][2] | dl->remainCards[2][2]) >> 2;
-  unsigned cl = (dl->remainCards[0][3] | dl->remainCards[2][3]) >> 2;
+  const unsigned sp = (dl->remainCards[0][0] | dl->remainCards[2][0]) >> 2;
+  const unsigned he = (dl->remainCards[0][1] | dl->remainCards[2][1]) >> 2;
+  const unsigned di = (dl->remainCards[0][2] | dl->remainCards[2][2]) >> 2;
+  const unsigned cl = (dl->remainCards[0][3] | dl->remainCards[2][3]) >> 2;
 
-  int hsp = highCards[sp];
-  int hhe = highCards[he];
-  int hdi = highCards[di];
-  int hcl = highCards[cl];
+  const int hsp = highCards[sp];
+  const int hhe = highCards[he];
+  const int hdi = highCards[di];
+  const int hcl = highCards[cl];
 
   int dev = (hsp >= 14 ? hsp - 14 : 14 - hsp) +
-            (hhe >= 14 ? hhe - 14 : 14 - hhe) +
-            (hdi >= 14 ? hdi - 14 : 14 - hdi) +
-            (hcl >= 14 ? hcl - 14 : 14 - hcl);
+    (hhe >= 14 ? hhe - 14 : 14 - hhe) +
+    (hdi >= 14 ? hdi - 14 : 14 - hdi) +
+    (hcl >= 14 ? hcl - 14 : 14 - hcl);
 
   if (dev >= 50) dev = 49;
 
@@ -690,7 +690,7 @@ int Scheduler::Strength(
 
 
 int Scheduler::Fanout(
-  deal const * dl)
+  deal const * dl) const
 {
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups. In a given suit the
@@ -719,8 +719,7 @@ int Scheduler::Fanout(
 }
 
 
-schedType Scheduler::GetNumber(
-  int thrId)
+schedType Scheduler::GetNumber(const int thrId)
 {
   int g = threadGroup[thrId];
   listType * lp;
@@ -802,14 +801,14 @@ schedType Scheduler::GetNumber(
 
 
 #ifdef DDS_SCHEDULER
-void Scheduler::StartThreadTimer(int thrId)
+void Scheduler::StartThreadTimer(const int thrId)
 {
   timersThread[thrId].Reset();
   timersThread[thrId].Start();
 }
 
 
-void Scheduler::EndThreadTimer(int thrId)
+void Scheduler::EndThreadTimer(const int thrId)
 {
   timersThread[thrId].End();
   int timeUser = timersThread[thrId].UserTime();
@@ -892,7 +891,7 @@ void Scheduler::EndBlockTimer()
 }
 
 
-void Scheduler::PrintTiming()
+void Scheduler::PrintTiming() const
 {
   const string fname = string(DDS_SCHEDULER_PREFIX) + DDS_DEBUG_SUFFIX;
   ofstream fout;
@@ -942,7 +941,7 @@ void Scheduler::PrintTiming()
 
 int Scheduler::PredictedTime(
   deal * dl,
-  int number)
+  int number) const
 {
   int trump = dl->trump;
   int NT = (trump == 4 ? 100 : 0);
