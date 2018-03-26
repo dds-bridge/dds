@@ -61,7 +61,7 @@ SCHEDULER	= /DDDS_SCHEDULER
 # All that matters from no. 3 and no. 4 is the following.  Here you
 # can add $(SMALL_MEMORY) etc.
 
-DDS_BEHAVIOR	=
+DDS_BEHAVIOR	= $(DEBUG_ALL)
 
 # ----------------------- OFTEN OK    ------------------------------
 
@@ -129,7 +129,7 @@ $(VFILE).obj:	$(DLLBASE).res
 	cvtres /MACHINE:X86 /OUT:$(VFILE).obj $(DLLBASE).res
 
 depend:
-	makedepend -Y -o.obj -- $(SOURCE_FILES)
+	makedepend $(DDS_BEHAVIOR) -Y -o.obj -- $(SOURCE_FILES)
 
 clean:
 	rm -f $(OBJ_FILES) $(DLL) $(DLLBASE).{lib,exp,def,obj,res}

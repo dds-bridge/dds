@@ -211,8 +211,8 @@ void InitConstants()
     }
   }
 
-  /* The use of the counttable to give the number of bits set to
-  one in an integer follows an implementation by Thomas Andrews. */
+  // The use of the counttable to give the number of bits set to
+  // one in an integer follows an implementation by Thomas Andrews.
 
   // counttable[aggr] is the number of '1' bits (binary weight)
   // in aggr.
@@ -476,8 +476,8 @@ void SetDealTables(
   unsigned int topBitRank = 1;
   unsigned int topBitNo = 2;
 
-  /* Initialization of the rel structure is inspired by
-     a solution given by Thomas Andrews */
+  // Initialization of the rel structure is inspired by
+  // a solution given by Thomas Andrews.
 
   // rel[aggr].absRank[absolute rank][suit].hand is the hand
   // (N = 0, E = 1 etc.) which holds the absolute rank in
