@@ -38,8 +38,11 @@ THR_GCD		= /DDDS_THREADS_GCD
 THR_OPENMP	= /DDDS_THREADS_OPENMP
 THR_WINAPI	= /DDDS_THREADS_WINAPI
 THR_STL  	= /DDDS_THREADS_STL
+THR_STLIMPL  	= /DDDS_THREADS_STLIMPL
+THR_PPLIMPL  	= /DDDS_THREADS_PPLIMPL
 
-THREADING	= $(THR_BOOST) $(THR_OPENMP) $(THR_WINAPI) $(THR_STL)
+THREADING	= $(THR_BOOST) $(THR_OPENMP) $(THR_WINAPI) \
+		$(THR_STL) $(THR_STLIMPL) $(THR_PPLIMPL)
 
 # If you need to add something for a threading system, this is
 # the place.
@@ -61,7 +64,7 @@ SCHEDULER	= /DDDS_SCHEDULER
 # All that matters from no. 3 and no. 4 is the following.  Here you
 # can add $(SMALL_MEMORY) etc.
 
-DDS_BEHAVIOR	= $(DEBUG_ALL)
+DDS_BEHAVIOR	=
 
 # ----------------------- OFTEN OK    ------------------------------
 
@@ -85,6 +88,7 @@ WARN_FLAGS	=		\
 	/wd4514			\
 	/wd4555			\
 	/wd4571			\
+	/wd4623			\
 	/wd4625			\
 	/wd4626			\
 	/wd4668			\
@@ -97,7 +101,9 @@ WARN_FLAGS	=		\
 	/wd5027			\
 	/WX
 
-COMPILE_FLAGS	= /O2 /Oi /Ot /Oy /GL /EHs \
+# If you don't have /std:c++17, you won't get THR_STLIMPL.
+
+COMPILE_FLAGS	= /O2 /Oi /Ot /Oy /GL /EHs /std:c++17 \
 		$(WARN_FLAGS) \
 		$(DDS_BEHAVIOR) $(THREAD_COMPILE) $(THREADING)
 
@@ -129,7 +135,7 @@ $(VFILE).obj:	$(DLLBASE).res
 	cvtres /MACHINE:X86 /OUT:$(VFILE).obj $(DLLBASE).res
 
 depend:
-	makedepend $(DDS_BEHAVIOR) -Y -o.obj -- $(SOURCE_FILES)
+	makedepend -Y -o.obj -- $(SOURCE_FILES)
 
 clean:
 	rm -f $(OBJ_FILES) $(DLL) $(DLLBASE).{lib,exp,def,obj,res}
