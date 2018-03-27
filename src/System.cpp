@@ -13,7 +13,8 @@
 #include <sstream>
 #include <stdlib.h>
 
-#include "SolveBoard.h" // For DetectDuplicates
+#include "SolveBoard.h"
+#include "PlayAnalyser.h"
 
 // Boost: Disable some header warnings.
 
@@ -508,7 +509,17 @@ int System::RunThreadsSTLIMPL()
   crossrefs.resize(bop->noOfBoards);
 
   // TODO: More general
-  DetectDuplicates(bop, uniques, crossrefs);
+  if (runCat == DDS_RUN_SOLVE)
+    DetectDuplicates(bop, uniques, crossrefs);
+  else if (runCat == DDS_RUN_TRACE)
+  {
+    uniques.resize(bop->noOfBoards);
+    for (unsigned i = 0; i < static_cast<unsigned>(bop->noOfBoards); i++)
+    {
+      uniques[i] = i;
+      crossrefs[i] = -1;
+    }
+  }
 // TEMP
 // cout << "uniques " << uniques.size() << endl;
 
@@ -525,7 +536,10 @@ int System::RunThreadsSTLIMPL()
     }
 
     // TODO: Use some kind of fptr
-    SolveSingleCommon(thrId, bno);
+    if (runCat == DDS_RUN_SOLVE)
+      SolveSingleCommon(thrId, bno);
+    else if (runCat == DDS_RUN_TRACE)
+      PlaySingleCommon(thrId, bno);
   });
 // cout << "used up to " << thrIdNext-1 << endl;
 
@@ -537,7 +551,8 @@ int System::RunThreadsSTLIMPL()
     if (crossrefs[i] != -1)
     {
       // TODO: Only works for Solve at the moment
-      CopySingleCommon(crossrefs[i], i);
+      if (runCat == DDS_RUN_SOLVE)
+        CopySolveSingle(crossrefs[i], i);
     }
   }
 #endif

@@ -271,6 +271,26 @@ int STDCALL AnalysePlayPBN(
 }
 
 
+void PlaySingleCommon(
+  const int thrId,
+  const int bno)
+{
+  solvedPlay solved;
+
+  int res = AnalysePlayBin(
+    playparam.bop->deals[bno],
+    traceparam.plp->plays[bno],
+    &solved,
+    thrId);
+
+  // If there are multiple errors, this will catch one of them.
+  if (res == 1)
+    traceparam.solvedp->solved[bno] = solved;
+  else
+   playparam.error = res;
+}
+
+
 void PlayChunkCommon(const int thrId)
 {
   vector<solvedPlay> solved;
@@ -285,6 +305,7 @@ void PlayChunkCommon(const int thrId)
     if (index == -1)
       break;
 
+    // TODO: Could use PlaySingleCommon
     int res = AnalysePlayBin(
                 playparam.bop->deals[index],
                 traceparam.plp->plays[index],

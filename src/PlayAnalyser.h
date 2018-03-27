@@ -11,6 +11,10 @@
 #define DDS_PLAYANALYSER_H
 
 
+void PlaySingleCommon(
+  const int thrId,
+  const int bno);
+
 void PlayChunkCommon(
   const int thrId);
 

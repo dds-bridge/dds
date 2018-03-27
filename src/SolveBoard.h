@@ -21,7 +21,7 @@ void SolveSingleCommon(
   const int thrId,
   const int bno);
 
-void CopySingleCommon(
+void CopySolveSingle(
   const int bnoFrom,
   const int bnoTo);
 

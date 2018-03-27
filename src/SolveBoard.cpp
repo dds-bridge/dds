@@ -53,7 +53,7 @@ void SolveSingleCommon(
 }
 
 
-void CopySingleCommon(
+void CopySolveSingle(
   const int bnoFrom,
   const int bnoTo)
 {
