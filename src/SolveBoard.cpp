@@ -46,8 +46,6 @@ void SolveSingleCommon(
               thrId);
   END_THREAD_TIMER(thrId);
 
-string st = "Sslved " + to_string(bno) + " res " + to_string(res) + "\n";
-cout << st;
   if (res == 1)
     param.solvedp->solvedBoard[bno] = fut;
   else
@@ -274,6 +272,9 @@ void DetectSolveDuplicates(
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
+  uniques.clear();
+  crossrefs.resize(bop->noOfBoards);
+
   const unsigned nu = static_cast<unsigned>(bop->noOfBoards);
   for (unsigned i = 0; i < nu; i++)
     crossrefs[i] = -1;

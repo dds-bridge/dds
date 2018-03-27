@@ -267,8 +267,10 @@ int threadingCode(char * arg)
     return 6;
   else if (str == "stlimpl")
     return 7;
-  else
+  else if (str == "pplimpl")
     return 8;
+  else
+    return 9;
 }
 
 

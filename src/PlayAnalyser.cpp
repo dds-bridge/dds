@@ -425,6 +425,7 @@ void DetectPlayDuplicates(
   // two tables.
 
   uniques.resize(bop->noOfBoards);
+  crossrefs.resize(bop->noOfBoards);
   for (unsigned i = 0; i < static_cast<unsigned>(bop->noOfBoards); i++)
   {
     uniques[i] = i;

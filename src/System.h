@@ -63,6 +63,7 @@ class System
     int RunThreadsSTL();
     int RunThreadsTBB();
     int RunThreadsSTLIMPL();
+    int RunThreadsPPLIMPL();
 
     string GetVersion(
       int& major,

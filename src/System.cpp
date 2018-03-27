@@ -20,16 +20,16 @@
 // Boost: Disable some header warnings.
 
 #ifdef DDS_THREADS_BOOST
-   #ifdef _MSC_VER
-     #pragma warning(push)
-     #pragma warning(disable: 4061 4191 4619 4623 5031)
-   #endif
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4061 4191 4619 4623 5031)
+  #endif
 
   #include <boost/thread.hpp>
 
-   #ifdef _MSC_VER
-     #pragma warning(pop)
-   #endif
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
 #endif
 
 #ifdef DDS_THREADS_GCD
@@ -42,6 +42,19 @@
 
 #ifdef DDS_THREADS_STLIMPL
   #include <execution>
+#endif
+
+#ifdef DDS_THREADS_PPLIMPL
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4355 4619 5038)
+  #endif
+
+  #include "ppl.h"
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
 #endif
 
 #ifdef DDS_THREADS_TBB
@@ -106,7 +119,8 @@ const vector<string> DDS_SYSTEM_THREADING =
   "Boost",
   "STL",
   "TBB",
-  "STL-impl"
+  "STL-impl",
+  "PPL-impl"
 };
 
 #define DDS_SYSTEM_THREAD_BASIC 0
@@ -117,7 +131,8 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_STL 5
 #define DDS_SYSTEM_THREAD_TBB 6
 #define DDS_SYSTEM_THREAD_STLIMPL 7
-#define DDS_SYSTEM_THREAD_SIZE 8
+#define DDS_SYSTEM_THREAD_PPLIMPL 8
+#define DDS_SYSTEM_THREAD_SIZE 9
 
 
 System::System()
@@ -170,6 +185,10 @@ void System::Reset()
   availableSystem[DDS_SYSTEM_THREAD_STLIMPL] = true;
 #endif
 
+#ifdef DDS_THREADS_PPLIMPL
+  availableSystem[DDS_SYSTEM_THREAD_PPLIMPL] = true;
+#endif
+
   // Take the first of any multi-threading system defined.
   for (unsigned k = 1; k < availableSystem.size(); k++)
   {
@@ -190,6 +209,8 @@ void System::Reset()
   RunPtrList[DDS_SYSTEM_THREAD_TBB] = &System::RunThreadsTBB; 
   RunPtrList[DDS_SYSTEM_THREAD_STLIMPL] = 
     &System::RunThreadsSTLIMPL; 
+  RunPtrList[DDS_SYSTEM_THREAD_PPLIMPL] = 
+    &System::RunThreadsPPLIMPL; 
 
   CallbackSimpleList.resize(DDS_RUN_SIZE);
   CallbackSimpleList[DDS_RUN_SOLVE] = SolveChunkCommon;
@@ -509,54 +530,31 @@ int System::RunThreadsSTL()
 int System::RunThreadsSTLIMPL()
 {
 #ifdef DDS_THREADS_STLIMPL
+  vector<int> uniques;
+  vector<int> crossrefs;
+  (* CallbackDuplList[runCat])(bop, uniques, crossrefs);
+
   atomic<int> thrIdNext = 0;
   thread_local int thrId = -1;
   bool err = false;
 
-  vector<int> uniques;
-  vector<int> crossrefs;
-  uniques.clear();
-  crossrefs.resize(bop->noOfBoards);
-
-  // TODO: More general.  Could have separate calc detector,
-  // doesn't need to check quite as much.
-  if (runCat == DDS_RUN_SOLVE)
-    DetectSolveDuplicates(bop, uniques, crossrefs);
-  else if (runCat == DDS_RUN_CALC)
-    DetectCalcDuplicates(bop, uniques, crossrefs);
-  else if (runCat == DDS_RUN_TRACE)
-    DetectPlayDuplicates(bop, uniques, crossrefs);
-  
   for_each(std::execution::par, uniques.begin(), uniques.end(),
     [&](int &bno)
   {
     if (thrId == -1)
     {
-      thrId = thrIdNext;
-      thrIdNext++;
-
+      thrId = thrIdNext++;
       if (thrIdNext > 16) // Hmm...
         err = true;
     }
 
-    // TODO: Use some kind of fptr
-    if (runCat == DDS_RUN_SOLVE)
-      SolveSingleCommon(thrId, bno);
-    else if (runCat == DDS_RUN_CALC)
-      CalcSingleCommon(thrId, bno);
-    else if (runCat == DDS_RUN_TRACE)
-      PlaySingleCommon(thrId, bno);
+    (* CallbackSingleList[runCat])(thrId, bno);
   });
 
   if (err)
     return RETURN_THREAD_INDEX; // TODO: Not quite right
 
-  if (runCat == DDS_RUN_SOLVE)
-    CopySolveSingle(crossrefs);
-  else if (runCat == DDS_RUN_CALC)
-    CopyCalcSingle(crossrefs);
-  else if (runCat == DDS_RUN_TRACE)
-    CopyPlaySingle(crossrefs);
+  (* CallbackCopyList[runCat])(crossrefs);
 #endif
 
   return RETURN_NO_FAULT;
@@ -587,6 +585,48 @@ int System::RunThreadsTBB()
 
   return RETURN_NO_FAULT;
 }
+
+
+//////////////////////////////////////////////////////////////////////
+//                            PPL                                   //
+//////////////////////////////////////////////////////////////////////
+
+
+#include <iostream>
+#include <fstream>
+int System::RunThreadsPPLIMPL()
+{
+#ifdef DDS_THREADS_PPLIMPL
+  vector<int> uniques;
+  vector<int> crossrefs;
+  (* CallbackDuplList[runCat])(bop, uniques, crossrefs);
+
+  atomic<int> thrIdNext = 0;
+  thread_local int thrId = -1;
+  bool err = false;
+
+  Concurrency::parallel_for_each(uniques.begin(), uniques.end(),
+    [&](int &bno)
+  {
+    if (thrId == -1)
+    {
+      thrId = thrIdNext++;
+      if (thrIdNext > 16) // Hmm...
+        err = true;
+    }
+
+    (* CallbackSingleList[runCat])(thrId, bno);
+  });
+
+  if (err)
+    return RETURN_THREAD_INDEX; // TODO: Not quite right
+
+  (* CallbackCopyList[runCat])(crossrefs);
+#endif
+
+  return RETURN_NO_FAULT;
+}
+
 
 
 int System::RunThreads()
