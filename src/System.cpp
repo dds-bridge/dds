@@ -504,21 +504,15 @@ int System::RunThreadsSTLIMPL()
   uniques.clear();
   crossrefs.resize(bop->noOfBoards);
 
-  // TODO: More general
+  // TODO: More general.  Could have separate calc detector,
+  // doesn't need to check quite as much.
   if (runCat == DDS_RUN_SOLVE)
-    DetectDuplicates(bop, uniques, crossrefs);
+    DetectSolveDuplicates(bop, uniques, crossrefs);
+  else if (runCat == DDS_RUN_CALC)
+    DetectCalcDuplicates(bop, uniques, crossrefs);
   else if (runCat == DDS_RUN_TRACE)
-  {
-    uniques.resize(bop->noOfBoards);
-    for (unsigned i = 0; i < static_cast<unsigned>(bop->noOfBoards); i++)
-    {
-      uniques[i] = i;
-      crossrefs[i] = -1;
-    }
-  }
-// TEMP
-// cout << "uniques " << uniques.size() << endl;
-
+    DetectPlayDuplicates(bop, uniques, crossrefs);
+  
   for_each(std::execution::par, uniques.begin(), uniques.end(),
     [&](int &bno)
   {
@@ -534,6 +528,8 @@ int System::RunThreadsSTLIMPL()
     // TODO: Use some kind of fptr
     if (runCat == DDS_RUN_SOLVE)
       SolveSingleCommon(thrId, bno);
+    else if (runCat == DDS_RUN_CALC)
+      CalcSingleCommon(thrId, bno);
     else if (runCat == DDS_RUN_TRACE)
       PlaySingleCommon(thrId, bno);
   });
@@ -549,6 +545,8 @@ int System::RunThreadsSTLIMPL()
       // TODO: Only works for Solve at the moment
       if (runCat == DDS_RUN_SOLVE)
         CopySolveSingle(crossrefs[i], i);
+      else if (runCat == DDS_RUN_CALC)
+        CopyCalcSingle(crossrefs[i], i);
     }
   }
 #endif

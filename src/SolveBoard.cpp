@@ -136,6 +136,7 @@ int SolveAllBoardsN(
   }
   else
   {
+    // TODO Only == 0 branch is needed here anymore.
     scheduler.RegisterRun(DDS_RUN_CALC, bop);
     sysdep.RegisterRun(DDS_RUN_CALC, bop); // TODO Not working yet (bop)
   }
@@ -260,7 +261,7 @@ int STDCALL SolveAllChunksBin(
 }
 
 
-void DetectDuplicates(
+void DetectSolveDuplicates(
   boards const * bop,
   vector<int>& uniques,
   vector<int>& crossrefs)

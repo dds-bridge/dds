@@ -10,14 +10,25 @@
 #ifndef DDS_CALCTABLES_H
 #define DDS_CALCTABLES_H
 
-#include <vector>
-
 #include "dds.h"
 
 using namespace std;
 
 
+void CalcSingleCommon(
+  const int thrID,
+  const int bno);
+
+void CopyCalcSingle(
+  const int bnoFrom,
+  const int bnoTo);
+
 void CalcChunkCommon(
   const int thrId);
+
+void DetectCalcDuplicates(
+  boards * const bop,
+  vector<int>& uniques,
+  vector<int>& crossrefs);
 
 #endif

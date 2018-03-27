@@ -14,8 +14,8 @@
 
 #include <sstream>
 
-#include "TimerList.h"
 #include "dds.h"
+#include "TimerList.h"
 
 #define DDS_TIMERS 50
 

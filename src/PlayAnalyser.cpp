@@ -413,3 +413,31 @@ int STDCALL AnalyseAllPlaysPBN(
   return AnalyseAllPlaysBin(&bd, &pl, solvedp, chunkSize);
 }
 
+
+void DetectPlayDuplicates(
+  boards const * bop,
+  vector<int>& uniques,
+  vector<int>& crossrefs)
+{
+  // This dummy function is there for consistency in System.cpp.
+  // In practice there is not much point in deteting play repeats,
+  // as it is highly unlikely that the play went identically at
+  // two tables.
+
+  uniques.resize(bop->noOfBoards);
+  for (unsigned i = 0; i < static_cast<unsigned>(bop->noOfBoards); i++)
+  {
+    uniques[i] = i;
+    crossrefs[i] = -1;
+  }
+}
+
+
+void CopyPlaySingle(
+  const int bnoFrom,
+  const int bnoTo)
+{
+  UNUSED(bnoFrom);
+  UNUSED(bnoTo);
+}
+

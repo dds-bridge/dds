@@ -18,4 +18,13 @@ void PlaySingleCommon(
 void PlayChunkCommon(
   const int thrId);
 
+void DetectPlayDuplicates(
+  boards const * bop,
+  vector<int>& uniques,
+  vector<int>& crossrefs);
+
+void CopyPlaySingle(
+  const int bnoFrom,
+  const int bnoTo);
+
 #endif

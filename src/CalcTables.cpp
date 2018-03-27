@@ -10,6 +10,7 @@
 
 #include "dds.h"
 #include "SolverIF.h"
+#include "SolveBoard.h"
 #include "System.h"
 #include "Memory.h"
 #include "Scheduler.h"
@@ -23,11 +24,65 @@ extern Memory memory;
 extern Scheduler scheduler;
 
 
+void CalcSingleCommon(
+  const int thrId,
+  const int bno)
+{
+  // Solves a single deal and strain for all four declarers.
+
+  futureTricks fut;
+  cparam.bop->deals[bno].first = 0;
+
+  START_THREAD_TIMER(thrId);
+  int res = SolveBoard(
+                cparam.bop->deals[bno],
+                cparam.bop->target[bno],
+                cparam.bop->solutions[bno],
+                cparam.bop->mode[bno],
+                &fut,
+                thrId);
+
+  // SH: I'm making a terrible use of the fut structure here.
+
+  if (res == 1)
+    cparam.solvedp->solvedBoard[bno].score[0] = fut.score[0];
+  else
+    cparam.error = res;
+
+  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+  for (int k = 1; k < DDS_HANDS; k++)
+  {
+    int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);
+
+    cparam.bop->deals[bno].first = k; // Next declarer
+
+    res = SolveSameBoard(thrp, cparam.bop->deals[bno], &fut, hint);
+
+    if (res == 1)
+      cparam.solvedp->solvedBoard[bno].score[k] = fut.score[0];
+    else
+      cparam.error = res;
+  }
+  END_THREAD_TIMER(thrId);
+}
+
+
+void CopyCalcSingle(
+  const int bnoFrom,
+  const int bnoTo)
+{
+  START_THREAD_TIMER(thrId);
+  for (int k = 0; k < DDS_HANDS; k++)
+    cparam.solvedp->solvedBoard[bnoTo].score[k] = 
+      cparam.solvedp->solvedBoard[bnoFrom].score[k];
+  END_THREAD_TIMER(thrId);
+}
+
+
 void CalcChunkCommon(
   const int thrId)
 {
-  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
-
+  // Solves each deal and strain for all four declarers.
   vector<futureTricks> fut;
   fut.resize(cparam.noOfBoards);
 
@@ -44,7 +99,7 @@ void CalcChunkCommon(
     if (st.repeatOf != -1)
     {
       START_THREAD_TIMER(thrId);
-      for (int k = 0; k < 4; k++)
+      for (int k = 0; k < DDS_HANDS; k++)
       {
         cparam.bop->deals[index].first = k;
 
@@ -55,55 +110,15 @@ void CalcChunkCommon(
       continue;
     }
 
-    cparam.bop->deals[index].first = 0;
-
-    START_THREAD_TIMER(thrId);
-    int res = SolveBoard(
-                cparam.bop->deals[index],
-                cparam.bop->target[index],
-                cparam.bop->solutions[index],
-                cparam.bop->mode[index],
-                &fut[index],
-                thrId);
-
-    // SH: I'm making a terrible use of the fut structure here.
-
-    if (res == 1)
-      cparam.solvedp->solvedBoard[index].score[0] = fut[index].score[0];
-    else
-      cparam.error = res;
-
-    for (int k = 1; k < 4; k++)
-    {
-      int hint = (k == 2 ? fut[index].score[0] :
-                  13 - fut[index].score[0]);
-
-      cparam.bop->deals[index].first = k; // Next declarer
-
-      res = SolveSameBoard(
-              thrp,
-              cparam.bop->deals[index],
-              &fut[index],
-              hint);
-
-      if (res == 1)
-        cparam.solvedp->solvedBoard[index].score[k] =
-          fut[index].score[0];
-      else
-        cparam.error = res;
-    }
-    END_THREAD_TIMER(thrId);
+    CalcSingleCommon(thrId, index);
   }
 }
 
 
 int CalcAllBoardsN(
   boards * bop,
-  solvedBoards * solvedp,
-  const int chunkSize,
-  const int source) // 0 solve, 1 calc
+  solvedBoards * solvedp)
 {
-  UNUSED(chunkSize);
   cparam.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
@@ -113,17 +128,8 @@ int CalcAllBoardsN(
   cparam.solvedp = solvedp;
   cparam.noOfBoards = bop->noOfBoards;
 
-  // TODO Now always 1
-  if (source == 0)
-  {
-    scheduler.RegisterRun(DDS_RUN_SOLVE, bop);
-    sysdep.RegisterRun(DDS_RUN_SOLVE, bop);
-  }
-  else
-  {
-    scheduler.RegisterRun(DDS_RUN_CALC, bop);
-    sysdep.RegisterRun(DDS_RUN_CALC, bop); // TODO Not working yet (bop)
-  }
+  scheduler.RegisterRun(DDS_RUN_CALC, bop);
+  sysdep.RegisterRun(DDS_RUN_CALC, bop);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solvedBoard[k].cards = 0;
@@ -168,9 +174,9 @@ int STDCALL CalcDDtable(
   }
 
   int ind = 0;
-  bo.noOfBoards = 5;
+  bo.noOfBoards = DDS_STRAINS;
 
-  for (int tr = 4; tr >= 0; tr--)
+  for (int tr = DDS_STRAINS-1; tr >= 0; tr--)
   {
     dl.trump = tr;
     bo.deals[ind] = dl;
@@ -180,25 +186,23 @@ int STDCALL CalcDDtable(
     ind++;
   }
 
-  int res = CalcAllBoardsN(&bo, &solved, 4, 1);
-  if (res == 1)
+  int res = CalcAllBoardsN(&bo, &solved);
+  if (res != 1)
+    return res;
+
+  for (int index = 0; index < DDS_STRAINS; index++)
   {
-    for (int index = 0; index < 5; index++)
+    int strain = bo.deals[index].trump;
+
+    // SH: I'm making a terrible use of the fut structure here.
+
+    for (int first = 0; first < DDS_HANDS; first++)
     {
-      int strain = bo.deals[index].trump;
-
-      // SH: I'm making a terrible use of the fut structure here.
-
-      for (int first = 0; first < DDS_HANDS; first++)
-      {
-        tablep->resTable[strain][ rho[first] ] =
-          13 - solved.solvedBoard[index].score[first];
-      }
+      tablep->resTable[strain][ rho[first] ] =
+        13 - solved.solvedBoard[index].score[first];
     }
-    return RETURN_NO_FAULT;
   }
-
-  return res;
+  return RETURN_NO_FAULT;
 }
 
 
@@ -220,7 +224,7 @@ int STDCALL CalcAllTables(
   int count = 0;
   bool okey = false;
 
-  for (int k = 0; k < 5; k++)
+  for (int k = 0; k < DDS_STRAINS; k++)
   {
     if (!trumpFilter[k])
     {
@@ -241,7 +245,7 @@ int STDCALL CalcAllTables(
 
   for (int m = 0; m < dealsp->noOfTables; m++)
   {
-    for (int tr = 4; tr >= 0; tr--)
+    for (int tr = DDS_STRAINS-1; tr >= 0; tr--)
     {
       if (trumpFilter[tr])
         continue;
@@ -269,7 +273,7 @@ int STDCALL CalcAllTables(
 
   bo.noOfBoards = lastIndex + 1;
 
-  int res = CalcAllBoardsN(&bo, &solved, 4, 1);
+  int res = CalcAllBoardsN(&bo, &solved);
   if (res != 1)
     return res;
 
@@ -338,4 +342,14 @@ int STDCALL CalcDDtablePBN(
   return res;
 }
 
+
+void DetectCalcDuplicates(
+  boards * const bop,
+  vector<int>& uniques,
+  vector<int>& crossrefs)
+{
+  // Could save a little bit of time with a dedicated checker that
+  // only looks at the cards.
+  return DetectSolveDuplicates(bop, uniques, crossrefs);
+}
 

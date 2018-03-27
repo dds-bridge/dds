@@ -34,9 +34,9 @@ int SolveAllBoardsN(
   const int chunkSize,
   const int source); // 0 source, 1 calc
 
-void DetectDuplicates(
+void DetectSolveDuplicates(
   boards const * bop,
   vector<int>& uniques,
-  vector<int>& crossrefs); // TODO: Should maybe go into System.cpp?
+  vector<int>& crossrefs);
 
 #endif
