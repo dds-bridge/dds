@@ -265,8 +265,10 @@ int threadingCode(char * arg)
     return 5;
   else if (str == "tbb")
     return 6;
-  else
+  else if (str == "stlimpl")
     return 7;
+  else
+    return 8;
 }
 
 
@@ -1017,9 +1019,7 @@ void loop_solve(
     for (int j = 0; j < count; j++)
     {
       if (! compare_FUT(&solvedbdp->solvedBoard[j], &fut_list[i + j]))
-      {
         printf("loop_solve i %d, j %d: Difference\n", i, j);
-      }
     }
   }
 

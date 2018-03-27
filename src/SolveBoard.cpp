@@ -24,6 +24,44 @@ extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
+bool SameBoard(
+  boards const * bop,
+  const unsigned index1,
+  const unsigned index2);
+
+
+void SolveSingleCommon(
+  const int thrId,
+  const int bno)
+{
+  futureTricks fut;
+
+  START_THREAD_TIMER(thrId);
+  int res = SolveBoard(
+              param.bop->deals[bno],
+              param.bop->target[bno],
+              param.bop->solutions[bno],
+              param.bop->mode[bno],
+              &fut,
+              thrId);
+  END_THREAD_TIMER(thrId);
+
+  if (res == 1)
+    param.solvedp->solvedBoard[bno] = fut;
+  else
+    param.error = res;
+}
+
+
+void CopySingleCommon(
+  const int bnoFrom,
+  const int bnoTo)
+{
+  START_THREAD_TIMER(thrId);
+  param.solvedp->solvedBoard[bnoTo] = param.solvedp->solvedBoard[bnoFrom];
+  END_THREAD_TIMER(thrId);
+}
+
 
 void SolveChunkCommon(
   const int thrId)
@@ -56,6 +94,7 @@ void SolveChunkCommon(
     }
     else
     {
+      // TODO: Could use SolveSingleCommon
       START_THREAD_TIMER(thrId);
       int res = SolveBoard(
                   param.bop->deals[index],
@@ -168,12 +207,12 @@ int SolveAllBoardsN(
   if (source == 0)
   {
     scheduler.RegisterRun(DDS_RUN_SOLVE, bop);
-    sysdep.RegisterRun(DDS_RUN_SOLVE);
+    sysdep.RegisterRun(DDS_RUN_SOLVE, bop);
   }
   else
   {
     scheduler.RegisterRun(DDS_RUN_CALC, bop);
-    sysdep.RegisterRun(DDS_RUN_CALC);
+    sysdep.RegisterRun(DDS_RUN_CALC, bop); // TODO Not working yet (bop)
   }
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
@@ -186,7 +225,6 @@ int SolveAllBoardsN(
   if (retRun != RETURN_NO_FAULT)
     return retRun;
 
-  /* Calculate number of solved boards. */
   solvedp->noOfBoards = param.noOfBoards;
 
 #ifdef DDS_SCHEDULER 
@@ -294,5 +332,69 @@ int STDCALL SolveAllChunksBin(
     return RETURN_CHUNK_SIZE;
 
   return SolveAllBoardsN(bop, solvedp, 1, 0);
+}
+
+
+void DetectDuplicates(
+  boards const * bop,
+  vector<int>& uniques,
+  vector<int>& crossrefs)
+{
+  const unsigned nu = static_cast<unsigned>(bop->noOfBoards);
+  for (unsigned i = 0; i < nu; i++)
+    crossrefs[i] = -1;
+
+  for (unsigned i = 0; i < nu; i++)
+  {
+    if (crossrefs[i] != -1)
+      continue;
+
+    uniques.push_back(i);
+
+    for (unsigned index = i+1; index < nu; index++)
+    {
+      if (SameBoard(bop, i, index))
+        crossrefs[index] = i;
+    }
+  }
+}
+
+
+bool SameBoard(
+  boards const * bop,
+  const unsigned index1,
+  const unsigned index2)
+{
+  for (int h = 0; h < DDS_HANDS; h++)
+  {
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+      if (bop->deals[index1].remainCards[h][s] !=
+          bop->deals[index2].remainCards[h][s])
+        return false;
+    }
+  }
+
+  if (bop->mode[index1] != bop->mode[index2])
+    return false;
+  if (bop->solutions[index1] != bop->solutions[index2])
+    return false;
+  if (bop->target[index1] != bop->target[index2])
+    return false;
+  if (bop->deals[index1].first != bop->deals[index2].first)
+    return false;
+  if (bop->deals[index1].trump != bop->deals[index2].trump)
+    return false;
+
+  for (int k = 0; k < 3; k++)
+  {
+    if (bop->deals[index1].currentTrickSuit[k] != 
+        bop->deals[index2].currentTrickSuit[k])
+      return false;
+    if (bop->deals[index1].currentTrickRank[k] != 
+        bop->deals[index2].currentTrickRank[k])
+      return false;
+  }
+  return true;
 }
 

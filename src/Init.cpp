@@ -143,7 +143,8 @@ void STDCALL SetMaxThreads(
 
   int oldNoOfThreads = noOfThreads;
   if (userThreads)
-    noOfThreads = Min(ncores, userThreads);
+    noOfThreads = userThreads;
+    // noOfThreads = Min(ncores, userThreads); TODO Switch back?
   else
     noOfThreads = ncores;
 

@@ -321,7 +321,7 @@ int STDCALL AnalyseAllPlaysBin(
   traceparam.solvedp = solvedp;
 
   scheduler.RegisterRun(DDS_RUN_TRACE, bop, plp);
-  sysdep.RegisterRun(DDS_RUN_TRACE);
+  sysdep.RegisterRun(DDS_RUN_TRACE, bop);
 
   START_BLOCK_TIMER;
   int retRun = sysdep.RunThreads(chunkSize);

@@ -47,6 +47,8 @@ class System
 
     fptrType fptr;
 
+    boards * bop;
+
     int RunThreadsBasic();
     int RunThreadsBoost();
     int RunThreadsOpenMP();
@@ -54,6 +56,7 @@ class System
     int RunThreadsWinAPI();
     int RunThreadsSTL();
     int RunThreadsTBB();
+    int RunThreadsSTLIMPL();
 
     string GetVersion(
       int& major,
@@ -79,7 +82,9 @@ class System
       const int mem_def_MB,
       const int mem_max_MB);
 
-    int RegisterRun(const RunMode r);
+    int RegisterRun(
+      const RunMode r,
+      boards * const bop);
 
     bool ThreadOK(const int thrId) const;
 

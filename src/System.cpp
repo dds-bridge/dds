@@ -13,6 +13,8 @@
 #include <sstream>
 #include <stdlib.h>
 
+#include "SolveBoard.h" // For DetectDuplicates
+
 // Boost: Disable some header warnings.
 
 #ifdef DDS_THREADS_BOOST
@@ -34,6 +36,10 @@
 
 #ifdef DDS_THREADS_STL
   #include <thread>
+#endif
+
+#ifdef DDS_THREADS_STLIMPL
+  #include <execution>
 #endif
 
 #ifdef DDS_THREADS_TBB
@@ -97,7 +103,8 @@ const vector<string> DDS_SYSTEM_THREADING =
   "GCD",
   "Boost",
   "STL",
-  "TBB"
+  "TBB",
+  "STL-impl"
 };
 
 #define DDS_SYSTEM_THREAD_BASIC 0
@@ -107,7 +114,8 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_BOOST 4
 #define DDS_SYSTEM_THREAD_STL 5
 #define DDS_SYSTEM_THREAD_TBB 6
-#define DDS_SYSTEM_THREAD_SIZE 7
+#define DDS_SYSTEM_THREAD_STLIMPL 7
+#define DDS_SYSTEM_THREAD_SIZE 8
 
 
 System::System()
@@ -156,6 +164,10 @@ void System::Reset()
   availableSystem[DDS_SYSTEM_THREAD_TBB] = true;
 #endif
 
+#ifdef DDS_THREADS_STLIMPL
+  availableSystem[DDS_SYSTEM_THREAD_STLIMPL] = true;
+#endif
+
   // Take the first of any multi-threading system defined.
   for (unsigned k = 1; k < availableSystem.size(); k++)
   {
@@ -174,6 +186,8 @@ void System::Reset()
   RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
   RunPtrList[DDS_SYSTEM_THREAD_STL] = &System::RunThreadsSTL; 
   RunPtrList[DDS_SYSTEM_THREAD_TBB] = &System::RunThreadsTBB; 
+  RunPtrList[DDS_SYSTEM_THREAD_STLIMPL] = 
+    &System::RunThreadsSTLIMPL; 
 
   // DDS_RUN_CALC doesn't happen.
   CallbackSimpleList.resize(DDS_RUN_SIZE);
@@ -265,12 +279,15 @@ int System::RegisterParams(
 }
 
 
-int System::RegisterRun(const RunMode mode)
+int System::RegisterRun(
+  const RunMode mode,
+  boards * const bopIn)
 {
   if (mode >= DDS_RUN_SIZE)
     return RETURN_THREAD_MISSING; // Not quite right;
 
   runCat = mode;
+  bop = bopIn;
   return RETURN_NO_FAULT;
 }
 
@@ -478,6 +495,57 @@ int System::RunThreadsSTL()
 }
 
 
+int System::RunThreadsSTLIMPL()
+{
+#ifdef DDS_THREADS_STLIMPL
+  atomic<int> thrIdNext = 0;
+  thread_local int thrId = -1;
+  bool err = false;
+
+  vector<int> uniques;
+  vector<int> crossrefs;
+  uniques.clear();
+  crossrefs.resize(bop->noOfBoards);
+
+  // TODO: More general
+  DetectDuplicates(bop, uniques, crossrefs);
+// TEMP
+// cout << "uniques " << uniques.size() << endl;
+
+  for_each(std::execution::par, uniques.begin(), uniques.end(),
+    [&](int &bno)
+  {
+    if (thrId == -1)
+    {
+      thrId = thrIdNext;
+      thrIdNext++;
+
+      if (thrIdNext > 16) // Hmm...
+        err = true;
+    }
+
+    // TODO: Use some kind of fptr
+    SolveSingleCommon(thrId, bno);
+  });
+// cout << "used up to " << thrIdNext-1 << endl;
+
+  if (err)
+    return RETURN_THREAD_INDEX; // TODO: Not quite right
+
+  for (unsigned i = 0; i < crossrefs.size(); i++)
+  {
+    if (crossrefs[i] != -1)
+    {
+      // TODO: Only works for Solve at the moment
+      CopySingleCommon(crossrefs[i], i);
+    }
+  }
+#endif
+
+  return RETURN_NO_FAULT;
+}
+
+
 //////////////////////////////////////////////////////////////////////
 //                            TBB                                   //
 //////////////////////////////////////////////////////////////////////
@@ -542,7 +610,7 @@ string System::GetSystem(int& sys) const
   sys = 3;
 #elif defined(__APPLE__)
   sys = 4;
-#ellse
+#else
   sys = 0;
 #endif
   

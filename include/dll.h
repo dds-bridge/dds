@@ -363,8 +363,9 @@ struct DDSInfo
   // 2 = OpenMP, 
   // 3 = GCD,
   // 4 = Boost,
-  // 5 = STL
-  // 6 = TBB
+  // 5 = STL,
+  // 6 = TBB,
+  // 7 = STLIMPL (for_each)
   int threading;
 
   // The actual number of threads configured
