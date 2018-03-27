@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #include "SolveBoard.h"
+#include "CalcTables.h"
 #include "PlayAnalyser.h"
 
 // Boost: Disable some header warnings.
@@ -193,13 +194,8 @@ void System::Reset()
   // DDS_RUN_CALC doesn't happen.
   CallbackSimpleList.resize(DDS_RUN_SIZE);
   CallbackSimpleList[DDS_RUN_SOLVE] = SolveChunkCommon;
-  CallbackSimpleList[DDS_RUN_CALC] = SolveChunkCommon;
+  CallbackSimpleList[DDS_RUN_CALC] = CalcChunkCommon;
   CallbackSimpleList[DDS_RUN_TRACE] = PlayChunkCommon;
-
-  CallbackComplexList.resize(DDS_RUN_SIZE);
-  CallbackComplexList[DDS_RUN_SOLVE] = SolveChunkDDtableCommon;
-  CallbackComplexList[DDS_RUN_CALC] = SolveChunkDDtableCommon;
-  CallbackComplexList[DDS_RUN_TRACE] = PlayChunkCommon;
 }
 
 
@@ -587,10 +583,9 @@ int System::RunThreadsTBB()
 }
 
 
-int System::RunThreads(const int chunkSize)
+int System::RunThreads()
 {
-  fptr = (chunkSize == 1 ? 
-    CallbackSimpleList[runCat] : CallbackComplexList[runCat]);
+  fptr = CallbackSimpleList[runCat];
 
   return (this->*RunPtrList[preferredSystem])();
 }

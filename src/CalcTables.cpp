@@ -9,8 +9,144 @@
 
 
 #include "dds.h"
-#include "SolveBoard.h"
+#include "SolverIF.h"
+#include "System.h"
+#include "Memory.h"
+#include "Scheduler.h"
 #include "PBN.h"
+
+
+paramType cparam;
+
+extern System sysdep;
+extern Memory memory;
+extern Scheduler scheduler;
+
+
+void CalcChunkCommon(
+  const int thrId)
+{
+  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+
+  vector<futureTricks> fut;
+  fut.resize(cparam.noOfBoards);
+
+  int index;
+  schedType st;
+
+  while (1)
+  {
+    st = scheduler.GetNumber(thrId);
+    index = st.number;
+    if (index == -1)
+      break;
+
+    if (st.repeatOf != -1)
+    {
+      START_THREAD_TIMER(thrId);
+      for (int k = 0; k < 4; k++)
+      {
+        cparam.bop->deals[index].first = k;
+
+        cparam.solvedp->solvedBoard[index].score[k] =
+          cparam.solvedp->solvedBoard[ st.repeatOf ].score[k];
+      }
+      END_THREAD_TIMER(thrId);
+      continue;
+    }
+
+    cparam.bop->deals[index].first = 0;
+
+    START_THREAD_TIMER(thrId);
+    int res = SolveBoard(
+                cparam.bop->deals[index],
+                cparam.bop->target[index],
+                cparam.bop->solutions[index],
+                cparam.bop->mode[index],
+                &fut[index],
+                thrId);
+
+    // SH: I'm making a terrible use of the fut structure here.
+
+    if (res == 1)
+      cparam.solvedp->solvedBoard[index].score[0] = fut[index].score[0];
+    else
+      cparam.error = res;
+
+    for (int k = 1; k < 4; k++)
+    {
+      int hint = (k == 2 ? fut[index].score[0] :
+                  13 - fut[index].score[0]);
+
+      cparam.bop->deals[index].first = k; // Next declarer
+
+      res = SolveSameBoard(
+              thrp,
+              cparam.bop->deals[index],
+              &fut[index],
+              hint);
+
+      if (res == 1)
+        cparam.solvedp->solvedBoard[index].score[k] =
+          fut[index].score[0];
+      else
+        cparam.error = res;
+    }
+    END_THREAD_TIMER(thrId);
+  }
+}
+
+
+int CalcAllBoardsN(
+  boards * bop,
+  solvedBoards * solvedp,
+  const int chunkSize,
+  const int source) // 0 solve, 1 calc
+{
+  UNUSED(chunkSize);
+  cparam.error = 0;
+
+  if (bop->noOfBoards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
+  cparam.bop = bop;
+  cparam.solvedp = solvedp;
+  cparam.noOfBoards = bop->noOfBoards;
+
+  // TODO Now always 1
+  if (source == 0)
+  {
+    scheduler.RegisterRun(DDS_RUN_SOLVE, bop);
+    sysdep.RegisterRun(DDS_RUN_SOLVE, bop);
+  }
+  else
+  {
+    scheduler.RegisterRun(DDS_RUN_CALC, bop);
+    sysdep.RegisterRun(DDS_RUN_CALC, bop); // TODO Not working yet (bop)
+  }
+
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
+    solvedp->solvedBoard[k].cards = 0;
+
+  START_BLOCK_TIMER;
+  int retRun = sysdep.RunThreads();
+  END_BLOCK_TIMER;
+
+  if (retRun != RETURN_NO_FAULT)
+    return retRun;
+
+  solvedp->noOfBoards = cparam.noOfBoards;
+
+#ifdef DDS_SCHEDULER 
+  scheduler.PrintTiming();
+#endif
+
+  if (cparam.error == 0)
+    return RETURN_NO_FAULT;
+  else
+    return cparam.error;
+}
+
 
 
 int STDCALL CalcDDtable(
@@ -44,7 +180,7 @@ int STDCALL CalcDDtable(
     ind++;
   }
 
-  int res = SolveAllBoardsN(&bo, &solved, 4, 1);
+  int res = CalcAllBoardsN(&bo, &solved, 4, 1);
   if (res == 1)
   {
     for (int index = 0; index < 5; index++)
@@ -133,7 +269,7 @@ int STDCALL CalcAllTables(
 
   bo.noOfBoards = lastIndex + 1;
 
-  int res = SolveAllBoardsN(&bo, &solved, 4, 1);
+  int res = CalcAllBoardsN(&bo, &solved, 4, 1);
   if (res != 1)
     return res;
 
@@ -178,17 +314,14 @@ int STDCALL CalcAllTablesPBN(
   ddTablesRes * resp,
   allParResults * presp)
 {
-  int res;
   ddTableDeals dls;
-
   for (int k = 0; k < dealsp->noOfTables; k++)
     if (ConvertFromPBN(dealsp->deals[k].cards, dls.deals[k].cards) != 1)
       return RETURN_PBN_FAULT;
 
   dls.noOfTables = dealsp->noOfTables;
 
-  res = CalcAllTables(&dls, mode, trumpFilter, resp, presp);
-
+  int res = CalcAllTables(&dls, mode, trumpFilter, resp, presp);
   return res;
 }
 
@@ -198,13 +331,10 @@ int STDCALL CalcDDtablePBN(
   ddTableResults * tablep)
 {
   ddTableDeal tableDeal;
-  int res;
-
   if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards) != 1)
     return RETURN_PBN_FAULT;
 
-  res = CalcDDtable(tableDeal, tablep);
-
+  int res = CalcDDtable(tableDeal, tablep);
   return res;
 }
 

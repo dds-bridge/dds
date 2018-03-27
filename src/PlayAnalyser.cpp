@@ -327,6 +327,8 @@ int STDCALL AnalyseAllPlaysBin(
   solvedPlays * solvedp,
   int chunkSize)
 {
+  UNUSED(chunkSize);
+
   playparam.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
@@ -345,7 +347,7 @@ int STDCALL AnalyseAllPlaysBin(
   sysdep.RegisterRun(DDS_RUN_TRACE, bop);
 
   START_BLOCK_TIMER;
-  int retRun = sysdep.RunThreads(chunkSize);
+  int retRun = sysdep.RunThreads();
   END_BLOCK_TIMER;
 
   if (retRun != RETURN_NO_FAULT)

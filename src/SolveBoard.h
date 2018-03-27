@@ -28,9 +28,6 @@ void CopySolveSingle(
 void SolveChunkCommon(
   const int thrId);
 
-void SolveChunkDDtableCommon(
-  const int thrId);
-
 int SolveAllBoardsN(
   boards * bop,
   solvedBoards * solvedp,

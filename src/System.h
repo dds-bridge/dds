@@ -94,7 +94,7 @@ class System
 
     int PreferThreading(const unsigned code);
 
-    int RunThreads(const int chunkSize);
+    int RunThreads();
 
     string str(DDSInfo * info) const;
 };

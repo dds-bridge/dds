@@ -17,7 +17,6 @@
 #include "debug.h"
 
 
-long chunk;
 paramType param;
 
 extern System sysdep;
@@ -114,87 +113,13 @@ void SolveChunkCommon(
 }
 
 
-void SolveChunkDDtableCommon(
-  const int thrId)
-{
-  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
-
-  vector<futureTricks> fut;
-  fut.resize(param.noOfBoards);
-
-  int index;
-  schedType st;
-
-  while (1)
-  {
-    st = scheduler.GetNumber(thrId);
-    index = st.number;
-    if (index == -1)
-      break;
-
-    if (st.repeatOf != -1)
-    {
-      START_THREAD_TIMER(thrId);
-      for (int k = 0; k < chunk; k++)
-      {
-        param.bop->deals[index].first = k;
-
-        param.solvedp->solvedBoard[index].score[k] =
-          param.solvedp->solvedBoard[ st.repeatOf ].score[k];
-      }
-      END_THREAD_TIMER(thrId);
-      continue;
-    }
-
-    param.bop->deals[index].first = 0;
-
-    START_THREAD_TIMER(thrId);
-    int res = SolveBoard(
-                param.bop->deals[index],
-                param.bop->target[index],
-                param.bop->solutions[index],
-                param.bop->mode[index],
-                &fut[index],
-                thrId);
-
-    // SH: I'm making a terrible use of the fut structure here.
-
-    if (res == 1)
-      param.solvedp->solvedBoard[index].score[0] = fut[index].score[0];
-    else
-      param.error = res;
-
-    for (int k = 1; k < chunk; k++)
-    {
-      int hint = (k == 2 ? fut[index].score[0] :
-                  13 - fut[index].score[0]);
-
-      param.bop->deals[index].first = k; // Next declarer
-
-      res = SolveSameBoard(
-              thrp,
-              param.bop->deals[index],
-              &fut[index],
-              hint);
-
-      if (res == 1)
-        param.solvedp->solvedBoard[index].score[k] =
-          fut[index].score[0];
-      else
-        param.error = res;
-    }
-    END_THREAD_TIMER(thrId);
-  }
-}
-
-
 int SolveAllBoardsN(
   boards * bop,
   solvedBoards * solvedp,
   const int chunkSize,
   const int source) // 0 solve, 1 calc
 {
-  chunk = chunkSize;
+  UNUSED(chunkSize);
   param.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
@@ -219,7 +144,7 @@ int SolveAllBoardsN(
     solvedp->solvedBoard[k].cards = 0;
 
   START_BLOCK_TIMER;
-  int retRun = sysdep.RunThreads(chunkSize);
+  int retRun = sysdep.RunThreads();
   END_BLOCK_TIMER;
 
   if (retRun != RETURN_NO_FAULT)
