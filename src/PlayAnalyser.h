@@ -24,7 +24,6 @@ void DetectPlayDuplicates(
   vector<int>& crossrefs);
 
 void CopyPlaySingle(
-  const int bnoFrom,
-  const int bnoTo);
+  const vector<int>& crossrefs);
 
 #endif

@@ -22,8 +22,7 @@ void SolveSingleCommon(
   const int bno);
 
 void CopySolveSingle(
-  const int bnoFrom,
-  const int bnoTo);
+  const vector<int>& crossrefs);
 
 void SolveChunkCommon(
   const int thrId);

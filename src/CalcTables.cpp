@@ -67,15 +67,19 @@ void CalcSingleCommon(
 }
 
 
-void CopyCalcSingle(
-  const int bnoFrom,
-  const int bnoTo)
+void CopyCalcSingle(const vector<int>& crossrefs)
 {
-  START_THREAD_TIMER(thrId);
-  for (int k = 0; k < DDS_HANDS; k++)
-    cparam.solvedp->solvedBoard[bnoTo].score[k] = 
-      cparam.solvedp->solvedBoard[bnoFrom].score[k];
-  END_THREAD_TIMER(thrId);
+  for (unsigned i = 0; i < crossrefs.size(); i++)
+  {
+    if (crossrefs[i] == -1)
+      continue;
+
+    START_THREAD_TIMER(thrId);
+    for (int k = 0; k < DDS_HANDS; k++)
+      cparam.solvedp->solvedBoard[i].score[k] = 
+        cparam.solvedp->solvedBoard[ crossrefs[i] ].score[k];
+    END_THREAD_TIMER(thrId);
+  }
 }
 
 
@@ -344,7 +348,7 @@ int STDCALL CalcDDtablePBN(
 
 
 void DetectCalcDuplicates(
-  boards * const bop,
+  boards const * bop,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {

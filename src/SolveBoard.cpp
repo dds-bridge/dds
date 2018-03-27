@@ -29,6 +29,7 @@ bool SameBoard(
   const unsigned index2);
 
 
+#include <iostream>
 void SolveSingleCommon(
   const int thrId,
   const int bno)
@@ -45,6 +46,8 @@ void SolveSingleCommon(
               thrId);
   END_THREAD_TIMER(thrId);
 
+string st = "Sslved " + to_string(bno) + " res " + to_string(res) + "\n";
+cout << st;
   if (res == 1)
     param.solvedp->solvedBoard[bno] = fut;
   else
@@ -52,13 +55,18 @@ void SolveSingleCommon(
 }
 
 
-void CopySolveSingle(
-  const int bnoFrom,
-  const int bnoTo)
+void CopySolveSingle(const vector<int>& crossrefs)
 {
-  START_THREAD_TIMER(thrId);
-  param.solvedp->solvedBoard[bnoTo] = param.solvedp->solvedBoard[bnoFrom];
-  END_THREAD_TIMER(thrId);
+  for (unsigned i = 0; i < crossrefs.size(); i++)
+  {
+    if (crossrefs[i] == -1)
+      continue;
+
+    START_THREAD_TIMER(thrId);
+    param.solvedp->solvedBoard[i] = 
+      param.solvedp->solvedBoard[crossrefs[i]];
+    END_THREAD_TIMER(thrId);
+  }
 }
 
 

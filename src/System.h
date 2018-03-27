@@ -22,6 +22,10 @@
 using namespace std;
 
 typedef void (*fptrType)(const int thid);
+typedef void (*fduplType)(
+  boards const * bop, vector<int>& uniques, vector<int>& crossrefs);
+typedef void (*fsingleType)(const int thid, const int bno);
+typedef void (*fcopyType)(const vector<int>& crossrefs);
 
 
 class System
@@ -40,7 +44,9 @@ class System
     vector<bool> availableSystem;
 
     vector<fptrType> CallbackSimpleList;
-    vector<fptrType> CallbackComplexList;
+    vector<fduplType> CallbackDuplList;
+    vector<fsingleType> CallbackSingleList;
+    vector<fcopyType> CallbackCopyList;
 
     typedef int (System::*RunPtr)();
     vector<RunPtr> RunPtrList;

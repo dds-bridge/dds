@@ -433,11 +433,8 @@ void DetectPlayDuplicates(
 }
 
 
-void CopyPlaySingle(
-  const int bnoFrom,
-  const int bnoTo)
+void CopyPlaySingle(const vector<int>& crossrefs)
 {
-  UNUSED(bnoFrom);
-  UNUSED(bnoTo);
+  UNUSED(crossrefs);
 }
 

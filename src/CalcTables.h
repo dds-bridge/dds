@@ -20,14 +20,13 @@ void CalcSingleCommon(
   const int bno);
 
 void CopyCalcSingle(
-  const int bnoFrom,
-  const int bnoTo);
+  const vector<int>& crossrefs);
 
 void CalcChunkCommon(
   const int thrId);
 
 void DetectCalcDuplicates(
-  boards * const bop,
+  boards const * bop,
   vector<int>& uniques,
   vector<int>& crossrefs);
 
