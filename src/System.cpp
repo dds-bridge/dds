@@ -605,18 +605,27 @@ int System::RunThreadsPPLIMPL()
   thread_local int thrId = -1;
   bool err = false;
 
+  // Not sure this actually works...
+  using namespace Concurrency;
+  Scheduler * sched = Scheduler::Create(
+    SchedulerPolicy(1, MaxConcurrency, numThreads));
+  sched->Attach();
+
   Concurrency::parallel_for_each(uniques.begin(), uniques.end(),
     [&](int &bno)
   {
     if (thrId == -1)
     {
       thrId = thrIdNext++;
-      if (thrIdNext > 16) // Hmm...
+      if (thrId >= numThreads)
         err = true;
     }
 
     (* CallbackSingleList[runCat])(thrId, bno);
   });
+
+  CurrentScheduler::Detach();
+  sched->Release();
 
   if (err)
     return RETURN_THREAD_INDEX; // TODO: Not quite right
