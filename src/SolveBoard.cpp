@@ -71,8 +71,6 @@ void CopySolveSingle(const vector<int>& crossrefs)
 void SolveChunkCommon(
   const int thrId)
 {
-  vector<futureTricks> fut;
-  fut.resize(param.noOfBoards);
   int index;
   schedType st;
 
@@ -93,27 +91,14 @@ void SolveChunkCommon(
         param.bop->deals[st.repeatOf].first)
     {
       START_THREAD_TIMER(thrId);
-      param.solvedp->solvedBoard[index] = fut[ st.repeatOf ];
+      param.solvedp->solvedBoard[index] = 
+        param.solvedp->solvedBoard[st.repeatOf];
       END_THREAD_TIMER(thrId);
       continue;
     }
     else
     {
-      // TODO: Could use SolveSingleCommon
-      START_THREAD_TIMER(thrId);
-      int res = SolveBoard(
-                  param.bop->deals[index],
-                  param.bop->target[index],
-                  param.bop->solutions[index],
-                  param.bop->mode[index],
-                  &fut[index],
-                  thrId);
-      END_THREAD_TIMER(thrId);
-
-      if (res == 1)
-        param.solvedp->solvedBoard[index] = fut[index];
-      else
-        param.error = res;
+      SolveSingleCommon(thrId, index);
     }
   }
 }
@@ -121,11 +106,8 @@ void SolveChunkCommon(
 
 int SolveAllBoardsN(
   boards * bop,
-  solvedBoards * solvedp,
-  const int chunkSize,
-  const int source) // 0 solve, 1 calc
+  solvedBoards * solvedp)
 {
-  UNUSED(chunkSize);
   param.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
@@ -135,17 +117,8 @@ int SolveAllBoardsN(
   param.solvedp = solvedp;
   param.noOfBoards = bop->noOfBoards;
 
-  if (source == 0)
-  {
-    scheduler.RegisterRun(DDS_RUN_SOLVE, bop);
-    sysdep.RegisterRun(DDS_RUN_SOLVE, bop);
-  }
-  else
-  {
-    // TODO Only == 0 branch is needed here anymore.
-    scheduler.RegisterRun(DDS_RUN_CALC, bop);
-    sysdep.RegisterRun(DDS_RUN_CALC, bop); // TODO Not working yet (bop)
-  }
+  scheduler.RegisterRun(DDS_RUN_SOLVE, bop);
+  sysdep.RegisterRun(DDS_RUN_SOLVE, bop);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solvedBoard[k].cards = 0;
@@ -223,7 +196,7 @@ int STDCALL SolveAllBoards(
       return RETURN_PBN_FAULT;
   }
 
-  int res = SolveAllBoardsN(&bo, solvedp, 1, 0);
+  int res = SolveAllBoardsN(&bo, solvedp);
   return res;
 }
 
@@ -263,7 +236,7 @@ int STDCALL SolveAllChunksBin(
   if (chunkSize < 1)
     return RETURN_CHUNK_SIZE;
 
-  return SolveAllBoardsN(bop, solvedp, 1, 0);
+  return SolveAllBoardsN(bop, solvedp);
 }
 
 

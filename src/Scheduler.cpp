@@ -800,6 +800,12 @@ schedType Scheduler::GetNumber(const int thrId)
 }
 
 
+int Scheduler::NumGroups() const
+{
+  return numGroups;
+}
+
+
 #ifdef DDS_SCHEDULER
 void Scheduler::StartThreadTimer(const int thrId)
 {

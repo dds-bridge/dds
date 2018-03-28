@@ -29,9 +29,7 @@ void SolveChunkCommon(
 
 int SolveAllBoardsN(
   boards * bop,
-  solvedBoards * solvedp,
-  const int chunkSize,
-  const int source); // 0 source, 1 calc
+  solvedBoards * solvedp);
 
 void DetectSolveDuplicates(
   boards const * bop,

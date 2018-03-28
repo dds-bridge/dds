@@ -168,6 +168,8 @@ class Scheduler
 
     schedType GetNumber(const int thrId);
 
+    int NumGroups() const;
+
 #ifdef DDS_SCHEDULER
     void StartThreadTimer(const int thrId);
 

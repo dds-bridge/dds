@@ -293,8 +293,6 @@ void PlaySingleCommon(
 
 void PlayChunkCommon(const int thrId)
 {
-  vector<solvedPlay> solved;
-  solved.resize(playparam.noOfBoards);
   int index;
   schedType st;
 
@@ -305,18 +303,7 @@ void PlayChunkCommon(const int thrId)
     if (index == -1)
       break;
 
-    // TODO: Could use PlaySingleCommon
-    int res = AnalysePlayBin(
-                playparam.bop->deals[index],
-                traceparam.plp->plays[index],
-                &solved[index],
-                thrId);
-
-    // If there are multiple errors, this will catch one of them.
-    if (res == 1)
-      traceparam.solvedp->solved[index] = solved[index];
-    else
-      playparam.error = res;
+    PlaySingleCommon(thrId, index);
   }
 }
 
