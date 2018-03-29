@@ -367,11 +367,13 @@ void InitDebugFiles()
     thrp->ABStats.SetFile(DDS_AB_STATS_PREFIX + send);
     thrp->ABStats.SetName(AB_TARGET_REACHED, "Target decided");
     thrp->ABStats.SetName(AB_DEPTH_ZERO , "depth == 0");
-    thrp->ABStats.SetName(AB_QUICKTRICKS , "QuickTricks");
-    thrp->ABStats.SetName(AB_LATERTRICKS , "LaterTricks");
-    thrp->ABStats.SetName(AB_MAIN_LOOKUP , "Main lookup");
-    thrp->ABStats.SetName(AB_SIDE_LOOKUP , "Other lookup");
-    thrp->ABStats.SetName(AB_MOVE_LOOP , "Move trial");
+    thrp->ABStats.SetName(AB_QUICKTRICKS, "QuickTricks");
+    thrp->ABStats.SetName(AB_QUICKTRICKS_2ND, 
+      "QuickTricks 2nd");
+    thrp->ABStats.SetName(AB_LATERTRICKS, "LaterTricks");
+    thrp->ABStats.SetName(AB_MAIN_LOOKUP, "Main lookup");
+    thrp->ABStats.SetName(AB_SIDE_LOOKUP, "Other lookup");
+    thrp->ABStats.SetName(AB_MOVE_LOOP, "Move trial");
 #endif
 
 #ifdef DDS_AB_HITS

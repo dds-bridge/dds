@@ -535,7 +535,11 @@ bool ABsearch1(
   int res = QuickTricksSecondHand(posPoint, hand, depth, target,
                                   trump, thrp);
   TIMER_END(TIMER_NO_QT, depth);
-  if (res) return success;
+  if (res) 
+  {
+    AB_COUNT(AB_QUICKTRICKS_2ND, true, depth);
+    return success;
+  }
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)

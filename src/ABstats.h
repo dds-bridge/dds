@@ -35,10 +35,11 @@ using namespace std;
 #define AB_TARGET_REACHED 0
 #define AB_DEPTH_ZERO 1
 #define AB_QUICKTRICKS 2
-#define AB_LATERTRICKS 3
-#define AB_MAIN_LOOKUP 4
-#define AB_SIDE_LOOKUP 5
-#define AB_MOVE_LOOP 6
+#define AB_QUICKTRICKS_2ND 3
+#define AB_LATERTRICKS 4
+#define AB_MAIN_LOOKUP 5
+#define AB_SIDE_LOOKUP 6
+#define AB_MOVE_LOOP 7
 
 
 
@@ -65,17 +66,25 @@ class ABstats
     bool fileSet;
 
     char name[DDS_AB_POS][40];
-    int nodes[DDS_MAXDEPTH];
-    int nodesCum[DDS_MAXDEPTH];
+
+    ABtracker ABnodes;
+    ABtracker ABnodesCum;
 
     ABtracker ABsides[2];
     ABtracker ABplaces[DDS_AB_POS];
 
-    int allnodes;
-    int allnodesCum;
-    int iniDepth;
+    void PrintHeaderPosition(FILE * fpl) const; 
 
-    void PrintStatsPosition(FILE * fpl) const;
+    void PrintStatsPosition(
+      FILE * fpl,
+      int no,
+      char * text,
+      const ABtracker& abt,
+      const ABtracker& divisor) const;
+
+    void PrintHeaderDepth(FILE * fpl) const; 
+
+    void PrintAverageDepth(FILE * fpl) const; 
 
   public:
     ABstats();
