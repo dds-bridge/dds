@@ -12,6 +12,8 @@
 */
 
 
+#include <iomanip>
+
 #include "dds.h"
 #include "ABstats.h"
 
@@ -19,11 +21,9 @@
 ABstats::ABstats()
 {
   fname = "";
-  fileSet = false;
-  fp = stdout;
 
   for (int p = 0; p < DDS_AB_POS; p++)
-    sprintf(name[p], "Position %4d", p);
+    name[p] = "Position " + to_string(p);
 
   ABstats::Reset();
 }
@@ -31,9 +31,6 @@ ABstats::ABstats()
 
 ABstats::~ABstats()
 {
-  // Nothing to do
-  if (fp != stdout && fp != nullptr)
-    fclose(fp);
 }
 
 
@@ -67,9 +64,6 @@ void ABstats::Reset()
 
 void ABstats::ResetCum()
 {
-  for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
-    nodesCum[depth] = 0;
-
   ABnodesCum.sumCum = 0;
   ABnodesCum.sumCumWeighted = 0;
 
@@ -90,22 +84,25 @@ void ABstats::ResetCum()
 void ABstats::SetFile(const string& fnameIn)
 {
   fname = fnameIn;
+  remove(fname.c_str()); // May fail -- that's OK
 }
 
 
-void ABstats::SetName(int no, char * ourName)
+void ABstats::SetName(
+  const int no, 
+  const string& nameIn)
 {
   if (no < 0 || no >= DDS_AB_POS)
     return;
 
-  sprintf(name[no], "%s", ourName);
+  name[no] = nameIn;
 }
 
 
 void ABstats::IncrPos(
-  int no, 
-  bool side, 
-  int depth)
+  const int no, 
+  const bool side, 
+  const int depth)
 {
   if (no < 0 || no >= DDS_AB_POS)
     return;
@@ -127,10 +124,8 @@ void ABstats::IncrPos(
 }
 
 
-void ABstats::IncrNode(int depth)
+void ABstats::IncrNode(const int depth)
 {
-  nodesCum[depth]++;
-
   ABnodes.list[depth]++;
   ABnodes.sum++;
   ABnodes.sumWeighted += depth;
@@ -147,105 +142,177 @@ int ABstats::GetNodes() const
 }
 
 
-void ABstats::PrintHeaderPosition(FILE * fpl) const
+void ABstats::PrintHeaderPosition(ofstream& fout) const
 {
-  fprintf(fpl, "%2s %-20s %8s %5s %5s %8s %5s %5s\n",
-    "No",
-    "Return",
-    "Count",
-    "%",
-    "d_avg",
-    "Cumul",
-    "%",
-    "d_avg");
+  fout << "No " <<
+    setw(20) << left << "Return" <<
+    setw(9) << right << "Count" <<
+    setw(6) << "%" <<
+    setw(6) << "d_avg" <<
+    setw(9) << "Cumul" <<
+    setw(6) << "%" <<
+    setw(6) << "d_avg" << "\n";
 
-  fprintf(fpl, "-----------------------------------");
-  fprintf(fpl, "------------------------------\n");
+  fout << string(65, '-') << "\n";
 }
 
+
 void ABstats::PrintStatsPosition(
-  FILE * fpl,
-  int no,
-  char * text,
+  ofstream& fout,
+  const int no,
+  const string& text,
   const ABtracker& abt,
   const ABtracker& divisor) const
 {
+  if (! abt.sumCum)
+    return;
+
+  fout << setw(2) << (no == -1 ? "" : to_string(no)) << " " << 
+    setw(20) << left << text <<
+    setw(9) << right << abt.sum <<
+    setw(6) << setprecision(1) << fixed << 
+      100. * abt.sum / static_cast<double>(divisor.sum);
+
   if (abt.sum)
-  {
-    fprintf(fpl, "%2s %-20s %8d %5.1f %5.1f %8d %5.1f %5.1f\n",
-      (no == -1 ? "" : to_string(no).c_str()),
-      text,
-      abt.sum,
-      100. * abt.sum / static_cast<double>(divisor.sum),
-      abt.sumWeighted / static_cast<double>(abt.sum),
-      abt.sumCum,
-      100. * abt.sumCum / static_cast<double>(divisor.sumCum),
-      abt.sumCumWeighted / static_cast<double>(abt.sumCum));
-  }
-  else if (abt.sumCum)
-  {
-    fprintf(fp, "%2s %-20s %8d %5.1f %5s %8d %5.1f %5.1f\n",
-      (no == -1 ? "" : to_string(no).c_str()),
-      text,
-      abt.sum,
-      100. * abt.sum / static_cast<double>(divisor.sum),
-      "",
-      abt.sumCum,
-      100. * abt.sumCum / static_cast<double>(divisor.sumCum),
-      abt.sumCumWeighted / static_cast<double>(abt.sumCum));
-  }
+    fout << setw(6) << setprecision(1) << fixed << 
+      abt.sumWeighted / static_cast<double>(abt.sum);
+  else
+    fout << setw(6) << "";
+
+  fout << setw(9) << abt.sumCum <<
+    setw(6) << setprecision(1) << fixed <<
+      100. * abt.sumCum / static_cast<double>(divisor.sumCum) <<
+    setw(6) << setprecision(1) << fixed <<
+      abt.sumCumWeighted / static_cast<double>(abt.sumCum) << "\n";
 }
 
 
-void ABstats::PrintHeaderDepth(FILE * fpl) const
+void ABstats::PrintHeaderDepth(ofstream& fout) const
 {
-  fprintf(fpl, "\n%5s %6s %6s %5s %5s %6s\n",
-          "Depth",
-          "Nodes",
-          "Cumul",
-          "Cum%",
-          "Cumc%",
-          "Branch");
+  fout << setw(5) << right << "Depth" <<
+    setw(7) << "Nodes" <<
+    setw(7) << "Cumul" <<
+    setw(6) << "Cum%" <<
+    setw(6) << "Cumc%" <<
+    setw(7) << "Branch" << "\n";
 
-  fprintf(fp, "------------------------------------------\n");
+  fout << string(38, '-') << "\n";
 }
 
 
-void ABstats::PrintAverageDepth(FILE * fpl) const
+void ABstats::PrintStatsDepth(
+  ofstream& fout,
+  const int depth,
+  const int cum) const
 {
-  fprintf(fpl, "\n%-5s %6d %6d\n",
-          "Total", ABnodes.sum, ABnodesCum.sumCum);
+  fout << setw(5) << depth <<
+    setw(7) << ABnodes.list[depth] <<
+    setw(7) << ABnodesCum.list[depth] <<
+    setw(6) << setprecision(1) << fixed <<
+      100. * ABnodesCum.list[depth] / 
+        static_cast<double>(ABnodesCum.sumCum) <<
+    setw(6) << setprecision(1) << fixed <<
+      100. * cum / static_cast<double>(ABnodesCum.sumCum);
+
+  // "Branching factor" from end of one trick to end of
+  // the previous trick.
+  if ((depth % 4 == 1) &&
+      (depth < DDS_MAXDEPTH - 4) &&
+      (ABnodesCum.list[depth + 4] > 0))
+    fout << setw(6) << setprecision(2) << fixed <<
+      ABnodesCum.list[depth] / 
+        static_cast<double>(ABnodesCum.list[depth + 4]);
+  fout << "\n";
+}
+
+
+void ABstats::PrintAverageDepth(
+  ofstream& fout,
+  const ABtracker& ABsidesSum) const
+{
+  fout << "\nTotal" <<
+    setw(7) << right << ABnodes.sum <<
+    setw(7) << ABnodesCum.sumCum << "\n";
+
+  if (! ABnodesCum.sumCum)
+    return;
+
+  fout << setw(5) << left << "Avg" << right;
 
   if (ABnodes.sum)
-  {
-    fprintf(fpl, "%-5s %6.1f %6.1f\n",
-      "d_avg",
-      ABnodes.sumWeighted / static_cast<double>(ABnodes.sum),
-      ABnodesCum.sumCumWeighted / static_cast<double>(ABnodesCum.sumCum));
-  }
-  else if (ABnodes.sumCum)
-  {
-    fprintf(fpl, "\n%-5s %6s %6.1f\n",
-      "Avg",
-      "-",
-      ABnodes.sumCumWeighted / static_cast<double>(ABnodesCum.sumCum));
-  }
+    fout << setw(7) << setprecision(1) << fixed << 
+      ABnodes.sumWeighted / static_cast<double>(ABnodes.sum);
+  else
+    fout << setw(7) << "";
+
+  fout << setw(7) << setprecision(1) << fixed << 
+    ABnodesCum.sumCumWeighted / static_cast<double>(ABnodesCum.sumCum) <<
+    "\n\n";
+
+  fout << setw(5) << left << "Nodes" <<
+    setw(7) << right << ABnodes.sum <<
+    setw(7) << ABnodesCum.sumCum << "\n";
+
+  fout << setw(5) << left << "Ends" <<
+    setw(7) << right << ABsidesSum.sum <<
+    setw(7) << ABsidesSum.sumCum << "\n";
+
+  if (ABsidesSum.sum)
+    fout << setw(5) << left << "Ratio" <<
+      setw(6) << right << setprecision(0) << fixed << 
+        100. * ABsidesSum.sum / static_cast<double>(ABnodes.sum) << "%" <<
+      setw(6) << setprecision(0) << fixed << 
+        100. * ABsidesSum.sumCum / static_cast<double>(ABnodesCum.sumCum) <<
+        "%\n\n";
 }
 
 
-#include "../include/portab.h"
+void ABstats::PrintHeaderDetail(ofstream& fout) const
+{
+  fout << " d" << setw(7) << "Side1" << setw(7) << "Side0";
+
+  for (int p = 0; p < DDS_AB_POS; p++)
+    fout << setw(6) << p;
+
+  fout << "\n" << string(65, '-') << "\n";
+}
+
+
+void ABstats::PrintStatsDetail(
+ ofstream& fout,
+ const int depth) const
+{
+  if (ABsides[1].list[depth] == 0 && ABsides[0].list[depth] == 0)
+    return;
+
+  fout << setw(2) << depth <<
+    setw(7) << ABsides[1].list[depth] <<
+    setw(7) << ABsides[0].list[depth];
+
+  for (int p = 0; p < DDS_AB_POS; p++)
+    fout << setw(6) << ABplaces[p].list[depth];
+  fout << "\n";
+}
+
+
+void ABstats::PrintSumDetail(ofstream& fout) const
+{
+  fout << string(65, '-') << "\n";
+
+  fout << setw(2) << "S" <<
+    setw(7) << ABsides[1].sum <<
+    setw(7) << ABsides[0].sum;
+
+  for (int p = 0; p < DDS_AB_POS; p++)
+    fout << setw(6) << ABplaces[p].sum;
+  fout << "\n\n";
+}
+
+
 void ABstats::PrintStats()
 {
-  if (! fileSet)
-  {
-    if (fname != "")
-    {
-      fp = fopen(fname.c_str(), "w");
-      if (! fp)
-        fp = stdout;
-    }
-    fileSet = true;
-  }
+  ofstream fout;
+  fout.open(fname, ofstream::out | ofstream::app);
 
   ABtracker ABsidesSum;
   ABsidesSum.sum = ABsides[1].sum + ABsides[0].sum;
@@ -253,90 +320,48 @@ void ABstats::PrintStats()
 
   if (ABsidesSum.sum)
   {
-    ABstats::PrintHeaderPosition(fp);
+    // First table: By side and position.
 
-    ABstats::PrintStatsPosition(fp, -1, "Side1", ABsides[1], ABsidesSum);
-    ABstats::PrintStatsPosition(fp, -1, "Side0", ABsides[0], ABsidesSum);
-    fprintf(fp, "\n");
+    ABstats::PrintHeaderPosition(fout);
+
+    ABstats::PrintStatsPosition(fout, -1, "Side1", ABsides[1], ABsidesSum);
+    ABstats::PrintStatsPosition(fout, -1, "Side0", ABsides[0], ABsidesSum);
+    fout << "\n";
 
     for (int p = 0; p < DDS_AB_POS; p++)
-      ABstats::PrintStatsPosition(fp, p, name[p], ABplaces[p], ABsidesSum);
+      ABstats::PrintStatsPosition(fout, p, name[p], ABplaces[p], ABsidesSum);
+    fout << "\n";
   }
 
-  ABstats::PrintHeaderDepth(fp);
+  ABstats::PrintHeaderDepth(fout);
+
+
+  // Second table: By depth.
 
   int c = 0;
   for (int d = DDS_MAXDEPTH - 1; d >= 0; d--)
   {
-    if (nodesCum[d] == 0)
+    if (ABnodesCum.list[d] == 0)
       continue;
 
-if (nodesCum[d] != ABnodesCum.list[d])
-  fprintf(fp, "Err %d %d\n", nodesCum[d], ABnodesCum.list[d]);
-
-    c += nodesCum[d];
-
-    fprintf(fp, "%5d %6d %6d %5.1f %5.1f",
-            d,
-            ABnodes.list[d],
-            nodesCum[d],
-            100. * nodesCum[d] / static_cast<double>(ABnodesCum.sumCum),
-            100. * c / static_cast<double>(ABnodesCum.sumCum));
-
-    // "Branching factor" from end of one trick to end of
-    // the previous trick.
-    if ((d % 4 == 1) &&
-        (d < DDS_MAXDEPTH - 4) &&
-        (nodesCum[d + 4] > 0))
-      fprintf(fp, " %5.2f",
-              nodesCum[d] / static_cast<double>(nodesCum[d + 4]));
-    fprintf(fp, "\n");
+    c += ABnodesCum.list[d];
+    ABstats::PrintStatsDepth(fout, d, c);
   }
 
-  ABstats::PrintAverageDepth(fp);
-  fprintf(fp, "\n");
+  ABstats::PrintAverageDepth(fout, ABsidesSum);
 
-  fprintf(fp, "%5s%7d%7d\n", "Nodes", ABnodes.sum, ABnodesCum.sumCum);
-  fprintf(fp, "%5s%7d%7d\n", "Ends", ABsidesSum.sum, ABsidesSum.sumCum);
-  if (ABsidesSum.sum)
-    fprintf(fp, "%5s%6.0f%%%6.0f%%\n\n", "Ratio", 
-      100. * ABsidesSum.sum / static_cast<double>(ABnodes.sum), 
-      100. * ABsidesSum.sumCum / static_cast<double>(ABnodesCum.sumCum));
 
 #ifdef DDS_AB_DETAILS
-  fprintf(fp, "%2s %6s %6s",
-          "d",
-          "Side1",
-          "Side0");
+  // Third table: All the detail.
 
-  for (int p = 0; p < DDS_AB_POS; p++)
-    fprintf(fp, " %5d", p);
-  fprintf(fp, "\n------------------------------");
-  fprintf(fp, "-----------------------------\n");
-
+  ABstats::PrintHeaderDetail(fout);
 
   for (int d = DDS_MAXDEPTH - 1; d >= 0; d--)
-  {
-    if (ABsides[1].list[d] == 0 && ABsides[0].list[d] == 0)
-      continue;
+    ABstats::PrintStatsDetail(fout, d);
 
-    fprintf(fp, "%2d %6d %6d",
-            d, ABsides[1].list[d], ABsides[0].list[d]);
-
-    for (int p = 0; p < DDS_AB_POS; p++)
-      fprintf(fp, " %5d", ABplaces[p].list[d]);
-    fprintf(fp, "\n");
-  }
-
-  fprintf(fp, "--------------------------------");
-  fprintf(fp, "---------------------------\n");
-
-  fprintf(fp, "%2s %6d %6d",
-          "S", ABsides[1].sum, ABsides[0].sum);
-
-  for (int p = 0; p < DDS_AB_POS; p++)
-    fprintf(fp, " %5d", ABplaces[p].sum);
-  fprintf(fp, "\n\n");
+  ABstats::PrintSumDetail(fout);
 #endif
-
+  
+  fout.close();
 }
+

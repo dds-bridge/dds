@@ -10,9 +10,8 @@
 #ifndef DDS_ABSTATS_H
 #define DDS_ABSTATS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <iostream>
+#include <fstream>
 #include <string>
 
 #include "debug.h"
@@ -41,11 +40,9 @@ using namespace std;
 #define AB_SIDE_LOOKUP 6
 #define AB_MOVE_LOOP 7
 
-
+#define DDS_AB_POS 8
 
 #define DDS_MAXDEPTH 49
-#define DDS_LINE_LEN 20
-#define DDS_AB_POS 7
 
 
 struct ABtracker
@@ -61,33 +58,51 @@ struct ABtracker
 class ABstats
 {
   private:
-    FILE * fp;
+
     string fname;
-    bool fileSet;
+    string name[DDS_AB_POS];
 
-    char name[DDS_AB_POS][40];
-
+    // A node arises when a new move is generated.
+    // Not every move leads to an AB termination.
     ABtracker ABnodes;
     ABtracker ABnodesCum;
 
+    // AB terminations are tracked by side and position.
     ABtracker ABsides[2];
     ABtracker ABplaces[DDS_AB_POS];
 
-    void PrintHeaderPosition(FILE * fpl) const; 
+    void PrintHeaderPosition(ofstream& fout) const; 
 
     void PrintStatsPosition(
-      FILE * fpl,
-      int no,
-      char * text,
+      ofstream& fout,
+      const int no,
+      const string& text,
       const ABtracker& abt,
       const ABtracker& divisor) const;
 
-    void PrintHeaderDepth(FILE * fpl) const; 
+    void PrintHeaderDepth(ofstream& fout) const; 
 
-    void PrintAverageDepth(FILE * fpl) const; 
+    void PrintStatsDepth(
+      ofstream& fout,
+      const int depth,
+      const int cum) const; 
+
+    void PrintAverageDepth(
+      ofstream& fout,
+      const ABtracker& ABsidesSum) const; 
+
+    void PrintHeaderDetail(ofstream& fout) const; 
+
+    void PrintStatsDetail(
+      ofstream& fout,
+      const int depth) const; 
+
+    void PrintSumDetail(ofstream& fout) const; 
 
   public:
+
     ABstats();
+
     ~ABstats();
 
     void Reset();
@@ -96,11 +111,16 @@ class ABstats
 
     void SetFile(const string& fnameIn);
 
-    void SetName(int no, char * name);
+    void SetName(
+      const int no, 
+      const string& nameIn);
 
-    void IncrPos(int no, bool side, int depth);
+    void IncrPos(
+      const int no, 
+      const bool side, 
+      const int depth);
 
-    void IncrNode(int depth);
+    void IncrNode(const int depth);
 
     int GetNodes() const;
 
