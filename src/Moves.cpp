@@ -2397,6 +2397,7 @@ void Moves::RegisterHit(
   }
 
 // Used for development
+// PrintDeal below untested in this context.
 #if 0
   if (findex == MG_COMB_NOTVOID3 && numSeen > 1 && trick >= 10)
     // if (0 && findex == MG_TRUMP_VOID3 && numSeen == 1 && curr > 1)
@@ -2404,9 +2405,7 @@ void Moves::RegisterHit(
     char text[12][80];
     RankToText(posPoint->rankInSuit, text);
 
-    for (int i = 0; i < 12; i++)
-      printf("%s\n", text[i]);
-    printf("\n", text);
+   PrintDeal(cout, posPoint->RankInsuit, 16);
 
     trackp = &track[trick];
 

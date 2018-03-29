@@ -32,7 +32,8 @@ string PrintSuit(const unsigned short suitCode);
 
 void PrintDeal(
   ofstream& fout,
-  const unsigned short ranks[][DDS_SUITS]);
+  const unsigned short ranks[][DDS_SUITS],
+  const unsigned spacing);
 
 void RankToDiagrams(
   unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
@@ -73,11 +74,12 @@ string PrintSuit(const unsigned short suitCode)
 
 void PrintDeal(
   ofstream& fout,
-  const unsigned short ranks[][DDS_SUITS])
+  const unsigned short ranks[][DDS_SUITS],
+  const unsigned spacing)
 {
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    fout << setw(8) << "" << 
+    fout << setw(spacing) << "" << 
       cardSuit[s] << " " <<
       PrintSuit(ranks[0][s]) << "\n";
   }
@@ -85,75 +87,20 @@ void PrintDeal(
   for (int s = 0; s < DDS_SUITS; s++)
   {
     fout << cardSuit[s] << " " <<
-      setw(14) << left << PrintSuit(ranks[3][s]) <<
+      setw(2*spacing - 2) << left << PrintSuit(ranks[3][s]) <<
       cardSuit[s] << " " <<
       PrintSuit(ranks[1][s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    fout << setw(8) << "" << 
+    fout << setw(spacing) << "" << 
       cardSuit[s] << " " <<
       PrintSuit(ranks[2][s]) << "\n";
   }
 
   fout << "\n";
   return;
-}
-
-
-void RankToText(
-  const unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
-  char text[DDS_HAND_LINES][DDS_FULL_LINE])
-{
-  int c, h, s, r;
-
-  for (int l = 0; l < DDS_HAND_LINES; l++)
-  {
-    memset(text[l], ' ', DDS_FULL_LINE);
-    text[l][DDS_FULL_LINE - 1] = '\0';
-  }
-
-  for (h = 0; h < DDS_HANDS; h++)
-  {
-    int offset, line;
-    if (h == 0)
-    {
-      offset = DDS_HAND_OFFSET;
-      line = 0;
-    }
-    else if (h == 1)
-    {
-      offset = 2 * DDS_HAND_OFFSET;
-      line = 4;
-    }
-    else if (h == 2)
-    {
-      offset = DDS_HAND_OFFSET;
-      line = 8;
-    }
-    else
-    {
-      offset = 0;
-      line = 4;
-    }
-
-    for (s = 0; s < DDS_SUITS; s++)
-    {
-      c = offset;
-      for (r = 14; r >= 2; r--)
-      {
-        if (rankInSuit[h][s] & bitMapRank[r])
-          text[line + s][c++] = static_cast<char>(cardRank[r]);
-      }
-
-      if (c == offset)
-        text[line + s][c++] = '-';
-
-      if (h != 3)
-        text[line + s][c] = '\0';
-    }
-  }
 }
 
 
@@ -351,7 +298,7 @@ int DumpInput(
   fout << "\ntarget=" << target << "\n";
   fout << "solutions=" << solutions << "\n";
   fout << "mode=" << mode << "\n\n\n";
-  PrintDeal(fout, ranks);
+  PrintDeal(fout, ranks, 8);
   fout.close();
   return 0;
 }
@@ -422,10 +369,7 @@ void DumpStored(
   moves->TrickToText((depth >> 2) + 1, text[0]);
   fout << string(text[0]) << "\n";
 
-  RankToText(posPoint->rankInSuit, text);
-  for (int i = 0; i < DDS_HAND_LINES; i++)
-    fout << string(text[i]) << "\n";
-  fout << "\n";
+  PrintDeal(fout, posPoint->rankInSuit, 16);
 
   fout.close();
 }
@@ -498,10 +442,7 @@ void DumpTopLevel(
   text[1][l] = '\0';
   fout << string(text[0]) << string(text[1]) << "\n\n";
 
-  RankToText(posPoint->rankInSuit, text);
-  for (int i = 0; i < DDS_HAND_LINES; i++)
-    fout << string(text[i]) << "\n";
-  fout << "\n";
+  PrintDeal(fout, posPoint->rankInSuit, 16);
 
   WinnersToText(posPoint->winRanks[ thrp->iniDepth ], text);
   for (int i = 0; i < DDS_SUITS; i++)

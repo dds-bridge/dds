@@ -55,12 +55,6 @@ int DumpInput(
   const int solutions,
   const int mode);
 
-string PrintSuit(const unsigned short suitCode);
-
-void PrintDeal(
-  ofstream& fout,
-  const unsigned short ranks[][DDS_SUITS]);
-
 bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
   const int target,

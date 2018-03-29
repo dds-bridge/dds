@@ -15,10 +15,6 @@
 #define DDS_HAND_LINES 12
 #define DDS_FULL_LINE 80
 
-void RankToText(
-  const unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
-  const char text[DDS_HAND_LINES][DDS_FULL_LINE]);
-
 int DumpInput(
   const int errCode,
   const deal& dl,
