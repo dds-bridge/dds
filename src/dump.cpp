@@ -46,11 +46,14 @@ string NodeToText(nodeCardsType const * np);
 
 string FullNodeToText(nodeCardsType const * np);
 
-void PosToText(
+string PosToText(
   pos const * posPoint,
   const int target,
-  const int depth,
-  string& text);
+  const int depth);
+
+string TopMove(
+  const bool val,
+  const moveType& bestMove);
 
 
 string PrintSuit(const unsigned short suitCode)
@@ -214,11 +217,10 @@ string FullNodeToText(nodeCardsType const * np)
 }
 
 
-void PosToText(
+string PosToText(
   pos const * posPoint,
   const int target,
-  const int depth,
-  string& text)
+  const int depth)
 {
   stringstream ss;
   ss << setw(16) << left << "Target" << target << "\n";
@@ -228,7 +230,7 @@ void PosToText(
     cardHand[ posPoint->first[depth] ] << "\n";
   ss << setw(16) << "Next first" << 
     cardHand[ posPoint->first[depth - 1] ] << "\n";
-  text = ss.str();
+  return ss.str();
 }
 
 
@@ -295,11 +297,7 @@ void DumpRetrieved(
 
   fout << "Retrieved entry\n";
   fout << string(15, '-') << "\n";
-
-  string stext;
-  PosToText(posPoint, target, depth, stext);
-  fout << stext << "\n";
-
+  fout << PosToText(posPoint, target, depth) << "\n";
   fout << FullNodeToText(np) << "\n";
 
   RankToDiagrams(posPoint->rankInSuit, np, text);
@@ -327,11 +325,7 @@ void DumpStored(
 
   fout << "Stored entry\n";
   fout << string(12, '-') << "\n";
-
-  string stext;
-  PosToText(posPoint, target, depth, stext);
-  fout << stext << "\n";
-
+  fout << PosToText(posPoint, target, depth) << "\n";
   fout << NodeToText(np);
 
   moves->TrickToText((depth >> 2) + 1, text[0]);
@@ -340,6 +334,23 @@ void DumpStored(
   PrintDeal(fout, posPoint->rankInSuit, 16);
 
   fout.close();
+}
+
+
+string TopMove(
+  const bool val,
+  const moveType& bestMove)
+{
+  if (val)
+  {
+    stringstream ss;
+    ss << "achieved with move " <<
+      cardSuit[ bestMove.suit ] <<
+      cardRank[ bestMove.rank ];
+    return ss.str();
+  }
+  else
+    return "failed";
 }
 
 
@@ -353,62 +364,29 @@ void DumpTopLevel(
   ofstream fout;
   fout.open(thrp->fnTopLevel, ofstream::out | ofstream::app);
 
-  char text[DDS_HAND_LINES][DDS_FULL_LINE];
   pos const * posPoint = &thrp->lookAheadPos;
 
+  string stext;
   if (printMode == 0)
   {
     // Trying just one target.
-    sprintf(text[0], "Single target %d, %s\n",
-            tricks,
-            "achieved");
+    stext = "Single target " + to_string(tricks) + ", " + "achieved";
   }
   else if (printMode == 1)
   {
     // Looking for best score.
-    if (thrp->val)
-    {
-      sprintf(text[0],
-              "Loop target %d, bounds %d .. %d, achieved with move %c%c\n",
-              tricks,
-              lower,
-              upper,
-              cardSuit[ thrp->bestMove[thrp->iniDepth].suit ],
-              cardRank[ thrp->bestMove[thrp->iniDepth].rank ]);
-    }
-    else
-    {
-      sprintf(text[0],
-              "Loop target %d, bounds %d .. %d, failed\n",
-              tricks,
-              lower,
-              upper);
-    }
+    stext = "Loop target " + to_string(tricks) + ", " +
+      "bounds " + to_string(lower) + " .. " + to_string(upper) + ", " +
+      TopMove(thrp->val, thrp->bestMove[thrp->iniDepth]) + "";
   }
   else if (printMode == 2)
   {
     // Looking for other moves with best score.
-    if (thrp->val)
-    {
-      sprintf(text[0],
-              "Loop for cards with score %d, achieved with move %c%c\n",
-              tricks,
-              cardSuit[ thrp->bestMove[thrp->iniDepth].suit ],
-              cardRank[ thrp->bestMove[thrp->iniDepth].rank ]);
-    }
-    else
-    {
-      sprintf(text[0],
-              "Loop for cards with score %d, failed\n",
-              tricks);
-    }
+    stext = "Loop for cards with score " + to_string(tricks) + ", " +
+      TopMove(thrp->val, thrp->bestMove[thrp->iniDepth]);
   }
 
-  size_t l = strlen(text[0]) - 1;
-
-  memset(text[1], '-', l);
-  text[1][l] = '\0';
-  fout << string(text[0]) << string(text[1]) << "\n\n";
+  fout << stext << "\n" << string(stext.size(), '-') << "\n\n";
 
   PrintDeal(fout, posPoint->rankInSuit, 16);
 
