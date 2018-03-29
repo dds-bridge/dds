@@ -36,27 +36,21 @@ void PrintDeal(
   const unsigned spacing);
 
 void RankToDiagrams(
-  unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
+  unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
   nodeCardsType * np,
   char text[DDS_HAND_LINES][DDS_FULL_LINE]);
 
-void WinnersToText(
-  unsigned short int winRanks[DDS_SUITS],
-  char text[DDS_SUITS][DDS_FULL_LINE]);
+string WinnersToText(const unsigned short winRanks[]);
 
-void NodeToText(
-  nodeCardsType * np,
-  char text[DDS_NODE_LINES][DDS_FULL_LINE]);
+string NodeToText(nodeCardsType const * np);
 
-void FullNodeToText(
-  nodeCardsType * np,
-  char text[DDS_NODE_LINES][DDS_FULL_LINE]);
+string FullNodeToText(nodeCardsType const * np);
 
 void PosToText(
-  pos * posPoint,
-  int target,
-  int depth,
-  char text[DDS_POS_LINES][DDS_FULL_LINE]);
+  pos const * posPoint,
+  const int target,
+  const int depth,
+  string& text);
 
 
 string PrintSuit(const unsigned short suitCode)
@@ -105,7 +99,7 @@ void PrintDeal(
 
 
 void RankToDiagrams(
-  const unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
+  const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
   nodeCardsType const * np,
   char text[DDS_HAND_LINES][DDS_FULL_LINE])
 {
@@ -174,69 +168,49 @@ void RankToDiagrams(
 }
 
 
-void WinnersToText(
-  const unsigned short int ourWinRanks[DDS_SUITS],
-  char text[DDS_SUITS][DDS_FULL_LINE])
+string WinnersToText(const unsigned short ourWinRanks[])
 {
-  int c, s, r;
+  stringstream ss;
+  for (int s = 0; s < DDS_SUITS; s++)
+    ss << cardSuit[s] << " " << PrintSuit(ourWinRanks[s]) << "\n";
 
-  for (int l = 0; l < DDS_SUITS; l++)
-    memset(text[l], ' ', DDS_FULL_LINE);
-
-  for (s = 0; s < DDS_SUITS; s++)
-  {
-    text[s][0] = static_cast<char>(cardSuit[s]);
-
-    c = 2;
-    for (r = 14; r >= 2; r--)
-    {
-      if (ourWinRanks[s] & bitMapRank[r])
-        text[s][c++] = static_cast<char>(cardRank[r]);
-    }
-    text[s][c] = '\0';
-  }
+  return ss.str();
 }
 
 
-void NodeToText(
-  nodeCardsType const * np,
-  char text[DDS_NODE_LINES - 1][DDS_FULL_LINE])
-
+string NodeToText(nodeCardsType const * np)
 {
-  sprintf(text[0], "Address\t\t%p\n", static_cast<void const *>(np));
+  stringstream ss;
+  ss << setw(16) << left << "Address" << 
+    static_cast<void const *>(np) << "\n";
 
-  sprintf(text[1], "Bounds\t\t%d to %d tricks\n",
-          static_cast<int>(np->lbound),
-          static_cast<int>(np->ubound));
+  ss << setw(16) << left << "Bounds" << 
+    static_cast<int>(np->lbound) << " to " <<
+    static_cast<int>(np->ubound) << " tricks\n";
 
-  sprintf(text[2], "Best move\t%c%c\n",
-          cardSuit[ static_cast<int>(np->bestMoveSuit) ],
-          cardRank[ static_cast<int>(np->bestMoveRank) ]);
+  ss << setw(16) << left << "Best move" << 
+    cardSuit[ static_cast<int>(np->bestMoveSuit) ] <<
+    cardRank[ static_cast<int>(np->bestMoveRank) ] << "\n";
 
+  return ss.str();
 }
 
 
-void FullNodeToText(
-  nodeCardsType const * np,
-  char text[DDS_NODE_LINES][DDS_FULL_LINE])
+string FullNodeToText(nodeCardsType const * np)
 
 {
-  sprintf(text[0], "Address\t\t%p\n", static_cast<void const *>(np));
+  stringstream ss;
+  vector<int> v(DDS_SUITS);
+  for (unsigned i = 0; i < DDS_SUITS; i++)
+    v[i] = 15 - static_cast<int>(np->leastWin[i]);
 
-  sprintf(text[1], "Lowest used\t%c%c, %c%c, %c%c, %c%c\n",
-          cardSuit[0], cardRank[ 15 - static_cast<int>(np->leastWin[0]) ],
-          cardSuit[1], cardRank[ 15 - static_cast<int>(np->leastWin[1]) ],
-          cardSuit[2], cardRank[ 15 - static_cast<int>(np->leastWin[2]) ],
-          cardSuit[3], cardRank[ 15 - static_cast<int>(np->leastWin[3]) ]);
+  ss << setw(16) << left << "Lowest used" << 
+    cardSuit[0] << cardRank[v[0]] << ", " <<
+    cardSuit[1] << cardRank[v[1]] << ", " <<
+    cardSuit[2] << cardRank[v[2]] << ", " <<
+    cardSuit[3] << cardRank[v[3]] << "\n";
 
-  sprintf(text[2], "Bounds\t\t%d to %d tricks\n",
-          static_cast<int>(np->lbound),
-          static_cast<int>(np->ubound));
-
-  sprintf(text[3], "Best move\t%c%c\n",
-          cardSuit[ static_cast<int>(np->bestMoveSuit) ],
-          cardRank[ static_cast<int>(np->bestMoveRank) ]);
-
+  return NodeToText(np) + ss.str();
 }
 
 
@@ -244,15 +218,17 @@ void PosToText(
   pos const * posPoint,
   const int target,
   const int depth,
-  char text[DDS_POS_LINES][DDS_FULL_LINE])
+  string& text)
 {
-  sprintf(text[0], "Target\t\t%d\n" , target);
-  sprintf(text[1], "Depth\t\t%d\n" , depth);
-  sprintf(text[2], "tricksMAX\t%d\n" , posPoint->tricksMAX);
-  sprintf(text[3], "First hand\t%c\n",
-          cardHand[ posPoint->first[depth] ]);
-  sprintf(text[4], "Next first\t%c\n",
-          cardHand[ posPoint->first[depth - 1] ]);
+  stringstream ss;
+  ss << setw(16) << left << "Target" << target << "\n";
+  ss << setw(16) << "Depth" << depth << "\n";
+  ss << setw(16) << "tricksMAX" << posPoint->tricksMAX << "\n";
+  ss << setw(16) << "First hand" << 
+    cardHand[ posPoint->first[depth] ] << "\n";
+  ss << setw(16) << "Next first" << 
+    cardHand[ posPoint->first[depth - 1] ] << "\n";
+  text = ss.str();
 }
 
 
@@ -320,15 +296,11 @@ void DumpRetrieved(
   fout << "Retrieved entry\n";
   fout << string(15, '-') << "\n";
 
-  PosToText(posPoint, target, depth, text);
-  for (int i = 0; i < DDS_POS_LINES; i++)
-    fout << string(text[i]);
-  fout << "\n";
+  string stext;
+  PosToText(posPoint, target, depth, stext);
+  fout << stext << "\n";
 
-  FullNodeToText(np, text);
-  for (int i = 0; i < DDS_NODE_LINES; i++)
-    fout << string(text[i]);
-  fout << "\n";
+  fout << FullNodeToText(np) << "\n";
 
   RankToDiagrams(posPoint->rankInSuit, np, text);
   for (int i = 0; i < DDS_HAND_LINES; i++)
@@ -356,15 +328,11 @@ void DumpStored(
   fout << "Stored entry\n";
   fout << string(12, '-') << "\n";
 
-  PosToText(posPoint, target, depth, text);
-  for (int i = 0; i < DDS_POS_LINES; i++)
-    fout << string(text[i]);
-  fout << "\n";
+  string stext;
+  PosToText(posPoint, target, depth, stext);
+  fout << stext << "\n";
 
-  NodeToText(np, text);
-  for (int i = 0; i < DDS_NODE_LINES - 1; i++)
-    fout << string(text[i]);
-  fout << "\n";
+  fout << NodeToText(np);
 
   moves->TrickToText((depth >> 2) + 1, text[0]);
   fout << string(text[0]) << "\n";
@@ -444,10 +412,7 @@ void DumpTopLevel(
 
   PrintDeal(fout, posPoint->rankInSuit, 16);
 
-  WinnersToText(posPoint->winRanks[ thrp->iniDepth ], text);
-  for (int i = 0; i < DDS_SUITS; i++)
-    fout << string(text[i]) << "\n";
-  fout << "\n";
+  fout << WinnersToText(posPoint->winRanks[ thrp->iniDepth ]) << "\n";
 
   fout << thrp->nodes << " AB nodes, " <<
     thrp->trickNodes << " trick nodes\n\n";
