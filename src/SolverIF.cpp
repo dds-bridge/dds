@@ -18,6 +18,7 @@
 #include "TimerList.h"
 #include "System.h"
 #include "Scheduler.h"
+#include "dump.h"
 #include "debug.h"
 
 extern System sysdep;
@@ -1175,98 +1176,5 @@ void LastTrickWinner(
   leadSuit = lastTrickSuit[hp];
   leadSideWins = ((handToPlay == maxHand ||
     partner[handToPlay] == maxHand) ? 1 : 0);
-}
-
-
-
-int DumpInput(
-  const int errCode, 
-  const deal& dl, 
-  const int target,
-  const int solutions, 
-  const int mode)
-{
-  ofstream fout;
-  fout.open("dump.txt");
-
-  fout << "Error code=" << errCode << "\n\n";
-  fout << "Deal data:\n";
-  fout << "trump=";
-
-  if (dl.trump == DDS_NOTRUMP)
-    fout << "N\n";
-  else
-    fout << cardSuit[dl.trump] << "\n";
-  fout << "first=" << cardHand[dl.first] << "\n";
-
-  unsigned short ranks[4][4];
-
-  for (int k = 0; k <= 2; k++)
-    if (dl.currentTrickRank[k] != 0)
-    {
-      fout << "index=" << k << 
-        " currentTrickSuit=" << cardSuit[dl.currentTrickSuit[k]] <<
-        " currentTrickRank= " << cardRank[dl.currentTrickRank[k]] << "\n";
-    }
-
-  for (int h = 0; h < DDS_HANDS; h++)
-    for (int s = 0; s < DDS_SUITS; s++)
-    {
-      fout << "index1=" << h << " index2=" << s <<
-        " remainCards=" << dl.remainCards[h][s] << "\n";
-      ranks[h][s] = static_cast<unsigned short>
-                    (dl.remainCards[h][s] >> 2);
-    }
-
-  fout << "\ntarget=" << target << "\n";
-  fout << "solutions=" << solutions << "\n";
-  fout << "mode=" << mode << "\n\n\n";
-  PrintDeal(fout, ranks);
-  fout.close();
-  return 0;
-}
-
-
-string PrintSuit(const unsigned short suitCode)
-{
-  if (! suitCode)
-    return "--";
-
-  string st;
-  for (int r = 14; r >= 2; r--)
-    if ((suitCode & bitMapRank[r]))
-      st += cardRank[r];
-  return st;
-}
-
-
-void PrintDeal(
-  ofstream& fout,
-  const unsigned short ranks[][DDS_SUITS])
-{
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    fout << setw(8) << "" << 
-      cardSuit[s] << " " <<
-      PrintSuit(ranks[0][s]) << "\n";
-  }
-
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    fout << cardSuit[s] << " " <<
-      setw(14) << left << PrintSuit(ranks[3][s]) <<
-      cardSuit[s] << " " <<
-      PrintSuit(ranks[1][s]) << "\n";
-  }
-
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    fout << setw(8) << "" << 
-      cardSuit[s] << " " <<
-      PrintSuit(ranks[2][s]) << "\n";
-  }
-
-  fout << "\n";
-  return;
 }
 

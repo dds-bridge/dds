@@ -1,5 +1,6 @@
 SOURCE_FILES    =               \
         dds.cpp                 \
+        dump.cpp                \
         ABsearch.cpp            \
         ABstats.cpp             \
         CalcTables.cpp          \

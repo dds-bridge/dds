@@ -1,12 +1,13 @@
 dds.obj: ../include/dll.h Init.h dds.h ../include/portab.h Memory.h
 dds.obj: TransTable.h Moves.h debug.h
+dump.obj: dds.h ../include/portab.h ../include/dll.h dump.h
 ABsearch.obj: dds.h ../include/portab.h ../include/dll.h TransTable.h Moves.h
 ABsearch.obj: QuickTricks.h Memory.h debug.h LaterTricks.h ABsearch.h
-ABsearch.obj: ABstats.h TimerList.h TimerGroup.h Timer.h
+ABsearch.obj: ABstats.h TimerList.h TimerGroup.h Timer.h dump.h
 ABstats.obj: dds.h ../include/portab.h ../include/dll.h ABstats.h debug.h
 CalcTables.obj: dds.h ../include/portab.h ../include/dll.h SolverIF.h
-CalcTables.obj: Memory.h TransTable.h Moves.h debug.h System.h Scheduler.h
-CalcTables.obj: TimeStatList.h TimeStat.h Timer.h PBN.h
+CalcTables.obj: Memory.h TransTable.h Moves.h debug.h SolveBoard.h System.h
+CalcTables.obj: Scheduler.h TimeStatList.h TimeStat.h Timer.h PBN.h
 DealerPar.obj: dds.h ../include/portab.h ../include/dll.h
 Init.obj: Init.h dds.h ../include/portab.h ../include/dll.h Memory.h
 Init.obj: TransTable.h Moves.h debug.h System.h Scheduler.h TimeStatList.h
@@ -31,13 +32,14 @@ SolveBoard.obj: Scheduler.h TimeStatList.h TimeStat.h Timer.h PBN.h
 SolverIF.obj: dds.h ../include/portab.h ../include/dll.h Init.h Memory.h
 SolverIF.obj: TransTable.h Moves.h debug.h ABsearch.h SolverIF.h TimerList.h
 SolverIF.obj: TimerGroup.h Timer.h System.h Scheduler.h TimeStatList.h
-SolverIF.obj: TimeStat.h
+SolverIF.obj: TimeStat.h dump.h
 System.obj: SolveBoard.h dds.h ../include/portab.h ../include/dll.h
-System.obj: CalcTables.h PlayAnalyser.h System.h
+System.obj: CalcTables.h PlayAnalyser.h parallel.h System.h Scheduler.h
+System.obj: TimeStatList.h TimeStat.h Timer.h
 Timer.obj: Timer.h
 TimerGroup.obj: TimerGroup.h Timer.h
-TimerList.obj: TimerList.h TimerGroup.h Timer.h debug.h dds.h
-TimerList.obj: ../include/portab.h ../include/dll.h
+TimerList.obj: dds.h ../include/portab.h ../include/dll.h TimerList.h
+TimerList.obj: TimerGroup.h Timer.h debug.h
 TimeStat.obj: TimeStat.h
 TimeStatList.obj: TimeStatList.h TimeStat.h
 TransTable.obj: dds.h ../include/portab.h ../include/dll.h TransTable.h
