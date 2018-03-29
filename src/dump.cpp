@@ -20,9 +20,9 @@
 
 
 #define DDS_POS_LINES 5
-#define DDS_HAND_LINES 12
+// #define DDS_HAND_LINES 12
 #define DDS_NODE_LINES 4
-#define DDS_FULL_LINE 80
+// #define DDS_FULL_LINE 80
 #define DDS_HAND_OFFSET 16
 #define DDS_HAND_OFFSET2 12
 #define DDS_DIAG_WIDTH 34
@@ -103,7 +103,7 @@ void PrintDeal(
 
 
 void RankToText(
-  unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
+  const unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
   char text[DDS_HAND_LINES][DDS_FULL_LINE])
 {
   int c, h, s, r;
@@ -158,8 +158,8 @@ void RankToText(
 
 
 void RankToDiagrams(
-  unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
-  nodeCardsType * np,
+  const unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS],
+  nodeCardsType const * np,
   char text[DDS_HAND_LINES][DDS_FULL_LINE])
 {
   int c, h, s, r;
@@ -228,7 +228,7 @@ void RankToDiagrams(
 
 
 void WinnersToText(
-  unsigned short int ourWinRanks[DDS_SUITS],
+  const unsigned short int ourWinRanks[DDS_SUITS],
   char text[DDS_SUITS][DDS_FULL_LINE])
 {
   int c, s, r;
@@ -252,11 +252,11 @@ void WinnersToText(
 
 
 void NodeToText(
-  nodeCardsType * np,
+  nodeCardsType const * np,
   char text[DDS_NODE_LINES - 1][DDS_FULL_LINE])
 
 {
-  sprintf(text[0], "Address\t\t%p\n", static_cast<void *>(np));
+  sprintf(text[0], "Address\t\t%p\n", static_cast<void const *>(np));
 
   sprintf(text[1], "Bounds\t\t%d to %d tricks\n",
           static_cast<int>(np->lbound),
@@ -270,11 +270,11 @@ void NodeToText(
 
 
 void FullNodeToText(
-  nodeCardsType * np,
+  nodeCardsType const * np,
   char text[DDS_NODE_LINES][DDS_FULL_LINE])
 
 {
-  sprintf(text[0], "Address\t\t%p\n", static_cast<void *>(np));
+  sprintf(text[0], "Address\t\t%p\n", static_cast<void const *>(np));
 
   sprintf(text[1], "Lowest used\t%c%c, %c%c, %c%c, %c%c\n",
           cardSuit[0], cardRank[ 15 - static_cast<int>(np->leastWin[0]) ],
@@ -294,9 +294,9 @@ void FullNodeToText(
 
 
 void PosToText(
-  pos * posPoint,
-  int target,
-  int depth,
+  pos const * posPoint,
+  const int target,
+  const int depth,
   char text[DDS_POS_LINES][DDS_FULL_LINE])
 {
   sprintf(text[0], "Target\t\t%d\n" , target);
@@ -358,81 +358,91 @@ int DumpInput(
 
 
 void DumpRetrieved(
-  FILE * fp,
-  pos * posPoint,
-  nodeCardsType * np,
-  int target,
-  int depth)
+  const string& fname,
+  pos const * posPoint,
+  nodeCardsType const * np,
+  const int target,
+  const int depth)
 {
+  ofstream fout;
+  fout.open(fname, ofstream::out | ofstream::app);
+
   // Big enough for all uses.
   char text[DDS_HAND_LINES][DDS_FULL_LINE];
 
-  fprintf(fp, "Retrieved entry\n");
-  fprintf(fp, "---------------\n");
+  fout << "Retrieved entry\n";
+  fout << string(15, '-') << "\n";
 
   PosToText(posPoint, target, depth, text);
   for (int i = 0; i < DDS_POS_LINES; i++)
-    fprintf(fp, "%s", text[i]);
-  fprintf(fp, "\n");
+    fout << string(text[i]);
+  fout << "\n";
 
   FullNodeToText(np, text);
   for (int i = 0; i < DDS_NODE_LINES; i++)
-    fprintf(fp, "%s", text[i]);
-  fprintf(fp, "\n");
+    fout << string(text[i]);
+  fout << "\n";
 
   RankToDiagrams(posPoint->rankInSuit, np, text);
   for (int i = 0; i < DDS_HAND_LINES; i++)
-    fprintf(fp, "%s\n", text[i]);
-  fprintf(fp, "\n");
+    fout << string(text[i]) << "\n";
+  fout << "\n";
+
+  fout.close();
 }
 
 
 void DumpStored(
-  FILE * fp,
-  pos * posPoint,
-  Moves * moves,
-  nodeCardsType * np,
-  int target,
-  int depth)
+  const string& fname,
+  pos const * posPoint,
+  Moves const * moves,
+  nodeCardsType const * np,
+  const int target,
+  const int depth)
 {
+  ofstream fout;
+  fout.open(fname, ofstream::out | ofstream::app);
+
   // Big enough for all uses.
   char text[DDS_HAND_LINES][DDS_FULL_LINE];
 
-  fprintf(fp, "Stored entry\n");
-  fprintf(fp, "------------\n");
+  fout << "Stored entry\n";
+  fout << string(12, '-') << "\n";
 
   PosToText(posPoint, target, depth, text);
   for (int i = 0; i < DDS_POS_LINES; i++)
-    fprintf(fp, "%s", text[i]);
-  fprintf(fp, "\n");
+    fout << string(text[i]);
+  fout << "\n";
 
   NodeToText(np, text);
   for (int i = 0; i < DDS_NODE_LINES - 1; i++)
-    fprintf(fp, "%s", text[i]);
-  fprintf(fp, "\n");
+    fout << string(text[i]);
+  fout << "\n";
 
   moves->TrickToText((depth >> 2) + 1, text[0]);
-  fprintf(fp, "%s", text[0]);
-  fprintf(fp, "\n");
+  fout << string(text[0]) << "\n";
 
   RankToText(posPoint->rankInSuit, text);
   for (int i = 0; i < DDS_HAND_LINES; i++)
-    fprintf(fp, "%s\n", text[i]);
-  fprintf(fp, "\n");
+    fout << string(text[i]) << "\n";
+  fout << "\n";
+
+  fout.close();
 }
 
 
 void DumpTopLevel(
-  ThreadData * thrp,
-  int tricks,
-  int lower,
-  int upper,
-  int printMode)
+  ThreadData const * thrp,
+  const int tricks,
+  const int lower,
+  const int upper,
+  const int printMode)
 {
-#ifdef DDS_TOP_LEVEL
+  ofstream fout;
+  fout.open(thrp->fnTopLevel, ofstream::out | ofstream::app);
+
   char text[DDS_HAND_LINES][DDS_FULL_LINE];
-  pos * posPoint = &thrp->lookAheadPos;
-  FILE * fp = thrp->fpTopLevel;
+  pos const * posPoint = &thrp->lookAheadPos;
 
   if (printMode == 0)
   {
@@ -486,27 +496,21 @@ void DumpTopLevel(
 
   memset(text[1], '-', l);
   text[1][l] = '\0';
-  fprintf(fp, "%s%s\n\n", text[0], text[1]);
+  fout << string(text[0]) << string(text[1]) << "\n\n";
 
   RankToText(posPoint->rankInSuit, text);
   for (int i = 0; i < DDS_HAND_LINES; i++)
-    fprintf(fp, "%s\n", text[i]);
-  fprintf(fp, "\n");
+    fout << string(text[i]) << "\n";
+  fout << "\n";
 
   WinnersToText(posPoint->winRanks[ thrp->iniDepth ], text);
   for (int i = 0; i < DDS_SUITS; i++)
-    fprintf(fp, "%s\n", text[i]);
-  fprintf(fp, "\n");
+    fout << string(text[i]) << "\n";
+  fout << "\n";
 
-  fprintf(fp, "%d AB nodes, %d trick nodes\n\n",
-          thrp->nodes,
-          thrp->trickNodes);
-#else
-  UNUSED(thrp);
-  UNUSED(tricks);
-  UNUSED(lower);
-  UNUSED(upper);
-  UNUSED(printMode);
-#endif
+  fout << thrp->nodes << " AB nodes, " <<
+    thrp->trickNodes << " trick nodes\n\n";
+
+  fout.close();
 }
 

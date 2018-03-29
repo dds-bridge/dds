@@ -81,12 +81,12 @@ struct ThreadData
 #endif
 
 #ifdef DDS_TOP_LEVEL
-  FILE * fpTopLevel;
+  string fnTopLevel;
 #endif
 
 #ifdef DDS_AB_HITS
-  FILE * fpRetrieved;
-  FILE * fpStored;
+  string fnRetrieved;
+  string fnStored;
 #endif
 
 };

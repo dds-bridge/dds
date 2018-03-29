@@ -372,7 +372,7 @@ struct DDSInfo
   // The actual number of threads configured
   int noOfThreads;
 
-  char systemString[512];
+  char systemString[1024];
 };
 
 

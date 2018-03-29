@@ -357,10 +357,8 @@ void InitDebugFiles()
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 
 #ifdef DDS_TOP_LEVEL
-    const string stop = DDS_TOP_LEVEL_PREFIX + send;
-    thrp->fpTopLevel = fopen(stop.c_str(), "w");
-    if (! thrp->fpTopLevel)
-      thrp->fpTopLevel = stdout;
+    thrp->fnTopLevel = DDS_TOP_LEVEL_PREFIX + send;
+    remove(thrp->fnTopLevel.c_str());  // May fail -- that's OK
 #endif
 
 #ifdef DDS_AB_STATS
@@ -377,24 +375,11 @@ void InitDebugFiles()
 #endif
 
 #ifdef DDS_AB_HITS
-    char fname[DDS_FNAME_LEN];
-    sprintf(fname, "%s%d%s",
-            DDS_AB_HITS_RETRIEVED_PREFIX,
-            thrId,
-            DDS_DEBUG_SUFFIX);
+    thrp->fnRetrieved = DDS_AB_HITS_RETRIEVED_PREFIX + send;
+    remove(thrp->fnRetrieved.c_str());
 
-    thrp->fpRetrieved = fopen(fname, "w");
-    if (! thrp->fpRetrieved)
-      thrp->fpRetrieved = stdout;
-
-    sprintf(fname, "%s%d%s",
-            DDS_AB_HITS_STORED_PREFIX,
-            thrId,
-            DDS_DEBUG_SUFFIX);
-
-    thrp->fpStored = fopen(fname, "w");
-    if (! thrp->fpStored)
-      thrp->fpStored = stdout;
+    thrp->fnStored = DDS_AB_HITS_STORED_PREFIX + send;
+    remove(thrp->fnStored.c_str());
 #endif
 
 #ifdef DDS_TIMING
@@ -422,18 +407,7 @@ void CloseDebugFiles()
   {
     ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
     UNUSED(thrp); // To avoid compile errors
-#ifdef DDS_TOP_LEVEL
-    if (thrp->fpTopLevel != stdout && thrp->fpTopLevel != nullptr)
-      fclose(thrp->fpTopLevel);
-#endif
-
-#ifdef DDS_AB_HITS
-    if (thrp->fpRetrieved != stdout && thrp->fpRetrieved != nullptr)
-      fclose(thrp->fpRetrieved);
-
-    if (thrp->fpStored != stdout && thrp->fpStored != nullptr)
-      fclose(thrp->fpStored);
-#endif
+    // TODO Delete function
   }
 }
 
