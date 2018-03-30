@@ -18,8 +18,19 @@
 
 using namespace std;
 
-
 #define HASH_MAX 200
+
+#ifdef DDS_SCHEDULER
+  #define START_BLOCK_TIMER scheduler.StartBlockTimer()
+  #define END_BLOCK_TIMER scheduler.EndBlockTimer()
+  #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
+  #define END_THREAD_TIMER(a) scheduler.EndThreadTimer(a)
+#else
+  #define START_BLOCK_TIMER 1
+  #define END_BLOCK_TIMER 1
+  #define START_THREAD_TIMER(a) 1
+  #define END_THREAD_TIMER(a) 1
+#endif
 
 
 struct schedType
