@@ -10,6 +10,7 @@
 #ifndef DDS_SOLVERIF_H
 #define DDS_SOLVERIF_H
 
+#include "dds.h"
 #include "Memory.h"
 
 

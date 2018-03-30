@@ -11,15 +11,12 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <stdlib.h>
 
 #include "SolveBoard.h"
 #include "CalcTables.h"
 #include "PlayAnalyser.h"
 #include "parallel.h"
 #include "System.h"
-#include "SolveBoard.h"
-#include "PlayAnalyser.h"
 #include "Scheduler.h"
 
 extern Scheduler scheduler;
@@ -260,11 +257,6 @@ int System::RegisterRun(
 
   runCat = mode;
   bop = &bdsIn;
-
-  // TODO: The implicit thread models don't need the scheduler(?).
-  // if (preferredSystem <= DDS_SYSTEM_THREAD_TBB)
-    // scheduler.RegisterRun(mode, bopIn);
-
   return RETURN_NO_FAULT;
 }
 
@@ -463,13 +455,6 @@ int System::RunThreadsSTL()
   vector<int> crossrefs;
   (* CallbackDuplList[runCat])(* bop, uniques, crossrefs);
 
-// TODO Remove
-// int numGroups = scheduler.NumGroups();
-// runSched += numGroups;
-// runDetect += uniques.size();
-// cout << "scheduler groups " << runSched << ", uniques " <<
-// runDetect << endl;
-
   const unsigned nu = static_cast<unsigned>(numThreads);
   threads.resize(nu);
 
@@ -487,23 +472,12 @@ int System::RunThreadsSTL()
 }
 
 
-// TODO Remove
-// #include "Memory.h"
-// extern Memory memory;
-
 int System::RunThreadsSTLIMPL()
 {
 #ifdef DDS_THREADS_STLIMPL
   vector<int> uniques;
   vector<int> crossrefs;
   (* CallbackDuplList[runCat])(* bop, uniques, crossrefs);
-
-// TODO Remove
-// int numGroups = scheduler.NumGroups();
-// runSched += numGroups;
-// runDetect += uniques.size();
-// cout << "scheduler groups " << runSched << ", uniques " <<
-  // runDetect << endl;
 
   atomic<int> thrIdNext = 0;
   thread_local int thrId = -1;
