@@ -81,6 +81,11 @@ void Memory::Resize(const unsigned n)
     for (unsigned i = nThreads; i < n; i++)
     {
       memory[i] = new ThreadData;
+
+      // TODO: Should come from the outside?
+      memory[i]->transTable.SetMemoryDefault(THREADMEM_DEF_MB);
+      memory[i]->transTable.SetMemoryMaximum(THREADMEM_MAX_MB);
+
       memory[i]->transTable.MakeTT();
     }
   }

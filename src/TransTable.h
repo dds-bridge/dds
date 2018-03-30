@@ -267,7 +267,6 @@ class TransTable
       long long suitLengths,
       int tricks,
       int firstHand,
-      int depth,
       bool flag);
 
     struct nodeCardsType * BuildPath(
@@ -299,7 +298,6 @@ class TransTable
       int orderSet[],
       int limit,
       winCardType * nodeP,
-      int firstHand,
       bool * lowerFlag);
 
 
@@ -346,16 +344,16 @@ class TransTable
       long long key,
       int handDist[]);
 
-    void DistToLengths(
+    void DistToLengths( // Both?
       int trick,
       int handDist[],
       unsigned char lengths[DDS_HANDS][DDS_SUITS]);
 
-    void LenToStr(
+    void LenToStr( // Both?
       unsigned char lengths[DDS_HANDS][DDS_SUITS],
       char * line);
 
-    void MakeHistStats(
+    void MakeHistStats( // Both? Or only LARGE?
       int hist[],
       int * count,
       int * prod_sum,
@@ -363,32 +361,32 @@ class TransTable
       int * max_len,
       int last_index);
 
-    int CalcPercentile(
+    int CalcPercentile( // Both?  Or only large?
       int hist[],
       double threshold,
       int last_index);
 
-    void PrintHist(
+    void PrintHist( // Both?  Or only LARGE?
       int hist[],
       int num_wraps,
       int last_index);
 
-    void UpdateSuitHist(
+    void UpdateSuitHist( // Only LARGE
       int trick,
       int hand,
       int hist[],
       int * num_wraps);
 
-    winBlockType * FindMatchingDist(
+    winBlockType * FindMatchingDist( // Only LARGE
       int trick,
       int hand,
       int handDistSought[DDS_HANDS]);
 
-    void PrintEntriesBlock(
+    void PrintEntriesBlock( // Both, but probably only LARGE?
       winBlockType * bp,
       unsigned char lengths[DDS_HANDS][DDS_SUITS]);
 
-    void UpdateEntryHist(
+    void UpdateEntryHist( // Only LARGE
       int trick,
       int hand,
       int hist[],
@@ -463,19 +461,19 @@ class TransTable
 
     void SetFile(const string& fname);
 
-    void PrintSuits(
+    void PrintSuits( // Only LARGE
       int trick,
       int hand);
 
-    void PrintAllSuits();
+    void PrintAllSuits(); // Only LARGE
 
-    void PrintSuitStats(
+    void PrintSuitStats( // Only LARGE
       int trick,
       int hand);
 
-    void PrintAllSuitStats();
+    void PrintAllSuitStats(); // Only LARGE
 
-    void PrintSummarySuitStats();
+    void PrintSummarySuitStats(); // Only LARGE
 
     // Examples:
     // int hd[DDS_HANDS] = { 0x0342, 0x0334, 0x0232, 0x0531 };
@@ -484,36 +482,36 @@ class TransTable
     // { 0x1fff, 0x1fff, 0x0f75, 0x1fff };
     // thrp->transTable.PrintEntriesDistAndCards(11, 1, ag, hd);
 
-    void PrintEntriesDist(
+    void PrintEntriesDist( // Only LARGE
       int trick,
       int hand,
       int handDist[DDS_HANDS]);
 
-    void PrintEntriesDistAndCards(
+    void PrintEntriesDistAndCards( // Only LARGE
       int trick,
       int hand,
       unsigned short * aggrTarget,
       int handDist[DDS_HANDS]);
 
-    void PrintEntries(
+    void PrintEntries( // Only LARGE
       int trick,
       int hand);
 
-    void PrintAllEntries();
+    void PrintAllEntries(); // Only LARGE
 
-    void PrintEntryStats(
+    void PrintEntryStats( // Only LARGE
       int trick,
       int hand);
 
-    void PrintAllEntryStats();
+    void PrintAllEntryStats(); // Only LARGE
 
-    void PrintSummaryEntryStats();
+    void PrintSummaryEntryStats(); // Only LARGE
 
-    void PrintPageSummary();
+    void PrintPageSummary(); // Only SMALL
 
-    void PrintNodeStats();
+    void PrintNodeStats(); // Only SMALL
 
-    void PrintResetStats();
+    void PrintResetStats(); // Only SMALL
 };
 
 #endif

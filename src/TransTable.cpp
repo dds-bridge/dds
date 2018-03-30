@@ -103,6 +103,7 @@ int TTlowestRank[8192];
 #endif
 
 
+#include <iostream>
 TransTable::TransTable()
 {
   if (! _constantsSet)
@@ -226,7 +227,6 @@ void TransTable::Init(int handLookup[][15])
         (aggp[ind].winMask[s] >> 2) | (3 << 24);
     }
   }
-
   return;
 }
 
@@ -347,11 +347,9 @@ void TransTable::MakeTT()
     if (pw == NULL)
       exit(1);
 
-
     pn = static_cast<struct nodeCardsType **>(calloc(static_cast<unsigned int>(maxIndex + 1), sizeof(struct nodeCardsType *)));
     if (pn == NULL)
       exit(1);
-
 
     for (int k = 1; k <= 13; k++)
       for (int h = 0; h < DDS_HANDS; h++)
@@ -362,7 +360,6 @@ void TransTable::MakeTT()
         if (pl[k][h] == NULL)
           exit(1);
       }
-
 
     for (i = 0; i <= maxIndex; i++)
     {
@@ -1054,8 +1051,7 @@ nodeCardsType * TransTable::Lookup(
       cardsP = NULL;
     else
     {
-      cardsP = FindSOP(orderSet, limit, pp->posSearchPoint,
-                       hand, lowerFlag);
+      cardsP = FindSOP(orderSet, limit, pp->posSearchPoint, lowerFlag);
 
       if (cardsP == NULL)
         return cardsP;
@@ -1078,7 +1074,7 @@ void TransTable::Add(
   bool flag)
 {
   BuildSOP(ourWinRanks, aggrTarget, first, suitLengths[tricks],
-           tricks, hand, tricks, flag);
+           tricks, hand, flag);
 
   if (clearTTflag)
   {
@@ -1116,7 +1112,7 @@ void TransTable::AddWinSet()
       wcount++;
       winSetSizeLimit = WSIZE;
       pw[wcount] =
-        static_cast<struct winCardType *>(calloc((WSIZE + 1), sizeof(struct winCardType)));
+        static_cast<struct winCardType *>(malloc((WSIZE + 1) * sizeof(struct winCardType)));
       if (pw[wcount] == NULL)
       {
         clearTTflag = true;
@@ -1154,7 +1150,7 @@ void TransTable::AddNodeSet()
       ncount++;
       nodeSetSizeLimit = NSIZE;
       pn[ncount] =
-        static_cast<struct nodeCardsType *>(calloc((NSIZE + 1), sizeof(struct nodeCardsType)));
+        static_cast<struct nodeCardsType *>(malloc((NSIZE + 1) * sizeof(struct nodeCardsType)));
       if (pn[ncount] == NULL)
       {
         clearTTflag = true;
@@ -1196,7 +1192,7 @@ void TransTable::AddLenSet(int trick, int firstHand)
     lcount[trick][firstHand]++;
 
     pl[trick][firstHand][lcount[trick][firstHand]] =
-      static_cast<struct posSearchTypeSmall *>(calloc(LSIZE + 1, sizeof(struct posSearchTypeSmall)));
+      static_cast<struct posSearchTypeSmall *>(malloc((LSIZE + 1) * sizeof(struct posSearchTypeSmall)));
 
     if (pl[trick][firstHand][lcount[trick][firstHand]] == NULL)
 
@@ -1236,10 +1232,8 @@ void TransTable::BuildSOP(
   long long lengths,
   int tricks,
   int firstHand,
-  int depth,
   bool flag)
 {
-  UNUSED(depth);
 #ifndef SMALL_MEMORY_OPTION
   UNUSED(ourWinRanks);
   UNUSED(aggrArg);
@@ -1337,8 +1331,7 @@ struct nodeCardsType * TransTable::BuildPath(
   return NULL;
 #else
   bool found;
-  struct winCardType * np, *p2, *nprev, *fnp, *pnp;
-  struct winCardType temp;
+  struct winCardType * np, *p2, *nprev;
   struct nodeCardsType * sopP = 0, *p;
 
   np = nodep->posSearchPoint;
@@ -1363,7 +1356,7 @@ struct nodeCardsType * TransTable::BuildPath(
     p2->first = NULL;
     np = p2;           /* Latest winning node */
     suit++;
-    while (suit < 4)
+    while (suit < DDS_SUITS)
     {
       p2 = &(winCards[winSetSize]);
       AddWinSet();
@@ -1409,31 +1402,10 @@ struct nodeCardsType * TransTable::BuildPath(
       if (found)
       {
         suit++;
-        if (suit > 3)
+        if (suit >= DDS_SUITS)
         {
           sopP = UpdateSOP(ubound, lbound, bestMoveSuit, bestMoveRank,
                            np->first);
-
-          if (np->prevWin != NULL)
-          {
-            pnp = np->prevWin;
-            fnp = pnp->nextWin;
-          }
-          else
-            fnp = nodep->posSearchPoint;
-
-          temp.orderSet = np->orderSet;
-          temp.winMask = np->winMask;
-          temp.first = np->first;
-          temp.nextWin = np->nextWin;
-          np->orderSet = fnp->orderSet;
-          np->winMask = fnp->winMask;
-          np->first = fnp->first;
-          np->nextWin = fnp->nextWin;
-          fnp->orderSet = temp.orderSet;
-          fnp->winMask = temp.winMask;
-          fnp->first = temp.first;
-          fnp->nextWin = temp.nextWin;
 
           *result = false;
           return sopP;
@@ -1601,11 +1573,9 @@ struct nodeCardsType * TransTable::UpdateSOP(
   UNUSED(nodep);
   return NULL;
 #else
-  if ((lbound > nodep->lbound) ||
-      (nodep->lbound == -1))
+  if (lbound > nodep->lbound)
     nodep->lbound = static_cast<char>(lbound);
-  if ((ubound < nodep->ubound) ||
-      (nodep->ubound == -1))
+  if (ubound < nodep->ubound)
     nodep->ubound = static_cast<char>(ubound);
 
   nodep->bestMoveSuit = bestMoveSuit;
@@ -1620,11 +1590,9 @@ struct nodeCardsType * TransTable::FindSOP(
   int orderSet[],
   int limit,
   winCardType * nodeP,
-  int firstHand,
   bool	* lowerFlag)
 {
   struct winCardType * np;
-  UNUSED(firstHand);
 
   np = nodeP;
   int s = 0;
@@ -2821,8 +2789,6 @@ int TransTable::EffectOfBlockBound(
 }
 
 
-// #define TT_MEMORY_SCENARIO
-
 void TransTable::PrintSummaryEntryStats()
 {
 #ifndef SMALL_MEMORY_OPTION
@@ -2832,9 +2798,7 @@ void TransTable::PrintSummaryEntryStats()
 
   int cumCount = 0;
   double cumProd = 0.;
-#ifdef TT_MEMORY_SCENARIO
   int cumMemory = 0;
-#endif
 
   suitWraps = 0;
   for (int i = 0; i <= BLOCKS_PER_ENTRY; i++)
@@ -2862,9 +2826,7 @@ void TransTable::PrintSummaryEntryStats()
 
       cumCount += count;
       cumProd += prod_sum;
-#ifdef TT_MEMORY_SCENARIO
       cumMemory += TransTable::EffectOfBlockBound(hist, 20);
-#endif
 
       double mean = prod_sum / static_cast<double>(count);
       double var = prod_sumsq /
@@ -2894,11 +2856,9 @@ void TransTable::PrintSummaryEntryStats()
 
   fprintf(fp, "Blocks produced\t%8d\n", TransTable::BlocksInUse());
 
-#ifdef TT_MEMORY_SCENARIO
   fprintf(fp, "Mem scenario\t%7.2f%%\n",
           100. * cumMemory /
           (static_cast<double>(BLOCKS_PER_ENTRY * cumCount)));
-#endif
 
   if (cumCount)
     fprintf(fp, "Fullness\t%7.2f%%\n",
