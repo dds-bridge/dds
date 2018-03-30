@@ -15,52 +15,52 @@
 
 
 bool ABsearch(
-  struct pos * posPoint,
+  pos * posPoint,
   const int target,
   const int depth,
-  struct ThreadData * thrp);
+  ThreadData * thrp);
 
 bool ABsearch0(
-  struct pos * posPoint,
+  pos * posPoint,
   const int target,
   const int depth,
-  struct ThreadData * thrp);
+  ThreadData * thrp);
 
 bool ABsearch1(
-  struct pos * posPoint,
+  pos * posPoint,
   const int target,
   const int depth,
-  struct ThreadData * thrp);
+  ThreadData * thrp);
 
 bool ABsearch2(
-  struct pos * posPoint,
+  pos * posPoint,
   const int target,
   const int depth,
-  struct ThreadData * thrp);
+  ThreadData * thrp);
 
 bool ABsearch3(
-  struct pos * posPoint,
+  pos * posPoint,
   const int target,
   const int depth,
-  struct ThreadData * thrp);
+  ThreadData * thrp);
 
 void Make0(
-  struct pos * posPoint,
+  pos * posPoint,
   const int depth,
   moveType const * mply);
 
 void Make1(
-  struct pos * posPoint,
+  pos * posPoint,
   const int depth,
   moveType const * mply);
 
 void Make2(
-  struct pos * posPoint,
+  pos * posPoint,
   const int depth,
   moveType const * mply);
 
 void Make3(
-  struct pos * posPoint,
+  pos * posPoint,
   unsigned short int trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,

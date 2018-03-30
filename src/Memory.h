@@ -53,13 +53,13 @@ struct ThreadData
   unsigned short int suit[DDS_HANDS][DDS_SUITS];
   int trump;
 
-  struct pos lookAheadPos; // Recursive alpha-beta data
+  pos lookAheadPos; // Recursive alpha-beta data
   bool analysisFlag;
   unsigned short int lowestWin[50][DDS_SUITS];
   WinnersType winners[13];
-  struct moveType forbiddenMoves[14];
-  struct moveType bestMove[50];
-  struct moveType bestMoveTT[50];
+  moveType forbiddenMoves[14];
+  moveType bestMove[50];
+  moveType bestMoveTT[50];
 
   double memUsed;
   int nodes;
@@ -67,7 +67,7 @@ struct ThreadData
 
   // Constant for a given hand.
   // 960 KB
-  struct relRanksType rel[8192];
+  relRanksType rel[8192];
 
   TransTable transTable;
 

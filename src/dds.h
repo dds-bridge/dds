@@ -92,7 +92,7 @@ struct moveType
 
 struct movePlyType
 {
-  struct moveType move[14];
+  moveType move[14];
   int current;
   int last;
 };
@@ -115,15 +115,15 @@ struct pos
   /* Cards that win by rank, firstindex is depth. */
   int first[50];
   /* Hand that leads the trick for each ply */
-  struct moveType move[50];
+  moveType move[50];
   /* Presently winning move */
   int handRelFirst;
   /* The current hand, relative first hand */
   int tricksMAX;
   /* Aggregated tricks won by MAX */
-  struct highCardType winner[DDS_SUITS];
+  highCardType winner[DDS_SUITS];
   /* Winning rank of trick. */
-  struct highCardType secondBest[DDS_SUITS];
+  highCardType secondBest[DDS_SUITS];
   /* Second best rank. */
 };
 
@@ -155,7 +155,7 @@ struct absRankType // 2 bytes
 
 struct relRanksType // 120 bytes
 {
-  struct absRankType absRank[15][DDS_SUITS];
+  absRankType absRank[15][DDS_SUITS];
 };
 
 struct paramType

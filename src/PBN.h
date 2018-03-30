@@ -10,13 +10,15 @@
 #ifndef DDS_PBN_H
 #define DDS_PBN_H
 
+#include "../include/dll.h"
+
 
 int ConvertFromPBN(
   char const * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS]);
 
 int ConvertPlayFromPBN(
-  playTracePBN const * playPBN,
-  playTraceBin * playBin);
+  const playTracePBN& playPBN,
+  playTraceBin& playBin);
 
 #endif

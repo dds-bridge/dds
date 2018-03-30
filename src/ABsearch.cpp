@@ -247,8 +247,8 @@ bool ABsearch0(
 
   bool res;
   TIMER_START(TIMER_NO_QT, depth);
-  int qtricks = QuickTricks(posPoint, hand, depth, target,
-                            trump, res, thrp);
+  int qtricks = QuickTricks(* posPoint, hand, depth, target,
+                            trump, res, * thrp);
   TIMER_END(TIMER_NO_QT, depth);
 
   if (thrp->nodeTypeStore[hand] == MAXNODE)
@@ -472,8 +472,8 @@ bool ABsearch1(
 #endif
 
   TIMER_START(TIMER_NO_QT, depth);
-  int res = QuickTricksSecondHand(posPoint, hand, depth, target,
-                                  trump, thrp);
+  int res = QuickTricksSecondHand(* posPoint, hand, depth, target,
+     trump, * thrp);
   TIMER_END(TIMER_NO_QT, depth);
   if (res) 
   {

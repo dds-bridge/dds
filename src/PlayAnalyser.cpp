@@ -7,10 +7,6 @@
    See LICENSE and README.
 */
 
-// #include <iostream>
-// #include <iomanip>
-// #include <fstream>
-
 #include "SolverIF.h"
 #include "System.h"
 #include "Memory.h"
@@ -261,8 +257,7 @@ int STDCALL AnalysePlayPBN(
     dl.currentTrickRank[i] = dlPBN.currentTrickRank[i];
   }
 
-  if (ConvertPlayFromPBN(&playPBN, &play) !=
-      RETURN_NO_FAULT)
+  if (ConvertPlayFromPBN(playPBN, play) != RETURN_NO_FAULT)
     return RETURN_PLAY_FAULT;
 
   return AnalysePlayBin(dl, play, solvedp, thrId);
@@ -387,7 +382,7 @@ int STDCALL AnalyseAllPlaysPBN(
 
   for (int k = 0; k < plpPBN->noOfBoards; k++)
   {
-    if (ConvertPlayFromPBN(&plpPBN->plays[k], &pl.plays[k]) !=
+    if (ConvertPlayFromPBN(plpPBN->plays[k], pl.plays[k]) !=
         RETURN_NO_FAULT)
       return RETURN_PLAY_FAULT;
   }

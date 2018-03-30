@@ -82,18 +82,18 @@ class TransTable
     {
       int orderSet;
       int winMask;
-      struct nodeCardsType * first;
-      struct winCardType * prevWin;
-      struct winCardType * nextWin;
-      struct winCardType * next;
+      nodeCardsType * first;
+      winCardType * prevWin;
+      winCardType * nextWin;
+      winCardType * next;
     };
 
     struct posSearchTypeSmall
     {
-      struct winCardType * posSearchPoint;
+      winCardType * posSearchPoint;
       long long suitLengths;
-      struct posSearchTypeSmall * left;
-      struct posSearchTypeSmall * right;
+      posSearchTypeSmall * left;
+      posSearchTypeSmall * right;
     };
 
     struct ttAggrType
@@ -183,9 +183,9 @@ class TransTable
     // Private data for the small memory version.
 
     long long aggrLenSets[14];
-    struct statsResetsType statsResets;
+    statsResetsType statsResets;
 
-    struct winCardType temp_win[5];
+    winCardType temp_win[5];
     int nodeSetSizeLimit;
     int winSetSizeLimit;
     unsigned long long maxmem;
@@ -198,15 +198,15 @@ class TransTable
     int ncount;
     bool clearTTflag;
     int windex;
-    struct ttAggrType * aggp;
+    ttAggrType * aggp;
 
-    struct posSearchTypeSmall * rootnp[14][DDS_HANDS];
-    struct winCardType ** pw;
-    struct nodeCardsType ** pn;
-    struct posSearchTypeSmall ** pl[14][DDS_HANDS];
-    struct nodeCardsType * nodeCards;
-    struct winCardType * winCards;
-    struct posSearchTypeSmall * posSearch[14][DDS_HANDS];
+    posSearchTypeSmall * rootnp[14][DDS_HANDS];
+    winCardType ** pw;
+    nodeCardsType ** pn;
+    posSearchTypeSmall ** pl[14][DDS_HANDS];
+    nodeCardsType * nodeCards;
+    winCardType * winCards;
+    posSearchTypeSmall * posSearch[14][DDS_HANDS];
     int nodeSetSize; /* Index with range 0 to nodeSetSizeLimit */
     int winSetSize;  /* Index with range 0 to winSetSizeLimit */
     int lenSetInd[14][DDS_HANDS];
@@ -277,11 +277,11 @@ class TransTable
       int lbound,
       char bestMoveSuit,
       char bestMoveRank,
-      struct posSearchTypeSmall * nodep,
+      posSearchTypeSmall * nodep,
       bool * result);
 
     struct posSearchTypeSmall * SearchLenAndInsert(
-      struct posSearchTypeSmall * rootp,
+      posSearchTypeSmall * rootp,
       long long key,
       bool insertNode,
       int trick,
@@ -293,12 +293,12 @@ class TransTable
       int lbound,
       char bestMoveSuit,
       char bestMoveRank,
-      struct nodeCardsType * nodep);
+      nodeCardsType * nodep);
 
     struct nodeCardsType * FindSOP(
       int orderSet[],
       int limit,
-      struct winCardType * nodeP,
+      winCardType * nodeP,
       int firstHand,
       bool * lowerFlag);
 

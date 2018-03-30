@@ -15,20 +15,20 @@
 
 
 int QuickTricks(
-  pos * posPoint,
+  pos& tpos,
   const int hand,
   const int depth,
   const int target,
   const int trump,
   bool& result,
-  ThreadData const * thrp);
+  const ThreadData& thrd);
 
 bool QuickTricksSecondHand(
-  pos * posPoint,
+  pos& tpos,
   const int hand,
   const int depth,
   const int target,
   const int trump,
-  ThreadData const * thrp);
+  const ThreadData& thrd);
 
 #endif
