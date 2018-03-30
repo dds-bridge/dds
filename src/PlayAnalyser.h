@@ -10,6 +10,12 @@
 #ifndef DDS_PLAYANALYSER_H
 #define DDS_PLAYANALYSER_H
 
+#include <vector>
+
+#include "dds.h"
+
+using namespace std;
+
 
 void PlaySingleCommon(
   const int thrId,
@@ -19,7 +25,7 @@ void PlayChunkCommon(
   const int thrId);
 
 void DetectPlayDuplicates(
-  boards const * bop,
+  const boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs);
 

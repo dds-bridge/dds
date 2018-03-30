@@ -26,7 +26,7 @@ void CalcChunkCommon(
   const int thrId);
 
 void DetectCalcDuplicates(
-  boards const * bop,
+  const boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs);
 

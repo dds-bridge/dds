@@ -241,14 +241,14 @@ int STDCALL SolveAllChunksBin(
 
 
 void DetectSolveDuplicates(
-  boards const * bop,
+  const boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
   uniques.clear();
-  crossrefs.resize(bop->noOfBoards);
+  crossrefs.resize(bds.noOfBoards);
 
-  const unsigned nu = static_cast<unsigned>(bop->noOfBoards);
+  const unsigned nu = static_cast<unsigned>(bds.noOfBoards);
   for (unsigned i = 0; i < nu; i++)
     crossrefs[i] = -1;
 
@@ -261,7 +261,7 @@ void DetectSolveDuplicates(
 
     for (unsigned index = i+1; index < nu; index++)
     {
-      if (SameBoard(bop, i, index))
+      if (SameBoard(&bds, i, index))
         crossrefs[index] = i;
     }
   }

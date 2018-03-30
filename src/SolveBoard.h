@@ -32,7 +32,7 @@ int SolveAllBoardsN(
   solvedBoards * solvedp);
 
 void DetectSolveDuplicates(
-  boards const * bop,
+  const boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs);
 

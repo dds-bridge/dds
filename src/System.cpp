@@ -461,7 +461,7 @@ int System::RunThreadsSTL()
 
   vector<int> uniques;
   vector<int> crossrefs;
-  (* CallbackDuplList[runCat])(bop, uniques, crossrefs);
+  (* CallbackDuplList[runCat])(* bop, uniques, crossrefs);
 
 // TODO Remove
 // int numGroups = scheduler.NumGroups();
@@ -496,7 +496,7 @@ int System::RunThreadsSTLIMPL()
 #ifdef DDS_THREADS_STLIMPL
   vector<int> uniques;
   vector<int> crossrefs;
-  (* CallbackDuplList[runCat])(bop, uniques, crossrefs);
+  (* CallbackDuplList[runCat])(* bop, uniques, crossrefs);
 
 // TODO Remove
 // int numGroups = scheduler.NumGroups();
@@ -568,7 +568,7 @@ int System::RunThreadsPPLIMPL()
 #ifdef DDS_THREADS_PPLIMPL
   vector<int> uniques;
   vector<int> crossrefs;
-  (* CallbackDuplList[runCat])(bop, uniques, crossrefs);
+  (* CallbackDuplList[runCat])(* bop, uniques, crossrefs);
 
   atomic<int> thrIdNext = 0;
   thread_local int thrId = -1;

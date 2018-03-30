@@ -7,12 +7,10 @@
    See LICENSE and README.
 */
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <vector>
+// #include <iostream>
+// #include <iomanip>
+// #include <fstream>
 
-#include "dds.h"
 #include "SolverIF.h"
 #include "System.h"
 #include "Memory.h"
@@ -55,7 +53,7 @@ int STDCALL AnalysePlayBin(
   if (! sysdep.ThreadOK(thrId))
     return RETURN_THREAD_INDEX;
 
-  struct ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
 
   moveType move;
   futureTricks fut;
@@ -368,22 +366,20 @@ int STDCALL AnalyseAllPlaysPBN(
 
   for (int k = 0; k < bopPBN->noOfBoards; k++)
   {
-    deal * dl;
-    dealPBN * dlp;
+    deal& dl = bd.deals[k];
+    dealPBN& dlp = bopPBN->deals[k];
 
-    dl = &(bd.deals[k]);
-    dlp = &(bopPBN->deals[k]);
-    if (ConvertFromPBN(dlp->remainCards,
-                       dl->remainCards) != RETURN_NO_FAULT)
+    if (ConvertFromPBN(dlp.remainCards,
+                       dl.remainCards) != RETURN_NO_FAULT)
       return RETURN_PBN_FAULT;
 
-    dl->trump = dlp->trump;
-    dl->first = dlp->first;
+    dl.trump = dlp.trump;
+    dl.first = dlp.first;
 
     for (int i = 0; i <= 2; i++)
     {
-      dl->currentTrickSuit[i] = dlp->currentTrickSuit[i];
-      dl->currentTrickRank[i] = dlp->currentTrickRank[i];
+      dl.currentTrickSuit[i] = dlp.currentTrickSuit[i];
+      dl.currentTrickRank[i] = dlp.currentTrickRank[i];
     }
   }
 
@@ -402,7 +398,7 @@ int STDCALL AnalyseAllPlaysPBN(
 
 
 void DetectPlayDuplicates(
-  boards const * bop,
+  const boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
@@ -411,9 +407,9 @@ void DetectPlayDuplicates(
   // as it is highly unlikely that the play went identically at
   // two tables.
 
-  uniques.resize(bop->noOfBoards);
-  crossrefs.resize(bop->noOfBoards);
-  for (unsigned i = 0; i < static_cast<unsigned>(bop->noOfBoards); i++)
+  uniques.resize(bds.noOfBoards);
+  crossrefs.resize(bds.noOfBoards);
+  for (unsigned i = 0; i < uniques.size(); i++)
   {
     uniques[i] = i;
     crossrefs[i] = -1;

@@ -348,12 +348,12 @@ int STDCALL CalcDDtablePBN(
 
 
 void DetectCalcDuplicates(
-  boards const * bop,
+  const boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
   // Could save a little bit of time with a dedicated checker that
   // only looks at the cards.
-  return DetectSolveDuplicates(bop, uniques, crossrefs);
+  return DetectSolveDuplicates(bds, uniques, crossrefs);
 }
 

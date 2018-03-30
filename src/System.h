@@ -23,7 +23,7 @@ using namespace std;
 
 typedef void (*fptrType)(const int thid);
 typedef void (*fduplType)(
-  boards const * bop, vector<int>& uniques, vector<int>& crossrefs);
+  const boards& bds, vector<int>& uniques, vector<int>& crossrefs);
 typedef void (*fsingleType)(const int thid, const int bno);
 typedef void (*fcopyType)(const vector<int>& crossrefs);
 
