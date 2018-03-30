@@ -8,7 +8,6 @@
 */
 
 
-#include "dds.h"
 #include "SolverIF.h"
 #include "SolveBoard.h"
 #include "System.h"
@@ -132,8 +131,8 @@ int CalcAllBoardsN(
   cparam.solvedp = solvedp;
   cparam.noOfBoards = bop->noOfBoards;
 
-  scheduler.RegisterRun(DDS_RUN_CALC, bop);
-  sysdep.RegisterRun(DDS_RUN_CALC, bop);
+  scheduler.RegisterRun(DDS_RUN_CALC, * bop);
+  sysdep.RegisterRun(DDS_RUN_CALC, * bop);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solvedBoard[k].cards = 0;

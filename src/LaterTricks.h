@@ -15,19 +15,19 @@
 
 
 bool LaterTricksMIN(
-  pos * posPoint,
+  pos& tpos,
   const int hand,
   const int depth,
   const int target,
   const int trump,
-  ThreadData const * thrp);
+  const ThreadData& thrd);
 
 bool LaterTricksMAX(
-  pos * posPoint,
+  pos& tpos,
   const int hand,
   const int depth,
   const int target,
   const int trump,
-  ThreadData const * thrp);
+  const ThreadData& thrd);
 
 #endif

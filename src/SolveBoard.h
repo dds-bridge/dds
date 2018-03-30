@@ -27,10 +27,6 @@ void CopySolveSingle(
 void SolveChunkCommon(
   const int thrId);
 
-int SolveAllBoardsN(
-  boards * bop,
-  solvedBoards * solvedp);
-
 void DetectSolveDuplicates(
   const boards& bds,
   vector<int>& uniques,

@@ -23,13 +23,16 @@ extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
+int SolveAllBoardsN(
+  boards& bds,
+  solvedBoards& solved);
+
 bool SameBoard(
-  boards const * bop,
+  const boards& bds,
   const unsigned index1,
   const unsigned index2);
 
 
-#include <iostream>
 void SolveSingleCommon(
   const int thrId,
   const int bno)
@@ -105,23 +108,23 @@ void SolveChunkCommon(
 
 
 int SolveAllBoardsN(
-  boards * bop,
-  solvedBoards * solvedp)
+  boards& bds,
+  solvedBoards& solved)
 {
   param.error = 0;
 
-  if (bop->noOfBoards > MAXNOOFBOARDS)
+  if (bds.noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  param.bop = bop;
-  param.solvedp = solvedp;
-  param.noOfBoards = bop->noOfBoards;
+  param.bop = &bds;
+  param.solvedp = &solved;
+  param.noOfBoards = bds.noOfBoards;
 
-  scheduler.RegisterRun(DDS_RUN_SOLVE, bop);
-  sysdep.RegisterRun(DDS_RUN_SOLVE, bop);
+  scheduler.RegisterRun(DDS_RUN_SOLVE, bds);
+  sysdep.RegisterRun(DDS_RUN_SOLVE, bds);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
-    solvedp->solvedBoard[k].cards = 0;
+    solved.solvedBoard[k].cards = 0;
 
   START_BLOCK_TIMER;
   int retRun = sysdep.RunThreads();
@@ -130,7 +133,7 @@ int SolveAllBoardsN(
   if (retRun != RETURN_NO_FAULT)
     return retRun;
 
-  solvedp->noOfBoards = param.noOfBoards;
+  solved.noOfBoards = param.noOfBoards;
 
 #ifdef DDS_SCHEDULER 
   scheduler.PrintTiming();
@@ -196,7 +199,7 @@ int STDCALL SolveAllBoards(
       return RETURN_PBN_FAULT;
   }
 
-  int res = SolveAllBoardsN(&bo, solvedp);
+  int res = SolveAllBoardsN(bo, * solvedp);
   return res;
 }
 
@@ -236,7 +239,7 @@ int STDCALL SolveAllChunksBin(
   if (chunkSize < 1)
     return RETURN_CHUNK_SIZE;
 
-  return SolveAllBoardsN(bop, solvedp);
+  return SolveAllBoardsN(* bop, * solvedp);
 }
 
 
@@ -261,7 +264,7 @@ void DetectSolveDuplicates(
 
     for (unsigned index = i+1; index < nu; index++)
     {
-      if (SameBoard(&bds, i, index))
+      if (SameBoard(bds, i, index))
         crossrefs[index] = i;
     }
   }
@@ -269,7 +272,7 @@ void DetectSolveDuplicates(
 
 
 bool SameBoard(
-  boards const * bop,
+  const boards& bds,
   const unsigned index1,
   const unsigned index2)
 {
@@ -277,30 +280,30 @@ bool SameBoard(
   {
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      if (bop->deals[index1].remainCards[h][s] !=
-          bop->deals[index2].remainCards[h][s])
+      if (bds.deals[index1].remainCards[h][s] !=
+          bds.deals[index2].remainCards[h][s])
         return false;
     }
   }
 
-  if (bop->mode[index1] != bop->mode[index2])
+  if (bds.mode[index1] != bds.mode[index2])
     return false;
-  if (bop->solutions[index1] != bop->solutions[index2])
+  if (bds.solutions[index1] != bds.solutions[index2])
     return false;
-  if (bop->target[index1] != bop->target[index2])
+  if (bds.target[index1] != bds.target[index2])
     return false;
-  if (bop->deals[index1].first != bop->deals[index2].first)
+  if (bds.deals[index1].first != bds.deals[index2].first)
     return false;
-  if (bop->deals[index1].trump != bop->deals[index2].trump)
+  if (bds.deals[index1].trump != bds.deals[index2].trump)
     return false;
 
   for (int k = 0; k < 3; k++)
   {
-    if (bop->deals[index1].currentTrickSuit[k] != 
-        bop->deals[index2].currentTrickSuit[k])
+    if (bds.deals[index1].currentTrickSuit[k] != 
+        bds.deals[index2].currentTrickSuit[k])
       return false;
-    if (bop->deals[index1].currentTrickRank[k] != 
-        bop->deals[index2].currentTrickRank[k])
+    if (bds.deals[index1].currentTrickRank[k] != 
+        bds.deals[index2].currentTrickRank[k])
       return false;
   }
   return true;

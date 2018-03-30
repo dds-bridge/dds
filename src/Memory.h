@@ -75,6 +75,11 @@ struct ThreadData
 
 #ifdef DDS_AB_STATS
   ABstats ABStats;
+  File fileABstats;
+#endif
+
+#ifdef DDS_MOVES
+  File fileMoves;
 #endif
 
 #ifdef DDS_TIMING
@@ -91,9 +96,6 @@ struct ThreadData
   File fileStored;
 #endif
 
-#ifdef DDS_AB_STATS
-  File fileABstats;
-#endif
 };
 
 

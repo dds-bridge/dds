@@ -253,13 +253,13 @@ int System::RegisterParams(
 
 int System::RegisterRun(
   const RunMode mode,
-  boards * const bopIn)
+  const boards& bdsIn)
 {
   if (mode >= DDS_RUN_SIZE)
     return RETURN_THREAD_MISSING; // Not quite right;
 
   runCat = mode;
-  bop = bopIn;
+  bop = &bdsIn;
 
   // TODO: The implicit thread models don't need the scheduler(?).
   // if (preferredSystem <= DDS_SYSTEM_THREAD_TBB)

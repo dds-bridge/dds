@@ -10,37 +10,33 @@
 #ifndef DDS_MOVES_H
 #define DDS_MOVES_H
 
+#include <iostream>
+#include <fstream>
 #include <string>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <string.h>
+
 #include "dds.h"
 #include "../include/dll.h"
 
 using namespace std;
 
 
-#define CMP_SWAP(i, j) if (a[i].weight < a[j].weight) \
-  { moveType tmp = a[i]; a[i] = a[j]; a[j] = tmp; }
-
-#define CMP_SWAP_NEW(i, j) if (mply[i].weight < mply[j].weight) \
-  { tmp = mply[i]; mply[i] = mply[j]; mply[j] = tmp; }
-
-#define MG_NT0 0
-#define MG_TRUMP0 1
-#define MG_NT_VOID1 2
-#define MG_TRUMP_VOID1 3
-#define MG_NT_NOTVOID1 4
-#define MG_TRUMP_NOTVOID1 5
-#define MG_NT_VOID2 6
-#define MG_TRUMP_VOID2 7
-#define MG_NT_NOTVOID2 8
-#define MG_TRUMP_NOTVOID2 9
-#define MG_NT_VOID3 10
-#define MG_TRUMP_VOID3 11
-#define MG_COMB_NOTVOID3 12
-#define MG_NUM_FUNCTIONS 13
+enum MGtype
+{
+  MG_NT0 = 0,
+  MG_TRUMP0 = 1,
+  MG_NT_VOID1 = 2,
+  MG_TRUMP_VOID1 = 3,
+  MG_NT_NOTVOID1 = 4,
+  MG_TRUMP_NOTVOID1 = 5,
+  MG_NT_VOID2 = 6,
+  MG_TRUMP_VOID2 = 7,
+  MG_NT_NOTVOID2 = 8,
+  MG_TRUMP_NOTVOID2 = 9,
+  MG_NT_VOID3 = 10,
+  MG_TRUMP_VOID3 = 11,
+  MG_COMB_NOTVOID3 = 12,
+  MG_SIZE = 13
+};
 
 
 struct trickDataType
@@ -88,9 +84,9 @@ class Moves
 
     moveType * mply;
 
-    int lastCall[13][DDS_HANDS];
+    MGtype lastCall[13][DDS_HANDS];
 
-    string funcName[MG_NUM_FUNCTIONS];
+    string funcName[MG_SIZE];
 
     struct moveStatType
     {
@@ -103,7 +99,7 @@ class Moves
     struct moveStatsType
     {
       int nfuncs;
-      moveStatType list[MG_NUM_FUNCTIONS];
+      moveStatType list[MG_SIZE];
     };
 
     moveStatType trickTable[13][DDS_HANDS];
@@ -117,8 +113,6 @@ class Moves
     moveStatsType trickFuncTable;
 
     moveStatsType trickFuncSuitTable;
-
-    string fname;
 
 
     void WeightAllocTrump0(
@@ -174,28 +168,18 @@ class Moves
       const int hit,
       const int len) const;
 
-    char * AverageString(
-      const moveStatType * statp,
-      char str[]) const;
+    string AverageString(const moveStatType& statp) const;
 
-    char * FullAverageString(
-      const moveStatType * statp,
-      char str[]) const;
+    string FullAverageString(const moveStatType& statp) const;
 
-    void PrintTrickTable(
-      FILE * fp,
-      const moveStatType tablep[][DDS_HANDS]) const ;
+    string PrintTrickTable(const moveStatType tablep[][DDS_HANDS]) const;
 
-    void PrintFunctionTable(
-      FILE * fp,
-      moveStatsType const * tablep) const;
+    string PrintFunctionTable(const moveStatsType& tablep) const;
 
   public:
     Moves();
 
     ~Moves();
-
-    void SetFile(const string& fname);
 
     void Init(
       const int tricks,
@@ -234,7 +218,7 @@ class Moves
     moveType * MakeNext(
       const int trick,
       const int relHand,
-      const unsigned short int winRanks[DDS_SUITS]);
+      const unsigned short winRanks[DDS_SUITS]);
 
     moveType * MakeNextSimple(
       const int trick,
@@ -274,12 +258,11 @@ class Moves
 
     string TrickToText(const int trick) const;
 
-    void PrintTrickStats() const;
+    void PrintTrickStats(ofstream& fout) const;
 
-    void PrintTrickDetails() const;
+    void PrintTrickDetails(ofstream& fout) const;
 
-    void PrintFunctionStats() const;
-
+    void PrintFunctionStats(ofstream& fout) const;
 };
 
 #endif

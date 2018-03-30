@@ -260,7 +260,7 @@ bool ABsearch0(
     }
 
     TIMER_START(TIMER_NO_LT, depth);
-    res = LaterTricksMIN(posPoint, hand, depth, target, trump, thrp);
+    res = LaterTricksMIN(* posPoint, hand, depth, target, trump, * thrp);
     TIMER_END(TIMER_NO_LT, depth);
 
     if (! res)
@@ -279,7 +279,7 @@ bool ABsearch0(
     }
 
     TIMER_START(TIMER_NO_LT, depth);
-    res = LaterTricksMAX(posPoint, hand, depth, target, trump, thrp);
+    res = LaterTricksMAX(* posPoint, hand, depth, target, trump, * thrp);
     TIMER_END(TIMER_NO_LT, depth);
 
     if (res)

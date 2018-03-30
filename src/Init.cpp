@@ -378,7 +378,7 @@ void InitDebugFiles()
 #endif
 
 #ifdef DDS_MOVES
-    thrp->moves.SetFile(DDS_MOVES_PREFIX + send);
+    thrp->fileMoves.SetName(DDS_MOVES_PREFIX + send);
 #endif
   }
 
@@ -401,6 +401,10 @@ void CloseDebugFiles()
 
 #ifdef DDS_TOP_LEVEL
     thrp->fileTopLevel.Close();
+#endif
+
+#ifdef DDS_MOVES
+    thrp->fileMoves.Close();
 #endif
 
 #ifdef DDS_AB_STATS

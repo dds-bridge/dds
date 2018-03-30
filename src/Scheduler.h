@@ -110,16 +110,15 @@ class Scheduler
 
     void SortHands(const enum RunMode mode);
 
-    int Strength(deal const * dl) const;
-    int Fanout(deal const * dl) const;
+    int Strength(const deal& dl) const;
+    int Fanout(const deal& dl) const;
 
     void Reset();
 
     vector<Timer> timersThread;
     Timer timerBlock;
 
-    void MakeGroups(
-      boards const * bop);
+    void MakeGroups(const boards& bds);
 
     void FinetuneGroups();
 
@@ -155,7 +154,7 @@ class Scheduler
 #endif
 
     int PredictedTime(
-      deal * dl,
+      deal& dl,
       int number) const;
 
 
@@ -170,12 +169,12 @@ class Scheduler
 
     void RegisterRun(
       const enum RunMode mode,
-      boards const * bop,
-      playTracesBin const * plp);
+      const boards& bds,
+      const playTracesBin& pl);
 
     void RegisterRun(
       const enum RunMode mode,
-      boards const * bop);
+      const boards& bds);
 
     schedType GetNumber(const int thrId);
 

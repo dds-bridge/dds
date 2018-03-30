@@ -132,28 +132,28 @@ void Scheduler::RegisterThreads(
 
 void Scheduler::RegisterRun(
   const enum RunMode mode,
-  boards const * bop,
-  playTracesBin const * plp)
+  const boards& bds,
+  const playTracesBin& pl)
 {
-  for (int b = 0; b < bop->noOfBoards; b++)
-    hands[b].depth = plp->plays[b].number;
+  for (int b = 0; b < bds.noOfBoards; b++)
+    hands[b].depth = pl.plays[b].number;
   
-  Scheduler::RegisterRun(mode, bop);
+  Scheduler::RegisterRun(mode, bds);
 }
 
 
 void Scheduler::RegisterRun(
   const enum RunMode mode,
-  boards const * bop)
+  const boards& bds)
 {
   Scheduler::Reset();
 
-  numHands = bop->noOfBoards;
+  numHands = bds.noOfBoards;
 
   // First split the hands according to strain and hash key.
   // This will lead to a few random collisions as well.
 
-  Scheduler::MakeGroups(bop);
+  Scheduler::MakeGroups(bds);
 
   // Then check whether groups with at least two elements are
   // homogeneous or whether they need to be split.
@@ -177,15 +177,14 @@ void Scheduler::SortHands(const enum RunMode mode)
 }
 
 
-void Scheduler::MakeGroups(
-  boards const * bop)
+void Scheduler::MakeGroups(const boards& bds)
 {
   deal const * dl;
   listType * lp;
 
   for (int b = 0; b < numHands; b++)
   {
-    dl = &bop->deals[b];
+    dl = &bds.deals[b];
 
     int strain = dl->trump;
 
@@ -210,8 +209,8 @@ void Scheduler::MakeGroups(
     hands[b].NTflag = (strain == 4 ? 1 : 0);
     hands[b].first = dl->first;
     hands[b].strain = strain;
-    hands[b].fanout = Scheduler::Fanout(dl);
-    // hands[b].strength = Scheduler::Strength(dl);
+    hands[b].fanout = Scheduler::Fanout(* dl);
+    // hands[b].strength = Scheduler::Strength(* dl);
 
     lp = &list[strain][key];
 
@@ -662,16 +661,15 @@ void Scheduler::SortTrace()
 }
 
 
-int Scheduler::Strength(
-  deal const * dl) const
+int Scheduler::Strength(const deal& dl) const
 {
   // If the strength in all suits is evenly split, then the
   // "strength" returned is close to 0. Maximum is 49.
 
-  const unsigned sp = (dl->remainCards[0][0] | dl->remainCards[2][0]) >> 2;
-  const unsigned he = (dl->remainCards[0][1] | dl->remainCards[2][1]) >> 2;
-  const unsigned di = (dl->remainCards[0][2] | dl->remainCards[2][2]) >> 2;
-  const unsigned cl = (dl->remainCards[0][3] | dl->remainCards[2][3]) >> 2;
+  const unsigned sp = (dl.remainCards[0][0] | dl.remainCards[2][0]) >> 2;
+  const unsigned he = (dl.remainCards[0][1] | dl.remainCards[2][1]) >> 2;
+  const unsigned di = (dl.remainCards[0][2] | dl.remainCards[2][2]) >> 2;
+  const unsigned cl = (dl.remainCards[0][3] | dl.remainCards[2][3]) >> 2;
 
   const int hsp = highCards[sp];
   const int hhe = highCards[he];
@@ -689,8 +687,7 @@ int Scheduler::Strength(
 }
 
 
-int Scheduler::Fanout(
-  deal const * dl) const
+int Scheduler::Fanout(const deal& dl) const
 {
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups. In a given suit the
@@ -706,7 +703,7 @@ int Scheduler::Fanout(
     numVoids = 0;
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      c = static_cast<int>(dl->remainCards[h][s] >> 2);
+      c = static_cast<int>(dl.remainCards[h][s] >> 2);
       fanoutSuit += groupData[c].lastGroup + 1;
       if (c == 0)
         numVoids++;
@@ -946,10 +943,10 @@ void Scheduler::PrintTiming() const
 
 
 int Scheduler::PredictedTime(
-  deal * dl,
+  deal& dl,
   int number) const
 {
-  int trump = dl->trump;
+  int trump = dl.trump;
   int NT = (trump == 4 ? 100 : 0);
 
   int dev1 = Scheduler::Strength(dl);

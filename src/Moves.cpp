@@ -8,11 +8,9 @@
 */
 
 
-#include <iostream>
 #include <iomanip>
 #include <sstream>
 
-#include "dds.h"
 #include "Moves.h"
 #include "debug.h"
 
@@ -23,10 +21,10 @@
 #endif
 
 
-const int RegisterList[16] =
+const MGtype RegisterList[16] =
 {
   MG_NT0, MG_TRUMP0,
-  -1, -1,
+  MG_SIZE, MG_SIZE, // Unused
 
   MG_NT_NOTVOID1, MG_TRUMP_NOTVOID1,
   MG_NT_VOID1, MG_TRUMP_VOID1,
@@ -55,20 +53,18 @@ Moves::Moves()
   funcName[MG_TRUMP_VOID3] = "Trump_Void3";
   funcName[MG_COMB_NOTVOID3] = "Comb_Notvoid3";
 
-  fname = "";
-
   for (int t = 0; t < 13; t++)
   {
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      lastCall[t][h] = -1;
+      lastCall[t][h] = MG_SIZE;
 
       trickTable[t][h].count = 0;
       trickSuitTable[t][h].count = 0;
 
       trickDetailTable [t][h].nfuncs = 0;
       trickDetailSuitTable[t][h].nfuncs = 0;
-      for (int i = 0; i < MG_NUM_FUNCTIONS; i++)
+      for (int i = 0; i < MG_SIZE; i++)
       {
         trickDetailTable [t][h].list[i].count = 0;
         trickDetailSuitTable[t][h].list[i].count = 0;
@@ -78,7 +74,7 @@ Moves::Moves()
 
   trickFuncTable.nfuncs = 0;
   trickFuncSuitTable.nfuncs = 0;
-  for (int i = 0; i < MG_NUM_FUNCTIONS; i++)
+  for (int i = 0; i < MG_SIZE; i++)
   {
     trickFuncTable .list[i].count = 0;
     trickFuncSuitTable.list[i].count = 0;
@@ -98,13 +94,6 @@ Moves::Moves()
   WeightList[13] = &Moves::WeightAllocCombinedNotvoid3;
   WeightList[14] = &Moves::WeightAllocNTVoid3;
   WeightList[15] = &Moves::WeightAllocTrumpVoid3;
-}
-
-
-void Moves::SetFile(const string& ourFname)
-{
-  fname = ourFname;
-  remove(fname.c_str());  // May fail -- that's OK
 }
 
 
@@ -2016,6 +2005,9 @@ void Moves::Sort(
 }
 
 
+#define CMP_SWAP(i, j) if (mply[i].weight < mply[j].weight) \
+  { tmp = mply[i]; mply[i] = mply[j]; mply[j] = tmp; }
+
 void Moves::MergeSort()
 {
   moveType tmp;
@@ -2023,230 +2015,230 @@ void Moves::MergeSort()
   switch (numMoves)
   {
     case 12:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(4, 5);
-      CMP_SWAP_NEW(6, 7);
-      CMP_SWAP_NEW(8, 9);
-      CMP_SWAP_NEW(10, 11);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(10, 11);
 
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(5, 7);
-      CMP_SWAP_NEW(9, 11);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(9, 11);
 
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(4, 6);
-      CMP_SWAP_NEW(8, 10);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(8, 10);
 
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(5, 6);
-      CMP_SWAP_NEW(9, 10);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(9, 10);
 
-      CMP_SWAP_NEW(1, 5);
-      CMP_SWAP_NEW(6, 10);
-      CMP_SWAP_NEW(5, 9);
-      CMP_SWAP_NEW(2, 6);
-      CMP_SWAP_NEW(1, 5);
-      CMP_SWAP_NEW(6, 10);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(7, 11);
-      CMP_SWAP_NEW(3, 7);
-      CMP_SWAP_NEW(4, 8);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(7, 11);
-      CMP_SWAP_NEW(1, 4);
-      CMP_SWAP_NEW(7, 10);
-      CMP_SWAP_NEW(3, 8);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(8, 9);
-      CMP_SWAP_NEW(2, 4);
-      CMP_SWAP_NEW(7, 9);
-      CMP_SWAP_NEW(3, 5);
-      CMP_SWAP_NEW(6, 8);
-      CMP_SWAP_NEW(3, 4);
-      CMP_SWAP_NEW(5, 6);
-      CMP_SWAP_NEW(7, 8);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(5, 9);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(7, 11);
+      CMP_SWAP(3, 7);
+      CMP_SWAP(4, 8);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(7, 11);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(7, 10);
+      CMP_SWAP(3, 8);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(7, 9);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(6, 8);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(7, 8);
       break;
     case 11:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(4, 5);
-      CMP_SWAP_NEW(6, 7);
-      CMP_SWAP_NEW(8, 9);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(8, 9);
 
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(5, 7);
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(4, 6);
-      CMP_SWAP_NEW(8, 10);
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(5, 6);
-      CMP_SWAP_NEW(9, 10);
-      CMP_SWAP_NEW(1, 5);
-      CMP_SWAP_NEW(6, 10);
-      CMP_SWAP_NEW(5, 9);
-      CMP_SWAP_NEW(2, 6);
-      CMP_SWAP_NEW(1, 5);
-      CMP_SWAP_NEW(6, 10);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(3, 7);
-      CMP_SWAP_NEW(4, 8);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(1, 4);
-      CMP_SWAP_NEW(7, 10);
-      CMP_SWAP_NEW(3, 8);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(8, 9);
-      CMP_SWAP_NEW(2, 4);
-      CMP_SWAP_NEW(7, 9);
-      CMP_SWAP_NEW(3, 5);
-      CMP_SWAP_NEW(6, 8);
-      CMP_SWAP_NEW(3, 4);
-      CMP_SWAP_NEW(5, 6);
-      CMP_SWAP_NEW(7, 8);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(8, 10);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(9, 10);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(5, 9);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(3, 7);
+      CMP_SWAP(4, 8);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(7, 10);
+      CMP_SWAP(3, 8);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(7, 9);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(6, 8);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(7, 8);
       break;
     case 10:
-      CMP_SWAP_NEW(1, 8);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(5, 9);
-      CMP_SWAP_NEW(2, 6);
-      CMP_SWAP_NEW(3, 7);
-      CMP_SWAP_NEW(0, 3);
-      CMP_SWAP_NEW(6, 9);
-      CMP_SWAP_NEW(2, 5);
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(3, 6);
-      CMP_SWAP_NEW(8, 9);
-      CMP_SWAP_NEW(4, 7);
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(4, 8);
-      CMP_SWAP_NEW(1, 5);
-      CMP_SWAP_NEW(7, 9);
+      CMP_SWAP(1, 8);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(5, 9);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(3, 7);
+      CMP_SWAP(0, 3);
+      CMP_SWAP(6, 9);
+      CMP_SWAP(2, 5);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(3, 6);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(4, 7);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(4, 8);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(7, 9);
 
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(3, 4);
-      CMP_SWAP_NEW(5, 6);
-      CMP_SWAP_NEW(7, 8);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(7, 8);
 
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(6, 8);
-      CMP_SWAP_NEW(2, 4);
-      CMP_SWAP_NEW(5, 7);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(6, 7);
-      CMP_SWAP_NEW(3, 5);
-      CMP_SWAP_NEW(4, 6);
-      CMP_SWAP_NEW(4, 5);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(6, 8);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(4, 5);
       break;
     case 9:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(3, 4);
-      CMP_SWAP_NEW(6, 7);
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(4, 5);
-      CMP_SWAP_NEW(7, 8);
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(3, 4);
-      CMP_SWAP_NEW(6, 7);
-      CMP_SWAP_NEW(0, 3);
-      CMP_SWAP_NEW(3, 6);
-      CMP_SWAP_NEW(0, 3);
-      CMP_SWAP_NEW(1, 4);
-      CMP_SWAP_NEW(4, 7);
-      CMP_SWAP_NEW(1, 4);
-      CMP_SWAP_NEW(2, 5);
-      CMP_SWAP_NEW(5, 8);
-      CMP_SWAP_NEW(2, 5);
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(5, 7);
-      CMP_SWAP_NEW(2, 6);
-      CMP_SWAP_NEW(4, 6);
-      CMP_SWAP_NEW(2, 4);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(7, 8);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(0, 3);
+      CMP_SWAP(3, 6);
+      CMP_SWAP(0, 3);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(4, 7);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(2, 5);
+      CMP_SWAP(5, 8);
+      CMP_SWAP(2, 5);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(5, 6);
       break;
     case 8:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(4, 5);
-      CMP_SWAP_NEW(6, 7);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
 
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(4, 6);
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(5, 7);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(5, 7);
 
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(5, 6);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(1, 5);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(1, 5);
 
-      CMP_SWAP_NEW(2, 6);
-      CMP_SWAP_NEW(3, 7);
-      CMP_SWAP_NEW(2, 4);
-      CMP_SWAP_NEW(3, 5);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(3, 7);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(3, 5);
 
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(3, 4);
-      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
       break;
     case 7:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(4, 5);
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(4, 6);
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(5, 6);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(1, 5);
-      CMP_SWAP_NEW(2, 6);
-      CMP_SWAP_NEW(2, 4);
-      CMP_SWAP_NEW(3, 5);
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(3, 4);
-      CMP_SWAP_NEW(5, 6);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
       break;
     case 6:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(4, 5);
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(1, 5);
-      CMP_SWAP_NEW(2, 4);
-      CMP_SWAP_NEW(3, 5);
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(3, 4);
       break;
     case 5:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(0, 4);
-      CMP_SWAP_NEW(2, 4);
-      CMP_SWAP_NEW(1, 2);
-      CMP_SWAP_NEW(3, 4);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(3, 4);
       break;
     case 4:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(2, 3);
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(1, 3);
-      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(1, 2);
       break;
     case 3:
-      CMP_SWAP_NEW(0, 1);
-      CMP_SWAP_NEW(0, 2);
-      CMP_SWAP_NEW(1, 2);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(1, 2);
       break;
     case 2:
-      CMP_SWAP_NEW(0, 1);
+      CMP_SWAP(0, 1);
       break;
     default:
       for (int i = 1; i < numMoves; i++)
@@ -2343,7 +2335,7 @@ void Moves::UpdateStatsEntry(
   }
   else
   {
-    if (statp->nfuncs >= MG_NUM_FUNCTIONS)
+    if (statp->nfuncs >= MG_SIZE)
     {
       printf("Shouldn't happen, %d\n", statp->nfuncs);
       for (int i = 0; i < statp->nfuncs; i++)
@@ -2453,163 +2445,154 @@ void Moves::RegisterHit(
 }
 
 
-char * Moves::AverageString(
-  moveStatType const * statp,
-  char str[]) const
+string Moves::AverageString(const moveStatType& stat) const
 {
-  if (statp->count == 0)
-    sprintf(str, "%5s %4s", "--", "--");
-  else
-    sprintf(str, "%5.2f %4.1f",
-            statp->sumHits / static_cast<double>(statp->count),
-            100. * statp->sumHits / static_cast<double>(statp->sumLengths));
-
-  return str;
-}
-
-
-char * Moves::FullAverageString(
-  moveStatType const * statp,
-  char str[]) const
-{
-  if (statp->count == 0)
-    sprintf(str, "%5s %5s %4s %8s %8s",
-            "--", "--", "--", "--", "--");
+  stringstream ss;
+  if (stat.count == 0)
+    ss << setw(5) << right << "--" << setw(5) << "--";
   else
   {
-    double avg = statp->sumHits / static_cast<double>(statp->count);
-
-    sprintf(str, "%5.3f %5.2f %4.1f %8d %8.0f",
-            avg,
-            statp->sumLengths / static_cast<double>(statp->count),
-            100. * statp->sumHits / static_cast<double>(statp->sumLengths),
-            statp->count,
-            (avg * avg * avg - 1) * statp->count);
+    ss << setw(5) << setprecision(2) << fixed <<
+      stat.sumHits / static_cast<double>(stat.count) <<
+      setw(5) << setprecision(1) << fixed <<
+      100. * stat.sumHits / static_cast<double>(stat.sumLengths);
   }
 
-  return str;
+  return ss.str();
 }
 
 
-void Moves::PrintTrickTable(
-  FILE * fp,
+string Moves::FullAverageString(const moveStatType& stat) const
+{
+  stringstream ss;
+  if (stat.count == 0)
+  {
+    ss << setw(6) << right << "--" <<
+      setw(6) << "--" <<
+      setw(5) << "--" <<
+      setw(9) << "--" <<
+      setw(5) << "--";
+  }
+  else
+  {
+    double avg = stat.sumHits / static_cast<double>(stat.count);
+
+    ss << setw(5) << setprecision(3) << fixed << avg <<
+      setw(6) << setprecision(2) << fixed <<
+        stat.sumLengths / static_cast<double>(stat.count) <<
+      setw(5) << setprecision(1) << fixed <<
+        100. * stat.sumHits / static_cast<double>(stat.sumLengths) <<
+      setw(9) << stat.count << setprecision(0) << fixed <<
+        (avg * avg * avg - 1) * stat.count;
+  }
+
+  return ss.str();
+}
+
+
+string Moves::PrintTrickTable(
   const moveStatType tablep[][DDS_HANDS]) const
 {
-  fprintf(fp, "%5s %11s %11s %11s %11s\n",
-          "Trick",
-          "Hand 0",
-          "Hand 1",
-          "Hand 2",
-          "Hand 3");
+  stringstream ss;
 
-  fprintf(fp, "%5s %5s %4s %5s %4s %5s %4s %5s %4s\n",
-          "",
-          "Avg", "%",
-          "Avg", "%",
-          "Avg", "%",
-          "Avg", "%");
+  ss << setw(5) << "Trick" <<
+    setw(12) << "Hand 0" <<
+    setw(12) << "Hand 1" <<
+    setw(12) << "Hand 2" <<
+    setw(12) << "Hand 3" << "\n";
 
-  char str[DDS_HANDS][16];
+  ss << setw(6) << "" <<
+    setw(6) << "Avg" << setw(5) << "%" <<
+    setw(6) << "Avg" << setw(5) << "%" <<
+    setw(6) << "Avg" << setw(5) << "%" <<
+    setw(6) << "Avg" << setw(5) << "%" << "\n";
+
   for (int t = 12; t >= 0; t--)
   {
-    fprintf(fp, "%5d %11s %11s %11s %11s\n",
-            t,
-            Moves::AverageString(&tablep[t][0], str[0]),
-            Moves::AverageString(&tablep[t][1], str[1]),
-            Moves::AverageString(&tablep[t][2], str[2]),
-            Moves::AverageString(&tablep[t][3], str[3]));
+    ss << setw(5) << right << t <<
+      setw(12) << Moves::AverageString(tablep[t][0]) <<
+      setw(12) << Moves::AverageString(tablep[t][1]) <<
+      setw(12) << Moves::AverageString(tablep[t][2]) <<
+      setw(12) << Moves::AverageString(tablep[t][3]) << "\n";
   }
+  return ss.str();
 }
 
 
-void Moves::PrintTrickStats() const
+string Moves::PrintFunctionTable(const moveStatsType& stat) const
 {
-  FILE * fp;
-  fp = fopen(fname.c_str(), "a");
-  fprintf(fp, "Overall statistics\n\n");
-  Moves::PrintTrickTable(fp, trickTable);
+  if (stat.nfuncs == 0)
+    return "";
 
-  fprintf(fp, "\n\nStatistics for winning suit\n\n");
-  Moves::PrintTrickTable(fp, trickSuitTable);
-  fprintf(fp, "\n\n");
-  fclose(fp);
-}
+  stringstream ss;
+  ss << setw(15) << left << "Function" <<
+    setw(6) << "Avg" <<
+    setw(6) << "Len" <<
+    setw(5) << "%" <<
+    setw(9) << "Count" <<
+    setw(9) << "Imp" << "\n";
 
-
-void Moves::PrintFunctionTable(
-  FILE * fp,
-  moveStatsType const * statp) const
-{
-  char str[2][40];
-
-  if (statp->nfuncs == 0)
-    return;
-
-  fprintf(fp, "%-15s %5s %5s %4s %8s %8s\n",
-          "Function", "Avg", "Len", "%", "Count", "Imp");
-
-  for (int fr = 0; fr < MG_NUM_FUNCTIONS; fr++)
+  for (int fr = 0; fr < MG_SIZE; fr++)
   {
-    for (int f = 0; f < statp->nfuncs; f++)
+    for (int f = 0; f < stat.nfuncs; f++)
     {
-      if (statp->list[f].findex != fr)
+      if (stat.list[f].findex != fr)
         continue;
 
-      sprintf(str[0], "%-15s", funcName[fr].c_str());
-
-      fprintf(fp, "%s %34s\n",
-              str[0],
-              Moves::FullAverageString(&statp->list[f], str[1]));
+      ss << setw(15) << left << funcName[fr] <<
+        Moves::FullAverageString(stat.list[f]) << "\n";
     }
   }
+  return ss.str();
 }
 
-void Moves::PrintTrickDetails() const
+
+void Moves::PrintTrickStats(ofstream& fout) const
 {
-  FILE * fp;
-  fp = fopen(fname.c_str(), "a");
-  fprintf(fp, "Trick detail statistics\n\n");
+  fout << "Overall statistics\n\n";
+  fout << Moves::PrintTrickTable(trickTable);
+
+  fout << "\n\nStatistics for winning suit\n\n";
+  fout << Moves::PrintTrickTable(trickSuitTable) << "\n\n";
+}
+
+
+void Moves::PrintTrickDetails(ofstream& fout) const
+{
+  fout << "Trick detail statistics\n\n";
 
   for (int t = 12; t >= 0; t--)
   {
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      fprintf(fp, "Trick %d, relative hand %d\n", t, h);
-      Moves::PrintFunctionTable(fp, &trickDetailTable[t][h]);
-      fprintf(fp, "\n");
+      fout << "Trick " << t << ", relative hand " << h << "\n";
+      fout << Moves::PrintFunctionTable(trickDetailTable[t][h]) << "\n";
     }
   }
 
-  fprintf(fp, "Suit detail statistics\n\n");
+  fout << "Suit detail statistics\n\n";
 
   for (int t = 12; t >= 0; t--)
   {
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      fprintf(fp, "Trick %d, relative hand %d\n", t, h);
-      Moves::PrintFunctionTable(fp, &trickDetailSuitTable[t][h]);
-      fprintf(fp, "\n");
+      fout << "Trick " << t << ", relative hand " << h << "\n";
+      fout << Moves::PrintFunctionTable(trickDetailSuitTable[t][h]) << 
+        "\n";
     }
   }
 
-  fprintf(fp, "\n\n");
-  fclose(fp);
+  fout << "\n\n";
 }
 
 
-void Moves::PrintFunctionStats() const
+void Moves::PrintFunctionStats(ofstream& fout) const
 {
-  FILE * fp;
-  fp = fopen(fname.c_str(), "a");
+  fout << "Function statistics\n\n";
+  fout << Moves::PrintFunctionTable(trickFuncTable);
 
-  fprintf(fp, "Function statistics\n\n");
-  Moves::PrintFunctionTable(fp, &trickFuncTable);
-
-  fprintf(fp, "\n\nFunction statistics for winning suit\n\n");
-  Moves::PrintFunctionTable(fp, &trickFuncSuitTable);
-  fprintf(fp, "\n\n");
-
-  fclose(fp);
+  fout << "\n\nFunction statistics for winning suit\n\n";
+  fout << Moves::PrintFunctionTable(trickFuncSuitTable);
+  fout << "\n\n";
 }
-
 

@@ -53,7 +53,7 @@ class System
 
     fptrType fptr;
 
-    boards * bop;
+    boards const * bop;
 
     int RunThreadsBasic();
     int RunThreadsBoost();
@@ -91,7 +91,7 @@ class System
 
     int RegisterRun(
       const RunMode r,
-      boards * const bop);
+      const boards& bop);
 
     bool ThreadOK(const int thrId) const;
 
