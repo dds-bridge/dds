@@ -147,7 +147,7 @@ ABexit:
 
   AB_COUNT(AB_MOVE_LOOP, value, depth);
 #ifdef DDS_AB_STATS
-  thrp->ABStats.PrintStats();
+  thrp->ABStats.PrintStats(thrp->fileABstats.GetStream());
 #endif
 
   return value;

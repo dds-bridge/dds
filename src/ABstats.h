@@ -31,16 +31,18 @@ using namespace std;
 #endif
 
 
-#define AB_TARGET_REACHED 0
-#define AB_DEPTH_ZERO 1
-#define AB_QUICKTRICKS 2
-#define AB_QUICKTRICKS_2ND 3
-#define AB_LATERTRICKS 4
-#define AB_MAIN_LOOKUP 5
-#define AB_SIDE_LOOKUP 6
-#define AB_MOVE_LOOP 7
-
-#define DDS_AB_POS 8
+enum ABCountType
+{
+  AB_TARGET_REACHED = 0,
+  AB_DEPTH_ZERO = 1,
+  AB_QUICKTRICKS = 2,
+  AB_QUICKTRICKS_2ND = 3,
+  AB_LATERTRICKS = 4,
+  AB_MAIN_LOOKUP = 5,
+  AB_SIDE_LOOKUP = 6,
+  AB_MOVE_LOOP = 7,
+  AB_SIZE = 8
+};
 
 #define DDS_MAXDEPTH 49
 
@@ -59,8 +61,7 @@ class ABstats
 {
   private:
 
-    string fname;
-    string name[DDS_AB_POS];
+    string name[AB_SIZE];
 
     // A node arises when a new move is generated.
     // Not every move leads to an AB termination.
@@ -69,7 +70,9 @@ class ABstats
 
     // AB terminations are tracked by side and position.
     ABtracker ABsides[2];
-    ABtracker ABplaces[DDS_AB_POS];
+    ABtracker ABplaces[AB_SIZE];
+
+    void SetNames();
 
     void PrintHeaderPosition(ofstream& fout) const; 
 
@@ -109,14 +112,8 @@ class ABstats
 
     void ResetCum();
 
-    void SetFile(const string& fnameIn);
-
-    void SetName(
-      const int no, 
-      const string& nameIn);
-
     void IncrPos(
-      const int no, 
+      const ABCountType no, 
       const bool side, 
       const int depth);
 
@@ -124,7 +121,7 @@ class ABstats
 
     int GetNodes() const;
 
-    void PrintStats();
+    void PrintStats(ofstream& fout);
 };
 
 #endif

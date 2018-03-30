@@ -35,15 +35,15 @@ void TimerGroup::Reset()
 }
 
 
-void TimerGroup::SetNames(const string& s)
+void TimerGroup::SetNames(const string& baseName)
 {
   string st;
-  if (s == "AB")
+  if (baseName == "AB")
   {
     // Special format emphasizing the card number within the trick.
     for (unsigned i = 0; i < timers.size(); i++)
     {
-      st = s + to_string(i % 4) + " " + to_string(i);
+      st = baseName + to_string(i % 4) + " " + to_string(i);
       timers[i].SetName(st);
     }
   }
@@ -51,11 +51,11 @@ void TimerGroup::SetNames(const string& s)
   {
     for (unsigned i = 0; i < timers.size(); i++)
     {
-      st = s + to_string(i);
+      st = baseName + to_string(i);
       timers[i].SetName(st);
     }
   }
-  bname = s;
+  bname = baseName;
 }
 
 

@@ -33,7 +33,7 @@ class TimerGroup
 
     void Reset();
 
-    void SetNames(const string& s);
+    void SetNames(const string& baseName);
 
     void Start(const unsigned no);
 

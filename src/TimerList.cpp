@@ -31,8 +31,6 @@ TimerList::~TimerList()
 
 void TimerList::Reset()
 {
-  fname = "";
-
   timerGroups.resize(TIMER_NO_SIZE);
 
   timerGroups[TIMER_NO_AB].SetNames("AB");
@@ -45,12 +43,6 @@ void TimerList::Reset()
   timerGroups[TIMER_NO_MOVEGEN].SetNames("MoveGen");
   timerGroups[TIMER_NO_LOOKUP].SetNames("Lookup");
   timerGroups[TIMER_NO_BUILD].SetNames("Build");
-}
-
-
-void TimerList::SetFile(const string& fnameIn)
-{
-  fname = fnameIn;
 }
 
 

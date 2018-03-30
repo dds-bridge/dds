@@ -82,8 +82,6 @@ class TimerList
 {
   private:
 
-    string fname;
-
     vector<TimerGroup> timerGroups;
 
   public:
@@ -92,8 +90,6 @@ class TimerList
     ~TimerList();
 
     void Reset();
-
-    void SetFile(const string& fnameIn);
 
     void Start(
       const ABTimerType groupno,

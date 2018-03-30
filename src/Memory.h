@@ -91,6 +91,9 @@ struct ThreadData
   File fileStored;
 #endif
 
+#ifdef DDS_AB_STATS
+  File fileABstats;
+#endif
 };
 
 

@@ -14,18 +14,13 @@
 
 #include <iomanip>
 
-#include "dds.h"
 #include "ABstats.h"
 
 
 ABstats::ABstats()
 {
-  fname = "";
-
-  for (int p = 0; p < DDS_AB_POS; p++)
-    name[p] = "Position " + to_string(p);
-
   ABstats::Reset();
+  ABstats::SetNames();
 }
 
 
@@ -51,7 +46,7 @@ void ABstats::Reset()
     ABsides[side].sumWeighted = 0;
   }
 
-  for (int place = 0; place < DDS_AB_POS; place++)
+  for (int place = 0; place < AB_SIZE; place++)
   {
     for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
       ABplaces[place].list[depth] = 0;
@@ -73,7 +68,7 @@ void ABstats::ResetCum()
     ABsides[side].sumCumWeighted = 0;
   }
 
-  for (int place = 0; place < DDS_AB_POS; place++)
+  for (int place = 0; place < AB_SIZE; place++)
   {
     ABplaces[place].sumCum = 0;
     ABplaces[place].sumCumWeighted = 0;
@@ -81,30 +76,25 @@ void ABstats::ResetCum()
 }
 
 
-void ABstats::SetFile(const string& fnameIn)
+void ABstats::SetNames()
 {
-  fname = fnameIn;
-  remove(fname.c_str()); // May fail -- that's OK
-}
-
-
-void ABstats::SetName(
-  const int no, 
-  const string& nameIn)
-{
-  if (no < 0 || no >= DDS_AB_POS)
-    return;
-
-  name[no] = nameIn;
+  name[AB_TARGET_REACHED] = "Target decided";
+  name[AB_DEPTH_ZERO] = "depth == 0";
+  name[AB_QUICKTRICKS] = "QuickTricks";
+  name[AB_QUICKTRICKS_2ND] = "QuickTricks 2nd";
+  name[AB_LATERTRICKS] = "LaterTricks";
+  name[AB_MAIN_LOOKUP] = "Main lookup";
+  name[AB_SIDE_LOOKUP] = "Other lookup";
+  name[AB_MOVE_LOOP] = "Move trial";
 }
 
 
 void ABstats::IncrPos(
-  const int no, 
+  const ABCountType no, 
   const bool side, 
   const int depth)
 {
-  if (no < 0 || no >= DDS_AB_POS)
+  if (no < 0 || no >= AB_SIZE)
     return;
 
   ABplaces[no].list[depth]++;
@@ -271,7 +261,7 @@ void ABstats::PrintHeaderDetail(ofstream& fout) const
 {
   fout << " d" << setw(7) << "Side1" << setw(7) << "Side0";
 
-  for (int p = 0; p < DDS_AB_POS; p++)
+  for (int p = 0; p < AB_SIZE; p++)
     fout << setw(6) << p;
 
   fout << "\n" << string(65, '-') << "\n";
@@ -289,7 +279,7 @@ void ABstats::PrintStatsDetail(
     setw(7) << ABsides[1].list[depth] <<
     setw(7) << ABsides[0].list[depth];
 
-  for (int p = 0; p < DDS_AB_POS; p++)
+  for (int p = 0; p < AB_SIZE; p++)
     fout << setw(6) << ABplaces[p].list[depth];
   fout << "\n";
 }
@@ -303,17 +293,14 @@ void ABstats::PrintSumDetail(ofstream& fout) const
     setw(7) << ABsides[1].sum <<
     setw(7) << ABsides[0].sum;
 
-  for (int p = 0; p < DDS_AB_POS; p++)
+  for (int p = 0; p < AB_SIZE; p++)
     fout << setw(6) << ABplaces[p].sum;
   fout << "\n\n";
 }
 
 
-void ABstats::PrintStats()
+void ABstats::PrintStats(ofstream& fout)
 {
-  ofstream fout;
-  fout.open(fname, ofstream::out | ofstream::app);
-
   ABtracker ABsidesSum;
   ABsidesSum.sum = ABsides[1].sum + ABsides[0].sum;
   ABsidesSum.sumCum = ABsides[1].sumCum + ABsides[0].sumCum;
@@ -328,7 +315,7 @@ void ABstats::PrintStats()
     ABstats::PrintStatsPosition(fout, -1, "Side0", ABsides[0], ABsidesSum);
     fout << "\n";
 
-    for (int p = 0; p < DDS_AB_POS; p++)
+    for (int p = 0; p < AB_SIZE; p++)
       ABstats::PrintStatsPosition(fout, p, name[p], ABplaces[p], ABsidesSum);
     fout << "\n";
   }
@@ -361,7 +348,5 @@ void ABstats::PrintStats()
 
   ABstats::PrintSumDetail(fout);
 #endif
-  
-  fout.close();
 }
 
