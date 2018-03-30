@@ -272,7 +272,7 @@ int SolveBoardInternal(
     if (k == 0)
       thrp->moves.MoveGen0(
         trick,
-        &thrp->lookAheadPos,
+        thrp->lookAheadPos,
         thrp->bestMove[iniDepth],
         thrp->bestMoveTT[iniDepth],
         thrp->rel);
@@ -280,10 +280,10 @@ int SolveBoardInternal(
       thrp->moves.MoveGen123(
         trick,
         k,
-        &thrp->lookAheadPos);
+        thrp->lookAheadPos);
 
     thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
-    thrp->moves.MakeSpecific(&mv, trick, k);
+    thrp->moves.MakeSpecific(mv, trick, k);
   }
 
   InitWinners(dl, thrp->lookAheadPos, thrp);
@@ -309,7 +309,7 @@ int SolveBoardInternal(
   if (handRelFirst == 0)
     thrp->moves.MoveGen0(
       trick,
-      &thrp->lookAheadPos,
+      thrp->lookAheadPos,
       thrp->bestMove[iniDepth],
       thrp->bestMoveTT[iniDepth],
       thrp->rel);
@@ -317,7 +317,7 @@ int SolveBoardInternal(
     thrp->moves.MoveGen123(
       trick,
       handRelFirst,
-      &thrp->lookAheadPos);
+      thrp->lookAheadPos);
 
   noMoves = thrp->moves.GetLength(trick, handRelFirst);
 
@@ -327,7 +327,7 @@ int SolveBoardInternal(
 
   if (mode == 0 && noMoves == 1)
   {
-    moveType * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+    moveType const * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -401,10 +401,10 @@ int SolveBoardInternal(
         int noLeft = thrp->moves.GetLength(trick, handRelFirst);
 
         thrp->moves.Rewind(trick, handRelFirst);
-        moveType * mp;
         for (int j = 0; j < noLeft; j++)
         {
-          mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+          moveType const * mp = 
+            thrp->moves.MakeNextSimple(trick, handRelFirst);
 
           futp->suit[mno + j] = mp->suit;
           futp->rank[mno + j] = mp->rank;
@@ -429,7 +429,9 @@ int SolveBoardInternal(
 
     for (int mno = 0; mno < noMoves; mno++)
     {
-      moveType * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+      moveType const * mp = 
+        thrp->moves.MakeNextSimple(trick, handRelFirst);
+
       futp->suit[mno] = mp->suit;
       futp->rank[mno] = mp->rank;
       futp->equals[mno] = mp->sequence << 2;
@@ -486,11 +488,11 @@ int SolveBoardInternal(
       else // solutions == 2, so return all cards
         futp->cards = noMoves;
 
-      moveType * mp;
       thrp->moves.Rewind(trick, handRelFirst);
       for (int i = 0; i < noMoves; i++)
       {
-        mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+        moveType const * mp = 
+          thrp->moves.MakeNextSimple(trick, handRelFirst);
 
         futp->score[i] = 0;
         futp->suit[i] = mp->suit;
@@ -561,7 +563,6 @@ int SolveBoardInternal(
   // This applies both to target == -1 and target >= 1.
   // ----------------------------------------------------------
 
-  moveType * mp;
   forb = 1;
   ind = 1;
 
@@ -574,7 +575,8 @@ int SolveBoardInternal(
 
     for (int k = 0; k < num; k++)
     {
-      mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+      moveType const * mp = 
+        thrp->moves.MakeNextSimple(trick, handRelFirst);
       thrp->forbiddenMoves[forb] = * mp;
       forb++;
 
@@ -799,23 +801,23 @@ int AnalyseLaterBoard(
 
   if (handRelFirst == 0)
   {
-    thrp->moves.MakeSpecific(move, trick + 1, 3);
+    thrp->moves.MakeSpecific(* move, trick + 1, 3);
     unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
     Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, thrp);
   }
   else if (handRelFirst == 1)
   {
-    thrp->moves.MakeSpecific(move, trick, 0);
+    thrp->moves.MakeSpecific(* move, trick, 0);
     Make0(&thrp->lookAheadPos, iniDepth + 1, move);
   }
   else if (handRelFirst == 2)
   {
-    thrp->moves.MakeSpecific(move, trick, 1);
+    thrp->moves.MakeSpecific(* move, trick, 1);
     Make1(&thrp->lookAheadPos, iniDepth + 1, move);
   }
   else
   {
-    thrp->moves.MakeSpecific(move, trick, 2);
+    thrp->moves.MakeSpecific(* move, trick, 2);
     Make2(&thrp->lookAheadPos, iniDepth + 1, move);
   }
 

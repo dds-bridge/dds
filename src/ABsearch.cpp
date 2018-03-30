@@ -34,28 +34,28 @@ void Make3Simple(
 void Undo0(
   pos * posPoint,
   int depth,
-  moveType * mply,
+  const moveType& mply,
   ThreadData * thrp);
 
 void Undo0Simple(
   pos * posPoint,
   int depth,
-  moveType * mply);
+  const moveType& mply);
 
 void Undo1(
   pos * posPoint,
   int depth,
-  moveType * mply);
+  const moveType& mply);
 
 void Undo2(
   pos * posPoint,
   int depth,
-  moveType * mply);
+  const moveType& mply);
 
 void Undo3(
   pos * posPoint,
   int depth,
-  moveType * mply);
+  const moveType& mply);
 
 
 const int handDelta[DDS_SUITS] = { 256, 16, 1, 0 };
@@ -88,7 +88,7 @@ bool ABsearch(
 
   thrp->moves.MoveGen0(
     tricks,
-    posPoint,
+    * posPoint,
     thrp->bestMove[depth],
     thrp->bestMoveTT[depth],
     thrp->rel);
@@ -96,15 +96,14 @@ bool ABsearch(
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
-  moveType * mply;
   for (int ss = 0; ss < DDS_SUITS; ss++)
     posPoint->winRanks[depth][ss] = 0;
 
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    mply = thrp->moves.MakeNext(tricks, 0,
-                                posPoint->winRanks[depth]);
+    moveType const * mply = thrp->moves.MakeNext(tricks, 0,
+      posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -120,7 +119,7 @@ bool ABsearch(
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo1(posPoint, depth, mply);
+    Undo1(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
     if (value == success) /* A cut-off? */
@@ -341,7 +340,7 @@ bool ABsearch0(
 
   thrp->moves.MoveGen0(
     tricks,
-    posPoint,
+    * posPoint,
     thrp->bestMove[depth],
     thrp->bestMoveTT[depth],
     thrp->rel);
@@ -351,12 +350,11 @@ bool ABsearch0(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     posPoint->winRanks[depth][ss] = 0;
 
-  moveType * mply;
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    mply = thrp->moves.MakeNext(tricks, 0,
-                                posPoint->winRanks[depth]);
+    moveType const * mply = thrp->moves.MakeNext(tricks, 0,
+      posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -372,7 +370,7 @@ bool ABsearch0(
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo1(posPoint, depth, mply);
+    Undo1(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
     if (value == success) /* A cut-off? */
@@ -485,7 +483,7 @@ bool ABsearch1(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     thrp->lowestWin[depth][ss] = 0;
 
-  thrp->moves.MoveGen123(tricks, 1, posPoint);
+  thrp->moves.MoveGen123(tricks, 1, * posPoint);
   if (depth == thrp->iniDepth)
     thrp->moves.Purge(tricks, 1, thrp->forbiddenMoves);
 
@@ -494,12 +492,11 @@ bool ABsearch1(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     posPoint->winRanks[depth][ss] = 0;
 
-  moveType * mply;
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    mply = thrp->moves.MakeNext(tricks, 1,
-                                posPoint->winRanks[depth]);
+    moveType const * mply = thrp->moves.MakeNext(tricks, 1,
+      posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -515,7 +512,7 @@ bool ABsearch1(
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo2(posPoint, depth, mply);
+    Undo2(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
     if (value == success) /* A cut-off? */
@@ -564,7 +561,7 @@ bool ABsearch2(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     thrp->lowestWin[depth][ss] = 0;
 
-  thrp->moves.MoveGen123(tricks, 2, posPoint);
+  thrp->moves.MoveGen123(tricks, 2, * posPoint);
   if (depth == thrp->iniDepth)
     thrp->moves.Purge(tricks, 2, thrp->forbiddenMoves);
 
@@ -573,12 +570,11 @@ bool ABsearch2(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     posPoint->winRanks[depth][ss] = 0;
 
-  moveType * mply;
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    mply = thrp->moves.MakeNext(tricks, 2,
-                                posPoint->winRanks[depth]);
+    moveType const * mply = thrp->moves.MakeNext(tricks, 2,
+      posPoint->winRanks[depth]);
 
     if (mply == NULL)
       break;
@@ -595,7 +591,7 @@ bool ABsearch2(
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo3(posPoint, depth, mply);
+    Undo3(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
 
@@ -649,13 +645,11 @@ bool ABsearch3(
     thrp->lowestWin[depth][ss] = 0;
   int tricks = (depth + 3) >> 2;
 
-  thrp->moves.MoveGen123(tricks, 3, posPoint);
+  thrp->moves.MoveGen123(tricks, 3, * posPoint);
   if (depth == thrp->iniDepth)
     thrp->moves.Purge(tricks, 3, thrp->forbiddenMoves);
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
-
-  moveType * mply;
 
   for (int ss = 0; ss < DDS_SUITS; ss++)
     posPoint->winRanks[depth][ss] = 0;
@@ -663,8 +657,8 @@ bool ABsearch3(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    mply = thrp->moves.MakeNext(tricks, 3,
-                                posPoint->winRanks[depth]);
+    moveType const * mply = thrp->moves.MakeNext(tricks, 3,
+      posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -685,7 +679,7 @@ bool ABsearch3(
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo0(posPoint, depth, mply, thrp);
+    Undo0(posPoint, depth, * mply, thrp);
 
     if (thrp->nodeTypeStore[posPoint->first[depth - 1]] == MAXNODE)
       posPoint->tricksMAX--;
@@ -787,9 +781,9 @@ void Make3(
 {
   int firstHand = posPoint->first[depth];
 
-  trickDataType * datap = thrp->moves.GetTrickData((depth + 3) >> 2);
+  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
 
-  posPoint->first[depth - 1] = handId(firstHand, datap->relWinner);
+  posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
   /* Defines who is first in the next move */
 
   int h = handId(firstHand, 3);
@@ -798,13 +792,13 @@ void Make3(
   for (int suit = 0; suit < DDS_SUITS; suit++)
     trickCards[suit] = 0;
 
-  int ss = datap->bestSuit;
-  if (datap->playCount[ss] >= 2)
+  int ss = data.bestSuit;
+  if (data.playCount[ss] >= 2)
   {
     // Win by rank when some else played that suit, too.
-    int rr = datap->bestRank;
+    int rr = data.bestRank;
     trickCards[ss] = static_cast<unsigned short>
-                     (bitMapRank[rr] | datap->bestSequence);
+      (bitMapRank[rr] | data.bestSequence);
   }
 
   int r = mply->rank;
@@ -820,7 +814,7 @@ void Make3(
 
   for (int st = 0; st < 4; st++)
   {
-    if (datap->playCount[st])
+    if (data.playCount[st])
     {
       int n = wp->number;
       wp->winner[n].suit = st;
@@ -849,23 +843,23 @@ void Make3Simple(
   moveType * mply,
   ThreadData * thrp)
 {
-  trickDataType * datap = thrp->moves.GetTrickData((depth + 3) >> 2);
+  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
 
   int firstHand = posPoint->first[depth];
 
   // Leader of next trick
-  posPoint->first[depth - 1] = handId(firstHand, datap->relWinner);
+  posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
 
   for (int suit = 0; suit < DDS_SUITS; suit++)
     trickCards[suit] = 0;
 
-  int s = datap->bestSuit;
-  if (datap->playCount[s] >= 2)
+  int s = data.bestSuit;
+  if (data.playCount[s] >= 2)
   {
     // Win by rank when some else played that suit, too.
-    int r = datap->bestRank;
+    int r = data.bestRank;
     trickCards[s] = static_cast<unsigned short>
-                    (bitMapRank[r] | datap->bestSequence);
+      (bitMapRank[r] | data.bestSequence);
   }
 
   int h = handId(firstHand, 3);
@@ -880,12 +874,12 @@ void Make3Simple(
 void Undo0(
   pos * posPoint,
   int depth,
-  moveType * mply,
+  const moveType& mply,
   ThreadData * thrp)
 {
   int h = handId(posPoint->first[depth], 3);
-  int s = mply->suit;
-  int r = mply->rank;
+  int s = mply.suit;
+  int r = mply.rank;
 
   posPoint->rankInSuit[h][s] |= bitMapRank[r];
   posPoint->aggr[s] |= bitMapRank[r];
@@ -909,11 +903,11 @@ void Undo0(
 void Undo0Simple(
   pos * posPoint,
   int depth,
-  moveType * mply)
+  const moveType& mply)
 {
   int h = handId(posPoint->first[depth], 3);
-  int s = mply->suit;
-  int r = mply->rank;
+  int s = mply.suit;
+  int r = mply.rank;
 
   posPoint->aggr[s] |= bitMapRank[r];
   posPoint->handDist[h] += handDelta[s];
@@ -923,11 +917,11 @@ void Undo0Simple(
 void Undo1(
   pos * posPoint,
   int depth,
-  moveType * mply)
+  const moveType& mply)
 {
   int h = posPoint->first[depth];
-  int s = mply->suit;
-  int r = mply->rank;
+  int s = mply.suit;
+  int r = mply.rank;
 
   posPoint->rankInSuit[h][s] |= bitMapRank[r];
   posPoint->aggr[s] |= bitMapRank[r];
@@ -939,11 +933,11 @@ void Undo1(
 void Undo2(
   pos * posPoint,
   int depth,
-  moveType * mply)
+  const moveType& mply)
 {
   int h = handId(posPoint->first[depth], 1);
-  int s = mply->suit;
-  int r = mply->rank;
+  int s = mply.suit;
+  int r = mply.rank;
 
   posPoint->rankInSuit[h][s] |= bitMapRank[r];
   posPoint->aggr[s] |= bitMapRank[r];
@@ -955,11 +949,11 @@ void Undo2(
 void Undo3(
   pos * posPoint,
   int depth,
-  moveType * mply)
+  const moveType& mply)
 {
   int h = handId(posPoint->first[depth], 2);
-  int s = mply->suit;
-  int r = mply->rank;
+  int s = mply.suit;
+  int r = mply.rank;
 
   posPoint->rankInSuit[h][s] |= bitMapRank[r];
   posPoint->aggr[s] |= bitMapRank[r];
