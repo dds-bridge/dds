@@ -15,7 +15,7 @@ BEGIN
             VALUE "FileDescription", "dds MinGW"
             VALUE "FileVersion", "2.8.4.0"
             VALUE "InternalName", "dds.dll"
-            VALUE "LegalCopyright", "Copyright © 2006-2014 Bo Haglund / 2014-16 Bo Haglund Soren Hein"
+            VALUE "LegalCopyright", "Copyright © 2006-2014 Bo Haglund / 2014-18 Bo Haglund Soren Hein"
             VALUE "OriginalFilename", "dds.dll"
             VALUE "ProductName", "Bridge double dummy solver"
             VALUE "ProductVersion", "2.8.4.0"

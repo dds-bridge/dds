@@ -14,6 +14,7 @@
 
 #include "TransTable.h"
 #include "Moves.h"
+#include "File.h"
 #include "debug.h"
 
 #ifdef DDS_AB_STATS
@@ -78,15 +79,16 @@ struct ThreadData
 
 #ifdef DDS_TIMING
   TimerList timerList;
+  File fileTimerList;
 #endif
 
 #ifdef DDS_TOP_LEVEL
-  string fnTopLevel;
+  File fileTopLevel;
 #endif
 
 #ifdef DDS_AB_HITS
-  string fnRetrieved;
-  string fnStored;
+  File fileRetrieved;
+  File fileStored;
 #endif
 
 };

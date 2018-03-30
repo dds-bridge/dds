@@ -12,12 +12,10 @@
    See TimerList.h for some description.
 */
 
-#include <sstream>
+// #include <sstream>
 
-#include "dds.h"
+// #include "dds.h"
 #include "TimerList.h"
-
-#define DDS_TIMERS 50
 
 
 TimerList::TimerList()
@@ -35,7 +33,7 @@ void TimerList::Reset()
 {
   fname = "";
 
-  timerGroups.resize(TIMER_GROUPS);
+  timerGroups.resize(TIMER_NO_SIZE);
 
   timerGroups[TIMER_NO_AB].SetNames("AB");
   timerGroups[TIMER_NO_MAKE].SetNames("Make");
@@ -57,20 +55,20 @@ void TimerList::SetFile(const string& fnameIn)
 
 
 void TimerList::Start(
-  const unsigned groupno,
+  const ABTimerType groupno,
   const unsigned timerno)
 {
-  if (groupno >= TIMER_GROUPS)
+  if (groupno >= TIMER_NO_SIZE)
     return;
   timerGroups[groupno].Start(timerno);
 }
 
 
 void TimerList::End(
-  const unsigned groupno,
+  const ABTimerType groupno,
   const unsigned timerno)
 {
-  if (groupno >= TIMER_GROUPS)
+  if (groupno >= TIMER_NO_SIZE)
     return;
   timerGroups[groupno].End(timerno);
 }
@@ -78,7 +76,7 @@ void TimerList::End(
 
 bool TimerList::Used() const
 {
-  for (unsigned g = 0; g < TIMER_GROUPS; g++)
+  for (unsigned g = 0; g < TIMER_NO_SIZE; g++)
   {
     if (timerGroups[g].Used())
       return true;
@@ -87,7 +85,7 @@ bool TimerList::Used() const
 }
 
 
-void TimerList::PrintStats() const
+void TimerList::PrintStats(ofstream& fout) const
 {
   if (! TimerList::Used())
     return;
@@ -101,7 +99,7 @@ void TimerList::PrintStats() const
   TimerGroup ABGroup;
   ABGroup = timerGroups[0];
   ABGroup.Differentiate();
-  for (unsigned g = 1; g < TIMER_GROUPS; g++)
+  for (unsigned g = 1; g < TIMER_NO_SIZE; g++)
     ABGroup -= timerGroups[g];
 
   Timer ABTotal;
@@ -110,19 +108,16 @@ void TimerList::PrintStats() const
   ABTotal.SetName("Sum");
 
   Timer sumTotal = ABTotal;
-  for (unsigned g = 1; g < TIMER_GROUPS; g++)
+  for (unsigned g = 1; g < TIMER_NO_SIZE; g++)
   {
     Timer t;
     timerGroups[g].Sum(t);
     sumTotal += t;
   }
 
-  ofstream fout;
-  fout.open(fname);
-
   fout << timerGroups[0].Header();
   fout << ABGroup.SumLine(sumTotal);
-  for (unsigned g = 1; g < TIMER_GROUPS; g++)
+  for (unsigned g = 1; g < TIMER_NO_SIZE; g++)
     fout << timerGroups[g].SumLine(sumTotal);
   fout << timerGroups[0].DashLine();
   fout << sumTotal.SumLine(sumTotal) << endl;
@@ -137,11 +132,9 @@ void TimerList::PrintStats() const
 
 #ifdef DDS_TIMING_DETAILS
   fout << timerGroups[0].DetailHeader();
-  for (unsigned g = 0; g < TIMER_GROUPS; g++)
+  for (unsigned g = 0; g < TIMER_NO_SIZE; g++)
     fout << timerGroups[g].DetailLines();
   fout << endl;
 #endif
-  
-  fout.close();
 }
 

@@ -39,7 +39,7 @@ class Timer
 
     void Reset();
 
-    void SetName(const string& s);
+    void SetName(const string& nameIn);
 
     void Start();
 

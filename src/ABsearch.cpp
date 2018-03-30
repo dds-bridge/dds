@@ -197,7 +197,8 @@ bool ABsearch0(
     if (cardsP)
     {
 #ifdef DDS_AB_HITS
-      DumpRetrieved(thrp->fnRetrieved, * posPoint, * cardsP, target, depth);
+      DumpRetrieved(thrp->fileRetrieved.GetStream(), 
+        * posPoint, * cardsP, target, depth);
 #endif
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -308,7 +309,8 @@ bool ABsearch0(
     if (cardsP)
     {
 #ifdef DDS_AB_HITS
-      DumpRetrieved(thrp->fnRetrieved, * posPoint, * cardsP, target, depth);
+      DumpRetrieved(thrp->fileRetrieved.GetStream(), 
+        * posPoint, * cardsP, target, depth);
 #endif
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -444,8 +446,8 @@ ABexit:
   TIMER_END(TIMER_NO_BUILD, depth);
 
 #ifdef DDS_AB_HITS
-  DumpStored(thrp->fnStored, * posPoint, thrp->moves,
-             first, target, depth);
+  DumpStored(thrp->fileStored.GetStream(), 
+    * posPoint, thrp->moves, first, target, depth);
 #endif
 
   AB_COUNT(AB_MOVE_LOOP, value, depth);

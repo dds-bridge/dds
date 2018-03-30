@@ -22,6 +22,7 @@ int DumpInput(
   const int mode);
 
 void DumpTopLevel(
+  ofstream& fout,
   const ThreadData& thrd,
   const int tricks,
   const int lower,
@@ -29,14 +30,14 @@ void DumpTopLevel(
   const int printMode);
 
 void DumpRetrieved(
-  const string& fname,
+  ofstream& fout,
   const pos& tpos,
   const nodeCardsType& node,
   const int target,
   const int depth);
 
 void DumpStored(
-  const string& fname,
+  ofstream& fout,
   const pos& tpos,
   const Moves& moves,
   const nodeCardsType& node,

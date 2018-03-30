@@ -489,7 +489,6 @@ int System::RunThreadsSTL()
 
 // TODO Remove
 // #include "Memory.h"
-// #include "TimerList.h"
 // extern Memory memory;
 
 int System::RunThreadsSTLIMPL()

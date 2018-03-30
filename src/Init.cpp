@@ -357,8 +357,7 @@ void InitDebugFiles()
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 
 #ifdef DDS_TOP_LEVEL
-    thrp->fnTopLevel = DDS_TOP_LEVEL_PREFIX + send;
-    remove(thrp->fnTopLevel.c_str());  // May fail -- that's OK
+    thrp->fileTopLevel.SetName(DDS_TOP_LEVEL_PREFIX + send);
 #endif
 
 #ifdef DDS_AB_STATS
@@ -375,15 +374,12 @@ void InitDebugFiles()
 #endif
 
 #ifdef DDS_AB_HITS
-    thrp->fnRetrieved = DDS_AB_HITS_RETRIEVED_PREFIX + send;
-    remove(thrp->fnRetrieved.c_str());
-
-    thrp->fnStored = DDS_AB_HITS_STORED_PREFIX + send;
-    remove(thrp->fnStored.c_str());
+    thrp->fileRetrieved.SetName(DDS_AB_HITS_RETRIEVED_PREFIX + send);
+    thrp->fileStored.SetName(DDS_AB_HITS_STORED_PREFIX + send);
 #endif
 
 #ifdef DDS_TIMING
-    thrp->timerList.SetFile(DDS_TIMING_PREFIX + send);
+    thrp->fileTimerList.SetName(DDS_TIMING_PREFIX + send);
 #endif
 
 #ifdef DDS_TT_STATS
@@ -406,8 +402,20 @@ void CloseDebugFiles()
   for (int thrId = 0; thrId < noOfThreads; thrId++)
   {
     ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
-    UNUSED(thrp); // To avoid compile errors
-    // TODO Delete function
+    UNUSED(thrp); // To avoid compiler warning
+
+#ifdef DDS_TIMING
+    thrp->fileTimerList.Close();
+#endif
+
+#ifdef DDS_TOP_LEVEL
+    thrp->fileTopLevel.Close();
+#endif
+
+#ifdef DDS_AB_HITS
+    thrp->fileRetrieved.Close();
+    thrp->fileStored.Close();
+#endif
   }
 }
 

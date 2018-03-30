@@ -21,7 +21,9 @@ class File
   private:
 
     string fname;
+
     bool fileOpen;
+
     ofstream fout;
 
   public:

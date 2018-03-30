@@ -43,7 +43,10 @@ void File::SetName(const string& fnameIn)
 ofstream& File::GetStream()
 {
   if (! fileOpen)
+  {
     fout.open(fname);
+    fileOpen = true;
+  }
   
   return fout;
 }

@@ -312,48 +312,39 @@ int DumpInput(
 
 
 void DumpRetrieved(
-  const string& fname,
+  ofstream& fout,
   const pos& tpos,
   const nodeCardsType& node,
   const int target,
   const int depth)
 {
-  ofstream fout;
-  fout.open(fname, ofstream::out | ofstream::app);
-
   fout << "Retrieved entry\n";
   fout << string(15, '-') << "\n";
   fout << PosToText(tpos, target, depth) << "\n";
   fout << FullNodeToText(node) << "\n";
   fout << RankToDiagrams(tpos.rankInSuit, node) << "\n";
-
-  fout.close();
 }
 
 
 void DumpStored(
-  const string& fname,
+  ofstream& fout,
   const pos& tpos,
   const Moves& moves,
   const nodeCardsType& node,
   const int target,
   const int depth)
 {
-  ofstream fout;
-  fout.open(fname, ofstream::out | ofstream::app);
-
   fout << "Stored entry\n";
   fout << string(12, '-') << "\n";
   fout << PosToText(tpos, target, depth) << "\n";
   fout << NodeToText(node);
   fout << moves.TrickToText((depth >> 2) + 1) << "\n";
   fout << PrintDeal(tpos.rankInSuit, 16);
-
-  fout.close();
 }
 
 
 void DumpTopLevel(
+  ofstream& fout,
   const ThreadData& thrd,
   const int tricks,
   const int lower,
@@ -362,15 +353,10 @@ void DumpTopLevel(
 {
   const pos& tpos = thrd.lookAheadPos;
 
-  ofstream fout;
-  fout.open(thrd.fnTopLevel, ofstream::out | ofstream::app);
-
   fout << DumpTopHeader(thrd, tricks, lower, upper, printMode) << "\n";
   fout << PrintDeal(tpos.rankInSuit, 16);
   fout << WinnersToText(tpos.winRanks[thrd.iniDepth]) << "\n";
   fout << thrd.nodes << " AB nodes, " <<
     thrd.trickNodes << " trick nodes\n\n";
-
-  fout.close();
 }
 

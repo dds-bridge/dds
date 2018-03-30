@@ -46,6 +46,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 
 #include "TimerGroup.h"
 #include "debug.h"
@@ -61,18 +62,20 @@ using namespace std;
   #define TIMER_END(g, a) 1
 #endif
 
-#define TIMER_NO_AB 0
-#define TIMER_NO_MAKE 1
-#define TIMER_NO_UNDO 2
-#define TIMER_NO_EVALUATE 3
-#define TIMER_NO_NEXTMOVE 4
-#define TIMER_NO_QT 5
-#define TIMER_NO_LT 6
-#define TIMER_NO_MOVEGEN 7
-#define TIMER_NO_LOOKUP 8
-#define TIMER_NO_BUILD 9
-
-#define TIMER_GROUPS 10
+enum ABTimerType
+{
+  TIMER_NO_AB = 0,
+  TIMER_NO_MAKE = 1,
+  TIMER_NO_UNDO = 2,
+  TIMER_NO_EVALUATE = 3,
+  TIMER_NO_NEXTMOVE = 4,
+  TIMER_NO_QT = 5,
+  TIMER_NO_LT = 6,
+  TIMER_NO_MOVEGEN = 7,
+  TIMER_NO_LOOKUP = 8,
+  TIMER_NO_BUILD = 9,
+  TIMER_NO_SIZE = 10
+};
 
 
 class TimerList
@@ -93,16 +96,16 @@ class TimerList
     void SetFile(const string& fnameIn);
 
     void Start(
-      const unsigned groupno,
+      const ABTimerType groupno,
       const unsigned timerno);
 
     void End(
-      const unsigned groupno,
+      const ABTimerType groupno,
       const unsigned timerno);
 
     bool Used() const;
 
-    void PrintStats() const;
+    void PrintStats(ofstream& fout) const;
 };
 
 #endif

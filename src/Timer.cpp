@@ -38,9 +38,9 @@ void Timer::Reset()
 }
 
 
-void Timer::SetName(const string& s)
+void Timer::SetName(const string& nameIn)
 {
-  name = s;
+  name = nameIn;
 }
 
 
