@@ -11,9 +11,8 @@
 #define DDS_DUMP_H
 
 #include "dds.h"
-
-#define DDS_HAND_LINES 12
-#define DDS_FULL_LINE 80
+#include "Moves.h"
+#include "Memory.h"
 
 int DumpInput(
   const int errCode,
@@ -23,7 +22,7 @@ int DumpInput(
   const int mode);
 
 void DumpTopLevel(
-  ThreadData const * thrp,
+  const ThreadData& thrd,
   const int tricks,
   const int lower,
   const int upper,
@@ -31,16 +30,16 @@ void DumpTopLevel(
 
 void DumpRetrieved(
   const string& fname,
-  pos const * posPoint,
-  nodeCardsType const * np,
+  const pos& tpos,
+  const nodeCardsType& node,
   const int target,
   const int depth);
 
 void DumpStored(
   const string& fname,
-  pos const * posPoint,
-  Moves const * moves,
-  nodeCardsType const * np,
+  const pos& tpos,
+  const Moves& moves,
+  const nodeCardsType& node,
   const int target,
   const int depth);
 

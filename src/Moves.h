@@ -13,6 +13,7 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 #include <string.h>
 #include "dds.h"
 #include "../include/dll.h"
@@ -271,9 +272,7 @@ class Moves
       const int tricks,
       const int relHand);
 
-    void TrickToText(
-      const int trick,
-      char text[]) const;
+    string TrickToText(const int trick) const;
 
     void PrintTrickStats() const;
 

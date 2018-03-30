@@ -12,15 +12,7 @@
 #include <sstream>
 #include <fstream>
 
-#include "dds.h"
-#include "TransTable.h"
-#include "Moves.h"
-#include "Memory.h"
 #include "dump.h"
-
-
-// #define DDS_HAND_LINES 12
-// #define DDS_FULL_LINE 80
 
 
 string PrintSuit(const unsigned short suitCode);
@@ -34,16 +26,16 @@ string PrintDeal(
 
 void RankToDiagrams(
   unsigned short ranks[DDS_HANDS][DDS_SUITS],
-  nodeCardsType const * np);
+  const nodeCardsType& node);
 
 string WinnersToText(const unsigned short winRanks[]);
 
-string NodeToText(nodeCardsType const * np);
+string NodeToText(const nodeCardsType& node);
 
-string FullNodeToText(nodeCardsType const * np);
+string FullNodeToText(const nodeCardsType& node);
 
 string PosToText(
-  pos const * posPoint,
+  const pos& tpos,
   const int target,
   const int depth);
 
@@ -52,7 +44,7 @@ string TopMove(
   const moveType& bestMove);
 
 string DumpTopHeader(
-  ThreadData const * thrp,
+  const ThreadData& thrd,
   const int tricks,
   const int lower,
   const int upper,
@@ -127,7 +119,7 @@ string PrintDeal(
 
 string RankToDiagrams(
   const unsigned short ranks[DDS_HANDS][DDS_SUITS],
-  nodeCardsType const * np)
+  const nodeCardsType& node)
 {
   stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)
@@ -136,7 +128,8 @@ string RankToDiagrams(
       (s == 0 ? "Sought" : "") << 
       cardSuit[s] << " " << setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
       setw(12) << (s == 0 ? "Found" : "") << 
-      cardSuit[s] << " " << PrintSuit(ranks[0][s], np->leastWin[s]) << "\n";
+      cardSuit[s] << " " << 
+        PrintSuit(ranks[0][s], node.leastWin[s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
@@ -145,8 +138,9 @@ string RankToDiagrams(
       cardSuit[s] << " " << setw(22) << left << PrintSuit(ranks[3][s]) <<
       cardSuit[s] << " " << setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
       cardSuit[s] << " " << 
-        setw(22) << PrintSuit(ranks[3][s], np->leastWin[s]) << 
-      cardSuit[s] << " " << PrintSuit(ranks[1][s], np->leastWin[s]) << "\n";
+        setw(22) << PrintSuit(ranks[3][s], node.leastWin[s]) << 
+      cardSuit[s] << " " << 
+        PrintSuit(ranks[1][s], node.leastWin[s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
@@ -154,7 +148,7 @@ string RankToDiagrams(
     ss << setw(12) << left << "" << 
       cardSuit[s] << " " << setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
       setw(12) << "" << cardSuit[s] << " " <<
-      PrintSuit(ranks[0][s], np->leastWin[s]) << "\n";
+      PrintSuit(ranks[0][s], node.leastWin[s]) << "\n";
   }
   return ss.str();
 }
@@ -170,31 +164,31 @@ string WinnersToText(const unsigned short ourWinRanks[])
 }
 
 
-string NodeToText(nodeCardsType const * np)
+string NodeToText(const nodeCardsType& node)
 {
   stringstream ss;
   ss << setw(16) << left << "Address" << 
-    static_cast<void const *>(np) << "\n";
+    static_cast<void const *>(&node) << "\n";
 
   ss << setw(16) << left << "Bounds" << 
-    static_cast<int>(np->lbound) << " to " <<
-    static_cast<int>(np->ubound) << " tricks\n";
+    static_cast<int>(node.lbound) << " to " <<
+    static_cast<int>(node.ubound) << " tricks\n";
 
   ss << setw(16) << left << "Best move" << 
-    cardSuit[ static_cast<int>(np->bestMoveSuit) ] <<
-    cardRank[ static_cast<int>(np->bestMoveRank) ] << "\n";
+    cardSuit[ static_cast<int>(node.bestMoveSuit) ] <<
+    cardRank[ static_cast<int>(node.bestMoveRank) ] << "\n";
 
   return ss.str();
 }
 
 
-string FullNodeToText(nodeCardsType const * np)
+string FullNodeToText(const nodeCardsType& node)
 
 {
   stringstream ss;
   vector<int> v(DDS_SUITS);
   for (unsigned i = 0; i < DDS_SUITS; i++)
-    v[i] = 15 - static_cast<int>(np->leastWin[i]);
+    v[i] = 15 - static_cast<int>(node.leastWin[i]);
 
   ss << setw(16) << left << "Lowest used" << 
     cardSuit[0] << cardRank[v[0]] << ", " <<
@@ -202,29 +196,27 @@ string FullNodeToText(nodeCardsType const * np)
     cardSuit[2] << cardRank[v[2]] << ", " <<
     cardSuit[3] << cardRank[v[3]] << "\n";
 
-  return NodeToText(np) + ss.str();
+  return NodeToText(node) + ss.str();
 }
 
 
 string PosToText(
-  pos const * posPoint,
+  const pos& tpos,
   const int target,
   const int depth)
 {
   stringstream ss;
   ss << setw(16) << left << "Target" << target << "\n";
   ss << setw(16) << "Depth" << depth << "\n";
-  ss << setw(16) << "tricksMAX" << posPoint->tricksMAX << "\n";
-  ss << setw(16) << "First hand" << 
-    cardHand[ posPoint->first[depth] ] << "\n";
-  ss << setw(16) << "Next first" << 
-    cardHand[ posPoint->first[depth - 1] ] << "\n";
+  ss << setw(16) << "tricksMAX" << tpos.tricksMAX << "\n";
+  ss << setw(16) << "First hand" << cardHand[tpos.first[depth]] << "\n";
+  ss << setw(16) << "Next first" << cardHand[tpos.first[depth - 1]] << "\n";
   return ss.str();
 }
 
 
 string DumpTopHeader(
-  ThreadData const * thrp,
+  const ThreadData& thrd,
   const int tricks,
   const int lower,
   const int upper,
@@ -241,13 +233,13 @@ string DumpTopHeader(
     // Looking for best score.
     stext = "Loop target " + to_string(tricks) + ", " +
       "bounds " + to_string(lower) + " .. " + to_string(upper) + ", " +
-      TopMove(thrp->val, thrp->bestMove[thrp->iniDepth]) + "";
+      TopMove(thrd.val, thrd.bestMove[thrd.iniDepth]) + "";
   }
   else if (printMode == 2)
   {
     // Looking for other moves with best score.
     stext = "Loop for cards with score " + to_string(tricks) + ", " +
-      TopMove(thrp->val, thrp->bestMove[thrp->iniDepth]);
+      TopMove(thrd.val, thrd.bestMove[thrd.iniDepth]);
   }
   return stext + "\n" + string(stext.size(), '-') + "\n";
 }
@@ -321,8 +313,8 @@ int DumpInput(
 
 void DumpRetrieved(
   const string& fname,
-  pos const * posPoint,
-  nodeCardsType const * np,
+  const pos& tpos,
+  const nodeCardsType& node,
   const int target,
   const int depth)
 {
@@ -331,9 +323,9 @@ void DumpRetrieved(
 
   fout << "Retrieved entry\n";
   fout << string(15, '-') << "\n";
-  fout << PosToText(posPoint, target, depth) << "\n";
-  fout << FullNodeToText(np) << "\n";
-  fout << RankToDiagrams(posPoint->rankInSuit, np) << "\n";
+  fout << PosToText(tpos, target, depth) << "\n";
+  fout << FullNodeToText(node) << "\n";
+  fout << RankToDiagrams(tpos.rankInSuit, node) << "\n";
 
   fout.close();
 }
@@ -341,48 +333,43 @@ void DumpRetrieved(
 
 void DumpStored(
   const string& fname,
-  pos const * posPoint,
-  Moves const * moves,
-  nodeCardsType const * np,
+  const pos& tpos,
+  const Moves& moves,
+  const nodeCardsType& node,
   const int target,
   const int depth)
 {
   ofstream fout;
   fout.open(fname, ofstream::out | ofstream::app);
 
-  // Big enough for all uses.
-  char text[DDS_HAND_LINES][DDS_FULL_LINE];
-
   fout << "Stored entry\n";
   fout << string(12, '-') << "\n";
-  fout << PosToText(posPoint, target, depth) << "\n";
-  fout << NodeToText(np);
-
-  moves->TrickToText((depth >> 2) + 1, text[0]);
-  fout << string(text[0]) << "\n";
-  fout << PrintDeal(posPoint->rankInSuit, 16);
+  fout << PosToText(tpos, target, depth) << "\n";
+  fout << NodeToText(node);
+  fout << moves.TrickToText((depth >> 2) + 1) << "\n";
+  fout << PrintDeal(tpos.rankInSuit, 16);
 
   fout.close();
 }
 
 
 void DumpTopLevel(
-  ThreadData const * thrp,
+  const ThreadData& thrd,
   const int tricks,
   const int lower,
   const int upper,
   const int printMode)
 {
-  pos const * posPoint = &thrp->lookAheadPos;
+  const pos& tpos = thrd.lookAheadPos;
 
   ofstream fout;
-  fout.open(thrp->fnTopLevel, ofstream::out | ofstream::app);
+  fout.open(thrd.fnTopLevel, ofstream::out | ofstream::app);
 
-  fout << DumpTopHeader(thrp, tricks, lower, upper, printMode) << "\n";
-  fout << PrintDeal(posPoint->rankInSuit, 16);
-  fout << WinnersToText(posPoint->winRanks[ thrp->iniDepth ]) << "\n";
-  fout << thrp->nodes << " AB nodes, " <<
-    thrp->trickNodes << " trick nodes\n\n";
+  fout << DumpTopHeader(thrd, tricks, lower, upper, printMode) << "\n";
+  fout << PrintDeal(tpos.rankInSuit, 16);
+  fout << WinnersToText(tpos.winRanks[thrd.iniDepth]) << "\n";
+  fout << thrd.nodes << " AB nodes, " <<
+    thrd.trickNodes << " trick nodes\n\n";
 
   fout.close();
 }

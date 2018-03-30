@@ -8,6 +8,10 @@
 */
 
 
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
 #include "dds.h"
 #include "Moves.h"
 #include "debug.h"
@@ -2287,28 +2291,26 @@ void Moves::PrintMoves(
 }
 
 
-void Moves::TrickToText(
-  const int trick,
-  char line[]) const
+string Moves::TrickToText(const int trick) const
 {
   const movePlyType& listp0 = moveList[trick][0];
   const movePlyType& listp1 = moveList[trick][1];
   const movePlyType& listp2 = moveList[trick][2];
   const movePlyType& listp3 = moveList[trick][3];
 
-  sprintf(line, "Last trick\t%c: %c%c - %c%c - %c%c - %c%c\n",
-          cardHand[ track[trick].leadHand ],
-          cardSuit[ listp0.move[listp0.current].suit ],
-          cardRank[ listp0.move[listp0.current].rank ],
+  stringstream ss;
+  ss << setw(16) << left << "Last trick" << 
+    cardHand[ track[trick].leadHand ] << ": " <<
+    cardSuit[ listp0.move[listp0.current].suit ] <<
+    cardRank[ listp0.move[listp0.current].rank ] << " - " <<
+    cardSuit[ listp1.move[listp1.current].suit ] << 
+    cardRank[ listp1.move[listp1.current].rank ] << " - " <<
+    cardSuit[ listp2.move[listp2.current].suit ] << 
+    cardRank[ listp2.move[listp2.current].rank ] << " - " <<
+    cardSuit[ listp3.move[listp3.current].suit ] << 
+    cardRank[ listp3.move[listp3.current].rank ] << "\n";
 
-          cardSuit[ listp1.move[listp1.current].suit ],
-          cardRank[ listp1.move[listp1.current].rank ],
-
-          cardSuit[ listp2.move[listp2.current].suit ],
-          cardRank[ listp2.move[listp2.current].rank ],
-
-          cardSuit[ listp3.move[listp3.current].suit ],
-          cardRank[ listp3.move[listp3.current].rank ]);
+  return ss.str();
 }
 
 

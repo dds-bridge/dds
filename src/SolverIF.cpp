@@ -367,7 +367,7 @@ int SolveBoardInternal(
         TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-        DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+        DumpTopLevel(* thrp, guess, lowerbound, upperbound, 1);
 #endif
 
         if (thrp->val)
@@ -460,7 +460,7 @@ int SolveBoardInternal(
       TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-      DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+      DumpTopLevel(* thrp, guess, lowerbound, upperbound, 1);
 #endif
 
       if (thrp->val)
@@ -526,7 +526,7 @@ int SolveBoardInternal(
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, target, -1, -1, 0);
+    DumpTopLevel(* thrp, target, -1, -1, 0);
 #endif
 
     if (! thrp->val)
@@ -591,7 +591,7 @@ int SolveBoardInternal(
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, target, -1, -1, 2);
+    DumpTopLevel(* thrp, target, -1, -1, 2);
 #endif
 
     if (! thrp->val)
@@ -711,7 +711,7 @@ int SolveSameBoard(
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+    DumpTopLevel(* thrp, guess, lowerbound, upperbound, 1);
 #endif
 
     if (thrp->val)
@@ -861,7 +861,7 @@ int AnalyseLaterBoard(
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+    DumpTopLevel(* thrp, guess, lowerbound, upperbound, 1);
 #endif
 
     if (thrp->val)

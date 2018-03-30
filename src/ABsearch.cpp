@@ -197,7 +197,7 @@ bool ABsearch0(
     if (cardsP)
     {
 #ifdef DDS_AB_HITS
-      DumpRetrieved(thrp->fnRetrieved, posPoint, cardsP, target, depth);
+      DumpRetrieved(thrp->fnRetrieved, * posPoint, * cardsP, target, depth);
 #endif
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -288,22 +288,6 @@ bool ABsearch0(
     }
   }
 
-  /*
-  if (depth == 4)
-  {
-    char text[DDS_HAND_LINES][DDS_FULL_LINE];
-
-    RankToText(posPoint->rankInSuit, text);
-    for (int i = 0; i < DDS_HAND_LINES; i++)
-      printf("%s\n", text[i]);
-    printf("\nTrump %c, leader %c, target %d tricks\n",
-      cardSuit[trump],
-      cardHand[hand],
-      - posPoint->tricksMAX + target);
-    printf("----------------------------------\n\n");
-  }
-  */
-
   if (depth < 20)
   {
     /* Find node that fits the suit lengths */
@@ -324,7 +308,7 @@ bool ABsearch0(
     if (cardsP)
     {
 #ifdef DDS_AB_HITS
-      DumpRetrieved(thrp->fnRetrieved, posPoint, cardsP, target, depth);
+      DumpRetrieved(thrp->fnRetrieved, * posPoint, * cardsP, target, depth);
 #endif
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -460,8 +444,8 @@ ABexit:
   TIMER_END(TIMER_NO_BUILD, depth);
 
 #ifdef DDS_AB_HITS
-  DumpStored(thrp->fnStored, posPoint, &thrp->moves,
-             &first, target, depth);
+  DumpStored(thrp->fnStored, * posPoint, thrp->moves,
+             first, target, depth);
 #endif
 
   AB_COUNT(AB_MOVE_LOOP, value, depth);
