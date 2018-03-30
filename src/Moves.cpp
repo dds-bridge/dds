@@ -2405,7 +2405,7 @@ void Moves::RegisterHit(
     char text[12][80];
     RankToText(posPoint->rankInSuit, text);
 
-   PrintDeal(cout, posPoint->RankInsuit, 16);
+    cout << PrintDeal(posPoint->RankInsuit, 16);
 
     trackp = &track[trick];
 

@@ -19,26 +19,22 @@
 #include "dump.h"
 
 
-#define DDS_POS_LINES 5
 // #define DDS_HAND_LINES 12
-#define DDS_NODE_LINES 4
 // #define DDS_FULL_LINE 80
-#define DDS_HAND_OFFSET 16
-#define DDS_HAND_OFFSET2 12
-#define DDS_DIAG_WIDTH 34
 
 
 string PrintSuit(const unsigned short suitCode);
+string PrintSuit(
+  const unsigned short suitCode,
+  const char leastWin);
 
-void PrintDeal(
-  ofstream& fout,
+string PrintDeal(
   const unsigned short ranks[][DDS_SUITS],
   const unsigned spacing);
 
 void RankToDiagrams(
-  unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
-  nodeCardsType * np,
-  char text[DDS_HAND_LINES][DDS_FULL_LINE]);
+  unsigned short ranks[DDS_HANDS][DDS_SUITS],
+  nodeCardsType const * np);
 
 string WinnersToText(const unsigned short winRanks[]);
 
@@ -55,6 +51,13 @@ string TopMove(
   const bool val,
   const moveType& bestMove);
 
+string DumpTopHeader(
+  ThreadData const * thrp,
+  const int tricks,
+  const int lower,
+  const int upper,
+  const int printMode);
+
 
 string PrintSuit(const unsigned short suitCode)
 {
@@ -69,21 +72,43 @@ string PrintSuit(const unsigned short suitCode)
 }
 
 
-void PrintDeal(
-  ofstream& fout,
+string PrintSuit(
+  const unsigned short suitCode,
+  const char leastWin)
+{
+  if (! suitCode)
+    return "--";
+
+  string st;
+  for (int r = 14; r >= 2; r--)
+  {
+    if ((suitCode & bitMapRank[r]))
+    {
+      if (r >= 15 - leastWin)
+        st += cardRank[r];
+      else
+        st += "x";
+    }
+  }
+  return st;
+}
+
+
+string PrintDeal(
   const unsigned short ranks[][DDS_SUITS],
   const unsigned spacing)
 {
+  stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    fout << setw(spacing) << "" << 
+    ss << setw(spacing) << "" << 
       cardSuit[s] << " " <<
       PrintSuit(ranks[0][s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    fout << cardSuit[s] << " " <<
+    ss << cardSuit[s] << " " <<
       setw(2*spacing - 2) << left << PrintSuit(ranks[3][s]) <<
       cardSuit[s] << " " <<
       PrintSuit(ranks[1][s]) << "\n";
@@ -91,83 +116,47 @@ void PrintDeal(
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    fout << setw(spacing) << "" << 
+    ss << setw(spacing) << "" << 
       cardSuit[s] << " " <<
       PrintSuit(ranks[2][s]) << "\n";
   }
 
-  fout << "\n";
-  return;
+  return ss.str() + "\n";
 }
 
 
-void RankToDiagrams(
-  const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
-  nodeCardsType const * np,
-  char text[DDS_HAND_LINES][DDS_FULL_LINE])
+string RankToDiagrams(
+  const unsigned short ranks[DDS_HANDS][DDS_SUITS],
+  nodeCardsType const * np)
 {
-  int c, h, s, r;
-
-  for (int l = 0; l < DDS_HAND_LINES; l++)
+  stringstream ss;
+  for (int s = 0; s < DDS_SUITS; s++)
   {
-    memset(text[l], ' ', DDS_FULL_LINE);
-    text[l][DDS_FULL_LINE - 1] = '\0';
-    text[l][DDS_DIAG_WIDTH ] = '|';
+    ss << setw(12) << left << 
+      (s == 0 ? "Sought" : "") << 
+      cardSuit[s] << " " << setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
+      setw(12) << (s == 0 ? "Found" : "") << 
+      cardSuit[s] << " " << PrintSuit(ranks[0][s], np->leastWin[s]) << "\n";
   }
 
-  strncpy(text[0], "Sought", 6);
-  strncpy(&text[0][DDS_DIAG_WIDTH + 5], "Found", 5);
-
-  for (h = 0; h < DDS_HANDS; h++)
+  for (int s = 0; s < DDS_SUITS; s++)
   {
-    int offset, line;
-    if (h == 0)
-    {
-      offset = DDS_HAND_OFFSET2;
-      line = 0;
-    }
-    else if (h == 1)
-    {
-      offset = 2 * DDS_HAND_OFFSET2;
-      line = 4;
-    }
-    else if (h == 2)
-    {
-      offset = DDS_HAND_OFFSET2;
-      line = 8;
-    }
-    else
-    {
-      offset = 0;
-      line = 4;
-    }
-
-    for (s = 0; s < DDS_SUITS; s++)
-    {
-      c = offset;
-      for (r = 14; r >= 2; r--)
-      {
-        if (rankInSuit[h][s] & bitMapRank[r])
-        {
-          text[line + s][c] = static_cast<char>(cardRank[r]);
-          text[line + s][c + DDS_DIAG_WIDTH + 5] =
-            (r >= 15 - np->leastWin[s] ?
-             static_cast<char>(cardRank[r]) : 'x');
-          c++;
-        }
-      }
-
-      if (c == offset)
-      {
-        text[line + s][c] = '-';
-        text[line + s][c + DDS_DIAG_WIDTH + 5] = '-';
-        c++;
-      }
-
-      if (h != 3)
-        text[line + s][c + DDS_DIAG_WIDTH + 5] = '\0';
-    }
+    ss << 
+      cardSuit[s] << " " << setw(22) << left << PrintSuit(ranks[3][s]) <<
+      cardSuit[s] << " " << setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
+      cardSuit[s] << " " << 
+        setw(22) << PrintSuit(ranks[3][s], np->leastWin[s]) << 
+      cardSuit[s] << " " << PrintSuit(ranks[1][s], np->leastWin[s]) << "\n";
   }
+
+  for (int s = 0; s < DDS_SUITS; s++)
+  {
+    ss << setw(12) << left << "" << 
+      cardSuit[s] << " " << setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
+      setw(12) << "" << cardSuit[s] << " " <<
+      PrintSuit(ranks[0][s], np->leastWin[s]) << "\n";
+  }
+  return ss.str();
 }
 
 
@@ -234,6 +223,53 @@ string PosToText(
 }
 
 
+string DumpTopHeader(
+  ThreadData const * thrp,
+  const int tricks,
+  const int lower,
+  const int upper,
+  const int printMode)
+{
+  string stext;
+  if (printMode == 0)
+  {
+    // Trying just one target.
+    stext = "Single target " + to_string(tricks) + ", " + "achieved";
+  }
+  else if (printMode == 1)
+  {
+    // Looking for best score.
+    stext = "Loop target " + to_string(tricks) + ", " +
+      "bounds " + to_string(lower) + " .. " + to_string(upper) + ", " +
+      TopMove(thrp->val, thrp->bestMove[thrp->iniDepth]) + "";
+  }
+  else if (printMode == 2)
+  {
+    // Looking for other moves with best score.
+    stext = "Loop for cards with score " + to_string(tricks) + ", " +
+      TopMove(thrp->val, thrp->bestMove[thrp->iniDepth]);
+  }
+  return stext + "\n" + string(stext.size(), '-') + "\n";
+}
+
+
+string TopMove(
+  const bool val,
+  const moveType& bestMove)
+{
+  if (val)
+  {
+    stringstream ss;
+    ss << "achieved with move " <<
+      cardSuit[ bestMove.suit ] <<
+      cardRank[ bestMove.rank ];
+    return ss.str();
+  }
+  else
+    return "failed";
+}
+
+
 int DumpInput(
   const int errCode, 
   const deal& dl, 
@@ -276,7 +312,8 @@ int DumpInput(
   fout << "\ntarget=" << target << "\n";
   fout << "solutions=" << solutions << "\n";
   fout << "mode=" << mode << "\n\n\n";
-  PrintDeal(fout, ranks, 8);
+  fout << PrintDeal(ranks, 8);
+
   fout.close();
   return 0;
 }
@@ -292,18 +329,11 @@ void DumpRetrieved(
   ofstream fout;
   fout.open(fname, ofstream::out | ofstream::app);
 
-  // Big enough for all uses.
-  char text[DDS_HAND_LINES][DDS_FULL_LINE];
-
   fout << "Retrieved entry\n";
   fout << string(15, '-') << "\n";
   fout << PosToText(posPoint, target, depth) << "\n";
   fout << FullNodeToText(np) << "\n";
-
-  RankToDiagrams(posPoint->rankInSuit, np, text);
-  for (int i = 0; i < DDS_HAND_LINES; i++)
-    fout << string(text[i]) << "\n";
-  fout << "\n";
+  fout << RankToDiagrams(posPoint->rankInSuit, np) << "\n";
 
   fout.close();
 }
@@ -330,27 +360,9 @@ void DumpStored(
 
   moves->TrickToText((depth >> 2) + 1, text[0]);
   fout << string(text[0]) << "\n";
-
-  PrintDeal(fout, posPoint->rankInSuit, 16);
+  fout << PrintDeal(posPoint->rankInSuit, 16);
 
   fout.close();
-}
-
-
-string TopMove(
-  const bool val,
-  const moveType& bestMove)
-{
-  if (val)
-  {
-    stringstream ss;
-    ss << "achieved with move " <<
-      cardSuit[ bestMove.suit ] <<
-      cardRank[ bestMove.rank ];
-    return ss.str();
-  }
-  else
-    return "failed";
 }
 
 
@@ -361,37 +373,14 @@ void DumpTopLevel(
   const int upper,
   const int printMode)
 {
+  pos const * posPoint = &thrp->lookAheadPos;
+
   ofstream fout;
   fout.open(thrp->fnTopLevel, ofstream::out | ofstream::app);
 
-  pos const * posPoint = &thrp->lookAheadPos;
-
-  string stext;
-  if (printMode == 0)
-  {
-    // Trying just one target.
-    stext = "Single target " + to_string(tricks) + ", " + "achieved";
-  }
-  else if (printMode == 1)
-  {
-    // Looking for best score.
-    stext = "Loop target " + to_string(tricks) + ", " +
-      "bounds " + to_string(lower) + " .. " + to_string(upper) + ", " +
-      TopMove(thrp->val, thrp->bestMove[thrp->iniDepth]) + "";
-  }
-  else if (printMode == 2)
-  {
-    // Looking for other moves with best score.
-    stext = "Loop for cards with score " + to_string(tricks) + ", " +
-      TopMove(thrp->val, thrp->bestMove[thrp->iniDepth]);
-  }
-
-  fout << stext << "\n" << string(stext.size(), '-') << "\n\n";
-
-  PrintDeal(fout, posPoint->rankInSuit, 16);
-
+  fout << DumpTopHeader(thrp, tricks, lower, upper, printMode) << "\n";
+  fout << PrintDeal(posPoint->rankInSuit, 16);
   fout << WinnersToText(posPoint->winRanks[ thrp->iniDepth ]) << "\n";
-
   fout << thrp->nodes << " AB nodes, " <<
     thrp->trickNodes << " trick nodes\n\n";
 
