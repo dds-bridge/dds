@@ -13,11 +13,12 @@
 
 #include "dds.h"
 
-#ifdef SMALL_MEMORY_OPTION
-  #include "TransTableS.h"
-#else
-  #include "TransTableL.h"
-#endif
+#include "TransTable.h"
+// #ifdef SMALL_MEMORY_OPTION
+  // #include "TransTableS.h"
+// #else
+  // #include "TransTableL.h"
+// #endif
 
 #include "Moves.h"
 #include "QuickTricks.h"
@@ -193,7 +194,7 @@ bool ABsearch0(
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
     nodeCardsType const * cardsP =
-      thrp->transTable.Lookup(
+      thrp->transTable->Lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
         limit, lowerFlag);
     TIMER_END(TIMER_NO_LOOKUP, depth);
@@ -305,7 +306,7 @@ bool ABsearch0(
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
     nodeCardsType const * cardsP =
-      thrp->transTable.Lookup(
+      thrp->transTable->Lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
         limit, lowerFlag);
     TIMER_END(TIMER_NO_LOOKUP, depth);
@@ -439,7 +440,7 @@ ABexit:
     ? true : false;
 
   TIMER_START(TIMER_NO_BUILD, depth);
-  thrp->transTable.Add(
+  thrp->transTable->Add(
     tricks,
     hand,
     posPoint->aggr,

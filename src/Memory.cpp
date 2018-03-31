@@ -22,46 +22,31 @@ Memory::~Memory()
 }
 
 
-#include <iostream>
 void Memory::Reset()
 {
   nThreads = 0;
-  defThrMB = 0;
-  maxThrMB = 0;
-  Memory::Resize(1);
 }
 
 
 void Memory::ResetThread(const unsigned thrId)
 {
-  memory[thrId]->transTable.ResetMemory(TT_RESET_FREE_MEMORY);
+  memory[thrId]->transTable->ResetMemory(TT_RESET_FREE_MEMORY);
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
 
 
 void Memory::ReturnThread(const unsigned thrId)
 {
-  memory[thrId]->transTable.ReturnAllMemory();
+  memory[thrId]->transTable->ReturnAllMemory();
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
 
 
-void Memory::SetThreadSize(
+void Memory::Resize(
+  const unsigned n,
+  const TTmemory flag,
   const int memDefault_MB,
   const int memMaximum_MB)
-{
-  defThrMB = memDefault_MB;
-  maxThrMB = memMaximum_MB;
-
-  for (unsigned i = 0; i < nThreads; i++)
-  {
-    memory[i]->transTable.SetMemoryDefault(defThrMB);
-    memory[i]->transTable.SetMemoryMaximum(maxThrMB);
-  }
-}
-
-
-void Memory::Resize(const unsigned n)
 {
   if (nThreads == n)
     return;
@@ -70,7 +55,8 @@ void Memory::Resize(const unsigned n)
   {
     for (unsigned i = n; i < nThreads; i++)
     {
-      memory[i]->transTable.ReturnAllMemory();
+      memory[i]->transTable->ReturnAllMemory();
+      delete memory[i]->transTable;
       delete memory[i];
     }
     memory.resize(static_cast<unsigned>(n));
@@ -81,12 +67,15 @@ void Memory::Resize(const unsigned n)
     for (unsigned i = nThreads; i < n; i++)
     {
       memory[i] = new ThreadData;
+      if (flag == DDS_TT_SMALL)
+        memory[i]->transTable = new TransTableS;
+      else
+        memory[i]->transTable = new TransTableL;
 
-      // TODO: Should come from the outside?
-      memory[i]->transTable.SetMemoryDefault(THREADMEM_DEF_MB);
-      memory[i]->transTable.SetMemoryMaximum(THREADMEM_MAX_MB);
+      memory[i]->transTable->SetMemoryDefault(memDefault_MB);
+      memory[i]->transTable->SetMemoryMaximum(memMaximum_MB);
 
-      memory[i]->transTable.MakeTT();
+      memory[i]->transTable->MakeTT();
     }
   }
 
@@ -102,13 +91,13 @@ ThreadData * Memory::GetPtr(const unsigned thrId)
 
 double Memory::MemoryInUseMB(const unsigned thrId) const
 {
-  return memory[thrId]->transTable.MemoryInUse() +
+  return memory[thrId]->transTable->MemoryInUse() +
     8192. * sizeof(relRanksType) / static_cast<double>(1024.);
 }
 
 
 void Memory::ReturnAllMemory()
 {
-  Memory::Resize(0);
+  Memory::Resize(0, DDS_TT_SMALL, 0, 0);
 }
 

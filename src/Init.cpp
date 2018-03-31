@@ -10,6 +10,7 @@
 
 #include "Init.h"
 #include "System.h"
+#include "Memory.h"
 #include "Scheduler.h"
 #include "debug.h"
 
@@ -29,6 +30,8 @@ void FreeThreadMem();
 void CalcThreadMemory(
   const int oldNoOfThreads,
   const int kilobytesUsable,
+  const int memcst_def,
+  const int memcst_max,
   int& mem_def,
   int& mem_max);
 
@@ -83,6 +86,8 @@ int _initialized = 0;
 void CalcThreadMemory(
   const int oldNoOfThreads,
   const int kilobytesUsable,
+  const int memcst_def,
+  const int memcst_max,
   int& mem_def,
   int& mem_max)
 {
@@ -90,34 +95,34 @@ void CalcThreadMemory(
   if (deltaThreads <= 0)
   {
     // We already have the memory.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_MAX_MB;
+    mem_def = memcst_def;
+    mem_max = memcst_max;
   }
   else if (kilobytesUsable == 0 || noOfThreads == 1)
   {
     // Take our chances with default values.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_MAX_MB;
+    mem_def = memcst_def;
+    mem_max = memcst_max;
   }
-  else if (kilobytesUsable >= 1024 * THREADMEM_MAX_MB * deltaThreads)
+  else if (kilobytesUsable >= 1024 * memcst_max * deltaThreads)
   {
     // Comfortable.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_MAX_MB;
+    mem_def = memcst_def;
+    mem_max = memcst_max;
   }
-  else if (kilobytesUsable >= 1024 * THREADMEM_DEF_MB * deltaThreads)
+  else if (kilobytesUsable >= 1024 * memcst_def * deltaThreads)
   {
     // Slightly less comfortable, cap the maximum,
     // but make the maximum number of threads.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_DEF_MB;
+    mem_def = memcst_def;
+    mem_max = memcst_def; // Not max
   }
   else
   {
     // Even less comfortable.  Thread number will be limited later.
     // Limit the number of threads to the available memory.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_DEF_MB;
+    mem_def = memcst_def;
+    mem_max = memcst_def; // Not max
   }
 }
 
@@ -148,8 +153,19 @@ void STDCALL SetMaxThreads(
   else
     noOfThreads = ncores;
 
+#ifdef SMALL_MEMORY_OPTION
+  const TTmemory TTmem = DDS_TT_SMALL;
+  const int memcst_def = THREADMEM_SMALL_DEF_MB;
+  const int memcst_max = THREADMEM_SMALL_MAX_MB;
+#else
+  const TTmemory TTmem = DDS_TT_LARGE;
+  const int memcst_def = THREADMEM_LARGE_DEF_MB;
+  const int memcst_max = THREADMEM_LARGE_MAX_MB;
+#endif
+
   int mem_def, mem_max;
-  CalcThreadMemory(oldNoOfThreads, kilobytesUsable, mem_def, mem_max);
+  CalcThreadMemory(oldNoOfThreads, kilobytesUsable, 
+    memcst_def, memcst_max, mem_def, mem_max);
 
   if (kilobytesUsable > 0 && noOfThreads > 1)
   {
@@ -166,8 +182,8 @@ void STDCALL SetMaxThreads(
     kilobytesUsable >> 10, mem_def, mem_max);
   scheduler.RegisterThreads(noOfThreads);
 
-  memory.Resize(static_cast<unsigned>(noOfThreads));
-  memory.SetThreadSize(mem_def, mem_max);
+  memory.Resize(static_cast<unsigned>(noOfThreads), 
+    TTmem, mem_def, mem_max);
 
   if (! _initialized)
   {
@@ -502,7 +518,7 @@ void SetDealTables(
     }
   }
 
-  thrp->transTable.Init(handLookup);
+  thrp->transTable->Init(handLookup);
 
   relRanksType * relp;
   for (unsigned int aggr = 1; aggr < 8192; aggr++)
@@ -580,7 +596,7 @@ void ResetBestMoves(
     thrp->bestMoveTT[d].rank = 0;
   }
 
-  thrp->memUsed = thrp->transTable.MemoryInUse() +
+  thrp->memUsed = thrp->transTable->MemoryInUse() +
                   ThreadMemoryUsed();
 
 #ifdef DDS_AB_STATS

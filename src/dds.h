@@ -21,13 +21,10 @@
 #endif
 
 
-#if defined(SMALL_MEMORY_OPTION)
-  #define THREADMEM_MAX_MB 30
-  #define THREADMEM_DEF_MB 20
-#else
-  #define THREADMEM_MAX_MB 160
-  #define THREADMEM_DEF_MB 95
-#endif
+#define THREADMEM_SMALL_MAX_MB 30
+#define THREADMEM_SMALL_DEF_MB 20
+#define THREADMEM_LARGE_MAX_MB 160
+#define THREADMEM_LARGE_DEF_MB 95
 
 #define MAXNODE 1
 #define MINNODE 0

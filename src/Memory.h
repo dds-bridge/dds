@@ -14,11 +14,8 @@
 
 #include "TransTable.h"
 
-#ifdef SMALL_MEMORY_OPTION
-  #include "TransTableS.h"
-#else
-  #include "TransTableL.h"
-#endif
+#include "TransTableS.h"
+#include "TransTableL.h"
 
 #include "Moves.h"
 #include "File.h"
@@ -34,6 +31,12 @@
 
 using namespace std;
 
+
+enum TTmemory
+{
+  DDS_TT_SMALL = 0,
+  DDS_TT_LARGE = 1
+};
 
 struct WinnerEntryType
 {
@@ -76,11 +79,7 @@ struct ThreadData
   // 960 KB
   relRanksType rel[8192];
 
-#ifdef SMALL_MEMORY_OPTION
-  TransTableS transTable;
-#else
-  TransTableL transTable;
-#endif
+  TransTable * transTable;
 
   Moves moves;
 
@@ -118,9 +117,6 @@ class Memory
 {
   private:
 
-    int defThrMB;
-    int maxThrMB;
-
     vector<ThreadData *> memory;
     unsigned nThreads;
 
@@ -136,11 +132,11 @@ class Memory
 
     void ReturnThread(const unsigned thrId);
 
-    void SetThreadSize(
+    void Resize(
+      const unsigned n,
+      const TTmemory flag,
       const int memDefault_MB,
       const int memMaximum_MB);
-
-    void Resize(const unsigned n);
 
     ThreadData * GetPtr(const unsigned thrId);
 

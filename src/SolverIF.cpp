@@ -225,7 +225,7 @@ int SolveBoardInternal(
       reason = TT_RESET_NEW_DEAL;
     else if (newTrump)
       reason = TT_RESET_NEW_TRUMP;
-    thrp->transTable.ResetMemory(reason);
+    thrp->transTable->ResetMemory(reason);
   }
 
   if (newDeal)
@@ -625,13 +625,12 @@ SOLVER_STATS:
 #endif
 
 #ifdef DDS_TT_STATS
-  #ifndef SMALL_MEMORY_OPTION
-  // thrp->transTable.PrintAllSuits();
-  // thrp->transTable.PrintEntries(10, 0);
-  thrp->transTable.PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-  thrp->transTable.PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
-  // thrp->transTable.PrintPageSummary();
-  #endif
+  // These are for the large TT -- empty if not.
+  // thrp->transTable->PrintAllSuits();
+  // thrp->transTable->PrintEntries(10, 0);
+  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintPageSummary();
 #endif
 
 #ifdef DDS_MOVES
@@ -644,7 +643,7 @@ SOLVER_STATS:
 
 SOLVER_DONE:
 
-  thrp->memUsed = thrp->transTable.MemoryInUse() +
+  thrp->memUsed = thrp->transTable->MemoryInUse() +
                   ThreadMemoryUsed();
 
   futp->nodes = thrp->trickNodes;
@@ -733,7 +732,7 @@ int SolveSameBoard(
   futp->cards = 1;
   futp->score[0] = lowerbound;
 
-  thrp->memUsed = thrp->transTable.MemoryInUse() +
+  thrp->memUsed = thrp->transTable->MemoryInUse() +
                   ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -741,10 +740,9 @@ int SolveSameBoard(
 #endif
 
 #ifdef DDS_TT_STATS
-  #ifndef SMALL_MEMORY_OPTION
-  thrp->transTable.PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-  thrp->transTable.PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
-  #endif
+  // These are for the large TT -- empty if not.
+  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
 #endif
 
 #ifdef DDS_MOVES
@@ -887,7 +885,7 @@ int AnalyseLaterBoard(
   futp->score[0] = lowerbound;
   futp->nodes = thrp->trickNodes;
 
-  thrp->memUsed = thrp->transTable.MemoryInUse() +
+  thrp->memUsed = thrp->transTable->MemoryInUse() +
                   ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -895,10 +893,9 @@ int AnalyseLaterBoard(
 #endif
 
 #ifdef DDS_TT_STATS
-  #ifndef SMALL_MEMORY_OPTION
-  thrp->transTable.PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-  thrp->transTable.PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
-  #endif
+  // These are for the large TT -- empty if not.
+  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
 #endif
 
 #ifdef DDS_MOVES
