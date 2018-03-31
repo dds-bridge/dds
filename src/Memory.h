@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "TransTable.h"
-
 #include "TransTableS.h"
 #include "TransTableL.h"
 
@@ -83,13 +82,18 @@ struct ThreadData
 
   Moves moves;
 
+#ifdef DDS_TOP_LEVEL
+  File fileTopLevel;
+#endif
+
 #ifdef DDS_AB_STATS
   ABstats ABStats;
   File fileABstats;
 #endif
 
-#ifdef DDS_MOVES
-  File fileMoves;
+#ifdef DDS_AB_HITS
+  File fileRetrieved;
+  File fileStored;
 #endif
 
 #ifdef DDS_TT_STATS
@@ -101,13 +105,8 @@ struct ThreadData
   File fileTimerList;
 #endif
 
-#ifdef DDS_TOP_LEVEL
-  File fileTopLevel;
-#endif
-
-#ifdef DDS_AB_HITS
-  File fileRetrieved;
-  File fileStored;
+#ifdef DDS_MOVES
+  File fileMoves;
 #endif
 
 };

@@ -11,15 +11,7 @@
 #include <sstream>
 #include <assert.h>
 
-#include "dds.h"
-
 #include "TransTable.h"
-// #ifdef SMALL_MEMORY_OPTION
-  // #include "TransTableS.h"
-// #else
-  // #include "TransTableL.h"
-// #endif
-
 #include "Moves.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"

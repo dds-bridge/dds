@@ -87,13 +87,17 @@ class System
 
     int RegisterParams(
       const int nThreads,
-      const int mem_usable_MB,
-      const int mem_def_MB,
-      const int mem_max_MB);
+      const int mem_usable_MB);
 
     int RegisterRun(
       const RunMode r,
       const boards& bop);
+
+    bool IsSingleThreaded() const;
+
+    bool IsIMPL() const;
+
+    unsigned NumThreads() const;
 
     bool ThreadOK(const int thrId) const;
 

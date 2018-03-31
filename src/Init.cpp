@@ -10,7 +10,6 @@
 
 #include "Init.h"
 #include "System.h"
-#include "Memory.h"
 #include "Scheduler.h"
 #include "debug.h"
 
@@ -18,7 +17,6 @@
 System sysdep;
 Memory memory;
 Scheduler scheduler;
-int noOfThreads;
 
 
 void InitConstants();
@@ -26,14 +24,6 @@ void InitConstants();
 void InitDebugFiles();
 
 void FreeThreadMem();
-
-void CalcThreadMemory(
-  const int oldNoOfThreads,
-  const int kilobytesUsable,
-  const int memcst_def,
-  const int memcst_max,
-  int& mem_def,
-  int& mem_max);
 
 
 int lho[DDS_HANDS] = { 1, 2, 3, 0 };
@@ -83,107 +73,96 @@ moveGroupType groupData[8192];
 
 int _initialized = 0;
 
-void CalcThreadMemory(
-  const int oldNoOfThreads,
-  const int kilobytesUsable,
-  const int memcst_def,
-  const int memcst_max,
-  int& mem_def,
-  int& mem_max)
-{
-  const int deltaThreads = noOfThreads - oldNoOfThreads;
-  if (deltaThreads <= 0)
-  {
-    // We already have the memory.
-    mem_def = memcst_def;
-    mem_max = memcst_max;
-  }
-  else if (kilobytesUsable == 0 || noOfThreads == 1)
-  {
-    // Take our chances with default values.
-    mem_def = memcst_def;
-    mem_max = memcst_max;
-  }
-  else if (kilobytesUsable >= 1024 * memcst_max * deltaThreads)
-  {
-    // Comfortable.
-    mem_def = memcst_def;
-    mem_max = memcst_max;
-  }
-  else if (kilobytesUsable >= 1024 * memcst_def * deltaThreads)
-  {
-    // Slightly less comfortable, cap the maximum,
-    // but make the maximum number of threads.
-    mem_def = memcst_def;
-    mem_max = memcst_def; // Not max
-  }
-  else
-  {
-    // Even less comfortable.  Thread number will be limited later.
-    // Limit the number of threads to the available memory.
-    mem_def = memcst_def;
-    mem_max = memcst_def; // Not max
-  }
-}
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
 void STDCALL SetMaxThreads(
   int userThreads)
 {
-  if (! _initialized)
-    noOfThreads = 0;
+  SetResources(0, userThreads);
+}
 
-  // First figure out how much memory we have available
-  // and how many cores the system has.
+
+void STDCALL SetResources(
+  int maxMemoryMB,
+  int maxThreadsIn)
+{
+  // Figure out system resources.
   int ncores;
   unsigned long long kilobytesFree;
   sysdep.GetHardware(ncores, kilobytesFree);
 
-  // 70%, capped at 2 GB.
-  int kilobytesUsable = static_cast<int>(0.70 * kilobytesFree);
-  if (kilobytesUsable > 2000000)
-    kilobytesUsable = 2000000;
+  // Memory usage will be limited to the lower of:
+  // - maxMemoryMB + 30% (if given; statistically this works out)
+  // - 70% of free memory
+  // - 1800 MB if we're on a 32-bit system.
 
-  int oldNoOfThreads = noOfThreads;
-  if (userThreads)
-    noOfThreads = userThreads;
-    // noOfThreads = Min(ncores, userThreads); TODO Switch back?
+  const int memMaxGivenMB = (maxMemoryMB == 0 ? 1000000 : 
+    static_cast<int>(1.3 * maxMemoryMB));
+  const int memMaxFreeMB = static_cast<int>(0.70 * kilobytesFree / 1024);
+  const int memMax32bMB = (sizeof(void *) == 4 ? 1800 : 1000000);
+
+  int memMaxMB = Min(memMaxGivenMB, memMaxFreeMB);
+  memMaxMB = Min(memMaxMB, memMax32bMB);
+
+  // The number of threads will be limited by:
+  // - If threading set as single-threaded or compiled only 
+  //   single-threaded: 1
+  // - If threading set as one of the IMPL variants: 1.5 * ncores
+  //   whatever the user says (as we currently don't have control)
+  // - Otherwise the lower of maxThreads and 1.5 * ncores (for test
+  //   purpose, later one 1 * ncores)
+
+  int thrMax;
+  if (sysdep.IsSingleThreaded())
+    thrMax = 1;
+  else if (sysdep.IsIMPL() || maxThreadsIn <= 0)
+    thrMax = static_cast<int>(1.51 * ncores);
   else
-    noOfThreads = ncores;
+    thrMax = Min(maxThreadsIn, static_cast<int>(1.51 * ncores));
 
-#ifdef SMALL_MEMORY_OPTION
-  const TTmemory TTmem = DDS_TT_SMALL;
-  const int memcst_def = THREADMEM_SMALL_DEF_MB;
-  const int memcst_max = THREADMEM_SMALL_MAX_MB;
-#else
-  const TTmemory TTmem = DDS_TT_LARGE;
-  const int memcst_def = THREADMEM_LARGE_DEF_MB;
-  const int memcst_max = THREADMEM_LARGE_MAX_MB;
-#endif
+  // For simplicity we won't vary the amount of memory per thread
+  // in the small and large versions.
 
-  int mem_def, mem_max;
-  CalcThreadMemory(oldNoOfThreads, kilobytesUsable, 
-    memcst_def, memcst_max, mem_def, mem_max);
-
-  if (kilobytesUsable > 0 && noOfThreads > 1)
+  int noOfThreads, noOfLargeThreads, noOfSmallThreads;
+  if (thrMax * THREADMEM_LARGE_MAX_MB <= memMaxMB)
   {
-    if (kilobytesUsable < 1024 * mem_max * noOfThreads)
-    {
-      int fittingThreads = static_cast<int>( kilobytesUsable /
-        ( static_cast<double>(1024. * mem_max) ) );
+    // We have enough memory for the maximum number of large threads.
+    noOfThreads = thrMax;
+    noOfLargeThreads = thrMax;
+    noOfSmallThreads = 0;
+  }
+  else if (thrMax * THREADMEM_SMALL_MAX_MB > memMaxMB)
+  {
+    // We don't even have enough memory for only small threads.
+    // We'll limit the number of threads.
+    noOfThreads = static_cast<int>(memMaxMB / 
+      static_cast<double>(thrMax));
+    noOfLargeThreads = 0;
+    noOfSmallThreads = noOfThreads;
+  }
+  else
+  {
+    // We'll have a mixture with as many large threads as possible.
+    const double d = static_cast<double>(
+          THREADMEM_LARGE_MAX_MB - THREADMEM_SMALL_MAX_MB);
 
-      noOfThreads = Max(fittingThreads, 1);
-    }
+    noOfThreads = thrMax;
+    noOfLargeThreads = static_cast<int>(
+      (memMaxMB - thrMax * THREADMEM_SMALL_MAX_MB) / d);
+    noOfSmallThreads = thrMax - noOfLargeThreads;
   }
 
-  sysdep.RegisterParams(noOfThreads, 
-    kilobytesUsable >> 10, mem_def, mem_max);
+  sysdep.RegisterParams(noOfThreads, memMaxMB);
+
   scheduler.RegisterThreads(noOfThreads);
 
-  memory.Resize(static_cast<unsigned>(noOfThreads), 
-    TTmem, mem_def, mem_max);
+  // Clear the thread memory and fill it up again.
+  memory.Resize(0, DDS_TT_SMALL, 0, 0);
+  if (noOfLargeThreads > 0)
+    memory.Resize(static_cast<unsigned>(noOfLargeThreads),
+      DDS_TT_LARGE, THREADMEM_LARGE_DEF_MB, THREADMEM_LARGE_MAX_MB);
+  if (noOfSmallThreads > 0)
+    memory.Resize(static_cast<unsigned>(noOfThreads),
+      DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
   if (! _initialized)
   {
@@ -366,9 +345,9 @@ void InitConstants()
 
 void InitDebugFiles()
 {
-  for (int thrId = 0; thrId < noOfThreads; thrId++)
+  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
   {
-    ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+    ThreadData * thrp = memory.GetPtr(thrId);
     UNUSED(thrp); // To avoid compile errors
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 
@@ -385,12 +364,12 @@ void InitDebugFiles()
     thrp->fileStored.SetName(DDS_AB_HITS_STORED_PREFIX + send);
 #endif
 
-#ifdef DDS_TIMING
-    thrp->fileTimerList.SetName(DDS_TIMING_PREFIX + send);
-#endif
-
 #ifdef DDS_TT_STATS
     thrp->fileTTstats.SetName(DDS_TT_STATS_PREFIX + send);
+#endif
+
+#ifdef DDS_TIMING
+    thrp->fileTimerList.SetName(DDS_TIMING_PREFIX + send);
 #endif
 
 #ifdef DDS_MOVES
@@ -406,25 +385,13 @@ void InitDebugFiles()
 
 void CloseDebugFiles()
 {
-  for (int thrId = 0; thrId < noOfThreads; thrId++)
+  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
   {
-    ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+    ThreadData * thrp = memory.GetPtr(thrId);
     UNUSED(thrp); // To avoid compiler warning
-
-#ifdef DDS_TIMING
-    thrp->fileTimerList.Close();
-#endif
 
 #ifdef DDS_TOP_LEVEL
     thrp->fileTopLevel.Close();
-#endif
-
-#ifdef DDS_TT_STATS
-    thrp->fileTTstats.Close();
-#endif
-
-#ifdef DDS_MOVES
-    thrp->fileMoves.Close();
 #endif
 
 #ifdef DDS_AB_STATS
@@ -434,6 +401,18 @@ void CloseDebugFiles()
 #ifdef DDS_AB_HITS
     thrp->fileRetrieved.Close();
     thrp->fileStored.Close();
+#endif
+
+#ifdef DDS_TT_STATS
+    thrp->fileTTstats.Close();
+#endif
+
+#ifdef DDS_TIMING
+    thrp->fileTimerList.Close();
+#endif
+
+#ifdef DDS_MOVES
+    thrp->fileMoves.Close();
 #endif
   }
 }
@@ -613,15 +592,15 @@ void STDCALL GetDDSInfo(DDSInfo * info)
 
 void FreeThreadMem()
 {
-  for (unsigned k = 0; k < static_cast<unsigned>(noOfThreads); k++)
-    memory.ResetThread(k);
+  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+    memory.ResetThread(thrId);
 }
 
 
 void STDCALL FreeMemory()
 {
-  for (unsigned k = 0; k < static_cast<unsigned>(noOfThreads); k++)
-    memory.ReturnThread(k);
+  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+    memory.ReturnThread(thrId);
 }
 
 

@@ -234,9 +234,7 @@ void System::GetHardware(
 
 int System::RegisterParams(
   const int nThreads,
-  const int mem_usable_MB,
-  const int mem_def_MB,
-  const int mem_max_MB)
+  const int mem_usable_MB)
 {
   // No upper limit -- caveat emptor.
   if (nThreads < 1)
@@ -244,8 +242,6 @@ int System::RegisterParams(
 
   numThreads = nThreads;
   sysMem_MB = mem_usable_MB;
-  thrDef_MB = mem_def_MB;
-  thrMax_MB = mem_max_MB;
   return RETURN_NO_FAULT;
 }
 
@@ -260,6 +256,24 @@ int System::RegisterRun(
   runCat = mode;
   bop = &bdsIn;
   return RETURN_NO_FAULT;
+}
+
+
+bool System::IsSingleThreaded() const
+{
+  return (preferredSystem == DDS_SYSTEM_THREAD_BASIC);
+}
+
+
+bool System::IsIMPL() const
+{
+  return (preferredSystem >= DDS_SYSTEM_THREAD_STLIMPL);
+}
+
+
+unsigned System::NumThreads() const
+{
+  return static_cast<unsigned>(numThreads);
 }
 
 
@@ -757,8 +771,11 @@ string System::str(DDSInfo * info) const
   ss << left << setw(17) << "Memory max (MB)" <<
     setw(16) << right << sysMem_MB << "\n";
 
-  const string stm = to_string(thrDef_MB) + " to " + to_string(thrMax_MB);
-  ss << left << setw(17) << "Thread def (MB)" <<
+  const string stm = to_string(THREADMEM_SMALL_DEF_MB) + "-" + 
+    to_string(THREADMEM_SMALL_MAX_MB) + " / " +
+    to_string(THREADMEM_LARGE_DEF_MB) + "-" +
+    to_string(THREADMEM_LARGE_MAX_MB);
+  ss << left << setw(17) << "Threads (MB)" <<
     setw(16) << right << stm << "\n";
 
   System::GetCores(info->numCores);

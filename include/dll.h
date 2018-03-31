@@ -391,6 +391,10 @@ EXTERN_C DLLEXPORT void STDCALL SetMaxThreads(
 EXTERN_C DLLEXPORT int STDCALL SetThreading(
   int code);
 
+EXTERN_C DLLEXPORT void STDCALL SetResources(
+  int maxMemoryMB,
+  int maxThreads);
+
 EXTERN_C DLLEXPORT void STDCALL FreeMemory();
 
 EXTERN_C DLLEXPORT int STDCALL SolveBoard(

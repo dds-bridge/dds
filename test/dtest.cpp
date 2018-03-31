@@ -20,13 +20,15 @@ using namespace std;
 
 int main(int argc, char * argv[])
 {
+  if (argc >= 5)
+    SetThreading(threadingCode(argv[4]));
+
   int nthreads = 0;
   if (argc >= 4)
     nthreads = atoi(argv[3]);
   SetMaxThreads(nthreads);
 
-  if (argc >= 5)
-    SetThreading(threadingCode(argv[4]));
+  SetResources(600, nthreads);
 
   DDSInfo info;
   GetDDSInfo(&info);

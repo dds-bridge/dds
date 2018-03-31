@@ -4,6 +4,8 @@ EXPORTS
    SetMaxThreads@4 = SetMaxThreads
    SetThreading
    SetThreading@4 = SetThreading
+   SetResources
+   SetResources@8 = SetResources
    FreeMemory
    FreeMemory@0 = FreeMemory
    ErrorMessage
