@@ -164,11 +164,12 @@ void STDCALL SetResources(
     memory.Resize(static_cast<unsigned>(noOfThreads),
       DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
+  InitDebugFiles();
+
   if (! _initialized)
   {
     _initialized = 1;
     InitConstants();
-    InitDebugFiles();
   }
 }
 

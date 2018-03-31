@@ -185,6 +185,8 @@ class TransTableL: public TransTable
       const int handDist[],
       unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
+    string SingleLenToStr(const unsigned char length[]) const;
+
     string LenToStr(
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 

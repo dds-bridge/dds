@@ -625,11 +625,13 @@ SOLVER_STATS:
 
 #ifdef DDS_TT_STATS
   // These are for the large TT -- empty if not.
-  // thrp->transTable->PrintAllSuits();
-  // thrp->transTable->PrintEntries(10, 0);
+  // thrp->transTable->PrintAllSuits(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllSuitStats(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
+
   thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
   thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
-  // thrp->transTable->PrintPageSummary();
 #endif
 
 #ifdef DDS_MOVES
@@ -642,9 +644,7 @@ SOLVER_STATS:
 
 SOLVER_DONE:
 
-  thrp->memUsed = thrp->transTable->MemoryInUse() +
-                  ThreadMemoryUsed();
-
+  thrp->memUsed = thrp->transTable->MemoryInUse() + ThreadMemoryUsed();
   futp->nodes = thrp->trickNodes;
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -740,6 +740,11 @@ int SolveSameBoard(
 
 #ifdef DDS_TT_STATS
   // These are for the large TT -- empty if not.
+  // thrp->transTable->PrintAllSuits(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllSuitStats(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
+
   thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
   thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
 #endif
@@ -893,6 +898,11 @@ int AnalyseLaterBoard(
 
 #ifdef DDS_TT_STATS
   // These are for the large TT -- empty if not.
+  // thrp->transTable->PrintAllSuits(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllSuitStats(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
+
   thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
   thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
 #endif

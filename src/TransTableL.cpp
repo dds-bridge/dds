@@ -1024,8 +1024,8 @@ void TransTableL::PrintNodeValues(
     cardSuit[3] << cardRank[15-static_cast<int>(np.leastWin[3])] << "\n";
 
   fout << setw(16) << left << "Bounds" << 
-    np.lbound << " to " <<
-    np.ubound << " tricks\n";
+    to_string(np.lbound) << " to " <<
+    to_string(np.ubound) << " tricks\n";
 
   fout << setw(16) << left << "Best move" <<
     cardSuit[ static_cast<int>(np.bestMoveSuit) ] <<
@@ -1127,19 +1127,20 @@ void TransTableL::DistToLengths(
 }
 
 
+string TransTableL::SingleLenToStr(const unsigned char len[]) const
+{
+  return to_string(len[0]) + "=" + to_string(len[1]) + "=" +
+         to_string(len[2]) + "=" + to_string(len[3]);
+}
+
+
 string TransTableL::LenToStr(
   const unsigned char len[DDS_HANDS][DDS_SUITS]) const
 {
-  stringstream ss;
-  ss << len[0][0] << "=" << len[0][1] << "=" << 
-        len[0][2] << "=" << len[0][3] << " " <<
-        len[1][0] << "=" << len[1][1] << "=" << 
-        len[1][2] << "=" << len[1][3] << " " <<
-        len[2][0] << "=" << len[2][1] << "=" << 
-        len[2][2] << "=" << len[2][3] << " " <<
-        len[3][0] << "=" << len[3][1] << "=" << 
-        len[3][2] << "=" << len[3][3];
-  return ss.str();
+  return TransTableL::SingleLenToStr(len[0]) + " " +
+         TransTableL::SingleLenToStr(len[1]) + " " +
+         TransTableL::SingleLenToStr(len[2]) + " " +
+         TransTableL::SingleLenToStr(len[3]);
 }
 
 
@@ -1153,11 +1154,11 @@ void TransTableL::PrintSuits(
   unsigned char len[DDS_HANDS][DDS_SUITS];
 
   fout << setw(4) << left << "Key" <<
-    setw(3) << "No" <<
-    setw(9) << right << players[0] <<
-    setw(9) << players[1] <<
-    setw(9) << players[2] <<
-    setw(9) << players[3] << "\n";
+    setw(3) << right << "No" <<
+    setw(8) << right << players[0] <<
+    setw(8) << players[1] <<
+    setw(8) << players[2] <<
+    setw(8) << players[3] << "\n";
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
@@ -1169,7 +1170,7 @@ void TransTableL::PrintSuits(
     {
       if (i == 0)
         fout << "0x" << setw(2) << hex << hashkey <<
-          setw(3) << right << dp->nextNo << " ";
+          setw(3) << right << dec << dp->nextNo << " ";
       else
         fout << setw(8) << "";
 
@@ -1263,7 +1264,7 @@ void TransTableL::PrintHist(
   fout << setw(7) << left << "Entries" <<
     setw(6) << right << count << "\n";
 
-  if (count)
+  if (count > 1)
   {
     fout << setw(7) << left << "Full" <<
       setw(6) << right << num_wraps << "\n";
@@ -1272,8 +1273,9 @@ void TransTableL::PrintHist(
     fout << setw(7) << left << "Average" <<
       setw(6) << right << setprecision(2) << fixed << mean << "\n";
 
-    double var = prod_sumsq /
-                 static_cast<double>(count - mean * mean);
+    double var = (prod_sumsq - count*mean*mean) /
+      static_cast<double>(count-1);
+
     if (var >= 0.)
       fout << setw(7) << left << "Std.dev" <<
         setw(6) << right << setprecision(2) << fixed << sqrt(var) << "\n";
@@ -1408,11 +1410,12 @@ void TransTableL::PrintSummarySuitStats(ofstream& fout) const
         count, prod_sum, prod_sumsq, max_len, DISTS_PER_ENTRY);
 
       double mean = 0., var = 0.;
-      if (count > 0)
+      if (count > 1)
       {
         mean = prod_sum / static_cast<double>(count);
-        var = prod_sumsq /
-               static_cast<double>(count - mean * mean);
+
+        var = (prod_sumsq - count*mean*mean) / 
+          static_cast<double>(count-1);
         if (var < 0.)
           var = 0.;
       }
@@ -1480,14 +1483,16 @@ void TransTableL::PrintEntriesBlock(
   winBlockType const * bp,
   const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const
 {
-  fout << bp->nextMatchNo << " matches for " << 
-    TransTableL::LenToStr(lengths) << "\n";
-  fout << string(71, '=') << "\n\n";
+  string st = to_string(bp->nextMatchNo) + 
+    " matches for " + TransTableL::LenToStr(lengths);
+
+  fout << st << "\n" << string(st.size(), '=') << "\n\n";
 
   for (int j = 0; j < bp->nextMatchNo; j++)
   {
-    fout << "Entry number " << j+1 << "\n";
-    fout << string(16, '-') << "\n\n";
+    st = "Entry number " + to_string(j+1);
+    fout << st << "\n";
+    fout << string(st.size(), '-') << "\n\n";
     TransTableL::PrintMatch(fout, bp->list[j], lengths);
   }
 }
@@ -1618,9 +1623,10 @@ void TransTableL::PrintAllEntries(ofstream& fout) const
   {
     for (int hand = 0; hand < DDS_HANDS; hand++)
     {
-      fout << "Entries, trick " << trick << ", hand " <<
-        players[hand] << "\n";
-      fout << string(30, '=') << "\n\n";
+      const string st = "Entries, trick " + to_string(trick) +
+        ", hand " + players[hand];
+      fout << st << "\n";
+      fout << string(st.size(), '=') << "\n\n";
       TransTableL::PrintEntries(fout, trick, hand);
     }
   }
@@ -1790,8 +1796,10 @@ void TransTableL::PrintSummaryEntryStats(ofstream& fout) const
       cumMemory += TransTableL::EffectOfBlockBound(hist, 20);
 
       double mean = prod_sum / static_cast<double>(count);
-      double var = prod_sumsq /
-                    static_cast<double>(count - mean * mean);
+      double var = (count > 1 ?
+        (prod_sumsq - count*mean*mean) / 
+          static_cast<double>(count-1) : 0.);
+
       if (var < 0.)
         var = 0.;
 
@@ -1823,7 +1831,7 @@ void TransTableL::PrintSummaryEntryStats(ofstream& fout) const
   if (cumCount)
     fout << setw(16) << left << "Fullness" <<
       setw(7) << right << setprecision(2) << fixed <<
-        100. * cumProd / (BLOCKS_PER_ENTRY * cumCount) << "&\n";
+        100. * cumProd / (BLOCKS_PER_ENTRY * cumCount) << "%\n";
   fout << "\n";
 }
 
