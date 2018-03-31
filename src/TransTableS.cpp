@@ -7,6 +7,8 @@
    See LICENSE and README.
 */
 
+#include <iomanip>
+
 #include "TransTableS.h"
 #include "debug.h"
 
@@ -53,13 +55,6 @@ void TransTableS::SetConstants()
     TTlowestRank[ind] = TTlowestRank[ind ^ topBitRank] - 1;
   }
 
-  resetText.resize(TT_RESET_SIZE);
-  resetText[TT_RESET_UNKNOWN] = "Unknown reason";
-  resetText[TT_RESET_TOO_MANY_NODES] = "Too many nodes";
-  resetText[TT_RESET_NEW_DEAL] = "New deal";
-  resetText[TT_RESET_NEW_TRUMP] = "New trump";
-  resetText[TT_RESET_MEMORY_EXHAUSTED] = "Memory exhausted";
-  resetText[TT_RESET_FREE_MEMORY] = "Free thread memory";
 }
 
 
@@ -94,6 +89,15 @@ void TransTableS::Init(const int handLookup[][15])
         (aggp[ind].winMask[s] >> 2) | (3 << 24);
     }
   }
+
+  resetText.resize(TT_RESET_SIZE);
+  resetText[TT_RESET_UNKNOWN] = "Unknown reason";
+  resetText[TT_RESET_TOO_MANY_NODES] = "Too many nodes";
+  resetText[TT_RESET_NEW_DEAL] = "New deal";
+  resetText[TT_RESET_NEW_TRUMP] = "New trump";
+  resetText[TT_RESET_MEMORY_EXHAUSTED] = "Memory exhausted";
+  resetText[TT_RESET_FREE_MEMORY] = "Free thread memory";
+
   return;
 }
 
@@ -197,12 +201,6 @@ void TransTableS::MakeTT()
 
     for (int k = 1; k <= 13; k++)
       aggrLenSets[k] = 0;
-#if defined(DDS_TT_STATS)
-    // TODO:  Needs to end up in the right file.
-    // fprintf(fp, "Report of generated PosSearch nodes per trick level.\n");
-    // fprintf(fp, "Trick level 13 is highest level with all 52 cards.\n");
-    // fprintf(fp, "---------------------------------------------------\n");
-#endif
     statsResets.noOfResets = 0;
     for (int k = 0; k <= 5; k++)
       statsResets.aggrResets[k] = 0;
@@ -927,17 +925,29 @@ nodeCardsType const * TransTableS::FindSOP(
 
 void TransTableS::PrintNodeStats(ofstream& fout) const
 {
+  fout << "Report of generated PosSearch nodes per trick level.\n";
+  fout << "Trick level 13 is highest level with all 52 cards.\n";
+  fout << string(51, '-') << "\n";
+
+  fout << setw(5) << "Trick" << 
+    setw(14) << right << "Created nodes" << "\n";
+
   for (int k = 13; k > 0; k--)
-    fout << "Trick " << k << ": Created nodes: " <<
-      static_cast<long>(aggrLenSets[k - 1]) << "\n\n";
+    fout << setw(5) << k << setw(14) << aggrLenSets[k-1] << "\n";
+
+  fout << endl;
 }
 
 
 void TransTableS::PrintResetStats(ofstream& fout) const
 {
-  fout << "Total no of Resets: " << statsResets.noOfResets << "\n\n";
+  fout << "Total no. of resets: " << statsResets.noOfResets << "\n" << endl;
 
-  for (int k = 0; k <= 5; k++)
-    fout << resetText[k] << ": " << statsResets.aggrResets[k] << "\n\n";
+  fout << setw(18) << left << "Reason" << 
+    setw(6) << right << "Count" << "\n";
+
+  for (int k = 0; k < TT_RESET_SIZE; k++)
+    fout << setw(18) << left << resetText[k] <<
+      setw(6) << right << statsResets.aggrResets[k] << "\n";
 }
 

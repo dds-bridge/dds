@@ -632,6 +632,10 @@ SOLVER_STATS:
 
   thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
   thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+
+  // These are for the small TT -- empty if not.
+  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
 #endif
 
 #ifdef DDS_MOVES
@@ -747,6 +751,10 @@ int SolveSameBoard(
 
   thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
   thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+
+  // These are for the small TT -- empty if not.
+  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
 #endif
 
 #ifdef DDS_MOVES
@@ -905,6 +913,10 @@ int AnalyseLaterBoard(
 
   thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
   thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+
+  // These are for the small TT -- empty if not.
+  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
 #endif
 
 #ifdef DDS_MOVES
