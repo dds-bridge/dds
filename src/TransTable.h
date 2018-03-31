@@ -7,60 +7,35 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_TRANSTABLES_H
-#define DDS_TRANSTABLES_H
-
 /*
-   This is an object for managing transposition tables and the
-   associated memory.
+   This is the parent class of TransTableS and TransTableL.
+   Those two are different implementations.  The S version has a
+   much smaller memory and a somewhat slower execution time.
 */
 
+#ifndef DDS_TRANSTABLE_H
+#define DDS_TRANSTABLE_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <iostream>
+#include <fstream>
 #include <string>
-#include "../include/dll.h"
+
 #include "dds.h"
 
 using namespace std;
 
-// ResetMemory reasons
-#define UNKNOWN_REASON 0
-#define TOO_MANY_NODES 1
-#define NEW_DEAL 2
-#define NEW_TRUMP 3
-#define MEMORY_EXHAUSTED 4
-#define FREE_THREAD_MEM 5
 
+enum TTresetReason
+{
+  TT_RESET_UNKNOWN = 0,
+  TT_RESET_TOO_MANY_NODES = 1,
+  TT_RESET_NEW_DEAL = 2,
+  TT_RESET_NEW_TRUMP = 3,
+  TT_RESET_MEMORY_EXHAUSTED = 4,
+  TT_RESET_FREE_MEMORY = 5,
+  TT_RESET_SIZE = 6
+};
 
-// For SMALL_MEMORY_OPTION
-#define NSIZE 50000
-#define WSIZE 50000
-#define NINIT 60000
-#define WINIT 170000
-#define LSIZE 200 // Per trick and first hand
-
-// For full memory option
-#define NUM_PAGES_DEFAULT 15
-#define NUM_PAGES_MAXIMUM 25
-#define BLOCKS_PER_PAGE 1000
-#define DISTS_PER_ENTRY 32
-#define BLOCKS_PER_ENTRY 125
-#define FIRST_HARVEST_TRICK 8
-#define HARVEST_AGE 10000
-
-#define TT_BYTES 4
-#define TT_TRICKS 12
-
-#define TT_LINE_LEN 20
-
-#define TT_PERCENTILE 0.9
-
-#define HISTSIZE 100000
-
-
-// Also used in ABSearch
 struct nodeCardsType // 8 bytes
 {
   char ubound; // For N-S
@@ -70,448 +45,103 @@ struct nodeCardsType // 8 bytes
   char leastWin[DDS_SUITS];
 };
 
-
+#ifdef _MSC_VER
+  // Disable warning for unused arguments.
+  #pragma warning(push)
+  #pragma warning(disable: 4100)
+#endif
 
 class TransTable
 {
-  private:
-
-    // Structures for the small memory option.
-
-    struct winCardType
-    {
-      int orderSet;
-      int winMask;
-      nodeCardsType * first;
-      winCardType * prevWin;
-      winCardType * nextWin;
-      winCardType * next;
-    };
-
-    struct posSearchTypeSmall
-    {
-      winCardType * posSearchPoint;
-      long long suitLengths;
-      posSearchTypeSmall * left;
-      posSearchTypeSmall * right;
-    };
-
-    struct ttAggrType
-    {
-      int aggrRanks[DDS_SUITS];
-      int winMask[DDS_SUITS];
-    };
-
-    struct statsResetsType
-    {
-      int noOfResets;
-      int aggrResets[6];
-    };
-
-
-    // Structures for the full memory option.
-
-    struct winMatchType // 52 bytes
-    {
-      unsigned xorSet;
-      unsigned topSet1 , topSet2 , topSet3 , topSet4 ;
-      unsigned topMask1, topMask2, topMask3, topMask4;
-      int maskIndex;
-      int lastMaskNo;
-      nodeCardsType first;
-    };
-
-    struct winBlockType // 6508 bytes when BLOCKS_PER_ENTRY == 125
-    {
-      int nextMatchNo;
-      int nextWriteNo;
-      // int timestampWrite;
-      int timestampRead;
-      winMatchType list[BLOCKS_PER_ENTRY];
-    };
-
-    struct posSearchType // 16 bytes (inefficiency, 12 bytes enough)
-    {
-      winBlockType * posBlock;
-      long long key;
-    };
-
-    struct distHashType // 520 bytes when DISTS_PER_ENTRY == 32
-    {
-      int nextNo;
-      int nextWriteNo;
-      posSearchType list[DISTS_PER_ENTRY];
-    };
-
-    struct aggrType // 80 bytes
-    {
-      unsigned aggrRanks[DDS_SUITS];
-      unsigned aggrBytes[DDS_SUITS][TT_BYTES];
-    };
-
-    struct poolType // 16 bytes
-    {
-      poolType * next;
-      poolType * prev;
-      int nextBlockNo;
-      winBlockType * list;
-    };
-
-    struct pageStatsType
-    {
-      int numResets,
-                        numCallocs,
-                        numFrees,
-                        numHarvests,
-                        lastCurrent;
-    };
-
-    struct harvestedType // 16 bytes
-    {
-      int nextBlockNo;
-      winBlockType * list [BLOCKS_PER_PAGE];
-    };
-
-    enum memStateType
-    {
-      FROM_POOL,
-      FROM_HARVEST
-    };
-
-
-#ifdef SMALL_MEMORY_OPTION
-    // Private data for the small memory version.
-
-    long long aggrLenSets[14];
-    statsResetsType statsResets;
-
-    winCardType temp_win[5];
-    int nodeSetSizeLimit;
-    int winSetSizeLimit;
-    unsigned long long maxmem;
-    unsigned long long allocmem;
-    unsigned long long summem;
-    int wmem;
-    int nmem;
-    int maxIndex;
-    int wcount;
-    int ncount;
-    bool clearTTflag;
-    int windex;
-    ttAggrType * aggp;
-
-    posSearchTypeSmall * rootnp[14][DDS_HANDS];
-    winCardType ** pw;
-    nodeCardsType ** pn;
-    posSearchTypeSmall ** pl[14][DDS_HANDS];
-    nodeCardsType * nodeCards;
-    winCardType * winCards;
-    posSearchTypeSmall * posSearch[14][DDS_HANDS];
-    int nodeSetSize; /* Index with range 0 to nodeSetSizeLimit */
-    int winSetSize;  /* Index with range 0 to winSetSizeLimit */
-    int lenSetInd[14][DDS_HANDS];
-    int lcount[14][DDS_HANDS];
-
-    const char * resetText[6];
-
-    long long suitLengths[14];
-#else
-    // Private data for the full memory version.
-    memStateType memState;
-
-    int pagesDefault,
-                        pagesCurrent,
-                        pagesMaximum;
-
-    int harvestTrick,
-                        harvestHand;
-
-    pageStatsType pageStats;
-
-
-    // aggr is constant for a given hand.
-    aggrType aggr[8192]; // 64 KB
-
-    // This is the real transposition table.
-    // The last index is the hash.
-    // 6240 KB with above assumptions
-    // distHashType TTroot[TT_TRICKS][DDS_HANDS][256];
-    distHashType * TTroot[TT_TRICKS][DDS_HANDS];
-
-    // It is useful to remember the last block we looked at.
-    winBlockType * lastBlockSeen[TT_TRICKS][DDS_HANDS];
-
-    // The pool of card entries for a given suit distribution.
-    poolType * poolp;
-    winBlockType * nextBlockp;
-    harvestedType harvested;
-#endif
-
-    int timestamp;
-    int TTInUse;
-
-    // Private functions for small memory option.
-
-    void Wipe();
-
-    void AddWinSet();
-
-    void AddNodeSet();
-
-    void AddLenSet(int trick, int firstHand);
-
-    void BuildSOP(
-      unsigned short ourWinRanks[DDS_SUITS],
-      unsigned short aggr[DDS_SUITS],
-      nodeCardsType * first,
-      long long suitLengths,
-      int tricks,
-      int firstHand,
-      bool flag);
-
-    struct nodeCardsType * BuildPath(
-      int * winMask,
-      int * winOrderSet,
-      int ubound,
-      int lbound,
-      char bestMoveSuit,
-      char bestMoveRank,
-      posSearchTypeSmall * nodep,
-      bool * result);
-
-    struct posSearchTypeSmall * SearchLenAndInsert(
-      posSearchTypeSmall * rootp,
-      long long key,
-      bool insertNode,
-      int trick,
-      int firstHand,
-      bool * result);
-
-    struct nodeCardsType * UpdateSOP(
-      int ubound,
-      int lbound,
-      char bestMoveSuit,
-      char bestMoveRank,
-      nodeCardsType * nodep);
-
-    struct nodeCardsType * FindSOP(
-      int orderSet[],
-      int limit,
-      winCardType * nodeP,
-      bool * lowerFlag);
-
-
-    // Full memory private functions, and common functions.
-
-    void InitTT();
-
-    void ReleaseTT();
-
-    void SetConstants();
-
-    int hash8(int * handDist);
-
-    winBlockType * GetNextCardBlock();
-
-    winBlockType * LookupSuit(
-      distHashType * dp,
-      long long key,
-      bool * empty);
-
-
-    nodeCardsType * LookupCards(
-      winMatchType * searchp,
-      winBlockType * bp,
-      int limit,
-      bool * lowerFlag);
-
-    void CreateOrUpdate(
-      winBlockType * bp,
-      winMatchType * searchp,
-      bool flag);
-
-    bool Harvest();
-
-    // Debug
-
-    FILE * fp;
-
-    // Really the maximum of BLOCKS_PER_ENTRY and DISTS_PER_ENTRY
-    int suitHist[BLOCKS_PER_ENTRY + 1],
-                        suitWraps;
-
-    void KeyToDist(
-      long long key,
-      int handDist[]);
-
-    void DistToLengths( // Both?
-      int trick,
-      int handDist[],
-      unsigned char lengths[DDS_HANDS][DDS_SUITS]);
-
-    void LenToStr( // Both?
-      unsigned char lengths[DDS_HANDS][DDS_SUITS],
-      char * line);
-
-    void MakeHistStats( // Both? Or only LARGE?
-      int hist[],
-      int * count,
-      int * prod_sum,
-      int * prod_sumsq,
-      int * max_len,
-      int last_index);
-
-    int CalcPercentile( // Both?  Or only large?
-      int hist[],
-      double threshold,
-      int last_index);
-
-    void PrintHist( // Both?  Or only LARGE?
-      int hist[],
-      int num_wraps,
-      int last_index);
-
-    void UpdateSuitHist( // Only LARGE
-      int trick,
-      int hand,
-      int hist[],
-      int * num_wraps);
-
-    winBlockType * FindMatchingDist( // Only LARGE
-      int trick,
-      int hand,
-      int handDistSought[DDS_HANDS]);
-
-    void PrintEntriesBlock( // Both, but probably only LARGE?
-      winBlockType * bp,
-      unsigned char lengths[DDS_HANDS][DDS_SUITS]);
-
-    void UpdateEntryHist( // Only LARGE
-      int trick,
-      int hand,
-      int hist[],
-      int * num_wraps);
-
-    int EffectOfBlockBound(
-      int hist[],
-      int size);
-
-    void PrintNodeValues(
-      nodeCardsType * np);
-
-    void PrintMatch(
-      winMatchType * wp,
-      unsigned char lengths[DDS_HANDS][DDS_SUITS]);
-
-    void MakeHolding(
-      char * high,
-      unsigned len,
-      char * res);
-
-    void DumpHands(
-      char hands[DDS_SUITS][DDS_HANDS][TT_LINE_LEN],
-      unsigned char lengths[DDS_HANDS][DDS_SUITS]);
-
-    void SetToPartialHands(
-      unsigned set,
-      unsigned mask,
-      int maxRank,
-      int numRanks,
-      char hands[DDS_SUITS][DDS_HANDS][TT_LINE_LEN],
-      int used[DDS_SUITS][DDS_HANDS]);
-
-    int BlocksInUse();
-
   public:
-    TransTable();
+    TransTable(){};
 
-    ~TransTable();
+    virtual ~TransTable(){};
 
-    void Init(int handLookup[][15]);
+    virtual void Init(const int handLookup[][15]){};
 
-    void SetMemoryDefault(int megabytes);
+    virtual void SetMemoryDefault(const int megabytes){};
 
-    void SetMemoryMaximum(int megabytes);
+    virtual void SetMemoryMaximum(const int megabytes){};
 
-    void MakeTT();
+    virtual void MakeTT(){};
 
-    void ResetMemory(int reason);
+    virtual void ResetMemory(const TTresetReason reason){};
 
-    void ReturnAllMemory();
+    virtual void ReturnAllMemory(){};
 
-    double MemoryInUse();
+    virtual double MemoryInUse() const {return 0.;};
 
-    nodeCardsType * Lookup(
-      int trick,
-      int hand,
-      unsigned short * aggrTarget,
-      int * handDist,
-      int limit,
-      bool * lowerFlag);
+    virtual nodeCardsType const * Lookup(
+      const int trick,
+      const int hand,
+      const unsigned short aggrTarget[],
+      const int handDist[],
+      const int limit,
+      bool& lowerFlag){return NULL;};
 
-    void Add(
-      int trick,
-      int hand,
-      unsigned short * aggrTarget,
-      unsigned short * winRanks,
-      nodeCardsType * first,
-      bool flag);
+    virtual void Add(
+      const int trick,
+      const int hand,
+      const unsigned short aggrTarget[],
+      const unsigned short winRanksArg[],
+      const nodeCardsType& first,
+      const bool flag){};
 
-    // Debug functions
+    virtual void PrintSuits(
+      ofstream& fout, 
+      const int trick, 
+      const int hand) const {};
 
-    void SetFile(const string& fname);
+    virtual void PrintAllSuits(ofstream& fout) const {};
 
-    void PrintSuits( // Only LARGE
-      int trick,
-      int hand);
+    virtual void PrintSuitStats(
+      ofstream& fout, 
+      const int trick, 
+      const int hand) const {};
 
-    void PrintAllSuits(); // Only LARGE
+    virtual void PrintAllSuitStats(ofstream& fout) const {};
 
-    void PrintSuitStats( // Only LARGE
-      int trick,
-      int hand);
+    virtual void PrintSummarySuitStats(ofstream& fout) const {};
 
-    void PrintAllSuitStats(); // Only LARGE
+    virtual void PrintEntriesDist(
+      ofstream& fout, 
+      const int trick,
+      const int hand,
+      const int handDist[]) const {};
 
-    void PrintSummarySuitStats(); // Only LARGE
+    virtual void PrintEntriesDistAndCards(
+      ofstream& fout,
+      const int trick,
+      const int hand,
+      const unsigned short aggrTarget[],
+      const int handDist[]) const {};
 
-    // Examples:
-    // int hd[DDS_HANDS] = { 0x0342, 0x0334, 0x0232, 0x0531 };
-    // thrp->transTable.PrintEntriesDist(11, 1, hd);
-    // unsigned short ag[DDS_HANDS] =
-    // { 0x1fff, 0x1fff, 0x0f75, 0x1fff };
-    // thrp->transTable.PrintEntriesDistAndCards(11, 1, ag, hd);
+    virtual void PrintEntries(
+      ofstream& fout, 
+      const int trick, 
+      const int hand) const {};
 
-    void PrintEntriesDist( // Only LARGE
-      int trick,
-      int hand,
-      int handDist[DDS_HANDS]);
+    virtual void PrintAllEntries(ofstream& fout) const {};
 
-    void PrintEntriesDistAndCards( // Only LARGE
-      int trick,
-      int hand,
-      unsigned short * aggrTarget,
-      int handDist[DDS_HANDS]);
+    virtual void PrintEntryStats(
+      ofstream& fout, 
+      const int trick, 
+      const int hand) const {};
 
-    void PrintEntries( // Only LARGE
-      int trick,
-      int hand);
+    virtual void PrintAllEntryStats(ofstream& fout) const {};
 
-    void PrintAllEntries(); // Only LARGE
+    virtual void PrintSummaryEntryStats(ofstream& fout) const {};
 
-    void PrintEntryStats( // Only LARGE
-      int trick,
-      int hand);
+    virtual void PrintPageSummary(ofstream& fout) const {};
 
-    void PrintAllEntryStats(); // Only LARGE
+    virtual void PrintNodeStats(ofstream& fout) const {};
 
-    void PrintSummaryEntryStats(); // Only LARGE
-
-    void PrintPageSummary(); // Only SMALL
-
-    void PrintNodeStats(); // Only SMALL
-
-    void PrintResetStats(); // Only SMALL
+    virtual void PrintResetStats(ofstream& fout) const {};
 };
+
+#ifdef _MSC_VER
+  #pragma warning(pop)
+#endif
 
 #endif

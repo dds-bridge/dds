@@ -13,6 +13,13 @@
 #include <vector>
 
 #include "TransTable.h"
+
+#ifdef SMALL_MEMORY_OPTION
+  #include "TransTableS.h"
+#else
+  #include "TransTableL.h"
+#endif
+
 #include "Moves.h"
 #include "File.h"
 #include "debug.h"
@@ -69,7 +76,11 @@ struct ThreadData
   // 960 KB
   relRanksType rel[8192];
 
-  TransTable transTable;
+#ifdef SMALL_MEMORY_OPTION
+  TransTableS transTable;
+#else
+  TransTableL transTable;
+#endif
 
   Moves moves;
 
@@ -81,6 +92,10 @@ struct ThreadData
 #ifdef DDS_MOVES
   File fileMoves;
 #endif
+
+#ifdef DDS_TT_STATS
+  File fileTTstats;
+#endif 
 
 #ifdef DDS_TIMING
   TimerList timerList;

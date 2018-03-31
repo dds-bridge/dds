@@ -34,7 +34,7 @@ void Memory::Reset()
 
 void Memory::ResetThread(const unsigned thrId)
 {
-  memory[thrId]->transTable.ResetMemory(FREE_THREAD_MEM);
+  memory[thrId]->transTable.ResetMemory(TT_RESET_FREE_MEMORY);
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
 

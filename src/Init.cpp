@@ -374,7 +374,7 @@ void InitDebugFiles()
 #endif
 
 #ifdef DDS_TT_STATS
-    thrp->transTable.SetFile(DDS_TT_STATS_PREFIX + send);
+    thrp->fileTTstats.SetName(DDS_TT_STATS_PREFIX + send);
 #endif
 
 #ifdef DDS_MOVES
@@ -401,6 +401,10 @@ void CloseDebugFiles()
 
 #ifdef DDS_TOP_LEVEL
     thrp->fileTopLevel.Close();
+#endif
+
+#ifdef DDS_TT_STATS
+    thrp->fileTTstats.Close();
 #endif
 
 #ifdef DDS_MOVES

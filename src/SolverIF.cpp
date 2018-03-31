@@ -218,13 +218,13 @@ int SolveBoardInternal(
        newTrump ||
        (thrp->nodes > SIMILARMAXWINNODES)))
   {
-    int reason = UNKNOWN_REASON;
+    TTresetReason reason = TT_RESET_UNKNOWN;
     if (thrp->nodes > SIMILARMAXWINNODES)
-      reason = TOO_MANY_NODES;
+      reason = TT_RESET_TOO_MANY_NODES;
     else if (newDeal && ! similarDeal)
-      reason = NEW_DEAL;
+      reason = TT_RESET_NEW_DEAL;
     else if (newTrump)
-      reason = NEW_TRUMP;
+      reason = TT_RESET_NEW_TRUMP;
     thrp->transTable.ResetMemory(reason);
   }
 
@@ -625,11 +625,13 @@ SOLVER_STATS:
 #endif
 
 #ifdef DDS_TT_STATS
+  #ifndef SMALL_MEMORY_OPTION
   // thrp->transTable.PrintAllSuits();
   // thrp->transTable.PrintEntries(10, 0);
-  thrp->transTable.PrintSummarySuitStats();
-  thrp->transTable.PrintSummaryEntryStats();
+  thrp->transTable.PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable.PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
   // thrp->transTable.PrintPageSummary();
+  #endif
 #endif
 
 #ifdef DDS_MOVES
@@ -739,8 +741,10 @@ int SolveSameBoard(
 #endif
 
 #ifdef DDS_TT_STATS
-  thrp->transTable.PrintSummarySuitStats();
-  thrp->transTable.PrintSummaryEntryStats();
+  #ifndef SMALL_MEMORY_OPTION
+  thrp->transTable.PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable.PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  #endif
 #endif
 
 #ifdef DDS_MOVES
@@ -891,8 +895,10 @@ int AnalyseLaterBoard(
 #endif
 
 #ifdef DDS_TT_STATS
-  thrp->transTable.PrintSummarySuitStats();
-  thrp->transTable.PrintSummaryEntryStats();
+  #ifndef SMALL_MEMORY_OPTION
+  thrp->transTable.PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable.PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  #endif
 #endif
 
 #ifdef DDS_MOVES

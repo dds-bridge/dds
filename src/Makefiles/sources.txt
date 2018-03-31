@@ -23,4 +23,5 @@ SOURCE_FILES    =               \
         TimerList.cpp           \
         TimeStat.cpp            \
         TimeStatList.cpp        \
-        TransTable.cpp
+        TransTableS.cpp         \
+        TransTableL.cpp

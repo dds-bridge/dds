@@ -13,7 +13,12 @@
 
 #include "dds.h"
 
-#include "TransTable.h"
+#ifdef SMALL_MEMORY_OPTION
+  #include "TransTableS.h"
+#else
+  #include "TransTableL.h"
+#endif
+
 #include "Moves.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"
@@ -187,17 +192,17 @@ bool ABsearch0(
 
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
-    nodeCardsType * cardsP =
+    nodeCardsType const * cardsP =
       thrp->transTable.Lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
-        limit, &lowerFlag);
+        limit, lowerFlag);
     TIMER_END(TIMER_NO_LOOKUP, depth);
 
     if (cardsP)
     {
 #ifdef DDS_AB_HITS
       DumpRetrieved(thrp->fileRetrieved.GetStream(), 
-        * posPoint, * cardsP, target, depth);
+        * posPoint, cardsP, target, depth);
 #endif
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -299,10 +304,10 @@ bool ABsearch0(
 
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
-    nodeCardsType * cardsP =
+    nodeCardsType const * cardsP =
       thrp->transTable.Lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
-        limit, &lowerFlag);
+        limit, lowerFlag);
     TIMER_END(TIMER_NO_LOOKUP, depth);
 
     if (cardsP)
@@ -439,7 +444,7 @@ ABexit:
     hand,
     posPoint->aggr,
     posPoint->winRanks[depth],
-    &first,
+    first,
     flag);
   TIMER_END(TIMER_NO_BUILD, depth);
 
