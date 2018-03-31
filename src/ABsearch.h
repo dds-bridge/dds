@@ -61,14 +61,14 @@ void Make2(
 
 void Make3(
   pos * posPoint,
-  unsigned short int trickCards[DDS_SUITS],
+  unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
   ThreadData * thrp);
 
 evalType Evaluate(
-  pos * posPoint,
-  int trump,
-  ThreadData * thrp);
+  pos const * posPoint,
+  const int trump,
+  ThreadData const * thrp);
 
 #endif

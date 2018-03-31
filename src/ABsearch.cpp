@@ -24,35 +24,35 @@
 
 void Make3Simple(
   pos * posPoint,
-  unsigned short int trickCards[DDS_SUITS],
-  int depth,
-  moveType * mply,
+  unsigned short trickCards[DDS_SUITS],
+  const int depth,
+  moveType const * mply,
   ThreadData * thrp);
 
 void Undo0(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply,
-  ThreadData * thrp);
+  ThreadData const * thrp);
 
 void Undo0Simple(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply);
 
 void Undo1(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply);
 
 void Undo2(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply);
 
 void Undo3(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply);
 
 
@@ -772,7 +772,7 @@ void Make2(
 
 void Make3(
   pos * posPoint,
-  unsigned short int trickCards[DDS_SUITS],
+  unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
   ThreadData * thrp)
@@ -836,9 +836,9 @@ void Make3(
 
 void Make3Simple(
   pos * posPoint,
-  unsigned short int trickCards[DDS_SUITS],
-  int depth,
-  moveType * mply,
+  unsigned short trickCards[DDS_SUITS],
+  const int depth,
+  moveType const * mply,
   ThreadData * thrp)
 {
   const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
@@ -871,9 +871,9 @@ void Make3Simple(
 
 void Undo0(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply,
-  ThreadData * thrp)
+  ThreadData const * thrp)
 {
   int h = handId(posPoint->first[depth], 3);
   int s = mply.suit;
@@ -885,7 +885,7 @@ void Undo0(
   posPoint->length[h][s]++;
 
   // Changes that we now undo.
-  WinnersType * wp = &thrp->winners[ (depth + 3) >> 2];
+  WinnersType const * wp = &thrp->winners[ (depth + 3) >> 2];
 
   for (int n = 0; n < wp->number; n++)
   {
@@ -900,7 +900,7 @@ void Undo0(
 
 void Undo0Simple(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply)
 {
   int h = handId(posPoint->first[depth], 3);
@@ -914,7 +914,7 @@ void Undo0Simple(
 
 void Undo1(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply)
 {
   int h = posPoint->first[depth];
@@ -930,7 +930,7 @@ void Undo1(
 
 void Undo2(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply)
 {
   int h = handId(posPoint->first[depth], 1);
@@ -946,7 +946,7 @@ void Undo2(
 
 void Undo3(
   pos * posPoint,
-  int depth,
+  const int depth,
   const moveType& mply)
 {
   int h = handId(posPoint->first[depth], 2);
@@ -961,9 +961,9 @@ void Undo3(
 
 
 evalType Evaluate(
-  pos * posPoint,
-  int trump,
-  ThreadData * thrp)
+  pos const * posPoint,
+  const int trump,
+  ThreadData const * thrp)
 {
   int s, h, hmax = 0, count = 0, k = 0;
   unsigned short rmax = 0;

@@ -368,8 +368,8 @@ struct DDSInfo
   // 4 = Boost,
   // 5 = STL,
   // 6 = TBB,
-  // 7 = STLIMPL (for_each),
-  // 8 = PPLIMPL (for_each),
+  // 7 = STLIMPL (for_each), experimental only
+  // 8 = PPLIMPL (for_each), experimental only
   int threading;
 
   // The actual number of threads configured

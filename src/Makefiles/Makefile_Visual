@@ -17,8 +17,8 @@
 # matters are CC_BOOST_INCL and CC_BOOST_LINK.
 # On my systems (there are two), they are here:
 
-BOOST32_PATH1	= \User\sheins\boost_1_66_0_x32
-BOOST32_LIB1	= $(BOOST32_PATH1)\lib32-msvc-14.0
+BOOST32_PATH1	= \User\sheins\boost_1_66_0_x32_new
+BOOST32_LIB1	= $(BOOST32_PATH1)\lib32-msvc-14.1
 
 BOOST32_PATH2	= \Users\s.hein\Documents\Programs\boost_1_66_0_x32_14_1
 BOOST32_LIB2	= $(BOOST32_PATH2)\lib32-msvc-14.1
@@ -33,11 +33,12 @@ CC_BOOST_LINK	= /link /LIBPATH:$(BOOST32_LIB1) /LIBPATH:$(BOOST32_LIB2)
 # CC_THREADING.
 
 # GCD doesn't work on Windows.
-THR_BOOST	= /DDDS_THREADS_BOOST
-THR_GCD		= /DDDS_THREADS_GCD
-THR_OPENMP	= /DDDS_THREADS_OPENMP
 THR_WINAPI	= /DDDS_THREADS_WINAPI
+THR_OPENMP	= /DDDS_THREADS_OPENMP
+THR_GCD		= /DDDS_THREADS_GCD
+THR_BOOST	= /DDDS_THREADS_BOOST
 THR_STL  	= /DDDS_THREADS_STL
+THR_TBB  	= /DDDS_THREADS_TBB
 THR_STLIMPL  	= /DDDS_THREADS_STLIMPL
 THR_PPLIMPL  	= /DDDS_THREADS_PPLIMPL
 
@@ -50,12 +51,7 @@ THREADING	= $(THR_BOOST) $(THR_OPENMP) $(THR_WINAPI) \
 THREAD_COMPILE	= /openmp $(CC_BOOST_INCL)
 THREAD_LINK	= $(CC_BOOST_LINK)
 
-# 3. The small memory option, which causes DDS to consume a lot less
-# memory and to run somewhat more slowly.
-
-SMALL_MEMORY	= /DSMALL_MEMORY_OPTION
-
-# 4. Debugging options.  (There are more granular options in debug.h.)
+# 3. Debugging options.  (There are more granular options in debug.h.)
 
 DEBUG_ALL	= /DDDS_DEBUG_ALL 
 TIMING		= /DDDS_TIMING
@@ -64,7 +60,7 @@ SCHEDULER	= /DDDS_SCHEDULER
 # All that matters from no. 3 and no. 4 is the following.  Here you
 # can add $(SMALL_MEMORY) etc.
 
-DDS_BEHAVIOR	=
+DDS_BEHAVIOR	= 
 
 # ----------------------- OFTEN OK    ------------------------------
 
@@ -103,7 +99,7 @@ WARN_FLAGS	=		\
 
 # If you don't have /std:c++17, you won't get THR_STLIMPL.
 
-COMPILE_FLAGS	= /O2 /Oi /Ot /Oy /GL /EHs /std:c++17 \
+COMPILE_FLAGS	= /O2 /Oi /Ot /Oy /Ox /GL /EHs /std:c++17 \
 		$(WARN_FLAGS) \
 		$(DDS_BEHAVIOR) $(THREAD_COMPILE) $(THREADING)
 

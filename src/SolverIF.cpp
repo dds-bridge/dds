@@ -11,10 +11,9 @@
 #include <iomanip>
 #include <sstream>
 
-#include "dds.h"
+#include "SolverIF.h"
 #include "Init.h"
 #include "ABsearch.h"
-#include "SolverIF.h"
 #include "TimerList.h"
 #include "System.h"
 #include "Scheduler.h"
@@ -93,7 +92,7 @@ int STDCALL SolveBoard(
 
 
 int SolveBoardInternal(
-  struct ThreadData * thrp,
+  ThreadData * thrp,
   const deal& dl,
   const int target,
   const int solutions,
@@ -657,7 +656,7 @@ SOLVER_DONE:
 
 
 int SolveSameBoard(
-  struct ThreadData * thrp,
+  ThreadData * thrp,
   const deal& dl,
   futureTricks * futp,
   const int hint)
