@@ -17,9 +17,11 @@
 #include "PlayAnalyser.h"
 #include "parallel.h"
 #include "System.h"
+#include "Memory.h"
 #include "Scheduler.h"
 
 extern Scheduler scheduler;
+extern Memory memory;
 
 
 const vector<string> DDS_SYSTEM_PLATFORM =
@@ -626,6 +628,26 @@ string System::GetSystem(int& sys) const
 }
 
 
+string System::GetBits(int& bits) const
+{
+  if constexpr (sizeof(void *) == 4)
+  {
+    bits = 32;
+    return "32 bits";
+  }
+  else if constexpr (sizeof(void *) == 8)
+  {
+    bits = 64;
+    return "64 bits";
+  }
+  else
+  {
+    bits = 0;
+    return "unknown";
+  }
+}
+
+
 string System::GetCompiler(int& comp) const
 {
 #if defined(_MSC_VER)
@@ -695,6 +717,16 @@ string System::GetThreading(int& thr) const
 }
 
 
+string System::GetThreadSizes(char * sizes) const
+{
+  string st;
+  for (unsigned i = 0; i < static_cast<unsigned>(numThreads); i++)
+    st += memory.ThreadSize(i);
+  strcpy(sizes, st.c_str());
+  return st;
+}
+
+
 string System::str(DDSInfo * info) const
 {
   stringstream ss;
@@ -703,6 +735,10 @@ string System::str(DDSInfo * info) const
   const string strSystem = System::GetSystem(info->system);
   ss << left << setw(13) << "System" <<
     setw(20) << right << strSystem << "\n";
+
+  const string strBits = System::GetBits(info->numBits);
+  ss << left << setw(13) << "Word size" <<
+    setw(20) << right << strBits << "\n";
 
   const string strCompiler = System::GetCompiler(info->compiler);
   ss << left << setw(13) << "Compiler" <<
@@ -732,6 +768,10 @@ string System::str(DDSInfo * info) const
   info->noOfThreads = numThreads;
   ss << left << setw(17) << "Number of threads" <<
     setw(16) << right << numThreads << "\n";
+
+  const string strThrSizes = System::GetThreadSizes(info->threadSizes);
+  ss << left << setw(13) << "Thread sizes" <<
+    setw(20) << right << strThrSizes << "\n";
 
   const string strThreading = System::GetThreading(info->threading);
   ss << left << setw(9) << "Threading" <<

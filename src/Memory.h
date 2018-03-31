@@ -120,6 +120,8 @@ class Memory
     vector<ThreadData *> memory;
     unsigned nThreads;
 
+    vector<string> threadSizes;
+
   public:
 
     Memory();
@@ -144,6 +146,7 @@ class Memory
 
     void ReturnAllMemory();
 
+    string ThreadSize(const unsigned thrId) const;
 };
 
 #endif

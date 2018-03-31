@@ -70,10 +70,12 @@ class System
       int& minor,
       int& patch) const;
     string GetSystem(int& sys) const;
+    string GetBits(int& bits) const;
     string GetCompiler(int& comp) const;
     string GetCores(int& comp) const;
     string GetConstructor(int& cons) const;
-    string GetThreading(int &thr) const;
+    string GetThreading(int& thr) const;
+    string GetThreadSizes(char * c) const;
 
 
   public:

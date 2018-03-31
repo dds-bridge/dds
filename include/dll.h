@@ -348,6 +348,9 @@ struct DDSInfo
   // Currently 0 = unknown, 1 = Windows, 2 = Cygwin, 3 = Linux, 4 = Apple
   int system;
 
+  // We know 32 and 64-bit systems.
+  int numBits;
+
   // Currently 0 = unknown, 1 = Microsoft Visual C++, 2 = mingw,
   // 3 = GNU g++, 4 = clang
   int compiler;
@@ -371,6 +374,11 @@ struct DDSInfo
 
   // The actual number of threads configured
   int noOfThreads;
+
+  // This will break if there are > 128 threads...
+  // The string is of the form LLLSSS meaning 3 large TT memories
+  // and 3 small ones.
+  char threadSizes[128];
 
   char systemString[1024];
 };

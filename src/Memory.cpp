@@ -53,6 +53,7 @@ void Memory::Resize(
 
   if (nThreads > n)
   {
+    // Downsize.
     for (unsigned i = n; i < nThreads; i++)
     {
       memory[i]->transTable->ReturnAllMemory();
@@ -60,17 +61,26 @@ void Memory::Resize(
       delete memory[i];
     }
     memory.resize(static_cast<unsigned>(n));
+    threadSizes.resize(static_cast<unsigned>(n));
   }
   else
   {
+    // Upsize.
     memory.resize(n);
+    threadSizes.resize(n);
     for (unsigned i = nThreads; i < n; i++)
     {
       memory[i] = new ThreadData;
       if (flag == DDS_TT_SMALL)
+      {
         memory[i]->transTable = new TransTableS;
+        threadSizes[i] = "S";
+      }
       else
+      {
         memory[i]->transTable = new TransTableL;
+        threadSizes[i] = "L";
+      }
 
       memory[i]->transTable->SetMemoryDefault(memDefault_MB);
       memory[i]->transTable->SetMemoryMaximum(memMaximum_MB);
@@ -99,5 +109,11 @@ double Memory::MemoryInUseMB(const unsigned thrId) const
 void Memory::ReturnAllMemory()
 {
   Memory::Resize(0, DDS_TT_SMALL, 0, 0);
+}
+
+
+string Memory::ThreadSize(const unsigned thrId) const
+{
+  return threadSizes[thrId];
 }
 
