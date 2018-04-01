@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -15,7 +15,6 @@
 
 #include "../include/dll.h"
 #include "../include/portab.h"
-#include "testStats.h"
 #include "TestTimer.h"
 #include "dtest.h"
 
@@ -47,8 +46,6 @@ int realMain(int argc, char * argv[])
   input_number = 0;
   timer.reset();
   timer.setname("Hand stats");
-
-  TestSetTimerName("Timer title");
 
   if (argc != 3 && argc != 4 && argc != 5)
   {
@@ -151,8 +148,6 @@ int realMain(int argc, char * argv[])
   }
 
   timer.printHands();
-  TestPrintTimer();
-  TestPrintTimerList();
 
   free(dealer_list);
   free(vul_list);

@@ -1,4 +1,3 @@
 DTEST_SOURCE_FILES 	=	\
 	testcommon.cpp		\
-	TestTimer.cpp		\
-	testStats.cpp
+	TestTimer.cpp

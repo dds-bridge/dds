@@ -45,11 +45,14 @@ So for example "cp Makefiles/Makefile_Visual Makefile".
 See "System-specific data" below.
 
 3. Check the configuration section and make any changes you need.
-Section (1) has to do with paths for certain multi-threading systems
-which you may or may not want/have.  Section (2) sets the threading
-systems with which you want to compile the DLL.  Note that you can
-have as many as you like (see below).  Section (3) has to do with
-certain debugging flags etc. which you normally shouldn't set.
+- Section (1) has to do with paths for certain multi-threading systems
+  which you may or may not want/have.  If you set a certain compiler
+  flag, it is your own responsibility that you have the corresponding
+  threading system available -- otherwise the code will not compile.
+- Section (2) sets the threading systems with which you want to compile 
+  the DLL.  Note that you can have as many as you like (see below).  
+- Section (3) has to do with certain debugging flags etc. which you 
+  normally shouldn't set.
 
 3. Check the "Often OK" section, in particular the name of the
 compiler you want to use.

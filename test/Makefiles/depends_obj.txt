@@ -63,9 +63,7 @@
 ../src/TimeStatList.obj: ../src/TimeStatList.h ../src/TimeStat.h
 ../src/TransTable.obj: ../src/dds.h ../include/portab.h ../include/dll.h
 ../src/TransTable.obj: ../src/TransTable.h ../src/debug.h
-testcommon.obj: ../include/dll.h ../include/portab.h testStats.h TestTimer.h
+testcommon.obj: ../include/dll.h ../include/portab.h
 testcommon.obj: dtest.h
-TestTimer.obj: TestTimer.h
-testStats.obj: ../include/portab.h testStats.h
 itest.obj: ../include/dll.h testcommon.h
 dtest.obj: ../include/dll.h testcommon.h
