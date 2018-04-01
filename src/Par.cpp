@@ -578,7 +578,8 @@ int STDCALL SidesParBin(
             k = 2;
             break;
           default:
-            throw std::runtime_error("j not in [0..3] in Par");
+            return RETURN_UNKNOWN_ERROR;
+            // j not in (0..4)
         }
 
         max_lower = min(max_low[k][best_par[m][i].par_tricks - 6], 
@@ -1210,8 +1211,8 @@ int STDCALL DealerParBin(
         presp->contracts[k].denom = 4;
         break;
       default:
-        throw std::runtime_error(
-          "contracts[1] not in (NSHDC) in DealerParBin");
+        return RETURN_UNKNOWN_FAULT;
+        // denomination not in (NSHDC)
     }
 
     if (strstr(parContr2[k].contracts, "NS"))
@@ -1389,7 +1390,8 @@ int STDCALL ConvertToDealerTextFormat(
         strcat(resp, "EW ");
         break;
       default:
-        throw std::runtime_error("Seats not in [N,W,S,W,NS,EW] in ConvertToDealerTextFormat");
+        return RETURN_UNKNOWN_FAULT;
+        // Seats not in (N,W,S,W,NS,EW)
     }
 
     for (i = 0; i < 10; i++)
@@ -1415,7 +1417,8 @@ int STDCALL ConvertToDealerTextFormat(
         strcat(resp, "C");
         break;
       default:
-        throw std::runtime_error("denom not in [N,S,H,D,C] in ConvertToDealerTextFormat");
+        return RETURN_UNKNOWN_FAULT;
+        // denom not in /N,S,H,D,C)
     }
 
     if (pres->contracts[k].underTricks > 0)
@@ -1488,7 +1491,8 @@ int STDCALL ConvertToSidesTextFormat(
           strcat(resp->parText[i], "EW ");
           break;
         default:
-          throw std::runtime_error("Seats not in [N,W,S,W,NS,EW] in ConvertToSidesTextFormat");
+          return RETURN_UNKNOWN_ERROR;
+          // Seats not in (N,W,S,W,NS,EW)
       }
 
       for (j = 0; j < 10; j++)
@@ -1514,7 +1518,8 @@ int STDCALL ConvertToSidesTextFormat(
           strcat(resp->parText[i], "C");
           break;
         default:
-          throw std::runtime_error("denom not in [N,S,H,D,C] in ConvertToSidesTextFormat");
+          return RETURN_UNKNOWN_ERROR;
+          // denom not in (N,S,H,D,C)
       }
 
       if ((pres + i)->contracts[k].underTricks > 0)
