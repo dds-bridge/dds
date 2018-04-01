@@ -1,6 +1,7 @@
 !.gitignore
 *.o
 *.a
+*.so
 *.dll
 *.obj
 *.def
