@@ -313,13 +313,6 @@ void TransTableS::ReturnAllMemory()
     return;
   TTInUse = 0;
 
-#if defined(DDS_TT_STATS)
-  // TODO Reactivate: Move somewhere else, where fout is known?
-  // PrintResetStats();
-  // PrintNodeStats();
-#endif
-
-
   Wipe();
 
   if (pw[0])

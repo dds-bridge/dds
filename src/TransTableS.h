@@ -188,8 +188,6 @@ class TransTableS: public TransTable
       const nodeCardsType& first,
       const bool flag);
 
-    // TODO: Fold up with L functions, same name?
-
     void PrintNodeStats(ofstream& fout) const;
 
     void PrintResetStats(ofstream& fout) const;

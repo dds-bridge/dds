@@ -458,10 +458,6 @@ int System::RunThreadsBoost()
 //                            STL                                   //
 //////////////////////////////////////////////////////////////////////
 
-// TODO Remove
-// int runSched = 0;
-// int runDetect = 0;
-
 int System::RunThreadsSTL()
 {
 #ifdef DDS_THREADS_STL
@@ -505,7 +501,7 @@ int System::RunThreadsSTLIMPL()
     if (thrId == -1)
     {
       thrId = thrIdNext++;
-      if (thrIdNext > 16) // Hmm...
+      if (thrId >= numThreads)
         err = true;
     }
 
@@ -513,7 +509,7 @@ int System::RunThreadsSTLIMPL()
   });
 
   if (err)
-    return RETURN_THREAD_INDEX; // TODO: Not quite right
+    return RETURN_THREAD_INDEX;
 
   (* CallbackCopyList[runCat])(crossrefs);
 #endif
@@ -587,7 +583,7 @@ int System::RunThreadsPPLIMPL()
   sched->Release();
 
   if (err)
-    return RETURN_THREAD_INDEX; // TODO: Not quite right
+    return RETURN_THREAD_INDEX;
 
   (* CallbackCopyList[runCat])(crossrefs);
 #endif
