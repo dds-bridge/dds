@@ -32,9 +32,6 @@
 #define SIMILARDEALLIMIT 5
 #define SIMILARMAXWINNODES 700000
 
-#define Max(x, y) (((x) >= (y)) ? (x) : (y))
-#define Min(x, y) (((x) <= (y)) ? (x) : (y))
-
 #define DDS_NOTRUMP 4
 
 /* "hand" is leading hand, "relative" is hand relative leading

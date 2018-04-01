@@ -9,6 +9,7 @@
 
 
 #include <stdexcept>
+#include <algorithm>
 
 #include "dds.h"
 #include "PBN.h"
@@ -283,7 +284,7 @@ int STDCALL SidesParBin(
             tablep->resTable[denom_conv[j]][0];
           t2 = k ? tablep->resTable[denom_conv[j]][3] : 
             tablep->resTable[denom_conv[j]][2];
-          tt = Max(t1, t2);
+          tt = max(t1, t2);
           /* tt is the maximum number of tricks current side can take in
           denomination.*/
 
@@ -543,7 +544,7 @@ int STDCALL SidesParBin(
           since the cost for the sacrifice is too small. */
         }
 
-        int opp_tricks = Max(t3[j], t4[j]);
+        int opp_tricks = max(t3[j], t4[j]);
 
         while (max_lower > 0)
         {
@@ -580,7 +581,7 @@ int STDCALL SidesParBin(
             throw std::runtime_error("j not in [0..3] in Par");
         }
 
-        max_lower = Min(max_low[k][best_par[m][i].par_tricks - 6], 
+        max_lower = min(max_low[k][best_par[m][i].par_tricks - 6], 
           max_lower);
 
         sidesRes[i].contracts[m].denom = j;
@@ -1561,5 +1562,4 @@ int STDCALL ConvertToSidesTextFormat(
 
   return RETURN_NO_FAULT;
 }
-
 

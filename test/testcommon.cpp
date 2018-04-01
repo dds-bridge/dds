@@ -846,7 +846,7 @@ bool compare_TRACE(
       trace2->number > 0)
   {
     printf("number %d != %d\n", trace1->number, trace2->number);
-    return true;
+    return false;
   }
 
   // Once that was fixed, the input file had length 0, not 1.
@@ -976,6 +976,34 @@ bool print_TRACE(solvedPlay * solvedp)
   {
     printf("Trick %d: %d\n", i, solvedp->tricks[i]);
   }
+  return true;
+}
+
+
+bool print_double_TRACE(solvedPlay * solvedp, solvedPlay * refp)
+{
+  printf("Number solved vs ref : %d vs %d\n", 
+    solvedp->number, refp->number);
+
+  const int m = min(solvedp->number, refp->number);
+  for (int i = 0; i < m;i++)
+  {
+    printf("Trick %d: %d vs %d %s\n", 
+      i, solvedp->tricks[i], refp->tricks[i],
+      (solvedp->tricks[i] == refp->tricks[i] ? "" : "ERROR"));
+  }
+
+  if (solvedp->number > m)
+  {
+    for (int i = m; i < solvedp->number; i++)
+      printf("Solved %d: %d\n", i, solvedp->number);
+  }
+  else if (refp->number > m)
+  {
+    for (int i = m; i < solvedp->number; i++)
+      printf("Ref %d: %d\n", i, refp->number);
+  }
+
   return true;
 }
 
@@ -1212,10 +1240,7 @@ bool loop_play(
       if (! compare_TRACE(&solvedplp->solved[j], &trace_list[i + j]))
       {
         printf("loop_play i %d, j %d: Difference\n", i, j);
-        // printf("trace_list[%d]: \n", i+j);
-        // print_TRACE(&trace_list[i+j]);
-        // printf("solvedplp[%d]: \n", j);
-        // print_TRACE(&solvedplp->solved[j]);
+        print_double_TRACE(&solvedplp->solved[j], &trace_list[i+j]);
       }
     }
   }

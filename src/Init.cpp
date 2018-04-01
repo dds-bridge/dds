@@ -8,6 +8,8 @@
 */
 
 
+#include <algorithm>
+
 #include "Init.h"
 #include "System.h"
 #include "Scheduler.h"
@@ -100,8 +102,8 @@ void STDCALL SetResources(
   const int memMaxFreeMB = static_cast<int>(0.70 * kilobytesFree / 1024);
   const int memMax32bMB = (sizeof(void *) == 4 ? 1800 : 1000000);
 
-  int memMaxMB = Min(memMaxGivenMB, memMaxFreeMB);
-  memMaxMB = Min(memMaxMB, memMax32bMB);
+  int memMaxMB = min(memMaxGivenMB, memMaxFreeMB);
+  memMaxMB = min(memMaxMB, memMax32bMB);
 
   // The number of threads will be limited by:
   // - If threading set as single-threaded or compiled only 
@@ -117,7 +119,7 @@ void STDCALL SetResources(
   else if (sysdep.IsIMPL() || maxThreadsIn <= 0)
     thrMax = static_cast<int>(1.51 * ncores);
   else
-    thrMax = Min(maxThreadsIn, static_cast<int>(1.51 * ncores));
+    thrMax = min(maxThreadsIn, static_cast<int>(1.51 * ncores));
 
   // For simplicity we won't vary the amount of memory per thread
   // in the small and large versions.

@@ -7,6 +7,8 @@
    See LICENSE and README.
 */
 
+#include <algorithm>
+
 #include "LaterTricks.h"
 
 
@@ -27,7 +29,7 @@ bool LaterTricksMIN(
       if (hh != -1)
       {
         if (thrd.nodeTypeStore[hh] == MAXNODE)
-          sum += Max(tpos.length[hh][ss],
+          sum += max(tpos.length[hh][ss],
                      tpos.length[partner[hh]][ss]);
       }
     }
@@ -64,7 +66,7 @@ bool LaterTricksMIN(
         (tpos.length[partner[hand]][trump] == 0))
     {
       if (((tpos.tricksMAX + (depth >> 2) + 1 -
-            Max(tpos.length[lho[hand]][trump],
+            max(tpos.length[lho[hand]][trump],
                 tpos.length[rho[hand]][trump])) < target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -160,7 +162,7 @@ bool LaterTricksMAX(
       if (hh != -1)
       {
         if (thrd.nodeTypeStore[hh] == MINNODE)
-          sum += Max(tpos.length[hh][ss],
+          sum += max(tpos.length[hh][ss],
                      tpos.length[partner[hh]][ss]);
       }
     }
@@ -197,7 +199,7 @@ bool LaterTricksMAX(
     if ((tpos.length[hand][trump] == 0) &&
         (tpos.length[partner[hand]][trump] == 0))
     {
-      int maxlen = Max(tpos.length[lho[hand]][trump],
+      int maxlen = max(tpos.length[lho[hand]][trump],
                        tpos.length[rho[hand]][trump]);
 
       if ((tpos.tricksMAX + maxlen) >= target)
