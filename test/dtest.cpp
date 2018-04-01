@@ -14,21 +14,22 @@
 
 #include "../include/dll.h"
 #include "testcommon.h"
+#include "args.h"
+#include "cst.h"
 
 using namespace std;
+
+OptionsType options;
 
 
 int main(int argc, char * argv[])
 {
-  if (argc >= 5)
-    SetThreading(threadingCode(argv[4]));
+  ReadArgs(argc, argv);
 
-  int nthreads = 0;
-  if (argc >= 4)
-    nthreads = atoi(argv[3]);
-  SetMaxThreads(nthreads);
+  if (options.threading != DTEST_THREADING_DEFAULT)
+    SetThreading(static_cast<int>(options.threading));
 
-  SetResources(1800, nthreads);
+  SetResources(options.memoryMB, options.numThreads);
 
   DDSInfo info;
   GetDDSInfo(&info);

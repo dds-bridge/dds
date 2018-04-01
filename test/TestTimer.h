@@ -7,8 +7,8 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_TIMING_H
-#define DDS_TIMING_H
+#ifndef DTEST_TESTTIMER_H
+#define DTEST_TESTTIMER_H
 
 #include <string>
 #include <chrono>

@@ -729,9 +729,16 @@ string System::GetThreading(int& thr) const
 
 string System::GetThreadSizes(char * sizes) const
 {
-  string st;
+  int l = 0, s = 0;
   for (unsigned i = 0; i < static_cast<unsigned>(numThreads); i++)
-    st += memory.ThreadSize(i);
+  {
+    if (memory.ThreadSize(i) == "S")
+      s++;
+    else
+      l++;
+  }
+
+  const string st = to_string(s) + " S, " + to_string(l) + " L";
   strcpy(sizes, st.c_str());
   return st;
 }

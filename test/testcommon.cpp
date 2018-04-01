@@ -17,8 +17,11 @@
 #include "../include/portab.h"
 #include "TestTimer.h"
 #include "dtest.h"
+#include "cst.h"
 
 using namespace std;
+
+extern OptionsType options;
 
 TestTimer timer;
 
@@ -43,30 +46,23 @@ int realMain(int argc, char * argv[]);
 
 int realMain(int argc, char * argv[])
 {
+  UNUSED(argc);
+  UNUSED(argv);
   input_number = 0;
   timer.reset();
   timer.setname("Hand stats");
 
-  if (argc != 3 && argc != 4 && argc != 5)
-  {
-    printf(
-      "Usage: dtest file.txt solve|calc|par|dealerpar|play [nthreads [threading]]\n");
-    return 1;
-  }
-
-  char * fname = argv[1];
-  char * type = argv[2];
-
-  if (! strcmp(type, "solve"))
+  // TODO: Make one.
+  if (options.solver == DTEST_SOLVER_SOLVE)
     input_number = SOLVE_SIZE;
-  else if (! strcmp(type, "calc"))
+  else if (options.solver == DTEST_SOLVER_CALC)
     input_number = BOARD_SIZE;
-  else if (! strcmp(type, "par"))
-    input_number = PAR_REPEAT;
-  else if (! strcmp(type, "dealerpar"))
-    input_number = PAR_REPEAT;
-  else if (! strcmp(type, "play"))
+  else if (options.solver == DTEST_SOLVER_PLAY)
     input_number = TRACE_SIZE;
+  else if (options.solver == DTEST_SOLVER_PAR)
+    input_number = PAR_REPEAT;
+  else if (options.solver == DTEST_SOLVER_DEALERPAR)
+    input_number = PAR_REPEAT;
 
   set_constants();
   main_identify();
@@ -90,7 +86,7 @@ int realMain(int argc, char * argv[])
   solvedPlay * trace_list;
   int number;
 
-  if (read_file(fname, &number, &dealer_list, &vul_list,
+  if (read_file(options.fname.c_str(), &number, &dealer_list, &vul_list,
         &deal_list, &fut_list, &table_list, &par_list, &dealerpar_list,
         &play_list, &trace_list) == false)
   {
@@ -98,7 +94,7 @@ int realMain(int argc, char * argv[])
     exit(0);
   }
 
-  if (! strcmp(type, "solve"))
+  if (options.solver == DTEST_SOLVER_SOLVE)
   {
     if (GIBmode)
     {
@@ -107,31 +103,12 @@ int realMain(int argc, char * argv[])
     }
     loop_solve(&bop, &solvedbdp, deal_list, fut_list, number);
   }
-  else if (! strcmp(type, "calc"))
+  else if (options.solver == DTEST_SOLVER_CALC)
   {
     loop_calc(&dealsp, &resp, &parp,
               deal_list, table_list, number);
   }
-  else if (! strcmp(type, "par"))
-  {
-    if (GIBmode)
-    {
-      printf("GIB file does not work with solve\n");
-      exit(0);
-    }
-    loop_par(vul_list, table_list, par_list, number);
-  }
-  else if (! strcmp(type, "dealerpar"))
-  {
-    if (GIBmode)
-    {
-      printf("GIB file does not work with solve\n");
-      exit(0);
-    }
-    loop_dealerpar(dealer_list, vul_list, table_list,
-                   dealerpar_list, number);
-  }
-  else if (! strcmp(type, "play"))
+  else if (options.solver == DTEST_SOLVER_PLAY)
   {
     if (GIBmode)
     {
@@ -141,9 +118,28 @@ int realMain(int argc, char * argv[])
     loop_play(&bop, &playsp, &solvedplp,
               deal_list, play_list, trace_list, number);
   }
+  else if (options.solver == DTEST_SOLVER_PAR)
+  {
+    if (GIBmode)
+    {
+      printf("GIB file does not work with solve\n");
+      exit(0);
+    }
+    loop_par(vul_list, table_list, par_list, number);
+  }
+  else if (options.solver == DTEST_SOLVER_DEALERPAR)
+  {
+    if (GIBmode)
+    {
+      printf("GIB file does not work with solve\n");
+      exit(0);
+    }
+    loop_dealerpar(dealer_list, vul_list, table_list,
+                   dealerpar_list, number);
+  }
   else
   {
-    printf("Unknown type %s\n", type);
+    printf("Unknown type %d\n", options.solver);
     exit(0);
   }
 
@@ -270,7 +266,7 @@ int threadingCode(char * arg)
 
 
 bool read_file(
-  char * fname,
+  char const * fname,
   int * number,
   int ** dealer_list,
   int ** vul_list,
@@ -283,24 +279,21 @@ bool read_file(
   solvedPlay ** trace_list)
 {
   char line[256];
-  char * name;
 
   FILE * fp;
   fp = fopen(fname, "r");
   if (fp == NULL)
   {
-    char backup[80];
-    sprintf(backup, "../hands/%s", fname);
-    fp = fopen(backup, "r");
-    name = backup;
-    if (fp == NULL)
-      return false;
+    printf("fp %s is NULL\n", fname);
+    return false;
   }
-  else
-    name = fname;
 
   if (! fgets(line, sizeof(line), fp))
+  {
+    printf("First line bad\n");
     return false;
+  }
+
   if (parse_NUMBER(line, number) == false)
   {
     if (parseable_GIB(line))
@@ -317,9 +310,7 @@ bool read_file(
       }
 
       fclose(fp);
-      fp = fopen(name, "r");
-      if (fp == NULL)
-        return false;
+      return false;
     }
     else
       return false;

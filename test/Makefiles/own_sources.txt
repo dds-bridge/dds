@@ -1,3 +1,4 @@
 DTEST_SOURCE_FILES 	=	\
+        args.cpp                \
 	testcommon.cpp		\
 	TestTimer.cpp

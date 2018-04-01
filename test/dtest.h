@@ -18,7 +18,7 @@ void main_identify();
 void set_constants();
 
 bool read_file(
-  char * fname,
+  char const * fname,
   int * number,
   int ** dealer_list,
   int ** vul_list,
