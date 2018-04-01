@@ -1,3 +1,38 @@
+Release Notes DDS 2.9.0
+-----------------------
+Included code for a number of multi-threading systems:
+- Windows API (was already there)
+- OpenMP (was already there)
+- GCD (new, intended for Mac, not really tested)
+- Boost (new, works on many systems, but you may have to install it)
+- STL (new, should work on most systems with a modern compiler)
+- TBB (new, not so broadly available, but portable in principle)
+- STLIMPL (new, don't use)
+- PPLIMPL (new, don't use)
+
+The number of threads is now unlimited in principle, although the
+DLL will not let you go beyond 1.5 * the number of processor cores.
+
+Enabled the transposition-table code for both the large and the small
+versions in the same DLL.  Therefore there is only a single DLL
+distributed now for both.
+
+Enabled the DLL to pick the best combination of large and small
+transposition tables for a given resource set-up consisting of
+available memory and number of threads.  Yes, the DLL can choose to
+run 4 large and 2 small threads, for example.
+
+Expanded the DDSInfo systemString (which now needs 1024 chars as 
+stated in the new dll.h).
+
+Fixed a reliance that char == signed char (not the case on Android,
+which caused a bug).
+
+Dealt with the reported issues on the GitHub issues list.
+
+Lots of clean-up of internal code.  The code also looks more like C++.
+
+
 Release Notes DDS 2.8.4
 -----------------------
 Added a lower-memory DLL version with a compile flag.  This is about

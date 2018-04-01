@@ -7,7 +7,7 @@ know what you're doing and you'll figure it out :-).
 
 The first step is to compile the library.
 
-If you have trouble, read the Makefile.  They all have the compiler
+If you have trouble, read the Makefiles.  They all have the compiler
 warning levels set rather high, and they are set to fail even on
 warnings.  You can turn this off.  The Visual C++ version also
 requires a couple of tools that you may not have, but this too is
@@ -24,14 +24,14 @@ Generally speaking:
   the Makefile, then modify the Makefile.
 
 Once you've tested the source, you'll need the library file, the
-dll.h include from the include directory, and possibly other files
+dll.h include file from the include directory, and possibly other files
 such as dll.lib, depending on the exact system.  You don't need
 include/portab.h, although you're welcome to use it.  The library
 files needed are:
 
 Microsoft Visual C++: dds.dll, dds.lib
 mingw and cygwin: dds.dll, dds.def
-Mac and linux: libdds.a
+Mac and linux: libdds.a or libdds.so depending on compilation
 
 
 General instructions
@@ -41,88 +41,131 @@ General instructions
 
 2. Copy the right Makefile_... from the Makefiles sub-directory
 to the src directory and call it Makefile, see below. (Or use make -f)
+So for example "cp Makefiles/Makefile_Visual Makefile".
+See "System-specific data" below.
 
-3. If your compiler does not have the name assumed in the Makefile
-(see below), modify the Makefile.
+3. Check the configuration section and make any changes you need.
+Section (1) has to do with paths for certain multi-threading systems
+which you may or may not want/have.  Section (2) sets the threading
+systems with which you want to compile the DLL.  Note that you can
+have as many as you like (see below).  Section (3) has to do with
+certain debugging flags etc. which you normally shouldn't set.
 
-4. If you don't have the "windres" and "cvtres" programs,
-then you can also manage without.  These are just used for
-getting version information into the DLL.  Delete the corresponding
-lines.
+3. Check the "Often OK" section, in particular the name of the
+compiler you want to use.
 
-5. If you want OpenMP rather than Windows multi-threading for
-some reason, find the right place in the Makefile and uncomment
-one line and comment the other.
+4. If you're on Windows and you don't have the "windres" and 
+"cvtres" programs, then you can also manage without.  These are 
+just used for getting version information into the DLL.  Delete 
+the corresponding lines.
 
-6. make clean (not necessary if you're starting clean).
+6. "make clean" (not necessary if you're starting clean).
 
-7. make depend (ditto).
+7. There is a "make depend" target, but DO NOT USE IT.  The Makefile
+is set up to read the dependencies from Makefiles/depends_*.txt.
 
-8. make (produces dds.dll on Windows, libdds.a on Linux and Mac).
+8. "make" (produces dds.dll on Windows, libdds.a or libdds.so on 
+Linux and Mac).
 
-9. make install (if you want to run tests; this is only a
-local install to ../lib, not a system-wide one).
+9. "make install" (if you want to run tests; this is only a
+local install to ../test and ../examples, not a system-wide one).
 
 
 System-specific data
 ====================
 
-Microsoft Visual C++ (Unix-like, so Cygwin and mingw)
+Microsoft Visual C++
 --------------------
 Makefile: Makefile_Visual
 Compiler: cl
 
-
-Microsoft Visual C++ (Windows-like, so no "mV", different "make")
---------------------
-Makefile: Makefile_Visual_Windows
-Compiler: cl
+If you don't have a Cygwin-like set-up with access to commands
+such as "cp", see the last lines of that Makefile.
 
 
-Mingw
------
+Windows Mingw
+-------------
 Makefile: Makefile_mingw
-Compiler: i686-w64-mingw32-g++
-
-32-bit and 64-bit variants for the tdc compiler are available.
+Compiler: g++
 
 
-Cygwin
-------
+Windows Cygwin
+--------------
 Makefile: Makefile_cygwin
 Compiler: g++
 
 
 Linux (static library .a)
-=====
-Makefile: Makefile_linux
+-----
+Makefile: Makefile_linux_static
 Compiler: g++
 
 
-Linux (dynamic library .ld)
-=====
+Linux (dynamic library .so)
+-----
 Makefile: Makefile_linux_shared
 Compiler: g++
 
 
-Apple
-=====
-Makefile: Makefile_Mac_clang (for clang compiler, single-threaded)
+MacOS clang (static library .a)
+-----
+Makefile: Makefile_Mac_clang_static
 Compiler: g++
-Supports both OpenMP and GDD multi-threading.
 
-Makefile: Makefile_Mac_gcc (for GNU g++ compiler, multi-threaded)
-Makefile: Makefile_Mac_shared (for GNU g++ compiler, multi-threaded)
+
+MacOS clang (shared library .a)
+-----
+Makefile: Makefile_Mac_clang_static
+Compiler: g++
+
+
+MacOS GNU g++ (static library .a)
+-----
+Makefile: Makefile_Mac_clang_static
+Compiler: gcc-4.9
+
+
+MacOS GNU g++ (shared library .a)
+-----
+Makefile: Makefile_Mac_clang_static
+Compiler: gcc-4.9
+
+
+Multi-threading
+===============
+
+As of v2.9.0 this works differently.  It is possible to have
+multiple threading systems in the same library.  There is a new
+DLL function called SetThreading() to select the one you want,
+in case there is more than one.  If the DLL is compiled only
+single-threaded, that is what you'll get.  If there are multiple
+options, the DLL will default to the multi-threaded one with the
+lowest number (among those compiled in, of course).  The numbers
+can be found in ../include/dll.h.
+
+It is NOT recommended to use STLIMPL and PPLIMPL as they are today.
+You cannot control the number of threads that they will want, nor
+the memory that they will consume.  But maybe some day...
+
+The others are very equivalent in terms of speed, but you might as
+well use STL if you have it, as this is probably the most portable.
+
+If you don't have a C++17 compiler, you will not get STLIMPL or
+PPLIMPL.
+
+The *IMPL versions let the system handle threads autonomously,
+whereas the others are handled by DDS internally.
 
 
 Testing
 =======
 
 The step "make install" above should have put the library file
-in ../lib.
+in ../test.
 
 test
 ----
+In the test directory you can compile the dtest program.
 This program tests five main modes of DDS:
 
 * solve, the solution of a hand for a given declarer and strain.
@@ -135,9 +178,11 @@ The program can use a number of pre-defined input files in the
 ../hands directory.
 
 To compile the program, you follow the same steps as for the library,
-except that you don't do a "make install".
+except that you don't do a "make install".  So you copy the right
+Makefile from Makefiles (e.g. "cp Makefiles/Makefile_Visual Makefile"),
+then type "make".
 
-You now have a program called "dtest" or "dtest.exe".  Let us 
+You should now have a program called "dtest" or "dtest.exe".  Let us 
 assume dtest.exe.  Let us also assume that your system is set up
 in such a way that your path does not include the current working
 directory.
@@ -155,11 +200,15 @@ file.txt has to be the name of a file EITHER in the current
 directory OR in ../hands.  The program checks first in the current
 directory.  A good starting example is list100.txt.
 
-mode has to be one of solve, calc, play, parand dealerpar.
+[TODO UPDATE]
+
+mode has to be one of solve, calc, play, par and dealerpar.
 
 The number of threads is optional.  If it is not supplied, DDS
 figures one out itself.  If it is supplied, then it is passed to
-SetMaxThreads().
+SetMaxThreads().  You can also use SetResources() instead of
+SetMaxThreads() to set the memory consumption as well.  If you use
+SetResources(), there is no need to use SetMaxThreads().
 
 Generally speaking, the test program first shows some information
 about how it was compiled.  Then it shows some ongoing timing
@@ -179,7 +228,7 @@ minimally to support a multi-threaded DLL.  However, it doesn't
 use the full capabilities of DDS, as it was written at a time when
 functions such as CalcAllTables and SolveAllBoards were not yet
 available.  Therefore it is rather slow, but it does have a nice
-hand generator built in.
+hand generator built in.  It has not been updated since v2.8.4.
 
 
 examples

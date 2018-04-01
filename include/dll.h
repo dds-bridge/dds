@@ -26,8 +26,8 @@
   #define EXTERN_C
 #endif
 
-/* Version 2.8.4. Allowing for 2 digit minor versions */
-#define DDS_VERSION 20804
+/* Version 2.9.0. Allowing for 2 digit minor versions */
+#define DDS_VERSION 20900
 
 
 #define DDS_HANDS 4
