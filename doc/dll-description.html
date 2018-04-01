@@ -878,10 +878,10 @@ CalcDDtable solves a single deal &#8220; tableDeal &#8221; and returns the doubl
 </table>
 
 <p>CalcAllTablesPBN is just like CalcAllTables, except for the input format.</p>
-<p>CallAllTables calculates the double dummy values of the denomination/declarer hand combinations in &#8220;*dealsp&#8221; for a number of DD tables in parallel. This increases the speed compared to calculating these values using a CalcDDtable call for each DD table. The results are returned in &#8220;*resp&#8221; which must be defined before CalcAllTables is called.</p>
+<p>CalcAllTables calculates the double dummy values of the denomination/declarer hand combinations in &#8220;*dealsp&#8221; for a number of DD tables in parallel. This increases the speed compared to calculating these values using a CalcDDtable call for each DD table. The results are returned in &#8220;*resp&#8221; which must be defined before CalcAllTables is called.</p>
 <p>The &#8220;mode&#8221; parameter contains the vulnerability (<a href="#Vulnerable">Vulnerable</a> encoding; not to be confused with the SolveBoard mode) for use in the par calculation. It is set to -1 if no par calculation is to be performed.</p>
 <p>There are 5 possible denominations or strains (the four trump suits and no trump). The parameter &#8220;trumpFilter&#8221; describes which, if any, of the 5 possibilities that will be excluded from the calculations. They are defined in <a href="#Suit">Suit</a> encoding order, so setting trumpFilter to {FALSE, FALSE, TRUE, TRUE, TRUE} means that values will only be calculated for the trump suits spades and hearts.</p>
-<p>The maximum number of DD tables in a CallAllTables call depends on the number of strains required, see the following table:</p>
+<p>The maximum number of DD tables in a CalcAllTables call depends on the number of strains required, see the following table:</p>
 <table>
 <thead>
 <tr>
