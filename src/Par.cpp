@@ -578,7 +578,7 @@ int STDCALL SidesParBin(
             k = 2;
             break;
           default:
-            return RETURN_UNKNOWN_ERROR;
+            return RETURN_UNKNOWN_FAULT;
             // j not in (0..4)
         }
 
@@ -1491,7 +1491,7 @@ int STDCALL ConvertToSidesTextFormat(
           strcat(resp->parText[i], "EW ");
           break;
         default:
-          return RETURN_UNKNOWN_ERROR;
+          return RETURN_UNKNOWN_FAULT;
           // Seats not in (N,W,S,W,NS,EW)
       }
 
@@ -1518,7 +1518,7 @@ int STDCALL ConvertToSidesTextFormat(
           strcat(resp->parText[i], "C");
           break;
         default:
-          return RETURN_UNKNOWN_ERROR;
+          return RETURN_UNKNOWN_FAULT;
           // denom not in (N,S,H,D,C)
       }
 
