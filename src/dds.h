@@ -144,7 +144,7 @@ struct extCard
 struct absRankType // 2 bytes
 {
   char rank;
-  char hand;
+  signed char hand;
 };
 
 struct relRanksType // 120 bytes

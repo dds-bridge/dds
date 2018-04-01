@@ -996,12 +996,12 @@ bool print_double_TRACE(solvedPlay * solvedp, solvedPlay * refp)
   if (solvedp->number > m)
   {
     for (int i = m; i < solvedp->number; i++)
-      printf("Solved %d: %d\n", i, solvedp->number);
+      printf("Solved %d: %d\n", i, solvedp->tricks[i]);
   }
   else if (refp->number > m)
   {
     for (int i = m; i < solvedp->number; i++)
-      printf("Ref %d: %d\n", i, refp->number);
+      printf("Ref %d: %d\n", i, refp->tricks[i]);
   }
 
   return true;
