@@ -1133,6 +1133,7 @@ bool loop_dealerpar(
 
   parResultsDealer presp;
 
+  timer.start(number);
   for (int i = 0; i < number; i++)
   {
     for (int j = 0; j < input_number; j++)
@@ -1152,6 +1153,11 @@ bool loop_dealerpar(
       printf("loop_dealerpar i %d: Difference\n", i);
     }
   }
+  timer.end();
+
+#ifdef BATCHTIMES
+  timer.printRunning(number, number);
+#endif
 
   return true;
 }

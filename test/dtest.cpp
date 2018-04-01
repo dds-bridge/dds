@@ -28,7 +28,7 @@ int main(int argc, char * argv[])
     nthreads = atoi(argv[3]);
   SetMaxThreads(nthreads);
 
-  SetResources(600, nthreads);
+  SetResources(1800, nthreads);
 
   DDSInfo info;
   GetDDSInfo(&info);

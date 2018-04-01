@@ -135,7 +135,7 @@ void STDCALL SetResources(
     // We don't even have enough memory for only small threads.
     // We'll limit the number of threads.
     noOfThreads = static_cast<int>(memMaxMB / 
-      static_cast<double>(thrMax));
+      static_cast<double>(THREADMEM_SMALL_MAX_MB));
     noOfLargeThreads = 0;
     noOfSmallThreads = noOfThreads;
   }
