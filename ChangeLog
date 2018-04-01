@@ -25,6 +25,8 @@ run 4 large and 2 small threads, for example.
 Expanded the DDSInfo systemString (which now needs 1024 chars as 
 stated in the new dll.h).
 
+MAXNOOFTABLES was increased from 32 to 40.
+
 Fixed a reliance that char == signed char (not the case on Android,
 which caused a bug).
 

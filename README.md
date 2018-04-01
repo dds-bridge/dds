@@ -73,6 +73,8 @@ The `without-multilib` is important because you won't get OpenMP otherwise, and 
 
 Thanks for Pierre Cossard's contribution, the Mac port now also supports GCD multi-threading with LLVM.
 
+There's an example .Net wrapper on https://github.com/anorsich/dds.net (not supported by us).
+
 Usage
 =====
 
