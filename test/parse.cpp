@@ -7,85 +7,93 @@
    See LICENSE and README.
 */
 
+#include <iostream>
+#include <fstream>
+#include <vector>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../include/dll.h"
 #include "parse.h"
+#include "../include/portab.h"
 
 using namespace std;
 
+// #define DEBUG
 
-bool parse_NUMBER(
-  char * line,
-  int * number);
 
 bool parse_PBN(
-  char * line,
-  int * dealer,
-  int * vul,
-  struct dealPBN * dl);
+  const vector<string>& list,
+  int& dealer,
+  int& vul,
+  dealPBN * dl);
 
 bool parse_FUT(
-  char * line,
-  struct futureTricks * fut);
+  const vector<string>& list,
+  futureTricks * fut);
 
 bool parse_TABLE(
-  char * line,
-  struct ddTableResults * table);
+  const vector<string>& list,
+  ddTableResults * table);
 
 bool parse_PAR(
-  char * line,
-  struct parResults * par);
+  const vector<string>& list,
+  parResults * par);
 
 bool parse_DEALERPAR(
-  char * line,
-  struct parResultsDealer * par);
+  const vector<string>& list,
+  parResultsDealer * par);
 
 bool parse_PLAY(
-  char * line,
-  struct playTracePBN * playp);
+  const vector<string>& list,
+  playTracePBN * play);
 
 bool parse_TRACE(
-  char * line,
-  struct solvedPlay * solvedp);
+  const vector<string>& list,
+  solvedPlay * solved);
 
-bool parseable_GIB(
-  char line[]);
+bool parseable_GIB(const string& line);
 
 bool parse_GIB(
-  char line[],
+  const string& line,
   dealPBN * dl,
   ddTableResults * table);
 
-bool consume_int(
-  char * line,
-  int * pos,
-  int * res);
+bool get_any_line(
+  ifstream& fin,
+  vector<string>& list,
+  const string& tag,
+  const int n);
 
-bool consume_string(
-  char * line,
-  int * pos,
-  char * res);
+bool get_head_element(
+  const string& elem,
+  const string& expected);
 
-bool consume_tag(
-  char * line,
-  int * pos,
-  const char * tag);
+bool get_int_element(
+  const string& elem,
+  int& res,
+  const string& errtext);
 
+bool strip_quotes(
+  const string& st,
+  char * cstr,
+  const string& errtag);
 
-// #define DEBUG
-#define ZERO (static_cast<int>('0'))
-#define NINE (static_cast<int>('9'))
-#define SPACE (static_cast<int>(' '))
-#define QUOTE (static_cast<int>('"'))
+bool strip_quotes(
+  const string& st,
+  int& res,
+  const string& errtag);
+
+void splitIntoWords(
+  const string& text,
+  vector<string>& words);
+
+bool str2int(
+  const string& text,
+  int& res);
 
 
 bool read_file(
-  char const * fname,
-  int * number,
+  const string& fname,
+  int& number,
+  bool& GIBmode,
   int ** dealer_list,
   int ** vul_list,
   dealPBN ** deal_list,
@@ -94,54 +102,58 @@ bool read_file(
   parResults ** par_list,
   parResultsDealer ** dealerpar_list,
   playTracePBN ** play_list,
-  solvedPlay ** trace_list,
-  bool& GIBmode)
+  solvedPlay ** trace_list)
 {
-  char line[256];
+  ifstream fin;
+  fin.open(fname);
 
-  FILE * fp;
-  fp = fopen(fname, "r");
-  if (fp == NULL)
+  string line;
+  if (! getline(fin, line))
   {
-    printf("fp %s is NULL\n", fname);
+    cout << "First line bad: '" << line << "'" << endl;
     return false;
   }
 
-  if (! fgets(line, sizeof(line), fp))
-  {
-    printf("First line bad\n");
-    return false;
-  }
+  vector<string> list;
+  splitIntoWords(line, list);
 
-  if (parse_NUMBER(line, number) == false)
+  if (list.size() == 2 && get_head_element(list[0], "NUMBER"))
   {
-    if (parseable_GIB(line))
+    // Hopefully a txt-style file.
+    if (! str2int(list[1], number))
     {
-      GIBmode = true;
-
-      * number = 1;
-      // Count lines, then start over.
-      while (1)
-      {
-        if (! fgets(line, sizeof(line), fp))
-          break;
-        (*number)++;
-      }
-
-      fclose(fp);
+      cout << "Not a number of hands: '" << list[1] << "'" << endl;
       return false;
     }
-    else
+    else if (number <= 0 || number > 100000)
+    {
+      cout << "Suspect number of hands: " << number << endl;
       return false;
+    }
   }
-
-  if (*number < 0 || *number > 100000)
+  else if (! parseable_GIB(line))
   {
-    printf("Suspect number %d\n", *number);
+    cout << "Not a GIB-style start: '" << line << "'" << endl;
     return false;
   }
+  else
+  {
+    // Count the lines, then start over.
+    number = 1;
+    while (1)
+    {
+      if (! getline(fin, line))
+        break;
+      number++;
+    }
+    fin.close();
+    fin.open(fname);
+  }
 
-  size_t number_t = static_cast<size_t>(* number);
+
+  // Make enough room for the hands.
+
+  const size_t number_t = static_cast<size_t>(number);
 
   if ((*dealer_list = static_cast<int *>
       (calloc(number_t, sizeof(int)))) == NULL)
@@ -181,343 +193,310 @@ bool read_file(
 
   if (GIBmode)
   {
-    int n = 0;
-    while (fgets(line, sizeof(line), fp))
+    for (int n = 0; n < number; n++)
     {
-      if (parse_GIB(line, &(*deal_list)[n], &(*table_list)[n])
-          == false)
+      if (! getline(fin, line))
+      {
+        cout << "Expected GIB line " << n << endl;
         return false;
-      n++;
+      }
+      if (! parse_GIB(line, &(*deal_list)[n], &(*table_list)[n]))
+        return false;
     }
   }
   else
   {
-    for (int n = 0; n < *number; n++)
+    for (int n = 0; n < number; n++)
     {
 #ifdef DEBUG
-      printf("Starting to read hand number %d\n", n);
-      printf("-------------------------------\n");
-      printf("play_list[%d].number = %d\n", n, (*play_list)[n].number);
+      cout << "Starting to read hand number " << n << "\n";
+      cout << string(31, '-') << "\n";
+      cout << "play_list[" << n << "].number = " <<
+        (*play_list)[n].number << "\n";
 #endif
 
-      if (! fgets(line, sizeof(line), fp)) return false;
-      if (parse_PBN(line, &(*dealer_list)[n], &(*vul_list)[n],
-                    &(*deal_list)[n]) == false) return false;
-
-      if (! fgets(line, sizeof(line), fp)) return false;
-      if (parse_FUT(line, &(*fut_list)[n]) == false) return false;
-
-      if (! fgets(line, sizeof(line), fp)) return false;
-      if (parse_TABLE(line, &(*table_list)[n]) == false) return false;
-
-      if (! fgets(line, sizeof(line), fp)) return false;
-      if (parse_PAR(line, &(*par_list)[n]) == false) return false;
-
-      if (! fgets(line, sizeof(line), fp)) return false;
-      if (parse_DEALERPAR(line, &(*dealerpar_list)[n]) == false)
+      if (! get_any_line(fin, list, "PBN", n))
+        return false;
+      if (! parse_PBN(list, (*dealer_list)[n], 
+          (*vul_list)[n], &(*deal_list)[n])) 
         return false;
 
-      if (! fgets(line, sizeof(line), fp)) return false;
-      if (parse_PLAY(line, &(*play_list)[n]) == false) return false;
+      if (! get_any_line(fin, list, "FUT", n))
+        return false;
+      if (! parse_FUT(list, &(*fut_list)[n]))
+        return false;
 
-      if (! fgets(line, sizeof(line), fp)) return false;
-      if (parse_TRACE(line, &(*trace_list)[n]) == false) return false;
+      if (! get_any_line(fin, list, "TABLE", n))
+        return false;
+      if (! parse_TABLE(list, &(*table_list)[n])) 
+        return false;
+
+      if (! get_any_line(fin, list, "PAR", n))
+        return false;
+      if (! parse_PAR(list, &(*par_list)[n])) 
+        return false;
+
+      if (! get_any_line(fin, list, "DEALERPAR", n))
+        return false;
+      if (! parse_DEALERPAR(list, &(*dealerpar_list)[n]))
+        return false;
+
+      if (! get_any_line(fin, list, "PLAY", n))
+        return false;
+      if (! parse_PLAY(list, &(*play_list)[n]))
+        return false;
+
+      if (! get_any_line(fin, list, "TRACE", n))
+        return false;
+      if (! parse_TRACE(list, &(*trace_list)[n]))
+        return false;
     }
   }
 
-  fclose(fp);
-  return 1;
-}
-
-
-bool parse_NUMBER(char * line, int * number)
-{
-#ifdef DEBUG
-  printf("parse_NUMBER: Got line '%s'\n", line);
-#endif
-  int pos = 0;
-  if (consume_tag(line, &pos, "NUMBER") == false) return false;
-#ifdef DEBUG
-  printf("parse_NUMBER: Got tag 'NUMBER'\n");
-#endif
-
-  if (consume_int(line, &pos, number) == false) return false;
-#ifdef DEBUG
-  printf("parse_NUMBER: Read number %d\n", * number);
-#endif
+  fin.close();
   return true;
 }
 
 
 bool parse_PBN(
-  char * line,
-  int * dealer,
-  int * vul,
+  const vector<string>& list,
+  int& dealer,
+  int& vul,
   dealPBN * dl)
 {
-#ifdef DEBUG
-  printf("parse_PBN: Got line '%s'\n", line);
-#endif
-  int pos = 0;
-  if (consume_tag(line, &pos, "PBN") == false) return false;
-#ifdef DEBUG
-  printf("parse_PBN: Got tag 'PBN'\n");
-#endif
-
-  if (consume_int(line, &pos, dealer) == false) return false;
-#ifdef DEBUG
-  printf("parse_PBN: Read dealer %d\n", * dealer);
-#endif
-
-  if (consume_int(line, &pos, vul) == false) return false;
-#ifdef DEBUG
-  printf("parse_PBN: Read vul %d\n", * dealer);
-#endif
-
-  if (consume_int(line, &pos, &dl->trump) == false) return false;
-#ifdef DEBUG
-  printf("parse_PBN: Read trump %d\n", dl->trump);
-#endif
-
-  if (consume_int(line, &pos, &dl->first) == false) return false;
-#ifdef DEBUG
-  printf("parse_PBN: Read first %d\n", dl->first);
-#endif
-
-  if (consume_string(line, &pos, dl->remainCards) == false)
+  if (list.size() != 9)
+  {
+    cout << "PBN list does not have 9 elements: " << list.size() << "\n";
     return false;
-#ifdef DEBUG
-  printf("parse_PBN: Read string '%s'\n", dl->remainCards);
-#endif
+  }
+
+  if (! get_head_element(list[0], "PBN"))
+    return false;
+  if (! get_int_element(list[1], dealer, "PBN dealer failed"))
+    return false;
+  if (! get_int_element(list[2], vul, "PBN vul failed"))
+    return false;
+  if (! get_int_element(list[3], dl->trump, "PBN trump failed"))
+    return false;
+  if (! get_int_element(list[4], dl->first, "PBN trump failed"))
+    return false;
+
+  for (int i = 0; i < 3; i++)
+  {
+    dl->currentTrickSuit[i] = 0;
+    dl->currentTrickRank[i] = 0;
+  }
+
+  if (! strip_quotes(
+      list[5] + " " + list[6] + " " + list[7] + " " + list[8],
+      dl->remainCards, "PBN string"))
+    return false;
 
   return true;
 }
 
 
-bool parse_FUT(char * line, futureTricks * fut)
+bool parse_FUT(
+  const vector<string>& list,
+  futureTricks * fut)
 {
-#ifdef DEBUG
-  printf("parse_FUT: Got line '%s'\n", line);
-#endif
-  int pos = 0;
-  if (consume_tag(line, &pos, "FUT") == false) return false;
-#ifdef DEBUG
-  printf("parse_FUT: Got tag 'FUT'\n");
-#endif
-
-  if (consume_int(line, &pos, &fut->cards) == false) return false;
-#ifdef DEBUG
-  printf("parse_FUT: Read cards %d\n", fut->cards);
-#endif
-
-  for (int c = 0; c < fut->cards; c++)
+  if (list.size() < 2)
   {
-    if (consume_int(line, &pos, &fut->suit[c]) == false) return false;
-#ifdef DEBUG
-    printf("parse_FUT: Read suit[%d]: %d\n", c, fut->suit[c]);
-#endif
+    cout << "PBN list does not have 2+ elements: " << list.size() << endl;
+    return false;
   }
 
-  for (int c = 0; c < fut->cards; c++)
+  if (! get_head_element(list[0], "FUT"))
+    return false;
+  if (! get_int_element(list[1], fut->cards, "FUT cards"))
+    return false;
+
+  if (static_cast<int>(list.size()) != 4 * fut->cards + 2)
   {
-    if (consume_int(line, &pos, &fut->rank[c]) == false) return false;
-#ifdef DEBUG
-    printf("parse_FUT: Read rank[%d]: %d\n", c, fut->rank[c]);
-#endif
+    cout << "PBN list does not have right length: " << list.size() << endl;
+    return false;
   }
 
-  for (int c = 0; c < fut->cards; c++)
-  {
-    if (consume_int(line, &pos, &fut->equals[c]) == false) return false;
-#ifdef DEBUG
-    printf("parse_FUT: Read equals[%d]: %d\n", c, fut->equals[c]);
-#endif
-  }
+  const int n = fut->cards;
+  for (int c = 0; c < n; c++)
+    if (! get_int_element(list[c+2], fut->suit[c], "FUT suit"))
+      return false;
 
-  for (int c = 0; c < fut->cards; c++)
-  {
-    if (consume_int(line, &pos, &fut->score[c]) == false) return false;
-#ifdef DEBUG
-    printf("parse_FUT: Read score[%d]: %d\n", c, fut->score[c]);
-#endif
-  }
+  for (int c = 0; c < n; c++)
+    if (! get_int_element(list[c+n+2], fut->rank[c], "FUT rank"))
+      return false;
+
+  for (int c = 0; c < n; c++)
+    if (! get_int_element(list[c+2*n+2], fut->equals[c], "FUT equals"))
+      return false;
+
+  for (int c = 0; c < n; c++)
+    if (! get_int_element(list[c+3*n+2], fut->score[c], "FUT score"))
+      return false;
 
   return true;
 }
 
 
-bool parse_TABLE(char * line, ddTableResults * table)
+bool parse_TABLE(
+  const vector<string>& list,
+  ddTableResults * table)
 {
-  int pos = 0;
-  if (consume_tag(line, &pos, "TABLE") == false) return false;
-#ifdef DEBUG
-  printf("parse_FUT: Got tag 'TABLE'\n");
-#endif
-
-  for (int suit = 0; suit <= 4; suit++)
+  if (list.size() != 21)
   {
-    for (int pl = 0; pl <= 3; pl++)
+    cout << "Table list does not have 21 elements: " << list.size() << endl;
+    return false;
+  }
+
+  if (! get_head_element(list[0], "TABLE"))
+    return false;
+
+  for (int suit = 0; suit < DDS_STRAINS; suit++)
+  {
+    for (int pl = 0; pl < DDS_HANDS; pl++)
     {
-      if (consume_int(line, &pos, &table->resTable[suit][pl]) == false)
+      if (! get_int_element(list[DDS_HANDS * suit + pl + 1],
+          table->resTable[suit][pl], "TABLE entry"))
         return false;
-#ifdef DEBUG
-      printf("parse_TABLE: Read table[%d][%d] = %d\n",
-             suit, pl, table->resTable[suit][pl]);
-#endif
     }
   }
-  return true;
-}
-
-
-bool parse_PAR(char * line, parResults * par)
-{
-#ifdef DEBUG
-  printf("parse_PAR: Got line '%s'\n", line);
-#endif
-
-  int pos = 0;
-  if (consume_tag(line, &pos, "PAR") == false) return false;
-#ifdef DEBUG
-  printf("parse_PAR: Got tag 'PAR'\n");
-#endif
-
-  if (consume_string(line, &pos, par->parScore[0]) == false)
-    return false;
-#ifdef DEBUG
-  printf("parse_PAR: Read string '%s'\n", par->parScore[0]);
-#endif
-
-  if (consume_string(line, &pos, par->parScore[1]) == false)
-    return false;
-#ifdef DEBUG
-  printf("parse_PAR: Read string '%s'\n", par->parScore[1]);
-#endif
-
-  if (consume_string(line, &pos, par->parContractsString[0]) == false)
-    return false;
-#ifdef DEBUG
-  printf("parse_PAR: Read string '%s'\n", par->parContractsString[0]);
-#endif
-
-  if (consume_string(line, &pos, par->parContractsString[1]) == false)
-    return false;
-#ifdef DEBUG
-  printf("parse_PAR: Read string '%s'\n", par->parContractsString[1]);
-#endif
 
   return true;
 }
 
 
-bool parse_DEALERPAR(char * line, parResultsDealer * par)
+bool parse_PAR(
+  const vector<string>& list,
+  parResults * par)
 {
-#ifdef DEBUG
-  printf("parse_DEALERPAR: Got line '%s'\n", line);
-#endif
-
-  int pos = 0;
-  if (consume_tag(line, &pos, "PAR2") == false) return false;
-#ifdef DEBUG
-  printf("parse_DEALERPAR: Got tag 'PAR2'\n");
-#endif
-
-  char str[256];
-  if (consume_string(line, &pos, str) == false)
+  if (list.size() < 9)
+  {
+    cout << "PAR list does not have 9+ elements: " << list.size() << endl;
     return false;
-#ifdef DEBUG
-  printf("parse_DEALERPAR: Read string '%s'\n", str);
-#endif
-  if (sscanf(str, "%d", &par->score) != 1)
+  }
+
+  if (! get_head_element(list[0], "PAR"))
     return false;
-#ifdef DEBUG
-  printf("parse_DEALERPAR: Read string '%s', number %d\n",
-         str, par->score);
-#endif
+
+  if (! strip_quotes(list[1] + " " + list[2], par->parScore[0], 
+      "PAR score 0"))
+    return false;
+
+  if (! strip_quotes(list[3] + " " + list[4], par->parScore[1], 
+      "PAR score 1"))
+    return false;
+
+  unsigned i = 5;
+  string st = "";
+  while (i < list.size())
+  {
+    st += " " + list[i++];
+    if (st.back() == '"')
+      break;
+  }
+
+  if (! strip_quotes(st.substr(1), par->parContractsString[0], 
+      "PAR contract 0"))
+    return false;
+
+  st = "";
+  while (i < list.size())
+  {
+    st += " " + list[i++];
+    if (st.back() == '"')
+      break;
+  }
+
+  if (! strip_quotes(st.substr(1), par->parContractsString[1], 
+      "PAR contract 1"))
+    return false;
+
+  return true;
+}
+
+
+bool parse_DEALERPAR(
+  const vector<string>& list,
+  parResultsDealer * par)
+{
+  if (list.size() < 3)
+  {
+    cout << "PAR2 list does not have 3+ elements: " << list.size() << endl;
+    return false;
+  }
+
+  if (! get_head_element(list[0], "PAR2"))
+    return false;
+
+  if (! strip_quotes(list[1], par->score, "PBN string"))
+    return false;
 
   int no = 0;
   while (1)
   {
-    if (consume_string(line, &pos, par->contracts[no]) == false)
+    if (! strip_quotes(list[no+2], par->contracts[no], "PAR2 contract"))
       break;
-#ifdef DEBUG
-    printf("parse_DEALERPAR: Read string number %d, '%s'\n",
-           no, par->contracts[no]);
-#endif
     no++;
   }
 
   par->number = no;
-#ifdef DEBUG
-  printf("parse_DEALERPAR: Read to number incl %d\n", no - 1);
-#endif
-
   return true;
 }
 
 
-bool parse_PLAY(char * line, playTracePBN * playp)
+bool parse_PLAY(
+  const vector<string>& list,
+  playTracePBN * playp)
 {
-#ifdef DEBUG
-  printf("parse_PLAY: Got line '%s'\n", line);
-#endif
-
-  int pos = 0;
-  if (consume_tag(line, &pos, "PLAY") == false) return false;
-#ifdef DEBUG
-  printf("parse_PLAY: Got tag 'PLAY', pos now %d\n", pos);
-#endif
-
-  if (consume_int(line, &pos, &playp->number) == false) return false;
-#ifdef DEBUG
-  printf("parse_PLAY: Read number %d\n", playp->number);
-#endif
-
-  if (consume_string(line, &pos, playp->cards) == false)
+  if (list.size() != 3)
+  {
+    cout << "PLAY list does not have 3 elements: " << list.size() << endl;
     return false;
-#ifdef DEBUG
-  printf("parse_PLAY: Read cards '%s'\n", playp->cards);
-#endif
+  }
+
+  if (! get_head_element(list[0], "PLAY"))
+    return false;
+
+  if (! get_int_element(list[1], playp->number, "PLAY number"))
+    return false;
+
+  if (! strip_quotes(list[2], playp->cards, "PLAY string"))
+    return false;
 
   return true;
 }
 
 
-bool parse_TRACE(char * line, solvedPlay * solvedp)
+bool parse_TRACE(
+  const vector<string>& list,
+  solvedPlay * solvedp)
 {
-#ifdef DEBUG
-  printf("parse_TRACE: Got line '%s'\n", line);
-#endif
+  if (list.size() < 2)
+  {
+    cout << "TRACE list does not have 2+ elements: " << list.size() << endl;
+    return false;
+  }
 
-  int pos = 0;
-  if (consume_tag(line, &pos, "TRACE") == false) return false;
-#ifdef DEBUG
-  printf("parse_TRACE: Got tag 'TRACE'\n");
-#endif
+  if (! get_head_element(list[0], "TRACE"))
+    return false;
 
-  if (consume_int(line, &pos, &solvedp->number) == false) return false;
-#ifdef DEBUG
-  printf("parse_TRACE: Read number %d\n", solvedp->number);
-#endif
+  if (! get_int_element(list[1], solvedp->number, "TRACE number"))
+    return false;
 
   for (int i = 0; i < solvedp->number; i++)
-  {
-    if (consume_int(line, &pos, &solvedp->tricks[i]) == false)
+    if (! get_int_element(list[2+i], solvedp->tricks[i], "TRACE element"))
       return false;
-#ifdef DEBUG
-    printf("parse_TRACE: Read tricks[%d] = %d\n", i, solvedp->tricks[i]);
-#endif
-  }
+
   return true;
 }
 
 
-bool parseable_GIB(char line[])
+bool parseable_GIB(const string& line)
 {
-  if (strlen(line) != 89)
+  if (line.size() != 89)
     return false;
 
-  if (line[67] != ':')
+  if (line.substr(67, 1) != ":")
     return false;
 
   return true;
@@ -525,28 +504,27 @@ bool parseable_GIB(char line[])
 
 int GIB_TO_DDS[4] = {1, 0, 3, 2};
 
-bool parse_GIB(char line[], dealPBN * dl, ddTableResults * table)
+bool parse_GIB(
+  const string& line,
+  dealPBN * dl, 
+  ddTableResults * table)
 {
-  strcpy(dl->remainCards, "W:");
-  strncpy(dl->remainCards + 2, line, 67);
-  dl->remainCards[69] = '\0';
+  string st = "W:" + line.substr(0, 67);
+  strcpy(dl->remainCards, st.c_str());
 
-  int zero = static_cast<int>('0');
-  int leta = static_cast<int>('A') - 10;
   int dds_strain, dds_hand;
-
   for (int s = 0; s < DDS_STRAINS; s++)
   {
     dds_strain = (s == 0 ? 4 : s - 1);
     for (int h = 0; h < DDS_HANDS; h++)
     {
       dds_hand = GIB_TO_DDS[h];
-      char c = line[68 + 4 * s + h];
+      const char * c = line.substr(68 + 4*s + h, 1).c_str();
       int d;
-      if (c >= '0' && c <= '9')
-        d = static_cast<int> (line[68 + 4 * s + h] - zero);
-      else if (c >= 'A' && c <= 'F')
-        d = static_cast<int> (line[68 + 4 * s + h] - leta);
+      if (c[0] >= '0' && c[0] <= '9')
+        d = static_cast<int> (c[0] - '0');
+      else if (c[0] >= 'A' && c[0] <= 'F')
+        d = static_cast<int> (c[0] + 10 - 'A');
       else
         return false;
 
@@ -560,77 +538,153 @@ bool parse_GIB(char line[], dealPBN * dl, ddTableResults * table)
 }
 
 
-bool consume_int(
-  char * line,
-  int * pos,
-  int * res)
+bool get_any_line(
+  ifstream& fin,
+  vector<string>& list,
+  const string& tag,
+  const int n)
 {
-  /* Too much Perl programming spoils one... No doubt there
-     is a good way to do this in C. */
-
-  int len = static_cast<int>(strlen(line));
-  int i = * pos;
-  int value = 0;
-  while (i < len &&
-         static_cast<int>(line[i]) >= ZERO &&
-         static_cast<int>(line[i]) <= NINE)
+  string line;
+  if (! getline(fin, line))
   {
-    value = 10 * value + static_cast<int>(line[i++]) - ZERO;
-  }
-  if (static_cast<int>(line[i]) != SPACE)
-  {
-    printf("Doesn't end on space\n");
+    cout << "Expected txt " << tag << " line " << n << endl;
     return false;
   }
-  *pos = i + 1;
-  *res = value;
-  return true;
-}
 
-bool consume_string(
-  char * line,
-  int * pos,
-  char * res)
-{
-  int len = static_cast<int>(strlen(line));
-  int i = * pos;
-
-  if (static_cast<int>(line[i]) != QUOTE) return false;
-  i++;
-
-  while (i < len && static_cast<int>(line[i]) != QUOTE)
-    i++;
-
-  if (static_cast<int>(line[i] ) != QUOTE) return false;
-  if (static_cast<int>(line[i + 1]) != SPACE) return false;
-  i += 2;
-
-  strncpy(res, line + *pos + 1, static_cast<size_t>(i - *pos - 3));
-  res[i - *pos - 3] = '\0';
-  *pos = i;
+  list.clear();
+  splitIntoWords(line, list);
   return true;
 }
 
 
-bool consume_tag(
-  char * line,
-  int * pos,
-  const char * tag)
+bool get_head_element(
+  const string& elem,
+  const string& expected)
 {
-  int len = static_cast<int>(strlen(line));
-  int i = * pos;
-  char read[80] = "";
-
-  while (i < len && static_cast<int>(line[i]) != SPACE)
+  if (elem != expected)
   {
-    i++;
+    cout << "PBN list does not start with " << expected << 
+      ": '" << elem << "'" << endl;
+    return false;
   }
-  i++;
+  else
+    return true;
+}
 
-  strncpy(read, line + *pos, static_cast<size_t>(i - *pos - 1));
-  if (strcmp(read, tag)) return false;
 
-  *pos = i;
+bool get_int_element(
+  const string& elem,
+  int& res,
+  const string& errtext)
+{
+  if (! str2int(elem, res))
+  {
+    cout << errtext << ": '" << elem << "'\n";
+    return false;
+  }
+  else
+    return true;
+}
+
+
+bool strip_quotes(
+  const string& st,
+  char * cstr,
+  const string& errtag)
+{
+  // Could just be past the last one.
+  if (st.size() == 0)
+    return false;
+
+  if (st.front() != '\"' || st.back() != '\"')
+  {
+    cout << errtag << " not in quotations: '" << st << "'\n";
+    return false;
+  }
+  strcpy(cstr, st.substr(1, st.size()-2).c_str());
+  return true;
+}
+
+
+bool strip_quotes(
+  const string& st,
+  int& res,
+  const string& errtag)
+{
+  if (st.front() != '\"' || st.back() != '\"')
+  {
+    cout << errtag << " not in quotations: '" << st << "'" << endl;
+    return false;
+  }
+
+  if (! str2int(st.substr(1, st.size()-2).c_str(), res))
+  {
+    cout << st << " not an int" << endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+void splitIntoWords(
+  const string& text,
+  vector<string>& words)
+{
+  // Split into words (split on \s+, effectively).
+  unsigned pos = 0;
+  unsigned startPos = 0;
+  bool isSpace = true;
+  const unsigned l = static_cast<unsigned>(text.length());
+
+  while (pos < l)
+  {
+    if (text.at(pos) == ' ')
+    {
+      if (! isSpace)
+      {
+        words.push_back(text.substr(startPos, pos-startPos));
+        isSpace = true;
+      }
+    }
+    else if (isSpace)
+    {
+      isSpace = false;
+      startPos = pos;
+    }
+    pos++;
+  }
+
+  if (! isSpace)
+    words.push_back(text.substr(startPos, pos-startPos));
+}
+
+
+bool str2int(
+  const string& text,
+  int& res)
+{
+  int i;
+  size_t pos;
+  try
+  {
+    i = stoi(text, &pos);
+    if (pos != text.size())
+      return false;
+
+  }
+  catch (const invalid_argument& ia)
+  {
+    UNUSED(ia);
+    return false;
+  }
+  catch (const out_of_range& ia)
+  {
+    UNUSED(ia);
+    return false;
+  }
+
+  res = i;
   return true;
 }
 

@@ -10,19 +10,26 @@
 #ifndef DTEST_PARSE_H
 #define DTEST_PARSE_H
 
+#include <string>
+
+#include "../include/dll.h"
+
+using namespace std;
+
+
 bool read_file(
-  char const * fname,
-  int * number,
+  const string& fname,
+  int& number,
+  bool& GIBmode,
   int ** dealer_list,
   int ** vul_list,
-  struct dealPBN ** deal_list,
-  struct futureTricks ** fut_list,
-  struct ddTableResults ** table_list,
-  struct parResults ** par_list,
-  struct parResultsDealer ** dealerpar_list,
-  struct playTracePBN ** play_list,
-  struct solvedPlay ** trace_list,
-  bool& GIBmode);
+  dealPBN ** deal_list,
+  futureTricks ** fut_list,
+  ddTableResults ** table_list,
+  parResults ** par_list,
+  parResultsDealer ** dealerpar_list,
+  playTracePBN ** play_list,
+  solvedPlay ** trace_list);
 
 #endif
 

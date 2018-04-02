@@ -200,9 +200,9 @@ int realMain(int argc, char * argv[])
   solvedPlay * trace_list;
   int number;
 
-  if (read_file(options.fname.c_str(), &number, &dealer_list, &vul_list,
+  if (read_file(options.fname, number, GIBmode, &dealer_list, &vul_list,
         &deal_list, &fut_list, &table_list, &par_list, &dealerpar_list,
-        &play_list, &trace_list, GIBmode) == false)
+        &play_list, &trace_list) == false)
   {
     printf("read_file failed.\n");
     exit(0);
@@ -727,6 +727,8 @@ bool loop_par(
     if (! compare_PAR(&presp, &par_list[i]))
     {
       printf("loop_par i %d: Difference\n", i);
+      print_PAR(&presp);
+      print_PAR(&par_list[i]);
     }
   }
 
