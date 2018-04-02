@@ -10,8 +10,6 @@
 #ifndef DTEST_PARSE_H
 #define DTEST_PARSE_H
 
-#include <string>
-
 #include "../include/dll.h"
 
 using namespace std;

@@ -1,6 +1,7 @@
 DTEST_SOURCE_FILES 	=	\
         args.cpp                \
         compare.cpp             \
+        loop.cpp                \
         parse.cpp               \
         print.cpp               \
 	testcommon.cpp		\

@@ -11,8 +11,8 @@
 #include <fstream>
 #include <vector>
 
-#include "parse.h"
 #include "../include/portab.h"
+#include "parse.h"
 
 using namespace std;
 

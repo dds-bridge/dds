@@ -10,6 +10,9 @@
 #ifndef DTEST_COMPARE_H
 #define DTEST_COMPARE_H
 
+#include "../include/dll.h"
+
+
 bool compare_PBN(
   const dealPBN& dl1,
   const dealPBN& dl2);

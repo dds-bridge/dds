@@ -10,7 +10,7 @@
 
 #include <string.h>
 
-#include "../include/dll.h"
+#include "compare.h"
 
 using namespace std;
 
