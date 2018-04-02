@@ -725,11 +725,7 @@ bool loop_par(
     }
 
     if (! compare_PAR(&presp, &par_list[i]))
-    {
       printf("loop_par i %d: Difference\n", i);
-      print_PAR(&presp);
-      print_PAR(&par_list[i]);
-    }
   }
 
   return true;

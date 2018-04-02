@@ -16,8 +16,6 @@
 
 using namespace std;
 
-// #define DEBUG
-
 
 bool parse_PBN(
   const vector<string>& list,
@@ -139,6 +137,7 @@ bool read_file(
   else
   {
     // Count the lines, then start over.
+    GIBmode = 1;
     number = 1;
     while (1)
     {
@@ -208,13 +207,6 @@ bool read_file(
   {
     for (int n = 0; n < number; n++)
     {
-#ifdef DEBUG
-      cout << "Starting to read hand number " << n << "\n";
-      cout << string(31, '-') << "\n";
-      cout << "play_list[" << n << "].number = " <<
-        (*play_list)[n].number << "\n";
-#endif
-
       if (! get_any_line(fin, list, "PBN", n))
         return false;
       if (! parse_PBN(list, (*dealer_list)[n], 
@@ -493,7 +485,7 @@ bool parse_TRACE(
 
 bool parseable_GIB(const string& line)
 {
-  if (line.size() != 89)
+  if (line.size() != 88)
     return false;
 
   if (line.substr(67, 1) != ":")
@@ -519,12 +511,12 @@ bool parse_GIB(
     for (int h = 0; h < DDS_HANDS; h++)
     {
       dds_hand = GIB_TO_DDS[h];
-      const char * c = line.substr(68 + 4*s + h, 1).c_str();
+      char const c = (line.substr(68 + 4*s + h, 1).c_str())[0];
       int d;
-      if (c[0] >= '0' && c[0] <= '9')
-        d = static_cast<int> (c[0] - '0');
-      else if (c[0] >= 'A' && c[0] <= 'F')
-        d = static_cast<int> (c[0] + 10 - 'A');
+      if (c >= 48 && c <= 57) // 0, 9
+        d = c-48;
+      else if (c >= 65 && c <= 70) // A, F
+        d = c-55;
       else
         return false;
 
