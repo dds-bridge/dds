@@ -8,6 +8,7 @@
 */
 
 
+#include <vector>
 #include <string.h>
 
 #include "compare.h"

@@ -67,7 +67,7 @@ const vector<string> threadingList =
   "TBB",
   "STLIMPL",
   "PPLIMPL",
-  "default",
+  "default"
 };
 
 string shortOptsAll, shortOptsWithArg;

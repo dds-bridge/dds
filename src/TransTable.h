@@ -51,6 +51,16 @@ struct nodeCardsType // 8 bytes
   #pragma warning(disable: 4100)
 #endif
 
+#ifdef __APPLE__
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
+
+#ifdef __GNUC__
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
 class TransTable
 {
   public:
@@ -142,6 +152,14 @@ class TransTable
 
 #ifdef _MSC_VER
   #pragma warning(pop)
+#endif
+
+#ifdef __APPLE__
+  #pragma clang diagnostic pop
+#endif
+
+#ifdef __GNUC__
+  #pragma GCC diagnostic pop
 #endif
 
 #endif

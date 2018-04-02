@@ -11,6 +11,8 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <string.h>
+#include <stdexcept>
 
 #include "../include/portab.h"
 #include "parse.h"

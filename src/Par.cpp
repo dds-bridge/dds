@@ -10,6 +10,7 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <string.h>
 
 #include "dds.h"
 #include "PBN.h"
@@ -523,7 +524,8 @@ int STDCALL SidesParBin(
         checked that the lowered contract still gets the score bonus 
         points that is present in par score.*/
 
-        sc2 = abs(best_par_score[i]);
+        sc2 = (best_par_score[i] >= 0 ?
+          best_par_score[i] : -best_par_score[i]);
         /* Score for making the tentative lower par contract. */
         while (max_lower > 0)
         {

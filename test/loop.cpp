@@ -33,7 +33,8 @@ void loop_solve(
   const int stepsize)
 {
 #ifdef BATCHTIMES
-  cout << setw(8) << left << "Hand no." << setw(25) << "Time" << "\n";
+  cout << setw(8) << left << "Hand no." << 
+    setw(25) << right << "Time" << "\n";
 #endif
 
   for (int i = 0; i < number; i += stepsize)
@@ -93,7 +94,8 @@ bool loop_calc(
   const int stepsize)
 {
 #ifdef BATCHTIMES
-  cout << setw(8) << left << "Hand no." << setw(25) << "Time" << "\n";
+  cout << setw(8) << left << "Hand no." << 
+    setw(25) << right << "Time" << "\n";
 #endif
 
   int filter[5] = {0, 0, 0, 0, 0};
@@ -240,7 +242,8 @@ bool loop_play(
   const int stepsize)
 {
 #ifdef BATCHTIMES
-  cout << setw(8) << left << "Hand no." << setw(25) << "Time" << "\n";
+  cout << setw(8) << left << "Hand no." << 
+    setw(25) << right << "Time" << "\n";
 #endif
 
   for (int i = 0; i < number; i += stepsize)

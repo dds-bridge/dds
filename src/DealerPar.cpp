@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <string>
+#include <string.h>
 #include <stdio.h>
 
 #include "dds.h"

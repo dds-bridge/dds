@@ -32,12 +32,7 @@ CC_BOOST_LINK	= -L$(CC_BOOST)/lib -lboost_system -lboost_thread-mt
 THREAD_COMPILE	= 
 THREAD_LINK	= $(CC_BOOST_LINK)
 
-# 2. The small memory option, which causes DDS to consume a lot less
-# memory and to run somewhat more slowly.
-
-SMALL_MEMORY	= -DSMALL_MEMORY_OPTION
-
-# 3. Debugging options.  (There are more granular options in debug.h.)
+# 2. Debugging options.  (There are more granular options in debug.h.)
 
 DEBUG_ALL	= -DDDS_DEBUG_ALL 
 TIMING		= -DDDS_TIMING

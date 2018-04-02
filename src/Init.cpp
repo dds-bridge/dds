@@ -9,6 +9,7 @@
 
 
 #include <algorithm>
+#include <string.h>
 
 #include "Init.h"
 #include "System.h"
