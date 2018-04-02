@@ -10,12 +10,20 @@ Included code for a number of multi-threading systems:
 - STLIMPL (new, don't use)
 - PPLIMPL (new, don't use)
 
+Tested combinations include:
+- Visual C++ with Windows API, OpenMP, Boost, STL
+- Cygwin g++ with Windows API, OpenMP, Boost, STL
+- mingw g++ with OpenMP, Boost, STL
+- Linux g++ with OpenMP, Boost, STL
+- MacOS clang with GCD, Boost, STL (static and shared library)
+- MacOS GNU g++ with OpenMP, Boost, STL
+
 The number of threads is now unlimited in principle, although the
 DLL will not let you go beyond 1.5 * the number of processor cores.
 
 Enabled the transposition-table code for both the large and the small
 versions in the same DLL.  Therefore there is only a single DLL
-distributed now for both.
+distributed now for both.  The SMALL_MEMORY compile switch is gone.
 
 Enabled the DLL to pick the best combination of large and small
 transposition tables for a given resource set-up consisting of

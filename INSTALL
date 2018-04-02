@@ -195,17 +195,9 @@ You can invoke the program as
 ./dtest.exe
 
 which should just give a brief usage message.  If that works, then
-you can invoke the program like this:
+you can invoke the program like this, for example:
 
-./dtest.exe file.txt mode [number of threads]
-
-file.txt has to be the name of a file EITHER in the current 
-directory OR in ../hands.  The program checks first in the current
-directory.  A good starting example is list100.txt.
-
-[TODO UPDATE]
-
-mode has to be one of solve, calc, play, par and dealerpar.
+./dtest.exe -f ../hands/list100.txt -s solve -n 4 -m 1000
 
 The number of threads is optional.  If it is not supplied, DDS
 figures one out itself.  If it is supplied, then it is passed to
