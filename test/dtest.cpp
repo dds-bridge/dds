@@ -9,8 +9,6 @@
 
 
 #include <iostream>
-#include <iomanip>
-#include <cstdlib>
 
 #include "../include/dll.h"
 #include "testcommon.h"

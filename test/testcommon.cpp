@@ -17,6 +17,7 @@
 #include "../include/portab.h"
 #include "TestTimer.h"
 #include "parse.h"
+#include "compare.h"
 #include "cst.h"
 #include "testcommon.h"
 
@@ -35,30 +36,6 @@ unsigned char dcardSuit[5];
 void main_identify();
 
 void set_constants();
-
-bool compare_PBN(
-  struct dealPBN * dl1,
-  struct dealPBN * dl2);
-
-bool compare_FUT(
-  struct futureTricks * fut1,
-  struct futureTricks * fut2);
-
-bool compare_TABLE(
-  struct ddTableResults * table1,
-  struct ddTableResults * table2);
-
-bool compare_PAR(
-  struct parResults * par1,
-  struct parResults * par2);
-
-bool compare_DEALERPAR(
-  struct parResultsDealer * par1,
-  struct parResultsDealer * par2);
-
-bool compare_TRACE(
-  struct solvedPlay * trace1,
-  struct solvedPlay * trace2);
 
 bool print_PBN(
   struct dealPBN * dl);
@@ -350,107 +327,6 @@ void set_constants()
 }
 
 
-bool compare_PBN(dealPBN * dl1, dealPBN * dl2)
-{
-  if (dl1->trump != dl2->trump) return false;
-  if (dl1->first != dl2->first) return false;
-  if (strcmp(dl1->remainCards, dl2->remainCards)) return false;
-  return true;
-}
-
-
-bool compare_FUT(futureTricks * fut1, futureTricks * fut2)
-{
-  if (fut1->cards != fut2->cards)
-    return false;
-
-  for (int i = 0; i < fut1->cards; i++)
-  {
-    if (fut1->suit [i] != fut2->suit [i]) return false;
-    if (fut1->rank [i] != fut2->rank [i]) return false;
-    if (fut1->equals[i] != fut2->equals[i]) return false;
-    if (fut1->score [i] != fut2->score [i]) return false;
-  }
-  return true;
-}
-
-
-bool compare_TABLE(ddTableResults * table1, ddTableResults * table2)
-{
-  for (int suit = 0; suit <= 4; suit++)
-  {
-    for (int pl = 0; pl <= 3; pl++)
-    {
-      if (table1->resTable[suit][pl] != table2->resTable[suit][pl])
-        return false;
-    }
-  }
-  return true;
-}
-
-
-bool compare_PAR(
-  parResults * par1,
-  parResults * par2)
-{
-  if (strcmp(par1->parScore[0], par2->parScore[0])) return false;
-  if (strcmp(par1->parScore[1], par2->parScore[1])) return false;
-
-  if (strcmp(par1->parContractsString[0],
-             par2->parContractsString[0]))
-    return false;
-  if (strcmp(par1->parContractsString[1],
-             par2->parContractsString[1]))
-    return false;
-  return true;
-}
-
-
-bool compare_DEALERPAR(
-  parResultsDealer * par1,
-  parResultsDealer * par2)
-{
-  if (par1->score != par2->score) return false;
-
-  for (int i = 0; i < par1->number; i++)
-  {
-    if (strcmp(par1->contracts[i], par2->contracts[i]))
-      return false;
-  }
-  return true;
-}
-
-
-bool compare_TRACE(
-  solvedPlay * trace1,
-  solvedPlay * trace2)
-{
-  // In a buglet, Trace returned trace1 == -3 if there is
-  // no input at all (trace2 is then 0).
-  if (trace1->number != trace2->number &&
-      trace2->number > 0)
-  {
-    printf("number %d != %d\n", trace1->number, trace2->number);
-    return false;
-  }
-
-  // Once that was fixed, the input file had length 0, not 1.
-  if (trace1->number == 1 && trace2->number == 0)
-    return true;
-
-  for (int i = 0; i < trace1->number; i++)
-  {
-    if (trace1->tricks[i] != trace2->tricks[i])
-    {
-      printf("i %d: %d != %d\n", i, trace1->tricks[i],
-             trace2->tricks[i]);
-      return false;
-    }
-  }
-  return true;
-}
-
-
 bool print_PBN(dealPBN * dl)
 {
   printf("%10s %d\n", "trump", dl->trump);
@@ -633,7 +509,7 @@ void loop_solve(
 
     for (int j = 0; j < count; j++)
     {
-      if (! compare_FUT(&solvedbdp->solvedBoard[j], &fut_list[i + j]))
+      if (! compare_FUT(solvedbdp->solvedBoard[j], fut_list[i + j]))
         printf("loop_solve i %d, j %d: Difference\n", i, j);
     }
   }
@@ -683,7 +559,7 @@ bool loop_calc(
 #endif
 
     for (int j = 0; j < count; j++)
-      if (! compare_TABLE(&resp->results[j], &table_list[i + j]))
+      if (! compare_TABLE(resp->results[j], table_list[i + j]))
       {
         printf("loop_calc table i %d, j %d: Difference\n", i, j);
         print_TABLE( &resp->results[j] );
@@ -724,7 +600,7 @@ bool loop_par(
       }
     }
 
-    if (! compare_PAR(&presp, &par_list[i]))
+    if (! compare_PAR(presp, par_list[i]))
       printf("loop_par i %d: Difference\n", i);
   }
 
@@ -759,7 +635,7 @@ bool loop_dealerpar(
       }
     }
 
-    if (! compare_DEALERPAR(&presp, &dealerpar_list[i]))
+    if (! compare_DEALERPAR(presp, dealerpar_list[i]))
     {
       printf("loop_dealerpar i %d: Difference\n", i);
     }
@@ -820,7 +696,7 @@ bool loop_play(
 
     for (int j = 0; j < count; j++)
     {
-      if (! compare_TRACE(&solvedplp->solved[j], &trace_list[i + j]))
+      if (! compare_TRACE(solvedplp->solved[j], trace_list[i + j]))
       {
         printf("loop_play i %d, j %d: Difference\n", i, j);
         print_double_TRACE(&solvedplp->solved[j], &trace_list[i+j]);
