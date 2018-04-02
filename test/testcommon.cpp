@@ -15,11 +15,13 @@
 
 #include "../include/dll.h"
 #include "../include/portab.h"
+
+#include "testcommon.h"
 #include "TestTimer.h"
 #include "parse.h"
 #include "compare.h"
+#include "print.h"
 #include "cst.h"
-#include "testcommon.h"
 
 using namespace std;
 
@@ -28,39 +30,13 @@ extern OptionsType options;
 TestTimer timer;
 
 
-void print_rank_count();
-unsigned short int dbitMapRank[16];
+unsigned short dbitMapRank[16];
 unsigned char dcardRank[16];
 unsigned char dcardSuit[5];
 
 void main_identify();
 
 void set_constants();
-
-bool print_PBN(
-  struct dealPBN * dl);
-
-bool print_FUT(
-  struct futureTricks * fut);
-
-void equals_to_string(
-  int equals,
-  char * res);
-
-bool print_TABLE(
-  struct ddTableResults * table);
-
-bool print_PAR(
-  struct parResults * par);
-
-bool print_DEALERPAR(
-  struct parResultsDealer * par);
-
-bool print_PLAY(
-  struct playTracePBN * play);
-
-bool print_TRACE(
-  struct solvedPlay * solvedp);
 
 void loop_solve(
   struct boardsPBN * bop,
@@ -189,7 +165,7 @@ int realMain(int argc, char * argv[])
   {
     if (GIBmode)
     {
-      printf("GIB file does not work with solve\n");
+      printf("GIB file only works works with calc\n");
       exit(0);
     }
     loop_solve(&bop, &solvedbdp, deal_list, fut_list, number);
@@ -327,148 +303,6 @@ void set_constants()
 }
 
 
-bool print_PBN(dealPBN * dl)
-{
-  printf("%10s %d\n", "trump", dl->trump);
-  printf("%10s %d\n", "first", dl->first);
-  printf("%10s %s\n", "cards", dl->remainCards);
-  return true;
-}
-
-
-bool print_FUT(futureTricks * fut)
-{
-  printf("%6s %d\n", "cards", fut->cards);
-  printf("%6s %-6s %-6s %-6s %-6s\n",
-         "", "suit", "rank", "equals", "score");
-
-  for (int i = 0; i < fut->cards; i++)
-  {
-    char res[15] = "";
-    equals_to_string(fut->equals[i], res);
-    printf("%6d %-6c %-6c %-6s %-6d\n",
-           i,
-           dcardSuit[ fut->suit[i] ],
-           dcardRank[ fut->rank[i] ],
-           res,
-           fut->score[i]);
-  }
-  return true;
-}
-
-
-void equals_to_string(int equals, char * res)
-{
-  int p = 0;
-  for (int i = 15; i >= 2; i--)
-  {
-    if (equals & dbitMapRank[i])
-      res[p++] = static_cast<char>(dcardRank[i]);
-  }
-  res[p] = 0;
-}
-
-
-bool print_TABLE(ddTableResults * table)
-{
-  printf("%5s %-5s %-5s %-5s %-5s\n",
-         "", "North", "South", "East", "West");
-
-  printf("%5s %5d %5d %5d %5d\n",
-         "NT",
-         table->resTable[4][0],
-         table->resTable[4][2],
-         table->resTable[4][1],
-         table->resTable[4][3]);
-
-  for (int suit = 0; suit <= 3; suit++)
-  {
-    printf("%5c %5d %5d %5d %5d\n",
-           dcardSuit[suit],
-           table->resTable[suit][0],
-           table->resTable[suit][2],
-           table->resTable[suit][1],
-           table->resTable[suit][3]);
-  }
-  return true;
-}
-
-
-bool print_PAR(parResults * par)
-{
-  printf("NS score: %s\n", par->parScore[0]);
-  printf("EW score: %s\n", par->parScore[1]);
-  printf("NS list : %s\n", par->parContractsString[0]);
-  printf("EW list : %s\n", par->parContractsString[1]);
-  return true;
-}
-
-
-bool print_DEALERPAR(parResultsDealer * par)
-{
-  printf("Score : %d\n", par->score);
-  printf("Pars : %d\n", par->number);
-
-  for (int i = 0; i < par->number; i++)
-  {
-    printf("Par %d: %s\n", i, par->contracts[i]);
-  }
-  return true;
-}
-
-
-bool print_PLAY(playTracePBN * play)
-{
-  printf("Number : %d\n", play->number);
-
-  for (int i = 0; i < play->number; i++)
-  {
-    printf("Play %d: %c%c\n", i, play->cards[2 * i], play->cards[2 * i + 1]);
-  }
-  return true;
-}
-
-
-bool print_TRACE(solvedPlay * solvedp)
-{
-  printf("Number : %d\n", solvedp->number);
-
-  for (int i = 0; i < solvedp->number; i++)
-  {
-    printf("Trick %d: %d\n", i, solvedp->tricks[i]);
-  }
-  return true;
-}
-
-
-bool print_double_TRACE(solvedPlay * solvedp, solvedPlay * refp)
-{
-  printf("Number solved vs ref : %d vs %d\n", 
-    solvedp->number, refp->number);
-
-  const int m = min(solvedp->number, refp->number);
-  for (int i = 0; i < m;i++)
-  {
-    printf("Trick %d: %d vs %d %s\n", 
-      i, solvedp->tricks[i], refp->tricks[i],
-      (solvedp->tricks[i] == refp->tricks[i] ? "" : "ERROR"));
-  }
-
-  if (solvedp->number > m)
-  {
-    for (int i = m; i < solvedp->number; i++)
-      printf("Solved %d: %d\n", i, solvedp->tricks[i]);
-  }
-  else if (refp->number > m)
-  {
-    for (int i = m; i < solvedp->number; i++)
-      printf("Ref %d: %d\n", i, refp->tricks[i]);
-  }
-
-  return true;
-}
-
-
 void loop_solve(
   boardsPBN * bop,
   solvedBoards * solvedbdp,
@@ -562,8 +396,8 @@ bool loop_calc(
       if (! compare_TABLE(resp->results[j], table_list[i + j]))
       {
         printf("loop_calc table i %d, j %d: Difference\n", i, j);
-        print_TABLE( &resp->results[j] );
-        print_TABLE( &table_list[i + j]) ;
+        print_TABLE(resp->results[j] );
+        print_TABLE(table_list[i + j]) ;
       }
   }
 
@@ -699,7 +533,7 @@ bool loop_play(
       if (! compare_TRACE(solvedplp->solved[j], trace_list[i + j]))
       {
         printf("loop_play i %d, j %d: Difference\n", i, j);
-        print_double_TRACE(&solvedplp->solved[j], &trace_list[i+j]);
+        print_double_TRACE(solvedplp->solved[j], trace_list[i+j]);
       }
     }
   }

@@ -88,6 +88,7 @@ bool str2int(
   int& res);
 
 
+#include "print.h"
 bool read_file(
   const string& fname,
   int& number,
