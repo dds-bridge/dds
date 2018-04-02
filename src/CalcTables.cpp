@@ -8,6 +8,7 @@
 */
 
 
+#include "CalcTables.h"
 #include "SolverIF.h"
 #include "SolveBoard.h"
 #include "System.h"
@@ -21,6 +22,10 @@ paramType cparam;
 extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
+
+int CalcAllBoardsN(
+  boards * bop,
+  solvedBoards * solvedp);
 
 
 void CalcSingleCommon(
@@ -87,7 +92,7 @@ void CalcChunkCommon(
 {
   // Solves each deal and strain for all four declarers.
   vector<futureTricks> fut;
-  fut.resize(cparam.noOfBoards);
+  fut.resize(static_cast<unsigned>(cparam.noOfBoards));
 
   int index;
   schedType st;

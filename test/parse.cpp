@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 
 #include "../include/portab.h"
 #include "parse.h"
@@ -79,6 +80,10 @@ bool strip_quotes(
   int& res,
   const string& errtag);
 
+string trimTrailing(
+  const string& st,
+  const char c);
+
 void splitIntoWords(
   const string& text,
   vector<string>& words);
@@ -88,7 +93,6 @@ bool str2int(
   int& res);
 
 
-#include "print.h"
 bool read_file(
   const string& fname,
   int& number,
@@ -114,6 +118,7 @@ bool read_file(
   }
 
   vector<string> list;
+  list.clear();
   splitIntoWords(line, list);
 
   if (list.size() == 2 && get_head_element(list[0], "NUMBER"))
@@ -311,20 +316,21 @@ bool parse_FUT(
   }
 
   const int n = fut->cards;
-  for (int c = 0; c < n; c++)
+  const unsigned nu = static_cast<unsigned>(fut->cards);
+  for (unsigned c = 0; c < nu; c++)
     if (! get_int_element(list[c+2], fut->suit[c], "FUT suit"))
       return false;
 
-  for (int c = 0; c < n; c++)
-    if (! get_int_element(list[c+n+2], fut->rank[c], "FUT rank"))
+  for (unsigned c = 0; c < nu; c++)
+    if (! get_int_element(list[c+nu+2], fut->rank[c], "FUT rank"))
       return false;
 
-  for (int c = 0; c < n; c++)
-    if (! get_int_element(list[c+2*n+2], fut->equals[c], "FUT equals"))
+  for (unsigned c = 0; c < nu; c++)
+    if (! get_int_element(list[c+2*nu+2], fut->equals[c], "FUT equals"))
       return false;
 
-  for (int c = 0; c < n; c++)
-    if (! get_int_element(list[c+3*n+2], fut->score[c], "FUT score"))
+  for (unsigned c = 0; c < nu; c++)
+    if (! get_int_element(list[c+3*nu+2], fut->score[c], "FUT score"))
       return false;
 
   return true;
@@ -344,9 +350,9 @@ bool parse_TABLE(
   if (! get_head_element(list[0], "TABLE"))
     return false;
 
-  for (int suit = 0; suit < DDS_STRAINS; suit++)
+  for (unsigned suit = 0; suit < DDS_STRAINS; suit++)
   {
-    for (int pl = 0; pl < DDS_HANDS; pl++)
+    for (unsigned pl = 0; pl < DDS_HANDS; pl++)
     {
       if (! get_int_element(list[DDS_HANDS * suit + pl + 1],
           table->resTable[suit][pl], "TABLE entry"))
@@ -412,9 +418,10 @@ bool parse_DEALERPAR(
   const vector<string>& list,
   parResultsDealer * par)
 {
-  if (list.size() < 3)
+  const unsigned l = list.size();
+  if (l < 3)
   {
-    cout << "PAR2 list does not have 3+ elements: " << list.size() << endl;
+    cout << "PAR2 list does not have 3+ elements: " << l << endl;
     return false;
   }
 
@@ -424,15 +431,15 @@ bool parse_DEALERPAR(
   if (! strip_quotes(list[1], par->score, "PBN string"))
     return false;
 
-  int no = 0;
-  while (1)
+  unsigned no = 0;
+  while (no+2 < l)
   {
     if (! strip_quotes(list[no+2], par->contracts[no], "PAR2 contract"))
       break;
     no++;
   }
 
-  par->number = no;
+  par->number = static_cast<int>(no);
   return true;
 }
 
@@ -476,7 +483,7 @@ bool parse_TRACE(
   if (! get_int_element(list[1], solvedp->number, "TRACE number"))
     return false;
 
-  for (int i = 0; i < solvedp->number; i++)
+  for (unsigned i = 0; i < static_cast<unsigned>(solvedp->number); i++)
     if (! get_int_element(list[2+i], solvedp->tricks[i], "TRACE element"))
       return false;
 
@@ -509,10 +516,11 @@ bool parse_GIB(
   for (int s = 0; s < DDS_STRAINS; s++)
   {
     dds_strain = (s == 0 ? 4 : s - 1);
-    for (int h = 0; h < DDS_HANDS; h++)
+    for (unsigned h = 0; h < DDS_HANDS; h++)
     {
       dds_hand = GIB_TO_DDS[h];
-      char const c = (line.substr(68 + 4*s + h, 1).c_str())[0];
+      char const c = (line.substr(
+        68 + 4*static_cast<unsigned>(s) + h, 1).c_str())[0];
       int d;
       if (c >= 48 && c <= 57) // 0, 9
         d = c-48;
@@ -620,6 +628,21 @@ bool strip_quotes(
 }
 
 
+string trimTrailing(
+  const string& text,
+  const char c)
+{
+  unsigned pos = static_cast<unsigned>(text.length());
+  while (pos >= 1 && text.at(pos-1) == c)
+    pos--;
+
+  if (pos == 0)
+    return "";
+  else
+    return text.substr(0, pos);
+}
+
+
 void splitIntoWords(
   const string& text,
   vector<string>& words)
@@ -628,15 +651,26 @@ void splitIntoWords(
   unsigned pos = 0;
   unsigned startPos = 0;
   bool isSpace = true;
-  const unsigned l = static_cast<unsigned>(text.length());
+
+  // It seems compilers have different ideas about files.
+  const unsigned tl = text.length();
+  string ttext;
+  if (text.back() == ' ')
+    ttext = text.substr(0, tl-1);
+  else if (text.at(tl-2) == ' ')
+    ttext = text.substr(0, tl-2);
+  else
+    ttext = text;
+
+  const unsigned l = static_cast<unsigned>(ttext.length());
 
   while (pos < l)
   {
-    if (text.at(pos) == ' ')
+    if (ttext.at(pos) == ' ')
     {
       if (! isSpace)
       {
-        words.push_back(text.substr(startPos, pos-startPos));
+        words.push_back(ttext.substr(startPos, pos-startPos));
         isSpace = true;
       }
     }
@@ -649,7 +683,7 @@ void splitIntoWords(
   }
 
   if (! isSpace)
-    words.push_back(text.substr(startPos, pos-startPos));
+    words.push_back(ttext.substr(startPos, pos-startPos));
 }
 
 

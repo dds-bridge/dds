@@ -616,10 +616,10 @@ string contract_as_text(
   const int tb = t[side + 2];
   const int t_max = (ta > tb ? ta : tb);
 
-  return NUMBER_TO_CONTRACT[no] +
+  return NUMBER_TO_CONTRACT[static_cast<unsigned>(no)] +
     (delta < 0 ? "*-" : "-") +
-    (ta == t_max ? NUMBER_TO_PLAYER[side] : "") +
-    (tb == t_max ? NUMBER_TO_PLAYER[side + 2] : "") +
+    (ta == t_max ? NUMBER_TO_PLAYER[static_cast<unsigned>(side)] : "") +
+    (tb == t_max ? NUMBER_TO_PLAYER[static_cast<unsigned>(side + 2)] : "") +
     (delta > 0 ? "+" : "") +
     (delta == 0 ? "" : to_string(delta));
 }
@@ -630,7 +630,7 @@ string sacrifice_as_text(
   const int pno,
   const int down)
 {
-  return NUMBER_TO_CONTRACT[no] + "-" +
-    NUMBER_TO_PLAYER[pno] + "-" +
+  return NUMBER_TO_CONTRACT[static_cast<unsigned>(no)] + "-" +
+    NUMBER_TO_PLAYER[static_cast<unsigned>(pno)] + "-" +
     to_string(down);
 }

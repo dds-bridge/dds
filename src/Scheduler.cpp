@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <math.h>
 
 #include "Scheduler.h"
 
@@ -102,7 +103,7 @@ void Scheduler::Reset()
     for (int key = 0; key < HASH_MAX; key++)
       list[strain][key].first = -1;
 
-  for (int t = 0; t < numThreads; t++)
+  for (unsigned t = 0; t < static_cast<unsigned>(numThreads); t++)
   {
     threadGroup[t] = -1;
     threadCurrGroup[t] = -1;
@@ -119,9 +120,10 @@ void Scheduler::RegisterThreads(
     return;
   numThreads = n;
 
-  threadGroup.resize(numThreads);
-  threadCurrGroup.resize(numThreads);
-  threadToHand.resize(numThreads);
+  const unsigned nu = static_cast<unsigned>(n);
+  threadGroup.resize(nu);
+  threadCurrGroup.resize(nu);
+  threadToHand.resize(nu);
 
 #ifdef DDS_SCHEDULER
   timeThread.Init("Threads", numThreads);
@@ -718,7 +720,8 @@ int Scheduler::Fanout(const deal& dl) const
 
 schedType Scheduler::GetNumber(const int thrId)
 {
-  int g = threadGroup[thrId];
+  const unsigned tu = static_cast<unsigned>(thrId);
+  int g = threadGroup[tu];
   listType * lp;
   schedType st;
 
@@ -749,8 +752,8 @@ schedType Scheduler::GetNumber(const int thrId)
     // A bit inelegant to duplicate this, but seems better than
     // the alternative, as threadGroup must get set to -1 in some
     // cases.
-    threadGroup[thrId] = g;
-    threadCurrGroup[thrId] = g;
+    threadGroup[tu] = g;
+    threadCurrGroup[tu] = g;
     group[g].repeatNo = 0;
     group[g].actual = 0;
   }
@@ -788,10 +791,10 @@ schedType Scheduler::GetNumber(const int thrId)
 
   hands[st.number].repeatNo = group[g].repeatNo++;
 
-  threadToHand[thrId] = st.number;
+  threadToHand[tu] = st.number;
 
   if (lp->first == -1)
-    threadGroup[thrId] = -1;
+    threadGroup[tu] = -1;
 
   return st;
 }

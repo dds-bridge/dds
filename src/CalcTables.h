@@ -10,6 +10,8 @@
 #ifndef DDS_CALCTABLES_H
 #define DDS_CALCTABLES_H
 
+#include <vector>
+
 #include "dds.h"
 
 using namespace std;

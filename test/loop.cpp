@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <string.h>
 
 #include "loop.h"
 #include "TestTimer.h"

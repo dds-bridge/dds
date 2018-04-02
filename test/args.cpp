@@ -209,7 +209,7 @@ void ReadArgs(
 
   SetDefaults();
 
-  int c, m;
+  int c, m = 0;
   bool errFlag = false, matchFlag;
   string stmp;
   char * ctmp;
@@ -250,7 +250,7 @@ void ReadArgs(
           transform(s.begin(), s.end(), s.begin(), ::tolower); 
           if (stmp == s)
           {
-            m = i;
+            m = static_cast<int>(i);
             matchFlag = true;
           }
         }
@@ -276,7 +276,7 @@ void ReadArgs(
           transform(s.begin(), s.end(), s.begin(), ::tolower); 
           if (stmp == s)
           {
-            m = i;
+            m = static_cast<int>(i);
             matchFlag = true;
           }
         }
@@ -299,7 +299,7 @@ void ReadArgs(
           nextToken -= 2;
           errFlag = true;
         }
-        options.numThreads = static_cast<unsigned>(m);
+        options.numThreads = m;
         break;
 
       case 'm':
@@ -310,7 +310,7 @@ void ReadArgs(
           nextToken -= 2;
           errFlag = true;
         }
-        options.memoryMB = static_cast<unsigned>(m);
+        options.memoryMB = m;
         break;
 
       default:

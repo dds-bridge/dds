@@ -14,6 +14,9 @@
 #include "dds.h"
 #include "PBN.h"
 
+using namespace std;
+
+
 struct par_suits_type
 {
   int suit;

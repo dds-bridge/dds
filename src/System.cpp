@@ -338,7 +338,7 @@ int System::RunThreadsWinAPI()
 {
 #ifdef DDS_THREADS_WINAPI
   HANDLE * solveAllEvents = static_cast<HANDLE * >(
-    malloc(numThreads * sizeof(HANDLE)));
+    malloc(static_cast<unsigned>(numThreads) * sizeof(HANDLE)));
 
   for (int k = 0; k < numThreads; k++)
   {
@@ -640,21 +640,32 @@ string System::GetSystem(int& sys) const
 
 string System::GetBits(int& bits) const
 {
-  if constexpr (sizeof(void *) == 4)
+#ifdef _MSC_VER
+  #pragma warning(push)
+  #pragma warning(disable: 4127)
+#endif
+
+  string st;
+  if (sizeof(void *) == 4)
   {
     bits = 32;
-    return "32 bits";
+    st = "32 bits";
   }
-  else if constexpr (sizeof(void *) == 8)
+  else if (sizeof(void *) == 8)
   {
     bits = 64;
-    return "64 bits";
+    st = "64 bits";
   }
   else
   {
     bits = 0;
-    return "unknown";
+    st = "unknown";
   }
+#ifdef _MSC_VER
+  #pragma warning(pop)
+#endif
+  
+  return st;
 }
 
 

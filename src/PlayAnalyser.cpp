@@ -7,6 +7,7 @@
    See LICENSE and README.
 */
 
+#include "PlayAnalyser.h"
 #include "SolverIF.h"
 #include "System.h"
 #include "Memory.h"
@@ -402,11 +403,11 @@ void DetectPlayDuplicates(
   // as it is highly unlikely that the play went identically at
   // two tables.
 
-  uniques.resize(bds.noOfBoards);
-  crossrefs.resize(bds.noOfBoards);
+  uniques.resize(static_cast<unsigned>(bds.noOfBoards));
+  crossrefs.resize(static_cast<unsigned>(bds.noOfBoards));
   for (unsigned i = 0; i < uniques.size(); i++)
   {
-    uniques[i] = i;
+    uniques[i] = static_cast<int>(i);
     crossrefs[i] = -1;
   }
 }

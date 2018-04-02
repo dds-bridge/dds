@@ -939,7 +939,7 @@ void TransTableS::PrintResetStats(ofstream& fout) const
   fout << setw(18) << left << "Reason" << 
     setw(6) << right << "Count" << "\n";
 
-  for (int k = 0; k < TT_RESET_SIZE; k++)
+  for (unsigned k = 0; k < TT_RESET_SIZE; k++)
     fout << setw(18) << left << resetText[k] <<
       setw(6) << right << statsResets.aggrResets[k] << "\n";
 }

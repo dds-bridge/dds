@@ -248,10 +248,11 @@ void DetectSolveDuplicates(
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
-  uniques.clear();
-  crossrefs.resize(bds.noOfBoards);
-
   const unsigned nu = static_cast<unsigned>(bds.noOfBoards);
+
+  uniques.clear();
+  crossrefs.resize(nu);
+
   for (unsigned i = 0; i < nu; i++)
     crossrefs[i] = -1;
 
@@ -260,12 +261,12 @@ void DetectSolveDuplicates(
     if (crossrefs[i] != -1)
       continue;
 
-    uniques.push_back(i);
+    uniques.push_back(static_cast<int>(i));
 
     for (unsigned index = i+1; index < nu; index++)
     {
       if (SameBoard(bds, i, index))
-        crossrefs[index] = i;
+        crossrefs[index] = static_cast<int>(i);
     }
   }
 }

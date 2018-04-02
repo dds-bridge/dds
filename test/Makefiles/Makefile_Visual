@@ -15,8 +15,8 @@
 # If you need to add something for the threading system, this is
 # the place.
 
-BOOST32_PATH1   = \User\sheins\boost_1_66_0_x32
-BOOST32_LIB1    = $(BOOST32_PATH1)\lib32-msvc-14.0
+BOOST32_PATH1   = \User\sheins\boost_1_66_0_x32_new
+BOOST32_LIB1    = $(BOOST32_PATH1)\lib32-msvc-14.1
 
 BOOST32_PATH2   = \Users\s.hein\Documents\Programs\boost_1_66_0_x32_14_1
 BOOST32_LIB2    = $(BOOST32_PATH2)\lib32-msvc-14.1
@@ -53,6 +53,7 @@ WARN_FLAGS	=		\
 	/wd4530			\
 	/wd4555			\
 	/wd4577			\
+	/wd4592			\
 	/wd4625			\
 	/wd4626			\
 	/wd4668			\
@@ -96,7 +97,7 @@ ITEST_SOURCE_FILES	=	\
 	$(DTEST_SOURCE_FILES)	\
 	itest.cpp
 
-ITEST_OBJ_FILES	= $(subst .cpp,.o,$(ITEST_SOURCE_FILES))
+ITEST_OBJ_FILES	= $(subst .cpp,.obj,$(ITEST_SOURCE_FILES))
 
 dtest:	$(DTEST_OBJ_FILES)
 	link $(LINK1_FLAGS) $(DTEST_OBJ_FILES) $(DLIB) \
@@ -119,4 +120,3 @@ clean:
 # If you don't have a Linux-like setup, use "del" instead of "rm".
 
 include $(INCL_DEPENDS)
-

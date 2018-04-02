@@ -19,11 +19,14 @@
 # CC_THREADING.
 
 # GCD doesn't work on Windows.
-THR_BOOST	= -DDDS_THREADS_BOOST
-THR_GCD		= -DDDS_THREADS_GCD
-THR_OPENMP	= -DDDS_THREADS_OPENMP
 THR_WINAPI	= -DDDS_THREADS_WINAPI
+THR_OPENMP	= -DDDS_THREADS_OPENMP
+THR_GCD		= -DDDS_THREADS_GCD
+THR_BOOST	= -DDDS_THREADS_BOOST
 THR_STL		= -DDDS_THREADS_STL
+THR_TBB		= -DDDS_THREADS_TBB
+THR_STLIMPL	= -DDDS_THREADS_STLIMPL
+THR_PPLIMPL	= -DDDS_THREADS_PPLIMPL
 
 THREADING	= $(THR_BOOST) $(THR_OPENMP) $(THR_WINAPI) $(THR_STL)
 
@@ -35,12 +38,7 @@ CC_BOOST_LINK	= -lboost_system -lboost_thread
 THREAD_COMPILE	= -fopenmp
 THREAD_LINK	= $(CC_BOOST_LINK)
 
-# 2. The small memory option, which causes DDS to consume a lot less
-# memory and to run somewhat more slowly.
-
-SMALL_MEMORY	= -DSMALL_MEMORY_OPTION
-
-# 3. Debugging options.  (There are more granular options in debug.h.)
+# 2. Debugging options.  (There are more granular options in debug.h.)
 
 DEBUG_ALL	= -DDDS_DEBUG_ALL 
 TIMING		= -DDDS_TIMING
@@ -58,7 +56,7 @@ DDS_BEHAVIOR	=
 # get it to compile.
 
 INCL_SOURCE	= Makefiles/sources.txt
-INCL_DEPENDS	= Makefiles/depends_obj.txt
+INCL_DEPENDS	= Makefiles/depends_o.txt
 
 # If your compiler name is not given here, change it.
 CC		= g++

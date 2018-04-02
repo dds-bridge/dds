@@ -1,9 +1,11 @@
 DDS_SOURCE_FILES    =           \
         ../src/dds.cpp          \
+        ../src/dump.cpp         \
         ../src/ABsearch.cpp     \
         ../src/ABstats.cpp      \
         ../src/CalcTables.cpp   \
         ../src/DealerPar.cpp    \
+        ../src/File.cpp         \
         ../src/Init.cpp         \
         ../src/LaterTricks.cpp  \
         ../src/Memory.cpp       \
@@ -21,4 +23,5 @@ DDS_SOURCE_FILES    =           \
         ../src/TimerList.cpp    \
         ../src/TimeStat.cpp     \
         ../src/TimeStatList.cpp \
-        ../src/TransTable.cpp
+        ../src/TransTableS.cpp  \
+        ../src/TransTableL.cpp

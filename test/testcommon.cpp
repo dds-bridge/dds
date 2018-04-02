@@ -25,6 +25,10 @@
 
 using namespace std;
 
+string GetSystem();
+string GetBits();
+string GetCompiler();
+
 
 const vector<string> DDS_SYSTEM_PLATFORM =
 {
@@ -133,7 +137,8 @@ int realMain(int argc, char * argv[])
   }
   else
   {
-    cout << "Unknown type " << options.solver << "\n";
+    cout << "Unknown type " << 
+      static_cast<unsigned>(options.solver) << "\n";
     exit(0);
   }
 

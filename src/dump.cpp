@@ -22,10 +22,10 @@ string PrintSuit(
 
 string PrintDeal(
   const unsigned short ranks[][DDS_SUITS],
-  const unsigned spacing);
+  const int spacing);
 
-void RankToDiagrams(
-  unsigned short ranks[DDS_HANDS][DDS_SUITS],
+string RankToDiagrams(
+  const unsigned short ranks[DDS_HANDS][DDS_SUITS],
   const nodeCardsType& node);
 
 string WinnersToText(const unsigned short winRanks[]);
@@ -59,7 +59,7 @@ string PrintSuit(const unsigned short suitCode)
   string st;
   for (int r = 14; r >= 2; r--)
     if ((suitCode & bitMapRank[r]))
-      st += cardRank[r];
+      st += static_cast<char>(cardRank[r]);
   return st;
 }
 
@@ -77,7 +77,7 @@ string PrintSuit(
     if ((suitCode & bitMapRank[r]))
     {
       if (r >= 15 - leastWin)
-        st += cardRank[r];
+        st += static_cast<char>(cardRank[r]);
       else
         st += "x";
     }
@@ -88,7 +88,7 @@ string PrintSuit(
 
 string PrintDeal(
   const unsigned short ranks[][DDS_SUITS],
-  const unsigned spacing)
+  const int spacing)
 {
   stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)

@@ -17,6 +17,10 @@
 #include "args.h"
 #include "cst.h"
 
+using namespace std;
+
+OptionsType options;
+
 
 int main(int argc, char * argv[])
 {
@@ -25,7 +29,7 @@ int main(int argc, char * argv[])
   if (options.threading != DTEST_THREADING_DEFAULT)
     SetThreading(static_cast<int>(options.threading));
 
-  SetResources(options.memory.MB, options.numThreads);
+  SetResources(options.memoryMB, options.numThreads);
 
   DDSInfo info;
   GetDDSInfo(&info);

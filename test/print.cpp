@@ -96,10 +96,10 @@ void print_FUT(const futureTricks& fut)
 string equals_to_string(const int equals)
 {
   string st = "";
-  for (int i = 15; i >= 2; i--)
+  for (unsigned i = 15; i >= 2; i--)
   {
     if (equals & dbitMapRank[i])
-      st += dcardRank[i];
+      st += static_cast<char>(dcardRank[i]);
   }
   return (st == "" ? "-" : st);
 }

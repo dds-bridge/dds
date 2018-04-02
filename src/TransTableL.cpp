@@ -81,6 +81,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <math.h>
 
 #include "TransTableL.h"
 #include "debug.h"
@@ -999,7 +1000,7 @@ void TransTableL::PrintMatch(
 {
   vector<vector<string>> hands;
   hands.resize(DDS_HANDS);
-  for (int i = 0; i < DDS_HANDS; i++)
+  for (unsigned i = 0; i < DDS_HANDS; i++)
     hands[i].resize(DDS_SUITS);
 
   TransTableL::SetToPartialHands(wp.topSet1, wp.topMask1, 14, 4, hands);
@@ -1052,13 +1053,13 @@ void TransTableL::DumpHands(
   const vector<vector<string>>& hands,
   const unsigned char lengths[][DDS_SUITS]) const
 {
-  for (int i = 0; i < DDS_SUITS; i++)
+  for (unsigned i = 0; i < DDS_SUITS; i++)
   {
     fout << setw(16) << "" << 
       TransTableL::MakeHolding(hands[0][i], lengths[0][i]) << "\n";
   }
 
-  for (int i = 0; i < DDS_SUITS; i++)
+  for (unsigned i = 0; i < DDS_SUITS; i++)
   {
     fout << setw(16) << left << 
       TransTableL::MakeHolding(hands[3][i], lengths[3][i]) <<
@@ -1067,7 +1068,7 @@ void TransTableL::DumpHands(
         TransTableL::MakeHolding(hands[1][i], lengths[1][i]) << "\n";
   }
 
-  for (int i = 0; i < DDS_SUITS; i++)
+  for (unsigned i = 0; i < DDS_SUITS; i++)
   {
     fout << setw(16) << "" <<
       TransTableL::MakeHolding(hands[2][i], lengths[2][i]) << "\n";
@@ -1083,11 +1084,11 @@ void TransTableL::SetToPartialHands(
   const int numRanks,
   vector<vector<string>>& hands) const
 {
-  for (int s = 0; s < DDS_SUITS; s++)
+  for (unsigned s = 0; s < DDS_SUITS; s++)
   {
     for (int rank = maxRank; rank > maxRank - numRanks; rank--)
     {
-      int shift = 8 * (3 - s) + 2 * (rank - maxRank + 3);
+      int shift = 8 * static_cast<int>(3 - s) + 2 * (rank - maxRank + 3);
       unsigned maskCard = mask >> shift;
 
       if (maskCard & 3)
@@ -1129,8 +1130,10 @@ void TransTableL::DistToLengths(
 
 string TransTableL::SingleLenToStr(const unsigned char len[]) const
 {
-  return to_string(len[0]) + "=" + to_string(len[1]) + "=" +
-         to_string(len[2]) + "=" + to_string(len[3]);
+  return to_string(static_cast<unsigned>(len[0])) + "=" + 
+         to_string(static_cast<unsigned>(len[1])) + "=" +
+         to_string(static_cast<unsigned>(len[2])) + "=" + 
+         to_string(static_cast<unsigned>(len[3]));
 }
 
 
@@ -1190,7 +1193,8 @@ void TransTableL::PrintAllSuits(ofstream& fout) const
   {
     for (int hand = 0; hand < DDS_HANDS; hand++)
     {
-      fout << "Trick " << trick << ", hand " << players[hand] << "\n";
+      fout << "Trick " << trick << ", hand " << 
+        players[static_cast<unsigned>(hand)] << "\n";
       fout << string(20, '=') << "\n\n";
 
       TransTableL::PrintSuits(fout, trick, hand);
@@ -1350,7 +1354,7 @@ void TransTableL::PrintSuitStats(
   TransTableL::UpdateSuitHist(trick, hand, hist, num_wraps);
 
   fout << "Suit histogram for trick " << trick << ", hand " <<
-    players[hand] << "\n";
+    players[static_cast<unsigned>(hand)] << "\n";
   TransTableL::PrintHist(fout, hist, num_wraps, DISTS_PER_ENTRY);
 }
 
@@ -1375,7 +1379,7 @@ void TransTableL::PrintAllSuitStats(ofstream& fout) const
         num_wraps, suitWraps);
 
       fout << "Suit histogram for trick " << trick << ", hand " <<
-        players[hand] << "\n";
+        players[static_cast<unsigned>(hand)] << "\n";
       TransTableL::PrintHist(fout, hist, num_wraps, DISTS_PER_ENTRY);
     }
   }
@@ -1425,7 +1429,7 @@ void TransTableL::PrintSummarySuitStats(ofstream& fout) const
           TT_PERCENTILE * count, DISTS_PER_ENTRY);
 
       fout << setw(5) << right << trick <<
-        setw(7) << players[hand] <<
+        setw(7) << players[static_cast<unsigned>(hand)] <<
         setw(8) << count <<
         setw(8) << num_wraps;
       
@@ -1514,7 +1518,7 @@ void TransTableL::PrintEntriesDistAndCards(
   TransTableL::DistToLengths(trick, handDist, len);
 
   fout << "Looking up entry for trick " << trick << ", hand " <<
-    players[hand] << "\n";
+    players[static_cast<unsigned>(hand)] << "\n";
   fout << TransTableL::LenToStr(len) << "\n\n";
 
   if (! bp)
@@ -1583,7 +1587,7 @@ void TransTableL::PrintEntriesDist(
   if (! bp)
   {
     fout << "Entry not found: Trick " << trick << ", hand " <<
-      players[hand] << "\n";
+      players[static_cast<unsigned>(hand)] << "\n";
     fout << TransTableL::LenToStr(len) << "\n\n";
     return;
   }
@@ -1624,7 +1628,7 @@ void TransTableL::PrintAllEntries(ofstream& fout) const
     for (int hand = 0; hand < DDS_HANDS; hand++)
     {
       const string st = "Entries, trick " + to_string(trick) +
-        ", hand " + players[hand];
+        ", hand " + players[static_cast<unsigned>(hand)];
       fout << st << "\n";
       fout << string(st.size(), '=') << "\n\n";
       TransTableL::PrintEntries(fout, trick, hand);
@@ -1705,7 +1709,7 @@ void TransTableL::PrintEntryStats(
   TransTableL::UpdateEntryHist(trick, hand, hist, num_wraps);
 
   fout << "Entry histogram for trick " << trick << ", hands " <<
-    players[hand] << "\n";
+    players[static_cast<unsigned>(hand)] << "\n";
   TransTableL::PrintHist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
 }
 
@@ -1728,7 +1732,7 @@ void TransTableL::PrintAllEntryStats(ofstream& fout) const
         num_wraps, suitWraps);
 
       fout << "Entry histogram for trick " << trick << ", hands " <<
-        players[hand] << "\n";
+        players[static_cast<unsigned>(hand)] << "\n";
       TransTableL::PrintHist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
     }
   }
@@ -1807,7 +1811,7 @@ void TransTableL::PrintSummaryEntryStats(ofstream& fout) const
          TT_PERCENTILE * count, BLOCKS_PER_ENTRY);
 
       fout << setw(5) << right << trick <<
-        setw(7) << players[hand] <<
+        setw(7) << players[static_cast<unsigned>(hand)] <<
         setw(8) << count <<
         setw(8) << num_wraps <<
         setw(8) << mean <<

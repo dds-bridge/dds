@@ -24,8 +24,6 @@ void print_PBN(const dealPBN& dl);
 
 void print_FUT(const futureTricks& fut);
 
-string equals_to_string(const int equals);
-
 void print_TABLE(const ddTableResults& table);
 
 void print_PAR(const parResults& par);

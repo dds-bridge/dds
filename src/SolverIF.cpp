@@ -47,13 +47,6 @@ void LastTrickWinner(
   int& leadSuit,
   int& leadSideWins);
 
-int DumpInput(
-  const int errCode,
-  const deal& dl,
-  const int target,
-  const int solutions,
-  const int mode);
-
 bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
   const int target,
