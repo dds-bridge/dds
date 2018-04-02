@@ -15,7 +15,7 @@
 # If you need to add something for the threading system, this is
 # the place.
 
-THREAD_LINK	= 
+THREAD_LINK	= -lboost_system -lboost_thread -lgomp
 
 # ----------------------- OFTEN OK    ------------------------------
 
