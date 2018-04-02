@@ -8,28 +8,28 @@
 */
 
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+
 #include "../include/dll.h"
 #include "testcommon.h"
+#include "args.h"
+#include "cst.h"
 
 
 int main(int argc, char * argv[])
 {
-  int nthreads = 0;
-  if (argc >= 4)
-    nthreads = atoi(argv[3]);
+  ReadArgs(argc, argv);
 
-  SetMaxThreads(nthreads);
+  if (options.threading != DTEST_THREADING_DEFAULT)
+    SetThreading(static_cast<int>(options.threading));
 
-  if (argc >= 5)
-    SetThreading(threadingCode(argv[4]));
+  SetResources(options.memory.MB, options.numThreads);
 
   DDSInfo info;
   GetDDSInfo(&info);
-  printf("%s", info.systemString);
-  printf("%-12s %20s\n\n", "Version", info.versionString);
-  fflush(stdout);
+  cout << info.systemString << endl;
 
   realMain(argc, argv);
 
