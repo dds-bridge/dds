@@ -18,6 +18,8 @@
 using namespace std;
 
 
+void set_constants();
+
 void print_PBN(const dealPBN& dl);
 
 void print_FUT(const futureTricks& fut);

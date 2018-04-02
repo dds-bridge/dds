@@ -16,11 +16,53 @@
 #include "cst.h"
 
 
-extern unsigned short dbitMapRank[16];
-extern unsigned char dcardRank[16];
-extern unsigned char dcardSuit[5];
+static unsigned short dbitMapRank[16];
+static unsigned char dcardRank[16];
+static unsigned char dcardSuit[5];
 
 string equals_to_string(const int equals);
+
+
+void set_constants()
+{
+  dbitMapRank[15] = 0x2000;
+  dbitMapRank[14] = 0x1000;
+  dbitMapRank[13] = 0x0800;
+  dbitMapRank[12] = 0x0400;
+  dbitMapRank[11] = 0x0200;
+  dbitMapRank[10] = 0x0100;
+  dbitMapRank[ 9] = 0x0080;
+  dbitMapRank[ 8] = 0x0040;
+  dbitMapRank[ 7] = 0x0020;
+  dbitMapRank[ 6] = 0x0010;
+  dbitMapRank[ 5] = 0x0008;
+  dbitMapRank[ 4] = 0x0004;
+  dbitMapRank[ 3] = 0x0002;
+  dbitMapRank[ 2] = 0x0001;
+  dbitMapRank[ 1] = 0;
+  dbitMapRank[ 0] = 0;
+
+  dcardRank[ 2] = '2';
+  dcardRank[ 3] = '3';
+  dcardRank[ 4] = '4';
+  dcardRank[ 5] = '5';
+  dcardRank[ 6] = '6';
+  dcardRank[ 7] = '7';
+  dcardRank[ 8] = '8';
+  dcardRank[ 9] = '9';
+  dcardRank[10] = 'T';
+  dcardRank[11] = 'J';
+  dcardRank[12] = 'Q';
+  dcardRank[13] = 'K';
+  dcardRank[14] = 'A';
+  dcardRank[15] = '-';
+
+  dcardSuit[0] = 'S';
+  dcardSuit[1] = 'H';
+  dcardSuit[2] = 'D';
+  dcardSuit[3] = 'C';
+  dcardSuit[4] = 'N';
+}
 
 
 void print_PBN(const dealPBN& dl)
