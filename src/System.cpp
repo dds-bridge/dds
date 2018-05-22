@@ -20,9 +20,11 @@
 #include "System.h"
 #include "Memory.h"
 #include "Scheduler.h"
+#include "ThreadMgr.h"
 
 extern Scheduler scheduler;
 extern Memory memory;
+extern ThreadMgr threadMgr;
 
 
 const vector<string> DDS_SYSTEM_PLATFORM =
@@ -492,25 +494,35 @@ int System::RunThreadsSTLIMPL()
   vector<int> crossrefs;
   (* CallbackDuplList[runCat])(* bop, uniques, crossrefs);
 
-  atomic<int> thrIdNext = 0;
-  thread_local int thrId = -1;
+  static atomic<int> thrIdNext = 0;
   bool err = false;
+
+  threadMgr.Reset(numThreads);
 
   for_each(std::execution::par, uniques.begin(), uniques.end(),
     [&](int &bno)
   {
+    thread_local int thrId = -1;
+    thread_local int realThrId;
     if (thrId == -1)
-    {
       thrId = thrIdNext++;
-      if (thrId >= numThreads)
-        err = true;
-    }
 
-    (* CallbackSingleList[runCat])(thrId, bno);
+    realThrId = threadMgr.Occupy(thrId);
+
+    if (realThrId == -1)
+      err = true;
+    else
+      (* CallbackSingleList[runCat])(realThrId, bno);
+
+    if (! threadMgr.Release(thrId))
+      err = true;
   });
 
   if (err)
+  {
+    cout << "Too many threads, numThreads " << numThreads << endl;
     return RETURN_THREAD_INDEX;
+  }
 
   (* CallbackCopyList[runCat])(crossrefs);
 #endif
@@ -557,11 +569,11 @@ int System::RunThreadsPPLIMPL()
   vector<int> crossrefs;
   (* CallbackDuplList[runCat])(* bop, uniques, crossrefs);
 
-  atomic<int> thrIdNext = 0;
-  thread_local int thrId = -1;
+  static atomic<int> thrIdNext = 0;
   bool err = false;
 
-  // Not sure this actually works...
+  threadMgr.Reset(numThreads);
+
   using namespace Concurrency;
   Concurrency::Scheduler * sched = Concurrency::Scheduler::Create(
     SchedulerPolicy(1, MaxConcurrency, numThreads));
@@ -570,21 +582,30 @@ int System::RunThreadsPPLIMPL()
   Concurrency::parallel_for_each(uniques.begin(), uniques.end(),
     [&](int &bno)
   {
+    thread_local int thrId = -1;
+    thread_local int realThrId;
     if (thrId == -1)
-    {
       thrId = thrIdNext++;
-      if (thrId >= numThreads)
-        err = true;
-    }
 
-    (* CallbackSingleList[runCat])(thrId, bno);
+    realThrId = threadMgr.Occupy(thrId);
+
+    if (realThrId == -1)
+      err = true;
+    else
+      (* CallbackSingleList[runCat])(realThrId, bno);
+
+    if (! threadMgr.Release(thrId))
+      err = true;
   });
 
   CurrentScheduler::Detach();
   sched->Release();
 
   if (err)
+  {
+    cout << "Too many threads, numThreads " << numThreads << endl;
     return RETURN_THREAD_INDEX;
+  }
 
   (* CallbackCopyList[runCat])(crossrefs);
 #endif

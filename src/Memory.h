@@ -139,6 +139,8 @@ class Memory
       const int memDefault_MB,
       const int memMaximum_MB);
 
+    int NumThreads() const;
+
     ThreadData * GetPtr(const unsigned thrId);
 
     double MemoryInUseMB(const unsigned thrId) const;

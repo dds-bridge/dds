@@ -93,8 +93,19 @@ void Memory::Resize(
 }
 
 
+int Memory::NumThreads() const
+{
+  return static_cast<int>(nThreads);
+}
+
+
 ThreadData * Memory::GetPtr(const unsigned thrId)
 {
+  if (thrId >= nThreads)
+  {
+    cout << "Memory::GetPtr: " << thrId << " vs. " << nThreads << endl;
+    exit(1);
+  }
   return memory[thrId];
 }
 

@@ -18,6 +18,7 @@ SOURCE_FILES    =               \
         SolveBoard.cpp          \
         SolverIF.cpp            \
         System.cpp              \
+        ThreadMgr.cpp           \
         Timer.cpp               \
         TimerGroup.cpp          \
         TimerList.cpp           \
