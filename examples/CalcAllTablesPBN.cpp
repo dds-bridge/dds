@@ -38,9 +38,7 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    for (int h = 0; h < DDS_HANDS; h++)
-      for (int s = 0; s < DDS_SUITS; s++)
-        strcpy(DDdealsPBN.deals[handno].cards, PBN[handno]);
+    strcpy(DDdealsPBN.deals[handno].cards, PBN[handno]);
   }
 
   res = CalcAllTablesPBN(&DDdealsPBN, mode, trumpFilter,
