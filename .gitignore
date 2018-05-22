@@ -14,3 +14,7 @@ test/itest
 *.exe
 *.swp
 *.bak
+
+*.exp
+*.lib
+*.res

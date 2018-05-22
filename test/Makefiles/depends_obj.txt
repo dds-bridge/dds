@@ -1,0 +1,102 @@
+../src/dds.obj: ../include/dll.h ../src/Init.h ../src/dds.h
+../src/dds.obj: ../include/portab.h ../src/Memory.h ../src/TransTable.h
+../src/dds.obj: ../src/TransTableS.h ../src/TransTableL.h ../src/Moves.h
+../src/dds.obj: ../src/File.h ../src/debug.h
+../src/dump.obj: ../src/dump.h ../src/dds.h ../include/portab.h
+../src/dump.obj: ../include/dll.h ../src/Moves.h ../src/Memory.h
+../src/dump.obj: ../src/TransTable.h ../src/TransTableS.h
+../src/dump.obj: ../src/TransTableL.h ../src/File.h ../src/debug.h
+../src/ABsearch.obj: ../src/TransTable.h ../src/dds.h ../include/portab.h
+../src/ABsearch.obj: ../include/dll.h ../src/Moves.h ../src/QuickTricks.h
+../src/ABsearch.obj: ../src/Memory.h ../src/TransTableS.h
+../src/ABsearch.obj: ../src/TransTableL.h ../src/File.h ../src/debug.h
+../src/ABsearch.obj: ../src/LaterTricks.h ../src/ABsearch.h ../src/ABstats.h
+../src/ABsearch.obj: ../src/TimerList.h ../src/TimerGroup.h ../src/Timer.h
+../src/ABsearch.obj: ../src/dump.h
+../src/ABstats.obj: ../src/ABstats.h ../src/debug.h
+../src/CalcTables.obj: ../src/CalcTables.h ../src/dds.h ../include/portab.h
+../src/CalcTables.obj: ../include/dll.h ../src/SolverIF.h ../src/Memory.h
+../src/CalcTables.obj: ../src/TransTable.h ../src/TransTableS.h
+../src/CalcTables.obj: ../src/TransTableL.h ../src/Moves.h ../src/File.h
+../src/CalcTables.obj: ../src/debug.h ../src/SolveBoard.h ../src/System.h
+../src/CalcTables.obj: ../src/Scheduler.h ../src/TimeStatList.h
+../src/CalcTables.obj: ../src/TimeStat.h ../src/Timer.h ../src/PBN.h
+../src/DealerPar.obj: ../src/dds.h ../include/portab.h ../include/dll.h
+../src/File.obj: ../src/File.h
+../src/Init.obj: ../src/Init.h ../src/dds.h ../include/portab.h
+../src/Init.obj: ../include/dll.h ../src/Memory.h ../src/TransTable.h
+../src/Init.obj: ../src/TransTableS.h ../src/TransTableL.h ../src/Moves.h
+../src/Init.obj: ../src/File.h ../src/debug.h ../src/System.h
+../src/Init.obj: ../src/Scheduler.h ../src/TimeStatList.h ../src/TimeStat.h
+../src/Init.obj: ../src/Timer.h
+../src/LaterTricks.obj: ../src/LaterTricks.h ../src/dds.h ../include/portab.h
+../src/LaterTricks.obj: ../include/dll.h ../src/Memory.h ../src/TransTable.h
+../src/LaterTricks.obj: ../src/TransTableS.h ../src/TransTableL.h
+../src/LaterTricks.obj: ../src/Moves.h ../src/File.h ../src/debug.h
+../src/Memory.obj: ../src/Memory.h ../src/TransTable.h ../src/dds.h
+../src/Memory.obj: ../include/portab.h ../include/dll.h ../src/TransTableS.h
+../src/Memory.obj: ../src/TransTableL.h ../src/Moves.h ../src/File.h
+../src/Memory.obj: ../src/debug.h
+../src/Moves.obj: ../src/Moves.h ../src/dds.h ../include/portab.h
+../src/Moves.obj: ../include/dll.h ../src/debug.h
+../src/Par.obj: ../src/dds.h ../include/portab.h ../include/dll.h
+../src/Par.obj: ../src/PBN.h
+../src/PlayAnalyser.obj: ../src/PlayAnalyser.h ../src/dds.h
+../src/PlayAnalyser.obj: ../include/portab.h ../include/dll.h
+../src/PlayAnalyser.obj: ../src/SolverIF.h ../src/Memory.h
+../src/PlayAnalyser.obj: ../src/TransTable.h ../src/TransTableS.h
+../src/PlayAnalyser.obj: ../src/TransTableL.h ../src/Moves.h ../src/File.h
+../src/PlayAnalyser.obj: ../src/debug.h ../src/System.h ../src/Scheduler.h
+../src/PlayAnalyser.obj: ../src/TimeStatList.h ../src/TimeStat.h
+../src/PlayAnalyser.obj: ../src/Timer.h ../src/PBN.h
+../src/PBN.obj: ../src/dds.h ../include/portab.h ../include/dll.h
+../src/PBN.obj: ../src/PBN.h
+../src/QuickTricks.obj: ../src/QuickTricks.h ../src/dds.h ../include/portab.h
+../src/QuickTricks.obj: ../include/dll.h ../src/Memory.h ../src/TransTable.h
+../src/QuickTricks.obj: ../src/TransTableS.h ../src/TransTableL.h
+../src/QuickTricks.obj: ../src/Moves.h ../src/File.h ../src/debug.h
+../src/Scheduler.obj: ../src/Scheduler.h ../src/dds.h ../include/portab.h
+../src/Scheduler.obj: ../include/dll.h ../src/TimeStatList.h
+../src/Scheduler.obj: ../src/TimeStat.h ../src/Timer.h
+../src/SolveBoard.obj: ../src/SolverIF.h ../src/dds.h ../include/portab.h
+../src/SolveBoard.obj: ../include/dll.h ../src/Memory.h ../src/TransTable.h
+../src/SolveBoard.obj: ../src/TransTableS.h ../src/TransTableL.h
+../src/SolveBoard.obj: ../src/Moves.h ../src/File.h ../src/debug.h
+../src/SolveBoard.obj: ../src/SolveBoard.h ../src/System.h ../src/Scheduler.h
+../src/SolveBoard.obj: ../src/TimeStatList.h ../src/TimeStat.h ../src/Timer.h
+../src/SolveBoard.obj: ../src/PBN.h
+../src/SolverIF.obj: ../src/SolverIF.h ../src/dds.h ../include/portab.h
+../src/SolverIF.obj: ../include/dll.h ../src/Memory.h ../src/TransTable.h
+../src/SolverIF.obj: ../src/TransTableS.h ../src/TransTableL.h ../src/Moves.h
+../src/SolverIF.obj: ../src/File.h ../src/debug.h ../src/Init.h
+../src/SolverIF.obj: ../src/ABsearch.h ../src/TimerList.h ../src/TimerGroup.h
+../src/SolverIF.obj: ../src/Timer.h ../src/System.h ../src/Scheduler.h
+../src/SolverIF.obj: ../src/TimeStatList.h ../src/TimeStat.h ../src/dump.h
+../src/System.obj: ../src/SolveBoard.h ../src/dds.h ../include/portab.h
+../src/System.obj: ../include/dll.h ../src/CalcTables.h ../src/PlayAnalyser.h
+../src/System.obj: ../src/parallel.h ../src/System.h ../src/Memory.h
+../src/System.obj: ../src/TransTable.h ../src/TransTableS.h
+../src/System.obj: ../src/TransTableL.h ../src/Moves.h ../src/File.h
+../src/System.obj: ../src/debug.h ../src/Scheduler.h ../src/TimeStatList.h
+../src/System.obj: ../src/TimeStat.h ../src/Timer.h
+../src/Timer.obj: ../src/Timer.h
+../src/TimerGroup.obj: ../src/TimerGroup.h ../src/Timer.h
+../src/TimerList.obj: ../src/TimerList.h ../src/TimerGroup.h ../src/Timer.h
+../src/TimerList.obj: ../src/debug.h
+../src/TimeStat.obj: ../src/TimeStat.h
+../src/TimeStatList.obj: ../src/TimeStatList.h ../src/TimeStat.h
+../src/TransTableS.obj: ../src/TransTableS.h ../src/TransTable.h ../src/dds.h
+../src/TransTableS.obj: ../include/portab.h ../include/dll.h ../src/debug.h
+../src/TransTableL.obj: ../src/TransTableL.h ../include/dll.h ../src/dds.h
+../src/TransTableL.obj: ../include/portab.h ../src/TransTable.h
+../src/TransTableL.obj: ../src/debug.h
+args.obj: args.h cst.h
+compare.obj: compare.h ../include/dll.h
+loop.obj: loop.h ../include/dll.h TestTimer.h compare.h print.h
+parse.obj: ../include/portab.h parse.h ../include/dll.h
+print.obj: print.h ../include/dll.h cst.h
+testcommon.obj: ../include/dll.h ../include/portab.h testcommon.h TestTimer.h
+testcommon.obj: parse.h loop.h compare.h print.h cst.h
+TestTimer.obj: TestTimer.h
+itest.obj: ../include/dll.h testcommon.h args.h cst.h
+dtest.obj: ../include/dll.h testcommon.h args.h cst.h

@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -10,9 +10,14 @@
 #ifndef DDS_ABSTATS_H
 #define DDS_ABSTATS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include "debug.h"
+
+using namespace std;
+
 
 /*
    AB_COUNT is a macro that avoids the tedious #ifdef's at
@@ -26,51 +31,97 @@
 #endif
 
 
-#define AB_TARGET_REACHED 0
-#define AB_DEPTH_ZERO 1
-#define AB_QUICKTRICKS 2
-#define AB_LATERTRICKS 3
-#define AB_MAIN_LOOKUP 4
-#define AB_SIDE_LOOKUP 5
-#define AB_MOVE_LOOP 6
-
-
+enum ABCountType
+{
+  AB_TARGET_REACHED = 0,
+  AB_DEPTH_ZERO = 1,
+  AB_QUICKTRICKS = 2,
+  AB_QUICKTRICKS_2ND = 3,
+  AB_LATERTRICKS = 4,
+  AB_MAIN_LOOKUP = 5,
+  AB_SIDE_LOOKUP = 6,
+  AB_MOVE_LOOP = 7,
+  AB_SIZE = 8
+};
 
 #define DDS_MAXDEPTH 49
-#define DDS_LINE_LEN 20
-#define DDS_AB_POS 7
 
+
+struct ABtracker
+{
+  int list[DDS_MAXDEPTH];
+  int sum;
+  int sumWeighted;
+  int sumCum;
+  int sumCumWeighted;
+};
 
 
 class ABstats
 {
   private:
-    FILE * fp;
-    char fname[DDS_LINE_LEN];
-    char name[DDS_AB_POS][40];
-    int counter[DDS_AB_POS][DDS_MAXDEPTH];
-    int counterCum[DDS_AB_POS];
-    int pcounterCum[DDS_AB_POS];
-    int score[2][DDS_MAXDEPTH];
-    int scoreCum[2];
-    int pscoreCum[2];
-    int nodes[DDS_MAXDEPTH];
-    int nodesCum[DDS_MAXDEPTH];
-    int allnodes,
-                        allnodesCum;
-    int iniDepth;
+
+    string name[AB_SIZE];
+
+    // A node arises when a new move is generated.
+    // Not every move leads to an AB termination.
+    ABtracker ABnodes;
+    ABtracker ABnodesCum;
+
+    // AB terminations are tracked by side and position.
+    ABtracker ABsides[2];
+    ABtracker ABplaces[AB_SIZE];
+
+    void SetNames();
+
+    void PrintHeaderPosition(ofstream& fout) const; 
+
+    void PrintStatsPosition(
+      ofstream& fout,
+      const int no,
+      const string& text,
+      const ABtracker& abt,
+      const ABtracker& divisor) const;
+
+    void PrintHeaderDepth(ofstream& fout) const; 
+
+    void PrintStatsDepth(
+      ofstream& fout,
+      const int depth,
+      const int cum) const; 
+
+    void PrintAverageDepth(
+      ofstream& fout,
+      const ABtracker& ABsidesSum) const; 
+
+    void PrintHeaderDetail(ofstream& fout) const; 
+
+    void PrintStatsDetail(
+      ofstream& fout,
+      const int depth) const; 
+
+    void PrintSumDetail(ofstream& fout) const; 
 
   public:
+
     ABstats();
+
     ~ABstats();
+
     void Reset();
+
     void ResetCum();
-    void SetFile(char * fname);
-    void SetName(int no, char * name);
-    void IncrPos(int no, bool side, int depth);
-    void IncrNode(int depth);
-    int GetNodes();
-    void PrintStats();
+
+    void IncrPos(
+      const ABCountType no, 
+      const bool side, 
+      const int depth);
+
+    void IncrNode(const int depth);
+
+    int GetNodes() const;
+
+    void PrintStats(ofstream& fout);
 };
 
 #endif

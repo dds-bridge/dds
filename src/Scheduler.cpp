@@ -2,132 +2,82 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
+
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <math.h>
 
 #include "Scheduler.h"
 
 
 Scheduler::Scheduler()
 {
-  // This can be HCP, for instance. Currently it is close to
-  // 6 - 4 - 2 - 1 - 0.5 for A-K-Q-J-T, but with 6.5 for the ace
-  // in order to make the sum come out to 28, an even number, so
-  // that the average number is an integer.
-
-  for (int i = 0; i < 8192; i++)
-  {
-    highCards[i] = 0;
-
-    if (i & (1 << 12)) highCards[i] += 13;
-    if (i & (1 << 11)) highCards[i] += 8;
-    if (i & (1 << 10)) highCards[i] += 4;
-    if (i & (1 << 9)) highCards[i] += 2;
-    if (i & (1 << 8)) highCards[i] += 1;
-  }
-
+  numThreads = 0;
   numHands = 0;
+
+  Scheduler::InitHighCards();
 
 #ifdef DDS_SCHEDULER
   Scheduler::InitTimes();
-
   for (int i = 0; i < 10000; i++)
   {
     timeHist[i] = 0;
     timeHistNT[i] = 0;
     timeHistSuit[i] = 0;
   }
-
-  sprintf(fname, "");
-  fp = stdout;
 #endif
 
-#if defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-  omp_init_lock(&lock);
-#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-  lock = dispatch_semaphore_create(1);
-#endif
+  Scheduler::RegisterThreads(1);
 }
 
 
-void Scheduler::SetFile(char * ourFname)
+void Scheduler::InitHighCards()
 {
-#ifdef DDS_SCHEDULER
-  if (strlen(ourFname) > 80)
-    return;
+  // highCards[i] is a point value of a given suit holding i.
+  // This can be HCP, for instance. Currently it is close to
+  // 6 - 4 - 2 - 1 - 0.5 for A-K-Q-J-T, but with 6.5 for the ace
+  // in order to make the sum come out to 28, an even number, so
+  // that the average number is an integer.
 
-  if (fp != stdout) // Already set
-    return;
-  strncpy(fname, ourFname, strlen(ourFname));
+  highCards.resize(1 << 13);
+  const unsigned pA = 1 << 12;
+  const unsigned pK = 1 << 11;
+  const unsigned pQ = 1 << 10;
+  const unsigned pJ = 1 << 9;
+  const unsigned pT = 1 << 8;
 
-  fp = fopen(fname, "w");
-  if (! fp)
-    fp = stdout;
-#else
-  UNUSED(ourFname);
-#endif
+  for (unsigned suit = 0; suit < (1 << 13); suit++)
+  {
+    int j = 0;
+    if (suit & pA) j += 13;
+    if (suit & pK) j += 8;
+    if (suit & pQ) j += 4;
+    if (suit & pJ) j += 2;
+    if (suit & pT) j += 1;
+    highCards[suit] = j;
+  }
 }
 
 
 #ifdef DDS_SCHEDULER
 void Scheduler::InitTimes()
 {
-  for (int s = 0; s < 2; s++)
-  {
-    timeStrain[s].cum = 0;
-    timeStrain[s].cumsq = 0;
-    timeStrain[s].number = 0;
+  timeStrain.Init("Suit/NT", 2);
+  timeRepeat.Init("Repeat number", 16);
+  timeDepth.Init("Trace depth", 60);
+  timeStrength.Init("Evenness", 60);
+  timeFanout.Init("Fanout", 100);
+  timeThread.Init("Threads", numThreads);
 
-    timeGroupActualStrain[s].cum = 0;
-    timeGroupActualStrain[s].cumsq = 0;
-    timeGroupActualStrain[s].number = 0;
-
-    timeGroupPredStrain[s].cum = 0;
-    timeGroupPredStrain[s].cumsq = 0;
-    timeGroupPredStrain[s].number = 0;
-
-    timeGroupDiffStrain[s].cum = 0;
-    timeGroupDiffStrain[s].cumsq = 0;
-    timeGroupDiffStrain[s].number = 0;
-  }
-
-  for (int s = 0; s < 16; s++)
-  {
-    timeRepeat[s].cum = 0;
-    timeRepeat[s].cumsq = 0;
-    timeRepeat[s].number = 0;
-  }
-
-  for (int s = 0; s < 60; s++)
-  {
-    timeDepth[s].cum = 0;
-    timeDepth[s].cumsq = 0;
-    timeDepth[s].number = 0;
-  }
-
-  for (int s = 0; s < 60; s++)
-  {
-    timeStrength[s].cum = 0;
-    timeStrength[s].cumsq = 0;
-    timeStrength[s].number = 0;
-  }
-
-  for (int s = 0; s < 100; s++)
-  {
-    timeFanout[s].cum = 0;
-    timeFanout[s].cumsq = 0;
-    timeFanout[s].number = 0;
-  }
-
-  for (int s = 0; s < MAXNOOFTHREADS; s++)
-  {
-    timeThread[s].cum = 0;
-    timeThread[s].cumsq = 0;
-    timeThread[s].number = 0;
-  }
+  timeGroupActualStrain.Init("Group actual suit/NT", 2);
+  timeGroupPredStrain.Init("Group predicted suit/NT", 2);
+  timeGroupDiffStrain.Init("Group diff suit/NT", 2);
 
   blockMax = 0;
   timeBlock = 0;
@@ -137,16 +87,6 @@ void Scheduler::InitTimes()
 
 Scheduler::~Scheduler()
 {
-#ifdef DDS_SCHEDULER
-  if (fp != stdout && fp != nullptr)
-    fclose(fp);
-#endif
-
-#if defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-  omp_destroy_lock(&lock);
-#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-  dispatch_release(lock);
-#endif
 }
 
 
@@ -163,8 +103,7 @@ void Scheduler::Reset()
     for (int key = 0; key < HASH_MAX; key++)
       list[strain][key].first = -1;
 
-
-  for (int t = 0; t < MAXNOOFTHREADS; t++)
+  for (unsigned t = 0; t < static_cast<unsigned>(numThreads); t++)
   {
     threadGroup[t] = -1;
     threadCurrGroup[t] = -1;
@@ -174,60 +113,80 @@ void Scheduler::Reset()
 }
 
 
-void Scheduler::RegisterTraceDepth(
-  playTracesBin * plp,
-  int number)
+void Scheduler::RegisterThreads(
+  const int n)
 {
-  // This is only used for traces, so it is entered separately.
+  if (n == numThreads)
+    return;
+  numThreads = n;
+
+  const unsigned nu = static_cast<unsigned>(n);
+  threadGroup.resize(nu);
+  threadCurrGroup.resize(nu);
+  threadToHand.resize(nu);
 
 #ifdef DDS_SCHEDULER
-  for (int b = 0; b < number; b++)
-    hands[b].depth = plp->plays[b].number;
-#else
-  UNUSED(plp);
-  UNUSED(number);
+  timeThread.Init("Threads", numThreads);
+  timersThread.resize(numThreads);
 #endif
 }
 
 
-void Scheduler::Register(
-  boards * bop,
-  int sortMode)
+void Scheduler::RegisterRun(
+  const enum RunMode mode,
+  const boards& bds,
+  const playTracesBin& pl)
+{
+  for (int b = 0; b < bds.noOfBoards; b++)
+    hands[b].depth = pl.plays[b].number;
+  
+  Scheduler::RegisterRun(mode, bds);
+}
+
+
+void Scheduler::RegisterRun(
+  const enum RunMode mode,
+  const boards& bds)
 {
   Scheduler::Reset();
 
-  numHands = bop->noOfBoards;
+  numHands = bds.noOfBoards;
 
   // First split the hands according to strain and hash key.
   // This will lead to a few random collisions as well.
 
-  Scheduler::MakeGroups(bop);
+  Scheduler::MakeGroups(bds);
 
   // Then check whether groups with at least two elements are
   // homogeneous or whether they need to be split.
 
   Scheduler::FinetuneGroups();
 
+  Scheduler::SortHands(mode);
+}
+
+
+void Scheduler::SortHands(const enum RunMode mode)
+{
   // Make predictions per group.
 
-  if (sortMode == SCHEDULER_SOLVE)
+  if (mode == DDS_RUN_SOLVE)
     Scheduler::SortSolve();
-  else if (sortMode == SCHEDULER_CALC)
+  else if (mode == DDS_RUN_CALC)
     Scheduler::SortCalc();
-  else if (sortMode == SCHEDULER_TRACE)
+  else if (mode == DDS_RUN_TRACE)
     Scheduler::SortTrace();
 }
 
 
-void Scheduler::MakeGroups(
-  boards * bop)
+void Scheduler::MakeGroups(const boards& bds)
 {
-  deal * dl;
+  deal const * dl;
   listType * lp;
 
   for (int b = 0; b < numHands; b++)
   {
-    dl = &bop->deals[b];
+    dl = &bds.deals[b];
 
     int strain = dl->trump;
 
@@ -252,8 +211,8 @@ void Scheduler::MakeGroups(
     hands[b].NTflag = (strain == 4 ? 1 : 0);
     hands[b].first = dl->first;
     hands[b].strain = strain;
-    hands[b].fanout = Scheduler::Fanout(dl);
-    // hands[b].strength = Scheduler::Strength(dl);
+    hands[b].fanout = Scheduler::Fanout(* dl);
+    // hands[b].strength = Scheduler::Strength(* dl);
 
     lp = &list[strain][key];
 
@@ -433,8 +392,8 @@ void Scheduler::FinetuneGroups()
 
 
 bool Scheduler::SameHand(
-  int hno1,
-  int hno2)
+  const int hno1,
+  const int hno2) const
 {
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -704,26 +663,25 @@ void Scheduler::SortTrace()
 }
 
 
-int Scheduler::Strength(
-  deal * dl)
+int Scheduler::Strength(const deal& dl) const
 {
   // If the strength in all suits is evenly split, then the
   // "strength" returned is close to 0. Maximum is 49.
 
-  unsigned sp = (dl->remainCards[0][0] | dl->remainCards[2][0]) >> 2;
-  unsigned he = (dl->remainCards[0][1] | dl->remainCards[2][1]) >> 2;
-  unsigned di = (dl->remainCards[0][2] | dl->remainCards[2][2]) >> 2;
-  unsigned cl = (dl->remainCards[0][3] | dl->remainCards[2][3]) >> 2;
+  const unsigned sp = (dl.remainCards[0][0] | dl.remainCards[2][0]) >> 2;
+  const unsigned he = (dl.remainCards[0][1] | dl.remainCards[2][1]) >> 2;
+  const unsigned di = (dl.remainCards[0][2] | dl.remainCards[2][2]) >> 2;
+  const unsigned cl = (dl.remainCards[0][3] | dl.remainCards[2][3]) >> 2;
 
-  int hsp = highCards[sp];
-  int hhe = highCards[he];
-  int hdi = highCards[di];
-  int hcl = highCards[cl];
+  const int hsp = highCards[sp];
+  const int hhe = highCards[he];
+  const int hdi = highCards[di];
+  const int hcl = highCards[cl];
 
   int dev = (hsp >= 14 ? hsp - 14 : 14 - hsp) +
-            (hhe >= 14 ? hhe - 14 : 14 - hhe) +
-            (hdi >= 14 ? hdi - 14 : 14 - hdi) +
-            (hcl >= 14 ? hcl - 14 : 14 - hcl);
+    (hhe >= 14 ? hhe - 14 : 14 - hhe) +
+    (hdi >= 14 ? hdi - 14 : 14 - hdi) +
+    (hcl >= 14 ? hcl - 14 : 14 - hcl);
 
   if (dev >= 50) dev = 49;
 
@@ -731,8 +689,7 @@ int Scheduler::Strength(
 }
 
 
-int Scheduler::Fanout(
-  deal * dl)
+int Scheduler::Fanout(const deal& dl) const
 {
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups. In a given suit the
@@ -748,7 +705,7 @@ int Scheduler::Fanout(
     numVoids = 0;
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      c = static_cast<int>(dl->remainCards[h][s] >> 2);
+      c = static_cast<int>(dl.remainCards[h][s] >> 2);
       fanoutSuit += groupData[c].lastGroup + 1;
       if (c == 0)
         numVoids++;
@@ -761,10 +718,10 @@ int Scheduler::Fanout(
 }
 
 
-schedType Scheduler::GetNumber(
-  int thrId)
+schedType Scheduler::GetNumber(const int thrId)
 {
-  int g = threadGroup[thrId];
+  const unsigned tu = static_cast<unsigned>(thrId);
+  int g = threadGroup[tu];
   listType * lp;
   schedType st;
 
@@ -780,20 +737,8 @@ schedType Scheduler::GetNumber(
       return st;
     }
 
-#if (defined(_WIN32) || defined(__CYGWIN__)) && \
-       !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-    g = InterlockedIncrement(&currGroup);
-#elif defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-    omp_set_lock(&lock);
+    // Atomic.
     g = ++currGroup;
-    omp_unset_lock(&lock);
-#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-    dispatch_semaphore_wait(lock, DISPATCH_TIME_FOREVER);
-    g = ++currGroup;
-    dispatch_semaphore_signal(lock);
-#else
-    g = ++currGroup;
-#endif
 
     if (g >= numGroups)
     {
@@ -807,8 +752,8 @@ schedType Scheduler::GetNumber(
     // A bit inelegant to duplicate this, but seems better than
     // the alternative, as threadGroup must get set to -1 in some
     // cases.
-    threadGroup[thrId] = g;
-    threadCurrGroup[thrId] = g;
+    threadGroup[tu] = g;
+    threadCurrGroup[tu] = g;
     group[g].repeatNo = 0;
     group[g].actual = 0;
   }
@@ -846,36 +791,33 @@ schedType Scheduler::GetNumber(
 
   hands[st.number].repeatNo = group[g].repeatNo++;
 
-  threadToHand[thrId] = st.number;
+  threadToHand[tu] = st.number;
 
   if (lp->first == -1)
-    threadGroup[thrId] = -1;
+    threadGroup[tu] = -1;
 
   return st;
 }
 
 
-#ifdef DDS_SCHEDULER
-void Scheduler::StartThreadTimer(int thrId)
+int Scheduler::NumGroups() const
 {
-#ifdef _WIN32
-  QueryPerformanceCounter(&timeStart[thrId]);
-#else
-  gettimeofday(&timeStart[thrId], NULL);
-#endif
+  return numGroups;
 }
 
 
-void Scheduler::EndThreadTimer(int thrId)
+#ifdef DDS_SCHEDULER
+void Scheduler::StartThreadTimer(const int thrId)
 {
-#ifdef _WIN32
-  QueryPerformanceCounter(&timeEnd[thrId]);
-  int timeUser = (timeEnd [thrId].QuadPart -
-                  timeStart[thrId].QuadPart);
-#else
-  gettimeofday(&timerListUser1[no], NULL);
-  int timeUser = Scheduler::timeDiff(timeEnd[thrId], timeStart[thrId]);
-#endif
+  timersThread[thrId].Reset();
+  timersThread[thrId].Start();
+}
+
+
+void Scheduler::EndThreadTimer(const int thrId)
+{
+  timersThread[thrId].End();
+  int timeUser = timersThread[thrId].UserTime();
 
   hands[ threadToHand[thrId] ].time = timeUser;
   hands[ threadToHand[thrId] ].thread = thrId;
@@ -886,24 +828,15 @@ void Scheduler::EndThreadTimer(int thrId)
 
 void Scheduler::StartBlockTimer()
 {
-#ifdef _WIN32
-  QueryPerformanceCounter(&blockStart);
-#else
-  gettimeofday(&blockStart, NULL);
-#endif
+  timerBlock.Reset();
+  timerBlock.Start();
 }
 
 
 void Scheduler::EndBlockTimer()
 {
-#ifdef _WIN32
-  QueryPerformanceCounter(&blockEnd);
-  int timeUser = (blockEnd .QuadPart -
-                  blockStart.QuadPart);
-#else
-  gettimeofday(&blockEnd, NULL);
-  int timeUser = Scheduler::timeDiff(blockEnd, blockStart);
-#endif
+  timerBlock.End();
+  const int timeUserBlock = timerBlock.UserTime();
 
   handType * hp;
   for (int b = 0; b < numHands; b++)
@@ -914,29 +847,15 @@ void Scheduler::EndBlockTimer()
 
     if (hp->selectFlag)
     {
-      timeStrain [ hp->NTflag ].number++;
-      timeStrain [ hp->NTflag ].cum += timeUser;
-      timeStrain [ hp->NTflag ].cumsq += timesq;
+      TimeStat ts;
+      ts.Set(timeUser, timesq);
 
-      timeRepeat [ hp->repeatNo ].number++;
-      timeRepeat [ hp->repeatNo ].cum += timeUser;
-      timeRepeat [ hp->repeatNo ].cumsq += timesq;
-
-      timeDepth [ hp->depth ].number++;
-      timeDepth [ hp->depth ].cum += timeUser;
-      timeDepth [ hp->depth ].cumsq += timesq;
-
-      timeStrength[ hp->strength ].number++;
-      timeStrength[ hp->strength ].cum += timeUser;
-      timeStrength[ hp->strength ].cumsq += timesq;
-
-      timeFanout [ hp->fanout ].number++;
-      timeFanout [ hp->fanout ].cum += timeUser;
-      timeFanout [ hp->fanout ].cumsq += timesq;
-
-      timeThread [ hp->thread ].number++;
-      timeThread [ hp->thread ].cum += timeUser;
-      timeThread [ hp->thread ].cumsq += timesq;
+      timeStrain.Add(hp->NTflag, ts);
+      timeRepeat.Add(hp->repeatNo, ts);
+      timeDepth.Add(hp->depth, ts);
+      timeStrength.Add(hp->strength, ts);
+      timeFanout.Add(hp->fanout, ts);
+      timeThread.Add(hp->thread, ts);
     }
 
     if (timeUser > blockMax)
@@ -958,138 +877,79 @@ void Scheduler::EndBlockTimer()
     int head = group[g].head;
     int NTflag = (hands[head].strain == 4 ? 1 : 0);
 
-    timeGroupActualStrain[NTflag].number++;
-    timeGroupActualStrain[NTflag].cum += group[g].actual;
-    timeGroupActualStrain[NTflag].cumsq +=
-      (double) group[g].actual * (double) group[g].actual;
+    TimeStat ts;
 
-    timeGroupPredStrain [NTflag].number++;
-    timeGroupPredStrain [NTflag].cum += group[g].pred;
-    timeGroupPredStrain [NTflag].cumsq +=
-      group[g].pred * group[g].pred;
+    ts.Set(group[g].actual);
+    timeGroupActualStrain.Add(NTflag, ts);
 
-    double diff = group[g].actual - group[g].pred;
+    ts.Set(group[g].pred);
+    timeGroupPredStrain.Add(NTflag, ts);
 
-    timeGroupDiffStrain [NTflag].number++;
-    timeGroupDiffStrain [NTflag].cum += diff;
-    timeGroupDiffStrain [NTflag].cumsq += diff * diff;
+    int diff = group[g].actual - group[g].pred;
+    ts.Set(diff);
+    timeGroupDiffStrain.Add(NTflag, ts);
   }
 
-  timeBlock += timeUser;
+
+  timeBlock += timeUserBlock;
   timeMax += blockMax;
   blockMax = 0;
 }
 
 
-void Scheduler::PrintTimingList(
-  timeType * tp,
-  int length,
-  const char title[])
+void Scheduler::PrintTiming() const
 {
-  bool empty = true;
-  for (int no = 0; no < length && empty; no++)
-  {
-    if (tp[no].number)
-      empty = false;
-  }
-  if (empty)
-    return;
+  const string fname = string(DDS_SCHEDULER_PREFIX) + DDS_DEBUG_SUFFIX;
+  ofstream fout;
+  fout.open(fname);
 
-  fprintf(fp, "%s\n\n", title);
-  fprintf(fp, "%5s %8s %12s %12s %12s %12s\n",
-          "n", "Number", "Cum time", "Average", "Sdev", "Sdev/mu");
-
-  long long sn = 0, st = 0;
-  double sq = 0;
-
-  for (int no = 0; no < length; no++)
-  {
-    if (tp[no].number == 0)
-      continue;
-
-    sn += tp[no].number;
-    st += tp[no].cum;
-    sq += tp[no].cumsq;
-
-    double avg = (double) tp[no].cum / (double) tp[no].number;
-    double arg = (tp[no].cumsq / (double) tp[no].number) -
-                  (double) avg * (double) avg;
-    double sdev = (arg >= 0. ? sqrt(arg) : 0.);
-
-    fprintf(fp, "%5d %8d %12lld ",
-            no,
-            tp[no].number,
-            tp[no].cum);
-    fprintf(fp, "%12.0f %12.0f %12.2f\n", avg, sdev, sdev / avg);
-  }
-
-  if (sn)
-  {
-    double avg = (double) st / (double) sn;
-    double arg = (sq / (double) sn) - (double) avg * (double) avg;
-    double sdev = (arg >= 0. ? sqrt(arg) : 0.);
-    fprintf(fp, " Avg %8lld %12lld ", sn, st);
-    fprintf(fp, "%12.0f %12.0f %12.2f\n", avg, sdev, sdev / avg);
-  }
-
-  fprintf(fp, "\n");
-}
-
-
-void Scheduler::PrintTiming()
-{
-  Scheduler::PrintTimingList(timeStrain , 2, "Suit/NT");
-  Scheduler::PrintTimingList(timeRepeat , 16, "Repeat number");
-  Scheduler::PrintTimingList(timeDepth , 60, "Trace depth");
-  Scheduler::PrintTimingList(timeStrength, 60, "Evenness");
-  Scheduler::PrintTimingList(timeFanout , 100, "Fanout");
-  Scheduler::PrintTimingList(timeThread , MAXNOOFTHREADS, "Threads");
-
-  Scheduler::PrintTimingList(timeGroupActualStrain, 2,
-                             "Group actual suit/NT");
-  Scheduler::PrintTimingList(timeGroupPredStrain , 2,
-                             "Group predicted suit/NT");
-  Scheduler::PrintTimingList(timeGroupDiffStrain , 2,
-                             "Group diff suit/NT");
+  fout << timeStrain.List();
+  fout << timeRepeat.List();
+  fout << timeDepth.List();
+  fout << timeStrength.List();
+  fout << timeFanout.List();
+  fout << timeThread.List();
+  fout << timeGroupActualStrain.List();
+  fout << timeGroupPredStrain.List();
+  fout << timeGroupDiffStrain.List();
 
 #if 0
+  fout << setw(13) << "Hist" <<
+    setw(10) << "Hist suit" <<
+    setw(10) << "Hist NT" << "\n";
   for (int i = 0; i < 10000; i++)
+  {
     if (timeHist[i] || timeHistSuit[i] || timeHistNT[i])
-      fprintf(fp, "%4d %8d %8d %8d\n",
-              i, timeHist[i], timeHistSuit[i], timeHistNT[i]);
-  fprintf(fp, "\n");
+    {
+      fout << setw(4) << i <<
+        setw(9) << timeHist[i] <<
+        setw(10) << timeHistSuit[i] <<
+        setw(10) << timeHistNT[i] << "\n";
+    }
+  }
+  fout << endl;
 #endif
 
   if (timeBlock == 0)
     return;
 
-  // Continuing problems with ld in long fprintf's...
-  double avg = 100. * (double) timeMax / (double) timeBlock;
-  fprintf(fp, "Largest hand %12lld ", timeMax);
-  fprintf(fp, "%12lld ", timeBlock);
-  fprintf(fp, "%5.2f%%\n\n", avg);
-}
+  const double avg = 100. * (double) timeMax / (double) timeBlock;
+  fout << "Largest hand" <<
+    setw(13) << timeMax << 
+    setw(13) << timeBlock <<
+    setw(6) << setprecision(2) << fixed << avg << "%\n\n";
 
-
-#ifndef _WIN32
-int Scheduler::timeDiff(
-  timeval x,
-  timeval y)
-{
-  /* Elapsed time, x-y, in milliseconds */
-  return 1000 * (x.tv_sec - y.tv_sec )
-         + (x.tv_usec - y.tv_usec) / 1000;
+  fout.close();
 }
-#endif
 
 #endif // DDS_SCHEDULER
 
 
 int Scheduler::PredictedTime(
-  deal * dl,
-  int number)
+  deal& dl,
+  int number) const
 {
-  int trump = dl->trump;
+  int trump = dl.trump;
   int NT = (trump == 4 ? 100 : 0);
 
   int dev1 = Scheduler::Strength(dl);
@@ -1123,5 +983,4 @@ int Scheduler::PredictedTime(
 
   return pred;
 }
-
 

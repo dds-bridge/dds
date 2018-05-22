@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -10,19 +10,8 @@
 #ifndef DDS_DDS_H
 #define DDS_DDS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <assert.h>
-#include <math.h>
-
-#include "debug.h"
 #include "../include/portab.h"
-
-#include "TransTable.h"
-#include "Timer.h"
-#include "ABstats.h"
+#include "../include/dll.h"
 
 
 #if defined(DDS_MEMORY_LEAKS) && defined(_MSC_VER)
@@ -32,27 +21,16 @@
 #endif
 
 
-#if defined(SMALL_MEMORY_OPTION)
-  #define THREADMEM_MAX_MB 30
-  #define THREADMEM_DEF_MB 20
-#else
-  #define THREADMEM_MAX_MB 160
-  #define THREADMEM_DEF_MB 95
-#endif
-
-#define MAXNOOFTHREADS 16
+#define THREADMEM_SMALL_MAX_MB 30
+#define THREADMEM_SMALL_DEF_MB 20
+#define THREADMEM_LARGE_MAX_MB 160
+#define THREADMEM_LARGE_DEF_MB 95
 
 #define MAXNODE 1
 #define MINNODE 0
 
-#define MOVESVALID 1
-#define MOVESLOCKED 2
-
 #define SIMILARDEALLIMIT 5
 #define SIMILARMAXWINNODES 700000
-
-#define Max(x, y) (((x) >= (y)) ? (x) : (y))
-#define Min(x, y) (((x) <= (y)) ? (x) : (y))
 
 #define DDS_NOTRUMP 4
 
@@ -84,16 +62,6 @@ extern char relRank[8192][15];
 extern unsigned short int winRanks[8192][14];
 
 
-extern int noOfThreads;
-
-struct playparamType
-{
-  int noOfBoards;
-  struct playTracesBin * plp;
-  struct solvedPlays * solvedp;
-};
-
-
 struct moveGroupType
 {
   // There are at most 7 groups of bit "runs" in a 13-bit vector
@@ -107,8 +75,6 @@ struct moveGroupType
 extern moveGroupType groupData[8192];
 
 
-extern int stat_contr[DDS_STRAINS];
-
 struct moveType
 {
   int suit;
@@ -120,7 +86,7 @@ struct moveType
 
 struct movePlyType
 {
-  struct moveType move[14];
+  moveType move[14];
   int current;
   int last;
 };
@@ -143,15 +109,15 @@ struct pos
   /* Cards that win by rank, firstindex is depth. */
   int first[50];
   /* Hand that leads the trick for each ply */
-  struct moveType move[50];
+  moveType move[50];
   /* Presently winning move */
   int handRelFirst;
   /* The current hand, relative first hand */
   int tricksMAX;
   /* Aggregated tricks won by MAX */
-  struct highCardType winner[DDS_SUITS];
+  highCardType winner[DDS_SUITS];
   /* Winning rank of trick. */
-  struct highCardType secondBest[DDS_SUITS];
+  highCardType secondBest[DDS_SUITS];
   /* Second best rank. */
 };
 
@@ -175,26 +141,31 @@ struct extCard
   int sequence;
 };
 
-struct paramType
-{
-  int noOfBoards;
-  struct boards * bop;
-  struct solvedBoards * solvedp;
-  int error;
-};
-
 struct absRankType // 2 bytes
 {
   char rank;
-  char hand;
+  signed char hand;
 };
 
 struct relRanksType // 120 bytes
 {
-  struct absRankType absRank[15][DDS_SUITS];
+  absRankType absRank[15][DDS_SUITS];
 };
 
-#include "Moves.h"
-#include "Scheduler.h"
+struct paramType
+{
+  int noOfBoards;
+  boards * bop;
+  solvedBoards * solvedp;
+  int error;
+};
+
+enum RunMode
+{
+  DDS_RUN_SOLVE = 0,
+  DDS_RUN_CALC = 1,
+  DDS_RUN_TRACE = 2,
+  DDS_RUN_SIZE = 3
+};
 
 #endif
