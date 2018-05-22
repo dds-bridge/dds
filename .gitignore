@@ -1,6 +1,7 @@
 !.gitignore
 *.o
 *.a
+*.so
 *.dll
 *.obj
 *.def
@@ -13,3 +14,7 @@ test/itest
 *.exe
 *.swp
 *.bak
+
+*.exp
+*.lib
+*.res

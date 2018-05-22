@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -11,20 +11,18 @@
 #include "dds.h"
 #include "PBN.h"
 
-int IsCard(char cardChar);
+int IsCard(const char cardChar);
 
 
 int ConvertFromPBN(
-  char * dealBuff,
+  char const * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS])
 {
-  int bp = 0, first, card, hand, handRelFirst, suitInHand, h, s;
-  int IsCard(char cardChar);
-
-  for (h = 0; h < DDS_HANDS; h++)
-    for (s = 0; s < DDS_SUITS; s++)
+  for (int h = 0; h < DDS_HANDS; h++)
+    for (int s = 0; s < DDS_SUITS; s++)
       remainCards[h][s] = 0;
 
+  int bp = 0;
   while (((dealBuff[bp] != 'W') && (dealBuff[bp] != 'N') &&
           (dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
           (dealBuff[bp] != 'w') && (dealBuff[bp] != 'n') &&
@@ -34,6 +32,7 @@ int ConvertFromPBN(
   if (bp >= 3)
     return 0;
 
+  int first;
   if ((dealBuff[bp] == 'N') || (dealBuff[bp] == 'n'))
     first = 0;
   else if ((dealBuff[bp] == 'E') || (dealBuff[bp] == 'e'))
@@ -46,8 +45,9 @@ int ConvertFromPBN(
   bp++;
   bp++;
 
-  handRelFirst = 0;
-  suitInHand = 0;
+  int handRelFirst = 0;
+  int suitInHand = 0;
+  int card, hand;
 
   while ((bp < 80) && (dealBuff[bp] != '\0'))
   {
@@ -99,7 +99,7 @@ int ConvertFromPBN(
 }
 
 
-int IsCard(char cardChar)
+int IsCard(const char cardChar)
 {
   switch (cardChar)
   {
@@ -120,23 +120,18 @@ int IsCard(char cardChar)
     case '9':
       return 9;
     case 'T':
-      return 10;
-    case 'J':
-      return 11;
-    case 'Q':
-      return 12;
-    case 'K':
-      return 13;
-    case 'A':
-      return 14;
     case 't':
       return 10;
+    case 'J':
     case 'j':
       return 11;
+    case 'Q':
     case 'q':
       return 12;
+    case 'K':
     case 'k':
       return 13;
+    case 'A':
     case 'a':
       return 14;
     default:
@@ -146,19 +141,19 @@ int IsCard(char cardChar)
 
 
 int ConvertPlayFromPBN(
-  playTracePBN * playPBN,
-  playTraceBin * playBin)
+  const playTracePBN& playPBN,
+  playTraceBin& playBin)
 {
-  int n = playPBN->number;
+  const int n = playPBN.number;
 
   if (n < 0 || n > 52)
     return RETURN_PLAY_FAULT;
 
-  playBin->number = n;
+  playBin.number = n;
 
   for (int i = 0; i < 2 * n; i += 2)
   {
-    char suit = playPBN->cards[i];
+    char suit = playPBN.cards[i];
     int s;
 
     if (suit == 's' || suit == 'S')
@@ -171,13 +166,13 @@ int ConvertPlayFromPBN(
       s = 3;
     else
       return RETURN_PLAY_FAULT;
-    playBin->suit[i >> 1] = s;
+    playBin.suit[i >> 1] = s;
 
-    int rank = IsCard(playPBN->cards[i + 1]);
+    int rank = IsCard(playPBN.cards[i+1]);
     if (rank == 0)
       return RETURN_PLAY_FAULT;
 
-    playBin->rank[i >> 1] = rank;
+    playBin.rank[i >> 1] = rank;
   }
   return RETURN_NO_FAULT;
 }

@@ -2,37 +2,43 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
-
-#include "dds.h"
-#include "threadmem.h"
+#include "PlayAnalyser.h"
 #include "SolverIF.h"
-#include "PBN.h"
+#include "System.h"
+#include "Memory.h"
 #include "Scheduler.h"
+#include "PBN.h"
+#include "debug.h"
+
+using namespace std;
+
 
 // Only single-threaded debugging here.
 #define DEBUG 0
 
-#ifdef DDS_SCHEDULER
-  #define START_BLOCK_TIMER scheduler.StartBlockTimer()
-  #define END_BLOCK_TIMER scheduler.EndBlockTimer()
-  #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
-  #define END_THREAD_TIMER(a) scheduler.EndThreadTimer(a)
-#else
-  #define START_BLOCK_TIMER 1
-  #define END_BLOCK_TIMER 1
-  #define START_THREAD_TIMER(a) 1
-  #define END_THREAD_TIMER(a) 1
-#endif
-
 #if DEBUG
-FILE * fp;
+  ofstream fout;
 #endif
 
+struct playparamType
+{
+  int noOfBoards;
+  playTracesBin * plp;
+  solvedPlays * solvedp;
+  int error;
+};
+
+paramType playparam;
+playparamType traceparam;
+
+extern System sysdep;
+extern Memory memory;
+extern Scheduler scheduler;
 
 
 int STDCALL AnalysePlayBin(
@@ -41,15 +47,20 @@ int STDCALL AnalysePlayBin(
   solvedPlay * solvedp,
   int thrId)
 {
+  if (! sysdep.ThreadOK(thrId))
+    return RETURN_THREAD_INDEX;
+
+  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+
   moveType move;
   futureTricks fut;
 
-  int ret = SolveBoard(dl, -1, 1, 1, &fut, thrId);
+  int ret = SolveBoardInternal(thrp, dl, -1, 1, 1, &fut);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
-  const int numTricks = ((localVar[thrId].iniDepth + 3) >> 2) + 1;
-  const int numCardsPlayed = ((48 - localVar[thrId].iniDepth) % 4) + 1;
+  const int numTricks = ((thrp->iniDepth + 3) >> 2) + 1;
+  const int numCardsPlayed = ((48 - thrp->iniDepth) % 4) + 1;
 
   int last_trick = (play.number + 3) / 4;
   int last_card = ((play.number + 3) % 4) + 1;
@@ -73,14 +84,14 @@ int STDCALL AnalysePlayBin(
   int solved_declarer = solvedp->tricks[0];
 #if DEBUG
   int initial_par = solved_declarer;
-  fp = fopen("trace.txt", "a");
-  fprintf(fp, "Initial solve: %d\n", initial_par);
-  fprintf(fp, "no %d, Last trick %d, last card %d\n",
-          play.number, last_trick, last_card);
-  fprintf(fp, "%5s %5s %5s %8s %6s %6s %5s %5s %5s\n",
-          "trick", "card", "rest", "declarer",
-          "player", "side", "soln0", "soln1", "diff");
-  fclose(fp);
+  fout.open("trace.txt", ofstream::out | ofstream::app);
+  fout << "Initial solve: " << initial_par << "\n";
+  fout << "no " << play.number << ", Last trick " << last_trick <<
+    ", last card " << last_card << "\n";
+  fout << setw(5) << "trick" << setw(6) << "card" << 
+    setw(6) << "rest" << setw(9) << "declarer" <<
+    setw(7) << "player" << setw(7) << "side" <<
+    setw(6) << "soln0" << setw(6) << "soln1" << setw(6) << "diff" << "\n";
 #endif
 
   for (int trick = 1; trick <= last_trick; trick++)
@@ -140,10 +151,10 @@ int STDCALL AnalysePlayBin(
         if (! usingCurrent)
         {
 #if DEBUG
-          fp = fopen("trace.txt", "a");
-          fprintf(fp, "ERR Trick %d card %d pl %d: suit %d hold %d\n",
-                  trick, card, running_player, suit, hold);
-          fclose(fp);
+          fout << "ERR Trick " << trick << " card " << card <<
+            " pl " << running_player << ": suit " << suit <<
+            " hold " << hold << "\n";
+          fout.close();
 #endif
           return RETURN_PLAY_FAULT;
         }
@@ -186,13 +197,13 @@ int STDCALL AnalysePlayBin(
       if (usingCurrent)
         continue;
 
-      if ((ret = AnalyseLaterBoard(dl.first,
-                                   &move, hint, hintDir, &fut, thrId))
+      if ((ret = AnalyseLaterBoard(thrp, dl.first, &move, hint, 
+        hintDir, &fut))
           != RETURN_NO_FAULT)
       {
 #if DEBUG
-        fp = fopen("trace.txt", "a");
-        fprintf(fp, "SolveBoard failed, ret %d\n", ret);
+        fout << "SolveBoard failed, ret " << ret << "\n";
+        fout.close();
 #endif
         return ret;
       }
@@ -203,13 +214,15 @@ int STDCALL AnalysePlayBin(
       solvedp->tricks[offset + card] = new_solved_decl;
 
 #if DEBUG
-      fp = fopen("trace.txt", "a");
-      fprintf(fp, "%5d %5d %5d %8d %6c %6d %5d %5d %5d\n",
-              trick, card, running_remainder, running_declarer,
-              cardHand[resp_player], running_side,
-              solved_declarer, new_solved_decl,
-              new_solved_decl - solved_declarer);
-      fclose(fp);
+      fout << setw(5) << trick << 
+        setw(6) << card << 
+        setw(6) << running_remainder << 
+        setw(9) << running_declarer <<
+        setw(7) << cardHand[resp_player] << 
+        setw(7) << running_side <<
+        setw(6) << solved_declarer << 
+        setw(6) << new_solved_decl << 
+        setw(6) << new_solved_decl - solved_declarer << "\n";
 #endif
 
       solved_declarer = new_solved_decl;
@@ -217,6 +230,9 @@ int STDCALL AnalysePlayBin(
   }
   solvedp->number = 4 * last_trick + last_card - 3 - (numCardsPlayed - 1);
 
+#if DEBUG
+  fout.close();
+#endif
   return RETURN_NO_FAULT;
 }
 
@@ -242,66 +258,48 @@ int STDCALL AnalysePlayPBN(
     dl.currentTrickRank[i] = dlPBN.currentTrickRank[i];
   }
 
-  if (ConvertPlayFromPBN(&playPBN, &play) !=
-      RETURN_NO_FAULT)
+  if (ConvertPlayFromPBN(playPBN, play) != RETURN_NO_FAULT)
     return RETURN_PLAY_FAULT;
 
   return AnalysePlayBin(dl, play, solvedp, thrId);
 }
 
 
-long pchunk = 0;
-int pfail;
-
-
-#if (defined(_WIN32) || defined(__CYGWIN__)) && \
-    !defined(_OPENMP) && !defined(DDS_THREADS_SINGLE)
-
-HANDLE solveAllPlayEvents[MAXNOOFTHREADS];
-LONG volatile pthreadIndex;
-LONG volatile pcurrent;
-paramType playparam;
-playparamType traceparam;
-
-DWORD CALLBACK SolveChunkTracePlay (void *);
-
-DWORD CALLBACK SolveChunkTracePlay (void *)
+void PlaySingleCommon(
+  const int thrId,
+  const int bno)
 {
-  solvedPlay solved[MAXNOOFBOARDS];
-  int thid;
+  solvedPlay solved;
 
-  thid = InterlockedIncrement(&pthreadIndex);
+  int res = AnalysePlayBin(
+    playparam.bop->deals[bno],
+    traceparam.plp->plays[bno],
+    &solved,
+    thrId);
 
+  // If there are multiple errors, this will catch one of them.
+  if (res == 1)
+    traceparam.solvedp->solved[bno] = solved;
+  else
+   playparam.error = res;
+}
+
+
+void PlayChunkCommon(const int thrId)
+{
   int index;
   schedType st;
+
   while (1)
   {
-    st = scheduler.GetNumber(thid);
+    st = scheduler.GetNumber(thrId);
     index = st.number;
     if (index == -1)
       break;
 
-    START_THREAD_TIMER(thid);
-    int res = AnalysePlayBin(
-                playparam.bop->deals[index],
-                traceparam.plp->plays[index],
-                &solved[index],
-                thid);
-    END_THREAD_TIMER(thid);
-
-    if (res == 1)
-      traceparam.solvedp->solved[index] = solved[index];
-    else
-      pfail = res;
-    /* If there are multiple errors, this will catch one of them */
+    PlaySingleCommon(thrId, index);
   }
-
-  if (SetEvent(solveAllPlayEvents[thid]) == 0)
-    return 0;
-
-  return 1;
 }
-
 
 
 int STDCALL AnalyseAllPlaysBin(
@@ -310,20 +308,15 @@ int STDCALL AnalyseAllPlaysBin(
   solvedPlays * solvedp,
   int chunkSize)
 {
+  UNUSED(chunkSize);
+
+  playparam.error = 0;
+
   if (bop->noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
   if (bop->noOfBoards != plp->noOfBoards)
     return RETURN_UNKNOWN_FAULT;
-
-  pchunk = chunkSize;
-  pfail = 1;
-
-  int res;
-  DWORD solveAllWaitResult;
-
-  pcurrent = 0;
-  pthreadIndex = -1;
 
   playparam.bop = bop;
   traceparam.plp = plp;
@@ -331,178 +324,28 @@ int STDCALL AnalyseAllPlaysBin(
   traceparam.noOfBoards = bop->noOfBoards;
   traceparam.solvedp = solvedp;
 
-  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
-  scheduler.Register(bop, SCHEDULER_TRACE);
-
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    solveAllPlayEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
-    if (solveAllPlayEvents[k] == 0)
-      return RETURN_THREAD_CREATE;
-  }
-
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    res = QueueUserWorkItem(SolveChunkTracePlay, NULL,
-                            WT_EXECUTELONGFUNCTION);
-    if (res != 1)
-      return res;
-  }
+  scheduler.RegisterRun(DDS_RUN_TRACE, * bop, * plp);
+  sysdep.RegisterRun(DDS_RUN_TRACE, * bop);
 
   START_BLOCK_TIMER;
-  solveAllWaitResult = WaitForMultipleObjects(
-    static_cast<unsigned>(noOfThreads),
-    solveAllPlayEvents, TRUE, INFINITE);
+  int retRun = sysdep.RunThreads();
   END_BLOCK_TIMER;
 
-  if (solveAllWaitResult != WAIT_OBJECT_0)
-    return RETURN_THREAD_WAIT;
-
-  for (int k = 0; k < noOfThreads; k++)
-    CloseHandle(solveAllPlayEvents[k]);
+  if (retRun != RETURN_NO_FAULT)
+    return retRun;
 
   solvedp->noOfBoards = bop->noOfBoards;
 
-  return pfail;
-}
-
-#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
-
-// This code for LLVM multi-threading on the Mac was kindly 
-// contributed by Pierre Cossard.
-
-int STDCALL AnalyseAllPlaysBin(
-  boards * bop,
-  playTracesBin * plp,
-  solvedPlays * solvedp,
-  int chunkSize)
-{
-  if (bop->noOfBoards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
-    
-  if (bop->noOfBoards != plp->noOfBoards)
-    return RETURN_UNKNOWN_FAULT;
-    
-  pchunk = chunkSize;
-  pfail = 1;
-    
-  solvedPlay *solved = static_cast<solvedPlay *> 
-    (calloc(MAXNOOFBOARDS, sizeof(solvedPlay)));
-    
-  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
-  scheduler.Register(bop, SCHEDULER_TRACE);
-    
-    
-    START_BLOCK_TIMER;
-    dispatch_apply(static_cast<size_t>(noOfThreads), 
-      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), 
-        ^(size_t t)
-    {
-      while (1)
-      {
-        int thid = static_cast<int>(t);
-            
-        schedType st = scheduler.GetNumber(thid);
-        int index = st.number;
-        if (index == -1)
-          break;
-            
-        START_THREAD_TIMER(thid);
-        int res = AnalysePlayBin(bop->deals[index],
-          plp->plays[index],
-          &solved[index],
-          thid);
-          END_THREAD_TIMER(thid);
-            
-        if (res == 1)
-          solvedp->solved[index] = solved[index];
-        else
-          pfail = res;
-      }
-    });
-    
-    END_BLOCK_TIMER;
-    free(solved);
-    
-    solvedp->noOfBoards = bop->noOfBoards;
-    
-    return pfail;
-}
-
-#else
-
-int STDCALL AnalyseAllPlaysBin(
-  boards * bop,
-  playTracesBin * plp,
-  solvedPlays * solvedp,
-  int chunkSize)
-{
-  if (bop->noOfBoards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
-
-  if (bop->noOfBoards != plp->noOfBoards)
-    return RETURN_UNKNOWN_FAULT;
-
-  pchunk = chunkSize;
-  pfail = 1;
-
-  int res;
-  solvedPlay solved[MAXNOOFBOARDS];
-
-  scheduler.RegisterTraceDepth(plp, bop->noOfBoards);
-  scheduler.Register(bop, SCHEDULER_TRACE);
-
-#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
-  if (omp_get_dynamic())
-    omp_set_dynamic(0);
-  omp_set_num_threads(noOfThreads);
-#elif defined (_OPENMP)
-  omp_set_num_threads(1);
+#ifdef DDS_SCHEDULER
+  scheduler.PrintTiming();
 #endif
 
-  int index, thid;
-  schedType st;
-
-  START_BLOCK_TIMER;
-
-  #pragma omp parallel default(none) shared(scheduler, bop, plp, solvedp, solved, pchunk, pfail) private(st, index, thid, res)
-  {
-    #pragma omp while schedule(dynamic, pchunk)
-
-    while (1)
-    {
-#if defined (_OPENMP) && !defined(DDS_THREADS_SINGLE)
-      thid = omp_get_thread_num();
-#else
-      thid = 0;
-#endif
-
-      st = scheduler.GetNumber(thid);
-      index = st.number;
-      if (index == -1)
-        break;
-
-      START_THREAD_TIMER(thid);
-      res = AnalysePlayBin(bop->deals[index],
-                           plp->plays[index],
-                           &solved[index],
-                           thid);
-      END_THREAD_TIMER(thid);
-
-      if (res == 1)
-        solvedp->solved[index] = solved[index];
-      else
-        pfail = res;
-    }
-  }
-
-  END_BLOCK_TIMER;
-
-  solvedp->noOfBoards = bop->noOfBoards;
-
-  return pfail;
+  if (playparam.error == 0)
+    return RETURN_NO_FAULT;
+  else
+    return playparam.error;
 }
-#endif
+
 
 int STDCALL AnalyseAllPlaysPBN(
   boardsPBN * bopPBN,
@@ -519,22 +362,20 @@ int STDCALL AnalyseAllPlaysPBN(
 
   for (int k = 0; k < bopPBN->noOfBoards; k++)
   {
-    deal * dl;
-    dealPBN * dlp;
+    deal& dl = bd.deals[k];
+    dealPBN& dlp = bopPBN->deals[k];
 
-    dl = &(bd.deals[k]);
-    dlp = &(bopPBN->deals[k]);
-    if (ConvertFromPBN(dlp->remainCards,
-                       dl->remainCards) != RETURN_NO_FAULT)
+    if (ConvertFromPBN(dlp.remainCards,
+                       dl.remainCards) != RETURN_NO_FAULT)
       return RETURN_PBN_FAULT;
 
-    dl->trump = dlp->trump;
-    dl->first = dlp->first;
+    dl.trump = dlp.trump;
+    dl.first = dlp.first;
 
     for (int i = 0; i <= 2; i++)
     {
-      dl->currentTrickSuit[i] = dlp->currentTrickSuit[i];
-      dl->currentTrickRank[i] = dlp->currentTrickRank[i];
+      dl.currentTrickSuit[i] = dlp.currentTrickSuit[i];
+      dl.currentTrickRank[i] = dlp.currentTrickRank[i];
     }
   }
 
@@ -542,12 +383,38 @@ int STDCALL AnalyseAllPlaysPBN(
 
   for (int k = 0; k < plpPBN->noOfBoards; k++)
   {
-    if (ConvertPlayFromPBN(&plpPBN->plays[k], &pl.plays[k]) !=
+    if (ConvertPlayFromPBN(plpPBN->plays[k], pl.plays[k]) !=
         RETURN_NO_FAULT)
       return RETURN_PLAY_FAULT;
   }
 
   chunkSize = 1;
   return AnalyseAllPlaysBin(&bd, &pl, solvedp, chunkSize);
+}
+
+
+void DetectPlayDuplicates(
+  const boards& bds,
+  vector<int>& uniques,
+  vector<int>& crossrefs)
+{
+  // This dummy function is there for consistency in System.cpp.
+  // In practice there is not much point in deteting play repeats,
+  // as it is highly unlikely that the play went identically at
+  // two tables.
+
+  uniques.resize(static_cast<unsigned>(bds.noOfBoards));
+  crossrefs.resize(static_cast<unsigned>(bds.noOfBoards));
+  for (unsigned i = 0; i < uniques.size(); i++)
+  {
+    uniques[i] = static_cast<int>(i);
+    crossrefs[i] = -1;
+  }
+}
+
+
+void CopyPlaySingle(const vector<int>& crossrefs)
+{
+  UNUSED(crossrefs);
 }
 

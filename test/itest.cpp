@@ -2,32 +2,38 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+
 #include "../include/dll.h"
 #include "testcommon.h"
+#include "args.h"
+#include "cst.h"
 
+using namespace std;
+
+OptionsType options;
 
 
 int main(int argc, char * argv[])
 {
-  int ncores = 0;
-  if (argc == 4)
-    ncores = atoi(argv[3]);
+  ReadArgs(argc, argv);
 
-  SetMaxThreads(ncores);
+  if (options.threading != DTEST_THREADING_DEFAULT)
+    SetThreading(static_cast<int>(options.threading));
+
+  SetResources(options.memoryMB, options.numThreads);
 
   DDSInfo info;
   GetDDSInfo(&info);
-  printf("%s", info.systemString);
-  printf("%-12s %20s\n\n", "Version", info.versionString);
-  fflush(stdout);
+  cout << info.systemString << endl;
 
   realMain(argc, argv);
 
