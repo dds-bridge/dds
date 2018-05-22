@@ -6,11 +6,11 @@ DDS offers a wide range of functions, including par-score calculations.
 
 Please refer to the [home page](http://privat.bahnhof.se/wb758135) for details.
 
-The current version is DDS 2.8.4 released in March 2016 and licensed under the Apache 2.0 license in the LICENSE FILE.
+The current version is DDS 2.9.0 beta, released in May 2018 and licensed under the Apache 2.0 license in the LICENSE FILE.
 
 Release notes are in the ChangeLog file.
 
-(c) Bo Haglund 2006-2014, (c) Bo Haglund / Soren Hein 2014-2016.
+(c) Bo Haglund 2006-2014, (c) Bo Haglund / Soren Hein 2014-2018.
 
 
 Credits
@@ -27,7 +27,7 @@ Foppe Hemminga maintains DDS on ArchLinux.  He also contributed a version of the
 
 Pierre Cossard contributed the code for multi-threading on the Mac using GDS.
 
-Soren Hein made a number of contributions before becoming a co-author starting in v2.8 in 2014.
+Soren Hein made a number of contributions before becoming a co-author starting with v2.8 in 2014.
 
 
 Overview
@@ -52,7 +52,7 @@ Supported systems
 =================
 The DLLs work out of the box on Windows systems.  There is a single-threaded version for old Windows versions, and there is a multi-threaded version that works on all modern Windows systems.  This is the one you should use if in doubt.  
 
-The Windows versions use the Windows multi-threading.  The code compiles on windows (see INSTALL) with at least:
+The distributed Windows DLL uses Windows multi-threading.  The code compiles on windows (see INSTALL) with at least:
 
 * Visual C++ 2010 Express editions or later.
 * The TDM-GCC/Mingw port of g++.
@@ -73,20 +73,22 @@ The `without-multilib` is important because you won't get OpenMP otherwise, and 
 
 Thanks for Pierre Cossard's contribution, the Mac port now also supports GCD multi-threading with LLVM.
 
+There's an example .Net wrapper on https://github.com/anorsich/dds.net (not supported by us).
+
 Usage
 =====
 
-DDS tries to figure out the available number of cores and the available memory.  Based on this, DDS calculates a reasonable number of threads to use.  The user can override this by calling the `SetMaxThreads()` function.  In principle SetMaxThreads can be called multiple times, but there is overhead associated with this, so only call it at the beginning of your program unless you really want to change the number of threads dynamically.
+DDS tries to figure out the available number of cores and the available memory.  Based on this, DDS calculates a reasonable number of threads to use.  The user can override this by calling the `SetMaxThreads()` or the `SetResources()` function.  In principle these functions can be called multiple times, but there is overhead associated with this, so only call it at the beginning of your program unless you really want to change the number of threads dynamically.
 
 DDS on Windows calls SetMaxThreads itself when it is attached to a process, so you don't have to.  On Unix-like systems we use an equivalent mechanism, but we have had a report that this does not always happen in the right order of things, so you may want to call SetMaxThreads explicitly.
 
 Docs
 ====
-The DDS library interface is very well documented. You find the docs, including a Markdown version which you can read online, in the /doc folder.
+The DDS library interface is documented. You find the docs, including a Markdown version which you can read online, in the /doc folder.  The Markdown version has not been updated since v2.8.4.
 
 Bugs
 ====
-Version 2.8.4 has no known bugs.
+Version 2.9.0 beta has no known bugs.
 
 Please report bugs to bo.haglund@bahnhof.se and soren.hein@gmail.com.
 

@@ -1,12 +1,10 @@
-# This is a Makefile for the dtest test program,
-# for Cygwin under Windows and the GNU g++ compiler.
+# --------------------- INFORMATION --------------------------------
 
-# It does assume a Unix-like setup for some commands,
-# but if you only want to call "make" with the default target,
-# you should be OK.
+# This the test Makefile for Windows and the Cygwin GNU g++
+# compiler.  It assumes a Unix-like setup for some commands.
 
-# The test program itself does not use multi-threading, 
-# but the DLL might, depending on how it was compiled.
+# The dtest program itself does not use multi-threading, 
+# but the library might, depending on how it was compiled.
 
 # The Makefile also allows an "un-official" and ugly, but
 # sometimes practical compilation of a directly integrated
@@ -14,17 +12,29 @@
 # uses the source and object files in the src directory...
 # Use "make itest" at your own risk.
 
+# If you need to add something for the threading system, this is
+# the place.
+
+CC_BOOST_LINK	= -lboost_system -lboost_thread
+
+THREAD_LINK	= $(CC_BOOST_LINK)
+
+# ----------------------- OFTEN OK    ------------------------------
+
+# From here on you you don't have to change anything to CONFIGURE
+# the compilation.  But you may well have to change something to 
+# get it to compile.
+
+INCL_DDS_SOURCE	= Makefiles/dds_sources.txt
+INCL_OWN_SOURCE	= Makefiles/own_sources.txt
+INCL_DEPENDS	= Makefiles/depends_o.txt
 
 # If your compiler name is not given here, change it.
 CC		= g++
 
-# Use this one to get Windows multi-threading
-# CC_FLAGS	= -O3 -flto -mtune=generic -fno-use-linker-plugin
-# Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic -fno-use-linker-plugin
+# We compile with aggressive warnings, but we have to turn off some
+# of them as they appear in libraries in great numbers...
 
-# These flags are not turned on by default, but DDS should pass them.
-# Turn them on below.
 WARN_FLAGS	= 		\
 	-Wshadow 		\
 	-Wsign-conversion 	\
@@ -32,13 +42,13 @@ WARN_FLAGS	= 		\
 	-Wcast-align -Wcast-qual \
 	-Wctor-dtor-privacy 	\
 	-Wdisabled-optimization \
+	-Wformat=2 		\
 	-Winit-self 		\
 	-Wlogical-op 		\
 	-Wmissing-declarations 	\
 	-Wmissing-include-dirs 	\
 	-Wnoexcept 		\
 	-Wold-style-cast 	\
-	-Wformat=2		\
 	-Woverloaded-virtual 	\
 	-Wredundant-decls 	\
 	-Wsign-promo 		\
@@ -50,162 +60,65 @@ WARN_FLAGS	= 		\
 	-Wno-unknown-pragmas 	\
 	-Wno-long-long
 
-# Here you can turn on warnings.
-# CC_FULL_FLAGS	= $(CC_FLAGS)
-CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
-
-DTEST		= dtest
-ITEST		= itest
+COMPILE_FLAGS	= -O3 -flto -fopenmp -mtune=generic \
+		-fno-use-linker-plugin \
+		$(WARN_FLAGS)
 
 DLLBASE		= dds
 DLL 		= $(DLLBASE).dll
 DLIB 		= $(DLLBASE).lib
 EXPORTER	= Exports.def
 
-# This is in addition to $(DTEST).cpp
-DTEST_SOURCE_FILES 	=	\
-	testcommon.cpp		\
-	testStats.cpp
-
-LD_FLAGS	= 		\
+LINK1_FLAGS	= 
+LINK2_FLAGS	= 		\
 	-Wl,--subsystem,windows \
 	-Wl,--output-def,$(DLLBASE).def	\
 	-Wl,--dynamicbase 	\
 	-Wl,--nxcompat 		\
 	-Wl,--no-seh 		\
-	-Wl,--enable-stdcall-fixup
+	-Wl,--enable-stdcall-fixup \
+	$(THREAD_LINK) \
+	-L. -l$(DLLBASE)
 
-LIB_FLAGS	= -L. -l$(DLLBASE)
+# This is in addition to $(DTEST).cpp
+
+include $(INCL_OWN_SOURCE)
 
 DTEST_OBJ_FILES	= $(subst .cpp,.o,$(DTEST_SOURCE_FILES)) $(DTEST).o
 
+DTEST		= dtest
+ITEST		= itest
+
 # These are the files that we steal from the src directory.
-SRC		= ../src
-STOLEN_SOURCE_FILES 	=	\
-	$(SRC)/dds.cpp 		\
-	$(SRC)/ABsearch.cpp	\
-	$(SRC)/ABstats.cpp	\
-	$(SRC)/CalcTables.cpp	\
-	$(SRC)/DealerPar.cpp 	\
-	$(SRC)/Init.cpp		\
-	$(SRC)/LaterTricks.cpp	\
-	$(SRC)/Moves.cpp	\
-	$(SRC)/Par.cpp 		\
-	$(SRC)/PlayAnalyser.cpp	\
-	$(SRC)/PBN.cpp		\
-	$(SRC)/QuickTricks.cpp	\
-	$(SRC)/Scheduler.cpp	\
-	$(SRC)/SolveBoard.cpp	\
-	$(SRC)/SolverIF.cpp	\
-	$(SRC)/Stats.cpp	\
-	$(SRC)/Timer.cpp	\
-	$(SRC)/TransTable.cpp
+
+include $(INCL_DDS_SOURCE)
 
 ITEST_SOURCE_FILES	=	\
-	$(STOLEN_SOURCE_FILES)	\
+	$(DDS_SOURCE_FILES)	\
 	$(DTEST_SOURCE_FILES)	\
 	itest.cpp
 
 ITEST_OBJ_FILES	= $(subst .cpp,.o,$(ITEST_SOURCE_FILES))
 
 dtest:	$(DTEST_OBJ_FILES)
-	$(CC) $(CC_FULL_FLAGS) $(DTEST_OBJ_FILES) $(LD_FLAGS) $(LIB_FLAGS) -o $(DTEST)
+	$(CC) $(COMPILE_FLAGS) $(LINK1_FLAGS) $(DTEST_OBJ_FILES) \
+	$(LINK2_FLAGS) -o $(DTEST)
 
 itest:	$(ITEST_OBJ_FILES)
-	$(CC) $(CC_FULL_FLAGS) $(ITEST_OBJ_FILES) $(LD_FLAGS) -o $(ITEST)
+	$(CC) $(COMPILE_FLAGS) $(LINK1_FLAGS) $(ITEST_OBJ_FILES) \
+	$(LINK2_FLAGS) -o $(ITEST)
 
 %.o:	%.cpp
-	$(CC) $(CC_FULL_FLAGS) -c $< -o $*.o
+	$(CC) $(COMPILE_FLAGS) -c $< -o $*.o
 
 depend:
 	makedepend -Y -- $(ITEST_SOURCE_FILES) $(DTEST).cpp
 
 clean:
-	rm -f $(ITEST_OBJ_FILES) $(DTEST).{o,exe} $(ITEST).exe $(DLL) $(DLLBASE).def
+	rm -f $(ITEST_OBJ_FILES) $(DTEST).{o,exe} $(ITEST).exe \
+	$(DLL) $(DLLBASE).def
 
+# If you don't have a Linux-like setup, use "del" instead of "rm".
 
-# DO NOT DELETE
+include $(INCL_DEPENDS)
 
-../src/dds.o: ../include/dll.h ../src/dds.h ../src/debug.h
-../src/dds.o: ../include/portab.h ../src/TransTable.h ../src/Timer.h
-../src/dds.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/dds.o: ../src/Scheduler.h ../src/Init.h
-../src/ABsearch.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/ABsearch.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/ABsearch.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/ABsearch.o: ../src/Scheduler.h ../src/threadmem.h ../src/QuickTricks.h
-../src/ABsearch.o: ../src/LaterTricks.h ../src/ABsearch.h
-../src/ABstats.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/ABstats.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/ABstats.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/ABstats.o: ../src/Scheduler.h
-../src/CalcTables.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/CalcTables.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/CalcTables.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/CalcTables.o: ../src/Scheduler.h ../src/SolveBoard.h ../src/PBN.h
-../src/DealerPar.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/DealerPar.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/DealerPar.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/DealerPar.o: ../src/Scheduler.h
-../src/Init.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/Init.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/Init.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/Init.o: ../src/Scheduler.h ../src/threadmem.h ../src/Init.h
-../src/Init.o: ../src/ABsearch.h
-../src/LaterTricks.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/LaterTricks.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/LaterTricks.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/LaterTricks.o: ../src/Scheduler.h ../src/threadmem.h
-../src/LaterTricks.o: ../src/LaterTricks.h
-../src/Moves.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/Moves.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/Moves.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/Moves.o: ../src/Scheduler.h ../src/ABsearch.h
-../src/Par.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/Par.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/Par.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/Par.o: ../src/Scheduler.h
-../src/PlayAnalyser.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/PlayAnalyser.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/PlayAnalyser.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/PlayAnalyser.o: ../src/Scheduler.h ../src/threadmem.h
-../src/PlayAnalyser.o: ../src/SolverIF.h ../src/PBN.h
-../src/PBN.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/PBN.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/PBN.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/PBN.o: ../src/Scheduler.h ../src/PBN.h
-../src/QuickTricks.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/QuickTricks.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/QuickTricks.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/QuickTricks.o: ../src/Scheduler.h ../src/threadmem.h
-../src/QuickTricks.o: ../src/QuickTricks.h
-../src/Scheduler.o: ../src/Scheduler.h ../src/dds.h ../src/debug.h
-../src/Scheduler.o: ../include/portab.h ../src/TransTable.h ../include/dll.h
-../src/Scheduler.o: ../src/Timer.h ../src/ABstats.h ../src/Moves.h
-../src/Scheduler.o: ../src/Stats.h
-../src/SolveBoard.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/SolveBoard.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/SolveBoard.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/SolveBoard.o: ../src/Scheduler.h ../src/threadmem.h ../src/SolverIF.h
-../src/SolveBoard.o: ../src/SolveBoard.h ../src/PBN.h
-../src/SolverIF.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/SolverIF.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/SolverIF.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/SolverIF.o: ../src/Scheduler.h ../src/Init.h ../src/threadmem.h
-../src/SolverIF.o: ../src/ABsearch.h ../src/SolverIF.h
-../src/Stats.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/Stats.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/Stats.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/Stats.o: ../src/Scheduler.h
-../src/Timer.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/Timer.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/Timer.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/Timer.o: ../src/Scheduler.h
-../src/TransTable.o: ../src/dds.h ../src/debug.h ../include/portab.h
-../src/TransTable.o: ../src/TransTable.h ../include/dll.h ../src/Timer.h
-../src/TransTable.o: ../src/ABstats.h ../src/Moves.h ../src/Stats.h
-../src/TransTable.o: ../src/Scheduler.h
-testcommon.o: ../include/dll.h ../include/portab.h testStats.h dtest.h
-testStats.o: ../include/portab.h testStats.h
-itest.o: ../include/dll.h testcommon.h
-dtest.o: ../include/dll.h testcommon.h

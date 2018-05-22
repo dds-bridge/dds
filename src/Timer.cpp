@@ -2,35 +2,20 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
-/*
-   See Timer.h for some description.
-*/
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 
-#include <stdexcept>
-
-#include "dds.h"
 #include "Timer.h"
 
-
-const char * TIMER_NAMES[TIMER_GROUPS] =
-{
-  "AB",
-  "Make",
-  "Undo",
-  "Evaluate",
-  "NextMove",
-  "QuickTricks",
-  "LaterTricks",
-  "MoveGen",
-  "Lookup",
-  "Build"
-};
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
 
 
 Timer::Timer()
@@ -41,347 +26,129 @@ Timer::Timer()
 
 Timer::~Timer()
 {
-  if (fp != stdout && fp != nullptr)
-    fclose(fp);
 }
 
 
 void Timer::Reset()
 {
-  strcpy(fname, "");
-
-  for (int i = 0; i < DDS_TIMERS; i++)
-  {
-    sprintf(name[i], "Timer %4d", i);
-    count[i] = 0;
-    userCum[i] = 0;
-    systCum[i] = 0.;
-  }
+  name = "";
+  count = 0;
+  userCum = 0;
+  systCum = 0;
 }
 
 
-void Timer::SetFile(char * ourFname)
+void Timer::SetName(const string& nameIn)
 {
-  if (strlen(ourFname) > DDS_FNAME_LEN)
-    return;
-
-  strncpy(fname, ourFname, strlen(ourFname));
-
-  fp = fopen(fname, "w");
-  if (!fp)
-    fp = stdout;
+  name = nameIn;
 }
 
 
-void Timer::SetName(int no, char * ourName)
+void Timer::Start()
 {
-  if (no < 0 || no >= DDS_TIMERS)
-    return;
-
-  sprintf(name[no], "%s", ourName);
+  user0 = Clock::now();
+  syst0 = clock();
 }
 
 
-void Timer::SetNames()
+void Timer::End()
 {
-  char tag[LINE_LEN];
+  time_point<Clock> user1 = Clock::now();
+  clock_t syst1 = clock();
 
-  for (int d = 0; d < TIMER_SPACING; d++)
-  {
-    int c = d % 4;
-    sprintf(tag, "AB%d %d", c, d);
-    Timer::SetName(TIMER_AB + d, tag);
+  chrono::duration<double, micro> d = user1 - user0;
+  int tuser = static_cast<int>(d.count());
 
-    for (int n = 1; n < TIMER_GROUPS; n++)
-    {
-      sprintf(tag, "%s %d", TIMER_NAMES[n], d);
-      Timer::SetName(n * TIMER_SPACING + d, tag);
-    }
-  }
-}
-
-void Timer::Start(int no)
-{
-  if (no < 0 || no >= DDS_TIMERS)
-    return;
-
-  systTimes0[no] = clock();
-
-#ifdef _WIN32
-  QueryPerformanceCounter(&userTimes0[no]);
-#else
-  gettimeofday(&userTimes0[no], nullptr);
-#endif
+  count++;
+  userCum += tuser;
+  systCum += static_cast<long>(syst1) - 
+    static_cast<long>(syst0);
 }
 
 
-void Timer::End(int no)
+bool Timer::Used() const
 {
-  if (no < 0 || no >= DDS_TIMERS)
-    return;
-
-  systTimes1[no] = clock();
-
-#ifdef _WIN32
-  QueryPerformanceCounter(&userTimes1[no]);
-  int timeUser = static_cast<int>
-                 (userTimes1[no].QuadPart - userTimes0[no].QuadPart);
-#else
-  gettimeofday(&userTimes1[no], nullptr);
-  int timeUser = Timer::TimevalDiff(userTimes1[no],
-                                    userTimes0[no]);
-#endif
-
-  count[no]++;
-
-  // This is more or less in milli-seconds except on Windows,
-  // where it is in "wall ticks". It is possible to convert
-  // to milli-seconds, but the resolution is so poor for fast
-  // functions that I leave it in integer form.
-
-  userCum[no] += timeUser;
-  systCum[no] += systTimes1[no] - systTimes0[no];
+  return (count > 0);
 }
 
 
-void Timer::OutputDetails()
+int Timer::UserTime() const
 {
-  fprintf(fp, "%-14s %10s %10s %10s %10s %10s\n",
-          "Name",
-          "Number",
-          "User ticks",
-          "Avg",
-          "System",
-          "Avg ms");
-
-  for (int no = 0; no < DDS_TIMERS; no++)
-  {
-    if (count[no] == 0)
-      continue;
-
-    fprintf(fp, "%-14s %10d %10lld %10.2f %10.0f %10.2f\n",
-            name[no],
-            count[no],
-            static_cast<long long>(userCum[no]),
-            static_cast<double>(userCum[no]) /
-            static_cast<double>(count[no]),
-            1000. * systCum[no],
-            1000. * static_cast<double>(systCum[no]) /
-            static_cast<double>(count[no]));
-  }
-  fprintf(fp, "\n");
+  return static_cast<int>(userCum);
 }
 
 
-void Timer::PrintStats()
+void Timer::operator +=(const Timer& add)
 {
-  bool used = false;
-  for (int no = 0; no < DDS_TIMERS; no++)
+  count += add.count;
+  userCum += add.userCum;
+  systCum += add.systCum;
+}
+
+
+void Timer::operator -=(const Timer& deduct)
+{
+  if (deduct.userCum > userCum)
+    userCum = 0;
+  else
+    userCum -= deduct.userCum;
+
+  if (deduct.systCum > systCum)
+    systCum = 0;
+  else
+    systCum -= deduct.systCum;
+}
+
+
+string Timer::SumLine(
+  const Timer& divisor,
+  const string& bname) const
+{
+  stringstream ss;
+  if (count > 0)
   {
-    if (count[no])
-    {
-      used = true;
-      break;
-    }
-  }
-
-  if (! used)
-    return;
-
-  // Approximate the exclusive times of each function.
-  // The ABsearch*() functions are recursively nested,
-  // so subtract out the one below.
-  // The other ones are subtracted out based on knowledge
-  // of the functions.
-
-  int64_t AB_userCum[TIMER_SPACING];
-  double AB_systCum[TIMER_SPACING];
-
-  AB_userCum[0] = userCum[0];
-  AB_systCum[0] = systCum[0];
-
-  int64_t AB_ct = count[0];
-  int64_t AB_ucum = AB_userCum[0];
-  double AB_scum = AB_systCum[0];
-
-  for (int d = 1; d < TIMER_SPACING; d++)
-  {
-    AB_ct += count[d];
-
-    if (userCum[d - 1] > userCum[d])
-    {
-      AB_userCum[d] = 0;
-      AB_systCum[d] = 0;
-      continue;
-    }
-
-    AB_userCum[d] = userCum[d] - userCum[d - 1];
-    AB_systCum[d] = systCum[d] - systCum[d - 1];
-
-    for (int no = 1; no < TIMER_GROUPS; no++)
-    {
-      int offset = no * TIMER_SPACING;
-      AB_userCum[d] -= userCum[offset + d ];
-      AB_systCum[d] -= systCum[offset + d ];
-    }
-
-    AB_ucum += AB_userCum[d];
-    AB_scum += AB_systCum[d];
-  }
-
-  int64_t all_ucum = AB_ucum;
-  double all_scum = AB_scum;
-  for (int no = TIMER_SPACING; no < DDS_TIMERS; no++)
-  {
-    all_ucum += userCum[no];
-    all_scum += systCum[no];
-  }
-
-  fprintf(fp, "%-14s %8s %10s %6s %4s %10s %6s %4s\n",
-          "Name",
-          "Count",
-          "User",
-          "Avg",
-          "%",
-          "Syst",
-          "Avg",
-          "%");
-
-  if (AB_ct)
-  {
-    fprintf(fp, "%-14s %8lld %10lld %6.2f %4.1f %10.0f %6.2f %4.1f\n",
-            TIMER_NAMES[0],
-            static_cast<long long>(AB_ct),
-            static_cast<long long>(AB_ucum),
-            AB_ucum / static_cast<double>(AB_ct),
-            100. * AB_ucum / all_ucum,
-            1000. * AB_scum,
-            1000. * AB_scum / static_cast<double>(AB_ct),
-            100. * AB_scum / all_scum);
+    ss << setw(14) << left << (bname == "" ? name : bname) <<
+      setw(9) << right << count <<
+      setw(11) << userCum <<
+      setw(7) << setprecision(2) << fixed << 
+        userCum / static_cast<double>(count) <<
+      setw(5) << setprecision(1) << fixed << 
+        100. * userCum / divisor.userCum <<
+      setw(11) << setprecision(0) << fixed << 
+        1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+      setw(7) << setprecision(2) << fixed <<
+        1000000 * systCum / static_cast<double>(count * CLOCKS_PER_SEC) <<
+      setw(5) << setprecision(1) << fixed << 
+        100. * systCum / divisor.systCum << "\n";
   }
   else
   {
-    fprintf(fp, "%-14s %8lld %10lld %6s %4s %10.0f %6s %4s\n",
-            TIMER_NAMES[0],
-            static_cast<long long>(AB_ct),
-            static_cast<long long>(AB_ucum),
-            "-",
-            "-",
-            1000. * AB_scum,
-            "-",
-            "-");
+    ss << setw(14) << left << (bname == "" ? name : bname) <<
+      setw(9) << right << count <<
+      setw(11) << userCum <<
+      setw(7) << "-" <<
+      setw(5) << "-" <<
+      setw(11) << 1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+      setw(7) << "-" <<
+      setw(5) << "-" << "\n";
   }
-
-  int64_t ct[TIMER_GROUPS];
-  for (int no = 1; no < TIMER_GROUPS; no++)
-  {
-    int offset = no * TIMER_SPACING;
-
-    int64_t ucum = 0;
-    double scum = 0;
-    ct[no] = 0;
-
-    for (int d = 0; d < TIMER_SPACING; d++)
-    {
-      ct[no] += count[offset + d];
-      ucum += userCum[offset + d];
-      scum += systCum[offset + d];
-    }
-
-    if (ct[no])
-    {
-      fprintf(fp, "%-14s %8lld %10lld %6.2f %4.1f %10.0f %6.2f %4.1f\n",
-              TIMER_NAMES[no],
-              static_cast<long long>(ct[no]),
-              static_cast<long long>(ucum),
-              ucum / static_cast<double>(ct[no]),
-              100. * ucum / all_ucum,
-              1000. * scum,
-              1000. * scum / static_cast<double>(ct[no]),
-              100. * scum / all_scum);
-    }
-    else
-    {
-      fprintf(fp, "%-14s %8lld %10lld %6s %4s %10.0f %6s %4s\n",
-              TIMER_NAMES[no],
-              static_cast<long long>(ct[no]),
-              static_cast<long long>(ucum),
-              "-",
-              "-",
-              1000. * scum,
-              "-",
-              "-");
-    }
-  }
-  fprintf(fp, "----------------------------------");
-  fprintf(fp, "-----------------------------------\n");
-  fprintf(fp, "%-14s %8s %10lld %6s %4s %10.0f\n\n\n",
-          "Sum",
-          "",
-          static_cast<long long>(all_ucum),
-          "",
-          "",
-          1000. * all_scum);
-
-  // This doesn't work properly yet. The issue is that on some
-  // loops there is no success, and in that case we have to try
-  // all moves to see this. But no move ordering could have done
-  // better. So we need to know the proportion for the successes
-  // only. This probably becomes more natural when there is a Move
-  // object. It doesn't really belong in Timer anyway.
-
-  //double genMoves = ct[TIMER_NO_MOVEGEN] + ct[TIMER_NO_NEXTMOVE];
-  //if (genMoves)
-  //fprintf(fp, "Move generation quality %.1f%%\n\n\n",
-  //100. * (1. - ct[TIMER_NO_MAKE] / genMoves));
-
-  if (AB_ucum > 0. && AB_scum > 0.)
-  {
-    fprintf(fp, "%-14s %8s %10s %6s %4s %10s %6s %4s\n",
-            "Name",
-            "Count",
-            "User",
-            "Avg",
-            "%",
-            "Syst",
-            "Avg",
-            "%");
-
-    for (int no = TIMER_SPACING - 1; no >= 0; no--)
-    {
-      if (count[no] == 0)
-        continue;
-
-      fprintf(fp, "%-14s %8d %10lld %6.2f %4.1f %10.0f %6.2f %4.1f\n",
-              name[TIMER_AB + no],
-              count[no],
-              static_cast<long long>(AB_userCum[no]),
-              AB_userCum[no] / static_cast<double>(count[no]),
-              100. * AB_userCum[no] / AB_ucum,
-              1000. * AB_systCum[no],
-              1000. * AB_systCum[no] / static_cast<double>(count[no]),
-              100. * AB_systCum[no] / static_cast<double>(AB_scum));
-
-    }
-    fprintf(fp, "----------------------------------");
-    fprintf(fp, "-----------------------------------\n");
-    fprintf(fp, "%-14s %8lld %10lld %6s %4s %10.0f\n\n\n",
-            "Sum",
-            static_cast<long long>(AB_ct),
-            static_cast<long long>(AB_ucum),
-            "",
-            "",
-            1000. * AB_scum);
-  }
-
-#ifdef DDS_TIMING_DETAILS
-  Timer::OutputDetails();
-#endif
+  return ss.str();
 }
 
 
-int Timer::TimevalDiff(timeval x, timeval y)
+string Timer::DetailLine() const
 {
-  return 1000 * (x.tv_sec - y.tv_sec )
-         + (x.tv_usec - y.tv_usec) / 1000;
+  stringstream ss;
+  ss << setw(15) << left << name <<
+    setw(10) << right << count <<
+    setw(11) << right << userCum <<
+    setw(11) << setprecision(2) << fixed << 
+      userCum / static_cast<double>(count) <<
+    setw(11) << setprecision(0) << fixed <<
+      1000000 * systCum / static_cast<double>(CLOCKS_PER_SEC) <<
+    setw(11) << setprecision(2) << fixed <<
+      1000000 * systCum / 
+        static_cast<double>(count * CLOCKS_PER_SEC) << "\n";
+
+  return ss.str();
 }

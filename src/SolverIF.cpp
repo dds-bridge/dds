@@ -2,78 +2,69 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
-#include <stdexcept>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 
-#include "dds.h"
-#include "Init.h"
-#include "Moves.h"
-#include "threadmem.h"
-#include "ABsearch.h"
-#include "Stats.h"
 #include "SolverIF.h"
+#include "Init.h"
+#include "ABsearch.h"
+#include "TimerList.h"
+#include "System.h"
+#include "Scheduler.h"
+#include "dump.h"
+#include "debug.h"
+
+extern System sysdep;
+extern Memory memory;
+extern Scheduler scheduler;
 
 
 int BoardRangeChecks(
-  deal * dl,
-  int target,
-  int solutions,
-  int mode,
-  int thrId);
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode);
 
 int BoardValueChecks(
-  deal * dl,
-  int target,
-  int solutions,
-  int mode,
-  localVarType * thrp);
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode,
+  ThreadData const * thrp);
 
 void LastTrickWinner(
-  deal * dl,
-  localVarType * thrp,
-  int handToPlay,
-  int handRelFirst,
-  int * leadRank,
-  int * leadSuit,
-  int * leadSideWins);
-
-int DumpInput(
-  int errCode,
-  deal * dl,
-  int target,
-  int solutions,
-  int mode);
-
-void PrintDeal(
-  FILE * fp,
-  unsigned short ranks[][DDS_SUITS]);
-
-
-extern int noOfThreads;
-
+  const deal& dl,
+  ThreadData const * thrp,
+  const int handToPlay,
+  const int handRelFirst,
+  int& leadRank,
+  int& leadSuit,
+  int& leadSideWins);
 
 bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
-  int target,
-  int depth,
-  localVarType * thrp)
+  const int target,
+  const int depth,
+  ThreadData * thrp)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
   pos * posPoint,
-  int target,
-  int depth,
-  localVarType * thrp)
+  const int target,
+  const int depth,
+  ThreadData * thrp)
   = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
 
 void (* Make_ptr_list[3])(
   pos * posPoint,
-  int depth,
-  moveType * mply)
+  const int depth,
+  moveType const * mply)
   = { Make0, Make1, Make2 };
 
 
@@ -85,13 +76,27 @@ int STDCALL SolveBoard(
   futureTricks * futp,
   int thrId)
 {
-  localVarType * thrp = &localVar[thrId];
+  if (! sysdep.ThreadOK(thrId))
+    return RETURN_THREAD_INDEX;
 
+  return SolveBoardInternal(memory.GetPtr(static_cast<unsigned>(thrId)), 
+    dl, target, solutions, mode, futp);
+}
+
+
+int SolveBoardInternal(
+  ThreadData * thrp,
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode,
+  futureTricks * futp)
+{
   // ----------------------------------------------------------
   // Formal parameter checks.
   // ----------------------------------------------------------
 
-  int ret = BoardRangeChecks(&dl, target, solutions, mode, thrId);
+  int ret = BoardRangeChecks(dl, target, solutions, mode);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -169,7 +174,7 @@ int STDCALL SolveBoard(
   // Consistency checks.
   // ----------------------------------------------------------
 
-  ret = BoardValueChecks(&dl, target, solutions, mode, thrp);
+  ret = BoardValueChecks(dl, target, solutions, mode, thrp);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -182,8 +187,8 @@ int STDCALL SolveBoard(
   {
     int leadRank, leadSuit, leadSideWins;
 
-    LastTrickWinner(&dl, thrp, handToPlay, handRelFirst,
-                    &leadRank, &leadSuit, &leadSideWins);
+    LastTrickWinner(dl, thrp, handToPlay, handRelFirst,
+      leadRank, leadSuit, leadSideWins);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -205,14 +210,14 @@ int STDCALL SolveBoard(
        newTrump ||
        (thrp->nodes > SIMILARMAXWINNODES)))
   {
-    int reason = UNKNOWN_REASON;
+    TTresetReason reason = TT_RESET_UNKNOWN;
     if (thrp->nodes > SIMILARMAXWINNODES)
-      reason = TOO_MANY_NODES;
+      reason = TT_RESET_TOO_MANY_NODES;
     else if (newDeal && ! similarDeal)
-      reason = NEW_DEAL;
+      reason = TT_RESET_NEW_DEAL;
     else if (newTrump)
-      reason = NEW_TRUMP;
-    thrp->transTable.ResetMemory(reason);
+      reason = TT_RESET_NEW_TRUMP;
+    thrp->transTable->ResetMemory(reason);
   }
 
   if (newDeal)
@@ -259,21 +264,21 @@ int STDCALL SolveBoard(
     if (k == 0)
       thrp->moves.MoveGen0(
         trick,
-        &thrp->lookAheadPos,
-        &thrp->bestMove[iniDepth],
-        &thrp->bestMoveTT[iniDepth],
+        thrp->lookAheadPos,
+        thrp->bestMove[iniDepth],
+        thrp->bestMoveTT[iniDepth],
         thrp->rel);
     else
       thrp->moves.MoveGen123(
         trick,
         k,
-        &thrp->lookAheadPos);
+        thrp->lookAheadPos);
 
     thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
-    thrp->moves.MakeSpecific(&mv, trick, k);
+    thrp->moves.MakeSpecific(mv, trick, k);
   }
 
-  InitWinners(&dl, &thrp->lookAheadPos, thrp);
+  InitWinners(dl, thrp->lookAheadPos, thrp);
 
 #ifdef DDS_AB_STATS
   thrp->ABStats.Reset();
@@ -296,15 +301,15 @@ int STDCALL SolveBoard(
   if (handRelFirst == 0)
     thrp->moves.MoveGen0(
       trick,
-      &thrp->lookAheadPos,
-      &thrp->bestMove[iniDepth],
-      &thrp->bestMoveTT[iniDepth],
+      thrp->lookAheadPos,
+      thrp->bestMove[iniDepth],
+      thrp->bestMoveTT[iniDepth],
       thrp->rel);
   else
     thrp->moves.MoveGen123(
       trick,
       handRelFirst,
-      &thrp->lookAheadPos);
+      thrp->lookAheadPos);
 
   noMoves = thrp->moves.GetLength(trick, handRelFirst);
 
@@ -314,7 +319,7 @@ int STDCALL SolveBoard(
 
   if (mode == 0 && noMoves == 1)
   {
-    moveType * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+    moveType const * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -345,16 +350,17 @@ int STDCALL SolveBoard(
       {
         ResetBestMoves(thrp);
 
-        TIMER_START(TIMER_AB + iniDepth);
+        TIMER_START(TIMER_NO_AB, iniDepth);
         thrp->val = (* AB_ptr_list[handRelFirst])(
                       &thrp->lookAheadPos,
                       guess,
                       iniDepth,
                       thrp);
-        TIMER_END(TIMER_AB + iniDepth);
+        TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-        DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+        DumpTopLevel(thrp->fileTopLevel.GetStream(), 
+          * thrp, guess, lowerbound, upperbound, 1);
 #endif
 
         if (thrp->val)
@@ -387,10 +393,10 @@ int STDCALL SolveBoard(
         int noLeft = thrp->moves.GetLength(trick, handRelFirst);
 
         thrp->moves.Rewind(trick, handRelFirst);
-        moveType * mp;
         for (int j = 0; j < noLeft; j++)
         {
-          mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+          moveType const * mp = 
+            thrp->moves.MakeNextSimple(trick, handRelFirst);
 
           futp->suit[mno + j] = mp->suit;
           futp->rank[mno + j] = mp->rank;
@@ -415,7 +421,9 @@ int STDCALL SolveBoard(
 
     for (int mno = 0; mno < noMoves; mno++)
     {
-      moveType * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+      moveType const * mp = 
+        thrp->moves.MakeNextSimple(trick, handRelFirst);
+
       futp->suit[mno] = mp->suit;
       futp->rank[mno] = mp->rank;
       futp->equals[mno] = mp->sequence << 2;
@@ -439,15 +447,16 @@ int STDCALL SolveBoard(
     {
       ResetBestMoves(thrp);
 
-      TIMER_START(TIMER_AB + iniDepth);
+      TIMER_START(TIMER_NO_AB, iniDepth);
       thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
                   guess,
                   iniDepth,
                   thrp);
-      TIMER_END(TIMER_AB + iniDepth);
+      TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-      DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+      DumpTopLevel(thrp->fileTopLevel.GetStream(),
+        * thrp, guess, lowerbound, upperbound, 1);
 #endif
 
       if (thrp->val)
@@ -471,11 +480,11 @@ int STDCALL SolveBoard(
       else // solutions == 2, so return all cards
         futp->cards = noMoves;
 
-      moveType * mp;
       thrp->moves.Rewind(trick, handRelFirst);
       for (int i = 0; i < noMoves; i++)
       {
-        mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+        moveType const * mp = 
+          thrp->moves.MakeNextSimple(trick, handRelFirst);
 
         futp->score[i] = 0;
         futp->suit[i] = mp->suit;
@@ -504,16 +513,17 @@ int STDCALL SolveBoard(
 
   else
   {
-    TIMER_START(TIMER_AB + iniDepth);
+    TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   target,
                   iniDepth,
                   thrp);
-    TIMER_END(TIMER_AB + iniDepth);
+    TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, target, -1, -1, 0);
+    DumpTopLevel(thrp->fileTopLevel.GetStream(), 
+      * thrp, target, -1, -1, 0);
 #endif
 
     if (! thrp->val)
@@ -545,7 +555,6 @@ int STDCALL SolveBoard(
   // This applies both to target == -1 and target >= 1.
   // ----------------------------------------------------------
 
-  moveType * mp;
   forb = 1;
   ind = 1;
 
@@ -558,7 +567,8 @@ int STDCALL SolveBoard(
 
     for (int k = 0; k < num; k++)
     {
-      mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+      moveType const * mp = 
+        thrp->moves.MakeNextSimple(trick, handRelFirst);
       thrp->forbiddenMoves[forb] = * mp;
       forb++;
 
@@ -569,16 +579,17 @@ int STDCALL SolveBoard(
 
     ResetBestMoves(thrp);
 
-    TIMER_START(TIMER_AB + iniDepth);
+    TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   futp->score[0],
                   iniDepth,
                   thrp);
-    TIMER_END(TIMER_AB + iniDepth);
+    TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, target, -1, -1, 2);
+    DumpTopLevel(thrp->fileTopLevel.GetStream(),
+      * thrp, target, -1, -1, 2);
 #endif
 
     if (! thrp->val)
@@ -602,30 +613,35 @@ SOLVER_STATS:
   }
 
 #ifdef DDS_TIMING
-  thrp->timer.PrintStats();
+  thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
 #endif
 
 #ifdef DDS_TT_STATS
-  // thrp->transTable.PrintAllSuits();
-  // thrp->transTable.PrintEntries(10, 0);
-  thrp->transTable.PrintSummarySuitStats();
-  thrp->transTable.PrintSummaryEntryStats();
-  // thrp->transTable.PrintPageSummary();
+  // These are for the large TT -- empty if not.
+  // thrp->transTable->PrintAllSuits(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllSuitStats(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
+
+  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+
+  // These are for the small TT -- empty if not.
+  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
 #endif
 
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats();
+  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  thrp->moves.PrintTrickDetails();
+  thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats();
+  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
 SOLVER_DONE:
 
-  thrp->memUsed = thrp->transTable.MemoryInUse() +
-                  ThreadMemoryUsed();
-
+  thrp->memUsed = thrp->transTable->MemoryInUse() + ThreadMemoryUsed();
   futp->nodes = thrp->trickNodes;
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -637,10 +653,10 @@ SOLVER_DONE:
 
 
 int SolveSameBoard(
-  deal dl,
+  ThreadData * thrp,
+  const deal& dl,
   futureTricks * futp,
-  int hint,
-  int thrId)
+  const int hint)
 {
   // Specialized function for SolveChunkDDtable for repeat solves.
   // No further parameter checks! This function makes heavy reuse
@@ -648,8 +664,6 @@ int SolveSameBoard(
   // corresponds to:
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
-
-  localVarType * thrp = &localVar[thrId];
 
   int iniDepth = thrp->iniDepth;
   int trick = (iniDepth + 3) >> 2;
@@ -691,16 +705,17 @@ int SolveSameBoard(
   {
     ResetBestMoves(thrp);
 
-    TIMER_START(TIMER_AB + iniDepth);
+    TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = ABsearch(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
                   thrp);
-    TIMER_END(TIMER_AB + iniDepth);
+    TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+    DumpTopLevel(thrp->fileTopLevel.GetStream(),
+      * thrp, guess, lowerbound, upperbound, 1);
 #endif
 
     if (thrp->val)
@@ -713,24 +728,34 @@ int SolveSameBoard(
   futp->cards = 1;
   futp->score[0] = lowerbound;
 
-  thrp->memUsed = thrp->transTable.MemoryInUse() +
+  thrp->memUsed = thrp->transTable->MemoryInUse() +
                   ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
-  thrp->timer.PrintStats();
+  thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
 #endif
 
 #ifdef DDS_TT_STATS
-  thrp->transTable.PrintSummarySuitStats();
-  thrp->transTable.PrintSummaryEntryStats();
+  // These are for the large TT -- empty if not.
+  // thrp->transTable->PrintAllSuits(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllSuitStats(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
+
+  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+
+  // These are for the small TT -- empty if not.
+  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
 #endif
 
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats();
+  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  thrp->moves.PrintTrickDetails();
+  thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats();
+  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
   futp->nodes = thrp->trickNodes;
@@ -744,12 +769,12 @@ int SolveSameBoard(
 
 
 int AnalyseLaterBoard(
-  int leadHand,
-  moveType * move,
-  int hint,
-  int hintDir,
-  futureTricks * futp,
-  int thrId)
+  ThreadData * thrp,
+  const int leadHand,
+  moveType const * move,
+  const int hint,
+  const int hintDir,
+  futureTricks * futp)
 {
   // Specialized function for PlayAnalyser for cards after the
   // opening lead. No further parameter checks! This function
@@ -757,8 +782,6 @@ int AnalyseLaterBoard(
   // various places. It corresponds to:
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
-
-  localVarType * thrp = &localVar[thrId];
 
   int iniDepth = --thrp->iniDepth;
   int cardCount = iniDepth + 4;
@@ -785,23 +808,23 @@ int AnalyseLaterBoard(
 
   if (handRelFirst == 0)
   {
-    thrp->moves.MakeSpecific(move, trick + 1, 3);
+    thrp->moves.MakeSpecific(* move, trick + 1, 3);
     unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
     Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, thrp);
   }
   else if (handRelFirst == 1)
   {
-    thrp->moves.MakeSpecific(move, trick, 0);
+    thrp->moves.MakeSpecific(* move, trick, 0);
     Make0(&thrp->lookAheadPos, iniDepth + 1, move);
   }
   else if (handRelFirst == 2)
   {
-    thrp->moves.MakeSpecific(move, trick, 1);
+    thrp->moves.MakeSpecific(* move, trick, 1);
     Make1(&thrp->lookAheadPos, iniDepth + 1, move);
   }
   else
   {
-    thrp->moves.MakeSpecific(move, trick, 2);
+    thrp->moves.MakeSpecific(* move, trick, 2);
     Make2(&thrp->lookAheadPos, iniDepth + 1, move);
   }
 
@@ -843,16 +866,17 @@ int AnalyseLaterBoard(
   {
     ResetBestMoves(thrp);
 
-    TIMER_START(TIMER_AB + iniDepth);
+    TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_trace_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
                   thrp);
-    TIMER_END(TIMER_AB + iniDepth);
+    TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
-    DumpTopLevel(thrp, guess, lowerbound, upperbound, 1);
+    DumpTopLevel(thrp->fileTopLevel.GetStream(),
+      * thrp, guess, lowerbound, upperbound, 1);
 #endif
 
     if (thrp->val)
@@ -866,24 +890,34 @@ int AnalyseLaterBoard(
   futp->score[0] = lowerbound;
   futp->nodes = thrp->trickNodes;
 
-  thrp->memUsed = thrp->transTable.MemoryInUse() +
+  thrp->memUsed = thrp->transTable->MemoryInUse() +
                   ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
-  thrp->timer.PrintStats();
+  thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
 #endif
 
 #ifdef DDS_TT_STATS
-  thrp->transTable.PrintSummarySuitStats();
-  thrp->transTable.PrintSummaryEntryStats();
+  // These are for the large TT -- empty if not.
+  // thrp->transTable->PrintAllSuits(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllSuitStats(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
+  // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
+
+  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+
+  // These are for the small TT -- empty if not.
+  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
+  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
 #endif
 
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats();
+  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  thrp->moves.PrintTrickDetails();
+  thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats();
+  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -895,11 +929,10 @@ int AnalyseLaterBoard(
 
 
 int BoardRangeChecks(
-  deal * dl,
-  int target,
-  int solutions,
-  int mode,
-  int thrId)
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode)
 {
   if (target < -1)
   {
@@ -937,20 +970,13 @@ int BoardRangeChecks(
     return RETURN_MODE_WRONG_HI;
   }
 
-  if (thrId < 0 || thrId >= noOfThreads)
-    /* Fault corrected after suggestion by Dirk Willecke. */
-  {
-    DumpInput(RETURN_THREAD_INDEX, dl, target, solutions, mode);
-    return RETURN_THREAD_INDEX;
-  }
-
-  if (dl->trump < 0 || dl->trump > 4)
+  if (dl.trump < 0 || dl.trump > 4)
   {
     DumpInput(RETURN_TRUMP_WRONG, dl, target, solutions, mode);
     return RETURN_TRUMP_WRONG;
   }
 
-  if (dl->first < 0 || dl->first > 3)
+  if (dl.first < 0 || dl.first > 3)
   {
     DumpInput(RETURN_FIRST_WRONG, dl, target, solutions, mode);
     return RETURN_FIRST_WRONG;
@@ -959,7 +985,7 @@ int BoardRangeChecks(
   int rankSeen[3] = {0, 0, 0};
   for (int k = 0; k < 3; k++)
   {
-    int r = dl->currentTrickRank[k];
+    int r = dl.currentTrickRank[k];
     if (r == 0)
       continue;
 
@@ -971,7 +997,7 @@ int BoardRangeChecks(
       return RETURN_SUIT_OR_RANK;
     }
 
-    if (dl->currentTrickSuit[k] < 0 || dl->currentTrickSuit[k] > 3)
+    if (dl.currentTrickSuit[k] < 0 || dl.currentTrickSuit[k] > 3)
     {
       DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
       return RETURN_SUIT_OR_RANK;
@@ -989,7 +1015,7 @@ int BoardRangeChecks(
   {
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      unsigned c = dl->remainCards[h][s];
+      unsigned c = dl.remainCards[h][s];
       if (c != 0 && (c < 0x0004 || c >= 0x8000))
       {
         DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
@@ -1003,11 +1029,11 @@ int BoardRangeChecks(
 
 
 int BoardValueChecks(
-  deal * dl,
-  int target,
-  int solutions,
-  int mode,
-  localVarType * thrp)
+  const deal& dl,
+  const int target,
+  const int solutions,
+  const int mode,
+  ThreadData const * thrp)
 {
   int cardCount = thrp->iniDepth + 4;
   if (cardCount <= 0)
@@ -1038,7 +1064,7 @@ int BoardValueChecks(
 
   int noOfCardsPerHand[DDS_HANDS] = {0, 0, 0, 0};
   for (int k = 0; k < handRelFirst; k++)
-    noOfCardsPerHand[handId(dl->first, k)] = 1;
+    noOfCardsPerHand[handId(dl.first, k)] = 1;
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -1057,9 +1083,9 @@ int BoardValueChecks(
   {
     unsigned short int aggrRemain = 0;
     for (int h = 0; h < DDS_HANDS; h++)
-      aggrRemain |= (dl->remainCards[h][dl->currentTrickSuit[k]] >> 2);
+      aggrRemain |= (dl.remainCards[h][dl.currentTrickSuit[k]] >> 2);
 
-    if ((aggrRemain & bitMapRank[dl->currentTrickRank[k]]) != 0)
+    if ((aggrRemain & bitMapRank[dl.currentTrickRank[k]]) != 0)
     {
       DumpInput(RETURN_PLAYED_CARD, dl, target, solutions, mode);
       return RETURN_PLAYED_CARD;
@@ -1093,13 +1119,13 @@ int BoardValueChecks(
 
 
 void LastTrickWinner(
-  deal * dl,
-  localVarType * thrp,
-  int handToPlay,
-  int handRelFirst,
-  int * leadRank,
-  int * leadSuit,
-  int * leadSideWins)
+  const deal& dl,
+  ThreadData const * thrp,
+  const int handToPlay,
+  const int handRelFirst,
+  int& leadRank,
+  int& leadSuit,
+  int& leadSideWins)
 {
   int lastTrickSuit[DDS_HANDS],
       lastTrickRank[DDS_HANDS],
@@ -1108,14 +1134,14 @@ void LastTrickWinner(
 
   for (h = 0; h < handRelFirst; h++)
   {
-    hp = handId(dl->first, h);
-    lastTrickSuit[hp] = dl->currentTrickSuit[h];
-    lastTrickRank[hp] = dl->currentTrickRank[h];
+    hp = handId(dl.first, h);
+    lastTrickSuit[hp] = dl.currentTrickSuit[h];
+    lastTrickRank[hp] = dl.currentTrickRank[h];
   }
 
   for (h = handRelFirst; h < DDS_HANDS; h++)
   {
-    hp = handId(dl->first, h);
+    hp = handId(dl.first, h);
     for (int s = 0; s < DDS_SUITS; s++)
     {
       if (thrp->suit[hp][s] != 0)
@@ -1132,15 +1158,15 @@ void LastTrickWinner(
       maxHand = -1;
 
   /* Highest trump? */
-  if (dl->trump != DDS_NOTRUMP)
+  if (dl.trump != DDS_NOTRUMP)
   {
     for (h = 0; h < DDS_HANDS; h++)
     {
-      if ((lastTrickSuit[h] == dl->trump) &&
+      if ((lastTrickSuit[h] == dl.trump) &&
           (lastTrickRank[h] > maxRank))
       {
         maxRank = lastTrickRank[h];
-        maxSuit = dl->trump;
+        maxSuit = dl.trump;
         maxHand = h;
       }
     }
@@ -1149,9 +1175,9 @@ void LastTrickWinner(
   /* Highest card in leading suit */
   if (maxRank == 0)
   {
-    maxRank = lastTrickRank[dl->first];
-    maxSuit = lastTrickSuit[dl->first];
-    maxHand = dl->first;
+    maxRank = lastTrickRank[dl.first];
+    maxSuit = lastTrickSuit[dl.first];
+    maxHand = dl.first;
 
     for (h = 0; h < DDS_HANDS; h++)
     {
@@ -1164,128 +1190,10 @@ void LastTrickWinner(
     }
   }
 
-  hp = handId(dl->first, handRelFirst);
-  * leadRank = lastTrickRank[hp];
-  * leadSuit = lastTrickSuit[hp];
-  * leadSideWins = ((handToPlay == maxHand ||
-                     partner[handToPlay] == maxHand) ? 1 : 0);
-}
-
-
-
-int DumpInput(
-  int errCode, 
-  deal * dl, 
-  int target,
-  int solutions, 
-  int mode)
-{
-
-  FILE * fp;
-  int i, j, k;
-  unsigned short ranks[4][4];
-
-  fp = fopen("dump.txt", "w");
-  if (fp == nullptr)
-    return RETURN_UNKNOWN_FAULT;
-  fprintf(fp, "Error code=%d\n", errCode);
-  fprintf(fp, "\n");
-  fprintf(fp, "Deal data:\n");
-  if (dl->trump != 4)
-    fprintf(fp, "trump=%c\n", cardSuit[dl->trump]);
-  else
-    fprintf(fp, "trump=N\n");
-  fprintf(fp, "first=%c\n", cardHand[dl->first]);
-  for (k = 0; k <= 2; k++)
-    if (dl->currentTrickRank[k] != 0)
-      fprintf(fp, "index=%d currentTrickSuit=%c currentTrickRank=%c\n",
-              k, cardSuit[dl->currentTrickSuit[k]],
-              cardRank[dl->currentTrickRank[k]]);
-  for (i = 0; i <= 3; i++)
-    for (j = 0; j <= 3; j++)
-    {
-      fprintf(fp, "index1=%d index2=%d remainCards=%d\n",
-              i, j, dl->remainCards[i][j]);
-      ranks[i][j] = static_cast<unsigned short>
-                    (dl->remainCards[i][/*3-*/j] >> 2);
-    }
-  fprintf(fp, "\n");
-  fprintf(fp, "target=%d\n", target);
-  fprintf(fp, "solutions=%d\n", solutions);
-  fprintf(fp, "mode=%d\n", mode);
-  fprintf(fp, "\n");
-  PrintDeal(fp, ranks);
-  fclose(fp);
-  return 0;
-}
-
-
-void PrintDeal(FILE * fp, unsigned short ranks[][4])
-{
-  int i, count, trickCount = 0, s, r;
-  bool ec[4];
-  for (i = 0; i <= 3; i++)
-  {
-    count = counttable[ranks[3][i]];
-    if (count > 5)
-      ec[i] = true;
-    else
-      ec[i] = false;
-    trickCount = trickCount + count;
-  }
-  fprintf(fp, "\n");
-  for (s = 0; s < DDS_SUITS; s++)
-  {
-    fprintf(fp, "\t%c ", cardSuit[s]);
-    if (!ranks[0][s])
-      fprintf(fp, "--");
-    else
-    {
-      for (r = 14; r >= 2; r--)
-        if ((ranks[0][s] & bitMapRank[r]) != 0)
-          fprintf(fp, "%c", cardRank[r]);
-    }
-    fprintf(fp, "\n");
-  }
-  for (s = 0; s < DDS_SUITS; s++)
-  {
-    fprintf(fp, "%c ", cardSuit[s]);
-    if (!ranks[3][s])
-      fprintf(fp, "--");
-    else
-    {
-      for (r = 14; r >= 2; r--)
-        if ((ranks[3][s] & bitMapRank[r]) != 0)
-          fprintf(fp, "%c", cardRank[r]);
-    }
-    if (ec[s])
-      fprintf(fp, "\t%c ", cardSuit[s]);
-    else
-      fprintf(fp, "\t\t%c ", cardSuit[s]);
-    if (!ranks[1][s])
-      fprintf(fp, "--");
-    else
-    {
-      for (r = 14; r >= 2; r--)
-        if ((ranks[1][s] & bitMapRank[r]) != 0)
-          fprintf(fp, "%c", cardRank[r]);
-    }
-    fprintf(fp, "\n");
-  }
-  for (s = 0; s < DDS_SUITS; s++)
-  {
-    fprintf(fp, "\t%c ", cardSuit[s]);
-    if (!ranks[2][s])
-      fprintf(fp, "--");
-    else
-    {
-      for (r = 14; r >= 2; r--)
-        if ((ranks[2][s] & bitMapRank[r]) != 0)
-          fprintf(fp, "%c", cardRank[r]);
-    }
-    fprintf(fp, "\n");
-  }
-  fprintf(fp, "\n");
-  return;
+  hp = handId(dl.first, handRelFirst);
+  leadRank = lastTrickRank[hp];
+  leadSuit = lastTrickSuit[hp];
+  leadSideWins = ((handToPlay == maxHand ||
+    partner[handToPlay] == maxHand) ? 1 : 0);
 }
 

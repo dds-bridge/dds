@@ -1,0 +1,27 @@
+DDS_SOURCE_FILES    =           \
+        ../src/dds.cpp          \
+        ../src/dump.cpp         \
+        ../src/ABsearch.cpp     \
+        ../src/ABstats.cpp      \
+        ../src/CalcTables.cpp   \
+        ../src/DealerPar.cpp    \
+        ../src/File.cpp         \
+        ../src/Init.cpp         \
+        ../src/LaterTricks.cpp  \
+        ../src/Memory.cpp       \
+        ../src/Moves.cpp        \
+        ../src/Par.cpp          \
+        ../src/PlayAnalyser.cpp \
+        ../src/PBN.cpp          \
+        ../src/QuickTricks.cpp  \
+        ../src/Scheduler.cpp    \
+        ../src/SolveBoard.cpp   \
+        ../src/SolverIF.cpp     \
+        ../src/System.cpp       \
+        ../src/Timer.cpp        \
+        ../src/TimerGroup.cpp   \
+        ../src/TimerList.cpp    \
+        ../src/TimeStat.cpp     \
+        ../src/TimeStatList.cpp \
+        ../src/TransTableS.cpp  \
+        ../src/TransTableL.cpp

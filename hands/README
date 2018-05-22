@@ -26,6 +26,7 @@ list1000.txt
 list300.txt
 list100.txt
 list10.txt
+list2.txt
 list1.txt
 -------------
 These are just excerpts from the larger masterDD.txt file.
@@ -42,3 +43,8 @@ thomas2.txt
 These are artificially constructed hands that take a very long
 time to solve.
 
+sol100000.txt
+sol10.txt
+-------------
+These are hands with CalcTable solutions.  I think they came from
+an original DDS test program.

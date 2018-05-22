@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -10,27 +10,26 @@
 #ifndef DDS_SCHEDULER_H
 #define DDS_SCHEDULER_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <atomic>
+
 #include "dds.h"
-#include "../include/dll.h"
+#include "TimeStatList.h"
+#include "Timer.h"
 
-#ifndef _WIN32
-  #include <sys/time.h>
-#endif
-
-#define SCHEDULER_NOSORT 0
-#define SCHEDULER_SOLVE 1
-#define SCHEDULER_CALC 2
-#define SCHEDULER_TRACE 3
+using namespace std;
 
 #define HASH_MAX 200
 
-
-#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
-  #include <dispatch/dispatch.h>
+#ifdef DDS_SCHEDULER
+  #define START_BLOCK_TIMER scheduler.StartBlockTimer()
+  #define END_BLOCK_TIMER scheduler.EndBlockTimer()
+  #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
+  #define END_THREAD_TIMER(a) scheduler.EndThreadTimer(a)
+#else
+  #define START_BLOCK_TIMER 1
+  #define END_BLOCK_TIMER 1
+  #define START_THREAD_TIMER(a) 1
+  #define END_THREAD_TIMER(a) 1
 #endif
 
 
@@ -44,12 +43,6 @@ struct schedType
 class Scheduler
 {
   private:
-
-#if defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
-    omp_lock_t lock;
-#elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)) && !defined(_OPENMP) && !defined(DDDS_THREADS_SINGLE)
-    dispatch_semaphore_t lock;
-#endif
 
     struct listType
     {
@@ -96,105 +89,73 @@ class Scheduler
     groupType group[MAXNOOFBOARDS];
     int numGroups;
     int extraGroups;
-#ifdef _WIN32
-    LONG volatile currGroup;
-#else
-    int volatile currGroup;
-#endif
+
+    atomic<int> currGroup;
 
     listType list[DDS_SUITS + 2][HASH_MAX];
 
     sortType sortList[MAXNOOFBOARDS];
     int sortLen;
 
-    int threadGroup[MAXNOOFTHREADS];
-    int threadCurrGroup[MAXNOOFTHREADS];
+    vector<int> threadGroup;
+    vector<int> threadCurrGroup;
+    vector<int> threadToHand;
 
-    int threadToHand[MAXNOOFTHREADS];
-
+    int numThreads;
     int numHands;
 
-    int highCards[8192];
+    vector<int> highCards;
 
-    int Strength(
-      deal * dl);
+    void InitHighCards();
 
-    int Fanout(
-      deal * dl);
+    void SortHands(const enum RunMode mode);
+
+    int Strength(const deal& dl) const;
+    int Fanout(const deal& dl) const;
 
     void Reset();
 
-#ifdef _WIN32
-    LARGE_INTEGER timeStart[MAXNOOFTHREADS];
-    LARGE_INTEGER timeEnd[MAXNOOFTHREADS];
-    LARGE_INTEGER blockStart;
-    LARGE_INTEGER blockEnd;
-#else
-    int timeDiff(
-      timeval x,
-      timeval y);
+    vector<Timer> timersThread;
+    Timer timerBlock;
 
-    timeval startTime[MAXNOOFTHREADS];
-    timeval endTime[MAXNOOFTHREADS];
-    timeval blockStart;
-    timeval blockEnd;
-#endif
-
-    void MakeGroups(
-      boards * bop);
+    void MakeGroups(const boards& bds);
 
     void FinetuneGroups();
 
     bool SameHand(
-      int hno1,
-      int hno2);
+      const int hno1,
+      const int hno2) const;
 
     void SortSolve(),
          SortCalc(),
          SortTrace();
 
 #ifdef DDS_SCHEDULER
-    FILE * fp;
-
-    char fname[80];
 
     int timeHist[10000];
     int timeHistNT[10000];
     int timeHistSuit[10000];
 
-    struct timeType
-    {
-      long long cum;
-      double cumsq;
-      int number;
-    };
-
-    timeType timeStrain[2];
-    timeType timeRepeat[16];
-    timeType timeDepth[60];
-    timeType timeStrength[60];
-    timeType timeFanout[100];
-    timeType timeThread[MAXNOOFTHREADS];
+    TimeStatList timeStrain;
+    TimeStatList timeRepeat;
+    TimeStatList timeDepth;
+    TimeStatList timeStrength;
+    TimeStatList timeFanout;
+    TimeStatList timeThread;
+    TimeStatList timeGroupActualStrain;
+    TimeStatList timeGroupPredStrain;
+    TimeStatList timeGroupDiffStrain;
 
     long long timeMax;
     long long blockMax;
     long long timeBlock;
 
-    timeType timeGroupActualStrain[2];
-    timeType timeGroupPredStrain[2];
-    timeType timeGroupDiffStrain[2];
-
     void InitTimes();
-
-    void PrintTimingList(
-      timeType * tp,
-      int length,
-      const char title[]);
 #endif
 
     int PredictedTime(
-      deal * dl,
-      int number);
+      deal& dl,
+      int number) const;
 
 
   public:
@@ -203,31 +164,32 @@ class Scheduler
 
     ~Scheduler();
 
-    void SetFile(char * fname);
+    void RegisterThreads(
+      const int n);
 
-    void RegisterTraceDepth(
-      playTracesBin * plp,
-      int number);
+    void RegisterRun(
+      const enum RunMode mode,
+      const boards& bds,
+      const playTracesBin& pl);
 
-    void Register(
-      boards * bop,
-      int sortMode);
+    void RegisterRun(
+      const enum RunMode mode,
+      const boards& bds);
 
-    schedType GetNumber(
-      int thrId);
+    schedType GetNumber(const int thrId);
+
+    int NumGroups() const;
 
 #ifdef DDS_SCHEDULER
-    void StartThreadTimer(
-      int thrId);
+    void StartThreadTimer(const int thrId);
 
-    void EndThreadTimer(
-      int thrId);
+    void EndThreadTimer(const int thrId);
 
     void StartBlockTimer();
 
     void EndBlockTimer();
 
-    void PrintTiming();
+    void PrintTiming() const;
 #endif
 
 };

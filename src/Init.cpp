@@ -2,30 +2,34 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
-#include "dds.h"
-#include "threadmem.h"
+#include <algorithm>
+#include <string.h>
+
 #include "Init.h"
-#include "Stats.h"
-#include "ABsearch.h"
+#include "System.h"
 #include "Scheduler.h"
+#include "ThreadMgr.h"
+#include "debug.h"
+
+
+System sysdep;
+Memory memory;
+Scheduler scheduler;
+ThreadMgr threadMgr;
+
 
 void InitConstants();
 
 void InitDebugFiles();
 
-double ConstantMemoryUsed();
-
 void FreeThreadMem();
 
-localVarType localVar[MAXNOOFTHREADS];
-Scheduler scheduler;
-int noOfThreads;
 
 int lho[DDS_HANDS] = { 1, 2, 3, 0 };
 int rho[DDS_HANDS] = { 3, 0, 1, 2 };
@@ -74,148 +78,112 @@ moveGroupType groupData[8192];
 
 int _initialized = 0;
 
+
 void STDCALL SetMaxThreads(
   int userThreads)
 {
-  if (! _initialized)
-    noOfThreads = 0;
+  SetResources(0, userThreads);
+}
 
-  InitTimer();
-  InitTimerList();
 
-  // First figure out how much memory we have available
-  // and how many cores the system has.
-  int oldNoOfThreads = noOfThreads;
-  unsigned long long kilobytesFree = 0;
-  int ncores = 1;
+void STDCALL SetResources(
+  int maxMemoryMB,
+  int maxThreadsIn)
+{
+  // Figure out system resources.
+  int ncores;
+  unsigned long long kilobytesFree;
+  sysdep.GetHardware(ncores, kilobytesFree);
 
-#ifdef DDS_THREADS_SINGLE
-  noOfThreads = 1;
-#else
-#if defined(_WIN32) || defined(__CYGWIN__)
-  /* Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
-     was suggested by Lorne Anderson. */
-  MEMORYSTATUSEX statex;
-  statex.dwLength = sizeof(statex);
-  GlobalMemoryStatusEx(&statex);
-  kilobytesFree = static_cast<unsigned long long>(
-                    statex.ullTotalPhys / 1024);
+  // Memory usage will be limited to the lower of:
+  // - maxMemoryMB + 30% (if given; statistically this works out)
+  // - 70% of free memory
+  // - 1800 MB if we're on a 32-bit system.
 
-  SYSTEM_INFO sysinfo;
-  GetSystemInfo(&sysinfo);
-  ncores = static_cast<int>(sysinfo.dwNumberOfProcessors);
-#endif
+  const int memMaxGivenMB = (maxMemoryMB == 0 ? 1000000 : 
+    static_cast<int>(1.3 * maxMemoryMB));
+  const int memMaxFreeMB = static_cast<int>(0.70 * kilobytesFree / 1024);
+  const int memMax32bMB = (sizeof(void *) == 4 ? 1800 : 1000000);
 
-#ifdef __APPLE__
-  // The code for Mac OS X was suggested by Matthew Kidd.
+  int memMaxMB = min(memMaxGivenMB, memMaxFreeMB);
+  memMaxMB = min(memMaxMB, memMax32bMB);
 
-  // This is physical memory, rather than "free" memory as below for Linux.
-  // Always leave 0.5 GB for the OS and other stuff. It would be better to
-  // find free memory (how?) but in practice the number of cores rather than
-  // free memory is almost certainly the limit for Macs which have 
-  // standardized hardware (whereas say a 32 core Linux server is hardly 
-  // unusual).
-  FILE * fifo = popen("sysctl -n hw.memsize", "r");
-  fscanf(fifo, "%lld", &kilobytesFree);
-  fclose(fifo);
+  // The number of threads will be limited by:
+  // - If threading set as single-threaded or compiled only 
+  //   single-threaded: 1
+  // - If threading set as one of the IMPL variants: ncores
+  //   whatever the user says (as we currently don't have control)
+  // - Otherwise the lower of maxThreads and ncores
 
-  kilobytesFree /= 1024;
-  if (kilobytesFree > 500000)
-  {
-    kilobytesFree -= 500000;
-  }
-
-  ncores = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
-
-#ifdef __linux__
-  /* The code for linux was suggested by Antony Lee. */
-  FILE * fifo = popen(
-                "free -k | tail -n+3 | head -n1 | awk '{print $NF}'", "r");
-  int ignore = fscanf(fifo, "%llu", &kilobytesFree);
-  fclose(fifo);
-
-  ncores = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
-#endif
-
-  // 70%, capped at 2 GB.
-  int kilobytesUsable = static_cast<int>(0.70 * kilobytesFree);
-  if (kilobytesUsable > 2000000)
-    kilobytesUsable = 2000000;
-
-  if (userThreads)
-    noOfThreads = Min(ncores, userThreads);
+  int thrMax;
+  if (sysdep.IsSingleThreaded())
+    thrMax = 1;
+  else if (sysdep.IsIMPL() || maxThreadsIn <= 0)
+    thrMax = ncores;
   else
-    noOfThreads = ncores;
+    thrMax = min(maxThreadsIn, ncores);
 
-  int deltaThreads = noOfThreads - oldNoOfThreads;
+  // For simplicity we won't vary the amount of memory per thread
+  // in the small and large versions.
 
-  int mem_def, mem_max;
-
-  if (deltaThreads <= 0)
+  int noOfThreads, noOfLargeThreads, noOfSmallThreads;
+  if (thrMax * THREADMEM_LARGE_MAX_MB <= memMaxMB)
   {
-    // We already have the memory.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_MAX_MB;
+    // We have enough memory for the maximum number of large threads.
+    noOfThreads = thrMax;
+    noOfLargeThreads = thrMax;
+    noOfSmallThreads = 0;
   }
-  else if (kilobytesUsable == 0 || noOfThreads == 1)
+  else if (thrMax * THREADMEM_SMALL_MAX_MB > memMaxMB)
   {
-    // Take our chances with default values.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_MAX_MB;
-  }
-  else if (kilobytesUsable >= 1024 * THREADMEM_MAX_MB * deltaThreads)
-  {
-    // Comfortable.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_MAX_MB;
-  }
-  else if (kilobytesUsable >= 1024 * THREADMEM_DEF_MB * deltaThreads)
-  {
-    // Slightly less comfortable, cap the maximum,
-    // but make the maximum number of threads.
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_DEF_MB;
+    // We don't even have enough memory for only small threads.
+    // We'll limit the number of threads.
+    noOfThreads = static_cast<int>(memMaxMB / 
+      static_cast<double>(THREADMEM_SMALL_MAX_MB));
+    noOfLargeThreads = 0;
+    noOfSmallThreads = noOfThreads;
   }
   else
   {
-    // Limit the number of threads to the available memory.
-    int fittingThreads = static_cast<int>( kilobytesUsable /
-                       ( static_cast<double>(1024. * THREADMEM_DEF_MB) ) );
+    // We'll have a mixture with as many large threads as possible.
+    const double d = static_cast<double>(
+          THREADMEM_LARGE_MAX_MB - THREADMEM_SMALL_MAX_MB);
 
-    noOfThreads = Max(fittingThreads, 1);
-    mem_def = THREADMEM_DEF_MB;
-    mem_max = THREADMEM_DEF_MB;
-  }
-
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    localVar[k].transTable.SetMemoryDefault(mem_def);
-    localVar[k].transTable.SetMemoryMaximum(mem_max);
+    noOfThreads = thrMax;
+    noOfLargeThreads = static_cast<int>(
+      (memMaxMB - thrMax * THREADMEM_SMALL_MAX_MB) / d);
+    noOfSmallThreads = thrMax - noOfLargeThreads;
   }
 
-  if (noOfThreads == oldNoOfThreads)
-  {
-    // Must already have TT allocated.
-  }
-  else if (noOfThreads > oldNoOfThreads)
-  {
-    for (int k = oldNoOfThreads; k < noOfThreads; k++)
-      localVar[k].transTable.MakeTT();
-  }
-  else
-  {
-    for (int k = noOfThreads; k < oldNoOfThreads; k++)
-      localVar[k].transTable.ReturnAllMemory();
-  }
+  sysdep.RegisterParams(noOfThreads, memMaxMB);
+
+  scheduler.RegisterThreads(noOfThreads);
+
+  // Clear the thread memory and fill it up again.
+  memory.Resize(0, DDS_TT_SMALL, 0, 0);
+  if (noOfLargeThreads > 0)
+    memory.Resize(static_cast<unsigned>(noOfLargeThreads),
+      DDS_TT_LARGE, THREADMEM_LARGE_DEF_MB, THREADMEM_LARGE_MAX_MB);
+  if (noOfSmallThreads > 0)
+    memory.Resize(static_cast<unsigned>(noOfThreads),
+      DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
+
+  threadMgr.Reset(noOfThreads);
+
+  InitDebugFiles();
 
   if (! _initialized)
   {
     _initialized = 1;
     InitConstants();
-    InitDebugFiles();
   }
+}
+
+
+int STDCALL SetThreading(
+  int code)
+{
+  return sysdep.PreferThreading(static_cast<unsigned>(code));
 }
 
 
@@ -246,8 +214,8 @@ void InitConstants()
     }
   }
 
-  /* The use of the counttable to give the number of bits set to
-  one in an integer follows an implementation by Thomas Andrews. */
+  // The use of the counttable to give the number of bits set to
+  // one in an integer follows an implementation by Thomas Andrews.
 
   // counttable[aggr] is the number of '1' bits (binary weight)
   // in aggr.
@@ -384,30 +352,35 @@ void InitConstants()
 
 void InitDebugFiles()
 {
-  for (int k = 0; k < noOfThreads; k++)
+  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
   {
+    ThreadData * thrp = memory.GetPtr(thrId);
+    UNUSED(thrp); // To avoid compile errors
+    const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
+
 #ifdef DDS_TOP_LEVEL
-    InitFileTopLevel(k);
+    thrp->fileTopLevel.SetName(DDS_TOP_LEVEL_PREFIX + send);
 #endif
 
 #ifdef DDS_AB_STATS
-    InitFileABstats(k);
+    thrp->fileABstats.SetName(DDS_AB_STATS_PREFIX + send);
 #endif
 
 #ifdef DDS_AB_HITS
-    InitFileABhits(k);
+    thrp->fileRetrieved.SetName(DDS_AB_HITS_RETRIEVED_PREFIX + send);
+    thrp->fileStored.SetName(DDS_AB_HITS_STORED_PREFIX + send);
 #endif
 
 #ifdef DDS_TT_STATS
-    InitFileTTstats(k);
+    thrp->fileTTstats.SetName(DDS_TT_STATS_PREFIX + send);
 #endif
 
 #ifdef DDS_TIMING
-    InitFileTimer(k);
+    thrp->fileTimerList.SetName(DDS_TIMING_PREFIX + send);
 #endif
 
 #ifdef DDS_MOVES
-    InitFileMoves(k);
+    thrp->fileMoves.SetName(DDS_MOVES_PREFIX + send);
 #endif
   }
 
@@ -419,21 +392,41 @@ void InitDebugFiles()
 
 void CloseDebugFiles()
 {
-  for (int k = 0; k < noOfThreads; k++)
+  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
   {
+    ThreadData * thrp = memory.GetPtr(thrId);
+    UNUSED(thrp); // To avoid compiler warning
+
 #ifdef DDS_TOP_LEVEL
-    CloseFileTopLevel(k);
+    thrp->fileTopLevel.Close();
+#endif
+
+#ifdef DDS_AB_STATS
+    thrp->fileABstats.Close();
 #endif
 
 #ifdef DDS_AB_HITS
-    CloseFileABhits(k);
+    thrp->fileRetrieved.Close();
+    thrp->fileStored.Close();
+#endif
+
+#ifdef DDS_TT_STATS
+    thrp->fileTTstats.Close();
+#endif
+
+#ifdef DDS_TIMING
+    thrp->fileTimerList.Close();
+#endif
+
+#ifdef DDS_MOVES
+    thrp->fileMoves.Close();
 #endif
   }
 }
 
 
 void SetDeal(
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   /* Initialization of the rel structure is inspired by
      a solution given by Thomas Andrews */
@@ -468,13 +461,13 @@ void SetDeal(
 
 
 void SetDealTables(
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   unsigned int topBitRank = 1;
   unsigned int topBitNo = 2;
 
-  /* Initialization of the rel structure is inspired by
-     a solution given by Thomas Andrews */
+  // Initialization of the rel structure is inspired by
+  // a solution given by Thomas Andrews.
 
   // rel[aggr].absRank[absolute rank][suit].hand is the hand
   // (N = 0, E = 1 etc.) which holds the absolute rank in
@@ -511,7 +504,7 @@ void SetDealTables(
     }
   }
 
-  thrp->transTable.Init(handLookup);
+  thrp->transTable->Init(handLookup);
 
   relRanksType * relp;
   for (unsigned int aggr = 1; aggr < 8192; aggr++)
@@ -546,9 +539,9 @@ void SetDealTables(
 
 
 void InitWinners(
-  deal * dl,
-  pos * posPoint,
-  localVarType * thrp)
+  const deal& dl,
+  pos& posPoint,
+  ThreadData const * thrp)
 {
   int hand, suit, rank;
   unsigned short int startMovesBitMap[DDS_HANDS][DDS_SUITS];
@@ -557,11 +550,11 @@ void InitWinners(
     for (int s = 0; s < DDS_SUITS; s++)
       startMovesBitMap[h][s] = 0;
 
-  for (int k = 0; k < posPoint->handRelFirst; k++)
+  for (int k = 0; k < posPoint.handRelFirst; k++)
   {
-    hand = handId(dl->first, k);
-    suit = dl->currentTrickSuit[k];
-    rank = dl->currentTrickRank[k];
+    hand = handId(dl.first, k);
+    suit = dl.currentTrickSuit[k];
+    rank = dl.currentTrickRank[k];
     startMovesBitMap[hand][suit] |= bitMapRank[rank];
   }
 
@@ -572,16 +565,16 @@ void InitWinners(
     for (int h = 0; h < DDS_HANDS; h++)
       aggr |= startMovesBitMap[h][s] | thrp->suit[h][s];
 
-    posPoint->winner[s].rank = thrp->rel[aggr].absRank[1][s].rank;
-    posPoint->winner[s].hand = thrp->rel[aggr].absRank[1][s].hand;
-    posPoint->secondBest[s].rank = thrp->rel[aggr].absRank[2][s].rank;
-    posPoint->secondBest[s].hand = thrp->rel[aggr].absRank[2][s].hand;
+    posPoint.winner[s].rank = thrp->rel[aggr].absRank[1][s].rank;
+    posPoint.winner[s].hand = thrp->rel[aggr].absRank[1][s].hand;
+    posPoint.secondBest[s].rank = thrp->rel[aggr].absRank[2][s].rank;
+    posPoint.secondBest[s].hand = thrp->rel[aggr].absRank[2][s].hand;
   }
 }
 
 
 void ResetBestMoves(
-  localVarType * thrp)
+  ThreadData * thrp)
 {
   for (int d = 0; d <= 49; d++)
   {
@@ -589,7 +582,7 @@ void ResetBestMoves(
     thrp->bestMoveTT[d].rank = 0;
   }
 
-  thrp->memUsed = thrp->transTable.MemoryInUse() +
+  thrp->memUsed = thrp->transTable->MemoryInUse() +
                   ThreadMemoryUsed();
 
 #ifdef DDS_AB_STATS
@@ -600,129 +593,27 @@ void ResetBestMoves(
 
 void STDCALL GetDDSInfo(DDSInfo * info)
 {
-  char t[80];
-
-  info->major = DDS_VERSION / 10000;
-  info->minor = (DDS_VERSION - info->major * 10000) / 100;
-  info->patch = DDS_VERSION % 100;
-
-  sprintf(info->versionString, "%d.%d.%d",
-    info->major, info->minor, info->patch);
-
-  info->system = 0;
-  info->compiler = 0;
-  info->constructor = 0;
-  info->threading = 0;
-  info->noOfThreads = noOfThreads;
-
-  sprintf(info->systemString, "DDS DLL\n-------\n");
-
-#if defined(_WIN32)
-  info->system = 1;
-  sprintf(t, "%-12s %20s\n", "System", "Windows");
-  strcat(info->systemString, t);
-#elif defined(__CYGWIN__)
-  info->system = 2;
-  sprintf(t, "%-12s %20s\n", "System", "Cygwin");
-  strcat(info->systemString, t);
-#elif defined(__linux)
-  info->system = 3;
-  sprintf(t, "%-12s %20s\n", "System", "Linux");
-  strcat(info->systemString, t);
-#elif defined(__APPLE__)
-  info->system = 4;
-  sprintf(t, "%-12s %20s\n", "System", "Apple");
-  strcat(info->systemString, t);
-#endif
-
-#if defined(_MSC_VER)
-  info->compiler = 1;
-  sprintf(t, "%-12s %20s\n", "Compiler", "Microsoft Visual C++");
-  strcat(info->systemString, t);
-#elif defined(__MINGW32__)
-  info->compiler = 2;
-  sprintf(t, "%-12s %20s\n", "Compiler", "MinGW");
-  strcat(info->systemString, t);
-#elif defined(__GNUC__)
-  info->compiler = 3;
-  sprintf(t, "%-12s %20s\n", "Compiler", "GNU g++");
-  strcat(info->systemString, t);
-#elif defined(__clang__)
-  info->compiler = 4;
-  sprintf(t, "%-12s %20s\n", "Compiler", "clang");
-  strcat(info->systemString, t);
-#endif
-
-#if defined(USES_DLLMAIN)
-  info->constructor = 1;
-  sprintf(t, "%-12s %20s\n", "Constructor", "DllMain");
-  strcat(info->systemString, t);
-#elif defined(USES_CONSTRUCTOR)
-  info->constructor = 2;
-  sprintf(t, "%-12s %20s\n", "Constructor", "Unix-style");
-  strcat(info->systemString, t);
-#endif
-
-#if defined(DDS_THREADS_SINGLE)
-  info->threading = 0;
-  sprintf(t, "%-12s %20s\n", "Threading", "None");
-  strcat(info->systemString, t);
-#elif defined(_OPENMP)
-  info->threading = 2;
-  sprintf(t, "%-12s %20s\n", "Threading", "OpenMP");
-  strcat(info->systemString, t);
-#elif defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
-  info->threading = 3;
-  sprintf(t, "%-12s %20s\n", "Threading", "GCD");
-  strcat(info->systemString, t);
-#else
-  info->threading = 1;
-  sprintf(t, "%-12s %20s\n", "Threading", "Windows");
-  strcat(info->systemString, t);
-#endif
-
-  sprintf(t, "%-12s %20d\n", "Threads", noOfThreads);
-  strcat(info->systemString, t);
+  (void) sysdep.str(info);
 }
 
 
 void FreeThreadMem()
 {
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    localVar[k].transTable.ResetMemory(FREE_THREAD_MEM);
-    localVar[k].memUsed = localVar[k].transTable.MemoryInUse() +
-                          ThreadMemoryUsed();
-  }
+  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+    memory.ResetThread(thrId);
 }
 
 
 void STDCALL FreeMemory()
 {
-  for (int k = 0; k < noOfThreads; k++)
-  {
-    localVar[k].transTable.ReturnAllMemory();
-    localVar[k].memUsed = localVar[k].transTable.MemoryInUse() +
-                          ThreadMemoryUsed();
-  }
-}
-
-
-double ConstantMemoryUsed()
-{
-  double memUsed =
-    8192 * ( sizeof(int) // highestRank
-             + sizeof(int) // counttable
-             + 15 * sizeof(char) // relRank
-             + 14 * sizeof(unsigned short int))
-    / static_cast<double>(1024.);
-
-  return memUsed;
+  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+    memory.ReturnThread(thrId);
 }
 
 
 double ThreadMemoryUsed()
 {
+  // TODO:  Only needed because SolverIF wants to set it. Avoid?
   double memUsed =
     8192 * sizeof(relRanksType)
     / static_cast<double>(1024.);
@@ -803,6 +694,9 @@ void STDCALL ErrorMessage(int code, char line[80])
       break;
     case RETURN_THREAD_WAIT:
       strcpy(line, TEXT_THREAD_WAIT);
+      break;
+    case RETURN_THREAD_MISSING:
+      strcpy(line, TEXT_THREAD_MISSING);
       break;
     case RETURN_NO_SUIT:
       strcpy(line, TEXT_NO_SUIT);

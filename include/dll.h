@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2015 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -26,8 +26,8 @@
   #define EXTERN_C
 #endif
 
-/* Version 2.8.4. Allowing for 2 digit minor versions */
-#define DDS_VERSION 20804
+/* Version 2.9.0. Allowing for 2 digit minor versions */
+#define DDS_VERSION 20900
 
 
 #define DDS_HANDS 4
@@ -37,7 +37,7 @@
 
 #define MAXNOOFBOARDS 200
 
-#define MAXNOOFTABLES 32
+#define MAXNOOFTABLES 40
 
 
 // Error codes. See interface document for more detail.
@@ -140,6 +140,10 @@
 // wrong while waiting for all threads to complete.
 #define RETURN_THREAD_WAIT -103
 #define TEXT_THREAD_WAIT "Something failed waiting for thread to end"
+
+// Tried to set a multi-threading system that is not present in DLL.
+#define RETURN_THREAD_MISSING -104
+#define TEXT_THREAD_MISSING "Multi-threading system not present"
 
 // CalcAllTables*()
 #define RETURN_NO_SUIT -201
@@ -344,6 +348,9 @@ struct DDSInfo
   // Currently 0 = unknown, 1 = Windows, 2 = Cygwin, 3 = Linux, 4 = Apple
   int system;
 
+  // We know 32 and 64-bit systems.
+  int numBits;
+
   // Currently 0 = unknown, 1 = Microsoft Visual C++, 2 = mingw,
   // 3 = GNU g++, 4 = clang
   int compiler;
@@ -351,19 +358,42 @@ struct DDSInfo
   // Currently 0 = none, 1 = DllMain, 2 = Unix-style
   int constructor;
 
-  // Currently 0 = none, 1 = Windows, 2 = OpenMP, 3 = GCD
+  int numCores;
+
+  // Currently 
+  // 0 = none, 
+  // 1 = Windows (native), 
+  // 2 = OpenMP, 
+  // 3 = GCD,
+  // 4 = Boost,
+  // 5 = STL,
+  // 6 = TBB,
+  // 7 = STLIMPL (for_each), experimental only
+  // 8 = PPLIMPL (for_each), experimental only
   int threading;
 
   // The actual number of threads configured
   int noOfThreads;
 
-  char systemString[512];
+  // This will break if there are > 128 threads...
+  // The string is of the form LLLSSS meaning 3 large TT memories
+  // and 3 small ones.
+  char threadSizes[128];
+
+  char systemString[1024];
 };
 
 
 
 EXTERN_C DLLEXPORT void STDCALL SetMaxThreads(
   int userThreads);
+
+EXTERN_C DLLEXPORT int STDCALL SetThreading(
+  int code);
+
+EXTERN_C DLLEXPORT void STDCALL SetResources(
+  int maxMemoryMB,
+  int maxThreads);
 
 EXTERN_C DLLEXPORT void STDCALL FreeMemory();
 

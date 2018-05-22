@@ -2,7 +2,7 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2015 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
@@ -64,13 +64,6 @@
 // usually generates a compiler warning)
 #ifndef UNUSED
   #define UNUSED(x) ((void)(true ? 0 : ((x), void(), 0)))
-#endif
-
-
-#if __cplusplus <= 199711L
-  #ifndef nullptr
-    #define nullptr NULL
-  #endif
 #endif
 
 #endif

@@ -2,14 +2,20 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
+#include <vector>
+#include <string>
+#include <string.h>
+#include <stdio.h>
 
 #include "dds.h"
+
+using namespace std;
 
 
 /* First index: 0 nonvul, 1 vul. Second index: tricks down */
@@ -64,7 +70,7 @@ int FLOOR_CONTRACT[36] =
       31, 32, 33, 34, 35
 };
 
-char NUMBER_TO_CONTRACT[36][3] =
+const vector<string> NUMBER_TO_CONTRACT =
 {
   "0",
   "1C", "1D", "1H", "1S", "1N",
@@ -76,7 +82,7 @@ char NUMBER_TO_CONTRACT[36][3] =
   "7C", "7D", "7H", "7S", "7N"
 };
 
-char NUMBER_TO_PLAYER[4][2] = { "N", "E", "S", "W" };
+const vector<string> NUMBER_TO_PLAYER = { "N", "E", "S", "W" };
 
 /* First index is vul: none, both, NS, EW.
    Second index is vul (0, 1) for NS and then EW. */
@@ -113,53 +119,51 @@ struct list_type
 
 
 void survey_scores(
-  ddTableResults * tablep,
-  int dealer,
-  int vul_by_side[2],
-  data_type * data,
-  int * num_candidates,
-  list_type list[2][5]);
+  const ddTableResults& table,
+  const int dealer,
+  const int vul_by_side[2],
+  data_type& data,
+  int& num_candidates,
+  list_type list[2][DDS_STRAINS]);
 
 void best_sacrifice(
-  ddTableResults * tablep,
-  int side,
-  int no,
-  int dno,
-  int dealer,
-  list_type list[2][5],
+  const ddTableResults& table,
+  const int side,
+  const int no,
+  const int dno,
+  const int dealer,
+  const list_type list[2][5],
   int sacr[5][5],
-  int * best_down);
+  int& best_down);
 
 void sacrifices_as_text(
-  ddTableResults * tablep,
-  int side,
-  int dealer,
-  int best_down,
-  int no_decl,
-  int dno,
-  list_type list[2][5],
-  int sacr[5][5],
+  const ddTableResults& table,
+  const int side,
+  const int dealer,
+  const int best_down,
+  const int no_decl,
+  const int dno,
+  const list_type list[2][5],
+  const int sacr[5][5],
   char results[10][10],
-  int * res_no);
+  int& res_no);
 
 void reduce_contract(
-  int * no,
-  int down,
-  int * plus);
+  int& no,
+  const int down,
+  int& plus);
 
-void contract_as_text(
-  ddTableResults * tablep,
-  int side,
-  int no,
-  int dno,
-  int down,
-  char str[10]);
+string contract_as_text(
+  const ddTableResults& table,
+  const int side,
+  const int no,
+  const int dno,
+  const int down);
 
-void sacrifice_as_text(
-  int no,
-  int pno,
-  int down,
-  char str[10]);
+string sacrifice_as_text(
+  const int no,
+  const int pno,
+  const int down);
 
 
 
@@ -172,9 +176,9 @@ int STDCALL DealerPar(
   /* dealer 0: North 1: East 2: South 3: West */
   /* vulnerable 0: None 1: Both 2: NS 3: EW */
 
-  int * vul_by_side = VUL_LOOKUP[vulnerable];
+  int const * vul_by_side = VUL_LOOKUP[vulnerable];
   data_type data;
-  list_type list[2][5];
+  list_type list[2][DDS_STRAINS];
 
   /* First we find the side entitled to a plus score (primacy)
      and some statistics for each constructively bid (undoubled)
@@ -182,13 +186,13 @@ int STDCALL DealerPar(
 
 
   int num_cand;
-  survey_scores(tablep, dealer, vul_by_side, &data, &num_cand, list);
+  survey_scores(* tablep, dealer, vul_by_side, data, num_cand, list);
   int side = data.primacy;
 
   if (side == -1)
   {
     presp->number = 1;
-    sprintf(presp->contracts[0], "%s", "pass");
+    strcpy(presp->contracts[0], "pass");
     return RETURN_NO_FAULT;
   }
 
@@ -199,10 +203,11 @@ int STDCALL DealerPar(
   int down = 0;
   int sac_found = 0;
 
-  int type[5], sac_gap[5];
+  int type[DDS_STRAINS], sac_gap[DDS_STRAINS];
   int best_down = 0;
-  int sacr[5][5] = { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}
+  int sacr[DDS_STRAINS][DDS_STRAINS] = 
+    { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}
   };
 
   for (int n = 0; n < num_cand; n++)
@@ -211,7 +216,7 @@ int STDCALL DealerPar(
     int dno = lists[n].dno;
     int target = DOWN_TARGET[no][vul_no];
 
-    best_sacrifice(tablep, side, no, dno, dealer, list, sacr, &down);
+    best_sacrifice(* tablep, side, no, dno, dealer, list, sacr, down);
 
     if (down <= target)
     {
@@ -252,10 +257,10 @@ int STDCALL DealerPar(
     {
       if (type[n] != 1 || lists[n].score != best_plus) continue;
       int no = lists[n].no, plus;
-      reduce_contract(&no, sac_gap[n], &plus);
+      reduce_contract(no, sac_gap[n], plus);
 
-      contract_as_text(tablep, side, no, lists[n].dno,
-                       plus, presp->contracts[res_no]);
+      strcpy(presp->contracts[res_no],
+        contract_as_text(* tablep, side, no, lists[n].dno, plus).c_str());
       res_no++;
     }
   }
@@ -269,9 +274,9 @@ int STDCALL DealerPar(
     for (int n = 0; n < num_cand; n++)
     {
       if (type[n] != 0 || lists[n].down != best_down) continue;
-      sacrifices_as_text(tablep, side, dealer, best_down,
+      sacrifices_as_text(* tablep, side, dealer, best_down,
                          lists[n].no, lists[n].dno, list, sacr,
-                         presp->contracts, &res_no);
+                         presp->contracts, res_no);
     }
   }
   presp->number = res_no;
@@ -280,12 +285,12 @@ int STDCALL DealerPar(
 
 
 void survey_scores(
-  ddTableResults * tablep,
-  int dealer,
-  int vul_by_side[2],
-  data_type * data,
-  int * num_candidates,
-  list_type list[2][5])
+  const ddTableResults& table,
+  const int dealer,
+  const int vul_by_side[2],
+  data_type& data,
+  int& num_candidates,
+  list_type list[2][DDS_STRAINS])
 {
   /*
     When this is done, data has added the following entries:
@@ -314,15 +319,15 @@ void survey_scores(
     int dearest_making_no = 0;
     int dearest_score = 0;
 
-    for (int dno = 0; dno <= 4; dno++)
+    for (int dno = 0; dno < DDS_STRAINS; dno++)
     {
       list_type * slist = &list[side][dno];
-      int * t = tablep->resTable[ DENOM_ORDER[dno] ];
-      int a = t[side];
-      int b = t[side + 2];
-      int best = (a > b ? a : b);
+      int const * t = table.resTable[ DENOM_ORDER[dno] ];
+      const int a = t[side];
+      const int b = t[side + 2];
+      const int best = (a > b ? a : b);
 
-      int no = 5 * (best - 7) + dno + 1;
+      const int no = 5 * (best - 7) + dno + 1;
       slist->no = no; /* May be negative! */
 
       if (best < 7)
@@ -331,7 +336,7 @@ void survey_scores(
         continue;
       }
 
-      int score = SCORES[no][ vul_by_side[side] ];
+      const int score = SCORES[no][ vul_by_side[side] ];
       slist->score = score;
       slist->dno = dno;
       slist->tricks = best;
@@ -352,15 +357,15 @@ void survey_scores(
         highest_making_no = no;
       }
     }
-    data_type * sside = &stats[side];
-    sside->highest_making_no = highest_making_no;
-    sside->dearest_making_no = dearest_making_no;
-    sside->dearest_score = dearest_score;
+    data_type& sside = stats[side];
+    sside.highest_making_no = highest_making_no;
+    sside.dearest_making_no = dearest_making_no;
+    sside.dearest_score = dearest_score;
   }
 
   int primacy = 0;
-  int s0 = stats[0].highest_making_no;
-  int s1 = stats[1].highest_making_no;
+  const int s0 = stats[0].highest_making_no;
+  const int s1 = stats[1].highest_making_no;
   if (s0 > s1)
   {
     primacy = 0;
@@ -371,19 +376,20 @@ void survey_scores(
   }
   else if (s0 == 0)
   {
-    data->primacy = -1;
+    data.primacy = -1;
     return;
   }
   else
   {
     /* Special case, depends who can bid it first. */
-    int dno = (s0 - 1) % 5;
-    int t_max = list[0][dno].tricks;
-    int * t = tablep->resTable[ DENOM_ORDER[dno] ];
+    const int dno = (s0 - 1) % 5;
+    const int t_max = list[0][dno].tricks;
+    int const * t = table.resTable[ DENOM_ORDER[dno] ];
 
     for (int pno = dealer; pno <= dealer + 3; pno++)
     {
-      if (t[pno % 4] != t_max) continue;
+      if (t[pno % 4] != t_max) 
+        continue;
       primacy = pno % 2;
       break;
     }
@@ -391,26 +397,27 @@ void survey_scores(
 
   data_type * sside = &stats[primacy];
 
-  int dm_no = sside->dearest_making_no;
-  data->primacy = primacy;
-  data->highest_making_no = sside->highest_making_no;
-  data->dearest_making_no = dm_no;
-  data->dearest_score = sside->dearest_score;
+  const int dm_no = sside->dearest_making_no;
+  data.primacy = primacy;
+  data.highest_making_no = sside->highest_making_no;
+  data.dearest_making_no = dm_no;
+  data.dearest_score = sside->dearest_score;
 
-  int vul_primacy = vul_by_side[primacy];
-  int vul_other = vul_by_side[1 - primacy];
-  data->vul_no = VUL_TO_NO[vul_primacy][vul_other];
+  const int vul_primacy = vul_by_side[primacy];
+  const int vul_other = vul_by_side[1 - primacy];
+  data.vul_no = VUL_TO_NO[vul_primacy][vul_other];
 
   /* Sort the scores in descending order of contract number,
      i.e. first by score and second by contract number in case
      the score is the same. Primitive bubble sort... */
-  int n = 5;
+  int n = DDS_STRAINS;
   do
   {
     int new_n = 0;
     for (int i = 1; i < n; i++)
     {
-      if (list[primacy][i - 1].no > list[primacy][i].no) continue;
+      if (list[primacy][i - 1].no > list[primacy][i].no) 
+        continue;
 
       list_type temp = list[primacy][i - 1];
       list[primacy][i - 1] = list[primacy][i];
@@ -422,53 +429,57 @@ void survey_scores(
   }
   while (n > 0);
 
-  *num_candidates = 5;
-  for (n = 0; n <= 4; n++)
+  num_candidates = DDS_STRAINS;
+  for (n = 0; n < DDS_STRAINS; n++)
   {
-    if (list[primacy][n].no < dm_no) (*num_candidates)--;
+    if (list[primacy][n].no < dm_no) 
+      num_candidates--;
   }
 }
 
 
 void best_sacrifice(
-  ddTableResults * tablep,
-  int side,
-  int no,
-  int dno,
-  int dealer,
-  list_type list[2][5],
-  int sacr_table[5][5],
-  int * best_down)
+  const ddTableResults& table,
+  const int side,
+  const int no,
+  const int dno,
+  const int dealer,
+  const list_type list[2][DDS_STRAINS],
+  int sacr_table[DDS_STRAINS][DDS_STRAINS],
+  int& best_down)
 {
-  int other = 1 - side;
-  list_type * sacr_list = list[other];
-  *best_down = BIGNUM;
+  const int other = 1 - side;
+  list_type const * sacr_list = list[other];
+  best_down = BIGNUM;
 
   for (int eno = 0; eno <= 4; eno++)
   {
-    list_type sacr = sacr_list[eno];
+    const list_type sacr = sacr_list[eno];
     int down = BIGNUM;
 
     if (eno == dno)
     {
-      int t_max = static_cast<int>((no + 34) / 5);
-      int * t = tablep->resTable[ DENOM_ORDER[dno] ];
+      const int t_max = static_cast<int>((no + 34) / 5);
+      int const * t = table.resTable[ DENOM_ORDER[dno] ];
       int incr_flag = 0;
       for (int pno = dealer; pno <= dealer + 3; pno++)
       {
-        int diff = t_max - t[pno % 4];
-        int s = pno % 2;
+        const int diff = t_max - t[pno % 4];
+        const int s = pno % 2;
         if (s == side)
         {
-          if (diff == 0) incr_flag = 1;
+          if (diff == 0) 
+            incr_flag = 1;
         }
         else
         {
-          int local = diff + incr_flag;
-          if (local < down) down = local;
+          const int local = diff + incr_flag;
+          if (local < down) 
+            down = local;
         }
       }
-      if (sacr.no + 5 * down > 35) down = BIGNUM;
+      if (sacr.no + 5 * down > 35) 
+        down = BIGNUM;
     }
     else
     {
@@ -476,25 +487,26 @@ void best_sacrifice(
       if (sacr.no + 5 * down > 35) down = BIGNUM;
     }
     sacr_table[dno][eno] = down;
-    if (down < *best_down) *best_down = down;
+    if (down < best_down) 
+      best_down = down;
   }
 }
 
 
 void sacrifices_as_text(
-  ddTableResults * tablep,
-  int side,
-  int dealer,
-  int best_down,
-  int no_decl,
-  int dno,
-  list_type list[2][5],
-  int sacr[5][5],
+  const ddTableResults& table,
+  const int side,
+  const int dealer,
+  const int best_down,
+  const int no_decl,
+  const int dno,
+  const list_type list[2][DDS_STRAINS],
+  const int sacr[DDS_STRAINS][DDS_STRAINS],
   char results[10][10],
-  int * res_no)
+  int& res_no)
 {
-  int other = 1 - side;
-  list_type * sacr_list = list[other];
+  const int other = 1 - side;
+  list_type const * sacr_list = list[other];
 
   for (int eno = 0; eno <= 4; eno++)
   {
@@ -503,15 +515,15 @@ void sacrifices_as_text(
 
     if (eno != dno)
     {
-      int no_sac = sacr_list[eno].no + 5 * best_down;
-      contract_as_text(tablep, other, no_sac, eno, -best_down,
-                       results[*res_no]);
-      (*res_no)++;
+      const int no_sac = sacr_list[eno].no + 5 * best_down;
+      strcpy(results[res_no], 
+        contract_as_text(table, other, no_sac, eno, -best_down).c_str());
+      res_no++;
       continue;
     }
 
-    int t_max = static_cast<int>((no_decl + 34) / 5);
-    int * t = tablep->resTable[ DENOM_ORDER[dno] ];
+    const int t_max = static_cast<int>((no_decl + 34) / 5);
+    int const * t = table.resTable[ DENOM_ORDER[dno] ];
     int incr_flag = 0;
     int p_hit = 0;
     int pno_list[2], sac_list[2];
@@ -534,37 +546,37 @@ void sacrifices_as_text(
       }
     }
 
-    int ns0 = sac_list[0];
+    const int ns0 = sac_list[0];
     if (p_hit == 1)
     {
-      sacrifice_as_text(ns0, pno_list[0], best_down,
-                        results[*res_no]);
-      (*res_no)++;
+      strcpy(results[res_no],
+        sacrifice_as_text(ns0, pno_list[0], best_down).c_str());
+      res_no++;
       continue;
     }
 
-    int ns1 = sac_list[1];
+    const int ns1 = sac_list[1];
     if (ns0 == ns1)
     {
       /* Both players */
-      contract_as_text(tablep, other, ns0, eno, -best_down,
-                       results[*res_no]);
-      (*res_no)++;
+      strcpy(results[res_no], 
+        contract_as_text(table, other, ns0, eno, -best_down).c_str());
+      res_no++;
       continue;
     }
 
-    int p = (ns0 < ns1 ? 0 : 1);
-    sacrifice_as_text(sac_list[p], pno_list[p], best_down,
-                      results[*res_no]);
-    (*res_no)++;
+    const int p = (ns0 < ns1 ? 0 : 1);
+    strcpy(results[res_no],
+      sacrifice_as_text(sac_list[p], pno_list[p], best_down).c_str());
+    res_no++;
   }
 }
 
 
 void reduce_contract(
-  int * no,
-  int sac_gap,
-  int * plus)
+  int& no,
+  const int sac_gap,
+  int& plus)
 {
   /* Could be that we found 4C just making, but it would be
      enough to bid 2C +2. But we don't want to bid so low that
@@ -573,12 +585,12 @@ void reduce_contract(
   if (sac_gap >= -1)
   {
     /* No scope to reduce. */
-    *plus = 0;
+    plus = 0;
     return;
   }
 
   /* This is the lowest contract that we could reduce to. */
-  int flr = FLOOR_CONTRACT[*no];
+  int flr = FLOOR_CONTRACT[no];
 
   /* As such, declarer could reduce the contract by down+1 levels
      (where down is negative) and still the opponent's sacrifice
@@ -586,47 +598,40 @@ void reduce_contract(
      this can go wrong: 1M+1 and 2M= both pay +90, but 3m*-2
      is a bad sacrifice against 2M=, while 2m*-1 would be a good
      sacrifice against 1M+1. */
-  int no_sac_level = *no + 5 * (sac_gap + 1);
+  int no_sac_level = no + 5 * (sac_gap + 1);
   int new_no = (no_sac_level > flr ? no_sac_level : flr);
-  *plus = (*no - new_no) / 5;
-  *no = new_no;
+  plus = (no - new_no) / 5;
+  no = new_no;
 }
 
 
-void contract_as_text(
-  ddTableResults * tablep,
-  int side,
-  int no,
-  int dno,
-  int delta,
-  char str[10])
+string contract_as_text(
+  const ddTableResults& table,
+  const int side,
+  const int no,
+  const int dno,
+  const int delta)
 {
-  int * t = tablep->resTable[ DENOM_ORDER[dno] ];
-  int ta = t[side];
-  int tb = t[side + 2];
-  int t_max = (ta > tb ? ta : tb);
+  int const * t = table.resTable[ DENOM_ORDER[dno] ];
+  const int ta = t[side];
+  const int tb = t[side + 2];
+  const int t_max = (ta > tb ? ta : tb);
 
-  char d[4] = "";
-  if (delta != 0)
-    sprintf(d, "%+d", delta);
-
-  sprintf(str, "%s%s%s%s%s",
-          NUMBER_TO_CONTRACT[no],
-          (delta < 0 ? "*-" : "-"),
-          (ta == t_max ? NUMBER_TO_PLAYER[side] : ""),
-          (tb == t_max ? NUMBER_TO_PLAYER[side + 2] : ""),
-          d);
+  return NUMBER_TO_CONTRACT[static_cast<unsigned>(no)] +
+    (delta < 0 ? "*-" : "-") +
+    (ta == t_max ? NUMBER_TO_PLAYER[static_cast<unsigned>(side)] : "") +
+    (tb == t_max ? NUMBER_TO_PLAYER[static_cast<unsigned>(side + 2)] : "") +
+    (delta > 0 ? "+" : "") +
+    (delta == 0 ? "" : to_string(delta));
 }
 
 
-void sacrifice_as_text(
-  int no,
-  int pno,
-  int down,
-  char str[10])
+string sacrifice_as_text(
+  const int no,
+  const int pno,
+  const int down)
 {
-  sprintf(str, "%s*-%s-%d",
-          NUMBER_TO_CONTRACT[no],
-          NUMBER_TO_PLAYER[pno],
-          down);
+  return NUMBER_TO_CONTRACT[static_cast<unsigned>(no)] + "-" +
+    NUMBER_TO_PLAYER[static_cast<unsigned>(pno)] + "-" +
+    to_string(down);
 }

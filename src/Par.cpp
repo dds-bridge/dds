@@ -2,15 +2,21 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
 #include <stdexcept>
+#include <algorithm>
+#include <string.h>
 
 #include "dds.h"
+#include "PBN.h"
+
+using namespace std;
+
 
 struct par_suits_type
 {
@@ -49,7 +55,6 @@ int STDCALL CalcParPBN(
 {
   int res;
   ddTableDeal tableDeal;
-  int ConvertFromPBN(char * dealBuff, unsigned int remainCards[4][4]);
   int STDCALL CalcPar(ddTableDeal tableDeal, int vulnerable,
                       ddTableResults * tablep, parResults * presp);
 
@@ -283,7 +288,7 @@ int STDCALL SidesParBin(
             tablep->resTable[denom_conv[j]][0];
           t2 = k ? tablep->resTable[denom_conv[j]][3] : 
             tablep->resTable[denom_conv[j]][2];
-          tt = Max(t1, t2);
+          tt = max(t1, t2);
           /* tt is the maximum number of tricks current side can take in
           denomination.*/
 
@@ -519,7 +524,8 @@ int STDCALL SidesParBin(
         checked that the lowered contract still gets the score bonus 
         points that is present in par score.*/
 
-        sc2 = abs(best_par_score[i]);
+        sc2 = (best_par_score[i] >= 0 ?
+          best_par_score[i] : -best_par_score[i]);
         /* Score for making the tentative lower par contract. */
         while (max_lower > 0)
         {
@@ -543,7 +549,7 @@ int STDCALL SidesParBin(
           since the cost for the sacrifice is too small. */
         }
 
-        int opp_tricks = Max(t3[j], t4[j]);
+        int opp_tricks = max(t3[j], t4[j]);
 
         while (max_lower > 0)
         {
@@ -577,10 +583,11 @@ int STDCALL SidesParBin(
             k = 2;
             break;
           default:
-            throw std::runtime_error("j not in [0..3] in Par");
+            return RETURN_UNKNOWN_FAULT;
+            // j not in (0..4)
         }
 
-        max_lower = Min(max_low[k][best_par[m][i].par_tricks - 6], 
+        max_lower = min(max_low[k][best_par[m][i].par_tricks - 6], 
           max_lower);
 
         sidesRes[i].contracts[m].denom = j;
@@ -1209,8 +1216,8 @@ int STDCALL DealerParBin(
         presp->contracts[k].denom = 4;
         break;
       default:
-        throw std::runtime_error(
-          "contracts[1] not in (NSHDC) in DealerParBin");
+        return RETURN_UNKNOWN_FAULT;
+        // denomination not in (NSHDC)
     }
 
     if (strstr(parContr2[k].contracts, "NS"))
@@ -1388,7 +1395,8 @@ int STDCALL ConvertToDealerTextFormat(
         strcat(resp, "EW ");
         break;
       default:
-        throw std::runtime_error("Seats not in [N,W,S,W,NS,EW] in ConvertToDealerTextFormat");
+        return RETURN_UNKNOWN_FAULT;
+        // Seats not in (N,W,S,W,NS,EW)
     }
 
     for (i = 0; i < 10; i++)
@@ -1414,7 +1422,8 @@ int STDCALL ConvertToDealerTextFormat(
         strcat(resp, "C");
         break;
       default:
-        throw std::runtime_error("denom not in [N,S,H,D,C] in ConvertToDealerTextFormat");
+        return RETURN_UNKNOWN_FAULT;
+        // denom not in /N,S,H,D,C)
     }
 
     if (pres->contracts[k].underTricks > 0)
@@ -1487,7 +1496,8 @@ int STDCALL ConvertToSidesTextFormat(
           strcat(resp->parText[i], "EW ");
           break;
         default:
-          throw std::runtime_error("Seats not in [N,W,S,W,NS,EW] in ConvertToSidesTextFormat");
+          return RETURN_UNKNOWN_FAULT;
+          // Seats not in (N,W,S,W,NS,EW)
       }
 
       for (j = 0; j < 10; j++)
@@ -1513,7 +1523,8 @@ int STDCALL ConvertToSidesTextFormat(
           strcat(resp->parText[i], "C");
           break;
         default:
-          throw std::runtime_error("denom not in [N,S,H,D,C] in ConvertToSidesTextFormat");
+          return RETURN_UNKNOWN_FAULT;
+          // denom not in (N,S,H,D,C)
       }
 
       if ((pres + i)->contracts[k].underTricks > 0)
@@ -1561,5 +1572,4 @@ int STDCALL ConvertToSidesTextFormat(
 
   return RETURN_NO_FAULT;
 }
-
 

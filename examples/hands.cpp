@@ -85,11 +85,11 @@ char PBN[3][80] = {
 // third index is hand.
 unsigned int holdings[3][4][4] =
 {
-  {
+  { // North       East     South          West
     { RQ|RJ|R6, R8|R7|R3, RK|R5, RA|RT|R9|R4|R2 } , // spades
     { RK|R6|R5|R2, RJ|R9|R7, RT|R8|R3, RA|RQ|R4 } , // hearts
     { RJ|R8|R5, RA|RT|R7|R6|R4, RK|RQ|R9, R3|R2 } , // diamonds
-    { RT|R9|R8, RQ|R4, RA|R7|R6|R5|R2, RK|RJ|R3 }}, // clubs,
+    { RT|R9|R8, RQ|R4, RA|R7|R6|R5|R2, RK|RJ|R3 }}, // clubs
   {
     { RA|RK|R9|R6, RQ|RJ|RT|R5|R4|R3|R2, 0, R8|R7},
     { RK|RQ|R8, RT, RJ|R9|R7|R5|R4|R3, RA|R6|R2 },

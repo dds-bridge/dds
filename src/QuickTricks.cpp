@@ -2,111 +2,111 @@
    DDS, a bridge double dummy solver.
 
    Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2016 by Bo Haglund & Soren Hein.
+   2014-2018 by Bo Haglund & Soren Hein.
 
    See LICENSE and README.
 */
 
 
-#include "dds.h"
-#include "threadmem.h"
+#include <algorithm>
+
 #include "QuickTricks.h"
 
 
 int QtricksLeadHandNT(
-  int hand,
-  pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int * lhoTrumpRanks,
-  int * rhoTrumpRanks,
-  bool commPartner,
-  int commSuit,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int trump,
-  int * res);
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  int& lhoTrumpRanks,
+  int& rhoTrumpRanks,
+  const bool commPartner,
+  const int commSuit,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int trump,
+  int& res);
 
 int QtricksLeadHandTrump(
-  int hand,
-  pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int lhoTrumpRanks,
-  int rhoTrumpRanks,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int * res);
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  int& res);
 
 int QuickTricksPartnerHandTrump(
-  int hand,
-  pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int lhoTrumpRanks,
-  int rhoTrumpRanks,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int commSuit,
-  int commRank,
-  int * res,
-  localVarType * thrp);
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
+  const ThreadData& thrd);
 
 int QuickTricksPartnerHandNT(
-  int hand,
-  pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int commSuit,
-  int commRank,
-  int * res,
-  localVarType * thrp);
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
+  const ThreadData& thrd);
 
 
 int QuickTricks(
-  pos * posPoint,
-  int hand,
-  int depth,
-  int target,
-  int trump,
-  bool * result,
-  localVarType * thrp)
+  pos& tpos,
+  const int hand,
+  const int depth,
+  const int target,
+  const int trump,
+  bool& result,
+  const ThreadData& thrd)
 {
   int suit, commRank = 0, commSuit = -1;
   int res;
   int lhoTrumpRanks = 0, rhoTrumpRanks = 0;
   int cutoff, lowestQtricks = 0;
 
-  *result = true;
+  result = true;
   int qtricks = 0;
 
-  if (thrp->nodeTypeStore[hand] == MAXNODE)
-    cutoff = target - posPoint->tricksMAX;
+  if (thrd.nodeTypeStore[hand] == MAXNODE)
+    cutoff = target - tpos.tricksMAX;
   else
-    cutoff = posPoint->tricksMAX - target + (depth >> 2) + 2;
+    cutoff = tpos.tricksMAX - target + (depth >> 2) + 2;
 
   bool commPartner = false;
-  unsigned short (* ris)[DDS_SUITS] = posPoint->rankInSuit;
-  unsigned char (* len)[DDS_SUITS] = posPoint->length;
-  highCardType * winner = posPoint->winner;
+  const unsigned short (* ris)[DDS_SUITS] = tpos.rankInSuit;
+  const unsigned char (* len)[DDS_SUITS] = tpos.length;
+  highCardType const * winner = tpos.winner;
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
@@ -128,7 +128,7 @@ int QuickTricks(
           break;
         }
       }
-      else if ((posPoint->secondBest[s].hand == partner[hand]) &&
+      else if ((tpos.secondBest[s].hand == partner[hand]) &&
                (winner[s].hand == hand) &&
                (len[hand][s] >= 2) &&
                (len[partner[hand]][s] >= 2))
@@ -141,7 +141,7 @@ int QuickTricks(
         {
           commPartner = true;
           commSuit = s;
-          commRank = posPoint->secondBest[s].rank;
+          commRank = tpos.secondBest[s].rank;
           break;
         }
       }
@@ -159,7 +159,7 @@ int QuickTricks(
           break;
         }
       }
-      else if ((posPoint->secondBest[s].hand == partner[hand]) &&
+      else if ((tpos.secondBest[s].hand == partner[hand]) &&
                (winner[s].hand == hand) &&
                (len[hand][s] >= 2) &&
                (len[partner[hand]][s] >= 2))
@@ -167,7 +167,7 @@ int QuickTricks(
         /* Can cross to partner's card: Type Kx opposite Ax */
         commPartner = true;
         commSuit = s;
-        commRank = posPoint->secondBest[s].rank;
+        commRank = tpos.secondBest[s].rank;
         break;
       }
     }
@@ -276,7 +276,7 @@ int QuickTricks(
         /* The partner but not the opponents have cards in
            the trump suit. */
 
-        int sum = Max(countOwn, countPart);
+        int sum = max(countOwn, countPart);
         for (int s = 0; s < DDS_SUITS; s++)
         {
           if ((sum > 0) &&
@@ -297,7 +297,7 @@ int QuickTricks(
       else if (!opps)
       {
         /* The partner but not the opponents have cards in the suit. */
-        int sum = Min(countOwn, countPart);
+        int sum = min(countOwn, countPart);
         if (trump == DDS_NOTRUMP)
         {
           if (sum >= cutoff)
@@ -321,7 +321,7 @@ int QuickTricks(
             if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
             {
               qtricks += countPart;
-              posPoint->winRanks[depth][commSuit] |=
+              tpos.winRanks[depth][commSuit] |=
                 bitMapRank[commRank];
 
               if (qtricks >= cutoff)
@@ -343,7 +343,7 @@ int QuickTricks(
           else
           {
             qtricks += countPart;
-            posPoint->winRanks[depth][commSuit] |=
+            tpos.winRanks[depth][commSuit] |=
               bitMapRank[commRank];
 
             if (qtricks >= cutoff)
@@ -369,7 +369,7 @@ int QuickTricks(
         {
           if (!opps && (trump != DDS_NOTRUMP) && (suit == trump))
           {
-            int sum = Max(countOwn, countPart);
+            int sum = max(countOwn, countPart);
             for (int s = 0; s < DDS_SUITS; s++)
             {
               if ((sum > 0) &&
@@ -384,14 +384,14 @@ int QuickTricks(
             }
             if (sum >= cutoff)
             {
-              posPoint->winRanks[depth][commSuit] |=
+              tpos.winRanks[depth][commSuit] |=
                 bitMapRank[commRank];
               return sum;
             }
           }
           else if (!opps)
           {
-            int sum = Min(countOwn, countPart);
+            int sum = min(countOwn, countPart);
             if (trump == DDS_NOTRUMP)
             {
               if (sum >= cutoff)
@@ -431,9 +431,9 @@ int QuickTricks(
     {
       if ((trump != DDS_NOTRUMP) && (trump != suit))
       {
-        qtricks = QtricksLeadHandTrump(hand, posPoint, cutoff, depth,
+        qtricks = QtricksLeadHandTrump(hand, tpos, cutoff, depth,
           countLho, countRho, lhoTrumpRanks, rhoTrumpRanks,
-          countOwn, countPart, suit, qtricks, &res);
+          countOwn, countPart, suit, qtricks, res);
 
         if (res == 1)
           return qtricks;
@@ -447,10 +447,10 @@ int QuickTricks(
       }
       else
       {
-        qtricks = QtricksLeadHandNT(hand, posPoint, cutoff, depth,
-          countLho, countRho, &lhoTrumpRanks, &rhoTrumpRanks,
+        qtricks = QtricksLeadHandNT(hand, tpos, cutoff, depth,
+          countLho, countRho, lhoTrumpRanks, rhoTrumpRanks,
           commPartner, commSuit, countOwn, countPart,
-          suit, qtricks, trump, &res);
+          suit, qtricks, trump, res);
 
         if (res == 1)
           return qtricks;
@@ -483,10 +483,10 @@ int QuickTricks(
           /* There is communication with the partner */
           if ((trump != DDS_NOTRUMP) && (trump != suit))
           {
-            qtricks = QuickTricksPartnerHandTrump(hand, posPoint,
+            qtricks = QuickTricksPartnerHandTrump(hand, tpos,
               cutoff, depth, countLho, countRho,
               lhoTrumpRanks, rhoTrumpRanks, countOwn,
-              countPart, suit, qtricks, commSuit, commRank, &res, thrp);
+              countPart, suit, qtricks, commSuit, commRank, res, thrd);
 
             if (res == 1)
               return qtricks;
@@ -500,9 +500,9 @@ int QuickTricks(
           }
           else
           {
-            qtricks = QuickTricksPartnerHandNT(hand, posPoint, cutoff,
+            qtricks = QuickTricksPartnerHandNT(hand, tpos, cutoff,
               depth, countLho, countRho, countOwn, countPart,
-              suit, qtricks, commSuit, commRank, &res, thrp);
+              suit, qtricks, commSuit, commRank, res, thrd);
 
             if (res == 1)
               return qtricks;
@@ -555,7 +555,7 @@ int QuickTricks(
             int rr = highestRank[ris[partner[hand]][trump]];
             if (rr != 0)
             {
-              posPoint->winRanks[depth][trump] |= bitMapRank[rr];
+              tpos.winRanks[depth][trump] |= bitMapRank[rr];
               if (1 >= cutoff)
                 return 1;
             }
@@ -575,7 +575,7 @@ int QuickTricks(
             {
               if ((ris[partner[hand]][trump] & bitMapRank[rr]) != 0)
               {
-                posPoint->winRanks[depth][trump] |= bitMapRank[rr];
+                tpos.winRanks[depth][trump] |= bitMapRank[rr];
                 break;
               }
             }
@@ -597,7 +597,7 @@ int QuickTricks(
             {
               if ((ris[partner[hand]][trump] & bitMapRank[rr]) != 0)
               {
-                posPoint->winRanks[depth][trump] |= bitMapRank[rr];
+                tpos.winRanks[depth][trump] |= bitMapRank[rr];
                 break;
               }
             }
@@ -641,15 +641,15 @@ int QuickTricks(
           continue;
         if (len[hand][ss] > 0)
         {
-          posPoint->winRanks[depth][ss] = bitMapRank[winner[ss].rank];
+          tpos.winRanks[depth][ss] = bitMapRank[winner[ss].rank];
         }
       }
 
-      if (thrp->nodeTypeStore[hand] != MAXNODE)
-        cutoff = target - posPoint->tricksMAX;
+      if (thrd.nodeTypeStore[hand] != MAXNODE)
+        cutoff = target - tpos.tricksMAX;
       else
       {
-        cutoff = posPoint->tricksMAX - target + (depth >> 2) + 2;
+        cutoff = tpos.tricksMAX - target + (depth >> 2) + 2;
       }
 
       if (1 >= cutoff)
@@ -657,38 +657,38 @@ int QuickTricks(
     }
   }
 
-  *result = false;
+  result = false;
   return qtricks;
 }
 
 
 int QtricksLeadHandTrump(
-  int hand,
-  pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int lhoTrumpRanks,
-  int rhoTrumpRanks,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int * res)
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  int& res)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
      res=2 Continue with next suit. */
 
-  *res = 1;
+  res = 1;
   int qt = qtricks;
   if (((countLho != 0) ||
        (lhoTrumpRanks == 0)) &&
       ((countRho != 0) || (rhoTrumpRanks == 0)))
   {
-    posPoint->winRanks[depth][suit] |=
-      bitMapRank[posPoint->winner[suit].rank];
+    tpos.winRanks[depth][suit] |=
+      bitMapRank[tpos.winner[suit].rank];
     qt++;
     if (qt >= cutoff)
       return qt;
@@ -702,17 +702,17 @@ int QtricksLeadHandTrump(
       qt += countOwn - 1;
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
 
-  if (posPoint->secondBest[suit].hand == hand)
+  if (tpos.secondBest[suit].hand == hand)
   {
     if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
     {
-      posPoint->winRanks[depth][suit] |=
-        bitMapRank[posPoint->secondBest[suit].rank];
+      tpos.winRanks[depth][suit] |=
+        bitMapRank[tpos.secondBest[suit].rank];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -721,20 +721,20 @@ int QtricksLeadHandTrump(
         qt += countOwn - 2;
         if (qt >= cutoff)
           return qt;
-        *res = 2;
+        res = 2;
         return qt;
       }
     }
   }
-  else if ((posPoint->secondBest[suit].hand == partner[hand])
+  else if ((tpos.secondBest[suit].hand == partner[hand])
            && (countOwn > 1) && (countPart > 1))
   {
     /* Second best at partner and suit length of own
        hand and partner > 1 */
     if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
     {
-      posPoint->winRanks[depth][suit] |=
-        bitMapRank[posPoint->secondBest[suit].rank];
+      tpos.winRanks[depth][suit] |=
+        bitMapRank[tpos.secondBest[suit].rank];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -742,52 +742,52 @@ int QtricksLeadHandTrump(
           (countRho <= 2) &&
           ((countPart <= 2) || (countOwn <= 2)))
       {
-        qt += Max(countOwn - 2, countPart - 2);
+        qt += max(countOwn - 2, countPart - 2);
         if (qt >= cutoff)
           return qt;
-        *res = 2;
+        res = 2;
         return qt;
       }
     }
   }
-  *res = 0;
+  res = 0;
   return qt;
 }
 
 int QtricksLeadHandNT(
-  int hand,
-  pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int * lhoTrumpRanks,
-  int * rhoTrumpRanks,
-  bool commPartner,
-  int commSuit,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int trump,
-  int * res)
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  int& lhoTrumpRanks,
+  int& rhoTrumpRanks,
+  const bool commPartner,
+  const int commSuit,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int trump,
+  int& res)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
      res=2 Continue with next suit. */
 
-  *res = 1;
+  res = 1;
   int qt = qtricks;
-  posPoint->winRanks[depth][suit] |=
-    bitMapRank[posPoint->winner[suit].rank];
+  tpos.winRanks[depth][suit] |=
+    bitMapRank[tpos.winner[suit].rank];
 
   qt++;
   if (qt >= cutoff)
     return qt;
   if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
   {
-    (*lhoTrumpRanks) = Max(0, (*lhoTrumpRanks) - 1);
-    (*rhoTrumpRanks) = Max(0, (*rhoTrumpRanks) - 1);
+    lhoTrumpRanks = max(0, lhoTrumpRanks - 1);
+    rhoTrumpRanks = max(0, rhoTrumpRanks - 1);
   }
 
   if ((countLho <= 1) && (countRho <= 1) && (countPart <= 1))
@@ -795,94 +795,94 @@ int QtricksLeadHandNT(
     qt += countOwn - 1;
     if (qt >= cutoff)
       return qt;
-    *res = 2;
+    res = 2;
     return qt;
   }
 
-  if (posPoint->secondBest[suit].hand == hand)
+  if (tpos.secondBest[suit].hand == hand)
   {
-    posPoint->winRanks[depth][suit] |=
-      bitMapRank[posPoint->secondBest[suit].rank];
+    tpos.winRanks[depth][suit] |=
+      bitMapRank[tpos.secondBest[suit].rank];
     qt++;
     if (qt >= cutoff)
       return qt;
     if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
     {
-      (*lhoTrumpRanks) = Max(0, (*lhoTrumpRanks) - 1);
-      (*rhoTrumpRanks) = Max(0, (*rhoTrumpRanks) - 1);
+      lhoTrumpRanks = max(0, lhoTrumpRanks - 1);
+      rhoTrumpRanks = max(0, rhoTrumpRanks - 1);
     }
     if ((countLho <= 2) && (countRho <= 2) && (countPart <= 2))
     {
       qt += countOwn - 2;
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
-  else if ((posPoint->secondBest[suit].hand == partner[hand])
+  else if ((tpos.secondBest[suit].hand == partner[hand])
            && (countOwn > 1) && (countPart > 1))
   {
     /* Second best at partner and suit length of own
        hand and partner > 1 */
-    posPoint->winRanks[depth][suit] |=
-      bitMapRank[posPoint->secondBest[suit].rank];
+    tpos.winRanks[depth][suit] |=
+      bitMapRank[tpos.secondBest[suit].rank];
     qt++;
     if (qt >= cutoff)
       return qt;
     if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
     {
-      (*lhoTrumpRanks) = Max(0, (*lhoTrumpRanks) - 1);
-      (*rhoTrumpRanks) = Max(0, (*rhoTrumpRanks) - 1);
+      lhoTrumpRanks = max(0, lhoTrumpRanks - 1);
+      rhoTrumpRanks = max(0, rhoTrumpRanks - 1);
     }
     if ((countLho <= 2) &&
         (countRho <= 2) &&
         ((countPart <= 2) || (countOwn <= 2)))
     {
-      qt += Max(countOwn - 2, countPart - 2);
+      qt += max(countOwn - 2, countPart - 2);
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
 
-  *res = 0;
+  res = 0;
   return qt;
 }
 
 
 int QuickTricksPartnerHandTrump(
-  int hand,
-  pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int lhoTrumpRanks,
-  int rhoTrumpRanks,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int commSuit,
-  int commRank,
-  int * res,
-  localVarType * thrp)
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
+  const ThreadData& thrd)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
      res=2 Continue with next suit. */
 
-  *res = 1;
+  res = 1;
   int qt = qtricks;
   if (((countLho != 0) || (lhoTrumpRanks == 0)) &&
       ((countRho != 0) || (rhoTrumpRanks == 0)))
   {
-    posPoint->winRanks[depth][suit] |=
-      bitMapRank[posPoint->winner[suit].rank];
+    tpos.winRanks[depth][suit] |=
+      bitMapRank[tpos.winner[suit].rank];
 
-    posPoint->winRanks[depth][commSuit] |= bitMapRank[commRank];
+    tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
 
     qt++; /* A trick can be taken */
     if (qt >= cutoff)
@@ -896,21 +896,21 @@ int QuickTricksPartnerHandTrump(
       qt += countPart - 1;
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
 
-  if (posPoint->secondBest[suit].hand == partner[hand])
+  if (tpos.secondBest[suit].hand == partner[hand])
   {
     /* Second best found in partners hand */
     if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
     {
       /* Opponents have no trump */
-      posPoint->winRanks[depth][suit] |=
-        bitMapRank[posPoint->secondBest[suit].rank];
+      tpos.winRanks[depth][suit] |=
+        bitMapRank[tpos.secondBest[suit].rank];
 
-      posPoint->winRanks[depth][commSuit] |= bitMapRank[commRank];
+      tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -919,12 +919,12 @@ int QuickTricksPartnerHandTrump(
         qt += countPart - 2;
         if (qt >= cutoff)
           return qt;
-        *res = 2;
+        res = 2;
         return qt;
       }
     }
   }
-  else if ((posPoint->secondBest[suit].hand == hand) &&
+  else if ((tpos.secondBest[suit].hand == hand) &&
            (countPart > 1) &&
            (countOwn > 1))
   {
@@ -934,10 +934,10 @@ int QuickTricksPartnerHandTrump(
     if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
     {
       /* Opponents have no trump */
-      posPoint->winRanks[depth][suit] |=
-        bitMapRank[posPoint->secondBest[suit].rank];
+      tpos.winRanks[depth][suit] |=
+        bitMapRank[tpos.secondBest[suit].rank];
 
-      posPoint->winRanks[depth][commSuit] |= bitMapRank[commRank];
+      tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
 
       qt++;
       if (qt >= cutoff)
@@ -946,29 +946,29 @@ int QuickTricksPartnerHandTrump(
           (countRho <= 2) &&
           ((countOwn <= 2) || (countPart <= 2)))
       {
-        qt += Max(countPart - 2, countOwn - 2);
+        qt += max(countPart - 2, countOwn - 2);
         if (qt >= cutoff)
           return qt;
-        *res = 2;
+        res = 2;
         return qt;
       }
     }
   }
   else if ((suit == commSuit) &&
-           (posPoint->secondBest[suit].hand == lho[hand]) &&
+           (tpos.secondBest[suit].hand == lho[hand]) &&
            ((countLho >= 2) || (lhoTrumpRanks == 0)) &&
            ((countRho >= 2) || (rhoTrumpRanks == 0)))
   {
     unsigned short ranks = 0;
     for (int h = 0; h < DDS_HANDS; h++)
-      ranks |= posPoint->rankInSuit[h][suit];
+      ranks |= tpos.rankInSuit[h][suit];
 
-    if (thrp->rel[ranks].absRank[3][suit].hand == partner[hand])
+    if (thrd.rel[ranks].absRank[3][suit].hand == partner[hand])
     {
-      posPoint->winRanks[depth][suit] |= bitMapRank[
-        static_cast<int>(thrp->rel[ranks].absRank[3][suit].rank) ];
+      tpos.winRanks[depth][suit] |= bitMapRank[
+        static_cast<int>(thrd.rel[ranks].absRank[3][suit].rank) ];
 
-      posPoint->winRanks[depth][commSuit] |= bitMapRank[commRank];
+      tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
 
       qt++;
       if (qt >= cutoff)
@@ -985,34 +985,34 @@ int QuickTricksPartnerHandTrump(
       }
     }
   }
-  *res = 0;
+  res = 0;
   return qt;
 }
 
 
 int QuickTricksPartnerHandNT(
-  int hand,
-  pos * posPoint,
-  int cutoff,
-  int depth,
-  int countLho,
-  int countRho,
-  int countOwn,
-  int countPart,
-  int suit,
-  int qtricks,
-  int commSuit,
-  int commRank,
-  int * res,
-  localVarType * thrp)
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
+  const ThreadData& thrd)
 {
-  *res = 1;
+  res = 1;
   int qt = qtricks;
 
-  posPoint->winRanks[depth][suit] |=
-    bitMapRank[posPoint->winner[suit].rank];
+  tpos.winRanks[depth][suit] |=
+    bitMapRank[tpos.winner[suit].rank];
 
-  posPoint->winRanks[depth][commSuit] |= bitMapRank[commRank];
+  tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
 
   qt++;
   if (qt >= cutoff)
@@ -1022,15 +1022,15 @@ int QuickTricksPartnerHandNT(
     qt += countPart - 1;
     if (qt >= cutoff)
       return qt;
-    *res = 2;
+    res = 2;
     return qt;
   }
 
-  if (posPoint->secondBest[suit].hand == partner[hand])
+  if (tpos.secondBest[suit].hand == partner[hand])
   {
     /* Second best found in partners hand */
-    posPoint->winRanks[depth][suit] |=
-      bitMapRank[posPoint->secondBest[suit].rank];
+    tpos.winRanks[depth][suit] |=
+      bitMapRank[tpos.secondBest[suit].rank];
 
     qt++;
     if (qt >= cutoff)
@@ -1040,17 +1040,17 @@ int QuickTricksPartnerHandNT(
       qt += countPart - 2;
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
-  else if ((posPoint->secondBest[suit].hand == hand)
+  else if ((tpos.secondBest[suit].hand == hand)
            && (countPart > 1) && (countOwn > 1))
   {
     /* Second best found in own hand and own and
        partner's suit length > 1 */
-    posPoint->winRanks[depth][suit] |=
-      bitMapRank[posPoint->secondBest[suit].rank];
+    tpos.winRanks[depth][suit] |=
+      bitMapRank[tpos.secondBest[suit].rank];
 
     qt++;
     if (qt >= cutoff)
@@ -1059,58 +1059,60 @@ int QuickTricksPartnerHandNT(
         (countRho <= 2) &&
         ((countOwn <= 2) || (countPart <= 2)))
     {
-      qt += Max(countPart - 2, countOwn - 2);
+      qt += max(countPart - 2, countOwn - 2);
       if (qt >= cutoff)
         return qt;
-      *res = 2;
+      res = 2;
       return qt;
     }
   }
   else if ((suit == commSuit) &&
-           (posPoint->secondBest[suit].hand == lho[hand]))
+           (tpos.secondBest[suit].hand == lho[hand]))
   {
     unsigned short ranks = 0;
     for (int h = 0; h < DDS_HANDS; h++)
-      ranks |= posPoint->rankInSuit[h][suit];
+      ranks |= tpos.rankInSuit[h][suit];
 
-    if (thrp->rel[ranks].absRank[3][suit].hand == partner[hand])
+    if (thrd.rel[ranks].absRank[3][suit].hand == partner[hand])
     {
-      posPoint->winRanks[depth][suit] |= bitMapRank[
-        static_cast<int>(thrp->rel[ranks].absRank[3][suit].rank) ];
+      tpos.winRanks[depth][suit] |= bitMapRank[
+        static_cast<int>(thrd.rel[ranks].absRank[3][suit].rank) ];
       qt++;
       if (qt >= cutoff)
         return qt;
       if ((countOwn <= 2) && (countLho <= 2) && (countRho <= 2))
       {
-        qtricks += countPart - 2;
+        // TODO: Is the fix to qt correct?
+        // qtricks += countPart - 2;
+        qt += countPart - 2;
         if (qt >= cutoff)
           return qt;
       }
     }
   }
-  *res = 0;
+  res = 0;
   return qt;
 }
 
 
 bool QuickTricksSecondHand(
-  pos * posPoint,
-  int hand,
-  int depth,
-  int target,
-  int trump,
-  localVarType * thrp)
+  pos& tpos,
+  const int hand,
+  const int depth,
+  const int target,
+  const int trump,
+  const ThreadData& thrd)
 {
-  if (depth == thrp->iniDepth)
+  if (depth == thrd.iniDepth)
     return false;
 
-  int ss = posPoint->move[depth + 1].suit;
-  unsigned short (*ris)[DDS_SUITS] = posPoint->rankInSuit;
+  int ss = tpos.move[depth + 1].suit;
+  unsigned short (*ris)[DDS_SUITS] = tpos.rankInSuit;
   unsigned short ranks = static_cast<unsigned short>
                          (ris[hand][ss] | ris[partner[hand]][ss]);
 
   for (int s = 0; s < DDS_SUITS; s++)
-    posPoint->winRanks[depth][s] = 0;
+    tpos.winRanks[depth][s] = 0;
 
   if ((trump != DDS_NOTRUMP) && (ss != trump) &&
       (((ris[hand][ss] == 0) && (ris[hand][trump] != 0)) ||
@@ -1124,7 +1126,7 @@ bool QuickTricksSecondHand(
     /* Own side can ruff, their side can't. */
   }
 
-  else if (ranks > (bitMapRank[posPoint->move[depth + 1].rank] |
+  else if (ranks > (bitMapRank[tpos.move[depth + 1].rank] |
                     ris[lho[hand]][ss]))
   {
     if ((trump != DDS_NOTRUMP) && (ss != trump) &&
@@ -1135,7 +1137,7 @@ bool QuickTricksSecondHand(
     /* Own side has highest card in suit, which LHO can't ruff. */
 
     int rr = highestRank[ranks];
-    posPoint->winRanks[depth][ss] = bitMapRank[rr];
+    tpos.winRanks[depth][ss] = bitMapRank[rr];
   }
   else
   {
@@ -1146,10 +1148,10 @@ bool QuickTricksSecondHand(
   int qtricks = 1;
 
   int cutoff;
-  if (thrp->nodeTypeStore[hand] == MAXNODE)
-    cutoff = target - posPoint->tricksMAX;
+  if (thrd.nodeTypeStore[hand] == MAXNODE)
+    cutoff = target - tpos.tricksMAX;
   else
-    cutoff = posPoint->tricksMAX - target + (depth >> 2) + 3;
+    cutoff = tpos.tricksMAX - target + (depth >> 2) + 3;
 
   if (qtricks >= cutoff)
     return true;
@@ -1165,13 +1167,13 @@ bool QuickTricksSecondHand(
   else
     hh = partner[hand];
 
-  if ((posPoint->winner[ss].hand == hh) &&
-      (posPoint->secondBest[ss].rank != 0) &&
-      (posPoint->secondBest[ss].hand == hh))
+  if ((tpos.winner[ss].hand == hh) &&
+      (tpos.secondBest[ss].rank != 0) &&
+      (tpos.secondBest[ss].hand == hh))
   {
     qtricks++;
-    posPoint->winRanks[depth][ss] |=
-      bitMapRank[posPoint->secondBest[ss].rank];
+    tpos.winRanks[depth][ss] |=
+      bitMapRank[tpos.secondBest[ss].rank];
 
     if (qtricks >= cutoff)
       return true;
@@ -1179,25 +1181,25 @@ bool QuickTricksSecondHand(
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    if ((s == ss) || (posPoint->length[hh][s] == 0))
+    if ((s == ss) || (tpos.length[hh][s] == 0))
       continue;
 
-    if ((posPoint->length[lho[hh]][s] == 0) &&
-        (posPoint->length[rho[hh]][s] == 0) &&
-        (posPoint->length[partner[hh]][s] == 0))
+    if ((tpos.length[lho[hh]][s] == 0) &&
+        (tpos.length[rho[hh]][s] == 0) &&
+        (tpos.length[partner[hh]][s] == 0))
     {
       /* Long other suit which nobody else holds. */
       qtricks += counttable[ris[hh][s]];
       if (qtricks >= cutoff)
         return true;
     }
-    else if ((posPoint->winner[s].rank != 0) &&
-             (posPoint->winner[s].hand == hh))
+    else if ((tpos.winner[s].rank != 0) &&
+             (tpos.winner[s].hand == hh))
     {
       /* Top winners in other suits. */
       qtricks++;
-      posPoint->winRanks[depth][s] |=
-        bitMapRank[posPoint->winner[s].rank];
+      tpos.winRanks[depth][s] |=
+        bitMapRank[tpos.winner[s].rank];
 
       if (qtricks >= cutoff)
         return true;
