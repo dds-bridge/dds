@@ -111,18 +111,17 @@ void STDCALL SetResources(
   // The number of threads will be limited by:
   // - If threading set as single-threaded or compiled only 
   //   single-threaded: 1
-  // - If threading set as one of the IMPL variants: 1.5 * ncores
+  // - If threading set as one of the IMPL variants: ncores
   //   whatever the user says (as we currently don't have control)
-  // - Otherwise the lower of maxThreads and 1.5 * ncores (for test
-  //   purpose, later one 1 * ncores)
+  // - Otherwise the lower of maxThreads and ncores
 
   int thrMax;
   if (sysdep.IsSingleThreaded())
     thrMax = 1;
   else if (sysdep.IsIMPL() || maxThreadsIn <= 0)
-    thrMax = static_cast<int>(1.51 * ncores);
+    thrMax = ncores;
   else
-    thrMax = min(maxThreadsIn, static_cast<int>(1.51 * ncores));
+    thrMax = min(maxThreadsIn, ncores);
 
   // For simplicity we won't vary the amount of memory per thread
   // in the small and large versions.
