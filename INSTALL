@@ -156,8 +156,13 @@ well use STL if you have it, as this is probably the most portable.
 If you don't have a C++17 compiler, you will not get STLIMPL or
 PPLIMPL.
 
-The *IMPL versions let the system handle threads autonomously,
-whereas the others are handled by DDS internally.
+The *IMPL versions let the system handle threads autonomously
+(up to the number of threads set by the user), whereas the others 
+are handled by DDS internally.  The *IMPL version are similar in
+speed, except if there is some near-duplication in the input hands
+(say, instances of the same distribution played in the same 
+denomination from different side).  The non-IMPL version handle
+this more efficiently.
 
 
 Testing

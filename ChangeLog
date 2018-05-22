@@ -1,5 +1,5 @@
-Release Notes DDS 2.9.0
------------------------
+Release Notes DDS 2.9.0 beta
+----------------------------
 Included code for a number of multi-threading systems:
 - Windows API (was already there)
 - OpenMP (was already there)
@@ -7,8 +7,8 @@ Included code for a number of multi-threading systems:
 - Boost (new, works on many systems, but you may have to install it)
 - STL (new, should work on most systems with a modern compiler)
 - TBB (new, not so broadly available, but portable in principle)
-- STLIMPL (new, don't use)
-- PPLIMPL (new, don't use)
+- STLIMPL (new, experimental)
+- PPLIMPL (new, experimental)
 
 Tested combinations include:
 - Visual C++ with Windows API, OpenMP, Boost, STL
@@ -19,7 +19,7 @@ Tested combinations include:
 - MacOS GNU g++ with OpenMP, Boost, STL
 
 The number of threads is now unlimited in principle, although the
-DLL will not let you go beyond 1.5 * the number of processor cores.
+DLL will not let you go beyond the number of processor cores.
 
 Enabled the transposition-table code for both the large and the small
 versions in the same DLL.  Therefore there is only a single DLL
