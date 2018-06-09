@@ -17,7 +17,7 @@
 # matters are CC_BOOST_INCL and CC_BOOST_LINK.
 # On my systems (there are two), they are here:
 
-BOOST32_PATH1	= \User\sheins\boost_1_66_0_x32_new
+BOOST32_PATH1	= \Users\heins\Libraries\Boost\boost_1_66_0_x32_new
 BOOST32_LIB1	= $(BOOST32_PATH1)\lib32-msvc-14.1
 
 BOOST32_PATH2	= \Users\s.hein\Documents\Programs\boost_1_66_0_x32_14_1
