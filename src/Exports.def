@@ -6,6 +6,8 @@ EXPORTS
    SetThreading@4 = SetThreading
    SetResources
    SetResources@8 = SetResources
+   GetDDSInfo
+   GetDDSInfo@4 = GetDDSInfo
    FreeMemory
    FreeMemory@0 = FreeMemory
    ErrorMessage
