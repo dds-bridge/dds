@@ -574,11 +574,6 @@ int System::RunThreadsPPLIMPL()
 
   threadMgr.Reset(numThreads);
 
-  using namespace Concurrency;
-  Concurrency::Scheduler * sched = Concurrency::Scheduler::Create(
-    SchedulerPolicy(1, MaxConcurrency, numThreads));
-  sched->Attach();
-
   Concurrency::parallel_for_each(uniques.begin(), uniques.end(),
     [&](int &bno)
   {
@@ -597,9 +592,6 @@ int System::RunThreadsPPLIMPL()
     if (! threadMgr.Release(thrId))
       err = true;
   });
-
-  CurrentScheduler::Detach();
-  sched->Release();
 
   if (err)
   {

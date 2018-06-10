@@ -102,24 +102,30 @@ int ThreadMgr::Occupy(const int machineId)
 
 bool ThreadMgr::Release(const int machineId)
 {
+  mtx.lock();
+
+  bool ret;
   const int r = machineThreads[machineId];
+
   if (r == -1)
   {
     // Error: Not in use.
-    return false;
+    ret = false;
   }
-
-  if (! realThreads[r])
+  else if (! realThreads[r])
   {
     // Error: Refers to a real thread that is not in use.
-    return false;
+    ret = false;
+  }
+  else
+  {
+    realThreads[r] = false;
+    machineThreads[machineId] = -1;
+    ret = true;
   }
 
-  mtx.lock();
-  realThreads[r] = false;
-  machineThreads[machineId] = -1;
   mtx.unlock();
-  return true;
+  return ret;
 }
 
 
