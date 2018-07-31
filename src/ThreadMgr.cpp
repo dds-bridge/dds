@@ -34,12 +34,12 @@ ThreadMgr::~ThreadMgr()
 }
 
 
-void ThreadMgr::Reset(const int nThreads)
+void ThreadMgr::Reset(const unsigned int nThreads)
 {
   if (nThreads > numRealThreads)
   {
     realThreads.resize(nThreads);
-    for (int t = numRealThreads; t < nThreads; t++)
+    for (unsigned int t = numRealThreads; t < nThreads; t++)
       realThreads[t] = false;
     numRealThreads = nThreads;
   }
@@ -47,20 +47,20 @@ void ThreadMgr::Reset(const int nThreads)
   if (nThreads > numMachineThreads)
   {
     machineThreads.resize(nThreads);
-    for (int t = numMachineThreads; t < nThreads; t++)
+    for (unsigned int t = numMachineThreads; t < nThreads; t++)
       machineThreads[t] = -1;
     numMachineThreads = nThreads;
   }
 }
 
 
-int ThreadMgr::Occupy(const int machineId)
+int ThreadMgr::Occupy(const unsigned int machineId)
 {
   if (machineId >= numMachineThreads)
   {
     numMachineThreads = machineId + 1;
     machineThreads.resize(numMachineThreads);
-    for (int t = machineId; t < numMachineThreads; t++)
+    for (unsigned int t = machineId; t < numMachineThreads; t++)
       machineThreads[t] = -1;
   }
 
@@ -75,13 +75,13 @@ int ThreadMgr::Occupy(const int machineId)
   do
   {
     mtx.lock();
-    for (int t = 0; t < numRealThreads; t++)
+    for (unsigned int t = 0; t < numRealThreads; t++)
     {
       if (realThreads[t] == false)
       {
         realThreads[t] = true;
-        machineThreads[machineId] = t;
-        res = t;
+        machineThreads[machineId] = static_cast<int>(t);
+        res = static_cast<int>(t);
         break;
       }
     }
@@ -100,7 +100,7 @@ int ThreadMgr::Occupy(const int machineId)
 }
 
 
-bool ThreadMgr::Release(const int machineId)
+bool ThreadMgr::Release(const unsigned int machineId)
 {
   const int r = machineThreads[machineId];
   if (r == -1)
@@ -109,14 +109,14 @@ bool ThreadMgr::Release(const int machineId)
     return false;
   }
 
-  if (! realThreads[r])
+  if (! realThreads[static_cast<unsigned int>(r)])
   {
     // Error: Refers to a real thread that is not in use.
     return false;
   }
 
   mtx.lock();
-  realThreads[r] = false;
+  realThreads[static_cast<unsigned int>(r)] = false;
   machineThreads[machineId] = -1;
   mtx.unlock();
   return true;
@@ -133,7 +133,7 @@ void ThreadMgr::Print(
 
   fo << tag << 
     ": Real threads occupied (out of " << numRealThreads << "):\n";
-  for (int t = 0; t < numRealThreads; t++)
+  for (unsigned int t = 0; t < numRealThreads; t++)
   {
     if (realThreads[t])
       fo << t << endl;
@@ -141,7 +141,7 @@ void ThreadMgr::Print(
   fo << endl;
 
   fo << "Machine threads overview:\n";
-  for (int t = 0; t < numMachineThreads; t++)
+  for (unsigned int t = 0; t < numMachineThreads; t++)
   {
     if (machineThreads[t] != -1)
     {
