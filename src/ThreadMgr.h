@@ -21,8 +21,8 @@ class ThreadMgr
 
     vector<bool> realThreads;
     vector<int> machineThreads;
-    int numRealThreads;
-    int numMachineThreads;
+    unsigned int numRealThreads;
+    unsigned int numMachineThreads;
 
   public:
 
@@ -30,11 +30,11 @@ class ThreadMgr
 
     ~ThreadMgr();
 
-    void Reset(const int nThreads);
+    void Reset(const unsigned int nThreads);
 
-    int Occupy(const int MachineThrId);
+    int Occupy(const unsigned int MachineThrId);
 
-    bool Release(const int MachineThrId);
+    bool Release(const unsigned int MachineThrId);
 
     void Print(
       const string& fname,
