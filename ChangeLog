@@ -1,9 +1,10 @@
 Release Notes DDS 2.9.0
 -----------------------
-- Fixed crashes in certain multi-threading types.
+- Fixed crashes in certain multi-threading types
 - Added GetDDSInfo to Exports.def (thanks to Paul Barden)
 - Fixed casting problems with some compilers in ThreadMgr
 - Updated documentation
+
 
 Release Notes DDS 2.9.0 beta
 ----------------------------
