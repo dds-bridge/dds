@@ -36,35 +36,37 @@ ThreadMgr::~ThreadMgr()
 
 void ThreadMgr::Reset(const int nThreads)
 {
-  if (nThreads > numRealThreads)
+  const unsigned n = static_cast<unsigned>(nThreads);
+  if (n > numRealThreads)
   {
-    realThreads.resize(nThreads);
-    for (int t = numRealThreads; t < nThreads; t++)
+    realThreads.resize(n);
+    for (unsigned t = numRealThreads; t < n; t++)
       realThreads[t] = false;
-    numRealThreads = nThreads;
+    numRealThreads = n;
   }
 
-  if (nThreads > numMachineThreads)
+  if (n > numMachineThreads)
   {
-    machineThreads.resize(nThreads);
-    for (int t = numMachineThreads; t < nThreads; t++)
+    machineThreads.resize(n);
+    for (unsigned t = numMachineThreads; t < n; t++)
       machineThreads[t] = -1;
-    numMachineThreads = nThreads;
+    numMachineThreads = n;
   }
 }
 
 
 int ThreadMgr::Occupy(const int machineId)
 {
-  if (machineId >= numMachineThreads)
+  const unsigned m = static_cast<unsigned>(machineId);
+  if (m >= numMachineThreads)
   {
-    numMachineThreads = machineId + 1;
+    numMachineThreads = m + 1;
     machineThreads.resize(numMachineThreads);
-    for (int t = machineId; t < numMachineThreads; t++)
+    for (unsigned t = m; t < numMachineThreads; t++)
       machineThreads[t] = -1;
   }
 
-  if (machineThreads[machineId] != -1)
+  if (machineThreads[m] != -1)
   {
     // Error: Already in use.
     return -1;
@@ -75,13 +77,14 @@ int ThreadMgr::Occupy(const int machineId)
   do
   {
     mtx.lock();
-    for (int t = 0; t < numRealThreads; t++)
+    for (unsigned t = 0; t < numRealThreads; t++)
     {
       if (realThreads[t] == false)
       {
+        const int ti = static_cast<int>(t);
         realThreads[t] = true;
-        machineThreads[machineId] = t;
-        res = t;
+        machineThreads[m] = ti;
+        res = ti;
         break;
       }
     }
@@ -102,24 +105,32 @@ int ThreadMgr::Occupy(const int machineId)
 
 bool ThreadMgr::Release(const int machineId)
 {
-  const int r = machineThreads[machineId];
+  mtx.lock();
+
+  bool ret;
+  const unsigned m = static_cast<unsigned>(machineId);
+  const int r = machineThreads[m];
+  const unsigned ru = static_cast<unsigned>(r);
+
   if (r == -1)
   {
     // Error: Not in use.
-    return false;
+    ret = false;
   }
-
-  if (! realThreads[r])
+  else if (! realThreads[ru])
   {
     // Error: Refers to a real thread that is not in use.
-    return false;
+    ret = false;
+  }
+  else
+  {
+    realThreads[ru] = false;
+    machineThreads[m] = -1;
+    ret = true;
   }
 
-  mtx.lock();
-  realThreads[r] = false;
-  machineThreads[machineId] = -1;
   mtx.unlock();
-  return true;
+  return ret;
 }
 
 
@@ -133,7 +144,7 @@ void ThreadMgr::Print(
 
   fo << tag << 
     ": Real threads occupied (out of " << numRealThreads << "):\n";
-  for (int t = 0; t < numRealThreads; t++)
+  for (unsigned t = 0; t < numRealThreads; t++)
   {
     if (realThreads[t])
       fo << t << endl;
@@ -141,7 +152,7 @@ void ThreadMgr::Print(
   fo << endl;
 
   fo << "Machine threads overview:\n";
-  for (int t = 0; t < numMachineThreads; t++)
+  for (unsigned t = 0; t < numMachineThreads; t++)
   {
     if (machineThreads[t] != -1)
     {
