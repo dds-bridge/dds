@@ -570,7 +570,7 @@ int System::RunThreadsPPLIMPL()
   (* CallbackDuplList[runCat])(* bop, uniques, crossrefs);
 
   static atomic<int> thrIdNext = 0;
-  bool err = false;
+  bool err = false, err2 = false;
 
   threadMgr.Reset(numThreads);
 
@@ -590,12 +590,17 @@ int System::RunThreadsPPLIMPL()
       (* CallbackSingleList[runCat])(realThrId, bno);
 
     if (! threadMgr.Release(thrId))
-      err = true;
+      err2 = true;
   });
 
   if (err)
   {
     cout << "Too many threads, numThreads " << numThreads << endl;
+    return RETURN_THREAD_INDEX;
+  }
+  else if (err2)
+  {
+    cout << "Release failed, numThreads " << numThreads << endl;
     return RETURN_THREAD_INDEX;
   }
 
