@@ -21,8 +21,8 @@ class ThreadMgr
 
     vector<bool> realThreads;
     vector<int> machineThreads;
-    int numRealThreads;
-    int numMachineThreads;
+    unsigned numRealThreads;
+    unsigned numMachineThreads;
 
   public:
 
