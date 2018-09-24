@@ -531,7 +531,7 @@ void SetDealTables(
     for (int s = 0; s < DDS_SUITS; s++)
     {
       relp->absRank[1][s].hand =
-        static_cast<char>(handLookup[s][topBitNo]);
+        static_cast<signed char>(handLookup[s][topBitNo]);
       relp->absRank[1][s].rank = static_cast<char>(topBitNo);
     }
   }
