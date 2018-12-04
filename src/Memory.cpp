@@ -37,6 +37,7 @@ void Memory::ResetThread(const unsigned thrId)
 
 void Memory::ReturnThread(const unsigned thrId)
 {
+  if(memory[thrId] == nullptr) return;
   memory[thrId]->transTable->ReturnAllMemory();
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
