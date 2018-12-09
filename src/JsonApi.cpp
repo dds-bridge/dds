@@ -1,20 +1,24 @@
-#include "json.hpp"
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
 
 #include "CalcTables.h"
 #include "dds.h"
 
 using namespace std;
-using json = nlohmann::json;
+using namespace rapidjson;
+// using json = nlohmann::json;
 
-static json TableResultToJson(const ddTableResults * table);
+static char * TableResultToJson(const ddTableResults * table);
+static char * ErrorToJson(const char * error);
 
 char * STDCALL JsonApi_CalcAllTables(const char * params)
 {
-  auto jobj = json::parse(params);
+  Document jobj;
+  jobj.Parse(params);
 
   ddTableDealsPBN pbnDeals;
   pbnDeals.noOfTables = 1;
-  strcpy(pbnDeals.deals[0].cards, jobj["pbn"].get<string>().c_str());
+  strcpy(pbnDeals.deals[0].cards, jobj["pbn"].GetString());
 
   ddTablesRes table;
   allParResults pres;
@@ -23,18 +27,14 @@ char * STDCALL JsonApi_CalcAllTables(const char * params)
   int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All
   int res = CalcAllTablesPBN(&pbnDeals, 0, trumpFilter, &table, &pres);
 
-  json ans;
-
   if (res != RETURN_NO_FAULT)
   {
     char line[80];
-    ErrorMessage(res, line);    
-    ans["error"] = line;
-    return strdup(ans.dump().c_str());
+    ErrorMessage(res, line);
+    return ErrorToJson(line);
   }
 
-  ans = TableResultToJson(&table.results[0]);
-  return strdup(ans.dump().c_str());
+  return TableResultToJson(&table.results[0]);
 }
 
 void STDCALL JsonApi_FreeCPtr(void * ptr)
@@ -42,42 +42,85 @@ void STDCALL JsonApi_FreeCPtr(void * ptr)
   free(ptr);
 }
 
-static json TableResultToJson(const ddTableResults * table)
+static char * ErrorToJson(const char * error)
 {
-    json jdir;
+  StringBuffer sb;
+  Writer<StringBuffer> writer(sb);
 
-    jdir["s"] = table->resTable[0][0];
-    jdir["h"] = table->resTable[1][0];
-    jdir["d"] = table->resTable[2][0];
-    jdir["c"] = table->resTable[3][0];
-    jdir["n"] = table->resTable[4][0];
+  writer.StartObject();
 
-    json ans;
-    ans["north"] = jdir;
+  writer.Key("error");
+  writer.String(error);
 
-    jdir["s"] = table->resTable[0][1];
-    jdir["h"] = table->resTable[1][1];
-    jdir["d"] = table->resTable[2][1];
-    jdir["c"] = table->resTable[3][1];
-    jdir["n"] = table->resTable[4][1];
+  writer.EndObject();
 
-    ans["east"] = jdir;
+  return strdup(sb.GetString());
+}
 
-    jdir["s"] = table->resTable[0][2];
-    jdir["h"] = table->resTable[1][2];
-    jdir["d"] = table->resTable[2][2];
-    jdir["c"] = table->resTable[3][2];
-    jdir["n"] = table->resTable[4][2];
+static char * TableResultToJson(const ddTableResults * table)
+{
+  StringBuffer sb;
+  Writer<StringBuffer> writer(sb);
 
-    ans["south"] = jdir;
+  writer.StartObject();
 
-    jdir["s"] = table->resTable[0][3];
-    jdir["h"] = table->resTable[1][3];
-    jdir["d"] = table->resTable[2][3];
-    jdir["c"] = table->resTable[3][3];
-    jdir["n"] = table->resTable[4][3];
+  writer.Key("north");
+  writer.StartObject();
+  writer.Key("s");
+  writer.Int(table->resTable[0][0]);
+  writer.Key("h");
+  writer.Int(table->resTable[1][0]);
+  writer.Key("d");
+  writer.Int(table->resTable[2][0]);
+  writer.Key("c");
+  writer.Int(table->resTable[3][0]);
+  writer.Key("n");
+  writer.Int(table->resTable[4][0]);
+  writer.EndObject();
 
-    ans["west"] = jdir;
+  writer.Key("east");
+  writer.StartObject();
+  writer.Key("s");
+  writer.Int(table->resTable[0][1]);
+  writer.Key("h");
+  writer.Int(table->resTable[1][1]);
+  writer.Key("d");
+  writer.Int(table->resTable[2][1]);
+  writer.Key("c");
+  writer.Int(table->resTable[3][1]);
+  writer.Key("n");
+  writer.Int(table->resTable[4][1]);
+  writer.EndObject();
 
-    return ans;
+  writer.Key("south");
+  writer.StartObject();
+  writer.Key("s");
+  writer.Int(table->resTable[0][2]);
+  writer.Key("h");
+  writer.Int(table->resTable[1][2]);
+  writer.Key("d");
+  writer.Int(table->resTable[2][2]);
+  writer.Key("c");
+  writer.Int(table->resTable[3][2]);
+  writer.Key("n");
+  writer.Int(table->resTable[4][2]);
+  writer.EndObject();
+
+  writer.Key("west");
+  writer.StartObject();
+  writer.Key("s");
+  writer.Int(table->resTable[0][3]);
+  writer.Key("h");
+  writer.Int(table->resTable[1][3]);
+  writer.Key("d");
+  writer.Int(table->resTable[2][3]);
+  writer.Key("c");
+  writer.Int(table->resTable[3][3]);
+  writer.Key("n");
+  writer.Int(table->resTable[4][3]);
+  writer.EndObject();
+
+  writer.EndObject();
+
+  return strdup(sb.GetString());
 }
