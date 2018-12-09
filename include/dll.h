@@ -532,4 +532,8 @@ EXTERN_C DLLEXPORT void STDCALL ErrorMessage(
   int code,
   char line[80]);
 
+EXTERN_C DLLEXPORT char * STDCALL JsonApi_CalcAllTables(const char * params);
+
+EXTERN_C DLLEXPORT void STDCALL JsonApi_FreeCPtr(void * ptr);
+
 #endif

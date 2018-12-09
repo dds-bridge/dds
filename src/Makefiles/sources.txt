@@ -7,6 +7,7 @@ SOURCE_FILES    =               \
         DealerPar.cpp           \
         File.cpp                \
         Init.cpp                \
+        JsonApi.cpp             \
         LaterTricks.cpp         \
         Memory.cpp              \
         Moves.cpp               \

@@ -37,7 +37,7 @@ void Memory::ResetThread(const unsigned thrId)
 
 void Memory::ReturnThread(const unsigned thrId)
 {
-  if(memory[thrId] == nullptr) return;
+  if(memory[thrId] == nullptr || memory[thrId]->transTable == nullptr) return;
   memory[thrId]->transTable->ReturnAllMemory();
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
@@ -113,6 +113,7 @@ ThreadData * Memory::GetPtr(const unsigned thrId)
 
 double Memory::MemoryInUseMB(const unsigned thrId) const
 {
+  if(memory[thrId] == nullptr || memory[thrId]->transTable == nullptr) return -101;
   return memory[thrId]->transTable->MemoryInUse() +
     8192. * sizeof(relRanksType) / static_cast<double>(1024.);
 }
