@@ -8,6 +8,7 @@
 */
 
 
+#include "Init.h"
 #include "Memory.h"
 
 
@@ -19,6 +20,8 @@ Memory::Memory()
 
 Memory::~Memory()
 {
+  CloseDebugFiles();
+  FreeMemory();
 }
 
 
@@ -30,6 +33,7 @@ void Memory::Reset()
 
 void Memory::ResetThread(const unsigned thrId)
 {
+  if(memory[thrId] == nullptr || memory[thrId]->transTable == nullptr) return;
   memory[thrId]->transTable->ResetMemory(TT_RESET_FREE_MEMORY);
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
@@ -37,8 +41,11 @@ void Memory::ResetThread(const unsigned thrId)
 
 void Memory::ReturnThread(const unsigned thrId)
 {
+  if(memory[thrId] == nullptr || memory[thrId]->transTable == nullptr) return;
   memory[thrId]->transTable->ReturnAllMemory();
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
+  delete memory[thrId]->transTable;
+  delete memory[thrId];
 }
 
 
@@ -103,7 +110,7 @@ ThreadData * Memory::GetPtr(const unsigned thrId)
 {
   if (thrId >= nThreads)
   {
-    cout << "Memory::GetPtr: " << thrId << " vs. " << nThreads << endl;
+    cout << "Memory::GetPtr: " << thrId << " vs. " << nThreads << " vs. " << memory.size() << endl;
     exit(1);
   }
   return memory[thrId];
@@ -112,6 +119,7 @@ ThreadData * Memory::GetPtr(const unsigned thrId)
 
 double Memory::MemoryInUseMB(const unsigned thrId) const
 {
+  if(memory[thrId] == nullptr || memory[thrId]->transTable == nullptr) return -101;
   return memory[thrId]->transTable->MemoryInUse() +
     8192. * sizeof(relRanksType) / static_cast<double>(1024.);
 }

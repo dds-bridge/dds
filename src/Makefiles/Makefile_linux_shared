@@ -81,9 +81,18 @@ WARN_FLAGS	= 		\
 	-Wno-long-long		\
 	-Wno-format
 
+# SANITIZE_FLAGS =				\
+# 		-fsanitize=address		\
+# 		-fsanitize=bounds		\
+# 		-fsanitize=object-size 	\
+# 		-fno-omit-frame-pointer
+
+SANITIZE_FLAGS =
+
 COMPILE_FLAGS	= -fPIC -O3 -flto -fopenmp -mtune=generic -std=c++11 \
 		$(WARN_FLAGS) \
-		$(DDS_BEHAVIOR) $(THREAD_COMPILE) $(THREADING)
+		$(DDS_BEHAVIOR) $(THREAD_COMPILE) $(THREADING)	\
+		$(SANITIZE_FLAGS)
 
 DLLBASE		= dds
 SHARED_LIB	= lib$(DLLBASE).so
@@ -100,8 +109,8 @@ LINK_FLAGS      =               \
         -Wl,-z                  \
         -Wl,relro               \
         $(THREAD_LINK)          \
-        -fPIC
-
+        -fPIC					\
+		$(SANITIZE_FLAGS)
 
 linux:	$(O_FILES)
 	$(CC) \

@@ -16,6 +16,7 @@ File.o: File.h
 Init.o: Init.h dds.h ../include/portab.h ../include/dll.h Memory.h
 Init.o: TransTable.h TransTableS.h TransTableL.h Moves.h File.h debug.h
 Init.o: System.h Scheduler.h TimeStatList.h TimeStat.h Timer.h
+JsonApi.o: CalcTables.h dds.h ../include/portab.h ../include/dll.h
 LaterTricks.o: LaterTricks.h dds.h ../include/portab.h ../include/dll.h
 LaterTricks.o: Memory.h TransTable.h TransTableS.h TransTableL.h Moves.h
 LaterTricks.o: File.h debug.h

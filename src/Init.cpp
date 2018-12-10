@@ -343,8 +343,9 @@ void InitConstants()
       groupData[ris].rank[g] = topBitNo;
       groupData[ris].sequence[g] = 0;
       groupData[ris].fullseq[g] = topBitRank;
-      groupData[ris].gap[g] =
-        topside[topBitNo] & botside[ groupData[ris].rank[g - 1] ];
+      groupData[ris].gap[g] = (g == 0 ?
+        topside[topBitNo] & botside[ 0 ] :
+        topside[topBitNo] & botside[ groupData[ris].rank[g - 1] ]);
     }
   }
 }
