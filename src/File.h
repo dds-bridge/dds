@@ -15,7 +15,7 @@
 
 using namespace std;
 
-
+namespace dds {
 class File
 {
   private:
@@ -40,5 +40,8 @@ class File
 
     void Close();
 };
+}  // namespace dds
+using dds::File;
+
 
 #endif
