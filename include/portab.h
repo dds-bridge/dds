@@ -34,7 +34,7 @@
 
 #elif defined (__linux)
   #include <unistd.h>
-  #if not defined(DDS_NO_STATIC_INIT)
+  #if !defined(DDS_NO_STATIC_INIT)
   #define USES_CONSTRUCTOR
   /* DLL uses a constructor function for initialization */
   #endif
