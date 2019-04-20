@@ -10,6 +10,7 @@
 #ifndef DDS_THREADMGR_H
 #define DDS_THREADMGR_H
 
+#include <string>
 #include <vector>
 
 using namespace std;
