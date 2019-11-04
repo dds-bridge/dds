@@ -1,4 +1,4 @@
-lang: c++
+language: cpp
 dist: bionic
 addons:
   apt:
