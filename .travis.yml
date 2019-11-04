@@ -9,8 +9,7 @@ addons:
     - libomp-dev 
 script:
   - cd src
-  - pwd
-  - ls
+  - make Makefiles/Makefile_linux_shared
   - make install -f Makefiles/Makefile_linux_shared
   - cd ../example
   - export LD_LIBRARY_PATH=$PWD
