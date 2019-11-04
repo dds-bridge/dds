@@ -11,7 +11,7 @@ script:
   - cd src
   - make -f Makefiles/Makefile_linux_shared
   - make install -f Makefiles/Makefile_linux_shared
-  - cd ../example
+  - cd ../examples
   - export LD_LIBRARY_PATH=$PWD
   - cp Makefiles/Makefile_linux Makefile
   - make
