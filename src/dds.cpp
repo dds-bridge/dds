@@ -34,7 +34,6 @@ extern "C" BOOL APIENTRY DllMain(
   else if (ul_reason_for_call == DLL_PROCESS_DETACH)
   {
     CloseDebugFiles();
-    FreeMemory();
 #ifdef DDS_MEMORY_LEAKS_WIN32
     _CrtDumpMemoryLeaks();
 #endif
@@ -59,7 +58,6 @@ void DDSInitialize(void)
 void DDSFinalize(void) 
 {
   CloseDebugFiles();
-  FreeMemory();
 }
 
 #elif defined(USES_CONSTRUCTOR)
@@ -73,7 +71,6 @@ static void __attribute__ ((constructor)) libInit(void)
 static void __attribute__ ((destructor)) libEnd(void)
 {
   CloseDebugFiles();
-  FreeMemory();
 }
 
 #endif
