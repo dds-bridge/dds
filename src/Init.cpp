@@ -350,7 +350,7 @@ void InitConstants()
 
 void InitDebugFiles()
 {
-  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
     ThreadData * thrp = memory.GetPtr(thrId);
     UNUSED(thrp); // To avoid compile errors
@@ -390,7 +390,7 @@ void InitDebugFiles()
 
 void CloseDebugFiles()
 {
-  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
     ThreadData * thrp = memory.GetPtr(thrId);
     UNUSED(thrp); // To avoid compiler warning
@@ -597,7 +597,7 @@ void STDCALL GetDDSInfo(DDSInfo * info)
 
 void STDCALL FreeMemory()
 {
-  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
     memory.ReturnThread(thrId);
 }
 
