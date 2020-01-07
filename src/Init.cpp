@@ -28,8 +28,6 @@ void InitConstants();
 
 void InitDebugFiles();
 
-void FreeThreadMem();
-
 
 int lho[DDS_HANDS] = { 1, 2, 3, 0 };
 int rho[DDS_HANDS] = { 3, 0, 1, 2 };
@@ -594,13 +592,6 @@ void ResetBestMoves(
 void STDCALL GetDDSInfo(DDSInfo * info)
 {
   (void) sysdep.str(info);
-}
-
-
-void FreeThreadMem()
-{
-  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
-    memory.ResetThread(thrId);
 }
 
 
