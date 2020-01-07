@@ -117,7 +117,6 @@ class Memory
   private:
 
     vector<ThreadData *> memory;
-    unsigned nThreads;
 
     vector<string> threadSizes;
 
@@ -127,8 +126,6 @@ class Memory
 
     ~Memory();
 
-    void Reset();
-
     void ReturnThread(const unsigned thrId);
 
     void Resize(
@@ -137,7 +134,7 @@ class Memory
       const int memDefault_MB,
       const int memMaximum_MB);
 
-    int NumThreads() const;
+    unsigned NumThreads() const;
 
     ThreadData * GetPtr(const unsigned thrId);
 
