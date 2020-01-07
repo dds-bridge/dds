@@ -42,7 +42,6 @@ void Memory::Resize(
     // Downsize.
     for (unsigned i = n; i < memory.size(); i++)
     {
-      memory[i]->transTable->ReturnAllMemory();
       delete memory[i]->transTable;
       delete memory[i];
     }
