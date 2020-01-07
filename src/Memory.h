@@ -145,8 +145,6 @@ class Memory
 
     double MemoryInUseMB(const unsigned thrId) const;
 
-    void ReturnAllMemory();
-
     string ThreadSize(const unsigned thrId) const;
 };
 

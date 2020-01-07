@@ -117,12 +117,6 @@ double Memory::MemoryInUseMB(const unsigned thrId) const
 }
 
 
-void Memory::ReturnAllMemory()
-{
-  Memory::Resize(0, DDS_TT_SMALL, 0, 0);
-}
-
-
 string Memory::ThreadSize(const unsigned thrId) const
 {
   return threadSizes[thrId];
