@@ -97,8 +97,6 @@ class System
 
     bool IsIMPL() const;
 
-    unsigned NumThreads() const;
-
     bool ThreadOK(const int thrId) const;
 
     void GetHardware(
