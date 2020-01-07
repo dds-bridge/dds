@@ -129,8 +129,6 @@ class Memory
 
     void Reset();
 
-    void ResetThread(const unsigned thrId);
-
     void ReturnThread(const unsigned thrId);
 
     void Resize(
