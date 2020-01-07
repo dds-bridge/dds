@@ -18,6 +18,7 @@ Memory::Memory()
 
 Memory::~Memory()
 {
+  Memory::Resize(0, DDS_TT_SMALL, 0, 0);
 }
 
 
