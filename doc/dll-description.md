@@ -22,7 +22,7 @@ The double dummy trick values for all 5 \* 4 = 20 possible combinations of a han
 
 To obtain better utilization of available threads, the double dummy (DD) tables can be grouped using one of the functions `CalcAllTables` and `CalcAllTablesPBN`.
 
-Solving hands can be done much more quickly using one of the multi-thread alternatives for calling SolveBoard. Then a number of hands are grouped for a single call to one of the functions `SolveAllBoards`, `SolveAllChunksBin` and `SolveAllChunksPBN`.  The hands are then solved in parallel using the available threads.
+Solving hands can be done much more quickly using one of the multi-thread alternatives for calling SolveBoard. Then a number of hands are grouped for a single call to one of the functions `SolveAllBoards`, `SolveAllBoardsBin`, `SolveAllChunksBin` and `SolveAllChunksPBN`.  The hands are then solved in parallel using the available threads.
 
 The number of threads is automatically configured by DDS on Windows, taking into account the number of processor cores and available memory.  The number of threads can be influenced using by calling `SetMaxThreads`. This function should probably always be called on Linux/Mac, with a zero argument for auto-configuration.
 
@@ -143,6 +143,13 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
 <td rowspan="2"><code><a href="#SolveAllBoards">SolveAllBoards</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 &#8220;Chunk&#8221; functions&#8221;!</td>
+</tr>
+<tr>
+<td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="2"><code><a href="#SolveAllBoardsBin">SolveAllBoardsBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</code></td><td rowspan="2">Binary</td><td rowspan="2">Similar to SolveAllBoards, but with binary input.</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
@@ -944,18 +951,29 @@ The maximum number of DD tables in a CalcAllTables call depends on the number of
 <table>
 <thead>
 <tr>
-<th><a name="SolveAllBoards"></a><code>SolveAllBoards</code></th><th><a name="SolveAllChunksBin"></a><code>SolveAllChunksBin</code></th><th><a name="SolveAllChunksPBN"></a><code>SolveAllChunksPBN</code></th>
+<th><a name="SolveAllBoardsBin"></a><code>SolveAllBoardsBin</code></th><th><a name="SolveAllBoards"></a><code>SolveAllBoards</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td><td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td>
+<td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td>
 </tr>
 <tr>
-<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
+<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
 </tr>
 <tr>
-<td></td><td><code>int chunkSize</code></td><td><code>int chunkSize</code></td>
+<th><a name="SolveAllChunksBin"></a><code>SolveAllChunksBin</code></th><th><a name="SolveAllChunksPBN"></a><code>SolveAllChunksPBN</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
+</tr>
+<tr>
+<td><code>int chunkSize</code></td><td><code>int chunkSize</code></td>
 </tr>
 </tbody>
 </table>
