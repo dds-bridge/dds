@@ -439,6 +439,10 @@ EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(
   struct boardsPBN * bop,
   struct solvedBoards * solvedp);
 
+EXTERN_C DLLEXPORT int STDCALL SolveAllBoardsBin(
+  struct boards * bop,
+  struct solvedBoards * solvedp);
+
 EXTERN_C DLLEXPORT int STDCALL SolveAllChunks(
   struct boardsPBN * bop,
   struct solvedBoards * solvedp,
