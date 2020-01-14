@@ -949,13 +949,13 @@ The maximum number of DD tables in a CalcAllTables call depends on the number of
 </thead>
 <tbody>
 <tr>
-<td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td>
+<td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td><td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td>
 </tr>
 <tr>
 <td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
 </tr>
 <tr>
-<td><code>int chunkSize</code></td><td><code>int chunkSize</code></td>
+<td></td><td><code>int chunkSize</code></td><td><code>int chunkSize</code></td>
 </tr>
 </tbody>
 </table>
