@@ -420,7 +420,7 @@ bool parse_DEALERPAR(
   const vector<string>& list,
   parResultsDealer * par)
 {
-  const unsigned l = list.size();
+  const size_t l = list.size();
   if (l < 3)
   {
     cout << "PAR2 list does not have 3+ elements: " << l << endl;
@@ -655,7 +655,7 @@ void splitIntoWords(
   bool isSpace = true;
 
   // It seems compilers have different ideas about files.
-  const unsigned tl = text.length();
+  const size_t tl = text.length();
   string ttext;
   if (text.back() == ' ')
     ttext = text.substr(0, tl-1);
