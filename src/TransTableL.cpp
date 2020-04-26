@@ -1038,7 +1038,7 @@ string TransTableL::MakeHolding(
   const string& high,
   const unsigned len) const
 {
-  const unsigned l = high.size();
+  const size_t l = high.size();
   if (l == 0)
     return "-";
   else if (l == len)
