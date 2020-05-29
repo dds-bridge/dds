@@ -14,23 +14,18 @@
 # CC_THREADING.
 
 # GCD and WINAPI don't work on Windows.
-THR_BOOST	= -DDDS_THREADS_BOOST
 THR_GCD		= -DDDS_THREADS_GCD
 THR_OPENMP	= -DDDS_THREADS_OPENMP
 THR_WINAPI	= -DDDS_THREADS_WINAPI
 THR_STL		= -DDDS_THREADS_STL
 
-THREADING	= $(THR_BOOST) $(THR_GCD) $(THR_STL)
+THREADING	= $(THR_GCD) $(THR_STL)
 
 # If you need to add something for a threading system, this is
 # the place.
 
-CC_BOOST	= /usr/local/Cellar/boost/1.56.0
-CC_BOOST_INCL	= $(CC_BOOST)/include
-CC_BOOST_LINK	= -L$(CC_BOOST)/lib -lboost_system -lboost_thread-mt
-
 THREAD_COMPILE	= 
-THREAD_LINK	= $(CC_BOOST_LINK)
+THREAD_LINK	=
 
 # 2. Debugging options.  (There are more granular options in debug.h.)
 
@@ -53,6 +48,9 @@ INCL_SOURCE	= Makefiles/sources.txt
 INCL_DEPENDS	= Makefiles/depends_o.txt
 
 # If your compiler name is not given here, change it.
+#
+# Note that even though g++ invokes clang under MacOS, we cannot specify clang
+# directly or we get link errors.
 CC		= g++
 
 # We compile with aggressive warnings, but we have to turn off some
