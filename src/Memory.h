@@ -10,6 +10,7 @@
 #ifndef DDS_MEMORY_H
 #define DDS_MEMORY_H
 
+#include <memory>
 #include <vector>
 
 #include "TransTable.h"
@@ -78,7 +79,7 @@ struct ThreadData
   // 960 KB
   relRanksType rel[8192];
 
-  TransTable * transTable;
+  std::unique_ptr<TransTable> transTable;
 
   Moves moves;
 
@@ -116,7 +117,7 @@ class Memory
 {
   private:
 
-    vector<ThreadData *> memory;
+    vector<ThreadData> memory;
     unsigned nThreads;
 
     vector<string> threadSizes;
