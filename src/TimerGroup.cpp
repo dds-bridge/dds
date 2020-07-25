@@ -86,7 +86,7 @@ void TimerGroup::Differentiate()
 {
   for (unsigned r = 0; r < timers.size()-1; r++)
   {
-    unsigned i = timers.size() - 1 - r;
+    size_t i = timers.size() - 1 - r;
     timers[i] -= timers[i-1];
   }
 }
@@ -149,7 +149,7 @@ string TimerGroup::TimerLines(const Timer& sumTotal) const
   string st = "";
   for (unsigned r = 0; r < timers.size(); r++)
   {
-    unsigned i = timers.size() - r - 1;
+    size_t i = timers.size() - r - 1;
     if (timers[i].Used())
       st += timers[i].SumLine(sumTotal);
   }

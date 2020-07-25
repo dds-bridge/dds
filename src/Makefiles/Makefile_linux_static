@@ -86,7 +86,7 @@ WARN_FLAGS	= 		\
 	-Wno-long-long		\
 	-Wno-format
 
-COMPILE_FLAGS	= -O3 -flto -fopenmp -mtune=generic -std=c++11 \
+COMPILE_FLAGS	= -O3 -flto -fopenmp -std=c++11 \
 		$(WARN_FLAGS) \
 		$(DDS_BEHAVIOR) $(THREAD_COMPILE) $(THREADING)
 

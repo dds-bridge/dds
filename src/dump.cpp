@@ -269,6 +269,7 @@ int DumpInput(
   const int solutions, 
   const int mode)
 {
+#ifndef DDS_NO_DUMP_ON_ERROR
   ofstream fout;
   fout.open("dump.txt");
 
@@ -307,6 +308,7 @@ int DumpInput(
   fout << PrintDeal(ranks, 8);
 
   fout.close();
+#endif
   return 0;
 }
 

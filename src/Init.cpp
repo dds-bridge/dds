@@ -28,8 +28,6 @@ void InitConstants();
 
 void InitDebugFiles();
 
-void FreeThreadMem();
-
 
 int lho[DDS_HANDS] = { 1, 2, 3, 0 };
 int rho[DDS_HANDS] = { 3, 0, 1, 2 };
@@ -352,7 +350,7 @@ void InitConstants()
 
 void InitDebugFiles()
 {
-  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
     ThreadData * thrp = memory.GetPtr(thrId);
     UNUSED(thrp); // To avoid compile errors
@@ -392,7 +390,7 @@ void InitDebugFiles()
 
 void CloseDebugFiles()
 {
-  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
     ThreadData * thrp = memory.GetPtr(thrId);
     UNUSED(thrp); // To avoid compiler warning
@@ -531,7 +529,7 @@ void SetDealTables(
     for (int s = 0; s < DDS_SUITS; s++)
     {
       relp->absRank[1][s].hand =
-        static_cast<char>(handLookup[s][topBitNo]);
+        static_cast<signed char>(handLookup[s][topBitNo]);
       relp->absRank[1][s].rank = static_cast<char>(topBitNo);
     }
   }
@@ -597,16 +595,9 @@ void STDCALL GetDDSInfo(DDSInfo * info)
 }
 
 
-void FreeThreadMem()
-{
-  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
-    memory.ResetThread(thrId);
-}
-
-
 void STDCALL FreeMemory()
 {
-  for (unsigned thrId = 0; thrId < sysdep.NumThreads(); thrId++)
+  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
     memory.ReturnThread(thrId);
 }
 
