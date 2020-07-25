@@ -20,6 +20,16 @@ Added df7cb's fix of Linux memory size detection.
 Added small explication of solving boards with partial tricks to
 the documentation.
 
+Added three small fixes from elkhrt (namespace, init, static init
+optional).
+
+Added aleaxit's three changes to some int/unsigned types.
+
+Removed Drop -mtune=generic as suggested by df7cb.
+
+Added SolveAllBoardsBin interface function for symmetry, as suggested
+by rimmington.
+
 Release Notes DDS 2.9.0
 -----------------------
 - Fixed crashes in certain multi-threading types
