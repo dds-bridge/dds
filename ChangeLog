@@ -10,7 +10,15 @@ complained about. Noticed by Nicolas Hammond.
 
 Added rimmington's fixes for some memory freeing problems.
 
-Added suokko's fix to a Makefile (cleanup of some flags).
+Added suokko's fixes to Makefiles (cleanup of some flags, making
+windres a parameter).
+
+Added df7cb's include of bool definition in C mode.
+
+Added df7cb's fix of Linux memory size detection.
+
+Added small explication of solving boards with partial tricks to
+the documentation.
 
 Release Notes DDS 2.9.0
 -----------------------
