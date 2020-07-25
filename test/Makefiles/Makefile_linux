@@ -61,7 +61,7 @@ WARN_FLAGS	= 		\
         -Wno-odr                \
 	-Wno-format
 
-COMPILE_FLAGS	= -O3 -flto -fopenmp -mtune=generic \
+COMPILE_FLAGS	= -O3 -flto -fopenmp \
 		$(WARN_FLAGS)
 
 DLLBASE		= dds
