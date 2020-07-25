@@ -73,7 +73,6 @@ static void __attribute__ ((constructor)) libInit(void)
 static void __attribute__ ((destructor)) libEnd(void)
 {
   CloseDebugFiles();
-  FreeMemory();
 }
 
 #endif
