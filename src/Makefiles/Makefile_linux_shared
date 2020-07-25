@@ -94,7 +94,7 @@ O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES))
 
 LINK_FLAGS      =               \
         -shared                 \
-        -Wl,-O2                 \
+        ${COMPILE_FLAGS}        \
         -Wl,--sort-common       \
         -Wl,--as-needed         \
         -Wl,-z                  \
