@@ -274,12 +274,6 @@ bool System::IsIMPL() const
 }
 
 
-unsigned System::NumThreads() const
-{
-  return static_cast<unsigned>(numThreads);
-}
-
-
 bool System::ThreadOK(const int thrId) const
 {
   return (thrId >= 0 && thrId < numThreads);
