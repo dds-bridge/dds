@@ -223,11 +223,13 @@ void System::GetHardware(
 #endif
 
 #ifdef __linux__
-  // The code for linux was suggested by Antony Lee.
-  FILE * fifo = popen(
-    "free -k | tail -n+3 | head -n1 | awk '{print $NF}'", "r");
-  int ignore = fscanf(fifo, "%llu", &kilobytesFree);
-  fclose(fifo);
+  // Use half of the physical memory
+  long pages = sysconf (_SC_PHYS_PAGES);
+  long pagesize = sysconf (_SC_PAGESIZE);
+  if (pages > 0 && pagesize > 0)
+    kilobytesFree = static_cast<unsigned long long>(pages * pagesize / 1024 / 2);
+  else
+    kilobytesFree = 1024 * 1024; // guess 1GB
 
   ncores = sysconf(_SC_NPROCESSORS_ONLN);
   return;
