@@ -17,7 +17,7 @@
 # matters are CC_BOOST_INCL and CC_BOOST_LINK.
 # On my systems (there are two), they are here:
 
-BOOST32_PATH1	= \Users\heins\Libraries\Boost\boost_1_66_0_x32_new
+BOOST32_PATH1	= \User\sheins\boost_1_66_0_x32_new
 BOOST32_LIB1	= $(BOOST32_PATH1)\lib32-msvc-14.1
 
 BOOST32_PATH2	= \Users\s.hein\Documents\Programs\boost_1_66_0_x32_14_1
@@ -42,8 +42,8 @@ THR_TBB  	= /DDDS_THREADS_TBB
 THR_STLIMPL  	= /DDDS_THREADS_STLIMPL
 THR_PPLIMPL  	= /DDDS_THREADS_PPLIMPL
 
-THREADING	= $(THR_BOOST) $(THR_OPENMP) $(THR_WINAPI) \
-		$(THR_STL) $(THR_STLIMPL) $(THR_PPLIMPL)
+THREADING	= $(THR_OPENMP) $(THR_WINAPI) \
+		$(THR_STL) $(THR_STLIMPL)
 
 # If you need to add something for a threading system, this is
 # the place.
@@ -95,15 +95,16 @@ WARN_FLAGS	=		\
 	/wd4996			\
 	/wd5026			\
 	/wd5027			\
+	/wd5045			\
 	/WX
 
 # If you don't have /std:c++17, you won't get THR_STLIMPL.
 
-COMPILE_FLAGS	= /O2 /Oi /Ot /Oy /Ox /GL /EHs /std:c++17 \
+COMPILE_FLAGS	= /O2 /Oi /Ot /Oy /Ox /GL /EHs /std:c++17 /Qspectre \
 		$(WARN_FLAGS) \
 		$(DDS_BEHAVIOR) $(THREAD_COMPILE) $(THREADING)
 
-LINK_FLAGS1	= /O2 /Oi /Ot /Oy /GL /EHs $(WARN_FLAGS)
+LINK_FLAGS1	= /O2 /Oi /Ot /Oy /GL /EHs /Qspectre $(WARN_FLAGS)
 LINK_FLAGS2	= $(THREAD_LINK)
 
 DLLBASE		= dds
