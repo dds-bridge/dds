@@ -119,8 +119,8 @@ clean:
 install:
 	test -d ../test || mkdir ../test
 	test -d ../examples || mkdir ../examples
-	cp $(STATIC_LIB) ../test
-	cp $(STATIC_LIB) ../examples
+	cp $(SHARED_LIB) ../test
+	cp $(SHARED_LIB) ../examples
 
 include $(INCL_DEPENDS)
 
