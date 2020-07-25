@@ -23,6 +23,7 @@
   #define EXTERN_C extern "C"
 #else
   #define EXTERN_C
+  #include <stdbool.h> // make "bool" available
 #endif
 
 /* Version 2.9.0. Allowing for 2 digit minor versions */
@@ -436,6 +437,10 @@ EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(
 
 EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(
   struct boardsPBN * bop,
+  struct solvedBoards * solvedp);
+
+EXTERN_C DLLEXPORT int STDCALL SolveAllBoardsBin(
+  struct boards * bop,
   struct solvedBoards * solvedp);
 
 EXTERN_C DLLEXPORT int STDCALL SolveAllChunks(

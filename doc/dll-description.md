@@ -22,7 +22,7 @@ The double dummy trick values for all 5 \* 4 = 20 possible combinations of a han
 
 To obtain better utilization of available threads, the double dummy (DD) tables can be grouped using one of the functions `CalcAllTables` and `CalcAllTablesPBN`.
 
-Solving hands can be done much more quickly using one of the multi-thread alternatives for calling SolveBoard. Then a number of hands are grouped for a single call to one of the functions `SolveAllBoards`, `SolveAllChunksBin` and `SolveAllChunksPBN`.  The hands are then solved in parallel using the available threads.
+Solving hands can be done much more quickly using one of the multi-thread alternatives for calling SolveBoard. Then a number of hands are grouped for a single call to one of the functions `SolveAllBoards`, `SolveAllBoardsBin`, `SolveAllChunksBin` and `SolveAllChunksPBN`.  The hands are then solved in parallel using the available threads.
 
 The number of threads is automatically configured by DDS on Windows, taking into account the number of processor cores and available memory.  The number of threads can be influenced using by calling `SetMaxThreads`. This function should probably always be called on Linux/Mac, with a zero argument for auto-configuration.
 
@@ -142,14 +142,21 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="2"><code><a href="#SolveAllBoards">SolveAllBoards</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="2">PBN</td><td rowspan="2">Consider using this instead of the next 3 &#8220;Chunk&#8221; functions&#8221;!</td>
+<td rowspan="2"><code><a href="#SolveAllBoards">SolveAllBoards</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="2">PBN</td><td rowspan="2">Solves a number of hands in parallel. Multi-threaded.</td>
+</tr>
+<tr>
+<td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td rowspan="2"><code><a href="#SolveAllBoardsBin">SolveAllBoardsBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</code></td><td rowspan="2">Binary</td><td rowspan="2">Similar to SolveAllBoards, but with binary input.</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code><a href="#SolveAllChunksBin">SolveAllChunksBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</code></td><td rowspan="3">Binary</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="3"><code><a href="#SolveAllChunksBin">SolveAllChunksBin</a></code></td><td><code>struct&nbsp;<a href="#boards">boards</a>&nbsp;*bop</code></td><td rowspan="3">Binary</td><td rowspan="3">Alias for SolveAllBoardsBin; don't use!</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
@@ -159,7 +166,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code><a href="#SolveAllChunks">SolveAllChunks</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllChunksPBN; don't use!</td>
+<td rowspan="3"><code><a href="#SolveAllChunks">SolveAllChunks</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN</a>&nbsp;*bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllBoards; don't use!</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
@@ -169,7 +176,7 @@ The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `Anal
 </tr>
 <td colspan="4">&nbsp;</td></tr>
 <tr>
-<td rowspan="3"><code><a href="#SolveAllChunksPBN">SolveAllChunksPBN</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN"</a>&nbsp;*bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Solves a number of hands in parallel. Multi-threaded.</td>
+<td rowspan="3"><code><a href="#SolveAllChunksPBN">SolveAllChunksPBN</a></code></td><td><code>struct&nbsp;<a href="#boardsPBN">boardsPBN"</a>&nbsp;*bop</code></td><td rowspan="3">PBN</td><td rowspan="3">Alias for SolveAllBoards; don't use!</td>
 </tr>
 <tr>
 <td><code>struct&nbsp;<a href="#solvedBoards">solvedBoards</a>&nbsp;*solvedp</code></td>
@@ -944,15 +951,26 @@ The maximum number of DD tables in a CalcAllTables call depends on the number of
 <table>
 <thead>
 <tr>
-<th><a name="SolveAllBoards"></a><code>SolveAllBoards</code></th><th><a name="SolveAllChunksBin"></a><code>SolveAllChunksBin</code></th><th><a name="SolveAllChunksPBN"></a><code>SolveAllChunksPBN</code></th>
+<th><a name="SolveAllBoardsBin"></a><code>SolveAllBoardsBin</code></th><th><a name="SolveAllBoards"></a><code>SolveAllBoards</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td>
+<td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td>
 </tr>
 <tr>
-<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
+<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
+</tr>
+<tr>
+<th><a name="SolveAllChunksBin"></a><code>SolveAllChunksBin</code></th><th><a name="SolveAllChunksPBN"></a><code>SolveAllChunksPBN</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>struct <a href="#boards">boards</a> *bop</code></td><td><code>struct <a href="#boardsPBN">boardsPBN</a> *bop</code></td>
+</tr>
+<tr>
+<td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td><td><code>struct <a href="#solvedBoards">solvedBoards</a> *solvedp</code></td>
 </tr>
 <tr>
 <td><code>int chunkSize</code></td><td><code>int chunkSize</code></td>
@@ -960,21 +978,19 @@ The maximum number of DD tables in a CalcAllTables call depends on the number of
 </tbody>
 </table>
 
-`SolveAllChunks` is an alias for SolveAllChunksPBN; don't use it.
+The `SolveAllBoards\*` functions invoke SolveBoard several times in parallel in multiple threads, rather than sequentially in a single thread. This increases execution speed. Boards are batched intelligently to reuse transposition tables (see <a href="#SolveBoard">SolveBoard</a>) when possible. Up to 200 boards are permitted per call.
 
-`SolveAllBoards` used to be an alias for SolveAllChunksPBN with a chunkSize of 1; however this has been changed in v2.8, and we now recommend only to use SolveAllBoards and not the chunk functions any more; explanation follows.
-
-The SolveAll\* functions invoke SolveBoard several times in parallel in multiple threads, rather than sequentially in a single thread. This increases execution speed. Up to 200 boards are permitted per call.
+`SolveAllChunks\*` is an alias for `SolveAllBoards\*`; don't use it. The `chunkSize` parameter is now ignored. An explanation of the historical situation before v2.8 follows:
 
 It is important to understand the parallelism and the concept of a chunk.
 
 If the chunk size is 1, then each of the threads starts out with a single board. If there are four threads, then boards 0, 1, 2 and 3 are initially solved. If thread 2 is finished first, it gets the next available board, in this case board 4. Perhaps this is a particularly easy board, so thread 2 also finishes this board before any other thread completes. Thread 2 then also gets board 5, and so on. This continues until all boards have been solved. In the end, three of the threads will be waiting for the last thread to finish, which causes a bit of inefficiency.
 
-The transposition table in a given thread (see <a href="#SolveBoard">SolveBoard</a>) is generally not reused between board 2, 4 and 5 in thread 2. This only happens if SolveBoard itself determines that the boards are suspiciously similar. If the chunk size is 2, then initially thread 0 gets boards 0 and 1, thread 1 gets boards 2 and 3, thread 2 gets boards 4 and 5, and thread 3 gets boards 6 and 7. When a thread is finished, it gets two new boards in one go, for instance boards 8 and 9. The transposition table in a given thread is reused within a chunk.
+The transposition table in a given thread is generally not reused between board 2, 4 and 5 in thread 2. This only happens if SolveBoard itself determines that the boards are suspiciously similar. If the chunk size is 2, then initially thread 0 gets boards 0 and 1, thread 1 gets boards 2 and 3, thread 2 gets boards 4 and 5, and thread 3 gets boards 6 and 7. When a thread is finished, it gets two new boards in one go, for instance boards 8 and 9. The transposition table in a given thread is reused within a chunk.
 
-No matter what the chunk size is, the boards are solved in parallel. If the user knows that boards are grouped in chunks of 2 or 10, it is possible to force the DD solver to use this knowledge. However, this is rather limiting on the user, as the alignment must remain perfect throughout the batch.
+No matter what the chunk size is, the boards are solved in parallel. If the user knows that boards are grouped in chunks of 2 or 10, it was possible to force the DD solver to use this knowledge. However, this was rather limiting on the user, as the alignment must remain perfect throughout the batch.
 
-SolveAllBoards now detects repetitions automatically within a batch, whether or not the hands are evenly arranged and whether or not the duplicates are next to each other. This is more flexible and transparent to the user, and the overhead is negligible. Therefore, use SolveAllBoards!
+SolveAllBoards now detects repetitions automatically within a batch, whether or not the hands are evenly arranged and whether or not the duplicates are next to each other. This is more flexible and transparent to the user, and the overhead is negligible. Therefore, all the `SolveAll\*` functions  use this approach.
 
 <table>
 <thead>

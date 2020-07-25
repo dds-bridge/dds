@@ -81,7 +81,7 @@ WARN_FLAGS	= 		\
 	-Wno-long-long		\
 	-Wno-format
 
-COMPILE_FLAGS	= -fPIC -O3 -flto -fopenmp -mtune=generic -std=c++11 \
+COMPILE_FLAGS	= -fPIC -O3 -flto -fopenmp -std=c++11 \
 		$(WARN_FLAGS) \
 		$(DDS_BEHAVIOR) $(THREAD_COMPILE) $(THREADING)
 
@@ -94,7 +94,7 @@ O_FILES 	= $(subst .cpp,.o,$(SOURCE_FILES))
 
 LINK_FLAGS      =               \
         -shared                 \
-        -Wl,-O2                 \
+        ${COMPILE_FLAGS}        \
         -Wl,--sort-common       \
         -Wl,--as-needed         \
         -Wl,-z                  \

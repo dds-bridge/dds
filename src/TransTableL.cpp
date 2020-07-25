@@ -1025,8 +1025,8 @@ void TransTableL::PrintNodeValues(
     cardSuit[3] << cardRank[15-static_cast<int>(np.leastWin[3])] << "\n";
 
   fout << setw(16) << left << "Bounds" << 
-    to_string(np.lbound) << " to " <<
-    to_string(np.ubound) << " tricks\n";
+    to_string(static_cast<int>(np.lbound)) << " to " <<
+    to_string(static_cast<int>(np.ubound)) << " tricks\n";
 
   fout << setw(16) << left << "Best move" <<
     cardSuit[ static_cast<int>(np.bestMoveSuit) ] <<
@@ -1038,7 +1038,7 @@ string TransTableL::MakeHolding(
   const string& high,
   const unsigned len) const
 {
-  const unsigned l = high.size();
+  const size_t l = high.size();
   if (l == 0)
     return "-";
   else if (l == len)

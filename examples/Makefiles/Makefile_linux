@@ -8,7 +8,7 @@
 # If your compiler name is not given here, change it.
 CC		= g++
 
-CC_FLAGS	= -O3 -flto -mtune=generic -fopenmp
+CC_FLAGS	= -O3 -flto -fopenmp
 
 # These flags are not turned on by default, but DDS should pass them.
 # Turn them on below.

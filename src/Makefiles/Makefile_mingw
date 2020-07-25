@@ -57,6 +57,7 @@ INCL_DEPENDS	= Makefiles/depends_obj.txt
 
 # If your compiler name is not given here, change it.
 CC		= g++
+WINDRES		= windres
 
 # We compile with aggressive warnings, but we have to turn off some
 # of them as they appear in libraries in great numbers...
@@ -115,10 +116,10 @@ mingw:	$(O_FILES)
 	$(CC) $(COMPILE_FLAGS) -c $<
 
 $(DLLBASE).res:	$(DLLBASE).rc
-	windres $(DLLBASE).rc $(DLLBASE).res
+	$(WINDRES) $(DLLBASE).rc $(DLLBASE).res
 
 $(VFILE).o:	$(DLLBASE).rc
-	windres $(WINDRES_FLAG) $(DLLBASE).rc $(VFILE).o
+	$(WINDRES) $(WINDRES_FLAG) $(DLLBASE).rc $(VFILE).o
 
 depend:
 	makedepend -Y -- $(SOURCE_FILES)
