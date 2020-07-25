@@ -204,6 +204,14 @@ int STDCALL SolveAllBoards(
 }
 
 
+int STDCALL SolveAllBoardsBin(
+  boards * bop,
+  solvedBoards * solvedp)
+{
+  return SolveAllBoardsN(* bop, * solvedp);
+}
+
+
 int STDCALL SolveAllChunksPBN(
   boardsPBN * bop, 
   solvedBoards * solvedp, 
