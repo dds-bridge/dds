@@ -1,6 +1,9 @@
 Release Notes DDS 2.9.1
 -----------------------
-- test/print.cpp: Fixed bug in equals_to_string() noticed by tucsu.
+test/print.cpp: Fixed bug in equals_to_string() noticed by tucsu.
+
+src/Makefiles/Makefile_linux_shared: Fixed use of static variables.
+Noticed by Nicolas Hammond.
 
 Release Notes DDS 2.9.0
 -----------------------
