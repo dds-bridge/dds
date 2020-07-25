@@ -17,6 +17,8 @@ Added df7cb's include of bool definition in C mode.
 
 Added df7cb's fix of Linux memory size detection.
 
+Added df7cb's change to avoid compiler errors where char is unsigned.
+
 Added small explication of solving boards with partial tricks to
 the documentation.
 
@@ -29,6 +31,7 @@ Removed Drop -mtune=generic as suggested by df7cb.
 
 Added SolveAllBoardsBin interface function for symmetry, as suggested
 by rimmington.
+
 
 Release Notes DDS 2.9.0
 -----------------------
