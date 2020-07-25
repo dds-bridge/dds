@@ -57,7 +57,7 @@ void Memory::Resize(
     threadSizes.resize(n);
     for (unsigned i = oldSize; i < n; i++)
     {
-      memory[i] = new ThreadData;
+      memory[i] = new ThreadData();
       if (flag == DDS_TT_SMALL)
       {
         memory[i]->transTable = new TransTableS;
