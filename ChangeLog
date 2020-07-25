@@ -1,3 +1,38 @@
+Release Notes DDS 2.9.1
+-----------------------
+test/print.cpp: Fixed bug in equals_to_string() noticed by tucsu.
+
+src/Makefiles/Makefile_linux_shared: Fixed use of static variables.
+Noticed by Nicolas Hammond.
+
+test/testcommon.cpp: Added initializations that some compilers
+complained about. Noticed by Nicolas Hammond.
+
+Added rimmington's fixes for some memory freeing problems.
+
+Added suokko's fixes to Makefiles (cleanup of some flags, making
+windres a parameter).
+
+Added df7cb's include of bool definition in C mode.
+
+Added df7cb's fix of Linux memory size detection.
+
+Added df7cb's change to avoid compiler errors where char is unsigned.
+
+Added small explication of solving boards with partial tricks to
+the documentation.
+
+Added three small fixes from elkhrt (namespace, init, static init
+optional).
+
+Added aleaxit's three changes to some int/unsigned types.
+
+Removed Drop -mtune=generic as suggested by df7cb.
+
+Added SolveAllBoardsBin interface function for symmetry, as suggested
+by rimmington.
+
+
 Release Notes DDS 2.9.0
 -----------------------
 - Fixed crashes in certain multi-threading types
