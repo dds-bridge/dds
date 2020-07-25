@@ -8,6 +8,10 @@ Noticed by Nicolas Hammond.
 test/testcommon.cpp: Added initializations that some compilers
 complained about. Noticed by Nicolas Hammond.
 
+Added rimmington's fixes for some memory freeing problems.
+
+Added suokko's fix to a Makefile (cleanup of some flags).
+
 Release Notes DDS 2.9.0
 -----------------------
 - Fixed crashes in certain multi-threading types
