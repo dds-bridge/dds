@@ -32,7 +32,7 @@
 
   #define USES_DLLMAIN
 
-#elif defined (__linux)
+#elif defined (__linux) || defined(__FreeBSD__)
   #include <unistd.h>
   #if !defined(DDS_NO_STATIC_INIT)
   #define USES_CONSTRUCTOR

@@ -51,7 +51,7 @@ struct nodeCardsType // 8 bytes
   #pragma warning(disable: 4100)
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || (defined(__FreeBSD__) && defined (__clang__))
   #pragma clang diagnostic push
   #pragma clang diagnostic ignored "-Wunused-parameter"
 #endif
@@ -154,7 +154,7 @@ class TransTable
   #pragma warning(pop)
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || (defined(__FreeBSD__) && defined(__clang__))
   #pragma clang diagnostic pop
 #endif
 

@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <string.h>
+#include <stdio.h>
 
 #include "dds.h"
 #include "PBN.h"
