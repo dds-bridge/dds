@@ -33,7 +33,8 @@ const vector<string> DDS_SYSTEM_PLATFORM =
   "Windows",
   "Cygwin",
   "Linux",
-  "Apple"
+  "Apple",
+  "FreeBSD"
 };
 
 const vector<string> DDS_SYSTEM_COMPILER =
@@ -222,7 +223,7 @@ void System::GetHardware(
   return;
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__FreeBSD__)
   // Use half of the physical memory
   long pages = sysconf (_SC_PHYS_PAGES);
   long pagesize = sysconf (_SC_PAGESIZE);
@@ -645,6 +646,8 @@ string System::GetSystem(int& sys) const
   sys = 3;
 #elif defined(__APPLE__)
   sys = 4;
+#elif defined(__FreeBSD__)
+  sys = 5;
 #else
   sys = 0;
 #endif
