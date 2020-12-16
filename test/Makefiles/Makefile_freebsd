@@ -1,6 +1,6 @@
 # --------------------- INFORMATION --------------------------------
 
-# This the test Makefile for Linux and the GNU g++ compiler.
+# This the test Makefile for FreeBSD and the clang c++ compiler.
 # It assumes a Unix-like setup for some commands.
 
 # The dtest program itself does not use multi-threading, 

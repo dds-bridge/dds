@@ -1,5 +1,5 @@
 # This is a Makefile for the examples,
-# for Linux and the GNU g++ compiler.
+# for FreeBSD and the clang c++ compiler.
 
 # It does assume a Unix-like setup for some commands,
 # but if you only want to call "make" with the default target,
