@@ -72,6 +72,7 @@ WARN_FLAGS	= 		\
 	-Wsign-promo 		\
 	-Wstrict-overflow=1 	\
 	-Wswitch-default -Wundef \
+	-Werror			\
 	-Wno-unused 		\
 	-Wno-unknown-pragmas 	\
 	-Wno-long-long		\

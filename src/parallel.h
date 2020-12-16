@@ -13,15 +13,23 @@
 // Boost: Disable some header warnings.
 
 #ifdef DDS_THREADS_BOOST
-  #ifdef _MSC_VER
+  #if defined(_MSC_VER)
     #pragma warning(push)
     #pragma warning(disable: 4061 4191 4619 4623 5031)
+  #elif defined(__clang__) && defined(__FreeBSD__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wold-style-cast"
+    #pragma clang diagnostic ignored "-Wsign-conversion"
+    #pragma clang diagnostic ignored "-Wundef"
+    #pragma clang diagnostic ignored "-Wc11-extensions"
   #endif
 
   #include <boost/thread.hpp>
 
-  #ifdef _MSC_VER
+  #if defined(_MSC_VER)
     #pragma warning(pop)
+  #elif defined(__clang__) && defined(__FreeBSD__)
+    #pragma clang diagnostic pop
   #endif
 #endif
 
