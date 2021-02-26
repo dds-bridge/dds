@@ -36,11 +36,11 @@ int BoardValueChecks(
   const int target,
   const int solutions,
   const int mode,
-  ThreadData const * thrp);
+	const int cardCount,
+	const int handRelFirst);
 
 void LastTrickWinner(
   const deal& dl,
-  ThreadData const * thrp,
   const int handToPlay,
   const int handRelFirst,
   int& leadRank,
@@ -104,46 +104,54 @@ int SolveBoardInternal(
   // Count and classify deal.
   // ----------------------------------------------------------
 
-  bool newDeal = false;
-  bool newTrump = false;
-  unsigned diffDeal = 0;
-  unsigned aggDeal = 0;
-  bool similarDeal;
   int cardCount = 0;
   int ind, forb, noMoves;
 
+	// -----------------------------------------------------------------------------------------------------------------------------------
+	// - We have the following cases for reuse of the transposition table (TT), aggr structures ect.                                     - 
+	// - a) The current deal is a 100% match against the one stored in the TT or with any number of cards missing (ie. played)           -
+	//      Note that we cannot be sure that the stored deal matches the deal for the last call, so we still have to initiate things     -
+	// - b) As a) but with any number of new cards in the new deal and none of these new cards was pressent in any other in the TT deal. -
+	// - c) A complete new deal where some cards is in another hand, it's the first deal or we have a new trumf suit (or NT)             -
+	// -----------------------------------------------------------------------------------------------------------------------------------
+	enum class Reuse
+	{
+		DealInTT = 0,	// type a)
+		NewCards = 1,	// type b)
+		NewDeal = 2		// type c)
+	};
+
+	Reuse reuse = Reuse::DealInTT;
+	if (mode == 3 || thrp->memUsed == 0 || dl.trump != thrp->trump)
+		reuse = Reuse::NewDeal;
+	else
   for (int h = 0; h < DDS_HANDS; h++)
-  {
     for (int s = 0; s < DDS_SUITS; s++)
     {
       unsigned int c = dl.remainCards[h][s] >> 2;
+				auto oldRanks  = thrp->suit[h][s];
 
-      cardCount += counttable[c];
-      diffDeal += (c ^ (thrp->suit[h][s]));
-      aggDeal += c;
-
-      if (thrp->suit[h][s] != c)
+				if (oldRanks != c)										//mspa: old and new suit differs
+				{
+					if ((oldRanks & c) != c)							//mspa: some cards in the new deal wasn't originaly in that hand
+					{
+						for (int oh = 0; oh < DDS_HANDS; oh++)
+							if (oh != h
+							&& (oldRanks & thrp->suit[oh][s]) != 0)		//mspa: some of the cards was in an other hand - ie. a new deal
       {
-        thrp->suit[h][s] = static_cast<unsigned short>(c);
-        newDeal = true;
+								reuse = Reuse::NewDeal;
+								goto CLASSIFICATION_DONE;
       }
+						reuse = Reuse::NewCards;
     }
   }
 
-  if (newDeal)
-  {
-    if (diffDeal == 0)
-      similarDeal = true;
-    else if ((aggDeal / diffDeal) > SIMILARDEALLIMIT)
-      similarDeal = true;
-    else
-      similarDeal = false;
   }
-  else
-    similarDeal = false;
 
-  if (dl.trump != thrp->trump)
-    newTrump = true;
+CLASSIFICATION_DONE:	
+		for (int h = 0; h < DDS_HANDS; h++)
+			for (int s = 0; s < DDS_SUITS; s++)
+				cardCount     += counttable[dl.remainCards[h][s] >> 2];				
 
   // ----------------------------------------------------------
   // Generic initialization.
@@ -156,25 +164,12 @@ int SolveBoardInternal(
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
   int handToPlay = handId(dl.first, handRelFirst);
-  thrp->trickNodes = 0;
-
-  thrp->lookAheadPos.handRelFirst = handRelFirst;
-  thrp->lookAheadPos.first[iniDepth] = dl.first;
-  thrp->lookAheadPos.tricksMAX = 0;
-
-  moveType mv = {0, 0, 0, 0};
-
-  for (int k = 0; k <= 13; k++)
-  {
-    thrp->forbiddenMoves[k].rank = 0;
-    thrp->forbiddenMoves[k].suit = 0;
-  }
 
   // ----------------------------------------------------------
   // Consistency checks.
   // ----------------------------------------------------------
 
-  ret = BoardValueChecks(dl, target, solutions, mode, thrp);
+	ret = BoardValueChecks(dl, target, solutions, mode, cardCount, 	handRelFirst );
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -187,8 +182,7 @@ int SolveBoardInternal(
   {
     int leadRank, leadSuit, leadSideWins;
 
-    LastTrickWinner(dl, thrp, handToPlay, handRelFirst,
-      leadRank, leadSuit, leadSideWins);
+		LastTrickWinner(dl, handToPlay, handRelFirst, leadRank, leadSuit, leadSideWins);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -203,32 +197,39 @@ int SolveBoardInternal(
 
   // ----------------------------------------------------------
   // More detailed initialization.
+	thrp->trickNodes = 0;
+	thrp->lookAheadPos.handRelFirst = handRelFirst;
+	thrp->lookAheadPos.first[iniDepth] = dl.first;		//mspa: possible negative index (iniDepth) - before last trick evaluation code was moved
+	thrp->lookAheadPos.tricksMAX = 0;
   // ----------------------------------------------------------
+	moveType mv = { 0, 0, 0, 0 };
 
-  if ((mode != 2) &&
-      (((newDeal) && (! similarDeal)) ||
-       newTrump ||
-       (thrp->nodes > SIMILARMAXWINNODES)))
+	for (int k = 0; k <= 13; k++)
   {
-    TTresetReason reason = TT_RESET_UNKNOWN;
-    if (thrp->nodes > SIMILARMAXWINNODES)
-      reason = TT_RESET_TOO_MANY_NODES;
-    else if (newDeal && ! similarDeal)
-      reason = TT_RESET_NEW_DEAL;
-    else if (newTrump)
-      reason = TT_RESET_NEW_TRUMP;
-    thrp->transTable->ResetMemory(reason);
+		thrp->forbiddenMoves[k].rank = 0;
+		thrp->forbiddenMoves[k].suit = 0;
   }
 
-  if (newDeal)
-  {
-    SetDeal(thrp);
+	if (mode != 2)
+		if (reuse == Reuse::NewDeal)
+			thrp->transTable->ResetMemory(TT_RESET_NEW_DEAL);
+		else
+			if (thrp->nodes > SIMILARMAXWINNODES)
+				thrp->transTable->ResetMemory(TT_RESET_TOO_MANY_NODES);
+	
+	// ------------------------------------------------------------------
+	// Save new hand or new cards in ThreadData and initiate structures 
+	// ------------------------------------------------------------------
+	if (reuse != Reuse::DealInTT)
+		for (int h = 0; h < DDS_HANDS; h++)
+			for (int s = 0; s < DDS_SUITS; s++)
+				thrp->suit[h][s] = static_cast<unsigned short>(dl.remainCards[h][s] >> 2);
+
+	SetDeal(dl, thrp);								// initiate Deal in thrp->lookAheadPos
+	
+	if (reuse != Reuse::DealInTT)
     SetDealTables(thrp);
-  }
-  else if (thrp->analysisFlag)
-  {
-    SetDeal(thrp);
-  }
+
   thrp->analysisFlag = false;
 
   if (handToPlay == 0 || handToPlay == 2)
@@ -299,19 +300,18 @@ int SolveBoardInternal(
     thrp->lookAheadPos.first[iniDepth]);
 
   if (handRelFirst == 0)
-    thrp->moves.MoveGen0(
+		noMoves = thrp->moves.MoveGen0(
       trick,
       thrp->lookAheadPos,
       thrp->bestMove[iniDepth],
       thrp->bestMoveTT[iniDepth],
       thrp->rel);
   else
-    thrp->moves.MoveGen123(
+		noMoves = thrp->moves.MoveGen123(
       trick,
       handRelFirst,
       thrp->lookAheadPos);
 
-  noMoves = thrp->moves.GetLength(trick, handRelFirst);
 
   // ----------------------------------------------------------
   // mode == 0: Check whether there is only one possible move
@@ -339,9 +339,10 @@ int SolveBoardInternal(
   if (solutions == 3)
   {
     // 7 for hand 0 and 2, 6 for hand 1 and 3
-    int guess = 7 - (handToPlay & 0x1);
-    int upperbound = 13;
+	int upperbound = trick + 1;
     int lowerbound = 0;
+	int guess = ((1 + upperbound) >> 1) - (handToPlay & 0x1);
+
     futp->cards = noMoves;
 
     for (int mno = 0; mno < noMoves; mno++)
@@ -439,10 +440,10 @@ int SolveBoardInternal(
 
   else if (target == -1)
   {
-    // 7 for hand 0 and 2, 6 for hand 1 and 3
-    int guess = 7 - (handToPlay & 0x1);
-    int upperbound = 13;
+    // NoCards/2 for E/W and one more for N/S
+		int upperbound = trick + 1;
     int lowerbound = 0;
+		int guess = ((1 + upperbound) >> 1) - (handToPlay & 0x1);
     do
     {
       ResetBestMoves(thrp);
@@ -699,7 +700,7 @@ int SolveSameBoard(
 
   int guess = hint;
   int lowerbound = 0;
-  int upperbound = 13;
+	int upperbound = trick+1;
 
   do
   {
@@ -854,7 +855,7 @@ int AnalyseLaterBoard(
   if (hintDir == 0)
   {
     lowerbound = hint;
-    upperbound = 13;
+		upperbound = trick+1;
   }
   else
   {
@@ -964,7 +965,7 @@ int BoardRangeChecks(
     return RETURN_MODE_WRONG_LO;
   }
 
-  if (mode > 2)
+  if (mode > 3)
   {
     DumpInput(RETURN_MODE_WRONG_HI, dl, target, solutions, mode);
     return RETURN_MODE_WRONG_HI;
@@ -1033,9 +1034,9 @@ int BoardValueChecks(
   const int target,
   const int solutions,
   const int mode,
-  ThreadData const * thrp)
+	const int   cardCount,
+	const int   handRelFirst)
 {
-  int cardCount = thrp->iniDepth + 4;
   if (cardCount <= 0)
   {
     DumpInput(RETURN_ZERO_CARDS, dl, target, solutions, mode);
@@ -1060,7 +1061,6 @@ int BoardValueChecks(
     return RETURN_TARGET_TOO_HIGH;
   }
 
-  int handRelFirst = thrp->lookAheadPos.handRelFirst;
 
   int noOfCardsPerHand[DDS_HANDS] = {0, 0, 0, 0};
   for (int k = 0; k < handRelFirst; k++)
@@ -1068,7 +1068,7 @@ int BoardValueChecks(
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
-      noOfCardsPerHand[h] += counttable[thrp->suit[h][s]];
+			noOfCardsPerHand[h] += counttable[dl.remainCards[h][s] >> 2]; 
 
   for (int h = 1; h < DDS_HANDS; h++)
   {
@@ -1099,12 +1099,11 @@ int BoardValueChecks(
       bool found = false;
       for (int h = 0; h < DDS_HANDS; h++)
       {
-        if ((thrp->suit[h][s] & bitMapRank[r]) != 0)
+				if ((dl.remainCards[h][s] >> 2 & bitMapRank[r]) != 0) 
         {
           if (found)
           {
-            DumpInput(RETURN_DUPLICATE_CARDS, dl,
-                      target, solutions, mode);
+						DumpInput(RETURN_DUPLICATE_CARDS, dl,target, solutions, mode);
             return RETURN_DUPLICATE_CARDS;
           }
           else
@@ -1120,7 +1119,6 @@ int BoardValueChecks(
 
 void LastTrickWinner(
   const deal& dl,
-  ThreadData const * thrp,
   const int handToPlay,
   const int handRelFirst,
   int& leadRank,
@@ -1144,10 +1142,10 @@ void LastTrickWinner(
     hp = handId(dl.first, h);
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      if (thrp->suit[hp][s] != 0)
+			if (dl.remainCards[hp][s] != 0)
       {
         lastTrickSuit[hp] = s;
-        lastTrickRank[hp] = highestRank[thrp->suit[hp][s]];
+				lastTrickRank[hp] = highestRank[dl.remainCards[hp][s]>>2];
         break;
       }
     }

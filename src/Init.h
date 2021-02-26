@@ -14,7 +14,9 @@
 #include "Memory.h"
 
 
-void SetDeal(ThreadData * thrp);
+void SetDeal(
+    const deal& dl,  
+    ThreadData * thrp);
 
 void SetDealTables(ThreadData * thrp);
 

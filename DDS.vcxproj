@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{EEC0E1CC-CF35-4B7D-A3A1-A5734BD3FCD3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>DDS 2.9</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>bin\$(Configuration)\</OutDir>
+    <IntDir>obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>bin\$(Configuration)\</OutDir>
+    <IntDir>obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DDS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <AssemblyDebug>true</AssemblyDebug>
+      <OutputFile>Libs\$(Configuration)\$(MSBuildProjectName).dll</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DDS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(SolutionDir)Libs\$(Configuration)\$(ProjectName).dll</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\ABsearch.cpp" />
+    <ClCompile Include="src\ABstats.cpp" />
+    <ClCompile Include="src\CalcTables.cpp" />
+    <ClCompile Include="src\dds.cpp" />
+    <ClCompile Include="src\DealerPar.cpp" />
+    <ClCompile Include="src\dump.cpp" />
+    <ClCompile Include="src\File.cpp" />
+    <ClCompile Include="src\Init.cpp" />
+    <ClCompile Include="src\LaterTricks.cpp" />
+    <ClCompile Include="src\Memory.cpp" />
+    <ClCompile Include="src\Moves.cpp" />
+    <ClCompile Include="src\Par.cpp" />
+    <ClCompile Include="src\PBN.cpp" />
+    <ClCompile Include="src\PlayAnalyser.cpp" />
+    <ClCompile Include="src\QuickTricks.cpp" />
+    <ClCompile Include="src\Scheduler.cpp" />
+    <ClCompile Include="src\SolveBoard.cpp" />
+    <ClCompile Include="src\SolverIF.cpp" />
+    <ClCompile Include="src\System.cpp" />
+    <ClCompile Include="src\ThreadMgr.cpp" />
+    <ClCompile Include="src\Timer.cpp" />
+    <ClCompile Include="src\TimerGroup.cpp" />
+    <ClCompile Include="src\TimerList.cpp" />
+    <ClCompile Include="src\TimeStat.cpp" />
+    <ClCompile Include="src\TimeStatList.cpp" />
+    <ClCompile Include="src\TransTableL.cpp" />
+    <ClCompile Include="src\TransTableS.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\Exports.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ABsearch.h" />
+    <ClInclude Include="src\ABstats.h" />
+    <ClInclude Include="src\CalcTables.h" />
+    <ClInclude Include="src\dds.h" />
+    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\dump.h" />
+    <ClInclude Include="src\File.h" />
+    <ClInclude Include="src\Init.h" />
+    <ClInclude Include="src\LaterTricks.h" />
+    <ClInclude Include="src\Memory.h" />
+    <ClInclude Include="src\Moves.h" />
+    <ClInclude Include="src\parallel.h" />
+    <ClInclude Include="src\PBN.h" />
+    <ClInclude Include="src\PlayAnalyser.h" />
+    <ClInclude Include="src\QuickTricks.h" />
+    <ClInclude Include="src\Scheduler.h" />
+    <ClInclude Include="src\SolveBoard.h" />
+    <ClInclude Include="src\SolverIF.h" />
+    <ClInclude Include="src\System.h" />
+    <ClInclude Include="src\ThreadMgr.h" />
+    <ClInclude Include="src\Timer.h" />
+    <ClInclude Include="src\TimerGroup.h" />
+    <ClInclude Include="src\TimerList.h" />
+    <ClInclude Include="src\TimeStat.h" />
+    <ClInclude Include="src\TimeStatList.h" />
+    <ClInclude Include="src\TransTable.h" />
+    <ClInclude Include="src\TransTableL.h" />
+    <ClInclude Include="src\TransTableS.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="src\dds.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

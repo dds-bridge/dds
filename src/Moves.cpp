@@ -225,20 +225,20 @@ int Moves::MoveGen0(
 
 
 int Moves::MoveGen123(
-  const int tricks,
+  const int trick,
   const int handRel,
   const pos& tpos)
 {
-  trackp = &track[tricks];
+  trackp    = &track[trick];
   leadHand = trackp->leadHand;
   currHand = handId(leadHand, handRel);
-  currTrick = tricks;
-  leadSuit = track[tricks].leadSuit;
+  currTrick = trick;
+  leadSuit  = track[trick].leadSuit;
 
   moveGroupType * mp;
   int removed, g, rank, seq;
 
-  movePlyType& list = moveList[tricks][handRel];
+  movePlyType& list = moveList[trick][handRel];
   mply = list.move;
 
   for (int s = 0; s < DDS_SUITS; s++)

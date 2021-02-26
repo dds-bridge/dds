@@ -18,3 +18,8 @@ test/itest
 *.exp
 *.lib
 *.res
+/.vs
+/bin/Debug
+/Libs/Debug
+/obj/Debug
+/DDS.vcxproj.user
