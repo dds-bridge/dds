@@ -424,6 +424,7 @@ void CloseDebugFiles()
 
 
 void SetDeal(
+    const deal& dl,  
   ThreadData * thrp)
 {
   /* Initialization of the rel structure is inspired by
@@ -434,17 +435,12 @@ void SetDeal(
     thrp->lookAheadPos.aggr[s] = 0;
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      thrp->lookAheadPos.rankInSuit[h][s] = thrp->suit[h][s];
-      thrp->lookAheadPos.aggr[s] |= thrp->suit[h][s];
+      thrp->lookAheadPos.aggr[s] |=                              
+      thrp->lookAheadPos.rankInSuit[h][s] = dl.remainCards[h][s]>>2;    
+      thrp->lookAheadPos.length[h][s] = static_cast<unsigned char>(counttable[thrp->lookAheadPos.rankInSuit[h][s]]);
     }
   }
 
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    for (int h = 0; h < DDS_HANDS; h++)
-      thrp->lookAheadPos.length[h][s] = static_cast<unsigned char>(
-        counttable[thrp->lookAheadPos.rankInSuit[h][s]]);
-  }
 
   // Clubs are implicit, for a given trick number.
   for (int h = 0; h < DDS_HANDS; h++)
@@ -461,34 +457,13 @@ void SetDeal(
 void SetDealTables(
   ThreadData * thrp)
 {
-  unsigned int topBitRank = 1;
-  unsigned int topBitNo = 2;
-
-  // Initialization of the rel structure is inspired by
-  // a solution given by Thomas Andrews.
-
-  // rel[aggr].absRank[absolute rank][suit].hand is the hand
-  // (N = 0, E = 1 etc.) which holds the absolute rank in
-  // the suit characterized by aggr.
-  // rel[aggr].absRank[absolute rank][suit].rank is the
-  // relative rank of that card.
-
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    for (int ord = 1; ord <= 13; ord++)
-    {
-      thrp->rel[0].absRank[ord][s].hand = -1;
-      thrp->rel[0].absRank[ord][s].rank = 0;
-    }
-  }
 
   // handLookup[suit][absolute rank] is the hand (N = 0 etc.)
   // holding the absolute rank in suit.
 
   int handLookup[DDS_SUITS][15];
   for (int s = 0; s < DDS_SUITS; s++)
-  {
-    for (int r = 14; r >= 2; r--)
+    for (int r = 14; r >= 2; )
     {
       handLookup[s][r] = 0;
       for (int h = 0; h < DDS_HANDS; h++)
@@ -499,11 +474,15 @@ void SetDealTables(
           break;
         }
       }
-    }
+      r--;
+      thrp->rel[0].absRank[r][s].hand = -1;
+      thrp->rel[0].absRank[r][s].rank = 0;
   }
 
   thrp->transTable->Init(handLookup);
 
+  unsigned int topBitRank = 1;
+  unsigned int topBitNo = 2;
   relRanksType * relp;
   for (unsigned int aggr = 1; aggr < 8192; aggr++)
   {
@@ -528,8 +507,7 @@ void SetDealTables(
     }
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      relp->absRank[1][s].hand =
-        static_cast<signed char>(handLookup[s][topBitNo]);
+      relp->absRank[1][s].hand = static_cast<signed char>(handLookup[s][topBitNo]);
       relp->absRank[1][s].rank = static_cast<char>(topBitNo);
     }
   }
@@ -561,7 +539,7 @@ void InitWinners(
   {
     aggr = 0;
     for (int h = 0; h < DDS_HANDS; h++)
-      aggr |= startMovesBitMap[h][s] | thrp->suit[h][s];
+        aggr |= startMovesBitMap[h][s] | dl.remainCards[h][s]>>2;  
 
     posPoint.winner[s].rank = thrp->rel[aggr].absRank[1][s].rank;
     posPoint.winner[s].hand = thrp->rel[aggr].absRank[1][s].hand;
