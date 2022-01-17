@@ -519,7 +519,7 @@ void TransTableS::AddLenSet(
   // The memory chunk for the posSearchTypeSmall structure 
   // will be exceeded.
 
-  const int incr = (LSIZE+1) * sizeof(posSearchTypeSmall);
+  const unsigned int incr = (LSIZE+1) * sizeof(posSearchTypeSmall);
 
   if ((allocmem + incr > maxmem) || (lcount[trick][firstHand] >= maxIndex))
   {
