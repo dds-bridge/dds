@@ -91,7 +91,7 @@ void STDCALL SetResources(
   // Figure out system resources.
   int ncores;
   unsigned long long kilobytesFree;
-  sysdep.GetHardware(ncores, kilobytesFree);
+  sysdep. (ncores, kilobytesFree);
 
   // Memory usage will be limited to the lower of:
   // - maxMemoryMB + 30% (if given; statistically this works out)
@@ -121,6 +121,7 @@ void STDCALL SetResources(
   else
     thrMax = min(maxThreadsIn, ncores);
 
+  // printf("%d threads, %d MB memory\n", thrMax, memMaxMB);
   // For simplicity we won't vary the amount of memory per thread
   // in the small and large versions.
 
