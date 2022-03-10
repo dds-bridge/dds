@@ -91,7 +91,7 @@ void STDCALL SetResources(
   // Figure out system resources.
   int ncores;
   unsigned long long kilobytesFree;
-  sysdep. (ncores, kilobytesFree);
+  sysdep.GetHardware(ncores, kilobytesFree);
 
   // Memory usage will be limited to the lower of:
   // - maxMemoryMB + 30% (if given; statistically this works out)
