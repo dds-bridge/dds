@@ -30,7 +30,7 @@ int main()
   char line[80];
   bool match;
 
-#if defined(__linux) || defined(__APPLE__) || defined(__WASM__)
+#if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);
 #endif
 
@@ -66,7 +66,7 @@ int main()
 
   if (res != RETURN_NO_FAULT)
   {
-    //ErrorMessage(res, line);
+    ErrorMessage(res, line);
     printf("DDS error: %s\n", line);
   }
 

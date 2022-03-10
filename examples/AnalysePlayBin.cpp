@@ -62,7 +62,9 @@ int main()
 
     if (res != RETURN_NO_FAULT)
     {
-      //ErrorMessage(res, line);
+#ifndef __WASM__
+      ErrorMessage(res, line);
+#endif
       printf("DDS error: %s\n", line);
     }
 
