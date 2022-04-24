@@ -33,7 +33,7 @@ int main()
   bool match2;
   bool match3;
 
-#if defined(__linux) || defined(__APPLE__)
+#if defined(__linux) || defined(__APPLE__)  || defined(__WASM__)
   SetMaxThreads(0);
 #endif
 

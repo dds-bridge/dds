@@ -66,8 +66,8 @@ OBJ_FILES	= $(subst .cpp,.o,$(COMMON_SOURCE_FILES))
 EX_OBJ_FILES	= $(subst .cpp,.o,$(ALL_EXAMPLE_FILES))
 EX_EXE_FILES	= $(subst .cpp,,$(ALL_EXAMPLE_FILES))
 
-AnalysePlayBin.js:	$(OBJ_FILES) AnalysePlayBin.cpp $(STATIC_LIB)
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalysePlayBin.cpp -o AnalysePlayBin.js
+AnalysePlayBin.html: $(OBJ_FILES) AnalysePlayBin.cpp $(STATIC_LIB)
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalysePlayBin.cpp -o AnalysePlayBin.html
 
 AnalysePlayPBN:	$(OBJ_FILES) AnalysePlayPBN.o
 	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalysePlayPBN.o -o AnalysePlayPBN
@@ -96,14 +96,17 @@ DealerPar:	$(OBJ_FILES) DealerPar.o
 Par:	$(OBJ_FILES) Par.o
 	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) Par.o -o Par
 
-SolveBoard:	$(OBJ_FILES) SolveBoard.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveBoard.o -o SolveBoard
+SolveBoard:	$(OBJ_FILES) SolveBoard.cpp $(STATIC_LIB)
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveBoard.cpp -o SolveBoard.html
+
+dds: $(OBJ_FILES) dds.cpp $(STATIC_LIB)
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) dds.cpp -o dds.html
 
 SolveBoardPBN:	$(OBJ_FILES) SolveBoardPBN.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveBoardPBN.o -o SolveBoardPBN
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveBoardPBN.o -o SolveBoardPBN.html
 
-SolveAllBoards:	$(OBJ_FILES) SolveAllBoards.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveAllBoards.o -o SolveAllBoards
+SolveAllBoards:	$(OBJ_FILES) SolveAllBoards.cpp $(STATIC_LIB)
+	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveAllBoards.cpp -o SolveAllBoards.html
 
 %.o:	%.cpp
 	$(CC) $(CC_FULL_FLAGS) -c $< -o $*.o
