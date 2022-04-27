@@ -33,7 +33,8 @@ const vector<string> DDS_SYSTEM_PLATFORM =
   "Windows",
   "Cygwin",
   "Linux",
-  "Apple"
+  "Apple",
+  "Wasm"
 };
 
 const vector<string> DDS_SYSTEM_COMPILER =
@@ -42,7 +43,8 @@ const vector<string> DDS_SYSTEM_COMPILER =
   "Microsoft Visual C++",
   "MinGW",
   "GNU g++",
-  "clang"
+  "clang",
+  "em++"
 };
 
 const vector<string> DDS_SYSTEM_CONSTRUCTOR =
@@ -232,6 +234,13 @@ void System::GetHardware(
     kilobytesFree = 1024 * 1024; // guess 1GB
 
   ncores = sysconf(_SC_NPROCESSORS_ONLN);
+  return;
+#endif
+
+#ifdef __WASM__
+  // TODO find out how much memory is available
+  kilobytesFree = 100 * 1024; // guess 100MB
+  ncores = 1;
   return;
 #endif
 }

@@ -121,6 +121,7 @@ void STDCALL SetResources(
   else
     thrMax = min(maxThreadsIn, ncores);
 
+  // printf("%d threads, %d MB memory\n", thrMax, memMaxMB);
   // For simplicity we won't vary the amount of memory per thread
   // in the small and large versions.
 
