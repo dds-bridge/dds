@@ -62,7 +62,8 @@ ALL_EXAMPLE_FILES	=	\
 	SolveBoardPBN.cpp	\
 	SolveAllBoards.cpp
 
-LIB_FLAGS	= -L. -l$(DLLBASE)
+LIB_FLAGS	= -Wl,-rpath=. \
+               -L. -l$(DLLBASE)
 
 LD_FLAGS	= 
 
