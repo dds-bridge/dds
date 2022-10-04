@@ -15,7 +15,7 @@
 # If you need to add something for the threading system, this is
 # the place.
 
-THREAD_LINK	= -lboost_system -lboost_thread -lgomp
+THREAD_LINK	= -lgomp
 
 # ----------------------- OFTEN OK    ------------------------------
 
@@ -28,7 +28,7 @@ INCL_OWN_SOURCE	= Makefiles/own_sources.txt
 INCL_DEPENDS	= Makefiles/depends_o.txt
 
 # If your compiler name is not given here, change it.
-CC		= g++
+# CXX	= g++
 
 # We compile with aggressive warnings, but we have to turn off some
 # of them as they appear in libraries in great numbers...
@@ -58,21 +58,18 @@ WARN_FLAGS	= 		\
 	-Wno-long-long		\
 	-Wno-format
 
-COMPILE_FLAGS	= -O3 $(WARN_FLAGS)
+CXXFLAGS	= -O3 -mms-bitfields -flto $(WARN_FLAGS) -I../include \
+	-DNDEBUG -DWIN32 -DWINVER=0x0601 -D_WIN32_WINNT=0x0601 -D_CONSOLE -DWIN32CON -D_LIB
 
 DLLBASE		= dds
-DLL 		= $(DLLBASE).dll
-DLIB 		= $(DLLBASE).lib
-EXPORTER	= Exports.def
 
-LINK1_FLAGS	= 
-LINK2_FLAGS	= 		\
+LDFLAGS	= -s -mconsole -flto	\
 	-Wl,--dynamicbase 	\
 	-Wl,--nxcompat 		\
 	-Wl,--no-seh 		\
-	-Wl,--enable-stdcall-fixup \
-	$(THREAD_LINK) \
-	-L. -l$(DLLBASE)
+	-Wl,--enable-stdcall-fixup
+
+LDLIBS	= -static -L. -l$(DLLBASE)
 
 # This is in addition to $(DTEST).cpp
 
@@ -81,9 +78,6 @@ include $(INCL_OWN_SOURCE)
 DTEST_OBJ_FILES	= $(subst .cpp,.o,$(DTEST_SOURCE_FILES)) $(DTEST).o
 
 DTEST		= dtest
-ITEST		= itest
-
-# These are the files that we steal from the src directory.
 
 include $(INCL_DDS_SOURCE)
 
@@ -94,26 +88,27 @@ ITEST_SOURCE_FILES	=	\
 
 ITEST_OBJ_FILES	= $(subst .cpp,.o,$(ITEST_SOURCE_FILES))
 
-dtest:	$(DTEST_OBJ_FILES)
-	$(CC) $(COMPILE_FLAGS) $(LINK1_FLAGS) $(DTEST_OBJ_FILES) \
-	$(LINK2_FLAGS) -o $(DTEST)
+.PHONY: all depend clean install
 
-itest:	$(ITEST_OBJ_FILES)
-	$(CC) $(COMPILE_FLAGS) $(LINK1_FLAGS) $(ITEST_OBJ_FILES) \
-	$(LINK2_FLAGS) -o $(ITEST)
+all: dtest.exe itest.exe
+
+dtest.exe: $(DTEST_OBJ_FILES)
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+itest.exe: $(ITEST_OBJ_FILES)
+	$(CXX) $(LDFLAGS) $^ $(THREAD_LINK) -o $@
 
 %.o:	%.cpp
-	$(CC) $(COMPILE_FLAGS) -c $< -o $*.o
+	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 depend:
 	makedepend -Y -- $(ITEST_SOURCE_FILES) $(DTEST).cpp
 
 clean:
-	rm -f *.o *.exe $(DLLBASE).def $(DLL)
+	$(RM) *.exe *.o
 
-# If you don't have a Linux-like setup, use "del" instead of "rm".
+install: dtest.exe itest.exe
+	cp $^ ../hands
 
 include $(INCL_DEPENDS)
-
-# DO NOT DELETE
 
