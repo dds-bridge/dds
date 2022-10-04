@@ -16,13 +16,7 @@
 
 
 # If your exact compiler name is not given here, change it.
-# CC		= mingw32-g++
-CC		= i686-w64-mingw32-g++
-
-# Use this one to get Windows multi-threading
-# CC_FLAGS	= -O3 -flto -mtune=generic
-# Use this one to get OpenMP multi-threading
-CC_FLAGS	= -O3 -flto -fopenmp -mtune=generic
+# CXX	= g++
 
 # These flags are not turned on by default, but DDS should pass them.
 # Turn them on below.
@@ -51,22 +45,20 @@ WARN_FLAGS	= 		\
 	-Wno-long-long		\
 	-Wno-format
 
-# Here you can turn on warnings.
-# CC_FULL_FLAGS	= $(CC_FLAGS)
-CC_FULL_FLAGS	= $(CC_FLAGS) $(WARN_FLAGS)
+CXXFLAGS	= -O3 -mms-bitfields -flto -mtune=generic \
+	$(WARN_FLAGS) -I../include \
+	-DNDEBUG -DWIN32 -DWINVER=0x0601 -D_WIN32_WINNT=0x0601 -D_CONSOLE -DWIN32CON -D_LIB
 
 DLLBASE		= dds
-DLL 		= $(DLLBASE).dll
-EXPORTER	= Exports.def
 
 COMMON_SOURCE_FILES 	=	\
 	hands.cpp
 
 ALL_EXAMPLE_FILES	=	\
-	AnalysePlayBin		\
-	AnalysePlayPBN		\
-	AnalyseAllPlaysBin	\
-	AnalyseAllPlaysPBN	\
+	AnalysePlayBin.cpp	\
+	AnalysePlayPBN.cpp	\
+	AnalyseAllPlaysBin.cpp	\
+	AnalyseAllPlaysPBN.cpp	\
 	CalcDDtable.cpp		\
 	CalcDDtablePBN.cpp	\
 	CalcAllTables.cpp	\
@@ -77,76 +69,34 @@ ALL_EXAMPLE_FILES	=	\
 	SolveBoardPBN.cpp	\
 	SolveAllBoards.cpp
 
-LD_FLAGS	= 		\
-	-Wl,--subsystem,windows \
-	-Wl,--output-def,$(DLLBASE).def	\
+LDFLAGS	= -s -mconsole -flto	\
 	-Wl,--dynamicbase 	\
 	-Wl,--nxcompat 		\
 	-Wl,--no-seh 		\
 	-Wl,--enable-stdcall-fixup
 
-LIB_FLAGS	= -L. -l$(DLLBASE)
+LDLIBS	= -static -L. -l$(DLLBASE)
 
 OBJ_FILES	= $(subst .cpp,.o,$(COMMON_SOURCE_FILES))
 EX_OBJ_FILES	= $(subst .cpp,.o,$(ALL_EXAMPLE_FILES))
 EX_EXE_FILES	= $(subst .cpp,.exe,$(ALL_EXAMPLE_FILES))
 
-AnalysePlayBin:	$(OBJ_FILES) AnalysePlayBin.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalysePlayBin.o -o AnalysePlayBin
+.PHONY: all depend clean
 
-AnalysePlayPBN:	$(OBJ_FILES) AnalysePlayPBN.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalysePlayPBN.o -o AnalysePlayPBN
+all: $(EX_EXE_FILES)
 
-AnalyseAllPlaysBin:	$(OBJ_FILES) AnalyseAllPlaysBin.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalyseAllPlaysBin.o -o AnalyseAllPlaysBin
-
-AnalyseAllPlaysPBN:	$(OBJ_FILES) AnalyseAllPlaysPBN.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) AnalyseAllPlaysPBN.o -o AnalyseAllPlaysPBN
-
-CalcDDtable:	$(OBJ_FILES) CalcDDtable.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) CalcDDtable.o -o CalcDDtable
-
-CalcDDtablePBN:	$(OBJ_FILES) CalcDDtablePBN.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) CalcDDtablePBN.o -o CalcDDtablePBN
-
-CalcAllTables:	$(OBJ_FILES) CalcAllTables.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) CalcAllTables.o -o CalcAllTables
-
-CalcAllTablesPBN:	$(OBJ_FILES) CalcAllTablesPBN.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) CalcAllTablesPBN.o -o CalcAllTablesPBN
-
-DealerPar:	$(OBJ_FILES) DealerPar.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) DealerPar.o -o DealerPar
-
-Par:	$(OBJ_FILES) Par.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) Par.o -o Par
-
-SolveBoard:	$(OBJ_FILES) SolveBoard.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveBoard.o -o SolveBoard
-
-SolveBoardPBN:	$(OBJ_FILES) SolveBoardPBN.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveBoardPBN.o -o SolveBoardPBN
-
-SolveAllBoards:	$(OBJ_FILES) SolveAllBoards.o
-	$(CC) $(CC_FULL_FLAGS) $(LD_FLAGS) $(LIB_FLAGS) $(OBJ_FILES) SolveAllBoards.o -o SolveAllBoards
+%.exe: $(OBJ_FILES) %.o
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 %.o:	%.cpp
-	$(CC) $(CC_FULL_FLAGS) -c $< -o $*.o
+	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 depend:
-	makedepend -Y -- $(cOMMON_SOURCE_FILES) $(ALL_EXAMPLE_FILES)
+	makedepend -Y -- $(COMMON_SOURCE_FILES) $(ALL_EXAMPLE_FILES)
 
 clean:
-	rm -f *.o *.exe $(DLL) $(DLLBASE).def
+	$(RM) *.exe *.o
 
 # DO NOT DELETE
+.PRECIOUS: $(OBJ_FILES) $(EX_OBJ_FILES)
 
-CalcDDtable.o: ../include/dll.h hands.h
-CalcDDtablePBN.o: ../include/dll.h hands.h
-CalcAllTables.o: ../include/dll.h hands.h
-CalcAllTablesPBN.o: ../include/dll.h hands.h
-DealerPar.o: ../include/dll.h hands.h
-Par.o: ../include/dll.h hands.h
-SolveBoard.o: ../include/dll.h hands.h
-SolveBoardPBN.o: ../include/dll.h hands.h
-SolveAllBoards.o: ../include/dll.h hands.h

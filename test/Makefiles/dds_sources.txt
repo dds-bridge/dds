@@ -18,6 +18,7 @@ DDS_SOURCE_FILES    =           \
         ../src/SolveBoard.cpp   \
         ../src/SolverIF.cpp     \
         ../src/System.cpp       \
+        ../src/ThreadMgr.cpp    \
         ../src/Timer.cpp        \
         ../src/TimerGroup.cpp   \
         ../src/TimerList.cpp    \
