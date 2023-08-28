@@ -60,7 +60,7 @@ int main()
 
     match = ComparePlay(&solved, handno);
 
-    sprintf(line, "AnalysePlayPBNBin, hand %d: %s\n",
+    snprintf(line, sizeof(line), "AnalysePlayPBNBin, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
     PrintPBNHand(line, dlPBN.remainCards);

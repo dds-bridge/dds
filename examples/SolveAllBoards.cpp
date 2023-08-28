@@ -64,7 +64,7 @@ int main()
   {
     match = CompareFut(&solved.solvedBoard[handno], handno, 3);
 
-    sprintf(line,
+    snprintf(line, sizeof(line),
             "SolveAllBoards, hand %d: solutions 3 %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 

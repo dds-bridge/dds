@@ -77,7 +77,7 @@ int main()
 
     match2 = CompareFut(&fut2, handno, solutions);
 
-    sprintf(line,
+    snprintf(line, sizeof(line),
             "SolveBoard, hand %d: solutions 3 %s, solutions 2 %s\n",
             handno + 1,
             (match3 ? "OK" : "ERROR"),
@@ -85,9 +85,9 @@ int main()
 
     PrintHand(line, dl.remainCards);
 
-    sprintf(line, "solutions == 3\n");
+    snprintf(line, sizeof(line), "solutions == 3\n");
     PrintFut(line, &fut3);
-    sprintf(line, "solutions == 2\n");
+    snprintf(line, sizeof(line), "solutions == 2\n");
     PrintFut(line, &fut2);
   }
 }
