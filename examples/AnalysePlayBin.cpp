@@ -68,7 +68,7 @@ int main()
 
     match = ComparePlay(&solved, handno);
 
-    sprintf(line, "AnalysePlayBin, hand %d: %s\n",
+    snprintf(line, sizeof(line), "AnalysePlayBin, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
     PrintHand(line, dl.remainCards);

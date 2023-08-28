@@ -45,7 +45,7 @@ int main()
 
     match = CompareTable(&table, handno);
 
-    sprintf(line,
+    snprintf(line, sizeof(line),
             "CalcDDtable, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 

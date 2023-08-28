@@ -131,9 +131,9 @@ int STDCALL Par(
   presp->parScore[1][2] = ' ';
   presp->parScore[1][3] = '\0';
 
-  sprintf(temp, "%d", sidesRes[0].score);
+  snprintf(temp, sizeof(temp), "%d", sidesRes[0].score);
   strcat(presp->parScore[0], temp);
-  sprintf(temp, "%d", sidesRes[1].score);
+  snprintf(temp, sizeof(temp), "%d", sidesRes[1].score);
   strcat(presp->parScore[1], temp);
 
   presp->parContractsString[0][0] = 'N';
@@ -163,7 +163,7 @@ int STDCALL Par(
 
         strcat(presp->parContractsString[i], 
           seats[sidesRes[i].contracts[k].seats]);
-        sprintf(temp, "%d", sidesRes[i].contracts[k].level);
+        snprintf(temp, sizeof(temp), "%d", sidesRes[i].contracts[k].level);
         buff[0] = static_cast<char>(
           cardSuit[denom_conv[sidesRes[i].contracts[k].denom]]);
         buff[1] = 'x';
@@ -189,7 +189,7 @@ int STDCALL Par(
             + sidesRes[i].contracts[k].level + 6);
 
 
-        sprintf(temp, "%d", n);
+        snprintf(temp, sizeof(temp), "%d", n);
         buff[0] = static_cast<char>(
           cardSuit[denom_conv[sidesRes[i].contracts[k].denom]]);
         buff[1] = '\0';
@@ -1290,7 +1290,7 @@ int STDCALL SidesPar(
 
     for (k = 0; k < sidesRes[i].number; k++)
     {
-      sprintf(sidesRes[i].contracts[k], "%d", parm[i].contracts[k].level);
+      snprintf(sidesRes[i].contracts[k], sizeof(sidesRes[i].contracts[k]), "%d", parm[i].contracts[k].level);
       switch (parm[i].contracts[k].denom)
       {
         case 0:
@@ -1342,13 +1342,13 @@ int STDCALL SidesPar(
       if (parm[i].contracts[k].underTricks > 0)
       {
         /* Sacrifice */
-        sprintf(buff, "-%d", parm[i].contracts[k].underTricks);
+        snprintf(buff, sizeof(buff), "-%d", parm[i].contracts[k].underTricks);
         strcat(sidesRes[i].contracts[k], buff);
       }
       else if (parm[i].contracts[k].overTricks > 0)
       {
         /* Make */
-        sprintf(buff, "+%d", parm[i].contracts[k].overTricks);
+        snprintf(buff, sizeof(buff), "+%d", parm[i].contracts[k].overTricks);
         strcat(sidesRes[i].contracts[k], buff);
       }
     }
@@ -1366,7 +1366,7 @@ int STDCALL ConvertToDealerTextFormat(
   int k, i;
   char buff[20];
 
-  sprintf(resp, "Par %d: ", pres->score);
+  snprintf(resp, sizeof(resp), "Par %d: ", pres->score);
 
   for (k = 0; k < pres->number; k++)
   {
@@ -1401,7 +1401,7 @@ int STDCALL ConvertToDealerTextFormat(
 
     for (i = 0; i < 10; i++)
       buff[i] = '\0';
-    sprintf(buff, "%d", pres->contracts[k].level);
+    snprintf(buff, sizeof(buff), "%d", pres->contracts[k].level);
     strcat(resp, buff);
 
     switch (pres->contracts[k].denom)
@@ -1431,7 +1431,7 @@ int STDCALL ConvertToDealerTextFormat(
       strcat(resp, "x-");
       for (i = 0; i < 10; i++)
         buff[i] = '\0';
-      sprintf(buff, "%d", pres->contracts[k].underTricks);
+      snprintf(buff, sizeof(buff), "%d", pres->contracts[k].underTricks);
       strcat(resp, buff);
     }
     else if (pres->contracts[k].overTricks > 0)
@@ -1439,7 +1439,7 @@ int STDCALL ConvertToDealerTextFormat(
       strcat(resp, "+");
       for (i = 0; i < 10; i++)
         buff[i] = '\0';
-      sprintf(buff, "%d", pres->contracts[k].overTricks);
+      snprintf(buff, sizeof(buff), "%d", pres->contracts[k].overTricks);
       strcat(resp, buff);
     }
   }
@@ -1460,14 +1460,14 @@ int STDCALL ConvertToSidesTextFormat(
 
   if (pres->score == 0)
   {
-    sprintf(resp->parText[0], "Par 0");
+    snprintf(resp->parText[0], sizeof(resp->parText[0]), "Par 0");
     return RETURN_NO_FAULT;
   }
 
   for (i = 0; i < 2; i++)
   {
 
-    sprintf(resp->parText[i], "Par %d: ", (pres + i)->score);
+    snprintf(resp->parText[i], sizeof(resp->parText[i]), "Par %d: ", (pres + i)->score);
 
     for (k = 0; k < (pres + i)->number; k++)
     {
@@ -1502,7 +1502,7 @@ int STDCALL ConvertToSidesTextFormat(
 
       for (j = 0; j < 10; j++)
         buff[j] = '\0';
-      sprintf(buff, "%d", (pres + i)->contracts[k].level);
+      snprintf(buff, sizeof(buff), "%d", (pres + i)->contracts[k].level);
       strcat(resp->parText[i], buff);
 
       switch ((pres + i)->contracts[k].denom)
@@ -1532,7 +1532,7 @@ int STDCALL ConvertToSidesTextFormat(
         strcat(resp->parText[i], "x-");
         for (j = 0; j < 10; j++)
           buff[j] = '\0';
-        sprintf(buff, "%d", (pres + i)->contracts[k].underTricks);
+        snprintf(buff, sizeof(buff), "%d", (pres + i)->contracts[k].underTricks);
         strcat(resp->parText[i], buff);
       }
       else if ((pres + i)->contracts[k].overTricks > 0)
@@ -1540,7 +1540,7 @@ int STDCALL ConvertToSidesTextFormat(
         strcat(resp->parText[i], "+");
         for (j = 0; j < 10; j++)
           buff[j] = '\0';
-        sprintf(buff, "%d", (pres + i)->contracts[k].overTricks);
+        snprintf(buff, sizeof(buff), "%d", (pres + i)->contracts[k].overTricks);
         strcat(resp->parText[i], buff);
       }
     }
