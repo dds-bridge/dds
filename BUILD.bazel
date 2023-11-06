@@ -1,0 +1,58 @@
+config_setting(
+    name = "build_macos",
+    constraint_values = [
+        "@platforms//os:osx",
+    ],
+)
+
+config_setting(
+    name = "debug_build_macos",
+        constraint_values = [
+        "@platforms//os:osx",
+    ],
+    values = {"compilation_mode": "dbg"},
+)
+
+config_setting(
+    name = "build_linux",
+    constraint_values = [
+        "@platforms//os:linux",
+    ],
+)
+
+config_setting(
+    name = "debug_build_linux",
+        constraint_values = [
+        "@platforms//os:linux",
+    ],
+    values = {"compilation_mode": "dbg"},
+)
+
+load("//:CPPVARIABLES.bzl", "CPPOPTS", "LINKOPTS")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+filegroup(
+    name = "dds_sources",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.h",
+        "include/portab.h",
+    ]),
+)
+
+filegroup(
+    name = "dds_headers",
+    srcs = ["include/dll.h"],
+)
+
+cc_library(
+    name = "dds",
+    srcs = ["//:dds_sources"],
+    hdrs = ["//:dds_headers"],
+    copts = CPPOPTS,
+    linkopts = LINKOPTS,
+    visibility = ["//visibility:public"],
+    include_prefix="dds",
+    deps = [
+    ],
+)

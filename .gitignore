@@ -1,20 +1,61 @@
-!.gitignore
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
 *.o
-*.a
-*.so
-*.dll
 *.obj
-*.def
-src/[Mm]akefile
-test/[Mm]akefile
-examples/[Mm]akefile
-test/dtest
-test/itest
 
-*.exe
-*.swp
-*.bak
+# Precompiled Headers
+*.gch
+*.pch
 
-*.exp
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
 *.lib
-*.res
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Bazel Directories
+bazel-*
+#
+# Build artefacts are placed in these directories.
+#
+bin/
+build/
+include/
+lib/
+Frameworks/
+Carthage/Build
+Carthage/Checkouts
+#
+# I think this is where Xcode keeps information about what files etc. that
+# when the project was closed.
+#
+xcuserdata/
+#
+# Don't want to check in any info about how Mac OS X displays the directory.
+#
+.DS_Store
+#
+#
+#
+*.xccheckout
+*.xcscmblueprint
+#
+.Rproj.user
