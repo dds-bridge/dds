@@ -37,12 +37,13 @@ filegroup(
         "src/*.cpp",
         "src/*.h",
         "include/portab.h",
+        "include/dll.h",
     ]),
 )
 
 filegroup(
     name = "dds_headers",
-    srcs = ["include/dll.h"],
+    srcs = ["include/dds.h"],
 )
 
 cc_library(
@@ -53,6 +54,7 @@ cc_library(
     linkopts = LINKOPTS,
     visibility = ["//visibility:public"],
     include_prefix="dds",
+    strip_include_prefix="include",
     deps = [
     ],
 )
