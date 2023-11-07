@@ -43,7 +43,7 @@ filegroup(
 
 filegroup(
     name = "dds_headers",
-    srcs = ["include/dds.h"],
+    srcs = ["dds.h"],
 )
 
 cc_library(
@@ -54,7 +54,6 @@ cc_library(
     linkopts = LINKOPTS,
     visibility = ["//visibility:public"],
     include_prefix="dds",
-    strip_include_prefix="include",
     deps = [
     ],
 )
