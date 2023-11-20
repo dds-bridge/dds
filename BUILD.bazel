@@ -28,7 +28,7 @@ config_setting(
     values = {"compilation_mode": "dbg"},
 )
 
-load("//:CPPVARIABLES.bzl", "CPPOPTS", "LINKOPTS")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 filegroup(
@@ -50,10 +50,10 @@ cc_library(
     name = "dds",
     srcs = ["//:dds_sources"],
     hdrs = ["//:dds_headers"],
-    copts = CPPOPTS,
-    linkopts = LINKOPTS,
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
     visibility = ["//visibility:public"],
     include_prefix="dds",
-    deps = [
-    ],
+    deps = [],
 )
