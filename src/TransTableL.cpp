@@ -100,12 +100,12 @@ static vector<string> players =
 };
 
 
-TransTableL::TransTableL()
-{
-  if (! _constantsSet)
-  {
-    _constantsSet = true;
-    TransTableL::SetConstants();
+/**
+ * @brief Large transposition table for double dummy solver.
+ *
+ * TransTableL implements a large, memory-intensive transposition table
+ * used to cache and retrieve results during double dummy bridge analysis.
+ * It manages memory allocation, lookup, and statistics for position caching.
   }
 
   poolp = nullptr;
@@ -131,6 +131,11 @@ TransTableL::TransTableL()
 }
 
 
+/**
+ * @brief Destroy the TransTableL object and free all memory.
+ *
+ * Calls ReturnAllMemory to release all allocated resources.
+ */
 TransTableL::~TransTableL()
 {
   TransTableL::ReturnAllMemory();

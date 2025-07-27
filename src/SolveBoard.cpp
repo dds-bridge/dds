@@ -146,6 +146,19 @@ int SolveAllBoardsN(
 }
 
 
+/**
+ * @brief Solve a single bridge deal in PBN format using double dummy analysis.
+ *
+ * Converts a PBN deal to internal format and calls SolveBoard.
+ *
+ * @param dlpbn The PBN deal to analyze
+ * @param target Target number of tricks
+ * @param solutions Solution mode
+ * @param mode Analysis mode
+ * @param futp Pointer to result structure
+ * @param thrId Index of thread to use
+ * @return 1 on success, error code otherwise
+ */
 int STDCALL SolveBoardPBN(
   dealPBN dlpbn, 
   int target,
@@ -171,6 +184,15 @@ int STDCALL SolveBoardPBN(
 }
 
 
+/**
+ * @brief Solve multiple bridge deals in PBN format.
+ *
+ * Converts each PBN deal to internal format and solves all boards.
+ *
+ * @param bop Pointer to multiple PBN deals
+ * @param solvedp Pointer to results for solved boards
+ * @return 1 on success, error code otherwise
+ */
 int STDCALL SolveAllBoards(
   boardsPBN * bop, 
   solvedBoards * solvedp)

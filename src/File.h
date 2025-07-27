@@ -16,6 +16,13 @@
 using namespace std;
 
 namespace dds {
+/**
+ * @brief File output manager for bridge double dummy solver.
+ *
+ * The File class provides a simple interface for managing output file streams
+ * used for logging, statistics, and debugging during double dummy analysis.
+ * It is used internally by various solver components and is not part of the public API.
+ */
 class File
 {
   private:
@@ -28,8 +35,18 @@ class File
 
   public:
 
+    /**
+     * @brief Construct a new File object.
+     *
+     * Initializes the file output manager and prepares for output operations.
+     */
     File();
 
+    /**
+     * @brief Destroy the File object and clean up resources.
+     *
+     * Closes the file stream and releases any associated resources.
+     */
     ~File();
 
     void Reset();

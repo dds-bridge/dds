@@ -40,6 +40,15 @@ struct schedType
 };
 
 
+/**
+ * @brief Scheduler for bridge double dummy solver threading and grouping.
+ *
+ * The Scheduler class manages the grouping, sorting, and distribution of boards
+ * for parallel double dummy analysis. It handles thread registration, workload
+ * partitioning, and timing statistics, optimizing the use of available threads
+ * for efficient solving. Scheduler is an internal component and not part of the
+ * public API, but is crucial for high-performance analysis on multicore systems.
+ */
 class Scheduler
 {
   private:
@@ -160,8 +169,24 @@ class Scheduler
 
   public:
 
+    /**
+     * @brief Construct a new Scheduler object.
+     *
+     * Initializes all internal data structures, thread and board counters, and
+     * prepares the scheduler for use in parallel double dummy solving.
+     */
     Scheduler();
 
+    /**
+     * @brief Destroy the Scheduler object and clean up resources.
+     *
+     * Releases all memory and performs cleanup of scheduler state.
+     */
+    /**
+     * @brief Destroy the Scheduler object and clean up resources.
+     *
+     * Releases all memory and performs cleanup of scheduler state.
+     */
     ~Scheduler();
 
     void RegisterThreads(

@@ -19,6 +19,14 @@ using std::chrono::time_point;
 using namespace std;
 
 
+/**
+ * @brief Timer for profiling bridge double dummy solver operations.
+ *
+ * The Timer class measures, accumulates, and reports user and system time
+ * for profiling and performance analysis of solver operations. It supports
+ * starting, stopping, and aggregating timing measurements. Used internally
+ * for detailed timing statistics.
+ */
 class Timer
 {
   private:
@@ -33,8 +41,18 @@ class Timer
 
   public:
 
+    /**
+     * @brief Construct a new Timer object.
+     *
+     * Initializes the timer and prepares for timing measurements.
+     */
     Timer();
 
+    /**
+     * @brief Destroy the Timer object and clean up resources.
+     *
+     * Releases any resources and resets timing state.
+     */
     ~Timer();
 
     void Reset();

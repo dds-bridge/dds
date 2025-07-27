@@ -41,6 +41,18 @@ extern Memory memory;
 extern Scheduler scheduler;
 
 
+/**
+ * @brief Analyze a sequence of played cards (binary format) and determine the tricks taken.
+ *
+ * This function simulates play of a bridge deal according to the provided play trace,
+ * using double dummy analysis to determine the number of tricks won at each step.
+ *
+ * @param dl The deal to analyze
+ * @param play The sequence of played cards (binary format)
+ * @param solvedp Pointer to result structure for solved play
+ * @param thrId Index of thread to use
+ * @return 1 on success, error code otherwise
+ */
 int STDCALL AnalysePlayBin(
   deal dl,
   playTraceBin play,
@@ -237,6 +249,18 @@ int STDCALL AnalysePlayBin(
 }
 
 
+/**
+ * @brief Analyze a sequence of played cards (PBN format) and determine the tricks taken.
+ *
+ * This function converts a PBN-format deal and play trace to internal format,
+ * then simulates play using double dummy analysis to determine the number of tricks won.
+ *
+ * @param dlPBN The deal to analyze (PBN format)
+ * @param playPBN The sequence of played cards (PBN format)
+ * @param solvedp Pointer to result structure for solved play
+ * @param thrId Index of thread to use
+ * @return 1 on success, error code otherwise
+ */
 int STDCALL AnalysePlayPBN(
   dealPBN dlPBN,
   playTracePBN playPBN,

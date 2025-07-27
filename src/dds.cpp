@@ -48,14 +48,23 @@ extern "C" BOOL APIENTRY DllMain(
 
 #elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
 
+/**
+ * @brief Initialize the DDS library (Apple platforms).
+ */
 void DDSInitialize(), DDSFinalize();
 
+/**
+ * @brief Initialize the DDS library.
+ */
 void DDSInitialize(void) 
 {
   SetMaxThreads(0);
 }
 
 
+/**
+ * @brief Finalize and clean up the DDS library.
+ */
 void DDSFinalize(void) 
 {
   CloseDebugFiles();
@@ -64,12 +73,22 @@ void DDSFinalize(void)
 
 #elif defined(USES_CONSTRUCTOR)
 
+/**
+ * @brief Library constructor for platforms supporting constructor attribute.
+ *
+ * This function is called when the library is loaded.
+ */
 static void __attribute__ ((constructor)) libInit(void)
 {
   SetMaxThreads(0);
 }
 
 
+/**
+ * @brief Library destructor for platforms supporting destructor attribute.
+ *
+ * This function is called when the library is unloaded.
+ */
 static void __attribute__ ((destructor)) libEnd(void)
 {
   CloseDebugFiles();

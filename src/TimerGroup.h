@@ -18,6 +18,14 @@
 using namespace std;
 
 
+/**
+ * @brief Group of timers for profiling bridge double dummy solver operations.
+ *
+ * The TimerGroup class manages a collection of Timer objects, allowing
+ * simultaneous profiling of multiple solver operations or phases. It supports
+ * starting, stopping, and reporting on grouped timing measurements for detailed
+ * performance analysis. Used internally for fine-grained profiling.
+ */
 class TimerGroup
 {
   private:
@@ -27,8 +35,18 @@ class TimerGroup
 
   public:
 
+    /**
+     * @brief Construct a new TimerGroup object.
+     *
+     * Initializes the group of timers and prepares for grouped profiling.
+     */
     TimerGroup();
 
+    /**
+     * @brief Destroy the TimerGroup object and clean up resources.
+     *
+     * Releases all memory and resets the group state.
+     */
     ~TimerGroup();
 
     void Reset();

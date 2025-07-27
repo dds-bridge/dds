@@ -57,6 +57,14 @@ struct ABtracker
 };
 
 
+/**
+ * @brief Alpha-beta search statistics accumulator for bridge double dummy solver.
+ *
+ * The ABstats class accumulates, tracks, and reports statistics related to
+ * alpha-beta pruning and search operations during double dummy analysis. It
+ * provides detailed breakdowns by position, depth, and side, supporting
+ * performance tuning and debugging. Used internally for profiling.
+ */
 class ABstats
 {
   private:
@@ -104,8 +112,18 @@ class ABstats
 
   public:
 
+    /**
+     * @brief Construct a new ABstats object.
+     *
+     * Initializes the alpha-beta statistics accumulator.
+     */
     ABstats();
 
+    /**
+     * @brief Destroy the ABstats object and clean up resources.
+     *
+     * Releases all memory and resets the statistics state.
+     */
     ~ABstats();
 
     void Reset();
