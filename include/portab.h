@@ -1,11 +1,12 @@
-/*
-   DDS, a bridge double dummy solver.
-
-   Copyright (C) 2006-2014 by Bo Haglund /
-   2014-2018 by Bo Haglund & Soren Hein.
-
-   See LICENSE and README.
-*/
+/**
+ * @file portab.h
+ * @brief Portability macros and definitions for DDS (Double Dummy Solver).
+ *
+ * This header defines macros and typedefs to ensure DDS can be built and run on multiple platforms,
+ * including Windows, Linux, and macOS. It handles compiler, OS, and threading differences.
+ *
+ * @copyright (C) 2006-2014 by Bo Haglund / 2014-2018 by Bo Haglund & Soren Hein.
+ */
 
 #ifndef DDS_PORTAB_H
 #define DDS_PORTAB_H
@@ -64,6 +65,12 @@
 // http://stackoverflow.com/a/4030983/211160
 // Use to indicate a variable is being intentionally not referred to (which
 // usually generates a compiler warning)
+/**
+ * @def UNUSED(x)
+ * @brief Macro to suppress unused variable warnings.
+ *
+ * Use this macro to indicate that a variable is intentionally unused, to avoid compiler warnings.
+ */
 #ifndef UNUSED
   #define UNUSED(x) ((void)(true ? 0 : ((x), void(), 0)))
 #endif

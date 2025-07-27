@@ -28,6 +28,15 @@ typedef void (*fsingleType)(const int thid, const int bno);
 typedef void (*fcopyType)(const vector<int>& crossrefs);
 
 
+/**
+ * @brief System-dependent manager for bridge double dummy solver.
+ *
+ * The System class encapsulates all system-dependent logic, including management
+ * of threading, memory allocation, and concurrency models for the solver. It
+ * provides an abstraction layer for different threading backends and system
+ * resources, optimizing solver execution for the host environment. System is an
+ * internal component and not part of the public API.
+ */
 class System
 {
   private:
@@ -79,8 +88,19 @@ class System
 
 
   public:
+    /**
+     * @brief Construct a new System object.
+     *
+     * Initializes system-dependent state, threading, and memory management for
+     * the double dummy solver.
+     */
     System();
 
+    /**
+     * @brief Destroy the System object and clean up resources.
+     *
+     * Releases all memory and performs cleanup of system state.
+     */
     ~System();
 
     void Reset();

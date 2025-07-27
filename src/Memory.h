@@ -112,6 +112,14 @@ struct ThreadData
 };
 
 
+/**
+ * @brief Thread-local memory manager for bridge double dummy solver.
+ *
+ * The Memory class manages per-thread resources, including allocation and cleanup
+ * of thread-local data structures required for double dummy analysis. It provides
+ * interfaces for resizing, accessing, and reporting memory usage for each thread.
+ * Memory is an internal component and not part of the public API.
+ */
 class Memory
 {
   private:
@@ -122,8 +130,18 @@ class Memory
 
   public:
 
+    /**
+     * @brief Construct a new Memory object.
+     *
+     * Initializes thread-local memory tracking and prepares for allocation.
+     */
     Memory();
 
+    /**
+     * @brief Destroy the Memory object and clean up resources.
+     *
+     * Releases all memory and performs cleanup of thread-local resources.
+     */
     ~Memory();
 
     void ReturnThread(const unsigned thrId);

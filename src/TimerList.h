@@ -78,6 +78,14 @@ enum ABTimerType
 };
 
 
+/**
+ * @brief List of named timer groups for profiling bridge double dummy solver phases.
+ *
+ * The TimerList class manages multiple TimerGroup objects, each associated with
+ * a specific solver phase or operation. It provides interfaces for resetting,
+ * starting, ending, and reporting timing data for all phases. Used internally
+ * for comprehensive profiling and optimization.
+ */
 class TimerList
 {
   private:
@@ -85,8 +93,18 @@ class TimerList
     vector<TimerGroup> timerGroups;
 
   public:
+    /**
+     * @brief Construct a new TimerList object.
+     *
+     * Initializes the list of timer groups for profiling.
+     */
     TimerList();
 
+    /**
+     * @brief Destroy the TimerList object and clean up resources.
+     *
+     * Releases all memory and resets the timer list state.
+     */
     ~TimerList();
 
     void Reset();

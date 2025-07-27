@@ -18,6 +18,13 @@
 using namespace std;
 
 
+/**
+ * @brief Collection of timing statistics for bridge double dummy solver.
+ *
+ * The TimeStatList class manages a collection of TimeStat objects, providing
+ * interfaces for profiling and reporting timing data for various solver components.
+ * It is used internally for performance analysis and optimization.
+ */
 class TimeStatList
 {
   private:
@@ -28,8 +35,18 @@ class TimeStatList
 
   public:
 
+    /**
+     * @brief Construct a new TimeStatList object.
+     *
+     * Initializes the timing statistics list and prepares for profiling.
+     */
     TimeStatList();
 
+    /**
+     * @brief Destroy the TimeStatList object and clean up resources.
+     *
+     * Releases all memory and performs cleanup of the statistics list.
+     */
     ~TimeStatList();
 
     void Reset();

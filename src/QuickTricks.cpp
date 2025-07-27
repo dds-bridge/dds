@@ -81,6 +81,21 @@ int QuickTricksPartnerHandNT(
   const ThreadData& thrd);
 
 
+/**
+ * @brief Analyze the number of quick tricks available for a given position.
+ *
+ * This function estimates the number of immediate tricks that can be taken
+ * from the current position, hand, depth, target, and trump suit using double dummy logic.
+ *
+ * @param tpos Position state
+ * @param hand Current hand
+ * @param depth Current search depth
+ * @param target Target number of tricks
+ * @param trump Trump suit
+ * @param result Reference to store if the target is achievable
+ * @param thrd Thread-local data
+ * @return Number of quick tricks found
+ */
 int QuickTricks(
   pos& tpos,
   const int hand,

@@ -159,6 +159,12 @@
 
 
 
+/**
+ * @brief Stores the result of a double dummy analysis for a single position.
+ *
+ * Contains the number of nodes searched, the number of cards in the result,
+ * and arrays for each card's suit, rank, equality group, and score.
+ */
 struct futureTricks
 {
   int nodes;
@@ -169,6 +175,15 @@ struct futureTricks
   int score[13];
 };
 
+/**
+ * @brief Represents a bridge deal for double dummy analysis.
+ *
+ * @param trump The trump suit (0 = NT, 1 = Spades, ...)
+ * @param first The hand to play first (0 = N, 1 = E, ...)
+ * @param currentTrickSuit Suits of cards played in the current trick
+ * @param currentTrickRank Ranks of cards played in the current trick
+ * @param remainCards Remaining cards in each hand and suit
+ */
 struct deal
 {
   int trump;
@@ -179,6 +194,15 @@ struct deal
 };
 
 
+/**
+ * @brief Represents a bridge deal in PBN (Portable Bridge Notation) format.
+ *
+ * @param trump The trump suit
+ * @param first The hand to play first
+ * @param currentTrickSuit Suits of cards played in the current trick
+ * @param currentTrickRank Ranks of cards played in the current trick
+ * @param remainCards PBN string describing remaining cards
+ */
 struct dealPBN
 {
   int trump;
@@ -189,6 +213,15 @@ struct dealPBN
 };
 
 
+/**
+ * @brief Represents multiple bridge deals for batch analysis.
+ *
+ * @param noOfBoards Number of deals
+ * @param deals Array of deals
+ * @param target Array of targets for each deal
+ * @param solutions Array of solution modes for each deal
+ * @param mode Array of modes for each deal
+ */
 struct boards
 {
   int noOfBoards;
@@ -385,18 +418,49 @@ struct DDSInfo
 
 
 
+/**
+ * @brief Set the maximum number of threads used by the solver.
+ *
+ * @param userThreads Maximum number of threads to use
+ */
 EXTERN_C DLLEXPORT void STDCALL SetMaxThreads(
   int userThreads);
 
+/**
+ * @brief Set the threading backend used by the solver.
+ *
+ * @param code Threading backend code (see documentation)
+ * @return 1 on success, error code otherwise
+ */
 EXTERN_C DLLEXPORT int STDCALL SetThreading(
   int code);
 
+/**
+ * @brief Set memory and thread resources for the solver.
+ *
+ * @param maxMemoryMB Maximum memory in megabytes
+ * @param maxThreads Maximum number of threads
+ */
 EXTERN_C DLLEXPORT void STDCALL SetResources(
   int maxMemoryMB,
   int maxThreads);
 
+/**
+ * @brief Free memory used by the solver.
+ */
 EXTERN_C DLLEXPORT void STDCALL FreeMemory();
 
+/**
+ * @brief Solve a single bridge deal using double dummy analysis.
+ *
+ * @param dl The deal to analyze
+ * @param target Target number of tricks
+ * @param solutions Solution mode (1 = best, 2 = all, etc.)
+ * @param mode Analysis mode
+ * @param futp Pointer to result structure
+ * @param threadIndex Index of thread to use
+ * @return 1 on success, error code otherwise
+ */
 EXTERN_C DLLEXPORT int STDCALL SolveBoard(
   struct deal dl,
   int target,
@@ -405,6 +469,17 @@ EXTERN_C DLLEXPORT int STDCALL SolveBoard(
   struct futureTricks * futp,
   int threadIndex);
 
+/**
+ * @brief Solve a single bridge deal in PBN format using double dummy analysis.
+ *
+ * @param dlpbn The PBN deal to analyze
+ * @param target Target number of tricks
+ * @param solutions Solution mode
+ * @param mode Analysis mode
+ * @param futp Pointer to result structure
+ * @param thrId Index of thread to use
+ * @return 1 on success, error code otherwise
+ */
 EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(
   struct dealPBN dlpbn,
   int target,
@@ -413,14 +488,38 @@ EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(
   struct futureTricks * futp,
   int thrId);
 
+/**
+ * @brief Calculate the double dummy table for a given deal.
+ *
+ * @param tableDeal Deal for which to calculate the table
+ * @param tablep Pointer to result table
+ * @return 1 on success, error code otherwise
+ */
 EXTERN_C DLLEXPORT int STDCALL CalcDDtable(
   struct ddTableDeal tableDeal,
   struct ddTableResults * tablep);
 
+/**
+ * @brief Calculate the double dummy table for a PBN deal.
+ *
+ * @param tableDealPBN PBN deal for which to calculate the table
+ * @param tablep Pointer to result table
+ * @return 1 on success, error code otherwise
+ */
 EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(
   struct ddTableDealPBN tableDealPBN,
   struct ddTableResults * tablep);
 
+/**
+ * @brief Calculate double dummy tables for multiple deals.
+ *
+ * @param dealsp Pointer to multiple deals
+ * @param mode Analysis mode
+ * @param trumpFilter Array of trump suit filters
+ * @param resp Pointer to result tables
+ * @param presp Pointer to par results
+ * @return 1 on success, error code otherwise
+ */
 EXTERN_C DLLEXPORT int STDCALL CalcAllTables(
   struct ddTableDeals * dealsp,
   int mode,
@@ -428,6 +527,16 @@ EXTERN_C DLLEXPORT int STDCALL CalcAllTables(
   struct ddTablesRes * resp,
   struct allParResults * presp);
 
+/**
+ * @brief Calculate double dummy tables for multiple PBN deals.
+ *
+ * @param dealsp Pointer to multiple PBN deals
+ * @param mode Analysis mode
+ * @param trumpFilter Array of trump suit filters
+ * @param resp Pointer to result tables
+ * @param presp Pointer to par results
+ * @return 1 on success, error code otherwise
+ */
 EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(
   struct ddTableDealsPBN * dealsp,
   int mode,
@@ -435,6 +544,13 @@ EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(
   struct ddTablesRes * resp,
   struct allParResults * presp);
 
+/**
+ * @brief Solve multiple bridge deals in PBN format.
+ *
+ * @param bop Pointer to multiple PBN deals
+ * @param solvedp Pointer to results for solved boards
+ * @return 1 on success, error code otherwise
+ */
 EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(
   struct boardsPBN * bop,
   struct solvedBoards * solvedp);

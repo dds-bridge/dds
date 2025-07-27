@@ -96,6 +96,17 @@ int VulnerDefSide(
   int vulnerable);
 
 
+/**
+ * @brief Compute the par score and contracts for both sides given double dummy results.
+ *
+ * This function analyzes the double dummy table results and determines the par score
+ * and contracts for both North-South and East-West, based on vulnerability.
+ *
+ * @param tablep Pointer to double dummy table results
+ * @param presp Pointer to result structure for par analysis
+ * @param vulnerable Vulnerability (0 = None, 1 = Both, 2 = NS, 3 = EW)
+ * @return 1 on success, error code otherwise
+ */
 int STDCALL Par(
   ddTableResults * tablep, 
   parResults * presp,

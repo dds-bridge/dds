@@ -38,24 +38,12 @@ bazel-*
 #
 bin/
 build/
-include/
 lib/
 Frameworks/
 Carthage/Build
 Carthage/Checkouts
-#
-# I think this is where Xcode keeps information about what files etc. that
-# when the project was closed.
-#
 xcuserdata/
-#
-# Don't want to check in any info about how Mac OS X displays the directory.
-#
 .DS_Store
-#
-#
-#
 *.xccheckout
 *.xcscmblueprint
-#
 .Rproj.user

@@ -77,6 +77,11 @@ moveGroupType groupData[8192];
 int _initialized = 0;
 
 
+/**
+ * @brief Set the maximum number of threads used by the solver.
+ *
+ * @param userThreads Maximum number of threads to use
+ */
 void STDCALL SetMaxThreads(
   int userThreads)
 {
@@ -84,6 +89,12 @@ void STDCALL SetMaxThreads(
 }
 
 
+/**
+ * @brief Set memory and thread resources for the solver.
+ *
+ * @param maxMemoryMB Maximum memory in megabytes
+ * @param maxThreadsIn Maximum number of threads
+ */
 void STDCALL SetResources(
   int maxMemoryMB,
   int maxThreadsIn)
@@ -178,6 +189,12 @@ void STDCALL SetResources(
 }
 
 
+/**
+ * @brief Set the threading backend used by the solver.
+ *
+ * @param code Threading backend code (see documentation)
+ * @return 1 on success, error code otherwise
+ */
 int STDCALL SetThreading(
   int code)
 {
@@ -595,6 +612,9 @@ void STDCALL GetDDSInfo(DDSInfo * info)
 }
 
 
+/**
+ * @brief Free memory used by the solver.
+ */
 void STDCALL FreeMemory()
 {
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)

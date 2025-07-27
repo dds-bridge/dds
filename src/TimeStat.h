@@ -15,6 +15,13 @@
 using namespace std;
 
 
+/**
+ * @brief Timing statistics accumulator for bridge double dummy solver.
+ *
+ * The TimeStat class accumulates, stores, and manipulates timing statistics
+ * (such as cumulative time and squared time) for performance analysis of
+ * double dummy solving runs. It is used internally for profiling and optimization.
+ */
 class TimeStat
 {
   private:
@@ -25,8 +32,18 @@ class TimeStat
 
   public:
 
+    /**
+     * @brief Construct a new TimeStat object.
+     *
+     * Initializes the timing statistics accumulator.
+     */
     TimeStat();
 
+    /**
+     * @brief Destroy the TimeStat object and clean up resources.
+     *
+     * Releases any resources and resets the accumulator state.
+     */
     ~TimeStat();
 
     void Reset();

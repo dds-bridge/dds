@@ -167,6 +167,18 @@ string sacrifice_as_text(
 
 
 
+/**
+ * @brief Compute the par score and contracts for a given dealer and vulnerability.
+ *
+ * This function analyzes the double dummy table results and determines the par score,
+ * contracts, and their text representation for the specified dealer and vulnerability.
+ *
+ * @param tablep Pointer to double dummy table results
+ * @param presp Pointer to result structure for dealer par analysis
+ * @param dealer Index of the dealer (0 = North, 1 = East, 2 = South, 3 = West)
+ * @param vulnerable Vulnerability (0 = None, 1 = Both, 2 = NS, 3 = EW)
+ * @return 1 on success, error code otherwise
+ */
 int STDCALL DealerPar(
   ddTableResults * tablep,
   parResultsDealer * presp,

@@ -50,6 +50,14 @@ struct trickDataType
 };
 
 
+/**
+ * @brief Move generator and tracker for bridge double dummy solver.
+ *
+ * The Moves class generates, tracks, and manages possible card plays (moves)
+ * during double dummy analysis. It provides interfaces for move generation,
+ * selection, statistics, and printing, supporting both notrump and suit contracts.
+ * Moves is an internal component and not part of the public API.
+ */
 class Moves
 {
   private:
@@ -174,8 +182,18 @@ class Moves
     string PrintFunctionTable(const moveStatsType& tablep) const;
 
   public:
+    /**
+     * @brief Construct a new Moves object.
+     *
+     * Initializes move tracking structures and prepares for move generation.
+     */
     Moves();
 
+    /**
+     * @brief Destroy the Moves object and clean up resources.
+     *
+     * Releases all memory and performs cleanup of move tracking state.
+     */
     ~Moves();
 
     void Init(

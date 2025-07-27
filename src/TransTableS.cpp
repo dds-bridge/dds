@@ -24,18 +24,24 @@ static bool _constantsSet = false;
 static int TTlowestRank[8192];
 
 
-TransTableS::TransTableS()
-{
-  if (! _constantsSet)
-  {
-    _constantsSet = true;
-    TransTableS::SetConstants();
+/**
+ * @brief Small transposition table for double dummy solver.
+ *
+ * TransTableS implements a small, memory-constrained transposition table
+ * used to cache and retrieve results during double dummy bridge analysis.
+ * It is designed for environments with limited memory resources and provides
+ * similar lookup and caching functionality as TransTableL, but with a smaller footprint.
   }
 
   TTInUse = 0;
 }
 
 
+/**
+ * @brief Destroy the TransTableS object and free all memory.
+ *
+ * Calls ReturnAllMemory to release all allocated resources.
+ */
 TransTableS::~TransTableS()
 {
   TransTableS::ReturnAllMemory();

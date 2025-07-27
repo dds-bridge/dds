@@ -12,6 +12,20 @@
 #include "LaterTricks.h"
 
 
+/**
+ * @brief Evaluate minimum possible tricks for a given position in double dummy analysis.
+ *
+ * This function estimates whether the minimum achievable tricks for the given position,
+ * hand, depth, and target can satisfy the target, considering the trump suit and current state.
+ *
+ * @param tpos Position state
+ * @param hand Current hand
+ * @param depth Current search depth
+ * @param target Target number of tricks
+ * @param trump Trump suit
+ * @param thrd Thread-local data
+ * @return true if target can be reached, false otherwise
+ */
 bool LaterTricksMIN(
   pos& tpos,
   const int hand,
@@ -145,6 +159,20 @@ bool LaterTricksMIN(
 }
 
 
+/**
+ * @brief Evaluate maximum possible tricks for a given position in double dummy analysis.
+ *
+ * This function estimates whether the maximum achievable tricks for the given position,
+ * hand, depth, and target can satisfy the target, considering the trump suit and current state.
+ *
+ * @param tpos Position state
+ * @param hand Current hand
+ * @param depth Current search depth
+ * @param target Target number of tricks
+ * @param trump Trump suit
+ * @param thrd Thread-local data
+ * @return true if target can be reached, false otherwise
+ */
 bool LaterTricksMAX(
   pos& tpos,
   const int hand,
