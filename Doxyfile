@@ -1,0 +1,16 @@
+# Doxyfile for DDS Bridge Double Dummy Solver
+PROJECT_NAME           = "DDS Bridge Double Dummy Solver"
+PROJECT_BRIEF          = "Legacy double dummy solver library for bridge analysis."
+OUTPUT_DIRECTORY       = doxygen_output
+INPUT                  = src include
+FILE_PATTERNS          = *.cpp *.h
+RECURSIVE              = YES
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+QUIET                  = YES
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_ANON_NSPACES   = YES
+HAVE_DOT               = NO

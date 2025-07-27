@@ -46,6 +46,27 @@ filegroup(
     srcs = ["dds.h"],
 )
 
+genrule(
+    name = "doxygen_docs",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.h",
+        "include/*.h",
+    ]) + ["Doxyfile"],
+    outs = ["doxygen_docs.zip"],
+    cmd = """
+      rm -rf doxygen_output
+      doxygen $(location Doxyfile)
+      if [ -d doxygen_output/html ]; then
+        zip -r $@ doxygen_output/html
+      else
+        echo 'No docs generated' > dummy.txt && zip $@ dummy.txt
+      fi
+    """,
+
+    output_to_bindir = True,
+)
+
 cc_library(
     name = "dds",
     srcs = ["//:dds_sources"],
