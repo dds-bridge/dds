@@ -78,3 +78,22 @@ cc_library(
     include_prefix="dds",
     deps = [],
 )
+
+cc_library(
+    name = "testable_dds",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.h",
+        "include/*.h",
+    ]),
+    hdrs = glob([
+        "src/*.h",
+        "include/*.h",
+    ]),
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = ["//tests:__pkg__"],
+    includes = ["include", "src"],
+    deps = [],
+)

@@ -1,0 +1,13 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+filegroup(
+    name = "test_sources",
+    srcs = glob(["*.cpp", "*.h"], exclude=["itest.cpp"]),
+)
+
+cc_binary(
+    name = "dtest",
+    srcs = [":test_sources"],
+    deps = ["//:testable_dds"],
+    visibility = ["//visibility:public"],
+)
