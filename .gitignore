@@ -1,3 +1,8 @@
+# Ignore VS Code directory, but share specific settings
+.vscode/*
+!.vscode/launch.json
+!.vscode/c_cpp_properties.json
+
 # Prerequisites
 *.d
 
