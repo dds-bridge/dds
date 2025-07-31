@@ -10,8 +10,12 @@
 #include <iomanip>
 
 #include "TransTableS.h"
-#include "debug.h"
-
+TransTableS::TransTableS()
+{
+  // Initialize any member variables here
+  TTInUse = 0;
+  maxmem = 100 * 1000000; // Default 100MB
+}
 
 #define NSIZE 50000
 #define WSIZE 50000

@@ -84,8 +84,7 @@
 #include <math.h>
 
 #include "TransTableL.h"
-#include "debug.h"
-
+TransTableL::TransTableL() = default;
 
 extern unsigned char cardRank[16];
 extern char relRank[8192][15];
