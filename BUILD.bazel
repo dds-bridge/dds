@@ -88,7 +88,6 @@ cc_library(
     ]),
     hdrs = glob([
         "src/*.h",
-        "include/*.h",
     ]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
@@ -97,6 +96,7 @@ cc_library(
         "//tests:__pkg__",
         "//tests/heuristic-sorting:__pkg__"],
     includes = ["include", "src"],
+    strip_include_prefix = "src",
     include_prefix="dds",
     deps = [],
 )
