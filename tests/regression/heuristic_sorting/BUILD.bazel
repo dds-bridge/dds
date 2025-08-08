@@ -8,7 +8,7 @@ filegroup(
 )
 
 cc_test(
-    name = "heuristic_sorting_test",
+    name = "heuristic_sorting",
     srcs = ["heuristic_sorting_test.cpp"],
     deps = [
         "@googletest//:gtest_main",
