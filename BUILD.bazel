@@ -94,7 +94,7 @@ cc_library(
     local_defines = DDS_LOCAL_DEFINES,
     visibility = [
         "//tests:__pkg__",
-        "//tests/heuristic-sorting:__pkg__"],
+        "//tests/regression/heuristic_sorting:__pkg__"],
     includes = ["include", "src"],
     strip_include_prefix = "src",
     include_prefix="dds",
