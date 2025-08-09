@@ -52,3 +52,4 @@ xcuserdata/
 *.xccheckout
 *.xcscmblueprint
 .Rproj.user
+.aider*
