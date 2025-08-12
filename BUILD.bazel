@@ -88,12 +88,15 @@ cc_library(
     ]),
     hdrs = glob([
         "src/*.h",
-        "include/*.h",
     ]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
-    visibility = ["//tests:__pkg__"],
+    visibility = [
+        "//tests:__pkg__",
+        "//tests/regression/heuristic_sorting:__pkg__"],
     includes = ["include", "src"],
+    strip_include_prefix = "src",
+    include_prefix="dds",
     deps = [],
 )
