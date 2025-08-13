@@ -13,8 +13,8 @@ jobs:
         uses: actions/checkout@v4
 
       # 2️⃣ Install Bazelisk (the recommended Bazel launcher)
-      - name: Setup Bazelisk
-        uses: bazelbuild/setup-bazelisk@v2
+      - name: Install Bazelisk
+        run: brew install bazelisk
 
       # 3️⃣ (Optional) Verify the BUILD files – useful for catching syntax errors early
       - name: Validate BUILD files
