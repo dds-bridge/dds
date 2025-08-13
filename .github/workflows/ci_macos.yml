@@ -16,15 +16,11 @@ jobs:
       - name: Install Bazelisk
         run: brew install bazelisk
 
-      # 3️⃣ (Optional) Verify the BUILD files – useful for catching syntax errors early
-      - name: Validate BUILD files
-        run: bazelisk validate //...
-
-      # 4️⃣ Build everything
+      # 3️⃣ Build everything
       - name: Build all targets
         run: bazelisk build //...
 
-      # 5️⃣ Run all tests
+      # 4️⃣ Run all tests
       - name: Run all tests
         run: bazelisk test //...
         
