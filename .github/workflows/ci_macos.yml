@@ -8,19 +8,23 @@ jobs:
   build_and_test:
     runs-on: macos-latest
     steps:
-      # 1️⃣ Checkout the repository
+      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Install Bazelisk (the recommended Bazel launcher)
+      # Install Bazelisk (the recommended Bazel launcher)
       - name: Install Bazelisk
         run: brew install bazelisk
 
-      # 3️⃣ Build everything
+      # Install Doxygen, to generate documentation
+      - name: Install Doxygen
+        run: brew install doxygen
+
+      # Build everything
       - name: Build all targets
         run: bazelisk build //...
 
-      # 4️⃣ Run all tests
+      # Run all tests
       - name: Run all tests
         run: bazelisk test //...
         
