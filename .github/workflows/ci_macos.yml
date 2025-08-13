@@ -1,0 +1,30 @@
+name: CI – macOS
+
+on:
+  pull_request:
+    branches: [mn_main]
+
+jobs:
+  build_and_test:
+    runs-on: macos-latest
+    steps:
+      # 1️⃣ Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Install Bazelisk (the recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: bazelbuild/setup-bazelisk@v2
+
+      # 3️⃣ (Optional) Verify the BUILD files – useful for catching syntax errors early
+      - name: Validate BUILD files
+        run: bazelisk validate //...
+
+      # 4️⃣ Build everything
+      - name: Build all targets
+        run: bazelisk build //...
+
+      # 5️⃣ Run all tests
+      - name: Run all tests
+        run: bazelisk test //...
+        
