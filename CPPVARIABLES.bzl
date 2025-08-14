@@ -19,7 +19,7 @@ DDS_LOCAL_DEFINES = select({
 DDS_LINKOPTS = select({
     "//:build_macos": [],
     "//:debug_build_macos": [],
-    "//:build_linux": ["-lbsd"],
-    "//:debug_build_linux": ["-lbsd"],
+    "//:build_linux": [],
+    "//:debug_build_linux": [],
     "//conditions:default": [],
 })
