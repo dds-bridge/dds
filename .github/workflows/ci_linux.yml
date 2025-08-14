@@ -15,7 +15,7 @@ jobs:
 
       # 2️⃣ Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
-        uses: bazelbuild/setup-bazelisk@v2
+        uses: bazel-contrib/setup-bazel@0.15.0
         # Optional: pin a specific Bazel version
         # with:
         #   bazel-version: 7.1.0
