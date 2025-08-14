@@ -27,4 +27,3 @@ jobs:
       # Run all tests
       - name: Run all tests
         run: bazelisk test //...
-        

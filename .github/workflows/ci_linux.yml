@@ -1,0 +1,33 @@
+# .github/workflows/ci_linux.yml
+name: CI – Linux
+
+on:
+  pull_request:
+    branches: [mn_main]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Install Bazelisk (recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: bazelbuild/setup-bazelisk@v2
+        # Optional: pin a specific Bazel version
+        # with:
+        #   bazel-version: 7.1.0
+
+      # 3️⃣ (Optional) Install Doxygen for documentation generation
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen
+
+      # 4️⃣ Build everything
+      - name: Build all targets
+        run: bazelisk build //...
+
+      # 5️⃣ Run all tests
+      - name: Run all tests
+        run: bazelisk test //...
