@@ -10,7 +10,7 @@
 #ifndef DTEST_COMPARE_H
 #define DTEST_COMPARE_H
 
-#include "../include/dll.h"
+#include "../src/dll.h"
 
 
 bool compare_PBN(

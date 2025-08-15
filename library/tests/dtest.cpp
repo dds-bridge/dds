@@ -10,7 +10,7 @@
 
 #include <iostream>
 
-#include "../include/dll.h"
+#include "../src/dll.h"
 #include "testcommon.h"
 #include "args.h"
 #include "cst.h"

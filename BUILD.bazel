@@ -31,72 +31,30 @@ config_setting(
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-filegroup(
-    name = "dds_sources",
-    srcs = glob([
-        "src/*.cpp",
-        "src/*.h",
-        "include/portab.h",
-        "include/dll.h",
-    ]),
-)
 
-filegroup(
-    name = "dds_headers",
-    srcs = ["dds.h"],
-)
+
+
 
 genrule(
     name = "doxygen_docs",
-    srcs = glob([
-        "src/*.cpp",
-        "src/*.h",
-        "include/*.h",
-    ]) + ["Doxyfile"],
+    srcs = ["Doxyfile"],
     outs = ["doxygen_docs.zip"],
     cmd = """
-      rm -rf doxygen_output
-      doxygen $(location Doxyfile)
-      if [ -d doxygen_output/html ]; then
-        zip -r $@ doxygen_output/html
-      else
-        echo 'No docs generated' > dummy.txt && zip $@ dummy.txt
-      fi
+      echo 'Doxygen docs temporarily disabled during migration' > dummy.txt && zip $@ dummy.txt
     """,
-
     output_to_bindir = True,
 )
 
 cc_library(
     name = "dds",
-    srcs = ["//:dds_sources"],
-    hdrs = ["//:dds_headers"],
-    copts = DDS_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    deps = ["//library/src:dds"],
     visibility = ["//visibility:public"],
-    include_prefix="dds",
-    deps = [],
 )
 
 cc_library(
     name = "testable_dds",
-    srcs = glob([
-        "src/*.cpp",
-        "src/*.h",
-        "include/*.h",
-    ]),
-    hdrs = glob([
-        "src/*.h",
-    ]),
-    copts = DDS_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    deps = ["//library/src:testable_dds"],
     visibility = [
-        "//tests:__pkg__",
-        "//tests/regression/heuristic_sorting:__pkg__"],
-    includes = ["include", "src"],
-    strip_include_prefix = "src",
-    include_prefix="dds",
-    deps = [],
+        "//library/tests:__pkg__",
+        "//library/tests/regression/heuristic_sorting:__pkg__"],
 )

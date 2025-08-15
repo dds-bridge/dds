@@ -10,7 +10,7 @@
 #ifndef DTEST_LOOP_H
 #define DTEST_LOOP_H
 
-#include "../include/dll.h"
+#include "../src/dll.h"
 
 
 void loop_solve(
