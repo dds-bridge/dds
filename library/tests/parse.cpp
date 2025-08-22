@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdexcept>
 
-#include "../include/portab.h"
+#include "../src/portab.h"
 #include "parse.h"
 
 using namespace std;

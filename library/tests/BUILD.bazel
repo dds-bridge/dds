@@ -8,6 +8,6 @@ filegroup(
 cc_binary(
     name = "dtest",
     srcs = [":test_sources"],
-    deps = ["//:testable_dds"],
+    deps = ["//library/src:testable_dds"],
     visibility = ["//visibility:public"],
 )

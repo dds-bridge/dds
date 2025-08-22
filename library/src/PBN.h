@@ -10,7 +10,7 @@
 #ifndef DDS_PBN_H
 #define DDS_PBN_H
 
-#include "../include/dll.h"
+#include "dll.h"
 
 
 /**

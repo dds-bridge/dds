@@ -10,8 +10,8 @@
 #ifndef DDS_DDS_H
 #define DDS_DDS_H
 
-#include "../include/portab.h"
-#include "../include/dll.h"
+#include "portab.h"
+#include "dll.h"
 
 
 #if defined(DDS_MEMORY_LEAKS) && defined(_MSC_VER)

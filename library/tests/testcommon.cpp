@@ -12,8 +12,8 @@
 #include <iomanip>
 #include <vector>
 
-#include "../include/dll.h"
-#include "../include/portab.h"
+#include "../src/dll.h"
+#include "../src/portab.h"
 
 #include "testcommon.h"
 #include "TestTimer.h"
