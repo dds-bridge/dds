@@ -1,0 +1,9 @@
+cc_test(
+    name = "heuristic_sorting_test",
+    srcs = ["heuristic_sorting_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting",
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+)

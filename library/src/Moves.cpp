@@ -202,9 +202,17 @@ int Moves::MoveGen0(
     }
 
     if (ftest)
+#ifdef DDS_USE_NEW_HEURISTIC
+      Moves::CallHeuristic();
+#else
       Moves::WeightAllocTrump0(tpos, bestMove, bestMoveTT, thrp_rel);
+#endif
     else
+#ifdef DDS_USE_NEW_HEURISTIC
+      Moves::CallHeuristic();
+#else
       Moves::WeightAllocNT0(tpos, bestMove, bestMoveTT, thrp_rel);
+#endif
   }
 
 #ifdef DDS_MOVES
@@ -282,7 +290,11 @@ int Moves::MoveGen123(
     if (numMoves == 1)
       return numMoves;
 
+    #ifdef DDS_USE_NEW_HEURISTIC
+    Moves::CallHeuristic();
+#else
     (this->*WeightList[findex])(tpos);
+#endif
 
     Moves::MergeSort();
     return numMoves;
@@ -321,7 +333,11 @@ int Moves::MoveGen123(
       g--;
     }
 
+    #ifdef DDS_USE_NEW_HEURISTIC
+    Moves::CallHeuristic();
+#else
     (this->*WeightFnc)(tpos);
+#endif
   }
 
   list.current = 0;
@@ -1985,8 +2001,49 @@ void Moves::Sort(
 #define CMP_SWAP(i, j) if (mply[i].weight < mply[j].weight) \
   { tmp = mply[i]; mply[i] = mply[j]; mply[j] = tmp; }
 
+void Moves::CallHeuristic() {
+  HeuristicContext context;
+  context.trump_suit = trump;
+  context.lead_hand = leadHand;
+  context.lead_suit = leadSuit;
+  context.current_hand_index = currHand;
+  context.tricks = currTrick;
+
+  // This is a simplified mapping. A real implementation would need to copy
+  // the full pos and relRanksType structures.
+  // context.pos = tpos;
+  // context.rel_ranks = thrp_rel;
+
+  context.highest_rank = highestRank;
+  context.lowest_rank = lowestRank;
+  context.group_data = groupData;
+  context.bit_map_rank = bitMapRank;
+  context.count_table = counttable;
+
+  CandidateMove candidate_moves[13];
+  for (int i = 0; i < numMoves; ++i) {
+    candidate_moves[i].card.suit = mply[i].suit;
+    candidate_moves[i].card.rank = mply[i].rank;
+    candidate_moves[i].sequence = mply[i].sequence;
+  }
+
+  ScoredMove scored_moves[13];
+  score_and_order(context, candidate_moves, numMoves, scored_moves);
+
+  for (int i = 0; i < numMoves; ++i) {
+    mply[i].suit = scored_moves[i].move.card.suit;
+    mply[i].rank = scored_moves[i].move.card.rank;
+    mply[i].sequence = scored_moves[i].move.sequence;
+    mply[i].weight = scored_moves[i].weight;
+  }
+}
+
 void Moves::MergeSort()
 {
+#ifdef DDS_USE_NEW_HEURISTIC
+  // New implementation
+#else
+  // Old implementation
   moveType tmp;
 
   switch (numMoves)

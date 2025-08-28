@@ -13,6 +13,7 @@ cc_library(
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
+        "//library/src/heuristic_sorting",
     ],
 )
 
@@ -31,5 +32,6 @@ cc_library(
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
+        "//library/src/heuristic_sorting",
     ],
 )
