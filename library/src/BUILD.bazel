@@ -2,9 +2,16 @@ load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
+    name = "dds_types",
+    hdrs = ["dds.h", "dll.h", "portab.h"],
+    include_prefix = "dds",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "dds",
     srcs = glob(["*.cpp"]),
-    hdrs = glob(["*.h"]),
+    hdrs = glob(["*.h"], exclude=["dds.h", "dll.h", "portab.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
@@ -26,6 +33,7 @@ cc_library(
     local_defines = DDS_LOCAL_DEFINES,
     visibility = [
         "//library/tests:__pkg__",
+        "//library/tests/heuristic_sorting:__pkg__",
         "//library/tests/regression/heuristic_sorting:__pkg__",
         "//:__pkg__",
     ],

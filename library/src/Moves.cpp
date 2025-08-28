@@ -13,6 +13,7 @@
 #include <cstdio>
 
 #include "Moves.h"
+#include "heuristic_sorting/heuristic_sorting.h"
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
@@ -203,13 +204,13 @@ int Moves::MoveGen0(
 
     if (ftest)
 #ifdef DDS_USE_NEW_HEURISTIC
-      Moves::CallHeuristic();
+      Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
 #else
       Moves::WeightAllocTrump0(tpos, bestMove, bestMoveTT, thrp_rel);
 #endif
     else
 #ifdef DDS_USE_NEW_HEURISTIC
-      Moves::CallHeuristic();
+      Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
 #else
       Moves::WeightAllocNT0(tpos, bestMove, bestMoveTT, thrp_rel);
 #endif
@@ -291,7 +292,7 @@ int Moves::MoveGen123(
       return numMoves;
 
     #ifdef DDS_USE_NEW_HEURISTIC
-    Moves::CallHeuristic();
+    Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
 #else
     (this->*WeightList[findex])(tpos);
 #endif
@@ -334,7 +335,7 @@ int Moves::MoveGen123(
     }
 
     #ifdef DDS_USE_NEW_HEURISTIC
-    Moves::CallHeuristic();
+    Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
 #else
     (this->*WeightFnc)(tpos);
 #endif
@@ -2001,29 +2002,39 @@ void Moves::Sort(
 #define CMP_SWAP(i, j) if (mply[i].weight < mply[j].weight) \
   { tmp = mply[i]; mply[i] = mply[j]; mply[j] = tmp; }
 
-void Moves::CallHeuristic() {
+void Moves::CallHeuristic(
+    const pos& tpos,
+    const moveType& bestMove,
+    const moveType& bestMoveTT,
+    const relRanksType thrp_rel[]) {
   HeuristicContext context;
   context.trump_suit = trump;
   context.lead_hand = leadHand;
   context.lead_suit = leadSuit;
   context.current_hand_index = currHand;
   context.tricks = currTrick;
+  context.tpos = &tpos;
 
-  // This is a simplified mapping. A real implementation would need to copy
-  // the full pos and relRanksType structures.
-  // context.pos = tpos;
-  // context.rel_ranks = thrp_rel;
-
+  // These are global variables from dds.h
   context.highest_rank = highestRank;
   context.lowest_rank = lowestRank;
   context.group_data = groupData;
   context.bit_map_rank = bitMapRank;
   context.count_table = counttable;
+  context.removed_ranks = trackp->removedRanks;
+  if (thrp_rel != nullptr) {
+    context.rel_ranks = &thrp_rel[tpos.aggr[suit]];
+  } else {
+    context.rel_ranks = nullptr;
+  }
+
+  context.best_move = bestMove;
+  context.best_move_tt = bestMoveTT;
 
   CandidateMove candidate_moves[13];
   for (int i = 0; i < numMoves; ++i) {
-    candidate_moves[i].card.suit = mply[i].suit;
-    candidate_moves[i].card.rank = mply[i].rank;
+    candidate_moves[i].suit = mply[i].suit;
+    candidate_moves[i].rank = mply[i].rank;
     candidate_moves[i].sequence = mply[i].sequence;
   }
 
@@ -2031,8 +2042,8 @@ void Moves::CallHeuristic() {
   score_and_order(context, candidate_moves, numMoves, scored_moves);
 
   for (int i = 0; i < numMoves; ++i) {
-    mply[i].suit = scored_moves[i].move.card.suit;
-    mply[i].rank = scored_moves[i].move.card.rank;
+    mply[i].suit = scored_moves[i].move.suit;
+    mply[i].rank = scored_moves[i].move.rank;
     mply[i].sequence = scored_moves[i].move.sequence;
     mply[i].weight = scored_moves[i].weight;
   }
@@ -2284,7 +2295,7 @@ void Moves::MergeSort()
         mply[j] = tmp;
       }
   }
-
+#endif
   return;
 }
 

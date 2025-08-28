@@ -10,8 +10,8 @@ The project uses Bazel for building. The `BUILD.bazel` and `MODULE.bazel` files 
 
 The project is built using Bazel. Here are the main commands:
 
-*   **Build the library:** `bazel build //:dds`
-*   **Run the tests:** `bazel test //library/tests/...`
+*   **Build the library:** `bazel build //...`
+*   **Run the tests:** `bazel test //...`
 
 To use the library in your own project, you would typically link against the compiled `dds` library and include the `dds.h` header file.
 

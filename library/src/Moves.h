@@ -14,7 +14,7 @@
 #include <fstream>
 #include <string>
 
-#include "dds.h"
+#include "dds/dds.h"
 #include "dll.h"
 
 using namespace std;
@@ -165,6 +165,12 @@ class Moves
     string PrintMove(const movePlyType& mply) const;
 
     void MergeSort();
+
+    void CallHeuristic(
+      const pos& tpos,
+      const moveType& bestMove,
+      const moveType& bestMoveTT,
+      const relRanksType thrp_rel[]);
 
     void UpdateStatsEntry(
       moveStatsType& stat,

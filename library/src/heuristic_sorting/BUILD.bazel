@@ -4,4 +4,5 @@ cc_library(
     hdrs = ["heuristic_sorting.h"],
     include_prefix = "heuristic_sorting",
     visibility = ["//library:__subpackages__"],
+    deps = ["//library/src:dds_types"],
 )
