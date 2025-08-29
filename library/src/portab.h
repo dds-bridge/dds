@@ -61,18 +61,4 @@
   #include <omp.h>
 #endif
 
-
-// http://stackoverflow.com/a/4030983/211160
-// Use to indicate a variable is being intentionally not referred to (which
-// usually generates a compiler warning)
-/**
- * @def UNUSED(x)
- * @brief Macro to suppress unused variable warnings.
- *
- * Use this macro to indicate that a variable is intentionally unused, to avoid compiler warnings.
- */
-#ifndef UNUSED
-  #define UNUSED(x) ((void)(true ? 0 : ((x), void(), 0)))
-#endif
-
 #endif

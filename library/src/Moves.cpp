@@ -1512,7 +1512,7 @@ void Moves::WeightAllocNTVoid2(const pos& tpos)
 }
 
 
-void Moves::WeightAllocCombinedNotvoid3(const pos& tpos)
+void Moves::WeightAllocCombinedNotvoid3([[maybe_unused]] const pos& tpos)
 {
   // We're always following suit.
   // This function is very good, but occasionally it is better
@@ -1541,7 +1541,6 @@ void Moves::WeightAllocCombinedNotvoid3(const pos& tpos)
         mply[k].weight = -mply[k].rank;
     }
   }
-  UNUSED(tpos);
 }
 
 

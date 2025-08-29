@@ -19,9 +19,9 @@
 #if defined(_WIN32) || defined(USES_DLLMAIN)
 
 extern "C" BOOL APIENTRY DllMain(
-  HMODULE hModule,
+  [[maybe_unused]] HMODULE hModule,
   DWORD ul_reason_for_call,
-  LPVOID lpReserved);
+  [[maybe_unused]] LPVOID lpReserved);
 
 extern "C" BOOL APIENTRY DllMain(
   HMODULE hModule,
@@ -40,8 +40,8 @@ extern "C" BOOL APIENTRY DllMain(
 #endif
   }
 
-  UNUSED(hModule);
-  UNUSED(lpReserved);
+  hModule;
+  lpReserved;
 
   return 1;
 }

@@ -13,7 +13,6 @@
 #include "Memory.h"
 #include "Scheduler.h"
 #include "PBN.h"
-#include "debug.h"
 
 using namespace std;
 
@@ -22,6 +21,7 @@ using namespace std;
 #define DEBUG 0
 
 #if DEBUG
+  #include "debug.h"
   ofstream fout;
 #endif
 
@@ -330,10 +330,8 @@ int STDCALL AnalyseAllPlaysBin(
   boards * bop,
   playTracesBin * plp,
   solvedPlays * solvedp,
-  int chunkSize)
+  [[maybe_unused]] int chunkSize)
 {
-  UNUSED(chunkSize);
-
   playparam.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
@@ -437,8 +435,6 @@ void DetectPlayDuplicates(
 }
 
 
-void CopyPlaySingle(const vector<int>& crossrefs)
-{
-  UNUSED(crossrefs);
-}
+void CopyPlaySingle([[maybe_unused]] const vector<int>& crossrefs)
+{ }
 

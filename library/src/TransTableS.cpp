@@ -111,10 +111,8 @@ void TransTableS::Init(const int handLookup[][15])
 }
 
 
-void TransTableS::SetMemoryDefault(const int megabytes)
-{
-  UNUSED(megabytes);
-}
+void TransTableS::SetMemoryDefault([[maybe_unused]] const int megabytes)
+{ }
 
 
 void TransTableS::SetMemoryMaximum(const int megabytes)
@@ -285,7 +283,7 @@ void TransTableS::InitTT()
 }
 
 
-void TransTableS::ResetMemory(const TTresetReason reason)
+void TransTableS::ResetMemory([[maybe_unused]] const TTresetReason reason)
 {
   Wipe();
 
@@ -308,8 +306,6 @@ void TransTableS::ResetMemory(const TTresetReason reason)
 #if defined(DDS_TT_STATS)
   statsResets.noOfResets++;
   statsResets.aggrResets[reason]++;
-#else
-  UNUSED(reason);
 #endif
 
   return;

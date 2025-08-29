@@ -56,10 +56,8 @@ TestTimer timer;
 void main_identify();
 
 
-int realMain(int argc, char * argv[])
+int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
 {
-  UNUSED(argc);
-  UNUSED(argv);
   bool GIBmode = false;
 
   int stepsize = 0;

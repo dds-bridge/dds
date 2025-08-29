@@ -369,8 +369,7 @@ void InitDebugFiles()
 {
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
-    ThreadData * thrp = memory.GetPtr(thrId);
-    UNUSED(thrp); // To avoid compile errors
+    [[maybe_unused]] ThreadData * thrp = memory.GetPtr(thrId);
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 
 #ifdef DDS_TOP_LEVEL
@@ -409,8 +408,7 @@ void CloseDebugFiles()
 {
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
-    ThreadData * thrp = memory.GetPtr(thrId);
-    UNUSED(thrp); // To avoid compiler warning
+    [[maybe_unused]] ThreadData * thrp = memory.GetPtr(thrId);
 
 #ifdef DDS_TOP_LEVEL
     thrp->fileTopLevel.Close();
