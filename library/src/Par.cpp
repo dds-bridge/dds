@@ -8,7 +8,6 @@
 */
 
 
-#include <stdexcept>
 #include <algorithm>
 #include <string.h>
 
@@ -16,7 +15,6 @@
 #include "PBN.h"
 
 using namespace std;
-
 
 struct par_suits_type
 {
@@ -1286,7 +1284,8 @@ int STDCALL SidesPar(
 {
   parResultsMaster parm[2];
   int res, i, k;
-  char buff[4];
+  constexpr size_t buf_size = 13;
+  char buff[buf_size];
 
   res = SidesParBin(tablep, parm, vulnerable);
 
@@ -1353,13 +1352,13 @@ int STDCALL SidesPar(
       if (parm[i].contracts[k].underTricks > 0)
       {
         /* Sacrifice */
-        snprintf(buff, 4, "-%d", parm[i].contracts[k].underTricks);
+        snprintf(buff, buf_size, "-%d", parm[i].contracts[k].underTricks);
         strcat(sidesRes[i].contracts[k], buff);
       }
       else if (parm[i].contracts[k].overTricks > 0)
       {
         /* Make */
-        snprintf(buff, 4, "+%d", parm[i].contracts[k].overTricks);
+        snprintf(buff, buf_size, "+%d", parm[i].contracts[k].overTricks);
         strcat(sidesRes[i].contracts[k], buff);
       }
     }
