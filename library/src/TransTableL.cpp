@@ -80,17 +80,16 @@
 
 
 #include <iomanip>
-#include <sstream>
 #include <math.h>
 
 #include "TransTableL.h"
-TransTableL::TransTableL() = default;
 
 extern unsigned char cardRank[16];
 extern char relRank[8192][15];
 
 static int TTlowestRank[8192];
 static unsigned maskBytes[8192][DDS_SUITS][TT_BYTES];
+static bool _constantsSet = false;
 
 static vector<string> players =
 {
@@ -105,6 +104,16 @@ static vector<string> players =
  * used to cache and retrieve results during double dummy bridge analysis.
  * It manages memory allocation, lookup, and statistics for position caching.
 */
+TransTableL::TransTableL()
+{
+  if (! _constantsSet)
+  {
+    _constantsSet = true;
+    TransTableL::SetConstants();
+  }
+
+  TTInUse = 0;
+}
 
 /**
  * @brief Destroy the TransTableL object and free all memory.

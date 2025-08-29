@@ -10,12 +10,6 @@
 #include <iomanip>
 
 #include "TransTableS.h"
-TransTableS::TransTableS()
-{
-  // Initialize any member variables here
-  TTInUse = 0;
-  maxmem = 100 * 1000000; // Default 100MB
-}
 
 #define NSIZE 50000
 #define WSIZE 50000
@@ -24,6 +18,7 @@ TransTableS::TransTableS()
 #define LSIZE 200 // Per trick and first hand
 
 static int TTlowestRank[8192];
+static bool _constantsSet = false;
 
 /**
  * @brief Small transposition table for double dummy solver.
@@ -33,6 +28,16 @@ static int TTlowestRank[8192];
  * It is designed for environments with limited memory resources and provides
  * similar lookup and caching functionality as TransTableL, but with a smaller footprint.
 */
+TransTableS::TransTableS()
+{
+  if (! _constantsSet)
+  {
+    _constantsSet = true;
+    TransTableS::SetConstants();
+  }
+
+  TTInUse = 0;
+}
 
 
 /**
