@@ -58,8 +58,8 @@ using namespace std;
   #define TIMER_START(g, a) thrp->timerList.Start(g, a)
   #define TIMER_END(g, a) thrp->timerList.End(g, a)
 #else
-  #define TIMER_START(g, a) 1
-  #define TIMER_END(g, a) 1
+  #define TIMER_START(g, a)
+  #define TIMER_END(g, a)
 #endif
 
 enum ABTimerType
