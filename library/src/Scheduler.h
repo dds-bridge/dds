@@ -28,8 +28,8 @@ using namespace std;
 #else
   #define START_BLOCK_TIMER
   #define END_BLOCK_TIMER
-  #define START_THREAD_TIMER(a) 1
-  #define END_THREAD_TIMER(a) 1
+  #define START_THREAD_TIMER(a)
+  #define END_THREAD_TIMER(a)
 #endif
 
 
