@@ -23,10 +23,7 @@ TransTableS::TransTableS()
 #define WINIT 170000
 #define LSIZE 200 // Per trick and first hand
 
-
-static bool _constantsSet = false;
 static int TTlowestRank[8192];
-
 
 /**
  * @brief Small transposition table for double dummy solver.
@@ -35,10 +32,7 @@ static int TTlowestRank[8192];
  * used to cache and retrieve results during double dummy bridge analysis.
  * It is designed for environments with limited memory resources and provides
  * similar lookup and caching functionality as TransTableL, but with a smaller footprint.
-  }
-
-  TTInUse = 0;
-}
+*/
 
 
 /**

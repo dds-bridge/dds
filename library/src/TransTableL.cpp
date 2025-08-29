@@ -89,7 +89,6 @@ TransTableL::TransTableL() = default;
 extern unsigned char cardRank[16];
 extern char relRank[8192][15];
 
-static bool _constantsSet = false;
 static int TTlowestRank[8192];
 static unsigned maskBytes[8192][DDS_SUITS][TT_BYTES];
 
@@ -105,30 +104,7 @@ static vector<string> players =
  * TransTableL implements a large, memory-intensive transposition table
  * used to cache and retrieve results during double dummy bridge analysis.
  * It manages memory allocation, lookup, and statistics for position caching.
-  }
-
-  poolp = nullptr;
-  pagesDefault = NUM_PAGES_DEFAULT;
-  pagesMaximum = NUM_PAGES_MAXIMUM;
-  pagesCurrent = 0;
-
-  memState = FROM_POOL;
-  harvestTrick = FIRST_HARVEST_TRICK;
-  harvestHand = 0;
-
-  harvested.nextBlockNo = 0;
-
-  timestamp = 0;
-
-  pageStats.numResets = 0;
-  pageStats.numCallocs = 0;
-  pageStats.numFrees = 0;
-  pageStats.numHarvests = 0;
-  pageStats.lastCurrent = 0;
-
-  TTInUse = 0;
-}
-
+*/
 
 /**
  * @brief Destroy the TransTableL object and free all memory.

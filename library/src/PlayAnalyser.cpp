@@ -93,8 +93,8 @@ int STDCALL AnalysePlayBin(
   int running_player = dl.first;
   int running_side = 1; /* defenders */
   int start_side = running_player % 2;
-  int solved_declarer = solvedp->tricks[0];
 #if DEBUG
+  int solved_declarer = solvedp->tricks[0];
   int initial_par = solved_declarer;
   fout.open("trace.txt", ofstream::out | ofstream::app);
   fout << "Initial solve: " << initial_par << "\n";
@@ -235,9 +235,9 @@ int STDCALL AnalysePlayBin(
         setw(6) << solved_declarer << 
         setw(6) << new_solved_decl << 
         setw(6) << new_solved_decl - solved_declarer << "\n";
+        solved_declarer = new_solved_decl;
 #endif
-
-      solved_declarer = new_solved_decl;
+      
     }
   }
   solvedp->number = 4 * last_trick + last_card - 3 - (numCardsPlayed - 1);

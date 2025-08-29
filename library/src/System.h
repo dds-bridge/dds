@@ -45,8 +45,6 @@ class System
 
     int numThreads;
     int sysMem_MB;
-    int thrDef_MB;
-    int thrMax_MB;
 
     unsigned preferredSystem;
 
