@@ -1,11 +1,47 @@
 "Global C++ compilation and link flags"
 
 DDS_CPPOPTS = select({
-    "//:build_macos": ["-std=c++17", "-stdlib=libc++", "-O3", "-mtune=generic", "-fPIC", "-DDDS_THREADS_GCD"],
-    "//:debug_build_macos": ["-std=c++17", "-stdlib=libc++", "-g", "-mtune=generic", "-fPIC", "-DDDS_THREADS_GCD"],
-    "//:build_linux": ["-O3", "-fopenmp", "-std=c++17"],
-    "//:debug_build_linux": ["-g", "-fopenmp", "-std=c++17"],
-    "//conditions:default": ["-std=c++17"],
+    "//:build_macos": [
+        "-std=c++17",
+        "-stdlib=libc++",
+        "-O3",
+        "-mtune=generic",
+        "-fPIC",
+        "-DDDS_THREADS_GCD",
+        "-Wpedantic",
+        "-Wall",
+        "-Werror",
+    ],
+    "//:debug_build_macos": [
+        "-std=c++17",
+        "-stdlib=libc++",
+        "-g",
+        "-mtune=generic",
+        "-fPIC",
+        "-DDDS_THREADS_GCD",
+        "-Wpedantic",
+        "-Wall",
+        "-Werror",
+    ],
+    "//:build_linux": [
+        "-O3",
+        "-fopenmp",
+        "-std=c++17",
+        "-Wpedantic",
+        "-Wall",
+        "-Werror",
+    ],
+    "//:debug_build_linux": [
+        "-g",
+        "-fopenmp",
+        "-std=c++17",
+        "-Wpedantic",
+        "-Wall",
+        "-Werror"
+    ],
+    "//conditions:default": [
+        "-std=c++17"
+    ],
 })
 
 DDS_LOCAL_DEFINES = select({
