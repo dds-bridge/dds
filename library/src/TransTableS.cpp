@@ -10,12 +10,6 @@
 #include <iomanip>
 
 #include "TransTableS.h"
-TransTableS::TransTableS()
-{
-  // Initialize any member variables here
-  TTInUse = 0;
-  maxmem = 100 * 1000000; // Default 100MB
-}
 
 #define NSIZE 50000
 #define WSIZE 50000
@@ -23,10 +17,8 @@ TransTableS::TransTableS()
 #define WINIT 170000
 #define LSIZE 200 // Per trick and first hand
 
-
-static bool _constantsSet = false;
 static int TTlowestRank[8192];
-
+static bool _constantsSet = false;
 
 /**
  * @brief Small transposition table for double dummy solver.
@@ -35,6 +27,13 @@ static int TTlowestRank[8192];
  * used to cache and retrieve results during double dummy bridge analysis.
  * It is designed for environments with limited memory resources and provides
  * similar lookup and caching functionality as TransTableL, but with a smaller footprint.
+*/
+TransTableS::TransTableS()
+{
+  if (! _constantsSet)
+  {
+    _constantsSet = true;
+    TransTableS::SetConstants();
   }
 
   TTInUse = 0;
@@ -112,10 +111,8 @@ void TransTableS::Init(const int handLookup[][15])
 }
 
 
-void TransTableS::SetMemoryDefault(const int megabytes)
-{
-  UNUSED(megabytes);
-}
+void TransTableS::SetMemoryDefault([[maybe_unused]] const int megabytes)
+{ }
 
 
 void TransTableS::SetMemoryMaximum(const int megabytes)
@@ -286,7 +283,7 @@ void TransTableS::InitTT()
 }
 
 
-void TransTableS::ResetMemory(const TTresetReason reason)
+void TransTableS::ResetMemory([[maybe_unused]] const TTresetReason reason)
 {
   Wipe();
 
@@ -309,8 +306,6 @@ void TransTableS::ResetMemory(const TTresetReason reason)
 #if defined(DDS_TT_STATS)
   statsResets.noOfResets++;
   statsResets.aggrResets[reason]++;
-#else
-  UNUSED(reason);
 #endif
 
   return;

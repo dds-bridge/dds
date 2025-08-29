@@ -65,7 +65,6 @@ class Moves
     int leadHand;
     int leadSuit;
     int currHand;
-    int currSuit;
     int currTrick;
     int trump;
     int suit;

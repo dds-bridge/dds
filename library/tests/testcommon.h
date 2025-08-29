@@ -10,7 +10,7 @@
 #ifndef DTEST_TESTCOMMON_H
 #define DTEST_TESTCOMMON_H
 
-int realMain(int argc, char * argv[]);
+int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[]);
 
 #endif
 

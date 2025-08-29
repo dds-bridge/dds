@@ -27,7 +27,7 @@ using namespace std;
 #ifdef DDS_AB_STATS
   #define AB_COUNT(a, b, c) thrp->ABStats.IncrPos(a, b, c)
 #else
-  #define AB_COUNT(a, b, c) 1
+  #define AB_COUNT(a, b, c)
 #endif
 
 

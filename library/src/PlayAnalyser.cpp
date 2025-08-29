@@ -13,7 +13,6 @@
 #include "Memory.h"
 #include "Scheduler.h"
 #include "PBN.h"
-#include "debug.h"
 
 using namespace std;
 
@@ -22,6 +21,7 @@ using namespace std;
 #define DEBUG 0
 
 #if DEBUG
+  #include "debug.h"
   ofstream fout;
 #endif
 
@@ -93,8 +93,8 @@ int STDCALL AnalysePlayBin(
   int running_player = dl.first;
   int running_side = 1; /* defenders */
   int start_side = running_player % 2;
-  int solved_declarer = solvedp->tricks[0];
 #if DEBUG
+  int solved_declarer = solvedp->tricks[0];
   int initial_par = solved_declarer;
   fout.open("trace.txt", ofstream::out | ofstream::app);
   fout << "Initial solve: " << initial_par << "\n";
@@ -235,9 +235,9 @@ int STDCALL AnalysePlayBin(
         setw(6) << solved_declarer << 
         setw(6) << new_solved_decl << 
         setw(6) << new_solved_decl - solved_declarer << "\n";
+        solved_declarer = new_solved_decl;
 #endif
-
-      solved_declarer = new_solved_decl;
+      
     }
   }
   solvedp->number = 4 * last_trick + last_card - 3 - (numCardsPlayed - 1);
@@ -330,10 +330,8 @@ int STDCALL AnalyseAllPlaysBin(
   boards * bop,
   playTracesBin * plp,
   solvedPlays * solvedp,
-  int chunkSize)
+  [[maybe_unused]] int chunkSize)
 {
-  UNUSED(chunkSize);
-
   playparam.error = 0;
 
   if (bop->noOfBoards > MAXNOOFBOARDS)
@@ -437,8 +435,6 @@ void DetectPlayDuplicates(
 }
 
 
-void CopyPlaySingle(const vector<int>& crossrefs)
-{
-  UNUSED(crossrefs);
-}
+void CopyPlaySingle([[maybe_unused]] const vector<int>& crossrefs)
+{ }
 

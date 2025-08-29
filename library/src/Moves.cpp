@@ -10,31 +10,29 @@
 
 #include <iomanip>
 #include <sstream>
+#include <cstdio>
 
 #include "Moves.h"
-#include "debug.h"
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
+  const MGtype RegisterList[16] =
+    {
+      MG_NT0, MG_TRUMP0,
+      MG_SIZE, MG_SIZE, // Unused
+
+      MG_NT_NOTVOID1, MG_TRUMP_NOTVOID1,
+      MG_NT_VOID1, MG_TRUMP_VOID1,
+
+      MG_NT_NOTVOID2, MG_TRUMP_NOTVOID2,
+      MG_NT_VOID2, MG_TRUMP_VOID2,
+
+      MG_COMB_NOTVOID3, MG_COMB_NOTVOID3,
+      MG_NT_VOID3, MG_TRUMP_VOID3
+    };
 #else
   #define MG_REGISTER(a, b) 1;
 #endif
-
-
-const MGtype RegisterList[16] =
-{
-  MG_NT0, MG_TRUMP0,
-  MG_SIZE, MG_SIZE, // Unused
-
-  MG_NT_NOTVOID1, MG_TRUMP_NOTVOID1,
-  MG_NT_VOID1, MG_TRUMP_VOID1,
-
-  MG_NT_NOTVOID2, MG_TRUMP_NOTVOID2,
-  MG_NT_VOID2, MG_TRUMP_VOID2,
-
-  MG_COMB_NOTVOID3, MG_COMB_NOTVOID3,
-  MG_NT_VOID3, MG_TRUMP_VOID3
-};
 
 
 Moves::Moves()
@@ -1514,7 +1512,7 @@ void Moves::WeightAllocNTVoid2(const pos& tpos)
 }
 
 
-void Moves::WeightAllocCombinedNotvoid3(const pos& tpos)
+void Moves::WeightAllocCombinedNotvoid3([[maybe_unused]] const pos& tpos)
 {
   // We're always following suit.
   // This function is very good, but occasionally it is better
@@ -1543,7 +1541,6 @@ void Moves::WeightAllocCombinedNotvoid3(const pos& tpos)
         mply[k].weight = -mply[k].rank;
     }
   }
-  UNUSED(tpos);
 }
 
 

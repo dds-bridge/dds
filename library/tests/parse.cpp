@@ -317,7 +317,6 @@ bool parse_FUT(
     return false;
   }
 
-  const int n = fut->cards;
   const unsigned nu = static_cast<unsigned>(fut->cards);
   for (unsigned c = 0; c < nu; c++)
     if (! get_int_element(list[c+2], fut->suit[c], "FUT suit"))
@@ -702,14 +701,12 @@ bool str2int(
       return false;
 
   }
-  catch (const invalid_argument& ia)
+  catch ([[maybe_unused]] const invalid_argument& ia)
   {
-    UNUSED(ia);
     return false;
   }
-  catch (const out_of_range& ia)
+  catch ([[maybe_unused]] const out_of_range& ia)
   {
-    UNUSED(ia);
     return false;
   }
 
