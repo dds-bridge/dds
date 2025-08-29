@@ -9,8 +9,8 @@
 
 
 #include <algorithm>
-#include <string.h>
-
+#include <cstdio>
+#include <cstring>
 #include "dds.h"
 #include "PBN.h"
 

@@ -10,9 +10,9 @@
 
 #include <iomanip>
 #include <sstream>
+#include <cstdio>
 
 #include "Moves.h"
-#include "debug.h"
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
