@@ -2007,46 +2007,13 @@ void Moves::CallHeuristic(
     const moveType& bestMove,
     const moveType& bestMoveTT,
     const relRanksType thrp_rel[]) {
-  HeuristicContext context;
-  context.trump_suit = trump;
-  context.lead_hand = leadHand;
-  context.lead_suit = leadSuit;
-  context.current_hand_index = currHand;
-  context.tricks = currTrick;
-  context.tpos = &tpos;
-
-  // These are global variables from dds.h
-  context.highest_rank = highestRank;
-  context.lowest_rank = lowestRank;
-  context.group_data = groupData;
-  context.bit_map_rank = bitMapRank;
-  context.count_table = counttable;
-  context.removed_ranks = trackp->removedRanks;
-  if (thrp_rel != nullptr) {
-    context.rel_ranks = &thrp_rel[tpos.aggr[suit]];
-  } else {
-    context.rel_ranks = nullptr;
-  }
-
-  context.best_move = bestMove;
-  context.best_move_tt = bestMoveTT;
-
-  CandidateMove candidate_moves[13];
-  for (int i = 0; i < numMoves; ++i) {
-    candidate_moves[i].suit = mply[i].suit;
-    candidate_moves[i].rank = mply[i].rank;
-    candidate_moves[i].sequence = mply[i].sequence;
-  }
-
-  ScoredMove scored_moves[13];
-  score_and_order(context, candidate_moves, numMoves, scored_moves);
-
-  for (int i = 0; i < numMoves; ++i) {
-    mply[i].suit = scored_moves[i].move.suit;
-    mply[i].rank = scored_moves[i].move.rank;
-    mply[i].sequence = scored_moves[i].move.sequence;
-    mply[i].weight = scored_moves[i].weight;
-  }
+  HeuristicContext context {
+      tpos,
+      bestMove,
+      bestMoveTT,
+      thrp_rel,
+  };
+  SortMoves(context);
 }
 
 void Moves::MergeSort()

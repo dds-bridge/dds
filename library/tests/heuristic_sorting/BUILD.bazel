@@ -1,9 +1,11 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
 cc_test(
     name = "heuristic_sorting_test",
-    srcs = ["heuristic_sorting_test.cpp"],
+    srcs = glob(["*.cpp"]),
     deps = [
-        "//library/src/heuristic_sorting",
-        "//library/src:testable_dds",
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src:dds_types",
         "@googletest//:gtest_main",
     ],
 )
