@@ -10,7 +10,10 @@ cc_library(
     local_defines = DDS_LOCAL_DEFINES,
     visibility = ["//visibility:public"],
     include_prefix = "dds",
-    deps = [],
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/utility:lookup_tables",
+    ],
 )
 
 cc_library(
@@ -25,5 +28,8 @@ cc_library(
         "//library/tests/regression/heuristic_sorting:__pkg__",
         "//:__pkg__",
     ],
-    deps = [],
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/utility:lookup_tables",
+    ],
 )

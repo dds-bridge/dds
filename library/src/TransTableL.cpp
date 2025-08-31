@@ -83,9 +83,8 @@
 #include <math.h>
 
 #include "TransTableL.h"
-
-extern unsigned char cardRank[16];
-extern char relRank[8192][15];
+#include "utility/Constants.h"
+#include "utility/LookupTables.h"
 
 static int TTlowestRank[8192];
 static unsigned maskBytes[8192][DDS_SUITS][TT_BYTES];
