@@ -8,7 +8,11 @@ cc_library(
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
-    visibility = ["//library/src:__pkg__", "//library/tests:__subpackages__"],
+    visibility = [
+        "//library/src:__pkg__",
+         "//library/src:__subpackages__",
+         "//library/tests:__subpackages__"
+    ],
     deps = [],
 )
 
@@ -19,6 +23,10 @@ cc_library(
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
-    visibility = ["//library/src:__pkg__", "//library/tests:__subpackages__"],
+    visibility = [
+        "//library/src:__pkg__",
+        "//library/src:__subpackages__",
+        "//library/tests:__subpackages__"
+    ],
     deps = [":constants"],
 )

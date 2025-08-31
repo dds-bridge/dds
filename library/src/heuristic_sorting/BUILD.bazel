@@ -6,7 +6,10 @@ cc_library(
     srcs = glob(["*.cpp"]),
     hdrs = glob(["*.h"]),
     visibility = ["//visibility:public"],
-    deps = ["//library/src:dds_types"],
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/utility:lookup_tables",
+    ],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
@@ -19,7 +22,10 @@ cc_library(
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
-    deps = ["//library/src:dds_types"],
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/utility:lookup_tables",
+    ],
     include_prefix = "heuristic_sorting",
     visibility = [
         "//library/tests/heuristic_sorting:__pkg__",
