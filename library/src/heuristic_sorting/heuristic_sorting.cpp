@@ -1,5 +1,4 @@
 #include "internal.h"
-#include "../dds.h"
 
 // Integration function for calling from moves.cpp
 void CallHeuristic(
@@ -450,10 +449,432 @@ void WeightAllocNT0(HeuristicContext& context) {
     }
   }
 }
-void WeightAllocTrumpNotvoid1(HeuristicContext& context) {}
-void WeightAllocNTNotvoid1(HeuristicContext& context) {}
-void WeightAllocTrumpVoid1(HeuristicContext& context) {}
-void WeightAllocNTVoid1(HeuristicContext& context) {}
+void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
+{
+  const pos& tpos = ctx.tpos;
+  const int trump = ctx.trump;
+  const int suit = ctx.suit;
+  const int currHand = ctx.currHand;
+  const int leadHand = ctx.leadHand;
+  const int leadSuit = ctx.leadSuit;
+  const int lastNumMoves = ctx.lastNumMoves;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  const int partner_lh = partner[leadHand];
+  const int rho_lh = rho[leadHand];
+  
+  unsigned short suitCount = tpos.length[currHand][suit];
+  int suitAdd;
+
+  if (suit == trump)
+  {
+    // We trump a non-trump card.
+    
+    if (tpos.length[partner_lh][leadSuit] != 0)
+    {
+      // 3rd hand will follow.
+      if ((tpos.rankInSuit[rho_lh][leadSuit] >
+           (tpos.rankInSuit[partner_lh][leadSuit] |
+            bitMapRank[trackp->move[0].rank])) ||
+          ((tpos.length[rho_lh][leadSuit] == 0) &&
+           (tpos.length[rho_lh][trump] != 0)))
+      {
+        // Partner can win with a card or by ruffing.
+        suitAdd = 60 + (suitCount << 6) / 44;
+      }
+      else
+      {
+        suitAdd = -2 + (suitCount << 6) / 36;
+        // Don't ruff from Kx.
+        if ((suitCount == 2) &&
+            (tpos.secondBest[suit].hand == currHand))
+          suitAdd += -4;
+      }
+    }
+    else if ((tpos.length[rho_lh][leadSuit] == 0) &&
+             (tpos.rankInSuit[rho_lh][trump] >
+              tpos.rankInSuit[partner_lh][trump]))
+    {
+      // Partner can overruff 3rd hand.
+      suitAdd = 60 + (suitCount << 6) / 44;
+    }
+    else if ((tpos.length[partner_lh][trump] == 0) &&
+             (tpos.rankInSuit[rho_lh][leadSuit] >
+              bitMapRank[trackp->move[0].rank]))
+    {
+      // 3rd hand has no trumps, and partner has suit winner.
+      suitAdd = 60 + (suitCount << 6) / 44;
+    }
+    else
+    {
+      suitAdd = -2 + (suitCount << 6) / 36;
+      // Don't ruff from Kx.
+      if ((suitCount == 2) &&
+          (tpos.secondBest[suit].hand == currHand))
+        suitAdd += -4;
+    }
+
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+  }
+  else if (suit != trump)
+  {
+    // We discard on a side suit.
+
+    if (tpos.length[partner_lh][leadSuit] != 0)
+    {
+      // 3rd hand will follow.
+      if (tpos.rankInSuit[rho_lh][leadSuit] >
+          (tpos.rankInSuit[partner_lh][leadSuit] |
+           bitMapRank[trackp->move[0].rank]))
+        // Partner has winning card.
+        suitAdd = 60 + (suitCount << 6) / 44;
+      else if ((tpos.length[rho_lh][leadSuit] == 0)
+               && (tpos.length[rho_lh][trump] != 0))
+        // Partner can ruff.
+        suitAdd = 60 + (suitCount << 6) / 44;
+      else
+      {
+        // FIX: No reason to differentiate here?
+        suitAdd = -2 + (suitCount << 6) / 36;
+        // Don't pitch from Kx.
+        if ((suitCount == 2) &&
+            (tpos.secondBest[suit].hand == currHand))
+          suitAdd += -4;
+      }
+    }
+    else if ((tpos.length[rho_lh][leadSuit] == 0)
+             && (tpos.rankInSuit[rho_lh][trump] >
+                 tpos.rankInSuit[partner_lh][trump]))
+      // Partner can overruff 3rd hand.
+      suitAdd = 60 + (suitCount << 6) / 44;
+    else if ((tpos.length[partner_lh][trump] == 0)
+             && (tpos.rankInSuit[rho_lh][leadSuit] >
+                 bitMapRank[trackp->move[0].rank]))
+      // 3rd hand has no trumps, and partner has suit winner.
+      suitAdd = 60 + (suitCount << 6) / 44;
+    else
+    {
+      // FIX: No reason to differentiate here?
+      suitAdd = -2 + (suitCount << 6) / 36;
+      // Don't pitch from Kx.
+      if ((suitCount == 2) &&
+          (tpos.secondBest[suit].hand == currHand))
+        suitAdd += -4;
+    }
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+  }
+  else if (tpos.length[partner_lh][leadSuit] != 0)
+  {
+    // 3rd hand follows suit while we ruff.
+    // Could be ruffing partner's winner!
+    suitAdd = (suitCount << 6) / 44;
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = 24 - (mply[k].rank) + suitAdd;
+  }
+  else if ((tpos.length[rho_lh][leadSuit] == 0)
+           && (tpos.length[rho_lh][trump] != 0) &&
+           (tpos.rankInSuit[rho_lh][trump] >
+            tpos.rankInSuit[partner_lh][trump]))
+  {
+    // Everybody is void, and partner can overruff.
+    suitAdd = (suitCount << 6) / 44;
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = 24 - (mply[k].rank) + suitAdd;
+  }
+  else
+  {
+    for (int k = lastNumMoves; k < numMoves; k++)
+    {
+      if (bitMapRank[mply[k].rank] >
+          tpos.rankInSuit[partner_lh][trump])
+      {
+        // We can ruff, 3rd hand is void but can't overruff.
+        suitAdd = (suitCount << 6) / 44;
+        mply[k].weight = 24 - (mply[k].rank) + suitAdd;
+      }
+      else
+      {
+        // We're getting overruffed. Make trick costly for opponents.
+        suitAdd = (suitCount << 6) / 36;
+        // Don't ruff from Kx.
+        if ((suitCount == 2) &&
+            (tpos.secondBest[suit].hand == currHand))
+          suitAdd += -4;
+        mply[k].weight = 15 - (mply[k].rank) + suitAdd;
+      }
+    }
+  }
+}
+void WeightAllocNTNotvoid1(HeuristicContext& ctx)
+{
+  const pos& tpos = ctx.tpos;
+  const int suit = ctx.suit;
+  const int currHand = ctx.currHand;
+  const int leadHand = ctx.leadHand;
+  const int leadSuit = ctx.leadSuit;
+  const int lastNumMoves = ctx.lastNumMoves;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  const int partner_lh = partner[leadHand];
+  const int rho_lh = rho[leadHand];
+
+  // FIX:
+  // Why the different penalties depending on partner?
+
+  if (tpos.rankInSuit[rho_lh][leadSuit] >
+      (tpos.rankInSuit[partner_lh][leadSuit] |
+       bitMapRank[trackp->move[0].rank]))
+  {
+    // Partner can win.
+    unsigned short suitCount = tpos.length[currHand][suit];
+    int suitAdd = (suitCount << 6) / 23;
+    // Discourage pitch from Kx or A stiff.
+    if (suitCount == 2 && tpos.secondBest[suit].hand == currHand)
+      suitAdd += -2;
+    else if (suitCount == 1 && tpos.winner[suit].hand == currHand)
+      suitAdd += -3;
+
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+  }
+  else
+  {
+    unsigned short suitCount = tpos.length[currHand][suit];
+    int suitAdd = (suitCount << 6) / 33;
+
+    // Discourage pitch from Kx.
+    if ((suitCount == 2) &&
+        (tpos.secondBest[suit].hand == currHand))
+      suitAdd += -6;
+
+    /* Discourage suit discard of highest card. */
+    else if ((suitCount == 1) &&
+             (tpos.winner[suit].hand == currHand))
+      suitAdd += -8;
+
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+  }
+}
+void WeightAllocTrumpVoid1(HeuristicContext& ctx)
+{
+  const pos& tpos = ctx.tpos;
+  const int trump = ctx.trump;
+  const int suit = ctx.suit;
+  const int currHand = ctx.currHand;
+  const int leadHand = ctx.leadHand;
+  const int leadSuit = ctx.leadSuit;
+  const int lastNumMoves = ctx.lastNumMoves;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  const int partner_lh = partner[leadHand];
+  const int rho_lh = rho[leadHand];
+  
+  unsigned short suitCount = tpos.length[currHand][suit];
+  int suitAdd;
+
+  if (suit == trump)
+  {
+    // We trump a non-trump card.
+    
+    if (tpos.length[partner_lh][leadSuit] != 0)
+    {
+      // 3rd hand will follow.
+      if ((tpos.rankInSuit[rho_lh][leadSuit] >
+           (tpos.rankInSuit[partner_lh][leadSuit] |
+            bitMapRank[trackp->move[0].rank])) ||
+          ((tpos.length[rho_lh][leadSuit] == 0) &&
+           (tpos.length[rho_lh][trump] != 0)))
+      {
+        // Partner can win with a card or by ruffing.
+        suitAdd = 60 + (suitCount << 6) / 44;
+      }
+      else
+      {
+        suitAdd = -2 + (suitCount << 6) / 36;
+        // Don't ruff from Kx.
+        if ((suitCount == 2) &&
+            (tpos.secondBest[suit].hand == currHand))
+          suitAdd += -4;
+      }
+    }
+    else if ((tpos.length[rho_lh][leadSuit] == 0) &&
+             (tpos.rankInSuit[rho_lh][trump] >
+              tpos.rankInSuit[partner_lh][trump]))
+    {
+      // Partner can overruff 3rd hand.
+      suitAdd = 60 + (suitCount << 6) / 44;
+    }
+    else if ((tpos.length[partner_lh][trump] == 0) &&
+             (tpos.rankInSuit[rho_lh][leadSuit] >
+              bitMapRank[trackp->move[0].rank]))
+    {
+      // 3rd hand has no trumps, and partner has suit winner.
+      suitAdd = 60 + (suitCount << 6) / 44;
+    }
+    else
+    {
+      suitAdd = -2 + (suitCount << 6) / 36;
+      // Don't ruff from Kx.
+      if ((suitCount == 2) &&
+          (tpos.secondBest[suit].hand == currHand))
+        suitAdd += -4;
+    }
+
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+  }
+  else if (suit != trump)
+  {
+    // We discard on a side suit.
+
+    if (tpos.length[partner_lh][leadSuit] != 0)
+    {
+      // 3rd hand will follow.
+      if (tpos.rankInSuit[rho_lh][leadSuit] >
+          (tpos.rankInSuit[partner_lh][leadSuit] |
+           bitMapRank[trackp->move[0].rank]))
+        // Partner has winning card.
+        suitAdd = 60 + (suitCount << 6) / 44;
+      else if ((tpos.length[rho_lh][leadSuit] == 0)
+               && (tpos.length[rho_lh][trump] != 0))
+        // Partner can ruff.
+        suitAdd = 60 + (suitCount << 6) / 44;
+      else
+      {
+        // FIX: No reason to differentiate here?
+        suitAdd = -2 + (suitCount << 6) / 36;
+        // Don't pitch from Kx.
+        if ((suitCount == 2) &&
+            (tpos.secondBest[suit].hand == currHand))
+          suitAdd += -4;
+      }
+    }
+    else if ((tpos.length[rho_lh][leadSuit] == 0)
+             && (tpos.rankInSuit[rho_lh][trump] >
+                 tpos.rankInSuit[partner_lh][trump]))
+      // Partner can overruff 3rd hand.
+      suitAdd = 60 + (suitCount << 6) / 44;
+    else if ((tpos.length[partner_lh][trump] == 0)
+             && (tpos.rankInSuit[rho_lh][leadSuit] >
+                 bitMapRank[trackp->move[0].rank]))
+      // 3rd hand has no trumps, and partner has suit winner.
+      suitAdd = 60 + (suitCount << 6) / 44;
+    else
+    {
+      // FIX: No reason to differentiate here?
+      suitAdd = -2 + (suitCount << 6) / 36;
+      // Don't pitch from Kx.
+      if ((suitCount == 2) &&
+          (tpos.secondBest[suit].hand == currHand))
+        suitAdd += -4;
+    }
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+  }
+  else if (tpos.length[partner_lh][leadSuit] != 0)
+  {
+    // 3rd hand follows suit while we ruff.
+    // Could be ruffing partner's winner!
+    suitAdd = (suitCount << 6) / 44;
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = 24 - (mply[k].rank) + suitAdd;
+  }
+  else if ((tpos.length[rho_lh][leadSuit] == 0)
+           && (tpos.length[rho_lh][trump] != 0) &&
+           (tpos.rankInSuit[rho_lh][trump] >
+            tpos.rankInSuit[partner_lh][trump]))
+  {
+    // Everybody is void, and partner can overruff.
+    suitAdd = (suitCount << 6) / 44;
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = 24 - (mply[k].rank) + suitAdd;
+  }
+  else
+  {
+    for (int k = lastNumMoves; k < numMoves; k++)
+    {
+      if (bitMapRank[mply[k].rank] >
+          tpos.rankInSuit[partner_lh][trump])
+      {
+        // We can ruff, 3rd hand is void but can't overruff.
+        suitAdd = (suitCount << 6) / 44;
+        mply[k].weight = 24 - (mply[k].rank) + suitAdd;
+      }
+      else
+      {
+        // We're getting overruffed. Make trick costly for opponents.
+        suitAdd = (suitCount << 6) / 36;
+        // Don't ruff from Kx.
+        if ((suitCount == 2) &&
+            (tpos.secondBest[suit].hand == currHand))
+          suitAdd += -4;
+        mply[k].weight = 15 - (mply[k].rank) + suitAdd;
+      }
+    }
+  }
+}
+void WeightAllocNTVoid1(HeuristicContext& ctx)
+{
+  const pos& tpos = ctx.tpos;
+  const int suit = ctx.suit;
+  const int currHand = ctx.currHand;
+  const int leadHand = ctx.leadHand;
+  const int leadSuit = ctx.leadSuit;
+  const int lastNumMoves = ctx.lastNumMoves;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  const int partner_lh = partner[leadHand];
+  const int rho_lh = rho[leadHand];
+
+  // FIX:
+  // Why the different penalties depending on partner?
+
+  if (tpos.rankInSuit[rho_lh][leadSuit] >
+      (tpos.rankInSuit[partner_lh][leadSuit] |
+       bitMapRank[trackp->move[0].rank]))
+  {
+    // Partner can win.
+    unsigned short suitCount = tpos.length[currHand][suit];
+    int suitAdd = (suitCount << 6) / 23;
+    // Discourage pitch from Kx or A stiff.
+    if (suitCount == 2 && tpos.secondBest[suit].hand == currHand)
+      suitAdd += -2;
+    else if (suitCount == 1 && tpos.winner[suit].hand == currHand)
+      suitAdd += -3;
+
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+  }
+  else
+  {
+    unsigned short suitCount = tpos.length[currHand][suit];
+    int suitAdd = (suitCount << 6) / 33;
+
+    // Discourage pitch from Kx.
+    if ((suitCount == 2) &&
+        (tpos.secondBest[suit].hand == currHand))
+      suitAdd += -6;
+
+    /* Discourage suit discard of highest card. */
+    else if ((suitCount == 1) &&
+             (tpos.winner[suit].hand == currHand))
+      suitAdd += -8;
+
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+  }
+}
 void WeightAllocTrumpNotvoid2(HeuristicContext& context) {}
 void WeightAllocNTNotvoid2(HeuristicContext& context) {}
 void WeightAllocTrumpVoid2(HeuristicContext& context) {}

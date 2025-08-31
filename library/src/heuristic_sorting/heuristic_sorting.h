@@ -1,9 +1,22 @@
 #pragma once
 
-#include "../dds.h"
-#include "../dll.h"
+// Constants
+#define DDS_HANDS 4
+#define DDS_SUITS 4
 
-// Forward declarations for types from Moves.h that we need
+// Forward declarations
+struct pos;
+struct moveType;
+struct relRanksType;
+
+// Type definitions needed for our context
+struct extCard
+{
+  int suit;
+  int rank;
+  int sequence;
+};
+
 struct trickDataType
 {
   int playCount[DDS_SUITS];
@@ -28,9 +41,9 @@ struct trackType
 };
 
 struct HeuristicContext {
-    const pos tpos;
-    const moveType bestMove;
-    const moveType bestMoveTT;
+    const pos& tpos;
+    const moveType& bestMove;
+    const moveType& bestMoveTT;
     const relRanksType* thrp_rel;
     moveType* mply;
     int numMoves;
