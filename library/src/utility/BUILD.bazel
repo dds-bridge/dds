@@ -1,0 +1,24 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "constants",
+    srcs = ["Constants.cpp"],
+    hdrs = ["Constants.h"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = ["//library/src:__pkg__", "//library/tests:__subpackages__"],
+    deps = [],
+)
+
+cc_library(
+    name = "lookup_tables",
+    srcs = ["LookupTables.cpp"],
+    hdrs = ["LookupTables.h"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = ["//library/src:__pkg__", "//library/tests:__subpackages__"],
+    deps = [":constants"],
+)

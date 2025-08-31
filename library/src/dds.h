@@ -41,38 +41,10 @@ by Thomas Andrews.
 All hand identities are given as
 0=NORTH, 1=EAST, 2=SOUTH, 3=WEST. */
 
+#include "utility/Constants.h"
+#include "utility/LookupTables.h"
+
 #define handId(hand, relative) (hand + relative) & 3
-
-
-extern int lho[DDS_HANDS];
-extern int rho[DDS_HANDS];
-extern int partner[DDS_HANDS];
-
-extern unsigned short int bitMapRank[16];
-
-extern unsigned char cardRank[16];
-extern unsigned char cardSuit[DDS_STRAINS];
-extern unsigned char cardHand[DDS_HANDS];
-
-// These five together take up 440 KB
-extern int highestRank[8192];
-extern int lowestRank[8192];
-extern int counttable[8192];
-extern char relRank[8192][15];
-extern unsigned short int winRanks[8192][14];
-
-
-struct moveGroupType
-{
-  // There are at most 7 groups of bit "runs" in a 13-bit vector
-  int lastGroup;
-  int rank[7];
-  int sequence[7];
-  int fullseq[7];
-  int gap[7];
-};
-
-extern moveGroupType groupData[8192];
 
 
 struct moveType

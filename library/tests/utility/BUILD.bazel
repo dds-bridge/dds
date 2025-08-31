@@ -1,0 +1,32 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "constants_test",
+    srcs = ["constants_test.cpp"],
+    deps = [
+        "//library/src/utility:constants",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "lookup_tables_test", 
+    srcs = ["lookup_tables_test.cpp"],
+    deps = [
+        "//library/src/utility:lookup_tables",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utility_test_suite",
+    srcs = [
+        "constants_test.cpp",
+        "lookup_tables_test.cpp",
+    ],
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/utility:lookup_tables", 
+        "@googletest//:gtest_main",
+    ],
+)
