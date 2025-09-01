@@ -20,3 +20,6 @@ void WeightAllocNTVoid3(HeuristicContext& context);
 // Helper functions used by level 2+ weight allocation
 int RankForcesAce(const HeuristicContext& context, const int cards4th);
 void GetTopNumber(const HeuristicContext& context, const int ris, const int prank, int& topNumber, int& mno);
+
+// Sorting function - sorts moves by weight using hardcoded sorting networks
+void MergeSort(moveType* mply, int numMoves);

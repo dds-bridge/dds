@@ -127,6 +127,304 @@ void SortMoves(HeuristicContext& context) {
             }
             break;
     }
+    
+    // CRITICAL: Sort the moves after weight assignment!
+    // This was missing and caused the 31% performance regression
+    MergeSort(context.mply, context.numMoves);
+}
+
+// MergeSort function extracted from original Moves.cpp
+// Uses hardcoded sorting networks for efficiency with small arrays
+#define CMP_SWAP(i, j) if (mply[i].weight < mply[j].weight) \
+  { tmp = mply[i]; mply[i] = mply[j]; mply[j] = tmp; }
+
+void MergeSort(moveType* mply, int numMoves)
+{
+  moveType tmp;
+  
+  switch (numMoves)
+  {
+    case 13:
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(10, 11);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(9, 11);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(8, 10);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(9, 10);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(5, 9);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(9, 10);
+      CMP_SWAP(3, 7);
+      CMP_SWAP(4, 8);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(7, 11);
+      CMP_SWAP(3, 8);
+      CMP_SWAP(4, 9);
+      CMP_SWAP(2, 7);
+      CMP_SWAP(6, 8);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(7, 10);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(6, 9);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(8, 10);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(7, 8);
+      CMP_SWAP(0, 12);
+      CMP_SWAP(0, 8);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(7, 8);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(9, 10);
+      CMP_SWAP(10, 11);
+      CMP_SWAP(11, 12);
+      break;
+    case 12:
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(10, 11);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(9, 11);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(8, 10);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(9, 10);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(5, 9);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(9, 10);
+      CMP_SWAP(3, 7);
+      CMP_SWAP(4, 8);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(7, 11);
+      CMP_SWAP(3, 8);
+      CMP_SWAP(4, 9);
+      CMP_SWAP(2, 7);
+      CMP_SWAP(6, 8);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(7, 10);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(6, 9);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(8, 10);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(7, 8);
+      break;
+    case 11:
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(8, 10);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(9, 10);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(6, 10);
+      CMP_SWAP(5, 9);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(3, 7);
+      CMP_SWAP(4, 8);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(7, 10);
+      CMP_SWAP(3, 8);
+      CMP_SWAP(6, 9);
+      CMP_SWAP(2, 7);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(7, 10);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(6, 8);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(7, 8);
+      break;
+    case 10:
+      CMP_SWAP(0, 5);
+      CMP_SWAP(1, 6);
+      CMP_SWAP(2, 7);
+      CMP_SWAP(3, 8);
+      CMP_SWAP(4, 9);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(7, 8);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(8, 9);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(7, 8);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(8, 9);
+      break;
+    case 9:
+      CMP_SWAP(0, 1);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(7, 8);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(0, 3);
+      CMP_SWAP(3, 6);
+      CMP_SWAP(0, 3);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(4, 7);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(2, 5);
+      CMP_SWAP(5, 8);
+      CMP_SWAP(2, 5);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(5, 6);
+      break;
+    case 8:
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(6, 7);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(5, 7);
+      CMP_SWAP(1, 2);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(3, 7);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(3, 6);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(3, 4);
+      break;
+    case 7:
+      CMP_SWAP(1, 2);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(5, 6);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(4, 6);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(2, 6);
+      CMP_SWAP(0, 4);
+      CMP_SWAP(1, 5);
+      CMP_SWAP(0, 3);
+      CMP_SWAP(2, 5);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(2, 3);
+      break;
+    case 6:
+      CMP_SWAP(1, 2);
+      CMP_SWAP(4, 5);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(3, 5);
+      CMP_SWAP(0, 1);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(2, 5);
+      CMP_SWAP(0, 3);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(2, 3);
+      break;
+    case 5:
+      CMP_SWAP(0, 1);
+      CMP_SWAP(3, 4);
+      CMP_SWAP(2, 4);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(1, 4);
+      CMP_SWAP(0, 3);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(1, 2);
+      break;
+    case 4:
+      CMP_SWAP(0, 1);
+      CMP_SWAP(2, 3);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(1, 3);
+      CMP_SWAP(1, 2);
+      break;
+    case 3:
+      CMP_SWAP(0, 1);
+      CMP_SWAP(0, 2);
+      CMP_SWAP(1, 2);
+      break;
+    case 2:
+      CMP_SWAP(0, 1);
+      break;
+    default:
+      for (int i = 1; i < numMoves; i++)
+      {
+        tmp = mply[i];
+        int j = i;
+        for (; j && tmp.weight > mply[j - 1].weight ; --j)
+          mply[j] = mply[j - 1];
+        mply[j] = tmp;
+      }
+  }
+  return;
 }
 
 
