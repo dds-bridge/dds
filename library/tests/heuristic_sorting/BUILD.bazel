@@ -1,11 +1,44 @@
-load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_test", "cc_binary")
 
 cc_test(
     name = "heuristic_sorting_test",
-    srcs = glob(["*.cpp"]),
+    srcs = ["heuristic_sorting_test.cpp"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "//library/src:dds_types",
         "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "heuristic_sorting_simple_test",
+    srcs = ["heuristic_sorting_test_simple.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "integration_test",
+    srcs = ["integration_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_binary(
+    name = "performance_benchmark",
+    srcs = ["performance_benchmark.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+    ],
+)
+
+cc_binary(
+    name = "micro_benchmark",
+    srcs = ["micro_benchmark.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
     ],
 )

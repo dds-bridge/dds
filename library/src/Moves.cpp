@@ -2007,21 +2007,28 @@ void Moves::CallHeuristic(
     const moveType& bestMove,
     const moveType& bestMoveTT,
     const relRanksType thrp_rel[]) {
-  HeuristicContext context {
+  
+  // Call the heuristic sorting library with full context
+  ::CallHeuristic(
       tpos,
       bestMove,
       bestMoveTT,
       thrp_rel,
-  };
-  SortMoves(context);
+      mply,           // Current move array
+      numMoves,       // Number of moves generated so far
+      lastNumMoves,   // Number of moves before current suit
+      trump,          // Trump suit
+      suit,           // Current suit being processed (for MoveGen0)
+      trackp,         // Track information
+      currTrick,      // Current trick number
+      currHand,       // Current hand to play
+      leadHand,       // Hand that led to this trick
+      leadSuit        // Suit that was led (for MoveGen123)
+  );
 }
 
 void Moves::MergeSort()
 {
-#ifdef DDS_USE_NEW_HEURISTIC
-  // New implementation
-#else
-  // Old implementation
   moveType tmp;
 
   switch (numMoves)
@@ -2262,7 +2269,6 @@ void Moves::MergeSort()
         mply[j] = tmp;
       }
   }
-#endif
   return;
 }
 

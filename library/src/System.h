@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "dds.h"
+#include "dds/dds.h"
 
 using namespace std;
 

@@ -37,13 +37,96 @@ void CallHeuristic(
   SortMoves(context);
 }
 
-// Dispatcher function
+// Dispatcher function - routes to correct WeightAlloc function based on game state
 void SortMoves(HeuristicContext& context) {
-    // This is a simplified dispatcher. The actual logic to choose the
-    // correct WeightAlloc function will be more complex and based on the
-    // logic in Moves::MoveGen0 and Moves::MoveGen123.
-    // For now, we'll just call one of them as a placeholder.
-    WeightAllocTrump0(context);
+    const pos& tpos = context.tpos;
+    
+    // Determine which position in trick (0=leading, 1-3=following)
+    int handRel = 0;
+    if (context.currHand != context.leadHand) {
+        // Calculate relative position: 1, 2, or 3 based on lead hand
+        handRel = (context.currHand + 4 - context.leadHand) % 4;
+    }
+    
+    // Leading hand (handRel == 0) - MoveGen0 logic
+    if (handRel == 0) {
+        // Check if trump game with trump winner available
+        bool trumpGame = (context.trump != DDS_NOTRUMP) && 
+                        (tpos.winner[context.trump].rank != 0);
+        
+        if (trumpGame) {
+            WeightAllocTrump0(context);
+        } else {
+            WeightAllocNT0(context);
+        }
+        return;
+    }
+    
+    // Following hands (handRel 1-3) - MoveGen123 logic
+    // Check trump game condition
+    int ftest = ((context.trump != DDS_NOTRUMP) &&
+                 (tpos.winner[context.trump].rank != 0) ? 1 : 0);
+    
+    // Check if current hand can follow suit (not void)
+    unsigned short ris = tpos.rankInSuit[context.currHand][context.leadSuit];
+    bool canFollowSuit = (ris != 0);
+    
+    // Calculate function index using same logic as original
+    int findex;
+    if (canFollowSuit) {
+        findex = 4 * handRel + ftest;
+    } else {
+        findex = 4 * handRel + ftest + 2;
+    }
+    
+    // Dispatch based on findex (matching WeightList array indices)
+    switch (findex) {
+        case 4:  // handRel=1, NT, following suit
+            WeightAllocNTNotvoid1(context);
+            break;
+        case 5:  // handRel=1, Trump, following suit  
+            WeightAllocTrumpNotvoid1(context);
+            break;
+        case 6:  // handRel=1, NT, void
+            WeightAllocNTVoid1(context);
+            break;
+        case 7:  // handRel=1, Trump, void
+            WeightAllocTrumpVoid1(context);
+            break;
+            
+        case 8:  // handRel=2, NT, following suit
+            WeightAllocNTNotvoid2(context);
+            break;
+        case 9:  // handRel=2, Trump, following suit
+            WeightAllocTrumpNotvoid2(context);
+            break;
+        case 10: // handRel=2, NT, void
+            WeightAllocNTVoid2(context);
+            break;
+        case 11: // handRel=2, Trump, void
+            WeightAllocTrumpVoid2(context);
+            break;
+            
+        case 12: // handRel=3, NT, following suit
+        case 13: // handRel=3, Trump, following suit (both use Combined)
+            WeightAllocCombinedNotvoid3(context);
+            break;
+        case 14: // handRel=3, NT, void
+            WeightAllocNTVoid3(context);
+            break;
+        case 15: // handRel=3, Trump, void
+            WeightAllocTrumpVoid3(context);
+            break;
+            
+        default:
+            // Should never happen, but fall back to basic function
+            if (ftest) {
+                WeightAllocTrump0(context);
+            } else {
+                WeightAllocNT0(context);
+            }
+            break;
+    }
 }
 
 
@@ -875,10 +958,598 @@ void WeightAllocNTVoid1(HeuristicContext& ctx)
       mply[k].weight = -mply[k].rank + suitAdd;
   }
 }
-void WeightAllocTrumpNotvoid2(HeuristicContext& context) {}
-void WeightAllocNTNotvoid2(HeuristicContext& context) {}
-void WeightAllocTrumpVoid2(HeuristicContext& context) {}
-void WeightAllocNTVoid2(HeuristicContext& context) {}
-void WeightAllocCombinedNotvoid3(HeuristicContext& context) {}
-void WeightAllocTrumpVoid3(HeuristicContext& context) {}
-void WeightAllocNTVoid3(HeuristicContext& context) {}
+
+
+// Helper functions for level 2+ weight allocation
+int RankForcesAce(const HeuristicContext& ctx, const int cards4th)
+{
+  // Figure out how high we have to play to force out the top.
+  const moveGroupType& mp = groupData[cards4th];
+
+  int g = mp.lastGroup;
+  int removed = static_cast<int>(ctx.trackp->removedRanks[ctx.leadSuit]);
+
+  while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
+    g--;
+
+  if (! g)
+    return -1;
+
+  // RHO's second-highest rank.
+  int secondRHO = (g == 0 ? 0 : mp.rank[g-1]);
+
+  if (secondRHO > ctx.trackp->move[1].rank)
+  {
+    // Try to force out the top as cheaply as possible.
+    int k = 0;
+    while (k < ctx.numMoves && ctx.mply[k].rank > secondRHO)
+      k++;
+
+    if (k)
+      return k - 1;
+  }
+  else if (ctx.trackp->high[1] == 1)
+  {
+    // Try to beat 2nd hand as cheaply as possible.
+    int k = 0;
+    while (k < ctx.numMoves && ctx.mply[k].rank > ctx.trackp->move[1].rank)
+      k++;
+
+    if (k)
+      return k - 1;
+  }
+
+  return -1;
+}
+
+
+void GetTopNumber(const HeuristicContext& ctx, const int ris, const int prank, int& topNumber, int& mno)
+{
+  topNumber = -10;
+
+  // Find the lowest move that still overtakes partner's card.
+  mno = 0;
+  while (mno < ctx.numMoves - 1 && ctx.mply[1 + mno].rank > prank)
+    mno++;
+
+  const moveGroupType& mp = groupData[ris];
+  int g = mp.lastGroup;
+
+  // Remove partner's card as well.
+  int removed = static_cast<int>(ctx.trackp->removedRanks[ctx.leadSuit] |
+                                 bitMapRank[prank]);
+
+  int fullseq = mp.fullseq[g];
+
+  while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
+    fullseq |= mp.fullseq[--g];
+
+  topNumber = counttable[fullseq] - 1;
+}
+void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
+{
+  const pos& tpos = ctx.tpos;
+  const int trump = ctx.trump;
+  const int leadHand = ctx.leadHand;
+  const int leadSuit = ctx.leadSuit;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  const int rho_lh = rho[leadHand];
+  const int cards4th = tpos.rankInSuit[rho_lh][leadSuit];
+  const int max4th = highestRank[cards4th];
+  const int min4th = lowestRank[cards4th];
+  const int max3rd = mply[0].rank;
+
+  if (leadSuit == trump)
+  {
+    if (trackp->high[1] == 0 && trackp->move[0].rank > max4th)
+    {
+      // Partner has already beat his LHO and will beat his RHO.
+      for (int k = 0; k < numMoves; k++)
+        mply[k].weight = -mply[k].rank;
+      return;
+    }
+    else if (max3rd < min4th || max3rd < trackp->move[1].rank)
+    {
+      // Our cards are too low to matter.
+      for (int k = 0; k < numMoves; k++)
+        mply[k].weight = -mply[k].rank;
+      return;
+    }
+    else if (max3rd > max4th)
+    {
+      // We can win the trick.
+      for (int k = 0; k < numMoves; k++)
+      {
+        if (mply[k].rank > max4th &&
+            mply[k].rank > trackp->move[1].rank)
+          mply[k].weight = 58 - mply[k].rank;
+        else
+          mply[k].weight = -mply[k].rank;
+      }
+    }
+    else
+    {
+      // Figure out how high we have to play to force out the top.
+      int kBonus = RankForcesAce(ctx, cards4th);
+
+      for (int k = 0; k < numMoves; k++)
+        mply[k].weight = -mply[k].rank;
+
+      if (kBonus != -1) // Force out ace
+        mply[kBonus].weight += 20;
+      return;
+    }
+  }
+
+  else if (trackp->move[1].suit == trump)
+  {
+    // 2nd hand ruffs, and we must follow suit.
+    for (int k = 0; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank;
+    return;
+  }
+
+  // So now leadSuit != trump and second hand didn't ruff.
+  else if (trackp->high[1] == 0)
+  {
+    // Partner is winning so far.
+    if (max4th == 0)
+    {
+      // 4th hand is either ruffing or not -- play low.
+      for (int k = 0; k < numMoves; k++)
+        mply[k].weight = -mply[k].rank;
+      return;
+    }
+
+    // So 4th hand follows.
+    else if (trackp->move[0].rank > max4th)
+    {
+      // Partner is already winning.
+      for (int k = 0; k < numMoves; k++)
+        mply[k].weight = -mply[k].rank;
+      return;
+    }
+
+    else if (max3rd < min4th || max3rd < trackp->move[1].rank)
+    {
+      // Our cards are too low to matter.
+      for (int k = 0; k < numMoves; k++)
+        mply[k].weight = -mply[k].rank;
+      return;
+    }
+
+    // So 4th hand can beat partner in the suit.
+    else if (max3rd > max4th)
+    {
+      // We can win the trick.
+      for (int k = 0; k < numMoves; k++)
+      {
+        if (mply[k].rank > max4th)
+          mply[k].weight = 58 - mply[k].rank;
+        else
+          mply[k].weight = -mply[k].rank;
+      }
+    }
+    else
+    {
+      // We can't win the trick.
+      // Figure out how high we have to play to force out the top.
+      int kBonus = RankForcesAce(ctx, cards4th);
+
+      for (int k = 0; k < numMoves; k++)
+      {
+        if (mply[k].rank > trackp->move[1].rank &&
+            mply[k].rank > max4th) // We will win
+          mply[k].weight = 60 - mply[k].rank;
+
+        else
+          mply[k].weight = -mply[k].rank;
+      }
+
+      if (kBonus != -1) // Force out ace
+        mply[kBonus].weight += 20;
+    }
+  }
+  else
+  {
+    // 2nd hand is winning so far. 4th hand is either ruffing
+    // or not -- play high enough to beat 2nd hand.
+    if (max4th == 0)
+    {
+      for (int k = 0; k < numMoves; k++)
+      {
+        if (mply[k].rank > trackp->move[1].rank)
+          mply[k].weight = 20 - mply[k].rank;
+        else
+          mply[k].weight = -mply[k].rank;
+      }
+      return;
+    }
+
+    // Our cards are too low to matter.
+    else if (max3rd < min4th || max3rd < trackp->move[1].rank)
+    {
+      for (int k = 0; k < numMoves; k++)
+        mply[k].weight = -mply[k].rank;
+      return;
+    }
+
+    // We can win the trick.
+    else if (max3rd > max4th)
+    {
+      for (int k = 0; k < numMoves; k++)
+      {
+        if (mply[k].rank > trackp->move[1].rank &&
+            mply[k].rank > max4th)
+          mply[k].weight = 58 - mply[k].rank;
+        else
+          mply[k].weight = -mply[k].rank;
+      }
+      return;
+    }
+
+    // Figure out how high we have to play to force out the top.
+    int kBonus = RankForcesAce(ctx, cards4th);
+
+    for (int k = 0; k < numMoves; k++)
+    {
+      if (mply[k].rank > trackp->move[1].rank &&
+          mply[k].rank > max4th) // We will win
+        mply[k].weight = 60 - mply[k].rank;
+
+      else
+        mply[k].weight = -mply[k].rank;
+    }
+
+    if (kBonus != -1) // Force out ace
+      mply[kBonus].weight += 20;
+  }
+}
+void WeightAllocNTNotvoid2(HeuristicContext& ctx)
+{
+  // One of the main remaining issues here is cashing out long
+  // suits. Examples:
+  // AKJ opposite Q, overtake.
+  // KQx opposite Jxxxx, don't block on the ace.
+  // KJTx opposite 9 with Qx in dummy, do win the T.
+
+  const pos& tpos = ctx.tpos;
+  const int leadHand = ctx.leadHand;
+  const int leadSuit = ctx.leadSuit;
+  const int currHand = ctx.currHand;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  const int rho_lh = rho[leadHand];
+  const int lho_lh = lho[leadHand];
+  const int partner_lh = partner[leadHand];
+  
+  const int cards4th = tpos.rankInSuit[rho_lh][leadSuit];
+  const int max4th = highestRank[cards4th];
+  const int min4th = lowestRank[cards4th];
+  const int max3rd = mply[0].rank;
+
+  if (trackp->high[1] == 0 && trackp->move[0].rank > max4th)
+  {
+    // Partner has already beat his LHO and will beat his RHO.
+    // Generally we play low and let partner win.
+    for (int k = 0; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank;
+
+    // This doesn't help much, not sure why. It does work.
+
+    // if (0 && tpos.length[leadHand][leadSuit] == 0 &&
+    if (tpos.length[leadHand][leadSuit] == 0 &&
+        tpos.winner[leadSuit].hand == currHand)
+    {
+      // Partner has a singleton, and we have the ace.
+      // Maybe we should overtake to run the suit.
+      int oppLen = tpos.length[rho_lh][leadSuit] - 1;
+      int lhoLen = tpos.length[lho_lh][leadSuit];
+      if (lhoLen > oppLen)
+        oppLen = lhoLen;
+
+      int topNumber, mno;
+      GetTopNumber(ctx, tpos.rankInSuit[partner_lh][leadSuit],
+                   trackp->move[0].rank, topNumber, mno);
+
+      if (oppLen <= topNumber)
+        mply[mno].weight += 20;
+    }
+    return;
+  }
+  else if (max3rd < min4th || max3rd < trackp->move[1].rank)
+  {
+    // Our cards are too low to matter.
+    for (int k = 0; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank;
+    return;
+  }
+
+  int kBonus = -1;
+  if (max4th > max3rd && max4th > trackp->move[1].rank)
+    kBonus = RankForcesAce(ctx, cards4th);
+
+  for (int k = 0; k < numMoves; k++)
+  {
+    if (mply[k].rank > trackp->move[1].rank &&
+        mply[k].rank > max4th) // We will win
+      mply[k].weight = 60 - mply[k].rank;
+
+    else
+      mply[k].weight = -mply[k].rank;
+  }
+
+  if (kBonus != -1) // Force out ace
+    mply[kBonus].weight += 20;
+}
+void WeightAllocTrumpVoid2(HeuristicContext& ctx)
+{
+  // Compared to "v2.8":
+  // Moved a test for partner's win out of the k loop.
+
+  const pos& tpos = ctx.tpos;
+  const int trump = ctx.trump;
+  const int suit = ctx.suit;
+  const int leadHand = ctx.leadHand;
+  const int leadSuit = ctx.leadSuit;
+  const int currHand = ctx.currHand;
+  const int lastNumMoves = ctx.lastNumMoves;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  const int rho_lh = rho[leadHand];
+  
+  int suitAdd;
+  const unsigned short suitCount = tpos.length[currHand][suit];
+  const int max4th = highestRank[tpos.rankInSuit[rho_lh][leadSuit]];
+
+  if (leadSuit == trump || suit != trump)
+  {
+    // Discard small from a long suit.
+    suitAdd = (suitCount << 6) / 40;
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + suitAdd;
+    return;
+  }
+
+  else if (trackp->high[1] == 0 && trackp->move[0].rank > max4th &&
+           (max4th != 0 || tpos.length[rho_lh][trump] == 0))
+  {
+    // Partner already beat 2nd and 4th hands.
+    // Don't overruff partner's sure winner.
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank - 50;
+    return;
+  }
+
+  // So now we're ruffing and partner is not already sure to win.
+
+  for (int k = lastNumMoves; k < numMoves; k++)
+  {
+    if (trackp->move[1].suit == trump &&
+        mply[k].rank < trackp->move[1].rank)
+    {
+      // Don't underruff.
+      int rRank = relRank[tpos.aggr[suit]][mply[k].rank];
+      suitAdd = (suitCount << 6) / 40;
+      mply[k].weight = -32 + rRank + suitAdd;
+    }
+
+    else if (trackp->high[1] == 0)
+    {
+      // We ruff partner's winner over 2nd hand.
+      if (max4th != 0)
+      {
+        if (tpos.secondBest[leadSuit].hand == leadHand)
+        {
+          // We'd like to know whether partner has KQ or just K,
+          // but that information takes a bit of diggging. It's
+          // easier just not to ruff the king.
+          suitAdd = (suitCount << 6) / 50;
+          mply[k].weight = 36 - mply[k].rank + suitAdd;
+        }
+        else
+        {
+          suitAdd = (suitCount << 6) / 50;
+          mply[k].weight = 48 - mply[k].rank + suitAdd;
+        }
+      }
+      else if (bitMapRank[mply[k].rank] >
+               tpos.rankInSuit[rho_lh][trump])
+      {
+        // We ruff higher than 4th hand.
+        suitAdd = (suitCount << 6) / 50;
+        mply[k].weight = 48 - mply[k].rank + suitAdd;
+      }
+      else
+      {
+        // Force out a higher trump in 4th hand.
+        suitAdd = (suitCount << 6) / 50;
+        mply[k].weight = -12 - mply[k].rank + suitAdd;
+      }
+    }
+
+    // 2nd hand was winning before we ruffed.
+    else if (max4th != 0)
+    {
+      // Just ruff low.
+      suitAdd = (suitCount << 6) / 50;
+      mply[k].weight = 72 - mply[k].rank + suitAdd;
+    }
+
+    else if (bitMapRank[mply[k].rank] >
+             tpos.rankInSuit[rho_lh][trump])
+    {
+      // Ruff higher than 4th hand can.
+      suitAdd = (suitCount << 6) / 50;
+      mply[k].weight = 48 - mply[k].rank + suitAdd;
+    }
+
+    else
+    {
+      // Force out a higher trump in 4th hand.
+      suitAdd = (suitCount << 6) / 50;
+      mply[k].weight = 36 - mply[k].rank + suitAdd;
+    }
+  }
+}
+void WeightAllocNTVoid2(HeuristicContext& ctx)
+{
+  // Compared to "v2.8":
+  // Took only the second branch. The first branch (partner
+  // has beat his LHO and will beat his RHO) was a bit different,
+  // for no reason that I could see. This is the same or a tiny
+  // bit better.
+
+  const pos& tpos = ctx.tpos;
+  const int suit = ctx.suit;
+  const int currHand = ctx.currHand;
+  const int lastNumMoves = ctx.lastNumMoves;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+
+  const unsigned short suitCount = tpos.length[currHand][suit];
+  int suitAdd = (suitCount << 6) / 24;
+
+  // Try not to pitch from Kx or stiff ace.
+  if (suitCount == 2 && tpos.secondBest[suit].hand == currHand)
+    suitAdd -= 4;
+  else if (suitCount == 1 && tpos.winner[suit].hand == currHand)
+    suitAdd -= 4;
+
+  for (int k = lastNumMoves; k < numMoves; k++)
+    mply[k].weight = -(mply[k].rank) + suitAdd;
+}
+void WeightAllocCombinedNotvoid3(HeuristicContext& ctx)
+{
+  // We're always following suit.
+  // This function is very good, but occasionally it is better
+  // to beat partner's card in order to cash out a suit in NT.
+
+  const int trump = ctx.trump;
+  const int leadSuit = ctx.leadSuit;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  if (trackp->high[2] == 1 ||
+      (leadSuit != trump && trackp->move[2].suit == trump))
+  {
+    // Partner is winning the trick so far, or an opponent
+    // has ruffed while we must follow. Play low.
+
+    for (int k = 0; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank;
+  }
+  else
+  {
+    // We're losing so far, and either trumps were led or
+    // trumps don't matter in this trick.
+
+    for (int k = 0; k < numMoves; k++)
+    {
+      if (mply[k].rank > trackp->move[2].rank)
+        // Win as cheaply as possible.
+        mply[k].weight = 30 - mply[k].rank;
+      else
+        mply[k].weight = -mply[k].rank;
+    }
+  }
+}
+void WeightAllocTrumpVoid3(HeuristicContext& ctx)
+{
+  // Compared to "v2.8":
+  // val removed for trump plays (doesn't really matter, though).
+
+  // To consider:
+  // rRank vs rank
+
+  const pos& tpos = ctx.tpos;
+  const int trump = ctx.trump;
+  const int suit = ctx.suit;
+  const int leadSuit = ctx.leadSuit;
+  const int currHand = ctx.currHand;
+  const int lastNumMoves = ctx.lastNumMoves;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+  const trackType* trackp = ctx.trackp;
+
+  // Don't pitch from Kx or stiff ace.
+  const int mylen = tpos.length[currHand][suit];
+  int val = (mylen << 6) / 24;
+  if ((mylen == 2) && (tpos.secondBest[suit].hand == currHand))
+    val -= 2;
+
+  if (leadSuit == trump)
+  {
+    // We're not following suit, so no hope.
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank + val;
+  }
+  else if (trackp->high[2] == 1) // Partner is winning so far
+  {
+    if (suit == trump) // Don't ruff
+      for (int k = lastNumMoves; k < numMoves; k++)
+        mply[k].weight = 2 - mply[k].rank + val;
+
+    else // Discard from a long suit
+      for (int k = lastNumMoves; k < numMoves; k++)
+        mply[k].weight = 25 - mply[k].rank + val;
+  }
+  else if (trackp->move[2].suit == trump) // They've ruffed
+  {
+    if (suit == trump)
+    {
+      for (int k = lastNumMoves; k < numMoves; k++)
+      {
+        int rRank = relRank[tpos.aggr[suit]][mply[k].rank];
+        if (mply[k].rank > trackp->move[2].rank)
+          mply[k].weight = 33 + rRank; // Overruff
+        else
+          mply[k].weight = -13 + rRank; // Underruff
+      }
+    }
+    else // We discard
+      for (int k = lastNumMoves; k < numMoves; k++)
+        mply[k].weight = 14 - (mply[k].rank) + val;
+  }
+  else if (suit == trump) // We ruff and win
+  {
+    for (int k = lastNumMoves; k < numMoves; k++)
+    {
+      int rRank = relRank[tpos.aggr[suit]][mply[k].rank];
+      mply[k].weight = 33 + rRank;
+    }
+  }
+  else // We discard and lose
+  {
+    for (int k = lastNumMoves; k < numMoves; k++)
+      mply[k].weight = 14 - mply[k].rank + val;
+  }
+}
+void WeightAllocNTVoid3(HeuristicContext& ctx)
+{
+  const pos& tpos = ctx.tpos;
+  const int suit = ctx.suit;
+  const int currHand = ctx.currHand;
+  const int lastNumMoves = ctx.lastNumMoves;
+  const int numMoves = ctx.numMoves;
+  moveType* mply = ctx.mply;
+
+  int mylen = tpos.length[currHand][suit];
+  int val = (mylen << 6) / 27;
+  // Try not to pitch from Kx, or to pitch a singleton winner.
+  if ((mylen == 2) && (tpos.secondBest[suit].hand == currHand))
+    val -= 6;
+  else if ((mylen == 1) && (tpos.winner[suit].hand == currHand))
+    val -= 8;
+
+  for (int k = lastNumMoves; k < numMoves; k++)
+    mply[k].weight = - mply[k].rank + val;
+}

@@ -10,7 +10,7 @@
 #ifndef DDS_LATERTRICKS_H
 #define DDS_LATERTRICKS_H
 
-#include "dds.h"
+#include "dds/dds.h"
 #include "Memory.h"
 
 

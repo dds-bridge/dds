@@ -9,7 +9,9 @@ cc_library(
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
+        "//library/src/data_types:dds_types",
     ],
+    include_prefix = "heuristic_sorting",
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
@@ -25,6 +27,7 @@ cc_library(
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
+        "//library/src/data_types:dds_types",
     ],
     include_prefix = "heuristic_sorting",
     visibility = [

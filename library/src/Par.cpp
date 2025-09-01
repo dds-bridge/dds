@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
-#include "dds.h"
+#include "dds/dds.h"
 #include "PBN.h"
 
 using namespace std;

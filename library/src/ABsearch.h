@@ -10,7 +10,7 @@
 #ifndef DDS_ABSEARCH_H
 #define DDS_ABSEARCH_H
 
-#include "dds.h"
+#include "dds/dds.h"
 #include "Memory.h"
 
 

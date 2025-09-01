@@ -16,11 +16,8 @@
 #ifndef DDS_TRANSTABLE_H
 #define DDS_TRANSTABLE_H
 
-#include <iostream>
 #include <fstream>
-#include <string>
-
-#include "dds.h"
+#include "dds/dll.h"
 
 using namespace std;
 

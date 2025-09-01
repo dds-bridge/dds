@@ -1,31 +1,11 @@
 #pragma once
 
+#include "dds/dds.h"
+
 // Constants
 #define DDS_HANDS 4
 #define DDS_SUITS 4
-
-// Forward declarations
-struct pos;
-struct moveType;
-struct relRanksType;
-
-// Type definitions needed for our context
-struct extCard
-{
-  int suit;
-  int rank;
-  int sequence;
-};
-
-struct trickDataType
-{
-  int playCount[DDS_SUITS];
-  int bestRank;
-  int bestSuit;
-  int bestSequence;
-  int relWinner;
-  int nextLeadHand;
-};
+#define DDS_NOTRUMP 4
 
 struct trackType
 {

@@ -12,14 +12,12 @@
 #include <iomanip>
 #include <vector>
 
-#include "../src/dll.h"
-#include "../src/portab.h"
+#include "dds/dll.h"
 
 #include "testcommon.h"
 #include "TestTimer.h"
 #include "parse.h"
 #include "loop.h"
-#include "compare.h"
 #include "print.h"
 #include "cst.h"
 

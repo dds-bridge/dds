@@ -15,7 +15,7 @@
 #include <string>
 
 #include "dds/dds.h"
-#include "dll.h"
+#include "heuristic_sorting/heuristic_sorting.h"
 
 using namespace std;
 
@@ -38,18 +38,6 @@ enum MGtype
   MG_SIZE = 13
 };
 
-
-struct trickDataType
-{
-  int playCount[DDS_SUITS];
-  int bestRank;
-  int bestSuit;
-  int bestSequence;
-  int relWinner;
-  int nextLeadHand;
-};
-
-
 /**
  * @brief Move generator and tracker for bridge double dummy solver.
  *
@@ -70,19 +58,6 @@ class Moves
     int suit;
     int numMoves;
     int lastNumMoves;
-
-    struct trackType
-    {
-      int leadHand;
-      int leadSuit;
-      int playSuits[DDS_HANDS];
-      int playRanks[DDS_HANDS];
-      trickDataType trickData;
-      extCard move[DDS_HANDS];
-      int high[DDS_HANDS];
-      int lowestWin[DDS_HANDS][DDS_SUITS];
-      int removedRanks[DDS_SUITS];
-    };
 
     trackType track[13];
     trackType * trackp;

@@ -50,6 +50,9 @@ DDS_LOCAL_DEFINES = select({
     "//:build_linux": [],
     "//:debug_build_linux": [],
     "//conditions:default": [],
+}) + select({
+    "//:new_heuristic": ["DDS_USE_NEW_HEURISTIC"],
+    "//conditions:default": [],
 })
 
 DDS_LINKOPTS = select({

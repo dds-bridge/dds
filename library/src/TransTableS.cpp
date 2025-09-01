@@ -10,6 +10,7 @@
 #include <iomanip>
 
 #include "TransTableS.h"
+#include "dds/dds.h"
 
 #define NSIZE 50000
 #define WSIZE 50000

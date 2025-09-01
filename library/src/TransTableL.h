@@ -19,8 +19,7 @@
 #include <vector>
 #include <string>
 
-#include "dll.h"
-#include "dds.h"
+#include "dds/dll.h"
 
 #include "TransTable.h"
 
