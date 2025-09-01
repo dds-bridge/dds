@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cstdio>
+#include <iostream>
 
 #include "Moves.h"
 #include "heuristic_sorting/heuristic_sorting.h"
@@ -252,8 +253,7 @@ int Moves::MoveGen123(
     trackp->lowestWin[handRel][s] = 0;
   numMoves = 0;
 
-  WeightPtr WeightFnc;
-  int findex;
+  [[maybe_unused]] int findex;
   int ftest = ((trump != DDS_NOTRUMP) &&
                (tpos.winner[trump].rank != 0) ? 1 : 0);
 
@@ -291,7 +291,7 @@ int Moves::MoveGen123(
     if (numMoves == 1)
       return numMoves;
 
-    #ifdef DDS_USE_NEW_HEURISTIC
+#ifdef DDS_USE_NEW_HEURISTIC
     Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
 #else
     (this->*WeightList[findex])(tpos);
@@ -306,7 +306,6 @@ int Moves::MoveGen123(
 #ifdef DDS_MOVES
   MG_REGISTER(RegisterList[findex], handRel);
 #endif
-  WeightFnc = WeightList[findex];
 
   for (suit = 0; suit < DDS_SUITS; suit++)
   {
@@ -334,9 +333,11 @@ int Moves::MoveGen123(
       g--;
     }
 
-    #ifdef DDS_USE_NEW_HEURISTIC
+#ifdef DDS_USE_NEW_HEURISTIC
     Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
 #else
+    WeightPtr WeightFnc;
+    WeightFnc = WeightList[findex];
     (this->*WeightFnc)(tpos);
 #endif
   }
