@@ -128,9 +128,8 @@ void SortMoves(HeuristicContext& context) {
             break;
     }
     
-    // CRITICAL: Sort the moves after weight assignment!
-    // This was missing and caused the 31% performance regression
-    MergeSort(context.mply, context.numMoves);
+    // Weight assignment complete - sorting will be handled by the calling code
+    // Original Moves.cpp will call Moves::MergeSort() conditionally as appropriate
 }
 
 // MergeSort function extracted from original Moves.cpp
