@@ -1,4 +1,6 @@
 #include "internal.h"
+#include "utility/Constants.h"
+#include "utility/LookupTables.h"
 
 // Integration function for calling from moves.cpp
 void CallHeuristic(
@@ -34,104 +36,67 @@ void CallHeuristic(
       leadSuit
   };
   
-  SortMoves(context);
+  // Inline SortMoves logic to eliminate function call overhead
+  // Determine which position in trick (0=leading, 1-3=following)
+  int handRel = 0;
+  if (context.currHand != context.leadHand) {
+      // Calculate relative position: 1, 2, or 3 based on lead hand
+      handRel = (context.currHand + 4 - context.leadHand) % 4;
+  }
+  
+  // Leading hand (handRel == 0) - MoveGen0 logic
+  if (handRel == 0) {
+      // Check if trump game with trump winner available
+      bool trumpGame = (context.trump != DDS_NOTRUMP) && 
+                      (context.trump >= 0 && context.trump < DDS_SUITS) &&
+                      (tpos.winner[context.trump].rank != 0);
+      
+      if (trumpGame) {
+          WeightAllocTrump0(context);
+      } else {
+          WeightAllocNT0(context);
+      }
+      return;
+  }
+  
+  // Following hands (handRel 1-3) - MoveGen123 logic
+  // Check trump game condition
+  int ftest = ((context.trump != DDS_NOTRUMP) &&
+               (context.trump >= 0 && context.trump < DDS_SUITS) &&
+               (tpos.winner[context.trump].rank != 0) ? 1 : 0);
+  
+  // Check if current hand can follow suit (not void)
+  unsigned short ris = tpos.rankInSuit[context.currHand][context.leadSuit];
+  bool canFollowSuit = (ris != 0);
+  
+  // Calculate function index using same logic as original
+  int findex;
+  if (canFollowSuit) {
+      findex = 4 * handRel + ftest;
+  } else {
+      findex = 4 * handRel + ftest + 2;
+  }
+  
+  // Following hands function dispatch table (MoveGen123 logic)
+  switch (findex) {
+      case 4:  WeightAllocNTNotvoid1(context); break;  // handRel=1, can follow, no trump
+      case 5:  WeightAllocTrumpNotvoid1(context); break;  // handRel=1, can follow, trump
+      case 6:  WeightAllocNTVoid1(context); break;  // handRel=1, void, no trump
+      case 7:  WeightAllocTrumpVoid1(context); break;  // handRel=1, void, trump
+      case 8:  WeightAllocNTNotvoid2(context); break;  // handRel=2, can follow, no trump
+      case 9:  WeightAllocTrumpNotvoid2(context); break;  // handRel=2, can follow, trump
+      case 10: WeightAllocNTVoid2(context); break; // handRel=2, void, no trump
+      case 11: WeightAllocTrumpVoid2(context); break; // handRel=2, void, trump
+      case 12: WeightAllocCombinedNotvoid3(context); break; // handRel=3, can follow, no trump
+      case 13: WeightAllocCombinedNotvoid3(context); break; // handRel=3, can follow, trump
+      case 14: WeightAllocNTVoid3(context); break; // handRel=3, void, no trump
+      case 15: WeightAllocTrumpVoid3(context); break; // handRel=3, void, trump
+      default: 
+          // Should not happen, but default to basic sorting
+          WeightAllocNT0(context);
+          break;
+  }
 }
-
-// Dispatcher function - routes to correct WeightAlloc function based on game state
-void SortMoves(HeuristicContext& context) {
-    const pos& tpos = context.tpos;
-    
-    // Determine which position in trick (0=leading, 1-3=following)
-    int handRel = 0;
-    if (context.currHand != context.leadHand) {
-        // Calculate relative position: 1, 2, or 3 based on lead hand
-        handRel = (context.currHand + 4 - context.leadHand) % 4;
-    }
-    
-    // Leading hand (handRel == 0) - MoveGen0 logic
-    if (handRel == 0) {
-        // Check if trump game with trump winner available
-        bool trumpGame = (context.trump != DDS_NOTRUMP) && 
-                        (tpos.winner[context.trump].rank != 0);
-        
-        if (trumpGame) {
-            WeightAllocTrump0(context);
-        } else {
-            WeightAllocNT0(context);
-        }
-        return;
-    }
-    
-    // Following hands (handRel 1-3) - MoveGen123 logic
-    // Check trump game condition
-    int ftest = ((context.trump != DDS_NOTRUMP) &&
-                 (tpos.winner[context.trump].rank != 0) ? 1 : 0);
-    
-    // Check if current hand can follow suit (not void)
-    unsigned short ris = tpos.rankInSuit[context.currHand][context.leadSuit];
-    bool canFollowSuit = (ris != 0);
-    
-    // Calculate function index using same logic as original
-    int findex;
-    if (canFollowSuit) {
-        findex = 4 * handRel + ftest;
-    } else {
-        findex = 4 * handRel + ftest + 2;
-    }
-    
-    // Dispatch based on findex (matching WeightList array indices)
-    switch (findex) {
-        case 4:  // handRel=1, NT, following suit
-            WeightAllocNTNotvoid1(context);
-            break;
-        case 5:  // handRel=1, Trump, following suit  
-            WeightAllocTrumpNotvoid1(context);
-            break;
-        case 6:  // handRel=1, NT, void
-            WeightAllocNTVoid1(context);
-            break;
-        case 7:  // handRel=1, Trump, void
-            WeightAllocTrumpVoid1(context);
-            break;
-            
-        case 8:  // handRel=2, NT, following suit
-            WeightAllocNTNotvoid2(context);
-            break;
-        case 9:  // handRel=2, Trump, following suit
-            WeightAllocTrumpNotvoid2(context);
-            break;
-        case 10: // handRel=2, NT, void
-            WeightAllocNTVoid2(context);
-            break;
-        case 11: // handRel=2, Trump, void
-            WeightAllocTrumpVoid2(context);
-            break;
-            
-        case 12: // handRel=3, NT, following suit
-        case 13: // handRel=3, Trump, following suit (both use Combined)
-            WeightAllocCombinedNotvoid3(context);
-            break;
-        case 14: // handRel=3, NT, void
-            WeightAllocNTVoid3(context);
-            break;
-        case 15: // handRel=3, Trump, void
-            WeightAllocTrumpVoid3(context);
-            break;
-            
-        default:
-            // Should never happen, but fall back to basic function
-            if (ftest) {
-                WeightAllocTrump0(context);
-            } else {
-                WeightAllocNT0(context);
-            }
-            break;
-    }
-    
-    // Weight assignment complete - sorting will be handled by the calling code
-    // Original Moves.cpp will call Moves::MergeSort() conditionally as appropriate
-}
-
 
 // The following functions are extracted from Moves.cpp and refactored to be
 // standalone. They now accept a HeuristicContext struct which contains all the
@@ -324,10 +289,13 @@ void WeightAllocTrump0(HeuristicContext& context)
          or was stored as the best move in a transposition table entry
          match. */
 
-      if ((context.bestMove.suit == context.suit) &&
+      // Only use bestMove/bestMoveTT if they're valid (non-empty)
+      if ((context.bestMove.rank > 0) && 
+          (context.bestMove.suit == context.suit) &&
           (context.bestMove.rank == context.mply[k].rank))
         context.mply[k].weight += 55;
-      else if ((context.bestMoveTT.suit == context.suit) &&
+      else if ((context.bestMoveTT.rank > 0) &&
+               (context.bestMoveTT.suit == context.suit) &&
                (context.bestMoveTT.rank == context.mply[k].rank))
         context.mply[k].weight += 18;
     }
@@ -387,7 +355,8 @@ void WeightAllocTrump0(HeuristicContext& context)
          or was stored as the best move in a transposition table
          entry match. */
 
-      if ((context.bestMove.suit == context.suit) &&
+      if ((context.bestMove.rank > 0) && 
+          (context.bestMove.suit == context.suit) &&
           (context.bestMove.rank == context.mply[k].rank))
         context.mply[k].weight += 18;
     }
@@ -458,10 +427,12 @@ void WeightAllocNT0(HeuristicContext& context) {
          or was stored as the best move in a transposition table
          entry match. */
 
-      if ((context.bestMove.suit == context.suit) &&
+      if ((context.bestMove.rank > 0) && 
+          (context.bestMove.suit == context.suit) &&
           (context.bestMove.rank == context.mply[k].rank))
         context.mply[k].weight += 126;
-      else if ((context.bestMoveTT.suit == context.suit) &&
+      else if ((context.bestMoveTT.rank > 0) &&
+               (context.bestMoveTT.suit == context.suit) &&
                (context.bestMoveTT.rank == context.mply[k].rank))
         context.mply[k].weight += 32;
     }
@@ -527,9 +498,12 @@ void WeightAllocNT0(HeuristicContext& context) {
          or was stored as the best move in a transposition table
          entry match. */
 
-      if ((context.bestMove.suit == context.suit) && (context.bestMove.rank == context.mply[k].rank))
+      if ((context.bestMove.rank > 0) && 
+          (context.bestMove.suit == context.suit) && 
+          (context.bestMove.rank == context.mply[k].rank))
         context.mply[k].weight += 47;
-      else if ((context.bestMoveTT.suit == context.suit) &&
+      else if ((context.bestMoveTT.rank > 0) &&
+               (context.bestMoveTT.suit == context.suit) &&
                (context.bestMoveTT.rank == context.mply[k].rank))
         context.mply[k].weight += 19;
     }

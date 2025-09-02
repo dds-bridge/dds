@@ -37,8 +37,6 @@ struct HeuristicContext {
     int leadSuit; // For MoveGen123
 };
 
-void SortMoves(HeuristicContext& context);
-
 // Integration function for calling from moves.cpp
 void CallHeuristic(
     const pos& tpos,

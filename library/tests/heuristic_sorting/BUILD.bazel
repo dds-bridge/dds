@@ -10,28 +10,11 @@ cc_test(
 )
 
 cc_test(
-    name = "heuristic_sorting_simple_test",
-    srcs = ["heuristic_sorting_test_simple.cpp"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "integration_test",
     srcs = ["integration_test.cpp"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
         "@googletest//:gtest_main",
-    ],
-)
-
-cc_binary(
-    name = "performance_benchmark",
-    srcs = ["performance_benchmark.cpp"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
     ],
 )
 
@@ -44,19 +27,6 @@ cc_binary(
 )
 
 cc_test(
-    name = "weight_comparison_test",
-    srcs = ["weight_comparison_test.cpp"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "//library/src:testable_dds",
-        "@googletest//:gtest_main",
-    ],
-    defines = select({
-        "//conditions:default": [],
-    }),
-)
-
-cc_test(
     name = "minimal_new_test",
     srcs = ["minimal_new_test.cpp"],
     deps = [
@@ -66,20 +36,12 @@ cc_test(
 )
 
 cc_test(
-    name = "simple_weight_comparison_test",
-    srcs = ["simple_weight_comparison_test.cpp"],
+    name = "minimal_weight_test",
+    srcs = ["minimal_weight_test.cpp"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
         "//library/src:testable_dds",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "baseline_weight_test",
-    srcs = ["baseline_weight_test.cpp"],
-    deps = [
-        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
         "@googletest//:gtest_main",
     ],
 )
@@ -87,6 +49,15 @@ cc_test(
 cc_test(
     name = "working_comparison_test",
     srcs = ["working_comparison_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "old_vs_new_comparison_test",
+    srcs = ["old_vs_new_comparison_test.cpp"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
         "@googletest//:gtest_main",
