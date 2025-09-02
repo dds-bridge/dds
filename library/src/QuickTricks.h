@@ -10,7 +10,7 @@
 #ifndef DDS_QUICKTRICKS_H
 #define DDS_QUICKTRICKS_H
 
-#include "dds.h"
+#include "dds/dds.h"
 #include "Memory.h"
 
 

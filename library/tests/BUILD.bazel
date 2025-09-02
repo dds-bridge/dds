@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 
 filegroup(
     name = "test_sources",
@@ -8,6 +8,9 @@ filegroup(
 cc_binary(
     name = "dtest",
     srcs = [":test_sources"],
-    deps = ["//library/src:testable_dds"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+    ],
     visibility = ["//visibility:public"],
 )

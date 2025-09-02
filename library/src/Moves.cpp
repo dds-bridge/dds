@@ -11,8 +11,10 @@
 #include <iomanip>
 #include <sstream>
 #include <cstdio>
+#include <iostream>
 
 #include "Moves.h"
+#include "heuristic_sorting/heuristic_sorting.h"
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
@@ -202,9 +204,17 @@ int Moves::MoveGen0(
     }
 
     if (ftest)
+#ifdef DDS_USE_NEW_HEURISTIC
+      Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
+#else
       Moves::WeightAllocTrump0(tpos, bestMove, bestMoveTT, thrp_rel);
+#endif
     else
+#ifdef DDS_USE_NEW_HEURISTIC
+      Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
+#else
       Moves::WeightAllocNT0(tpos, bestMove, bestMoveTT, thrp_rel);
+#endif
   }
 
 #ifdef DDS_MOVES
@@ -243,8 +253,7 @@ int Moves::MoveGen123(
     trackp->lowestWin[handRel][s] = 0;
   numMoves = 0;
 
-  WeightPtr WeightFnc;
-  int findex;
+  [[maybe_unused]] int findex;
   int ftest = ((trump != DDS_NOTRUMP) &&
                (tpos.winner[trump].rank != 0) ? 1 : 0);
 
@@ -282,7 +291,11 @@ int Moves::MoveGen123(
     if (numMoves == 1)
       return numMoves;
 
+#ifdef DDS_USE_NEW_HEURISTIC
+    Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
+#else
     (this->*WeightList[findex])(tpos);
+#endif
 
     Moves::MergeSort();
     return numMoves;
@@ -293,7 +306,6 @@ int Moves::MoveGen123(
 #ifdef DDS_MOVES
   MG_REGISTER(RegisterList[findex], handRel);
 #endif
-  WeightFnc = WeightList[findex];
 
   for (suit = 0; suit < DDS_SUITS; suit++)
   {
@@ -321,7 +333,13 @@ int Moves::MoveGen123(
       g--;
     }
 
+#ifdef DDS_USE_NEW_HEURISTIC
+    Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
+#else
+    WeightPtr WeightFnc;
+    WeightFnc = WeightList[findex];
     (this->*WeightFnc)(tpos);
+#endif
   }
 
   list.current = 0;
@@ -1985,6 +2003,31 @@ void Moves::Sort(
 #define CMP_SWAP(i, j) if (mply[i].weight < mply[j].weight) \
   { tmp = mply[i]; mply[i] = mply[j]; mply[j] = tmp; }
 
+void Moves::CallHeuristic(
+    const pos& tpos,
+    const moveType& bestMove,
+    const moveType& bestMoveTT,
+    const relRanksType thrp_rel[]) {
+  
+  // Call the heuristic sorting library with full context
+  ::CallHeuristic(
+      tpos,
+      bestMove,
+      bestMoveTT,
+      thrp_rel,
+      mply,           // Current move array
+      numMoves,       // Number of moves generated so far
+      lastNumMoves,   // Number of moves before current suit
+      trump,          // Trump suit
+      suit,           // Current suit being processed (for MoveGen0)
+      trackp,         // Track information
+      currTrick,      // Current trick number
+      currHand,       // Current hand to play
+      leadHand,       // Hand that led to this trick
+      leadSuit        // Suit that was led (for MoveGen123)
+  );
+}
+
 void Moves::MergeSort()
 {
   moveType tmp;
@@ -2227,7 +2270,6 @@ void Moves::MergeSort()
         mply[j] = tmp;
       }
   }
-
   return;
 }
 

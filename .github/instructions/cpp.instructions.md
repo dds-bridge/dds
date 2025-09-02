@@ -56,6 +56,7 @@ Code organization preferences:
 - **Functions** – keep short; extract helpers if > 20 lines.
 - **Variables** – snake_case; classes – PascalCase.
 - **Header guards** – `#pragma once` or traditional guards.
+- **Include paths** – use paths provided by the bazel dependencies.
 ## Safety
 - Initialize all variables.
 - Check bounds on container access.

@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "../src/dll.h"
+#include "dds/dll.h"
 
 using namespace std;
 

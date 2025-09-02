@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <cstdlib>
 
-#include "../src/dll.h"
+#include "dds/dll.h"
 #include "testcommon.h"
 #include "args.h"
 #include "cst.h"

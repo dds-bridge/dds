@@ -28,6 +28,11 @@ config_setting(
     values = {"compilation_mode": "dbg"},
 )
 
+config_setting(
+    name = "new_heuristic",
+    define_values = {"use_new_heuristic": "true"},
+)
+
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 

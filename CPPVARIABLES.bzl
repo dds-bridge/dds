@@ -15,6 +15,7 @@ DDS_CPPOPTS = select({
     "//:debug_build_macos": [
         "-std=c++17",
         "-stdlib=libc++",
+        "-O2",
         "-g",
         "-mtune=generic",
         "-fPIC",
@@ -33,6 +34,7 @@ DDS_CPPOPTS = select({
     ],
     "//:debug_build_linux": [
         "-g",
+        "-O2",
         "-fopenmp",
         "-std=c++17",
         "-Wpedantic",
@@ -49,6 +51,9 @@ DDS_LOCAL_DEFINES = select({
     "//:debug_build_macos": ["DDS_THREADS_GCD"],
     "//:build_linux": [],
     "//:debug_build_linux": [],
+    "//conditions:default": [],
+}) + select({
+    "//:new_heuristic": ["DDS_USE_NEW_HEURISTIC"],
     "//conditions:default": [],
 })
 

@@ -11,9 +11,9 @@
 #define DDS_SCHEDULER_H
 
 #include <atomic>
+#include <vector>
 
-#include "dds.h"
-#include "TimeStatList.h"
+#include "dds/dds.h"
 #include "Timer.h"
 
 using namespace std;

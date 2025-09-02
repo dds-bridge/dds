@@ -69,7 +69,6 @@ struct highCardType
   int hand;
 };
 
-
 struct pos
 {
   unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS];
@@ -93,6 +92,15 @@ struct pos
   /* Second best rank. */
 };
 
+struct trickDataType
+{
+  int playCount[DDS_SUITS];
+  int bestRank;
+  int bestSuit;
+  int bestSequence;
+  int relWinner;
+  int nextLeadHand;
+};
 
 struct evalType
 {
