@@ -25,6 +25,7 @@ cc_library(
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
+    include_prefix = "dds",
     visibility = [
         "//library/tests:__pkg__",
         "//library/tests/heuristic_sorting:__pkg__",

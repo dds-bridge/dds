@@ -42,3 +42,53 @@ cc_binary(
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
     ],
 )
+
+cc_test(
+    name = "weight_comparison_test",
+    srcs = ["weight_comparison_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+    defines = select({
+        "//conditions:default": [],
+    }),
+)
+
+cc_test(
+    name = "minimal_new_test",
+    srcs = ["minimal_new_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "simple_weight_comparison_test",
+    srcs = ["simple_weight_comparison_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "baseline_weight_test",
+    srcs = ["baseline_weight_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "working_comparison_test",
+    srcs = ["working_comparison_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "@googletest//:gtest_main",
+    ],
+)

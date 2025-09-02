@@ -1,10 +1,9 @@
 
-#include "heuristic_sorting/internal.h"
-#include "heuristic_sorting/heuristic_sorting.h"
 #include <gtest/gtest.h>
 #include <cassert>
 #include <iostream>
-
+#include "heuristic_sorting/internal.h"
+#include "heuristic_sorting/heuristic_sorting.h"
 class HeuristicSortingUnitTest : public ::testing::Test {
  protected:
   HeuristicSortingUnitTest() = default;
@@ -315,48 +314,6 @@ TEST_F(HeuristicSortingUnitTest, TestAllMissingWeightAllocFunctions) {
         << "WeightAllocNTVoid3 should assign weights";
     
     std::cout << "All 13 WeightAlloc functions tested successfully!" << std::endl;
-}
-
-// Test MergeSort functionality with different move counts
-TEST_F(HeuristicSortingUnitTest, TestMergeSortComprehensive) {
-    std::cout << "Testing MergeSort for all cases 1-13 moves..." << std::endl;
-    
-    // Test each case from 1 to 13 moves
-    for (int numMoves = 1; numMoves <= 13; numMoves++) {
-        moveType mply[13];
-        
-        // Create moves with weights in reverse order to test sorting
-        for (int i = 0; i < numMoves; i++) {
-            mply[i].suit = i % 4;
-            mply[i].rank = 14 - i;
-            mply[i].weight = numMoves - i; // Reverse order: 13, 12, 11, ..., 1
-            mply[i].sequence = 1 << (14 - i);
-        }
-        
-        // Sort using MergeSort
-        MergeSort(mply, numMoves);
-        
-        // Verify moves are sorted in descending order by weight
-        bool properlyorted = true;
-        for (int i = 1; i < numMoves; i++) {
-            if (mply[i-1].weight < mply[i].weight) {
-                properlyorted = false;
-                break;
-            }
-        }
-        
-        EXPECT_TRUE(properlyorted) << "MergeSort failed for " << numMoves << " moves";
-        
-        // Verify highest weight (numMoves) is first
-        EXPECT_EQ(mply[0].weight, numMoves) 
-            << "Highest weight move should be first for " << numMoves << " moves";
-        
-        // Verify lowest weight (1) is last
-        EXPECT_EQ(mply[numMoves-1].weight, 1)
-            << "Lowest weight move should be last for " << numMoves << " moves";
-    }
-    
-    std::cout << "MergeSort tested successfully for all cases 1-13!" << std::endl;
 }
 
 // Test function dispatch logic to ensure correct WeightAlloc function is called

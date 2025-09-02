@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include <vector>
 #include <cstring>
 
 // Include the new heuristic library headers

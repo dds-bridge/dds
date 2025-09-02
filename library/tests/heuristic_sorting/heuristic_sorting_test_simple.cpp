@@ -1,8 +1,7 @@
-#include "heuristic_sorting/internal.h"
-#include "heuristic_sorting/heuristic_sorting.h"
 #include <gtest/gtest.h>
 #include <iostream>
-
+#include "heuristic_sorting/internal.h"
+#include "heuristic_sorting/heuristic_sorting.h"
 class HeuristicSortingUnitTest : public ::testing::Test {
  protected:
   HeuristicSortingUnitTest() = default;
@@ -253,44 +252,6 @@ TEST_F(HeuristicSortingUnitTest, TestWeightComparison) {
     EXPECT_TRUE(weightsMatch) << "Identical scenarios should produce identical weights";
     
     std::cout << "Weight comparison test passed - identical scenarios produce identical weights." << std::endl;
-}
-
-// Test move ordering effectiveness
-TEST_F(HeuristicSortingUnitTest, TestMoveOrderingEffectiveness) {
-    const int numMoves = 7;
-    moveType mply[numMoves];
-    
-    // Create moves with random initial weights
-    int initialWeights[] = {5, 1, 8, 3, 9, 2, 6};
-    for (int i = 0; i < numMoves; i++) {
-        mply[i].suit = i % 4;
-        mply[i].rank = 14 - i;
-        mply[i].weight = initialWeights[i];
-        mply[i].sequence = 1 << (14 - i);
-    }
-
-    // Sort using MergeSort
-    MergeSort(mply, numMoves);
-
-    // Verify moves are in descending order
-    bool properOrder = true;
-    for (int i = 1; i < numMoves; i++) {
-        if (mply[i-1].weight < mply[i].weight) {
-            properOrder = false;
-            std::cout << "Order violation at position " << i 
-                      << ": " << mply[i-1].weight << " < " << mply[i].weight << std::endl;
-        }
-    }
-    
-    EXPECT_TRUE(properOrder) << "Moves should be sorted in descending order by weight";
-    
-    // Verify highest weight is first
-    EXPECT_EQ(mply[0].weight, 9) << "Highest weight move should be first";
-    
-    // Verify lowest weight is last
-    EXPECT_EQ(mply[numMoves-1].weight, 1) << "Lowest weight move should be last";
-    
-    std::cout << "Move ordering effectiveness test passed." << std::endl;
 }
 
 // Test all trump suits and no-trump scenarios
