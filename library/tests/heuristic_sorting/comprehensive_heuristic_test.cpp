@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include <vector>
 #include <cstring>
 #include <algorithm>
 
 // Include the new heuristic library headers
+#include "dds/dds.h"
 #include "heuristic_sorting/internal.h"
 #include "heuristic_sorting/heuristic_sorting.h"
 

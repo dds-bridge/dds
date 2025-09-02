@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include "heuristic_sorting/heuristic_sorting.h"
-#include "dds/Moves.h"
 
 // This test compares weights produced by the old and new heuristic implementations
 // It must be compiled twice - once with each implementation - to capture outputs

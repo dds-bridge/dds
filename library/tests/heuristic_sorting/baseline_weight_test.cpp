@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
+#include "dds/dds.h"
 #include "dds/Moves.h"
 
 /**

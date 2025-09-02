@@ -4,7 +4,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "dds",
     srcs = glob(["*.cpp"]),
-    hdrs = glob(["*.h"], exclude=["dds.h", "dll.h", "portab.h"]),
+    hdrs = glob(["*.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
