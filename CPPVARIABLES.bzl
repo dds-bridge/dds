@@ -15,6 +15,7 @@ DDS_CPPOPTS = select({
     "//:debug_build_macos": [
         "-std=c++17",
         "-stdlib=libc++",
+        "-O2",
         "-g",
         "-mtune=generic",
         "-fPIC",
@@ -33,6 +34,7 @@ DDS_CPPOPTS = select({
     ],
     "//:debug_build_linux": [
         "-g",
+        "-O2",
         "-fopenmp",
         "-std=c++17",
         "-Wpedantic",
