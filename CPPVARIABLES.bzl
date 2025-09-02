@@ -54,6 +54,7 @@ DDS_LOCAL_DEFINES = select({
     "//conditions:default": [],
 }) + select({
     "//:new_heuristic": ["DDS_USE_NEW_HEURISTIC"],
+    "//:skip_heuristic": ["DDS_SKIP_HEURISTIC"],
     "//conditions:default": [],
 })
 

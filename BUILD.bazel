@@ -33,6 +33,11 @@ config_setting(
     define_values = {"use_new_heuristic": "true"},
 )
 
+config_setting(
+    name = "skip_heuristic",
+    define_values = {"skip_heuristic": "true"},
+)
+
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
