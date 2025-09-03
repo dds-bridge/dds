@@ -16,6 +16,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 #include "dds/dds.h"
 
@@ -50,10 +51,10 @@ class System
 
     vector<bool> availableSystem;
 
-    vector<fptrType> CallbackSimpleList;
-    vector<fduplType> CallbackDuplList;
-    vector<fsingleType> CallbackSingleList;
-    vector<fcopyType> CallbackCopyList;
+    array<fptrType, DDS_RUN_SIZE> CallbackSimpleList;
+    array<fduplType, DDS_RUN_SIZE> CallbackDuplList;
+    array<fsingleType, DDS_RUN_SIZE> CallbackSingleList;
+    array<fcopyType, DDS_RUN_SIZE> CallbackCopyList;
 
     typedef int (System::*RunPtr)();
     vector<RunPtr> RunPtrList;

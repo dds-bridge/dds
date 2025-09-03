@@ -154,22 +154,18 @@ void System::Reset()
   RunPtrList[DDS_SYSTEM_THREAD_PPLIMPL] = 
     &System::RunThreadsPPLIMPL; 
 
-  CallbackSimpleList.resize(DDS_RUN_SIZE);
   CallbackSimpleList[DDS_RUN_SOLVE] = SolveChunkCommon;
   CallbackSimpleList[DDS_RUN_CALC] = CalcChunkCommon;
   CallbackSimpleList[DDS_RUN_TRACE] = PlayChunkCommon;
 
-  CallbackDuplList.resize(DDS_RUN_SIZE);
   CallbackDuplList[DDS_RUN_SOLVE] = DetectSolveDuplicates;
   CallbackDuplList[DDS_RUN_CALC] = DetectCalcDuplicates;
   CallbackDuplList[DDS_RUN_TRACE] = DetectPlayDuplicates;
 
-  CallbackSingleList.resize(DDS_RUN_SIZE);
   CallbackSingleList[DDS_RUN_SOLVE] = SolveSingleCommon;
   CallbackSingleList[DDS_RUN_CALC] = CalcSingleCommon;
   CallbackSingleList[DDS_RUN_TRACE] = PlaySingleCommon;
 
-  CallbackCopyList.resize(DDS_RUN_SIZE);
   CallbackCopyList[DDS_RUN_SOLVE] = CopySolveSingle;
   CallbackCopyList[DDS_RUN_CALC] = CopyCalcSingle;
   CallbackCopyList[DDS_RUN_TRACE] = CopyPlaySingle;

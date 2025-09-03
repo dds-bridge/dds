@@ -51,7 +51,7 @@ Code organization preferences:
 - **Smart pointers** – prefer `std::unique_ptr` / `std::shared_ptr`.
 - **Const-correctness** – mark data/functions const where possible.
 - **No `using namespace` in headers.**
-- **Google C++ Style Guide** – follow naming, formatting, and layout.
+- **Google C++ Style Guide** – [Style Guide](https://google.github.io/styleguide/cppguide.html) follow naming, formatting, and layout.
 - **Enums** – use `enum class`.
 - **Functions** – keep short; extract helpers if > 20 lines.
 - **Variables** – snake_case; classes – PascalCase.
