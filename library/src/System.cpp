@@ -13,10 +13,6 @@
 #include <sstream>
 #include <string.h>
 
-#include "SolveBoard.h"
-#include "CalcTables.h"
-#include "PlayAnalyser.h"
-#include "parallel.h"
 #include "System.h"
 #include "Memory.h"
 #include "Scheduler.h"
@@ -26,6 +22,66 @@ extern Scheduler scheduler;
 extern Memory memory;
 extern ThreadMgr threadMgr;
 
+// Boost: Disable some header warnings.
+
+#ifdef DDS_THREADS_BOOST
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4061 4191 4619 4623 5031)
+  #endif
+
+  #include <boost/thread.hpp>
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
+#endif
+
+#ifdef DDS_THREADS_GCD
+  #include <dispatch/dispatch.h>
+#endif
+
+#ifdef DDS_THREADS_STL
+  #include <thread>
+#endif
+
+#ifdef DDS_THREADS_STLIMPL
+  #include <execution>
+#endif
+
+#ifdef DDS_THREADS_PPLIMPL
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4355 4619 5038)
+  #endif
+
+  #include "ppl.h"
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
+#endif
+
+#ifdef DDS_THREADS_TBB
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4574)
+  #endif 
+
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wold-style-cast"
+  #pragma GCC diagnostic ignored "-Wsign-conversion"
+  #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+
+  #include "tbb/tbb.h"
+  #include "tbb/tbb_thread.h"
+
+  #pragma GCC diagnostic pop
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
+#endif
 
 const vector<string> DDS_SYSTEM_PLATFORM =
 {
@@ -77,8 +133,49 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_SIZE 9
 
 
-System::System()
+System::System(
+    fptrType solve_chunk_common,
+    fptrType calc_chunk_common,
+    fptrType play_chunk_common,
+    fduplType detect_solve_duplicates,
+    fduplType detect_calc_duplicates,
+    fduplType detect_play_duplicates,
+    fsingleType solve_single_common,
+    fsingleType calc_single_common,
+    fsingleType play_single_common,
+    fcopyType copy_solve_single,
+    fcopyType copy_calc_single,
+    fcopyType copy_play_single
+)
 {
+  RunPtrList.resize(DDS_SYSTEM_THREAD_SIZE);
+  RunPtrList[DDS_SYSTEM_THREAD_BASIC] = &System::RunThreadsBasic; 
+  RunPtrList[DDS_SYSTEM_THREAD_WINAPI] = &System::RunThreadsWinAPI; 
+  RunPtrList[DDS_SYSTEM_THREAD_OPENMP] = &System::RunThreadsOpenMP; 
+  RunPtrList[DDS_SYSTEM_THREAD_GCD] = &System::RunThreadsGCD; 
+  RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
+  RunPtrList[DDS_SYSTEM_THREAD_STL] = &System::RunThreadsSTL; 
+  RunPtrList[DDS_SYSTEM_THREAD_TBB] = &System::RunThreadsTBB; 
+  RunPtrList[DDS_SYSTEM_THREAD_STLIMPL] = 
+    &System::RunThreadsSTLIMPL; 
+  RunPtrList[DDS_SYSTEM_THREAD_PPLIMPL] = 
+    &System::RunThreadsPPLIMPL; 
+
+  CallbackSimpleList[DDS_RUN_SOLVE] = solve_chunk_common;
+  CallbackSimpleList[DDS_RUN_CALC] = calc_chunk_common;
+  CallbackSimpleList[DDS_RUN_TRACE] = play_chunk_common;
+
+  CallbackDuplList[DDS_RUN_SOLVE] = detect_solve_duplicates;
+  CallbackDuplList[DDS_RUN_CALC] = detect_calc_duplicates;
+  CallbackDuplList[DDS_RUN_TRACE] = detect_play_duplicates;
+
+  CallbackSingleList[DDS_RUN_SOLVE] = solve_single_common;
+  CallbackSingleList[DDS_RUN_CALC] = calc_single_common;
+  CallbackSingleList[DDS_RUN_TRACE] = play_single_common;
+
+  CallbackCopyList[DDS_RUN_SOLVE] = copy_solve_single;
+  CallbackCopyList[DDS_RUN_CALC] = copy_calc_single;
+  CallbackCopyList[DDS_RUN_TRACE] = copy_play_single;
   System::Reset();
 }
 
@@ -140,35 +237,6 @@ void System::Reset()
       break;
     }
   }
-  
-  RunPtrList.resize(DDS_SYSTEM_THREAD_SIZE);
-  RunPtrList[DDS_SYSTEM_THREAD_BASIC] = &System::RunThreadsBasic; 
-  RunPtrList[DDS_SYSTEM_THREAD_WINAPI] = &System::RunThreadsWinAPI; 
-  RunPtrList[DDS_SYSTEM_THREAD_OPENMP] = &System::RunThreadsOpenMP; 
-  RunPtrList[DDS_SYSTEM_THREAD_GCD] = &System::RunThreadsGCD; 
-  RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
-  RunPtrList[DDS_SYSTEM_THREAD_STL] = &System::RunThreadsSTL; 
-  RunPtrList[DDS_SYSTEM_THREAD_TBB] = &System::RunThreadsTBB; 
-  RunPtrList[DDS_SYSTEM_THREAD_STLIMPL] = 
-    &System::RunThreadsSTLIMPL; 
-  RunPtrList[DDS_SYSTEM_THREAD_PPLIMPL] = 
-    &System::RunThreadsPPLIMPL; 
-
-  CallbackSimpleList[DDS_RUN_SOLVE] = SolveChunkCommon;
-  CallbackSimpleList[DDS_RUN_CALC] = CalcChunkCommon;
-  CallbackSimpleList[DDS_RUN_TRACE] = PlayChunkCommon;
-
-  CallbackDuplList[DDS_RUN_SOLVE] = DetectSolveDuplicates;
-  CallbackDuplList[DDS_RUN_CALC] = DetectCalcDuplicates;
-  CallbackDuplList[DDS_RUN_TRACE] = DetectPlayDuplicates;
-
-  CallbackSingleList[DDS_RUN_SOLVE] = SolveSingleCommon;
-  CallbackSingleList[DDS_RUN_CALC] = CalcSingleCommon;
-  CallbackSingleList[DDS_RUN_TRACE] = PlaySingleCommon;
-
-  CallbackCopyList[DDS_RUN_SOLVE] = CopySolveSingle;
-  CallbackCopyList[DDS_RUN_CALC] = CopyCalcSingle;
-  CallbackCopyList[DDS_RUN_TRACE] = CopyPlaySingle;
 }
 
 

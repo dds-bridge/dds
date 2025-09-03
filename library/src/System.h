@@ -93,7 +93,20 @@ class System
      * Initializes system-dependent state, threading, and memory management for
      * the double dummy solver.
      */
-    System();
+    System(
+      fptrType solve_chunk_common,
+      fptrType calc_chunk_common,
+      fptrType play_chunk_common,
+      fduplType detect_solve_duplicates,
+      fduplType detect_calc_duplicates,
+      fduplType detect_play_duplicates,
+      fsingleType solve_single_common,
+      fsingleType calc_single_common,
+      fsingleType play_single_common,
+      fcopyType copy_solve_single,
+      fcopyType copy_calc_single,
+      fcopyType copy_play_single
+    );
 
     /**
      * @brief Destroy the System object and clean up resources.

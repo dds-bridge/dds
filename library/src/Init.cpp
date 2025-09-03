@@ -18,9 +18,24 @@
 #include "debug.h"
 #include "utility/Constants.h"
 #include "utility/LookupTables.h"
+#include "SolveBoard.h"
+#include "CalcTables.h"
+#include "PlayAnalyser.h"
 
-
-System sysdep;
+System sysdep(
+    &SolveChunkCommon,
+    &CalcChunkCommon,
+    &PlayChunkCommon,
+    &DetectSolveDuplicates,
+    &DetectCalcDuplicates,
+    &DetectPlayDuplicates,
+    &SolveSingleCommon,
+    &CalcSingleCommon,
+    &PlaySingleCommon,
+    &CopySolveSingle,
+    &CopyCalcSingle,
+    &CopyPlaySingle
+);
 Memory memory;
 Scheduler scheduler;
 ThreadMgr threadMgr;
