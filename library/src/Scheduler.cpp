@@ -7,10 +7,6 @@
    See LICENSE and README.
 */
 
-
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <math.h>
 
 #include "Scheduler.h"
