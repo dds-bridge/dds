@@ -17,6 +17,7 @@ cc_library(
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src/system",
     ],
 )
 
@@ -41,5 +42,6 @@ cc_library(
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src/system",
     ],
 )

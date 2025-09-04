@@ -16,11 +16,9 @@
 #include "System.h"
 #include "Memory.h"
 #include "Scheduler.h"
-#include "ThreadMgr.h"
 
 extern Scheduler scheduler;
 extern Memory memory;
-extern ThreadMgr threadMgr;
 
 // Boost: Disable some header warnings.
 
@@ -557,7 +555,7 @@ int System::RunThreadsSTLIMPL()
   static atomic<int> thrIdNext = 0;
   bool err = false;
 
-  threadMgr.Reset(numThreads);
+  ThreadMgr::instance().Reset(numThreads);
 
   for_each(std::execution::par, uniques.begin(), uniques.end(),
     [&](int &bno)
@@ -567,14 +565,14 @@ int System::RunThreadsSTLIMPL()
     if (thrId == -1)
       thrId = thrIdNext++;
 
-    realThrId = threadMgr.Occupy(thrId);
+    realThrId = ThreadMgr::instance()::instance().Occupy(thrId);
 
     if (realThrId == -1)
       err = true;
     else
       (* CallbackSingleList[runCat])(realThrId, bno);
 
-    if (! threadMgr.Release(thrId))
+    if (! ThreadMgr::instance()::instance().Release(thrId))
       err = true;
   });
 
@@ -632,7 +630,7 @@ int System::RunThreadsPPLIMPL()
   static atomic<int> thrIdNext = 0;
   bool err = false, err2 = false;
 
-  threadMgr.Reset(numThreads);
+  ThreadMgr::instance().Reset(numThreads);
 
   Concurrency::parallel_for_each(uniques.begin(), uniques.end(),
     [&](int &bno)
@@ -642,14 +640,14 @@ int System::RunThreadsPPLIMPL()
     if (thrId == -1)
       thrId = thrIdNext++;
 
-    realThrId = threadMgr.Occupy(thrId);
+    realThrId = ThreadMgr::instance().Occupy(thrId);
 
     if (realThrId == -1)
       err = true;
     else
       (* CallbackSingleList[runCat])(realThrId, bno);
 
-    if (! threadMgr.Release(thrId))
+    if (! ThreadMgr::instance().Release(thrId))
       err2 = true;
   });
 

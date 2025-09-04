@@ -14,7 +14,7 @@
 #include "Init.h"
 #include "System.h"
 #include "Scheduler.h"
-#include "ThreadMgr.h"
+#include "system/ThreadMgr.h"
 #include "debug.h"
 #include "utility/Constants.h"
 #include "utility/LookupTables.h"
@@ -38,8 +38,6 @@ System sysdep(
 );
 Memory memory;
 Scheduler scheduler;
-ThreadMgr threadMgr;
-
 
 void InitDebugFiles();
 
@@ -147,7 +145,7 @@ void STDCALL SetResources(
     memory.Resize(static_cast<unsigned>(noOfThreads),
       DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
-  threadMgr.Reset(noOfThreads);
+  ThreadMgr::instance().Reset(noOfThreads);
 
   InitDebugFiles();
 

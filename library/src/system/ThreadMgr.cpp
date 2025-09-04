@@ -10,7 +10,6 @@
 
 #include <iostream>
 #include <iomanip>
-#include <sstream>
 #include <fstream>
 #include <mutex>
 #include <chrono>
@@ -21,18 +20,9 @@
 mutex mtx;
 mutex mtxPrint;
 
+ThreadMgr ThreadMgr::single_instance;
 
-ThreadMgr::ThreadMgr()
-{
-  numRealThreads = 0;
-  numMachineThreads = 0;
-}
-
-
-ThreadMgr::~ThreadMgr()
-{
-}
-
+ThreadMgr::~ThreadMgr() { }
 
 void ThreadMgr::Reset(const int nThreads)
 {
