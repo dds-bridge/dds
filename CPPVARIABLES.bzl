@@ -2,7 +2,7 @@
 
 DDS_CPPOPTS = select({
     "//:build_macos": [
-        "-std=c++17",
+        "-std=c++20",
         "-stdlib=libc++",
         "-O3",
         "-mtune=generic",
@@ -13,7 +13,7 @@ DDS_CPPOPTS = select({
         "-Werror",
     ],
     "//:debug_build_macos": [
-        "-std=c++17",
+        "-std=c++20",
         "-stdlib=libc++",
         "-O2",
         "-g",
@@ -27,7 +27,7 @@ DDS_CPPOPTS = select({
     "//:build_linux": [
         "-O3",
         "-fopenmp",
-        "-std=c++17",
+        "-std=c++20",
         "-Wpedantic",
         "-Wall",
         "-Werror",
@@ -36,13 +36,13 @@ DDS_CPPOPTS = select({
         "-g",
         "-O2",
         "-fopenmp",
-        "-std=c++17",
+        "-std=c++20",
         "-Wpedantic",
         "-Wall",
         "-Werror"
     ],
     "//conditions:default": [
-        "-std=c++17"
+        "-std=c++20"
     ],
 })
 
