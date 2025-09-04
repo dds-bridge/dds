@@ -38,6 +38,11 @@ config_setting(
     define_values = {"skip_heuristic": "true"},
 )
 
+config_setting(
+    name = "debug_all",
+    define_values = {"debug_all": "true"},
+)
+
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 

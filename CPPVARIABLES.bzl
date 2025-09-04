@@ -46,17 +46,22 @@ DDS_CPPOPTS = select({
     ],
 })
 
-DDS_LOCAL_DEFINES = select({
+DDS_OS_DEFINES = select({
     "//:build_macos": ["DDS_THREADS_GCD"],
     "//:debug_build_macos": ["DDS_THREADS_GCD"],
     "//:build_linux": [],
     "//:debug_build_linux": [],
     "//conditions:default": [],
-}) + select({
+})
+
+DDS_DEBUG_DEFINES = select({
     "//:new_heuristic": ["DDS_USE_NEW_HEURISTIC"],
     "//:skip_heuristic": ["DDS_SKIP_HEURISTIC"],
+    "//:debug_all": ["DDS_DEBUG_ALL"],
     "//conditions:default": [],
 })
+
+DDS_LOCAL_DEFINES = DDS_OS_DEFINES + DDS_DEBUG_DEFINES
 
 DDS_LINKOPTS = select({
     "//:build_macos": [],
