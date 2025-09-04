@@ -243,8 +243,7 @@ void System::GetHardware(
   unsigned long long& kilobytesFree) const
 {
   kilobytesFree = 0;
-  ncores = 1;
-  (void) System::GetCores(ncores);
+  ncores = System::GetCores();
 
 #if defined(_WIN32) || defined(__CYGWIN__)
   // Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
@@ -778,8 +777,9 @@ string System::GetConstructor(int& cons) const
 }
 
 
-string System::GetCores(int& cores) const
+int System::GetCores() const
 {
+  int cores = 0;
 #if defined(_WIN32) || defined(__CYGWIN__)
   SYSTEM_INFO sysinfo;
   GetSystemInfo(&sysinfo);
@@ -791,7 +791,7 @@ string System::GetCores(int& cores) const
   // TODO Think about thread::hardware_concurrency().
   // This should be standard in C++11.
 
-  return to_string(cores);
+  return cores;
 }
 
 
@@ -815,7 +815,7 @@ string System::GetThreading(int& thr) const
 }
 
 
-string System::GetThreadSizes(char * sizes) const
+string System::GetThreadSizes() const
 {
   int l = 0, s = 0;
   for (unsigned i = 0; i < static_cast<unsigned>(numThreads); i++)
@@ -827,66 +827,5 @@ string System::GetThreadSizes(char * sizes) const
   }
 
   const string st = to_string(s) + " S, " + to_string(l) + " L";
-  strcpy(sizes, st.c_str());
   return st;
 }
-
-
-string System::str(DDSInfo * info) const
-{
-  stringstream ss;
-  ss << "DDS DLL\n-------\n";
-
-  const string strSystem = System::GetSystem(info->system);
-  ss << left << setw(13) << "System" <<
-    setw(20) << right << strSystem << "\n";
-
-  const string strBits = System::GetBits(info->numBits);
-  ss << left << setw(13) << "Word size" <<
-    setw(20) << right << strBits << "\n";
-
-  const string strCompiler = System::GetCompiler(info->compiler);
-  ss << left << setw(13) << "Compiler" <<
-    setw(20) << right << strCompiler << "\n";
-
-  const string strConstructor = System::GetConstructor(info->constructor);
-  ss << left << setw(13) << "Constructor" <<
-    setw(20) << right << strConstructor << "\n";
-
-  const string strVersion = System::GetVersion(info->major,
-    info->minor, info->patch);
-  ss << left << setw(13) << "Version" <<
-    setw(20) << right << strVersion << "\n";
-  strcpy(info->versionString, strVersion.c_str());
-
-  ss << left << setw(17) << "Memory max (MB)" <<
-    setw(16) << right << sysMem_MB << "\n";
-
-  const string stm = to_string(THREADMEM_SMALL_DEF_MB) + "-" + 
-    to_string(THREADMEM_SMALL_MAX_MB) + " / " +
-    to_string(THREADMEM_LARGE_DEF_MB) + "-" +
-    to_string(THREADMEM_LARGE_MAX_MB);
-  ss << left << setw(17) << "Threads (MB)" <<
-    setw(16) << right << stm << "\n";
-
-  System::GetCores(info->numCores);
-  ss << left << setw(17) << "Number of cores" <<
-    setw(16) << right << info->numCores << "\n";
-
-  info->noOfThreads = numThreads;
-  ss << left << setw(17) << "Number of threads" <<
-    setw(16) << right << numThreads << "\n";
-
-  const string strThrSizes = System::GetThreadSizes(info->threadSizes);
-  ss << left << setw(13) << "Thread sizes" <<
-    setw(20) << right << strThrSizes << "\n";
-
-  const string strThreading = System::GetThreading(info->threading);
-  ss << left << setw(9) << "Threading" <<
-    setw(24) << right << strThreading << "\n";
-
-  const string st = ss.str();
-  strcpy(info->systemString, st.c_str());
-  return st;
-}
-

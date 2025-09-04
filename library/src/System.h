@@ -72,6 +72,8 @@ class System
     int RunThreadsTBB();
     int RunThreadsSTLIMPL();
     int RunThreadsPPLIMPL();
+  
+    public:
 
     string GetVersion(
       int& major,
@@ -80,13 +82,13 @@ class System
     string GetSystem(int& sys) const;
     string GetBits(int& bits) const;
     string GetCompiler(int& comp) const;
-    string GetCores(int& comp) const;
+    int GetCores() const;
     string GetConstructor(int& cons) const;
     string GetThreading(int& thr) const;
-    string GetThreadSizes(char * c) const;
+    string GetThreadSizes() const;
+    int GetMemoryMax() const { return sysMem_MB; }
+    int GetNumThreads() const { return numThreads; }
 
-
-  public:
     /**
      * @brief Construct a new System object.
      *
@@ -138,8 +140,6 @@ class System
     int PreferThreading(const unsigned code);
 
     int RunThreads();
-
-    string str(DDSInfo * info) const;
 };
 
 #endif
