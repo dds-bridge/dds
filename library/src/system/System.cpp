@@ -14,11 +14,9 @@
 #include <string.h>
 
 #include "System.h"
-#include "Memory.h"
 #include "Scheduler.h"
 
 extern Scheduler scheduler;
-extern Memory memory;
 
 // Boost: Disable some header warnings.
 
@@ -811,21 +809,5 @@ string System::GetThreading(int& thr) const
       }
     }
   }
-  return st;
-}
-
-
-string System::GetThreadSizes() const
-{
-  int l = 0, s = 0;
-  for (unsigned i = 0; i < static_cast<unsigned>(numThreads); i++)
-  {
-    if (memory.ThreadSize(i) == "S")
-      s++;
-    else
-      l++;
-  }
-
-  const string st = to_string(s) + " S, " + to_string(l) + " L";
   return st;
 }

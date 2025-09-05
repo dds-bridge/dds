@@ -15,8 +15,8 @@
 #include "Init.h"
 #include "ABsearch.h"
 #include "TimerList.h"
-#include "System.h"
-#include "Scheduler.h"
+#include "system/System.h"
+#include "system/Scheduler.h"
 #include "dump.h"
 #include "debug.h"
 

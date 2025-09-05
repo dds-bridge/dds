@@ -85,7 +85,6 @@ class System
     int GetCores() const;
     string GetConstructor(int& cons) const;
     string GetThreading(int& thr) const;
-    string GetThreadSizes() const;
     int GetMemoryMax() const { return sysMem_MB; }
     int GetNumThreads() const { return numThreads; }
 

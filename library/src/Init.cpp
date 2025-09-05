@@ -12,8 +12,8 @@
 #include <string.h>
 
 #include "Init.h"
-#include "System.h"
-#include "Scheduler.h"
+#include "system/System.h"
+#include "system/Scheduler.h"
 #include "system/ThreadMgr.h"
 #include "debug.h"
 #include "utility/Constants.h"
@@ -454,7 +454,16 @@ void STDCALL GetDDSInfo(DDSInfo * info)
   ss << left << setw(17) << "Number of threads" <<
     setw(16) << right << sysdep.GetNumThreads() << "\n";
 
-  const string strThrSizes =  sysdep.GetThreadSizes();
+  int l = 0, s = 0;
+  for (unsigned i = 0; i < static_cast<unsigned>(info->noOfThreads); i++)
+  {
+    if (memory.ThreadSize(i) == "S")
+      s++;
+    else
+      l++;
+  }
+
+  const string strThrSizes =  to_string(s) + " S, " + to_string(l) + " L";
   strcpy(info->threadSizes, strThrSizes.c_str());
   ss << left << setw(13) << "Thread sizes" <<
     setw(20) << right << strThrSizes << "\n";

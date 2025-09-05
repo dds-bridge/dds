@@ -9,9 +9,9 @@
 
 #include "PlayAnalyser.h"
 #include "SolverIF.h"
-#include "System.h"
+#include "system/System.h"
 #include "Memory.h"
-#include "Scheduler.h"
+#include "system/Scheduler.h"
 #include "PBN.h"
 
 using namespace std;
