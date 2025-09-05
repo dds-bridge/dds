@@ -20,7 +20,7 @@
 #include <vector>
 #include <string>
 
-#include "TransTable.h"
+#include "trans_table/TransTable.h"
 
 using namespace std;
 

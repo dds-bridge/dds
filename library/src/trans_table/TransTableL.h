@@ -21,7 +21,7 @@
 
 #include "dds/dll.h"
 
-#include "TransTable.h"
+#include "trans_table/TransTable.h"
 
 using namespace std;
 
