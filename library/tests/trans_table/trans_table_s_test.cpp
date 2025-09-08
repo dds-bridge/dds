@@ -2,7 +2,7 @@
 #include <cstring>
 
 // Include DDS types first
-#include "library/src/data_types/dll.h"
+#include "dds/dll.h"
 
 // Try including the TransTable headers - they should be available through testable_trans_table
 // Use extern "C++" to avoid any linkage issues
@@ -16,7 +16,7 @@ class TransTableS;
 namespace dds_test {
 
 // Helper function to create a simple hand lookup table
-void CreateBasicHandLookup(int handLookup[15][15]) {
+static void CreateBasicHandLookup(int handLookup[15][15]) {
     for (int i = 0; i < 15; ++i) {
         for (int j = 0; j < 15; ++j) {
             handLookup[i][j] = (i + j) % 4; // Simple pattern
@@ -25,7 +25,7 @@ void CreateBasicHandLookup(int handLookup[15][15]) {
 }
 
 // Helper function to create test aggregate target
-void CreateTestAggrTarget(unsigned short aggrTarget[DDS_SUITS]) {
+static void CreateTestAggrTarget(unsigned short aggrTarget[DDS_SUITS]) {
     aggrTarget[0] = 0x1111; // Spades
     aggrTarget[1] = 0x2222; // Hearts  
     aggrTarget[2] = 0x3333; // Diamonds
@@ -33,7 +33,7 @@ void CreateTestAggrTarget(unsigned short aggrTarget[DDS_SUITS]) {
 }
 
 // Helper function to create test win ranks
-void CreateTestWinRanks(unsigned short winRanks[DDS_SUITS]) {
+static void CreateTestWinRanks(unsigned short winRanks[DDS_SUITS]) {
     winRanks[0] = 0x5555; // Spades
     winRanks[1] = 0x6666; // Hearts
     winRanks[2] = 0x7777; // Diamonds  

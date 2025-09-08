@@ -4,8 +4,8 @@
 #include <vector>
 #include <random>
 #include <array>
-#include "library/src/trans_table/TransTable.h"
-#include "library/src/data_types/dll.h"
+#include "trans_table/TransTable.h"
+#include "dds/dll.h"
 
 namespace dds_test {
 
