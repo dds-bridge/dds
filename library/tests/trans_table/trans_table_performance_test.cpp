@@ -8,9 +8,9 @@
 #include <vector>
 #include <memory>
 
-#include "library/src/trans_table/TransTable.h"
-#include "library/src/trans_table/TransTableS.h"
-#include "library/src/trans_table/TransTableL.h"
+#include "trans_table/TransTable.h"
+#include "trans_table/TransTableS.h"
+#include "trans_table/TransTableL.h"
 #include "library/tests/trans_table/mock_data_generators.h"
 
 using dds_test::MockDataFactory;
