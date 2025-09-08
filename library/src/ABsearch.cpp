@@ -11,7 +11,7 @@
 #include <sstream>
 #include <assert.h>
 
-#include "TransTable.h"
+#include "trans_table/TransTable.h"
 #include "Moves.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"

@@ -15,6 +15,7 @@ cc_library(
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
         "//library/src/heuristic_sorting",
+        "//library/src/trans_table",
     ],
 )
 
@@ -37,5 +38,6 @@ cc_library(
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
         "//library/src/heuristic_sorting",
+        "//library/src/trans_table",
     ],
 )

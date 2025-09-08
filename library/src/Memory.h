@@ -12,9 +12,9 @@
 
 #include <vector>
 
-#include "TransTable.h"
-#include "TransTableS.h"
-#include "TransTableL.h"
+#include "trans_table/TransTable.h"
+#include "trans_table/TransTableS.h"
+#include "trans_table/TransTableL.h"
 
 #include "Moves.h"
 #include "File.h"

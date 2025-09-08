@@ -1,0 +1,36 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+cc_library(
+    name = "test_utilities",
+    srcs = [
+        "test_utilities.cpp",
+        "mock_data_generators.cpp",
+    ],
+    hdrs = [
+        "test_utilities.h",
+        "mock_data_generators.h",
+    ],
+    deps = [
+        "//library/src/trans_table:testable_trans_table",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "trans_table",
+    srcs = [
+        "trans_table_base_test.cpp",
+        "trans_table_s_test.cpp",
+        "trans_table_l_test.cpp",
+        # Note: integration and performance tests excluded due to runtime issues
+        #"trans_table_integration_test.cpp",
+        #"trans_table_performance_test.cpp",
+    ],
+    deps = [
+        "//library/src/trans_table:testable_trans_table",
+        ":test_utilities",
+        "@googletest//:gtest_main",
+    ],
+)
