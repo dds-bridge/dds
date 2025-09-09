@@ -37,6 +37,7 @@ class HeuristicSortingCompareFixture : public ::testing::Test {
 };
 
 TEST_F(HeuristicSortingCompareFixture, LegacyVsNewSinglePosition) {
+#ifdef DDS_USE_NEW_HEURISTIC
   // Create a basic position (minimal data)
   pos tpos;
   memset(&tpos, 0, sizeof(tpos));
@@ -56,7 +57,6 @@ TEST_F(HeuristicSortingCompareFixture, LegacyVsNewSinglePosition) {
   }
 
   // Ensure runtime switch exists (function provided when built with the define)
-#ifdef DDS_USE_NEW_HEURISTIC
   set_use_new_heuristic(false);
   std::string legacy = run_and_serialize(tpos, moves, numMoves, 1);
 

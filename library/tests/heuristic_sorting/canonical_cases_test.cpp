@@ -22,6 +22,7 @@ static std::string run_and_serialize_once(const pos& tpos, moveType* moves, int 
 #endif
 
 TEST(CanonicalCases, AllMatchLegacyNew) {
+#ifdef DDS_USE_NEW_HEURISTIC
   const int numCases = 6;
   for (int c = 0; c < numCases; ++c) {
     pos tpos;
@@ -53,7 +54,6 @@ TEST(CanonicalCases, AllMatchLegacyNew) {
       moves[i].sequence = i + 1;
     }
 
-#ifdef DDS_USE_NEW_HEURISTIC
     set_use_new_heuristic(false);
     std::string legacy = run_and_serialize_once(tpos, moves, numMoves, 1);
     for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
@@ -65,8 +65,8 @@ TEST(CanonicalCases, AllMatchLegacyNew) {
       write_json_log("build/compare-results/canonical_new.json", neu);
     }
     EXPECT_EQ(legacy, neu);
+  }
 #else
     GTEST_SKIP() << "Runtime toggling not available: build with --define=new_heuristic=true";
 #endif
-  }
 }
