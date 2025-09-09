@@ -62,3 +62,66 @@ bool write_json_log(const std::string& path, const std::string& json_text) {
   ofs << json_text;
   return ofs.good();
 }
+
+// Initialize relRanks table and trackType based on a given pos (used by fuzz tests)
+void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 assumed */, trackType* trackp) {
+  // zero track
+  if (trackp) {
+    std::memset(trackp, 0, sizeof(*trackp));
+    for (int p = 0; p < DDS_HANDS; ++p) trackp->high[p] = 0;
+    for (int s = 0; s < DDS_SUITS; ++s) trackp->removedRanks[s] = 0;
+    for (int p = 0; p < DDS_HANDS; ++p) {
+      trackp->move[p].suit = 0;
+      trackp->move[p].rank = 0;
+      trackp->move[p].sequence = 0;
+    }
+  }
+
+  if (!relTable) return;
+
+  // Initialize relTable[0]
+  for (int s = 0; s < DDS_SUITS; s++) {
+    for (int ord = 1; ord <= 13; ord++) {
+      relTable[0].absRank[ord][s].hand = -1;
+      relTable[0].absRank[ord][s].rank = 0;
+    }
+  }
+
+  // Build handLookup from current deal
+  int handLookup[DDS_SUITS][15];
+  for (int s = 0; s < DDS_SUITS; s++) {
+    for (int r = 14; r >= 2; r--) {
+      handLookup[s][r] = 0;
+      for (int h = 0; h < DDS_HANDS; h++) {
+        if (tpos.rankInSuit[h][s] & bitMapRank[r]) {
+          handLookup[s][r] = h;
+          break;
+        }
+      }
+    }
+  }
+
+  unsigned int topBitRank = 1;
+  unsigned int topBitNo = 2;
+  for (unsigned int aggr = 1; aggr < 8192; aggr++) {
+    if (aggr >= (topBitRank << 1)) {
+      topBitRank <<= 1;
+      topBitNo++;
+    }
+
+    relTable[aggr] = relTable[aggr ^ topBitRank];
+    relRanksType * relp = &relTable[aggr];
+
+    int weight = counttable[aggr];
+    for (int c = weight; c >= 2; c--) {
+      for (int s = 0; s < DDS_SUITS; s++) {
+        relp->absRank[c][s].hand = relp->absRank[c - 1][s].hand;
+        relp->absRank[c][s].rank = relp->absRank[c - 1][s].rank;
+      }
+    }
+    for (int s = 0; s < DDS_SUITS; s++) {
+      relp->absRank[1][s].hand = static_cast<signed char>(handLookup[s][topBitNo]);
+      relp->absRank[1][s].rank = static_cast<char>(topBitNo);
+    }
+  }
+}

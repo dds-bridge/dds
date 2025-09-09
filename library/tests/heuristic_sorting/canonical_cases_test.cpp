@@ -10,10 +10,11 @@
 static std::string run_and_serialize_once(const pos& tpos, moveType* moves, int numMoves, int trump) {
   moveType bestMove = {};
   moveType bestMoveTT = {};
-  relRanksType thrp_rel[1] = {};
+  static relRanksType relTable[8192];
   trackType track = {};
+  init_rel_and_track(tpos, relTable, &track);
 
-  CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel, moves, numMoves,
+  CallHeuristic(tpos, bestMove, bestMoveTT, relTable, moves, numMoves,
                 0, trump, 0, &track, 1, 0, 0, 0);
   return normalize_ordering(moves, numMoves, true);
 }

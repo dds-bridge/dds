@@ -97,68 +97,10 @@ TEST(FuzzDriver, RandomizedBatch) {
       moves[m].sequence = m + 1;
     }
 
-  // Initialize track fields used by heuristics
+  // Initialize rel table and track using helper
   trackType track = {};
-  track.move[0].suit = track.move[0].rank = track.move[0].sequence = 0;
-    for (int p = 0; p < DDS_HANDS; ++p) {
-      track.move[p].suit = 0;
-      track.move[p].rank = 0;
-      track.move[p].sequence = 0;
-      track.high[p] = 0;
-    }
-    for (int s = 0; s < DDS_SUITS; ++s) track.removedRanks[s] = 0;
-
-    // Build rel table required by heuristics (relRanksType thrp_rel[8192])
-    // We'll allocate a single-element array wrapper so CallHeuristic can index
-    // thrp_rel[aggr] safely. For full compatibility we build a small rel table
-    // for all possible aggr values (0..8191) following SetDealTables logic.
-    static relRanksType relTable[8192];
-    // Initialize relTable[0]
-    for (int s = 0; s < DDS_SUITS; s++) {
-      for (int ord = 1; ord <= 13; ord++) {
-        relTable[0].absRank[ord][s].hand = -1;
-        relTable[0].absRank[ord][s].rank = 0;
-      }
-    }
-
-    // Build handLookup from current deal
-    int handLookup[DDS_SUITS][15];
-    for (int s = 0; s < DDS_SUITS; s++) {
-      for (int r = 14; r >= 2; r--) {
-        handLookup[s][r] = 0;
-        for (int h = 0; h < DDS_HANDS; h++) {
-          if (tpos.rankInSuit[h][s] & bitMapRank[r]) {
-            handLookup[s][r] = h;
-            break;
-          }
-        }
-      }
-    }
-
-    // Fill relTable by propagating topBitRank as in SetDealTables
-    unsigned int topBitRank = 1;
-    unsigned int topBitNo = 2;
-    for (unsigned int aggr = 1; aggr < 8192; aggr++) {
-      if (aggr >= (topBitRank << 1)) {
-        topBitRank <<= 1;
-        topBitNo++;
-      }
-
-      relTable[aggr] = relTable[aggr ^ topBitRank];
-      relRanksType * relp = &relTable[aggr];
-
-      int weight = counttable[aggr];
-      for (int c = weight; c >= 2; c--) {
-        for (int s = 0; s < DDS_SUITS; s++) {
-          relp->absRank[c][s].hand = relp->absRank[c - 1][s].hand;
-          relp->absRank[c][s].rank = relp->absRank[c - 1][s].rank;
-        }
-      }
-      for (int s = 0; s < DDS_SUITS; s++) {
-        relp->absRank[1][s].hand = static_cast<signed char>(handLookup[s][topBitNo]);
-        relp->absRank[1][s].rank = static_cast<char>(topBitNo);
-      }
-    }
+  static relRanksType relTable[8192];
+  init_rel_and_track(tpos, relTable, &track);
 
     std::string legacy;
     std::string neu;
