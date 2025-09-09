@@ -18,7 +18,10 @@
 
 #ifdef DDS_USE_NEW_HEURISTIC
   static bool use_new_heuristic_flag = false;
-  bool set_use_new_heuristic(const bool val) { use_new_heuristic_flag = val; }
+  bool set_use_new_heuristic(const bool val) { 
+    use_new_heuristic_flag = val; 
+    return use_new_heuristic_flag;
+  }
   bool use_new_heuristic() { return use_new_heuristic_flag; }
 #endif
 

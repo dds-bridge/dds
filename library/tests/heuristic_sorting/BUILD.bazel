@@ -45,3 +45,13 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "compare_smoke",
+    srcs = ["compare_smoke.cpp", "test_utils.cpp", "test_utils.h"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves",
+        "@googletest//:gtest_main",
+    ],
+)
