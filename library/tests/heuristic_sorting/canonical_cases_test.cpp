@@ -6,6 +6,7 @@
 #include "heuristic_sorting/internal.h"
 #include "moves/Moves.h"
 
+#ifdef DDS_USE_NEW_HEURISTIC
 // Helper to run heuristic and get normalized ordering (re-implemented locally)
 static std::string run_and_serialize_once(const pos& tpos, moveType* moves, int numMoves, int trump) {
   moveType bestMove = {};
@@ -18,6 +19,7 @@ static std::string run_and_serialize_once(const pos& tpos, moveType* moves, int 
                 0, trump, 0, &track, 1, 0, 0, 0);
   return normalize_ordering(moves, numMoves, true);
 }
+#endif
 
 TEST(CanonicalCases, AllMatchLegacyNew) {
   const int numCases = 6;
