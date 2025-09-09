@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cstring>
 #include <vector>
+#include <algorithm>
 
 #include "heuristic_sorting/heuristic_sorting.h"
 #include "heuristic_sorting/internal.h"
