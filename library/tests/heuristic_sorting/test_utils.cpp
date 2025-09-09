@@ -241,21 +241,87 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
     trackp->trickData.nextLeadHand = (trackp->leadHand + trackp->trickData.relWinner) % 4;
   }
 
-  // Populate lowestWin: conservative approximation used by MoveGen routines.
-  // For each relative hand and suit set lowestWin to the lowest rank present
-  // in that relative hand for that suit (if any), else 0.
+  // Populate lowestWin: compute a more precise minimal winning rank for
+  // each relative hand (relh) and suit (s) given the current trick state.
   if (trackp) {
+    // helpers to find ranks in a bitmask
+    auto find_smallest_rank = [](unsigned short ris) -> int {
+      for (int r = 1; r <= 13; ++r) if (ris & (1u << r)) return r;
+      return 0;
+    };
+    auto find_smallest_rank_greater = [](unsigned short ris, int thr) -> int {
+      for (int r = thr + 1; r <= 13; ++r) if (ris & (1u << r)) return r;
+      return 0;
+    };
+
+    // current best on trick (if any)
+    bool hasCurrentBest = (cardsPlayed > 0);
+    int curBestSuit = -1;
+    int curBestRank = 0;
+    if (hasCurrentBest) {
+      int lastRel = cardsPlayed - 1;
+      int relWinner = trackp->high[lastRel];
+      extCard best = trackp->move[relWinner];
+      curBestSuit = best.suit;
+      curBestRank = best.rank;
+    }
+
     for (int relh = 0; relh < DDS_HANDS; ++relh) {
       for (int s = 0; s < DDS_SUITS; ++s) {
         trackp->lowestWin[relh][s] = 0;
-        // Determine absolute hand for this relative hand
+        // If this relative hand already played in this trick, skip
+        if (cardsPlayed > 0 && relh < cardsPlayed) {
+          trackp->lowestWin[relh][s] = 0;
+          continue;
+        }
+
         int absHand = (trackp->leadHand + relh) % 4;
-  unsigned short ris = localPos.rankInSuit[absHand][s];
-        if (ris) {
-          // find lowest rank bit (smallest rank number that exists)
-          for (int r = 1; r <= 13; ++r) {
-            if (ris & (1u << r)) { trackp->lowestWin[relh][s] = r; break; }
+        unsigned short ris = localPos.rankInSuit[absHand][s];
+        if (!ris) { trackp->lowestWin[relh][s] = 0; continue; }
+
+        // If there is no current best (lead not played), use smallest rank
+        if (!hasCurrentBest) {
+          trackp->lowestWin[relh][s] = find_smallest_rank(ris);
+          continue;
+        }
+
+        // If candidate suit equals current best suit
+        if (s == curBestSuit) {
+          // need a higher rank than current best
+          trackp->lowestWin[relh][s] = find_smallest_rank_greater(ris, curBestRank);
+          continue;
+        }
+
+        // If candidate is trump
+        if (s == trump) {
+          if (curBestSuit != trump) {
+            // any trump will beat non-trump; choose smallest trump in hand
+            trackp->lowestWin[relh][s] = find_smallest_rank(ris);
+          } else {
+            // best is also trump: need higher trump
+            trackp->lowestWin[relh][s] = find_smallest_rank_greater(ris, curBestRank);
           }
+          continue;
+        }
+
+        // Candidate is non-trump and not equal to current best suit.
+        // If current best is trump, non-trump cannot win.
+        if (curBestSuit == trump) {
+          trackp->lowestWin[relh][s] = 0;
+          continue;
+        }
+
+        // If current best is of a different suit (not trump), then only a card
+        // in the lead suit can beat it; if candidate suit equals leadSuit,
+        // we can try to beat that; otherwise cannot win.
+        if (s == trackp->leadSuit) {
+          // If current best is also leadSuit this case is handled earlier;
+          // here current best is different suit => it must be that someone
+          // trumped already, which we handled above. As a fallback, require
+          // higher rank than any current best of this suit.
+          trackp->lowestWin[relh][s] = find_smallest_rank_greater(ris, curBestRank);
+        } else {
+          trackp->lowestWin[relh][s] = 0;
         }
       }
     }
