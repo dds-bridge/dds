@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <random>
+#include <algorithm>
 #include <chrono>
 #include <vector>
 #include <cstring>
@@ -11,12 +12,12 @@
 #include "heuristic_sorting/internal.h"
 #include "moves/Moves.h"
 
-static std::string run_and_serialize_once(const pos& tpos, const relRanksType* thrp_rel, moveType* moves, int numMoves, int trump, trackType* trackp) {
+static std::string run_and_serialize_once(const pos& tpos, const relRanksType* thrp_rel, moveType* moves, int numMoves, int trump, trackType* trackp, int currTrick) {
   moveType bestMove = {};
   moveType bestMoveTT = {};
 
   CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel, moves, numMoves,
-                0, trump, 0, trackp, 1, 0, 0, 0);
+                0, trump, 0, trackp, currTrick, 0, 0, 0);
   return normalize_ordering(moves, numMoves, true);
 }
 
@@ -46,24 +47,39 @@ TEST(FuzzDriver, RandomizedBatch) {
     std::shuffle(deck.begin(), deck.end(), g);
 
     int idx = 0;
+    // Build per-suit card lists then remap ranks to continuous numbers
+    std::vector<std::pair<int,int>> suitCards[DDS_SUITS];
+    int suitCountsPerHand[DDS_HANDS][DDS_SUITS] = {};
+
     for (int h = 0; h < DDS_HANDS; ++h) {
-      int suitCounts[DDS_SUITS] = {0,0,0,0};
       for (int c = 0; c < 13; ++c) {
         int card = deck[idx++];
         int suit = card / 13;
-        int rank = (card % 13) + 1; // 1..13
+        int rank = (card % 13) + 1; // 1..13 original rank
+        suitCards[suit].push_back({rank, h});
+        suitCountsPerHand[h][suit]++;
+      }
+    }
 
-        // set bit for rank in rankInSuit (we use 1<<rank, safe within 16 bits)
-        tpos.rankInSuit[h][suit] |= static_cast<unsigned short>(1u << rank);
-        suitCounts[suit]++;
+    // For each suit, sort by original rank desc and assign new ranks
+    for (int s = 0; s < DDS_SUITS; ++s) {
+      auto &vec = suitCards[s];
+      std::sort(vec.begin(), vec.end(), [](const auto &a, const auto &b){ return a.first > b.first; });
+      int newRank = 13;
+      for (auto &p : vec) {
+        int hand = p.second;
+        tpos.rankInSuit[hand][s] |= static_cast<unsigned short>(1u << newRank);
+        if (newRank > 1) --newRank; else newRank = 1;
       }
-      // set lengths for this hand
-      for (int s = 0; s < DDS_SUITS; ++s) {
-        tpos.length[h][s] = static_cast<unsigned char>(suitCounts[s]);
-      }
-      // handDist: total cards in hand
+    }
+
+    // set lengths/handDist
+    for (int h = 0; h < DDS_HANDS; ++h) {
       tpos.handDist[h] = 0;
-      for (int s = 0; s < DDS_SUITS; ++s) tpos.handDist[h] += suitCounts[s];
+      for (int s = 0; s < DDS_SUITS; ++s) {
+        tpos.length[h][s] = static_cast<unsigned char>(suitCountsPerHand[h][s]);
+        tpos.handDist[h] += suitCountsPerHand[h][s];
+      }
     }
 
     // compute aggr for each suit (aggregate ranks across hands)
@@ -97,10 +113,55 @@ TEST(FuzzDriver, RandomizedBatch) {
       moves[m].sequence = m + 1;
     }
 
-  // Initialize rel table and track using helper
+    // pick a random current trick (number of tricks already played)
+    std::uniform_int_distribution<int> trickDist(0, 12);
+    int currTrick = trickDist(g);
+
+  // Decide whether to simulate a mid-trick with 1..3 cards played (~30% cases)
+  std::uniform_real_distribution<double> prob(0.0, 1.0);
+  int cardsPlayed = 0;
+  moveType playedMoves[4];
   trackType track = {};
   static relRanksType relTable[8192];
+  if (prob(g) < 0.30) {
+      std::uniform_int_distribution<int> cardsDist(1, 3);
+      cardsPlayed = cardsDist(g);
+
+      // Choose a lead hand and then generate played moves in order from lead
+      std::uniform_int_distribution<int> leadDist(0, 3);
+      int leadHand = leadDist(g);
+      int nextHand = leadHand;
+
+      for (int p = 0; p < cardsPlayed; ++p) {
+        // pick a random suit where that hand has at least one card
+        std::vector<int> suitsWithCard;
+        for (int s = 0; s < DDS_SUITS; ++s) {
+          if (tpos.rankInSuit[nextHand][s]) suitsWithCard.push_back(s);
+        }
+        if (suitsWithCard.empty()) {
+          // fallback: pick any suit
+          playedMoves[p].suit = p % DDS_SUITS;
+          playedMoves[p].rank = 1;
+        } else {
+          int sidx = suitsWithCard[g() % suitsWithCard.size()];
+          // pick highest available rank in that suit for that hand
+          unsigned short ris = tpos.rankInSuit[nextHand][sidx];
+          int pickRank = 1;
+          for (int r = 13; r >= 1; --r) if (ris & (1u << r)) { pickRank = r; break; }
+          playedMoves[p].suit = sidx;
+          playedMoves[p].rank = pickRank;
+        }
+        playedMoves[p].sequence = p + 1;
+        nextHand = (nextHand + 1) % 4;
+      }
+
+  // Initialize rel table and track using helper with mid-trick
+  init_rel_and_track(tpos, relTable, &track, cardsPlayed, playedMoves, /*leadHand*/0, /*trump*/1);
+    } else {
+      // No mid-trick
+      cardsPlayed = 0;
   init_rel_and_track(tpos, relTable, &track);
+    }
 
     std::string legacy;
     std::string neu;
@@ -108,7 +169,7 @@ TEST(FuzzDriver, RandomizedBatch) {
     bool okNew = true;
     try {
       set_use_new_heuristic(false);
-      legacy = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, &track);
+  legacy = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, &track, currTrick);
     } catch (...) {
       okLegacy = false;
     }
@@ -117,7 +178,7 @@ TEST(FuzzDriver, RandomizedBatch) {
 
     try {
       set_use_new_heuristic(true);
-      neu = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, &track);
+  neu = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, &track, currTrick);
     } catch (...) {
       okNew = false;
     }
