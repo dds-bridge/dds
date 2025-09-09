@@ -8,7 +8,7 @@
 */
 
 
-#include "Memory.h"
+#include "system/Memory.h"
 #include <iostream>
 #include <cstdlib>
 #include "trans_table/TransTableS.h"

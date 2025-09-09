@@ -12,7 +12,7 @@
 #include "SolverIF.h"
 #include "SolveBoard.h"
 #include "system/System.h"
-#include "Memory.h"
+#include "system/Memory.h"
 #include "system/Scheduler.h"
 #include "PBN.h"
 

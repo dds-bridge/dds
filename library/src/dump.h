@@ -12,7 +12,7 @@
 
 #include "dds/dds.h"
 #include "moves/Moves.h"
-#include "Memory.h"
+#include "system/Memory.h"
 
 int DumpInput(
   const int errCode,

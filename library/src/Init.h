@@ -11,7 +11,7 @@
 #define DDS_INIT_H
 
 #include "dds/dds.h"
-#include "Memory.h"
+#include "system/Memory.h"
 
 
 void SetDeal(ThreadData * thrp);
