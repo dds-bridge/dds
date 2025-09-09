@@ -12,19 +12,32 @@
 #include <string.h>
 
 #include "Init.h"
-#include "System.h"
-#include "Scheduler.h"
-#include "ThreadMgr.h"
+#include "system/System.h"
+#include "system/Scheduler.h"
+#include "system/ThreadMgr.h"
 #include "debug.h"
 #include "utility/Constants.h"
 #include "utility/LookupTables.h"
+#include "SolveBoard.h"
+#include "CalcTables.h"
+#include "PlayAnalyser.h"
 
-
-System sysdep;
+System sysdep(
+    &SolveChunkCommon,
+    &CalcChunkCommon,
+    &PlayChunkCommon,
+    &DetectSolveDuplicates,
+    &DetectCalcDuplicates,
+    &DetectPlayDuplicates,
+    &SolveSingleCommon,
+    &CalcSingleCommon,
+    &PlaySingleCommon,
+    &CopySolveSingle,
+    &CopyCalcSingle,
+    &CopyPlaySingle
+);
 Memory memory;
 Scheduler scheduler;
-ThreadMgr threadMgr;
-
 
 void InitDebugFiles();
 
@@ -132,7 +145,7 @@ void STDCALL SetResources(
     memory.Resize(static_cast<unsigned>(noOfThreads),
       DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
-  threadMgr.Reset(noOfThreads);
+  ThreadMgr::instance().Reset(noOfThreads);
 
   InitDebugFiles();
 
@@ -398,7 +411,69 @@ void ResetBestMoves(
 
 void STDCALL GetDDSInfo(DDSInfo * info)
 {
-  (void) sysdep.str(info);
+  stringstream ss;
+  ss << "DDS DLL\n-------\n";
+
+  const string strSystem = sysdep.GetSystem(info->system);
+  ss << left << setw(13) << "System" <<
+    setw(20) << right << strSystem << "\n";
+
+  const string strBits = sysdep.GetBits(info->numBits);
+  ss << left << setw(13) << "Word size" <<
+    setw(20) << right << strBits << "\n";
+
+  const string strCompiler =sysdep.GetCompiler(info->compiler);
+  ss << left << setw(13) << "Compiler" <<
+    setw(20) << right << strCompiler << "\n";
+
+  const string strConstructor = sysdep.GetConstructor(info->constructor);
+  ss << left << setw(13) << "Constructor" <<
+    setw(20) << right << strConstructor << "\n";
+
+  const string strVersion = sysdep.GetVersion(info->major,
+    info->minor, info->patch);
+  ss << left << setw(13) << "Version" <<
+    setw(20) << right << strVersion << "\n";
+  strcpy(info->versionString, strVersion.c_str());
+
+  ss << left << setw(17) << "Memory max (MB)" <<
+    setw(16) << right << sysdep.GetMemoryMax() << "\n";
+
+  const string stm = to_string(THREADMEM_SMALL_DEF_MB) + "-" + 
+    to_string(THREADMEM_SMALL_MAX_MB) + " / " +
+    to_string(THREADMEM_LARGE_DEF_MB) + "-" +
+    to_string(THREADMEM_LARGE_MAX_MB);
+  ss << left << setw(17) << "Threads (MB)" <<
+    setw(16) << right << stm << "\n";
+
+  info->numCores  = sysdep.GetCores();
+  ss << left << setw(17) << "Number of cores" <<
+    setw(16) << right << info->numCores << "\n";
+
+  info->noOfThreads = sysdep.GetNumThreads();
+  ss << left << setw(17) << "Number of threads" <<
+    setw(16) << right << sysdep.GetNumThreads() << "\n";
+
+  int l = 0, s = 0;
+  for (unsigned i = 0; i < static_cast<unsigned>(info->noOfThreads); i++)
+  {
+    if (memory.ThreadSize(i) == "S")
+      s++;
+    else
+      l++;
+  }
+
+  const string strThrSizes =  to_string(s) + " S, " + to_string(l) + " L";
+  strcpy(info->threadSizes, strThrSizes.c_str());
+  ss << left << setw(13) << "Thread sizes" <<
+    setw(20) << right << strThrSizes << "\n";
+
+  const string strThreading =  sysdep.GetThreading(info->threading);
+  ss << left << setw(9) << "Threading" <<
+    setw(24) << right << strThreading << "\n";
+
+  const string st = ss.str();
+  strcpy(info->systemString, st.c_str());
 }
 
 

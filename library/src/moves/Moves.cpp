@@ -226,6 +226,10 @@ int Moves::MoveGen0(
 
   list.current = 0;
   list.last = numMoves - 1;
+
+#ifdef DDS_SKIP_HEURISTIC
+  return numMoves;
+#endif
   if (numMoves != 1)
     Moves::MergeSort();
   return numMoves;
@@ -290,7 +294,9 @@ int Moves::MoveGen123(
     list.last = numMoves - 1;
     if (numMoves == 1)
       return numMoves;
-
+#ifdef DDS_SKIP_HEURISTIC
+  return numMoves;
+#endif
 #ifdef DDS_USE_NEW_HEURISTIC
     Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
 #else
@@ -344,6 +350,9 @@ int Moves::MoveGen123(
 
   list.current = 0;
   list.last = numMoves - 1;
+#ifdef DDS_SKIP_HEURISTIC
+    return numMoves;
+#endif
   if (numMoves != 1)
     Moves::MergeSort();
   return numMoves;

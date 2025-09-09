@@ -16,6 +16,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 #include "dds/dds.h"
 
@@ -50,10 +51,10 @@ class System
 
     vector<bool> availableSystem;
 
-    vector<fptrType> CallbackSimpleList;
-    vector<fduplType> CallbackDuplList;
-    vector<fsingleType> CallbackSingleList;
-    vector<fcopyType> CallbackCopyList;
+    array<fptrType, DDS_RUN_SIZE> CallbackSimpleList;
+    array<fduplType, DDS_RUN_SIZE> CallbackDuplList;
+    array<fsingleType, DDS_RUN_SIZE> CallbackSingleList;
+    array<fcopyType, DDS_RUN_SIZE> CallbackCopyList;
 
     typedef int (System::*RunPtr)();
     vector<RunPtr> RunPtrList;
@@ -71,6 +72,8 @@ class System
     int RunThreadsTBB();
     int RunThreadsSTLIMPL();
     int RunThreadsPPLIMPL();
+  
+    public:
 
     string GetVersion(
       int& major,
@@ -79,20 +82,32 @@ class System
     string GetSystem(int& sys) const;
     string GetBits(int& bits) const;
     string GetCompiler(int& comp) const;
-    string GetCores(int& comp) const;
+    int GetCores() const;
     string GetConstructor(int& cons) const;
     string GetThreading(int& thr) const;
-    string GetThreadSizes(char * c) const;
+    int GetMemoryMax() const { return sysMem_MB; }
+    int GetNumThreads() const { return numThreads; }
 
-
-  public:
     /**
      * @brief Construct a new System object.
      *
      * Initializes system-dependent state, threading, and memory management for
      * the double dummy solver.
      */
-    System();
+    System(
+      fptrType solve_chunk_common,
+      fptrType calc_chunk_common,
+      fptrType play_chunk_common,
+      fduplType detect_solve_duplicates,
+      fduplType detect_calc_duplicates,
+      fduplType detect_play_duplicates,
+      fsingleType solve_single_common,
+      fsingleType calc_single_common,
+      fsingleType play_single_common,
+      fcopyType copy_solve_single,
+      fcopyType copy_calc_single,
+      fcopyType copy_play_single
+    );
 
     /**
      * @brief Destroy the System object and clean up resources.
@@ -124,8 +139,6 @@ class System
     int PreferThreading(const unsigned code);
 
     int RunThreads();
-
-    string str(DDSInfo * info) const;
 };
 
 #endif

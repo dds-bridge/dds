@@ -10,9 +10,9 @@
 
 #include "SolverIF.h"
 #include "SolveBoard.h"
-#include "System.h"
-#include "Memory.h"
-#include "Scheduler.h"
+#include "system/System.h"
+#include "system/Memory.h"
+#include "system/Scheduler.h"
 #include "PBN.h"
 #include "debug.h"
 

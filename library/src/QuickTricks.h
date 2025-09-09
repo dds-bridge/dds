@@ -11,7 +11,7 @@
 #define DDS_QUICKTRICKS_H
 
 #include "dds/dds.h"
-#include "Memory.h"
+#include "system/Memory.h"
 
 
 int QuickTricks(

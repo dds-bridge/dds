@@ -13,19 +13,71 @@
 #include <sstream>
 #include <string.h>
 
-#include "SolveBoard.h"
-#include "CalcTables.h"
-#include "PlayAnalyser.h"
-#include "parallel.h"
 #include "System.h"
-#include "Memory.h"
 #include "Scheduler.h"
-#include "ThreadMgr.h"
 
 extern Scheduler scheduler;
-extern Memory memory;
-extern ThreadMgr threadMgr;
 
+// Boost: Disable some header warnings.
+
+#ifdef DDS_THREADS_BOOST
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4061 4191 4619 4623 5031)
+  #endif
+
+  #include <boost/thread.hpp>
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
+#endif
+
+#ifdef DDS_THREADS_GCD
+  #include <dispatch/dispatch.h>
+#endif
+
+#ifdef DDS_THREADS_STL
+  #include <thread>
+#endif
+
+#ifdef DDS_THREADS_STLIMPL
+  #include <execution>
+#endif
+
+#ifdef DDS_THREADS_PPLIMPL
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4355 4619 5038)
+  #endif
+
+  #include "ppl.h"
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
+#endif
+
+#ifdef DDS_THREADS_TBB
+  #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4574)
+  #endif 
+
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wold-style-cast"
+  #pragma GCC diagnostic ignored "-Wsign-conversion"
+  #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+
+  #include "tbb/tbb.h"
+  #include "tbb/tbb_thread.h"
+
+  #pragma GCC diagnostic pop
+
+  #ifdef _MSC_VER
+    #pragma warning(pop)
+  #endif
+#endif
 
 const vector<string> DDS_SYSTEM_PLATFORM =
 {
@@ -77,8 +129,49 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_SIZE 9
 
 
-System::System()
+System::System(
+    fptrType solve_chunk_common,
+    fptrType calc_chunk_common,
+    fptrType play_chunk_common,
+    fduplType detect_solve_duplicates,
+    fduplType detect_calc_duplicates,
+    fduplType detect_play_duplicates,
+    fsingleType solve_single_common,
+    fsingleType calc_single_common,
+    fsingleType play_single_common,
+    fcopyType copy_solve_single,
+    fcopyType copy_calc_single,
+    fcopyType copy_play_single
+)
 {
+  RunPtrList.resize(DDS_SYSTEM_THREAD_SIZE);
+  RunPtrList[DDS_SYSTEM_THREAD_BASIC] = &System::RunThreadsBasic; 
+  RunPtrList[DDS_SYSTEM_THREAD_WINAPI] = &System::RunThreadsWinAPI; 
+  RunPtrList[DDS_SYSTEM_THREAD_OPENMP] = &System::RunThreadsOpenMP; 
+  RunPtrList[DDS_SYSTEM_THREAD_GCD] = &System::RunThreadsGCD; 
+  RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
+  RunPtrList[DDS_SYSTEM_THREAD_STL] = &System::RunThreadsSTL; 
+  RunPtrList[DDS_SYSTEM_THREAD_TBB] = &System::RunThreadsTBB; 
+  RunPtrList[DDS_SYSTEM_THREAD_STLIMPL] = 
+    &System::RunThreadsSTLIMPL; 
+  RunPtrList[DDS_SYSTEM_THREAD_PPLIMPL] = 
+    &System::RunThreadsPPLIMPL; 
+
+  CallbackSimpleList[DDS_RUN_SOLVE] = solve_chunk_common;
+  CallbackSimpleList[DDS_RUN_CALC] = calc_chunk_common;
+  CallbackSimpleList[DDS_RUN_TRACE] = play_chunk_common;
+
+  CallbackDuplList[DDS_RUN_SOLVE] = detect_solve_duplicates;
+  CallbackDuplList[DDS_RUN_CALC] = detect_calc_duplicates;
+  CallbackDuplList[DDS_RUN_TRACE] = detect_play_duplicates;
+
+  CallbackSingleList[DDS_RUN_SOLVE] = solve_single_common;
+  CallbackSingleList[DDS_RUN_CALC] = calc_single_common;
+  CallbackSingleList[DDS_RUN_TRACE] = play_single_common;
+
+  CallbackCopyList[DDS_RUN_SOLVE] = copy_solve_single;
+  CallbackCopyList[DDS_RUN_CALC] = copy_calc_single;
+  CallbackCopyList[DDS_RUN_TRACE] = copy_play_single;
   System::Reset();
 }
 
@@ -140,39 +233,6 @@ void System::Reset()
       break;
     }
   }
-  
-  RunPtrList.resize(DDS_SYSTEM_THREAD_SIZE);
-  RunPtrList[DDS_SYSTEM_THREAD_BASIC] = &System::RunThreadsBasic; 
-  RunPtrList[DDS_SYSTEM_THREAD_WINAPI] = &System::RunThreadsWinAPI; 
-  RunPtrList[DDS_SYSTEM_THREAD_OPENMP] = &System::RunThreadsOpenMP; 
-  RunPtrList[DDS_SYSTEM_THREAD_GCD] = &System::RunThreadsGCD; 
-  RunPtrList[DDS_SYSTEM_THREAD_BOOST] = &System::RunThreadsBoost; 
-  RunPtrList[DDS_SYSTEM_THREAD_STL] = &System::RunThreadsSTL; 
-  RunPtrList[DDS_SYSTEM_THREAD_TBB] = &System::RunThreadsTBB; 
-  RunPtrList[DDS_SYSTEM_THREAD_STLIMPL] = 
-    &System::RunThreadsSTLIMPL; 
-  RunPtrList[DDS_SYSTEM_THREAD_PPLIMPL] = 
-    &System::RunThreadsPPLIMPL; 
-
-  CallbackSimpleList.resize(DDS_RUN_SIZE);
-  CallbackSimpleList[DDS_RUN_SOLVE] = SolveChunkCommon;
-  CallbackSimpleList[DDS_RUN_CALC] = CalcChunkCommon;
-  CallbackSimpleList[DDS_RUN_TRACE] = PlayChunkCommon;
-
-  CallbackDuplList.resize(DDS_RUN_SIZE);
-  CallbackDuplList[DDS_RUN_SOLVE] = DetectSolveDuplicates;
-  CallbackDuplList[DDS_RUN_CALC] = DetectCalcDuplicates;
-  CallbackDuplList[DDS_RUN_TRACE] = DetectPlayDuplicates;
-
-  CallbackSingleList.resize(DDS_RUN_SIZE);
-  CallbackSingleList[DDS_RUN_SOLVE] = SolveSingleCommon;
-  CallbackSingleList[DDS_RUN_CALC] = CalcSingleCommon;
-  CallbackSingleList[DDS_RUN_TRACE] = PlaySingleCommon;
-
-  CallbackCopyList.resize(DDS_RUN_SIZE);
-  CallbackCopyList[DDS_RUN_SOLVE] = CopySolveSingle;
-  CallbackCopyList[DDS_RUN_CALC] = CopyCalcSingle;
-  CallbackCopyList[DDS_RUN_TRACE] = CopyPlaySingle;
 }
 
 
@@ -181,8 +241,7 @@ void System::GetHardware(
   unsigned long long& kilobytesFree) const
 {
   kilobytesFree = 0;
-  ncores = 1;
-  (void) System::GetCores(ncores);
+  ncores = System::GetCores();
 
 #if defined(_WIN32) || defined(__CYGWIN__)
   // Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
@@ -493,7 +552,7 @@ int System::RunThreadsSTLIMPL()
   static atomic<int> thrIdNext = 0;
   bool err = false;
 
-  threadMgr.Reset(numThreads);
+  ThreadMgr::instance().Reset(numThreads);
 
   for_each(std::execution::par, uniques.begin(), uniques.end(),
     [&](int &bno)
@@ -503,14 +562,14 @@ int System::RunThreadsSTLIMPL()
     if (thrId == -1)
       thrId = thrIdNext++;
 
-    realThrId = threadMgr.Occupy(thrId);
+    realThrId = ThreadMgr::instance()::instance().Occupy(thrId);
 
     if (realThrId == -1)
       err = true;
     else
       (* CallbackSingleList[runCat])(realThrId, bno);
 
-    if (! threadMgr.Release(thrId))
+    if (! ThreadMgr::instance()::instance().Release(thrId))
       err = true;
   });
 
@@ -568,7 +627,7 @@ int System::RunThreadsPPLIMPL()
   static atomic<int> thrIdNext = 0;
   bool err = false, err2 = false;
 
-  threadMgr.Reset(numThreads);
+  ThreadMgr::instance().Reset(numThreads);
 
   Concurrency::parallel_for_each(uniques.begin(), uniques.end(),
     [&](int &bno)
@@ -578,14 +637,14 @@ int System::RunThreadsPPLIMPL()
     if (thrId == -1)
       thrId = thrIdNext++;
 
-    realThrId = threadMgr.Occupy(thrId);
+    realThrId = ThreadMgr::instance().Occupy(thrId);
 
     if (realThrId == -1)
       err = true;
     else
       (* CallbackSingleList[runCat])(realThrId, bno);
 
-    if (! threadMgr.Release(thrId))
+    if (! ThreadMgr::instance().Release(thrId))
       err2 = true;
   });
 
@@ -716,8 +775,9 @@ string System::GetConstructor(int& cons) const
 }
 
 
-string System::GetCores(int& cores) const
+int System::GetCores() const
 {
+  int cores = 0;
 #if defined(_WIN32) || defined(__CYGWIN__)
   SYSTEM_INFO sysinfo;
   GetSystemInfo(&sysinfo);
@@ -729,7 +789,7 @@ string System::GetCores(int& cores) const
   // TODO Think about thread::hardware_concurrency().
   // This should be standard in C++11.
 
-  return to_string(cores);
+  return cores;
 }
 
 
@@ -751,80 +811,3 @@ string System::GetThreading(int& thr) const
   }
   return st;
 }
-
-
-string System::GetThreadSizes(char * sizes) const
-{
-  int l = 0, s = 0;
-  for (unsigned i = 0; i < static_cast<unsigned>(numThreads); i++)
-  {
-    if (memory.ThreadSize(i) == "S")
-      s++;
-    else
-      l++;
-  }
-
-  const string st = to_string(s) + " S, " + to_string(l) + " L";
-  strcpy(sizes, st.c_str());
-  return st;
-}
-
-
-string System::str(DDSInfo * info) const
-{
-  stringstream ss;
-  ss << "DDS DLL\n-------\n";
-
-  const string strSystem = System::GetSystem(info->system);
-  ss << left << setw(13) << "System" <<
-    setw(20) << right << strSystem << "\n";
-
-  const string strBits = System::GetBits(info->numBits);
-  ss << left << setw(13) << "Word size" <<
-    setw(20) << right << strBits << "\n";
-
-  const string strCompiler = System::GetCompiler(info->compiler);
-  ss << left << setw(13) << "Compiler" <<
-    setw(20) << right << strCompiler << "\n";
-
-  const string strConstructor = System::GetConstructor(info->constructor);
-  ss << left << setw(13) << "Constructor" <<
-    setw(20) << right << strConstructor << "\n";
-
-  const string strVersion = System::GetVersion(info->major,
-    info->minor, info->patch);
-  ss << left << setw(13) << "Version" <<
-    setw(20) << right << strVersion << "\n";
-  strcpy(info->versionString, strVersion.c_str());
-
-  ss << left << setw(17) << "Memory max (MB)" <<
-    setw(16) << right << sysMem_MB << "\n";
-
-  const string stm = to_string(THREADMEM_SMALL_DEF_MB) + "-" + 
-    to_string(THREADMEM_SMALL_MAX_MB) + " / " +
-    to_string(THREADMEM_LARGE_DEF_MB) + "-" +
-    to_string(THREADMEM_LARGE_MAX_MB);
-  ss << left << setw(17) << "Threads (MB)" <<
-    setw(16) << right << stm << "\n";
-
-  System::GetCores(info->numCores);
-  ss << left << setw(17) << "Number of cores" <<
-    setw(16) << right << info->numCores << "\n";
-
-  info->noOfThreads = numThreads;
-  ss << left << setw(17) << "Number of threads" <<
-    setw(16) << right << numThreads << "\n";
-
-  const string strThrSizes = System::GetThreadSizes(info->threadSizes);
-  ss << left << setw(13) << "Thread sizes" <<
-    setw(20) << right << strThrSizes << "\n";
-
-  const string strThreading = System::GetThreading(info->threading);
-  ss << left << setw(9) << "Threading" <<
-    setw(24) << right << strThreading << "\n";
-
-  const string st = ss.str();
-  strcpy(info->systemString, st.c_str());
-  return st;
-}
-

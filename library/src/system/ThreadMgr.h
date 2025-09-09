@@ -33,14 +33,18 @@ class ThreadMgr
     unsigned numRealThreads;
     unsigned numMachineThreads;
 
-  public:
-
-    /**
+      /**
      * @brief Construct a new ThreadMgr object.
      *
      * Initializes thread tracking structures and prepares the manager for use.
      */
-    ThreadMgr();
+    ThreadMgr() : numRealThreads(0), numMachineThreads(0) {}
+    ThreadMgr(const ThreadMgr&) = delete;
+    ThreadMgr& operator=(const ThreadMgr&) = delete;
+
+    static ThreadMgr single_instance;
+
+  public:
 
     /**
      * @brief Destroy the ThreadMgr object and clean up resources.
@@ -48,6 +52,10 @@ class ThreadMgr
      * Releases all memory and performs cleanup of thread manager state.
      */
     ~ThreadMgr();
+
+    static ThreadMgr& instance() {
+        return single_instance;
+    };
 
     void Reset(const int nThreads);
 
