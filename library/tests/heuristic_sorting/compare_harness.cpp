@@ -17,23 +17,22 @@ class HeuristicSortingCompareFixture : public ::testing::Test {
   void TearDown() override {}
 
   std::string run_and_serialize(const pos& tpos, moveType* moves, int numMoves, int trump) {
-    moveType bestMove = {};
-    moveType bestMoveTT = {};
-    relRanksType thrp_rel[1] = {};
-    trackType track = {};
+  moveType bestMove = {};
+  moveType bestMoveTT = {};
+  relRanksType thrp_rel[1] = {};
+  trackType track = {};
 
-    auto start = std::chrono::high_resolution_clock::now();
-    CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel, moves, numMoves,
-                  0, trump, 0, &track, 1, 0, 0, 0);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> dur = end - start;
+  // Run heuristic (we keep timing locally but do not include it in the returned
+  // string so comparisons don't fail due to minor timing differences).
+  auto start = std::chrono::high_resolution_clock::now();
+  CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel, moves, numMoves,
+          0, trump, 0, &track, 1, 0, 0, 0);
+  auto end = std::chrono::high_resolution_clock::now();
+  (void)std::chrono::duration<double>(end - start);
 
-    std::string serialized = normalize_ordering(moves, numMoves, true);
-
-    // prepend timing info
-    std::ostringstream out;
-    out << "{\"time_s\":" << dur.count() << ",\"ordering\":" << serialized << "}";
-    return out.str();
+  // Return ordering only for stable comparisons.
+  std::string serialized = normalize_ordering(moves, numMoves, true);
+  return serialized;
   }
 };
 
