@@ -352,6 +352,7 @@ int Moves::MoveGen123(
         WeightFnc = WeightList[findex];
         (this->*WeightFnc)(tpos);
     }
+  }
 
   list.current = 0;
   list.last = numMoves - 1;

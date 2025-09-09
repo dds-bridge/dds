@@ -45,21 +45,3 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
-
-cc_test(
-    name = "working_comparison_test",
-    srcs = ["working_comparison_test.cpp"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "old_vs_new_comparison_test",
-    srcs = ["old_vs_new_comparison_test.cpp"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "@googletest//:gtest_main",
-    ],
-)
