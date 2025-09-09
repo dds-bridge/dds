@@ -12,12 +12,11 @@
 #include "heuristic_sorting/internal.h"
 #include "moves/Moves.h"
 
-static std::string run_and_serialize_once(const pos& tpos, const relRanksType* thrp_rel, moveType* moves, int numMoves, int trump, trackType* trackp, int currTrick) {
+static std::string run_and_serialize_once(const pos& tpos, const relRanksType* thrp_rel, moveType* moves, int numMoves, int trump, int suit, trackType* trackp, int currTrick, int currHand, int leadHand, int leadSuit) {
   moveType bestMove = {};
   moveType bestMoveTT = {};
-
   CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel, moves, numMoves,
-                0, trump, 0, trackp, currTrick, 0, 0, 0);
+                0, trump, suit, trackp, currTrick, currHand, leadHand, leadSuit);
   return normalize_ordering(moves, numMoves, true);
 }
 
@@ -123,14 +122,15 @@ TEST(FuzzDriver, RandomizedBatch) {
   moveType playedMoves[4];
   trackType track = {};
   static relRanksType relTable[8192];
+  int leadHand = 0;
   if (prob(g) < 0.30) {
       std::uniform_int_distribution<int> cardsDist(1, 3);
       cardsPlayed = cardsDist(g);
 
       // Choose a lead hand and then generate played moves in order from lead
-      std::uniform_int_distribution<int> leadDist(0, 3);
-      int leadHand = leadDist(g);
-      int nextHand = leadHand;
+  std::uniform_int_distribution<int> leadDist(0, 3);
+  leadHand = leadDist(g);
+  int nextHand = leadHand;
 
       for (int p = 0; p < cardsPlayed; ++p) {
         // pick a random suit where that hand has at least one card
@@ -155,13 +155,31 @@ TEST(FuzzDriver, RandomizedBatch) {
         nextHand = (nextHand + 1) % 4;
       }
 
-  // Initialize rel table and track using helper with mid-trick
-  init_rel_and_track(tpos, relTable, &track, cardsPlayed, playedMoves, /*leadHand*/0, /*trump*/1);
+  // Initialize rel table and track using helper with mid-trick (use chosen leadHand)
+  init_rel_and_track(tpos, relTable, &track, cardsPlayed, playedMoves, leadHand, /*trump*/1);
     } else {
       // No mid-trick
       cardsPlayed = 0;
-  init_rel_and_track(tpos, relTable, &track);
+  // choose a random leadHand when no mid-trick to vary positions
+  std::uniform_int_distribution<int> leadDist2(0,3);
+  leadHand = leadDist2(g);
+  init_rel_and_track(tpos, relTable, &track, 0, nullptr, leadHand, /*trump*/1);
     }
+
+    // Randomize currHand and suit to exercise following-hand logic as well
+    std::uniform_int_distribution<int> handDist(0,3);
+    int currHand = handDist(g);
+    // pick a leadSuit: prefer first played card suit when mid-trick, else random
+    int leadSuit = 0;
+    if (cardsPlayed > 0) leadSuit = playedMoves[0].suit;
+    else {
+      std::uniform_int_distribution<int> suitDist(0,3);
+      leadSuit = suitDist(g);
+    }
+
+    // choose a suit context for CallHeuristic (can be different from leadSuit)
+    std::uniform_int_distribution<int> suitCtx(0,3);
+    int suit = suitCtx(g);
 
     std::string legacy;
     std::string neu;
@@ -169,7 +187,7 @@ TEST(FuzzDriver, RandomizedBatch) {
     bool okNew = true;
     try {
       set_use_new_heuristic(false);
-  legacy = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, &track, currTrick);
+      legacy = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, suit, &track, currTrick, currHand, leadHand, leadSuit);
     } catch (...) {
       okLegacy = false;
     }
@@ -178,7 +196,7 @@ TEST(FuzzDriver, RandomizedBatch) {
 
     try {
       set_use_new_heuristic(true);
-  neu = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, &track, currTrick);
+      neu = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, suit, &track, currTrick, currHand, leadHand, leadSuit);
     } catch (...) {
       okNew = false;
     }
@@ -210,7 +228,12 @@ TEST(FuzzDriver, RandomizedBatch) {
   }
 
   std::cout << "Fuzz results: total=" << count << " matched=" << matched << " mismatched=" << mismatched << "\n";
-  EXPECT_EQ(0, mismatched) << "Found " << mismatched << " mismatches out of " << count << " cases";
+  if (mismatched > 0) {
+    std::cerr << "ERROR: Found " << mismatched << " mismatches out of " << count << " cases\n";
+    FAIL() << "Found " << mismatched << " mismatches out of " << count << " cases";
+  } else {
+    SUCCEED();
+  }
 #else
   GTEST_SKIP() << "Runtime toggling not available: build with --define=new_heuristic=true";
 #endif
