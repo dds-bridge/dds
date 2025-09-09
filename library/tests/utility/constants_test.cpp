@@ -112,13 +112,13 @@ TEST_F(ConstantsTest, CardHandValues) {
 // Test array bounds and properties
 TEST_F(ConstantsTest, ArraySizes) {
     // Test that arrays have expected sizes by accessing last valid element
-    EXPECT_NO_THROW(auto val = lho[3]);
-    EXPECT_NO_THROW(auto val = rho[3]);
-    EXPECT_NO_THROW(auto val = partner[3]);
-    EXPECT_NO_THROW(auto val = bitMapRank[15]);
-    EXPECT_NO_THROW(auto val = cardRank[15]);
-    EXPECT_NO_THROW(auto val = cardSuit[4]);
-    EXPECT_NO_THROW(auto val = cardHand[3]);
+    EXPECT_NO_THROW((void)lho[3]);
+    EXPECT_NO_THROW((void)rho[3]);
+    EXPECT_NO_THROW((void)partner[3]);
+    EXPECT_NO_THROW((void)bitMapRank[15]);
+    EXPECT_NO_THROW((void)cardRank[15]);
+    EXPECT_NO_THROW((void)cardSuit[4]);
+    EXPECT_NO_THROW((void)cardHand[3]);
 }
 
 TEST_F(ConstantsTest, BitMapRankUniqueness) {

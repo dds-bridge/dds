@@ -16,6 +16,7 @@ cc_library(
         "//library/src/utility:lookup_tables",
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
+        "//library/src/moves:moves",
     ],
 )
 
@@ -39,5 +40,6 @@ cc_library(
         "//library/src/utility:lookup_tables",
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
+        "//library/src/moves:moves",
     ],
 )

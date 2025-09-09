@@ -13,12 +13,8 @@
 #include <vector>
 
 #include "trans_table/TransTable.h"
-#include "trans_table/TransTableS.h"
-#include "trans_table/TransTableL.h"
+#include "moves/Moves.h"
 
-#include "Moves.h"
-#include "File.h"
-#include "debug.h"
 
 #ifdef DDS_AB_STATS
   #include "ABstats.h"
