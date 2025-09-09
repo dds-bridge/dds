@@ -13,12 +13,11 @@
 #include <vector>
 
 #include "trans_table/TransTable.h"
-#include "trans_table/TransTableS.h"
-#include "trans_table/TransTableL.h"
+// ...existing code...
 
-#include "Moves.h"
+#include "moves/Moves.h"
 #include "File.h"
-#include "debug.h"
+// debug.h is not required in this header; include it where needed in sources
 
 #ifdef DDS_AB_STATS
   #include "ABstats.h"

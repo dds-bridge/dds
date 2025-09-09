@@ -7,12 +7,10 @@
    See LICENSE and README.
 */
 
-#include <iostream>
-#include <sstream>
 #include <assert.h>
 
 #include "trans_table/TransTable.h"
-#include "Moves.h"
+#include "moves/Moves.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"
 #include "ABsearch.h"

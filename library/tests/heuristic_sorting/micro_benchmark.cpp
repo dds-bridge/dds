@@ -33,12 +33,12 @@ public:
         std::cout << "Warmup iterations: " << WARMUP_ITERATIONS << std::endl << std::endl;
 
         // Test each individual heuristic function
-        results.push_back(BenchmarkFunction("WeightAllocTrump0", [this](HeuristicContext& ctx) { WeightAllocTrump0(ctx); }));
-        results.push_back(BenchmarkFunction("WeightAllocNT0", [this](HeuristicContext& ctx) { WeightAllocNT0(ctx); }));
-        results.push_back(BenchmarkFunction("WeightAllocTrumpNotvoid1", [this](HeuristicContext& ctx) { WeightAllocTrumpNotvoid1(ctx); }));
-        results.push_back(BenchmarkFunction("WeightAllocNTNotvoid1", [this](HeuristicContext& ctx) { WeightAllocNTNotvoid1(ctx); }));
-        results.push_back(BenchmarkFunction("WeightAllocTrumpVoid1", [this](HeuristicContext& ctx) { WeightAllocTrumpVoid1(ctx); }));
-        results.push_back(BenchmarkFunction("WeightAllocNTVoid1", [this](HeuristicContext& ctx) { WeightAllocNTVoid1(ctx); }));
+    results.push_back(BenchmarkFunction("WeightAllocTrump0", [](HeuristicContext& ctx) { WeightAllocTrump0(ctx); }));
+    results.push_back(BenchmarkFunction("WeightAllocNT0", [](HeuristicContext& ctx) { WeightAllocNT0(ctx); }));
+    results.push_back(BenchmarkFunction("WeightAllocTrumpNotvoid1", [](HeuristicContext& ctx) { WeightAllocTrumpNotvoid1(ctx); }));
+    results.push_back(BenchmarkFunction("WeightAllocNTNotvoid1", [](HeuristicContext& ctx) { WeightAllocNTNotvoid1(ctx); }));
+    results.push_back(BenchmarkFunction("WeightAllocTrumpVoid1", [](HeuristicContext& ctx) { WeightAllocTrumpVoid1(ctx); }));
+    results.push_back(BenchmarkFunction("WeightAllocNTVoid1", [](HeuristicContext& ctx) { WeightAllocNTVoid1(ctx); }));
         
         return results;
     }

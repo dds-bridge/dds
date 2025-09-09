@@ -11,7 +11,7 @@
 #define DDS_DUMP_H
 
 #include "dds/dds.h"
-#include "Moves.h"
+#include "moves/Moves.h"
 #include "Memory.h"
 
 int DumpInput(

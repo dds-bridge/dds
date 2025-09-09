@@ -91,11 +91,11 @@ TEST_F(LookupTablesTest, GroupDataArray) {
     // Test that groupData array has valid moveGroupType entries
     for (int i = 0; i < 8192; i++) {
         // Test that we can access the struct members
-        EXPECT_NO_THROW(auto val = groupData[i].lastGroup);
-        EXPECT_NO_THROW(auto val = groupData[i].rank[0]);
-        EXPECT_NO_THROW(auto val = groupData[i].sequence[0]);
-        EXPECT_NO_THROW(auto val = groupData[i].fullseq[0]);
-        EXPECT_NO_THROW(auto val = groupData[i].gap[0]);
+    EXPECT_NO_THROW((void)groupData[i].lastGroup);
+    EXPECT_NO_THROW((void)groupData[i].rank[0]);
+    EXPECT_NO_THROW((void)groupData[i].sequence[0]);
+    EXPECT_NO_THROW((void)groupData[i].fullseq[0]);
+    EXPECT_NO_THROW((void)groupData[i].gap[0]);
     }
 }
 
@@ -123,8 +123,8 @@ TEST_F(LookupTablesTest, EmptySetHandling) {
     // Test that empty set (i=0) is handled correctly
     EXPECT_EQ(counttable[0], 0);
     // Other values for i=0 depend on implementation but should be well-defined
-    EXPECT_NO_THROW(auto val = highestRank[0]);
-    EXPECT_NO_THROW(auto val = lowestRank[0]);
+    EXPECT_NO_THROW((void)highestRank[0]);
+    EXPECT_NO_THROW((void)lowestRank[0]);
 }
 
 TEST_F(LookupTablesTest, FullSetHandling) {

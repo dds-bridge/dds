@@ -9,6 +9,10 @@
 
 
 #include "Memory.h"
+#include <iostream>
+#include <cstdlib>
+#include "trans_table/TransTableS.h"
+#include "trans_table/TransTableL.h"
 
 
 Memory::Memory()
