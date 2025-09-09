@@ -1,3 +1,5 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_test", "cc_binary")
 
 cc_test(
@@ -51,7 +53,21 @@ cc_test(
     srcs = ["compare_smoke.cpp", "test_utils.cpp", "test_utils.h"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "//library/src/moves",
+        "//library/src/moves:moves",
         "@googletest//:gtest_main",
     ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_test(
+    name = "compare_harness",
+    srcs = ["compare_harness.cpp", "test_utils.cpp", "test_utils.h"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
 )
