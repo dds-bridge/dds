@@ -7,7 +7,8 @@ cc_test(
     srcs = ["heuristic_sorting_test.cpp"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "@googletest//:gtest_main",
+    "@googletest//:gtest_main",
+    "//library/src/moves:moves",
     ],
 )
 
@@ -91,6 +92,18 @@ cc_test(
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
         "//library/src/moves:moves",
         "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_test(
+    name = "targeted_unit_tests",
+    srcs = ["targeted_unit_tests.cpp" , "test_utils.cpp", "test_utils.h"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+    "@googletest//:gtest_main",
+    "//library/src/moves:moves",
     ],
     copts = DDS_CPPOPTS,
     local_defines = DDS_LOCAL_DEFINES,
