@@ -7,7 +7,8 @@ cc_test(
     srcs = ["heuristic_sorting_test.cpp"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "@googletest//:gtest_main",
+    "@googletest//:gtest_main",
+    "//library/src/moves:moves",
     ],
 )
 
@@ -87,6 +88,42 @@ cc_test(
 cc_test(
     name = "fuzz_driver",
     srcs = ["fuzz_driver.cpp", "test_utils.cpp", "test_utils.h"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_test(
+    name = "targeted_unit_tests",
+    srcs = ["targeted_unit_tests.cpp" , "test_utils.cpp", "test_utils.h"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+    "@googletest//:gtest_main",
+    "//library/src/moves:moves",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_test(
+    name = "expanded_golden_tests",
+    srcs = ["expanded_golden_tests.cpp", "test_utils.cpp", "test_utils.h"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_test(
+    name = "partner_opponent_tests",
+    srcs = ["partner_opponent_tests.cpp", "test_utils.cpp", "test_utils.h"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
         "//library/src/moves:moves",
