@@ -1,3 +1,5 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_test", "cc_binary")
 
 cc_test(
@@ -47,19 +49,49 @@ cc_test(
 )
 
 cc_test(
-    name = "working_comparison_test",
-    srcs = ["working_comparison_test.cpp"],
+    name = "compare_smoke",
+    srcs = ["compare_smoke.cpp", "test_utils.cpp", "test_utils.h"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
         "@googletest//:gtest_main",
     ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
 )
 
 cc_test(
-    name = "old_vs_new_comparison_test",
-    srcs = ["old_vs_new_comparison_test.cpp"],
+    name = "compare_harness",
+    srcs = ["compare_harness.cpp", "test_utils.cpp", "test_utils.h"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
         "@googletest//:gtest_main",
     ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_test(
+    name = "canonical_cases",
+    srcs = ["canonical_cases_test.cpp", "test_utils.cpp", "test_utils.h"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_test(
+    name = "fuzz_driver",
+    srcs = ["fuzz_driver.cpp", "test_utils.cpp", "test_utils.h"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
 )

@@ -18,6 +18,13 @@
 
 using namespace std;
 
+#ifdef DDS_USE_NEW_HEURISTIC
+  bool set_use_new_heuristic(const bool val);
+  bool use_new_heuristic();
+#else
+ constexpr bool set_use_new_heuristic(const bool val) { return false; }
+ constexpr bool use_new_heuristic() { return false; }
+#endif
 
 enum MGtype
 {
@@ -47,7 +54,7 @@ enum MGtype
  */
 class Moves
 {
-  private:
+   public:
 
     int leadHand;
     int leadSuit;
@@ -160,7 +167,6 @@ class Moves
 
     string PrintFunctionTable(const moveStatsType& tablep) const;
 
-  public:
     /**
      * @brief Construct a new Moves object.
      *

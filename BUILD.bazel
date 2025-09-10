@@ -30,7 +30,7 @@ config_setting(
 
 config_setting(
     name = "new_heuristic",
-    define_values = {"use_new_heuristic": "true"},
+    define_values = {"new_heuristic": "true"},
 )
 
 config_setting(
