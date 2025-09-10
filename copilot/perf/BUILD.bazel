@@ -1,0 +1,10 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "weight_alloc_microbench",
+    srcs = ["weight_alloc_microbench.cpp", "fixtures.h"],
+    deps = [
+    "//library/src/moves:moves",
+    "//library/src/data_types:dds_types",
+    ],
+)
