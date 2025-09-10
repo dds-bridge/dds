@@ -4,6 +4,7 @@ name: CI – Linux
 on:
   pull_request:
     branches: [mn_main]
+  workflow_dispatch: {}
 
 jobs:
   build_and_test:
@@ -31,3 +32,57 @@ jobs:
       # 5️⃣ Run all tests
       - name: Run all tests
         run: bazelisk test //...
+  perf_sample:
+  name: Perf sampling (perf -> flamegraph)
+  runs-on: ubuntu-latest
+  if: ${{ github.event_name == 'workflow_dispatch' }}
+  needs: build_and_test
+  steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bazelisk
+        uses: bazel-contrib/setup-bazel@0.15.0
+
+      - name: Install perf and tools
+        run: |
+          sudo apt-get update
+          # Install perf (linux-tools) and other helpers
+          sudo apt-get install -y linux-tools-common linux-tools-$(uname -r) perf git perl
+
+      - name: Relax perf restrictions (may require sudo)
+        run: sudo sysctl -w kernel.perf_event_paranoid=-1 || true
+
+      - name: Build dtest with symbols
+        run: bazelisk build //library/tests:dtest -c opt --copt=-g --define=new_heuristic=true
+
+      - name: Run perf capture via helper script
+        run: |
+          chmod +x copilot/perf/run_sample.sh
+          ./copilot/perf/run_sample.sh --no-build --duration 30 --bench hands/list100.txt --name ci-linux || true
+
+      - name: Post-process perf data (if present)
+        run: |
+          set -euo pipefail
+          ARTDIR=copilot/perf/artifacts
+          # Find newest .data file
+          DATA=$(ls -t ${ARTDIR}/*.data 2>/dev/null | head -n1 || true)
+          if [ -n "${DATA}" ]; then
+            echo "Found perf data: ${DATA}"
+            PERF_SCRIPT_OUT="${DATA%.data}.perf"
+            echo "Converting perf.data -> perf script (${PERF_SCRIPT_OUT})"
+            perf script -i "${DATA}" > "${PERF_SCRIPT_OUT}"
+            echo "Generating flamegraph (requires network to clone FlameGraph)"
+            git clone https://github.com/brendangregg/FlameGraph.git /tmp/FlameGraph
+            /tmp/FlameGraph/stackcollapse-perf.pl "${PERF_SCRIPT_OUT}" > "${PERF_SCRIPT_OUT}.folded"
+            /tmp/FlameGraph/flamegraph.pl "${PERF_SCRIPT_OUT}.folded" > "${PERF_SCRIPT_OUT}.svg"
+            echo "Flamegraph generated: ${PERF_SCRIPT_OUT}.svg"
+          else
+            echo "No perf .data file found in ${ARTDIR}; skipping post-processing"
+          fi
+
+      - name: Upload perf artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-artifacts
+          path: copilot/perf/artifacts/
