@@ -17,7 +17,7 @@
 #include "heuristic_sorting/heuristic_sorting.h"
 
 #ifdef DDS_USE_NEW_HEURISTIC
-  static bool use_new_heuristic_flag = false;
+  static bool use_new_heuristic_flag = true;
   bool set_use_new_heuristic(const bool val) { 
     use_new_heuristic_flag = val; 
     return use_new_heuristic_flag;
