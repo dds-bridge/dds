@@ -55,15 +55,6 @@ TEST(TargetedUnitTests, GetTopNumberEdgeCases) {
   pos tpos = {};
   memset(&tpos, 0, sizeof(tpos));
 
-  // Prepare some dummy moves and call GetTopNumber via Moves wrapper
-  moveType moves[4];
-  for (int i = 0; i < 4; ++i) {
-    moves[i].suit = i % DDS_SUITS;
-    moves[i].rank = 14 - i;
-    moves[i].weight = 0;
-    moves[i].sequence = i + 1;
-  }
-
   int topNumber = -1;
   int mno = -1;
   // Build a small HeuristicContext for GetTopNumber
