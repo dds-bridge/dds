@@ -153,6 +153,15 @@ class Moves
       const moveType& bestMoveTT,
       const relRanksType thrp_rel[]);
 
+  // Logging helpers for external code to set the current board id
+  // so move logs include the originating board index.
+  static void set_moves_board_id(unsigned long id);
+  static unsigned long get_moves_board_id();
+  // Logging helper to attach the originating board PBN string
+  // so logs can be correlated to the original input easily.
+  static void set_moves_board_pbn(const string& pbn);
+  static const string& get_moves_board_pbn();
+
     void UpdateStatsEntry(
       moveStatsType& stat,
       const int findex,

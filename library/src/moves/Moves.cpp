@@ -12,6 +12,9 @@
 #include <sstream>
 #include <cstdio>
 #include <iostream>
+#include <cstdlib>
+#include <string>
+#include <fstream>
 
 #include "Moves.h"
 #include "heuristic_sorting/heuristic_sorting.h"
@@ -24,6 +27,80 @@
   }
   bool use_new_heuristic() { return use_new_heuristic_flag; }
 #endif
+
+  // Simple, environment-controlled logging for move lists and weights.
+  // Enable by setting DDS_LOG_MOVES=1 in the environment when running dtest.
+  static unsigned long moves_log_counter = 0;
+  static unsigned long moves_board_id = 0;
+  static std::string moves_board_pbn;
+
+  void Moves::set_moves_board_id(unsigned long id) { moves_board_id = id; }
+  unsigned long Moves::get_moves_board_id() { return moves_board_id; }
+
+  void Moves::set_moves_board_pbn(const string& pbn) { moves_board_pbn = pbn; }
+  const string& Moves::get_moves_board_pbn() { return moves_board_pbn; }
+
+  static std::ofstream moves_log_ofs;
+  static bool moves_log_file_opened = false;
+
+  static void LogMovesJSONL(const Moves &M, const pos &tpos, const char *stage)
+  {
+    if (std::getenv("DDS_LOG_MOVES") == nullptr) return;
+
+    ++moves_log_counter;
+    // Emit a single JSON object per line (JSONL). Keep it compact.
+    std::ostringstream oss;
+    oss << "{";
+    oss << "\"id\":" << moves_log_counter << ",";
+    oss << "\"board_id\":" << moves_board_id << ",";
+    oss << "\"variant\":\"" << (use_new_heuristic() ? "new" : "legacy") << "\",";
+    oss << "\"stage\":\"" << stage << "\",";
+    oss << "\"currTrick\":" << M.currTrick << ",";
+    oss << "\"currHand\":" << M.currHand << ",";
+    oss << "\"leadHand\":" << M.leadHand << ",";
+    oss << "\"leadSuit\":" << M.leadSuit << ",";
+    oss << "\"numMoves\":" << M.numMoves << ",";
+    // Include the raw PBN snippet if available. Escape double quotes and backslashes.
+    oss << "\"board_pbn\":\"";
+    for (char c : moves_board_pbn) {
+      if (c == '\\') oss << "\\\\";
+      else if (c == '"') oss << "\\\"";
+      else if (c == '\n') oss << "\\n";
+      else oss << c;
+    }
+    oss << "\",";
+    oss << "\"moves\":[";
+    for (int k = 0; k < M.numMoves; ++k)
+    {
+      const moveType &mv = M.mply[k];
+      if (k) oss << ",";
+      oss << "{";
+      oss << "\"idx\":" << k << ",";
+      oss << "\"suit\":" << mv.suit << ",";
+      oss << "\"rank\":" << mv.rank << ",";
+      oss << "\"seq\":" << mv.sequence << ",";
+      oss << "\"w\":" << mv.weight;
+      oss << "}";
+    }
+    oss << "]}";
+
+    // If DDS_MOVES_JSONL is set, append to that file to avoid stdout/stderr interleaving.
+    const char *path = std::getenv("DDS_MOVES_JSONL");
+    if (path != nullptr) {
+      if (!moves_log_file_opened) {
+        moves_log_ofs.open(path, std::ios::out | std::ios::app);
+        moves_log_file_opened = moves_log_ofs.is_open();
+      }
+      if (moves_log_file_opened) {
+        moves_log_ofs << oss.str() << '\n';
+        moves_log_ofs.flush();
+        return;
+      }
+    }
+
+    // Fallback to stdout if no file specified or opening failed.
+    std::cout << oss.str() << std::endl;
+  }
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
@@ -311,8 +388,13 @@ int Moves::MoveGen123(
     } else {
       (this->*WeightList[findex])(tpos);
     }
+  // Log before sorting (weights allocated)
+  LogMovesJSONL(*this, tpos, "pre-sort");
 
-    Moves::MergeSort();
+  Moves::MergeSort();
+
+  // Log after sorting (sorted order/weights)
+  LogMovesJSONL(*this, tpos, "post-sort");
     return numMoves;
   }
 
