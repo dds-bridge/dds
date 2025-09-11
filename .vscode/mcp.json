@@ -1,0 +1,44 @@
+{
+    "servers": {
+        "cpp": {
+            "type": "stdio",
+            "command": "${env:HOME}/go/bin/mcp-language-server",
+            "args": [
+                "-workspace",
+                "${workspaceFolder}",
+                "-lsp",
+                "/opt/homebrew/opt/llvm/bin/clangd",
+                "--",
+                "--compile-commands-dir=${workspaceFolder}"
+            ],
+            "env": {}
+        },
+        "git": {
+            "type": "stdio",
+            "command": "/opt/homebrew/bin/npx",
+            "args": [
+                "-y",
+                "@cyanheads/git-mcp-server@latest"
+            ],
+            "env": {
+                "MCP_LOG_LEVEL": "info",
+                "GIT_SIGN_COMMITS": "false"
+            }
+        },
+        "serena": {
+            "type": "stdio",
+            "command": "/opt/homebrew/bin/uv",
+            "args": [
+                "run",
+                "--directory",
+                "${env:HOME}/Source/Python/serena",
+                "serena",
+                "start-mcp-server",
+                "--project",
+                "${workspaceFolder}"
+            ],
+            "env": {}
+        }
+    },
+    "inputs": []
+}
