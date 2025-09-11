@@ -46,10 +46,6 @@ config_setting(
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-
-
-
-
 genrule(
     name = "doxygen_docs",
     srcs = ["Doxyfile"],

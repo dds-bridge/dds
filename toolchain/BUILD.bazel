@@ -1,0 +1,31 @@
+load(":brew_clang_cc_toolchain_config.bzl", "brew_clang_toolchain_config")
+
+filegroup(name = "empty")
+
+brew_clang_toolchain_config(
+    name = "brew_clang_cc_toolchain_config",
+    library_search_directories = ["/opt/homebrew/lib"],
+)
+
+cc_toolchain(
+    name = "cc_brew_clang_toolchain",
+    all_files = ":empty",
+    compiler_files = ":empty",
+    dwp_files = ":empty",
+    linker_files = ":empty",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    supports_param_files = 0,
+    toolchain_config = ":brew_clang_cc_toolchain_config",
+    toolchain_identifier = "brew_clang_toolchain",
+)
+
+toolchain(
+    name = "brew_clang_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:macos",
+    ],
+    toolchain_type = "@rules_cc//cc:toolchain_type",
+    toolchain = ":cc_brew_clang_toolchain",
+)
+
