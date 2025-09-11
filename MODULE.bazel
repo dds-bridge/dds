@@ -13,3 +13,5 @@ git_override(
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
     commit = "33658bab23a4858b513d767480b43d3d8fb6a3d1",
 )
+
+register_toolchains("//toolchain:brew_clang_toolchain")
