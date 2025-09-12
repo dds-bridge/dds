@@ -93,7 +93,6 @@ void CallHeuristic(
       case 15: WeightAllocTrumpVoid3(context); break; // handRel=3, void, trump
       default: 
           // Should not happen, but default to basic sorting
-          WeightAllocNT0(context);
           break;
   }
 }
