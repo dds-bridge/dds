@@ -55,3 +55,4 @@ xcuserdata/
 *.xcscmblueprint
 .Rproj.user
 .aider*
+copilot/perf/artifacts
