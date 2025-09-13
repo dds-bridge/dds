@@ -1,4 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 
 filegroup(
     name = "test_sources",
@@ -8,6 +9,9 @@ filegroup(
 cc_binary(
     name = "dtest",
     srcs = [":test_sources"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
     deps = [
         "//library/src:testable_dds",
         "//library/src/data_types:dds_types",

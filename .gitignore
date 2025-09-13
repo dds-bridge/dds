@@ -3,6 +3,7 @@
 !.vscode/launch.json
 !.vscode/c_cpp_properties.json
 !.vscode/mcp.json
+!.vscode/tasks.json
 
 # Prerequisites
 *.d
