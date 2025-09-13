@@ -35,65 +35,73 @@ void CallHeuristic(
       leadHand,
       leadSuit
   };
-  
-  // Inline SortMoves logic to eliminate function call overhead
+  // Forward to the context-taking overload which contains the actual
+  // heuristic logic. This keeps the old API for compatibility while
+  // enabling callers that can pre-construct a HeuristicContext to call
+  // the overload directly.
+  CallHeuristic(context);
+}
+
+// New overload: accepts a pre-built HeuristicContext. This contains the
+// same inline logic that used to be in the previous function body.
+void CallHeuristic(const HeuristicContext& context) {
   // Determine which position in trick (0=leading, 1-3=following)
   int handRel = 0;
   if (context.currHand != context.leadHand) {
-      // Calculate relative position: 1, 2, or 3 based on lead hand
-      handRel = (context.currHand + 4 - context.leadHand) % 4;
+    // Calculate relative position: 1, 2, or 3 based on lead hand
+    handRel = (context.currHand + 4 - context.leadHand) % 4;
   }
-  
+
   // Leading hand (handRel == 0) - MoveGen0 logic
   if (handRel == 0) {
-      // Check if trump game with trump winner available
-      bool trumpGame = (context.trump != DDS_NOTRUMP) && 
-                      (context.trump >= 0 && context.trump < DDS_SUITS) &&
-                      (tpos.winner[context.trump].rank != 0);
+    // Check if trump game with trump winner available
+    bool trumpGame = (context.trump != DDS_NOTRUMP) && 
+            (context.trump >= 0 && context.trump < DDS_SUITS) &&
+            (context.tpos.winner[context.trump].rank != 0);
       
-      if (trumpGame) {
-          WeightAllocTrump0(context);
-      } else {
-          WeightAllocNT0(context);
-      }
-      return;
+    if (trumpGame) {
+      WeightAllocTrump0(const_cast<HeuristicContext&>(context));
+    } else {
+      WeightAllocNT0(const_cast<HeuristicContext&>(context));
+    }
+    return;
   }
-  
+
   // Following hands (handRel 1-3) - MoveGen123 logic
   // Check trump game condition
   int ftest = ((context.trump != DDS_NOTRUMP) &&
-               (context.trump >= 0 && context.trump < DDS_SUITS) &&
-               (tpos.winner[context.trump].rank != 0) ? 1 : 0);
-  
+         (context.trump >= 0 && context.trump < DDS_SUITS) &&
+         (context.tpos.winner[context.trump].rank != 0) ? 1 : 0);
+
   // Check if current hand can follow suit (not void)
-  unsigned short ris = tpos.rankInSuit[context.currHand][context.leadSuit];
+  unsigned short ris = context.tpos.rankInSuit[context.currHand][context.leadSuit];
   bool canFollowSuit = (ris != 0);
-  
+
   // Calculate function index using same logic as original
   int findex;
   if (canFollowSuit) {
-      findex = 4 * handRel + ftest;
+    findex = 4 * handRel + ftest;
   } else {
-      findex = 4 * handRel + ftest + 2;
+    findex = 4 * handRel + ftest + 2;
   }
-  
+
   // Following hands function dispatch table (MoveGen123 logic)
   switch (findex) {
-      case 4:  WeightAllocNTNotvoid1(context); break;  // handRel=1, can follow, no trump
-      case 5:  WeightAllocTrumpNotvoid1(context); break;  // handRel=1, can follow, trump
-      case 6:  WeightAllocNTVoid1(context); break;  // handRel=1, void, no trump
-      case 7:  WeightAllocTrumpVoid1(context); break;  // handRel=1, void, trump
-      case 8:  WeightAllocNTNotvoid2(context); break;  // handRel=2, can follow, no trump
-      case 9:  WeightAllocTrumpNotvoid2(context); break;  // handRel=2, can follow, trump
-      case 10: WeightAllocNTVoid2(context); break; // handRel=2, void, no trump
-      case 11: WeightAllocTrumpVoid2(context); break; // handRel=2, void, trump
-      case 12: WeightAllocCombinedNotvoid3(context); break; // handRel=3, can follow, no trump
-      case 13: WeightAllocCombinedNotvoid3(context); break; // handRel=3, can follow, trump
-      case 14: WeightAllocNTVoid3(context); break; // handRel=3, void, no trump
-      case 15: WeightAllocTrumpVoid3(context); break; // handRel=3, void, trump
-      default: 
-          // Should not happen, but default to basic sorting
-          break;
+    case 4:  WeightAllocNTNotvoid1(const_cast<HeuristicContext&>(context)); break;  // handRel=1, can follow, no trump
+    case 5:  WeightAllocTrumpNotvoid1(const_cast<HeuristicContext&>(context)); break;  // handRel=1, can follow, trump
+    case 6:  WeightAllocNTVoid1(const_cast<HeuristicContext&>(context)); break;  // handRel=1, void, no trump
+    case 7:  WeightAllocTrumpVoid1(const_cast<HeuristicContext&>(context)); break;  // handRel=1, void, trump
+    case 8:  WeightAllocNTNotvoid2(const_cast<HeuristicContext&>(context)); break;  // handRel=2, can follow, no trump
+    case 9:  WeightAllocTrumpNotvoid2(const_cast<HeuristicContext&>(context)); break;  // handRel=2, can follow, trump
+    case 10: WeightAllocNTVoid2(const_cast<HeuristicContext&>(context)); break; // handRel=2, void, no trump
+    case 11: WeightAllocTrumpVoid2(const_cast<HeuristicContext&>(context)); break; // handRel=2, void, trump
+    case 12: WeightAllocCombinedNotvoid3(const_cast<HeuristicContext&>(context)); break; // handRel=3, can follow, no trump
+    case 13: WeightAllocCombinedNotvoid3(const_cast<HeuristicContext&>(context)); break; // handRel=3, can follow, trump
+    case 14: WeightAllocNTVoid3(const_cast<HeuristicContext&>(context)); break; // handRel=3, void, no trump
+    case 15: WeightAllocTrumpVoid3(const_cast<HeuristicContext&>(context)); break; // handRel=3, void, trump
+    default: 
+      // Should not happen, but default to basic sorting
+      break;
   }
 }
 
@@ -633,12 +641,10 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
 
 void WeightAllocNTNotvoid1(HeuristicContext& ctx)
 {
+  // Faithful port of Moves::WeightAllocNTNotvoid1(const pos& tpos)
   const pos& tpos = ctx.tpos;
-  const int suit = ctx.suit;
-  const int currHand = ctx.currHand;
   const int leadHand = ctx.leadHand;
   const int leadSuit = ctx.leadSuit;
-  const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
   const trackType* trackp = ctx.trackp;
@@ -646,42 +652,48 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
   const int partner_lh = partner[leadHand];
   const int rho_lh = rho[leadHand];
 
-  // FIX:
-  // Why the different penalties depending on partner?
+  // Original logic from Moves::WeightAllocNTNotvoid1
+  const int max3rd = highestRank[
+    tpos.rankInSuit[partner_lh][leadSuit]];
+  const int maxpd = highestRank[
+    tpos.rankInSuit[rho_lh][leadSuit] ];
 
-  if (tpos.rankInSuit[rho_lh][leadSuit] >
-      (tpos.rankInSuit[partner_lh][leadSuit] |
-       bitMapRank[trackp->move[0].rank]))
+  if (maxpd > trackp->move[0].rank && maxpd > max3rd)
   {
-    // Partner can win.
-    unsigned short suitCount = tpos.length[currHand][suit];
-    int suitAdd = (suitCount << 6) / 23;
-    // Discourage pitch from Kx or A stiff.
-    if (suitCount == 2 && tpos.secondBest[suit].hand == currHand)
-      suitAdd += -2;
-    else if (suitCount == 1 && tpos.winner[suit].hand == currHand)
-      suitAdd += -3;
-
-    for (int k = lastNumMoves; k < numMoves; k++)
-      mply[k].weight = -mply[k].rank + suitAdd;
+    // Partner can beat both opponents.
+    for (int k = 0; k < numMoves; k++)
+      mply[k].weight = -mply[k].rank;
   }
   else
   {
-    unsigned short suitCount = tpos.length[currHand][suit];
-    int suitAdd = (suitCount << 6) / 33;
+    int min3rd = lowestRank [
+                   tpos.rankInSuit[partner_lh][leadSuit]];
+    int minpd = lowestRank [
+                   tpos.rankInSuit[rho_lh][leadSuit] ];
 
-    // Discourage pitch from Kx.
-    if ((suitCount == 2) &&
-        (tpos.secondBest[suit].hand == currHand))
-      suitAdd += -6;
+    for (int k = 0; k < numMoves; k++)
+    {
+      int rRank = relRank[ tpos.aggr[leadSuit] ][mply[k].rank];
 
-    /* Discourage suit discard of highest card. */
-    else if ((suitCount == 1) &&
-             (tpos.winner[suit].hand == currHand))
-      suitAdd += -8;
+      if (mply[k].rank > trackp->move[0].rank && mply[k].rank > max3rd)
+        // We can beat both opponents.
+        mply[k].weight = 81 - mply[k].rank;
 
-    for (int k = lastNumMoves; k < numMoves; k++)
-      mply[k].weight = -mply[k].rank + suitAdd;
+      else if ((min3rd > mply[k].rank) || (minpd > mply[k].rank))
+        // Card can make no difference, so play very low.
+        mply[k].weight = -3 + rRank;
+
+      else if (mply[k].rank < trackp->move[0].rank)
+        // Can't beat the card led.
+        mply[k].weight = -11 + rRank;
+
+      else if (mply[k].sequence)
+        // Some willingness to split.
+        mply[k].weight = 10 + rRank;
+
+      else
+        mply[k].weight = 13 - mply[k].rank;
+    }
   }
 }
 void WeightAllocTrumpVoid1(HeuristicContext& ctx)
