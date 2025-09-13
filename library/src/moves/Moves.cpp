@@ -79,7 +79,7 @@
       oss << "\"suit\":" << mv.suit << ",";
       oss << "\"rank\":" << mv.rank << ",";
       oss << "\"seq\":" << mv.sequence << ",";
-      oss << "\"w\":" << mv.weight;
+      oss << "\"weight\":" << mv.weight;
       oss << "}";
     }
     oss << "]}";
