@@ -2108,24 +2108,25 @@ void Moves::CallHeuristic(
     const moveType& bestMove,
     const moveType& bestMoveTT,
     const relRanksType thrp_rel[]) {
-  
-  // Call the heuristic sorting library with full context
-  ::CallHeuristic(
-      tpos,
-      bestMove,
-      bestMoveTT,
-      thrp_rel,
-      mply,           // Current move array
-      numMoves,       // Number of moves generated so far
-      lastNumMoves,   // Number of moves before current suit
-      trump,          // Trump suit
-      suit,           // Current suit being processed (for MoveGen0)
-      trackp,         // Track information
-      currTrick,      // Current trick number
-      currHand,       // Current hand to play
-      leadHand,       // Hand that led to this trick
-      leadSuit        // Suit that was led (for MoveGen123)
-  );
+  // Construct context once here and call the context-taking overload.
+  HeuristicContext context{
+    tpos,
+    bestMove,
+    bestMoveTT,
+    thrp_rel,
+    mply,
+    numMoves,
+    lastNumMoves,
+    trump,
+    suit,
+    trackp,
+    currTrick,
+    currHand,
+    leadHand,
+    leadSuit
+  };
+
+  ::CallHeuristic(context);
 }
 
 void Moves::MergeSort()
