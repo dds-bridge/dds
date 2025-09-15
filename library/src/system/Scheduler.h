@@ -15,6 +15,10 @@
 
 #include "dds/dds.h"
 #include "Timer.h"
+// TimeStatList is required when DDS_SCHEDULER is enabled.
+#ifdef DDS_SCHEDULER
+#include "TimeStatList.h"
+#endif
 
 using namespace std;
 
@@ -145,15 +149,15 @@ class Scheduler
     int timeHistNT[10000];
     int timeHistSuit[10000];
 
-    TimeStatList timeStrain;
-    TimeStatList timeRepeat;
-    TimeStatList timeDepth;
-    TimeStatList timeStrength;
-    TimeStatList timeFanout;
-    TimeStatList timeThread;
-    TimeStatList timeGroupActualStrain;
-    TimeStatList timeGroupPredStrain;
-    TimeStatList timeGroupDiffStrain;
+  TimeStatList timeStrain;
+  TimeStatList timeRepeat;
+  TimeStatList timeDepth;
+  TimeStatList timeStrength;
+  TimeStatList timeFanout;
+  TimeStatList timeThread;
+  TimeStatList timeGroupActualStrain;
+  TimeStatList timeGroupPredStrain;
+  TimeStatList timeGroupDiffStrain;
 
     long long timeMax;
     long long blockMax;
@@ -204,6 +208,21 @@ class Scheduler
     schedType GetNumber(const int thrId);
 
     int NumGroups() const;
+
+  /**
+   * @brief Retrieve per-board raw times collected by the scheduler.
+   *
+   * Fills outVec with pairs (boardIndex, userTimeMs) for each board in
+   * the current run. This is intended for post-run reporting.
+   */
+  void GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const;
+
+  // Lightweight API to set a board's time in ms for reporting when
+  // full DDS_SCHEDULER timing is not enabled. Thread-safe for single-writer per-board.
+  void SetBoardTime(int boardIndex, int timeMs);
+
+    // Release timing storage early to avoid heavy destructor work at exit.
+    void ClearTiming();
 
 #ifdef DDS_SCHEDULER
     void StartThreadTimer(const int thrId);

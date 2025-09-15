@@ -9,6 +9,7 @@
 
 
 #include <iostream>
+#include <unistd.h>
 
 #include "dds/dll.h"
 #include "testcommon.h"
@@ -35,5 +36,6 @@ int main(int argc, char * argv[])
 
   realMain(argc, argv);
 
+  // Restore normal termination so destructors / atexit handlers run.
   exit(0);
 }

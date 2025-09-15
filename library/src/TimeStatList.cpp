@@ -23,11 +23,19 @@ TimeStatList::TimeStatList()
 
 TimeStatList::~TimeStatList()
 {
+  std::cerr << "[D] TimeStatList::~TimeStatList() start\n";
+  std::cerr << "[D] TimeStatList::~TimeStatList() end\n";
 }
 
 
 void TimeStatList::Reset()
 {
+}
+
+void TimeStatList::Clear()
+{
+  list.clear();
+  name.clear();
 }
 
 
