@@ -45,3 +45,14 @@ cc_library(
         "//library/src/system",
     ],
 )
+
+
+cc_library(
+    name = "timing",
+    srcs = ["TimeStatList.cpp"],
+    hdrs = ["TimeStatList.h", "TimeStat.h"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = ["//visibility:public"],
+)

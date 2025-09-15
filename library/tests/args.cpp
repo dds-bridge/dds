@@ -36,7 +36,7 @@ struct optEntry
   unsigned numArgs;
 };
 
-#define DTEST_NUM_OPTIONS 5
+#define DTEST_NUM_OPTIONS 6
 
 const optEntry optList[DTEST_NUM_OPTIONS] =
 {
@@ -44,7 +44,8 @@ const optEntry optList[DTEST_NUM_OPTIONS] =
   {"s", "solver", 1},
   {"t", "threading", 1},
   {"n", "numthr", 1},
-  {"m", "memory", 1}
+  {"m", "memory", 1},
+  {"r", "report", 0}
 };
 
 const vector<string> solverList =
@@ -100,6 +101,8 @@ void Usage(
     "\n" <<
     "-t, --threading t  Currently one of (case-insensitive):\n" <<
     "                   default, none, winapi, openmp, gcd, boost,\n" <<
+      "\n" <<
+      "-r, --report       Print per-board timings sorted by longest first.\n" <<
     "                   stl, tbb, stlimpl, pplimpl.\n" <<
     "                   (Default: default meaning that DDS decides)\n" <<
     "\n" <<
@@ -170,6 +173,7 @@ void SetDefaults()
   options.threading = DTEST_THREADING_DEFAULT;
   options.numThreads = 0;
   options.memoryMB = 0;
+  options.reportSlowBoards = false;
 }
 
 
@@ -311,6 +315,10 @@ void ReadArgs(
           errFlag = true;
         }
         options.memoryMB = m;
+        break;
+
+      case 'r':
+        options.reportSlowBoards = true;
         break;
 
       default:

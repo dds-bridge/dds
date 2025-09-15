@@ -62,6 +62,8 @@ class TimeStatList
     bool Used() const;
 
     string List() const;
+  // Release stored data early to speed up shutdown.
+  void Clear();
 };
 
 #endif

@@ -8,8 +8,25 @@
 */
 
 #include <math.h>
+#include <iostream>
 
 #include "Scheduler.h"
+#include <fstream>
+#include <iomanip>
+#ifdef DDS_SCHEDULER
+#include "TimeStatList.h"
+
+// debug.h lives in the parent directory; some build configurations
+// may not expose it via include paths for this target. Provide
+// safe fallbacks for the scheduler filename macros if they are
+// not already defined by debug.h.
+#ifndef DDS_SCHEDULER_PREFIX
+#define DDS_SCHEDULER_PREFIX "sched"
+#endif
+#ifndef DDS_DEBUG_SUFFIX
+#define DDS_DEBUG_SUFFIX ".txt"
+#endif
+#endif
 
 
 Scheduler::Scheduler()
@@ -64,12 +81,24 @@ void Scheduler::InitHighCards()
 #ifdef DDS_SCHEDULER
 void Scheduler::InitTimes()
 {
+  // Initialize TimeStatList members
+  timeStrain.Reset();
+  timeRepeat.Reset();
+  timeDepth.Reset();
+  timeStrength.Reset();
+  timeFanout.Reset();
+  timeThread.Reset();
+
   timeStrain.Init("Suit/NT", 2);
   timeRepeat.Init("Repeat number", 16);
   timeDepth.Init("Trace depth", 60);
   timeStrength.Init("Evenness", 60);
   timeFanout.Init("Fanout", 100);
   timeThread.Init("Threads", numThreads);
+
+  timeGroupActualStrain.Reset();
+  timeGroupPredStrain.Reset();
+  timeGroupDiffStrain.Reset();
 
   timeGroupActualStrain.Init("Group actual suit/NT", 2);
   timeGroupPredStrain.Init("Group predicted suit/NT", 2);
@@ -83,6 +112,26 @@ void Scheduler::InitTimes()
 
 Scheduler::~Scheduler()
 {
+  std::cerr << "[D] Scheduler::~Scheduler() start\n";
+  // No dynamic cleanup required for TimeStatList members
+  std::cerr << "[D] Scheduler::~Scheduler() end\n";
+}
+
+void Scheduler::ClearTiming()
+{
+#ifdef DDS_SCHEDULER
+  timeStrain.Clear();
+  timeRepeat.Clear();
+  timeDepth.Clear();
+  timeStrength.Clear();
+  timeFanout.Clear();
+  timeThread.Clear();
+  timeGroupActualStrain.Clear();
+  timeGroupPredStrain.Clear();
+  timeGroupDiffStrain.Clear();
+#else
+  // Nothing to do if scheduler timing not compiled in; ensure hands[] times are untouched.
+#endif
 }
 
 
@@ -846,12 +895,12 @@ void Scheduler::EndBlockTimer()
       TimeStat ts;
       ts.Set(timeUser, timesq);
 
-      timeStrain.Add(hp->NTflag, ts);
-      timeRepeat.Add(hp->repeatNo, ts);
-      timeDepth.Add(hp->depth, ts);
-      timeStrength.Add(hp->strength, ts);
-      timeFanout.Add(hp->fanout, ts);
-      timeThread.Add(hp->thread, ts);
+        timeStrain.Add(hp->NTflag, ts);
+        timeRepeat.Add(hp->repeatNo, ts);
+        timeDepth.Add(hp->depth, ts);
+        timeStrength.Add(hp->strength, ts);
+        timeFanout.Add(hp->fanout, ts);
+        timeThread.Add(hp->thread, ts);
     }
 
     if (timeUser > blockMax)
@@ -875,15 +924,15 @@ void Scheduler::EndBlockTimer()
 
     TimeStat ts;
 
-    ts.Set(group[g].actual);
-    timeGroupActualStrain.Add(NTflag, ts);
+  ts.Set(group[g].actual);
+  timeGroupActualStrain.Add(NTflag, ts);
 
-    ts.Set(group[g].pred);
-    timeGroupPredStrain.Add(NTflag, ts);
+  ts.Set(group[g].pred);
+  timeGroupPredStrain.Add(NTflag, ts);
 
-    int diff = group[g].actual - group[g].pred;
-    ts.Set(diff);
-    timeGroupDiffStrain.Add(NTflag, ts);
+  int diff = group[g].actual - group[g].pred;
+  ts.Set(diff);
+  timeGroupDiffStrain.Add(NTflag, ts);
   }
 
 
@@ -939,6 +988,26 @@ void Scheduler::PrintTiming() const
 }
 
 #endif // DDS_SCHEDULER
+
+void Scheduler::GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const
+{
+  outVec.clear();
+  for (int b = 0; b < numHands; b++)
+  {
+    const handType& hp = hands[b];
+    outVec.emplace_back(b, hp.time);
+  }
+}
+
+
+void Scheduler::SetBoardTime(int boardIndex, int timeMs)
+{
+  if (boardIndex < 0 || boardIndex >= MAXNOOFBOARDS) return;
+  // store in the hand time field; this is a lightweight fallback
+  // for when DDS_SCHEDULER isn't enabled. No locking required for
+  // single-writer per-board usage pattern from the solver threads.
+  hands[boardIndex].time = timeMs;
+}
 
 
 int Scheduler::PredictedTime(

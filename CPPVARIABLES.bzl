@@ -70,3 +70,15 @@ DDS_LINKOPTS = select({
     "//:debug_build_linux": [],
     "//conditions:default": [],
 })
+
+# Per-target define to enable scheduler timing when desired.
+# This variable returns ["DDS_SCHEDULER"] for macOS builds by default
+# and empty on other platforms. BUILD files may add it to their
+# local_defines to enable scheduler timing only for selected targets.
+DDS_SCHEDULER_DEFINE = select({
+    "//:build_macos": ["DDS_SCHEDULER"],
+    "//:debug_build_macos": ["DDS_SCHEDULER"],
+    "//:build_linux": [],
+    "//:debug_build_linux": [],
+    "//conditions:default": [],
+})

@@ -22,7 +22,9 @@ Memory::Memory()
 
 Memory::~Memory()
 {
+  std::cerr << "[D] Memory::~Memory() start\n";
   Memory::Resize(0, DDS_TT_SMALL, 0, 0);
+  std::cerr << "[D] Memory::~Memory() end\n";
 }
 
 

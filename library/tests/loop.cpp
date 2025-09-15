@@ -49,14 +49,7 @@ void loop_solve(
       bop->target[j] = -1;
       bop->solutions[j] = 3;
       bop->mode[j] = 1;
-  // Provide a stable board id for move logging
-  // The Moves logging helper expects a global id; set it here.
-  // ...existing code...
-  // Set board id = global index (i + j) and attach the original PBN string
-  // so the JSONL logs can be correlated back to the input board.
-  ::Moves::set_moves_board_id(static_cast<unsigned long>(i + j));
-  // deal_list[i+j].remainCards contains the PBN encoding for the deal.
-  ::Moves::set_moves_board_pbn(std::string(deal_list[i+j].remainCards));
+  // (no-op)
     }
 
     timer.start(count);

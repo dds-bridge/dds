@@ -47,6 +47,7 @@ struct OptionsType
   Threading threading;
   int numThreads;
   int memoryMB;
+  bool reportSlowBoards;
 };
 
 #endif
