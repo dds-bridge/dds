@@ -19,14 +19,15 @@
 #include "Moves.h"
 #include "heuristic_sorting/heuristic_sorting.h"
 
-#ifdef DDS_USE_NEW_HEURISTIC
-  static bool use_new_heuristic_flag = true;
-  bool set_use_new_heuristic(const bool val) { 
-    use_new_heuristic_flag = val; 
-    return use_new_heuristic_flag;
-  }
-  bool use_new_heuristic() { return use_new_heuristic_flag; }
-#endif
+// Compatibility stubs for runtime toggle (preserved for ABI/test harnesses).
+// These functions are no-ops: the codebase always uses the new heuristic.
+bool set_use_new_heuristic(const bool val) { (void)val; return true; }
+bool use_new_heuristic() { return true; }
+
+
+// Runtime heuristic toggle removed: always use the new heuristic implementation.
+// Keep compatible no-op runtime variables via explicit functions in Moves.h/cpp.
+
 
   // Simple, environment-controlled logging helpers (accessors kept for
   // external test harnesses). The detailed JSONL logger was removed
@@ -220,17 +221,10 @@ int Moves::MoveGen0(
       g--;
     }
 
-    if (ftest)
-      if (use_new_heuristic()) {
+    if (ftest) {
         Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
       } else {
-        Moves::WeightAllocTrump0(tpos, bestMove, bestMoveTT, thrp_rel);
-      }
-    else
-      if (use_new_heuristic()) {
         Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
-      } else {
-        Moves::WeightAllocNT0(tpos, bestMove, bestMoveTT, thrp_rel);
       }
   }
 
@@ -314,11 +308,7 @@ int Moves::MoveGen123(
 #ifdef DDS_SKIP_HEURISTIC
   return numMoves;
 #endif
-      if (use_new_heuristic()) {
-        Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
-      } else {
-        (this->*WeightList[findex])(tpos);
-      }
+      Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
 
     Moves::MergeSort();
     return numMoves;
@@ -356,13 +346,7 @@ int Moves::MoveGen123(
       g--;
     }
 
-    if (use_new_heuristic()) {
-        Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
-    } else {
-        WeightPtr WeightFnc;
-        WeightFnc = WeightList[findex];
-        (this->*WeightFnc)(tpos);
-    }
+    Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
   }
 
   list.current = 0;

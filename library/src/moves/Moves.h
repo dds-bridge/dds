@@ -18,12 +18,13 @@
 
 using namespace std;
 
-#ifdef DDS_USE_NEW_HEURISTIC
+#if 1
+  // Runtime compatibility stubs: keep these symbols stable so existing
+  // test harnesses that call `set_use_new_heuristic` / `use_new_heuristic`
+  // continue to link. The runtime toggle no longer affects behavior;
+  // the codebase always uses the new heuristic implementation.
   bool set_use_new_heuristic(const bool val);
   bool use_new_heuristic();
-#else
- constexpr bool set_use_new_heuristic(const bool val) { return false; }
- constexpr bool use_new_heuristic() { return false; }
 #endif
 
 enum MGtype
