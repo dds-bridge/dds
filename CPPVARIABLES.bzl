@@ -26,7 +26,7 @@ DDS_CPPOPTS = select({
     ],
     "//:build_linux": [
         "-O3",
-        "-fopenmp",
+        "-fPIC",
         "-std=c++20",
         "-Wpedantic",
         "-Wall",
@@ -35,7 +35,7 @@ DDS_CPPOPTS = select({
     "//:debug_build_linux": [
         "-g",
         "-O2",
-        "-fopenmp",
+        "-fPIC",
         "-std=c++20",
         "-Wpedantic",
         "-Wall",
