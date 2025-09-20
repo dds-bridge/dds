@@ -32,6 +32,9 @@ jobs:
       # 5️⃣ Run all tests
       - name: Run all tests
         run: bazelisk test //...
+
+      - name: Run all tests with scheduler enabled
+        run: bazelisk test //... --define=scheduler=true
   perf_sample:
     name: Perf sampling (perf -> flamegraph)
     runs-on: ubuntu-latest

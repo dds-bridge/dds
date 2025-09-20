@@ -43,6 +43,12 @@ config_setting(
     define_values = {"debug_all": "true"},
 )
 
+# Enable DDS_SCHEDULER via --define=scheduler=true
+config_setting(
+    name = "scheduler",
+    define_values = {"scheduler": "true"},
+)
+
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
