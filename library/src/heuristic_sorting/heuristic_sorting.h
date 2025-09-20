@@ -53,3 +53,9 @@ void CallHeuristic(
     int currHand,
     int leadHand,
     int leadSuit);
+
+// Overload that accepts a pre-built context to avoid repeated
+// aggregate construction at the call site. Callers that can
+// pre-construct a HeuristicContext should use this to reduce
+// per-call overhead in hot paths.
+void CallHeuristic(const HeuristicContext& context);

@@ -20,6 +20,14 @@ jobs:
       - name: Install Doxygen
         run: brew install doxygen
 
+      # Install clang 20
+      - name: Install Clang
+        run: brew install llvm@20
+
+      # Softlink llvm@20 to llvm
+      - name: Softlink Clang
+        run: ln -s /opt/homebrew/opt/llvm@20 /opt/homebrew/opt/llvm
+
       # Build everything
       - name: Build all targets
         run: bazelisk build //...

@@ -1,4 +1,4 @@
-load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
@@ -6,6 +6,7 @@ cc_library(
     srcs = glob(["*.cpp"]),
     hdrs = glob(["*.h"]),
     visibility = ["//visibility:public"],
+    includes = [".."],
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
@@ -16,5 +17,5 @@ cc_library(
     include_prefix = "system",
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
 )

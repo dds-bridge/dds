@@ -20,6 +20,7 @@
 #include "loop.h"
 #include "print.h"
 #include "cst.h"
+#include "system/Scheduler.h"
 
 using namespace std;
 
@@ -49,6 +50,7 @@ const vector<string> DDS_SYSTEM_COMPILER =
 
 extern OptionsType options;
 TestTimer timer;
+extern Scheduler scheduler;
 
 
 void main_identify();
@@ -140,6 +142,28 @@ int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
 
   timer.printHands();
 
+  if (options.reportSlowBoards)
+  {
+    std::vector<std::pair<int,int>> times;
+    scheduler.GetBoardTimes(times);
+    if (times.empty())
+    {
+      cout << "Per-board timing data not available. Rebuild with DDS_SCHEDULER enabled to collect per-board timings." << std::endl;
+    }
+    else
+    {
+      // Sort by time desc
+      std::sort(times.begin(), times.end(), [](const auto &a, const auto &b){
+        return a.second > b.second;
+      });
+
+      cout << "Per-board timings (ms) sorted by longest first:\n";
+      for (const auto &p : times)
+        cout << p.second << "\t" << p.first << "\n";
+      cout << endl;
+    }
+  }
+
   free(dealer_list);
   free(vul_list);
   free(deal_list);
@@ -149,6 +173,9 @@ int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   free(dealerpar_list);
   free(play_list);
   free(trace_list);
+
+  // Release heavy timing storage before program exit to avoid long destructor work.
+  scheduler.ClearTiming();
 
   return (0);
 }

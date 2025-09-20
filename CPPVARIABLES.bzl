@@ -70,3 +70,11 @@ DDS_LINKOPTS = select({
     "//:debug_build_linux": [],
     "//conditions:default": [],
 })
+
+# Per-target define to enable scheduler timing when desired.
+# Controlled with: --define=scheduler=true
+# Usage in BUILD files: local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE
+DDS_SCHEDULER_DEFINE = select({
+    "//:scheduler": ["DDS_SCHEDULER"],
+    "//conditions:default": [],
+})

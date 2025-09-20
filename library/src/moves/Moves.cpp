@@ -12,6 +12,9 @@
 #include <sstream>
 #include <cstdio>
 #include <iostream>
+#include <cstdlib>
+#include <string>
+#include <fstream>
 
 #include "Moves.h"
 #include "heuristic_sorting/heuristic_sorting.h"
@@ -24,6 +27,11 @@
   }
   bool use_new_heuristic() { return use_new_heuristic_flag; }
 #endif
+
+  // Simple, environment-controlled logging helpers (accessors kept for
+  // external test harnesses). The detailed JSONL logger was removed
+  // after parity verification, only the board id/pbn accessors remain.
+  // (move-logging removed)
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
@@ -306,11 +314,11 @@ int Moves::MoveGen123(
 #ifdef DDS_SKIP_HEURISTIC
   return numMoves;
 #endif
-    if (use_new_heuristic()) {
-      Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
-    } else {
-      (this->*WeightList[findex])(tpos);
-    }
+      if (use_new_heuristic()) {
+        Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
+      } else {
+        (this->*WeightList[findex])(tpos);
+      }
 
     Moves::MergeSort();
     return numMoves;
@@ -2026,24 +2034,25 @@ void Moves::CallHeuristic(
     const moveType& bestMove,
     const moveType& bestMoveTT,
     const relRanksType thrp_rel[]) {
-  
-  // Call the heuristic sorting library with full context
-  ::CallHeuristic(
-      tpos,
-      bestMove,
-      bestMoveTT,
-      thrp_rel,
-      mply,           // Current move array
-      numMoves,       // Number of moves generated so far
-      lastNumMoves,   // Number of moves before current suit
-      trump,          // Trump suit
-      suit,           // Current suit being processed (for MoveGen0)
-      trackp,         // Track information
-      currTrick,      // Current trick number
-      currHand,       // Current hand to play
-      leadHand,       // Hand that led to this trick
-      leadSuit        // Suit that was led (for MoveGen123)
-  );
+  // Construct context once here and call the context-taking overload.
+  HeuristicContext context{
+    tpos,
+    bestMove,
+    bestMoveTT,
+    thrp_rel,
+    mply,
+    numMoves,
+    lastNumMoves,
+    trump,
+    suit,
+    trackp,
+    currTrick,
+    currHand,
+    leadHand,
+    leadSuit
+  };
+
+  ::CallHeuristic(context);
 }
 
 void Moves::MergeSort()

@@ -153,6 +153,8 @@ class Moves
       const moveType& bestMoveTT,
       const relRanksType thrp_rel[]);
 
+  // (logging accessors removed)
+
     void UpdateStatsEntry(
       moveStatsType& stat,
       const int findex,

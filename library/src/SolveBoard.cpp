@@ -15,6 +15,7 @@
 #include "system/Scheduler.h"
 #include "PBN.h"
 #include "debug.h"
+#include <chrono>
 
 
 paramType param;
@@ -39,7 +40,11 @@ void SolveSingleCommon(
 {
   futureTricks fut;
 
+  // Fallback timing: measure per-board elapsed time (ms) even when
+  // DDS_SCHEDULER isn't enabled at compile time. This allows the
+  // dtest -r/--report option to print per-board timings.
   START_THREAD_TIMER(thrId);
+  auto t0 = std::chrono::steady_clock::now();
   int res = SolveBoard(
               param.bop->deals[bno],
               param.bop->target[bno],
@@ -47,7 +52,15 @@ void SolveSingleCommon(
               param.bop->mode[bno],
               &fut,
               thrId);
+  auto t1 = std::chrono::steady_clock::now();
   END_THREAD_TIMER(thrId);
+
+  // Compute elapsed milliseconds and publish to scheduler as a
+  // lightweight fallback. Scheduler will ignore or use this value
+  // when reporting if full DDS_SCHEDULER timing is not active.
+  auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  if (dur < 0) dur = 0;
+  scheduler.SetBoardTime(bno, static_cast<int>(dur));
 
   if (res == 1)
     param.solvedp->solvedBoard[bno] = fut;

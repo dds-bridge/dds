@@ -32,6 +32,7 @@ jobs:
       # 5️⃣ Run all tests
       - name: Run all tests
         run: bazelisk test //...
+
   perf_sample:
     name: Perf sampling (perf -> flamegraph)
     runs-on: ubuntu-latest

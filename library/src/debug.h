@@ -93,7 +93,7 @@
 #define DDS_MOVES_PREFIX "movestats"
 
 // Enables timing in the scheduler.
-// #define DDS_SCHEDULER
+// DDS_SCHEDULER is provided by the build system when enabled.
 #define DDS_SCHEDULER_PREFIX "sched"
 
 

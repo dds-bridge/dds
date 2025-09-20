@@ -16,6 +16,7 @@
 #include "TestTimer.h"
 #include "compare.h"
 #include "print.h"
+#include "moves/Moves.h"
 
 using namespace std;
 
@@ -48,6 +49,7 @@ void loop_solve(
       bop->target[j] = -1;
       bop->solutions[j] = 3;
       bop->mode[j] = 1;
+  // (no-op)
     }
 
     timer.start(count);
