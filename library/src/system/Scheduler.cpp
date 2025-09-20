@@ -111,11 +111,7 @@ void Scheduler::InitTimes()
 
 
 Scheduler::~Scheduler()
-{
-  std::cerr << "[D] Scheduler::~Scheduler() start\n";
-  // No dynamic cleanup required for TimeStatList members
-  std::cerr << "[D] Scheduler::~Scheduler() end\n";
-}
+{ }
 
 void Scheduler::ClearTiming()
 {

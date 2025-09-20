@@ -78,7 +78,7 @@ DDS_LINKOPTS = select({
 DDS_SCHEDULER_DEFINE = select({
     "//:build_macos": ["DDS_SCHEDULER"],
     "//:debug_build_macos": ["DDS_SCHEDULER"],
-    "//:build_linux": [],
-    "//:debug_build_linux": [],
+    "//:build_linux": ["DDS_SCHEDULER"],
+    "//:debug_build_linux": ["DDS_SCHEDULER"],
     "//conditions:default": [],
 })

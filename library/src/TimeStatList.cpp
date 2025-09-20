@@ -23,8 +23,7 @@ TimeStatList::TimeStatList()
 
 TimeStatList::~TimeStatList()
 {
-  std::cerr << "[D] TimeStatList::~TimeStatList() start\n";
-  std::cerr << "[D] TimeStatList::~TimeStatList() end\n";
+  TimeStatList::Clear();
 }
 
 
@@ -52,7 +51,11 @@ void TimeStatList::Add(
   const unsigned pos,
   const TimeStat& add)
 {
-  list[pos] += add;
+  if (pos < list.size()) {
+    list[pos] += add;
+  } else {
+    std::cerr << "[E] TimeStatList::Add(): pos " << pos << " out of range, size " << list.size() << "\n";
+  }    
 }
 
 
