@@ -352,25 +352,6 @@ void Moves::GetTopNumber(
 }
 
 
-
-/* WeightAllocNTNotvoid2 removed - replaced by new heuristic. */
-
-
-/* WeightAllocTrumpVoid2 removed - replaced by new heuristic. */
-
-
-/* WeightAllocNTVoid2 removed - replaced by new heuristic. */
-
-
-/* WeightAllocCombinedNotvoid3 removed - replaced by new heuristic. */
-
-
-/* WeightAllocTrumpVoid3 removed - replaced by new heuristic. */
-
-
-/* WeightAllocNTVoid3 removed - replaced by new heuristic. */
-
-
 inline bool Moves::WinningMove(
   const moveType& mvp1,
   const extCard& mvp2,
