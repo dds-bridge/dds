@@ -104,29 +104,9 @@ class Moves
     moveStatsType trickFuncSuitTable;
 
 
-    void WeightAllocTrump0(
-      const pos& tpos,
-      const moveType& bestMove,
-      const moveType& bestMoveTT,
-      const relRanksType thrp_rel[]);
-
-    void WeightAllocNT0(
-      const pos& tpos,
-      const moveType& bestMove,
-      const moveType& bestMoveTT,
-      const relRanksType thrp_rel[]);
-
-    void WeightAllocTrumpNotvoid1( const pos& tpos);
-    void WeightAllocNTNotvoid1(const pos& tpos);
-    void WeightAllocTrumpVoid1(const pos& tpos);
-    void WeightAllocNTVoid1(const pos& tpos);
-    void WeightAllocTrumpNotvoid2(const pos& tpos);
-    void WeightAllocNTNotvoid2(const pos& tpos);
-    void WeightAllocTrumpVoid2(const pos& tpos);
-    void WeightAllocNTVoid2(const pos& tpos);
-    void WeightAllocCombinedNotvoid3(const pos& tpos);
-    void WeightAllocTrumpVoid3(const pos& tpos);
-    void WeightAllocNTVoid3(const pos& tpos);
+    // Legacy WeightAlloc* functions removed: the new heuristic is the canonical
+    // implementation. If external code relied on the symbols, thin wrappers
+    // were previously present; they have been removed to simplify the codebase.
 
     void GetTopNumber(
       const int ris,

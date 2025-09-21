@@ -98,20 +98,9 @@ Moves::Moves()
     trickFuncSuitTable.list[i].count = 0;
   }
 
-  WeightList[ 4] = &Moves::WeightAllocNTNotvoid1;
-  WeightList[ 5] = &Moves::WeightAllocTrumpNotvoid1;
-  WeightList[ 6] = &Moves::WeightAllocNTVoid1;
-  WeightList[ 7] = &Moves::WeightAllocTrumpVoid1;
-
-  WeightList[ 8] = &Moves::WeightAllocNTNotvoid2;
-  WeightList[ 9] = &Moves::WeightAllocTrumpNotvoid2;
-  WeightList[10] = &Moves::WeightAllocNTVoid2;
-  WeightList[11] = &Moves::WeightAllocTrumpVoid2;
-
-  WeightList[12] = &Moves::WeightAllocCombinedNotvoid3;
-  WeightList[13] = &Moves::WeightAllocCombinedNotvoid3;
-  WeightList[14] = &Moves::WeightAllocNTVoid3;
-  WeightList[15] = &Moves::WeightAllocTrumpVoid3;
+  // Legacy WeightList entries cleared: use centralized heuristic dispatch.
+  for (int i = 4; i < 16; ++i)
+    WeightList[i] = nullptr;
 }
 
 
@@ -360,167 +349,25 @@ int Moves::MoveGen123(
 }
 
 
-void Moves::WeightAllocTrump0(
-  const pos& tpos,
-  const moveType& bestMove,
-  const moveType& bestMoveTT,
-  const relRanksType thrp_rel[])
-{
-  // Delegating wrapper: call the centralized heuristic with a constructed context.
-  HeuristicContext ctx{
-    tpos,
-    bestMove,
-    bestMoveTT,
-    thrp_rel,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocTrump0 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocNT0(
-  const pos& tpos,
-  const moveType& bestMove,
-  const moveType& bestMoveTT,
-  const relRanksType thrp_rel[])
-{
-  HeuristicContext ctx{
-    tpos,
-    bestMove,
-    bestMoveTT,
-    thrp_rel,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocNT0 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocTrumpNotvoid1(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocTrumpNotvoid1 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocNTNotvoid1(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocNTNotvoid1 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocTrumpVoid1(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocTrumpVoid1 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocNTVoid1(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocNTVoid1 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocTrumpNotvoid2(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocTrumpNotvoid2 removed - replaced by new heuristic. */
 
 
 int Moves::RankForcesAce(
@@ -596,136 +443,22 @@ void Moves::GetTopNumber(
 
 
 
-void Moves::WeightAllocNTNotvoid2(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocNTNotvoid2 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocTrumpVoid2(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocTrumpVoid2 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocNTVoid2(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocNTVoid2 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocCombinedNotvoid3(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocCombinedNotvoid3 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocTrumpVoid3(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocTrumpVoid3 removed - replaced by new heuristic. */
 
 
-void Moves::WeightAllocNTVoid3(const pos& tpos)
-{
-  HeuristicContext ctx{
-    tpos,
-    moveType{},
-    moveType{},
-    nullptr,
-    mply,
-    numMoves,
-    lastNumMoves,
-    trump,
-    suit,
-    trackp,
-    currTrick,
-    currHand,
-    leadHand,
-    leadSuit
-  };
-  ::CallHeuristic(ctx);
-}
+/* WeightAllocNTVoid3 removed - replaced by new heuristic. */
 
 
 inline bool Moves::WinningMove(
