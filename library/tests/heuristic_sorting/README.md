@@ -1,6 +1,6 @@
 Purpose
 
-Short notes and commands for running the heuristic-sorting test suite and related comparison/fuzz tools.
+Short notes and commands for running the heuristic-sorting test suite.
 
 Prerequisites
 
@@ -32,17 +32,6 @@ bazel test //library/tests/heuristic_sorting:targeted_unit_tests \
   \
   --nocache_test_results \
   --test_output=errors
-```
-
-Run the fuzz driver (tests are sandboxed so pass env via --test_env):
-
-```bash
-bazel test //library/tests/heuristic_sorting:fuzz_driver \
-  \
-  --nocache_test_results \
-  --test_output=errors \
-  --test_env=FUZZ_SEED=42 \
-  --test_env=FUZZ_ITER=1000
 ```
 
 Coverage notes
