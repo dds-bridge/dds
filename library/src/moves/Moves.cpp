@@ -21,8 +21,12 @@
 
 // Compatibility stubs for runtime toggle (preserved for ABI/test harnesses).
 // These functions are no-ops: the codebase always uses the new heuristic.
-bool set_use_new_heuristic(const bool val) { (void)val; return true; }
-bool use_new_heuristic() { return true; }
+// Runtime toggle functions `set_use_new_heuristic` / `use_new_heuristic`
+// have been removed. The new heuristic implementation in
+// `library/src/heuristic_sorting` is now the canonical path and is always
+// used. Tests and harnesses should not toggle this at runtime; if they do,
+// update them to remove the calls. Previously these were no-op stubs kept
+// for link-compatibility.
 
 
 // Runtime heuristic toggle removed: always use the new heuristic implementation.

@@ -58,14 +58,14 @@ TEST_F(HeuristicSortingCompareFixture, LegacyVsNewSinglePosition) {
   // The runtime toggle is retained as a no-op for compatibility; we call it
   // to preserve previous test behavior but the new heuristic is always used.
   // Compatibility call: this is a no-op in current builds.
-  set_use_new_heuristic(false);
+  // Runtime toggle removed; omitted previous call to set_use_new_heuristic(false).
   std::string legacy = run_and_serialize(tpos, moves, numMoves, 1);
 
   // Reset weights before rerunning
   for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
 
   // Compatibility call: this is a no-op in current builds.
-  set_use_new_heuristic(true);
+  // Runtime toggle removed; omitted previous call to set_use_new_heuristic(true).
   std::string neu = run_and_serialize(tpos, moves, numMoves, 1);
 
   if (legacy != neu) {

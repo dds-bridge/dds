@@ -51,12 +51,12 @@ TEST(CanonicalCases, AllMatchLegacyNew) {
       moves[i].sequence = i + 1;
     }
 
-  // Compatibility call: set_use_new_heuristic is a no-op and does not change behavior.
-  set_use_new_heuristic(false);
+  // Compatibility toggle removed: runtime toggle no longer exists. Previous
+  // call to set_use_new_heuristic(false) omitted.
   std::string legacy = run_and_serialize_once(tpos, moves, numMoves, 1);
   for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
   // Compatibility call: set_use_new_heuristic is a no-op and does not change behavior.
-  set_use_new_heuristic(true);
+  // set_use_new_heuristic(true);  // runtime toggle removed - build separate binaries with --define=new_heuristic=true/false to compare
   std::string neu = run_and_serialize_once(tpos, moves, numMoves, 1);
     if (legacy != neu) {
       // write diagnostics

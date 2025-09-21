@@ -73,7 +73,7 @@ bazel coverage //library/tests/heuristic_sorting:all \
 
 Notes and best practices
 
-The test package previously supported runtime toggling between legacy and new implementations when built with `--define=new_heuristic=true`. The new heuristic is now the default. A compatibility function `set_use_new_heuristic(...)` remains for existing test harnesses but is a no-op and does not change behavior.
+ The test package previously supported runtime toggling between legacy and new implementations when built with `--define=new_heuristic=true`. The new heuristic is now the default. Runtime toggling via `set_use_new_heuristic(...)` has been removed; update harnesses to run binaries built with the desired compile-time define instead.
 - Use `--test_output=all` when debugging tests to capture stdout from gtest.
 - Save golden outputs (normalize ordering JSON) under `build/compare-results` for triage when legacy vs new disagree.
 

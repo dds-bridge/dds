@@ -27,12 +27,12 @@ TEST(PartnerOpponent, LHO_has_singleton_and_top) {
   moveType bm = {}; moveType bmtt = {}; relRanksType rel[1] = {}; trackType track = {};
 
   // Compatibility call; no-op in current builds.
-  set_use_new_heuristic(false);
+  // Runtime toggle removed; omitted previous call to set_use_new_heuristic(false).
   CallHeuristic(tpos, bm, bmtt, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string legacy = normalize_ordering(moves, numMoves, true);
   for (int i=0;i<numMoves;++i) moves[i].weight = 0;
   // Compatibility call; no-op in current builds.
-  set_use_new_heuristic(true);
+  // Runtime toggle removed; omitted previous call to set_use_new_heuristic(true).
   CallHeuristic(tpos, bm, bmtt, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string neu = normalize_ordering(moves, numMoves, true);
   EXPECT_EQ(legacy, neu);
@@ -48,12 +48,12 @@ TEST(PartnerOpponent, Partner_has_second_highest) {
   moveType bm = {}; moveType bmtt = {}; relRanksType rel[1] = {}; trackType track = {};
 
   // Compatibility call; no-op in current builds.
-  set_use_new_heuristic(false);
+  // Runtime toggle removed; omitted previous call to set_use_new_heuristic(false).
   CallHeuristic(tpos, bm, bmtt, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string legacy = normalize_ordering(moves, numMoves, true);
   for (int i=0;i<numMoves;++i) moves[i].weight = 0;
   // Compatibility call; no-op in current builds.
-  set_use_new_heuristic(true);
+  // Runtime toggle removed; omitted previous call to set_use_new_heuristic(true).
   CallHeuristic(tpos, bm, bmtt, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string neu = normalize_ordering(moves, numMoves, true);
   EXPECT_EQ(legacy, neu);
@@ -69,12 +69,12 @@ TEST(PartnerOpponent, RHO_raises_and_wins) {
   moveType bm = {}; moveType bmtt = {}; relRanksType rel[1] = {}; trackType track = {};
 
   // Compatibility call; no-op in current builds.
-  set_use_new_heuristic(false);
+  // Runtime toggle removed; omitted previous call to set_use_new_heuristic(false).
   CallHeuristic(tpos, bm, bmtt, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string legacy = normalize_ordering(moves, numMoves, true);
   for (int i=0;i<numMoves;++i) moves[i].weight = 0;
   // Compatibility call; no-op in current builds.
-  set_use_new_heuristic(true);
+  // Runtime toggle removed; omitted previous call to set_use_new_heuristic(true).
   CallHeuristic(tpos, bm, bmtt, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string neu = normalize_ordering(moves, numMoves, true);
   EXPECT_EQ(legacy, neu);

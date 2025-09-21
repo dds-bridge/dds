@@ -185,7 +185,8 @@ TEST(FuzzDriver, RandomizedBatch) {
     bool okLegacy = true;
     bool okNew = true;
     try {
-      set_use_new_heuristic(false);
+  // Runtime toggle removed; omitted previous call to
+  // set_use_new_heuristic(false).
       legacy = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, suit, &track, currTrick, currHand, leadHand, leadSuit);
     } catch (...) {
       okLegacy = false;
@@ -194,7 +195,8 @@ TEST(FuzzDriver, RandomizedBatch) {
     for (int m = 0; m < numMoves; ++m) moves[m].weight = 0;
 
     try {
-      set_use_new_heuristic(true);
+  // Runtime toggle removed; omitted previous call to
+  // set_use_new_heuristic(true).
       neu = run_and_serialize_once(tpos, relTable, moves, numMoves, 1, suit, &track, currTrick, currHand, leadHand, leadSuit);
     } catch (...) {
       okNew = false;

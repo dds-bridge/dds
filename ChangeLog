@@ -254,7 +254,7 @@ Problem pointed out by John Goacher with missing par contract
 has been corrected.  
 
 Tuned code for increased performance, especially in function 
-MoveGen and in the WeightAlloc function.
+MoveGen and in the `\0` (migrated into library/src/heuristic_sorting; canonical API: CallHeuristic) function.
 
 
 Release Notes DDS 2.4.2
