@@ -18,17 +18,6 @@
 
 using namespace std;
 
-#if 1
-  // Runtime compatibility stubs: keep these symbols stable so existing
-  // test harnesses that call `set_use_new_heuristic` / `use_new_heuristic`
-  // continue to link. The runtime toggle no longer affects behavior;
-  // the codebase always uses the new heuristic implementation.
-  // runtime toggle removed: test harnesses should no longer call
-  // `set_use_new_heuristic` / `use_new_heuristic`. The new heuristic is the
-  // canonical implementation inside `library/src/heuristic_sorting` and is
-  // invoked via `CallHeuristic(...)`.
-#endif
-
 enum MGtype
 {
   MG_NT0 = 0,
@@ -105,18 +94,11 @@ class Moves
 
     moveStatsType trickFuncSuitTable;
 
-
-    // Legacy WeightAlloc* functions removed: the new heuristic is the canonical
-    // implementation. If external code relied on the symbols, thin wrappers
-    // were previously present; they have been removed to simplify the codebase.
-
     void GetTopNumber(
       const int ris,
       const int prank,
       int& topNumber,
       int& mno) const;
-
-    int RankForcesAce(int cards4th) const;
 
     typedef void (Moves::*WeightPtr)(const pos& tpos);
     WeightPtr WeightList[16];

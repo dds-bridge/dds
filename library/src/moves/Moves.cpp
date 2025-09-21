@@ -19,25 +19,6 @@
 #include "Moves.h"
 #include "heuristic_sorting/heuristic_sorting.h"
 
-// Compatibility stubs for runtime toggle (preserved for ABI/test harnesses).
-// These functions are no-ops: the codebase always uses the new heuristic.
-// Runtime toggle functions `set_use_new_heuristic` / `use_new_heuristic`
-// have been removed. The new heuristic implementation in
-// `library/src/heuristic_sorting` is now the canonical path and is always
-// used. Tests and harnesses should not toggle this at runtime; if they do,
-// update them to remove the calls. Previously these were no-op stubs kept
-// for link-compatibility.
-
-
-// Runtime heuristic toggle removed: always use the new heuristic implementation.
-// Keep compatible no-op runtime variables via explicit functions in Moves.h/cpp.
-
-
-  // Simple, environment-controlled logging helpers (accessors kept for
-  // external test harnesses). The detailed JSONL logger was removed
-  // after parity verification, only the board id/pbn accessors remain.
-  // (move-logging removed)
-
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
   const MGtype RegisterList[16] =
@@ -351,71 +332,6 @@ int Moves::MoveGen123(
     Moves::MergeSort();
   return numMoves;
 }
-
-
-/* WeightAllocTrump0 removed - replaced by new heuristic. */
-
-
-/* WeightAllocNT0 removed - replaced by new heuristic. */
-
-
-/* WeightAllocTrumpNotvoid1 removed - replaced by new heuristic. */
-
-
-/* WeightAllocNTNotvoid1 removed - replaced by new heuristic. */
-
-
-/* WeightAllocTrumpVoid1 removed - replaced by new heuristic. */
-
-
-/* WeightAllocNTVoid1 removed - replaced by new heuristic. */
-
-
-/* WeightAllocTrumpNotvoid2 removed - replaced by new heuristic. */
-
-
-int Moves::RankForcesAce(
-  const int cards4th) const
-{
-  // Figure out how high we have to play to force out the top.
-  const moveGroupType& mp = groupData[cards4th];
-
-  int g = mp.lastGroup;
-  int removed = static_cast<int>(trackp->removedRanks[leadSuit]);
-
-  while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
-    g--;
-
-  if (! g)
-    return -1;
-
-  // RHO's second-highest rank.
-  int secondRHO = (g == 0 ? 0 : mp.rank[g-1]);
-
-  if (secondRHO > trackp->move[1].rank)
-  {
-    // Try to force out the top as cheaply as possible.
-    int k = 0;
-    while (k < numMoves && mply[k].rank > secondRHO)
-      k++;
-
-    if (k)
-      return k - 1;
-  }
-  else if (trackp->high[1] == 1)
-  {
-    // Try to beat 2nd hand as cheaply as possible.
-    int k = 0;
-    while (k < numMoves && mply[k].rank > trackp->move[1].rank)
-      k++;
-
-    if (k)
-      return k - 1;
-  }
-
-  return -1;
-}
-
 
 void Moves::GetTopNumber(
   const int ris,

@@ -12,10 +12,10 @@ bazel build //library/src:dds
 ```
 Uses the original heuristic implementation embedded in moves.cpp.
 
-#### New Heuristic
+#### Heuristic Sorting
 The project uses the modular heuristic sorting library as the default implementation. The library target
 `//library/src/heuristic_sorting` is available and is included as a dependency by targets that need
-heuristic sorting. Build-time toggles that previously allowed switching implementations have been removed.
+heuristic sorting.
 
 ### Library Dependencies
 
