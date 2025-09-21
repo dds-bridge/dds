@@ -21,7 +21,6 @@ Run the whole heuristic-sorting test suite with the new heuristic and force test
 
 ```bash
 bazel test //library/tests/heuristic_sorting:all \
-  \
   --nocache_test_results \
   --test_output=errors
 ```
