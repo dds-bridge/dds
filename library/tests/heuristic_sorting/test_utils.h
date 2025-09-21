@@ -5,7 +5,7 @@
 #include "heuristic_sorting/heuristic_sorting.h"
 #include "dds/dds.h"
 
-std::string normalize_ordering(const moveType* moves, int numMoves, bool include_scores=false);
+std::string normalize_ordering(const moveType* moves, int numMoves, bool include_scores = false);
 
 // Initialize relRanks table and trackType based on a given pos (used by fuzz tests)
 // Optional: simulate a mid-trick state by providing the number of cards already
