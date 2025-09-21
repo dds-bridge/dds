@@ -82,12 +82,7 @@ Moves::Moves()
     trickFuncTable .list[i].count = 0;
     trickFuncSuitTable.list[i].count = 0;
   }
-
-  // Legacy WeightList entries cleared: use centralized heuristic dispatch.
-  for (int i = 4; i < 16; ++i)
-    WeightList[i] = nullptr;
 }
-
 
 Moves::~Moves()
 {

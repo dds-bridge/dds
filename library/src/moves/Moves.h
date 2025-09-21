@@ -100,9 +100,6 @@ class Moves
       int& topNumber,
       int& mno) const;
 
-    typedef void (Moves::*WeightPtr)(const pos& tpos);
-    WeightPtr WeightList[16];
-
     inline bool WinningMove(
       const moveType& mvp1,
       const extCard& mvp2,
