@@ -161,9 +161,6 @@ int Moves::MoveGen0(
     trackp->lowestWin[0][s] = 0;
   numMoves = 0;
 
-  bool ftest = ((trump != DDS_NOTRUMP) &&
-                (tpos.winner[trump].rank != 0));
-
   for (suit = 0; suit < DDS_SUITS; suit++)
   {
     unsigned short ris = tpos.rankInSuit[leadHand][suit];
@@ -190,14 +187,12 @@ int Moves::MoveGen0(
       g--;
     }
 
-    if (ftest) {
-        Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
-      } else {
-        Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
-      }
+    Moves::CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel);
   }
 
 #ifdef DDS_MOVES
+  bool ftest = ((trump != DDS_NOTRUMP) &&
+                (tpos.winner[trump].rank != 0));
   if (ftest)
     MG_REGISTER(MG_TRUMP0, 0);
   else
