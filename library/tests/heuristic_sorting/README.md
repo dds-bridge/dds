@@ -29,7 +29,6 @@ Run a single test target (faster iteration):
 
 ```bash
 bazel test //library/tests/heuristic_sorting:targeted_unit_tests \
-  \
   --nocache_test_results \
   --test_output=errors
 ```
