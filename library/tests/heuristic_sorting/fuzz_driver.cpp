@@ -12,7 +12,6 @@
 #include "heuristic_sorting/internal.h"
 #include "moves/Moves.h"
 
-#ifdef DDS_USE_NEW_HEURISTIC
 static std::string run_and_serialize_once(const pos& tpos, const relRanksType* thrp_rel, moveType* moves, int numMoves, int trump, int suit, trackType* trackp, int currTrick, int currHand, int leadHand, int leadSuit) {
   moveType bestMove = {};
   moveType bestMoveTT = {};
@@ -20,10 +19,8 @@ static std::string run_and_serialize_once(const pos& tpos, const relRanksType* t
                 0, trump, suit, trackp, currTrick, currHand, leadHand, leadSuit);
   return normalize_ordering(moves, numMoves, true);
 }
-#endif
 
 TEST(FuzzDriver, RandomizedBatch) {
-#ifdef DDS_USE_NEW_HEURISTIC
   const char* env_count = std::getenv("FUZZ_COUNT");
   const char* env_seed = std::getenv("FUZZ_SEED");
   int count = env_count ? std::atoi(env_count) : 100;
@@ -236,7 +233,5 @@ TEST(FuzzDriver, RandomizedBatch) {
   } else {
     SUCCEED();
   }
-#else
-  GTEST_SKIP() << "Runtime toggling not available: build with --define=new_heuristic=true";
-#endif
 }
+

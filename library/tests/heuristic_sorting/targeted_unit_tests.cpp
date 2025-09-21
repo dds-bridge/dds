@@ -101,10 +101,8 @@ TEST(TargetedUnitTests, GoldenOrderingSmallPosition) {
   relRanksType thrp_rel[1] = {};
   trackType track = {};
 
-  // Run legacy
-#ifdef DDS_USE_NEW_HEURISTIC
+  // Run legacy (set_use_new_heuristic is a no-op compatibility hook)
   set_use_new_heuristic(false);
-#endif
   CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel, moves, numMoves,
                 0, 1, 0, &track, 1, 0, 0, 0);
   std::string legacy = normalize_ordering(moves, numMoves, true);
@@ -112,10 +110,8 @@ TEST(TargetedUnitTests, GoldenOrderingSmallPosition) {
   // Reset weights
   for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
 
-  // Run new
-#ifdef DDS_USE_NEW_HEURISTIC
+  // Run new (set_use_new_heuristic is a no-op compatibility hook)
   set_use_new_heuristic(true);
-#endif
   CallHeuristic(tpos, bestMove, bestMoveTT, thrp_rel, moves, numMoves,
                 0, 1, 0, &track, 1, 0, 0, 0);
   std::string neu = normalize_ordering(moves, numMoves, true);

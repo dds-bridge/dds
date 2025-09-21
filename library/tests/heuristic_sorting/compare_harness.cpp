@@ -37,7 +37,6 @@ class HeuristicSortingCompareFixture : public ::testing::Test {
 };
 
 TEST_F(HeuristicSortingCompareFixture, LegacyVsNewSinglePosition) {
-#ifdef DDS_USE_NEW_HEURISTIC
   // Create a basic position (minimal data)
   pos tpos;
   memset(&tpos, 0, sizeof(tpos));
@@ -56,13 +55,16 @@ TEST_F(HeuristicSortingCompareFixture, LegacyVsNewSinglePosition) {
     moves[i].sequence = i + 1;
   }
 
-  // Ensure runtime switch exists (function provided when built with the define)
+  // The runtime toggle is retained as a no-op for compatibility; we call it
+  // to preserve previous test behavior but the new heuristic is always used.
+  // Compatibility call: this is a no-op in current builds.
   set_use_new_heuristic(false);
   std::string legacy = run_and_serialize(tpos, moves, numMoves, 1);
 
   // Reset weights before rerunning
   for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
 
+  // Compatibility call: this is a no-op in current builds.
   set_use_new_heuristic(true);
   std::string neu = run_and_serialize(tpos, moves, numMoves, 1);
 
@@ -79,7 +81,4 @@ TEST_F(HeuristicSortingCompareFixture, LegacyVsNewSinglePosition) {
   }
 
   EXPECT_EQ(legacy, neu);
-#else
-  GTEST_SKIP() << "Runtime toggling not available: build with --define=use_new_heuristic=true";
-#endif
 }

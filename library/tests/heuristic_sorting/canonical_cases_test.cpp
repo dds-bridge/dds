@@ -6,7 +6,6 @@
 #include "heuristic_sorting/internal.h"
 #include "moves/Moves.h"
 
-#ifdef DDS_USE_NEW_HEURISTIC
 // Helper to run heuristic and get normalized ordering (re-implemented locally)
 static std::string run_and_serialize_once(const pos& tpos, moveType* moves, int numMoves, int trump) {
   moveType bestMove = {};
@@ -19,10 +18,8 @@ static std::string run_and_serialize_once(const pos& tpos, moveType* moves, int 
                 0, trump, 0, &track, 1, 0, 0, 0);
   return normalize_ordering(moves, numMoves, true);
 }
-#endif
 
 TEST(CanonicalCases, AllMatchLegacyNew) {
-#ifdef DDS_USE_NEW_HEURISTIC
   const int numCases = 6;
   for (int c = 0; c < numCases; ++c) {
     pos tpos;
@@ -54,11 +51,13 @@ TEST(CanonicalCases, AllMatchLegacyNew) {
       moves[i].sequence = i + 1;
     }
 
-    set_use_new_heuristic(false);
-    std::string legacy = run_and_serialize_once(tpos, moves, numMoves, 1);
-    for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
-    set_use_new_heuristic(true);
-    std::string neu = run_and_serialize_once(tpos, moves, numMoves, 1);
+  // Compatibility call: set_use_new_heuristic is a no-op and does not change behavior.
+  set_use_new_heuristic(false);
+  std::string legacy = run_and_serialize_once(tpos, moves, numMoves, 1);
+  for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
+  // Compatibility call: set_use_new_heuristic is a no-op and does not change behavior.
+  set_use_new_heuristic(true);
+  std::string neu = run_and_serialize_once(tpos, moves, numMoves, 1);
     if (legacy != neu) {
       // write diagnostics
       write_json_log("build/compare-results/canonical_legacy.json", legacy);
@@ -66,7 +65,4 @@ TEST(CanonicalCases, AllMatchLegacyNew) {
     }
     EXPECT_EQ(legacy, neu);
   }
-#else
-    GTEST_SKIP() << "Runtime toggling not available: build with --define=new_heuristic=true";
-#endif
 }

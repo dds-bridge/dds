@@ -3,7 +3,8 @@
 #include "heuristic_sorting/heuristic_sorting.h"
 #include "heuristic_sorting/internal.h"
 
-// Declaration of runtime switch - available when built with DDS_USE_NEW_HEURISTIC
+// Declaration of runtime switch retained for compatibility; it's a no-op now and the
+// new heuristic is the default implementation.
 #include "moves/Moves.h"
 
 class HeuristicSortingCompareSmokeTest : public ::testing::Test {
