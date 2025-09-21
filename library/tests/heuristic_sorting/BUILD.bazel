@@ -21,14 +21,6 @@ cc_test(
     ],
 )
 
-cc_binary(
-    name = "micro_benchmark",
-    srcs = ["micro_benchmark.cpp"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-    ],
-)
-
 cc_test(
     name = "minimal_new_test",
     srcs = ["minimal_new_test.cpp"],
@@ -47,54 +39,6 @@ cc_test(
         "//library/src/data_types:dds_types",
         "@googletest//:gtest_main",
     ],
-)
-
-cc_test(
-    name = "compare_smoke",
-    srcs = ["compare_smoke.cpp", "test_utils.cpp", "test_utils.h"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "//library/src/moves:moves",
-        "@googletest//:gtest_main",
-    ],
-    copts = DDS_CPPOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
-)
-
-cc_test(
-    name = "compare_harness",
-    srcs = ["compare_harness.cpp", "test_utils.cpp", "test_utils.h"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "//library/src/moves:moves",
-        "@googletest//:gtest_main",
-    ],
-    copts = DDS_CPPOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
-)
-
-cc_test(
-    name = "canonical_cases",
-    srcs = ["canonical_cases_test.cpp", "test_utils.cpp", "test_utils.h"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "//library/src/moves:moves",
-        "@googletest//:gtest_main",
-    ],
-    copts = DDS_CPPOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
-)
-
-cc_test(
-    name = "fuzz_driver",
-    srcs = ["fuzz_driver.cpp", "test_utils.cpp", "test_utils.h"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "//library/src/moves:moves",
-        "@googletest//:gtest_main",
-    ],
-    copts = DDS_CPPOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
 )
 
 cc_test(
