@@ -55,7 +55,7 @@ jobs:
           run: sudo sysctl -w kernel.perf_event_paranoid=-1 || true
 
         - name: Build dtest with symbols
-          run: bazelisk build //library/tests:dtest -c opt --copt=-g --define=new_heuristic=true
+          run: bazelisk build //library/tests:dtest -c opt --copt=-g
 
         - name: Run perf capture via helper script
           run: |

@@ -1,6 +1,6 @@
 Purpose
 
-Short notes and commands for running the heuristic-sorting test suite and related comparison/fuzz tools.
+Short notes and commands for running the heuristic-sorting test suite.
 
 Prerequisites
 
@@ -12,7 +12,7 @@ Build with new heuristic enabled
 To build the workspace and enable the new heuristic library (this defines the runtime toggle `set_use_new_heuristic`):
 
 ```bash
-bazel build //... --define=new_heuristic=true
+bazel build //...
 ```
 
 Run tests (no cached results)
@@ -21,7 +21,6 @@ Run the whole heuristic-sorting test suite with the new heuristic and force test
 
 ```bash
 bazel test //library/tests/heuristic_sorting:all \
-  --define=new_heuristic=true \
   --nocache_test_results \
   --test_output=errors
 ```
@@ -30,20 +29,8 @@ Run a single test target (faster iteration):
 
 ```bash
 bazel test //library/tests/heuristic_sorting:targeted_unit_tests \
-  --define=new_heuristic=true \
   --nocache_test_results \
   --test_output=errors
-```
-
-Run the fuzz driver (tests are sandboxed so pass env via --test_env):
-
-```bash
-bazel test //library/tests/heuristic_sorting:fuzz_driver \
-  --define=new_heuristic=true \
-  --nocache_test_results \
-  --test_output=errors \
-  --test_env=FUZZ_SEED=42 \
-  --test_env=FUZZ_ITER=1000
 ```
 
 Coverage notes
@@ -65,7 +52,6 @@ brew install gcc
 
 ```bash
 bazel coverage //library/tests/heuristic_sorting:all \
-  --define=new_heuristic=true \
   --nocache_test_results \
   --test_output=errors
 ```
@@ -74,7 +60,7 @@ bazel coverage //library/tests/heuristic_sorting:all \
 
 Notes and best practices
 
-- The test package contains a small comparison harness which can switch between legacy and new implementations when built with `--define=new_heuristic=true` and then `set_use_new_heuristic(...)` is available at runtime.
+ The test package previously supported runtime toggling between legacy and new implementations when built with `--define=new_heuristic=true`. The new heuristic is now the default. Runtime toggling via `set_use_new_heuristic(...)` has been removed; update harnesses to run binaries built with the desired compile-time define instead.
 - Use `--test_output=all` when debugging tests to capture stdout from gtest.
 - Save golden outputs (normalize ordering JSON) under `build/compare-results` for triage when legacy vs new disagree.
 

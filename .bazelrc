@@ -1,11 +1,4 @@
 # Bazel configuration for DDS project
 
-# Configuration for using the new heuristic sorting library
-build:new_heuristic --define=new_heuristic=true
-
-# Debug builds with new heuristic
-build:debug_new_heuristic --compilation_mode=dbg --define=new_heuristic=true
-
 # Performance optimization flags
 build:opt --compilation_mode=opt
-build:opt_new_heuristic --compilation_mode=opt --define=new_heuristic=true

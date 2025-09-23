@@ -12,29 +12,10 @@ bazel build //library/src:dds
 ```
 Uses the original heuristic implementation embedded in moves.cpp.
 
-#### New Heuristic Configuration
-```bash
-bazel build //library/src:dds --config=new_heuristic
-```
-Uses the new modular heuristic sorting library.
-
-#### Debug Build with New Heuristic
-```bash
-bazel build //library/src:dds --config=debug_new_heuristic
-```
-Debug build using the new heuristic library.
-
-#### Optimized Build with New Heuristic
-```bash
-bazel build //library/src:dds --config=opt_new_heuristic
-```
-Optimized build using the new heuristic library.
-
-### Manual Configuration
-You can also manually specify the configuration:
-```bash
-bazel build //library/src:dds --define=use_new_heuristic=true
-```
+#### Heuristic Sorting
+The project uses the modular heuristic sorting library as the default implementation. The library target
+`//library/src/heuristic_sorting` is available and is included as a dependency by targets that need
+heuristic sorting.
 
 ### Library Dependencies
 
@@ -51,30 +32,11 @@ deps = [
 ### Configuration Details
 
 #### CPPVARIABLES.bzl
-The `DDS_USE_NEW_HEURISTIC` flag is conditionally added based on the build configuration:
-
-```starlark
-DDS_LOCAL_DEFINES = select({
-    "//:build_macos": ["DDS_THREADS_GCD"],
-    "//:debug_build_macos": ["DDS_THREADS_GCD"],
-    "//:build_linux": [],
-    "//:debug_build_linux": [],
-    "//conditions:default": [],
-}) + select({
-    "//:new_heuristic": ["DDS_USE_NEW_HEURISTIC"],
-    "//conditions:default": [],
-})
-```
+The build variable mapping that previously injected `DDS_USE_NEW_HEURISTIC` has been removed. The
+heuristic sorting library is included by depending on `//library/src/heuristic_sorting` where required.
 
 #### BUILD.bazel
-Configuration setting for the new heuristic:
-
-```starlark
-config_setting(
-    name = "new_heuristic",
-    define_values = {"use_new_heuristic": "true"},
-)
-```
+The project no longer relies on a build-time define to select the heuristic implementation. Targets that need heuristic sorting should depend on `//library/src/heuristic_sorting`.
 
 ### Testing Both Configurations
 
@@ -92,8 +54,6 @@ bazel build //library/src/heuristic_sorting:heuristic_sorting --config=new_heuri
 
 ### Library Structure
 
-- `//library/src/heuristic_sorting` - Main heuristic sorting library
-- `//library/src/heuristic_sorting:testable_heuristic_sorting` - Test version with internal symbols exposed
 
 ### Visibility and Access
 
@@ -102,8 +62,6 @@ The heuristic sorting library is marked with `visibility = ["//visibility:public
 ### Dependencies
 
 The heuristic sorting library depends on:
-- `//library/src/utility:constants` - DDS constants and definitions
-- `//library/src/utility:lookup_tables` - Precomputed lookup tables
 
 ### Migration Path
 

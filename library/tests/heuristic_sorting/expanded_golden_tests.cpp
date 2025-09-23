@@ -30,13 +30,13 @@ TEST(ExpandedGolden, LeadAndVoidCases) {
 
   moveType bestMove = {}; moveType bestMoveTT = {}; relRanksType rel[1] = {}; trackType track = {};
 
-  set_use_new_heuristic(false);
+  // Runtime toggle removed; previous call to set_use_new_heuristic(false) omitted.
   CallHeuristic(tpos, bestMove, bestMoveTT, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string legacy = normalize_ordering(moves, numMoves, true);
 
   for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
 
-  set_use_new_heuristic(true);
+  // Runtime toggle removed; previous call to set_use_new_heuristic(true) omitted.
   CallHeuristic(tpos, bestMove, bestMoveTT, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string neu = normalize_ordering(moves, numMoves, true);
 
@@ -55,13 +55,13 @@ TEST(ExpandedGolden, MidTrickRuffing) {
   moveType bestMove = {}; moveType bestMoveTT = {}; relRanksType rel[8192]; trackType track = {};
   init_rel_and_track(tpos, rel, &track, 2, moves, 0, 1);
 
-  set_use_new_heuristic(false);
+  // Runtime toggle removed; previous call to set_use_new_heuristic(false) omitted.
   CallHeuristic(tpos, bestMove, bestMoveTT, rel, moves, numMoves, 2, 1, 0, &track, 1, 2, 0, 0);
   std::string legacy = normalize_ordering(moves, numMoves, true);
 
   for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
 
-  set_use_new_heuristic(true);
+  // Runtime toggle removed; previous call to set_use_new_heuristic(true) omitted.
   CallHeuristic(tpos, bestMove, bestMoveTT, rel, moves, numMoves, 2, 1, 0, &track, 1, 2, 0, 0);
   std::string neu = normalize_ordering(moves, numMoves, true);
 
@@ -78,13 +78,13 @@ TEST(ExpandedGolden, LargeLengths) {
 
   moveType bestMove = {}; moveType bestMoveTT = {}; relRanksType rel[1] = {}; trackType track = {};
 
-  set_use_new_heuristic(false);
+  // Runtime toggle removed; previous call to set_use_new_heuristic(false) omitted.
   CallHeuristic(tpos, bestMove, bestMoveTT, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string legacy = normalize_ordering(moves, numMoves, true);
 
   for (int i = 0; i < numMoves; ++i) moves[i].weight = 0;
 
-  set_use_new_heuristic(true);
+  // Runtime toggle removed; previous call to set_use_new_heuristic(true) omitted.
   CallHeuristic(tpos, bestMove, bestMoveTT, rel, moves, numMoves, 0, 1, 0, &track, 1, 0, 0, 0);
   std::string neu = normalize_ordering(moves, numMoves, true);
 

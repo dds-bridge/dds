@@ -18,14 +18,6 @@
 
 using namespace std;
 
-#ifdef DDS_USE_NEW_HEURISTIC
-  bool set_use_new_heuristic(const bool val);
-  bool use_new_heuristic();
-#else
- constexpr bool set_use_new_heuristic(const bool val) { return false; }
- constexpr bool use_new_heuristic() { return false; }
-#endif
-
 enum MGtype
 {
   MG_NT0 = 0,
@@ -102,41 +94,11 @@ class Moves
 
     moveStatsType trickFuncSuitTable;
 
-
-    void WeightAllocTrump0(
-      const pos& tpos,
-      const moveType& bestMove,
-      const moveType& bestMoveTT,
-      const relRanksType thrp_rel[]);
-
-    void WeightAllocNT0(
-      const pos& tpos,
-      const moveType& bestMove,
-      const moveType& bestMoveTT,
-      const relRanksType thrp_rel[]);
-
-    void WeightAllocTrumpNotvoid1( const pos& tpos);
-    void WeightAllocNTNotvoid1(const pos& tpos);
-    void WeightAllocTrumpVoid1(const pos& tpos);
-    void WeightAllocNTVoid1(const pos& tpos);
-    void WeightAllocTrumpNotvoid2(const pos& tpos);
-    void WeightAllocNTNotvoid2(const pos& tpos);
-    void WeightAllocTrumpVoid2(const pos& tpos);
-    void WeightAllocNTVoid2(const pos& tpos);
-    void WeightAllocCombinedNotvoid3(const pos& tpos);
-    void WeightAllocTrumpVoid3(const pos& tpos);
-    void WeightAllocNTVoid3(const pos& tpos);
-
     void GetTopNumber(
       const int ris,
       const int prank,
       int& topNumber,
       int& mno) const;
-
-    int RankForcesAce(int cards4th) const;
-
-    typedef void (Moves::*WeightPtr)(const pos& tpos);
-    WeightPtr WeightList[16];
 
     inline bool WinningMove(
       const moveType& mvp1,
