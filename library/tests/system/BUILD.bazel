@@ -1,0 +1,12 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "context_equivalence_test",
+    srcs = ["context_equivalence_test.cpp"],
+    copts = [],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
