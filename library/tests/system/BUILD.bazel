@@ -5,7 +5,7 @@ cc_test(
     srcs = ["context_equivalence_test.cpp"],
     copts = [],
     deps = [
-        "//library/src:testable_dds",
+        "//library/src:dds",
         "//library/src/data_types:dds_types",
         "@googletest//:gtest_main",
     ],

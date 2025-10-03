@@ -29,12 +29,7 @@ cc_library(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
     include_prefix = "dds",
-    visibility = [
-        "//library/tests:__pkg__",
-        "//library/tests/heuristic_sorting:__pkg__",
-        "//library/tests/regression/heuristic_sorting:__pkg__",
-        "//:__pkg__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
        "//library/src/data_types:dds_types",
         "//library/src/utility:constants",
