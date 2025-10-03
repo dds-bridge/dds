@@ -20,6 +20,8 @@ static deal make_empty_deal()
 
 TEST(SystemContextEquivalence, LegacyVsContextReturnCode)
 {
+  // Ensure DDS system and thread-local memory are initialized
+  SetMaxThreads(1);
   const int thr = 0;
   futureTricks ft_legacy{};
   futureTricks ft_ctx{};
