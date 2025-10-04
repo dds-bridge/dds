@@ -21,6 +21,7 @@
 #include "SolveBoard.h"
 #include "CalcTables.h"
 #include "PlayAnalyser.h"
+#include "SolverContext.h"
 
 System sysdep(
     &SolveChunkCommon,
@@ -322,7 +323,10 @@ void SetDealTables(
     }
   }
 
-  thrp->transTable->Init(handLookup);
+  {
+    SolverContext ctx{thrp};
+    ctx.transTable()->Init(handLookup);
+  }
 
   relRanksType * relp;
   for (unsigned int aggr = 1; aggr < 8192; aggr++)
@@ -400,8 +404,11 @@ void ResetBestMoves(
     thrp->bestMoveTT[d].rank = 0;
   }
 
-  thrp->memUsed = thrp->transTable->MemoryInUse() +
-                  ThreadMemoryUsed();
+  {
+    SolverContext ctx{thrp};
+    thrp->memUsed = ctx.transTable()->MemoryInUse() +
+                    ThreadMemoryUsed();
+  }
 
 #ifdef DDS_AB_STATS
   thrp->ABStats.Reset();
