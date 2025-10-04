@@ -912,8 +912,11 @@ int AnalyseLaterBoard(
   futp->score[0] = lowerbound;
   futp->nodes = thrp->trickNodes;
 
-  thrp->memUsed = thrp->transTable->MemoryInUse() +
-                  ThreadMemoryUsed();
+  {
+    SolverContext ctx{thrp};
+    thrp->memUsed = ctx.transTable()->MemoryInUse() +
+                    ThreadMemoryUsed();
+  }
 
 #ifdef DDS_TIMING
   thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
@@ -926,12 +929,18 @@ int AnalyseLaterBoard(
   // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
-  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  {
+    SolverContext ctx{thrp};
+    ctx.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+    ctx.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  }
 
   // These are for the small TT -- empty if not.
-  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
-  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
+  {
+    SolverContext ctx{thrp};
+    ctx.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
+    ctx.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
+  }
 #endif
 
 #ifdef DDS_MOVES
