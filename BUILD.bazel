@@ -49,7 +49,6 @@ config_setting(
     define_values = {"scheduler": "true"},
 )
 
-load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 genrule(
@@ -73,5 +72,8 @@ cc_library(
     deps = ["//library/src:testable_dds"],
     visibility = [
         "//library/tests:__pkg__",
-        "//library/tests/regression/heuristic_sorting:__pkg__"],
+        "//library/tests/regression/heuristic_sorting:__pkg__",
+        "//library/tests/heuristic_sorting:__pkg__",
+        "//library/tests/system:__pkg__",
+    ],
 )

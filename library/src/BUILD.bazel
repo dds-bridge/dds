@@ -29,7 +29,13 @@ cc_library(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
     include_prefix = "dds",
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//:__pkg__",  # allow root package to wrap/export
+        "//library/tests:__pkg__",
+        "//library/tests/heuristic_sorting:__pkg__",
+        # Include regression package if it needs direct access
+        "//library/tests/regression/heuristic_sorting:__pkg__",
+    ],
     deps = [
        "//library/src/data_types:dds_types",
         "//library/src/utility:constants",
