@@ -146,7 +146,7 @@ class Memory
       const unsigned n,
       const TTmemory flag,
       const int memDefault_MB,
-      const int memMaximum_MB);
+      const int memMaximum_MB); // NOLINT(bugprone-easily-swappable-parameters)
 
     unsigned NumThreads() const;
 

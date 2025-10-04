@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include "trans_table/TransTableS.h"
 #include "trans_table/TransTableL.h"
+#include "SolverContext.h"
 
 
 Memory::Memory()
@@ -30,16 +31,17 @@ Memory::~Memory()
 
 void Memory::ReturnThread(const unsigned thrId)
 {
-  memory[thrId]->transTable->ReturnAllMemory();
+  SolverContext ctx{memory[thrId]};
+  ctx.transTable()->ReturnAllMemory();
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
 
-
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Memory::Resize(
   const unsigned n,
   const TTmemory flag,
   const int memDefault_MB,
-  const int memMaximum_MB)
+  const int memMaximum_MB) // NOLINT(bugprone-easily-swappable-parameters)
 {
   if (memory.size() == n)
     return;
@@ -103,7 +105,8 @@ ThreadData * Memory::GetPtr(const unsigned thrId)
 
 double Memory::MemoryInUseMB(const unsigned thrId) const
 {
-  return memory[thrId]->transTable->MemoryInUse() +
+  SolverContext ctx{memory[thrId]};
+  return ctx.transTable()->MemoryInUse() +
     8192. * sizeof(relRanksType) / static_cast<double>(1024.);
 }
 
