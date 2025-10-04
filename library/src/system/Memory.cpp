@@ -77,10 +77,13 @@ void Memory::Resize(
         threadSizes[i] = "L";
       }
 
-      memory[i]->transTable->SetMemoryDefault(memDefault_MB);
-      memory[i]->transTable->SetMemoryMaximum(memMaximum_MB);
-
-      memory[i]->transTable->MakeTT();
+      // Route TT setup via SolverContext for consistency
+      {
+        SolverContext ctx{memory[i]};
+        ctx.transTable()->SetMemoryDefault(memDefault_MB);
+        ctx.transTable()->SetMemoryMaximum(memMaximum_MB);
+        ctx.transTable()->MakeTT();
+      }
     }
   }
 }
