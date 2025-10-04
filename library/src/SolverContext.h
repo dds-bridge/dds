@@ -13,6 +13,7 @@
 struct ThreadData;     // defined in system/Memory.h
 struct deal;           // defined in dds/dll.h
 struct futureTricks;   // defined in dds/dll.h
+class TransTable;      // defined in trans_table/TransTable.h
 
 // Minimal configuration scaffold for future expansion.
 struct SolverConfig
@@ -30,6 +31,10 @@ public:
 
   ThreadData* thread() const { return thr_; }
   const SolverConfig& config() const { return cfg_; }
+
+  // Transitional access to the thread's transposition table.
+  // This will later be owned/configured by the context instead of ThreadData.
+  TransTable* transTable() const;
 
 private:
   ThreadData* thr_ = nullptr;
