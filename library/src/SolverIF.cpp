@@ -17,6 +17,7 @@
 #include "system/TimerList.h"
 #include "system/System.h"
 #include "system/Scheduler.h"
+#include "SolverContext.h"
 #include "dump.h"
 #include "debug.h"
 
@@ -217,7 +218,10 @@ int SolveBoardInternal(
       reason = TT_RESET_NEW_DEAL;
     else if (newTrump)
       reason = TT_RESET_NEW_TRUMP;
-    thrp->transTable->ResetMemory(reason);
+    {
+      SolverContext ctx{thrp};
+      ctx.transTable()->ResetMemory(reason);
+    }
   }
 
   if (newDeal)
@@ -623,12 +627,18 @@ SOLVER_STATS:
   // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
-  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  {
+    SolverContext ctx{thrp};
+    ctx.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+    ctx.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  }
 
   // These are for the small TT -- empty if not.
-  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
-  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
+  {
+    SolverContext ctx{thrp};
+    ctx.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
+    ctx.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
+  }
 #endif
 
 #ifdef DDS_MOVES
@@ -641,7 +651,10 @@ SOLVER_STATS:
 
 SOLVER_DONE:
 
-  thrp->memUsed = thrp->transTable->MemoryInUse() + ThreadMemoryUsed();
+  {
+    SolverContext ctx{thrp};
+    thrp->memUsed = ctx.transTable()->MemoryInUse() + ThreadMemoryUsed();
+  }
   futp->nodes = thrp->trickNodes;
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -728,8 +741,11 @@ int SolveSameBoard(
   futp->cards = 1;
   futp->score[0] = lowerbound;
 
-  thrp->memUsed = thrp->transTable->MemoryInUse() +
-                  ThreadMemoryUsed();
+  {
+    SolverContext ctx{thrp};
+    thrp->memUsed = ctx.transTable()->MemoryInUse() +
+                    ThreadMemoryUsed();
+  }
 
 #ifdef DDS_TIMING
   thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
@@ -742,12 +758,18 @@ int SolveSameBoard(
   // thrp->transTable->PrintAllEntries(thrp->fileTTstats.GetStream());
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
-  thrp->transTable->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-  thrp->transTable->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  {
+    SolverContext ctx{thrp};
+    ctx.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+    ctx.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  }
 
   // These are for the small TT -- empty if not.
-  thrp->transTable->PrintNodeStats(thrp->fileTTstats.GetStream());
-  thrp->transTable->PrintResetStats(thrp->fileTTstats.GetStream());
+  {
+    SolverContext ctx{thrp};
+    ctx.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
+    ctx.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
+  }
 #endif
 
 #ifdef DDS_MOVES
