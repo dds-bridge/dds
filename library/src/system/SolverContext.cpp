@@ -16,13 +16,17 @@ TransTable* SolverContext::transTable() const
   if (!thr_->transTable)
   {
     TransTable* created = nullptr;
-    if (config().ttKind == TTKind::Small)
+    // Prefer thread-stored configuration determined by Init/Memory
+    TTKind kind = (thr_->ttType == DDS_TT_SMALL ? TTKind::Small : TTKind::Large);
+    if (kind == TTKind::Small)
       created = new TransTableS();
     else
       created = new TransTableL();
 
-    created->SetMemoryDefault(config().ttMemDefaultMB);
-    created->SetMemoryMaximum(config().ttMemMaximumMB);
+    int defMB = (cfg_.ttMemDefaultMB > 0 ? cfg_.ttMemDefaultMB : thr_->ttMemDefault_MB);
+    int maxMB = (cfg_.ttMemMaximumMB > 0 ? cfg_.ttMemMaximumMB : thr_->ttMemMaximum_MB);
+    created->SetMemoryDefault(defMB);
+    created->SetMemoryMaximum(maxMB);
     created->MakeTT();
 
     ownedTT_.reset(created);

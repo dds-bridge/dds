@@ -82,6 +82,11 @@ void Memory::Resize(
 
       memory[i]->ttExternallyOwned = false;
 
+      // Store TT configuration on thread for consistency
+      memory[i]->ttType = flag;
+      memory[i]->ttMemDefault_MB = memDefault_MB;
+      memory[i]->ttMemMaximum_MB = memMaximum_MB;
+
       // Route TT setup via SolverContext for consistency
       {
         SolverContext ctx{memory[i]};
@@ -94,6 +99,11 @@ void Memory::Resize(
       memory[i]->transTable = nullptr;
       memory[i]->ttExternallyOwned = true;
       threadSizes[i] = (flag == DDS_TT_SMALL ? "S" : "L");
+
+      // Defer TT configuration to SolverContext via ThreadData fields
+      memory[i]->ttType = flag;
+      memory[i]->ttMemDefault_MB = memDefault_MB;
+      memory[i]->ttMemMaximum_MB = memMaximum_MB;
 #endif
     }
   }
