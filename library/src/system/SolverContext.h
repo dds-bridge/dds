@@ -9,11 +9,10 @@
 #ifndef DDS_SYSTEM_SOLVERCONTEXT_H
 #define DDS_SYSTEM_SOLVERCONTEXT_H
 
-#include <memory>
 struct ThreadData;     // defined in system/Memory.h
 struct deal;           // defined in dds/dll.h
 struct futureTricks;   // defined in dds/dll.h
-#include "trans_table/TransTable.h"  // ensure complete type for unique_ptr
+class TransTable;      // defined in trans_table/TransTable.h
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
@@ -40,13 +39,9 @@ public:
   TransTable* transTable() const;
   TransTable* maybeTransTable() const;
 
-  bool adoptTransTableOwnership();
-  TransTable* releaseTransTableOwnership();
-
 private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
-  mutable std::unique_ptr<TransTable> ownedTT_{};
 };
 
 int SolveBoardWithContext(

@@ -17,11 +17,7 @@ int SolveBoardWithContext(
   int mode,
   futureTricks* futp)
 {
-  // Temporarily adopt TT ownership so all TT access goes through the context
-  // during the solve. Release before returning to preserve legacy layout.
-  const bool adopted = ctx.adoptTransTableOwnership();
-  const int rc = SolveBoardInternal(ctx.thread(), dl, target, solutions, mode, futp);
-  if (adopted)
-    ctx.releaseTransTableOwnership();
-  return rc;
+  // Use ThreadData-attached TT so all contexts created in lower layers
+  // observe the same table. No ownership adoption to avoid duplication.
+  return SolveBoardInternal(ctx.thread(), dl, target, solutions, mode, futp);
 }

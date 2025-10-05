@@ -2,16 +2,15 @@
 
 // Keep dependencies local to this implementation to avoid include churn.
 #include "system/Memory.h"       // for ThreadData definition
-#include "trans_table/TransTable.h"
 #include "trans_table/TransTableS.h"
 #include "trans_table/TransTableL.h"
+#include "data_types/dds.h" // THREADMEM_* defaults
 
 TransTable* SolverContext::transTable() const
 {
   if (!thr_)
     return nullptr;
-  if (ownedTT_)
-    return ownedTT_.get();
+  // No context-owned pointer; attach to thread state
 
   if (!thr_->transTable)
   {
@@ -25,13 +24,27 @@ TransTable* SolverContext::transTable() const
 
     int defMB = (cfg_.ttMemDefaultMB > 0 ? cfg_.ttMemDefaultMB : thr_->ttMemDefault_MB);
     int maxMB = (cfg_.ttMemMaximumMB > 0 ? cfg_.ttMemMaximumMB : thr_->ttMemMaximum_MB);
+    // Fallback to conservative defaults if absent
+    if (defMB <= 0 || maxMB <= 0)
+    {
+      if (kind == TTKind::Small)
+      {
+        defMB = THREADMEM_SMALL_DEF_MB;
+        maxMB = THREADMEM_SMALL_MAX_MB;
+      }
+      else
+      {
+        defMB = THREADMEM_LARGE_DEF_MB;
+        maxMB = THREADMEM_LARGE_MAX_MB;
+      }
+    }
     created->SetMemoryDefault(defMB);
     created->SetMemoryMaximum(maxMB);
     created->MakeTT();
 
-    ownedTT_.reset(created);
-    thr_->ttExternallyOwned = true; // ensure Memory won’t delete while adopted
-    return ownedTT_.get();
+    // Attach to thread state; let Memory own lifetime by default
+    thr_->transTable = created;
+    thr_->ttExternallyOwned = false;
   }
 
   return thr_->transTable;
@@ -41,36 +54,7 @@ TransTable* SolverContext::maybeTransTable() const
 {
   if (!thr_)
     return nullptr;
-  if (ownedTT_)
-    return ownedTT_.get();
   return thr_->transTable;
 }
 
 SolverContext::~SolverContext() = default;
-
-bool SolverContext::adoptTransTableOwnership()
-{
-  if (!thr_ || ownedTT_)
-    return false;
-  if (thr_->transTable)
-  {
-    ownedTT_.reset(thr_->transTable);
-    thr_->transTable = nullptr;
-    thr_->ttExternallyOwned = true;
-    return true;
-  }
-  return false;
-}
-
-TransTable* SolverContext::releaseTransTableOwnership()
-{
-  if (!ownedTT_)
-    return nullptr;
-  TransTable* raw = ownedTT_.release();
-  if (thr_)
-  {
-    thr_->transTable = raw;
-    thr_->ttExternallyOwned = false;
-  }
-  return raw;
-}
