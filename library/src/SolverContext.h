@@ -17,9 +17,14 @@ struct futureTricks;   // defined in dds/dll.h
 class TransTable;      // defined in trans_table/TransTable.h
 
 // Minimal configuration scaffold for future expansion.
+// TT configuration without depending on Memory headers.
+enum class TTKind { Small, Large };
+
 struct SolverConfig
 {
-  // Placeholder for future tunables (TT size, buffers, etc.).
+  TTKind ttKind = TTKind::Small;
+  int ttMemDefaultMB = 0;
+  int ttMemMaximumMB = 0;
 };
 
 // An instance-scoped handle that owns (or references) all per-solve mutable state.
@@ -55,7 +60,7 @@ private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
   // Optional owned TT instance; by default null so legacy ownership remains.
-  std::unique_ptr<TransTable> ownedTT_{};
+  mutable std::unique_ptr<TransTable> ownedTT_{};
 };
 
 // New additive API (no behavior change):

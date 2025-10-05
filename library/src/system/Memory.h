@@ -80,6 +80,11 @@ struct ThreadData
   // and Memory should not delete it during downsizing/destruction.
   bool ttExternallyOwned = false;
 
+  // Deferred TT configuration for context-owned construction
+  TTmemory ttType = DDS_TT_SMALL;
+  int ttMemDefault_MB = 0;
+  int ttMemMaximum_MB = 0;
+
   Moves moves;
 
 #ifdef DDS_TOP_LEVEL
