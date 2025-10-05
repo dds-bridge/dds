@@ -47,6 +47,11 @@ public:
   // This will later be owned/configured by the context instead of ThreadData.
   TransTable* transTable() const;
 
+  // Non-lazy view: return a TT pointer if one already exists (either owned by
+  // the context or present on the thread), otherwise return nullptr without
+  // creating anything. Useful for teardown paths to avoid constructing TTs.
+  TransTable* maybeTransTable() const;
+
   // Ownership scaffolding (no-op unless explicitly called):
   // Adopt ownership of the current thread's TransTable instance so it will be
   // destroyed with this context instead of by Memory/ThreadData. This requires

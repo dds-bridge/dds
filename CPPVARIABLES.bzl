@@ -58,6 +58,9 @@ DDS_LOCAL_DEFINES = select({
 }) + select({
     "//:debug_all": ["DDS_DEBUG_ALL"],
     "//conditions:default": [],
+}) + select({
+    "//:tt_context_ownership": ["DDS_TT_CONTEXT_OWNERSHIP"],
+    "//conditions:default": [],
 })
 
 DDS_LINKOPTS = select({

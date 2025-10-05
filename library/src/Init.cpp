@@ -21,7 +21,7 @@
 #include "SolveBoard.h"
 #include "CalcTables.h"
 #include "PlayAnalyser.h"
-#include "SolverContext.h"
+#include "system/SolverContext.h"
 
 System sysdep(
     &SolveChunkCommon,

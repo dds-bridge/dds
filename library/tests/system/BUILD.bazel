@@ -10,3 +10,16 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+# Same parity test, but with context TT ownership enabled to validate lazy TT path
+cc_test(
+    name = "context_equivalence_test_ctx_tt",
+    srcs = ["context_equivalence_test.cpp"],
+    copts = [],
+    local_defines = ["DDS_TT_CONTEXT_OWNERSHIP"],
+    deps = [
+        "//library/src:dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)

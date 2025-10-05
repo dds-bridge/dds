@@ -17,7 +17,7 @@
 #include "system/TimerList.h"
 #include "system/System.h"
 #include "system/Scheduler.h"
-#include "SolverContext.h"
+#include "system/SolverContext.h"
 #include "dump.h"
 #include "debug.h"
 

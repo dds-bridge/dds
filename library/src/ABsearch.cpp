@@ -10,7 +10,7 @@
 #include <assert.h>
 
 #include "trans_table/TransTable.h"
-#include "SolverContext.h"
+#include "system/SolverContext.h"
 #include "moves/Moves.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"

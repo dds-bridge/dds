@@ -11,9 +11,11 @@
 #include "system/Memory.h"
 #include <iostream>
 #include <cstdlib>
+#ifndef DDS_TT_CONTEXT_OWNERSHIP
 #include "trans_table/TransTableS.h"
 #include "trans_table/TransTableL.h"
-#include "SolverContext.h"
+#endif
+#include "system/SolverContext.h"
 
 
 Memory::Memory()
@@ -23,16 +25,15 @@ Memory::Memory()
 
 Memory::~Memory()
 {
-  std::cerr << "[D] Memory::~Memory() start\n";
   Memory::Resize(0, DDS_TT_SMALL, 0, 0);
-  std::cerr << "[D] Memory::~Memory() end\n";
 }
 
 
 void Memory::ReturnThread(const unsigned thrId)
 {
   SolverContext ctx{memory[thrId]};
-  ctx.transTable()->ReturnAllMemory();
+  if (auto* tt = ctx.maybeTransTable())
+    tt->ReturnAllMemory();
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
 
@@ -119,8 +120,10 @@ ThreadData * Memory::GetPtr(const unsigned thrId)
 double Memory::MemoryInUseMB(const unsigned thrId) const
 {
   SolverContext ctx{memory[thrId]};
-  return ctx.transTable()->MemoryInUse() +
-    8192. * sizeof(relRanksType) / static_cast<double>(1024.);
+  double ttMem = 0.0;
+  if (auto* tt = ctx.maybeTransTable())
+    ttMem = tt->MemoryInUse();
+  return ttMem + 8192. * sizeof(relRanksType) / static_cast<double>(1024.);
 }
 
 

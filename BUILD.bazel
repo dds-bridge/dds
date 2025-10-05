@@ -49,6 +49,12 @@ config_setting(
     define_values = {"scheduler": "true"},
 )
 
+# Enable DDS_TT_CONTEXT_OWNERSHIP via --define=tt_context_ownership=true
+config_setting(
+    name = "tt_context_ownership",
+    define_values = {"tt_context_ownership": "true"},
+)
+
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 genrule(
