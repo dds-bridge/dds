@@ -67,6 +67,7 @@ void Memory::Resize(
     for (unsigned i = oldSize; i < n; i++)
     {
       memory[i] = new ThreadData();
+#ifndef DDS_TT_CONTEXT_OWNERSHIP
       if (flag == DDS_TT_SMALL)
       {
         memory[i]->transTable = new TransTableS;
@@ -87,6 +88,12 @@ void Memory::Resize(
         ctx.transTable()->SetMemoryMaximum(memMaximum_MB);
         ctx.transTable()->MakeTT();
       }
+#else
+      // Context will lazily construct and own the TT; leave thread pointer null
+      memory[i]->transTable = nullptr;
+      memory[i]->ttExternallyOwned = true;
+      threadSizes[i] = (flag == DDS_TT_SMALL ? "S" : "L");
+#endif
     }
   }
 }
