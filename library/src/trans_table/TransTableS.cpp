@@ -8,6 +8,8 @@
 */
 
 #include <iomanip>
+#include <cstdlib>
+#include <iostream>
 
 #include "TransTableS.h"
 #include "dds/dds.h"
@@ -124,7 +126,7 @@ void TransTableS::SetMemoryMaximum(const int megabytes)
 
 void TransTableS::MakeTT()
 {
-  int i;
+  // Note: keep local variables minimal; indices are declared in inner scopes.
 
   if (!TTInUse)
   {
@@ -136,8 +138,33 @@ void TransTableS::MakeTT()
     wmem = static_cast<int>((WSIZE + 1) * sizeof(winCardType));
     nmem = static_cast<int>((NSIZE + 1) * sizeof(nodeCardsType));
 
-    maxIndex = static_cast<int>(
-      (maxmem - summem) / ((WSIZE + 1) * sizeof(winCardType)));
+    // Compute how many additional slabs we could potentially allocate.
+    // Guard against negative values if maxmem < summem (which can happen
+    // with very small configured limits).
+    if (maxmem <= summem)
+      maxIndex = 0;
+    else
+    {
+      const unsigned long long denom =
+        static_cast<unsigned long long>((WSIZE + 1) * sizeof(winCardType));
+      maxIndex = static_cast<int>((maxmem - summem) / denom);
+      if (maxIndex < 0)
+        maxIndex = 0;
+    }
+
+    // Optional debug to aid troubleshooting when tuning memory limits.
+    if (const char* dbg = std::getenv("DDS_DEBUG_TT_CREATE"))
+    {
+      if (*dbg)
+      {
+        std::cerr << "[DDS] TT(S) init: maxmem=" << maxmem
+                  << " summem=" << summem
+                  << " wmem=" << wmem
+                  << " nmem=" << nmem
+                  << " maxIndex=" << maxIndex
+                  << std::endl;
+      }
+    }
 
     pw = static_cast<winCardType **>(calloc(static_cast<unsigned int>(maxIndex + 1), sizeof(winCardType *)));
     if (pw == NULL)
@@ -156,33 +183,6 @@ void TransTableS::MakeTT()
         if (pl[k][h] == NULL)
           exit(1);
       }
-
-    for (i = 0; i <= maxIndex; i++)
-    {
-      if (pw[i])
-        free(pw[i]);
-      pw[i] = NULL;
-    }
-
-    for (i = 0; i <= maxIndex; i++)
-    {
-      if (pn[i])
-        free(pn[i]);
-      pn[i] = NULL;
-    }
-
-    for (int k = 1; k <= 13; k++)
-    {
-      for (int h = 0; h < DDS_HANDS; h++)
-      {
-        for (i = 0; i <= maxIndex; i++)
-        {
-          if (pl[k][h][i])
-            free(pl[k][h][i]);
-          pl[k][h][i] = NULL;
-        }
-      }
-    }
 
     pw[0] = static_cast<winCardType *>(calloc(WINIT + 1, sizeof(winCardType)));
     if (pw[0] == NULL)
