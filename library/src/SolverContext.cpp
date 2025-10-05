@@ -49,6 +49,7 @@ bool SolverContext::adoptTransTableOwnership()
   {
     ownedTT_.reset(thr_->transTable);
     thr_->transTable = nullptr;
+    thr_->ttExternallyOwned = true;
     return true;
   }
   return false;
@@ -60,5 +61,10 @@ TransTable* SolverContext::releaseTransTableOwnership()
     return nullptr;
   TransTable* raw = ownedTT_.release();
   // Caller is responsible for reattaching if desired.
+  if (thr_)
+  {
+    thr_->transTable = raw;
+    thr_->ttExternallyOwned = false;
+  }
   return raw;
 }

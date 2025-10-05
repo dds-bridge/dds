@@ -76,6 +76,10 @@ struct ThreadData
 
   TransTable * transTable;
 
+  // If true, the TransTable lifetime is managed externally (e.g., by SolverContext)
+  // and Memory should not delete it during downsizing/destruction.
+  bool ttExternallyOwned = false;
+
   Moves moves;
 
 #ifdef DDS_TOP_LEVEL

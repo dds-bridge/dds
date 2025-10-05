@@ -51,7 +51,8 @@ void Memory::Resize(
     // Downsize.
     for (unsigned i = n; i < memory.size(); i++)
     {
-      delete memory[i]->transTable;
+      if (memory[i]->transTable && !memory[i]->ttExternallyOwned)
+        delete memory[i]->transTable;
       delete memory[i];
     }
     memory.resize(static_cast<unsigned>(n));
@@ -76,6 +77,8 @@ void Memory::Resize(
         memory[i]->transTable = new TransTableL;
         threadSizes[i] = "L";
       }
+
+      memory[i]->ttExternallyOwned = false;
 
       // Route TT setup via SolverContext for consistency
       {
