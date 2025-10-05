@@ -3,7 +3,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "dds",
-    srcs = glob(["*.cpp"]),
+    srcs = glob(["*.cpp"], exclude=["SolverContext.cpp"]),
     hdrs = glob(["*.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
@@ -23,7 +23,7 @@ cc_library(
 
 cc_library(
     name = "testable_dds",
-    srcs = glob(["*.cpp", "*.h"]),
+    srcs = glob(["*.cpp", "*.h"], exclude=["SolverContext.cpp"]),
     hdrs = glob(["*.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
