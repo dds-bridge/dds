@@ -40,6 +40,20 @@ TransTable* SolverContext::transTable() const
         maxMB = THREADMEM_LARGE_MAX_MB;
       }
     }
+
+    // Optional environment overrides for tuning
+    if (const char* s = std::getenv("DDS_TT_DEFAULT_MB"))
+    {
+      int v = std::atoi(s);
+      if (v > 0)
+        defMB = v;
+    }
+    if (const char* s = std::getenv("DDS_TT_LIMIT_MB"))
+    {
+      int v = std::atoi(s);
+      if (v > 0)
+        maxMB = std::min(maxMB, v);
+    }
     if (maxMB < defMB)
       maxMB = defMB;
 
