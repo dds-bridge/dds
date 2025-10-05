@@ -5,6 +5,8 @@
 #include "trans_table/TransTableS.h"
 #include "trans_table/TransTableL.h"
 #include "data_types/dds.h" // THREADMEM_* defaults
+#include <cstdlib>
+#include <iostream>
 
 TransTable* SolverContext::transTable() const
 {
@@ -38,6 +40,22 @@ TransTable* SolverContext::transTable() const
         maxMB = THREADMEM_LARGE_MAX_MB;
       }
     }
+    if (maxMB < defMB)
+      maxMB = defMB;
+
+    // Optional one-time debug print per creation
+    if (const char* dbg = std::getenv("DDS_DEBUG_TT_CREATE"))
+    {
+      if (*dbg)
+      {
+        std::cerr << "[DDS] TT create: kind="
+                  << (kind == TTKind::Small ? 'S' : 'L')
+                  << " defMB=" << defMB
+                  << " maxMB=" << maxMB
+                  << std::endl;
+      }
+    }
+
     created->SetMemoryDefault(defMB);
     created->SetMemoryMaximum(maxMB);
     created->MakeTT();
