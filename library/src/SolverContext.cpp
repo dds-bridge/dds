@@ -58,7 +58,9 @@ TransTable* SolverContext::transTable() const
     created->MakeTT();
 
     ownedTT_.reset(created);
-    thr_->ttExternallyOwned = true; // ensure Memory won’t delete while adopted
+    // Ownership of TT is now transferred to SolverContext (ownedTT_).
+    // Set ttExternallyOwned to true so ThreadData/Memory will not delete TT while context owns it.
+    thr_->ttExternallyOwned = true;
     return ownedTT_.get();
   }
 
