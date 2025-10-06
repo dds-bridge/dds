@@ -50,9 +50,10 @@ void Memory::Resize(
     // Downsize.
     for (unsigned i = n; i < memory.size(); i++)
     {
-      if (memory[i]->transTable && !memory[i]->ttExternallyOwned)
+      if (memory[i] && memory[i]->transTable && !memory[i]->ttExternallyOwned)
         delete memory[i]->transTable;
-      delete memory[i];
+      if (memory[i])
+        delete memory[i];
     }
     memory.resize(static_cast<unsigned>(n));
     threadSizes.resize(static_cast<unsigned>(n));
