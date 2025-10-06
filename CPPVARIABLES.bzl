@@ -61,6 +61,9 @@ DDS_LOCAL_DEFINES = select({
 }) + select({
     "//:tt_context_ownership": ["DDS_TT_CONTEXT_OWNERSHIP"],
     "//conditions:default": [],
+}) + select({
+    "//:recompute_second_hand": ["DDS_RECOMPUTE_SECOND_HAND"],
+    "//conditions:default": [],
 })
 
 DDS_LINKOPTS = select({
