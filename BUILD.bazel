@@ -55,11 +55,6 @@ config_setting(
     define_values = {"tt_context_ownership": "true"},
 )
 
-# Enable DDS_RECOMPUTE_SECOND_HAND via --define=recompute_second_hand=true
-config_setting(
-    name = "recompute_second_hand",
-    define_values = {"recompute_second_hand": "true"},
-)
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 

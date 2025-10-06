@@ -896,26 +896,8 @@ void Undo0(
     int st = wp->winner[n].suit;
     posPoint->winner[st].rank = wp->winner[n].winnerRank;
     posPoint->winner[st].hand = wp->winner[n].winnerHand;
-    #ifndef DDS_RECOMPUTE_SECOND_HAND
     posPoint->secondBest[st].rank = wp->winner[n].secondRank;
     posPoint->secondBest[st].hand = wp->winner[n].secondHand;
-    #else
-    // Restore the saved rank and infer the owning hand from the restored position.
-    posPoint->secondBest[st].rank = wp->winner[n].secondRank;
-    {
-      int r = posPoint->secondBest[st].rank;
-      int owningHand = -1;
-      for (int h2 = 0; h2 < 4; ++h2)
-      {
-        if (posPoint->rankInSuit[h2][st] & bitMapRank[r]) { owningHand = h2; break; }
-      }
-      // Prefer saved value unless recomputed owner exactly matches.
-      if (owningHand >= 0 && owningHand == wp->winner[n].secondHand)
-        posPoint->secondBest[st].hand = owningHand;
-      else
-        posPoint->secondBest[st].hand = wp->winner[n].secondHand;
-    }
-    #endif
   }
 }
 
