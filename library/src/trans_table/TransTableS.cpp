@@ -20,8 +20,23 @@
 #define WINIT 170000
 #define LSIZE 200 // Per trick and first hand
 
-static int TTlowestRank[8192];
-static bool _constantsSet = false;
+// Accessor for a lazily initialized, immutable TTlowestRank table.
+static const std::array<int, 8192>& TTLowestRankTable()
+{
+  static const std::array<int, 8192> table = []{
+    std::array<int, 8192> t{};
+    unsigned int topBitRank = 1;
+    t[0] = 15; // Void
+    for (unsigned ind = 1; ind < 8192; ind++)
+    {
+      if (ind >= (topBitRank + topBitRank)) /* Next top bit */
+        topBitRank <<= 1;
+      t[ind] = t[ind ^ topBitRank] - 1;
+    }
+    return t;
+  }();
+  return table;
+}
 
 /**
  * @brief Small transposition table for double dummy solver.
@@ -33,12 +48,8 @@ static bool _constantsSet = false;
 */
 TransTableS::TransTableS()
 {
-  if (! _constantsSet)
-  {
-    _constantsSet = true;
-    TransTableS::SetConstants();
-  }
-
+  // Ensure the table is built once.
+  (void)TTLowestRankTable();
   TTInUse = 0;
 }
 
@@ -54,20 +65,7 @@ TransTableS::~TransTableS()
 }
 
 
-void TransTableS::SetConstants()
-{
-  unsigned int topBitRank = 1;
-  TTlowestRank[0] = 15; // Void
-
-  for (unsigned ind = 1; ind < 8192; ind++)
-  {
-    if (ind >= (topBitRank + topBitRank)) /* Next top bit */
-      topBitRank <<= 1;
-
-    TTlowestRank[ind] = TTlowestRank[ind ^ topBitRank] - 1;
-  }
-
-}
+// SetConstants removed; constants are produced by TTLowestRankTable().
 
 
 void TransTableS::Init(const int handLookup[][15])
@@ -587,7 +585,7 @@ void TransTableS::BuildSOP(
 
       winMask[ss] = aggp[temp].winMask[ss];
       winOrderSet[ss] = aggp[temp].aggrRanks[ss];
-      low[ss] = static_cast<char>(TTlowestRank[temp]);
+  low[ss] = static_cast<char>(TTLowestRankTable()[temp]);
     }
   }
 
