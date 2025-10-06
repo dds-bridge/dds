@@ -18,7 +18,7 @@ cc_test(
     copts = [],
     local_defines = ["DDS_TT_CONTEXT_OWNERSHIP"],
     deps = [
-        "//library/src:dds",
+        "//library/src:testable_dds",
         "//library/src/data_types:dds_types",
         "@googletest//:gtest_main",
     ],

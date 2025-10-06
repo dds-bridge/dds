@@ -3,7 +3,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "dds",
-    srcs = glob(["*.cpp"], exclude=["SolverContext.cpp"]),
+    srcs = glob(["*.cpp"]),
     hdrs = glob(["*.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
@@ -23,7 +23,7 @@ cc_library(
 
 cc_library(
     name = "testable_dds",
-    srcs = glob(["*.cpp", "*.h"], exclude=["SolverContext.cpp"]),
+    srcs = glob(["*.cpp", "*.h"]),
     hdrs = glob(["*.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
@@ -33,7 +33,7 @@ cc_library(
         "//:__pkg__",  # allow root package to wrap/export
         "//library/tests:__pkg__",
         "//library/tests/heuristic_sorting:__pkg__",
-        # Include regression package if it needs direct access
+        "//library/tests/system:__pkg__",
         "//library/tests/regression/heuristic_sorting:__pkg__",
     ],
     deps = [

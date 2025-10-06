@@ -2,8 +2,9 @@
 #include <cstring>
 
 #include "dds/dll.h"
-#include "dds/SolverContext.h"
+#include "system/SolverContext.h"
 #include "system/Memory.h"
+#include "SolverIF.h"
 
 extern Memory memory;
 

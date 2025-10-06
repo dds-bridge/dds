@@ -44,12 +44,4 @@ private:
   SolverConfig cfg_{};
 };
 
-int SolveBoardWithContext(
-  SolverContext& ctx,
-  const deal& dl,
-  int target,
-  int solutions,
-  int mode,
-  futureTricks* futp);
-
 #endif // DDS_SYSTEM_SOLVERCONTEXT_H
