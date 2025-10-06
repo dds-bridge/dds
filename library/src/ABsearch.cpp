@@ -10,6 +10,7 @@
 #include <assert.h>
 
 #include "trans_table/TransTable.h"
+#include "system/SolverContext.h"
 #include "moves/Moves.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"
@@ -183,8 +184,9 @@ bool ABsearch0(
 
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
+    SolverContext ctx{thrp};
     nodeCardsType const * cardsP =
-      thrp->transTable->Lookup(
+      ctx.transTable()->Lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
         limit, lowerFlag);
     TIMER_END(TIMER_NO_LOOKUP, depth);
@@ -295,8 +297,9 @@ bool ABsearch0(
 
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
+    SolverContext ctx{thrp};
     nodeCardsType const * cardsP =
-      thrp->transTable->Lookup(
+      ctx.transTable()->Lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
         limit, lowerFlag);
     TIMER_END(TIMER_NO_LOOKUP, depth);
@@ -430,13 +433,16 @@ ABexit:
     ? true : false;
 
   TIMER_START(TIMER_NO_BUILD, depth);
-  thrp->transTable->Add(
+  {
+    SolverContext ctx{thrp};
+    ctx.transTable()->Add(
     tricks,
     hand,
     posPoint->aggr,
     posPoint->winRanks[depth],
     first,
     flag);
+  }
   TIMER_END(TIMER_NO_BUILD, depth);
 
 #ifdef DDS_AB_HITS

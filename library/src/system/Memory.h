@@ -76,6 +76,15 @@ struct ThreadData
 
   TransTable * transTable;
 
+  // If true, the TransTable lifetime is managed externally (e.g., by SolverContext)
+  // and Memory should not delete it during downsizing/destruction.
+  bool ttExternallyOwned = false;
+
+  // Deferred TT configuration for context-owned construction
+  TTmemory ttType = DDS_TT_SMALL;
+  int ttMemDefault_MB = 0;
+  int ttMemMaximum_MB = 0;
+
   Moves moves;
 
 #ifdef DDS_TOP_LEVEL
@@ -146,7 +155,7 @@ class Memory
       const unsigned n,
       const TTmemory flag,
       const int memDefault_MB,
-      const int memMaximum_MB);
+      const int memMaximum_MB); // NOLINT(bugprone-easily-swappable-parameters)
 
     unsigned NumThreads() const;
 

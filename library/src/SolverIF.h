@@ -12,7 +12,15 @@
 
 #include "dds/dds.h"
 #include "system/Memory.h"
+#include "system/SolverContext.h"
 
+int SolveBoardWithContext(
+  SolverContext& ctx,
+  const deal& dl,
+  int target,
+  int solutions,
+  int mode,
+  futureTricks* futp);
 
 int SolveBoardInternal(
   ThreadData * thrp,

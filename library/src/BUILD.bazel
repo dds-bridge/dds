@@ -30,10 +30,11 @@ cc_library(
     local_defines = DDS_LOCAL_DEFINES,
     include_prefix = "dds",
     visibility = [
+        "//:__pkg__",  # allow root package to wrap/export
         "//library/tests:__pkg__",
         "//library/tests/heuristic_sorting:__pkg__",
+        "//library/tests/system:__pkg__",
         "//library/tests/regression/heuristic_sorting:__pkg__",
-        "//:__pkg__",
     ],
     deps = [
        "//library/src/data_types:dds_types",

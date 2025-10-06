@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include "trans_table/TransTableS.h"
 #include "trans_table/TransTableL.h"
+#include "system/SolverContext.h"
 
 
 Memory::Memory()
@@ -22,24 +23,24 @@ Memory::Memory()
 
 Memory::~Memory()
 {
-  std::cerr << "[D] Memory::~Memory() start\n";
   Memory::Resize(0, DDS_TT_SMALL, 0, 0);
-  std::cerr << "[D] Memory::~Memory() end\n";
 }
 
 
 void Memory::ReturnThread(const unsigned thrId)
 {
-  memory[thrId]->transTable->ReturnAllMemory();
+  SolverContext ctx{memory[thrId]};
+  if (auto* tt = ctx.maybeTransTable())
+    tt->ReturnAllMemory();
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
 
-
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Memory::Resize(
   const unsigned n,
   const TTmemory flag,
   const int memDefault_MB,
-  const int memMaximum_MB)
+  const int memMaximum_MB) // NOLINT(bugprone-easily-swappable-parameters)
 {
   if (memory.size() == n)
     return;
@@ -49,8 +50,10 @@ void Memory::Resize(
     // Downsize.
     for (unsigned i = n; i < memory.size(); i++)
     {
-      delete memory[i]->transTable;
-      delete memory[i];
+      if (memory[i] && memory[i]->transTable && !memory[i]->ttExternallyOwned)
+        delete memory[i]->transTable;
+      if (memory[i])
+        delete memory[i];
     }
     memory.resize(static_cast<unsigned>(n));
     threadSizes.resize(static_cast<unsigned>(n));
@@ -64,6 +67,7 @@ void Memory::Resize(
     for (unsigned i = oldSize; i < n; i++)
     {
       memory[i] = new ThreadData();
+#ifndef DDS_TT_CONTEXT_OWNERSHIP
       if (flag == DDS_TT_SMALL)
       {
         memory[i]->transTable = new TransTableS;
@@ -75,10 +79,77 @@ void Memory::Resize(
         threadSizes[i] = "L";
       }
 
-      memory[i]->transTable->SetMemoryDefault(memDefault_MB);
-      memory[i]->transTable->SetMemoryMaximum(memMaximum_MB);
+      memory[i]->ttExternallyOwned = false;
 
-      memory[i]->transTable->MakeTT();
+      // Store TT configuration on thread for consistency
+      memory[i]->ttType = flag;
+      memory[i]->ttMemDefault_MB = memDefault_MB;
+      memory[i]->ttMemMaximum_MB = memMaximum_MB;
+
+      // Route TT setup via SolverContext for consistency
+      {
+        SolverContext ctx{memory[i]};
+        ctx.transTable()->SetMemoryDefault(memDefault_MB);
+        ctx.transTable()->SetMemoryMaximum(memMaximum_MB);
+        ctx.transTable()->MakeTT();
+      }
+#else
+      // Context will lazily construct and own the TT; leave thread pointer null
+      memory[i]->transTable = nullptr;
+      memory[i]->ttExternallyOwned = true;
+      threadSizes[i] = (flag == DDS_TT_SMALL ? "S" : "L");
+
+      // Defer TT configuration to SolverContext via ThreadData fields
+      memory[i]->ttType = flag;
+      memory[i]->ttMemDefault_MB = memDefault_MB;
+      memory[i]->ttMemMaximum_MB = memMaximum_MB;
+
+      // Optional eager creation to mimic legacy behavior for debugging
+      if (std::getenv("DDS_TT_EAGER"))
+      {
+        if (flag == DDS_TT_SMALL)
+          memory[i]->transTable = new TransTableS;
+        else
+          memory[i]->transTable = new TransTableL;
+
+        memory[i]->ttExternallyOwned = false;
+
+        // Compute effective sizes with fallbacks and env overrides
+        int effDef = (memDefault_MB > 0 ? memDefault_MB
+                                        : (flag == DDS_TT_SMALL ? THREADMEM_SMALL_DEF_MB
+                                                                : THREADMEM_LARGE_DEF_MB));
+        int effMax = (memMaximum_MB > 0 ? memMaximum_MB
+                                        : (flag == DDS_TT_SMALL ? THREADMEM_SMALL_MAX_MB
+                                                                : THREADMEM_LARGE_MAX_MB));
+        if (const char* s = std::getenv("DDS_TT_DEFAULT_MB"))
+        {
+          int v = std::atoi(s);
+          if (v > 0) effDef = v;
+        }
+        if (const char* s = std::getenv("DDS_TT_LIMIT_MB"))
+        {
+          int v = std::atoi(s);
+          if (v > 0 && v < effMax) effMax = v;
+        }
+        if (effMax < effDef) effMax = effDef;
+
+        if (const char* dbg = std::getenv("DDS_DEBUG_TT_CREATE"))
+        {
+          if (*dbg)
+          {
+            std::cerr << "[DDS] TT eager create: kind="
+                      << (flag == DDS_TT_SMALL ? 'S' : 'L')
+                      << " defMB=" << effDef
+                      << " maxMB=" << effMax
+                      << std::endl;
+          }
+        }
+
+        memory[i]->transTable->SetMemoryDefault(effDef);
+        memory[i]->transTable->SetMemoryMaximum(effMax);
+        memory[i]->transTable->MakeTT();
+      }
+#endif
     }
   }
 }
@@ -103,8 +174,11 @@ ThreadData * Memory::GetPtr(const unsigned thrId)
 
 double Memory::MemoryInUseMB(const unsigned thrId) const
 {
-  return memory[thrId]->transTable->MemoryInUse() +
-    8192. * sizeof(relRanksType) / static_cast<double>(1024.);
+  SolverContext ctx{memory[thrId]};
+  double ttMem = 0.0;
+  if (auto* tt = ctx.maybeTransTable())
+    ttMem = tt->MemoryInUse();
+  return ttMem + 8192. * sizeof(relRanksType) / static_cast<double>(1024.);
 }
 
 

@@ -1,9 +1,9 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 
 filegroup(
     name = "test_sources",
-    srcs = glob(["*.cpp", "*.h"], exclude=["itest.cpp"]),
+    srcs = glob(["*.cpp", "*.h"], exclude=["itest.cpp", "context_equivalence.cpp"]),
 )
 
 cc_binary(
@@ -18,3 +18,5 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
 )
+
+
