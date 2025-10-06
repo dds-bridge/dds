@@ -12,7 +12,7 @@
 struct ThreadData;     // defined in system/Memory.h
 struct deal;           // defined in dds/dll.h
 struct futureTricks;   // defined in dds/dll.h
-class TransTable;      // defined in trans_table/TransTable.h
+#include "trans_table/TransTable.h" // ensure complete type and enums
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
@@ -38,6 +38,14 @@ public:
 
   TransTable* transTable() const;
   TransTable* maybeTransTable() const;
+
+  // Dispose and erase the TT instance associated with this thread, if any.
+  void DisposeTransTable() const;
+
+  // Lightweight facades used by tests and call sites; no-ops if no TT exists.
+  void ResetForSolve() const;   // Calls ResetMemory(TT_RESET_FREE_MEMORY)
+  void ClearTT() const;         // Calls ReturnAllMemory()
+  void ResizeTT(int defMB, int maxMB) const; // Updates sizes if TT exists
 
 private:
   ThreadData* thr_ = nullptr;

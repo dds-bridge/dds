@@ -7,14 +7,24 @@
 #include "data_types/dds.h" // THREADMEM_* defaults
 #include <cstdlib>
 #include <iostream>
+#include <unordered_map>
+
+namespace {
+// Central registry mapping ThreadData* to its TransTable instance.
+// Kept as a function-local static to avoid global non-const warning.
+static std::unordered_map<ThreadData*, TransTable*>& registry()
+{
+  static std::unordered_map<ThreadData*, TransTable*> map;
+  return map;
+}
+}
 
 TransTable* SolverContext::transTable() const
 {
   if (!thr_)
     return nullptr;
-  // No context-owned pointer; attach to thread state
-
-  if (!thr_->transTable)
+  auto it = registry().find(thr_);
+  if (it == registry().end() || it->second == nullptr)
   {
     TransTable* created = nullptr;
     // Prefer thread-stored configuration determined by Init/Memory
@@ -74,19 +84,51 @@ TransTable* SolverContext::transTable() const
     created->SetMemoryMaximum(maxMB);
     created->MakeTT();
 
-    // Attach to thread state; let Memory own lifetime by default
-    thr_->transTable = created;
-    thr_->ttExternallyOwned = false;
+    // Attach to registry
+    registry()[thr_] = created;
   }
-
-  return thr_->transTable;
+  return registry()[thr_];
 }
 
 TransTable* SolverContext::maybeTransTable() const
 {
   if (!thr_)
     return nullptr;
-  return thr_->transTable;
+  auto it = registry().find(thr_);
+  return (it == registry().end() ? nullptr : it->second);
+}
+
+void SolverContext::DisposeTransTable() const
+{
+  auto it = registry().find(thr_);
+  if (it != registry().end())
+  {
+    delete it->second;
+    it->second = nullptr;
+    registry().erase(it);
+  }
 }
 
 SolverContext::~SolverContext() = default;
+
+void SolverContext::ResetForSolve() const
+{
+  if (auto* tt = maybeTransTable())
+    tt->ResetMemory(TT_RESET_FREE_MEMORY);
+}
+
+void SolverContext::ClearTT() const
+{
+  if (auto* tt = maybeTransTable())
+    tt->ReturnAllMemory();
+}
+
+void SolverContext::ResizeTT(int defMB, int maxMB) const
+{
+  if (auto* tt = maybeTransTable())
+  {
+    if (maxMB < defMB) maxMB = defMB;
+    tt->SetMemoryDefault(defMB);
+    tt->SetMemoryMaximum(maxMB);
+  }
+}

@@ -13,6 +13,10 @@
 #include "dds/dds.h"
 #include "moves/Moves.h"
 #include "system/Memory.h"
+#include "trans_table/TransTable.h" // for nodeCardsType and enums
+
+// Forward declaration left for clarity; full type is included above.
+struct nodeCardsType;
 
 int DumpInput(
   const int errCode,

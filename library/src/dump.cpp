@@ -12,6 +12,7 @@
 #include <sstream>
 #include <fstream>
 
+#include "trans_table/TransTable.h"
 #include "dump.h"
 
 

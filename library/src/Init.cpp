@@ -21,6 +21,8 @@
 #include "SolveBoard.h"
 #include "CalcTables.h"
 #include "PlayAnalyser.h"
+// Order matters: include TransTable to ensure complete type for virtual calls
+#include "trans_table/TransTable.h"
 #include "system/SolverContext.h"
 
 System sysdep(

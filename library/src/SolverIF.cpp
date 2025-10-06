@@ -17,6 +17,7 @@
 #include "system/TimerList.h"
 #include "system/System.h"
 #include "system/Scheduler.h"
+#include "trans_table/TransTable.h"
 #include "system/SolverContext.h"
 #include "dump.h"
 #include "debug.h"
