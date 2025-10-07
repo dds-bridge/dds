@@ -119,7 +119,7 @@ void TransTableS::SetMemoryDefault([[maybe_unused]] const int megabytes)
 
 void TransTableS::SetMemoryMaximum(const int megabytes)
 {
-  maxmem = static_cast<unsigned long long>(1000000ULL * static_cast<unsigned long long>(megabytes));
+  maxmem = 1000000ULL * static_cast<unsigned long long>(megabytes);
 }
 
 
