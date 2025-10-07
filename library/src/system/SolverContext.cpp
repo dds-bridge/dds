@@ -82,12 +82,7 @@ TransTable* SolverContext::transTable() const
 
     created->SetMemoryDefault(defMB);
     created->SetMemoryMaximum(maxMB);
-    created->MakeTT();
-
-    // Ensure the TT is immediately usable: initialize internal roots.
-    // Production calls ResetMemory at solve start; doing it here avoids
-    // footguns when tests or callers perform a Lookup/Add before a solve.
-    created->ResetMemory(TT_RESET_FREE_MEMORY);
+  created->MakeTT();
 
     // Attach to registry
     registry()[thr_] = created;

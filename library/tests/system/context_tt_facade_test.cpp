@@ -63,8 +63,8 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   auto* tt = ctx.transTable();
   ASSERT_NE(nullptr, tt);
 
-  // Ensure TT internal roots are initialized before Lookup/Add.
-  // Production code calls ResetMemory at solve start; mirror that here.
+  // Ensure TT internal roots are initialized before Lookup/Add for the test.
+  // Production resets happen in SolverIF around new deals/trumps.
   ctx.ResetForSolve();
 
   // Minimal initialization for TT internals (aggr tables)
