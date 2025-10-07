@@ -166,10 +166,9 @@ int SolveBoardInternal(
 
   moveType mv = {0, 0, 0, 0};
 
-  for (int k = 0; k <= 13; k++)
   {
-    thrp->forbiddenMoves[k].rank = 0;
-    thrp->forbiddenMoves[k].suit = 0;
+    SolverContext ctx{thrp};
+    ctx.search().clearForbiddenMoves();
   }
 
   // ----------------------------------------------------------
@@ -267,12 +266,15 @@ int SolveBoardInternal(
       thrp->lookAheadPos.first[iniDepth]);
 
     if (k == 0)
+    {
+      SolverContext ctx{thrp};
       thrp->moves.MoveGen0(
         trick,
         thrp->lookAheadPos,
-        thrp->bestMove[iniDepth],
-        thrp->bestMoveTT[iniDepth],
+        ctx.search().bestMove(iniDepth),
+        ctx.search().bestMoveTT(iniDepth),
         thrp->rel);
+    }
     else
       thrp->moves.MoveGen123(
         trick,
@@ -304,12 +306,15 @@ int SolveBoardInternal(
     thrp->lookAheadPos.first[iniDepth]);
 
   if (handRelFirst == 0)
+  {
+    SolverContext ctx{thrp};
     thrp->moves.MoveGen0(
       trick,
       thrp->lookAheadPos,
-      thrp->bestMove[iniDepth],
-      thrp->bestMoveTT[iniDepth],
+      ctx.search().bestMove(iniDepth),
+      ctx.search().bestMoveTT(iniDepth),
       thrp->rel);
+  }
   else
     thrp->moves.MoveGen123(
       trick,
@@ -370,7 +375,8 @@ int SolveBoardInternal(
 
         if (thrp->val)
         {
-          mv = thrp->bestMove[iniDepth];
+          SolverContext ctx{thrp};
+          mv = ctx.search().bestMove(iniDepth);
           lowerbound = guess++;
         }
         else
@@ -380,15 +386,21 @@ int SolveBoardInternal(
 
       if (lowerbound)
       {
-        thrp->bestMove[iniDepth] = mv;
+        {
+          SolverContext ctx{thrp};
+          ctx.search().bestMove(iniDepth) = mv;
+        }
 
         futp->suit[mno] = mv.suit;
         futp->rank[mno] = mv.rank;
         futp->equals[mno] = mv.sequence << 2;
         futp->score[mno] = lowerbound;
 
-        thrp->forbiddenMoves[mno + 1].suit = mv.suit;
-        thrp->forbiddenMoves[mno + 1].rank = mv.rank;
+        {
+          SolverContext ctx{thrp};
+          ctx.search().forbiddenMove(mno + 1).suit = mv.suit;
+          ctx.search().forbiddenMove(mno + 1).rank = mv.rank;
+        }
 
         guess = lowerbound;
         lowerbound = 0;
@@ -466,7 +478,8 @@ int SolveBoardInternal(
 
       if (thrp->val)
       {
-        mv = thrp->bestMove[iniDepth];
+        SolverContext ctx{thrp};
+        mv = ctx.search().bestMove(iniDepth);
         lowerbound = guess++;
       }
       else
@@ -475,7 +488,10 @@ int SolveBoardInternal(
     }
     while (lowerbound < upperbound);
 
-    thrp->bestMove[iniDepth] = mv;
+    {
+      SolverContext ctx{thrp};
+      ctx.search().bestMove(iniDepth) = mv;
+    }
     if (lowerbound == 0)
     {
       // ALL the other moves must also have payoff 0.
@@ -545,9 +561,12 @@ int SolveBoardInternal(
     else
     {
       futp->cards = 1;
-      futp->suit[0] = thrp->bestMove[iniDepth].suit;
-      futp->rank[0] = thrp->bestMove[iniDepth].rank;
-      futp->equals[0] = thrp->bestMove[iniDepth].sequence << 2;
+      {
+        SolverContext ctx{thrp};
+        futp->suit[0] = ctx.search().bestMove(iniDepth).suit;
+        futp->rank[0] = ctx.search().bestMove(iniDepth).rank;
+        futp->equals[0] = ctx.search().bestMove(iniDepth).sequence << 2;
+      }
       futp->score[0] = target;
 
       if (solutions != 2)
@@ -574,12 +593,18 @@ int SolveBoardInternal(
     {
       moveType const * mp = 
         thrp->moves.MakeNextSimple(trick, handRelFirst);
-      thrp->forbiddenMoves[forb] = * mp;
+      {
+        SolverContext ctx{thrp};
+        ctx.search().forbiddenMove(forb) = * mp;
+      }
       forb++;
 
-      if ((thrp->bestMove[iniDepth].suit == mp->suit) &&
-          (thrp->bestMove[iniDepth].rank == mp->rank))
+      {
+        SolverContext ctx{thrp};
+        if ((ctx.search().bestMove(iniDepth).suit == mp->suit) &&
+            (ctx.search().bestMove(iniDepth).rank == mp->rank))
         break;
+      }
     }
 
     ResetBestMoves(thrp);
@@ -600,10 +625,13 @@ int SolveBoardInternal(
     if (! thrp->val)
       break;
 
-    futp->cards = ind + 1;
-    futp->suit[ind] = thrp->bestMove[iniDepth].suit;
-    futp->rank[ind] = thrp->bestMove[iniDepth].rank;
-    futp->equals[ind] = thrp->bestMove[iniDepth].sequence << 2;
+    {
+      SolverContext ctx{thrp};
+      futp->cards = ind + 1;
+      futp->suit[ind] = ctx.search().bestMove(iniDepth).suit;
+      futp->rank[ind] = ctx.search().bestMove(iniDepth).rank;
+      futp->equals[ind] = ctx.search().bestMove(iniDepth).sequence << 2;
+    }
     futp->score[ind] = futp->score[0];
     ind++;
   }
@@ -611,10 +639,9 @@ int SolveBoardInternal(
 
 SOLVER_STATS:
 
-  for (int k = 0; k <= 13; k++)
   {
-    thrp->forbiddenMoves[k].rank = 0;
-    thrp->forbiddenMoves[k].suit = 0;
+    SolverContext ctx{thrp};
+    ctx.search().clearForbiddenMoves();
   }
 
 #ifdef DDS_TIMING

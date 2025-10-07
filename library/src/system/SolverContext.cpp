@@ -124,6 +124,12 @@ moveType* SolverContext::SearchContext::forbiddenMoves() { return thr_->forbidde
 const moveType* SolverContext::SearchContext::forbiddenMoves() const { return thr_->forbiddenMoves; }
 moveType& SolverContext::SearchContext::forbiddenMove(int index) { return thr_->forbiddenMoves[index]; }
 const moveType& SolverContext::SearchContext::forbiddenMove(int index) const { return thr_->forbiddenMoves[index]; }
+void SolverContext::SearchContext::clearForbiddenMoves() {
+  for (int k = 0; k <= 13; ++k) {
+    thr_->forbiddenMoves[k].rank = 0;
+    thr_->forbiddenMoves[k].suit = 0;
+  }
+}
 
 TransTable* SolverContext::maybeTransTable() const
 {
