@@ -277,6 +277,9 @@ void TransTableS::InitTT()
     for (int h = 0; h < DDS_HANDS; h++)
     {
       posSearch[k][h] = pl[k][h][0];
+      // Set lenSetInd to 1 (not 0) because index 0 is reserved for the root node.
+      // This ensures that the first Lookup/Add can safely use index 1,
+      // and avoids overwriting the valid empty node at index 0.
       lenSetInd[k][h] = 1;
       lcount[k][h] = 0;
       // Initialize the root node to a valid empty node so that a
