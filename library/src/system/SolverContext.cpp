@@ -2,6 +2,7 @@
 
 // Keep dependencies local to this implementation to avoid include churn.
 #include "system/Memory.h"       // for ThreadData definition
+#include "dds/dds.h"             // moveType, WinnersType
 #include "trans_table/TransTableS.h"
 #include "trans_table/TransTableL.h"
 #include "data_types/dds.h" // THREADMEM_* defaults
@@ -90,6 +91,40 @@ TransTable* SolverContext::transTable() const
   return registry()[thr_];
 }
 
+// --- SearchContext out-of-line definitions ---
+unsigned short& SolverContext::SearchContext::lowestWin(int depth, int suit) {
+  return thr_->lowestWin[depth][suit];
+}
+const unsigned short& SolverContext::SearchContext::lowestWin(int depth, int suit) const {
+  return thr_->lowestWin[depth][suit];
+}
+moveType& SolverContext::SearchContext::bestMove(int depth) {
+  return thr_->bestMove[depth];
+}
+const moveType& SolverContext::SearchContext::bestMove(int depth) const {
+  return thr_->bestMove[depth];
+}
+moveType& SolverContext::SearchContext::bestMoveTT(int depth) {
+  return thr_->bestMoveTT[depth];
+}
+const moveType& SolverContext::SearchContext::bestMoveTT(int depth) const {
+  return thr_->bestMoveTT[depth];
+}
+WinnersType& SolverContext::SearchContext::winners(int trickIndex) {
+  return thr_->winners[trickIndex];
+}
+const WinnersType& SolverContext::SearchContext::winners(int trickIndex) const {
+  return thr_->winners[trickIndex];
+}
+int& SolverContext::SearchContext::nodes() { return thr_->nodes; }
+int& SolverContext::SearchContext::trickNodes() { return thr_->trickNodes; }
+int& SolverContext::SearchContext::iniDepth() { return thr_->iniDepth; }
+int SolverContext::SearchContext::iniDepth() const { return thr_->iniDepth; }
+moveType* SolverContext::SearchContext::forbiddenMoves() { return thr_->forbiddenMoves; }
+const moveType* SolverContext::SearchContext::forbiddenMoves() const { return thr_->forbiddenMoves; }
+moveType& SolverContext::SearchContext::forbiddenMove(int index) { return thr_->forbiddenMoves[index]; }
+const moveType& SolverContext::SearchContext::forbiddenMove(int index) const { return thr_->forbiddenMoves[index]; }
+
 TransTable* SolverContext::maybeTransTable() const
 {
   if (!thr_)
@@ -115,6 +150,26 @@ void SolverContext::ResetForSolve() const
 {
   if (auto* tt = maybeTransTable())
     tt->ResetMemory(TT_RESET_FREE_MEMORY);
+  if (!thr_) return;
+  // Reset a subset of search state to a clean slate.
+  thr_->nodes = 0;
+  thr_->trickNodes = 0;
+  for (int d = 0; d < 50; ++d) {
+    thr_->bestMove[d].suit = 0;
+    thr_->bestMove[d].rank = 0;
+    thr_->bestMoveTT[d].suit = 0;
+    thr_->bestMoveTT[d].rank = 0;
+    for (int s = 0; s < DDS_SUITS; ++s) {
+      thr_->lowestWin[d][s] = 0;
+    }
+  }
+  for (int t = 0; t < 13; ++t) {
+    thr_->winners[t].number = 0;
+  }
+  for (int k = 0; k <= 13; ++k) {
+    thr_->forbiddenMoves[k].rank = 0;
+    thr_->forbiddenMoves[k].suit = 0;
+  }
 }
 
 void SolverContext::ClearTT() const
