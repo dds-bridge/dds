@@ -11,11 +11,11 @@
 
 namespace {
 // Central registry mapping ThreadData* to its TransTable instance.
-// Kept as a function-local static to avoid global non-const warning.
+// Use a leaky singleton to avoid static destruction order issues at exit.
 static std::unordered_map<ThreadData*, TransTable*>& registry()
 {
-  static std::unordered_map<ThreadData*, TransTable*> map;
-  return map;
+  static auto* map = new std::unordered_map<ThreadData*, TransTable*>();
+  return *map;
 }
 }
 
@@ -83,6 +83,11 @@ TransTable* SolverContext::transTable() const
     created->SetMemoryDefault(defMB);
     created->SetMemoryMaximum(maxMB);
     created->MakeTT();
+
+    // Ensure the TT is immediately usable: initialize internal roots.
+    // Production calls ResetMemory at solve start; doing it here avoids
+    // footguns when tests or callers perform a Lookup/Add before a solve.
+    created->ResetMemory(TT_RESET_FREE_MEMORY);
 
     // Attach to registry
     registry()[thr_] = created;

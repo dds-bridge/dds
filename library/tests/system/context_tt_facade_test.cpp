@@ -63,6 +63,15 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   auto* tt = ctx.transTable();
   ASSERT_NE(nullptr, tt);
 
+  // Ensure TT internal roots are initialized before Lookup/Add.
+  // Production code calls ResetMemory at solve start; mirror that here.
+  ctx.ResetForSolve();
+
+  // Minimal initialization for TT internals (aggr tables)
+  int handLookup[DDS_SUITS][15] = {};
+  // Leave all zeros (map ranks to North=0) which is sufficient for basic TT wiring
+  tt->Init(handLookup);
+
   const int trick = 11; // any valid trick index in [1..11] per implementation
   const int hand = 0;   // North
   unsigned short aggrTarget[DDS_HANDS] = {0, 0, 0, 0};

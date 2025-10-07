@@ -276,8 +276,15 @@ void TransTableS::InitTT()
     for (int h = 0; h < DDS_HANDS; h++)
     {
       posSearch[k][h] = pl[k][h][0];
-      lenSetInd[k][h] = 0;
+      lenSetInd[k][h] = 1;
       lcount[k][h] = 0;
+      // Initialize the root node to a valid empty node so that a
+      // first Lookup/Add can function even before ResetMemory.
+      posSearch[k][h][0].suitLengths = 0;
+      posSearch[k][h][0].posSearchPoint = NULL;
+      posSearch[k][h][0].left = NULL;
+      posSearch[k][h][0].right = NULL;
+      rootnp[k][h] = &(posSearch[k][h][0]);
     }
 }
 
