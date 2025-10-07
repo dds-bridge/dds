@@ -75,19 +75,20 @@ bool ABsearch(
   bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
   bool value = ! success;
 
+  SolverContext ctx{thrp};
 #ifdef DDS_TOP_LEVEL
-  thrp->nodes++;
+  ctx.search().nodes()++;
 #endif
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    thrp->lowestWin[depth][ss] = 0;
+    ctx.search().lowestWin(depth, ss) = 0;
 
   thrp->moves.MoveGen0(
     tricks,
     * posPoint,
-    thrp->bestMove[depth],
-    thrp->bestMoveTT[depth],
+    ctx.search().bestMove(depth),
+    ctx.search().bestMoveTT(depth),
     thrp->rel);
   thrp->moves.Purge(tricks, 0, thrp->forbiddenMoves);
 
@@ -125,7 +126,7 @@ bool ABsearch(
         posPoint->winRanks[depth][ss] =
           posPoint->winRanks[depth - 1][ss];
 
-      thrp->bestMove[depth] = * mply;
+  ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
       thrp->moves.RegisterHit(tricks, 0);
 #endif
@@ -166,8 +167,9 @@ bool ABsearch0(
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
 
+  SolverContext ctx{thrp};
 #ifdef DDS_TOP_LEVEL
-  thrp->nodes++;
+  ctx.search().nodes()++;
 #endif
 
   for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -184,7 +186,6 @@ bool ABsearch0(
 
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
-    SolverContext ctx{thrp};
     nodeCardsType const * cardsP =
       ctx.transTable()->Lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
@@ -205,8 +206,8 @@ bool ABsearch0(
 
       if (cardsP->bestMoveRank != 0)
       {
-        thrp->bestMoveTT[depth].suit = cardsP->bestMoveSuit;
-        thrp->bestMoveTT[depth].rank = cardsP->bestMoveRank;
+        ctx.search().bestMoveTT(depth).suit = static_cast<unsigned char>(cardsP->bestMoveSuit);
+        ctx.search().bestMoveTT(depth).rank = static_cast<unsigned char>(cardsP->bestMoveRank);
       }
 
       bool scoreFlag =
@@ -297,7 +298,6 @@ bool ABsearch0(
 
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
-    SolverContext ctx{thrp};
     nodeCardsType const * cardsP =
       ctx.transTable()->Lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
@@ -318,8 +318,8 @@ bool ABsearch0(
 
       if (cardsP->bestMoveRank != 0)
       {
-        thrp->bestMoveTT[depth].suit = cardsP->bestMoveSuit;
-        thrp->bestMoveTT[depth].rank = cardsP->bestMoveRank;
+        ctx.search().bestMoveTT(depth).suit = static_cast<unsigned char>(cardsP->bestMoveSuit);
+        ctx.search().bestMoveTT(depth).rank = static_cast<unsigned char>(cardsP->bestMoveRank);
       }
 
       bool scoreFlag =
@@ -335,7 +335,7 @@ bool ABsearch0(
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    thrp->lowestWin[depth][ss] = 0;
+    ctx.search().lowestWin(depth, ss) = 0;
 
   thrp->moves.MoveGen0(
     tricks,
@@ -378,7 +378,7 @@ bool ABsearch0(
         posPoint->winRanks[depth][ss] =
           posPoint->winRanks[depth - 1][ss];
 
-      thrp->bestMove[depth] = * mply;
+    ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
       thrp->moves.RegisterHit(tricks, 0);
 #endif
@@ -467,8 +467,9 @@ bool ABsearch1(
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
 
+  SolverContext ctx{thrp};
 #ifdef DDS_TOP_LEVEL
-  thrp->nodes++;
+  ctx.search().nodes()++;
 #endif
 
   TIMER_START(TIMER_NO_QT, depth);
@@ -483,10 +484,10 @@ bool ABsearch1(
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    thrp->lowestWin[depth][ss] = 0;
+    ctx.search().lowestWin(depth, ss) = 0;
 
   thrp->moves.MoveGen123(tricks, 1, * posPoint);
-  if (depth == thrp->iniDepth)
+  if (depth == ctx.search().iniDepth())
     thrp->moves.Purge(tricks, 1, thrp->forbiddenMoves);
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
@@ -523,7 +524,7 @@ bool ABsearch1(
         posPoint->winRanks[depth][ss] =
           posPoint->winRanks[depth - 1][ss];
 
-      thrp->bestMove[depth] = * mply;
+  ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
       thrp->moves.RegisterHit(tricks, 1);
 #endif
@@ -555,16 +556,17 @@ bool ABsearch2(
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
 
+  SolverContext ctx{thrp};
 #ifdef DDS_TOP_LEVEL
-  thrp->nodes++;
+  ctx.search().nodes()++;
 #endif
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    thrp->lowestWin[depth][ss] = 0;
+    ctx.search().lowestWin(depth, ss) = 0;
 
   thrp->moves.MoveGen123(tricks, 2, * posPoint);
-  if (depth == thrp->iniDepth)
+  if (depth == ctx.search().iniDepth())
     thrp->moves.Purge(tricks, 2, thrp->forbiddenMoves);
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
@@ -603,7 +605,7 @@ bool ABsearch2(
         posPoint->winRanks[depth][ss] =
           posPoint->winRanks[depth - 1][ss];
 
-      thrp->bestMove[depth] = * mply;
+  ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
       thrp->moves.RegisterHit(tricks, 2);
 #endif
@@ -638,17 +640,18 @@ bool ABsearch3(
   bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
   bool value = ! success;
 
+  SolverContext ctx{thrp};
 #ifdef DDS_TOP_LEVEL
-  thrp->nodes++;
+  ctx.search().nodes()++;
 #endif
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    thrp->lowestWin[depth][ss] = 0;
+    ctx.search().lowestWin(depth, ss) = 0;
   int tricks = (depth + 3) >> 2;
 
   thrp->moves.MoveGen123(tricks, 3, * posPoint);
-  if (depth == thrp->iniDepth)
+  if (depth == ctx.search().iniDepth())
     thrp->moves.Purge(tricks, 3, thrp->forbiddenMoves);
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
@@ -671,7 +674,7 @@ bool ABsearch3(
 
     Make3(posPoint, makeWinRank, depth, mply, thrp);
 
-    thrp->trickNodes++; // As handRelFirst == 0
+  ctx.search().trickNodes()++; // As handRelFirst == 0
 
     if (thrp->nodeTypeStore[posPoint->first[depth - 1]] == MAXNODE)
       posPoint->tricksMAX++;
@@ -694,7 +697,7 @@ bool ABsearch3(
         posPoint->winRanks[depth][ss] = static_cast<unsigned short>(
                                           posPoint->winRanks[depth - 1][ss] | makeWinRank[ss]);
 
-      thrp->bestMove[depth] = * mply;
+  ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
       thrp->moves.RegisterHit(tricks, 3);
 #endif
