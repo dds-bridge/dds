@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <cstdlib>
 #include <iostream>
+#include <array>
 
 #include "TransTableS.h"
 #include "dds/dds.h"
@@ -20,8 +21,23 @@
 #define WINIT 170000
 #define LSIZE 200 // Per trick and first hand
 
-static int TTlowestRank[8192];
-static bool _constantsSet = false;
+// Accessor for a lazily initialized, immutable TTlowestRank table.
+static const std::array<int, 8192>& TTLowestRankTable()
+{
+  static const std::array<int, 8192> table = []{
+    std::array<int, 8192> t{};
+    unsigned int topBitRank = 1;
+    t[0] = 15; // Void
+    for (unsigned ind = 1; ind < 8192; ind++)
+    {
+      if (ind >= (topBitRank + topBitRank)) /* Next top bit */
+        topBitRank <<= 1;
+      t[ind] = t[ind ^ topBitRank] - 1;
+    }
+    return t;
+  }();
+  return table;
+}
 
 /**
  * @brief Small transposition table for double dummy solver.
@@ -33,12 +49,8 @@ static bool _constantsSet = false;
 */
 TransTableS::TransTableS()
 {
-  if (! _constantsSet)
-  {
-    _constantsSet = true;
-    TransTableS::SetConstants();
-  }
-
+  // Ensure the table is built once.
+  (void)TTLowestRankTable();
   TTInUse = 0;
 }
 
@@ -54,20 +66,7 @@ TransTableS::~TransTableS()
 }
 
 
-void TransTableS::SetConstants()
-{
-  unsigned int topBitRank = 1;
-  TTlowestRank[0] = 15; // Void
-
-  for (unsigned ind = 1; ind < 8192; ind++)
-  {
-    if (ind >= (topBitRank + topBitRank)) /* Next top bit */
-      topBitRank <<= 1;
-
-    TTlowestRank[ind] = TTlowestRank[ind ^ topBitRank] - 1;
-  }
-
-}
+// SetConstants removed; constants are produced by TTLowestRankTable().
 
 
 void TransTableS::Init(const int handLookup[][15])
@@ -120,7 +119,7 @@ void TransTableS::SetMemoryDefault([[maybe_unused]] const int megabytes)
 
 void TransTableS::SetMemoryMaximum(const int megabytes)
 {
-  maxmem = static_cast<unsigned long long>(1000000 * megabytes);
+  maxmem = 1000000ULL * static_cast<unsigned long long>(megabytes);
 }
 
 
@@ -132,11 +131,11 @@ void TransTableS::MakeTT()
   {
     TTInUse = 1;
 
-    summem = (WINIT + 1) * sizeof(winCardType) +
-             (NINIT + 1) * sizeof(nodeCardsType) +
-             (LSIZE + 1) * 52 * sizeof(posSearchTypeSmall);
-    wmem = static_cast<int>((WSIZE + 1) * sizeof(winCardType));
-    nmem = static_cast<int>((NSIZE + 1) * sizeof(nodeCardsType));
+  summem = (1ULL * (WINIT + 1) * sizeof(winCardType)) +
+       (1ULL * (NINIT + 1) * sizeof(nodeCardsType)) +
+       (1ULL * (LSIZE + 1) * 52 * sizeof(posSearchTypeSmall));
+  wmem = static_cast<int>(1ULL * (WSIZE + 1) * sizeof(winCardType));
+  nmem = static_cast<int>(1ULL * (NSIZE + 1) * sizeof(nodeCardsType));
 
     // Compute how many additional slabs we could potentially allocate.
     // Guard against negative values if maxmem < summem (which can happen
@@ -146,7 +145,7 @@ void TransTableS::MakeTT()
     else
     {
       const unsigned long long denom =
-        static_cast<unsigned long long>((WSIZE + 1) * sizeof(winCardType));
+        static_cast<unsigned long long>(1ULL * (WSIZE + 1) * sizeof(winCardType));
       maxIndex = static_cast<int>((maxmem - summem) / denom);
       if (maxIndex < 0)
         maxIndex = 0;
@@ -261,8 +260,8 @@ void TransTableS::InitTT()
   winSetSizeLimit = WINIT;
   nodeSetSizeLimit = NINIT;
   allocmem = (WINIT + 1) * sizeof(winCardType);
-  allocmem += (NINIT + 1) * sizeof(nodeCardsType);
-  allocmem += (LSIZE + 1) * 52 * sizeof(posSearchTypeSmall);
+  allocmem += 1ULL * (NINIT + 1) * sizeof(nodeCardsType);
+  allocmem += 1ULL * (LSIZE + 1) * 52 * sizeof(posSearchTypeSmall);
   winCards = pw[0];
   nodeCards = pn[0];
   wcount = 0;
@@ -278,8 +277,18 @@ void TransTableS::InitTT()
     for (int h = 0; h < DDS_HANDS; h++)
     {
       posSearch[k][h] = pl[k][h][0];
-      lenSetInd[k][h] = 0;
+      // Set lenSetInd to 1 (not 0) because index 0 is reserved for the root node.
+      // This ensures that the first Lookup/Add can safely use index 1,
+      // and avoids overwriting the valid empty node at index 0.
+      lenSetInd[k][h] = 1;
       lcount[k][h] = 0;
+      // Initialize the root node to a valid empty node so that a
+      // first Lookup/Add can function even before ResetMemory.
+      posSearch[k][h][0].suitLengths = 0;
+      posSearch[k][h][0].posSearchPoint = NULL;
+      posSearch[k][h][0].left = NULL;
+      posSearch[k][h][0].right = NULL;
+      rootnp[k][h] = &(posSearch[k][h][0]);
     }
 }
 
@@ -322,29 +331,29 @@ void TransTableS::ReturnAllMemory()
   Wipe();
 
   if (pw[0])
-    free(pw[0]);
+    free(static_cast<void*>(pw[0]));
   pw[0] = NULL;
 
   if (pn[0])
-    free(pn[0]);
+    free(static_cast<void*>(pn[0]));
   pn[0] = NULL;
 
   for (int k = 1; k <= 13; k++)
   {
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      if (pl[k][h][0])
-        free(pl[k][h][0]);
+        if (pl[k][h][0])
+          free(static_cast<void*>(pl[k][h][0]));
       pl[k][h][0] = NULL;
     }
   }
 
   if (pw)
-    free(pw);
+    free(static_cast<void*>(pw));
   pw = NULL;
 
   if (pn)
-    free(pn);
+    free(static_cast<void*>(pn));
   pn = NULL;
 
   if (aggp)
@@ -587,7 +596,7 @@ void TransTableS::BuildSOP(
 
       winMask[ss] = aggp[temp].winMask[ss];
       winOrderSet[ss] = aggp[temp].aggrRanks[ss];
-      low[ss] = static_cast<char>(TTlowestRank[temp]);
+    low[ss] = static_cast<char>(TTLowestRankTable()[static_cast<size_t>(temp)]);
     }
   }
 
@@ -622,7 +631,7 @@ void TransTableS::BuildSOP(
     }
 
     for (int k = 0; k < DDS_SUITS; k++)
-      cardsP->leastWin[k] = 15 - low[k];
+  cardsP->leastWin[k] = static_cast<char>(15 - low[k]);
   }
 }
 

@@ -81,19 +81,72 @@
 
 #include <iomanip>
 #include <math.h>
+#include <array>
 
 #include "TransTableL.h"
 #include "utility/Constants.h"
 #include "utility/LookupTables.h"
 
-static int TTlowestRank[8192];
-static unsigned maskBytes[8192][DDS_SUITS][TT_BYTES];
-static bool _constantsSet = false;
-
-static vector<string> players =
+static const std::array<int, 8192>& TTLowestRankTable()
 {
-  "North", "East", "South", "West"
-};
+  static const std::array<int, 8192> table = []{
+    std::array<int, 8192> t{};
+    unsigned int topBitRank = 1;
+    t[0] = 15; // Void
+    for (unsigned ind = 1; ind < 8192; ind++)
+    {
+      if (ind >= (topBitRank + topBitRank)) /* Next top bit */
+        topBitRank <<= 1;
+      t[ind] = t[ind ^ topBitRank] - 1;
+    }
+    return t;
+  }();
+  return table;
+}
+
+static const std::array<std::array<std::array<unsigned, TT_BYTES>, DDS_SUITS>, 8192>& MaskBytesTable()
+{
+  static const auto table = []{
+    std::array<std::array<std::array<unsigned, TT_BYTES>, DDS_SUITS>, 8192> m{};
+    unsigned int topBitRank = 1;
+    unsigned winMask[8192];
+    winMask[0] = 0;
+    for (unsigned ind = 1; ind < 8192; ind++)
+    {
+      if (ind >= (topBitRank + topBitRank)) /* Next top bit */
+        topBitRank <<= 1;
+      winMask[ind] = (winMask[ind ^ topBitRank] >> 2) | (3 << 24);
+
+      m[ind][0][0] = (winMask[ind] << 6) & 0xff000000;
+      m[ind][0][1] = (winMask[ind] << 14) & 0xff000000;
+      m[ind][0][2] = (winMask[ind] << 22) & 0xff000000;
+      m[ind][0][3] = (winMask[ind] << 30) & 0xff000000;
+
+      m[ind][1][0] = (winMask[ind] >> 2) & 0x00ff0000;
+      m[ind][1][1] = (winMask[ind] << 6) & 0x00ff0000;
+      m[ind][1][2] = (winMask[ind] << 14) & 0x00ff0000;
+      m[ind][1][3] = (winMask[ind] << 22) & 0x00ff0000;
+
+      m[ind][2][0] = (winMask[ind] >> 10) & 0x0000ff00;
+      m[ind][2][1] = (winMask[ind] >> 2) & 0x0000ff00;
+      m[ind][2][2] = (winMask[ind] << 6) & 0x0000ff00;
+      m[ind][2][3] = (winMask[ind] << 14) & 0x0000ff00;
+
+      m[ind][3][0] = (winMask[ind] >> 18) & 0x000000ff;
+      m[ind][3][1] = (winMask[ind] >> 10) & 0x000000ff;
+      m[ind][3][2] = (winMask[ind] >> 2) & 0x000000ff;
+      m[ind][3][3] = (winMask[ind] << 6) & 0x000000ff;
+    }
+    return m;
+  }();
+  return table;
+}
+
+static const std::array<std::string, 4>& Players()
+{
+  static const std::array<std::string, 4> p = {"North", "East", "South", "West"};
+  return p;
+}
 
 
 /**
@@ -105,12 +158,10 @@ static vector<string> players =
 */
 TransTableL::TransTableL()
 {
-  if (! _constantsSet)
-  {
-    _constantsSet = true;
-    TransTableL::SetConstants();
-  }
-
+  // Touch the tables once to ensure construction.
+  (void)TTLowestRankTable();
+  (void)MaskBytesTable();
+  (void)Players();
   TTInUse = 0;
 }
 
@@ -124,48 +175,7 @@ TransTableL::~TransTableL()
   TransTableL::ReturnAllMemory();
 }
 
-
-void TransTableL::SetConstants()
-{
-  unsigned int topBitRank = 1;
-  TTlowestRank[0] = 15; // Void
-  unsigned winMask[8192];
-  winMask[0] = 0;
-
-  for (unsigned ind = 1; ind < 8192; ind++)
-  {
-    if (ind >= (topBitRank + topBitRank)) /* Next top bit */
-      topBitRank <<= 1;
-
-    // winMask is a growing list of 11's. In the end it will
-    // have 26 bits, so 13 groups of two bits. It always
-    // consists of all 11's, then all 00's.
-
-    winMask[ind] = (winMask[ind ^ topBitRank] >> 2) | (3 << 24);
-
-    maskBytes[ind][0][0] = (winMask[ind] << 6) & 0xff000000;
-    maskBytes[ind][0][1] = (winMask[ind] << 14) & 0xff000000;
-    maskBytes[ind][0][2] = (winMask[ind] << 22) & 0xff000000;
-    maskBytes[ind][0][3] = (winMask[ind] << 30) & 0xff000000;
-
-    maskBytes[ind][1][0] = (winMask[ind] >> 2) & 0x00ff0000;
-    maskBytes[ind][1][1] = (winMask[ind] << 6) & 0x00ff0000;
-    maskBytes[ind][1][2] = (winMask[ind] << 14) & 0x00ff0000;
-    maskBytes[ind][1][3] = (winMask[ind] << 22) & 0x00ff0000;
-
-    maskBytes[ind][2][0] = (winMask[ind] >> 10) & 0x0000ff00;
-    maskBytes[ind][2][1] = (winMask[ind] >> 2) & 0x0000ff00;
-    maskBytes[ind][2][2] = (winMask[ind] << 6) & 0x0000ff00;
-    maskBytes[ind][2][3] = (winMask[ind] << 14) & 0x0000ff00;
-
-    maskBytes[ind][3][0] = (winMask[ind] >> 18) & 0x000000ff;
-    maskBytes[ind][3][1] = (winMask[ind] >> 10) & 0x000000ff;
-    maskBytes[ind][3][2] = (winMask[ind] >> 2) & 0x000000ff;
-    maskBytes[ind][3][3] = (winMask[ind] << 6) & 0x000000ff;
-
-    TTlowestRank[ind] = TTlowestRank[ind ^ topBitRank] - 1;
-  }
-}
+// SetConstants removed; constants are produced by TTLowestRankTable/MaskBytesTable.
 
 
 void TransTableL::Init(const int handLookup[][15])
@@ -912,7 +922,7 @@ void TransTableL::Add(
   }
 
   unsigned * ab[DDS_SUITS];
-  unsigned * mb[DDS_SUITS];
+  const unsigned * mb[DDS_SUITS];
   char low[DDS_SUITS];
   unsigned short int ag;
   int w;
@@ -932,7 +942,7 @@ void TransTableL::Add(
     if (w == 0)
     {
       ab[ss] = aggr[0].aggrBytes[ss];
-      mb[ss] = maskBytes[0][ss];
+      mb[ss] = MaskBytesTable()[0][ss].data();
       low[ss] = 15;
       TTentry.first.leastWin[ss] = 0;
     }
@@ -942,8 +952,8 @@ void TransTableL::Add(
       ag = static_cast<unsigned short>(aggrTarget[ss] & (-w));
 
       ab[ss] = aggr[ag].aggrBytes[ss];
-      mb[ss] = maskBytes[ag][ss];
-      low[ss] = static_cast<char>(TTlowestRank[ag]);
+      mb[ss] = MaskBytesTable()[ag][ss].data();
+      low[ss] = static_cast<char>(TTLowestRankTable()[ag]);
 
       TTentry.first.leastWin[ss] = 15 - low[ss];
       TTentry.xorSet ^= aggr[ag].aggrRanks[ss];
@@ -1145,10 +1155,10 @@ void TransTableL::PrintSuits(
 
   fout << setw(4) << left << "Key" <<
     setw(3) << right << "No" <<
-    setw(8) << right << players[0] <<
-    setw(8) << players[1] <<
-    setw(8) << players[2] <<
-    setw(8) << players[3] << "\n";
+    setw(8) << right << Players()[0] <<
+    setw(8) << Players()[1] <<
+    setw(8) << Players()[2] <<
+    setw(8) << Players()[3] << "\n";
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
@@ -1181,7 +1191,7 @@ void TransTableL::PrintAllSuits(ofstream& fout) const
     for (int hand = 0; hand < DDS_HANDS; hand++)
     {
       fout << "Trick " << trick << ", hand " << 
-        players[static_cast<unsigned>(hand)] << "\n";
+        Players()[static_cast<unsigned>(hand)] << "\n";
       fout << string(20, '=') << "\n\n";
 
       TransTableL::PrintSuits(fout, trick, hand);
@@ -1341,7 +1351,7 @@ void TransTableL::PrintSuitStats(
   TransTableL::UpdateSuitHist(trick, hand, hist, num_wraps);
 
   fout << "Suit histogram for trick " << trick << ", hand " <<
-    players[static_cast<unsigned>(hand)] << "\n";
+    Players()[static_cast<unsigned>(hand)] << "\n";
   TransTableL::PrintHist(fout, hist, num_wraps, DISTS_PER_ENTRY);
 }
 
@@ -1366,7 +1376,7 @@ void TransTableL::PrintAllSuitStats(ofstream& fout) const
         num_wraps, suitWraps);
 
       fout << "Suit histogram for trick " << trick << ", hand " <<
-        players[static_cast<unsigned>(hand)] << "\n";
+        Players()[static_cast<unsigned>(hand)] << "\n";
       TransTableL::PrintHist(fout, hist, num_wraps, DISTS_PER_ENTRY);
     }
   }
@@ -1416,7 +1426,7 @@ void TransTableL::PrintSummarySuitStats(ofstream& fout) const
           TT_PERCENTILE * count, DISTS_PER_ENTRY);
 
       fout << setw(5) << right << trick <<
-        setw(7) << players[static_cast<unsigned>(hand)] <<
+  setw(7) << Players()[static_cast<unsigned>(hand)] <<
         setw(8) << count <<
         setw(8) << num_wraps;
       
@@ -1505,7 +1515,7 @@ void TransTableL::PrintEntriesDistAndCards(
   TransTableL::DistToLengths(trick, handDist, len);
 
   fout << "Looking up entry for trick " << trick << ", hand " <<
-    players[static_cast<unsigned>(hand)] << "\n";
+    Players()[static_cast<unsigned>(hand)] << "\n";
   fout << TransTableL::LenToStr(len) << "\n\n";
 
   if (! bp)
@@ -1574,7 +1584,7 @@ void TransTableL::PrintEntriesDist(
   if (! bp)
   {
     fout << "Entry not found: Trick " << trick << ", hand " <<
-      players[static_cast<unsigned>(hand)] << "\n";
+      Players()[static_cast<unsigned>(hand)] << "\n";
     fout << TransTableL::LenToStr(len) << "\n\n";
     return;
   }
@@ -1615,7 +1625,7 @@ void TransTableL::PrintAllEntries(ofstream& fout) const
     for (int hand = 0; hand < DDS_HANDS; hand++)
     {
       const string st = "Entries, trick " + to_string(trick) +
-        ", hand " + players[static_cast<unsigned>(hand)];
+        ", hand " + Players()[static_cast<unsigned>(hand)];
       fout << st << "\n";
       fout << string(st.size(), '=') << "\n\n";
       TransTableL::PrintEntries(fout, trick, hand);
@@ -1696,7 +1706,7 @@ void TransTableL::PrintEntryStats(
   TransTableL::UpdateEntryHist(trick, hand, hist, num_wraps);
 
   fout << "Entry histogram for trick " << trick << ", hands " <<
-    players[static_cast<unsigned>(hand)] << "\n";
+    Players()[static_cast<unsigned>(hand)] << "\n";
   TransTableL::PrintHist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
 }
 
@@ -1719,7 +1729,7 @@ void TransTableL::PrintAllEntryStats(ofstream& fout) const
         num_wraps, suitWraps);
 
       fout << "Entry histogram for trick " << trick << ", hands " <<
-        players[static_cast<unsigned>(hand)] << "\n";
+        Players()[static_cast<unsigned>(hand)] << "\n";
       TransTableL::PrintHist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
     }
   }
@@ -1798,7 +1808,7 @@ void TransTableL::PrintSummaryEntryStats(ofstream& fout) const
          TT_PERCENTILE * count, BLOCKS_PER_ENTRY);
 
       fout << setw(5) << right << trick <<
-        setw(7) << players[static_cast<unsigned>(hand)] <<
+  setw(7) << Players()[static_cast<unsigned>(hand)] <<
         setw(8) << count <<
         setw(8) << num_wraps <<
         setw(8) << mean <<

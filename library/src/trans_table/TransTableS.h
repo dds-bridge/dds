@@ -98,7 +98,7 @@ class TransTableS: public TransTable
 
     int TTInUse;
 
-    void SetConstants();
+  // Constants are provided via internal function-local static tables.
 
     void Wipe();
 

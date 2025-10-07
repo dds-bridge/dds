@@ -11,8 +11,7 @@
 #include "system/Memory.h"
 #include <iostream>
 #include <cstdlib>
-#include "trans_table/TransTableS.h"
-#include "trans_table/TransTableL.h"
+#include "trans_table/TransTable.h"
 #include "system/SolverContext.h"
 
 
@@ -50,8 +49,14 @@ void Memory::Resize(
     // Downsize.
     for (unsigned i = n; i < memory.size(); i++)
     {
-      if (memory[i] && memory[i]->transTable && !memory[i]->ttExternallyOwned)
-        delete memory[i]->transTable;
+      if (memory[i])
+      {
+        // Return and release TT memory via context API.
+        SolverContext ctx{memory[i]};
+        if (auto* tt = ctx.maybeTransTable())
+          tt->ReturnAllMemory();
+        ctx.DisposeTransTable();
+      }
       if (memory[i])
         delete memory[i];
     }
@@ -67,89 +72,19 @@ void Memory::Resize(
     for (unsigned i = oldSize; i < n; i++)
     {
       memory[i] = new ThreadData();
-#ifndef DDS_TT_CONTEXT_OWNERSHIP
-      if (flag == DDS_TT_SMALL)
-      {
-        memory[i]->transTable = new TransTableS;
-        threadSizes[i] = "S";
-      }
-      else
-      {
-        memory[i]->transTable = new TransTableL;
-        threadSizes[i] = "L";
-      }
-
-      memory[i]->ttExternallyOwned = false;
-
-      // Store TT configuration on thread for consistency
-      memory[i]->ttType = flag;
-      memory[i]->ttMemDefault_MB = memDefault_MB;
-      memory[i]->ttMemMaximum_MB = memMaximum_MB;
-
-      // Route TT setup via SolverContext for consistency
-      {
-        SolverContext ctx{memory[i]};
-        ctx.transTable()->SetMemoryDefault(memDefault_MB);
-        ctx.transTable()->SetMemoryMaximum(memMaximum_MB);
-        ctx.transTable()->MakeTT();
-      }
-#else
-      // Context will lazily construct and own the TT; leave thread pointer null
-      memory[i]->transTable = nullptr;
-      memory[i]->ttExternallyOwned = true;
+      // Context will lazily construct and own the TT
       threadSizes[i] = (flag == DDS_TT_SMALL ? "S" : "L");
 
       // Defer TT configuration to SolverContext via ThreadData fields
       memory[i]->ttType = flag;
       memory[i]->ttMemDefault_MB = memDefault_MB;
       memory[i]->ttMemMaximum_MB = memMaximum_MB;
-
       // Optional eager creation to mimic legacy behavior for debugging
       if (std::getenv("DDS_TT_EAGER"))
       {
-        if (flag == DDS_TT_SMALL)
-          memory[i]->transTable = new TransTableS;
-        else
-          memory[i]->transTable = new TransTableL;
-
-        memory[i]->ttExternallyOwned = false;
-
-        // Compute effective sizes with fallbacks and env overrides
-        int effDef = (memDefault_MB > 0 ? memDefault_MB
-                                        : (flag == DDS_TT_SMALL ? THREADMEM_SMALL_DEF_MB
-                                                                : THREADMEM_LARGE_DEF_MB));
-        int effMax = (memMaximum_MB > 0 ? memMaximum_MB
-                                        : (flag == DDS_TT_SMALL ? THREADMEM_SMALL_MAX_MB
-                                                                : THREADMEM_LARGE_MAX_MB));
-        if (const char* s = std::getenv("DDS_TT_DEFAULT_MB"))
-        {
-          int v = std::atoi(s);
-          if (v > 0) effDef = v;
-        }
-        if (const char* s = std::getenv("DDS_TT_LIMIT_MB"))
-        {
-          int v = std::atoi(s);
-          if (v > 0 && v < effMax) effMax = v;
-        }
-        if (effMax < effDef) effMax = effDef;
-
-        if (const char* dbg = std::getenv("DDS_DEBUG_TT_CREATE"))
-        {
-          if (*dbg)
-          {
-            std::cerr << "[DDS] TT eager create: kind="
-                      << (flag == DDS_TT_SMALL ? 'S' : 'L')
-                      << " defMB=" << effDef
-                      << " maxMB=" << effMax
-                      << std::endl;
-          }
-        }
-
-        memory[i]->transTable->SetMemoryDefault(effDef);
-        memory[i]->transTable->SetMemoryMaximum(effMax);
-        memory[i]->transTable->MakeTT();
+        SolverContext ctx{memory[i]};
+        (void)ctx.transTable(); // force creation
       }
-#endif
     }
   }
 }

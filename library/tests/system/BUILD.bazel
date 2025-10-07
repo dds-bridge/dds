@@ -23,3 +23,15 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+# New lifecycle test that validates SolverContext-managed TT behavior
+cc_test(
+    name = "context_tt_facade_test",
+    srcs = ["context_tt_facade_test.cpp"],
+    copts = [],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)

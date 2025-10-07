@@ -149,7 +149,7 @@ class TransTableL: public TransTable
 
     void ReleaseTT();
 
-    void SetConstants();
+  // Constants are provided via internal function-local static tables.
 
     int hash8(const int handDist[]) const;
 
