@@ -120,6 +120,10 @@ int& SolverContext::SearchContext::nodes() { return thr_->nodes; }
 int& SolverContext::SearchContext::trickNodes() { return thr_->trickNodes; }
 int& SolverContext::SearchContext::iniDepth() { return thr_->iniDepth; }
 int SolverContext::SearchContext::iniDepth() const { return thr_->iniDepth; }
+moveType* SolverContext::SearchContext::forbiddenMoves() { return thr_->forbiddenMoves; }
+const moveType* SolverContext::SearchContext::forbiddenMoves() const { return thr_->forbiddenMoves; }
+moveType& SolverContext::SearchContext::forbiddenMove(int index) { return thr_->forbiddenMoves[index]; }
+const moveType& SolverContext::SearchContext::forbiddenMove(int index) const { return thr_->forbiddenMoves[index]; }
 
 TransTable* SolverContext::maybeTransTable() const
 {
@@ -161,6 +165,10 @@ void SolverContext::ResetForSolve() const
   }
   for (int t = 0; t < 13; ++t) {
     thr_->winners[t].number = 0;
+  }
+  for (int k = 0; k <= 13; ++k) {
+    thr_->forbiddenMoves[k].rank = 0;
+    thr_->forbiddenMoves[k].suit = 0;
   }
 }
 
