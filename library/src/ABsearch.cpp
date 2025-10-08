@@ -72,7 +72,7 @@ bool ABsearch(
 
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
-  bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
+  bool success = (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
 
   SolverContext ctx{thrp};
@@ -179,7 +179,7 @@ bool ABsearch0(
   {
     /* Find node that fits the suit lengths */
     int limit;
-    if (thrp->nodeTypeStore[0] == MAXNODE)
+  if (SolverContext{thrp}.search().nodeTypeStore(0) == MAXNODE)
       limit = target - posPoint->tricksMAX - 1;
     else
       limit = tricks - (target - posPoint->tricksMAX - 1);
@@ -211,7 +211,7 @@ bool ABsearch0(
       }
 
       bool scoreFlag =
-        (thrp->nodeTypeStore[0] == MAXNODE ? lowerFlag : ! lowerFlag);
+  (SolverContext{thrp}.search().nodeTypeStore(0) == MAXNODE ? lowerFlag : ! lowerFlag);
 
       AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
       return scoreFlag;
@@ -249,7 +249,7 @@ bool ABsearch0(
                             trump, res, * thrp);
   TIMER_END(TIMER_NO_QT, depth);
 
-  if (thrp->nodeTypeStore[hand] == MAXNODE)
+  if (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE)
   {
     if (res)
     {
@@ -291,7 +291,7 @@ bool ABsearch0(
   {
     /* Find node that fits the suit lengths */
     int limit;
-    if (thrp->nodeTypeStore[0] == MAXNODE)
+  if (SolverContext{thrp}.search().nodeTypeStore(0) == MAXNODE)
       limit = target - posPoint->tricksMAX - 1;
     else
       limit = tricks - (target - posPoint->tricksMAX - 1);
@@ -323,14 +323,14 @@ bool ABsearch0(
       }
 
       bool scoreFlag =
-        (thrp->nodeTypeStore[0] == MAXNODE ? lowerFlag : ! lowerFlag);
+  (SolverContext{thrp}.search().nodeTypeStore(0) == MAXNODE ? lowerFlag : ! lowerFlag);
 
       AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
       return scoreFlag;
     }
   }
 
-  bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
+  bool success = (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
@@ -396,7 +396,7 @@ ABexit:
   nodeCardsType first;
   if (value)
   {
-    if (thrp->nodeTypeStore[0] == MAXNODE)
+  if (SolverContext{thrp}.search().nodeTypeStore(0) == MAXNODE)
     {
       first.ubound = static_cast<char>(tricks + 1);
       first.lbound = static_cast<char>(target - posPoint->tricksMAX);
@@ -410,7 +410,7 @@ ABexit:
   }
   else
   {
-    if (thrp->nodeTypeStore[0] == MAXNODE)
+  if (SolverContext{thrp}.search().nodeTypeStore(0) == MAXNODE)
     {
       first.ubound = static_cast<char>
                      (target - posPoint->tricksMAX - 1);
@@ -428,8 +428,8 @@ ABexit:
   first.bestMoveRank = static_cast<char>(thrp->bestMove[depth].rank);
 
   bool flag =
-    ((thrp->nodeTypeStore[hand] == MAXNODE && value) ||
-     (thrp->nodeTypeStore[hand] == MINNODE && !value))
+  ((SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE && value) ||
+   (SolverContext{thrp}.search().nodeTypeStore(hand) == MINNODE && !value))
     ? true : false;
 
   TIMER_START(TIMER_NO_BUILD, depth);
@@ -463,7 +463,7 @@ bool ABsearch1(
 {
   int trump = thrp->trump;
   int hand = handId(posPoint->first[depth], 1);
-  bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
+  bool success = (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
 
@@ -552,7 +552,7 @@ bool ABsearch2(
   ThreadData * thrp)
 {
   int hand = handId(posPoint->first[depth], 2);
-  bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
+  bool success = (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
 
@@ -676,7 +676,7 @@ bool ABsearch3(
 
   ctx.search().trickNodes()++; // As handRelFirst == 0
 
-    if (thrp->nodeTypeStore[posPoint->first[depth - 1]] == MAXNODE)
+  if (SolverContext{thrp}.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricksMAX++;
 
     TIMER_START(TIMER_NO_AB, depth - 1);
@@ -686,7 +686,7 @@ bool ABsearch3(
     TIMER_START(TIMER_NO_UNDO, depth);
     Undo0(posPoint, depth, * mply, thrp);
 
-    if (thrp->nodeTypeStore[posPoint->first[depth - 1]] == MAXNODE)
+  if (SolverContext{thrp}.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricksMAX--;
 
     TIMER_END(TIMER_NO_UNDO, depth);
@@ -1001,7 +1001,8 @@ evalType Evaluate(
       if (count >= 2)
         eval.winRanks[trump] = rmax;
 
-      if (thrp->nodeTypeStore[hmax] == MAXNODE)
+      SolverContext ctx{const_cast<ThreadData*>(thrp)};
+      if (ctx.search().nodeTypeStore(hmax) == MAXNODE)
         goto maxexit;
       else
         goto minexit;
@@ -1034,10 +1035,13 @@ evalType Evaluate(
   if (count >= 2)
     eval.winRanks[k] = rmax;
 
-  if (thrp->nodeTypeStore[hmax] == MAXNODE)
+  {
+    SolverContext ctx{const_cast<ThreadData*>(thrp)};
+    if (ctx.search().nodeTypeStore(hmax) == MAXNODE)
     goto maxexit;
   else
     goto minexit;
+  }
 
 maxexit:
   eval.tricks = posPoint->tricksMAX + 1;

@@ -61,6 +61,9 @@ public:
     const moveType& bestMoveTT(int depth) const;
     WinnersType& winners(int trickIndex);
     const WinnersType& winners(int trickIndex) const;
+  // Node type store for each hand (MAXNODE/MINNODE)
+  int& nodeTypeStore(int hand);
+  const int& nodeTypeStore(int hand) const;
     // Access to forbidden moves buffer used by Moves::Purge and solver loops
     moveType* forbiddenMoves();
     const moveType* forbiddenMoves() const;
