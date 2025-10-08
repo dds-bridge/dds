@@ -66,6 +66,7 @@ public:
     const moveType* forbiddenMoves() const;
     moveType& forbiddenMove(int index);
     const moveType& forbiddenMove(int index) const;
+  void clearForbiddenMoves();
     int& nodes();
     int& trickNodes();
     int& iniDepth();

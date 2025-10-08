@@ -2,11 +2,6 @@
 
 #include "dds/dds.h"
 
-// Constants
-#define DDS_HANDS 4
-#define DDS_SUITS 4
-#define DDS_NOTRUMP 4
-
 struct trackType
 {
   int leadHand;

@@ -11,6 +11,8 @@
 #ifndef DDS_DLL_H
 #define DDS_DLL_H
 
+#include "utility/Constants.h"
+
 #if (defined(_WIN32) || defined(__CYGWIN__)) && ! defined(__clang__)
   #define DLLEXPORT __declspec(dllexport)
   #define STDCALL __stdcall
@@ -28,12 +30,6 @@
 
 /* Version 2.9.0. Allowing for 2 digit minor versions */
 #define DDS_VERSION 20900
-
-
-#define DDS_HANDS 4
-#define DDS_SUITS 4
-#define DDS_STRAINS 5
-
 
 #define MAXNOOFBOARDS 200
 
