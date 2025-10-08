@@ -627,10 +627,10 @@ int SolveBoardInternal(
 
 
 SOLVER_STATS:
-
-  SolverContext ctx{thrp};
-  ctx.search().clearForbiddenMoves();
-
+  {
+    SolverContext ctx{thrp};
+    ctx.search().clearForbiddenMoves();
+  }
 #ifdef DDS_TIMING
   thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
 #endif
