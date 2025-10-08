@@ -11,8 +11,10 @@
 #define DDS_UTILITY_CONSTANTS_H
 
 // Constants from dll.h
-#define DDS_HANDS 4
-#define DDS_STRAINS 5
+constexpr int DDS_STRAINS = 5;
+constexpr int DDS_HANDS = 4;
+constexpr int DDS_SUITS = 4;
+constexpr int DDS_NOTRUMP = 4;
 
 // Hand relationship arrays
 extern int lho[DDS_HANDS];

@@ -7,10 +7,6 @@
    See LICENSE and README.
 */
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-
 #include "SolverIF.h"
 #include "Init.h"
 #include "ABsearch.h"
@@ -20,7 +16,6 @@
 #include "trans_table/TransTable.h"
 #include "system/SolverContext.h"
 #include "dump.h"
-#include "debug.h"
 
 extern System sysdep;
 extern Memory memory;
@@ -166,10 +161,10 @@ int SolveBoardInternal(
 
   moveType mv = {0, 0, 0, 0};
 
-  {
-    SolverContext ctx{thrp};
-    ctx.search().clearForbiddenMoves();
-  }
+  
+  SolverContext ctx{thrp};
+  ctx.search().clearForbiddenMoves();
+  
 
   // ----------------------------------------------------------
   // Consistency checks.
@@ -218,10 +213,9 @@ int SolveBoardInternal(
       reason = TT_RESET_NEW_DEAL;
     else if (newTrump)
       reason = TT_RESET_NEW_TRUMP;
-    {
-      SolverContext ctx{thrp};
-      ctx.transTable()->ResetMemory(reason);
-    }
+    
+    SolverContext ctx{thrp};
+    ctx.transTable()->ResetMemory(reason);
   }
 
   if (newDeal)
@@ -386,10 +380,8 @@ int SolveBoardInternal(
 
       if (lowerbound)
       {
-        {
-          SolverContext ctx{thrp};
-          ctx.search().bestMove(iniDepth) = mv;
-        }
+        SolverContext ctx{thrp};
+        ctx.search().bestMove(iniDepth) = mv;
 
         futp->suit[mno] = mv.suit;
         futp->rank[mno] = mv.rank;
@@ -593,10 +585,9 @@ int SolveBoardInternal(
     {
       moveType const * mp = 
         thrp->moves.MakeNextSimple(trick, handRelFirst);
-      {
-        SolverContext ctx{thrp};
-        ctx.search().forbiddenMove(forb) = * mp;
-      }
+      
+      SolverContext ctx{thrp};
+      ctx.search().forbiddenMove(forb) = * mp;
       forb++;
 
       {
@@ -769,11 +760,9 @@ int SolveSameBoard(
   futp->cards = 1;
   futp->score[0] = lowerbound;
 
-  {
-    SolverContext ctx{thrp};
-    thrp->memUsed = ctx.transTable()->MemoryInUse() +
+  SolverContext ctx{thrp};
+  thrp->memUsed = ctx.transTable()->MemoryInUse() +
                     ThreadMemoryUsed();
-  }
 
 #ifdef DDS_TIMING
   thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
@@ -940,11 +929,10 @@ int AnalyseLaterBoard(
   futp->score[0] = lowerbound;
   futp->nodes = thrp->trickNodes;
 
-  {
-    SolverContext ctx{thrp};
-    thrp->memUsed = ctx.transTable()->MemoryInUse() +
+  
+  SolverContext ctx{thrp};
+  thrp->memUsed = ctx.transTable()->MemoryInUse() +
                     ThreadMemoryUsed();
-  }
 
 #ifdef DDS_TIMING
   thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
