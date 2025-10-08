@@ -116,6 +116,8 @@ WinnersType& SolverContext::SearchContext::winners(int trickIndex) {
 const WinnersType& SolverContext::SearchContext::winners(int trickIndex) const {
   return thr_->winners[trickIndex];
 }
+int& SolverContext::SearchContext::nodeTypeStore(int hand) { return thr_->nodeTypeStore[hand]; }
+const int& SolverContext::SearchContext::nodeTypeStore(int hand) const { return thr_->nodeTypeStore[hand]; }
 int& SolverContext::SearchContext::nodes() { return thr_->nodes; }
 int& SolverContext::SearchContext::trickNodes() { return thr_->trickNodes; }
 int& SolverContext::SearchContext::iniDepth() { return thr_->iniDepth; }
