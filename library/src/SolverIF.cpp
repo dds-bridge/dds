@@ -480,10 +480,10 @@ int SolveBoardInternal(
     }
     while (lowerbound < upperbound);
 
-    {
-      SolverContext ctx{thrp};
-      ctx.search().bestMove(iniDepth) = mv;
-    }
+
+    SolverContext ctx{thrp};
+    ctx.search().bestMove(iniDepth) = mv;
+  
     if (lowerbound == 0)
     {
       // ALL the other moves must also have payoff 0.
@@ -553,12 +553,10 @@ int SolveBoardInternal(
     else
     {
       futp->cards = 1;
-      {
-        SolverContext ctx{thrp};
-        futp->suit[0] = ctx.search().bestMove(iniDepth).suit;
-        futp->rank[0] = ctx.search().bestMove(iniDepth).rank;
-        futp->equals[0] = ctx.search().bestMove(iniDepth).sequence << 2;
-      }
+      SolverContext ctx{thrp};
+      futp->suit[0] = ctx.search().bestMove(iniDepth).suit;
+      futp->rank[0] = ctx.search().bestMove(iniDepth).rank;
+      futp->equals[0] = ctx.search().bestMove(iniDepth).sequence << 2;
       futp->score[0] = target;
 
       if (solutions != 2)
@@ -616,13 +614,13 @@ int SolveBoardInternal(
     if (! thrp->val)
       break;
 
-    {
-      SolverContext ctx{thrp};
-      futp->cards = ind + 1;
-      futp->suit[ind] = ctx.search().bestMove(iniDepth).suit;
-      futp->rank[ind] = ctx.search().bestMove(iniDepth).rank;
-      futp->equals[ind] = ctx.search().bestMove(iniDepth).sequence << 2;
-    }
+    
+    SolverContext ctx{thrp};
+    futp->cards = ind + 1;
+    futp->suit[ind] = ctx.search().bestMove(iniDepth).suit;
+    futp->rank[ind] = ctx.search().bestMove(iniDepth).rank;
+    futp->equals[ind] = ctx.search().bestMove(iniDepth).sequence << 2;
+    
     futp->score[ind] = futp->score[0];
     ind++;
   }
@@ -630,10 +628,8 @@ int SolveBoardInternal(
 
 SOLVER_STATS:
 
-  {
-    SolverContext ctx{thrp};
-    ctx.search().clearForbiddenMoves();
-  }
+  SolverContext ctx{thrp};
+  ctx.search().clearForbiddenMoves();
 
 #ifdef DDS_TIMING
   thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
