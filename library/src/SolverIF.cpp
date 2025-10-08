@@ -223,11 +223,14 @@ int SolveBoardInternal(
     SetDeal(thrp);
     SetDealTables(thrp);
   }
-  else if (thrp->analysisFlag)
+  else if (SolverContext{thrp}.search().analysisFlag())
   {
     SetDeal(thrp);
   }
-  thrp->analysisFlag = false;
+  {
+    SolverContext ctx{thrp};
+    ctx.search().analysisFlag() = false;
+  }
 
   {
     SolverContext ctx{thrp};
@@ -829,7 +832,10 @@ int AnalyseLaterBoard(
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
   thrp->trickNodes = 0;
-  thrp->analysisFlag = true;
+  {
+    SolverContext ctx{thrp};
+    ctx.search().analysisFlag() = true;
+  }
   int handToPlay = handId(leadHand, handRelFirst);
 
   if (handToPlay == 0 || handToPlay == 2)

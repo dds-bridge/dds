@@ -53,6 +53,9 @@ public:
   class SearchContext {
   public:
     explicit SearchContext(ThreadData* thr) : thr_(thr) {}
+    // analysis flag used to control incremental analysis behavior
+    bool& analysisFlag();
+    bool analysisFlag() const;
     unsigned short& lowestWin(int depth, int suit);
     const unsigned short& lowestWin(int depth, int suit) const;
     moveType& bestMove(int depth);
