@@ -27,6 +27,21 @@ static bool ABsearch2_ctx(pos * posPoint, int target, int depth, ThreadData * th
 static bool ABsearch3_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
 static evalType EvaluateWithContext(pos const * posPoint, int trump, SolverContext& ctx);
 
+// ctx-enabled helpers to keep search-state access behind the facade
+static void Make3_ctx(
+  pos * posPoint,
+  unsigned short trickCards[DDS_SUITS],
+  const int depth,
+  moveType const * mply,
+  ThreadData * thrp,
+  SolverContext& ctx);
+
+static void Undo0_ctx(
+  pos * posPoint,
+  const int depth,
+  const moveType& mply,
+  SolverContext& ctx);
+
 
 void Make3Simple(
   pos * posPoint,
@@ -706,7 +721,7 @@ static bool ABsearch3_ctx(
     if (mply == NULL)
       break;
 
-    Make3(posPoint, makeWinRank, depth, mply, thrp);
+  Make3_ctx(posPoint, makeWinRank, depth, mply, thrp, ctx);
 
     ctx.search().trickNodes()++; // As handRelFirst == 0
 
@@ -718,7 +733,7 @@ static bool ABsearch3_ctx(
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo0(posPoint, depth, * mply, thrp);
+  Undo0_ctx(posPoint, depth, * mply, ctx);
 
     if (ctx.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricksMAX--;
@@ -873,6 +888,72 @@ void Make3(
 }
 
 
+// ctx-enabled version that records winners via the SearchContext facade
+static void Make3_ctx(
+  pos * posPoint,
+  unsigned short trickCards[DDS_SUITS],
+  const int depth,
+  moveType const * mply,
+  ThreadData * thrp,
+  SolverContext& ctx)
+{
+  int firstHand = posPoint->first[depth];
+
+  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
+
+  posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
+  /* Defines who is first in the next move */
+
+  int h = handId(firstHand, 3);
+  /* Hand pointed to by posPoint->first will lead the next trick */
+
+  for (int suit = 0; suit < DDS_SUITS; suit++)
+    trickCards[suit] = 0;
+
+  int ss = data.bestSuit;
+  if (data.playCount[ss] >= 2)
+  {
+    // Win by rank when some else played that suit, too.
+    int rr = data.bestRank;
+    trickCards[ss] = static_cast<unsigned short>
+      (bitMapRank[rr] | data.bestSequence);
+  }
+
+  int r = mply->rank;
+  int s = mply->suit;
+  posPoint->rankInSuit[h][s] &= (~bitMapRank[r]);
+  posPoint->aggr[s] ^= bitMapRank[r];
+  posPoint->handDist[h] -= handDelta[s];
+  posPoint->length[h][s]--;
+
+  // Changes that we may have to undo.
+  WinnersType * wp = &ctx.search().winners((depth + 3) >> 2);
+  wp->number = 0;
+
+  for (int st = 0; st < 4; st++)
+  {
+    if (data.playCount[st])
+    {
+      int n = wp->number;
+      wp->winner[n].suit = st;
+      wp->winner[n].winnerRank = posPoint->winner[st].rank;
+      wp->winner[n].winnerHand = posPoint->winner[st].hand;
+      wp->winner[n].secondRank = posPoint->secondBest[st].rank;
+      wp->winner[n].secondHand = posPoint->secondBest[st].hand;
+      wp->number++;
+
+      int aggr = posPoint->aggr[st];
+
+      posPoint->winner[st].rank = static_cast<unsigned char>(thrp->rel[aggr].absRank[1][st].rank);
+      posPoint->winner[st].hand = static_cast<unsigned char>(thrp->rel[aggr].absRank[1][st].hand);
+      posPoint->secondBest[st].rank = static_cast<unsigned char>(thrp->rel[aggr].absRank[2][st].rank);
+      posPoint->secondBest[st].hand = static_cast<unsigned char>(thrp->rel[aggr].absRank[2][st].hand);
+
+    }
+  }
+}
+
+
 void Make3Simple(
   pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
@@ -925,6 +1006,35 @@ void Undo0(
 
   // Changes that we now undo.
   WinnersType const * wp = &thrp->winners[ (depth + 3) >> 2];
+
+  for (int n = 0; n < wp->number; n++)
+  {
+    int st = wp->winner[n].suit;
+    posPoint->winner[st].rank = wp->winner[n].winnerRank;
+    posPoint->winner[st].hand = wp->winner[n].winnerHand;
+    posPoint->secondBest[st].rank = wp->winner[n].secondRank;
+    posPoint->secondBest[st].hand = wp->winner[n].secondHand;
+  }
+}
+
+// ctx-enabled version that reads winners via the SearchContext facade
+static void Undo0_ctx(
+  pos * posPoint,
+  const int depth,
+  const moveType& mply,
+  SolverContext& ctx)
+{
+  int h = handId(posPoint->first[depth], 3);
+  int s = mply.suit;
+  int r = mply.rank;
+
+  posPoint->rankInSuit[h][s] |= bitMapRank[r];
+  posPoint->aggr[s] |= bitMapRank[r];
+  posPoint->handDist[h] += handDelta[s];
+  posPoint->length[h][s]++;
+
+  // Changes that we now undo.
+  WinnersType const * wp = &ctx.search().winners((depth + 3) >> 2);
 
   for (int n = 0; n < wp->number; n++)
   {
