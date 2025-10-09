@@ -358,10 +358,11 @@ void DumpTopLevel(
   const int printMode)
 {
   const pos& tpos = thrd.lookAheadPos;
+  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
 
   fout << DumpTopHeader(thrd, tricks, lower, upper, printMode) << "\n";
   fout << PrintDeal(tpos.rankInSuit, 16);
-  fout << WinnersToText(tpos.winRanks[thrd.iniDepth]) << "\n";
+  fout << WinnersToText(tpos.winRanks[ctx.search().iniDepth()]) << "\n";
   fout << thrd.nodes << " AB nodes, " <<
     thrd.trickNodes << " trick nodes\n\n";
 }
