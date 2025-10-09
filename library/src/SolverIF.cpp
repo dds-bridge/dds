@@ -201,7 +201,6 @@ int SolveBoardInternal(
   // ----------------------------------------------------------
 
   {
-    SolverContext ctx{thrp};
     if ((mode != 2) &&
         (((newDeal) && (! similarDeal)) ||
          newTrump ||
@@ -262,7 +261,6 @@ int SolveBoardInternal(
 
     if (k == 0)
     {
-      SolverContext ctx{thrp};
       thrp->moves.MoveGen0(
         trick,
         thrp->lookAheadPos,
@@ -289,7 +287,6 @@ int SolveBoardInternal(
 
 #ifdef DDS_TOP_LEVEL
   {
-    SolverContext ctx{thrp};
     ctx.search().nodes() = 0;
   }
 #endif
@@ -305,7 +302,6 @@ int SolveBoardInternal(
 
   if (handRelFirst == 0)
   {
-    SolverContext ctx{thrp};
     thrp->moves.MoveGen0(
       trick,
       thrp->lookAheadPos,
@@ -373,7 +369,6 @@ int SolveBoardInternal(
 
         if (thrp->val)
         {
-          SolverContext ctx{thrp};
           mv = ctx.search().bestMove(iniDepth);
           lowerbound = guess++;
         }
@@ -384,7 +379,6 @@ int SolveBoardInternal(
 
       if (lowerbound)
       {
-        SolverContext ctx{thrp};
         ctx.search().bestMove(iniDepth) = mv;
 
         futp->suit[mno] = mv.suit;
@@ -392,11 +386,8 @@ int SolveBoardInternal(
         futp->equals[mno] = mv.sequence << 2;
         futp->score[mno] = lowerbound;
 
-        {
-          SolverContext ctx{thrp};
-          ctx.search().forbiddenMove(mno + 1).suit = mv.suit;
-          ctx.search().forbiddenMove(mno + 1).rank = mv.rank;
-        }
+        ctx.search().forbiddenMove(mno + 1).suit = mv.suit;
+        ctx.search().forbiddenMove(mno + 1).rank = mv.rank;
 
         guess = lowerbound;
         lowerbound = 0;
@@ -474,7 +465,6 @@ int SolveBoardInternal(
 
       if (thrp->val)
       {
-        SolverContext ctx{thrp};
         mv = ctx.search().bestMove(iniDepth);
         lowerbound = guess++;
       }
@@ -484,9 +474,8 @@ int SolveBoardInternal(
     }
     while (lowerbound < upperbound);
 
-
-    SolverContext ctx{thrp};
-    ctx.search().bestMove(iniDepth) = mv;
+    
+  ctx.search().bestMove(iniDepth) = mv;
   
     if (lowerbound == 0)
     {
@@ -557,10 +546,9 @@ int SolveBoardInternal(
     else
     {
       futp->cards = 1;
-      SolverContext ctx{thrp};
-      futp->suit[0] = ctx.search().bestMove(iniDepth).suit;
-      futp->rank[0] = ctx.search().bestMove(iniDepth).rank;
-      futp->equals[0] = ctx.search().bestMove(iniDepth).sequence << 2;
+  futp->suit[0] = ctx.search().bestMove(iniDepth).suit;
+  futp->rank[0] = ctx.search().bestMove(iniDepth).rank;
+  futp->equals[0] = ctx.search().bestMove(iniDepth).sequence << 2;
       futp->score[0] = target;
 
       if (solutions != 2)
@@ -588,16 +576,12 @@ int SolveBoardInternal(
       moveType const * mp = 
         thrp->moves.MakeNextSimple(trick, handRelFirst);
       
-      SolverContext ctx{thrp};
       ctx.search().forbiddenMove(forb) = * mp;
       forb++;
 
-      {
-        SolverContext ctx{thrp};
-        if ((ctx.search().bestMove(iniDepth).suit == mp->suit) &&
-            (ctx.search().bestMove(iniDepth).rank == mp->rank))
+      if ((ctx.search().bestMove(iniDepth).suit == mp->suit) &&
+          (ctx.search().bestMove(iniDepth).rank == mp->rank))
         break;
-      }
     }
 
     ResetBestMoves(thrp);
@@ -618,8 +602,6 @@ int SolveBoardInternal(
     if (! thrp->val)
       break;
 
-    
-    SolverContext ctx{thrp};
     futp->cards = ind + 1;
     futp->suit[ind] = ctx.search().bestMove(iniDepth).suit;
     futp->rank[ind] = ctx.search().bestMove(iniDepth).rank;
@@ -632,7 +614,6 @@ int SolveBoardInternal(
 
 SOLVER_STATS:
   {
-    SolverContext ctx{thrp};
     ctx.search().clearForbiddenMoves();
   }
 #ifdef DDS_TIMING
@@ -647,14 +628,12 @@ SOLVER_STATS:
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-    SolverContext ctx{thrp};
     ctx.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
     ctx.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-    SolverContext ctx{thrp};
     ctx.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
     ctx.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
   }
@@ -671,11 +650,9 @@ SOLVER_STATS:
 SOLVER_DONE:
 
   {
-    SolverContext ctx{thrp};
     thrp->memUsed = ctx.transTable()->MemoryInUse() + ThreadMemoryUsed();
   }
   {
-    SolverContext ctx{thrp};
     futp->nodes = ctx.search().trickNodes();
   }
 
@@ -704,27 +681,25 @@ int SolveSameBoard(
   int iniDepth = ctxSame.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
   {
-    SolverContext ctx{thrp};
-    ctx.search().trickNodes() = 0;
+    ctxSame.search().trickNodes() = 0;
   }
 
   thrp->lookAheadPos.first[iniDepth] = dl.first;
 
   {
-    SolverContext ctx{thrp};
     if (dl.first == 0 || dl.first == 2)
     {
-      ctx.search().nodeTypeStore(0) = MAXNODE;
-      ctx.search().nodeTypeStore(1) = MINNODE;
-      ctx.search().nodeTypeStore(2) = MAXNODE;
-      ctx.search().nodeTypeStore(3) = MINNODE;
+      ctxSame.search().nodeTypeStore(0) = MAXNODE;
+      ctxSame.search().nodeTypeStore(1) = MINNODE;
+      ctxSame.search().nodeTypeStore(2) = MAXNODE;
+      ctxSame.search().nodeTypeStore(3) = MINNODE;
     }
     else
     {
-      ctx.search().nodeTypeStore(0) = MINNODE;
-      ctx.search().nodeTypeStore(1) = MAXNODE;
-      ctx.search().nodeTypeStore(2) = MINNODE;
-      ctx.search().nodeTypeStore(3) = MAXNODE;
+      ctxSame.search().nodeTypeStore(0) = MINNODE;
+      ctxSame.search().nodeTypeStore(1) = MAXNODE;
+      ctxSame.search().nodeTypeStore(2) = MINNODE;
+      ctxSame.search().nodeTypeStore(3) = MAXNODE;
     }
   }
 
@@ -735,8 +710,7 @@ int SolveSameBoard(
 
 #ifdef DDS_TOP_LEVEL
   {
-    SolverContext ctx{thrp};
-    ctx.search().nodes() = 0;
+    ctxSame.search().nodes() = 0;
   }
 #endif
 
@@ -773,8 +747,7 @@ int SolveSameBoard(
   futp->cards = 1;
   futp->score[0] = lowerbound;
 
-  SolverContext ctx{thrp};
-  thrp->memUsed = ctx.transTable()->MemoryInUse() +
+  thrp->memUsed = ctxSame.transTable()->MemoryInUse() +
                     ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -789,16 +762,14 @@ int SolveSameBoard(
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-    SolverContext ctx{thrp};
-    ctx.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-    ctx.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+    ctxSame.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+    ctxSame.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-    SolverContext ctx{thrp};
-    ctx.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
-    ctx.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
+    ctxSame.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
+    ctxSame.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
   }
 #endif
 
@@ -811,8 +782,7 @@ int SolveSameBoard(
 #endif
 
   {
-    SolverContext ctx{thrp};
-    futp->nodes = ctx.search().trickNodes();
+    futp->nodes = ctxSame.search().trickNodes();
   }
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -844,30 +814,27 @@ int AnalyseLaterBoard(
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
   {
-    SolverContext ctx{thrp};
-    ctx.search().trickNodes() = 0;
+    ctxLater.search().trickNodes() = 0;
   }
   {
-    SolverContext ctx{thrp};
-    ctx.search().analysisFlag() = true;
+    ctxLater.search().analysisFlag() = true;
   }
   int handToPlay = handId(leadHand, handRelFirst);
 
   {
-    SolverContext ctx{thrp};
     if (handToPlay == 0 || handToPlay == 2)
     {
-      ctx.search().nodeTypeStore(0) = MAXNODE;
-      ctx.search().nodeTypeStore(1) = MINNODE;
-      ctx.search().nodeTypeStore(2) = MAXNODE;
-      ctx.search().nodeTypeStore(3) = MINNODE;
+      ctxLater.search().nodeTypeStore(0) = MAXNODE;
+      ctxLater.search().nodeTypeStore(1) = MINNODE;
+      ctxLater.search().nodeTypeStore(2) = MAXNODE;
+      ctxLater.search().nodeTypeStore(3) = MINNODE;
     }
     else
     {
-      ctx.search().nodeTypeStore(0) = MINNODE;
-      ctx.search().nodeTypeStore(1) = MAXNODE;
-      ctx.search().nodeTypeStore(2) = MINNODE;
-      ctx.search().nodeTypeStore(3) = MAXNODE;
+      ctxLater.search().nodeTypeStore(0) = MINNODE;
+      ctxLater.search().nodeTypeStore(1) = MAXNODE;
+      ctxLater.search().nodeTypeStore(2) = MINNODE;
+      ctxLater.search().nodeTypeStore(3) = MAXNODE;
     }
   }
 
@@ -910,8 +877,7 @@ int AnalyseLaterBoard(
 
 #ifdef DDS_TOP_LEVEL
   {
-    SolverContext ctx{thrp};
-    ctx.search().nodes() = 0;
+    ctxLater.search().nodes() = 0;
   }
 #endif
 
@@ -957,13 +923,11 @@ int AnalyseLaterBoard(
 
   futp->score[0] = lowerbound;
   {
-    SolverContext ctx{thrp};
-    futp->nodes = ctx.search().trickNodes();
+    futp->nodes = ctxLater.search().trickNodes();
   }
 
   
-  SolverContext ctx{thrp};
-  thrp->memUsed = ctx.transTable()->MemoryInUse() +
+  thrp->memUsed = ctxLater.transTable()->MemoryInUse() +
                     ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -978,16 +942,14 @@ int AnalyseLaterBoard(
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-    SolverContext ctx{thrp};
-    ctx.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-    ctx.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+    ctxLater.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
+    ctxLater.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-    SolverContext ctx{thrp};
-    ctx.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
-    ctx.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
+    ctxLater.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
+    ctxLater.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
   }
 #endif
 
