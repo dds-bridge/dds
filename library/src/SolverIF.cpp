@@ -149,7 +149,7 @@ int SolveBoardInternal(
   thrp->trump = dl.trump;
 
   thrp->iniDepth = cardCount - 4;
-  int iniDepth = thrp->iniDepth;
+  int iniDepth = SolverContext{thrp}.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
   int handToPlay = handId(dl.first, handRelFirst);
@@ -710,7 +710,7 @@ int SolveSameBoard(
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
 
-  int iniDepth = thrp->iniDepth;
+  int iniDepth = SolverContext{thrp}.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
   {
     SolverContext ctx{thrp};
@@ -847,7 +847,7 @@ int AnalyseLaterBoard(
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
 
-  int iniDepth = --thrp->iniDepth;
+  int iniDepth = --SolverContext{thrp}.search().iniDepth();
   int cardCount = iniDepth + 4;
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
@@ -964,7 +964,10 @@ int AnalyseLaterBoard(
   while (lowerbound < upperbound);
 
   futp->score[0] = lowerbound;
-  futp->nodes = thrp->trickNodes;
+  {
+    SolverContext ctx{thrp};
+    futp->nodes = ctx.search().trickNodes();
+  }
 
   
   SolverContext ctx{thrp};
