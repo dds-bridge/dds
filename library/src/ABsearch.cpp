@@ -23,6 +23,8 @@
 // Internal ctx-enabled variants (forward declarations)
 static bool ABsearch0_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
 static bool ABsearch1_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
+static bool ABsearch2_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
+static bool ABsearch3_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
 static evalType EvaluateWithContext(pos const * posPoint, int trump, SolverContext& ctx);
 
 
@@ -531,7 +533,7 @@ static bool ABsearch1_ctx(
     Make1(posPoint, depth, mply);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-    value = ABsearch2(posPoint, target, depth - 1, thrp); // ABsearch2 will be migrated in a follow-up slice
+  value = ABsearch2_ctx(posPoint, target, depth - 1, thrp, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
@@ -569,12 +571,22 @@ bool ABsearch2(
   const int depth,
   ThreadData * thrp)
 {
+  SolverContext ctx{thrp};
+  return ABsearch2_ctx(posPoint, target, depth, thrp, ctx);
+}
+
+static bool ABsearch2_ctx(
+  pos * posPoint,
+  const int target,
+  const int depth,
+  ThreadData * thrp,
+  SolverContext& ctx)
+{
   int hand = handId(posPoint->first[depth], 2);
-  bool success = (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE ? true : false);
+  bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
 
-  SolverContext ctx{thrp};
 #ifdef DDS_TOP_LEVEL
   ctx.search().nodes()++;
 #endif
@@ -595,8 +607,7 @@ bool ABsearch2(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = thrp->moves.MakeNext(tricks, 2,
-      posPoint->winRanks[depth]);
+    moveType const * mply = thrp->moves.MakeNext(tricks, 2, posPoint->winRanks[depth]);
 
     if (mply == NULL)
       break;
@@ -609,21 +620,19 @@ bool ABsearch2(
     TIMER_END(TIMER_NO_MAKE, depth);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-    value = ABsearch3(posPoint, target, depth - 1, thrp);
+    value = ABsearch3_ctx(posPoint, target, depth - 1, thrp, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
     Undo3(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
-
     if (value == success) /* A cut-off? */
     {
       for (int ss = 0; ss < DDS_SUITS; ss++)
-        posPoint->winRanks[depth][ss] =
-          posPoint->winRanks[depth - 1][ss];
+        posPoint->winRanks[depth][ss] = posPoint->winRanks[depth - 1][ss];
 
-  ctx.search().bestMove(depth) = * mply;
+      ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
       thrp->moves.RegisterHit(tricks, 2);
 #endif
@@ -631,8 +640,7 @@ bool ABsearch2(
     }
 
     for (int ss = 0; ss < DDS_SUITS; ss++)
-      posPoint->winRanks[depth][ss] |=
-        posPoint->winRanks[depth - 1][ss];
+      posPoint->winRanks[depth][ss] |= posPoint->winRanks[depth - 1][ss];
 
     TIMER_START(TIMER_NO_NEXTMOVE, depth);
     TIMER_END(TIMER_NO_NEXTMOVE, depth);
@@ -650,15 +658,25 @@ bool ABsearch3(
   const int depth,
   ThreadData * thrp)
 {
+  SolverContext ctx{thrp};
+  return ABsearch3_ctx(posPoint, target, depth, thrp, ctx);
+}
+
+static bool ABsearch3_ctx(
+  pos * posPoint,
+  const int target,
+  const int depth,
+  ThreadData * thrp,
+  SolverContext& ctx)
+{
   /* This is a specialized AB function for handRelFirst == 3. */
 
   unsigned short int makeWinRank[DDS_SUITS];
 
   int hand = handId(posPoint->first[depth], 3);
-  bool success = (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE ? true : false);
+  bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
 
-  SolverContext ctx{thrp};
 #ifdef DDS_TOP_LEVEL
   ctx.search().nodes()++;
 #endif
@@ -680,8 +698,7 @@ bool ABsearch3(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = thrp->moves.MakeNext(tricks, 3,
-      posPoint->winRanks[depth]);
+    moveType const * mply = thrp->moves.MakeNext(tricks, 3, posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -692,19 +709,19 @@ bool ABsearch3(
 
     Make3(posPoint, makeWinRank, depth, mply, thrp);
 
-  ctx.search().trickNodes()++; // As handRelFirst == 0
+    ctx.search().trickNodes()++; // As handRelFirst == 0
 
-  if (SolverContext{thrp}.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
+    if (ctx.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricksMAX++;
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-    value = ABsearch0(posPoint, target, depth - 1, thrp);
+    value = ABsearch0_ctx(posPoint, target, depth - 1, thrp, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
     Undo0(posPoint, depth, * mply, thrp);
 
-  if (SolverContext{thrp}.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
+    if (ctx.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricksMAX--;
 
     TIMER_END(TIMER_NO_UNDO, depth);
@@ -713,17 +730,16 @@ bool ABsearch3(
     {
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] = static_cast<unsigned short>(
-                                          posPoint->winRanks[depth - 1][ss] | makeWinRank[ss]);
+          posPoint->winRanks[depth - 1][ss] | makeWinRank[ss]);
 
-  ctx.search().bestMove(depth) = * mply;
+      ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
       thrp->moves.RegisterHit(tricks, 3);
 #endif
       goto ABexit;
     }
     for (int ss = 0; ss < DDS_SUITS; ss++)
-      posPoint->winRanks[depth][ss] |=
-        posPoint->winRanks[depth - 1][ss] | makeWinRank[ss];
+      posPoint->winRanks[depth][ss] |= posPoint->winRanks[depth - 1][ss] | makeWinRank[ss];
 
     TIMER_START(TIMER_NO_NEXTMOVE, depth);
     TIMER_END(TIMER_NO_NEXTMOVE, depth);
@@ -733,7 +749,6 @@ ABexit:
   AB_COUNT(AB_MOVE_LOOP, value, depth);
   return value;
 }
-
 
 void Make0(
   pos * posPoint,
