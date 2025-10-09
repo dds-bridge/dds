@@ -861,19 +861,22 @@ int AnalyseLaterBoard(
   }
   int handToPlay = handId(leadHand, handRelFirst);
 
-  if (handToPlay == 0 || handToPlay == 2)
   {
-    thrp->nodeTypeStore[0] = MAXNODE;
-    thrp->nodeTypeStore[1] = MINNODE;
-    thrp->nodeTypeStore[2] = MAXNODE;
-    thrp->nodeTypeStore[3] = MINNODE;
-  }
-  else
-  {
-    thrp->nodeTypeStore[0] = MINNODE;
-    thrp->nodeTypeStore[1] = MAXNODE;
-    thrp->nodeTypeStore[2] = MINNODE;
-    thrp->nodeTypeStore[3] = MAXNODE;
+    SolverContext ctx{thrp};
+    if (handToPlay == 0 || handToPlay == 2)
+    {
+      ctx.search().nodeTypeStore(0) = MAXNODE;
+      ctx.search().nodeTypeStore(1) = MINNODE;
+      ctx.search().nodeTypeStore(2) = MAXNODE;
+      ctx.search().nodeTypeStore(3) = MINNODE;
+    }
+    else
+    {
+      ctx.search().nodeTypeStore(0) = MINNODE;
+      ctx.search().nodeTypeStore(1) = MAXNODE;
+      ctx.search().nodeTypeStore(2) = MINNODE;
+      ctx.search().nodeTypeStore(3) = MAXNODE;
+    }
   }
 
   if (handRelFirst == 0)
