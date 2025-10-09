@@ -153,7 +153,10 @@ int SolveBoardInternal(
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
   int handToPlay = handId(dl.first, handRelFirst);
-  thrp->trickNodes = 0;
+  {
+    SolverContext ctx{thrp};
+    ctx.search().trickNodes() = 0;
+  }
 
   thrp->lookAheadPos.handRelFirst = handRelFirst;
   thrp->lookAheadPos.first[iniDepth] = dl.first;
@@ -201,21 +204,23 @@ int SolveBoardInternal(
   // More detailed initialization.
   // ----------------------------------------------------------
 
-  if ((mode != 2) &&
-      (((newDeal) && (! similarDeal)) ||
-       newTrump ||
-       (thrp->nodes > SIMILARMAXWINNODES)))
   {
-    TTresetReason reason = TT_RESET_UNKNOWN;
-    if (thrp->nodes > SIMILARMAXWINNODES)
-      reason = TT_RESET_TOO_MANY_NODES;
-    else if (newDeal && ! similarDeal)
-      reason = TT_RESET_NEW_DEAL;
-    else if (newTrump)
-      reason = TT_RESET_NEW_TRUMP;
-    
     SolverContext ctx{thrp};
-    ctx.transTable()->ResetMemory(reason);
+    if ((mode != 2) &&
+        (((newDeal) && (! similarDeal)) ||
+         newTrump ||
+         (ctx.search().nodes() > SIMILARMAXWINNODES)))
+    {
+      TTresetReason reason = TT_RESET_UNKNOWN;
+      if (ctx.search().nodes() > SIMILARMAXWINNODES)
+        reason = TT_RESET_TOO_MANY_NODES;
+      else if (newDeal && ! similarDeal)
+        reason = TT_RESET_NEW_DEAL;
+      else if (newTrump)
+        reason = TT_RESET_NEW_TRUMP;
+      
+      ctx.transTable()->ResetMemory(reason);
+    }
   }
 
   if (newDeal)
@@ -293,7 +298,10 @@ int SolveBoardInternal(
 #endif
 
 #ifdef DDS_TOP_LEVEL
-  thrp->nodes = 0;
+  {
+    SolverContext ctx{thrp};
+    ctx.search().nodes() = 0;
+  }
 #endif
 
   thrp->moves.Init(
@@ -676,7 +684,10 @@ SOLVER_DONE:
     SolverContext ctx{thrp};
     thrp->memUsed = ctx.transTable()->MemoryInUse() + ThreadMemoryUsed();
   }
-  futp->nodes = thrp->trickNodes;
+  {
+    SolverContext ctx{thrp};
+    futp->nodes = ctx.search().trickNodes();
+  }
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
   _CrtDumpMemoryLeaks();
@@ -701,7 +712,10 @@ int SolveSameBoard(
 
   int iniDepth = thrp->iniDepth;
   int trick = (iniDepth + 3) >> 2;
-  thrp->trickNodes = 0;
+  {
+    SolverContext ctx{thrp};
+    ctx.search().trickNodes() = 0;
+  }
 
   thrp->lookAheadPos.first[iniDepth] = dl.first;
 
@@ -729,7 +743,10 @@ int SolveSameBoard(
 #endif
 
 #ifdef DDS_TOP_LEVEL
-  thrp->nodes = 0;
+  {
+    SolverContext ctx{thrp};
+    ctx.search().nodes() = 0;
+  }
 #endif
 
   thrp->moves.Reinit(trick, dl.first);
@@ -802,7 +819,10 @@ int SolveSameBoard(
   thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
-  futp->nodes = thrp->trickNodes;
+  {
+    SolverContext ctx{thrp};
+    futp->nodes = ctx.search().trickNodes();
+  }
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
   _CrtDumpMemoryLeaks();
@@ -831,7 +851,10 @@ int AnalyseLaterBoard(
   int cardCount = iniDepth + 4;
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
-  thrp->trickNodes = 0;
+  {
+    SolverContext ctx{thrp};
+    ctx.search().trickNodes() = 0;
+  }
   {
     SolverContext ctx{thrp};
     ctx.search().analysisFlag() = true;
@@ -891,7 +914,10 @@ int AnalyseLaterBoard(
 #endif
 
 #ifdef DDS_TOP_LEVEL
-  thrp->nodes = 0;
+  {
+    SolverContext ctx{thrp};
+    ctx.search().nodes() = 0;
+  }
 #endif
 
   int guess = hint,
