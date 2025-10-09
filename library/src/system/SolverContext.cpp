@@ -92,6 +92,8 @@ TransTable* SolverContext::transTable() const
 }
 
 // --- SearchContext out-of-line definitions ---
+bool& SolverContext::SearchContext::analysisFlag() { return thr_->analysisFlag; }
+bool SolverContext::SearchContext::analysisFlag() const { return thr_->analysisFlag; }
 unsigned short& SolverContext::SearchContext::lowestWin(int depth, int suit) {
   return thr_->lowestWin[depth][suit];
 }
@@ -162,6 +164,7 @@ void SolverContext::ResetForSolve() const
   // Reset a subset of search state to a clean slate.
   thr_->nodes = 0;
   thr_->trickNodes = 0;
+  thr_->analysisFlag = false;
   for (int d = 0; d < 50; ++d) {
     thr_->bestMove[d].suit = 0;
     thr_->bestMove[d].rank = 0;
