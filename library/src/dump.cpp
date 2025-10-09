@@ -13,6 +13,7 @@
 #include <fstream>
 
 #include "trans_table/TransTable.h"
+#include "system/SolverContext.h"
 #include "dump.h"
 
 
@@ -223,6 +224,8 @@ string DumpTopHeader(
   const int upper,
   const int printMode)
 {
+  // Use facade to read search-state safely
+  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
   string stext;
   if (printMode == 0)
   {
@@ -234,13 +237,13 @@ string DumpTopHeader(
     // Looking for best score.
     stext = "Loop target " + to_string(tricks) + ", " +
       "bounds " + to_string(lower) + " .. " + to_string(upper) + ", " +
-      TopMove(thrd.val, thrd.bestMove[thrd.iniDepth]) + "";
+      TopMove(thrd.val, ctx.search().bestMove(ctx.search().iniDepth())) + "";
   }
   else if (printMode == 2)
   {
     // Looking for other moves with best score.
     stext = "Loop for cards with score " + to_string(tricks) + ", " +
-      TopMove(thrd.val, thrd.bestMove[thrd.iniDepth]);
+      TopMove(thrd.val, ctx.search().bestMove(ctx.search().iniDepth()));
   }
   return stext + "\n" + string(stext.size(), '-') + "\n";
 }
