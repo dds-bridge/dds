@@ -637,7 +637,7 @@ bool ABsearch3(
   unsigned short int makeWinRank[DDS_SUITS];
 
   int hand = handId(posPoint->first[depth], 3);
-  bool success = (thrp->nodeTypeStore[hand] == MAXNODE ? true : false);
+  bool success = (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
 
   SolverContext ctx{thrp};
