@@ -79,10 +79,9 @@ bool ABsearch(
 
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
-  bool success = (SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE ? true : false);
-  bool value = ! success;
-
   SolverContext ctx{thrp};
+  bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
+  bool value = ! success;
 #ifdef DDS_TOP_LEVEL
   ctx.search().nodes()++;
 #endif

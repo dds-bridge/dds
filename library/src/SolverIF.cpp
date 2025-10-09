@@ -149,14 +149,12 @@ int SolveBoardInternal(
   thrp->trump = dl.trump;
 
   thrp->iniDepth = cardCount - 4;
-  int iniDepth = SolverContext{thrp}.search().iniDepth();
+  SolverContext ctx{thrp};
+  int iniDepth = ctx.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
   int handToPlay = handId(dl.first, handRelFirst);
-  {
-    SolverContext ctx{thrp};
-    ctx.search().trickNodes() = 0;
-  }
+  ctx.search().trickNodes() = 0;
 
   thrp->lookAheadPos.handRelFirst = handRelFirst;
   thrp->lookAheadPos.first[iniDepth] = dl.first;
@@ -164,8 +162,6 @@ int SolveBoardInternal(
 
   moveType mv = {0, 0, 0, 0};
 
-  
-  SolverContext ctx{thrp};
   ctx.search().clearForbiddenMoves();
   
 
@@ -228,31 +224,25 @@ int SolveBoardInternal(
     SetDeal(thrp);
     SetDealTables(thrp);
   }
-  else if (SolverContext{thrp}.search().analysisFlag())
+  else if (ctx.search().analysisFlag())
   {
     SetDeal(thrp);
   }
-  {
-    SolverContext ctx{thrp};
-    ctx.search().analysisFlag() = false;
-  }
+  ctx.search().analysisFlag() = false;
 
+  if (handToPlay == 0 || handToPlay == 2)
   {
-    SolverContext ctx{thrp};
-    if (handToPlay == 0 || handToPlay == 2)
-    {
-      ctx.search().nodeTypeStore(0) = MAXNODE;
-      ctx.search().nodeTypeStore(1) = MINNODE;
-      ctx.search().nodeTypeStore(2) = MAXNODE;
-      ctx.search().nodeTypeStore(3) = MINNODE;
-    }
-    else
-    {
-      ctx.search().nodeTypeStore(0) = MINNODE;
-      ctx.search().nodeTypeStore(1) = MAXNODE;
-      ctx.search().nodeTypeStore(2) = MINNODE;
-      ctx.search().nodeTypeStore(3) = MAXNODE;
-    }
+    ctx.search().nodeTypeStore(0) = MAXNODE;
+    ctx.search().nodeTypeStore(1) = MINNODE;
+    ctx.search().nodeTypeStore(2) = MAXNODE;
+    ctx.search().nodeTypeStore(3) = MINNODE;
+  }
+  else
+  {
+    ctx.search().nodeTypeStore(0) = MINNODE;
+    ctx.search().nodeTypeStore(1) = MAXNODE;
+    ctx.search().nodeTypeStore(2) = MINNODE;
+    ctx.search().nodeTypeStore(3) = MAXNODE;
   }
 
   for (int k = 0; k < handRelFirst; k++)
@@ -710,7 +700,8 @@ int SolveSameBoard(
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
 
-  int iniDepth = SolverContext{thrp}.search().iniDepth();
+  SolverContext ctxSame{thrp};
+  int iniDepth = ctxSame.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
   {
     SolverContext ctx{thrp};
@@ -847,7 +838,8 @@ int AnalyseLaterBoard(
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
 
-  int iniDepth = --SolverContext{thrp}.search().iniDepth();
+  SolverContext ctxLater{thrp};
+  int iniDepth = --ctxLater.search().iniDepth();
   int cardCount = iniDepth + 4;
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
