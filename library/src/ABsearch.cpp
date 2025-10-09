@@ -340,8 +340,8 @@ bool ABsearch0(
   thrp->moves.MoveGen0(
     tricks,
     * posPoint,
-    thrp->bestMove[depth],
-    thrp->bestMoveTT[depth],
+    ctx.search().bestMove(depth),
+    ctx.search().bestMoveTT(depth),
     thrp->rel);
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
@@ -424,8 +424,8 @@ ABexit:
     }
   }
 
-  first.bestMoveSuit = static_cast<char>(thrp->bestMove[depth].suit);
-  first.bestMoveRank = static_cast<char>(thrp->bestMove[depth].rank);
+  first.bestMoveSuit = static_cast<char>(ctx.search().bestMove(depth).suit);
+  first.bestMoveRank = static_cast<char>(ctx.search().bestMove(depth).rank);
 
   bool flag =
   ((SolverContext{thrp}.search().nodeTypeStore(hand) == MAXNODE && value) ||
