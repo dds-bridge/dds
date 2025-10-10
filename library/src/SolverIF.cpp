@@ -443,6 +443,19 @@ int SolveBoardInternal(
 
   else if (target == -1)
   {
+    /*
+     * Reset semantics
+     * ----------------
+     * - ResetForSolve(): Heavy, per-solve reset (frees TT memory as needed and
+     *   clears broad search state). Use this only at top-level initialization of
+     *   a solve. Do NOT call it inside iterative search loops; it changes state
+     *   beyond what the legacy code expected and can affect move ordering/output.
+     *
+     * - ResetBestMovesLite(): Lightweight, per-iteration reset that matches the
+     *   legacy ResetBestMoves behavior. It only clears bestMove[*].rank and
+     *   bestMoveTT[*].rank, updates memUsed and ABStats. Use this inside the
+     *   do/while and other iterative loops below to preserve historical results.
+     */
     // 7 for hand 0 and 2, 6 for hand 1 and 3
     int guess = 7 - (handToPlay & 0x1);
     int upperbound = 13;
