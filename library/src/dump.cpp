@@ -363,7 +363,7 @@ void DumpTopLevel(
   fout << DumpTopHeader(thrd, tricks, lower, upper, printMode) << "\n";
   fout << PrintDeal(tpos.rankInSuit, 16);
   fout << WinnersToText(tpos.winRanks[ctx.search().iniDepth()]) << "\n";
-  fout << thrd.nodes << " AB nodes, " <<
-    thrd.trickNodes << " trick nodes\n\n";
+  fout << ctx.search().nodes() << " AB nodes, " <<
+    ctx.search().trickNodes() << " trick nodes\n\n";
 }
 
