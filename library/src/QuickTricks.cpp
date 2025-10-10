@@ -1166,7 +1166,7 @@ bool QuickTricksSecondHand(
   int qtricks = 1;
 
   int cutoff;
-  if (thrd.nodeTypeStore[hand] == MAXNODE)
+  if (ctx.search().nodeTypeStore(hand) == MAXNODE)
     cutoff = target - tpos.tricksMAX;
   else
     cutoff = tpos.tricksMAX - target + (depth >> 2) + 3;
