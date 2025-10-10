@@ -16,6 +16,7 @@ struct moveType;       // from dds/dds.h
 struct WinnersType;    // from dds/dds.h
 struct pos;            // from dds/dds.h
 struct relRanksType;   // from dds/dds.h
+struct trickDataType;  // from data_types/dds.h
 #include "trans_table/TransTable.h" // ensure complete type and enums
 
 // Minimal configuration scaffold for future expansion.
@@ -135,6 +136,9 @@ public:
     void RegisterHit(
       const int tricks,
       const int relHand);
+
+    // Read-only access to per-trick generated metadata
+    const trickDataType& GetTrickData(const int tricks);
 
   private:
     ThreadData* thr_ = nullptr;

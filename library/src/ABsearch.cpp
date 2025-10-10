@@ -831,9 +831,10 @@ void Make3(
   moveType const * mply,
   ThreadData * thrp)
 {
+  SolverContext ctx{thrp};
   int firstHand = posPoint->first[depth];
 
-  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
+  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
   /* Defines who is first in the next move */
@@ -899,7 +900,7 @@ static void Make3_ctx(
 {
   int firstHand = posPoint->first[depth];
 
-  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
+  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
   /* Defines who is first in the next move */

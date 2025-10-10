@@ -290,3 +290,8 @@ void SolverContext::MoveGenContext::RegisterHit(
 {
   thr_->moves.RegisterHit(tricks, relHand);
 }
+
+const trickDataType& SolverContext::MoveGenContext::GetTrickData(const int tricks)
+{
+  return thr_->moves.GetTrickData(tricks);
+}
