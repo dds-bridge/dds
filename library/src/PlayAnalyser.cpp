@@ -13,6 +13,7 @@
 #include "system/Memory.h"
 #include "system/Scheduler.h"
 #include "PBN.h"
+#include "system/SolverContext.h"
 
 using namespace std;
 
@@ -71,8 +72,10 @@ int STDCALL AnalysePlayBin(
   if (ret != RETURN_NO_FAULT)
     return ret;
 
-  const int numTricks = ((thrp->iniDepth + 3) >> 2) + 1;
-  const int numCardsPlayed = ((48 - thrp->iniDepth) % 4) + 1;
+  SolverContext ctx{thrp};
+  const int iniDepth = ctx.search().iniDepth();
+  const int numTricks = ((iniDepth + 3) >> 2) + 1;
+  const int numCardsPlayed = ((48 - iniDepth) % 4) + 1;
 
   int last_trick = (play.number + 3) / 4;
   int last_card = ((play.number + 3) % 4) + 1;
