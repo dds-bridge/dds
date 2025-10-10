@@ -119,6 +119,11 @@ public:
       const int relHand,
       const unsigned short winRanks[]);
 
+    // Simpler variant without winRanks used in several SolverIF paths
+    const moveType* MakeNextSimple(
+      const int trick,
+      const int relHand);
+
     int GetLength(
       const int trick,
       const int relHand) const;

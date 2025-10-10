@@ -263,6 +263,13 @@ const moveType* SolverContext::MoveGenContext::MakeNext(
   return thr_->moves.MakeNext(trick, relHand, winRanks);
 }
 
+const moveType* SolverContext::MoveGenContext::MakeNextSimple(
+  const int trick,
+  const int relHand)
+{
+  return thr_->moves.MakeNextSimple(trick, relHand);
+}
+
 int SolverContext::MoveGenContext::GetLength(
   const int trick,
   const int relHand) const

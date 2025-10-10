@@ -323,7 +323,7 @@ int SolveBoardInternal(
 
   if (mode == 0 && noMoves == 1)
   {
-    moveType const * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+  moveType const * mp = ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -400,7 +400,7 @@ int SolveBoardInternal(
         for (int j = 0; j < noLeft; j++)
         {
           moveType const * mp = 
-            thrp->moves.MakeNextSimple(trick, handRelFirst);
+            ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
           futp->suit[mno + j] = mp->suit;
           futp->rank[mno + j] = mp->rank;
