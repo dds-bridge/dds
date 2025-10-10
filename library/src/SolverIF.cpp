@@ -503,7 +503,7 @@ int SolveBoardInternal(
       for (int i = 0; i < noMoves; i++)
       {
         moveType const * mp = 
-          thrp->moves.MakeNextSimple(trick, handRelFirst);
+          ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
         futp->score[i] = 0;
         futp->suit[i] = mp->suit;
@@ -587,7 +587,7 @@ int SolveBoardInternal(
     for (int k = 0; k < num; k++)
     {
       moveType const * mp = 
-        thrp->moves.MakeNextSimple(trick, handRelFirst);
+        ctx.moveGen().MakeNextSimple(trick, handRelFirst);
       
       ctx.search().forbiddenMove(forb) = * mp;
       forb++;
