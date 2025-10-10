@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "LaterTricks.h"
+#include "system/SolverContext.h"
 
 
 /**
@@ -34,6 +35,7 @@ bool LaterTricksMIN(
   const int trump,
   const ThreadData& thrd)
 {
+  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
   if ((trump == DDS_NOTRUMP) || (tpos.winner[trump].rank == 0))
   {
     int sum = 0;
@@ -42,7 +44,7 @@ bool LaterTricksMIN(
       int hh = tpos.winner[ss].hand;
       if (hh != -1)
       {
-        if (thrd.nodeTypeStore[hh] == MAXNODE)
+        if (ctx.search().nodeTypeStore(hh) == MAXNODE)
           sum += max(tpos.length[hh][ss],
                      tpos.length[partner[hh]][ss]);
       }
@@ -59,7 +61,7 @@ bool LaterTricksMIN(
 
         if (win_hand == -1)
           tpos.winRanks[depth][ss] = 0;
-        else if (thrd.nodeTypeStore[win_hand] == MINNODE)
+        else if (ctx.search().nodeTypeStore(win_hand) == MINNODE)
         {
           if ((tpos.rankInSuit[partner[win_hand]][ss] == 0) &&
               (tpos.rankInSuit[lho[win_hand]][ss] == 0) &&
@@ -74,7 +76,7 @@ bool LaterTricksMIN(
       return false;
     }
   }
-  else if (thrd.nodeTypeStore[tpos.winner[trump].hand] == MINNODE)
+  else if (ctx.search().nodeTypeStore(tpos.winner[trump].hand) == MINNODE)
   {
     if ((tpos.length[hand][trump] == 0) &&
         (tpos.length[partner[hand]][trump] == 0))
@@ -103,7 +105,7 @@ bool LaterTricksMIN(
         return true;
 
       int r2 = tpos.secondBest[trump].rank;
-      if ((thrd.nodeTypeStore[hh] == MINNODE) && (r2 != 0))
+      if ((ctx.search().nodeTypeStore(hh) == MINNODE) && (r2 != 0))
       {
         if (tpos.length[hh][trump] > 1 ||
             tpos.length[partner[hh]][trump] > 1)
@@ -122,7 +124,7 @@ bool LaterTricksMIN(
     if (hh == -1)
       return true;
 
-    if ((thrd.nodeTypeStore[hh] != MINNODE) ||
+    if ((ctx.search().nodeTypeStore(hh) != MINNODE) ||
         (tpos.length[hh][trump] <= 1))
       return true;
 
@@ -144,7 +146,7 @@ bool LaterTricksMIN(
       if (h == -1)
         return true;
 
-      if ((thrd.nodeTypeStore[h] == MINNODE) &&
+      if ((ctx.search().nodeTypeStore(h) == MINNODE) &&
           ((tpos.tricksMAX + (depth >> 2)) < target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -181,6 +183,7 @@ bool LaterTricksMAX(
   const int trump,
   const ThreadData& thrd)
 {
+  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
   if ((trump == DDS_NOTRUMP) || (tpos.winner[trump].rank == 0))
   {
     int sum = 0;
@@ -189,7 +192,7 @@ bool LaterTricksMAX(
       int hh = tpos.winner[ss].hand;
       if (hh != -1)
       {
-        if (thrd.nodeTypeStore[hh] == MINNODE)
+        if (ctx.search().nodeTypeStore(hh) == MINNODE)
           sum += max(tpos.length[hh][ss],
                      tpos.length[partner[hh]][ss]);
       }
@@ -206,7 +209,7 @@ bool LaterTricksMAX(
         int win_hand = tpos.winner[ss].hand;
         if (win_hand == -1)
           tpos.winRanks[depth][ss] = 0;
-        else if (thrd.nodeTypeStore[win_hand] == MAXNODE)
+        else if (ctx.search().nodeTypeStore(win_hand) == MAXNODE)
         {
           if ((tpos.rankInSuit[partner[win_hand]][ss] == 0) &&
               (tpos.rankInSuit[lho[win_hand]][ss] == 0) &&
@@ -222,7 +225,7 @@ bool LaterTricksMAX(
       return true;
     }
   }
-  else if (thrd.nodeTypeStore[tpos.winner[trump].hand] == MAXNODE)
+  else if (ctx.search().nodeTypeStore(tpos.winner[trump].hand) == MAXNODE)
   {
     if ((tpos.length[hand][trump] == 0) &&
         (tpos.length[partner[hand]][trump] == 0))
@@ -251,7 +254,7 @@ bool LaterTricksMAX(
       if (hh == -1)
         return false;
 
-      if ((thrd.nodeTypeStore[hh] == MAXNODE) &&
+      if ((ctx.search().nodeTypeStore(hh) == MAXNODE) &&
           (tpos.secondBest[trump].rank != 0))
       {
         if (((tpos.length[hh][trump] > 1) ||
@@ -274,7 +277,7 @@ bool LaterTricksMAX(
     if (hh == -1)
       return false;
 
-    if ((thrd.nodeTypeStore[hh] != MAXNODE) ||
+    if ((ctx.search().nodeTypeStore(hh) != MAXNODE) ||
         (tpos.length[hh][trump] <= 1))
       return false;
 
@@ -296,7 +299,7 @@ bool LaterTricksMAX(
       if (h == -1)
         return false;
 
-      if ((thrd.nodeTypeStore[h] == MAXNODE) &&
+      if ((ctx.search().nodeTypeStore(h) == MAXNODE) &&
           ((tpos.tricksMAX + 1) >= target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)

@@ -11,6 +11,7 @@
 #include <algorithm>
 
 #include "QuickTricks.h"
+#include "system/SolverContext.h"
 
 
 int QtricksLeadHandNT(
@@ -105,6 +106,7 @@ int QuickTricks(
   bool& result,
   const ThreadData& thrd)
 {
+  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
   int suit, commRank = 0, commSuit = -1;
   int res;
   int lhoTrumpRanks = 0, rhoTrumpRanks = 0;
@@ -113,7 +115,7 @@ int QuickTricks(
   result = true;
   int qtricks = 0;
 
-  if (thrd.nodeTypeStore[hand] == MAXNODE)
+  if (ctx.search().nodeTypeStore(hand) == MAXNODE)
     cutoff = target - tpos.tricksMAX;
   else
     cutoff = tpos.tricksMAX - target + (depth >> 2) + 2;
@@ -660,7 +662,7 @@ int QuickTricks(
         }
       }
 
-      if (thrd.nodeTypeStore[hand] != MAXNODE)
+      if (ctx.search().nodeTypeStore(hand) != MAXNODE)
         cutoff = target - tpos.tricksMAX;
       else
       {
@@ -1118,7 +1120,8 @@ bool QuickTricksSecondHand(
   const int trump,
   const ThreadData& thrd)
 {
-  if (depth == thrd.iniDepth)
+  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  if (depth == ctx.search().iniDepth())
     return false;
 
   int ss = tpos.move[depth + 1].suit;
@@ -1163,7 +1166,7 @@ bool QuickTricksSecondHand(
   int qtricks = 1;
 
   int cutoff;
-  if (thrd.nodeTypeStore[hand] == MAXNODE)
+  if (ctx.search().nodeTypeStore(hand) == MAXNODE)
     cutoff = target - tpos.tricksMAX;
   else
     cutoff = tpos.tricksMAX - target + (depth >> 2) + 3;

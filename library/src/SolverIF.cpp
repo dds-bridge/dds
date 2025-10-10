@@ -148,8 +148,8 @@ int SolveBoardInternal(
 
   thrp->trump = dl.trump;
 
-  thrp->iniDepth = cardCount - 4;
   SolverContext ctx{thrp};
+  ctx.search().iniDepth() = cardCount - 4;
   int iniDepth = ctx.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
@@ -352,7 +352,7 @@ int SolveBoardInternal(
     {
       do
       {
-        ResetBestMoves(thrp);
+        ctx.ResetBestMovesLite();
 
         TIMER_START(TIMER_NO_AB, iniDepth);
         thrp->val = (* AB_ptr_list[handRelFirst])(
@@ -443,13 +443,26 @@ int SolveBoardInternal(
 
   else if (target == -1)
   {
+    /*
+     * Reset semantics
+     * ----------------
+     * - ResetForSolve(): Heavy, per-solve reset (frees TT memory as needed and
+     *   clears broad search state). Use this only at top-level initialization of
+     *   a solve. Do NOT call it inside iterative search loops; it changes state
+     *   beyond what the legacy code expected and can affect move ordering/output.
+     *
+     * - ResetBestMovesLite(): Lightweight, per-iteration reset that matches the
+     *   legacy ResetBestMoves behavior. It only clears bestMove[*].rank and
+     *   bestMoveTT[*].rank, updates memUsed and ABStats. Use this inside the
+     *   do/while and other iterative loops below to preserve historical results.
+     */
     // 7 for hand 0 and 2, 6 for hand 1 and 3
     int guess = 7 - (handToPlay & 0x1);
     int upperbound = 13;
     int lowerbound = 0;
     do
     {
-      ResetBestMoves(thrp);
+      ctx.ResetBestMovesLite();
 
       TIMER_START(TIMER_NO_AB, iniDepth);
       thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
@@ -584,7 +597,7 @@ int SolveBoardInternal(
         break;
     }
 
-    ResetBestMoves(thrp);
+  /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_list[handRelFirst])(
@@ -722,7 +735,7 @@ int SolveSameBoard(
 
   do
   {
-    ResetBestMoves(thrp);
+  /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = ABsearch(
@@ -898,7 +911,7 @@ int AnalyseLaterBoard(
 
   do
   {
-    ResetBestMoves(thrp);
+  ctxLater.ResetBestMovesLite();
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_trace_list[handRelFirst])(
@@ -1076,7 +1089,8 @@ int BoardValueChecks(
   const int mode,
   ThreadData const * thrp)
 {
-  int cardCount = thrp->iniDepth + 4;
+  SolverContext ctx{const_cast<ThreadData*>(thrp)};
+  int cardCount = ctx.search().iniDepth() + 4;
   if (cardCount <= 0)
   {
     DumpInput(RETURN_ZERO_CARDS, dl, target, solutions, mode);

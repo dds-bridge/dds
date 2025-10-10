@@ -397,27 +397,6 @@ void InitWinners(
 }
 
 
-void ResetBestMoves(
-  ThreadData * thrp)
-{
-  for (int d = 0; d <= 49; d++)
-  {
-    thrp->bestMove [d].rank = 0;
-    thrp->bestMoveTT[d].rank = 0;
-  }
-
-  {
-    SolverContext ctx{thrp};
-    thrp->memUsed = ctx.transTable()->MemoryInUse() +
-                    ThreadMemoryUsed();
-  }
-
-#ifdef DDS_AB_STATS
-  thrp->ABStats.Reset();
-#endif
-}
-
-
 void STDCALL GetDDSInfo(DDSInfo * info)
 {
   stringstream ss;
@@ -494,18 +473,6 @@ void STDCALL FreeMemory()
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
     memory.ReturnThread(thrId);
 }
-
-
-double ThreadMemoryUsed()
-{
-  // TODO:  Only needed because SolverIF wants to set it. Avoid?
-  double memUsed =
-    8192 * sizeof(relRanksType)
-    / static_cast<double>(1024.);
-
-  return memUsed;
-}
-
 
 void STDCALL ErrorMessage(int code, char line[80])
 {
