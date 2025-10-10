@@ -23,9 +23,6 @@ void InitWinners(
   pos& posPoint,
   ThreadData const * thrp);
 
-
-double ThreadMemoryUsed();
-
 void CloseDebugFiles();
 
 #endif

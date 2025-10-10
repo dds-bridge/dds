@@ -91,4 +91,6 @@ private:
   SolverConfig cfg_{};
 };
 
+double ThreadMemoryUsed();
+
 #endif // DDS_SYSTEM_SOLVERCONTEXT_H

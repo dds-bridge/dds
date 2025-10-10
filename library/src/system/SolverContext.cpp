@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
-#include "Init.h"
 
 namespace {
 // Central registry mapping ThreadData* to its TransTable instance.
@@ -217,4 +216,14 @@ void SolverContext::ResetBestMovesLite() const
 #ifdef DDS_AB_STATS
   thr_->ABStats.Reset();
 #endif
+}
+
+double ThreadMemoryUsed()
+{
+  // TODO:  Only needed because SolverIF wants to set it. Avoid?
+  double memUsed =
+    8192 * sizeof(relRanksType)
+    / static_cast<double>(1024.);
+
+  return memUsed;
 }

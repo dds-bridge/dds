@@ -474,18 +474,6 @@ void STDCALL FreeMemory()
     memory.ReturnThread(thrId);
 }
 
-
-double ThreadMemoryUsed()
-{
-  // TODO:  Only needed because SolverIF wants to set it. Avoid?
-  double memUsed =
-    8192 * sizeof(relRanksType)
-    / static_cast<double>(1024.);
-
-  return memUsed;
-}
-
-
 void STDCALL ErrorMessage(int code, char line[80])
 {
   switch (code)
