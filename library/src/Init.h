@@ -23,7 +23,6 @@ void InitWinners(
   pos& posPoint,
   ThreadData const * thrp);
 
-void ResetBestMoves(ThreadData * thrp);
 
 double ThreadMemoryUsed();
 

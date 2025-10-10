@@ -397,27 +397,6 @@ void InitWinners(
 }
 
 
-void ResetBestMoves(
-  ThreadData * thrp)
-{
-  for (int d = 0; d <= 49; d++)
-  {
-    thrp->bestMove [d].rank = 0;
-    thrp->bestMoveTT[d].rank = 0;
-  }
-
-  {
-    SolverContext ctx{thrp};
-    thrp->memUsed = ctx.transTable()->MemoryInUse() +
-                    ThreadMemoryUsed();
-  }
-
-#ifdef DDS_AB_STATS
-  thrp->ABStats.Reset();
-#endif
-}
-
-
 void STDCALL GetDDSInfo(DDSInfo * info)
 {
   stringstream ss;
