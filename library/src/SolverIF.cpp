@@ -148,8 +148,8 @@ int SolveBoardInternal(
 
   thrp->trump = dl.trump;
 
-  thrp->iniDepth = cardCount - 4;
   SolverContext ctx{thrp};
+  ctx.search().iniDepth() = cardCount - 4;
   int iniDepth = ctx.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
@@ -352,7 +352,7 @@ int SolveBoardInternal(
     {
       do
       {
-        ResetBestMoves(thrp);
+  ctx.ResetForSolve();
 
         TIMER_START(TIMER_NO_AB, iniDepth);
         thrp->val = (* AB_ptr_list[handRelFirst])(
@@ -449,7 +449,7 @@ int SolveBoardInternal(
     int lowerbound = 0;
     do
     {
-      ResetBestMoves(thrp);
+      ctx.ResetForSolve();
 
       TIMER_START(TIMER_NO_AB, iniDepth);
       thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
@@ -584,7 +584,7 @@ int SolveBoardInternal(
         break;
     }
 
-    ResetBestMoves(thrp);
+  ctx.ResetForSolve();
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_list[handRelFirst])(
@@ -722,7 +722,7 @@ int SolveSameBoard(
 
   do
   {
-    ResetBestMoves(thrp);
+  ctxSame.ResetForSolve();
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = ABsearch(
@@ -898,7 +898,7 @@ int AnalyseLaterBoard(
 
   do
   {
-    ResetBestMoves(thrp);
+    ctxLater.ResetForSolve();
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_trace_list[handRelFirst])(
