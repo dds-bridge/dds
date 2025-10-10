@@ -853,7 +853,7 @@ int AnalyseLaterBoard(
 
   if (handRelFirst == 0)
   {
-    thrp->moves.MakeSpecific(* move, trick + 1, 3);
+    ctxLater.moveGen().MakeSpecific(* move, trick + 1, 3);
     unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
     Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, thrp);
   }
