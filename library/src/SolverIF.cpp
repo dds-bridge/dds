@@ -426,7 +426,7 @@ int SolveBoardInternal(
     for (int mno = 0; mno < noMoves; mno++)
     {
       moveType const * mp = 
-        thrp->moves.MakeNextSimple(trick, handRelFirst);
+        ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
       futp->suit[mno] = mp->suit;
       futp->rank[mno] = mp->rank;
