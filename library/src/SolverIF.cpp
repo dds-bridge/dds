@@ -261,7 +261,7 @@ int SolveBoardInternal(
 
     if (k == 0)
     {
-      thrp->moves.MoveGen0(
+      ctx.moveGen().MoveGen0(
         trick,
         thrp->lookAheadPos,
         ctx.search().bestMove(iniDepth),
@@ -269,7 +269,7 @@ int SolveBoardInternal(
         thrp->rel);
     }
     else
-      thrp->moves.MoveGen123(
+      ctx.moveGen().MoveGen123(
         trick,
         k,
         thrp->lookAheadPos);
@@ -302,7 +302,7 @@ int SolveBoardInternal(
 
   if (handRelFirst == 0)
   {
-    thrp->moves.MoveGen0(
+    ctx.moveGen().MoveGen0(
       trick,
       thrp->lookAheadPos,
       ctx.search().bestMove(iniDepth),
@@ -310,12 +310,12 @@ int SolveBoardInternal(
       thrp->rel);
   }
   else
-    thrp->moves.MoveGen123(
+    ctx.moveGen().MoveGen123(
       trick,
       handRelFirst,
       thrp->lookAheadPos);
 
-  noMoves = thrp->moves.GetLength(trick, handRelFirst);
+  noMoves = ctx.moveGen().GetLength(trick, handRelFirst);
 
   // ----------------------------------------------------------
   // mode == 0: Check whether there is only one possible move
@@ -394,9 +394,9 @@ int SolveBoardInternal(
       }
       else
       {
-        int noLeft = thrp->moves.GetLength(trick, handRelFirst);
+  int noLeft = ctx.moveGen().GetLength(trick, handRelFirst);
 
-        thrp->moves.Rewind(trick, handRelFirst);
+  ctx.moveGen().Rewind(trick, handRelFirst);
         for (int j = 0; j < noLeft; j++)
         {
           moveType const * mp = 
@@ -499,7 +499,7 @@ int SolveBoardInternal(
       else // solutions == 2, so return all cards
         futp->cards = noMoves;
 
-      thrp->moves.Rewind(trick, handRelFirst);
+  ctx.moveGen().Rewind(trick, handRelFirst);
       for (int i = 0; i < noMoves; i++)
       {
         moveType const * mp = 
@@ -581,8 +581,8 @@ int SolveBoardInternal(
   {
     // Moves up to and including bestMove are now forbidden.
 
-    thrp->moves.Rewind(trick, handRelFirst);
-    int num = thrp->moves.GetLength(trick, handRelFirst);
+  ctx.moveGen().Rewind(trick, handRelFirst);
+  int num = ctx.moveGen().GetLength(trick, handRelFirst);
 
     for (int k = 0; k < num; k++)
     {
@@ -1089,7 +1089,7 @@ int BoardValueChecks(
   const int mode,
   ThreadData const * thrp)
 {
-  SolverContext ctx{const_cast<ThreadData*>(thrp)};
+  SolverContext ctx{thrp};
   int cardCount = ctx.search().iniDepth() + 4;
   if (cardCount <= 0)
   {

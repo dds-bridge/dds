@@ -14,6 +14,8 @@ struct deal;           // defined in dds/dll.h
 struct futureTricks;   // defined in dds/dll.h
 struct moveType;       // from dds/dds.h
 struct WinnersType;    // from dds/dds.h
+struct pos;            // from dds/dds.h
+struct relRanksType;   // from dds/dds.h
 #include "trans_table/TransTable.h" // ensure complete type and enums
 
 // Minimal configuration scaffold for future expansion.
@@ -32,6 +34,10 @@ class SolverContext
 public:
   explicit SolverContext(ThreadData* thread, SolverConfig cfg = {})
   : thr_(thread), cfg_(cfg) {}
+
+  // Allow construction from const ThreadData* for read-only contexts
+  explicit SolverContext(const ThreadData* thread, SolverConfig cfg = {})
+  : thr_(const_cast<ThreadData*>(thread)), cfg_(cfg) {}
 
   ~SolverContext();
 
@@ -85,6 +91,51 @@ public:
   };
 
   inline SearchContext search() const { return SearchContext(thr_); }
+
+  // --- Move generation facade ---
+  class MoveGenContext {
+  public:
+    explicit MoveGenContext(ThreadData* thr) : thr_(thr) {}
+
+    int MoveGen0(
+      const int tricks,
+      const pos& tpos,
+      const moveType& bestMove,
+      const moveType& bestMoveTT,
+      const relRanksType thrp_rel[]);
+
+    int MoveGen123(
+      const int tricks,
+      const int relHand,
+      const pos& tpos);
+
+    void Purge(
+      const int tricks,
+      const int relHand,
+      const moveType forbiddenMoves[]);
+
+    const moveType* MakeNext(
+      const int trick,
+      const int relHand,
+      const unsigned short winRanks[]);
+
+    int GetLength(
+      const int trick,
+      const int relHand) const;
+
+    void Rewind(
+      const int tricks,
+      const int relHand);
+
+    void RegisterHit(
+      const int tricks,
+      const int relHand);
+
+  private:
+    ThreadData* thr_ = nullptr;
+  };
+
+  inline MoveGenContext moveGen() const { return MoveGenContext(thr_); }
 
 private:
   ThreadData* thr_ = nullptr;

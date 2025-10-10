@@ -225,7 +225,7 @@ string DumpTopHeader(
   const int printMode)
 {
   // Use facade to read search-state safely
-  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  SolverContext ctx{&thrd};
   string stext;
   if (printMode == 0)
   {
@@ -358,7 +358,7 @@ void DumpTopLevel(
   const int printMode)
 {
   const pos& tpos = thrd.lookAheadPos;
-  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  SolverContext ctx{&thrd};
 
   fout << DumpTopHeader(thrd, tricks, lower, upper, printMode) << "\n";
   fout << PrintDeal(tpos.rankInSuit, 16);

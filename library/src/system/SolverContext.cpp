@@ -227,3 +227,59 @@ double ThreadMemoryUsed()
 
   return memUsed;
 }
+
+// --- MoveGenContext out-of-line definitions ---
+int SolverContext::MoveGenContext::MoveGen0(
+  const int tricks,
+  const pos& tpos,
+  const moveType& bestMove,
+  const moveType& bestMoveTT,
+  const relRanksType thrp_rel[])
+{
+  return thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
+}
+
+int SolverContext::MoveGenContext::MoveGen123(
+  const int tricks,
+  const int relHand,
+  const pos& tpos)
+{
+  return thr_->moves.MoveGen123(tricks, relHand, tpos);
+}
+
+void SolverContext::MoveGenContext::Purge(
+  const int tricks,
+  const int relHand,
+  const moveType forbiddenMoves[])
+{
+  thr_->moves.Purge(tricks, relHand, forbiddenMoves);
+}
+
+const moveType* SolverContext::MoveGenContext::MakeNext(
+  const int trick,
+  const int relHand,
+  const unsigned short winRanks[])
+{
+  return thr_->moves.MakeNext(trick, relHand, winRanks);
+}
+
+int SolverContext::MoveGenContext::GetLength(
+  const int trick,
+  const int relHand) const
+{
+  return thr_->moves.GetLength(trick, relHand);
+}
+
+void SolverContext::MoveGenContext::Rewind(
+  const int tricks,
+  const int relHand)
+{
+  thr_->moves.Rewind(tricks, relHand);
+}
+
+void SolverContext::MoveGenContext::RegisterHit(
+  const int tricks,
+  const int relHand)
+{
+  thr_->moves.RegisterHit(tricks, relHand);
+}
