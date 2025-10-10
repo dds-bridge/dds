@@ -295,3 +295,11 @@ const trickDataType& SolverContext::MoveGenContext::GetTrickData(const int trick
 {
   return thr_->moves.GetTrickData(tricks);
 }
+
+void SolverContext::MoveGenContext::MakeSpecific(
+  const moveType& mply,
+  const int trick,
+  const int relHand)
+{
+  thr_->moves.MakeSpecific(mply, trick, relHand);
+}

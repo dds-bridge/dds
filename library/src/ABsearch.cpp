@@ -962,7 +962,8 @@ void Make3Simple(
   moveType const * mply,
   ThreadData * thrp)
 {
-  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
+  SolverContext ctx{thrp};
+  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   int firstHand = posPoint->first[depth];
 

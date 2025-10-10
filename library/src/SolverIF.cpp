@@ -274,8 +274,8 @@ int SolveBoardInternal(
         k,
         thrp->lookAheadPos);
 
-    thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
-    thrp->moves.MakeSpecific(mv, trick, k);
+  thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
+  ctx.moveGen().MakeSpecific(mv, trick, k);
   }
 
   InitWinners(dl, thrp->lookAheadPos, thrp);

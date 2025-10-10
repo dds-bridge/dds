@@ -140,6 +140,12 @@ public:
     // Read-only access to per-trick generated metadata
     const trickDataType& GetTrickData(const int tricks);
 
+    // Specify a particular move at a trick/hand position
+    void MakeSpecific(
+      const moveType& mply,
+      const int trick,
+      const int relHand);
+
   private:
     ThreadData* thr_ = nullptr;
   };
