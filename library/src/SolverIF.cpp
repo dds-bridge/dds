@@ -352,7 +352,7 @@ int SolveBoardInternal(
     {
       do
       {
-  ctx.ResetForSolve();
+        ctx.ResetBestMovesLite();
 
         TIMER_START(TIMER_NO_AB, iniDepth);
         thrp->val = (* AB_ptr_list[handRelFirst])(
@@ -449,7 +449,7 @@ int SolveBoardInternal(
     int lowerbound = 0;
     do
     {
-      ctx.ResetForSolve();
+      ctx.ResetBestMovesLite();
 
       TIMER_START(TIMER_NO_AB, iniDepth);
       thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
@@ -584,7 +584,7 @@ int SolveBoardInternal(
         break;
     }
 
-  ctx.ResetForSolve();
+  /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_list[handRelFirst])(
@@ -722,7 +722,7 @@ int SolveSameBoard(
 
   do
   {
-  ctxSame.ResetForSolve();
+  /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = ABsearch(
@@ -898,7 +898,7 @@ int AnalyseLaterBoard(
 
   do
   {
-    ctxLater.ResetForSolve();
+  ctxLater.ResetBestMovesLite();
 
     TIMER_START(TIMER_NO_AB, iniDepth);
     thrp->val = (* AB_ptr_trace_list[handRelFirst])(

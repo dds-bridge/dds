@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
+#include "Init.h"
 
 namespace {
 // Central registry mapping ThreadData* to its TransTable instance.
@@ -197,4 +198,23 @@ void SolverContext::ResizeTT(int defMB, int maxMB) const
     tt->SetMemoryDefault(defMB);
     tt->SetMemoryMaximum(maxMB);
   }
+}
+
+// Lightweight reset matching legacy ResetBestMoves semantics.
+void SolverContext::ResetBestMovesLite() const
+{
+  if (!thr_) return;
+  for (int d = 0; d <= 49; ++d)
+  {
+    thr_->bestMove[d].rank = 0;
+    thr_->bestMoveTT[d].rank = 0;
+  }
+  // Keep memUsed in sync as the legacy code did
+  if (auto* tt = maybeTransTable())
+    thr_->memUsed = tt->MemoryInUse() + ThreadMemoryUsed();
+  else
+    thr_->memUsed = ThreadMemoryUsed();
+#ifdef DDS_AB_STATS
+  thr_->ABStats.Reset();
+#endif
 }

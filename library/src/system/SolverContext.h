@@ -46,6 +46,9 @@ public:
 
   // Lightweight facades used by tests and call sites; no-ops if no TT exists.
   void ResetForSolve() const;   // Calls ResetMemory(TT_RESET_FREE_MEMORY)
+  // Lightweight per-iteration reset matching legacy ResetBestMoves semantics.
+  // Only clears bestMove[*].rank and bestMoveTT[*].rank, updates memUsed and ABStats.
+  void ResetBestMovesLite() const;
   void ClearTT() const;         // Calls ReturnAllMemory()
   void ResizeTT(int defMB, int maxMB) const; // Updates sizes if TT exists
 
