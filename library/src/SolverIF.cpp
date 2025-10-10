@@ -1076,7 +1076,8 @@ int BoardValueChecks(
   const int mode,
   ThreadData const * thrp)
 {
-  int cardCount = thrp->iniDepth + 4;
+  SolverContext ctx{const_cast<ThreadData*>(thrp)};
+  int cardCount = ctx.search().iniDepth() + 4;
   if (cardCount <= 0)
   {
     DumpInput(RETURN_ZERO_CARDS, dl, target, solutions, mode);
