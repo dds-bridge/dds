@@ -787,11 +787,11 @@ int SolveSameBoard(
 #endif
 
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
+  ctxSame.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
+  ctxSame.moveGen().PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctxSame.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
   {
@@ -967,11 +967,11 @@ int AnalyseLaterBoard(
 #endif
 
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
+  ctxLater.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
+  ctxLater.moveGen().PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctxLater.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
