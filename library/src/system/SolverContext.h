@@ -162,7 +162,7 @@ public:
     const trickDataType& GetTrickData(const int tricks);
 
  // Read-only textual dump helper
-  std::string TrickToText(const int trick) const;
+    std::string TrickToText(const int trick) const;
 
     // Specify a particular move at a trick/hand position
     void MakeSpecific(
