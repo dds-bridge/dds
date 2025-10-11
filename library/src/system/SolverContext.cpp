@@ -227,3 +227,119 @@ double ThreadMemoryUsed()
 
   return memUsed;
 }
+
+// --- MoveGenContext out-of-line definitions ---
+int SolverContext::MoveGenContext::MoveGen0(
+  const int tricks,
+  const pos& tpos,
+  const moveType& bestMove,
+  const moveType& bestMoveTT,
+  const relRanksType thrp_rel[])
+{
+  return thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
+}
+
+int SolverContext::MoveGenContext::MoveGen123(
+  const int tricks,
+  const int relHand,
+  const pos& tpos)
+{
+  return thr_->moves.MoveGen123(tricks, relHand, tpos);
+}
+
+void SolverContext::MoveGenContext::Purge(
+  const int tricks,
+  const int relHand,
+  const moveType forbiddenMoves[])
+{
+  thr_->moves.Purge(tricks, relHand, forbiddenMoves);
+}
+
+const moveType* SolverContext::MoveGenContext::MakeNext(
+  const int trick,
+  const int relHand,
+  const unsigned short winRanks[])
+{
+  return thr_->moves.MakeNext(trick, relHand, winRanks);
+}
+
+const moveType* SolverContext::MoveGenContext::MakeNextSimple(
+  const int trick,
+  const int relHand)
+{
+  return thr_->moves.MakeNextSimple(trick, relHand);
+}
+
+int SolverContext::MoveGenContext::GetLength(
+  const int trick,
+  const int relHand) const
+{
+  return thr_->moves.GetLength(trick, relHand);
+}
+
+void SolverContext::MoveGenContext::Rewind(
+  const int tricks,
+  const int relHand)
+{
+  thr_->moves.Rewind(tricks, relHand);
+}
+
+void SolverContext::MoveGenContext::RegisterHit(
+  const int tricks,
+  const int relHand)
+{
+  thr_->moves.RegisterHit(tricks, relHand);
+}
+
+const trickDataType& SolverContext::MoveGenContext::GetTrickData(const int tricks)
+{
+  return thr_->moves.GetTrickData(tricks);
+}
+
+void SolverContext::MoveGenContext::MakeSpecific(
+  const moveType& mply,
+  const int trick,
+  const int relHand)
+{
+  thr_->moves.MakeSpecific(mply, trick, relHand);
+}
+
+std::string SolverContext::MoveGenContext::TrickToText(const int trick) const
+{
+  return thr_->moves.TrickToText(trick);
+}
+
+void SolverContext::MoveGenContext::Reinit(
+  const int tricks,
+  const int leadHand)
+{
+  thr_->moves.Reinit(tricks, leadHand);
+}
+
+void SolverContext::MoveGenContext::Init(
+  const int tricks,
+  const int relStartHand,
+  const int initialRanks[],
+  const int initialSuits[],
+  const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+  const int trump,
+  const int leadHand)
+{
+  thr_->moves.Init(tricks, relStartHand, initialRanks, initialSuits,
+                   rankInSuit, trump, leadHand);
+}
+
+void SolverContext::MoveGenContext::PrintTrickStats(std::ofstream& fout) const
+{
+  thr_->moves.PrintTrickStats(fout);
+}
+
+void SolverContext::MoveGenContext::PrintFunctionStats(std::ofstream& fout) const
+{
+  thr_->moves.PrintFunctionStats(fout);
+}
+
+void SolverContext::MoveGenContext::PrintTrickDetails(std::ofstream& fout) const
+{
+  thr_->moves.PrintTrickDetails(fout);
+}

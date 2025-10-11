@@ -250,7 +250,7 @@ int SolveBoardInternal(
     mv.suit = dl.currentTrickSuit[k];
     mv.sequence = 0;
 
-    thrp->moves.Init(
+    ctx.moveGen().Init(
       trick,
       k,
       dl.currentTrickRank,
@@ -261,7 +261,7 @@ int SolveBoardInternal(
 
     if (k == 0)
     {
-      thrp->moves.MoveGen0(
+      ctx.moveGen().MoveGen0(
         trick,
         thrp->lookAheadPos,
         ctx.search().bestMove(iniDepth),
@@ -269,13 +269,13 @@ int SolveBoardInternal(
         thrp->rel);
     }
     else
-      thrp->moves.MoveGen123(
+      ctx.moveGen().MoveGen123(
         trick,
         k,
         thrp->lookAheadPos);
 
-    thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
-    thrp->moves.MakeSpecific(mv, trick, k);
+  thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
+  ctx.moveGen().MakeSpecific(mv, trick, k);
   }
 
   InitWinners(dl, thrp->lookAheadPos, thrp);
@@ -291,7 +291,7 @@ int SolveBoardInternal(
   }
 #endif
 
-  thrp->moves.Init(
+  ctx.moveGen().Init(
     trick,
     handRelFirst,
     dl.currentTrickRank,
@@ -302,7 +302,7 @@ int SolveBoardInternal(
 
   if (handRelFirst == 0)
   {
-    thrp->moves.MoveGen0(
+    ctx.moveGen().MoveGen0(
       trick,
       thrp->lookAheadPos,
       ctx.search().bestMove(iniDepth),
@@ -310,12 +310,12 @@ int SolveBoardInternal(
       thrp->rel);
   }
   else
-    thrp->moves.MoveGen123(
+    ctx.moveGen().MoveGen123(
       trick,
       handRelFirst,
       thrp->lookAheadPos);
 
-  noMoves = thrp->moves.GetLength(trick, handRelFirst);
+  noMoves = ctx.moveGen().GetLength(trick, handRelFirst);
 
   // ----------------------------------------------------------
   // mode == 0: Check whether there is only one possible move
@@ -323,7 +323,7 @@ int SolveBoardInternal(
 
   if (mode == 0 && noMoves == 1)
   {
-    moveType const * mp = thrp->moves.MakeNextSimple(trick, handRelFirst);
+  moveType const * mp = ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -394,13 +394,13 @@ int SolveBoardInternal(
       }
       else
       {
-        int noLeft = thrp->moves.GetLength(trick, handRelFirst);
+  int noLeft = ctx.moveGen().GetLength(trick, handRelFirst);
 
-        thrp->moves.Rewind(trick, handRelFirst);
+  ctx.moveGen().Rewind(trick, handRelFirst);
         for (int j = 0; j < noLeft; j++)
         {
           moveType const * mp = 
-            thrp->moves.MakeNextSimple(trick, handRelFirst);
+            ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
           futp->suit[mno + j] = mp->suit;
           futp->rank[mno + j] = mp->rank;
@@ -426,7 +426,7 @@ int SolveBoardInternal(
     for (int mno = 0; mno < noMoves; mno++)
     {
       moveType const * mp = 
-        thrp->moves.MakeNextSimple(trick, handRelFirst);
+        ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
       futp->suit[mno] = mp->suit;
       futp->rank[mno] = mp->rank;
@@ -499,11 +499,11 @@ int SolveBoardInternal(
       else // solutions == 2, so return all cards
         futp->cards = noMoves;
 
-      thrp->moves.Rewind(trick, handRelFirst);
+  ctx.moveGen().Rewind(trick, handRelFirst);
       for (int i = 0; i < noMoves; i++)
       {
         moveType const * mp = 
-          thrp->moves.MakeNextSimple(trick, handRelFirst);
+          ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
         futp->score[i] = 0;
         futp->suit[i] = mp->suit;
@@ -581,13 +581,13 @@ int SolveBoardInternal(
   {
     // Moves up to and including bestMove are now forbidden.
 
-    thrp->moves.Rewind(trick, handRelFirst);
-    int num = thrp->moves.GetLength(trick, handRelFirst);
+  ctx.moveGen().Rewind(trick, handRelFirst);
+  int num = ctx.moveGen().GetLength(trick, handRelFirst);
 
     for (int k = 0; k < num; k++)
     {
       moveType const * mp = 
-        thrp->moves.MakeNextSimple(trick, handRelFirst);
+        ctx.moveGen().MakeNextSimple(trick, handRelFirst);
       
       ctx.search().forbiddenMove(forb) = * mp;
       forb++;
@@ -652,12 +652,13 @@ SOLVER_STATS:
   }
 #endif
 
+// Diagnostics are routed via the SolverContext MoveGen facade.
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
+  ctx.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
+  ctx.moveGen().PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctx.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
 SOLVER_DONE:
@@ -727,7 +728,7 @@ int SolveSameBoard(
   }
 #endif
 
-  thrp->moves.Reinit(trick, dl.first);
+  ctxSame.moveGen().Reinit(trick, dl.first);
 
   int guess = hint;
   int lowerbound = 0;
@@ -787,11 +788,11 @@ int SolveSameBoard(
 #endif
 
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
+  ctxSame.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
+  ctxSame.moveGen().PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctxSame.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
   {
@@ -853,23 +854,23 @@ int AnalyseLaterBoard(
 
   if (handRelFirst == 0)
   {
-    thrp->moves.MakeSpecific(* move, trick + 1, 3);
+    ctxLater.moveGen().MakeSpecific(* move, trick + 1, 3);
     unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
     Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, thrp);
   }
   else if (handRelFirst == 1)
   {
-    thrp->moves.MakeSpecific(* move, trick, 0);
+    ctxLater.moveGen().MakeSpecific(* move, trick, 0);
     Make0(&thrp->lookAheadPos, iniDepth + 1, move);
   }
   else if (handRelFirst == 2)
   {
-    thrp->moves.MakeSpecific(* move, trick, 1);
+    ctxLater.moveGen().MakeSpecific(* move, trick, 1);
     Make1(&thrp->lookAheadPos, iniDepth + 1, move);
   }
   else
   {
-    thrp->moves.MakeSpecific(* move, trick, 2);
+    ctxLater.moveGen().MakeSpecific(* move, trick, 2);
     Make2(&thrp->lookAheadPos, iniDepth + 1, move);
   }
 
@@ -966,12 +967,13 @@ int AnalyseLaterBoard(
   }
 #endif
 
+// Diagnostics are routed via the SolverContext MoveGen facade.
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
+  ctxLater.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
+  ctxLater.moveGen().PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctxLater.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -1089,7 +1091,7 @@ int BoardValueChecks(
   const int mode,
   ThreadData const * thrp)
 {
-  SolverContext ctx{const_cast<ThreadData*>(thrp)};
+  SolverContext ctx{thrp};
   int cardCount = ctx.search().iniDepth() + 4;
   if (cardCount <= 0)
   {

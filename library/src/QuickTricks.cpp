@@ -106,7 +106,7 @@ int QuickTricks(
   bool& result,
   const ThreadData& thrd)
 {
-  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  SolverContext ctx{&thrd};
   int suit, commRank = 0, commSuit = -1;
   int res;
   int lhoTrumpRanks = 0, rhoTrumpRanks = 0;
@@ -1120,7 +1120,7 @@ bool QuickTricksSecondHand(
   const int trump,
   const ThreadData& thrd)
 {
-  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  SolverContext ctx{&thrd};
   if (depth == ctx.search().iniDepth())
     return false;
 

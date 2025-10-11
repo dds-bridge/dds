@@ -11,14 +11,12 @@
 
 #include "trans_table/TransTable.h"
 #include "system/SolverContext.h"
-#include "moves/Moves.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"
 #include "ABsearch.h"
 #include "ABstats.h"
 #include "system/TimerList.h"
 #include "dump.h"
-#include "debug.h"
 
 // Internal ctx-enabled variants (forward declarations)
 static bool ABsearch0_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
@@ -105,13 +103,13 @@ bool ABsearch(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     ctx.search().lowestWin(depth, ss) = 0;
 
-  thrp->moves.MoveGen0(
+  ctx.moveGen().MoveGen0(
     tricks,
     * posPoint,
     ctx.search().bestMove(depth),
     ctx.search().bestMoveTT(depth),
     thrp->rel);
-  thrp->moves.Purge(tricks, 0, ctx.search().forbiddenMoves());
+  ctx.moveGen().Purge(tricks, 0, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -121,7 +119,7 @@ bool ABsearch(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = thrp->moves.MakeNext(tricks, 0,
+    moveType const * mply = ctx.moveGen().MakeNext(tricks, 0,
       posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
@@ -149,7 +147,7 @@ bool ABsearch(
 
   ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
-      thrp->moves.RegisterHit(tricks, 0);
+  ctx.moveGen().RegisterHit(tricks, 0);
 #endif
       goto ABexit;
     }
@@ -367,7 +365,7 @@ static bool ABsearch0_ctx(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     ctx.search().lowestWin(depth, ss) = 0;
 
-  thrp->moves.MoveGen0(
+  ctx.moveGen().MoveGen0(
     tricks,
     * posPoint,
     ctx.search().bestMove(depth),
@@ -382,7 +380,7 @@ static bool ABsearch0_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = thrp->moves.MakeNext(tricks, 0,
+    moveType const * mply = ctx.moveGen().MakeNext(tricks, 0,
       posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
@@ -410,7 +408,7 @@ static bool ABsearch0_ctx(
 
       ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
-      thrp->moves.RegisterHit(tricks, 0);
+  ctx.moveGen().RegisterHit(tricks, 0);
 #endif
       goto ABexit;
     }
@@ -474,7 +472,7 @@ ABexit:
 
 #ifdef DDS_AB_HITS
   DumpStored(thrp->fileStored.GetStream(), 
-    * posPoint, thrp->moves, first, target, depth);
+    * posPoint, ctx, first, target, depth);
 #endif
 
   AB_COUNT(AB_MOVE_LOOP, value, depth);
@@ -523,9 +521,9 @@ static bool ABsearch1_ctx(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     ctx.search().lowestWin(depth, ss) = 0;
 
-  thrp->moves.MoveGen123(tricks, 1, * posPoint);
+  ctx.moveGen().MoveGen123(tricks, 1, * posPoint);
   if (depth == ctx.search().iniDepth())
-    thrp->moves.Purge(tricks, 1, ctx.search().forbiddenMoves());
+  ctx.moveGen().Purge(tricks, 1, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -535,7 +533,7 @@ static bool ABsearch1_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = thrp->moves.MakeNext(tricks, 1, posPoint->winRanks[depth]);
+  moveType const * mply = ctx.moveGen().MakeNext(tricks, 1, posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -561,7 +559,7 @@ static bool ABsearch1_ctx(
 
       ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
-      thrp->moves.RegisterHit(tricks, 1);
+  ctx.moveGen().RegisterHit(tricks, 1);
 #endif
       goto ABexit;
     }
@@ -609,9 +607,9 @@ static bool ABsearch2_ctx(
   for (int ss = 0; ss < DDS_SUITS; ss++)
     ctx.search().lowestWin(depth, ss) = 0;
 
-  thrp->moves.MoveGen123(tricks, 2, * posPoint);
+  ctx.moveGen().MoveGen123(tricks, 2, * posPoint);
   if (depth == ctx.search().iniDepth())
-    thrp->moves.Purge(tricks, 2, ctx.search().forbiddenMoves());
+  ctx.moveGen().Purge(tricks, 2, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -621,7 +619,7 @@ static bool ABsearch2_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = thrp->moves.MakeNext(tricks, 2, posPoint->winRanks[depth]);
+  moveType const * mply = ctx.moveGen().MakeNext(tricks, 2, posPoint->winRanks[depth]);
 
     if (mply == NULL)
       break;
@@ -648,7 +646,7 @@ static bool ABsearch2_ctx(
 
       ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
-      thrp->moves.RegisterHit(tricks, 2);
+  ctx.moveGen().RegisterHit(tricks, 2);
 #endif
       goto ABexit;
     }
@@ -700,9 +698,9 @@ static bool ABsearch3_ctx(
     ctx.search().lowestWin(depth, ss) = 0;
   int tricks = (depth + 3) >> 2;
 
-  thrp->moves.MoveGen123(tricks, 3, * posPoint);
+  ctx.moveGen().MoveGen123(tricks, 3, * posPoint);
   if (depth == ctx.search().iniDepth())
-    thrp->moves.Purge(tricks, 3, ctx.search().forbiddenMoves());
+  ctx.moveGen().Purge(tricks, 3, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -712,7 +710,7 @@ static bool ABsearch3_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = thrp->moves.MakeNext(tricks, 3, posPoint->winRanks[depth]);
+  moveType const * mply = ctx.moveGen().MakeNext(tricks, 3, posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -748,7 +746,7 @@ static bool ABsearch3_ctx(
 
       ctx.search().bestMove(depth) = * mply;
 #ifdef DDS_MOVES
-      thrp->moves.RegisterHit(tricks, 3);
+  ctx.moveGen().RegisterHit(tricks, 3);
 #endif
       goto ABexit;
     }
@@ -831,9 +829,10 @@ void Make3(
   moveType const * mply,
   ThreadData * thrp)
 {
+  SolverContext ctx{thrp};
   int firstHand = posPoint->first[depth];
 
-  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
+  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
   /* Defines who is first in the next move */
@@ -899,7 +898,7 @@ static void Make3_ctx(
 {
   int firstHand = posPoint->first[depth];
 
-  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
+  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
   /* Defines who is first in the next move */
@@ -961,7 +960,8 @@ void Make3Simple(
   moveType const * mply,
   ThreadData * thrp)
 {
-  const trickDataType& data = thrp->moves.GetTrickData((depth + 3) >> 2);
+  SolverContext ctx{thrp};
+  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   int firstHand = posPoint->first[depth];
 
@@ -1114,7 +1114,7 @@ evalType Evaluate(
   const int trump,
   ThreadData const * thrp)
 {
-  SolverContext ctx{const_cast<ThreadData*>(thrp)};
+  SolverContext ctx{thrp};
   return EvaluateWithContext(posPoint, trump, ctx);
 }
 

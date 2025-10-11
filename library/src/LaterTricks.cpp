@@ -35,7 +35,7 @@ bool LaterTricksMIN(
   const int trump,
   const ThreadData& thrd)
 {
-  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  SolverContext ctx{&thrd};
   if ((trump == DDS_NOTRUMP) || (tpos.winner[trump].rank == 0))
   {
     int sum = 0;
@@ -183,7 +183,7 @@ bool LaterTricksMAX(
   const int trump,
   const ThreadData& thrd)
 {
-  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  SolverContext ctx{&thrd};
   if ((trump == DDS_NOTRUMP) || (tpos.winner[trump].rank == 0))
   {
     int sum = 0;

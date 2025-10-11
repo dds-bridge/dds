@@ -225,7 +225,7 @@ string DumpTopHeader(
   const int printMode)
 {
   // Use facade to read search-state safely
-  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  SolverContext ctx{&thrd};
   string stext;
   if (printMode == 0)
   {
@@ -348,6 +348,22 @@ void DumpStored(
   fout << PrintDeal(tpos.rankInSuit, 16);
 }
 
+void DumpStored(
+  ofstream& fout,
+  const pos& tpos,
+  SolverContext& ctx,
+  const nodeCardsType& node,
+  const int target,
+  const int depth)
+{
+  fout << "Stored entry\n";
+  fout << string(12, '-') << "\n";
+  fout << PosToText(tpos, target, depth) << "\n";
+  fout << NodeToText(node);
+  fout << ctx.moveGen().TrickToText((depth >> 2) + 1) << "\n";
+  fout << PrintDeal(tpos.rankInSuit, 16);
+}
+
 
 void DumpTopLevel(
   ofstream& fout,
@@ -358,7 +374,7 @@ void DumpTopLevel(
   const int printMode)
 {
   const pos& tpos = thrd.lookAheadPos;
-  SolverContext ctx{const_cast<ThreadData*>(&thrd)};
+  SolverContext ctx{&thrd};
 
   fout << DumpTopHeader(thrd, tricks, lower, upper, printMode) << "\n";
   fout << PrintDeal(tpos.rankInSuit, 16);

@@ -14,6 +14,9 @@ struct deal;           // defined in dds/dll.h
 struct futureTricks;   // defined in dds/dll.h
 struct moveType;       // from dds/dds.h
 struct WinnersType;    // from dds/dds.h
+struct pos;            // from dds/dds.h
+struct relRanksType;   // from dds/dds.h
+struct trickDataType;  // from data_types/dds.h
 #include "trans_table/TransTable.h" // ensure complete type and enums
 
 // Minimal configuration scaffold for future expansion.
@@ -32,6 +35,10 @@ class SolverContext
 public:
   explicit SolverContext(ThreadData* thread, SolverConfig cfg = {})
   : thr_(thread), cfg_(cfg) {}
+
+  // Allow construction from const ThreadData* for read-only contexts
+  explicit SolverContext(const ThreadData* thread, SolverConfig cfg = {})
+  : thr_(const_cast<ThreadData*>(thread)), cfg_(cfg) {}
 
   ~SolverContext();
 
@@ -85,6 +92,89 @@ public:
   };
 
   inline SearchContext search() const { return SearchContext(thr_); }
+
+  // --- Move generation facade ---
+  class MoveGenContext {
+  public:
+    explicit MoveGenContext(ThreadData* thr) : thr_(thr) {}
+
+    int MoveGen0(
+      const int tricks,
+      const pos& tpos,
+      const moveType& bestMove,
+      const moveType& bestMoveTT,
+      const relRanksType thrp_rel[]);
+
+    int MoveGen123(
+      const int tricks,
+      const int relHand,
+      const pos& tpos);
+
+    void Purge(
+      const int tricks,
+      const int relHand,
+      const moveType forbiddenMoves[]);
+
+    const moveType* MakeNext(
+      const int trick,
+      const int relHand,
+      const unsigned short winRanks[]);
+
+    // Simpler variant without winRanks used in several SolverIF paths
+    const moveType* MakeNextSimple(
+      const int trick,
+      const int relHand);
+
+    int GetLength(
+      const int trick,
+      const int relHand) const;
+
+    void Rewind(
+      const int tricks,
+      const int relHand);
+
+    void RegisterHit(
+      const int tricks,
+      const int relHand);
+
+    // Reinitialize move generation for a new lead hand at a given trick
+    void Reinit(
+      const int tricks,
+      const int leadHand);
+
+    // Initialize move generation state for a given trick and starting hand
+    void Init(
+      const int tricks,
+      const int relStartHand,
+      const int initialRanks[],
+      const int initialSuits[],
+      const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+      const int trump,
+      const int leadHand);
+
+  // Diagnostics (no behavior change; passthrough to Moves)
+  // Note: Emission is controlled by DDS_MOVES / DDS_MOVES_DETAILS.
+    void PrintTrickStats(std::ofstream& fout) const;
+    void PrintTrickDetails(std::ofstream& fout) const;
+    void PrintFunctionStats(std::ofstream& fout) const;
+
+    // Read-only access to per-trick generated metadata
+    const trickDataType& GetTrickData(const int tricks);
+
+ // Read-only textual dump helper
+    std::string TrickToText(const int trick) const;
+
+    // Specify a particular move at a trick/hand position
+    void MakeSpecific(
+      const moveType& mply,
+      const int trick,
+      const int relHand);
+
+  private:
+    ThreadData* thr_ = nullptr;
+  };
+
+  inline MoveGenContext moveGen() const { return MoveGenContext(thr_); }
 
 private:
   ThreadData* thr_ = nullptr;
