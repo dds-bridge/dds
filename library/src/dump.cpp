@@ -348,6 +348,22 @@ void DumpStored(
   fout << PrintDeal(tpos.rankInSuit, 16);
 }
 
+void DumpStored(
+  ofstream& fout,
+  const pos& tpos,
+  SolverContext& ctx,
+  const nodeCardsType& node,
+  const int target,
+  const int depth)
+{
+  fout << "Stored entry\n";
+  fout << string(12, '-') << "\n";
+  fout << PosToText(tpos, target, depth) << "\n";
+  fout << NodeToText(node);
+  fout << ctx.moveGen().TrickToText((depth >> 2) + 1) << "\n";
+  fout << PrintDeal(tpos.rankInSuit, 16);
+}
+
 
 void DumpTopLevel(
   ofstream& fout,

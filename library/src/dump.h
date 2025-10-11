@@ -12,6 +12,7 @@
 
 #include "dds/dds.h"
 #include "moves/Moves.h"
+#include "system/SolverContext.h"
 #include "system/Memory.h"
 #include "trans_table/TransTable.h" // for nodeCardsType and enums
 
@@ -44,6 +45,15 @@ void DumpStored(
   ofstream& fout,
   const pos& tpos,
   const Moves& moves,
+  const nodeCardsType& node,
+  const int target,
+  const int depth);
+
+// Convenience overload to avoid direct Moves exposure at call sites
+void DumpStored(
+  ofstream& fout,
+  const pos& tpos,
+  SolverContext& ctx,
   const nodeCardsType& node,
   const int target,
   const int depth);

@@ -472,7 +472,7 @@ ABexit:
 
 #ifdef DDS_AB_HITS
   DumpStored(thrp->fileStored.GetStream(), 
-    * posPoint, thrp->moves, first, target, depth);
+    * posPoint, ctx, first, target, depth);
 #endif
 
   AB_COUNT(AB_MOVE_LOOP, value, depth);

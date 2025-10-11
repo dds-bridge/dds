@@ -304,6 +304,11 @@ void SolverContext::MoveGenContext::MakeSpecific(
   thr_->moves.MakeSpecific(mply, trick, relHand);
 }
 
+std::string SolverContext::MoveGenContext::TrickToText(const int trick) const
+{
+  return thr_->moves.TrickToText(trick);
+}
+
 void SolverContext::MoveGenContext::Reinit(
   const int tricks,
   const int leadHand)
