@@ -333,3 +333,8 @@ void SolverContext::MoveGenContext::PrintFunctionStats(std::ofstream& fout) cons
 {
   thr_->moves.PrintFunctionStats(fout);
 }
+
+void SolverContext::MoveGenContext::PrintTrickDetails(std::ofstream& fout) const
+{
+  thr_->moves.PrintTrickDetails(fout);
+}

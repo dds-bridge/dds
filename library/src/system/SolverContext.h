@@ -154,6 +154,7 @@ public:
 
     // Diagnostics (no behavior change; passthrough to Moves)
     void PrintTrickStats(std::ofstream& fout) const;
+  void PrintTrickDetails(std::ofstream& fout) const;
     void PrintFunctionStats(std::ofstream& fout) const;
 
     // Read-only access to per-trick generated metadata
