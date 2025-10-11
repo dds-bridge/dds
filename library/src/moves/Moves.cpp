@@ -747,6 +747,10 @@ void Moves::CallHeuristic(
   context.move1_rank = (trackp ? trackp->move[1].rank : 0);
   context.high1 = (trackp ? trackp->high[1] : 0);
   context.move1_suit = (trackp ? trackp->move[1].suit : 0);
+  // Third-hand snapshots
+  context.move2_rank = (trackp ? trackp->move[2].rank : 0);
+  context.move2_suit = (trackp ? trackp->move[2].suit : 0);
+  context.high2 = (trackp ? trackp->high[2] : 0);
 
   ::CallHeuristic(context);
 }

@@ -39,6 +39,11 @@ struct HeuristicContext {
     int move1_rank = 0; // trackp->move[1].rank
   int high1 = 0;      // trackp->high[1]
   int move1_suit = 0; // trackp->move[1].suit (for some helpers)
+
+  // Third-hand snapshots for CombinedNotvoid3 and TrumpVoid3 helpers.
+  int move2_rank = 0; // trackp->move[2].rank
+  int move2_suit = 0; // trackp->move[2].suit
+  int high2 = 0;      // trackp->high[2]
 };
 
 // Integration function for calling from moves.cpp
