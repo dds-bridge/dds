@@ -323,3 +323,13 @@ void SolverContext::MoveGenContext::Init(
   thr_->moves.Init(tricks, relStartHand, initialRanks, initialSuits,
                    rankInSuit, trump, leadHand);
 }
+
+void SolverContext::MoveGenContext::PrintTrickStats(std::ofstream& fout) const
+{
+  thr_->moves.PrintTrickStats(fout);
+}
+
+void SolverContext::MoveGenContext::PrintFunctionStats(std::ofstream& fout) const
+{
+  thr_->moves.PrintFunctionStats(fout);
+}

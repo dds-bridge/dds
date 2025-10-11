@@ -653,11 +653,11 @@ SOLVER_STATS:
 #endif
 
 #ifdef DDS_MOVES
-  thrp->moves.PrintTrickStats(thrp->fileMoves.GetStream());
+  ctx.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
   thrp->moves.PrintTrickDetails(thrp->fileMoves.GetStream());
 #endif
-  thrp->moves.PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctx.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
 #endif
 
 SOLVER_DONE:

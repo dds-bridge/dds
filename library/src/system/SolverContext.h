@@ -152,6 +152,10 @@ public:
       const int trump,
       const int leadHand);
 
+    // Diagnostics (no behavior change; passthrough to Moves)
+    void PrintTrickStats(std::ofstream& fout) const;
+    void PrintFunctionStats(std::ofstream& fout) const;
+
     // Read-only access to per-trick generated metadata
     const trickDataType& GetTrickData(const int tricks);
 
