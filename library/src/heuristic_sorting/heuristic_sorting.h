@@ -30,6 +30,10 @@ struct HeuristicContext {
     int currHand;
     int leadHand;
     int leadSuit; // For MoveGen123
+  // Snapshot of per-suit removed ranks for the current trick. This is
+  // populated by the caller to avoid relying on the underlying Moves::trackp
+  // mutation and to localize mutable heuristic buffers inside the context.
+  int removedRanks[DDS_SUITS] = {0};
 };
 
 // Integration function for calling from moves.cpp

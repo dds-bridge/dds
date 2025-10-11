@@ -918,7 +918,7 @@ int RankForcesAce(const HeuristicContext& ctx, const int cards4th)
   const moveGroupType& mp = groupData[cards4th];
 
   int g = mp.lastGroup;
-  int removed = static_cast<int>(ctx.trackp->removedRanks[ctx.leadSuit]);
+  int removed = static_cast<int>(ctx.removedRanks[ctx.leadSuit]);
 
   while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
     g--;
@@ -967,7 +967,7 @@ void GetTopNumber(const HeuristicContext& ctx, const int ris, const int prank, i
   int g = mp.lastGroup;
 
   // Remove partner's card as well.
-  int removed = static_cast<int>(ctx.trackp->removedRanks[ctx.leadSuit] |
+  int removed = static_cast<int>(ctx.removedRanks[ctx.leadSuit] |
                                  bitMapRank[prank]);
 
   int fullseq = mp.fullseq[g];

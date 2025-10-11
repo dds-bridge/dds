@@ -738,6 +738,12 @@ void Moves::CallHeuristic(
     leadSuit
   };
 
+  // Snapshot removedRanks into the context to avoid direct dependence on
+  // the mutable Moves::trackp buffer inside heuristic code.
+  for (int s = 0; s < DDS_SUITS; ++s) {
+    context.removedRanks[s] = trackp ? trackp->removedRanks[s] : 0;
+  }
+
   ::CallHeuristic(context);
 }
 
