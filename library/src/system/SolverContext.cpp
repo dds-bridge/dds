@@ -303,3 +303,10 @@ void SolverContext::MoveGenContext::MakeSpecific(
 {
   thr_->moves.MakeSpecific(mply, trick, relHand);
 }
+
+void SolverContext::MoveGenContext::Reinit(
+  const int tricks,
+  const int leadHand)
+{
+  thr_->moves.Reinit(tricks, leadHand);
+}

@@ -137,6 +137,11 @@ public:
       const int tricks,
       const int relHand);
 
+    // Reinitialize move generation for a new lead hand at a given trick
+    void Reinit(
+      const int tricks,
+      const int leadHand);
+
     // Read-only access to per-trick generated metadata
     const trickDataType& GetTrickData(const int tricks);
 

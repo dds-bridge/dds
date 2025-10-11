@@ -727,7 +727,7 @@ int SolveSameBoard(
   }
 #endif
 
-  thrp->moves.Reinit(trick, dl.first);
+  ctxSame.moveGen().Reinit(trick, dl.first);
 
   int guess = hint;
   int lowerbound = 0;
