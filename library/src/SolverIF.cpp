@@ -250,7 +250,7 @@ int SolveBoardInternal(
     mv.suit = dl.currentTrickSuit[k];
     mv.sequence = 0;
 
-    thrp->moves.Init(
+    ctx.moveGen().Init(
       trick,
       k,
       dl.currentTrickRank,
@@ -291,7 +291,7 @@ int SolveBoardInternal(
   }
 #endif
 
-  thrp->moves.Init(
+  ctx.moveGen().Init(
     trick,
     handRelFirst,
     dl.currentTrickRank,

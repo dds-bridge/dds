@@ -142,6 +142,16 @@ public:
       const int tricks,
       const int leadHand);
 
+    // Initialize move generation state for a given trick and starting hand
+    void Init(
+      const int tricks,
+      const int relStartHand,
+      const int initialRanks[],
+      const int initialSuits[],
+      const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+      const int trump,
+      const int leadHand);
+
     // Read-only access to per-trick generated metadata
     const trickDataType& GetTrickData(const int tricks);
 

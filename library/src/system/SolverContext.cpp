@@ -310,3 +310,16 @@ void SolverContext::MoveGenContext::Reinit(
 {
   thr_->moves.Reinit(tricks, leadHand);
 }
+
+void SolverContext::MoveGenContext::Init(
+  const int tricks,
+  const int relStartHand,
+  const int initialRanks[],
+  const int initialSuits[],
+  const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+  const int trump,
+  const int leadHand)
+{
+  thr_->moves.Init(tricks, relStartHand, initialRanks, initialSuits,
+                   rankInSuit, trump, leadHand);
+}
