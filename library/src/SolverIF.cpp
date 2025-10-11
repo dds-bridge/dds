@@ -869,7 +869,7 @@ int AnalyseLaterBoard(
   }
   else
   {
-    thrp->moves.MakeSpecific(* move, trick, 2);
+    ctxLater.moveGen().MakeSpecific(* move, trick, 2);
     Make2(&thrp->lookAheadPos, iniDepth + 1, move);
   }
 
