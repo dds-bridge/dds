@@ -161,7 +161,7 @@ public:
     // Read-only access to per-trick generated metadata
     const trickDataType& GetTrickData(const int tricks);
 
-  // Read-only textual dump helper
+ // Read-only textual dump helper
   std::string TrickToText(const int trick) const;
 
     // Specify a particular move at a trick/hand position
