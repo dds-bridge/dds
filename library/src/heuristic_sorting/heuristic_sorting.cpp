@@ -953,6 +953,7 @@ int RankForcesAce(const HeuristicContext& ctx, const int cards4th)
 }
 
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters): Intentional ordering; mirrors legacy helper usage
 void GetTopNumber(const HeuristicContext& ctx, const int ris, const int prank, int& topNumber, int& mno)
 {
   topNumber = -10;
@@ -1283,7 +1284,10 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
     mply[k].rank < ctx.move1_rank)
     {
       // Don't underruff.
-      int rRank = relRank[tpos.aggr[suit]][mply[k].rank];
+    int rRank = static_cast<int>(
+      static_cast<unsigned char>(
+        relRank[static_cast<unsigned char>(tpos.aggr[suit])]
+           [static_cast<unsigned char>(mply[k].rank)]));
       suitAdd = (suitCount << 6) / 40;
       mply[k].weight = -32 + rRank + suitAdd;
     }
@@ -1365,9 +1369,8 @@ void WeightAllocNTVoid2(HeuristicContext& ctx)
   int suitAdd = (suitCount << 6) / 24;
 
   // Try not to pitch from Kx or stiff ace.
-  if (suitCount == 2 && tpos.secondBest[suit].hand == currHand)
-    suitAdd -= 4;
-  else if (suitCount == 1 && tpos.winner[suit].hand == currHand)
+  if ((suitCount == 2 && tpos.secondBest[suit].hand == currHand) ||
+      (suitCount == 1 && tpos.winner[suit].hand == currHand))
     suitAdd -= 4;
 
   for (int k = lastNumMoves; k < numMoves; k++)
@@ -1453,7 +1456,10 @@ void WeightAllocTrumpVoid3(HeuristicContext& ctx)
     {
       for (int k = lastNumMoves; k < numMoves; k++)
       {
-        int rRank = relRank[tpos.aggr[suit]][mply[k].rank];
+    int rRank = static_cast<int>(
+      static_cast<unsigned char>(
+        relRank[static_cast<unsigned char>(tpos.aggr[suit])]
+             [static_cast<unsigned char>(mply[k].rank)]));
         if (mply[k].rank > ctx.move2_rank)
           mply[k].weight = 33 + rRank; // Overruff
         else
@@ -1468,7 +1474,10 @@ void WeightAllocTrumpVoid3(HeuristicContext& ctx)
   {
     for (int k = lastNumMoves; k < numMoves; k++)
     {
-      int rRank = relRank[tpos.aggr[suit]][mply[k].rank];
+    int rRank = static_cast<int>(
+      static_cast<unsigned char>(
+        relRank[static_cast<unsigned char>(tpos.aggr[suit])]
+           [static_cast<unsigned char>(mply[k].rank)]));
       mply[k].weight = 33 + rRank;
     }
   }
