@@ -11,14 +11,12 @@
 
 #include "trans_table/TransTable.h"
 #include "system/SolverContext.h"
-#include "moves/Moves.h"
 #include "QuickTricks.h"
 #include "LaterTricks.h"
 #include "ABsearch.h"
 #include "ABstats.h"
 #include "system/TimerList.h"
 #include "dump.h"
-#include "debug.h"
 
 // Internal ctx-enabled variants (forward declarations)
 static bool ABsearch0_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);

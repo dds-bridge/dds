@@ -652,6 +652,7 @@ SOLVER_STATS:
   }
 #endif
 
+// Diagnostics are routed via the SolverContext MoveGen facade.
 #ifdef DDS_MOVES
   ctx.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
@@ -966,6 +967,7 @@ int AnalyseLaterBoard(
   }
 #endif
 
+// Diagnostics are routed via the SolverContext MoveGen facade.
 #ifdef DDS_MOVES
   ctxLater.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
