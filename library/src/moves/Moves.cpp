@@ -746,6 +746,7 @@ void Moves::CallHeuristic(
   // Snapshot minimal trick state for helper usage.
   context.move1_rank = (trackp ? trackp->move[1].rank : 0);
   context.high1 = (trackp ? trackp->high[1] : 0);
+  context.move1_suit = (trackp ? trackp->move[1].suit : 0);
 
   ::CallHeuristic(context);
 }

@@ -37,7 +37,8 @@ struct HeuristicContext {
     // Tiny trick-view snapshots to reduce dependence on trackp for hot helpers.
     // Only the fields required by RankForcesAce are copied for now.
     int move1_rank = 0; // trackp->move[1].rank
-    int high1 = 0;      // trackp->high[1]
+  int high1 = 0;      // trackp->high[1]
+  int move1_suit = 0; // trackp->move[1].suit (for some helpers)
 };
 
 // Integration function for calling from moves.cpp

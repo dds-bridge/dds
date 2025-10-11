@@ -995,14 +995,14 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
 
   if (leadSuit == trump)
   {
-    if (trackp->high[1] == 0 && trackp->move[0].rank > max4th)
+    if (ctx.high1 == 0 && trackp->move[0].rank > max4th)
     {
       // Partner has already beat his LHO and will beat his RHO.
       for (int k = 0; k < numMoves; k++)
         mply[k].weight = -mply[k].rank;
       return;
     }
-    else if (max3rd < min4th || max3rd < trackp->move[1].rank)
+    else if (max3rd < min4th || max3rd < ctx.move1_rank)
     {
       // Our cards are too low to matter.
       for (int k = 0; k < numMoves; k++)
@@ -1015,7 +1015,7 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
       for (int k = 0; k < numMoves; k++)
       {
         if (mply[k].rank > max4th &&
-            mply[k].rank > trackp->move[1].rank)
+            mply[k].rank > ctx.move1_rank)
           mply[k].weight = 58 - mply[k].rank;
         else
           mply[k].weight = -mply[k].rank;
@@ -1035,7 +1035,7 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
     }
   }
 
-  else if (trackp->move[1].suit == trump)
+  else if (ctx.move1_suit == trump)
   {
     // 2nd hand ruffs, and we must follow suit.
     for (int k = 0; k < numMoves; k++)
@@ -1044,7 +1044,7 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
   }
 
   // So now leadSuit != trump and second hand didn't ruff.
-  else if (trackp->high[1] == 0)
+  else if (ctx.high1 == 0)
   {
     // Partner is winning so far.
     if (max4th == 0)
@@ -1056,7 +1056,7 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
     }
 
     // So 4th hand follows.
-    else if (trackp->move[0].rank > max4th)
+  else if (trackp->move[0].rank > max4th)
     {
       // Partner is already winning.
       for (int k = 0; k < numMoves; k++)
