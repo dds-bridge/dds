@@ -44,6 +44,9 @@ struct HeuristicContext {
   int move2_rank = 0; // trackp->move[2].rank
   int move2_suit = 0; // trackp->move[2].suit
   int high2 = 0;      // trackp->high[2]
+
+  // Leader's card snapshot for targeted helpers.
+  int lead0_rank = 0; // trackp->move[0].rank
 };
 
 // Integration function for calling from moves.cpp

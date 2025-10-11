@@ -524,7 +524,7 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
   const int leadSuit = ctx.leadSuit;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  // trackp not needed here; use context snapshots for third-hand state.
+  // trackp not needed here; use context snapshots for trick state.
 
 
   const int max3rd = highestRank[
@@ -543,15 +543,15 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
 
     if (leadSuit == trump)
     {
-      if (maxpd > trackp->move[0].rank && maxpd > max3rd)
+      if (maxpd > ctx.lead0_rank && maxpd > max3rd)
         winMove = true;
-      else if (mply[k].rank > trackp->move[0].rank &&
+      else if (mply[k].rank > ctx.lead0_rank &&
                mply[k].rank > max3rd)
         winMove = true;
     }
     else
     {
-      if (mply[k].rank > trackp->move[0].rank && mply[k].rank > max3rd)
+  if (mply[k].rank > ctx.lead0_rank && mply[k].rank > max3rd)
       {
         if ((max3rd != 0) ||
             (tpos.length[partner[leadHand]][trump] == 0))
@@ -562,15 +562,15 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
                      tpos.rankInSuit[partner[leadHand]][trump]))
           winMove = true;
       }
-      else if (maxpd > trackp->move[0].rank && maxpd > max3rd)
+  else if (maxpd > ctx.lead0_rank && maxpd > max3rd)
       {
         if ((max3rd != 0) ||
             (tpos.length[partner[leadHand]][trump] == 0))
           winMove = true;
       }
-      else if (trackp->move[0].rank > maxpd &&
-               trackp->move[0].rank > max3rd &&
-               trackp->move[0].rank > mply[k].rank)
+  else if (ctx.lead0_rank > maxpd &&
+       ctx.lead0_rank > max3rd &&
+       ctx.lead0_rank > mply[k].rank)
       {
         if ((maxpd == 0) && (tpos.length[rho[leadHand]][trump] != 0))
         {
@@ -592,7 +592,7 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
       if (min3rd > mply[k].rank)
         // Partner must be winning -- we can't.
         mply[k].weight = 40 + rRank;
-      else if ((maxpd > trackp->move[0].rank) &&
+  else if ((maxpd > ctx.lead0_rank) &&
                (tpos.rankInSuit[leadHand][leadSuit] >
                 tpos.rankInSuit[rho[leadHand]][leadSuit]))
         mply[k].weight = 41 + rRank;
@@ -604,7 +604,7 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
 
       // FIX: Don't follow
 
-      else if (mply[k].rank > trackp->move[0].rank)
+  else if (mply[k].rank > ctx.lead0_rank)
       {
         if (mply[k].rank < maxpd)
           mply[k].weight = 78 - (mply[k].rank);
@@ -628,7 +628,7 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
     else if (mply[k].rank < min3rd || mply[k].rank < minpd)
       // Will be beaten anyway.
       mply[k].weight = -9 + rRank;
-    else if (mply[k].rank < trackp->move[0].rank)
+    else if (mply[k].rank < ctx.lead0_rank)
       // Already beaten.
       mply[k].weight = -16 + rRank;
     else if (mply[k].sequence)
@@ -647,7 +647,7 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
   const int leadSuit = ctx.leadSuit;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  const trackType* trackp = ctx.trackp;
+  // trackp not needed; using snapshot lead0_rank.
 
   const int partner_lh = partner[leadHand];
   const int rho_lh = rho[leadHand];
@@ -658,7 +658,7 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
   const int maxpd = highestRank[
     tpos.rankInSuit[rho_lh][leadSuit] ];
 
-  if (maxpd > trackp->move[0].rank && maxpd > max3rd)
+  if (maxpd > ctx.lead0_rank && maxpd > max3rd)
   {
     // Partner can beat both opponents.
     for (int k = 0; k < numMoves; k++)
@@ -675,7 +675,7 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
     {
       int rRank = relRank[ tpos.aggr[leadSuit] ][mply[k].rank];
 
-      if (mply[k].rank > trackp->move[0].rank && mply[k].rank > max3rd)
+  if (mply[k].rank > ctx.lead0_rank && mply[k].rank > max3rd)
         // We can beat both opponents.
         mply[k].weight = 81 - mply[k].rank;
 
@@ -683,7 +683,7 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
         // Card can make no difference, so play very low.
         mply[k].weight = -3 + rRank;
 
-      else if (mply[k].rank < trackp->move[0].rank)
+  else if (mply[k].rank < ctx.lead0_rank)
         // Can't beat the card led.
         mply[k].weight = -11 + rRank;
 
@@ -707,7 +707,7 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  // trackp not needed here; use context snapshots for third-hand state.
+  // trackp not needed here; use context snapshots for trick state.
 
   const int partner_lh = partner[leadHand];
   const int rho_lh = rho[leadHand];
@@ -722,9 +722,9 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
     if (tpos.length[partner_lh][leadSuit] != 0)
     {
       // 3rd hand will follow.
-      if ((tpos.rankInSuit[rho_lh][leadSuit] >
-           (tpos.rankInSuit[partner_lh][leadSuit] |
-            bitMapRank[trackp->move[0].rank])) ||
+  if ((tpos.rankInSuit[rho_lh][leadSuit] >
+       (tpos.rankInSuit[partner_lh][leadSuit] |
+    bitMapRank[ctx.lead0_rank])) ||
           ((tpos.length[rho_lh][leadSuit] == 0) &&
            (tpos.length[rho_lh][trump] != 0)))
       {
@@ -747,9 +747,9 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
       // Partner can overruff 3rd hand.
       suitAdd = 60 + (suitCount << 6) / 44;
     }
-    else if ((tpos.length[partner_lh][trump] == 0) &&
-             (tpos.rankInSuit[rho_lh][leadSuit] >
-              bitMapRank[trackp->move[0].rank]))
+  else if ((tpos.length[partner_lh][trump] == 0) &&
+       (tpos.rankInSuit[rho_lh][leadSuit] >
+        bitMapRank[ctx.lead0_rank]))
     {
       // 3rd hand has no trumps, and partner has suit winner.
       suitAdd = 60 + (suitCount << 6) / 44;
@@ -773,9 +773,9 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
     if (tpos.length[partner_lh][leadSuit] != 0)
     {
       // 3rd hand will follow.
-      if (tpos.rankInSuit[rho_lh][leadSuit] >
-          (tpos.rankInSuit[partner_lh][leadSuit] |
-           bitMapRank[trackp->move[0].rank]))
+    if (tpos.rankInSuit[rho_lh][leadSuit] >
+      (tpos.rankInSuit[partner_lh][leadSuit] |
+       bitMapRank[ctx.lead0_rank]))
         // Partner has winning card.
         suitAdd = 60 + (suitCount << 6) / 44;
       else if ((tpos.length[rho_lh][leadSuit] == 0)
@@ -797,9 +797,9 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
                  tpos.rankInSuit[partner_lh][trump]))
       // Partner can overruff 3rd hand.
       suitAdd = 60 + (suitCount << 6) / 44;
-    else if ((tpos.length[partner_lh][trump] == 0)
-             && (tpos.rankInSuit[rho_lh][leadSuit] >
-                 bitMapRank[trackp->move[0].rank]))
+  else if ((tpos.length[partner_lh][trump] == 0)
+       && (tpos.rankInSuit[rho_lh][leadSuit] >
+         bitMapRank[ctx.lead0_rank]))
       // 3rd hand has no trumps, and partner has suit winner.
       suitAdd = 60 + (suitCount << 6) / 44;
     else
@@ -866,7 +866,6 @@ void WeightAllocNTVoid1(HeuristicContext& ctx)
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  const trackType* trackp = ctx.trackp;
 
   const int partner_lh = partner[leadHand];
   const int rho_lh = rho[leadHand];
@@ -876,7 +875,7 @@ void WeightAllocNTVoid1(HeuristicContext& ctx)
 
   if (tpos.rankInSuit[rho_lh][leadSuit] >
       (tpos.rankInSuit[partner_lh][leadSuit] |
-       bitMapRank[trackp->move[0].rank]))
+       bitMapRank[ctx.lead0_rank]))
   {
     // Partner can win.
     unsigned short suitCount = tpos.length[currHand][suit];
@@ -985,7 +984,6 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
   const int leadSuit = ctx.leadSuit;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  const trackType* trackp = ctx.trackp;
 
   const int rho_lh = rho[leadHand];
   const int cards4th = tpos.rankInSuit[rho_lh][leadSuit];
@@ -995,7 +993,7 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
 
   if (leadSuit == trump)
   {
-    if (ctx.high1 == 0 && trackp->move[0].rank > max4th)
+  if (ctx.high1 == 0 && ctx.lead0_rank > max4th)
     {
       // Partner has already beat his LHO and will beat his RHO.
       for (int k = 0; k < numMoves; k++)
@@ -1056,7 +1054,7 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
     }
 
     // So 4th hand follows.
-  else if (trackp->move[0].rank > max4th)
+  else if (ctx.lead0_rank > max4th)
     {
       // Partner is already winning.
       for (int k = 0; k < numMoves; k++)
@@ -1173,7 +1171,6 @@ void WeightAllocNTNotvoid2(HeuristicContext& ctx)
   const int currHand = ctx.currHand;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  const trackType* trackp = ctx.trackp;
 
   const int rho_lh = rho[leadHand];
   const int lho_lh = lho[leadHand];
@@ -1184,7 +1181,7 @@ void WeightAllocNTNotvoid2(HeuristicContext& ctx)
   const int min4th = lowestRank[cards4th];
   const int max3rd = mply[0].rank;
 
-  if (ctx.high1 == 0 && trackp->move[0].rank > max4th)
+  if (ctx.high1 == 0 && ctx.lead0_rank > max4th)
   {
     // Partner has already beat his LHO and will beat his RHO.
     // Generally we play low and let partner win.
@@ -1206,7 +1203,7 @@ void WeightAllocNTNotvoid2(HeuristicContext& ctx)
 
       int topNumber, mno;
   GetTopNumber(ctx, tpos.rankInSuit[partner_lh][leadSuit],
-       trackp->move[0].rank, topNumber, mno);
+    ctx.lead0_rank, topNumber, mno);
 
       if (oppLen <= topNumber)
         mply[mno].weight += 20;
@@ -1252,7 +1249,6 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  const trackType* trackp = ctx.trackp;
 
   const int rho_lh = rho[leadHand];
   
@@ -1269,7 +1265,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
     return;
   }
 
-  else if (ctx.high1 == 0 && trackp->move[0].rank > max4th &&
+  else if (ctx.high1 == 0 && ctx.lead0_rank > max4th &&
            (max4th != 0 || tpos.length[rho_lh][trump] == 0))
   {
     // Partner already beat 2nd and 4th hands.
@@ -1387,7 +1383,6 @@ void WeightAllocCombinedNotvoid3(HeuristicContext& ctx)
   const int leadSuit = ctx.leadSuit;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  const trackType* trackp = ctx.trackp;
 
   if (ctx.high2 == 1 ||
     (leadSuit != trump && ctx.move2_suit == trump))
@@ -1429,7 +1424,6 @@ void WeightAllocTrumpVoid3(HeuristicContext& ctx)
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
   moveType* mply = ctx.mply;
-  const trackType* trackp = ctx.trackp;
 
   // Don't pitch from Kx or stiff ace.
   const int mylen = tpos.length[currHand][suit];
