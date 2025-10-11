@@ -859,12 +859,12 @@ int AnalyseLaterBoard(
   }
   else if (handRelFirst == 1)
   {
-    thrp->moves.MakeSpecific(* move, trick, 0);
+    ctxLater.moveGen().MakeSpecific(* move, trick, 0);
     Make0(&thrp->lookAheadPos, iniDepth + 1, move);
   }
   else if (handRelFirst == 2)
   {
-    thrp->moves.MakeSpecific(* move, trick, 1);
+    ctxLater.moveGen().MakeSpecific(* move, trick, 1);
     Make1(&thrp->lookAheadPos, iniDepth + 1, move);
   }
   else
