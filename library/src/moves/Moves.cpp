@@ -743,6 +743,9 @@ void Moves::CallHeuristic(
   for (int s = 0; s < DDS_SUITS; ++s) {
     context.removedRanks[s] = trackp ? trackp->removedRanks[s] : 0;
   }
+  // Snapshot minimal trick state for helper usage.
+  context.move1_rank = (trackp ? trackp->move[1].rank : 0);
+  context.high1 = (trackp ? trackp->high[1] : 0);
 
   ::CallHeuristic(context);
 }

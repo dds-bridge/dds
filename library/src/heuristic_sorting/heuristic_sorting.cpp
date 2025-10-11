@@ -929,7 +929,7 @@ int RankForcesAce(const HeuristicContext& ctx, const int cards4th)
   // RHO's second-highest rank.
   int secondRHO = (g == 0 ? 0 : mp.rank[g-1]);
 
-  if (secondRHO > ctx.trackp->move[1].rank)
+  if (secondRHO > ctx.move1_rank)
   {
     // Try to force out the top as cheaply as possible.
     int k = 0;
@@ -939,11 +939,11 @@ int RankForcesAce(const HeuristicContext& ctx, const int cards4th)
     if (k)
       return k - 1;
   }
-  else if (ctx.trackp->high[1] == 1)
+  else if (ctx.high1 == 1)
   {
     // Try to beat 2nd hand as cheaply as possible.
     int k = 0;
-    while (k < ctx.numMoves && ctx.mply[k].rank > ctx.trackp->move[1].rank)
+    while (k < ctx.numMoves && ctx.mply[k].rank > ctx.move1_rank)
       k++;
 
     if (k)
