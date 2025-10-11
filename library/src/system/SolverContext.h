@@ -155,7 +155,7 @@ public:
   // Diagnostics (no behavior change; passthrough to Moves)
   // Note: Emission is controlled by DDS_MOVES / DDS_MOVES_DETAILS.
     void PrintTrickStats(std::ofstream& fout) const;
-  void PrintTrickDetails(std::ofstream& fout) const;
+    void PrintTrickDetails(std::ofstream& fout) const;
     void PrintFunctionStats(std::ofstream& fout) const;
 
     // Read-only access to per-trick generated metadata
