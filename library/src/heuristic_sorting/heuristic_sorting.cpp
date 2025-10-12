@@ -569,8 +569,8 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
           winMove = true;
       }
   else if (ctx.lead0_rank > maxpd &&
-       ctx.lead0_rank > max3rd &&
-       ctx.lead0_rank > mply[k].rank)
+           ctx.lead0_rank > max3rd &&
+           ctx.lead0_rank > mply[k].rank)
       {
         if ((maxpd == 0) && (tpos.length[rho[leadHand]][trump] != 0))
         {
