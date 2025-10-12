@@ -40,3 +40,22 @@ cc_library(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE + ["DDS_UTILITIES_LOG"],
 )
+
+cc_library(
+    name = "system_util_stats",
+    srcs = glob(["*.cpp"]),
+    hdrs = glob(["*.h", "util/*.h"]),
+    visibility = ["//visibility:public"],
+    includes = [".."],
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/utility:lookup_tables",
+        "//library/src/data_types:dds_types",
+        "//library/src/trans_table",
+        "//library/src/moves:moves",
+    ],
+    include_prefix = "system",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE + ["DDS_UTILITIES_STATS"],
+)

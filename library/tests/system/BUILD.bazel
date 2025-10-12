@@ -57,3 +57,24 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+# Utilities stats tests: without/with define
+cc_test(
+    name = "utilities_stats_test",
+    srcs = ["utilities_stats_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_stats_test_with_define",
+    srcs = ["utilities_stats_test_with_define.cpp"],
+    deps = [
+        "//library/src:testable_dds_util_stats",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)

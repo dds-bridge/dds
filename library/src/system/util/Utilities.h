@@ -26,9 +26,20 @@ public:
   const std::vector<std::string>& log_buffer() const { return log_; }
   void log_clear() { log_.clear(); }
 
+  // Minimal stats: opt-in counters for smoke validation in tests.
+  struct Stats {
+    unsigned tt_creates = 0;
+    unsigned tt_disposes = 0;
+  };
+
+  const Stats& stats() const { return stats_; }
+  Stats& stats() { return stats_; }
+  void stats_reset() { stats_ = Stats{}; }
+
 private:
   std::mt19937 rng_{};                // default-constructed; seed via seed()
   std::vector<std::string> log_{};    // minimal structured log lines
+  Stats stats_{};                     // optional counters
 };
 
 } // namespace dds

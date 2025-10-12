@@ -96,6 +96,10 @@ TransTable* SolverContext::transTable() const
     }
 #endif
 
+#ifdef DDS_UTILITIES_STATS
+  const_cast<SolverContext*>(this)->utilities().util().stats().tt_creates++;
+#endif
+
     // Attach to registry
     registry()[thr_] = created;
   }
@@ -162,6 +166,9 @@ void SolverContext::DisposeTransTable() const
 #ifdef DDS_UTILITIES_LOG
     // Append a tiny debug entry indicating TT disposal.
     const_cast<SolverContext*>(this)->utilities().logAppend("tt:dispose");
+#endif
+#ifdef DDS_UTILITIES_STATS
+    const_cast<SolverContext*>(this)->utilities().util().stats().tt_disposes++;
 #endif
     delete it->second;
     it->second = nullptr;

@@ -72,3 +72,26 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "testable_dds_util_stats",
+    srcs = glob(["*.cpp", "*.h"]),
+    hdrs = glob(["*.h"]),
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    include_prefix = "dds",
+    visibility = [
+        "//:__pkg__",
+        "//library/tests/system:__pkg__",
+    ],
+    deps = [
+       "//library/src/data_types:dds_types",
+        "//library/src/utility:constants",
+        "//library/src/utility:lookup_tables",
+        "//library/src/heuristic_sorting",
+        "//library/src/trans_table",
+        "//library/src/moves:moves",
+        "//library/src/system:system_util_stats",
+    ],
+)
+
