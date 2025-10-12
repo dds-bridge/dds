@@ -1284,10 +1284,10 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
     mply[k].rank < ctx.move1_rank)
     {
       // Don't underruff.
-    int rRank = static_cast<int>(
-      static_cast<unsigned char>(
-        relRank[static_cast<unsigned char>(tpos.aggr[suit])]
-           [static_cast<unsigned char>(mply[k].rank)]));
+    unsigned char aggrSuit = static_cast<unsigned char>(tpos.aggr[suit]);
+    unsigned char moveRank = static_cast<unsigned char>(mply[k].rank);
+    unsigned char relRankValue = static_cast<unsigned char>(relRank[aggrSuit][moveRank]);
+    int rRank = static_cast<int>(relRankValue);
       suitAdd = (suitCount << 6) / 40;
       mply[k].weight = -32 + rRank + suitAdd;
     }
