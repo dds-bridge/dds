@@ -58,6 +58,16 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "utilities_log_ctx_ops_test_with_define",
+    srcs = ["utilities_log_ctx_ops_test_with_define.cpp"],
+    deps = [
+        "//library/src:testable_dds_util_log",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # Utilities stats tests: without/with define
 cc_test(
     name = "utilities_stats_test",
