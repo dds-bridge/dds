@@ -592,7 +592,7 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
       if (min3rd > mply[k].rank)
         // Partner must be winning -- we can't.
         mply[k].weight = 40 + rRank;
-  else if ((maxpd > ctx.lead0_rank) &&
+      else if ((maxpd > ctx.lead0_rank) &&
                (tpos.rankInSuit[leadHand][leadSuit] >
                 tpos.rankInSuit[rho[leadHand]][leadSuit]))
         mply[k].weight = 41 + rRank;
