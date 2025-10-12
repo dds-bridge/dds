@@ -551,7 +551,7 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
     }
     else
     {
-  if (mply[k].rank > ctx.lead0_rank && mply[k].rank > max3rd)
+      if (mply[k].rank > ctx.lead0_rank && mply[k].rank > max3rd)
       {
         if ((max3rd != 0) ||
             (tpos.length[partner[leadHand]][trump] == 0))
