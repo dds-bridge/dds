@@ -4,7 +4,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "system",
     srcs = glob(["*.cpp"]),
-    hdrs = glob(["*.h"]),
+    hdrs = glob(["*.h", "util/*.h"]),
     visibility = ["//visibility:public"],
     includes = [".."],
     deps = [
@@ -13,6 +13,7 @@ cc_library(
         "//library/src/data_types:dds_types",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        # Utilities lives under system/util (header-only for now)
     ],
     include_prefix = "system",
     copts = DDS_CPPOPTS,

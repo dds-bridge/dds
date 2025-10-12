@@ -18,6 +18,10 @@ struct pos;            // from dds/dds.h
 struct relRanksType;   // from dds/dds.h
 struct trickDataType;  // from data_types/dds.h
 #include "trans_table/TransTable.h" // ensure complete type and enums
+#include "system/util/Utilities.h"   // instance-scoped RNG and logging
+#include <string>
+#include <vector>
+#include <random>
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
@@ -28,22 +32,49 @@ struct SolverConfig
   TTKind ttKind = TTKind::Small;
   int ttMemDefaultMB = 0;
   int ttMemMaximumMB = 0;
+  // Optional deterministic RNG seed (0 means "no explicit seed").
+  unsigned long long rngSeed = 0ULL;
 };
 
 class SolverContext
 {
 public:
   explicit SolverContext(ThreadData* thread, SolverConfig cfg = {})
-  : thr_(thread), cfg_(cfg) {}
+  : thr_(thread), cfg_(cfg)
+  {
+    if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
+  }
 
   // Allow construction from const ThreadData* for read-only contexts
   explicit SolverContext(const ThreadData* thread, SolverConfig cfg = {})
-  : thr_(const_cast<ThreadData*>(thread)), cfg_(cfg) {}
+  : thr_(const_cast<ThreadData*>(thread)), cfg_(cfg)
+  {
+    if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
+  }
 
   ~SolverContext();
 
   ThreadData* thread() const { return thr_; }
   const SolverConfig& config() const { return cfg_; }
+
+  // --- Utilities facade ---
+  class UtilitiesContext {
+  public:
+    explicit UtilitiesContext(::dds::Utilities* util) : util_(util) {}
+    ::dds::Utilities& util() { return *util_; }
+    const ::dds::Utilities& util() const { return *util_; }
+    std::mt19937& rng() { return util_->rng(); }
+    const std::mt19937& rng() const { return util_->rng(); }
+    void seedRng(unsigned long long seed) { util_->seed(seed); }
+    void logAppend(const std::string& s) { util_->log_append(s); }
+    const std::vector<std::string>& logBuffer() const { return util_->log_buffer(); }
+    void logClear() { util_->log_clear(); }
+  private:
+    ::dds::Utilities* util_ = nullptr;
+  };
+
+  inline UtilitiesContext utilities() { return UtilitiesContext(&utils_); }
+  inline UtilitiesContext utilities() const { return UtilitiesContext(const_cast<::dds::Utilities*>(&utils_)); }
 
   TransTable* transTable() const;
   TransTable* maybeTransTable() const;
@@ -179,6 +210,7 @@ public:
 private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
+  ::dds::Utilities utils_{};
 };
 
 double ThreadMemoryUsed();
