@@ -180,6 +180,9 @@ SolverContext::~SolverContext() = default;
 
 void SolverContext::ResetForSolve() const
 {
+#ifdef DDS_UTILITIES_LOG
+  const_cast<SolverContext*>(this)->utilities().logAppend("ctx:reset_for_solve");
+#endif
   if (auto* tt = maybeTransTable())
     tt->ResetMemory(TT_RESET_FREE_MEMORY);
   if (!thr_) return;
@@ -207,12 +210,22 @@ void SolverContext::ResetForSolve() const
 
 void SolverContext::ClearTT() const
 {
+#ifdef DDS_UTILITIES_LOG
+  const_cast<SolverContext*>(this)->utilities().logAppend("tt:clear");
+#endif
   if (auto* tt = maybeTransTable())
     tt->ReturnAllMemory();
 }
 
 void SolverContext::ResizeTT(int defMB, int maxMB) const
 {
+#ifdef DDS_UTILITIES_LOG
+  {
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "tt:resize|%d|%d", defMB, maxMB);
+    const_cast<SolverContext*>(this)->utilities().logAppend(std::string(buf));
+  }
+#endif
   if (auto* tt = maybeTransTable())
   {
     if (maxMB < defMB) maxMB = defMB;
@@ -224,6 +237,9 @@ void SolverContext::ResizeTT(int defMB, int maxMB) const
 // Lightweight reset matching legacy ResetBestMoves semantics.
 void SolverContext::ResetBestMovesLite() const
 {
+#ifdef DDS_UTILITIES_LOG
+  const_cast<SolverContext*>(this)->utilities().logAppend("ctx:reset_best_moves_lite");
+#endif
   if (!thr_) return;
   for (int d = 0; d <= 49; ++d)
   {
