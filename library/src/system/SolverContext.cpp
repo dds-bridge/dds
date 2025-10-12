@@ -8,6 +8,7 @@
 #include "data_types/dds.h" // THREADMEM_* defaults
 #include <cstdlib>
 #include <iostream>
+#include <cstdio>
 #include <unordered_map>
 
 namespace {
@@ -85,6 +86,16 @@ TransTable* SolverContext::transTable() const
     created->SetMemoryMaximum(maxMB);
   created->MakeTT();
 
+#ifdef DDS_UTILITIES_LOG
+    // Append a tiny debug entry indicating TT creation and chosen kind/sizes.
+    {
+      char buf[96];
+      const char kch = (kind == TTKind::Small ? 'S' : 'L');
+      std::snprintf(buf, sizeof(buf), "tt:create|%c|%d|%d", kch, defMB, maxMB);
+      const_cast<SolverContext*>(this)->utilities().logAppend(std::string(buf));
+    }
+#endif
+
     // Attach to registry
     registry()[thr_] = created;
   }
@@ -148,6 +159,10 @@ void SolverContext::DisposeTransTable() const
   auto it = registry().find(thr_);
   if (it != registry().end())
   {
+#ifdef DDS_UTILITIES_LOG
+    // Append a tiny debug entry indicating TT disposal.
+    const_cast<SolverContext*>(this)->utilities().logAppend("tt:dispose");
+#endif
     delete it->second;
     it->second = nullptr;
     registry().erase(it);
