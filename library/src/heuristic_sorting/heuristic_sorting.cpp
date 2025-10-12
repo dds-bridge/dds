@@ -1369,8 +1369,9 @@ void WeightAllocNTVoid2(HeuristicContext& ctx)
   int suitAdd = (suitCount << 6) / 24;
 
   // Try not to pitch from Kx or stiff ace.
-  if ((suitCount == 2 && tpos.secondBest[suit].hand == currHand) ||
-      (suitCount == 1 && tpos.winner[suit].hand == currHand))
+  if (suitCount == 2 && tpos.secondBest[suit].hand == currHand)
+    suitAdd -= 4;
+  if (suitCount == 1 && tpos.winner[suit].hand == currHand)
     suitAdd -= 4;
 
   for (int k = lastNumMoves; k < numMoves; k++)
