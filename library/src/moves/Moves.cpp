@@ -738,6 +738,22 @@ void Moves::CallHeuristic(
     leadSuit
   };
 
+  // Snapshot removedRanks into the context to avoid direct dependence on
+  // the mutable Moves::trackp buffer inside heuristic code.
+  for (int s = 0; s < DDS_SUITS; ++s) {
+    context.removedRanks[s] = trackp ? trackp->removedRanks[s] : 0;
+  }
+  // Snapshot minimal trick state for helper usage.
+  context.move1_rank = (trackp ? trackp->move[1].rank : 0);
+  context.high1 = (trackp ? trackp->high[1] : 0);
+  context.move1_suit = (trackp ? trackp->move[1].suit : 0);
+  // Third-hand snapshots
+  context.move2_rank = (trackp ? trackp->move[2].rank : 0);
+  context.move2_suit = (trackp ? trackp->move[2].suit : 0);
+  context.high2 = (trackp ? trackp->high[2] : 0);
+  // Leader snapshot
+  context.lead0_rank = (trackp ? trackp->move[0].rank : 0);
+
   ::CallHeuristic(context);
 }
 

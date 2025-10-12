@@ -30,6 +30,23 @@ struct HeuristicContext {
     int currHand;
     int leadHand;
     int leadSuit; // For MoveGen123
+  // Snapshot of per-suit removed ranks for the current trick. This is
+  // populated by the caller to avoid relying on the underlying Moves::trackp
+  // mutation and to localize mutable heuristic buffers inside the context.
+  int removedRanks[DDS_SUITS] = {0};
+    // Tiny trick-view snapshots to reduce dependence on trackp for hot helpers.
+    // Only the fields required by RankForcesAce are copied for now.
+    int move1_rank = 0; // trackp->move[1].rank
+  int high1 = 0;      // trackp->high[1]
+  int move1_suit = 0; // trackp->move[1].suit (for some helpers)
+
+  // Third-hand snapshots for CombinedNotvoid3 and TrumpVoid3 helpers.
+  int move2_rank = 0; // trackp->move[2].rank
+  int move2_suit = 0; // trackp->move[2].suit
+  int high2 = 0;      // trackp->high[2]
+
+  // Leader's card snapshot for targeted helpers.
+  int lead0_rank = 0; // trackp->move[0].rank
 };
 
 // Integration function for calling from moves.cpp
