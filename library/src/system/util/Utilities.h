@@ -41,6 +41,7 @@ public:
   // Logging: a very simple append-only buffer; callers can flush and clear.
   void log_append(const std::string& s) { log_.push_back(s); }
   const std::vector<std::string>& log_buffer() const { return log_; }
+  size_t log_size() const { return log_.size(); }
   void log_clear() { log_.clear(); }
 
   // Minimal stats: opt-in counters for smoke validation in tests.
@@ -51,6 +52,7 @@ public:
 
   const Stats& stats() const { return stats_; }
   Stats& stats() { return stats_; }
+  Stats stats_snapshot() const { return stats_; }
   void stats_reset() { stats_ = Stats{}; }
 
 private:
