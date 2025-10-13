@@ -43,7 +43,7 @@ public:
     return *rng_;
   }
   const std::mt19937& rng() const {
-    if (!rng_) const_cast<Utilities*>(this)->rng_ = std::make_unique<std::mt19937>();
+    if (!rng_) rng_ = std::make_unique<std::mt19937>();
     return *rng_;
   }
 
