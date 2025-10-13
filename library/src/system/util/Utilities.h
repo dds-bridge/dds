@@ -42,6 +42,12 @@ public:
   void log_append(const std::string& s) { log_.push_back(s); }
   const std::vector<std::string>& log_buffer() const { return log_; }
   size_t log_size() const { return log_.size(); }
+  bool log_contains(const std::string& prefix) const {
+    for (const auto& line : log_) {
+      if (line.rfind(prefix, 0) == 0) return true; // prefix match
+    }
+    return false;
+  }
   void log_clear() { log_.clear(); }
 
   // Minimal stats: opt-in counters for smoke validation in tests.

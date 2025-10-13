@@ -100,6 +100,16 @@ cc_test(
 )
 
 cc_test(
+    name = "utilities_log_contains_test",
+    srcs = ["utilities_log_contains_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "utilities_feature_flags_test",
     srcs = ["utilities_feature_flags_test.cpp"],
     deps = [
