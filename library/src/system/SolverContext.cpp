@@ -19,6 +19,15 @@ static std::unordered_map<ThreadData*, TransTable*>& registry()
   static auto* map = new std::unordered_map<ThreadData*, TransTable*>();
   return *map;
 }
+
+// Per-thread Arena registry. Managed as a leaky singleton similar to TT.
+namespace {
+static std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>& arena_registry()
+{
+  static auto* map = new std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>();
+  return *map;
+}
+}
 }
 
 TransTable* SolverContext::transTable() const
@@ -111,6 +120,26 @@ TransTable* SolverContext::transTable() const
     registry()[thr_] = created;
   }
   return registry()[thr_];
+}
+
+// --- Arena access (per-thread registry) ---
+dds::Arena* SolverContext::arena()
+{
+  if (!thr_) return nullptr;
+  auto& map = arena_registry();
+  auto it = map.find(thr_);
+  if (it == map.end()) {
+    if (cfg_.arenaCapacityBytes == 0ULL) return nullptr;
+    auto ins = map.emplace(thr_, std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes));
+    return ins.first->second.get();
+  }
+  return it->second.get();
+}
+
+const dds::Arena* SolverContext::arena() const
+{
+  // const overload delegates to non-const (registry is mutable globally)
+  return const_cast<SolverContext*>(this)->arena();
 }
 
 // --- SearchContext out-of-line definitions ---

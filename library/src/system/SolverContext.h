@@ -23,7 +23,6 @@ struct trickDataType;  // from data_types/dds.h
 #include <string>
 #include <vector>
 #include <random>
-#include <memory>
 #include <cstddef>
 
 // Minimal configuration scaffold for future expansion.
@@ -88,19 +87,8 @@ public:
   inline UtilitiesContext utilities() const { return UtilitiesContext(&utils_); }
 
   // Optional arena access (may be null if capacity not provided)
-  dds::Arena* arena() {
-    if (!arena_ && cfg_.arenaCapacityBytes > 0) {
-      arena_ = std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes);
-    }
-    return arena_.get();
-  }
-  const dds::Arena* arena() const {
-    if (!arena_ && cfg_.arenaCapacityBytes > 0) {
-      // lazy-init in const context; arena_ is mutable
-      arena_ = std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes);
-    }
-    return arena_.get();
-  }
+  dds::Arena* arena();
+  const dds::Arena* arena() const;
 
   TransTable* transTable() const;
   TransTable* maybeTransTable() const;
@@ -237,7 +225,7 @@ private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
-  mutable std::unique_ptr<dds::Arena> arena_{};
+  // Arena is managed per ThreadData in a central registry (see .cpp).
 };
 
 double ThreadMemoryUsed();
