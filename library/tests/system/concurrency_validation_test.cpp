@@ -65,8 +65,8 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
     deals.emplace_back(make_deal_from_pbn(s.c_str(), /*trump=*/0, /*first=*/0));
   }
 
-  futureTricks baseline_ft[3]{}; // N == 3 currently
-  int baseline_rc[3]{};
+  std::vector<futureTricks> baseline_ft(N);
+  std::vector<int> baseline_rc(N, 0);
 
   {
     ThreadData* thr0 = memory.GetPtr(0);
