@@ -22,12 +22,10 @@ static std::unordered_map<ThreadData*, TransTable*>& registry()
 }
 
 // Per-thread Arena registry. Managed as a leaky singleton similar to TT.
-namespace {
 static std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>& arena_registry()
 {
   static auto* map = new std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>();
   return *map;
-}
 }
 }
 
