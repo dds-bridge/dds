@@ -1,3 +1,13 @@
+Work in progress towards version 3
+==================================
+I wanted to use DDS 2.9.0 for training declarer models but found that memory management prevented me from solving several hands in paralell whilst also preserving the transposition table. The latter is required to make several calls for the same hand training a declarer model against double dummy perfect defenders.
+
+To address these issues, and also take advantage of modern C++ features, I had to update the project to a more modular build structure. This allowed me to create a library with dynamic memory management.
+
+There is no version 3 yet as the code is not ready to be released. It is, however, clear that merging these changes back into the original repository will not be feasible.
+
+Martin Nygren, October 2025
+
 Introduction
 ============
 DDS is a double-dummy solver of bridge hands.  It is provided as a Windows DLL and as C++ source code suitable for a number of operating systems.  It supports single-threading and multi-threading  for improved performance.
