@@ -19,9 +19,11 @@ struct relRanksType;   // from dds/dds.h
 struct trickDataType;  // from data_types/dds.h
 #include "trans_table/TransTable.h" // ensure complete type and enums
 #include "system/util/Utilities.h"   // instance-scoped RNG and logging
+#include "system/util/Arena.h"       // simple bump arena for short-lived allocations
 #include <string>
 #include <vector>
 #include <random>
+#include <cstddef>
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
@@ -34,6 +36,8 @@ struct SolverConfig
   int ttMemMaximumMB = 0;
   // Optional deterministic RNG seed (0 means "no explicit seed").
   unsigned long long rngSeed = 0ULL;
+  // Optional arena capacity (bytes). 0 disables arena.
+  std::size_t arenaCapacityBytes = 0ULL;
 };
 
 class SolverContext
@@ -42,6 +46,9 @@ public:
   explicit SolverContext(ThreadData* thread, SolverConfig cfg = {})
   : thr_(thread), cfg_(cfg)
   {
+#ifdef DDS_DEFAULT_ARENA_BYTES
+    if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
+#endif
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
   }
 
@@ -49,6 +56,9 @@ public:
   explicit SolverContext(const ThreadData* thread, SolverConfig cfg = {})
   : thr_(const_cast<ThreadData*>(thread)), cfg_(cfg)
   {
+#ifdef DDS_DEFAULT_ARENA_BYTES
+    if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
+#endif
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
   }
 
@@ -75,6 +85,10 @@ public:
 
   inline UtilitiesContext utilities() { return UtilitiesContext(&utils_); }
   inline UtilitiesContext utilities() const { return UtilitiesContext(&utils_); }
+
+  // Optional arena access (may be null if capacity not provided)
+  dds::Arena* arena();
+  const dds::Arena* arena() const;
 
   TransTable* transTable() const;
   TransTable* maybeTransTable() const;
@@ -211,6 +225,7 @@ private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
+  // Arena is managed per ThreadData in a central registry (see .cpp).
 };
 
 double ThreadMemoryUsed();

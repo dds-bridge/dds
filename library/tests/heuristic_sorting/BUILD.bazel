@@ -64,3 +64,15 @@ cc_test(
     copts = DDS_CPPOPTS,
     local_defines = DDS_LOCAL_DEFINES,
 )
+
+cc_test(
+    name = "merge_scratch_test",
+    srcs = ["merge_scratch_test.cpp"],
+    deps = [
+        "//library/src/moves:moves",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)

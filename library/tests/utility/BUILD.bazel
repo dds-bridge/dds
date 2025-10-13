@@ -1,6 +1,15 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
 cc_test(
+    name = "arena_test",
+    srcs = ["arena_test.cpp"],
+    deps = [
+        "//library/src/system:system",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "rng_determinism_test",
     srcs = ["rng_determinism_test.cpp"],
     deps = [

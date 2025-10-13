@@ -15,9 +15,12 @@
 #include <cstdlib>
 #include <string>
 #include <fstream>
+#include <cstring>
 
 #include "Moves.h"
 #include "heuristic_sorting/heuristic_sorting.h"
+// Optional arena-backed scratch support (wired via TLS by SolverContext)
+#include "utility/ScratchAllocTLS.h"
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
@@ -990,14 +993,35 @@ void Moves::MergeSort()
       CMP_SWAP(0, 1);
       break;
     default:
-      for (int i = 1; i < numMoves; i++)
-      {
-        tmp = mply[i];
-        int j = i;
-        for (; j && tmp.weight > mply[j - 1].weight ; --j)
-          mply[j] = mply[j - 1];
-        mply[j] = tmp;
+    {
+      // Try an arena-backed temporary copy buffer if a TLS allocator is set.
+      moveType* copyBuf = nullptr;
+      if (numMoves > 0) {
+        void* p = dds::tls::TryAlloc(static_cast<std::size_t>(numMoves) * sizeof(moveType), alignof(moveType));
+        copyBuf = static_cast<moveType*>(p);
       }
+      if (copyBuf) {
+        std::memcpy(copyBuf, mply, static_cast<std::size_t>(numMoves) * sizeof(moveType));
+        // Stable insertion from copyBuf into mply (descending by weight)
+        for (int i = 0; i < numMoves; ++i) {
+          const moveType cur = copyBuf[i];
+          int j = i;
+          for (; j && cur.weight > mply[j - 1].weight; --j)
+            mply[j] = mply[j - 1];
+          mply[j] = cur;
+        }
+      } else {
+        // Original in-place stable insertion sort path
+        for (int i = 1; i < numMoves; i++)
+        {
+          tmp = mply[i];
+          int j = i;
+          for (; j && tmp.weight > mply[j - 1].weight ; --j)
+            mply[j] = mply[j - 1];
+          mply[j] = tmp;
+        }
+      }
+    }
   }
   return;
 }

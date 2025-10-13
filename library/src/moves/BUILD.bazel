@@ -11,6 +11,7 @@ cc_library(
         "//library/src/utility:lookup_tables",
         "//library/src/data_types:dds_types",
         "//library/src/heuristic_sorting",
+        "//library/src/utility:scratch_alloc_tls",
     ],
     include_prefix = "moves",
     copts = DDS_CPPOPTS,
