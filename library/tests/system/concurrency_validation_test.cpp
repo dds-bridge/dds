@@ -89,7 +89,7 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
   for (size_t i = 0; i < N; ++i) {
     threads.emplace_back([i, &deals, &out_ft, &out_rc]() {
       ThreadData* thr = memory.GetPtr(static_cast<unsigned>(i));
-      ASSERT_NE(thr, nullptr);
+      EXPECT_NE(thr, nullptr);
       SolverContext ctx{thr};
       futureTricks ft{};
       const int rc = SolveBoardWithContext(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
