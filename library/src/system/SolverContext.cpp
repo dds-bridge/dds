@@ -8,8 +8,8 @@
 #include "data_types/dds.h" // THREADMEM_* defaults
 #include <cstdlib>
 #include <iostream>
-#include <cstdio>
 #include <unordered_map>
+#include "system/util/Arena.h"
 
 namespace {
 // Central registry mapping ThreadData* to its TransTable instance.
@@ -89,9 +89,16 @@ TransTable* SolverContext::transTable() const
 #ifdef DDS_UTILITIES_LOG
     // Append a tiny debug entry indicating TT creation and chosen kind/sizes.
     {
-      char buf[96];
       const char kch = (kind == TTKind::Small ? 'S' : 'L');
-      std::snprintf(buf, sizeof(buf), "tt:create|%c|%d|%d", kch, defMB, maxMB);
+      // Prefer arena-backed small buffer to avoid stack churn; fallback to stack.
+      char* buf = nullptr;
+      constexpr std::size_t kLen = 96;
+      if (auto* a = const_cast<SolverContext*>(this)->arena()) {
+        buf = static_cast<char*>(a->allocate({kLen, alignof(char)}));
+      }
+      char local[kLen];
+      if (!buf) buf = local;
+      std::snprintf(buf, kLen, "tt:create|%c|%d|%d", kch, defMB, maxMB);
       utilities().logAppend(std::string(buf));
     }
 #endif
@@ -181,8 +188,22 @@ SolverContext::~SolverContext() = default;
 void SolverContext::ResetForSolve() const
 {
 #ifdef DDS_UTILITIES_LOG
-  utilities().logAppend("ctx:reset_for_solve");
+  // Use arena-backed small buffer when available.
+  {
+    char* buf = nullptr;
+    constexpr std::size_t kLen = 32;
+    if (auto* a = const_cast<SolverContext*>(this)->arena()) {
+      buf = static_cast<char*>(a->allocate({kLen, alignof(char)}));
+    }
+    char local[kLen];
+    if (!buf) buf = local;
+    std::snprintf(buf, kLen, "ctx:reset_for_solve");
+    utilities().logAppend(std::string(buf));
+  }
 #endif
+  if (auto* a = const_cast<SolverContext*>(this)->arena()) {
+    a->reset();
+  }
   if (auto* tt = maybeTransTable())
     tt->ResetMemory(TT_RESET_FREE_MEMORY);
   if (!thr_) return;

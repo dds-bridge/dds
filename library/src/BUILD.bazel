@@ -27,7 +27,7 @@ cc_library(
     hdrs = glob(["*.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + ["DDS_DEFAULT_ARENA_BYTES=65536"],
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",  # allow root package to wrap/export
@@ -55,7 +55,7 @@ cc_library(
     hdrs = glob(["*.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + ["DDS_DEFAULT_ARENA_BYTES=65536"],
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",
@@ -78,7 +78,7 @@ cc_library(
     hdrs = glob(["*.h"]),
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + ["DDS_DEFAULT_ARENA_BYTES=65536"],
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",
