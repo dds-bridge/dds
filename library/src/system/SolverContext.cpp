@@ -317,11 +317,14 @@ double ThreadMemoryUsed()
 
 // --- MoveGenContext out-of-line definitions ---
 namespace {
-struct ShimCtx { SolverContext* ctx; };
+// Opaque context passed to the TLS allocator shim; avoids constructing a SolverContext.
+struct TDShim { ThreadData* thr; };
 static void* ArenaAllocShim(std::size_t size, std::size_t align, void* c) {
-  auto* sc = static_cast<ShimCtx*>(c);
-  if (!sc || !sc->ctx) return nullptr;
-  if (auto* a = sc->ctx->arena()) return a->allocate({size, align});
+  auto* sc = static_cast<TDShim*>(c);
+  if (!sc || !sc->thr) return nullptr;
+  auto& map = arena_registry();
+  auto it = map.find(sc->thr);
+  if (it != map.end() && it->second) return it->second->allocate({size, align});
   return nullptr;
 }
 }
@@ -334,8 +337,7 @@ int SolverContext::MoveGenContext::MoveGen0(
   const relRanksType thrp_rel[])
 {
   // Expose an optional allocator to legacy code paths.
-  SolverContext ctx(thr_);
-  ShimCtx shim{&ctx};
+  TDShim shim{thr_};
   dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
   dds::tls::ResetAlloc();
@@ -347,8 +349,7 @@ int SolverContext::MoveGenContext::MoveGen123(
   const int relHand,
   const pos& tpos)
 {
-  SolverContext ctx(thr_);
-  ShimCtx shim{&ctx};
+  TDShim shim{thr_};
   dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen123(tricks, relHand, tpos);
   dds::tls::ResetAlloc();
