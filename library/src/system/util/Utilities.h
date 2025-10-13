@@ -14,6 +14,27 @@ class Utilities {
 public:
   Utilities() = default;
 
+  // Explicit deep-copy semantics to keep class copyable while
+  // preserving small object size via pointer-backed RNG storage.
+  Utilities(const Utilities& other)
+    : log_(other.log_), stats_(other.stats_)
+  {
+    if (other.rng_) rng_ = std::make_unique<std::mt19937>(*other.rng_);
+  }
+
+  Utilities& operator=(const Utilities& other)
+  {
+    if (this == &other) return *this;
+    if (other.rng_) rng_ = std::make_unique<std::mt19937>(*other.rng_);
+    else rng_.reset();
+    log_ = other.log_;
+    stats_ = other.stats_;
+    return *this;
+  }
+
+  Utilities(Utilities&&) noexcept = default;
+  Utilities& operator=(Utilities&&) noexcept = default;
+
   // Compile-time feature detection helpers for tests and guarded code paths.
   static constexpr bool log_enabled() {
 #ifdef DDS_UTILITIES_LOG
@@ -71,7 +92,7 @@ public:
   void stats_reset() { stats_ = Stats{}; }
 
 private:
-  mutable std::unique_ptr<std::mt19937> rng_;  // created on demand
+  mutable std::unique_ptr<std::mt19937> rng_;  // created on demand (deep-copyable)
   std::vector<std::string> log_{};    // minimal structured log lines
   Stats stats_{};                     // optional counters
 };
