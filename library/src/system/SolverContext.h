@@ -74,7 +74,7 @@ public:
   };
 
   inline UtilitiesContext utilities() { return UtilitiesContext(&utils_); }
-  inline UtilitiesContext utilities() const { return UtilitiesContext(const_cast<::dds::Utilities*>(&utils_)); }
+  inline UtilitiesContext utilities() const { return UtilitiesContext(&utils_); }
 
   TransTable* transTable() const;
   TransTable* maybeTransTable() const;
@@ -210,7 +210,7 @@ public:
 private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
-  ::dds::Utilities utils_{};
+  mutable ::dds::Utilities utils_{};
 };
 
 double ThreadMemoryUsed();

@@ -92,12 +92,12 @@ TransTable* SolverContext::transTable() const
       char buf[96];
       const char kch = (kind == TTKind::Small ? 'S' : 'L');
       std::snprintf(buf, sizeof(buf), "tt:create|%c|%d|%d", kch, defMB, maxMB);
-      const_cast<SolverContext*>(this)->utilities().logAppend(std::string(buf));
+      utilities().logAppend(std::string(buf));
     }
 #endif
 
 #ifdef DDS_UTILITIES_STATS
-  const_cast<SolverContext*>(this)->utilities().util().stats().tt_creates++;
+  utilities().util().stats().tt_creates++;
 #endif
 
     // Attach to registry
@@ -164,11 +164,11 @@ void SolverContext::DisposeTransTable() const
   if (it != registry().end())
   {
 #ifdef DDS_UTILITIES_LOG
-    // Append a tiny debug entry indicating TT disposal.
-    const_cast<SolverContext*>(this)->utilities().logAppend("tt:dispose");
+  // Append a tiny debug entry indicating TT disposal.
+  utilities().logAppend("tt:dispose");
 #endif
 #ifdef DDS_UTILITIES_STATS
-    const_cast<SolverContext*>(this)->utilities().util().stats().tt_disposes++;
+  utilities().util().stats().tt_disposes++;
 #endif
     delete it->second;
     it->second = nullptr;
@@ -181,7 +181,7 @@ SolverContext::~SolverContext() = default;
 void SolverContext::ResetForSolve() const
 {
 #ifdef DDS_UTILITIES_LOG
-  const_cast<SolverContext*>(this)->utilities().logAppend("ctx:reset_for_solve");
+  utilities().logAppend("ctx:reset_for_solve");
 #endif
   if (auto* tt = maybeTransTable())
     tt->ResetMemory(TT_RESET_FREE_MEMORY);
@@ -211,7 +211,7 @@ void SolverContext::ResetForSolve() const
 void SolverContext::ClearTT() const
 {
 #ifdef DDS_UTILITIES_LOG
-  const_cast<SolverContext*>(this)->utilities().logAppend("tt:clear");
+  utilities().logAppend("tt:clear");
 #endif
   if (auto* tt = maybeTransTable())
     tt->ReturnAllMemory();
@@ -223,7 +223,7 @@ void SolverContext::ResizeTT(int defMB, int maxMB) const
   {
     char buf[64];
     std::snprintf(buf, sizeof(buf), "tt:resize|%d|%d", defMB, maxMB);
-    const_cast<SolverContext*>(this)->utilities().logAppend(std::string(buf));
+    utilities().logAppend(std::string(buf));
   }
 #endif
   if (auto* tt = maybeTransTable())
@@ -238,7 +238,7 @@ void SolverContext::ResizeTT(int defMB, int maxMB) const
 void SolverContext::ResetBestMovesLite() const
 {
 #ifdef DDS_UTILITIES_LOG
-  const_cast<SolverContext*>(this)->utilities().logAppend("ctx:reset_best_moves_lite");
+  utilities().logAppend("ctx:reset_best_moves_lite");
 #endif
   if (!thr_) return;
   for (int d = 0; d <= 49; ++d)
