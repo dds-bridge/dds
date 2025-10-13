@@ -63,8 +63,8 @@ public:
     explicit UtilitiesContext(::dds::Utilities* util) : util_(util) {}
     ::dds::Utilities& util() { return *util_; }
     const ::dds::Utilities& util() const { return *util_; }
-    std::mt19937& rng() { return util_->rng(); }
-    const std::mt19937& rng() const { return util_->rng(); }
+  std::mt19937& rng() { return util_->rng(); }
+  const std::mt19937& rng() const { return util_->rng(); }
     void seedRng(unsigned long long seed) { util_->seed(seed); }
     void logAppend(const std::string& s) { util_->log_append(s); }
     const std::vector<std::string>& logBuffer() const { return util_->log_buffer(); }
