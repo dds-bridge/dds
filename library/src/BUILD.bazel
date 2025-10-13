@@ -36,6 +36,7 @@ cc_library(
         "//library/tests/system:__pkg__",
         "//library/tests/utility:__pkg__",
         "//library/tests/regression/heuristic_sorting:__pkg__",
+        "//library/tests/solve_board:__pkg__",
     ],
     deps = [
        "//library/src/data_types:dds_types",
