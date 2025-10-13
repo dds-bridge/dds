@@ -51,7 +51,6 @@ public:
     if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
 #endif
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
-    if (cfg_.arenaCapacityBytes > 0) arena_ = std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes);
   }
 
   // Allow construction from const ThreadData* for read-only contexts
@@ -62,7 +61,6 @@ public:
     if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
 #endif
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
-    if (cfg_.arenaCapacityBytes > 0) arena_ = std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes);
   }
 
   ~SolverContext();
@@ -90,8 +88,19 @@ public:
   inline UtilitiesContext utilities() const { return UtilitiesContext(&utils_); }
 
   // Optional arena access (may be null if capacity not provided)
-  dds::Arena* arena() { return arena_.get(); }
-  const dds::Arena* arena() const { return arena_.get(); }
+  dds::Arena* arena() {
+    if (!arena_ && cfg_.arenaCapacityBytes > 0) {
+      arena_ = std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes);
+    }
+    return arena_.get();
+  }
+  const dds::Arena* arena() const {
+    if (!arena_ && cfg_.arenaCapacityBytes > 0) {
+      // lazy-init in const context; arena_ is mutable
+      arena_ = std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes);
+    }
+    return arena_.get();
+  }
 
   TransTable* transTable() const;
   TransTable* maybeTransTable() const;
@@ -228,7 +237,7 @@ private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
-  std::unique_ptr<dds::Arena> arena_{};
+  mutable std::unique_ptr<dds::Arena> arena_{};
 };
 
 double ThreadMemoryUsed();
