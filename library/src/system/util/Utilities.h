@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <random>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -12,6 +13,27 @@ namespace dds {
 class Utilities {
 public:
   Utilities() = default;
+
+  // Explicit deep-copy semantics to keep class copyable while
+  // preserving small object size via pointer-backed RNG storage.
+  Utilities(const Utilities& other)
+    : log_(other.log_), stats_(other.stats_)
+  {
+    if (other.rng_) rng_ = std::make_unique<std::mt19937>(*other.rng_);
+  }
+
+  Utilities& operator=(const Utilities& other)
+  {
+    if (this == &other) return *this;
+    if (other.rng_) rng_ = std::make_unique<std::mt19937>(*other.rng_);
+    else rng_.reset();
+    log_ = other.log_;
+    stats_ = other.stats_;
+    return *this;
+  }
+
+  Utilities(Utilities&&) noexcept = default;
+  Utilities& operator=(Utilities&&) noexcept = default;
 
   // Compile-time feature detection helpers for tests and guarded code paths.
   static constexpr bool log_enabled() {
@@ -31,12 +53,20 @@ public:
   }
 
   // RNG: mt19937 seeded with a 64-bit seed for determinism across platforms.
+  // Lazily instantiate the engine to avoid paying initialization unless used.
   void seed(uint64_t seed_value) {
-    rng_.seed(static_cast<std::mt19937::result_type>(seed_value));
+    if (!rng_) rng_ = std::make_unique<std::mt19937>();
+    rng_->seed(static_cast<std::mt19937::result_type>(seed_value));
   }
 
-  std::mt19937& rng() { return rng_; }
-  const std::mt19937& rng() const { return rng_; }
+  std::mt19937& rng() {
+    if (!rng_) rng_ = std::make_unique<std::mt19937>();
+    return *rng_;
+  }
+  const std::mt19937& rng() const {
+    if (!rng_) rng_ = std::make_unique<std::mt19937>();
+    return *rng_;
+  }
 
   // Logging: a very simple append-only buffer; callers can flush and clear.
   void log_append(const std::string& s) { log_.push_back(s); }
@@ -62,7 +92,7 @@ public:
   void stats_reset() { stats_ = Stats{}; }
 
 private:
-  std::mt19937 rng_{};                // default-constructed; seed via seed()
+  mutable std::unique_ptr<std::mt19937> rng_;  // created on demand (deep-copyable)
   std::vector<std::string> log_{};    // minimal structured log lines
   Stats stats_{};                     // optional counters
 };

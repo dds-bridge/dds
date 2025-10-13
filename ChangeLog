@@ -1,5 +1,6 @@
 Unreleased
 ----------
+- Fix: Utilities RNG is now lazily initialized. This removes the per-context cost of default-constructing std::mt19937 when RNG is unused, restoring baseline performance with no behavior change. Deterministic seeding via SolverConfig.rngSeed is preserved.
 - Task 06: Encapsulated MoveGen diagnostics via `SolverContext`; removed stray direct calls; all tests green and merged.
 - Task 07: Migrated heuristic sorting helpers to use `HeuristicContext` snapshots; static analysis addressed; merged with tests green.
 - Task 08 (in progress):
