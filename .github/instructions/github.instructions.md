@@ -10,7 +10,7 @@ This project uses GitHub as its primary version control and collaboration platfo
 You have access to an MCP server named **`github`** (running `mcp-github`) which can create branches, push commits, and open PRs directly from the Continue.dev environment. See `.vscode/mcp.json` for configuration.
 
 ## Branching Strategy
-- **Default branch:** `mn_main`
+- **Default branch:** `main`
 - Always create a new branch for changes.  
   Format:  
   - `feature/<short-description>` for new features  
@@ -20,7 +20,7 @@ You have access to an MCP server named **`github`** (running `mcp-github`) which
 - Branch names must be lowercase and use hyphens instead of spaces.
 
 ## Pull Request Rules
-1. **Always** open a PR for changes — no direct commits to `mn_main`.
+1. **Always** open a PR for changes — no direct commits to `main`.
 2. Include:
    - A clear title describing the change
    - A concise but informative description

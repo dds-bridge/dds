@@ -3,7 +3,7 @@ name: CI – Linux
 
 on:
   pull_request:
-    branches: [mn_main]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:

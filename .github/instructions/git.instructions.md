@@ -24,7 +24,7 @@ alwaysApply: false
 | Push | `git push` | `git push origin <branch>` |
 | Branch status | `git branch` | `git branch --show-current` |
 | Repo info | `git repo` | `git repo --owner` |
-| Diff vs base | `git diff` | `git diff mn_main` |
+| Diff vs base | `git diff` | `git diff main` |
 
 > Use the `git` MCP server’s JSON‑based API. For example, to create a commit you can send:  
 > ```json
