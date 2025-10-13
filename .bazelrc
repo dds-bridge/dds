@@ -2,3 +2,11 @@
 
 # Performance optimization flags
 build:opt --compilation_mode=opt
+
+# ThreadSanitizer configuration
+# Usage: bazel test --config=tsan //path:target
+build:tsan --copt=-fsanitize=thread
+build:tsan --linkopt=-fsanitize=thread
+build:tsan --strip=never
+build:tsan --features=dbg
+build:tsan --compilation_mode=dbg
