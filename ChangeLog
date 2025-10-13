@@ -1,3 +1,16 @@
+Unreleased
+----------
+- Task 06: Encapsulated MoveGen diagnostics via `SolverContext`; removed stray direct calls; all tests green and merged.
+- Task 07: Migrated heuristic sorting helpers to use `HeuristicContext` snapshots; static analysis addressed; merged with tests green.
+- Task 08 (in progress):
+	- Utilities: Introduced header-only `Utilities` with per-instance RNG (`std::mt19937`), an append-only log buffer, and minimal `Stats` counters.
+	- Deterministic seeding exposed via `SolverConfig.rngSeed` and `SolverContext::utilities()` accessors.
+	- Optional logging under `DDS_UTILITIES_LOG`: compact entries for TransTable lifecycle (create/dispose/clear/resize) and context ops (reset-for-solve, reset-best-moves-lite).
+	- Optional stats under `DDS_UTILITIES_STATS`: counters `tt_creates` and `tt_disposes` incremented at lifecycle points.
+	- Feature detection helpers `Utilities::log_enabled()` and `Utilities::stats_enabled()` added, with tests for enabled/disabled variants.
+	- Bazel wiring: dedicated testable targets enable flags only for targeted tests; default builds remain unaffected.
+	- Tests added: RNG determinism; logging enabled/disabled; stats enabled/disabled; context operation logs; feature-flag detection.
+
 Release Notes DDS 2.9.1
 -----------------------
 test/print.cpp: Fixed bug in equals_to_string() noticed by tucsu.

@@ -8,6 +8,7 @@
 #include "data_types/dds.h" // THREADMEM_* defaults
 #include <cstdlib>
 #include <iostream>
+#include <cstdio>
 #include <unordered_map>
 
 namespace {
@@ -85,6 +86,20 @@ TransTable* SolverContext::transTable() const
     created->SetMemoryMaximum(maxMB);
   created->MakeTT();
 
+#ifdef DDS_UTILITIES_LOG
+    // Append a tiny debug entry indicating TT creation and chosen kind/sizes.
+    {
+      char buf[96];
+      const char kch = (kind == TTKind::Small ? 'S' : 'L');
+      std::snprintf(buf, sizeof(buf), "tt:create|%c|%d|%d", kch, defMB, maxMB);
+      utilities().logAppend(std::string(buf));
+    }
+#endif
+
+#ifdef DDS_UTILITIES_STATS
+  utilities().util().stats().tt_creates++;
+#endif
+
     // Attach to registry
     registry()[thr_] = created;
   }
@@ -148,6 +163,13 @@ void SolverContext::DisposeTransTable() const
   auto it = registry().find(thr_);
   if (it != registry().end())
   {
+#ifdef DDS_UTILITIES_LOG
+  // Append a tiny debug entry indicating TT disposal.
+  utilities().logAppend("tt:dispose");
+#endif
+#ifdef DDS_UTILITIES_STATS
+  utilities().util().stats().tt_disposes++;
+#endif
     delete it->second;
     it->second = nullptr;
     registry().erase(it);
@@ -158,6 +180,9 @@ SolverContext::~SolverContext() = default;
 
 void SolverContext::ResetForSolve() const
 {
+#ifdef DDS_UTILITIES_LOG
+  utilities().logAppend("ctx:reset_for_solve");
+#endif
   if (auto* tt = maybeTransTable())
     tt->ResetMemory(TT_RESET_FREE_MEMORY);
   if (!thr_) return;
@@ -185,12 +210,22 @@ void SolverContext::ResetForSolve() const
 
 void SolverContext::ClearTT() const
 {
+#ifdef DDS_UTILITIES_LOG
+  utilities().logAppend("tt:clear");
+#endif
   if (auto* tt = maybeTransTable())
     tt->ReturnAllMemory();
 }
 
 void SolverContext::ResizeTT(int defMB, int maxMB) const
 {
+#ifdef DDS_UTILITIES_LOG
+  {
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "tt:resize|%d|%d", defMB, maxMB);
+    utilities().logAppend(std::string(buf));
+  }
+#endif
   if (auto* tt = maybeTransTable())
   {
     if (maxMB < defMB) maxMB = defMB;
@@ -202,6 +237,9 @@ void SolverContext::ResizeTT(int defMB, int maxMB) const
 // Lightweight reset matching legacy ResetBestMoves semantics.
 void SolverContext::ResetBestMovesLite() const
 {
+#ifdef DDS_UTILITIES_LOG
+  utilities().logAppend("ctx:reset_best_moves_lite");
+#endif
   if (!thr_) return;
   for (int d = 0; d <= 49; ++d)
   {

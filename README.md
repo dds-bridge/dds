@@ -92,3 +92,28 @@ Version 2.9.0 has no known bugs.
 
 Please report bugs to bo.haglund@bahnhof.se and soren.hein@gmail.com.
 
+
+Utilities (RNG, logging, stats)
+================================
+
+Task 08 introduced an instance-scoped Utilities bundle and opt-in diagnostics. These changes are behavior-neutral by default.
+
+- Per-instance RNG
+    - `dds::Utilities` (header-only) lives under `library/src/system/util/Utilities.h`.
+    - `SolverContext` exposes `utilities()` with access to a `std::mt19937` RNG.
+    - Deterministic seeding is available via `SolverConfig.rngSeed` on `SolverContext` construction.
+
+- Optional logging (compile-time)
+    - When compiled with `DDS_UTILITIES_LOG`, `SolverContext` appends compact entries for internal lifecycle (e.g., TransTable create/dispose/clear/resize, context resets/best-move reset).
+    - Log lines are available via `ctx.utilities().logBuffer()` and can be cleared with `logClear()`.
+
+- Optional stats (compile-time)
+    - When compiled with `DDS_UTILITIES_STATS`, `Utilities::Stats` exposes small counters (e.g., `tt_creates`, `tt_disposes`) incremented from `SolverContext` lifecycle.
+    - Stats can be reset with `stats_reset()`.
+
+Testing and build variants
+- Default builds do not enable these flags and thus incur no overhead.
+- Tests enable flags via dedicated Bazel targets so the main library remains unaffected:
+    - Logging: `//library/src/system:system_util_log`, `//library/src:testable_dds_util_log`.
+    - Stats: `//library/src/system:system_util_stats`, `//library/src:testable_dds_util_stats`.
+

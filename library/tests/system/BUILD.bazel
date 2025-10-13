@@ -35,3 +35,106 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+# Utilities logging tests: one without define (expect empty), one with define (expect entries)
+cc_test(
+    name = "utilities_log_test",
+    srcs = ["utilities_log_test.cpp"],
+    copts = [],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_log_test_with_define",
+    srcs = ["utilities_log_test_with_define.cpp"],
+    deps = [
+        "//library/src:testable_dds_util_log",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_log_ctx_ops_test_with_define",
+    srcs = ["utilities_log_ctx_ops_test_with_define.cpp"],
+    deps = [
+        "//library/src:testable_dds_util_log",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_log_ctx_ops_test",
+    srcs = ["utilities_log_ctx_ops_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Utilities stats tests: without/with define
+cc_test(
+    name = "utilities_stats_test",
+    srcs = ["utilities_stats_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_stats_test_with_define",
+    srcs = ["utilities_stats_test_with_define.cpp"],
+    deps = [
+        "//library/src:testable_dds_util_stats",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_log_contains_test",
+    srcs = ["utilities_log_contains_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_feature_flags_test",
+    srcs = ["utilities_feature_flags_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_feature_flags_test_with_log",
+    srcs = ["utilities_feature_flags_test_with_log.cpp"],
+    deps = [
+        "//library/src:testable_dds_util_log",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utilities_feature_flags_test_with_stats",
+    srcs = ["utilities_feature_flags_test_with_stats.cpp"],
+    deps = [
+        "//library/src:testable_dds_util_stats",
+        "//library/src/data_types:dds_types",
+        "@googletest//:gtest_main",
+    ],
+)
