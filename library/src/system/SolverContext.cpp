@@ -10,6 +10,7 @@
 #include <iostream>
 #include <unordered_map>
 #include "system/util/Arena.h"
+#include "utility/ScratchAllocTLS.h"
 
 namespace {
 // Central registry mapping ThreadData* to its TransTable instance.
@@ -317,6 +318,16 @@ double ThreadMemoryUsed()
 }
 
 // --- MoveGenContext out-of-line definitions ---
+namespace {
+struct ShimCtx { SolverContext* ctx; };
+static void* ArenaAllocShim(std::size_t size, std::size_t align, void* c) {
+  auto* sc = static_cast<ShimCtx*>(c);
+  if (!sc || !sc->ctx) return nullptr;
+  if (auto* a = sc->ctx->arena()) return a->allocate({size, align});
+  return nullptr;
+}
+}
+
 int SolverContext::MoveGenContext::MoveGen0(
   const int tricks,
   const pos& tpos,
@@ -324,7 +335,13 @@ int SolverContext::MoveGenContext::MoveGen0(
   const moveType& bestMoveTT,
   const relRanksType thrp_rel[])
 {
-  return thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
+  // Expose an optional allocator to legacy code paths.
+  SolverContext ctx(thr_);
+  ShimCtx shim{&ctx};
+  dds::tls::SetAlloc(&ArenaAllocShim, &shim);
+  auto rc = thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
+  dds::tls::ResetAlloc();
+  return rc;
 }
 
 int SolverContext::MoveGenContext::MoveGen123(
@@ -332,7 +349,12 @@ int SolverContext::MoveGenContext::MoveGen123(
   const int relHand,
   const pos& tpos)
 {
-  return thr_->moves.MoveGen123(tricks, relHand, tpos);
+  SolverContext ctx(thr_);
+  ShimCtx shim{&ctx};
+  dds::tls::SetAlloc(&ArenaAllocShim, &shim);
+  auto rc = thr_->moves.MoveGen123(tricks, relHand, tpos);
+  dds::tls::ResetAlloc();
+  return rc;
 }
 
 void SolverContext::MoveGenContext::Purge(

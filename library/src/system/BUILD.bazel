@@ -10,6 +10,7 @@ cc_library(
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
+        "//library/src/utility:scratch_alloc_tls",
         "//library/src/data_types:dds_types",
         "//library/src/trans_table",
         "//library/src/moves:moves",
@@ -31,6 +32,7 @@ cc_library(
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
+        "//library/src/utility:scratch_alloc_tls",
         "//library/src/data_types:dds_types",
         "//library/src/trans_table",
         "//library/src/moves:moves",
@@ -50,6 +52,7 @@ cc_library(
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
+        "//library/src/utility:scratch_alloc_tls",
         "//library/src/data_types:dds_types",
         "//library/src/trans_table",
         "//library/src/moves:moves",
