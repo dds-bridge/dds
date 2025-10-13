@@ -13,6 +13,23 @@ class Utilities {
 public:
   Utilities() = default;
 
+  // Compile-time feature detection helpers for tests and guarded code paths.
+  static constexpr bool log_enabled() {
+#ifdef DDS_UTILITIES_LOG
+    return true;
+#else
+    return false;
+#endif
+  }
+
+  static constexpr bool stats_enabled() {
+#ifdef DDS_UTILITIES_STATS
+    return true;
+#else
+    return false;
+#endif
+  }
+
   // RNG: mt19937 seeded with a 64-bit seed for determinism across platforms.
   void seed(uint64_t seed_value) {
     rng_.seed(static_cast<std::mt19937::result_type>(seed_value));
