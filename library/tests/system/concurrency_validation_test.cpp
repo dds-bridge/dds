@@ -29,6 +29,7 @@ static deal make_deal_from_pbn(const char* pbn, int trump = 0, int first = 0)
   // Convert PBN distribution into remainCards bitmasks
   const int rc = ConvertFromPBN(pbn, dl.remainCards);
   // If conversion fails, keep an empty deal which should yield a deterministic error.
+  // Silent failure is intentional for this test: downstream code is expected to handle empty deals.
   (void)rc;
   return dl;
 }
