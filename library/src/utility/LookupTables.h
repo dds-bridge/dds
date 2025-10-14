@@ -21,15 +21,53 @@ struct moveGroupType
   int gap[7];
 };
 
-// Lookup table arrays
-extern int highestRank[8192];
-extern int lowestRank[8192];
-extern int counttable[8192];
-extern char relRank[8192][15];
-extern unsigned short int winRanks[8192][14];
-extern moveGroupType groupData[8192];
-
-// Initialization function
+// Initialization function (safe to call multiple times)
+// Ensures the lookup tables are initialized once per process.
 void InitLookupTables();
+
+// Read-only accessors implemented as lightweight proxy tables that
+// preserve existing "table[index]" syntax while prohibiting mutation.
+
+struct HighestRankTable {
+  int operator[](int i) const noexcept;
+};
+
+struct LowestRankTable {
+  int operator[](int i) const noexcept;
+};
+
+struct CountTable {
+  int operator[](int i) const noexcept;
+};
+
+struct RelRankRow {
+  int i; // aggregate index
+  char operator[](int j) const noexcept;
+};
+
+struct RelRankTable {
+  RelRankRow operator[](int i) const noexcept;
+};
+
+struct WinRanksRow {
+  int i; // aggregate index
+  unsigned short operator[](int j) const noexcept;
+};
+
+struct WinRanksTable {
+  WinRanksRow operator[](int i) const noexcept;
+};
+
+struct GroupDataTable {
+  const moveGroupType& operator[](int i) const noexcept;
+};
+
+// Externally visible, read-only table objects
+extern const HighestRankTable highestRank;
+extern const LowestRankTable lowestRank;
+extern const CountTable counttable;
+extern const RelRankTable relRank;
+extern const WinRanksTable winRanks;
+extern const GroupDataTable groupData;
 
 #endif
