@@ -171,7 +171,7 @@ int Moves::MoveGen0(
 
     lastNumMoves = numMoves;
   mp = &group_data[ris];
-    g = mp->lastGroup;
+  g = mp->last_group_;
     removed = trackp->removedRanks[suit];
 
     while (g >= 0)
@@ -180,7 +180,7 @@ int Moves::MoveGen0(
       seq = mp->sequence[g];
 
       while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
-        seq |= mp->fullseq[--g];
+  seq |= mp->fullseq_[--g];
 
       mply[numMoves].sequence = seq;
       mply[numMoves].suit = suit;
@@ -244,7 +244,7 @@ int Moves::MoveGen123(
   if (ris != 0)
   {
   mp = &group_data[ris];
-    g = mp->lastGroup;
+  g = mp->last_group_;
     removed = trackp->removedRanks[leadSuit];
 
     while (g >= 0)
@@ -253,7 +253,7 @@ int Moves::MoveGen123(
       seq = mp->sequence[g];
 
       while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
-        seq |= mp->fullseq[--g];
+  seq |= mp->fullseq_[--g];
 
       mply[numMoves].sequence = seq;
       mply[numMoves].suit = leadSuit;
@@ -294,7 +294,7 @@ int Moves::MoveGen123(
 
     lastNumMoves = numMoves;
   mp = &group_data[ris];
-    g = mp->lastGroup;
+  g = mp->last_group_;
     removed = trackp->removedRanks[suit];
 
     while (g >= 0)
@@ -303,7 +303,7 @@ int Moves::MoveGen123(
       seq = mp->sequence[g];
 
       while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
-        seq |= mp->fullseq[--g];
+  seq |= mp->fullseq_[--g];
 
       mply[numMoves].sequence = seq;
       mply[numMoves].suit = suit;
@@ -340,16 +340,16 @@ void Moves::GetTopNumber(
     mno++;
 
   const MoveGroupType& mp = group_data[ris];
-  int g = mp.lastGroup;
+  int g = mp.last_group_;
 
   // Remove partner's card as well.
   int removed = static_cast<int>(trackp->removedRanks[leadSuit] |
                                  bitMapRank[prank]);
 
-  int fullseq = mp.fullseq[g];
+  int fullseq = mp.fullseq_[g];
 
-  while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
-    fullseq |= mp.fullseq[--g];
+  while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))
+  fullseq |= mp.fullseq_[--g];
 
   topNumber = count_table[fullseq] - 1;
 }

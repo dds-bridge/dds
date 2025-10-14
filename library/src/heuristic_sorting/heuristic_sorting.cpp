@@ -876,17 +876,17 @@ int RankForcesAce(const HeuristicContext& ctx, const int cards4th)
   // Figure out how high we have to play to force out the top.
   const MoveGroupType& mp = group_data[cards4th];
 
-  int g = mp.lastGroup;
+  int g = mp.last_group_;
   int removed = static_cast<int>(ctx.removedRanks[ctx.leadSuit]);
 
-  while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
+  while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))
     g--;
 
   if (! g)
     return -1;
 
   // RHO's second-highest rank.
-  int secondRHO = (g == 0 ? 0 : mp.rank[g-1]);
+  int secondRHO = (g == 0 ? 0 : mp.rank_[g-1]);
 
   if (secondRHO > ctx.move1_rank)
   {
@@ -924,16 +924,16 @@ void GetTopNumber(const HeuristicContext& ctx, const int ris, const int prank, i
     mno++;
 
   const MoveGroupType& mp = group_data[ris];
-  int g = mp.lastGroup;
+  int g = mp.last_group_;
 
   // Remove partner's card as well.
   int removed = static_cast<int>(ctx.removedRanks[ctx.leadSuit] |
                                  bitMapRank[prank]);
 
-  int fullseq = mp.fullseq[g];
+  int fullseq = mp.fullseq_[g];
 
-  while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
-    fullseq |= mp.fullseq[--g];
+  while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))
+    fullseq |= mp.fullseq_[--g];
 
   topNumber = count_table[fullseq] - 1;
 }

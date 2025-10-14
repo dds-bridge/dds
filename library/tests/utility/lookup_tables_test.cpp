@@ -91,11 +91,11 @@ TEST_F(LookupTablesTest, GroupDataArray) {
     // Test that group_data array has valid MoveGroupType entries
     for (int i = 0; i < 8192; i++) {
         // Test that we can access the struct members
-    EXPECT_NO_THROW((void)group_data[i].lastGroup);
-    EXPECT_NO_THROW((void)group_data[i].rank[0]);
-    EXPECT_NO_THROW((void)group_data[i].sequence[0]);
-    EXPECT_NO_THROW((void)group_data[i].fullseq[0]);
-    EXPECT_NO_THROW((void)group_data[i].gap[0]);
+    EXPECT_NO_THROW((void)group_data[i].last_group_);
+    EXPECT_NO_THROW((void)group_data[i].rank_[0]);
+    EXPECT_NO_THROW((void)group_data[i].sequence_[0]);
+    EXPECT_NO_THROW((void)group_data[i].fullseq_[0]);
+    EXPECT_NO_THROW((void)group_data[i].gap_[0]);
     }
 }
 
@@ -138,17 +138,17 @@ TEST_F(LookupTablesTest, FullSetHandling) {
 TEST_F(LookupTablesTest, MoveGroupTypeStruct) {
     // Test that we can create and use MoveGroupType
     MoveGroupType testGroup;
-    testGroup.lastGroup = 3;
-    testGroup.rank[0] = 5;
-    testGroup.sequence[0] = 3;
-    testGroup.fullseq[0] = 1;
-    testGroup.gap[0] = 7;
+    testGroup.last_group_ = 3;
+    testGroup.rank_[0] = 5;
+    testGroup.sequence_[0] = 3;
+    testGroup.fullseq_[0] = 1;
+    testGroup.gap_[0] = 7;
     
-    EXPECT_EQ(testGroup.lastGroup, 3);
-    EXPECT_EQ(testGroup.rank[0], 5);
-    EXPECT_EQ(testGroup.sequence[0], 3);
-    EXPECT_EQ(testGroup.fullseq[0], 1);
-    EXPECT_EQ(testGroup.gap[0], 7);
+    EXPECT_EQ(testGroup.last_group_, 3);
+    EXPECT_EQ(testGroup.rank_[0], 5);
+    EXPECT_EQ(testGroup.sequence_[0], 3);
+    EXPECT_EQ(testGroup.fullseq_[0], 1);
+    EXPECT_EQ(testGroup.gap_[0], 7);
 }
 
 TEST_F(LookupTablesTest, GroupDataStructAccess) {
@@ -157,14 +157,14 @@ TEST_F(LookupTablesTest, GroupDataStructAccess) {
     const MoveGroupType& group = group_data[i];
         
         // Values should be in reasonable ranges
-        // lastGroup can be -1 to indicate no groups
-        EXPECT_GE(group.lastGroup, -1);
-        EXPECT_LE(group.lastGroup, 6); // At most 7 groups (0-6)
-        EXPECT_GE(group.rank[0], 0);
-        EXPECT_LE(group.rank[0], 15);
-        EXPECT_GE(group.sequence[0], 0);
-        EXPECT_GE(group.fullseq[0], 0);
-        EXPECT_GE(group.gap[0], 0);
+    // last_group_ can be -1 to indicate no groups
+    EXPECT_GE(group.last_group_, -1);
+    EXPECT_LE(group.last_group_, 6); // At most 7 groups (0-6)
+    EXPECT_GE(group.rank_[0], 0);
+    EXPECT_LE(group.rank_[0], 15);
+    EXPECT_GE(group.sequence_[0], 0);
+    EXPECT_GE(group.fullseq_[0], 0);
+    EXPECT_GE(group.gap_[0], 0);
     }
 }
 

@@ -22,19 +22,19 @@ struct MoveGroupType
   /** \brief Index of the last valid group (run) in this representation.
    *  -1 indicates there are no groups (empty suit).
    */
-  int lastGroup;
+  int last_group_;
 
   /** \brief For each group g, the absolute rank (2..14) of the top card. */
-  int rank[7];
+  int rank_[7];
 
   /** \brief For each group g, bitmask of the sequence excluding the top card. */
-  int sequence[7];
+  int sequence_[7];
 
   /** \brief For each group g, bitmask of the full sequence including top card. */
-  int fullseq[7];
+  int fullseq_[7];
 
   /** \brief For each group g (g>=1), bitmask of the gap between group g and g-1. */
-  int gap[7];
+  int gap_[7];
 };
 
 /**

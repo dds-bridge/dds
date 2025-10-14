@@ -114,7 +114,7 @@ static auto dds_lut_init_impl() -> void
   // groupData[ris] is a representation of the suit (ris is
   // "rank in suit") in terms of runs of adjacent bits.
   // 1 1100 1101 0110
-  // has 4 runs, so lastGroup is 3, and the entries are
+  // has 4 runs, so last_group_ is 3, and the entries are
   // 0: 4 and 0x0002, gap 0x0000 (lowest gap unused, though)
   // 1: 6 and 0x0000, gap 0x0008
   // 2: 9 and 0x0040, gap 0x0020
@@ -142,13 +142,13 @@ static auto dds_lut_init_impl() -> void
   // botside[T] = 0x1e00
   // which is 0x0600, the binary code for QJ.
 
-  dds_lut_groupData_storage[0].lastGroup = -1;
+  dds_lut_groupData_storage[0].last_group_ = -1;
 
-  dds_lut_groupData_storage[1].lastGroup = 0;
-  dds_lut_groupData_storage[1].rank[0] = 2;
-  dds_lut_groupData_storage[1].sequence[0] = 0;
-  dds_lut_groupData_storage[1].fullseq[0] = 1;
-  dds_lut_groupData_storage[1].gap[0] = 0;
+  dds_lut_groupData_storage[1].last_group_ = 0;
+  dds_lut_groupData_storage[1].rank_[0] = 2;
+  dds_lut_groupData_storage[1].sequence_[0] = 0;
+  dds_lut_groupData_storage[1].fullseq_[0] = 1;
+  dds_lut_groupData_storage[1].gap_[0] = 0;
 
   int topBitRank = 1;
   int nextBitRank = 0;
@@ -169,19 +169,19 @@ static auto dds_lut_init_impl() -> void
 
     if (ris & nextBitRank) // 11... Extend group
     {
-      g = dds_lut_groupData_storage[ris].lastGroup;
-      dds_lut_groupData_storage[ris].rank[g]++;
-      dds_lut_groupData_storage[ris].sequence[g] |= nextBitRank;
-      dds_lut_groupData_storage[ris].fullseq[g] |= topBitRank;
+  g = dds_lut_groupData_storage[ris].last_group_;
+  dds_lut_groupData_storage[ris].rank_[g]++;
+  dds_lut_groupData_storage[ris].sequence_[g] |= nextBitRank;
+  dds_lut_groupData_storage[ris].fullseq_[g] |= topBitRank;
     }
     else // 10... New group
     {
-      g = ++dds_lut_groupData_storage[ris].lastGroup;
-      dds_lut_groupData_storage[ris].rank[g] = topBitNo;
-      dds_lut_groupData_storage[ris].sequence[g] = 0;
-      dds_lut_groupData_storage[ris].fullseq[g] = topBitRank;
-      dds_lut_groupData_storage[ris].gap[g] =
-        topside[topBitNo] & botside[ dds_lut_groupData_storage[ris].rank[g - 1] ];
+      g = ++dds_lut_groupData_storage[ris].last_group_;
+      dds_lut_groupData_storage[ris].rank_[g] = topBitNo;
+      dds_lut_groupData_storage[ris].sequence_[g] = 0;
+      dds_lut_groupData_storage[ris].fullseq_[g] = topBitRank;
+      dds_lut_groupData_storage[ris].gap_[g] =
+        topside[topBitNo] & botside[ dds_lut_groupData_storage[ris].rank_[g - 1] ];
     }
   }
 }
