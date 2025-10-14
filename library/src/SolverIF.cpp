@@ -115,7 +115,7 @@ int SolveBoardInternal(
     {
       unsigned int c = dl.remainCards[h][s] >> 2;
 
-      cardCount += counttable[c];
+  cardCount += count_table[c];
       diffDeal += (c ^ (thrp->suit[h][s]));
       aggDeal += c;
 
@@ -1125,7 +1125,7 @@ int BoardValueChecks(
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
-      noOfCardsPerHand[h] += counttable[thrp->suit[h][s]];
+  noOfCardsPerHand[h] += count_table[thrp->suit[h][s]];
 
   for (int h = 1; h < DDS_HANDS; h++)
   {
@@ -1204,7 +1204,7 @@ void LastTrickWinner(
       if (thrp->suit[hp][s] != 0)
       {
         lastTrickSuit[hp] = s;
-        lastTrickRank[hp] = highestRank[thrp->suit[hp][s]];
+  lastTrickRank[hp] = highest_rank[thrp->suit[hp][s]];
         break;
       }
     }

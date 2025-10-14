@@ -232,7 +232,7 @@ static bool ABsearch0_ctx(
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] =
-          winRanks[ posPoint->aggr[ss] ]
+          win_ranks[ posPoint->aggr[ss] ]
           [ static_cast<unsigned char>(cardsP->leastWin[ss]) ];
 
       if (cardsP->bestMoveRank != 0)
@@ -342,7 +342,7 @@ static bool ABsearch0_ctx(
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] =
-          winRanks[ posPoint->aggr[ss] ]
+          win_ranks[ posPoint->aggr[ss] ]
           [ static_cast<unsigned char>(cardsP->leastWin[ss]) ];
 
       if (cardsP->bestMoveRank != 0)
@@ -413,8 +413,9 @@ static bool ABsearch0_ctx(
       goto ABexit;
     }
     for (int ss = 0; ss < DDS_SUITS; ss++)
-      posPoint->winRanks[depth][ss] |=
-        posPoint->winRanks[depth - 1][ss];
+        posPoint->winRanks[depth][ss] =
+          win_ranks[ posPoint->aggr[ss] ]
+          [ static_cast<unsigned char>(cardsP->leastWin[ss]) ];
 
     TIMER_START(TIMER_NO_NEXTMOVE, depth);
     TIMER_END(TIMER_NO_NEXTMOVE, depth);

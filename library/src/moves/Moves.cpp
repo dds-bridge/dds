@@ -170,7 +170,7 @@ int Moves::MoveGen0(
     if (ris == 0) continue;
 
     lastNumMoves = numMoves;
-    mp = &groupData[ris];
+  mp = &group_data[ris];
     g = mp->lastGroup;
     removed = trackp->removedRanks[suit];
 
@@ -243,7 +243,7 @@ int Moves::MoveGen123(
 
   if (ris != 0)
   {
-    mp = &groupData[ris];
+  mp = &group_data[ris];
     g = mp->lastGroup;
     removed = trackp->removedRanks[leadSuit];
 
@@ -293,7 +293,7 @@ int Moves::MoveGen123(
     if (ris == 0) continue;
 
     lastNumMoves = numMoves;
-    mp = &groupData[ris];
+  mp = &group_data[ris];
     g = mp->lastGroup;
     removed = trackp->removedRanks[suit];
 
@@ -339,7 +339,7 @@ void Moves::GetTopNumber(
   while (mno < numMoves - 1 && mply[1 + mno].rank > prank)
     mno++;
 
-  const moveGroupType& mp = groupData[ris];
+  const moveGroupType& mp = group_data[ris];
   int g = mp.lastGroup;
 
   // Remove partner's card as well.
@@ -351,7 +351,7 @@ void Moves::GetTopNumber(
   while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
     fullseq |= mp.fullseq[--g];
 
-  topNumber = counttable[fullseq] - 1;
+  topNumber = count_table[fullseq] - 1;
 }
 
 
@@ -479,7 +479,7 @@ moveType const * Moves::MakeNext(
     prevp = &list.move[ list.current - 1 ];
     if (lwp[ prevp->suit ] == 0)
     {
-      int low = lowestRank[ ourWinRanks[prevp->suit] ];
+  int low = lowest_rank[ ourWinRanks[prevp->suit] ];
       if (low == 0)
         low = 15;
       if (prevp->rank < low)

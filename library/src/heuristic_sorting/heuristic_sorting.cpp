@@ -87,7 +87,7 @@ void WeightAllocTrump0(HeuristicContext& context)
     int suitBonus = 0;
     bool winMove = false;
 
-    int rRank = relRank[aggr][context.mply[k].rank];
+  int rRank = rel_rank[aggr][context.mply[k].rank];
 
     /* Discourage suit if LHO or RHO can ruff. */
     if ((context.suit != context.trump) &&
@@ -353,7 +353,7 @@ void WeightAllocNT0(HeuristicContext& context) {
   for (int k = context.lastNumMoves; k < context.numMoves; k++)
   {
     int suitWeightDelta = suitWeightD;
-    int rRank = relRank[aggr][context.mply[k].rank];
+  int rRank = rel_rank[aggr][context.mply[k].rank];
 
     if (context.tpos.winner[context.suit].rank == context.mply[k].rank ||
         (context.tpos.rankInSuit[partner[context.leadHand]][context.suit] >
@@ -487,19 +487,19 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
   // trackp not needed here; use context snapshots for trick state.
 
 
-  const int max3rd = highestRank[
+  const int max3rd = highest_rank[
                  tpos.rankInSuit[partner[leadHand]][leadSuit]];
-  const int maxpd = highestRank[
+  const int maxpd = highest_rank[
                  tpos.rankInSuit[rho[leadHand] ][leadSuit]];
-  const int min3rd = lowestRank [
+  const int min3rd = lowest_rank [
                  tpos.rankInSuit[partner[leadHand]][leadSuit]];
-  const int minpd = lowestRank [
+  const int minpd = lowest_rank [
                  tpos.rankInSuit[rho[leadHand] ][leadSuit]];
 
   for (int k = 0; k < numMoves; k++)
   {
     bool winMove = false; /* If true, current move can win trick. */
-    int rRank = relRank[ tpos.aggr[leadSuit] ][mply[k].rank];
+  int rRank = rel_rank[ tpos.aggr[leadSuit] ][mply[k].rank];
 
     if (leadSuit == trump)
     {
@@ -613,9 +613,9 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
   const int rho_lh = rho[leadHand];
 
   // Original logic from Moves::WeightAllocNTNotvoid1
-  const int max3rd = highestRank[
+  const int max3rd = highest_rank[
     tpos.rankInSuit[partner_lh][leadSuit]];
-  const int maxpd = highestRank[
+  const int maxpd = highest_rank[
     tpos.rankInSuit[rho_lh][leadSuit] ];
 
   if (maxpd > ctx.lead0_rank && maxpd > max3rd)
@@ -626,14 +626,14 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
   }
   else
   {
-    int min3rd = lowestRank [
+  int min3rd = lowest_rank [
                    tpos.rankInSuit[partner_lh][leadSuit]];
-    int minpd = lowestRank [
+  int minpd = lowest_rank [
                    tpos.rankInSuit[rho_lh][leadSuit] ];
 
     for (int k = 0; k < numMoves; k++)
     {
-      int rRank = relRank[ tpos.aggr[leadSuit] ][mply[k].rank];
+  int rRank = rel_rank[ tpos.aggr[leadSuit] ][mply[k].rank];
 
   if (mply[k].rank > ctx.lead0_rank && mply[k].rank > max3rd)
         // We can beat both opponents.
@@ -874,7 +874,7 @@ void WeightAllocNTVoid1(HeuristicContext& ctx)
 int RankForcesAce(const HeuristicContext& ctx, const int cards4th)
 {
   // Figure out how high we have to play to force out the top.
-  const moveGroupType& mp = groupData[cards4th];
+  const moveGroupType& mp = group_data[cards4th];
 
   int g = mp.lastGroup;
   int removed = static_cast<int>(ctx.removedRanks[ctx.leadSuit]);
@@ -923,7 +923,7 @@ void GetTopNumber(const HeuristicContext& ctx, const int ris, const int prank, i
   while (mno < ctx.numMoves - 1 && ctx.mply[1 + mno].rank > prank)
     mno++;
 
-  const moveGroupType& mp = groupData[ris];
+  const moveGroupType& mp = group_data[ris];
   int g = mp.lastGroup;
 
   // Remove partner's card as well.
@@ -935,7 +935,7 @@ void GetTopNumber(const HeuristicContext& ctx, const int ris, const int prank, i
   while (g >= 1 && ((mp.gap[g] & removed) == mp.gap[g]))
     fullseq |= mp.fullseq[--g];
 
-  topNumber = counttable[fullseq] - 1;
+  topNumber = count_table[fullseq] - 1;
 }
 void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
 {
@@ -948,8 +948,8 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
 
   const int rho_lh = rho[leadHand];
   const int cards4th = tpos.rankInSuit[rho_lh][leadSuit];
-  const int max4th = highestRank[cards4th];
-  const int min4th = lowestRank[cards4th];
+  const int max4th = highest_rank[cards4th];
+  const int min4th = lowest_rank[cards4th];
   const int max3rd = mply[0].rank;
 
   if (leadSuit == trump)
@@ -1138,8 +1138,8 @@ void WeightAllocNTNotvoid2(HeuristicContext& ctx)
   const int partner_lh = partner[leadHand];
   
   const int cards4th = tpos.rankInSuit[rho_lh][leadSuit];
-  const int max4th = highestRank[cards4th];
-  const int min4th = lowestRank[cards4th];
+  const int max4th = highest_rank[cards4th];
+  const int min4th = lowest_rank[cards4th];
   const int max3rd = mply[0].rank;
 
   if (ctx.high1 == 0 && ctx.lead0_rank > max4th)
@@ -1215,7 +1215,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
   
   int suitAdd;
   const unsigned short suitCount = tpos.length[currHand][suit];
-  const int max4th = highestRank[tpos.rankInSuit[rho_lh][leadSuit]];
+  const int max4th = highest_rank[tpos.rankInSuit[rho_lh][leadSuit]];
 
   if (leadSuit == trump || suit != trump)
   {
@@ -1246,7 +1246,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
       // Don't underruff.
     unsigned char aggrSuit = static_cast<unsigned char>(tpos.aggr[suit]);
     unsigned char moveRank = static_cast<unsigned char>(mply[k].rank);
-    unsigned char relRankValue = static_cast<unsigned char>(relRank[aggrSuit][moveRank]);
+  unsigned char relRankValue = static_cast<unsigned char>(rel_rank[aggrSuit][moveRank]);
     int rRank = static_cast<int>(relRankValue);
       suitAdd = (suitCount << 6) / 40;
       mply[k].weight = -32 + rRank + suitAdd;
@@ -1419,7 +1419,7 @@ void WeightAllocTrumpVoid3(HeuristicContext& ctx)
       {
     int rRank = static_cast<int>(
       static_cast<unsigned char>(
-        relRank[static_cast<unsigned char>(tpos.aggr[suit])]
+  rel_rank[static_cast<unsigned char>(tpos.aggr[suit])]
              [static_cast<unsigned char>(mply[k].rank)]));
         if (mply[k].rank > ctx.move2_rank)
           mply[k].weight = 33 + rRank; // Overruff
@@ -1437,7 +1437,7 @@ void WeightAllocTrumpVoid3(HeuristicContext& ctx)
     {
     int rRank = static_cast<int>(
       static_cast<unsigned char>(
-        relRank[static_cast<unsigned char>(tpos.aggr[suit])]
+  rel_rank[static_cast<unsigned char>(tpos.aggr[suit])]
            [static_cast<unsigned char>(mply[k].rank)]));
       mply[k].weight = 33 + rRank;
     }

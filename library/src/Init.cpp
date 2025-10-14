@@ -155,7 +155,7 @@ void STDCALL SetResources(
   if (! _initialized)
   {
     _initialized = 1;
-    InitLookupTables();
+    init_lookup_tables();
   }
 }
 
@@ -266,7 +266,7 @@ void SetDeal(
   {
     for (int h = 0; h < DDS_HANDS; h++)
       thrp->lookAheadPos.length[h][s] = static_cast<unsigned char>(
-        counttable[thrp->lookAheadPos.rankInSuit[h][s]]);
+  count_table[thrp->lookAheadPos.rankInSuit[h][s]]);
   }
 
   // Clubs are implicit, for a given trick number.
@@ -343,7 +343,7 @@ void SetDealTables(
     thrp->rel[aggr] = thrp->rel[aggr ^ topBitRank];
     relp = &thrp->rel[aggr];
 
-    int weight = counttable[aggr];
+  int weight = count_table[aggr];
     for (int c = weight; c >= 2; c--)
     {
       for (int s = 0; s < DDS_SUITS; s++)

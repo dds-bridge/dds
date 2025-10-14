@@ -569,7 +569,7 @@ int QuickTricks(
           {
             lowestQtricks = 1;
 
-            int rr = highestRank[ris[partner[hand]][trump]];
+            int rr = highest_rank[ris[partner[hand]][trump]];
             if (rr != 0)
             {
               tpos.winRanks[depth][trump] |= bitMapRank[rr];
@@ -1154,7 +1154,7 @@ bool QuickTricksSecondHand(
 
     /* Own side has highest card in suit, which LHO can't ruff. */
 
-    int rr = highestRank[ranks];
+  int rr = highest_rank[ranks];
     tpos.winRanks[depth][ss] = bitMapRank[rr];
   }
   else
@@ -1207,7 +1207,7 @@ bool QuickTricksSecondHand(
         (tpos.length[partner[hh]][s] == 0))
     {
       /* Long other suit which nobody else holds. */
-      qtricks += counttable[ris[hh][s]];
+  qtricks += count_table[ris[hh][s]];
       if (qtricks >= cutoff)
         return true;
     }
