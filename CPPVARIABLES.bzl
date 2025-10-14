@@ -13,10 +13,7 @@ DDS_CPPOPTS = select({
         "-Werror",
     ],
     "//:debug_build_macos": [
-        "-std=c++20",
         "-stdlib=libc++",
-        "-O2",
-        "-g",
         "-mtune=generic",
         "-fPIC",
         "-DDDS_THREADS_GCD",

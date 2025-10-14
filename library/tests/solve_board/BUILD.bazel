@@ -1,0 +1,17 @@
+# Google Test for Heuristic Sorting
+
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+filegroup(
+    name = "solve_board_test_sources",
+    srcs = glob(["*.cpp",]),
+)
+
+cc_test(
+    name = "solve_board_test",
+    srcs = [":solve_board_test_sources"],
+    deps = [
+        "@googletest//:gtest_main",
+        "//library/src:testable_dds",
+    ],
+)
