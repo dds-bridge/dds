@@ -199,43 +199,10 @@ struct DdsLutInitGuard {
 static DdsLutInitGuard dds_lut_init_guard;
 }
 
-// Define the read-only table objects and their operators
-
-const HighestRankTable highestRank{};
-const LowestRankTable lowestRank{};
-const CountTable counttable{};
-const RelRankTable relRank{};
-const WinRanksTable winRanks{};
-const GroupDataTable groupData{};
-
-int HighestRankTable::operator[](int i) const noexcept {
-  return dds_lut_highestRank_storage[i];
-}
-
-int LowestRankTable::operator[](int i) const noexcept {
-  return dds_lut_lowestRank_storage[i];
-}
-
-int CountTable::operator[](int i) const noexcept {
-  return dds_lut_counttable_storage[i];
-}
-
-char RelRankRow::operator[](int j) const noexcept {
-  return dds_lut_relRank_storage[i][j];
-}
-
-RelRankRow RelRankTable::operator[](int idx) const noexcept {
-  return RelRankRow{idx};
-}
-
-unsigned short WinRanksRow::operator[](int j) const noexcept {
-  return dds_lut_winRanks_storage[i][j];
-}
-
-WinRanksRow WinRanksTable::operator[](int idx) const noexcept {
-  return WinRanksRow{idx};
-}
-
-const moveGroupType& GroupDataTable::operator[](int idx) const noexcept {
-  return dds_lut_groupData_storage[idx];
-}
+// Bind const references to internal storage for zero-overhead access
+const int (&highestRank)[8192] = dds_lut_highestRank_storage;
+const int (&lowestRank)[8192] = dds_lut_lowestRank_storage;
+const int (&counttable)[8192] = dds_lut_counttable_storage;
+const char (&relRank)[8192][15] = dds_lut_relRank_storage;
+const unsigned short (&winRanks)[8192][14] = dds_lut_winRanks_storage;
+const moveGroupType (&groupData)[8192] = dds_lut_groupData_storage;

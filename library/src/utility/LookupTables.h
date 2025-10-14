@@ -47,83 +47,24 @@ struct moveGroupType
 void InitLookupTables();
 
 /**
- * \brief Read-only accessors that preserve array-like syntax.
+ * \brief Read-only views of the precomputed lookup tables.
  *
- * These lightweight proxy tables provide `operator[]` to look up values while
- * preventing mutation. They mirror the historical data layout:
- * - Index domain for the first dimension is 0..8191 (13-bit aggregate).
- * - Values are precomputed and initialized once per process.
+ * These are exposed as const references to fixed-size arrays to provide
+ * zero-overhead indexing (e.g., highestRank[i], relRank[i][j]). The
+ * underlying storage is initialized once via InitLookupTables().
  */
-
-/** \brief Highest absolute rank in a suit aggregate.
- *
- * For a given aggregate bitmask (0..8191), returns the highest absolute rank
- * present (2..14). Returns 0 for an empty aggregate (0).
- */
-struct HighestRankTable {
-  /** Lookup by aggregate bitmask. */
-  int operator[](int i) const noexcept;
-};
-
-/** \brief Lowest absolute rank in a suit aggregate (2..14). */
-struct LowestRankTable {
-  /** Lookup by aggregate bitmask. */
-  int operator[](int i) const noexcept;
-};
-
-/** \brief Population count (number of set bits) of an aggregate (0..13). */
-struct CountTable {
-  /** Lookup by aggregate bitmask. */
-  int operator[](int i) const noexcept;
-};
-
-/** \brief Row proxy for relative ranks within a given aggregate. */
-struct RelRankRow {
-  int i; //!< aggregate index (0..8191)
-  /** Lookup by absolute rank (2..14) to get the relative rank position. */
-  char operator[](int j) const noexcept;
-};
-
-/** \brief Relative rank lookup table: relRank[aggr][absRank] -> relative rank.
- *
- * Provides the position (1..13) of an absolute rank within the aggregate when
- * ranks are ordered descending (A..2). Values are 0 if the rank is not present.
- */
-struct RelRankTable {
-  /** Get a row proxy for a specific aggregate. */
-  RelRankRow operator[](int i) const noexcept;
-};
-
-/** \brief Row proxy for winners bitmasks limited to top N cards. */
-struct WinRanksRow {
-  int i; //!< aggregate index (0..8191)
-  /** Lookup by leastWin (0..13) to get mask of top N absolute ranks. */
-  unsigned short operator[](int j) const noexcept;
-};
-
-/** \brief Winners lookup: winRanks[aggr][leastWin] -> bitmask of top N ranks. */
-struct WinRanksTable {
-  /** Get a row proxy for a specific aggregate. */
-  WinRanksRow operator[](int i) const noexcept;
-};
-
-/** \brief Group data lookup: groupData[aggr] -> run decomposition. */
-struct GroupDataTable {
-  /** Access the read-only group decomposition for an aggregate. */
-  const moveGroupType& operator[](int i) const noexcept;
-};
 
 /** \brief Read-only table: highest absolute rank per aggregate. */
-extern const HighestRankTable highestRank;
+extern const int (&highestRank)[8192];
 /** \brief Read-only table: lowest absolute rank per aggregate. */
-extern const LowestRankTable lowestRank;
+extern const int (&lowestRank)[8192];
 /** \brief Read-only table: count of set bits per aggregate. */
-extern const CountTable counttable;
+extern const int (&counttable)[8192];
 /** \brief Read-only table: relative rank lookup per aggregate. */
-extern const RelRankTable relRank;
+extern const char (&relRank)[8192][15];
 /** \brief Read-only table: winners mask limited to top N cards. */
-extern const WinRanksTable winRanks;
+extern const unsigned short (&winRanks)[8192][14];
 /** \brief Read-only table: run decomposition per aggregate. */
-extern const GroupDataTable groupData;
+extern const moveGroupType (&groupData)[8192];
 
 #endif
