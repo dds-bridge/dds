@@ -154,7 +154,7 @@ TEST_F(LookupTablesTest, MoveGroupTypeStruct) {
 TEST_F(LookupTablesTest, GroupDataStructAccess) {
     // Test that we can access groupData array entries
     for (int i = 0; i < 10; i++) { // Test first 10 entries
-        moveGroupType& group = groupData[i];
+        const moveGroupType& group = groupData[i];
         
         // Values should be in reasonable ranges
         // lastGroup can be -1 to indicate no groups

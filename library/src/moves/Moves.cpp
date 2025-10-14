@@ -155,7 +155,7 @@ int Moves::MoveGen0(
   currHand = leadHand;
   currTrick = tricks;
 
-  moveGroupType * mp;
+  const moveGroupType * mp;
   int removed, g, rank, seq;
 
   movePlyType& list = moveList[tricks][0];
@@ -225,7 +225,7 @@ int Moves::MoveGen123(
   currTrick = tricks;
   leadSuit = track[tricks].leadSuit;
 
-  moveGroupType * mp;
+  const moveGroupType * mp;
   int removed, g, rank, seq;
 
   movePlyType& list = moveList[tricks][handRel];
