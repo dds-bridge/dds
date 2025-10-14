@@ -134,10 +134,10 @@ TEST_F(LookupTablesTest, FullSetHandling) {
     EXPECT_EQ(lowest_rank[8191], 2);   // Deuce should be lowest
 }
 
-// Test moveGroupType struct functionality
+// Test MoveGroupType struct functionality
 TEST_F(LookupTablesTest, MoveGroupTypeStruct) {
-    // Test that we can create and use moveGroupType
-    moveGroupType testGroup;
+    // Test that we can create and use MoveGroupType
+    MoveGroupType testGroup;
     testGroup.lastGroup = 3;
     testGroup.rank[0] = 5;
     testGroup.sequence[0] = 3;

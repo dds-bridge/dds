@@ -155,7 +155,7 @@ int Moves::MoveGen0(
   currHand = leadHand;
   currTrick = tricks;
 
-  const moveGroupType * mp;
+  const MoveGroupType * mp;
   int removed, g, rank, seq;
 
   movePlyType& list = moveList[tricks][0];
@@ -225,7 +225,7 @@ int Moves::MoveGen123(
   currTrick = tricks;
   leadSuit = track[tricks].leadSuit;
 
-  const moveGroupType * mp;
+  const MoveGroupType * mp;
   int removed, g, rank, seq;
 
   movePlyType& list = moveList[tricks][handRel];
@@ -339,7 +339,7 @@ void Moves::GetTopNumber(
   while (mno < numMoves - 1 && mply[1 + mno].rank > prank)
     mno++;
 
-  const moveGroupType& mp = group_data[ris];
+  const MoveGroupType& mp = group_data[ris];
   int g = mp.lastGroup;
 
   // Remove partner's card as well.

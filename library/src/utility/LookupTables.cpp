@@ -191,8 +191,6 @@ auto init_lookup_tables() -> void
   std::call_once(dds_lut_once_flag, dds_lut_init_impl);
 }
 
-auto InitLookupTables() -> void { init_lookup_tables(); }
-
 // Eager initialization at program start (TU load) to avoid any cost on first use.
 namespace {
 struct DdsLutInitGuard
@@ -202,18 +200,12 @@ struct DdsLutInitGuard
     init_lookup_tables();
   }
 };
-static DdsLutInitGuard dds_lut_init_guard;
+static const DdsLutInitGuard dds_lut_init_guard;
 }
 
 // Bind const references to internal storage for zero-overhead access
-const int (&highestRank)[8192] = dds_lut_highestRank_storage;
-const int (&lowestRank)[8192] = dds_lut_lowestRank_storage;
-const int (&counttable)[8192] = dds_lut_counttable_storage;
-const char (&relRank)[8192][15] = dds_lut_relRank_storage;
-const unsigned short (&winRanks)[8192][14] = dds_lut_winRanks_storage;
-const moveGroupType (&groupData)[8192] = dds_lut_groupData_storage; // legacy name
 const MoveGroupType (&group_data)[8192] = dds_lut_groupData_storage; // preferred
-// Add snake_case aliases for other tables
+// snake_case aliases for all tables
 const int (&highest_rank)[8192] = dds_lut_highestRank_storage;
 const int (&lowest_rank)[8192] = dds_lut_lowestRank_storage;
 const int (&count_table)[8192] = dds_lut_counttable_storage;

@@ -37,9 +37,6 @@ struct MoveGroupType
   int gap[7];
 };
 
-// Legacy alias for backward compatibility
-using moveGroupType = MoveGroupType;
-
 /**
  * \brief Initialize the lookup tables.
  *
@@ -49,34 +46,26 @@ using moveGroupType = MoveGroupType;
  */
 // Preferred snake_case name
 auto init_lookup_tables() -> void;
-// Backward-compatible alias (will be removed in a future major release)
-auto InitLookupTables() -> void;
 
 /**
  * \brief Read-only views of the precomputed lookup tables.
  *
  * These are exposed as const references to fixed-size arrays to provide
- * zero-overhead indexing (e.g., highestRank[i], relRank[i][j]). The
- * underlying storage is initialized once via InitLookupTables().
+ * zero-overhead indexing (e.g., highest_rank[i], rel_rank[i][j]). The
+ * underlying storage is initialized once via init_lookup_tables().
  */
 
 /** \brief Read-only table: highest absolute rank per aggregate. */
-extern const int (&highestRank)[8192];           // legacy name
 extern const int (&highest_rank)[8192];          // preferred snake_case
 /** \brief Read-only table: lowest absolute rank per aggregate. */
-extern const int (&lowestRank)[8192];            // legacy name
 extern const int (&lowest_rank)[8192];           // preferred snake_case
 /** \brief Read-only table: count of set bits per aggregate. */
-extern const int (&counttable)[8192];            // legacy name
 extern const int (&count_table)[8192];           // preferred snake_case
 /** \brief Read-only table: relative rank lookup per aggregate. */
-extern const char (&relRank)[8192][15];          // legacy name
 extern const char (&rel_rank)[8192][15];         // preferred snake_case
 /** \brief Read-only table: winners mask limited to top N cards. */
-extern const unsigned short (&winRanks)[8192][14]; // legacy name
 extern const unsigned short (&win_ranks)[8192][14]; // preferred snake_case
 /** \brief Read-only table: run decomposition per aggregate. */
-extern const moveGroupType (&groupData)[8192];   // legacy name
 extern const MoveGroupType (&group_data)[8192];  // preferred snake_case
 
 #endif

@@ -874,7 +874,7 @@ void WeightAllocNTVoid1(HeuristicContext& ctx)
 int RankForcesAce(const HeuristicContext& ctx, const int cards4th)
 {
   // Figure out how high we have to play to force out the top.
-  const moveGroupType& mp = group_data[cards4th];
+  const MoveGroupType& mp = group_data[cards4th];
 
   int g = mp.lastGroup;
   int removed = static_cast<int>(ctx.removedRanks[ctx.leadSuit]);
@@ -923,7 +923,7 @@ void GetTopNumber(const HeuristicContext& ctx, const int ris, const int prank, i
   while (mno < ctx.numMoves - 1 && ctx.mply[1 + mno].rank > prank)
     mno++;
 
-  const moveGroupType& mp = group_data[ris];
+  const MoveGroupType& mp = group_data[ris];
   int g = mp.lastGroup;
 
   // Remove partner's card as well.
