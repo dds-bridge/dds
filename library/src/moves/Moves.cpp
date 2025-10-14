@@ -176,10 +176,10 @@ int Moves::MoveGen0(
 
     while (g >= 0)
     {
-      rank = mp->rank[g];
-      seq = mp->sequence[g];
+  rank = mp->rank_[g];
+  seq = mp->sequence_[g];
 
-      while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
+  while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
   seq |= mp->fullseq_[--g];
 
       mply[numMoves].sequence = seq;
@@ -249,10 +249,10 @@ int Moves::MoveGen123(
 
     while (g >= 0)
     {
-      rank = mp->rank[g];
-      seq = mp->sequence[g];
+  rank = mp->rank_[g];
+  seq = mp->sequence_[g];
 
-      while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
+  while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
   seq |= mp->fullseq_[--g];
 
       mply[numMoves].sequence = seq;
@@ -299,10 +299,10 @@ int Moves::MoveGen123(
 
     while (g >= 0)
     {
-      rank = mp->rank[g];
-      seq = mp->sequence[g];
+  rank = mp->rank_[g];
+  seq = mp->sequence_[g];
 
-      while (g >= 1 && ((mp->gap[g] & removed) == mp->gap[g]))
+  while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
   seq |= mp->fullseq_[--g];
 
       mply[numMoves].sequence = seq;
