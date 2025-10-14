@@ -24,7 +24,7 @@ static moveGroupType dds_lut_groupData_storage[8192];
 static std::once_flag dds_lut_once_flag;
 }
 
-static void dds_lut_init_impl()
+static auto dds_lut_init_impl() -> void
 {
   // highestRank[aggr] is the highest absolute rank in the
   // suit represented by aggr. The absolute rank is 2 .. 14.
@@ -186,15 +186,19 @@ static void dds_lut_init_impl()
   }
 }
 
-void InitLookupTables()
+auto InitLookupTables() -> void
 {
   std::call_once(dds_lut_once_flag, dds_lut_init_impl);
 }
 
 // Eager initialization at program start (TU load) to avoid any cost on first use.
 namespace {
-struct DdsLutInitGuard {
-  DdsLutInitGuard() { InitLookupTables(); }
+struct DdsLutInitGuard
+{
+  DdsLutInitGuard() noexcept
+  {
+    InitLookupTables();
+  }
 };
 static DdsLutInitGuard dds_lut_init_guard;
 }

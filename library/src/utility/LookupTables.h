@@ -44,7 +44,7 @@ struct moveGroupType
  * initialization happens at most once per process. Accessing any table via
  * the read-only proxies also triggers lazy initialization.
  */
-void InitLookupTables();
+auto InitLookupTables() -> void;
 
 /**
  * \brief Read-only views of the precomputed lookup tables.
