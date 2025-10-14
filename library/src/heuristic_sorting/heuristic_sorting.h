@@ -49,23 +49,6 @@ struct HeuristicContext {
   int lead0_rank = 0; // trackp->move[0].rank
 };
 
-// Integration function for calling from moves.cpp
-void CallHeuristic(
-    const pos& tpos,
-    const moveType& bestMove,
-    const moveType& bestMoveTT,
-    const relRanksType thrp_rel[],
-    moveType* mply,
-    int numMoves,
-    int lastNumMoves,
-    int trump,
-    int suit,
-    const trackType* trackp,
-    int currTrick,
-    int currHand,
-    int leadHand,
-    int leadSuit);
-
 // Overload that accepts a pre-built context to avoid repeated
 // aggregate construction at the call site. Callers that can
 // pre-construct a HeuristicContext should use this to reduce

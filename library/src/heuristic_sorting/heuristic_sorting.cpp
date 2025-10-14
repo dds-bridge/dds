@@ -2,46 +2,6 @@
 #include "utility/Constants.h"
 #include "utility/LookupTables.h"
 
-// Integration function for calling from moves.cpp
-void CallHeuristic(
-    const pos& tpos,
-    const moveType& bestMove,
-    const moveType& bestMoveTT,
-    const relRanksType thrp_rel[],
-    moveType* mply,
-    int numMoves,
-    int lastNumMoves,
-    int trump,
-    int suit,
-    const trackType* trackp,
-    int currTrick,
-    int currHand,
-    int leadHand,
-    int leadSuit) {
-  
-  HeuristicContext context {
-      tpos,
-      bestMove,
-      bestMoveTT,
-      thrp_rel,
-      mply,
-      numMoves,
-      lastNumMoves,
-      trump,
-      suit,
-      trackp,
-      currTrick,
-      currHand,
-      leadHand,
-      leadSuit
-  };
-  // Forward to the context-taking overload which contains the actual
-  // heuristic logic. This keeps the old API for compatibility while
-  // enabling callers that can pre-construct a HeuristicContext to call
-  // the overload directly.
-  CallHeuristic(context);
-}
-
 // New overload: accepts a pre-built HeuristicContext. This contains the
 // same inline logic that used to be in the previous function body.
 void CallHeuristic(const HeuristicContext& context) {
