@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
-
-#include "dds/dds.h"
+#include <dds/dds.h>
 class TrickThreeBugTests : public ::testing::Test {
      protected:
         TrickThreeBugTests() = default;
@@ -17,9 +16,9 @@ inline size_t dds_max(futureTricks const & fut)
     return static_cast<size_t>(res);
 }
 
-TEST_F(TrickThreeBugTests, test_declarer_makes_at_least_one_trick) {
+TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks) {
     SetMaxThreads(0);
-    
+
     int target = 0;
     int solutions = 3;
     int mode = 0;
@@ -48,5 +47,5 @@ TEST_F(TrickThreeBugTests, test_declarer_makes_at_least_one_trick) {
     auto ret = SolveBoard(dl, target, solutions, mode, &fut, thread_index);
     auto max = dds_max(fut);
 
-    ASSERT_TRUE(max >= 1);
+    ASSERT_TRUE(max == 9);
 }

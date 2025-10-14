@@ -321,7 +321,7 @@ int SolveBoardInternal(
   // mode == 0: Check whether there is only one possible move
   // ----------------------------------------------------------
 
-  if (mode == 0 && noMoves == 1)
+  if (mode == 0 && noMoves == 1 && solutions != 3)
   {
   moveType const * mp = ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
