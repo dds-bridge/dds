@@ -191,14 +191,13 @@ void InitLookupTables()
   std::call_once(dds_lut_once_flag, dds_lut_init_impl);
 }
 
-// Accessor implementations for read-only proxies
-
-const int* dds_lut_highestRank_data() noexcept { InitLookupTables(); return dds_lut_highestRank_storage; }
-const int* dds_lut_lowestRank_data() noexcept { InitLookupTables(); return dds_lut_lowestRank_storage; }
-const int* dds_lut_counttable_data() noexcept { InitLookupTables(); return dds_lut_counttable_storage; }
-const char* dds_lut_relRank_row(int i) noexcept { InitLookupTables(); return dds_lut_relRank_storage[i]; }
-const unsigned short* dds_lut_winRanks_row(int i) noexcept { InitLookupTables(); return dds_lut_winRanks_storage[i]; }
-const moveGroupType& dds_lut_groupData_at(int i) noexcept { InitLookupTables(); return dds_lut_groupData_storage[i]; }
+// Eager initialization at program start (TU load) to avoid any cost on first use.
+namespace {
+struct DdsLutInitGuard {
+  DdsLutInitGuard() { InitLookupTables(); }
+};
+static DdsLutInitGuard dds_lut_init_guard;
+}
 
 // Define the read-only table objects and their operators
 
@@ -210,19 +209,19 @@ const WinRanksTable winRanks{};
 const GroupDataTable groupData{};
 
 int HighestRankTable::operator[](int i) const noexcept {
-  return dds_lut_highestRank_data()[i];
+  return dds_lut_highestRank_storage[i];
 }
 
 int LowestRankTable::operator[](int i) const noexcept {
-  return dds_lut_lowestRank_data()[i];
+  return dds_lut_lowestRank_storage[i];
 }
 
 int CountTable::operator[](int i) const noexcept {
-  return dds_lut_counttable_data()[i];
+  return dds_lut_counttable_storage[i];
 }
 
 char RelRankRow::operator[](int j) const noexcept {
-  return dds_lut_relRank_row(i)[j];
+  return dds_lut_relRank_storage[i][j];
 }
 
 RelRankRow RelRankTable::operator[](int idx) const noexcept {
@@ -230,7 +229,7 @@ RelRankRow RelRankTable::operator[](int idx) const noexcept {
 }
 
 unsigned short WinRanksRow::operator[](int j) const noexcept {
-  return dds_lut_winRanks_row(i)[j];
+  return dds_lut_winRanks_storage[i][j];
 }
 
 WinRanksRow WinRanksTable::operator[](int idx) const noexcept {
@@ -238,5 +237,5 @@ WinRanksRow WinRanksTable::operator[](int idx) const noexcept {
 }
 
 const moveGroupType& GroupDataTable::operator[](int idx) const noexcept {
-  return dds_lut_groupData_at(idx);
+  return dds_lut_groupData_storage[idx];
 }
