@@ -17,7 +17,7 @@
  * decomposes the vector into up to 7 contiguous runs of bits. It is used to
  * generate move sequences and to reason about gaps between runs.
  */
-struct moveGroupType
+struct MoveGroupType
 {
   /** \brief Index of the last valid group (run) in this representation.
    *  -1 indicates there are no groups (empty suit).
@@ -37,6 +37,9 @@ struct moveGroupType
   int gap[7];
 };
 
+// Legacy alias for backward compatibility
+using moveGroupType = MoveGroupType;
+
 /**
  * \brief Initialize the lookup tables.
  *
@@ -44,6 +47,9 @@ struct moveGroupType
  * initialization happens at most once per process. Accessing any table via
  * the read-only proxies also triggers lazy initialization.
  */
+// Preferred snake_case name
+auto init_lookup_tables() -> void;
+// Backward-compatible alias (will be removed in a future major release)
 auto InitLookupTables() -> void;
 
 /**
@@ -55,16 +61,22 @@ auto InitLookupTables() -> void;
  */
 
 /** \brief Read-only table: highest absolute rank per aggregate. */
-extern const int (&highestRank)[8192];
+extern const int (&highestRank)[8192];           // legacy name
+extern const int (&highest_rank)[8192];          // preferred snake_case
 /** \brief Read-only table: lowest absolute rank per aggregate. */
-extern const int (&lowestRank)[8192];
+extern const int (&lowestRank)[8192];            // legacy name
+extern const int (&lowest_rank)[8192];           // preferred snake_case
 /** \brief Read-only table: count of set bits per aggregate. */
-extern const int (&counttable)[8192];
+extern const int (&counttable)[8192];            // legacy name
+extern const int (&count_table)[8192];           // preferred snake_case
 /** \brief Read-only table: relative rank lookup per aggregate. */
-extern const char (&relRank)[8192][15];
+extern const char (&relRank)[8192][15];          // legacy name
+extern const char (&rel_rank)[8192][15];         // preferred snake_case
 /** \brief Read-only table: winners mask limited to top N cards. */
-extern const unsigned short (&winRanks)[8192][14];
+extern const unsigned short (&winRanks)[8192][14]; // legacy name
+extern const unsigned short (&win_ranks)[8192][14]; // preferred snake_case
 /** \brief Read-only table: run decomposition per aggregate. */
-extern const moveGroupType (&groupData)[8192];
+extern const moveGroupType (&groupData)[8192];   // legacy name
+extern const MoveGroupType (&group_data)[8192];  // preferred snake_case
 
 #endif
