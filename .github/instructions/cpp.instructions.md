@@ -2,6 +2,7 @@
 name: C++ Development Rules (clangd MCP)
 languages: ["cpp", "c++", "h", "hpp", "cc"]
 alwaysApply: false
+applyTo: "**/*.cpp,**/*.cc,**/*.c,**/*.hpp,**/*.hh,**/*.h"
 ---
 
 # C++ Development Rules with clangd MCP Integration
@@ -13,7 +14,6 @@ alwaysApply: false
 - **Name:** `serena` (see `.vscode/mcp.json` for configuration)
 - **Type:** semantic code retrieval and editing (see `.vscode/mcp.json`)
 - **Status:** Must be running for all C++ work
-
 ## Tooling
 | Feature | What it does | When to use |
 |---------|--------------|-------------|
@@ -45,7 +45,94 @@ Code organization preferences:
 4. **Include management** – run *organize-includes* before committing to remove unused includes.
 5. **Post-change diagnostics** – verify no new errors after code changes.
 
-## Coding Guidelines
+# C++ Style Instructions
+
+This project follows a consistent modern C++ style, inspired by Google/LLVM with some adjustments.
+
+## General Principles
+- Prefer clarity and consistency over brevity.
+- Follow RAII and Core Guidelines best practices.
+- Avoid Hungarian notation, `m_` prefixes, and leading underscores.
+
+## Naming
+
+### Types
+- **PascalCase**
+- Examples: `FixedArray`, `ErrorCode`, `SimulationRunner`
+
+### Functions and Methods
+- **snake_case**
+- Examples: `compute_area()`, `reset_cache()`
+
+### Variables (local / global)
+- **snake_case**
+- Examples: `max_size`, `error_message`
+
+### Member Variables
+- **snake_case with trailing underscore**
+- Examples: `count_`, `element_size_`
+
+### Constants
+- **PascalCase**
+- Examples: `MaxIterations`, `Pi`
+- Use `ALL_CAPS` only for macros.
+
+### Template Parameters
+- **PascalCase, short descriptive**
+- Examples: `T`, `Key`, `Value`
+
+### Namespaces
+- **snake_case**
+- Examples: `physics`, `cosmology`
+
+### Files
+- **snake_case**
+- Match main type or purpose.
+- Examples: `fixed_array.h`, `error_code.cpp`
+
+### Macros
+- Avoid when possible.
+- If needed, use **ALL_CAPS** with underscores.
+- Example: `#define BUFFER_SIZE 1024`
+
+## Formatting
+
+### Indentation
+- **4 spaces** per indentation level.
+- No hard tabs.
+
+### Braces
+- **New line (Allman style)** for:
+  - classes
+  - structs
+  - enums
+  - functions
+  - namespaces
+- **Same line (K&R style)** for control statements:
+  ```cpp
+  if (x > 0) {
+      do_something();
+  }
+  ```
+
+### Function declarations
+- Use trailing return types consistently.
+- Examples:
+```cpp
+auto compute_area(int radius) -> int;
+auto get_iterator() -> std::vector<int>::iterator;
+
+### Function calls
+```
+- If arguments don’t fit on one line, place each on its own line:
+```cpp
+auto result = compute_area(
+    width,
+    height
+);
+```
+
+### General Rules
 - **Standard:** C++20 (`-std=c++20`)
 - **RAII** – manage resources via destructors.
 - **Smart pointers** – prefer `std::unique_ptr` / `std::shared_ptr`.
@@ -57,13 +144,15 @@ Code organization preferences:
 - **Variables** – snake_case; classes – PascalCase.
 - **Header guards** – `#pragma once` or traditional guards.
 - **Include paths** – use paths provided by the bazel dependencies.
-## Safety
+
+### Safety
 - Initialize all variables.
 - Check bounds on container access.
 - Prefer exceptions over error codes when appropriate.
 - Use `std::optional` for nullable values.
 - Mark compile-time constants with `constexpr`.
-## Documentation
+
+### Documentation
 - Public APIs: Doxygen-style comments.
 - Explain non-obvious design choices.
 - Provide usage examples for complex interfaces.

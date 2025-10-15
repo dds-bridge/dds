@@ -10,29 +10,34 @@
 #include "LookupTables.h"
 #include "Constants.h"
 #include <string.h>
+#include <mutex>
 
-// Lookup table arrays
-int highestRank[8192];
-int lowestRank[8192];
-int counttable[8192];
-char relRank[8192][15];
-unsigned short int winRanks[8192][14];
-moveGroupType groupData[8192];
+namespace {
+  // Underlying storage (internal linkage)
+  static int dds_lut_highestRank_storage[8192];
+  static int dds_lut_lowestRank_storage[8192];
+  static int dds_lut_counttable_storage[8192];
+  static char dds_lut_relRank_storage[8192][15];
+  static unsigned short dds_lut_winRanks_storage[8192][14];
+  static MoveGroupType dds_lut_groupData_storage[8192];
 
-void InitLookupTables()
+  static std::once_flag dds_lut_once_flag;
+}
+
+static auto dds_lut_init_impl() -> void
 {
   // highestRank[aggr] is the highest absolute rank in the
   // suit represented by aggr. The absolute rank is 2 .. 14.
   // Similarly for lowestRank.
-  highestRank[0] = 0;
-  lowestRank [0] = 0;
+  dds_lut_highestRank_storage[0] = 0;
+  dds_lut_lowestRank_storage[0] = 0;
   for (int aggr = 1; aggr < 8192; aggr++)
   {
     for (int r = 14; r >= 2; r--)
     {
       if (aggr & bitMapRank[r])
       {
-        highestRank[aggr] = r;
+        dds_lut_highestRank_storage[aggr] = r;
         break;
       }
     }
@@ -40,7 +45,7 @@ void InitLookupTables()
     {
       if (aggr & bitMapRank[r])
       {
-        lowestRank[aggr] = r;
+        dds_lut_lowestRank_storage[aggr] = r;
         break;
       }
     }
@@ -53,12 +58,12 @@ void InitLookupTables()
   // in aggr.
   for (int aggr = 0; aggr < 8192; aggr++)
   {
-    counttable[aggr] = 0;
+    dds_lut_counttable_storage[aggr] = 0;
     for (int r = 0; r < 13; r++)
     {
       if (aggr & (1 << r))
       {
-        counttable[aggr]++;
+        dds_lut_counttable_storage[aggr]++;
       }
     }
   }
@@ -66,7 +71,7 @@ void InitLookupTables()
   // relRank[aggr][absolute rank] is the relative rank of
   // that absolute rank in the suit represented by aggr.
   // The relative rank is 2 .. 14.
-  memset(relRank[0], 0, 15);
+  memset(dds_lut_relRank_storage[0], 0, 15);
   for (int aggr = 1; aggr < 8192; aggr++)
   {
     char ord = 0;
@@ -75,7 +80,7 @@ void InitLookupTables()
       if (aggr & bitMapRank[r])
       {
         ord++;
-        relRank[aggr][r] = ord;
+        dds_lut_relRank_storage[aggr][r] = ord;
       }
     }
   }
@@ -84,7 +89,7 @@ void InitLookupTables()
   // by aggr, but limited to its top "leastWin" bits.
   for (int aggr = 0; aggr < 8192; aggr++)
   {
-    winRanks[aggr][0] = 0;
+    dds_lut_winRanks_storage[aggr][0] = 0;
     for (int leastWin = 1; leastWin < 14; leastWin++)
     {
       int res = 0;
@@ -102,14 +107,14 @@ void InitLookupTables()
             break;
         }
       }
-      winRanks[aggr][leastWin] = static_cast<unsigned short>(res);
+      dds_lut_winRanks_storage[aggr][leastWin] = static_cast<unsigned short>(res);
     }
   }
 
   // groupData[ris] is a representation of the suit (ris is
   // "rank in suit") in terms of runs of adjacent bits.
   // 1 1100 1101 0110
-  // has 4 runs, so lastGroup is 3, and the entries are
+  // has 4 runs, so last_group_ is 3, and the entries are
   // 0: 4 and 0x0002, gap 0x0000 (lowest gap unused, though)
   // 1: 6 and 0x0000, gap 0x0008
   // 2: 9 and 0x0040, gap 0x0020
@@ -137,13 +142,13 @@ void InitLookupTables()
   // botside[T] = 0x1e00
   // which is 0x0600, the binary code for QJ.
 
-  groupData[0].lastGroup = -1;
+  dds_lut_groupData_storage[0].last_group_ = -1;
 
-  groupData[1].lastGroup = 0;
-  groupData[1].rank[0] = 2;
-  groupData[1].sequence[0] = 0;
-  groupData[1].fullseq[0] = 1;
-  groupData[1].gap[0] = 0;
+  dds_lut_groupData_storage[1].last_group_ = 0;
+  dds_lut_groupData_storage[1].rank_[0] = 2;
+  dds_lut_groupData_storage[1].sequence_[0] = 0;
+  dds_lut_groupData_storage[1].fullseq_[0] = 1;
+  dds_lut_groupData_storage[1].gap_[0] = 0;
 
   int topBitRank = 1;
   int nextBitRank = 0;
@@ -160,23 +165,48 @@ void InitLookupTables()
       topBitNo++;
     }
 
-    groupData[ris] = groupData[ris ^ topBitRank];
+    dds_lut_groupData_storage[ris] = dds_lut_groupData_storage[ris ^ topBitRank];
 
     if (ris & nextBitRank) // 11... Extend group
     {
-      g = groupData[ris].lastGroup;
-      groupData[ris].rank[g]++;
-      groupData[ris].sequence[g] |= nextBitRank;
-      groupData[ris].fullseq[g] |= topBitRank;
+      g = dds_lut_groupData_storage[ris].last_group_;
+      dds_lut_groupData_storage[ris].rank_[g]++;
+      dds_lut_groupData_storage[ris].sequence_[g] |= nextBitRank;
+      dds_lut_groupData_storage[ris].fullseq_[g] |= topBitRank;
     }
     else // 10... New group
     {
-      g = ++groupData[ris].lastGroup;
-      groupData[ris].rank[g] = topBitNo;
-      groupData[ris].sequence[g] = 0;
-      groupData[ris].fullseq[g] = topBitRank;
-      groupData[ris].gap[g] =
-        topside[topBitNo] & botside[ groupData[ris].rank[g - 1] ];
+      g = ++dds_lut_groupData_storage[ris].last_group_;
+      dds_lut_groupData_storage[ris].rank_[g] = topBitNo;
+      dds_lut_groupData_storage[ris].sequence_[g] = 0;
+      dds_lut_groupData_storage[ris].fullseq_[g] = topBitRank;
+      dds_lut_groupData_storage[ris].gap_[g] =
+        topside[topBitNo] & botside[ dds_lut_groupData_storage[ris].rank_[g - 1] ];
     }
   }
 }
+
+auto init_lookup_tables() -> void
+{
+  std::call_once(dds_lut_once_flag, dds_lut_init_impl);
+}
+
+// Eager initialization at program start (TU load) to avoid any cost on first use.
+namespace {
+  struct DdsLutInitGuard
+  {
+    DdsLutInitGuard() noexcept
+    {
+      init_lookup_tables();
+    }
+  };
+  static const DdsLutInitGuard dds_lut_init_guard;
+}
+
+// Bind const references to internal storage for zero-overhead access
+const MoveGroupType (&group_data)[8192] = dds_lut_groupData_storage;
+const int (&highest_rank)[8192] = dds_lut_highestRank_storage;
+const int (&lowest_rank)[8192] = dds_lut_lowestRank_storage;
+const int (&count_table)[8192] = dds_lut_counttable_storage;
+const char (&rel_rank)[8192][15] = dds_lut_relRank_storage;
+const unsigned short (&win_ranks)[8192][14] = dds_lut_winRanks_storage;

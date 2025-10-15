@@ -23,7 +23,7 @@
    play in aggr. The ace is 14, the deuce is 2. A void counts as
    rank 15 ("not even the ace"). It would go horribly wrong
    if this rank were chosen to be 0, as might seem intuitive.
-   This is not the same as lowestRank, the lowest absolute rank.
+  This is not the same as lowest_rank (legacy: lowestRank), the lowest absolute rank.
 
    maskBytes[aggr][suit] is a set of 4 32-bit integers,
    where suit is 0 ..3 (spades .. clubs). Each integer only

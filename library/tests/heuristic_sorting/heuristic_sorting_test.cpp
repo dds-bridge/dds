@@ -72,46 +72,6 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0SetsWeight) {
     std::cout << "TestWeightAllocTrump0 passed. Weight: " << mply[0].weight << std::endl;
 }
 
-// Test CallHeuristic integration
-TEST_F(HeuristicSortingUnitTest, TestCallHeuristicIntegration) {
-    pos tpos = createBasicPosition();
-    moveType bestMove = {};
-    moveType bestMoveTT = {};
-    relRanksType thrp_rel[1] = {};
-    moveType mply[10];
-    
-    // Initialize a move
-    mply[0].suit = 0;     
-    mply[0].rank = 14;    
-    mply[0].weight = 0;
-    mply[0].sequence = 1;
-    
-    trackType track = {};
-    
-    // Call the integration function
-    CallHeuristic(
-        tpos,
-        bestMove, 
-        bestMoveTT,
-        thrp_rel,
-        mply,
-        1,       // numMoves
-        0,       // lastNumMoves
-        1,       // trump (hearts)
-        0,       // suit
-        &track,  // trackp
-        1,       // currTrick
-        0,       // currHand
-        0,       // leadHand
-        0        // leadSuit
-    );
-    
-    // The weight should have been set
-    EXPECT_NE(mply[0].weight, 0) << "CallHeuristic should set move weights";
-    
-    std::cout << "TestCallHeuristicIntegration passed. Weight: " << mply[0].weight << std::endl;
-}
-
 // Test WeightAllocTrump0 function
 TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0) {
     moveType mply[10];

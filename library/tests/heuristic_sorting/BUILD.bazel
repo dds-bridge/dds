@@ -13,15 +13,6 @@ cc_test(
 )
 
 cc_test(
-    name = "integration_test",
-    srcs = ["integration_test.cpp"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "minimal_new_test",
     srcs = ["minimal_new_test.cpp"],
     deps = [
@@ -48,18 +39,6 @@ cc_test(
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
     "@googletest//:gtest_main",
     "//library/src/moves:moves",
-    ],
-    copts = DDS_CPPOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
-)
-
-cc_test(
-    name = "expanded_golden_tests",
-    srcs = ["expanded_golden_tests.cpp", "test_utils.cpp", "test_utils.h"],
-    deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
-        "//library/src/moves:moves",
-        "@googletest//:gtest_main",
     ],
     copts = DDS_CPPOPTS,
     local_defines = DDS_LOCAL_DEFINES,

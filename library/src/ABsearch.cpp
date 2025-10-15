@@ -151,9 +151,9 @@ bool ABsearch(
 #endif
       goto ABexit;
     }
+    // Accumulate winRanks from the explored child to inform subsequent moves
     for (int ss = 0; ss < DDS_SUITS; ss++)
-      posPoint->winRanks[depth][ss] |=
-        posPoint->winRanks[depth - 1][ss];
+      posPoint->winRanks[depth][ss] |= posPoint->winRanks[depth - 1][ss];
 
     TIMER_START(TIMER_NO_NEXTMOVE, depth);
     TIMER_END(TIMER_NO_NEXTMOVE, depth);
@@ -232,7 +232,7 @@ static bool ABsearch0_ctx(
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] =
-          winRanks[ posPoint->aggr[ss] ]
+          win_ranks[ posPoint->aggr[ss] ]
           [ static_cast<unsigned char>(cardsP->leastWin[ss]) ];
 
       if (cardsP->bestMoveRank != 0)
@@ -342,7 +342,7 @@ static bool ABsearch0_ctx(
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] =
-          winRanks[ posPoint->aggr[ss] ]
+          win_ranks[ posPoint->aggr[ss] ]
           [ static_cast<unsigned char>(cardsP->leastWin[ss]) ];
 
       if (cardsP->bestMoveRank != 0)
@@ -412,9 +412,9 @@ static bool ABsearch0_ctx(
 #endif
       goto ABexit;
     }
+    // Accumulate winRanks from the explored child to inform subsequent moves
     for (int ss = 0; ss < DDS_SUITS; ss++)
-      posPoint->winRanks[depth][ss] |=
-        posPoint->winRanks[depth - 1][ss];
+      posPoint->winRanks[depth][ss] |= posPoint->winRanks[depth - 1][ss];
 
     TIMER_START(TIMER_NO_NEXTMOVE, depth);
     TIMER_END(TIMER_NO_NEXTMOVE, depth);
@@ -523,7 +523,7 @@ static bool ABsearch1_ctx(
 
   ctx.moveGen().MoveGen123(tricks, 1, * posPoint);
   if (depth == ctx.search().iniDepth())
-  ctx.moveGen().Purge(tricks, 1, ctx.search().forbiddenMoves());
+    ctx.moveGen().Purge(tricks, 1, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -564,6 +564,7 @@ static bool ABsearch1_ctx(
       goto ABexit;
     }
 
+    // Accumulate winRanks from the explored child to inform subsequent moves
     for (int ss = 0; ss < DDS_SUITS; ss++)
       posPoint->winRanks[depth][ss] |= posPoint->winRanks[depth - 1][ss];
 
@@ -609,7 +610,7 @@ static bool ABsearch2_ctx(
 
   ctx.moveGen().MoveGen123(tricks, 2, * posPoint);
   if (depth == ctx.search().iniDepth())
-  ctx.moveGen().Purge(tricks, 2, ctx.search().forbiddenMoves());
+    ctx.moveGen().Purge(tricks, 2, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -651,6 +652,7 @@ static bool ABsearch2_ctx(
       goto ABexit;
     }
 
+    // Accumulate winRanks from the explored child to inform subsequent moves
     for (int ss = 0; ss < DDS_SUITS; ss++)
       posPoint->winRanks[depth][ss] |= posPoint->winRanks[depth - 1][ss];
 
@@ -700,7 +702,7 @@ static bool ABsearch3_ctx(
 
   ctx.moveGen().MoveGen123(tricks, 3, * posPoint);
   if (depth == ctx.search().iniDepth())
-  ctx.moveGen().Purge(tricks, 3, ctx.search().forbiddenMoves());
+    ctx.moveGen().Purge(tricks, 3, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -750,6 +752,7 @@ static bool ABsearch3_ctx(
 #endif
       goto ABexit;
     }
+    // Accumulate winRanks from explored child to inform subsequent moves
     for (int ss = 0; ss < DDS_SUITS; ss++)
       posPoint->winRanks[depth][ss] |= posPoint->winRanks[depth - 1][ss] | makeWinRank[ss];
 

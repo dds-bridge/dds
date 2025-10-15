@@ -115,7 +115,7 @@ int SolveBoardInternal(
     {
       unsigned int c = dl.remainCards[h][s] >> 2;
 
-      cardCount += counttable[c];
+      cardCount += count_table[c];
       diffDeal += (c ^ (thrp->suit[h][s]));
       aggDeal += c;
 
@@ -323,7 +323,7 @@ int SolveBoardInternal(
 
   if (mode == 0 && noMoves == 1 && solutions != 3)
   {
-  moveType const * mp = ctx.moveGen().MakeNextSimple(trick, handRelFirst);
+    moveType const * mp = ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -394,9 +394,9 @@ int SolveBoardInternal(
       }
       else
       {
-  int noLeft = ctx.moveGen().GetLength(trick, handRelFirst);
+        int noLeft = ctx.moveGen().GetLength(trick, handRelFirst);
 
-  ctx.moveGen().Rewind(trick, handRelFirst);
+        ctx.moveGen().Rewind(trick, handRelFirst);
         for (int j = 0; j < noLeft; j++)
         {
           moveType const * mp = 
@@ -499,7 +499,7 @@ int SolveBoardInternal(
       else // solutions == 2, so return all cards
         futp->cards = noMoves;
 
-  ctx.moveGen().Rewind(trick, handRelFirst);
+      ctx.moveGen().Rewind(trick, handRelFirst);
       for (int i = 0; i < noMoves; i++)
       {
         moveType const * mp = 
@@ -559,9 +559,9 @@ int SolveBoardInternal(
     else
     {
       futp->cards = 1;
-  futp->suit[0] = ctx.search().bestMove(iniDepth).suit;
-  futp->rank[0] = ctx.search().bestMove(iniDepth).rank;
-  futp->equals[0] = ctx.search().bestMove(iniDepth).sequence << 2;
+      futp->suit[0] = ctx.search().bestMove(iniDepth).suit;
+      futp->rank[0] = ctx.search().bestMove(iniDepth).rank;
+      futp->equals[0] = ctx.search().bestMove(iniDepth).sequence << 2;
       futp->score[0] = target;
 
       if (solutions != 2)
@@ -581,8 +581,8 @@ int SolveBoardInternal(
   {
     // Moves up to and including bestMove are now forbidden.
 
-  ctx.moveGen().Rewind(trick, handRelFirst);
-  int num = ctx.moveGen().GetLength(trick, handRelFirst);
+    ctx.moveGen().Rewind(trick, handRelFirst);
+    int num = ctx.moveGen().GetLength(trick, handRelFirst);
 
     for (int k = 0; k < num; k++)
     {
@@ -1125,7 +1125,7 @@ int BoardValueChecks(
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
-      noOfCardsPerHand[h] += counttable[thrp->suit[h][s]];
+  noOfCardsPerHand[h] += count_table[thrp->suit[h][s]];
 
   for (int h = 1; h < DDS_HANDS; h++)
   {
@@ -1204,7 +1204,7 @@ void LastTrickWinner(
       if (thrp->suit[hp][s] != 0)
       {
         lastTrickSuit[hp] = s;
-        lastTrickRank[hp] = highestRank[thrp->suit[hp][s]];
+        lastTrickRank[hp] = highest_rank[thrp->suit[hp][s]];
         break;
       }
     }
