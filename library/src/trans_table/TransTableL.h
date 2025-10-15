@@ -19,9 +19,7 @@
 #include <vector>
 #include <string>
 
-#include "dds/dll.h"
-
-#include "trans_table/TransTable.h"
+#include "TransTable.h"
 
 
 #define NUM_PAGES_DEFAULT 15

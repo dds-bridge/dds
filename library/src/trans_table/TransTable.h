@@ -17,7 +17,7 @@
 #define DDS_TRANSTABLE_H
 
 #include <fstream>
-#include "dds/dll.h"
+#include <dds/dds.h>
 
 // New-style types
 enum class ResetReason

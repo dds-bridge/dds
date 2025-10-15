@@ -84,8 +84,7 @@
 #include <array>
 
 #include "TransTableL.h"
-#include "utility/Constants.h"
-#include "utility/LookupTables.h"
+#include <utility/Constants.h>
 
 // Local using-declarations for readability in this implementation file only.
 using std::ofstream;
