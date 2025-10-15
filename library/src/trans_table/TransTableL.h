@@ -23,8 +23,6 @@
 
 #include "trans_table/TransTable.h"
 
-using namespace std;
-
 
 #define NUM_PAGES_DEFAULT 15
 #define NUM_PAGES_MAXIMUM 25
@@ -184,9 +182,9 @@ class TransTableL: public TransTable
       const int handDist[],
       unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
-    string SingleLenToStr(const unsigned char length[]) const;
+    std::string SingleLenToStr(const unsigned char length[]) const;
 
-    string LenToStr(
+    std::string LenToStr(
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
     void MakeHistStats(
@@ -203,7 +201,7 @@ class TransTableL: public TransTable
       const int last_index) const;
 
     void PrintHist(
-      ofstream& fout,
+      std::ofstream& fout,
       const int hist[],
       const int num_wraps,
       const int last_index) const;
@@ -228,7 +226,7 @@ class TransTableL: public TransTable
       const int handDistSought[]) const;
 
     void PrintEntriesBlock(
-      ofstream& fout,
+      std::ofstream& fout,
       winBlockType const * bp,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
@@ -251,21 +249,21 @@ class TransTableL: public TransTable
       const int size) const;
 
     void PrintNodeValues(
-      ofstream& fout,
+      std::ofstream& fout,
       const nodeCardsType& np) const;
 
     void PrintMatch(
-      ofstream& fout,
+      std::ofstream& fout,
       const winMatchType& wp,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
-    string MakeHolding(
-      const string& high,
+    std::string MakeHolding(
+      const std::string& high,
       const unsigned len) const;
 
     void DumpHands(
-      ofstream& fout,
-      const vector<vector<string>>& hands,
+      std::ofstream& fout,
+      const std::vector<std::vector<std::string>>& hands,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
     void SetToPartialHands(
@@ -273,7 +271,7 @@ class TransTableL: public TransTable
       const unsigned mask,
       const int maxRank,
       const int numRanks,
-      vector<vector<string>>& hands) const;
+      std::vector<std::vector<std::string>>& hands) const;
 
     int BlocksInUse() const;
 
@@ -282,19 +280,19 @@ class TransTableL: public TransTable
 
     ~TransTableL();
 
-    void Init(const int handLookup[][15]);
+    void Init(const int handLookup[][15]) override;
 
-    void SetMemoryDefault(const int megabytes);
+    void SetMemoryDefault(int megabytes) override;
 
-    void SetMemoryMaximum(const int megabytes);
+    void SetMemoryMaximum(int megabytes) override;
 
-    void MakeTT();
+    void MakeTT() override;
 
-    void ResetMemory(const TTresetReason reason);
+    void ResetMemory(const TTresetReason reason) override;
 
-    void ReturnAllMemory();
+    void ReturnAllMemory() override;
 
-    double MemoryInUse() const;
+    double MemoryInUse() const override;
 
     nodeCardsType * Lookup(
       const int trick,
@@ -302,7 +300,7 @@ class TransTableL: public TransTable
       const unsigned short aggrTarget[],
       const int handDist[],
       const int limit,
-      bool& lowerFlag);
+      bool& lowerFlag) override;
 
     void Add(
       const int trick,
@@ -310,23 +308,23 @@ class TransTableL: public TransTable
       const unsigned short aggrTarget[],
       const unsigned short winRanksArg[],
       const nodeCardsType& first,
-      const bool flag);
+      const bool flag) override;
 
     void PrintSuits(
-      ofstream& fout,
+      std::ofstream& fout,
       const int trick,
-      const int hand) const;
+      const int hand) const override;
 
-    void PrintAllSuits(ofstream& fout) const;
+    void PrintAllSuits(std::ofstream& fout) const override;
 
     void PrintSuitStats(
-      ofstream& fout,
+      std::ofstream& fout,
       const int trick,
-      const int hand) const;
+      const int hand) const override;
 
-    void PrintAllSuitStats(ofstream& fout) const;
+    void PrintAllSuitStats(std::ofstream& fout) const override;
 
-    void PrintSummarySuitStats(ofstream& fout) const;
+    void PrintSummarySuitStats(std::ofstream& fout) const override;
 
     // Examples:
     // int hd[DDS_HANDS] = { 0x0342, 0x0334, 0x0232, 0x0531 };
@@ -336,33 +334,33 @@ class TransTableL: public TransTable
     // thrp->transTable.PrintEntriesDistAndCards(cout, 11, 1, ag, hd);
 
     void PrintEntriesDist(
-      ofstream& fout,
+      std::ofstream& fout,
       const int trick,
       const int hand,
-      const int handDist[]) const;
+      const int handDist[]) const override;
 
     void PrintEntriesDistAndCards(
-      ofstream& fout,
+      std::ofstream& fout,
       const int trick,
       const int hand,
       const unsigned short aggrTarget[],
-      const int handDist[]) const;
+      const int handDist[]) const override;
 
     void PrintEntries(
-      ofstream& fout,
+      std::ofstream& fout,
       const int trick,
-      const int hand) const;
+      const int hand) const override;
 
-    void PrintAllEntries(ofstream& fout) const;
+  void PrintAllEntries(std::ofstream& fout) const override;
 
     void PrintEntryStats(
-      ofstream& fout,
+      std::ofstream& fout,
       const int trick,
-      const int hand) const;
+      const int hand) const override;
 
-    void PrintAllEntryStats(ofstream& fout) const;
+  void PrintAllEntryStats(std::ofstream& fout) const override;
 
-    void PrintSummaryEntryStats(ofstream& fout) const;
+  void PrintSummaryEntryStats(std::ofstream& fout) const override;
 };
 
 #endif

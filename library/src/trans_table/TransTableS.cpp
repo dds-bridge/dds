@@ -39,6 +39,14 @@ static const std::array<int, 8192>& TTLowestRankTable()
   return table;
 }
 
+// Local using-declarations for readability in this implementation file only.
+using std::ofstream;
+using std::endl;
+using std::setw;
+using std::left;
+using std::right;
+using std::string;
+
 /**
  * @brief Small transposition table for double dummy solver.
  *

@@ -22,8 +22,6 @@
 
 #include "trans_table/TransTable.h"
 
-using namespace std;
-
 
 class TransTableS: public TransTable
 {
@@ -82,9 +80,9 @@ class TransTableS: public TransTable
 
     posSearchTypeSmall * rootnp[14][DDS_HANDS];
     winCardType ** pw;
-    nodeCardsType ** pn;
+  nodeCardsType ** pn;
     posSearchTypeSmall ** pl[14][DDS_HANDS];
-    nodeCardsType * nodeCards;
+  nodeCardsType * nodeCards;
     winCardType * winCards;
     posSearchTypeSmall * posSearch[14][DDS_HANDS];
     int nodeSetSize; /* Index with range 0 to nodeSetSizeLimit */
@@ -92,7 +90,7 @@ class TransTableS: public TransTable
     int lenSetInd[14][DDS_HANDS];
     int lcount[14][DDS_HANDS];
 
-    vector<string> resetText;
+  std::vector<std::string> resetText;
 
     long long suitLengths[14];
 
@@ -115,13 +113,13 @@ class TransTableS: public TransTable
     void BuildSOP(
       const unsigned short ourWinRanks[DDS_SUITS],
       const unsigned short aggr[DDS_SUITS],
-      const nodeCardsType& first,
+      const NodeCards& first,
       const long long suitLengths,
       const int tricks,
       const int firstHand,
       const bool flag);
 
-    nodeCardsType * BuildPath(
+    NodeCards * BuildPath(
       const int winMask[],
       const int winOrderSet[],
       const int ubound,
@@ -139,14 +137,14 @@ class TransTableS: public TransTable
       const int firstHand,
       bool& result);
 
-    nodeCardsType * UpdateSOP(
+    NodeCards * UpdateSOP(
       const int ubound,
       const int lbound,
       const char bestMoveSuit,
       const char bestMoveRank,
-      nodeCardsType * nodep);
+      NodeCards * nodep);
 
-    nodeCardsType const * FindSOP(
+    NodeCards const * FindSOP(
       const int orderSet[],
       const int limit,
       winCardType * nodeP,
@@ -158,19 +156,19 @@ class TransTableS: public TransTable
 
     ~TransTableS();
 
-    void Init(const int handLookup[][15]);
+    void Init(const int handLookup[][15]) override;
 
-    void SetMemoryDefault(const int megabytes);
+    void SetMemoryDefault(const int megabytes) override;
 
-    void SetMemoryMaximum(const int megabytes);
+    void SetMemoryMaximum(const int megabytes) override;
 
-    void MakeTT();
+    void MakeTT() override;
 
-    void ResetMemory(const TTresetReason reason);
+    void ResetMemory(const TTresetReason reason) override;
 
-    void ReturnAllMemory();
+    void ReturnAllMemory() override;
 
-    double MemoryInUse() const;
+    double MemoryInUse() const override;
 
     nodeCardsType const * Lookup(
       const int trick,
@@ -178,7 +176,7 @@ class TransTableS: public TransTable
       const unsigned short aggrTarget[],
       const int handDist[],
       const int limit,
-      bool& lowerFlag);
+      bool& lowerFlag) override;
 
     void Add(
       const int trick,
@@ -186,11 +184,11 @@ class TransTableS: public TransTable
       const unsigned short aggrTarget[],
       const unsigned short winRanksArg[],
       const nodeCardsType& first,
-      const bool flag);
+      const bool flag) override;
 
-    void PrintNodeStats(ofstream& fout) const;
+  void PrintNodeStats(std::ofstream& fout) const;
 
-    void PrintResetStats(ofstream& fout) const;
+  void PrintResetStats(std::ofstream& fout) const;
 };
 
 #endif

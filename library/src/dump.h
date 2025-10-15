@@ -16,8 +16,7 @@
 #include "system/Memory.h"
 #include "trans_table/TransTable.h" // for nodeCardsType and enums
 
-// Forward declaration left for clarity; full type is included above.
-struct nodeCardsType;
+// nodeCardsType is provided via TransTable.h (alias to NodeCards)
 
 int DumpInput(
   const int errCode,

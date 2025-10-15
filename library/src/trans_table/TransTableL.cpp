@@ -87,6 +87,20 @@
 #include "utility/Constants.h"
 #include "utility/LookupTables.h"
 
+// Local using-declarations for readability in this implementation file only.
+using std::ofstream;
+using std::vector;
+using std::string;
+using std::setw;
+using std::left;
+using std::right;
+using std::endl;
+using std::hex;
+using std::dec;
+using std::setprecision;
+using std::fixed;
+using std::to_string;
+
 static const std::array<int, 8192>& TTLowestRankTable()
 {
   static const std::array<int, 8192> table = []{
