@@ -13,15 +13,15 @@
 #include <mutex>
 
 namespace {
-// Underlying storage (internal linkage)
-static int dds_lut_highestRank_storage[8192];
-static int dds_lut_lowestRank_storage[8192];
-static int dds_lut_counttable_storage[8192];
-static char dds_lut_relRank_storage[8192][15];
-static unsigned short dds_lut_winRanks_storage[8192][14];
-static MoveGroupType dds_lut_groupData_storage[8192];
+  // Underlying storage (internal linkage)
+  static int dds_lut_highestRank_storage[8192];
+  static int dds_lut_lowestRank_storage[8192];
+  static int dds_lut_counttable_storage[8192];
+  static char dds_lut_relRank_storage[8192][15];
+  static unsigned short dds_lut_winRanks_storage[8192][14];
+  static MoveGroupType dds_lut_groupData_storage[8192];
 
-static std::once_flag dds_lut_once_flag;
+  static std::once_flag dds_lut_once_flag;
 }
 
 static auto dds_lut_init_impl() -> void
@@ -169,10 +169,10 @@ static auto dds_lut_init_impl() -> void
 
     if (ris & nextBitRank) // 11... Extend group
     {
-  g = dds_lut_groupData_storage[ris].last_group_;
-  dds_lut_groupData_storage[ris].rank_[g]++;
-  dds_lut_groupData_storage[ris].sequence_[g] |= nextBitRank;
-  dds_lut_groupData_storage[ris].fullseq_[g] |= topBitRank;
+      g = dds_lut_groupData_storage[ris].last_group_;
+      dds_lut_groupData_storage[ris].rank_[g]++;
+      dds_lut_groupData_storage[ris].sequence_[g] |= nextBitRank;
+      dds_lut_groupData_storage[ris].fullseq_[g] |= topBitRank;
     }
     else // 10... New group
     {
@@ -193,19 +193,18 @@ auto init_lookup_tables() -> void
 
 // Eager initialization at program start (TU load) to avoid any cost on first use.
 namespace {
-struct DdsLutInitGuard
-{
-  DdsLutInitGuard() noexcept
+  struct DdsLutInitGuard
   {
-    init_lookup_tables();
-  }
-};
-static const DdsLutInitGuard dds_lut_init_guard;
+    DdsLutInitGuard() noexcept
+    {
+      init_lookup_tables();
+    }
+  };
+  static const DdsLutInitGuard dds_lut_init_guard;
 }
 
 // Bind const references to internal storage for zero-overhead access
-const MoveGroupType (&group_data)[8192] = dds_lut_groupData_storage; // preferred
-// snake_case aliases for all tables
+const MoveGroupType (&group_data)[8192] = dds_lut_groupData_storage;
 const int (&highest_rank)[8192] = dds_lut_highestRank_storage;
 const int (&lowest_rank)[8192] = dds_lut_lowestRank_storage;
 const int (&count_table)[8192] = dds_lut_counttable_storage;

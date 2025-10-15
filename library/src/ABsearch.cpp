@@ -523,7 +523,7 @@ static bool ABsearch1_ctx(
 
   ctx.moveGen().MoveGen123(tricks, 1, * posPoint);
   if (depth == ctx.search().iniDepth())
-  ctx.moveGen().Purge(tricks, 1, ctx.search().forbiddenMoves());
+    ctx.moveGen().Purge(tricks, 1, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -610,7 +610,7 @@ static bool ABsearch2_ctx(
 
   ctx.moveGen().MoveGen123(tricks, 2, * posPoint);
   if (depth == ctx.search().iniDepth())
-  ctx.moveGen().Purge(tricks, 2, ctx.search().forbiddenMoves());
+    ctx.moveGen().Purge(tricks, 2, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -702,7 +702,7 @@ static bool ABsearch3_ctx(
 
   ctx.moveGen().MoveGen123(tricks, 3, * posPoint);
   if (depth == ctx.search().iniDepth())
-  ctx.moveGen().Purge(tricks, 3, ctx.search().forbiddenMoves());
+    ctx.moveGen().Purge(tricks, 3, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 

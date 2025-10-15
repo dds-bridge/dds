@@ -747,7 +747,7 @@ int Scheduler::Fanout(const deal& dl) const
     for (int s = 0; s < DDS_SUITS; s++)
     {
       c = static_cast<int>(dl.remainCards[h][s] >> 2);
-  fanoutSuit += group_data[c].last_group_ + 1;
+      fanoutSuit += group_data[c].last_group_ + 1;
       if (c == 0)
         numVoids++;
     }

@@ -87,7 +87,7 @@ void WeightAllocTrump0(HeuristicContext& context)
     int suitBonus = 0;
     bool winMove = false;
 
-  int rRank = rel_rank[aggr][context.mply[k].rank];
+    int rRank = rel_rank[aggr][context.mply[k].rank];
 
     /* Discourage suit if LHO or RHO can ruff. */
     if ((context.suit != context.trump) &&
@@ -353,7 +353,7 @@ void WeightAllocNT0(HeuristicContext& context) {
   for (int k = context.lastNumMoves; k < context.numMoves; k++)
   {
     int suitWeightDelta = suitWeightD;
-  int rRank = rel_rank[aggr][context.mply[k].rank];
+    int rRank = rel_rank[aggr][context.mply[k].rank];
 
     if (context.tpos.winner[context.suit].rank == context.mply[k].rank ||
         (context.tpos.rankInSuit[partner[context.leadHand]][context.suit] >
@@ -633,9 +633,9 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
 
     for (int k = 0; k < numMoves; k++)
     {
-  int rRank = rel_rank[ tpos.aggr[leadSuit] ][mply[k].rank];
+      int rRank = rel_rank[ tpos.aggr[leadSuit] ][mply[k].rank];
 
-  if (mply[k].rank > ctx.lead0_rank && mply[k].rank > max3rd)
+      if (mply[k].rank > ctx.lead0_rank && mply[k].rank > max3rd)
         // We can beat both opponents.
         mply[k].weight = 81 - mply[k].rank;
 
@@ -643,7 +643,7 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
         // Card can make no difference, so play very low.
         mply[k].weight = -3 + rRank;
 
-  else if (mply[k].rank < ctx.lead0_rank)
+      else if (mply[k].rank < ctx.lead0_rank)
         // Can't beat the card led.
         mply[k].weight = -11 + rRank;
 

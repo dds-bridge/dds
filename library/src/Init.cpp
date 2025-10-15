@@ -343,7 +343,7 @@ void SetDealTables(
     thrp->rel[aggr] = thrp->rel[aggr ^ topBitRank];
     relp = &thrp->rel[aggr];
 
-  int weight = count_table[aggr];
+    int weight = count_table[aggr];
     for (int c = weight; c >= 2; c--)
     {
       for (int s = 0; s < DDS_SUITS; s++)

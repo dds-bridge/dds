@@ -170,8 +170,8 @@ int Moves::MoveGen0(
     if (ris == 0) continue;
 
     lastNumMoves = numMoves;
-  mp = &group_data[ris];
-  g = mp->last_group_;
+    mp = &group_data[ris];
+    g = mp->last_group_;
     removed = trackp->removedRanks[suit];
 
     while (g >= 0)
@@ -243,17 +243,17 @@ int Moves::MoveGen123(
 
   if (ris != 0)
   {
-  mp = &group_data[ris];
-  g = mp->last_group_;
+    mp = &group_data[ris];
+    g = mp->last_group_;
     removed = trackp->removedRanks[leadSuit];
 
     while (g >= 0)
     {
-  rank = mp->rank_[g];
-  seq = mp->sequence_[g];
+      rank = mp->rank_[g];
+      seq = mp->sequence_[g];
 
-  while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
-  seq |= mp->fullseq_[--g];
+      while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
+        seq |= mp->fullseq_[--g];
 
       mply[numMoves].sequence = seq;
       mply[numMoves].suit = leadSuit;
@@ -293,17 +293,17 @@ int Moves::MoveGen123(
     if (ris == 0) continue;
 
     lastNumMoves = numMoves;
-  mp = &group_data[ris];
-  g = mp->last_group_;
+    mp = &group_data[ris];
+    g = mp->last_group_;
     removed = trackp->removedRanks[suit];
 
     while (g >= 0)
     {
-  rank = mp->rank_[g];
-  seq = mp->sequence_[g];
+      rank = mp->rank_[g];
+      seq = mp->sequence_[g];
 
-  while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
-  seq |= mp->fullseq_[--g];
+      while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
+        seq |= mp->fullseq_[--g];
 
       mply[numMoves].sequence = seq;
       mply[numMoves].suit = suit;
@@ -349,7 +349,7 @@ void Moves::GetTopNumber(
   int fullseq = mp.fullseq_[g];
 
   while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))
-  fullseq |= mp.fullseq_[--g];
+    fullseq |= mp.fullseq_[--g];
 
   topNumber = count_table[fullseq] - 1;
 }
@@ -479,7 +479,7 @@ moveType const * Moves::MakeNext(
     prevp = &list.move[ list.current - 1 ];
     if (lwp[ prevp->suit ] == 0)
     {
-  int low = lowest_rank[ ourWinRanks[prevp->suit] ];
+      int low = lowest_rank[ ourWinRanks[prevp->suit] ];
       if (low == 0)
         low = 15;
       if (prevp->rank < low)
