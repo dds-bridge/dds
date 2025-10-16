@@ -76,8 +76,7 @@ TransTableS::~TransTableS()
 // SetConstants removed; constants are produced by TTLowestRankTable().
 
 
-void TransTableS::init(const int handLookup[][15])
-{
+auto TransTableS::init(const int handLookup[][15]) -> void {
   unsigned int topBitRank = 1;
   unsigned int topBitNo = 2;
 
@@ -120,18 +119,15 @@ void TransTableS::init(const int handLookup[][15])
 }
 
 
-void TransTableS::set_memory_default([[maybe_unused]] const int megabytes)
-{ }
+auto TransTableS::set_memory_default([[maybe_unused]] const int megabytes) -> void { }
 
 
-void TransTableS::set_memory_maximum(const int megabytes)
-{
+auto TransTableS::set_memory_maximum(const int megabytes) -> void {
   maxmem = 1000000ULL * static_cast<unsigned long long>(megabytes);
 }
 
 
-void TransTableS::make_tt()
-{
+auto TransTableS::make_tt() -> void {
   // Note: keep local variables minimal; indices are declared in inner scopes.
 
   if (!TTInUse)
@@ -225,8 +221,7 @@ void TransTableS::make_tt()
 }
 
 
-void TransTableS::Wipe()
-{
+auto TransTableS::Wipe() -> void {
   int m;
 
   for (m = 1; m <= wcount; m++)
@@ -262,8 +257,7 @@ void TransTableS::Wipe()
 
 
 
-void TransTableS::InitTT()
-{
+auto TransTableS::InitTT() -> void {
   winSetSizeLimit = WINIT;
   nodeSetSizeLimit = NINIT;
   allocmem = (WINIT + 1) * sizeof(winCardType);
@@ -300,8 +294,7 @@ void TransTableS::InitTT()
 }
 
 
-void TransTableS::reset_memory([[maybe_unused]] const ResetReason reason)
-{
+auto TransTableS::reset_memory([[maybe_unused]] const ResetReason reason) -> void {
   Wipe();
 
   InitTT();
@@ -328,8 +321,7 @@ void TransTableS::reset_memory([[maybe_unused]] const ResetReason reason)
   return;
 }
 
-void TransTableS::return_all_memory()
-{
+auto TransTableS::return_all_memory() -> void {
 
   if (!TTInUse)
     return;
@@ -371,8 +363,7 @@ void TransTableS::return_all_memory()
 }
 
 
-double TransTableS::memory_in_use() const
-{
+auto TransTableS::memory_in_use() const -> double {
   int ttMem = static_cast<int>(allocmem);
   int aggrMem = 8192 * static_cast<int>(sizeof(ttAggrType));
   return (ttMem + aggrMem) / static_cast<double>(1024.);
@@ -428,14 +419,13 @@ NodeCards const * TransTableS::lookup(
 }
 
 
-void TransTableS::add(
+auto TransTableS::add(
   const int tricks,
   const int hand,
   const unsigned short aggrTarget[],
   const unsigned short ourWinRanks[],
   const NodeCards& first,
-  const bool flag)
-{
+  const bool flag) -> void {
   BuildSOP(ourWinRanks, aggrTarget, first, suitLengths[tricks],
            tricks, hand, flag);
 
@@ -446,8 +436,7 @@ void TransTableS::add(
 }
 
 
-void TransTableS::AddWinSet()
-{
+auto TransTableS::AddWinSet() -> void {
   if (clearTTflag)
   {
     windex++;
@@ -492,8 +481,7 @@ void TransTableS::AddWinSet()
   return;
 }
 
-void TransTableS::AddNodeSet()
-{
+auto TransTableS::AddNodeSet() -> void {
   if (nodeSetSize >= nodeSetSizeLimit)
   {
     /* The memory chunk for the nodeCards structure will be exceeded. */
@@ -525,10 +513,9 @@ void TransTableS::AddNodeSet()
   return;
 }
 
-void TransTableS::AddLenSet(
+auto TransTableS::AddLenSet(
   const int trick, 
-  const int firstHand)
-{
+  const int firstHand) -> void {
   if (lenSetInd[trick][firstHand] < LSIZE)
   {
     lenSetInd[trick][firstHand]++;
@@ -573,15 +560,14 @@ void TransTableS::AddLenSet(
 }
 
 
-void TransTableS::BuildSOP(
+auto TransTableS::BuildSOP(
   const unsigned short ourWinRanks[DDS_SUITS],
   const unsigned short aggrArg[DDS_SUITS],
   const NodeCards& first,
   const long long lengths,
   const int tricks,
   const int firstHand,
-  const bool flag)
-{
+  const bool flag) -> void {
   int winMask[DDS_SUITS];
   int winOrderSet[DDS_SUITS];
   char low[DDS_SUITS];
@@ -938,8 +924,7 @@ NodeCards const * TransTableS::FindSOP(
 }
 
 
-void TransTableS::PrintNodeStats(ofstream& fout) const
-{
+auto TransTableS::PrintNodeStats(ofstream& fout) const -> void {
   fout << "Report of generated PosSearch nodes per trick level.\n";
   fout << "Trick level 13 is highest level with all 52 cards.\n";
   fout << string(51, '-') << "\n";
@@ -954,8 +939,7 @@ void TransTableS::PrintNodeStats(ofstream& fout) const
 }
 
 
-void TransTableS::PrintResetStats(ofstream& fout) const
-{
+auto TransTableS::PrintResetStats(ofstream& fout) const -> void {
   fout << "Total no. of resets: " << statsResets.noOfResets << "\n" << endl;
 
   fout << setw(18) << left << "Reason" << 
