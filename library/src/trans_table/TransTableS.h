@@ -150,18 +150,12 @@ class TransTableS: public TransTable
       winCardType * nodeP,
       bool& lowerFlag);
 
-  public:
-
-    TransTableS();
-
-    ~TransTableS();
-
-    // Legacy implementation API retained as helpers
+    // Legacy implementation helpers (kept private)
     void Init(const int handLookup[][15]);
     void SetMemoryDefault(const int megabytes);
     void SetMemoryMaximum(const int megabytes);
     void MakeTT();
-  void ResetMemory(const ResetReason reason);
+    void ResetMemory(const ResetReason reason);
     void ReturnAllMemory();
     double MemoryInUse() const;
     NodeCards const * Lookup(
@@ -176,15 +170,21 @@ class TransTableS: public TransTable
       const int hand,
       const unsigned short aggrTarget[],
       const unsigned short winRanksArg[],
-  const NodeCards& first,
+      const NodeCards& first,
       const bool flag);
+
+  public:
+
+    TransTableS();
+
+    ~TransTableS();
 
     // Modern overrides implemented as inline wrappers
     void init(const int hand_lookup[][15]) override { Init(hand_lookup); }
     void set_memory_default(int megabytes) override { SetMemoryDefault(megabytes); }
     void set_memory_maximum(int megabytes) override { SetMemoryMaximum(megabytes); }
     void make_tt() override { MakeTT(); }
-  void reset_memory(ResetReason reason) override { ResetMemory(reason); }
+    void reset_memory(ResetReason reason) override { ResetMemory(reason); }
     void return_all_memory() override { ReturnAllMemory(); }
     auto memory_in_use() const -> double override { return MemoryInUse(); }
     auto lookup(
@@ -198,8 +198,8 @@ class TransTableS: public TransTable
       int trick,
       int hand,
       const unsigned short aggr_target[],
-  const unsigned short win_ranks_arg[],
-  const NodeCards& first,
+      const unsigned short win_ranks_arg[],
+      const NodeCards& first,
       bool flag) override { Add(trick, hand, aggr_target, win_ranks_arg, first, flag); }
 
     // The small TT does not provide verbose dumping; implement no-op printers

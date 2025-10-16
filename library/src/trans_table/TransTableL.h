@@ -273,17 +273,12 @@ class TransTableL: public TransTable
 
     int BlocksInUse() const;
 
-  public:
-    TransTableL();
-
-    ~TransTableL();
-
-    // Legacy implementation API retained as helpers
+    // Legacy implementation helpers (kept private)
     void Init(const int handLookup[][15]);
     void SetMemoryDefault(int megabytes);
     void SetMemoryMaximum(int megabytes);
     void MakeTT();
-  void ResetMemory(const ResetReason reason);
+    void ResetMemory(const ResetReason reason);
     void ReturnAllMemory();
     double MemoryInUse() const;
     NodeCards * Lookup(
@@ -297,8 +292,8 @@ class TransTableL: public TransTable
       const int trick,
       const int hand,
       const unsigned short aggrTarget[],
-  const unsigned short winRanksArg[],
-  const NodeCards& first,
+      const unsigned short winRanksArg[],
+      const NodeCards& first,
       const bool flag);
     void PrintSuits(
       std::ofstream& fout,
@@ -311,42 +306,39 @@ class TransTableL: public TransTable
       const int hand) const;
     void PrintAllSuitStats(std::ofstream& fout) const;
     void PrintSummarySuitStats(std::ofstream& fout) const;
-
-    // Examples:
-    // int hd[DDS_HANDS] = { 0x0342, 0x0334, 0x0232, 0x0531 };
-    // thrp->transTable.PrintEntriesDist(cout, 11, 1, hd);
-    // unsigned short ag[DDS_HANDS] =
-    // { 0x1fff, 0x1fff, 0x0f75, 0x1fff };
-    // thrp->transTable.PrintEntriesDistAndCards(cout, 11, 1, ag, hd);
-
     void PrintEntriesDist(
       std::ofstream& fout,
       const int trick,
       const int hand,
       const int handDist[]) const;
-
     void PrintEntriesDistAndCards(
       std::ofstream& fout,
       const int trick,
       const int hand,
       const unsigned short aggrTarget[],
       const int handDist[]) const;
-
     void PrintEntries(
       std::ofstream& fout,
       const int trick,
       const int hand) const;
-
     void PrintAllEntries(std::ofstream& fout) const;
-
     void PrintEntryStats(
       std::ofstream& fout,
       const int trick,
       const int hand) const;
-
     void PrintAllEntryStats(std::ofstream& fout) const;
-
     void PrintSummaryEntryStats(std::ofstream& fout) const;
+
+  public:
+    TransTableL();
+
+    ~TransTableL();
+    // Examples:
+    // int hd[DDS_HANDS] = { 0x0342, 0x0334, 0x0232, 0x0531 };
+    // thrp->transTable.PrintEntriesDist(cout, 11, 1, hd);
+    // unsigned short ag[DDS_HANDS] =
+    // { 0x1fff, 0x1fff, 0x0f75, 0x1fff };
+    // thrp->transTable.PrintEntriesDistAndCards(cout, 11, 1, ag, hd);
 
     // Modern overrides implemented as inline wrappers
     void init(const int hand_lookup[][15]) override { Init(hand_lookup); }

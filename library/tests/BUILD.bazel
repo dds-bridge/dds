@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 
 filegroup(
@@ -17,6 +17,20 @@ cc_binary(
         "//library/src/data_types:dds_types",
     ],
     visibility = ["//visibility:public"],
+)
+
+
+# cc_test target to enable `bazel test //library/tests:all`
+cc_test(
+    name = "unit_tests",
+    srcs = [":test_sources"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/data_types:dds_types",
+    ],
 )
 
 
