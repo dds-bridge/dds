@@ -22,20 +22,20 @@
 #include "TransTable.h"
 
 
-#define NUM_PAGES_DEFAULT 15
-#define NUM_PAGES_MAXIMUM 25
-#define BLOCKS_PER_PAGE 1000
-#define DISTS_PER_ENTRY 32
-#define BLOCKS_PER_ENTRY 125
-#define FIRST_HARVEST_TRICK 8
-#define HARVEST_AGE 10000
+enum {
+  NUM_PAGES_DEFAULT = 15,
+  NUM_PAGES_MAXIMUM = 25,
+  BLOCKS_PER_PAGE = 1000,
+  DISTS_PER_ENTRY = 32,
+  BLOCKS_PER_ENTRY = 125,
+  FIRST_HARVEST_TRICK = 8,
+  HARVEST_AGE = 10000,
+  TT_BYTES = 4,
+  TT_TRICKS = 12,
+  TT_LINE_LEN = 20
+};
 
-#define TT_BYTES 4
-#define TT_TRICKS 12
-
-#define TT_LINE_LEN 20
-
-#define TT_PERCENTILE 0.9
+inline constexpr double TT_PERCENTILE = 0.9;
 
 
 class TransTableL: public TransTable
