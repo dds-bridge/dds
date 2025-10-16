@@ -69,14 +69,14 @@ TransTableS::TransTableS()
  */
 TransTableS::~TransTableS()
 {
-  TransTableS::ReturnAllMemory();
+  TransTableS::return_all_memory();
 }
 
 
 // SetConstants removed; constants are produced by TTLowestRankTable().
 
 
-void TransTableS::Init(const int handLookup[][15])
+void TransTableS::init(const int handLookup[][15])
 {
   unsigned int topBitRank = 1;
   unsigned int topBitNo = 2;
@@ -120,17 +120,17 @@ void TransTableS::Init(const int handLookup[][15])
 }
 
 
-void TransTableS::SetMemoryDefault([[maybe_unused]] const int megabytes)
+void TransTableS::set_memory_default([[maybe_unused]] const int megabytes)
 { }
 
 
-void TransTableS::SetMemoryMaximum(const int megabytes)
+void TransTableS::set_memory_maximum(const int megabytes)
 {
   maxmem = 1000000ULL * static_cast<unsigned long long>(megabytes);
 }
 
 
-void TransTableS::MakeTT()
+void TransTableS::make_tt()
 {
   // Note: keep local variables minimal; indices are declared in inner scopes.
 
@@ -300,7 +300,7 @@ void TransTableS::InitTT()
 }
 
 
-void TransTableS::ResetMemory([[maybe_unused]] const ResetReason reason)
+void TransTableS::reset_memory([[maybe_unused]] const ResetReason reason)
 {
   Wipe();
 
@@ -328,7 +328,7 @@ void TransTableS::ResetMemory([[maybe_unused]] const ResetReason reason)
   return;
 }
 
-void TransTableS::ReturnAllMemory()
+void TransTableS::return_all_memory()
 {
 
   if (!TTInUse)
@@ -371,7 +371,7 @@ void TransTableS::ReturnAllMemory()
 }
 
 
-double TransTableS::MemoryInUse() const
+double TransTableS::memory_in_use() const
 {
   int ttMem = static_cast<int>(allocmem);
   int aggrMem = 8192 * static_cast<int>(sizeof(ttAggrType));
@@ -379,7 +379,7 @@ double TransTableS::MemoryInUse() const
 }
 
 
-NodeCards const * TransTableS::Lookup(
+NodeCards const * TransTableS::lookup(
   const int trick,
   const int hand,
   const unsigned short aggrTarget[],
@@ -428,7 +428,7 @@ NodeCards const * TransTableS::Lookup(
 }
 
 
-void TransTableS::Add(
+void TransTableS::add(
   const int tricks,
   const int hand,
   const unsigned short aggrTarget[],
@@ -440,7 +440,7 @@ void TransTableS::Add(
            tricks, hand, flag);
 
   if (clearTTflag)
-    ResetMemory(ResetReason::MemoryExhausted);
+    reset_memory(ResetReason::MemoryExhausted);
 
   return;
 }

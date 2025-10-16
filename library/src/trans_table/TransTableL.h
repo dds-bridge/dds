@@ -273,61 +273,7 @@ class TransTableL: public TransTable
 
     int BlocksInUse() const;
 
-    // Legacy implementation helpers (kept private)
-    void Init(const int handLookup[][15]);
-    void SetMemoryDefault(int megabytes);
-    void SetMemoryMaximum(int megabytes);
-    void MakeTT();
-    void ResetMemory(const ResetReason reason);
-    void ReturnAllMemory();
-    double MemoryInUse() const;
-    NodeCards * Lookup(
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const int handDist[],
-      const int limit,
-      bool& lowerFlag);
-    void Add(
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const unsigned short winRanksArg[],
-      const NodeCards& first,
-      const bool flag);
-    void PrintSuits(
-      std::ofstream& fout,
-      const int trick,
-      const int hand) const;
-    void PrintAllSuits(std::ofstream& fout) const;
-    void PrintSuitStats(
-      std::ofstream& fout,
-      const int trick,
-      const int hand) const;
-    void PrintAllSuitStats(std::ofstream& fout) const;
-    void PrintSummarySuitStats(std::ofstream& fout) const;
-    void PrintEntriesDist(
-      std::ofstream& fout,
-      const int trick,
-      const int hand,
-      const int handDist[]) const;
-    void PrintEntriesDistAndCards(
-      std::ofstream& fout,
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const int handDist[]) const;
-    void PrintEntries(
-      std::ofstream& fout,
-      const int trick,
-      const int hand) const;
-    void PrintAllEntries(std::ofstream& fout) const;
-    void PrintEntryStats(
-      std::ofstream& fout,
-      const int trick,
-      const int hand) const;
-    void PrintAllEntryStats(std::ofstream& fout) const;
-    void PrintSummaryEntryStats(std::ofstream& fout) const;
+    // Legacy implementation helpers removed; modern overrides are canonical.
 
   public:
     TransTableL();
@@ -340,40 +286,40 @@ class TransTableL: public TransTable
     // { 0x1fff, 0x1fff, 0x0f75, 0x1fff };
     // thrp->transTable.PrintEntriesDistAndCards(cout, 11, 1, ag, hd);
 
-    // Modern overrides implemented as inline wrappers
-    void init(const int hand_lookup[][15]) override { Init(hand_lookup); }
-    void set_memory_default(int megabytes) override { SetMemoryDefault(megabytes); }
-    void set_memory_maximum(int megabytes) override { SetMemoryMaximum(megabytes); }
-    void make_tt() override { MakeTT(); }
-  void reset_memory(ResetReason reason) override { ResetMemory(reason); }
-    void return_all_memory() override { ReturnAllMemory(); }
-    auto memory_in_use() const -> double override { return MemoryInUse(); }
+    // Modern overrides (out-of-line implementations in .cpp)
+    void init(const int hand_lookup[][15]) override;
+    void set_memory_default(int megabytes) override;
+    void set_memory_maximum(int megabytes) override;
+    void make_tt() override;
+    void reset_memory(ResetReason reason) override;
+    void return_all_memory() override;
+    auto memory_in_use() const -> double override;
     auto lookup(
       int trick,
       int hand,
       const unsigned short aggr_target[],
       const int hand_dist[],
       int limit,
-      bool& lower_flag) -> NodeCards const * override { return Lookup(trick, hand, aggr_target, hand_dist, limit, lower_flag); }
+      bool& lower_flag) -> NodeCards const * override;
     void add(
       int trick,
       int hand,
       const unsigned short aggr_target[],
       const unsigned short win_ranks_arg[],
       const NodeCards& first,
-      bool flag) override { Add(trick, hand, aggr_target, win_ranks_arg, first, flag); }
-    void print_suits(std::ofstream& fout, int trick, int hand) const override { PrintSuits(fout, trick, hand); }
-    void print_all_suits(std::ofstream& fout) const override { PrintAllSuits(fout); }
-    void print_suit_stats(std::ofstream& fout, int trick, int hand) const override { PrintSuitStats(fout, trick, hand); }
-    void print_all_suit_stats(std::ofstream& fout) const override { PrintAllSuitStats(fout); }
-    void print_summary_suit_stats(std::ofstream& fout) const override { PrintSummarySuitStats(fout); }
-    void print_entries_dist(std::ofstream& fout, int trick, int hand, const int hand_dist[]) const override { PrintEntriesDist(fout, trick, hand, hand_dist); }
-    void print_entries_dist_and_cards(std::ofstream& fout, int trick, int hand, const unsigned short aggr_target[], const int hand_dist[]) const override { PrintEntriesDistAndCards(fout, trick, hand, aggr_target, hand_dist); }
-    void print_entries(std::ofstream& fout, int trick, int hand) const override { PrintEntries(fout, trick, hand); }
-    void print_all_entries(std::ofstream& fout) const override { PrintAllEntries(fout); }
-    void print_entry_stats(std::ofstream& fout, int trick, int hand) const override { PrintEntryStats(fout, trick, hand); }
-    void print_all_entry_stats(std::ofstream& fout) const override { PrintAllEntryStats(fout); }
-    void print_summary_entry_stats(std::ofstream& fout) const override { PrintSummaryEntryStats(fout); }
+      bool flag) override;
+    void print_suits(std::ofstream& fout, int trick, int hand) const override;
+    void print_all_suits(std::ofstream& fout) const override;
+    void print_suit_stats(std::ofstream& fout, int trick, int hand) const override;
+    void print_all_suit_stats(std::ofstream& fout) const override;
+    void print_summary_suit_stats(std::ofstream& fout) const override;
+    void print_entries_dist(std::ofstream& fout, int trick, int hand, const int hand_dist[]) const override;
+    void print_entries_dist_and_cards(std::ofstream& fout, int trick, int hand, const unsigned short aggr_target[], const int hand_dist[]) const override;
+    void print_entries(std::ofstream& fout, int trick, int hand) const override;
+    void print_all_entries(std::ofstream& fout) const override;
+    void print_entry_stats(std::ofstream& fout, int trick, int hand) const override;
+    void print_all_entry_stats(std::ofstream& fout) const override;
+    void print_summary_entry_stats(std::ofstream& fout) const override;
 };
 
 #endif

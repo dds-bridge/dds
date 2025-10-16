@@ -185,13 +185,13 @@ TransTableL::TransTableL()
  */
 TransTableL::~TransTableL()
 {
-  TransTableL::ReturnAllMemory();
+  return_all_memory();
 }
 
 // SetConstants removed; constants are produced by TTLowestRankTable/MaskBytesTable.
 
 
-void TransTableL::Init(const int handLookup[][15])
+void TransTableL::init(const int handLookup[][15])
 {
   // This is very similar to SetConstants, except that it
   // happens with actual cards. It also makes sense to
@@ -252,7 +252,7 @@ void TransTableL::Init(const int handLookup[][15])
 }
 
 
-void TransTableL::SetMemoryDefault(int megabytes)
+void TransTableL::set_memory_default(int megabytes)
 {
   double blockMem = BLOCKS_PER_PAGE * sizeof(winBlockType) /
                     static_cast<double>(1024.);
@@ -261,7 +261,7 @@ void TransTableL::SetMemoryDefault(int megabytes)
 }
 
 
-void TransTableL::SetMemoryMaximum(int megabytes)
+void TransTableL::set_memory_maximum(int megabytes)
 {
   double blockMem = BLOCKS_PER_PAGE * sizeof(winBlockType) /
                     static_cast<double>(1024.);
@@ -276,7 +276,7 @@ void TransTableL::SetMemoryMaximum(int megabytes)
 //                                                         //
 /////////////////////////////////////////////////////////////
 
-void TransTableL::MakeTT()
+void TransTableL::make_tt()
 {
   if (! TTInUse)
   {
@@ -336,7 +336,7 @@ void TransTableL::ReleaseTT()
 }
 
 
-void TransTableL::ResetMemory([[maybe_unused]] const ResetReason reason)
+void TransTableL::reset_memory([[maybe_unused]] const ResetReason reason)
 {
   if (poolp == nullptr)
     return;
@@ -375,7 +375,7 @@ void TransTableL::ResetMemory([[maybe_unused]] const ResetReason reason)
 }
 
 
-void TransTableL::ReturnAllMemory()
+void TransTableL::return_all_memory()
 {
   poolType * tmp;
 
@@ -423,7 +423,7 @@ int TransTableL::BlocksInUse() const
 }
 
 
-double TransTableL::MemoryInUse() const
+double TransTableL::memory_in_use() const
 {
   int blockMem = BLOCKS_PER_PAGE * pagesCurrent *
                  static_cast<int>(sizeof(winBlockType));
@@ -484,7 +484,7 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
     {
       if (! TransTableL::Harvest())
       {
-        TransTableL::ResetMemory(ResetReason::Unknown);
+        TransTableL::reset_memory(ResetReason::Unknown);
         poolp->nextBlockNo++;
         return nextBlockp++;
       }
@@ -510,7 +510,7 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
       // Have to try to reclaim memory.
       if (! TransTableL::Harvest())
       {
-        TransTableL::ResetMemory(ResetReason::Unknown);
+        TransTableL::reset_memory(ResetReason::Unknown);
         poolp->nextBlockNo++;
         return nextBlockp++;
       }
@@ -531,7 +531,7 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
         // and start over.
         if (! TransTableL::Harvest())
         {
-          TransTableL::ResetMemory(ResetReason::Unknown);
+          TransTableL::reset_memory(ResetReason::Unknown);
           poolp->nextBlockNo++;
           return nextBlockp++;
         }
@@ -548,7 +548,7 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
       {
         if (! TransTableL::Harvest())
         {
-          TransTableL::ResetMemory(ResetReason::Unknown);
+          TransTableL::reset_memory(ResetReason::Unknown);
           poolp->nextBlockNo++;
           return nextBlockp++;
         }
@@ -677,7 +677,7 @@ int TransTableL::hash8(const int handDist[]) const
 }
 
 
-NodeCards * TransTableL::Lookup(
+NodeCards const * TransTableL::lookup(
   const int tricks,
   const int hand,
   const unsigned short aggrTarget[],
@@ -918,7 +918,7 @@ void TransTableL::CreateOrUpdate(
 }
 
 
-void TransTableL::Add(
+void TransTableL::add(
   const int tricks,
   const int hand,
   const unsigned short aggrTarget[],
@@ -1157,7 +1157,7 @@ string TransTableL::LenToStr(
 }
 
 
-void TransTableL::PrintSuits(
+void TransTableL::print_suits(
   ofstream& fout,
   const int trick,
   const int hand) const
@@ -1197,7 +1197,7 @@ void TransTableL::PrintSuits(
 }
 
 
-void TransTableL::PrintAllSuits(ofstream& fout) const
+void TransTableL::print_all_suits(ofstream& fout) const
 {
   for (int trick = 11; trick >= 1; trick--)
   {
@@ -1207,7 +1207,7 @@ void TransTableL::PrintAllSuits(ofstream& fout) const
         Players()[static_cast<unsigned>(hand)] << "\n";
       fout << string(20, '=') << "\n\n";
 
-      TransTableL::PrintSuits(fout, trick, hand);
+      TransTableL::print_suits(fout, trick, hand);
     }
   }
 }
@@ -1353,7 +1353,7 @@ void TransTableL::UpdateSuitHist(
 }
 
 
-void TransTableL::PrintSuitStats(
+void TransTableL::print_suit_stats(
   ofstream& fout,
   const int trick,
   const int hand) const
@@ -1369,7 +1369,7 @@ void TransTableL::PrintSuitStats(
 }
 
 
-void TransTableL::PrintAllSuitStats(ofstream& fout) const
+void TransTableL::print_all_suit_stats(ofstream& fout) const
 {
   int num_wraps;
   int suitWraps = 0;
@@ -1399,7 +1399,7 @@ void TransTableL::PrintAllSuitStats(ofstream& fout) const
 }
 
 
-void TransTableL::PrintSummarySuitStats(ofstream& fout) const
+void TransTableL::print_summary_suit_stats(ofstream& fout) const
 {
   int hist[DISTS_PER_ENTRY+1];
   int count, prod_sum, prod_sumsq, max_len, num_wraps;
@@ -1513,7 +1513,7 @@ void TransTableL::PrintEntriesBlock(
 
 
 
-void TransTableL::PrintEntriesDistAndCards(
+void TransTableL::print_entries_dist_and_cards(
   ofstream& fout,
   const int trick,
   const int hand,
@@ -1581,7 +1581,7 @@ void TransTableL::PrintEntriesDistAndCards(
 }
 
 
-void TransTableL::PrintEntriesDist(
+void TransTableL::print_entries_dist(
   ofstream& fout,
   const int trick,
   const int hand,
@@ -1606,7 +1606,7 @@ void TransTableL::PrintEntriesDist(
 }
 
 
-void TransTableL::PrintEntries(
+void TransTableL::print_entries(
   ofstream& fout,
   const int trick,
   const int hand) const
@@ -1631,7 +1631,7 @@ void TransTableL::PrintEntries(
 }
 
 
-void TransTableL::PrintAllEntries(ofstream& fout) const
+void TransTableL::print_all_entries(ofstream& fout) const
 {
   for (int trick = 11; trick >= 1; trick--)
   {
@@ -1641,7 +1641,7 @@ void TransTableL::PrintAllEntries(ofstream& fout) const
         ", hand " + Players()[static_cast<unsigned>(hand)];
       fout << st << "\n";
       fout << string(st.size(), '=') << "\n\n";
-      TransTableL::PrintEntries(fout, trick, hand);
+      TransTableL::print_entries(fout, trick, hand);
     }
   }
   fout << "\n";
@@ -1708,7 +1708,7 @@ void TransTableL::UpdateEntryHist(
 }
 
 
-void TransTableL::PrintEntryStats(
+void TransTableL::print_entry_stats(
   ofstream& fout,
   const int trick,
   const int hand) const
@@ -1724,7 +1724,7 @@ void TransTableL::PrintEntryStats(
 }
 
 
-void TransTableL::PrintAllEntryStats(ofstream& fout) const
+void TransTableL::print_all_entry_stats(ofstream& fout) const
 {
   int hist[BLOCKS_PER_ENTRY+1];
   int num_wraps;
@@ -1777,7 +1777,7 @@ int TransTableL::EffectOfBlockBound(
 }
 
 
-void TransTableL::PrintSummaryEntryStats(ofstream& fout) const
+void TransTableL::print_summary_entry_stats(ofstream& fout) const
 {
   int hist[BLOCKS_PER_ENTRY + 1];
   int count, prod_sum, prod_sumsq, max_len, num_wraps;
