@@ -28,7 +28,7 @@ protected:
         unsigned short aggrTarget[DDS_SUITS],
         int handDist[DDS_HANDS],
         unsigned short winRanks[DDS_SUITS],
-        nodeCardsType& nodeData
+    NodeCards& nodeData
     );
     
     // Helper to verify memory usage patterns
@@ -94,13 +94,13 @@ private:
 // Position comparison utilities
 class PositionComparator {
 public:
-    // Compare two nodeCardsType structures
-    static bool AreEqual(const nodeCardsType& a, const nodeCardsType& b);
+    // Compare two NodeCards structures
+    static bool AreEqual(const NodeCards& a, const NodeCards& b);
     
     // Compare bounds with tolerance
     static bool BoundsAreEquivalent(
-        const nodeCardsType& a, 
-        const nodeCardsType& b,
+    const NodeCards& a, 
+    const NodeCards& b,
         int tolerance = 0
     );
     
@@ -112,7 +112,7 @@ public:
     );
     
     // Helper to print position data for debugging
-    static std::string PositionToString(const nodeCardsType& node);
+    static std::string PositionToString(const NodeCards& node);
     static std::string RanksToString(const unsigned short ranks[DDS_SUITS]);
 };
 
@@ -129,7 +129,7 @@ public:
     static bool IsValidWinRanks(const unsigned short winRanks[DDS_SUITS]);
     
     // Validate node data is reasonable
-    static bool IsValidNodeData(const nodeCardsType& node);
+    static bool IsValidNodeData(const NodeCards& node);
     
     // Check if trick/hand parameters are in valid range
     static bool IsValidTrickHand(int trick, int hand);

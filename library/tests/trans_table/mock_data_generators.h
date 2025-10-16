@@ -69,7 +69,7 @@ public:
     void GenerateComplexAggrTarget(unsigned short aggrTarget[DDS_SUITS]);
     
     // Generate node card data
-    void GenerateNodeCardsType(nodeCardsType& node, int tricksRemaining);
+    void GenerateNodeCardsType(NodeCards& node, int tricksRemaining);
     
     // Generate realistic game sequences
     struct GameSequence {
@@ -156,7 +156,7 @@ public:
         unsigned short aggrTarget[DDS_SUITS];
         int handDist[DDS_HANDS];
         unsigned short winRanks[DDS_SUITS];
-        nodeCardsType nodeData;
+    NodeCards nodeData;
         int handLookup[DDS_HANDS][15];
     };
     

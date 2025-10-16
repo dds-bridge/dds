@@ -327,7 +327,7 @@ void SetDealTables(
 
   {
     SolverContext ctx{thrp};
-    ctx.transTable()->Init(handLookup);
+    ctx.transTable()->init(handLookup);
   }
 
   relRanksType * relp;

@@ -28,13 +28,13 @@ string PrintDeal(
 
 string RankToDiagrams(
   const unsigned short ranks[DDS_HANDS][DDS_SUITS],
-  const nodeCardsType& node);
+  const NodeCards& node);
 
 string WinnersToText(const unsigned short winRanks[]);
 
-string NodeToText(const nodeCardsType& node);
+string NodeToText(const NodeCards& node);
 
-string FullNodeToText(const nodeCardsType& node);
+string FullNodeToText(const NodeCards& node);
 
 string PosToText(
   const pos& tpos,
@@ -121,7 +121,7 @@ string PrintDeal(
 
 string RankToDiagrams(
   const unsigned short ranks[DDS_HANDS][DDS_SUITS],
-  const nodeCardsType& node)
+  const NodeCards& node)
 {
   stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)
@@ -166,7 +166,7 @@ string WinnersToText(const unsigned short ourWinRanks[])
 }
 
 
-string NodeToText(const nodeCardsType& node)
+string NodeToText(const NodeCards& node)
 {
   stringstream ss;
   ss << setw(16) << left << "Address" << 
@@ -184,7 +184,7 @@ string NodeToText(const nodeCardsType& node)
 }
 
 
-string FullNodeToText(const nodeCardsType& node)
+string FullNodeToText(const NodeCards& node)
 
 {
   stringstream ss;
@@ -320,7 +320,7 @@ int DumpInput(
 void DumpRetrieved(
   ofstream& fout,
   const pos& tpos,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth)
 {
@@ -336,7 +336,7 @@ void DumpStored(
   ofstream& fout,
   const pos& tpos,
   const Moves& moves,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth)
 {
@@ -352,7 +352,7 @@ void DumpStored(
   ofstream& fout,
   const pos& tpos,
   SolverContext& ctx,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth)
 {

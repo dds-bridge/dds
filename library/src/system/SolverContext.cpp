@@ -90,9 +90,9 @@ TransTable* SolverContext::transTable() const
       }
     }
 
-    created->SetMemoryDefault(defMB);
-    created->SetMemoryMaximum(maxMB);
-  created->MakeTT();
+    created->set_memory_default(defMB);
+    created->set_memory_maximum(maxMB);
+    created->make_tt();
 
 #ifdef DDS_UTILITIES_LOG
     // Append a tiny debug entry indicating TT creation and chosen kind/sizes.
@@ -233,7 +233,7 @@ void SolverContext::ResetForSolve() const
     a->reset();
   }
   if (auto* tt = maybeTransTable())
-    tt->ResetMemory(TT_RESET_FREE_MEMORY);
+    tt->reset_memory(ResetReason::FreeMemory);
   if (!thr_) return;
   // Reset a subset of search state to a clean slate.
   thr_->nodes = 0;
@@ -263,7 +263,7 @@ void SolverContext::ClearTT() const
   utilities().logAppend("tt:clear");
 #endif
   if (auto* tt = maybeTransTable())
-    tt->ReturnAllMemory();
+    tt->return_all_memory();
 }
 
 void SolverContext::ResizeTT(int defMB, int maxMB) const
@@ -278,8 +278,8 @@ void SolverContext::ResizeTT(int defMB, int maxMB) const
   if (auto* tt = maybeTransTable())
   {
     if (maxMB < defMB) maxMB = defMB;
-    tt->SetMemoryDefault(defMB);
-    tt->SetMemoryMaximum(maxMB);
+  tt->set_memory_default(defMB);
+  tt->set_memory_maximum(maxMB);
   }
 }
 
@@ -297,7 +297,7 @@ void SolverContext::ResetBestMovesLite() const
   }
   // Keep memUsed in sync as the legacy code did
   if (auto* tt = maybeTransTable())
-    thr_->memUsed = tt->MemoryInUse() + ThreadMemoryUsed();
+    thr_->memUsed = tt->memory_in_use() + ThreadMemoryUsed();
   else
     thr_->memUsed = ThreadMemoryUsed();
 #ifdef DDS_AB_STATS

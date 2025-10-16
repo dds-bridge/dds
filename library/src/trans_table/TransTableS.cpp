@@ -108,13 +108,13 @@ void TransTableS::Init(const int handLookup[][15])
     }
   }
 
-  resetText.resize(TT_RESET_SIZE);
-  resetText[TT_RESET_UNKNOWN] = "Unknown reason";
-  resetText[TT_RESET_TOO_MANY_NODES] = "Too many nodes";
-  resetText[TT_RESET_NEW_DEAL] = "New deal";
-  resetText[TT_RESET_NEW_TRUMP] = "New trump";
-  resetText[TT_RESET_MEMORY_EXHAUSTED] = "Memory exhausted";
-  resetText[TT_RESET_FREE_MEMORY] = "Free thread memory";
+  resetText.resize(kResetReasonCount);
+  resetText[static_cast<int>(ResetReason::Unknown)] = "Unknown reason";
+  resetText[static_cast<int>(ResetReason::TooManyNodes)] = "Too many nodes";
+  resetText[static_cast<int>(ResetReason::NewDeal)] = "New deal";
+  resetText[static_cast<int>(ResetReason::NewTrump)] = "New trump";
+  resetText[static_cast<int>(ResetReason::MemoryExhausted)] = "Memory exhausted";
+  resetText[static_cast<int>(ResetReason::FreeMemory)] = "Free thread memory";
 
   return;
 }
@@ -139,10 +139,10 @@ void TransTableS::MakeTT()
     TTInUse = 1;
 
   summem = (1ULL * (WINIT + 1) * sizeof(winCardType)) +
-       (1ULL * (NINIT + 1) * sizeof(nodeCardsType)) +
+    (1ULL * (NINIT + 1) * sizeof(NodeCards)) +
        (1ULL * (LSIZE + 1) * 52 * sizeof(posSearchTypeSmall));
   wmem = static_cast<int>(1ULL * (WSIZE + 1) * sizeof(winCardType));
-  nmem = static_cast<int>(1ULL * (NSIZE + 1) * sizeof(nodeCardsType));
+  nmem = static_cast<int>(1ULL * (NSIZE + 1) * sizeof(NodeCards));
 
     // Compute how many additional slabs we could potentially allocate.
     // Guard against negative values if maxmem < summem (which can happen
@@ -176,7 +176,7 @@ void TransTableS::MakeTT()
     if (pw == NULL)
       exit(1);
 
-    pn = static_cast<nodeCardsType **>(calloc(static_cast<unsigned int>(maxIndex + 1), sizeof(nodeCardsType *)));
+  pn = static_cast<NodeCards **>(calloc(static_cast<unsigned int>(maxIndex + 1), sizeof(NodeCards *)));
     if (pn == NULL)
       exit(1);
 
@@ -194,7 +194,7 @@ void TransTableS::MakeTT()
     if (pw[0] == NULL)
       exit(1);
 
-    pn[0] = static_cast<nodeCardsType *>(calloc(NINIT + 1, sizeof(nodeCardsType)));
+  pn[0] = static_cast<NodeCards *>(calloc(NINIT + 1, sizeof(NodeCards)));
     if (pn[0] == NULL)
       exit(1);
 
@@ -267,7 +267,7 @@ void TransTableS::InitTT()
   winSetSizeLimit = WINIT;
   nodeSetSizeLimit = NINIT;
   allocmem = (WINIT + 1) * sizeof(winCardType);
-  allocmem += 1ULL * (NINIT + 1) * sizeof(nodeCardsType);
+  allocmem += 1ULL * (NINIT + 1) * sizeof(NodeCards);
   allocmem += 1ULL * (LSIZE + 1) * 52 * sizeof(posSearchTypeSmall);
   winCards = pw[0];
   nodeCards = pn[0];
@@ -300,7 +300,7 @@ void TransTableS::InitTT()
 }
 
 
-void TransTableS::ResetMemory([[maybe_unused]] const TTresetReason reason)
+void TransTableS::ResetMemory([[maybe_unused]] const ResetReason reason)
 {
   Wipe();
 
@@ -322,7 +322,7 @@ void TransTableS::ResetMemory([[maybe_unused]] const TTresetReason reason)
 
 #if defined(DDS_TT_STATS)
   statsResets.noOfResets++;
-  statsResets.aggrResets[reason]++;
+  statsResets.aggrResets[static_cast<int>(reason)]++;
 #endif
 
   return;
@@ -379,7 +379,7 @@ double TransTableS::MemoryInUse() const
 }
 
 
-nodeCardsType const * TransTableS::Lookup(
+NodeCards const * TransTableS::Lookup(
   const int trick,
   const int hand,
   const unsigned short aggrTarget[],
@@ -390,7 +390,7 @@ nodeCardsType const * TransTableS::Lookup(
   bool res;
   posSearchTypeSmall * pp;
   int orderSet[DDS_SUITS];
-  nodeCardsType const * cardsP;
+  NodeCards const * cardsP;
 
   suitLengths[trick] =
     (static_cast<long long>(handDist[0]) << 36) |
@@ -433,14 +433,14 @@ void TransTableS::Add(
   const int hand,
   const unsigned short aggrTarget[],
   const unsigned short ourWinRanks[],
-  const nodeCardsType& first,
+  const NodeCards& first,
   const bool flag)
 {
   BuildSOP(ourWinRanks, aggrTarget, first, suitLengths[tricks],
            tricks, hand, flag);
 
   if (clearTTflag)
-    ResetMemory(TT_RESET_MEMORY_EXHAUSTED);
+    ResetMemory(ResetReason::MemoryExhausted);
 
   return;
 }
@@ -507,14 +507,14 @@ void TransTableS::AddNodeSet()
       ncount++;
       nodeSetSizeLimit = NSIZE;
       pn[ncount] =
-        static_cast<nodeCardsType *>(malloc((NSIZE + 1) * sizeof(nodeCardsType)));
+  static_cast<NodeCards *>(malloc((NSIZE + 1) * sizeof(NodeCards)));
       if (pn[ncount] == NULL)
       {
         clearTTflag = true;
       }
       else
       {
-        allocmem += (NSIZE + 1) * sizeof(nodeCardsType);
+  allocmem += (NSIZE + 1) * sizeof(NodeCards);
         nodeSetSize = 0;
         nodeCards = pn[ncount];
       }
@@ -576,7 +576,7 @@ void TransTableS::AddLenSet(
 void TransTableS::BuildSOP(
   const unsigned short ourWinRanks[DDS_SUITS],
   const unsigned short aggrArg[DDS_SUITS],
-  const nodeCardsType& first,
+  const NodeCards& first,
   const long long lengths,
   const int tricks,
   const int firstHand,
@@ -611,7 +611,7 @@ void TransTableS::BuildSOP(
   posSearchTypeSmall * np = SearchLenAndInsert(
     rootnp[tricks][firstHand], lengths, true, tricks, firstHand, res);
 
-  nodeCardsType * cardsP = BuildPath(
+  NodeCards * cardsP = BuildPath(
     winMask, 
     winOrderSet,
     static_cast<int>(first.ubound), 
@@ -643,7 +643,7 @@ void TransTableS::BuildSOP(
 }
 
 
-nodeCardsType * TransTableS::BuildPath(
+NodeCards * TransTableS::BuildPath(
   const int winMask[],
   const int winOrderSet[],
   const int ubound,
@@ -659,7 +659,7 @@ nodeCardsType * TransTableS::BuildPath(
 
   bool found;
   winCardType * np, *p2, *nprev;
-  nodeCardsType *p;
+  NodeCards *p;
 
   np = nodep->posSearchPoint;
   nprev = NULL;
@@ -869,12 +869,12 @@ TransTableS::posSearchTypeSmall * TransTableS::SearchLenAndInsert(
 }
 
 
-nodeCardsType * TransTableS::UpdateSOP(
+NodeCards * TransTableS::UpdateSOP(
   int ubound,
   int lbound,
   char bestMoveSuit,
   char bestMoveRank,
-  nodeCardsType * nodep)
+  NodeCards * nodep)
 {
   /* Update SOP node with new values for upper and lower
   bounds. */
@@ -890,7 +890,7 @@ nodeCardsType * TransTableS::UpdateSOP(
 }
 
 
-nodeCardsType const * TransTableS::FindSOP(
+NodeCards const * TransTableS::FindSOP(
   const int orderSet[],
   const int limit,
   winCardType * nodeP,
@@ -961,7 +961,7 @@ void TransTableS::PrintResetStats(ofstream& fout) const
   fout << setw(18) << left << "Reason" << 
     setw(6) << right << "Count" << "\n";
 
-  for (unsigned k = 0; k < TT_RESET_SIZE; k++)
+  for (unsigned k = 0; k < kResetReasonCount; k++)
     fout << setw(18) << left << resetText[k] <<
       setw(6) << right << statsResets.aggrResets[k] << "\n";
 }

@@ -206,13 +206,13 @@ int SolveBoardInternal(
          newTrump ||
          (ctx.search().nodes() > SIMILARMAXWINNODES)))
     {
-      TTresetReason reason = TT_RESET_UNKNOWN;
-      if (ctx.search().nodes() > SIMILARMAXWINNODES)
-        reason = TT_RESET_TOO_MANY_NODES;
-      else if (newDeal && ! similarDeal)
-        reason = TT_RESET_NEW_DEAL;
-      else if (newTrump)
-        reason = TT_RESET_NEW_TRUMP;
+        ResetReason reason = ResetReason::Unknown;
+        if (ctx.search().nodes() > SIMILARMAXWINNODES)
+          reason = ResetReason::TooManyNodes;
+        else if (newDeal && ! similarDeal)
+          reason = ResetReason::NewDeal;
+        else if (newTrump)
+          reason = ResetReason::NewTrump;
       
   ctx.transTable()->reset_memory(static_cast<ResetReason>(static_cast<int>(reason)));
     }

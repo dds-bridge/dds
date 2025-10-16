@@ -4,14 +4,7 @@
 // Include DDS types first
 #include "dds/dll.h"
 
-// Try including the TransTable headers - they should be available through testable_trans_table
-// Use extern "C++" to avoid any linkage issues
-extern "C++" {
-// Forward declare types that should be available
-struct nodeCardsType;
-class TransTable;
-class TransTableL;
-}
+// No TransTable dependencies needed in this file; remove legacy forward declarations.
 
 namespace dds_test {
 

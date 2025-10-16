@@ -56,7 +56,7 @@ class TransTableS: public TransTable
     struct statsResetsType
     {
       int noOfResets;
-      int aggrResets[TT_RESET_SIZE];
+      int aggrResets[kResetReasonCount];
     };
 
 
@@ -80,9 +80,9 @@ class TransTableS: public TransTable
 
     posSearchTypeSmall * rootnp[14][DDS_HANDS];
     winCardType ** pw;
-  nodeCardsType ** pn;
+  NodeCards ** pn;
     posSearchTypeSmall ** pl[14][DDS_HANDS];
-  nodeCardsType * nodeCards;
+  NodeCards * nodeCards;
     winCardType * winCards;
     posSearchTypeSmall * posSearch[14][DDS_HANDS];
     int nodeSetSize; /* Index with range 0 to nodeSetSizeLimit */
@@ -161,10 +161,10 @@ class TransTableS: public TransTable
     void SetMemoryDefault(const int megabytes);
     void SetMemoryMaximum(const int megabytes);
     void MakeTT();
-    void ResetMemory(const TTresetReason reason);
+  void ResetMemory(const ResetReason reason);
     void ReturnAllMemory();
     double MemoryInUse() const;
-    nodeCardsType const * Lookup(
+    NodeCards const * Lookup(
       const int trick,
       const int hand,
       const unsigned short aggrTarget[],
@@ -176,7 +176,7 @@ class TransTableS: public TransTable
       const int hand,
       const unsigned short aggrTarget[],
       const unsigned short winRanksArg[],
-      const nodeCardsType& first,
+  const NodeCards& first,
       const bool flag);
 
     // Modern overrides implemented as inline wrappers
@@ -184,7 +184,7 @@ class TransTableS: public TransTable
     void set_memory_default(int megabytes) override { SetMemoryDefault(megabytes); }
     void set_memory_maximum(int megabytes) override { SetMemoryMaximum(megabytes); }
     void make_tt() override { MakeTT(); }
-    void reset_memory(ResetReason reason) override { ResetMemory(static_cast<TTresetReason>(static_cast<int>(reason))); }
+  void reset_memory(ResetReason reason) override { ResetMemory(reason); }
     void return_all_memory() override { ReturnAllMemory(); }
     auto memory_in_use() const -> double override { return MemoryInUse(); }
     auto lookup(
@@ -198,8 +198,8 @@ class TransTableS: public TransTable
       int trick,
       int hand,
       const unsigned short aggr_target[],
-      const unsigned short win_ranks_arg[],
-      const NodeCards& first,
+  const unsigned short win_ranks_arg[],
+  const NodeCards& first,
       bool flag) override { Add(trick, hand, aggr_target, win_ranks_arg, first, flag); }
 
     // The small TT does not provide verbose dumping; implement no-op printers

@@ -336,7 +336,7 @@ void TransTableL::ReleaseTT()
 }
 
 
-void TransTableL::ResetMemory([[maybe_unused]] const TTresetReason reason)
+void TransTableL::ResetMemory([[maybe_unused]] const ResetReason reason)
 {
   if (poolp == nullptr)
     return;
@@ -484,7 +484,7 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
     {
       if (! TransTableL::Harvest())
       {
-        TransTableL::ResetMemory(TT_RESET_UNKNOWN);
+        TransTableL::ResetMemory(ResetReason::Unknown);
         poolp->nextBlockNo++;
         return nextBlockp++;
       }
@@ -510,7 +510,7 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
       // Have to try to reclaim memory.
       if (! TransTableL::Harvest())
       {
-        TransTableL::ResetMemory(TT_RESET_UNKNOWN);
+        TransTableL::ResetMemory(ResetReason::Unknown);
         poolp->nextBlockNo++;
         return nextBlockp++;
       }
@@ -531,7 +531,7 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
         // and start over.
         if (! TransTableL::Harvest())
         {
-          TransTableL::ResetMemory(TT_RESET_UNKNOWN);
+          TransTableL::ResetMemory(ResetReason::Unknown);
           poolp->nextBlockNo++;
           return nextBlockp++;
         }
@@ -548,7 +548,7 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
       {
         if (! TransTableL::Harvest())
         {
-          TransTableL::ResetMemory(TT_RESET_UNKNOWN);
+          TransTableL::ResetMemory(ResetReason::Unknown);
           poolp->nextBlockNo++;
           return nextBlockp++;
         }
@@ -677,7 +677,7 @@ int TransTableL::hash8(const int handDist[]) const
 }
 
 
-nodeCardsType * TransTableL::Lookup(
+NodeCards * TransTableL::Lookup(
   const int tricks,
   const int hand,
   const unsigned short aggrTarget[],
@@ -782,7 +782,7 @@ TransTableL::winBlockType * TransTableL::LookupSuit(
 }
 
 
-nodeCardsType * TransTableL::LookupCards(
+NodeCards * TransTableL::LookupCards(
   const winMatchType& search,
   winBlockType * bp,
   const int limit,
@@ -812,7 +812,7 @@ nodeCardsType * TransTableL::LookupCards(
     }
 
     // Check bounds.
-    nodeCardsType * nodep = &wp->first;
+    NodeCards * nodep = &wp->first;
     if (nodep->lbound > limit)
     {
       bp->timestampRead = ++timestamp;
@@ -847,7 +847,7 @@ nodeCardsType * TransTableL::LookupCards(
       }
     }
 
-    nodeCardsType * nodep = &wp->first;
+    NodeCards * nodep = &wp->first;
     if (nodep->lbound > limit)
     {
       lowerFlag = true;
@@ -887,7 +887,7 @@ void TransTableL::CreateOrUpdate(
     if (wp->topSet2 != search.topSet2 ) continue;
     if (wp->topSet3 != search.topSet3 ) continue;
 
-    nodeCardsType& node = wp->first;
+    NodeCards& node = wp->first;
     if (search.first.lbound > node.lbound)
       node.lbound = search.first.lbound;
     if (search.first.ubound < node.ubound)
@@ -923,7 +923,7 @@ void TransTableL::Add(
   const int hand,
   const unsigned short aggrTarget[],
   const unsigned short ourWinRanks[],
-  const nodeCardsType& first,
+  const NodeCards& first,
   const bool flag)
 {
   if (lastBlockSeen[tricks][hand] == nullptr)
@@ -1026,7 +1026,7 @@ void TransTableL::PrintMatch(
 
 void TransTableL::PrintNodeValues(
   ofstream& fout,
-  const nodeCardsType& np) const
+  const NodeCards& np) const
 {
   fout << setw(16) << left << "Lowest used" <<
     cardSuit[0] << cardRank[15-static_cast<int>(np.leastWin[0])] << ", " <<

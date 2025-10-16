@@ -34,7 +34,7 @@ void TransTableTestBase::CreateTestPositionData(
     unsigned short aggrTarget[DDS_SUITS],
     int handDist[DDS_HANDS],
     unsigned short winRanks[DDS_SUITS],
-    nodeCardsType& nodeData) {
+    NodeCards& nodeData) {
     
     // Create simple test position data
     for (int suit = 0; suit < DDS_SUITS; suit++) {
@@ -58,14 +58,14 @@ void TransTableTestBase::CreateTestPositionData(
 }
 
 double TransTableTestBase::GetInitialMemoryUsage(TransTable* table) {
-    return table ? table->MemoryInUse() : 0.0;
+    return table ? table->memory_in_use() : 0.0;
 }
 
 // MemoryTracker implementation
 MemoryTracker::MemoryTracker(TransTable* table) 
     : table_(table), initialUsage_(0.0), peakUsage_(0.0) {
     if (table_) {
-        initialUsage_ = table_->MemoryInUse();
+        initialUsage_ = table_->memory_in_use();
         peakUsage_ = initialUsage_;
     }
 }
@@ -75,12 +75,12 @@ MemoryTracker::~MemoryTracker() {
 }
 
 double MemoryTracker::GetCurrentUsage() const {
-    return table_ ? table_->MemoryInUse() : 0.0;
+    return table_ ? table_->memory_in_use() : 0.0;
 }
 
 void MemoryTracker::UpdatePeak() {
     if (table_) {
-        double current = table_->MemoryInUse();
+        double current = table_->memory_in_use();
         if (current > peakUsage_) {
             peakUsage_ = current;
         }
@@ -177,7 +177,7 @@ void PerformanceTimer::PrintResults() const {
 }
 
 // PositionComparator implementation
-bool PositionComparator::AreEqual(const nodeCardsType& a, const nodeCardsType& b) {
+bool PositionComparator::AreEqual(const NodeCards& a, const NodeCards& b) {
     if (a.ubound != b.ubound || a.lbound != b.lbound) {
         return false;
     }
@@ -196,8 +196,8 @@ bool PositionComparator::AreEqual(const nodeCardsType& a, const nodeCardsType& b
 }
 
 bool PositionComparator::BoundsAreEquivalent(
-    const nodeCardsType& a, 
-    const nodeCardsType& b,
+    const NodeCards& a, 
+    const NodeCards& b,
     int tolerance) {
     
     return (abs(a.ubound - b.ubound) <= tolerance) &&
@@ -222,7 +222,7 @@ bool PositionComparator::RelativeRanksMatch(
     return true;
 }
 
-std::string PositionComparator::PositionToString(const nodeCardsType& node) {
+std::string PositionComparator::PositionToString(const NodeCards& node) {
     std::ostringstream oss;
     oss << "NodeData{ubound:" << static_cast<int>(node.ubound)
         << ", lbound:" << static_cast<int>(node.lbound)
@@ -284,7 +284,7 @@ bool TestDataValidator::IsValidWinRanks(const unsigned short winRanks[DDS_SUITS]
     return true;
 }
 
-bool TestDataValidator::IsValidNodeData(const nodeCardsType& node) {
+bool TestDataValidator::IsValidNodeData(const NodeCards& node) {
     // Check bounds are reasonable
     if (node.ubound < 0 || node.ubound > 13 ||
         node.lbound < 0 || node.lbound > 13 ||

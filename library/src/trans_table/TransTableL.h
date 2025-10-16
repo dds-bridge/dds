@@ -156,7 +156,7 @@ class TransTableL: public TransTable
       const long long key,
       bool& empty);
 
-    nodeCardsType * LookupCards(
+    NodeCards * LookupCards(
       const winMatchType& search,
       winBlockType * bp,
       const int limit,
@@ -248,7 +248,7 @@ class TransTableL: public TransTable
 
     void PrintNodeValues(
       std::ofstream& fout,
-      const nodeCardsType& np) const;
+  const NodeCards& np) const;
 
     void PrintMatch(
       std::ofstream& fout,
@@ -283,10 +283,10 @@ class TransTableL: public TransTable
     void SetMemoryDefault(int megabytes);
     void SetMemoryMaximum(int megabytes);
     void MakeTT();
-    void ResetMemory(const TTresetReason reason);
+  void ResetMemory(const ResetReason reason);
     void ReturnAllMemory();
     double MemoryInUse() const;
-    nodeCardsType * Lookup(
+    NodeCards * Lookup(
       const int trick,
       const int hand,
       const unsigned short aggrTarget[],
@@ -297,8 +297,8 @@ class TransTableL: public TransTable
       const int trick,
       const int hand,
       const unsigned short aggrTarget[],
-      const unsigned short winRanksArg[],
-      const nodeCardsType& first,
+  const unsigned short winRanksArg[],
+  const NodeCards& first,
       const bool flag);
     void PrintSuits(
       std::ofstream& fout,
@@ -353,7 +353,7 @@ class TransTableL: public TransTable
     void set_memory_default(int megabytes) override { SetMemoryDefault(megabytes); }
     void set_memory_maximum(int megabytes) override { SetMemoryMaximum(megabytes); }
     void make_tt() override { MakeTT(); }
-    void reset_memory(ResetReason reason) override { ResetMemory(static_cast<TTresetReason>(static_cast<int>(reason))); }
+  void reset_memory(ResetReason reason) override { ResetMemory(reason); }
     void return_all_memory() override { ReturnAllMemory(); }
     auto memory_in_use() const -> double override { return MemoryInUse(); }
     auto lookup(

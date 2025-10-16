@@ -185,7 +185,7 @@ void MockPositionGenerator::GenerateComplexAggrTarget(unsigned short aggrTarget[
     }
 }
 
-void MockPositionGenerator::GenerateNodeCardsType(nodeCardsType& node, int tricksRemaining) {
+void MockPositionGenerator::GenerateNodeCardsType(NodeCards& node, int tricksRemaining) {
     node.ubound = static_cast<char>(tricksRemaining);
     node.lbound = static_cast<char>(std::max(0, tricksRemaining - 3));
     node.bestMoveSuit = static_cast<char>(std::uniform_int_distribution<int>(0, DDS_SUITS - 1)(generator_));

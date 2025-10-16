@@ -97,7 +97,7 @@ public:
   void DisposeTransTable() const;
 
   // Lightweight facades used by tests and call sites; no-ops if no TT exists.
-  void ResetForSolve() const;   // Calls ResetMemory(TT_RESET_FREE_MEMORY)
+  void ResetForSolve() const;   // Calls reset_memory(ResetReason::FreeMemory)
   // Lightweight per-iteration reset matching legacy ResetBestMoves semantics.
   // Only clears bestMove[*].rank and bestMoveTT[*].rank, updates memUsed and ABStats.
   void ResetBestMovesLite() const;

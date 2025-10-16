@@ -217,7 +217,7 @@ static bool ABsearch0_ctx(
 
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
-    nodeCardsType const * cardsP =
+  NodeCards const * cardsP =
       ctx.transTable()->lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
         limit, lowerFlag);
@@ -327,7 +327,7 @@ static bool ABsearch0_ctx(
 
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
-    nodeCardsType const * cardsP =
+  NodeCards const * cardsP =
       ctx.transTable()->lookup(
         tricks, hand, posPoint->aggr, posPoint->handDist,
         limit, lowerFlag);
@@ -421,7 +421,7 @@ static bool ABsearch0_ctx(
   }
 
 ABexit:
-  nodeCardsType first;
+  NodeCards first;
   if (value)
   {
     if (ctx.search().nodeTypeStore(0) == MAXNODE)
