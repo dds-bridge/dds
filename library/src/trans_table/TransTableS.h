@@ -33,7 +33,7 @@ class TransTableS: public TransTable
     {
       int orderSet;
       int winMask;
-      nodeCardsType * first;
+      NodeCards * first;
       winCardType * prevWin;
       winCardType * nextWin;
       winCardType * next;
@@ -111,10 +111,10 @@ class TransTableS: public TransTable
       const int firstHand);
 
     void BuildSOP(
-      const unsigned short ourWinRanks[DDS_SUITS],
-      const unsigned short aggr[DDS_SUITS],
-      const NodeCards& first,
-      const long long suitLengths,
+  const unsigned short ourWinRanks[DDS_SUITS],
+  const unsigned short aggr[DDS_SUITS],
+  const NodeCards& first,
+  const long long suitLengths,
       const int tricks,
       const int firstHand,
       const bool flag);
@@ -156,35 +156,69 @@ class TransTableS: public TransTable
 
     ~TransTableS();
 
-    void Init(const int handLookup[][15]) override;
-
-    void SetMemoryDefault(const int megabytes) override;
-
-    void SetMemoryMaximum(const int megabytes) override;
-
-    void MakeTT() override;
-
-    void ResetMemory(const TTresetReason reason) override;
-
-    void ReturnAllMemory() override;
-
-    double MemoryInUse() const override;
-
+    // Legacy implementation API retained as helpers
+    void Init(const int handLookup[][15]);
+    void SetMemoryDefault(const int megabytes);
+    void SetMemoryMaximum(const int megabytes);
+    void MakeTT();
+    void ResetMemory(const TTresetReason reason);
+    void ReturnAllMemory();
+    double MemoryInUse() const;
     nodeCardsType const * Lookup(
       const int trick,
       const int hand,
       const unsigned short aggrTarget[],
       const int handDist[],
       const int limit,
-      bool& lowerFlag) override;
-
+      bool& lowerFlag);
     void Add(
       const int trick,
       const int hand,
       const unsigned short aggrTarget[],
       const unsigned short winRanksArg[],
       const nodeCardsType& first,
-      const bool flag) override;
+      const bool flag);
+
+    // Modern overrides implemented as inline wrappers
+    void init(const int hand_lookup[][15]) override { Init(hand_lookup); }
+    void set_memory_default(int megabytes) override { SetMemoryDefault(megabytes); }
+    void set_memory_maximum(int megabytes) override { SetMemoryMaximum(megabytes); }
+    void make_tt() override { MakeTT(); }
+    void reset_memory(ResetReason reason) override { ResetMemory(static_cast<TTresetReason>(static_cast<int>(reason))); }
+    void return_all_memory() override { ReturnAllMemory(); }
+    auto memory_in_use() const -> double override { return MemoryInUse(); }
+    auto lookup(
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const int hand_dist[],
+      int limit,
+      bool& lower_flag) -> NodeCards const * override { return Lookup(trick, hand, aggr_target, hand_dist, limit, lower_flag); }
+    void add(
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const unsigned short win_ranks_arg[],
+      const NodeCards& first,
+      bool flag) override { Add(trick, hand, aggr_target, win_ranks_arg, first, flag); }
+
+    // The small TT does not provide verbose dumping; implement no-op printers
+    void print_suits(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+    void print_all_suits(std::ofstream& /*fout*/) const override {}
+    void print_suit_stats(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+    void print_all_suit_stats(std::ofstream& /*fout*/) const override {}
+    void print_summary_suit_stats(std::ofstream& /*fout*/) const override {}
+    void print_entries_dist(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/, const int /*hand_dist*/[]) const override {}
+    void print_entries_dist_and_cards(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/, const unsigned short /*aggr_target*/[], const int /*hand_dist*/[]) const override {}
+    void print_entries(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+    void print_all_entries(std::ofstream& /*fout*/) const override {}
+    void print_entry_stats(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+    void print_all_entry_stats(std::ofstream& /*fout*/) const override {}
+    void print_summary_entry_stats(std::ofstream& /*fout*/) const override {}
+
+    // Bridge stats printers to existing small-TT implementations
+    void print_node_stats(std::ofstream& fout) const override { PrintNodeStats(fout); }
+    void print_reset_stats(std::ofstream& fout) const override { PrintResetStats(fout); }
 
   void PrintNodeStats(std::ofstream& fout) const;
 

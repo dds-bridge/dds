@@ -23,40 +23,40 @@ protected:
         
         ~MockTransTable() override = default;
 
-        void Init(const int handLookup[][15]) override {
+        void init(const int handLookup[][15]) override {
             initCalled = true;
         }
 
-        void SetMemoryDefault(const int megabytes) override {
+        void set_memory_default(int megabytes) override {
             defaultMemory = megabytes;
         }
 
-        void SetMemoryMaximum(const int megabytes) override {
+        void set_memory_maximum(int megabytes) override {
             maximumMemory = megabytes;
         }
 
-        void MakeTT() override {
+        void make_tt() override {
             ttMade = true;
         }
 
-        void ResetMemory(const TTresetReason reason) override {
+        void reset_memory(ResetReason reason) override {
             lastResetReason = reason;
         }
 
-        void ReturnAllMemory() override {
+        void return_all_memory() override {
             memoryReturned = true;
         }
 
-        double MemoryInUse() const override {
+        double memory_in_use() const override {
             return testMemoryUsage;
         }
 
-        nodeCardsType const * Lookup(
-            const int trick,
-            const int hand,
-            const unsigned short aggrTarget[],
-            const int handDist[],
-            const int limit,
+        NodeCards const * lookup(
+            int trick,
+            int hand,
+            const unsigned short aggr_target[],
+            const int hand_dist[],
+            int limit,
             bool& lowerFlag) override {
             
             lookupCalled = true;
@@ -67,13 +67,13 @@ protected:
             return testLookupResult;
         }
 
-        void Add(
-            const int trick,
-            const int hand,
-            const unsigned short aggrTarget[],
-            const unsigned short winRanksArg[],
-            const nodeCardsType& first,
-            const bool flag) override {
+        void add(
+            int trick,
+            int hand,
+            const unsigned short aggr_target[],
+            const unsigned short win_ranks_arg[],
+            const NodeCards& first,
+            bool flag) override {
             
             addCalled = true;
             addTrick = trick;
@@ -81,17 +81,29 @@ protected:
             addFlag = flag;
         }
 
-        void PrintSuits(
-            std::ofstream& fout,
-            const int trick,
-            const int hand) const override {
+        void print_suits(
+            std::ofstream& /*fout*/,
+            int /*trick*/,
+            int /*hand*/) const override {
             
             printSuitsCalled = true;
         }
 
-        void PrintAllSuits(std::ofstream& fout) const override {
+        void print_all_suits(std::ofstream& /*fout*/) const override {
             printAllSuitsCalled = true;
         }
+
+        // No-op implementations for remaining pure-virtual printers
+        void print_suit_stats(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+        void print_all_suit_stats(std::ofstream& /*fout*/) const override {}
+        void print_summary_suit_stats(std::ofstream& /*fout*/) const override {}
+        void print_entries_dist(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/, const int /*hand_dist*/[]) const override {}
+        void print_entries_dist_and_cards(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/, const unsigned short /*aggr_target*/[], const int /*hand_dist*/[]) const override {}
+        void print_entries(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+        void print_all_entries(std::ofstream& /*fout*/) const override {}
+        void print_entry_stats(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+        void print_all_entry_stats(std::ofstream& /*fout*/) const override {}
+        void print_summary_entry_stats(std::ofstream& /*fout*/) const override {}
 
         // Test state variables (mutable for const methods)
         mutable bool initCalled = false;
@@ -104,14 +116,14 @@ protected:
         
         int defaultMemory = 0;
         int maximumMemory = 0;
-        TTresetReason lastResetReason = TT_RESET_UNKNOWN;
+    ResetReason lastResetReason = ResetReason::Unknown;
         
         // Lookup test state
         int lastTrick = -1;
         int lastHand = -1;
         int lastLimit = -1;
         bool testLowerFlag = false;
-        nodeCardsType* testLookupResult = nullptr;
+    NodeCards const* testLookupResult = nullptr;
         
         // Add test state
         int addTrick = -1;
@@ -172,13 +184,13 @@ TEST_F(TransTableBaseTest, MakeTTMethodCallsOverride) {
 }
 
 TEST_F(TransTableBaseTest, ResetMemoryMethodCallsOverride) {
-    EXPECT_EQ(baseTable->lastResetReason, TT_RESET_UNKNOWN);
+    EXPECT_EQ(baseTable->lastResetReason, ResetReason::Unknown);
     
     baseTable->ResetMemory(TT_RESET_NEW_DEAL);
-    EXPECT_EQ(baseTable->lastResetReason, TT_RESET_NEW_DEAL);
+    EXPECT_EQ(baseTable->lastResetReason, ResetReason::NewDeal);
     
     baseTable->ResetMemory(TT_RESET_MEMORY_EXHAUSTED);
-    EXPECT_EQ(baseTable->lastResetReason, TT_RESET_MEMORY_EXHAUSTED);
+    EXPECT_EQ(baseTable->lastResetReason, ResetReason::MemoryExhausted);
 }
 
 TEST_F(TransTableBaseTest, ReturnAllMemoryMethodCallsOverride) {
