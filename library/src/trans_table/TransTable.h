@@ -36,11 +36,11 @@ inline constexpr int kResetReasonCount = static_cast<int>(ResetReason::Count);
 // Node value/cached card data
 struct NodeCards // 8 bytes
 {
-  char ubound; // For N-S
-  char lbound; // For N-S
-  char bestMoveSuit;
-  char bestMoveRank;
-  char leastWin[DDS_SUITS];
+  char upper_bound; // For N-S
+  char lower_bound; // For N-S
+  char best_move_suit;
+  char best_move_rank;
+  char least_win[DDS_SUITS];
 };
 
 #ifdef _MSC_VER

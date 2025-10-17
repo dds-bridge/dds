@@ -84,11 +84,11 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
 
   // Add a minimal node for the same suit distribution so subsequent Lookup hits
   NodeCards first{};
-  first.lbound = 0;
-  first.ubound = 0;
-  first.bestMoveSuit = 0;
-  first.bestMoveRank = 0;
-  std::memset(first.leastWin, 0, sizeof(first.leastWin));
+  first.lower_bound = 0;
+  first.upper_bound = 0;
+  first.best_move_suit = 0;
+  first.best_move_rank = 0;
+  std::memset(first.least_win, 0, sizeof(first.least_win));
 
   unsigned short ourWinRanks[DDS_HANDS] = {0, 0, 0, 0};
   tt->add(trick, hand, aggrTarget, ourWinRanks, first, /*flag*/false);
@@ -96,8 +96,8 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   // Hit now (bounds allow returning the stored node)
   auto* hitNode = tt->lookup(trick, hand, aggrTarget, handDist, /*limit*/0, lowerFlag);
   ASSERT_NE(nullptr, hitNode);
-  EXPECT_EQ(0, static_cast<int>(hitNode->lbound));
-  EXPECT_EQ(0, static_cast<int>(hitNode->ubound));
+  EXPECT_EQ(0, static_cast<int>(hitNode->lower_bound));
+  EXPECT_EQ(0, static_cast<int>(hitNode->upper_bound));
 
   // Dispose destroys the TT instance from the registry
   ctx.DisposeTransTable();

@@ -166,8 +166,8 @@ TEST_F(TransTableIntegrationTest, ResultConsistency) {
     ASSERT_NE(resultL, nullptr);
     
     // Results should be equivalent
-    EXPECT_EQ(resultS->ubound, resultL->ubound);
-    EXPECT_EQ(resultS->lbound, resultL->lbound);
+    EXPECT_EQ(resultS->upper_bound, resultL->upper_bound);
+    EXPECT_EQ(resultS->lower_bound, resultL->lower_bound);
     EXPECT_EQ(lowerFlagS, lowerFlagL);
 }
 

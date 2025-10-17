@@ -186,13 +186,13 @@ void MockPositionGenerator::GenerateComplexAggrTarget(unsigned short aggrTarget[
 }
 
 void MockPositionGenerator::GenerateNodeCardsType(NodeCards& node, int tricksRemaining) {
-    node.ubound = static_cast<char>(tricksRemaining);
-    node.lbound = static_cast<char>(std::max(0, tricksRemaining - 3));
-    node.bestMoveSuit = static_cast<char>(std::uniform_int_distribution<int>(0, DDS_SUITS - 1)(generator_));
-    node.bestMoveRank = static_cast<char>(std::uniform_int_distribution<int>(2, 14)(generator_));
+    node.upper_bound = static_cast<char>(tricksRemaining);
+    node.lower_bound = static_cast<char>(std::max(0, tricksRemaining - 3));
+    node.best_move_suit = static_cast<char>(std::uniform_int_distribution<int>(0, DDS_SUITS - 1)(generator_));
+    node.best_move_rank = static_cast<char>(std::uniform_int_distribution<int>(2, 14)(generator_));
     
     for (int suit = 0; suit < DDS_SUITS; suit++) {
-        node.leastWin[suit] = static_cast<char>(std::uniform_int_distribution<int>(2, 14)(generator_));
+        node.least_win[suit] = static_cast<char>(std::uniform_int_distribution<int>(2, 14)(generator_));
     }
 }
 

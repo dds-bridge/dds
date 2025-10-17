@@ -47,13 +47,13 @@ void TransTableTestBase::CreateTestPositionData(
     }
     
     // Initialize node data
-    nodeData.ubound = static_cast<char>(13 - trick);
-    nodeData.lbound = static_cast<char>(trick > 0 ? trick - 1 : 0);
-    nodeData.bestMoveSuit = static_cast<char>(0);
-    nodeData.bestMoveRank = static_cast<char>(14); // Ace
+    nodeData.upper_bound = static_cast<char>(13 - trick);
+    nodeData.lower_bound = static_cast<char>(trick > 0 ? trick - 1 : 0);
+    nodeData.best_move_suit = static_cast<char>(0);
+    nodeData.best_move_rank = static_cast<char>(14); // Ace
     
     for (int suit = 0; suit < DDS_SUITS; suit++) {
-        nodeData.leastWin[suit] = static_cast<char>(2 + suit); // 2, 3, 4, 5
+        nodeData.least_win[suit] = static_cast<char>(2 + suit); // 2, 3, 4, 5
     }
 }
 
@@ -178,16 +178,16 @@ void PerformanceTimer::PrintResults() const {
 
 // PositionComparator implementation
 bool PositionComparator::AreEqual(const NodeCards& a, const NodeCards& b) {
-    if (a.ubound != b.ubound || a.lbound != b.lbound) {
+    if (a.upper_bound != b.upper_bound || a.lower_bound != b.lower_bound) {
         return false;
     }
     
-    if (a.bestMoveSuit != b.bestMoveSuit || a.bestMoveRank != b.bestMoveRank) {
+    if (a.best_move_suit != b.best_move_suit || a.best_move_rank != b.best_move_rank) {
         return false;
     }
     
     for (int suit = 0; suit < DDS_SUITS; suit++) {
-        if (a.leastWin[suit] != b.leastWin[suit]) {
+        if (a.least_win[suit] != b.least_win[suit]) {
             return false;
         }
     }
@@ -200,8 +200,8 @@ bool PositionComparator::BoundsAreEquivalent(
     const NodeCards& b,
     int tolerance) {
     
-    return (abs(a.ubound - b.ubound) <= tolerance) &&
-           (abs(a.lbound - b.lbound) <= tolerance);
+    return (abs(a.upper_bound - b.upper_bound) <= tolerance) &&
+           (abs(a.lower_bound - b.lower_bound) <= tolerance);
 }
 
 bool PositionComparator::RelativeRanksMatch(
@@ -224,15 +224,15 @@ bool PositionComparator::RelativeRanksMatch(
 
 std::string PositionComparator::PositionToString(const NodeCards& node) {
     std::ostringstream oss;
-    oss << "NodeData{ubound:" << static_cast<int>(node.ubound)
-        << ", lbound:" << static_cast<int>(node.lbound)
-        << ", bestMove:" << static_cast<int>(node.bestMoveSuit) 
-        << "/" << static_cast<int>(node.bestMoveRank)
-        << ", leastWin:[";
+    oss << "NodeData{ubound:" << static_cast<int>(node.upper_bound)
+        << ", lbound:" << static_cast<int>(node.lower_bound)
+        << ", bestMove:" << static_cast<int>(node.best_move_suit) 
+        << "/" << static_cast<int>(node.best_move_rank)
+        << ", least_win:[";
     
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         if (suit > 0) oss << ",";
-        oss << static_cast<int>(node.leastWin[suit]);
+        oss << static_cast<int>(node.least_win[suit]);
     }
     oss << "]}";
     
@@ -286,21 +286,21 @@ bool TestDataValidator::IsValidWinRanks(const unsigned short winRanks[DDS_SUITS]
 
 bool TestDataValidator::IsValidNodeData(const NodeCards& node) {
     // Check bounds are reasonable
-    if (node.ubound < 0 || node.ubound > 13 ||
-        node.lbound < 0 || node.lbound > 13 ||
-        node.lbound > node.ubound) {
+    if (node.upper_bound < 0 || node.upper_bound > 13 ||
+        node.lower_bound < 0 || node.lower_bound > 13 ||
+        node.lower_bound > node.upper_bound) {
         return false;
     }
     
     // Check suit/rank are in valid range
-    if (node.bestMoveSuit < 0 || node.bestMoveSuit >= DDS_SUITS ||
-        node.bestMoveRank < 2 || node.bestMoveRank > 14) {
+    if (node.best_move_suit < 0 || node.best_move_suit >= DDS_SUITS ||
+        node.best_move_rank < 2 || node.best_move_rank > 14) {
         return false;
     }
     
-    // Check leastWin values
+    // Check least_win values
     for (int suit = 0; suit < DDS_SUITS; suit++) {
-        if (node.leastWin[suit] < 0 || node.leastWin[suit] > 14) {
+        if (node.least_win[suit] < 0 || node.least_win[suit] > 14) {
             return false;
         }
     }

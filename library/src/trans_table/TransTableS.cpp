@@ -600,31 +600,31 @@ auto TransTableS::BuildSOP(
   NodeCards * cardsP = BuildPath(
     winMask, 
     winOrderSet,
-    static_cast<int>(first.ubound), 
-    static_cast<int>(first.lbound),
-    static_cast<char>(first.bestMoveSuit), 
-    static_cast<char>(first.bestMoveRank),
+    static_cast<int>(first.upper_bound), 
+    static_cast<int>(first.lower_bound),
+    static_cast<char>(first.best_move_suit), 
+    static_cast<char>(first.best_move_rank),
     np, 
     res);
 
   if (res)
   {
-    cardsP->ubound = static_cast<char>(first.ubound);
-    cardsP->lbound = static_cast<char>(first.lbound);
+    cardsP->upper_bound = static_cast<char>(first.upper_bound);
+    cardsP->lower_bound = static_cast<char>(first.lower_bound);
 
     if (flag)
     {
-      cardsP->bestMoveSuit = static_cast<char>(first.bestMoveSuit);
-      cardsP->bestMoveRank = static_cast<char>(first.bestMoveRank);
+      cardsP->best_move_suit = static_cast<char>(first.best_move_suit);
+      cardsP->best_move_rank = static_cast<char>(first.best_move_rank);
     }
     else
     {
-      cardsP->bestMoveSuit = 0;
-      cardsP->bestMoveRank = 0;
+      cardsP->best_move_suit = 0;
+      cardsP->best_move_rank = 0;
     }
 
     for (int k = 0; k < DDS_SUITS; k++)
-  cardsP->leastWin[k] = static_cast<char>(15 - low[k]);
+  cardsP->least_win[k] = static_cast<char>(15 - low[k]);
   }
 }
 
@@ -864,13 +864,13 @@ NodeCards * TransTableS::UpdateSOP(
 {
   /* Update SOP node with new values for upper and lower
   bounds. */
-  if (lbound > nodep->lbound)
-    nodep->lbound = static_cast<char>(lbound);
-  if (ubound < nodep->ubound)
-    nodep->ubound = static_cast<char>(ubound);
+  if (lbound > nodep->lower_bound)
+    nodep->lower_bound = static_cast<char>(lbound);
+  if (ubound < nodep->upper_bound)
+    nodep->upper_bound = static_cast<char>(ubound);
 
-  nodep->bestMoveSuit = bestMoveSuit;
-  nodep->bestMoveRank = bestMoveRank;
+  nodep->best_move_suit = bestMoveSuit;
+  nodep->best_move_rank = bestMoveRank;
 
   return nodep;
 }
@@ -899,12 +899,12 @@ NodeCards const * TransTableS::FindSOP(
         continue;
       }
 
-      if (np->first->lbound > limit)
+      if (np->first->lower_bound > limit)
       {
         lowerFlag = true;
         return np->first;
       }
-      else if (np->first->ubound <= limit)
+      else if (np->first->upper_bound <= limit)
       {
         lowerFlag = false;
         return np->first;

@@ -233,12 +233,12 @@ static bool ABsearch0_ctx(
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] =
           win_ranks[ posPoint->aggr[ss] ]
-          [ static_cast<unsigned char>(cardsP->leastWin[ss]) ];
+          [ static_cast<unsigned char>(cardsP->least_win[ss]) ];
 
-      if (cardsP->bestMoveRank != 0)
+      if (cardsP->best_move_rank != 0)
       {
-        ctx.search().bestMoveTT(depth).suit = static_cast<unsigned char>(cardsP->bestMoveSuit);
-        ctx.search().bestMoveTT(depth).rank = static_cast<unsigned char>(cardsP->bestMoveRank);
+        ctx.search().bestMoveTT(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
+        ctx.search().bestMoveTT(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
       }
 
       bool scoreFlag = (ctx.search().nodeTypeStore(0) == MAXNODE ? lowerFlag : ! lowerFlag);
@@ -343,12 +343,12 @@ static bool ABsearch0_ctx(
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->winRanks[depth][ss] =
           win_ranks[ posPoint->aggr[ss] ]
-          [ static_cast<unsigned char>(cardsP->leastWin[ss]) ];
+          [ static_cast<unsigned char>(cardsP->least_win[ss]) ];
 
-      if (cardsP->bestMoveRank != 0)
+      if (cardsP->best_move_rank != 0)
       {
-        ctx.search().bestMoveTT(depth).suit = static_cast<unsigned char>(cardsP->bestMoveSuit);
-        ctx.search().bestMoveTT(depth).rank = static_cast<unsigned char>(cardsP->bestMoveRank);
+        ctx.search().bestMoveTT(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
+        ctx.search().bestMoveTT(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
       }
 
       bool scoreFlag = (ctx.search().nodeTypeStore(0) == MAXNODE ? lowerFlag : ! lowerFlag);
@@ -426,34 +426,34 @@ ABexit:
   {
     if (ctx.search().nodeTypeStore(0) == MAXNODE)
     {
-      first.ubound = static_cast<char>(tricks + 1);
-      first.lbound = static_cast<char>(target - posPoint->tricksMAX);
+      first.upper_bound = static_cast<char>(tricks + 1);
+      first.lower_bound = static_cast<char>(target - posPoint->tricksMAX);
     }
     else
     {
-      first.ubound = static_cast<char>
+      first.upper_bound = static_cast<char>
                      (tricks + 1 - target + posPoint->tricksMAX);
-      first.lbound = 0;
+      first.lower_bound = 0;
     }
   }
   else
   {
     if (ctx.search().nodeTypeStore(0) == MAXNODE)
     {
-      first.ubound = static_cast<char>
+      first.upper_bound = static_cast<char>
                      (target - posPoint->tricksMAX - 1);
-      first.lbound = 0;
+      first.lower_bound = 0;
     }
     else
     {
-      first.ubound = static_cast<char>(tricks + 1);
-      first.lbound = static_cast<char>
+      first.upper_bound = static_cast<char>(tricks + 1);
+      first.lower_bound = static_cast<char>
                      (tricks + 1 - target + posPoint->tricksMAX + 1);
     }
   }
 
-  first.bestMoveSuit = static_cast<char>(ctx.search().bestMove(depth).suit);
-  first.bestMoveRank = static_cast<char>(ctx.search().bestMove(depth).rank);
+  first.best_move_suit = static_cast<char>(ctx.search().bestMove(depth).suit);
+  first.best_move_rank = static_cast<char>(ctx.search().bestMove(depth).rank);
 
   bool flag =
     ((ctx.search().nodeTypeStore(hand) == MAXNODE && value) ||

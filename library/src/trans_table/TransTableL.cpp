@@ -801,13 +801,13 @@ NodeCards * TransTableL::LookupCards(
 
     // Check bounds.
     NodeCards * nodep = &wp->first;
-    if (nodep->lbound > limit)
+    if (nodep->lower_bound > limit)
     {
       bp->timestampRead = ++timestamp_;
       lowerFlag = true;
       return nodep;
     }
-    else if (nodep->ubound <= limit)
+    else if (nodep->upper_bound <= limit)
     {
       bp->timestampRead = ++timestamp_;
       lowerFlag = false;
@@ -836,13 +836,13 @@ NodeCards * TransTableL::LookupCards(
     }
 
     NodeCards * nodep = &wp->first;
-    if (nodep->lbound > limit)
+    if (nodep->lower_bound > limit)
     {
       lowerFlag = true;
       bp->timestampRead = ++timestamp_;
       return nodep;
     }
-    else if (nodep->ubound <= limit)
+    else if (nodep->upper_bound <= limit)
     {
       lowerFlag = false;
       bp->timestampRead = ++timestamp_;
@@ -875,13 +875,13 @@ auto TransTableL::CreateOrUpdate(
     if (wp->topSet3 != search.topSet3 ) continue;
 
     NodeCards& node = wp->first;
-    if (search.first.lbound > node.lbound)
-      node.lbound = search.first.lbound;
-    if (search.first.ubound < node.ubound)
-      node.ubound = search.first.ubound;
+    if (search.first.lower_bound > node.lower_bound)
+      node.lower_bound = search.first.lower_bound;
+    if (search.first.upper_bound < node.upper_bound)
+      node.upper_bound = search.first.upper_bound;
 
-    node.bestMoveSuit = search.first.bestMoveSuit;
-    node.bestMoveRank = search.first.bestMoveRank;
+    node.best_move_suit = search.first.best_move_suit;
+    node.best_move_rank = search.first.best_move_rank;
     return;
   }
 
@@ -899,8 +899,8 @@ auto TransTableL::CreateOrUpdate(
 
   if (!flag)
   {
-    wp->first.bestMoveSuit = 0;
-    wp->first.bestMoveRank = 0;
+    wp->first.best_move_suit = 0;
+    wp->first.best_move_rank = 0;
   }
 }
 
@@ -943,7 +943,7 @@ auto TransTableL::add(
       ab[ss] = aggr_[0].aggrBytes[ss];
       mb[ss] = MaskBytesTable()[0][ss].data();
       low[ss] = 15;
-      TTentry.first.leastWin[ss] = 0;
+      TTentry.first.least_win[ss] = 0;
     }
     else
     {
@@ -954,7 +954,7 @@ auto TransTableL::add(
       mb[ss] = MaskBytesTable()[ag][ss].data();
       low[ss] = static_cast<char>(TTLowestRankTable()[ag]);
 
-      TTentry.first.leastWin[ss] = 15 - low[ss];
+      TTentry.first.least_win[ss] = 15 - low[ss];
       TTentry.xorSet ^= aggr_[ag].aggrRanks[ss];
     }
   }
@@ -1013,18 +1013,18 @@ auto TransTableL::PrintNodeValues(
   ofstream& fout,
   const NodeCards& np) const -> void {
   fout << setw(16) << left << "Lowest used" <<
-    cardSuit[0] << cardRank[15-static_cast<int>(np.leastWin[0])] << ", " <<
-    cardSuit[1] << cardRank[15-static_cast<int>(np.leastWin[1])] << ", " <<
-    cardSuit[2] << cardRank[15-static_cast<int>(np.leastWin[2])] << ", " <<
-    cardSuit[3] << cardRank[15-static_cast<int>(np.leastWin[3])] << "\n";
+    cardSuit[0] << cardRank[15-static_cast<int>(np.least_win[0])] << ", " <<
+    cardSuit[1] << cardRank[15-static_cast<int>(np.least_win[1])] << ", " <<
+    cardSuit[2] << cardRank[15-static_cast<int>(np.least_win[2])] << ", " <<
+    cardSuit[3] << cardRank[15-static_cast<int>(np.least_win[3])] << "\n";
 
   fout << setw(16) << left << "Bounds" << 
-    to_string(static_cast<int>(np.lbound)) << " to " <<
-    to_string(static_cast<int>(np.ubound)) << " tricks\n";
+    to_string(static_cast<int>(np.lower_bound)) << " to " <<
+    to_string(static_cast<int>(np.upper_bound)) << " tricks\n";
 
   fout << setw(16) << left << "Best move" <<
-    cardSuit[ static_cast<int>(np.bestMoveSuit) ] <<
-    cardRank[ static_cast<int>(np.bestMoveRank) ] << "\n\n";
+    cardSuit[ static_cast<int>(np.best_move_suit) ] <<
+    cardRank[ static_cast<int>(np.best_move_rank) ] << "\n\n";
 }
 
 
