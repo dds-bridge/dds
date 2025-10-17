@@ -212,7 +212,7 @@ auto TransTableS::make_tt() -> void {
     for (int k = 1; k <= 13; k++)
       aggr_len_sets_[k] = 0;
     stats_resets_.no_of_resets = 0;
-    for (int k = 0; k <= 5; k++)
+    for (int k = 0; k < kResetReasonCount; k++)
       stats_resets_.aggr_resets[k] = 0;
 
   }
