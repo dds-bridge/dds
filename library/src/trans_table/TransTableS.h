@@ -108,51 +108,51 @@ class TransTableS: public TransTable
 
     auto add_len_set(
       int trick, 
-      int firstHand) -> void;
+      int first_hand) -> void;
 
     auto build_sop(
-      const unsigned short ourWinRanks[DDS_SUITS],
-      const unsigned short aggrArg[DDS_SUITS],
+      const unsigned short our_win_ranks[DDS_SUITS],
+      const unsigned short aggr_arg[DDS_SUITS],
       const NodeCards& first,
       long long lengths,
       int tricks,
-      int firstHand,
+      int first_hand,
       bool flag
     ) -> void;
 
     auto build_path(
-      const int winMask[],
-      const int winOrderSet[],
-      int uBound,
-      int lBound,
-      char bestMoveSuit,
-      char bestMoveRank,
-      PosSearchSmall * nodePtr,
+      const int win_mask[],
+      const int win_order_set[],
+      int u_bound,
+      int l_bound,
+      char best_move_suit,
+      char best_move_rank,
+      PosSearchSmall * node_ptr,
       bool& result
     ) -> NodeCards *;
 
     auto search_len_and_insert(
-      PosSearchSmall * rootPtr,
+      PosSearchSmall * root_ptr,
       long long key,
-      bool insertNode,
+      bool insert_node,
       int trick,
-      int firstHand,
+      int first_hand,
       bool& result
     ) -> PosSearchSmall *;
 
     auto update_sop(
-      int uBound,
-      int lBound,
-      char bestMoveSuit,
-      char bestMoveRank,
+      int u_bound,
+      int l_bound,
+      char best_move_suit,
+      char best_move_rank,
       NodeCards * node
     ) -> NodeCards *;
 
     auto find_sop(
-      const int orderSet[],
+      const int order_set[],
       int limit,
-      WinCard * nodeP,
-      bool& lowerFlag
+      WinCard * node_p,
+      bool& lower_flag
     ) -> NodeCards const *;
 
   public:
