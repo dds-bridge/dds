@@ -377,7 +377,7 @@ auto TransTableL::return_all_memory() -> void {
 }
 
 
-auto TransTableL::BlocksInUse() const -> int {
+auto TransTableL::blocksInUse() const -> int {
   Pool * pp = pool_;
   int count = 0;
 
@@ -934,12 +934,12 @@ auto TransTableL::printMatch(
   for (unsigned i = 0; i < DDS_HANDS; i++)
     hands[i].resize(DDS_SUITS);
 
-  TransTableL::SetToPartialHands(wp.topSet1, wp.topMask1, 14, 4, hands);
-  TransTableL::SetToPartialHands(wp.topSet2, wp.topMask2, 10, 4, hands);
-  TransTableL::SetToPartialHands(wp.topSet3, wp.topMask3, 6, 4, hands);
-  TransTableL::SetToPartialHands(wp.topSet4, wp.topMask4, 2, 1, hands);
+  TransTableL::setToPartialHands(wp.topSet1, wp.topMask1, 14, 4, hands);
+  TransTableL::setToPartialHands(wp.topSet2, wp.topMask2, 10, 4, hands);
+  TransTableL::setToPartialHands(wp.topSet3, wp.topMask3, 6, 4, hands);
+  TransTableL::setToPartialHands(wp.topSet4, wp.topMask4, 2, 1, hands);
 
-  TransTableL::DumpHands(fout, hands, lengths);
+  TransTableL::dumpHands(fout, hands, lengths);
 
   TransTableL::printNodeValues(fout, wp.first);
 }
@@ -978,7 +978,7 @@ string TransTableL::makeHolding(
 }
 
 
-auto TransTableL::DumpHands(
+auto TransTableL::dumpHands(
   ofstream& fout,
   const vector<vector<string>>& hands,
   const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void {
@@ -1003,7 +1003,7 @@ auto TransTableL::DumpHands(
 }
 
 
-auto TransTableL::SetToPartialHands(
+auto TransTableL::setToPartialHands(
   const unsigned set,
   const unsigned mask,
   const int maxRank,
@@ -1684,7 +1684,7 @@ auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void {
   fout << setw(16) << left << "Blocks counted " <<
     setw(8) << right << cumCount << "\n";
   fout << setw(16) << left << "Blocks produced " <<
-    setw(8) << right << TransTableL::BlocksInUse() << "\n";
+    setw(8) << right << TransTableL::blocksInUse() << "\n";
   fout << setw(16) << left << "Mem scenario" <<
     setw(7) << right << setprecision(2) << fixed <<
       100. * cumMemory / 

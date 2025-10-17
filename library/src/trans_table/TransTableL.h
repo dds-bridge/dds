@@ -141,9 +141,9 @@ class TransTableL: public TransTable
     int tt_in_use_;
 
 
-  auto initTT() -> void;
+    auto initTT() -> void;
 
-  auto releaseTT() -> void;
+    auto releaseTT() -> void;
 
   // Constants are provided via internal function-local static tables.
 
@@ -259,19 +259,19 @@ class TransTableL: public TransTable
       const std::string& high,
       unsigned len) const -> std::string;
 
-    void DumpHands(
+    void dumpHands(
       std::ofstream& fout,
       const std::vector<std::vector<std::string>>& hands,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
-    void SetToPartialHands(
+    void setToPartialHands(
       const unsigned set,
       const unsigned mask,
       const int maxRank,
       const int numRanks,
       std::vector<std::vector<std::string>>& hands) const;
 
-    int BlocksInUse() const;
+    int blocksInUse() const;
 
     // Legacy implementation helpers removed; modern overrides are canonical.
 
