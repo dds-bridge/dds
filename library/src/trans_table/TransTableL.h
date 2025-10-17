@@ -44,62 +44,62 @@ class TransTableL: public TransTable
 
     struct WinMatch // 52 bytes
     {
-      unsigned xorSet;
-      unsigned topSet1 , topSet2 , topSet3 , topSet4 ;
-      unsigned topMask1, topMask2, topMask3, topMask4;
-      int maskIndex;
-      int lastMaskNo;
-      NodeCards first;
+      unsigned xor_set_;
+      unsigned top_set1_ , top_set2_ , top_set3_ , top_set4_ ;
+      unsigned top_mask1_, top_mask2_, top_mask3_, top_mask4_;
+      int mask_index_;
+      int last_mask_no_;
+      NodeCards first_;
     };
 
     struct WinBlock // 6508 bytes when BLOCKS_PER_ENTRY == 125
     {
-      int nextMatchNo;
-      int nextWriteNo;
-      int timestampRead;
-      WinMatch list[BLOCKS_PER_ENTRY];
+      int next_match_no_;
+      int next_write_no_;
+      int timestamp_read_;
+      WinMatch list_[BLOCKS_PER_ENTRY];
     };
 
     struct PosSearch // 16 bytes (inefficiency, 12 bytes enough)
     {
-      WinBlock * posBlock;
-      long long key;
+      WinBlock * pos_block_;
+      long long key_;
     };
 
     struct DistHash // 520 bytes when DISTS_PER_ENTRY == 32
     {
-      int nextNo;
-      int nextWriteNo;
-      PosSearch list[DISTS_PER_ENTRY];
+      int next_no_;
+      int next_write_no_;
+      PosSearch list_[DISTS_PER_ENTRY];
     };
 
     struct Aggr // 80 bytes
     {
-      unsigned aggrRanks[DDS_SUITS];
-      unsigned aggrBytes[DDS_SUITS][TT_BYTES];
+      unsigned aggr_ranks_[DDS_SUITS];
+      unsigned aggr_bytes_[DDS_SUITS][TT_BYTES];
     };
 
     struct Pool // 16 bytes
     {
-      Pool * next;
-      Pool * prev;
-      int nextBlockNo;
-      WinBlock * list;
+      Pool * next_;
+      Pool * prev_;
+      int next_block_no_;
+      WinBlock * list_;
     };
 
     struct PageStats
     {
-      int numResets;
-      int numCallocs;
-      int numFrees;
-      int numHarvests;
-      int lastCurrent;
+      int num_resets_;
+      int num_callocs_;
+      int num_frees_;
+      int num_harvests_;
+      int last_current_;
     };
 
     struct Harvested // 16 bytes
     {
-      int nextBlockNo;
-      WinBlock * list [BLOCKS_PER_PAGE];
+      int next_block_no_;
+      WinBlock * list_ [BLOCKS_PER_PAGE];
     };
 
     enum class MemState
