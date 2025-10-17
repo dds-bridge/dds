@@ -214,7 +214,7 @@ int SolveBoardInternal(
         else if (newTrump)
           reason = ResetReason::NewTrump;
       
-  ctx.transTable()->reset_memory(static_cast<ResetReason>(static_cast<int>(reason)));
+  ctx.transTable()->reset_memory(reason);
     }
   }
 
