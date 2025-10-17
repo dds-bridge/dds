@@ -60,10 +60,10 @@ class TransTableS: public TransTable
     };
 
 
-  long long aggr_len_sets_[14];
-  StatsResets stats_resets_;
+    long long aggr_len_sets_[14];
+    StatsResets stats_resets_;
 
-  WinCard temp_win_[5];
+    WinCard temp_win_[5];
     int node_set_size_limit_;
     int win_set_size_limit_;
     unsigned long long maxmem_;
@@ -82,7 +82,7 @@ class TransTableS: public TransTable
     WinCard ** pw_;
     NodeCards ** pn_;
     PosSearchSmall ** pl_[14][DDS_HANDS];
-  NodeCards * node_cards_;
+    NodeCards * node_cards_;
     WinCard * win_cards_;
     PosSearchSmall * pos_search_[14][DDS_HANDS];
     int node_set_size_; /* Index with range 0 to node_set_size_limit_ */
@@ -90,13 +90,13 @@ class TransTableS: public TransTable
     int len_set_ind_[14][DDS_HANDS];
     int lcount_[14][DDS_HANDS];
 
-  std::vector<std::string> reset_text_;
+    std::vector<std::string> reset_text_;
 
     long long suit_lengths_[14];
 
     int tt_in_use_;
 
-  // Constants are provided via internal function-local static tables.
+    // Constants are provided via internal function-local static tables.
 
     void wipe();
 
@@ -111,13 +111,14 @@ class TransTableS: public TransTable
       const int firstHand);
 
     void build_sop(
-  const unsigned short ourWinRanks[DDS_SUITS],
-  const unsigned short aggr[DDS_SUITS],
-  const NodeCards& first,
-  const long long suit_lengths_,
+      const unsigned short ourWinRanks[DDS_SUITS],
+      const unsigned short aggr[DDS_SUITS],
+      const NodeCards& first,
+      const long long suit_lengths_,
       const int tricks,
       const int firstHand,
-      const bool flag);
+      const bool flag
+    );
 
     NodeCards * build_path(
       const int winMask[],
@@ -127,7 +128,8 @@ class TransTableS: public TransTable
       const char bestMoveSuit,
       const char bestMoveRank,
       PosSearchSmall * node,
-      bool& result);
+      bool& result
+    );
 
     struct PosSearchSmall * search_len_and_insert(
       PosSearchSmall * rootp,
@@ -135,23 +137,23 @@ class TransTableS: public TransTable
       const bool insertNode,
       const int trick,
       const int firstHand,
-      bool& result);
+      bool& result
+    );
 
     NodeCards * update_sop(
       const int ubound,
       const int lbound,
       const char bestMoveSuit,
       const char bestMoveRank,
-      NodeCards * nodep);
+      NodeCards * nodep
+    );
 
     NodeCards const * find_sop(
       const int orderSet[],
       const int limit,
       WinCard * nodeP,
-      bool& lowerFlag);
-
-    // Legacy implementation helpers removed from public API; modern overrides are canonical.
-
+      bool& lowerFlag
+    );
 
   public:
 
@@ -174,14 +176,16 @@ class TransTableS: public TransTable
       const unsigned short aggr_target[],
       const int hand_dist[],
       int limit,
-      bool& lower_flag) -> NodeCards const * override;
+      bool& lower_flag
+    ) -> NodeCards const * override;
     void add(
       int trick,
       int hand,
       const unsigned short aggr_target[],
       const unsigned short win_ranks_arg[],
       const NodeCards& first,
-      bool flag) override;
+      bool flag
+    ) override;
 
   // The small TT does not provide verbose dumping; implement no-op printers
   void print_suits(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
