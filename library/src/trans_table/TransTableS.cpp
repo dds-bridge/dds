@@ -423,10 +423,10 @@ auto TransTableS::add(
   const int tricks,
   const int hand,
   const unsigned short aggrTarget[],
-  const unsigned short ourWinRanks[],
+  const unsigned short our_win_ranks[],
   const NodeCards& first,
   const bool flag) -> void {
-  build_sop(ourWinRanks, aggrTarget, first, suit_lengths_[tricks],
+  build_sop(our_win_ranks, aggrTarget, first, suit_lengths_[tricks],
            tricks, hand, flag);
 
   if (clear_tt_flag_)
@@ -514,10 +514,10 @@ auto TransTableS::add_node_set() -> void {
 }
 
 auto TransTableS::add_len_set(
-  const int trick, 
-  const int firstHand) -> void {
-  if (len_set_ind_[trick][firstHand] < LSIZE) {
-    len_set_ind_[trick][firstHand]++;
+  const int trick,
+  const int first_hand) -> void {
+  if (len_set_ind_[trick][first_hand] < LSIZE) {
+    len_set_ind_[trick][first_hand]++;
 #if defined(DDS_TT_STATS)
     aggr_len_sets_[trick]++;
 #endif
@@ -529,7 +529,7 @@ auto TransTableS::add_len_set(
 
   const int incr = (LSIZE+1) * sizeof(PosSearchSmall);
 
-  if ((allocmem_ + incr > maxmem_) || (lcount_[trick][firstHand] >= max_index_))
+  if ((allocmem_ + incr > maxmem_) || (lcount_[trick][first_hand] >= max_index_))
   {
     // Already allocated memory plus needed allocation overshot maxmem_.
     clear_tt_flag_ = true;
@@ -538,21 +538,21 @@ auto TransTableS::add_len_set(
 
   // Obtain another memory chunk LSIZE.
 
-  lcount_[trick][firstHand]++;
+  lcount_[trick][first_hand]++;
 
-  pl_[trick][firstHand][lcount_[trick][firstHand]] =
+  pl_[trick][first_hand][lcount_[trick][first_hand]] =
     static_cast<PosSearchSmall *>(malloc(incr));
 
-  if (pl_[trick][firstHand][lcount_[trick][firstHand]] == NULL)
+  if (pl_[trick][first_hand][lcount_[trick][first_hand]] == NULL)
   {
     clear_tt_flag_ = true;
     return;
   }
 
   allocmem_ += incr;
-  len_set_ind_[trick][firstHand] = 0;
-  pos_search_[trick][firstHand] =
-    pl_[trick][firstHand][lcount_[trick][firstHand]];
+  len_set_ind_[trick][first_hand] = 0;
+  pos_search_[trick][first_hand] =
+    pl_[trick][first_hand][lcount_[trick][first_hand]];
 #if defined(DDS_TT_STATS)
   aggr_len_sets_[trick]++;
 #endif
@@ -560,45 +560,45 @@ auto TransTableS::add_len_set(
 
 
 auto TransTableS::build_sop(
-  const unsigned short ourWinRanks[DDS_SUITS],
-  const unsigned short aggrArg[DDS_SUITS],
+  const unsigned short our_win_ranks[DDS_SUITS],
+  const unsigned short aggr_arg[DDS_SUITS],
   const NodeCards& first,
   const long long lengths,
   const int tricks,
-  const int firstHand,
+  const int first_hand,
   const bool flag) -> void {
   int win_mask_[DDS_SUITS];
-  int winOrderSet[DDS_SUITS];
+  int win_order_set[DDS_SUITS];
   char low[DDS_SUITS];
 
   for (int ss = 0; ss < DDS_SUITS; ss++)
   {
-    int w = ourWinRanks[ss];
+    int w = our_win_ranks[ss];
     if (w == 0)
     {
       win_mask_[ss] = 0;
-      winOrderSet[ss] = 0;
+      win_order_set[ss] = 0;
       low[ss] = 15;
     }
     else
     {
       w = w & (-w);       /* Only lowest win */
       const unsigned short temp = 
-        static_cast<unsigned short>(aggrArg[ss] & (-w));
+        static_cast<unsigned short>(aggr_arg[ss] & (-w));
 
       win_mask_[ss] = aggp_[temp].win_mask_[ss];
-      winOrderSet[ss] = aggp_[temp].aggr_ranks_[ss];
+      win_order_set[ss] = aggp_[temp].aggr_ranks_[ss];
     low[ss] = static_cast<char>(TTLowestRankTable()[static_cast<size_t>(temp)]);
     }
   }
 
   bool res;
   PosSearchSmall * np = search_len_and_insert(
-    rootnp_[tricks][firstHand], lengths, true, tricks, firstHand, res);
+    rootnp_[tricks][first_hand], lengths, true, tricks, first_hand, res);
 
   NodeCards * cardsP = build_path(
     win_mask_, 
-    winOrderSet,
+    win_order_set,
     static_cast<int>(first.upper_bound), 
     static_cast<int>(first.lower_bound),
     static_cast<char>(first.best_move_suit), 
@@ -630,12 +630,12 @@ auto TransTableS::build_sop(
 
 auto TransTableS::build_path(
   const int win_mask_[],
-  const int winOrderSet[],
-  const int uBound,
-  const int lBound,
-  const char bestMoveSuit,
-  const char bestMoveRank,
-  PosSearchSmall * nodePtr,
+  const int win_order_set[],
+  const int u_bound,
+  const int l_bound,
+  const char best_move_suit,
+  const char best_move_rank,
+  PosSearchSmall * node_ptr,
   bool& result) -> NodeCards * {
   /* If result is TRUE, a new SOP has been created and build_path returns a
   pointer to it. If result is FALSE, an existing SOP is used and build_path
@@ -645,7 +645,7 @@ auto TransTableS::build_path(
   WinCard * np, *p2, *nprev;
   NodeCards *p;
 
-  np = nodePtr->pos_search_point_;
+  np = node_ptr->pos_search_point_;
   nprev = NULL;
   int suit = 0;
 
@@ -661,9 +661,9 @@ auto TransTableS::build_path(
     p2->next_ = NULL;
     p2->next_win_ = NULL;
     p2->prev_win_ = NULL;
-    nodePtr->pos_search_point_ = p2;
+    node_ptr->pos_search_point_ = p2;
     p2->win_mask_ = win_mask_[suit];
-    p2->order_set_ = winOrderSet[suit];
+    p2->order_set_ = win_order_set[suit];
     p2->first_ = NULL;
     np = p2;           /* Latest winning node */
     suit++;
@@ -676,7 +676,7 @@ auto TransTableS::build_path(
       p2->next_ = NULL;
       p2->next_win_ = NULL;
       p2->win_mask_ = win_mask_[suit];
-      p2->order_set_ = winOrderSet[suit];
+      p2->order_set_ = win_order_set[suit];
       p2->first_ = NULL;
       np = p2;         /* Latest winning node */
       suit++;
@@ -697,7 +697,7 @@ auto TransTableS::build_path(
       while (1)      /* Find node amongst alternatives */
       {
         if ((np->win_mask_ == win_mask_[suit]) &&
-            (np->order_set_ == winOrderSet[suit]))
+            (np->order_set_ == win_order_set[suit]))
         {
           /* Part of path found */
           found = true;
@@ -715,7 +715,7 @@ auto TransTableS::build_path(
         if (suit >= DDS_SUITS)
         {
           result = false;
-          return update_sop(uBound, lBound, bestMoveSuit, bestMoveRank,
+          return update_sop(u_bound, l_bound, best_move_suit, best_move_rank,
             np->first_);
         }
         else
@@ -739,12 +739,12 @@ auto TransTableS::build_path(
     }
     else
     {
-      p2->next_ = nodePtr->pos_search_point_;
-      nodePtr->pos_search_point_ = p2;
+      p2->next_ = node_ptr->pos_search_point_;
+      node_ptr->pos_search_point_ = p2;
     }
     p2->next_win_ = NULL;
     p2->win_mask_ = win_mask_[suit];
-    p2->order_set_ = winOrderSet[suit];
+    p2->order_set_ = win_order_set[suit];
     p2->first_ = NULL;
     np = p2;          /* Latest winning node */
     suit++;
@@ -758,7 +758,7 @@ auto TransTableS::build_path(
       p2->prev_win_ = np;
       p2->next_ = NULL;
       p2->win_mask_ = win_mask_[suit];
-      p2->order_set_ = winOrderSet[suit];
+      p2->order_set_ = win_order_set[suit];
       p2->first_ = NULL;
       p2->next_win_ = NULL;
       np = p2;         /* Latest winning node */
@@ -775,15 +775,15 @@ auto TransTableS::build_path(
 }
 
 auto TransTableS::search_len_and_insert(
-  PosSearchSmall * rootPtr,
+  PosSearchSmall * root_ptr,
   const long long key,
-  const bool insertNode,
+  const bool insert_node,
   const int trick,
-  const int firstHand,
+  const int first_hand,
   bool& result) -> TransTableS::PosSearchSmall * {
   /* Search for node which matches with the suit length combination
   given by parameter key. If no such node is found, NULL is
-  returned if parameter insertNode is FALSE, otherwise a new
+  returned if parameter insert_node is FALSE, otherwise a new
   node is inserted with suit_lengths_ set to key, the pointer to
   this node is returned.
   The algorithm used is defined in Knuth "The art of computer
@@ -793,10 +793,10 @@ auto TransTableS::search_len_and_insert(
   PosSearchSmall * np, *p, *sp;
 
   sp = NULL;
-  if (insertNode)
-    sp = &(pos_search_[trick][firstHand][len_set_ind_[trick][firstHand]]);
+  if (insert_node)
+    sp = &(pos_search_[trick][first_hand][len_set_ind_[trick][first_hand]]);
 
-  np = rootPtr;
+  np = root_ptr;
   while (1)
   {
     if (key == np->suit_lengths_)
@@ -808,10 +808,10 @@ auto TransTableS::search_len_and_insert(
     {
       if (np->left_ != NULL)
         np = np->left_;
-      else if (insertNode)
+      else if (insert_node)
       {
         p = sp;
-        add_len_set(trick, firstHand);
+        add_len_set(trick, first_hand);
         np->left_ = p;
         p->pos_search_point_ = NULL;
         p->suit_lengths_ = key;
@@ -830,10 +830,10 @@ auto TransTableS::search_len_and_insert(
     {
       if (np->right_ != NULL)
         np = np->right_;
-      else if (insertNode)
+      else if (insert_node)
       {
         p = sp;
-        add_len_set(trick, firstHand);
+        add_len_set(trick, first_hand);
         np->right_ = p;
         p->pos_search_point_ = NULL;
         p->suit_lengths_ = key;
@@ -853,22 +853,22 @@ auto TransTableS::search_len_and_insert(
 
 
 auto TransTableS::update_sop(
-  int uBound,
-  int lBound,
-  char bestMoveSuit,
-  char bestMoveRank,
-  NodeCards * nodePtr) -> NodeCards * {
+  int u_bound,
+  int l_bound,
+  char best_move_suit,
+  char best_move_rank,
+  NodeCards * node_ptr) -> NodeCards * {
   /* Update SOP node with new values for upper and lower
   bounds. */
-  if (lBound > nodePtr->lower_bound)
-    nodePtr->lower_bound = static_cast<char>(lBound);
-  if (uBound < nodePtr->upper_bound)
-    nodePtr->upper_bound = static_cast<char>(uBound);
+  if (l_bound > node_ptr->lower_bound)
+    node_ptr->lower_bound = static_cast<char>(l_bound);
+  if (u_bound < node_ptr->upper_bound)
+    node_ptr->upper_bound = static_cast<char>(u_bound);
 
-  nodePtr->best_move_suit = bestMoveSuit;
-  nodePtr->best_move_rank = bestMoveRank;
+  node_ptr->best_move_suit = best_move_suit;
+  node_ptr->best_move_rank = best_move_rank;
 
-  return nodePtr;
+  return node_ptr;
 }
 
 
