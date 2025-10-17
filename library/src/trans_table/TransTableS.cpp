@@ -516,8 +516,7 @@ auto TransTableS::add_node_set() -> void {
 auto TransTableS::add_len_set(
   const int trick, 
   const int firstHand) -> void {
-  if (len_set_ind_[trick][firstHand] < LSIZE)
-  {
+  if (len_set_ind_[trick][firstHand] < LSIZE) {
     len_set_ind_[trick][firstHand]++;
 #if defined(DDS_TT_STATS)
     aggr_len_sets_[trick]++;
@@ -629,16 +628,15 @@ auto TransTableS::build_sop(
 }
 
 
-NodeCards * TransTableS::build_path(
+auto TransTableS::build_path(
   const int win_mask_[],
   const int winOrderSet[],
-  const int ubound,
-  const int lbound,
+  const int uBound,
+  const int lBound,
   const char bestMoveSuit,
   const char bestMoveRank,
-  PosSearchSmall * nodep,
-  bool& result)
-{
+  PosSearchSmall * nodePtr,
+  bool& result) -> NodeCards * {
   /* If result is TRUE, a new SOP has been created and build_path returns a
   pointer to it. If result is FALSE, an existing SOP is used and build_path
   returns a pointer to the SOP */
@@ -647,7 +645,7 @@ NodeCards * TransTableS::build_path(
   WinCard * np, *p2, *nprev;
   NodeCards *p;
 
-  np = nodep->pos_search_point_;
+  np = nodePtr->pos_search_point_;
   nprev = NULL;
   int suit = 0;
 
@@ -663,7 +661,7 @@ NodeCards * TransTableS::build_path(
     p2->next_ = NULL;
     p2->next_win_ = NULL;
     p2->prev_win_ = NULL;
-    nodep->pos_search_point_ = p2;
+    nodePtr->pos_search_point_ = p2;
     p2->win_mask_ = win_mask_[suit];
     p2->order_set_ = winOrderSet[suit];
     p2->first_ = NULL;
@@ -717,7 +715,7 @@ NodeCards * TransTableS::build_path(
         if (suit >= DDS_SUITS)
         {
           result = false;
-          return update_sop(ubound, lbound, bestMoveSuit, bestMoveRank,
+          return update_sop(uBound, lBound, bestMoveSuit, bestMoveRank,
             np->first_);
         }
         else
@@ -741,8 +739,8 @@ NodeCards * TransTableS::build_path(
     }
     else
     {
-      p2->next_ = nodep->pos_search_point_;
-      nodep->pos_search_point_ = p2;
+      p2->next_ = nodePtr->pos_search_point_;
+      nodePtr->pos_search_point_ = p2;
     }
     p2->next_win_ = NULL;
     p2->win_mask_ = win_mask_[suit];
@@ -776,14 +774,13 @@ NodeCards * TransTableS::build_path(
   }
 }
 
-TransTableS::PosSearchSmall * TransTableS::search_len_and_insert(
-  PosSearchSmall * rootp,
+auto TransTableS::search_len_and_insert(
+  PosSearchSmall * rootPtr,
   const long long key,
   const bool insertNode,
   const int trick,
   const int firstHand,
-  bool& result)
-{
+  bool& result) -> TransTableS::PosSearchSmall * {
   /* Search for node which matches with the suit length combination
   given by parameter key. If no such node is found, NULL is
   returned if parameter insertNode is FALSE, otherwise a new
@@ -799,7 +796,7 @@ TransTableS::PosSearchSmall * TransTableS::search_len_and_insert(
   if (insertNode)
     sp = &(pos_search_[trick][firstHand][len_set_ind_[trick][firstHand]]);
 
-  np = rootp;
+  np = rootPtr;
   while (1)
   {
     if (key == np->suit_lengths_)
@@ -855,33 +852,31 @@ TransTableS::PosSearchSmall * TransTableS::search_len_and_insert(
 }
 
 
-NodeCards * TransTableS::update_sop(
-  int ubound,
-  int lbound,
+auto TransTableS::update_sop(
+  int uBound,
+  int lBound,
   char bestMoveSuit,
   char bestMoveRank,
-  NodeCards * nodep)
-{
+  NodeCards * nodePtr) -> NodeCards * {
   /* Update SOP node with new values for upper and lower
   bounds. */
-  if (lbound > nodep->lower_bound)
-    nodep->lower_bound = static_cast<char>(lbound);
-  if (ubound < nodep->upper_bound)
-    nodep->upper_bound = static_cast<char>(ubound);
+  if (lBound > nodePtr->lower_bound)
+    nodePtr->lower_bound = static_cast<char>(lBound);
+  if (uBound < nodePtr->upper_bound)
+    nodePtr->upper_bound = static_cast<char>(uBound);
 
-  nodep->best_move_suit = bestMoveSuit;
-  nodep->best_move_rank = bestMoveRank;
+  nodePtr->best_move_suit = bestMoveSuit;
+  nodePtr->best_move_rank = bestMoveRank;
 
-  return nodep;
+  return nodePtr;
 }
 
 
-NodeCards const * TransTableS::find_sop(
+auto TransTableS::find_sop(
   const int order_set_[],
   const int limit,
   WinCard * nodeP,
-  bool& lowerFlag)
-{
+  bool& lowerFlag) -> NodeCards const * {
   WinCard * np;
 
   np = nodeP;

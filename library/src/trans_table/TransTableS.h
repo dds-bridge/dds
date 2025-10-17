@@ -98,62 +98,62 @@ class TransTableS: public TransTable
 
     // Constants are provided via internal function-local static tables.
 
-    void wipe();
+    auto wipe() -> void;
 
-    void init_tt();
+    auto init_tt() -> void;
 
-    void add_win_set();
+    auto add_win_set() -> void;
 
-    void add_node_set();
+    auto add_node_set() -> void;
 
-    void add_len_set(
-      const int trick, 
-      const int firstHand);
+    auto add_len_set(
+      int trick, 
+      int firstHand) -> void;
 
-    void build_sop(
+    auto build_sop(
       const unsigned short ourWinRanks[DDS_SUITS],
-      const unsigned short aggr[DDS_SUITS],
+      const unsigned short aggrArg[DDS_SUITS],
       const NodeCards& first,
-      const long long suit_lengths_,
-      const int tricks,
-      const int firstHand,
-      const bool flag
-    );
+      long long lengths,
+      int tricks,
+      int firstHand,
+      bool flag
+    ) -> void;
 
-    NodeCards * build_path(
+    auto build_path(
       const int winMask[],
       const int winOrderSet[],
-      const int ubound,
-      const int lbound,
-      const char bestMoveSuit,
-      const char bestMoveRank,
-      PosSearchSmall * node,
+      int uBound,
+      int lBound,
+      char bestMoveSuit,
+      char bestMoveRank,
+      PosSearchSmall * nodePtr,
       bool& result
-    );
+    ) -> NodeCards *;
 
-    struct PosSearchSmall * search_len_and_insert(
-      PosSearchSmall * rootp,
-      const long long key,
-      const bool insertNode,
-      const int trick,
-      const int firstHand,
+    auto search_len_and_insert(
+      PosSearchSmall * rootPtr,
+      long long key,
+      bool insertNode,
+      int trick,
+      int firstHand,
       bool& result
-    );
+    ) -> PosSearchSmall *;
 
-    NodeCards * update_sop(
-      const int ubound,
-      const int lbound,
-      const char bestMoveSuit,
-      const char bestMoveRank,
-      NodeCards * nodep
-    );
+    auto update_sop(
+      int uBound,
+      int lBound,
+      char bestMoveSuit,
+      char bestMoveRank,
+      NodeCards * node
+    ) -> NodeCards *;
 
-    NodeCards const * find_sop(
+    auto find_sop(
       const int orderSet[],
-      const int limit,
+      int limit,
       WinCard * nodeP,
       bool& lowerFlag
-    );
+    ) -> NodeCards const *;
 
   public:
 
