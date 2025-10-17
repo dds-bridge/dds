@@ -277,11 +277,11 @@ auto TransTableL::make_tt() -> void {
     }
   }
 
-  TransTableL::initTT();
+  TransTableL::init_tt();
 }
 
 
-auto TransTableL::initTT() -> void {
+auto TransTableL::init_tt() -> void {
   for (int c = 0; c < TT_TRICKS; c++) {
     for (int h = 0; h < DDS_HANDS; h++) {
       for (int i = 0; i < 256; i++) {
@@ -295,7 +295,7 @@ auto TransTableL::initTT() -> void {
 }
 
 
-auto TransTableL::releaseTT() -> void {
+auto TransTableL::release_tt() -> void {
   if (! tt_in_use_)
     return;
   tt_in_use_ = 0;
@@ -338,7 +338,7 @@ auto TransTableL::reset_memory([[maybe_unused]] const ResetReason reason) -> voi
   pool_->nextBlockNo = 0;
   next_block_ = pool_->list;
 
-  TransTableL::initTT();
+  TransTableL::init_tt();
 
   timestamp_ = 0;
 
@@ -371,13 +371,13 @@ auto TransTableL::return_all_memory() -> void {
   page_stats_.numHarvests = 0;
   page_stats_.lastCurrent = 0;
 
-  TransTableL::releaseTT();
+  TransTableL::release_tt();
 
   return;
 }
 
 
-auto TransTableL::blocksInUse() const -> int {
+auto TransTableL::blocks_in_use() const -> int {
   Pool * pp = pool_;
   int count = 0;
 
@@ -403,7 +403,7 @@ auto TransTableL::memory_in_use() const -> double {
 }
 
 
-auto TransTableL::getNextCardBlock() -> TransTableL::WinBlock * {
+auto TransTableL::get_next_card_block() -> TransTableL::WinBlock * {
   /*
      Spaghetti code. The basic idea is that there is a pool of
      pages. When a page runs out, we get a next pool. But we're
@@ -642,7 +642,7 @@ auto TransTableL::lookup(
 
   bool empty;
   last_block_seen_[tricks][hand] =
-    lookupSuit(&tt_root_[tricks][hand][hashkey], suitLengths, empty);
+    lookup_suit(&tt_root_[tricks][hand][hashkey], suitLengths, empty);
   if (empty)
     return nullptr;
 
@@ -658,12 +658,12 @@ auto TransTableL::lookup(
   TTentry.topSet3 = ab0[2] | ab1[2] | ab2[2] | ab3[2];
   TTentry.topSet4 = ab0[3] | ab1[3] | ab2[3] | ab3[3];
 
-  return TransTableL::lookupCards(TTentry,
+  return TransTableL::lookup_cards(TTentry,
     last_block_seen_[tricks][hand], limit, lowerFlag);
 }
 
 
-auto TransTableL::lookupSuit(
+auto TransTableL::lookup_suit(
   DistHash * dp,
   const long long key,
   bool& empty) -> TransTableL::WinBlock * {
@@ -699,10 +699,10 @@ auto TransTableL::lookupSuit(
   {
     // Didn't find an exact match, but there is still room.
     // The following looks a bit odd because it is possible that
-    // getNextCardBlock wipes out the whole memory, so we
+    // get_next_card_block wipes out the whole memory, so we
     // have to use the up-to-date location, not m from above.
 
-    WinBlock * bp = getNextCardBlock();
+    WinBlock * bp = get_next_card_block();
     m = dp->nextWriteNo++;
     dp->list[m].posBlock = bp;
     dp->list[m].posBlock->timestampRead = timestamp_;
@@ -723,7 +723,7 @@ auto TransTableL::lookupSuit(
 }
 
 
-auto TransTableL::lookupCards(
+auto TransTableL::lookup_cards(
   const WinMatch& search,
   WinBlock * bp,
   const int limit,
@@ -796,7 +796,7 @@ auto TransTableL::lookupCards(
 }
 
 
-auto TransTableL::createOrUpdate(
+auto TransTableL::create_or_update(
   WinBlock * bp,
   const WinMatch& search,
   const bool flag) -> void {
@@ -920,12 +920,12 @@ auto TransTableL::add(
   else
     TTentry.lastMaskNo = 4;
 
-  TransTableL::createOrUpdate(last_block_seen_[tricks][hand],
+  TransTableL::create_or_update(last_block_seen_[tricks][hand],
     TTentry, flag);
 }
 
 
-auto TransTableL::printMatch(
+auto TransTableL::print_match(
   ofstream& fout,
   const WinMatch& wp,
   const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void {
@@ -934,18 +934,18 @@ auto TransTableL::printMatch(
   for (unsigned i = 0; i < DDS_HANDS; i++)
     hands[i].resize(DDS_SUITS);
 
-  TransTableL::setToPartialHands(wp.topSet1, wp.topMask1, 14, 4, hands);
-  TransTableL::setToPartialHands(wp.topSet2, wp.topMask2, 10, 4, hands);
-  TransTableL::setToPartialHands(wp.topSet3, wp.topMask3, 6, 4, hands);
-  TransTableL::setToPartialHands(wp.topSet4, wp.topMask4, 2, 1, hands);
+  TransTableL::set_to_partial_hands(wp.topSet1, wp.topMask1, 14, 4, hands);
+  TransTableL::set_to_partial_hands(wp.topSet2, wp.topMask2, 10, 4, hands);
+  TransTableL::set_to_partial_hands(wp.topSet3, wp.topMask3, 6, 4, hands);
+  TransTableL::set_to_partial_hands(wp.topSet4, wp.topMask4, 2, 1, hands);
 
-  TransTableL::dumpHands(fout, hands, lengths);
+  TransTableL::dump_hands(fout, hands, lengths);
 
-  TransTableL::printNodeValues(fout, wp.first);
+  TransTableL::print_node_values(fout, wp.first);
 }
 
 
-auto TransTableL::printNodeValues(
+auto TransTableL::print_node_values(
   ofstream& fout,
   const NodeCards& np) const -> void {
   fout << setw(16) << left << "Lowest used" <<
@@ -964,7 +964,7 @@ auto TransTableL::printNodeValues(
 }
 
 
-string TransTableL::makeHolding(
+string TransTableL::make_holding(
   const string& high,
   const unsigned len) const
 {
@@ -978,32 +978,32 @@ string TransTableL::makeHolding(
 }
 
 
-auto TransTableL::dumpHands(
+auto TransTableL::dump_hands(
   ofstream& fout,
   const vector<vector<string>>& hands,
   const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void {
   for (unsigned i = 0; i < DDS_SUITS; i++) {
     fout << setw(16) << "" << 
-      TransTableL::makeHolding(hands[0][i], lengths[0][i]) << "\n";
+      TransTableL::make_holding(hands[0][i], lengths[0][i]) << "\n";
   }
 
   for (unsigned i = 0; i < DDS_SUITS; i++) {
     fout << setw(16) << left << 
-      TransTableL::makeHolding(hands[3][i], lengths[3][i]) <<
+      TransTableL::make_holding(hands[3][i], lengths[3][i]) <<
       setw(16) << "" <<
       setw(16) << 
-        TransTableL::makeHolding(hands[1][i], lengths[1][i]) << "\n";
+        TransTableL::make_holding(hands[1][i], lengths[1][i]) << "\n";
   }
 
   for (unsigned i = 0; i < DDS_SUITS; i++) {
     fout << setw(16) << "" <<
-      TransTableL::makeHolding(hands[2][i], lengths[2][i]) << "\n";
+      TransTableL::make_holding(hands[2][i], lengths[2][i]) << "\n";
   }
   fout << "\n";
 }
 
 
-auto TransTableL::setToPartialHands(
+auto TransTableL::set_to_partial_hands(
   const unsigned set,
   const unsigned mask,
   const int maxRank,
@@ -1023,7 +1023,7 @@ auto TransTableL::setToPartialHands(
 }
 
 
-auto TransTableL::keyToDist(
+auto TransTableL::key_to_dist(
   const long long key,
   int handDist[]) const -> void {
   handDist[0] = static_cast<int>((key >> 36) & 0x00000fff);
@@ -1033,7 +1033,7 @@ auto TransTableL::keyToDist(
 }
 
 
-auto TransTableL::distToLengths(
+auto TransTableL::dist_to_lengths(
   const int trick,
   const int handDist[],
   unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void {
@@ -1047,7 +1047,7 @@ auto TransTableL::distToLengths(
 }
 
 
-string TransTableL::singleLenToStr(const unsigned char len[]) const
+string TransTableL::single_len_to_str(const unsigned char len[]) const
 {
   return to_string(static_cast<unsigned>(len[0])) + "=" + 
          to_string(static_cast<unsigned>(len[1])) + "=" +
@@ -1056,13 +1056,13 @@ string TransTableL::singleLenToStr(const unsigned char len[]) const
 }
 
 
-string TransTableL::lenToStr(
+string TransTableL::len_to_str(
   const unsigned char len[DDS_HANDS][DDS_SUITS]) const
 {
-  return TransTableL::singleLenToStr(len[0]) + " " +
-         TransTableL::singleLenToStr(len[1]) + " " +
-         TransTableL::singleLenToStr(len[2]) + " " +
-         TransTableL::singleLenToStr(len[3]);
+  return TransTableL::single_len_to_str(len[0]) + " " +
+         TransTableL::single_len_to_str(len[1]) + " " +
+         TransTableL::single_len_to_str(len[2]) + " " +
+         TransTableL::single_len_to_str(len[3]);
 }
 
 
@@ -1093,10 +1093,10 @@ auto TransTableL::print_suits(
       else
         fout << setw(8) << "";
 
-      TransTableL::keyToDist(dp->list[i].key, handDist);
-      TransTableL::distToLengths(trick, handDist, len);
+      TransTableL::key_to_dist(dp->list[i].key, handDist);
+      TransTableL::dist_to_lengths(trick, handDist, len);
 
-      fout << TransTableL::lenToStr(len) << "\n";
+      fout << TransTableL::len_to_str(len) << "\n";
     }
   }
   fout << "\n";
@@ -1116,7 +1116,7 @@ auto TransTableL::print_all_suits(ofstream& fout) const -> void {
 }
 
 
-auto TransTableL::makeHistStats(
+auto TransTableL::make_hist_stats(
   const int hist[],
   int& count,
   int& prod_sum,
@@ -1141,7 +1141,7 @@ auto TransTableL::makeHistStats(
 }
 
 
-auto TransTableL::calcPercentile(
+auto TransTableL::calc_percentile(
   const int hist[],
   const double threshold,
   const int last_index) const -> int {
@@ -1156,14 +1156,14 @@ auto TransTableL::calcPercentile(
 }
 
 
-auto TransTableL::printHist(
+auto TransTableL::print_hist(
   ofstream& fout,
   const int hist[],
   const int num_wraps,
   const int last_index) const -> void {
   int count, prod_sum, prod_sumsq, max_len;
 
-  TransTableL::makeHistStats(hist,
+  TransTableL::make_hist_stats(hist,
     count, prod_sum, prod_sumsq, max_len, last_index);
 
   for (int i = 1; i <= last_index; i++)
@@ -1197,7 +1197,7 @@ auto TransTableL::printHist(
 }
 
 
-auto TransTableL::updateSuitHist(
+auto TransTableL::update_suit_hist(
   const int trick,
   const int hand,
   int hist[],
@@ -1218,7 +1218,7 @@ auto TransTableL::updateSuitHist(
 }
 
 
-auto TransTableL::updateSuitHist(
+auto TransTableL::update_suit_hist(
   const int trick,
   const int hand,
   int hist[],
@@ -1251,11 +1251,11 @@ auto TransTableL::print_suit_stats(
   int hist[DISTS_PER_ENTRY+1];
   int num_wraps;
 
-  TransTableL::updateSuitHist(trick, hand, hist, num_wraps);
+  TransTableL::update_suit_hist(trick, hand, hist, num_wraps);
 
   fout << "Suit histogram for trick " << trick << ", hand " <<
     Players()[static_cast<unsigned>(hand)] << "\n";
-  TransTableL::printHist(fout, hist, num_wraps, DISTS_PER_ENTRY);
+  TransTableL::print_hist(fout, hist, num_wraps, DISTS_PER_ENTRY);
 }
 
 
@@ -1272,17 +1272,17 @@ auto TransTableL::print_all_suit_stats(ofstream& fout) const -> void {
 
   for (int trick = 11; trick >= 1; trick--) {
     for (int hand = 0; hand < DDS_HANDS; hand++) {
-      TransTableL::updateSuitHist(trick, hand, hist, suitHist,
+      TransTableL::update_suit_hist(trick, hand, hist, suitHist,
         num_wraps, suitWraps);
 
       fout << "Suit histogram for trick " << trick << ", hand " <<
         Players()[static_cast<unsigned>(hand)] << "\n";
-      TransTableL::printHist(fout, hist, num_wraps, DISTS_PER_ENTRY);
+      TransTableL::print_hist(fout, hist, num_wraps, DISTS_PER_ENTRY);
     }
   }
 
   fout << "Overall suit histogram\n";
-  TransTableL::printHist(fout, suitHist, suitWraps, DISTS_PER_ENTRY);
+  TransTableL::print_hist(fout, suitHist, suitWraps, DISTS_PER_ENTRY);
 }
 
 
@@ -1303,8 +1303,8 @@ auto TransTableL::print_summary_suit_stats(ofstream& fout) const -> void {
 
   for (int trick = 11; trick >= 1; trick--) {
     for (int hand = 0; hand < DDS_HANDS; hand++) {
-      TransTableL::updateSuitHist(trick, hand, hist, num_wraps);
-      TransTableL::makeHistStats(hist,
+      TransTableL::update_suit_hist(trick, hand, hist, num_wraps);
+      TransTableL::make_hist_stats(hist,
         count, prod_sum, prod_sumsq, max_len, DISTS_PER_ENTRY);
 
       double mean = 0., var = 0.;
@@ -1318,7 +1318,7 @@ auto TransTableL::print_summary_suit_stats(ofstream& fout) const -> void {
       }
 
       const int percentile =
-        TransTableL::calcPercentile(hist,
+        TransTableL::calc_percentile(hist,
           TT_PERCENTILE * count, DISTS_PER_ENTRY);
 
       fout << setw(5) << right << trick <<
@@ -1341,7 +1341,7 @@ auto TransTableL::print_summary_suit_stats(ofstream& fout) const -> void {
 }
 
 
-TransTableL::WinBlock const * TransTableL::findMatchingDist(
+TransTableL::WinBlock const * TransTableL::find_matching_dist(
   const int trick,
   const int hand,
   const int handDistSought[]) const
@@ -1354,7 +1354,7 @@ TransTableL::WinBlock const * TransTableL::findMatchingDist(
     dp = &tt_root_[trick][hand][hashkey];
     for (int i = 0; i < dp->nextNo; i++) {
       bp = dp->list[i].posBlock;
-      TransTableL::keyToDist(dp->list[i].key, handDist);
+      TransTableL::key_to_dist(dp->list[i].key, handDist);
 
       bool same = true;
       for (int h = 0; h < DDS_HANDS; h++) {
@@ -1371,12 +1371,12 @@ TransTableL::WinBlock const * TransTableL::findMatchingDist(
 }
 
 
-auto TransTableL::printEntriesBlock(
+auto TransTableL::print_entries_block(
   ofstream& fout,
   WinBlock const * bp,
   const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void {
   string st = to_string(bp->nextMatchNo) + 
-    " matches for " + TransTableL::lenToStr(lengths);
+    " matches for " + TransTableL::len_to_str(lengths);
 
   fout << st << "\n" << string(st.size(), '=') << "\n\n";
 
@@ -1384,7 +1384,7 @@ auto TransTableL::printEntriesBlock(
     st = "Entry number " + to_string(j+1);
     fout << st << "\n";
     fout << string(st.size(), '-') << "\n\n";
-    TransTableL::printMatch(fout, bp->list[j], lengths);
+    TransTableL::print_match(fout, bp->list[j], lengths);
   }
 }
 
@@ -1399,13 +1399,13 @@ auto TransTableL::print_entries_dist_and_cards(
   unsigned char len[DDS_HANDS][DDS_SUITS];
 
   WinBlock const * bp =
-    TransTableL::findMatchingDist(trick, hand, handDist);
+    TransTableL::find_matching_dist(trick, hand, handDist);
 
-  TransTableL::distToLengths(trick, handDist, len);
+  TransTableL::dist_to_lengths(trick, handDist, len);
 
   fout << "Looking up entry for trick " << trick << ", hand " <<
     Players()[static_cast<unsigned>(hand)] << "\n";
-  fout << TransTableL::lenToStr(len) << "\n\n";
+  fout << TransTableL::len_to_str(len) << "\n\n";
 
   if (! bp) {
     fout << "Entry not found\n\n";
@@ -1443,7 +1443,7 @@ auto TransTableL::print_entries_dist_and_cards(
 
     fout << "Match number " << matchNo++ << "\n";
     fout << string(15, '-') << "\n";
-    TransTableL::printMatch(fout, bp->list[i], len);
+    TransTableL::print_match(fout, bp->list[i], len);
   }
 
   if (matchNo == 1)
@@ -1461,18 +1461,18 @@ auto TransTableL::print_entries_dist(
   unsigned char len[DDS_HANDS][DDS_SUITS];
 
   WinBlock const * bp =
-    TransTableL::findMatchingDist(trick, hand, handDist);
+    TransTableL::find_matching_dist(trick, hand, handDist);
 
-  TransTableL::distToLengths(trick, handDist, len);
+  TransTableL::dist_to_lengths(trick, handDist, len);
 
   if (! bp) {
     fout << "Entry not found: Trick " << trick << ", hand " <<
       Players()[static_cast<unsigned>(hand)] << "\n";
-    fout << TransTableL::lenToStr(len) << "\n\n";
+    fout << TransTableL::len_to_str(len) << "\n\n";
     return;
   }
 
-  TransTableL::printEntriesBlock(fout, bp, len);
+  TransTableL::print_entries_block(fout, bp, len);
 }
 
 
@@ -1489,10 +1489,10 @@ auto TransTableL::print_entries(
     dp = &tt_root_[trick][hand][hashkey];
     for (int i = 0; i < dp->nextNo; i++) {
       bp = dp->list[i].posBlock;
-      TransTableL::keyToDist(dp->list[i].key, handDist);
-      TransTableL::distToLengths(trick, handDist, lengths);
+      TransTableL::key_to_dist(dp->list[i].key, handDist);
+      TransTableL::dist_to_lengths(trick, handDist, lengths);
 
-      TransTableL::printEntriesBlock(fout, bp, lengths);
+      TransTableL::print_entries_block(fout, bp, lengths);
     }
   }
 }
@@ -1512,7 +1512,7 @@ auto TransTableL::print_all_entries(ofstream& fout) const -> void {
 }
 
 
-auto TransTableL::updateEntryHist(
+auto TransTableL::update_entry_hist(
   const int trick,
   const int hand,
   int hist[],
@@ -1536,7 +1536,7 @@ auto TransTableL::updateEntryHist(
 }
 
 
-auto TransTableL::updateEntryHist(
+auto TransTableL::update_entry_hist(
   const int trick,
   const int hand,
   int hist[],
@@ -1572,11 +1572,11 @@ auto TransTableL::print_entry_stats(
   int hist[BLOCKS_PER_ENTRY+1];
   int num_wraps;
 
-  TransTableL::updateEntryHist(trick, hand, hist, num_wraps);
+  TransTableL::update_entry_hist(trick, hand, hist, num_wraps);
 
   fout << "Entry histogram for trick " << trick << ", hands " <<
     Players()[static_cast<unsigned>(hand)] << "\n";
-  TransTableL::printHist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
+  TransTableL::print_hist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
 }
 
 
@@ -1591,21 +1591,21 @@ auto TransTableL::print_all_entry_stats(ofstream& fout) const -> void {
 
   for (int trick = 11; trick >= 1; trick--) {
     for (int hand = 0; hand < DDS_HANDS; hand++) {
-      TransTableL::updateEntryHist(trick, hand, hist, suitHist,
+      TransTableL::update_entry_hist(trick, hand, hist, suitHist,
         num_wraps, suitWraps);
 
       fout << "Entry histogram for trick " << trick << ", hands " <<
         Players()[static_cast<unsigned>(hand)] << "\n";
-      TransTableL::printHist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
+      TransTableL::print_hist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
     }
   }
 
   fout << "Overall entry histogram\n";
-  TransTableL::printHist(fout, suitHist, suitWraps, BLOCKS_PER_ENTRY);
+  TransTableL::print_hist(fout, suitHist, suitWraps, BLOCKS_PER_ENTRY);
 }
 
 
-auto TransTableL::effectOfBlockBound(
+auto TransTableL::effect_of_block_bound(
   const int hist[],
   const int size) const -> int {
   // Calculates the number of blocks used if the blocks
@@ -1649,13 +1649,13 @@ auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void {
 
   for (int trick = 11; trick >= 1; trick--) {
     for (int hand = 0; hand < DDS_HANDS; hand++) {
-      TransTableL::updateEntryHist(trick, hand, hist, num_wraps);
-      TransTableL::makeHistStats(hist,
+      TransTableL::update_entry_hist(trick, hand, hist, num_wraps);
+      TransTableL::make_hist_stats(hist,
         count, prod_sum, prod_sumsq, max_len, BLOCKS_PER_ENTRY);
 
       cumCount += count;
       cumProd += prod_sum;
-      cumMemory += TransTableL::effectOfBlockBound(hist, 20);
+      cumMemory += TransTableL::effect_of_block_bound(hist, 20);
 
       double mean = prod_sum / static_cast<double>(count);
       double var = (count > 1 ?
@@ -1665,7 +1665,7 @@ auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void {
       if (var < 0.)
         var = 0.;
 
-      const int percentile = TransTableL::calcPercentile(hist,
+      const int percentile = TransTableL::calc_percentile(hist,
          TT_PERCENTILE * count, BLOCKS_PER_ENTRY);
 
       fout << setw(5) << right << trick <<
@@ -1684,7 +1684,7 @@ auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void {
   fout << setw(16) << left << "Blocks counted " <<
     setw(8) << right << cumCount << "\n";
   fout << setw(16) << left << "Blocks produced " <<
-    setw(8) << right << TransTableL::blocksInUse() << "\n";
+    setw(8) << right << TransTableL::blocks_in_use() << "\n";
   fout << setw(16) << left << "Mem scenario" <<
     setw(7) << right << setprecision(2) << fixed <<
       100. * cumMemory / 

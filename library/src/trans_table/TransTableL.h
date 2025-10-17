@@ -141,28 +141,28 @@ class TransTableL: public TransTable
     int tt_in_use_;
 
 
-    auto initTT() -> void;
+    auto init_tt() -> void;
 
-    auto releaseTT() -> void;
+    auto release_tt() -> void;
 
   // Constants are provided via internal function-local static tables.
 
     auto hash8(const int handDist[]) const -> int;
 
-    auto getNextCardBlock() -> WinBlock *;
+    auto get_next_card_block() -> WinBlock *;
 
-    auto lookupSuit(
+    auto lookup_suit(
       DistHash * dp,
       long long key,
       bool& empty) -> WinBlock *;
 
-    auto lookupCards(
+    auto lookup_cards(
       const WinMatch& search,
       WinBlock * bp,
       int limit,
       bool& lowerFlag) -> NodeCards *;
 
-    auto createOrUpdate(
+    auto create_or_update(
       WinBlock * bp,
       const WinMatch& search,
       bool flag) -> void;
@@ -171,21 +171,21 @@ class TransTableL: public TransTable
 
     // Debug functions from here on.
 
-    auto keyToDist(
+    auto key_to_dist(
       long long key,
       int handDist[]) const -> void;
 
-    auto distToLengths(
+    auto dist_to_lengths(
       int trick,
       const int handDist[],
       unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    auto singleLenToStr(const unsigned char length[]) const -> std::string;
+    auto single_len_to_str(const unsigned char length[]) const -> std::string;
 
-    auto lenToStr(
+    auto len_to_str(
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> std::string;
 
-    auto makeHistStats(
+    auto make_hist_stats(
       const int hist[],
       int& count,
       int& prodSum,
@@ -193,24 +193,24 @@ class TransTableL: public TransTable
       int& maxLen,
       int lastIndex) const -> void;
 
-    auto calcPercentile(
+    auto calc_percentile(
       const int hist[],
       double threshold,
       int lastIndex) const -> int;
 
-    auto printHist(
+    auto print_hist(
       std::ofstream& fout,
       const int hist[],
       int numWraps,
       int lastIndex) const -> void;
 
-    auto updateSuitHist(
+    auto update_suit_hist(
       int trick,
       int hand,
       int hist[],
       int& numWraps) const -> void;
 
-    auto updateSuitHist(
+    auto update_suit_hist(
       int trick,
       int hand,
       int hist[],
@@ -218,23 +218,23 @@ class TransTableL: public TransTable
       int& numWraps,
       int& suitWraps) const -> void;
 
-    auto findMatchingDist(
+    auto find_matching_dist(
       int trick,
       int hand,
       const int handDistSought[]) const -> WinBlock const *;
 
-    auto printEntriesBlock(
+    auto print_entries_block(
       std::ofstream& fout,
       WinBlock const * bp,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    auto updateEntryHist(
+    auto update_entry_hist(
       int trick,
       int hand,
       int hist[],
       int& numWraps) const -> void;
 
-    auto updateEntryHist(
+    auto update_entry_hist(
       int trick,
       int hand,
       int hist[],
@@ -242,36 +242,36 @@ class TransTableL: public TransTable
       int& numWraps,
       int& suitWraps) const -> void;
 
-    auto effectOfBlockBound(
+    auto effect_of_block_bound(
       const int hist[],
       int size) const -> int;
 
-    auto printNodeValues(
+    auto print_node_values(
       std::ofstream& fout,
       const NodeCards& node) const -> void;
 
-    auto printMatch(
+    auto print_match(
       std::ofstream& fout,
       const WinMatch& match,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    auto makeHolding(
+    auto make_holding(
       const std::string& high,
       unsigned len) const -> std::string;
 
-    void dumpHands(
+    void dump_hands(
       std::ofstream& fout,
       const std::vector<std::vector<std::string>>& hands,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
-    void setToPartialHands(
+    void set_to_partial_hands(
       const unsigned set,
       const unsigned mask,
       const int maxRank,
       const int numRanks,
       std::vector<std::vector<std::string>>& hands) const;
 
-    int blocksInUse() const;
+    int blocks_in_use() const;
 
     // Legacy implementation helpers removed; modern overrides are canonical.
 
