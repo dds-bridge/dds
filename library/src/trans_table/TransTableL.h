@@ -42,7 +42,7 @@ class TransTableL: public TransTable
 {
   private:
 
-    struct winMatchType // 52 bytes
+    struct WinMatch // 52 bytes
     {
       unsigned xorSet;
       unsigned topSet1 , topSet2 , topSet3 , topSet4 ;
@@ -52,42 +52,42 @@ class TransTableL: public TransTable
       NodeCards first;
     };
 
-    struct winBlockType // 6508 bytes when BLOCKS_PER_ENTRY == 125
+    struct WinBlock // 6508 bytes when BLOCKS_PER_ENTRY == 125
     {
       int nextMatchNo;
       int nextWriteNo;
       int timestampRead;
-      winMatchType list[BLOCKS_PER_ENTRY];
+      WinMatch list[BLOCKS_PER_ENTRY];
     };
 
-    struct posSearchType // 16 bytes (inefficiency, 12 bytes enough)
+    struct PosSearch // 16 bytes (inefficiency, 12 bytes enough)
     {
-      winBlockType * posBlock;
+      WinBlock * posBlock;
       long long key;
     };
 
-    struct distHashType // 520 bytes when DISTS_PER_ENTRY == 32
+    struct DistHash // 520 bytes when DISTS_PER_ENTRY == 32
     {
       int nextNo;
       int nextWriteNo;
-      posSearchType list[DISTS_PER_ENTRY];
+      PosSearch list[DISTS_PER_ENTRY];
     };
 
-    struct aggrType // 80 bytes
+    struct Aggr // 80 bytes
     {
       unsigned aggrRanks[DDS_SUITS];
       unsigned aggrBytes[DDS_SUITS][TT_BYTES];
     };
 
-    struct poolType // 16 bytes
+    struct Pool // 16 bytes
     {
-      poolType * next;
-      poolType * prev;
+      Pool * next;
+      Pool * prev;
       int nextBlockNo;
-      winBlockType * list;
+      WinBlock * list;
     };
 
-    struct pageStatsType
+    struct PageStats
     {
       int numResets;
       int numCallocs;
@@ -96,20 +96,20 @@ class TransTableL: public TransTable
       int lastCurrent;
     };
 
-    struct harvestedType // 16 bytes
+    struct Harvested // 16 bytes
     {
       int nextBlockNo;
-      winBlockType * list [BLOCKS_PER_PAGE];
+      WinBlock * list [BLOCKS_PER_PAGE];
     };
 
-    enum memStateType
+    enum class MemState
     {
       FROM_POOL,
       FROM_HARVEST
     };
 
     // Private data for the full memory version.
-    memStateType mem_state_;
+    MemState mem_state_;
 
     int pages_default_;
     int pages_current_;
@@ -118,74 +118,74 @@ class TransTableL: public TransTable
     int harvest_trick_;
     int harvest_hand_;
 
-    pageStatsType page_stats_;
+    PageStats page_stats_;
 
     // aggr is constant for a given hand.
-    aggrType aggr_[8192]; // 64 KB
+    Aggr aggr_[8192]; // 64 KB
 
     // This is the real transposition table.
     // The last index is the hash.
     // 6240 KB with above assumptions
-    // distHashType tt_root_[TT_TRICKS][DDS_HANDS][256];
-    distHashType * tt_root_[TT_TRICKS][DDS_HANDS];
+    // DistHash tt_root_[TT_TRICKS][DDS_HANDS][256];
+    DistHash * tt_root_[TT_TRICKS][DDS_HANDS];
 
     // It is useful to remember the last block we looked at.
-    winBlockType * last_block_seen_[TT_TRICKS][DDS_HANDS];
+    WinBlock * last_block_seen_[TT_TRICKS][DDS_HANDS];
 
     // The pool of card entries for a given suit distribution.
-    poolType * pool_;
-    winBlockType * next_block_;
-    harvestedType harvested_;
+    Pool * pool_;
+    WinBlock * next_block_;
+    Harvested harvested_;
 
     int timestamp_;
     int tt_in_use_;
 
 
-  auto InitTT() -> void;
+  auto initTT() -> void;
 
-  auto ReleaseTT() -> void;
+  auto releaseTT() -> void;
 
   // Constants are provided via internal function-local static tables.
 
     auto hash8(const int handDist[]) const -> int;
 
-    auto GetNextCardBlock() -> winBlockType *;
+    auto getNextCardBlock() -> WinBlock *;
 
-    auto LookupSuit(
-      distHashType * dp,
+    auto lookupSuit(
+      DistHash * dp,
       long long key,
-      bool& empty) -> winBlockType *;
+      bool& empty) -> WinBlock *;
 
-    auto LookupCards(
-      const winMatchType& search,
-      winBlockType * bp,
+    auto lookupCards(
+      const WinMatch& search,
+      WinBlock * bp,
       int limit,
       bool& lowerFlag) -> NodeCards *;
 
-    auto CreateOrUpdate(
-      winBlockType * bp,
-      const winMatchType& search,
+    auto createOrUpdate(
+      WinBlock * bp,
+      const WinMatch& search,
       bool flag) -> void;
 
-    auto Harvest() -> bool;
+    auto harvest() -> bool;
 
     // Debug functions from here on.
 
-    auto KeyToDist(
+    auto keyToDist(
       long long key,
       int handDist[]) const -> void;
 
-    auto DistToLengths(
+    auto distToLengths(
       int trick,
       const int handDist[],
       unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    auto SingleLenToStr(const unsigned char length[]) const -> std::string;
+    auto singleLenToStr(const unsigned char length[]) const -> std::string;
 
-    auto LenToStr(
+    auto lenToStr(
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> std::string;
 
-    auto MakeHistStats(
+    auto makeHistStats(
       const int hist[],
       int& count,
       int& prodSum,
@@ -193,24 +193,24 @@ class TransTableL: public TransTable
       int& maxLen,
       int lastIndex) const -> void;
 
-    auto CalcPercentile(
+    auto calcPercentile(
       const int hist[],
       double threshold,
       int lastIndex) const -> int;
 
-    auto PrintHist(
+    auto printHist(
       std::ofstream& fout,
       const int hist[],
       int numWraps,
       int lastIndex) const -> void;
 
-    auto UpdateSuitHist(
+    auto updateSuitHist(
       int trick,
       int hand,
       int hist[],
       int& numWraps) const -> void;
 
-    auto UpdateSuitHist(
+    auto updateSuitHist(
       int trick,
       int hand,
       int hist[],
@@ -218,23 +218,23 @@ class TransTableL: public TransTable
       int& numWraps,
       int& suitWraps) const -> void;
 
-    auto FindMatchingDist(
+    auto findMatchingDist(
       int trick,
       int hand,
-      const int handDistSought[]) const -> winBlockType const *;
+      const int handDistSought[]) const -> WinBlock const *;
 
-    auto PrintEntriesBlock(
+    auto printEntriesBlock(
       std::ofstream& fout,
-      winBlockType const * bp,
+      WinBlock const * bp,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    auto UpdateEntryHist(
+    auto updateEntryHist(
       int trick,
       int hand,
       int hist[],
       int& numWraps) const -> void;
 
-    auto UpdateEntryHist(
+    auto updateEntryHist(
       int trick,
       int hand,
       int hist[],
@@ -242,20 +242,20 @@ class TransTableL: public TransTable
       int& numWraps,
       int& suitWraps) const -> void;
 
-    auto EffectOfBlockBound(
+    auto effectOfBlockBound(
       const int hist[],
       int size) const -> int;
 
-    auto PrintNodeValues(
+    auto printNodeValues(
       std::ofstream& fout,
       const NodeCards& node) const -> void;
 
-    auto PrintMatch(
+    auto printMatch(
       std::ofstream& fout,
-      const winMatchType& match,
+      const WinMatch& match,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    auto MakeHolding(
+    auto makeHolding(
       const std::string& high,
       unsigned len) const -> std::string;
 

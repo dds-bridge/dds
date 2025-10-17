@@ -161,7 +161,6 @@ class TransTableS: public TransTable
 
     ~TransTableS();
 
-    // Modern overrides implemented as inline wrappers
     void init(const int hand_lookup[][15]) override;
     void set_memory_default(int megabytes) override;
     void set_memory_maximum(int megabytes) override;
