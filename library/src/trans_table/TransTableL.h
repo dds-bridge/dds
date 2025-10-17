@@ -109,36 +109,36 @@ class TransTableL: public TransTable
     };
 
     // Private data for the full memory version.
-    memStateType memState;
+    memStateType mem_state_;
 
-    int pagesDefault;
-    int pagesCurrent;
-    int pagesMaximum;
+    int pages_default_;
+    int pages_current_;
+    int pages_maximum_;
 
-    int harvestTrick;
-    int harvestHand;
+    int harvest_trick_;
+    int harvest_hand_;
 
-    pageStatsType pageStats;
+    pageStatsType page_stats_;
 
     // aggr is constant for a given hand.
-    aggrType aggr[8192]; // 64 KB
+    aggrType aggr_[8192]; // 64 KB
 
     // This is the real transposition table.
     // The last index is the hash.
     // 6240 KB with above assumptions
-    // distHashType TTroot[TT_TRICKS][DDS_HANDS][256];
-    distHashType * TTroot[TT_TRICKS][DDS_HANDS];
+    // distHashType tt_root_[TT_TRICKS][DDS_HANDS][256];
+    distHashType * tt_root_[TT_TRICKS][DDS_HANDS];
 
     // It is useful to remember the last block we looked at.
-    winBlockType * lastBlockSeen[TT_TRICKS][DDS_HANDS];
+    winBlockType * last_block_seen_[TT_TRICKS][DDS_HANDS];
 
     // The pool of card entries for a given suit distribution.
-    poolType * poolp;
-    winBlockType * nextBlockp;
-    harvestedType harvested;
+    poolType * pool_;
+    winBlockType * next_block_;
+    harvestedType harvested_;
 
-    int timestamp;
-    int TTInUse;
+    int timestamp_;
+    int tt_in_use_;
 
 
     void InitTT();

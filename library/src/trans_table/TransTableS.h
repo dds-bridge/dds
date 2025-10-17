@@ -42,7 +42,7 @@ class TransTableS: public TransTable
     struct posSearchTypeSmall
     {
       winCardType * posSearchPoint;
-      long long suitLengths;
+      long long suit_lengths_;
       posSearchTypeSmall * left;
       posSearchTypeSmall * right;
     };
@@ -60,41 +60,41 @@ class TransTableS: public TransTable
     };
 
 
-    long long aggrLenSets[14];
-    statsResetsType statsResets;
+    long long aggr_len_sets_[14];
+    statsResetsType stats_resets_;
 
     winCardType temp_win[5];
-    int nodeSetSizeLimit;
-    int winSetSizeLimit;
-    unsigned long long maxmem;
-    unsigned long long allocmem;
-    unsigned long long summem;
-    int wmem;
-    int nmem;
-    int maxIndex;
-    int wcount;
-    int ncount;
-    bool clearTTflag;
-    int windex;
-    ttAggrType * aggp;
+    int node_set_size_limit_;
+    int win_set_size_limit_;
+    unsigned long long maxmem_;
+    unsigned long long allocmem_;
+    unsigned long long summem_;
+    int wmem_;
+    int nmem_;
+    int max_index_;
+    int wcount_;
+    int ncount_;
+    bool clear_tt_flag_;
+    int windex_;
+    ttAggrType * aggp_;
 
-    posSearchTypeSmall * rootnp[14][DDS_HANDS];
-    winCardType ** pw;
-  NodeCards ** pn;
-    posSearchTypeSmall ** pl[14][DDS_HANDS];
-  NodeCards * nodeCards;
-    winCardType * winCards;
-    posSearchTypeSmall * posSearch[14][DDS_HANDS];
-    int nodeSetSize; /* Index with range 0 to nodeSetSizeLimit */
-    int winSetSize;  /* Index with range 0 to winSetSizeLimit */
-    int lenSetInd[14][DDS_HANDS];
-    int lcount[14][DDS_HANDS];
+    posSearchTypeSmall * rootnp_[14][DDS_HANDS];
+    winCardType ** pw_;
+  NodeCards ** pn_;
+    posSearchTypeSmall ** pl_[14][DDS_HANDS];
+  NodeCards * node_cards_;
+    winCardType * win_cards_;
+    posSearchTypeSmall * pos_search_[14][DDS_HANDS];
+    int node_set_size_; /* Index with range 0 to node_set_size_limit_ */
+    int win_set_size_;  /* Index with range 0 to win_set_size_limit_ */
+    int len_set_ind_[14][DDS_HANDS];
+    int lcount_[14][DDS_HANDS];
 
-  std::vector<std::string> resetText;
+  std::vector<std::string> reset_text_;
 
-    long long suitLengths[14];
+    long long suit_lengths_[14];
 
-    int TTInUse;
+    int tt_in_use_;
 
   // Constants are provided via internal function-local static tables.
 
@@ -114,7 +114,7 @@ class TransTableS: public TransTable
   const unsigned short ourWinRanks[DDS_SUITS],
   const unsigned short aggr[DDS_SUITS],
   const NodeCards& first,
-  const long long suitLengths,
+  const long long suit_lengths_,
       const int tricks,
       const int firstHand,
       const bool flag);

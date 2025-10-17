@@ -15,17 +15,17 @@
    object. In order to save time and memory, they share a
    single memory.
 
-   Each 13-bit number, aggr, represents a possible set of cards
+   Each 13-bit number, aggr_, represents a possible set of cards
    remaining in a suit. For example, 0x15a2 represents
    A(1) QT(5) 97(a) 3(2).
 
-   TTlowestRank[aggr] gives the lowest relative rank that is in
-   play in aggr. The ace is 14, the deuce is 2. A void counts as
+   TTlowestRank[aggr_] gives the lowest relative rank that is in
+   play in aggr_. The ace is 14, the deuce is 2. A void counts as
    rank 15 ("not even the ace"). It would go horribly wrong
    if this rank were chosen to be 0, as might seem intuitive.
   This is not the same as lowest_rank (legacy: lowestRank), the lowest absolute rank.
 
-   maskBytes[aggr][suit] is a set of 4 32-bit integers,
+   maskBytes[aggr_][suit] is a set of 4 32-bit integers,
    where suit is 0 ..3 (spades .. clubs). Each integer only
    has 8 of its 32 bits set, but these 8 bits could be either
    in the top byte (byte 0) or any of the others (bytes 1 ..3).
@@ -175,7 +175,7 @@ TransTableL::TransTableL()
   (void)TTLowestRankTable();
   (void)MaskBytesTable();
   (void)Players();
-  TTInUse = 0;
+  tt_in_use_ = 0;
 }
 
 /**
@@ -203,11 +203,11 @@ auto TransTableL::init(const int handLookup[][15]) -> void {
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    aggr[0].aggrRanks[s] = 0;
-    aggr[0].aggrBytes[s][0] = 0;
-    aggr[0].aggrBytes[s][1] = 0;
-    aggr[0].aggrBytes[s][2] = 0;
-    aggr[0].aggrBytes[s][3] = 0;
+    aggr_[0].aggrRanks[s] = 0;
+    aggr_[0].aggrBytes[s][0] = 0;
+    aggr_[0].aggrBytes[s][1] = 0;
+    aggr_[0].aggrBytes[s][2] = 0;
+    aggr_[0].aggrBytes[s][3] = 0;
   }
 
   for (unsigned ind = 1; ind < 8192; ind++)
@@ -219,8 +219,8 @@ auto TransTableL::init(const int handLookup[][15]) -> void {
       topBitNo++;
     }
 
-    aggr[ind] = aggr[ind ^ topBitRank];
-    ap = &aggr[ind];
+    aggr_[ind] = aggr_[ind ^ topBitRank];
+    ap = &aggr_[ind];
 
     for (int s = 0; s < DDS_SUITS; s++)
     {
@@ -255,7 +255,7 @@ auto TransTableL::set_memory_default(int megabytes) -> void {
   double blockMem = BLOCKS_PER_PAGE * sizeof(winBlockType) /
                     static_cast<double>(1024.);
 
-  pagesDefault = static_cast<int>((1024 * megabytes) / blockMem);
+  pages_default_ = static_cast<int>((1024 * megabytes) / blockMem);
 }
 
 
@@ -263,7 +263,7 @@ auto TransTableL::set_memory_maximum(int megabytes) -> void {
   double blockMem = BLOCKS_PER_PAGE * sizeof(winBlockType) /
                     static_cast<double>(1024.);
 
-  pagesMaximum = static_cast<int>((1024 * megabytes) / blockMem);
+  pages_maximum_ = static_cast<int>((1024 * megabytes) / blockMem);
 }
 
 
@@ -274,18 +274,18 @@ auto TransTableL::set_memory_maximum(int megabytes) -> void {
 /////////////////////////////////////////////////////////////
 
 auto TransTableL::make_tt() -> void {
-  if (! TTInUse)
+  if (! tt_in_use_)
   {
-    TTInUse = 1;
+    tt_in_use_ = 1;
 
     for (int t = 0; t < TT_TRICKS; t++)
     {
       for (int h = 0; h < DDS_HANDS; h++)
       {
-        TTroot[t][h] = static_cast<distHashType *>
+        tt_root_[t][h] = static_cast<distHashType *>
                        (malloc(256 * sizeof(distHashType)));
 
-        if (TTroot[t][h] == nullptr)
+        if (tt_root_[t][h] == nullptr)
           exit(1);
       }
     }
@@ -302,67 +302,67 @@ auto TransTableL::InitTT() -> void {
     {
       for (int i = 0; i < 256; i++)
       {
-        TTroot[c][h][i].nextNo = 0;
-        TTroot[c][h][i].nextWriteNo = 0;
+        tt_root_[c][h][i].nextNo = 0;
+        tt_root_[c][h][i].nextWriteNo = 0;
 
       }
-      lastBlockSeen[c][h] = nullptr;
+      last_block_seen_[c][h] = nullptr;
     }
   }
 }
 
 
 auto TransTableL::ReleaseTT() -> void {
-  if (! TTInUse)
+  if (! tt_in_use_)
     return;
-  TTInUse = 0;
+  tt_in_use_ = 0;
 
   for (int t = 0; t < TT_TRICKS; t++)
   {
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      if (TTroot[t][h] == nullptr)
+      if (tt_root_[t][h] == nullptr)
         continue;
 
-      free(TTroot[t][h]);
+      free(tt_root_[t][h]);
     }
   }
 }
 
 
 auto TransTableL::reset_memory([[maybe_unused]] const ResetReason reason) -> void {
-  if (poolp == nullptr)
+  if (pool_ == nullptr)
     return;
 
-  pageStats.numResets++;
-  pageStats.numCallocs += pagesCurrent - pageStats.lastCurrent;
-  pageStats.lastCurrent = pagesCurrent;
+  page_stats_.numResets++;
+  page_stats_.numCallocs += pages_current_ - page_stats_.lastCurrent;
+  page_stats_.lastCurrent = pages_current_;
 
-  while (pagesCurrent > pagesDefault)
+  while (pages_current_ > pages_default_)
   {
-    free(poolp->list);
-    poolp = poolp->prev;
+    free(pool_->list);
+    pool_ = pool_->prev;
 
-    free(poolp->next);
-    poolp->next = nullptr;
+    free(pool_->next);
+    pool_->next = nullptr;
 
-    pagesCurrent--;
+    pages_current_--;
   }
 
-  pageStats.numFrees += pageStats.lastCurrent - pagesCurrent;
-  pageStats.lastCurrent = pagesCurrent;
+  page_stats_.numFrees += page_stats_.lastCurrent - pages_current_;
+  page_stats_.lastCurrent = pages_current_;
 
-  while (poolp->prev)
-    poolp = poolp->prev;
+  while (pool_->prev)
+    pool_ = pool_->prev;
 
-  poolp->nextBlockNo = 0;
-  nextBlockp = poolp->list;
+  pool_->nextBlockNo = 0;
+  next_block_ = pool_->list;
 
   TransTableL::InitTT();
 
-  timestamp = 0;
+  timestamp_ = 0;
 
-  memState = FROM_POOL;
+  mem_state_ = FROM_POOL;
 
   return;
 }
@@ -371,27 +371,27 @@ auto TransTableL::reset_memory([[maybe_unused]] const ResetReason reason) -> voi
 auto TransTableL::return_all_memory() -> void {
   poolType * tmp;
 
-  if (poolp)
+  if (pool_)
   {
-    while (poolp->next)
-      poolp = poolp->next;
+    while (pool_->next)
+      pool_ = pool_->next;
 
-    while (poolp)
+    while (pool_)
     {
-      free(poolp->list);
-      tmp = poolp;
-      poolp = poolp->prev;
+      free(pool_->list);
+      tmp = pool_;
+      pool_ = pool_->prev;
       free(tmp);
     }
   }
 
-  pagesCurrent = 0;
+  pages_current_ = 0;
 
-  pageStats.numResets = 0;
-  pageStats.numCallocs = 0;
-  pageStats.numFrees = 0;
-  pageStats.numHarvests = 0;
-  pageStats.lastCurrent = 0;
+  page_stats_.numResets = 0;
+  page_stats_.numCallocs = 0;
+  page_stats_.numFrees = 0;
+  page_stats_.numHarvests = 0;
+  page_stats_.lastCurrent = 0;
 
   TransTableL::ReleaseTT();
 
@@ -400,7 +400,7 @@ auto TransTableL::return_all_memory() -> void {
 
 
 auto TransTableL::BlocksInUse() const -> int {
-  poolType * pp = poolp;
+  poolType * pp = pool_;
   int count = 0;
 
   do
@@ -415,7 +415,7 @@ auto TransTableL::BlocksInUse() const -> int {
 
 
 auto TransTableL::memory_in_use() const -> double {
-  int blockMem = BLOCKS_PER_PAGE * pagesCurrent *
+  int blockMem = BLOCKS_PER_PAGE * pages_current_ *
                  static_cast<int>(sizeof(winBlockType));
   int aggrMem = 8192 * static_cast<int>(sizeof(aggrType));
   int rootMem = TT_TRICKS * DDS_HANDS * 256 *
@@ -443,71 +443,71 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
      continue with that.
   */
 
-  if (poolp == nullptr)
+  if (pool_ == nullptr)
   {
     // Have to be able to get at least one pool.
-    poolp = static_cast<poolType *>(calloc(1, sizeof(poolType)));
-    if (poolp == nullptr)
+    pool_ = static_cast<poolType *>(calloc(1, sizeof(poolType)));
+    if (pool_ == nullptr)
       exit(1);
 
-    poolp->list = static_cast<winBlockType *>
+    pool_->list = static_cast<winBlockType *>
                   (malloc(BLOCKS_PER_PAGE * sizeof(winBlockType)));
 
-    if (! poolp->list)
+    if (! pool_->list)
       exit(1);
 
-    poolp->next = nullptr;
-    poolp->prev = nullptr;
-    poolp->nextBlockNo = 1;
+    pool_->next = nullptr;
+    pool_->prev = nullptr;
+    pool_->nextBlockNo = 1;
 
-    nextBlockp = poolp->list;
+    next_block_ = pool_->list;
 
-    pagesCurrent++;
+    pages_current_++;
 
-    return nextBlockp++;
+    return next_block_++;
   }
-  else if (memState == FROM_HARVEST)
+  else if (mem_state_ == FROM_HARVEST)
   {
     // Not allowed to get more memory, so reuse old one.
-    int n = harvested.nextBlockNo;
+    int n = harvested_.nextBlockNo;
     if (n == BLOCKS_PER_PAGE)
     {
       if (! TransTableL::Harvest())
       {
         TransTableL::reset_memory(ResetReason::Unknown);
-        poolp->nextBlockNo++;
-        return nextBlockp++;
+        pool_->nextBlockNo++;
+        return next_block_++;
       }
       n = 0;
     }
 
-    harvested.nextBlockNo++;
-    return harvested.list[n];
+    harvested_.nextBlockNo++;
+    return harvested_.list[n];
   }
-  else if (poolp->nextBlockNo == BLOCKS_PER_PAGE)
+  else if (pool_->nextBlockNo == BLOCKS_PER_PAGE)
   {
-    if (poolp->next)
+    if (pool_->next)
     {
       // Reuse a dormant block that has not been freed.
-      poolp = poolp->next;
-      poolp->nextBlockNo = 1;
-      nextBlockp = poolp->list;
+      pool_ = pool_->next;
+      pool_->nextBlockNo = 1;
+      next_block_ = pool_->list;
 
-      return nextBlockp++;
+      return next_block_++;
     }
-    else if (pagesCurrent == pagesMaximum)
+    else if (pages_current_ == pages_maximum_)
     {
       // Have to try to reclaim memory.
       if (! TransTableL::Harvest())
       {
         TransTableL::reset_memory(ResetReason::Unknown);
-        poolp->nextBlockNo++;
-        return nextBlockp++;
+        pool_->nextBlockNo++;
+        return next_block_++;
       }
 
-      memState = FROM_HARVEST;
-      harvested.nextBlockNo++;
-      return harvested.list[0];
+      mem_state_ = FROM_HARVEST;
+      harvested_.nextBlockNo++;
+      return harvested_.list[0];
     }
     else
     {
@@ -522,13 +522,13 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
         if (! TransTableL::Harvest())
         {
           TransTableL::reset_memory(ResetReason::Unknown);
-          poolp->nextBlockNo++;
-          return nextBlockp++;
+          pool_->nextBlockNo++;
+          return next_block_++;
         }
 
-        memState = FROM_HARVEST;
-        harvested.nextBlockNo++;
-        return harvested.list[0];
+        mem_state_ = FROM_HARVEST;
+        harvested_.nextBlockNo++;
+        return harvested_.list[0];
       }
 
       newpoolp->list = static_cast<winBlockType *>
@@ -539,43 +539,43 @@ TransTableL::winBlockType * TransTableL::GetNextCardBlock()
         if (! TransTableL::Harvest())
         {
           TransTableL::reset_memory(ResetReason::Unknown);
-          poolp->nextBlockNo++;
-          return nextBlockp++;
+          pool_->nextBlockNo++;
+          return next_block_++;
         }
 
-        memState = FROM_HARVEST;
-        harvested.nextBlockNo++;
-        return harvested.list[0];
+        mem_state_ = FROM_HARVEST;
+        harvested_.nextBlockNo++;
+        return harvested_.list[0];
       }
 
       newpoolp->nextBlockNo = 1;
       newpoolp->next = nullptr;
-      newpoolp->prev = poolp;
+      newpoolp->prev = pool_;
 
-      poolp->next = newpoolp;
-      poolp = newpoolp;
+      pool_->next = newpoolp;
+      pool_ = newpoolp;
 
-      nextBlockp = newpoolp->list;
+      next_block_ = newpoolp->list;
 
-      pagesCurrent++;
+      pages_current_++;
 
-      return nextBlockp++;
+      return next_block_++;
     }
   }
 
-  poolp->nextBlockNo++;
-  return nextBlockp++;
+  pool_->nextBlockNo++;
+  return next_block_++;
 }
 
 
 bool TransTableL::Harvest()
 {
-  distHashType * rootptr = TTroot[harvestTrick][harvestHand];
+  distHashType * rootptr = tt_root_[harvest_trick_][harvest_hand_];
   distHashType * ptr;
   winBlockType * bp;
 
-  int trick = harvestTrick;
-  int hand = harvestHand;
+  int trick = harvest_trick_;
+  int hand = harvest_hand_;
   int hash, suit, hno = 0;
 
   while (1)
@@ -586,12 +586,12 @@ bool TransTableL::Harvest()
       for (suit = ptr->nextNo - 1; suit >= 0; suit--)
       {
         bp = ptr->list[suit].posBlock;
-        if (timestamp - bp->timestampRead > HARVEST_AGE)
+        if (timestamp_ - bp->timestampRead > HARVEST_AGE)
         {
           bp->nextMatchNo = 0;
           bp->nextWriteNo = 0;
-          bp->timestampRead = timestamp;
-          harvested.list[hno] = bp;
+          bp->timestampRead = timestamp_;
+          harvested_.list[hno] = bp;
 
           // Swap the last element down.
           if (suit != ptr->nextNo - 1)
@@ -602,33 +602,33 @@ bool TransTableL::Harvest()
 
           if (++hno == BLOCKS_PER_PAGE)
           {
-            if (++harvestHand >= DDS_HANDS)
+            if (++harvest_hand_ >= DDS_HANDS)
             {
               // Skip rest of this [trick][hand] for simplicity.
-              harvestHand = 0;
-              if (--harvestTrick < 0)
-                harvestTrick = FIRST_HARVEST_TRICK;
+              harvest_hand_ = 0;
+              if (--harvest_trick_ < 0)
+                harvest_trick_ = FIRST_HARVEST_TRICK;
             }
 
-            harvested.nextBlockNo = 0;
-            pageStats.numHarvests++;
+            harvested_.nextBlockNo = 0;
+            page_stats_.numHarvests++;
             return true;
           }
         }
       }
     }
 
-    if (++harvestHand >= DDS_HANDS)
+    if (++harvest_hand_ >= DDS_HANDS)
     {
-      harvestHand = 0;
-      if (--harvestTrick < 0)
-        harvestTrick = FIRST_HARVEST_TRICK;
+      harvest_hand_ = 0;
+      if (--harvest_trick_ < 0)
+        harvest_trick_ = FIRST_HARVEST_TRICK;
     }
 
-    if (harvestTrick == trick && harvestHand == hand)
+    if (harvest_trick_ == trick && harvest_hand_ == hand)
       return false;
 
-    rootptr = TTroot[harvestTrick][harvestHand];
+    rootptr = tt_root_[harvest_trick_][harvest_hand_];
   }
 }
 
@@ -683,16 +683,16 @@ auto TransTableL::lookup(
   int hashkey = hash8(handDist);
 
   bool empty;
-  lastBlockSeen[tricks][hand] =
-    LookupSuit(&TTroot[tricks][hand][hashkey], suitLengths, empty);
+  last_block_seen_[tricks][hand] =
+    LookupSuit(&tt_root_[tricks][hand][hashkey], suitLengths, empty);
   if (empty)
     return nullptr;
 
   // If that worked, look up cards.
-  unsigned * ab0 = aggr[ aggrTarget[0] ].aggrBytes[0];
-  unsigned * ab1 = aggr[ aggrTarget[1] ].aggrBytes[1];
-  unsigned * ab2 = aggr[ aggrTarget[2] ].aggrBytes[2];
-  unsigned * ab3 = aggr[ aggrTarget[3] ].aggrBytes[3];
+  unsigned * ab0 = aggr_[ aggrTarget[0] ].aggrBytes[0];
+  unsigned * ab1 = aggr_[ aggrTarget[1] ].aggrBytes[1];
+  unsigned * ab2 = aggr_[ aggrTarget[2] ].aggrBytes[2];
+  unsigned * ab3 = aggr_[ aggrTarget[3] ].aggrBytes[3];
 
   winMatchType TTentry;
   TTentry.topSet1 = ab0[0] | ab1[0] | ab2[0] | ab3[0];
@@ -701,7 +701,7 @@ auto TransTableL::lookup(
   TTentry.topSet4 = ab0[3] | ab1[3] | ab2[3] | ab3[3];
 
   return TransTableL::LookupCards(TTentry,
-    lastBlockSeen[tricks][hand], limit, lowerFlag);
+    last_block_seen_[tricks][hand], limit, lowerFlag);
 }
 
 
@@ -752,7 +752,7 @@ TransTableL::winBlockType * TransTableL::LookupSuit(
     winBlockType * bp = GetNextCardBlock();
     m = dp->nextWriteNo++;
     dp->list[m].posBlock = bp;
-    dp->list[m].posBlock->timestampRead = timestamp;
+    dp->list[m].posBlock->timestampRead = timestamp_;
     dp->nextNo++;
   }
 
@@ -803,13 +803,13 @@ NodeCards * TransTableL::LookupCards(
     NodeCards * nodep = &wp->first;
     if (nodep->lbound > limit)
     {
-      bp->timestampRead = ++timestamp;
+      bp->timestampRead = ++timestamp_;
       lowerFlag = true;
       return nodep;
     }
     else if (nodep->ubound <= limit)
     {
-      bp->timestampRead = ++timestamp;
+      bp->timestampRead = ++timestamp_;
       lowerFlag = false;
       return nodep;
     }
@@ -839,13 +839,13 @@ NodeCards * TransTableL::LookupCards(
     if (nodep->lbound > limit)
     {
       lowerFlag = true;
-      bp->timestampRead = ++timestamp;
+      bp->timestampRead = ++timestamp_;
       return nodep;
     }
     else if (nodep->ubound <= limit)
     {
       lowerFlag = false;
-      bp->timestampRead = ++timestamp;
+      bp->timestampRead = ++timestamp_;
       return nodep;
     }
   }
@@ -912,7 +912,7 @@ auto TransTableL::add(
   const unsigned short ourWinRanks[],
   const NodeCards& first,
   const bool flag) -> void {
-  if (lastBlockSeen[tricks][hand] == nullptr)
+  if (last_block_seen_[tricks][hand] == nullptr)
   {
     // We have recently reset the entire memory, and we were
     // in the middle of a recursion. So we'll just have to
@@ -940,7 +940,7 @@ auto TransTableL::add(
     w = static_cast<int>(ourWinRanks[ss]);
     if (w == 0)
     {
-      ab[ss] = aggr[0].aggrBytes[ss];
+      ab[ss] = aggr_[0].aggrBytes[ss];
       mb[ss] = MaskBytesTable()[0][ss].data();
       low[ss] = 15;
       TTentry.first.leastWin[ss] = 0;
@@ -950,12 +950,12 @@ auto TransTableL::add(
       w = w & (-w); /* Only lowest win */
       ag = static_cast<unsigned short>(aggrTarget[ss] & (-w));
 
-      ab[ss] = aggr[ag].aggrBytes[ss];
+      ab[ss] = aggr_[ag].aggrBytes[ss];
       mb[ss] = MaskBytesTable()[ag][ss].data();
       low[ss] = static_cast<char>(TTLowestRankTable()[ag]);
 
       TTentry.first.leastWin[ss] = 15 - low[ss];
-      TTentry.xorSet ^= aggr[ag].aggrRanks[ss];
+      TTentry.xorSet ^= aggr_[ag].aggrRanks[ss];
     }
   }
 
@@ -984,7 +984,7 @@ auto TransTableL::add(
   else
     TTentry.lastMaskNo = 4;
 
-  TransTableL::CreateOrUpdate(lastBlockSeen[tricks][hand],
+  TransTableL::CreateOrUpdate(last_block_seen_[tricks][hand],
     TTentry, flag);
 }
 
@@ -1154,7 +1154,7 @@ auto TransTableL::print_suits(
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
-    dp = &TTroot[trick][hand][hashkey];
+    dp = &tt_root_[trick][hand][hashkey];
     if (dp->nextNo == 0)
       continue;
 
@@ -1289,7 +1289,7 @@ auto TransTableL::UpdateSuitHist(
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
-    dp = &TTroot[trick][hand][hashkey];
+    dp = &tt_root_[trick][hand][hashkey];
     hist [ dp->nextNo ]++;
 
     if (dp->nextNo != dp->nextWriteNo)
@@ -1313,7 +1313,7 @@ auto TransTableL::UpdateSuitHist(
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
-    dp = &TTroot[trick][hand][hashkey];
+    dp = &tt_root_[trick][hand][hashkey];
     hist [ dp->nextNo ]++;
     suitHist[ dp->nextNo ]++;
 
@@ -1439,7 +1439,7 @@ TransTableL::winBlockType const * TransTableL::FindMatchingDist(
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
-    dp = &TTroot[trick][hand][hashkey];
+    dp = &tt_root_[trick][hand][hashkey];
     for (int i = 0; i < dp->nextNo; i++)
     {
       bp = dp->list[i].posBlock;
@@ -1505,10 +1505,10 @@ auto TransTableL::print_entries_dist_and_cards(
     return;
   }
 
-  unsigned const * ab0 = aggr[ aggrTarget[0] ].aggrBytes[0];
-  unsigned const * ab1 = aggr[ aggrTarget[1] ].aggrBytes[1];
-  unsigned const * ab2 = aggr[ aggrTarget[2] ].aggrBytes[2];
-  unsigned const * ab3 = aggr[ aggrTarget[3] ].aggrBytes[3];
+  unsigned const * ab0 = aggr_[ aggrTarget[0] ].aggrBytes[0];
+  unsigned const * ab1 = aggr_[ aggrTarget[1] ].aggrBytes[1];
+  unsigned const * ab2 = aggr_[ aggrTarget[2] ].aggrBytes[2];
+  unsigned const * ab3 = aggr_[ aggrTarget[3] ].aggrBytes[3];
 
   winMatchType TTentry;
   TTentry.topSet1 = ab0[0] | ab1[0] | ab2[0] | ab3[0];
@@ -1584,7 +1584,7 @@ auto TransTableL::print_entries(
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
-    dp = &TTroot[trick][hand][hashkey];
+    dp = &tt_root_[trick][hand][hashkey];
     for (int i = 0; i < dp->nextNo; i++)
     {
       bp = dp->list[i].posBlock;
@@ -1626,7 +1626,7 @@ auto TransTableL::UpdateEntryHist(
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
-    dp = &TTroot[trick][hand][hashkey];
+    dp = &tt_root_[trick][hand][hashkey];
     for (int i = 0; i < dp->nextNo; i++)
     {
       int c = dp->list[i].posBlock->nextMatchNo;
@@ -1654,7 +1654,7 @@ auto TransTableL::UpdateEntryHist(
 
   for (int hashkey = 0; hashkey < 256; hashkey++)
   {
-    dp = &TTroot[trick][hand][hashkey];
+    dp = &tt_root_[trick][hand][hashkey];
     for (int i = 0; i < dp->nextNo; i++)
     {
       int c = dp->list[i].posBlock->nextMatchNo;
