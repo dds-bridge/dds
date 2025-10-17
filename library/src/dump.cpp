@@ -28,13 +28,13 @@ string PrintDeal(
 
 string RankToDiagrams(
   const unsigned short ranks[DDS_HANDS][DDS_SUITS],
-  const nodeCardsType& node);
+  const NodeCards& node);
 
 string WinnersToText(const unsigned short winRanks[]);
 
-string NodeToText(const nodeCardsType& node);
+string NodeToText(const NodeCards& node);
 
-string FullNodeToText(const nodeCardsType& node);
+string FullNodeToText(const NodeCards& node);
 
 string PosToText(
   const pos& tpos,
@@ -121,7 +121,7 @@ string PrintDeal(
 
 string RankToDiagrams(
   const unsigned short ranks[DDS_HANDS][DDS_SUITS],
-  const nodeCardsType& node)
+  const NodeCards& node)
 {
   stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)
@@ -131,7 +131,7 @@ string RankToDiagrams(
       cardSuit[s] << " " << setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
       setw(12) << (s == 0 ? "Found" : "") << 
       cardSuit[s] << " " << 
-        PrintSuit(ranks[0][s], node.leastWin[s]) << "\n";
+        PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
@@ -140,9 +140,9 @@ string RankToDiagrams(
       cardSuit[s] << " " << setw(22) << left << PrintSuit(ranks[3][s]) <<
       cardSuit[s] << " " << setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
       cardSuit[s] << " " << 
-        setw(22) << PrintSuit(ranks[3][s], node.leastWin[s]) << 
+        setw(22) << PrintSuit(ranks[3][s], node.least_win[s]) << 
       cardSuit[s] << " " << 
-        PrintSuit(ranks[1][s], node.leastWin[s]) << "\n";
+        PrintSuit(ranks[1][s], node.least_win[s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
@@ -150,7 +150,7 @@ string RankToDiagrams(
     ss << setw(12) << left << "" << 
       cardSuit[s] << " " << setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
       setw(12) << "" << cardSuit[s] << " " <<
-      PrintSuit(ranks[0][s], node.leastWin[s]) << "\n";
+      PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
   }
   return ss.str();
 }
@@ -166,31 +166,31 @@ string WinnersToText(const unsigned short ourWinRanks[])
 }
 
 
-string NodeToText(const nodeCardsType& node)
+string NodeToText(const NodeCards& node)
 {
   stringstream ss;
   ss << setw(16) << left << "Address" << 
     static_cast<void const *>(&node) << "\n";
 
   ss << setw(16) << left << "Bounds" << 
-    static_cast<int>(node.lbound) << " to " <<
-    static_cast<int>(node.ubound) << " tricks\n";
+    static_cast<int>(node.lower_bound) << " to " <<
+    static_cast<int>(node.upper_bound) << " tricks\n";
 
   ss << setw(16) << left << "Best move" << 
-    cardSuit[ static_cast<int>(node.bestMoveSuit) ] <<
-    cardRank[ static_cast<int>(node.bestMoveRank) ] << "\n";
+    cardSuit[ static_cast<int>(node.best_move_suit) ] <<
+    cardRank[ static_cast<int>(node.best_move_rank) ] << "\n";
 
   return ss.str();
 }
 
 
-string FullNodeToText(const nodeCardsType& node)
+string FullNodeToText(const NodeCards& node)
 
 {
   stringstream ss;
   vector<int> v(DDS_SUITS);
   for (unsigned i = 0; i < DDS_SUITS; i++)
-    v[i] = 15 - static_cast<int>(node.leastWin[i]);
+    v[i] = 15 - static_cast<int>(node.least_win[i]);
 
   ss << setw(16) << left << "Lowest used" << 
     cardSuit[0] << cardRank[v[0]] << ", " <<
@@ -320,7 +320,7 @@ int DumpInput(
 void DumpRetrieved(
   ofstream& fout,
   const pos& tpos,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth)
 {
@@ -336,7 +336,7 @@ void DumpStored(
   ofstream& fout,
   const pos& tpos,
   const Moves& moves,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth)
 {
@@ -352,7 +352,7 @@ void DumpStored(
   ofstream& fout,
   const pos& tpos,
   SolverContext& ctx,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth)
 {

@@ -30,7 +30,7 @@ void Memory::ReturnThread(const unsigned thrId)
 {
   SolverContext ctx{memory[thrId]};
   if (auto* tt = ctx.maybeTransTable())
-    tt->ReturnAllMemory();
+    tt->return_all_memory();
   memory[thrId]->memUsed = Memory::MemoryInUseMB(thrId);
 }
 
@@ -54,7 +54,7 @@ void Memory::Resize(
         // Return and release TT memory via context API.
         SolverContext ctx{memory[i]};
         if (auto* tt = ctx.maybeTransTable())
-          tt->ReturnAllMemory();
+          tt->return_all_memory();
         ctx.DisposeTransTable();
       }
       if (memory[i])
@@ -112,7 +112,7 @@ double Memory::MemoryInUseMB(const unsigned thrId) const
   SolverContext ctx{memory[thrId]};
   double ttMem = 0.0;
   if (auto* tt = ctx.maybeTransTable())
-    ttMem = tt->MemoryInUse();
+    ttMem = tt->memory_in_use();
   return ttMem + 8192. * sizeof(relRanksType) / static_cast<double>(1024.);
 }
 

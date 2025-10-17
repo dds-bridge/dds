@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <memory>
-#include "library/src/trans_table/TransTable.h"
+#include "trans_table/TransTable.h"
 
 namespace dds_test {
 
@@ -23,40 +23,40 @@ protected:
         
         ~MockTransTable() override = default;
 
-        void Init(const int handLookup[][15]) override {
+        void init(const int handLookup[][15]) override {
             initCalled = true;
         }
 
-        void SetMemoryDefault(const int megabytes) override {
+        void set_memory_default(int megabytes) override {
             defaultMemory = megabytes;
         }
 
-        void SetMemoryMaximum(const int megabytes) override {
+        void set_memory_maximum(int megabytes) override {
             maximumMemory = megabytes;
         }
 
-        void MakeTT() override {
+        void make_tt() override {
             ttMade = true;
         }
 
-        void ResetMemory(const TTresetReason reason) override {
+        void reset_memory(ResetReason reason) override {
             lastResetReason = reason;
         }
 
-        void ReturnAllMemory() override {
+        void return_all_memory() override {
             memoryReturned = true;
         }
 
-        double MemoryInUse() const override {
+        double memory_in_use() const override {
             return testMemoryUsage;
         }
 
-        nodeCardsType const * Lookup(
-            const int trick,
-            const int hand,
-            const unsigned short aggrTarget[],
-            const int handDist[],
-            const int limit,
+        NodeCards const * lookup(
+            int trick,
+            int hand,
+            const unsigned short aggr_target[],
+            const int hand_dist[],
+            int limit,
             bool& lowerFlag) override {
             
             lookupCalled = true;
@@ -67,13 +67,13 @@ protected:
             return testLookupResult;
         }
 
-        void Add(
-            const int trick,
-            const int hand,
-            const unsigned short aggrTarget[],
-            const unsigned short winRanksArg[],
-            const nodeCardsType& first,
-            const bool flag) override {
+        void add(
+            int trick,
+            int hand,
+            const unsigned short aggr_target[],
+            const unsigned short win_ranks_arg[],
+            const NodeCards& first,
+            bool flag) override {
             
             addCalled = true;
             addTrick = trick;
@@ -81,17 +81,29 @@ protected:
             addFlag = flag;
         }
 
-        void PrintSuits(
-            std::ofstream& fout,
-            const int trick,
-            const int hand) const override {
+        void print_suits(
+            std::ofstream& /*fout*/,
+            int /*trick*/,
+            int /*hand*/) const override {
             
             printSuitsCalled = true;
         }
 
-        void PrintAllSuits(std::ofstream& fout) const override {
+        void print_all_suits(std::ofstream& /*fout*/) const override {
             printAllSuitsCalled = true;
         }
+
+        // No-op implementations for remaining pure-virtual printers
+        void print_suit_stats(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+        void print_all_suit_stats(std::ofstream& /*fout*/) const override {}
+        void print_summary_suit_stats(std::ofstream& /*fout*/) const override {}
+        void print_entries_dist(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/, const int /*hand_dist*/[]) const override {}
+        void print_entries_dist_and_cards(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/, const unsigned short /*aggr_target*/[], const int /*hand_dist*/[]) const override {}
+        void print_entries(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+        void print_all_entries(std::ofstream& /*fout*/) const override {}
+        void print_entry_stats(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+        void print_all_entry_stats(std::ofstream& /*fout*/) const override {}
+        void print_summary_entry_stats(std::ofstream& /*fout*/) const override {}
 
         // Test state variables (mutable for const methods)
         mutable bool initCalled = false;
@@ -104,14 +116,14 @@ protected:
         
         int defaultMemory = 0;
         int maximumMemory = 0;
-        TTresetReason lastResetReason = TT_RESET_UNKNOWN;
+    ResetReason lastResetReason = ResetReason::Unknown;
         
         // Lookup test state
         int lastTrick = -1;
         int lastHand = -1;
         int lastLimit = -1;
         bool testLowerFlag = false;
-        nodeCardsType* testLookupResult = nullptr;
+    NodeCards const* testLookupResult = nullptr;
         
         // Add test state
         int addTrick = -1;
@@ -153,43 +165,43 @@ TEST_F(TransTableBaseTest, InitMethodCallsOverride) {
     int handLookup[15][15]; // Mock lookup table
     
     EXPECT_FALSE(baseTable->initCalled);
-    baseTable->Init(handLookup);
+    baseTable->init(handLookup);
     EXPECT_TRUE(baseTable->initCalled);
 }
 
 TEST_F(TransTableBaseTest, SetMemoryMethodsWork) {
-    baseTable->SetMemoryDefault(64);
+    baseTable->set_memory_default(64);
     EXPECT_EQ(baseTable->defaultMemory, 64);
     
-    baseTable->SetMemoryMaximum(128);
+    baseTable->set_memory_maximum(128);
     EXPECT_EQ(baseTable->maximumMemory, 128);
 }
 
 TEST_F(TransTableBaseTest, MakeTTMethodCallsOverride) {
     EXPECT_FALSE(baseTable->ttMade);
-    baseTable->MakeTT();
+    baseTable->make_tt();
     EXPECT_TRUE(baseTable->ttMade);
 }
 
 TEST_F(TransTableBaseTest, ResetMemoryMethodCallsOverride) {
-    EXPECT_EQ(baseTable->lastResetReason, TT_RESET_UNKNOWN);
+    EXPECT_EQ(baseTable->lastResetReason, ResetReason::Unknown);
     
-    baseTable->ResetMemory(TT_RESET_NEW_DEAL);
-    EXPECT_EQ(baseTable->lastResetReason, TT_RESET_NEW_DEAL);
+    baseTable->reset_memory(ResetReason::NewDeal);
+    EXPECT_EQ(baseTable->lastResetReason, ResetReason::NewDeal);
     
-    baseTable->ResetMemory(TT_RESET_MEMORY_EXHAUSTED);
-    EXPECT_EQ(baseTable->lastResetReason, TT_RESET_MEMORY_EXHAUSTED);
+    baseTable->reset_memory(ResetReason::MemoryExhausted);
+    EXPECT_EQ(baseTable->lastResetReason, ResetReason::MemoryExhausted);
 }
 
 TEST_F(TransTableBaseTest, ReturnAllMemoryMethodCallsOverride) {
     EXPECT_FALSE(baseTable->memoryReturned);
-    baseTable->ReturnAllMemory();
+    baseTable->return_all_memory();
     EXPECT_TRUE(baseTable->memoryReturned);
 }
 
 TEST_F(TransTableBaseTest, MemoryInUseMethodCallsOverride) {
     // Test that virtual method calls override implementation
-    double memUsage = baseTable->MemoryInUse();
+    double memUsage = baseTable->memory_in_use();
     EXPECT_EQ(memUsage, 42.5); // Should return mock value
 }
 
@@ -200,7 +212,7 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
     
     EXPECT_FALSE(baseTable->lookupCalled);
     
-    nodeCardsType const* result = baseTable->Lookup(
+    NodeCards const* result = baseTable->lookup(
         10, // trick
         2,  // hand
         aggrTarget,
@@ -220,11 +232,11 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
 TEST_F(TransTableBaseTest, AddMethodCallsOverride) {
     unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
     unsigned short winRanks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
-    nodeCardsType nodeData;
+    NodeCards nodeData;
     
     EXPECT_FALSE(baseTable->addCalled);
     
-    baseTable->Add(
+    baseTable->add(
         8,  // trick
         1,  // hand
         aggrTarget,
@@ -245,10 +257,10 @@ TEST_F(TransTableBaseTest, PrintMethodsCallOverride) {
     EXPECT_FALSE(baseTable->printSuitsCalled);
     EXPECT_FALSE(baseTable->printAllSuitsCalled);
     
-    baseTable->PrintSuits(testFile, 5, 2); // trick=5, hand=2
+    baseTable->print_suits(testFile, 5, 2); // trick=5, hand=2
     EXPECT_TRUE(baseTable->printSuitsCalled);
     
-    baseTable->PrintAllSuits(testFile);
+    baseTable->print_all_suits(testFile);
     EXPECT_TRUE(baseTable->printAllSuitsCalled);
     
     testFile.close();
@@ -264,30 +276,30 @@ TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures) {
     
     // Test that we can call all virtual methods through base pointer
     int handLookup[15][15];
-    basePtr->Init(handLookup);
+    basePtr->init(handLookup);
     
-    basePtr->SetMemoryDefault(64);
-    basePtr->SetMemoryMaximum(128);
-    basePtr->MakeTT();
-    basePtr->ResetMemory(TT_RESET_NEW_DEAL);
-    basePtr->ReturnAllMemory();
+    basePtr->set_memory_default(64);
+    basePtr->set_memory_maximum(128);
+    basePtr->make_tt();
+    basePtr->reset_memory(ResetReason::NewDeal);
+    basePtr->return_all_memory();
     
-    double mem = basePtr->MemoryInUse();
+    double mem = basePtr->memory_in_use();
     EXPECT_GE(mem, 0.0); // Should return non-negative value
     
     unsigned short aggrTarget[DDS_SUITS] = {0, 0, 0, 0};
     unsigned short winRanks[DDS_SUITS] = {0, 0, 0, 0};
     int handDist[4] = {0, 0, 0, 0};
     bool lowerFlag = false;
-    nodeCardsType nodeData;
+    NodeCards nodeData;
     
     // Should not crash when called through base pointer
-    basePtr->Lookup(0, 0, aggrTarget, handDist, 0, lowerFlag);
-    basePtr->Add(0, 0, aggrTarget, winRanks, nodeData, false);
+    basePtr->lookup(0, 0, aggrTarget, handDist, 0, lowerFlag);
+    basePtr->add(0, 0, aggrTarget, winRanks, nodeData, false);
     
     std::ofstream nullFile("/dev/null");
-    basePtr->PrintSuits(nullFile, 0, 1); // trick=0, hand=1
-    basePtr->PrintAllSuits(nullFile);
+    basePtr->print_suits(nullFile, 0, 1); // trick=0, hand=1
+    basePtr->print_all_suits(nullFile);
     nullFile.close();
 }
 
@@ -296,13 +308,13 @@ TEST_F(TransTableBaseTest, PolymorphicBehaviorWorks) {
     TransTable* basePtr = baseTable.get();
     
     // Calls should go to derived class implementations
-    basePtr->MakeTT();
+    basePtr->make_tt();
     EXPECT_TRUE(baseTable->ttMade);
     
-    basePtr->ReturnAllMemory();
+    basePtr->return_all_memory();
     EXPECT_TRUE(baseTable->memoryReturned);
     
-    double memUsage = basePtr->MemoryInUse();
+    double memUsage = basePtr->memory_in_use();
     EXPECT_EQ(memUsage, 42.5); // Should call derived implementation
 }
 

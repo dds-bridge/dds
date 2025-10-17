@@ -17,29 +17,30 @@
 #define DDS_TRANSTABLE_H
 
 #include <fstream>
-#include "dds/dll.h"
+#include <dds/dll.h>
 
-using namespace std;
-
-
-enum TTresetReason
+// Reset reason for table memory and counters
+enum class ResetReason
 {
-  TT_RESET_UNKNOWN = 0,
-  TT_RESET_TOO_MANY_NODES = 1,
-  TT_RESET_NEW_DEAL = 2,
-  TT_RESET_NEW_TRUMP = 3,
-  TT_RESET_MEMORY_EXHAUSTED = 4,
-  TT_RESET_FREE_MEMORY = 5,
-  TT_RESET_SIZE = 6
+  Unknown = 0,
+  TooManyNodes = 1,
+  NewDeal = 2,
+  NewTrump = 3,
+  MemoryExhausted = 4,
+  FreeMemory = 5,
+  Count = 6
 };
 
-struct nodeCardsType // 8 bytes
+inline constexpr int kResetReasonCount = static_cast<int>(ResetReason::Count);
+
+// Node value/cached card data
+struct NodeCards // 8 bytes
 {
-  char ubound; // For N-S
-  char lbound; // For N-S
-  char bestMoveSuit;
-  char bestMoveRank;
-  char leastWin[DDS_SUITS];
+  char upper_bound; // For N-S
+  char lower_bound; // For N-S
+  char best_move_suit;
+  char best_move_rank;
+  char least_win[DDS_SUITS];
 };
 
 #ifdef _MSC_VER
@@ -61,90 +62,47 @@ struct nodeCardsType // 8 bytes
 class TransTable
 {
   public:
-    TransTable(){};
+    TransTable() = default;
 
-    virtual ~TransTable(){};
+    virtual ~TransTable() = default;
 
-    virtual void Init(const int handLookup[][15]){};
-
-    virtual void SetMemoryDefault(const int megabytes){};
-
-    virtual void SetMemoryMaximum(const int megabytes){};
-
-    virtual void MakeTT(){};
-
-    virtual void ResetMemory(const TTresetReason reason){};
-
-    virtual void ReturnAllMemory(){};
-
-    virtual double MemoryInUse() const {return 0.;};
-
-    virtual nodeCardsType const * Lookup(
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const int handDist[],
-      const int limit,
-      bool& lowerFlag){return NULL;};
-
-    virtual void Add(
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const unsigned short winRanksArg[],
-      const nodeCardsType& first,
-      const bool flag){};
-
-    virtual void PrintSuits(
-      ofstream& fout, 
-      const int trick, 
-      const int hand) const {};
-
-    virtual void PrintAllSuits(ofstream& fout) const {};
-
-    virtual void PrintSuitStats(
-      ofstream& fout, 
-      const int trick, 
-      const int hand) const {};
-
-    virtual void PrintAllSuitStats(ofstream& fout) const {};
-
-    virtual void PrintSummarySuitStats(ofstream& fout) const {};
-
-    virtual void PrintEntriesDist(
-      ofstream& fout, 
-      const int trick,
-      const int hand,
-      const int handDist[]) const {};
-
-    virtual void PrintEntriesDistAndCards(
-      ofstream& fout,
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const int handDist[]) const {};
-
-    virtual void PrintEntries(
-      ofstream& fout, 
-      const int trick, 
-      const int hand) const {};
-
-    virtual void PrintAllEntries(ofstream& fout) const {};
-
-    virtual void PrintEntryStats(
-      ofstream& fout, 
-      const int trick, 
-      const int hand) const {};
-
-    virtual void PrintAllEntryStats(ofstream& fout) const {};
-
-    virtual void PrintSummaryEntryStats(ofstream& fout) const {};
-
-    virtual void PrintPageSummary(ofstream& fout) const {};
-
-    virtual void PrintNodeStats(ofstream& fout) const {};
-
-    virtual void PrintResetStats(ofstream& fout) const {};
+    // Pure-virtual modern API
+    virtual void init(const int hand_lookup[][15]) = 0;
+    virtual void set_memory_default(int megabytes) = 0;
+    virtual void set_memory_maximum(int megabytes) = 0;
+    virtual void make_tt() = 0;
+    virtual void reset_memory(ResetReason reason) = 0;
+    virtual void return_all_memory() = 0;
+    virtual auto memory_in_use() const -> double = 0;
+    virtual auto lookup(
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const int hand_dist[],
+      int limit,
+      bool& lower_flag) -> NodeCards const * = 0;
+    virtual void add(
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const unsigned short win_ranks[],
+      const NodeCards& first,
+      bool flag) = 0;
+    virtual void print_suits(std::ofstream& fout, int trick, int hand) const = 0;
+    virtual void print_all_suits(std::ofstream& fout) const = 0;
+    virtual void print_suit_stats(std::ofstream& fout, int trick, int hand) const = 0;
+    virtual void print_all_suit_stats(std::ofstream& fout) const = 0;
+    virtual void print_summary_suit_stats(std::ofstream& fout) const = 0;
+    virtual void print_entries_dist(std::ofstream& fout, int trick, int hand, const int hand_dist[]) const = 0;
+    virtual void print_entries_dist_and_cards(std::ofstream& fout, int trick, int hand, const unsigned short aggr_target[], const int hand_dist[]) const = 0;
+    virtual void print_entries(std::ofstream& fout, int trick, int hand) const = 0;
+    virtual void print_all_entries(std::ofstream& fout) const = 0;
+    virtual void print_entry_stats(std::ofstream& fout, int trick, int hand) const = 0;
+    virtual void print_all_entry_stats(std::ofstream& fout) const = 0;
+    virtual void print_summary_entry_stats(std::ofstream& fout) const = 0;
+    virtual void print_page_summary(std::ofstream& /*fout*/) const {}
+    virtual void print_node_stats(std::ofstream& /*fout*/) const {}
+    virtual void print_reset_stats(std::ofstream& /*fout*/) const {}
 };
 
 #ifdef _MSC_VER

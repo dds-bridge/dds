@@ -14,10 +14,9 @@
 #include "moves/Moves.h"
 #include "system/SolverContext.h"
 #include "system/Memory.h"
-#include "trans_table/TransTable.h" // for nodeCardsType and enums
+#include "trans_table/TransTable.h" // for NodeCards and enums
 
-// Forward declaration left for clarity; full type is included above.
-struct nodeCardsType;
+// NodeCards is provided via TransTable.h
 
 int DumpInput(
   const int errCode,
@@ -37,7 +36,7 @@ void DumpTopLevel(
 void DumpRetrieved(
   ofstream& fout,
   const pos& tpos,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth);
 
@@ -45,7 +44,7 @@ void DumpStored(
   ofstream& fout,
   const pos& tpos,
   const Moves& moves,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth);
 
@@ -54,7 +53,7 @@ void DumpStored(
   ofstream& fout,
   const pos& tpos,
   SolverContext& ctx,
-  const nodeCardsType& node,
+  const NodeCards& node,
   const int target,
   const int depth);
 

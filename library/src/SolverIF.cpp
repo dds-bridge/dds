@@ -206,15 +206,15 @@ int SolveBoardInternal(
          newTrump ||
          (ctx.search().nodes() > SIMILARMAXWINNODES)))
     {
-      TTresetReason reason = TT_RESET_UNKNOWN;
-      if (ctx.search().nodes() > SIMILARMAXWINNODES)
-        reason = TT_RESET_TOO_MANY_NODES;
-      else if (newDeal && ! similarDeal)
-        reason = TT_RESET_NEW_DEAL;
-      else if (newTrump)
-        reason = TT_RESET_NEW_TRUMP;
+        ResetReason reason = ResetReason::Unknown;
+        if (ctx.search().nodes() > SIMILARMAXWINNODES)
+          reason = ResetReason::TooManyNodes;
+        else if (newDeal && ! similarDeal)
+          reason = ResetReason::NewDeal;
+        else if (newTrump)
+          reason = ResetReason::NewTrump;
       
-      ctx.transTable()->ResetMemory(reason);
+  ctx.transTable()->reset_memory(reason);
     }
   }
 
@@ -641,14 +641,14 @@ SOLVER_STATS:
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-    ctx.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-    ctx.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  ctx.transTable()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
+  ctx.transTable()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-    ctx.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
-    ctx.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
+  ctx.transTable()->print_node_stats(thrp->fileTTstats.GetStream());
+  ctx.transTable()->print_reset_stats(thrp->fileTTstats.GetStream());
   }
 #endif
 
@@ -664,7 +664,7 @@ SOLVER_STATS:
 SOLVER_DONE:
 
   {
-    thrp->memUsed = ctx.transTable()->MemoryInUse() + ThreadMemoryUsed();
+  thrp->memUsed = ctx.transTable()->memory_in_use() + ThreadMemoryUsed();
   }
   {
     futp->nodes = ctx.search().trickNodes();
@@ -761,7 +761,7 @@ int SolveSameBoard(
   futp->cards = 1;
   futp->score[0] = lowerbound;
 
-  thrp->memUsed = ctxSame.transTable()->MemoryInUse() +
+  thrp->memUsed = ctxSame.transTable()->memory_in_use() +
                     ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -776,14 +776,14 @@ int SolveSameBoard(
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-    ctxSame.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-    ctxSame.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  ctxSame.transTable()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
+  ctxSame.transTable()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-    ctxSame.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
-    ctxSame.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
+  ctxSame.transTable()->print_node_stats(thrp->fileTTstats.GetStream());
+  ctxSame.transTable()->print_reset_stats(thrp->fileTTstats.GetStream());
   }
 #endif
 
@@ -941,7 +941,7 @@ int AnalyseLaterBoard(
   }
 
   
-  thrp->memUsed = ctxLater.transTable()->MemoryInUse() +
+  thrp->memUsed = ctxLater.transTable()->memory_in_use() +
                     ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -956,14 +956,14 @@ int AnalyseLaterBoard(
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-    ctxLater.transTable()->PrintSummarySuitStats(thrp->fileTTstats.GetStream());
-    ctxLater.transTable()->PrintSummaryEntryStats(thrp->fileTTstats.GetStream());
+  ctxLater.transTable()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
+  ctxLater.transTable()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-    ctxLater.transTable()->PrintNodeStats(thrp->fileTTstats.GetStream());
-    ctxLater.transTable()->PrintResetStats(thrp->fileTTstats.GetStream());
+  ctxLater.transTable()->print_node_stats(thrp->fileTTstats.GetStream());
+  ctxLater.transTable()->print_reset_stats(thrp->fileTTstats.GetStream());
   }
 #endif
 

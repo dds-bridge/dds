@@ -70,7 +70,7 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   // Minimal initialization for TT internals (aggr tables)
   int handLookup[DDS_SUITS][15] = {};
   // Leave all zeros (map ranks to North=0) which is sufficient for basic TT wiring
-  tt->Init(handLookup);
+  tt->init(handLookup);
 
   const int trick = 11; // any valid trick index in [1..11] per implementation
   const int hand = 0;   // North
@@ -79,25 +79,25 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   bool lowerFlag = false;
 
   // Miss before any Add
-  auto* missNode = tt->Lookup(trick, hand, aggrTarget, handDist, /*limit*/0, lowerFlag);
+  auto* missNode = tt->lookup(trick, hand, aggrTarget, handDist, /*limit*/0, lowerFlag);
   EXPECT_EQ(nullptr, missNode);
 
   // Add a minimal node for the same suit distribution so subsequent Lookup hits
-  nodeCardsType first{};
-  first.lbound = 0;
-  first.ubound = 0;
-  first.bestMoveSuit = 0;
-  first.bestMoveRank = 0;
-  std::memset(first.leastWin, 0, sizeof(first.leastWin));
+  NodeCards first{};
+  first.lower_bound = 0;
+  first.upper_bound = 0;
+  first.best_move_suit = 0;
+  first.best_move_rank = 0;
+  std::memset(first.least_win, 0, sizeof(first.least_win));
 
   unsigned short ourWinRanks[DDS_HANDS] = {0, 0, 0, 0};
-  tt->Add(trick, hand, aggrTarget, ourWinRanks, first, /*flag*/false);
+  tt->add(trick, hand, aggrTarget, ourWinRanks, first, /*flag*/false);
 
   // Hit now (bounds allow returning the stored node)
-  auto* hitNode = tt->Lookup(trick, hand, aggrTarget, handDist, /*limit*/0, lowerFlag);
+  auto* hitNode = tt->lookup(trick, hand, aggrTarget, handDist, /*limit*/0, lowerFlag);
   ASSERT_NE(nullptr, hitNode);
-  EXPECT_EQ(0, static_cast<int>(hitNode->lbound));
-  EXPECT_EQ(0, static_cast<int>(hitNode->ubound));
+  EXPECT_EQ(0, static_cast<int>(hitNode->lower_bound));
+  EXPECT_EQ(0, static_cast<int>(hitNode->upper_bound));
 
   // Dispose destroys the TT instance from the registry
   ctx.DisposeTransTable();

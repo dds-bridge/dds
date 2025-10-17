@@ -19,315 +19,266 @@
 #include <vector>
 #include <string>
 
-#include "dds/dll.h"
-
-#include "trans_table/TransTable.h"
-
-using namespace std;
+#include "TransTable.h"
 
 
-#define NUM_PAGES_DEFAULT 15
-#define NUM_PAGES_MAXIMUM 25
-#define BLOCKS_PER_PAGE 1000
-#define DISTS_PER_ENTRY 32
-#define BLOCKS_PER_ENTRY 125
-#define FIRST_HARVEST_TRICK 8
-#define HARVEST_AGE 10000
+enum {
+  NUM_PAGES_DEFAULT = 15,
+  NUM_PAGES_MAXIMUM = 25,
+  BLOCKS_PER_PAGE = 1000,
+  DISTS_PER_ENTRY = 32,
+  BLOCKS_PER_ENTRY = 125,
+  FIRST_HARVEST_TRICK = 8,
+  HARVEST_AGE = 10000,
+  TT_BYTES = 4,
+  TT_TRICKS = 12,
+  TT_LINE_LEN = 20
+};
 
-#define TT_BYTES 4
-#define TT_TRICKS 12
-
-#define TT_LINE_LEN 20
-
-#define TT_PERCENTILE 0.9
+inline constexpr double TT_PERCENTILE = 0.9;
 
 
 class TransTableL: public TransTable
 {
   private:
 
-    struct winMatchType // 52 bytes
+    struct WinMatch // 52 bytes
     {
-      unsigned xorSet;
-      unsigned topSet1 , topSet2 , topSet3 , topSet4 ;
-      unsigned topMask1, topMask2, topMask3, topMask4;
-      int maskIndex;
-      int lastMaskNo;
-      nodeCardsType first;
+      unsigned xor_set_;
+      unsigned top_set1_ , top_set2_ , top_set3_ , top_set4_ ;
+      unsigned top_mask1_, top_mask2_, top_mask3_, top_mask4_;
+      int mask_index_;
+      int last_mask_no_;
+      NodeCards first_;
     };
 
-    struct winBlockType // 6508 bytes when BLOCKS_PER_ENTRY == 125
+    struct WinBlock // 6508 bytes when BLOCKS_PER_ENTRY == 125
     {
-      int nextMatchNo;
-      int nextWriteNo;
-      int timestampRead;
-      winMatchType list[BLOCKS_PER_ENTRY];
+      int next_match_no_;
+      int next_write_no_;
+      int timestamp_read_;
+      WinMatch list_[BLOCKS_PER_ENTRY];
     };
 
-    struct posSearchType // 16 bytes (inefficiency, 12 bytes enough)
+    struct PosSearch // 16 bytes (inefficiency, 12 bytes enough)
     {
-      winBlockType * posBlock;
-      long long key;
+      WinBlock * pos_block_;
+      long long key_;
     };
 
-    struct distHashType // 520 bytes when DISTS_PER_ENTRY == 32
+    struct DistHash // 520 bytes when DISTS_PER_ENTRY == 32
     {
-      int nextNo;
-      int nextWriteNo;
-      posSearchType list[DISTS_PER_ENTRY];
+      int next_no_;
+      int next_write_no_;
+      PosSearch list_[DISTS_PER_ENTRY];
     };
 
-    struct aggrType // 80 bytes
+    struct Aggr // 80 bytes
     {
-      unsigned aggrRanks[DDS_SUITS];
-      unsigned aggrBytes[DDS_SUITS][TT_BYTES];
+      unsigned aggr_ranks_[DDS_SUITS];
+      unsigned aggr_bytes_[DDS_SUITS][TT_BYTES];
     };
 
-    struct poolType // 16 bytes
+    struct Pool // 16 bytes
     {
-      poolType * next;
-      poolType * prev;
-      int nextBlockNo;
-      winBlockType * list;
+      Pool * next_;
+      Pool * prev_;
+      int next_block_no_;
+      WinBlock * list_;
     };
 
-    struct pageStatsType
+    struct PageStats
     {
-      int numResets;
-      int numCallocs;
-      int numFrees;
-      int numHarvests;
-      int lastCurrent;
+      int num_resets_;
+      int num_callocs_;
+      int num_frees_;
+      int num_harvests_;
+      int last_current_;
     };
 
-    struct harvestedType // 16 bytes
+    struct Harvested // 16 bytes
     {
-      int nextBlockNo;
-      winBlockType * list [BLOCKS_PER_PAGE];
+      int next_block_no_;
+      WinBlock * list_ [BLOCKS_PER_PAGE];
     };
 
-    enum memStateType
+    enum class MemState
     {
       FROM_POOL,
       FROM_HARVEST
     };
 
     // Private data for the full memory version.
-    memStateType memState;
+    MemState mem_state_;
 
-    int pagesDefault;
-    int pagesCurrent;
-    int pagesMaximum;
+    int pages_default_;
+    int pages_current_;
+    int pages_maximum_;
 
-    int harvestTrick;
-    int harvestHand;
+    int harvest_trick_;
+    int harvest_hand_;
 
-    pageStatsType pageStats;
+    PageStats page_stats_;
 
     // aggr is constant for a given hand.
-    aggrType aggr[8192]; // 64 KB
+    Aggr aggr_[8192]; // 64 KB
 
     // This is the real transposition table.
     // The last index is the hash.
     // 6240 KB with above assumptions
-    // distHashType TTroot[TT_TRICKS][DDS_HANDS][256];
-    distHashType * TTroot[TT_TRICKS][DDS_HANDS];
+    // DistHash tt_root_[TT_TRICKS][DDS_HANDS][256];
+    DistHash * tt_root_[TT_TRICKS][DDS_HANDS];
 
     // It is useful to remember the last block we looked at.
-    winBlockType * lastBlockSeen[TT_TRICKS][DDS_HANDS];
+    WinBlock * last_block_seen_[TT_TRICKS][DDS_HANDS];
 
     // The pool of card entries for a given suit distribution.
-    poolType * poolp;
-    winBlockType * nextBlockp;
-    harvestedType harvested;
+    Pool * pool_;
+    WinBlock * next_block_;
+    Harvested harvested_;
 
-    int timestamp;
-    int TTInUse;
+    int timestamp_;
+    int tt_in_use_;
 
 
-    void InitTT();
+    auto init_tt() -> void;
 
-    void ReleaseTT();
+    auto release_tt() -> void;
 
   // Constants are provided via internal function-local static tables.
 
-    int hash8(const int handDist[]) const;
+    auto hash8(const int handDist[]) const -> int;
 
-    winBlockType * GetNextCardBlock();
+    auto get_next_card_block() -> WinBlock *;
 
-    winBlockType * LookupSuit(
-      distHashType * dp,
-      const long long key,
-      bool& empty);
+    auto lookup_suit(
+      DistHash * dp,
+      long long key,
+      bool& empty) -> WinBlock *;
 
-    nodeCardsType * LookupCards(
-      const winMatchType& search,
-      winBlockType * bp,
-      const int limit,
-      bool& lowerFlag);
+    auto lookup_cards(
+      const WinMatch& search,
+      WinBlock * bp,
+      int limit,
+      bool& lowerFlag) -> NodeCards *;
 
-    void CreateOrUpdate(
-      winBlockType * bp,
-      const winMatchType& search,
-      const bool flag);
+    auto create_or_update(
+      WinBlock * bp,
+      const WinMatch& search,
+      bool flag) -> void;
 
-    bool Harvest();
+    auto harvest() -> bool;
 
     // Debug functions from here on.
 
-    void KeyToDist(
-      const long long key,
-      int handDist[]) const;
+    auto key_to_dist(
+      long long key,
+      int handDist[]) const -> void;
 
-    void DistToLengths(
-      const int trick,
+    auto dist_to_lengths(
+      int trick,
       const int handDist[],
-      unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
+      unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    string SingleLenToStr(const unsigned char length[]) const;
+    auto single_len_to_str(const unsigned char length[]) const -> std::string;
 
-    string LenToStr(
-      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
+    auto len_to_str(
+      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> std::string;
 
-    void MakeHistStats(
+    auto make_hist_stats(
       const int hist[],
       int& count,
-      int& prod_sum,
-      int& prod_sumsq,
-      int& max_len,
-      const int last_index) const;
+      int& prodSum,
+      int& prodSumsq,
+      int& maxLen,
+      int lastIndex) const -> void;
 
-    int CalcPercentile(
+    auto calc_percentile(
       const int hist[],
-      const double threshold,
-      const int last_index) const;
+      double threshold,
+      int lastIndex) const -> int;
 
-    void PrintHist(
-      ofstream& fout,
+    auto print_hist(
+      std::ofstream& fout,
       const int hist[],
-      const int num_wraps,
-      const int last_index) const;
+      int numWraps,
+      int lastIndex) const -> void;
 
-    void UpdateSuitHist(
-      const int trick,
-      const int hand,
+    auto update_suit_hist(
+      int trick,
+      int hand,
       int hist[],
-      int& num_wraps) const;
+      int& numWraps) const -> void;
 
-    void UpdateSuitHist(
-      const int trick,
-      const int hand,
+    auto update_suit_hist(
+      int trick,
+      int hand,
       int hist[],
       int suitHist[],
-      int& num_wraps,
-      int& suitWraps) const;
+      int& numWraps,
+      int& suitWraps) const -> void;
 
-    winBlockType const * FindMatchingDist(
-      const int trick,
-      const int hand,
-      const int handDistSought[]) const;
+    auto find_matching_dist(
+      int trick,
+      int hand,
+      const int handDistSought[]) const -> WinBlock const *;
 
-    void PrintEntriesBlock(
-      ofstream& fout,
-      winBlockType const * bp,
-      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
+    auto print_entries_block(
+      std::ofstream& fout,
+      WinBlock const * bp,
+      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    void UpdateEntryHist(
-      const int trick,
-      const int hand,
+    auto update_entry_hist(
+      int trick,
+      int hand,
       int hist[],
-      int& num_wraps) const;
+      int& numWraps) const -> void;
 
-    void UpdateEntryHist(
-      const int trick,
-      const int hand,
+    auto update_entry_hist(
+      int trick,
+      int hand,
       int hist[],
       int suitHist[],
-      int& num_wraps,
-      int& suitWraps) const;
+      int& numWraps,
+      int& suitWraps) const -> void;
 
-    int EffectOfBlockBound(
+    auto effect_of_block_bound(
       const int hist[],
-      const int size) const;
+      int size) const -> int;
 
-    void PrintNodeValues(
-      ofstream& fout,
-      const nodeCardsType& np) const;
+    auto print_node_values(
+      std::ofstream& fout,
+      const NodeCards& node) const -> void;
 
-    void PrintMatch(
-      ofstream& fout,
-      const winMatchType& wp,
+    auto print_match(
+      std::ofstream& fout,
+      const WinMatch& match,
+      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
+
+    auto make_holding(
+      const std::string& high,
+      unsigned len) const -> std::string;
+
+    void dump_hands(
+      std::ofstream& fout,
+      const std::vector<std::vector<std::string>>& hands,
       const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
 
-    string MakeHolding(
-      const string& high,
-      const unsigned len) const;
-
-    void DumpHands(
-      ofstream& fout,
-      const vector<vector<string>>& hands,
-      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
-
-    void SetToPartialHands(
+    void set_to_partial_hands(
       const unsigned set,
       const unsigned mask,
       const int maxRank,
       const int numRanks,
-      vector<vector<string>>& hands) const;
+      std::vector<std::vector<std::string>>& hands) const;
 
-    int BlocksInUse() const;
+    int blocks_in_use() const;
+
+    // Legacy implementation helpers removed; modern overrides are canonical.
 
   public:
     TransTableL();
 
     ~TransTableL();
-
-    void Init(const int handLookup[][15]);
-
-    void SetMemoryDefault(const int megabytes);
-
-    void SetMemoryMaximum(const int megabytes);
-
-    void MakeTT();
-
-    void ResetMemory(const TTresetReason reason);
-
-    void ReturnAllMemory();
-
-    double MemoryInUse() const;
-
-    nodeCardsType * Lookup(
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const int handDist[],
-      const int limit,
-      bool& lowerFlag);
-
-    void Add(
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const unsigned short winRanksArg[],
-      const nodeCardsType& first,
-      const bool flag);
-
-    void PrintSuits(
-      ofstream& fout,
-      const int trick,
-      const int hand) const;
-
-    void PrintAllSuits(ofstream& fout) const;
-
-    void PrintSuitStats(
-      ofstream& fout,
-      const int trick,
-      const int hand) const;
-
-    void PrintAllSuitStats(ofstream& fout) const;
-
-    void PrintSummarySuitStats(ofstream& fout) const;
-
     // Examples:
     // int hd[DDS_HANDS] = { 0x0342, 0x0334, 0x0232, 0x0531 };
     // thrp->transTable.PrintEntriesDist(cout, 11, 1, hd);
@@ -335,34 +286,40 @@ class TransTableL: public TransTable
     // { 0x1fff, 0x1fff, 0x0f75, 0x1fff };
     // thrp->transTable.PrintEntriesDistAndCards(cout, 11, 1, ag, hd);
 
-    void PrintEntriesDist(
-      ofstream& fout,
-      const int trick,
-      const int hand,
-      const int handDist[]) const;
-
-    void PrintEntriesDistAndCards(
-      ofstream& fout,
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const int handDist[]) const;
-
-    void PrintEntries(
-      ofstream& fout,
-      const int trick,
-      const int hand) const;
-
-    void PrintAllEntries(ofstream& fout) const;
-
-    void PrintEntryStats(
-      ofstream& fout,
-      const int trick,
-      const int hand) const;
-
-    void PrintAllEntryStats(ofstream& fout) const;
-
-    void PrintSummaryEntryStats(ofstream& fout) const;
+    // Modern overrides (out-of-line implementations in .cpp)
+    void init(const int hand_lookup[][15]) override;
+    void set_memory_default(int megabytes) override;
+    void set_memory_maximum(int megabytes) override;
+    void make_tt() override;
+    void reset_memory(ResetReason reason) override;
+    void return_all_memory() override;
+    auto memory_in_use() const -> double override;
+    auto lookup(
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const int hand_dist[],
+      int limit,
+      bool& lower_flag) -> NodeCards const * override;
+    void add(
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const unsigned short win_ranks_arg[],
+      const NodeCards& first,
+      bool flag) override;
+    void print_suits(std::ofstream& fout, int trick, int hand) const override;
+    void print_all_suits(std::ofstream& fout) const override;
+    void print_suit_stats(std::ofstream& fout, int trick, int hand) const override;
+    void print_all_suit_stats(std::ofstream& fout) const override;
+    void print_summary_suit_stats(std::ofstream& fout) const override;
+    void print_entries_dist(std::ofstream& fout, int trick, int hand, const int hand_dist[]) const override;
+    void print_entries_dist_and_cards(std::ofstream& fout, int trick, int hand, const unsigned short aggr_target[], const int hand_dist[]) const override;
+    void print_entries(std::ofstream& fout, int trick, int hand) const override;
+    void print_all_entries(std::ofstream& fout) const override;
+    void print_entry_stats(std::ofstream& fout, int trick, int hand) const override;
+    void print_all_entry_stats(std::ofstream& fout) const override;
+    void print_summary_entry_stats(std::ofstream& fout) const override;
 };
 
 #endif

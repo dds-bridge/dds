@@ -20,9 +20,7 @@
 #include <vector>
 #include <string>
 
-#include "trans_table/TransTable.h"
-
-using namespace std;
+#include "TransTable.h"
 
 
 class TransTableS: public TransTable
@@ -31,126 +29,131 @@ class TransTableS: public TransTable
 
     // Structures for the small memory option.
 
-    struct winCardType
+    struct WinCard
     {
-      int orderSet;
-      int winMask;
-      nodeCardsType * first;
-      winCardType * prevWin;
-      winCardType * nextWin;
-      winCardType * next;
+      int order_set_;
+      int win_mask_;
+      NodeCards * first_;
+      WinCard * prev_win_;
+      WinCard * next_win_;
+      WinCard * next_;
     };
 
-    struct posSearchTypeSmall
+    struct PosSearchSmall
     {
-      winCardType * posSearchPoint;
-      long long suitLengths;
-      posSearchTypeSmall * left;
-      posSearchTypeSmall * right;
+      WinCard * pos_search_point_;
+      long long suit_lengths_;
+      PosSearchSmall * left_;
+      PosSearchSmall * right_;
     };
 
-    struct ttAggrType
+    struct TtAggr
     {
-      int aggrRanks[DDS_SUITS];
-      int winMask[DDS_SUITS];
+      int aggr_ranks_[DDS_SUITS];
+      int win_mask_[DDS_SUITS];
     };
 
-    struct statsResetsType
+    struct StatsResets
     {
-      int noOfResets;
-      int aggrResets[TT_RESET_SIZE];
+      int no_of_resets;
+      int aggr_resets[kResetReasonCount];
     };
 
 
-    long long aggrLenSets[14];
-    statsResetsType statsResets;
+    long long aggr_len_sets_[14];
+    StatsResets stats_resets_;
 
-    winCardType temp_win[5];
-    int nodeSetSizeLimit;
-    int winSetSizeLimit;
-    unsigned long long maxmem;
-    unsigned long long allocmem;
-    unsigned long long summem;
-    int wmem;
-    int nmem;
-    int maxIndex;
-    int wcount;
-    int ncount;
-    bool clearTTflag;
-    int windex;
-    ttAggrType * aggp;
+    WinCard temp_win_[5];
+    int node_set_size_limit_;
+    int win_set_size_limit_;
+    unsigned long long maxmem_;
+    unsigned long long allocmem_;
+    unsigned long long summem_;
+    int wmem_;
+    int nmem_;
+    int max_index_;
+    int wcount_;
+    int ncount_;
+    bool clear_tt_flag_;
+    int windex_;
+    TtAggr * aggp_;
 
-    posSearchTypeSmall * rootnp[14][DDS_HANDS];
-    winCardType ** pw;
-    nodeCardsType ** pn;
-    posSearchTypeSmall ** pl[14][DDS_HANDS];
-    nodeCardsType * nodeCards;
-    winCardType * winCards;
-    posSearchTypeSmall * posSearch[14][DDS_HANDS];
-    int nodeSetSize; /* Index with range 0 to nodeSetSizeLimit */
-    int winSetSize;  /* Index with range 0 to winSetSizeLimit */
-    int lenSetInd[14][DDS_HANDS];
-    int lcount[14][DDS_HANDS];
+    PosSearchSmall * rootnp_[14][DDS_HANDS];
+    WinCard ** pw_;
+    NodeCards ** pn_;
+    PosSearchSmall ** pl_[14][DDS_HANDS];
+    NodeCards * node_cards_;
+    WinCard * win_cards_;
+    PosSearchSmall * pos_search_[14][DDS_HANDS];
+    int node_set_size_; /* Index with range 0 to node_set_size_limit_ */
+    int win_set_size_;  /* Index with range 0 to win_set_size_limit_ */
+    int len_set_ind_[14][DDS_HANDS];
+    int lcount_[14][DDS_HANDS];
 
-    vector<string> resetText;
+    std::vector<std::string> reset_text_;
 
-    long long suitLengths[14];
+    long long suit_lengths_[14];
 
-    int TTInUse;
+    int tt_in_use_;
 
-  // Constants are provided via internal function-local static tables.
+    // Constants are provided via internal function-local static tables.
 
-    void Wipe();
+    auto wipe() -> void;
 
-    void InitTT();
+    auto init_tt() -> void;
 
-    void AddWinSet();
+    auto add_win_set() -> void;
 
-    void AddNodeSet();
+    auto add_node_set() -> void;
 
-    void AddLenSet(
-      const int trick, 
-      const int firstHand);
+    auto add_len_set(
+      int trick, 
+      int first_hand) -> void;
 
-    void BuildSOP(
-      const unsigned short ourWinRanks[DDS_SUITS],
-      const unsigned short aggr[DDS_SUITS],
-      const nodeCardsType& first,
-      const long long suitLengths,
-      const int tricks,
-      const int firstHand,
-      const bool flag);
+    auto build_sop(
+      const unsigned short our_win_ranks[DDS_SUITS],
+      const unsigned short aggr_arg[DDS_SUITS],
+      const NodeCards& first,
+      long long lengths,
+      int tricks,
+      int first_hand,
+      bool flag
+    ) -> void;
 
-    nodeCardsType * BuildPath(
-      const int winMask[],
-      const int winOrderSet[],
-      const int ubound,
-      const int lbound,
-      const char bestMoveSuit,
-      const char bestMoveRank,
-      posSearchTypeSmall * node,
-      bool& result);
+    auto build_path(
+      const int win_mask[],
+      const int win_order_set[],
+      int u_bound,
+      int l_bound,
+      char best_move_suit,
+      char best_move_rank,
+      PosSearchSmall * node_ptr,
+      bool& result
+    ) -> NodeCards *;
 
-    struct posSearchTypeSmall * SearchLenAndInsert(
-      posSearchTypeSmall * rootp,
-      const long long key,
-      const bool insertNode,
-      const int trick,
-      const int firstHand,
-      bool& result);
+    auto search_len_and_insert(
+      PosSearchSmall * root_ptr,
+      long long key,
+      bool insert_node,
+      int trick,
+      int first_hand,
+      bool& result
+    ) -> PosSearchSmall *;
 
-    nodeCardsType * UpdateSOP(
-      const int ubound,
-      const int lbound,
-      const char bestMoveSuit,
-      const char bestMoveRank,
-      nodeCardsType * nodep);
+    auto update_sop(
+      int u_bound,
+      int l_bound,
+      char best_move_suit,
+      char best_move_rank,
+      NodeCards * node
+    ) -> NodeCards *;
 
-    nodeCardsType const * FindSOP(
-      const int orderSet[],
-      const int limit,
-      winCardType * nodeP,
-      bool& lowerFlag);
+    auto find_sop(
+      const int order_set[],
+      int limit,
+      WinCard * node_p,
+      bool& lower_flag
+    ) -> NodeCards const *;
 
   public:
 
@@ -158,39 +161,52 @@ class TransTableS: public TransTable
 
     ~TransTableS();
 
-    void Init(const int handLookup[][15]);
+    void init(const int hand_lookup[][15]) override;
+    void set_memory_default(int megabytes) override;
+    void set_memory_maximum(int megabytes) override;
+    void make_tt() override;
+    void reset_memory(ResetReason reason) override;
+    void return_all_memory() override;
+    auto memory_in_use() const -> double override;
 
-    void SetMemoryDefault(const int megabytes);
+    auto lookup(
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const int hand_dist[],
+      int limit,
+      bool& lower_flag
+    ) -> NodeCards const * override;
+    void add(
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const unsigned short win_ranks_arg[],
+      const NodeCards& first,
+      bool flag
+    ) override;
 
-    void SetMemoryMaximum(const int megabytes);
+  // The small TT does not provide verbose dumping; implement no-op printers
+  void print_suits(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+  void print_all_suits(std::ofstream& /*fout*/) const override {}
+  void print_suit_stats(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+  void print_all_suit_stats(std::ofstream& /*fout*/) const override {}
+  void print_summary_suit_stats(std::ofstream& /*fout*/) const override {}
+  void print_entries_dist(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/, const int /*hand_dist*/[]) const override {}
+  void print_entries_dist_and_cards(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/, const unsigned short /*aggr_target*/[], const int /*hand_dist*/[]) const override {}
+  void print_entries(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+  void print_all_entries(std::ofstream& /*fout*/) const override {}
+  void print_entry_stats(std::ofstream& /*fout*/, int /*trick*/, int /*hand*/) const override {}
+  void print_all_entry_stats(std::ofstream& /*fout*/) const override {}
+  void print_summary_entry_stats(std::ofstream& /*fout*/) const override {}
 
-    void MakeTT();
+  // Bridge stats printers to existing small-TT implementations
+  void print_node_stats(std::ofstream& fout) const override { PrintNodeStats(fout); }
+  void print_reset_stats(std::ofstream& fout) const override { PrintResetStats(fout); }
 
-    void ResetMemory(const TTresetReason reason);
+  void PrintNodeStats(std::ofstream& fout) const;
 
-    void ReturnAllMemory();
-
-    double MemoryInUse() const;
-
-    nodeCardsType const * Lookup(
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const int handDist[],
-      const int limit,
-      bool& lowerFlag);
-
-    void Add(
-      const int trick,
-      const int hand,
-      const unsigned short aggrTarget[],
-      const unsigned short winRanksArg[],
-      const nodeCardsType& first,
-      const bool flag);
-
-    void PrintNodeStats(ofstream& fout) const;
-
-    void PrintResetStats(ofstream& fout) const;
+  void PrintResetStats(std::ofstream& fout) const;
 };
 
 #endif
