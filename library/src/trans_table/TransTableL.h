@@ -141,123 +141,123 @@ class TransTableL: public TransTable
     int tt_in_use_;
 
 
-    void InitTT();
+  auto InitTT() -> void;
 
-    void ReleaseTT();
+  auto ReleaseTT() -> void;
 
   // Constants are provided via internal function-local static tables.
 
-    int hash8(const int handDist[]) const;
+    auto hash8(const int handDist[]) const -> int;
 
-    winBlockType * GetNextCardBlock();
+    auto GetNextCardBlock() -> winBlockType *;
 
-    winBlockType * LookupSuit(
+    auto LookupSuit(
       distHashType * dp,
-      const long long key,
-      bool& empty);
+      long long key,
+      bool& empty) -> winBlockType *;
 
-    NodeCards * LookupCards(
+    auto LookupCards(
       const winMatchType& search,
       winBlockType * bp,
-      const int limit,
-      bool& lowerFlag);
+      int limit,
+      bool& lowerFlag) -> NodeCards *;
 
-    void CreateOrUpdate(
+    auto CreateOrUpdate(
       winBlockType * bp,
       const winMatchType& search,
-      const bool flag);
+      bool flag) -> void;
 
-    bool Harvest();
+    auto Harvest() -> bool;
 
     // Debug functions from here on.
 
-    void KeyToDist(
-      const long long key,
-      int handDist[]) const;
+    auto KeyToDist(
+      long long key,
+      int handDist[]) const -> void;
 
-    void DistToLengths(
-      const int trick,
+    auto DistToLengths(
+      int trick,
       const int handDist[],
-      unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
+      unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    std::string SingleLenToStr(const unsigned char length[]) const;
+    auto SingleLenToStr(const unsigned char length[]) const -> std::string;
 
-    std::string LenToStr(
-      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
+    auto LenToStr(
+      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> std::string;
 
-    void MakeHistStats(
+    auto MakeHistStats(
       const int hist[],
       int& count,
-      int& prod_sum,
-      int& prod_sumsq,
-      int& max_len,
-      const int last_index) const;
+      int& prodSum,
+      int& prodSumsq,
+      int& maxLen,
+      int lastIndex) const -> void;
 
-    int CalcPercentile(
+    auto CalcPercentile(
       const int hist[],
-      const double threshold,
-      const int last_index) const;
+      double threshold,
+      int lastIndex) const -> int;
 
-    void PrintHist(
+    auto PrintHist(
       std::ofstream& fout,
       const int hist[],
-      const int num_wraps,
-      const int last_index) const;
+      int numWraps,
+      int lastIndex) const -> void;
 
-    void UpdateSuitHist(
-      const int trick,
-      const int hand,
+    auto UpdateSuitHist(
+      int trick,
+      int hand,
       int hist[],
-      int& num_wraps) const;
+      int& numWraps) const -> void;
 
-    void UpdateSuitHist(
-      const int trick,
-      const int hand,
+    auto UpdateSuitHist(
+      int trick,
+      int hand,
       int hist[],
       int suitHist[],
-      int& num_wraps,
-      int& suitWraps) const;
+      int& numWraps,
+      int& suitWraps) const -> void;
 
-    winBlockType const * FindMatchingDist(
-      const int trick,
-      const int hand,
-      const int handDistSought[]) const;
+    auto FindMatchingDist(
+      int trick,
+      int hand,
+      const int handDistSought[]) const -> winBlockType const *;
 
-    void PrintEntriesBlock(
+    auto PrintEntriesBlock(
       std::ofstream& fout,
       winBlockType const * bp,
-      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
+      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    void UpdateEntryHist(
-      const int trick,
-      const int hand,
+    auto UpdateEntryHist(
+      int trick,
+      int hand,
       int hist[],
-      int& num_wraps) const;
+      int& numWraps) const -> void;
 
-    void UpdateEntryHist(
-      const int trick,
-      const int hand,
+    auto UpdateEntryHist(
+      int trick,
+      int hand,
       int hist[],
       int suitHist[],
-      int& num_wraps,
-      int& suitWraps) const;
+      int& numWraps,
+      int& suitWraps) const -> void;
 
-    int EffectOfBlockBound(
+    auto EffectOfBlockBound(
       const int hist[],
-      const int size) const;
+      int size) const -> int;
 
-    void PrintNodeValues(
+    auto PrintNodeValues(
       std::ofstream& fout,
-  const NodeCards& np) const;
+      const NodeCards& node) const -> void;
 
-    void PrintMatch(
+    auto PrintMatch(
       std::ofstream& fout,
-      const winMatchType& wp,
-      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
+      const winMatchType& match,
+      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    std::string MakeHolding(
+    auto MakeHolding(
       const std::string& high,
-      const unsigned len) const;
+      unsigned len) const -> std::string;
 
     void DumpHands(
       std::ofstream& fout,
