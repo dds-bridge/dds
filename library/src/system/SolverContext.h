@@ -24,6 +24,7 @@ struct trickDataType;  // from data_types/dds.h
 #include <vector>
 #include <random>
 #include <cstddef>
+#include <memory>
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
@@ -227,10 +228,9 @@ private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
-  // Transposition table instance owned by this context (per-context TT)
-  // Marked maybe_unused because some translation units include this header
-  // but don't reference the member directly; actual use is in the .cpp.
-  [[maybe_unused]] mutable TransTable* tt_ = nullptr;
+  // Transposition table instance owned by this context (per-context TT).
+  // Use a unique_ptr for clear ownership semantics.
+  mutable std::unique_ptr<TransTable> tt_;
   // Arena is managed per ThreadData in a central registry (see .cpp).
 };
 

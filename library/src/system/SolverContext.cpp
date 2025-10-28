@@ -13,15 +13,7 @@
 #include "utility/ScratchAllocTLS.h"
 
 namespace {
-// Central registry mapping ThreadData* to its TransTable instance.
-// Use a leaky singleton to avoid static destruction order issues at exit.
-static std::unordered_map<ThreadData*, TransTable*>& registry()
-{
-  static auto* map = new std::unordered_map<ThreadData*, TransTable*>();
-  return *map;
-}
-
-// Per-thread Arena registry. Managed as a leaky singleton similar to TT.
+// Per-thread Arena registry. Managed as a leaky singleton.
 static std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>& arena_registry()
 {
   static auto* map = new std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>();
@@ -33,8 +25,8 @@ TransTable* SolverContext::transTable() const
 {
   if (!thr_)
     return nullptr;
-  auto it = registry().find(thr_);
-  if (it == registry().end() || it->second == nullptr)
+
+  if (!tt_)
   {
     TransTable* created = nullptr;
     // Prefer thread-stored configuration determined by Init/Memory
@@ -115,10 +107,10 @@ TransTable* SolverContext::transTable() const
   utilities().util().stats().tt_creates++;
 #endif
 
-    // Attach to registry
-    registry()[thr_] = created;
+    // Attach to context-owned unique_ptr
+    const_cast<SolverContext*>(this)->tt_.reset(created);
   }
-  return registry()[thr_];
+  return tt_.get();
 }
 
 // --- Arena access (per-thread registry) ---
@@ -187,27 +179,22 @@ void SolverContext::SearchContext::clearForbiddenMoves() {
 
 TransTable* SolverContext::maybeTransTable() const
 {
-  if (!thr_)
-    return nullptr;
-  auto it = registry().find(thr_);
-  return (it == registry().end() ? nullptr : it->second);
+  // If a context-owned TT exists, return it; otherwise nullptr.
+  return tt_ ? tt_.get() : nullptr;
 }
 
 void SolverContext::DisposeTransTable() const
 {
-  auto it = registry().find(thr_);
-  if (it != registry().end())
+  if (tt_)
   {
 #ifdef DDS_UTILITIES_LOG
-  // Append a tiny debug entry indicating TT disposal.
-  utilities().logAppend("tt:dispose");
+    // Append a tiny debug entry indicating TT disposal.
+    utilities().logAppend("tt:dispose");
 #endif
 #ifdef DDS_UTILITIES_STATS
-  utilities().util().stats().tt_disposes++;
+    utilities().util().stats().tt_disposes++;
 #endif
-    delete it->second;
-    it->second = nullptr;
-    registry().erase(it);
+    const_cast<SolverContext*>(this)->tt_.reset();
   }
 }
 
