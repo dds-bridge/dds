@@ -90,7 +90,9 @@ public:
   dds::Arena* arena();
   const dds::Arena* arena() const;
 
+  // Returns the owned transposition table instance (creates if null)
   TransTable* transTable() const;
+  // Returns the TT instance if it exists, or nullptr
   TransTable* maybeTransTable() const;
 
   // Dispose and erase the TT instance associated with this thread, if any.
@@ -225,6 +227,10 @@ private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
+  // Transposition table instance owned by this context (per-context TT)
+  // Marked maybe_unused because some translation units include this header
+  // but don't reference the member directly; actual use is in the .cpp.
+  [[maybe_unused]] mutable TransTable* tt_ = nullptr;
   // Arena is managed per ThreadData in a central registry (see .cpp).
 };
 
