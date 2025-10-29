@@ -227,10 +227,10 @@ private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
-  // Transposition table instance owned by this context (per-context TT)
-  // Marked maybe_unused because some translation units include this header
-  // but don't reference the member directly; actual use is in the .cpp.
-  [[maybe_unused]] mutable TransTable* tt_ = nullptr;
+  // Transposition table instance is stored in the implementation's
+  // per-thread registry. This header exposes accessors only; the
+  // implementation manages actual ownership (currently per-thread
+  // shared_ptr). Do not rely on any `tt_` member here.
   // Arena is managed per ThreadData in a central registry (see .cpp).
 };
 
