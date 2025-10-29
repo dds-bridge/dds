@@ -3,6 +3,7 @@
 // Keep dependencies local to this implementation to avoid include churn.
 #include "system/Memory.h"       // for ThreadData definition
 #include "dds/dds.h"             // moveType, WinnersType
+#include <memory>
 #include "trans_table/TransTableS.h"
 #include "trans_table/TransTableL.h"
 #include "data_types/dds.h" // THREADMEM_* defaults
@@ -15,9 +16,11 @@
 namespace {
 // Central registry mapping ThreadData* to its TransTable instance.
 // Use a leaky singleton to avoid static destruction order issues at exit.
-static std::unordered_map<ThreadData*, TransTable*>& registry()
+// Use std::shared_ptr internally so ownership is explicit and safe for
+// future refactors that may hand out shared references.
+static std::unordered_map<ThreadData*, std::shared_ptr<TransTable>>& registry()
 {
-  static auto* map = new std::unordered_map<ThreadData*, TransTable*>();
+  static auto* map = new std::unordered_map<ThreadData*, std::shared_ptr<TransTable>>();
   return *map;
 }
 
@@ -36,13 +39,13 @@ TransTable* SolverContext::transTable() const
   auto it = registry().find(thr_);
   if (it == registry().end() || it->second == nullptr)
   {
-    TransTable* created = nullptr;
+    std::shared_ptr<TransTable> created;
     // Prefer thread-stored configuration determined by Init/Memory
     TTKind kind = (thr_->ttType == DDS_TT_SMALL ? TTKind::Small : TTKind::Large);
     if (kind == TTKind::Small)
-      created = new TransTableS();
+      created = std::make_shared<TransTableS>();
     else
-      created = new TransTableL();
+      created = std::make_shared<TransTableL>();
 
     int defMB = (cfg_.ttMemDefaultMB > 0 ? cfg_.ttMemDefaultMB : thr_->ttMemDefault_MB);
     int maxMB = (cfg_.ttMemMaximumMB > 0 ? cfg_.ttMemMaximumMB : thr_->ttMemMaximum_MB);
@@ -90,9 +93,9 @@ TransTable* SolverContext::transTable() const
       }
     }
 
-    created->set_memory_default(defMB);
-    created->set_memory_maximum(maxMB);
-    created->make_tt();
+  created->set_memory_default(defMB);
+  created->set_memory_maximum(maxMB);
+  created->make_tt();
 
 #ifdef DDS_UTILITIES_LOG
     // Append a tiny debug entry indicating TT creation and chosen kind/sizes.
@@ -115,10 +118,10 @@ TransTable* SolverContext::transTable() const
   utilities().util().stats().tt_creates++;
 #endif
 
-    // Attach to registry
+    // Attach to registry (shared ownership)
     registry()[thr_] = created;
   }
-  return registry()[thr_];
+  return registry()[thr_].get();
 }
 
 // --- Arena access (per-thread registry) ---
@@ -190,7 +193,7 @@ TransTable* SolverContext::maybeTransTable() const
   if (!thr_)
     return nullptr;
   auto it = registry().find(thr_);
-  return (it == registry().end() ? nullptr : it->second);
+  return (it == registry().end() ? nullptr : it->second.get());
 }
 
 void SolverContext::DisposeTransTable() const
@@ -199,14 +202,13 @@ void SolverContext::DisposeTransTable() const
   if (it != registry().end())
   {
 #ifdef DDS_UTILITIES_LOG
-  // Append a tiny debug entry indicating TT disposal.
-  utilities().logAppend("tt:dispose");
+    // Append a tiny debug entry indicating TT disposal.
+    utilities().logAppend("tt:dispose");
 #endif
 #ifdef DDS_UTILITIES_STATS
-  utilities().util().stats().tt_disposes++;
+    utilities().util().stats().tt_disposes++;
 #endif
-    delete it->second;
-    it->second = nullptr;
+    // Erase shared_ptr from registry; destructor will free when no refs remain.
     registry().erase(it);
   }
 }
