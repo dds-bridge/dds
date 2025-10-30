@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "system/SolverContext.h"
 #include "system/Memory.h"
-#include "data_types/dds.h"
+#include <dds/dds.h>
 
 extern Memory memory;
 
@@ -14,8 +14,8 @@ static void ensureThread()
 TEST(UtilitiesStatsTest, CountersRemainZeroWithoutDefine)
 {
   ensureThread();
-  ThreadData* thr = memory.GetPtr(0);
-  SolverContext ctx{thr};
+  ensureThread();
+  SolverContext ctx;
   ctx.utilities().util().stats_reset();
 
   (void)ctx.transTable();

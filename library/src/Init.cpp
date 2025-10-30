@@ -177,7 +177,9 @@ void InitDebugFiles()
 {
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
-    [[maybe_unused]] ThreadData * thrp = memory.GetPtr(thrId);
+    // Create a temporary context to access ThreadData for initialization.
+    SolverContext tmp_ctx;
+    [[maybe_unused]] ThreadData * thrp = tmp_ctx.thread();
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 
 #ifdef DDS_TOP_LEVEL
@@ -216,7 +218,8 @@ void CloseDebugFiles()
 {
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
-    [[maybe_unused]] ThreadData * thrp = memory.GetPtr(thrId);
+    SolverContext tmp_ctx;
+    [[maybe_unused]] ThreadData * thrp = tmp_ctx.thread();
 
 #ifdef DDS_TOP_LEVEL
     thrp->fileTopLevel.Close();

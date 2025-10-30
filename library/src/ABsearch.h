@@ -10,8 +10,8 @@
 #ifndef DDS_ABSEARCH_H
 #define DDS_ABSEARCH_H
 
-#include "dds/dds.h"
-#include "system/Memory.h"
+#include <dds/dds.h>
+#include <system/ThreadData.h>
 
 
 bool ABsearch(

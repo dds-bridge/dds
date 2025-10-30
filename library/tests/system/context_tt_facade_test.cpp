@@ -3,7 +3,7 @@
 #include "dds/dll.h"
 #include "system/Memory.h"
 #include "system/SolverContext.h"
-#include "data_types/dds.h"  // THREADMEM_* constants
+#include <dds/dds.h>  // THREADMEM_* constants
 
 extern Memory memory;
 
@@ -15,14 +15,10 @@ TEST(SystemContextTTFacades, ResetAndResizeAreNoopsWithoutTT)
   // so ensure we have at least one thread allocated for the test.
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
-  ThreadData* tdp = memory.GetPtr(static_cast<unsigned>(thr));
+  // Create a context that owns its ThreadData for this test.
+  SolverContext ctx;
   // Ensure no TT yet (construction is lazy until first use)
-  {
-    SolverContext pre{tdp};
-    ASSERT_EQ(nullptr, pre.maybeTransTable());
-  }
-
-  SolverContext ctx{tdp};
+  ASSERT_EQ(nullptr, ctx.maybeTransTable());
   // Should not crash and should not create TT
   ctx.ResetForSolve();
   ctx.ClearTT();
@@ -38,9 +34,9 @@ TEST(SystemContextTTFacades, ResizeCreatesWhenExisting)
   // Ensure at least one thread exists; fall back to a small thread config.
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
-  ThreadData* tdp = memory.GetPtr(static_cast<unsigned>(thr));
+  // Use owned context for the test
+  SolverContext ctx;
   // Force create via transTable()
-  SolverContext ctx{tdp};
   auto* tt = ctx.transTable();
   ASSERT_NE(nullptr, tt);
 
@@ -56,8 +52,7 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
-  ThreadData* tdp = memory.GetPtr(static_cast<unsigned>(thr));
-  SolverContext ctx{tdp};
+  SolverContext ctx;
 
   // Create TT and perform an initial lookup (expect miss)
   auto* tt = ctx.transTable();

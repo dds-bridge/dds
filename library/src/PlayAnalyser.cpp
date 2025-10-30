@@ -63,7 +63,9 @@ int STDCALL AnalysePlayBin(
   if (! sysdep.ThreadOK(thrId))
     return RETURN_THREAD_INDEX;
 
-  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+  // Create an owned context for this analysis and obtain its ThreadData.
+  SolverContext outer_ctx;
+  ThreadData * thrp = outer_ctx.thread();
 
   moveType move;
   futureTricks fut;

@@ -32,8 +32,7 @@ int main()
   int r1 = SolveBoard(dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft1, thr);
 
   // Act: context
-  ThreadData* tdp = memory.GetPtr(static_cast<unsigned>(thr));
-  SolverContext ctx{tdp};
+  SolverContext ctx;
   int r2 = SolveBoardWithContext(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft2);
 
   // Assert: return codes identical (both should be error on empty deal)

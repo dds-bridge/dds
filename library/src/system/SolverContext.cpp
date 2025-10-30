@@ -1,4 +1,4 @@
-#include "system/SolverContext.h"
+#include "SolverContext.h"
 
 // Keep dependencies local to this implementation to avoid include churn.
 #include "system/Memory.h"       // for ThreadData definition
@@ -6,7 +6,7 @@
 #include <memory>
 #include "trans_table/TransTableS.h"
 #include "trans_table/TransTableL.h"
-#include "data_types/dds.h" // THREADMEM_* defaults
+#include <dds/dds.h> // THREADMEM_* defaults
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
@@ -23,13 +23,26 @@ static std::unordered_map<ThreadData*, std::shared_ptr<TransTable>>& registry()
   static auto* map = new std::unordered_map<ThreadData*, std::shared_ptr<TransTable>>();
   return *map;
 }
-
 // Per-thread Arena registry. Managed as a leaky singleton similar to TT.
 static std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>& arena_registry()
 {
   static auto* map = new std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>();
   return *map;
 }
+}
+
+// Owned-ThreadData constructor: allocate ThreadData as a member of the
+// SolverContext so callers can create a context at the top of the stack
+// and pass it down without a separate per-thread lookup.
+SolverContext::SolverContext(SolverConfig cfg)
+  : thr_(nullptr), cfg_(cfg)
+{
+#ifdef DDS_DEFAULT_ARENA_BYTES
+  if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
+#endif
+  owned_thr_ = new ThreadData();
+  thr_ = owned_thr_;
+  if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
 }
 
 TransTable* SolverContext::transTable() const
@@ -213,7 +226,15 @@ void SolverContext::DisposeTransTable() const
   }
 }
 
-SolverContext::~SolverContext() = default;
+SolverContext::~SolverContext()
+{
+  // Owned ThreadData is deleted here; ThreadData is a complete type in this
+  // translation unit (Memory.h included above), so deletion is well-formed.
+  if (owned_thr_) {
+    delete owned_thr_;
+    owned_thr_ = nullptr;
+  }
+}
 
 void SolverContext::ResetForSolve() const
 {

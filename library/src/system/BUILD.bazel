@@ -6,7 +6,7 @@ cc_library(
     srcs = glob(["*.cpp"]),
     hdrs = glob(["*.h", "util/*.h"]),
     visibility = ["//visibility:public"],
-    includes = [".."],
+    includes = ["."],
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
@@ -28,7 +28,7 @@ cc_library(
     srcs = glob(["*.cpp"]),
     hdrs = glob(["*.h", "util/*.h"]),
     visibility = ["//visibility:public"],
-    includes = [".."],
+    includes = ["."],
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",
@@ -48,7 +48,7 @@ cc_library(
     srcs = glob(["*.cpp"]),
     hdrs = glob(["*.h", "util/*.h"]),
     visibility = ["//visibility:public"],
-    includes = [".."],
+    includes = ["."],
     deps = [
         "//library/src/utility:constants",
         "//library/src/utility:lookup_tables",

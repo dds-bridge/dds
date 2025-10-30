@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "system/SolverContext.h"
 #include "system/Memory.h"
-#include "data_types/dds.h"  // THREADMEM_* defaults
+#include <dds/dds.h>  // THREADMEM_* defaults
 
 extern Memory memory;
 
@@ -14,8 +14,8 @@ static void ensureThread()
 TEST(UtilitiesLogTest, NoLogWithoutDefine)
 {
   ensureThread();
-  ThreadData* thr = memory.GetPtr(0);
-  SolverContext ctx{thr};
+  ensureThread();
+  SolverContext ctx;
 
   // Ensure clean start
   ctx.utilities().logClear();

@@ -9,21 +9,15 @@
 #ifndef DDS_SYSTEM_SOLVERCONTEXT_H
 #define DDS_SYSTEM_SOLVERCONTEXT_H
 
-struct ThreadData;     // defined in system/Memory.h
-struct deal;           // defined in dds/dll.h
-struct futureTricks;   // defined in dds/dll.h
-struct moveType;       // from dds/dds.h
-struct WinnersType;    // from dds/dds.h
-struct pos;            // from dds/dds.h
-struct relRanksType;   // from dds/dds.h
-struct trickDataType;  // from data_types/dds.h
-#include "trans_table/TransTable.h" // ensure complete type and enums
-#include "system/util/Utilities.h"   // instance-scoped RNG and logging
-#include "system/util/Arena.h"       // simple bump arena for short-lived allocations
+#include "ThreadData.h"
+#include "util/Utilities.h"
+#include "util/Arena.h"
+#include <trans_table/TransTable.h>
 #include <string>
 #include <vector>
 #include <random>
 #include <cstddef>
+#include <memory>
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
@@ -51,6 +45,11 @@ public:
 #endif
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
   }
+
+  // Construct a context that owns its ThreadData instance. This is the
+  // preferred mode for the new instance-scoped API: callers can create a
+  // SolverContext at the top of the call-stack and pass it downwards.
+  explicit SolverContext(SolverConfig cfg = {});
 
   // Allow construction from const ThreadData* for read-only contexts
   explicit SolverContext(const ThreadData* thread, SolverConfig cfg = {})
@@ -227,6 +226,11 @@ private:
   ThreadData* thr_ = nullptr;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
+  // Optional owned ThreadData when the context is the owner. We store a
+  // raw pointer in the header to avoid instantiating unique_ptr's destructor
+  // while ThreadData is an incomplete type here. Ownership is managed in
+  // the implementation file (see .cpp).
+  ThreadData* owned_thr_ = nullptr;
   // Transposition table instance is stored in the implementation's
   // per-thread registry. This header exposes accessors only; the
   // implementation manages actual ownership (currently per-thread
