@@ -1,6 +1,7 @@
-#pragma once
+#ifndef DDS_HEURISTIC_SORTING_H
+#define DDS_HEURISTIC_SORTING_H
 
-#include "dds/dds.h"
+#include <dds/dds.h>
 
 struct trackType
 {
@@ -54,3 +55,5 @@ struct HeuristicContext {
 // pre-construct a HeuristicContext should use this to reduce
 // per-call overhead in hot paths.
 void CallHeuristic(const HeuristicContext& context);
+
+#endif // DDS_HEURISTIC_SORTING_H

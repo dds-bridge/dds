@@ -1,6 +1,6 @@
 #include "internal.h"
-#include "utility/Constants.h"
-#include "utility/LookupTables.h"
+#include <utility/Constants.h>
+#include <utility/LookupTables.h>
 
 // New overload: accepts a pre-built HeuristicContext. This contains the
 // same inline logic that used to be in the previous function body.
