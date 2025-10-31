@@ -994,32 +994,13 @@ void Moves::MergeSort()
       break;
     default:
     {
-      // Try an arena-backed temporary copy buffer if a TLS allocator is set.
-      moveType* copyBuf = nullptr;
-      if (numMoves > 0) {
-        void* p = dds::tls::TryAlloc(static_cast<std::size_t>(numMoves) * sizeof(moveType), alignof(moveType));
-        copyBuf = static_cast<moveType*>(p);
-      }
-      if (copyBuf) {
-        std::memcpy(copyBuf, mply, static_cast<std::size_t>(numMoves) * sizeof(moveType));
-        // Stable insertion from copyBuf into mply (descending by weight)
-        for (int i = 0; i < numMoves; ++i) {
-          const moveType cur = copyBuf[i];
-          int j = i;
-          for (; j && cur.weight > mply[j - 1].weight; --j)
-            mply[j] = mply[j - 1];
-          mply[j] = cur;
-        }
-      } else {
-        // Original in-place stable insertion sort path
-        for (int i = 1; i < numMoves; i++)
-        {
-          tmp = mply[i];
-          int j = i;
-          for (; j && tmp.weight > mply[j - 1].weight ; --j)
-            mply[j] = mply[j - 1];
-          mply[j] = tmp;
-        }
+      for (int i = 1; i < numMoves; i++)
+      {
+        tmp = mply[i];
+        int j = i;
+        for (; j && tmp.weight > mply[j - 1].weight ; --j)
+          mply[j] = mply[j - 1];
+        mply[j] = tmp;
       }
     }
   }

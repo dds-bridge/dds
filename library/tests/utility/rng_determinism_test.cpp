@@ -6,8 +6,7 @@
 
 TEST(UtilitiesRngTest, DeterministicSequenceWithSeed) {
   // Set up a minimal ThreadData directly; TT is unused in this test.
-  ThreadData thrInst{};
-  ThreadData* thr = &thrInst;
+  auto thr = std::make_shared<ThreadData>();
 
   // Seeded contexts should produce the same sequence for same seed.
   SolverConfig cfg{};
@@ -28,8 +27,7 @@ TEST(UtilitiesRngTest, DeterministicSequenceWithSeed) {
 }
 
 TEST(UtilitiesRngTest, DifferentSeedsYieldDifferentSequences) {
-  ThreadData thrInst{};
-  ThreadData* thr = &thrInst;
+  auto thr = std::make_shared<ThreadData>();
 
   SolverConfig cfgA{}; cfgA.rngSeed = 42ULL;
   SolverConfig cfgB{}; cfgB.rngSeed = 43ULL;

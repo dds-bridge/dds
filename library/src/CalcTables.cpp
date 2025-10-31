@@ -56,7 +56,7 @@ void CalcSingleCommon(
   // Create an owned context for this worker and use its ThreadData for
   // subsequent same-board solves.
   SolverContext outer_ctx;
-  ThreadData * thrp = outer_ctx.thread();
+  auto thrp = outer_ctx.thread();
   for (int k = 1; k < DDS_HANDS; k++)
   {
     int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);

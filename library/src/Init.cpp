@@ -178,8 +178,8 @@ void InitDebugFiles()
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
     // Create a temporary context to access ThreadData for initialization.
-    SolverContext tmp_ctx;
-    [[maybe_unused]] ThreadData * thrp = tmp_ctx.thread();
+  SolverContext tmp_ctx;
+  [[maybe_unused]] auto thrp = tmp_ctx.thread();
     const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
 
 #ifdef DDS_TOP_LEVEL
@@ -218,8 +218,8 @@ void CloseDebugFiles()
 {
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
-    SolverContext tmp_ctx;
-    [[maybe_unused]] ThreadData * thrp = tmp_ctx.thread();
+  SolverContext tmp_ctx;
+  [[maybe_unused]] auto thrp = tmp_ctx.thread();
 
 #ifdef DDS_TOP_LEVEL
     thrp->fileTopLevel.Close();
@@ -250,7 +250,7 @@ void CloseDebugFiles()
 
 
 void SetDeal(
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   /* Initialization of the rel structure is inspired by
      a solution given by Thomas Andrews */
@@ -285,7 +285,7 @@ void SetDeal(
 
 
 void SetDealTables(
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   unsigned int topBitRank = 1;
   unsigned int topBitNo = 2;
@@ -368,7 +368,7 @@ void SetDealTables(
 void InitWinners(
   const deal& dl,
   pos& posPoint,
-  ThreadData const * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   int hand, suit, rank;
   unsigned short int startMovesBitMap[DDS_HANDS][DDS_SUITS];

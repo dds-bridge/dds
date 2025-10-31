@@ -37,8 +37,8 @@ struct SolverConfig
 class SolverContext
 {
 public:
-  explicit SolverContext(ThreadData* thread, SolverConfig cfg = {})
-  : thr_(thread), cfg_(cfg)
+  explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
+  : thr_(std::move(thread)), cfg_(cfg)
   {
 #ifdef DDS_DEFAULT_ARENA_BYTES
     if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
@@ -46,14 +46,19 @@ public:
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
   }
 
+  // NOTE: constructors that accepted raw ThreadData* were removed as part
+  // of the ownership migration. Callers should pass a
+  // std::shared_ptr<ThreadData> (non-owning wrappers can be created with
+  // std::shared_ptr<ThreadData>(ptr, [](ThreadData*){})).
+
   // Construct a context that owns its ThreadData instance. This is the
   // preferred mode for the new instance-scoped API: callers can create a
   // SolverContext at the top of the call-stack and pass it downwards.
   explicit SolverContext(SolverConfig cfg = {});
 
   // Allow construction from const ThreadData* for read-only contexts
-  explicit SolverContext(const ThreadData* thread, SolverConfig cfg = {})
-  : thr_(const_cast<ThreadData*>(thread)), cfg_(cfg)
+  explicit SolverContext(std::shared_ptr<const ThreadData> thread, SolverConfig cfg = {})
+  : thr_(std::const_pointer_cast<ThreadData>(thread)), cfg_(cfg)
   {
 #ifdef DDS_DEFAULT_ARENA_BYTES
     if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
@@ -63,7 +68,7 @@ public:
 
   ~SolverContext();
 
-  ThreadData* thread() const { return thr_; }
+  std::shared_ptr<ThreadData> thread() const { return thr_; }
   const SolverConfig& config() const { return cfg_; }
 
   // --- Utilities facade ---
@@ -108,7 +113,7 @@ public:
   // --- Search state facade ---
   class SearchContext {
   public:
-    explicit SearchContext(ThreadData* thr) : thr_(thr) {}
+  explicit SearchContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
     // analysis flag used to control incremental analysis behavior
     bool& analysisFlag();
     bool analysisFlag() const;
@@ -134,7 +139,7 @@ public:
     int& iniDepth();
     int iniDepth() const;
   private:
-    ThreadData* thr_ = nullptr;
+    std::shared_ptr<ThreadData> thr_;
   };
 
   inline SearchContext search() const { return SearchContext(thr_); }
@@ -142,7 +147,7 @@ public:
   // --- Move generation facade ---
   class MoveGenContext {
   public:
-    explicit MoveGenContext(ThreadData* thr) : thr_(thr) {}
+    explicit MoveGenContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
 
     int MoveGen0(
       const int tricks,
@@ -217,20 +222,20 @@ public:
       const int relHand);
 
   private:
-    ThreadData* thr_ = nullptr;
+    std::shared_ptr<ThreadData> thr_;
   };
 
   inline MoveGenContext moveGen() const { return MoveGenContext(thr_); }
 
 private:
-  ThreadData* thr_ = nullptr;
+  // Shared ownership of per-context ThreadData. Callers can construct
+  // a context with an externally-owned std::shared_ptr<ThreadData> or
+  // let the context create/own one via the default constructor.
+  std::shared_ptr<ThreadData> thr_;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
-  // Optional owned ThreadData when the context is the owner. We store a
-  // raw pointer in the header to avoid instantiating unique_ptr's destructor
-  // while ThreadData is an incomplete type here. Ownership is managed in
-  // the implementation file (see .cpp).
-  ThreadData* owned_thr_ = nullptr;
+  // NOTE: `owned_thr_` removed; `thr_` now represents the shared ownership
+  // (if any) for this context.
   // Transposition table instance is stored in the implementation's
   // per-thread registry. This header exposes accessors only; the
   // implementation manages actual ownership (currently per-thread

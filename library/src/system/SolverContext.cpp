@@ -40,8 +40,8 @@ SolverContext::SolverContext(SolverConfig cfg)
 #ifdef DDS_DEFAULT_ARENA_BYTES
   if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
 #endif
-  owned_thr_ = new ThreadData();
-  thr_ = owned_thr_;
+  // Create an owned ThreadData instance and keep it in thr_.
+  thr_ = std::make_shared<ThreadData>();
   if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
 }
 
@@ -49,7 +49,7 @@ TransTable* SolverContext::transTable() const
 {
   if (!thr_)
     return nullptr;
-  auto it = registry().find(thr_);
+  auto it = registry().find(thr_.get());
   if (it == registry().end() || it->second == nullptr)
   {
     std::shared_ptr<TransTable> created;
@@ -106,15 +106,13 @@ TransTable* SolverContext::transTable() const
       }
     }
 
-  created->set_memory_default(defMB);
-  created->set_memory_maximum(maxMB);
-  created->make_tt();
+    created->set_memory_default(defMB);
+    created->set_memory_maximum(maxMB);
+    created->make_tt();
 
 #ifdef DDS_UTILITIES_LOG
-    // Append a tiny debug entry indicating TT creation and chosen kind/sizes.
     {
       const char kch = (kind == TTKind::Small ? 'S' : 'L');
-      // Prefer arena-backed small buffer to avoid stack churn; fallback to stack.
       char* buf = nullptr;
       constexpr std::size_t kLen = 96;
       if (auto* a = const_cast<SolverContext*>(this)->arena()) {
@@ -128,13 +126,12 @@ TransTable* SolverContext::transTable() const
 #endif
 
 #ifdef DDS_UTILITIES_STATS
-  utilities().util().stats().tt_creates++;
+    utilities().util().stats().tt_creates++;
 #endif
 
-    // Attach to registry (shared ownership)
-    registry()[thr_] = created;
+    registry()[thr_.get()] = created;
   }
-  return registry()[thr_].get();
+  return registry()[thr_.get()].get();
 }
 
 // --- Arena access (per-thread registry) ---
@@ -142,11 +139,11 @@ dds::Arena* SolverContext::arena()
 {
   if (!thr_) return nullptr;
   auto& map = arena_registry();
-  auto it = map.find(thr_);
+  auto it = map.find(thr_.get());
   if (it == map.end()) {
     if (cfg_.arenaCapacityBytes == 0ULL) return nullptr;
-    auto ins = map.emplace(thr_, std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes));
-    return ins.first->second.get();
+  auto ins = map.emplace(thr_.get(), std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes));
+  return ins.first->second.get();
   }
   return it->second.get();
 }
@@ -205,13 +202,13 @@ TransTable* SolverContext::maybeTransTable() const
 {
   if (!thr_)
     return nullptr;
-  auto it = registry().find(thr_);
+  auto it = registry().find(thr_.get());
   return (it == registry().end() ? nullptr : it->second.get());
 }
 
 void SolverContext::DisposeTransTable() const
 {
-  auto it = registry().find(thr_);
+  auto it = registry().find(thr_.get());
   if (it != registry().end())
   {
 #ifdef DDS_UTILITIES_LOG
@@ -226,15 +223,10 @@ void SolverContext::DisposeTransTable() const
   }
 }
 
-SolverContext::~SolverContext()
-{
-  // Owned ThreadData is deleted here; ThreadData is a complete type in this
-  // translation unit (Memory.h included above), so deletion is well-formed.
-  if (owned_thr_) {
-    delete owned_thr_;
-    owned_thr_ = nullptr;
-  }
-}
+// Defaulted destructor defined out-of-line so destruction of the
+// owned std::shared_ptr<ThreadData> happens where ThreadData is a
+// complete type.
+SolverContext::~SolverContext() = default;
 
 void SolverContext::ResetForSolve() const
 {
@@ -360,7 +352,7 @@ int SolverContext::MoveGenContext::MoveGen0(
   const relRanksType thrp_rel[])
 {
   // Expose an optional allocator to legacy code paths.
-  TDShim shim{thr_};
+  TDShim shim{thr_.get()};
   dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
   dds::tls::ResetAlloc();
@@ -372,7 +364,7 @@ int SolverContext::MoveGenContext::MoveGen123(
   const int relHand,
   const pos& tpos)
 {
-  TDShim shim{thr_};
+  TDShim shim{thr_.get()};
   dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen123(tricks, relHand, tpos);
   dds::tls::ResetAlloc();

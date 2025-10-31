@@ -15,7 +15,7 @@ TEST(ArenaReuseTest, SameThreadSharesArenaAndResets)
   ensureThread();
   // Create an owning context to provide a ThreadData for the test.
   SolverContext owner;
-  ThreadData* thr = owner.thread();
+  auto thr = owner.thread();
 
   // Two contexts pointing to the same ThreadData
   SolverContext ctx1{thr, SolverConfig{.arenaCapacityBytes = 4096}};
@@ -49,10 +49,10 @@ TEST(ArenaReuseTest, DifferentThreadsGetDifferentArenas)
     memory.Resize(2, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
   SolverContext owner0;
-  ThreadData* thr = owner0.thread();
+  auto thr = owner0.thread();
   SolverContext owner1;
-  ThreadData* thr0 = owner0.thread();
-  ThreadData* thr1 = owner1.thread();
+  auto thr0 = owner0.thread();
+  auto thr1 = owner1.thread();
   SolverContext ctx0{thr0, SolverConfig{.arenaCapacityBytes = 2048}};
   SolverContext ctx1{thr1, SolverConfig{.arenaCapacityBytes = 2048}};
 

@@ -19,10 +19,10 @@
 #include "dump.h"
 
 // Internal ctx-enabled variants (forward declarations)
-static bool ABsearch0_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
-static bool ABsearch1_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
-static bool ABsearch2_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
-static bool ABsearch3_ctx(pos * posPoint, int target, int depth, ThreadData * thrp, SolverContext& ctx);
+static bool ABsearch0_ctx(pos * posPoint, int target, int depth, const std::shared_ptr<ThreadData>& thrp, SolverContext& ctx);
+static bool ABsearch1_ctx(pos * posPoint, int target, int depth, const std::shared_ptr<ThreadData>& thrp, SolverContext& ctx);
+static bool ABsearch2_ctx(pos * posPoint, int target, int depth, const std::shared_ptr<ThreadData>& thrp, SolverContext& ctx);
+static bool ABsearch3_ctx(pos * posPoint, int target, int depth, const std::shared_ptr<ThreadData>& thrp, SolverContext& ctx);
 static evalType EvaluateWithContext(pos const * posPoint, int trump, SolverContext& ctx);
 
 // ctx-enabled helpers to keep search-state access behind the facade
@@ -31,7 +31,7 @@ static void Make3_ctx(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx);
 
 static void Undo0_ctx(
@@ -46,13 +46,13 @@ void Make3Simple(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  ThreadData * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 void Undo0(
   pos * posPoint,
   const int depth,
   const moveType& mply,
-  ThreadData const * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 void Undo0Simple(
   pos * posPoint,
@@ -82,7 +82,7 @@ bool ABsearch(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   /* posPoint points to the current look-ahead position,
      target is number of tricks to take for the player,
@@ -108,7 +108,7 @@ bool ABsearch(
     * posPoint,
     ctx.search().bestMove(depth),
     ctx.search().bestMoveTT(depth),
-    thrp->rel);
+  thrp->rel);
   ctx.moveGen().Purge(tricks, 0, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
@@ -174,7 +174,7 @@ bool ABsearch0(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   // Thin wrapper: construct once and pass down
   SolverContext ctx{thrp};
@@ -186,7 +186,7 @@ static bool ABsearch0_ctx(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
   /* posPoint points to the current look-ahead position,
@@ -484,7 +484,7 @@ bool ABsearch1(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   // Wrapper: construct once and pass down
   SolverContext ctx{thrp};
@@ -495,7 +495,7 @@ static bool ABsearch1_ctx(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
   int trump = thrp->trump;
@@ -582,7 +582,7 @@ bool ABsearch2(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   SolverContext ctx{thrp};
   return ABsearch2_ctx(posPoint, target, depth, thrp, ctx);
@@ -592,7 +592,7 @@ static bool ABsearch2_ctx(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
   int hand = handId(posPoint->first[depth], 2);
@@ -670,7 +670,7 @@ bool ABsearch3(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   SolverContext ctx{thrp};
   return ABsearch3_ctx(posPoint, target, depth, thrp, ctx);
@@ -680,7 +680,7 @@ static bool ABsearch3_ctx(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
   /* This is a specialized AB function for handRelFirst == 3. */
@@ -830,7 +830,7 @@ void Make3(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   SolverContext ctx{thrp};
   int firstHand = posPoint->first[depth];
@@ -896,7 +896,7 @@ static void Make3_ctx(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
   int firstHand = posPoint->first[depth];
@@ -961,7 +961,7 @@ void Make3Simple(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   SolverContext ctx{thrp};
   const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
@@ -996,7 +996,7 @@ void Undo0(
   pos * posPoint,
   const int depth,
   const moveType& mply,
-  ThreadData const * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   int h = handId(posPoint->first[depth], 3);
   int s = mply.suit;
@@ -1115,7 +1115,7 @@ void Undo3(
 evalType Evaluate(
   pos const * posPoint,
   const int trump,
-  ThreadData const * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   SolverContext ctx{thrp};
   return EvaluateWithContext(posPoint, trump, ctx);

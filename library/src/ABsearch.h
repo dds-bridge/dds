@@ -12,37 +12,38 @@
 
 #include <dds/dds.h>
 #include <system/ThreadData.h>
+#include <memory>
 
 
 bool ABsearch(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 bool ABsearch0(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 bool ABsearch1(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 bool ABsearch2(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 bool ABsearch3(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 void Make0(
   pos * posPoint,
@@ -64,11 +65,11 @@ void Make3(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  ThreadData * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 evalType Evaluate(
   pos const * posPoint,
   const int trump,
-  ThreadData const * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 #endif

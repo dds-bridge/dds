@@ -65,7 +65,7 @@ int STDCALL AnalysePlayBin(
 
   // Create an owned context for this analysis and obtain its ThreadData.
   SolverContext outer_ctx;
-  ThreadData * thrp = outer_ctx.thread();
+  auto thrp = outer_ctx.thread();
 
   moveType move;
   futureTricks fut;

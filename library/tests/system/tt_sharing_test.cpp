@@ -11,7 +11,7 @@ TEST(TransTableSharingTest, SameThreadSharesTT)
 
   // Create an owning context for this (simulates a thread-local owner)
   SolverContext owner;
-  ThreadData* thr = owner.thread();
+  auto thr = owner.thread();
   SolverContext ctx1{thr};
   SolverContext ctx2{thr};
 

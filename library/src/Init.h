@@ -12,16 +12,17 @@
 
 #include "dds/dds.h"
 #include "system/Memory.h"
+#include <memory>
 
 
-void SetDeal(ThreadData * thrp);
+void SetDeal(const std::shared_ptr<ThreadData>& thrp);
 
-void SetDealTables(ThreadData * thrp);
+void SetDealTables(const std::shared_ptr<ThreadData>& thrp);
 
 void InitWinners(
   const deal& dl,
   pos& posPoint,
-  ThreadData const * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 void CloseDebugFiles();
 

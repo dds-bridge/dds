@@ -33,11 +33,11 @@ int BoardValueChecks(
   const int target,
   const int solutions,
   const int mode,
-  ThreadData const * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 void LastTrickWinner(
   const deal& dl,
-  ThreadData const * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
   const int handRelFirst,
   int& leadRank,
@@ -48,14 +48,14 @@ bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
   = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
 
 void (* Make_ptr_list[3])(
@@ -85,7 +85,7 @@ int STDCALL SolveBoard(
 
 
 int SolveBoardInternal(
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const deal& dl,
   const int target,
   const int solutions,
@@ -682,7 +682,7 @@ SOLVER_DONE:
 
 
 int SolveSameBoard(
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const deal& dl,
   futureTricks * futp,
   const int hint)
@@ -811,7 +811,7 @@ int SolveSameBoard(
 
 
 int AnalyseLaterBoard(
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const int leadHand,
   moveType const * move,
   const int hint,
@@ -1092,7 +1092,7 @@ int BoardValueChecks(
   const int target,
   const int solutions,
   const int mode,
-  ThreadData const * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   SolverContext ctx{thrp};
   int cardCount = ctx.search().iniDepth() + 4;
@@ -1180,7 +1180,7 @@ int BoardValueChecks(
 
 void LastTrickWinner(
   const deal& dl,
-  ThreadData const * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
   const int handRelFirst,
   int& leadRank,

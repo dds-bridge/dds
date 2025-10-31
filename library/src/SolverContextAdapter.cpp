@@ -2,7 +2,7 @@
 
 // Legacy internal entry point; avoid heavy includes here.
 int SolveBoardInternal(
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const deal& dl,
   const int target,
   const int solutions,
