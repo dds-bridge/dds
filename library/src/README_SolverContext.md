@@ -2,7 +2,10 @@
 
 This file documents the additive instance-based API introduced for the dynamic environment refactor.
 
-- `SolverContext` wraps a `ThreadData*` for now and will later own all per-instance state.
+- `SolverContext` stores a `std::shared_ptr<ThreadData>` and may either own
+	per-context thread state or act as a non-owning facade via a
+	non-owning `std::shared_ptr<ThreadData>` (constructed with a no-op
+	deleter). The codebase is migrating to instance-scoped ownership.
 - `SolveBoardWithContext` forwards to the existing `SolveBoardInternal` without changing behavior.
 - Legacy APIs remain unchanged.
 

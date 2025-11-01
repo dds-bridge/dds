@@ -47,6 +47,24 @@ int QtricksLeadHandTrump(
   const int qtricks,
   int& res);
 
+int QuickTricksPartnerHand(
+  const int hand,
+  pos& tpos,
+  const int cutoff,
+  const int depth,
+  const int countLho,
+  const int countRho,
+  const int lhoTrumpRanks,
+  const int rhoTrumpRanks,
+  const int countOwn,
+  const int countPart,
+  const int suit,
+  const int qtricks,
+  const int commSuit,
+  const int commRank,
+  int& res,
+  const std::shared_ptr<ThreadData>& thrp);
+
 int QuickTricksPartnerHandTrump(
   const int hand,
   pos& tpos,
@@ -63,7 +81,7 @@ int QuickTricksPartnerHandTrump(
   const int commSuit,
   const int commRank,
   int& res,
-  const ThreadData& thrd);
+  const std::shared_ptr<ThreadData>& thrp);
 
 int QuickTricksPartnerHandNT(
   const int hand,
@@ -79,7 +97,7 @@ int QuickTricksPartnerHandNT(
   const int commSuit,
   const int commRank,
   int& res,
-  const ThreadData& thrd);
+  const std::shared_ptr<ThreadData>& thrp);
 
 
 /**
@@ -104,9 +122,9 @@ int QuickTricks(
   const int target,
   const int trump,
   bool& result,
-  const ThreadData& thrd)
+  const std::shared_ptr<ThreadData>& thrp)
 {
-  SolverContext ctx{ std::shared_ptr<ThreadData>(const_cast<ThreadData*>(&thrd), [](ThreadData*){}) };
+  SolverContext ctx{ thrp };
   int suit, commRank = 0, commSuit = -1;
   int res;
   int lhoTrumpRanks = 0, rhoTrumpRanks = 0;
@@ -503,7 +521,7 @@ int QuickTricks(
             qtricks = QuickTricksPartnerHandTrump(hand, tpos,
               cutoff, depth, countLho, countRho,
               lhoTrumpRanks, rhoTrumpRanks, countOwn,
-              countPart, suit, qtricks, commSuit, commRank, res, thrd);
+              countPart, suit, qtricks, commSuit, commRank, res, thrp);
 
             if (res == 1)
               return qtricks;
@@ -519,7 +537,7 @@ int QuickTricks(
           {
             qtricks = QuickTricksPartnerHandNT(hand, tpos, cutoff,
               depth, countLho, countRho, countOwn, countPart,
-              suit, qtricks, commSuit, commRank, res, thrd);
+              suit, qtricks, commSuit, commRank, res, thrp);
 
             if (res == 1)
               return qtricks;
@@ -885,7 +903,7 @@ int QuickTricksPartnerHandTrump(
   const int commSuit,
   const int commRank,
   int& res,
-  const ThreadData& thrd)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   /* res=0 Continue with same suit.
      res=1 Cutoff.
@@ -980,10 +998,10 @@ int QuickTricksPartnerHandTrump(
     for (int h = 0; h < DDS_HANDS; h++)
       ranks |= tpos.rankInSuit[h][suit];
 
-    if (thrd.rel[ranks].absRank[3][suit].hand == partner[hand])
+    if (thrp->rel[ranks].absRank[3][suit].hand == partner[hand])
     {
       tpos.winRanks[depth][suit] |= bitMapRank[
-        static_cast<int>(thrd.rel[ranks].absRank[3][suit].rank) ];
+        static_cast<int>(thrp->rel[ranks].absRank[3][suit].rank) ];
 
       tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
 
@@ -1021,7 +1039,7 @@ int QuickTricksPartnerHandNT(
   const int commSuit,
   const int commRank,
   int& res,
-  const ThreadData& thrd)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   res = 1;
   int qt = qtricks;
@@ -1090,10 +1108,10 @@ int QuickTricksPartnerHandNT(
     for (int h = 0; h < DDS_HANDS; h++)
       ranks |= tpos.rankInSuit[h][suit];
 
-    if (thrd.rel[ranks].absRank[3][suit].hand == partner[hand])
+    if (thrp->rel[ranks].absRank[3][suit].hand == partner[hand])
     {
       tpos.winRanks[depth][suit] |= bitMapRank[
-        static_cast<int>(thrd.rel[ranks].absRank[3][suit].rank) ];
+        static_cast<int>(thrp->rel[ranks].absRank[3][suit].rank) ];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -1118,9 +1136,9 @@ bool QuickTricksSecondHand(
   const int depth,
   const int target,
   const int trump,
-  const ThreadData& thrd)
+  const std::shared_ptr<ThreadData>& thrp)
 {
-  SolverContext ctx{ std::shared_ptr<ThreadData>(const_cast<ThreadData*>(&thrd), [](ThreadData*){}) };
+  SolverContext ctx{ thrp };
   if (depth == ctx.search().iniDepth())
     return false;
 

@@ -12,6 +12,7 @@
 
 #include "dds/dds.h"
 #include "system/Memory.h"
+#include <memory>
 
 
 int QuickTricks(
@@ -21,7 +22,7 @@ int QuickTricks(
   const int target,
   const int trump,
   bool& result,
-  const ThreadData& thrd);
+  const std::shared_ptr<ThreadData>& thrp);
 
 bool QuickTricksSecondHand(
   pos& tpos,
@@ -29,6 +30,6 @@ bool QuickTricksSecondHand(
   const int depth,
   const int target,
   const int trump,
-  const ThreadData& thrd);
+  const std::shared_ptr<ThreadData>& thrp);
 
 #endif

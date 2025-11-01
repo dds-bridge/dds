@@ -367,7 +367,7 @@ int SolveBoardInternal(
 
 #ifdef DDS_TOP_LEVEL
         DumpTopLevel(thrp->fileTopLevel.GetStream(), 
-          * thrp, guess, lowerbound, upperbound, 1);
+          thrp, guess, lowerbound, upperbound, 1);
 #endif
 
         if (thrp->val)
@@ -476,7 +476,7 @@ int SolveBoardInternal(
 
 #ifdef DDS_TOP_LEVEL
       DumpTopLevel(thrp->fileTopLevel.GetStream(),
-        * thrp, guess, lowerbound, upperbound, 1);
+        thrp, guess, lowerbound, upperbound, 1);
 #endif
 
       if (thrp->val)
@@ -545,7 +545,7 @@ int SolveBoardInternal(
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(), 
-      * thrp, target, -1, -1, 0);
+      thrp, target, -1, -1, 0);
 #endif
 
     if (! thrp->val)
@@ -612,7 +612,7 @@ int SolveBoardInternal(
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
-      * thrp, target, -1, -1, 2);
+      thrp, target, -1, -1, 2);
 #endif
 
     if (! thrp->val)
@@ -751,7 +751,7 @@ int SolveSameBoard(
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
-      * thrp, guess, lowerbound, upperbound, 1);
+      thrp, guess, lowerbound, upperbound, 1);
 #endif
 
     if (thrp->val)
@@ -927,7 +927,7 @@ int AnalyseLaterBoard(
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
-      * thrp, guess, lowerbound, upperbound, 1);
+      thrp, guess, lowerbound, upperbound, 1);
 #endif
 
     if (thrp->val)

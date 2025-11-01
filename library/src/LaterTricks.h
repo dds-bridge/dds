@@ -12,6 +12,7 @@
 
 #include "dds/dds.h"
 #include "system/Memory.h"
+#include <memory>
 
 
 bool LaterTricksMIN(
@@ -20,7 +21,7 @@ bool LaterTricksMIN(
   const int depth,
   const int target,
   const int trump,
-  const ThreadData& thrd);
+  const std::shared_ptr<ThreadData>& thrp);
 
 bool LaterTricksMAX(
   pos& tpos,
@@ -28,6 +29,6 @@ bool LaterTricksMAX(
   const int depth,
   const int target,
   const int trump,
-  const ThreadData& thrd);
+  const std::shared_ptr<ThreadData>& thrp);
 
 #endif

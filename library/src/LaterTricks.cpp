@@ -33,9 +33,9 @@ bool LaterTricksMIN(
   const int depth,
   const int target,
   const int trump,
-  const ThreadData& thrd)
+  const std::shared_ptr<ThreadData>& thrp)
 {
-  SolverContext ctx{ std::shared_ptr<ThreadData>(const_cast<ThreadData*>(&thrd), [](ThreadData*){}) };
+  SolverContext ctx{ thrp };
   if ((trump == DDS_NOTRUMP) || (tpos.winner[trump].rank == 0))
   {
     int sum = 0;
@@ -142,7 +142,14 @@ bool LaterTricksMIN(
     else
     {
       unsigned short aggr = tpos.aggr[trump];
-      int h = thrd.rel[aggr].absRank[3][trump].hand;
+      // Defensive check: rel[] is sized 8192 in ThreadData. If aggr
+      // is out of bounds we avoid a crash and return a conservative result.
+      if (aggr >= 8192u)
+      {
+        fprintf(stderr, "LaterTricksMIN: invalid aggr=%u (depth=%d)\n", aggr, depth);
+        return true; // conservative fallback
+      }
+      int h = thrp->rel[aggr].absRank[3][trump].hand;
       if (h == -1)
         return true;
 
@@ -152,7 +159,7 @@ bool LaterTricksMIN(
         for (int ss = 0; ss < DDS_SUITS; ss++)
           tpos.winRanks[depth][ss] = 0;
         tpos.winRanks[depth][trump] = bitMapRank[
-          static_cast<int>(thrd.rel[aggr].absRank[3][trump].rank) ];
+          static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
         return false;
       }
     }
@@ -181,9 +188,9 @@ bool LaterTricksMAX(
   const int depth,
   const int target,
   const int trump,
-  const ThreadData& thrd)
+  const std::shared_ptr<ThreadData>& thrp)
 {
-  SolverContext ctx{ std::shared_ptr<ThreadData>(const_cast<ThreadData*>(&thrd), [](ThreadData*){}) };
+  SolverContext ctx{ thrp };
   if ((trump == DDS_NOTRUMP) || (tpos.winner[trump].rank == 0))
   {
     int sum = 0;
@@ -295,7 +302,7 @@ bool LaterTricksMAX(
     else
     {
       unsigned short aggr = tpos.aggr[trump];
-      int h = thrd.rel[aggr].absRank[3][trump].hand;
+  int h = thrp->rel[aggr].absRank[3][trump].hand;
       if (h == -1)
         return false;
 
@@ -305,7 +312,7 @@ bool LaterTricksMAX(
         for (int ss = 0; ss < DDS_SUITS; ss++)
           tpos.winRanks[depth][ss] = 0;
         tpos.winRanks[depth][trump] = bitMapRank[
-          static_cast<int>(thrd.rel[aggr].absRank[3][trump].rank) ];
+          static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
         return true;
       }
     }
