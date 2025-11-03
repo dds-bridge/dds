@@ -169,7 +169,28 @@ TransTableL::TransTableL() {
   (void)TTLowestRankTable();
   (void)MaskBytesTable();
   (void)Players();
+  // Initialize all internal state to safe defaults. Some of these
+  // fields were previously left uninitialized and relied on implicit
+  // zeroing via legacy construction paths. With newer creation flows
+  // (via SolverContext), make the invariants explicit here.
   tt_in_use_ = 0;
+  mem_state_ = MemState::FROM_POOL;
+  pages_default_ = 0;
+  pages_current_ = 0;
+  pages_maximum_ = 0;
+  harvest_trick_ = 0;
+  harvest_hand_ = 0;
+  page_stats_ = PageStats{0,0,0,0,0};
+  timestamp_ = 0;
+  pool_ = nullptr;
+  next_block_ = nullptr;
+  harvested_.next_block_no_ = 0;
+  for (int c = 0; c < TT_TRICKS; ++c) {
+    for (int h = 0; h < DDS_HANDS; ++h) {
+      tt_root_[c][h] = nullptr;
+      last_block_seen_[c][h] = nullptr;
+    }
+  }
 }
 
 /**
@@ -315,16 +336,32 @@ auto TransTableL::reset_memory([[maybe_unused]] const ResetReason reason) -> voi
   if (pool_ == nullptr)
     return;
 
+  // Temporary debug: observe reset parameters to diagnose crashes
+  #if defined(DDS_DEBUG_TT_RESET)
+    std::fprintf(stderr,
+                 "[TransTableL::reset_memory] reason=%d current=%d default=%d pool=%p\n",
+                 static_cast<int>(reason),
+                 pages_current_,
+                 pages_default_,
+                 static_cast<void*>(pool_));
+  #endif
+
   page_stats_.num_resets_++;
   page_stats_.num_callocs_ += pages_current_ - page_stats_.last_current_;
   page_stats_.last_current_ = pages_current_;
 
   while (pages_current_ > pages_default_) {
-    free(pool_->list_);
-    pool_ = pool_->prev_;
-
-    free(pool_->next_);
-    pool_->next_ = nullptr;
+    // Free the tail-most pool and unlink safely even if it was the only one.
+    Pool* cur = pool_;
+    free(cur->list_);
+    pool_ = cur->prev_;
+    if (pool_ != nullptr) {
+      free(cur);
+      pool_->next_ = nullptr;
+    } else {
+      // No pools remain after this release
+      free(cur);
+    }
 
     pages_current_--;
   }
@@ -332,11 +369,18 @@ auto TransTableL::reset_memory([[maybe_unused]] const ResetReason reason) -> voi
   page_stats_.num_frees_ += page_stats_.last_current_ - pages_current_;
   page_stats_.last_current_ = pages_current_;
 
-  while (pool_->prev_)
-    pool_ = pool_->prev_;
+  if (pool_ != nullptr) {
+    while (pool_->prev_)
+      pool_ = pool_->prev_;
+  }
 
-  pool_->next_block_no_ = 0;
-  next_block_ = pool_->list_;
+  if (pool_ != nullptr) {
+    pool_->next_block_no_ = 0;
+    next_block_ = pool_->list_;
+  } else {
+    // No pool => future allocations will create a fresh pool on demand
+    next_block_ = nullptr;
+  }
 
   TransTableL::init_tt();
 
