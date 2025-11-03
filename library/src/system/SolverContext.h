@@ -32,7 +32,7 @@ enum class TTKind { Small, Large };
 
 struct SolverConfig
 {
-  TTKind ttKind = TTKind::Small;
+  TTKind ttKind = TTKind::Large;
   int ttMemDefaultMB = 0;
   int ttMemMaximumMB = 0;
   // Optional deterministic RNG seed (0 means "no explicit seed").
