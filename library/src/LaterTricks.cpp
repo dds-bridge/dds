@@ -160,7 +160,7 @@ bool LaterTricksMIN(
       // is out of bounds we avoid a crash and return a conservative result.
       if (aggr >= 8192u)
       {
-        DDS_UTILITIES_LOG("LaterTricksMIN: invalid aggr=%u (depth=%d)", aggr, depth);
+        fprintf(stderr, "LaterTricksMIN: invalid aggr=%u (depth=%d)", aggr, depth);
         return true; // conservative fallback
       }
   int h = ctx.thread()->rel[aggr].absRank[3][trump].hand;
