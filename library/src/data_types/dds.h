@@ -41,7 +41,6 @@ All hand identities are given as
 0=NORTH, 1=EAST, 2=SOUTH, 3=WEST. */
 
 #include "utility/Constants.h"
-#include "utility/LookupTables.h"
 
 #define handId(hand, relative) (hand + relative) & 3
 

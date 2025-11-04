@@ -8,7 +8,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//library/src/utility:constants",
-        "//library/src/utility:lookup_tables",
+        "//library/src/lookup_tables:lookup_tables",
         "//library/src/data_types:dds_types",
     ],
     include_prefix = "trans_table",
@@ -26,7 +26,7 @@ cc_library(
     local_defines = DDS_LOCAL_DEFINES,
     deps = [
         "//library/src/utility:constants",
-        "//library/src/utility:lookup_tables",
+        "//library/src/lookup_tables:lookup_tables",
         "//library/src/data_types:dds_types",
     ],
     include_prefix = "trans_table",

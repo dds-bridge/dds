@@ -21,6 +21,7 @@
 #include "heuristic_sorting/heuristic_sorting.h"
 // Optional arena-backed scratch support (wired via TLS by SolverContext)
 #include "utility/ScratchAllocTLS.h"
+#include <lookup_tables/LookupTables.h>
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a

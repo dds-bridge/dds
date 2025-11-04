@@ -16,6 +16,7 @@
 #include "trans_table/TransTable.h"
 #include "system/SolverContext.h"
 #include "dump.h"
+#include <lookup_tables/LookupTables.h>
 
 extern System sysdep;
 extern Memory memory;

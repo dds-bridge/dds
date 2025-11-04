@@ -12,6 +12,7 @@
 
 #include "QuickTricks.h"
 #include "system/SolverContext.h"
+#include <lookup_tables/LookupTables.h>
 
 
 int QtricksLeadHandNT(

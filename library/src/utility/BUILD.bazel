@@ -33,18 +33,4 @@ cc_library(
     deps = [],
 )
 
-cc_library(
-    name = "lookup_tables",
-    srcs = ["LookupTables.cpp"],
-    hdrs = ["LookupTables.h"],
-    copts = DDS_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
-    include_prefix = "utility",
-    visibility = [
-        "//library/src:__pkg__",
-        "//library/src:__subpackages__",
-        "//library/tests:__subpackages__"
-    ],
-    deps = [":constants"],
-)
+

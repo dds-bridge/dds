@@ -13,6 +13,7 @@
 #include "Scheduler.h"
 #include <fstream>
 #include <iomanip>
+#include <lookup_tables/LookupTables.h>
 #ifdef DDS_SCHEDULER
 #include "TimeStatList.h"
 

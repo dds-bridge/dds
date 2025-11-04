@@ -17,6 +17,7 @@
 #include "ABstats.h"
 #include "system/TimerList.h"
 #include "dump.h"
+#include <lookup_tables/LookupTables.h>
 
 // Internal ctx-enabled variants (forward declarations)
 static bool ABsearch0_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);

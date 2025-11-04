@@ -15,7 +15,7 @@
 #include <system/ThreadMgr.h>
 #include <utility/debug.h>
 #include <utility/Constants.h>
-#include <utility/LookupTables.h>
+#include <lookup_tables/LookupTables.h>
 #include "SolveBoard.h"
 #include "CalcTables.h"
 #include "PlayAnalyser.h"
