@@ -9,6 +9,7 @@
 
 
 #include "Init.h"
+#include <cstring>
 #include <system/System.h>
 #include <system/Scheduler.h>
 #include <system/ThreadMgr.h>
