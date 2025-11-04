@@ -7,8 +7,8 @@
    See LICENSE and README.
 */
 
-#include "LookupTables.h"
-#include "Constants.h"
+#include <lookup_tables/LookupTables.h>
+#include <utility/Constants.h>
 #include <string.h>
 #include <mutex>
 

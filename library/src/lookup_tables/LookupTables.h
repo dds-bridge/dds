@@ -7,8 +7,8 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_UTILITY_LOOKUPTABLES_H
-#define DDS_UTILITY_LOOKUPTABLES_H
+#ifndef DDS_LOOKUP_TABLES_LOOKUPTABLES_H
+#define DDS_LOOKUP_TABLES_LOOKUPTABLES_H
 
 /**
  * \brief Representation of a suit bitmask as runs of adjacent ranks.
@@ -44,7 +44,6 @@ struct MoveGroupType
  * initialization happens at most once per process. Accessing any table via
  * the read-only proxies also triggers lazy initialization.
  */
-// Preferred snake_case name
 auto init_lookup_tables() -> void;
 
 /**

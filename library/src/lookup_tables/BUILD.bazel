@@ -2,18 +2,14 @@ load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
-    name = "moves",
-    srcs = glob(["*.cpp"]),
-    hdrs = glob(["*.h"]),
+    name = "lookup_tables",
+    srcs = ["LookupTables.cpp"],
+    hdrs = ["LookupTables.h"],
     visibility = ["//visibility:public"],
     deps = [
         "//library/src/utility:constants",
-        "//library/src/lookup_tables:lookup_tables",
-        "//library/src/data_types:dds_types",
-        "//library/src/heuristic_sorting",
-        "//library/src/utility:scratch_alloc_tls",
     ],
-    include_prefix = "moves",
+    include_prefix = "lookup_tables",
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
