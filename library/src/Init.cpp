@@ -285,8 +285,9 @@ void SetDeal(
 
 
 void SetDealTables(
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
+  auto thrp = ctx.thread();
   unsigned int topBitRank = 1;
   unsigned int topBitNo = 2;
 
@@ -329,7 +330,6 @@ void SetDealTables(
   }
 
   {
-    SolverContext ctx{thrp};
     ctx.transTable()->init(handLookup);
   }
 

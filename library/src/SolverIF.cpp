@@ -222,8 +222,8 @@ int SolveBoardInternal(
 
   if (newDeal)
   {
-    SetDeal(thrp);
-    SetDealTables(thrp);
+  SetDeal(thrp);
+  SetDealTables(ctx);
   }
   else if (ctx.search().analysisFlag())
   {
