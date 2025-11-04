@@ -46,7 +46,7 @@ string TopMove(
   const moveType& bestMove);
 
 string DumpTopHeader(
-  const ThreadData& thrd,
+  const std::shared_ptr<ThreadData>& thrp,
   const int tricks,
   const int lower,
   const int upper,
@@ -218,14 +218,14 @@ string PosToText(
 
 
 string DumpTopHeader(
-  const ThreadData& thrd,
+  const std::shared_ptr<ThreadData>& thrp,
   const int tricks,
   const int lower,
   const int upper,
   const int printMode)
 {
-  // Use facade to read search-state safely
-  SolverContext ctx{&thrd};
+  // Use facade to read search-state safely (caller provides shared_ptr)
+  SolverContext ctx{ thrp };
   string stext;
   if (printMode == 0)
   {
@@ -237,13 +237,13 @@ string DumpTopHeader(
     // Looking for best score.
     stext = "Loop target " + to_string(tricks) + ", " +
       "bounds " + to_string(lower) + " .. " + to_string(upper) + ", " +
-      TopMove(thrd.val, ctx.search().bestMove(ctx.search().iniDepth())) + "";
+      TopMove(thrp->val, ctx.search().bestMove(ctx.search().iniDepth())) + "";
   }
   else if (printMode == 2)
   {
     // Looking for other moves with best score.
     stext = "Loop for cards with score " + to_string(tricks) + ", " +
-      TopMove(thrd.val, ctx.search().bestMove(ctx.search().iniDepth()));
+      TopMove(thrp->val, ctx.search().bestMove(ctx.search().iniDepth()));
   }
   return stext + "\n" + string(stext.size(), '-') + "\n";
 }
@@ -367,16 +367,16 @@ void DumpStored(
 
 void DumpTopLevel(
   ofstream& fout,
-  const ThreadData& thrd,
+  const std::shared_ptr<ThreadData>& thrp,
   const int tricks,
   const int lower,
   const int upper,
   const int printMode)
 {
-  const pos& tpos = thrd.lookAheadPos;
-  SolverContext ctx{&thrd};
+  const pos& tpos = thrp->lookAheadPos;
+  SolverContext ctx{ thrp };
 
-  fout << DumpTopHeader(thrd, tricks, lower, upper, printMode) << "\n";
+  fout << DumpTopHeader(thrp, tricks, lower, upper, printMode) << "\n";
   fout << PrintDeal(tpos.rankInSuit, 16);
   fout << WinnersToText(tpos.winRanks[ctx.search().iniDepth()]) << "\n";
   fout << ctx.search().nodes() << " AB nodes, " <<

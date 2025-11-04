@@ -8,22 +8,20 @@
 */
 
 
-#include <algorithm>
-#include <string.h>
-
 #include "Init.h"
-#include "system/System.h"
-#include "system/Scheduler.h"
-#include "system/ThreadMgr.h"
-#include "debug.h"
-#include "utility/Constants.h"
-#include "utility/LookupTables.h"
+#include <cstring>
+#include <system/System.h>
+#include <system/Scheduler.h>
+#include <system/ThreadMgr.h>
+#include <utility/debug.h>
+#include <utility/Constants.h>
+#include <utility/LookupTables.h>
 #include "SolveBoard.h"
 #include "CalcTables.h"
 #include "PlayAnalyser.h"
 // Order matters: include TransTable to ensure complete type for virtual calls
-#include "trans_table/TransTable.h"
-#include "system/SolverContext.h"
+#include <trans_table/TransTable.h>
+#include <system/SolverContext.h>
 
 System sysdep(
     &SolveChunkCommon,
@@ -175,37 +173,6 @@ int STDCALL SetThreading(
 
 void InitDebugFiles()
 {
-  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
-  {
-    [[maybe_unused]] ThreadData * thrp = memory.GetPtr(thrId);
-    const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
-
-#ifdef DDS_TOP_LEVEL
-    thrp->fileTopLevel.SetName(DDS_TOP_LEVEL_PREFIX + send);
-#endif
-
-#ifdef DDS_AB_STATS
-    thrp->fileABstats.SetName(DDS_AB_STATS_PREFIX + send);
-#endif
-
-#ifdef DDS_AB_HITS
-    thrp->fileRetrieved.SetName(DDS_AB_HITS_RETRIEVED_PREFIX + send);
-    thrp->fileStored.SetName(DDS_AB_HITS_STORED_PREFIX + send);
-#endif
-
-#ifdef DDS_TT_STATS
-    thrp->fileTTstats.SetName(DDS_TT_STATS_PREFIX + send);
-#endif
-
-#ifdef DDS_TIMING
-    thrp->fileTimerList.SetName(DDS_TIMING_PREFIX + send);
-#endif
-
-#ifdef DDS_MOVES
-    thrp->fileMoves.SetName(DDS_MOVES_PREFIX + send);
-#endif
-  }
-
 #ifdef DDS_SCHEDULER
   InitFileScheduler();
 #endif
@@ -216,38 +183,15 @@ void CloseDebugFiles()
 {
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
   {
-    [[maybe_unused]] ThreadData * thrp = memory.GetPtr(thrId);
-
-#ifdef DDS_TOP_LEVEL
-    thrp->fileTopLevel.Close();
-#endif
-
-#ifdef DDS_AB_STATS
-    thrp->fileABstats.Close();
-#endif
-
-#ifdef DDS_AB_HITS
-    thrp->fileRetrieved.Close();
-    thrp->fileStored.Close();
-#endif
-
-#ifdef DDS_TT_STATS
-    thrp->fileTTstats.Close();
-#endif
-
-#ifdef DDS_TIMING
-    thrp->fileTimerList.Close();
-#endif
-
-#ifdef DDS_MOVES
-    thrp->fileMoves.Close();
-#endif
+  SolverContext tmp_ctx;
+  [[maybe_unused]] auto thrp = tmp_ctx.thread();
+  thrp->close_debug_files();
   }
 }
 
 
 void SetDeal(
-  ThreadData * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   /* Initialization of the rel structure is inspired by
      a solution given by Thomas Andrews */
@@ -282,8 +226,9 @@ void SetDeal(
 
 
 void SetDealTables(
-  ThreadData * thrp)
+  SolverContext& ctx)
 {
+  auto thrp = ctx.thread();
   unsigned int topBitRank = 1;
   unsigned int topBitNo = 2;
 
@@ -326,7 +271,6 @@ void SetDealTables(
   }
 
   {
-    SolverContext ctx{thrp};
     ctx.transTable()->init(handLookup);
   }
 
@@ -365,7 +309,7 @@ void SetDealTables(
 void InitWinners(
   const deal& dl,
   pos& posPoint,
-  ThreadData const * thrp)
+  const std::shared_ptr<ThreadData>& thrp)
 {
   int hand, suit, rank;
   unsigned short int startMovesBitMap[DDS_HANDS][DDS_SUITS];

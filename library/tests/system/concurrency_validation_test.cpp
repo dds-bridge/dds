@@ -8,7 +8,7 @@
 #include "dds/PBN.h"
 #include "system/SolverContext.h"
 #include "system/Memory.h"
-#include "SolverIF.h"
+#include "dds/SolverIF.h"
 
 extern Memory memory;
 
@@ -70,9 +70,7 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
   std::vector<int> baseline_rc(N, 0);
 
   {
-    ThreadData* thr0 = memory.GetPtr(0);
-    ASSERT_NE(thr0, nullptr);
-    SolverContext ctx{thr0};
+    SolverContext ctx;
     for (size_t i = 0; i < N; ++i) {
       futureTricks ft{};
       const int rc = SolveBoardWithContext(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
@@ -89,9 +87,7 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
   threads.reserve(N);
   for (size_t i = 0; i < N; ++i) {
     threads.emplace_back([i, &deals, &out_ft, &out_rc]() {
-      ThreadData* thr = memory.GetPtr(static_cast<unsigned>(i));
-      EXPECT_NE(thr, nullptr);
-      SolverContext ctx{thr};
+      SolverContext ctx;
       futureTricks ft{};
       const int rc = SolveBoardWithContext(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
       out_rc[i] = rc;

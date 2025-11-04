@@ -9,21 +9,15 @@
 #ifndef DDS_SYSTEM_SOLVERCONTEXT_H
 #define DDS_SYSTEM_SOLVERCONTEXT_H
 
-struct ThreadData;     // defined in system/Memory.h
-struct deal;           // defined in dds/dll.h
-struct futureTricks;   // defined in dds/dll.h
-struct moveType;       // from dds/dds.h
-struct WinnersType;    // from dds/dds.h
-struct pos;            // from dds/dds.h
-struct relRanksType;   // from dds/dds.h
-struct trickDataType;  // from data_types/dds.h
-#include "trans_table/TransTable.h" // ensure complete type and enums
-#include "system/util/Utilities.h"   // instance-scoped RNG and logging
-#include "system/util/Arena.h"       // simple bump arena for short-lived allocations
+#include "ThreadData.h"
+#include "util/Utilities.h"
+#include "util/Arena.h"
+#include <trans_table/TransTable.h>
 #include <string>
 #include <vector>
 #include <random>
 #include <cstddef>
+#include <memory>
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
@@ -31,7 +25,7 @@ enum class TTKind { Small, Large };
 
 struct SolverConfig
 {
-  TTKind ttKind = TTKind::Small;
+  TTKind ttKind = TTKind::Large;
   int ttMemDefaultMB = 0;
   int ttMemMaximumMB = 0;
   // Optional deterministic RNG seed (0 means "no explicit seed").
@@ -43,28 +37,30 @@ struct SolverConfig
 class SolverContext
 {
 public:
-  explicit SolverContext(ThreadData* thread, SolverConfig cfg = {})
-  : thr_(thread), cfg_(cfg)
+  explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
+  : thr_(std::move(thread)), cfg_(cfg)
   {
 #ifdef DDS_DEFAULT_ARENA_BYTES
     if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
 #endif
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
+    // Bind the persistent facades to the underlying ThreadData.
+    search_.set_thread(thr_);
   }
 
-  // Allow construction from const ThreadData* for read-only contexts
-  explicit SolverContext(const ThreadData* thread, SolverConfig cfg = {})
-  : thr_(const_cast<ThreadData*>(thread)), cfg_(cfg)
-  {
-#ifdef DDS_DEFAULT_ARENA_BYTES
-    if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
-#endif
-    if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
-  }
+  // NOTE: constructors that accepted raw ThreadData* were removed as part
+  // of the ownership migration. Callers should pass a
+  // std::shared_ptr<ThreadData> (non-owning wrappers can be created with
+  // std::shared_ptr<ThreadData>(ptr, [](ThreadData*){})).
+
+  // Construct a context that owns its ThreadData instance. This is the
+  // preferred mode for the new instance-scoped API: callers can create a
+  // SolverContext at the top of the call-stack and pass it downwards.
+  explicit SolverContext(SolverConfig cfg = {});
 
   ~SolverContext();
 
-  ThreadData* thread() const { return thr_; }
+  std::shared_ptr<ThreadData> thread() const { return thr_; }
   const SolverConfig& config() const { return cfg_; }
 
   // --- Utilities facade ---
@@ -109,7 +105,8 @@ public:
   // --- Search state facade ---
   class SearchContext {
   public:
-    explicit SearchContext(ThreadData* thr) : thr_(thr) {}
+  SearchContext() = default;
+  explicit SearchContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
     // analysis flag used to control incremental analysis behavior
     bool& analysisFlag();
     bool analysisFlag() const;
@@ -135,15 +132,23 @@ public:
     int& iniDepth();
     int iniDepth() const;
   private:
-    ThreadData* thr_ = nullptr;
+    std::shared_ptr<ThreadData> thr_;
+  public:
+    // Allow SolverContext to bind or rebind the underlying ThreadData
+    // after construction (useful when SolverContext owns the ThreadData
+    // and sets it up after default construction).
+    void set_thread(const std::shared_ptr<ThreadData>& thr) { thr_ = thr; }
   };
 
-  inline SearchContext search() const { return SearchContext(thr_); }
+  // Expose a persistent SearchContext owned by the SolverContext.
+  SearchContext& search() { return search_; }
+  const SearchContext& search() const { return search_; }
+
 
   // --- Move generation facade ---
   class MoveGenContext {
   public:
-    explicit MoveGenContext(ThreadData* thr) : thr_(thr) {}
+    explicit MoveGenContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
 
     int MoveGen0(
       const int tricks,
@@ -218,15 +223,23 @@ public:
       const int relHand);
 
   private:
-    ThreadData* thr_ = nullptr;
+    std::shared_ptr<ThreadData> thr_;
   };
 
   inline MoveGenContext moveGen() const { return MoveGenContext(thr_); }
 
 private:
-  ThreadData* thr_ = nullptr;
+  // Shared ownership of per-context ThreadData. Callers can construct
+  // a context with an externally-owned std::shared_ptr<ThreadData> or
+  // let the context create/own one via the default constructor.
+  std::shared_ptr<ThreadData> thr_;
+  // Persistent facade objects bound to this context. `search_` is
+  // initialized after `thr_` is set in constructors.
+  SearchContext search_;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
+  // NOTE: `owned_thr_` removed; `thr_` now represents the shared ownership
+  // (if any) for this context.
   // Transposition table instance is stored in the implementation's
   // per-thread registry. This header exposes accessors only; the
   // implementation manages actual ownership (currently per-thread

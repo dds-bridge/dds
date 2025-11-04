@@ -55,6 +55,18 @@ config_setting(
     define_values = {"tt_context_ownership": "true"},
 )
 
+# Enable DDS_DEBUG_TT_RESET via --define=tt_reset_debug=true
+config_setting(
+    name = "tt_reset_debug",
+    define_values = {"tt_reset_debug": "true"},
+)
+
+# Enable AddressSanitizer via --define=asan=true
+config_setting(
+    name = "asan",
+    define_values = {"asan": "true"},
+)
+
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 

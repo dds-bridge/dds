@@ -29,15 +29,15 @@ int BoardRangeChecks(
   const int mode);
 
 int BoardValueChecks(
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,
-  const int mode,
-  ThreadData const * thrp);
+  const int mode);
 
 void LastTrickWinner(
   const deal& dl,
-  ThreadData const * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
   const int handRelFirst,
   int& leadRank,
@@ -48,14 +48,14 @@ bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  SolverContext& ctx)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp)
+  SolverContext& ctx)
   = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
 
 void (* Make_ptr_list[3])(
@@ -76,13 +76,16 @@ int STDCALL SolveBoard(
   if (! sysdep.ThreadOK(thrId))
     return RETURN_THREAD_INDEX;
 
-  return SolveBoardInternal(memory.GetPtr(static_cast<unsigned>(thrId)), 
-    dl, target, solutions, mode, futp);
+  // Create an owned context for this call and pass its ThreadData into the
+  // internal solver. The outer context owns the ThreadData for the duration
+  // of the call so inner contexts may be created as non-owning views.
+  SolverContext outer_ctx;
+  return SolveBoardInternal(outer_ctx, dl, target, solutions, mode, futp);
 }
 
 
 int SolveBoardInternal(
-  ThreadData * thrp,
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,
@@ -101,6 +104,7 @@ int SolveBoardInternal(
   // Count and classify deal.
   // ----------------------------------------------------------
 
+  auto thrp = ctx.thread();
   bool newDeal = false;
   bool newTrump = false;
   unsigned diffDeal = 0;
@@ -147,8 +151,6 @@ int SolveBoardInternal(
   // ----------------------------------------------------------
 
   thrp->trump = dl.trump;
-
-  SolverContext ctx{thrp};
   ctx.search().iniDepth() = cardCount - 4;
   int iniDepth = ctx.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
@@ -169,7 +171,7 @@ int SolveBoardInternal(
   // Consistency checks.
   // ----------------------------------------------------------
 
-  ret = BoardValueChecks(dl, target, solutions, mode, thrp);
+  ret = BoardValueChecks(ctx, dl, target, solutions, mode);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -220,8 +222,8 @@ int SolveBoardInternal(
 
   if (newDeal)
   {
-    SetDeal(thrp);
-    SetDealTables(thrp);
+  SetDeal(thrp);
+  SetDealTables(ctx);
   }
   else if (ctx.search().analysisFlag())
   {
@@ -355,16 +357,16 @@ int SolveBoardInternal(
         ctx.ResetBestMovesLite();
 
         TIMER_START(TIMER_NO_AB, iniDepth);
-        thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[handRelFirst])(
                       &thrp->lookAheadPos,
                       guess,
                       iniDepth,
-                      thrp);
+          ctx);
         TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
         DumpTopLevel(thrp->fileTopLevel.GetStream(), 
-          * thrp, guess, lowerbound, upperbound, 1);
+          thrp, guess, lowerbound, upperbound, 1);
 #endif
 
         if (thrp->val)
@@ -465,15 +467,15 @@ int SolveBoardInternal(
       ctx.ResetBestMovesLite();
 
       TIMER_START(TIMER_NO_AB, iniDepth);
-      thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
+  thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
                   guess,
                   iniDepth,
-                  thrp);
+      ctx);
       TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
       DumpTopLevel(thrp->fileTopLevel.GetStream(),
-        * thrp, guess, lowerbound, upperbound, 1);
+        thrp, guess, lowerbound, upperbound, 1);
 #endif
 
       if (thrp->val)
@@ -533,16 +535,16 @@ int SolveBoardInternal(
   else
   {
     TIMER_START(TIMER_NO_AB, iniDepth);
-    thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   target,
                   iniDepth,
-                  thrp);
+          ctx);
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(), 
-      * thrp, target, -1, -1, 0);
+      thrp, target, -1, -1, 0);
 #endif
 
     if (! thrp->val)
@@ -600,16 +602,16 @@ int SolveBoardInternal(
   /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
-    thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   futp->score[0],
                   iniDepth,
-                  thrp);
+          ctx);
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
-      * thrp, target, -1, -1, 2);
+      thrp, target, -1, -1, 2);
 #endif
 
     if (! thrp->val)
@@ -679,7 +681,7 @@ SOLVER_DONE:
 
 
 int SolveSameBoard(
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const deal& dl,
   futureTricks * futp,
   const int hint)
@@ -739,16 +741,16 @@ int SolveSameBoard(
   /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
-    thrp->val = ABsearch(
+  thrp->val = ABsearch(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
-                  thrp);
+          ctxSame);
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
-      * thrp, guess, lowerbound, upperbound, 1);
+      thrp, guess, lowerbound, upperbound, 1);
 #endif
 
     if (thrp->val)
@@ -808,7 +810,7 @@ int SolveSameBoard(
 
 
 int AnalyseLaterBoard(
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const int leadHand,
   moveType const * move,
   const int hint,
@@ -855,8 +857,8 @@ int AnalyseLaterBoard(
   if (handRelFirst == 0)
   {
     ctxLater.moveGen().MakeSpecific(* move, trick + 1, 3);
-    unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
-    Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, thrp);
+  unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
+  Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, ctxLater);
   }
   else if (handRelFirst == 1)
   {
@@ -877,7 +879,7 @@ int AnalyseLaterBoard(
   if (cardCount <= 4)
   {
     // Last trick.
-    evalType eval = Evaluate(&thrp->lookAheadPos, thrp->trump, thrp);
+    evalType eval = EvaluateWithContext(&thrp->lookAheadPos, thrp->trump, ctxLater);
     futp->score[0] = eval.tricks;
     futp->nodes = 0;
 
@@ -915,16 +917,16 @@ int AnalyseLaterBoard(
   ctxLater.ResetBestMovesLite();
 
     TIMER_START(TIMER_NO_AB, iniDepth);
-    thrp->val = (* AB_ptr_trace_list[handRelFirst])(
+  thrp->val = (* AB_ptr_trace_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
-                  thrp);
+          ctxLater);
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
-      * thrp, guess, lowerbound, upperbound, 1);
+      thrp, guess, lowerbound, upperbound, 1);
 #endif
 
     if (thrp->val)
@@ -1085,13 +1087,13 @@ int BoardRangeChecks(
 
 
 int BoardValueChecks(
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,
-  const int mode,
-  ThreadData const * thrp)
+  const int mode)
 {
-  SolverContext ctx{thrp};
+  auto thrp = ctx.thread();
   int cardCount = ctx.search().iniDepth() + 4;
   if (cardCount <= 0)
   {
@@ -1177,7 +1179,7 @@ int BoardValueChecks(
 
 void LastTrickWinner(
   const deal& dl,
-  ThreadData const * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
   const int handRelFirst,
   int& leadRank,

@@ -22,7 +22,7 @@ using namespace std;
 #define DEBUG 0
 
 #if DEBUG
-  #include "debug.h"
+  #include <utility/debug.h>
   ofstream fout;
 #endif
 
@@ -63,16 +63,17 @@ int STDCALL AnalysePlayBin(
   if (! sysdep.ThreadOK(thrId))
     return RETURN_THREAD_INDEX;
 
-  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+  // Create an owned context for this analysis and obtain its ThreadData.
+  SolverContext outer_ctx;
+  auto thrp = outer_ctx.thread();
 
   moveType move;
   futureTricks fut;
 
-  int ret = SolveBoardInternal(thrp, dl, -1, 1, 1, &fut);
+  int ret = SolveBoardInternal(outer_ctx, dl, -1, 1, 1, &fut);
   if (ret != RETURN_NO_FAULT)
     return ret;
-
-  SolverContext ctx{thrp};
+  SolverContext& ctx = outer_ctx;
   const int iniDepth = ctx.search().iniDepth();
   const int numTricks = ((iniDepth + 3) >> 2) + 1;
   const int numCardsPlayed = ((48 - iniDepth) % 4) + 1;

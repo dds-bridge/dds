@@ -27,7 +27,7 @@ int DumpInput(
 
 void DumpTopLevel(
   ofstream& fout,
-  const ThreadData& thrd,
+  const std::shared_ptr<ThreadData>& thrp,
   const int tricks,
   const int lower,
   const int upper,

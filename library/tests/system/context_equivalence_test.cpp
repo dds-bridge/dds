@@ -4,7 +4,7 @@
 #include "dds/dll.h"
 #include "system/SolverContext.h"
 #include "system/Memory.h"
-#include "SolverIF.h"
+#include "dds/SolverIF.h"
 
 extern Memory memory;
 
@@ -30,8 +30,8 @@ TEST(SystemContextEquivalence, LegacyVsContextReturnCode)
 
   const int r_legacy = SolveBoard(dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft_legacy, thr);
 
-  ThreadData* tdp = memory.GetPtr(static_cast<unsigned>(thr));
-  SolverContext ctx{tdp};
+  // Construct a SolverContext-owned ThreadData for the context-based call.
+  SolverContext ctx;
   const int r_ctx = SolveBoardWithContext(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft_ctx);
 
   EXPECT_EQ(r_legacy, r_ctx) << "Legacy and context return codes should match";

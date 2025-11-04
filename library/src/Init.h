@@ -12,16 +12,18 @@
 
 #include "dds/dds.h"
 #include "system/Memory.h"
+#include "system/SolverContext.h"
+#include <memory>
 
 
-void SetDeal(ThreadData * thrp);
+void SetDeal(const std::shared_ptr<ThreadData>& thrp);
 
-void SetDealTables(ThreadData * thrp);
+void SetDealTables(SolverContext& ctx);
 
 void InitWinners(
   const deal& dl,
   pos& posPoint,
-  ThreadData const * thrp);
+  const std::shared_ptr<ThreadData>& thrp);
 
 void CloseDebugFiles();
 

@@ -10,8 +10,8 @@
 #ifndef DDS_LATERTRICKS_H
 #define DDS_LATERTRICKS_H
 
-#include "dds/dds.h"
-#include "system/Memory.h"
+#include <dds/dds.h>
+#include <system/SolverContext.h>
 
 
 bool LaterTricksMIN(
@@ -20,7 +20,7 @@ bool LaterTricksMIN(
   const int depth,
   const int target,
   const int trump,
-  const ThreadData& thrd);
+  SolverContext& ctx);
 
 bool LaterTricksMAX(
   pos& tpos,
@@ -28,6 +28,6 @@ bool LaterTricksMAX(
   const int depth,
   const int target,
   const int trump,
-  const ThreadData& thrd);
+  SolverContext& ctx);
 
 #endif

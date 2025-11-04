@@ -13,6 +13,7 @@
 #include "dds/dds.h"
 #include "system/Memory.h"
 #include "system/SolverContext.h"
+#include <memory>
 
 int SolveBoardWithContext(
   SolverContext& ctx,
@@ -23,7 +24,7 @@ int SolveBoardWithContext(
   futureTricks* futp);
 
 int SolveBoardInternal(
-  ThreadData * thrp,
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,
@@ -31,13 +32,13 @@ int SolveBoardInternal(
   futureTricks * futp);
 
 int SolveSameBoard(
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const deal& dl,
   futureTricks * futp,
   const int hint);
 
 int AnalyseLaterBoard(
-  ThreadData * thrp,
+  const std::shared_ptr<ThreadData>& thrp,
   const int leadHand,
   moveType const * move,
   const int hint,

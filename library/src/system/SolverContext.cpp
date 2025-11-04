@@ -1,17 +1,21 @@
-#include "system/SolverContext.h"
+#include "SolverContext.h"
 
 // Keep dependencies local to this implementation to avoid include churn.
-#include "system/Memory.h"       // for ThreadData definition
-#include "dds/dds.h"             // moveType, WinnersType
+#include <system/ThreadData.h>       // for ThreadData definition
+// Pull in the concrete dds types and THREADMEM_* macros directly so
+// this translation unit can compute TT defaults without relying on
+// build-system include remapping.
+#include <dds/dds.h>
+#include <trans_table/TransTable.h>
+#include <trans_table/TransTableS.h>
+#include <trans_table/TransTableL.h>
 #include <memory>
-#include "trans_table/TransTableS.h"
-#include "trans_table/TransTableL.h"
-#include "data_types/dds.h" // THREADMEM_* defaults
+#include <mutex>
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
-#include "system/util/Arena.h"
-#include "utility/ScratchAllocTLS.h"
+#include "util/Arena.h"
+#include <utility/ScratchAllocTLS.h>
 
 namespace {
 // Central registry mapping ThreadData* to its TransTable instance.
@@ -23,32 +27,76 @@ static std::unordered_map<ThreadData*, std::shared_ptr<TransTable>>& registry()
   static auto* map = new std::unordered_map<ThreadData*, std::shared_ptr<TransTable>>();
   return *map;
 }
-
 // Per-thread Arena registry. Managed as a leaky singleton similar to TT.
 static std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>& arena_registry()
 {
   static auto* map = new std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>();
   return *map;
 }
+
+// Mutexes protecting the global registries. Use per-registry mutexes to
+// limit contention between unrelated operations.
+static std::mutex& registry_mutex()
+{
+  static auto* m = new std::mutex();
+  return *m;
+}
+
+static std::mutex& arena_registry_mutex()
+{
+  static auto* m = new std::mutex();
+  return *m;
+}
+}
+
+// Owned-ThreadData constructor: allocate ThreadData as a member of the
+// SolverContext so callers can create a context at the top of the stack
+// and pass it down without a separate per-thread lookup.
+SolverContext::SolverContext(SolverConfig cfg)
+  : thr_(nullptr), cfg_(cfg)
+{
+#ifdef DDS_DEFAULT_ARENA_BYTES
+  if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
+#endif
+  // Create an owned ThreadData instance and keep it in thr_.
+  thr_ = std::make_shared<ThreadData>();
+  // Ensure ThreadData has sensible TT defaults so later lookup doesn't
+  // rely solely on zero-initialized fields. Prefer explicit config from
+  // SolverConfig when provided.
+  thr_->ttType = (cfg_.ttKind == TTKind::Small ? DDS_TT_SMALL : DDS_TT_LARGE);
+  if (thr_->ttMemDefault_MB <= 0) {
+    thr_->ttMemDefault_MB = (thr_->ttType == DDS_TT_SMALL ? THREADMEM_SMALL_DEF_MB : THREADMEM_LARGE_DEF_MB);
+  }
+  if (thr_->ttMemMaximum_MB <= 0) {
+    thr_->ttMemMaximum_MB = (thr_->ttType == DDS_TT_SMALL ? THREADMEM_SMALL_MAX_MB : THREADMEM_LARGE_MAX_MB);
+  }
+  if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
+  // Ensure persistent facades like SearchContext see the bound ThreadData.
+  search_.set_thread(thr_);
 }
 
 TransTable* SolverContext::transTable() const
 {
   if (!thr_)
     return nullptr;
-  auto it = registry().find(thr_);
-  if (it == registry().end() || it->second == nullptr)
+  // Fast-path: check under lock if a TT already exists for this ThreadData.
   {
-    std::shared_ptr<TransTable> created;
-    // Prefer thread-stored configuration determined by Init/Memory
-    TTKind kind = (thr_->ttType == DDS_TT_SMALL ? TTKind::Small : TTKind::Large);
-    if (kind == TTKind::Small)
-      created = std::make_shared<TransTableS>();
-    else
-      created = std::make_shared<TransTableL>();
+    std::lock_guard<std::mutex> lk(registry_mutex());
+    auto it = registry().find(thr_.get());
+    if (it != registry().end() && it->second)
+      return it->second.get();
+  }
 
-    int defMB = (cfg_.ttMemDefaultMB > 0 ? cfg_.ttMemDefaultMB : thr_->ttMemDefault_MB);
-    int maxMB = (cfg_.ttMemMaximumMB > 0 ? cfg_.ttMemMaximumMB : thr_->ttMemMaximum_MB);
+  std::shared_ptr<TransTable> created;
+  // Prefer thread-stored configuration determined by Init/Memory
+  TTKind kind = (thr_->ttType == DDS_TT_SMALL ? TTKind::Small : TTKind::Large);
+  if (kind == TTKind::Small)
+    created = std::make_shared<TransTableS>();
+  else
+    created = std::make_shared<TransTableL>();
+
+  int defMB = (cfg_.ttMemDefaultMB > 0 ? cfg_.ttMemDefaultMB : thr_->ttMemDefault_MB);
+  int maxMB = (cfg_.ttMemMaximumMB > 0 ? cfg_.ttMemMaximumMB : thr_->ttMemMaximum_MB);
     // Fallback to conservative defaults if absent
     if (defMB <= 0 || maxMB <= 0)
     {
@@ -98,10 +146,8 @@ TransTable* SolverContext::transTable() const
   created->make_tt();
 
 #ifdef DDS_UTILITIES_LOG
-    // Append a tiny debug entry indicating TT creation and chosen kind/sizes.
     {
       const char kch = (kind == TTKind::Small ? 'S' : 'L');
-      // Prefer arena-backed small buffer to avoid stack churn; fallback to stack.
       char* buf = nullptr;
       constexpr std::size_t kLen = 96;
       if (auto* a = const_cast<SolverContext*>(this)->arena()) {
@@ -115,13 +161,18 @@ TransTable* SolverContext::transTable() const
 #endif
 
 #ifdef DDS_UTILITIES_STATS
-  utilities().util().stats().tt_creates++;
+    utilities().util().stats().tt_creates++;
 #endif
 
-    // Attach to registry (shared ownership)
-    registry()[thr_] = created;
+  // Insert the created table under lock, but handle the rare case where
+  // another thread inserted concurrently by reusing the existing entry.
+  {
+    std::lock_guard<std::mutex> lk(registry_mutex());
+    auto it2 = registry().find(thr_.get());
+    if (it2 == registry().end() || !it2->second)
+      registry()[thr_.get()] = created;
+    return registry()[thr_.get()].get();
   }
-  return registry()[thr_].get();
 }
 
 // --- Arena access (per-thread registry) ---
@@ -129,13 +180,16 @@ dds::Arena* SolverContext::arena()
 {
   if (!thr_) return nullptr;
   auto& map = arena_registry();
-  auto it = map.find(thr_);
-  if (it == map.end()) {
-    if (cfg_.arenaCapacityBytes == 0ULL) return nullptr;
-    auto ins = map.emplace(thr_, std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes));
-    return ins.first->second.get();
+  {
+    std::lock_guard<std::mutex> lk(arena_registry_mutex());
+    auto it = map.find(thr_.get());
+    if (it == map.end()) {
+      if (cfg_.arenaCapacityBytes == 0ULL) return nullptr;
+      auto ins = map.emplace(thr_.get(), std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes));
+      return ins.first->second.get();
+    }
+    return it->second.get();
   }
-  return it->second.get();
 }
 
 const dds::Arena* SolverContext::arena() const
@@ -192,13 +246,18 @@ TransTable* SolverContext::maybeTransTable() const
 {
   if (!thr_)
     return nullptr;
-  auto it = registry().find(thr_);
+  std::lock_guard<std::mutex> lk(registry_mutex());
+  auto it = registry().find(thr_.get());
   return (it == registry().end() ? nullptr : it->second.get());
 }
 
 void SolverContext::DisposeTransTable() const
 {
-  auto it = registry().find(thr_);
+#if defined(DDS_UTILITIES_LOG) || defined(DDS_UTILITIES_STATS)
+  // Small debug/stat instrumentation is safe while holding the lock.
+#endif
+  std::lock_guard<std::mutex> lk(registry_mutex());
+  auto it = registry().find(thr_.get());
   if (it != registry().end())
   {
 #ifdef DDS_UTILITIES_LOG
@@ -213,6 +272,9 @@ void SolverContext::DisposeTransTable() const
   }
 }
 
+// Defaulted destructor defined out-of-line so destruction of the
+// owned std::shared_ptr<ThreadData> happens where ThreadData is a
+// complete type.
 SolverContext::~SolverContext() = default;
 
 void SolverContext::ResetForSolve() const
@@ -325,6 +387,7 @@ static void* ArenaAllocShim(std::size_t size, std::size_t align, void* c) {
   auto* sc = static_cast<TDShim*>(c);
   if (!sc || !sc->thr) return nullptr;
   auto& map = arena_registry();
+  std::lock_guard<std::mutex> lk(arena_registry_mutex());
   auto it = map.find(sc->thr);
   if (it != map.end() && it->second) return it->second->allocate({size, align});
   return nullptr;
@@ -339,7 +402,7 @@ int SolverContext::MoveGenContext::MoveGen0(
   const relRanksType thrp_rel[])
 {
   // Expose an optional allocator to legacy code paths.
-  TDShim shim{thr_};
+  TDShim shim{thr_.get()};
   dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
   dds::tls::ResetAlloc();
@@ -351,7 +414,7 @@ int SolverContext::MoveGenContext::MoveGen123(
   const int relHand,
   const pos& tpos)
 {
-  TDShim shim{thr_};
+  TDShim shim{thr_.get()};
   dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen123(tricks, relHand, tpos);
   dds::tls::ResetAlloc();

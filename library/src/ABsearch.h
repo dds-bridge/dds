@@ -10,39 +10,39 @@
 #ifndef DDS_ABSEARCH_H
 #define DDS_ABSEARCH_H
 
-#include "dds/dds.h"
-#include "system/Memory.h"
+#include <dds/dds.h>
+#include <system/SolverContext.h>
 
 
 bool ABsearch(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  SolverContext& ctx);
 
 bool ABsearch0(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  SolverContext& ctx);
 
 bool ABsearch1(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  SolverContext& ctx);
 
 bool ABsearch2(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  SolverContext& ctx);
 
 bool ABsearch3(
   pos * posPoint,
   const int target,
   const int depth,
-  ThreadData * thrp);
+  SolverContext& ctx);
 
 void Make0(
   pos * posPoint,
@@ -64,11 +64,12 @@ void Make3(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  ThreadData * thrp);
+  SolverContext& ctx);
 
-evalType Evaluate(
+// Evaluate terminal position using the provided context
+evalType EvaluateWithContext(
   pos const * posPoint,
   const int trump,
-  ThreadData const * thrp);
+  SolverContext& ctx);
 
 #endif

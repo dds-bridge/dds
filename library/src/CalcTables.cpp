@@ -53,7 +53,10 @@ void CalcSingleCommon(
   else
     cparam.error = res;
 
-  ThreadData * thrp = memory.GetPtr(static_cast<unsigned>(thrId));
+  // Create an owned context for this worker and use its ThreadData for
+  // subsequent same-board solves.
+  SolverContext outer_ctx;
+  auto thrp = outer_ctx.thread();
   for (int k = 1; k < DDS_HANDS; k++)
   {
     int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);

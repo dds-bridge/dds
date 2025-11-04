@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DDS_HEURISTIC_SORTING_INTERNAL_H
+#define DDS_HEURISTIC_SORTING_INTERNAL_H
 
 #include "heuristic_sorting.h"
 
@@ -20,3 +21,5 @@ void WeightAllocNTVoid3(HeuristicContext& context);
 // Helper functions used by level 2+ weight allocation
 int RankForcesAce(const HeuristicContext& context, const int cards4th);
 void GetTopNumber(const HeuristicContext& context, const int ris, const int prank, int& topNumber, int& mno);
+
+#endif // DDS_HEURISTIC_SORTING_INTERNAL_H

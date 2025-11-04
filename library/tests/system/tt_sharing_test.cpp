@@ -9,7 +9,9 @@ TEST(TransTableSharingTest, SameThreadSharesTT)
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
-  ThreadData* thr = memory.GetPtr(0);
+  // Create an owning context for this (simulates a thread-local owner)
+  SolverContext owner;
+  auto thr = owner.thread();
   SolverContext ctx1{thr};
   SolverContext ctx2{thr};
 
