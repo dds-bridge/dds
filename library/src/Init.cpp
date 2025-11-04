@@ -172,15 +172,6 @@ int STDCALL SetThreading(
 
 void InitDebugFiles()
 {
-  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
-  {
-    // Create a temporary context to access ThreadData for initialization.
-  SolverContext tmp_ctx;
-  [[maybe_unused]] auto thrp = tmp_ctx.thread();
-  [[maybe_unused]] const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
-  thrp->init_debug_files(send);
-  }
-
 #ifdef DDS_SCHEDULER
   InitFileScheduler();
 #endif
