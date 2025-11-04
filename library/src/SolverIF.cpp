@@ -29,11 +29,11 @@ int BoardRangeChecks(
   const int mode);
 
 int BoardValueChecks(
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,
-  const int mode,
-  const std::shared_ptr<ThreadData>& thrp);
+  const int mode);
 
 void LastTrickWinner(
   const deal& dl,
@@ -171,7 +171,7 @@ int SolveBoardInternal(
   // Consistency checks.
   // ----------------------------------------------------------
 
-  ret = BoardValueChecks(dl, target, solutions, mode, thrp);
+  ret = BoardValueChecks(ctx, dl, target, solutions, mode);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -1087,13 +1087,13 @@ int BoardRangeChecks(
 
 
 int BoardValueChecks(
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,
-  const int mode,
-  const std::shared_ptr<ThreadData>& thrp)
+  const int mode)
 {
-  SolverContext ctx{thrp};
+  auto thrp = ctx.thread();
   int cardCount = ctx.search().iniDepth() + 4;
   if (cardCount <= 0)
   {

@@ -1,7 +1,7 @@
 #include "SolverContext.h"
 
 // Keep dependencies local to this implementation to avoid include churn.
-#include "system/Memory.h"       // for ThreadData definition
+#include <system/ThreadData.h>       // for ThreadData definition
 // Pull in the concrete dds types and THREADMEM_* macros directly so
 // this translation unit can compute TT defaults without relying on
 // build-system include remapping.
