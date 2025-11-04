@@ -61,6 +61,12 @@ config_setting(
     define_values = {"tt_reset_debug": "true"},
 )
 
+# Enable AddressSanitizer via --define=asan=true
+config_setting(
+    name = "asan",
+    define_values = {"asan": "true"},
+)
+
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
