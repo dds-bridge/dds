@@ -66,9 +66,10 @@ void Make3(
   moveType const * mply,
   const std::shared_ptr<ThreadData>& thrp);
 
-evalType Evaluate(
+// Evaluate terminal position using the provided context
+evalType EvaluateWithContext(
   pos const * posPoint,
   const int trump,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 #endif

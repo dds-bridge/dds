@@ -23,7 +23,7 @@ static bool ABsearch0_ctx(pos * posPoint, int target, int depth, SolverContext& 
 static bool ABsearch1_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
 static bool ABsearch2_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
 static bool ABsearch3_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
-static evalType EvaluateWithContext(pos const * posPoint, int trump, SolverContext& ctx);
+evalType EvaluateWithContext(pos const * posPoint, int trump, SolverContext& ctx);
 
 // ctx-enabled helpers to keep search-state access behind the facade
 static void Make3_ctx(
@@ -1106,16 +1106,7 @@ void Undo3(
 }
 
 
-evalType Evaluate(
-  pos const * posPoint,
-  const int trump,
-  const std::shared_ptr<ThreadData>& thrp)
-{
-  SolverContext ctx{thrp};
-  return EvaluateWithContext(posPoint, trump, ctx);
-}
-
-static evalType EvaluateWithContext(
+evalType EvaluateWithContext(
   pos const * posPoint,
   const int trump,
   SolverContext& ctx)

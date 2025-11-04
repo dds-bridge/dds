@@ -879,7 +879,7 @@ int AnalyseLaterBoard(
   if (cardCount <= 4)
   {
     // Last trick.
-    evalType eval = Evaluate(&thrp->lookAheadPos, thrp->trump, thrp);
+    evalType eval = EvaluateWithContext(&thrp->lookAheadPos, thrp->trump, ctxLater);
     futp->score[0] = eval.tricks;
     futp->nodes = 0;
 
