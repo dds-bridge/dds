@@ -14,7 +14,6 @@ static void ensureThread()
 TEST(UtilitiesStatsTestWithDefine, CountersIncreaseWhenEnabled)
 {
   ensureThread();
-  ensureThread();
   SolverContext ctx;
   ctx.utilities().util().stats_reset();
 

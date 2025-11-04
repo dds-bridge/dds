@@ -355,12 +355,9 @@ auto TransTableL::reset_memory([[maybe_unused]] const ResetReason reason) -> voi
     Pool* cur = pool_;
     free(cur->list_);
     pool_ = cur->prev_;
-    if (pool_ != nullptr) {
-      free(cur);
+    free(cur);
+    if (pool_ != nullptr) {   
       pool_->next_ = nullptr;
-    } else {
-      // No pools remain after this release
-      free(cur);
     }
 
     pages_current_--;
