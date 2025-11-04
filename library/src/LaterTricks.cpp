@@ -33,9 +33,9 @@ bool LaterTricksMIN(
   const int depth,
   const int target,
   const int trump,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
-  SolverContext ctx{ thrp };
+  
   const bool depth_ok = (depth >= 0 && depth < 50);
   if ((trump == DDS_NOTRUMP) || (tpos.winner[trump].rank == 0))
   {
@@ -163,7 +163,7 @@ bool LaterTricksMIN(
         fprintf(stderr, "LaterTricksMIN: invalid aggr=%u (depth=%d)\n", aggr, depth);
         return true; // conservative fallback
       }
-      int h = thrp->rel[aggr].absRank[3][trump].hand;
+  int h = ctx.thread()->rel[aggr].absRank[3][trump].hand;
       if (h == -1)
         return true;
 
@@ -176,7 +176,7 @@ bool LaterTricksMIN(
         for (int ss = 0; ss < DDS_SUITS; ss++)
           if (depth_ok) tpos.winRanks[depth][ss] = 0;
         if (depth_ok) tpos.winRanks[depth][trump] = bitMapRank[
-          static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
+          static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[aggr].absRank[3][trump].rank)) ];
         return false;
       }
     }
@@ -205,9 +205,9 @@ bool LaterTricksMAX(
   const int depth,
   const int target,
   const int trump,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
-  SolverContext ctx{ thrp };
+  
   const bool depth_ok = (depth >= 0 && depth < 50);
   if ((trump == DDS_NOTRUMP) || (tpos.winner[trump].rank == 0))
   {
@@ -338,7 +338,7 @@ bool LaterTricksMAX(
         fprintf(stderr, "LaterTricksMAX: invalid aggr=%u (depth=%d)\n", aggr, depth);
         return false; // conservative fallback for MAX
       }
-      int h = thrp->rel[aggr].absRank[3][trump].hand;
+  int h = ctx.thread()->rel[aggr].absRank[3][trump].hand;
       if (h == -1)
         return false;
 
@@ -351,7 +351,7 @@ bool LaterTricksMAX(
         for (int ss = 0; ss < DDS_SUITS; ss++)
           if (depth_ok) tpos.winRanks[depth][ss] = 0;
         if (depth_ok) tpos.winRanks[depth][trump] = bitMapRank[
-          static_cast<int>(thrp->rel[aggr].absRank[3][trump].rank) ];
+          static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[aggr].absRank[3][trump].rank)) ];
         return true;
       }
     }

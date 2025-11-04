@@ -12,7 +12,7 @@
 
 #include "dds/dds.h"
 #include "system/Memory.h"
-#include <memory>
+#include "system/SolverContext.h"
 
 
 int QuickTricks(
@@ -22,7 +22,7 @@ int QuickTricks(
   const int target,
   const int trump,
   bool& result,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 bool QuickTricksSecondHand(
   pos& tpos,
@@ -30,6 +30,6 @@ bool QuickTricksSecondHand(
   const int depth,
   const int target,
   const int trump,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 #endif
