@@ -64,7 +64,7 @@ void Make3(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 // Evaluate terminal position using the provided context
 evalType EvaluateWithContext(

@@ -45,7 +45,7 @@ void Make3Simple(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 void Undo0(
   pos * posPoint,
@@ -823,9 +823,9 @@ void Make3(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
-  SolverContext ctx{thrp};
+  auto thrp = ctx.thread();
   int firstHand = posPoint->first[depth];
 
   const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
@@ -954,9 +954,8 @@ void Make3Simple(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
-  SolverContext ctx{thrp};
   const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   int firstHand = posPoint->first[depth];

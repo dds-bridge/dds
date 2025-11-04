@@ -857,8 +857,8 @@ int AnalyseLaterBoard(
   if (handRelFirst == 0)
   {
     ctxLater.moveGen().MakeSpecific(* move, trick + 1, 3);
-    unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
-    Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, thrp);
+  unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
+  Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, ctxLater);
   }
   else if (handRelFirst == 1)
   {
