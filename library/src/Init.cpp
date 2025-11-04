@@ -8,22 +8,19 @@
 */
 
 
-#include <algorithm>
-#include <string.h>
-
 #include "Init.h"
-#include "system/System.h"
-#include "system/Scheduler.h"
-#include "system/ThreadMgr.h"
+#include <system/System.h>
+#include <system/Scheduler.h>
+#include <system/ThreadMgr.h>
 #include "debug.h"
-#include "utility/Constants.h"
-#include "utility/LookupTables.h"
+#include <utility/Constants.h>
+#include <utility/LookupTables.h>
 #include "SolveBoard.h"
 #include "CalcTables.h"
 #include "PlayAnalyser.h"
 // Order matters: include TransTable to ensure complete type for virtual calls
-#include "trans_table/TransTable.h"
-#include "system/SolverContext.h"
+#include <trans_table/TransTable.h>
+#include <system/SolverContext.h>
 
 System sysdep(
     &SolveChunkCommon,
@@ -180,32 +177,8 @@ void InitDebugFiles()
     // Create a temporary context to access ThreadData for initialization.
   SolverContext tmp_ctx;
   [[maybe_unused]] auto thrp = tmp_ctx.thread();
-    const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
-
-#ifdef DDS_TOP_LEVEL
-    thrp->fileTopLevel.SetName(DDS_TOP_LEVEL_PREFIX + send);
-#endif
-
-#ifdef DDS_AB_STATS
-    thrp->fileABstats.SetName(DDS_AB_STATS_PREFIX + send);
-#endif
-
-#ifdef DDS_AB_HITS
-    thrp->fileRetrieved.SetName(DDS_AB_HITS_RETRIEVED_PREFIX + send);
-    thrp->fileStored.SetName(DDS_AB_HITS_STORED_PREFIX + send);
-#endif
-
-#ifdef DDS_TT_STATS
-    thrp->fileTTstats.SetName(DDS_TT_STATS_PREFIX + send);
-#endif
-
-#ifdef DDS_TIMING
-    thrp->fileTimerList.SetName(DDS_TIMING_PREFIX + send);
-#endif
-
-#ifdef DDS_MOVES
-    thrp->fileMoves.SetName(DDS_MOVES_PREFIX + send);
-#endif
+  [[maybe_unused]] const string send = to_string(thrId) + DDS_DEBUG_SUFFIX;
+  thrp->init_debug_files(send);
   }
 
 #ifdef DDS_SCHEDULER
@@ -220,31 +193,7 @@ void CloseDebugFiles()
   {
   SolverContext tmp_ctx;
   [[maybe_unused]] auto thrp = tmp_ctx.thread();
-
-#ifdef DDS_TOP_LEVEL
-    thrp->fileTopLevel.Close();
-#endif
-
-#ifdef DDS_AB_STATS
-    thrp->fileABstats.Close();
-#endif
-
-#ifdef DDS_AB_HITS
-    thrp->fileRetrieved.Close();
-    thrp->fileStored.Close();
-#endif
-
-#ifdef DDS_TT_STATS
-    thrp->fileTTstats.Close();
-#endif
-
-#ifdef DDS_TIMING
-    thrp->fileTimerList.Close();
-#endif
-
-#ifdef DDS_MOVES
-    thrp->fileMoves.Close();
-#endif
+  thrp->close_debug_files();
   }
 }
 
