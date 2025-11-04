@@ -24,7 +24,7 @@ int SolveBoardWithContext(
   futureTricks* futp);
 
 int SolveBoardInternal(
-  const std::shared_ptr<ThreadData>& thrp,
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,

@@ -80,12 +80,12 @@ int STDCALL SolveBoard(
   // internal solver. The outer context owns the ThreadData for the duration
   // of the call so inner contexts may be created as non-owning views.
   SolverContext outer_ctx;
-  return SolveBoardInternal(outer_ctx.thread(), dl, target, solutions, mode, futp);
+  return SolveBoardInternal(outer_ctx, dl, target, solutions, mode, futp);
 }
 
 
 int SolveBoardInternal(
-  const std::shared_ptr<ThreadData>& thrp,
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,
@@ -104,6 +104,7 @@ int SolveBoardInternal(
   // Count and classify deal.
   // ----------------------------------------------------------
 
+  auto thrp = ctx.thread();
   bool newDeal = false;
   bool newTrump = false;
   unsigned diffDeal = 0;
@@ -150,8 +151,6 @@ int SolveBoardInternal(
   // ----------------------------------------------------------
 
   thrp->trump = dl.trump;
-
-  SolverContext ctx{thrp};
   ctx.search().iniDepth() = cardCount - 4;
   int iniDepth = ctx.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;

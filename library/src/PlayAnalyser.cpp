@@ -70,11 +70,10 @@ int STDCALL AnalysePlayBin(
   moveType move;
   futureTricks fut;
 
-  int ret = SolveBoardInternal(thrp, dl, -1, 1, 1, &fut);
+  int ret = SolveBoardInternal(outer_ctx, dl, -1, 1, 1, &fut);
   if (ret != RETURN_NO_FAULT)
     return ret;
-
-  SolverContext ctx{thrp};
+  SolverContext& ctx = outer_ctx;
   const int iniDepth = ctx.search().iniDepth();
   const int numTricks = ((iniDepth + 3) >> 2) + 1;
   const int numCardsPlayed = ((48 - iniDepth) % 4) + 1;

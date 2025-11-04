@@ -2,7 +2,7 @@
 
 // Legacy internal entry point; avoid heavy includes here.
 int SolveBoardInternal(
-  const std::shared_ptr<ThreadData>& thrp,
+  SolverContext& ctx,
   const deal& dl,
   const int target,
   const int solutions,
@@ -19,5 +19,5 @@ int SolveBoardWithContext(
 {
   // Use ThreadData-attached TT so all contexts created in lower layers
   // observe the same table. No ownership adoption to avoid duplication.
-  return SolveBoardInternal(ctx.thread(), dl, target, solutions, mode, futp);
+  return SolveBoardInternal(ctx, dl, target, solutions, mode, futp);
 }
