@@ -22,7 +22,7 @@ using namespace std;
 #define DEBUG 0
 
 #if DEBUG
-  #include "debug.h"
+  #include <utility/debug.h>
   ofstream fout;
 #endif
 

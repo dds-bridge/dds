@@ -20,7 +20,7 @@ cc_library(
 cc_library(
     name = "constants",
     srcs = ["Constants.cpp"],
-    hdrs = ["Constants.h"],
+    hdrs = ["Constants.h", "debug.h"],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,

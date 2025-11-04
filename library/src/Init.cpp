@@ -12,7 +12,7 @@
 #include <system/System.h>
 #include <system/Scheduler.h>
 #include <system/ThreadMgr.h>
-#include "debug.h"
+#include <utility/debug.h>
 #include <utility/Constants.h>
 #include <utility/LookupTables.h>
 #include "SolveBoard.h"

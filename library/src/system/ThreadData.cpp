@@ -1,6 +1,6 @@
 // ThreadData instance methods implementation
 #include "system/ThreadData.h"
-#include "debug.h"
+#include <utility/debug.h>
 
 using std::string;
 

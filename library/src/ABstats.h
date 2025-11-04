@@ -14,7 +14,7 @@
 #include <fstream>
 #include <string>
 
-#include "debug.h"
+#include <utility/debug.h>
 
 using namespace std;
 
