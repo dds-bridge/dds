@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "dds/dll.h"            // public API
-#include "system/SolverContext.h"  // new instance API (added to src)
+#include <solver_context/SolverContext.h>  // new instance API (added to src)
 
 // Access legacy thread memory to build a context (test-only knowledge)
 #include "system/Memory.h"

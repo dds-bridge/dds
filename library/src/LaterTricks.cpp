@@ -10,7 +10,7 @@
 #include <algorithm>
 
 #include "LaterTricks.h"
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 
 
 /**

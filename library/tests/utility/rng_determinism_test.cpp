@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include <random>
 #include <vector>
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 #include "system/Memory.h"
 
 TEST(UtilitiesRngTest, DeterministicSequenceWithSeed) {

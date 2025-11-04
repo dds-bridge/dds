@@ -1,4 +1,4 @@
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 
 // Legacy internal entry point; avoid heavy includes here.
 int SolveBoardInternal(

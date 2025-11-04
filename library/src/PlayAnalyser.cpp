@@ -13,7 +13,7 @@
 #include "system/Memory.h"
 #include "system/Scheduler.h"
 #include "PBN.h"
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 
 using namespace std;
 

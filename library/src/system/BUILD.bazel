@@ -3,7 +3,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "system",
-    srcs = glob(["*.cpp"]),
+    srcs = glob(["*.cpp"], exclude = ["SolverContext.cpp"]),
     hdrs = glob(["*.h", "util/*.h"]),
     visibility = ["//visibility:public"],
     includes = ["."],
@@ -25,7 +25,7 @@ cc_library(
 # Variant with Utilities logging enabled for tests that assert log behavior
 cc_library(
     name = "system_util_log",
-    srcs = glob(["*.cpp"]),
+    srcs = glob(["*.cpp"], exclude = ["SolverContext.cpp"]),
     hdrs = glob(["*.h", "util/*.h"]),
     visibility = ["//visibility:public"],
     includes = ["."],
@@ -45,7 +45,7 @@ cc_library(
 
 cc_library(
     name = "system_util_stats",
-    srcs = glob(["*.cpp"]),
+    srcs = glob(["*.cpp"], exclude = ["SolverContext.cpp"]),
     hdrs = glob(["*.h", "util/*.h"]),
     visibility = ["//visibility:public"],
     includes = ["."],
@@ -62,3 +62,5 @@ cc_library(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE + ["DDS_UTILITIES_STATS"],
 )
+
+# SolverContext is now a separate library under library/src/solver_context.
