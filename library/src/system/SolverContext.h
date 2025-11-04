@@ -19,13 +19,6 @@
 #include <cstddef>
 #include <memory>
 
-// Note: constructors that accepted raw `ThreadData*` were removed during the
-// ownership migration. Callers should pass a `std::shared_ptr<ThreadData>`.
-// For cases where a non-owning wrapper is required (temporary/read-only
-// contexts), construct a non-owning `std::shared_ptr<ThreadData>` with a
-// no-op deleter and an explicit cast, e.g.:
-//   std::shared_ptr<ThreadData>(const_cast<ThreadData*>(&thrd), [](ThreadData*){});
-
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
 enum class TTKind { Small, Large };
@@ -64,12 +57,6 @@ public:
   // preferred mode for the new instance-scoped API: callers can create a
   // SolverContext at the top of the call-stack and pass it downwards.
   explicit SolverContext(SolverConfig cfg = {});
-
-  // Note: read-only convenience constructors that accepted a
-  // `std::shared_ptr<const ThreadData>` were removed as part of the
-  // ownership migration. Use the primary constructor with a
-  // non-owning `std::shared_ptr<ThreadData>` (see guidance above) when
-  // needed.
 
   ~SolverContext();
 

@@ -19,10 +19,10 @@
 #include "dump.h"
 
 // Internal ctx-enabled variants (forward declarations)
-static bool ABsearch0_ctx(pos * posPoint, int target, int depth, const std::shared_ptr<ThreadData>& thrp, SolverContext& ctx);
-static bool ABsearch1_ctx(pos * posPoint, int target, int depth, const std::shared_ptr<ThreadData>& thrp, SolverContext& ctx);
-static bool ABsearch2_ctx(pos * posPoint, int target, int depth, const std::shared_ptr<ThreadData>& thrp, SolverContext& ctx);
-static bool ABsearch3_ctx(pos * posPoint, int target, int depth, const std::shared_ptr<ThreadData>& thrp, SolverContext& ctx);
+static bool ABsearch0_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ABsearch1_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ABsearch2_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ABsearch3_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
 static evalType EvaluateWithContext(pos const * posPoint, int trump, SolverContext& ctx);
 
 // ctx-enabled helpers to keep search-state access behind the facade
@@ -31,7 +31,6 @@ static void Make3_ctx(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx);
 
 static void Undo0_ctx(
@@ -82,7 +81,7 @@ bool ABsearch(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
   /* posPoint points to the current look-ahead position,
      target is number of tricks to take for the player,
@@ -90,9 +89,9 @@ bool ABsearch(
      the value of the subtree is returned.
      This is a specialized AB function for handRelFirst == 0. */
 
+  auto thrp = ctx.thread();
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
-  SolverContext ctx{thrp};
   bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
 #ifdef DDS_TOP_LEVEL
@@ -108,7 +107,7 @@ bool ABsearch(
     * posPoint,
     ctx.search().bestMove(depth),
     ctx.search().bestMoveTT(depth),
-  thrp->rel);
+    thrp->rel);
   ctx.moveGen().Purge(tricks, 0, ctx.search().forbiddenMoves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
@@ -132,7 +131,7 @@ bool ABsearch(
     Make0(posPoint, depth, mply);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-    value = ABsearch1(posPoint, target, depth - 1, thrp);
+  value = ABsearch1_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
@@ -174,11 +173,9 @@ bool ABsearch0(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
-  // Thin wrapper: construct once and pass down
-  SolverContext ctx{thrp};
-  return ABsearch0_ctx(posPoint, target, depth, thrp, ctx);
+  return ABsearch0_ctx(posPoint, target, depth, ctx);
 }
 
 // ctx-enabled implementation
@@ -186,7 +183,6 @@ static bool ABsearch0_ctx(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
   /* posPoint points to the current look-ahead position,
@@ -195,6 +191,7 @@ static bool ABsearch0_ctx(
      the value of the subtree is returned.
      This is a specialized AB function for handRelFirst == 0. */
 
+  auto thrp = ctx.thread();
   int trump = thrp->trump;
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
@@ -393,7 +390,7 @@ static bool ABsearch0_ctx(
     Make0(posPoint, depth, mply);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-    value = ABsearch1_ctx(posPoint, target, depth - 1, thrp, ctx);
+  value = ABsearch1_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
@@ -484,20 +481,18 @@ bool ABsearch1(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
-  // Wrapper: construct once and pass down
-  SolverContext ctx{thrp};
-  return ABsearch1_ctx(posPoint, target, depth, thrp, ctx);
+  return ABsearch1_ctx(posPoint, target, depth, ctx);
 }
 
 static bool ABsearch1_ctx(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
+  auto thrp = ctx.thread();
   int trump = thrp->trump;
   int hand = handId(posPoint->first[depth], 1);
   bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
@@ -545,7 +540,7 @@ static bool ABsearch1_ctx(
     Make1(posPoint, depth, mply);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-  value = ABsearch2_ctx(posPoint, target, depth - 1, thrp, ctx);
+  value = ABsearch2_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
@@ -582,19 +577,18 @@ bool ABsearch2(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
-  SolverContext ctx{thrp};
-  return ABsearch2_ctx(posPoint, target, depth, thrp, ctx);
+  return ABsearch2_ctx(posPoint, target, depth, ctx);
 }
 
 static bool ABsearch2_ctx(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
+  auto thrp = ctx.thread();
   int hand = handId(posPoint->first[depth], 2);
   bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
@@ -633,7 +627,7 @@ static bool ABsearch2_ctx(
     TIMER_END(TIMER_NO_MAKE, depth);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-    value = ABsearch3_ctx(posPoint, target, depth - 1, thrp, ctx);
+  value = ABsearch3_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
@@ -670,23 +664,22 @@ bool ABsearch3(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
 {
-  SolverContext ctx{thrp};
-  return ABsearch3_ctx(posPoint, target, depth, thrp, ctx);
+  return ABsearch3_ctx(posPoint, target, depth, ctx);
 }
 
 static bool ABsearch3_ctx(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
   /* This is a specialized AB function for handRelFirst == 3. */
 
   unsigned short int makeWinRank[DDS_SUITS];
 
+  auto thrp = ctx.thread();
   int hand = handId(posPoint->first[depth], 3);
   bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
@@ -721,15 +714,15 @@ static bool ABsearch3_ctx(
     if (mply == NULL)
       break;
 
-  Make3_ctx(posPoint, makeWinRank, depth, mply, thrp, ctx);
+  Make3_ctx(posPoint, makeWinRank, depth, mply, ctx);
 
     ctx.search().trickNodes()++; // As handRelFirst == 0
 
     if (ctx.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricksMAX++;
 
-    TIMER_START(TIMER_NO_AB, depth - 1);
-    value = ABsearch0_ctx(posPoint, target, depth - 1, thrp, ctx);
+  TIMER_START(TIMER_NO_AB, depth - 1);
+  value = ABsearch0_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
@@ -896,9 +889,9 @@ static void Make3_ctx(
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   moveType const * mply,
-  const std::shared_ptr<ThreadData>& thrp,
   SolverContext& ctx)
 {
+  auto thrp = ctx.thread();
   int firstHand = posPoint->first[depth];
 
   const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
@@ -1027,6 +1020,7 @@ static void Undo0_ctx(
   const moveType& mply,
   SolverContext& ctx)
 {
+  // No timers here; macros not used in this helper
   int h = handId(posPoint->first[depth], 3);
   int s = mply.suit;
   int r = mply.rank;
@@ -1126,6 +1120,7 @@ static evalType EvaluateWithContext(
   const int trump,
   SolverContext& ctx)
 {
+  auto thrp = ctx.thread();
   int s, h, hmax = 0, count = 0, k = 0;
   unsigned short rmax = 0;
   evalType eval;

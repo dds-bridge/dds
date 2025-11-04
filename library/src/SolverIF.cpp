@@ -48,14 +48,14 @@ bool (* AB_ptr_list[DDS_HANDS])(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp)
+  SolverContext& ctx)
   = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
 
 void (* Make_ptr_list[3])(
@@ -358,11 +358,11 @@ int SolveBoardInternal(
         ctx.ResetBestMovesLite();
 
         TIMER_START(TIMER_NO_AB, iniDepth);
-        thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[handRelFirst])(
                       &thrp->lookAheadPos,
                       guess,
                       iniDepth,
-                      thrp);
+          ctx);
         TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
@@ -468,10 +468,10 @@ int SolveBoardInternal(
       ctx.ResetBestMovesLite();
 
       TIMER_START(TIMER_NO_AB, iniDepth);
-      thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
+  thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
                   guess,
                   iniDepth,
-                  thrp);
+      ctx);
       TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
@@ -536,11 +536,11 @@ int SolveBoardInternal(
   else
   {
     TIMER_START(TIMER_NO_AB, iniDepth);
-    thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   target,
                   iniDepth,
-                  thrp);
+          ctx);
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
@@ -603,11 +603,11 @@ int SolveBoardInternal(
   /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
-    thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   futp->score[0],
                   iniDepth,
-                  thrp);
+          ctx);
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
@@ -742,11 +742,11 @@ int SolveSameBoard(
   /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
-    thrp->val = ABsearch(
+  thrp->val = ABsearch(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
-                  thrp);
+          ctxSame);
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL
@@ -918,11 +918,11 @@ int AnalyseLaterBoard(
   ctxLater.ResetBestMovesLite();
 
     TIMER_START(TIMER_NO_AB, iniDepth);
-    thrp->val = (* AB_ptr_trace_list[handRelFirst])(
+  thrp->val = (* AB_ptr_trace_list[handRelFirst])(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
-                  thrp);
+          ctxLater);
     TIMER_END(TIMER_NO_AB, iniDepth);
 
 #ifdef DDS_TOP_LEVEL

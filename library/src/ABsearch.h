@@ -11,39 +11,38 @@
 #define DDS_ABSEARCH_H
 
 #include <dds/dds.h>
-#include <system/ThreadData.h>
-#include <memory>
+#include <system/SolverContext.h>
 
 
 bool ABsearch(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 bool ABsearch0(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 bool ABsearch1(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 bool ABsearch2(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 bool ABsearch3(
   pos * posPoint,
   const int target,
   const int depth,
-  const std::shared_ptr<ThreadData>& thrp);
+  SolverContext& ctx);
 
 void Make0(
   pos * posPoint,
