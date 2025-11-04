@@ -14,7 +14,6 @@ static void ensureThread()
 TEST(UtilitiesLogTest, NoLogWithoutDefine)
 {
   ensureThread();
-  ensureThread();
   SolverContext ctx;
 
   // Ensure clean start

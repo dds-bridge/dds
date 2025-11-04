@@ -74,7 +74,7 @@ class Memory
     unsigned NumThreads() const;
     double MemoryInUseMB(const unsigned thrId) const;
 
-    string ThreadSize(const unsigned thrId) const;
+    std::string ThreadSize(const unsigned thrId) const;
 };
 
 #endif

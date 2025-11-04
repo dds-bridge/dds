@@ -14,7 +14,6 @@ static void ensureThread()
 TEST(UtilitiesLogCtxOpsNoDefine, NoEntriesWhenDisabled)
 {
   ensureThread();
-  ensureThread();
   SolverContext ctx;
 
   // Start from a clean log buffer

@@ -14,7 +14,6 @@ static void ensureThread()
 TEST(UtilitiesLogTestWithDefine, LogsPresentWhenEnabled)
 {
   ensureThread();
-  ensureThread();
   SolverContext ctx;
   ctx.utilities().logClear();
 

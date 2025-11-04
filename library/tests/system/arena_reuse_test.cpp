@@ -49,7 +49,6 @@ TEST(ArenaReuseTest, DifferentThreadsGetDifferentArenas)
     memory.Resize(2, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
   SolverContext owner0;
-  auto thr = owner0.thread();
   SolverContext owner1;
   auto thr0 = owner0.thread();
   auto thr1 = owner1.thread();

@@ -66,7 +66,7 @@ double Memory::MemoryInUseMB(const unsigned /*thrId*/) const
 }
 
 
-string Memory::ThreadSize(const unsigned thrId) const
+std::string Memory::ThreadSize(const unsigned thrId) const
 {
   if (thrId >= threadSizes.size()) return std::string();
   return threadSizes[thrId];
