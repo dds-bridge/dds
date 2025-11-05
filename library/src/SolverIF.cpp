@@ -77,11 +77,9 @@ int STDCALL SolveBoard(
   if (! sysdep.ThreadOK(thrId))
     return RETURN_THREAD_INDEX;
 
-  // Create an owned context for this call and pass its ThreadData into the
-  // internal solver. The outer context owns the ThreadData for the duration
-  // of the call so inner contexts may be created as non-owning views.
+  // Create an owned context for this call and delegate to the C++ overload.
   SolverContext outer_ctx;
-  return SolveBoardInternal(outer_ctx, dl, target, solutions, mode, futp);
+  return SolveBoard(outer_ctx, dl, target, solutions, mode, futp);
 }
 
 

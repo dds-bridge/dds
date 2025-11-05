@@ -21,3 +21,15 @@ int SolveBoardWithContext(
   // observe the same table. No ownership adoption to avoid duplication.
   return SolveBoardInternal(ctx, dl, target, solutions, mode, futp);
 }
+
+// Convenience C++ overload delegating to the context-aware entry point.
+int SolveBoard(
+  SolverContext& ctx,
+  const deal& dl,
+  int target,
+  int solutions,
+  int mode,
+  futureTricks* futp)
+{
+  return SolveBoardWithContext(ctx, dl, target, solutions, mode, futp);
+}

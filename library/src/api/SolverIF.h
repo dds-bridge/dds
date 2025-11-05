@@ -23,6 +23,15 @@ int SolveBoardWithContext(
   int mode,
   futureTricks* futp);
 
+// C++-only overload exposed via <api/...> for C++ clients managing state.
+int SolveBoard(
+  SolverContext& ctx,
+  const deal& dl,
+  int target,
+  int solutions,
+  int mode,
+  futureTricks* futp);
+
 int SolveBoardInternal(
   SolverContext& ctx,
   const deal& dl,
