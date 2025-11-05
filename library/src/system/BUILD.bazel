@@ -62,5 +62,3 @@ cc_library(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE + ["DDS_UTILITIES_STATS"],
 )
-
-# SolverContext is a separate library under library/src/solver_context.
