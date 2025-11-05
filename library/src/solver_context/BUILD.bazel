@@ -1,35 +1,53 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-def solver_context_variant(name, extra_defines = []):
-    cc_library(
-        name = name,
-        srcs = ["SolverContext.cpp"],
-        hdrs = ["SolverContext.h"],
-        visibility = ["//visibility:public"],
-        includes = ["."],
-        include_prefix = "solver_context",
-        deps = [
-            "//library/src/system",                   # ThreadData.h, Utilities, Arena
-            "//library/src/data_types:dds_types",     # <dds/dds.h>
-            "//library/src/trans_table",              # TT headers
-        ],
-        copts = DDS_CPPOPTS,
-        linkopts = DDS_LINKOPTS,
-        local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE + extra_defines,
-    )
-
-solver_context_variant(
+cc_library(
     name = "solver_context",
-    extra_defines = [],
+    srcs = ["SolverContext.cpp"],
+    hdrs = ["SolverContext.h"],
+    visibility = ["//visibility:public"],
+    includes = ["."],
+    include_prefix = "solver_context",
+    deps = [
+        "//library/src/system",                   # ThreadData.h, Utilities, Arena
+        "//library/src/data_types:dds_types",     # <dds/dds.h>
+        "//library/src/trans_table",              # TT headers
+    ],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
 )
 
-solver_context_variant(
+cc_library(
     name = "solver_context_log",
-    extra_defines = ["DDS_UTILITIES_LOG"],
+    srcs = ["SolverContext.cpp"],
+    hdrs = ["SolverContext.h"],
+    visibility = ["//visibility:public"],
+    includes = ["."],
+    include_prefix = "solver_context",
+    deps = [
+        "//library/src/system",
+        "//library/src/data_types:dds_types",
+        "//library/src/trans_table",
+    ],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE + ["DDS_UTILITIES_LOG"],
 )
 
-solver_context_variant(
+cc_library(
     name = "solver_context_stats",
-    extra_defines = ["DDS_UTILITIES_STATS"],
+    srcs = ["SolverContext.cpp"],
+    hdrs = ["SolverContext.h"],
+    visibility = ["//visibility:public"],
+    includes = ["."],
+    include_prefix = "solver_context",
+    deps = [
+        "//library/src/system",
+        "//library/src/data_types:dds_types",
+        "//library/src/trans_table",
+    ],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE + ["DDS_UTILITIES_STATS"],
 )
