@@ -17,7 +17,7 @@
 #define DDS_TRANSTABLE_H
 
 #include <fstream>
-#include <dds/dll.h>
+#include <api/dll.h>
 
 // Reset reason for table memory and counters
 enum class ResetReason

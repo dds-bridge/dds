@@ -2,7 +2,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "dds/dds.h"
+#include <api/dds.h>
 
 class HeuristicSortingTest : public ::testing::Test {
  protected:

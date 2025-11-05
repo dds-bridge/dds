@@ -10,7 +10,7 @@
 #ifndef DDS_ABSEARCH_H
 #define DDS_ABSEARCH_H
 
-#include <dds/dds.h>
+#include <api/dds.h>
 #include <solver_context/SolverContext.h>
 
 

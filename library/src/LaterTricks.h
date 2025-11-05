@@ -10,7 +10,7 @@
 #ifndef DDS_LATERTRICKS_H
 #define DDS_LATERTRICKS_H
 
-#include <dds/dds.h>
+#include <api/dds.h>
 #include <solver_context/SolverContext.h>
 
 

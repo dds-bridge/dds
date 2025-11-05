@@ -1,7 +1,7 @@
 #ifndef DDS_THREAD_DATA_H
 #define DDS_THREAD_DATA_H
 
-#include <dds/dds.h>
+#include <api/dds.h>
 #include <moves/Moves.h>
 #include <string>
 

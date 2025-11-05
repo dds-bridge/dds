@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <solver_context/SolverContext.h>
 #include "system/Memory.h"
-#include <dds/dds.h>  // THREADMEM_* defaults
+#include <api/dds.h>  // THREADMEM_* defaults
 
 extern Memory memory;
 

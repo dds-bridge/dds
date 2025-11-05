@@ -18,7 +18,7 @@
 #include <vector>
 #include <array>
 
-#include "dds/dds.h"
+#include <api/dds.h>
 
 using namespace std;
 

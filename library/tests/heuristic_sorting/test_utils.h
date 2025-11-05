@@ -3,7 +3,7 @@
 
 #include <string>
 #include "heuristic_sorting/heuristic_sorting.h"
-#include "dds/dds.h"
+#include <api/dds.h>
 
 std::string normalize_ordering(const moveType* moves, int numMoves, bool include_scores = false);
 

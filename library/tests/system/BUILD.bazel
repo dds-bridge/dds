@@ -6,7 +6,7 @@ cc_test(
     copts = [],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -17,7 +17,7 @@ cc_test(
     copts = [],
     deps = [
         "//library/src:dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -30,7 +30,7 @@ cc_test(
     local_defines = ["DDS_TT_CONTEXT_OWNERSHIP"],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -42,7 +42,7 @@ cc_test(
     copts = [],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -54,7 +54,7 @@ cc_test(
     copts = [],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -64,7 +64,7 @@ cc_test(
     srcs = ["utilities_log_test_with_define.cpp"],
     deps = [
         "//library/src:testable_dds_util_log",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -74,7 +74,7 @@ cc_test(
     srcs = ["utilities_log_ctx_ops_test_with_define.cpp"],
     deps = [
         "//library/src:testable_dds_util_log",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -84,7 +84,7 @@ cc_test(
     srcs = ["utilities_log_ctx_ops_test.cpp"],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -95,7 +95,7 @@ cc_test(
     srcs = ["utilities_stats_test.cpp"],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -105,7 +105,7 @@ cc_test(
     srcs = ["utilities_stats_test_with_define.cpp"],
     deps = [
         "//library/src:testable_dds_util_stats",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -115,7 +115,7 @@ cc_test(
     srcs = ["utilities_log_contains_test.cpp"],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -125,7 +125,7 @@ cc_test(
     srcs = ["utilities_feature_flags_test.cpp"],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -135,7 +135,7 @@ cc_test(
     srcs = ["utilities_feature_flags_test_with_log.cpp"],
     deps = [
         "//library/src:testable_dds_util_log",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -145,7 +145,7 @@ cc_test(
     srcs = ["utilities_feature_flags_test_with_stats.cpp"],
     deps = [
         "//library/src:testable_dds_util_stats",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -155,7 +155,7 @@ cc_test(
     srcs = ["arena_reuse_test.cpp"],
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )

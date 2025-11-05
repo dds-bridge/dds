@@ -11,7 +11,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <array>
-#include <dds/dds.h>
+#include <api/dds.h>
 
 #include "TransTableS.h"
 

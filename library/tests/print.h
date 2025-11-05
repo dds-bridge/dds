@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "dds/dll.h"
+#include <api/dll.h>
 
 using namespace std;
 

@@ -5,7 +5,7 @@
 #include <random>
 #include <array>
 #include "trans_table/TransTable.h"
-#include "dds/dll.h"
+#include <api/dll.h>
 
 namespace dds_test {
 

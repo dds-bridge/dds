@@ -14,7 +14,7 @@ cc_binary(
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
     ],
     visibility = ["//visibility:public"],
 )
@@ -29,7 +29,7 @@ cc_test(
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     deps = [
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
     ],
 )
 

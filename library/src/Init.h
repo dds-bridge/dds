@@ -10,7 +10,7 @@
 #ifndef DDS_INIT_H
 #define DDS_INIT_H
 
-#include "dds/dds.h"
+#include <api/dds.h>
 #include "system/Memory.h"
 #include <solver_context/SolverContext.h>
 #include <memory>

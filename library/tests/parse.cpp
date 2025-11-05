@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdexcept>
 
-#include "dds/dll.h"
+#include <api/dll.h>
 #include "parse.h"
 
 using namespace std;

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <dds/dds.h>
+#include <api/dds.h>
 class TrickThreeBugTests : public ::testing::Test {
      protected:
         TrickThreeBugTests() = default;

@@ -11,7 +11,7 @@
 #include <iostream>
 #include <unistd.h>
 
-#include "dds/dll.h"
+#include <api/dll.h>
 #include "testcommon.h"
 #include "args.h"
 #include "cst.h"

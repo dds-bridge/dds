@@ -13,7 +13,7 @@
 #include <fstream>
 #include <string>
 
-#include "dds/dds.h"
+#include <api/dds.h>
 #include "heuristic_sorting/heuristic_sorting.h"
 
 using namespace std;
