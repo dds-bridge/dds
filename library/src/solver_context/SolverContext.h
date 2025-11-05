@@ -9,9 +9,9 @@
 #ifndef DDS_SYSTEM_SOLVERCONTEXT_H
 #define DDS_SYSTEM_SOLVERCONTEXT_H
 
-#include "ThreadData.h"
-#include "util/Utilities.h"
-#include "util/Arena.h"
+#include <system/ThreadData.h>
+#include <system/util/Utilities.h>
+#include <system/util/Arena.h>
 #include <trans_table/TransTable.h>
 #include <string>
 #include <vector>

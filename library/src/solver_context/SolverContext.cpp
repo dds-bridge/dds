@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
-#include "util/Arena.h"
+#include <system/util/Arena.h>
 #include <utility/ScratchAllocTLS.h>
 
 namespace {

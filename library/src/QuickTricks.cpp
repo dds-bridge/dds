@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include "QuickTricks.h"
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 #include <lookup_tables/LookupTables.h>
 
 

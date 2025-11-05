@@ -13,7 +13,7 @@
 #include <fstream>
 
 #include "trans_table/TransTable.h"
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 #include "dump.h"
 
 

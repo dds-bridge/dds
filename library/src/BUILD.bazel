@@ -18,6 +18,7 @@ cc_library(
         "//library/src/trans_table",
         "//library/src/moves:moves",
         "//library/src/system",
+        "//library/src/solver_context:solver_context",
     ],
 )
 
@@ -46,6 +47,7 @@ cc_library(
         "//library/src/trans_table",
         "//library/src/moves:moves",
         "//library/src/system",
+        "//library/src/solver_context:solver_context",
     ],
 )
 
@@ -70,6 +72,7 @@ cc_library(
         "//library/src/trans_table",
         "//library/src/moves:moves",
         "//library/src/system:system_util_log",
+        "//library/src/solver_context:solver_context_log",
     ],
 )
 
@@ -93,6 +96,7 @@ cc_library(
         "//library/src/trans_table",
         "//library/src/moves:moves",
         "//library/src/system:system_util_stats",
+        "//library/src/solver_context:solver_context_stats",
     ],
 )
 

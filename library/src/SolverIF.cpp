@@ -14,7 +14,7 @@
 #include "system/System.h"
 #include "system/Scheduler.h"
 #include "trans_table/TransTable.h"
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 #include "dump.h"
 #include <lookup_tables/LookupTables.h>
 

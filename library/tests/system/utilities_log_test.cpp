@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 #include "system/Memory.h"
 #include <dds/dds.h>  // THREADMEM_* defaults
 

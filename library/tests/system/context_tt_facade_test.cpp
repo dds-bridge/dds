@@ -2,7 +2,7 @@
 #include <cstring>
 #include "dds/dll.h"
 #include "system/Memory.h"
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 #include <dds/dds.h>  // THREADMEM_* constants
 
 extern Memory memory;

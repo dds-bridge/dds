@@ -12,7 +12,7 @@
 
 #include "dds/dds.h"
 #include "moves/Moves.h"
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 #include "system/Memory.h"
 #include "trans_table/TransTable.h" // for NodeCards and enums
 

@@ -12,7 +12,7 @@
 
 #include "dds/dds.h"
 #include "system/Memory.h"
-#include "system/SolverContext.h"
+#include <solver_context/SolverContext.h>
 
 
 int QuickTricks(
