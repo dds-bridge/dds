@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include <cstring>
 
-#include "dds/dll.h"
+#include <api/dll.h>
 #include <solver_context/SolverContext.h>
 #include "system/Memory.h"
-#include "dds/SolverIF.h"
+#include <api/SolverIF.h>
 
 extern Memory memory;
 

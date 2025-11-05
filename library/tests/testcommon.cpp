@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <vector>
 
-#include "dds/dll.h"
+#include <api/dll.h>
 
 #include "testcommon.h"
 #include "TestTimer.h"

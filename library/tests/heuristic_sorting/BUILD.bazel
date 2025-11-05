@@ -27,7 +27,7 @@ cc_test(
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
         "//library/src:testable_dds",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -49,7 +49,7 @@ cc_test(
     srcs = ["merge_scratch_test.cpp"],
     deps = [
         "//library/src/moves:moves",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
     copts = DDS_CPPOPTS,

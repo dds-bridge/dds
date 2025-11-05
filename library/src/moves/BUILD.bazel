@@ -9,7 +9,7 @@ cc_library(
     deps = [
         "//library/src/utility:constants",
         "//library/src/lookup_tables:lookup_tables",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "//library/src/heuristic_sorting",
         "//library/src/utility:scratch_alloc_tls",
     ],

@@ -2,7 +2,7 @@
 #include <iostream>
 #include "heuristic_sorting/heuristic_sorting.h"
 #include "heuristic_sorting/internal.h"
-#include "dds/dll.h"
+#include <api/dll.h>
 
 /**
  * Minimal test to isolate the segfault issue

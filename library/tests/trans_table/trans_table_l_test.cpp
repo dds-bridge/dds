@@ -2,7 +2,7 @@
 #include <cstring>
 
 // Include DDS types first
-#include "dds/dll.h"
+#include <api/dll.h>
 
 // No TransTable dependencies needed in this file; remove legacy forward declarations.
 

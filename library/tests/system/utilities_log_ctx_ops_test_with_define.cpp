@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <solver_context/SolverContext.h>
 #include "system/Memory.h"
-#include <dds/dds.h>
+#include <api/dds.h>
 
 extern Memory memory;
 

@@ -1,7 +1,7 @@
 #ifndef DDS_HEURISTIC_SORTING_H
 #define DDS_HEURISTIC_SORTING_H
 
-#include <dds/dds.h>
+#include <api/dds.h>
 
 struct trackType
 {

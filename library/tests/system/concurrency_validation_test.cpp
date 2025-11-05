@@ -4,11 +4,11 @@
 #include <string>
 #include <cstring>
 
-#include "dds/dll.h"
-#include "dds/PBN.h"
+#include <api/dll.h>
+#include <api/PBN.h>
 #include <solver_context/SolverContext.h>
 #include "system/Memory.h"
-#include "dds/SolverIF.h"
+#include <api/SolverIF.h>
 
 extern Memory memory;
 

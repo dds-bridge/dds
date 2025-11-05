@@ -13,7 +13,7 @@
 #include <atomic>
 #include <vector>
 
-#include "dds/dds.h"
+#include <api/dds.h>
 #include "Timer.h"
 // TimeStatList is required when DDS_SCHEDULER is enabled.
 #ifdef DDS_SCHEDULER

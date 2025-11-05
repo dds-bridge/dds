@@ -8,7 +8,7 @@
 */
 
 
-#include "dds/dds.h"
+#include <api/dds.h>
 #include "PBN.h"
 
 int IsCard(const char cardChar);

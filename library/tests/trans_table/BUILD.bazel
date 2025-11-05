@@ -12,7 +12,7 @@ cc_library(
     ],
     deps = [
         "//library/src/trans_table:testable_trans_table",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "@googletest//:gtest",
     ],
     visibility = ["//visibility:public"],

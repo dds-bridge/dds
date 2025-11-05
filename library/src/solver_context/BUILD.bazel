@@ -10,7 +10,7 @@ cc_library(
     include_prefix = "solver_context",
     deps = [
         "//library/src/system",                   # ThreadData.h, Utilities, Arena
-        "//library/src/data_types:dds_types",     # <dds/dds.h>
+    "//library/src/api:api_definitions",     # <api/dds.h>
         "//library/src/trans_table",              # TT headers
     ],
     copts = DDS_CPPOPTS,
@@ -27,7 +27,7 @@ cc_library(
     include_prefix = "solver_context",
     deps = [
         "//library/src/system",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "//library/src/trans_table",
     ],
     copts = DDS_CPPOPTS,
@@ -44,7 +44,7 @@ cc_library(
     include_prefix = "solver_context",
     deps = [
         "//library/src/system",
-        "//library/src/data_types:dds_types",
+    "//library/src/api:api_definitions",
         "//library/src/trans_table",
     ],
     copts = DDS_CPPOPTS,

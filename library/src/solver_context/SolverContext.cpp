@@ -5,7 +5,7 @@
 // Pull in the concrete dds types and THREADMEM_* macros directly so
 // this translation unit can compute TT defaults without relying on
 // build-system include remapping.
-#include <dds/dds.h>
+#include <api/dds.h>
 #include <trans_table/TransTable.h>
 #include <trans_table/TransTableS.h>
 #include <trans_table/TransTableL.h>

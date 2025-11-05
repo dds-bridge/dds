@@ -10,7 +10,7 @@
 #ifndef DDS_DUMP_H
 #define DDS_DUMP_H
 
-#include "dds/dds.h"
+#include <api/dds.h>
 #include "moves/Moves.h"
 #include <solver_context/SolverContext.h>
 #include "system/Memory.h"

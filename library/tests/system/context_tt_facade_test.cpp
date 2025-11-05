@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <cstring>
-#include "dds/dll.h"
+#include <api/dll.h>
 #include "system/Memory.h"
 #include <solver_context/SolverContext.h>
-#include <dds/dds.h>  // THREADMEM_* constants
+#include <api/dds.h>  // THREADMEM_* constants
 
 extern Memory memory;
 
