@@ -238,6 +238,37 @@ void SolverContext::ResizeTT(int defMB, int maxMB) const
   }
 }
 
+void SolverContext::ConfigureTT(TTKind kind, int defMB, int maxMB)
+{
+  // Apply environment limit if present to preserve existing behavior.
+  if (const char* s = std::getenv("DDS_TT_LIMIT_MB")) {
+    int v = std::atoi(s);
+    if (v > 0) maxMB = std::min(maxMB, v);
+  }
+  if (maxMB < defMB) maxMB = defMB;
+
+  // Persist configuration for future TT creations.
+  cfg_.ttKind = kind;
+  cfg_.ttMemDefaultMB = defMB;
+  cfg_.ttMemMaximumMB = maxMB;
+
+  auto* tt = search_.maybeTransTable();
+  if (!tt) return; // Nothing to apply now; will take effect on lazy creation.
+
+  // If kind changes, dispose and recreate now to ensure effect is applied.
+  bool is_small = (dynamic_cast<TransTableS*>(tt) != nullptr);
+  TTKind current_kind = is_small ? TTKind::Small : TTKind::Large;
+  if (current_kind != kind) {
+    DisposeTransTable();
+    // Force immediate creation with new config to keep behavior explicit.
+    (void)transTable();
+    return;
+  }
+
+  // Same kind: resize in-place.
+  ResizeTT(defMB, maxMB);
+}
+
 // Lightweight reset matching legacy ResetBestMoves semantics.
 void SolverContext::ResetBestMovesLite() const
 {

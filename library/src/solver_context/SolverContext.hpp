@@ -99,6 +99,9 @@ public:
   void ResetBestMovesLite() const;
   void ClearTT() const;         // Calls ReturnAllMemory()
   void ResizeTT(int defMB, int maxMB) const; // Updates sizes if TT exists
+  // Explicit runtime configuration of TT kind and memory limits. Applies to
+  // existing TT (resize or recreate) and persists for future creations.
+  void ConfigureTT(TTKind kind, int defMB, int maxMB);
 
   // --- Search state facade ---
   class SearchContext {

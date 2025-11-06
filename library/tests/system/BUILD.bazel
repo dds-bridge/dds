@@ -151,3 +151,13 @@ cc_test(
 )
 
 ## Retired: arena_reuse_test removed after arena deprecation.
+
+cc_test(
+    name = "configure_tt_api_test",
+    srcs = ["configure_tt_api_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
