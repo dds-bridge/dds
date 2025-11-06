@@ -17,11 +17,11 @@
 #include <fstream>
 #include <cstring>
 
-#include "Moves.h"
-#include "heuristic_sorting/heuristic_sorting.h"
+#include "Moves.hpp"
+#include "heuristic_sorting/heuristic_sorting.hpp"
 // Optional arena-backed scratch support (wired via TLS by SolverContext)
-#include "utility/ScratchAllocTLS.h"
-#include <lookup_tables/LookupTables.h>
+#include "utility/ScratchAllocTLS.hpp"
+#include <lookup_tables/LookupTables.hpp>
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a

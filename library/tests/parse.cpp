@@ -11,11 +11,11 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <stdexcept>
 
 #include <api/dll.h>
-#include "parse.h"
+#include "parse.hpp"
 
 using namespace std;
 

@@ -7,9 +7,9 @@
    See LICENSE and README.
 */
 
-#include <lookup_tables/LookupTables.h>
+#include <lookup_tables/LookupTables.hpp>
 #include <utility/Constants.h>
-#include <string.h>
+#include <cstring>
 #include <mutex>
 
 namespace {

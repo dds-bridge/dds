@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "TimerGroup.h"
+#include "TimerGroup.hpp"
 
 
 TimerGroup::TimerGroup()

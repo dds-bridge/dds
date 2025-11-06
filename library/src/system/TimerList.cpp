@@ -9,10 +9,10 @@
 
 
 /*
-   See TimerList.h for some description.
+   See TimerList.hpp for some description.
 */
 
-#include "TimerList.h"
+#include "TimerList.hpp"
 
 
 TimerList::TimerList()

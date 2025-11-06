@@ -10,7 +10,7 @@
 #ifndef DDS_UTILITY_CONSTANTS_H
 #define DDS_UTILITY_CONSTANTS_H
 
-// Constants from dll.h
+// Constants from dll.hpp
 constexpr int DDS_STRAINS = 5;
 constexpr int DDS_HANDS = 4;
 constexpr int DDS_SUITS = 4;

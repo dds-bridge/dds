@@ -8,13 +8,13 @@
 */
 
 
-#include "CalcTables.h"
-#include "SolverIF.h"
-#include "SolveBoard.h"
-#include "system/System.h"
-#include "system/Memory.h"
-#include "system/Scheduler.h"
-#include "PBN.h"
+#include "CalcTables.hpp"
+#include "SolverIF.hpp"
+#include "SolveBoard.hpp"
+#include "system/System.hpp"
+#include "system/Memory.hpp"
+#include "system/Scheduler.hpp"
+#include "PBN.hpp"
 
 
 paramType cparam;

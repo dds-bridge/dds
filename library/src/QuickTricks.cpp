@@ -10,9 +10,9 @@
 
 #include <algorithm>
 
-#include "QuickTricks.h"
-#include <solver_context/SolverContext.h>
-#include <lookup_tables/LookupTables.h>
+#include "QuickTricks.hpp"
+#include <solver_context/SolverContext.hpp>
+#include <lookup_tables/LookupTables.hpp>
 
 
 int QtricksLeadHandNT(

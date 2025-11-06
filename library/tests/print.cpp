@@ -12,8 +12,8 @@
 #include <iomanip>
 #include <algorithm>
 
-#include "print.h"
-#include "cst.h"
+#include "print.hpp"
+#include "cst.hpp"
 
 
 static unsigned short dbitMapRank[16];

@@ -2,16 +2,16 @@
 #define DDS_THREAD_DATA_H
 
 #include <api/dds.h>
-#include <moves/Moves.h>
+#include <moves/Moves.hpp>
 #include <string>
 
 
 #ifdef DDS_AB_STATS
-  #include "ABstats.h"
+  #include "ABstats.hpp"
 #endif
 
 #ifdef DDS_TIMING
-  #include "TimerList.h"
+  #include "TimerList.hpp"
 #endif
 enum TTmemory
 {

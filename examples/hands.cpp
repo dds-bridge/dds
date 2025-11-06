@@ -10,11 +10,11 @@
 
 // General initialization of three hands to be used in examples.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "../include/dll.h"
-#include "hands.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include "../include/dll.hpp"
+#include "hands.hpp"
 
 #define SP 0
 #define HE 1

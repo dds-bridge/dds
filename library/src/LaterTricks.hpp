@@ -11,7 +11,7 @@
 #define DDS_LATERTRICKS_H
 
 #include <api/dds.h>
-#include <solver_context/SolverContext.h>
+#include <solver_context/SolverContext.hpp>
 
 
 bool LaterTricksMIN(

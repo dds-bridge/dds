@@ -13,7 +13,7 @@
 #include <array>
 #include <api/dds.h>
 
-#include "TransTableS.h"
+#include "TransTableS.hpp"
 
 #define NSIZE 50000
 #define WSIZE 50000

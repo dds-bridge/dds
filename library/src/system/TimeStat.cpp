@@ -11,9 +11,9 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <math.h>
+#include <cmath>
 
-#include "TimeStat.h"
+#include "TimeStat.hpp"
 
 
 TimeStat::TimeStat()

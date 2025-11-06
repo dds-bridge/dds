@@ -14,10 +14,10 @@
 #include <vector>
 
 #include <api/dds.h>
-#include "Timer.h"
+#include "Timer.hpp"
 // TimeStatList is required when DDS_SCHEDULER is enabled.
 #ifdef DDS_SCHEDULER
-#include "TimeStatList.h"
+#include "TimeStatList.hpp"
 #endif
 
 using namespace std;

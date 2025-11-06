@@ -1,5 +1,5 @@
-#include "utility/ArenaTLS.h"
-#include "system/util/Arena.h"
+#include "utility/ArenaTLS.hpp"
+#include "system/util/Arena.hpp"
 
 namespace dds {
 namespace tls {

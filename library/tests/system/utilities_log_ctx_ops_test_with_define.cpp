@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <solver_context/SolverContext.h>
-#include "system/Memory.h"
+#include <solver_context/SolverContext.hpp>
+#include "system/Memory.hpp"
 #include <api/dds.h>
 
 extern Memory memory;

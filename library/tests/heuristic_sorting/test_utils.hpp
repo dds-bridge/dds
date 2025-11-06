@@ -2,7 +2,7 @@
 #define DDS_TEST_UTILS_H
 
 #include <string>
-#include "heuristic_sorting/heuristic_sorting.h"
+#include "heuristic_sorting/heuristic_sorting.hpp"
 #include <api/dds.h>
 
 std::string normalize_ordering(const moveType* moves, int numMoves, bool include_scores = false);

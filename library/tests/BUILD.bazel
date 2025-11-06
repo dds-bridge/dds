@@ -3,7 +3,7 @@ load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", 
 
 filegroup(
     name = "test_sources",
-    srcs = glob(["*.cpp", "*.h"], exclude=["itest.cpp", "context_equivalence.cpp"]),
+    srcs = glob(["*.cpp", "*.hpp"], exclude=["itest.cpp", "context_equivalence.cpp"]),
 )
 
 cc_binary(

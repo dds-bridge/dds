@@ -4,7 +4,7 @@
 
 
 // Access legacy thread memory to build a context (test-only knowledge)
-#include <system/Memory.h>
+#include <system/Memory.hpp>
 #include <dds/dds.hpp>
 extern Memory memory;
 

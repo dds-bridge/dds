@@ -1,21 +1,21 @@
-#include "SolverContext.h"
+#include "SolverContext.hpp"
 
 // Keep dependencies local to this implementation to avoid include churn.
-#include <system/ThreadData.h>       // for ThreadData definition
+#include <system/ThreadData.hpp>       // for ThreadData definition
 // Pull in the concrete dds types and THREADMEM_* macros directly so
 // this translation unit can compute TT defaults without relying on
 // build-system include remapping.
 #include <api/dds.h>
-#include <trans_table/TransTable.h>
-#include <trans_table/TransTableS.h>
-#include <trans_table/TransTableL.h>
+#include <trans_table/TransTable.hpp>
+#include <trans_table/TransTableS.hpp>
+#include <trans_table/TransTableL.hpp>
 #include <memory>
 #include <mutex>
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
-#include <system/util/Arena.h>
-#include <utility/ScratchAllocTLS.h>
+#include <system/util/Arena.hpp>
+#include <utility/ScratchAllocTLS.hpp>
 
 namespace {
 // Central registry mapping ThreadData* to its TransTable instance.

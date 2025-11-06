@@ -11,10 +11,10 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <string.h>
+#include <cstring>
 
-#include "System.h"
-#include "Scheduler.h"
+#include "System.hpp"
+#include "Scheduler.hpp"
 
 extern Scheduler scheduler;
 
@@ -26,7 +26,7 @@ extern Scheduler scheduler;
     #pragma warning(disable: 4061 4191 4619 4623 5031)
   #endif
 
-  #include <boost/thread.hpp>
+  #include <boost/thread.hpppp>
 
   #ifdef _MSC_VER
     #pragma warning(pop)
@@ -51,7 +51,7 @@ extern Scheduler scheduler;
     #pragma warning(disable: 4355 4619 5038)
   #endif
 
-  #include "ppl.h"
+  #include "ppl.hpp"
 
   #ifdef _MSC_VER
     #pragma warning(pop)
@@ -69,8 +69,8 @@ extern Scheduler scheduler;
   #pragma GCC diagnostic ignored "-Wsign-conversion"
   #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 
-  #include "tbb/tbb.h"
-  #include "tbb/tbb_thread.h"
+  #include "tbb/tbb.hpp"
+  #include "tbb/tbb_thread.hpp"
 
   #pragma GCC diagnostic pop
 

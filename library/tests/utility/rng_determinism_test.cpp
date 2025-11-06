@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include <random>
 #include <vector>
-#include <solver_context/SolverContext.h>
-#include "system/Memory.h"
+#include <solver_context/SolverContext.hpp>
+#include "system/Memory.hpp"
 
 TEST(UtilitiesRngTest, DeterministicSequenceWithSeed) {
   // Set up a minimal ThreadData directly; TT is unused in this test.

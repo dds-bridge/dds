@@ -9,10 +9,10 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "trans_table/TransTable.h"
-#include "trans_table/TransTableS.h"
-#include "trans_table/TransTableL.h"
-#include "mock_data_generators.h"
+#include "trans_table/TransTable.hpp"
+#include "trans_table/TransTableS.hpp"
+#include "trans_table/TransTableL.hpp"
+#include "mock_data_generators.hpp"
 
 namespace dds_test {
 

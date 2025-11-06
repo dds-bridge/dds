@@ -2,8 +2,8 @@
 #include <gtest/gtest.h>
 #include <cassert>
 #include <iostream>
-#include "heuristic_sorting/internal.h"
-#include "heuristic_sorting/heuristic_sorting.h"
+#include "heuristic_sorting/internal.hpp"
+#include "heuristic_sorting/heuristic_sorting.hpp"
 class HeuristicSortingUnitTest : public ::testing::Test {
  protected:
   HeuristicSortingUnitTest() = default;

@@ -34,7 +34,7 @@ cc_test(
 
 cc_test(
     name = "targeted_unit_tests",
-    srcs = ["targeted_unit_tests.cpp" , "test_utils.cpp", "test_utils.h"],
+    srcs = ["targeted_unit_tests.cpp" , "test_utils.cpp", "test_utils.hpp"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
     "@googletest//:gtest_main",

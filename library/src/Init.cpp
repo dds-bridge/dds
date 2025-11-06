@@ -8,20 +8,20 @@
 */
 
 
-#include "Init.h"
+#include "Init.hpp"
 #include <cstring>
-#include <system/System.h>
-#include <system/Scheduler.h>
-#include <system/ThreadMgr.h>
+#include <system/System.hpp>
+#include <system/Scheduler.hpp>
+#include <system/ThreadMgr.hpp>
 #include <utility/debug.h>
 #include <utility/Constants.h>
-#include <lookup_tables/LookupTables.h>
-#include "SolveBoard.h"
-#include "CalcTables.h"
-#include "PlayAnalyser.h"
+#include <lookup_tables/LookupTables.hpp>
+#include "SolveBoard.hpp"
+#include "CalcTables.hpp"
+#include "PlayAnalyser.hpp"
 // Order matters: include TransTable to ensure complete type for virtual calls
-#include <trans_table/TransTable.h>
-#include <solver_context/SolverContext.h>
+#include <trans_table/TransTable.hpp>
+#include <solver_context/SolverContext.hpp>
 
 System sysdep(
     &SolveChunkCommon,

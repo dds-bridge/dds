@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <chrono>
-#include <lookup_tables/LookupTables.h>
+#include <lookup_tables/LookupTables.hpp>
 
 class LookupTablesTest : public ::testing::Test {
 protected:

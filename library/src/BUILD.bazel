@@ -10,8 +10,8 @@ filegroup(
     name = "dds_sources",
     srcs = glob([
         "*.cpp",
-        "*.h",
         "*.hpp",
+        "*.h",
     ],
     exclude = external_headers,
     )
@@ -54,7 +54,7 @@ filegroup(
 filegroup(
     name = "testable_dds_headers",
     srcs = glob([
-        "*.h", "*.hpp",
+        "*.hpp", "*.h",
     ],),
 )
 

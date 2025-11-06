@@ -1,7 +1,7 @@
 #ifndef DDS_HEURISTIC_SORTING_INTERNAL_H
 #define DDS_HEURISTIC_SORTING_INTERNAL_H
 
-#include "heuristic_sorting.h"
+#include "heuristic_sorting.hpp"
 
 // Internal helper functions for the heuristic sorting library
 void WeightAllocTrump0(HeuristicContext& context);

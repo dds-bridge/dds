@@ -80,10 +80,10 @@
 
 
 #include <iomanip>
-#include <math.h>
+#include <cmath>
 #include <array>
 
-#include "TransTableL.h"
+#include "TransTableL.hpp"
 #include <utility/Constants.h>
 
 // Local using-declarations for readability in this implementation file only.

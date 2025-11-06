@@ -1,4 +1,4 @@
-#include "system/util/Arena.h"
+#include "system/util/Arena.hpp"
 #include <gtest/gtest.h>
 
 using dds::Arena;
