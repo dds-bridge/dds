@@ -107,6 +107,10 @@ public:
   public:
   SearchContext() = default;
   explicit SearchContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
+    // Returns the owned transposition table instance (creates if null)
+    TransTable* transTable();
+    // Returns the TT instance if it exists, or nullptr
+    TransTable* maybeTransTable() const;
     // analysis flag used to control incremental analysis behavior
     bool& analysisFlag();
     bool analysisFlag() const;
@@ -133,11 +137,17 @@ public:
     int iniDepth() const;
   private:
     std::shared_ptr<ThreadData> thr_;
+    // Instance-owned transposition table, created lazily on first access.
+    std::unique_ptr<TransTable> tt_{};
+    // Back-reference to the owning SolverContext (for config, utilities, arena).
+    SolverContext* owner_ = nullptr;
   public:
     // Allow SolverContext to bind or rebind the underlying ThreadData
     // after construction (useful when SolverContext owns the ThreadData
     // and sets it up after default construction).
     void set_thread(const std::shared_ptr<ThreadData>& thr) { thr_ = thr; }
+    // Bind the owning SolverContext instance for access to config/utilities/arena
+    void set_owner(SolverContext* owner) { owner_ = owner; }
   };
 
   // Expose a persistent SearchContext owned by the SolverContext.

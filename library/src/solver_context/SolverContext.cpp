@@ -73,6 +73,7 @@ SolverContext::SolverContext(SolverConfig cfg)
   if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
   // Ensure persistent facades like SearchContext see the bound ThreadData.
   search_.set_thread(thr_);
+  search_.set_owner(this);
 }
 
 TransTable* SolverContext::transTable() const
@@ -240,6 +241,95 @@ void SolverContext::SearchContext::clearForbiddenMoves() {
     thr_->forbiddenMoves[k].rank = 0;
     thr_->forbiddenMoves[k].suit = 0;
   }
+}
+
+// New: per-context transposition table accessors
+TransTable* SolverContext::SearchContext::maybeTransTable() const {
+  return tt_ ? tt_.get() : nullptr;
+}
+
+TransTable* SolverContext::SearchContext::transTable() {
+  if (tt_) return tt_.get();
+  // Require owner (for config, utilities, and arena). If missing, best
+  // effort: proceed with ThreadData-derived defaults.
+  TTKind kind = TTKind::Large;
+  int defMB = 0;
+  int maxMB = 0;
+  if (owner_) {
+    kind = owner_->config().ttKind;
+    defMB = owner_->config().ttMemDefaultMB;
+    maxMB = owner_->config().ttMemMaximumMB;
+  }
+  // Fallback to ThreadData-derived settings if not provided via config
+  if (thr_) {
+    if (kind != TTKind::Small && kind != TTKind::Large) {
+      kind = (thr_->ttType == DDS_TT_SMALL ? TTKind::Small : TTKind::Large);
+    }
+    if (defMB <= 0) defMB = thr_->ttMemDefault_MB;
+    if (maxMB <= 0) maxMB = thr_->ttMemMaximum_MB;
+  }
+  // Final fallback to THREADMEM_* constants
+  if (defMB <= 0 || maxMB <= 0) {
+    if (kind == TTKind::Small) {
+      defMB = THREADMEM_SMALL_DEF_MB;
+      maxMB = THREADMEM_SMALL_MAX_MB;
+    } else {
+      defMB = THREADMEM_LARGE_DEF_MB;
+      maxMB = THREADMEM_LARGE_MAX_MB;
+    }
+  }
+  // Optional environment overrides
+  if (const char* s = std::getenv("DDS_TT_DEFAULT_MB")) {
+    int v = std::atoi(s);
+    if (v > 0) defMB = v;
+  }
+  if (const char* s = std::getenv("DDS_TT_LIMIT_MB")) {
+    int v = std::atoi(s);
+    if (v > 0) maxMB = std::min(maxMB, v);
+  }
+  if (maxMB < defMB) maxMB = defMB;
+
+  // Create appropriate concrete table
+  if (kind == TTKind::Small)
+    tt_ = std::unique_ptr<TransTable>(new TransTableS());
+  else
+    tt_ = std::unique_ptr<TransTable>(new TransTableL());
+
+  tt_->set_memory_default(defMB);
+  tt_->set_memory_maximum(maxMB);
+  tt_->make_tt();
+
+#ifdef DDS_UTILITIES_LOG
+  {
+    const char kch = (kind == TTKind::Small ? 'S' : 'L');
+    char* buf = nullptr;
+    constexpr std::size_t kLen = 96;
+    dds::Arena* a = nullptr;
+    if (owner_) a = const_cast<SolverContext*>(owner_)->arena();
+    if (a) buf = static_cast<char*>(a->allocate({kLen, alignof(char)}));
+    char local[kLen];
+    if (!buf) buf = local;
+    std::snprintf(buf, kLen, "tt:create|%c|%d|%d", kch, defMB, maxMB);
+    if (owner_) owner_->utilities().logAppend(std::string(buf));
+  }
+#endif
+
+#ifdef DDS_UTILITIES_STATS
+  if (owner_) owner_->utilities().util().stats().tt_creates++;
+#endif
+
+  // Optional one-time debug print per creation
+  if (const char* dbg = std::getenv("DDS_DEBUG_TT_CREATE")) {
+    if (*dbg) {
+      std::cerr << "[DDS] TT create: kind="
+                << (kind == TTKind::Small ? 'S' : 'L')
+                << " defMB=" << defMB
+                << " maxMB=" << maxMB
+                << std::endl;
+    }
+  }
+
+  return tt_.get();
 }
 
 TransTable* SolverContext::maybeTransTable() const
