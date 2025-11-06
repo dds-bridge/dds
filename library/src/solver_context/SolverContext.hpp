@@ -185,7 +185,7 @@ public:
   // --- Move generation facade ---
   class MoveGenContext {
   public:
-    explicit MoveGenContext(std::shared_ptr<ThreadData> thr, const SolverContext* owner)
+    explicit MoveGenContext(std::shared_ptr<ThreadData> thr)
       : thr_(std::move(thr)) {}
 
     int MoveGen0(
