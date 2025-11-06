@@ -11,7 +11,7 @@
 #ifndef DDS_DLL_H
 #define DDS_DLL_H
 
-#include "utility/Constants.h"
+#include <utility/Constants.h>
 
 #if (defined(_WIN32) || defined(__CYGWIN__)) && ! defined(__clang__)
   #define DLLEXPORT __declspec(dllexport)

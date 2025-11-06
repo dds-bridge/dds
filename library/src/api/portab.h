@@ -47,7 +47,7 @@
 
   #define USES_CONSTRUCTOR
 
-  typedef long long __int64;
+  typedef long long int64;
 
 #endif
 
