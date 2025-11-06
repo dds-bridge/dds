@@ -46,6 +46,7 @@ public:
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
     // Bind the persistent facades to the underlying ThreadData.
     search_.set_thread(thr_);
+    search_.set_owner(this);
   }
 
   // NOTE: constructors that accepted raw ThreadData* were removed as part
@@ -111,6 +112,8 @@ public:
     TransTable* transTable();
     // Returns the TT instance if it exists, or nullptr
     TransTable* maybeTransTable() const;
+    // Dispose and erase the TT instance owned by this context, if any.
+    void disposeTransTable();
     // analysis flag used to control incremental analysis behavior
     bool& analysisFlag();
     bool analysisFlag() const;
