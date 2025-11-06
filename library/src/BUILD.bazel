@@ -11,7 +11,7 @@ filegroup(
     srcs = glob([
         "*.cpp",
         "*.h",
-        "*hpp",
+        "*.hpp",
     ],
     exclude = external_headers,
     )
