@@ -13,8 +13,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "../include/dll.h"
-#include "hands.hpp"
+#include "../include/dll.hpp"
+#include "hands.h"
 
 #define SP 0
 #define HE 1

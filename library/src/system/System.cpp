@@ -26,7 +26,7 @@ extern Scheduler scheduler;
     #pragma warning(disable: 4061 4191 4619 4623 5031)
   #endif
 
-  #include <boost/thread.hpppp>
+  #include <boost/thread.hpp>
 
   #ifdef _MSC_VER
     #pragma warning(pop)
@@ -51,7 +51,7 @@ extern Scheduler scheduler;
     #pragma warning(disable: 4355 4619 5038)
   #endif
 
-  #include "ppl.hpp"
+  #include "ppl.h"
 
   #ifdef _MSC_VER
     #pragma warning(pop)
@@ -69,8 +69,8 @@ extern Scheduler scheduler;
   #pragma GCC diagnostic ignored "-Wsign-conversion"
   #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 
-  #include "tbb/tbb.hpp"
-  #include "tbb/tbb_thread.hpp"
+  #include "tbb/tbb.h"
+  #include "tbb/tbb_thread.h"
 
   #pragma GCC diagnostic pop
 

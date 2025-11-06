@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include "../include/dll.hpp"
-#include "hands.hpp"
+#include "hands.h"
 
 
 int main()
