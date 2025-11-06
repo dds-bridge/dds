@@ -19,8 +19,6 @@
 
 #include "Moves.hpp"
 #include "heuristic_sorting/heuristic_sorting.hpp"
-// Optional arena-backed scratch support (wired via TLS by SolverContext)
-#include "utility/ScratchAllocTLS.hpp"
 #include <lookup_tables/LookupTables.hpp>
 
 #ifdef DDS_MOVES
