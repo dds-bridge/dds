@@ -7,24 +7,22 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_QUICKTRICKS_H
-#define DDS_QUICKTRICKS_H
+#ifndef DDS_LATERTRICKS_H
+#define DDS_LATERTRICKS_H
 
 #include <api/dds.h>
-#include "system/Memory.h"
-#include <solver_context/SolverContext.h>
+#include <solver_context/SolverContext.hpp>
 
 
-int QuickTricks(
+bool LaterTricksMIN(
   pos& tpos,
   const int hand,
   const int depth,
   const int target,
   const int trump,
-  bool& result,
   SolverContext& ctx);
 
-bool QuickTricksSecondHand(
+bool LaterTricksMAX(
   pos& tpos,
   const int hand,
   const int depth,

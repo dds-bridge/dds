@@ -7,8 +7,8 @@ cc_library(
         "mock_data_generators.cpp",
     ],
     hdrs = [
-        "test_utilities.h",
-        "mock_data_generators.h",
+        "test_utilities.hpp",
+        "mock_data_generators.hpp",
     ],
     deps = [
         "//library/src/trans_table:testable_trans_table",

@@ -14,7 +14,7 @@
 #include <string>
 
 #include <api/dds.h>
-#include "heuristic_sorting/heuristic_sorting.h"
+#include <heuristic_sorting/heuristic_sorting.hpp>
 
 using namespace std;
 

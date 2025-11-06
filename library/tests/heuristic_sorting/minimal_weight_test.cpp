@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include "heuristic_sorting/heuristic_sorting.h"
-#include "heuristic_sorting/internal.h"
+#include "heuristic_sorting/heuristic_sorting.hpp"
+#include "heuristic_sorting/internal.hpp"
 #include <api/dll.h>
 
 /**

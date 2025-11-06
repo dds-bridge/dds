@@ -9,7 +9,7 @@
 
 
 #include <api/dll.h>
-#include "Init.h"
+#include "Init.hpp"
 
 #ifdef _MANAGED
   #pragma managed(push, off)

@@ -10,13 +10,13 @@
 
 #include <iostream>
 #include <iomanip>
-#include <string.h>
+#include <cstring>
 
-#include "loop.h"
-#include "TestTimer.h"
-#include "compare.h"
-#include "print.h"
-#include "moves/Moves.h"
+#include "loop.hpp"
+#include "TestTimer.hpp"
+#include "compare.hpp"
+#include "print.hpp"
+#include "moves/Moves.hpp"
 
 using namespace std;
 

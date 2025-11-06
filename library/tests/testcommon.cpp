@@ -14,13 +14,13 @@
 
 #include <api/dll.h>
 
-#include "testcommon.h"
-#include "TestTimer.h"
-#include "parse.h"
-#include "loop.h"
-#include "print.h"
-#include "cst.h"
-#include "system/Scheduler.h"
+#include "testcommon.hpp"
+#include "TestTimer.hpp"
+#include "parse.hpp"
+#include "loop.hpp"
+#include "print.hpp"
+#include "cst.hpp"
+#include "system/Scheduler.hpp"
 
 using namespace std;
 

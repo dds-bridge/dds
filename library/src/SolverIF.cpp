@@ -7,16 +7,16 @@
    See LICENSE and README.
 */
 
-#include "SolverIF.h"
-#include "Init.h"
-#include "ABsearch.h"
-#include "system/TimerList.h"
-#include "system/System.h"
-#include "system/Scheduler.h"
-#include "trans_table/TransTable.h"
-#include <solver_context/SolverContext.h>
-#include "dump.h"
-#include <lookup_tables/LookupTables.h>
+#include "SolverIF.hpp"
+#include "Init.hpp"
+#include "ABsearch.hpp"
+#include <system/TimerList.hpp>
+#include <system/System.hpp>
+#include <system/Scheduler.hpp>
+#include <trans_table/TransTable.hpp>
+#include <solver_context/SolverContext.hpp>
+#include "dump.hpp"
+#include <lookup_tables/LookupTables.hpp>
 #include <api/SolveBoard.hpp>
 
 extern System sysdep;

@@ -11,7 +11,7 @@
 #define DDS_SOLVEBOARD_HPP
 
 #include <api/dds.h>
-#include <solver_context/SolverContext.h>
+#include <solver_context/SolverContext.hpp>
 
 // C++-only overload exposed via <api/...> for C++ clients managing state.
 int SolveBoard(

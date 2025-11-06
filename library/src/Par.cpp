@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <cstring>
 #include <api/dds.h>
-#include "PBN.h"
+#include "PBN.hpp"
 
 using namespace std;
 

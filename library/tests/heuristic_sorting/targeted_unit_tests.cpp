@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include <cstring>
 
-#include "heuristic_sorting/internal.h"
-#include "heuristic_sorting/heuristic_sorting.h"
-#include "test_utils.h"
-#include "moves/Moves.h"
+#include "heuristic_sorting/internal.hpp"
+#include "heuristic_sorting/heuristic_sorting.hpp"
+#include "test_utils.hpp"
+#include "moves/Moves.hpp"
 
 // Targeted unit tests for small helper functions and golden expectations
 
@@ -65,7 +65,7 @@ TEST(TargetedUnitTests, GetTopNumberEdgeCases) {
   trackType track_dummy = {};
   HeuristicContext ctx = { tpos, bm, bmtt, thrp_rel_dummy, mply_dummy, 0, 0, DDS_NOTRUMP, 0, &track_dummy, 0, 0, 0, 0 };
 
-  // Call the free helper GetTopNumber from internal.h
+  // Call the free helper GetTopNumber from internal.hpp
   GetTopNumber(ctx, 0, 14, topNumber, mno);
   // topNumber may be -1 if no candidate found; ensure values are in expected ranges
   EXPECT_GE(topNumber, -1);

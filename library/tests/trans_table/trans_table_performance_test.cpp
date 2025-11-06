@@ -8,10 +8,10 @@
 #include <vector>
 #include <memory>
 
-#include "trans_table/TransTable.h"
-#include "trans_table/TransTableS.h"
-#include "trans_table/TransTableL.h"
-#include "library/tests/trans_table/mock_data_generators.h"
+#include "trans_table/TransTable.hpp"
+#include "trans_table/TransTableS.hpp"
+#include "trans_table/TransTableL.hpp"
+#include "library/tests/trans_table/mock_data_generators.hpp"
 
 using dds_test::MockDataFactory;
 using TestScenario = dds_test::MockDataFactory::TestScenario;

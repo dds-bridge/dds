@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <memory>
-#include "trans_table/TransTable.h"
+#include "trans_table/TransTable.hpp"
 
 namespace dds_test {
 

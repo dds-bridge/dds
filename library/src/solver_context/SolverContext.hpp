@@ -9,10 +9,10 @@
 #ifndef DDS_SYSTEM_SOLVERCONTEXT_H
 #define DDS_SYSTEM_SOLVERCONTEXT_H
 
-#include <system/ThreadData.h>
-#include <system/util/Utilities.h>
-#include <system/util/Arena.h>
-#include <trans_table/TransTable.h>
+#include <system/ThreadData.hpp>
+#include <system/util/Utilities.hpp>
+#include <system/util/Arena.hpp>
+#include <trans_table/TransTable.hpp>
 #include <string>
 #include <vector>
 #include <random>

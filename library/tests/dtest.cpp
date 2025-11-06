@@ -12,9 +12,9 @@
 #include <unistd.h>
 
 #include <api/dll.h>
-#include "testcommon.h"
-#include "args.h"
-#include "cst.h"
+#include "testcommon.hpp"
+#include "args.hpp"
+#include "cst.hpp"
 
 using namespace std;
 

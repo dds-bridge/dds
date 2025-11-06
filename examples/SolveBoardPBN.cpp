@@ -11,10 +11,10 @@
 // Test program for the SolveBoardPBN function.
 // Uses the hands pre-set in hands.cpp.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "../include/dll.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include "../include/dll.hpp"
 #include "hands.h"
 
 

@@ -7,13 +7,13 @@
    See LICENSE and README.
 */
 
-#include "PlayAnalyser.h"
-#include "SolverIF.h"
-#include "system/System.h"
-#include "system/Memory.h"
-#include "system/Scheduler.h"
-#include "PBN.h"
-#include <solver_context/SolverContext.h>
+#include "PlayAnalyser.hpp"
+#include "SolverIF.hpp"
+#include <system/System.hpp>
+#include <system/Memory.hpp>
+#include <system/Scheduler.hpp>
+#include <PBN.hpp>
+#include <solver_context/SolverContext.hpp>
 
 using namespace std;
 

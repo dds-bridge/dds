@@ -12,9 +12,9 @@
 #include <sstream>
 #include <fstream>
 
-#include "trans_table/TransTable.h"
-#include <solver_context/SolverContext.h>
-#include "dump.h"
+#include <trans_table/TransTable.hpp>
+#include <solver_context/SolverContext.hpp>
+#include "dump.hpp"
 
 
 string PrintSuit(const unsigned short suitCode);

@@ -11,10 +11,10 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <string.h>
+#include <cstring>
 
-#include "System.h"
-#include "Scheduler.h"
+#include "System.hpp"
+#include "Scheduler.hpp"
 
 extern Scheduler scheduler;
 

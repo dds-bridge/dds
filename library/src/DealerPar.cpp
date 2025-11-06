@@ -10,8 +10,8 @@
 
 #include <vector>
 #include <string>
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 
 #include <api/dll.h>
 

@@ -4,7 +4,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "scratch_alloc_tls",
     srcs = ["ScratchAllocTLS.cpp"],
-    hdrs = ["ScratchAllocTLS.h"],
+    hdrs = ["ScratchAllocTLS.hpp"],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,

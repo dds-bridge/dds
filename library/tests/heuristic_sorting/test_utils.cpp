@@ -1,13 +1,13 @@
-#include "test_utils.h"
+#include "test_utils.hpp"
 #include <fstream>
 #include <sstream>
 #include <cstring>
 #include <vector>
 #include <algorithm>
 
-#include "heuristic_sorting/heuristic_sorting.h"
-#include "heuristic_sorting/internal.h"
-#include <lookup_tables/LookupTables.h>
+#include "heuristic_sorting/heuristic_sorting.hpp"
+#include "heuristic_sorting/internal.hpp"
+#include <lookup_tables/LookupTables.hpp>
 
 // Normalization: stable textual representation (same as serialize for now)
 std::string normalize_ordering(const moveType* moves, int numMoves, bool include_scores) {

@@ -11,7 +11,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "TestTimer.h"
+#include "TestTimer.hpp"
 
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;

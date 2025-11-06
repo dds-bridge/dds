@@ -7,20 +7,20 @@
    See LICENSE and README.
 */
 
-#include <math.h>
+#include <cmath>
 #include <iostream>
 
-#include "Scheduler.h"
+#include "Scheduler.hpp"
 #include <fstream>
 #include <iomanip>
-#include <lookup_tables/LookupTables.h>
+#include <lookup_tables/LookupTables.hpp>
 #ifdef DDS_SCHEDULER
-#include "TimeStatList.h"
+#include "TimeStatList.hpp"
 
-// debug.h lives in the parent directory; some build configurations
+// debug.hpp lives in the parent directory; some build configurations
 // may not expose it via include paths for this target. Provide
 // safe fallbacks for the scheduler filename macros if they are
-// not already defined by debug.h.
+// not already defined by debug.hpp.
 #ifndef DDS_SCHEDULER_PREFIX
 #define DDS_SCHEDULER_PREFIX "sched"
 #endif

@@ -7,17 +7,17 @@
    See LICENSE and README.
 */
 
-#include <assert.h>
+#include <cassert>
 
-#include "trans_table/TransTable.h"
-#include <solver_context/SolverContext.h>
-#include "QuickTricks.h"
-#include "LaterTricks.h"
-#include "ABsearch.h"
-#include "ABstats.h"
-#include "system/TimerList.h"
-#include "dump.h"
-#include <lookup_tables/LookupTables.h>
+#include <trans_table/TransTable.hpp>
+#include <solver_context/SolverContext.hpp>
+#include "QuickTricks.hpp"
+#include "LaterTricks.hpp"
+#include "ABsearch.hpp"
+#include "ABstats.hpp"
+#include <system/TimerList.hpp>
+#include "dump.hpp"
+#include <lookup_tables/LookupTables.hpp>
 
 // Internal ctx-enabled variants (forward declarations)
 static bool ABsearch0_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);

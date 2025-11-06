@@ -48,7 +48,7 @@
 #include <vector>
 #include <string>
 
-#include "TimerGroup.h"
+#include "TimerGroup.hpp"
 
 using namespace std;
 

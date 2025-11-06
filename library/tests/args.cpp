@@ -16,13 +16,13 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <sys/stat.h>
 
 
-#include "args.h"
-#include "cst.h"
+#include "args.hpp"
+#include "cst.hpp"
 
 using namespace std;
 

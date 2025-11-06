@@ -9,8 +9,8 @@
 
 #include <algorithm>
 
-#include "LaterTricks.h"
-#include <solver_context/SolverContext.h>
+#include "LaterTricks.hpp"
+#include <solver_context/SolverContext.hpp>
 
 
 /**

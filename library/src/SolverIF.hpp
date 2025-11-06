@@ -11,7 +11,7 @@
 #define DDS_SOLVERIF_H
 
 #include <api/dds.h>
-#include <solver_context/SolverContext.h>
+#include <solver_context/SolverContext.hpp>
 #include <memory>
 
 int SolveBoardInternal(

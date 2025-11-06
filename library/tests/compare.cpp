@@ -9,9 +9,9 @@
 
 
 #include <vector>
-#include <string.h>
+#include <cstring>
 
-#include "compare.h"
+#include "compare.hpp"
 
 using namespace std;
 

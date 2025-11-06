@@ -1,4 +1,4 @@
-#include "utility/ScratchAllocTLS.h"
+#include "utility/ScratchAllocTLS.hpp"
 
 namespace dds {
 namespace tls {
