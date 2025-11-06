@@ -1,19 +1,25 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
+external_headers = [
+    "dds.h",
+    "dds.hpp",
+]
+
 filegroup(
     name = "dds_sources",
     srcs = glob([
         "*.cpp",
         "*.h",
+        "*.hpp",
     ],
-    exclude=["dds.h"],
+    exclude = external_headers,
     )
 )
 
 filegroup(
     name = "dds_headers",
-    srcs = ["dds.h"],
+    srcs = external_headers,
 )
 
 cc_library(
@@ -48,7 +54,7 @@ filegroup(
 filegroup(
     name = "testable_dds_headers",
     srcs = glob([
-        "*.h",
+        "*.h", "*.hpp",
     ],),
 )
 

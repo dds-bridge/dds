@@ -17,7 +17,7 @@ cc_test(
     copts = [],
     deps = [
         "//library/src:dds",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )

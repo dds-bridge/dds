@@ -11,17 +11,8 @@
 #define DDS_SOLVERIF_H
 
 #include <api/dds.h>
-#include "system/Memory.h"
 #include <solver_context/SolverContext.h>
 #include <memory>
-
-int SolveBoardWithContext(
-  SolverContext& ctx,
-  const deal& dl,
-  int target,
-  int solutions,
-  int mode,
-  futureTricks* futp);
 
 int SolveBoardInternal(
   SolverContext& ctx,

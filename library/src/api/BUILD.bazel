@@ -3,7 +3,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "api_definitions",
-    hdrs = ["dds.h", "dll.h", "portab.h", "SolverIF.h", "PBN.h"],
+    hdrs = ["dds.h", "dll.h", "portab.h", "PBN.h", "SolveBoard.hpp"],
     include_prefix = "api",
     visibility = ["//visibility:public"],
     deps = [

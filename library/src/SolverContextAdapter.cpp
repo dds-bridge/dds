@@ -1,15 +1,7 @@
 #include <solver_context/SolverContext.h>
+#include "SolverIF.h"
 
-// Legacy internal entry point; avoid heavy includes here.
-int SolveBoardInternal(
-  SolverContext& ctx,
-  const deal& dl,
-  const int target,
-  const int solutions,
-  const int mode,
-  futureTricks * futp);
-
-int SolveBoardWithContext(
+int SolveBoard(
   SolverContext& ctx,
   const deal& dl,
   int target,
