@@ -1,10 +1,6 @@
 #include "SolverContext.hpp"
 
-// Keep dependencies local to this implementation to avoid include churn.
-#include <system/ThreadData.hpp>       // for ThreadData definition
-// Pull in the concrete dds types and THREADMEM_* macros directly so
-// this translation unit can compute TT defaults without relying on
-// build-system include remapping.
+#include <system/ThreadData.hpp> 
 #include <api/dds.h>
 #include <trans_table/TransTable.hpp>
 #include <trans_table/TransTableS.hpp>
@@ -13,8 +9,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <system/util/Utilities.hpp>
-
-// No global Arena registry: arenas are instance-owned by SolverContext.
 
 // Owned-ThreadData constructor: allocate ThreadData as a member of the
 // SolverContext so callers can create a context at the top of the stack
@@ -39,7 +33,12 @@ TransTable* SolverContext::transTable() const
   return const_cast<SolverContext*>(this)->search_.transTable();
 }
 
-// No arena accessors: arena detached from SolverContext.
+// --- SearchContext disposal helper ---
+void SolverContext::SearchContext::disposeTransTable()
+{
+  // Simply reset the unique_ptr; logging/stats are handled by caller.
+  tt_.reset();
+}
 
 // --- SearchContext out-of-line definitions ---
 bool& SolverContext::SearchContext::analysisFlag() { return thr_->analysisFlag; }
@@ -414,13 +413,6 @@ void SolverContext::MoveGenContext::PrintTrickStats(std::ofstream& fout) const
 void SolverContext::MoveGenContext::PrintFunctionStats(std::ofstream& fout) const
 {
   thr_->moves.PrintFunctionStats(fout);
-}
-
-// --- SearchContext disposal helper ---
-void SolverContext::SearchContext::disposeTransTable()
-{
-  // Simply reset the unique_ptr; logging/stats are handled by caller.
-  tt_.reset();
 }
 
 void SolverContext::MoveGenContext::PrintTrickDetails(std::ofstream& fout) const
