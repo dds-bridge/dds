@@ -82,7 +82,31 @@ public:
   inline UtilitiesContext utilities() { return UtilitiesContext(&utils_); }
   inline UtilitiesContext utilities() const { return UtilitiesContext(&utils_); }
 
-  // Arena support removed; logging uses stack buffers.
+  // Developer note — TT lifecycle (instance-scoped)
+  //
+  // - Ownership: Each SolverContext::SearchContext owns its TransTable (TT)
+  //   via a std::unique_ptr created lazily on first access. There is no
+  //   global TT registry and no ThreadData-owned TT.
+  // - Configuration: The effective TT kind and memory sizes are determined by
+  //   the SolverContext's SolverConfig (ttKind, ttMemDefaultMB, ttMemMaximumMB),
+  //   with optional environment overrides:
+  //     DDS_TT_DEFAULT_MB  — overrides default MB if > 0
+  //     DDS_TT_LIMIT_MB    — caps maximum MB if > 0
+  //   Call ConfigureTT(...) at runtime to persist a new configuration and apply
+  //   it to an existing TT (resize in place) or recreate if the kind changes.
+  // - Reset semantics:
+  //     ResetForSolve()        — clears a subset of search state and calls
+  //                               tt->reset_memory(FreeMemory) when a TT exists;
+  //                               preserves the TT allocation for reuse.
+  //     ResetBestMovesLite()   — clears only best-move ranks and updates memUsed.
+  //     ClearTT()              — returns all TT memory to the system; preserves
+  //                               future config and recreates lazily on demand.
+  //     DisposeTransTable()    — destroys the owned TT immediately.
+  // - Diagnostics: When built with DDS_UTILITIES_LOG / DDS_UTILITIES_STATS, TT
+  //   lifecycle events append compact log entries and bump small counters.
+  //
+  // Arena support has been removed from the SolverContext; logging uses
+  // stack-allocated buffers only.
 
   // Returns the owned transposition table instance (creates if null)
   TransTable* transTable() const;
@@ -256,7 +280,8 @@ private:
   // NOTE: `owned_thr_` removed; `thr_` now represents the shared ownership
   // (if any) for this context.
   // Transposition table is now owned per SearchContext and created lazily.
-  // Arena is instance-owned by SolverContext and created lazily based on config.
+  //
+  // See the developer note above for details on TT lifecycle and resets.
 };
 
 double ThreadMemoryUsed();

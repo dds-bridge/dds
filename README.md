@@ -127,3 +127,50 @@ Testing and build variants
     - Logging: `//library/src/system:system_util_log`, `//library/src:testable_dds_util_log`.
     - Stats: `//library/src/system:system_util_stats`, `//library/src:testable_dds_util_stats`.
 
+
+Transposition table (TT) ownership and configuration
+====================================================
+
+As of the 3.x work-in-progress, the transposition table is owned per solver instance, not globally. This makes repeated solves cheaper and removes cross-thread coupling.
+
+- Ownership and lifecycle
+    - Each `SolverContext` has a nested `SearchContext` that owns a TT (`std::unique_ptr<TransTable>`), created lazily on first use.
+    - There is no global TT registry; `ThreadData` no longer carries a TT.
+    - You can explicitly dispose or clear the TT:
+        - `ctx.DisposeTransTable()` destroys the TT now.
+        - `ctx.ClearTT()` returns all TT memory but keeps configuration; the TT will be recreated lazily.
+        - `ctx.ResetForSolve()` preserves the TT allocation and resets a small subset of search state, matching legacy behavior for iterative solves.
+
+- Runtime configuration
+    - Use `ctx.ConfigureTT(TTKind kind, int defaultMB, int maximumMB)` to set TT type and memory bounds at runtime.
+        - If the kind changes (Small ↔ Large), the TT is recreated immediately.
+        - If the kind is unchanged, the TT is resized in place.
+    - Environment variables remain supported and are applied as overrides when present:
+        - `DDS_TT_DEFAULT_MB` — override default size if > 0.
+        - `DDS_TT_LIMIT_MB` — cap the maximum size if > 0.
+
+- Minimal usage sketch
+    ```cpp
+    #include <solver_context/SolverContext.hpp>
+    using namespace dds; // if applicable in your codebase
+
+    SolverContext ctx;               // owns its ThreadData
+    ctx.ConfigureTT(TTKind::Large,   // or TTKind::Small
+                                    256,             // default MB
+                                    1024);           // maximum MB
+
+    // ... run one or more solves using APIs that accept a SolverContext ...
+
+    ctx.ResetForSolve();  // prepare for another solve, preserving TT allocation
+    // Optionally: ctx.ClearTT();     // drop TT memory, keep config
+    // Optionally: ctx.DisposeTransTable(); // destroy TT entirely
+    ```
+
+Diagnostics
+- When compiled with `DDS_UTILITIES_LOG`, TT lifecycle events (create/resize/clear/dispose) emit compact log entries into `ctx.utilities().logBuffer()`.
+- When compiled with `DDS_UTILITIES_STATS`, small counters (e.g., `tt_creates`, `tt_disposes`) are incremented under `ctx.utilities().util().stats()`.
+
+Compatibility notes
+- Public DLL-style APIs continue to work; the internal implementation now routes TT ownership through `SolverContext`.
+- Existing environment variable behavior is preserved; runtime configuration clamps to any active `DDS_TT_LIMIT_MB`.
+
