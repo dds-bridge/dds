@@ -61,9 +61,8 @@ struct ThreadData
   relRanksType rel[8192];
 
   // Deferred TT configuration for context-owned construction
-  TTmemory ttType = DDS_TT_SMALL;
-  int ttMemDefault_MB = 0;
-  int ttMemMaximum_MB = 0;
+  // TransTable configuration moved to SolverContext::SolverConfig and
+  // per-context member in SolverContext::SearchContext.
 
   Moves moves;
 

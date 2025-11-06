@@ -43,16 +43,6 @@ SolverContext::SolverContext(SolverConfig cfg)
 #endif
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();
-  // Ensure ThreadData has sensible TT defaults so later lookup doesn't
-  // rely solely on zero-initialized fields. Prefer explicit config from
-  // SolverConfig when provided.
-  thr_->ttType = (cfg_.ttKind == TTKind::Small ? DDS_TT_SMALL : DDS_TT_LARGE);
-  if (thr_->ttMemDefault_MB <= 0) {
-    thr_->ttMemDefault_MB = (thr_->ttType == DDS_TT_SMALL ? THREADMEM_SMALL_DEF_MB : THREADMEM_LARGE_DEF_MB);
-  }
-  if (thr_->ttMemMaximum_MB <= 0) {
-    thr_->ttMemMaximum_MB = (thr_->ttType == DDS_TT_SMALL ? THREADMEM_SMALL_MAX_MB : THREADMEM_LARGE_MAX_MB);
-  }
   if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
   // Ensure persistent facades like SearchContext see the bound ThreadData.
   search_.set_thread(thr_);
@@ -139,24 +129,11 @@ TransTable* SolverContext::SearchContext::maybeTransTable() const {
 
 TransTable* SolverContext::SearchContext::transTable() {
   if (tt_) return tt_.get();
-  // Require owner (for config, utilities, and arena). If missing, best
-  // effort: proceed with ThreadData-derived defaults.
-  TTKind kind = TTKind::Large;
-  int defMB = 0;
-  int maxMB = 0;
-  if (owner_) {
-    kind = owner_->config().ttKind;
-    defMB = owner_->config().ttMemDefaultMB;
-    maxMB = owner_->config().ttMemMaximumMB;
-  }
-  // Fallback to ThreadData-derived settings if not provided via config
-  if (thr_) {
-    if (kind != TTKind::Small && kind != TTKind::Large) {
-      kind = (thr_->ttType == DDS_TT_SMALL ? TTKind::Small : TTKind::Large);
-    }
-    if (defMB <= 0) defMB = thr_->ttMemDefault_MB;
-    if (maxMB <= 0) maxMB = thr_->ttMemMaximum_MB;
-  }
+  // Require owner (for config, utilities, and arena). If missing, fall back
+  // to Large with built-in defaults.
+  TTKind kind = (owner_ ? owner_->config().ttKind : TTKind::Large);
+  int defMB = (owner_ ? owner_->config().ttMemDefaultMB : 0);
+  int maxMB = (owner_ ? owner_->config().ttMemMaximumMB : 0);
   // Final fallback to THREADMEM_* constants
   if (defMB <= 0 || maxMB <= 0) {
     if (kind == TTKind::Small) {
