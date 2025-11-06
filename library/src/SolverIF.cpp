@@ -17,6 +17,7 @@
 #include <solver_context/SolverContext.h>
 #include "dump.h"
 #include <lookup_tables/LookupTables.h>
+#include <api/SolveBoard.hpp>
 
 extern System sysdep;
 extern Memory memory;
@@ -81,7 +82,6 @@ int STDCALL SolveBoard(
   SolverContext outer_ctx;
   return SolveBoard(outer_ctx, dl, target, solutions, mode, futp);
 }
-
 
 int SolveBoardInternal(
   SolverContext& ctx,

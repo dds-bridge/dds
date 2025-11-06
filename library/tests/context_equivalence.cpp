@@ -2,11 +2,10 @@
 #include <cstring>
 #include <iostream>
 
-#include <api/dll.h>            // public API
-#include <solver_context/SolverContext.h>  // new instance API (added to src)
 
 // Access legacy thread memory to build a context (test-only knowledge)
-#include "system/Memory.h"
+#include <system/Memory.h>
+#include <dds/dds.hpp>
 extern Memory memory;
 
 static deal make_empty_deal()
@@ -33,7 +32,7 @@ int main()
 
   // Act: context
   SolverContext ctx;
-  int r2 = SolveBoardWithContext(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft2);
+  int r2 = SolveBoard(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft2);
 
   // Assert: return codes identical (both should be error on empty deal)
   if (r1 != r2) {

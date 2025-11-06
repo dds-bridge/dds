@@ -284,7 +284,6 @@ struct parResults
   char parContractsString[2][128];
 };
 
-
 struct allParResults
 {
   struct parResults presults[MAXNOOFTABLES];

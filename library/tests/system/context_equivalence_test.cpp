@@ -1,10 +1,8 @@
 #include <gtest/gtest.h>
 #include <cstring>
 
-#include <api/dll.h>
-#include <solver_context/SolverContext.h>
-#include "system/Memory.h"
-#include <api/SolverIF.h>
+#include <system/Memory.h>
+#include <dds/dds.hpp>
 
 extern Memory memory;
 
@@ -32,7 +30,7 @@ TEST(SystemContextEquivalence, LegacyVsContextReturnCode)
 
   // Construct a SolverContext-owned ThreadData for the context-based call.
   SolverContext ctx;
-  const int r_ctx = SolveBoardWithContext(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft_ctx);
+  const int r_ctx = SolveBoard(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft_ctx);
 
   EXPECT_EQ(r_legacy, r_ctx) << "Legacy and context return codes should match";
 }

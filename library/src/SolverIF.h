@@ -11,28 +11,8 @@
 #define DDS_SOLVERIF_H
 
 #include <api/dds.h>
-#include "system/Memory.h"
 #include <solver_context/SolverContext.h>
 #include <memory>
-
-int SolveBoardWithContext(
-  SolverContext& ctx,
-  const deal& dl,
-  int target,
-  int solutions,
-  int mode,
-  futureTricks* futp);
-
-// C++-only overload: Provide a SolveBoard variant that accepts a SolverContext.
-// This is not part of the C API (declared in dll.h) and is intended for
-// C++ clients that manage solver state explicitly.
-int SolveBoard(
-  SolverContext& ctx,
-  const deal& dl,
-  int target,
-  int solutions,
-  int mode,
-  futureTricks* futp);
 
 int SolveBoardInternal(
   SolverContext& ctx,
