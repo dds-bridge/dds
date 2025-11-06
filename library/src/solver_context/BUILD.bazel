@@ -9,7 +9,7 @@ cc_library(
     includes = ["."],
     include_prefix = "solver_context",
     deps = [
-        "//library/src/system",                   # ThreadData.h, Utilities, Arena
+        "//library/src/system",                   # ThreadData.h, Utilities
     "//library/src/api:api_definitions",     # <api/dds.h>
         "//library/src/trans_table",              # TT headers
     ],

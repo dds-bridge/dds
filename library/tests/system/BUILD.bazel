@@ -150,12 +150,4 @@ cc_test(
     ],
 )
 
-cc_test(
-    name = "arena_reuse_test",
-    srcs = ["arena_reuse_test.cpp"],
-    deps = [
-        "//library/src:testable_dds",
-    "//library/src/api:api_definitions",
-        "@googletest//:gtest_main",
-    ],
-)
+## Retired: arena_reuse_test removed after arena deprecation.

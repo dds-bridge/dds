@@ -12,7 +12,7 @@
 #include <memory>
 #include <cstdlib>
 #include <iostream>
-#include <system/util/Arena.hpp>
+#include <system/util/Utilities.hpp>
 
 // No global Arena registry: arenas are instance-owned by SolverContext.
 
@@ -39,21 +39,7 @@ TransTable* SolverContext::transTable() const
   return const_cast<SolverContext*>(this)->search_.transTable();
 }
 
-// --- Arena access (per-thread registry) ---
-dds::Arena* SolverContext::arena()
-{
-  if (cfg_.arenaCapacityBytes == 0ULL) return nullptr;
-  if (!arena_) {
-    arena_ = std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes);
-  }
-  return arena_.get();
-}
-
-const dds::Arena* SolverContext::arena() const
-{
-  // const overload delegates to non-const (registry is mutable globally)
-  return const_cast<SolverContext*>(this)->arena();
-}
+// No arena accessors: arena detached from SolverContext.
 
 // --- SearchContext out-of-line definitions ---
 bool& SolverContext::SearchContext::analysisFlag() { return thr_->analysisFlag; }
@@ -145,14 +131,8 @@ TransTable* SolverContext::SearchContext::transTable() {
 #ifdef DDS_UTILITIES_LOG
   {
     const char kch = (kind == TTKind::Small ? 'S' : 'L');
-    char* buf = nullptr;
-    constexpr std::size_t kLen = 96;
-    dds::Arena* a = nullptr;
-    if (owner_) a = const_cast<SolverContext*>(owner_)->arena();
-    if (a) buf = static_cast<char*>(a->allocate({kLen, alignof(char)}));
-    char local[kLen];
-    if (!buf) buf = local;
-    std::snprintf(buf, kLen, "tt:create|%c|%d|%d", kch, defMB, maxMB);
+    char buf[96];
+    std::snprintf(buf, sizeof(buf), "tt:create|%c|%d|%d", kch, defMB, maxMB);
     if (owner_) owner_->utilities().logAppend(std::string(buf));
   }
 #endif
@@ -201,22 +181,12 @@ SolverContext::~SolverContext() = default;
 void SolverContext::ResetForSolve() const
 {
 #ifdef DDS_UTILITIES_LOG
-  // Use arena-backed small buffer when available.
   {
-    char* buf = nullptr;
-    constexpr std::size_t kLen = 32;
-    if (auto* a = const_cast<SolverContext*>(this)->arena()) {
-      buf = static_cast<char*>(a->allocate({kLen, alignof(char)}));
-    }
-    char local[kLen];
-    if (!buf) buf = local;
-    std::snprintf(buf, kLen, "ctx:reset_for_solve");
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "ctx:reset_for_solve");
     utilities().logAppend(std::string(buf));
   }
 #endif
-  if (auto* a = const_cast<SolverContext*>(this)->arena()) {
-    a->reset();
-  }
   if (auto* tt = search_.maybeTransTable())
     tt->reset_memory(ResetReason::FreeMemory);
   if (!thr_) return;

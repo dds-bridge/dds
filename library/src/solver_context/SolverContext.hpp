@@ -11,7 +11,6 @@
 
 #include <system/ThreadData.hpp>
 #include <system/util/Utilities.hpp>
-#include <system/util/Arena.hpp>
 #include <trans_table/TransTable.hpp>
 #include <string>
 #include <vector>
@@ -83,9 +82,7 @@ public:
   inline UtilitiesContext utilities() { return UtilitiesContext(&utils_); }
   inline UtilitiesContext utilities() const { return UtilitiesContext(&utils_); }
 
-  // Optional arena access (may be null if capacity not provided)
-  dds::Arena* arena();
-  const dds::Arena* arena() const;
+  // Arena support removed; logging uses stack buffers.
 
   // Returns the owned transposition table instance (creates if null)
   TransTable* transTable() const;
@@ -141,9 +138,9 @@ public:
   private:
     std::shared_ptr<ThreadData> thr_;
     // Instance-owned transposition table, created lazily on first access.
-    std::unique_ptr<TransTable> tt_{};
+    std::unique_ptr<TransTable> tt_;
     // Back-reference to the owning SolverContext (for config, utilities, arena).
-    SolverContext* owner_ = nullptr;
+    SolverContext* owner_;
   public:
     // Allow SolverContext to bind or rebind the underlying ThreadData
     // after construction (useful when SolverContext owns the ThreadData
@@ -162,7 +159,7 @@ public:
   class MoveGenContext {
   public:
     explicit MoveGenContext(std::shared_ptr<ThreadData> thr, const SolverContext* owner)
-      : thr_(std::move(thr)), owner_(owner) {}
+      : thr_(std::move(thr)) {}
 
     int MoveGen0(
       const int tricks,
@@ -238,7 +235,6 @@ public:
 
   private:
     std::shared_ptr<ThreadData> thr_;
-    const SolverContext* owner_ = nullptr;
   };
 
   inline MoveGenContext moveGen() const { return MoveGenContext(thr_, this); }
@@ -253,8 +249,7 @@ private:
   SearchContext search_;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
-  // Instance-owned arena; created lazily based on cfg_.arenaCapacityBytes
-  std::unique_ptr<dds::Arena> arena_{};
+  // Arena removed.
   // NOTE: `owned_thr_` removed; `thr_` now represents the shared ownership
   // (if any) for this context.
   // Transposition table is now owned per SearchContext and created lazily.
