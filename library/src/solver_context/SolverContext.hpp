@@ -264,7 +264,7 @@ public:
     std::shared_ptr<ThreadData> thr_;
   };
 
-  inline MoveGenContext moveGen() const { return MoveGenContext(thr_, this); }
+  inline MoveGenContext moveGen() const { return MoveGenContext(thr_); }
 
 private:
   // Shared ownership of per-context ThreadData. Callers can construct
