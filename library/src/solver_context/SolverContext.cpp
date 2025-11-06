@@ -18,28 +18,11 @@
 #include <utility/ScratchAllocTLS.hpp>
 
 namespace {
-// Central registry mapping ThreadData* to its TransTable instance.
-// Use a leaky singleton to avoid static destruction order issues at exit.
-// Use std::shared_ptr internally so ownership is explicit and safe for
-// future refactors that may hand out shared references.
-static std::unordered_map<ThreadData*, std::shared_ptr<TransTable>>& registry()
-{
-  static auto* map = new std::unordered_map<ThreadData*, std::shared_ptr<TransTable>>();
-  return *map;
-}
 // Per-thread Arena registry. Managed as a leaky singleton similar to TT.
 static std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>& arena_registry()
 {
   static auto* map = new std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>();
   return *map;
-}
-
-// Mutexes protecting the global registries. Use per-registry mutexes to
-// limit contention between unrelated operations.
-static std::mutex& registry_mutex()
-{
-  static auto* m = new std::mutex();
-  return *m;
 }
 
 static std::mutex& arena_registry_mutex()
