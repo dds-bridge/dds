@@ -92,7 +92,7 @@ TransTable* SolverContext::SearchContext::maybeTransTable() const {
 
 TransTable* SolverContext::SearchContext::transTable() {
   if (tt_) return tt_.get();
-  // Require owner (for config, utilities, and arena). If missing, fall back
+  // Require owner (for config and utilities). If missing, fall back
   // to Large with built-in defaults.
   TTKind kind = (owner_ ? owner_->config().ttKind : TTKind::Large);
   int defMB = (owner_ ? owner_->config().ttMemDefaultMB : 0);
