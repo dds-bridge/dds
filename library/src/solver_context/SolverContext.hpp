@@ -166,7 +166,7 @@ public:
     std::shared_ptr<ThreadData> thr_;
     // Instance-owned transposition table, created lazily on first access.
     std::unique_ptr<TransTable> tt_;
-    // Back-reference to the owning SolverContext (for config, utilities, arena).
+    // Back-reference to the owning SolverContext (for config and utilities).
     SolverContext* owner_;
   public:
     // Allow SolverContext to bind or rebind the underlying ThreadData
