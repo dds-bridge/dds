@@ -13,7 +13,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <system/util/Arena.hpp>
-#include <utility/ScratchAllocTLS.hpp>
 
 // No global Arena registry: arenas are instance-owned by SolverContext.
 
@@ -302,17 +301,7 @@ double ThreadMemoryUsed()
 }
 
 // --- MoveGenContext out-of-line definitions ---
-namespace {
-// Opaque context passed to the TLS allocator shim; references owning SolverContext.
-struct OwnerShim { const SolverContext* owner; };
-static void* ArenaAllocShim(std::size_t size, std::size_t align, void* c) {
-  auto* sh = static_cast<OwnerShim*>(c);
-  if (!sh || !sh->owner) return nullptr;
-  if (auto* a = const_cast<SolverContext*>(sh->owner)->arena())
-    return a->allocate({size, align});
-  return nullptr;
-}
-}
+// No TLS allocator shim required: move generation now runs without a global allocator hook.
 
 int SolverContext::MoveGenContext::MoveGen0(
   const int tricks,
@@ -321,11 +310,7 @@ int SolverContext::MoveGenContext::MoveGen0(
   const moveType& bestMoveTT,
   const relRanksType thrp_rel[])
 {
-  // Expose an optional allocator to legacy code paths.
-  OwnerShim shim{owner_};
-  dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
-  dds::tls::ResetAlloc();
   return rc;
 }
 
@@ -334,10 +319,7 @@ int SolverContext::MoveGenContext::MoveGen123(
   const int relHand,
   const pos& tpos)
 {
-  OwnerShim shim{owner_};
-  dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen123(tricks, relHand, tpos);
-  dds::tls::ResetAlloc();
   return rc;
 }
 
