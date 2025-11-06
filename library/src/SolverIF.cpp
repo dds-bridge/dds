@@ -10,10 +10,10 @@
 #include "SolverIF.hpp"
 #include "Init.hpp"
 #include "ABsearch.hpp"
-#include "system/TimerList.hpp"
-#include "system/System.hpp"
-#include "system/Scheduler.hpp"
-#include "trans_table/TransTable.hpp"
+#include <system/TimerList.hpp>
+#include <system/System.hpp>
+#include <system/Scheduler.hpp>
+#include <trans_table/TransTable.hpp>
 #include <solver_context/SolverContext.hpp>
 #include "dump.hpp"
 #include <lookup_tables/LookupTables.hpp>

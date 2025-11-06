@@ -12,7 +12,7 @@
 #include <sstream>
 #include <fstream>
 
-#include "trans_table/TransTable.hpp"
+#include <trans_table/TransTable.hpp>
 #include <solver_context/SolverContext.hpp>
 #include "dump.hpp"
 

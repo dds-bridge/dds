@@ -11,9 +11,9 @@
 #include "CalcTables.hpp"
 #include "SolverIF.hpp"
 #include "SolveBoard.hpp"
-#include "system/System.hpp"
-#include "system/Memory.hpp"
-#include "system/Scheduler.hpp"
+#include <system/System.hpp>
+#include <system/Memory.hpp>
+#include <system/Scheduler.hpp>
 #include "PBN.hpp"
 
 

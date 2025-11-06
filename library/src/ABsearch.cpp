@@ -9,13 +9,13 @@
 
 #include <cassert>
 
-#include "trans_table/TransTable.hpp"
+#include <trans_table/TransTable.hpp>
 #include <solver_context/SolverContext.hpp>
 #include "QuickTricks.hpp"
 #include "LaterTricks.hpp"
 #include "ABsearch.hpp"
 #include "ABstats.hpp"
-#include "system/TimerList.hpp"
+#include <system/TimerList.hpp>
 #include "dump.hpp"
 #include <lookup_tables/LookupTables.hpp>
 

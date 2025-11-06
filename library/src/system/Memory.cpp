@@ -11,7 +11,7 @@
 #include "Memory.hpp"
 #include <iostream>
 #include <cstdlib>
-#include "trans_table/TransTable.hpp"
+#include <trans_table/TransTable.hpp>
 
 // After moving ThreadData ownership into SolverContext, Memory no longer
 // holds per-thread ThreadData pointers. Keep a minimal implementation that
