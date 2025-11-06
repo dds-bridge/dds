@@ -13,7 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "../include/dll.hpp"
+#include "../include/dll.h"
 #include "hands.hpp"
 
 #define SP 0
