@@ -11,7 +11,6 @@
 
 #include <system/ThreadData.hpp>
 #include <system/util/Utilities.hpp>
-#include <system/util/Arena.hpp>
 #include <trans_table/TransTable.hpp>
 #include <string>
 #include <vector>
@@ -46,6 +45,7 @@ public:
     if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
     // Bind the persistent facades to the underlying ThreadData.
     search_.set_thread(thr_);
+    search_.set_owner(this);
   }
 
   // NOTE: constructors that accepted raw ThreadData* were removed as part
@@ -82,9 +82,31 @@ public:
   inline UtilitiesContext utilities() { return UtilitiesContext(&utils_); }
   inline UtilitiesContext utilities() const { return UtilitiesContext(&utils_); }
 
-  // Optional arena access (may be null if capacity not provided)
-  dds::Arena* arena();
-  const dds::Arena* arena() const;
+  // Developer note — TT lifecycle (instance-scoped)
+  //
+  // - Ownership: Each SolverContext::SearchContext owns its TransTable (TT)
+  //   via a std::unique_ptr created lazily on first access. There is no
+  //   global TT registry and no ThreadData-owned TT.
+  // - Configuration: The effective TT kind and memory sizes are determined by
+  //   the SolverContext's SolverConfig (ttKind, ttMemDefaultMB, ttMemMaximumMB),
+  //   with optional environment overrides:
+  //     DDS_TT_DEFAULT_MB  — overrides default MB if > 0
+  //     DDS_TT_LIMIT_MB    — caps maximum MB if > 0
+  //   Call ConfigureTT(...) at runtime to persist a new configuration and apply
+  //   it to an existing TT (resize in place) or recreate if the kind changes.
+  // - Reset semantics:
+  //     ResetForSolve()        — clears a subset of search state and calls
+  //                               tt->reset_memory(FreeMemory) when a TT exists;
+  //                               preserves the TT allocation for reuse.
+  //     ResetBestMovesLite()   — clears only best-move ranks and updates memUsed.
+  //     ClearTT()              — returns all TT memory to the system; preserves
+  //                               future config and recreates lazily on demand.
+  //     DisposeTransTable()    — destroys the owned TT immediately.
+  // - Diagnostics: When built with DDS_UTILITIES_LOG / DDS_UTILITIES_STATS, TT
+  //   lifecycle events append compact log entries and bump small counters.
+  //
+  // Arena support has been removed from the SolverContext; logging uses
+  // stack-allocated buffers only.
 
   // Returns the owned transposition table instance (creates if null)
   TransTable* transTable() const;
@@ -101,12 +123,21 @@ public:
   void ResetBestMovesLite() const;
   void ClearTT() const;         // Calls ReturnAllMemory()
   void ResizeTT(int defMB, int maxMB) const; // Updates sizes if TT exists
+  // Explicit runtime configuration of TT kind and memory limits. Applies to
+  // existing TT (resize or recreate) and persists for future creations.
+  void ConfigureTT(TTKind kind, int defMB, int maxMB);
 
   // --- Search state facade ---
   class SearchContext {
   public:
   SearchContext() = default;
   explicit SearchContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
+    // Returns the owned transposition table instance (creates if null)
+    TransTable* transTable();
+    // Returns the TT instance if it exists, or nullptr
+    TransTable* maybeTransTable() const;
+    // Dispose and erase the TT instance owned by this context, if any.
+    void disposeTransTable();
     // analysis flag used to control incremental analysis behavior
     bool& analysisFlag();
     bool analysisFlag() const;
@@ -133,11 +164,17 @@ public:
     int iniDepth() const;
   private:
     std::shared_ptr<ThreadData> thr_;
+    // Instance-owned transposition table, created lazily on first access.
+    std::unique_ptr<TransTable> tt_;
+    // Back-reference to the owning SolverContext (for config and utilities).
+    SolverContext* owner_;
   public:
     // Allow SolverContext to bind or rebind the underlying ThreadData
     // after construction (useful when SolverContext owns the ThreadData
     // and sets it up after default construction).
     void set_thread(const std::shared_ptr<ThreadData>& thr) { thr_ = thr; }
+    // Bind the owning SolverContext instance for access to config/utilities/arena
+    void set_owner(SolverContext* owner) { owner_ = owner; }
   };
 
   // Expose a persistent SearchContext owned by the SolverContext.
@@ -148,7 +185,8 @@ public:
   // --- Move generation facade ---
   class MoveGenContext {
   public:
-    explicit MoveGenContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
+    explicit MoveGenContext(std::shared_ptr<ThreadData> thr)
+      : thr_(std::move(thr)) {}
 
     int MoveGen0(
       const int tricks,
@@ -238,13 +276,12 @@ private:
   SearchContext search_;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
+  // Arena removed.
   // NOTE: `owned_thr_` removed; `thr_` now represents the shared ownership
   // (if any) for this context.
-  // Transposition table instance is stored in the implementation's
-  // per-thread registry. This header exposes accessors only; the
-  // implementation manages actual ownership (currently per-thread
-  // shared_ptr). Do not rely on any `tt_` member here.
-  // Arena is managed per ThreadData in a central registry (see .cpp).
+  // Transposition table is now owned per SearchContext and created lazily.
+  //
+  // See the developer note above for details on TT lifecycle and resets.
 };
 
 double ThreadMemoryUsed();

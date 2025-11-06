@@ -1,13 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
-cc_test(
-    name = "arena_test",
-    srcs = ["arena_test.cpp"],
-    deps = [
-        "//library/src/system:system",
-        "@googletest//:gtest_main",
-    ],
-)
+## Retired: arena_test removed after arena deprecation.
 
 cc_test(
     name = "rng_determinism_test",
