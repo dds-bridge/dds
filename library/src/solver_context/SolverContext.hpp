@@ -161,7 +161,8 @@ public:
   // --- Move generation facade ---
   class MoveGenContext {
   public:
-    explicit MoveGenContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
+    explicit MoveGenContext(std::shared_ptr<ThreadData> thr, const SolverContext* owner)
+      : thr_(std::move(thr)), owner_(owner) {}
 
     int MoveGen0(
       const int tricks,
@@ -237,9 +238,10 @@ public:
 
   private:
     std::shared_ptr<ThreadData> thr_;
+    const SolverContext* owner_ = nullptr;
   };
 
-  inline MoveGenContext moveGen() const { return MoveGenContext(thr_); }
+  inline MoveGenContext moveGen() const { return MoveGenContext(thr_, this); }
 
 private:
   // Shared ownership of per-context ThreadData. Callers can construct
@@ -251,13 +253,12 @@ private:
   SearchContext search_;
   SolverConfig cfg_{};
   mutable ::dds::Utilities utils_{};
+  // Instance-owned arena; created lazily based on cfg_.arenaCapacityBytes
+  std::unique_ptr<dds::Arena> arena_{};
   // NOTE: `owned_thr_` removed; `thr_` now represents the shared ownership
   // (if any) for this context.
-  // Transposition table instance is stored in the implementation's
-  // per-thread registry. This header exposes accessors only; the
-  // implementation manages actual ownership (currently per-thread
-  // shared_ptr). Do not rely on any `tt_` member here.
-  // Arena is managed per ThreadData in a central registry (see .cpp).
+  // Transposition table is now owned per SearchContext and created lazily.
+  // Arena is instance-owned by SolverContext and created lazily based on config.
 };
 
 double ThreadMemoryUsed();

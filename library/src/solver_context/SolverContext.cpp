@@ -10,27 +10,12 @@
 #include <trans_table/TransTableS.hpp>
 #include <trans_table/TransTableL.hpp>
 #include <memory>
-#include <mutex>
 #include <cstdlib>
 #include <iostream>
-#include <unordered_map>
 #include <system/util/Arena.hpp>
 #include <utility/ScratchAllocTLS.hpp>
 
-namespace {
-// Per-thread Arena registry. Managed as a leaky singleton similar to TT.
-static std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>& arena_registry()
-{
-  static auto* map = new std::unordered_map<ThreadData*, std::unique_ptr<dds::Arena>>();
-  return *map;
-}
-
-static std::mutex& arena_registry_mutex()
-{
-  static auto* m = new std::mutex();
-  return *m;
-}
-}
+// No global Arena registry: arenas are instance-owned by SolverContext.
 
 // Owned-ThreadData constructor: allocate ThreadData as a member of the
 // SolverContext so callers can create a context at the top of the stack
@@ -58,18 +43,11 @@ TransTable* SolverContext::transTable() const
 // --- Arena access (per-thread registry) ---
 dds::Arena* SolverContext::arena()
 {
-  if (!thr_) return nullptr;
-  auto& map = arena_registry();
-  {
-    std::lock_guard<std::mutex> lk(arena_registry_mutex());
-    auto it = map.find(thr_.get());
-    if (it == map.end()) {
-      if (cfg_.arenaCapacityBytes == 0ULL) return nullptr;
-      auto ins = map.emplace(thr_.get(), std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes));
-      return ins.first->second.get();
-    }
-    return it->second.get();
+  if (cfg_.arenaCapacityBytes == 0ULL) return nullptr;
+  if (!arena_) {
+    arena_ = std::make_unique<dds::Arena>(cfg_.arenaCapacityBytes);
   }
+  return arena_.get();
 }
 
 const dds::Arena* SolverContext::arena() const
@@ -325,15 +303,13 @@ double ThreadMemoryUsed()
 
 // --- MoveGenContext out-of-line definitions ---
 namespace {
-// Opaque context passed to the TLS allocator shim; avoids constructing a SolverContext.
-struct TDShim { ThreadData* thr; };
+// Opaque context passed to the TLS allocator shim; references owning SolverContext.
+struct OwnerShim { const SolverContext* owner; };
 static void* ArenaAllocShim(std::size_t size, std::size_t align, void* c) {
-  auto* sc = static_cast<TDShim*>(c);
-  if (!sc || !sc->thr) return nullptr;
-  auto& map = arena_registry();
-  std::lock_guard<std::mutex> lk(arena_registry_mutex());
-  auto it = map.find(sc->thr);
-  if (it != map.end() && it->second) return it->second->allocate({size, align});
+  auto* sh = static_cast<OwnerShim*>(c);
+  if (!sh || !sh->owner) return nullptr;
+  if (auto* a = const_cast<SolverContext*>(sh->owner)->arena())
+    return a->allocate({size, align});
   return nullptr;
 }
 }
@@ -346,7 +322,7 @@ int SolverContext::MoveGenContext::MoveGen0(
   const relRanksType thrp_rel[])
 {
   // Expose an optional allocator to legacy code paths.
-  TDShim shim{thr_.get()};
+  OwnerShim shim{owner_};
   dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
   dds::tls::ResetAlloc();
@@ -358,7 +334,7 @@ int SolverContext::MoveGenContext::MoveGen123(
   const int relHand,
   const pos& tpos)
 {
-  TDShim shim{thr_.get()};
+  OwnerShim shim{owner_};
   dds::tls::SetAlloc(&ArenaAllocShim, &shim);
   auto rc = thr_->moves.MoveGen123(tricks, relHand, tpos);
   dds::tls::ResetAlloc();
