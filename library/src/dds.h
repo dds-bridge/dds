@@ -5,4 +5,4 @@
 #include <api/dll.h>
 #include <api/portab.h>
 
-#endif // _DDS_EXTERNAL_CAPI_H
+#endif // _DDS_EXTERNAL_C_API_H
