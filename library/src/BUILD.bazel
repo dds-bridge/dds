@@ -54,7 +54,7 @@ filegroup(
 filegroup(
     name = "testable_dds_headers",
     srcs = glob([
-        "*.h", "*hpp",
+        "*.h", "*.hpp",
     ],),
 )
 
