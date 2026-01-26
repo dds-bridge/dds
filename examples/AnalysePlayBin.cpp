@@ -18,9 +18,9 @@
 #include "hands.h"
 
 
-extern unsigned char dcardSuit[5], dcardRank[16];
+extern unsigned char card_suit_chars_[5], card_rank_chars_[16];
 
-int main()
+auto main() -> int
 {
   deal dl;
   playTraceBin DDplay;
@@ -36,8 +36,8 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    dl.trump = trump[handno];
-    dl.first = first[handno];
+    dl.trump = trump_suit_[handno];
+    dl.first = first_hand_[handno];
 
     dl.currentTrickSuit[0] = 0;
     dl.currentTrickSuit[1] = 0;
@@ -49,13 +49,13 @@ int main()
 
     for (int h = 0; h < DDS_HANDS; h++)
       for (int s = 0; s < DDS_SUITS; s++)
-        dl.remainCards[h][s] = holdings[handno][s][h];
+        dl.remainCards[h][s] = holdings_[handno][s][h];
 
-    DDplay.number = playNo[handno];
-    for (int i = 0; i < playNo[handno]; i++)
+    DDplay.number = play_count_[handno];
+    for (int i = 0; i < play_count_[handno]; i++)
     {
-      DDplay.suit[i] = playSuit[handno][i];
-      DDplay.rank[i] = playRank[handno][i];
+      DDplay.suit[i] = play_suit_[handno][i];
+      DDplay.rank[i] = play_rank_[handno][i];
     }
 
     res = AnalysePlayBin(dl, DDplay, &solved, threadIndex);
@@ -66,14 +66,14 @@ int main()
       printf("DDS error: %s\n", line);
     }
 
-    match = ComparePlay(&solved, handno);
+    match = compare_play(&solved, handno);
 
     sprintf(line, "AnalysePlayBin, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
-    PrintHand(line, dl.remainCards);
+    print_hand(line, dl.remainCards);
 
-    PrintBinPlay(&DDplay, &solved);
+    print_bin_play(&DDplay, &solved);
   }
 }
 

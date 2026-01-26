@@ -18,7 +18,7 @@
 #include "hands.h"
 
 
-int main()
+auto main() -> int
 {
   ddTableResults DDtable;
   parResultsDealer pres;
@@ -33,9 +33,9 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    SetTable(&DDtable, handno);
+    set_table(&DDtable, handno);
 
-    res = DealerPar(&DDtable, &pres, dealer[handno], vul[handno]);
+    res = DealerPar(&DDtable, &pres, dealer_hand_[handno], vulnerability_[handno]);
 
     if (res != RETURN_NO_FAULT)
     {
@@ -43,13 +43,13 @@ int main()
       printf("DDS error: %s\n", line);
     }
 
-    match = CompareDealerPar(&pres, handno);
+    match = compare_dealer_par(&pres, handno);
 
     printf("DealerPar, hand %d: %s\n\n",
            handno + 1, (match ? "OK" : "ERROR"));
 
-    PrintTable(&DDtable);
+    print_table(&DDtable);
 
-    PrintDealerPar(&pres);
+    print_dealer_par(&pres);
   }
 }
