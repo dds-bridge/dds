@@ -1,6 +1,25 @@
 There are a number of simple examples for individual DDS functions.
 
-Copy the Makefile for your system from the Makefiles folder.
+## Building with Bazel (Recommended)
+
+Build all examples:
+    bazel build //examples:all_examples
+
+Build a specific example:
+    bazel build //examples:CalcDDtable
+
+Run an example:
+    bazel run //examples:CalcDDtable
+
+Available examples:
+- AnalyseAllPlaysBin, AnalyseAllPlaysPBN
+- AnalysePlayBin, AnalysePlayPBN
+- CalcAllTables, CalcAllTablesPBN
+- CalcDDtable, CalcDDtablePBN
+- DealerPar, Par
+- SolveAllBoards, SolveBoard, SolveBoardPBN
+
+## Building with Make (Legacy)
 
 Then make the example you want,
 
