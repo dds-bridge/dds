@@ -11,7 +11,7 @@ bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "googletest",
     remote = "https://github.com/google/googletest.git",
-    commit = "85087857ad10bd407cd6ed2f52f7ea9752db621f",  # Bazel 9 compatible
+    commit = "85087857ad10bd407cd6ed2f52f7ea9752db621f",  # Override 1.17.0.bcr.1 with a commit known to be Bazel 9 compatible
 )
 
 git_override(
