@@ -18,7 +18,7 @@
 #include "hands.h"
 
 
-int main()
+auto main() -> int
 {
   ddTableDeals DDdeals;
   ddTablesRes tableRes;
@@ -40,7 +40,7 @@ int main()
   {
     for (int h = 0; h < DDS_HANDS; h++)
       for (int s = 0; s < DDS_SUITS; s++)
-        DDdeals.deals[handno].cards[h][s] = holdings[handno][s][h];
+        DDdeals.deals[handno].cards[h][s] = holdings_[handno][s][h];
   }
 
   res = CalcAllTables(&DDdeals, mode, trumpFilter, &tableRes, &pres);
@@ -53,15 +53,15 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    match = CompareTable(&tableRes.results[handno], handno);
+    match = compare_table(&tableRes.results[handno], handno);
 
     sprintf(line,
             "CalcDDtable, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
-    PrintHand(line, DDdeals.deals[handno].cards);
+    print_hand(line, DDdeals.deals[handno].cards);
 
-    PrintTable(&tableRes.results[handno]);
+    print_table(&tableRes.results[handno]);
   }
 }
 

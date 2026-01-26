@@ -18,9 +18,9 @@
 #include "hands.h"
 
 
-extern unsigned char dcardSuit[5], dcardRank[16];
+extern unsigned char card_suit_chars_[5], card_rank_chars_[16];
 
-int main()
+auto main() -> int
 {
   boards bo;
   playTracesBin DDplays;
@@ -39,8 +39,8 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    bo.deals[handno].trump = trump[handno];
-    bo.deals[handno].first = first[handno];
+    bo.deals[handno].trump = trump_suit_[handno];
+    bo.deals[handno].first = first_hand_[handno];
 
     bo.deals[handno].currentTrickSuit[0] = 0;
     bo.deals[handno].currentTrickSuit[1] = 0;
@@ -52,13 +52,13 @@ int main()
 
     for (int h = 0; h < DDS_HANDS; h++)
       for (int s = 0; s < DDS_SUITS; s++)
-        bo.deals[handno].remainCards[h][s] = holdings[handno][s][h];
+        bo.deals[handno].remainCards[h][s] = holdings_[handno][s][h];
 
-    DDplays.plays[handno].number = playNo[handno];
-    for (int i = 0; i < playNo[handno]; i++)
+    DDplays.plays[handno].number = play_count_[handno];
+    for (int i = 0; i < play_count_[handno]; i++)
     {
-      DDplays.plays[handno].suit[i] = playSuit[handno][i];
-      DDplays.plays[handno].rank[i] = playRank[handno][i];
+      DDplays.plays[handno].suit[i] = play_suit_[handno][i];
+      DDplays.plays[handno].rank[i] = play_rank_[handno][i];
     }
   }
 
@@ -72,14 +72,14 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    match = ComparePlay(&solved.solved[handno], handno);
+    match = compare_play(&solved.solved[handno], handno);
 
     sprintf(line, "AnalyseAllPlaysBin, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
-    PrintHand(line, bo.deals[handno].remainCards);
+    print_hand(line, bo.deals[handno].remainCards);
 
-    PrintBinPlay(&DDplays.plays[handno], &solved.solved[handno]);
+    print_bin_play(&DDplays.plays[handno], &solved.solved[handno]);
   }
 }
 

@@ -7,50 +7,53 @@
    See LICENSE and README.
 */
 
+#ifndef EXAMPLES_HANDS_H
+#define EXAMPLES_HANDS_H
 
 // General initialization of three hands to be used in examples.
 
-extern int trump[3];
-extern int first[3];
-extern int dealer[3];
-extern int vul[3];
+extern int trump_suit_[3];
+extern int first_hand_[3];
+extern int dealer_hand_[3];
+extern int vulnerability_[3];
 
-extern char PBN[3][80];
+extern char pbn_hands_[3][80];
 
-extern unsigned int holdings[3][4][4];
+extern unsigned int holdings_[3][4][4];
 
-extern int playNo[3];
+extern int play_count_[3];
 
-extern char play[3][106];
-extern int playSuit[3][52];
-extern int playRank[3][52];
-
-
-void PrintFut(char title[], futureTricks * fut);
-void equals_to_string(int equals, char * res);
-bool CompareFut(futureTricks * fut, int handno, int solutions);
-
-void SetTable(ddTableResults * table, int handno);
-bool CompareTable(ddTableResults * table, int handno);
-void PrintTable(ddTableResults * table);
-
-bool ComparePar(parResults * par, int handno);
-bool CompareDealerPar(parResultsDealer * par, int handno);
-void PrintPar(parResults * par);
-void PrintDealerPar(parResultsDealer * par);
-
-bool ComparePlay(solvedPlay * trace, int handno);
-void PrintBinPlay(playTraceBin * play, solvedPlay * solved);
-void PrintPBNPlay(playTracePBN * play, solvedPlay * solved);
+extern char play_sequence_[3][106];
+extern int play_suit_[3][52];
+extern int play_rank_[3][52];
 
 
-void PrintHand(char title[], 
-  unsigned int rankInSuit[DDS_HANDS][DDS_SUITS]);
+auto print_future_tricks(char title[], futureTricks * fut) -> void;
+auto equals_to_string(int equals, char * res) -> void;
+auto compare_future_tricks(futureTricks * fut, int handno, int solutions) -> bool;
 
-void PrintPBNHand(char title[], char remainCards[]);
+auto set_table(ddTableResults * table, int handno) -> void;
+auto compare_table(ddTableResults * table, int handno) -> bool;
+auto print_table(ddTableResults * table) -> void;
 
-int ConvertPBN(char * dealBuff,
-  unsigned int remainCards[DDS_HANDS][DDS_SUITS]);
+auto compare_par(parResults * par, int handno) -> bool;
+auto compare_dealer_par(parResultsDealer * par, int handno) -> bool;
+auto print_par(parResults * par) -> void;
+auto print_dealer_par(parResultsDealer * par) -> void;
 
-int IsACard(char cardChar);
+auto compare_play(solvedPlay * trace, int handno) -> bool;
+auto print_bin_play(playTraceBin * play, solvedPlay * solved) -> void;
+auto print_pbn_play(playTracePBN * play, solvedPlay * solved) -> void;
 
+
+auto print_hand(char title[], 
+  unsigned int rankInSuit[DDS_HANDS][DDS_SUITS]) -> void;
+
+auto print_pbn_hand(char title[], char remainCards[]) -> void;
+
+auto convert_pbn(char * dealBuff,
+  unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int;
+
+auto is_a_card(char cardChar) -> int;
+
+#endif  // EXAMPLES_HANDS_H

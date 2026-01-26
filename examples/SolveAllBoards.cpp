@@ -18,7 +18,7 @@
 #include "hands.h"
 
 
-int main()
+auto main() -> int
 {
   boardsPBN bo;
   solvedBoards solved;
@@ -34,8 +34,8 @@ int main()
   bo.noOfBoards = 3;
   for (int handno = 0; handno < 3; handno++)
   {
-    bo.deals[handno].trump = trump[handno];
-    bo.deals[handno].first = first[handno];
+    bo.deals[handno].trump = trump_suit_[handno];
+    bo.deals[handno].first = first_hand_[handno];
 
     bo.deals[handno].currentTrickSuit[0] = 0;
     bo.deals[handno].currentTrickSuit[1] = 0;
@@ -45,7 +45,7 @@ int main()
     bo.deals[handno].currentTrickRank[1] = 0;
     bo.deals[handno].currentTrickRank[2] = 0;
 
-    strcpy(bo.deals[handno].remainCards, PBN[handno]);
+    strcpy(bo.deals[handno].remainCards, pbn_hands_[handno]);
 
     bo.target [handno] = -1;
     bo.solutions[handno] = 3;
@@ -62,14 +62,14 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    match = CompareFut(&solved.solvedBoard[handno], handno, 3);
+    match = compare_future_tricks(&solved.solvedBoard[handno], handno, 3);
 
     sprintf(line,
             "SolveAllBoards, hand %d: solutions 3 %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
-    PrintPBNHand(line, bo.deals[handno].remainCards);
+    print_pbn_hand(line, bo.deals[handno].remainCards);
 
-    PrintFut(line, &solved.solvedBoard[handno]);
+    print_future_tricks(line, &solved.solvedBoard[handno]);
   }
 }

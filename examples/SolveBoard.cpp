@@ -18,7 +18,7 @@
 #include "hands.h"
 
 
-int main()
+auto main() -> int
 {
   deal dl;
   futureTricks fut2, // solutions == 2
@@ -39,8 +39,8 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    dl.trump = trump[handno];
-    dl.first = first[handno];
+    dl.trump = trump_suit_[handno];
+    dl.first = first_hand_[handno];
 
     dl.currentTrickSuit[0] = 0;
     dl.currentTrickSuit[1] = 0;
@@ -52,7 +52,7 @@ int main()
 
     for (int h = 0; h < DDS_HANDS; h++)
       for (int s = 0; s < DDS_SUITS; s++)
-        dl.remainCards[h][s] = holdings[handno][s][h];
+        dl.remainCards[h][s] = holdings_[handno][s][h];
 
     target = -1;
     solutions = 3;
@@ -65,7 +65,7 @@ int main()
       printf("DDS error: %s\n", line);
     }
 
-    match3 = CompareFut(&fut3, handno, solutions);
+    match3 = compare_future_tricks(&fut3, handno, solutions);
 
     solutions = 2;
     res = SolveBoard(dl, target, solutions, mode, &fut2, threadIndex);
@@ -75,7 +75,7 @@ int main()
       printf("DDS error: %s\n", line);
     }
 
-    match2 = CompareFut(&fut2, handno, solutions);
+    match2 = compare_future_tricks(&fut2, handno, solutions);
 
     sprintf(line,
             "SolveBoard, hand %d: solutions 3 %s, solutions 2 %s\n",
@@ -83,11 +83,11 @@ int main()
             (match3 ? "OK" : "ERROR"),
             (match2 ? "OK" : "ERROR"));
 
-    PrintHand(line, dl.remainCards);
+    print_hand(line, dl.remainCards);
 
     sprintf(line, "solutions == 3\n");
-    PrintFut(line, &fut3);
+    print_future_tricks(line, &fut3);
     sprintf(line, "solutions == 2\n");
-    PrintFut(line, &fut2);
+    print_future_tricks(line, &fut2);
   }
 }

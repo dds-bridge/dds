@@ -18,7 +18,7 @@
 #include "hands.h"
 
 
-int main()
+auto main() -> int
 {
   ddTableDealPBN tableDealPBN;
   ddTableResults table;
@@ -33,7 +33,7 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    strcpy(tableDealPBN.cards, PBN[handno]);
+    strcpy(tableDealPBN.cards, pbn_hands_[handno]);
 
     res = CalcDDtablePBN(tableDealPBN, &table);
 
@@ -43,14 +43,14 @@ int main()
       printf("DDS error: %s\n", line);
     }
 
-    match = CompareTable(&table, handno);
+    match = compare_table(&table, handno);
 
     sprintf(line,
             "CalcDDtable, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
-    PrintPBNHand(line, tableDealPBN.cards);
+    print_pbn_hand(line, tableDealPBN.cards);
 
-    PrintTable(&table);
+    print_table(&table);
   }
 }

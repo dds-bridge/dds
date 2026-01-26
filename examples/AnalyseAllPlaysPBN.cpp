@@ -18,9 +18,9 @@
 #include "hands.h"
 
 
-extern unsigned char dcardSuit[5], dcardRank[16];
+extern unsigned char card_suit_chars_[5], card_rank_chars_[16];
 
-int main()
+auto main() -> int
 {
   boardsPBN bo;
   playTracesPBN DDplays;
@@ -39,8 +39,8 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    bo.deals[handno].trump = trump[handno];
-    bo.deals[handno].first = first[handno];
+    bo.deals[handno].trump = trump_suit_[handno];
+    bo.deals[handno].first = first_hand_[handno];
 
     bo.deals[handno].currentTrickSuit[0] = 0;
     bo.deals[handno].currentTrickSuit[1] = 0;
@@ -50,10 +50,10 @@ int main()
     bo.deals[handno].currentTrickRank[1] = 0;
     bo.deals[handno].currentTrickRank[2] = 0;
 
-    strcpy(bo.deals[handno].remainCards, PBN[handno]);
+    strcpy(bo.deals[handno].remainCards, pbn_hands_[handno]);
 
-    DDplays.plays[handno].number = playNo[handno];
-    strcpy(DDplays.plays[handno].cards, play[handno]);
+    DDplays.plays[handno].number = play_count_[handno];
+    strcpy(DDplays.plays[handno].cards, play_sequence_[handno]);
   }
 
   res = AnalyseAllPlaysPBN(&bo, &DDplays, &solved, chunkSize);
@@ -66,14 +66,14 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    match = ComparePlay(&solved.solved[handno], handno);
+    match = compare_play(&solved.solved[handno], handno);
 
     sprintf(line, "AnalyseAllPlaysBin, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
-    PrintPBNHand(line, bo.deals[handno].remainCards);
+    print_pbn_hand(line, bo.deals[handno].remainCards);
 
-    PrintPBNPlay(&DDplays.plays[handno], &solved.solved[handno]);
+    print_pbn_play(&DDplays.plays[handno], &solved.solved[handno]);
   }
 }
 

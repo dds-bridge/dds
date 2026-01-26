@@ -18,7 +18,7 @@
 #include "hands.h"
 
 
-int main()
+auto main() -> int
 {
   dealPBN dlPBN;
   futureTricks fut2, // solutions == 2
@@ -39,8 +39,8 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    dlPBN.trump = trump[handno];
-    dlPBN.first = first[handno];
+    dlPBN.trump = trump_suit_[handno];
+    dlPBN.first = first_hand_[handno];
 
     dlPBN.currentTrickSuit[0] = 0;
     dlPBN.currentTrickSuit[1] = 0;
@@ -50,7 +50,7 @@ int main()
     dlPBN.currentTrickRank[1] = 0;
     dlPBN.currentTrickRank[2] = 0;
 
-    strcpy(dlPBN.remainCards, PBN[handno]);
+    strcpy(dlPBN.remainCards, pbn_hands_[handno]);
 
     target = -1;
     solutions = 3;
@@ -63,7 +63,7 @@ int main()
       printf("DDS error: %s\n", line);
     }
 
-    match3 = CompareFut(&fut3, handno, solutions);
+    match3 = compare_future_tricks(&fut3, handno, solutions);
 
     solutions = 2;
     res = SolveBoardPBN(dlPBN, target, solutions, mode, &fut2, 0);
@@ -73,7 +73,7 @@ int main()
       printf("DDS error: %s\n", line);
     }
 
-    match2 = CompareFut(&fut2, handno, solutions);
+    match2 = compare_future_tricks(&fut2, handno, solutions);
 
     sprintf(line,
             "SolveBoardPBN, hand %d: solutions 3 %s, solutions 2 %s\n",
@@ -81,11 +81,11 @@ int main()
             (match3 ? "OK" : "ERROR"),
             (match2 ? "OK" : "ERROR"));
 
-    PrintPBNHand(line, dlPBN.remainCards);
+    print_pbn_hand(line, dlPBN.remainCards);
 
     sprintf(line, "solutions == 3\n");
-    PrintFut(line, &fut3);
+    print_future_tricks(line, &fut3);
     sprintf(line, "solutions == 2\n");
-    PrintFut(line, &fut2);
+    print_future_tricks(line, &fut2);
   }
 }

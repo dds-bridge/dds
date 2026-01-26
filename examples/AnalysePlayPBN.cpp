@@ -18,7 +18,7 @@
 #include "hands.h"
 
 
-int main()
+auto main() -> int
 {
   dealPBN dlPBN;
   playTracePBN DDplayPBN;
@@ -34,8 +34,8 @@ int main()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    dlPBN.trump = trump[handno];
-    dlPBN.first = first[handno];
+    dlPBN.trump = trump_suit_[handno];
+    dlPBN.first = first_hand_[handno];
 
     dlPBN.currentTrickSuit[0] = 0;
     dlPBN.currentTrickSuit[1] = 0;
@@ -45,10 +45,10 @@ int main()
     dlPBN.currentTrickRank[1] = 0;
     dlPBN.currentTrickRank[2] = 0;
 
-    strcpy(dlPBN.remainCards, PBN[handno]);
+    strcpy(dlPBN.remainCards, pbn_hands_[handno]);
 
-    DDplayPBN.number = playNo[handno];
-    strcpy(DDplayPBN.cards, play[handno]);
+    DDplayPBN.number = play_count_[handno];
+    strcpy(DDplayPBN.cards, play_sequence_[handno]);
 
     res = AnalysePlayPBN(dlPBN, DDplayPBN, &solved, threadIndex);
 
@@ -58,14 +58,14 @@ int main()
       printf("DDS error: %s\n", line);
     }
 
-    match = ComparePlay(&solved, handno);
+    match = compare_play(&solved, handno);
 
     sprintf(line, "AnalysePlayPBNBin, hand %d: %s\n",
             handno + 1, (match ? "OK" : "ERROR"));
 
-    PrintPBNHand(line, dlPBN.remainCards);
+    print_pbn_hand(line, dlPBN.remainCards);
 
-    PrintPBNPlay(&DDplayPBN, &solved);
+    print_pbn_play(&DDplayPBN, &solved);
   }
 }
 
