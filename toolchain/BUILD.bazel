@@ -1,4 +1,5 @@
 load(":brew_clang_cc_toolchain_config.bzl", "brew_clang_toolchain_config")
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 
 filegroup(name = "empty")
 

@@ -3,10 +3,16 @@ module(
     version = "0.1.0"
 )
 
-bazel_dep(name = "rules_cc", version = "0.1.1")
-bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "googletest", version = "1.16.0")
+bazel_dep(name = "rules_cc", version = "0.2.16")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.1")
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+
+git_override(
+    module_name = "googletest",
+    remote = "https://github.com/google/googletest.git",
+    commit = "85087857ad10bd407cd6ed2f52f7ea9752db621f",  # Bazel 9 compatible
+)
 
 git_override(
     module_name = "hedron_compile_commands",
