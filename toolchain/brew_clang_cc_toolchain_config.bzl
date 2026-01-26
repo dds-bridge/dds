@@ -9,6 +9,7 @@ load(
     "tool_path",
     "with_feature_set",
 )
+load("@rules_cc//cc:defs.bzl", "cc_common")
 
 all_compile_actions = [
     ACTION_NAMES.c_compile,
@@ -157,6 +158,7 @@ def _impl(ctx):
             "/opt/homebrew/Cellar/llvm@20/20.1.8/lib/clang/20/include/",
             "/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/usr/include/",
             "/Library/Developer/CommandLineTools/SDKs/MacOSX15.sdk/usr/include/",
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/include/",
         ],
         toolchain_identifier = "brew_clang_toolchain",
         host_system_name = "local",
@@ -174,5 +176,4 @@ brew_clang_toolchain_config = rule(
     attrs = {
         "library_search_directories": attr.string_list(),
     },
-    provides = [CcToolchainConfigInfo],
 )

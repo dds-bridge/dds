@@ -4,17 +4,6 @@ languages: ["bazel", "starlark", "build", "bazelbuild"]
 alwaysApply: false
 ---
 
-# Bazel Build System Rules (MCP-Integrated)
-
-
-## MCP Server
-- **Name:** `bazel` (see `.vscode/mcp.json` for configuration)
-- **Type:** `mcp-bazel`
-- **Capabilities:**
-  - Parse & validate BUILD/.bzl files
-  - Build graph analysis
-  - Target query & navigation
-  - Auto-generate build commands
 
 > **Tip:** Whenever you edit a BUIL or .bzl file, run a `bazel` MCP command first to catch syntax or dependency issues.
 
@@ -33,7 +22,7 @@ alwaysApply: false
 - Run `bazel build //...` & `bazel test //...` locally before pushing.
 - Document any non-trivial macros or build logic in comments.
 
-## Working with the MCP Server
+## Working with bazel commands
 ```bash
 # Validate a BUILD file
 bazel validate //path/to:BUILD
