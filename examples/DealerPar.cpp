@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <api/dll.h>
-#include "hands.h"
+#include "hands.hpp"
 
 
 auto main() -> int

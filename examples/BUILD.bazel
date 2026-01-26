@@ -11,7 +11,7 @@ EXAMPLES_CPPOPTS = DDS_CPPOPTS + [
 cc_library(
     name = "hands",
     srcs = ["hands.cpp"],
-    hdrs = ["hands.h"],
+    hdrs = ["hands.hpp"],
     copts = EXAMPLES_CPPOPTS,
     local_defines = DDS_LOCAL_DEFINES,
     deps = [

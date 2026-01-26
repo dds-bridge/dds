@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <api/dll.h>
-#include "hands.h"
+#include "hands.hpp"
 
 
 extern unsigned char card_suit_chars_[5], card_rank_chars_[16];
