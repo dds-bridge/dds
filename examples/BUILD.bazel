@@ -1,0 +1,211 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+
+# Examples use legacy C-style code, so we need to suppress certain warnings
+EXAMPLES_CPPOPTS = DDS_CPPOPTS + [
+    "-Wno-deprecated-declarations",
+    "-Wno-unused-variable",
+]
+
+# Shared utilities used by all examples
+cc_library(
+    name = "hands",
+    srcs = ["hands.cpp"],
+    hdrs = ["hands.h"],
+    copts = EXAMPLES_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+# Example binaries
+cc_binary(
+    name = "AnalyseAllPlaysBin",
+    srcs = ["AnalyseAllPlaysBin.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "AnalyseAllPlaysPBN",
+    srcs = ["AnalyseAllPlaysPBN.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "AnalysePlayBin",
+    srcs = ["AnalysePlayBin.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "AnalysePlayPBN",
+    srcs = ["AnalysePlayPBN.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "CalcAllTables",
+    srcs = ["CalcAllTables.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "CalcAllTablesPBN",
+    srcs = ["CalcAllTablesPBN.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "CalcDDtable",
+    srcs = ["CalcDDtable.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "CalcDDtablePBN",
+    srcs = ["CalcDDtablePBN.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "DealerPar",
+    srcs = ["DealerPar.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "Par",
+    srcs = ["Par.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "SolveAllBoards",
+    srcs = ["SolveAllBoards.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "SolveBoard",
+    srcs = ["SolveBoard.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "SolveBoardPBN",
+    srcs = ["SolveBoardPBN.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+# Convenience target to build all examples
+filegroup(
+    name = "all_examples",
+    srcs = [
+        ":AnalyseAllPlaysBin",
+        ":AnalyseAllPlaysPBN",
+        ":AnalysePlayBin",
+        ":AnalysePlayPBN",
+        ":CalcAllTables",
+        ":CalcAllTablesPBN",
+        ":CalcDDtable",
+        ":CalcDDtablePBN",
+        ":DealerPar",
+        ":Par",
+        ":SolveAllBoards",
+        ":SolveBoard",
+        ":SolveBoardPBN",
+    ],
+)
