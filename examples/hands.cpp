@@ -566,7 +566,7 @@ auto print_pbn_hand(char title[], char remainCardsPBN[]) -> void
 auto convert_pbn(char * dealBuff,
                unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int
 {
-  int buffer_pos = 0, first_hand, card, hand, handRelFirst, suitInHand, h, s;
+  int buffer_pos = 0, first_hand, card, hand, hand_rel_first, suit_in_hand, h, s;
 
   for (h = 0; h < DDS_HANDS; h++)
     for (s = 0; s < DDS_SUITS; s++)
@@ -593,8 +593,8 @@ auto convert_pbn(char * dealBuff,
   buffer_pos++;
   buffer_pos++;
 
-  handRelFirst = 0;
-  suitInHand = 0;
+  hand_rel_first = 0;
+  suit_in_hand = 0;
 
   while ((buffer_pos < 80) && (dealBuff[buffer_pos] != '\0'))
   {
@@ -604,41 +604,41 @@ auto convert_pbn(char * dealBuff,
       switch (first_hand)
       {
         case 0:
-          hand = handRelFirst;
+          hand = hand_rel_first;
           break;
         case 1:
-          if (handRelFirst == 0)
+          if (hand_rel_first == 0)
             hand = 1;
-          else if (handRelFirst == 3)
+          else if (hand_rel_first == 3)
             hand = 0;
           else
-            hand = handRelFirst + 1;
+            hand = hand_rel_first + 1;
           break;
         case 2:
-          if (handRelFirst == 0)
+          if (hand_rel_first == 0)
             hand = 2;
-          else if (handRelFirst == 1)
+          else if (hand_rel_first == 1)
             hand = 3;
           else
-            hand = handRelFirst - 2;
+            hand = hand_rel_first - 2;
           break;
         default:
-          if (handRelFirst == 0)
+          if (hand_rel_first == 0)
             hand = 3;
           else
-            hand = handRelFirst - 1;
+            hand = hand_rel_first - 1;
       }
 
-      remainCards[hand][suitInHand] |=
+      remainCards[hand][suit_in_hand] |=
         static_cast<unsigned>((bit_map_rank_[card] << 2));
 
     }
     else if (dealBuff[buffer_pos] == '.')
-      suitInHand++;
+      suit_in_hand++;
     else if (dealBuff[buffer_pos] == ' ')
     {
-      handRelFirst++;
-      suitInHand = 0;
+      hand_rel_first++;
+      suit_in_hand = 0;
     }
     buffer_pos++;
   }
