@@ -101,3 +101,8 @@ Bugs
 Version 2.9.0 has no known bugs.
 
 Please report bugs to bo.haglund@bahnhof.se and soren.hein@gmail.com.
+
+Version 3.0.0, preliminary change log
+====
+
+To build with C api include `<api/dll.h>`, for the full C++ api use <dds/dds.hpp>
