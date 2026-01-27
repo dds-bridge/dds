@@ -9,15 +9,14 @@
 #ifndef DDS_SYSTEM_SOLVERCONTEXT_H
 #define DDS_SYSTEM_SOLVERCONTEXT_H
 
-#include <system/util/utilities.hpp>
 #include <system/thread_data.hpp>
+#include <system/utils/utilities.hpp>
 #include <trans_table/trans_table.hpp>
 #include <string>
 #include <vector>
 #include <random>
 #include <cstddef>
 #include <memory>
-#include <trans_table/trans_table.hpp>
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
