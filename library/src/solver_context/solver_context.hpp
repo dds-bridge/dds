@@ -10,8 +10,9 @@
 #define DDS_SYSTEM_SOLVERCONTEXT_H
 
 #include <system/thread_data.hpp>
-#include <system/utils/utilities.hpp>
+#include <system/util/utilities.hpp>
 #include <trans_table/trans_table.hpp>
+
 #include <string>
 #include <vector>
 #include <random>

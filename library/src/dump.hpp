@@ -13,10 +13,6 @@
 #include <api/dds.h>
 #include "moves/moves.hpp"
 #include <solver_context/solver_context.hpp>
-#include "system/memory.hpp"
-#include "trans_table/trans_table.hpp" // for NodeCards and enums
-
-// NodeCards is provided via TransTable.hpp
 
 int DumpInput(
   const int errCode,
