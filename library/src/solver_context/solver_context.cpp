@@ -8,7 +8,7 @@
 #include <memory>
 #include <cstdlib>
 #include <iostream>
-#include <system/util/Utilities.hpp>
+#include <system/util/utilities.hpp>
 
 // Owned-ThreadData constructor: allocate ThreadData as a member of the
 // SolverContext so callers can create a context at the top of the stack

@@ -9,7 +9,7 @@
 #ifndef DDS_SYSTEM_SOLVERCONTEXT_H
 #define DDS_SYSTEM_SOLVERCONTEXT_H
 
-#include <system/util/Utilities.hpp>
+#include <system/util/utilities.hpp>
 #include <system/thread_data.hpp>
 #include <trans_table/trans_table.hpp>
 #include <string>
