@@ -11,8 +11,6 @@
 #include <vector>
 #include <string>
 #include <cstring>
-#include <cstdio>
-
 #include <api/dll.h>
 
 using namespace std;
