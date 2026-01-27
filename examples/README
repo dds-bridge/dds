@@ -6,18 +6,18 @@ Build all examples:
     bazel build //examples:all_examples
 
 Build a specific example:
-    bazel build //examples:CalcDDtable
+    bazel build //examples:calc_dd_table
 
 Run an example:
-    bazel run //examples:CalcDDtable
+    bazel run //examples:calc_dd_table
 
 Available examples:
-- AnalyseAllPlaysBin, AnalyseAllPlaysPBN
-- AnalysePlayBin, AnalysePlayPBN
-- CalcAllTables, CalcAllTablesPBN
-- CalcDDtable, CalcDDtablePBN
-- DealerPar, Par
-- SolveAllBoards, SolveBoard, SolveBoardPBN
+- analyse_all_plays_bin, analyse_all_plays_pbn
+- analyse_play_bin, analyse_play_pbn
+- calc_all_tables, calc_all_tables_pbn
+- calc_dd_table, calc_dd_table_pbn
+- dealer_par, par
+- solve_all_boards, solve_board, solve_board_pbn
 
 ## Building with Make (Legacy)
 
