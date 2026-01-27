@@ -1,7 +1,16 @@
-#ifndef DDS_API_SOLVE_BOARD_HPP_LOWER
-#define DDS_API_SOLVE_BOARD_HPP_LOWER
+#ifndef DDS_API_SOLVE_BOARD_HPP
+#define DDS_API_SOLVE_BOARD_HPP
 
-// Compatibility shim: prefer <api/solve_board.hpp>; forwards to legacy <api/SolveBoard.hpp>
-#include "SolveBoard.hpp"
+#include <api/dds.h>
+#include <solver_context/SolverContext.hpp>
 
-#endif // DDS_API_SOLVE_BOARD_HPP_LOWER
+// C++-only overload exposed via <api/solve_board.hpp> for clients managing solver state.
+auto SolveBoard(
+	SolverContext& ctx,
+	const deal& dl,
+	int target,
+	int solutions,
+	int mode,
+	futureTricks* futp) -> int;
+
+#endif // DDS_API_SOLVE_BOARD_HPP

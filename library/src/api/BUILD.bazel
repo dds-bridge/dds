@@ -8,8 +8,7 @@ cc_library(
         "dll.h",
         "portab.h",
         "PBN.h",           # Case-sensitive on consumers; cannot add pbn.h on macOS CI
-        "SolveBoard.hpp",
-        "solve_board.hpp", # New snake_case forwarding header
+        "solve_board.hpp",
     ],
     include_prefix = "api",
     visibility = ["//visibility:public"],

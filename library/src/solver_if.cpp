@@ -17,7 +17,7 @@
 #include <solver_context/SolverContext.hpp>
 #include "dump.hpp"
 #include <lookup_tables/LookupTables.hpp>
-#include <api/SolveBoard.hpp>
+#include <api/solve_board.hpp>
 
 extern System sysdep;
 extern Memory memory;
