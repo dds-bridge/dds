@@ -7,7 +7,7 @@
    See LICENSE and README.
 */
 
-#include "SolverIF.hpp"
+#include "solver_if.hpp"
 #include "init.hpp"
 #include "ab_search.hpp"
 #include <system/TimerList.hpp>

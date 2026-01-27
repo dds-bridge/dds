@@ -8,8 +8,8 @@
 */
 
 
-#include "SolverIF.hpp"
-#include "SolveBoard.hpp"
+#include "solver_if.hpp"
+#include "solve_board.hpp"
 #include <system/System.hpp>
 #include <system/Memory.hpp>
 #include <system/Scheduler.hpp>

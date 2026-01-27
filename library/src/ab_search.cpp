@@ -11,7 +11,7 @@
 
 #include <trans_table/TransTable.hpp>
 #include <solver_context/SolverContext.hpp>
-#include "QuickTricks.hpp"
+#include "quick_tricks.hpp"
 #include "later_tricks.hpp"
 #include "ab_search.hpp"
 #include "ab_stats.hpp"

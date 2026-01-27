@@ -7,8 +7,8 @@
    See LICENSE and README.
 */
 
-#include "PlayAnalyser.hpp"
-#include "SolverIF.hpp"
+#include "play_analyser.hpp"
+#include "solver_if.hpp"
 #include <system/System.hpp>
 #include <system/Memory.hpp>
 #include <system/Scheduler.hpp>

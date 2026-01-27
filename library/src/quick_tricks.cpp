@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-#include "QuickTricks.hpp"
+#include "quick_tricks.hpp"
 #include <solver_context/SolverContext.hpp>
 #include <lookup_tables/LookupTables.hpp>
 

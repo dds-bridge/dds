@@ -16,9 +16,9 @@
 #include <utility/debug.h>
 #include <utility/Constants.h>
 #include <lookup_tables/LookupTables.hpp>
-#include "SolveBoard.hpp"
+#include "solve_board.hpp"
 #include "calc_tables.hpp"
-#include "PlayAnalyser.hpp"
+#include "play_analyser.hpp"
 // Order matters: include TransTable to ensure complete type for virtual calls
 #include <trans_table/TransTable.hpp>
 #include <solver_context/SolverContext.hpp>
