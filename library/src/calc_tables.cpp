@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-
-#include "CalcTables.hpp"
+#include "calc_tables.hpp"
 #include "SolverIF.hpp"
 #include "SolveBoard.hpp"
 #include <system/System.hpp>

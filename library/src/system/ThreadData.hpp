@@ -7,7 +7,7 @@
 
 
 #ifdef DDS_AB_STATS
-  #include "ABstats.hpp"
+  #include "ab_stats.hpp"
 #endif
 
 #ifdef DDS_TIMING

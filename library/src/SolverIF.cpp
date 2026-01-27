@@ -9,7 +9,7 @@
 
 #include "SolverIF.hpp"
 #include "Init.hpp"
-#include "ABsearch.hpp"
+#include "ab_search.hpp"
 #include <system/TimerList.hpp>
 #include <system/System.hpp>
 #include <system/Scheduler.hpp>
