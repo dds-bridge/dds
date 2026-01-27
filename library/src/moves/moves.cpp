@@ -17,9 +17,9 @@
 #include <fstream>
 #include <cstring>
 
-#include "Moves.hpp"
+#include "moves.hpp"
 #include "heuristic_sorting/heuristic_sorting.hpp"
-#include <lookup_tables/LookupTables.hpp>
+#include <lookup_tables/lookup_tables.hpp>
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a

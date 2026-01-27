@@ -9,11 +9,11 @@
 
 #include "play_analyser.hpp"
 #include "solver_if.hpp"
-#include <system/System.hpp>
-#include <system/Memory.hpp>
-#include <system/Scheduler.hpp>
+#include <system/system.hpp>
+#include <system/memory.hpp>
+#include <system/scheduler.hpp>
 #include <pbn.hpp>
-#include <solver_context/SolverContext.hpp>
+#include <solver_context/solver_context.hpp>
 
 using namespace std;
 

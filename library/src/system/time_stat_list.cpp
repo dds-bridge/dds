@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "TimeStatList.hpp"
+#include "time_stat_list.hpp"
 
 
 TimeStatList::TimeStatList()

@@ -10,7 +10,7 @@
 #include <algorithm>
 
 #include "later_tricks.hpp"
-#include <solver_context/SolverContext.hpp>
+#include <solver_context/solver_context.hpp>
 
 
 /**

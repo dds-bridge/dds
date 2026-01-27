@@ -7,7 +7,7 @@
 #include <string>
 #include <array>
 #include <map>
-#include "trans_table/TransTable.hpp"
+#include "trans_table/trans_table.hpp"
 #include <api/dll.h>
 
 namespace dds_test {

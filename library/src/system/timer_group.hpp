@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "Timer.hpp"
+#include "timer.hpp"
 
 using namespace std;
 

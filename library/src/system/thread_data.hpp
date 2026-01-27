@@ -2,7 +2,7 @@
 #define DDS_THREAD_DATA_H
 
 #include <api/dds.h>
-#include <moves/Moves.hpp>
+#include <moves/moves.hpp>
 #include <string>
 
 
@@ -11,7 +11,7 @@
 #endif
 
 #ifdef DDS_TIMING
-  #include "TimerList.hpp"
+  #include "timer_list.hpp"
 #endif
 enum TTmemory
 {

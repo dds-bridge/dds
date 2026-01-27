@@ -10,13 +10,13 @@
 #include "solver_if.hpp"
 #include "init.hpp"
 #include "ab_search.hpp"
-#include <system/TimerList.hpp>
-#include <system/System.hpp>
-#include <system/Scheduler.hpp>
-#include <trans_table/TransTable.hpp>
-#include <solver_context/SolverContext.hpp>
+#include <system/timer_list.hpp>
+#include <system/system.hpp>
+#include <system/scheduler.hpp>
+#include <trans_table/trans_table.hpp>
+#include <solver_context/solver_context.hpp>
 #include "dump.hpp"
-#include <lookup_tables/LookupTables.hpp>
+#include <lookup_tables/lookup_tables.hpp>
 #include <api/solve_board.hpp>
 
 extern System sysdep;

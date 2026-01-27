@@ -13,7 +13,7 @@
 #include <sstream>
 #include <cmath>
 
-#include "TimeStat.hpp"
+#include "time_stat.hpp"
 
 
 TimeStat::TimeStat()

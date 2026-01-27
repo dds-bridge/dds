@@ -13,8 +13,8 @@
 #include <vector>
 
 #include <api/dds.h>
-#include <moves/Moves.hpp>
-#include "ThreadData.hpp"
+#include <moves/moves.hpp>
+#include "thread_data.hpp"
 
 
 #ifdef DDS_AB_STATS
@@ -22,7 +22,7 @@
 #endif
 
 #ifdef DDS_TIMING
-  #include "TimerList.hpp"
+  #include "timer_list.hpp"
 #endif
 
 

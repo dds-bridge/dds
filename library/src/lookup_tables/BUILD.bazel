@@ -3,8 +3,8 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "lookup_tables",
-    srcs = ["LookupTables.cpp"],
-    hdrs = ["LookupTables.hpp"],
+    srcs = ["lookup_tables.cpp"],
+    hdrs = ["lookup_tables.hpp"],
     visibility = ["//visibility:public"],
     deps = [
         "//library/src/utility:constants",

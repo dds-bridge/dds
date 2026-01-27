@@ -1,4 +1,4 @@
-#include <solver_context/SolverContext.hpp>
+#include <solver_context/solver_context.hpp>
 #include "solver_if.hpp"
 
 int SolveBoard(

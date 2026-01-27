@@ -11,8 +11,8 @@
 #define DDS_QUICKTRICKS_H
 
 #include <api/dds.h>
-#include <system/Memory.hpp>
-#include <solver_context/SolverContext.hpp>
+#include <system/memory.hpp>
+#include <solver_context/solver_context.hpp>
 
 
 int QuickTricks(

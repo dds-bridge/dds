@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "moves/Moves.hpp"
+#include "moves/moves.hpp"
 
 // Minimal harness: construct a Moves instance, populate a small move list with
 // varying weights, call MergeSort via Sort(), and verify descending order.

@@ -13,8 +13,8 @@
 #include <sstream>
 #include <cstring>
 
-#include "System.hpp"
-#include "Scheduler.hpp"
+#include "system.hpp"
+#include "scheduler.hpp"
 
 extern Scheduler scheduler;
 

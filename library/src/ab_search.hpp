@@ -11,7 +11,7 @@
 #define DDS_ABSEARCH_H
 
 #include <api/dds.h>
-#include <solver_context/SolverContext.hpp>
+#include <solver_context/solver_context.hpp>
 
 
 bool ABsearch(

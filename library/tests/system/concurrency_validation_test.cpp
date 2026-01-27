@@ -6,8 +6,8 @@
 
 #include <api/dll.h>
 #include <api/PBN.h>
-#include <solver_context/SolverContext.hpp>
-#include "system/Memory.hpp"
+#include <solver_context/solver_context.hpp>
+#include "system/memory.hpp"
 #include <dds/dds.hpp>
 
 extern Memory memory;

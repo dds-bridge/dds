@@ -10,9 +10,9 @@
 
 #include "solver_if.hpp"
 #include "solve_board.hpp"
-#include <system/System.hpp>
-#include <system/Memory.hpp>
-#include <system/Scheduler.hpp>
+#include <system/system.hpp>
+#include <system/memory.hpp>
+#include <system/scheduler.hpp>
 #include <pbn.hpp>
 #include <utility/debug.h>
 #include <chrono>

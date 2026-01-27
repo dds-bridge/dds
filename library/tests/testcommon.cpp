@@ -20,7 +20,7 @@
 #include "loop.hpp"
 #include "print.hpp"
 #include "cst.hpp"
-#include "system/Scheduler.hpp"
+#include "system/scheduler.hpp"
 
 using namespace std;
 

@@ -7,7 +7,7 @@
 
 #include "heuristic_sorting/heuristic_sorting.hpp"
 #include "heuristic_sorting/internal.hpp"
-#include <lookup_tables/LookupTables.hpp>
+#include <lookup_tables/lookup_tables.hpp>
 
 // Normalization: stable textual representation (same as serialize for now)
 std::string normalize_ordering(const moveType* moves, int numMoves, bool include_scores) {

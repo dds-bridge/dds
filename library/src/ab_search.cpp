@@ -9,15 +9,15 @@
 
 #include <cassert>
 
-#include <trans_table/TransTable.hpp>
-#include <solver_context/SolverContext.hpp>
+#include <trans_table/trans_table.hpp>
+#include <solver_context/solver_context.hpp>
 #include "quick_tricks.hpp"
 #include "later_tricks.hpp"
 #include "ab_search.hpp"
 #include "ab_stats.hpp"
-#include <system/TimerList.hpp>
+#include <system/timer_list.hpp>
 #include "dump.hpp"
-#include <lookup_tables/LookupTables.hpp>
+#include <lookup_tables/lookup_tables.hpp>
 
 // Internal ctx-enabled variants (forward declarations)
 static bool ABsearch0_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);

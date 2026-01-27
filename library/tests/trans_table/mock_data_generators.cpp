@@ -1,7 +1,7 @@
 #include "mock_data_generators.hpp"
 #include <iostream>
 #include <algorithm>
-#include "utility/Constants.h"
+#include "utility/constants.h"
 
 namespace dds_test {
 

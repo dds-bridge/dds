@@ -1,6 +1,6 @@
 #include "internal.hpp"
-#include <utility/Constants.h>
-#include <lookup_tables/LookupTables.hpp>
+#include <utility/constants.h>
+#include <lookup_tables/lookup_tables.hpp>
 
 // New overload: accepts a pre-built HeuristicContext. This contains the
 // same inline logic that used to be in the previous function body.

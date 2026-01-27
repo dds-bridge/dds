@@ -83,8 +83,8 @@
 #include <cmath>
 #include <array>
 
-#include "TransTableL.hpp"
-#include <utility/Constants.h>
+#include "trans_table_l.hpp"
+#include <utility/constants.h>
 
 // Local using-declarations for readability in this implementation file only.
 using std::ofstream;

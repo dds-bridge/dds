@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "TimeStat.hpp"
+#include "time_stat.hpp"
 
 using namespace std;
 

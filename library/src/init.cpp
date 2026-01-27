@@ -10,18 +10,18 @@
 
 #include "init.hpp"
 #include <cstring>
-#include <system/System.hpp>
-#include <system/Scheduler.hpp>
-#include <system/ThreadMgr.hpp>
+#include <system/system.hpp>
+#include <system/scheduler.hpp>
+#include <system/thread_mgr.hpp>
 #include <utility/debug.h>
-#include <utility/Constants.h>
-#include <lookup_tables/LookupTables.hpp>
+#include <utility/constants.h>
+#include <lookup_tables/lookup_tables.hpp>
 #include "solve_board.hpp"
 #include "calc_tables.hpp"
 #include "play_analyser.hpp"
 // Order matters: include TransTable to ensure complete type for virtual calls
-#include <trans_table/TransTable.hpp>
-#include <solver_context/SolverContext.hpp>
+#include <trans_table/trans_table.hpp>
+#include <solver_context/solver_context.hpp>
 
 System sysdep(
     &SolveChunkCommon,

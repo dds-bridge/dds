@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "Timer.hpp"
+#include "timer.hpp"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;

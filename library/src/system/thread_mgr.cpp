@@ -15,7 +15,7 @@
 #include <chrono>
 #include <thread>
 
-#include "ThreadMgr.hpp"
+#include "thread_mgr.hpp"
 
 mutex mtx;
 mutex mtxPrint;

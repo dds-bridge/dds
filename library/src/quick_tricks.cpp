@@ -11,8 +11,8 @@
 #include <algorithm>
 
 #include "quick_tricks.hpp"
-#include <solver_context/SolverContext.hpp>
-#include <lookup_tables/LookupTables.hpp>
+#include <solver_context/solver_context.hpp>
+#include <lookup_tables/lookup_tables.hpp>
 
 
 int QtricksLeadHandNT(

@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include <solver_context/SolverContext.hpp>
-#include <trans_table/TransTableS.hpp>
-#include <trans_table/TransTableL.hpp>
+#include <solver_context/solver_context.hpp>
+#include <trans_table/trans_table_s.hpp>
+#include <trans_table/trans_table_l.hpp>
 
 namespace {
 

@@ -7,8 +7,8 @@
    See LICENSE and README.
 */
 
-#include <lookup_tables/LookupTables.hpp>
-#include <utility/Constants.h>
+#include <lookup_tables/lookup_tables.hpp>
+#include <utility/constants.h>
 #include <cstring>
 #include <mutex>
 

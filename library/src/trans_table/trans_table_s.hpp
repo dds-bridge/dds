@@ -20,7 +20,7 @@
 #include <vector>
 #include <string>
 
-#include "TransTable.hpp"
+#include "trans_table.hpp"
 
 
 class TransTableS: public TransTable

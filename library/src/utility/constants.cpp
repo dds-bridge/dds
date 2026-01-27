@@ -7,7 +7,7 @@
    See LICENSE and README.
 */
 
-#include "Constants.h"
+#include "constants.h"
 
 // Hand relationship arrays
 int lho[DDS_HANDS] = { 1, 2, 3, 0 };

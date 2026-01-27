@@ -3,8 +3,8 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "solver_context",
-    srcs = ["SolverContext.cpp"],
-    hdrs = ["SolverContext.hpp"],
+    srcs = ["solver_context.cpp"],
+    hdrs = ["solver_context.hpp"],
     visibility = ["//visibility:public"],
     includes = ["."],
     include_prefix = "solver_context",
@@ -20,8 +20,8 @@ cc_library(
 
 cc_library(
     name = "solver_context_log",
-    srcs = ["SolverContext.cpp"],
-    hdrs = ["SolverContext.hpp"],
+    srcs = ["solver_context.cpp"],
+    hdrs = ["solver_context.hpp"],
     visibility = ["//visibility:public"],
     includes = ["."],
     include_prefix = "solver_context",
@@ -37,8 +37,8 @@ cc_library(
 
 cc_library(
     name = "solver_context_stats",
-    srcs = ["SolverContext.cpp"],
-    hdrs = ["SolverContext.hpp"],
+    srcs = ["solver_context.cpp"],
+    hdrs = ["solver_context.hpp"],
     visibility = ["//visibility:public"],
     includes = ["."],
     include_prefix = "solver_context",

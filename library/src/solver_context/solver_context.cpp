@@ -1,10 +1,10 @@
-#include "SolverContext.hpp"
+#include "solver_context.hpp"
 
-#include <system/ThreadData.hpp> 
+#include <system/thread_data.hpp>
 #include <api/dds.h>
-#include <trans_table/TransTable.hpp>
-#include <trans_table/TransTableS.hpp>
-#include <trans_table/TransTableL.hpp>
+#include <trans_table/trans_table.hpp>
+#include <trans_table/trans_table_s.hpp>
+#include <trans_table/trans_table_l.hpp>
 #include <memory>
 #include <cstdlib>
 #include <iostream>

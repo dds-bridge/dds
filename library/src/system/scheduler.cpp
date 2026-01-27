@@ -10,12 +10,12 @@
 #include <cmath>
 #include <iostream>
 
-#include "Scheduler.hpp"
+#include "scheduler.hpp"
 #include <fstream>
 #include <iomanip>
-#include <lookup_tables/LookupTables.hpp>
+#include <lookup_tables/lookup_tables.hpp>
 #ifdef DDS_SCHEDULER
-#include "TimeStatList.hpp"
+#include "time_stat_list.hpp"
 
 // debug.hpp lives in the parent directory; some build configurations
 // may not expose it via include paths for this target. Provide
