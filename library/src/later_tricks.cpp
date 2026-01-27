@@ -9,7 +9,7 @@
 
 #include <algorithm>
 
-#include "LaterTricks.hpp"
+#include "later_tricks.hpp"
 #include <solver_context/SolverContext.hpp>
 
 

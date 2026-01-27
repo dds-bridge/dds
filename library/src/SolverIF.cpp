@@ -8,7 +8,7 @@
 */
 
 #include "SolverIF.hpp"
-#include "Init.hpp"
+#include "init.hpp"
 #include "ab_search.hpp"
 #include <system/TimerList.hpp>
 #include <system/System.hpp>

@@ -8,7 +8,7 @@
 */
 
 
-#include "Init.hpp"
+#include "init.hpp"
 #include <cstring>
 #include <system/System.hpp>
 #include <system/Scheduler.hpp>

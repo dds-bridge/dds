@@ -13,7 +13,7 @@
 #include <system/System.hpp>
 #include <system/Memory.hpp>
 #include <system/Scheduler.hpp>
-#include <PBN.hpp>
+#include <pbn.hpp>
 #include <utility/debug.h>
 #include <chrono>
 

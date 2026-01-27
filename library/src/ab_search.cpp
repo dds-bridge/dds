@@ -12,7 +12,7 @@
 #include <trans_table/TransTable.hpp>
 #include <solver_context/SolverContext.hpp>
 #include "QuickTricks.hpp"
-#include "LaterTricks.hpp"
+#include "later_tricks.hpp"
 #include "ab_search.hpp"
 #include "ab_stats.hpp"
 #include <system/TimerList.hpp>
