@@ -5,9 +5,9 @@
 
 // C++-only overload exposed via <api/solve_board.hpp> for clients managing solver state.
 auto SolveBoard(
-	SolverContext& ctx,
-	const deal& dl,
-	int target,
-	int solutions,
-	int mode,
-	futureTricks* futp) -> int;
+    SolverContext& ctx,
+    const deal& dl,
+    int target,
+    int solutions,
+    int mode,
+    futureTricks* futp) -> int;
