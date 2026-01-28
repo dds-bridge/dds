@@ -1,5 +1,4 @@
-#ifndef DDS_API_SOLVE_BOARD_HPP
-#define DDS_API_SOLVE_BOARD_HPP
+#pragma once
 
 #include <api/dds.h>
 #include <solver_context/solver_context.hpp>
@@ -12,5 +11,3 @@ auto SolveBoard(
 	int solutions,
 	int mode,
 	futureTricks* futp) -> int;
-
-#endif // DDS_API_SOLVE_BOARD_HPP

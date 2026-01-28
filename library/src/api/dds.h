@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_DDS_H
-#define DDS_DDS_H
+#pragma once
 
 #include "portab.h"
 #include "dll.h"
@@ -145,5 +144,3 @@ enum RunMode
   DDS_RUN_TRACE = 2,
   DDS_RUN_SIZE = 3
 };
-
-#endif

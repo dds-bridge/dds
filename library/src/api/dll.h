@@ -8,8 +8,7 @@
 */
 
 
-#ifndef DDS_DLL_H
-#define DDS_DLL_H
+#pragma once
 
 #include <utility/constants.h>
 
@@ -646,5 +645,3 @@ EXTERN_C DLLEXPORT void STDCALL GetDDSInfo(
 EXTERN_C DLLEXPORT void STDCALL ErrorMessage(
   int code,
   char line[80]);
-
-#endif
