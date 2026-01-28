@@ -157,21 +157,21 @@ System::System(
   RunPtrList[DDS_SYSTEM_THREAD_PPLIMPL] = 
     &System::RunThreadsPPLIMPL; 
 
-  CallbackSimpleList[DDS_RUN_SOLVE] = solve_chunk_common;
-  CallbackSimpleList[DDS_RUN_CALC] = calc_chunk_common;
-  CallbackSimpleList[DDS_RUN_TRACE] = play_chunk_common;
+  CallbackSimpleList[static_cast<size_t>(RunMode::DDS_RUN_SOLVE)] = solve_chunk_common;
+  CallbackSimpleList[static_cast<size_t>(RunMode::DDS_RUN_CALC)] = calc_chunk_common;
+  CallbackSimpleList[static_cast<size_t>(RunMode::DDS_RUN_TRACE)] = play_chunk_common;
 
-  CallbackDuplList[DDS_RUN_SOLVE] = detect_solve_duplicates;
-  CallbackDuplList[DDS_RUN_CALC] = detect_calc_duplicates;
-  CallbackDuplList[DDS_RUN_TRACE] = detect_play_duplicates;
+  CallbackDuplList[static_cast<size_t>(RunMode::DDS_RUN_SOLVE)] = detect_solve_duplicates;
+  CallbackDuplList[static_cast<size_t>(RunMode::DDS_RUN_CALC)] = detect_calc_duplicates;
+  CallbackDuplList[static_cast<size_t>(RunMode::DDS_RUN_TRACE)] = detect_play_duplicates;
 
-  CallbackSingleList[DDS_RUN_SOLVE] = solve_single_common;
-  CallbackSingleList[DDS_RUN_CALC] = calc_single_common;
-  CallbackSingleList[DDS_RUN_TRACE] = play_single_common;
+  CallbackSingleList[static_cast<size_t>(RunMode::DDS_RUN_SOLVE)] = solve_single_common;
+  CallbackSingleList[static_cast<size_t>(RunMode::DDS_RUN_CALC)] = calc_single_common;
+  CallbackSingleList[static_cast<size_t>(RunMode::DDS_RUN_TRACE)] = play_single_common;
 
-  CallbackCopyList[DDS_RUN_SOLVE] = copy_solve_single;
-  CallbackCopyList[DDS_RUN_CALC] = copy_calc_single;
-  CallbackCopyList[DDS_RUN_TRACE] = copy_play_single;
+  CallbackCopyList[static_cast<size_t>(RunMode::DDS_RUN_SOLVE)] = copy_solve_single;
+  CallbackCopyList[static_cast<size_t>(RunMode::DDS_RUN_CALC)] = copy_calc_single;
+  CallbackCopyList[static_cast<size_t>(RunMode::DDS_RUN_TRACE)] = copy_play_single;
   System::Reset();
 }
 
@@ -183,7 +183,7 @@ System::~System()
 
 void System::Reset()
 {
-  runCat = DDS_RUN_SOLVE;
+  runCat = RunMode::DDS_RUN_SOLVE;
   numThreads = 1;
   preferredSystem = DDS_SYSTEM_THREAD_BASIC;
 
@@ -314,7 +314,7 @@ int System::RegisterRun(
   const RunMode mode,
   const boards& bdsIn)
 {
-  if (mode >= DDS_RUN_SIZE)
+  if (mode >= RunMode::DDS_RUN_SIZE)
     return RETURN_THREAD_MISSING; // Not quite right;
 
   runCat = mode;
@@ -669,7 +669,7 @@ int System::RunThreadsPPLIMPL()
 
 int System::RunThreads()
 {
-  fptr = CallbackSimpleList[runCat];
+  fptr = CallbackSimpleList[static_cast<size_t>(runCat)];
 
   return (this->*RunPtrList[preferredSystem])();
 }

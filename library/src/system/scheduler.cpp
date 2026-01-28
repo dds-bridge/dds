@@ -212,11 +212,11 @@ void Scheduler::SortHands(const enum RunMode mode)
 {
   // Make predictions per group.
 
-  if (mode == DDS_RUN_SOLVE)
+  if (mode == RunMode::DDS_RUN_SOLVE)
     Scheduler::SortSolve();
-  else if (mode == DDS_RUN_CALC)
+  else if (mode == RunMode::DDS_RUN_CALC)
     Scheduler::SortCalc();
-  else if (mode == DDS_RUN_TRACE)
+  else if (mode == RunMode::DDS_RUN_TRACE)
     Scheduler::SortTrace();
 }
 

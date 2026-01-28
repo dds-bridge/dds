@@ -133,8 +133,8 @@ int SolveAllBoardsN(
   param.solvedp = &solved;
   param.noOfBoards = bds.noOfBoards;
 
-  scheduler.RegisterRun(DDS_RUN_SOLVE, bds);
-  sysdep.RegisterRun(DDS_RUN_SOLVE, bds);
+  scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
+  sysdep.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solved.solvedBoard[k].cards = 0;

@@ -51,10 +51,10 @@ class System
 
     vector<bool> availableSystem;
 
-    array<fptrType, DDS_RUN_SIZE> CallbackSimpleList;
-    array<fduplType, DDS_RUN_SIZE> CallbackDuplList;
-    array<fsingleType, DDS_RUN_SIZE> CallbackSingleList;
-    array<fcopyType, DDS_RUN_SIZE> CallbackCopyList;
+    array<fptrType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> CallbackSimpleList;
+    array<fduplType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> CallbackDuplList;
+    array<fsingleType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> CallbackSingleList;
+    array<fcopyType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> CallbackCopyList;
 
     typedef int (System::*RunPtr)();
     vector<RunPtr> RunPtrList;

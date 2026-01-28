@@ -137,7 +137,7 @@ struct paramType
   int error;
 };
 
-enum RunMode
+enum class RunMode
 {
   DDS_RUN_SOLVE = 0,
   DDS_RUN_CALC = 1,
