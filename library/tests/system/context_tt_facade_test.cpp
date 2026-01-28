@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <cstring>
 #include <api/dll.h>
-#include "system/Memory.hpp"
-#include <solver_context/SolverContext.hpp>
+#include "system/memory.hpp"
+#include <solver_context/solver_context.hpp>
 #include <api/dds.h>  // THREADMEM_* constants
 
 extern Memory memory;

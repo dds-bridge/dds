@@ -4,7 +4,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cstdlib>
-#include "utility/Constants.h"
+#include "utility/constants.h"
 
 namespace dds_test {
 

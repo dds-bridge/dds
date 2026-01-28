@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include <cstring>
 
-#include <system/Memory.hpp>
+#include <system/memory.hpp>
+#include <solver_context/solver_context.hpp>
 #include <dds/dds.hpp>
 
 extern Memory memory;

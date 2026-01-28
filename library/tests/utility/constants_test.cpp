@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "library/src/utility/Constants.h"
+#include <utility/constants.h>
 
 class ConstantsTest : public ::testing::Test {
 protected:

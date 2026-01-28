@@ -1,4 +1,4 @@
-#include "library/src/system/util/Utilities.hpp"
+#include "library/src/system/util/utilities.hpp"
 #include <gtest/gtest.h>
 
 namespace dds {

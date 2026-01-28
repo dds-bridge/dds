@@ -3,8 +3,8 @@
 #define DDS_UTILITIES_LOG
 #endif
 
-#include "library/src/system/util/Utilities.hpp"
 #include <gtest/gtest.h>
+#include "library/src/system/util/utilities.hpp"
 
 namespace dds {
 

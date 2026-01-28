@@ -4,7 +4,7 @@
 #include "heuristic_sorting/internal.hpp"
 #include "heuristic_sorting/heuristic_sorting.hpp"
 #include "test_utils.hpp"
-#include "moves/Moves.hpp"
+#include "moves/moves.hpp"
 
 // Targeted unit tests for small helper functions and golden expectations
 

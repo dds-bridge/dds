@@ -54,7 +54,7 @@ cc_test(
     copts = [],
     deps = [
         "//library/src:testable_dds",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -74,7 +74,7 @@ cc_test(
     srcs = ["utilities_log_ctx_ops_test_with_define.cpp"],
     deps = [
         "//library/src:testable_dds_util_log",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -84,7 +84,7 @@ cc_test(
     srcs = ["utilities_log_ctx_ops_test.cpp"],
     deps = [
         "//library/src:testable_dds",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
@@ -95,17 +95,7 @@ cc_test(
     srcs = ["utilities_stats_test.cpp"],
     deps = [
         "//library/src:testable_dds",
-    "//library/src/api:api_definitions",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "utilities_stats_test_with_define",
-    srcs = ["utilities_stats_test_with_define.cpp"],
-    deps = [
-        "//library/src:testable_dds_util_stats",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )

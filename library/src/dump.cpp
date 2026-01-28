@@ -12,8 +12,8 @@
 #include <sstream>
 #include <fstream>
 
-#include <trans_table/TransTable.hpp>
-#include <solver_context/SolverContext.hpp>
+#include <trans_table/trans_table.hpp>
+#include <solver_context/solver_context.hpp>
 #include "dump.hpp"
 
 

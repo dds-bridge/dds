@@ -29,7 +29,7 @@ cc_test(
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     deps = [
         "//library/src:testable_dds",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
     ],
 )
 

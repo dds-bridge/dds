@@ -11,12 +11,8 @@
 #define DDS_DUMP_H
 
 #include <api/dds.h>
-#include "moves/Moves.hpp"
-#include <solver_context/SolverContext.hpp>
-#include "system/Memory.hpp"
-#include "trans_table/TransTable.hpp" // for NodeCards and enums
-
-// NodeCards is provided via TransTable.hpp
+#include "moves/moves.hpp"
+#include <solver_context/solver_context.hpp>
 
 int DumpInput(
   const int errCode,

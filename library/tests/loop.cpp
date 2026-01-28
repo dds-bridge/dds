@@ -16,7 +16,7 @@
 #include "TestTimer.hpp"
 #include "compare.hpp"
 #include "print.hpp"
-#include "moves/Moves.hpp"
+#include "moves/moves.hpp"
 
 using namespace std;
 
