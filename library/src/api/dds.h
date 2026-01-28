@@ -41,7 +41,13 @@ All hand identities are given as
 
 #include "utility/constants.h"
 
-#define handId(hand, relative) (hand + relative) & 3
+/**
+ * @brief Calculate relative hand position.
+ * @param hand Base hand position (0=NORTH, 1=EAST, 2=SOUTH, 3=WEST)
+ * @param relative Relative offset (0-3)
+ * @return Resulting hand position (0-3)
+ */
+#define HAND_ID(hand, relative) ((hand + relative) & 3)
 
 
 struct moveType

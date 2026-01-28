@@ -154,7 +154,7 @@ int SolveBoardInternal(
   int iniDepth = ctx.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
   int handRelFirst = (48 - iniDepth) % 4;
-  int handToPlay = handId(dl.first, handRelFirst);
+  int handToPlay = HAND_ID(dl.first, handRelFirst);
   ctx.search().trickNodes() = 0;
 
   thrp->lookAheadPos.handRelFirst = handRelFirst;
@@ -834,7 +834,7 @@ int AnalyseLaterBoard(
   {
     ctxLater.search().analysisFlag() = true;
   }
-  int handToPlay = handId(leadHand, handRelFirst);
+  int handToPlay = HAND_ID(leadHand, handRelFirst);
 
   {
     if (handToPlay == 0 || handToPlay == 2)
@@ -1122,7 +1122,7 @@ int BoardValueChecks(
 
   int noOfCardsPerHand[DDS_HANDS] = {0, 0, 0, 0};
   for (int k = 0; k < handRelFirst; k++)
-    noOfCardsPerHand[handId(dl.first, k)] = 1;
+    noOfCardsPerHand[HAND_ID(dl.first, k)] = 1;
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -1192,14 +1192,14 @@ void LastTrickWinner(
 
   for (h = 0; h < handRelFirst; h++)
   {
-    hp = handId(dl.first, h);
+    hp = HAND_ID(dl.first, h);
     lastTrickSuit[hp] = dl.currentTrickSuit[h];
     lastTrickRank[hp] = dl.currentTrickRank[h];
   }
 
   for (h = handRelFirst; h < DDS_HANDS; h++)
   {
-    hp = handId(dl.first, h);
+    hp = HAND_ID(dl.first, h);
     for (int s = 0; s < DDS_SUITS; s++)
     {
       if (thrp->suit[hp][s] != 0)
@@ -1248,7 +1248,7 @@ void LastTrickWinner(
     }
   }
 
-  hp = handId(dl.first, handRelFirst);
+  hp = HAND_ID(dl.first, handRelFirst);
   leadRank = lastTrickRank[hp];
   leadSuit = lastTrickSuit[hp];
   leadSideWins = ((handToPlay == maxHand ||

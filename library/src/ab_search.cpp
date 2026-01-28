@@ -495,7 +495,7 @@ static bool ABsearch1_ctx(
 {
   auto thrp = ctx.thread();
   int trump = thrp->trump;
-  int hand = handId(posPoint->first[depth], 1);
+  int hand = HAND_ID(posPoint->first[depth], 1);
   bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
@@ -590,7 +590,7 @@ static bool ABsearch2_ctx(
   SolverContext& ctx)
 {
   auto thrp = ctx.thread();
-  int hand = handId(posPoint->first[depth], 2);
+  int hand = HAND_ID(posPoint->first[depth], 2);
   bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
@@ -681,7 +681,7 @@ static bool ABsearch3_ctx(
   unsigned short int makeWinRank[DDS_SUITS];
 
   auto thrp = ctx.thread();
-  int hand = handId(posPoint->first[depth], 3);
+  int hand = HAND_ID(posPoint->first[depth], 3);
   bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
   bool value = ! success;
 
@@ -788,7 +788,7 @@ void Make1(
   int firstHand = posPoint->first[depth];
   posPoint->first[depth - 1] = firstHand;
 
-  int h = handId(firstHand, 1);
+  int h = HAND_ID(firstHand, 1);
   int s = mply->suit;
   int r = mply->rank;
 
@@ -808,7 +808,7 @@ void Make2(
   int firstHand = posPoint->first[depth];
   posPoint->first[depth - 1] = firstHand;
 
-  int h = handId(firstHand, 2);
+  int h = HAND_ID(firstHand, 2);
   int s = mply->suit;
   int r = mply->rank;
 
@@ -831,10 +831,10 @@ void Make3(
 
   const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
-  posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
+  posPoint->first[depth - 1] = HAND_ID(firstHand, data.relWinner);
   /* Defines who is first in the next move */
 
-  int h = handId(firstHand, 3);
+  int h = HAND_ID(firstHand, 3);
   /* Hand pointed to by posPoint->first will lead the next trick */
 
   for (int suit = 0; suit < DDS_SUITS; suit++)
@@ -897,10 +897,10 @@ static void Make3_ctx(
 
   const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
-  posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
+  posPoint->first[depth - 1] = HAND_ID(firstHand, data.relWinner);
   /* Defines who is first in the next move */
 
-  int h = handId(firstHand, 3);
+  int h = HAND_ID(firstHand, 3);
   /* Hand pointed to by posPoint->first will lead the next trick */
 
   for (int suit = 0; suit < DDS_SUITS; suit++)
@@ -962,7 +962,7 @@ void Make3Simple(
   int firstHand = posPoint->first[depth];
 
   // Leader of next trick
-  posPoint->first[depth - 1] = handId(firstHand, data.relWinner);
+  posPoint->first[depth - 1] = HAND_ID(firstHand, data.relWinner);
 
   for (int suit = 0; suit < DDS_SUITS; suit++)
     trickCards[suit] = 0;
@@ -976,7 +976,7 @@ void Make3Simple(
       (bitMapRank[r] | data.bestSequence);
   }
 
-  int h = handId(firstHand, 3);
+  int h = HAND_ID(firstHand, 3);
   int r = mply->rank;
   s = mply->suit;
 
@@ -991,7 +991,7 @@ void Undo0(
   const moveType& mply,
   const std::shared_ptr<ThreadData>& thrp)
 {
-  int h = handId(posPoint->first[depth], 3);
+  int h = HAND_ID(posPoint->first[depth], 3);
   int s = mply.suit;
   int r = mply.rank;
 
@@ -1021,7 +1021,7 @@ static void Undo0_ctx(
   SolverContext& ctx)
 {
   // No timers here; macros not used in this helper
-  int h = handId(posPoint->first[depth], 3);
+  int h = HAND_ID(posPoint->first[depth], 3);
   int s = mply.suit;
   int r = mply.rank;
 
@@ -1049,7 +1049,7 @@ void Undo0Simple(
   const int depth,
   const moveType& mply)
 {
-  int h = handId(posPoint->first[depth], 3);
+  int h = HAND_ID(posPoint->first[depth], 3);
   int s = mply.suit;
   int r = mply.rank;
 
@@ -1079,7 +1079,7 @@ void Undo2(
   const int depth,
   const moveType& mply)
 {
-  int h = handId(posPoint->first[depth], 1);
+  int h = HAND_ID(posPoint->first[depth], 1);
   int s = mply.suit;
   int r = mply.rank;
 
@@ -1095,7 +1095,7 @@ void Undo3(
   const int depth,
   const moveType& mply)
 {
-  int h = handId(posPoint->first[depth], 2);
+  int h = HAND_ID(posPoint->first[depth], 2);
   int s = mply.suit;
   int r = mply.rank;
 

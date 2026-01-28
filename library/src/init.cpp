@@ -320,7 +320,7 @@ void InitWinners(
 
   for (int k = 0; k < posPoint.handRelFirst; k++)
   {
-    hand = handId(dl.first, k);
+    hand = HAND_ID(dl.first, k);
     suit = dl.currentTrickSuit[k];
     rank = dl.currentTrickRank[k];
     startMovesBitMap[hand][suit] |= bitMapRank[rank];

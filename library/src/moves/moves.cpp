@@ -220,7 +220,7 @@ int Moves::MoveGen123(
 {
   trackp = &track[tricks];
   leadHand = trackp->leadHand;
-  currHand = handId(leadHand, handRel);
+  currHand = HAND_ID(leadHand, handRel);
   currTrick = tricks;
   leadSuit = track[tricks].leadSuit;
 
