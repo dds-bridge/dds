@@ -417,8 +417,8 @@ struct DDSInfo
  *
  * @param userThreads Maximum number of threads to use
  */
-EXTERN_C DLLEXPORT void STDCALL SetMaxThreads(
-  int userThreads);
+EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
+  int userThreads) -> void;
 
 /**
  * @brief Set the threading backend used by the solver.
@@ -426,8 +426,8 @@ EXTERN_C DLLEXPORT void STDCALL SetMaxThreads(
  * @param code Threading backend code (see documentation)
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL SetThreading(
-  int code);
+EXTERN_C DLLEXPORT auto STDCALL SetThreading(
+  int code) -> int;
 
 /**
  * @brief Set memory and thread resources for the solver.
@@ -435,14 +435,14 @@ EXTERN_C DLLEXPORT int STDCALL SetThreading(
  * @param maxMemoryMB Maximum memory in megabytes
  * @param maxThreads Maximum number of threads
  */
-EXTERN_C DLLEXPORT void STDCALL SetResources(
+EXTERN_C DLLEXPORT auto STDCALL SetResources(
   int maxMemoryMB,
-  int maxThreads);
+  int maxThreads) -> void;
 
 /**
  * @brief Free memory used by the solver.
  */
-EXTERN_C DLLEXPORT void STDCALL FreeMemory();
+EXTERN_C DLLEXPORT auto STDCALL FreeMemory() -> void;
 
 /**
  * @brief Solve a single bridge deal using double dummy analysis.
@@ -455,13 +455,13 @@ EXTERN_C DLLEXPORT void STDCALL FreeMemory();
  * @param threadIndex Index of thread to use
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL SolveBoard(
+EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
   struct deal dl,
   int target,
   int solutions,
   int mode,
   struct futureTricks * futp,
-  int threadIndex);
+  int threadIndex) -> int;
 
 /**
  * @brief Solve a single bridge deal in PBN format using double dummy analysis.
@@ -474,13 +474,13 @@ EXTERN_C DLLEXPORT int STDCALL SolveBoard(
  * @param thrId Index of thread to use
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(
+EXTERN_C DLLEXPORT auto STDCALL SolveBoardPBN(
   struct dealPBN dlpbn,
   int target,
   int solutions,
   int mode,
   struct futureTricks * futp,
-  int thrId);
+  int thrId) -> int;
 
 /**
  * @brief Calculate the double dummy table for a given deal.
@@ -489,9 +489,9 @@ EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(
  * @param tablep Pointer to result table
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL CalcDDtable(
+EXTERN_C DLLEXPORT auto STDCALL CalcDDtable(
   struct ddTableDeal tableDeal,
-  struct ddTableResults * tablep);
+  struct ddTableResults * tablep) -> int;
 
 /**
  * @brief Calculate the double dummy table for a PBN deal.
@@ -500,9 +500,9 @@ EXTERN_C DLLEXPORT int STDCALL CalcDDtable(
  * @param tablep Pointer to result table
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(
+EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBN(
   struct ddTableDealPBN tableDealPBN,
-  struct ddTableResults * tablep);
+  struct ddTableResults * tablep) -> int;
 
 /**
  * @brief Calculate double dummy tables for multiple deals.
@@ -514,12 +514,12 @@ EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(
  * @param presp Pointer to par results
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL CalcAllTables(
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTables(
   struct ddTableDeals * dealsp,
   int mode,
   int trumpFilter[DDS_STRAINS],
   struct ddTablesRes * resp,
-  struct allParResults * presp);
+  struct allParResults * presp) -> int;
 
 /**
  * @brief Calculate double dummy tables for multiple PBN deals.
@@ -531,12 +531,12 @@ EXTERN_C DLLEXPORT int STDCALL CalcAllTables(
  * @param presp Pointer to par results
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBN(
   struct ddTableDealsPBN * dealsp,
   int mode,
   int trumpFilter[DDS_STRAINS],
   struct ddTablesRes * resp,
-  struct allParResults * presp);
+  struct allParResults * presp) -> int;
 
 /**
  * @brief Solve multiple bridge deals in PBN format.
@@ -545,103 +545,103 @@ EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(
  * @param solvedp Pointer to results for solved boards
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoards(
   struct boardsPBN * bop,
-  struct solvedBoards * solvedp);
+  struct solvedBoards * solvedp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SolveAllBoardsBin(
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBin(
   struct boards * bop,
-  struct solvedBoards * solvedp);
+  struct solvedBoards * solvedp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SolveAllChunks(
+EXTERN_C DLLEXPORT auto STDCALL SolveAllChunks(
   struct boardsPBN * bop,
   struct solvedBoards * solvedp,
-  int chunkSize);
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SolveAllChunksBin(
+EXTERN_C DLLEXPORT auto STDCALL SolveAllChunksBin(
   struct boards * bop,
   struct solvedBoards * solvedp,
-  int chunkSize);
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SolveAllChunksPBN(
+EXTERN_C DLLEXPORT auto STDCALL SolveAllChunksPBN(
   struct boardsPBN * bop,
   struct solvedBoards * solvedp,
-  int chunkSize);
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL Par(
+EXTERN_C DLLEXPORT auto STDCALL Par(
   struct ddTableResults * tablep,
   struct parResults * presp,
-  int vulnerable);
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL CalcPar(
+EXTERN_C DLLEXPORT auto STDCALL CalcPar(
   struct ddTableDeal tableDeal,
   int vulnerable,
   struct ddTableResults * tablep,
-  struct parResults * presp);
+  struct parResults * presp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL CalcParPBN(
+EXTERN_C DLLEXPORT auto STDCALL CalcParPBN(
   struct ddTableDealPBN tableDealPBN,
   struct ddTableResults * tablep,
   int vulnerable,
-  struct parResults * presp);
+  struct parResults * presp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SidesPar(
+EXTERN_C DLLEXPORT auto STDCALL SidesPar(
   struct ddTableResults * tablep,
   struct parResultsDealer sidesRes[2],
-  int vulnerable);
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL DealerPar(
+EXTERN_C DLLEXPORT auto STDCALL DealerPar(
   struct ddTableResults * tablep,
   struct parResultsDealer * presp,
   int dealer,
-  int vulnerable);
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL DealerParBin(
+EXTERN_C DLLEXPORT auto STDCALL DealerParBin(
   struct ddTableResults * tablep,
   struct parResultsMaster * presp,
   int dealer, 
-  int vulnerable);
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SidesParBin(
+EXTERN_C DLLEXPORT auto STDCALL SidesParBin(
   struct ddTableResults * tablep,
   struct parResultsMaster sidesRes[2],
-  int vulnerable);
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL ConvertToDealerTextFormat(
+EXTERN_C DLLEXPORT auto STDCALL ConvertToDealerTextFormat(
   struct parResultsMaster * pres,
-  char * resp);
+  char * resp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL ConvertToSidesTextFormat(
+EXTERN_C DLLEXPORT auto STDCALL ConvertToSidesTextFormat(
   struct parResultsMaster * pres,
-  struct parTextResults * resp);
+  struct parTextResults * resp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL AnalysePlayBin(
+EXTERN_C DLLEXPORT auto STDCALL AnalysePlayBin(
   struct deal dl,
   struct playTraceBin play,
   struct solvedPlay * solved,
-  int thrId);
+  int thrId) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL AnalysePlayPBN(
+EXTERN_C DLLEXPORT auto STDCALL AnalysePlayPBN(
   struct dealPBN dlPBN,
   struct playTracePBN playPBN,
   struct solvedPlay * solvedp,
-  int thrId);
+  int thrId) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL AnalyseAllPlaysBin(
+EXTERN_C DLLEXPORT auto STDCALL AnalyseAllPlaysBin(
   struct boards * bop,
   struct playTracesBin * plp,
   struct solvedPlays * solvedp,
-  int chunkSize);
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL AnalyseAllPlaysPBN(
+EXTERN_C DLLEXPORT auto STDCALL AnalyseAllPlaysPBN(
   struct boardsPBN * bopPBN,
   struct playTracesPBN * plpPBN,
   struct solvedPlays * solvedp,
-  int chunkSize);
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT void STDCALL GetDDSInfo(
-  struct DDSInfo * info);
+EXTERN_C DLLEXPORT auto STDCALL GetDDSInfo(
+  struct DDSInfo * info) -> void;
 
-EXTERN_C DLLEXPORT void STDCALL ErrorMessage(
+EXTERN_C DLLEXPORT auto STDCALL ErrorMessage(
   int code,
-  char line[80]);
+  char line[80]) -> void;
