@@ -9,15 +9,15 @@
 
 #pragma once
 
-#include "portab.h"
-#include "dll.h"
-
-
+// System headers
 #if defined(DDS_MEMORY_LEAKS) && defined(_MSC_VER)
   #define DDS_MEMORY_LEAKS_WIN32
   #define _CRTDBG_MAP_ALLOC
   #include <crtdbg.h>
 #endif
+
+// Project headers
+#include "dll.h"
 
 
 #define THREADMEM_SMALL_MAX_MB 30
