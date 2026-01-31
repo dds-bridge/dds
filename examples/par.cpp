@@ -20,8 +20,8 @@
 
 auto main() -> int
 {
-  ddTableResults DDtable;
-  parResults pres;
+  DdTableResults DDtable;
+  ParResults pres;
 
   int res;
   char line[80];

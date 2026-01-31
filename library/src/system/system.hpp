@@ -24,7 +24,7 @@ using namespace std;
 
 typedef void (*fptrType)(const int thid);
 typedef void (*fduplType)(
-  const boards& bds, vector<int>& uniques, vector<int>& crossrefs);
+  const Boards& bds, vector<int>& uniques, vector<int>& crossrefs);
 typedef void (*fsingleType)(const int thid, const int bno);
 typedef void (*fcopyType)(const vector<int>& crossrefs);
 
@@ -61,7 +61,7 @@ class System
 
     fptrType fptr;
 
-    boards const * bop;
+    Boards const * bop;
 
     int RunThreadsBasic();
     int RunThreadsBoost();
@@ -124,7 +124,7 @@ class System
 
     int RegisterRun(
       const RunMode r,
-      const boards& bop);
+      const Boards& bop);
 
     bool IsSingleThreaded() const;
 

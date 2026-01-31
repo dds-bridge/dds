@@ -46,15 +46,15 @@ const int max_low[3][8] = {
 
 
 int STDCALL CalcParPBN(
-  ddTableDealPBN tableDealPBN,
-  ddTableResults * tablep, 
+  DdTableDealPBN tableDealPBN,
+  DdTableResults * tablep, 
   int vulnerable, 
-  parResults * presp)
+  ParResults * presp)
 {
   int res;
-  ddTableDeal tableDeal;
-  int STDCALL CalcPar(ddTableDeal tableDeal, int vulnerable,
-                      ddTableResults * tablep, parResults * presp);
+  DdTableDeal tableDeal;
+  int STDCALL CalcPar(DdTableDeal tableDeal, int vulnerable,
+                      DdTableResults * tablep, ParResults * presp);
 
   if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards) != 1)
     return RETURN_PBN_FAULT;
@@ -76,14 +76,14 @@ void SideSeats(
   int t1,
   int t2,
   int order,
-  parResultsMaster sidesRes[2]);
+  ParResultsMaster sidesRes[2]);
 
 void CalcOverTricks(
   int i,
   int max_lower,
   int tricks,
   int order,
-  parResultsMaster sidesRes[2]);
+  ParResultsMaster sidesRes[2]);
 
 int CalcMultiContracts(
   int max_lower,
@@ -106,8 +106,8 @@ int VulnerDefSide(
  * @return 1 on success, error code otherwise
  */
 int STDCALL Par(
-  ddTableResults * tablep, 
-  parResults * presp,
+  DdTableResults * tablep, 
+  ParResults * presp,
   int vulnerable)
 {
   /* vulnerable 0: None 1: Both 2: NS 3: EW */
@@ -118,7 +118,7 @@ int STDCALL Par(
 
   /* The Par function computes the par result and contracts. */
 
-  parResultsMaster sidesRes[2];
+  ParResultsMaster sidesRes[2];
   int res, k;
   char temp[8], buff[3];
   int denom_conv[5] = { 4, 0, 1, 2, 3 };
@@ -216,8 +216,8 @@ int STDCALL Par(
 #ifndef DEALER_PAR_ENGINE_ONLY
 
 int STDCALL SidesParBin(
-  ddTableResults * tablep,
-  parResultsMaster sidesRes[2],
+  DdTableResults * tablep,
+  ParResultsMaster sidesRes[2],
   int vulnerable)
 {
 
@@ -695,7 +695,7 @@ int STDCALL SidesParBin(
 #else
 
 int STDCALL SidesParBin(
-  ddTableResults * tablep,
+  DdTableResults * tablep,
   parResultsMaster sidesRes[2],
   int vulnerable)
 {
@@ -913,7 +913,7 @@ void SideSeats(
   int t1, 
   int t2, 
   int order, 
-  parResultsMaster sidesRes[2])
+  ParResultsMaster sidesRes[2])
 {
 
   if ((dr + i) % 2 )
@@ -954,7 +954,7 @@ void CalcOverTricks(
   int max_lower, 
   int tricks, 
   int order, 
-  parResultsMaster sidesRes[2])
+  ParResultsMaster sidesRes[2])
 {
   switch (tricks - 6)
   {
@@ -1123,10 +1123,10 @@ int CalcMultiContracts(int max_lower, int tricks)
 }
 
 int STDCALL CalcPar(
-  ddTableDeal tableDeal, 
+  DdTableDeal tableDeal, 
   int vulnerable,
-  ddTableResults * tablep, 
-  parResults * presp)
+  DdTableResults * tablep, 
+  ParResults * presp)
 {
 
   int res;
@@ -1143,15 +1143,15 @@ int STDCALL CalcPar(
 
 
 int STDCALL DealerParBin(
-  ddTableResults * tablep,
-  parResultsMaster * presp,
+  DdTableResults * tablep,
+  ParResultsMaster * presp,
   int dealer,
   int vulnerable)
 {
   /* dealer 0: North 1: East 2: South 3: West */
   /* vulnerable 0: None 1: Both 2: NS 3: EW */
 
-  parResultsDealer parResDealer;
+  ParResultsDealer parResDealer;
   parContr2Type parContr2[10];
   int k, delta;
 
@@ -1278,11 +1278,11 @@ int STDCALL DealerParBin(
 
 
 int STDCALL SidesPar(
-  ddTableResults * tablep, 
-  parResultsDealer sidesRes[2], 
+  DdTableResults * tablep, 
+  ParResultsDealer sidesRes[2], 
   int vulnerable)
 {
-  parResultsMaster parm[2];
+  ParResultsMaster parm[2];
   int res, i, k;
   constexpr size_t buf_size = 13;
   char buff[buf_size];
@@ -1370,7 +1370,7 @@ int STDCALL SidesPar(
 
 
 int STDCALL ConvertToDealerTextFormat(
-  parResultsMaster * pres, 
+  ParResultsMaster * pres, 
   char * resp)
 {
   int k, i;
@@ -1458,8 +1458,8 @@ int STDCALL ConvertToDealerTextFormat(
 
 
 int STDCALL ConvertToSidesTextFormat(
-  parResultsMaster * pres, 
-  parTextResults * resp)
+  ParResultsMaster * pres, 
+  ParTextResults * resp)
 {
   int k, i, j;
   char buff[20];

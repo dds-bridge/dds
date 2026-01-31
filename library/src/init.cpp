@@ -274,7 +274,7 @@ void SetDealTables(
     ctx.transTable()->init(handLookup);
   }
 
-  relRanksType * relp;
+  RelRanksType * relp;
   for (unsigned int aggr = 1; aggr < 8192; aggr++)
   {
     if (aggr >= (topBitRank << 1))
@@ -307,8 +307,8 @@ void SetDealTables(
 
 
 void InitWinners(
-  const deal& dl,
-  pos& posPoint,
+  const Deal& dl,
+  Pos& posPoint,
   const std::shared_ptr<ThreadData>& thrp)
 {
   int hand, suit, rank;

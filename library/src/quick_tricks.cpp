@@ -17,7 +17,7 @@
 
 int QtricksLeadHandNT(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -35,7 +35,7 @@ int QtricksLeadHandNT(
 
 int QtricksLeadHandTrump(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -50,7 +50,7 @@ int QtricksLeadHandTrump(
 
 int QuickTricksPartnerHand(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -68,7 +68,7 @@ int QuickTricksPartnerHand(
 
 int QuickTricksPartnerHandTrump(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -86,7 +86,7 @@ int QuickTricksPartnerHandTrump(
 
 int QuickTricksPartnerHandNT(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -117,7 +117,7 @@ int QuickTricksPartnerHandNT(
  * @return Number of quick tricks found
  */
 int QuickTricks(
-  pos& tpos,
+  Pos& tpos,
   const int hand,
   const int depth,
   const int target,
@@ -141,7 +141,7 @@ int QuickTricks(
   bool commPartner = false;
   const unsigned short (* ris)[DDS_SUITS] = tpos.rankInSuit;
   const unsigned char (* len)[DDS_SUITS] = tpos.length;
-  highCardType const * winner = tpos.winner;
+  HighCardType const * winner = tpos.winner;
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
@@ -699,7 +699,7 @@ int QuickTricks(
 
 int QtricksLeadHandTrump(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -791,7 +791,7 @@ int QtricksLeadHandTrump(
 
 int QtricksLeadHandNT(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -889,7 +889,7 @@ int QtricksLeadHandNT(
 
 int QuickTricksPartnerHandTrump(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -1027,7 +1027,7 @@ int QuickTricksPartnerHandTrump(
 
 int QuickTricksPartnerHandNT(
   const int hand,
-  pos& tpos,
+  Pos& tpos,
   const int cutoff,
   const int depth,
   const int countLho,
@@ -1131,7 +1131,7 @@ int QuickTricksPartnerHandNT(
 
 
 bool QuickTricksSecondHand(
-  pos& tpos,
+  Pos& tpos,
   const int hand,
   const int depth,
   const int target,

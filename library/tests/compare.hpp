@@ -14,28 +14,28 @@
 
 
 bool compare_PBN(
-  const dealPBN& dl1,
-  const dealPBN& dl2);
+  const DealPBN& dl1,
+  const DealPBN& dl2);
 
 bool compare_FUT(
-  const futureTricks& fut1,
-  const futureTricks& fut2);
+  const FutureTricks& fut1,
+  const FutureTricks& fut2);
 
 bool compare_TABLE(
-  const ddTableResults& table1,
-  const ddTableResults& table2);
+  const DdTableResults& table1,
+  const DdTableResults& table2);
 
 bool compare_PAR(
-  const parResults& par1,
-  const parResults& par2);
+  const ParResults& par1,
+  const ParResults& par2);
 
 bool compare_DEALERPAR(
-  const parResultsDealer& par1,
-  const parResultsDealer& par2);
+  const ParResultsDealer& par1,
+  const ParResultsDealer& par2);
 
 bool compare_TRACE(
-  const solvedPlay& trace1,
-  const solvedPlay& trace2);
+  const SolvedPlay& trace1,
+  const SolvedPlay& trace2);
 
 #endif
 

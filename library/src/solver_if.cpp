@@ -25,20 +25,20 @@ extern Scheduler scheduler;
 
 
 int BoardRangeChecks(
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode);
 
 int BoardValueChecks(
   SolverContext& ctx,
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode);
 
 void LastTrickWinner(
-  const deal& dl,
+  const Deal& dl,
   const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
   const int handRelFirst,
@@ -47,32 +47,32 @@ void LastTrickWinner(
   int& leadSideWins);
 
 bool (* AB_ptr_list[DDS_HANDS])(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
   = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
 
 void (* Make_ptr_list[3])(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  moveType const * mply)
+  MoveType const * mply)
   = { Make0, Make1, Make2 };
 
 
 int STDCALL SolveBoard(
-  deal dl,
+  Deal dl,
   int target,
   int solutions,
   int mode,
-  futureTricks * futp,
+  FutureTricks * futp,
   int thrId)
 {
   if (! sysdep.ThreadOK(thrId))
@@ -85,11 +85,11 @@ int STDCALL SolveBoard(
 
 int SolveBoardInternal(
   SolverContext& ctx,
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode,
-  futureTricks * futp)
+  FutureTricks * futp)
 {
   // ----------------------------------------------------------
   // Formal parameter checks.
@@ -100,7 +100,7 @@ int SolveBoardInternal(
     return ret;
 
   // ----------------------------------------------------------
-  // Count and classify deal.
+  // Count and classify Deal.
   // ----------------------------------------------------------
 
   auto thrp = ctx.thread();
@@ -161,7 +161,7 @@ int SolveBoardInternal(
   thrp->lookAheadPos.first[iniDepth] = dl.first;
   thrp->lookAheadPos.tricksMAX = 0;
 
-  moveType mv = {0, 0, 0, 0};
+  MoveType mv = {0, 0, 0, 0};
 
   ctx.search().clearForbiddenMoves();
   
@@ -324,7 +324,7 @@ int SolveBoardInternal(
 
   if (mode == 0 && noMoves == 1 && solutions != 3)
   {
-    moveType const * mp = ctx.moveGen().MakeNextSimple(trick, handRelFirst);
+    MoveType const * mp = ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -400,7 +400,7 @@ int SolveBoardInternal(
         ctx.moveGen().Rewind(trick, handRelFirst);
         for (int j = 0; j < noLeft; j++)
         {
-          moveType const * mp = 
+          MoveType const * mp = 
             ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
           futp->suit[mno + j] = mp->suit;
@@ -426,7 +426,7 @@ int SolveBoardInternal(
 
     for (int mno = 0; mno < noMoves; mno++)
     {
-      moveType const * mp = 
+      MoveType const * mp = 
         ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
       futp->suit[mno] = mp->suit;
@@ -503,7 +503,7 @@ int SolveBoardInternal(
       ctx.moveGen().Rewind(trick, handRelFirst);
       for (int i = 0; i < noMoves; i++)
       {
-        moveType const * mp = 
+        MoveType const * mp = 
           ctx.moveGen().MakeNextSimple(trick, handRelFirst);
 
         futp->score[i] = 0;
@@ -587,7 +587,7 @@ int SolveBoardInternal(
 
     for (int k = 0; k < num; k++)
     {
-      moveType const * mp = 
+      MoveType const * mp = 
         ctx.moveGen().MakeNextSimple(trick, handRelFirst);
       
       ctx.search().forbiddenMove(forb) = * mp;
@@ -681,8 +681,8 @@ SOLVER_DONE:
 
 int SolveSameBoard(
   const std::shared_ptr<ThreadData>& thrp,
-  const deal& dl,
-  futureTricks * futp,
+  const Deal& dl,
+  FutureTricks * futp,
   const int hint)
 {
   // Specialized function for SolveChunkDDtable for repeat solves.
@@ -811,10 +811,10 @@ int SolveSameBoard(
 int AnalyseLaterBoard(
   const std::shared_ptr<ThreadData>& thrp,
   const int leadHand,
-  moveType const * move,
+  MoveType const * move,
   const int hint,
   const int hintDir,
-  futureTricks * futp)
+  FutureTricks * futp)
 {
   // Specialized function for PlayAnalyser for cards after the
   // opening lead. No further parameter checks! This function
@@ -878,7 +878,7 @@ int AnalyseLaterBoard(
   if (cardCount <= 4)
   {
     // Last trick.
-    evalType eval = EvaluateWithContext(&thrp->lookAheadPos, thrp->trump, ctxLater);
+    EvalType eval = EvaluateWithContext(&thrp->lookAheadPos, thrp->trump, ctxLater);
     futp->score[0] = eval.tricks;
     futp->nodes = 0;
 
@@ -986,7 +986,7 @@ int AnalyseLaterBoard(
 
 
 int BoardRangeChecks(
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode)
@@ -1087,7 +1087,7 @@ int BoardRangeChecks(
 
 int BoardValueChecks(
   SolverContext& ctx,
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode)
@@ -1177,7 +1177,7 @@ int BoardValueChecks(
 
 
 void LastTrickWinner(
-  const deal& dl,
+  const Deal& dl,
   const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
   const int handRelFirst,

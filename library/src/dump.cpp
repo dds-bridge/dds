@@ -37,13 +37,13 @@ string NodeToText(const NodeCards& node);
 string FullNodeToText(const NodeCards& node);
 
 string PosToText(
-  const pos& tpos,
+  const Pos& tpos,
   const int target,
   const int depth);
 
 string TopMove(
   const bool val,
-  const moveType& bestMove);
+  const MoveType& bestMove);
 
 string DumpTopHeader(
   const std::shared_ptr<ThreadData>& thrp,
@@ -203,7 +203,7 @@ string FullNodeToText(const NodeCards& node)
 
 
 string PosToText(
-  const pos& tpos,
+  const Pos& tpos,
   const int target,
   const int depth)
 {
@@ -251,7 +251,7 @@ string DumpTopHeader(
 
 string TopMove(
   const bool val,
-  const moveType& bestMove)
+  const MoveType& bestMove)
 {
   if (val)
   {
@@ -268,7 +268,7 @@ string TopMove(
 
 int DumpInput(
   const int errCode, 
-  const deal& dl, 
+  const Deal& dl, 
   const int target,
   const int solutions, 
   const int mode)
@@ -319,7 +319,7 @@ int DumpInput(
 
 void DumpRetrieved(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   const NodeCards& node,
   const int target,
   const int depth)
@@ -334,7 +334,7 @@ void DumpRetrieved(
 
 void DumpStored(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   const Moves& moves,
   const NodeCards& node,
   const int target,
@@ -350,7 +350,7 @@ void DumpStored(
 
 void DumpStored(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   SolverContext& ctx,
   const NodeCards& node,
   const int target,
@@ -373,7 +373,7 @@ void DumpTopLevel(
   const int upper,
   const int printMode)
 {
-  const pos& tpos = thrp->lookAheadPos;
+  const Pos& tpos = thrp->lookAheadPos;
   SolverContext ctx{ thrp };
 
   fout << DumpTopHeader(thrp, tricks, lower, upper, printMode) << "\n";

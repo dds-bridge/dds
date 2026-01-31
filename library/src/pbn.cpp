@@ -141,8 +141,8 @@ int IsCard(const char cardChar)
 
 
 int ConvertPlayFromPBN(
-  const playTracePBN& playPBN,
-  playTraceBin& playBin)
+  const PlayTracePBN& playPBN,
+  PlayTraceBin& playBin)
 {
   const int n = playPBN.number;
 

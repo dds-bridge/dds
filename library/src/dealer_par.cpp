@@ -117,7 +117,7 @@ struct list_type
 
 
 void survey_scores(
-  const ddTableResults& table,
+  const DdTableResults& table,
   const int dealer,
   const int vul_by_side[2],
   data_type& data,
@@ -125,7 +125,7 @@ void survey_scores(
   list_type list[2][DDS_STRAINS]);
 
 void best_sacrifice(
-  const ddTableResults& table,
+  const DdTableResults& table,
   const int side,
   const int no,
   const int dno,
@@ -135,7 +135,7 @@ void best_sacrifice(
   int& best_down);
 
 void sacrifices_as_text(
-  const ddTableResults& table,
+  const DdTableResults& table,
   const int side,
   const int dealer,
   const int best_down,
@@ -152,7 +152,7 @@ void reduce_contract(
   int& plus);
 
 string contract_as_text(
-  const ddTableResults& table,
+  const DdTableResults& table,
   const int side,
   const int no,
   const int dno,
@@ -178,8 +178,8 @@ string sacrifice_as_text(
  * @return 1 on success, error code otherwise
  */
 int STDCALL DealerPar(
-  ddTableResults * tablep,
-  parResultsDealer * presp,
+  DdTableResults * tablep,
+  ParResultsDealer * presp,
   int dealer,
   int vulnerable)
 {
@@ -295,7 +295,7 @@ int STDCALL DealerPar(
 
 
 void survey_scores(
-  const ddTableResults& table,
+  const DdTableResults& table,
   const int dealer,
   const int vul_by_side[2],
   data_type& data,
@@ -305,7 +305,7 @@ void survey_scores(
   /*
     When this is done, data has added the following entries:
     * primacy (0 or 1) is the side entitled to a plus score.
-      If the deal should be passed out, it is -1, and nothing
+      If the Deal should be passed out, it is -1, and nothing
       else is set.
     * highest_making_no is a contract number (for that side)
     * dearest_making_no is a contract number (for that side)
@@ -449,7 +449,7 @@ void survey_scores(
 
 
 void best_sacrifice(
-  const ddTableResults& table,
+  const DdTableResults& table,
   const int side,
   const int no,
   const int dno,
@@ -504,7 +504,7 @@ void best_sacrifice(
 
 
 void sacrifices_as_text(
-  const ddTableResults& table,
+  const DdTableResults& table,
   const int side,
   const int dealer,
   const int best_down,
@@ -616,7 +616,7 @@ void reduce_contract(
 
 
 string contract_as_text(
-  const ddTableResults& table,
+  const DdTableResults& table,
   const int side,
   const int no,
   const int dno,

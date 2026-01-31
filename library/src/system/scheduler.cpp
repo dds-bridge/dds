@@ -176,8 +176,8 @@ void Scheduler::RegisterThreads(
 
 void Scheduler::RegisterRun(
   const enum RunMode mode,
-  const boards& bds,
-  const playTracesBin& pl)
+  const Boards& bds,
+  const PlayTracesBin& pl)
 {
   for (int b = 0; b < bds.noOfBoards; b++)
     hands[b].depth = pl.plays[b].number;
@@ -188,7 +188,7 @@ void Scheduler::RegisterRun(
 
 void Scheduler::RegisterRun(
   const enum RunMode mode,
-  const boards& bds)
+  const Boards& bds)
 {
   Scheduler::Reset();
 
@@ -221,9 +221,9 @@ void Scheduler::SortHands(const enum RunMode mode)
 }
 
 
-void Scheduler::MakeGroups(const boards& bds)
+void Scheduler::MakeGroups(const Boards& bds)
 {
-  deal const * dl;
+  Deal const * dl;
   listType * lp;
 
   for (int b = 0; b < numHands; b++)
@@ -705,7 +705,7 @@ void Scheduler::SortTrace()
 }
 
 
-int Scheduler::Strength(const deal& dl) const
+int Scheduler::Strength(const Deal& dl) const
 {
   // If the strength in all suits is evenly split, then the
   // "strength" returned is close to 0. Maximum is 49.
@@ -731,7 +731,7 @@ int Scheduler::Strength(const deal& dl) const
 }
 
 
-int Scheduler::Fanout(const deal& dl) const
+int Scheduler::Fanout(const Deal& dl) const
 {
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups. In a given suit the
@@ -1008,7 +1008,7 @@ void Scheduler::SetBoardTime(int boardIndex, int timeMs)
 
 
 int Scheduler::PredictedTime(
-  deal& dl,
+  Deal& dl,
   int number) const
 {
   int trump = dl.trump;

@@ -111,7 +111,7 @@ auto TransTableS::init(const int handLookup[][15]) -> void {
   reset_text_.resize(kResetReasonCount);
   reset_text_[static_cast<int>(ResetReason::Unknown)] = "Unknown reason";
   reset_text_[static_cast<int>(ResetReason::TooManyNodes)] = "Too many nodes";
-  reset_text_[static_cast<int>(ResetReason::NewDeal)] = "New deal";
+  reset_text_[static_cast<int>(ResetReason::NewDeal)] = "New Deal";
   reset_text_[static_cast<int>(ResetReason::NewTrump)] = "New trump";
   reset_text_[static_cast<int>(ResetReason::MemoryExhausted)] = "Memory exhausted";
   reset_text_[static_cast<int>(ResetReason::FreeMemory)] = "Free thread memory";

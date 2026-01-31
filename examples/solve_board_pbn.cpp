@@ -20,8 +20,8 @@
 
 auto main() -> int
 {
-  dealPBN dlPBN;
-  futureTricks fut2, // solutions == 2
+  DealPBN dlPBN;
+  FutureTricks fut2, // solutions == 2
                 fut3; // solutions == 3
 
   int target;

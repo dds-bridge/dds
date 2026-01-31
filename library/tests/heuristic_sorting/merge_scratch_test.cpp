@@ -10,7 +10,7 @@ TEST(MergeScratchTest, OrdersByWeightDescending) {
   const int relHand = 0;
 
   // Build a tiny list of moves with out-of-order weights
-  movePlyType& list = mv.moveList[trick][relHand];
+  MovePlyType& list = mv.moveList[trick][relHand];
   list.last = 4;
   list.current = 0;
   // Initialize entries

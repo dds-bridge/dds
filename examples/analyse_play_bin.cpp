@@ -22,9 +22,9 @@ extern unsigned char card_suit_chars_[5], card_rank_chars_[16];
 
 auto main() -> int
 {
-  deal dl;
-  playTraceBin DDplay;
-  solvedPlay solved;
+  Deal dl;
+  PlayTraceBin DDplay;
+  SolvedPlay solved;
 
   int threadIndex = 0, res;
   char line[80];

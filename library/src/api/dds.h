@@ -50,7 +50,7 @@ All hand identities are given as
 #define HAND_ID(hand, relative) ((hand + relative) & 3)
 
 
-struct moveType
+struct MoveType
 {
   int suit;
   int rank;
@@ -59,20 +59,20 @@ struct moveType
   int weight; /* Weight used at sorting */
 };
 
-struct movePlyType
+struct MovePlyType
 {
-  moveType move[14];
+  MoveType move[14];
   int current;
   int last;
 };
 
-struct highCardType
+struct HighCardType
 {
   int rank;
   int hand;
 };
 
-struct pos
+struct Pos
 {
   unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS];
   unsigned short int aggr[DDS_SUITS];
@@ -83,19 +83,19 @@ struct pos
   /* Cards that win by rank, firstindex is depth. */
   int first[50];
   /* Hand that leads the trick for each ply */
-  moveType move[50];
+  MoveType move[50];
   /* Presently winning move */
   int handRelFirst;
   /* The current hand, relative first hand */
   int tricksMAX;
   /* Aggregated tricks won by MAX */
-  highCardType winner[DDS_SUITS];
+  HighCardType winner[DDS_SUITS];
   /* Winning rank of trick. */
-  highCardType secondBest[DDS_SUITS];
+  HighCardType secondBest[DDS_SUITS];
   /* Second best rank. */
 };
 
-struct trickDataType
+struct TrickDataType
 {
   int playCount[DDS_SUITS];
   int bestRank;
@@ -105,41 +105,41 @@ struct trickDataType
   int nextLeadHand;
 };
 
-struct evalType
+struct EvalType
 {
   int tricks;
   unsigned short int winRanks[DDS_SUITS];
 };
 
-struct card
+struct Card
 {
   int suit;
   int rank;
 };
 
-struct extCard
+struct ExtCard
 {
   int suit;
   int rank;
   int sequence;
 };
 
-struct absRankType // 2 bytes
+struct AbsRankType // 2 bytes
 {
   char rank;
   signed char hand;
 };
 
-struct relRanksType // 120 bytes
+struct RelRanksType // 120 bytes
 {
-  absRankType absRank[15][DDS_SUITS];
+  AbsRankType absRank[15][DDS_SUITS];
 };
 
-struct paramType
+struct ParamType
 {
   int noOfBoards;
-  boards * bop;
-  solvedBoards * solvedp;
+  Boards * bop;
+  SolvedBoards * solvedp;
   int error;
 };
 

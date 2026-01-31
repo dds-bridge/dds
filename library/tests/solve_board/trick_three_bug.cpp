@@ -5,7 +5,7 @@ class TrickThreeBugTests : public ::testing::Test {
         TrickThreeBugTests() = default;
 };
 
-inline size_t dds_max(futureTricks const & fut)
+inline size_t dds_max(FutureTricks const & fut)
 {
     int res = 0;
     for(int i = 0; i < 13 && fut.rank[i] > 0; ++i)
@@ -23,7 +23,7 @@ TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks) {
     int solutions = 3;
     int mode = 0;
     int thread_index = 0;
-    struct futureTricks fut = {
+    struct FutureTricks fut = {
         .nodes=0,
         .cards = 0,
         .suit = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -31,7 +31,7 @@ TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks) {
         .equals = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         .score = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
     };
-    struct deal dl = {
+    struct Deal dl = {
         .trump = 4, // No Trump
         .first = 2, // South to play
         .currentTrickSuit = {0, 0, 0},

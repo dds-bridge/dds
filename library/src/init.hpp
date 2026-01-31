@@ -21,8 +21,8 @@ void SetDeal(const std::shared_ptr<ThreadData>& thrp);
 void SetDealTables(SolverContext& ctx);
 
 void InitWinners(
-  const deal& dl,
-  pos& posPoint,
+  const Deal& dl,
+  Pos& posPoint,
   const std::shared_ptr<ThreadData>& thrp);
 
 void CloseDebugFiles();

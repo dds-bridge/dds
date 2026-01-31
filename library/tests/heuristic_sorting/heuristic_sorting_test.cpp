@@ -9,8 +9,8 @@ class HeuristicSortingUnitTest : public ::testing::Test {
   HeuristicSortingUnitTest() = default;
   
   // Helper function to create a basic position
-  pos createBasicPosition() {
-    pos tpos = {};
+  Pos createBasicPosition() {
+    Pos tpos = {};
     // Initialize with some basic data
     for (int hand = 0; hand < DDS_HANDS; hand++) {
       for (int suit = 0; suit < DDS_SUITS; suit++) {
@@ -22,10 +22,10 @@ class HeuristicSortingUnitTest : public ::testing::Test {
   }
   
   // Helper function to create a basic context with modifiable position
-  HeuristicContext createBasicContext(pos& tpos, moveType* mply, int numMoves) {
-    static moveType bestMove = {};
-    static moveType bestMoveTT = {};
-    static relRanksType thrp_rel[1] = {};
+  HeuristicContext createBasicContext(Pos& tpos, MoveType* mply, int numMoves) {
+    static MoveType bestMove = {};
+    static MoveType bestMoveTT = {};
+    static RelRanksType thrp_rel[1] = {};
     static trackType track = {};
     
     return HeuristicContext {
@@ -49,8 +49,8 @@ class HeuristicSortingUnitTest : public ::testing::Test {
 
 // Test WeightAllocTrump0 function
 TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0SetsWeight) {
-    moveType mply[10];
-    pos tpos = createBasicPosition();
+    MoveType mply[10];
+    Pos tpos = createBasicPosition();
     
     // Initialize a move
     mply[0].suit = 0;     // Spades
@@ -74,8 +74,8 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0SetsWeight) {
 
 // Test WeightAllocTrump0 function
 TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0) {
-    moveType mply[10];
-    pos tpos = createBasicPosition();
+    MoveType mply[10];
+    Pos tpos = createBasicPosition();
     
     // Initialize a move
     mply[0].suit = 0;     // Spades
@@ -99,8 +99,8 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0) {
 
 // Test WeightAllocNT0 function
 TEST_F(HeuristicSortingUnitTest, TestWeightAllocNT0) {
-    moveType mply[10];
-    pos tpos = createBasicPosition();
+    MoveType mply[10];
+    Pos tpos = createBasicPosition();
     
     // Initialize a move
     mply[0].suit = 0;     // Spades
@@ -124,8 +124,8 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocNT0) {
 
 // Test WeightAllocTrumpNotvoid1 function
 TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrumpNotvoid1) {
-    moveType mply[10];
-    pos tpos = createBasicPosition();
+    MoveType mply[10];
+    Pos tpos = createBasicPosition();
     
     // Initialize a move
     mply[0].suit = 0;     // Spades (lead suit)
@@ -151,8 +151,8 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrumpNotvoid1) {
 
 // Test all missing WeightAlloc functions for complete coverage
 TEST_F(HeuristicSortingUnitTest, TestAllMissingWeightAllocFunctions) {
-    moveType mply[5];
-    pos tpos = createBasicPosition();
+    MoveType mply[5];
+    Pos tpos = createBasicPosition();
     
     // Initialize multiple moves for better testing
     for (int i = 0; i < 5; i++) {
@@ -173,21 +173,21 @@ TEST_F(HeuristicSortingUnitTest, TestAllMissingWeightAllocFunctions) {
     const_cast<int&>(context.currHand) = 1;
     const_cast<int&>(context.leadSuit) = 0;
     WeightAllocNTNotvoid1(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocNTNotvoid1 should assign weights";
     
     // WeightAllocTrumpVoid1
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
     WeightAllocTrumpVoid1(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocTrumpVoid1 should assign weights";
     
     // WeightAllocNTVoid1
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
     WeightAllocNTVoid1(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocNTVoid1 should assign weights";
     
     // Test Position 2 functions
@@ -198,28 +198,28 @@ TEST_F(HeuristicSortingUnitTest, TestAllMissingWeightAllocFunctions) {
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
     WeightAllocTrumpNotvoid2(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocTrumpNotvoid2 should assign weights";
     
     // WeightAllocNTNotvoid2
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
     WeightAllocNTNotvoid2(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocNTNotvoid2 should assign weights";
     
     // WeightAllocTrumpVoid2
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
     WeightAllocTrumpVoid2(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocTrumpVoid2 should assign weights";
     
     // WeightAllocNTVoid2
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
     WeightAllocNTVoid2(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocNTVoid2 should assign weights";
     
     // Test Position 3 functions
@@ -230,21 +230,21 @@ TEST_F(HeuristicSortingUnitTest, TestAllMissingWeightAllocFunctions) {
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
     WeightAllocCombinedNotvoid3(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocCombinedNotvoid3 should assign weights";
     
     // WeightAllocTrumpVoid3
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
     WeightAllocTrumpVoid3(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocTrumpVoid3 should assign weights";
     
     // WeightAllocNTVoid3
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
     WeightAllocNTVoid3(context);
-    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const moveType& m) { return m.weight != 0; }))
+    EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
         << "WeightAllocNTVoid3 should assign weights";
     
     std::cout << "All 13 WeightAlloc functions tested successfully!" << std::endl;

@@ -20,9 +20,9 @@
 
 auto main() -> int
 {
-  dealPBN dlPBN;
-  playTracePBN DDplayPBN;
-  solvedPlay solved;
+  DealPBN dlPBN;
+  PlayTracePBN DDplayPBN;
+  SolvedPlay solved;
 
   int threadIndex = 0, res;
   char line[80];

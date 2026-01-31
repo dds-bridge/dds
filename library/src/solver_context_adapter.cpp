@@ -3,11 +3,11 @@
 
 int SolveBoard(
   SolverContext& ctx,
-  const deal& dl,
+  const Deal& dl,
   int target,
   int solutions,
   int mode,
-  futureTricks* futp)
+  FutureTricks* futp)
 {
   // Use ThreadData-attached TT so all contexts created in lower layers
   // observe the same table. No ownership adoption to avoid duplication.

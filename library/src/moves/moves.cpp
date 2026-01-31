@@ -144,10 +144,10 @@ void Moves::Reinit(
 
 int Moves::MoveGen0(
   const int tricks,
-  const pos& tpos,
-  const moveType& bestMove,
-  const moveType& bestMoveTT,
-  const relRanksType thrp_rel[])
+  const Pos& tpos,
+  const MoveType& bestMove,
+  const MoveType& bestMoveTT,
+  const RelRanksType thrp_rel[])
 {
   trackp = &track[tricks];
   leadHand = trackp->leadHand;
@@ -157,7 +157,7 @@ int Moves::MoveGen0(
   const MoveGroupType * mp;
   int removed, g, rank, seq;
 
-  movePlyType& list = moveList[tricks][0];
+  MovePlyType& list = moveList[tricks][0];
   mply = list.move;
   for (int s = 0; s < DDS_SUITS; s++)
     trackp->lowestWin[0][s] = 0;
@@ -216,7 +216,7 @@ int Moves::MoveGen0(
 int Moves::MoveGen123(
   const int tricks,
   const int handRel,
-  const pos& tpos)
+  const Pos& tpos)
 {
   trackp = &track[tricks];
   leadHand = trackp->leadHand;
@@ -227,7 +227,7 @@ int Moves::MoveGen123(
   const MoveGroupType * mp;
   int removed, g, rank, seq;
 
-  movePlyType& list = moveList[tricks][handRel];
+  MovePlyType& list = moveList[tricks][handRel];
   mply = list.move;
 
   for (int s = 0; s < DDS_SUITS; s++)
@@ -274,7 +274,7 @@ int Moves::MoveGen123(
 #ifdef DDS_SKIP_HEURISTIC
   return numMoves;
 #endif
-      Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
+      Moves::CallHeuristic(tpos, MoveType{}, MoveType{}, nullptr);
 
     Moves::MergeSort();
     return numMoves;
@@ -312,7 +312,7 @@ int Moves::MoveGen123(
       g--;
     }
 
-    Moves::CallHeuristic(tpos, moveType{}, moveType{}, nullptr);
+    Moves::CallHeuristic(tpos, MoveType{}, MoveType{}, nullptr);
   }
 
   list.current = 0;
@@ -355,8 +355,8 @@ void Moves::GetTopNumber(
 
 
 inline bool Moves::WinningMove(
-  const moveType& mvp1,
-  const extCard& mvp2,
+  const MoveType& mvp1,
+  const ExtCard& mvp2,
   const int ourTrump) const
 {
   /* Return true if move 1 wins over move 2, with the assumption that
@@ -385,7 +385,7 @@ int Moves::GetLength(
 
 
 void Moves::MakeSpecific(
-  const moveType& ourMply,
+  const MoveType& ourMply,
   const int trick,
   const int relHand)
 {
@@ -451,7 +451,7 @@ void Moves::MakeSpecific(
 }
 
 
-moveType const * Moves::MakeNext(
+MoveType const * Moves::MakeNext(
   const int trick,
   const int relHand,
   const unsigned short ourWinRanks[DDS_SUITS])
@@ -460,10 +460,10 @@ moveType const * Moves::MakeNext(
   // "small" move per suit.
 
   int * lwp = track[trick].lowestWin[relHand];
-  movePlyType& list = moveList[trick][relHand];
+  MovePlyType& list = moveList[trick][relHand];
   trackp = &track[trick];
 
-  moveType * currp = nullptr, * prevp;
+  MoveType * currp = nullptr, * prevp;
 
   bool found = false;
   if (list.last == -1)
@@ -561,17 +561,17 @@ moveType const * Moves::MakeNext(
 }
 
 
-moveType const * Moves::MakeNextSimple(
+MoveType const * Moves::MakeNextSimple(
   const int trick,
   const int relHand)
 {
   // Don't worry about small moves. Why not, actually?
 
-  movePlyType& list = moveList[trick][relHand];
+  MovePlyType& list = moveList[trick][relHand];
   if (list.current > list.last)
     return NULL;
 
-  const moveType& curr = list.move[list.current];
+  const MoveType& curr = list.move[list.current];
 
   trackp = &track[trick];
 
@@ -644,9 +644,9 @@ void Moves::Rewind(
 void Moves::Purge(
   const int trick,
   const int ourLeadHand,
-  const moveType forbiddenMoves[])
+  const MoveType forbiddenMoves[])
 {
-  movePlyType& ourMply = moveList[trick][ourLeadHand];
+  MovePlyType& ourMply = moveList[trick][ourLeadHand];
 
   for (int k = 1; k <= 13; k++)
   {
@@ -678,9 +678,9 @@ void Moves::Reward(
 }
 
 
-const trickDataType& Moves::GetTrickData(const int tricks)
+const TrickDataType& Moves::GetTrickData(const int tricks)
 {
-  trickDataType& data = track[tricks].trickData;
+  TrickDataType& data = track[tricks].trickData;
   for (int s = 0; s < DDS_SUITS; s++)
     data.playCount[s] = 0;
   for (int relh = 0; relh < DDS_HANDS; relh++)
@@ -718,10 +718,10 @@ void Moves::Sort(
   { tmp = mply[i]; mply[i] = mply[j]; mply[j] = tmp; }
 
 void Moves::CallHeuristic(
-    const pos& tpos,
-    const moveType& bestMove,
-    const moveType& bestMoveTT,
-    const relRanksType thrp_rel[]) {
+    const Pos& tpos,
+    const MoveType& bestMove,
+    const MoveType& bestMoveTT,
+    const RelRanksType thrp_rel[]) {
   // Construct context once here and call the context-taking overload.
   HeuristicContext context{
     tpos,
@@ -761,7 +761,7 @@ void Moves::CallHeuristic(
 
 void Moves::MergeSort()
 {
-  moveType tmp;
+  MoveType tmp;
 
   switch (numMoves)
   {
@@ -1007,7 +1007,7 @@ void Moves::MergeSort()
 }
 
 
-string Moves::PrintMove(const movePlyType& ourMply) const
+string Moves::PrintMove(const MovePlyType& ourMply) const
 {
   stringstream ss;
 
@@ -1029,7 +1029,7 @@ string Moves::PrintMoves(
   const int trick,
   const int relHand) const
 {
-  const movePlyType& list = moveList[trick][relHand];
+  const MovePlyType& list = moveList[trick][relHand];
   
   const string st = "trick " + to_string(trick) +
     " relHand " + to_string(relHand) +
@@ -1042,10 +1042,10 @@ string Moves::PrintMoves(
 
 string Moves::TrickToText(const int trick) const
 {
-  const movePlyType& listp0 = moveList[trick][0];
-  const movePlyType& listp1 = moveList[trick][1];
-  const movePlyType& listp2 = moveList[trick][2];
-  const movePlyType& listp3 = moveList[trick][3];
+  const MovePlyType& listp0 = moveList[trick][0];
+  const MovePlyType& listp1 = moveList[trick][1];
+  const MovePlyType& listp2 = moveList[trick][2];
+  const MovePlyType& listp3 = moveList[trick][3];
 
   stringstream ss;
   ss << setw(16) << left << "Last trick" << 
@@ -1114,7 +1114,7 @@ void Moves::RegisterHit(
   const int trick,
   const int relHand)
 {
-  const movePlyType& list = moveList[trick][relHand];
+  const MovePlyType& list = moveList[trick][relHand];
 
   const int findex = lastCall[trick][relHand];
   const int len = list.last + 1;

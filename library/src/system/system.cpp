@@ -312,7 +312,7 @@ int System::RegisterParams(
 
 int System::RegisterRun(
   const RunMode mode,
-  const boards& bdsIn)
+  const Boards& bdsIn)
 {
   if (mode >= RunMode::DDS_RUN_SIZE)
     return RETURN_THREAD_MISSING; // Not quite right;

@@ -19,22 +19,22 @@ static void ensureThreads(size_t n)
     memory.Resize(static_cast<unsigned>(n), DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 }
 
-static deal make_deal_from_pbn(const char* pbn, int trump = 0, int first = 0)
+static Deal make_deal_from_pbn(const char* pbn, int trump = 0, int first = 0)
 {
-  deal dl{};
+  Deal dl{};
   dl.trump = trump;
   dl.first = first;
   std::memset(dl.currentTrickSuit, 0, sizeof(dl.currentTrickSuit));
   std::memset(dl.currentTrickRank, 0, sizeof(dl.currentTrickRank));
   // Convert PBN distribution into remainCards bitmasks
   const int rc = ConvertFromPBN(pbn, dl.remainCards);
-  // If conversion fails, keep an empty deal which should yield a deterministic error.
+  // If conversion fails, keep an empty Deal which should yield a deterministic error.
   // Silent failure is intentional for this test: downstream code is expected to handle empty deals.
   (void)rc;
   return dl;
 }
 
-static bool equal_future_tricks(const futureTricks& a, const futureTricks& b)
+static bool equal_future_tricks(const FutureTricks& a, const FutureTricks& b)
 {
   if (a.cards != b.cards) return false;
   for (int i = 0; i < a.cards; ++i) {
@@ -60,19 +60,19 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
   ensureThreads(N);
 
   // Prepare deals and sequential baselines (single thread / thr 0)
-  std::vector<deal> deals;
+  std::vector<Deal> deals;
   deals.reserve(N);
   for (const auto& s : pbns) {
     deals.emplace_back(make_deal_from_pbn(s.c_str(), /*trump=*/0, /*first=*/0));
   }
 
-  std::vector<futureTricks> baseline_ft(N);
+  std::vector<FutureTricks> baseline_ft(N);
   std::vector<int> baseline_rc(N, 0);
 
   {
     SolverContext ctx;
     for (size_t i = 0; i < N; ++i) {
-      futureTricks ft{};
+      FutureTricks ft{};
       const int rc = SolveBoard(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
       baseline_rc[i] = rc;
       baseline_ft[i] = ft; // copy
@@ -80,7 +80,7 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
   }
 
   // Run in parallel: one thread per board with its own ThreadData/Context
-  std::vector<futureTricks> out_ft(N);
+  std::vector<FutureTricks> out_ft(N);
   std::vector<int> out_rc(N, 0);
 
   std::vector<std::thread> threads;
@@ -88,7 +88,7 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
   for (size_t i = 0; i < N; ++i) {
     threads.emplace_back([i, &deals, &out_ft, &out_rc]() {
       SolverContext ctx;
-      futureTricks ft{};
+      FutureTricks ft{};
       const int rc = SolveBoard(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
       out_rc[i] = rc;
       out_ft[i] = ft;

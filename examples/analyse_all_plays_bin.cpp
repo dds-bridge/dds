@@ -22,9 +22,9 @@ extern unsigned char card_suit_chars_[5], card_rank_chars_[16];
 
 auto main() -> int
 {
-  boards bo;
-  playTracesBin DDplays;
-  solvedPlays solved;
+  Boards bo;
+  PlayTracesBin DDplays;
+  SolvedPlays solved;
 
   int chunkSize = 1, res;
   char line[80];

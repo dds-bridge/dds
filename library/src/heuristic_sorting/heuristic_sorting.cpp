@@ -478,12 +478,12 @@ void WeightAllocNT0(HeuristicContext& context) {
 }
 void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
 {
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int trump = ctx.trump;
   const int leadHand = ctx.leadHand;
   const int leadSuit = ctx.leadSuit;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
   // trackp not needed here; use context snapshots for trick state.
 
 
@@ -601,12 +601,12 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
 
 void WeightAllocNTNotvoid1(HeuristicContext& ctx)
 {
-  // Faithful port of Moves::WeightAllocNTNotvoid1(const pos& tpos)
-  const pos& tpos = ctx.tpos;
+  // Faithful port of Moves::WeightAllocNTNotvoid1(const Pos& tpos)
+  const Pos& tpos = ctx.tpos;
   const int leadHand = ctx.leadHand;
   const int leadSuit = ctx.leadSuit;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
   // trackp not needed; using snapshot lead0_rank.
 
   const int partner_lh = partner[leadHand];
@@ -658,7 +658,7 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
 }
 void WeightAllocTrumpVoid1(HeuristicContext& ctx)
 {
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int trump = ctx.trump;
   const int suit = ctx.suit;
   const int currHand = ctx.currHand;
@@ -666,7 +666,7 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
   const int leadSuit = ctx.leadSuit;
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
   // trackp not needed here; use context snapshots for trick state.
 
   const int partner_lh = partner[leadHand];
@@ -818,14 +818,14 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
 }
 void WeightAllocNTVoid1(HeuristicContext& ctx)
 {
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int suit = ctx.suit;
   const int currHand = ctx.currHand;
   const int leadHand = ctx.leadHand;
   const int leadSuit = ctx.leadSuit;
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
 
   const int partner_lh = partner[leadHand];
   const int rho_lh = rho[leadHand];
@@ -939,12 +939,12 @@ void GetTopNumber(const HeuristicContext& ctx, const int ris, const int prank, i
 }
 void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
 {
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int trump = ctx.trump;
   const int leadHand = ctx.leadHand;
   const int leadSuit = ctx.leadSuit;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
 
   const int rho_lh = rho[leadHand];
   const int cards4th = tpos.rankInSuit[rho_lh][leadSuit];
@@ -1126,12 +1126,12 @@ void WeightAllocNTNotvoid2(HeuristicContext& ctx)
   // KQx opposite Jxxxx, don't block on the ace.
   // KJTx opposite 9 with Qx in dummy, do win the T.
 
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int leadHand = ctx.leadHand;
   const int leadSuit = ctx.leadSuit;
   const int currHand = ctx.currHand;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
 
   const int rho_lh = rho[leadHand];
   const int lho_lh = lho[leadHand];
@@ -1201,7 +1201,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
   // Compared to "v2.8":
   // Moved a test for partner's win out of the k loop.
 
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int trump = ctx.trump;
   const int suit = ctx.suit;
   const int leadHand = ctx.leadHand;
@@ -1209,7 +1209,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
   const int currHand = ctx.currHand;
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
 
   const int rho_lh = rho[leadHand];
   
@@ -1318,12 +1318,12 @@ void WeightAllocNTVoid2(HeuristicContext& ctx)
   // for no reason that I could see. This is the same or a tiny
   // bit better.
 
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int suit = ctx.suit;
   const int currHand = ctx.currHand;
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
 
   const unsigned short suitCount = tpos.length[currHand][suit];
   int suitAdd = (suitCount << 6) / 24;
@@ -1346,7 +1346,7 @@ void WeightAllocCombinedNotvoid3(HeuristicContext& ctx)
   const int trump = ctx.trump;
   const int leadSuit = ctx.leadSuit;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
 
   if (ctx.high2 == 1 ||
     (leadSuit != trump && ctx.move2_suit == trump))
@@ -1380,14 +1380,14 @@ void WeightAllocTrumpVoid3(HeuristicContext& ctx)
   // To consider:
   // rRank vs rank
 
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int trump = ctx.trump;
   const int suit = ctx.suit;
   const int leadSuit = ctx.leadSuit;
   const int currHand = ctx.currHand;
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
 
   // Don't pitch from Kx or stiff ace.
   const int mylen = tpos.length[currHand][suit];
@@ -1450,12 +1450,12 @@ void WeightAllocTrumpVoid3(HeuristicContext& ctx)
 }
 void WeightAllocNTVoid3(HeuristicContext& ctx)
 {
-  const pos& tpos = ctx.tpos;
+  const Pos& tpos = ctx.tpos;
   const int suit = ctx.suit;
   const int currHand = ctx.currHand;
   const int lastNumMoves = ctx.lastNumMoves;
   const int numMoves = ctx.numMoves;
-  moveType* mply = ctx.mply;
+  MoveType* mply = ctx.mply;
 
   int mylen = tpos.length[currHand][suit];
   int val = (mylen << 6) / 27;

@@ -20,8 +20,8 @@
 
 auto main() -> int
 {
-  ddTableDealPBN tableDealPBN;
-  ddTableResults table;
+  DdTableDealPBN tableDealPBN;
+  DdTableResults table;
 
   int res;
   char line[80];

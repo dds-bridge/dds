@@ -28,7 +28,7 @@
  * @return true if target can be reached, false otherwise
  */
 bool LaterTricksMIN(
-  pos& tpos,
+  Pos& tpos,
   const int hand,
   const int depth,
   const int target,
@@ -200,7 +200,7 @@ bool LaterTricksMIN(
  * @return true if target can be reached, false otherwise
  */
 bool LaterTricksMAX(
-  pos& tpos,
+  Pos& tpos,
   const int hand,
   const int depth,
   const int target,

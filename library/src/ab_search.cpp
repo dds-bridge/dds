@@ -20,66 +20,66 @@
 #include <lookup_tables/lookup_tables.hpp>
 
 // Internal ctx-enabled variants (forward declarations)
-static bool ABsearch0_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
-static bool ABsearch1_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
-static bool ABsearch2_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
-static bool ABsearch3_ctx(pos * posPoint, int target, int depth, SolverContext& ctx);
-evalType EvaluateWithContext(pos const * posPoint, int trump, SolverContext& ctx);
+static bool ABsearch0_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ABsearch1_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ABsearch2_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ABsearch3_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
+EvalType EvaluateWithContext(Pos const * posPoint, int trump, SolverContext& ctx);
 
 // ctx-enabled helpers to keep search-state access behind the facade
 static void Make3_ctx(
-  pos * posPoint,
+  Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
-  moveType const * mply,
+  MoveType const * mply,
   SolverContext& ctx);
 
 static void Undo0_ctx(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply,
+  const MoveType& mply,
   SolverContext& ctx);
 
 
 void Make3Simple(
-  pos * posPoint,
+  Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
-  moveType const * mply,
+  MoveType const * mply,
   SolverContext& ctx);
 
 void Undo0(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply,
+  const MoveType& mply,
   const std::shared_ptr<ThreadData>& thrp);
 
 void Undo0Simple(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply);
+  const MoveType& mply);
 
 void Undo1(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply);
+  const MoveType& mply);
 
 void Undo2(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply);
+  const MoveType& mply);
 
 void Undo3(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply);
+  const MoveType& mply);
 
 
 const int handDelta[DDS_SUITS] = { 256, 16, 1, 0 };
 
 
 bool ABsearch(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -119,7 +119,7 @@ bool ABsearch(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = ctx.moveGen().MakeNext(tricks, 0,
+    MoveType const * mply = ctx.moveGen().MakeNext(tricks, 0,
       posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
@@ -171,7 +171,7 @@ ABexit:
 
 
 bool ABsearch0(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -181,7 +181,7 @@ bool ABsearch0(
 
 // ctx-enabled implementation
 static bool ABsearch0_ctx(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -259,7 +259,7 @@ static bool ABsearch0_ctx(
   else if (depth == 0) /* Maximum depth? */
   {
     TIMER_START(TIMER_NO_EVALUATE, depth);
-    evalType evalData = EvaluateWithContext(posPoint, trump, ctx);
+    EvalType evalData = EvaluateWithContext(posPoint, trump, ctx);
     TIMER_END(TIMER_NO_EVALUATE, depth);
 
     bool value = (evalData.tricks >= target ? true : false);
@@ -378,7 +378,7 @@ static bool ABsearch0_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    moveType const * mply = ctx.moveGen().MakeNext(tricks, 0,
+    MoveType const * mply = ctx.moveGen().MakeNext(tricks, 0,
       posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
@@ -479,7 +479,7 @@ ABexit:
 
 
 bool ABsearch1(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -488,7 +488,7 @@ bool ABsearch1(
 }
 
 static bool ABsearch1_ctx(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -529,7 +529,7 @@ static bool ABsearch1_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-  moveType const * mply = ctx.moveGen().MakeNext(tricks, 1, posPoint->winRanks[depth]);
+  MoveType const * mply = ctx.moveGen().MakeNext(tricks, 1, posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -575,7 +575,7 @@ ABexit:
 
 
 bool ABsearch2(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -584,7 +584,7 @@ bool ABsearch2(
 }
 
 static bool ABsearch2_ctx(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -615,7 +615,7 @@ static bool ABsearch2_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-  moveType const * mply = ctx.moveGen().MakeNext(tricks, 2, posPoint->winRanks[depth]);
+  MoveType const * mply = ctx.moveGen().MakeNext(tricks, 2, posPoint->winRanks[depth]);
 
     if (mply == NULL)
       break;
@@ -662,7 +662,7 @@ ABexit:
 
 
 bool ABsearch3(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -671,7 +671,7 @@ bool ABsearch3(
 }
 
 static bool ABsearch3_ctx(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
@@ -706,7 +706,7 @@ static bool ABsearch3_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-  moveType const * mply = ctx.moveGen().MakeNext(tricks, 3, posPoint->winRanks[depth]);
+  MoveType const * mply = ctx.moveGen().MakeNext(tricks, 3, posPoint->winRanks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -760,9 +760,9 @@ ABexit:
 }
 
 void Make0(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  moveType const * mply)
+  MoveType const * mply)
 {
   /* First hand is not changed in next move */
   int h = posPoint->first[depth];
@@ -780,9 +780,9 @@ void Make0(
 
 
 void Make1(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  moveType const * mply)
+  MoveType const * mply)
 {
   /* First hand is not changed in next move */
   int firstHand = posPoint->first[depth];
@@ -800,9 +800,9 @@ void Make1(
 
 
 void Make2(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  moveType const * mply)
+  MoveType const * mply)
 {
   /* First hand is not changed in next move */
   int firstHand = posPoint->first[depth];
@@ -820,16 +820,16 @@ void Make2(
 
 
 void Make3(
-  pos * posPoint,
+  Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
-  moveType const * mply,
+  MoveType const * mply,
   SolverContext& ctx)
 {
   auto thrp = ctx.thread();
   int firstHand = posPoint->first[depth];
 
-  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
+  const TrickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   posPoint->first[depth - 1] = HAND_ID(firstHand, data.relWinner);
   /* Defines who is first in the next move */
@@ -886,16 +886,16 @@ void Make3(
 
 // ctx-enabled version that records winners via the SearchContext facade
 static void Make3_ctx(
-  pos * posPoint,
+  Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
-  moveType const * mply,
+  MoveType const * mply,
   SolverContext& ctx)
 {
   auto thrp = ctx.thread();
   int firstHand = posPoint->first[depth];
 
-  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
+  const TrickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   posPoint->first[depth - 1] = HAND_ID(firstHand, data.relWinner);
   /* Defines who is first in the next move */
@@ -951,13 +951,13 @@ static void Make3_ctx(
 
 
 void Make3Simple(
-  pos * posPoint,
+  Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
-  moveType const * mply,
+  MoveType const * mply,
   SolverContext& ctx)
 {
-  const trickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
+  const TrickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
 
   int firstHand = posPoint->first[depth];
 
@@ -986,9 +986,9 @@ void Make3Simple(
 
 
 void Undo0(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply,
+  const MoveType& mply,
   const std::shared_ptr<ThreadData>& thrp)
 {
   int h = HAND_ID(posPoint->first[depth], 3);
@@ -1015,9 +1015,9 @@ void Undo0(
 
 // ctx-enabled version that reads winners via the SearchContext facade
 static void Undo0_ctx(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply,
+  const MoveType& mply,
   SolverContext& ctx)
 {
   // No timers here; macros not used in this helper
@@ -1045,9 +1045,9 @@ static void Undo0_ctx(
 
 
 void Undo0Simple(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply)
+  const MoveType& mply)
 {
   int h = HAND_ID(posPoint->first[depth], 3);
   int s = mply.suit;
@@ -1059,9 +1059,9 @@ void Undo0Simple(
 
 
 void Undo1(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply)
+  const MoveType& mply)
 {
   int h = posPoint->first[depth];
   int s = mply.suit;
@@ -1075,9 +1075,9 @@ void Undo1(
 
 
 void Undo2(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply)
+  const MoveType& mply)
 {
   int h = HAND_ID(posPoint->first[depth], 1);
   int s = mply.suit;
@@ -1091,9 +1091,9 @@ void Undo2(
 
 
 void Undo3(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  const moveType& mply)
+  const MoveType& mply)
 {
   int h = HAND_ID(posPoint->first[depth], 2);
   int s = mply.suit;
@@ -1106,15 +1106,15 @@ void Undo3(
 }
 
 
-evalType EvaluateWithContext(
-  pos const * posPoint,
+EvalType EvaluateWithContext(
+  Pos const * posPoint,
   const int trump,
   SolverContext& ctx)
 {
   auto thrp = ctx.thread();
   int s, h, hmax = 0, count = 0, k = 0;
   unsigned short rmax = 0;
-  evalType eval;
+  EvalType eval;
 
   int firstHand = posPoint->first[0];
   assert((firstHand >= 0) && (firstHand <= 3));

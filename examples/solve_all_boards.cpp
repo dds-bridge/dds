@@ -20,8 +20,8 @@
 
 auto main() -> int
 {
-  boardsPBN bo;
-  solvedBoards solved;
+  BoardsPBN bo;
+  SolvedBoards solved;
 
   int res;
   char line[80];

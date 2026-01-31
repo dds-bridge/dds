@@ -10,18 +10,18 @@
 
 TEST(TargetedUnitTests, RankForcesAceBasic) {
   // Construct a minimal context and exercise RankForcesAce for different cards4th
-  pos tpos = {};
+  Pos tpos = {};
   memset(&tpos, 0, sizeof(tpos));
 
   // Build a safe HeuristicContext using local objects
-  moveType bm = {};
-  moveType bmtt = {};
-  relRanksType thrp_rel_dummy[1] = {};
-  moveType mply_dummy[1] = {};
+  MoveType bm = {};
+  MoveType bmtt = {};
+  RelRanksType thrp_rel_dummy[1] = {};
+  MoveType mply_dummy[1] = {};
   trackType track_dummy = {};
 
   HeuristicContext ctx = {
-    tpos,                   // pos
+    tpos,                   // Pos
     bm,                     // bestMove
     bmtt,                   // bestMoveTT
     thrp_rel_dummy,         // thrp_rel
@@ -52,16 +52,16 @@ TEST(TargetedUnitTests, RankForcesAceBasic) {
 }
 
 TEST(TargetedUnitTests, GetTopNumberEdgeCases) {
-  pos tpos = {};
+  Pos tpos = {};
   memset(&tpos, 0, sizeof(tpos));
 
   int topNumber = -1;
   int mno = -1;
   // Build a small HeuristicContext for GetTopNumber
-  moveType bm = {};
-  moveType bmtt = {};
-  relRanksType thrp_rel_dummy[1] = {};
-  moveType mply_dummy[1] = {};
+  MoveType bm = {};
+  MoveType bmtt = {};
+  RelRanksType thrp_rel_dummy[1] = {};
+  MoveType mply_dummy[1] = {};
   trackType track_dummy = {};
   HeuristicContext ctx = { tpos, bm, bmtt, thrp_rel_dummy, mply_dummy, 0, 0, DDS_NOTRUMP, 0, &track_dummy, 0, 0, 0, 0 };
 

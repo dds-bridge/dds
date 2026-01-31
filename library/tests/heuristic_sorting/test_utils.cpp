@@ -10,7 +10,7 @@
 #include <lookup_tables/lookup_tables.hpp>
 
 // Normalization: stable textual representation (same as serialize for now)
-std::string normalize_ordering(const moveType* moves, int numMoves, bool include_scores) {
+std::string normalize_ordering(const MoveType* moves, int numMoves, bool include_scores) {
   // Create an index array and sort it deterministically by:
   // 1) weight (descending)
   // 2) suit (ascending)
@@ -45,9 +45,9 @@ std::string normalize_ordering(const moveType* moves, int numMoves, bool include
   return out.str();
 }
 
-// Initialize relRanks table and trackType based on a given pos (used by fuzz tests)
-void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 assumed */, trackType* trackp,
-    int cardsPlayed, const moveType* playedMoves, int leadHand, int trump) {
+// Initialize relRanks table and trackType based on a given Pos (used by fuzz tests)
+void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 assumed */, trackType* trackp,
+    int cardsPlayed, const MoveType* playedMoves, int leadHand, int trump) {
   // zero track and set sane defaults
   if (trackp) {
     std::memset(trackp, 0, sizeof(*trackp));
@@ -77,12 +77,12 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
 
   if (!relTable) return;
 
-  // Work on a mutable copy of pos so we can simulate cards removed by plays
-  pos localPos = tpos;
+  // Work on a mutable copy of Pos so we can simulate cards removed by plays
+  Pos localPos = tpos;
   if (cardsPlayed > 0 && playedMoves) {
     // playedMoves are in play order starting from leadHand (absolute)
     for (int i = 0; i < cardsPlayed; ++i) {
-      const moveType &m = playedMoves[i];
+      const MoveType &m = playedMoves[i];
       int absHand = (leadHand + i) % 4;
       if (m.rank > 0 && m.rank < 16) {
         unsigned short mask = bitMapRank[m.rank];
@@ -127,7 +127,7 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
     }
   }
 
-  // Build handLookup from current deal (use localPos which may have had cards removed)
+  // Build handLookup from current Deal (use localPos which may have had cards removed)
   int handLookup[DDS_SUITS][15];
   for (int s = 0; s < DDS_SUITS; s++) {
     for (int r = 14; r >= 2; r--) {
@@ -150,7 +150,7 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
     }
 
     relTable[aggr] = relTable[aggr ^ topBitRank];
-    relRanksType * relp = &relTable[aggr];
+    RelRanksType * relp = &relTable[aggr];
 
   int weight = count_table[aggr];
     for (int c = weight; c >= 2; c--) {
@@ -174,7 +174,7 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
     if (cardsPlayed > DDS_HANDS) cardsPlayed = DDS_HANDS;
     int relIndex = 0;
     for (int i = 0; i < cardsPlayed; ++i) {
-      const moveType& m = playedMoves[i];
+      const MoveType& m = playedMoves[i];
       // relative index in trick: 0..cardsPlayed-1
       relIndex = i;
       trackp->playSuits[relIndex] = m.suit;
@@ -194,7 +194,7 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
         trackp->leadSuit = m.suit;
       } else {
         // compare with previous winning card
-  extCard prev = trackp->move[trackp->high[relIndex - 1]];
+  ExtCard prev = trackp->move[trackp->high[relIndex - 1]];
         bool newIsWinning = false;
         if (m.suit == prev.suit) {
           if (m.rank > prev.rank) newIsWinning = true;
@@ -243,7 +243,7 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
     if (hasCurrentBest) {
       int lastRel = cardsPlayed - 1;
       int relWinner = trackp->high[lastRel];
-      extCard best = trackp->move[relWinner];
+      ExtCard best = trackp->move[relWinner];
       curBestSuit = best.suit;
       curBestRank = best.rank;
     }

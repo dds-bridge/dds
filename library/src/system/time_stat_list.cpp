@@ -48,13 +48,13 @@ void TimeStatList::Init(
 
 
 void TimeStatList::Add(
-  const unsigned pos,
+  const unsigned Pos,
   const TimeStat& add)
 {
-  if (pos < list.size()) {
-    list[pos] += add;
+  if (Pos < list.size()) {
+    list[Pos] += add;
   } else {
-    std::cerr << "[E] TimeStatList::Add(): pos " << pos << " out of range, size " << list.size() << "\n";
+    std::cerr << "[E] TimeStatList::Add(): Pos " << Pos << " out of range, size " << list.size() << "\n";
   }    
 }
 

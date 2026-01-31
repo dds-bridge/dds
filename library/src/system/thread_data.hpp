@@ -44,13 +44,13 @@ struct ThreadData
   unsigned short int suit[DDS_HANDS][DDS_SUITS];
   int trump;
 
-  pos lookAheadPos; // Recursive alpha-beta data
+  Pos lookAheadPos; // Recursive alpha-beta data
   bool analysisFlag;
   unsigned short int lowestWin[50][DDS_SUITS];
   WinnersType winners[13];
-  moveType forbiddenMoves[14];
-  moveType bestMove[50];
-  moveType bestMoveTT[50];
+  MoveType forbiddenMoves[14];
+  MoveType bestMove[50];
+  MoveType bestMoveTT[50];
 
   double memUsed;
   int nodes;
@@ -58,7 +58,7 @@ struct ThreadData
 
   // Constant for a given hand.
   // 960 KB
-  relRanksType rel[8192];
+  RelRanksType rel[8192];
 
   // Deferred TT configuration for context-owned construction
   // TransTable configuration moved to SolverContext::SolverConfig and

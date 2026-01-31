@@ -59,10 +59,10 @@ unsigned Memory::NumThreads() const
 
 double Memory::MemoryInUseMB(const unsigned /*thrId*/) const
 {
-  // We can only account for the static relRanksType footprint here. Any
+  // We can only account for the static RelRanksType footprint here. Any
   // transposition table memory is owned by SolverContext/transposition
   // table instances and must be queried via those contexts when available.
-  return 8192. * sizeof(relRanksType) / static_cast<double>(1024.);
+  return 8192. * sizeof(RelRanksType) / static_cast<double>(1024.);
 }
 
 

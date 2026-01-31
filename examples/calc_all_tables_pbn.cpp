@@ -20,9 +20,9 @@
 
 auto main() -> int
 {
-  ddTableDealsPBN DDdealsPBN;
-  ddTablesRes tableRes;
-  allParResults pres;
+  DdTableDealsPBN DDdealsPBN;
+  DdTablesRes tableRes;
+  AllParResults pres;
 
   int mode = 0; // No par calculation
   int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All

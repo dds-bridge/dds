@@ -28,22 +28,22 @@ extern int play_suit_[3][52];
 extern int play_rank_[3][52];
 
 
-auto print_future_tricks(char title[], futureTricks * fut) -> void;
+auto print_future_tricks(char title[], FutureTricks * fut) -> void;
 auto equals_to_string(int equals, char * res) -> void;
-auto compare_future_tricks(futureTricks * fut, int handno, int solutions) -> bool;
+auto compare_future_tricks(FutureTricks * fut, int handno, int solutions) -> bool;
 
-auto set_table(ddTableResults * table, int handno) -> void;
-auto compare_table(ddTableResults * table, int handno) -> bool;
-auto print_table(ddTableResults * table) -> void;
+auto set_table(DdTableResults * table, int handno) -> void;
+auto compare_table(DdTableResults * table, int handno) -> bool;
+auto print_table(DdTableResults * table) -> void;
 
-auto compare_par(parResults * par, int handno) -> bool;
-auto compare_dealer_par(parResultsDealer * par, int handno) -> bool;
-auto print_par(parResults * par) -> void;
-auto print_dealer_par(parResultsDealer * par) -> void;
+auto compare_par(ParResults * par, int handno) -> bool;
+auto compare_dealer_par(ParResultsDealer * par, int handno) -> bool;
+auto print_par(ParResults * par) -> void;
+auto print_dealer_par(ParResultsDealer * par) -> void;
 
-auto compare_play(solvedPlay * trace, int handno) -> bool;
-auto print_bin_play(playTraceBin * play, solvedPlay * solved) -> void;
-auto print_pbn_play(playTracePBN * play, solvedPlay * solved) -> void;
+auto compare_play(SolvedPlay * trace, int handno) -> bool;
+auto print_bin_play(PlayTraceBin * play, SolvedPlay * solved) -> void;
+auto print_pbn_play(PlayTracePBN * play, SolvedPlay * solved) -> void;
 
 
 auto print_hand(char title[], 

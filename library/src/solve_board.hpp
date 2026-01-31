@@ -28,7 +28,7 @@ void SolveChunkCommon(
   const int thrId);
 
 void DetectSolveDuplicates(
-  const boards& bds,
+  const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs);
 

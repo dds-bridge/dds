@@ -16,24 +16,24 @@
 #include "pbn.hpp"
 
 
-paramType cparam;
+ParamType cparam;
 
 extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
 int CalcAllBoardsN(
-  boards * bop,
-  solvedBoards * solvedp);
+  Boards * bop,
+  SolvedBoards * solvedp);
 
 
 void CalcSingleCommon(
   const int thrId,
   const int bno)
 {
-  // Solves a single deal and strain for all four declarers.
+  // Solves a single Deal and strain for all four declarers.
 
-  futureTricks fut;
+  FutureTricks fut;
   cparam.bop->deals[bno].first = 0;
 
   START_THREAD_TIMER(thrId);
@@ -92,8 +92,8 @@ void CopyCalcSingle(const vector<int>& crossrefs)
 void CalcChunkCommon(
   const int thrId)
 {
-  // Solves each deal and strain for all four declarers.
-  vector<futureTricks> fut;
+  // Solves each Deal and strain for all four declarers.
+  vector<FutureTricks> fut;
   fut.resize(static_cast<unsigned>(cparam.noOfBoards));
 
   int index;
@@ -126,8 +126,8 @@ void CalcChunkCommon(
 
 
 int CalcAllBoardsN(
-  boards * bop,
-  solvedBoards * solvedp)
+  Boards * bop,
+  SolvedBoards * solvedp)
 {
   cparam.error = 0;
 
@@ -166,12 +166,12 @@ int CalcAllBoardsN(
 
 
 int STDCALL CalcDDtable(
-  ddTableDeal tableDeal,
-  ddTableResults * tablep)
+  DdTableDeal tableDeal,
+  DdTableResults * tablep)
 {
-  deal dl;
-  boards bo;
-  solvedBoards solved;
+  Deal dl;
+  Boards bo;
+  SolvedBoards solved;
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -217,11 +217,11 @@ int STDCALL CalcDDtable(
 
 
 int STDCALL CalcAllTables(
-  ddTableDeals * dealsp,
+  DdTableDeals * dealsp,
   int mode,
   int trumpFilter[5],
-  ddTablesRes * resp,
-  allParResults * presp)
+  DdTablesRes * resp,
+  AllParResults * presp)
 {
   /* mode = 0: par calculation, vulnerability None
      mode = 1: par calculation, vulnerability All
@@ -229,8 +229,8 @@ int STDCALL CalcAllTables(
      mode = 3: par calculation, vulnerability EW
          mode = -1: no par calculation */
 
-  boards bo;
-  solvedBoards solved;
+  Boards bo;
+  SolvedBoards solved;
   int count = 0;
   bool okey = false;
 
@@ -322,13 +322,13 @@ int STDCALL CalcAllTables(
 
 
 int STDCALL CalcAllTablesPBN(
-  ddTableDealsPBN * dealsp,
+  DdTableDealsPBN * dealsp,
   int mode,
   int trumpFilter[5],
-  ddTablesRes * resp,
-  allParResults * presp)
+  DdTablesRes * resp,
+  AllParResults * presp)
 {
-  ddTableDeals dls;
+  DdTableDeals dls;
   for (int k = 0; k < dealsp->noOfTables; k++)
     if (ConvertFromPBN(dealsp->deals[k].cards, dls.deals[k].cards) != 1)
       return RETURN_PBN_FAULT;
@@ -341,10 +341,10 @@ int STDCALL CalcAllTablesPBN(
 
 
 int STDCALL CalcDDtablePBN(
-  ddTableDealPBN tableDealPBN,
-  ddTableResults * tablep)
+  DdTableDealPBN tableDealPBN,
+  DdTableResults * tablep)
 {
-  ddTableDeal tableDeal;
+  DdTableDeal tableDeal;
   if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards) != 1)
     return RETURN_PBN_FAULT;
 
@@ -354,7 +354,7 @@ int STDCALL CalcDDtablePBN(
 
 
 void DetectCalcDuplicates(
-  const boards& bds,
+  const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {

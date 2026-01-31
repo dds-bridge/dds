@@ -18,18 +18,18 @@
 #include <chrono>
 
 
-paramType param;
+ParamType param;
 
 extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
 int SolveAllBoardsN(
-  boards& bds,
-  solvedBoards& solved);
+  Boards& bds,
+  SolvedBoards& solved);
 
 bool SameBoard(
-  const boards& bds,
+  const Boards& bds,
   const unsigned index1,
   const unsigned index2);
 
@@ -38,7 +38,7 @@ void SolveSingleCommon(
   const int thrId,
   const int bno)
 {
-  futureTricks fut;
+  FutureTricks fut;
 
   // Fallback timing: measure per-board elapsed time (ms) even when
   // DDS_SCHEDULER isn't enabled at compile time. This allows the
@@ -121,8 +121,8 @@ void SolveChunkCommon(
 
 
 int SolveAllBoardsN(
-  boards& bds,
-  solvedBoards& solved)
+  Boards& bds,
+  SolvedBoards& solved)
 {
   param.error = 0;
 
@@ -160,11 +160,11 @@ int SolveAllBoardsN(
 
 
 /**
- * @brief Solve a single bridge deal in PBN format using double dummy analysis.
+ * @brief Solve a single bridge Deal in PBN format using double dummy analysis.
  *
- * Converts a PBN deal to internal format and calls SolveBoard.
+ * Converts a PBN Deal to internal format and calls SolveBoard.
  *
- * @param dlpbn The PBN deal to analyze
+ * @param dlpbn The PBN Deal to analyze
  * @param target Target number of tricks
  * @param solutions Solution mode
  * @param mode Analysis mode
@@ -173,14 +173,14 @@ int SolveAllBoardsN(
  * @return 1 on success, error code otherwise
  */
 int STDCALL SolveBoardPBN(
-  dealPBN dlpbn, 
+  DealPBN dlpbn, 
   int target,
   int solutions, 
   int mode, 
-  futureTricks * futp, 
+  FutureTricks * futp, 
   int thrId)
 {
-  deal dl;
+  Deal dl;
   if (ConvertFromPBN(dlpbn.remainCards, dl.remainCards) != RETURN_NO_FAULT)
     return RETURN_PBN_FAULT;
 
@@ -200,17 +200,17 @@ int STDCALL SolveBoardPBN(
 /**
  * @brief Solve multiple bridge deals in PBN format.
  *
- * Converts each PBN deal to internal format and solves all boards.
+ * Converts each PBN Deal to internal format and solves all Boards.
  *
  * @param bop Pointer to multiple PBN deals
- * @param solvedp Pointer to results for solved boards
+ * @param solvedp Pointer to results for solved Boards
  * @return 1 on success, error code otherwise
  */
 int STDCALL SolveAllBoards(
-  boardsPBN * bop, 
-  solvedBoards * solvedp)
+  BoardsPBN * bop, 
+  SolvedBoards * solvedp)
 {
-  boards bo;
+  Boards bo;
   bo.noOfBoards = bop->noOfBoards;
   if (bo.noOfBoards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
@@ -240,16 +240,16 @@ int STDCALL SolveAllBoards(
 
 
 int STDCALL SolveAllBoardsBin(
-  boards * bop,
-  solvedBoards * solvedp)
+  Boards * bop,
+  SolvedBoards * solvedp)
 {
   return SolveAllBoardsN(* bop, * solvedp);
 }
 
 
 int STDCALL SolveAllChunksPBN(
-  boardsPBN * bop, 
-  solvedBoards * solvedp, 
+  BoardsPBN * bop, 
+  SolvedBoards * solvedp, 
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.
@@ -261,8 +261,8 @@ int STDCALL SolveAllChunksPBN(
 
 
 int STDCALL SolveAllChunks(
-  boardsPBN * bop, 
-  solvedBoards * solvedp, 
+  BoardsPBN * bop, 
+  SolvedBoards * solvedp, 
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.
@@ -274,8 +274,8 @@ int STDCALL SolveAllChunks(
 
 
 int STDCALL SolveAllChunksBin(
-  boards * bop, 
-  solvedBoards * solvedp, 
+  Boards * bop, 
+  SolvedBoards * solvedp, 
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.
@@ -287,7 +287,7 @@ int STDCALL SolveAllChunksBin(
 
 
 void DetectSolveDuplicates(
-  const boards& bds,
+  const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
@@ -316,7 +316,7 @@ void DetectSolveDuplicates(
 
 
 bool SameBoard(
-  const boards& bds,
+  const Boards& bds,
   const unsigned index1,
   const unsigned index2)
 {

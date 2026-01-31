@@ -29,12 +29,12 @@ using namespace std;
 struct playparamType
 {
   int noOfBoards;
-  playTracesBin * plp;
-  solvedPlays * solvedp;
+  PlayTracesBin * plp;
+  SolvedPlays * solvedp;
   int error;
 };
 
-paramType playparam;
+ParamType playparam;
 playparamType traceparam;
 
 extern System sysdep;
@@ -45,19 +45,19 @@ extern Scheduler scheduler;
 /**
  * @brief Analyze a sequence of played cards (binary format) and determine the tricks taken.
  *
- * This function simulates play of a bridge deal according to the provided play trace,
+ * This function simulates play of a bridge Deal according to the provided play trace,
  * using double dummy analysis to determine the number of tricks won at each step.
  *
- * @param dl The deal to analyze
+ * @param dl The Deal to analyze
  * @param play The sequence of played cards (binary format)
  * @param solvedp Pointer to result structure for solved play
  * @param thrId Index of thread to use
  * @return 1 on success, error code otherwise
  */
 int STDCALL AnalysePlayBin(
-  deal dl,
-  playTraceBin play,
-  solvedPlay * solvedp,
+  Deal dl,
+  PlayTraceBin play,
+  SolvedPlay * solvedp,
   int thrId)
 {
   if (! sysdep.ThreadOK(thrId))
@@ -67,8 +67,8 @@ int STDCALL AnalysePlayBin(
   SolverContext outer_ctx;
   auto thrp = outer_ctx.thread();
 
-  moveType move;
-  futureTricks fut;
+  MoveType move;
+  FutureTricks fut;
 
   int ret = SolveBoardInternal(outer_ctx, dl, -1, 1, 1, &fut);
   if (ret != RETURN_NO_FAULT)
@@ -256,23 +256,23 @@ int STDCALL AnalysePlayBin(
 /**
  * @brief Analyze a sequence of played cards (PBN format) and determine the tricks taken.
  *
- * This function converts a PBN-format deal and play trace to internal format,
+ * This function converts a PBN-format Deal and play trace to internal format,
  * then simulates play using double dummy analysis to determine the number of tricks won.
  *
- * @param dlPBN The deal to analyze (PBN format)
+ * @param dlPBN The Deal to analyze (PBN format)
  * @param playPBN The sequence of played cards (PBN format)
  * @param solvedp Pointer to result structure for solved play
  * @param thrId Index of thread to use
  * @return 1 on success, error code otherwise
  */
 int STDCALL AnalysePlayPBN(
-  dealPBN dlPBN,
-  playTracePBN playPBN,
-  solvedPlay * solvedp,
+  DealPBN dlPBN,
+  PlayTracePBN playPBN,
+  SolvedPlay * solvedp,
   int thrId)
 {
-  deal dl;
-  playTraceBin play;
+  Deal dl;
+  PlayTraceBin play;
 
   if (ConvertFromPBN(dlPBN.remainCards, dl.remainCards) !=
       RETURN_NO_FAULT)
@@ -297,7 +297,7 @@ void PlaySingleCommon(
   const int thrId,
   const int bno)
 {
-  solvedPlay solved;
+  SolvedPlay solved;
 
   int res = AnalysePlayBin(
     playparam.bop->deals[bno],
@@ -331,9 +331,9 @@ void PlayChunkCommon(const int thrId)
 
 
 int STDCALL AnalyseAllPlaysBin(
-  boards * bop,
-  playTracesBin * plp,
-  solvedPlays * solvedp,
+  Boards * bop,
+  PlayTracesBin * plp,
+  SolvedPlays * solvedp,
   [[maybe_unused]] int chunkSize)
 {
   playparam.error = 0;
@@ -374,13 +374,13 @@ int STDCALL AnalyseAllPlaysBin(
 
 
 int STDCALL AnalyseAllPlaysPBN(
-  boardsPBN * bopPBN,
-  playTracesPBN * plpPBN,
-  solvedPlays * solvedp,
+  BoardsPBN * bopPBN,
+  PlayTracesPBN * plpPBN,
+  SolvedPlays * solvedp,
   int chunkSize)
 {
-  boards bd;
-  playTracesBin pl;
+  Boards bd;
+  PlayTracesBin pl;
 
   bd.noOfBoards = bopPBN->noOfBoards;
   if (bd.noOfBoards > MAXNOOFBOARDS)
@@ -388,8 +388,8 @@ int STDCALL AnalyseAllPlaysPBN(
 
   for (int k = 0; k < bopPBN->noOfBoards; k++)
   {
-    deal& dl = bd.deals[k];
-    dealPBN& dlp = bopPBN->deals[k];
+    Deal& dl = bd.deals[k];
+    DealPBN& dlp = bopPBN->deals[k];
 
     if (ConvertFromPBN(dlp.remainCards,
                        dl.remainCards) != RETURN_NO_FAULT)
@@ -420,7 +420,7 @@ int STDCALL AnalyseAllPlaysPBN(
 
 
 void DetectPlayDuplicates(
-  const boards& bds,
+  const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
