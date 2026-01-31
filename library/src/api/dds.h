@@ -49,104 +49,166 @@ All hand identities are given as
  */
 #define HAND_ID(hand, relative) ((hand + relative) & 3)
 
-
+/**
+ * @brief Represents a single card move in the game.
+ *
+ * Contains information about a card that can be played, including
+ * its suit, rank, sequence status, and sorting weight.
+ */
 struct MoveType
 {
-  int suit;
-  int rank;
-  int sequence; /* Whether or not this move is the
-                                     first in a sequence */
-  int weight; /* Weight used at sorting */
+  int suit;      ///< Suit of the card (0-3: spades, hearts, diamonds, clubs)
+  int rank;      ///< Rank of the card (2-14: 2 through Ace)
+  int sequence;  ///< Whether this move is the first in a sequence
+  int weight;    ///< Weight used for sorting during move generation
 };
 
+/**
+ * @brief Collection of moves available at a single ply.
+ *
+ * Stores all possible moves at a given point in the game,
+ * along with tracking of current and last move indices.
+ */
 struct MovePlyType
 {
-  MoveType move[14];
-  int current;
-  int last;
+  MoveType move[14];  ///< Array of possible moves (max 13 cards + sentinel)
+  int current;        ///< Index of current move being considered
+  int last;           ///< Index of last valid move in array
 };
 
+/**
+ * @brief Identifies a high card by rank and holding hand.
+ *
+ * Used to track high cards in each suit during analysis.
+ */
 struct HighCardType
 {
-  int rank;
-  int hand;
+  int rank;  ///< Rank of the high card (2-14)
+  int hand;  ///< Hand holding the card (0-3: N, E, S, W)
 };
 
+/**
+ * @brief Complete position state during game analysis.
+ *
+ * Represents the full state of a bridge position including card distribution,
+ * trump information, and current play state. This is the core data structure
+ * used throughout the solver.
+ */
 struct Pos
 {
-  unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS];
-  unsigned short int aggr[DDS_SUITS];
-  unsigned char length[DDS_HANDS][DDS_SUITS];
-  int handDist[DDS_HANDS];
+  unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS];  ///< Bitmask of ranks held by each hand in each suit
+  unsigned short int aggr[DDS_SUITS];                    ///< Aggregate bitmask of all cards in each suit
+  unsigned char length[DDS_HANDS][DDS_SUITS];            ///< Number of cards each hand holds in each suit
+  int handDist[DDS_HANDS];                               ///< Total number of cards held by each hand
 
-  unsigned short int winRanks[50][DDS_SUITS];
-  /* Cards that win by rank, firstindex is depth. */
-  int first[50];
-  /* Hand that leads the trick for each ply */
-  MoveType move[50];
-  /* Presently winning move */
-  int handRelFirst;
-  /* The current hand, relative first hand */
-  int tricksMAX;
-  /* Aggregated tricks won by MAX */
-  HighCardType winner[DDS_SUITS];
-  /* Winning rank of trick. */
-  HighCardType secondBest[DDS_SUITS];
-  /* Second best rank. */
+  unsigned short int winRanks[50][DDS_SUITS];  ///< Cards that win by rank at each depth
+  int first[50];                               ///< Hand that leads the trick for each ply
+  MoveType move[50];                           ///< Presently winning move at each ply
+  int handRelFirst;                            ///< Current hand, relative to first hand
+  int tricksMAX;                               ///< Aggregated tricks won by maximizing side
+  HighCardType winner[DDS_SUITS];              ///< Winning rank of trick in each suit
+  HighCardType secondBest[DDS_SUITS];          ///< Second best rank in each suit
 };
 
+/**
+ * @brief Trick-level data for current play state.
+ *
+ * Tracks information about the current trick being played,
+ * including play counts, best cards, and lead information.
+ */
 struct TrickDataType
 {
-  int playCount[DDS_SUITS];
-  int bestRank;
-  int bestSuit;
-  int bestSequence;
-  int relWinner;
-  int nextLeadHand;
+  int playCount[DDS_SUITS];  ///< Number of cards played in each suit
+  int bestRank;              ///< Rank of best card played so far
+  int bestSuit;              ///< Suit of best card played so far
+  int bestSequence;          ///< Sequence of best card
+  int relWinner;             ///< Relative position of current trick winner
+  int nextLeadHand;          ///< Hand that will lead next trick
 };
 
+/**
+ * @brief Evaluation result for a position.
+ *
+ * Contains the number of tricks that can be won and which specific
+ * card ranks can win in each suit.
+ */
 struct EvalType
 {
-  int tricks;
-  unsigned short int winRanks[DDS_SUITS];
+  int tricks;                              ///< Number of tricks that can be won from this position
+  unsigned short int winRanks[DDS_SUITS];  ///< Bitmask of winning ranks in each suit
 };
 
+/**
+ * @brief Simple card representation.
+ *
+ * Basic structure identifying a card by suit and rank.
+ */
 struct Card
 {
-  int suit;
-  int rank;
+  int suit;  ///< Suit of the card (0-3: spades, hearts, diamonds, clubs)
+  int rank;  ///< Rank of the card (2-14: 2 through Ace)
 };
 
+/**
+ * @brief Extended card representation with sequence information.
+ *
+ * Like Card but includes sequence information for tracking
+ * equivalent cards during move generation.
+ */
 struct ExtCard
 {
-  int suit;
-  int rank;
-  int sequence;
+  int suit;      ///< Suit of the card (0-3: spades, hearts, diamonds, clubs)
+  int rank;      ///< Rank of the card (2-14: 2 through Ace)
+  int sequence;  ///< Sequence identifier for equivalent cards
 };
 
+/**
+ * @brief Absolute rank with holding hand.
+ *
+ * Compact representation (2 bytes) identifying a card rank
+ * and which hand holds it.
+ */
 struct AbsRankType // 2 bytes
 {
-  char rank;
-  signed char hand;
+  char rank;         ///< Rank of the card (2-14)
+  signed char hand;  ///< Hand holding the card (0-3: N, E, S, W)
 };
 
+/**
+ * @brief Relative rank table for all suits.
+ *
+ * Contains absolute rank information for all possible card positions
+ * across all suits. Used for quick lookup during position analysis.
+ */
 struct RelRanksType // 120 bytes
 {
-  AbsRankType absRank[15][DDS_SUITS];
+  AbsRankType absRank[15][DDS_SUITS];  ///< Rank information indexed by position and suit
 };
 
+/**
+ * @brief Parameters for batch board solving.
+ *
+ * Contains input/output structures for solving multiple boards
+ * in a single operation.
+ */
 struct ParamType
 {
-  int noOfBoards;
-  Boards * bop;
-  SolvedBoards * solvedp;
-  int error;
+  int noOfBoards;          ///< Number of boards to solve
+  Boards * bop;            ///< Pointer to input boards
+  SolvedBoards * solvedp;  ///< Pointer to output solutions
+  int error;               ///< Error code from operation
 };
 
+/**
+ * @brief Execution mode for solver operations.
+ *
+ * Determines how the solver processes a position - solving for best play,
+ * calculating all possible outcomes, or tracing a specific line of play.
+ */
 enum class RunMode
 {
-  DDS_RUN_SOLVE = 0,
-  DDS_RUN_CALC = 1,
-  DDS_RUN_TRACE = 2,
-  DDS_RUN_SIZE = 3
+  DDS_RUN_SOLVE = 0,  ///< Solve mode: find optimal play
+  DDS_RUN_CALC = 1,   ///< Calculate mode: compute all outcomes
+  DDS_RUN_TRACE = 2,  ///< Trace mode: analyze specific play sequence
+  DDS_RUN_SIZE = 3    ///< Size sentinel (not a valid mode)
 };

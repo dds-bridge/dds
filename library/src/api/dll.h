@@ -226,19 +226,35 @@ struct Boards
   int mode[MAXNOOFBOARDS];
 };
 
+/**
+ * @brief Multiple boards in PBN format for batch solving.
+ *
+ * Similar to Boards but uses PBN (Portable Bridge Notation) format
+ * for deal representation. Used for solving multiple boards efficiently.
+ *
+ * @see Boards
+ */
 struct BoardsPBN
 {
-  int noOfBoards;
-  struct DealPBN deals[MAXNOOFBOARDS];
-  int target[MAXNOOFBOARDS];
-  int solutions[MAXNOOFBOARDS];
-  int mode[MAXNOOFBOARDS];
+  int noOfBoards;                            ///< Number of boards to solve
+  struct DealPBN deals[MAXNOOFBOARDS];       ///< Array of deals in PBN format
+  int target[MAXNOOFBOARDS];                 ///< Target tricks for each board
+  int solutions[MAXNOOFBOARDS];              ///< Solution mode for each board
+  int mode[MAXNOOFBOARDS];                   ///< Solve mode for each board
 };
 
+/**
+ * @brief Solutions for multiple boards.
+ *
+ * Container for results from batch board solving operations.
+ * Each entry contains the complete future tricks analysis for one board.
+ *
+ * @see FutureTricks
+ */
 struct SolvedBoards
 {
-  int noOfBoards;
-  struct FutureTricks solvedBoard[MAXNOOFBOARDS];
+  int noOfBoards;                                    ///< Number of solved boards
+  struct FutureTricks solvedBoard[MAXNOOFBOARDS];    ///< Array of solutions
 };
 
 struct DdTableDeal
