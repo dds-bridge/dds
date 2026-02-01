@@ -111,7 +111,7 @@ auto TransTableS::init(const int handLookup[][15]) -> void {
   reset_text_.resize(kResetReasonCount);
   reset_text_[static_cast<int>(ResetReason::Unknown)] = "Unknown reason";
   reset_text_[static_cast<int>(ResetReason::TooManyNodes)] = "Too many nodes";
-  reset_text_[static_cast<int>(ResetReason::NewDeal)] = "New deal";
+  reset_text_[static_cast<int>(ResetReason::NewDeal)] = "New Deal";
   reset_text_[static_cast<int>(ResetReason::NewTrump)] = "New trump";
   reset_text_[static_cast<int>(ResetReason::MemoryExhausted)] = "Memory exhausted";
   reset_text_[static_cast<int>(ResetReason::FreeMemory)] = "Free thread memory";
@@ -375,7 +375,7 @@ NodeCards const * TransTableS::lookup(
   const int trick,
   const int hand,
   const unsigned short aggrTarget[],
-  const int handDist[],
+  const int hand_dist[],
   const int limit,
   bool& lowerFlag)
 {
@@ -385,10 +385,10 @@ NodeCards const * TransTableS::lookup(
   NodeCards const * cardsP;
 
   suit_lengths_[trick] =
-    (static_cast<long long>(handDist[0]) << 36) |
-    (static_cast<long long>(handDist[1]) << 24) |
-    (static_cast<long long>(handDist[2]) << 12) |
-    (static_cast<long long>(handDist[3]));
+    (static_cast<long long>(hand_dist[0]) << 36) |
+    (static_cast<long long>(hand_dist[1]) << 24) |
+    (static_cast<long long>(hand_dist[2]) << 12) |
+    (static_cast<long long>(hand_dist[3]));
 
   pp = search_len_and_insert(rootnp_[trick][hand],
     suit_lengths_[trick], false, trick, hand, res);

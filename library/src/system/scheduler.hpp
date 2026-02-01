@@ -47,7 +47,7 @@ struct schedType
 /**
  * @brief Scheduler for bridge double dummy solver threading and grouping.
  *
- * The Scheduler class manages the grouping, sorting, and distribution of boards
+ * The Scheduler class manages the grouping, sorting, and distribution of Boards
  * for parallel double dummy analysis. It handles thread registration, workload
  * partitioning, and timing statistics, optimizing the use of available threads
  * for efficient solving. Scheduler is an internal component and not part of the
@@ -123,15 +123,15 @@ class Scheduler
 
     void SortHands(const enum RunMode mode);
 
-    int Strength(const deal& dl) const;
-    int Fanout(const deal& dl) const;
+    int Strength(const Deal& dl) const;
+    int Fanout(const Deal& dl) const;
 
     void Reset();
 
     vector<Timer> timersThread;
     Timer timerBlock;
 
-    void MakeGroups(const boards& bds);
+    void MakeGroups(const Boards& bds);
 
     void FinetuneGroups();
 
@@ -167,7 +167,7 @@ class Scheduler
 #endif
 
     int PredictedTime(
-      deal& dl,
+      Deal& dl,
       int number) const;
 
 
@@ -198,12 +198,12 @@ class Scheduler
 
     void RegisterRun(
       const enum RunMode mode,
-      const boards& bds,
-      const playTracesBin& pl);
+      const Boards& bds,
+      const PlayTracesBin& pl);
 
     void RegisterRun(
       const enum RunMode mode,
-      const boards& bds);
+      const Boards& bds);
 
     schedType GetNumber(const int thrId);
 

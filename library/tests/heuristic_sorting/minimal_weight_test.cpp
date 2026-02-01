@@ -19,8 +19,8 @@ TEST_F(MinimalWeightTest, BasicWeightAllocCall) {
     std::cout << "Creating basic position..." << std::endl;
     
     // Create a basic position structure
-    pos tpos;
-    memset(&tpos, 0, sizeof(pos));
+    Pos tpos;
+    memset(&tpos, 0, sizeof(Pos));
     
     // Set minimal required data
     tpos.length[0][0] = 4;  // North has 4 spades
@@ -29,26 +29,26 @@ TEST_F(MinimalWeightTest, BasicWeightAllocCall) {
     tpos.length[3][0] = 3;  // West has 3 spades
     
     // Create some test moves
-    moveType moves[3] = {
+    MoveType moves[3] = {
         {0, 14, 0, 0},  // Ace of spades
         {0, 13, 0, 0},  // King of spades
         {0, 12, 0, 0}   // Queen of spades
     };
     
     // Create other required structures
-    moveType bestMove = {0, 14, 1, 0};
-    moveType bestMoveTT = {0, 13, 1, 0};
-    relRanksType thrp_rel[4] = {};
+    MoveType bestMove = {0, 14, 1, 0};
+    MoveType bestMoveTT = {0, 13, 1, 0};
+    RelRanksType thrp_rel[4] = {};
     
     std::cout << "Creating HeuristicContext..." << std::endl;
     
     // Create HeuristicContext using constructor syntax
     HeuristicContext context = {
-        tpos,          // const pos& tpos
-        bestMove,      // const moveType& bestMove  
-        bestMoveTT,    // const moveType& bestMoveTT
-        thrp_rel,      // const relRanksType* thrp_rel
-        moves,         // moveType* mply
+        tpos,          // const Pos& tpos
+        bestMove,      // const MoveType& bestMove  
+        bestMoveTT,    // const MoveType& bestMoveTT
+        thrp_rel,      // const RelRanksType* thrp_rel
+        moves,         // MoveType* mply
         3,             // numMoves
         0,             // lastNumMoves
         0,             // trump (spades)

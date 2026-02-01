@@ -20,9 +20,9 @@
 
 auto main() -> int
 {
-  ddTableDealsPBN DDdealsPBN;
-  ddTablesRes tableRes;
-  allParResults pres;
+  DdTableDealsPBN DDdealsPBN;
+  DdTablesRes tableRes;
+  AllParResults pres;
 
   int mode = 0; // No par calculation
   int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All
@@ -34,7 +34,7 @@ auto main() -> int
   SetMaxThreads(0);
 #endif
 
-  DDdealsPBN.noOfTables = 3;
+  DDdealsPBN.no_of_tables = 3;
 
   for (int handno = 0; handno < 3; handno++)
   {

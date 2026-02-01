@@ -22,13 +22,13 @@ bool read_file(
   bool& GIBmode,
   int ** dealer_list,
   int ** vul_list,
-  dealPBN ** deal_list,
-  futureTricks ** fut_list,
-  ddTableResults ** table_list,
-  parResults ** par_list,
-  parResultsDealer ** dealerpar_list,
-  playTracePBN ** play_list,
-  solvedPlay ** trace_list);
+  DealPBN ** deal_list,
+  FutureTricks ** fut_list,
+  DdTableResults ** table_list,
+  ParResults ** par_list,
+  ParResultsDealer ** dealerpar_list,
+  PlayTracePBN ** play_list,
+  SolvedPlay ** trace_list);
 
 #endif
 

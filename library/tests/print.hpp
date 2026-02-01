@@ -20,23 +20,23 @@ using namespace std;
 
 void set_constants();
 
-void print_PBN(const dealPBN& dl);
+void print_PBN(const DealPBN& dl);
 
-void print_FUT(const futureTricks& fut);
+void print_FUT(const FutureTricks& fut);
 
-void print_TABLE(const ddTableResults& table);
+void print_TABLE(const DdTableResults& table);
 
-void print_PAR(const parResults& par);
+void print_PAR(const ParResults& par);
 
-void print_DEALERPAR(const parResultsDealer& par);
+void print_DEALERPAR(const ParResultsDealer& par);
 
-void print_PLAY(const playTracePBN& play);
+void print_PLAY(const PlayTracePBN& play);
 
-void print_TRACE(const solvedPlay& solved);
+void print_TRACE(const SolvedPlay& solved);
 
 void print_double_TRACE(
-  const solvedPlay& solved,
-  const solvedPlay& ref);
+  const SolvedPlay& solved,
+  const SolvedPlay& ref);
 
 #endif
 

@@ -16,29 +16,30 @@
 #include "pbn.hpp"
 
 
-paramType cparam;
+ParamType cparam;
 
 extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
 int CalcAllBoardsN(
-  boards * bop,
-  solvedBoards * solvedp);
+  Boards * bop,
+  SolvedBoards * solvedp);
 
 
 void CalcSingleCommon(
   const int thrId,
   const int bno)
 {
-  // Solves a single deal and strain for all four declarers.
+  // Solves a single Deal and strain for all four declarers.
 
-  futureTricks fut;
-  cparam.bop->deals[bno].first = 0;
+  FutureTricks fut;
+  Deal deal = cparam.bop->deals[bno];  // Make a local copy
+  deal.first = 0;
 
   START_THREAD_TIMER(thrId);
   int res = SolveBoard(
-                cparam.bop->deals[bno],
+                deal,
                 cparam.bop->target[bno],
                 cparam.bop->solutions[bno],
                 cparam.bop->mode[bno],
@@ -48,7 +49,7 @@ void CalcSingleCommon(
   // SH: I'm making a terrible use of the fut structure here.
 
   if (res == 1)
-    cparam.solvedp->solvedBoard[bno].score[0] = fut.score[0];
+    cparam.solvedp->solved_board[bno].score[0] = fut.score[0];
   else
     cparam.error = res;
 
@@ -60,12 +61,12 @@ void CalcSingleCommon(
   {
     int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);
 
-    cparam.bop->deals[bno].first = k; // Next declarer
+    deal.first = k; // Next declarer
 
-    res = SolveSameBoard(thrp, cparam.bop->deals[bno], &fut, hint);
+    res = SolveSameBoard(thrp, deal, &fut, hint);
 
     if (res == 1)
-      cparam.solvedp->solvedBoard[bno].score[k] = fut.score[0];
+      cparam.solvedp->solved_board[bno].score[k] = fut.score[0];
     else
       cparam.error = res;
   }
@@ -82,8 +83,8 @@ void CopyCalcSingle(const vector<int>& crossrefs)
 
     START_THREAD_TIMER(thrId);
     for (int k = 0; k < DDS_HANDS; k++)
-      cparam.solvedp->solvedBoard[i].score[k] = 
-        cparam.solvedp->solvedBoard[ crossrefs[i] ].score[k];
+      cparam.solvedp->solved_board[i].score[k] = 
+        cparam.solvedp->solved_board[ crossrefs[i] ].score[k];
     END_THREAD_TIMER(thrId);
   }
 }
@@ -92,9 +93,9 @@ void CopyCalcSingle(const vector<int>& crossrefs)
 void CalcChunkCommon(
   const int thrId)
 {
-  // Solves each deal and strain for all four declarers.
-  vector<futureTricks> fut;
-  fut.resize(static_cast<unsigned>(cparam.noOfBoards));
+  // Solves each Deal and strain for all four declarers.
+  vector<FutureTricks> fut;
+  fut.resize(static_cast<unsigned>(cparam.no_of_boards));
 
   int index;
   schedType st;
@@ -111,10 +112,8 @@ void CalcChunkCommon(
       START_THREAD_TIMER(thrId);
       for (int k = 0; k < DDS_HANDS; k++)
       {
-        cparam.bop->deals[index].first = k;
-
-        cparam.solvedp->solvedBoard[index].score[k] =
-          cparam.solvedp->solvedBoard[ st.repeatOf ].score[k];
+        cparam.solvedp->solved_board[index].score[k] =
+          cparam.solvedp->solved_board[ st.repeatOf ].score[k];
       }
       END_THREAD_TIMER(thrId);
       continue;
@@ -126,23 +125,23 @@ void CalcChunkCommon(
 
 
 int CalcAllBoardsN(
-  boards * bop,
-  solvedBoards * solvedp)
+  Boards * bop,
+  SolvedBoards * solvedp)
 {
   cparam.error = 0;
 
-  if (bop->noOfBoards > MAXNOOFBOARDS)
+  if (bop->no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
   cparam.bop = bop;
   cparam.solvedp = solvedp;
-  cparam.noOfBoards = bop->noOfBoards;
+  cparam.no_of_boards = bop->no_of_boards;
 
-  scheduler.RegisterRun(DDS_RUN_CALC, * bop);
-  sysdep.RegisterRun(DDS_RUN_CALC, * bop);
+  scheduler.RegisterRun(RunMode::DDS_RUN_CALC, * bop);
+  sysdep.RegisterRun(RunMode::DDS_RUN_CALC, * bop);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
-    solvedp->solvedBoard[k].cards = 0;
+    solvedp->solved_board[k].cards = 0;
 
   START_BLOCK_TIMER;
   int retRun = sysdep.RunThreads();
@@ -151,7 +150,7 @@ int CalcAllBoardsN(
   if (retRun != RETURN_NO_FAULT)
     return retRun;
 
-  solvedp->noOfBoards = cparam.noOfBoards;
+  solvedp->no_of_boards = cparam.no_of_boards;
 
 #ifdef DDS_SCHEDULER 
   scheduler.PrintTiming();
@@ -166,12 +165,12 @@ int CalcAllBoardsN(
 
 
 int STDCALL CalcDDtable(
-  ddTableDeal tableDeal,
-  ddTableResults * tablep)
+  DdTableDeal tableDeal,
+  DdTableResults * tablep)
 {
-  deal dl;
-  boards bo;
-  solvedBoards solved;
+  Deal dl;
+  Boards bo;
+  SolvedBoards solved;
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -184,7 +183,7 @@ int STDCALL CalcDDtable(
   }
 
   int ind = 0;
-  bo.noOfBoards = DDS_STRAINS;
+  bo.no_of_boards = DDS_STRAINS;
 
   for (int tr = DDS_STRAINS-1; tr >= 0; tr--)
   {
@@ -208,8 +207,8 @@ int STDCALL CalcDDtable(
 
     for (int first = 0; first < DDS_HANDS; first++)
     {
-      tablep->resTable[strain][ rho[first] ] =
-        13 - solved.solvedBoard[index].score[first];
+      tablep->res_table[strain][ rho[first] ] =
+        13 - solved.solved_board[index].score[first];
     }
   }
   return RETURN_NO_FAULT;
@@ -217,11 +216,11 @@ int STDCALL CalcDDtable(
 
 
 int STDCALL CalcAllTables(
-  ddTableDeals * dealsp,
+  DdTableDeals const * dealsp,
   int mode,
-  int trumpFilter[5],
-  ddTablesRes * resp,
-  allParResults * presp)
+  int const trumpFilter[5],
+  DdTablesRes * resp,
+  AllParResults * presp)
 {
   /* mode = 0: par calculation, vulnerability None
      mode = 1: par calculation, vulnerability All
@@ -229,8 +228,8 @@ int STDCALL CalcAllTables(
      mode = 3: par calculation, vulnerability EW
          mode = -1: no par calculation */
 
-  boards bo;
-  solvedBoards solved;
+  Boards bo;
+  SolvedBoards solved;
   int count = 0;
   bool okey = false;
 
@@ -246,14 +245,14 @@ int STDCALL CalcAllTables(
   if (!okey)
     return RETURN_NO_SUIT;
 
-  if (count * dealsp->noOfTables > MAXNOOFTABLES * DDS_STRAINS)
+  if (count * dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
     return RETURN_TOO_MANY_TABLES;
 
   int ind = 0;
   int lastIndex = 0;
-  resp->noOfBoards = 0;
+  resp->no_of_boards = 0;
 
-  for (int m = 0; m < dealsp->noOfTables; m++)
+  for (int m = 0; m < dealsp->no_of_tables; m++)
   {
     for (int tr = DDS_STRAINS-1; tr >= 0; tr--)
     {
@@ -281,15 +280,15 @@ int STDCALL CalcAllTables(
     }
   }
 
-  bo.noOfBoards = lastIndex + 1;
+  bo.no_of_boards = lastIndex + 1;
 
   int res = CalcAllBoardsN(&bo, &solved);
   if (res != 1)
     return res;
 
-  resp->noOfBoards += 4 * solved.noOfBoards;
+  resp->no_of_boards += 4 * solved.no_of_boards;
 
-  for (int m = 0; m < dealsp->noOfTables; m++)
+  for (int m = 0; m < dealsp->no_of_tables; m++)
   {
     for (int strainIndex = 0; strainIndex < count; strainIndex++)
     {
@@ -300,8 +299,8 @@ int STDCALL CalcAllTables(
 
       for (int first = 0; first < DDS_HANDS; first++)
       {
-        resp->results[m].resTable[strain][ rho[first] ] =
-          13 - solved.solvedBoard[index].score[first];
+        resp->results[m].res_table[strain][ rho[first] ] =
+          13 - solved.solved_board[index].score[first];
       }
     }
   }
@@ -309,9 +308,9 @@ int STDCALL CalcAllTables(
   if ((mode > -1) && (mode < 4) && (count == 5))
   {
     /* Calculate par */
-    for (int k = 0; k < dealsp->noOfTables; k++)
+    for (int k = 0; k < dealsp->no_of_tables; k++)
     {
-      res = Par(&(resp->results[k]), &(presp->presults[k]), mode);
+      res = Par(&(resp->results[k]), &(presp->par_results[k]), mode);
       /* vulnerable 0: None 1: Both 2: NS 3: EW */
       if (res != 1)
         return res;
@@ -322,18 +321,18 @@ int STDCALL CalcAllTables(
 
 
 int STDCALL CalcAllTablesPBN(
-  ddTableDealsPBN * dealsp,
+  DdTableDealsPBN const * dealsp,
   int mode,
-  int trumpFilter[5],
-  ddTablesRes * resp,
-  allParResults * presp)
+  int const trumpFilter[5],
+  DdTablesRes * resp,
+  AllParResults * presp)
 {
-  ddTableDeals dls;
-  for (int k = 0; k < dealsp->noOfTables; k++)
+  DdTableDeals dls;
+  for (int k = 0; k < dealsp->no_of_tables; k++)
     if (ConvertFromPBN(dealsp->deals[k].cards, dls.deals[k].cards) != 1)
       return RETURN_PBN_FAULT;
 
-  dls.noOfTables = dealsp->noOfTables;
+  dls.no_of_tables = dealsp->no_of_tables;
 
   int res = CalcAllTables(&dls, mode, trumpFilter, resp, presp);
   return res;
@@ -341,10 +340,10 @@ int STDCALL CalcAllTablesPBN(
 
 
 int STDCALL CalcDDtablePBN(
-  ddTableDealPBN tableDealPBN,
-  ddTableResults * tablep)
+  DdTableDealPBN tableDealPBN,
+  DdTableResults * tablep)
 {
-  ddTableDeal tableDeal;
+  DdTableDeal tableDeal;
   if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards) != 1)
     return RETURN_PBN_FAULT;
 
@@ -354,7 +353,7 @@ int STDCALL CalcDDtablePBN(
 
 
 void DetectCalcDuplicates(
-  const boards& bds,
+  const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {

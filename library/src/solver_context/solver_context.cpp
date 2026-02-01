@@ -46,16 +46,16 @@ unsigned short& SolverContext::SearchContext::lowestWin(int depth, int suit) {
 const unsigned short& SolverContext::SearchContext::lowestWin(int depth, int suit) const {
   return thr_->lowestWin[depth][suit];
 }
-moveType& SolverContext::SearchContext::bestMove(int depth) {
+MoveType& SolverContext::SearchContext::bestMove(int depth) {
   return thr_->bestMove[depth];
 }
-const moveType& SolverContext::SearchContext::bestMove(int depth) const {
+const MoveType& SolverContext::SearchContext::bestMove(int depth) const {
   return thr_->bestMove[depth];
 }
-moveType& SolverContext::SearchContext::bestMoveTT(int depth) {
+MoveType& SolverContext::SearchContext::bestMoveTT(int depth) {
   return thr_->bestMoveTT[depth];
 }
-const moveType& SolverContext::SearchContext::bestMoveTT(int depth) const {
+const MoveType& SolverContext::SearchContext::bestMoveTT(int depth) const {
   return thr_->bestMoveTT[depth];
 }
 WinnersType& SolverContext::SearchContext::winners(int trickIndex) {
@@ -70,10 +70,10 @@ int& SolverContext::SearchContext::nodes() { return thr_->nodes; }
 int& SolverContext::SearchContext::trickNodes() { return thr_->trickNodes; }
 int& SolverContext::SearchContext::iniDepth() { return thr_->iniDepth; }
 int SolverContext::SearchContext::iniDepth() const { return thr_->iniDepth; }
-moveType* SolverContext::SearchContext::forbiddenMoves() { return thr_->forbiddenMoves; }
-const moveType* SolverContext::SearchContext::forbiddenMoves() const { return thr_->forbiddenMoves; }
-moveType& SolverContext::SearchContext::forbiddenMove(int index) { return thr_->forbiddenMoves[index]; }
-const moveType& SolverContext::SearchContext::forbiddenMove(int index) const { return thr_->forbiddenMoves[index]; }
+MoveType* SolverContext::SearchContext::forbiddenMoves() { return thr_->forbiddenMoves; }
+const MoveType* SolverContext::SearchContext::forbiddenMoves() const { return thr_->forbiddenMoves; }
+MoveType& SolverContext::SearchContext::forbiddenMove(int index) { return thr_->forbiddenMoves[index]; }
+const MoveType& SolverContext::SearchContext::forbiddenMove(int index) const { return thr_->forbiddenMoves[index]; }
 void SolverContext::SearchContext::clearForbiddenMoves() {
   for (int k = 0; k <= 13; ++k) {
     thr_->forbiddenMoves[k].rank = 0;
@@ -291,7 +291,7 @@ double ThreadMemoryUsed()
 {
   // TODO:  Only needed because SolverIF wants to set it. Avoid?
   double memUsed =
-    8192 * sizeof(relRanksType)
+    8192 * sizeof(RelRanksType)
     / static_cast<double>(1024.);
 
   return memUsed;
@@ -302,10 +302,10 @@ double ThreadMemoryUsed()
 
 int SolverContext::MoveGenContext::MoveGen0(
   const int tricks,
-  const pos& tpos,
-  const moveType& bestMove,
-  const moveType& bestMoveTT,
-  const relRanksType thrp_rel[])
+  const Pos& tpos,
+  const MoveType& bestMove,
+  const MoveType& bestMoveTT,
+  const RelRanksType thrp_rel[])
 {
   auto rc = thr_->moves.MoveGen0(tricks, tpos, bestMove, bestMoveTT, thrp_rel);
   return rc;
@@ -314,7 +314,7 @@ int SolverContext::MoveGenContext::MoveGen0(
 int SolverContext::MoveGenContext::MoveGen123(
   const int tricks,
   const int relHand,
-  const pos& tpos)
+  const Pos& tpos)
 {
   auto rc = thr_->moves.MoveGen123(tricks, relHand, tpos);
   return rc;
@@ -323,20 +323,20 @@ int SolverContext::MoveGenContext::MoveGen123(
 void SolverContext::MoveGenContext::Purge(
   const int tricks,
   const int relHand,
-  const moveType forbiddenMoves[])
+  const MoveType forbiddenMoves[])
 {
   thr_->moves.Purge(tricks, relHand, forbiddenMoves);
 }
 
-const moveType* SolverContext::MoveGenContext::MakeNext(
+const MoveType* SolverContext::MoveGenContext::MakeNext(
   const int trick,
   const int relHand,
-  const unsigned short winRanks[])
+  const unsigned short win_ranks[])
 {
-  return thr_->moves.MakeNext(trick, relHand, winRanks);
+  return thr_->moves.MakeNext(trick, relHand, win_ranks);
 }
 
-const moveType* SolverContext::MoveGenContext::MakeNextSimple(
+const MoveType* SolverContext::MoveGenContext::MakeNextSimple(
   const int trick,
   const int relHand)
 {
@@ -364,13 +364,13 @@ void SolverContext::MoveGenContext::RegisterHit(
   thr_->moves.RegisterHit(tricks, relHand);
 }
 
-const trickDataType& SolverContext::MoveGenContext::GetTrickData(const int tricks)
+const TrickDataType& SolverContext::MoveGenContext::GetTrickData(const int tricks)
 {
   return thr_->moves.GetTrickData(tricks);
 }
 
 void SolverContext::MoveGenContext::MakeSpecific(
-  const moveType& mply,
+  const MoveType& mply,
   const int trick,
   const int relHand)
 {
@@ -394,12 +394,12 @@ void SolverContext::MoveGenContext::Init(
   const int relStartHand,
   const int initialRanks[],
   const int initialSuits[],
-  const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+  const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
   const int trump,
   const int leadHand)
 {
   thr_->moves.Init(tricks, relStartHand, initialRanks, initialSuits,
-                   rankInSuit, trump, leadHand);
+                   rank_in_suit, trump, leadHand);
 }
 
 void SolverContext::MoveGenContext::PrintTrickStats(std::ofstream& fout) const

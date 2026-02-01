@@ -16,24 +16,24 @@
 
 int SolveBoardInternal(
   SolverContext& ctx,
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode,
-  futureTricks * futp);
+  FutureTricks * futp);
 
 int SolveSameBoard(
   const std::shared_ptr<ThreadData>& thrp,
-  const deal& dl,
-  futureTricks * futp,
+  const Deal& dl,
+  FutureTricks * futp,
   const int hint);
 
 int AnalyseLaterBoard(
   const std::shared_ptr<ThreadData>& thrp,
   const int leadHand,
-  moveType const * move,
+  MoveType const * move,
   const int hint,
   const int hintDir,
-  futureTricks * futp);
+  FutureTricks * futp);
 
 #endif

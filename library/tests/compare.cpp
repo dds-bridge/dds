@@ -17,8 +17,8 @@ using namespace std;
 
 
 bool compare_PBN(
-  const dealPBN& dl1, 
-  const dealPBN& dl2)
+  const DealPBN& dl1, 
+  const DealPBN& dl2)
 {
   if (dl1.trump != dl2.trump) 
     return false;
@@ -32,8 +32,8 @@ bool compare_PBN(
 
 
 bool compare_FUT(
-  const futureTricks& fut1, 
-  const futureTricks& fut2)
+  const FutureTricks& fut1, 
+  const FutureTricks& fut2)
 {
   if (fut1.cards != fut2.cards)
     return false;
@@ -55,13 +55,13 @@ bool compare_FUT(
 
 
 bool compare_TABLE(
-  const ddTableResults& table1, 
-  const ddTableResults& table2)
+  const DdTableResults& table1, 
+  const DdTableResults& table2)
 {
   for (int suit = 0; suit < DDS_SUITS; suit++)
   {
     for (int pl = 0; pl < DDS_HANDS; pl++)
-      if (table1.resTable[suit][pl] != table2.resTable[suit][pl])
+      if (table1.res_table[suit][pl] != table2.res_table[suit][pl])
         return false;
   }
 
@@ -70,16 +70,16 @@ bool compare_TABLE(
 
 
 bool compare_PAR(
-  const parResults& par1,
-  const parResults& par2)
+  const ParResults& par1,
+  const ParResults& par2)
 {
-  if (strcmp(par1.parScore[0], par2.parScore[0])) 
+  if (strcmp(par1.par_score[0], par2.par_score[0])) 
     return false;
-  if (strcmp(par1.parScore[1], par2.parScore[1])) 
+  if (strcmp(par1.par_score[1], par2.par_score[1])) 
     return false;
-  if (strcmp(par1.parContractsString[0], par2.parContractsString[0]))
+  if (strcmp(par1.par_contracts_string[0], par2.par_contracts_string[0]))
     return false;
-  if (strcmp(par1.parContractsString[1], par2.parContractsString[1]))
+  if (strcmp(par1.par_contracts_string[1], par2.par_contracts_string[1]))
     return false;
 
   return true;
@@ -87,8 +87,8 @@ bool compare_PAR(
 
 
 bool compare_DEALERPAR(
-  const parResultsDealer& par1,
-  const parResultsDealer& par2)
+  const ParResultsDealer& par1,
+  const ParResultsDealer& par2)
 {
   if (par1.score != par2.score) 
     return false;
@@ -102,8 +102,8 @@ bool compare_DEALERPAR(
 
 
 bool compare_TRACE(
-  const solvedPlay& trace1,
-  const solvedPlay& trace2)
+  const SolvedPlay& trace1,
+  const SolvedPlay& trace2)
 {
   // In a buglet, Trace returned trace1 == -3 if there is
   // no input at all (trace2 is then 0).

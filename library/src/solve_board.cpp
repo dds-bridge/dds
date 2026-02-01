@@ -18,18 +18,18 @@
 #include <chrono>
 
 
-paramType param;
+ParamType param;
 
 extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
 int SolveAllBoardsN(
-  boards& bds,
-  solvedBoards& solved);
+  Boards const & bds,
+  SolvedBoards& solved);
 
 bool SameBoard(
-  const boards& bds,
+  const Boards& bds,
   const unsigned index1,
   const unsigned index2);
 
@@ -38,7 +38,7 @@ void SolveSingleCommon(
   const int thrId,
   const int bno)
 {
-  futureTricks fut;
+  FutureTricks fut;
 
   // Fallback timing: measure per-board elapsed time (ms) even when
   // DDS_SCHEDULER isn't enabled at compile time. This allows the
@@ -63,7 +63,7 @@ void SolveSingleCommon(
   scheduler.SetBoardTime(bno, static_cast<int>(dur));
 
   if (res == 1)
-    param.solvedp->solvedBoard[bno] = fut;
+    param.solvedp->solved_board[bno] = fut;
   else
     param.error = res;
 }
@@ -77,8 +77,8 @@ void CopySolveSingle(const vector<int>& crossrefs)
       continue;
 
     START_THREAD_TIMER(thrId);
-    param.solvedp->solvedBoard[i] = 
-      param.solvedp->solvedBoard[crossrefs[i]];
+    param.solvedp->solved_board[i] = 
+      param.solvedp->solved_board[crossrefs[i]];
     END_THREAD_TIMER(thrId);
   }
 }
@@ -107,8 +107,8 @@ void SolveChunkCommon(
         param.bop->deals[st.repeatOf].first)
     {
       START_THREAD_TIMER(thrId);
-      param.solvedp->solvedBoard[index] = 
-        param.solvedp->solvedBoard[st.repeatOf];
+      param.solvedp->solved_board[index] = 
+        param.solvedp->solved_board[st.repeatOf];
       END_THREAD_TIMER(thrId);
       continue;
     }
@@ -121,23 +121,23 @@ void SolveChunkCommon(
 
 
 int SolveAllBoardsN(
-  boards& bds,
-  solvedBoards& solved)
+  Boards const & bds,
+  SolvedBoards& solved)
 {
   param.error = 0;
 
-  if (bds.noOfBoards > MAXNOOFBOARDS)
+  if (bds.no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
   param.bop = &bds;
   param.solvedp = &solved;
-  param.noOfBoards = bds.noOfBoards;
+  param.no_of_boards = bds.no_of_boards;
 
-  scheduler.RegisterRun(DDS_RUN_SOLVE, bds);
-  sysdep.RegisterRun(DDS_RUN_SOLVE, bds);
+  scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
+  sysdep.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
-    solved.solvedBoard[k].cards = 0;
+    solved.solved_board[k].cards = 0;
 
   START_BLOCK_TIMER;
   int retRun = sysdep.RunThreads();
@@ -146,7 +146,7 @@ int SolveAllBoardsN(
   if (retRun != RETURN_NO_FAULT)
     return retRun;
 
-  solved.noOfBoards = param.noOfBoards;
+  solved.no_of_boards = param.no_of_boards;
 
 #ifdef DDS_SCHEDULER 
   scheduler.PrintTiming();
@@ -160,11 +160,11 @@ int SolveAllBoardsN(
 
 
 /**
- * @brief Solve a single bridge deal in PBN format using double dummy analysis.
+ * @brief Solve a single bridge Deal in PBN format using double dummy analysis.
  *
- * Converts a PBN deal to internal format and calls SolveBoard.
+ * Converts a PBN Deal to internal format and calls SolveBoard.
  *
- * @param dlpbn The PBN deal to analyze
+ * @param dlpbn The PBN Deal to analyze
  * @param target Target number of tricks
  * @param solutions Solution mode
  * @param mode Analysis mode
@@ -173,14 +173,14 @@ int SolveAllBoardsN(
  * @return 1 on success, error code otherwise
  */
 int STDCALL SolveBoardPBN(
-  dealPBN dlpbn, 
+  DealPBN dlpbn, 
   int target,
   int solutions, 
   int mode, 
-  futureTricks * futp, 
+  FutureTricks * futp, 
   int thrId)
 {
-  deal dl;
+  Deal dl;
   if (ConvertFromPBN(dlpbn.remainCards, dl.remainCards) != RETURN_NO_FAULT)
     return RETURN_PBN_FAULT;
 
@@ -200,22 +200,22 @@ int STDCALL SolveBoardPBN(
 /**
  * @brief Solve multiple bridge deals in PBN format.
  *
- * Converts each PBN deal to internal format and solves all boards.
+ * Converts each PBN Deal to internal format and solves all Boards.
  *
  * @param bop Pointer to multiple PBN deals
- * @param solvedp Pointer to results for solved boards
+ * @param solvedp Pointer to results for solved Boards
  * @return 1 on success, error code otherwise
  */
 int STDCALL SolveAllBoards(
-  boardsPBN * bop, 
-  solvedBoards * solvedp)
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp)
 {
-  boards bo;
-  bo.noOfBoards = bop->noOfBoards;
-  if (bo.noOfBoards > MAXNOOFBOARDS)
+  Boards bo;
+  bo.no_of_boards = bop->no_of_boards;
+  if (bo.no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  for (int k = 0; k < bop->noOfBoards; k++)
+  for (int k = 0; k < bop->no_of_boards; k++)
   {
     bo.mode[k] = bop->mode[k];
     bo.solutions[k] = bop->solutions[k];
@@ -240,16 +240,16 @@ int STDCALL SolveAllBoards(
 
 
 int STDCALL SolveAllBoardsBin(
-  boards * bop,
-  solvedBoards * solvedp)
+  Boards const * bop,
+  SolvedBoards * solvedp)
 {
   return SolveAllBoardsN(* bop, * solvedp);
 }
 
 
 int STDCALL SolveAllChunksPBN(
-  boardsPBN * bop, 
-  solvedBoards * solvedp, 
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp,
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.
@@ -261,8 +261,8 @@ int STDCALL SolveAllChunksPBN(
 
 
 int STDCALL SolveAllChunks(
-  boardsPBN * bop, 
-  solvedBoards * solvedp, 
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp,
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.
@@ -274,8 +274,8 @@ int STDCALL SolveAllChunks(
 
 
 int STDCALL SolveAllChunksBin(
-  boards * bop, 
-  solvedBoards * solvedp, 
+  Boards const * bop,
+  SolvedBoards * solvedp,
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.
@@ -287,11 +287,11 @@ int STDCALL SolveAllChunksBin(
 
 
 void DetectSolveDuplicates(
-  const boards& bds,
+  const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
-  const unsigned nu = static_cast<unsigned>(bds.noOfBoards);
+  const unsigned nu = static_cast<unsigned>(bds.no_of_boards);
 
   uniques.clear();
   crossrefs.resize(nu);
@@ -316,7 +316,7 @@ void DetectSolveDuplicates(
 
 
 bool SameBoard(
-  const boards& bds,
+  const Boards& bds,
   const unsigned index1,
   const unsigned index2)
 {

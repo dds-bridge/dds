@@ -56,7 +56,7 @@ class TimeStatList
       const unsigned len);
 
     void Add(
-      const unsigned pos,
+      const unsigned Pos,
       const TimeStat& add);
 
     bool Used() const;

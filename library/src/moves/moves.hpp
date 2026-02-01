@@ -60,9 +60,9 @@ class Moves
     trackType track[13];
     trackType * trackp;
 
-    movePlyType moveList[13][DDS_HANDS];
+    MovePlyType moveList[13][DDS_HANDS];
 
-    moveType * mply;
+    MoveType * mply;
 
     MGtype lastCall[13][DDS_HANDS];
 
@@ -101,19 +101,19 @@ class Moves
       int& mno) const;
 
     inline bool WinningMove(
-      const moveType& mvp1,
-      const extCard& mvp2,
+      const MoveType& mvp1,
+      const ExtCard& mvp2,
       const int trump) const;
 
-    string PrintMove(const movePlyType& mply) const;
+    string PrintMove(const MovePlyType& mply) const;
 
     void MergeSort();
 
     void CallHeuristic(
-      const pos& tpos,
-      const moveType& bestMove,
-      const moveType& bestMoveTT,
-      const relRanksType thrp_rel[]);
+      const Pos& tpos,
+      const MoveType& bestMove,
+      const MoveType& bestMoveTT,
+      const RelRanksType thrp_rel[]);
 
   // (logging accessors removed)
 
@@ -150,7 +150,7 @@ class Moves
       const int relStartHand,
       const int initialRanks[],
       const int initialSuits[],
-      const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+      const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
       const int trump,
       const int leadHand);
 
@@ -160,31 +160,31 @@ class Moves
 
     int MoveGen0(
       const int tricks,
-      const pos& tpos,
-      const moveType& bestMove,
-      const moveType& bestMoveTT,
-      const relRanksType thrp_rel[]);
+      const Pos& tpos,
+      const MoveType& bestMove,
+      const MoveType& bestMoveTT,
+      const RelRanksType thrp_rel[]);
 
     int MoveGen123(
       const int tricks,
       const int relHand,
-      const pos& tpos);
+      const Pos& tpos);
 
     int GetLength(
       const int trick,
       const int relHand) const;
 
     void MakeSpecific(
-      const moveType& mply,
+      const MoveType& mply,
       const int trick,
       const int relHand);
 
-    moveType const * MakeNext(
+    MoveType const * MakeNext(
       const int trick,
       const int relHand,
-      const unsigned short winRanks[DDS_SUITS]);
+      const unsigned short win_ranks[DDS_SUITS]);
 
-    moveType const * MakeNextSimple(
+    MoveType const * MakeNextSimple(
       const int trick,
       const int relHand);
 
@@ -199,13 +199,13 @@ class Moves
     void Purge(
       const int tricks,
       const int relHand,
-      const moveType forbiddenMoves[]);
+      const MoveType forbiddenMoves[]);
 
     void Reward(
       const int trick,
       const int relHand);
 
-    const trickDataType& GetTrickData(const int tricks);
+    const TrickDataType& GetTrickData(const int tricks);
 
     void Sort(
       const int tricks,

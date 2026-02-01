@@ -147,7 +147,7 @@ class TransTableL: public TransTable
 
   // Constants are provided via internal function-local static tables.
 
-    auto hash8(const int handDist[]) const -> int;
+    auto hash8(const int hand_dist[]) const -> int;
 
     auto get_next_card_block() -> WinBlock *;
 
@@ -173,11 +173,11 @@ class TransTableL: public TransTable
 
     auto key_to_dist(
       long long key,
-      int handDist[]) const -> void;
+      int hand_dist[]) const -> void;
 
     auto dist_to_lengths(
       int trick,
-      const int handDist[],
+      const int hand_dist[],
       unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
     auto single_len_to_str(const unsigned char length[]) const -> std::string;
@@ -221,7 +221,7 @@ class TransTableL: public TransTable
     auto find_matching_dist(
       int trick,
       int hand,
-      const int handDistSought[]) const -> WinBlock const *;
+      const int hand_distSought[]) const -> WinBlock const *;
 
     auto print_entries_block(
       std::ofstream& fout,

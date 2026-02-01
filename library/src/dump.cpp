@@ -30,20 +30,20 @@ string RankToDiagrams(
   const unsigned short ranks[DDS_HANDS][DDS_SUITS],
   const NodeCards& node);
 
-string WinnersToText(const unsigned short winRanks[]);
+string WinnersToText(const unsigned short win_ranks[]);
 
 string NodeToText(const NodeCards& node);
 
 string FullNodeToText(const NodeCards& node);
 
 string PosToText(
-  const pos& tpos,
+  const Pos& tpos,
   const int target,
   const int depth);
 
 string TopMove(
   const bool val,
-  const moveType& bestMove);
+  const MoveType& bestMove);
 
 string DumpTopHeader(
   const std::shared_ptr<ThreadData>& thrp,
@@ -203,14 +203,14 @@ string FullNodeToText(const NodeCards& node)
 
 
 string PosToText(
-  const pos& tpos,
+  const Pos& tpos,
   const int target,
   const int depth)
 {
   stringstream ss;
   ss << setw(16) << left << "Target" << target << "\n";
   ss << setw(16) << "Depth" << depth << "\n";
-  ss << setw(16) << "tricksMAX" << tpos.tricksMAX << "\n";
+  ss << setw(16) << "tricks_max" << tpos.tricks_max << "\n";
   ss << setw(16) << "First hand" << cardHand[tpos.first[depth]] << "\n";
   ss << setw(16) << "Next first" << cardHand[tpos.first[depth - 1]] << "\n";
   return ss.str();
@@ -251,7 +251,7 @@ string DumpTopHeader(
 
 string TopMove(
   const bool val,
-  const moveType& bestMove)
+  const MoveType& bestMove)
 {
   if (val)
   {
@@ -268,7 +268,7 @@ string TopMove(
 
 int DumpInput(
   const int errCode, 
-  const deal& dl, 
+  const Deal& dl, 
   const int target,
   const int solutions, 
   const int mode)
@@ -319,7 +319,7 @@ int DumpInput(
 
 void DumpRetrieved(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   const NodeCards& node,
   const int target,
   const int depth)
@@ -328,13 +328,13 @@ void DumpRetrieved(
   fout << string(15, '-') << "\n";
   fout << PosToText(tpos, target, depth) << "\n";
   fout << FullNodeToText(node) << "\n";
-  fout << RankToDiagrams(tpos.rankInSuit, node) << "\n";
+  fout << RankToDiagrams(tpos.rank_in_suit, node) << "\n";
 }
 
 
 void DumpStored(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   const Moves& moves,
   const NodeCards& node,
   const int target,
@@ -345,12 +345,12 @@ void DumpStored(
   fout << PosToText(tpos, target, depth) << "\n";
   fout << NodeToText(node);
   fout << moves.TrickToText((depth >> 2) + 1) << "\n";
-  fout << PrintDeal(tpos.rankInSuit, 16);
+  fout << PrintDeal(tpos.rank_in_suit, 16);
 }
 
 void DumpStored(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   SolverContext& ctx,
   const NodeCards& node,
   const int target,
@@ -361,7 +361,7 @@ void DumpStored(
   fout << PosToText(tpos, target, depth) << "\n";
   fout << NodeToText(node);
   fout << ctx.moveGen().TrickToText((depth >> 2) + 1) << "\n";
-  fout << PrintDeal(tpos.rankInSuit, 16);
+  fout << PrintDeal(tpos.rank_in_suit, 16);
 }
 
 
@@ -373,12 +373,12 @@ void DumpTopLevel(
   const int upper,
   const int printMode)
 {
-  const pos& tpos = thrp->lookAheadPos;
+  const Pos& tpos = thrp->lookAheadPos;
   SolverContext ctx{ thrp };
 
   fout << DumpTopHeader(thrp, tricks, lower, upper, printMode) << "\n";
-  fout << PrintDeal(tpos.rankInSuit, 16);
-  fout << WinnersToText(tpos.winRanks[ctx.search().iniDepth()]) << "\n";
+  fout << PrintDeal(tpos.rank_in_suit, 16);
+  fout << WinnersToText(tpos.win_ranks[ctx.search().iniDepth()]) << "\n";
   fout << ctx.search().nodes() << " AB nodes, " <<
     ctx.search().trickNodes() << " trick nodes\n\n";
 }

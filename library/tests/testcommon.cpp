@@ -78,13 +78,13 @@ int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   int number = 0;
   int * dealer_list = nullptr;
   int * vul_list = nullptr;
-  dealPBN * deal_list = nullptr;
-  futureTricks * fut_list = nullptr;
-  ddTableResults * table_list = nullptr;
-  parResults * par_list = nullptr;
-  parResultsDealer * dealerpar_list = nullptr;
-  playTracePBN * play_list = nullptr;
-  solvedPlay * trace_list = nullptr;
+  DealPBN * deal_list = nullptr;
+  FutureTricks * fut_list = nullptr;
+  DdTableResults * table_list = nullptr;
+  ParResults * par_list = nullptr;
+  ParResultsDealer * dealerpar_list = nullptr;
+  PlayTracePBN * play_list = nullptr;
+  SolvedPlay * trace_list = nullptr;
   if (read_file(options.fname, number, GIBmode, &dealer_list, &vul_list,
         &deal_list, &fut_list, &table_list, &par_list, &dealerpar_list,
         &play_list, &trace_list) == false)
@@ -102,13 +102,13 @@ int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   timer.reset();
   timer.setname("Hand stats");
 
-  boardsPBN bop;
-  solvedBoards solvedbdp;
-  ddTableDealsPBN dealsp;
-  ddTablesRes resp;
-  allParResults parp;
-  playTracesPBN playsp;
-  solvedPlays solvedplp;
+  BoardsPBN bop;
+  SolvedBoards solvedbdp;
+  DdTableDealsPBN dealsp;
+  DdTablesRes resp;
+  AllParResults parp;
+  PlayTracesPBN playsp;
+  SolvedPlays solvedplp;
 
   if (options.solver == DTEST_SOLVER_SOLVE)
   {

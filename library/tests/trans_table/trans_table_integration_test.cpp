@@ -91,8 +91,8 @@ TEST_F(TransTableIntegrationTest, VirtualMethodsWorkCorrectly) {
     
     // Create test data using available factory methods
     auto s = factory->CreateBasicScenario();
-    ttS->add(s.trick, s.hand, s.aggrTarget, s.winRanks, s.nodeData, false);
-    ttL->add(s.trick, s.hand, s.aggrTarget, s.winRanks, s.nodeData, false);
+    ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+    ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
     
     double memory2S = ttS->memory_in_use();
     double memory2L = ttL->memory_in_use();
@@ -103,8 +103,8 @@ TEST_F(TransTableIntegrationTest, VirtualMethodsWorkCorrectly) {
     
     // Should be able to lookup
     bool lowerFlagS = false, lowerFlagL = false;
-    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.handDist, 10, lowerFlagS);
-    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.handDist, 10, lowerFlagL);
+    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
+    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
     
     EXPECT_NE(resultS, nullptr);
     EXPECT_NE(resultL, nullptr);
@@ -119,13 +119,13 @@ TEST_F(TransTableIntegrationTest, BasicDataOperations) {
     auto s = factory->CreateBasicScenario();
     
     // Add data to both tables
-    ttS->add(s.trick, s.hand, s.aggrTarget, s.winRanks, s.nodeData, false);
-    ttL->add(s.trick, s.hand, s.aggrTarget, s.winRanks, s.nodeData, false);
+    ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+    ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
     
     // Lookup should find the data
     bool lowerFlagS = false, lowerFlagL = false;
-    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.handDist, 10, lowerFlagS);
-    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.handDist, 10, lowerFlagL);
+    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
+    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
     
     EXPECT_NE(resultS, nullptr);
     EXPECT_NE(resultL, nullptr);
@@ -137,12 +137,12 @@ TEST_F(TransTableIntegrationTest, MultipleScenarios) {
         auto s = factory->CreateBasicScenario();
         s.trick = i + 1;  // Vary the trick number
         
-    ttS->add(s.trick, s.hand, s.aggrTarget, s.winRanks, s.nodeData, false);
-    ttL->add(s.trick, s.hand, s.aggrTarget, s.winRanks, s.nodeData, false);
+    ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+    ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
         
         bool lowerFlagS = false, lowerFlagL = false;
-    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.handDist, 10, lowerFlagS);
-    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.handDist, 10, lowerFlagL);
+    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
+    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
         
         EXPECT_NE(resultS, nullptr) << "Failed for scenario " << i;
         EXPECT_NE(resultL, nullptr) << "Failed for scenario " << i;
@@ -154,13 +154,13 @@ TEST_F(TransTableIntegrationTest, ResultConsistency) {
     auto s = factory->CreateBasicScenario();
     
     // Add identical data to both tables
-    ttS->add(s.trick, s.hand, s.aggrTarget, s.winRanks, s.nodeData, false);
-    ttL->add(s.trick, s.hand, s.aggrTarget, s.winRanks, s.nodeData, false);
+    ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+    ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
     
     // Lookup should return consistent results
     bool lowerFlagS = false, lowerFlagL = false;
-    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.handDist, 10, lowerFlagS);
-    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.handDist, 10, lowerFlagL);
+    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
+    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
     
     ASSERT_NE(resultS, nullptr);
     ASSERT_NE(resultL, nullptr);

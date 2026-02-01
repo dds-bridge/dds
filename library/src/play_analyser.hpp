@@ -25,7 +25,7 @@ void PlayChunkCommon(
   const int thrId);
 
 void DetectPlayDuplicates(
-  const boards& bds,
+  const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs);
 

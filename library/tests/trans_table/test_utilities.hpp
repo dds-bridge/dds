@@ -26,8 +26,8 @@ protected:
         int trick, 
         int hand, 
         unsigned short aggrTarget[DDS_SUITS],
-        int handDist[DDS_HANDS],
-        unsigned short winRanks[DDS_SUITS],
+        int hand_dist[DDS_HANDS],
+        unsigned short win_ranks[DDS_SUITS],
     NodeCards& nodeData
     );
     
@@ -120,13 +120,13 @@ public:
 class TestDataValidator {
 public:
     // Validate hand distribution is legal
-    static bool IsValidHandDistribution(const int handDist[DDS_HANDS]);
+    static bool IsValidHandDistribution(const int hand_dist[DDS_HANDS]);
     
     // Validate aggregate target data
     static bool IsValidAggrTarget(const unsigned short aggrTarget[DDS_SUITS]);
     
     // Validate winning ranks are consistent
-    static bool IsValidWinRanks(const unsigned short winRanks[DDS_SUITS]);
+    static bool IsValidWinRanks(const unsigned short win_ranks[DDS_SUITS]);
     
     // Validate node data is reasonable
     static bool IsValidNodeData(const NodeCards& node);

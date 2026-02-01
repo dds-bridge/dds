@@ -8,9 +8,9 @@ class HeuristicSortingTest : public ::testing::Test {
  protected:
   HeuristicSortingTest() = default;
   
-  // Helper function to create a moveType with specified values
-  moveType createMove(int suit, int rank, int sequence, int weight) {
-    moveType move;
+  // Helper function to create a MoveType with specified values
+  MoveType createMove(int suit, int rank, int sequence, int weight) {
+    MoveType move;
     move.suit = suit;
     move.rank = rank;
     move.sequence = sequence;
@@ -21,7 +21,7 @@ class HeuristicSortingTest : public ::testing::Test {
 
 TEST_F(HeuristicSortingTest, SortsMovesInDescendingOrderByWeight) {
   // Create test moves with different weights
-  std::vector<moveType> testMoves = {
+  std::vector<MoveType> testMoves = {
     createMove(0, 14, 0, 10),  // Low weight
     createMove(1, 13, 0, 50),  // High weight
     createMove(2, 12, 0, 30),  // Medium weight
@@ -33,7 +33,7 @@ TEST_F(HeuristicSortingTest, SortsMovesInDescendingOrderByWeight) {
   
   // Sort using standard library to verify our expectation
   std::sort(testMoves.begin(), testMoves.end(), 
-    [](const moveType& a, const moveType& b) {
+    [](const MoveType& a, const MoveType& b) {
       return a.weight > b.weight;  // Descending order
     });
   
@@ -45,8 +45,8 @@ TEST_F(HeuristicSortingTest, SortsMovesInDescendingOrderByWeight) {
 
 TEST_F(HeuristicSortingTest, HigherWeightMovesHavePriority) {
   // Test that moves with higher weights get priority in sorting
-  moveType highPriority = createMove(0, 14, 0, 100);
-  moveType lowPriority = createMove(1, 13, 0, 5);
+  MoveType highPriority = createMove(0, 14, 0, 100);
+  MoveType lowPriority = createMove(1, 13, 0, 5);
   
   EXPECT_GT(highPriority.weight, lowPriority.weight);
   
@@ -71,8 +71,8 @@ TEST_F(HeuristicSortingTest, WeightCalculationFollowsHeuristics) {
 
 TEST_F(HeuristicSortingTest, MoveSequenceAffectsWeight) {
   // Test that sequence moves get different weights
-  moveType sequenceMove = createMove(0, 14, 1, 40);  // Has sequence
-  moveType nonSequenceMove = createMove(0, 14, 0, 20);  // No sequence
+  MoveType sequenceMove = createMove(0, 14, 1, 40);  // Has sequence
+  MoveType nonSequenceMove = createMove(0, 14, 0, 20);  // No sequence
   
   // Sequence moves typically get bonus weight
   EXPECT_GT(sequenceMove.weight, nonSequenceMove.weight);
@@ -82,9 +82,9 @@ TEST_F(HeuristicSortingTest, SameSuitMovesOrderedByRank) {
   // Within the same suit, higher ranks should generally have higher weights
   // (though this depends on the specific heuristic context)
   
-  moveType ace = createMove(0, 14, 0, 50);    // Ace
-  moveType king = createMove(0, 13, 0, 45);   // King  
-  moveType queen = createMove(0, 12, 0, 40);  // Queen
+  MoveType ace = createMove(0, 14, 0, 50);    // Ace
+  MoveType king = createMove(0, 13, 0, 45);   // King  
+  MoveType queen = createMove(0, 12, 0, 40);  // Queen
   
   // Generally, higher ranks get higher base weights
   EXPECT_GE(ace.weight, king.weight);
@@ -94,10 +94,10 @@ TEST_F(HeuristicSortingTest, SameSuitMovesOrderedByRank) {
 TEST_F(HeuristicSortingTest, WeightDifferencesSignificant) {
   // Test that weight differences are significant enough to affect sorting
   
-  moveType bestMove = createMove(0, 14, 1, 100);
-  moveType goodMove = createMove(1, 13, 1, 75);
-  moveType averageMove = createMove(2, 12, 0, 50);
-  moveType poorMove = createMove(3, 11, 0, 25);
+  MoveType bestMove = createMove(0, 14, 1, 100);
+  MoveType goodMove = createMove(1, 13, 1, 75);
+  MoveType averageMove = createMove(2, 12, 0, 50);
+  MoveType poorMove = createMove(3, 11, 0, 25);
   
   // Verify clear ordering
   EXPECT_GT(bestMove.weight, goodMove.weight);
@@ -113,8 +113,8 @@ TEST_F(HeuristicSortingTest, WeightDifferencesSignificant) {
 TEST_F(HeuristicSortingTest, TrumpSuitMovesGetPriority) {
   // In trump contracts, trump suit moves often get priority
   
-  moveType trumpMove = createMove(0, 14, 0, 80);    // Trump suit (assuming suit 0 is trump)
-  moveType nonTrumpMove = createMove(1, 14, 0, 60); // Non-trump suit
+  MoveType trumpMove = createMove(0, 14, 0, 80);    // Trump suit (assuming suit 0 is trump)
+  MoveType nonTrumpMove = createMove(1, 14, 0, 60); // Non-trump suit
   
   // Trump moves should generally have higher weights
   EXPECT_GT(trumpMove.weight, nonTrumpMove.weight);
@@ -123,9 +123,9 @@ TEST_F(HeuristicSortingTest, TrumpSuitMovesGetPriority) {
 TEST_F(HeuristicSortingTest, SortingStabilityWithEqualWeights) {
   // Test behavior when moves have equal weights
   
-  moveType move1 = createMove(0, 14, 0, 50);
-  moveType move2 = createMove(1, 13, 0, 50);
-  moveType move3 = createMove(2, 12, 0, 50);
+  MoveType move1 = createMove(0, 14, 0, 50);
+  MoveType move2 = createMove(1, 13, 0, 50);
+  MoveType move3 = createMove(2, 12, 0, 50);
   
   // All have equal weights
   EXPECT_EQ(move1.weight, move2.weight);
@@ -137,7 +137,7 @@ TEST_F(HeuristicSortingTest, SortingStabilityWithEqualWeights) {
 
 TEST_F(HeuristicSortingTest, WeightRangeIsReasonable) {
   // Test that weights are in a reasonable range
-  moveType testMove = createMove(0, 14, 1, 100);
+  MoveType testMove = createMove(0, 14, 1, 100);
   
   // Weights should be positive for valid moves
   EXPECT_GT(testMove.weight, 0);

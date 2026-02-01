@@ -30,19 +30,19 @@ void CalcSingleCommon(
   const int bno);
 
 /**
- * @brief Copy calculation results for single boards based on cross-references.
+ * @brief Copy calculation results for single Boards based on cross-references.
  *
- * Copies results from previously computed boards as indicated by the cross-reference vector.
+ * Copies results from previously computed Boards as indicated by the cross-reference vector.
  *
- * @param crossrefs Vector of cross-reference indices mapping boards to be copied.
+ * @param crossrefs Vector of cross-reference indices mapping Boards to be copied.
  */
 void CopyCalcSingle(
   const vector<int>& crossrefs);
 
 /**
- * @brief Perform common chunk calculations for a set of boards.
+ * @brief Perform common chunk calculations for a set of Boards.
  *
- * Computes results for a chunk (batch) of boards using the specified thread ID.
+ * Computes results for a chunk (batch) of Boards using the specified thread ID.
  *
  * @param thrId Thread identifier for parallel execution.
  */
@@ -52,14 +52,14 @@ void CalcChunkCommon(
 /**
  * @brief Detect duplicate board calculations and build cross-reference maps.
  *
- * Identifies unique and duplicate boards in a batch, populating vectors for unique indices and cross-references.
+ * Identifies unique and duplicate Boards in a batch, populating vectors for unique indices and cross-references.
  *
  * @param bds Boards to analyze for duplicates.
- * @param uniques Output vector of indices for unique boards.
+ * @param uniques Output vector of indices for unique Boards.
  * @param crossrefs Output vector mapping each board to its unique representative.
  */
 void DetectCalcDuplicates(
-  const boards& bds,
+  const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs);
 

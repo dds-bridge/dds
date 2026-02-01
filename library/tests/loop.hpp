@@ -14,44 +14,44 @@
 
 
 void loop_solve(
-  boardsPBN * bop,
-  solvedBoards * solvedbdp,
-  dealPBN * deal_list,
-  futureTricks * fut_list,
+  BoardsPBN * bop,
+  SolvedBoards * solvedbdp,
+  DealPBN * deal_list,
+  FutureTricks * fut_list,
   const int number,
   const int stepsize);
 
 bool loop_calc(
-  ddTableDealsPBN * dealsp,
-  ddTablesRes * resp,
-  allParResults * parp,
-  dealPBN * deal_list,
-  ddTableResults * table_list,
+  DdTableDealsPBN * dealsp,
+  DdTablesRes * resp,
+  AllParResults * parp,
+  DealPBN * deal_list,
+  DdTableResults * table_list,
   const int number,
   const int stepsize);
 
 bool loop_par(
   int * vul_list,
-  ddTableResults * table_list,
-  parResults * par_list,
+  DdTableResults * table_list,
+  ParResults * par_list,
   const int number,
   const int stepsize);
 
 bool loop_dealerpar(
   int * dealer_list,
   int * vul_list,
-  ddTableResults * table_list,
-  parResultsDealer * dealerpar_list,
+  DdTableResults * table_list,
+  ParResultsDealer * dealerpar_list,
   const int number,
   const int stepsize);
 
 bool loop_play(
-  boardsPBN * bop,
-  playTracesPBN * playsp,
-  solvedPlays * solvedplp,
-  dealPBN * deal_list,
-  playTracePBN * play_list,
-  solvedPlay * trace_list,
+  BoardsPBN * bop,
+  PlayTracesPBN * playsp,
+  SolvedPlays * solvedplp,
+  DealPBN * deal_list,
+  PlayTracePBN * play_list,
+  SolvedPlay * trace_list,
   const int number,
   const int stepsize);
 

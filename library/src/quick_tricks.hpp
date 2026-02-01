@@ -16,7 +16,7 @@
 
 
 int QuickTricks(
-  pos& tpos,
+  Pos& tpos,
   const int hand,
   const int depth,
   const int target,
@@ -25,7 +25,7 @@ int QuickTricks(
   SolverContext& ctx);
 
 bool QuickTricksSecondHand(
-  pos& tpos,
+  Pos& tpos,
   const int hand,
   const int depth,
   const int target,

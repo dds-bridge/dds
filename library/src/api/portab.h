@@ -8,8 +8,7 @@
  * @copyright (C) 2006-2014 by Bo Haglund / 2014-2018 by Bo Haglund & Soren Hein.
  */
 
-#ifndef DDS_PORTAB_H
-#define DDS_PORTAB_H
+#pragma once
 
 
 #if defined(_WIN32)
@@ -55,6 +54,4 @@
     (! defined DDS_THREADS_OPENMP) && \
     (! defined DDS_THREADS_NONE)
   #define DDS_THREADS_NONE
-#endif
-
 #endif

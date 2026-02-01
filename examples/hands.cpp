@@ -240,7 +240,7 @@ int dealer_par_count_[3] = { 1, 1, 1 };
 // Dealer par scores expected.
 int dealer_scores_[3] = { -110, 100, -300 };
 
-// Dealer par contracts expected, here only one per deal.
+// Dealer par contracts expected, here only one per Deal.
 // That is not always the case.
 char dealer_contracts_[3][4][10] = { 
   { "2S-EW"   , "", "", "" },
@@ -270,7 +270,7 @@ unsigned char card_hand_chars_[4] = { 'N', 'E', 'S', 'W' };
 
 
 
-auto print_future_tricks(char title[], futureTricks * fut) -> void
+auto print_future_tricks(char title[], FutureTricks * fut) -> void
 {
   printf("%s\n", title);
 
@@ -305,7 +305,7 @@ auto equals_to_string(int equals, char * res) -> void
 }
 
 
-auto compare_future_tricks(futureTricks * fut, int handno, int solutions) -> bool
+auto compare_future_tricks(FutureTricks * fut, int handno, int solutions) -> bool
 {
   if (solutions == 2)
   {
@@ -326,21 +326,21 @@ auto compare_future_tricks(futureTricks * fut, int handno, int solutions) -> boo
 }
 
 
-auto set_table(ddTableResults * table, int handno) -> void
+auto set_table(DdTableResults * table, int handno) -> void
 {
   for (int suit = 0; suit < DDS_STRAINS; suit++)
     for (int pl = 0; pl <= 3; pl++)
-      table->resTable[suit][pl] = dd_table_[handno][4 * suit + pl];
+      table->res_table[suit][pl] = dd_table_[handno][4 * suit + pl];
 }
 
 
-auto compare_table(ddTableResults * table, int handno) -> bool
+auto compare_table(DdTableResults * table, int handno) -> bool
 {
   for (int suit = 0; suit < DDS_STRAINS; suit++)
   {
     for (int pl = 0; pl <= 3; pl++)
     {
-      if (table->resTable[suit][pl] != dd_table_[handno][4 * suit + pl])
+      if (table->res_table[suit][pl] != dd_table_[handno][4 * suit + pl])
         return false;
     }
   }
@@ -348,45 +348,45 @@ auto compare_table(ddTableResults * table, int handno) -> bool
 }
 
 
-auto print_table(ddTableResults * table) -> void
+auto print_table(DdTableResults * table) -> void
 {
   printf("%5s %-5s %-5s %-5s %-5s\n",
          "", "North", "South", "East", "West");
 
   printf("%5s %5d %5d %5d %5d\n",
          "NT",
-         table->resTable[4][0],
-         table->resTable[4][2],
-         table->resTable[4][1],
-         table->resTable[4][3]);
+         table->res_table[4][0],
+         table->res_table[4][2],
+         table->res_table[4][1],
+         table->res_table[4][3]);
 
   for (int suit = 0; suit < DDS_SUITS; suit++)
   {
     printf("%5c %5d %5d %5d %5d\n",
            card_suit_chars_[suit],
-           table->resTable[suit][0],
-           table->resTable[suit][2],
-           table->resTable[suit][1],
-           table->resTable[suit][3]);
+           table->res_table[suit][0],
+           table->res_table[suit][2],
+           table->res_table[suit][1],
+           table->res_table[suit][3]);
   }
   printf("\n");
 }
 
 
-auto compare_par(parResults * par, int handno) -> bool
+auto compare_par(ParResults * par, int handno) -> bool
 {
-  if (strcmp(par->parScore[0], par_scores_[handno][0])) return false;
-  if (strcmp(par->parScore[1], par_scores_[handno][1])) return false;
+  if (strcmp(par->par_score[0], par_scores_[handno][0])) return false;
+  if (strcmp(par->par_score[1], par_scores_[handno][1])) return false;
 
-  if (strcmp(par->parContractsString[0], par_strings_[handno][0]))
+  if (strcmp(par->par_contracts_string[0], par_strings_[handno][0]))
     return false;
-  if (strcmp(par->parContractsString[1], par_strings_[handno][1]))
+  if (strcmp(par->par_contracts_string[1], par_strings_[handno][1]))
     return false;
   return true;
 }
 
 
-auto compare_dealer_par(parResultsDealer * par, int handno) -> bool
+auto compare_dealer_par(ParResultsDealer * par, int handno) -> bool
 {
   if (par->number != dealer_par_count_[handno]) return false;
   if (par->score != dealer_scores_[handno]) return false;
@@ -400,17 +400,17 @@ auto compare_dealer_par(parResultsDealer * par, int handno) -> bool
 }
 
 
-auto print_par(parResults * par) -> void
+auto print_par(ParResults * par) -> void
 {
-  printf("NS score: %s\n", par->parScore[0]);
-  printf("EW score: %s\n", par->parScore[1]);
-  printf("NS list : %s\n", par->parContractsString[0]);
-  printf("EW list : %s\n", par->parContractsString[1]);
+  printf("NS score: %s\n", par->par_score[0]);
+  printf("EW score: %s\n", par->par_score[1]);
+  printf("NS list : %s\n", par->par_contracts_string[0]);
+  printf("EW list : %s\n", par->par_contracts_string[1]);
   printf("\n");
 }
 
 
-auto print_dealer_par(parResultsDealer * par) -> void
+auto print_dealer_par(ParResultsDealer * par) -> void
 {
   printf("Score : %d\n", par->score);
   printf("Pars : %d\n", par->number);
@@ -422,7 +422,7 @@ auto print_dealer_par(parResultsDealer * par) -> void
 }
 
 
-auto compare_play(solvedPlay * solved, int handno) -> bool
+auto compare_play(SolvedPlay * solved, int handno) -> bool
 {
   if (solved->number != trace_count_[handno])
   {
@@ -442,7 +442,7 @@ auto compare_play(solvedPlay * solved, int handno) -> bool
 }
 
 
-auto print_bin_play(playTraceBin * playp, solvedPlay * solved) -> void
+auto print_bin_play(PlayTraceBin * playp, SolvedPlay * solved) -> void
 {
   printf("Number : %d\n", solved->number);
 
@@ -461,7 +461,7 @@ auto print_bin_play(playTraceBin * playp, solvedPlay * solved) -> void
 }
 
 
-auto print_pbn_play(playTracePBN * playp, solvedPlay * solved) -> void
+auto print_pbn_play(PlayTracePBN * playp, SolvedPlay * solved) -> void
 {
   printf("Number : %d\n", solved->number);
 

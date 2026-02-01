@@ -8,8 +8,7 @@
 */
 
 
-#ifndef DDS_DLL_H
-#define DDS_DLL_H
+#pragma once
 
 #include <utility/constants.h>
 
@@ -44,7 +43,7 @@
 #define TEXT_NO_FAULT "Success"
 
 // Currently happens when fopen() fails or when AnalyseAllPlaysBin()
-// get a different number of boards in its first two arguments.
+// get a different number of Boards in its first two arguments.
 #define RETURN_UNKNOWN_FAULT -1
 #define TEXT_UNKNOWN_FAULT "General error"
 
@@ -126,7 +125,7 @@
 
 // SolveBoard() and AnalysePlay*()
 #define RETURN_TOO_MANY_BOARDS -101
-#define TEXT_TOO_MANY_BOARDS "Too many boards requested"
+#define TEXT_TOO_MANY_BOARDS "Too many Boards requested"
 
 // Returned from multi-threading functions.
 #define RETURN_THREAD_CREATE -102
@@ -161,7 +160,7 @@
  * Contains the number of nodes searched, the number of cards in the result,
  * and arrays for each card's suit, rank, equality group, and score.
  */
-struct futureTricks
+struct FutureTricks
 {
   int nodes;
   int cards;
@@ -172,7 +171,7 @@ struct futureTricks
 };
 
 /**
- * @brief Represents a bridge deal for double dummy analysis.
+ * @brief Represents a bridge Deal for double dummy analysis.
  *
  * @param trump The trump suit (0 = NT, 1 = Spades, ...)
  * @param first The hand to play first (0 = N, 1 = E, ...)
@@ -180,7 +179,7 @@ struct futureTricks
  * @param currentTrickRank Ranks of cards played in the current trick
  * @param remainCards Remaining cards in each hand and suit
  */
-struct deal
+struct Deal
 {
   int trump;
   int first;
@@ -191,7 +190,7 @@ struct deal
 
 
 /**
- * @brief Represents a bridge deal in PBN (Portable Bridge Notation) format.
+ * @brief Represents a bridge Deal in PBN (Portable Bridge Notation) format.
  *
  * @param trump The trump suit
  * @param first The hand to play first
@@ -199,7 +198,7 @@ struct deal
  * @param currentTrickRank Ranks of cards played in the current trick
  * @param remainCards PBN string describing remaining cards
  */
-struct dealPBN
+struct DealPBN
 {
   int trump;
   int first;
@@ -214,82 +213,98 @@ struct dealPBN
  *
  * @param noOfBoards Number of deals
  * @param deals Array of deals
- * @param target Array of targets for each deal
- * @param solutions Array of solution modes for each deal
- * @param mode Array of modes for each deal
+ * @param target Array of targets for each Deal
+ * @param solutions Array of solution modes for each Deal
+ * @param mode Array of modes for each Deal
  */
-struct boards
+struct Boards
 {
-  int noOfBoards;
-  struct deal deals[MAXNOOFBOARDS];
+  int no_of_boards;
+  struct Deal deals[MAXNOOFBOARDS];
   int target[MAXNOOFBOARDS];
   int solutions[MAXNOOFBOARDS];
   int mode[MAXNOOFBOARDS];
 };
 
-struct boardsPBN
+/**
+ * @brief Multiple boards in PBN format for batch solving.
+ *
+ * Similar to Boards but uses PBN (Portable Bridge Notation) format
+ * for deal representation. Used for solving multiple boards efficiently.
+ *
+ * @see Boards
+ */
+struct BoardsPBN
 {
-  int noOfBoards;
-  struct dealPBN deals[MAXNOOFBOARDS];
-  int target[MAXNOOFBOARDS];
-  int solutions[MAXNOOFBOARDS];
-  int mode[MAXNOOFBOARDS];
+  int no_of_boards;                            ///< Number of boards to solve
+  struct DealPBN deals[MAXNOOFBOARDS];       ///< Array of deals in PBN format
+  int target[MAXNOOFBOARDS];                 ///< Target tricks for each board
+  int solutions[MAXNOOFBOARDS];              ///< Solution mode for each board
+  int mode[MAXNOOFBOARDS];                   ///< Solve mode for each board
 };
 
-struct solvedBoards
+/**
+ * @brief Solutions for multiple boards.
+ *
+ * Container for results from batch board solving operations.
+ * Each entry contains the complete future tricks analysis for one board.
+ *
+ * @see FutureTricks
+ */
+struct SolvedBoards
 {
-  int noOfBoards;
-  struct futureTricks solvedBoard[MAXNOOFBOARDS];
+  int no_of_boards;                                    ///< Number of solved boards
+  struct FutureTricks solved_board[MAXNOOFBOARDS];    ///< Array of solutions
 };
 
-struct ddTableDeal
+struct DdTableDeal
 {
   unsigned int cards[DDS_HANDS][DDS_SUITS];
 };
 
-struct ddTableDeals
+struct DdTableDeals
 {
-  int noOfTables;
-  struct ddTableDeal deals[MAXNOOFTABLES * DDS_STRAINS];
+  int no_of_tables;
+  struct DdTableDeal deals[MAXNOOFTABLES * DDS_STRAINS];
 };
 
-struct ddTableDealPBN
+struct DdTableDealPBN
 {
   char cards[80];
 };
 
-struct ddTableDealsPBN
+struct DdTableDealsPBN
 {
-  int noOfTables;
-  struct ddTableDealPBN deals[MAXNOOFTABLES * DDS_STRAINS];
+  int no_of_tables;
+  struct DdTableDealPBN deals[MAXNOOFTABLES * DDS_STRAINS];
 };
 
-struct ddTableResults
+struct DdTableResults
 {
-  int resTable[DDS_STRAINS][DDS_HANDS];
+  int res_table[DDS_STRAINS][DDS_HANDS];
 };
 
-struct ddTablesRes
+struct DdTablesRes
 {
-  int noOfBoards;
-  struct ddTableResults results[MAXNOOFTABLES * DDS_STRAINS];
+  int no_of_boards;
+  struct DdTableResults results[MAXNOOFTABLES * DDS_STRAINS];
 };
 
-struct parResults
+struct ParResults
 {
   /* index = 0 is NS view and index = 1
      is EW view. By 'view' is here meant
      which side that starts the bidding. */
-  char parScore[2][16];
-  char parContractsString[2][128];
+  char par_score[2][16];
+  char par_contracts_string[2][128];
 };
 
-struct allParResults
+struct AllParResults
 {
-  struct parResults presults[MAXNOOFTABLES];
+  struct ParResults par_results[MAXNOOFTABLES];
 };
 
-struct parResultsDealer
+struct ParResultsDealer
 {
   /* number: Number of contracts yielding the par score.
      score: Par score for the specified dealer hand.
@@ -303,75 +318,75 @@ struct parResultsDealer
   char contracts[10][10];
 };
 
-struct contractType
+struct ContractType
 {
-  int underTricks; /* 0 = make 1-13 = sacrifice */
-  int overTricks; /* 0-3, e.g. 1 for 4S + 1. */
+  int under_tricks; /* 0 = make 1-13 = sacrifice */
+  int over_tricks; /* 0-3, e.g. 1 for 4S + 1. */
   int level; /* 1-7 */
   int denom; /* 0 = No Trumps, 1 = trump Spades, 2 = trump Hearts,
-				  3 = trump Diamonds, 4 = trump Clubs */
+                  3 = trump Diamonds, 4 = trump Clubs */
   int seats; /* One of the cases N, E, W, S, NS, EW;
-				   0 = N 1 = E, 2 = S, 3 = W, 4 = NS, 5 = EW */
+                   0 = N 1 = E, 2 = S, 3 = W, 4 = NS, 5 = EW */
 };
 
-struct parResultsMaster
+struct ParResultsMaster
 {
   int score; /* Sign according to the NS view */
   int number; /* Number of contracts giving the par score */
-  struct contractType contracts[10]; /* Par contracts */
+  struct ContractType contracts[10]; /* Par contracts */
 };
 
-struct parTextResults
+struct ParTextResults
 {
-  char parText[2][128]; /* Short text for par information, e.g.
-				Par -110: EW 2S EW 2D+1 */
+  char par_text[2][128]; /* Short text for par information, e.g.
+            Par -110: EW 2S EW 2D+1 */
   bool equal; /* true in the normal case when it does not matter who
-			starts the bidding. Otherwise, false. */
+            starts the bidding. Otherwise, false. */
 };
 
 
-struct playTraceBin
+struct PlayTraceBin
 {
   int number;
   int suit[52];
   int rank[52];
 };
 
-struct playTracePBN
+struct PlayTracePBN
 {
   int number;
   char cards[106];
 };
 
-struct solvedPlay
+struct SolvedPlay
 {
   int number;
   int tricks[53];
 };
 
-struct playTracesBin
+struct PlayTracesBin
 {
-  int noOfBoards;
-  struct playTraceBin plays[MAXNOOFBOARDS];
+  int no_of_boards;
+  struct PlayTraceBin plays[MAXNOOFBOARDS];
 };
 
-struct playTracesPBN
+struct PlayTracesPBN
 {
-  int noOfBoards;
-  struct playTracePBN plays[MAXNOOFBOARDS];
+  int no_of_boards;
+  struct PlayTracePBN plays[MAXNOOFBOARDS];
 };
 
-struct solvedPlays
+struct SolvedPlays
 {
-  int noOfBoards;
-  struct solvedPlay solved[MAXNOOFBOARDS];
+  int no_of_boards;
+  struct SolvedPlay solved[MAXNOOFBOARDS];
 };
 
 struct DDSInfo
 {
   // Version 2.8.0 has 2, 8, 0 and a string of 2.8.0
   int major, minor, patch; 
-  char versionString[10];
+  char version_string[10];
 
   // Currently 0 = unknown, 1 = Windows, 2 = Cygwin, 3 = Linux, 4 = Apple
   int system;
@@ -418,8 +433,8 @@ struct DDSInfo
  *
  * @param userThreads Maximum number of threads to use
  */
-EXTERN_C DLLEXPORT void STDCALL SetMaxThreads(
-  int userThreads);
+EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
+  int userThreads) -> void;
 
 /**
  * @brief Set the threading backend used by the solver.
@@ -427,8 +442,8 @@ EXTERN_C DLLEXPORT void STDCALL SetMaxThreads(
  * @param code Threading backend code (see documentation)
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL SetThreading(
-  int code);
+EXTERN_C DLLEXPORT auto STDCALL SetThreading(
+  int code) -> int;
 
 /**
  * @brief Set memory and thread resources for the solver.
@@ -436,19 +451,19 @@ EXTERN_C DLLEXPORT int STDCALL SetThreading(
  * @param maxMemoryMB Maximum memory in megabytes
  * @param maxThreads Maximum number of threads
  */
-EXTERN_C DLLEXPORT void STDCALL SetResources(
+EXTERN_C DLLEXPORT auto STDCALL SetResources(
   int maxMemoryMB,
-  int maxThreads);
+  int maxThreads) -> void;
 
 /**
  * @brief Free memory used by the solver.
  */
-EXTERN_C DLLEXPORT void STDCALL FreeMemory();
+EXTERN_C DLLEXPORT auto STDCALL FreeMemory() -> void;
 
 /**
- * @brief Solve a single bridge deal using double dummy analysis.
+ * @brief Solve a single bridge Deal using double dummy analysis.
  *
- * @param dl The deal to analyze
+ * @param dl The Deal to analyze
  * @param target Target number of tricks
  * @param solutions Solution mode (1 = best, 2 = all, etc.)
  * @param mode Analysis mode
@@ -456,18 +471,18 @@ EXTERN_C DLLEXPORT void STDCALL FreeMemory();
  * @param threadIndex Index of thread to use
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL SolveBoard(
-  struct deal dl,
+EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
+  struct Deal dl,
   int target,
   int solutions,
   int mode,
-  struct futureTricks * futp,
-  int threadIndex);
+  struct FutureTricks * futp,
+  int threadIndex) -> int;
 
 /**
- * @brief Solve a single bridge deal in PBN format using double dummy analysis.
+ * @brief Solve a single bridge Deal in PBN format using double dummy analysis.
  *
- * @param dlpbn The PBN deal to analyze
+ * @param dlpbn The PBN Deal to analyze
  * @param target Target number of tricks
  * @param solutions Solution mode
  * @param mode Analysis mode
@@ -475,35 +490,35 @@ EXTERN_C DLLEXPORT int STDCALL SolveBoard(
  * @param thrId Index of thread to use
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL SolveBoardPBN(
-  struct dealPBN dlpbn,
+EXTERN_C DLLEXPORT auto STDCALL SolveBoardPBN(
+  struct DealPBN dlpbn,
   int target,
   int solutions,
   int mode,
-  struct futureTricks * futp,
-  int thrId);
+  struct FutureTricks * futp,
+  int thrId) -> int;
 
 /**
- * @brief Calculate the double dummy table for a given deal.
+ * @brief Calculate the double dummy table for a given Deal.
  *
  * @param tableDeal Deal for which to calculate the table
  * @param tablep Pointer to result table
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL CalcDDtable(
-  struct ddTableDeal tableDeal,
-  struct ddTableResults * tablep);
+EXTERN_C DLLEXPORT auto STDCALL CalcDDtable(
+  struct DdTableDeal tableDeal,
+  struct DdTableResults * tablep) -> int;
 
 /**
- * @brief Calculate the double dummy table for a PBN deal.
+ * @brief Calculate the double dummy table for a PBN Deal.
  *
- * @param tableDealPBN PBN deal for which to calculate the table
+ * @param tableDealPBN PBN Deal for which to calculate the table
  * @param tablep Pointer to result table
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(
-  struct ddTableDealPBN tableDealPBN,
-  struct ddTableResults * tablep);
+EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBN(
+  struct DdTableDealPBN tableDealPBN,
+  struct DdTableResults * tablep) -> int;
 
 /**
  * @brief Calculate double dummy tables for multiple deals.
@@ -515,12 +530,12 @@ EXTERN_C DLLEXPORT int STDCALL CalcDDtablePBN(
  * @param presp Pointer to par results
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL CalcAllTables(
-  struct ddTableDeals * dealsp,
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTables(
+  struct DdTableDeals const * dealsp,
   int mode,
-  int trumpFilter[DDS_STRAINS],
-  struct ddTablesRes * resp,
-  struct allParResults * presp);
+  int const trumpFilter[DDS_STRAINS],
+  struct DdTablesRes * resp,
+  struct AllParResults * presp) -> int;
 
 /**
  * @brief Calculate double dummy tables for multiple PBN deals.
@@ -532,119 +547,117 @@ EXTERN_C DLLEXPORT int STDCALL CalcAllTables(
  * @param presp Pointer to par results
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL CalcAllTablesPBN(
-  struct ddTableDealsPBN * dealsp,
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBN(
+  struct DdTableDealsPBN const * dealsp,
   int mode,
-  int trumpFilter[DDS_STRAINS],
-  struct ddTablesRes * resp,
-  struct allParResults * presp);
+  int const trumpFilter[DDS_STRAINS],
+  struct DdTablesRes * resp,
+  struct AllParResults * presp) -> int;
 
 /**
  * @brief Solve multiple bridge deals in PBN format.
  *
  * @param bop Pointer to multiple PBN deals
- * @param solvedp Pointer to results for solved boards
+ * @param solvedp Pointer to results for solved Boards
  * @return 1 on success, error code otherwise
  */
-EXTERN_C DLLEXPORT int STDCALL SolveAllBoards(
-  struct boardsPBN * bop,
-  struct solvedBoards * solvedp);
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoards(
+  struct BoardsPBN const * bop,
+  struct SolvedBoards * solvedp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SolveAllBoardsBin(
-  struct boards * bop,
-  struct solvedBoards * solvedp);
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBin(
+  struct Boards const * bop,
+  struct SolvedBoards * solvedp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SolveAllChunks(
-  struct boardsPBN * bop,
-  struct solvedBoards * solvedp,
-  int chunkSize);
+EXTERN_C DLLEXPORT auto STDCALL SolveAllChunks(
+  struct BoardsPBN const * bop,
+  struct SolvedBoards * solvedp,
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SolveAllChunksBin(
-  struct boards * bop,
-  struct solvedBoards * solvedp,
-  int chunkSize);
+EXTERN_C DLLEXPORT auto STDCALL SolveAllChunksBin(
+  struct Boards const * bop,
+  struct SolvedBoards * solvedp,
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SolveAllChunksPBN(
-  struct boardsPBN * bop,
-  struct solvedBoards * solvedp,
-  int chunkSize);
+EXTERN_C DLLEXPORT auto STDCALL SolveAllChunksPBN(
+  struct BoardsPBN const * bop,
+  struct SolvedBoards * solvedp,
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL Par(
-  struct ddTableResults * tablep,
-  struct parResults * presp,
-  int vulnerable);
+EXTERN_C DLLEXPORT auto STDCALL Par(
+  struct DdTableResults const * tablep,
+  struct ParResults * presp,
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL CalcPar(
-  struct ddTableDeal tableDeal,
+EXTERN_C DLLEXPORT auto STDCALL CalcPar(
+  struct DdTableDeal tableDeal,
   int vulnerable,
-  struct ddTableResults * tablep,
-  struct parResults * presp);
+  struct DdTableResults * tablep,
+  struct ParResults * presp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL CalcParPBN(
-  struct ddTableDealPBN tableDealPBN,
-  struct ddTableResults * tablep,
+EXTERN_C DLLEXPORT auto STDCALL CalcParPBN(
+  struct DdTableDealPBN tableDealPBN,
+  struct DdTableResults * tablep,
   int vulnerable,
-  struct parResults * presp);
+  struct ParResults * presp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SidesPar(
-  struct ddTableResults * tablep,
-  struct parResultsDealer sidesRes[2],
-  int vulnerable);
+EXTERN_C DLLEXPORT auto STDCALL SidesPar(
+  struct DdTableResults const * tablep,
+  struct ParResultsDealer sidesRes[2],
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL DealerPar(
-  struct ddTableResults * tablep,
-  struct parResultsDealer * presp,
+EXTERN_C DLLEXPORT auto STDCALL DealerPar(
+  struct DdTableResults const * tablep,
+  struct ParResultsDealer * presp,
   int dealer,
-  int vulnerable);
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL DealerParBin(
-  struct ddTableResults * tablep,
-  struct parResultsMaster * presp,
+EXTERN_C DLLEXPORT auto STDCALL DealerParBin(
+  struct DdTableResults const * tablep,
+  struct ParResultsMaster * presp,
   int dealer, 
-  int vulnerable);
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL SidesParBin(
-  struct ddTableResults * tablep,
-  struct parResultsMaster sidesRes[2],
-  int vulnerable);
+EXTERN_C DLLEXPORT auto STDCALL SidesParBin(
+  struct DdTableResults const * tablep,
+  struct ParResultsMaster sidesRes[2],
+  int vulnerable) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL ConvertToDealerTextFormat(
-  struct parResultsMaster * pres,
-  char * resp);
+EXTERN_C DLLEXPORT auto STDCALL ConvertToDealerTextFormat(
+  struct ParResultsMaster const * pres,
+  char * resp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL ConvertToSidesTextFormat(
-  struct parResultsMaster * pres,
-  struct parTextResults * resp);
+EXTERN_C DLLEXPORT auto STDCALL ConvertToSidesTextFormat(
+  struct ParResultsMaster const * pres,
+  struct ParTextResults * resp) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL AnalysePlayBin(
-  struct deal dl,
-  struct playTraceBin play,
-  struct solvedPlay * solved,
-  int thrId);
+EXTERN_C DLLEXPORT auto STDCALL AnalysePlayBin(
+  struct Deal dl,
+  struct PlayTraceBin play,
+  struct SolvedPlay * solved,
+  int thrId) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL AnalysePlayPBN(
-  struct dealPBN dlPBN,
-  struct playTracePBN playPBN,
-  struct solvedPlay * solvedp,
-  int thrId);
+EXTERN_C DLLEXPORT auto STDCALL AnalysePlayPBN(
+  struct DealPBN dlPBN,
+  struct PlayTracePBN playPBN,
+  struct SolvedPlay * solvedp,
+  int thrId) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL AnalyseAllPlaysBin(
-  struct boards * bop,
-  struct playTracesBin * plp,
-  struct solvedPlays * solvedp,
-  int chunkSize);
+EXTERN_C DLLEXPORT auto STDCALL AnalyseAllPlaysBin(
+  struct Boards const * bop,
+  struct PlayTracesBin const * plp,
+  struct SolvedPlays * solvedp,
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT int STDCALL AnalyseAllPlaysPBN(
-  struct boardsPBN * bopPBN,
-  struct playTracesPBN * plpPBN,
-  struct solvedPlays * solvedp,
-  int chunkSize);
+EXTERN_C DLLEXPORT auto STDCALL AnalyseAllPlaysPBN(
+  struct BoardsPBN const * bopPBN,
+  struct PlayTracesPBN const * plpPBN,
+  struct SolvedPlays * solvedp,
+  int chunkSize) -> int;
 
-EXTERN_C DLLEXPORT void STDCALL GetDDSInfo(
-  struct DDSInfo * info);
+EXTERN_C DLLEXPORT auto STDCALL GetDDSInfo(
+  struct DDSInfo * info) -> void;
 
-EXTERN_C DLLEXPORT void STDCALL ErrorMessage(
+EXTERN_C DLLEXPORT auto STDCALL ErrorMessage(
   int code,
-  char line[80]);
-
-#endif
+  char line[80]) -> void;

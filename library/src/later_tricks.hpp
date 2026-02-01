@@ -15,7 +15,7 @@
 
 
 bool LaterTricksMIN(
-  pos& tpos,
+  Pos& tpos,
   const int hand,
   const int depth,
   const int target,
@@ -23,7 +23,7 @@ bool LaterTricksMIN(
   SolverContext& ctx);
 
 bool LaterTricksMAX(
-  pos& tpos,
+  Pos& tpos,
   const int hand,
   const int depth,
   const int target,

@@ -24,38 +24,38 @@ bool parse_PBN(
   const vector<string>& list,
   int& dealer,
   int& vul,
-  dealPBN * dl);
+  DealPBN * dl);
 
 bool parse_FUT(
   const vector<string>& list,
-  futureTricks * fut);
+  FutureTricks * fut);
 
 bool parse_TABLE(
   const vector<string>& list,
-  ddTableResults * table);
+  DdTableResults * table);
 
 bool parse_PAR(
   const vector<string>& list,
-  parResults * par);
+  ParResults * par);
 
 bool parse_DEALERPAR(
   const vector<string>& list,
-  parResultsDealer * par);
+  ParResultsDealer * par);
 
 bool parse_PLAY(
   const vector<string>& list,
-  playTracePBN * play);
+  PlayTracePBN * play);
 
 bool parse_TRACE(
   const vector<string>& list,
-  solvedPlay * solved);
+  SolvedPlay * solved);
 
 bool parseable_GIB(const string& line);
 
 bool parse_GIB(
   const string& line,
-  dealPBN * dl,
-  ddTableResults * table);
+  DealPBN * dl,
+  DdTableResults * table);
 
 bool get_any_line(
   ifstream& fin,
@@ -101,13 +101,13 @@ bool read_file(
   bool& GIBmode,
   int ** dealer_list,
   int ** vul_list,
-  dealPBN ** deal_list,
-  futureTricks ** fut_list,
-  ddTableResults ** table_list,
-  parResults ** par_list,
-  parResultsDealer ** dealerpar_list,
-  playTracePBN ** play_list,
-  solvedPlay ** trace_list)
+  DealPBN ** deal_list,
+  FutureTricks ** fut_list,
+  DdTableResults ** table_list,
+  ParResults ** par_list,
+  ParResultsDealer ** dealerpar_list,
+  PlayTracePBN ** play_list,
+  SolvedPlay ** trace_list)
 {
   ifstream fin;
   fin.open(fname);
@@ -170,32 +170,32 @@ bool read_file(
       (calloc(number_t, sizeof(int)))) == NULL)
     return false;
 
-  if ((*deal_list = static_cast<dealPBN *>
-      (calloc(number_t, sizeof(dealPBN)))) == NULL)
+  if ((*deal_list = static_cast<DealPBN *>
+      (calloc(number_t, sizeof(DealPBN)))) == NULL)
     return false;
 
-  if ((*fut_list = static_cast<futureTricks *>
-      (calloc(number_t, sizeof(futureTricks)))) == NULL)
+  if ((*fut_list = static_cast<FutureTricks *>
+      (calloc(number_t, sizeof(FutureTricks)))) == NULL)
     return false;
 
-  if ((*table_list = static_cast<ddTableResults *>
-      (calloc(number_t, sizeof(ddTableResults)))) == NULL)
+  if ((*table_list = static_cast<DdTableResults *>
+      (calloc(number_t, sizeof(DdTableResults)))) == NULL)
     return false;
 
-  if ((*par_list = static_cast<parResults *>
-      (calloc(number_t, sizeof(parResults)))) == NULL)
+  if ((*par_list = static_cast<ParResults *>
+      (calloc(number_t, sizeof(ParResults)))) == NULL)
     return false;
 
-  if ((*dealerpar_list = static_cast<parResultsDealer *>
-      (calloc(number_t, sizeof(parResultsDealer)))) == NULL)
+  if ((*dealerpar_list = static_cast<ParResultsDealer *>
+      (calloc(number_t, sizeof(ParResultsDealer)))) == NULL)
     return false;
 
-  if ((*play_list = static_cast<playTracePBN *>
-      (calloc(number_t, sizeof(playTracePBN)))) == NULL)
+  if ((*play_list = static_cast<PlayTracePBN *>
+      (calloc(number_t, sizeof(PlayTracePBN)))) == NULL)
     return false;
 
-  if ((*trace_list = static_cast<solvedPlay *>
-      (calloc(number_t, sizeof(solvedPlay)))) == NULL)
+  if ((*trace_list = static_cast<SolvedPlay *>
+      (calloc(number_t, sizeof(SolvedPlay)))) == NULL)
     return false;
 
   if (GIBmode)
@@ -262,7 +262,7 @@ bool parse_PBN(
   const vector<string>& list,
   int& dealer,
   int& vul,
-  dealPBN * dl)
+  DealPBN * dl)
 {
   if (list.size() != 9)
   {
@@ -298,7 +298,7 @@ bool parse_PBN(
 
 bool parse_FUT(
   const vector<string>& list,
-  futureTricks * fut)
+  FutureTricks * fut)
 {
   if (list.size() < 2)
   {
@@ -340,7 +340,7 @@ bool parse_FUT(
 
 bool parse_TABLE(
   const vector<string>& list,
-  ddTableResults * table)
+  DdTableResults * table)
 {
   if (list.size() != 21)
   {
@@ -356,7 +356,7 @@ bool parse_TABLE(
     for (unsigned pl = 0; pl < DDS_HANDS; pl++)
     {
       if (! get_int_element(list[DDS_HANDS * suit + pl + 1],
-          table->resTable[suit][pl], "TABLE entry"))
+          table->res_table[suit][pl], "TABLE entry"))
         return false;
     }
   }
@@ -367,7 +367,7 @@ bool parse_TABLE(
 
 bool parse_PAR(
   const vector<string>& list,
-  parResults * par)
+  ParResults * par)
 {
   if (list.size() < 9)
   {
@@ -378,11 +378,11 @@ bool parse_PAR(
   if (! get_head_element(list[0], "PAR"))
     return false;
 
-  if (! strip_quotes(list[1] + " " + list[2], par->parScore[0], 
+  if (! strip_quotes(list[1] + " " + list[2], par->par_score[0], 
       "PAR score 0"))
     return false;
 
-  if (! strip_quotes(list[3] + " " + list[4], par->parScore[1], 
+  if (! strip_quotes(list[3] + " " + list[4], par->par_score[1], 
       "PAR score 1"))
     return false;
 
@@ -395,7 +395,7 @@ bool parse_PAR(
       break;
   }
 
-  if (! strip_quotes(st.substr(1), par->parContractsString[0], 
+  if (! strip_quotes(st.substr(1), par->par_contracts_string[0], 
       "PAR contract 0"))
     return false;
 
@@ -407,7 +407,7 @@ bool parse_PAR(
       break;
   }
 
-  if (! strip_quotes(st.substr(1), par->parContractsString[1], 
+  if (! strip_quotes(st.substr(1), par->par_contracts_string[1], 
       "PAR contract 1"))
     return false;
 
@@ -417,7 +417,7 @@ bool parse_PAR(
 
 bool parse_DEALERPAR(
   const vector<string>& list,
-  parResultsDealer * par)
+  ParResultsDealer * par)
 {
   const size_t l = list.size();
   if (l < 3)
@@ -447,7 +447,7 @@ bool parse_DEALERPAR(
 
 bool parse_PLAY(
   const vector<string>& list,
-  playTracePBN * playp)
+  PlayTracePBN * playp)
 {
   if (list.size() != 3)
   {
@@ -470,7 +470,7 @@ bool parse_PLAY(
 
 bool parse_TRACE(
   const vector<string>& list,
-  solvedPlay * solvedp)
+  SolvedPlay * solvedp)
 {
   if (list.size() < 2)
   {
@@ -507,8 +507,8 @@ int GIB_TO_DDS[4] = {1, 0, 3, 2};
 
 bool parse_GIB(
   const string& line,
-  dealPBN * dl, 
-  ddTableResults * table)
+  DealPBN * dl, 
+  DdTableResults * table)
 {
   string st = "W:" + line.substr(0, 67);
   strcpy(dl->remainCards, st.c_str());
@@ -533,7 +533,7 @@ bool parse_GIB(
       if (dds_hand & 1)
         d = 13 - d;
 
-      table->resTable[dds_strain][dds_hand] = d;
+      table->res_table[dds_strain][dds_hand] = d;
     }
   }
   return true;
@@ -633,14 +633,14 @@ string trimTrailing(
   const string& text,
   const char c)
 {
-  unsigned pos = static_cast<unsigned>(text.length());
-  while (pos >= 1 && text.at(pos-1) == c)
-    pos--;
+  unsigned Pos = static_cast<unsigned>(text.length());
+  while (Pos >= 1 && text.at(Pos-1) == c)
+    Pos--;
 
-  if (pos == 0)
+  if (Pos == 0)
     return "";
   else
-    return text.substr(0, pos);
+    return text.substr(0, Pos);
 }
 
 
@@ -649,7 +649,7 @@ void splitIntoWords(
   vector<string>& words)
 {
   // Split into words (split on \s+, effectively).
-  unsigned pos = 0;
+  unsigned Pos = 0;
   unsigned startPos = 0;
   bool isSpace = true;
 
@@ -665,26 +665,26 @@ void splitIntoWords(
 
   const unsigned l = static_cast<unsigned>(ttext.length());
 
-  while (pos < l)
+  while (Pos < l)
   {
-    if (ttext.at(pos) == ' ')
+    if (ttext.at(Pos) == ' ')
     {
       if (! isSpace)
       {
-        words.push_back(ttext.substr(startPos, pos-startPos));
+        words.push_back(ttext.substr(startPos, Pos-startPos));
         isSpace = true;
       }
     }
     else if (isSpace)
     {
       isSpace = false;
-      startPos = pos;
+      startPos = Pos;
     }
-    pos++;
+    Pos++;
   }
 
   if (! isSpace)
-    words.push_back(ttext.substr(startPos, pos-startPos));
+    words.push_back(ttext.substr(startPos, Pos-startPos));
 }
 
 
@@ -693,11 +693,11 @@ bool str2int(
   int& res)
 {
   int i;
-  size_t pos;
+  size_t Pos;
   try
   {
-    i = stoi(text, &pos);
-    if (pos != text.size())
+    i = stoi(text, &Pos);
+    if (Pos != text.size())
       return false;
 
   }

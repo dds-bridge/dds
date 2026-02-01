@@ -15,60 +15,60 @@
 
 
 bool ABsearch(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx);
 
 bool ABsearch0(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx);
 
 bool ABsearch1(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx);
 
 bool ABsearch2(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx);
 
 bool ABsearch3(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx);
 
 void Make0(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  moveType const * mply);
+  MoveType const * mply);
 
 void Make1(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  moveType const * mply);
+  MoveType const * mply);
 
 void Make2(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  moveType const * mply);
+  MoveType const * mply);
 
 void Make3(
-  pos * posPoint,
+  Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
-  moveType const * mply,
+  MoveType const * mply,
   SolverContext& ctx);
 
 // Evaluate terminal position using the provided context
-evalType EvaluateWithContext(
-  pos const * posPoint,
+EvalType EvaluateWithContext(
+  Pos const * posPoint,
   const int trump,
   SolverContext& ctx);
 

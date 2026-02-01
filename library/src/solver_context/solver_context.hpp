@@ -144,20 +144,20 @@ public:
     bool analysisFlag() const;
     unsigned short& lowestWin(int depth, int suit);
     const unsigned short& lowestWin(int depth, int suit) const;
-    moveType& bestMove(int depth);
-    const moveType& bestMove(int depth) const;
-    moveType& bestMoveTT(int depth);
-    const moveType& bestMoveTT(int depth) const;
+    MoveType& bestMove(int depth);
+    const MoveType& bestMove(int depth) const;
+    MoveType& bestMoveTT(int depth);
+    const MoveType& bestMoveTT(int depth) const;
     WinnersType& winners(int trickIndex);
     const WinnersType& winners(int trickIndex) const;
   // Node type store for each hand (MAXNODE/MINNODE)
   int& nodeTypeStore(int hand);
   const int& nodeTypeStore(int hand) const;
     // Access to forbidden moves buffer used by Moves::Purge and solver loops
-    moveType* forbiddenMoves();
-    const moveType* forbiddenMoves() const;
-    moveType& forbiddenMove(int index);
-    const moveType& forbiddenMove(int index) const;
+    MoveType* forbiddenMoves();
+    const MoveType* forbiddenMoves() const;
+    MoveType& forbiddenMove(int index);
+    const MoveType& forbiddenMove(int index) const;
   void clearForbiddenMoves();
     int& nodes();
     int& trickNodes();
@@ -191,28 +191,28 @@ public:
 
     int MoveGen0(
       const int tricks,
-      const pos& tpos,
-      const moveType& bestMove,
-      const moveType& bestMoveTT,
-      const relRanksType thrp_rel[]);
+      const Pos& tpos,
+      const MoveType& bestMove,
+      const MoveType& bestMoveTT,
+      const RelRanksType thrp_rel[]);
 
     int MoveGen123(
       const int tricks,
       const int relHand,
-      const pos& tpos);
+      const Pos& tpos);
 
     void Purge(
       const int tricks,
       const int relHand,
-      const moveType forbiddenMoves[]);
+      const MoveType forbiddenMoves[]);
 
-    const moveType* MakeNext(
+    const MoveType* MakeNext(
       const int trick,
       const int relHand,
-      const unsigned short winRanks[]);
+      const unsigned short win_ranks[]);
 
-    // Simpler variant without winRanks used in several SolverIF paths
-    const moveType* MakeNextSimple(
+    // Simpler variant without win_ranks used in several SolverIF paths
+    const MoveType* MakeNextSimple(
       const int trick,
       const int relHand);
 
@@ -239,7 +239,7 @@ public:
       const int relStartHand,
       const int initialRanks[],
       const int initialSuits[],
-      const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+      const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
       const int trump,
       const int leadHand);
 
@@ -250,14 +250,14 @@ public:
     void PrintFunctionStats(std::ofstream& fout) const;
 
     // Read-only access to per-trick generated metadata
-    const trickDataType& GetTrickData(const int tricks);
+    const TrickDataType& GetTrickData(const int tricks);
 
  // Read-only textual dump helper
     std::string TrickToText(const int trick) const;
 
     // Specify a particular move at a trick/hand position
     void MakeSpecific(
-      const moveType& mply,
+      const MoveType& mply,
       const int trick,
       const int relHand);
 

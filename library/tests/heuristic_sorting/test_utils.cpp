@@ -10,7 +10,7 @@
 #include <lookup_tables/lookup_tables.hpp>
 
 // Normalization: stable textual representation (same as serialize for now)
-std::string normalize_ordering(const moveType* moves, int numMoves, bool include_scores) {
+std::string normalize_ordering(const MoveType* moves, int numMoves, bool include_scores) {
   // Create an index array and sort it deterministically by:
   // 1) weight (descending)
   // 2) suit (ascending)
@@ -45,9 +45,9 @@ std::string normalize_ordering(const moveType* moves, int numMoves, bool include
   return out.str();
 }
 
-// Initialize relRanks table and trackType based on a given pos (used by fuzz tests)
-void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 assumed */, trackType* trackp,
-    int cardsPlayed, const moveType* playedMoves, int leadHand, int trump) {
+// Initialize relRanks table and trackType based on a given Pos (used by fuzz tests)
+void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 assumed */, trackType* trackp,
+    int cardsPlayed, const MoveType* playedMoves, int leadHand, int trump) {
   // zero track and set sane defaults
   if (trackp) {
     std::memset(trackp, 0, sizeof(*trackp));
@@ -67,50 +67,50 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
         trackp->lowestWin[h][s] = 0;
     }
     // default trickData
-    for (int s = 0; s < DDS_SUITS; ++s) trackp->trickData.playCount[s] = 0;
-    trackp->trickData.bestRank = 0;
-    trackp->trickData.bestSuit = 0;
-    trackp->trickData.bestSequence = 0;
-    trackp->trickData.relWinner = 0;
-    trackp->trickData.nextLeadHand = leadHand;
+    for (int s = 0; s < DDS_SUITS; ++s) trackp->trickData.play_count[s] = 0;
+    trackp->trickData.best_rank = 0;
+    trackp->trickData.best_suit = 0;
+    trackp->trickData.best_sequence = 0;
+    trackp->trickData.rel_winner = 0;
+    trackp->trickData.next_lead_hand = leadHand;
   }
 
   if (!relTable) return;
 
-  // Work on a mutable copy of pos so we can simulate cards removed by plays
-  pos localPos = tpos;
+  // Work on a mutable copy of Pos so we can simulate cards removed by plays
+  Pos localPos = tpos;
   if (cardsPlayed > 0 && playedMoves) {
     // playedMoves are in play order starting from leadHand (absolute)
     for (int i = 0; i < cardsPlayed; ++i) {
-      const moveType &m = playedMoves[i];
+      const MoveType &m = playedMoves[i];
       int absHand = (leadHand + i) % 4;
       if (m.rank > 0 && m.rank < 16) {
         unsigned short mask = bitMapRank[m.rank];
         // remove the card from localPos
-        localPos.rankInSuit[absHand][m.suit] &= static_cast<unsigned short>(~mask);
+        localPos.rank_in_suit[absHand][m.suit] &= static_cast<unsigned short>(~mask);
         // update aggregate and lengths
         localPos.aggr[m.suit] &= static_cast<unsigned short>(~mask);
         if (localPos.length[absHand][m.suit] > 0) localPos.length[absHand][m.suit]--;
-        if (localPos.handDist[absHand] > 0) localPos.handDist[absHand]--;
+        if (localPos.hand_dist[absHand] > 0) localPos.hand_dist[absHand]--;
       }
     }
 
-    // Recompute winner/secondBest conservatively for each suit based on remaining cards
+    // Recompute winner/second_best conservatively for each suit based on remaining cards
     for (int s = 0; s < DDS_SUITS; ++s) {
       localPos.winner[s].rank = 0; localPos.winner[s].hand = 0;
-      localPos.secondBest[s].rank = 0; localPos.secondBest[s].hand = 0;
+      localPos.second_best[s].rank = 0; localPos.second_best[s].hand = 0;
       for (int h = 0; h < DDS_HANDS; ++h) {
-        unsigned short ris = localPos.rankInSuit[h][s];
+        unsigned short ris = localPos.rank_in_suit[h][s];
         if (!ris) continue;
         for (int r = 13; r >= 1; --r) {
           if (ris & (1u << r)) {
             if (r > localPos.winner[s].rank) {
-              localPos.secondBest[s] = localPos.winner[s];
+              localPos.second_best[s] = localPos.winner[s];
               localPos.winner[s].rank = r;
               localPos.winner[s].hand = h;
-            } else if (r > localPos.secondBest[s].rank) {
-              localPos.secondBest[s].rank = r;
-              localPos.secondBest[s].hand = h;
+            } else if (r > localPos.second_best[s].rank) {
+              localPos.second_best[s].rank = r;
+              localPos.second_best[s].hand = h;
             }
             break;
           }
@@ -122,18 +122,18 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
   // Initialize relTable[0]
   for (int s = 0; s < DDS_SUITS; s++) {
     for (int ord = 1; ord <= 13; ord++) {
-      relTable[0].absRank[ord][s].hand = -1;
-      relTable[0].absRank[ord][s].rank = 0;
+      relTable[0].abs_rank[ord][s].hand = -1;
+      relTable[0].abs_rank[ord][s].rank = 0;
     }
   }
 
-  // Build handLookup from current deal (use localPos which may have had cards removed)
+  // Build handLookup from current Deal (use localPos which may have had cards removed)
   int handLookup[DDS_SUITS][15];
   for (int s = 0; s < DDS_SUITS; s++) {
     for (int r = 14; r >= 2; r--) {
       handLookup[s][r] = 0;
       for (int h = 0; h < DDS_HANDS; h++) {
-        if (localPos.rankInSuit[h][s] & bitMapRank[r]) {
+        if (localPos.rank_in_suit[h][s] & bitMapRank[r]) {
           handLookup[s][r] = h;
           break;
         }
@@ -150,18 +150,18 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
     }
 
     relTable[aggr] = relTable[aggr ^ topBitRank];
-    relRanksType * relp = &relTable[aggr];
+    RelRanksType * relp = &relTable[aggr];
 
   int weight = count_table[aggr];
     for (int c = weight; c >= 2; c--) {
       for (int s = 0; s < DDS_SUITS; s++) {
-        relp->absRank[c][s].hand = relp->absRank[c - 1][s].hand;
-        relp->absRank[c][s].rank = relp->absRank[c - 1][s].rank;
+        relp->abs_rank[c][s].hand = relp->abs_rank[c - 1][s].hand;
+        relp->abs_rank[c][s].rank = relp->abs_rank[c - 1][s].rank;
       }
     }
     for (int s = 0; s < DDS_SUITS; s++) {
-      relp->absRank[1][s].hand = static_cast<signed char>(handLookup[s][topBitNo]);
-      relp->absRank[1][s].rank = static_cast<char>(topBitNo);
+      relp->abs_rank[1][s].hand = static_cast<signed char>(handLookup[s][topBitNo]);
+      relp->abs_rank[1][s].rank = static_cast<char>(topBitNo);
     }
   }
 
@@ -174,7 +174,7 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
     if (cardsPlayed > DDS_HANDS) cardsPlayed = DDS_HANDS;
     int relIndex = 0;
     for (int i = 0; i < cardsPlayed; ++i) {
-      const moveType& m = playedMoves[i];
+      const MoveType& m = playedMoves[i];
       // relative index in trick: 0..cardsPlayed-1
       relIndex = i;
       trackp->playSuits[relIndex] = m.suit;
@@ -194,7 +194,7 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
         trackp->leadSuit = m.suit;
       } else {
         // compare with previous winning card
-  extCard prev = trackp->move[trackp->high[relIndex - 1]];
+  ExtCard prev = trackp->move[trackp->high[relIndex - 1]];
         bool newIsWinning = false;
         if (m.suit == prev.suit) {
           if (m.rank > prev.rank) newIsWinning = true;
@@ -212,15 +212,15 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
 
     // Update trickData play counts
     for (int p = 0; p < cardsPlayed; ++p)
-      trackp->trickData.playCount[ trackp->playSuits[p] ]++;
+      trackp->trickData.play_count[ trackp->playSuits[p] ]++;
 
     // Update trickData best values from the last play
-    trackp->trickData.bestRank = trackp->move[cardsPlayed - 1].rank;
-    trackp->trickData.bestSuit = trackp->move[cardsPlayed - 1].suit;
-    trackp->trickData.bestSequence = trackp->move[cardsPlayed - 1].sequence;
-    trackp->trickData.relWinner = trackp->high[cardsPlayed - 1];
-    // nextLeadHand if trick completes would be based on high[cardsPlayed-1]
-    trackp->trickData.nextLeadHand = (trackp->leadHand + trackp->trickData.relWinner) % 4;
+    trackp->trickData.best_rank = trackp->move[cardsPlayed - 1].rank;
+    trackp->trickData.best_suit = trackp->move[cardsPlayed - 1].suit;
+    trackp->trickData.best_sequence = trackp->move[cardsPlayed - 1].sequence;
+    trackp->trickData.rel_winner = trackp->high[cardsPlayed - 1];
+    // next_lead_hand if trick completes would be based on high[cardsPlayed-1]
+    trackp->trickData.next_lead_hand = (trackp->leadHand + trackp->trickData.rel_winner) % 4;
   }
 
   // Populate lowestWin: compute a more precise minimal winning rank for
@@ -242,8 +242,8 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
     int curBestRank = 0;
     if (hasCurrentBest) {
       int lastRel = cardsPlayed - 1;
-      int relWinner = trackp->high[lastRel];
-      extCard best = trackp->move[relWinner];
+      int rel_winner = trackp->high[lastRel];
+      ExtCard best = trackp->move[rel_winner];
       curBestSuit = best.suit;
       curBestRank = best.rank;
     }
@@ -258,7 +258,7 @@ void init_rel_and_track(const pos& tpos, relRanksType* relTable /* size 8192 ass
         }
 
         int absHand = (trackp->leadHand + relh) % 4;
-        unsigned short ris = localPos.rankInSuit[absHand][s];
+        unsigned short ris = localPos.rank_in_suit[absHand][s];
         if (!ris) { trackp->lowestWin[relh][s] = 0; continue; }
 
         // If there is no current best (lead not played), use smallest rank

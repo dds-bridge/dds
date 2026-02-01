@@ -18,7 +18,7 @@ namespace {
   static int dds_lut_lowestRank_storage[8192];
   static int dds_lut_counttable_storage[8192];
   static char dds_lut_relRank_storage[8192][15];
-  static unsigned short dds_lut_winRanks_storage[8192][14];
+  static unsigned short dds_lut_win_ranks_storage[8192][14];
   static MoveGroupType dds_lut_groupData_storage[8192];
 
   static std::once_flag dds_lut_once_flag;
@@ -85,11 +85,11 @@ static auto dds_lut_init_impl() -> void
     }
   }
 
-  // winRanks[aggr][leastWin] is the absolute suit represented
+  // win_ranks[aggr][leastWin] is the absolute suit represented
   // by aggr, but limited to its top "leastWin" bits.
   for (int aggr = 0; aggr < 8192; aggr++)
   {
-    dds_lut_winRanks_storage[aggr][0] = 0;
+    dds_lut_win_ranks_storage[aggr][0] = 0;
     for (int leastWin = 1; leastWin < 14; leastWin++)
     {
       int res = 0;
@@ -107,7 +107,7 @@ static auto dds_lut_init_impl() -> void
             break;
         }
       }
-      dds_lut_winRanks_storage[aggr][leastWin] = static_cast<unsigned short>(res);
+      dds_lut_win_ranks_storage[aggr][leastWin] = static_cast<unsigned short>(res);
     }
   }
 
@@ -209,4 +209,4 @@ const int (&highest_rank)[8192] = dds_lut_highestRank_storage;
 const int (&lowest_rank)[8192] = dds_lut_lowestRank_storage;
 const int (&count_table)[8192] = dds_lut_counttable_storage;
 const char (&rel_rank)[8192][15] = dds_lut_relRank_storage;
-const unsigned short (&win_ranks)[8192][14] = dds_lut_winRanks_storage;
+const unsigned short (&win_ranks)[8192][14] = dds_lut_win_ranks_storage;

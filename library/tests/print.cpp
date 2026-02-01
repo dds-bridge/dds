@@ -65,7 +65,7 @@ void set_constants()
 }
 
 
-void print_PBN(const dealPBN& dl)
+void print_PBN(const DealPBN& dl)
 {
   cout << setw(10) << left << "trump" << dl.trump << "\n";
   cout << setw(10) << "first" << dl.first << "\n";
@@ -73,7 +73,7 @@ void print_PBN(const dealPBN& dl)
 }
 
 
-void print_FUT(const futureTricks& fut)
+void print_FUT(const FutureTricks& fut)
 {
   cout << setw(6) << left << "cards" << fut.cards << "\n";
   cout << setw(6) << right <<  "No." << 
@@ -105,7 +105,7 @@ string equals_to_string(const int equals)
 }
 
 
-void print_TABLE(const ddTableResults& table)
+void print_TABLE(const DdTableResults& table)
 {
   cout << setw(5) << right << "" <<
     setw(6) << "North" <<
@@ -114,32 +114,32 @@ void print_TABLE(const ddTableResults& table)
     setw(6) << "West" << "\n";
 
   cout << setw(5) << right << "NT" <<
-    setw(6) << table.resTable[4][0] <<
-    setw(6) << table.resTable[4][2] <<
-    setw(6) << table.resTable[4][1] <<
-    setw(6) << table.resTable[4][3] << "\n";
+    setw(6) << table.res_table[4][0] <<
+    setw(6) << table.res_table[4][2] <<
+    setw(6) << table.res_table[4][1] <<
+    setw(6) << table.res_table[4][3] << "\n";
 
   for (int suit = 0; suit <= 3; suit++)
   {
     cout << setw(5) << right << dcardSuit[suit] <<
-      setw(6) << table.resTable[suit][0] <<
-      setw(6) << table.resTable[suit][2] <<
-      setw(6) << table.resTable[suit][1] <<
-      setw(6) << table.resTable[suit][3] << "\n";
+      setw(6) << table.res_table[suit][0] <<
+      setw(6) << table.res_table[suit][2] <<
+      setw(6) << table.res_table[suit][1] <<
+      setw(6) << table.res_table[suit][3] << "\n";
   }
 }
 
 
-void print_PAR(const parResults& par)
+void print_PAR(const ParResults& par)
 {
-  cout << setw(9) << left << "NS score" << par.parScore[0] << "\n";
-  cout << setw(9) << "EW score" << par.parScore[1] << "\n";
-  cout << setw(9) << "NS list" << par.parContractsString[0] << "\n";
-  cout << setw(9) << "EW list" << par.parContractsString[1] << "\n";
+  cout << setw(9) << left << "NS score" << par.par_score[0] << "\n";
+  cout << setw(9) << "EW score" << par.par_score[1] << "\n";
+  cout << setw(9) << "NS list" << par.par_contracts_string[0] << "\n";
+  cout << setw(9) << "EW list" << par.par_contracts_string[1] << "\n";
 }
 
 
-void print_DEALERPAR(const parResultsDealer& par)
+void print_DEALERPAR(const ParResultsDealer& par)
 {
   cout << setw(6) << left << "Score" << par.score << "\n";
   cout << setw(6) << left << "Pars" << par.number << "\n";
@@ -149,7 +149,7 @@ void print_DEALERPAR(const parResultsDealer& par)
 }
 
 
-void print_PLAY(const playTracePBN& play)
+void print_PLAY(const PlayTracePBN& play)
 {
   cout << setw(6) << right << "Number" << 
     setw(5) << play.number << "\n";
@@ -160,7 +160,7 @@ void print_PLAY(const playTracePBN& play)
 }
 
 
-void print_TRACE(const solvedPlay& solved)
+void print_TRACE(const SolvedPlay& solved)
 {
   cout << setw(6) << right << "Number" << 
     setw(5) << solved.number << "\n";
@@ -172,8 +172,8 @@ void print_TRACE(const solvedPlay& solved)
 
 
 void print_double_TRACE(
-  const solvedPlay& solved, 
-  const solvedPlay& ref)
+  const SolvedPlay& solved, 
+  const SolvedPlay& ref)
 {
   cout << "Number solved vs ref: " << solved.number << " vs. " <<
     ref.number << "\n";

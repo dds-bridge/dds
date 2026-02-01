@@ -201,7 +201,7 @@ void SetDeal(
     thrp->lookAheadPos.aggr[s] = 0;
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      thrp->lookAheadPos.rankInSuit[h][s] = thrp->suit[h][s];
+      thrp->lookAheadPos.rank_in_suit[h][s] = thrp->suit[h][s];
       thrp->lookAheadPos.aggr[s] |= thrp->suit[h][s];
     }
   }
@@ -210,13 +210,13 @@ void SetDeal(
   {
     for (int h = 0; h < DDS_HANDS; h++)
       thrp->lookAheadPos.length[h][s] = static_cast<unsigned char>(
-  count_table[thrp->lookAheadPos.rankInSuit[h][s]]);
+  count_table[thrp->lookAheadPos.rank_in_suit[h][s]]);
   }
 
   // Clubs are implicit, for a given trick number.
   for (int h = 0; h < DDS_HANDS; h++)
   {
-    thrp->lookAheadPos.handDist[h] =
+    thrp->lookAheadPos.hand_dist[h] =
       static_cast<long long>(
         (thrp->lookAheadPos.length[h][0] << 8) |
         (thrp->lookAheadPos.length[h][1] << 4) |
@@ -235,18 +235,18 @@ void SetDealTables(
   // Initialization of the rel structure is inspired by
   // a solution given by Thomas Andrews.
 
-  // rel[aggr].absRank[absolute rank][suit].hand is the hand
+  // rel[aggr].abs_rank[absolute rank][suit].hand is the hand
   // (N = 0, E = 1 etc.) which holds the absolute rank in
   // the suit characterized by aggr.
-  // rel[aggr].absRank[absolute rank][suit].rank is the
+  // rel[aggr].abs_rank[absolute rank][suit].rank is the
   // relative rank of that card.
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
     for (int ord = 1; ord <= 13; ord++)
     {
-      thrp->rel[0].absRank[ord][s].hand = -1;
-      thrp->rel[0].absRank[ord][s].rank = 0;
+      thrp->rel[0].abs_rank[ord][s].hand = -1;
+      thrp->rel[0].abs_rank[ord][s].rank = 0;
     }
   }
 
@@ -274,7 +274,7 @@ void SetDealTables(
     ctx.transTable()->init(handLookup);
   }
 
-  relRanksType * relp;
+  RelRanksType * relp;
   for (unsigned int aggr = 1; aggr < 8192; aggr++)
   {
     if (aggr >= (topBitRank << 1))
@@ -292,23 +292,23 @@ void SetDealTables(
     {
       for (int s = 0; s < DDS_SUITS; s++)
       {
-        relp->absRank[c][s].hand = relp->absRank[c - 1][s].hand;
-        relp->absRank[c][s].rank = relp->absRank[c - 1][s].rank;
+        relp->abs_rank[c][s].hand = relp->abs_rank[c - 1][s].hand;
+        relp->abs_rank[c][s].rank = relp->abs_rank[c - 1][s].rank;
       }
     }
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      relp->absRank[1][s].hand =
+      relp->abs_rank[1][s].hand =
         static_cast<signed char>(handLookup[s][topBitNo]);
-      relp->absRank[1][s].rank = static_cast<char>(topBitNo);
+      relp->abs_rank[1][s].rank = static_cast<char>(topBitNo);
     }
   }
 }
 
 
 void InitWinners(
-  const deal& dl,
-  pos& posPoint,
+  const Deal& dl,
+  Pos& posPoint,
   const std::shared_ptr<ThreadData>& thrp)
 {
   int hand, suit, rank;
@@ -318,9 +318,9 @@ void InitWinners(
     for (int s = 0; s < DDS_SUITS; s++)
       startMovesBitMap[h][s] = 0;
 
-  for (int k = 0; k < posPoint.handRelFirst; k++)
+  for (int k = 0; k < posPoint.hand_rel_first; k++)
   {
-    hand = handId(dl.first, k);
+    hand = HAND_ID(dl.first, k);
     suit = dl.currentTrickSuit[k];
     rank = dl.currentTrickRank[k];
     startMovesBitMap[hand][suit] |= bitMapRank[rank];
@@ -333,10 +333,10 @@ void InitWinners(
     for (int h = 0; h < DDS_HANDS; h++)
       aggr |= startMovesBitMap[h][s] | thrp->suit[h][s];
 
-    posPoint.winner[s].rank = thrp->rel[aggr].absRank[1][s].rank;
-    posPoint.winner[s].hand = thrp->rel[aggr].absRank[1][s].hand;
-    posPoint.secondBest[s].rank = thrp->rel[aggr].absRank[2][s].rank;
-    posPoint.secondBest[s].hand = thrp->rel[aggr].absRank[2][s].hand;
+    posPoint.winner[s].rank = thrp->rel[aggr].abs_rank[1][s].rank;
+    posPoint.winner[s].hand = thrp->rel[aggr].abs_rank[1][s].hand;
+    posPoint.second_best[s].rank = thrp->rel[aggr].abs_rank[2][s].rank;
+    posPoint.second_best[s].hand = thrp->rel[aggr].abs_rank[2][s].hand;
   }
 }
 
@@ -366,7 +366,7 @@ void STDCALL GetDDSInfo(DDSInfo * info)
     info->minor, info->patch);
   ss << left << setw(13) << "Version" <<
     setw(20) << right << strVersion << "\n";
-  strcpy(info->versionString, strVersion.c_str());
+  strcpy(info->version_string, strVersion.c_str());
 
   ss << left << setw(17) << "Memory max (MB)" <<
     setw(16) << right << sysdep.GetMemoryMax() << "\n";

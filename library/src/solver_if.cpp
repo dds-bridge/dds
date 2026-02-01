@@ -25,54 +25,54 @@ extern Scheduler scheduler;
 
 
 int BoardRangeChecks(
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode);
 
 int BoardValueChecks(
   SolverContext& ctx,
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode);
 
 void LastTrickWinner(
-  const deal& dl,
+  const Deal& dl,
   const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
-  const int handRelFirst,
+  const int hand_rel_first,
   int& leadRank,
   int& leadSuit,
   int& leadSideWins);
 
 bool (* AB_ptr_list[DDS_HANDS])(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
   = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
-  pos * posPoint,
+  Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
   = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
 
 void (* Make_ptr_list[3])(
-  pos * posPoint,
+  Pos * posPoint,
   const int depth,
-  moveType const * mply)
+  MoveType const * mply)
   = { Make0, Make1, Make2 };
 
 
 int STDCALL SolveBoard(
-  deal dl,
+  Deal dl,
   int target,
   int solutions,
   int mode,
-  futureTricks * futp,
+  FutureTricks * futp,
   int thrId)
 {
   if (! sysdep.ThreadOK(thrId))
@@ -85,11 +85,11 @@ int STDCALL SolveBoard(
 
 int SolveBoardInternal(
   SolverContext& ctx,
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode,
-  futureTricks * futp)
+  FutureTricks * futp)
 {
   // ----------------------------------------------------------
   // Formal parameter checks.
@@ -100,7 +100,7 @@ int SolveBoardInternal(
     return ret;
 
   // ----------------------------------------------------------
-  // Count and classify deal.
+  // Count and classify Deal.
   // ----------------------------------------------------------
 
   auto thrp = ctx.thread();
@@ -153,15 +153,15 @@ int SolveBoardInternal(
   ctx.search().iniDepth() = cardCount - 4;
   int iniDepth = ctx.search().iniDepth();
   int trick = (iniDepth + 3) >> 2;
-  int handRelFirst = (48 - iniDepth) % 4;
-  int handToPlay = handId(dl.first, handRelFirst);
+  int hand_rel_first = (48 - iniDepth) % 4;
+  int handToPlay = HAND_ID(dl.first, hand_rel_first);
   ctx.search().trickNodes() = 0;
 
-  thrp->lookAheadPos.handRelFirst = handRelFirst;
+  thrp->lookAheadPos.hand_rel_first = hand_rel_first;
   thrp->lookAheadPos.first[iniDepth] = dl.first;
-  thrp->lookAheadPos.tricksMAX = 0;
+  thrp->lookAheadPos.tricks_max = 0;
 
-  moveType mv = {0, 0, 0, 0};
+  MoveType mv = {0, 0, 0, 0};
 
   ctx.search().clearForbiddenMoves();
   
@@ -183,7 +183,7 @@ int SolveBoardInternal(
   {
     int leadRank, leadSuit, leadSideWins;
 
-    LastTrickWinner(dl, thrp, handToPlay, handRelFirst,
+    LastTrickWinner(dl, thrp, handToPlay, hand_rel_first,
       leadRank, leadSuit, leadSideWins);
 
     futp->nodes = 0;
@@ -245,7 +245,7 @@ int SolveBoardInternal(
     ctx.search().nodeTypeStore(3) = MAXNODE;
   }
 
-  for (int k = 0; k < handRelFirst; k++)
+  for (int k = 0; k < hand_rel_first; k++)
   {
     mv.rank = dl.currentTrickRank[k];
     mv.suit = dl.currentTrickSuit[k];
@@ -256,7 +256,7 @@ int SolveBoardInternal(
       k,
       dl.currentTrickRank,
       dl.currentTrickSuit,
-      thrp->lookAheadPos.rankInSuit,
+      thrp->lookAheadPos.rank_in_suit,
       thrp->trump,
       thrp->lookAheadPos.first[iniDepth]);
 
@@ -275,7 +275,7 @@ int SolveBoardInternal(
         k,
         thrp->lookAheadPos);
 
-  thrp->lookAheadPos.move[iniDepth + handRelFirst - k] = mv;
+  thrp->lookAheadPos.move[iniDepth + hand_rel_first - k] = mv;
   ctx.moveGen().MakeSpecific(mv, trick, k);
   }
 
@@ -294,14 +294,14 @@ int SolveBoardInternal(
 
   ctx.moveGen().Init(
     trick,
-    handRelFirst,
+    hand_rel_first,
     dl.currentTrickRank,
     dl.currentTrickSuit,
-    thrp->lookAheadPos.rankInSuit,
+    thrp->lookAheadPos.rank_in_suit,
     thrp->trump,
     thrp->lookAheadPos.first[iniDepth]);
 
-  if (handRelFirst == 0)
+  if (hand_rel_first == 0)
   {
     ctx.moveGen().MoveGen0(
       trick,
@@ -313,10 +313,10 @@ int SolveBoardInternal(
   else
     ctx.moveGen().MoveGen123(
       trick,
-      handRelFirst,
+      hand_rel_first,
       thrp->lookAheadPos);
 
-  noMoves = ctx.moveGen().GetLength(trick, handRelFirst);
+  noMoves = ctx.moveGen().GetLength(trick, hand_rel_first);
 
   // ----------------------------------------------------------
   // mode == 0: Check whether there is only one possible move
@@ -324,7 +324,7 @@ int SolveBoardInternal(
 
   if (mode == 0 && noMoves == 1 && solutions != 3)
   {
-    moveType const * mp = ctx.moveGen().MakeNextSimple(trick, handRelFirst);
+    MoveType const * mp = ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -356,7 +356,7 @@ int SolveBoardInternal(
         ctx.ResetBestMovesLite();
 
         TIMER_START(TIMER_NO_AB, iniDepth);
-  thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[hand_rel_first])(
                       &thrp->lookAheadPos,
                       guess,
                       iniDepth,
@@ -395,13 +395,13 @@ int SolveBoardInternal(
       }
       else
       {
-        int noLeft = ctx.moveGen().GetLength(trick, handRelFirst);
+        int noLeft = ctx.moveGen().GetLength(trick, hand_rel_first);
 
-        ctx.moveGen().Rewind(trick, handRelFirst);
+        ctx.moveGen().Rewind(trick, hand_rel_first);
         for (int j = 0; j < noLeft; j++)
         {
-          moveType const * mp = 
-            ctx.moveGen().MakeNextSimple(trick, handRelFirst);
+          MoveType const * mp = 
+            ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
 
           futp->suit[mno + j] = mp->suit;
           futp->rank[mno + j] = mp->rank;
@@ -426,8 +426,8 @@ int SolveBoardInternal(
 
     for (int mno = 0; mno < noMoves; mno++)
     {
-      moveType const * mp = 
-        ctx.moveGen().MakeNextSimple(trick, handRelFirst);
+      MoveType const * mp = 
+        ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
 
       futp->suit[mno] = mp->suit;
       futp->rank[mno] = mp->rank;
@@ -466,7 +466,7 @@ int SolveBoardInternal(
       ctx.ResetBestMovesLite();
 
       TIMER_START(TIMER_NO_AB, iniDepth);
-  thrp->val = (* AB_ptr_list[handRelFirst])(&thrp->lookAheadPos,
+  thrp->val = (* AB_ptr_list[hand_rel_first])(&thrp->lookAheadPos,
                   guess,
                   iniDepth,
       ctx);
@@ -500,11 +500,11 @@ int SolveBoardInternal(
       else // solutions == 2, so return all cards
         futp->cards = noMoves;
 
-      ctx.moveGen().Rewind(trick, handRelFirst);
+      ctx.moveGen().Rewind(trick, hand_rel_first);
       for (int i = 0; i < noMoves; i++)
       {
-        moveType const * mp = 
-          ctx.moveGen().MakeNextSimple(trick, handRelFirst);
+        MoveType const * mp = 
+          ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
 
         futp->score[i] = 0;
         futp->suit[i] = mp->suit;
@@ -534,7 +534,7 @@ int SolveBoardInternal(
   else
   {
     TIMER_START(TIMER_NO_AB, iniDepth);
-  thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[hand_rel_first])(
                   &thrp->lookAheadPos,
                   target,
                   iniDepth,
@@ -582,13 +582,13 @@ int SolveBoardInternal(
   {
     // Moves up to and including bestMove are now forbidden.
 
-    ctx.moveGen().Rewind(trick, handRelFirst);
-    int num = ctx.moveGen().GetLength(trick, handRelFirst);
+    ctx.moveGen().Rewind(trick, hand_rel_first);
+    int num = ctx.moveGen().GetLength(trick, hand_rel_first);
 
     for (int k = 0; k < num; k++)
     {
-      moveType const * mp = 
-        ctx.moveGen().MakeNextSimple(trick, handRelFirst);
+      MoveType const * mp = 
+        ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
       
       ctx.search().forbiddenMove(forb) = * mp;
       forb++;
@@ -601,7 +601,7 @@ int SolveBoardInternal(
   /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, iniDepth);
-  thrp->val = (* AB_ptr_list[handRelFirst])(
+  thrp->val = (* AB_ptr_list[hand_rel_first])(
                   &thrp->lookAheadPos,
                   futp->score[0],
                   iniDepth,
@@ -681,8 +681,8 @@ SOLVER_DONE:
 
 int SolveSameBoard(
   const std::shared_ptr<ThreadData>& thrp,
-  const deal& dl,
-  futureTricks * futp,
+  const Deal& dl,
+  FutureTricks * futp,
   const int hint)
 {
   // Specialized function for SolveChunkDDtable for repeat solves.
@@ -811,10 +811,10 @@ int SolveSameBoard(
 int AnalyseLaterBoard(
   const std::shared_ptr<ThreadData>& thrp,
   const int leadHand,
-  moveType const * move,
+  MoveType const * move,
   const int hint,
   const int hintDir,
-  futureTricks * futp)
+  FutureTricks * futp)
 {
   // Specialized function for PlayAnalyser for cards after the
   // opening lead. No further parameter checks! This function
@@ -827,14 +827,14 @@ int AnalyseLaterBoard(
   int iniDepth = --ctxLater.search().iniDepth();
   int cardCount = iniDepth + 4;
   int trick = (iniDepth + 3) >> 2;
-  int handRelFirst = (48 - iniDepth) % 4;
+  int hand_rel_first = (48 - iniDepth) % 4;
   {
     ctxLater.search().trickNodes() = 0;
   }
   {
     ctxLater.search().analysisFlag() = true;
   }
-  int handToPlay = handId(leadHand, handRelFirst);
+  int handToPlay = HAND_ID(leadHand, hand_rel_first);
 
   {
     if (handToPlay == 0 || handToPlay == 2)
@@ -853,18 +853,18 @@ int AnalyseLaterBoard(
     }
   }
 
-  if (handRelFirst == 0)
+  if (hand_rel_first == 0)
   {
     ctxLater.moveGen().MakeSpecific(* move, trick + 1, 3);
   unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
   Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, ctxLater);
   }
-  else if (handRelFirst == 1)
+  else if (hand_rel_first == 1)
   {
     ctxLater.moveGen().MakeSpecific(* move, trick, 0);
     Make0(&thrp->lookAheadPos, iniDepth + 1, move);
   }
-  else if (handRelFirst == 2)
+  else if (hand_rel_first == 2)
   {
     ctxLater.moveGen().MakeSpecific(* move, trick, 1);
     Make1(&thrp->lookAheadPos, iniDepth + 1, move);
@@ -878,7 +878,7 @@ int AnalyseLaterBoard(
   if (cardCount <= 4)
   {
     // Last trick.
-    evalType eval = EvaluateWithContext(&thrp->lookAheadPos, thrp->trump, ctxLater);
+    EvalType eval = EvaluateWithContext(&thrp->lookAheadPos, thrp->trump, ctxLater);
     futp->score[0] = eval.tricks;
     futp->nodes = 0;
 
@@ -916,7 +916,7 @@ int AnalyseLaterBoard(
   ctxLater.ResetBestMovesLite();
 
     TIMER_START(TIMER_NO_AB, iniDepth);
-  thrp->val = (* AB_ptr_trace_list[handRelFirst])(
+  thrp->val = (* AB_ptr_trace_list[hand_rel_first])(
                   &thrp->lookAheadPos,
                   guess,
                   iniDepth,
@@ -986,7 +986,7 @@ int AnalyseLaterBoard(
 
 
 int BoardRangeChecks(
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode)
@@ -1087,7 +1087,7 @@ int BoardRangeChecks(
 
 int BoardValueChecks(
   SolverContext& ctx,
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode)
@@ -1118,11 +1118,11 @@ int BoardValueChecks(
     return RETURN_TARGET_TOO_HIGH;
   }
 
-  int handRelFirst = thrp->lookAheadPos.handRelFirst;
+  int hand_rel_first = thrp->lookAheadPos.hand_rel_first;
 
   int noOfCardsPerHand[DDS_HANDS] = {0, 0, 0, 0};
-  for (int k = 0; k < handRelFirst; k++)
-    noOfCardsPerHand[handId(dl.first, k)] = 1;
+  for (int k = 0; k < hand_rel_first; k++)
+    noOfCardsPerHand[HAND_ID(dl.first, k)] = 1;
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -1137,7 +1137,7 @@ int BoardValueChecks(
     }
   }
 
-  for (int k = 0; k < handRelFirst; k++)
+  for (int k = 0; k < hand_rel_first; k++)
   {
     unsigned short int aggrRemain = 0;
     for (int h = 0; h < DDS_HANDS; h++)
@@ -1177,10 +1177,10 @@ int BoardValueChecks(
 
 
 void LastTrickWinner(
-  const deal& dl,
+  const Deal& dl,
   const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
-  const int handRelFirst,
+  const int hand_rel_first,
   int& leadRank,
   int& leadSuit,
   int& leadSideWins)
@@ -1190,16 +1190,16 @@ void LastTrickWinner(
       h,
       hp;
 
-  for (h = 0; h < handRelFirst; h++)
+  for (h = 0; h < hand_rel_first; h++)
   {
-    hp = handId(dl.first, h);
+    hp = HAND_ID(dl.first, h);
     lastTrickSuit[hp] = dl.currentTrickSuit[h];
     lastTrickRank[hp] = dl.currentTrickRank[h];
   }
 
-  for (h = handRelFirst; h < DDS_HANDS; h++)
+  for (h = hand_rel_first; h < DDS_HANDS; h++)
   {
-    hp = handId(dl.first, h);
+    hp = HAND_ID(dl.first, h);
     for (int s = 0; s < DDS_SUITS; s++)
     {
       if (thrp->suit[hp][s] != 0)
@@ -1248,7 +1248,7 @@ void LastTrickWinner(
     }
   }
 
-  hp = handId(dl.first, handRelFirst);
+  hp = HAND_ID(dl.first, hand_rel_first);
   leadRank = lastTrickRank[hp];
   leadSuit = lastTrickSuit[hp];
   leadSideWins = ((handToPlay == maxHand ||

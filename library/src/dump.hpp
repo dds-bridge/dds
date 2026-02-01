@@ -16,7 +16,7 @@
 
 int DumpInput(
   const int errCode,
-  const deal& dl,
+  const Deal& dl,
   const int target,
   const int solutions,
   const int mode);
@@ -31,14 +31,14 @@ void DumpTopLevel(
 
 void DumpRetrieved(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   const NodeCards& node,
   const int target,
   const int depth);
 
 void DumpStored(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   const Moves& moves,
   const NodeCards& node,
   const int target,
@@ -47,7 +47,7 @@ void DumpStored(
 // Convenience overload to avoid direct Moves exposure at call sites
 void DumpStored(
   ofstream& fout,
-  const pos& tpos,
+  const Pos& tpos,
   SolverContext& ctx,
   const NodeCards& node,
   const int target,

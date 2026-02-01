@@ -20,8 +20,8 @@
 
 auto main() -> int
 {
-  boardsPBN bo;
-  solvedBoards solved;
+  BoardsPBN bo;
+  SolvedBoards solved;
 
   int res;
   char line[80];
@@ -31,7 +31,7 @@ auto main() -> int
   SetMaxThreads(0);
 #endif
 
-  bo.noOfBoards = 3;
+  bo.no_of_boards = 3;
   for (int handno = 0; handno < 3; handno++)
   {
     bo.deals[handno].trump = trump_suit_[handno];
@@ -62,7 +62,7 @@ auto main() -> int
 
   for (int handno = 0; handno < 3; handno++)
   {
-    match = compare_future_tricks(&solved.solvedBoard[handno], handno, 3);
+    match = compare_future_tricks(&solved.solved_board[handno], handno, 3);
 
     sprintf(line,
             "SolveAllBoards, hand %d: solutions 3 %s\n",
@@ -70,6 +70,6 @@ auto main() -> int
 
     print_pbn_hand(line, bo.deals[handno].remainCards);
 
-    print_future_tricks(line, &solved.solvedBoard[handno]);
+    print_future_tricks(line, &solved.solved_board[handno]);
   }
 }

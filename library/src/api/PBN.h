@@ -7,36 +7,33 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_PBN_H
-#define DDS_PBN_H
+#pragma once
 
 #include <api/dll.h>
 
 
 /**
- * @brief Convert a PBN (Portable Bridge Notation) deal string to DDS card array.
+ * @brief Convert a PBN (Portable Bridge Notation) Deal string to DDS card array.
  *
- * Parses a PBN-format deal string and fills the DDS card array with the remaining cards for each hand and suit.
+ * Parses a PBN-format Deal string and fills the DDS card array with the remaining cards for each hand and suit.
  *
- * @param dealBuff PBN-format deal string.
+ * @param dealBuff PBN-format Deal string.
  * @param remainCards Output array for remaining cards per hand and suit.
  * @return 1 if successful, 0 otherwise.
  */
-int ConvertFromPBN(
+auto ConvertFromPBN(
   char const * dealBuff,
-  unsigned int remainCards[DDS_HANDS][DDS_SUITS]);
+  unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int;
 
 /**
  * @brief Convert a PBN-format play trace to binary play trace.
  *
- * Converts a play trace from PBN format to the binary playTraceBin structure for analysis.
+ * Converts a play trace from PBN format to the binary PlayTraceBin structure for analysis.
  *
  * @param playPBN Play trace in PBN format.
  * @param playBin Output binary play trace structure.
  * @return 1 if successful, 0 otherwise.
  */
-int ConvertPlayFromPBN(
-  const playTracePBN& playPBN,
-  playTraceBin& playBin);
-
-#endif
+auto ConvertPlayFromPBN(
+  const PlayTracePBN& playPBN,
+  PlayTraceBin& playBin) -> int;

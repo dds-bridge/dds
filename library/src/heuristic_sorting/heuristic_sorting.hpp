@@ -9,19 +9,19 @@ struct trackType
   int leadSuit;
   int playSuits[DDS_HANDS];
   int playRanks[DDS_HANDS];
-  trickDataType trickData;
-  extCard move[DDS_HANDS];
+  TrickDataType trickData;
+  ExtCard move[DDS_HANDS];
   int high[DDS_HANDS];
   int lowestWin[DDS_HANDS][DDS_SUITS];
   int removedRanks[DDS_SUITS];
 };
 
 struct HeuristicContext {
-    const pos& tpos;
-    const moveType& bestMove;
-    const moveType& bestMoveTT;
-    const relRanksType* thrp_rel;
-    moveType* mply;
+    const Pos& tpos;
+    const MoveType& bestMove;
+    const MoveType& bestMoveTT;
+    const RelRanksType* thrp_rel;
+    MoveType* mply;
     int numMoves;
     int lastNumMoves;
     int trump;

@@ -6,20 +6,20 @@
 TEST(MinimalNewTest, TestWeightAllocTrump0) {
     std::cout << "Testing minimal WeightAllocTrump0 call..." << std::endl;
     
-    // Create minimal pos structure
-    pos tpos = {};
+    // Create minimal Pos structure
+    Pos tpos = {};
     // Note: trump is passed separately in the context
     
     // Initialize some basic data
     for (int h = 0; h < 4; h++) {
         for (int s = 0; s < 4; s++) {
             tpos.length[h][s] = 3; // Each hand has 3 cards in each suit
-            tpos.rankInSuit[h][s] = 0x7000; // Some high cards
+            tpos.rank_in_suit[h][s] = 0x7000; // Some high cards
         }
     }
     
     // Create moves
-    moveType moves[3];
+    MoveType moves[3];
     moves[0] = {0, 14, 0, 0}; // Ace of spades
     moves[1] = {0, 13, 0, 0}; // King of spades  
     moves[2] = {0, 12, 0, 0}; // Queen of spades
@@ -28,16 +28,16 @@ TEST(MinimalNewTest, TestWeightAllocTrump0) {
         moves[i].weight = 0;
     }
     
-    moveType bestMove = {0, 14, 1, 0};
-    moveType bestMoveTT = {0, 13, 1, 0};
-    relRanksType thrp_rel = {};
+    MoveType bestMove = {0, 14, 1, 0};
+    MoveType bestMoveTT = {0, 13, 1, 0};
+    RelRanksType thrp_rel = {};
     
     trackType track = {};
     track.leadHand = 0;
     track.leadSuit = 0;
     
     HeuristicContext context = {
-        tpos,           // pos
+        tpos,           // Pos
         bestMove,       // bestMove  
         bestMoveTT,     // bestMoveTT
         &thrp_rel,      // thrp_rel
