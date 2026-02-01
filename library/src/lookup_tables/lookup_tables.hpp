@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_LOOKUP_TABLES_LOOKUPTABLES_H
-#define DDS_LOOKUP_TABLES_LOOKUPTABLES_H
+#pragma once
 
 /**
  * \brief Representation of a suit bitmask as runs of adjacent ranks.
@@ -66,5 +65,3 @@ extern const char (&rel_rank)[8192][15];         // preferred snake_case
 extern const unsigned short (&win_ranks)[8192][14]; // preferred snake_case
 /** \brief Read-only table: run decomposition per aggregate. */
 extern const MoveGroupType (&group_data)[8192];  // preferred snake_case
-
-#endif
