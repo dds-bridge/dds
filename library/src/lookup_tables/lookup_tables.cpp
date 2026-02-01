@@ -122,7 +122,7 @@ static auto init_lookup_tables_impl() -> void
   // 2: 9 and 0x0040, gap 0x0020
   // 3: 14 and 0x0c00, gap 0x0300
 
-  int topside[15] =
+  static const int topside[15] =
   {
     0x0000, 0x0000, 0x0000, 0x0001, // 2, 3,
     0x0003, 0x0007, 0x000f, 0x001f, // 4, 5, 6, 7,
@@ -130,7 +130,7 @@ static auto init_lookup_tables_impl() -> void
     0x03ff, 0x07ff, 0x0fff          // Q, K, A
   };
 
-  int botside[15] =
+  static const int botside[15] =
   {
     0xffff, 0xffff, 0x1ffe, 0x1ffc, // 2, 3,
     0x1ff8, 0x1ff0, 0x1fe0, 0x1fc0, // 4, 5, 6, 7,
