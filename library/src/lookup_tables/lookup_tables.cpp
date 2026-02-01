@@ -182,6 +182,9 @@ static auto init_lookup_tables_impl() -> void
       group_data_storage[ris].rank_[g] = topBitNo;
       group_data_storage[ris].sequence_[g] = 0;
       group_data_storage[ris].fullseq_[g] = topBitRank;
+      // gap_[g] is the gap between the current group g and the previous group (g-1).
+      // Since g was just incremented and g >= 1 here, rank_[g-1] is always valid.
+      // The first group (g == 0) is handled separately via explicit initialization above.
       group_data_storage[ris].gap_[g] =
         topside[topBitNo] & botside[ group_data_storage[ris].rank_[g - 1] ];
     }
