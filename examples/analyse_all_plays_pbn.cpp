@@ -34,8 +34,8 @@ auto main() -> int
   SetMaxThreads(0);
 #endif
 
-  bo.noOfBoards = 3;
-  DDplays.noOfBoards = 3;
+  bo.no_of_boards = 3;
+  DDplays.no_of_boards = 3;
 
   for (int handno = 0; handno < 3; handno++)
   {

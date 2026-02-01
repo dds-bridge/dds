@@ -150,7 +150,7 @@ class Moves
       const int relStartHand,
       const int initialRanks[],
       const int initialSuits[],
-      const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+      const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
       const int trump,
       const int leadHand);
 
@@ -182,7 +182,7 @@ class Moves
     MoveType const * MakeNext(
       const int trick,
       const int relHand,
-      const unsigned short winRanks[DDS_SUITS]);
+      const unsigned short win_ranks[DDS_SUITS]);
 
     MoveType const * MakeNextSimple(
       const int trick,

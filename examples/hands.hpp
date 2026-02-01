@@ -47,7 +47,7 @@ auto print_pbn_play(PlayTracePBN * play, SolvedPlay * solved) -> void;
 
 
 auto print_hand(char title[], 
-  unsigned int rankInSuit[DDS_HANDS][DDS_SUITS]) -> void;
+  unsigned int rank_in_suit[DDS_HANDS][DDS_SUITS]) -> void;
 
 auto print_pbn_hand(char title[], char remainCards[]) -> void;
 

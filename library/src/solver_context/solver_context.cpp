@@ -331,9 +331,9 @@ void SolverContext::MoveGenContext::Purge(
 const MoveType* SolverContext::MoveGenContext::MakeNext(
   const int trick,
   const int relHand,
-  const unsigned short winRanks[])
+  const unsigned short win_ranks[])
 {
-  return thr_->moves.MakeNext(trick, relHand, winRanks);
+  return thr_->moves.MakeNext(trick, relHand, win_ranks);
 }
 
 const MoveType* SolverContext::MoveGenContext::MakeNextSimple(
@@ -394,12 +394,12 @@ void SolverContext::MoveGenContext::Init(
   const int relStartHand,
   const int initialRanks[],
   const int initialSuits[],
-  const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+  const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
   const int trump,
   const int leadHand)
 {
   thr_->moves.Init(tricks, relStartHand, initialRanks, initialSuits,
-                   rankInSuit, trump, leadHand);
+                   rank_in_suit, trump, leadHand);
 }
 
 void SolverContext::MoveGenContext::PrintTrickStats(std::ofstream& fout) const

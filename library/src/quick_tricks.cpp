@@ -134,12 +134,12 @@ int QuickTricks(
   int qtricks = 0;
 
   if (ctx.search().nodeTypeStore(hand) == MAXNODE)
-    cutoff = target - tpos.tricksMAX;
+    cutoff = target - tpos.tricks_max;
   else
-    cutoff = tpos.tricksMAX - target + (depth >> 2) + 2;
+    cutoff = tpos.tricks_max - target + (depth >> 2) + 2;
 
   bool commPartner = false;
-  const unsigned short (* ris)[DDS_SUITS] = tpos.rankInSuit;
+  const unsigned short (* ris)[DDS_SUITS] = tpos.rank_in_suit;
   const unsigned char (* len)[DDS_SUITS] = tpos.length;
   HighCardType const * winner = tpos.winner;
 
@@ -163,7 +163,7 @@ int QuickTricks(
           break;
         }
       }
-      else if ((tpos.secondBest[s].hand == partner[hand]) &&
+      else if ((tpos.second_best[s].hand == partner[hand]) &&
                (winner[s].hand == hand) &&
                (len[hand][s] >= 2) &&
                (len[partner[hand]][s] >= 2))
@@ -176,7 +176,7 @@ int QuickTricks(
         {
           commPartner = true;
           commSuit = s;
-          commRank = tpos.secondBest[s].rank;
+          commRank = tpos.second_best[s].rank;
           break;
         }
       }
@@ -194,7 +194,7 @@ int QuickTricks(
           break;
         }
       }
-      else if ((tpos.secondBest[s].hand == partner[hand]) &&
+      else if ((tpos.second_best[s].hand == partner[hand]) &&
                (winner[s].hand == hand) &&
                (len[hand][s] >= 2) &&
                (len[partner[hand]][s] >= 2))
@@ -202,7 +202,7 @@ int QuickTricks(
         /* Can cross to partner's card: Type Kx opposite Ax */
         commPartner = true;
         commSuit = s;
-        commRank = tpos.secondBest[s].rank;
+        commRank = tpos.second_best[s].rank;
         break;
       }
     }
@@ -356,7 +356,7 @@ int QuickTricks(
             if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
             {
               qtricks += countPart;
-              tpos.winRanks[depth][commSuit] |=
+              tpos.win_ranks[depth][commSuit] |=
                 bitMapRank[commRank];
 
               if (qtricks >= cutoff)
@@ -378,7 +378,7 @@ int QuickTricks(
           else
           {
             qtricks += countPart;
-            tpos.winRanks[depth][commSuit] |=
+            tpos.win_ranks[depth][commSuit] |=
               bitMapRank[commRank];
 
             if (qtricks >= cutoff)
@@ -419,7 +419,7 @@ int QuickTricks(
             }
             if (sum >= cutoff)
             {
-              tpos.winRanks[depth][commSuit] |=
+              tpos.win_ranks[depth][commSuit] |=
                 bitMapRank[commRank];
               return sum;
             }
@@ -590,7 +590,7 @@ int QuickTricks(
             int rr = highest_rank[ris[partner[hand]][trump]];
             if (rr != 0)
             {
-              tpos.winRanks[depth][trump] |= bitMapRank[rr];
+              tpos.win_ranks[depth][trump] |= bitMapRank[rr];
               if (1 >= cutoff)
                 return 1;
             }
@@ -610,7 +610,7 @@ int QuickTricks(
             {
               if ((ris[partner[hand]][trump] & bitMapRank[rr]) != 0)
               {
-                tpos.winRanks[depth][trump] |= bitMapRank[rr];
+                tpos.win_ranks[depth][trump] |= bitMapRank[rr];
                 break;
               }
             }
@@ -632,7 +632,7 @@ int QuickTricks(
             {
               if ((ris[partner[hand]][trump] & bitMapRank[rr]) != 0)
               {
-                tpos.winRanks[depth][trump] |= bitMapRank[rr];
+                tpos.win_ranks[depth][trump] |= bitMapRank[rr];
                 break;
               }
             }
@@ -676,15 +676,15 @@ int QuickTricks(
           continue;
         if (len[hand][ss] > 0)
         {
-          tpos.winRanks[depth][ss] = bitMapRank[winner[ss].rank];
+          tpos.win_ranks[depth][ss] = bitMapRank[winner[ss].rank];
         }
       }
 
       if (ctx.search().nodeTypeStore(hand) != MAXNODE)
-        cutoff = target - tpos.tricksMAX;
+        cutoff = target - tpos.tricks_max;
       else
       {
-        cutoff = tpos.tricksMAX - target + (depth >> 2) + 2;
+        cutoff = tpos.tricks_max - target + (depth >> 2) + 2;
       }
 
       if (1 >= cutoff)
@@ -722,7 +722,7 @@ int QtricksLeadHandTrump(
        (lhoTrumpRanks == 0)) &&
       ((countRho != 0) || (rhoTrumpRanks == 0)))
   {
-    tpos.winRanks[depth][suit] |=
+    tpos.win_ranks[depth][suit] |=
       bitMapRank[tpos.winner[suit].rank];
     qt++;
     if (qt >= cutoff)
@@ -742,12 +742,12 @@ int QtricksLeadHandTrump(
     }
   }
 
-  if (tpos.secondBest[suit].hand == hand)
+  if (tpos.second_best[suit].hand == hand)
   {
     if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
     {
-      tpos.winRanks[depth][suit] |=
-        bitMapRank[tpos.secondBest[suit].rank];
+      tpos.win_ranks[depth][suit] |=
+        bitMapRank[tpos.second_best[suit].rank];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -761,15 +761,15 @@ int QtricksLeadHandTrump(
       }
     }
   }
-  else if ((tpos.secondBest[suit].hand == partner[hand])
+  else if ((tpos.second_best[suit].hand == partner[hand])
            && (countOwn > 1) && (countPart > 1))
   {
     /* Second best at partner and suit length of own
        hand and partner > 1 */
     if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
     {
-      tpos.winRanks[depth][suit] |=
-        bitMapRank[tpos.secondBest[suit].rank];
+      tpos.win_ranks[depth][suit] |=
+        bitMapRank[tpos.second_best[suit].rank];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -813,7 +813,7 @@ int QtricksLeadHandNT(
 
   res = 1;
   int qt = qtricks;
-  tpos.winRanks[depth][suit] |=
+  tpos.win_ranks[depth][suit] |=
     bitMapRank[tpos.winner[suit].rank];
 
   qt++;
@@ -834,10 +834,10 @@ int QtricksLeadHandNT(
     return qt;
   }
 
-  if (tpos.secondBest[suit].hand == hand)
+  if (tpos.second_best[suit].hand == hand)
   {
-    tpos.winRanks[depth][suit] |=
-      bitMapRank[tpos.secondBest[suit].rank];
+    tpos.win_ranks[depth][suit] |=
+      bitMapRank[tpos.second_best[suit].rank];
     qt++;
     if (qt >= cutoff)
       return qt;
@@ -855,13 +855,13 @@ int QtricksLeadHandNT(
       return qt;
     }
   }
-  else if ((tpos.secondBest[suit].hand == partner[hand])
+  else if ((tpos.second_best[suit].hand == partner[hand])
            && (countOwn > 1) && (countPart > 1))
   {
     /* Second best at partner and suit length of own
        hand and partner > 1 */
-    tpos.winRanks[depth][suit] |=
-      bitMapRank[tpos.secondBest[suit].rank];
+    tpos.win_ranks[depth][suit] |=
+      bitMapRank[tpos.second_best[suit].rank];
     qt++;
     if (qt >= cutoff)
       return qt;
@@ -914,10 +914,10 @@ int QuickTricksPartnerHandTrump(
   if (((countLho != 0) || (lhoTrumpRanks == 0)) &&
       ((countRho != 0) || (rhoTrumpRanks == 0)))
   {
-    tpos.winRanks[depth][suit] |=
+    tpos.win_ranks[depth][suit] |=
       bitMapRank[tpos.winner[suit].rank];
 
-    tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
+    tpos.win_ranks[depth][commSuit] |= bitMapRank[commRank];
 
     qt++; /* A trick can be taken */
     if (qt >= cutoff)
@@ -936,16 +936,16 @@ int QuickTricksPartnerHandTrump(
     }
   }
 
-  if (tpos.secondBest[suit].hand == partner[hand])
+  if (tpos.second_best[suit].hand == partner[hand])
   {
     /* Second best found in partners hand */
     if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
     {
       /* Opponents have no trump */
-      tpos.winRanks[depth][suit] |=
-        bitMapRank[tpos.secondBest[suit].rank];
+      tpos.win_ranks[depth][suit] |=
+        bitMapRank[tpos.second_best[suit].rank];
 
-      tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
+      tpos.win_ranks[depth][commSuit] |= bitMapRank[commRank];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -959,7 +959,7 @@ int QuickTricksPartnerHandTrump(
       }
     }
   }
-  else if ((tpos.secondBest[suit].hand == hand) &&
+  else if ((tpos.second_best[suit].hand == hand) &&
            (countPart > 1) &&
            (countOwn > 1))
   {
@@ -969,10 +969,10 @@ int QuickTricksPartnerHandTrump(
     if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
     {
       /* Opponents have no trump */
-      tpos.winRanks[depth][suit] |=
-        bitMapRank[tpos.secondBest[suit].rank];
+      tpos.win_ranks[depth][suit] |=
+        bitMapRank[tpos.second_best[suit].rank];
 
-      tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
+      tpos.win_ranks[depth][commSuit] |= bitMapRank[commRank];
 
       qt++;
       if (qt >= cutoff)
@@ -990,20 +990,20 @@ int QuickTricksPartnerHandTrump(
     }
   }
   else if ((suit == commSuit) &&
-           (tpos.secondBest[suit].hand == lho[hand]) &&
+           (tpos.second_best[suit].hand == lho[hand]) &&
            ((countLho >= 2) || (lhoTrumpRanks == 0)) &&
            ((countRho >= 2) || (rhoTrumpRanks == 0)))
   {
     unsigned short ranks = 0;
     for (int h = 0; h < DDS_HANDS; h++)
-      ranks |= tpos.rankInSuit[h][suit];
+      ranks |= tpos.rank_in_suit[h][suit];
 
-    if (ctx.thread()->rel[ranks].absRank[3][suit].hand == partner[hand])
+    if (ctx.thread()->rel[ranks].abs_rank[3][suit].hand == partner[hand])
     {
-      tpos.winRanks[depth][suit] |= bitMapRank[
-        static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[ranks].absRank[3][suit].rank)) ];
+      tpos.win_ranks[depth][suit] |= bitMapRank[
+        static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[ranks].abs_rank[3][suit].rank)) ];
 
-      tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
+      tpos.win_ranks[depth][commSuit] |= bitMapRank[commRank];
 
       qt++;
       if (qt >= cutoff)
@@ -1044,10 +1044,10 @@ int QuickTricksPartnerHandNT(
   res = 1;
   int qt = qtricks;
 
-  tpos.winRanks[depth][suit] |=
+  tpos.win_ranks[depth][suit] |=
     bitMapRank[tpos.winner[suit].rank];
 
-  tpos.winRanks[depth][commSuit] |= bitMapRank[commRank];
+  tpos.win_ranks[depth][commSuit] |= bitMapRank[commRank];
 
   qt++;
   if (qt >= cutoff)
@@ -1061,11 +1061,11 @@ int QuickTricksPartnerHandNT(
     return qt;
   }
 
-  if (tpos.secondBest[suit].hand == partner[hand])
+  if (tpos.second_best[suit].hand == partner[hand])
   {
     /* Second best found in partners hand */
-    tpos.winRanks[depth][suit] |=
-      bitMapRank[tpos.secondBest[suit].rank];
+    tpos.win_ranks[depth][suit] |=
+      bitMapRank[tpos.second_best[suit].rank];
 
     qt++;
     if (qt >= cutoff)
@@ -1079,13 +1079,13 @@ int QuickTricksPartnerHandNT(
       return qt;
     }
   }
-  else if ((tpos.secondBest[suit].hand == hand)
+  else if ((tpos.second_best[suit].hand == hand)
            && (countPart > 1) && (countOwn > 1))
   {
     /* Second best found in own hand and own and
        partner's suit length > 1 */
-    tpos.winRanks[depth][suit] |=
-      bitMapRank[tpos.secondBest[suit].rank];
+    tpos.win_ranks[depth][suit] |=
+      bitMapRank[tpos.second_best[suit].rank];
 
     qt++;
     if (qt >= cutoff)
@@ -1102,16 +1102,16 @@ int QuickTricksPartnerHandNT(
     }
   }
   else if ((suit == commSuit) &&
-           (tpos.secondBest[suit].hand == lho[hand]))
+           (tpos.second_best[suit].hand == lho[hand]))
   {
     unsigned short ranks = 0;
     for (int h = 0; h < DDS_HANDS; h++)
-      ranks |= tpos.rankInSuit[h][suit];
+      ranks |= tpos.rank_in_suit[h][suit];
 
-    if (ctx.thread()->rel[ranks].absRank[3][suit].hand == partner[hand])
+    if (ctx.thread()->rel[ranks].abs_rank[3][suit].hand == partner[hand])
     {
-      tpos.winRanks[depth][suit] |= bitMapRank[
-        static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[ranks].absRank[3][suit].rank)) ];
+      tpos.win_ranks[depth][suit] |= bitMapRank[
+        static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[ranks].abs_rank[3][suit].rank)) ];
       qt++;
       if (qt >= cutoff)
         return qt;
@@ -1142,12 +1142,12 @@ bool QuickTricksSecondHand(
     return false;
 
   int ss = tpos.move[depth + 1].suit;
-  unsigned short (*ris)[DDS_SUITS] = tpos.rankInSuit;
+  unsigned short (*ris)[DDS_SUITS] = tpos.rank_in_suit;
   unsigned short ranks = static_cast<unsigned short>
                          (ris[hand][ss] | ris[partner[hand]][ss]);
 
   for (int s = 0; s < DDS_SUITS; s++)
-    tpos.winRanks[depth][s] = 0;
+    tpos.win_ranks[depth][s] = 0;
 
   if ((trump != DDS_NOTRUMP) && (ss != trump) &&
       (((ris[hand][ss] == 0) && (ris[hand][trump] != 0)) ||
@@ -1172,7 +1172,7 @@ bool QuickTricksSecondHand(
     /* Own side has highest card in suit, which LHO can't ruff. */
 
     int rr = highest_rank[ranks];
-    tpos.winRanks[depth][ss] = bitMapRank[rr];
+    tpos.win_ranks[depth][ss] = bitMapRank[rr];
   }
   else
   {
@@ -1184,9 +1184,9 @@ bool QuickTricksSecondHand(
 
   int cutoff;
   if (ctx.search().nodeTypeStore(hand) == MAXNODE)
-    cutoff = target - tpos.tricksMAX;
+    cutoff = target - tpos.tricks_max;
   else
-    cutoff = tpos.tricksMAX - target + (depth >> 2) + 3;
+    cutoff = tpos.tricks_max - target + (depth >> 2) + 3;
 
   if (qtricks >= cutoff)
     return true;
@@ -1203,12 +1203,12 @@ bool QuickTricksSecondHand(
     hh = partner[hand];
 
   if ((tpos.winner[ss].hand == hh) &&
-      (tpos.secondBest[ss].rank != 0) &&
-      (tpos.secondBest[ss].hand == hh))
+      (tpos.second_best[ss].rank != 0) &&
+      (tpos.second_best[ss].hand == hh))
   {
     qtricks++;
-    tpos.winRanks[depth][ss] |=
-      bitMapRank[tpos.secondBest[ss].rank];
+    tpos.win_ranks[depth][ss] |=
+      bitMapRank[tpos.second_best[ss].rank];
 
     if (qtricks >= cutoff)
       return true;
@@ -1233,7 +1233,7 @@ bool QuickTricksSecondHand(
     {
       /* Top winners in other suits. */
       qtricks++;
-      tpos.winRanks[depth][s] |=
+      tpos.win_ranks[depth][s] |=
         bitMapRank[tpos.winner[s].rank];
 
       if (qtricks >= cutoff)

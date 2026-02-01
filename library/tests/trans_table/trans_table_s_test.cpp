@@ -26,11 +26,11 @@ static void CreateTestAggrTarget(unsigned short aggrTarget[DDS_SUITS]) {
 }
 
 // Helper function to create test win ranks
-static void CreateTestWinRanks(unsigned short winRanks[DDS_SUITS]) {
-    winRanks[0] = 0x5555; // Spades
-    winRanks[1] = 0x6666; // Hearts
-    winRanks[2] = 0x7777; // Diamonds  
-    winRanks[3] = 0x8888; // Clubs
+static void CreateTestWinRanks(unsigned short win_ranks[DDS_SUITS]) {
+    win_ranks[0] = 0x5555; // Spades
+    win_ranks[1] = 0x6666; // Hearts
+    win_ranks[2] = 0x7777; // Diamonds  
+    win_ranks[3] = 0x8888; // Clubs
 }
 
 // Test that verifies DDS constants are available
@@ -71,10 +71,10 @@ TEST(TransTableSBasicTest, HelperFunctionsWork) {
     EXPECT_EQ(aggrTarget[0], 0x1111);
     EXPECT_EQ(aggrTarget[3], 0x4444);
     
-    unsigned short winRanks[DDS_SUITS];
-    CreateTestWinRanks(winRanks);
-    EXPECT_EQ(winRanks[0], 0x5555);
-    EXPECT_EQ(winRanks[3], 0x8888);
+    unsigned short win_ranks[DDS_SUITS];
+    CreateTestWinRanks(win_ranks);
+    EXPECT_EQ(win_ranks[0], 0x5555);
+    EXPECT_EQ(win_ranks[3], 0x8888);
 }
 
 // Test data consistency for relative rank patterns

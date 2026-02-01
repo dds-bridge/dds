@@ -219,7 +219,7 @@ struct DealPBN
  */
 struct Boards
 {
-  int noOfBoards;
+  int no_of_boards;
   struct Deal deals[MAXNOOFBOARDS];
   int target[MAXNOOFBOARDS];
   int solutions[MAXNOOFBOARDS];
@@ -236,7 +236,7 @@ struct Boards
  */
 struct BoardsPBN
 {
-  int noOfBoards;                            ///< Number of boards to solve
+  int no_of_boards;                            ///< Number of boards to solve
   struct DealPBN deals[MAXNOOFBOARDS];       ///< Array of deals in PBN format
   int target[MAXNOOFBOARDS];                 ///< Target tricks for each board
   int solutions[MAXNOOFBOARDS];              ///< Solution mode for each board
@@ -253,8 +253,8 @@ struct BoardsPBN
  */
 struct SolvedBoards
 {
-  int noOfBoards;                                    ///< Number of solved boards
-  struct FutureTricks solvedBoard[MAXNOOFBOARDS];    ///< Array of solutions
+  int no_of_boards;                                    ///< Number of solved boards
+  struct FutureTricks solved_board[MAXNOOFBOARDS];    ///< Array of solutions
 };
 
 struct DdTableDeal
@@ -264,7 +264,7 @@ struct DdTableDeal
 
 struct DdTableDeals
 {
-  int noOfTables;
+  int no_of_tables;
   struct DdTableDeal deals[MAXNOOFTABLES * DDS_STRAINS];
 };
 
@@ -275,18 +275,18 @@ struct DdTableDealPBN
 
 struct DdTableDealsPBN
 {
-  int noOfTables;
+  int no_of_tables;
   struct DdTableDealPBN deals[MAXNOOFTABLES * DDS_STRAINS];
 };
 
 struct DdTableResults
 {
-  int resTable[DDS_STRAINS][DDS_HANDS];
+  int res_table[DDS_STRAINS][DDS_HANDS];
 };
 
 struct DdTablesRes
 {
-  int noOfBoards;
+  int no_of_boards;
   struct DdTableResults results[MAXNOOFTABLES * DDS_STRAINS];
 };
 
@@ -295,13 +295,13 @@ struct ParResults
   /* index = 0 is NS view and index = 1
      is EW view. By 'view' is here meant
      which side that starts the bidding. */
-  char parScore[2][16];
-  char parContractsString[2][128];
+  char par_score[2][16];
+  char par_contracts_string[2][128];
 };
 
 struct AllParResults
 {
-  struct ParResults presults[MAXNOOFTABLES];
+  struct ParResults par_results[MAXNOOFTABLES];
 };
 
 struct ParResultsDealer
@@ -320,8 +320,8 @@ struct ParResultsDealer
 
 struct ContractType
 {
-  int underTricks; /* 0 = make 1-13 = sacrifice */
-  int overTricks; /* 0-3, e.g. 1 for 4S + 1. */
+  int under_tricks; /* 0 = make 1-13 = sacrifice */
+  int over_tricks; /* 0-3, e.g. 1 for 4S + 1. */
   int level; /* 1-7 */
   int denom; /* 0 = No Trumps, 1 = trump Spades, 2 = trump Hearts,
                   3 = trump Diamonds, 4 = trump Clubs */
@@ -338,7 +338,7 @@ struct ParResultsMaster
 
 struct ParTextResults
 {
-  char parText[2][128]; /* Short text for par information, e.g.
+  char par_text[2][128]; /* Short text for par information, e.g.
             Par -110: EW 2S EW 2D+1 */
   bool equal; /* true in the normal case when it does not matter who
             starts the bidding. Otherwise, false. */
@@ -366,19 +366,19 @@ struct SolvedPlay
 
 struct PlayTracesBin
 {
-  int noOfBoards;
+  int no_of_boards;
   struct PlayTraceBin plays[MAXNOOFBOARDS];
 };
 
 struct PlayTracesPBN
 {
-  int noOfBoards;
+  int no_of_boards;
   struct PlayTracePBN plays[MAXNOOFBOARDS];
 };
 
 struct SolvedPlays
 {
-  int noOfBoards;
+  int no_of_boards;
   struct SolvedPlay solved[MAXNOOFBOARDS];
 };
 
@@ -386,7 +386,7 @@ struct DDSInfo
 {
   // Version 2.8.0 has 2, 8, 0 and a string of 2.8.0
   int major, minor, patch; 
-  char versionString[10];
+  char version_string[10];
 
   // Currently 0 = unknown, 1 = Windows, 2 = Cygwin, 3 = Linux, 4 = Apple
   int system;

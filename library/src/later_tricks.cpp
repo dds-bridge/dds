@@ -52,9 +52,9 @@ bool LaterTricksMIN(
       }
     }
 
-    if ((tpos.tricksMAX + sum < target) && (sum > 0))
+    if ((tpos.tricks_max + sum < target) && (sum > 0))
     {
-      if ((tpos.tricksMAX + (depth >> 2) >= target))
+      if ((tpos.tricks_max + (depth >> 2) >= target))
         return true;
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -62,24 +62,24 @@ bool LaterTricksMIN(
         int win_hand = tpos.winner[ss].hand;
 
         if (win_hand == -1) {
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
         }
         else if (static_cast<unsigned>(win_hand) >= static_cast<unsigned>(DDS_HANDS)) {
           // Invalid hand index; avoid using partner/lho/rho with OOB index.
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
           continue;
         }
         else if (ctx.search().nodeTypeStore(win_hand) == MINNODE)
         {
-          if ((tpos.rankInSuit[partner[win_hand]][ss] == 0) &&
-              (tpos.rankInSuit[lho[win_hand]][ss] == 0) &&
-              (tpos.rankInSuit[rho[win_hand]][ss] == 0))
-            { if (depth_ok) tpos.winRanks[depth][ss] = 0; }
+          if ((tpos.rank_in_suit[partner[win_hand]][ss] == 0) &&
+              (tpos.rank_in_suit[lho[win_hand]][ss] == 0) &&
+              (tpos.rank_in_suit[rho[win_hand]][ss] == 0))
+            { if (depth_ok) tpos.win_ranks[depth][ss] = 0; }
           else
-            { if (depth_ok) tpos.winRanks[depth][ss] = bitMapRank[tpos.winner[ss].rank]; }
+            { if (depth_ok) tpos.win_ranks[depth][ss] = bitMapRank[tpos.winner[ss].rank]; }
         }
         else {
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
         }
       }
       return false;
@@ -90,41 +90,41 @@ bool LaterTricksMIN(
     if ((tpos.length[hand][trump] == 0) &&
         (tpos.length[partner[hand]][trump] == 0))
     {
-      if (((tpos.tricksMAX + (depth >> 2) + 1 -
+      if (((tpos.tricks_max + (depth >> 2) + 1 -
             max(tpos.length[lho[hand]][trump],
                 tpos.length[rho[hand]][trump])) < target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
         return false;
       }
     }
-    else if ((tpos.tricksMAX + (depth >> 2)) < target)
+    else if ((tpos.tricks_max + (depth >> 2)) < target)
     {
       for (int ss = 0; ss < DDS_SUITS; ss++)
-        if (depth_ok) tpos.winRanks[depth][ss] = 0;
-      if (depth_ok) tpos.winRanks[depth][trump] =
+        if (depth_ok) tpos.win_ranks[depth][ss] = 0;
+      if (depth_ok) tpos.win_ranks[depth][trump] =
         bitMapRank[tpos.winner[trump].rank];
       return false;
     }
-    else if (tpos.tricksMAX + (depth >> 2) == target)
+    else if (tpos.tricks_max + (depth >> 2) == target)
     {
-      int hh = tpos.secondBest[trump].hand;
+      int hh = tpos.second_best[trump].hand;
       if (hh == -1)
         return true;
 
       if (static_cast<unsigned>(hh) >= static_cast<unsigned>(DDS_HANDS))
         return true;
 
-      int r2 = tpos.secondBest[trump].rank;
+      int r2 = tpos.second_best[trump].rank;
       if ((ctx.search().nodeTypeStore(hh) == MINNODE) && (r2 != 0))
       {
         if (tpos.length[hh][trump] > 1 ||
             tpos.length[partner[hh]][trump] > 1)
         {
           for (int ss = 0; ss < DDS_SUITS; ss++)
-            if (depth_ok) tpos.winRanks[depth][ss] = 0;
-          if (depth_ok) tpos.winRanks[depth][trump] = bitMapRank[r2];
+            if (depth_ok) tpos.win_ranks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][trump] = bitMapRank[r2];
           return false;
         }
       }
@@ -132,7 +132,7 @@ bool LaterTricksMIN(
   }
   else // Not NT
   {
-    int hh = tpos.secondBest[trump].hand;
+    int hh = tpos.second_best[trump].hand;
     if (hh == -1)
       return true;
     if (static_cast<unsigned>(hh) >= static_cast<unsigned>(DDS_HANDS))
@@ -144,12 +144,12 @@ bool LaterTricksMIN(
 
     if (tpos.winner[trump].hand == rho[hh])
     {
-      if (((tpos.tricksMAX + (depth >> 2)) < target))
+      if (((tpos.tricks_max + (depth >> 2)) < target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
-        if (depth_ok) tpos.winRanks[depth][trump] =
-          bitMapRank[tpos.secondBest[trump].rank];
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
+        if (depth_ok) tpos.win_ranks[depth][trump] =
+          bitMapRank[tpos.second_best[trump].rank];
         return false;
       }
     }
@@ -163,7 +163,7 @@ bool LaterTricksMIN(
         fprintf(stderr, "LaterTricksMIN: invalid aggr=%u (depth=%d)", aggr, depth);
         return true; // conservative fallback
       }
-  int h = ctx.thread()->rel[aggr].absRank[3][trump].hand;
+  int h = ctx.thread()->rel[aggr].abs_rank[3][trump].hand;
       if (h == -1)
         return true;
 
@@ -171,12 +171,12 @@ bool LaterTricksMIN(
         return true;
 
       if ((ctx.search().nodeTypeStore(h) == MINNODE) &&
-          ((tpos.tricksMAX + (depth >> 2)) < target))
+          ((tpos.tricks_max + (depth >> 2)) < target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
-        if (depth_ok) tpos.winRanks[depth][trump] = bitMapRank[
-          static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[aggr].absRank[3][trump].rank)) ];
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
+        if (depth_ok) tpos.win_ranks[depth][trump] = bitMapRank[
+          static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[aggr].abs_rank[3][trump].rank)) ];
         return false;
       }
     }
@@ -224,34 +224,34 @@ bool LaterTricksMAX(
       }
     }
 
-    if ((tpos.tricksMAX + (depth >> 2) + 1 - sum >= target) &&
+    if ((tpos.tricks_max + (depth >> 2) + 1 - sum >= target) &&
         (sum > 0))
     {
-      if ((tpos.tricksMAX + 1 < target))
+      if ((tpos.tricks_max + 1 < target))
         return false;
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
       {
         int win_hand = tpos.winner[ss].hand;
         if (win_hand == -1) {
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
         }
         else if (static_cast<unsigned>(win_hand) >= static_cast<unsigned>(DDS_HANDS)) {
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
           continue;
         }
         else if (ctx.search().nodeTypeStore(win_hand) == MAXNODE)
         {
-          if ((tpos.rankInSuit[partner[win_hand]][ss] == 0) &&
-              (tpos.rankInSuit[lho[win_hand]][ss] == 0) &&
-              (tpos.rankInSuit[rho[win_hand]][ss] == 0))
-            { if (depth_ok) tpos.winRanks[depth][ss] = 0; }
+          if ((tpos.rank_in_suit[partner[win_hand]][ss] == 0) &&
+              (tpos.rank_in_suit[lho[win_hand]][ss] == 0) &&
+              (tpos.rank_in_suit[rho[win_hand]][ss] == 0))
+            { if (depth_ok) tpos.win_ranks[depth][ss] = 0; }
           else
-            { if (depth_ok) tpos.winRanks[depth][ss] =
+            { if (depth_ok) tpos.win_ranks[depth][ss] =
               bitMapRank[tpos.winner[ss].rank]; }
         }
         else {
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
         }
       }
       return true;
@@ -265,24 +265,24 @@ bool LaterTricksMAX(
       int maxlen = max(tpos.length[lho[hand]][trump],
                        tpos.length[rho[hand]][trump]);
 
-      if ((tpos.tricksMAX + maxlen) >= target)
+      if ((tpos.tricks_max + maxlen) >= target)
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
         return true;
       }
     }
-    else if ((tpos.tricksMAX + 1) >= target)
+    else if ((tpos.tricks_max + 1) >= target)
     {
       for (int ss = 0; ss < DDS_SUITS; ss++)
-        if (depth_ok) tpos.winRanks[depth][ss] = 0;
-      if (depth_ok) tpos.winRanks[depth][trump] =
+        if (depth_ok) tpos.win_ranks[depth][ss] = 0;
+      if (depth_ok) tpos.win_ranks[depth][trump] =
         bitMapRank[tpos.winner[trump].rank];
       return true;
     }
     else
     {
-      int hh = tpos.secondBest[trump].hand;
+      int hh = tpos.second_best[trump].hand;
       if (hh == -1)
         return false;
 
@@ -290,16 +290,16 @@ bool LaterTricksMAX(
         return false;
 
       if ((ctx.search().nodeTypeStore(hh) == MAXNODE) &&
-          (tpos.secondBest[trump].rank != 0))
+          (tpos.second_best[trump].rank != 0))
       {
         if (((tpos.length[hh][trump] > 1) ||
              (tpos.length[partner[hh]][trump] > 1)) &&
-            ((tpos.tricksMAX + 2) >= target))
+            ((tpos.tricks_max + 2) >= target))
         {
           for (int ss = 0; ss < DDS_SUITS; ss++)
-            if (depth_ok) tpos.winRanks[depth][ss] = 0;
-          if (depth_ok) tpos.winRanks[depth][trump] =
-            bitMapRank[tpos.secondBest[trump].rank];
+            if (depth_ok) tpos.win_ranks[depth][ss] = 0;
+          if (depth_ok) tpos.win_ranks[depth][trump] =
+            bitMapRank[tpos.second_best[trump].rank];
           return true;
         }
       }
@@ -308,7 +308,7 @@ bool LaterTricksMAX(
 
   else // trump != DDS_NOTRUMP)
   {
-    int hh = tpos.secondBest[trump].hand;
+    int hh = tpos.second_best[trump].hand;
     if (hh == -1)
       return false;
     if (static_cast<unsigned>(hh) >= static_cast<unsigned>(DDS_HANDS))
@@ -320,12 +320,12 @@ bool LaterTricksMAX(
 
     if (tpos.winner[trump].hand == rho[hh])
     {
-      if ((tpos.tricksMAX + 1) >= target)
+      if ((tpos.tricks_max + 1) >= target)
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
-        if (depth_ok) tpos.winRanks[depth][trump] =
-          bitMapRank[tpos.secondBest[trump].rank] ;
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
+        if (depth_ok) tpos.win_ranks[depth][trump] =
+          bitMapRank[tpos.second_best[trump].rank] ;
         return true;
       }
     }
@@ -338,7 +338,7 @@ bool LaterTricksMAX(
         fprintf(stderr, "LaterTricksMAX: invalid aggr=%u (depth=%d)\n", aggr, depth);
         return false; // conservative fallback for MAX
       }
-  int h = ctx.thread()->rel[aggr].absRank[3][trump].hand;
+  int h = ctx.thread()->rel[aggr].abs_rank[3][trump].hand;
       if (h == -1)
         return false;
 
@@ -346,12 +346,12 @@ bool LaterTricksMAX(
         return false;
 
       if ((ctx.search().nodeTypeStore(h) == MAXNODE) &&
-          ((tpos.tricksMAX + 1) >= target))
+          ((tpos.tricks_max + 1) >= target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
-          if (depth_ok) tpos.winRanks[depth][ss] = 0;
-        if (depth_ok) tpos.winRanks[depth][trump] = bitMapRank[
-          static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[aggr].absRank[3][trump].rank)) ];
+          if (depth_ok) tpos.win_ranks[depth][ss] = 0;
+        if (depth_ok) tpos.win_ranks[depth][trump] = bitMapRank[
+          static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[aggr].abs_rank[3][trump].rank)) ];
         return true;
       }
     }

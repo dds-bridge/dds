@@ -70,11 +70,11 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   const int trick = 11; // any valid trick index in [1..11] per implementation
   const int hand = 0;   // North
   unsigned short aggrTarget[DDS_HANDS] = {0, 0, 0, 0};
-  int handDist[DDS_HANDS] = {0, 0, 0, 0}; // 0 spades/hearts/diamonds; clubs inferred
+  int hand_dist[DDS_HANDS] = {0, 0, 0, 0}; // 0 spades/hearts/diamonds; clubs inferred
   bool lowerFlag = false;
 
   // Miss before any Add
-  auto* missNode = tt->lookup(trick, hand, aggrTarget, handDist, /*limit*/0, lowerFlag);
+  auto* missNode = tt->lookup(trick, hand, aggrTarget, hand_dist, /*limit*/0, lowerFlag);
   EXPECT_EQ(nullptr, missNode);
 
   // Add a minimal node for the same suit distribution so subsequent Lookup hits
@@ -89,7 +89,7 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   tt->add(trick, hand, aggrTarget, ourWinRanks, first, /*flag*/false);
 
   // Hit now (bounds allow returning the stored node)
-  auto* hitNode = tt->lookup(trick, hand, aggrTarget, handDist, /*limit*/0, lowerFlag);
+  auto* hitNode = tt->lookup(trick, hand, aggrTarget, hand_dist, /*limit*/0, lowerFlag);
   ASSERT_NE(nullptr, hitNode);
   EXPECT_EQ(0, static_cast<int>(hitNode->lower_bound));
   EXPECT_EQ(0, static_cast<int>(hitNode->upper_bound));

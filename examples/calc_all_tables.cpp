@@ -34,7 +34,7 @@ auto main() -> int
   SetMaxThreads(0);
 #endif
 
-  DDdeals.noOfTables = 3;
+  DDdeals.no_of_tables = 3;
 
   for (int handno = 0; handno < 3; handno++)
   {

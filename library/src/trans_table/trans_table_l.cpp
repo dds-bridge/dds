@@ -632,16 +632,16 @@ auto TransTableL::harvest() -> bool
 }
 
 
-auto TransTableL::hash8(const int handDist[]) const -> int {
+auto TransTableL::hash8(const int hand_dist[]) const -> int {
   /*
-     handDist is an array of hand distributions, North .. West.
+     hand_dist is an array of hand distributions, North .. West.
      Each entry is a 12-bit number with 3 groups of 4 bits.
      Each group is the binary representation of the number of
      cards held in that suit. The suits are in order spades,
      hearts, diamonds. Clubs can be neglected, as the total
      number of cards in a hand is given by the trick number.
 
-     For example, if handDist[1] equals 0x0433, then East holds
+     For example, if hand_dist[1] equals 0x0433, then East holds
      4 spades, 3 hearts, 3 diamonds and the rest in clubs.
      If this is after the second trick, there are 11 cards, so
      East must hold 1 club.
@@ -656,10 +656,10 @@ auto TransTableL::hash8(const int handDist[]) const -> int {
   */
 
   int h =
-    (handDist[0] ^
-     ((handDist[1] * 5) ) ^
-     ((handDist[2] * 25) ) ^
-     ((handDist[3] * 125) ) );
+    (hand_dist[0] ^
+     ((hand_dist[1] * 5) ) ^
+     ((hand_dist[2] * 25) ) ^
+     ((hand_dist[3] * 125) ) );
 
   return (h ^ (h >> 5)) & 0xff;
 }
@@ -669,17 +669,17 @@ auto TransTableL::lookup(
   const int tricks,
   const int hand,
   const unsigned short aggrTarget[],
-  const int handDist[],
+  const int hand_dist[],
   const int limit,
   bool& lowerFlag) -> NodeCards const * {
   // First look up distribution.
   long long suitLengths =
-    (static_cast<long long>(handDist[0]) << 36) |
-    (static_cast<long long>(handDist[1]) << 24) |
-    (static_cast<long long>(handDist[2]) << 12) |
-    (static_cast<long long>(handDist[3]) );
+    (static_cast<long long>(hand_dist[0]) << 36) |
+    (static_cast<long long>(hand_dist[1]) << 24) |
+    (static_cast<long long>(hand_dist[2]) << 12) |
+    (static_cast<long long>(hand_dist[3]) );
 
-  int hashkey = hash8(handDist);
+  int hashkey = hash8(hand_dist);
 
   bool empty;
   last_block_seen_[tricks][hand] =
@@ -937,7 +937,7 @@ auto TransTableL::add(
   }
 
   // It's a bit annoying that we may be regenerating these.
-  // But winRanks can cause them to change after lookup().
+  // But win_ranks can cause them to change after lookup().
 
   TTentry.top_set1_ = ab[0][0] | ab[1][0] | ab[2][0] | ab[3][0];
   TTentry.top_set2_ = ab[0][1] | ab[1][1] | ab[2][1] | ab[3][1];
@@ -1066,22 +1066,22 @@ auto TransTableL::set_to_partial_hands(
 
 auto TransTableL::key_to_dist(
   const long long key_,
-  int handDist[]) const -> void {
-  handDist[0] = static_cast<int>((key_ >> 36) & 0x00000fff);
-  handDist[1] = static_cast<int>((key_ >> 24) & 0x00000fff);
-  handDist[2] = static_cast<int>((key_ >> 12) & 0x00000fff);
-  handDist[3] = static_cast<int>((key_ ) & 0x00000fff);
+  int hand_dist[]) const -> void {
+  hand_dist[0] = static_cast<int>((key_ >> 36) & 0x00000fff);
+  hand_dist[1] = static_cast<int>((key_ >> 24) & 0x00000fff);
+  hand_dist[2] = static_cast<int>((key_ >> 12) & 0x00000fff);
+  hand_dist[3] = static_cast<int>((key_ ) & 0x00000fff);
 }
 
 
 auto TransTableL::dist_to_lengths(
   const int trick,
-  const int handDist[],
+  const int hand_dist[],
   unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void {
   for (int h = 0; h < DDS_HANDS; h++) {
-    lengths[h][0] = static_cast<unsigned char>((handDist[h] >> 8) & 0xf);
-    lengths[h][1] = static_cast<unsigned char>((handDist[h] >> 4) & 0xf);
-    lengths[h][2] = static_cast<unsigned char>((handDist[h] ) & 0xf);
+    lengths[h][0] = static_cast<unsigned char>((hand_dist[h] >> 8) & 0xf);
+    lengths[h][1] = static_cast<unsigned char>((hand_dist[h] >> 4) & 0xf);
+    lengths[h][2] = static_cast<unsigned char>((hand_dist[h] ) & 0xf);
     lengths[h][3] = static_cast<unsigned char>
       (trick + 1 - lengths[h][0] - lengths[h][1] - lengths[h][2]);
   }
@@ -1112,7 +1112,7 @@ auto TransTableL::print_suits(
   const int trick,
   const int hand) const -> void {
   DistHash * dp;
-  int handDist[DDS_HANDS];
+  int hand_dist[DDS_HANDS];
   unsigned char len[DDS_HANDS][DDS_SUITS];
 
   fout << setw(4) << left << "Key" <<
@@ -1134,8 +1134,8 @@ auto TransTableL::print_suits(
       else
         fout << setw(8) << "";
 
-      TransTableL::key_to_dist(dp->list_[i].key_, handDist);
-      TransTableL::dist_to_lengths(trick, handDist, len);
+      TransTableL::key_to_dist(dp->list_[i].key_, hand_dist);
+      TransTableL::dist_to_lengths(trick, hand_dist, len);
 
       fout << TransTableL::len_to_str(len) << "\n";
     }
@@ -1385,21 +1385,21 @@ auto TransTableL::print_summary_suit_stats(ofstream& fout) const -> void {
 TransTableL::WinBlock const * TransTableL::find_matching_dist(
   const int trick,
   const int hand,
-  const int handDistSought[]) const
+  const int hand_distSought[]) const
 {
   WinBlock * bp;
   DistHash * dp;
-  int handDist[DDS_HANDS];
+  int hand_dist[DDS_HANDS];
 
   for (int hashkey = 0; hashkey < 256; hashkey++) {
     dp = &tt_root_[trick][hand][hashkey];
     for (int i = 0; i < dp->next_no_; i++) {
       bp = dp->list_[i].pos_block_;
-      TransTableL::key_to_dist(dp->list_[i].key_, handDist);
+      TransTableL::key_to_dist(dp->list_[i].key_, hand_dist);
 
       bool same = true;
       for (int h = 0; h < DDS_HANDS; h++) {
-        if (handDist[h] != handDistSought[h]) {
+        if (hand_dist[h] != hand_distSought[h]) {
           same = false;
           break;
         }
@@ -1436,13 +1436,13 @@ auto TransTableL::print_entries_dist_and_cards(
   const int trick,
   const int hand,
   const unsigned short aggrTarget[],
-  const int handDist[]) const -> void {
+  const int hand_dist[]) const -> void {
   unsigned char len[DDS_HANDS][DDS_SUITS];
 
   WinBlock const * bp =
-    TransTableL::find_matching_dist(trick, hand, handDist);
+    TransTableL::find_matching_dist(trick, hand, hand_dist);
 
-  TransTableL::dist_to_lengths(trick, handDist, len);
+  TransTableL::dist_to_lengths(trick, hand_dist, len);
 
   fout << "Looking up entry for trick " << trick << ", hand " <<
     Players()[static_cast<unsigned>(hand)] << "\n";
@@ -1498,13 +1498,13 @@ auto TransTableL::print_entries_dist(
   ofstream& fout,
   const int trick,
   const int hand,
-  const int handDist[]) const -> void {
+  const int hand_dist[]) const -> void {
   unsigned char len[DDS_HANDS][DDS_SUITS];
 
   WinBlock const * bp =
-    TransTableL::find_matching_dist(trick, hand, handDist);
+    TransTableL::find_matching_dist(trick, hand, hand_dist);
 
-  TransTableL::dist_to_lengths(trick, handDist, len);
+  TransTableL::dist_to_lengths(trick, hand_dist, len);
 
   if (! bp) {
     fout << "Entry not found: Trick " << trick << ", hand " <<
@@ -1523,15 +1523,15 @@ auto TransTableL::print_entries(
   const int hand) const -> void {
   WinBlock * bp;
   DistHash * dp;
-  int handDist[DDS_HANDS];
+  int hand_dist[DDS_HANDS];
   unsigned char lengths[DDS_HANDS][DDS_SUITS];
 
   for (int hashkey = 0; hashkey < 256; hashkey++) {
     dp = &tt_root_[trick][hand][hashkey];
     for (int i = 0; i < dp->next_no_; i++) {
       bp = dp->list_[i].pos_block_;
-      TransTableL::key_to_dist(dp->list_[i].key_, handDist);
-      TransTableL::dist_to_lengths(trick, handDist, lengths);
+      TransTableL::key_to_dist(dp->list_[i].key_, hand_dist);
+      TransTableL::dist_to_lengths(trick, hand_dist, lengths);
 
       TransTableL::print_entries_block(fout, bp, lengths);
     }

@@ -34,7 +34,7 @@ void CallHeuristic(const HeuristicContext& context) {
          (context.tpos.winner[context.trump].rank != 0) ? 1 : 0);
 
   // Check if current hand can follow suit (not void)
-  unsigned short ris = context.tpos.rankInSuit[context.currHand][context.leadSuit];
+  unsigned short ris = context.tpos.rank_in_suit[context.currHand][context.leadSuit];
   bool canFollowSuit = (ris != 0);
 
   // Calculate function index using same logic as original
@@ -91,10 +91,10 @@ void WeightAllocTrump0(HeuristicContext& context)
 
     /* Discourage suit if LHO or RHO can ruff. */
     if ((context.suit != context.trump) &&
-        (((context.tpos.rankInSuit[lho[context.leadHand]][context.suit] == 0) &&
-          (context.tpos.rankInSuit[lho[context.leadHand]][context.trump] != 0)) ||
-         ((context.tpos.rankInSuit[rho[context.leadHand]][context.suit] == 0) &&
-          (context.tpos.rankInSuit[rho[context.leadHand]][context.trump] != 0))))
+        (((context.tpos.rank_in_suit[lho[context.leadHand]][context.suit] == 0) &&
+          (context.tpos.rank_in_suit[lho[context.leadHand]][context.trump] != 0)) ||
+         ((context.tpos.rank_in_suit[rho[context.leadHand]][context.suit] == 0) &&
+          (context.tpos.rank_in_suit[rho[context.leadHand]][context.trump] != 0))))
       suitBonus = -12;
 
     /* Encourage suit if partner can ruff. */
@@ -106,7 +106,7 @@ void WeightAllocTrump0(HeuristicContext& context)
 
     /* Discourage suit if RHO has high card. */
     if ((context.tpos.winner[context.suit].hand == rho[context.leadHand]) ||
-        (context.tpos.secondBest[context.suit].hand == rho[context.leadHand]))
+        (context.tpos.second_best[context.suit].hand == rho[context.leadHand]))
     {
       if (suitCountRH != 1)
         suitBonus += -12;
@@ -116,7 +116,7 @@ void WeightAllocTrump0(HeuristicContext& context)
        Exception: partner has singleton. */
 
     else if ((context.tpos.winner[context.suit].hand == lho[context.leadHand]) &&
-             (context.tpos.secondBest[context.suit].hand == partner[context.leadHand]))
+             (context.tpos.second_best[context.suit].hand == partner[context.leadHand]))
     {
       /* This case was suggested by Joel Bradmetz. */
       if (context.tpos.length[partner[context.leadHand]][context.suit] != 1)
@@ -153,19 +153,19 @@ void WeightAllocTrump0(HeuristicContext& context)
             winMove = true;
         }
         else if (((context.tpos.length[lho[context.leadHand]][context.suit] != 0) ||
-                  (context.tpos.rankInSuit[partner[context.leadHand]][context.trump] >
-                   context.tpos.rankInSuit[lho[context.leadHand]][context.trump])) &&
+                  (context.tpos.rank_in_suit[partner[context.leadHand]][context.trump] >
+                   context.tpos.rank_in_suit[lho[context.leadHand]][context.trump])) &&
                  ((context.tpos.length[rho[context.leadHand]][context.suit] != 0) ||
-                  (context.tpos.rankInSuit[partner[context.leadHand]][context.trump] >
-                   context.tpos.rankInSuit[rho[context.leadHand]][context.trump])))
+                  (context.tpos.rank_in_suit[partner[context.leadHand]][context.trump] >
+                   context.tpos.rank_in_suit[rho[context.leadHand]][context.trump])))
           winMove = true;
       }
       else
         winMove = true;
     }
-    else if (context.tpos.rankInSuit[partner[context.leadHand]][context.suit] >
-             (context.tpos.rankInSuit[lho[context.leadHand]][context.suit] |
-              context.tpos.rankInSuit[rho[context.leadHand]][context.suit]))
+    else if (context.tpos.rank_in_suit[partner[context.leadHand]][context.suit] >
+             (context.tpos.rank_in_suit[lho[context.leadHand]][context.suit] |
+              context.tpos.rank_in_suit[rho[context.leadHand]][context.suit]))
     {
       if (context.suit != context.trump)
       {
@@ -188,23 +188,23 @@ void WeightAllocTrump0(HeuristicContext& context)
             (context.tpos.length[rho[context.leadHand]][context.suit] == 0) &&
             (context.tpos.length[rho[context.leadHand]][context.trump] != 0))
         {
-          if (context.tpos.rankInSuit[partner[context.leadHand]][context.trump] >
-              (context.tpos.rankInSuit[lho[context.leadHand]][context.trump] |
-               context.tpos.rankInSuit[rho[context.leadHand]][context.trump]))
+          if (context.tpos.rank_in_suit[partner[context.leadHand]][context.trump] >
+              (context.tpos.rank_in_suit[lho[context.leadHand]][context.trump] |
+               context.tpos.rank_in_suit[rho[context.leadHand]][context.trump]))
             winMove = true;
         }
         else if ((context.tpos.length[lho[context.leadHand]][context.suit] == 0) &&
                  (context.tpos.length[lho[context.leadHand]][context.trump] != 0))
         {
-          if (context.tpos.rankInSuit[partner[context.leadHand]][context.trump]
-              > context.tpos.rankInSuit[lho[context.leadHand]][context.trump])
+          if (context.tpos.rank_in_suit[partner[context.leadHand]][context.trump]
+              > context.tpos.rank_in_suit[lho[context.leadHand]][context.trump])
             winMove = true;
         }
         else if ((context.tpos.length[rho[context.leadHand]][context.suit] == 0) &&
                  (context.tpos.length[rho[context.leadHand]][context.trump] != 0))
         {
-          if (context.tpos.rankInSuit[partner[context.leadHand]][context.trump]
-              > context.tpos.rankInSuit[rho[context.leadHand]][context.trump])
+          if (context.tpos.rank_in_suit[partner[context.leadHand]][context.trump]
+              > context.tpos.rank_in_suit[rho[context.leadHand]][context.trump])
             winMove = true;
         }
         else
@@ -226,7 +226,7 @@ void WeightAllocTrump0(HeuristicContext& context)
       else if (context.tpos.winner[context.suit].hand == context.leadHand)
       {
         /* Also, partner has second highest card. */
-        if (context.tpos.secondBest[context.suit].hand == partner[context.leadHand])
+        if (context.tpos.second_best[context.suit].hand == partner[context.leadHand])
           context.mply[k].weight = suitWeightDelta + 48 + rRank;
         else if (context.tpos.winner[context.suit].rank == context.mply[k].rank)
           /* If the current card to play is the highest card. */
@@ -237,7 +237,7 @@ void WeightAllocTrump0(HeuristicContext& context)
       else if (context.tpos.winner[context.suit].hand == partner[context.leadHand])
       {
         /* If partner has highest card */
-        if (context.tpos.secondBest[context.suit].hand == context.leadHand)
+        if (context.tpos.second_best[context.suit].hand == context.leadHand)
           context.mply[k].weight = suitWeightDelta + 42 + rRank;
         else
           context.mply[k].weight = suitWeightDelta + 28 + rRank;
@@ -245,7 +245,7 @@ void WeightAllocTrump0(HeuristicContext& context)
       /* Encourage playing second highest rank if hand also has
          third highest rank. */
       else if ((context.mply[k].sequence) &&
-               (context.mply[k].rank == context.tpos.secondBest[context.suit].rank))
+               (context.mply[k].rank == context.tpos.second_best[context.suit].rank))
         context.mply[k].weight = suitWeightDelta + 40;
       else if (context.mply[k].sequence)
         context.mply[k].weight = suitWeightDelta + 22 + rRank;
@@ -273,15 +273,15 @@ void WeightAllocTrump0(HeuristicContext& context)
          the side of the hand has the highest card in the next round
          playing this suit. */
 
-      int thirdBestHand = context.thrp_rel[aggr].absRank[3][context.suit].hand;
+      int thirdBestHand = context.thrp_rel[aggr].abs_rank[3][context.suit].hand;
 
-      if ((context.tpos.secondBest[context.suit].hand == partner[context.leadHand]) &&
+      if ((context.tpos.second_best[context.suit].hand == partner[context.leadHand]) &&
           (partner[context.leadHand] == thirdBestHand))
         suitWeightDelta += 20;
-      else if (((context.tpos.secondBest[context.suit].hand == context.leadHand) &&
+      else if (((context.tpos.second_best[context.suit].hand == context.leadHand) &&
                 (partner[context.leadHand] == thirdBestHand) &&
                 (context.tpos.length[partner[context.leadHand]][context.suit] > 1)) ||
-               ((context.tpos.secondBest[context.suit].hand == partner[context.leadHand]) &&
+               ((context.tpos.second_best[context.suit].hand == partner[context.leadHand]) &&
                 (context.leadHand == thirdBestHand) &&
                 (context.tpos.length[partner[context.leadHand]][context.suit] > 1)))
         suitWeightDelta += 13;
@@ -296,7 +296,7 @@ void WeightAllocTrump0(HeuristicContext& context)
         context.mply[k].weight = suitWeightDelta + rRank + 2;
       else if (context.tpos.winner[context.suit].hand == context.leadHand)
       {
-        if (context.tpos.secondBest[context.suit].hand == partner[context.leadHand])
+        if (context.tpos.second_best[context.suit].hand == partner[context.leadHand])
           /* Opponents win by ruffing */
           context.mply[k].weight = suitWeightDelta + 33 + rRank;
         else if (context.tpos.winner[context.suit].rank == context.mply[k].rank)
@@ -313,7 +313,7 @@ void WeightAllocTrump0(HeuristicContext& context)
       /* Encourage playing second highest rank if hand also has
          third highest rank. */
       else if ((context.mply[k].sequence) &&
-               (context.mply[k].rank == context.tpos.secondBest[context.suit].rank))
+               (context.mply[k].rank == context.tpos.second_best[context.suit].rank))
         context.mply[k].weight = suitWeightDelta + 35;
       else
         context.mply[k].weight = suitWeightDelta + 17 - (context.mply[k].rank);
@@ -356,21 +356,21 @@ void WeightAllocNT0(HeuristicContext& context) {
     int rRank = rel_rank[aggr][context.mply[k].rank];
 
     if (context.tpos.winner[context.suit].rank == context.mply[k].rank ||
-        (context.tpos.rankInSuit[partner[context.leadHand]][context.suit] >
-         (context.tpos.rankInSuit[lho[context.leadHand]][context.suit] |
-          context.tpos.rankInSuit[rho[context.leadHand]][context.suit])))
+        (context.tpos.rank_in_suit[partner[context.leadHand]][context.suit] >
+         (context.tpos.rank_in_suit[lho[context.leadHand]][context.suit] |
+          context.tpos.rank_in_suit[rho[context.leadHand]][context.suit])))
     {
       // Can win trick, ourselves or partner.
       // FIX: No distinction?
       /* Discourage suit if RHO has second best card.
          Exception: RHO has singleton. */
-      if (context.tpos.secondBest[context.suit].hand == rho[context.leadHand])
+      if (context.tpos.second_best[context.suit].hand == rho[context.leadHand])
       {
         if (suitCountRH != 1)
           suitWeightDelta += -1;
       }
       /* Encourage playing suit if LHO has second highest rank. */
-      else if (context.tpos.secondBest[context.suit].hand == lho[context.leadHand])
+      else if (context.tpos.second_best[context.suit].hand == lho[context.leadHand])
       {
         if (suitCountLH != 1)
           suitWeightDelta += 22;
@@ -382,9 +382,9 @@ void WeightAllocNT0(HeuristicContext& context) {
          current side to play, or if second best is a singleton
          at LHO or RHO. */
 
-      if (((context.tpos.secondBest[context.suit].hand != lho[context.leadHand])
+      if (((context.tpos.second_best[context.suit].hand != lho[context.leadHand])
            || (suitCountLH == 1)) &&
-          ((context.tpos.secondBest[context.suit].hand != rho[context.leadHand])
+          ((context.tpos.second_best[context.suit].hand != rho[context.leadHand])
            || (suitCountRH == 1)))
         context.mply[k].weight = suitWeightDelta + 45 + rRank;
       else
@@ -409,7 +409,7 @@ void WeightAllocNT0(HeuristicContext& context) {
          Exception: RHO has singleton. */
 
       if ((context.tpos.winner[context.suit].hand == rho[context.leadHand]) ||
-          (context.tpos.secondBest[context.suit].hand == rho[context.leadHand]))
+          (context.tpos.second_best[context.suit].hand == rho[context.leadHand]))
       {
         if (suitCountRH != 1)
           suitWeightDelta += -10;
@@ -419,7 +419,7 @@ void WeightAllocNT0(HeuristicContext& context) {
          Exception: partner has singleton. */
 
       else if ((context.tpos.winner[context.suit].hand == lho[context.leadHand]) &&
-               (context.tpos.secondBest[context.suit].hand == partner[context.leadHand]))
+               (context.tpos.second_best[context.suit].hand == partner[context.leadHand]))
       {
         /* This case was suggested by Joel Bradmetz. */
         if (context.tpos.length[partner[context.leadHand]][context.suit] != 1)
@@ -431,15 +431,15 @@ void WeightAllocNT0(HeuristicContext& context) {
          that the side of the hand has the highest card in the
          next round playing this suit. */
 
-      int thirdBestHand = context.thrp_rel[aggr].absRank[3][context.suit].hand;
+      int thirdBestHand = context.thrp_rel[aggr].abs_rank[3][context.suit].hand;
 
-      if ((context.tpos.secondBest[context.suit].hand == partner[context.leadHand]) &&
+      if ((context.tpos.second_best[context.suit].hand == partner[context.leadHand]) &&
           (partner[context.leadHand] == thirdBestHand))
         suitWeightDelta += 35;
-      else if (((context.tpos.secondBest[context.suit].hand == context.leadHand) &&
+      else if (((context.tpos.second_best[context.suit].hand == context.leadHand) &&
                 (partner[context.leadHand] == thirdBestHand) &&
                 (context.tpos.length[partner[context.leadHand]][context.suit] > 1)) ||
-               ((context.tpos.secondBest[context.suit].hand == partner[context.leadHand]) &&
+               ((context.tpos.second_best[context.suit].hand == partner[context.leadHand]) &&
                 (context.leadHand == thirdBestHand) &&
                 (context.tpos.length[partner[context.leadHand]][context.suit] > 1)))
         suitWeightDelta += 25;
@@ -456,7 +456,7 @@ void WeightAllocNT0(HeuristicContext& context) {
         context.mply[k].weight = suitWeightDelta - 17 + rRank;
       else if (! context.mply[k].sequence)
         context.mply[k].weight = suitWeightDelta + 12 + rRank;
-      else if (context.mply[k].rank == context.tpos.secondBest[context.suit].rank)
+      else if (context.mply[k].rank == context.tpos.second_best[context.suit].rank)
         context.mply[k].weight = suitWeightDelta + 48;
       else
         context.mply[k].weight = suitWeightDelta + 29 - rRank;
@@ -488,13 +488,13 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
 
 
   const int max3rd = highest_rank[
-                 tpos.rankInSuit[partner[leadHand]][leadSuit]];
+                 tpos.rank_in_suit[partner[leadHand]][leadSuit]];
   const int maxpd = highest_rank[
-                 tpos.rankInSuit[rho[leadHand] ][leadSuit]];
+                 tpos.rank_in_suit[rho[leadHand] ][leadSuit]];
   const int min3rd = lowest_rank [
-                 tpos.rankInSuit[partner[leadHand]][leadSuit]];
+                 tpos.rank_in_suit[partner[leadHand]][leadSuit]];
   const int minpd = lowest_rank [
-                 tpos.rankInSuit[rho[leadHand] ][leadSuit]];
+                 tpos.rank_in_suit[rho[leadHand] ][leadSuit]];
 
   for (int k = 0; k < numMoves; k++)
   {
@@ -518,8 +518,8 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
           winMove = true;
         else if ((maxpd == 0)
                  && (tpos.length[rho[leadHand]][trump] != 0)
-                 && (tpos.rankInSuit[rho[leadHand]][trump] >
-                     tpos.rankInSuit[partner[leadHand]][trump]))
+                 && (tpos.rank_in_suit[rho[leadHand]][trump] >
+                     tpos.rank_in_suit[partner[leadHand]][trump]))
           winMove = true;
       }
   else if (maxpd > ctx.lead0_rank && maxpd > max3rd)
@@ -537,8 +537,8 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
           if ((max3rd != 0) ||
               (tpos.length[partner[leadHand]][trump] == 0))
             winMove = true;
-          else if (tpos.rankInSuit[rho[leadHand]][trump]
-                   > tpos.rankInSuit[partner[leadHand]][trump])
+          else if (tpos.rank_in_suit[rho[leadHand]][trump]
+                   > tpos.rank_in_suit[partner[leadHand]][trump])
             winMove = true;
         }
       }
@@ -553,8 +553,8 @@ void WeightAllocTrumpNotvoid1(HeuristicContext& ctx)
         // Partner must be winning -- we can't.
         mply[k].weight = 40 + rRank;
       else if ((maxpd > ctx.lead0_rank) &&
-               (tpos.rankInSuit[leadHand][leadSuit] >
-                tpos.rankInSuit[rho[leadHand]][leadSuit]))
+               (tpos.rank_in_suit[leadHand][leadSuit] >
+                tpos.rank_in_suit[rho[leadHand]][leadSuit]))
         mply[k].weight = 41 + rRank;
 
       /* If rho has a card in the leading suit that
@@ -614,9 +614,9 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
 
   // Original logic from Moves::WeightAllocNTNotvoid1
   const int max3rd = highest_rank[
-    tpos.rankInSuit[partner_lh][leadSuit]];
+    tpos.rank_in_suit[partner_lh][leadSuit]];
   const int maxpd = highest_rank[
-    tpos.rankInSuit[rho_lh][leadSuit] ];
+    tpos.rank_in_suit[rho_lh][leadSuit] ];
 
   if (maxpd > ctx.lead0_rank && maxpd > max3rd)
   {
@@ -627,9 +627,9 @@ void WeightAllocNTNotvoid1(HeuristicContext& ctx)
   else
   {
   int min3rd = lowest_rank [
-                   tpos.rankInSuit[partner_lh][leadSuit]];
+                   tpos.rank_in_suit[partner_lh][leadSuit]];
   int minpd = lowest_rank [
-                   tpos.rankInSuit[rho_lh][leadSuit] ];
+                   tpos.rank_in_suit[rho_lh][leadSuit] ];
 
     for (int k = 0; k < numMoves; k++)
     {
@@ -682,8 +682,8 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
     if (tpos.length[partner_lh][leadSuit] != 0)
     {
       // 3rd hand will follow.
-  if ((tpos.rankInSuit[rho_lh][leadSuit] >
-       (tpos.rankInSuit[partner_lh][leadSuit] |
+  if ((tpos.rank_in_suit[rho_lh][leadSuit] >
+       (tpos.rank_in_suit[partner_lh][leadSuit] |
     bitMapRank[ctx.lead0_rank])) ||
           ((tpos.length[rho_lh][leadSuit] == 0) &&
            (tpos.length[rho_lh][trump] != 0)))
@@ -696,19 +696,19 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
         suitAdd = -2 + (suitCount << 6) / 36;
         // Don't ruff from Kx.
         if ((suitCount == 2) &&
-            (tpos.secondBest[suit].hand == currHand))
+            (tpos.second_best[suit].hand == currHand))
           suitAdd += -4;
       }
     }
     else if ((tpos.length[rho_lh][leadSuit] == 0) &&
-             (tpos.rankInSuit[rho_lh][trump] >
-              tpos.rankInSuit[partner_lh][trump]))
+             (tpos.rank_in_suit[rho_lh][trump] >
+              tpos.rank_in_suit[partner_lh][trump]))
     {
       // Partner can overruff 3rd hand.
       suitAdd = 60 + (suitCount << 6) / 44;
     }
   else if ((tpos.length[partner_lh][trump] == 0) &&
-       (tpos.rankInSuit[rho_lh][leadSuit] >
+       (tpos.rank_in_suit[rho_lh][leadSuit] >
         bitMapRank[ctx.lead0_rank]))
     {
       // 3rd hand has no trumps, and partner has suit winner.
@@ -719,7 +719,7 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
       suitAdd = -2 + (suitCount << 6) / 36;
       // Don't ruff from Kx.
       if ((suitCount == 2) &&
-          (tpos.secondBest[suit].hand == currHand))
+          (tpos.second_best[suit].hand == currHand))
         suitAdd += -4;
     }
 
@@ -733,8 +733,8 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
     if (tpos.length[partner_lh][leadSuit] != 0)
     {
       // 3rd hand will follow.
-    if (tpos.rankInSuit[rho_lh][leadSuit] >
-      (tpos.rankInSuit[partner_lh][leadSuit] |
+    if (tpos.rank_in_suit[rho_lh][leadSuit] >
+      (tpos.rank_in_suit[partner_lh][leadSuit] |
        bitMapRank[ctx.lead0_rank]))
         // Partner has winning card.
         suitAdd = 60 + (suitCount << 6) / 44;
@@ -748,17 +748,17 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
         suitAdd = -2 + (suitCount << 6) / 36;
         // Don't pitch from Kx.
         if ((suitCount == 2) &&
-            (tpos.secondBest[suit].hand == currHand))
+            (tpos.second_best[suit].hand == currHand))
           suitAdd += -4;
       }
     }
     else if ((tpos.length[rho_lh][leadSuit] == 0)
-             && (tpos.rankInSuit[rho_lh][trump] >
-                 tpos.rankInSuit[partner_lh][trump]))
+             && (tpos.rank_in_suit[rho_lh][trump] >
+                 tpos.rank_in_suit[partner_lh][trump]))
       // Partner can overruff 3rd hand.
       suitAdd = 60 + (suitCount << 6) / 44;
   else if ((tpos.length[partner_lh][trump] == 0)
-       && (tpos.rankInSuit[rho_lh][leadSuit] >
+       && (tpos.rank_in_suit[rho_lh][leadSuit] >
          bitMapRank[ctx.lead0_rank]))
       // 3rd hand has no trumps, and partner has suit winner.
       suitAdd = 60 + (suitCount << 6) / 44;
@@ -768,7 +768,7 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
       suitAdd = -2 + (suitCount << 6) / 36;
       // Don't pitch from Kx.
       if ((suitCount == 2) &&
-          (tpos.secondBest[suit].hand == currHand))
+          (tpos.second_best[suit].hand == currHand))
         suitAdd += -4;
     }
     for (int k = lastNumMoves; k < numMoves; k++)
@@ -784,8 +784,8 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
   }
   else if ((tpos.length[rho_lh][leadSuit] == 0)
            && (tpos.length[rho_lh][trump] != 0) &&
-           (tpos.rankInSuit[rho_lh][trump] >
-            tpos.rankInSuit[partner_lh][trump]))
+           (tpos.rank_in_suit[rho_lh][trump] >
+            tpos.rank_in_suit[partner_lh][trump]))
   {
     // Everybody is void, and partner can overruff.
     suitAdd = (suitCount << 6) / 44;
@@ -797,7 +797,7 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
     for (int k = lastNumMoves; k < numMoves; k++)
     {
       if (bitMapRank[mply[k].rank] >
-          tpos.rankInSuit[partner_lh][trump])
+          tpos.rank_in_suit[partner_lh][trump])
       {
         // We can ruff, 3rd hand is void but can't overruff.
         suitAdd = (suitCount << 6) / 44;
@@ -809,7 +809,7 @@ void WeightAllocTrumpVoid1(HeuristicContext& ctx)
         suitAdd = (suitCount << 6) / 36;
         // Don't ruff from Kx.
         if ((suitCount == 2) &&
-            (tpos.secondBest[suit].hand == currHand))
+            (tpos.second_best[suit].hand == currHand))
           suitAdd += -4;
         mply[k].weight = 15 - (mply[k].rank) + suitAdd;
       }
@@ -833,15 +833,15 @@ void WeightAllocNTVoid1(HeuristicContext& ctx)
   // FIX:
   // Why the different penalties depending on partner?
 
-  if (tpos.rankInSuit[rho_lh][leadSuit] >
-      (tpos.rankInSuit[partner_lh][leadSuit] |
+  if (tpos.rank_in_suit[rho_lh][leadSuit] >
+      (tpos.rank_in_suit[partner_lh][leadSuit] |
        bitMapRank[ctx.lead0_rank]))
   {
     // Partner can win.
     unsigned short suitCount = tpos.length[currHand][suit];
     int suitAdd = (suitCount << 6) / 23;
     // Discourage pitch from Kx or A stiff.
-    if (suitCount == 2 && tpos.secondBest[suit].hand == currHand)
+    if (suitCount == 2 && tpos.second_best[suit].hand == currHand)
       suitAdd += -2;
     else if (suitCount == 1 && tpos.winner[suit].hand == currHand)
       suitAdd += -3;
@@ -856,7 +856,7 @@ void WeightAllocNTVoid1(HeuristicContext& ctx)
 
     // Discourage pitch from Kx.
     if ((suitCount == 2) &&
-        (tpos.secondBest[suit].hand == currHand))
+        (tpos.second_best[suit].hand == currHand))
       suitAdd += -6;
 
     /* Discourage suit discard of highest card. */
@@ -947,7 +947,7 @@ void WeightAllocTrumpNotvoid2(HeuristicContext& ctx)
   MoveType* mply = ctx.mply;
 
   const int rho_lh = rho[leadHand];
-  const int cards4th = tpos.rankInSuit[rho_lh][leadSuit];
+  const int cards4th = tpos.rank_in_suit[rho_lh][leadSuit];
   const int max4th = highest_rank[cards4th];
   const int min4th = lowest_rank[cards4th];
   const int max3rd = mply[0].rank;
@@ -1137,7 +1137,7 @@ void WeightAllocNTNotvoid2(HeuristicContext& ctx)
   const int lho_lh = lho[leadHand];
   const int partner_lh = partner[leadHand];
   
-  const int cards4th = tpos.rankInSuit[rho_lh][leadSuit];
+  const int cards4th = tpos.rank_in_suit[rho_lh][leadSuit];
   const int max4th = highest_rank[cards4th];
   const int min4th = lowest_rank[cards4th];
   const int max3rd = mply[0].rank;
@@ -1163,7 +1163,7 @@ void WeightAllocNTNotvoid2(HeuristicContext& ctx)
         oppLen = lhoLen;
 
       int topNumber, mno;
-  GetTopNumber(ctx, tpos.rankInSuit[partner_lh][leadSuit],
+  GetTopNumber(ctx, tpos.rank_in_suit[partner_lh][leadSuit],
     ctx.lead0_rank, topNumber, mno);
 
       if (oppLen <= topNumber)
@@ -1215,7 +1215,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
   
   int suitAdd;
   const unsigned short suitCount = tpos.length[currHand][suit];
-  const int max4th = highest_rank[tpos.rankInSuit[rho_lh][leadSuit]];
+  const int max4th = highest_rank[tpos.rank_in_suit[rho_lh][leadSuit]];
 
   if (leadSuit == trump || suit != trump)
   {
@@ -1257,7 +1257,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
       // We ruff partner's winner over 2nd hand.
       if (max4th != 0)
       {
-        if (tpos.secondBest[leadSuit].hand == leadHand)
+        if (tpos.second_best[leadSuit].hand == leadHand)
         {
           // We'd like to know whether partner has KQ or just K,
           // but that information takes a bit of diggging. It's
@@ -1272,7 +1272,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
         }
       }
       else if (bitMapRank[mply[k].rank] >
-               tpos.rankInSuit[rho_lh][trump])
+               tpos.rank_in_suit[rho_lh][trump])
       {
         // We ruff higher than 4th hand.
         suitAdd = (suitCount << 6) / 50;
@@ -1295,7 +1295,7 @@ void WeightAllocTrumpVoid2(HeuristicContext& ctx)
     }
 
     else if (bitMapRank[mply[k].rank] >
-             tpos.rankInSuit[rho_lh][trump])
+             tpos.rank_in_suit[rho_lh][trump])
     {
       // Ruff higher than 4th hand can.
       suitAdd = (suitCount << 6) / 50;
@@ -1329,7 +1329,7 @@ void WeightAllocNTVoid2(HeuristicContext& ctx)
   int suitAdd = (suitCount << 6) / 24;
 
   // Try not to pitch from Kx or stiff ace.
-  if (suitCount == 2 && tpos.secondBest[suit].hand == currHand)
+  if (suitCount == 2 && tpos.second_best[suit].hand == currHand)
     suitAdd -= 4;
   if (suitCount == 1 && tpos.winner[suit].hand == currHand)
     suitAdd -= 4;
@@ -1392,7 +1392,7 @@ void WeightAllocTrumpVoid3(HeuristicContext& ctx)
   // Don't pitch from Kx or stiff ace.
   const int mylen = tpos.length[currHand][suit];
   int val = (mylen << 6) / 24;
-  if ((mylen == 2) && (tpos.secondBest[suit].hand == currHand))
+  if ((mylen == 2) && (tpos.second_best[suit].hand == currHand))
     val -= 2;
 
   if (leadSuit == trump)
@@ -1460,7 +1460,7 @@ void WeightAllocNTVoid3(HeuristicContext& ctx)
   int mylen = tpos.length[currHand][suit];
   int val = (mylen << 6) / 27;
   // Try not to pitch from Kx, or to pitch a singleton winner.
-  if ((mylen == 2) && (tpos.secondBest[suit].hand == currHand))
+  if ((mylen == 2) && (tpos.second_best[suit].hand == currHand))
     val -= 6;
   else if ((mylen == 1) && (tpos.winner[suit].hand == currHand))
     val -= 8;

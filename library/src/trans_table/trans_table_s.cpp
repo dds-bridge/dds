@@ -375,7 +375,7 @@ NodeCards const * TransTableS::lookup(
   const int trick,
   const int hand,
   const unsigned short aggrTarget[],
-  const int handDist[],
+  const int hand_dist[],
   const int limit,
   bool& lowerFlag)
 {
@@ -385,10 +385,10 @@ NodeCards const * TransTableS::lookup(
   NodeCards const * cardsP;
 
   suit_lengths_[trick] =
-    (static_cast<long long>(handDist[0]) << 36) |
-    (static_cast<long long>(handDist[1]) << 24) |
-    (static_cast<long long>(handDist[2]) << 12) |
-    (static_cast<long long>(handDist[3]));
+    (static_cast<long long>(hand_dist[0]) << 36) |
+    (static_cast<long long>(hand_dist[1]) << 24) |
+    (static_cast<long long>(hand_dist[2]) << 12) |
+    (static_cast<long long>(hand_dist[3]));
 
   pp = search_len_and_insert(rootnp_[trick][hand],
     suit_lengths_[trick], false, trick, hand, res);

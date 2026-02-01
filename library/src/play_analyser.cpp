@@ -28,7 +28,7 @@ using namespace std;
 
 struct playparamType
 {
-  int noOfBoards;
+  int no_of_boards;
   PlayTracesBin const * plp;
   SolvedPlays * solvedp;
   int error;
@@ -338,16 +338,16 @@ int STDCALL AnalyseAllPlaysBin(
 {
   playparam.error = 0;
 
-  if (bop->noOfBoards > MAXNOOFBOARDS)
+  if (bop->no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  if (bop->noOfBoards != plp->noOfBoards)
+  if (bop->no_of_boards != plp->no_of_boards)
     return RETURN_UNKNOWN_FAULT;
 
   playparam.bop = bop;
   traceparam.plp = plp;
-  playparam.noOfBoards = bop->noOfBoards;
-  traceparam.noOfBoards = bop->noOfBoards;
+  playparam.no_of_boards = bop->no_of_boards;
+  traceparam.no_of_boards = bop->no_of_boards;
   traceparam.solvedp = solvedp;
 
   scheduler.RegisterRun(RunMode::DDS_RUN_TRACE, * bop, * plp);
@@ -360,7 +360,7 @@ int STDCALL AnalyseAllPlaysBin(
   if (retRun != RETURN_NO_FAULT)
     return retRun;
 
-  solvedp->noOfBoards = bop->noOfBoards;
+  solvedp->no_of_boards = bop->no_of_boards;
 
 #ifdef DDS_SCHEDULER
   scheduler.PrintTiming();
@@ -382,11 +382,11 @@ int STDCALL AnalyseAllPlaysPBN(
   Boards bd;
   PlayTracesBin pl;
 
-  bd.noOfBoards = bopPBN->noOfBoards;
-  if (bd.noOfBoards > MAXNOOFBOARDS)
+  bd.no_of_boards = bopPBN->no_of_boards;
+  if (bd.no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  for (int k = 0; k < bopPBN->noOfBoards; k++)
+  for (int k = 0; k < bopPBN->no_of_boards; k++)
   {
     Deal& dl = bd.deals[k];
     DealPBN const & dlp = bopPBN->deals[k];
@@ -405,9 +405,9 @@ int STDCALL AnalyseAllPlaysPBN(
     }
   }
 
-  pl.noOfBoards = plpPBN->noOfBoards;
+  pl.no_of_boards = plpPBN->no_of_boards;
 
-  for (int k = 0; k < plpPBN->noOfBoards; k++)
+  for (int k = 0; k < plpPBN->no_of_boards; k++)
   {
     if (ConvertPlayFromPBN(plpPBN->plays[k], pl.plays[k]) !=
         RETURN_NO_FAULT)
@@ -429,8 +429,8 @@ void DetectPlayDuplicates(
   // as it is highly unlikely that the play went identically at
   // two tables.
 
-  uniques.resize(static_cast<unsigned>(bds.noOfBoards));
-  crossrefs.resize(static_cast<unsigned>(bds.noOfBoards));
+  uniques.resize(static_cast<unsigned>(bds.no_of_boards));
+  crossrefs.resize(static_cast<unsigned>(bds.no_of_boards));
   for (unsigned i = 0; i < uniques.size(); i++)
   {
     uniques[i] = static_cast<int>(i);

@@ -332,7 +332,7 @@ void survey_scores(
     for (int dno = 0; dno < DDS_STRAINS; dno++)
     {
       list_type * slist = &list[side][dno];
-      int const * t = table.resTable[ DENOM_ORDER[dno] ];
+      int const * t = table.res_table[ DENOM_ORDER[dno] ];
       const int a = t[side];
       const int b = t[side + 2];
       const int best = (a > b ? a : b);
@@ -394,7 +394,7 @@ void survey_scores(
     /* Special case, depends who can bid it first. */
     const int dno = (s0 - 1) % 5;
     const int t_max = list[0][dno].tricks;
-    int const * t = table.resTable[ DENOM_ORDER[dno] ];
+    int const * t = table.res_table[ DENOM_ORDER[dno] ];
 
     for (int pno = dealer; pno <= dealer + 3; pno++)
     {
@@ -470,7 +470,7 @@ void best_sacrifice(
     if (eno == dno)
     {
       const int t_max = static_cast<int>((no + 34) / 5);
-      int const * t = table.resTable[ DENOM_ORDER[dno] ];
+      int const * t = table.res_table[ DENOM_ORDER[dno] ];
       int incr_flag = 0;
       for (int pno = dealer; pno <= dealer + 3; pno++)
       {
@@ -533,7 +533,7 @@ void sacrifices_as_text(
     }
 
     const int t_max = static_cast<int>((no_decl + 34) / 5);
-    int const * t = table.resTable[ DENOM_ORDER[dno] ];
+    int const * t = table.res_table[ DENOM_ORDER[dno] ];
     int incr_flag = 0;
     int p_hit = 0;
     int pno_list[2], sac_list[2];
@@ -622,7 +622,7 @@ string contract_as_text(
   const int dno,
   const int delta)
 {
-  int const * t = table.resTable[ DENOM_ORDER[dno] ];
+  int const * t = table.res_table[ DENOM_ORDER[dno] ];
   const int ta = t[side];
   const int tb = t[side + 2];
   const int t_max = (ta > tb ? ta : tb);

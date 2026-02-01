@@ -14,7 +14,7 @@ TEST(MinimalNewTest, TestWeightAllocTrump0) {
     for (int h = 0; h < 4; h++) {
         for (int s = 0; s < 4; s++) {
             tpos.length[h][s] = 3; // Each hand has 3 cards in each suit
-            tpos.rankInSuit[h][s] = 0x7000; // Some high cards
+            tpos.rank_in_suit[h][s] = 0x7000; // Some high cards
         }
     }
     

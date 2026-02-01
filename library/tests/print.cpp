@@ -114,28 +114,28 @@ void print_TABLE(const DdTableResults& table)
     setw(6) << "West" << "\n";
 
   cout << setw(5) << right << "NT" <<
-    setw(6) << table.resTable[4][0] <<
-    setw(6) << table.resTable[4][2] <<
-    setw(6) << table.resTable[4][1] <<
-    setw(6) << table.resTable[4][3] << "\n";
+    setw(6) << table.res_table[4][0] <<
+    setw(6) << table.res_table[4][2] <<
+    setw(6) << table.res_table[4][1] <<
+    setw(6) << table.res_table[4][3] << "\n";
 
   for (int suit = 0; suit <= 3; suit++)
   {
     cout << setw(5) << right << dcardSuit[suit] <<
-      setw(6) << table.resTable[suit][0] <<
-      setw(6) << table.resTable[suit][2] <<
-      setw(6) << table.resTable[suit][1] <<
-      setw(6) << table.resTable[suit][3] << "\n";
+      setw(6) << table.res_table[suit][0] <<
+      setw(6) << table.res_table[suit][2] <<
+      setw(6) << table.res_table[suit][1] <<
+      setw(6) << table.res_table[suit][3] << "\n";
   }
 }
 
 
 void print_PAR(const ParResults& par)
 {
-  cout << setw(9) << left << "NS score" << par.parScore[0] << "\n";
-  cout << setw(9) << "EW score" << par.parScore[1] << "\n";
-  cout << setw(9) << "NS list" << par.parContractsString[0] << "\n";
-  cout << setw(9) << "EW list" << par.parContractsString[1] << "\n";
+  cout << setw(9) << left << "NS score" << par.par_score[0] << "\n";
+  cout << setw(9) << "EW score" << par.par_score[1] << "\n";
+  cout << setw(9) << "NS list" << par.par_contracts_string[0] << "\n";
+  cout << setw(9) << "EW list" << par.par_contracts_string[1] << "\n";
 }
 
 

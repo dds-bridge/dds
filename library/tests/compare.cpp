@@ -61,7 +61,7 @@ bool compare_TABLE(
   for (int suit = 0; suit < DDS_SUITS; suit++)
   {
     for (int pl = 0; pl < DDS_HANDS; pl++)
-      if (table1.resTable[suit][pl] != table2.resTable[suit][pl])
+      if (table1.res_table[suit][pl] != table2.res_table[suit][pl])
         return false;
   }
 
@@ -73,13 +73,13 @@ bool compare_PAR(
   const ParResults& par1,
   const ParResults& par2)
 {
-  if (strcmp(par1.parScore[0], par2.parScore[0])) 
+  if (strcmp(par1.par_score[0], par2.par_score[0])) 
     return false;
-  if (strcmp(par1.parScore[1], par2.parScore[1])) 
+  if (strcmp(par1.par_score[1], par2.par_score[1])) 
     return false;
-  if (strcmp(par1.parContractsString[0], par2.parContractsString[0]))
+  if (strcmp(par1.par_contracts_string[0], par2.par_contracts_string[0]))
     return false;
-  if (strcmp(par1.parContractsString[1], par2.parContractsString[1]))
+  if (strcmp(par1.par_contracts_string[1], par2.par_contracts_string[1]))
     return false;
 
   return true;

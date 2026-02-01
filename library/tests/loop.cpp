@@ -42,7 +42,7 @@ void loop_solve(
   {
     int count = (i + stepsize > number ? number - i : stepsize);
 
-    bop->noOfBoards = count;
+    bop->no_of_boards = count;
     for (int j = 0; j < count; j++)
     {
       bop->deals[j] = deal_list[i + j];
@@ -67,12 +67,12 @@ void loop_solve(
 
     for (int j = 0; j < count; j++)
     {
-      if (compare_FUT(solvedbdp->solvedBoard[j], fut_list[i + j]))
+      if (compare_FUT(solvedbdp->solved_board[j], fut_list[i + j]))
         continue;
 
       cout << "loop_solve: i " << i << ", j " << j << ": " <<
         "Difference\n\n";
-      print_FUT(solvedbdp->solvedBoard[j]);
+      print_FUT(solvedbdp->solved_board[j]);
       cout << "\n";
       print_FUT(fut_list[i+j]);
       cout << "\n";
@@ -105,7 +105,7 @@ bool loop_calc(
   for (int i = 0; i < number; i += stepsize)
   {
     int count = (i + stepsize > number ? number - i : stepsize);
-    dealsp->noOfTables = count;
+    dealsp->no_of_tables = count;
     for (int j = 0; j < count; j++)
       strcpy(dealsp->deals[j].cards, deal_list[i+j].remainCards);
 
@@ -252,8 +252,8 @@ bool loop_play(
   {
     int count = (i + stepsize > number ? number - i : stepsize);
 
-    bop->noOfBoards = count;
-    playsp->noOfBoards = count;
+    bop->no_of_boards = count;
+    playsp->no_of_boards = count;
 
     for (int j = 0; j < count; j++)
     {

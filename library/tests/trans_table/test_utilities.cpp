@@ -32,18 +32,18 @@ void TransTableTestBase::CreateTestPositionData(
     int trick, 
     int hand, 
     unsigned short aggrTarget[DDS_SUITS],
-    int handDist[DDS_HANDS],
-    unsigned short winRanks[DDS_SUITS],
+    int hand_dist[DDS_HANDS],
+    unsigned short win_ranks[DDS_SUITS],
     NodeCards& nodeData) {
     
     // Create simple test position data
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         aggrTarget[suit] = static_cast<unsigned short>(0x1000 + suit * 0x100);
-        winRanks[suit] = static_cast<unsigned short>(0x2000 + suit * 0x200);
+        win_ranks[suit] = static_cast<unsigned short>(0x2000 + suit * 0x200);
     }
     
     for (int h = 0; h < DDS_HANDS; h++) {
-        handDist[h] = 13 - trick; // Decreasing cards as tricks progress
+        hand_dist[h] = 13 - trick; // Decreasing cards as tricks progress
     }
     
     // Initialize node data
@@ -251,13 +251,13 @@ std::string PositionComparator::RanksToString(const unsigned short ranks[DDS_SUI
 }
 
 // TestDataValidator implementation
-bool TestDataValidator::IsValidHandDistribution(const int handDist[DDS_HANDS]) {
+bool TestDataValidator::IsValidHandDistribution(const int hand_dist[DDS_HANDS]) {
     int total = 0;
     for (int hand = 0; hand < DDS_HANDS; hand++) {
-        if (handDist[hand] < 0 || handDist[hand] > 13) {
+        if (hand_dist[hand] < 0 || hand_dist[hand] > 13) {
             return false;
         }
-        total += handDist[hand];
+        total += hand_dist[hand];
     }
     
     // Total should be reasonable for remaining cards
@@ -274,10 +274,10 @@ bool TestDataValidator::IsValidAggrTarget(const unsigned short aggrTarget[DDS_SU
     return true;
 }
 
-bool TestDataValidator::IsValidWinRanks(const unsigned short winRanks[DDS_SUITS]) {
+bool TestDataValidator::IsValidWinRanks(const unsigned short win_ranks[DDS_SUITS]) {
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         // Check if winning ranks are within valid range
-        if (winRanks[suit] > 0x1FFF) { // 13 bits max
+        if (win_ranks[suit] > 0x1FFF) { // 13 bits max
             return false;
         }
     }

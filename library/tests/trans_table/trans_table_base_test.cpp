@@ -207,7 +207,7 @@ TEST_F(TransTableBaseTest, MemoryInUseMethodCallsOverride) {
 
 TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
     unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
-    int handDist[4] = {13, 13, 13, 13};
+    int hand_dist[4] = {13, 13, 13, 13};
     bool lowerFlag = true;
     
     EXPECT_FALSE(baseTable->lookupCalled);
@@ -216,7 +216,7 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
         10, // trick
         2,  // hand
         aggrTarget,
-        handDist,
+        hand_dist,
         8,  // limit
         lowerFlag
     );
@@ -231,7 +231,7 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
 
 TEST_F(TransTableBaseTest, AddMethodCallsOverride) {
     unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
-    unsigned short winRanks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
+    unsigned short win_ranks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
     NodeCards nodeData;
     
     EXPECT_FALSE(baseTable->addCalled);
@@ -240,7 +240,7 @@ TEST_F(TransTableBaseTest, AddMethodCallsOverride) {
         8,  // trick
         1,  // hand
         aggrTarget,
-        winRanks,
+        win_ranks,
         nodeData,
         true // flag
     );
@@ -288,14 +288,14 @@ TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures) {
     EXPECT_GE(mem, 0.0); // Should return non-negative value
     
     unsigned short aggrTarget[DDS_SUITS] = {0, 0, 0, 0};
-    unsigned short winRanks[DDS_SUITS] = {0, 0, 0, 0};
-    int handDist[4] = {0, 0, 0, 0};
+    unsigned short win_ranks[DDS_SUITS] = {0, 0, 0, 0};
+    int hand_dist[4] = {0, 0, 0, 0};
     bool lowerFlag = false;
     NodeCards nodeData;
     
     // Should not crash when called through base pointer
-    basePtr->lookup(0, 0, aggrTarget, handDist, 0, lowerFlag);
-    basePtr->add(0, 0, aggrTarget, winRanks, nodeData, false);
+    basePtr->lookup(0, 0, aggrTarget, hand_dist, 0, lowerFlag);
+    basePtr->add(0, 0, aggrTarget, win_ranks, nodeData, false);
     
     std::ofstream nullFile("/dev/null");
     basePtr->print_suits(nullFile, 0, 1); // trick=0, hand=1

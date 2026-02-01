@@ -330,7 +330,7 @@ auto set_table(DdTableResults * table, int handno) -> void
 {
   for (int suit = 0; suit < DDS_STRAINS; suit++)
     for (int pl = 0; pl <= 3; pl++)
-      table->resTable[suit][pl] = dd_table_[handno][4 * suit + pl];
+      table->res_table[suit][pl] = dd_table_[handno][4 * suit + pl];
 }
 
 
@@ -340,7 +340,7 @@ auto compare_table(DdTableResults * table, int handno) -> bool
   {
     for (int pl = 0; pl <= 3; pl++)
     {
-      if (table->resTable[suit][pl] != dd_table_[handno][4 * suit + pl])
+      if (table->res_table[suit][pl] != dd_table_[handno][4 * suit + pl])
         return false;
     }
   }
@@ -355,19 +355,19 @@ auto print_table(DdTableResults * table) -> void
 
   printf("%5s %5d %5d %5d %5d\n",
          "NT",
-         table->resTable[4][0],
-         table->resTable[4][2],
-         table->resTable[4][1],
-         table->resTable[4][3]);
+         table->res_table[4][0],
+         table->res_table[4][2],
+         table->res_table[4][1],
+         table->res_table[4][3]);
 
   for (int suit = 0; suit < DDS_SUITS; suit++)
   {
     printf("%5c %5d %5d %5d %5d\n",
            card_suit_chars_[suit],
-           table->resTable[suit][0],
-           table->resTable[suit][2],
-           table->resTable[suit][1],
-           table->resTable[suit][3]);
+           table->res_table[suit][0],
+           table->res_table[suit][2],
+           table->res_table[suit][1],
+           table->res_table[suit][3]);
   }
   printf("\n");
 }
@@ -375,12 +375,12 @@ auto print_table(DdTableResults * table) -> void
 
 auto compare_par(ParResults * par, int handno) -> bool
 {
-  if (strcmp(par->parScore[0], par_scores_[handno][0])) return false;
-  if (strcmp(par->parScore[1], par_scores_[handno][1])) return false;
+  if (strcmp(par->par_score[0], par_scores_[handno][0])) return false;
+  if (strcmp(par->par_score[1], par_scores_[handno][1])) return false;
 
-  if (strcmp(par->parContractsString[0], par_strings_[handno][0]))
+  if (strcmp(par->par_contracts_string[0], par_strings_[handno][0]))
     return false;
-  if (strcmp(par->parContractsString[1], par_strings_[handno][1]))
+  if (strcmp(par->par_contracts_string[1], par_strings_[handno][1]))
     return false;
   return true;
 }
@@ -402,10 +402,10 @@ auto compare_dealer_par(ParResultsDealer * par, int handno) -> bool
 
 auto print_par(ParResults * par) -> void
 {
-  printf("NS score: %s\n", par->parScore[0]);
-  printf("EW score: %s\n", par->parScore[1]);
-  printf("NS list : %s\n", par->parContractsString[0]);
-  printf("EW list : %s\n", par->parContractsString[1]);
+  printf("NS score: %s\n", par->par_score[0]);
+  printf("EW score: %s\n", par->par_score[1]);
+  printf("NS list : %s\n", par->par_contracts_string[0]);
+  printf("EW list : %s\n", par->par_contracts_string[1]);
   printf("\n");
 }
 

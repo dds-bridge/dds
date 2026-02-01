@@ -179,7 +179,7 @@ void Scheduler::RegisterRun(
   const Boards& bds,
   const PlayTracesBin& pl)
 {
-  for (int b = 0; b < bds.noOfBoards; b++)
+  for (int b = 0; b < bds.no_of_boards; b++)
     hands[b].depth = pl.plays[b].number;
   
   Scheduler::RegisterRun(mode, bds);
@@ -192,7 +192,7 @@ void Scheduler::RegisterRun(
 {
   Scheduler::Reset();
 
-  numHands = bds.noOfBoards;
+  numHands = bds.no_of_boards;
 
   // First split the hands according to strain and hash key.
   // This will lead to a few random collisions as well.

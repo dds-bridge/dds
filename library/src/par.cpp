@@ -131,28 +131,28 @@ int STDCALL Par(
   if (res != RETURN_NO_FAULT)
     return res;
 
-  presp->parScore[0][0] = 'N';
-  presp->parScore[0][1] = 'S';
-  presp->parScore[0][2] = ' ';
-  presp->parScore[0][3] = '\0';
-  presp->parScore[1][0] = 'E';
-  presp->parScore[1][1] = 'W';
-  presp->parScore[1][2] = ' ';
-  presp->parScore[1][3] = '\0';
+  presp->par_score[0][0] = 'N';
+  presp->par_score[0][1] = 'S';
+  presp->par_score[0][2] = ' ';
+  presp->par_score[0][3] = '\0';
+  presp->par_score[1][0] = 'E';
+  presp->par_score[1][1] = 'W';
+  presp->par_score[1][2] = ' ';
+  presp->par_score[1][3] = '\0';
 
   snprintf(temp, 8, "%d", sidesRes[0].score);
-  strcat(presp->parScore[0], temp);
+  strcat(presp->par_score[0], temp);
   snprintf(temp, 8, "%d", sidesRes[1].score);
-  strcat(presp->parScore[1], temp);
+  strcat(presp->par_score[1], temp);
 
-  presp->parContractsString[0][0] = 'N';
-  presp->parContractsString[0][1] = 'S';
-  presp->parContractsString[0][2] = ':';
-  presp->parContractsString[0][3] = '\0';
-  presp->parContractsString[1][0] = 'E';
-  presp->parContractsString[1][1] = 'W';
-  presp->parContractsString[1][2] = ':';
-  presp->parContractsString[1][3] = '\0';
+  presp->par_contracts_string[0][0] = 'N';
+  presp->par_contracts_string[0][1] = 'S';
+  presp->par_contracts_string[0][2] = ':';
+  presp->par_contracts_string[0][3] = '\0';
+  presp->par_contracts_string[1][0] = 'E';
+  presp->par_contracts_string[1][1] = 'W';
+  presp->par_contracts_string[1][2] = ':';
+  presp->par_contracts_string[1][3] = '\0';
 
   if (sidesRes[0].score == 0)
   {
@@ -163,14 +163,14 @@ int STDCALL Par(
 
   for (int i = 0; i <= 1; i++)
   {
-    if (sidesRes[i].contracts[0].underTricks > 0)
+    if (sidesRes[i].contracts[0].under_tricks > 0)
     {
       /* Sacrifice*/
 
       for (k = 0; k < sidesRes[i].number; k++)
       {
 
-        strcat(presp->parContractsString[i], 
+        strcat(presp->par_contracts_string[i], 
           seats[sidesRes[i].contracts[k].seats]);
         snprintf(temp, 8, "%d", sidesRes[i].contracts[k].level);
         buff[0] = static_cast<char>(
@@ -178,9 +178,9 @@ int STDCALL Par(
         buff[1] = 'x';
         buff[2] = '\0';
         strcat(temp, buff);
-        strcat(presp->parContractsString[i], temp);
+        strcat(presp->par_contracts_string[i], temp);
         if (k != (sidesRes[i].number - 1))
-          strcat(presp->parContractsString[i], contr_sep);
+          strcat(presp->par_contracts_string[i], contr_sep);
       }
     }
     else
@@ -190,11 +190,11 @@ int STDCALL Par(
       for (k = 0; k < sidesRes[i].number; k++)
       {
 
-        strcat(presp->parContractsString[i], 
+        strcat(presp->par_contracts_string[i], 
           seats[sidesRes[i].contracts[k].seats]);
 
-        int n = CalcMultiContracts(sidesRes[i].contracts[k].overTricks, 
-          sidesRes[i].contracts[k].overTricks
+        int n = CalcMultiContracts(sidesRes[i].contracts[k].over_tricks, 
+          sidesRes[i].contracts[k].over_tricks
             + sidesRes[i].contracts[k].level + 6);
 
 
@@ -203,9 +203,9 @@ int STDCALL Par(
           cardSuit[denom_conv[sidesRes[i].contracts[k].denom]]);
         buff[1] = '\0';
         strcat(temp, buff);
-        strcat(presp->parContractsString[i], temp);
+        strcat(presp->par_contracts_string[i], temp);
         if (k != (sidesRes[i].number - 1))
-          strcat(presp->parContractsString[i], contr_sep);
+          strcat(presp->par_contracts_string[i], contr_sep);
       }
     }
   }
@@ -293,10 +293,10 @@ int STDCALL SidesParBin(
         if (denom_filter[j] == 0)
         {
           /* Current denomination is not filtered out. */
-          t1 = k ? tablep->resTable[denom_conv[j]][1] : 
-            tablep->resTable[denom_conv[j]][0];
-          t2 = k ? tablep->resTable[denom_conv[j]][3] : 
-            tablep->resTable[denom_conv[j]][2];
+          t1 = k ? tablep->res_table[denom_conv[j]][1] : 
+            tablep->res_table[denom_conv[j]][0];
+          t2 = k ? tablep->res_table[denom_conv[j]][3] : 
+            tablep->res_table[denom_conv[j]][2];
           tt = max(t1, t2);
           /* tt is the maximum number of tricks current side can take in
           denomination.*/
@@ -434,14 +434,14 @@ int STDCALL SidesParBin(
     /* Neither side can make anything.*/
     sidesRes[0].contracts[0].denom = 0;
     sidesRes[0].contracts[0].level = 0;
-    sidesRes[0].contracts[0].overTricks = 0;
-    sidesRes[0].contracts[0].underTricks = 0;
+    sidesRes[0].contracts[0].over_tricks = 0;
+    sidesRes[0].contracts[0].under_tricks = 0;
     sidesRes[0].contracts[0].seats = 0;
     sidesRes[0].number = 1;
     sidesRes[1].contracts[0].denom = 0;
     sidesRes[1].contracts[0].level = 0;
-    sidesRes[1].contracts[0].overTricks = 0;
-    sidesRes[1].contracts[0].underTricks = 0;
+    sidesRes[1].contracts[0].over_tricks = 0;
+    sidesRes[1].contracts[0].under_tricks = 0;
     sidesRes[1].contracts[0].seats = 0;
     sidesRes[1].number = 1;
     return RETURN_NO_FAULT;
@@ -473,17 +473,17 @@ int STDCALL SidesParBin(
 
         j = best_par[m][i].par_denom;
 
-        t1 = ((dr + i) % 2) ? tablep->resTable[denom_conv[j]][0] : 
-          tablep->resTable[denom_conv[j]][1];
-        t2 = ((dr + i) % 2) ? tablep->resTable[denom_conv[j]][2] : 
-          tablep->resTable[denom_conv[j]][3];
+        t1 = ((dr + i) % 2) ? tablep->res_table[denom_conv[j]][0] : 
+          tablep->res_table[denom_conv[j]][1];
+        t2 = ((dr + i) % 2) ? tablep->res_table[denom_conv[j]][2] : 
+          tablep->res_table[denom_conv[j]][3];
         tt = (t1 > t2) ? t1 : t2;
 
         SideSeats(dr, i, t1, t2, m, sidesRes);
         sidesRes[i].contracts[m].denom = j;
         sidesRes[i].contracts[m].level = best_par[m][i].par_tricks - 6;
-        sidesRes[i].contracts[m].overTricks = 0;
-        sidesRes[i].contracts[m].underTricks = best_par_sacut[i];
+        sidesRes[i].contracts[m].over_tricks = 0;
+        sidesRes[i].contracts[m].under_tricks = best_par_sacut[i];
 
       }
     }
@@ -496,10 +496,10 @@ int STDCALL SidesParBin(
       tu_max = 0;
       for (m = 0; m <= 4; m++)
       {
-        t3[m] = ((dr + i) % 2 == 0) ? tablep->resTable[denom_conv[m]][0] :
-          tablep->resTable[denom_conv[m]][1];
-        t4[m] = ((dr + i) % 2 == 0) ? tablep->resTable[denom_conv[m]][2] :
-          tablep->resTable[denom_conv[m]][3];
+        t3[m] = ((dr + i) % 2 == 0) ? tablep->res_table[denom_conv[m]][0] :
+          tablep->res_table[denom_conv[m]][1];
+        t4[m] = ((dr + i) % 2 == 0) ? tablep->res_table[denom_conv[m]][2] :
+          tablep->res_table[denom_conv[m]][3];
         tu = (t3[m] > t4[m]) ? t3[m] : t4[m];
         if (tu > tu_max)
         {
@@ -513,10 +513,10 @@ int STDCALL SidesParBin(
       {
         j = best_par[m][i].par_denom;
 
-        t1 = ((dr + i) % 2) ? tablep->resTable[denom_conv[j]][0] : 
-          tablep->resTable[denom_conv[j]][1];
-        t2 = ((dr + i) % 2) ? tablep->resTable[denom_conv[j]][2] : 
-          tablep->resTable[denom_conv[j]][3];
+        t1 = ((dr + i) % 2) ? tablep->res_table[denom_conv[j]][0] : 
+          tablep->res_table[denom_conv[j]][1];
+        t2 = ((dr + i) % 2) ? tablep->res_table[denom_conv[j]][2] : 
+          tablep->res_table[denom_conv[j]][3];
         tt = (t1 > t2) ? t1 : t2;
 
         SideSeats(dr, i, t1, t2, m, sidesRes);
@@ -600,13 +600,13 @@ int STDCALL SidesParBin(
           max_lower);
 
         sidesRes[i].contracts[m].denom = j;
-        sidesRes[i].contracts[m].underTricks = 0;
+        sidesRes[i].contracts[m].under_tricks = 0;
 
         CalcOverTricks(i, max_lower, best_par[m][i].par_tricks, 
           m, sidesRes);
 
         sidesRes[i].contracts[m].level = best_par[m][i].par_tricks - 6 - 
-          sidesRes[i].contracts[m].overTricks;
+          sidesRes[i].contracts[m].over_tricks;
 
       }
     }
@@ -632,7 +632,7 @@ int STDCALL SidesParBin(
     {
       j = sidesRes[opp_side[i]].contracts[k].denom;
       int ss = sidesRes[opp_side[i]].contracts[k].level + 
-               sidesRes[opp_side[i]].contracts[k].overTricks;
+               sidesRes[opp_side[i]].contracts[k].over_tricks;
 
       if (ss > dom_level[opp_side[i]] ||
          (ss == dom_level[opp_side[i]] && j < dom_denom[opp_side[i]]))
@@ -645,7 +645,7 @@ int STDCALL SidesParBin(
           dom_denom[opp_side[i]] = j;
           dom_level[opp_side[i]] = 
             sidesRes[opp_side[i]].contracts[k].level + 
-            sidesRes[opp_side[i]].contracts[k].overTricks;
+            sidesRes[opp_side[i]].contracts[k].over_tricks;
         }
       }
       k++;
@@ -666,10 +666,10 @@ int STDCALL SidesParBin(
         j = sidesRes[i].contracts[k].denom;
 
         if (((sidesRes[i].contracts[k].level + 
-          sidesRes[i].contracts[k].overTricks) < 
+          sidesRes[i].contracts[k].over_tricks) < 
           dom_level[opp_side[i]]) ||
           (((sidesRes[i].contracts[k].level + 
-          sidesRes[i].contracts[k].overTricks) == dom_level[opp_side[i]])
+          sidesRes[i].contracts[k].over_tricks) == dom_level[opp_side[i]])
              && (dom_denom[opp_side[i]] < sidesRes[i].contracts[k].denom)))
           denom_to_remove[i][j] = 1;
       }
@@ -961,65 +961,65 @@ void CalcOverTricks(
     case 5:
       if (max_lower == 3)
       {
-        sidesRes[i].contracts[order].overTricks = 3;
+        sidesRes[i].contracts[order].over_tricks = 3;
       }
       else if (max_lower == 2)
       {
-        sidesRes[i].contracts[order].overTricks = 2;
+        sidesRes[i].contracts[order].over_tricks = 2;
       }
       else if (max_lower == 1)
       {
-        sidesRes[i].contracts[order].overTricks = 1;
+        sidesRes[i].contracts[order].over_tricks = 1;
       }
       else
       {
-        sidesRes[i].contracts[order].overTricks = 0;
+        sidesRes[i].contracts[order].over_tricks = 0;
       }
       break;
     case 4:
       if (max_lower == 3)
       {
-        sidesRes[i].contracts[order].overTricks = 3;
+        sidesRes[i].contracts[order].over_tricks = 3;
       }
       else if (max_lower == 2)
       {
-        sidesRes[i].contracts[order].overTricks = 2;
+        sidesRes[i].contracts[order].over_tricks = 2;
       }
       else if (max_lower == 1)
       {
-        sidesRes[i].contracts[order].overTricks = 1;
+        sidesRes[i].contracts[order].over_tricks = 1;
       }
       else
       {
-        sidesRes[i].contracts[order].overTricks = 0;
+        sidesRes[i].contracts[order].over_tricks = 0;
       }
       break;
     case 3:
       if (max_lower == 2)
       {
-        sidesRes[i].contracts[order].overTricks = 2;
+        sidesRes[i].contracts[order].over_tricks = 2;
       }
       else if (max_lower == 1)
       {
-        sidesRes[i].contracts[order].overTricks = 1;
+        sidesRes[i].contracts[order].over_tricks = 1;
       }
       else
       {
-        sidesRes[i].contracts[order].overTricks = 0;
+        sidesRes[i].contracts[order].over_tricks = 0;
       }
       break;
     case 2:
       if (max_lower == 1)
       {
-        sidesRes[i].contracts[order].overTricks = 1;
+        sidesRes[i].contracts[order].over_tricks = 1;
       }
       else
       {
-        sidesRes[i].contracts[order].overTricks = 0;
+        sidesRes[i].contracts[order].over_tricks = 0;
       }
       break;
     default:
-      sidesRes[i].contracts[order].overTricks = 0;
+      sidesRes[i].contracts[order].over_tricks = 0;
   }
   return;
 }
@@ -1257,20 +1257,20 @@ int STDCALL DealerParBin(
     if (parResDealer.contracts[0][2] == '*')
     {
       /* Sacrifice */
-      presp->contracts[k].underTricks =
+      presp->contracts[k].under_tricks =
         static_cast<int>(parContr2[k].contracts[6 + delta] - '0');
-      presp->contracts[k].overTricks = 0;
+      presp->contracts[k].over_tricks = 0;
     }
     else
       /* Make */
 
     {
       if (strchr(parContr2[k].contracts, '+'))
-        presp->contracts[k].overTricks =
+        presp->contracts[k].over_tricks =
           static_cast<int>(parContr2[k].contracts[5 + delta] - '0');
       else
-        presp->contracts[k].overTricks = 0;
-      presp->contracts[k].underTricks = 0;
+        presp->contracts[k].over_tricks = 0;
+      presp->contracts[k].under_tricks = 0;
     }
   }
   return RETURN_NO_FAULT;
@@ -1322,7 +1322,7 @@ int STDCALL SidesPar(
           // Cannot happen, but keeps gcc happy.
           break;
       }
-      if (parm[i].contracts[k].underTricks > 0)
+      if (parm[i].contracts[k].under_tricks > 0)
         /* Sacrifice */
         strcat(sidesRes[i].contracts[k], "*");
       switch (parm[i].contracts[k].seats)
@@ -1349,16 +1349,16 @@ int STDCALL SidesPar(
           // Cannot happen, but keeps gcc happy.
           break;
       }
-      if (parm[i].contracts[k].underTricks > 0)
+      if (parm[i].contracts[k].under_tricks > 0)
       {
         /* Sacrifice */
-        snprintf(buff, buf_size, "-%d", parm[i].contracts[k].underTricks);
+        snprintf(buff, buf_size, "-%d", parm[i].contracts[k].under_tricks);
         strcat(sidesRes[i].contracts[k], buff);
       }
-      else if (parm[i].contracts[k].overTricks > 0)
+      else if (parm[i].contracts[k].over_tricks > 0)
       {
         /* Make */
-        snprintf(buff, buf_size, "+%d", parm[i].contracts[k].overTricks);
+        snprintf(buff, buf_size, "+%d", parm[i].contracts[k].over_tricks);
         strcat(sidesRes[i].contracts[k], buff);
       }
     }
@@ -1436,20 +1436,20 @@ int STDCALL ConvertToDealerTextFormat(
         // denom not in /N,S,H,D,C)
     }
 
-    if (pres->contracts[k].underTricks > 0)
+    if (pres->contracts[k].under_tricks > 0)
     {
       strcat(resp, "x-");
       for (i = 0; i < 10; i++)
         buff[i] = '\0';
-      snprintf(buff, 10, "%d", pres->contracts[k].underTricks);
+      snprintf(buff, 10, "%d", pres->contracts[k].under_tricks);
       strcat(resp, buff);
     }
-    else if (pres->contracts[k].overTricks > 0)
+    else if (pres->contracts[k].over_tricks > 0)
     {
       strcat(resp, "+");
       for (i = 0; i < 10; i++)
         buff[i] = '\0';
-      snprintf(buff, 10, "%d", pres->contracts[k].overTricks);
+      snprintf(buff, 10, "%d", pres->contracts[k].over_tricks);
       strcat(resp, buff);
     }
   }
@@ -1466,44 +1466,44 @@ int STDCALL ConvertToSidesTextFormat(
 
   for (i = 0; i < 2; i++)
     for (k = 0; k < 128; k++)
-      resp->parText[i][k] = '\0';
+      resp->par_text[i][k] = '\0';
 
   if (pres->score == 0)
   {
-    snprintf(resp->parText[0], 7, "Par 0");
+    snprintf(resp->par_text[0], 7, "Par 0");
     return RETURN_NO_FAULT;
   }
 
   for (i = 0; i < 2; i++)
   {
 
-    snprintf(resp->parText[i], 10, "Par %d: ", (pres + i)->score);
+    snprintf(resp->par_text[i], 10, "Par %d: ", (pres + i)->score);
 
     for (k = 0; k < (pres + i)->number; k++)
     {
 
       if (k != 0)
-        strcat(resp->parText[i], " ");
+        strcat(resp->par_text[i], " ");
 
       switch ((pres + i)->contracts[k].seats)
       {
         case 0:
-          strcat(resp->parText[i], "N ");
+          strcat(resp->par_text[i], "N ");
           break;
         case 1:
-          strcat(resp->parText[i], "E ");
+          strcat(resp->par_text[i], "E ");
           break;
         case 2:
-          strcat(resp->parText[i], "S ");
+          strcat(resp->par_text[i], "S ");
           break;
         case 3:
-          strcat(resp->parText[i], "W ");
+          strcat(resp->par_text[i], "W ");
           break;
         case 4:
-          strcat(resp->parText[i], "NS ");
+          strcat(resp->par_text[i], "NS ");
           break;
         case 5:
-          strcat(resp->parText[i], "EW ");
+          strcat(resp->par_text[i], "EW ");
           break;
         default:
           return RETURN_UNKNOWN_FAULT;
@@ -1513,45 +1513,45 @@ int STDCALL ConvertToSidesTextFormat(
       for (j = 0; j < 10; j++)
         buff[j] = '\0';
       snprintf(buff, 10, "%d", (pres + i)->contracts[k].level);
-      strcat(resp->parText[i], buff);
+      strcat(resp->par_text[i], buff);
 
       switch ((pres + i)->contracts[k].denom)
       {
         case 0:
-          strcat(resp->parText[i], "NT");
+          strcat(resp->par_text[i], "NT");
           break;
         case 1:
-          strcat(resp->parText[i], "S");
+          strcat(resp->par_text[i], "S");
           break;
         case 2:
-          strcat(resp->parText[i], "H");
+          strcat(resp->par_text[i], "H");
           break;
         case 3:
-          strcat(resp->parText[i], "D");
+          strcat(resp->par_text[i], "D");
           break;
         case 4:
-          strcat(resp->parText[i], "C");
+          strcat(resp->par_text[i], "C");
           break;
         default:
           return RETURN_UNKNOWN_FAULT;
           // denom not in (N,S,H,D,C)
       }
 
-      if ((pres + i)->contracts[k].underTricks > 0)
+      if ((pres + i)->contracts[k].under_tricks > 0)
       {
-        strcat(resp->parText[i], "x-");
+        strcat(resp->par_text[i], "x-");
         for (j = 0; j < 10; j++)
           buff[j] = '\0';
-        snprintf(buff, 10, "%d", (pres + i)->contracts[k].underTricks);
-        strcat(resp->parText[i], buff);
+        snprintf(buff, 10, "%d", (pres + i)->contracts[k].under_tricks);
+        strcat(resp->par_text[i], buff);
       }
-      else if ((pres + i)->contracts[k].overTricks > 0)
+      else if ((pres + i)->contracts[k].over_tricks > 0)
       {
-        strcat(resp->parText[i], "+");
+        strcat(resp->par_text[i], "+");
         for (j = 0; j < 10; j++)
           buff[j] = '\0';
-        snprintf(buff, 10, "%d", (pres + i)->contracts[k].overTricks);
-        strcat(resp->parText[i], buff);
+        snprintf(buff, 10, "%d", (pres + i)->contracts[k].over_tricks);
+        strcat(resp->par_text[i], buff);
       }
     }
 
@@ -1568,9 +1568,9 @@ int STDCALL ConvertToSidesTextFormat(
         {
           if ((pres->contracts[k].denom != (pres + 1)->contracts[k].denom) ||
               (pres->contracts[k].level != (pres + 1)->contracts[k].level) ||
-              (pres->contracts[k].overTricks != (pres + 1)->contracts[k].overTricks) ||
+              (pres->contracts[k].over_tricks != (pres + 1)->contracts[k].over_tricks) ||
               (pres->contracts[k].seats != (pres + 1)->contracts[k].seats) ||
-              (pres->contracts[k].underTricks != (pres + 1)->contracts[k].underTricks))
+              (pres->contracts[k].under_tricks != (pres + 1)->contracts[k].under_tricks))
           {
             resp->equal = false;
             break;

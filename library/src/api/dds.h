@@ -96,18 +96,18 @@ struct HighCardType
  */
 struct Pos
 {
-  unsigned short int rankInSuit[DDS_HANDS][DDS_SUITS];  ///< Bitmask of ranks held by each hand in each suit
-  unsigned short int aggr[DDS_SUITS];                    ///< Aggregate bitmask of all cards in each suit
-  unsigned char length[DDS_HANDS][DDS_SUITS];            ///< Number of cards each hand holds in each suit
-  int handDist[DDS_HANDS];                               ///< Total number of cards held by each hand
+  unsigned short int rank_in_suit[DDS_HANDS][DDS_SUITS];  ///< Bitmask of ranks held by each hand in each suit
+  unsigned short int aggr[DDS_SUITS];                      ///< Aggregate bitmask of all cards in each suit
+  unsigned char length[DDS_HANDS][DDS_SUITS];              ///< Number of cards each hand holds in each suit
+  int hand_dist[DDS_HANDS];                                ///< Total number of cards held by each hand
 
-  unsigned short int winRanks[50][DDS_SUITS];  ///< Cards that win by rank at each depth
-  int first[50];                               ///< Hand that leads the trick for each ply
-  MoveType move[50];                           ///< Presently winning move at each ply
-  int handRelFirst;                            ///< Current hand, relative to first hand
-  int tricksMAX;                               ///< Aggregated tricks won by maximizing side
-  HighCardType winner[DDS_SUITS];              ///< Winning rank of trick in each suit
-  HighCardType secondBest[DDS_SUITS];          ///< Second best rank in each suit
+  unsigned short int win_ranks[50][DDS_SUITS];  ///< Cards that win by rank at each depth
+  int first[50];                                ///< Hand that leads the trick for each ply
+  MoveType move[50];                            ///< Presently winning move at each ply
+  int hand_rel_first;                           ///< Current hand, relative to first hand
+  int tricks_max;                               ///< Aggregated tricks won by maximizing side
+  HighCardType winner[DDS_SUITS];               ///< Winning rank of trick in each suit
+  HighCardType second_best[DDS_SUITS];          ///< Second best rank in each suit
 };
 
 /**
@@ -118,12 +118,12 @@ struct Pos
  */
 struct TrickDataType
 {
-  int playCount[DDS_SUITS];  ///< Number of cards played in each suit
-  int bestRank;              ///< Rank of best card played so far
-  int bestSuit;              ///< Suit of best card played so far
-  int bestSequence;          ///< Sequence of best card
-  int relWinner;             ///< Relative position of current trick winner
-  int nextLeadHand;          ///< Hand that will lead next trick
+  int play_count[DDS_SUITS];  ///< Number of cards played in each suit
+  int best_rank;              ///< Rank of best card played so far
+  int best_suit;              ///< Suit of best card played so far
+  int best_sequence;          ///< Sequence of best card
+  int rel_winner;             ///< Relative position of current trick winner
+  int next_lead_hand;         ///< Hand that will lead next trick
 };
 
 /**
@@ -134,8 +134,8 @@ struct TrickDataType
  */
 struct EvalType
 {
-  int tricks;                              ///< Number of tricks that can be won from this position
-  unsigned short int winRanks[DDS_SUITS];  ///< Bitmask of winning ranks in each suit
+  int tricks;                             ///< Number of tricks that can be won from this position
+  unsigned short int win_ranks[DDS_SUITS];  ///< Bitmask of winning ranks in each suit
 };
 
 /**
@@ -182,7 +182,7 @@ struct AbsRankType // 2 bytes
  */
 struct RelRanksType // 120 bytes
 {
-  AbsRankType absRank[15][DDS_SUITS];  ///< Rank information indexed by position and suit
+  AbsRankType abs_rank[15][DDS_SUITS];  ///< Rank information indexed by position and suit
 };
 
 /**
@@ -193,7 +193,7 @@ struct RelRanksType // 120 bytes
  */
 struct ParamType
 {
-  int noOfBoards;              ///< Number of boards to solve
+  int no_of_boards;            ///< Number of boards to solve
   Boards const * bop;          ///< Pointer to input boards
   SolvedBoards * solvedp;      ///< Pointer to output solutions
   int error;                   ///< Error code from operation

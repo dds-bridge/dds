@@ -14,7 +14,7 @@ class HeuristicSortingUnitTest : public ::testing::Test {
     // Initialize with some basic data
     for (int hand = 0; hand < DDS_HANDS; hand++) {
       for (int suit = 0; suit < DDS_SUITS; suit++) {
-        tpos.rankInSuit[hand][suit] = 0;
+        tpos.rank_in_suit[hand][suit] = 0;
         tpos.length[hand][suit] = 0;
       }
     }

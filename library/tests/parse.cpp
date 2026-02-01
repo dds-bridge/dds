@@ -356,7 +356,7 @@ bool parse_TABLE(
     for (unsigned pl = 0; pl < DDS_HANDS; pl++)
     {
       if (! get_int_element(list[DDS_HANDS * suit + pl + 1],
-          table->resTable[suit][pl], "TABLE entry"))
+          table->res_table[suit][pl], "TABLE entry"))
         return false;
     }
   }
@@ -378,11 +378,11 @@ bool parse_PAR(
   if (! get_head_element(list[0], "PAR"))
     return false;
 
-  if (! strip_quotes(list[1] + " " + list[2], par->parScore[0], 
+  if (! strip_quotes(list[1] + " " + list[2], par->par_score[0], 
       "PAR score 0"))
     return false;
 
-  if (! strip_quotes(list[3] + " " + list[4], par->parScore[1], 
+  if (! strip_quotes(list[3] + " " + list[4], par->par_score[1], 
       "PAR score 1"))
     return false;
 
@@ -395,7 +395,7 @@ bool parse_PAR(
       break;
   }
 
-  if (! strip_quotes(st.substr(1), par->parContractsString[0], 
+  if (! strip_quotes(st.substr(1), par->par_contracts_string[0], 
       "PAR contract 0"))
     return false;
 
@@ -407,7 +407,7 @@ bool parse_PAR(
       break;
   }
 
-  if (! strip_quotes(st.substr(1), par->parContractsString[1], 
+  if (! strip_quotes(st.substr(1), par->par_contracts_string[1], 
       "PAR contract 1"))
     return false;
 
@@ -533,7 +533,7 @@ bool parse_GIB(
       if (dds_hand & 1)
         d = 13 - d;
 
-      table->resTable[dds_strain][dds_hand] = d;
+      table->res_table[dds_strain][dds_hand] = d;
     }
   }
   return true;

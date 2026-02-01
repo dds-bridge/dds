@@ -96,7 +96,7 @@ void Moves::Init(
   const int relStartHand,
   const int initialRanks[],
   const int initialSuits[],
-  const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+  const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
   const int ourTrump,
   const int ourLeadHand)
 {
@@ -122,7 +122,7 @@ void Moves::Init(
 
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
-      track[tricks].removedRanks[s] ^= rankInSuit[h][s];
+      track[tricks].removedRanks[s] ^= rank_in_suit[h][s];
 
   for (int n = 0; n < relStartHand; n++)
   {
@@ -165,7 +165,7 @@ int Moves::MoveGen0(
 
   for (suit = 0; suit < DDS_SUITS; suit++)
   {
-    unsigned short ris = tpos.rankInSuit[leadHand][suit];
+    unsigned short ris = tpos.rank_in_suit[leadHand][suit];
     if (ris == 0) continue;
 
     lastNumMoves = numMoves;
@@ -238,7 +238,7 @@ int Moves::MoveGen123(
   int ftest = ((trump != DDS_NOTRUMP) &&
                (tpos.winner[trump].rank != 0) ? 1 : 0);
 
-  unsigned short ris = tpos.rankInSuit[currHand][leadSuit];
+  unsigned short ris = tpos.rank_in_suit[currHand][leadSuit];
 
   if (ris != 0)
   {
@@ -288,7 +288,7 @@ int Moves::MoveGen123(
 
   for (suit = 0; suit < DDS_SUITS; suit++)
   {
-    ris = tpos.rankInSuit[currHand][suit];
+    ris = tpos.rank_in_suit[currHand][suit];
     if (ris == 0) continue;
 
     lastNumMoves = numMoves;
@@ -682,13 +682,13 @@ const TrickDataType& Moves::GetTrickData(const int tricks)
 {
   TrickDataType& data = track[tricks].trickData;
   for (int s = 0; s < DDS_SUITS; s++)
-    data.playCount[s] = 0;
+    data.play_count[s] = 0;
   for (int relh = 0; relh < DDS_HANDS; relh++)
-    data.playCount[ trackp->playSuits[relh] ]++;
+    data.play_count[ trackp->playSuits[relh] ]++;
 
   int sum = 0;
   for (int s = 0; s < DDS_SUITS; s++)
-    sum += data.playCount[s];
+    sum += data.play_count[s];
 
   if (sum != 4)
   {
@@ -696,10 +696,10 @@ const TrickDataType& Moves::GetTrickData(const int tricks)
     exit(1);
   }
 
-  data.bestRank = trackp->move[3].rank;
-  data.bestSuit = trackp->move[3].suit;
-  data.bestSequence = trackp->move[3].sequence;
-  data.relWinner = trackp->high[3];
+  data.best_rank = trackp->move[3].rank;
+  data.best_suit = trackp->move[3].suit;
+  data.best_sequence = trackp->move[3].sequence;
+  data.rel_winner = trackp->high[3];
   return data;
 }
 

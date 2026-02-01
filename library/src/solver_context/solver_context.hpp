@@ -209,9 +209,9 @@ public:
     const MoveType* MakeNext(
       const int trick,
       const int relHand,
-      const unsigned short winRanks[]);
+      const unsigned short win_ranks[]);
 
-    // Simpler variant without winRanks used in several SolverIF paths
+    // Simpler variant without win_ranks used in several SolverIF paths
     const MoveType* MakeNextSimple(
       const int trick,
       const int relHand);
@@ -239,7 +239,7 @@ public:
       const int relStartHand,
       const int initialRanks[],
       const int initialSuits[],
-      const unsigned short rankInSuit[DDS_HANDS][DDS_SUITS],
+      const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
       const int trump,
       const int leadHand);
 

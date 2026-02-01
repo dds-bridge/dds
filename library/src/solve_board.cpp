@@ -63,7 +63,7 @@ void SolveSingleCommon(
   scheduler.SetBoardTime(bno, static_cast<int>(dur));
 
   if (res == 1)
-    param.solvedp->solvedBoard[bno] = fut;
+    param.solvedp->solved_board[bno] = fut;
   else
     param.error = res;
 }
@@ -77,8 +77,8 @@ void CopySolveSingle(const vector<int>& crossrefs)
       continue;
 
     START_THREAD_TIMER(thrId);
-    param.solvedp->solvedBoard[i] = 
-      param.solvedp->solvedBoard[crossrefs[i]];
+    param.solvedp->solved_board[i] = 
+      param.solvedp->solved_board[crossrefs[i]];
     END_THREAD_TIMER(thrId);
   }
 }
@@ -107,8 +107,8 @@ void SolveChunkCommon(
         param.bop->deals[st.repeatOf].first)
     {
       START_THREAD_TIMER(thrId);
-      param.solvedp->solvedBoard[index] = 
-        param.solvedp->solvedBoard[st.repeatOf];
+      param.solvedp->solved_board[index] = 
+        param.solvedp->solved_board[st.repeatOf];
       END_THREAD_TIMER(thrId);
       continue;
     }
@@ -126,18 +126,18 @@ int SolveAllBoardsN(
 {
   param.error = 0;
 
-  if (bds.noOfBoards > MAXNOOFBOARDS)
+  if (bds.no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
   param.bop = &bds;
   param.solvedp = &solved;
-  param.noOfBoards = bds.noOfBoards;
+  param.no_of_boards = bds.no_of_boards;
 
   scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
   sysdep.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
-    solved.solvedBoard[k].cards = 0;
+    solved.solved_board[k].cards = 0;
 
   START_BLOCK_TIMER;
   int retRun = sysdep.RunThreads();
@@ -146,7 +146,7 @@ int SolveAllBoardsN(
   if (retRun != RETURN_NO_FAULT)
     return retRun;
 
-  solved.noOfBoards = param.noOfBoards;
+  solved.no_of_boards = param.no_of_boards;
 
 #ifdef DDS_SCHEDULER 
   scheduler.PrintTiming();
@@ -211,11 +211,11 @@ int STDCALL SolveAllBoards(
   SolvedBoards * solvedp)
 {
   Boards bo;
-  bo.noOfBoards = bop->noOfBoards;
-  if (bo.noOfBoards > MAXNOOFBOARDS)
+  bo.no_of_boards = bop->no_of_boards;
+  if (bo.no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  for (int k = 0; k < bop->noOfBoards; k++)
+  for (int k = 0; k < bop->no_of_boards; k++)
   {
     bo.mode[k] = bop->mode[k];
     bo.solutions[k] = bop->solutions[k];
@@ -291,7 +291,7 @@ void DetectSolveDuplicates(
   vector<int>& uniques,
   vector<int>& crossrefs)
 {
-  const unsigned nu = static_cast<unsigned>(bds.noOfBoards);
+  const unsigned nu = static_cast<unsigned>(bds.no_of_boards);
 
   uniques.clear();
   crossrefs.resize(nu);
