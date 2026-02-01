@@ -47,7 +47,7 @@ struct MoveGroupType
    * @brief For each group g, bitmask of the sequence excluding the top card.
    * 
    * This represents the "tail" of the run below the top card.
-   * Example: For AKQ, top=Ace, sequence=0x1800 (KQ).
+   * Example: For AKQ, top=Ace(0x1000), sequence=0x0C00 (K=0x0800 | Q=0x0400).
    * Only indices 0..last_group_ contain valid data.
    */
   int sequence_[7];
@@ -56,7 +56,7 @@ struct MoveGroupType
    * @brief For each group g, bitmask of the full sequence including top card.
    * 
    * This is the complete run: fullseq[g] = (1 << rank[g]) | sequence[g].
-   * Example: For AKQ, fullseq=0x3800.
+   * Example: For AKQ, fullseq=0x1C00 (A=0x1000 | K=0x0800 | Q=0x0400).
    * Only indices 0..last_group_ contain valid data.
    */
   int fullseq_[7];
