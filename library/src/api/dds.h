@@ -193,10 +193,10 @@ struct RelRanksType // 120 bytes
  */
 struct ParamType
 {
-  int noOfBoards;          ///< Number of boards to solve
-  Boards * bop;            ///< Pointer to input boards
-  SolvedBoards * solvedp;  ///< Pointer to output solutions
-  int error;               ///< Error code from operation
+  int noOfBoards;              ///< Number of boards to solve
+  Boards const * bop;          ///< Pointer to input boards
+  SolvedBoards * solvedp;      ///< Pointer to output solutions
+  int error;                   ///< Error code from operation
 };
 
 /**

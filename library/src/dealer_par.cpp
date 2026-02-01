@@ -178,7 +178,7 @@ string sacrifice_as_text(
  * @return 1 on success, error code otherwise
  */
 int STDCALL DealerPar(
-  DdTableResults * tablep,
+  DdTableResults const * tablep,
   ParResultsDealer * presp,
   int dealer,
   int vulnerable)

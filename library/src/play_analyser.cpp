@@ -29,7 +29,7 @@ using namespace std;
 struct playparamType
 {
   int noOfBoards;
-  PlayTracesBin * plp;
+  PlayTracesBin const * plp;
   SolvedPlays * solvedp;
   int error;
 };
@@ -331,8 +331,8 @@ void PlayChunkCommon(const int thrId)
 
 
 int STDCALL AnalyseAllPlaysBin(
-  Boards * bop,
-  PlayTracesBin * plp,
+  Boards const * bop,
+  PlayTracesBin const * plp,
   SolvedPlays * solvedp,
   [[maybe_unused]] int chunkSize)
 {
@@ -374,8 +374,8 @@ int STDCALL AnalyseAllPlaysBin(
 
 
 int STDCALL AnalyseAllPlaysPBN(
-  BoardsPBN * bopPBN,
-  PlayTracesPBN * plpPBN,
+  BoardsPBN const * bopPBN,
+  PlayTracesPBN const * plpPBN,
   SolvedPlays * solvedp,
   int chunkSize)
 {
@@ -389,7 +389,7 @@ int STDCALL AnalyseAllPlaysPBN(
   for (int k = 0; k < bopPBN->noOfBoards; k++)
   {
     Deal& dl = bd.deals[k];
-    DealPBN& dlp = bopPBN->deals[k];
+    DealPBN const & dlp = bopPBN->deals[k];
 
     if (ConvertFromPBN(dlp.remainCards,
                        dl.remainCards) != RETURN_NO_FAULT)

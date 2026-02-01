@@ -25,7 +25,7 @@ extern Memory memory;
 extern Scheduler scheduler;
 
 int SolveAllBoardsN(
-  Boards& bds,
+  Boards const & bds,
   SolvedBoards& solved);
 
 bool SameBoard(
@@ -121,7 +121,7 @@ void SolveChunkCommon(
 
 
 int SolveAllBoardsN(
-  Boards& bds,
+  Boards const & bds,
   SolvedBoards& solved)
 {
   param.error = 0;
@@ -207,7 +207,7 @@ int STDCALL SolveBoardPBN(
  * @return 1 on success, error code otherwise
  */
 int STDCALL SolveAllBoards(
-  BoardsPBN * bop, 
+  BoardsPBN const * bop,
   SolvedBoards * solvedp)
 {
   Boards bo;
@@ -240,7 +240,7 @@ int STDCALL SolveAllBoards(
 
 
 int STDCALL SolveAllBoardsBin(
-  Boards * bop,
+  Boards const * bop,
   SolvedBoards * solvedp)
 {
   return SolveAllBoardsN(* bop, * solvedp);
@@ -248,8 +248,8 @@ int STDCALL SolveAllBoardsBin(
 
 
 int STDCALL SolveAllChunksPBN(
-  BoardsPBN * bop, 
-  SolvedBoards * solvedp, 
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp,
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.
@@ -261,8 +261,8 @@ int STDCALL SolveAllChunksPBN(
 
 
 int STDCALL SolveAllChunks(
-  BoardsPBN * bop, 
-  SolvedBoards * solvedp, 
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp,
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.
@@ -274,8 +274,8 @@ int STDCALL SolveAllChunks(
 
 
 int STDCALL SolveAllChunksBin(
-  Boards * bop, 
-  SolvedBoards * solvedp, 
+  Boards const * bop,
+  SolvedBoards * solvedp,
   int chunkSize)
 {
   // Historical aliases.  Don't use -- they may go away.

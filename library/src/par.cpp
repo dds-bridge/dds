@@ -106,7 +106,7 @@ int VulnerDefSide(
  * @return 1 on success, error code otherwise
  */
 int STDCALL Par(
-  DdTableResults * tablep, 
+  DdTableResults const * tablep, 
   ParResults * presp,
   int vulnerable)
 {
@@ -216,7 +216,7 @@ int STDCALL Par(
 #ifndef DEALER_PAR_ENGINE_ONLY
 
 int STDCALL SidesParBin(
-  DdTableResults * tablep,
+  DdTableResults const * tablep,
   ParResultsMaster sidesRes[2],
   int vulnerable)
 {
@@ -695,7 +695,7 @@ int STDCALL SidesParBin(
 #else
 
 int STDCALL SidesParBin(
-  DdTableResults * tablep,
+  DdTableResults const * tablep,
   parResultsMaster sidesRes[2],
   int vulnerable)
 {
@@ -1143,7 +1143,7 @@ int STDCALL CalcPar(
 
 
 int STDCALL DealerParBin(
-  DdTableResults * tablep,
+  DdTableResults const * tablep,
   ParResultsMaster * presp,
   int dealer,
   int vulnerable)
@@ -1278,8 +1278,8 @@ int STDCALL DealerParBin(
 
 
 int STDCALL SidesPar(
-  DdTableResults * tablep, 
-  ParResultsDealer sidesRes[2], 
+  DdTableResults const * tablep,
+  ParResultsDealer sidesRes[2],
   int vulnerable)
 {
   ParResultsMaster parm[2];
@@ -1370,7 +1370,7 @@ int STDCALL SidesPar(
 
 
 int STDCALL ConvertToDealerTextFormat(
-  ParResultsMaster * pres, 
+  ParResultsMaster const * pres,
   char * resp)
 {
   int k, i;
@@ -1458,7 +1458,7 @@ int STDCALL ConvertToDealerTextFormat(
 
 
 int STDCALL ConvertToSidesTextFormat(
-  ParResultsMaster * pres, 
+  ParResultsMaster const * pres,
   ParTextResults * resp)
 {
   int k, i, j;

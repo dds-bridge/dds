@@ -531,9 +531,9 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBN(
  * @return 1 on success, error code otherwise
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcAllTables(
-  struct DdTableDeals * dealsp,
+  struct DdTableDeals const * dealsp,
   int mode,
-  int trumpFilter[DDS_STRAINS],
+  int const trumpFilter[DDS_STRAINS],
   struct DdTablesRes * resp,
   struct AllParResults * presp) -> int;
 
@@ -548,9 +548,9 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTables(
  * @return 1 on success, error code otherwise
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBN(
-  struct DdTableDealsPBN * dealsp,
+  struct DdTableDealsPBN const * dealsp,
   int mode,
-  int trumpFilter[DDS_STRAINS],
+  int const trumpFilter[DDS_STRAINS],
   struct DdTablesRes * resp,
   struct AllParResults * presp) -> int;
 
@@ -562,30 +562,30 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBN(
  * @return 1 on success, error code otherwise
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoards(
-  struct BoardsPBN * bop,
+  struct BoardsPBN const * bop,
   struct SolvedBoards * solvedp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBin(
-  struct Boards * bop,
+  struct Boards const * bop,
   struct SolvedBoards * solvedp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllChunks(
-  struct BoardsPBN * bop,
+  struct BoardsPBN const * bop,
   struct SolvedBoards * solvedp,
   int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllChunksBin(
-  struct Boards * bop,
+  struct Boards const * bop,
   struct SolvedBoards * solvedp,
   int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllChunksPBN(
-  struct BoardsPBN * bop,
+  struct BoardsPBN const * bop,
   struct SolvedBoards * solvedp,
   int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL Par(
-  struct DdTableResults * tablep,
+  struct DdTableResults const * tablep,
   struct ParResults * presp,
   int vulnerable) -> int;
 
@@ -602,33 +602,33 @@ EXTERN_C DLLEXPORT auto STDCALL CalcParPBN(
   struct ParResults * presp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SidesPar(
-  struct DdTableResults * tablep,
+  struct DdTableResults const * tablep,
   struct ParResultsDealer sidesRes[2],
   int vulnerable) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL DealerPar(
-  struct DdTableResults * tablep,
+  struct DdTableResults const * tablep,
   struct ParResultsDealer * presp,
   int dealer,
   int vulnerable) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL DealerParBin(
-  struct DdTableResults * tablep,
+  struct DdTableResults const * tablep,
   struct ParResultsMaster * presp,
   int dealer, 
   int vulnerable) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SidesParBin(
-  struct DdTableResults * tablep,
+  struct DdTableResults const * tablep,
   struct ParResultsMaster sidesRes[2],
   int vulnerable) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL ConvertToDealerTextFormat(
-  struct ParResultsMaster * pres,
+  struct ParResultsMaster const * pres,
   char * resp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL ConvertToSidesTextFormat(
-  struct ParResultsMaster * pres,
+  struct ParResultsMaster const * pres,
   struct ParTextResults * resp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL AnalysePlayBin(
@@ -644,14 +644,14 @@ EXTERN_C DLLEXPORT auto STDCALL AnalysePlayPBN(
   int thrId) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL AnalyseAllPlaysBin(
-  struct Boards * bop,
-  struct PlayTracesBin * plp,
+  struct Boards const * bop,
+  struct PlayTracesBin const * plp,
   struct SolvedPlays * solvedp,
   int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL AnalyseAllPlaysPBN(
-  struct BoardsPBN * bopPBN,
-  struct PlayTracesPBN * plpPBN,
+  struct BoardsPBN const * bopPBN,
+  struct PlayTracesPBN const * plpPBN,
   struct SolvedPlays * solvedp,
   int chunkSize) -> int;
 

@@ -34,11 +34,12 @@ void CalcSingleCommon(
   // Solves a single Deal and strain for all four declarers.
 
   FutureTricks fut;
-  cparam.bop->deals[bno].first = 0;
+  Deal deal = cparam.bop->deals[bno];  // Make a local copy
+  deal.first = 0;
 
   START_THREAD_TIMER(thrId);
   int res = SolveBoard(
-                cparam.bop->deals[bno],
+                deal,
                 cparam.bop->target[bno],
                 cparam.bop->solutions[bno],
                 cparam.bop->mode[bno],
@@ -60,9 +61,9 @@ void CalcSingleCommon(
   {
     int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);
 
-    cparam.bop->deals[bno].first = k; // Next declarer
+    deal.first = k; // Next declarer
 
-    res = SolveSameBoard(thrp, cparam.bop->deals[bno], &fut, hint);
+    res = SolveSameBoard(thrp, deal, &fut, hint);
 
     if (res == 1)
       cparam.solvedp->solvedBoard[bno].score[k] = fut.score[0];
@@ -111,8 +112,6 @@ void CalcChunkCommon(
       START_THREAD_TIMER(thrId);
       for (int k = 0; k < DDS_HANDS; k++)
       {
-        cparam.bop->deals[index].first = k;
-
         cparam.solvedp->solvedBoard[index].score[k] =
           cparam.solvedp->solvedBoard[ st.repeatOf ].score[k];
       }
@@ -217,9 +216,9 @@ int STDCALL CalcDDtable(
 
 
 int STDCALL CalcAllTables(
-  DdTableDeals * dealsp,
+  DdTableDeals const * dealsp,
   int mode,
-  int trumpFilter[5],
+  int const trumpFilter[5],
   DdTablesRes * resp,
   AllParResults * presp)
 {
@@ -322,9 +321,9 @@ int STDCALL CalcAllTables(
 
 
 int STDCALL CalcAllTablesPBN(
-  DdTableDealsPBN * dealsp,
+  DdTableDealsPBN const * dealsp,
   int mode,
-  int trumpFilter[5],
+  int const trumpFilter[5],
   DdTablesRes * resp,
   AllParResults * presp)
 {
