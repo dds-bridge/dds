@@ -85,14 +85,14 @@ struct MoveGroupType
  * - win_ranks for top-N card selection
  * - group_data for run decomposition
  *
- * Safe to call multiple times. Internally guarded by std::call_once so
- * initialization happens at most once per process. The tables are automatically
- * initialized on first access, but explicit initialization can be performed
- * for predictable timing.
+ * The tables are eagerly initialized at program startup via static initialization
+ * (DdsLutInitGuard). Explicit calls to this function are safe but redundant;
+ * they become no-ops after initial startup initialization.
  *
  * @note Thread-safe via std::call_once synchronization
- * @note Automatic eager initialization occurs at program startup
- * @note Subsequent calls are no-ops with minimal overhead
+ * @note Initialization occurs automatically at program startup
+ * @note Explicit calls after startup are no-ops with minimal overhead
+ * @note Safe to call multiple times from any thread
  *
  * @see highest_rank, lowest_rank, count_table, rel_rank, win_ranks, group_data
  */
