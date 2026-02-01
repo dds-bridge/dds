@@ -7,10 +7,11 @@
    See LICENSE and README.
 */
 
-#include <lookup_tables/lookup_tables.hpp>
-#include <utility/constants.h>
 #include <cstring>
 #include <mutex>
+
+#include <lookup_tables/lookup_tables.hpp>
+#include <utility/constants.h>
 
 namespace
 {
