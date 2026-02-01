@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_MOVES_H
-#define DDS_MOVES_H
+#pragma once
 
 #include <fstream>
 #include <string>
@@ -226,6 +225,5 @@ class Moves
     void PrintTrickDetails(ofstream& fout) const;
 
     void PrintFunctionStats(ofstream& fout) const;
-};
 
-#endif
+};
