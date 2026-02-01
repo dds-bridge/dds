@@ -23,19 +23,19 @@
 
 #ifdef DDS_MOVES
   #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
-  const MGtype RegisterList[16] =
+  const MgType RegisterList[16] =
     {
-      MG_NT0, MG_TRUMP0,
-      MG_SIZE, MG_SIZE, // Unused
+      MgType::NT0, MgType::TRUMP0,
+      MgType::SIZE, MgType::SIZE, // Unused
 
-      MG_NT_NOTVOID1, MG_TRUMP_NOTVOID1,
-      MG_NT_VOID1, MG_TRUMP_VOID1,
+      MgType::NT_NOTVOID1, MgType::TRUMP_NOTVOID1,
+      MgType::NT_VOID1, MgType::TRUMP_VOID1,
 
-      MG_NT_NOTVOID2, MG_TRUMP_NOTVOID2,
-      MG_NT_VOID2, MG_TRUMP_VOID2,
+      MgType::NT_NOTVOID2, MgType::TRUMP_NOTVOID2,
+      MgType::NT_VOID2, MgType::TRUMP_VOID2,
 
-      MG_COMB_NOTVOID3, MG_COMB_NOTVOID3,
-      MG_NT_VOID3, MG_TRUMP_VOID3
+      MgType::COMB_NOTVOID3, MgType::COMB_NOTVOID3,
+      MgType::NT_VOID3, MgType::TRUMP_VOID3
     };
 #else
   #define MG_REGISTER(a, b) 1;
@@ -44,32 +44,32 @@
 
 Moves::Moves()
 {
-  funcName[MG_NT0] = "NT0";
-  funcName[MG_TRUMP0] = "Trump0";
-  funcName[MG_NT_VOID1] = "NT_Void1";
-  funcName[MG_TRUMP_VOID1] = "Trump_Void1";
-  funcName[MG_NT_NOTVOID1] = "NT_Notvoid1";
-  funcName[MG_TRUMP_NOTVOID1] = "Trump_Notvoid1";
-  funcName[MG_NT_VOID2] = "NT_Void2";
-  funcName[MG_TRUMP_VOID2] = "Trump_Void2";
-  funcName[MG_NT_NOTVOID2] = "NT_Notvoid2";
-  funcName[MG_TRUMP_NOTVOID2] = "Trump_Notvoid2";
-  funcName[MG_NT_VOID3] = "NT_Void3";
-  funcName[MG_TRUMP_VOID3] = "Trump_Void3";
-  funcName[MG_COMB_NOTVOID3] = "Comb_Notvoid3";
+  funcName[static_cast<int>(MgType::NT0)] = "NT0";
+  funcName[static_cast<int>(MgType::TRUMP0)] = "Trump0";
+  funcName[static_cast<int>(MgType::NT_VOID1)] = "NT_Void1";
+  funcName[static_cast<int>(MgType::TRUMP_VOID1)] = "Trump_Void1";
+  funcName[static_cast<int>(MgType::NT_NOTVOID1)] = "NT_Notvoid1";
+  funcName[static_cast<int>(MgType::TRUMP_NOTVOID1)] = "Trump_Notvoid1";
+  funcName[static_cast<int>(MgType::NT_VOID2)] = "NT_Void2";
+  funcName[static_cast<int>(MgType::TRUMP_VOID2)] = "Trump_Void2";
+  funcName[static_cast<int>(MgType::NT_NOTVOID2)] = "NT_Notvoid2";
+  funcName[static_cast<int>(MgType::TRUMP_NOTVOID2)] = "Trump_Notvoid2";
+  funcName[static_cast<int>(MgType::NT_VOID3)] = "NT_Void3";
+  funcName[static_cast<int>(MgType::TRUMP_VOID3)] = "Trump_Void3";
+  funcName[static_cast<int>(MgType::COMB_NOTVOID3)] = "Comb_Notvoid3";
 
   for (int t = 0; t < 13; t++)
   {
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      lastCall[t][h] = MG_SIZE;
+      lastCall[t][h] = MgType::SIZE;
 
       trickTable[t][h].count = 0;
       trickSuitTable[t][h].count = 0;
 
       trickDetailTable [t][h].nfuncs = 0;
       trickDetailSuitTable[t][h].nfuncs = 0;
-      for (int i = 0; i < MG_SIZE; i++)
+      for (int i = 0; i < static_cast<int>(MgType::SIZE); i++)
       {
         trickDetailTable [t][h].list[i].count = 0;
         trickDetailSuitTable[t][h].list[i].count = 0;
@@ -79,7 +79,7 @@ Moves::Moves()
 
   trickFuncTable.nfuncs = 0;
   trickFuncSuitTable.nfuncs = 0;
-  for (int i = 0; i < MG_SIZE; i++)
+  for (int i = 0; i < static_cast<int>(MgType::SIZE); i++)
   {
     trickFuncTable .list[i].count = 0;
     trickFuncSuitTable.list[i].count = 0;
@@ -196,9 +196,9 @@ int Moves::MoveGen0(
   bool ftest = ((trump != DDS_NOTRUMP) &&
                 (tpos.winner[trump].rank != 0));
   if (ftest)
-    MG_REGISTER(MG_TRUMP0, 0);
+    MG_REGISTER(MgType::TRUMP0, 0);
   else
-    MG_REGISTER(MG_NT0, 0);
+    MG_REGISTER(MgType::NT0, 0);
 #endif
 
   list.current = 0;
@@ -1092,7 +1092,7 @@ void Moves::UpdateStatsEntry(
   }
   else
   {
-    if (stat.nfuncs >= MG_SIZE)
+    if (stat.nfuncs >= static_cast<int>(MgType::SIZE))
     {
       cout << "Shouldn't happen, " << stat.nfuncs << endl;
       for (int i = 0; i < stat.nfuncs; i++)
@@ -1116,7 +1116,7 @@ void Moves::RegisterHit(
 {
   const MovePlyType& list = moveList[trick][relHand];
 
-  const int findex = lastCall[trick][relHand];
+  const int findex = static_cast<int>(lastCall[trick][relHand]);
   const int len = list.last + 1;
 
   if (findex == -1)
@@ -1258,7 +1258,7 @@ string Moves::PrintFunctionTable(const moveStatsType& stat) const
     setw(9) << "Count" <<
     setw(9) << "Imp" << "\n";
 
-  for (int fr = 0; fr < MG_SIZE; fr++)
+  for (int fr = 0; fr < static_cast<int>(MgType::SIZE); fr++)
   {
     for (int f = 0; f < stat.nfuncs; f++)
     {

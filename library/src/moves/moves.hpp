@@ -17,22 +17,22 @@
 
 using namespace std;
 
-enum MGtype
+enum class MgType
 {
-  MG_NT0 = 0,
-  MG_TRUMP0 = 1,
-  MG_NT_VOID1 = 2,
-  MG_TRUMP_VOID1 = 3,
-  MG_NT_NOTVOID1 = 4,
-  MG_TRUMP_NOTVOID1 = 5,
-  MG_NT_VOID2 = 6,
-  MG_TRUMP_VOID2 = 7,
-  MG_NT_NOTVOID2 = 8,
-  MG_TRUMP_NOTVOID2 = 9,
-  MG_NT_VOID3 = 10,
-  MG_TRUMP_VOID3 = 11,
-  MG_COMB_NOTVOID3 = 12,
-  MG_SIZE = 13
+  NT0 = 0,
+  TRUMP0 = 1,
+  NT_VOID1 = 2,
+  TRUMP_VOID1 = 3,
+  NT_NOTVOID1 = 4,
+  TRUMP_NOTVOID1 = 5,
+  NT_VOID2 = 6,
+  TRUMP_VOID2 = 7,
+  NT_NOTVOID2 = 8,
+  TRUMP_NOTVOID2 = 9,
+  NT_VOID3 = 10,
+  TRUMP_VOID3 = 11,
+  COMB_NOTVOID3 = 12,
+  SIZE = 13
 };
 
 /**
@@ -63,9 +63,9 @@ class Moves
 
     MoveType * mply;
 
-    MGtype lastCall[13][DDS_HANDS];
+    MgType lastCall[13][DDS_HANDS];
 
-    string funcName[MG_SIZE];
+    string funcName[static_cast<int>(MgType::SIZE)];
 
     struct moveStatType
     {
@@ -78,7 +78,7 @@ class Moves
     struct moveStatsType
     {
       int nfuncs;
-      moveStatType list[MG_SIZE];
+      moveStatType list[static_cast<int>(MgType::SIZE)];
     };
 
     moveStatType trickTable[13][DDS_HANDS];
