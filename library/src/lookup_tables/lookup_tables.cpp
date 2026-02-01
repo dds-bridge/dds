@@ -12,7 +12,8 @@
 #include <cstring>
 #include <mutex>
 
-namespace {
+namespace
+{
   // Underlying storage (internal linkage)
   static int highest_rank_storage[8192];
   static int lowest_rank_storage[8192];
@@ -192,7 +193,8 @@ auto init_lookup_tables() -> void
 }
 
 // Eager initialization at program start (TU load) to avoid any cost on first use.
-namespace {
+namespace
+{
   struct DdsLutInitGuard
   {
     DdsLutInitGuard() noexcept
