@@ -55,7 +55,10 @@ struct MoveGroupType
   /**
    * @brief For each group g, bitmask of the full sequence including top card.
    * 
-   * This is the complete run: fullseq[g] = (1 << rank[g]) | sequence[g].
+   * This is the complete run including the top card: 
+   * fullseq[g] = (1 << (rank[g] - 2)) | sequence[g]
+   * where rank[g] is the absolute rank (2..14).
+   * Equivalently: fullseq[g] = bitMapRank[rank[g]] | sequence[g].
    * Example: For AKQ, fullseq=0x1C00 (A=0x1000 | K=0x0800 | Q=0x0400).
    * Only indices 0..last_group_ contain valid data.
    */
