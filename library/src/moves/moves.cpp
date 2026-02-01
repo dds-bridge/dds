@@ -91,14 +91,14 @@ Moves::~Moves()
 }
 
 
-void Moves::Init(
+auto Moves::Init(
   const int tricks,
   const int relStartHand,
   const int initialRanks[],
   const int initialSuits[],
   const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
   const int ourTrump,
-  const int ourLeadHand)
+  const int ourLeadHand) -> void
 {
   currTrick = tricks;
   trump = ourTrump;
@@ -134,20 +134,20 @@ void Moves::Init(
 }
 
 
-void Moves::Reinit(
+auto Moves::Reinit(
   const int tricks,
-  const int ourLeadHand)
+  const int ourLeadHand) -> void
 {
   track[tricks].leadHand = ourLeadHand;
 }
 
 
-int Moves::MoveGen0(
+auto Moves::MoveGen0(
   const int tricks,
   const Pos& tpos,
   const MoveType& bestMove,
   const MoveType& bestMoveTT,
-  const RelRanksType thrp_rel[])
+  const RelRanksType thrp_rel[]) -> int
 {
   trackp = &track[tricks];
   leadHand = trackp->leadHand;
@@ -213,10 +213,10 @@ int Moves::MoveGen0(
 }
 
 
-int Moves::MoveGen123(
+auto Moves::MoveGen123(
   const int tricks,
   const int handRel,
-  const Pos& tpos)
+  const Pos& tpos) -> int
 {
   trackp = &track[tricks];
   leadHand = trackp->leadHand;
@@ -325,11 +325,11 @@ int Moves::MoveGen123(
   return numMoves;
 }
 
-void Moves::GetTopNumber(
+auto Moves::GetTopNumber(
   const int ris,
   const int prank,
   int& topNumber,
-  int& mno) const
+  int& mno) const -> void
 {
   topNumber = -10;
 
@@ -354,10 +354,10 @@ void Moves::GetTopNumber(
 }
 
 
-inline bool Moves::WinningMove(
+inline auto Moves::WinningMove(
   const MoveType& mvp1,
   const ExtCard& mvp2,
-  const int ourTrump) const
+  const int ourTrump) const -> bool
 {
   /* Return true if move 1 wins over move 2, with the assumption that
   move 2 is the presently winning card of the trick */
@@ -376,18 +376,18 @@ inline bool Moves::WinningMove(
 }
 
 
-int Moves::GetLength(
+auto Moves::GetLength(
   const int trick,
-  const int relHand) const
+  const int relHand) const -> int
 {
   return moveList[trick][relHand].last + 1;
 }
 
 
-void Moves::MakeSpecific(
+auto Moves::MakeSpecific(
   const MoveType& ourMply,
   const int trick,
-  const int relHand)
+  const int relHand) -> void
 {
   trackp = &track[trick];
 
@@ -451,10 +451,10 @@ void Moves::MakeSpecific(
 }
 
 
-MoveType const * Moves::MakeNext(
+auto Moves::MakeNext(
   const int trick,
   const int relHand,
-  const unsigned short ourWinRanks[DDS_SUITS])
+  const unsigned short ourWinRanks[DDS_SUITS]) -> MoveType const *
 {
   // Find moves that are >= ourWinRanks[suit], but allow one
   // "small" move per suit.
@@ -561,9 +561,9 @@ MoveType const * Moves::MakeNext(
 }
 
 
-MoveType const * Moves::MakeNextSimple(
+auto Moves::MakeNextSimple(
   const int trick,
-  const int relHand)
+  const int relHand) -> MoveType const *
 {
   // Don't worry about small moves. Why not, actually?
 
@@ -625,26 +625,26 @@ MoveType const * Moves::MakeNextSimple(
 }
 
 
-void Moves::Step(
+auto Moves::Step(
   const int tricks,
-  const int relHand)
+  const int relHand) -> void
 {
   moveList[tricks][relHand].current++;
 }
 
 
-void Moves::Rewind(
+auto Moves::Rewind(
   const int tricks,
-  const int relHand)
+  const int relHand) -> void
 {
   moveList[tricks][relHand].current = 0;
 }
 
 
-void Moves::Purge(
+auto Moves::Purge(
   const int trick,
   const int ourLeadHand,
-  const MoveType forbiddenMoves[])
+  const MoveType forbiddenMoves[]) -> void
 {
   MovePlyType& ourMply = moveList[trick][ourLeadHand];
 
@@ -669,16 +669,16 @@ void Moves::Purge(
 }
 
 
-void Moves::Reward(
+auto Moves::Reward(
   const int tricks,
-  const int relHand)
+  const int relHand) -> void
 {
   moveList[tricks][relHand].
   move[ moveList[tricks][relHand].current - 1 ].weight += 100;
 }
 
 
-const TrickDataType& Moves::GetTrickData(const int tricks)
+auto Moves::GetTrickData(const int tricks) -> const TrickDataType&
 {
   TrickDataType& data = track[tricks].trickData;
   for (int s = 0; s < DDS_SUITS; s++)
@@ -704,9 +704,9 @@ const TrickDataType& Moves::GetTrickData(const int tricks)
 }
 
 
-void Moves::Sort(
+auto Moves::Sort(
   const int tricks,
-  const int relHand)
+  const int relHand) -> void
 {
   numMoves = moveList[tricks][relHand].last + 1;
   mply = moveList[tricks][relHand].move;
@@ -717,11 +717,11 @@ void Moves::Sort(
 #define CMP_SWAP(i, j) if (mply[i].weight < mply[j].weight) \
   { tmp = mply[i]; mply[i] = mply[j]; mply[j] = tmp; }
 
-void Moves::CallHeuristic(
-    const Pos& tpos,
-    const MoveType& bestMove,
-    const MoveType& bestMoveTT,
-    const RelRanksType thrp_rel[]) {
+auto Moves::CallHeuristic(
+  const Pos& tpos,
+  const MoveType& bestMove,
+  const MoveType& bestMoveTT,
+  const RelRanksType thrp_rel[]) -> void {
   // Construct context once here and call the context-taking overload.
   HeuristicContext context{
     tpos,
@@ -759,7 +759,7 @@ void Moves::CallHeuristic(
   ::CallHeuristic(context);
 }
 
-void Moves::MergeSort()
+auto Moves::MergeSort() -> void
 {
   MoveType tmp;
 
@@ -1007,7 +1007,7 @@ void Moves::MergeSort()
 }
 
 
-string Moves::PrintMove(const MovePlyType& ourMply) const
+auto Moves::PrintMove(const MovePlyType& ourMply) const -> string
 {
   stringstream ss;
 
@@ -1025,9 +1025,9 @@ string Moves::PrintMove(const MovePlyType& ourMply) const
 }
 
 
-string Moves::PrintMoves(
+auto Moves::PrintMoves(
   const int trick,
-  const int relHand) const
+  const int relHand) const -> string
 {
   const MovePlyType& list = moveList[trick][relHand];
   
@@ -1040,7 +1040,7 @@ string Moves::PrintMoves(
 }
 
 
-string Moves::TrickToText(const int trick) const
+auto Moves::TrickToText(const int trick) const -> string
 {
   const MovePlyType& listp0 = moveList[trick][0];
   const MovePlyType& listp1 = moveList[trick][1];
@@ -1064,11 +1064,11 @@ string Moves::TrickToText(const int trick) const
 
 
 
-void Moves::UpdateStatsEntry(
+auto Moves::UpdateStatsEntry(
   moveStatsType& stat,
   const int findex,
   const int hit,
-  const int len) const
+  const int len) const -> void
 {
   bool found = false;
   int fno = 0;
@@ -1110,9 +1110,9 @@ void Moves::UpdateStatsEntry(
 }
 
 
-void Moves::RegisterHit(
+auto Moves::RegisterHit(
   const int trick,
-  const int relHand)
+  const int relHand) -> void
 {
   const MovePlyType& list = moveList[trick][relHand];
 
@@ -1171,7 +1171,7 @@ void Moves::RegisterHit(
 }
 
 
-string Moves::AverageString(const moveStatType& stat) const
+auto Moves::AverageString(const moveStatType& stat) const -> string
 {
   stringstream ss;
   if (stat.count == 0)
@@ -1188,7 +1188,7 @@ string Moves::AverageString(const moveStatType& stat) const
 }
 
 
-string Moves::FullAverageString(const moveStatType& stat) const
+auto Moves::FullAverageString(const moveStatType& stat) const -> string
 {
   stringstream ss;
   if (stat.count == 0)
@@ -1216,8 +1216,9 @@ string Moves::FullAverageString(const moveStatType& stat) const
 }
 
 
-string Moves::PrintTrickTable(
+auto Moves::PrintTrickTable(
   const moveStatType tablep[][DDS_HANDS]) const
+  -> string
 {
   stringstream ss;
 
@@ -1245,7 +1246,7 @@ string Moves::PrintTrickTable(
 }
 
 
-string Moves::PrintFunctionTable(const moveStatsType& stat) const
+auto Moves::PrintFunctionTable(const moveStatsType& stat) const -> string
 {
   if (stat.nfuncs == 0)
     return "";
@@ -1273,7 +1274,7 @@ string Moves::PrintFunctionTable(const moveStatsType& stat) const
 }
 
 
-void Moves::PrintTrickStats(ofstream& fout) const
+auto Moves::PrintTrickStats(ofstream& fout) const -> void
 {
   fout << "Overall statistics\n\n";
   fout << Moves::PrintTrickTable(trickTable);
@@ -1283,7 +1284,7 @@ void Moves::PrintTrickStats(ofstream& fout) const
 }
 
 
-void Moves::PrintTrickDetails(ofstream& fout) const
+auto Moves::PrintTrickDetails(ofstream& fout) const -> void
 {
   fout << "Trick detail statistics\n\n";
 
@@ -1312,7 +1313,7 @@ void Moves::PrintTrickDetails(ofstream& fout) const
 }
 
 
-void Moves::PrintFunctionStats(ofstream& fout) const
+auto Moves::PrintFunctionStats(ofstream& fout) const -> void
 {
   fout << "Function statistics\n\n";
   fout << Moves::PrintFunctionTable(trickFuncTable);

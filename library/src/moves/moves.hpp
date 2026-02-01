@@ -93,42 +93,42 @@ class Moves
 
     moveStatsType trickFuncSuitTable;
 
-    void GetTopNumber(
+    auto GetTopNumber(
       const int ris,
       const int prank,
       int& topNumber,
-      int& mno) const;
+      int& mno) const -> void;
 
-    inline bool WinningMove(
+    inline auto WinningMove(
       const MoveType& mvp1,
       const ExtCard& mvp2,
-      const int trump) const;
+      const int trump) const -> bool;
 
-    string PrintMove(const MovePlyType& mply) const;
+    auto PrintMove(const MovePlyType& mply) const -> string;
 
-    void MergeSort();
+    auto MergeSort() -> void;
 
-    void CallHeuristic(
+    auto CallHeuristic(
       const Pos& tpos,
       const MoveType& bestMove,
       const MoveType& bestMoveTT,
-      const RelRanksType thrp_rel[]);
+      const RelRanksType thrp_rel[]) -> void;
 
   // (logging accessors removed)
 
-    void UpdateStatsEntry(
+    auto UpdateStatsEntry(
       moveStatsType& stat,
       const int findex,
       const int hit,
-      const int len) const;
+      const int len) const -> void;
 
-    string AverageString(const moveStatType& statp) const;
+    auto AverageString(const moveStatType& statp) const -> string;
 
-    string FullAverageString(const moveStatType& statp) const;
+    auto FullAverageString(const moveStatType& statp) const -> string;
 
-    string PrintTrickTable(const moveStatType tablep[][DDS_HANDS]) const;
+    auto PrintTrickTable(const moveStatType tablep[][DDS_HANDS]) const -> string;
 
-    string PrintFunctionTable(const moveStatsType& tablep) const;
+    auto PrintFunctionTable(const moveStatsType& tablep) const -> string;
 
     /**
      * @brief Construct a new Moves object.
@@ -144,86 +144,86 @@ class Moves
      */
     ~Moves();
 
-    void Init(
+    auto Init(
       const int tricks,
       const int relStartHand,
       const int initialRanks[],
       const int initialSuits[],
       const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
       const int trump,
-      const int leadHand);
+      const int leadHand) -> void;
 
-    void Reinit(
+    auto Reinit(
       const int tricks,
-      const int leadHand);
+      const int leadHand) -> void;
 
-    int MoveGen0(
+    auto MoveGen0(
       const int tricks,
       const Pos& tpos,
       const MoveType& bestMove,
       const MoveType& bestMoveTT,
-      const RelRanksType thrp_rel[]);
+      const RelRanksType thrp_rel[]) -> int;
 
-    int MoveGen123(
+    auto MoveGen123(
       const int tricks,
       const int relHand,
-      const Pos& tpos);
+      const Pos& tpos) -> int;
 
-    int GetLength(
+    auto GetLength(
       const int trick,
-      const int relHand) const;
+      const int relHand) const -> int;
 
-    void MakeSpecific(
+    auto MakeSpecific(
       const MoveType& mply,
       const int trick,
-      const int relHand);
+      const int relHand) -> void;
 
-    MoveType const * MakeNext(
+    auto MakeNext(
       const int trick,
       const int relHand,
-      const unsigned short win_ranks[DDS_SUITS]);
+      const unsigned short win_ranks[DDS_SUITS]) -> MoveType const *;
 
-    MoveType const * MakeNextSimple(
+    auto MakeNextSimple(
       const int trick,
-      const int relHand);
+      const int relHand) -> MoveType const *;
 
-    void Step(
+    auto Step(
       const int tricks,
-      const int relHand);
+      const int relHand) -> void;
 
-    void Rewind(
+    auto Rewind(
       const int tricks,
-      const int relHand);
+      const int relHand) -> void;
 
-    void Purge(
+    auto Purge(
       const int tricks,
       const int relHand,
-      const MoveType forbiddenMoves[]);
+      const MoveType forbiddenMoves[]) -> void;
 
-    void Reward(
+    auto Reward(
       const int trick,
-      const int relHand);
+      const int relHand) -> void;
 
-    const TrickDataType& GetTrickData(const int tricks);
+    auto GetTrickData(const int tricks) -> const TrickDataType&;
 
-    void Sort(
+    auto Sort(
       const int tricks,
-      const int relHand);
+      const int relHand) -> void;
 
-    string PrintMoves(
+    auto PrintMoves(
       const int trick,
-      const int relHand) const;
+      const int relHand) const -> string;
 
-    void RegisterHit(
+    auto RegisterHit(
       const int tricks,
-      const int relHand);
+      const int relHand) -> void;
 
-    string TrickToText(const int trick) const;
+    auto TrickToText(const int trick) const -> string;
 
-    void PrintTrickStats(ofstream& fout) const;
+    auto PrintTrickStats(ofstream& fout) const -> void;
 
-    void PrintTrickDetails(ofstream& fout) const;
+    auto PrintTrickDetails(ofstream& fout) const -> void;
 
-    void PrintFunctionStats(ofstream& fout) const;
+    auto PrintFunctionStats(ofstream& fout) const -> void;
 
 };
