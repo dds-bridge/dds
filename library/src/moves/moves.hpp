@@ -15,8 +15,6 @@
 #include <api/dds.h>
 #include <heuristic_sorting/heuristic_sorting.hpp>
 
-using namespace std;
-
 enum class MgType {
   NT0 = 0,
   TRUMP0 = 1,
@@ -62,7 +60,7 @@ public:
 
   MgType lastCall[13][DDS_HANDS];
 
-  string funcName[static_cast<int>(MgType::SIZE)];
+  std::string funcName[static_cast<int>(MgType::SIZE)];
 
   struct moveStatType {
     int count;
@@ -94,7 +92,7 @@ public:
   inline auto WinningMove(const MoveType &mvp1, const ExtCard &mvp2,
                           const int trump) const -> bool;
 
-  auto PrintMove(const MovePlyType &mply) const -> string;
+  auto PrintMove(const MovePlyType &mply) const -> std::string;
 
   auto MergeSort() -> void;
 
@@ -107,13 +105,14 @@ public:
   auto UpdateStatsEntry(moveStatsType &stat, const int findex, const int hit,
                         const int len) const -> void;
 
-  auto AverageString(const moveStatType &statp) const -> string;
+  auto AverageString(const moveStatType &statp) const -> std::string;
 
-  auto FullAverageString(const moveStatType &statp) const -> string;
+  auto FullAverageString(const moveStatType &statp) const -> std::string;
 
-  auto PrintTrickTable(const moveStatType tablep[][DDS_HANDS]) const -> string;
+  auto PrintTrickTable(const moveStatType tablep[][DDS_HANDS]) const
+      -> std::string;
 
-  auto PrintFunctionTable(const moveStatsType &tablep) const -> string;
+  auto PrintFunctionTable(const moveStatsType &tablep) const -> std::string;
 
   /**
    * @brief Construct a new Moves object.
@@ -165,15 +164,15 @@ public:
 
   auto Sort(const int tricks, const int relHand) -> void;
 
-  auto PrintMoves(const int trick, const int relHand) const -> string;
+  auto PrintMoves(const int trick, const int relHand) const -> std::string;
 
   auto RegisterHit(const int tricks, const int relHand) -> void;
 
-  auto TrickToText(const int trick) const -> string;
+  auto TrickToText(const int trick) const -> std::string;
 
-  auto PrintTrickStats(ofstream &fout) const -> void;
+  auto PrintTrickStats(std::ofstream &fout) const -> void;
 
-  auto PrintTrickDetails(ofstream &fout) const -> void;
+  auto PrintTrickDetails(std::ofstream &fout) const -> void;
 
-  auto PrintFunctionStats(ofstream &fout) const -> void;
+  auto PrintFunctionStats(std::ofstream &fout) const -> void;
 };

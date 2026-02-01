@@ -7,9 +7,7 @@
    See LICENSE and README.
 */
 
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -17,8 +15,21 @@
 #include <string>
 
 #include "heuristic_sorting/heuristic_sorting.hpp"
-#include "moves.hpp"
 #include <lookup_tables/lookup_tables.hpp>
+#include "moves.hpp"
+
+using std::cout;
+using std::endl;
+using std::fixed;
+using std::hex;
+using std::left;
+using std::ofstream;
+using std::right;
+using std::setprecision;
+using std::setw;
+using std::string;
+using std::stringstream;
+using std::to_string;
 
 #ifdef DDS_MOVES
 #define MG_REGISTER(a, b) lastCall[currTrick][b] = a
