@@ -602,6 +602,12 @@ auto Moves::Sort(const int tricks, const int relHand) -> void {
     mply[j] = tmp;                                                             \
   }
 
+/**
+ * @brief Build a heuristic context and invoke heuristic sorting.
+ *
+ * Centralizes the construction of HeuristicContext to keep the call sites
+ * consistent and avoid exposing mutable state to heuristic helpers.
+ */
 auto Moves::CallHeuristic(const Pos &tpos, const MoveType &bestMove,
                           const MoveType &bestMoveTT,
                           const RelRanksType thrp_rel[]) -> void {
@@ -629,6 +635,12 @@ auto Moves::CallHeuristic(const Pos &tpos, const MoveType &bestMove,
   ::CallHeuristic(context);
 }
 
+/**
+ * @brief Sort move list by weight using small fixed-size sorting networks.
+ *
+ * Optimized for short lists typical in move generation. Falls back to
+ * insertion sort for other sizes.
+ */
 auto Moves::MergeSort() -> void {
   MoveType tmp;
 

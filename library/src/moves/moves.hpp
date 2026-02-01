@@ -15,20 +15,40 @@
 #include <api/dds.h>
 #include <heuristic_sorting/heuristic_sorting.hpp>
 
+/**
+ * @brief Move generation category used for heuristic tracking.
+ *
+ * Encodes the contract and void/not-void situation for which a move list
+ * is being generated. Values are used as indices into statistics tables.
+ */
 enum class MgType {
+  /** Notrump at trick 0. */
   NT0 = 0,
+  /** Trump contract at trick 0. */
   TRUMP0 = 1,
+  /** Notrump, void in one hand. */
   NT_VOID1 = 2,
+  /** Trump, void in one hand. */
   TRUMP_VOID1 = 3,
+  /** Notrump, no void in one hand. */
   NT_NOTVOID1 = 4,
+  /** Trump, no void in one hand. */
   TRUMP_NOTVOID1 = 5,
+  /** Notrump, void in two hands. */
   NT_VOID2 = 6,
+  /** Trump, void in two hands. */
   TRUMP_VOID2 = 7,
+  /** Notrump, no void in two hands. */
   NT_NOTVOID2 = 8,
+  /** Trump, no void in two hands. */
   TRUMP_NOTVOID2 = 9,
+  /** Notrump, void in three hands. */
   NT_VOID3 = 10,
+  /** Trump, void in three hands. */
   TRUMP_VOID3 = 11,
+  /** Combined void/not-void tracking for three hands. */
   COMB_NOTVOID3 = 12,
+  /** Number of categories. */
   SIZE = 13
 };
 
@@ -42,26 +62,41 @@ enum class MgType {
  */
 class Moves {
 public:
+  /** @brief Lead hand index for the current trick. */
   int leadHand;
+  /** @brief Lead suit for the current trick. */
   int leadSuit;
+  /** @brief Current hand index being processed. */
   int currHand;
+  /** @brief Current trick number. */
   int currTrick;
+  /** @brief Trump suit or DDS_NOTRUMP. */
   int trump;
+  /** @brief Suit currently being generated. */
   int suit;
+  /** @brief Number of moves currently generated. */
   int numMoves;
+  /** @brief Previous move count used by heuristic. */
   int lastNumMoves;
 
+  /** @brief Per-trick tracking state. */
   trackType track[13];
+  /** @brief Pointer to active track entry. */
   trackType *trackp;
 
+  /** @brief Move lists indexed by trick and relative hand. */
   MovePlyType moveList[13][DDS_HANDS];
 
+  /** @brief Pointer to current move list storage. */
   MoveType *mply;
 
+  /** @brief Last heuristic category per trick and hand. */
   MgType lastCall[13][DDS_HANDS];
 
+  /** @brief Human-readable names for MgType categories. */
   std::string funcName[static_cast<int>(MgType::SIZE)];
 
+  /** @brief Aggregate statistics for a single function category. */
   struct moveStatType {
     int count;
     int findex;
@@ -69,50 +104,110 @@ public:
     int sumLengths;
   };
 
+  /** @brief Collection of statistics for all function categories. */
   struct moveStatsType {
     int nfuncs;
     moveStatType list[static_cast<int>(MgType::SIZE)];
   };
 
+  /** @brief Trick-level statistics for all hands. */
   moveStatType trickTable[13][DDS_HANDS];
 
+  /** @brief Trick-level statistics for winning suit only. */
   moveStatType trickSuitTable[13][DDS_HANDS];
 
+  /** @brief Detailed per-function stats by trick and hand. */
   moveStatsType trickDetailTable[13][DDS_HANDS];
 
+  /** @brief Detailed per-function stats by trick/hand for winning suit. */
   moveStatsType trickDetailSuitTable[13][DDS_HANDS];
 
+  /** @brief Aggregated function stats across all tricks. */
   moveStatsType trickFuncTable;
 
+  /** @brief Aggregated function stats for winning suit. */
   moveStatsType trickFuncSuitTable;
 
+  /**
+   * @brief Compute top number of winning moves for a given rank.
+   *
+   * @param ris Rank-in-suit bitmask
+   * @param prank Partner rank
+   * @param topNumber Output: top move number
+   * @param mno Output: move index
+   */
   auto GetTopNumber(const int ris, const int prank, int &topNumber,
                     int &mno) const -> void;
 
+  /**
+   * @brief Determine whether one move wins over another.
+   *
+   * @param mvp1 Candidate move
+   * @param mvp2 Current winning card
+   * @param trump Trump suit
+   * @return True if mvp1 wins against mvp2
+   */
   inline auto WinningMove(const MoveType &mvp1, const ExtCard &mvp2,
                           const int trump) const -> bool;
 
+  /**
+   * @brief Render a move list as a printable string.
+   *
+   * @param mply Move list
+   * @return Formatted string for debugging/logging
+   */
   auto PrintMove(const MovePlyType &mply) const -> std::string;
 
+  /** @brief Sort current move list by weight. */
   auto MergeSort() -> void;
 
+  /**
+   * @brief Invoke heuristic sorting for current move list.
+   *
+   * @param tpos Current position
+   * @param bestMove Best move from search
+   * @param bestMoveTT Best move from transposition table
+   * @param thrp_rel Relative ranks per hand
+   */
   auto CallHeuristic(const Pos &tpos, const MoveType &bestMove,
                      const MoveType &bestMoveTT, const RelRanksType thrp_rel[])
       -> void;
 
   // (logging accessors removed)
 
-  auto UpdateStatsEntry(moveStatsType &stat, const int findex, const int hit,
-                        const int len) const -> void;
+    /**
+     * @brief Update statistics for a single function category.
+     *
+     * @param stat Statistics table to update
+     * @param findex Function index
+     * @param hit Hit position
+     * @param len List length
+     */
+    auto UpdateStatsEntry(moveStatsType &stat, const int findex, const int hit,
+              const int len) const -> void;
 
-  auto AverageString(const moveStatType &statp) const -> std::string;
+    /** @brief Format average stats for a single category. */
+    auto AverageString(const moveStatType &statp) const -> std::string;
 
-  auto FullAverageString(const moveStatType &statp) const -> std::string;
+    /** @brief Format detailed average stats for a single category. */
+    auto FullAverageString(const moveStatType &statp) const -> std::string;
 
-  auto PrintTrickTable(const moveStatType tablep[][DDS_HANDS]) const
+    /**
+     * @brief Format trick-level statistics as a table.
+     *
+     * @param tablep Table of statistics
+     * @return Formatted text table
+     */
+    auto PrintTrickTable(const moveStatType tablep[][DDS_HANDS]) const
       -> std::string;
 
-  auto PrintFunctionTable(const moveStatsType &tablep) const -> std::string;
+    /**
+     * @brief Format function-level statistics as a table.
+     *
+     * @param tablep Statistics collection
+     * @return Formatted text table
+     */
+    auto PrintFunctionTable(const moveStatsType &tablep) const -> std::string;
 
   /**
    * @brief Construct a new Moves object.
@@ -128,51 +223,186 @@ public:
    */
   ~Moves();
 
-  auto Init(const int tricks, const int relStartHand, const int initialRanks[],
-            const int initialSuits[],
-            const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
-            const int trump, const int leadHand) -> void;
+    /**
+     * @brief Initialize move generation for a new deal state.
+     *
+     * @param tricks Current trick index
+     * @param relStartHand Relative starting hand
+     * @param initialRanks Initial ranks played
+     * @param initialSuits Initial suits played
+     * @param rank_in_suit Rank bitmaps by hand/suit
+     * @param trump Trump suit
+     * @param leadHand Absolute lead hand
+     */
+    auto Init(const int tricks, const int relStartHand, const int initialRanks[],
+        const int initialSuits[],
+        const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
+        const int trump, const int leadHand) -> void;
 
-  auto Reinit(const int tricks, const int leadHand) -> void;
+    /**
+     * @brief Reset tracking state for a new lead hand.
+     *
+     * @param tricks Current trick index
+     * @param leadHand Absolute lead hand
+     */
+    auto Reinit(const int tricks, const int leadHand) -> void;
 
-  auto MoveGen0(const int tricks, const Pos &tpos, const MoveType &bestMove,
-                const MoveType &bestMoveTT, const RelRanksType thrp_rel[])
+    /**
+     * @brief Generate moves for first hand of the trick.
+     *
+     * @param tricks Current trick index
+     * @param tpos Current position
+     * @param bestMove Best move from search
+     * @param bestMoveTT Best move from transposition table
+     * @param thrp_rel Relative ranks per hand
+     * @return Number of generated moves
+     */
+    auto MoveGen0(const int tricks, const Pos &tpos, const MoveType &bestMove,
+          const MoveType &bestMoveTT, const RelRanksType thrp_rel[])
       -> int;
 
-  auto MoveGen123(const int tricks, const int relHand, const Pos &tpos) -> int;
+    /**
+     * @brief Generate moves for second/third/fourth hand of the trick.
+     *
+     * @param tricks Current trick index
+     * @param relHand Relative hand index
+     * @param tpos Current position
+     * @return Number of generated moves
+     */
+    auto MoveGen123(const int tricks, const int relHand, const Pos &tpos) -> int;
 
-  auto GetLength(const int trick, const int relHand) const -> int;
+    /**
+     * @brief Get number of moves available for trick/hand.
+     *
+     * @param trick Trick index
+     * @param relHand Relative hand index
+     * @return Move count
+     */
+    auto GetLength(const int trick, const int relHand) const -> int;
 
-  auto MakeSpecific(const MoveType &mply, const int trick, const int relHand)
+    /**
+     * @brief Apply a specific move to tracking state.
+     *
+     * @param mply Move to apply
+     * @param trick Trick index
+     * @param relHand Relative hand index
+     */
+    auto MakeSpecific(const MoveType &mply, const int trick, const int relHand)
       -> void;
 
-  auto MakeNext(const int trick, const int relHand,
-                const unsigned short win_ranks[DDS_SUITS]) -> MoveType const *;
+    /**
+     * @brief Choose next move according to win constraints.
+     *
+     * @param trick Trick index
+     * @param relHand Relative hand index
+     * @param win_ranks Minimum winning rank per suit
+     * @return Pointer to chosen move or nullptr
+     */
+    auto MakeNext(const int trick, const int relHand,
+          const unsigned short win_ranks[DDS_SUITS]) -> MoveType const *;
 
-  auto MakeNextSimple(const int trick, const int relHand) -> MoveType const *;
+    /**
+     * @brief Choose next move without win constraints.
+     *
+     * @param trick Trick index
+     * @param relHand Relative hand index
+     * @return Pointer to chosen move or nullptr
+     */
+    auto MakeNextSimple(const int trick, const int relHand) -> MoveType const *;
 
-  auto Step(const int tricks, const int relHand) -> void;
+    /**
+     * @brief Advance to next move in list.
+     *
+     * @param tricks Current trick index
+     * @param relHand Relative hand index
+     */
+    auto Step(const int tricks, const int relHand) -> void;
 
-  auto Rewind(const int tricks, const int relHand) -> void;
+    /**
+     * @brief Reset move index to start of list.
+     *
+     * @param tricks Current trick index
+     * @param relHand Relative hand index
+     */
+    auto Rewind(const int tricks, const int relHand) -> void;
 
-  auto Purge(const int tricks, const int relHand,
-             const MoveType forbiddenMoves[]) -> void;
+    /**
+     * @brief Remove forbidden moves from a list.
+     *
+     * @param tricks Current trick index
+     * @param relHand Relative hand index
+     * @param forbiddenMoves Move list to exclude
+     */
+    auto Purge(const int tricks, const int relHand,
+         const MoveType forbiddenMoves[]) -> void;
 
-  auto Reward(const int trick, const int relHand) -> void;
+    /**
+     * @brief Reward the last chosen move with extra weight.
+     *
+     * @param trick Trick index
+     * @param relHand Relative hand index
+     */
+    auto Reward(const int trick, const int relHand) -> void;
 
-  auto GetTrickData(const int tricks) -> const TrickDataType &;
+    /**
+     * @brief Collect summary data for the current trick.
+     *
+     * @param tricks Current trick index
+     * @return Trick data snapshot
+     */
+    auto GetTrickData(const int tricks) -> const TrickDataType &;
 
-  auto Sort(const int tricks, const int relHand) -> void;
+    /**
+     * @brief Sort moves by heuristic weight.
+     *
+     * @param tricks Current trick index
+     * @param relHand Relative hand index
+     */
+    auto Sort(const int tricks, const int relHand) -> void;
 
-  auto PrintMoves(const int trick, const int relHand) const -> std::string;
+    /**
+     * @brief Render moves for a trick/hand as a printable string.
+     *
+     * @param trick Trick index
+     * @param relHand Relative hand index
+     * @return Formatted string
+     */
+    auto PrintMoves(const int trick, const int relHand) const -> std::string;
 
-  auto RegisterHit(const int tricks, const int relHand) -> void;
+    /**
+     * @brief Register the chosen move in statistics tables.
+     *
+     * @param tricks Current trick index
+     * @param relHand Relative hand index
+     */
+    auto RegisterHit(const int tricks, const int relHand) -> void;
 
-  auto TrickToText(const int trick) const -> std::string;
+    /**
+     * @brief Render the last trick as a string.
+     *
+     * @param trick Trick index
+     * @return Formatted string
+     */
+    auto TrickToText(const int trick) const -> std::string;
 
-  auto PrintTrickStats(std::ofstream &fout) const -> void;
+    /**
+     * @brief Print summary trick statistics to stream.
+     *
+     * @param fout Output stream
+     */
+    auto PrintTrickStats(std::ofstream &fout) const -> void;
 
-  auto PrintTrickDetails(std::ofstream &fout) const -> void;
+    /**
+     * @brief Print detailed trick statistics to stream.
+     *
+     * @param fout Output stream
+     */
+    auto PrintTrickDetails(std::ofstream &fout) const -> void;
 
-  auto PrintFunctionStats(std::ofstream &fout) const -> void;
+    /**
+     * @brief Print aggregated function statistics to stream.
+     *
+     * @param fout Output stream
+     */
+    auto PrintFunctionStats(std::ofstream &fout) const -> void;
 };
