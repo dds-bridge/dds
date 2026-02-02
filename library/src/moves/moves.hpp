@@ -59,6 +59,12 @@ enum class MgType {
  * during double dummy analysis. It provides interfaces for move generation,
  * selection, statistics, and printing, supporting both notrump and suit
  * contracts. Moves is an internal component and not part of the public API.
+ *
+ * @section error_handling Error Handling
+ * This class uses assertions for internal invariant checking. All public methods
+ * assume valid input and proper initialization. Violations trigger assertions in
+ * debug builds. Methods that may fail to find a move (MakeNext, MakeNextSimple)
+ * return nullptr to indicate no valid move exists.
  */
 class Moves {
 public:
@@ -296,7 +302,7 @@ public:
      * @param trick Trick index
      * @param relHand Relative hand index
      * @param win_ranks Minimum winning rank per suit
-     * @return Pointer to chosen move or nullptr
+     * @return Pointer to chosen move, or nullptr if no valid move found
      */
     auto MakeNext(const int trick, const int relHand,
           const unsigned short win_ranks[DDS_SUITS]) -> MoveType const *;
@@ -306,7 +312,7 @@ public:
      *
      * @param trick Trick index
      * @param relHand Relative hand index
-     * @return Pointer to chosen move or nullptr
+     * @return Pointer to chosen move, or nullptr if list exhausted
      */
     auto MakeNextSimple(const int trick, const int relHand) -> MoveType const *;
 

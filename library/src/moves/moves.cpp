@@ -7,6 +7,7 @@
    See LICENSE and README.
 */
 
+#include <cassert>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -405,7 +406,7 @@ auto Moves::MakeNext(const int trick, const int relHand,
 
   bool found = false;
   if (list.last == -1)
-    return NULL;
+    return nullptr;
   else if (list.current == 0) {
     currp = &list.move[0];
     found = true;
@@ -428,7 +429,7 @@ auto Moves::MakeNext(const int trick, const int relHand,
     }
 
     if (!found)
-      return NULL;
+      return nullptr;
   }
 
   if (relHand == 0) {
@@ -487,7 +488,7 @@ auto Moves::MakeNextSimple(const int trick, const int relHand)
 
   MovePlyType &list = moveList[trick][relHand];
   if (list.current > list.last)
-    return NULL;
+    return nullptr;
 
   const MoveType &curr = list.move[list.current];
 
@@ -577,10 +578,8 @@ auto Moves::GetTrickData(const int tricks) -> const TrickDataType & {
   for (int s = 0; s < DDS_SUITS; s++)
     sum += data.play_count[s];
 
-  if (sum != 4) {
-    cout << "Sum " << sum << " is not four" << endl;
-    exit(1);
-  }
+  // Internal invariant: exactly 4 cards must be played per trick
+  assert(sum == 4 && "GetTrickData: play_count sum must equal 4");
 
   data.best_rank = trackp->move[3].rank;
   data.best_suit = trackp->move[3].suit;
@@ -948,12 +947,9 @@ auto Moves::UpdateStatsEntry(moveStatsType &stat, const int findex,
     funp->sumHits += hit;
     funp->sumLengths += len;
   } else {
-    if (stat.nfuncs >= static_cast<int>(MgType::SIZE)) {
-      cout << "Shouldn't happen, " << stat.nfuncs << endl;
-      for (int i = 0; i < stat.nfuncs; i++)
-        cout << i << " " << stat.list[i].findex << "\n";
-      exit(1);
-    }
+    // Internal invariant: nfuncs must not exceed array size
+    assert(stat.nfuncs < static_cast<int>(MgType::SIZE) &&
+           "UpdateStatsEntry: nfuncs overflow");
 
     funp = &stat.list[stat.nfuncs++];
 
@@ -970,17 +966,12 @@ auto Moves::RegisterHit(const int trick, const int relHand) -> void {
   const int findex = static_cast<int>(lastCall[trick][relHand]);
   const int len = list.last + 1;
 
-  if (findex == -1) {
-    cout << "RegisterHit trick " << trick << " relHand " << relHand
-         << " findex -1" << endl;
-    exit(1);
-  }
+  // Internal invariant: lastCall must be initialized before RegisterHit
+  assert(findex != -1 && "RegisterHit: lastCall not initialized");
 
   const int curr = list.current;
-  if (curr < 1 || curr > len) {
-    cout << "current out of bounds" << endl;
-    exit(1);
-  }
+  // Internal invariant: current must be within valid range [1, len]
+  assert(curr >= 1 && curr <= len && "RegisterHit: current out of bounds");
 
   const int moveSuit = list.move[curr - 1].suit;
   int numSuit = 0;
