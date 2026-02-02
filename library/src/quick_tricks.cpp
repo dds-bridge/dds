@@ -311,7 +311,7 @@ int QuickTricks(
         /* The partner but not the opponents have cards in
            the trump suit. */
 
-        int sum = max(countOwn, countPart);
+        int sum = std::max(countOwn, countPart);
         for (int s = 0; s < DDS_SUITS; s++)
         {
           if ((sum > 0) &&
@@ -332,7 +332,7 @@ int QuickTricks(
       else if (!opps)
       {
         /* The partner but not the opponents have cards in the suit. */
-        int sum = min(countOwn, countPart);
+        int sum = std::min(countOwn, countPart);
         if (trump == DDS_NOTRUMP)
         {
           if (sum >= cutoff)
@@ -404,7 +404,7 @@ int QuickTricks(
         {
           if (!opps && (trump != DDS_NOTRUMP) && (suit == trump))
           {
-            int sum = max(countOwn, countPart);
+            int sum = std::max(countOwn, countPart);
             for (int s = 0; s < DDS_SUITS; s++)
             {
               if ((sum > 0) &&
@@ -426,7 +426,7 @@ int QuickTricks(
           }
           else if (!opps)
           {
-            int sum = min(countOwn, countPart);
+            int sum = std::min(countOwn, countPart);
             if (trump == DDS_NOTRUMP)
             {
               if (sum >= cutoff)
@@ -777,7 +777,7 @@ int QtricksLeadHandTrump(
           (countRho <= 2) &&
           ((countPart <= 2) || (countOwn <= 2)))
       {
-        qt += max(countOwn - 2, countPart - 2);
+        qt += std::max(countOwn - 2, countPart - 2);
         if (qt >= cutoff)
           return qt;
         res = 2;
@@ -821,8 +821,8 @@ int QtricksLeadHandNT(
     return qt;
   if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
   {
-    lhoTrumpRanks = max(0, lhoTrumpRanks - 1);
-    rhoTrumpRanks = max(0, rhoTrumpRanks - 1);
+    lhoTrumpRanks = std::max(0, lhoTrumpRanks - 1);
+    rhoTrumpRanks = std::max(0, rhoTrumpRanks - 1);
   }
 
   if ((countLho <= 1) && (countRho <= 1) && (countPart <= 1))
@@ -843,8 +843,8 @@ int QtricksLeadHandNT(
       return qt;
     if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
     {
-      lhoTrumpRanks = max(0, lhoTrumpRanks - 1);
-      rhoTrumpRanks = max(0, rhoTrumpRanks - 1);
+      lhoTrumpRanks = std::max(0, lhoTrumpRanks - 1);
+      rhoTrumpRanks = std::max(0, rhoTrumpRanks - 1);
     }
     if ((countLho <= 2) && (countRho <= 2) && (countPart <= 2))
     {
@@ -867,14 +867,14 @@ int QtricksLeadHandNT(
       return qt;
     if ((trump == suit) && ((!commPartner) || (suit != commSuit)))
     {
-      lhoTrumpRanks = max(0, lhoTrumpRanks - 1);
-      rhoTrumpRanks = max(0, rhoTrumpRanks - 1);
+      lhoTrumpRanks = std::max(0, lhoTrumpRanks - 1);
+      rhoTrumpRanks = std::max(0, rhoTrumpRanks - 1);
     }
     if ((countLho <= 2) &&
         (countRho <= 2) &&
         ((countPart <= 2) || (countOwn <= 2)))
     {
-      qt += max(countOwn - 2, countPart - 2);
+      qt += std::max(countOwn - 2, countPart - 2);
       if (qt >= cutoff)
         return qt;
       res = 2;
@@ -981,7 +981,7 @@ int QuickTricksPartnerHandTrump(
           (countRho <= 2) &&
           ((countOwn <= 2) || (countPart <= 2)))
       {
-        qt += max(countPart - 2, countOwn - 2);
+        qt += std::max(countPart - 2, countOwn - 2);
         if (qt >= cutoff)
           return qt;
         res = 2;
@@ -1094,7 +1094,7 @@ int QuickTricksPartnerHandNT(
         (countRho <= 2) &&
         ((countOwn <= 2) || (countPart <= 2)))
     {
-      qt += max(countPart - 2, countOwn - 2);
+      qt += std::max(countPart - 2, countOwn - 2);
       if (qt >= cutoff)
         return qt;
       res = 2;

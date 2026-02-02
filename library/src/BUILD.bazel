@@ -71,6 +71,7 @@ cc_library(
         "//:__pkg__",  # allow root package to wrap/export
         "//library/tests:__pkg__",
         "//library/tests/heuristic_sorting:__pkg__",
+        "//library/tests/moves:__pkg__",
         "//library/tests/system:__pkg__",
         "//library/tests/utility:__pkg__",
         "//library/tests/regression/heuristic_sorting:__pkg__",

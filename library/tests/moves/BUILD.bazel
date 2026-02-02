@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_test(
+    name = "moves_test",
+    size = "small",
+    srcs = ["moves_test.cpp"],
+    deps = [
+        "//library/src/moves:testable_moves",
+        "@googletest//:gtest_main",
+    ],
+    copts = ["-std=c++20"],
+)
