@@ -65,6 +65,13 @@ enum class MgType {
  * assume valid input and proper initialization. Violations trigger assertions in
  * debug builds. Methods that may fail to find a move (MakeNext, MakeNextSimple)
  * return nullptr to indicate no valid move exists.
+ *
+ * @section memory_safety Memory Safety
+ * This class uses stack-allocated arrays with RAII semantics. No dynamic memory
+ * allocation is performed. The trackp and mply pointers are non-owning references
+ * to elements within the stack-allocated arrays (track and moveList respectively).
+ * These pointers are valid only during the lifetime of the Moves object and must
+ * not outlive it.
  */
 class Moves {
 public:
@@ -87,13 +94,13 @@ public:
 
   /** @brief Per-trick tracking state. */
   trackType track[13];
-  /** @brief Pointer to active track entry. */
+  /** @brief Pointer to active track entry (non-owning, points into track array). */
   trackType *trackp;
 
   /** @brief Move lists indexed by trick and relative hand. */
   MovePlyType moveList[13][DDS_HANDS];
 
-  /** @brief Pointer to current move list storage. */
+  /** @brief Pointer to current move list storage (non-owning, points into moveList). */
   MoveType *mply;
 
   /** @brief Last heuristic category per trick and hand. */

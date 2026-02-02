@@ -50,6 +50,10 @@ const MgType RegisterList[16] = {MgType::NT0,           MgType::TRUMP0,
 #endif
 
 Moves::Moves() {
+  // Initialize non-owning pointers to nullptr for safety
+  trackp = nullptr;
+  mply = nullptr;
+
   funcName[static_cast<int>(MgType::NT0)] = "NT0";
   funcName[static_cast<int>(MgType::TRUMP0)] = "Trump0";
   funcName[static_cast<int>(MgType::NT_VOID1)] = "NT_Void1";
