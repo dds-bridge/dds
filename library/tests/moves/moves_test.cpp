@@ -14,7 +14,6 @@
 #include <vector>
 #include <cstring>
 #include <chrono>
-#include <memory>
 
 #include "moves.hpp"
 
