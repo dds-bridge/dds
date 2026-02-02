@@ -377,7 +377,7 @@ NodeCards const * TransTableS::lookup(
   const unsigned short aggrTarget[],
   const int hand_dist[],
   const int limit,
-  bool& lowerFlag)
+  bool& lower_flag)
 {
   bool res;
   PosSearchSmall * pp;
@@ -406,7 +406,7 @@ NodeCards const * TransTableS::lookup(
       cardsP = NULL;
     else
     {
-      cardsP = find_sop(order_set_, limit, pp->pos_search_point_, lowerFlag);
+      cardsP = find_sop(order_set_, limit, pp->pos_search_point_, lower_flag);
 
       if (cardsP == NULL)
         return cardsP;
@@ -877,7 +877,7 @@ auto TransTableS::find_sop(
   const int order_set_[],
   const int limit,
   WinCard * nodeP,
-  bool& lowerFlag) -> NodeCards const * {
+  bool& lower_flag) -> NodeCards const * {
   WinCard * np;
 
   np = nodeP;
@@ -897,12 +897,12 @@ auto TransTableS::find_sop(
 
       if (np->first_->lower_bound > limit)
       {
-        lowerFlag = true;
+        lower_flag = true;
         return np->first_;
       }
       else if (np->first_->upper_bound <= limit)
       {
-        lowerFlag = false;
+        lower_flag = false;
         return np->first_;
       }
     }

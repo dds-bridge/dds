@@ -213,14 +213,14 @@ class TransTableL: public TransTable
       int trick,
       int hand,
       int hist[],
-      int suitHist[],
-      int& numWraps,
-      int& suitWraps) const -> void;
+      int suit_hist[],
+      int& num_wraps,
+      int& suit_wraps) const -> void;
 
     auto find_matching_dist(
       int trick,
       int hand,
-      const int hand_distSought[]) const -> WinBlock const *;
+      const int hand_dist_sought[]) const -> WinBlock const *;
 
     auto print_entries_block(
       std::ofstream& fout,
@@ -266,8 +266,8 @@ class TransTableL: public TransTable
     void set_to_partial_hands(
       const unsigned set,
       const unsigned mask,
-      const int maxRank,
-      const int numRanks,
+      const int max_rank,
+      const int num_ranks,
       std::vector<std::vector<std::string>>& hands) const;
 
     int blocks_in_use() const;
