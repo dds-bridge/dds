@@ -309,7 +309,7 @@ auto Moves::GetTopNumber(const int ris, const int prank, int &topNumber,
   int g = mp.last_group_;
 
   // Remove partner's card as well.
-  int removed =
+  const int removed =
       static_cast<int>(trackp->removedRanks[leadSuit] | bitMapRank[prank]);
 
   int fullseq = mp.fullseq_[g];
@@ -642,9 +642,10 @@ auto Moves::CallHeuristic(const Pos &tpos, const MoveType &bestMove,
  * insertion sort for other sizes.
  */
 auto Moves::MergeSort() -> void {
+  const int len = numMoves;
   MoveType tmp;
 
-  switch (numMoves) {
+  switch (len) {
   case 12:
     CMP_SWAP(0, 1);
     CMP_SWAP(2, 3);
@@ -872,7 +873,7 @@ auto Moves::MergeSort() -> void {
     CMP_SWAP(0, 1);
     break;
   default: {
-    for (int i = 1; i < numMoves; i++) {
+    for (int i = 1; i < len; i++) {
       tmp = mply[i];
       int j = i;
       for (; j && tmp.weight > mply[j - 1].weight; --j)
