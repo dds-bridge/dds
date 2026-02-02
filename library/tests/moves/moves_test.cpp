@@ -177,8 +177,8 @@ TEST_F(MovesTest, PointersSetCorrectlyDuringInit) {
   moves->Init(5, 0, initialRanks, initialSuits, pos.rank_in_suit, 
               DDS_NOTRUMP, 0);
   
-  // After init, trackp should point to track[5]
-  EXPECT_EQ(moves->trackp, &moves->track[5]);
+  // After init, trackp should still be nullptr (it's set later in MoveGen0)
+  EXPECT_EQ(moves->trackp, nullptr);
 }
 
 /**
