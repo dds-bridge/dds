@@ -72,6 +72,15 @@ enum class MgType {
  * to elements within the stack-allocated arrays (track and moveList respectively).
  * These pointers are valid only during the lifetime of the Moves object and must
  * not outlive it.
+ *
+ * @section usage Typical Usage
+ * 1. Create Moves object (constructor initializes statistics)
+ * 2. Call Init() to set up initial state for a deal
+ * 3. For opening lead: call MoveGen0() to generate moves
+ * 4. For subsequent plays: call MoveGen123() for each hand
+ * 5. Use MakeNext() or MakeNextSimple() to iterate through legal moves
+ * 6. Call MakeSpecific() to record a move choice
+ * 7. Use RegisterHit() to record statistics about chosen moves
  */
 class Moves {
 public:

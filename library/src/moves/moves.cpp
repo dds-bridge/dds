@@ -94,6 +94,16 @@ Moves::Moves() {
 
 Moves::~Moves() {}
 
+/**
+ * @brief Initialize move generation state for a new deal.
+ *
+ * Sets up tracking arrays and initializes removed ranks based on the starting
+ * position. Handles partial tricks by incorporating already-played cards.
+ *
+ * The removedRanks array tracks which cards are no longer available. It starts
+ * with all cards (0xffff), then XORs with available cards to mark them as
+ * available, then XORs back any cards already played in this trick.
+ */
 auto Moves::Init(const int tricks, const int relStartHand,
                  const int initialRanks[], const int initialSuits[],
                  const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
@@ -131,6 +141,19 @@ auto Moves::Reinit(const int tricks, const int ourLeadHand) -> void {
   track[tricks].leadHand = ourLeadHand;
 }
 
+/**
+ * @brief Generate moves for the opening lead (first hand of trick).
+ *
+ * Iterates through all suits and generates legal plays from each. Uses
+ * precomputed group_data to identify sequences of equivalent cards.
+ * The inner loop merges consecutive groups when gaps are filled by
+ * removed cards, reducing the move list to distinct strategic options.
+ *
+ * Calls heuristic sorting after each suit to prioritize likely-good moves.
+ * Final sort by weight ensures best moves are tried first in search.
+ *
+ * @return Number of legal moves generated
+ */
 auto Moves::MoveGen0(const int tricks, const Pos &tpos,
                      const MoveType &bestMove, const MoveType &bestMoveTT,
                      const RelRanksType thrp_rel[]) -> int {
@@ -158,10 +181,14 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
     g = mp->last_group_;
     removed = trackp->removedRanks[suit];
 
+    // Generate moves for this suit by iterating through card groups.
+    // Merge consecutive groups when gaps are filled by removed cards.
     while (g >= 0) {
       rank = mp->rank_[g];
       seq = mp->sequence_[g];
 
+      // If all cards in the gap above this group have been played,
+      // merge this group with the one below it (equivalent plays).
       while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
         seq |= mp->fullseq_[--g];
 
@@ -303,6 +330,9 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
 
 auto Moves::GetTopNumber(const int ris, const int prank, int &topNumber,
                          int &mno) const -> void {
+  // Determine how many winning moves exist when partner has played prank.
+  // topNumber indicates the number of cards that can win, mno is the index
+  // in the move list of the lowest winning card.
   topNumber = -10;
 
   // Find the lowest move that still overtakes partner's card.
@@ -313,12 +343,14 @@ auto Moves::GetTopNumber(const int ris, const int prank, int &topNumber,
   const MoveGroupType &mp = group_data[ris];
   int g = mp.last_group_;
 
-  // Remove partner's card as well.
+  // Include partner's card as removed to count only moves that beat it.
   const int removed =
       static_cast<int>(trackp->removedRanks[leadSuit] | bitMapRank[prank]);
 
   int fullseq = mp.fullseq_[g];
 
+  // Merge groups as in move generation, accounting for gaps filled
+  // by removed cards (including partner's card).
   while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))
     fullseq |= mp.fullseq_[--g];
 
@@ -379,11 +411,14 @@ auto Moves::MakeSpecific(const MoveType &ourMply, const int trick,
   trackp->playSuits[relHand] = ourMply.suit;
   trackp->playRanks[relHand] = ourMply.rank;
 
+  // When trick completes (4th card played), prepare next trick's state.
   if (relHand == 3) {
     trackType *newp = &track[trick - 1];
 
+    // Winner of this trick leads the next one.
     newp->leadHand = (trackp->leadHand + trackp->high[3]) % 4;
 
+    // Update removed ranks to include all cards played in this trick.
     int r, s;
     for (s = 0; s < DDS_SUITS; s++)
       newp->removedRanks[s] = trackp->removedRanks[s];
@@ -400,7 +435,11 @@ auto Moves::MakeNext(const int trick, const int relHand,
                      const unsigned short ourWinRanks[DDS_SUITS])
     -> MoveType const * {
   // Find moves that are >= ourWinRanks[suit], but allow one
-  // "small" move per suit.
+  // "small" move per suit to explore losing options.
+  //
+  // The lowestWin array tracks the minimum rank to try next for each suit.
+  // After trying one card below the winning threshold, subsequent cards
+  // must meet the threshold.
 
   int *lwp = track[trick].lowestWin[relHand];
   MovePlyType &list = moveList[trick][relHand];
