@@ -47,7 +47,7 @@ bool LaterTricksMIN(
       {
         if (static_cast<unsigned>(hh) < static_cast<unsigned>(DDS_HANDS) &&
             ctx.search().nodeTypeStore(hh) == MAXNODE)
-          sum += max(tpos.length[hh][ss],
+          sum += std::max(tpos.length[hh][ss],
                      tpos.length[partner[hh]][ss]);
       }
     }
@@ -91,7 +91,7 @@ bool LaterTricksMIN(
         (tpos.length[partner[hand]][trump] == 0))
     {
       if (((tpos.tricks_max + (depth >> 2) + 1 -
-            max(tpos.length[lho[hand]][trump],
+            std::max(tpos.length[lho[hand]][trump],
                 tpos.length[rho[hand]][trump])) < target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -219,7 +219,7 @@ bool LaterTricksMAX(
       {
         if (static_cast<unsigned>(hh) < static_cast<unsigned>(DDS_HANDS) &&
             ctx.search().nodeTypeStore(hh) == MINNODE)
-          sum += max(tpos.length[hh][ss],
+          sum += std::max(tpos.length[hh][ss],
                      tpos.length[partner[hh]][ss]);
       }
     }
@@ -262,7 +262,7 @@ bool LaterTricksMAX(
     if ((tpos.length[hand][trump] == 0) &&
         (tpos.length[partner[hand]][trump] == 0))
     {
-      int maxlen = max(tpos.length[lho[hand]][trump],
+      int maxlen = std::max(tpos.length[lho[hand]][trump],
                        tpos.length[rho[hand]][trump]);
 
       if ((tpos.tricks_max + maxlen) >= target)

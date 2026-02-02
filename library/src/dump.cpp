@@ -17,35 +17,35 @@
 #include "dump.hpp"
 
 
-string PrintSuit(const unsigned short suitCode);
-string PrintSuit(
+std::string PrintSuit(const unsigned short suitCode);
+std::string PrintSuit(
   const unsigned short suitCode,
   const char leastWin);
 
-string PrintDeal(
+std::string PrintDeal(
   const unsigned short ranks[][DDS_SUITS],
   const int spacing);
 
-string RankToDiagrams(
+std::string RankToDiagrams(
   const unsigned short ranks[DDS_HANDS][DDS_SUITS],
   const NodeCards& node);
 
-string WinnersToText(const unsigned short win_ranks[]);
+std::string WinnersToText(const unsigned short win_ranks[]);
 
-string NodeToText(const NodeCards& node);
+std::string NodeToText(const NodeCards& node);
 
-string FullNodeToText(const NodeCards& node);
+std::string FullNodeToText(const NodeCards& node);
 
-string PosToText(
+std::string PosToText(
   const Pos& tpos,
   const int target,
   const int depth);
 
-string TopMove(
+std::string TopMove(
   const bool val,
   const MoveType& bestMove);
 
-string DumpTopHeader(
+std::string DumpTopHeader(
   const std::shared_ptr<ThreadData>& thrp,
   const int tricks,
   const int lower,
@@ -53,12 +53,12 @@ string DumpTopHeader(
   const int printMode);
 
 
-string PrintSuit(const unsigned short suitCode)
+std::string PrintSuit(const unsigned short suitCode)
 {
   if (! suitCode)
     return "--";
 
-  string st;
+  std::string st;
   for (int r = 14; r >= 2; r--)
     if ((suitCode & bitMapRank[r]))
       st += static_cast<char>(cardRank[r]);
@@ -66,14 +66,14 @@ string PrintSuit(const unsigned short suitCode)
 }
 
 
-string PrintSuit(
+std::string PrintSuit(
   const unsigned short suitCode,
   const char leastWin)
 {
   if (! suitCode)
     return "--";
 
-  string st;
+  std::string st;
   for (int r = 14; r >= 2; r--)
   {
     if ((suitCode & bitMapRank[r]))
@@ -88,14 +88,14 @@ string PrintSuit(
 }
 
 
-string PrintDeal(
+std::string PrintDeal(
   const unsigned short ranks[][DDS_SUITS],
   const int spacing)
 {
-  stringstream ss;
+  std::stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    ss << setw(spacing) << "" << 
+    ss << std::setw(spacing) << "" << 
       cardSuit[s] << " " <<
       PrintSuit(ranks[0][s]) << "\n";
   }
@@ -103,14 +103,14 @@ string PrintDeal(
   for (int s = 0; s < DDS_SUITS; s++)
   {
     ss << cardSuit[s] << " " <<
-      setw(2*spacing - 2) << left << PrintSuit(ranks[3][s]) <<
+      std::setw(2*spacing - 2) << std::left << PrintSuit(ranks[3][s]) <<
       cardSuit[s] << " " <<
       PrintSuit(ranks[1][s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    ss << setw(spacing) << "" << 
+    ss << std::setw(spacing) << "" << 
       cardSuit[s] << " " <<
       PrintSuit(ranks[2][s]) << "\n";
   }
@@ -119,17 +119,17 @@ string PrintDeal(
 }
 
 
-string RankToDiagrams(
+std::string RankToDiagrams(
   const unsigned short ranks[DDS_HANDS][DDS_SUITS],
   const NodeCards& node)
 {
-  stringstream ss;
+  std::stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    ss << setw(12) << left << 
+    ss << std::setw(12) << std::left << 
       (s == 0 ? "Sought" : "") << 
-      cardSuit[s] << " " << setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
-      setw(12) << (s == 0 ? "Found" : "") << 
+      cardSuit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
+      std::setw(12) << (s == 0 ? "Found" : "") << 
       cardSuit[s] << " " << 
         PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
   }
@@ -137,28 +137,28 @@ string RankToDiagrams(
   for (int s = 0; s < DDS_SUITS; s++)
   {
     ss << 
-      cardSuit[s] << " " << setw(22) << left << PrintSuit(ranks[3][s]) <<
-      cardSuit[s] << " " << setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
+      cardSuit[s] << " " << std::setw(22) << std::left << PrintSuit(ranks[3][s]) <<
+      cardSuit[s] << " " << std::setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
       cardSuit[s] << " " << 
-        setw(22) << PrintSuit(ranks[3][s], node.least_win[s]) << 
+        std::setw(22) << PrintSuit(ranks[3][s], node.least_win[s]) << 
       cardSuit[s] << " " << 
         PrintSuit(ranks[1][s], node.least_win[s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    ss << setw(12) << left << "" << 
-      cardSuit[s] << " " << setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
-      setw(12) << "" << cardSuit[s] << " " <<
+    ss << std::setw(12) << std::left << "" << 
+      cardSuit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
+      std::setw(12) << "" << cardSuit[s] << " " <<
       PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
   }
   return ss.str();
 }
 
 
-string WinnersToText(const unsigned short ourWinRanks[])
+std::string WinnersToText(const unsigned short ourWinRanks[])
 {
-  stringstream ss;
+  std::stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)
     ss << cardSuit[s] << " " << PrintSuit(ourWinRanks[s]) << "\n";
 
@@ -166,17 +166,17 @@ string WinnersToText(const unsigned short ourWinRanks[])
 }
 
 
-string NodeToText(const NodeCards& node)
+std::string NodeToText(const NodeCards& node)
 {
-  stringstream ss;
-  ss << setw(16) << left << "Address" << 
+  std::stringstream ss;
+  ss << std::setw(16) << std::left << "Address" << 
     static_cast<void const *>(&node) << "\n";
 
-  ss << setw(16) << left << "Bounds" << 
+  ss << std::setw(16) << std::left << "Bounds" << 
     static_cast<int>(node.lower_bound) << " to " <<
     static_cast<int>(node.upper_bound) << " tricks\n";
 
-  ss << setw(16) << left << "Best move" << 
+  ss << std::setw(16) << std::left << "Best move" << 
     cardSuit[ static_cast<int>(node.best_move_suit) ] <<
     cardRank[ static_cast<int>(node.best_move_rank) ] << "\n";
 
@@ -184,15 +184,15 @@ string NodeToText(const NodeCards& node)
 }
 
 
-string FullNodeToText(const NodeCards& node)
+std::string FullNodeToText(const NodeCards& node)
 
 {
-  stringstream ss;
-  vector<int> v(DDS_SUITS);
+  std::stringstream ss;
+  std::vector<int> v(DDS_SUITS);
   for (unsigned i = 0; i < DDS_SUITS; i++)
     v[i] = 15 - static_cast<int>(node.least_win[i]);
 
-  ss << setw(16) << left << "Lowest used" << 
+  ss << std::setw(16) << std::left << "Lowest used" << 
     cardSuit[0] << cardRank[v[0]] << ", " <<
     cardSuit[1] << cardRank[v[1]] << ", " <<
     cardSuit[2] << cardRank[v[2]] << ", " <<
@@ -202,22 +202,22 @@ string FullNodeToText(const NodeCards& node)
 }
 
 
-string PosToText(
+std::string PosToText(
   const Pos& tpos,
   const int target,
   const int depth)
 {
-  stringstream ss;
-  ss << setw(16) << left << "Target" << target << "\n";
-  ss << setw(16) << "Depth" << depth << "\n";
-  ss << setw(16) << "tricks_max" << tpos.tricks_max << "\n";
-  ss << setw(16) << "First hand" << cardHand[tpos.first[depth]] << "\n";
-  ss << setw(16) << "Next first" << cardHand[tpos.first[depth - 1]] << "\n";
+  std::stringstream ss;
+  ss << std::setw(16) << std::left << "Target" << target << "\n";
+  ss << std::setw(16) << "Depth" << depth << "\n";
+  ss << std::setw(16) << "tricks_max" << tpos.tricks_max << "\n";
+  ss << std::setw(16) << "First hand" << cardHand[tpos.first[depth]] << "\n";
+  ss << std::setw(16) << "Next first" << cardHand[tpos.first[depth - 1]] << "\n";
   return ss.str();
 }
 
 
-string DumpTopHeader(
+std::string DumpTopHeader(
   const std::shared_ptr<ThreadData>& thrp,
   const int tricks,
   const int lower,
@@ -226,36 +226,36 @@ string DumpTopHeader(
 {
   // Use facade to read search-state safely (caller provides shared_ptr)
   SolverContext ctx{ thrp };
-  string stext;
+  std::string stext;
   if (printMode == 0)
   {
     // Trying just one target.
-    stext = "Single target " + to_string(tricks) + ", " + "achieved";
+    stext = "Single target " + std::to_string(tricks) + ", " + "achieved";
   }
   else if (printMode == 1)
   {
     // Looking for best score.
-    stext = "Loop target " + to_string(tricks) + ", " +
-      "bounds " + to_string(lower) + " .. " + to_string(upper) + ", " +
+    stext = "Loop target " + std::to_string(tricks) + ", " +
+      "bounds " + std::to_string(lower) + " .. " + std::to_string(upper) + ", " +
       TopMove(thrp->val, ctx.search().bestMove(ctx.search().iniDepth())) + "";
   }
   else if (printMode == 2)
   {
     // Looking for other moves with best score.
-    stext = "Loop for cards with score " + to_string(tricks) + ", " +
+    stext = "Loop for cards with score " + std::to_string(tricks) + ", " +
       TopMove(thrp->val, ctx.search().bestMove(ctx.search().iniDepth()));
   }
-  return stext + "\n" + string(stext.size(), '-') + "\n";
+  return stext + "\n" + std::string(stext.size(), '-') + "\n";
 }
 
 
-string TopMove(
+std::string TopMove(
   const bool val,
   const MoveType& bestMove)
 {
   if (val)
   {
-    stringstream ss;
+    std::stringstream ss;
     ss << "achieved with move " <<
       cardSuit[ bestMove.suit ] <<
       cardRank[ bestMove.rank ];
@@ -274,7 +274,7 @@ int DumpInput(
   const int mode)
 {
 #ifndef DDS_NO_DUMP_ON_ERROR
-  ofstream fout;
+  std::ofstream fout;
   fout.open("dump.txt");
 
   fout << "Error code=" << errCode << "\n\n";
@@ -317,56 +317,8 @@ int DumpInput(
 }
 
 
-void DumpRetrieved(
-  ofstream& fout,
-  const Pos& tpos,
-  const NodeCards& node,
-  const int target,
-  const int depth)
-{
-  fout << "Retrieved entry\n";
-  fout << string(15, '-') << "\n";
-  fout << PosToText(tpos, target, depth) << "\n";
-  fout << FullNodeToText(node) << "\n";
-  fout << RankToDiagrams(tpos.rank_in_suit, node) << "\n";
-}
-
-
-void DumpStored(
-  ofstream& fout,
-  const Pos& tpos,
-  const Moves& moves,
-  const NodeCards& node,
-  const int target,
-  const int depth)
-{
-  fout << "Stored entry\n";
-  fout << string(12, '-') << "\n";
-  fout << PosToText(tpos, target, depth) << "\n";
-  fout << NodeToText(node);
-  fout << moves.TrickToText((depth >> 2) + 1) << "\n";
-  fout << PrintDeal(tpos.rank_in_suit, 16);
-}
-
-void DumpStored(
-  ofstream& fout,
-  const Pos& tpos,
-  SolverContext& ctx,
-  const NodeCards& node,
-  const int target,
-  const int depth)
-{
-  fout << "Stored entry\n";
-  fout << string(12, '-') << "\n";
-  fout << PosToText(tpos, target, depth) << "\n";
-  fout << NodeToText(node);
-  fout << ctx.moveGen().TrickToText((depth >> 2) + 1) << "\n";
-  fout << PrintDeal(tpos.rank_in_suit, 16);
-}
-
-
 void DumpTopLevel(
-  ofstream& fout,
+  std::ofstream& fout,
   const std::shared_ptr<ThreadData>& thrp,
   const int tricks,
   const int lower,

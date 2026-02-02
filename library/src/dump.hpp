@@ -22,7 +22,7 @@ int DumpInput(
   const int mode);
 
 void DumpTopLevel(
-  ofstream& fout,
+  std::ofstream& fout,
   const std::shared_ptr<ThreadData>& thrp,
   const int tricks,
   const int lower,
@@ -30,14 +30,14 @@ void DumpTopLevel(
   const int printMode);
 
 void DumpRetrieved(
-  ofstream& fout,
+  std::ofstream& fout,
   const Pos& tpos,
   const NodeCards& node,
   const int target,
   const int depth);
 
 void DumpStored(
-  ofstream& fout,
+  std::ofstream& fout,
   const Pos& tpos,
   const Moves& moves,
   const NodeCards& node,
@@ -46,7 +46,7 @@ void DumpStored(
 
 // Convenience overload to avoid direct Moves exposure at call sites
 void DumpStored(
-  ofstream& fout,
+  std::ofstream& fout,
   const Pos& tpos,
   SolverContext& ctx,
   const NodeCards& node,
