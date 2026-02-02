@@ -79,12 +79,32 @@
 */
 
 
-#include <iomanip>
-#include <cmath>
 #include <array>
+#include <cmath>
+#include <cstdlib>
+#include <iomanip>
+#include <new>
 
 #include "trans_table_l.hpp"
+
 #include <utility/constants.h>
+
+namespace
+{
+auto checked_malloc(const size_t size) -> void*
+{
+  if (void* ptr = std::malloc(size))
+    return ptr;
+  throw std::bad_alloc();
+}
+
+auto checked_calloc(const size_t count, const size_t size) -> void*
+{
+  if (void* ptr = std::calloc(count, size))
+    return ptr;
+  throw std::bad_alloc();
+}
+}
 
 // Local using-declarations for readability in this implementation file only.
 using std::ofstream;
@@ -299,11 +319,8 @@ auto TransTableL::make_tt() -> void
 
     for (int t = 0; t < TtTricks; t++) {
       for (int h = 0; h < DDS_HANDS; h++) {
-        tt_root_[t][h] = static_cast<DistHash *>
-          (malloc(256 * sizeof(DistHash)));
-
-        if (tt_root_[t][h] == nullptr)
-          exit(1);
+        tt_root_[t][h] = static_cast<DistHash *>(
+          checked_malloc(256 * sizeof(DistHash)));
       }
     }
   }
@@ -480,15 +497,10 @@ auto TransTableL::get_next_card_block() -> TransTableL::WinBlock *
 
   if (pool_ == nullptr) {
     // Have to be able to get at least one pool.
-    pool_ = static_cast<Pool *>(calloc(1, sizeof(Pool)));
-    if (pool_ == nullptr)
-      exit(1);
+    pool_ = static_cast<Pool *>(checked_calloc(1, sizeof(Pool)));
 
-    pool_->list_ = static_cast<WinBlock *>
-                  (malloc(BlocksPerPage * sizeof(WinBlock)));
-
-    if (!pool_->list_)
-      exit(1);
+    pool_->list_ = static_cast<WinBlock *>(
+      checked_malloc(BlocksPerPage * sizeof(WinBlock)));
 
     pool_->next_ = nullptr;
     pool_->prev_ = nullptr;

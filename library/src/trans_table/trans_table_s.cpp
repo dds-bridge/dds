@@ -7,10 +7,11 @@
    See LICENSE and README.
 */
 
-#include <iomanip>
-#include <cstdlib>
-#include <iostream>
 #include <array>
+#include <cstdlib>
+#include <iomanip>
+#include <iostream>
+#include <new>
 #include <api/dds.h>
 
 #include "trans_table_s.hpp"
@@ -20,6 +21,16 @@
 #define NINIT 60000
 #define WINIT 170000
 #define LSIZE 200 // Per trick and first hand
+
+namespace
+{
+auto checked_calloc(const size_t count, const size_t size) -> void*
+{
+  if (void* ptr = std::calloc(count, size))
+    return ptr;
+  throw std::bad_alloc();
+}
+}
 
 // Accessor for a lazily initialized, immutable TTlowestRank table.
 static const std::array<int, 8192>& tt_lowest_rank_table()
@@ -174,49 +185,37 @@ auto TransTableS::make_tt() -> void
       }
     }
 
-    pw_ = static_cast<WinCard **>(calloc(
+    pw_ = static_cast<WinCard **>(checked_calloc(
       static_cast<unsigned int>(max_index_ + 1),
       sizeof(WinCard *)));
-    if (pw_ == NULL)
-      exit(1);
 
-    pn_ = static_cast<NodeCards **>(calloc(
+    pn_ = static_cast<NodeCards **>(checked_calloc(
       static_cast<unsigned int>(max_index_ + 1),
       sizeof(NodeCards *)));
-    if (pn_ == NULL)
-      exit(1);
 
     for (int k = 1; k <= 13; k++)
       for (int h = 0; h < DDS_HANDS; h++)
       {
-        pl_[k][h] = static_cast<PosSearchSmall **>(calloc(
+        pl_[k][h] = static_cast<PosSearchSmall **>(checked_calloc(
           static_cast<unsigned int>(max_index_ + 1),
           sizeof(PosSearchSmall *)));
-        if (pl_[k][h] == NULL)
-          exit(1);
       }
 
-    pw_[0] = static_cast<WinCard *>(calloc(WINIT + 1, sizeof(WinCard)));
-    if (pw_[0] == NULL)
-      exit(1);
+    pw_[0] = static_cast<WinCard *>(
+      checked_calloc(WINIT + 1, sizeof(WinCard)));
 
-    pn_[0] = static_cast<NodeCards *>(calloc(NINIT + 1, sizeof(NodeCards)));
-    if (pn_[0] == NULL)
-      exit(1);
+    pn_[0] = static_cast<NodeCards *>(
+      checked_calloc(NINIT + 1, sizeof(NodeCards)));
 
     for (int k = 1; k <= 13; k++)
       for (int h = 0; h < DDS_HANDS; h++)
       {
-        pl_[k][h][0] = static_cast<PosSearchSmall *>(calloc(
+        pl_[k][h][0] = static_cast<PosSearchSmall *>(checked_calloc(
           (LSIZE + 1),
           sizeof(PosSearchSmall)));
-        if (pl_[k][h][0] == NULL)
-          exit(1);
       }
 
-    aggp_ = static_cast<TtAggr *>(calloc(8192, sizeof(TtAggr)));
-    if (aggp_ == NULL)
-      exit(1);
+    aggp_ = static_cast<TtAggr *>(checked_calloc(8192, sizeof(TtAggr)));
 
     init_tt();
 
@@ -239,13 +238,13 @@ auto TransTableS::wipe() -> void
   {
     if (pw_[m])
       free(pw_[m]);
-    pw_[m] = NULL;
+    pw_[m] = nullptr;
   }
   for (m = 1; m <= ncount_; m++)
   {
     if (pn_[m])
       free(pn_[m]);
-    pn_[m] = NULL;
+    pn_[m] = nullptr;
   }
 
   for (int k = 1; k <= 13; k++)
@@ -256,7 +255,7 @@ auto TransTableS::wipe() -> void
       {
         if (pl_[k][h][m])
           free(pl_[k][h][m]);
-        pl_[k][h][m] = NULL;
+        pl_[k][h][m] = nullptr;
       }
     }
   }
@@ -296,9 +295,9 @@ auto TransTableS::init_tt() -> void
       // Initialize the root node to a valid empty node so that a
       // first Lookup/Add can function even before ResetMemory.
       pos_search_[k][h][0].suit_lengths_ = 0;
-      pos_search_[k][h][0].pos_search_point_ = NULL;
-      pos_search_[k][h][0].left_ = NULL;
-      pos_search_[k][h][0].right_ = NULL;
+      pos_search_[k][h][0].pos_search_point_ = nullptr;
+      pos_search_[k][h][0].left_ = nullptr;
+      pos_search_[k][h][0].right_ = nullptr;
       rootnp_[k][h] = &(pos_search_[k][h][0]);
     }
 }
@@ -317,9 +316,9 @@ auto TransTableS::reset_memory(
     {
       rootnp_[k][h] = &(pos_search_[k][h][0]);
       pos_search_[k][h][0].suit_lengths_ = 0;
-      pos_search_[k][h][0].pos_search_point_ = NULL;
-      pos_search_[k][h][0].left_ = NULL;
-      pos_search_[k][h][0].right_ = NULL;
+      pos_search_[k][h][0].pos_search_point_ = nullptr;
+      pos_search_[k][h][0].left_ = nullptr;
+      pos_search_[k][h][0].right_ = nullptr;
 
       len_set_ind_[k][h] = 1;
     }
@@ -343,11 +342,11 @@ auto TransTableS::return_all_memory() -> void
 
   if (pw_[0])
     free(static_cast<void*>(pw_[0]));
-  pw_[0] = NULL;
+  pw_[0] = nullptr;
 
   if (pn_[0])
     free(static_cast<void*>(pn_[0]));
-  pn_[0] = NULL;
+  pn_[0] = nullptr;
 
   for (int k = 1; k <= 13; k++)
   {
@@ -355,21 +354,21 @@ auto TransTableS::return_all_memory() -> void
     {
       if (pl_[k][h][0])
         free(static_cast<void*>(pl_[k][h][0]));
-      pl_[k][h][0] = NULL;
+      pl_[k][h][0] = nullptr;
     }
   }
 
   if (pw_)
     free(static_cast<void*>(pw_));
-  pw_ = NULL;
+  pw_ = nullptr;
 
   if (pn_)
     free(static_cast<void*>(pn_));
-  pn_ = NULL;
+  pn_ = nullptr;
 
   if (aggp_)
     free(aggp_);
-  aggp_ = NULL;
+  aggp_ = nullptr;
 
   return;
 }
@@ -411,7 +410,7 @@ auto TransTableS::lookup(
     res);
 
   /* Find node that fits the suit lengths */
-  if ((pp != NULL) && res)
+  if ((pp != nullptr) && res)
   {
     for (int ss = 0; ss < DDS_SUITS; ss++)
     {
@@ -419,19 +418,19 @@ auto TransTableS::lookup(
         aggp_[aggrTarget[ss]].aggr_ranks_[ss];
     }
 
-    if (pp->pos_search_point_ == NULL)
-      cardsP = NULL;
+    if (pp->pos_search_point_ == nullptr)
+      cardsP = nullptr;
     else
     {
       cardsP = find_sop(order_set_, limit, pp->pos_search_point_, lower_flag);
 
-      if (cardsP == NULL)
+      if (cardsP == nullptr)
         return cardsP;
     }
   }
   else
   {
-    cardsP = NULL;
+    cardsP = nullptr;
   }
   return cardsP;
 }
@@ -486,7 +485,7 @@ auto TransTableS::add_win_set() -> void
       win_set_size_limit_ = WSIZE;
       pw_[wcount_] =
         static_cast<WinCard *>(malloc((WSIZE + 1) * sizeof(WinCard)));
-      if (pw_[wcount_] == NULL)
+      if (pw_[wcount_] == nullptr)
       {
         clear_tt_flag_ = true;
         windex_++;
@@ -521,7 +520,7 @@ auto TransTableS::add_node_set() -> void
       node_set_size_limit_ = NSIZE;
       pn_[ncount_] =
         static_cast<NodeCards *>(malloc((NSIZE + 1) * sizeof(NodeCards)));
-      if (pn_[ncount_] == NULL)
+      if (pn_[ncount_] == nullptr)
       {
         clear_tt_flag_ = true;
       }
@@ -569,7 +568,7 @@ auto TransTableS::add_len_set(
   pl_[trick][first_hand][lcount_[trick][first_hand]] =
     static_cast<PosSearchSmall *>(malloc(incr));
 
-  if (pl_[trick][first_hand][lcount_[trick][first_hand]] == NULL)
+  if (pl_[trick][first_hand][lcount_[trick][first_hand]] == nullptr)
   {
     clear_tt_flag_ = true;
     return;
@@ -675,25 +674,25 @@ auto TransTableS::build_path(
   NodeCards *p;
 
   np = node_ptr->pos_search_point_;
-  nprev = NULL;
+  nprev = nullptr;
   int suit = 0;
 
   /* If winning node has a card that equals the next winning card deduced
   from the position, then there already exists a (partial) path */
 
-  if (np == NULL)
+  if (np == nullptr)
   {
     /* There is no winning list created yet */
     /* Create winning nodes */
     p2 = &(win_cards_[win_set_size_]);
     add_win_set();
-    p2->next_ = NULL;
-    p2->next_win_ = NULL;
-    p2->prev_win_ = NULL;
+    p2->next_ = nullptr;
+    p2->next_win_ = nullptr;
+    p2->prev_win_ = nullptr;
     node_ptr->pos_search_point_ = p2;
     p2->win_mask_ = win_mask_[suit];
     p2->order_set_ = win_order_set[suit];
-    p2->first_ = NULL;
+    p2->first_ = nullptr;
     np = p2;           /* Latest winning node */
     suit++;
     while (suit < DDS_SUITS)
@@ -702,11 +701,11 @@ auto TransTableS::build_path(
       add_win_set();
       np->next_win_ = p2;
       p2->prev_win_ = np;
-      p2->next_ = NULL;
-      p2->next_win_ = NULL;
+      p2->next_ = nullptr;
+      p2->next_win_ = nullptr;
       p2->win_mask_ = win_mask_[suit];
       p2->order_set_ = win_order_set[suit];
-      p2->first_ = NULL;
+      p2->first_ = nullptr;
       np = p2;         /* Latest winning node */
       suit++;
     }
@@ -733,7 +732,7 @@ auto TransTableS::build_path(
           nprev = np;
           break;
         }
-        if (np->next_ != NULL)
+        if (np->next_ != nullptr)
           np = np->next_;
         else
           break;
@@ -761,7 +760,7 @@ auto TransTableS::build_path(
     p2 = &(win_cards_[win_set_size_]);
     add_win_set();
     p2->prev_win_ = nprev;
-    if (nprev != NULL)
+    if (nprev != nullptr)
     {
       p2->next_ = nprev->next_win_;
       nprev->next_win_ = p2;
@@ -771,10 +770,10 @@ auto TransTableS::build_path(
       p2->next_ = node_ptr->pos_search_point_;
       node_ptr->pos_search_point_ = p2;
     }
-    p2->next_win_ = NULL;
+    p2->next_win_ = nullptr;
     p2->win_mask_ = win_mask_[suit];
     p2->order_set_ = win_order_set[suit];
-    p2->first_ = NULL;
+    p2->first_ = nullptr;
     np = p2;          /* Latest winning node */
     suit++;
 
@@ -785,11 +784,11 @@ auto TransTableS::build_path(
       add_win_set();
       np->next_win_ = p2;
       p2->prev_win_ = np;
-      p2->next_ = NULL;
+      p2->next_ = nullptr;
       p2->win_mask_ = win_mask_[suit];
       p2->order_set_ = win_order_set[suit];
-      p2->first_ = NULL;
-      p2->next_win_ = NULL;
+      p2->first_ = nullptr;
+      p2->next_win_ = nullptr;
       np = p2;         /* Latest winning node */
       suit++;
     }
@@ -812,7 +811,7 @@ auto TransTableS::search_len_and_insert(
   bool& result) -> TransTableS::PosSearchSmall *
 {
   /* Search for node which matches with the suit length combination
-  given by parameter key. If no such node is found, NULL is
+  given by parameter key. If no such node is found, nullptr is
   returned if parameter insert_node is FALSE, otherwise a new
   node is inserted with suit_lengths_ set to key, the pointer to
   this node is returned.
@@ -822,7 +821,7 @@ auto TransTableS::search_len_and_insert(
 
   PosSearchSmall * np, *p, *sp;
 
-  sp = NULL;
+  sp = nullptr;
   if (insert_node)
     sp = &(pos_search_[trick][first_hand][len_set_ind_[trick][first_hand]]);
 
@@ -836,46 +835,46 @@ auto TransTableS::search_len_and_insert(
     }
     else if (key < np->suit_lengths_)
     {
-      if (np->left_ != NULL)
+      if (np->left_ != nullptr)
         np = np->left_;
       else if (insert_node)
       {
         p = sp;
         add_len_set(trick, first_hand);
         np->left_ = p;
-        p->pos_search_point_ = NULL;
+        p->pos_search_point_ = nullptr;
         p->suit_lengths_ = key;
-        p->left_ = NULL;
-        p->right_ = NULL;
+        p->left_ = nullptr;
+        p->right_ = nullptr;
         result = true;
         return p;
       }
       else
       {
         result = false;
-        return NULL;
+        return nullptr;
       }
     }
     else        /* key > suit_lengths_ */
     {
-      if (np->right_ != NULL)
+      if (np->right_ != nullptr)
         np = np->right_;
       else if (insert_node)
       {
         p = sp;
         add_len_set(trick, first_hand);
         np->right_ = p;
-        p->pos_search_point_ = NULL;
+        p->pos_search_point_ = nullptr;
         p->suit_lengths_ = key;
-        p->left_ = NULL;
-        p->right_ = NULL;
+        p->left_ = nullptr;
+        p->right_ = nullptr;
         result = true;
         return p;
       }
       else
       {
         result = false;
-        return NULL;
+        return nullptr;
       }
     }
   }
@@ -938,16 +937,16 @@ auto TransTableS::find_sop(
       }
     }
 
-    while (np->next_ == NULL)
+    while (np->next_ == nullptr)
     {
       np = np->prev_win_;
       s--;
-      if (np == NULL) /* Previous node is header node? */
-        return NULL;
+      if (np == nullptr) /* Previous node is header node? */
+        return nullptr;
     }
     np = np->next_;
   }
-  return NULL;
+  return nullptr;
 }
 
 
