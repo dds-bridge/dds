@@ -22,17 +22,17 @@
 #define LSIZE 200 // Per trick and first hand
 
 // Accessor for a lazily initialized, immutable TTlowestRank table.
-static const std::array<int, 8192>& TTLowestRankTable()
+static const std::array<int, 8192>& tt_lowest_rank_table()
 {
   static const std::array<int, 8192> table = []{
     std::array<int, 8192> t{};
-    unsigned int topBitRank = 1;
+    unsigned int top_bit_rank = 1;
     t[0] = 15; // Void
     for (unsigned ind = 1; ind < 8192; ind++)
     {
-      if (ind >= (topBitRank + topBitRank)) /* Next top bit */
-        topBitRank <<= 1;
-      t[ind] = t[ind ^ topBitRank] - 1;
+      if (ind >= (top_bit_rank + top_bit_rank)) /* Next top bit */
+        top_bit_rank <<= 1;
+      t[ind] = t[ind ^ top_bit_rank] - 1;
     }
     return t;
   }();
@@ -58,7 +58,7 @@ using std::string;
 TransTableS::TransTableS()
 {
   // Ensure the table is built once.
-  (void)TTLowestRankTable();
+  (void)tt_lowest_rank_table();
   tt_in_use_ = 0;
 }
 
@@ -74,12 +74,12 @@ TransTableS::~TransTableS()
 }
 
 
-// SetConstants removed; constants are produced by TTLowestRankTable().
+// SetConstants removed; constants are produced by tt_lowest_rank_table().
 
 
 auto TransTableS::init(const int handLookup[][15]) -> void {
-  unsigned int topBitRank = 1;
-  unsigned int topBitNo = 2;
+  unsigned int top_bit_rank = 1;
+  unsigned int top_bit_no = 2;
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
@@ -89,26 +89,26 @@ auto TransTableS::init(const int handLookup[][15]) -> void {
 
   for (unsigned int ind = 1; ind < 8192; ind++)
   {
-    if (ind >= (topBitRank + topBitRank))
+    if (ind >= (top_bit_rank + top_bit_rank))
     {
       /* Next top bit */
-      topBitRank <<= 1;
-      topBitNo++;
+      top_bit_rank <<= 1;
+      top_bit_no++;
     }
-    aggp_[ind] = aggp_[ind ^ topBitRank];
+    aggp_[ind] = aggp_[ind ^ top_bit_rank];
 
     for (int s = 0; s < 4; s++)
     {
       aggp_[ind].aggr_ranks_[s] =
         (aggp_[ind].aggr_ranks_[s] >> 2) |
-        (handLookup[s][topBitNo] << 24);
+        (handLookup[s][top_bit_no] << 24);
 
       aggp_[ind].win_mask_[s] =
         (aggp_[ind].win_mask_[s] >> 2) | (3 << 24);
     }
   }
 
-  reset_text_.resize(kResetReasonCount);
+  reset_text_.resize(ResetReasonCount);
   reset_text_[static_cast<int>(ResetReason::Unknown)] = "Unknown reason";
   reset_text_[static_cast<int>(ResetReason::TooManyNodes)] = "Too many nodes";
   reset_text_[static_cast<int>(ResetReason::NewDeal)] = "New Deal";
@@ -212,9 +212,9 @@ auto TransTableS::make_tt() -> void {
 
     for (int k = 1; k <= 13; k++)
       aggr_len_sets_[k] = 0;
-    stats_resets_.no_of_resets = 0;
-    for (int k = 0; k < kResetReasonCount; k++)
-      stats_resets_.aggr_resets[k] = 0;
+    stats_resets_.no_of_resets_ = 0;
+    for (int k = 0; k < ResetReasonCount; k++)
+      stats_resets_.aggr_resets_[k] = 0;
 
   }
 
@@ -315,8 +315,8 @@ auto TransTableS::reset_memory([[maybe_unused]] const ResetReason reason) -> voi
   }
 
 #if defined(DDS_TT_STATS)
-  stats_resets_.no_of_resets++;
-  stats_resets_.aggr_resets[static_cast<int>(reason)]++;
+  stats_resets_.no_of_resets_++;
+  stats_resets_.aggr_resets_[static_cast<int>(reason)]++;
 #endif
 
   return;
@@ -589,7 +589,7 @@ auto TransTableS::build_sop(
 
       win_mask_[ss] = aggp_[temp].win_mask_[ss];
       win_order_set[ss] = aggp_[temp].aggr_ranks_[ss];
-    low[ss] = static_cast<char>(TTLowestRankTable()[static_cast<size_t>(temp)]);
+    low[ss] = static_cast<char>(tt_lowest_rank_table()[static_cast<size_t>(temp)]);
     }
   }
 
@@ -936,13 +936,13 @@ auto TransTableS::PrintNodeStats(ofstream& fout) const -> void {
 
 
 auto TransTableS::PrintResetStats(ofstream& fout) const -> void {
-  fout << "Total no. of resets: " << stats_resets_.no_of_resets << "\n" << endl;
+  fout << "Total no. of resets: " << stats_resets_.no_of_resets_ << "\n" << endl;
 
   fout << setw(18) << left << "Reason" << 
     setw(6) << right << "Count" << "\n";
 
-  for (unsigned k = 0; k < kResetReasonCount; k++)
+  for (unsigned k = 0; k < ResetReasonCount; k++)
     fout << setw(18) << left << reset_text_[k] <<
-      setw(6) << right << stats_resets_.aggr_resets[k] << "\n";
+      setw(6) << right << stats_resets_.aggr_resets_[k] << "\n";
 }
 

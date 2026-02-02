@@ -54,8 +54,8 @@ class TransTableS: public TransTable
 
     struct StatsResets
     {
-      int no_of_resets;
-      int aggr_resets[kResetReasonCount];
+      int no_of_resets_;
+      int aggr_resets_[ResetReasonCount];
     };
 
 
@@ -207,4 +207,3 @@ class TransTableS: public TransTable
 
   void PrintResetStats(std::ofstream& fout) const;
 };
-

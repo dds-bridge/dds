@@ -22,19 +22,19 @@
 
 
 enum {
-  NUM_PAGES_DEFAULT = 15,
-  NUM_PAGES_MAXIMUM = 25,
-  BLOCKS_PER_PAGE = 1000,
-  DISTS_PER_ENTRY = 32,
-  BLOCKS_PER_ENTRY = 125,
-  FIRST_HARVEST_TRICK = 8,
-  HARVEST_AGE = 10000,
-  TT_BYTES = 4,
-  TT_TRICKS = 12,
+  NumPagesDefault = 15,
+  NumPagesMaximum = 25,
+  BlocksPerPage = 1000,
+  DistsPerEntry = 32,
+  BlocksPerEntry = 125,
+  FirstHarvestTrick = 8,
+  HarvestAge = 10000,
+  TtBytes = 4,
+  TtTricks = 12,
   TT_LINE_LEN = 20
 };
 
-inline constexpr double TT_PERCENTILE = 0.9;
+inline constexpr double TtPercentile = 0.9;
 
 
 class TransTableL: public TransTable
@@ -51,12 +51,12 @@ class TransTableL: public TransTable
       NodeCards first_;
     };
 
-    struct WinBlock // 6508 bytes when BLOCKS_PER_ENTRY == 125
+    struct WinBlock // 6508 bytes when BlocksPerEntry == 125
     {
       int next_match_no_;
       int next_write_no_;
       int timestamp_read_;
-      WinMatch list_[BLOCKS_PER_ENTRY];
+      WinMatch list_[BlocksPerEntry];
     };
 
     struct PosSearch // 16 bytes (inefficiency, 12 bytes enough)
@@ -65,17 +65,17 @@ class TransTableL: public TransTable
       long long key_;
     };
 
-    struct DistHash // 520 bytes when DISTS_PER_ENTRY == 32
+    struct DistHash // 520 bytes when DistsPerEntry == 32
     {
       int next_no_;
       int next_write_no_;
-      PosSearch list_[DISTS_PER_ENTRY];
+      PosSearch list_[DistsPerEntry];
     };
 
     struct Aggr // 80 bytes
     {
       unsigned aggr_ranks_[DDS_SUITS];
-      unsigned aggr_bytes_[DDS_SUITS][TT_BYTES];
+      unsigned aggr_bytes_[DDS_SUITS][TtBytes];
     };
 
     struct Pool // 16 bytes
@@ -98,7 +98,7 @@ class TransTableL: public TransTable
     struct Harvested // 16 bytes
     {
       int next_block_no_;
-      WinBlock * list_ [BLOCKS_PER_PAGE];
+      WinBlock * list_ [BlocksPerPage];
     };
 
     enum class MemState
@@ -125,11 +125,11 @@ class TransTableL: public TransTable
     // This is the real transposition table.
     // The last index is the hash.
     // 6240 KB with above assumptions
-    // DistHash tt_root_[TT_TRICKS][DDS_HANDS][256];
-    DistHash * tt_root_[TT_TRICKS][DDS_HANDS];
+    // DistHash tt_root_[TtTricks][DDS_HANDS][256];
+    DistHash * tt_root_[TtTricks][DDS_HANDS];
 
     // It is useful to remember the last block we looked at.
-    WinBlock * last_block_seen_[TT_TRICKS][DDS_HANDS];
+    WinBlock * last_block_seen_[TtTricks][DDS_HANDS];
 
     // The pool of card entries for a given suit distribution.
     Pool * pool_;
@@ -320,4 +320,3 @@ class TransTableL: public TransTable
     void print_all_entry_stats(std::ofstream& fout) const override;
     void print_summary_entry_stats(std::ofstream& fout) const override;
 };
-

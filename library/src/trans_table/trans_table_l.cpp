@@ -100,31 +100,31 @@ using std::setprecision;
 using std::fixed;
 using std::to_string;
 
-static auto TTLowestRankTable() -> const std::array<int, 8192>& {
+static auto tt_lowest_rank_table() -> const std::array<int, 8192>& {
   static const std::array<int, 8192> table = []{
     std::array<int, 8192> t{};
-    unsigned int topBitRank = 1;
+    unsigned int top_bit_rank = 1;
     t[0] = 15; // Void
     for (unsigned ind = 1; ind < 8192; ind++) {
-      if (ind >= (topBitRank + topBitRank)) /* Next top bit */
-        topBitRank <<= 1;
-      t[ind] = t[ind ^ topBitRank] - 1;
+      if (ind >= (top_bit_rank + top_bit_rank)) /* Next top bit */
+        top_bit_rank <<= 1;
+      t[ind] = t[ind ^ top_bit_rank] - 1;
     }
     return t;
   }();
   return table;
 }
 
-static auto MaskBytesTable() -> const std::array<std::array<std::array<unsigned, TT_BYTES>, DDS_SUITS>, 8192>& {
+static auto mask_bytes_table() -> const std::array<std::array<std::array<unsigned, TtBytes>, DDS_SUITS>, 8192>& {
   static const auto table = []{
-    std::array<std::array<std::array<unsigned, TT_BYTES>, DDS_SUITS>, 8192> m{};
-    unsigned int topBitRank = 1;
+    std::array<std::array<std::array<unsigned, TtBytes>, DDS_SUITS>, 8192> m{};
+    unsigned int top_bit_rank = 1;
     unsigned winMask[8192];
     winMask[0] = 0;
     for (unsigned ind = 1; ind < 8192; ind++) {
-      if (ind >= (topBitRank + topBitRank)) /* Next top bit */
-        topBitRank <<= 1;
-      winMask[ind] = (winMask[ind ^ topBitRank] >> 2) | (3 << 24);
+      if (ind >= (top_bit_rank + top_bit_rank)) /* Next top bit */
+        top_bit_rank <<= 1;
+      winMask[ind] = (winMask[ind ^ top_bit_rank] >> 2) | (3 << 24);
 
       m[ind][0][0] = (winMask[ind] << 6) & 0xff000000;
       m[ind][0][1] = (winMask[ind] << 14) & 0xff000000;
@@ -166,8 +166,8 @@ static auto Players() -> const std::array<std::string, 4>& {
 */
 TransTableL::TransTableL() {
   // Touch the tables once to ensure construction.
-  (void)TTLowestRankTable();
-  (void)MaskBytesTable();
+  (void)tt_lowest_rank_table();
+  (void)mask_bytes_table();
   (void)Players();
   // Initialize all internal state to safe defaults. Some of these
   // fields were previously left uninitialized and relied on implicit
@@ -185,7 +185,7 @@ TransTableL::TransTableL() {
   pool_ = nullptr;
   next_block_ = nullptr;
   harvested_.next_block_no_ = 0;
-  for (int c = 0; c < TT_TRICKS; ++c) {
+  for (int c = 0; c < TtTricks; ++c) {
     for (int h = 0; h < DDS_HANDS; ++h) {
       tt_root_[c][h] = nullptr;
       last_block_seen_[c][h] = nullptr;
@@ -211,8 +211,8 @@ auto TransTableL::init(const int handLookup[][15]) -> void {
   // keep a record of aggr_ranks_ for each suit. These are
   // only used later for xor_set_.
 
-  unsigned int topBitRank = 1;
-  unsigned int topBitNo = 2;
+  unsigned int top_bit_rank = 1;
+  unsigned int top_bit_no = 2;
   Aggr * ap;
 
   for (int s = 0; s < DDS_SUITS; s++) {
@@ -224,18 +224,18 @@ auto TransTableL::init(const int handLookup[][15]) -> void {
   }
 
   for (unsigned ind = 1; ind < 8192; ind++) {
-    if (ind >= (topBitRank << 1)) {
+    if (ind >= (top_bit_rank << 1)) {
       /* Next top bit */
-      topBitRank <<= 1;
-      topBitNo++;
+      top_bit_rank <<= 1;
+      top_bit_no++;
     }
 
-    aggr_[ind] = aggr_[ind ^ topBitRank];
+    aggr_[ind] = aggr_[ind ^ top_bit_rank];
     ap = &aggr_[ind];
 
     for (int s = 0; s < DDS_SUITS; s++) {
       ap->aggr_ranks_[s] = ap->aggr_ranks_[s] >> 2 |
-                          static_cast<unsigned>(handLookup[s][topBitNo] << 24);
+                          static_cast<unsigned>(handLookup[s][top_bit_no] << 24);
     }
 
     ap->aggr_bytes_[0][0] = (ap->aggr_ranks_[0] << 6) & 0xff000000;
@@ -262,7 +262,7 @@ auto TransTableL::init(const int handLookup[][15]) -> void {
 
 
 auto TransTableL::set_memory_default(int megabytes) -> void {
-  double blockMem = BLOCKS_PER_PAGE * sizeof(WinBlock) /
+  double blockMem = BlocksPerPage * sizeof(WinBlock) /
                     static_cast<double>(1024.);
 
   pages_default_ = static_cast<int>((1024 * megabytes) / blockMem);
@@ -270,7 +270,7 @@ auto TransTableL::set_memory_default(int megabytes) -> void {
 
 
 auto TransTableL::set_memory_maximum(int megabytes) -> void {
-  double blockMem = BLOCKS_PER_PAGE * sizeof(WinBlock) /
+  double blockMem = BlocksPerPage * sizeof(WinBlock) /
                     static_cast<double>(1024.);
 
   pages_maximum_ = static_cast<int>((1024 * megabytes) / blockMem);
@@ -287,7 +287,7 @@ auto TransTableL::make_tt() -> void {
   if (! tt_in_use_) {
     tt_in_use_ = 1;
 
-    for (int t = 0; t < TT_TRICKS; t++) {
+    for (int t = 0; t < TtTricks; t++) {
       for (int h = 0; h < DDS_HANDS; h++) {
         tt_root_[t][h] = static_cast<DistHash *>
                        (malloc(256 * sizeof(DistHash)));
@@ -303,7 +303,7 @@ auto TransTableL::make_tt() -> void {
 
 
 auto TransTableL::init_tt() -> void {
-  for (int c = 0; c < TT_TRICKS; c++) {
+  for (int c = 0; c < TtTricks; c++) {
     for (int h = 0; h < DDS_HANDS; h++) {
       for (int i = 0; i < 256; i++) {
         tt_root_[c][h][i].next_no_ = 0;
@@ -321,7 +321,7 @@ auto TransTableL::release_tt() -> void {
     return;
   tt_in_use_ = 0;
 
-  for (int t = 0; t < TT_TRICKS; t++) {
+  for (int t = 0; t < TtTricks; t++) {
     for (int h = 0; h < DDS_HANDS; h++) {
       if (tt_root_[t][h] == nullptr)
         continue;
@@ -434,10 +434,10 @@ auto TransTableL::blocks_in_use() const -> int {
 
 
 auto TransTableL::memory_in_use() const -> double {
-  int blockMem = BLOCKS_PER_PAGE * pages_current_ *
+  int blockMem = BlocksPerPage * pages_current_ *
                  static_cast<int>(sizeof(WinBlock));
   int aggrMem = 8192 * static_cast<int>(sizeof(Aggr));
-  int rootMem = TT_TRICKS * DDS_HANDS * 256 *
+  int rootMem = TtTricks * DDS_HANDS * 256 *
                  static_cast<int>(sizeof(DistHash));
 
   return (blockMem + aggrMem + rootMem) / static_cast<double>(1024.);
@@ -468,7 +468,7 @@ auto TransTableL::get_next_card_block() -> TransTableL::WinBlock * {
       exit(1);
 
     pool_->list_ = static_cast<WinBlock *>
-                  (malloc(BLOCKS_PER_PAGE * sizeof(WinBlock)));
+                  (malloc(BlocksPerPage * sizeof(WinBlock)));
 
     if (! pool_->list_)
       exit(1);
@@ -486,7 +486,7 @@ auto TransTableL::get_next_card_block() -> TransTableL::WinBlock * {
   else if (mem_state_ == MemState::FROM_HARVEST) {
     // Not allowed to get more memory, so reuse old one.
     int n = harvested_.next_block_no_;
-    if (n == BLOCKS_PER_PAGE) {
+    if (n == BlocksPerPage) {
       if (! TransTableL::harvest()) {
         TransTableL::reset_memory(ResetReason::Unknown);
         pool_->next_block_no_++;
@@ -498,7 +498,7 @@ auto TransTableL::get_next_card_block() -> TransTableL::WinBlock * {
     harvested_.next_block_no_++;
     return harvested_.list_[n];
   }
-  else if (pool_->next_block_no_ == BLOCKS_PER_PAGE) {
+  else if (pool_->next_block_no_ == BlocksPerPage) {
     if (pool_->next_) {
       // Reuse a dormant block that has not been freed.
       pool_ = pool_->next_;
@@ -540,7 +540,7 @@ auto TransTableL::get_next_card_block() -> TransTableL::WinBlock * {
       }
 
       newpoolp->list_ = static_cast<WinBlock *>
-        (malloc(BLOCKS_PER_PAGE * sizeof(WinBlock)));
+        (malloc(BlocksPerPage * sizeof(WinBlock)));
 
       if (! newpoolp->list_) {
         if (! TransTableL::harvest()) {
@@ -589,7 +589,7 @@ auto TransTableL::harvest() -> bool
       ptr = &rootptr[hash];
       for (suit = ptr->next_no_ - 1; suit >= 0; suit--) {
         bp = ptr->list_[suit].pos_block_;
-        if (timestamp_ - bp->timestamp_read_ > HARVEST_AGE) {
+        if (timestamp_ - bp->timestamp_read_ > HarvestAge) {
           bp->next_match_no_ = 0;
           bp->next_write_no_ = 0;
           bp->timestamp_read_ = timestamp_;
@@ -602,12 +602,12 @@ auto TransTableL::harvest() -> bool
           ptr->next_no_--;
           ptr->next_write_no_ = ptr->next_no_;
 
-          if (++hno == BLOCKS_PER_PAGE) {
+          if (++hno == BlocksPerPage) {
             if (++harvest_hand_ >= DDS_HANDS) {
               // Skip rest of this [trick][hand] for simplicity.
               harvest_hand_ = 0;
               if (--harvest_trick_ < 0)
-                harvest_trick_ = FIRST_HARVEST_TRICK;
+                harvest_trick_ = FirstHarvestTrick;
             }
 
             harvested_.next_block_no_ = 0;
@@ -621,7 +621,7 @@ auto TransTableL::harvest() -> bool
     if (++harvest_hand_ >= DDS_HANDS) {
       harvest_hand_ = 0;
       if (--harvest_trick_ < 0)
-        harvest_trick_ = FIRST_HARVEST_TRICK;
+        harvest_trick_ = FirstHarvestTrick;
     }
 
     if (harvest_trick_ == trick && harvest_hand_ == hand)
@@ -726,10 +726,10 @@ auto TransTableL::lookup_suit(
   empty = true;
   int m;
 
-  if (n == DISTS_PER_ENTRY) {
+  if (n == DistsPerEntry) {
     // No room for new exact suits at this hash position.
     // Have to reuse an existing pos_block_.
-    if (dp->next_write_no_ == DISTS_PER_ENTRY) {
+    if (dp->next_write_no_ == DistsPerEntry) {
       m = 0;
       dp->next_write_no_ = 1;
     }
@@ -867,8 +867,8 @@ auto TransTableL::create_or_update(
     return;
   }
 
-  if (n == BLOCKS_PER_ENTRY) {
-    if (bp->next_write_no_ >= BLOCKS_PER_ENTRY)
+  if (n == BlocksPerEntry) {
+    if (bp->next_write_no_ >= BlocksPerEntry)
       bp->next_write_no_ = 0;
   }
   else
@@ -918,7 +918,7 @@ auto TransTableL::add(
     w = static_cast<int>(ourWinRanks[ss]);
     if (w == 0) {
       ab[ss] = aggr_[0].aggr_bytes_[ss];
-      mb[ss] = MaskBytesTable()[0][ss].data();
+      mb[ss] = mask_bytes_table()[0][ss].data();
       low[ss] = 15;
       TTentry.first_.least_win[ss] = 0;
     }
@@ -928,8 +928,8 @@ auto TransTableL::add(
       ag = static_cast<unsigned short>(aggrTarget[ss] & (-w));
 
       ab[ss] = aggr_[ag].aggr_bytes_[ss];
-      mb[ss] = MaskBytesTable()[ag][ss].data();
-      low[ss] = static_cast<char>(TTLowestRankTable()[ag]);
+      mb[ss] = mask_bytes_table()[ag][ss].data();
+      low[ss] = static_cast<char>(tt_lowest_rank_table()[ag]);
 
       TTentry.first_.least_win[ss] = 15 - low[ss];
       TTentry.xor_set_ ^= aggr_[ag].aggr_ranks_[ss];
@@ -1246,7 +1246,7 @@ auto TransTableL::update_suit_hist(
   DistHash * dp;
 
   num_wraps = 0;
-  for (int i = 0; i <= DISTS_PER_ENTRY; i++)
+  for (int i = 0; i <= DistsPerEntry; i++)
     hist[i] = 0;
 
   for (int hashkey = 0; hashkey < 256; hashkey++) {
@@ -1269,7 +1269,7 @@ auto TransTableL::update_suit_hist(
   DistHash * dp;
 
   num_wraps = 0;
-  for (int i = 0; i <= DISTS_PER_ENTRY; i++)
+  for (int i = 0; i <= DistsPerEntry; i++)
     hist[i] = 0;
 
   for (int hashkey = 0; hashkey < 256; hashkey++) {
@@ -1289,14 +1289,14 @@ auto TransTableL::print_suit_stats(
   ofstream& fout,
   const int trick,
   const int hand) const -> void {
-  int hist[DISTS_PER_ENTRY+1];
+  int hist[DistsPerEntry+1];
   int num_wraps;
 
   TransTableL::update_suit_hist(trick, hand, hist, num_wraps);
 
   fout << "Suit histogram for trick " << trick << ", hand " <<
     Players()[static_cast<unsigned>(hand)] << "\n";
-  TransTableL::print_hist(fout, hist, num_wraps, DISTS_PER_ENTRY);
+  TransTableL::print_hist(fout, hist, num_wraps, DistsPerEntry);
 }
 
 
@@ -1304,11 +1304,11 @@ auto TransTableL::print_all_suit_stats(ofstream& fout) const -> void {
   int num_wraps;
   int suitWraps = 0;
 
-  // Really the maximum of BLOCKS_PER_ENTRY and DISTS_PER_ENTRY.
-  int hist[DISTS_PER_ENTRY+1];
-  int suitHist[DISTS_PER_ENTRY+1];
+  // Really the maximum of BlocksPerEntry and DistsPerEntry.
+  int hist[DistsPerEntry+1];
+  int suitHist[DistsPerEntry+1];
 
-  for (int i = 0; i <= DISTS_PER_ENTRY; i++)
+  for (int i = 0; i <= DistsPerEntry; i++)
     suitHist[i] = 0;
 
   for (int trick = 11; trick >= 1; trick--) {
@@ -1318,17 +1318,17 @@ auto TransTableL::print_all_suit_stats(ofstream& fout) const -> void {
 
       fout << "Suit histogram for trick " << trick << ", hand " <<
         Players()[static_cast<unsigned>(hand)] << "\n";
-      TransTableL::print_hist(fout, hist, num_wraps, DISTS_PER_ENTRY);
+      TransTableL::print_hist(fout, hist, num_wraps, DistsPerEntry);
     }
   }
 
   fout << "Overall suit histogram\n";
-  TransTableL::print_hist(fout, suitHist, suitWraps, DISTS_PER_ENTRY);
+  TransTableL::print_hist(fout, suitHist, suitWraps, DistsPerEntry);
 }
 
 
 auto TransTableL::print_summary_suit_stats(ofstream& fout) const -> void {
-  int hist[DISTS_PER_ENTRY+1];
+  int hist[DistsPerEntry+1];
   int count, prod_sum, prod_sumsq, max_len, num_wraps;
 
   fout << "Suit depth statistics\n\n";
@@ -1340,13 +1340,13 @@ auto TransTableL::print_summary_suit_stats(ofstream& fout) const -> void {
     setw(8) << "Average" <<
     setw(8) << "Std.dev" <<
     setw(8) << "Maximum" <<
-    "   P" << setw(4) << setprecision(2) << fixed << TT_PERCENTILE << "\n";
+    "   P" << setw(4) << setprecision(2) << fixed << TtPercentile << "\n";
 
   for (int trick = 11; trick >= 1; trick--) {
     for (int hand = 0; hand < DDS_HANDS; hand++) {
       TransTableL::update_suit_hist(trick, hand, hist, num_wraps);
       TransTableL::make_hist_stats(hist,
-        count, prod_sum, prod_sumsq, max_len, DISTS_PER_ENTRY);
+        count, prod_sum, prod_sumsq, max_len, DistsPerEntry);
 
       double mean = 0., var = 0.;
       if (count > 1) {
@@ -1360,7 +1360,7 @@ auto TransTableL::print_summary_suit_stats(ofstream& fout) const -> void {
 
       const int percentile =
         TransTableL::calc_percentile(hist,
-          TT_PERCENTILE * count, DISTS_PER_ENTRY);
+          TtPercentile * count, DistsPerEntry);
 
       fout << setw(5) << right << trick <<
   setw(7) << Players()[static_cast<unsigned>(hand)] <<
@@ -1561,7 +1561,7 @@ auto TransTableL::update_entry_hist(
   DistHash * dp;
 
   num_wraps = 0;
-  for (int i = 0; i <= BLOCKS_PER_ENTRY; i++)
+  for (int i = 0; i <= BlocksPerEntry; i++)
     hist[i] = 0;
 
   for (int hashkey = 0; hashkey < 256; hashkey++) {
@@ -1587,7 +1587,7 @@ auto TransTableL::update_entry_hist(
   DistHash * dp;
 
   num_wraps = 0;
-  for (int i = 0; i <= BLOCKS_PER_ENTRY; i++)
+  for (int i = 0; i <= BlocksPerEntry; i++)
     hist[i] = 0;
 
   for (int hashkey = 0; hashkey < 256; hashkey++) {
@@ -1610,24 +1610,24 @@ auto TransTableL::print_entry_stats(
   ofstream& fout,
   const int trick,
   const int hand) const -> void {
-  int hist[BLOCKS_PER_ENTRY+1];
+  int hist[BlocksPerEntry+1];
   int num_wraps;
 
   TransTableL::update_entry_hist(trick, hand, hist, num_wraps);
 
   fout << "Entry histogram for trick " << trick << ", hands " <<
     Players()[static_cast<unsigned>(hand)] << "\n";
-  TransTableL::print_hist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
+  TransTableL::print_hist(fout, hist, num_wraps, BlocksPerEntry);
 }
 
 
 auto TransTableL::print_all_entry_stats(ofstream& fout) const -> void {
-  int hist[BLOCKS_PER_ENTRY+1];
+  int hist[BlocksPerEntry+1];
   int num_wraps;
 
   int suitWraps = 0;
-  int suitHist[BLOCKS_PER_ENTRY+1];
-  for (int i = 0; i <= BLOCKS_PER_ENTRY; i++)
+  int suitHist[BlocksPerEntry+1];
+  for (int i = 0; i <= BlocksPerEntry; i++)
     suitHist[i] = 0;
 
   for (int trick = 11; trick >= 1; trick--) {
@@ -1637,12 +1637,12 @@ auto TransTableL::print_all_entry_stats(ofstream& fout) const -> void {
 
       fout << "Entry histogram for trick " << trick << ", hands " <<
         Players()[static_cast<unsigned>(hand)] << "\n";
-      TransTableL::print_hist(fout, hist, num_wraps, BLOCKS_PER_ENTRY);
+      TransTableL::print_hist(fout, hist, num_wraps, BlocksPerEntry);
     }
   }
 
   fout << "Overall entry histogram\n";
-  TransTableL::print_hist(fout, suitHist, suitWraps, BLOCKS_PER_ENTRY);
+  TransTableL::print_hist(fout, suitHist, suitWraps, BlocksPerEntry);
 }
 
 
@@ -1651,15 +1651,15 @@ auto TransTableL::effect_of_block_bound(
   const int size) const -> int {
   // Calculates the number of blocks used if the blocks
   // are divided up in units of size, rather than in units
-  // of BLOCKS_PER_ENTRY. Only makes sense if size is less
-  // than BLOCKS_PER_ENTRY, as we won't have statistics for
-  // how many blocks above BLOCKS_PER_ENTRY would be created
-  // if BLOCKS_PER_ENTRY were larger.
+  // of BlocksPerEntry. Only makes sense if size is less
+  // than BlocksPerEntry, as we won't have statistics for
+  // how many blocks above BlocksPerEntry would be created
+  // if BlocksPerEntry were larger.
 
   int cum_memory = 0;
   int unit_size = 0;
 
-  for (int i = 1; i <= BLOCKS_PER_ENTRY; i++) {
+  for (int i = 1; i <= BlocksPerEntry; i++) {
     if ((i - 1) % size == 0)
       unit_size += size;
 
@@ -1670,7 +1670,7 @@ auto TransTableL::effect_of_block_bound(
 
 
 auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void {
-  int hist[BLOCKS_PER_ENTRY + 1];
+  int hist[BlocksPerEntry + 1];
   int count, prod_sum, prod_sumsq, max_len, num_wraps;
 
   int cumCount = 0;
@@ -1686,13 +1686,13 @@ auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void {
     setw(8) << "Average" <<
     setw(8) << "Std.dev" <<
     setw(8) << "Maximum" <<
-    "   P" << setw(4) << setprecision(2) << fixed << TT_PERCENTILE << "\n";
+    "   P" << setw(4) << setprecision(2) << fixed << TtPercentile << "\n";
 
   for (int trick = 11; trick >= 1; trick--) {
     for (int hand = 0; hand < DDS_HANDS; hand++) {
       TransTableL::update_entry_hist(trick, hand, hist, num_wraps);
       TransTableL::make_hist_stats(hist,
-        count, prod_sum, prod_sumsq, max_len, BLOCKS_PER_ENTRY);
+        count, prod_sum, prod_sumsq, max_len, BlocksPerEntry);
 
       cumCount += count;
       cumProd += prod_sum;
@@ -1707,7 +1707,7 @@ auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void {
         var = 0.;
 
       const int percentile = TransTableL::calc_percentile(hist,
-         TT_PERCENTILE * count, BLOCKS_PER_ENTRY);
+         TtPercentile * count, BlocksPerEntry);
 
       fout << setw(5) << right << trick <<
   setw(7) << Players()[static_cast<unsigned>(hand)] <<
@@ -1729,12 +1729,12 @@ auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void {
   fout << setw(16) << left << "Mem scenario" <<
     setw(7) << right << setprecision(2) << fixed <<
       100. * cumMemory / 
-        (static_cast<double>(BLOCKS_PER_ENTRY * cumCount)) << "%\n";
+        (static_cast<double>(BlocksPerEntry * cumCount)) << "%\n";
 
   if (cumCount)
     fout << setw(16) << left << "Fullness" <<
       setw(7) << right << setprecision(2) << fixed <<
-        100. * cumProd / (BLOCKS_PER_ENTRY * cumCount) << "%\n";
+        100. * cumProd / (BlocksPerEntry * cumCount) << "%\n";
   fout << "\n";
 }
 

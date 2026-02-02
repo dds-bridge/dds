@@ -30,7 +30,7 @@ enum class ResetReason
   Count = 6
 };
 
-inline constexpr int kResetReasonCount = static_cast<int>(ResetReason::Count);
+inline constexpr int ResetReasonCount = static_cast<int>(ResetReason::Count);
 
 // Node value/cached card data
 struct NodeCards // 8 bytes
@@ -46,6 +46,7 @@ struct NodeCards // 8 bytes
   // Disable warning for unused arguments.
   #pragma warning(push)
   #pragma warning(disable: 4100)
+#endif
 
 #ifdef __APPLE__
   #pragma clang diagnostic push
@@ -113,6 +114,4 @@ class TransTable
 
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
-#endif
-
 #endif
