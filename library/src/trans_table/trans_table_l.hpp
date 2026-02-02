@@ -21,7 +21,8 @@
 #include "trans_table.hpp"
 
 
-enum {
+enum
+{
   NumPagesDefault = 15,
   NumPagesMaximum = 25,
   BlocksPerPage = 1000,
@@ -258,19 +259,19 @@ class TransTableL: public TransTable
       const std::string& high,
       unsigned len) const -> std::string;
 
-    void dump_hands(
+    auto dump_hands(
       std::ofstream& fout,
       const std::vector<std::vector<std::string>>& hands,
-      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const;
+      const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const -> void;
 
-    void set_to_partial_hands(
+    auto set_to_partial_hands(
       const unsigned set,
       const unsigned mask,
       const int max_rank,
       const int num_ranks,
-      std::vector<std::vector<std::string>>& hands) const;
+      std::vector<std::vector<std::string>>& hands) const -> void;
 
-    int blocks_in_use() const;
+    auto blocks_in_use() const -> int;
 
     // Legacy implementation helpers removed; modern overrides are canonical.
 
@@ -286,12 +287,12 @@ class TransTableL: public TransTable
     // thrp->transTable.PrintEntriesDistAndCards(cout, 11, 1, ag, hd);
 
     // Modern overrides (out-of-line implementations in .cpp)
-    void init(const int hand_lookup[][15]) override;
-    void set_memory_default(int megabytes) override;
-    void set_memory_maximum(int megabytes) override;
-    void make_tt() override;
-    void reset_memory(ResetReason reason) override;
-    void return_all_memory() override;
+    auto init(const int hand_lookup[][15]) -> void override;
+    auto set_memory_default(int megabytes) -> void override;
+    auto set_memory_maximum(int megabytes) -> void override;
+    auto make_tt() -> void override;
+    auto reset_memory(ResetReason reason) -> void override;
+    auto return_all_memory() -> void override;
     auto memory_in_use() const -> double override;
     auto lookup(
       int trick,
@@ -300,23 +301,44 @@ class TransTableL: public TransTable
       const int hand_dist[],
       int limit,
       bool& lower_flag) -> NodeCards const * override;
-    void add(
+    auto add(
       int trick,
       int hand,
       const unsigned short aggr_target[],
       const unsigned short win_ranks_arg[],
       const NodeCards& first,
-      bool flag) override;
-    void print_suits(std::ofstream& fout, int trick, int hand) const override;
-    void print_all_suits(std::ofstream& fout) const override;
-    void print_suit_stats(std::ofstream& fout, int trick, int hand) const override;
-    void print_all_suit_stats(std::ofstream& fout) const override;
-    void print_summary_suit_stats(std::ofstream& fout) const override;
-    void print_entries_dist(std::ofstream& fout, int trick, int hand, const int hand_dist[]) const override;
-    void print_entries_dist_and_cards(std::ofstream& fout, int trick, int hand, const unsigned short aggr_target[], const int hand_dist[]) const override;
-    void print_entries(std::ofstream& fout, int trick, int hand) const override;
-    void print_all_entries(std::ofstream& fout) const override;
-    void print_entry_stats(std::ofstream& fout, int trick, int hand) const override;
-    void print_all_entry_stats(std::ofstream& fout) const override;
-    void print_summary_entry_stats(std::ofstream& fout) const override;
+      bool flag) -> void override;
+    auto print_suits(
+      std::ofstream& fout,
+      int trick,
+      int hand) const -> void override;
+    auto print_all_suits(std::ofstream& fout) const -> void override;
+    auto print_suit_stats(
+      std::ofstream& fout,
+      int trick,
+      int hand) const -> void override;
+    auto print_all_suit_stats(std::ofstream& fout) const -> void override;
+    auto print_summary_suit_stats(std::ofstream& fout) const -> void override;
+    auto print_entries_dist(
+      std::ofstream& fout,
+      int trick,
+      int hand,
+      const int hand_dist[]) const -> void override;
+    auto print_entries_dist_and_cards(
+      std::ofstream& fout,
+      int trick,
+      int hand,
+      const unsigned short aggr_target[],
+      const int hand_dist[]) const -> void override;
+    auto print_entries(
+      std::ofstream& fout,
+      int trick,
+      int hand) const -> void override;
+    auto print_all_entries(std::ofstream& fout) const -> void override;
+    auto print_entry_stats(
+      std::ofstream& fout,
+      int trick,
+      int hand) const -> void override;
+    auto print_all_entry_stats(std::ofstream& fout) const -> void override;
+    auto print_summary_entry_stats(std::ofstream& fout) const -> void override;
 };
