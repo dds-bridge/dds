@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_TRANSTABLES_H
-#define DDS_TRANSTABLES_H
+#pragma once
 
 /*
    This is an object for managing transposition tables and the
@@ -209,4 +208,3 @@ class TransTableS: public TransTable
   void PrintResetStats(std::ofstream& fout) const;
 };
 
-#endif

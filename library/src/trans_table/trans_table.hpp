@@ -13,8 +13,7 @@
    much smaller memory and a somewhat slower execution time.
 */
 
-#ifndef DDS_TRANSTABLE_H
-#define DDS_TRANSTABLE_H
+#pragma once
 
 #include <fstream>
 #include <api/dll.h>
@@ -47,7 +46,6 @@ struct NodeCards // 8 bytes
   // Disable warning for unused arguments.
   #pragma warning(push)
   #pragma warning(disable: 4100)
-#endif
 
 #ifdef __APPLE__
   #pragma clang diagnostic push

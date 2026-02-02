@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_TRANSTABLEL_H
-#define DDS_TRANSTABLEL_H
+#pragma once
 
 /*
    This is an implementation of the transposition table that requires
@@ -322,4 +321,3 @@ class TransTableL: public TransTable
     void print_summary_entry_stats(std::ofstream& fout) const override;
 };
 
-#endif
