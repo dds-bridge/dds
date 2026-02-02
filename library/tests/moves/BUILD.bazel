@@ -7,7 +7,7 @@ cc_test(
     size = "small",
     srcs = ["moves_test.cpp"],
     deps = [
-        "//library/src:testable_dds",
+        "//library/src/moves:testable_moves",
         "@googletest//:gtest_main",
     ],
     copts = ["-std=c++20"],
