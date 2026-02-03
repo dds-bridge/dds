@@ -950,7 +950,7 @@ auto TransTableS::find_sop(
 }
 
 
-auto TransTableS::PrintNodeStats(ofstream& fout) const -> void
+auto TransTableS::print_node_stats_impl(ofstream& fout) const -> void
 {
   fout << "Report of generated PosSearch nodes per trick level.\n";
   fout << "Trick level 13 is highest level with all 52 cards.\n";
@@ -966,7 +966,7 @@ auto TransTableS::PrintNodeStats(ofstream& fout) const -> void
 }
 
 
-auto TransTableS::PrintResetStats(ofstream& fout) const -> void
+auto TransTableS::print_reset_stats_impl(ofstream& fout) const -> void
 {
   fout << "Total no. of resets: " << stats_resets_.no_of_resets_ << "\n" << endl;
 

@@ -335,18 +335,18 @@ class TransTableS: public TransTable
 
     /// \brief Bridge to node statistics printer.
     ///
-    /// Delegates to PrintNodeStats() implementation.
+    /// Delegates to print_node_stats_impl() implementation.
     auto print_node_stats(std::ofstream& fout) const -> void override
     {
-      PrintNodeStats(fout);
+      print_node_stats_impl(fout);
     }
 
     /// \brief Bridge to reset statistics printer.
     ///
-    /// Delegates to PrintResetStats() implementation.
+    /// Delegates to print_reset_stats_impl() implementation.
     auto print_reset_stats(std::ofstream& fout) const -> void override
     {
-      PrintResetStats(fout);
+      print_reset_stats_impl(fout);
     }
 
     /// \brief Print node statistics from the small TT.
@@ -354,12 +354,12 @@ class TransTableS: public TransTable
     /// Outputs statistics about the cached nodes and memory usage.
     ///
     /// \param fout Output stream for statistics
-    auto PrintNodeStats(std::ofstream& fout) const -> void;
+    auto print_node_stats_impl(std::ofstream& fout) const -> void;
 
     /// \brief Print reset statistics from the small TT.
     ///
     /// Outputs statistics about when and why the table was reset.
     ///
     /// \param fout Output stream for statistics
-    auto PrintResetStats(std::ofstream& fout) const -> void;
+    auto print_reset_stats_impl(std::ofstream& fout) const -> void;
 };
