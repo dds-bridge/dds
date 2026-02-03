@@ -152,9 +152,9 @@ class TransTable
     /// make_tt() before further use.
     virtual auto return_all_memory() -> void = 0;
 
-    /// \brief Return the amount of memory currently in use (in MB).
+    /// \brief Return the amount of memory currently in use (in KB).
     ///
-    /// \return Memory usage in megabytes
+    /// \return Memory usage in kilobytes
     virtual auto memory_in_use() const -> double = 0;
 
     /// \brief Lookup a cached result for a position.
