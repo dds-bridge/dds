@@ -22,40 +22,66 @@
 #include "trans_table.hpp"
 
 
+/// \brief Memory-efficient transposition table implementation.
+///
+/// TransTableS provides a smaller-footprint implementation of the transposition
+/// table suitable for memory-constrained environments. It uses a tree-based
+/// structure with card sets and win rank sets to organize cached positions.
+///
+/// \par Memory Strategy
+/// Uses malloc/calloc for pool-based allocation with fixed-size arrays:
+/// - WinCard pool for storing rank/card information
+/// - NodeCards pool for caching search results
+/// - PosSearchSmall trees for position organization
+///
+/// Allocations throw std::bad_alloc on failure (see Task 7 modernization).
+/// Non-critical allocations may use fallback strategies.
+///
+/// \par Performance Characteristics
+/// Slower than TransTableL due to smaller cache and binary tree lookups.
+/// Suitable for analysis with memory constraints (analysis.max_memory_mb < 1000).
+///
+/// \par Thread Safety
+/// Not thread-safe. Must be accessed from a single thread.
+///
+/// \see TransTableL for the full-featured implementation
+/// \see NodeCards for cached position data
 class TransTableS: public TransTable
 {
   private:
 
-    // Structures for the small memory option.
-
+    /// \brief Card entry in the small TT with win mask information.
     struct WinCard
     {
-      int order_set_;
-      int win_mask_;
-      NodeCards * first_;
-      WinCard * prev_win_;
-      WinCard * next_win_;
-      WinCard * next_;
+      int order_set_;              ///< Bitmask of card orders
+      int win_mask_;               ///< Bitmask of winning ranks
+      NodeCards * first_;          ///< Pointer to cached result
+      WinCard * prev_win_;         ///< Link in win set list
+      WinCard * next_win_;         ///< Link in win set list
+      WinCard * next_;             ///< Link in position search tree
     };
 
+    /// \brief Tree node for binary search on card distributions.
     struct PosSearchSmall
     {
-      WinCard * pos_search_point_;
-      long long suit_lengths_;
-      PosSearchSmall * left_;
-      PosSearchSmall * right_;
+      WinCard * pos_search_point_; ///< Associated card entry
+      long long suit_lengths_;     ///< Card length distribution key
+      PosSearchSmall * left_;      ///< Left subtree
+      PosSearchSmall * right_;     ///< Right subtree
     };
 
+    /// \brief Aggregated targets and win masks for a given hand.
     struct TtAggr
     {
-      int aggr_ranks_[DDS_SUITS];
-      int win_mask_[DDS_SUITS];
+      int aggr_ranks_[DDS_SUITS];  ///< Target tricks per suit
+      int win_mask_[DDS_SUITS];    ///< Win mask per suit
     };
 
+    /// \brief Statistics about table resets.
     struct StatsResets
     {
-      int no_of_resets_;
-      int aggr_resets_[ResetReasonCount];
+      int no_of_resets_;           ///< Total number of resets
+      int aggr_resets_[ResetReasonCount]; ///< Reset counts by reason
     };
 
 
@@ -156,18 +182,67 @@ class TransTableS: public TransTable
 
   public:
 
+    /// \brief Construct a small transposition table instance.
+    ///
+    /// Initializes the small TT with default memory limits. Must call
+    /// make_tt() to actually allocate memory.
     TransTableS();
 
+    /// \brief Destroy the small transposition table.
+    ///
+    /// Releases all allocated memory and internal structures.
     ~TransTableS();
 
+    /// \brief Initialize the transposition table with hand lookup tables.
+    ///
+    /// Sets up the TT with hand lookup configuration for position hashing.
+    ///
+    /// \param hand_lookup Array of hand lookup tables [15][15]
+    /// \throws std::bad_alloc if initialization fails
     auto init(const int hand_lookup[][15]) -> void override;
+
+    /// \brief Set the default (soft) memory limit.
+    ///
+    /// \param megabytes Desired soft memory limit in MB
     auto set_memory_default(int megabytes) -> void override;
+
+    /// \brief Set the maximum (hard) memory limit.
+    ///
+    /// \param megabytes Maximum allowed memory in MB
     auto set_memory_maximum(int megabytes) -> void override;
+
+    /// \brief Allocate transposition table memory structures.
+    ///
+    /// \throws std::bad_alloc if memory allocation fails
     auto make_tt() -> void override;
+
+    /// \brief Clear cached entries and reset statistics.
+    ///
+    /// \param reason Why the reset is occurring
     auto reset_memory(ResetReason reason) -> void override;
+
+    /// \brief Deallocate all transposition table memory.
+    ///
+    /// After calling this, must call make_tt() before further lookups.
     auto return_all_memory() -> void override;
+
+    /// \brief Return current memory usage in megabytes.
+    ///
+    /// \return Memory in use (MB)
     auto memory_in_use() const -> double override;
 
+    /// \brief Lookup a cached position result.
+    ///
+    /// Searches for previously cached analysis of the given position.
+    /// Returns nullptr if not found.
+    ///
+    /// \param trick Current trick (0-12)
+    /// \param hand Hand to play (0-3)
+    /// \param aggr_target Target tricks per suit
+    /// \param hand_dist Card distribution
+    /// \param limit Early termination threshold
+    /// \param[out] lower_flag Set to true if result is a lower bound
+    /// \return Cached result or nullptr
     auto lookup(
       int trick,
       int hand,
@@ -176,6 +251,17 @@ class TransTableS: public TransTable
       int limit,
       bool& lower_flag
     ) -> NodeCards const * override;
+
+    /// \brief Add a computed result to the transposition table.
+    ///
+    /// Caches a newly computed search result for later lookup.
+    ///
+    /// \param trick Current trick (0-12)
+    /// \param hand Hand to play (0-3)
+    /// \param aggr_target Target tricks per suit
+    /// \param win_ranks_arg Winning ranks (optimization data)
+    /// \param first Computed result to cache
+    /// \param flag True if this is a lower bound (incomplete search)
     auto add(
       int trick,
       int hand,
@@ -185,7 +271,10 @@ class TransTableS: public TransTable
       bool flag
     ) -> void override;
 
-    // The small TT does not provide verbose dumping; implement no-op printers
+    /// \brief No-op print implementation for small TT.
+    ///
+    /// The small transposition table does not support detailed dumping.
+    /// These methods are no-op implementations of the base class interface.
     auto print_suits(
       std::ofstream& /*fout*/,
       int /*trick*/,
@@ -244,17 +333,33 @@ class TransTableS: public TransTable
     {
     }
 
-    // Bridge stats printers to existing small-TT implementations
+    /// \brief Bridge to node statistics printer.
+    ///
+    /// Delegates to PrintNodeStats() implementation.
     auto print_node_stats(std::ofstream& fout) const -> void override
     {
       PrintNodeStats(fout);
     }
+
+    /// \brief Bridge to reset statistics printer.
+    ///
+    /// Delegates to PrintResetStats() implementation.
     auto print_reset_stats(std::ofstream& fout) const -> void override
     {
       PrintResetStats(fout);
     }
 
+    /// \brief Print node statistics from the small TT.
+    ///
+    /// Outputs statistics about the cached nodes and memory usage.
+    ///
+    /// \param fout Output stream for statistics
     auto PrintNodeStats(std::ofstream& fout) const -> void;
 
+    /// \brief Print reset statistics from the small TT.
+    ///
+    /// Outputs statistics about when and why the table was reset.
+    ///
+    /// \param fout Output stream for statistics
     auto PrintResetStats(std::ofstream& fout) const -> void;
 };
