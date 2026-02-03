@@ -315,14 +315,37 @@ auto TransTableL::set_memory_maximum(int megabytes) -> void
 auto TransTableL::make_tt() -> void
 {
   if (!tt_in_use_) {
-    tt_in_use_ = 1;
+    // Allocate all memory into temporaries first for exception safety.
+    // If any allocation throws, nothing has been modified.
+    DistHash* temp_roots[TtTricks][DDS_HANDS];
 
+    try {
+      for (int t = 0; t < TtTricks; t++) {
+        for (int h = 0; h < DDS_HANDS; h++) {
+          temp_roots[t][h] = static_cast<DistHash *>(
+            checked_malloc(256 * sizeof(DistHash)));
+        }
+      }
+    } catch (...) {
+      // Clean up any allocated blocks on exception
+      for (int t = 0; t < TtTricks; t++) {
+        for (int h = 0; h < DDS_HANDS; h++) {
+          if (temp_roots[t][h] != nullptr) {
+            free(temp_roots[t][h]);
+            temp_roots[t][h] = nullptr;
+          }
+        }
+      }
+      throw;
+    }
+
+    // All allocations succeeded; assign to members and mark as in-use
     for (int t = 0; t < TtTricks; t++) {
       for (int h = 0; h < DDS_HANDS; h++) {
-        tt_root_[t][h] = static_cast<DistHash *>(
-          checked_malloc(256 * sizeof(DistHash)));
+        tt_root_[t][h] = temp_roots[t][h];
       }
     }
+    tt_in_use_ = 1;
   }
 
   TransTableL::init_tt();
