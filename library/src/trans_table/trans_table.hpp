@@ -40,8 +40,8 @@ inline constexpr int ResetReasonCount = static_cast<int>(ResetReason::Count);
 ///
 /// This structure holds the cached values computed during double dummy analysis
 /// for a particular node/trick combination. It stores bounds on the number of
-/// tricks N-S can make (upper and lower bounds), the best move to play, and the
-/// minimum number of tricks each suit can guarantee.
+/// tricks the side to move at this node can make (upper and lower bounds), the
+/// best move to play, and the minimum number of tricks each suit can guarantee.
 ///
 /// Size: 8 bytes (tightly packed to minimize memory footprint in large tables)
 ///
@@ -50,8 +50,8 @@ inline constexpr int ResetReasonCount = static_cast<int>(ResetReason::Count);
 /// \see ResetReason for memory management related to this structure
 struct NodeCards // 8 bytes
 {
-  char upper_bound;     ///< Maximum tricks N-S can make (0-13)
-  char lower_bound;     ///< Minimum tricks N-S can make (0-13)
+  char upper_bound;     ///< Maximum tricks for side to move at this node (0-13)
+  char lower_bound;     ///< Minimum tricks for side to move at this node (0-13)
   char best_move_suit;  ///< Optimal suit to play next (0-3 for C,D,H,S)
   char best_move_rank;  ///< Optimal rank to play next (0-12 for 2-A)
   char least_win[DDS_SUITS]; ///< Minimum tricks for each suit as trump
@@ -166,7 +166,8 @@ class TransTable
     /// \param hand Current hand to play (0-3)
     /// \param aggr_target Aggregated targets per suit (4 values, one per suit)
     /// \param hand_dist Card distribution for each hand (4 values)
-    /// \param limit Maximum tricks N-S needs (for early termination)
+    /// \param limit Threshold for early termination, interpreted for the
+    ///              side to move at this node
     /// \param[out] lower_flag Set to true if result is a lower bound
     /// \return Pointer to cached NodeCards if found; nullptr otherwise
     /// \note The returned pointer is only valid until the next add() or reset
