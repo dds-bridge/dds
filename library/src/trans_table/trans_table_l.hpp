@@ -31,8 +31,7 @@ enum
   FirstHarvestTrick = 8,
   HarvestAge = 10000,
   TtBytes = 4,
-  TtTricks = 12,
-  TT_LINE_LEN = 20
+  TtTricks = 12
 };
 
 inline constexpr double TtPercentile = 0.9;
