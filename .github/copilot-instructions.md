@@ -127,9 +127,9 @@ bazel test //...
 - `.bazelrc` - Compiler flags, build modes
 
 **Public API**:
-- `library/src/api/dds.h` - Main C++ API (use `#include <api/dds.h>`)
-- `library/src/api/dll.h` - C API for legacy compatibility
-- `library/src/dds.hpp` - C++ namespace wrapper (in `library/src/`)
+- `library/src/api/dll.h` - C API (use `#include <api/dll.h>`)
+- `library/src/dds.hpp` - Full C++ API (use `#include <dds/dds.hpp>`)
+- `library/src/api/dds.h` - Internal header included by dds.hpp
 
 **Core Solver**:
 - `library/src/ab_search.cpp` - Alpha-beta search implementation
