@@ -201,9 +201,15 @@ class TransTableS: public TransTable
     /// \throws std::bad_alloc if initialization fails
     auto init(const int hand_lookup[][15]) -> void override;
 
-    /// \brief Set the default (soft) memory limit.
+    /// \brief Set the default (soft) memory limit (no-op for TransTableS).
     ///
-    /// \param megabytes Desired soft memory limit in MB
+    /// For the small transposition table implementation, this function is
+    /// intentionally a no-op and exists only to satisfy the TransTable
+    /// interface. TransTableS does not track or enforce a separate soft
+    /// memory limit; only the hard limit set via set_memory_maximum() is
+    /// honored.
+    ///
+    /// \param megabytes Ignored for TransTableS
     auto set_memory_default(int megabytes) -> void override;
 
     /// \brief Set the maximum (hard) memory limit.
