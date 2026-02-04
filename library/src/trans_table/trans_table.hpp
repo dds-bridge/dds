@@ -41,7 +41,8 @@ inline constexpr int ResetReasonCount = static_cast<int>(ResetReason::Count);
 /// This structure holds the cached values computed during double dummy analysis
 /// for a particular node/trick combination. It stores bounds on the number of
 /// tricks the side to move at this node can make (upper and lower bounds), the
-/// best move to play, and the minimum number of tricks each suit can guarantee.
+/// best move to play, and per-suit lowest winning rank encodings for move
+/// ordering.
 ///
 /// Size: 8 bytes (tightly packed to minimize memory footprint in large tables)
 ///
@@ -52,9 +53,9 @@ struct NodeCards // 8 bytes
 {
   char upper_bound;     ///< Maximum tricks for side to move at this node (0-13)
   char lower_bound;     ///< Minimum tricks for side to move at this node (0-13)
-  char best_move_suit;  ///< Optimal suit to play next (0-3 for C,D,H,S)
-  char best_move_rank;  ///< Optimal rank to play next (0-12 for 2-A)
-  char least_win[DDS_SUITS]; ///< Minimum tricks for each suit as trump
+  char best_move_suit;  ///< Optimal suit index (0=S, 1=H, 2=D, 3=C; matches cardSuit)
+  char best_move_rank;  ///< Absolute rank (2-14 for 2-A), 0 used as sentinel
+  char least_win[DDS_SUITS]; ///< Encoded lowest winning rank (0-13), used as 15 - least_win
 };
 
 #ifdef _MSC_VER
