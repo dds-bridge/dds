@@ -340,16 +340,17 @@ class TransTableL: public TransTable
     ///
     /// Sets up the TT with hand lookup configuration for position hashing.
     ///
-    /// \param hand_lookup Array of hand lookup tables [15][15]
+    /// \param hand_lookup Array of hand lookup tables [DDS_SUITS][15]
+    ///   (4 suits/hands by 15 ranks).
     /// \throws std::bad_alloc if initialization fails
     /// \par Usage Example
     /// \code
     /// unsigned short ag[DDS_HANDS] = { 0x1fff, 0x1fff, 0x0f75, 0x1fff };
     /// int hd[DDS_HANDS] = { 0x0342, 0x0334, 0x0232, 0x0531 };
-    /// bool lowerFlag = false;
+    /// bool lower_flag = false;
     /// int wr = 0;
     /// int result = 0;
-    /// thrp->transTable.lookup(11, 1, ag, hd, 13, lowerFlag);
+    /// thrp->transTable.lookup(11, 1, ag, hd, 13, lower_flag);
     /// thrp->transTable.add(11, 1, ag, wr, result, false);
     /// \endcode
     auto init(const int hand_lookup[][15]) -> void override;
