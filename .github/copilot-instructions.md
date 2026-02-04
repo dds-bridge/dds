@@ -85,9 +85,9 @@ bazel test //...
 ├── library/
 │   ├── src/                        # Main source code
 │   │   ├── api/                    # Public C/C++ API headers
-│   │   │   ├── dds.h              # Main C++ API header
-│   │   │   ├── dll.h              # C API header
-│   │   │   └── solve_board.hpp
+│   │   │   ├── dds.h              # Internal header (data structures)
+│   │   │   ├── dll.h              # C API
+│   │   │   └── solve_board.hpp    # C++ solver interface
 │   │   ├── solver_context/         # Solver state management
 │   │   ├── trans_table/            # Transposition table implementation
 │   │   ├── system/                 # Threading/memory/system utilities
@@ -129,6 +129,7 @@ bazel test //...
 **Public API** (use these include paths):
 - `#include <api/dll.h>` - C API
 - `#include <dds/dds.hpp>` - C++ API (includes api/dll.h and api/solve_board.hpp)
+  - Note: The `dds/` prefix is added by Bazel's `include_prefix` directive in the build rules
 
 **Public API Files** (actual file locations):
 - `library/src/api/dll.h` - C API declarations
