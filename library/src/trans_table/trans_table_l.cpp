@@ -174,7 +174,7 @@ static auto mask_bytes_table()
   return table;
 }
 
-static auto Players() -> const std::array<std::string, 4>&
+static auto players() -> const std::array<std::string, 4>&
 {
   static const std::array<std::string, 4> p = {"North", "East", "South", "West"};
   return p;
@@ -193,7 +193,7 @@ TransTableL::TransTableL()
   // Touch the tables once to ensure construction.
   (void)tt_lowest_rank_table();
   (void)mask_bytes_table();
-  (void)Players();
+  (void)players();
   // Initialize all internal state to safe defaults. Some of these
   // fields were previously left uninitialized and relied on implicit
   // zeroing via legacy construction paths. With newer creation flows
@@ -317,7 +317,7 @@ auto TransTableL::make_tt() -> void
   if (!tt_in_use_) {
     // Allocate all memory into temporaries first for exception safety.
     // If any allocation throws, nothing has been modified.
-    DistHash* temp_roots[TtTricks][DDS_HANDS];
+    DistHash* temp_roots[TtTricks][DDS_HANDS] = {};
 
     try {
       for (int t = 0; t < TtTricks; t++) {
@@ -1185,10 +1185,10 @@ auto TransTableL::print_suits(
 
   fout << setw(4) << left << "Key" <<
     setw(3) << right << "No" <<
-    setw(8) << right << Players()[0] <<
-    setw(8) << Players()[1] <<
-    setw(8) << Players()[2] <<
-    setw(8) << Players()[3] << "\n";
+    setw(8) << right << players()[0] <<
+    setw(8) << players()[1] <<
+    setw(8) << players()[2] <<
+    setw(8) << players()[3] << "\n";
 
   for (int hashkey = 0; hashkey < 256; hashkey++) {
     dp = &tt_root_[trick][hand][hashkey];
@@ -1217,7 +1217,7 @@ auto TransTableL::print_all_suits(ofstream& fout) const -> void
   for (int trick = 11; trick >= 1; trick--) {
     for (int hand = 0; hand < DDS_HANDS; hand++) {
       fout << "Trick " << trick << ", hand " <<
-        Players()[static_cast<unsigned>(hand)] << "\n";
+        players()[static_cast<unsigned>(hand)] << "\n";
       fout << string(20, '=') << "\n\n";
 
       TransTableL::print_suits(fout, trick, hand);
@@ -1375,7 +1375,7 @@ auto TransTableL::print_suit_stats(
   TransTableL::update_suit_hist(trick, hand, hist, num_wraps);
 
   fout << "Suit histogram for trick " << trick << ", hand " <<
-    Players()[static_cast<unsigned>(hand)] << "\n";
+    players()[static_cast<unsigned>(hand)] << "\n";
   TransTableL::print_hist(fout, hist, num_wraps, DistsPerEntry);
 }
 
@@ -1398,7 +1398,7 @@ auto TransTableL::print_all_suit_stats(ofstream& fout) const -> void
         num_wraps, suit_wraps);
 
       fout << "Suit histogram for trick " << trick << ", hand " <<
-        Players()[static_cast<unsigned>(hand)] << "\n";
+        players()[static_cast<unsigned>(hand)] << "\n";
       TransTableL::print_hist(fout, hist, num_wraps, DistsPerEntry);
     }
   }
@@ -1445,7 +1445,7 @@ auto TransTableL::print_summary_suit_stats(ofstream& fout) const -> void
           TtPercentile * count, DistsPerEntry);
 
       fout << setw(5) << right << trick <<
-        setw(7) << Players()[static_cast<unsigned>(hand)] <<
+        setw(7) << players()[static_cast<unsigned>(hand)] <<
         setw(8) << count <<
         setw(8) << num_wraps;
       
@@ -1529,7 +1529,7 @@ auto TransTableL::print_entries_dist_and_cards(
   TransTableL::dist_to_lengths(trick, hand_dist, len);
 
   fout << "Looking up entry for trick " << trick << ", hand " <<
-    Players()[static_cast<unsigned>(hand)] << "\n";
+    players()[static_cast<unsigned>(hand)] << "\n";
   fout << TransTableL::len_to_str(len) << "\n\n";
 
   if (!bp) {
@@ -1593,7 +1593,7 @@ auto TransTableL::print_entries_dist(
 
   if (!bp) {
     fout << "Entry not found: Trick " << trick << ", hand " <<
-      Players()[static_cast<unsigned>(hand)] << "\n";
+      players()[static_cast<unsigned>(hand)] << "\n";
     fout << TransTableL::len_to_str(len) << "\n\n";
     return;
   }
@@ -1630,7 +1630,7 @@ auto TransTableL::print_all_entries(ofstream& fout) const -> void
   for (int trick = 11; trick >= 1; trick--) {
     for (int hand = 0; hand < DDS_HANDS; hand++) {
       const string st = "Entries, trick " + to_string(trick) +
-        ", hand " + Players()[static_cast<unsigned>(hand)];
+        ", hand " + players()[static_cast<unsigned>(hand)];
       fout << st << "\n";
       fout << string(st.size(), '=') << "\n\n";
       TransTableL::print_entries(fout, trick, hand);
@@ -1706,7 +1706,7 @@ auto TransTableL::print_entry_stats(
   TransTableL::update_entry_hist(trick, hand, hist, num_wraps);
 
   fout << "Entry histogram for trick " << trick << ", hands " <<
-    Players()[static_cast<unsigned>(hand)] << "\n";
+    players()[static_cast<unsigned>(hand)] << "\n";
   TransTableL::print_hist(fout, hist, num_wraps, BlocksPerEntry);
 }
 
@@ -1727,7 +1727,7 @@ auto TransTableL::print_all_entry_stats(ofstream& fout) const -> void
         num_wraps, suit_wraps);
 
       fout << "Entry histogram for trick " << trick << ", hands " <<
-        Players()[static_cast<unsigned>(hand)] << "\n";
+        players()[static_cast<unsigned>(hand)] << "\n";
       TransTableL::print_hist(fout, hist, num_wraps, BlocksPerEntry);
     }
   }
@@ -1805,7 +1805,7 @@ auto TransTableL::print_summary_entry_stats(ofstream& fout) const -> void
         BlocksPerEntry);
 
       fout << setw(5) << right << trick <<
-        setw(7) << Players()[static_cast<unsigned>(hand)] <<
+        setw(7) << players()[static_cast<unsigned>(hand)] <<
         setw(8) << count <<
         setw(8) << num_wraps <<
         setw(8) << mean <<

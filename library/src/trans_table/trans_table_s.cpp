@@ -149,8 +149,7 @@ auto TransTableS::make_tt() -> void
 
   if (!tt_in_use_)
   {
-    tt_in_use_ = 1;
-
+    // Calculate memory requirements before any allocation
     summem_ = (1ULL * (WINIT + 1) * sizeof(WinCard)) +
       (1ULL * (NINIT + 1) * sizeof(NodeCards)) +
       (1ULL * (LSIZE + 1) * 52 * sizeof(PosSearchSmall));
@@ -185,37 +184,75 @@ auto TransTableS::make_tt() -> void
       }
     }
 
-    pw_ = static_cast<WinCard **>(checked_calloc(
-      static_cast<unsigned int>(max_index_ + 1),
-      sizeof(WinCard *)));
+    // Allocate to temporaries for exception safety
+    WinCard** temp_pw = nullptr;
+    NodeCards** temp_pn = nullptr;
+    PosSearchSmall** temp_pl[14][DDS_HANDS] = {};
+    TtAggr* temp_aggp = nullptr;
 
-    pn_ = static_cast<NodeCards **>(checked_calloc(
-      static_cast<unsigned int>(max_index_ + 1),
-      sizeof(NodeCards *)));
+    try {
+      temp_pw = static_cast<WinCard **>(checked_calloc(
+        static_cast<unsigned int>(max_index_ + 1),
+        sizeof(WinCard *)));
 
+      temp_pn = static_cast<NodeCards **>(checked_calloc(
+        static_cast<unsigned int>(max_index_ + 1),
+        sizeof(NodeCards *)));
+
+      for (int k = 1; k <= 13; k++)
+        for (int h = 0; h < DDS_HANDS; h++)
+        {
+          temp_pl[k][h] = static_cast<PosSearchSmall **>(checked_calloc(
+            static_cast<unsigned int>(max_index_ + 1),
+            sizeof(PosSearchSmall *)));
+        }
+
+      temp_pw[0] = static_cast<WinCard *>(
+        checked_calloc(WINIT + 1, sizeof(WinCard)));
+
+      temp_pn[0] = static_cast<NodeCards *>(
+        checked_calloc(NINIT + 1, sizeof(NodeCards)));
+
+      for (int k = 1; k <= 13; k++)
+        for (int h = 0; h < DDS_HANDS; h++)
+        {
+          temp_pl[k][h][0] = static_cast<PosSearchSmall *>(checked_calloc(
+            (LSIZE + 1),
+            sizeof(PosSearchSmall)));
+        }
+
+      temp_aggp = static_cast<TtAggr *>(checked_calloc(8192, sizeof(TtAggr)));
+
+    } catch (...) {
+      // Clean up any allocations on exception
+      if (temp_pw) {
+        if (temp_pw[0]) free(temp_pw[0]);
+        free(temp_pw);
+      }
+      if (temp_pn) {
+        if (temp_pn[0]) free(temp_pn[0]);
+        free(temp_pn);
+      }
+      for (int k = 1; k <= 13; k++)
+        for (int h = 0; h < DDS_HANDS; h++)
+          if (temp_pl[k][h]) {
+            if (temp_pl[k][h][0]) free(temp_pl[k][h][0]);
+            free(temp_pl[k][h]);
+          }
+      if (temp_aggp) free(temp_aggp);
+      throw;
+    }
+
+    // All allocations succeeded; assign to members
+    pw_ = temp_pw;
+    pn_ = temp_pn;
     for (int k = 1; k <= 13; k++)
       for (int h = 0; h < DDS_HANDS; h++)
-      {
-        pl_[k][h] = static_cast<PosSearchSmall **>(checked_calloc(
-          static_cast<unsigned int>(max_index_ + 1),
-          sizeof(PosSearchSmall *)));
-      }
+        pl_[k][h] = temp_pl[k][h];
+    aggp_ = temp_aggp;
 
-    pw_[0] = static_cast<WinCard *>(
-      checked_calloc(WINIT + 1, sizeof(WinCard)));
-
-    pn_[0] = static_cast<NodeCards *>(
-      checked_calloc(NINIT + 1, sizeof(NodeCards)));
-
-    for (int k = 1; k <= 13; k++)
-      for (int h = 0; h < DDS_HANDS; h++)
-      {
-        pl_[k][h][0] = static_cast<PosSearchSmall *>(checked_calloc(
-          (LSIZE + 1),
-          sizeof(PosSearchSmall)));
-      }
-
-    aggp_ = static_cast<TtAggr *>(checked_calloc(8192, sizeof(TtAggr)));
+    // Now mark as in-use after all allocations succeeded
+    tt_in_use_ = 1;
 
     init_tt();
 

@@ -226,9 +226,9 @@ class TransTableS: public TransTable
     /// After calling this, must call make_tt() before further lookups.
     auto return_all_memory() -> void override;
 
-    /// \brief Return current memory usage in megabytes.
+    /// \brief Return current memory usage in kilobytes.
     ///
-    /// \return Memory in use (MB)
+    /// \return Memory in use (KB)
     auto memory_in_use() const -> double override;
 
     /// \brief Lookup a cached position result.
