@@ -74,7 +74,7 @@ bazel test //...
 
 ### Directory Structure
 ```
-/home/runner/work/dds3/dds3/
+<repository-root>/
 ├── .github/
 │   ├── copilot-instructions.md     # This file
 │   ├── instructions/                # Path-specific instructions
