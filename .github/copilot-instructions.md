@@ -126,10 +126,15 @@ bazel test //...
 - `MODULE.bazel` - External dependencies (GoogleTest, etc.)
 - `.bazelrc` - Compiler flags, build modes
 
-**Public API**:
-- `library/src/api/dll.h` - C API (use `#include <api/dll.h>`)
-- `library/src/dds.hpp` - Full C++ API (use `#include <dds/dds.hpp>`)
-- `library/src/api/dds.h` - Internal header included by dds.hpp
+**Public API** (use these include paths):
+- `#include <api/dll.h>` - C API
+- `#include <dds/dds.hpp>` - C++ API (includes api/dll.h and api/solve_board.hpp)
+
+**Public API Files** (actual file locations):
+- `library/src/api/dll.h` - C API declarations
+- `library/src/dds.hpp` - C++ API wrapper
+- `library/src/api/dds.h` - Internal header (data structures, included by dds.hpp)
+- `library/src/api/solve_board.hpp` - C++ solver interface
 
 **Core Solver**:
 - `library/src/ab_search.cpp` - Alpha-beta search implementation
@@ -214,7 +219,20 @@ bazel build //library/tests:dtest
 
 ### Formatting
 - **Indentation**: 4 spaces (no tabs)
-- **Braces**: Allman style for functions/classes, K&R for control flow
+- **Braces**: 
+  - **Allman style** (opening brace on new line) for functions, classes, structs, enums, namespaces:
+    ```cpp
+    void my_function()
+    {
+        // body
+    }
+    ```
+  - **K&R style** (opening brace on same line) for control statements:
+    ```cpp
+    if (condition) {
+        do_something();
+    }
+    ```
 - **Standard**: C++20 (`-std=c++20`)
 - **Header guards**: Use `#pragma once`
 - **Include order**: System headers, then project headers
