@@ -46,10 +46,13 @@ bazel build --define=asan=true //...
 ```
 
 ### Build Time Expectations
+(On a modern multi-core system with 8+ cores and SSD)
 - Initial build (cold cache): 2-5 minutes
 - Incremental builds: 10-30 seconds
 - Full test suite: 1-3 minutes
 - Individual test: 2-10 seconds
+
+Note: Times may vary significantly based on hardware and network conditions.
 
 ### Before Making Changes
 ALWAYS run these commands first to establish baseline:
@@ -85,7 +88,7 @@ bazel test //...
 ├── library/
 │   ├── src/                        # Main source code
 │   │   ├── api/                    # Public C/C++ API headers
-│   │   │   ├── dds.h              # Internal header (data structures)
+│   │   │   ├── dds.h              # Internal header (data structures, included by dds.hpp)
 │   │   │   ├── dll.h              # C API
 │   │   │   └── solve_board.hpp    # C++ solver interface
 │   │   ├── solver_context/         # Solver state management
@@ -129,7 +132,7 @@ bazel test //...
 **Public API** (use these include paths):
 - `#include <api/dll.h>` - C API
 - `#include <dds/dds.hpp>` - C++ API (includes api/dll.h and api/solve_board.hpp)
-  - Note: The `dds/` prefix is added by Bazel's `include_prefix` directive in the build rules
+  - Note: The file is at `library/src/dds.hpp`, but the `dds/` prefix is added by Bazel's `include_prefix` directive in the build rules
 
 **Public API Files** (actual file locations):
 - `library/src/api/dll.h` - C API declarations
