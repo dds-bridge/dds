@@ -389,9 +389,14 @@ auto TransTableS::return_all_memory() -> void
   {
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      if (pl_[k][h][0])
-        free(static_cast<void*>(pl_[k][h][0]));
-      pl_[k][h][0] = nullptr;
+      if (pl_[k][h])
+      {
+        if (pl_[k][h][0])
+          free(static_cast<void*>(pl_[k][h][0]));
+        pl_[k][h][0] = nullptr;
+        free(static_cast<void*>(pl_[k][h]));
+        pl_[k][h] = nullptr;
+      }
     }
   }
 
