@@ -340,8 +340,8 @@ class TransTableL: public TransTable
     ///
     /// Sets up the TT with hand lookup configuration for position hashing.
     ///
-    /// \param hand_lookup Array of hand lookup tables [DDS_SUITS][15]
-    ///   (4 suits/hands by 15 ranks).
+    /// \param hand_lookup Hand lookup table array of size [DDS_SUITS][15]
+    ///   (i.e., parameter type const int hand_lookup[DDS_SUITS][15], 4 suits by 15 ranks).
     /// \throws std::bad_alloc if initialization fails
     /// \par Usage Example
     /// \code
