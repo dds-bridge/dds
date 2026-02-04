@@ -231,7 +231,7 @@ TransTableL::~TransTableL()
 // SetConstants removed; constants are produced by TTLowestRankTable/MaskBytesTable.
 
 
-auto TransTableL::init(const int handLookup[][15]) -> void
+auto TransTableL::init(const int hand_lookup[][15]) -> void
 {
   // This is very similar to SetConstants, except that it
   // happens with actual cards. It also makes sense to
@@ -262,7 +262,7 @@ auto TransTableL::init(const int handLookup[][15]) -> void
 
     for (int s = 0; s < DDS_SUITS; s++) {
       ap->aggr_ranks_[s] = (ap->aggr_ranks_[s] >> 2) |
-        static_cast<unsigned>(handLookup[s][top_bit_no] << 24);
+        static_cast<unsigned>(hand_lookup[s][top_bit_no] << 24);
     }
 
     ap->aggr_bytes_[0][0] = (ap->aggr_ranks_[0] << 6) & 0xff000000;
@@ -721,7 +721,7 @@ auto TransTableL::hash8(const int hand_dist[]) const -> int
 auto TransTableL::lookup(
   const int tricks,
   const int hand,
-  const unsigned short aggrTarget[],
+  const unsigned short aggr_target[],
   const int hand_dist[],
   const int limit,
   bool& lower_flag) -> NodeCards const *
@@ -742,10 +742,10 @@ auto TransTableL::lookup(
     return nullptr;
 
   // If that worked, look up cards.
-  unsigned * ab0 = aggr_[aggrTarget[0]].aggr_bytes_[0];
-  unsigned * ab1 = aggr_[aggrTarget[1]].aggr_bytes_[1];
-  unsigned * ab2 = aggr_[aggrTarget[2]].aggr_bytes_[2];
-  unsigned * ab3 = aggr_[aggrTarget[3]].aggr_bytes_[3];
+  unsigned * ab0 = aggr_[aggr_target[0]].aggr_bytes_[0];
+  unsigned * ab1 = aggr_[aggr_target[1]].aggr_bytes_[1];
+  unsigned * ab2 = aggr_[aggr_target[2]].aggr_bytes_[2];
+  unsigned * ab3 = aggr_[aggr_target[3]].aggr_bytes_[3];
 
   WinMatch TTentry;
   TTentry.top_set1_ = ab0[0] | ab1[0] | ab2[0] | ab3[0];
@@ -948,8 +948,8 @@ auto TransTableL::create_or_update(
 auto TransTableL::add(
   const int tricks,
   const int hand,
-  const unsigned short aggrTarget[],
-  const unsigned short ourWinRanks[],
+  const unsigned short aggr_target[],
+  const unsigned short our_win_ranks[],
   const NodeCards& first,
   const bool flag) -> void
 {
@@ -976,7 +976,7 @@ auto TransTableL::add(
   TTentry.xor_set_ = 0;
 
   for (int ss = 0; ss < DDS_SUITS; ss++) {
-    w = static_cast<int>(ourWinRanks[ss]);
+    w = static_cast<int>(our_win_ranks[ss]);
     if (w == 0) {
       ab[ss] = aggr_[0].aggr_bytes_[ss];
       mb[ss] = mask_bytes_table()[0][ss].data();
@@ -986,7 +986,7 @@ auto TransTableL::add(
     else
     {
       w = w & (-w); /* Only lowest win */
-      ag = static_cast<unsigned short>(aggrTarget[ss] & (-w));
+      ag = static_cast<unsigned short>(aggr_target[ss] & (-w));
 
       ab[ss] = aggr_[ag].aggr_bytes_[ss];
       mb[ss] = mask_bytes_table()[ag][ss].data();
@@ -1518,7 +1518,7 @@ auto TransTableL::print_entries_dist_and_cards(
   ofstream& fout,
   const int trick,
   const int hand,
-  const unsigned short aggrTarget[],
+  const unsigned short aggr_target[],
   const int hand_dist[]) const -> void
 {
   unsigned char len[DDS_HANDS][DDS_SUITS];
@@ -1537,10 +1537,10 @@ auto TransTableL::print_entries_dist_and_cards(
     return;
   }
 
-  unsigned const * ab0 = aggr_[aggrTarget[0]].aggr_bytes_[0];
-  unsigned const * ab1 = aggr_[aggrTarget[1]].aggr_bytes_[1];
-  unsigned const * ab2 = aggr_[aggrTarget[2]].aggr_bytes_[2];
-  unsigned const * ab3 = aggr_[aggrTarget[3]].aggr_bytes_[3];
+  unsigned const * ab0 = aggr_[aggr_target[0]].aggr_bytes_[0];
+  unsigned const * ab1 = aggr_[aggr_target[1]].aggr_bytes_[1];
+  unsigned const * ab2 = aggr_[aggr_target[2]].aggr_bytes_[2];
+  unsigned const * ab3 = aggr_[aggr_target[3]].aggr_bytes_[3];
 
   WinMatch TTentry;
   TTentry.top_set1_ = ab0[0] | ab1[0] | ab2[0] | ab3[0];

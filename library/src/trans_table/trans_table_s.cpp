@@ -422,7 +422,7 @@ auto TransTableS::memory_in_use() const -> double
 auto TransTableS::lookup(
   const int trick,
   const int hand,
-  const unsigned short aggrTarget[],
+  const unsigned short aggr_target[],
   const int hand_dist[],
   const int limit,
   bool& lower_flag) -> NodeCards const *
@@ -452,7 +452,7 @@ auto TransTableS::lookup(
     for (int ss = 0; ss < DDS_SUITS; ss++)
     {
       order_set_[ss] =
-        aggp_[aggrTarget[ss]].aggr_ranks_[ss];
+        aggp_[aggr_target[ss]].aggr_ranks_[ss];
     }
 
     if (pp->pos_search_point_ == nullptr)
@@ -476,14 +476,14 @@ auto TransTableS::lookup(
 auto TransTableS::add(
   const int tricks,
   const int hand,
-  const unsigned short aggrTarget[],
+  const unsigned short aggr_target[],
   const unsigned short our_win_ranks[],
   const NodeCards& first,
   const bool flag) -> void
 {
   build_sop(
     our_win_ranks,
-    aggrTarget,
+    aggr_target,
     first,
     suit_lengths_[tricks],
     tricks,
