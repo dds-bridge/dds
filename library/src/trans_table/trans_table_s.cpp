@@ -88,7 +88,7 @@ TransTableS::~TransTableS()
 // SetConstants removed; constants are produced by tt_lowest_rank_table().
 
 
-auto TransTableS::init(const int handLookup[][15]) -> void
+auto TransTableS::init(const int hand_lookup[][15]) -> void
 {
   unsigned int top_bit_rank = 1;
   unsigned int top_bit_no = 2;
@@ -113,7 +113,7 @@ auto TransTableS::init(const int handLookup[][15]) -> void
     {
       aggp_[ind].aggr_ranks_[s] =
         (aggp_[ind].aggr_ranks_[s] >> 2) |
-        (handLookup[s][top_bit_no] << 24);
+        (hand_lookup[s][top_bit_no] << 24);
 
       aggp_[ind].win_mask_[s] =
         (aggp_[ind].win_mask_[s] >> 2) | (3 << 24);
