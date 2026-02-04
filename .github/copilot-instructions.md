@@ -129,7 +129,7 @@ bazel test //...
 **Public API**:
 - `library/src/api/dds.h` - Main C++ API (use `#include <api/dds.h>`)
 - `library/src/api/dll.h` - C API for legacy compatibility
-- `library/src/dds.hpp` - C++ namespace wrapper
+- `library/src/dds.hpp` - C++ namespace wrapper (in `library/src/`)
 
 **Core Solver**:
 - `library/src/ab_search.cpp` - Alpha-beta search implementation
@@ -292,7 +292,6 @@ These instructions are comprehensive and tested. **Only search the codebase if**
 - Need to update build? → `BUILD.bazel` or `library/src/BUILD.bazel`
 
 ### Don't
-- Don't modify `.github/agents/` directory (contains other agent instructions)
 - Don't change test expected values without verifying correctness
 - Don't add new dependencies without strong justification
 - Don't disable warnings or errors in build files
