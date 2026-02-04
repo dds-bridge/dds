@@ -197,7 +197,7 @@ class TransTableS: public TransTable
     ///
     /// Sets up the TT with hand lookup configuration for position hashing.
     ///
-    /// \param hand_lookup Array of hand lookup tables [15][15]
+    /// \param hand_lookup Array of hand lookup tables [DDS_SUITS][15]
     /// \throws std::bad_alloc if initialization fails
     auto init(const int hand_lookup[][15]) -> void override;
 
