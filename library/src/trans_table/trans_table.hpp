@@ -108,9 +108,9 @@ class TransTable
     /// Sets up the transposition table with the provided hand lookup tables
     /// used for efficient position hashing and lookups.
     ///
-    /// \param hand_lookup Array of hand lookup tables [15][15]
+    /// \param hand_lookup Array of hand lookup tables with shape [DDS_SUITS][15]
     /// \throws std::bad_alloc if memory allocation fails during initialization
-    /// \pre hand_lookup must be a valid [15][15] array
+    /// \pre hand_lookup must be a valid [DDS_SUITS][15] array
     virtual auto init(const int hand_lookup[][15]) -> void = 0;
 
     /// \brief Set the default (soft) memory limit in megabytes.
