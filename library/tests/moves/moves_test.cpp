@@ -94,7 +94,7 @@ TEST_F(MovesTest, ReinitUpdateLeadHand) {
   moves->Reinit(7, 2);
   
   // Verify lead hand updated
-  EXPECT_EQ(moves->track[7].leadHand, 2);
+  EXPECT_EQ(moves->track[7].lead_hand, 2);
 }
 
 TEST_F(MovesTest, GetLengthReturnsCorrectCount) {
