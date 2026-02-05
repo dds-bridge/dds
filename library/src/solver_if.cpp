@@ -75,7 +75,7 @@ int STDCALL SolveBoard(
   FutureTricks * futp,
   int thrId)
 {
-  if (! sysdep.ThreadOK(thrId))
+  if (! sysdep.thread_ok(thrId))
     return RETURN_THREAD_INDEX;
 
   // Create an owned context for this call and delegate to the C++ overload.

@@ -138,13 +138,13 @@ int CalcAllBoardsN(
   cparam.no_of_boards = bop->no_of_boards;
 
   scheduler.RegisterRun(RunMode::DDS_RUN_CALC, * bop);
-  sysdep.RegisterRun(RunMode::DDS_RUN_CALC, * bop);
+  sysdep.register_run(RunMode::DDS_RUN_CALC, * bop);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solved_board[k].cards = 0;
 
   START_BLOCK_TIMER;
-  int retRun = sysdep.RunThreads();
+  int retRun = sysdep.run_threads();
   END_BLOCK_TIMER;
 
   if (retRun != RETURN_NO_FAULT)
