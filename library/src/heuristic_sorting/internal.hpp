@@ -4,22 +4,22 @@
 #include "heuristic_sorting.hpp"
 
 // Internal helper functions for the heuristic sorting library
-void WeightAllocTrump0(HeuristicContext& context);
-void WeightAllocNT0(HeuristicContext& context);
-void WeightAllocTrumpNotvoid1(HeuristicContext& context);
-void WeightAllocNTNotvoid1(HeuristicContext& context);
-void WeightAllocTrumpVoid1(HeuristicContext& context);
-void WeightAllocNTVoid1(HeuristicContext& context);
-void WeightAllocTrumpNotvoid2(HeuristicContext& context);
-void WeightAllocNTNotvoid2(HeuristicContext& context);
-void WeightAllocTrumpVoid2(HeuristicContext& context);
-void WeightAllocNTVoid2(HeuristicContext& context);
-void WeightAllocCombinedNotvoid3(HeuristicContext& context);
-void WeightAllocTrumpVoid3(HeuristicContext& context);
-void WeightAllocNTVoid3(HeuristicContext& context);
+void weight_alloc_trump0(HeuristicContext& context);
+void weight_alloc_nt0(HeuristicContext& context);
+void weight_alloc_trump_notvoid1(HeuristicContext& context);
+void weight_alloc_nt_notvoid1(HeuristicContext& context);
+void weight_alloc_trump_void1(HeuristicContext& context);
+void weight_alloc_nt_void1(HeuristicContext& context);
+void weight_alloc_trump_notvoid2(HeuristicContext& context);
+void weight_alloc_nt_notvoid2(HeuristicContext& context);
+void weight_alloc_trump_void2(HeuristicContext& context);
+void weight_alloc_nt_void2(HeuristicContext& context);
+void weight_alloc_combined_notvoid3(HeuristicContext& context);
+void weight_alloc_trump_void3(HeuristicContext& context);
+void weight_alloc_nt_void3(HeuristicContext& context);
 
 // Helper functions used by level 2+ weight allocation
-int RankForcesAce(const HeuristicContext& context, const int cards4th);
-void GetTopNumber(const HeuristicContext& context, const int ris, const int prank, int& topNumber, int& mno);
+int rank_forces_ace(const HeuristicContext& context, const int cards4th);
+void get_top_number(const HeuristicContext& context, const int ris, const int prank, int& top_number, int& mno);
 
 #endif // DDS_HEURISTIC_SORTING_INTERNAL_H
