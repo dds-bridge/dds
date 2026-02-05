@@ -168,7 +168,7 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
   // If requested, simulate cards already played in the current trick.
   // playedMoves is expected to be an array of length >= cardsPlayed with
   // moves in play order (first played -> last played). We will set
-  // trackp->play_suits/playRanks/move/high and update removedRanks and
+  // trackp->play_suits/play_ranks/move/high and update removed_ranks and
   // trickData accordingly; also set lead_suit from the first played card.
   if (trackp && cardsPlayed > 0 && playedMoves) {
     if (cardsPlayed > DDS_HANDS) cardsPlayed = DDS_HANDS;

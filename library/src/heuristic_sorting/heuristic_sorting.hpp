@@ -51,7 +51,7 @@ struct HeuristicContext
     int high1 = 0;      // trackp->high[1]
     int move1_suit = 0; // trackp->move[1].suit (for some helpers)
 
-    // Third-hand snapshots for CombinedNotvoid3 and TrumpVoid3 helpers.
+    // Third-hand snapshots for weight_alloc_combined_notvoid3 and weight_alloc_trump_void3 helpers.
     int move2_rank = 0; // trackp->move[2].rank
     int move2_suit = 0; // trackp->move[2].suit
     int high2 = 0;      // trackp->high[2]

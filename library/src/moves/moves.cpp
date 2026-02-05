@@ -650,15 +650,15 @@ auto Moves::Sort(const int tricks, const int relHand) -> void {
  * Centralizes the construction of HeuristicContext to keep the call sites
  * consistent and avoid exposing mutable state to heuristic helpers.
  */
-auto Moves::call_heuristic(const Pos &tpos, const MoveType &bestMove,
-                          const MoveType &bestMoveTT,
+auto Moves::call_heuristic(const Pos &tpos, const MoveType &best_move,
+                          const MoveType &best_move_tt,
                           const RelRanksType thrp_rel[]) -> void {
   // Construct context once here and call the context-taking overload.
   HeuristicContext context{
-      tpos,  bestMove, bestMoveTT, thrp_rel,  mply,     numMoves, lastNumMoves,
+      tpos,  best_move, best_move_tt, thrp_rel,  mply,     numMoves, lastNumMoves,
       trump, suit,     trackp,     currTrick, currHand, leadHand, leadSuit};
 
-  // Snapshot removedRanks into the context to avoid direct dependence on
+  // Snapshot removed_ranks into the context to avoid direct dependence on
   // the mutable Moves::trackp buffer inside heuristic code.
   for (int s = 0; s < DDS_SUITS; ++s) {
     context.removed_ranks[s] = trackp ? trackp->removed_ranks[s] : 0;

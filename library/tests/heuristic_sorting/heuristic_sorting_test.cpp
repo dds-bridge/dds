@@ -48,7 +48,7 @@ class HeuristicSortingUnitTest : public ::testing::Test {
 };
 
 // Test weight_alloc_trump0 function
-TEST_F(HeuristicSortingUnitTest, Testweight_alloc_trump0SetsWeight) {
+TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0SetsWeight) {
     MoveType mply[10];
     Pos tpos = createBasicPosition();
     
@@ -73,7 +73,7 @@ TEST_F(HeuristicSortingUnitTest, Testweight_alloc_trump0SetsWeight) {
 }
 
 // Test weight_alloc_trump0 function
-TEST_F(HeuristicSortingUnitTest, Testweight_alloc_trump0) {
+TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0) {
     MoveType mply[10];
     Pos tpos = createBasicPosition();
     
@@ -98,7 +98,7 @@ TEST_F(HeuristicSortingUnitTest, Testweight_alloc_trump0) {
 }
 
 // Test weight_alloc_nt0 function
-TEST_F(HeuristicSortingUnitTest, Testweight_alloc_nt0) {
+TEST_F(HeuristicSortingUnitTest, TestWeightAllocNt0) {
     MoveType mply[10];
     Pos tpos = createBasicPosition();
     
@@ -123,7 +123,7 @@ TEST_F(HeuristicSortingUnitTest, Testweight_alloc_nt0) {
 }
 
 // Test weight_alloc_trump_notvoid1 function
-TEST_F(HeuristicSortingUnitTest, Testweight_alloc_trump_notvoid1) {
+TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrumpNotvoid1) {
     MoveType mply[10];
     Pos tpos = createBasicPosition();
     

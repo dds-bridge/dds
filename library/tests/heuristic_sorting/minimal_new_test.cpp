@@ -3,7 +3,7 @@
 #include "heuristic_sorting/heuristic_sorting.hpp"
 #include "heuristic_sorting/internal.hpp"
 
-TEST(MinimalNewTest, Testweight_alloc_trump0) {
+TEST(MinimalNewTest, TestWeightAllocTrump0) {
     std::cout << "Testing minimal weight_alloc_trump0 call..." << std::endl;
     
     // Create minimal Pos structure

@@ -8,7 +8,7 @@
 
 // Targeted unit tests for small helper functions and golden expectations
 
-TEST(TargetedUnitTests, rank_forces_aceBasic) {
+TEST(TargetedUnitTests, RankForcesAceBasic) {
   // Construct a minimal context and exercise rank_forces_ace for different cards4th
   Pos tpos = {};
   memset(&tpos, 0, sizeof(tpos));
@@ -51,7 +51,7 @@ TEST(TargetedUnitTests, rank_forces_aceBasic) {
   EXPECT_LE(res5, 14);
 }
 
-TEST(TargetedUnitTests, get_top_numberEdgeCases) {
+TEST(TargetedUnitTests, GetTopNumberEdgeCases) {
   Pos tpos = {};
   memset(&tpos, 0, sizeof(tpos));
 
