@@ -102,9 +102,9 @@ public:
   int lastNumMoves;
 
   /** @brief Per-trick tracking state. */
-  trackType track[13];
+  TrackType track[13];
   /** @brief Pointer to active track entry (non-owning, points into track array). */
-  trackType *trackp;
+  TrackType *trackp;
 
   /** @brief Move lists indexed by trick and relative hand. */
   MovePlyType moveList[13][DDS_HANDS];
@@ -187,12 +187,12 @@ public:
    * @brief Invoke heuristic sorting for current move list.
    *
    * @param tpos Current position
-   * @param bestMove Best move from search
-   * @param bestMoveTT Best move from transposition table
+   * @param best_move Best move from search
+   * @param best_move_tt Best move from transposition table
    * @param thrp_rel Relative ranks per hand
    */
-  auto CallHeuristic(const Pos &tpos, const MoveType &bestMove,
-                     const MoveType &bestMoveTT, const RelRanksType thrp_rel[])
+  auto call_heuristic(const Pos &tpos, const MoveType &best_move,
+                     const MoveType &best_move_tt, const RelRanksType thrp_rel[])
       -> void;
 
   // (logging accessors removed)

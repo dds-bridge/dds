@@ -9,7 +9,7 @@
 // Targeted unit tests for small helper functions and golden expectations
 
 TEST(TargetedUnitTests, RankForcesAceBasic) {
-  // Construct a minimal context and exercise RankForcesAce for different cards4th
+  // Construct a minimal context and exercise rank_forces_ace for different cards4th
   Pos tpos = {};
   memset(&tpos, 0, sizeof(tpos));
 
@@ -18,7 +18,7 @@ TEST(TargetedUnitTests, RankForcesAceBasic) {
   MoveType bmtt = {};
   RelRanksType thrp_rel_dummy[1] = {};
   MoveType mply_dummy[1] = {};
-  trackType track_dummy = {};
+  TrackType track_dummy = {};
 
   HeuristicContext ctx = {
     tpos,                   // Pos
@@ -38,11 +38,11 @@ TEST(TargetedUnitTests, RankForcesAceBasic) {
   };
 
   // Sanity: ensure function is callable and returns in-range values
-  int res0 = RankForcesAce(ctx, 0);
-  int res1 = RankForcesAce(ctx, 1);
-  int res5 = RankForcesAce(ctx, 5);
+  int res0 = rank_forces_ace(ctx, 0);
+  int res1 = rank_forces_ace(ctx, 1);
+  int res5 = rank_forces_ace(ctx, 5);
 
-  // RankForcesAce may return -1 when no forcing rank exists; ensure value is sane
+  // rank_forces_ace may return -1 when no forcing rank exists; ensure value is sane
   EXPECT_GE(res0, -1);
   EXPECT_GE(res1, -1);
   EXPECT_GE(res5, -1);
@@ -57,23 +57,23 @@ TEST(TargetedUnitTests, GetTopNumberEdgeCases) {
 
   int topNumber = -1;
   int mno = -1;
-  // Build a small HeuristicContext for GetTopNumber
+  // Build a small HeuristicContext for get_top_number
   MoveType bm = {};
   MoveType bmtt = {};
   RelRanksType thrp_rel_dummy[1] = {};
   MoveType mply_dummy[1] = {};
-  trackType track_dummy = {};
+  TrackType track_dummy = {};
   HeuristicContext ctx = { tpos, bm, bmtt, thrp_rel_dummy, mply_dummy, 0, 0, DDS_NOTRUMP, 0, &track_dummy, 0, 0, 0, 0 };
 
-  // Call the free helper GetTopNumber from internal.hpp
-  GetTopNumber(ctx, 0, 14, topNumber, mno);
+  // Call the free helper get_top_number from internal.hpp
+  get_top_number(ctx, 0, 14, topNumber, mno);
   // topNumber may be -1 if no candidate found; ensure values are in expected ranges
   EXPECT_GE(topNumber, -1);
   EXPECT_LE(topNumber, 14);
   EXPECT_GE(mno, 0);
   EXPECT_LE(mno, 13);
 
-  GetTopNumber(ctx, 5, 10, topNumber, mno);
+  get_top_number(ctx, 5, 10, topNumber, mno);
   EXPECT_GE(topNumber, -1);
   EXPECT_LE(topNumber, 14);
   EXPECT_GE(mno, 0);

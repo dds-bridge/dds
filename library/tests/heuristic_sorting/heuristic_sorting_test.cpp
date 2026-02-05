@@ -26,7 +26,7 @@ class HeuristicSortingUnitTest : public ::testing::Test {
     static MoveType bestMove = {};
     static MoveType bestMoveTT = {};
     static RelRanksType thrp_rel[1] = {};
-    static trackType track = {};
+    static TrackType track = {};
     
     return HeuristicContext {
         tpos,
@@ -47,7 +47,7 @@ class HeuristicSortingUnitTest : public ::testing::Test {
   }
 };
 
-// Test WeightAllocTrump0 function
+// Test weight_alloc_trump0 function
 TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0SetsWeight) {
     MoveType mply[10];
     Pos tpos = createBasicPosition();
@@ -64,15 +64,15 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0SetsWeight) {
     const_cast<int&>(context.trump) = 1; // Hearts are trump
     
     // Call the function under test
-    WeightAllocTrump0(context);
+    weight_alloc_trump0(context);
     
     // The weight should have been modified
-    EXPECT_NE(mply[0].weight, 0) << "Weight should be set by WeightAllocTrump0";
+    EXPECT_NE(mply[0].weight, 0) << "Weight should be set by weight_alloc_trump0";
     
-    std::cout << "TestWeightAllocTrump0 passed. Weight: " << mply[0].weight << std::endl;
+    std::cout << "Testweight_alloc_trump0 passed. Weight: " << mply[0].weight << std::endl;
 }
 
-// Test WeightAllocTrump0 function
+// Test weight_alloc_trump0 function
 TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0) {
     MoveType mply[10];
     Pos tpos = createBasicPosition();
@@ -89,16 +89,16 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrump0) {
     const_cast<int&>(context.trump) = 1; // Hearts are trump
     
     // Call the function under test
-    WeightAllocTrump0(context);
+    weight_alloc_trump0(context);
     
     // The weight should have been modified
-    EXPECT_NE(mply[0].weight, 0) << "Weight should be set by WeightAllocTrump0";
+    EXPECT_NE(mply[0].weight, 0) << "Weight should be set by weight_alloc_trump0";
     
-    std::cout << "TestWeightAllocTrump0 passed. Weight: " << mply[0].weight << std::endl;
+    std::cout << "Testweight_alloc_trump0 passed. Weight: " << mply[0].weight << std::endl;
 }
 
-// Test WeightAllocNT0 function
-TEST_F(HeuristicSortingUnitTest, TestWeightAllocNT0) {
+// Test weight_alloc_nt0 function
+TEST_F(HeuristicSortingUnitTest, TestWeightAllocNt0) {
     MoveType mply[10];
     Pos tpos = createBasicPosition();
     
@@ -114,15 +114,15 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocNT0) {
     const_cast<int&>(context.trump) = DDS_NOTRUMP; // No trump
     
     // Call the function under test
-    WeightAllocNT0(context);
+    weight_alloc_nt0(context);
     
     // The weight should have been modified
-    EXPECT_NE(mply[0].weight, 0) << "Weight should be set by WeightAllocNT0";
+    EXPECT_NE(mply[0].weight, 0) << "Weight should be set by weight_alloc_nt0";
     
-    std::cout << "TestWeightAllocNT0 passed. Weight: " << mply[0].weight << std::endl;
+    std::cout << "Testweight_alloc_nt0 passed. Weight: " << mply[0].weight << std::endl;
 }
 
-// Test WeightAllocTrumpNotvoid1 function
+// Test weight_alloc_trump_notvoid1 function
 TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrumpNotvoid1) {
     MoveType mply[10];
     Pos tpos = createBasicPosition();
@@ -137,16 +137,16 @@ TEST_F(HeuristicSortingUnitTest, TestWeightAllocTrumpNotvoid1) {
     
     // Modify context settings
     const_cast<int&>(context.trump) = 1; // Hearts are trump
-    const_cast<int&>(context.leadSuit) = 0; // Spades led
-    const_cast<int&>(context.currHand) = 1; // Second hand to play
+    const_cast<int&>(context.lead_suit) = 0; // Spades led
+    const_cast<int&>(context.curr_hand) = 1; // Second hand to play
     
     // Call the function under test
-    WeightAllocTrumpNotvoid1(context);
+    weight_alloc_trump_notvoid1(context);
     
     // The weight should have been modified
-    EXPECT_NE(mply[0].weight, 0) << "Weight should be set by WeightAllocTrumpNotvoid1";
+    EXPECT_NE(mply[0].weight, 0) << "Weight should be set by weight_alloc_trump_notvoid1";
     
-    std::cout << "TestWeightAllocTrumpNotvoid1 passed. Weight: " << mply[0].weight << std::endl;
+    std::cout << "Testweight_alloc_trump_notvoid1 passed. Weight: " << mply[0].weight << std::endl;
 }
 
 // Test all missing WeightAlloc functions for complete coverage
@@ -167,85 +167,85 @@ TEST_F(HeuristicSortingUnitTest, TestAllMissingWeightAllocFunctions) {
     // Test Position 1 functions
     std::cout << "Testing Position 1 functions..." << std::endl;
     
-    // WeightAllocNTNotvoid1
+    // weight_alloc_nt_notvoid1
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
-    const_cast<int&>(context.currHand) = 1;
-    const_cast<int&>(context.leadSuit) = 0;
-    WeightAllocNTNotvoid1(context);
+    const_cast<int&>(context.curr_hand) = 1;
+    const_cast<int&>(context.lead_suit) = 0;
+    weight_alloc_nt_notvoid1(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocNTNotvoid1 should assign weights";
+        << "weight_alloc_nt_notvoid1 should assign weights";
     
-    // WeightAllocTrumpVoid1
+    // weight_alloc_trump_void1
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
-    WeightAllocTrumpVoid1(context);
+    weight_alloc_trump_void1(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocTrumpVoid1 should assign weights";
+        << "weight_alloc_trump_void1 should assign weights";
     
-    // WeightAllocNTVoid1
+    // weight_alloc_nt_void1
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
-    WeightAllocNTVoid1(context);
+    weight_alloc_nt_void1(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocNTVoid1 should assign weights";
+        << "weight_alloc_nt_void1 should assign weights";
     
     // Test Position 2 functions
     std::cout << "Testing Position 2 functions..." << std::endl;
-    const_cast<int&>(context.currHand) = 2;
+    const_cast<int&>(context.curr_hand) = 2;
     
-    // WeightAllocTrumpNotvoid2
+    // weight_alloc_trump_notvoid2
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
-    WeightAllocTrumpNotvoid2(context);
+    weight_alloc_trump_notvoid2(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocTrumpNotvoid2 should assign weights";
+        << "weight_alloc_trump_notvoid2 should assign weights";
     
-    // WeightAllocNTNotvoid2
+    // weight_alloc_nt_notvoid2
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
-    WeightAllocNTNotvoid2(context);
+    weight_alloc_nt_notvoid2(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocNTNotvoid2 should assign weights";
+        << "weight_alloc_nt_notvoid2 should assign weights";
     
-    // WeightAllocTrumpVoid2
+    // weight_alloc_trump_void2
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
-    WeightAllocTrumpVoid2(context);
+    weight_alloc_trump_void2(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocTrumpVoid2 should assign weights";
+        << "weight_alloc_trump_void2 should assign weights";
     
-    // WeightAllocNTVoid2
+    // weight_alloc_nt_void2
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
-    WeightAllocNTVoid2(context);
+    weight_alloc_nt_void2(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocNTVoid2 should assign weights";
+        << "weight_alloc_nt_void2 should assign weights";
     
     // Test Position 3 functions
     std::cout << "Testing Position 3 functions..." << std::endl;
-    const_cast<int&>(context.currHand) = 3;
+    const_cast<int&>(context.curr_hand) = 3;
     
-    // WeightAllocCombinedNotvoid3
+    // weight_alloc_combined_notvoid3
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
-    WeightAllocCombinedNotvoid3(context);
+    weight_alloc_combined_notvoid3(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocCombinedNotvoid3 should assign weights";
+        << "weight_alloc_combined_notvoid3 should assign weights";
     
-    // WeightAllocTrumpVoid3
+    // weight_alloc_trump_void3
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = 1;
-    WeightAllocTrumpVoid3(context);
+    weight_alloc_trump_void3(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocTrumpVoid3 should assign weights";
+        << "weight_alloc_trump_void3 should assign weights";
     
-    // WeightAllocNTVoid3
+    // weight_alloc_nt_void3
     for (int i = 0; i < 5; i++) mply[i].weight = 0;
     const_cast<int&>(context.trump) = DDS_NOTRUMP;
-    WeightAllocNTVoid3(context);
+    weight_alloc_nt_void3(context);
     EXPECT_TRUE(std::any_of(mply, mply + 5, [](const MoveType& m) { return m.weight != 0; }))
-        << "WeightAllocNTVoid3 should assign weights";
+        << "weight_alloc_nt_void3 should assign weights";
     
     std::cout << "All 13 WeightAlloc functions tested successfully!" << std::endl;
 }

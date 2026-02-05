@@ -45,34 +45,34 @@ std::string normalize_ordering(const MoveType* moves, int numMoves, bool include
   return out.str();
 }
 
-// Initialize relRanks table and trackType based on a given Pos (used by fuzz tests)
-void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 assumed */, trackType* trackp,
-    int cardsPlayed, const MoveType* playedMoves, int leadHand, int trump) {
+// Initialize relRanks table and TrackType based on a given Pos (used by fuzz tests)
+void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 assumed */, TrackType* trackp,
+    int cardsPlayed, const MoveType* playedMoves, int lead_hand, int trump) {
   // zero track and set sane defaults
   if (trackp) {
     std::memset(trackp, 0, sizeof(*trackp));
-    trackp->leadHand = leadHand;
-    trackp->leadSuit = 0;
+    trackp->lead_hand = lead_hand;
+    trackp->lead_suit = 0;
     for (int p = 0; p < DDS_HANDS; ++p) {
       trackp->high[p] = 0;
-      trackp->playSuits[p] = 0;
-      trackp->playRanks[p] = 0;
+      trackp->play_suits[p] = 0;
+      trackp->play_ranks[p] = 0;
       trackp->move[p].suit = 0;
       trackp->move[p].rank = 0;
       trackp->move[p].sequence = 0;
     }
     for (int s = 0; s < DDS_SUITS; ++s) {
-      trackp->removedRanks[s] = 0; // will OR in present cards below
+      trackp->removed_ranks[s] = 0; // will OR in present cards below
       for (int h = 0; h < DDS_HANDS; ++h)
-        trackp->lowestWin[h][s] = 0;
+        trackp->lowest_win[h][s] = 0;
     }
     // default trickData
-    for (int s = 0; s < DDS_SUITS; ++s) trackp->trickData.play_count[s] = 0;
-    trackp->trickData.best_rank = 0;
-    trackp->trickData.best_suit = 0;
-    trackp->trickData.best_sequence = 0;
-    trackp->trickData.rel_winner = 0;
-    trackp->trickData.next_lead_hand = leadHand;
+    for (int s = 0; s < DDS_SUITS; ++s) trackp->trick_data.play_count[s] = 0;
+    trackp->trick_data.best_rank = 0;
+    trackp->trick_data.best_suit = 0;
+    trackp->trick_data.best_sequence = 0;
+    trackp->trick_data.rel_winner = 0;
+    trackp->trick_data.next_lead_hand = lead_hand;
   }
 
   if (!relTable) return;
@@ -80,10 +80,10 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
   // Work on a mutable copy of Pos so we can simulate cards removed by plays
   Pos localPos = tpos;
   if (cardsPlayed > 0 && playedMoves) {
-    // playedMoves are in play order starting from leadHand (absolute)
+    // playedMoves are in play order starting from lead_hand (absolute)
     for (int i = 0; i < cardsPlayed; ++i) {
       const MoveType &m = playedMoves[i];
-      int absHand = (leadHand + i) % 4;
+      int absHand = (lead_hand + i) % 4;
       if (m.rank > 0 && m.rank < 16) {
         unsigned short mask = bitMapRank[m.rank];
         // remove the card from localPos
@@ -168,8 +168,8 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
   // If requested, simulate cards already played in the current trick.
   // playedMoves is expected to be an array of length >= cardsPlayed with
   // moves in play order (first played -> last played). We will set
-  // trackp->playSuits/playRanks/move/high and update removedRanks and
-  // trickData accordingly; also set leadSuit from the first played card.
+  // trackp->play_suits/play_ranks/move/high and update removed_ranks and
+  // trickData accordingly; also set lead_suit from the first played card.
   if (trackp && cardsPlayed > 0 && playedMoves) {
     if (cardsPlayed > DDS_HANDS) cardsPlayed = DDS_HANDS;
     int relIndex = 0;
@@ -177,21 +177,21 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
       const MoveType& m = playedMoves[i];
       // relative index in trick: 0..cardsPlayed-1
       relIndex = i;
-      trackp->playSuits[relIndex] = m.suit;
-      trackp->playRanks[relIndex] = m.rank;
+      trackp->play_suits[relIndex] = m.suit;
+      trackp->play_ranks[relIndex] = m.rank;
       trackp->move[relIndex].suit = m.suit;
       trackp->move[relIndex].rank = m.rank;
       trackp->move[relIndex].sequence = m.sequence;
 
       // maintain removedRanks: mark that the card has been played
       if (m.rank > 0 && m.rank < 16)
-        trackp->removedRanks[m.suit] |= bitMapRank[m.rank];
+        trackp->removed_ranks[m.suit] |= bitMapRank[m.rank];
 
       // update high[]: who currently wins among the played cards
       if (relIndex == 0) {
         trackp->high[0] = 0;
-        // leadSuit is the first card's suit
-        trackp->leadSuit = m.suit;
+        // lead_suit is the first card's suit
+        trackp->lead_suit = m.suit;
       } else {
         // compare with previous winning card
   ExtCard prev = trackp->move[trackp->high[relIndex - 1]];
@@ -212,18 +212,18 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
 
     // Update trickData play counts
     for (int p = 0; p < cardsPlayed; ++p)
-      trackp->trickData.play_count[ trackp->playSuits[p] ]++;
+      trackp->trick_data.play_count[ trackp->play_suits[p] ]++;
 
     // Update trickData best values from the last play
-    trackp->trickData.best_rank = trackp->move[cardsPlayed - 1].rank;
-    trackp->trickData.best_suit = trackp->move[cardsPlayed - 1].suit;
-    trackp->trickData.best_sequence = trackp->move[cardsPlayed - 1].sequence;
-    trackp->trickData.rel_winner = trackp->high[cardsPlayed - 1];
+    trackp->trick_data.best_rank = trackp->move[cardsPlayed - 1].rank;
+    trackp->trick_data.best_suit = trackp->move[cardsPlayed - 1].suit;
+    trackp->trick_data.best_sequence = trackp->move[cardsPlayed - 1].sequence;
+    trackp->trick_data.rel_winner = trackp->high[cardsPlayed - 1];
     // next_lead_hand if trick completes would be based on high[cardsPlayed-1]
-    trackp->trickData.next_lead_hand = (trackp->leadHand + trackp->trickData.rel_winner) % 4;
+    trackp->trick_data.next_lead_hand = (trackp->lead_hand + trackp->trick_data.rel_winner) % 4;
   }
 
-  // Populate lowestWin: compute a more precise minimal winning rank for
+  // Populate lowest_win: compute a more precise minimal winning rank for
   // each relative hand (relh) and suit (s) given the current trick state.
   if (trackp) {
     // helpers to find ranks in a bitmask
@@ -250,27 +250,27 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
 
     for (int relh = 0; relh < DDS_HANDS; ++relh) {
       for (int s = 0; s < DDS_SUITS; ++s) {
-        trackp->lowestWin[relh][s] = 0;
+        trackp->lowest_win[relh][s] = 0;
         // If this relative hand already played in this trick, skip
         if (cardsPlayed > 0 && relh < cardsPlayed) {
-          trackp->lowestWin[relh][s] = 0;
+          trackp->lowest_win[relh][s] = 0;
           continue;
         }
 
-        int absHand = (trackp->leadHand + relh) % 4;
+        int absHand = (trackp->lead_hand + relh) % 4;
         unsigned short ris = localPos.rank_in_suit[absHand][s];
-        if (!ris) { trackp->lowestWin[relh][s] = 0; continue; }
+        if (!ris) { trackp->lowest_win[relh][s] = 0; continue; }
 
         // If there is no current best (lead not played), use smallest rank
         if (!hasCurrentBest) {
-          trackp->lowestWin[relh][s] = find_smallest_rank(ris);
+          trackp->lowest_win[relh][s] = find_smallest_rank(ris);
           continue;
         }
 
         // If candidate suit equals current best suit
         if (s == curBestSuit) {
           // need a higher rank than current best
-          trackp->lowestWin[relh][s] = find_smallest_rank_greater(ris, curBestRank);
+          trackp->lowest_win[relh][s] = find_smallest_rank_greater(ris, curBestRank);
           continue;
         }
 
@@ -278,10 +278,10 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
         if (s == trump) {
           if (curBestSuit != trump) {
             // any trump will beat non-trump; choose smallest trump in hand
-            trackp->lowestWin[relh][s] = find_smallest_rank(ris);
+            trackp->lowest_win[relh][s] = find_smallest_rank(ris);
           } else {
             // best is also trump: need higher trump
-            trackp->lowestWin[relh][s] = find_smallest_rank_greater(ris, curBestRank);
+            trackp->lowest_win[relh][s] = find_smallest_rank_greater(ris, curBestRank);
           }
           continue;
         }
@@ -289,21 +289,21 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
         // Candidate is non-trump and not equal to current best suit.
         // If current best is trump, non-trump cannot win.
         if (curBestSuit == trump) {
-          trackp->lowestWin[relh][s] = 0;
+          trackp->lowest_win[relh][s] = 0;
           continue;
         }
 
         // If current best is of a different suit (not trump), then only a card
-        // in the lead suit can beat it; if candidate suit equals leadSuit,
+        // in the lead suit can beat it; if candidate suit equals lead_suit,
         // we can try to beat that; otherwise cannot win.
-        if (s == trackp->leadSuit) {
-          // If current best is also leadSuit this case is handled earlier;
+        if (s == trackp->lead_suit) {
+          // If current best is also lead_suit this case is handled earlier;
           // here current best is different suit => it must be that someone
           // trumped already, which we handled above. As a fallback, require
           // higher rank than any current best of this suit.
-          trackp->lowestWin[relh][s] = find_smallest_rank_greater(ris, curBestRank);
+          trackp->lowest_win[relh][s] = find_smallest_rank_greater(ris, curBestRank);
         } else {
-          trackp->lowestWin[relh][s] = 0;
+          trackp->lowest_win[relh][s] = 0;
         }
       }
     }

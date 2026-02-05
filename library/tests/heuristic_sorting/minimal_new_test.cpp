@@ -4,7 +4,7 @@
 #include "heuristic_sorting/internal.hpp"
 
 TEST(MinimalNewTest, TestWeightAllocTrump0) {
-    std::cout << "Testing minimal WeightAllocTrump0 call..." << std::endl;
+    std::cout << "Testing minimal weight_alloc_trump0 call..." << std::endl;
     
     // Create minimal Pos structure
     Pos tpos = {};
@@ -32,9 +32,9 @@ TEST(MinimalNewTest, TestWeightAllocTrump0) {
     MoveType bestMoveTT = {0, 13, 1, 0};
     RelRanksType thrp_rel = {};
     
-    trackType track = {};
-    track.leadHand = 0;
-    track.leadSuit = 0;
+    TrackType track = {};
+    track.lead_hand = 0;
+    track.lead_suit = 0;
     
     HeuristicContext context = {
         tpos,           // Pos
@@ -53,12 +53,12 @@ TEST(MinimalNewTest, TestWeightAllocTrump0) {
         0               // leadSuit (spades)
     };
     
-    std::cout << "About to call WeightAllocTrump0..." << std::endl;
+    std::cout << "About to call weight_alloc_trump0..." << std::endl;
     
     // This is where the segfault likely occurs
-    WeightAllocTrump0(context);
+    weight_alloc_trump0(context);
     
-    std::cout << "WeightAllocTrump0 completed successfully!" << std::endl;
+    std::cout << "weight_alloc_trump0 completed successfully!" << std::endl;
     
     for (int i = 0; i < 3; i++) {
         std::cout << "Move " << i << " weight: " << moves[i].weight << std::endl;

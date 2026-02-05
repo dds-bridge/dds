@@ -54,17 +54,17 @@ TEST_F(MinimalWeightTest, BasicWeightAllocCall) {
         0,             // trump (spades)
         0,             // suit
         nullptr,       // trackp
-        0,             // currTrick
-        0,             // currHand
-        0,             // leadHand
-        0              // leadSuit
+        0,             // curr_trick
+        0,             // curr_hand
+        0,             // lead_hand
+        0              // lead_suit
     };
     
-    std::cout << "Calling WeightAllocTrump0..." << std::endl;
+    std::cout << "Calling weight_alloc_trump0..." << std::endl;
     
     try {
-        WeightAllocTrump0(context);
-        std::cout << "SUCCESS: WeightAllocTrump0 completed without crash!" << std::endl;
+        weight_alloc_trump0(context);
+        std::cout << "SUCCESS: weight_alloc_trump0 completed without crash!" << std::endl;
         
         // Print results
         for (int i = 0; i < 3; i++) {
@@ -75,6 +75,6 @@ TEST_F(MinimalWeightTest, BasicWeightAllocCall) {
         
         SUCCEED();
     } catch (...) {
-        FAIL() << "WeightAllocTrump0 threw an exception";
+        FAIL() << "weight_alloc_trump0 threw an exception";
     }
 }
