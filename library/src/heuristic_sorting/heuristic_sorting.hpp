@@ -24,30 +24,30 @@ struct HeuristicContext
     MoveType* mply;
     int num_moves;
     int last_num_moves;
-    int trump;
-    int suit; // For MoveGen0, the suit being considered
+    const int trump;
+    const int suit; // For MoveGen0, the suit being considered
     const TrackType* trackp;
-    int curr_trick;
-    int curr_hand;
-    int lead_hand;
-    int lead_suit; // For MoveGen123
+    const int curr_trick;
+    const int curr_hand;
+    const int lead_hand;
+    const int lead_suit; // For MoveGen123
     // Snapshot of per-suit removed ranks for the current trick. This is
     // populated by the caller to avoid relying on the underlying Moves::trackp
     // mutation and to localize mutable heuristic buffers inside the context.
     int removed_ranks[DDS_SUITS] = {0};
     // Tiny trick-view snapshots to reduce dependence on trackp for hot helpers.
     // Only the fields required by rank_forces_ace are copied for now.
-    int move1_rank = 0; // trackp->move[1].rank
-    int high1 = 0;      // trackp->high[1]
-    int move1_suit = 0; // trackp->move[1].suit (for some helpers)
+    const int move1_rank = 0; // trackp->move[1].rank
+    const int high1 = 0;      // trackp->high[1]
+    const int move1_suit = 0; // trackp->move[1].suit (for some helpers)
 
     // Third-hand snapshots for CombinedNotvoid3 and TrumpVoid3 helpers.
-    int move2_rank = 0; // trackp->move[2].rank
-    int move2_suit = 0; // trackp->move[2].suit
-    int high2 = 0;      // trackp->high[2]
+    const int move2_rank = 0; // trackp->move[2].rank
+    const int move2_suit = 0; // trackp->move[2].suit
+    const int high2 = 0;      // trackp->high[2]
 
     // Leader's card snapshot for targeted helpers.
-    int lead0_rank = 0; // trackp->move[0].rank
+    const int lead0_rank = 0; // trackp->move[0].rank
 };
 
 // Overload that accepts a pre-built context to avoid repeated
