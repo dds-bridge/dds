@@ -1,5 +1,4 @@
-#ifndef DDS_HEURISTIC_SORTING_H
-#define DDS_HEURISTIC_SORTING_H
+#pragma once
 
 #include <api/dds.h>
 
@@ -16,7 +15,8 @@ struct TrackType
   int removed_ranks[DDS_SUITS];
 };
 
-struct HeuristicContext {
+struct HeuristicContext
+{
     const Pos& tpos;
     const MoveType& best_move;
     const MoveType& best_move_tt;
@@ -31,23 +31,23 @@ struct HeuristicContext {
     int curr_hand;
     int lead_hand;
     int lead_suit; // For MoveGen123
-  // Snapshot of per-suit removed ranks for the current trick. This is
-  // populated by the caller to avoid relying on the underlying Moves::trackp
-  // mutation and to localize mutable heuristic buffers inside the context.
-  int removed_ranks[DDS_SUITS] = {0};
+    // Snapshot of per-suit removed ranks for the current trick. This is
+    // populated by the caller to avoid relying on the underlying Moves::trackp
+    // mutation and to localize mutable heuristic buffers inside the context.
+    int removed_ranks[DDS_SUITS] = {0};
     // Tiny trick-view snapshots to reduce dependence on trackp for hot helpers.
     // Only the fields required by rank_forces_ace are copied for now.
     int move1_rank = 0; // trackp->move[1].rank
-  int high1 = 0;      // trackp->high[1]
-  int move1_suit = 0; // trackp->move[1].suit (for some helpers)
+    int high1 = 0;      // trackp->high[1]
+    int move1_suit = 0; // trackp->move[1].suit (for some helpers)
 
-  // Third-hand snapshots for CombinedNotvoid3 and TrumpVoid3 helpers.
-  int move2_rank = 0; // trackp->move[2].rank
-  int move2_suit = 0; // trackp->move[2].suit
-  int high2 = 0;      // trackp->high[2]
+    // Third-hand snapshots for CombinedNotvoid3 and TrumpVoid3 helpers.
+    int move2_rank = 0; // trackp->move[2].rank
+    int move2_suit = 0; // trackp->move[2].suit
+    int high2 = 0;      // trackp->high[2]
 
-  // Leader's card snapshot for targeted helpers.
-  int lead0_rank = 0; // trackp->move[0].rank
+    // Leader's card snapshot for targeted helpers.
+    int lead0_rank = 0; // trackp->move[0].rank
 };
 
 // Overload that accepts a pre-built context to avoid repeated
@@ -56,4 +56,3 @@ struct HeuristicContext {
 // per-call overhead in hot paths.
 void call_heuristic(const HeuristicContext& context);
 
-#endif // DDS_HEURISTIC_SORTING_H

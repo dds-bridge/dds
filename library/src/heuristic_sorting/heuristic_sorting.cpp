@@ -4,7 +4,8 @@
 
 // New overload: accepts a pre-built HeuristicContext. This contains the
 // same inline logic that used to be in the previous function body.
-void call_heuristic(const HeuristicContext& context) {
+void call_heuristic(const HeuristicContext& context)
+{
   // Determine which position in trick (0=leading, 1-3=following)
   int hand_rel = 0;
   if (context.curr_hand != context.lead_hand) {
