@@ -47,17 +47,17 @@ struct HeuristicContext
     int removed_ranks[DDS_SUITS] = {0};
     // Tiny trick-view snapshots to reduce dependence on trackp for hot helpers.
     // Only the fields required by rank_forces_ace are copied for now.
-    const int move1_rank = 0; // trackp->move[1].rank
-    const int high1 = 0;      // trackp->high[1]
-    const int move1_suit = 0; // trackp->move[1].suit (for some helpers)
+    int move1_rank = 0; // trackp->move[1].rank
+    int high1 = 0;      // trackp->high[1]
+    int move1_suit = 0; // trackp->move[1].suit (for some helpers)
 
     // Third-hand snapshots for CombinedNotvoid3 and TrumpVoid3 helpers.
-    const int move2_rank = 0; // trackp->move[2].rank
-    const int move2_suit = 0; // trackp->move[2].suit
-    const int high2 = 0;      // trackp->high[2]
+    int move2_rank = 0; // trackp->move[2].rank
+    int move2_suit = 0; // trackp->move[2].suit
+    int high2 = 0;      // trackp->high[2]
 
     // Leader's card snapshot for targeted helpers.
-    const int lead0_rank = 0; // trackp->move[0].rank
+    int lead0_rank = 0; // trackp->move[0].rank
 };
 
 /// @brief Apply heuristic sorting to candidate moves in the given context.
