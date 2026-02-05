@@ -2,6 +2,10 @@
 
 #include <api/dds.h>
 
+/// @brief Track information for maintaining position state during move generation.
+/// 
+/// Stores the current trick state, played cards, rankings, and indices used
+/// by heuristic sorting routines to order candidate moves effectively.
 struct TrackType
 {
   int lead_hand;
@@ -15,8 +19,14 @@ struct TrackType
   int removed_ranks[DDS_SUITS];
 };
 
+/// @brief Context information for heuristic move sorting and weighting.
+///
+/// Encapsulates all data needed by heuristic sorting functions to evaluate and
+/// weight candidate moves. Combines position state, move arrays, and cached
+/// snapshots to minimize repeated lookups during hot path execution.
 struct HeuristicContext
 {
+    // Core position and move generation data
     const Pos& tpos;
     const MoveType& best_move;
     const MoveType& best_move_tt;
@@ -50,9 +60,18 @@ struct HeuristicContext
     const int lead0_rank = 0; // trackp->move[0].rank
 };
 
-// Overload that accepts a pre-built context to avoid repeated
-// aggregate construction at the call site. Callers that can
-// pre-construct a HeuristicContext should use this to reduce
-// per-call overhead in hot paths.
+/// @brief Apply heuristic sorting to candidate moves in the given context.
+///
+/// Evaluates candidate moves using position-dependent heuristics to assign
+/// weights that guide search algorithms toward the most promising lines.
+/// Heuristics vary based on position characteristics (leading/following hand,
+/// trump presence, suit availability) to optimize move ordering efficiency.
+///
+/// @param context Pre-constructed HeuristicContext containing position data,
+///                move arrays, and cached snapshots for efficient evaluation.
+///
+/// @note This function mutates the context's move weighting arrays.
+/// @note Prefer this overload over parameterized versions to minimize
+///       construction overhead in hot paths.
 void call_heuristic(const HeuristicContext& context);
 
