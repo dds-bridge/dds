@@ -219,7 +219,9 @@ public:
     auto forbidden_move(int index) const -> const MoveType&;
     auto clear_forbidden_moves() -> void;
     auto nodes() -> int&;
+    auto nodes() const -> const int&;
     auto trick_nodes() -> int&;
+    auto trick_nodes() const -> const int&;
     auto ini_depth() -> int&;
     auto ini_depth() const -> int;
 

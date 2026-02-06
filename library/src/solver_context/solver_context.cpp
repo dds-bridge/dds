@@ -88,7 +88,17 @@ auto SolverContext::SearchContext::nodes() -> int&
   return thr_->nodes;
 }
 
+auto SolverContext::SearchContext::nodes() const -> const int&
+{
+  return thr_->nodes;
+}
+
 auto SolverContext::SearchContext::trick_nodes() -> int&
+{
+  return thr_->trickNodes;
+}
+
+auto SolverContext::SearchContext::trick_nodes() const -> const int&
 {
   return thr_->trickNodes;
 }
