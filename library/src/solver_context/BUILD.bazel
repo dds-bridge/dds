@@ -9,9 +9,9 @@ cc_library(
     includes = ["."],
     include_prefix = "solver_context",
     deps = [
-        "//library/src/system",                   # ThreadData.h, Utilities
-    "//library/src/api:api_definitions",     # <api/dds.h>
-        "//library/src/trans_table",              # TT headers
+        "//library/src/system",               # ThreadData.h, Utilities
+        "//library/src/api:api_definitions",  # <api/dds.h>
+        "//library/src/trans_table",          # TT headers
     ],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
@@ -27,7 +27,7 @@ cc_library(
     include_prefix = "solver_context",
     deps = [
         "//library/src/system",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
         "//library/src/trans_table",
     ],
     copts = DDS_CPPOPTS,
@@ -44,7 +44,7 @@ cc_library(
     include_prefix = "solver_context",
     deps = [
         "//library/src/system",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
         "//library/src/trans_table",
     ],
     copts = DDS_CPPOPTS,
