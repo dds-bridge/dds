@@ -447,12 +447,12 @@ int SolveBoardInternal(
     /*
      * Reset semantics
      * ----------------
-    * - reset_for_solve(): Heavy, per-solve reset (frees TT memory as needed and
+     * - reset_for_solve(): Heavy, per-solve reset (frees TT memory as needed and
      *   clears broad search state). Use this only at top-level initialization of
      *   a solve. Do NOT call it inside iterative search loops; it changes state
      *   beyond what the legacy code expected and can affect move ordering/output.
      *
-    * - reset_best_moves_lite(): Lightweight, per-iteration reset that matches the
+     * - reset_best_moves_lite(): Lightweight, per-iteration reset that matches the
      *   legacy ResetBestMoves behavior. It only clears bestMove[*].rank and
      *   bestMoveTT[*].rank, updates memUsed and ABStats. Use this inside the
      *   do/while and other iterative loops below to preserve historical results.
@@ -466,10 +466,10 @@ int SolveBoardInternal(
         ctx.reset_best_moves_lite();
 
         TIMER_START(TIMER_NO_AB, ini_depth);
-  thrp->val = (* AB_ptr_list[hand_rel_first])(&thrp->lookAheadPos,
-                  guess,
-              ini_depth,
-      ctx);
+        thrp->val = (* AB_ptr_list[hand_rel_first])(&thrp->lookAheadPos,
+            guess,
+            ini_depth,
+            ctx);
         TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL

@@ -36,8 +36,6 @@ struct SolverConfig
   int tt_mem_maximum_mb_ = 0;
   // Optional deterministic RNG seed (0 means "no explicit seed").
   unsigned long long rng_seed_ = 0ULL;
-  // Optional arena capacity (bytes). 0 disables arena.
-  std::size_t arena_capacity_bytes_ = 0ULL;
 };
 
 /**
@@ -55,12 +53,9 @@ public:
   explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
   : thr_(std::move(thread)), cfg_(cfg)
   {
-#ifdef DDS_DEFAULT_ARENA_BYTES
-  if (cfg_.arena_capacity_bytes_ == 0ULL) {
-    cfg_.arena_capacity_bytes_ = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
-  }
-#endif
-  if (cfg_.rng_seed_ != 0ULL) utils_.seed(cfg_.rng_seed_);
+    if (cfg_.rng_seed_ != 0ULL) {
+      utils_.seed(cfg_.rng_seed_);
+    }
     // Bind the persistent facades to the underlying ThreadData.
     search_.set_thread(thr_);
     search_.set_owner(this);
@@ -154,6 +149,9 @@ public:
   /**
    * @brief Access utilities facade for logging, RNG, and stats.
    */
+  /**
+   * @brief Access utilities facade for mutable contexts.
+   */
   auto utilities() -> UtilitiesContext
   {
     return UtilitiesContext(&utils_);
@@ -161,10 +159,11 @@ public:
 
   /**
    * @brief Access utilities facade for const contexts.
+   * @note Returns a const-only wrapper to preserve const-correctness.
    */
   auto utilities() const -> UtilitiesContext
   {
-    return UtilitiesContext(&utils_);
+    return UtilitiesContext(const_cast<dds::Utilities*>(&utils_));
   }
 
   // Developer note — TT lifecycle (instance-scoped)
@@ -173,7 +172,7 @@ public:
   //   via a std::unique_ptr created lazily on first access. There is no
   //   global TT registry and no ThreadData-owned TT.
   // - Configuration: The effective TT kind and memory sizes are determined by
-  //   the SolverContext's SolverConfig (ttKind, ttMemDefaultMB, ttMemMaximumMB),
+  //   the SolverContext's SolverConfig (tt_kind_, tt_mem_default_mb_, tt_mem_maximum_mb_),
   //   with optional environment overrides:
   //     DDS_TT_DEFAULT_MB  — overrides default MB if > 0
   //     DDS_TT_LIMIT_MB    — caps maximum MB if > 0
@@ -289,13 +288,6 @@ public:
     auto ini_depth() -> int&;
     auto ini_depth() const -> int;
 
-  private:
-    std::shared_ptr<ThreadData> thr_;
-    // Instance-owned transposition table, created lazily on first access.
-    std::unique_ptr<TransTable> tt_;
-    // Back-reference to the owning SolverContext (for config and utilities).
-    SolverContext* owner_;
-
   public:
     // Allow SolverContext to bind or rebind the underlying ThreadData
     // after construction (useful when SolverContext owns the ThreadData
@@ -310,6 +302,13 @@ public:
     {
       owner_ = owner;
     }
+
+  private:
+    std::shared_ptr<ThreadData> thr_;
+    // Instance-owned transposition table, created lazily on first access.
+    std::unique_ptr<TransTable> tt_;
+    // Back-reference to the owning SolverContext (for config and utilities).
+    SolverContext* owner_ = nullptr;
   };
 
   // Expose a persistent SearchContext owned by the SolverContext.
