@@ -10,7 +10,7 @@ TEST(UtilitiesRngTest, DeterministicSequenceWithSeed) {
 
   // Seeded contexts should produce the same sequence for same seed.
   SolverConfig cfg{};
-  cfg.rngSeed = 123456789ULL;
+  cfg.rng_seed_ = 123456789ULL;
 
   SolverContext ctx1(thr, cfg);
   SolverContext ctx2(thr, cfg);
@@ -29,8 +29,8 @@ TEST(UtilitiesRngTest, DeterministicSequenceWithSeed) {
 TEST(UtilitiesRngTest, DifferentSeedsYieldDifferentSequences) {
   auto thr = std::make_shared<ThreadData>();
 
-  SolverConfig cfgA{}; cfgA.rngSeed = 42ULL;
-  SolverConfig cfgB{}; cfgB.rngSeed = 43ULL;
+  SolverConfig cfgA{}; cfgA.rng_seed_ = 42ULL;
+  SolverConfig cfgB{}; cfgB.rng_seed_ = 43ULL;
 
   SolverContext ctxA(thr, cfgA);
   SolverContext ctxB(thr, cfgB);

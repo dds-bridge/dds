@@ -74,9 +74,9 @@ int STDCALL AnalysePlayBin(
   if (ret != RETURN_NO_FAULT)
     return ret;
   SolverContext& ctx = outer_ctx;
-  const int iniDepth = ctx.search().iniDepth();
-  const int numTricks = ((iniDepth + 3) >> 2) + 1;
-  const int numCardsPlayed = ((48 - iniDepth) % 4) + 1;
+  const int ini_depth = ctx.search().ini_depth();
+  const int numTricks = ((ini_depth + 3) >> 2) + 1;
+  const int numCardsPlayed = ((48 - ini_depth) % 4) + 1;
 
   int last_trick = (play.number + 3) / 4;
   int last_card = ((play.number + 3) % 4) + 1;

@@ -16,16 +16,16 @@ TEST(TransTableSharingTest, SameThreadSharesTT)
   SolverContext ctx2{thr};
 
   // Initially no TT
-  EXPECT_EQ(ctx1.maybeTransTable(), nullptr);
-  EXPECT_EQ(ctx2.maybeTransTable(), nullptr);
+  EXPECT_EQ(ctx1.maybe_trans_table(), nullptr);
+  EXPECT_EQ(ctx2.maybe_trans_table(), nullptr);
 
-  TransTable* t1 = ctx1.transTable();
+  TransTable* t1 = ctx1.trans_table();
   ASSERT_NE(t1, nullptr);
-  TransTable* t2 = ctx2.maybeTransTable();
+  TransTable* t2 = ctx2.maybe_trans_table();
   ASSERT_NE(t2, nullptr);
   EXPECT_EQ(t1, t2);
 
   // Dispose via one context should remove from registry
-  ctx1.DisposeTransTable();
-  EXPECT_EQ(ctx2.maybeTransTable(), nullptr);
+  ctx1.dispose_trans_table();
+  EXPECT_EQ(ctx2.maybe_trans_table(), nullptr);
 }

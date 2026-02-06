@@ -17,11 +17,11 @@ TEST(UtilitiesLogTest, NoLogWithoutDefine)
   SolverContext ctx;
 
   // Ensure clean start
-  ctx.utilities().logClear();
+  ctx.utilities().log_clear();
 
   // Create TT and dispose it; without define there should be no logs
-  (void)ctx.transTable();
-  ctx.DisposeTransTable();
+  (void)ctx.trans_table();
+  ctx.dispose_trans_table();
 
-  EXPECT_TRUE(ctx.utilities().logBuffer().empty());
+  EXPECT_TRUE(ctx.utilities().log_buffer().empty());
 }
