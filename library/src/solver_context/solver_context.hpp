@@ -63,27 +63,78 @@ public:
 
   ~SolverContext();
 
-  std::shared_ptr<ThreadData> thread() const { return thr_; }
-  const SolverConfig& config() const { return cfg_; }
+  auto thread() const -> std::shared_ptr<ThreadData>
+  {
+    return thr_;
+  }
+
+  auto config() const -> const SolverConfig&
+  {
+    return cfg_;
+  }
 
   // --- Utilities facade ---
-  class UtilitiesContext {
+  class UtilitiesContext
+  {
   public:
-    explicit UtilitiesContext(::dds::Utilities* util) : util_(util) {}
-    ::dds::Utilities& util() { return *util_; }
-    const ::dds::Utilities& util() const { return *util_; }
-  std::mt19937& rng() { return util_->rng(); }
-  const std::mt19937& rng() const { return util_->rng(); }
-    void seed_rng(unsigned long long seed) { util_->seed(seed); }
-    void log_append(const std::string& s) { util_->log_append(s); }
-    const std::vector<std::string>& log_buffer() const { return util_->log_buffer(); }
-    void log_clear() { util_->log_clear(); }
+    explicit UtilitiesContext(::dds::Utilities* util)
+      : util_(util)
+    {
+    }
+
+    auto util() -> ::dds::Utilities&
+    {
+      return *util_;
+    }
+
+    auto util() const -> const ::dds::Utilities&
+    {
+      return *util_;
+    }
+
+    auto rng() -> std::mt19937&
+    {
+      return util_->rng();
+    }
+
+    auto rng() const -> const std::mt19937&
+    {
+      return util_->rng();
+    }
+
+    auto seed_rng(unsigned long long seed) -> void
+    {
+      util_->seed(seed);
+    }
+
+    auto log_append(const std::string& s) -> void
+    {
+      util_->log_append(s);
+    }
+
+    auto log_buffer() const -> const std::vector<std::string>&
+    {
+      return util_->log_buffer();
+    }
+
+    auto log_clear() -> void
+    {
+      util_->log_clear();
+    }
+
   private:
     ::dds::Utilities* util_ = nullptr;
   };
 
-  inline UtilitiesContext utilities() { return UtilitiesContext(&utils_); }
-  inline UtilitiesContext utilities() const { return UtilitiesContext(&utils_); }
+  auto utilities() -> UtilitiesContext
+  {
+    return UtilitiesContext(&utils_);
+  }
+
+  auto utilities() const -> UtilitiesContext
+  {
+    return UtilitiesContext(&utils_);
+  }
 
   // Developer note — TT lifecycle (instance-scoped)
   //
@@ -112,162 +163,189 @@ public:
   // stack-allocated buffers only.
 
   // Returns the owned transposition table instance (creates if null)
-  TransTable* trans_table() const;
+  auto trans_table() const -> TransTable*;
   // Returns the TT instance if it exists, or nullptr
-  TransTable* maybe_trans_table() const;
+  auto maybe_trans_table() const -> TransTable*;
 
   // Dispose and erase the TT instance associated with this thread, if any.
-  void dispose_trans_table() const;
+  auto dispose_trans_table() const -> void;
 
   // Lightweight facades used by tests and call sites; no-ops if no TT exists.
-  void reset_for_solve() const;   // Calls reset_memory(ResetReason::FreeMemory)
+  auto reset_for_solve() const -> void;   // Calls reset_memory(ResetReason::FreeMemory)
   // Lightweight per-iteration reset matching legacy ResetBestMoves semantics.
   // Only clears bestMove[*].rank and bestMoveTT[*].rank, updates memUsed and ABStats.
-  void reset_best_moves_lite() const;
-  void clear_tt() const;         // Calls ReturnAllMemory()
-  void resize_tt(int defMB, int maxMB) const; // Updates sizes if TT exists
+  auto reset_best_moves_lite() const -> void;
+  auto clear_tt() const -> void;         // Calls ReturnAllMemory()
+  auto resize_tt(int defMB, int maxMB) const -> void; // Updates sizes if TT exists
   // Explicit runtime configuration of TT kind and memory limits. Applies to
   // existing TT (resize or recreate) and persists for future creations.
-  void configure_tt(TTKind kind, int defMB, int maxMB);
+  auto configure_tt(TTKind kind, int defMB, int maxMB) -> void;
 
   // --- Search state facade ---
-  class SearchContext {
+  class SearchContext
+  {
   public:
-  SearchContext() = default;
-  explicit SearchContext(std::shared_ptr<ThreadData> thr) : thr_(std::move(thr)) {}
+    SearchContext() = default;
+
+    explicit SearchContext(std::shared_ptr<ThreadData> thr)
+      : thr_(std::move(thr))
+    {
+    }
+
     // Returns the owned transposition table instance (creates if null)
-    TransTable* trans_table();
+    auto trans_table() -> TransTable*;
     // Returns the TT instance if it exists, or nullptr
-    TransTable* maybe_trans_table() const;
+    auto maybe_trans_table() const -> TransTable*;
     // Dispose and erase the TT instance owned by this context, if any.
-    void dispose_trans_table();
+    auto dispose_trans_table() -> void;
     // analysis flag used to control incremental analysis behavior
-    bool& analysis_flag();
-    bool analysis_flag() const;
-    unsigned short& lowest_win(int depth, int suit);
-    const unsigned short& lowest_win(int depth, int suit) const;
-    MoveType& best_move(int depth);
-    const MoveType& best_move(int depth) const;
-    MoveType& best_move_tt(int depth);
-    const MoveType& best_move_tt(int depth) const;
-    WinnersType& winners(int trickIndex);
-    const WinnersType& winners(int trickIndex) const;
-  // Node type store for each hand (MAXNODE/MINNODE)
-  int& node_type_store(int hand);
-  const int& node_type_store(int hand) const;
+    auto analysis_flag() -> bool&;
+    auto analysis_flag() const -> bool;
+    auto lowest_win(int depth, int suit) -> unsigned short&;
+    auto lowest_win(int depth, int suit) const -> const unsigned short&;
+    auto best_move(int depth) -> MoveType&;
+    auto best_move(int depth) const -> const MoveType&;
+    auto best_move_tt(int depth) -> MoveType&;
+    auto best_move_tt(int depth) const -> const MoveType&;
+    auto winners(int trickIndex) -> WinnersType&;
+    auto winners(int trickIndex) const -> const WinnersType&;
+    // Node type store for each hand (MAXNODE/MINNODE)
+    auto node_type_store(int hand) -> int&;
+    auto node_type_store(int hand) const -> const int&;
     // Access to forbidden moves buffer used by Moves::Purge and solver loops
-    MoveType* forbidden_moves();
-    const MoveType* forbidden_moves() const;
-    MoveType& forbidden_move(int index);
-    const MoveType& forbidden_move(int index) const;
-  void clear_forbidden_moves();
-    int& nodes();
-    int& trick_nodes();
-    int& ini_depth();
-    int ini_depth() const;
+    auto forbidden_moves() -> MoveType*;
+    auto forbidden_moves() const -> const MoveType*;
+    auto forbidden_move(int index) -> MoveType&;
+    auto forbidden_move(int index) const -> const MoveType&;
+    auto clear_forbidden_moves() -> void;
+    auto nodes() -> int&;
+    auto trick_nodes() -> int&;
+    auto ini_depth() -> int&;
+    auto ini_depth() const -> int;
+
   private:
     std::shared_ptr<ThreadData> thr_;
     // Instance-owned transposition table, created lazily on first access.
     std::unique_ptr<TransTable> tt_;
     // Back-reference to the owning SolverContext (for config and utilities).
     SolverContext* owner_;
+
   public:
     // Allow SolverContext to bind or rebind the underlying ThreadData
     // after construction (useful when SolverContext owns the ThreadData
     // and sets it up after default construction).
-    void set_thread(const std::shared_ptr<ThreadData>& thr) { thr_ = thr; }
+    auto set_thread(const std::shared_ptr<ThreadData>& thr) -> void
+    {
+      thr_ = thr;
+    }
+
     // Bind the owning SolverContext instance for access to config/utilities/arena
-    void set_owner(SolverContext* owner) { owner_ = owner; }
+    auto set_owner(SolverContext* owner) -> void
+    {
+      owner_ = owner;
+    }
   };
 
   // Expose a persistent SearchContext owned by the SolverContext.
-  SearchContext& search() { return search_; }
-  const SearchContext& search() const { return search_; }
+  auto search() -> SearchContext&
+  {
+    return search_;
+  }
 
+  auto search() const -> const SearchContext&
+  {
+    return search_;
+  }
 
   // --- Move generation facade ---
-  class MoveGenContext {
+  class MoveGenContext
+  {
   public:
     explicit MoveGenContext(std::shared_ptr<ThreadData> thr)
-      : thr_(std::move(thr)) {}
+      : thr_(std::move(thr))
+    {
+    }
 
-    int move_gen_0(
+    auto move_gen_0(
       const int tricks,
       const Pos& tpos,
       const MoveType& bestMove,
       const MoveType& bestMoveTT,
-      const RelRanksType thrp_rel[]);
+      const RelRanksType thrp_rel[]) -> int;
 
-    int move_gen_123(
+    auto move_gen_123(
       const int tricks,
       const int relHand,
-      const Pos& tpos);
+      const Pos& tpos) -> int;
 
-    void purge(
+    auto purge(
       const int tricks,
       const int relHand,
-      const MoveType forbiddenMoves[]);
+      const MoveType forbiddenMoves[]) -> void;
 
-    const MoveType* make_next(
+    auto make_next(
       const int trick,
       const int relHand,
-      const unsigned short win_ranks[]);
+      const unsigned short win_ranks[]) -> const MoveType*;
 
     // Simpler variant without win_ranks used in several SolverIF paths
-    const MoveType* make_next_simple(
+    auto make_next_simple(
       const int trick,
-      const int relHand);
+      const int relHand) -> const MoveType*;
 
-    int get_length(
+    auto get_length(
       const int trick,
-      const int relHand) const;
+      const int relHand) const -> int;
 
-    void rewind(
+    auto rewind(
       const int tricks,
-      const int relHand);
+      const int relHand) -> void;
 
-    void register_hit(
+    auto register_hit(
       const int tricks,
-      const int relHand);
+      const int relHand) -> void;
 
     // Reinitialize move generation for a new lead hand at a given trick
-    void reinit(
+    auto reinit(
       const int tricks,
-      const int leadHand);
+      const int leadHand) -> void;
 
     // Initialize move generation state for a given trick and starting hand
-    void init(
+    auto init(
       const int tricks,
       const int relStartHand,
       const int initialRanks[],
       const int initialSuits[],
       const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
       const int trump,
-      const int leadHand);
+      const int leadHand) -> void;
 
   // Diagnostics (no behavior change; passthrough to Moves)
   // Note: Emission is controlled by DDS_MOVES / DDS_MOVES_DETAILS.
-    void print_trick_stats(std::ofstream& fout) const;
-    void print_trick_details(std::ofstream& fout) const;
-    void print_function_stats(std::ofstream& fout) const;
+    auto print_trick_stats(std::ofstream& fout) const -> void;
+    auto print_trick_details(std::ofstream& fout) const -> void;
+    auto print_function_stats(std::ofstream& fout) const -> void;
 
     // Read-only access to per-trick generated metadata
-    const TrickDataType& get_trick_data(const int tricks);
+    auto get_trick_data(const int tricks) -> const TrickDataType&;
 
  // Read-only textual dump helper
-    std::string trick_to_text(const int trick) const;
+    auto trick_to_text(const int trick) const -> std::string;
 
     // Specify a particular move at a trick/hand position
-    void make_specific(
+    auto make_specific(
       const MoveType& mply,
       const int trick,
-      const int relHand);
+      const int relHand) -> void;
 
   private:
     std::shared_ptr<ThreadData> thr_;
   };
 
-  inline MoveGenContext move_gen() const { return MoveGenContext(thr_); }
+  auto move_gen() const -> MoveGenContext
+  {
+    return MoveGenContext(thr_);
+  }
 
 private:
   // Shared ownership of per-context ThreadData. Callers can construct
@@ -287,6 +365,6 @@ private:
   // See the developer note above for details on TT lifecycle and resets.
 };
 
-double ThreadMemoryUsed();
+auto ThreadMemoryUsed() -> double;
 
 #endif // DDS_SYSTEM_SOLVERCONTEXT_H
