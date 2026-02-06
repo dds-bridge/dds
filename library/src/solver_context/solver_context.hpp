@@ -6,18 +6,17 @@
    while internally delegating to existing code paths.
 */
 
-#ifndef DDS_SYSTEM_SOLVERCONTEXT_H
-#define DDS_SYSTEM_SOLVERCONTEXT_H
+#pragma once
+
+#include <cstddef>
+#include <memory>
+#include <random>
+#include <string>
+#include <vector>
 
 #include <system/thread_data.hpp>
 #include <system/util/utilities.hpp>
 #include <trans_table/trans_table.hpp>
-
-#include <string>
-#include <vector>
-#include <random>
-#include <cstddef>
-#include <memory>
 
 // Minimal configuration scaffold for future expansion.
 // TT configuration without depending on Memory headers.
@@ -445,5 +444,3 @@ private:
 };
 
 auto ThreadMemoryUsed() -> double;
-
-#endif // DDS_SYSTEM_SOLVERCONTEXT_H

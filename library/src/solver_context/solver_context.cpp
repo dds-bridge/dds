@@ -1,11 +1,12 @@
 #include "solver_context.hpp"
 
-#include <api/dds.h>
-#include <trans_table/trans_table_s.hpp>
-#include <trans_table/trans_table_l.hpp>
-#include <memory>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
+
+#include <api/dds.h>
+#include <trans_table/trans_table_l.hpp>
+#include <trans_table/trans_table_s.hpp>
 
 // Owned-ThreadData constructor: allocate ThreadData as a member of the
 // SolverContext so callers can create a context at the top of the stack
