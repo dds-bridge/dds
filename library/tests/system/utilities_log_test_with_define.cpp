@@ -15,12 +15,12 @@ TEST(UtilitiesLogTestWithDefine, LogsPresentWhenEnabled)
 {
   ensureThread();
   SolverContext ctx;
-  ctx.utilities().logClear();
+  ctx.utilities().log_clear();
 
-  (void)ctx.transTable();
-  ctx.DisposeTransTable();
+  (void)ctx.trans_table();
+  ctx.dispose_trans_table();
 
-  const auto& logs = ctx.utilities().logBuffer();
+  const auto& logs = ctx.utilities().log_buffer();
   ASSERT_GE(logs.size(), 1u);
   // First log must be tt:create|K|def|max where K in {S,L}
   EXPECT_TRUE(logs[0].rfind("tt:create|", 0) == 0);

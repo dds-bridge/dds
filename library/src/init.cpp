@@ -271,7 +271,7 @@ void SetDealTables(
   }
 
   {
-    ctx.transTable()->init(handLookup);
+    ctx.trans_table()->init(handLookup);
   }
 
   RelRanksType * relp;

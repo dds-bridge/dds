@@ -46,7 +46,7 @@ bool LaterTricksMIN(
       if (hh != -1)
       {
         if (static_cast<unsigned>(hh) < static_cast<unsigned>(DDS_HANDS) &&
-            ctx.search().nodeTypeStore(hh) == MAXNODE)
+            ctx.search().node_type_store(hh) == MAXNODE)
           sum += std::max(tpos.length[hh][ss],
                      tpos.length[partner[hh]][ss]);
       }
@@ -69,7 +69,7 @@ bool LaterTricksMIN(
           if (depth_ok) tpos.win_ranks[depth][ss] = 0;
           continue;
         }
-        else if (ctx.search().nodeTypeStore(win_hand) == MINNODE)
+        else if (ctx.search().node_type_store(win_hand) == MINNODE)
         {
           if ((tpos.rank_in_suit[partner[win_hand]][ss] == 0) &&
               (tpos.rank_in_suit[lho[win_hand]][ss] == 0) &&
@@ -85,7 +85,7 @@ bool LaterTricksMIN(
       return false;
     }
   }
-  else if (ctx.search().nodeTypeStore(tpos.winner[trump].hand) == MINNODE)
+  else if (ctx.search().node_type_store(tpos.winner[trump].hand) == MINNODE)
   {
     if ((tpos.length[hand][trump] == 0) &&
         (tpos.length[partner[hand]][trump] == 0))
@@ -117,7 +117,7 @@ bool LaterTricksMIN(
         return true;
 
       int r2 = tpos.second_best[trump].rank;
-      if ((ctx.search().nodeTypeStore(hh) == MINNODE) && (r2 != 0))
+      if ((ctx.search().node_type_store(hh) == MINNODE) && (r2 != 0))
       {
         if (tpos.length[hh][trump] > 1 ||
             tpos.length[partner[hh]][trump] > 1)
@@ -138,7 +138,7 @@ bool LaterTricksMIN(
     if (static_cast<unsigned>(hh) >= static_cast<unsigned>(DDS_HANDS))
       return true;
 
-    if ((ctx.search().nodeTypeStore(hh) != MINNODE) ||
+    if ((ctx.search().node_type_store(hh) != MINNODE) ||
         (tpos.length[hh][trump] <= 1))
       return true;
 
@@ -163,14 +163,14 @@ bool LaterTricksMIN(
         fprintf(stderr, "LaterTricksMIN: invalid aggr=%u (depth=%d)", aggr, depth);
         return true; // conservative fallback
       }
-  int h = ctx.thread()->rel[aggr].abs_rank[3][trump].hand;
+      int h = ctx.thread()->rel[aggr].abs_rank[3][trump].hand;
       if (h == -1)
         return true;
 
       if (static_cast<unsigned>(h) >= static_cast<unsigned>(DDS_HANDS))
         return true;
 
-      if ((ctx.search().nodeTypeStore(h) == MINNODE) &&
+      if ((ctx.search().node_type_store(h) == MINNODE) &&
           ((tpos.tricks_max + (depth >> 2)) < target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -218,7 +218,7 @@ bool LaterTricksMAX(
       if (hh != -1)
       {
         if (static_cast<unsigned>(hh) < static_cast<unsigned>(DDS_HANDS) &&
-            ctx.search().nodeTypeStore(hh) == MINNODE)
+            ctx.search().node_type_store(hh) == MINNODE)
           sum += std::max(tpos.length[hh][ss],
                      tpos.length[partner[hh]][ss]);
       }
@@ -240,7 +240,7 @@ bool LaterTricksMAX(
           if (depth_ok) tpos.win_ranks[depth][ss] = 0;
           continue;
         }
-        else if (ctx.search().nodeTypeStore(win_hand) == MAXNODE)
+        else if (ctx.search().node_type_store(win_hand) == MAXNODE)
         {
           if ((tpos.rank_in_suit[partner[win_hand]][ss] == 0) &&
               (tpos.rank_in_suit[lho[win_hand]][ss] == 0) &&
@@ -257,7 +257,7 @@ bool LaterTricksMAX(
       return true;
     }
   }
-  else if (ctx.search().nodeTypeStore(tpos.winner[trump].hand) == MAXNODE)
+  else if (ctx.search().node_type_store(tpos.winner[trump].hand) == MAXNODE)
   {
     if ((tpos.length[hand][trump] == 0) &&
         (tpos.length[partner[hand]][trump] == 0))
@@ -289,7 +289,7 @@ bool LaterTricksMAX(
       if (static_cast<unsigned>(hh) >= static_cast<unsigned>(DDS_HANDS))
         return false;
 
-      if ((ctx.search().nodeTypeStore(hh) == MAXNODE) &&
+      if ((ctx.search().node_type_store(hh) == MAXNODE) &&
           (tpos.second_best[trump].rank != 0))
       {
         if (((tpos.length[hh][trump] > 1) ||
@@ -314,7 +314,7 @@ bool LaterTricksMAX(
     if (static_cast<unsigned>(hh) >= static_cast<unsigned>(DDS_HANDS))
       return false;
 
-    if ((ctx.search().nodeTypeStore(hh) != MAXNODE) ||
+    if ((ctx.search().node_type_store(hh) != MAXNODE) ||
         (tpos.length[hh][trump] <= 1))
       return false;
 
@@ -338,14 +338,14 @@ bool LaterTricksMAX(
         fprintf(stderr, "LaterTricksMAX: invalid aggr=%u (depth=%d)\n", aggr, depth);
         return false; // conservative fallback for MAX
       }
-  int h = ctx.thread()->rel[aggr].abs_rank[3][trump].hand;
+      int h = ctx.thread()->rel[aggr].abs_rank[3][trump].hand;
       if (h == -1)
         return false;
 
       if (static_cast<unsigned>(h) >= static_cast<unsigned>(DDS_HANDS))
         return false;
 
-      if ((ctx.search().nodeTypeStore(h) == MAXNODE) &&
+      if ((ctx.search().node_type_store(h) == MAXNODE) &&
           ((tpos.tricks_max + 1) >= target))
       {
         for (int ss = 0; ss < DDS_SUITS; ss++)

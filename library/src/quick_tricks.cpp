@@ -133,7 +133,7 @@ int QuickTricks(
   result = true;
   int qtricks = 0;
 
-  if (ctx.search().nodeTypeStore(hand) == MAXNODE)
+  if (ctx.search().node_type_store(hand) == MAXNODE)
     cutoff = target - tpos.tricks_max;
   else
     cutoff = tpos.tricks_max - target + (depth >> 2) + 2;
@@ -680,7 +680,7 @@ int QuickTricks(
         }
       }
 
-      if (ctx.search().nodeTypeStore(hand) != MAXNODE)
+      if (ctx.search().node_type_store(hand) != MAXNODE)
         cutoff = target - tpos.tricks_max;
       else
       {
@@ -1138,7 +1138,7 @@ bool QuickTricksSecondHand(
   const int trump,
   SolverContext& ctx)
 {
-  if (depth == ctx.search().iniDepth())
+  if (depth == ctx.search().ini_depth())
     return false;
 
   int ss = tpos.move[depth + 1].suit;
@@ -1183,7 +1183,7 @@ bool QuickTricksSecondHand(
   int qtricks = 1;
 
   int cutoff;
-  if (ctx.search().nodeTypeStore(hand) == MAXNODE)
+  if (ctx.search().node_type_store(hand) == MAXNODE)
     cutoff = target - tpos.tricks_max;
   else
     cutoff = tpos.tricks_max - target + (depth >> 2) + 3;

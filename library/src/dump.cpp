@@ -237,13 +237,13 @@ std::string DumpTopHeader(
     // Looking for best score.
     stext = "Loop target " + std::to_string(tricks) + ", " +
       "bounds " + std::to_string(lower) + " .. " + std::to_string(upper) + ", " +
-      TopMove(thrp->val, ctx.search().bestMove(ctx.search().iniDepth())) + "";
+    TopMove(thrp->val, ctx.search().best_move(ctx.search().ini_depth())) + "";
   }
   else if (printMode == 2)
   {
     // Looking for other moves with best score.
     stext = "Loop for cards with score " + std::to_string(tricks) + ", " +
-      TopMove(thrp->val, ctx.search().bestMove(ctx.search().iniDepth()));
+      TopMove(thrp->val, ctx.search().best_move(ctx.search().ini_depth()));
   }
   return stext + "\n" + std::string(stext.size(), '-') + "\n";
 }
@@ -330,8 +330,8 @@ void DumpTopLevel(
 
   fout << DumpTopHeader(thrp, tricks, lower, upper, printMode) << "\n";
   fout << PrintDeal(tpos.rank_in_suit, 16);
-  fout << WinnersToText(tpos.win_ranks[ctx.search().iniDepth()]) << "\n";
+  fout << WinnersToText(tpos.win_ranks[ctx.search().ini_depth()]) << "\n";
   fout << ctx.search().nodes() << " AB nodes, " <<
-    ctx.search().trickNodes() << " trick nodes\n\n";
+    ctx.search().trick_nodes() << " trick nodes\n\n";
 }
 

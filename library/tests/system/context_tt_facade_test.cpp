@@ -18,13 +18,13 @@ TEST(SystemContextTTFacades, ResetAndResizeAreNoopsWithoutTT)
   // Create a context that owns its ThreadData for this test.
   SolverContext ctx;
   // Ensure no TT yet (construction is lazy until first use)
-  ASSERT_EQ(nullptr, ctx.maybeTransTable());
+  ASSERT_EQ(nullptr, ctx.maybe_trans_table());
   // Should not crash and should not create TT
-  ctx.ResetForSolve();
-  ctx.ClearTT();
-  ctx.ResizeTT(8, 16);
+  ctx.reset_for_solve();
+  ctx.clear_tt();
+  ctx.resize_tt(8, 16);
 
-  EXPECT_EQ(nullptr, ctx.maybeTransTable());
+  EXPECT_EQ(nullptr, ctx.maybe_trans_table());
 }
 
 TEST(SystemContextTTFacades, ResizeCreatesWhenExisting)
@@ -36,13 +36,13 @@ TEST(SystemContextTTFacades, ResizeCreatesWhenExisting)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
   // Use owned context for the test
   SolverContext ctx;
-  // Force create via transTable()
-  auto* tt = ctx.transTable();
+  // Force create via trans_table()
+  auto* tt = ctx.trans_table();
   ASSERT_NE(nullptr, tt);
 
   // Resize should apply immediately and keep TT alive
-  ctx.ResizeTT(8, 16);
-  EXPECT_NE(nullptr, ctx.maybeTransTable());
+  ctx.resize_tt(8, 16);
+  EXPECT_NE(nullptr, ctx.maybe_trans_table());
 }
 
 TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
@@ -55,12 +55,12 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   SolverContext ctx;
 
   // Create TT and perform an initial lookup (expect miss)
-  auto* tt = ctx.transTable();
+  auto* tt = ctx.trans_table();
   ASSERT_NE(nullptr, tt);
 
   // Ensure TT internal roots are initialized before Lookup/Add for the test.
   // Production resets happen in SolverIF around new deals/trumps.
-  ctx.ResetForSolve();
+  ctx.reset_for_solve();
 
   // Minimal initialization for TT internals (aggr tables)
   int handLookup[DDS_SUITS][15] = {};
@@ -95,6 +95,6 @@ TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
   EXPECT_EQ(0, static_cast<int>(hitNode->upper_bound));
 
   // Dispose destroys the TT instance from the registry
-  ctx.DisposeTransTable();
-  EXPECT_EQ(nullptr, ctx.maybeTransTable());
+  ctx.dispose_trans_table();
+  EXPECT_EQ(nullptr, ctx.maybe_trans_table());
 }

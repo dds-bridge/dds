@@ -17,13 +17,13 @@ TEST(UtilitiesLogCtxOpsNoDefine, NoEntriesWhenDisabled)
   SolverContext ctx;
 
   // Start from a clean log buffer
-  ctx.utilities().logClear();
+  ctx.utilities().log_clear();
 
   // Exercise the context operations (should not produce log entries by default)
-  ctx.ResetForSolve();
-  ctx.ResetBestMovesLite();
-  ctx.ResizeTT(8, 16);
-  ctx.ClearTT();
+  ctx.reset_for_solve();
+  ctx.reset_best_moves_lite();
+  ctx.resize_tt(8, 16);
+  ctx.clear_tt();
 
-  EXPECT_TRUE(ctx.utilities().logBuffer().empty());
+  EXPECT_TRUE(ctx.utilities().log_buffer().empty());
 }

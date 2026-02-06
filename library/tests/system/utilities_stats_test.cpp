@@ -17,8 +17,8 @@ TEST(UtilitiesStatsTest, CountersRemainZeroWithoutDefine)
   SolverContext ctx;
   ctx.utilities().util().stats_reset();
 
-  (void)ctx.transTable();
-  ctx.DisposeTransTable();
+  (void)ctx.trans_table();
+  ctx.dispose_trans_table();
 
   const auto& st = ctx.utilities().util().stats();
   EXPECT_EQ(0u, st.tt_creates);

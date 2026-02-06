@@ -14,48 +14,50 @@ SolverContext::SolverContext(SolverConfig cfg)
   : thr_(nullptr), cfg_(cfg)
 {
 #ifdef DDS_DEFAULT_ARENA_BYTES
-  if (cfg_.arenaCapacityBytes == 0ULL) cfg_.arenaCapacityBytes = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
+  if (cfg_.arena_capacity_bytes_ == 0ULL) {
+    cfg_.arena_capacity_bytes_ = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
+  }
 #endif
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();
-  if (cfg_.rngSeed != 0ULL) utils_.seed(cfg_.rngSeed);
+  if (cfg_.rng_seed_ != 0ULL) utils_.seed(cfg_.rng_seed_);
   // Ensure persistent facades like SearchContext see the bound ThreadData.
   search_.set_thread(thr_);
   search_.set_owner(this);
 }
 
-TransTable* SolverContext::transTable() const
+TransTable* SolverContext::trans_table() const
 {
   // Delegate to per-context SearchContext member (lazy creation inside).
-  return const_cast<SolverContext*>(this)->search_.transTable();
+  return const_cast<SolverContext*>(this)->search_.trans_table();
 }
 
 // --- SearchContext disposal helper ---
-void SolverContext::SearchContext::disposeTransTable()
+void SolverContext::SearchContext::dispose_trans_table()
 {
   // Simply reset the unique_ptr; logging/stats are handled by caller.
   tt_.reset();
 }
 
 // --- SearchContext out-of-line definitions ---
-bool& SolverContext::SearchContext::analysisFlag() { return thr_->analysisFlag; }
-bool SolverContext::SearchContext::analysisFlag() const { return thr_->analysisFlag; }
-unsigned short& SolverContext::SearchContext::lowestWin(int depth, int suit) {
+bool& SolverContext::SearchContext::analysis_flag() { return thr_->analysisFlag; }
+bool SolverContext::SearchContext::analysis_flag() const { return thr_->analysisFlag; }
+unsigned short& SolverContext::SearchContext::lowest_win(int depth, int suit) {
   return thr_->lowestWin[depth][suit];
 }
-const unsigned short& SolverContext::SearchContext::lowestWin(int depth, int suit) const {
+const unsigned short& SolverContext::SearchContext::lowest_win(int depth, int suit) const {
   return thr_->lowestWin[depth][suit];
 }
-MoveType& SolverContext::SearchContext::bestMove(int depth) {
+MoveType& SolverContext::SearchContext::best_move(int depth) {
   return thr_->bestMove[depth];
 }
-const MoveType& SolverContext::SearchContext::bestMove(int depth) const {
+const MoveType& SolverContext::SearchContext::best_move(int depth) const {
   return thr_->bestMove[depth];
 }
-MoveType& SolverContext::SearchContext::bestMoveTT(int depth) {
+MoveType& SolverContext::SearchContext::best_move_tt(int depth) {
   return thr_->bestMoveTT[depth];
 }
-const MoveType& SolverContext::SearchContext::bestMoveTT(int depth) const {
+const MoveType& SolverContext::SearchContext::best_move_tt(int depth) const {
   return thr_->bestMoveTT[depth];
 }
 WinnersType& SolverContext::SearchContext::winners(int trickIndex) {
@@ -64,17 +66,17 @@ WinnersType& SolverContext::SearchContext::winners(int trickIndex) {
 const WinnersType& SolverContext::SearchContext::winners(int trickIndex) const {
   return thr_->winners[trickIndex];
 }
-int& SolverContext::SearchContext::nodeTypeStore(int hand) { return thr_->nodeTypeStore[hand]; }
-const int& SolverContext::SearchContext::nodeTypeStore(int hand) const { return thr_->nodeTypeStore[hand]; }
+int& SolverContext::SearchContext::node_type_store(int hand) { return thr_->nodeTypeStore[hand]; }
+const int& SolverContext::SearchContext::node_type_store(int hand) const { return thr_->nodeTypeStore[hand]; }
 int& SolverContext::SearchContext::nodes() { return thr_->nodes; }
-int& SolverContext::SearchContext::trickNodes() { return thr_->trickNodes; }
-int& SolverContext::SearchContext::iniDepth() { return thr_->iniDepth; }
-int SolverContext::SearchContext::iniDepth() const { return thr_->iniDepth; }
-MoveType* SolverContext::SearchContext::forbiddenMoves() { return thr_->forbiddenMoves; }
-const MoveType* SolverContext::SearchContext::forbiddenMoves() const { return thr_->forbiddenMoves; }
-MoveType& SolverContext::SearchContext::forbiddenMove(int index) { return thr_->forbiddenMoves[index]; }
-const MoveType& SolverContext::SearchContext::forbiddenMove(int index) const { return thr_->forbiddenMoves[index]; }
-void SolverContext::SearchContext::clearForbiddenMoves() {
+int& SolverContext::SearchContext::trick_nodes() { return thr_->trickNodes; }
+int& SolverContext::SearchContext::ini_depth() { return thr_->iniDepth; }
+int SolverContext::SearchContext::ini_depth() const { return thr_->iniDepth; }
+MoveType* SolverContext::SearchContext::forbidden_moves() { return thr_->forbiddenMoves; }
+const MoveType* SolverContext::SearchContext::forbidden_moves() const { return thr_->forbiddenMoves; }
+MoveType& SolverContext::SearchContext::forbidden_move(int index) { return thr_->forbiddenMoves[index]; }
+const MoveType& SolverContext::SearchContext::forbidden_move(int index) const { return thr_->forbiddenMoves[index]; }
+void SolverContext::SearchContext::clear_forbidden_moves() {
   for (int k = 0; k <= 13; ++k) {
     thr_->forbiddenMoves[k].rank = 0;
     thr_->forbiddenMoves[k].suit = 0;
@@ -82,17 +84,17 @@ void SolverContext::SearchContext::clearForbiddenMoves() {
 }
 
 // New: per-context transposition table accessors
-TransTable* SolverContext::SearchContext::maybeTransTable() const {
+TransTable* SolverContext::SearchContext::maybe_trans_table() const {
   return tt_ ? tt_.get() : nullptr;
 }
 
-TransTable* SolverContext::SearchContext::transTable() {
+TransTable* SolverContext::SearchContext::trans_table() {
   if (tt_) return tt_.get();
   // Require owner (for config and utilities). If missing, fall back
   // to Large with built-in defaults.
-  TTKind kind = (owner_ ? owner_->config().ttKind : TTKind::Large);
-  int defMB = (owner_ ? owner_->config().ttMemDefaultMB : 0);
-  int maxMB = (owner_ ? owner_->config().ttMemMaximumMB : 0);
+  TTKind kind = (owner_ ? owner_->config().tt_kind_ : TTKind::Large);
+  int defMB = (owner_ ? owner_->config().tt_mem_default_mb_ : 0);
+  int maxMB = (owner_ ? owner_->config().tt_mem_maximum_mb_ : 0);
   // Final fallback to THREADMEM_* constants
   if (defMB <= 0 || maxMB <= 0) {
     if (kind == TTKind::Small) {
@@ -129,7 +131,7 @@ TransTable* SolverContext::SearchContext::transTable() {
     const char kch = (kind == TTKind::Small ? 'S' : 'L');
     char buf[96];
     std::snprintf(buf, sizeof(buf), "tt:create|%c|%d|%d", kch, defMB, maxMB);
-    if (owner_) owner_->utilities().logAppend(std::string(buf));
+    if (owner_) owner_->utilities().log_append(std::string(buf));
   }
 #endif
 
@@ -151,22 +153,22 @@ TransTable* SolverContext::SearchContext::transTable() {
   return tt_.get();
 }
 
-TransTable* SolverContext::maybeTransTable() const
+TransTable* SolverContext::maybe_trans_table() const
 {
-  return search_.maybeTransTable();
+  return search_.maybe_trans_table();
 }
 
-void SolverContext::DisposeTransTable() const
+void SolverContext::dispose_trans_table() const
 {
 #ifdef DDS_UTILITIES_LOG
     // Append a tiny debug entry indicating TT disposal.
-    utilities().logAppend("tt:dispose");
+    utilities().log_append("tt:dispose");
 #endif
 #ifdef DDS_UTILITIES_STATS
     utilities().util().stats().tt_disposes++;
 #endif
   // Dispose the member-owned TT (if any)
-  const_cast<SolverContext*>(this)->search_.disposeTransTable();
+  const_cast<SolverContext*>(this)->search_.dispose_trans_table();
 }
 
 // Defaulted destructor defined out-of-line so destruction of the
@@ -174,16 +176,16 @@ void SolverContext::DisposeTransTable() const
 // complete type.
 SolverContext::~SolverContext() = default;
 
-void SolverContext::ResetForSolve() const
+void SolverContext::reset_for_solve() const
 {
 #ifdef DDS_UTILITIES_LOG
   {
     char buf[32];
     std::snprintf(buf, sizeof(buf), "ctx:reset_for_solve");
-    utilities().logAppend(std::string(buf));
+    utilities().log_append(std::string(buf));
   }
 #endif
-  if (auto* tt = search_.maybeTransTable())
+  if (auto* tt = search_.maybe_trans_table())
     tt->reset_memory(ResetReason::FreeMemory);
   if (!thr_) return;
   // Reset a subset of search state to a clean slate.
@@ -208,25 +210,25 @@ void SolverContext::ResetForSolve() const
   }
 }
 
-void SolverContext::ClearTT() const
+void SolverContext::clear_tt() const
 {
 #ifdef DDS_UTILITIES_LOG
-  utilities().logAppend("tt:clear");
+  utilities().log_append("tt:clear");
 #endif
-  if (auto* tt = search_.maybeTransTable())
+  if (auto* tt = search_.maybe_trans_table())
     tt->return_all_memory();
 }
 
-void SolverContext::ResizeTT(int defMB, int maxMB) const
+void SolverContext::resize_tt(int defMB, int maxMB) const
 {
 #ifdef DDS_UTILITIES_LOG
   {
     char buf[64];
     std::snprintf(buf, sizeof(buf), "tt:resize|%d|%d", defMB, maxMB);
-    utilities().logAppend(std::string(buf));
+    utilities().log_append(std::string(buf));
   }
 #endif
-  if (auto* tt = search_.maybeTransTable())
+  if (auto* tt = search_.maybe_trans_table())
   {
     if (maxMB < defMB) maxMB = defMB;
   tt->set_memory_default(defMB);
@@ -234,7 +236,7 @@ void SolverContext::ResizeTT(int defMB, int maxMB) const
   }
 }
 
-void SolverContext::ConfigureTT(TTKind kind, int defMB, int maxMB)
+void SolverContext::configure_tt(TTKind kind, int defMB, int maxMB)
 {
   // Apply environment limit if present to preserve existing behavior.
   if (const char* s = std::getenv("DDS_TT_LIMIT_MB")) {
@@ -244,32 +246,32 @@ void SolverContext::ConfigureTT(TTKind kind, int defMB, int maxMB)
   if (maxMB < defMB) maxMB = defMB;
 
   // Persist configuration for future TT creations.
-  cfg_.ttKind = kind;
-  cfg_.ttMemDefaultMB = defMB;
-  cfg_.ttMemMaximumMB = maxMB;
+  cfg_.tt_kind_ = kind;
+  cfg_.tt_mem_default_mb_ = defMB;
+  cfg_.tt_mem_maximum_mb_ = maxMB;
 
-  auto* tt = search_.maybeTransTable();
+  auto* tt = search_.maybe_trans_table();
   if (!tt) return; // Nothing to apply now; will take effect on lazy creation.
 
   // If kind changes, dispose and recreate now to ensure effect is applied.
   bool is_small = (dynamic_cast<TransTableS*>(tt) != nullptr);
   TTKind current_kind = is_small ? TTKind::Small : TTKind::Large;
   if (current_kind != kind) {
-    DisposeTransTable();
+    dispose_trans_table();
     // Force immediate creation with new config to keep behavior explicit.
-    (void)transTable();
+    (void)trans_table();
     return;
   }
 
   // Same kind: resize in-place.
-  ResizeTT(defMB, maxMB);
+  resize_tt(defMB, maxMB);
 }
 
 // Lightweight reset matching legacy ResetBestMoves semantics.
-void SolverContext::ResetBestMovesLite() const
+void SolverContext::reset_best_moves_lite() const
 {
 #ifdef DDS_UTILITIES_LOG
-  utilities().logAppend("ctx:reset_best_moves_lite");
+  utilities().log_append("ctx:reset_best_moves_lite");
 #endif
   if (!thr_) return;
   for (int d = 0; d <= 49; ++d)
@@ -278,7 +280,7 @@ void SolverContext::ResetBestMovesLite() const
     thr_->bestMoveTT[d].rank = 0;
   }
   // Keep memUsed in sync as the legacy code did
-  if (auto* tt = search_.maybeTransTable())
+  if (auto* tt = search_.maybe_trans_table())
     thr_->memUsed = tt->memory_in_use() + ThreadMemoryUsed();
   else
     thr_->memUsed = ThreadMemoryUsed();
@@ -300,7 +302,7 @@ double ThreadMemoryUsed()
 // --- MoveGenContext out-of-line definitions ---
 // No TLS allocator shim required: move generation now runs without a global allocator hook.
 
-int SolverContext::MoveGenContext::MoveGen0(
+int SolverContext::MoveGenContext::move_gen_0(
   const int tricks,
   const Pos& tpos,
   const MoveType& bestMove,
@@ -311,7 +313,7 @@ int SolverContext::MoveGenContext::MoveGen0(
   return rc;
 }
 
-int SolverContext::MoveGenContext::MoveGen123(
+int SolverContext::MoveGenContext::move_gen_123(
   const int tricks,
   const int relHand,
   const Pos& tpos)
@@ -320,7 +322,7 @@ int SolverContext::MoveGenContext::MoveGen123(
   return rc;
 }
 
-void SolverContext::MoveGenContext::Purge(
+void SolverContext::MoveGenContext::purge(
   const int tricks,
   const int relHand,
   const MoveType forbiddenMoves[])
@@ -328,7 +330,7 @@ void SolverContext::MoveGenContext::Purge(
   thr_->moves.Purge(tricks, relHand, forbiddenMoves);
 }
 
-const MoveType* SolverContext::MoveGenContext::MakeNext(
+const MoveType* SolverContext::MoveGenContext::make_next(
   const int trick,
   const int relHand,
   const unsigned short win_ranks[])
@@ -336,40 +338,40 @@ const MoveType* SolverContext::MoveGenContext::MakeNext(
   return thr_->moves.MakeNext(trick, relHand, win_ranks);
 }
 
-const MoveType* SolverContext::MoveGenContext::MakeNextSimple(
+const MoveType* SolverContext::MoveGenContext::make_next_simple(
   const int trick,
   const int relHand)
 {
   return thr_->moves.MakeNextSimple(trick, relHand);
 }
 
-int SolverContext::MoveGenContext::GetLength(
+int SolverContext::MoveGenContext::get_length(
   const int trick,
   const int relHand) const
 {
   return thr_->moves.GetLength(trick, relHand);
 }
 
-void SolverContext::MoveGenContext::Rewind(
+void SolverContext::MoveGenContext::rewind(
   const int tricks,
   const int relHand)
 {
   thr_->moves.Rewind(tricks, relHand);
 }
 
-void SolverContext::MoveGenContext::RegisterHit(
+void SolverContext::MoveGenContext::register_hit(
   const int tricks,
   const int relHand)
 {
   thr_->moves.RegisterHit(tricks, relHand);
 }
 
-const TrickDataType& SolverContext::MoveGenContext::GetTrickData(const int tricks)
+const TrickDataType& SolverContext::MoveGenContext::get_trick_data(const int tricks)
 {
   return thr_->moves.GetTrickData(tricks);
 }
 
-void SolverContext::MoveGenContext::MakeSpecific(
+void SolverContext::MoveGenContext::make_specific(
   const MoveType& mply,
   const int trick,
   const int relHand)
@@ -377,19 +379,19 @@ void SolverContext::MoveGenContext::MakeSpecific(
   thr_->moves.MakeSpecific(mply, trick, relHand);
 }
 
-std::string SolverContext::MoveGenContext::TrickToText(const int trick) const
+std::string SolverContext::MoveGenContext::trick_to_text(const int trick) const
 {
   return thr_->moves.TrickToText(trick);
 }
 
-void SolverContext::MoveGenContext::Reinit(
+void SolverContext::MoveGenContext::reinit(
   const int tricks,
   const int leadHand)
 {
   thr_->moves.Reinit(tricks, leadHand);
 }
 
-void SolverContext::MoveGenContext::Init(
+void SolverContext::MoveGenContext::init(
   const int tricks,
   const int relStartHand,
   const int initialRanks[],
@@ -402,17 +404,17 @@ void SolverContext::MoveGenContext::Init(
                    rank_in_suit, trump, leadHand);
 }
 
-void SolverContext::MoveGenContext::PrintTrickStats(std::ofstream& fout) const
+void SolverContext::MoveGenContext::print_trick_stats(std::ofstream& fout) const
 {
   thr_->moves.PrintTrickStats(fout);
 }
 
-void SolverContext::MoveGenContext::PrintFunctionStats(std::ofstream& fout) const
+void SolverContext::MoveGenContext::print_function_stats(std::ofstream& fout) const
 {
   thr_->moves.PrintFunctionStats(fout);
 }
 
-void SolverContext::MoveGenContext::PrintTrickDetails(std::ofstream& fout) const
+void SolverContext::MoveGenContext::print_trick_details(std::ofstream& fout) const
 {
   thr_->moves.PrintTrickDetails(fout);
 }

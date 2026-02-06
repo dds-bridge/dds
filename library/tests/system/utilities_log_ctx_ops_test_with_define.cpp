@@ -17,15 +17,15 @@ TEST(UtilitiesLogCtxOpsWithDefine, EmitsCtxAndTTOps)
   SolverContext ctx;
 
   // Start from a clean log buffer
-  ctx.utilities().logClear();
+  ctx.utilities().log_clear();
 
   // Exercise the newly logged operations
-  ctx.ResetForSolve();
-  ctx.ResetBestMovesLite();
-  ctx.ResizeTT(8, 16);
-  ctx.ClearTT();
+  ctx.reset_for_solve();
+  ctx.reset_best_moves_lite();
+  ctx.resize_tt(8, 16);
+  ctx.clear_tt();
 
-  const auto& logs = ctx.utilities().logBuffer();
+  const auto& logs = ctx.utilities().log_buffer();
   // We expect at least the four entries we just invoked
   ASSERT_GE(logs.size(), 4u);
 

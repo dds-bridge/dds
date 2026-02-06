@@ -93,7 +93,7 @@ bool ABsearch(
   auto thrp = ctx.thread();
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
-  bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
+  bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
 #ifdef DDS_TOP_LEVEL
   ctx.search().nodes()++;
@@ -101,15 +101,15 @@ bool ABsearch(
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    ctx.search().lowestWin(depth, ss) = 0;
+    ctx.search().lowest_win(depth, ss) = 0;
 
-  ctx.moveGen().MoveGen0(
+  ctx.move_gen().move_gen_0(
     tricks,
     * posPoint,
-    ctx.search().bestMove(depth),
-    ctx.search().bestMoveTT(depth),
+    ctx.search().best_move(depth),
+    ctx.search().best_move_tt(depth),
     thrp->rel);
-  ctx.moveGen().Purge(tricks, 0, ctx.search().forbiddenMoves());
+  ctx.move_gen().purge(tricks, 0, ctx.search().forbidden_moves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -119,7 +119,7 @@ bool ABsearch(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    MoveType const * mply = ctx.moveGen().MakeNext(tricks, 0,
+    MoveType const * mply = ctx.move_gen().make_next(tricks, 0,
       posPoint->win_ranks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
@@ -145,9 +145,9 @@ bool ABsearch(
         posPoint->win_ranks[depth][ss] =
           posPoint->win_ranks[depth - 1][ss];
 
-  ctx.search().bestMove(depth) = * mply;
+  ctx.search().best_move(depth) = * mply;
 #ifdef DDS_MOVES
-  ctx.moveGen().RegisterHit(tricks, 0);
+  ctx.move_gen().register_hit(tricks, 0);
 #endif
       goto ABexit;
     }
@@ -208,7 +208,7 @@ static bool ABsearch0_ctx(
   {
     /* Find node that fits the suit lengths */
     int limit;
-    if (ctx.search().nodeTypeStore(0) == MAXNODE)
+    if (ctx.search().node_type_store(0) == MAXNODE)
       limit = target - posPoint->tricks_max - 1;
     else
       limit = tricks - (target - posPoint->tricks_max - 1);
@@ -216,7 +216,7 @@ static bool ABsearch0_ctx(
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
   NodeCards const * cardsP =
-      ctx.transTable()->lookup(
+      ctx.trans_table()->lookup(
         tricks, hand, posPoint->aggr, posPoint->hand_dist,
         limit, lowerFlag);
     TIMER_END(TIMER_NO_LOOKUP, depth);
@@ -235,11 +235,11 @@ static bool ABsearch0_ctx(
 
       if (cardsP->best_move_rank != 0)
       {
-        ctx.search().bestMoveTT(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
-        ctx.search().bestMoveTT(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
+        ctx.search().best_move_tt(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
+        ctx.search().best_move_tt(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
       }
 
-      bool scoreFlag = (ctx.search().nodeTypeStore(0) == MAXNODE ? lowerFlag : ! lowerFlag);
+      bool scoreFlag = (ctx.search().node_type_store(0) == MAXNODE ? lowerFlag : ! lowerFlag);
 
       AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
       return scoreFlag;
@@ -277,7 +277,7 @@ static bool ABsearch0_ctx(
     trump, res, ctx);
   TIMER_END(TIMER_NO_QT, depth);
 
-  if (ctx.search().nodeTypeStore(hand) == MAXNODE)
+  if (ctx.search().node_type_store(hand) == MAXNODE)
   {
     if (res)
     {
@@ -318,7 +318,7 @@ static bool ABsearch0_ctx(
   {
     /* Find node that fits the suit lengths */
     int limit;
-    if (ctx.search().nodeTypeStore(0) == MAXNODE)
+    if (ctx.search().node_type_store(0) == MAXNODE)
       limit = target - posPoint->tricks_max - 1;
     else
       limit = tricks - (target - posPoint->tricks_max - 1);
@@ -326,7 +326,7 @@ static bool ABsearch0_ctx(
     bool lowerFlag;
     TIMER_START(TIMER_NO_LOOKUP, depth);
   NodeCards const * cardsP =
-      ctx.transTable()->lookup(
+      ctx.trans_table()->lookup(
         tricks, hand, posPoint->aggr, posPoint->hand_dist,
         limit, lowerFlag);
     TIMER_END(TIMER_NO_LOOKUP, depth);
@@ -345,29 +345,29 @@ static bool ABsearch0_ctx(
 
       if (cardsP->best_move_rank != 0)
       {
-        ctx.search().bestMoveTT(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
-        ctx.search().bestMoveTT(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
+        ctx.search().best_move_tt(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
+        ctx.search().best_move_tt(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
       }
 
-      bool scoreFlag = (ctx.search().nodeTypeStore(0) == MAXNODE ? lowerFlag : ! lowerFlag);
+      bool scoreFlag = (ctx.search().node_type_store(0) == MAXNODE ? lowerFlag : ! lowerFlag);
 
       AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
       return scoreFlag;
     }
   }
 
-  bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
+  bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    ctx.search().lowestWin(depth, ss) = 0;
+    ctx.search().lowest_win(depth, ss) = 0;
 
-  ctx.moveGen().MoveGen0(
+  ctx.move_gen().move_gen_0(
     tricks,
     * posPoint,
-    ctx.search().bestMove(depth),
-    ctx.search().bestMoveTT(depth),
+    ctx.search().best_move(depth),
+    ctx.search().best_move_tt(depth),
     thrp->rel);
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
@@ -378,7 +378,7 @@ static bool ABsearch0_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-    MoveType const * mply = ctx.moveGen().MakeNext(tricks, 0,
+    MoveType const * mply = ctx.move_gen().make_next(tricks, 0,
       posPoint->win_ranks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
@@ -404,9 +404,9 @@ static bool ABsearch0_ctx(
         posPoint->win_ranks[depth][ss] =
           posPoint->win_ranks[depth - 1][ss];
 
-      ctx.search().bestMove(depth) = * mply;
+      ctx.search().best_move(depth) = * mply;
 #ifdef DDS_MOVES
-  ctx.moveGen().RegisterHit(tricks, 0);
+  ctx.move_gen().register_hit(tricks, 0);
 #endif
       goto ABexit;
     }
@@ -422,7 +422,7 @@ ABexit:
   NodeCards first;
   if (value)
   {
-    if (ctx.search().nodeTypeStore(0) == MAXNODE)
+    if (ctx.search().node_type_store(0) == MAXNODE)
     {
       first.upper_bound = static_cast<char>(tricks + 1);
       first.lower_bound = static_cast<char>(target - posPoint->tricks_max);
@@ -436,7 +436,7 @@ ABexit:
   }
   else
   {
-    if (ctx.search().nodeTypeStore(0) == MAXNODE)
+    if (ctx.search().node_type_store(0) == MAXNODE)
     {
       first.upper_bound = static_cast<char>
                      (target - posPoint->tricks_max - 1);
@@ -450,16 +450,16 @@ ABexit:
     }
   }
 
-  first.best_move_suit = static_cast<char>(ctx.search().bestMove(depth).suit);
-  first.best_move_rank = static_cast<char>(ctx.search().bestMove(depth).rank);
+  first.best_move_suit = static_cast<char>(ctx.search().best_move(depth).suit);
+  first.best_move_rank = static_cast<char>(ctx.search().best_move(depth).rank);
 
   bool flag =
-    ((ctx.search().nodeTypeStore(hand) == MAXNODE && value) ||
-     (ctx.search().nodeTypeStore(hand) == MINNODE && !value))
+    ((ctx.search().node_type_store(hand) == MAXNODE && value) ||
+     (ctx.search().node_type_store(hand) == MINNODE && !value))
     ? true : false;
 
   TIMER_START(TIMER_NO_BUILD, depth);
-  ctx.transTable()->add(
+  ctx.trans_table()->add(
     tricks,
     hand,
     posPoint->aggr,
@@ -496,7 +496,7 @@ static bool ABsearch1_ctx(
   auto thrp = ctx.thread();
   int trump = thrp->trump;
   int hand = HAND_ID(posPoint->first[depth], 1);
-  bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
+  bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
 
@@ -515,11 +515,11 @@ static bool ABsearch1_ctx(
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    ctx.search().lowestWin(depth, ss) = 0;
+    ctx.search().lowest_win(depth, ss) = 0;
 
-  ctx.moveGen().MoveGen123(tricks, 1, * posPoint);
-  if (depth == ctx.search().iniDepth())
-    ctx.moveGen().Purge(tricks, 1, ctx.search().forbiddenMoves());
+  ctx.move_gen().move_gen_123(tricks, 1, * posPoint);
+  if (depth == ctx.search().ini_depth())
+    ctx.move_gen().purge(tricks, 1, ctx.search().forbidden_moves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -529,7 +529,7 @@ static bool ABsearch1_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-  MoveType const * mply = ctx.moveGen().MakeNext(tricks, 1, posPoint->win_ranks[depth]);
+  MoveType const * mply = ctx.move_gen().make_next(tricks, 1, posPoint->win_ranks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -553,9 +553,9 @@ static bool ABsearch1_ctx(
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->win_ranks[depth][ss] = posPoint->win_ranks[depth - 1][ss];
 
-      ctx.search().bestMove(depth) = * mply;
+      ctx.search().best_move(depth) = * mply;
 #ifdef DDS_MOVES
-  ctx.moveGen().RegisterHit(tricks, 1);
+  ctx.move_gen().register_hit(tricks, 1);
 #endif
       goto ABexit;
     }
@@ -591,7 +591,7 @@ static bool ABsearch2_ctx(
 {
   auto thrp = ctx.thread();
   int hand = HAND_ID(posPoint->first[depth], 2);
-  bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
+  bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
   int tricks = (depth + 3) >> 2;
 
@@ -601,11 +601,11 @@ static bool ABsearch2_ctx(
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    ctx.search().lowestWin(depth, ss) = 0;
+    ctx.search().lowest_win(depth, ss) = 0;
 
-  ctx.moveGen().MoveGen123(tricks, 2, * posPoint);
-  if (depth == ctx.search().iniDepth())
-    ctx.moveGen().Purge(tricks, 2, ctx.search().forbiddenMoves());
+  ctx.move_gen().move_gen_123(tricks, 2, * posPoint);
+  if (depth == ctx.search().ini_depth())
+    ctx.move_gen().purge(tricks, 2, ctx.search().forbidden_moves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -615,7 +615,7 @@ static bool ABsearch2_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-  MoveType const * mply = ctx.moveGen().MakeNext(tricks, 2, posPoint->win_ranks[depth]);
+  MoveType const * mply = ctx.move_gen().make_next(tricks, 2, posPoint->win_ranks[depth]);
 
     if (mply == NULL)
       break;
@@ -640,9 +640,9 @@ static bool ABsearch2_ctx(
       for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->win_ranks[depth][ss] = posPoint->win_ranks[depth - 1][ss];
 
-      ctx.search().bestMove(depth) = * mply;
+      ctx.search().best_move(depth) = * mply;
 #ifdef DDS_MOVES
-  ctx.moveGen().RegisterHit(tricks, 2);
+  ctx.move_gen().register_hit(tricks, 2);
 #endif
       goto ABexit;
     }
@@ -682,7 +682,7 @@ static bool ABsearch3_ctx(
 
   auto thrp = ctx.thread();
   int hand = HAND_ID(posPoint->first[depth], 3);
-  bool success = (ctx.search().nodeTypeStore(hand) == MAXNODE ? true : false);
+  bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
 
 #ifdef DDS_TOP_LEVEL
@@ -691,12 +691,12 @@ static bool ABsearch3_ctx(
 
   TIMER_START(TIMER_NO_MOVEGEN, depth);
   for (int ss = 0; ss < DDS_SUITS; ss++)
-    ctx.search().lowestWin(depth, ss) = 0;
+    ctx.search().lowest_win(depth, ss) = 0;
   int tricks = (depth + 3) >> 2;
 
-  ctx.moveGen().MoveGen123(tricks, 3, * posPoint);
-  if (depth == ctx.search().iniDepth())
-    ctx.moveGen().Purge(tricks, 3, ctx.search().forbiddenMoves());
+  ctx.move_gen().move_gen_123(tricks, 3, * posPoint);
+  if (depth == ctx.search().ini_depth())
+    ctx.move_gen().purge(tricks, 3, ctx.search().forbidden_moves());
 
   TIMER_END(TIMER_NO_MOVEGEN, depth);
 
@@ -706,7 +706,7 @@ static bool ABsearch3_ctx(
   while (1)
   {
     TIMER_START(TIMER_NO_MAKE, depth);
-  MoveType const * mply = ctx.moveGen().MakeNext(tricks, 3, posPoint->win_ranks[depth]);
+  MoveType const * mply = ctx.move_gen().make_next(tricks, 3, posPoint->win_ranks[depth]);
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
 #endif
@@ -717,9 +717,9 @@ static bool ABsearch3_ctx(
 
   Make3_ctx(posPoint, makeWinRank, depth, mply, ctx);
 
-    ctx.search().trickNodes()++; // As hand_rel_first == 0
+    ctx.search().trick_nodes()++; // As hand_rel_first == 0
 
-    if (ctx.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
+    if (ctx.search().node_type_store(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricks_max++;
 
   TIMER_START(TIMER_NO_AB, depth - 1);
@@ -729,7 +729,7 @@ static bool ABsearch3_ctx(
     TIMER_START(TIMER_NO_UNDO, depth);
   Undo0_ctx(posPoint, depth, * mply, ctx);
 
-    if (ctx.search().nodeTypeStore(posPoint->first[depth - 1]) == MAXNODE)
+    if (ctx.search().node_type_store(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricks_max--;
 
     TIMER_END(TIMER_NO_UNDO, depth);
@@ -740,9 +740,9 @@ static bool ABsearch3_ctx(
         posPoint->win_ranks[depth][ss] = static_cast<unsigned short>(
           posPoint->win_ranks[depth - 1][ss] | makeWinRank[ss]);
 
-      ctx.search().bestMove(depth) = * mply;
+      ctx.search().best_move(depth) = * mply;
 #ifdef DDS_MOVES
-  ctx.moveGen().RegisterHit(tricks, 3);
+  ctx.move_gen().register_hit(tricks, 3);
 #endif
       goto ABexit;
     }
@@ -829,7 +829,7 @@ void Make3(
   auto thrp = ctx.thread();
   int firstHand = posPoint->first[depth];
 
-  const TrickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
+  const TrickDataType& data = ctx.move_gen().get_trick_data((depth + 3) >> 2);
 
   posPoint->first[depth - 1] = HAND_ID(firstHand, data.rel_winner);
   /* Defines who is first in the next move */
@@ -895,7 +895,7 @@ static void Make3_ctx(
   auto thrp = ctx.thread();
   int firstHand = posPoint->first[depth];
 
-  const TrickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
+  const TrickDataType& data = ctx.move_gen().get_trick_data((depth + 3) >> 2);
 
   posPoint->first[depth - 1] = HAND_ID(firstHand, data.rel_winner);
   /* Defines who is first in the next move */
@@ -957,7 +957,7 @@ void Make3Simple(
   MoveType const * mply,
   SolverContext& ctx)
 {
-  const TrickDataType& data = ctx.moveGen().GetTrickData((depth + 3) >> 2);
+  const TrickDataType& data = ctx.move_gen().get_trick_data((depth + 3) >> 2);
 
   int firstHand = posPoint->first[depth];
 
@@ -1141,7 +1141,7 @@ EvalType EvaluateWithContext(
       if (count >= 2)
         eval.win_ranks[trump] = rmax;
 
-      if (ctx.search().nodeTypeStore(hmax) == MAXNODE)
+      if (ctx.search().node_type_store(hmax) == MAXNODE)
         goto maxexit;
       else
         goto minexit;
@@ -1174,7 +1174,7 @@ EvalType EvaluateWithContext(
   if (count >= 2)
     eval.win_ranks[k] = rmax;
 
-  if (ctx.search().nodeTypeStore(hmax) == MAXNODE)
+  if (ctx.search().node_type_store(hmax) == MAXNODE)
     goto maxexit;
   else
     goto minexit;

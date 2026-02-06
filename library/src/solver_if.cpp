@@ -150,20 +150,20 @@ int SolveBoardInternal(
   // ----------------------------------------------------------
 
   thrp->trump = dl.trump;
-  ctx.search().iniDepth() = cardCount - 4;
-  int iniDepth = ctx.search().iniDepth();
-  int trick = (iniDepth + 3) >> 2;
-  int hand_rel_first = (48 - iniDepth) % 4;
+  ctx.search().ini_depth() = cardCount - 4;
+  int ini_depth = ctx.search().ini_depth();
+  int trick = (ini_depth + 3) >> 2;
+  int hand_rel_first = (48 - ini_depth) % 4;
   int handToPlay = HAND_ID(dl.first, hand_rel_first);
-  ctx.search().trickNodes() = 0;
+  ctx.search().trick_nodes() = 0;
 
   thrp->lookAheadPos.hand_rel_first = hand_rel_first;
-  thrp->lookAheadPos.first[iniDepth] = dl.first;
+  thrp->lookAheadPos.first[ini_depth] = dl.first;
   thrp->lookAheadPos.tricks_max = 0;
 
   MoveType mv = {0, 0, 0, 0};
 
-  ctx.search().clearForbiddenMoves();
+  ctx.search().clear_forbidden_moves();
   
 
   // ----------------------------------------------------------
@@ -215,7 +215,7 @@ int SolveBoardInternal(
         else if (newTrump)
           reason = ResetReason::NewTrump;
       
-  ctx.transTable()->reset_memory(reason);
+  ctx.trans_table()->reset_memory(reason);
     }
   }
 
@@ -224,25 +224,25 @@ int SolveBoardInternal(
   SetDeal(thrp);
   SetDealTables(ctx);
   }
-  else if (ctx.search().analysisFlag())
+  else if (ctx.search().analysis_flag())
   {
     SetDeal(thrp);
   }
-  ctx.search().analysisFlag() = false;
+  ctx.search().analysis_flag() = false;
 
   if (handToPlay == 0 || handToPlay == 2)
   {
-    ctx.search().nodeTypeStore(0) = MAXNODE;
-    ctx.search().nodeTypeStore(1) = MINNODE;
-    ctx.search().nodeTypeStore(2) = MAXNODE;
-    ctx.search().nodeTypeStore(3) = MINNODE;
+    ctx.search().node_type_store(0) = MAXNODE;
+    ctx.search().node_type_store(1) = MINNODE;
+    ctx.search().node_type_store(2) = MAXNODE;
+    ctx.search().node_type_store(3) = MINNODE;
   }
   else
   {
-    ctx.search().nodeTypeStore(0) = MINNODE;
-    ctx.search().nodeTypeStore(1) = MAXNODE;
-    ctx.search().nodeTypeStore(2) = MINNODE;
-    ctx.search().nodeTypeStore(3) = MAXNODE;
+    ctx.search().node_type_store(0) = MINNODE;
+    ctx.search().node_type_store(1) = MAXNODE;
+    ctx.search().node_type_store(2) = MINNODE;
+    ctx.search().node_type_store(3) = MAXNODE;
   }
 
   for (int k = 0; k < hand_rel_first; k++)
@@ -251,32 +251,32 @@ int SolveBoardInternal(
     mv.suit = dl.currentTrickSuit[k];
     mv.sequence = 0;
 
-    ctx.moveGen().Init(
+    ctx.move_gen().init(
       trick,
       k,
       dl.currentTrickRank,
       dl.currentTrickSuit,
       thrp->lookAheadPos.rank_in_suit,
       thrp->trump,
-      thrp->lookAheadPos.first[iniDepth]);
+      thrp->lookAheadPos.first[ini_depth]);
 
     if (k == 0)
     {
-      ctx.moveGen().MoveGen0(
+      ctx.move_gen().move_gen_0(
         trick,
         thrp->lookAheadPos,
-        ctx.search().bestMove(iniDepth),
-        ctx.search().bestMoveTT(iniDepth),
+        ctx.search().best_move(ini_depth),
+        ctx.search().best_move_tt(ini_depth),
         thrp->rel);
     }
     else
-      ctx.moveGen().MoveGen123(
+      ctx.move_gen().move_gen_123(
         trick,
         k,
         thrp->lookAheadPos);
 
-  thrp->lookAheadPos.move[iniDepth + hand_rel_first - k] = mv;
-  ctx.moveGen().MakeSpecific(mv, trick, k);
+  thrp->lookAheadPos.move[ini_depth + hand_rel_first - k] = mv;
+  ctx.move_gen().make_specific(mv, trick, k);
   }
 
   InitWinners(dl, thrp->lookAheadPos, thrp);
@@ -292,31 +292,31 @@ int SolveBoardInternal(
   }
 #endif
 
-  ctx.moveGen().Init(
+  ctx.move_gen().init(
     trick,
     hand_rel_first,
     dl.currentTrickRank,
     dl.currentTrickSuit,
     thrp->lookAheadPos.rank_in_suit,
     thrp->trump,
-    thrp->lookAheadPos.first[iniDepth]);
+    thrp->lookAheadPos.first[ini_depth]);
 
   if (hand_rel_first == 0)
   {
-    ctx.moveGen().MoveGen0(
+    ctx.move_gen().move_gen_0(
       trick,
       thrp->lookAheadPos,
-      ctx.search().bestMove(iniDepth),
-      ctx.search().bestMoveTT(iniDepth),
+      ctx.search().best_move(ini_depth),
+      ctx.search().best_move_tt(ini_depth),
       thrp->rel);
   }
   else
-    ctx.moveGen().MoveGen123(
+    ctx.move_gen().move_gen_123(
       trick,
       hand_rel_first,
       thrp->lookAheadPos);
 
-  noMoves = ctx.moveGen().GetLength(trick, hand_rel_first);
+  noMoves = ctx.move_gen().get_length(trick, hand_rel_first);
 
   // ----------------------------------------------------------
   // mode == 0: Check whether there is only one possible move
@@ -324,7 +324,7 @@ int SolveBoardInternal(
 
   if (mode == 0 && noMoves == 1 && solutions != 3)
   {
-    MoveType const * mp = ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
+    MoveType const * mp = ctx.move_gen().make_next_simple(trick, hand_rel_first);
 
     futp->nodes = 0;
     futp->cards = 1;
@@ -353,15 +353,15 @@ int SolveBoardInternal(
     {
       do
       {
-        ctx.ResetBestMovesLite();
+        ctx.reset_best_moves_lite();
 
-        TIMER_START(TIMER_NO_AB, iniDepth);
+        TIMER_START(TIMER_NO_AB, ini_depth);
   thrp->val = (* AB_ptr_list[hand_rel_first])(
                       &thrp->lookAheadPos,
                       guess,
-                      iniDepth,
+                      ini_depth,
           ctx);
-        TIMER_END(TIMER_NO_AB, iniDepth);
+        TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
         DumpTopLevel(thrp->fileTopLevel.GetStream(), 
@@ -370,7 +370,7 @@ int SolveBoardInternal(
 
         if (thrp->val)
         {
-          mv = ctx.search().bestMove(iniDepth);
+          mv = ctx.search().best_move(ini_depth);
           lowerbound = guess++;
         }
         else
@@ -380,28 +380,28 @@ int SolveBoardInternal(
 
       if (lowerbound)
       {
-        ctx.search().bestMove(iniDepth) = mv;
+        ctx.search().best_move(ini_depth) = mv;
 
         futp->suit[mno] = mv.suit;
         futp->rank[mno] = mv.rank;
         futp->equals[mno] = mv.sequence << 2;
         futp->score[mno] = lowerbound;
 
-        ctx.search().forbiddenMove(mno + 1).suit = mv.suit;
-        ctx.search().forbiddenMove(mno + 1).rank = mv.rank;
+        ctx.search().forbidden_move(mno + 1).suit = mv.suit;
+        ctx.search().forbidden_move(mno + 1).rank = mv.rank;
 
         guess = lowerbound;
         lowerbound = 0;
       }
       else
       {
-        int noLeft = ctx.moveGen().GetLength(trick, hand_rel_first);
+        int noLeft = ctx.move_gen().get_length(trick, hand_rel_first);
 
-        ctx.moveGen().Rewind(trick, hand_rel_first);
+        ctx.move_gen().rewind(trick, hand_rel_first);
         for (int j = 0; j < noLeft; j++)
         {
           MoveType const * mp = 
-            ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
+            ctx.move_gen().make_next_simple(trick, hand_rel_first);
 
           futp->suit[mno + j] = mp->suit;
           futp->rank[mno + j] = mp->rank;
@@ -427,7 +427,7 @@ int SolveBoardInternal(
     for (int mno = 0; mno < noMoves; mno++)
     {
       MoveType const * mp = 
-        ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
+        ctx.move_gen().make_next_simple(trick, hand_rel_first);
 
       futp->suit[mno] = mp->suit;
       futp->rank[mno] = mp->rank;
@@ -447,12 +447,12 @@ int SolveBoardInternal(
     /*
      * Reset semantics
      * ----------------
-     * - ResetForSolve(): Heavy, per-solve reset (frees TT memory as needed and
+    * - reset_for_solve(): Heavy, per-solve reset (frees TT memory as needed and
      *   clears broad search state). Use this only at top-level initialization of
      *   a solve. Do NOT call it inside iterative search loops; it changes state
      *   beyond what the legacy code expected and can affect move ordering/output.
      *
-     * - ResetBestMovesLite(): Lightweight, per-iteration reset that matches the
+    * - reset_best_moves_lite(): Lightweight, per-iteration reset that matches the
      *   legacy ResetBestMoves behavior. It only clears bestMove[*].rank and
      *   bestMoveTT[*].rank, updates memUsed and ABStats. Use this inside the
      *   do/while and other iterative loops below to preserve historical results.
@@ -463,14 +463,14 @@ int SolveBoardInternal(
     int lowerbound = 0;
     do
     {
-      ctx.ResetBestMovesLite();
+        ctx.reset_best_moves_lite();
 
-      TIMER_START(TIMER_NO_AB, iniDepth);
+        TIMER_START(TIMER_NO_AB, ini_depth);
   thrp->val = (* AB_ptr_list[hand_rel_first])(&thrp->lookAheadPos,
                   guess,
-                  iniDepth,
+              ini_depth,
       ctx);
-      TIMER_END(TIMER_NO_AB, iniDepth);
+        TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
       DumpTopLevel(thrp->fileTopLevel.GetStream(),
@@ -479,7 +479,7 @@ int SolveBoardInternal(
 
       if (thrp->val)
       {
-        mv = ctx.search().bestMove(iniDepth);
+        mv = ctx.search().best_move(ini_depth);
         lowerbound = guess++;
       }
       else
@@ -489,7 +489,7 @@ int SolveBoardInternal(
     while (lowerbound < upperbound);
 
     
-  ctx.search().bestMove(iniDepth) = mv;
+  ctx.search().best_move(ini_depth) = mv;
   
     if (lowerbound == 0)
     {
@@ -500,11 +500,11 @@ int SolveBoardInternal(
       else // solutions == 2, so return all cards
         futp->cards = noMoves;
 
-      ctx.moveGen().Rewind(trick, hand_rel_first);
+      ctx.move_gen().rewind(trick, hand_rel_first);
       for (int i = 0; i < noMoves; i++)
       {
         MoveType const * mp = 
-          ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
+          ctx.move_gen().make_next_simple(trick, hand_rel_first);
 
         futp->score[i] = 0;
         futp->suit[i] = mp->suit;
@@ -533,13 +533,13 @@ int SolveBoardInternal(
 
   else
   {
-    TIMER_START(TIMER_NO_AB, iniDepth);
+    TIMER_START(TIMER_NO_AB, ini_depth);
   thrp->val = (* AB_ptr_list[hand_rel_first])(
                   &thrp->lookAheadPos,
                   target,
-                  iniDepth,
+                  ini_depth,
           ctx);
-    TIMER_END(TIMER_NO_AB, iniDepth);
+    TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(), 
@@ -560,9 +560,9 @@ int SolveBoardInternal(
     else
     {
       futp->cards = 1;
-      futp->suit[0] = ctx.search().bestMove(iniDepth).suit;
-      futp->rank[0] = ctx.search().bestMove(iniDepth).rank;
-      futp->equals[0] = ctx.search().bestMove(iniDepth).sequence << 2;
+      futp->suit[0] = ctx.search().best_move(ini_depth).suit;
+      futp->rank[0] = ctx.search().best_move(ini_depth).rank;
+      futp->equals[0] = ctx.search().best_move(ini_depth).sequence << 2;
       futp->score[0] = target;
 
       if (solutions != 2)
@@ -582,31 +582,31 @@ int SolveBoardInternal(
   {
     // Moves up to and including bestMove are now forbidden.
 
-    ctx.moveGen().Rewind(trick, hand_rel_first);
-    int num = ctx.moveGen().GetLength(trick, hand_rel_first);
+    ctx.move_gen().rewind(trick, hand_rel_first);
+    int num = ctx.move_gen().get_length(trick, hand_rel_first);
 
     for (int k = 0; k < num; k++)
     {
       MoveType const * mp = 
-        ctx.moveGen().MakeNextSimple(trick, hand_rel_first);
+        ctx.move_gen().make_next_simple(trick, hand_rel_first);
       
-      ctx.search().forbiddenMove(forb) = * mp;
+      ctx.search().forbidden_move(forb) = * mp;
       forb++;
 
-      if ((ctx.search().bestMove(iniDepth).suit == mp->suit) &&
-          (ctx.search().bestMove(iniDepth).rank == mp->rank))
+        if ((ctx.search().best_move(ini_depth).suit == mp->suit) &&
+          (ctx.search().best_move(ini_depth).rank == mp->rank))
         break;
     }
 
   /* No per-iteration full reset here; preserve original behavior */
 
-    TIMER_START(TIMER_NO_AB, iniDepth);
+    TIMER_START(TIMER_NO_AB, ini_depth);
   thrp->val = (* AB_ptr_list[hand_rel_first])(
                   &thrp->lookAheadPos,
                   futp->score[0],
-                  iniDepth,
+                  ini_depth,
           ctx);
-    TIMER_END(TIMER_NO_AB, iniDepth);
+    TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
@@ -617,9 +617,9 @@ int SolveBoardInternal(
       break;
 
     futp->cards = ind + 1;
-    futp->suit[ind] = ctx.search().bestMove(iniDepth).suit;
-    futp->rank[ind] = ctx.search().bestMove(iniDepth).rank;
-    futp->equals[ind] = ctx.search().bestMove(iniDepth).sequence << 2;
+    futp->suit[ind] = ctx.search().best_move(ini_depth).suit;
+    futp->rank[ind] = ctx.search().best_move(ini_depth).rank;
+    futp->equals[ind] = ctx.search().best_move(ini_depth).sequence << 2;
     
     futp->score[ind] = futp->score[0];
     ind++;
@@ -628,7 +628,7 @@ int SolveBoardInternal(
 
 SOLVER_STATS:
   {
-    ctx.search().clearForbiddenMoves();
+    ctx.search().clear_forbidden_moves();
   }
 #ifdef DDS_TIMING
   thrp->timerList.PrintStats(thrp->fileTimerList.GetStream());
@@ -642,33 +642,33 @@ SOLVER_STATS:
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-  ctx.transTable()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
-  ctx.transTable()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-  ctx.transTable()->print_node_stats(thrp->fileTTstats.GetStream());
-  ctx.transTable()->print_reset_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_node_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_reset_stats(thrp->fileTTstats.GetStream());
   }
 #endif
 
 // Diagnostics are routed via the SolverContext MoveGen facade.
 #ifdef DDS_MOVES
-  ctx.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_trick_stats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  ctx.moveGen().PrintTrickDetails(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_trick_details(thrp->fileMoves.GetStream());
 #endif
-  ctx.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_function_stats(thrp->fileMoves.GetStream());
 #endif
 
 SOLVER_DONE:
 
   {
-  thrp->memUsed = ctx.transTable()->memory_in_use() + ThreadMemoryUsed();
+  thrp->memUsed = ctx.trans_table()->memory_in_use() + ThreadMemoryUsed();
   }
   {
-    futp->nodes = ctx.search().trickNodes();
+    futp->nodes = ctx.search().trick_nodes();
   }
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -693,28 +693,28 @@ int SolveSameBoard(
   // The function only needs to return fut.score[0].
 
   SolverContext ctxSame{thrp};
-  int iniDepth = ctxSame.search().iniDepth();
-  int trick = (iniDepth + 3) >> 2;
+  int ini_depth = ctxSame.search().ini_depth();
+  int trick = (ini_depth + 3) >> 2;
   {
-    ctxSame.search().trickNodes() = 0;
+    ctxSame.search().trick_nodes() = 0;
   }
 
-  thrp->lookAheadPos.first[iniDepth] = dl.first;
+  thrp->lookAheadPos.first[ini_depth] = dl.first;
 
   {
     if (dl.first == 0 || dl.first == 2)
     {
-      ctxSame.search().nodeTypeStore(0) = MAXNODE;
-      ctxSame.search().nodeTypeStore(1) = MINNODE;
-      ctxSame.search().nodeTypeStore(2) = MAXNODE;
-      ctxSame.search().nodeTypeStore(3) = MINNODE;
+      ctxSame.search().node_type_store(0) = MAXNODE;
+      ctxSame.search().node_type_store(1) = MINNODE;
+      ctxSame.search().node_type_store(2) = MAXNODE;
+      ctxSame.search().node_type_store(3) = MINNODE;
     }
     else
     {
-      ctxSame.search().nodeTypeStore(0) = MINNODE;
-      ctxSame.search().nodeTypeStore(1) = MAXNODE;
-      ctxSame.search().nodeTypeStore(2) = MINNODE;
-      ctxSame.search().nodeTypeStore(3) = MAXNODE;
+      ctxSame.search().node_type_store(0) = MINNODE;
+      ctxSame.search().node_type_store(1) = MAXNODE;
+      ctxSame.search().node_type_store(2) = MINNODE;
+      ctxSame.search().node_type_store(3) = MAXNODE;
     }
   }
 
@@ -729,7 +729,7 @@ int SolveSameBoard(
   }
 #endif
 
-  ctxSame.moveGen().Reinit(trick, dl.first);
+  ctxSame.move_gen().reinit(trick, dl.first);
 
   int guess = hint;
   int lowerbound = 0;
@@ -739,13 +739,13 @@ int SolveSameBoard(
   {
   /* No per-iteration full reset here; preserve original behavior */
 
-    TIMER_START(TIMER_NO_AB, iniDepth);
+    TIMER_START(TIMER_NO_AB, ini_depth);
   thrp->val = ABsearch(
                   &thrp->lookAheadPos,
                   guess,
-                  iniDepth,
+                  ini_depth,
           ctxSame);
-    TIMER_END(TIMER_NO_AB, iniDepth);
+    TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
@@ -762,7 +762,7 @@ int SolveSameBoard(
   futp->cards = 1;
   futp->score[0] = lowerbound;
 
-  thrp->memUsed = ctxSame.transTable()->memory_in_use() +
+  thrp->memUsed = ctxSame.trans_table()->memory_in_use() +
                     ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -777,27 +777,27 @@ int SolveSameBoard(
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-  ctxSame.transTable()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
-  ctxSame.transTable()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
+  ctxSame.trans_table()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
+  ctxSame.trans_table()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-  ctxSame.transTable()->print_node_stats(thrp->fileTTstats.GetStream());
-  ctxSame.transTable()->print_reset_stats(thrp->fileTTstats.GetStream());
+  ctxSame.trans_table()->print_node_stats(thrp->fileTTstats.GetStream());
+  ctxSame.trans_table()->print_reset_stats(thrp->fileTTstats.GetStream());
   }
 #endif
 
 #ifdef DDS_MOVES
-  ctxSame.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
+  ctxSame.move_gen().print_trick_stats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  ctxSame.moveGen().PrintTrickDetails(thrp->fileMoves.GetStream());
+  ctxSame.move_gen().print_trick_details(thrp->fileMoves.GetStream());
 #endif
-  ctxSame.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctxSame.move_gen().print_function_stats(thrp->fileMoves.GetStream());
 #endif
 
   {
-    futp->nodes = ctxSame.search().trickNodes();
+    futp->nodes = ctxSame.search().trick_nodes();
   }
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -824,55 +824,55 @@ int AnalyseLaterBoard(
   // The function only needs to return fut.score[0].
 
   SolverContext ctxLater{thrp};
-  int iniDepth = --ctxLater.search().iniDepth();
-  int cardCount = iniDepth + 4;
-  int trick = (iniDepth + 3) >> 2;
-  int hand_rel_first = (48 - iniDepth) % 4;
+  int ini_depth = --ctxLater.search().ini_depth();
+  int cardCount = ini_depth + 4;
+  int trick = (ini_depth + 3) >> 2;
+  int hand_rel_first = (48 - ini_depth) % 4;
   {
-    ctxLater.search().trickNodes() = 0;
+    ctxLater.search().trick_nodes() = 0;
   }
   {
-    ctxLater.search().analysisFlag() = true;
+    ctxLater.search().analysis_flag() = true;
   }
   int handToPlay = HAND_ID(leadHand, hand_rel_first);
 
   {
     if (handToPlay == 0 || handToPlay == 2)
     {
-      ctxLater.search().nodeTypeStore(0) = MAXNODE;
-      ctxLater.search().nodeTypeStore(1) = MINNODE;
-      ctxLater.search().nodeTypeStore(2) = MAXNODE;
-      ctxLater.search().nodeTypeStore(3) = MINNODE;
+      ctxLater.search().node_type_store(0) = MAXNODE;
+      ctxLater.search().node_type_store(1) = MINNODE;
+      ctxLater.search().node_type_store(2) = MAXNODE;
+      ctxLater.search().node_type_store(3) = MINNODE;
     }
     else
     {
-      ctxLater.search().nodeTypeStore(0) = MINNODE;
-      ctxLater.search().nodeTypeStore(1) = MAXNODE;
-      ctxLater.search().nodeTypeStore(2) = MINNODE;
-      ctxLater.search().nodeTypeStore(3) = MAXNODE;
+      ctxLater.search().node_type_store(0) = MINNODE;
+      ctxLater.search().node_type_store(1) = MAXNODE;
+      ctxLater.search().node_type_store(2) = MINNODE;
+      ctxLater.search().node_type_store(3) = MAXNODE;
     }
   }
 
   if (hand_rel_first == 0)
   {
-    ctxLater.moveGen().MakeSpecific(* move, trick + 1, 3);
+    ctxLater.move_gen().make_specific(* move, trick + 1, 3);
   unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
-  Make3(&thrp->lookAheadPos, ourWinRanks, iniDepth + 1, move, ctxLater);
+  Make3(&thrp->lookAheadPos, ourWinRanks, ini_depth + 1, move, ctxLater);
   }
   else if (hand_rel_first == 1)
   {
-    ctxLater.moveGen().MakeSpecific(* move, trick, 0);
-    Make0(&thrp->lookAheadPos, iniDepth + 1, move);
+    ctxLater.move_gen().make_specific(* move, trick, 0);
+    Make0(&thrp->lookAheadPos, ini_depth + 1, move);
   }
   else if (hand_rel_first == 2)
   {
-    ctxLater.moveGen().MakeSpecific(* move, trick, 1);
-    Make1(&thrp->lookAheadPos, iniDepth + 1, move);
+    ctxLater.move_gen().make_specific(* move, trick, 1);
+    Make1(&thrp->lookAheadPos, ini_depth + 1, move);
   }
   else
   {
-    ctxLater.moveGen().MakeSpecific(* move, trick, 2);
-    Make2(&thrp->lookAheadPos, iniDepth + 1, move);
+    ctxLater.move_gen().make_specific(* move, trick, 2);
+    Make2(&thrp->lookAheadPos, ini_depth + 1, move);
   }
 
   if (cardCount <= 4)
@@ -913,15 +913,15 @@ int AnalyseLaterBoard(
 
   do
   {
-  ctxLater.ResetBestMovesLite();
+  ctxLater.reset_best_moves_lite();
 
-    TIMER_START(TIMER_NO_AB, iniDepth);
+    TIMER_START(TIMER_NO_AB, ini_depth);
   thrp->val = (* AB_ptr_trace_list[hand_rel_first])(
                   &thrp->lookAheadPos,
                   guess,
-                  iniDepth,
+                  ini_depth,
           ctxLater);
-    TIMER_END(TIMER_NO_AB, iniDepth);
+    TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
     DumpTopLevel(thrp->fileTopLevel.GetStream(),
@@ -938,11 +938,11 @@ int AnalyseLaterBoard(
 
   futp->score[0] = lowerbound;
   {
-    futp->nodes = ctxLater.search().trickNodes();
+    futp->nodes = ctxLater.search().trick_nodes();
   }
 
   
-  thrp->memUsed = ctxLater.transTable()->memory_in_use() +
+  thrp->memUsed = ctxLater.trans_table()->memory_in_use() +
                     ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -957,24 +957,24 @@ int AnalyseLaterBoard(
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-  ctxLater.transTable()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
-  ctxLater.transTable()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
+  ctxLater.trans_table()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
+  ctxLater.trans_table()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-  ctxLater.transTable()->print_node_stats(thrp->fileTTstats.GetStream());
-  ctxLater.transTable()->print_reset_stats(thrp->fileTTstats.GetStream());
+  ctxLater.trans_table()->print_node_stats(thrp->fileTTstats.GetStream());
+  ctxLater.trans_table()->print_reset_stats(thrp->fileTTstats.GetStream());
   }
 #endif
 
 // Diagnostics are routed via the SolverContext MoveGen facade.
 #ifdef DDS_MOVES
-  ctxLater.moveGen().PrintTrickStats(thrp->fileMoves.GetStream());
+  ctxLater.move_gen().print_trick_stats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  ctxLater.moveGen().PrintTrickDetails(thrp->fileMoves.GetStream());
+  ctxLater.move_gen().print_trick_details(thrp->fileMoves.GetStream());
 #endif
-  ctxLater.moveGen().PrintFunctionStats(thrp->fileMoves.GetStream());
+  ctxLater.move_gen().print_function_stats(thrp->fileMoves.GetStream());
 #endif
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
@@ -1093,7 +1093,7 @@ int BoardValueChecks(
   const int mode)
 {
   auto thrp = ctx.thread();
-  int cardCount = ctx.search().iniDepth() + 4;
+  int cardCount = ctx.search().ini_depth() + 4;
   if (cardCount <= 0)
   {
     DumpInput(RETURN_ZERO_CARDS, dl, target, solutions, mode);
