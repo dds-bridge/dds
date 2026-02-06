@@ -71,7 +71,7 @@ void STDCALL SetResources(
   // Figure out system resources.
   int ncores;
   unsigned long long kilobytesFree;
-  sysdep.GetHardware(ncores, kilobytesFree);
+  sysdep.get_hardware(ncores, kilobytesFree);
 
   // Memory usage will be limited to the lower of:
   // - maxMemoryMB + 30% (if given; statistically this works out)
@@ -94,9 +94,9 @@ void STDCALL SetResources(
   // - Otherwise the lower of maxThreads and ncores
 
   int thrMax;
-  if (sysdep.IsSingleThreaded())
+  if (sysdep.is_single_threaded())
     thrMax = 1;
-  else if (sysdep.IsIMPL() || maxThreadsIn <= 0)
+  else if (sysdep.is_impl() || maxThreadsIn <= 0)
     thrMax = ncores;
   else
     thrMax = min(maxThreadsIn, ncores);
@@ -133,7 +133,7 @@ void STDCALL SetResources(
     noOfSmallThreads = thrMax - noOfLargeThreads;
   }
 
-  sysdep.RegisterParams(noOfThreads, memMaxMB);
+  sysdep.register_params(noOfThreads, memMaxMB);
 
   scheduler.RegisterThreads(noOfThreads);
 
@@ -167,7 +167,7 @@ void STDCALL SetResources(
 int STDCALL SetThreading(
   int code)
 {
-  return sysdep.PreferThreading(static_cast<unsigned>(code));
+  return sysdep.prefer_threading(static_cast<unsigned>(code));
 }
 
 
@@ -346,30 +346,30 @@ void STDCALL GetDDSInfo(DDSInfo * info)
   stringstream ss;
   ss << "DDS DLL\n-------\n";
 
-  const string strSystem = sysdep.GetSystem(info->system);
+  const string strSystem = sysdep.get_system(info->system);
   ss << left << setw(13) << "System" <<
     setw(20) << right << strSystem << "\n";
 
-  const string strBits = sysdep.GetBits(info->numBits);
+  const string strBits = sysdep.get_bits(info->numBits);
   ss << left << setw(13) << "Word size" <<
     setw(20) << right << strBits << "\n";
 
-  const string strCompiler =sysdep.GetCompiler(info->compiler);
+  const string strCompiler =sysdep.get_compiler(info->compiler);
   ss << left << setw(13) << "Compiler" <<
     setw(20) << right << strCompiler << "\n";
 
-  const string strConstructor = sysdep.GetConstructor(info->constructor);
+  const string strConstructor = sysdep.get_constructor(info->constructor);
   ss << left << setw(13) << "Constructor" <<
     setw(20) << right << strConstructor << "\n";
 
-  const string strVersion = sysdep.GetVersion(info->major,
+  const string strVersion = sysdep.get_version(info->major,
     info->minor, info->patch);
   ss << left << setw(13) << "Version" <<
     setw(20) << right << strVersion << "\n";
   strcpy(info->version_string, strVersion.c_str());
 
   ss << left << setw(17) << "Memory max (MB)" <<
-    setw(16) << right << sysdep.GetMemoryMax() << "\n";
+    setw(16) << right << sysdep.get_memory_max() << "\n";
 
   const string stm = to_string(THREADMEM_SMALL_DEF_MB) + "-" + 
     to_string(THREADMEM_SMALL_MAX_MB) + " / " +
@@ -378,13 +378,13 @@ void STDCALL GetDDSInfo(DDSInfo * info)
   ss << left << setw(17) << "Threads (MB)" <<
     setw(16) << right << stm << "\n";
 
-  info->numCores  = sysdep.GetCores();
+  info->numCores  = sysdep.get_cores();
   ss << left << setw(17) << "Number of cores" <<
     setw(16) << right << info->numCores << "\n";
 
-  info->noOfThreads = sysdep.GetNumThreads();
+  info->noOfThreads = sysdep.get_num_threads();
   ss << left << setw(17) << "Number of threads" <<
-    setw(16) << right << sysdep.GetNumThreads() << "\n";
+    setw(16) << right << sysdep.get_num_threads() << "\n";
 
   int l = 0, s = 0;
   for (unsigned i = 0; i < static_cast<unsigned>(info->noOfThreads); i++)
@@ -400,7 +400,7 @@ void STDCALL GetDDSInfo(DDSInfo * info)
   ss << left << setw(13) << "Thread sizes" <<
     setw(20) << right << strThrSizes << "\n";
 
-  const string strThreading =  sysdep.GetThreading(info->threading);
+  const string strThreading =  sysdep.get_threading(info->threading);
   ss << left << setw(9) << "Threading" <<
     setw(24) << right << strThreading << "\n";
 

@@ -22,11 +22,11 @@
 
 using namespace std;
 
-typedef void (*fptrType)(const int thid);
-typedef void (*fduplType)(
+typedef void (*FptrType)(const int thread_id);
+typedef void (*FduplType)(
   const Boards& bds, vector<int>& uniques, vector<int>& crossrefs);
-typedef void (*fsingleType)(const int thid, const int bno);
-typedef void (*fcopyType)(const vector<int>& crossrefs);
+typedef void (*FsingleType)(const int thread_id, const int board_number);
+typedef void (*FcopyType)(const vector<int>& crossrefs);
 
 
 /**
@@ -42,51 +42,51 @@ class System
 {
   private:
 
-    RunMode runCat; // SOLVE / CALC / PLAY
+    RunMode run_cat_; // SOLVE / CALC / PLAY
 
-    int numThreads;
-    int sysMem_MB;
+    int num_threads_;
+    int sys_mem_mb_;
 
-    unsigned preferredSystem;
+    unsigned preferred_system_;
 
-    vector<bool> availableSystem;
+    vector<bool> available_system_;
 
-    array<fptrType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> CallbackSimpleList;
-    array<fduplType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> CallbackDuplList;
-    array<fsingleType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> CallbackSingleList;
-    array<fcopyType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> CallbackCopyList;
+    array<FptrType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> callback_simple_list_;
+    array<FduplType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> callback_dupl_list_;
+    array<FsingleType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> callback_single_list_;
+    array<FcopyType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> callback_copy_list_;
 
     typedef int (System::*RunPtr)();
-    vector<RunPtr> RunPtrList;
+    vector<RunPtr> run_ptr_list_;
 
-    fptrType fptr;
+    FptrType fptr_;
 
-    Boards const * bop;
+    const Boards* boards_;
 
-    int RunThreadsBasic();
-    int RunThreadsBoost();
-    int RunThreadsOpenMP();
-    int RunThreadsGCD();
-    int RunThreadsWinAPI();
-    int RunThreadsSTL();
-    int RunThreadsTBB();
-    int RunThreadsSTLIMPL();
-    int RunThreadsPPLIMPL();
+    int run_threads_basic();
+    int run_threads_boost();
+    int run_threads_openmp();
+    int run_threads_gcd();
+    int run_threads_winapi();
+    int run_threads_stl();
+    int run_threads_tbb();
+    int run_threads_stlimpl();
+    int run_threads_pplimpl();
   
     public:
 
-    string GetVersion(
+    string get_version(
       int& major,
       int& minor,
       int& patch) const;
-    string GetSystem(int& sys) const;
-    string GetBits(int& bits) const;
-    string GetCompiler(int& comp) const;
-    int GetCores() const;
-    string GetConstructor(int& cons) const;
-    string GetThreading(int& thr) const;
-    int GetMemoryMax() const { return sysMem_MB; }
-    int GetNumThreads() const { return numThreads; }
+    string get_system(int& sys) const;
+    string get_bits(int& bits) const;
+    string get_compiler(int& comp) const;
+    int get_cores() const;
+    string get_constructor(int& cons) const;
+    string get_threading(int& thr) const;
+    int get_memory_max() const { return sys_mem_mb_; }
+    int get_num_threads() const { return num_threads_; }
 
     /**
      * @brief Construct a new System object.
@@ -95,18 +95,18 @@ class System
      * the double dummy solver.
      */
     System(
-      fptrType solve_chunk_common,
-      fptrType calc_chunk_common,
-      fptrType play_chunk_common,
-      fduplType detect_solve_duplicates,
-      fduplType detect_calc_duplicates,
-      fduplType detect_play_duplicates,
-      fsingleType solve_single_common,
-      fsingleType calc_single_common,
-      fsingleType play_single_common,
-      fcopyType copy_solve_single,
-      fcopyType copy_calc_single,
-      fcopyType copy_play_single
+      FptrType solve_chunk_common,
+      FptrType calc_chunk_common,
+      FptrType play_chunk_common,
+      FduplType detect_solve_duplicates,
+      FduplType detect_calc_duplicates,
+      FduplType detect_play_duplicates,
+      FsingleType solve_single_common,
+      FsingleType calc_single_common,
+      FsingleType play_single_common,
+      FcopyType copy_solve_single,
+      FcopyType copy_calc_single,
+      FcopyType copy_play_single
     );
 
     /**
@@ -116,29 +116,29 @@ class System
      */
     ~System();
 
-    void Reset();
+    void reset();
 
-    int RegisterParams(
-      const int nThreads,
-      const int mem_usable_MB);
+    int register_params(
+      const int n_threads,
+      const int mem_usable_mb);
 
-    int RegisterRun(
-      const RunMode r,
-      const Boards& bop);
+    int register_run(
+      const RunMode run_mode,
+      const Boards& boards);
 
-    bool IsSingleThreaded() const;
+    bool is_single_threaded() const;
 
-    bool IsIMPL() const;
+    bool is_impl() const;
 
-    bool ThreadOK(const int thrId) const;
+    bool thread_ok(const int thread_id) const;
 
-    void GetHardware(
-      int& ncores,
-      unsigned long long& kilobytesFree) const;
+    void get_hardware(
+      int& core_count,
+      unsigned long long& kilobytes_free) const;
 
-    int PreferThreading(const unsigned code);
+    int prefer_threading(const unsigned code);
 
-    int RunThreads();
+    int run_threads();
 };
 
 #endif

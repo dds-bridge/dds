@@ -60,7 +60,7 @@ int STDCALL AnalysePlayBin(
   SolvedPlay * solvedp,
   int thrId)
 {
-  if (! sysdep.ThreadOK(thrId))
+  if (! sysdep.thread_ok(thrId))
     return RETURN_THREAD_INDEX;
 
   // Create an owned context for this analysis and obtain its ThreadData.
@@ -351,10 +351,10 @@ int STDCALL AnalyseAllPlaysBin(
   traceparam.solvedp = solvedp;
 
   scheduler.RegisterRun(RunMode::DDS_RUN_TRACE, * bop, * plp);
-  sysdep.RegisterRun(RunMode::DDS_RUN_TRACE, * bop);
+  sysdep.register_run(RunMode::DDS_RUN_TRACE, * bop);
 
   START_BLOCK_TIMER;
-  int retRun = sysdep.RunThreads();
+  int retRun = sysdep.run_threads();
   END_BLOCK_TIMER;
 
   if (retRun != RETURN_NO_FAULT)
