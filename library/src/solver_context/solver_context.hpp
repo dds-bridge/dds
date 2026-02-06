@@ -23,6 +23,13 @@
 // TT configuration without depending on Memory headers.
 enum class TTKind { Small, Large };
 
+/**
+ * @brief Configuration options for SolverContext instances.
+ *
+ * Provides per-context configuration for transposition tables, RNG seeding,
+ * and optional arena sizing. Values are applied when creating or reconfiguring
+ * a SolverContext and persist across lazy TT creation.
+ */
 struct SolverConfig
 {
   TTKind tt_kind_ = TTKind::Large;
@@ -34,6 +41,15 @@ struct SolverConfig
   std::size_t arena_capacity_bytes_ = 0ULL;
 };
 
+/**
+ * @brief Instance-scoped solver context for DDS.
+ *
+ * Owns or references ThreadData and exposes lightweight facades for search
+ * state, move generation, and utilities. The context manages an instance-owned
+ * transposition table (TT) and provides explicit reset and configuration hooks.
+ *
+ * @threadsafe Not inherently thread-safe. Use one SolverContext per thread.
+ */
 class SolverContext
 {
 public:
@@ -63,11 +79,21 @@ public:
 
   ~SolverContext();
 
+  /**
+   * @brief Access the underlying ThreadData shared pointer.
+   *
+   * @return Shared ownership of the ThreadData used by this context.
+   */
   auto thread() const -> std::shared_ptr<ThreadData>
   {
     return thr_;
   }
 
+  /**
+   * @brief Access the current configuration snapshot.
+   *
+   * @return Const reference to the configuration stored in this context.
+   */
   auto config() const -> const SolverConfig&
   {
     return cfg_;
@@ -126,11 +152,17 @@ public:
     ::dds::Utilities* util_ = nullptr;
   };
 
+  /**
+   * @brief Access utilities facade for logging, RNG, and stats.
+   */
   auto utilities() -> UtilitiesContext
   {
     return UtilitiesContext(&utils_);
   }
 
+  /**
+   * @brief Access utilities facade for const contexts.
+   */
   auto utilities() const -> UtilitiesContext
   {
     return UtilitiesContext(&utils_);
@@ -163,25 +195,58 @@ public:
   // stack-allocated buffers only.
 
   // Returns the owned transposition table instance (creates if null)
+  /**
+   * @brief Get or create the transposition table.
+   *
+   * @return Pointer to the owned TT instance.
+   */
   auto trans_table() const -> TransTable*;
   // Returns the TT instance if it exists, or nullptr
+  /**
+   * @brief Get the transposition table if already created.
+   *
+   * @return Pointer to the TT instance or nullptr.
+   */
   auto maybe_trans_table() const -> TransTable*;
 
   // Dispose and erase the TT instance associated with this thread, if any.
+  /**
+   * @brief Dispose the owned transposition table immediately.
+   */
   auto dispose_trans_table() const -> void;
 
   // Lightweight facades used by tests and call sites; no-ops if no TT exists.
+  /**
+   * @brief Reset search state for a new solve.
+   *
+   * Calls TT reset with ResetReason::FreeMemory when applicable.
+   */
   auto reset_for_solve() const -> void;   // Calls reset_memory(ResetReason::FreeMemory)
   // Lightweight per-iteration reset matching legacy ResetBestMoves semantics.
   // Only clears bestMove[*].rank and bestMoveTT[*].rank, updates memUsed and ABStats.
+  /**
+   * @brief Lightweight reset used inside search iterations.
+   */
   auto reset_best_moves_lite() const -> void;
+  /**
+   * @brief Return all TT memory to the system without destroying the TT.
+   */
   auto clear_tt() const -> void;         // Calls ReturnAllMemory()
+  /**
+   * @brief Resize TT memory defaults and limits in-place if TT exists.
+   */
   auto resize_tt(int defMB, int maxMB) const -> void; // Updates sizes if TT exists
   // Explicit runtime configuration of TT kind and memory limits. Applies to
   // existing TT (resize or recreate) and persists for future creations.
+  /**
+   * @brief Configure TT kind and memory limits.
+   */
   auto configure_tt(TTKind kind, int defMB, int maxMB) -> void;
 
   // --- Search state facade ---
+  /**
+   * @brief Facade for per-solve search state.
+   */
   class SearchContext
   {
   public:
@@ -249,17 +314,26 @@ public:
   };
 
   // Expose a persistent SearchContext owned by the SolverContext.
+  /**
+   * @brief Access the persistent search-state facade.
+   */
   auto search() -> SearchContext&
   {
     return search_;
   }
 
+  /**
+   * @brief Access the persistent search-state facade (const).
+   */
   auto search() const -> const SearchContext&
   {
     return search_;
   }
 
   // --- Move generation facade ---
+  /**
+   * @brief Facade for move generation utilities bound to ThreadData.
+   */
   class MoveGenContext
   {
   public:
@@ -344,6 +418,9 @@ public:
     std::shared_ptr<ThreadData> thr_;
   };
 
+  /**
+   * @brief Access move generation facade.
+   */
   auto move_gen() const -> MoveGenContext
   {
     return MoveGenContext(thr_);
