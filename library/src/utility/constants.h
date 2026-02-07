@@ -56,7 +56,7 @@ extern const unsigned short bit_map_rank[16];
 extern const unsigned char card_rank[16];
 
 /// @brief Character representation for suits.
-/// Maps suit index (0-4) to character: S/H/D/C/N (north trump).
+/// Maps suit index (0-4) to character: S/H/D/C/N (no trump).
 extern const unsigned char card_suit[DDS_STRAINS];
 
 /// @brief Character representation for hands.
