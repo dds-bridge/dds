@@ -3,6 +3,14 @@
 /// @brief Regression test for the trick three bug in solve_board.
 /// @details Verifies the solver reports nine tricks for a known board.
 
+// C++ standard library headers
+#include <algorithm>
+#include <cstddef>
+
+// Third-party headers
+#include <gtest/gtest.h>
+
+// Project headers
 #include <api/dds.h>
 class TrickThreeBugTests : public ::testing::Test {
      protected:
