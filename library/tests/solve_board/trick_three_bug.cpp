@@ -8,15 +8,15 @@ class TrickThreeBugTests : public ::testing::Test {
 inline size_t dds_max(FutureTricks const & fut)
 {
     int res = 0;
-    for(int i = 0; i < 13 && fut.rank[i] > 0; ++i)
-    {
+    for (int i = 0; i < 13 && fut.rank[i] > 0; ++i) {
         res = std::max(res, fut.score[i]);
     }
 
     return static_cast<size_t>(res);
 }
 
-TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks) {
+TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks)
+{
     SetMaxThreads(0);
 
     int target = 0;
