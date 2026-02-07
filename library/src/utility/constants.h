@@ -25,16 +25,22 @@ constexpr int DDS_NOTRUMP = 4;  ///< No trump strain index
 /// an absolute hand (0-3) to the corresponding related hand.
 /// @{
 
-/// @brief Left-hand opponent for each hand.
-/// Maps: North(0)->West(3), East(1)->North(0), South(2)->East(1), West(3)->South(2)
+/// @brief Left-hand opponent for each hand (index -> hand value).
+/// Precomputed lookup: lho[i] gives the hand number of the player sitting to hand i's left.
+/// Values: lho[0]=3 (North's LHO is West), lho[1]=0 (East's LHO is North),
+///         lho[2]=1 (South's LHO is East), lho[3]=2 (West's LHO is South)
 extern const int lho[DDS_HANDS];
 
-/// @brief Right-hand opponent for each hand.
-/// Maps: North(0)->East(1), East(1)->South(2), South(2)->West(3), West(3)->North(0)
+/// @brief Right-hand opponent for each hand (index -> hand value).
+/// Precomputed lookup: rho[i] gives the hand number of the player sitting to hand i's right.
+/// Values: rho[0]=1 (North's RHO is East), rho[1]=2 (East's RHO is South),
+///         rho[2]=3 (South's RHO is West), rho[3]=0 (West's RHO is North)
 extern const int rho[DDS_HANDS];
 
-/// @brief Partner for each hand.
-/// Maps: North(0)->South(2), East(1)->West(3), South(2)->North(0), West(3)->East(1)
+/// @brief Partner for each hand (index -> hand value).
+/// Precomputed lookup: partner[i] gives the hand number of the player partnered with hand i.
+/// Values: partner[0]=2 (North's partner is South), partner[1]=3 (East's partner is West),
+///         partner[2]=0 (South's partner is North), partner[3]=1 (West's partner is East)
 extern const int partner[DDS_HANDS];
 
 /// @}

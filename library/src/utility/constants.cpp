@@ -9,9 +9,15 @@
 
 #include "constants.h"
 
-/// Hand relationship arrays: precomputed for O(1) lookup efficiency.
-/// These define the circular relationship between the four bridge hands.
+/// Left-hand opponent array: lho[hand] gives the hand sitting to hand's left.
+/// Bridge hand positions: 0=North, 1=East, 2=South, 3=West (clockwise)
+/// Left opponent circulates counter-clockwise from player's perspective:
+/// North(0)->West(3), East(1)->North(0), South(2)->East(1), West(3)->South(2)
 const int lho[DDS_HANDS] = {3, 0, 1, 2};
+
+/// Right-hand opponent array: rho[hand] gives the hand sitting to hand's right.
+/// Right opponent circulates clockwise from player's perspective:
+/// North(0)->East(1), East(1)->South(2), South(2)->West(3), West(3)->North(0)
 const int rho[DDS_HANDS] = {1, 2, 3, 0};
 const int partner[DDS_HANDS] = {2, 3, 0, 1};
 
