@@ -11,15 +11,17 @@
 
 // Project headers
 #include <api/dds.h>
-class TrickThreeBugTests : public ::testing::Test {
-     protected:
-        TrickThreeBugTests() = default;
+
+class TrickThreeBugTests : public ::testing::Test
+{
+protected:
+    TrickThreeBugTests() = default;
 };
 
 /// @brief Return the maximum trick score from a FutureTricks result.
 /// @param fut FutureTricks produced by the solver.
 /// @return Maximum score value across all results.
-inline size_t dds_max(FutureTricks const & fut)
+inline auto dds_max(FutureTricks const & fut) -> size_t
 {
     int res = 0;
     for (int i = 0; i < 13 && fut.rank[i] > 0; ++i) {
