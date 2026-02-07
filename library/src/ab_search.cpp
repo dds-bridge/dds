@@ -772,8 +772,8 @@ void Make0(
   posPoint->first[depth - 1] = h;
   posPoint->move[depth] = * mply;
 
-  posPoint->rank_in_suit[h][s] &= (~bitMapRank[r]);
-  posPoint->aggr[s] ^= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
+  posPoint->aggr[s] ^= bit_map_rank[r];
   posPoint->hand_dist[h] -= handDelta[s];
   posPoint->length[h][s]--;
 }
@@ -792,8 +792,8 @@ void Make1(
   int s = mply->suit;
   int r = mply->rank;
 
-  posPoint->rank_in_suit[h][s] &= (~bitMapRank[r]);
-  posPoint->aggr[s] ^= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
+  posPoint->aggr[s] ^= bit_map_rank[r];
   posPoint->hand_dist[h] -= handDelta[s];
   posPoint->length[h][s]--;
 }
@@ -812,8 +812,8 @@ void Make2(
   int s = mply->suit;
   int r = mply->rank;
 
-  posPoint->rank_in_suit[h][s] &= (~bitMapRank[r]);
-  posPoint->aggr[s] ^= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
+  posPoint->aggr[s] ^= bit_map_rank[r];
   posPoint->hand_dist[h] -= handDelta[s];
   posPoint->length[h][s]--;
 }
@@ -846,13 +846,13 @@ void Make3(
     // Win by rank when some else played that suit, too.
     int rr = data.best_rank;
     trickCards[ss] = static_cast<unsigned short>
-      (bitMapRank[rr] | data.best_sequence);
+      (bit_map_rank[rr] | data.best_sequence);
   }
 
   int r = mply->rank;
   int s = mply->suit;
-  posPoint->rank_in_suit[h][s] &= (~bitMapRank[r]);
-  posPoint->aggr[s] ^= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
+  posPoint->aggr[s] ^= bit_map_rank[r];
   posPoint->hand_dist[h] -= handDelta[s];
   posPoint->length[h][s]--;
 
@@ -912,13 +912,13 @@ static void Make3_ctx(
     // Win by rank when some else played that suit, too.
     int rr = data.best_rank;
     trickCards[ss] = static_cast<unsigned short>
-      (bitMapRank[rr] | data.best_sequence);
+      (bit_map_rank[rr] | data.best_sequence);
   }
 
   int r = mply->rank;
   int s = mply->suit;
-  posPoint->rank_in_suit[h][s] &= (~bitMapRank[r]);
-  posPoint->aggr[s] ^= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
+  posPoint->aggr[s] ^= bit_map_rank[r];
   posPoint->hand_dist[h] -= handDelta[s];
   posPoint->length[h][s]--;
 
@@ -973,14 +973,14 @@ void Make3Simple(
     // Win by rank when some else played that suit, too.
     int r = data.best_rank;
     trickCards[s] = static_cast<unsigned short>
-      (bitMapRank[r] | data.best_sequence);
+      (bit_map_rank[r] | data.best_sequence);
   }
 
   int h = HAND_ID(firstHand, 3);
   int r = mply->rank;
   s = mply->suit;
 
-  posPoint->aggr[s] ^= bitMapRank[r];
+  posPoint->aggr[s] ^= bit_map_rank[r];
   posPoint->hand_dist[h] -= handDelta[s];
 }
 
@@ -995,8 +995,8 @@ void Undo0(
   int s = mply.suit;
   int r = mply.rank;
 
-  posPoint->rank_in_suit[h][s] |= bitMapRank[r];
-  posPoint->aggr[s] |= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
+  posPoint->aggr[s] |= bit_map_rank[r];
   posPoint->hand_dist[h] += handDelta[s];
   posPoint->length[h][s]++;
 
@@ -1025,8 +1025,8 @@ static void Undo0_ctx(
   int s = mply.suit;
   int r = mply.rank;
 
-  posPoint->rank_in_suit[h][s] |= bitMapRank[r];
-  posPoint->aggr[s] |= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
+  posPoint->aggr[s] |= bit_map_rank[r];
   posPoint->hand_dist[h] += handDelta[s];
   posPoint->length[h][s]++;
 
@@ -1053,7 +1053,7 @@ void Undo0Simple(
   int s = mply.suit;
   int r = mply.rank;
 
-  posPoint->aggr[s] |= bitMapRank[r];
+  posPoint->aggr[s] |= bit_map_rank[r];
   posPoint->hand_dist[h] += handDelta[s];
 }
 
@@ -1067,8 +1067,8 @@ void Undo1(
   int s = mply.suit;
   int r = mply.rank;
 
-  posPoint->rank_in_suit[h][s] |= bitMapRank[r];
-  posPoint->aggr[s] |= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
+  posPoint->aggr[s] |= bit_map_rank[r];
   posPoint->hand_dist[h] += handDelta[s];
   posPoint->length[h][s]++;
 }
@@ -1083,8 +1083,8 @@ void Undo2(
   int s = mply.suit;
   int r = mply.rank;
 
-  posPoint->rank_in_suit[h][s] |= bitMapRank[r];
-  posPoint->aggr[s] |= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
+  posPoint->aggr[s] |= bit_map_rank[r];
   posPoint->hand_dist[h] += handDelta[s];
   posPoint->length[h][s]++;
 }
@@ -1099,8 +1099,8 @@ void Undo3(
   int s = mply.suit;
   int r = mply.rank;
 
-  posPoint->rank_in_suit[h][s] |= bitMapRank[r];
-  posPoint->aggr[s] |= bitMapRank[r];
+  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
+  posPoint->aggr[s] |= bit_map_rank[r];
   posPoint->hand_dist[h] += handDelta[s];
   posPoint->length[h][s]++;
 }

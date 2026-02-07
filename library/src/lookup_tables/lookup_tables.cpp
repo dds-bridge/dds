@@ -37,7 +37,7 @@ static auto init_lookup_tables_impl() -> void
   {
     for (int rank = 14; rank >= 2; rank--)
     {
-      if (aggregate & bitMapRank[rank])
+      if (aggregate & bit_map_rank[rank])
       {
         highest_rank_storage[aggregate] = rank;
         break;
@@ -45,7 +45,7 @@ static auto init_lookup_tables_impl() -> void
     }
     for (int rank = 2; rank <= 14; rank++)
     {
-      if (aggregate & bitMapRank[rank])
+      if (aggregate & bit_map_rank[rank])
       {
         lowest_rank_storage[aggregate] = rank;
         break;
@@ -79,7 +79,7 @@ static auto init_lookup_tables_impl() -> void
     char ordinal = 0;
     for (int rank = 14; rank >= 2; rank--)
     {
-      if (aggregate & bitMapRank[rank])
+      if (aggregate & bit_map_rank[rank])
       {
         ordinal++;
         rel_rank_storage[aggregate][rank] = ordinal;
@@ -98,11 +98,11 @@ static auto init_lookup_tables_impl() -> void
       int next_bit_position = 1;
       for (int rank = 14; rank >= 2; rank--)
       {
-        if (aggregate & bitMapRank[rank])
+        if (aggregate & bit_map_rank[rank])
         {
           if (next_bit_position <= least_win)
           {
-            result |= bitMapRank[rank];
+            result |= bit_map_rank[rank];
             next_bit_position++;
           }
           else

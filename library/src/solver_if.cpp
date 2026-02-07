@@ -1143,7 +1143,7 @@ int BoardValueChecks(
     for (int h = 0; h < DDS_HANDS; h++)
       aggrRemain |= (dl.remainCards[h][dl.currentTrickSuit[k]] >> 2);
 
-    if ((aggrRemain & bitMapRank[dl.currentTrickRank[k]]) != 0)
+    if ((aggrRemain & bit_map_rank[dl.currentTrickRank[k]]) != 0)
     {
       DumpInput(RETURN_PLAYED_CARD, dl, target, solutions, mode);
       return RETURN_PLAYED_CARD;
@@ -1157,7 +1157,7 @@ int BoardValueChecks(
       bool found = false;
       for (int h = 0; h < DDS_HANDS; h++)
       {
-        if ((thrp->suit[h][s] & bitMapRank[r]) != 0)
+        if ((thrp->suit[h][s] & bit_map_rank[r]) != 0)
         {
           if (found)
           {

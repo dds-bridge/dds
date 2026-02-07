@@ -83,7 +83,7 @@ int ConvertFromPBN(
       }
 
       remainCards[hand][suitInHand] |=
-        static_cast<unsigned>((bitMapRank[card] << 2));
+        static_cast<unsigned>((bit_map_rank[card] << 2));
 
     }
     else if (dealBuff[bp] == '.')

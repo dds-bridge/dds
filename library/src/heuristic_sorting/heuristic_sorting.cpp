@@ -685,7 +685,7 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
       // 3rd hand will follow.
   if ((tpos.rank_in_suit[rho_lh][lead_suit] >
        (tpos.rank_in_suit[partner_lh][lead_suit] |
-    bitMapRank[ctx.lead0_rank])) ||
+    bit_map_rank[ctx.lead0_rank])) ||
           ((tpos.length[rho_lh][lead_suit] == 0) &&
            (tpos.length[rho_lh][trump] != 0)))
       {
@@ -710,7 +710,7 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
     }
   else if ((tpos.length[partner_lh][trump] == 0) &&
        (tpos.rank_in_suit[rho_lh][lead_suit] >
-        bitMapRank[ctx.lead0_rank]))
+        bit_map_rank[ctx.lead0_rank]))
     {
       // 3rd hand has no trumps, and partner has suit winner.
       suitAdd = 60 + (suitCount << 6) / 44;
@@ -736,7 +736,7 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
       // 3rd hand will follow.
     if (tpos.rank_in_suit[rho_lh][lead_suit] >
       (tpos.rank_in_suit[partner_lh][lead_suit] |
-       bitMapRank[ctx.lead0_rank]))
+       bit_map_rank[ctx.lead0_rank]))
         // Partner has winning card.
         suitAdd = 60 + (suitCount << 6) / 44;
       else if ((tpos.length[rho_lh][lead_suit] == 0)
@@ -760,7 +760,7 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
       suitAdd = 60 + (suitCount << 6) / 44;
   else if ((tpos.length[partner_lh][trump] == 0)
        && (tpos.rank_in_suit[rho_lh][lead_suit] >
-         bitMapRank[ctx.lead0_rank]))
+         bit_map_rank[ctx.lead0_rank]))
       // 3rd hand has no trumps, and partner has suit winner.
       suitAdd = 60 + (suitCount << 6) / 44;
     else
@@ -797,7 +797,7 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
   {
     for (int k = last_num_moves; k < num_moves; k++)
     {
-      if (bitMapRank[mply[k].rank] >
+      if (bit_map_rank[mply[k].rank] >
           tpos.rank_in_suit[partner_lh][trump])
       {
         // We can ruff, 3rd hand is void but can't overruff.
@@ -836,7 +836,7 @@ void weight_alloc_nt_void1(HeuristicContext& ctx)
 
   if (tpos.rank_in_suit[rho_lh][lead_suit] >
       (tpos.rank_in_suit[partner_lh][lead_suit] |
-       bitMapRank[ctx.lead0_rank]))
+       bit_map_rank[ctx.lead0_rank]))
   {
     // Partner can win.
     unsigned short suitCount = tpos.length[curr_hand][suit];
@@ -929,7 +929,7 @@ void get_top_number(const HeuristicContext& ctx, const int ris, const int prank,
 
   // Remove partner's card as well.
   int removed = static_cast<int>(ctx.removed_ranks[ctx.lead_suit] |
-                                 bitMapRank[prank]);
+                                 bit_map_rank[prank]);
 
   int fullseq = mp.fullseq_[g];
 
@@ -1272,7 +1272,7 @@ void weight_alloc_trump_void2(HeuristicContext& ctx)
           mply[k].weight = 48 - mply[k].rank + suitAdd;
         }
       }
-      else if (bitMapRank[mply[k].rank] >
+      else if (bit_map_rank[mply[k].rank] >
                tpos.rank_in_suit[rho_lh][trump])
       {
         // We ruff higher than 4th hand.
@@ -1295,7 +1295,7 @@ void weight_alloc_trump_void2(HeuristicContext& ctx)
       mply[k].weight = 72 - mply[k].rank + suitAdd;
     }
 
-    else if (bitMapRank[mply[k].rank] >
+    else if (bit_map_rank[mply[k].rank] >
              tpos.rank_in_suit[rho_lh][trump])
     {
       // Ruff higher than 4th hand can.

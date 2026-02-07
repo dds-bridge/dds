@@ -60,8 +60,8 @@ std::string PrintSuit(const unsigned short suitCode)
 
   std::string st;
   for (int r = 14; r >= 2; r--)
-    if ((suitCode & bitMapRank[r]))
-      st += static_cast<char>(cardRank[r]);
+    if ((suitCode & bit_map_rank[r]))
+      st += static_cast<char>(card_rank[r]);
   return st;
 }
 
@@ -76,10 +76,10 @@ std::string PrintSuit(
   std::string st;
   for (int r = 14; r >= 2; r--)
   {
-    if ((suitCode & bitMapRank[r]))
+    if ((suitCode & bit_map_rank[r]))
     {
       if (r >= 15 - leastWin)
-        st += static_cast<char>(cardRank[r]);
+        st += static_cast<char>(card_rank[r]);
       else
         st += "x";
     }
@@ -96,22 +96,22 @@ std::string PrintDeal(
   for (int s = 0; s < DDS_SUITS; s++)
   {
     ss << std::setw(spacing) << "" << 
-      cardSuit[s] << " " <<
+      card_suit[s] << " " <<
       PrintSuit(ranks[0][s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
-    ss << cardSuit[s] << " " <<
+    ss << card_suit[s] << " " <<
       std::setw(2*spacing - 2) << std::left << PrintSuit(ranks[3][s]) <<
-      cardSuit[s] << " " <<
+      card_suit[s] << " " <<
       PrintSuit(ranks[1][s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
     ss << std::setw(spacing) << "" << 
-      cardSuit[s] << " " <<
+      card_suit[s] << " " <<
       PrintSuit(ranks[2][s]) << "\n";
   }
 
@@ -128,28 +128,28 @@ std::string RankToDiagrams(
   {
     ss << std::setw(12) << std::left << 
       (s == 0 ? "Sought" : "") << 
-      cardSuit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
+      card_suit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
       std::setw(12) << (s == 0 ? "Found" : "") << 
-      cardSuit[s] << " " << 
+      card_suit[s] << " " << 
         PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
     ss << 
-      cardSuit[s] << " " << std::setw(22) << std::left << PrintSuit(ranks[3][s]) <<
-      cardSuit[s] << " " << std::setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
-      cardSuit[s] << " " << 
+      card_suit[s] << " " << std::setw(22) << std::left << PrintSuit(ranks[3][s]) <<
+      card_suit[s] << " " << std::setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
+      card_suit[s] << " " << 
         std::setw(22) << PrintSuit(ranks[3][s], node.least_win[s]) << 
-      cardSuit[s] << " " << 
+      card_suit[s] << " " << 
         PrintSuit(ranks[1][s], node.least_win[s]) << "\n";
   }
 
   for (int s = 0; s < DDS_SUITS; s++)
   {
     ss << std::setw(12) << std::left << "" << 
-      cardSuit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
-      std::setw(12) << "" << cardSuit[s] << " " <<
+      card_suit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
+      std::setw(12) << "" << card_suit[s] << " " <<
       PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
   }
   return ss.str();
@@ -160,7 +160,7 @@ std::string WinnersToText(const unsigned short ourWinRanks[])
 {
   std::stringstream ss;
   for (int s = 0; s < DDS_SUITS; s++)
-    ss << cardSuit[s] << " " << PrintSuit(ourWinRanks[s]) << "\n";
+    ss << card_suit[s] << " " << PrintSuit(ourWinRanks[s]) << "\n";
 
   return ss.str();
 }
@@ -177,8 +177,8 @@ std::string NodeToText(const NodeCards& node)
     static_cast<int>(node.upper_bound) << " tricks\n";
 
   ss << std::setw(16) << std::left << "Best move" << 
-    cardSuit[ static_cast<int>(node.best_move_suit) ] <<
-    cardRank[ static_cast<int>(node.best_move_rank) ] << "\n";
+    card_suit[ static_cast<int>(node.best_move_suit) ] <<
+    card_rank[ static_cast<int>(node.best_move_rank) ] << "\n";
 
   return ss.str();
 }
@@ -193,10 +193,10 @@ std::string FullNodeToText(const NodeCards& node)
     v[i] = 15 - static_cast<int>(node.least_win[i]);
 
   ss << std::setw(16) << std::left << "Lowest used" << 
-    cardSuit[0] << cardRank[v[0]] << ", " <<
-    cardSuit[1] << cardRank[v[1]] << ", " <<
-    cardSuit[2] << cardRank[v[2]] << ", " <<
-    cardSuit[3] << cardRank[v[3]] << "\n";
+    card_suit[0] << card_rank[v[0]] << ", " <<
+    card_suit[1] << card_rank[v[1]] << ", " <<
+    card_suit[2] << card_rank[v[2]] << ", " <<
+    card_suit[3] << card_rank[v[3]] << "\n";
 
   return NodeToText(node) + ss.str();
 }
@@ -211,8 +211,8 @@ std::string PosToText(
   ss << std::setw(16) << std::left << "Target" << target << "\n";
   ss << std::setw(16) << "Depth" << depth << "\n";
   ss << std::setw(16) << "tricks_max" << tpos.tricks_max << "\n";
-  ss << std::setw(16) << "First hand" << cardHand[tpos.first[depth]] << "\n";
-  ss << std::setw(16) << "Next first" << cardHand[tpos.first[depth - 1]] << "\n";
+  ss << std::setw(16) << "First hand" << card_hand[tpos.first[depth]] << "\n";
+  ss << std::setw(16) << "Next first" << card_hand[tpos.first[depth - 1]] << "\n";
   return ss.str();
 }
 
@@ -257,8 +257,8 @@ std::string TopMove(
   {
     std::stringstream ss;
     ss << "achieved with move " <<
-      cardSuit[ bestMove.suit ] <<
-      cardRank[ bestMove.rank ];
+      card_suit[ bestMove.suit ] <<
+      card_rank[ bestMove.rank ];
     return ss.str();
   }
   else
@@ -284,8 +284,8 @@ int DumpInput(
   if (dl.trump == DDS_NOTRUMP)
     fout << "N\n";
   else
-    fout << cardSuit[dl.trump] << "\n";
-  fout << "first=" << cardHand[dl.first] << "\n";
+    fout << card_suit[dl.trump] << "\n";
+  fout << "first=" << card_hand[dl.first] << "\n";
 
   unsigned short ranks[4][4];
 
@@ -293,8 +293,8 @@ int DumpInput(
     if (dl.currentTrickRank[k] != 0)
     {
       fout << "index=" << k << 
-        " currentTrickSuit=" << cardSuit[dl.currentTrickSuit[k]] <<
-        " currentTrickRank= " << cardRank[dl.currentTrickRank[k]] << "\n";
+        " currentTrickSuit=" << card_suit[dl.currentTrickSuit[k]] <<
+        " currentTrickRank= " << card_rank[dl.currentTrickRank[k]] << "\n";
     }
 
   for (int h = 0; h < DDS_HANDS; h++)

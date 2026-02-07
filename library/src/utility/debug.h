@@ -7,132 +7,134 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_DEBUG_H
-#define DDS_DEBUG_H
+#pragma once
 
+/// @file debug.h
+/// @brief Debug configuration flags and statistics support.
+/// @defgroup utility_debug Debug Utilities
+/// @{
 
-/*
-    A number of debug flags cause output files to be generated.
+/// @brief Debug flag performance impact summary.
+///
+/// A number of debug flags cause diagnostic output files to be generated.
+/// One file per thread is created. Performance impact varies significantly:
+///
+/// <table>
+/// <tr><th>Mode</th><th>Clock Ticks</th><th>File Size (KB)</th></tr>
+/// <tr><td>No debugging</td><td>66</td><td>--</td></tr>
+/// <tr><td>DDS_TOP_LEVEL</td><td>63</td><td>8</td></tr>
+/// <tr><td>DDS_AB_STATS</td><td>71</td><td>36</td></tr>
+/// <tr><td>DDS_AB_STATS + DDS_AB_DETAILS</td><td>75</td><td>64</td></tr>
+/// <tr><td>DDS_AB_HITS</td><td>680</td><td>12004</td></tr>
+/// <tr><td>DDS_TT_STATS</td><td>68</td><td>8</td></tr>
+/// <tr><td>DDS_TIMING</td><td>125</td><td>8</td></tr>
+/// <tr><td>All Together</td><td>720</td><td>--</td></tr>
+/// </table>
+///
+/// @note These measurements are from a single hand, single-threaded execution
+/// with ~207,000 AB nodes and ~63,000 trick nodes. Times are approximate;
+/// actual performance depends on hardware and hand complexity.
 
-    One file per thread is generated.
+/// @name Debug Configuration Flags
+/// Enable individual debug modes to generate diagnostic output files.
+/// @{
 
-    Some example statistics on what to expect for a single
-    hand, single-threaded, with about 207,000 AB nodes and
-    about 63,000 trick nodes, called in solve mode such that
-    a total of 11 calls to the AB optimization are performed.
-
-    The clock "ticks" are for that debugging mode only, with
-    all the other ones turned off, unless otherwise noted.
-    The data is of course approximate.  (Of course nothing
-    gets faster with debugging.)
-
-    Mode                Clock "ticks"   File size in KB
-    No debugging                   66                --
-
-    DDS_TOP_LEVEL                  63                 8
-
-    DDS_AB_STATS                   71                36
-    + DDS_AB_DETAILS               75                64
-
-    DDS_AB_HITS                   680              8624 (stored)
-                                                  12004 (retrieved)
-
-    DDS_TT_STATS (*)               68                 8
-
-    DDS_TIMING                    125                 8
-    + DDS_TIMING_DETAILS          130                28
-
-    All together                  720                --
-
-    (*) This depends on the stat functions called in TransTable.
-    Here only the summary functions are called by default.
-
-    For comparison, the old DDS functions, which only work
-    single-threaded, yields three files stat.txt, storett.txt
-    and rectt.txt.
-
-                               145124                56 (stat)
-                                                   6940 (store)
-                                                   7732 (rectt)
-
-    So the speed-up is a factor of 200.
-*/
-
-// If you want ALL the output files, this is easier
+/// @brief Enable all debug output files.
+/// Convenience flag that enables all debug modes below simultaneously.
 // #define DDS_DEBUG_ALL
 
+/// @brief File extension for debug output files.
 #define DDS_DEBUG_SUFFIX ".txt"
 
-// Enables data about each call to the top-level AB routine.
+/// @brief Log data about each call to the top-level AB routine.
+/// Generates detailed information about solver entry points and parameters.
 // #define DDS_TOP_LEVEL
 #define DDS_TOP_LEVEL_PREFIX "toplevel"
 
-// Enables AB statistics, node counts etc.
+/// @brief Enable AB search statistics (node counts, timing, etc.).
+/// Records alpha-beta search performance metrics for optimization analysis.
 // #define DDS_AB_STATS
 #define DDS_AB_STATS_PREFIX "ABstats"
 
-// Gives more detail, in combination with DDS_AB_STATS.
+/// @brief Enable detailed AB search statistics.
+/// Must be combined with DDS_AB_STATS for enhanced diagnostic output.
 // #define DDS_AB_DETAILS
 
-// Gives information on nodes stored and retrieved from TT memory.
+/// @brief Log transposition table hits and misses.
+/// Tracks which positions are stored to and retrieved from the TT cache.
 // #define DDS_AB_HITS
 #define DDS_AB_HITS_RETRIEVED_PREFIX "retrieved"
 #define DDS_AB_HITS_STORED_PREFIX "stored"
 
-// Gives statistics on the usage of TT memory.
+/// @brief Enable transposition table usage statistics.
+/// Reports memory efficiency and hit rates of the position cache.
 // #define DDS_TT_STATS
 #define DDS_TT_STATS_PREFIX "TTstats"
 
-// Enables timing of the AB search and related functions.
-// Makes an attempt to calculate exclusive times of functions.
+/// @brief Enable timing of AB search and related functions.
+/// Measures execution time and attempts to calculate exclusive (non-overlapping) times.
 // #define DDS_TIMING
 #define DDS_TIMING_PREFIX "timer"
 
-// Enables statistics on move generation quality.
+/// @brief Enable detailed timing breakdown.
+/// Requires DDS_TIMING; provides per-function timing details.
+// #define DDS_TIMING_DETAILS
+
+/// @brief Enable move generation quality statistics.
+/// Analyzes the effectiveness of move ordering heuristics.
 // #define DDS_MOVES
 #define DDS_MOVES_PREFIX "movestats"
 
-// Enables timing in the scheduler.
-// DDS_SCHEDULER is provided by the build system when enabled.
+/// @brief Enable detailed move generation statistics.
+/// Requires DDS_MOVES; provides per-move-type analysis.
+// #define DDS_MOVES_DETAILS
+
+/// @brief Enable scheduler timing (provided by build system).
+/// Logs thread pool scheduling decisions and timing.
 #define DDS_SCHEDULER_PREFIX "sched"
 
+/// @}
 
 #ifdef DDS_DEBUG_ALL
-  #define DDS_TOP_LEVEL
-  #ifndef DDS_AB_STATS
-    #define DDS_AB_STATS
-  #endif
-  #ifndef DDS_AB_DETAILS
-    #define DDS_AB_DETAILS
-  #endif
-  #ifndef DDS_AB_HITS
-    #define DDS_AB_HITS
-  #endif
-  #ifndef DDS_TT_STATS
-    #define DDS_TT_STATS
-  #endif
-  #ifndef DDS_TIMING
-    #define DDS_TIMING
-  #endif
-  #ifndef DDS_TIMING_DETAILS
-    #define DDS_TIMING_DETAILS
-  #endif
-  #ifndef DDS_MOVES
-    #define DDS_MOVES
-  #endif
-  #ifndef DDS_MOVES_DETAILS
-    #define DDS_MOVES_DETAILS
-  #endif
+#define DDS_TOP_LEVEL
+#ifndef DDS_AB_STATS
+#define DDS_AB_STATS
+#endif
+#ifndef DDS_AB_DETAILS
+#define DDS_AB_DETAILS
+#endif
+#ifndef DDS_AB_HITS
+#define DDS_AB_HITS
+#endif
+#ifndef DDS_TT_STATS
+#define DDS_TT_STATS
+#endif
+#ifndef DDS_TIMING
+#define DDS_TIMING
+#endif
+#ifndef DDS_TIMING_DETAILS
+#define DDS_TIMING_DETAILS
+#endif
+#ifndef DDS_MOVES
+#define DDS_MOVES
+#endif
+#ifndef DDS_MOVES_DETAILS
+#define DDS_MOVES_DETAILS
+#endif
 #endif
 
+/// @name Performance Counters
+/// @brief Statistics counters for profiling and analysis.
+/// @{
 
-// This debugging feature only works with Microsoft's compiler.
-// In fact, it doesn't seem to do anything right now :-).
-// #define DDS_MEMORY_LEAKS
+/// @brief Number of available counter slots for performance tracking.
+constexpr int COUNTER_SLOTS = 200;
 
-
-#define COUNTER_SLOTS 200
-
+/// @brief Global array of performance counters.
+/// Each thread may use these counters for statistics collection.
+/// Size: COUNTER_SLOTS (200) entries.
 extern long long counter[COUNTER_SLOTS];
 
-#endif
+/// @}
+
+/// @}
