@@ -1,4 +1,3 @@
-#include <gtest/gtest.h>
 /// @file trick_three_bug.cpp
 /// @brief Regression test for the trick three bug in solve_board.
 /// @details Verifies the solver reports nine tricks for a known board.
