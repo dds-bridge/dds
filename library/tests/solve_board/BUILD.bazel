@@ -1,17 +1,14 @@
-# Google Test for Heuristic Sorting
+# Solve_board regression tests
 
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
-filegroup(
-    name = "solve_board_test_sources",
-    srcs = glob(["*.cpp",]),
-)
-
 cc_test(
     name = "solve_board_test",
-    srcs = [":solve_board_test_sources"],
+    srcs = [
+        "trick_three_bug.cpp",
+    ],
     deps = [
-        "@googletest//:gtest_main",
         "//library/src:testable_dds",
+        "@googletest//:gtest_main",
     ],
 )
