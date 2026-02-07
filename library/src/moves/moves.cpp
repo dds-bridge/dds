@@ -617,7 +617,7 @@ auto Moves::GetTrickData(const int tricks) -> const TrickDataType & {
   for (int relh = 0; relh < DDS_HANDS; relh++)
     data.play_count[trackp->play_suits[relh]]++;
 
-#if DEBUG
+#ifdef DEBUG
   int sum = 0;
   for (int s = 0; s < DDS_SUITS; s++)
     sum += data.play_count[s];
