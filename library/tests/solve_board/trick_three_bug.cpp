@@ -61,7 +61,8 @@ TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks)
     };
 
     auto ret = SolveBoard(dl, target, solutions, mode, &fut, thread_index);
+    ASSERT_EQ(RETURN_NO_FAULT, ret);
     const auto max = dds_max(fut);
 
-    ASSERT_TRUE(max == 9);
+    ASSERT_EQ(static_cast<size_t>(9), max);
 }
