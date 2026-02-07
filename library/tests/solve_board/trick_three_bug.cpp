@@ -19,10 +19,10 @@ TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks)
 {
     SetMaxThreads(0);
 
-    int target = 0;
-    int solutions = 3;
-    int mode = 0;
-    int thread_index = 0;
+    const int target = 0;
+    const int solutions = 3;
+    const int mode = 0;
+    const int thread_index = 0;
     struct FutureTricks fut = {
         .nodes=0,
         .cards = 0,
@@ -45,7 +45,7 @@ TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks)
     };
 
     auto ret = SolveBoard(dl, target, solutions, mode, &fut, thread_index);
-    auto max = dds_max(fut);
+    const auto max = dds_max(fut);
 
     ASSERT_TRUE(max == 9);
 }
