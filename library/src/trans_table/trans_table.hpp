@@ -53,7 +53,7 @@ struct NodeCards // 8 bytes
 {
   char upper_bound;     ///< Maximum tricks for side to move at this node (0-13)
   char lower_bound;     ///< Minimum tricks for side to move at this node (0-13)
-  char best_move_suit;  ///< Optimal suit index (0=S, 1=H, 2=D, 3=C; matches cardSuit)
+  char best_move_suit;  ///< Optimal suit index (0=S, 1=H, 2=D, 3=C; matches card_suit)
   char best_move_rank;  ///< Absolute rank (2-14 for 2-A), 0 used as sentinel
   char least_win[DDS_SUITS]; ///< Encoded lowest winning rank (0-13), used as 15 - least_win
 };

@@ -261,7 +261,7 @@ void SetDealTables(
       handLookup[s][r] = 0;
       for (int h = 0; h < DDS_HANDS; h++)
       {
-        if (thrp->suit[h][s] & bitMapRank[r])
+        if (thrp->suit[h][s] & bit_map_rank[r])
         {
           handLookup[s][r] = h;
           break;
@@ -323,7 +323,7 @@ void InitWinners(
     hand = HAND_ID(dl.first, k);
     suit = dl.currentTrickSuit[k];
     rank = dl.currentTrickRank[k];
-    startMovesBitMap[hand][suit] |= bitMapRank[rank];
+    startMovesBitMap[hand][suit] |= bit_map_rank[rank];
   }
 
   int aggr;

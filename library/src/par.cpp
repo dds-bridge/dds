@@ -174,7 +174,7 @@ int STDCALL Par(
           seats[sidesRes[i].contracts[k].seats]);
         snprintf(temp, 8, "%d", sidesRes[i].contracts[k].level);
         buff[0] = static_cast<char>(
-          cardSuit[denom_conv[sidesRes[i].contracts[k].denom]]);
+          card_suit[denom_conv[sidesRes[i].contracts[k].denom]]);
         buff[1] = 'x';
         buff[2] = '\0';
         strcat(temp, buff);
@@ -200,7 +200,7 @@ int STDCALL Par(
 
         snprintf(temp, 8, "%d", n);
         buff[0] = static_cast<char>(
-          cardSuit[denom_conv[sidesRes[i].contracts[k].denom]]);
+          card_suit[denom_conv[sidesRes[i].contracts[k].denom]]);
         buff[1] = '\0';
         strcat(temp, buff);
         strcat(presp->par_contracts_string[i], temp);

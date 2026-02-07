@@ -132,7 +132,7 @@ int STDCALL AnalysePlayBin(
         suit = play.suit[offset + card - 1];
         rr = play.rank[offset + card - 1];
       }
-      unsigned hold = static_cast<unsigned>(bitMapRank[rr] << 2);
+      unsigned hold = static_cast<unsigned>(bit_map_rank[rr] << 2);
 
       move.suit = suit;
       move.rank = rr;
@@ -234,7 +234,7 @@ int STDCALL AnalysePlayBin(
         setw(6) << card << 
         setw(6) << running_remainder << 
         setw(9) << running_declarer <<
-        setw(7) << cardHand[resp_player] << 
+        setw(7) << card_hand[resp_player] << 
         setw(7) << running_side <<
         setw(6) << solved_declarer << 
         setw(6) << new_solved_decl << 

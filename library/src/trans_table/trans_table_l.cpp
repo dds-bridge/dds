@@ -1053,18 +1053,18 @@ auto TransTableL::print_node_values(
   const NodeCards& np) const -> void
 {
   fout << setw(16) << left << "Lowest used" <<
-    cardSuit[0] << cardRank[15-static_cast<int>(np.least_win[0])] << ", " <<
-    cardSuit[1] << cardRank[15-static_cast<int>(np.least_win[1])] << ", " <<
-    cardSuit[2] << cardRank[15-static_cast<int>(np.least_win[2])] << ", " <<
-    cardSuit[3] << cardRank[15-static_cast<int>(np.least_win[3])] << "\n";
+    card_suit[0] << card_rank[15-static_cast<int>(np.least_win[0])] << ", " <<
+    card_suit[1] << card_rank[15-static_cast<int>(np.least_win[1])] << ", " <<
+    card_suit[2] << card_rank[15-static_cast<int>(np.least_win[2])] << ", " <<
+    card_suit[3] << card_rank[15-static_cast<int>(np.least_win[3])] << "\n";
 
   fout << setw(16) << left << "Bounds" << 
     to_string(static_cast<int>(np.lower_bound)) << " to " <<
     to_string(static_cast<int>(np.upper_bound)) << " tricks\n";
 
   fout << setw(16) << left << "Best move" <<
-    cardSuit[ static_cast<int>(np.best_move_suit) ] <<
-    cardRank[ static_cast<int>(np.best_move_rank) ] << "\n\n";
+    card_suit[ static_cast<int>(np.best_move_suit) ] <<
+    card_rank[ static_cast<int>(np.best_move_rank) ] << "\n\n";
 }
 
 
@@ -1122,7 +1122,7 @@ auto TransTableL::set_to_partial_hands(
 
       if (maskCard & 3) {
         unsigned player = (set >> shift) & 3;
-        hands[player][s] += static_cast<char>(cardRank[rank]);
+        hands[player][s] += static_cast<char>(card_rank[rank]);
       }
     }
   }

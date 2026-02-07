@@ -85,7 +85,7 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
       const MoveType &m = playedMoves[i];
       int absHand = (lead_hand + i) % 4;
       if (m.rank > 0 && m.rank < 16) {
-        unsigned short mask = bitMapRank[m.rank];
+        unsigned short mask = bit_map_rank[m.rank];
         // remove the card from localPos
         localPos.rank_in_suit[absHand][m.suit] &= static_cast<unsigned short>(~mask);
         // update aggregate and lengths
@@ -133,7 +133,7 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
     for (int r = 14; r >= 2; r--) {
       handLookup[s][r] = 0;
       for (int h = 0; h < DDS_HANDS; h++) {
-        if (localPos.rank_in_suit[h][s] & bitMapRank[r]) {
+        if (localPos.rank_in_suit[h][s] & bit_map_rank[r]) {
           handLookup[s][r] = h;
           break;
         }
@@ -185,7 +185,7 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* relTable /* size 8192 ass
 
       // maintain removedRanks: mark that the card has been played
       if (m.rank > 0 && m.rank < 16)
-        trackp->removed_ranks[m.suit] |= bitMapRank[m.rank];
+        trackp->removed_ranks[m.suit] |= bit_map_rank[m.rank];
 
       // update high[]: who currently wins among the played cards
       if (relIndex == 0) {

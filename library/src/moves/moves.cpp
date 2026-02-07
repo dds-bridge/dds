@@ -133,7 +133,7 @@ auto Moves::Init(const int tricks, const int relStartHand,
     int s = initialSuits[n];
     int r = initialRanks[n];
 
-    track[tricks].removed_ranks[s] ^= bitMapRank[r];
+    track[tricks].removed_ranks[s] ^= bit_map_rank[r];
   }
 }
 
@@ -345,7 +345,7 @@ auto Moves::GetTopNumber(const int ris, const int prank, int &topNumber,
 
   // Include partner's card as removed to count only moves that beat it.
   const int removed =
-      static_cast<int>(trackp->removed_ranks[leadSuit] | bitMapRank[prank]);
+      static_cast<int>(trackp->removed_ranks[leadSuit] | bit_map_rank[prank]);
 
   int fullseq = mp.fullseq_[g];
 
@@ -426,7 +426,7 @@ auto Moves::MakeSpecific(const MoveType &ourMply, const int trick,
     for (int h = 0; h < DDS_HANDS; h++) {
       r = trackp->play_ranks[h];
       s = trackp->play_suits[h];
-      newp->removed_ranks[s] |= bitMapRank[r];
+      newp->removed_ranks[s] |= bit_map_rank[r];
     }
   }
 }
@@ -517,7 +517,7 @@ auto Moves::MakeNext(const int trick, const int relHand,
     for (int h = 0; h < DDS_HANDS; h++) {
       r = trackp->play_ranks[h];
       s = trackp->play_suits[h];
-      newt.removed_ranks[s] |= bitMapRank[r];
+      newt.removed_ranks[s] |= bit_map_rank[r];
     }
   }
 
@@ -935,9 +935,9 @@ auto Moves::PrintMove(const MovePlyType &ourMply) const -> string {
   ss << "current " << ourMply.current << ", last " << ourMply.last << "\n";
   ss << " i suit sequence rank wgt\n";
   for (int i = 0; i <= ourMply.last; i++) {
-    ss << setw(2) << right << i << setw(3) << cardSuit[ourMply.move[i].suit]
+    ss << setw(2) << right << i << setw(3) << card_suit[ourMply.move[i].suit]
        << setw(9) << hex << ourMply.move[i].sequence << setw(3)
-       << cardRank[ourMply.move[i].rank] << setw(3) << ourMply.move[i].weight
+       << card_rank[ourMply.move[i].rank] << setw(3) << ourMply.move[i].weight
        << "\n";
   }
   return ss.str();
@@ -960,15 +960,15 @@ auto Moves::TrickToText(const int trick) const -> string {
   const MovePlyType &listp3 = moveList[trick][3];
 
   stringstream ss;
-  ss << setw(16) << left << "Last trick" << cardHand[track[trick].lead_hand]
-     << ": " << cardSuit[listp0.move[listp0.current].suit]
-     << cardRank[listp0.move[listp0.current].rank] << " - "
-     << cardSuit[listp1.move[listp1.current].suit]
-     << cardRank[listp1.move[listp1.current].rank] << " - "
-     << cardSuit[listp2.move[listp2.current].suit]
-     << cardRank[listp2.move[listp2.current].rank] << " - "
-     << cardSuit[listp3.move[listp3.current].suit]
-     << cardRank[listp3.move[listp3.current].rank] << "\n";
+  ss << setw(16) << left << "Last trick" << card_hand[track[trick].lead_hand]
+     << ": " << card_suit[listp0.move[listp0.current].suit]
+     << card_rank[listp0.move[listp0.current].rank] << " - "
+     << card_suit[listp1.move[listp1.current].suit]
+     << card_rank[listp1.move[listp1.current].rank] << " - "
+     << card_suit[listp2.move[listp2.current].suit]
+     << card_rank[listp2.move[listp2.current].rank] << " - "
+     << card_suit[listp3.move[listp3.current].suit]
+     << card_rank[listp3.move[listp3.current].rank] << "\n";
 
   return ss.str();
 }
