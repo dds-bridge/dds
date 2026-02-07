@@ -1,10 +1,17 @@
 #include <gtest/gtest.h>
+/// @file trick_three_bug.cpp
+/// @brief Regression test for the trick three bug in solve_board.
+/// @details Verifies the solver reports nine tricks for a known board.
+
 #include <api/dds.h>
 class TrickThreeBugTests : public ::testing::Test {
      protected:
         TrickThreeBugTests() = default;
 };
 
+/// @brief Return the maximum trick score from a FutureTricks result.
+/// @param fut FutureTricks produced by the solver.
+/// @return Maximum score value across all results.
 inline size_t dds_max(FutureTricks const & fut)
 {
     int res = 0;
@@ -15,6 +22,8 @@ inline size_t dds_max(FutureTricks const & fut)
     return static_cast<size_t>(res);
 }
 
+/// Test case: declarer makes nine tricks on the regression board.
+/// @details Reproduces the original bug scenario and validates the fix.
 TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks)
 {
     SetMaxThreads(0);

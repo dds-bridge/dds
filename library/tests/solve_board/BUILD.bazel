@@ -1,4 +1,4 @@
-# Google Test for Heuristic Sorting
+# Solve_board regression tests
 
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
