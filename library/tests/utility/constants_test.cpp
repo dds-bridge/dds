@@ -14,19 +14,19 @@ protected:
 
 // Test hand relationship arrays
 TEST_F(ConstantsTest, LhoArrayValues) {
-    // Test left-hand opponent mappings
-    EXPECT_EQ(lho[0], 3);  // North's LHO is West
-    EXPECT_EQ(lho[1], 0);  // East's LHO is North  
-    EXPECT_EQ(lho[2], 1);  // South's LHO is East
-    EXPECT_EQ(lho[3], 2);  // West's LHO is South
+    // Test left-hand opponent mappings (compass orientation)
+    EXPECT_EQ(lho[0], 1);  // North's LHO is East
+    EXPECT_EQ(lho[1], 2);  // East's LHO is South  
+    EXPECT_EQ(lho[2], 3);  // South's LHO is West
+    EXPECT_EQ(lho[3], 0);  // West's LHO is North
 }
 
 TEST_F(ConstantsTest, RhoArrayValues) {
-    // Test right-hand opponent mappings
-    EXPECT_EQ(rho[0], 1);  // North's RHO is East
-    EXPECT_EQ(rho[1], 2);  // East's RHO is South
-    EXPECT_EQ(rho[2], 3);  // South's RHO is West
-    EXPECT_EQ(rho[3], 0);  // West's RHO is North
+    // Test right-hand opponent mappings (compass orientation)
+    EXPECT_EQ(rho[0], 3);  // North's RHO is West
+    EXPECT_EQ(rho[1], 0);  // East's RHO is North
+    EXPECT_EQ(rho[2], 1);  // South's RHO is East
+    EXPECT_EQ(rho[3], 2);  // West's RHO is South
 }
 
 TEST_F(ConstantsTest, PartnerArrayValues) {

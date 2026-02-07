@@ -27,14 +27,14 @@ constexpr int DDS_NOTRUMP = 4;  ///< No trump strain index
 
 /// @brief Left-hand opponent for each hand (index -> hand value).
 /// Precomputed lookup: lho[i] gives the hand number of the player sitting to hand i's left.
-/// Values: lho[0]=3 (North's LHO is West), lho[1]=0 (East's LHO is North),
-///         lho[2]=1 (South's LHO is East), lho[3]=2 (West's LHO is South)
+/// Values: lho[0]=1 (North's LHO is East), lho[1]=2 (East's LHO is South),
+///         lho[2]=3 (South's LHO is West), lho[3]=0 (West's LHO is North)
 extern const int lho[DDS_HANDS];
 
 /// @brief Right-hand opponent for each hand (index -> hand value).
 /// Precomputed lookup: rho[i] gives the hand number of the player sitting to hand i's right.
-/// Values: rho[0]=1 (North's RHO is East), rho[1]=2 (East's RHO is South),
-///         rho[2]=3 (South's RHO is West), rho[3]=0 (West's RHO is North)
+/// Values: rho[0]=3 (North's RHO is West), rho[1]=0 (East's RHO is North),
+///         rho[2]=1 (South's RHO is East), rho[3]=2 (West's RHO is South)
 extern const int rho[DDS_HANDS];
 
 /// @brief Partner for each hand (index -> hand value).

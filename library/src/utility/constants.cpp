@@ -10,15 +10,16 @@
 #include "constants.h"
 
 /// Left-hand opponent array: lho[hand] gives the hand sitting to hand's left.
-/// Bridge hand positions: 0=North, 1=East, 2=South, 3=West (clockwise)
-/// Left opponent circulates counter-clockwise from player's perspective:
-/// North(0)->West(3), East(1)->North(0), South(2)->East(1), West(3)->South(2)
-const int lho[DDS_HANDS] = {3, 0, 1, 2};
+/// Bridge hand positions: 0=North, 1=East, 2=South, 3=West (compass orientation)
+/// From each player's perspective (compass direction):
+/// North's left=East(1), East's left=South(2), South's left=West(3), West's left=North(0)
+const int lho[DDS_HANDS] = {1, 2, 3, 0};
 
 /// Right-hand opponent array: rho[hand] gives the hand sitting to hand's right.
-/// Right opponent circulates clockwise from player's perspective:
-/// North(0)->East(1), East(1)->South(2), South(2)->West(3), West(3)->North(0)
-const int rho[DDS_HANDS] = {1, 2, 3, 0};
+/// Bridge hand positions: 0=North, 1=East, 2=South, 3=West (compass orientation)
+/// From each player's perspective (compass direction):
+/// North's right=West(3), East's right=North(0), South's right=East(1), West's right=South(2)
+const int rho[DDS_HANDS] = {3, 0, 1, 2};
 const int partner[DDS_HANDS] = {2, 3, 0, 1};
 
 /// Bitmask representation of card ranks.
