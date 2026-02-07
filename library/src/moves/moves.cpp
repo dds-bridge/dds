@@ -617,12 +617,14 @@ auto Moves::GetTrickData(const int tricks) -> const TrickDataType & {
   for (int relh = 0; relh < DDS_HANDS; relh++)
     data.play_count[trackp->play_suits[relh]]++;
 
+#ifdef DDS_DEBUG
   int sum = 0;
   for (int s = 0; s < DDS_SUITS; s++)
     sum += data.play_count[s];
 
   // Internal invariant: exactly 4 cards must be played per trick
   assert(sum == 4 && "GetTrickData: play_count sum must equal 4");
+#endif
 
   data.best_rank = trackp->move[3].rank;
   data.best_suit = trackp->move[3].suit;
