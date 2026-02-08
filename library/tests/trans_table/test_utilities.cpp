@@ -3,7 +3,6 @@
 
 // Project headers
 #include "test_utilities.hpp"
-#include "utility/constants.h"
 
 // C++ standard library headers
 #include <algorithm>
