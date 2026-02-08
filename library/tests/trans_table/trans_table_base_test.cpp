@@ -1,54 +1,74 @@
-#include <gtest/gtest.h>
+/// @file trans_table_base_test.cpp
+/// @brief Unit tests for TransTable base class functionality.
+/// @details Tests virtual methods, polymorphism, and base class interface.
+
+// C++ standard library headers
 #include <memory>
+
+// Third-party headers
+#include <gtest/gtest.h>
+
+// Project headers
 #include "trans_table/trans_table.hpp"
 
 namespace dds_test {
 
 // Test fixture for TransTable base class
-class TransTableBaseTest : public ::testing::Test {
+class TransTableBaseTest : public ::testing::Test
+{
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         // Create mock derived class for testing base functionality
         baseTable = std::make_unique<MockTransTable>();
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         baseTable.reset();
     }
 
     // Mock concrete implementation for testing base class
-    class MockTransTable : public TransTable {
+    class MockTransTable : public TransTable
+    {
     public:
         MockTransTable() : TransTable() {}
         
         ~MockTransTable() override = default;
 
-        void init(const int handLookup[][15]) override {
-            initCalled = true;
+        void init(const int handLookup[][15]) override
+        {
+            init_called_ = true;
         }
 
-        void set_memory_default(int megabytes) override {
-            defaultMemory = megabytes;
+        void set_memory_default(int megabytes) override
+        {
+            default_memory_ = megabytes;
         }
 
-        void set_memory_maximum(int megabytes) override {
-            maximumMemory = megabytes;
+        void set_memory_maximum(int megabytes) override
+        {
+            maximum_memory_ = megabytes;
         }
 
-        void make_tt() override {
-            ttMade = true;
+        void make_tt() override
+        {
+            tt_made_ = true;
         }
 
-        void reset_memory(ResetReason reason) override {
-            lastResetReason = reason;
+        void reset_memory(ResetReason reason) override
+        {
+            last_reset_reason_ = reason;
         }
 
-        void return_all_memory() override {
-            memoryReturned = true;
+        void return_all_memory() override
+        {
+            memory_returned_ = true;
         }
 
-        double memory_in_use() const override {
-            return testMemoryUsage;
+        double memory_in_use() const override
+        {
+            return test_memory_usage_;
         }
 
         NodeCards const * lookup(
@@ -57,14 +77,15 @@ protected:
             const unsigned short aggr_target[],
             const int hand_dist[],
             int limit,
-            bool& lowerFlag) override {
-            
-            lookupCalled = true;
-            lastTrick = trick;
-            lastHand = hand;
-            lastLimit = limit;
-            lowerFlag = testLowerFlag;
-            return testLookupResult;
+            bool& lowerFlag) override
+        {
+
+            lookup_called_ = true;
+            last_trick_ = trick;
+            last_hand_ = hand;
+            last_limit_ = limit;
+            lowerFlag = test_lower_flag_;
+            return test_lookup_result_;
         }
 
         void add(
@@ -73,24 +94,26 @@ protected:
             const unsigned short aggr_target[],
             const unsigned short win_ranks_arg[],
             const NodeCards& first,
-            bool flag) override {
-            
-            addCalled = true;
-            addTrick = trick;
-            addHand = hand;
-            addFlag = flag;
+            bool flag) override
+        {
+
+            add_called_ = true;
+            add_trick_ = trick;
+            add_hand_ = hand;
+            add_flag_ = flag;
         }
 
         void print_suits(
             std::ofstream& /*fout*/,
             int /*trick*/,
-            int /*hand*/) const override {
-            
-            printSuitsCalled = true;
+            int /*hand*/) const override
+        {
+            print_suits_called_ = true;
         }
 
-        void print_all_suits(std::ofstream& /*fout*/) const override {
-            printAllSuitsCalled = true;
+        void print_all_suits(std::ofstream& /*fout*/) const override
+        {
+            print_all_suits_called_ = true;
         }
 
         // No-op implementations for remaining pure-virtual printers
@@ -106,50 +129,52 @@ protected:
         void print_summary_entry_stats(std::ofstream& /*fout*/) const override {}
 
         // Test state variables (mutable for const methods)
-        mutable bool initCalled = false;
-        mutable bool ttMade = false;
-        mutable bool memoryReturned = false;
-        mutable bool lookupCalled = false;
-        mutable bool addCalled = false;
-        mutable bool printSuitsCalled = false;
-        mutable bool printAllSuitsCalled = false;
-        
-        int defaultMemory = 0;
-        int maximumMemory = 0;
-    ResetReason lastResetReason = ResetReason::Unknown;
-        
+        mutable bool init_called_ = false;
+        mutable bool tt_made_ = false;
+        mutable bool memory_returned_ = false;
+        mutable bool lookup_called_ = false;
+        mutable bool add_called_ = false;
+        mutable bool print_suits_called_ = false;
+        mutable bool print_all_suits_called_ = false;
+
+        int default_memory_ = 0;
+        int maximum_memory_ = 0;
+        ResetReason last_reset_reason_ = ResetReason::Unknown;
+
         // Lookup test state
-        int lastTrick = -1;
-        int lastHand = -1;
-        int lastLimit = -1;
-        bool testLowerFlag = false;
-    NodeCards const* testLookupResult = nullptr;
-        
+        int last_trick_ = -1;
+        int last_hand_ = -1;
+        int last_limit_ = -1;
+        bool test_lower_flag_ = false;
+        NodeCards const* test_lookup_result_ = nullptr;
+
         // Add test state
-        int addTrick = -1;
-        int addHand = -1;
-        bool addFlag = false;
-        
+        int add_trick_ = -1;
+        int add_hand_ = -1;
+        bool add_flag_ = false;
+
         // Memory test state
-        double testMemoryUsage = 42.5;
+        double test_memory_usage_ = 42.5;
     };
 
     std::unique_ptr<MockTransTable> baseTable;
 };
 
 // Construction/Destruction Tests
-TEST_F(TransTableBaseTest, ConstructorCreatesValidObject) {
+TEST_F(TransTableBaseTest, ConstructorCreatesValidObject)
+{
     EXPECT_NE(baseTable.get(), nullptr);
     
     // Verify initial state
-    EXPECT_FALSE(baseTable->initCalled);
-    EXPECT_FALSE(baseTable->ttMade);
-    EXPECT_FALSE(baseTable->memoryReturned);
-    EXPECT_EQ(baseTable->defaultMemory, 0);
-    EXPECT_EQ(baseTable->maximumMemory, 0);
+    EXPECT_FALSE(baseTable->init_called_);
+    EXPECT_FALSE(baseTable->tt_made_);
+    EXPECT_FALSE(baseTable->memory_returned_);
+    EXPECT_EQ(baseTable->default_memory_, 0);
+    EXPECT_EQ(baseTable->maximum_memory_, 0);
 }
 
-TEST_F(TransTableBaseTest, VirtualDestructorWorks) {
+TEST_F(TransTableBaseTest, VirtualDestructorWorks)
+{
     // Create through base pointer to verify virtual destructor
     std::unique_ptr<TransTable> basePtr = std::make_unique<MockTransTable>();
     EXPECT_NE(basePtr.get(), nullptr);
@@ -161,56 +186,63 @@ TEST_F(TransTableBaseTest, VirtualDestructorWorks) {
 }
 
 // Interface Verification Tests
-TEST_F(TransTableBaseTest, InitMethodCallsOverride) {
-    int handLookup[15][15]; // Mock lookup table
+TEST_F(TransTableBaseTest, InitMethodCallsOverride)
+{
+    int handLookup[15][15] = {}; // Mock lookup table (zero-initialized)
     
-    EXPECT_FALSE(baseTable->initCalled);
+    EXPECT_FALSE(baseTable->init_called_);
     baseTable->init(handLookup);
-    EXPECT_TRUE(baseTable->initCalled);
+    EXPECT_TRUE(baseTable->init_called_);
 }
 
-TEST_F(TransTableBaseTest, SetMemoryMethodsWork) {
+TEST_F(TransTableBaseTest, SetMemoryMethodsWork)
+{
     baseTable->set_memory_default(64);
-    EXPECT_EQ(baseTable->defaultMemory, 64);
-    
+    EXPECT_EQ(baseTable->default_memory_, 64);
+
     baseTable->set_memory_maximum(128);
-    EXPECT_EQ(baseTable->maximumMemory, 128);
+    EXPECT_EQ(baseTable->maximum_memory_, 128);
 }
 
-TEST_F(TransTableBaseTest, MakeTTMethodCallsOverride) {
-    EXPECT_FALSE(baseTable->ttMade);
+TEST_F(TransTableBaseTest, MakeTTMethodCallsOverride)
+{
+    EXPECT_FALSE(baseTable->tt_made_);
     baseTable->make_tt();
-    EXPECT_TRUE(baseTable->ttMade);
+    EXPECT_TRUE(baseTable->tt_made_);
 }
 
-TEST_F(TransTableBaseTest, ResetMemoryMethodCallsOverride) {
-    EXPECT_EQ(baseTable->lastResetReason, ResetReason::Unknown);
-    
+TEST_F(TransTableBaseTest, ResetMemoryMethodCallsOverride)
+{
+    EXPECT_EQ(baseTable->last_reset_reason_, ResetReason::Unknown);
+
     baseTable->reset_memory(ResetReason::NewDeal);
-    EXPECT_EQ(baseTable->lastResetReason, ResetReason::NewDeal);
-    
+    EXPECT_EQ(baseTable->last_reset_reason_, ResetReason::NewDeal);
+
     baseTable->reset_memory(ResetReason::MemoryExhausted);
-    EXPECT_EQ(baseTable->lastResetReason, ResetReason::MemoryExhausted);
+    EXPECT_EQ(baseTable->last_reset_reason_, ResetReason::MemoryExhausted);
 }
 
-TEST_F(TransTableBaseTest, ReturnAllMemoryMethodCallsOverride) {
-    EXPECT_FALSE(baseTable->memoryReturned);
+TEST_F(TransTableBaseTest, ReturnAllMemoryMethodCallsOverride)
+{
+    EXPECT_FALSE(baseTable->memory_returned_);
     baseTable->return_all_memory();
-    EXPECT_TRUE(baseTable->memoryReturned);
+    EXPECT_TRUE(baseTable->memory_returned_);
 }
 
-TEST_F(TransTableBaseTest, MemoryInUseMethodCallsOverride) {
+TEST_F(TransTableBaseTest, MemoryInUseMethodCallsOverride)
+{
     // Test that virtual method calls override implementation
-    double memUsage = baseTable->memory_in_use();
+    const double memUsage = baseTable->memory_in_use();
     EXPECT_EQ(memUsage, 42.5); // Should return mock value
 }
 
-TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
-    unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
-    int hand_dist[4] = {13, 13, 13, 13};
+TEST_F(TransTableBaseTest, LookupMethodCallsOverride)
+{
+    const unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
+    const int hand_dist[4] = {13, 13, 13, 13};
     bool lowerFlag = true;
     
-    EXPECT_FALSE(baseTable->lookupCalled);
+    EXPECT_FALSE(baseTable->lookup_called_);
     
     NodeCards const* result = baseTable->lookup(
         10, // trick
@@ -221,20 +253,21 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
         lowerFlag
     );
     
-    EXPECT_TRUE(baseTable->lookupCalled);
-    EXPECT_EQ(baseTable->lastTrick, 10);
-    EXPECT_EQ(baseTable->lastHand, 2);
-    EXPECT_EQ(baseTable->lastLimit, 8);
-    EXPECT_EQ(lowerFlag, baseTable->testLowerFlag); // Should be modified by override
-    EXPECT_EQ(result, baseTable->testLookupResult);
+    EXPECT_TRUE(baseTable->lookup_called_);
+    EXPECT_EQ(baseTable->last_trick_, 10);
+    EXPECT_EQ(baseTable->last_hand_, 2);
+    EXPECT_EQ(baseTable->last_limit_, 8);
+    EXPECT_EQ(lowerFlag, baseTable->test_lower_flag_); // Should be modified by override
+    EXPECT_EQ(result, baseTable->test_lookup_result_);
 }
 
-TEST_F(TransTableBaseTest, AddMethodCallsOverride) {
-    unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
-    unsigned short win_ranks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
+TEST_F(TransTableBaseTest, AddMethodCallsOverride)
+{
+    const unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
+    const unsigned short win_ranks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
     NodeCards nodeData;
     
-    EXPECT_FALSE(baseTable->addCalled);
+    EXPECT_FALSE(baseTable->add_called_);
     
     baseTable->add(
         8,  // trick
@@ -245,30 +278,32 @@ TEST_F(TransTableBaseTest, AddMethodCallsOverride) {
         true // flag
     );
     
-    EXPECT_TRUE(baseTable->addCalled);
-    EXPECT_EQ(baseTable->addTrick, 8);
-    EXPECT_EQ(baseTable->addHand, 1);
-    EXPECT_TRUE(baseTable->addFlag);
+    EXPECT_TRUE(baseTable->add_called_);
+    EXPECT_EQ(baseTable->add_trick_, 8);
+    EXPECT_EQ(baseTable->add_hand_, 1);
+    EXPECT_TRUE(baseTable->add_flag_);
 }
 
-TEST_F(TransTableBaseTest, PrintMethodsCallOverride) {
+TEST_F(TransTableBaseTest, PrintMethodsCallOverride)
+{
     std::ofstream testFile("test_output.txt");
     
-    EXPECT_FALSE(baseTable->printSuitsCalled);
-    EXPECT_FALSE(baseTable->printAllSuitsCalled);
+    EXPECT_FALSE(baseTable->print_suits_called_);
+    EXPECT_FALSE(baseTable->print_all_suits_called_);
     
     baseTable->print_suits(testFile, 5, 2); // trick=5, hand=2
-    EXPECT_TRUE(baseTable->printSuitsCalled);
+    EXPECT_TRUE(baseTable->print_suits_called_);
     
     baseTable->print_all_suits(testFile);
-    EXPECT_TRUE(baseTable->printAllSuitsCalled);
+    EXPECT_TRUE(baseTable->print_all_suits_called_);
     
     testFile.close();
     std::remove("test_output.txt"); // Cleanup
 }
 
 // Interface Contract Tests
-TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures) {
+TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures)
+{
     // This test verifies that all expected virtual methods exist
     // and have the correct signatures by calling them through base pointer
     
@@ -303,16 +338,17 @@ TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures) {
     nullFile.close();
 }
 
-TEST_F(TransTableBaseTest, PolymorphicBehaviorWorks) {
+TEST_F(TransTableBaseTest, PolymorphicBehaviorWorks)
+{
     // Verify that virtual dispatch works correctly
     TransTable* basePtr = baseTable.get();
     
     // Calls should go to derived class implementations
     basePtr->make_tt();
-    EXPECT_TRUE(baseTable->ttMade);
+    EXPECT_TRUE(baseTable->tt_made_);
     
     basePtr->return_all_memory();
-    EXPECT_TRUE(baseTable->memoryReturned);
+    EXPECT_TRUE(baseTable->memory_returned_);
     
     double memUsage = basePtr->memory_in_use();
     EXPECT_EQ(memUsage, 42.5); // Should call derived implementation

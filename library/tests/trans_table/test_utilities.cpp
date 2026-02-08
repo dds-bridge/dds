@@ -1,24 +1,32 @@
+/// @file test_utilities.cpp
+/// @brief Implementation of test utilities for trans_table tests.
+
+// Project headers
 #include "test_utilities.hpp"
-#include <iostream>
-#include <iomanip>
-#include <sstream>
+
+// C++ standard library headers
 #include <algorithm>
 #include <cstdlib>
-#include "utility/constants.h"
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 namespace dds_test {
 
 // TransTableTestBase implementation
-void TransTableTestBase::SetUp() {
+void TransTableTestBase::SetUp()
+{
     CreateStandardHandLookup(standardHandLookup);
     setupComplete = true;
 }
 
-void TransTableTestBase::TearDown() {
+void TransTableTestBase::TearDown()
+{
     setupComplete = false;
 }
 
-void TransTableTestBase::CreateStandardHandLookup(int handLookup[][15]) {
+void TransTableTestBase::CreateStandardHandLookup(int handLookup[][15])
+{
     // Initialize with standard hand configuration
     // This creates a mapping from relative ranks to hand positions
     for (int hand = 0; hand < DDS_HANDS; hand++) {
@@ -57,7 +65,8 @@ void TransTableTestBase::CreateTestPositionData(
     }
 }
 
-double TransTableTestBase::GetInitialMemoryUsage(TransTable* table) {
+double TransTableTestBase::GetInitialMemoryUsage(TransTable* table)
+{
     return table ? table->memory_in_use() : 0.0;
 }
 
@@ -78,7 +87,8 @@ double MemoryTracker::GetCurrentUsage() const {
     return table_ ? table_->memory_in_use() : 0.0;
 }
 
-void MemoryTracker::UpdatePeak() {
+void MemoryTracker::UpdatePeak()
+{
     if (table_) {
         double current = table_->memory_in_use();
         if (current > peakUsage_) {
@@ -98,19 +108,22 @@ PerformanceTimer::PerformanceTimer() : isRunning_(false) {
     Reset();
 }
 
-void PerformanceTimer::Start() {
+void PerformanceTimer::Start()
+{
     startTime_ = std::chrono::high_resolution_clock::now();
     isRunning_ = true;
 }
 
-void PerformanceTimer::Stop() {
+void PerformanceTimer::Stop()
+{
     if (isRunning_) {
         endTime_ = std::chrono::high_resolution_clock::now();
         isRunning_ = false;
     }
 }
 
-void PerformanceTimer::Reset() {
+void PerformanceTimer::Reset()
+{
     startTime_ = std::chrono::high_resolution_clock::time_point();
     endTime_ = std::chrono::high_resolution_clock::time_point();
     isRunning_ = false;
@@ -131,14 +144,16 @@ double PerformanceTimer::GetElapsedSeconds() const {
     return ms.count() / 1000.0;
 }
 
-void PerformanceTimer::StartOperation(const std::string& name) {
+void PerformanceTimer::StartOperation(const std::string& name)
+{
     operations_[name].count++;
     // Store start time for this operation
     startTime_ = std::chrono::high_resolution_clock::now();
     isRunning_ = true;
 }
 
-void PerformanceTimer::EndOperation(const std::string& name) {
+void PerformanceTimer::EndOperation(const std::string& name)
+{
     if (isRunning_) {
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now() - startTime_);
@@ -177,7 +192,8 @@ void PerformanceTimer::PrintResults() const {
 }
 
 // PositionComparator implementation
-bool PositionComparator::AreEqual(const NodeCards& a, const NodeCards& b) {
+bool PositionComparator::AreEqual(const NodeCards& a, const NodeCards& b)
+{
     if (a.upper_bound != b.upper_bound || a.lower_bound != b.lower_bound) {
         return false;
     }
@@ -222,7 +238,8 @@ bool PositionComparator::RelativeRanksMatch(
     return true;
 }
 
-std::string PositionComparator::PositionToString(const NodeCards& node) {
+std::string PositionComparator::PositionToString(const NodeCards& node)
+{
     std::ostringstream oss;
     oss << "NodeData{ubound:" << static_cast<int>(node.upper_bound)
         << ", lbound:" << static_cast<int>(node.lower_bound)
@@ -239,7 +256,8 @@ std::string PositionComparator::PositionToString(const NodeCards& node) {
     return oss.str();
 }
 
-std::string PositionComparator::RanksToString(const unsigned short ranks[DDS_SUITS]) {
+std::string PositionComparator::RanksToString(const unsigned short ranks[DDS_SUITS])
+{
     std::ostringstream oss;
     oss << "Ranks[";
     for (int suit = 0; suit < DDS_SUITS; suit++) {
@@ -251,7 +269,8 @@ std::string PositionComparator::RanksToString(const unsigned short ranks[DDS_SUI
 }
 
 // TestDataValidator implementation
-bool TestDataValidator::IsValidHandDistribution(const int hand_dist[DDS_HANDS]) {
+bool TestDataValidator::IsValidHandDistribution(const int hand_dist[DDS_HANDS])
+{
     int total = 0;
     for (int hand = 0; hand < DDS_HANDS; hand++) {
         if (hand_dist[hand] < 0 || hand_dist[hand] > 13) {
@@ -264,7 +283,8 @@ bool TestDataValidator::IsValidHandDistribution(const int hand_dist[DDS_HANDS]) 
     return total >= 0 && total <= 52;
 }
 
-bool TestDataValidator::IsValidAggrTarget(const unsigned short aggrTarget[DDS_SUITS]) {
+bool TestDataValidator::IsValidAggrTarget(const unsigned short aggrTarget[DDS_SUITS])
+{
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         // Check if the aggregate value is within reasonable bounds
         if (aggrTarget[suit] > 0x1FFF) { // 13 bits max for card combinations
@@ -274,7 +294,8 @@ bool TestDataValidator::IsValidAggrTarget(const unsigned short aggrTarget[DDS_SU
     return true;
 }
 
-bool TestDataValidator::IsValidWinRanks(const unsigned short win_ranks[DDS_SUITS]) {
+bool TestDataValidator::IsValidWinRanks(const unsigned short win_ranks[DDS_SUITS])
+{
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         // Check if winning ranks are within valid range
         if (win_ranks[suit] > 0x1FFF) { // 13 bits max
@@ -284,7 +305,8 @@ bool TestDataValidator::IsValidWinRanks(const unsigned short win_ranks[DDS_SUITS
     return true;
 }
 
-bool TestDataValidator::IsValidNodeData(const NodeCards& node) {
+bool TestDataValidator::IsValidNodeData(const NodeCards& node)
+{
     // Check bounds are reasonable
     if (node.upper_bound < 0 || node.upper_bound > 13 ||
         node.lower_bound < 0 || node.lower_bound > 13 ||
@@ -308,7 +330,8 @@ bool TestDataValidator::IsValidNodeData(const NodeCards& node) {
     return true;
 }
 
-bool TestDataValidator::IsValidTrickHand(int trick, int hand) {
+bool TestDataValidator::IsValidTrickHand(int trick, int hand)
+{
     return (trick >= 1 && trick <= 13) && 
            (hand >= 0 && hand < DDS_HANDS);
 }

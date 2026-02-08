@@ -1,14 +1,19 @@
-#ifndef DDS_TEST_UTILITIES_H
-#define DDS_TEST_UTILITIES_H
+/// @file test_utilities.hpp
+/// @brief Test utilities and fixtures for trans_table tests.
+/// @details Provides base fixtures, memory tracking, and test data creation helpers.
 
-#include <gtest/gtest.h>
-#include <memory>
-#include <chrono>
-#include <string>
+#pragma once
+
+// C++ standard library headers
 #include <array>
+#include <chrono>
 #include <map>
-#include "trans_table/trans_table.hpp"
+#include <memory>
+#include <string>
+
+// Project headers
 #include <api/dll.h>
+#include "trans_table/trans_table.hpp"
 
 namespace dds_test {
 
@@ -136,5 +141,3 @@ public:
 };
 
 } // namespace dds_test
-
-#endif // DDS_TEST_UTILITIES_H

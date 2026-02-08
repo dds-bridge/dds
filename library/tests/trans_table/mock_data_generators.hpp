@@ -1,11 +1,17 @@
-#ifndef DDS_MOCK_DATA_GENERATORS_H
-#define DDS_MOCK_DATA_GENERATORS_H
+/// @file mock_data_generators.hpp
+/// @brief Mock data generators for trans_table testing.
+/// @details Provides generators for hands, positions, and game sequences.
 
-#include <vector>
-#include <random>
+#pragma once
+
+// C++ standard library headers
 #include <array>
-#include "trans_table/trans_table.hpp"
+#include <random>
+#include <vector>
+
+// Project headers
 #include <api/dll.h>
+#include "trans_table/trans_table.hpp"
 
 namespace dds_test {
 
@@ -183,5 +189,3 @@ private:
 };
 
 } // namespace dds_test
-
-#endif // DDS_MOCK_DATA_GENERATORS_H
