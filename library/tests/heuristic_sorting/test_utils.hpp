@@ -1,5 +1,5 @@
-#ifndef DDS_TEST_UTILS_H
-#define DDS_TEST_UTILS_H
+#ifndef LIBRARY_TESTS_HEURISTIC_SORTING_TEST_UTILS_HPP_
+#define LIBRARY_TESTS_HEURISTIC_SORTING_TEST_UTILS_HPP_
 
 #include <string>
 #include "heuristic_sorting/heuristic_sorting.hpp"
@@ -21,4 +21,4 @@ void init_rel_and_track(
 	int lead_hand = 0,
 	int trump = DDS_NOTRUMP);
 
-#endif // DDS_TEST_UTILS_H
+#endif // LIBRARY_TESTS_HEURISTIC_SORTING_TEST_UTILS_HPP_
