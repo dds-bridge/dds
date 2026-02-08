@@ -3,16 +3,16 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 cc_library(
     name = "test_utilities",
     srcs = [
-        "test_utilities.cpp",
         "mock_data_generators.cpp",
+        "test_utilities.cpp",
     ],
     hdrs = [
-        "test_utilities.hpp",
         "mock_data_generators.hpp",
+        "test_utilities.hpp",
     ],
     deps = [
+        "//library/src/api:api_definitions",
         "//library/src/trans_table:testable_trans_table",
-    "//library/src/api:api_definitions",
         "@googletest//:gtest",
     ],
     visibility = ["//visibility:public"],
