@@ -1,3 +1,6 @@
+/// @file test_utilities.cpp
+/// @brief Implementation of test utilities for trans_table tests.
+
 // Project headers
 #include "test_utilities.hpp"
 #include "utility/constants.h"

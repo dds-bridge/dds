@@ -1,3 +1,7 @@
+/// @file mock_data_generators.hpp
+/// @brief Mock data generators for trans_table testing.
+/// @details Provides generators for hands, positions, and game sequences.
+
 #pragma once
 
 // C++ standard library headers

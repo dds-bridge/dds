@@ -1,3 +1,7 @@
+/// @file trans_table_base_test.cpp
+/// @brief Unit tests for TransTable base class functionality.
+/// @details Tests virtual methods, polymorphism, and base class interface.
+
 // C++ standard library headers
 #include <memory>
 

@@ -1,3 +1,6 @@
+/// @file mock_data_generators.cpp
+/// @brief Implementation of mock data generators for trans_table tests.
+
 // Project headers
 #include "mock_data_generators.hpp"
 #include "utility/constants.h"

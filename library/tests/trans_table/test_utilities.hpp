@@ -1,3 +1,7 @@
+/// @file test_utilities.hpp
+/// @brief Test utilities and fixtures for trans_table tests.
+/// @details Provides base fixtures, memory tracking, and test data creation helpers.
+
 #pragma once
 
 // C++ standard library headers
