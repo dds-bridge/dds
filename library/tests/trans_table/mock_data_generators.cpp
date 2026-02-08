@@ -10,7 +10,8 @@ MockHandGenerator::MockHandGenerator(unsigned int seed)
     : generator_(seed), cardDist_(0, 12), suitDist_(0, 3) {
 }
 
-void MockHandGenerator::GenerateRandomDistribution(int hand_dist[DDS_HANDS]) {
+void MockHandGenerator::GenerateRandomDistribution(int hand_dist[DDS_HANDS])
+{
     // Generate random but valid distribution
     int remaining = 52;
     for (int hand = 0; hand < DDS_HANDS - 1; hand++) {
@@ -24,14 +25,16 @@ void MockHandGenerator::GenerateRandomDistribution(int hand_dist[DDS_HANDS]) {
     EnsureValidTotalCards(hand_dist);
 }
 
-void MockHandGenerator::GenerateBalancedDistribution(int hand_dist[DDS_HANDS]) {
+void MockHandGenerator::GenerateBalancedDistribution(int hand_dist[DDS_HANDS])
+{
     // Each hand gets approximately the same number of cards
     for (int hand = 0; hand < DDS_HANDS; hand++) {
         hand_dist[hand] = 13; // Standard distribution
     }
 }
 
-void MockHandGenerator::GenerateUnbalancedDistribution(int hand_dist[DDS_HANDS]) {
+void MockHandGenerator::GenerateUnbalancedDistribution(int hand_dist[DDS_HANDS])
+{
     // Create an unbalanced distribution
     hand_dist[0] = 10;
     hand_dist[1] = 15;
@@ -41,19 +44,22 @@ void MockHandGenerator::GenerateUnbalancedDistribution(int hand_dist[DDS_HANDS])
     EnsureValidTotalCards(hand_dist);
 }
 
-void MockHandGenerator::GenerateVoidSuitDistribution(int hand_dist[DDS_HANDS], int suitToVoid) {
+void MockHandGenerator::GenerateVoidSuitDistribution(int hand_dist[DDS_HANDS], int suitToVoid)
+{
     GenerateBalancedDistribution(hand_dist);
     // This is hand distribution, not suit distribution
     // For now, just create a standard distribution
 }
 
-void MockHandGenerator::GenerateLongSuitDistribution(int hand_dist[DDS_HANDS], int suitToExtend) {
+void MockHandGenerator::GenerateLongSuitDistribution(int hand_dist[DDS_HANDS], int suitToExtend)
+{
     GenerateBalancedDistribution(hand_dist);
     // This is hand distribution, not suit distribution
     // For now, just create a standard distribution
 }
 
-void MockHandGenerator::GenerateStandardHandLookup(int handLookup[][15]) {
+void MockHandGenerator::GenerateStandardHandLookup(int handLookup[][15])
+{
     // Create standard hand lookup table
     for (int hand = 0; hand < DDS_HANDS; hand++) {
         for (int rank = 0; rank < 15; rank++) {
@@ -62,7 +68,8 @@ void MockHandGenerator::GenerateStandardHandLookup(int handLookup[][15]) {
     }
 }
 
-void MockHandGenerator::GenerateRandomHandLookup(int handLookup[][15]) {
+void MockHandGenerator::GenerateRandomHandLookup(int handLookup[][15])
+{
     for (int hand = 0; hand < DDS_HANDS; hand++) {
         for (int rank = 0; rank < 15; rank++) {
             std::uniform_int_distribution<int> dist(0, DDS_HANDS - 1);
@@ -91,7 +98,8 @@ void MockHandGenerator::PrintDistribution(const int hand_dist[DDS_HANDS]) const 
     std::cout << "]\n";
 }
 
-void MockHandGenerator::EnsureValidTotalCards(int hand_dist[DDS_HANDS], int targetTotal) {
+void MockHandGenerator::EnsureValidTotalCards(int hand_dist[DDS_HANDS], int targetTotal)
+{
     int total = 0;
     for (int hand = 0; hand < DDS_HANDS; hand++) {
         total += hand_dist[hand];
@@ -165,7 +173,8 @@ void MockPositionGenerator::GenerateEndGamePosition(
     }
 }
 
-void MockPositionGenerator::GenerateAggrTarget(unsigned short aggrTarget[DDS_SUITS], int complexity) {
+void MockPositionGenerator::GenerateAggrTarget(unsigned short aggrTarget[DDS_SUITS], int complexity)
+{
     if (complexity == 1) {
         GenerateSimpleAggrTarget(aggrTarget);
     } else {
@@ -173,19 +182,22 @@ void MockPositionGenerator::GenerateAggrTarget(unsigned short aggrTarget[DDS_SUI
     }
 }
 
-void MockPositionGenerator::GenerateSimpleAggrTarget(unsigned short aggrTarget[DDS_SUITS]) {
+void MockPositionGenerator::GenerateSimpleAggrTarget(unsigned short aggrTarget[DDS_SUITS])
+{
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         aggrTarget[suit] = static_cast<unsigned short>(0x1000 + suit * 0x100);
     }
 }
 
-void MockPositionGenerator::GenerateComplexAggrTarget(unsigned short aggrTarget[DDS_SUITS]) {
+void MockPositionGenerator::GenerateComplexAggrTarget(unsigned short aggrTarget[DDS_SUITS])
+{
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         aggrTarget[suit] = static_cast<unsigned short>(aggrDist_(generator_));
     }
 }
 
-void MockPositionGenerator::GenerateNodeCardsType(NodeCards& node, int tricksRemaining) {
+void MockPositionGenerator::GenerateNodeCardsType(NodeCards& node, int tricksRemaining)
+{
     node.upper_bound = static_cast<char>(tricksRemaining);
     node.lower_bound = static_cast<char>(std::max(0, tricksRemaining - 3));
     node.best_move_suit = static_cast<char>(std::uniform_int_distribution<int>(0, DDS_SUITS - 1)(generator_));
@@ -196,7 +208,8 @@ void MockPositionGenerator::GenerateNodeCardsType(NodeCards& node, int tricksRem
     }
 }
 
-MockPositionGenerator::GameSequence MockPositionGenerator::GenerateGameSequence(int startTrick, int endTrick) {
+MockPositionGenerator::GameSequence MockPositionGenerator::GenerateGameSequence(int startTrick, int endTrick)
+{
     GameSequence sequence;
     
     for (int trick = startTrick; trick <= endTrick; trick++) {
@@ -217,7 +230,8 @@ MockPositionGenerator::GameSequence MockPositionGenerator::GenerateGameSequence(
     return sequence;
 }
 
-void MockPositionGenerator::AdjustForTrickNumber(int trick, int hand_dist[DDS_HANDS]) {
+void MockPositionGenerator::AdjustForTrickNumber(int trick, int hand_dist[DDS_HANDS])
+{
     for (int hand = 0; hand < DDS_HANDS; hand++) {
         hand_dist[hand] = std::max(0, 13 - trick);
     }
@@ -228,13 +242,15 @@ MockWinRankGenerator::MockWinRankGenerator(unsigned int seed)
     : generator_(seed), rankDist_(0, 0x1FFF), coinFlip_(0.5) {
 }
 
-void MockWinRankGenerator::GenerateSimpleWinRanks(unsigned short win_ranks[DDS_SUITS]) {
+void MockWinRankGenerator::GenerateSimpleWinRanks(unsigned short win_ranks[DDS_SUITS])
+{
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         win_ranks[suit] = static_cast<unsigned short>(0x1000 + suit * 0x100);
     }
 }
 
-void MockWinRankGenerator::GenerateComplexWinRanks(unsigned short win_ranks[DDS_SUITS]) {
+void MockWinRankGenerator::GenerateComplexWinRanks(unsigned short win_ranks[DDS_SUITS])
+{
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         win_ranks[suit] = rankDist_(generator_);
         EnsureValidRankPattern(win_ranks[suit]);
@@ -267,37 +283,44 @@ void MockWinRankGenerator::GenerateRelativeRankScenario(
     }
 }
 
-void MockWinRankGenerator::GenerateSingleSuitWin(unsigned short win_ranks[DDS_SUITS], int suit) {
+void MockWinRankGenerator::GenerateSingleSuitWin(unsigned short win_ranks[DDS_SUITS], int suit)
+{
     for (int s = 0; s < DDS_SUITS; s++) {
         win_ranks[s] = (s == suit) ? static_cast<unsigned short>(0x1000) : 0;
     }
 }
 
-void MockWinRankGenerator::GenerateMultiSuitWin(unsigned short win_ranks[DDS_SUITS]) {
+void MockWinRankGenerator::GenerateMultiSuitWin(unsigned short win_ranks[DDS_SUITS])
+{
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         win_ranks[suit] = coinFlip_(generator_) ? static_cast<unsigned short>(0x1000 + suit * 0x200) : 0;
     }
 }
 
-void MockWinRankGenerator::GenerateNoWinRanks(unsigned short win_ranks[DDS_SUITS]) {
+void MockWinRankGenerator::GenerateNoWinRanks(unsigned short win_ranks[DDS_SUITS])
+{
     for (int suit = 0; suit < DDS_SUITS; suit++) {
         win_ranks[suit] = 0;
     }
 }
 
-void MockWinRankGenerator::GenerateHighCardPattern(unsigned short& suitRanks) {
+void MockWinRankGenerator::GenerateHighCardPattern(unsigned short& suitRanks)
+{
     suitRanks = 0x1C00; // A, K, Q
 }
 
-void MockWinRankGenerator::GenerateLowCardPattern(unsigned short& suitRanks) {
+void MockWinRankGenerator::GenerateLowCardPattern(unsigned short& suitRanks)
+{
     suitRanks = 0x000E; // 2, 3, 4
 }
 
-void MockWinRankGenerator::GenerateSequencePattern(unsigned short& suitRanks) {
+void MockWinRankGenerator::GenerateSequencePattern(unsigned short& suitRanks)
+{
     suitRanks = 0x01F0; // 5, 6, 7, 8, 9
 }
 
-void MockWinRankGenerator::GenerateGappedPattern(unsigned short& suitRanks) {
+void MockWinRankGenerator::GenerateGappedPattern(unsigned short& suitRanks)
+{
     suitRanks = 0x1401; // A, 7, 2
 }
 
@@ -333,11 +356,13 @@ void MockWinRankGenerator::PrintWinRanks(const unsigned short win_ranks[DDS_SUIT
     std::cout << std::dec << "]\n";
 }
 
-void MockWinRankGenerator::EnsureValidRankPattern(unsigned short& ranks) {
+void MockWinRankGenerator::EnsureValidRankPattern(unsigned short& ranks)
+{
     ranks &= 0x1FFF; // Ensure only 13 bits are set
 }
 
-unsigned short MockWinRankGenerator::CreateRankSequence(int start, int length) {
+unsigned short MockWinRankGenerator::CreateRankSequence(int start, int length)
+{
     unsigned short result = 0;
     for (int i = 0; i < length && (start + i) <= 14; i++) {
         result |= (1 << (start + i - 2)); // Bit positions for ranks 2-14
@@ -350,7 +375,8 @@ MockDataFactory::MockDataFactory(unsigned int baseSeed)
     : handGen_(baseSeed), posGen_(baseSeed + 1), rankGen_(baseSeed + 2), currentSeed_(baseSeed) {
 }
 
-MockDataFactory::TestScenario MockDataFactory::CreateBasicScenario() {
+MockDataFactory::TestScenario MockDataFactory::CreateBasicScenario()
+{
     TestScenario scenario;
     
     posGen_.GenerateEarlyGamePosition(
@@ -365,7 +391,8 @@ MockDataFactory::TestScenario MockDataFactory::CreateBasicScenario() {
     return scenario;
 }
 
-MockDataFactory::TestScenario MockDataFactory::CreateComplexScenario() {
+MockDataFactory::TestScenario MockDataFactory::CreateComplexScenario()
+{
     TestScenario scenario;
     
     posGen_.GenerateMiddleGamePosition(
@@ -380,7 +407,8 @@ MockDataFactory::TestScenario MockDataFactory::CreateComplexScenario() {
     return scenario;
 }
 
-MockDataFactory::TestScenario MockDataFactory::CreateEdgeCaseScenario() {
+MockDataFactory::TestScenario MockDataFactory::CreateEdgeCaseScenario()
+{
     TestScenario scenario;
     
     posGen_.GenerateEndGamePosition(
@@ -395,7 +423,8 @@ MockDataFactory::TestScenario MockDataFactory::CreateEdgeCaseScenario() {
     return scenario;
 }
 
-MockDataFactory::TestScenario MockDataFactory::CreatePerformanceScenario() {
+MockDataFactory::TestScenario MockDataFactory::CreatePerformanceScenario()
+{
     TestScenario scenario;
     
     posGen_.GenerateMiddleGamePosition(
@@ -411,7 +440,8 @@ MockDataFactory::TestScenario MockDataFactory::CreatePerformanceScenario() {
 }
 
 std::pair<MockDataFactory::TestScenario, MockDataFactory::TestScenario> 
-MockDataFactory::CreateEquivalentScenarios() {
+MockDataFactory::CreateEquivalentScenarios()
+{
     TestScenario scenario1 = CreateBasicScenario();
     TestScenario scenario2 = scenario1; // Copy for equivalence
     
@@ -422,14 +452,16 @@ MockDataFactory::CreateEquivalentScenarios() {
 }
 
 std::pair<MockDataFactory::TestScenario, MockDataFactory::TestScenario>
-MockDataFactory::CreateNonEquivalentScenarios() {
+MockDataFactory::CreateNonEquivalentScenarios()
+{
     TestScenario scenario1 = CreateBasicScenario();
     TestScenario scenario2 = CreateComplexScenario();
     
     return std::make_pair(scenario1, scenario2);
 }
 
-std::vector<MockDataFactory::TestScenario> MockDataFactory::CreateTestSuite(int count) {
+std::vector<MockDataFactory::TestScenario> MockDataFactory::CreateTestSuite(int count)
+{
     std::vector<TestScenario> scenarios;
     scenarios.reserve(count);
     
@@ -448,7 +480,8 @@ std::vector<MockDataFactory::TestScenario> MockDataFactory::CreateTestSuite(int 
     return scenarios;
 }
 
-std::vector<MockDataFactory::TestScenario> MockDataFactory::CreateRegressionTestSuite() {
+std::vector<MockDataFactory::TestScenario> MockDataFactory::CreateRegressionTestSuite()
+{
     std::vector<TestScenario> scenarios;
     
     // Add specific scenarios for regression testing

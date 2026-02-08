@@ -5,49 +5,60 @@
 namespace dds_test {
 
 // Test fixture for TransTable base class
-class TransTableBaseTest : public ::testing::Test {
+class TransTableBaseTest : public ::testing::Test
+{
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         // Create mock derived class for testing base functionality
         baseTable = std::make_unique<MockTransTable>();
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         baseTable.reset();
     }
 
     // Mock concrete implementation for testing base class
-    class MockTransTable : public TransTable {
+    class MockTransTable : public TransTable
+    {
     public:
         MockTransTable() : TransTable() {}
         
         ~MockTransTable() override = default;
 
-        void init(const int handLookup[][15]) override {
+        void init(const int handLookup[][15]) override
+        {
             initCalled = true;
         }
 
-        void set_memory_default(int megabytes) override {
+        void set_memory_default(int megabytes) override
+        {
             defaultMemory = megabytes;
         }
 
-        void set_memory_maximum(int megabytes) override {
+        void set_memory_maximum(int megabytes) override
+        {
             maximumMemory = megabytes;
         }
 
-        void make_tt() override {
+        void make_tt() override
+        {
             ttMade = true;
         }
 
-        void reset_memory(ResetReason reason) override {
+        void reset_memory(ResetReason reason) override
+        {
             lastResetReason = reason;
         }
 
-        void return_all_memory() override {
+        void return_all_memory() override
+        {
             memoryReturned = true;
         }
 
-        double memory_in_use() const override {
+        double memory_in_use() const override
+        {
             return testMemoryUsage;
         }
 
@@ -57,7 +68,8 @@ protected:
             const unsigned short aggr_target[],
             const int hand_dist[],
             int limit,
-            bool& lowerFlag) override {
+            bool& lowerFlag) override
+        {
             
             lookupCalled = true;
             lastTrick = trick;
@@ -73,7 +85,8 @@ protected:
             const unsigned short aggr_target[],
             const unsigned short win_ranks_arg[],
             const NodeCards& first,
-            bool flag) override {
+            bool flag) override
+        {
             
             addCalled = true;
             addTrick = trick;
@@ -84,12 +97,14 @@ protected:
         void print_suits(
             std::ofstream& /*fout*/,
             int /*trick*/,
-            int /*hand*/) const override {
+            int /*hand*/) const override
+        {
             
             printSuitsCalled = true;
         }
 
-        void print_all_suits(std::ofstream& /*fout*/) const override {
+        void print_all_suits(std::ofstream& /*fout*/) const override
+        {
             printAllSuitsCalled = true;
         }
 
@@ -138,7 +153,8 @@ protected:
 };
 
 // Construction/Destruction Tests
-TEST_F(TransTableBaseTest, ConstructorCreatesValidObject) {
+TEST_F(TransTableBaseTest, ConstructorCreatesValidObject)
+{
     EXPECT_NE(baseTable.get(), nullptr);
     
     // Verify initial state
@@ -149,7 +165,8 @@ TEST_F(TransTableBaseTest, ConstructorCreatesValidObject) {
     EXPECT_EQ(baseTable->maximumMemory, 0);
 }
 
-TEST_F(TransTableBaseTest, VirtualDestructorWorks) {
+TEST_F(TransTableBaseTest, VirtualDestructorWorks)
+{
     // Create through base pointer to verify virtual destructor
     std::unique_ptr<TransTable> basePtr = std::make_unique<MockTransTable>();
     EXPECT_NE(basePtr.get(), nullptr);
@@ -161,7 +178,8 @@ TEST_F(TransTableBaseTest, VirtualDestructorWorks) {
 }
 
 // Interface Verification Tests
-TEST_F(TransTableBaseTest, InitMethodCallsOverride) {
+TEST_F(TransTableBaseTest, InitMethodCallsOverride)
+{
     int handLookup[15][15]; // Mock lookup table
     
     EXPECT_FALSE(baseTable->initCalled);
@@ -169,7 +187,8 @@ TEST_F(TransTableBaseTest, InitMethodCallsOverride) {
     EXPECT_TRUE(baseTable->initCalled);
 }
 
-TEST_F(TransTableBaseTest, SetMemoryMethodsWork) {
+TEST_F(TransTableBaseTest, SetMemoryMethodsWork)
+{
     baseTable->set_memory_default(64);
     EXPECT_EQ(baseTable->defaultMemory, 64);
     
@@ -177,13 +196,15 @@ TEST_F(TransTableBaseTest, SetMemoryMethodsWork) {
     EXPECT_EQ(baseTable->maximumMemory, 128);
 }
 
-TEST_F(TransTableBaseTest, MakeTTMethodCallsOverride) {
+TEST_F(TransTableBaseTest, MakeTTMethodCallsOverride)
+{
     EXPECT_FALSE(baseTable->ttMade);
     baseTable->make_tt();
     EXPECT_TRUE(baseTable->ttMade);
 }
 
-TEST_F(TransTableBaseTest, ResetMemoryMethodCallsOverride) {
+TEST_F(TransTableBaseTest, ResetMemoryMethodCallsOverride)
+{
     EXPECT_EQ(baseTable->lastResetReason, ResetReason::Unknown);
     
     baseTable->reset_memory(ResetReason::NewDeal);
@@ -193,19 +214,22 @@ TEST_F(TransTableBaseTest, ResetMemoryMethodCallsOverride) {
     EXPECT_EQ(baseTable->lastResetReason, ResetReason::MemoryExhausted);
 }
 
-TEST_F(TransTableBaseTest, ReturnAllMemoryMethodCallsOverride) {
+TEST_F(TransTableBaseTest, ReturnAllMemoryMethodCallsOverride)
+{
     EXPECT_FALSE(baseTable->memoryReturned);
     baseTable->return_all_memory();
     EXPECT_TRUE(baseTable->memoryReturned);
 }
 
-TEST_F(TransTableBaseTest, MemoryInUseMethodCallsOverride) {
+TEST_F(TransTableBaseTest, MemoryInUseMethodCallsOverride)
+{
     // Test that virtual method calls override implementation
     double memUsage = baseTable->memory_in_use();
     EXPECT_EQ(memUsage, 42.5); // Should return mock value
 }
 
-TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
+TEST_F(TransTableBaseTest, LookupMethodCallsOverride)
+{
     unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
     int hand_dist[4] = {13, 13, 13, 13};
     bool lowerFlag = true;
@@ -229,7 +253,8 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride) {
     EXPECT_EQ(result, baseTable->testLookupResult);
 }
 
-TEST_F(TransTableBaseTest, AddMethodCallsOverride) {
+TEST_F(TransTableBaseTest, AddMethodCallsOverride)
+{
     unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
     unsigned short win_ranks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
     NodeCards nodeData;
@@ -251,7 +276,8 @@ TEST_F(TransTableBaseTest, AddMethodCallsOverride) {
     EXPECT_TRUE(baseTable->addFlag);
 }
 
-TEST_F(TransTableBaseTest, PrintMethodsCallOverride) {
+TEST_F(TransTableBaseTest, PrintMethodsCallOverride)
+{
     std::ofstream testFile("test_output.txt");
     
     EXPECT_FALSE(baseTable->printSuitsCalled);
@@ -268,7 +294,8 @@ TEST_F(TransTableBaseTest, PrintMethodsCallOverride) {
 }
 
 // Interface Contract Tests
-TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures) {
+TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures)
+{
     // This test verifies that all expected virtual methods exist
     // and have the correct signatures by calling them through base pointer
     
@@ -303,7 +330,8 @@ TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures) {
     nullFile.close();
 }
 
-TEST_F(TransTableBaseTest, PolymorphicBehaviorWorks) {
+TEST_F(TransTableBaseTest, PolymorphicBehaviorWorks)
+{
     // Verify that virtual dispatch works correctly
     TransTable* basePtr = baseTable.get();
     

@@ -19,7 +19,8 @@ namespace dds_test {
 using TestScenario = MockDataFactory::TestScenario;
 
 
-class TransTableIntegrationTest : public ::testing::Test {
+class TransTableIntegrationTest : public ::testing::Test
+{
 protected:
     void SetUp() override {
         factory = std::make_unique<MockDataFactory>(12345);
@@ -49,19 +50,22 @@ protected:
 // Cross-Implementation Consistency Tests
 // ============================================================================
 
-TEST_F(TransTableIntegrationTest, BothImplementationsCanBeCreated) {
+TEST_F(TransTableIntegrationTest, BothImplementationsCanBeCreated)
+{
     EXPECT_NE(ttS, nullptr);
     EXPECT_NE(ttL, nullptr);
 }
 
-TEST_F(TransTableIntegrationTest, ObjectsCanBeDestroyed) {
+TEST_F(TransTableIntegrationTest, ObjectsCanBeDestroyed)
+{
     // Test that objects can be destroyed without issues
     auto tempS = std::make_unique<TransTableS>();
     auto tempL = std::make_unique<TransTableL>();
     // Destruction happens automatically
 }
 
-TEST_F(TransTableIntegrationTest, BasicMethodsExist) {
+TEST_F(TransTableIntegrationTest, BasicMethodsExist)
+{
     // Test that basic methods can be called without crashing
     EXPECT_NO_THROW(ttS->memory_in_use());
     EXPECT_NO_THROW(ttL->memory_in_use());
@@ -71,7 +75,8 @@ TEST_F(TransTableIntegrationTest, BasicMethodsExist) {
 // Interface Compliance Tests  
 // ============================================================================
 
-TEST_F(TransTableIntegrationTest, BothImplementationsInheritFromTransTable) {
+TEST_F(TransTableIntegrationTest, BothImplementationsInheritFromTransTable)
+{
     // Verify both implementations can be used polymorphically
     double memS = ttS->memory_in_use();
     double memL = ttL->memory_in_use();
@@ -84,7 +89,8 @@ TEST_F(TransTableIntegrationTest, BothImplementationsInheritFromTransTable) {
     EXPECT_NO_THROW(ttL->reset_memory(ResetReason::NewDeal));
 }
 
-TEST_F(TransTableIntegrationTest, VirtualMethodsWorkCorrectly) {
+TEST_F(TransTableIntegrationTest, VirtualMethodsWorkCorrectly)
+{
     // Test virtual method dispatch works
     double memory1S = ttS->memory_in_use();
     double memory1L = ttL->memory_in_use();
@@ -114,7 +120,8 @@ TEST_F(TransTableIntegrationTest, VirtualMethodsWorkCorrectly) {
 // Real Game Scenario Tests
 // ============================================================================
 
-TEST_F(TransTableIntegrationTest, BasicDataOperations) {
+TEST_F(TransTableIntegrationTest, BasicDataOperations)
+{
     // Test basic add and lookup operations
     auto s = factory->CreateBasicScenario();
     
@@ -131,7 +138,8 @@ TEST_F(TransTableIntegrationTest, BasicDataOperations) {
     EXPECT_NE(resultL, nullptr);
 }
 
-TEST_F(TransTableIntegrationTest, MultipleScenarios) {
+TEST_F(TransTableIntegrationTest, MultipleScenarios)
+{
     // Test with multiple different scenarios
     for (int i = 0; i < 5; ++i) {
         auto s = factory->CreateBasicScenario();
@@ -149,7 +157,8 @@ TEST_F(TransTableIntegrationTest, MultipleScenarios) {
     }
 }
 
-TEST_F(TransTableIntegrationTest, ResultConsistency) {
+TEST_F(TransTableIntegrationTest, ResultConsistency)
+{
     // Test that both implementations return consistent results
     auto s = factory->CreateBasicScenario();
     

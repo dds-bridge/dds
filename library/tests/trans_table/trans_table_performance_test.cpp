@@ -16,7 +16,8 @@
 using dds_test::MockDataFactory;
 using TestScenario = dds_test::MockDataFactory::TestScenario;
 
-class TransTablePerformanceTest : public ::testing::Test {
+class TransTablePerformanceTest : public ::testing::Test
+{
 protected:
     void SetUp() override {
         factory = std::make_unique<MockDataFactory>(98765);
@@ -42,7 +43,8 @@ protected:
 };
 
 // Memory Stress Test: Add a large number of positions
-TEST_F(TransTablePerformanceTest, MemoryStress_AddManyPositions) {
+TEST_F(TransTablePerformanceTest, MemoryStress_AddManyPositions)
+{
     auto scenarios = factory->CreateTestSuite(10000);
     for (const auto& s : scenarios) {
         ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
@@ -57,7 +59,8 @@ TEST_F(TransTablePerformanceTest, MemoryStress_AddManyPositions) {
 }
 
 // Memory Limit Boundary Test
-TEST_F(TransTablePerformanceTest, MemoryLimitBoundary) {
+TEST_F(TransTablePerformanceTest, MemoryLimitBoundary)
+{
     ttS->set_memory_maximum(8); // 8 MB
     ttL->set_memory_maximum(8);
     ttS->make_tt();
@@ -74,7 +77,8 @@ TEST_F(TransTablePerformanceTest, MemoryLimitBoundary) {
 }
 
 // Rapid Allocation/Deallocation Pattern
-TEST_F(TransTablePerformanceTest, RapidAllocationDeallocation) {
+TEST_F(TransTablePerformanceTest, RapidAllocationDeallocation)
+{
     for (int cycle = 0; cycle < 10; ++cycle) {
         auto scenarios = factory->CreateTestSuite(500);
         for (const auto& s : scenarios) {
@@ -89,7 +93,8 @@ TEST_F(TransTablePerformanceTest, RapidAllocationDeallocation) {
 }
 
 // Lookup Performance Test
-TEST_F(TransTablePerformanceTest, LookupPerformance) {
+TEST_F(TransTablePerformanceTest, LookupPerformance)
+{
     auto scenarios = factory->CreateTestSuite(2000);
     for (const auto& s : scenarios) {
         ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
@@ -114,7 +119,8 @@ TEST_F(TransTablePerformanceTest, LookupPerformance) {
 }
 
 // Cache Hit/Miss Rate Test
-TEST_F(TransTablePerformanceTest, CacheHitMissRate) {
+TEST_F(TransTablePerformanceTest, CacheHitMissRate)
+{
     auto scenarios = factory->CreateTestSuite(1000);
     // Add all positions
     for (const auto& s : scenarios) {
@@ -143,7 +149,8 @@ TEST_F(TransTablePerformanceTest, CacheHitMissRate) {
 }
 
 // Search Time Complexity Test (scaling)
-TEST_F(TransTablePerformanceTest, SearchTimeComplexityScaling) {
+TEST_F(TransTablePerformanceTest, SearchTimeComplexityScaling)
+{
     std::vector<int> sizes = {100, 1000, 5000};
     for (int n : sizes) {
     ttS->reset_memory(ResetReason::NewDeal);
@@ -173,14 +180,16 @@ TEST_F(TransTablePerformanceTest, SearchTimeComplexityScaling) {
 }
 
 // Thread Safety/Concurrent Access Test (Task 12)
-TEST_F(TransTablePerformanceTest, DISABLED_ConcurrentAccessNotSupported) {
+TEST_F(TransTablePerformanceTest, DISABLED_ConcurrentAccessNotSupported)
+{
     // The TransTable implementations are not thread-safe.
     // Concurrent access must be guarded externally (e.g., with a mutex).
     SUCCEED() << "TransTable is not thread-safe; concurrent access is not supported.";
 }
 
 // End-to-End Integration Test (Task 13)
-TEST_F(TransTablePerformanceTest, EndToEndIntegration_SearchSimulation) {
+TEST_F(TransTablePerformanceTest, EndToEndIntegration_SearchSimulation)
+{
     // Simulate a search algorithm using the trans table for storage and retrieval
     auto scenarios = factory->CreateTestSuite(500);
     int found = 0, notFound = 0;
