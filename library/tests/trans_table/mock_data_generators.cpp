@@ -3,7 +3,6 @@
 
 // Project headers
 #include "mock_data_generators.hpp"
-#include "utility/constants.h"
 
 // C++ standard library headers
 #include <algorithm>
