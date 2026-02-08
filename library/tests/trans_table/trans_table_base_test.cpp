@@ -180,7 +180,7 @@ TEST_F(TransTableBaseTest, VirtualDestructorWorks)
 // Interface Verification Tests
 TEST_F(TransTableBaseTest, InitMethodCallsOverride)
 {
-    int handLookup[15][15]; // Mock lookup table
+    int handLookup[15][15] = {}; // Mock lookup table (zero-initialized)
     
     EXPECT_FALSE(baseTable->initCalled);
     baseTable->init(handLookup);
@@ -224,14 +224,14 @@ TEST_F(TransTableBaseTest, ReturnAllMemoryMethodCallsOverride)
 TEST_F(TransTableBaseTest, MemoryInUseMethodCallsOverride)
 {
     // Test that virtual method calls override implementation
-    double memUsage = baseTable->memory_in_use();
+    const double memUsage = baseTable->memory_in_use();
     EXPECT_EQ(memUsage, 42.5); // Should return mock value
 }
 
 TEST_F(TransTableBaseTest, LookupMethodCallsOverride)
 {
-    unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
-    int hand_dist[4] = {13, 13, 13, 13};
+    const unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
+    const int hand_dist[4] = {13, 13, 13, 13};
     bool lowerFlag = true;
     
     EXPECT_FALSE(baseTable->lookupCalled);
@@ -255,8 +255,8 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride)
 
 TEST_F(TransTableBaseTest, AddMethodCallsOverride)
 {
-    unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
-    unsigned short win_ranks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
+    const unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
+    const unsigned short win_ranks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
     NodeCards nodeData;
     
     EXPECT_FALSE(baseTable->addCalled);
