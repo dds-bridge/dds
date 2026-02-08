@@ -1,7 +1,6 @@
-/*
-   Performance and stress tests for TransTable implementations.
-   Covers memory stress, lookup performance, and allocation patterns.
-*/
+/// @file trans_table_performance_test.cpp
+/// @brief Performace tests for TransTable implementations.
+/// @details Covers memory stress, lookup performance, and allocation patterns.
 
 #include <gtest/gtest.h>
 #include <chrono>
