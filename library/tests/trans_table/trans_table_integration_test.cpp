@@ -26,30 +26,30 @@ protected:
     {
         factory = std::make_unique<MockDataFactory>(12345);
         scenario = factory->CreateBasicScenario();
-        ttS = std::make_unique<TransTableS>();
-        ttL = std::make_unique<TransTableL>();
+        tt_s_ = std::make_unique<TransTableS>();
+        tt_l_ = std::make_unique<TransTableL>();
         // Initialize with basic scenario data
-        ttS->init(scenario.handLookup);
-        ttL->init(scenario.handLookup);
-        ttS->set_memory_default(DEFAULT_MEMORY_MB);
-        ttL->set_memory_default(DEFAULT_MEMORY_MB);
-        ttS->make_tt();
-        ttL->make_tt();
+        tt_s_->init(scenario.handLookup);
+        tt_l_->init(scenario.handLookup);
+        tt_s_->set_memory_default(DefaultMemoryMb);
+        tt_l_->set_memory_default(DefaultMemoryMb);
+        tt_s_->make_tt();
+        tt_l_->make_tt();
     }
     void TearDown() override
     {
-        if (ttS) {
-            ttS->return_all_memory();
+        if (tt_s_) {
+            tt_s_->return_all_memory();
         }
-        if (ttL) {
-            ttL->return_all_memory();
+        if (tt_l_) {
+            tt_l_->return_all_memory();
         }
     }
-    static constexpr int DEFAULT_MEMORY_MB = 64;
+    static constexpr int DefaultMemoryMb = 64;
     std::unique_ptr<MockDataFactory> factory;
     TestScenario scenario;
-    std::unique_ptr<TransTableS> ttS;
-    std::unique_ptr<TransTableL> ttL;
+    std::unique_ptr<TransTableS> tt_s_;
+    std::unique_ptr<TransTableL> tt_l_;
 };
 
 // ============================================================================
@@ -58,23 +58,23 @@ protected:
 
 TEST_F(TransTableIntegrationTest, BothImplementationsCanBeCreated)
 {
-    EXPECT_NE(ttS, nullptr);
-    EXPECT_NE(ttL, nullptr);
+    EXPECT_NE(tt_s_, nullptr);
+    EXPECT_NE(tt_l_, nullptr);
 }
 
 TEST_F(TransTableIntegrationTest, ObjectsCanBeDestroyed)
 {
     // Test that objects can be destroyed without issues
-    auto tempS = std::make_unique<TransTableS>();
-    auto tempL = std::make_unique<TransTableL>();
+    auto temp_s = std::make_unique<TransTableS>();
+    auto temp_l = std::make_unique<TransTableL>();
     // Destruction happens automatically
 }
 
 TEST_F(TransTableIntegrationTest, BasicMethodsExist)
 {
     // Test that basic methods can be called without crashing
-    EXPECT_NO_THROW(ttS->memory_in_use());
-    EXPECT_NO_THROW(ttL->memory_in_use());
+    EXPECT_NO_THROW(tt_s_->memory_in_use());
+    EXPECT_NO_THROW(tt_l_->memory_in_use());
 }
 
 // ============================================================================
@@ -84,39 +84,39 @@ TEST_F(TransTableIntegrationTest, BasicMethodsExist)
 TEST_F(TransTableIntegrationTest, BothImplementationsInheritFromTransTable)
 {
     // Verify both implementations can be used polymorphically
-    double memS = ttS->memory_in_use();
-    double memL = ttL->memory_in_use();
-    
-    EXPECT_GE(memS, 0.0);
-    EXPECT_GE(memL, 0.0);
-    
+    const double mem_s = tt_s_->memory_in_use();
+    const double mem_l = tt_l_->memory_in_use();
+
+    EXPECT_GE(mem_s, 0.0);
+    EXPECT_GE(mem_l, 0.0);
+
     // Should be able to reset through interface
-    EXPECT_NO_THROW(ttS->reset_memory(ResetReason::NewDeal));
-    EXPECT_NO_THROW(ttL->reset_memory(ResetReason::NewDeal));
+    EXPECT_NO_THROW(tt_s_->reset_memory(ResetReason::NewDeal));
+    EXPECT_NO_THROW(tt_l_->reset_memory(ResetReason::NewDeal));
 }
 
 TEST_F(TransTableIntegrationTest, VirtualMethodsWorkCorrectly)
 {
     // Test virtual method dispatch works
-    double memory1S = ttS->memory_in_use();
-    double memory1L = ttL->memory_in_use();
-    
+    const double memory1_s = tt_s_->memory_in_use();
+    const double memory1_l = tt_l_->memory_in_use();
+
     // Create test data using available factory methods
     auto s = factory->CreateBasicScenario();
-    ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-    ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-    
-    double memory2S = ttS->memory_in_use();
-    double memory2L = ttL->memory_in_use();
-    
+    tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+    tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+
+    const double memory2_s = tt_s_->memory_in_use();
+    const double memory2_l = tt_l_->memory_in_use();
+
     // Memory usage should increase (or at least not decrease)
-    EXPECT_GE(memory2S, memory1S);
-    EXPECT_GE(memory2L, memory1L);
-    
+    EXPECT_GE(memory2_s, memory1_s);
+    EXPECT_GE(memory2_l, memory1_l);
+
     // Should be able to lookup
-    bool lowerFlagS = false, lowerFlagL = false;
-    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
-    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
+    bool lower_flag_s = false, lower_flag_l = false;
+    auto result_s = tt_s_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag_s);
+    auto result_l = tt_l_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag_l);
     
     EXPECT_NE(resultS, nullptr);
     EXPECT_NE(resultL, nullptr);
@@ -130,15 +130,15 @@ TEST_F(TransTableIntegrationTest, BasicDataOperations)
 {
     // Test basic add and lookup operations
     auto s = factory->CreateBasicScenario();
-    
+
     // Add data to both tables
-    ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-    ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-    
+    tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+    tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+
     // Lookup should find the data
-    bool lowerFlagS = false, lowerFlagL = false;
-    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
-    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
+    bool lower_flag_s = false, lower_flag_l = false;
+    auto result_s = tt_s_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag_s);
+    auto result_l = tt_l_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag_l);
     
     EXPECT_NE(resultS, nullptr);
     EXPECT_NE(resultL, nullptr);
@@ -151,15 +151,15 @@ TEST_F(TransTableIntegrationTest, MultipleScenarios)
         auto s = factory->CreateBasicScenario();
         s.trick = i + 1;  // Vary the trick number
 
-        ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-        ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
 
-        bool lowerFlagS = false, lowerFlagL = false;
-        auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
-        auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
+        bool lower_flag_s = false, lower_flag_l = false;
+        auto result_s = tt_s_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag_s);
+        auto result_l = tt_l_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag_l);
 
-        EXPECT_NE(resultS, nullptr) << "Failed for scenario " << i;
-        EXPECT_NE(resultL, nullptr) << "Failed for scenario " << i;
+        EXPECT_NE(result_s, nullptr) << "Failed for scenario " << i;
+        EXPECT_NE(result_l, nullptr) << "Failed for scenario " << i;
     }
 }
 
@@ -167,23 +167,23 @@ TEST_F(TransTableIntegrationTest, ResultConsistency)
 {
     // Test that both implementations return consistent results
     auto s = factory->CreateBasicScenario();
-    
+
     // Add identical data to both tables
-    ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-    ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-    
+    tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+    tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+
     // Lookup should return consistent results
-    bool lowerFlagS = false, lowerFlagL = false;
-    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
-    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
-    
-    ASSERT_NE(resultS, nullptr);
-    ASSERT_NE(resultL, nullptr);
-    
+    bool lower_flag_s = false, lower_flag_l = false;
+    auto result_s = tt_s_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag_s);
+    auto result_l = tt_l_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag_l);
+
+    ASSERT_NE(result_s, nullptr);
+    ASSERT_NE(result_l, nullptr);
+
     // Results should be equivalent
-    EXPECT_EQ(resultS->upper_bound, resultL->upper_bound);
-    EXPECT_EQ(resultS->lower_bound, resultL->lower_bound);
-    EXPECT_EQ(lowerFlagS, lowerFlagL);
+    EXPECT_EQ(result_s->upper_bound, result_l->upper_bound);
+    EXPECT_EQ(result_s->lower_bound, result_l->lower_bound);
+    EXPECT_EQ(lower_flag_s, lower_flag_l);
 }
 
 } // namespace dds_test

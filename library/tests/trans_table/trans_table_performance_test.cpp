@@ -23,25 +23,25 @@ protected:
     {
         factory = std::make_unique<MockDataFactory>(98765);
         scenario = factory->CreateBasicScenario();
-        ttS = std::make_unique<TransTableS>();
-        ttL = std::make_unique<TransTableL>();
-        ttS->init(scenario.handLookup);
-        ttL->init(scenario.handLookup);
-        ttS->set_memory_default(DEFAULT_MEMORY_MB);
-        ttL->set_memory_default(DEFAULT_MEMORY_MB);
-        ttS->make_tt();
-        ttL->make_tt();
+        tt_s_ = std::make_unique<TransTableS>();
+        tt_l_ = std::make_unique<TransTableL>();
+        tt_s_->init(scenario.handLookup);
+        tt_l_->init(scenario.handLookup);
+        tt_s_->set_memory_default(DefaultMemoryMb);
+        tt_l_->set_memory_default(DefaultMemoryMb);
+        tt_s_->make_tt();
+        tt_l_->make_tt();
     }
     void TearDown() override
     {
-        ttS->return_all_memory();
-        ttL->return_all_memory();
+        tt_s_->return_all_memory();
+        tt_l_->return_all_memory();
     }
-    static constexpr int DEFAULT_MEMORY_MB = 64;
+    static constexpr int DefaultMemoryMb = 64;
     std::unique_ptr<MockDataFactory> factory;
     TestScenario scenario;
-    std::unique_ptr<TransTableS> ttS;
-    std::unique_ptr<TransTableL> ttL;
+    std::unique_ptr<TransTableS> tt_s_;
+    std::unique_ptr<TransTableL> tt_l_;
 };
 
 // Memory Stress Test: Add a large number of positions
@@ -49,33 +49,33 @@ TEST_F(TransTablePerformanceTest, MemoryStress_AddManyPositions)
 {
     auto scenarios = factory->CreateTestSuite(10000);
     for (const auto& s : scenarios) {
-        ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-        ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
     }
-    double memS = ttS->memory_in_use();
-    double memL = ttL->memory_in_use();
-    EXPECT_GT(memS, 0.0);
-    EXPECT_GT(memL, 0.0);
-    EXPECT_LT(memS, DEFAULT_MEMORY_MB * 1.2);
-    EXPECT_LT(memL, DEFAULT_MEMORY_MB * 1.2);
+    const double mem_s = tt_s_->memory_in_use();
+    const double mem_l = tt_l_->memory_in_use();
+    EXPECT_GT(mem_s, 0.0);
+    EXPECT_GT(mem_l, 0.0);
+    EXPECT_LT(mem_s, DefaultMemoryMb * 1.2);
+    EXPECT_LT(mem_l, DefaultMemoryMb * 1.2);
 }
 
 // Memory Limit Boundary Test
 TEST_F(TransTablePerformanceTest, MemoryLimitBoundary)
 {
-    ttS->set_memory_maximum(8); // 8 MB
-    ttL->set_memory_maximum(8);
-    ttS->make_tt();
-    ttL->make_tt();
+    tt_s_->set_memory_maximum(8); // 8 MB
+    tt_l_->set_memory_maximum(8);
+    tt_s_->make_tt();
+    tt_l_->make_tt();
     auto scenarios = factory->CreateTestSuite(2000);
     for (const auto& s : scenarios) {
-        ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-        ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
     }
-    double memS = ttS->memory_in_use();
-    double memL = ttL->memory_in_use();
-    EXPECT_LE(memS, 8.5);
-    EXPECT_LE(memL, 8.5);
+    const double mem_s = tt_s_->memory_in_use();
+    const double mem_l = tt_l_->memory_in_use();
+    EXPECT_LE(mem_s, 8.5);
+    EXPECT_LE(mem_l, 8.5);
 }
 
 // Rapid Allocation/Deallocation Pattern
@@ -84,13 +84,13 @@ TEST_F(TransTablePerformanceTest, RapidAllocationDeallocation)
     for (int cycle = 0; cycle < 10; ++cycle) {
         auto scenarios = factory->CreateTestSuite(500);
         for (const auto& s : scenarios) {
-            ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-            ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+            tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+            tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
         }
-        ttS->reset_memory(ResetReason::NewDeal);
-        ttL->reset_memory(ResetReason::NewDeal);
-        EXPECT_LE(ttS->memory_in_use(), DEFAULT_MEMORY_MB);
-        EXPECT_LE(ttL->memory_in_use(), DEFAULT_MEMORY_MB);
+        tt_s_->reset_memory(ResetReason::NewDeal);
+        tt_l_->reset_memory(ResetReason::NewDeal);
+        EXPECT_LE(tt_s_->memory_in_use(), DefaultMemoryMb);
+        EXPECT_LE(tt_l_->memory_in_use(), DefaultMemoryMb);
     }
 }
 
@@ -99,25 +99,25 @@ TEST_F(TransTablePerformanceTest, LookupPerformance)
 {
     auto scenarios = factory->CreateTestSuite(2000);
     for (const auto& s : scenarios) {
-        ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-        ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
     }
-    auto startS = std::chrono::high_resolution_clock::now();
+    auto start_s = std::chrono::high_resolution_clock::now();
     for (const auto& s : scenarios) {
-        bool lowerFlag = false;
-        ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag);
+        bool lower_flag = false;
+        tt_s_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag);
     }
-    auto endS = std::chrono::high_resolution_clock::now();
-    auto durationS = std::chrono::duration_cast<std::chrono::milliseconds>(endS - startS);
-    auto startL = std::chrono::high_resolution_clock::now();
+    auto end_s = std::chrono::high_resolution_clock::now();
+    auto duration_s = std::chrono::duration_cast<std::chrono::milliseconds>(end_s - start_s);
+    auto start_l = std::chrono::high_resolution_clock::now();
     for (const auto& s : scenarios) {
-        bool lowerFlag = false;
-        ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag);
+        bool lower_flag = false;
+        tt_l_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lower_flag);
     }
-    auto endL = std::chrono::high_resolution_clock::now();
-    auto durationL = std::chrono::duration_cast<std::chrono::milliseconds>(endL - startL);
-    EXPECT_LT(durationS.count(), 2000); // Should be reasonably fast
-    EXPECT_LT(durationL.count(), 2000);
+    auto end_l = std::chrono::high_resolution_clock::now();
+    auto duration_l = std::chrono::duration_cast<std::chrono::milliseconds>(end_l - start_l);
+    EXPECT_LT(duration_s.count(), 2000); // Should be reasonably fast
+    EXPECT_LT(duration_l.count(), 2000);
 }
 
 // Cache Hit/Miss Rate Test
@@ -126,28 +126,28 @@ TEST_F(TransTablePerformanceTest, CacheHitMissRate)
     auto scenarios = factory->CreateTestSuite(1000);
     // Add all positions
     for (const auto& s : scenarios) {
-        ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-        ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
     }
     // Lookup all (should be hits)
-    int hitsS = 0, hitsL = 0;
+    int hits_s = 0, hits_l = 0;
     for (const auto& s : scenarios) {
         bool lowerFlag = false;
-        if (ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) hitsS++;
-        if (ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) hitsL++;
+        if (tt_s_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) hits_s++;
+        if (tt_l_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) hits_l++;
     }
-    EXPECT_EQ(hitsS, 1000);
-    EXPECT_EQ(hitsL, 1000);
+    EXPECT_EQ(hits_s, 1000);
+    EXPECT_EQ(hits_l, 1000);
     // Lookup random (should be mostly misses)
-    int missesS = 0, missesL = 0;
+    int misses_s = 0, misses_l = 0;
     auto randoms = factory->CreateTestSuite(1000);
     for (const auto& s : randoms) {
         bool lowerFlag = false;
-        if (!ttS->lookup(s.trick+1, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) missesS++;
-        if (!ttL->lookup(s.trick+1, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) missesL++;
+        if (!tt_s_->lookup(s.trick+1, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) misses_s++;
+        if (!tt_l_->lookup(s.trick+1, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) misses_l++;
     }
-    EXPECT_GT(missesS, 800);
-    EXPECT_GT(missesL, 800);
+    EXPECT_GT(misses_s, 800);
+    EXPECT_GT(misses_l, 800);
 }
 
 // Search Time Complexity Test (scaling)
@@ -155,29 +155,29 @@ TEST_F(TransTablePerformanceTest, SearchTimeComplexityScaling)
 {
     std::vector<int> sizes = {100, 1000, 5000};
     for (int n : sizes) {
-        ttS->reset_memory(ResetReason::NewDeal);
-        ttL->reset_memory(ResetReason::NewDeal);
+        tt_s_->reset_memory(ResetReason::NewDeal);
+        tt_l_->reset_memory(ResetReason::NewDeal);
         auto scenarios = factory->CreateTestSuite(n);
         for (const auto& s : scenarios) {
-            ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-            ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+            tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+            tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
         }
-        auto startS = std::chrono::high_resolution_clock::now();
+        auto start_s = std::chrono::high_resolution_clock::now();
         for (const auto& s : scenarios) {
             bool lowerFlag = false;
-            ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag);
+            tt_s_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag);
         }
-        auto endS = std::chrono::high_resolution_clock::now();
-        auto durationS = std::chrono::duration_cast<std::chrono::milliseconds>(endS - startS);
-        auto startL = std::chrono::high_resolution_clock::now();
+        auto end_s = std::chrono::high_resolution_clock::now();
+        auto duration_s = std::chrono::duration_cast<std::chrono::milliseconds>(end_s - start_s);
+        auto start_l = std::chrono::high_resolution_clock::now();
         for (const auto& s : scenarios) {
             bool lowerFlag = false;
-            ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag);
+            tt_l_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag);
         }
-        auto endL = std::chrono::high_resolution_clock::now();
-        auto durationL = std::chrono::duration_cast<std::chrono::milliseconds>(endL - startL);
-        EXPECT_LT(durationS.count(), 2000);
-        EXPECT_LT(durationL.count(), 2000);
+        auto end_l = std::chrono::high_resolution_clock::now();
+        auto duration_l = std::chrono::duration_cast<std::chrono::milliseconds>(end_l - start_l);
+        EXPECT_LT(duration_s.count(), 2000);
+        EXPECT_LT(duration_l.count(), 2000);
     }
 }
 
@@ -198,18 +198,18 @@ TEST_F(TransTablePerformanceTest, EndToEndIntegration_SearchSimulation)
     // Simulate search: add and lookup, with resets in between
     for (int round = 0; round < 5; ++round) {
         for (const auto& s : scenarios) {
-            ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-            ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+            tt_s_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+            tt_l_->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
         }
         for (const auto& s : scenarios) {
             bool lowerFlag = false;
-            if (ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) found++;
+            if (tt_s_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) found++;
             else notFound++;
-            if (ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) found++;
+            if (tt_l_->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlag)) found++;
             else notFound++;
         }
-        ttS->reset_memory(ResetReason::NewDeal);
-        ttL->reset_memory(ResetReason::NewDeal);
+        tt_s_->reset_memory(ResetReason::NewDeal);
+        tt_l_->reset_memory(ResetReason::NewDeal);
     }
     EXPECT_GT(found, notFound);
 }
