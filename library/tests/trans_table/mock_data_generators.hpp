@@ -1,11 +1,13 @@
-#ifndef DDS_MOCK_DATA_GENERATORS_H
-#define DDS_MOCK_DATA_GENERATORS_H
+#pragma once
 
-#include <vector>
-#include <random>
+// C++ standard library headers
 #include <array>
-#include "trans_table/trans_table.hpp"
+#include <random>
+#include <vector>
+
+// Project headers
 #include <api/dll.h>
+#include "trans_table/trans_table.hpp"
 
 namespace dds_test {
 
@@ -183,5 +185,3 @@ private:
 };
 
 } // namespace dds_test
-
-#endif // DDS_MOCK_DATA_GENERATORS_H

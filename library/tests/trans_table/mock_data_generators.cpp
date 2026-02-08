@@ -1,7 +1,10 @@
+// Project headers
 #include "mock_data_generators.hpp"
-#include <iostream>
-#include <algorithm>
 #include "utility/constants.h"
+
+// C++ standard library headers
+#include <algorithm>
+#include <iostream>
 
 namespace dds_test {
 

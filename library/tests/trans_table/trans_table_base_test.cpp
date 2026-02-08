@@ -1,5 +1,10 @@
-#include <gtest/gtest.h>
+// C++ standard library headers
 #include <memory>
+
+// Third-party headers
+#include <gtest/gtest.h>
+
+// Project headers
 #include "trans_table/trans_table.hpp"
 
 namespace dds_test {

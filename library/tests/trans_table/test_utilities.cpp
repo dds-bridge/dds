@@ -1,10 +1,13 @@
+// Project headers
 #include "test_utilities.hpp"
-#include <iostream>
-#include <iomanip>
-#include <sstream>
+#include "utility/constants.h"
+
+// C++ standard library headers
 #include <algorithm>
 #include <cstdlib>
-#include "utility/constants.h"
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 namespace dds_test {
 
