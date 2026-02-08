@@ -11,9 +11,6 @@
 #include <memory>
 #include <string>
 
-// Third-party headers
-#include <gtest/gtest.h>
-
 // Project headers
 #include <api/dll.h>
 #include "trans_table/trans_table.hpp"
