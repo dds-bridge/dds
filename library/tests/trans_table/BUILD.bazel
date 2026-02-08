@@ -24,9 +24,6 @@ cc_test(
         "trans_table_base_test.cpp",
         "trans_table_s_test.cpp",
         "trans_table_l_test.cpp",
-        # Note: integration and performance tests excluded due to runtime issues
-        #"trans_table_integration_test.cpp",
-        #"trans_table_performance_test.cpp",
     ],
     deps = [
         "//library/src/trans_table:testable_trans_table",
