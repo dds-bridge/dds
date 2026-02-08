@@ -108,7 +108,6 @@ protected:
             int /*trick*/,
             int /*hand*/) const override
         {
-            
             printSuitsCalled = true;
         }
 
