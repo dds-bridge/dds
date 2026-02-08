@@ -19,21 +19,23 @@ using TestScenario = dds_test::MockDataFactory::TestScenario;
 class TransTablePerformanceTest : public ::testing::Test
 {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         factory = std::make_unique<MockDataFactory>(98765);
         scenario = factory->CreateBasicScenario();
         ttS = std::make_unique<TransTableS>();
         ttL = std::make_unique<TransTableL>();
-    ttS->init(scenario.handLookup);
-    ttL->init(scenario.handLookup);
-    ttS->set_memory_default(DEFAULT_MEMORY_MB);
-    ttL->set_memory_default(DEFAULT_MEMORY_MB);
-    ttS->make_tt();
-    ttL->make_tt();
+        ttS->init(scenario.handLookup);
+        ttL->init(scenario.handLookup);
+        ttS->set_memory_default(DEFAULT_MEMORY_MB);
+        ttL->set_memory_default(DEFAULT_MEMORY_MB);
+        ttS->make_tt();
+        ttL->make_tt();
     }
-    void TearDown() override {
-    ttS->return_all_memory();
-    ttL->return_all_memory();
+    void TearDown() override
+    {
+        ttS->return_all_memory();
+        ttL->return_all_memory();
     }
     static constexpr int DEFAULT_MEMORY_MB = 64;
     std::unique_ptr<MockDataFactory> factory;
@@ -153,8 +155,8 @@ TEST_F(TransTablePerformanceTest, SearchTimeComplexityScaling)
 {
     std::vector<int> sizes = {100, 1000, 5000};
     for (int n : sizes) {
-    ttS->reset_memory(ResetReason::NewDeal);
-    ttL->reset_memory(ResetReason::NewDeal);
+        ttS->reset_memory(ResetReason::NewDeal);
+        ttL->reset_memory(ResetReason::NewDeal);
         auto scenarios = factory->CreateTestSuite(n);
         for (const auto& s : scenarios) {
             ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);

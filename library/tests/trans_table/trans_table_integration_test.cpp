@@ -22,22 +22,28 @@ using TestScenario = MockDataFactory::TestScenario;
 class TransTableIntegrationTest : public ::testing::Test
 {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         factory = std::make_unique<MockDataFactory>(12345);
         scenario = factory->CreateBasicScenario();
         ttS = std::make_unique<TransTableS>();
         ttL = std::make_unique<TransTableL>();
         // Initialize with basic scenario data
-    ttS->init(scenario.handLookup);
-    ttL->init(scenario.handLookup);
-    ttS->set_memory_default(DEFAULT_MEMORY_MB);
-    ttL->set_memory_default(DEFAULT_MEMORY_MB);
-    ttS->make_tt();
-    ttL->make_tt();
+        ttS->init(scenario.handLookup);
+        ttL->init(scenario.handLookup);
+        ttS->set_memory_default(DEFAULT_MEMORY_MB);
+        ttL->set_memory_default(DEFAULT_MEMORY_MB);
+        ttS->make_tt();
+        ttL->make_tt();
     }
-    void TearDown() override {
-    if (ttS) ttS->return_all_memory();
-    if (ttL) ttL->return_all_memory();
+    void TearDown() override
+    {
+        if (ttS) {
+            ttS->return_all_memory();
+        }
+        if (ttL) {
+            ttL->return_all_memory();
+        }
     }
     static constexpr int DEFAULT_MEMORY_MB = 64;
     std::unique_ptr<MockDataFactory> factory;
@@ -144,14 +150,14 @@ TEST_F(TransTableIntegrationTest, MultipleScenarios)
     for (int i = 0; i < 5; ++i) {
         auto s = factory->CreateBasicScenario();
         s.trick = i + 1;  // Vary the trick number
-        
-    ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-    ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
-        
+
+        ttS->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+        ttL->add(s.trick, s.hand, s.aggrTarget, s.win_ranks, s.nodeData, false);
+
         bool lowerFlagS = false, lowerFlagL = false;
-    auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
-    auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
-        
+        auto resultS = ttS->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagS);
+        auto resultL = ttL->lookup(s.trick, s.hand, s.aggrTarget, s.hand_dist, 10, lowerFlagL);
+
         EXPECT_NE(resultS, nullptr) << "Failed for scenario " << i;
         EXPECT_NE(resultL, nullptr) << "Failed for scenario " << i;
     }
