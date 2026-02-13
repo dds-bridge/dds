@@ -156,7 +156,7 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* rel_table /* size 8192 as
     rel_table[aggr] = rel_table[aggr ^ topBitRank];
     RelRanksType * relp = &rel_table[aggr];
 
-  int weight = count_table[aggr];
+    int weight = count_table[aggr];
     for (int c = weight; c >= 2; c--) {
       for (int s = 0; s < DDS_SUITS; s++) {
         relp->abs_rank[c][s].hand = relp->abs_rank[c - 1][s].hand;
