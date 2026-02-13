@@ -198,7 +198,7 @@ void init_rel_and_track(const Pos& tpos, RelRanksType* rel_table /* size 8192 as
         track_p->lead_suit = m.suit;
       } else {
         // compare with previous winning card
-  ExtCard prev = track_p->move[track_p->high[relIndex - 1]];
+        ExtCard prev = track_p->move[track_p->high[relIndex - 1]];
         bool newIsWinning = false;
         if (m.suit == prev.suit) {
           if (m.rank > prev.rank) newIsWinning = true;
