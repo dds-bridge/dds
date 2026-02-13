@@ -7,8 +7,20 @@ cc_test(
     srcs = ["heuristic_sorting_test.cpp"],
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
-    "@googletest//:gtest_main",
-    "//library/src/moves:moves",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "merge_scratch_test",
+    srcs = ["merge_scratch_test.cpp"],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/api:api_definitions",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -25,33 +37,25 @@ cc_test(
     name = "minimal_weight_test",
     srcs = ["minimal_weight_test.cpp"],
     deps = [
-        "//library/src/heuristic_sorting:testable_heuristic_sorting",
         "//library/src:testable_dds",
-    "//library/src/api:api_definitions",
+        "//library/src/api:api_definitions",
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
         "@googletest//:gtest_main",
     ],
 )
 
 cc_test(
     name = "targeted_unit_tests",
-    srcs = ["targeted_unit_tests.cpp" , "test_utils.cpp", "test_utils.hpp"],
+    srcs = [
+        "targeted_unit_tests.cpp",
+        "test_utils.cpp",
+        "test_utils.hpp",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
     deps = [
         "//library/src/heuristic_sorting:testable_heuristic_sorting",
-    "@googletest//:gtest_main",
-    "//library/src/moves:moves",
-    ],
-    copts = DDS_CPPOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
-)
-
-cc_test(
-    name = "merge_scratch_test",
-    srcs = ["merge_scratch_test.cpp"],
-    deps = [
         "//library/src/moves:moves",
-    "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
-    copts = DDS_CPPOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
 )
