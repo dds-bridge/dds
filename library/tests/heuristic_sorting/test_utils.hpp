@@ -19,11 +19,11 @@
  * then by suit, rank, and sequence. Useful for comparing move orders across tests.
  *
  * @param moves Array of moves to normalize
- * @param numMoves Number of moves in the array
+ * @param num_moves Number of moves in the array
  * @param include_scores If true, include weight values in output
  * @return JSON-like string representation of sorted moves
  */
-std::string normalize_ordering(const MoveType* moves, int numMoves, bool include_scores = false);
+std::string normalize_ordering(const MoveType* moves, int num_moves, bool include_scores = false);
 
 /**
  * @brief Initialize relRanks table and TrackType for testing
@@ -33,18 +33,18 @@ std::string normalize_ordering(const MoveType* moves, int numMoves, bool include
  * a mid-trick state by providing cards already played.
  *
  * @param tpos The position to initialize from
- * @param relTable Pointer to RelRanksType array (size 8192 assumed)
- * @param trackp Pointer to TrackType structure to initialize
- * @param cardsPlayed Number of cards already played (0..4), default 0
- * @param playedMoves Array of played moves in play order (first to last), optional
+ * @param rel_table Pointer to RelRanksType array (size 8192 assumed)
+ * @param track_p Pointer to TrackType structure to initialize
+ * @param cards_played Number of cards already played (0..4), default 0
+ * @param played_moves Array of played moves in play order (first to last), optional
  * @param lead_hand Absolute hand that led the trick (0..3), default 0
  * @param trump Trump suit or DDS_NOTRUMP, default DDS_NOTRUMP
  */
 void init_rel_and_track(
-	const Pos& tpos,
-	RelRanksType* relTable /* size 8192 assumed */,
-	TrackType* trackp,
-	int cardsPlayed = 0,
-	const MoveType* playedMoves = nullptr,
-	int lead_hand = 0,
-	int trump = DDS_NOTRUMP);
+    const Pos& tpos,
+    RelRanksType* rel_table /* size 8192 assumed */,
+    TrackType* track_p,
+    int cards_played = 0,
+    const MoveType* played_moves = nullptr,
+    int lead_hand = 0,
+    int trump = DDS_NOTRUMP);
