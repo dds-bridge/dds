@@ -1,3 +1,11 @@
+/**
+ * @file minimal_weight_test.cpp
+ * @brief Minimal test to verify weight allocation functions don't crash
+ *
+ * Basic smoke test for weight_alloc_trump0 function to ensure it completes
+ * without segmentation faults on minimal input data.
+ */
+
 #include <gtest/gtest.h>
 #include <iostream>
 #include "heuristic_sorting/heuristic_sorting.hpp"

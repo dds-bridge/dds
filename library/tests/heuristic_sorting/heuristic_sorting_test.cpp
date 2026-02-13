@@ -1,3 +1,10 @@
+/**
+ * @file heuristic_sorting_test.cpp
+ * @brief Comprehensive unit tests for heuristic sorting weight allocation functions
+ *
+ * Tests all weight allocation functions across different trick positions (0-3)
+ * and contexts (trump/NT, void/not-void) to ensure correct move prioritization.
+ */
 
 #include <gtest/gtest.h>
 #include <cassert>
