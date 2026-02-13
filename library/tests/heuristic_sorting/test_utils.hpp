@@ -1,5 +1,4 @@
-#ifndef LIBRARY_TESTS_HEURISTIC_SORTING_TEST_UTILS_HPP_
-#define LIBRARY_TESTS_HEURISTIC_SORTING_TEST_UTILS_HPP_
+#pragma once
 
 #include <string>
 #include "heuristic_sorting/heuristic_sorting.hpp"
@@ -20,5 +19,3 @@ void init_rel_and_track(
 	const MoveType* playedMoves = nullptr,
 	int lead_hand = 0,
 	int trump = DDS_NOTRUMP);
-
-#endif // LIBRARY_TESTS_HEURISTIC_SORTING_TEST_UTILS_HPP_
