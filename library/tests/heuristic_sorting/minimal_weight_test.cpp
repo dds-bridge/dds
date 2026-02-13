@@ -7,9 +7,11 @@
 /**
  * Minimal test to isolate the segfault issue
  */
-class MinimalWeightTest : public ::testing::Test {
+class MinimalWeightTest : public ::testing::Test
+{
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         // Initialize the DDS system
         SetMaxThreads(0);
     }
