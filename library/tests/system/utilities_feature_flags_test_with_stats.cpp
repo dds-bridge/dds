@@ -3,8 +3,9 @@
 #define DDS_UTILITIES_STATS
 #endif
 
-#include "library/src/system/util/utilities.hpp"
 #include <gtest/gtest.h>
+
+#include "library/src/system/util/utilities.hpp"
 
 namespace dds {
 
