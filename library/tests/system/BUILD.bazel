@@ -140,10 +140,36 @@ cc_test(
     ],
 )
 
+# Utilities snapshot tests
+# DISABLED: Tests for unimplemented log_snapshot() feature
+cc_test(
+    name = "utilities_log_snapshot_test",
+    srcs = ["utilities_log_snapshot_test.cpp"],
+    tags = ["manual"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # Utilities stats tests
 cc_test(
     name = "utilities_stats_test",
     srcs = ["utilities_stats_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Transposition table sharing tests
+# DISABLED: Tests for SolverContext TT sharing (incomplete API)
+cc_test(
+    name = "tt_sharing_test",
+    srcs = ["tt_sharing_test.cpp"],
+    tags = ["manual"],
     deps = [
         "//library/src:testable_dds",
         "//library/src/api:api_definitions",
