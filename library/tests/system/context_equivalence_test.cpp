@@ -1,3 +1,9 @@
+/// @file context_equivalence_test.cpp
+/// @brief Tests for equivalence between legacy and context-based solver APIs.
+///
+/// Validates that SolverContext and legacy SolveBoard produce identical
+/// results for the same input hands and parameters.
+
 #include <gtest/gtest.h>
 #include <cstring>
 

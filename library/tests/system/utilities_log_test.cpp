@@ -1,3 +1,9 @@
+/// @file utilities_log_test.cpp
+/// @brief Tests for utilities logging without DDS_UTILITIES_LOG define.
+///
+/// Validates that no log entries are recorded when DDS_UTILITIES_LOG
+/// is not defined at compile time.
+
 #include <gtest/gtest.h>
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"

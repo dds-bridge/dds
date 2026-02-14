@@ -1,3 +1,9 @@
+/// @file utilities_log_ctx_ops_test.cpp
+/// @brief Tests for SolverContext operations logging without DDS_UTILITIES_LOG.
+///
+/// Validates that no log entries are emitted when DDS_UTILITIES_LOG is
+/// not defined at compile time.
+
 #include <gtest/gtest.h>
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"

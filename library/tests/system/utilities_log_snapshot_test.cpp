@@ -1,3 +1,9 @@
+/// @file utilities_log_snapshot_test.cpp
+/// @brief Tests for log buffer snapshot functionality.
+///
+/// Validates that snapshots of log buffers are independent copies
+/// and remain unchanged when the original buffer is modified.
+
 #include <gtest/gtest.h>
 
 #include "library/src/system/util/utilities.hpp"

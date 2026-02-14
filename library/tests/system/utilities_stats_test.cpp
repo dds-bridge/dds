@@ -1,3 +1,9 @@
+/// @file utilities_stats_test.cpp
+/// @brief Tests for statistics counters without DDS_UTILITIES_STATS define.
+///
+/// Validates that statistics counters remain zero when DDS_UTILITIES_STATS
+/// is not defined at compile time.
+
 #include <gtest/gtest.h>
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"

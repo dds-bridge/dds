@@ -1,3 +1,9 @@
+/// @file concurrency_validation_test.cpp
+/// @brief Tests for concurrent access to SolverContext and transposition tables.
+///
+/// Validates that multiple SolverContext instances can operate safely in
+/// parallel with proper thread management and transposition table sharing.
+
 #include <gtest/gtest.h>
 #include <thread>
 #include <vector>

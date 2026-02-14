@@ -1,3 +1,9 @@
+/// @file utilities_log_ctx_ops_test_with_define.cpp
+/// @brief Tests for SolverContext operations logging with DDS_UTILITIES_LOG.
+///
+/// Validates that context and transposition table operations are properly
+/// logged when DDS_UTILITIES_LOG is defined.
+
 #include <gtest/gtest.h>
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"

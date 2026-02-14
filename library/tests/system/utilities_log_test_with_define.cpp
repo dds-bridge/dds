@@ -1,3 +1,9 @@
+/// @file utilities_log_test_with_define.cpp
+/// @brief Tests for utilities logging with DDS_UTILITIES_LOG defined.
+///
+/// Validates that transposition table operations are properly logged
+/// when DDS_UTILITIES_LOG is defined at compile time.
+
 #include <gtest/gtest.h>
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"

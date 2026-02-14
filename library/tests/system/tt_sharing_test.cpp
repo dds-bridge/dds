@@ -1,3 +1,9 @@
+/// @file tt_sharing_test.cpp
+/// @brief Tests for transposition table sharing across SolverContext instances.
+///
+/// Validates that multiple SolverContext instances with the same thread
+/// data share the same transposition table instance.
+
 #include <gtest/gtest.h>
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"
