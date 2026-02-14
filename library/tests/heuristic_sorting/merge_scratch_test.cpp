@@ -1,3 +1,11 @@
+/**
+ * @file merge_scratch_test.cpp
+ * @brief Test for merge sort functionality in move ordering
+ *
+ * Verifies that the Moves::Sort() function correctly orders moves
+ * by weight in descending order using merge sort algorithm.
+ */
+
 #include <gtest/gtest.h>
 #include "moves/moves.hpp"
 

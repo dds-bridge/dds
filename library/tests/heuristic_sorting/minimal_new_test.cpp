@@ -1,3 +1,11 @@
+/**
+ * @file minimal_new_test.cpp
+ * @brief Minimal test for weight_alloc_trump0 function
+ *
+ * Tests basic functionality of weight allocation for trump contracts
+ * to verify the function executes successfully without errors.
+ */
+
 #include <gtest/gtest.h>
 #include <iostream>
 #include "heuristic_sorting/heuristic_sorting.hpp"

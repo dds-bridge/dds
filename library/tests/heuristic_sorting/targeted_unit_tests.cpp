@@ -1,3 +1,11 @@
+/**
+ * @file targeted_unit_tests.cpp
+ * @brief Targeted unit tests for small helper functions in heuristic sorting
+ *
+ * Tests individual helper functions like rank_forces_ace() and get_top_number()
+ * with edge cases and golden expectations to ensure correctness.
+ */
+
 #include <gtest/gtest.h>
 #include <cstring>
 
