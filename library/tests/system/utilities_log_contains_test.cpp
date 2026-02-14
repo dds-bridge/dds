@@ -1,5 +1,11 @@
+/// @file utilities_log_contains_test.cpp
+/// @brief Tests for log buffer content validation.
+///
+/// Validates that log entries are properly recorded and can be searched
+/// within the utilities log buffer.
 
 #include <gtest/gtest.h>
+
 #include "library/src/system/util/utilities.hpp"
 
 namespace dds {

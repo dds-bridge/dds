@@ -1,5 +1,12 @@
-#include "library/src/system/util/utilities.hpp"
+/// @file utilities_feature_flags_test.cpp
+/// @brief Tests for feature flag detection in Utilities.
+///
+/// Validates that logging and statistics features are properly disabled
+/// by default without compile-time defines.
+
 #include <gtest/gtest.h>
+
+#include "library/src/system/util/utilities.hpp"
 
 namespace dds {
 

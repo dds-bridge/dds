@@ -1,3 +1,9 @@
+/// @file concurrency_validation_test.cpp
+/// @brief Tests for concurrent access to SolverContext and transposition tables.
+///
+/// Validates that multiple SolverContext instances can operate safely in
+/// parallel with proper thread management and transposition table sharing.
+
 #include <gtest/gtest.h>
 #include <thread>
 #include <vector>
@@ -13,7 +19,7 @@
 extern Memory memory;
 
 // Ensure at least N thread slots are available in the legacy Memory
-static void ensureThreads(size_t n)
+static void ensure_threads(size_t n)
 {
   if (memory.NumThreads() < n)
     memory.Resize(static_cast<unsigned>(n), DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
@@ -57,7 +63,7 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
   };
 
   const size_t N = pbns.size();
-  ensureThreads(N);
+  ensure_threads(N);
 
   // Prepare deals and sequential baselines (single thread / thr 0)
   std::vector<Deal> deals;

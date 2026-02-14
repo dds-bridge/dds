@@ -1,3 +1,9 @@
+/// @file utilities_log_ctx_ops_test.cpp
+/// @brief Tests for SolverContext operations logging without DDS_UTILITIES_LOG.
+///
+/// Validates that no log entries are emitted when DDS_UTILITIES_LOG is
+/// not defined at compile time.
+
 #include <gtest/gtest.h>
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"
@@ -5,7 +11,7 @@
 
 extern Memory memory;
 
-static void ensureThread()
+static void ensure_thread()
 {
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
@@ -13,7 +19,7 @@ static void ensureThread()
 
 TEST(UtilitiesLogCtxOpsNoDefine, NoEntriesWhenDisabled)
 {
-  ensureThread();
+  ensure_thread();
   SolverContext ctx;
 
   // Start from a clean log buffer

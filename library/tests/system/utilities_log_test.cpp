@@ -1,3 +1,9 @@
+/// @file utilities_log_test.cpp
+/// @brief Tests for utilities logging without DDS_UTILITIES_LOG define.
+///
+/// Validates that no log entries are recorded when DDS_UTILITIES_LOG
+/// is not defined at compile time.
+
 #include <gtest/gtest.h>
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"
@@ -5,7 +11,7 @@
 
 extern Memory memory;
 
-static void ensureThread()
+static void ensure_thread()
 {
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
@@ -13,7 +19,7 @@ static void ensureThread()
 
 TEST(UtilitiesLogTest, NoLogWithoutDefine)
 {
-  ensureThread();
+  ensure_thread();
   SolverContext ctx;
 
   // Ensure clean start

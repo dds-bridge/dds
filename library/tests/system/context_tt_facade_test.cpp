@@ -1,3 +1,9 @@
+/// @file context_tt_facade_test.cpp
+/// @brief Tests for SolverContext transposition table facade methods.
+///
+/// Validates reset, clear, resize, and lifecycle methods for managing
+/// transposition tables within a SolverContext.
+
 #include <gtest/gtest.h>
 #include <cstring>
 #include <api/dll.h>

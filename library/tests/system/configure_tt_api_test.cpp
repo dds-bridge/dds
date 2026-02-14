@@ -1,3 +1,9 @@
+/// @file configure_tt_api_test.cpp
+/// @brief Tests for transposition table configuration API.
+///
+/// Validates SolverContext configure_tt() behavior for resizing,
+/// switching kinds, and lazy initialization of transposition tables.
+
 #include <gtest/gtest.h>
 
 #include <solver_context/solver_context.hpp>
