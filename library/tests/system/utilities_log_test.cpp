@@ -5,7 +5,7 @@
 
 extern Memory memory;
 
-static void ensureThread()
+static void ensure_thread()
 {
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
@@ -13,7 +13,7 @@ static void ensureThread()
 
 TEST(UtilitiesLogTest, NoLogWithoutDefine)
 {
-  ensureThread();
+  ensure_thread();
   SolverContext ctx;
 
   // Ensure clean start
