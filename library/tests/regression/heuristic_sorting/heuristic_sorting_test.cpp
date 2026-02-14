@@ -1,3 +1,9 @@
+/// @file heuristic_sorting_test.cpp
+/// @brief Regression tests for heuristic sorting behavior.
+///
+/// Validates that move weights are ordered correctly and that weight-related
+/// heuristics maintain expected priority and consistency across scenarios.
+
 #include <algorithm>
 #include <gtest/gtest.h>
 #include <vector>
