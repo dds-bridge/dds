@@ -1,6 +1,6 @@
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <vector>
-#include <algorithm>
 
 #include <api/dds.h>
 
