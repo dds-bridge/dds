@@ -1,3 +1,10 @@
+/// @file constants_test.cpp
+/// @brief Tests for bridge card constant arrays and relationships.
+///
+/// Validates that constant arrays (lho, rho, partner, bit_map_rank, card_rank,
+/// card_suit, card_hand) have correct values and maintain expected relationships
+/// (e.g., partner of partner is self, LHO of RHO is self).
+
 #include <gtest/gtest.h>
 #include <utility/constants.h>
 

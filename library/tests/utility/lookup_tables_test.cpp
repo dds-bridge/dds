@@ -1,5 +1,13 @@
-#include <gtest/gtest.h>
+/// @file lookup_tables_test.cpp
+/// @brief Tests for lookup table initialization and consistency.
+///
+/// Validates that lookup tables (highest_rank, lowest_rank, count_table, rel_rank,
+/// win_ranks, group_data) are correctly initialized with proper values, correct
+/// dimensions, and maintain internal consistency relationships.
+
 #include <chrono>
+#include <gtest/gtest.h>
+
 #include <lookup_tables/lookup_tables.hpp>
 
 class LookupTablesTest : public ::testing::Test {

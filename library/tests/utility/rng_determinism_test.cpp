@@ -1,6 +1,14 @@
-#include "gtest/gtest.h"
+/// @file rng_determinism_test.cpp
+/// @brief Tests for RNG determinism with seed-based reproduction.
+///
+/// Validates that the RNG (mt19937) in SolverContext produces deterministic
+/// sequences when seeded with the same value, and produces different sequences
+/// with different seeds.
+
 #include <random>
 #include <vector>
+#include <gtest/gtest.h>
+
 #include <solver_context/solver_context.hpp>
 #include "system/memory.hpp"
 
