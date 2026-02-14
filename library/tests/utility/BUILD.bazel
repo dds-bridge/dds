@@ -1,15 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
-## Retired: arena_test removed after arena deprecation.
-
-cc_test(
-    name = "rng_determinism_test",
-    srcs = ["rng_determinism_test.cpp"],
-    deps = [
-        "//library/src:testable_dds",
-        "@googletest//:gtest_main",
-    ],
-)
+# Utility tests: constants, lookup tables, and RNG determinism validation
 
 cc_test(
     name = "constants_test",
@@ -21,7 +12,7 @@ cc_test(
 )
 
 cc_test(
-    name = "lookup_tables_test", 
+    name = "lookup_tables_test",
     srcs = ["lookup_tables_test.cpp"],
     deps = [
         "//library/src/lookup_tables:lookup_tables",
@@ -30,14 +21,24 @@ cc_test(
 )
 
 cc_test(
+    name = "rng_determinism_test",
+    srcs = ["rng_determinism_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Aggregate test suite combining constants and lookup tables tests
+cc_test(
     name = "utility_test_suite",
     srcs = [
         "constants_test.cpp",
         "lookup_tables_test.cpp",
     ],
     deps = [
+        "//library/src/lookup_tables:lookup_tables",
         "//library/src/utility:constants",
-        "//library/src/lookup_tables:lookup_tables", 
         "@googletest//:gtest_main",
     ],
 )
