@@ -20,56 +20,56 @@
 #include <lookup_tables/lookup_tables.hpp>
 
 // Internal ctx-enabled variants (forward declarations)
-static bool ABsearch0_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
-static bool ABsearch1_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
-static bool ABsearch2_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
-static bool ABsearch3_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
-EvalType EvaluateWithContext(Pos const * posPoint, int trump, SolverContext& ctx);
+static bool ab_search_0_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ab_search_1_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ab_search_2_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
+static bool ab_search_3_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
+EvalType evaluate_with_context(Pos const * posPoint, int trump, SolverContext& ctx);
 
 // ctx-enabled helpers to keep search-state access behind the facade
-static void Make3_ctx(
+static void make_3_ctx(
   Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   MoveType const * mply,
   SolverContext& ctx);
 
-static void Undo0_ctx(
+static void undo_0_ctx(
   Pos * posPoint,
   const int depth,
   const MoveType& mply,
   SolverContext& ctx);
 
 
-void Make3Simple(
+void make_3_simple(
   Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
   MoveType const * mply,
   SolverContext& ctx);
 
-void Undo0(
+void undo_0(
   Pos * posPoint,
   const int depth,
   const MoveType& mply,
   const std::shared_ptr<ThreadData>& thrp);
 
-void Undo0Simple(
+void undo_0_simple(
   Pos * posPoint,
   const int depth,
   const MoveType& mply);
 
-void Undo1(
+void undo_1(
   Pos * posPoint,
   const int depth,
   const MoveType& mply);
 
-void Undo2(
+void undo_2(
   Pos * posPoint,
   const int depth,
   const MoveType& mply);
 
-void Undo3(
+void undo_3(
   Pos * posPoint,
   const int depth,
   const MoveType& mply);
@@ -78,7 +78,7 @@ void Undo3(
 const int handDelta[DDS_SUITS] = { 256, 16, 1, 0 };
 
 
-bool ABsearch(
+bool ab_search(
   Pos * posPoint,
   const int target,
   const int depth,
@@ -129,14 +129,14 @@ bool ABsearch(
     if (mply == NULL)
       break;
 
-    Make0(posPoint, depth, mply);
+    make_0(posPoint, depth, mply);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-  value = ABsearch1_ctx(posPoint, target, depth - 1, ctx);
+  value = ab_search_1_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo1(posPoint, depth, * mply);
+    undo_1(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
     if (value == success) /* A cut-off? */
@@ -170,17 +170,17 @@ ABexit:
 }
 
 
-bool ABsearch0(
+bool ab_search_0(
   Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
 {
-  return ABsearch0_ctx(posPoint, target, depth, ctx);
+  return ab_search_0_ctx(posPoint, target, depth, ctx);
 }
 
 // ctx-enabled implementation
-static bool ABsearch0_ctx(
+static bool ab_search_0_ctx(
   Pos * posPoint,
   const int target,
   const int depth,
@@ -259,7 +259,7 @@ static bool ABsearch0_ctx(
   else if (depth == 0) /* Maximum depth? */
   {
     TIMER_START(TIMER_NO_EVALUATE, depth);
-    EvalType evalData = EvaluateWithContext(posPoint, trump, ctx);
+    EvalType evalData = evaluate_with_context(posPoint, trump, ctx);
     TIMER_END(TIMER_NO_EVALUATE, depth);
 
     bool value = (evalData.tricks >= target ? true : false);
@@ -388,14 +388,14 @@ static bool ABsearch0_ctx(
     if (mply == NULL)
       break;
 
-    Make0(posPoint, depth, mply);
+    make_0(posPoint, depth, mply);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-  value = ABsearch1_ctx(posPoint, target, depth - 1, ctx);
+  value = ab_search_1_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo1(posPoint, depth, * mply);
+    undo_1(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
     if (value == success) /* A cut-off? */
@@ -478,16 +478,16 @@ ABexit:
 }
 
 
-bool ABsearch1(
+bool ab_search_1(
   Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
 {
-  return ABsearch1_ctx(posPoint, target, depth, ctx);
+  return ab_search_1_ctx(posPoint, target, depth, ctx);
 }
 
-static bool ABsearch1_ctx(
+static bool ab_search_1_ctx(
   Pos * posPoint,
   const int target,
   const int depth,
@@ -538,14 +538,14 @@ static bool ABsearch1_ctx(
     if (mply == NULL)
       break;
 
-    Make1(posPoint, depth, mply);
+    make_1(posPoint, depth, mply);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-  value = ABsearch2_ctx(posPoint, target, depth - 1, ctx);
+  value = ab_search_2_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo2(posPoint, depth, * mply);
+    undo_2(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
     if (value == success) /* A cut-off? */
@@ -574,16 +574,16 @@ ABexit:
 }
 
 
-bool ABsearch2(
+bool ab_search_2(
   Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
 {
-  return ABsearch2_ctx(posPoint, target, depth, ctx);
+  return ab_search_2_ctx(posPoint, target, depth, ctx);
 }
 
-static bool ABsearch2_ctx(
+static bool ab_search_2_ctx(
   Pos * posPoint,
   const int target,
   const int depth,
@@ -620,7 +620,7 @@ static bool ABsearch2_ctx(
     if (mply == NULL)
       break;
 
-    Make2(posPoint, depth, mply);
+    make_2(posPoint, depth, mply);
 
 #ifdef DDS_AB_STATS
     thrp->ABStats.IncrNode(depth);
@@ -628,11 +628,11 @@ static bool ABsearch2_ctx(
     TIMER_END(TIMER_NO_MAKE, depth);
 
     TIMER_START(TIMER_NO_AB, depth - 1);
-  value = ABsearch3_ctx(posPoint, target, depth - 1, ctx);
+  value = ab_search_3_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-    Undo3(posPoint, depth, * mply);
+    undo_3(posPoint, depth, * mply);
     TIMER_END(TIMER_NO_UNDO, depth);
 
     if (value == success) /* A cut-off? */
@@ -661,16 +661,16 @@ ABexit:
 }
 
 
-bool ABsearch3(
+bool ab_search_3(
   Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
 {
-  return ABsearch3_ctx(posPoint, target, depth, ctx);
+  return ab_search_3_ctx(posPoint, target, depth, ctx);
 }
 
-static bool ABsearch3_ctx(
+static bool ab_search_3_ctx(
   Pos * posPoint,
   const int target,
   const int depth,
@@ -715,7 +715,7 @@ static bool ABsearch3_ctx(
     if (mply == NULL)
       break;
 
-  Make3_ctx(posPoint, makeWinRank, depth, mply, ctx);
+  make_3_ctx(posPoint, makeWinRank, depth, mply, ctx);
 
     ctx.search().trick_nodes()++; // As hand_rel_first == 0
 
@@ -723,11 +723,11 @@ static bool ABsearch3_ctx(
       posPoint->tricks_max++;
 
   TIMER_START(TIMER_NO_AB, depth - 1);
-  value = ABsearch0_ctx(posPoint, target, depth - 1, ctx);
+  value = ab_search_0_ctx(posPoint, target, depth - 1, ctx);
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-  Undo0_ctx(posPoint, depth, * mply, ctx);
+  undo_0_ctx(posPoint, depth, * mply, ctx);
 
     if (ctx.search().node_type_store(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricks_max--;
@@ -759,7 +759,7 @@ ABexit:
   return value;
 }
 
-void Make0(
+void make_0(
   Pos * posPoint,
   const int depth,
   MoveType const * mply)
@@ -779,7 +779,7 @@ void Make0(
 }
 
 
-void Make1(
+void make_1(
   Pos * posPoint,
   const int depth,
   MoveType const * mply)
@@ -799,7 +799,7 @@ void Make1(
 }
 
 
-void Make2(
+void make_2(
   Pos * posPoint,
   const int depth,
   MoveType const * mply)
@@ -819,7 +819,7 @@ void Make2(
 }
 
 
-void Make3(
+void make_3(
   Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
@@ -885,7 +885,7 @@ void Make3(
 
 
 // ctx-enabled version that records winners via the SearchContext facade
-static void Make3_ctx(
+static void make_3_ctx(
   Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
@@ -950,7 +950,7 @@ static void Make3_ctx(
 }
 
 
-void Make3Simple(
+void make_3_simple(
   Pos * posPoint,
   unsigned short trickCards[DDS_SUITS],
   const int depth,
@@ -985,7 +985,7 @@ void Make3Simple(
 }
 
 
-void Undo0(
+void undo_0(
   Pos * posPoint,
   const int depth,
   const MoveType& mply,
@@ -1014,7 +1014,7 @@ void Undo0(
 }
 
 // ctx-enabled version that reads winners via the SearchContext facade
-static void Undo0_ctx(
+static void undo_0_ctx(
   Pos * posPoint,
   const int depth,
   const MoveType& mply,
@@ -1044,7 +1044,7 @@ static void Undo0_ctx(
 }
 
 
-void Undo0Simple(
+void undo_0_simple(
   Pos * posPoint,
   const int depth,
   const MoveType& mply)
@@ -1058,7 +1058,7 @@ void Undo0Simple(
 }
 
 
-void Undo1(
+void undo_1(
   Pos * posPoint,
   const int depth,
   const MoveType& mply)
@@ -1074,7 +1074,7 @@ void Undo1(
 }
 
 
-void Undo2(
+void undo_2(
   Pos * posPoint,
   const int depth,
   const MoveType& mply)
@@ -1090,7 +1090,7 @@ void Undo2(
 }
 
 
-void Undo3(
+void undo_3(
   Pos * posPoint,
   const int depth,
   const MoveType& mply)
@@ -1106,7 +1106,7 @@ void Undo3(
 }
 
 
-EvalType EvaluateWithContext(
+EvalType evaluate_with_context(
   Pos const * posPoint,
   const int trump,
   SolverContext& ctx)

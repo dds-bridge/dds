@@ -24,17 +24,17 @@
 #include <solver_context/solver_context.hpp>
 
 System sysdep(
-    &SolveChunkCommon,
-    &CalcChunkCommon,
+    &solve_chunk_common,
+    &calc_chunk_common,
     &PlayChunkCommon,
-    &DetectSolveDuplicates,
+    &detect_solve_duplicates,
     &DetectCalcDuplicates,
     &DetectPlayDuplicates,
-    &SolveSingleCommon,
-    &CalcSingleCommon,
+    &solve_single_common,
+    &calc_single_common,
     &PlaySingleCommon,
-    &CopySolveSingle,
-    &CopyCalcSingle,
+    &copy_solve_single,
+    &copy_calc_single,
     &CopyPlaySingle
 );
 Memory memory;

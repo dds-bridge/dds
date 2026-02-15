@@ -7,69 +7,65 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_ABSEARCH_H
-#define DDS_ABSEARCH_H
+#pragma once
 
 #include <api/dds.h>
 #include <solver_context/solver_context.hpp>
 
+auto ab_search(
+    Pos* pos_point,
+    int target,
+    int depth,
+    SolverContext& ctx) -> bool;
 
-bool ABsearch(
-  Pos * posPoint,
-  const int target,
-  const int depth,
-  SolverContext& ctx);
+auto ab_search_0(
+    Pos* pos_point,
+    int target,
+    int depth,
+    SolverContext& ctx) -> bool;
 
-bool ABsearch0(
-  Pos * posPoint,
-  const int target,
-  const int depth,
-  SolverContext& ctx);
+auto ab_search_1(
+    Pos* pos_point,
+    int target,
+    int depth,
+    SolverContext& ctx) -> bool;
 
-bool ABsearch1(
-  Pos * posPoint,
-  const int target,
-  const int depth,
-  SolverContext& ctx);
+auto ab_search_2(
+    Pos* pos_point,
+    int target,
+    int depth,
+    SolverContext& ctx) -> bool;
 
-bool ABsearch2(
-  Pos * posPoint,
-  const int target,
-  const int depth,
-  SolverContext& ctx);
+auto ab_search_3(
+    Pos* pos_point,
+    int target,
+    int depth,
+    SolverContext& ctx) -> bool;
 
-bool ABsearch3(
-  Pos * posPoint,
-  const int target,
-  const int depth,
-  SolverContext& ctx);
+auto make_0(
+    Pos* pos_point,
+    int depth,
+    const MoveType* mply) -> void;
 
-void Make0(
-  Pos * posPoint,
-  const int depth,
-  MoveType const * mply);
+auto make_1(
+    Pos* pos_point,
+    int depth,
+    const MoveType* mply) -> void;
 
-void Make1(
-  Pos * posPoint,
-  const int depth,
-  MoveType const * mply);
+auto make_2(
+    Pos* pos_point,
+    int depth,
+    const MoveType* mply) -> void;
 
-void Make2(
-  Pos * posPoint,
-  const int depth,
-  MoveType const * mply);
+auto make_3(
+    Pos* pos_point,
+    unsigned short trick_cards[DDS_SUITS],
+    int depth,
+    const MoveType* mply,
+    SolverContext& ctx) -> void;
 
-void Make3(
-  Pos * posPoint,
-  unsigned short trickCards[DDS_SUITS],
-  const int depth,
-  MoveType const * mply,
-  SolverContext& ctx);
-
-// Evaluate terminal position using the provided context
-EvalType EvaluateWithContext(
-  Pos const * posPoint,
-  const int trump,
-  SolverContext& ctx);
-
-#endif
+// Evaluate terminal position using the provided context.
+auto evaluate_with_context(
+    const Pos* pos_point,
+    int trump,
+    SolverContext& ctx) -> EvalType;

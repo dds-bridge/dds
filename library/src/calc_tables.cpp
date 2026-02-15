@@ -22,14 +22,14 @@ extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
-int CalcAllBoardsN(
+auto calc_all_boards_n(
   Boards * bop,
-  SolvedBoards * solvedp);
+  SolvedBoards * solvedp) -> int;
 
 
-void CalcSingleCommon(
+auto calc_single_common(
   const int thrId,
-  const int bno)
+  const int bno) -> void
 {
   // Solves a single Deal and strain for all four declarers.
 
@@ -63,7 +63,7 @@ void CalcSingleCommon(
 
     deal.first = k; // Next declarer
 
-    res = SolveSameBoard(thrp, deal, &fut, hint);
+    res = solve_same_board(thrp, deal, &fut, hint);
 
     if (res == 1)
       cparam.solvedp->solved_board[bno].score[k] = fut.score[0];
@@ -74,7 +74,7 @@ void CalcSingleCommon(
 }
 
 
-void CopyCalcSingle(const vector<int>& crossrefs)
+auto copy_calc_single(const vector<int>& crossrefs) -> void
 {
   for (unsigned i = 0; i < crossrefs.size(); i++)
   {
@@ -90,8 +90,8 @@ void CopyCalcSingle(const vector<int>& crossrefs)
 }
 
 
-void CalcChunkCommon(
-  const int thrId)
+auto calc_chunk_common(
+  const int thrId) -> void
 {
   // Solves each Deal and strain for all four declarers.
   vector<FutureTricks> fut;
@@ -119,14 +119,14 @@ void CalcChunkCommon(
       continue;
     }
 
-    CalcSingleCommon(thrId, index);
+    calc_single_common(thrId, index);
   }
 }
 
 
-int CalcAllBoardsN(
+auto calc_all_boards_n(
   Boards * bop,
-  SolvedBoards * solvedp)
+  SolvedBoards * solvedp) -> int
 {
   cparam.error = 0;
 
@@ -195,7 +195,7 @@ int STDCALL CalcDDtable(
     ind++;
   }
 
-  int res = CalcAllBoardsN(&bo, &solved);
+  int res = calc_all_boards_n(&bo, &solved);
   if (res != 1)
     return res;
 
@@ -282,7 +282,7 @@ int STDCALL CalcAllTables(
 
   bo.no_of_boards = lastIndex + 1;
 
-  int res = CalcAllBoardsN(&bo, &solved);
+  int res = calc_all_boards_n(&bo, &solved);
   if (res != 1)
     return res;
 
@@ -329,7 +329,7 @@ int STDCALL CalcAllTablesPBN(
 {
   DdTableDeals dls;
   for (int k = 0; k < dealsp->no_of_tables; k++)
-    if (ConvertFromPBN(dealsp->deals[k].cards, dls.deals[k].cards) != 1)
+    if (convert_from_pbn(dealsp->deals[k].cards, dls.deals[k].cards) != 1)
       return RETURN_PBN_FAULT;
 
   dls.no_of_tables = dealsp->no_of_tables;
@@ -344,7 +344,7 @@ int STDCALL CalcDDtablePBN(
   DdTableResults * tablep)
 {
   DdTableDeal tableDeal;
-  if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards) != 1)
+  if (convert_from_pbn(tableDealPBN.cards, tableDeal.cards) != 1)
     return RETURN_PBN_FAULT;
 
   int res = CalcDDtable(tableDeal, tablep);
@@ -359,6 +359,6 @@ void DetectCalcDuplicates(
 {
   // Could save a little bit of time with a dedicated checker that
   // only looks at the cards.
-  return DetectSolveDuplicates(bds, uniques, crossrefs);
+  return detect_solve_duplicates(bds, uniques, crossrefs);
 }
 

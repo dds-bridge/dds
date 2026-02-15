@@ -9,7 +9,7 @@
 
 /*
    TimerList consists of a number of groups, one for each piece
-   of the code being timed (ABsearch etc).
+  of the code being timed (ab_search etc).
 
    Each group corresponds to something that should be timed at
    multiple AB depths, i.e. cards played. The first card of a
@@ -34,7 +34,7 @@
    to be timed, so
 
    TIMER_START(TIMER_NO_AB, depth);
-   ABsearch(...);
+  ab_search(...);
    TIMER_END(TIMER_NO_AB, depth);
 
    This avoids the tedious #ifdef's at every place of a timer.

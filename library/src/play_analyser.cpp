@@ -70,7 +70,7 @@ int STDCALL AnalysePlayBin(
   MoveType move;
   FutureTricks fut;
 
-  int ret = SolveBoardInternal(outer_ctx, dl, -1, 1, 1, &fut);
+  int ret = solve_board_internal(outer_ctx, dl, -1, 1, 1, &fut);
   if (ret != RETURN_NO_FAULT)
     return ret;
   SolverContext& ctx = outer_ctx;
@@ -213,7 +213,7 @@ int STDCALL AnalysePlayBin(
       if (usingCurrent)
         continue;
 
-      if ((ret = AnalyseLaterBoard(thrp, dl.first, &move, hint, 
+      if ((ret = analyse_later_board(thrp, dl.first, &move, hint, 
         hintDir, &fut))
           != RETURN_NO_FAULT)
       {

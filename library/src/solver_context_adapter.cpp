@@ -11,5 +11,5 @@ int SolveBoard(
 {
   // Use ThreadData-attached TT so all contexts created in lower layers
   // observe the same table. No ownership adoption to avoid duplication.
-  return SolveBoardInternal(ctx, dl, target, solutions, mode, futp);
+  return solve_board_internal(ctx, dl, target, solutions, mode, futp);
 }

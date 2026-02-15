@@ -808,7 +808,7 @@ auto TransTableL::lookup_suit(
     dp->next_no_++;
   }
 
-  // As long as the secondary Lookup loop in ABsearch exists,
+  // As long as the secondary Lookup loop in ab_search exists,
   // it will cause spurious extra blocks to be created here
   // which are not useful, because nothing is ever Add'ed.
   // This is not a memory leak, as the memory is properly freed,

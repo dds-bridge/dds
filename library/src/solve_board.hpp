@@ -17,19 +17,19 @@
 using namespace std;
 
 
-void SolveSingleCommon(
+auto solve_single_common(
   const int thrId,
-  const int bno);
+  const int bno) -> void;
 
-void CopySolveSingle(
-  const vector<int>& crossrefs);
+auto copy_solve_single(
+  const vector<int>& crossrefs) -> void;
 
-void SolveChunkCommon(
-  const int thrId);
+auto solve_chunk_common(
+  const int thrId) -> void;
 
-void DetectSolveDuplicates(
+auto detect_solve_duplicates(
   const Boards& bds,
   vector<int>& uniques,
-  vector<int>& crossrefs);
+  vector<int>& crossrefs) -> void;
 
 #endif

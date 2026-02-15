@@ -24,19 +24,19 @@ extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
-int SolveAllBoardsN(
+auto solve_all_boards_n(
   Boards const & bds,
-  SolvedBoards& solved);
+  SolvedBoards& solved) -> int;
 
-bool SameBoard(
+auto same_board(
   const Boards& bds,
   const unsigned index1,
-  const unsigned index2);
+  const unsigned index2) -> bool;
 
 
-void SolveSingleCommon(
+auto solve_single_common(
   const int thrId,
-  const int bno)
+  const int bno) -> void
 {
   FutureTricks fut;
 
@@ -69,7 +69,7 @@ void SolveSingleCommon(
 }
 
 
-void CopySolveSingle(const vector<int>& crossrefs)
+auto copy_solve_single(const vector<int>& crossrefs) -> void
 {
   for (unsigned i = 0; i < crossrefs.size(); i++)
   {
@@ -84,8 +84,8 @@ void CopySolveSingle(const vector<int>& crossrefs)
 }
 
 
-void SolveChunkCommon(
-  const int thrId)
+auto solve_chunk_common(
+  const int thrId) -> void
 {
   int index;
   schedType st;
@@ -114,15 +114,15 @@ void SolveChunkCommon(
     }
     else
     {
-      SolveSingleCommon(thrId, index);
+      solve_single_common(thrId, index);
     }
   }
 }
 
 
-int SolveAllBoardsN(
+auto solve_all_boards_n(
   Boards const & bds,
-  SolvedBoards& solved)
+  SolvedBoards& solved) -> int
 {
   param.error = 0;
 
@@ -181,7 +181,7 @@ int STDCALL SolveBoardPBN(
   int thrId)
 {
   Deal dl;
-  if (ConvertFromPBN(dlpbn.remainCards, dl.remainCards) != RETURN_NO_FAULT)
+  if (convert_from_pbn(dlpbn.remainCards, dl.remainCards) != RETURN_NO_FAULT)
     return RETURN_PBN_FAULT;
 
   for (int k = 0; k <= 2; k++)
@@ -229,12 +229,12 @@ int STDCALL SolveAllBoards(
       bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
     }
 
-    if (ConvertFromPBN(bop->deals[k].remainCards, bo.deals[k].remainCards) 
+    if (convert_from_pbn(bop->deals[k].remainCards, bo.deals[k].remainCards) 
         != 1)
       return RETURN_PBN_FAULT;
   }
 
-  int res = SolveAllBoardsN(bo, * solvedp);
+  int res = solve_all_boards_n(bo, * solvedp);
   return res;
 }
 
@@ -243,7 +243,7 @@ int STDCALL SolveAllBoardsBin(
   Boards const * bop,
   SolvedBoards * solvedp)
 {
-  return SolveAllBoardsN(* bop, * solvedp);
+  return solve_all_boards_n(* bop, * solvedp);
 }
 
 
@@ -282,14 +282,14 @@ int STDCALL SolveAllChunksBin(
   if (chunkSize < 1)
     return RETURN_CHUNK_SIZE;
 
-  return SolveAllBoardsN(* bop, * solvedp);
+  return solve_all_boards_n(* bop, * solvedp);
 }
 
 
-void DetectSolveDuplicates(
+auto detect_solve_duplicates(
   const Boards& bds,
   vector<int>& uniques,
-  vector<int>& crossrefs)
+  vector<int>& crossrefs) -> void
 {
   const unsigned nu = static_cast<unsigned>(bds.no_of_boards);
 
@@ -308,17 +308,17 @@ void DetectSolveDuplicates(
 
     for (unsigned index = i+1; index < nu; index++)
     {
-      if (SameBoard(bds, i, index))
+      if (same_board(bds, i, index))
         crossrefs[index] = static_cast<int>(i);
     }
   }
 }
 
 
-bool SameBoard(
+auto same_board(
   const Boards& bds,
   const unsigned index1,
-  const unsigned index2)
+  const unsigned index2) -> bool
 {
   for (int h = 0; h < DDS_HANDS; h++)
   {

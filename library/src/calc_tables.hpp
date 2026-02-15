@@ -25,9 +25,9 @@ using namespace std;
  * @param thrID Thread identifier for parallel execution.
  * @param bno Board number to analyze.
  */
-void CalcSingleCommon(
+auto calc_single_common(
   const int thrID,
-  const int bno);
+  const int bno) -> void;
 
 /**
  * @brief Copy calculation results for single Boards based on cross-references.
@@ -36,8 +36,8 @@ void CalcSingleCommon(
  *
  * @param crossrefs Vector of cross-reference indices mapping Boards to be copied.
  */
-void CopyCalcSingle(
-  const vector<int>& crossrefs);
+auto copy_calc_single(
+  const vector<int>& crossrefs) -> void;
 
 /**
  * @brief Perform common chunk calculations for a set of Boards.
@@ -46,8 +46,8 @@ void CopyCalcSingle(
  *
  * @param thrId Thread identifier for parallel execution.
  */
-void CalcChunkCommon(
-  const int thrId);
+auto calc_chunk_common(
+  const int thrId) -> void;
 
 /**
  * @brief Detect duplicate board calculations and build cross-reference maps.
@@ -58,9 +58,9 @@ void CalcChunkCommon(
  * @param uniques Output vector of indices for unique Boards.
  * @param crossrefs Output vector mapping each board to its unique representative.
  */
-void DetectCalcDuplicates(
+auto detect_calc_duplicates(
   const Boards& bds,
   vector<int>& uniques,
-  vector<int>& crossrefs);
+  vector<int>& crossrefs) -> void;
 
 #endif
