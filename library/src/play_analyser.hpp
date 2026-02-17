@@ -17,19 +17,19 @@
 using namespace std;
 
 
-void PlaySingleCommon(
+void play_single_common(
   const int thrId,
   const int bno);
 
-void PlayChunkCommon(
+void play_chunk_common(
   const int thrId);
 
-void DetectPlayDuplicates(
+void detect_play_duplicates(
   const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs);
 
-void CopyPlaySingle(
+void copy_play_single(
   const vector<int>& crossrefs);
 
 #endif

@@ -274,7 +274,7 @@ int STDCALL AnalysePlayPBN(
   Deal dl;
   PlayTraceBin play;
 
-  if (ConvertFromPBN(dlPBN.remainCards, dl.remainCards) !=
+  if (convert_from_pbn(dlPBN.remainCards, dl.remainCards) !=
       RETURN_NO_FAULT)
     return RETURN_PBN_FAULT;
 
@@ -286,14 +286,14 @@ int STDCALL AnalysePlayPBN(
     dl.currentTrickRank[i] = dlPBN.currentTrickRank[i];
   }
 
-  if (ConvertPlayFromPBN(playPBN, play) != RETURN_NO_FAULT)
+  if (convert_play_from_pbn(playPBN, play) != RETURN_NO_FAULT)
     return RETURN_PLAY_FAULT;
 
   return AnalysePlayBin(dl, play, solvedp, thrId);
 }
 
 
-void PlaySingleCommon(
+void play_single_common(
   const int thrId,
   const int bno)
 {
@@ -313,7 +313,7 @@ void PlaySingleCommon(
 }
 
 
-void PlayChunkCommon(const int thrId)
+void play_chunk_common(const int thrId)
 {
   int index;
   schedType st;
@@ -325,7 +325,7 @@ void PlayChunkCommon(const int thrId)
     if (index == -1)
       break;
 
-    PlaySingleCommon(thrId, index);
+    play_single_common(thrId, index);
   }
 }
 
@@ -391,7 +391,7 @@ int STDCALL AnalyseAllPlaysPBN(
     Deal& dl = bd.deals[k];
     DealPBN const & dlp = bopPBN->deals[k];
 
-    if (ConvertFromPBN(dlp.remainCards,
+    if (convert_from_pbn(dlp.remainCards,
                        dl.remainCards) != RETURN_NO_FAULT)
       return RETURN_PBN_FAULT;
 
@@ -409,7 +409,7 @@ int STDCALL AnalyseAllPlaysPBN(
 
   for (int k = 0; k < plpPBN->no_of_boards; k++)
   {
-    if (ConvertPlayFromPBN(plpPBN->plays[k], pl.plays[k]) !=
+    if (convert_play_from_pbn(plpPBN->plays[k], pl.plays[k]) !=
         RETURN_NO_FAULT)
       return RETURN_PLAY_FAULT;
   }
@@ -419,7 +419,7 @@ int STDCALL AnalyseAllPlaysPBN(
 }
 
 
-void DetectPlayDuplicates(
+void detect_play_duplicates(
   const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)
@@ -439,6 +439,6 @@ void DetectPlayDuplicates(
 }
 
 
-void CopyPlaySingle([[maybe_unused]] const vector<int>& crossrefs)
+void copy_play_single([[maybe_unused]] const vector<int>& crossrefs)
 { }
 

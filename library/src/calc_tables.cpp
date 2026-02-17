@@ -352,7 +352,7 @@ int STDCALL CalcDDtablePBN(
 }
 
 
-void DetectCalcDuplicates(
+void detect_calc_duplicates(
   const Boards& bds,
   vector<int>& uniques,
   vector<int>& crossrefs)

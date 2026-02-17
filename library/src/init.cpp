@@ -26,16 +26,16 @@
 System sysdep(
     &solve_chunk_common,
     &calc_chunk_common,
-    &PlayChunkCommon,
+    &play_chunk_common,
     &detect_solve_duplicates,
-    &DetectCalcDuplicates,
-    &DetectPlayDuplicates,
+    &detect_calc_duplicates,
+    &detect_play_duplicates,
     &solve_single_common,
     &calc_single_common,
-    &PlaySingleCommon,
+    &play_single_common,
     &copy_solve_single,
     &copy_calc_single,
-    &CopyPlaySingle
+    &copy_play_single
 );
 Memory memory;
 Scheduler scheduler;

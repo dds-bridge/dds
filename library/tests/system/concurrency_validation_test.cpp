@@ -33,7 +33,7 @@ static Deal make_deal_from_pbn(const char* pbn, int trump = 0, int first = 0)
   std::memset(dl.currentTrickSuit, 0, sizeof(dl.currentTrickSuit));
   std::memset(dl.currentTrickRank, 0, sizeof(dl.currentTrickRank));
   // Convert PBN distribution into remainCards bitmasks
-  const int rc = ConvertFromPBN(pbn, dl.remainCards);
+  const int rc = convert_from_pbn(pbn, dl.remainCards);
   // If conversion fails, keep an empty Deal which should yield a deterministic error.
   // Silent failure is intentional for this test: downstream code is expected to handle empty deals.
   (void)rc;
