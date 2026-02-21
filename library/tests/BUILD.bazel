@@ -1,11 +1,19 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 
+# Test utility sources (glob used for convenience; excludes integration/context equivalence tests)
 filegroup(
     name = "test_sources",
-    srcs = glob(["*.cpp", "*.hpp"], exclude=["itest.cpp", "context_equivalence.cpp"]),
+    srcs = glob(
+        ["*.cpp", "*.hpp"],
+        exclude = [
+            "itest.cpp",
+            "context_equivalence.cpp",
+        ],
+    ),
 )
 
+# Main test executable for manual invocation
 cc_binary(
     name = "dtest",
     srcs = [":test_sources"],
@@ -19,8 +27,8 @@ cc_binary(
     visibility = ["//visibility:public"],
 )
 
-
-# cc_test target to enable `bazel test //library/tests:all`
+# Test target for Bazel test execution (`bazel test //library/tests:all`)
+# Uses testable_dds to expose internal symbols for unit testing
 cc_test(
     name = "unit_tests",
     srcs = [":test_sources"],
