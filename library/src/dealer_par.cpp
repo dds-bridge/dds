@@ -7,10 +7,10 @@
    See LICENSE and README.
 */
 
-
-#include <vector>
-#include <string>
 #include <cstring>
+#include <string>
+#include <vector>
+
 #include <api/dll.h>
 
 using namespace std;

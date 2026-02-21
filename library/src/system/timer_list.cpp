@@ -80,7 +80,7 @@ void TimerList::PrintStats(ofstream& fout) const
     return;
 
   // Approximate the exclusive times of each function.
-  // The ABsearch*() functions are recursively nested,
+  // The ab_search_*() functions are recursively nested,
   // so subtract out the one below.
   // The other ones are subtracted out based on knowledge
   // of the functions.

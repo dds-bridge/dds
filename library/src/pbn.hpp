@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_PBN_H
-#define DDS_PBN_H
+#pragma once
 
 #include <api/dll.h>
 
@@ -22,9 +21,9 @@
  * @param remainCards Output array for remaining cards per hand and suit.
  * @return 1 if successful, 0 otherwise.
  */
-int ConvertFromPBN(
+auto convert_from_pbn(
   char const * dealBuff,
-  unsigned int remainCards[DDS_HANDS][DDS_SUITS]);
+  unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int;
 
 /**
  * @brief Convert a PBN-format play trace to binary play trace.
@@ -35,8 +34,6 @@ int ConvertFromPBN(
  * @param playBin Output binary play trace structure.
  * @return 1 if successful, 0 otherwise.
  */
-int ConvertPlayFromPBN(
+auto convert_play_from_pbn(
   const PlayTracePBN& playPBN,
-  PlayTraceBin& playBin);
-
-#endif
+  PlayTraceBin& playBin) -> int;

@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#include <api/dll.h>
 #include "init.hpp"
+#include <api/dll.h>
 
 #ifdef _MANAGED
   #pragma managed(push, off)

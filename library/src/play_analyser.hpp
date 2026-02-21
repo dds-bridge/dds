@@ -7,29 +7,24 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_PLAYANALYSER_H
-#define DDS_PLAYANALYSER_H
+#pragma once
 
 #include <vector>
 
 #include <api/dll.h>
 
-using namespace std;
 
-
-void PlaySingleCommon(
+void play_single_common(
   const int thrId,
   const int bno);
 
-void PlayChunkCommon(
+void play_chunk_common(
   const int thrId);
 
-void DetectPlayDuplicates(
+void detect_play_duplicates(
   const Boards& bds,
-  vector<int>& uniques,
-  vector<int>& crossrefs);
+  std::vector<int>& uniques,
+  std::vector<int>& crossrefs);
 
-void CopyPlaySingle(
-  const vector<int>& crossrefs);
-
-#endif
+void copy_play_single(
+  const std::vector<int>& crossrefs);

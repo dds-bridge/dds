@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_LATERTRICKS_H
-#define DDS_LATERTRICKS_H
+#pragma once
 
 #include <api/dds.h>
 #include <solver_context/solver_context.hpp>
@@ -29,5 +28,3 @@ bool LaterTricksMAX(
   const int target,
   const int trump,
   SolverContext& ctx);
-
-#endif

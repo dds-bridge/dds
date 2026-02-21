@@ -7,16 +7,15 @@
    See LICENSE and README.
 */
 
-
-#include <api/dds.h>
 #include "pbn.hpp"
+#include <api/dds.h>
 
-int IsCard(const char cardChar);
+auto is_card(const char cardChar) -> int;
 
 
-int ConvertFromPBN(
+auto convert_from_pbn(
   char const * dealBuff,
-  unsigned int remainCards[DDS_HANDS][DDS_SUITS])
+  unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int
 {
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
@@ -51,7 +50,7 @@ int ConvertFromPBN(
 
   while ((bp < 80) && (dealBuff[bp] != '\0'))
   {
-    card = IsCard(dealBuff[bp]);
+    card = is_card(dealBuff[bp]);
     if (card)
     {
       switch (first)
@@ -99,7 +98,7 @@ int ConvertFromPBN(
 }
 
 
-int IsCard(const char cardChar)
+auto is_card(const char cardChar) -> int
 {
   switch (cardChar)
   {
@@ -140,9 +139,9 @@ int IsCard(const char cardChar)
 }
 
 
-int ConvertPlayFromPBN(
+auto convert_play_from_pbn(
   const PlayTracePBN& playPBN,
-  PlayTraceBin& playBin)
+  PlayTraceBin& playBin) -> int
 {
   const int n = playPBN.number;
 
@@ -168,7 +167,7 @@ int ConvertPlayFromPBN(
       return RETURN_PLAY_FAULT;
     playBin.suit[i >> 1] = s;
 
-    int rank = IsCard(playPBN.cards[i+1]);
+    int rank = is_card(playPBN.cards[i+1]);
     if (rank == 0)
       return RETURN_PLAY_FAULT;
 

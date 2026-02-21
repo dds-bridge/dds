@@ -7,12 +7,12 @@
    See LICENSE and README.
 */
 
-
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
-#include <api/dds.h>
+
 #include "pbn.hpp"
+#include <api/dds.h>
 
 using namespace std;
 
@@ -56,7 +56,7 @@ int STDCALL CalcParPBN(
   int STDCALL CalcPar(DdTableDeal tableDeal, int vulnerable,
                       DdTableResults * tablep, ParResults * presp);
 
-  if (ConvertFromPBN(tableDealPBN.cards, tableDeal.cards) != 1)
+  if (convert_from_pbn(tableDealPBN.cards, tableDeal.cards) != 1)
     return RETURN_PBN_FAULT;
 
   res = CalcPar(tableDeal, vulnerable, tablep, presp);

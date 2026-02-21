@@ -7,64 +7,64 @@
    See LICENSE and README.
 */
 
-#include "solver_if.hpp"
-#include "init.hpp"
 #include "ab_search.hpp"
-#include <system/timer_list.hpp>
-#include <system/system.hpp>
-#include <system/scheduler.hpp>
-#include <trans_table/trans_table.hpp>
-#include <solver_context/solver_context.hpp>
 #include "dump.hpp"
-#include <lookup_tables/lookup_tables.hpp>
+#include "init.hpp"
+#include "solver_if.hpp"
 #include <api/solve_board.hpp>
+#include <lookup_tables/lookup_tables.hpp>
+#include <solver_context/solver_context.hpp>
+#include <system/scheduler.hpp>
+#include <system/system.hpp>
+#include <system/timer_list.hpp>
+#include <trans_table/trans_table.hpp>
 
 extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
 
-int BoardRangeChecks(
+auto board_range_checks(
   const Deal& dl,
   const int target,
   const int solutions,
-  const int mode);
+  const int mode) -> int;
 
-int BoardValueChecks(
+auto board_value_checks(
   SolverContext& ctx,
   const Deal& dl,
   const int target,
   const int solutions,
-  const int mode);
+  const int mode) -> int;
 
-void LastTrickWinner(
+auto last_trick_winner(
   const Deal& dl,
   const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
   const int hand_rel_first,
   int& leadRank,
   int& leadSuit,
-  int& leadSideWins);
+  int& leadSideWins) -> void;
 
 bool (* AB_ptr_list[DDS_HANDS])(
   Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
-  = { ABsearch, ABsearch1, ABsearch2, ABsearch3 };
+  = { ab_search, ab_search_1, ab_search_2, ab_search_3 };
 
 bool (* AB_ptr_trace_list[DDS_HANDS])(
   Pos * posPoint,
   const int target,
   const int depth,
   SolverContext& ctx)
-  = { ABsearch0, ABsearch1, ABsearch2, ABsearch3 };
+  = { ab_search_0, ab_search_1, ab_search_2, ab_search_3 };
 
 void (* Make_ptr_list[3])(
   Pos * posPoint,
   const int depth,
   MoveType const * mply)
-  = { Make0, Make1, Make2 };
+  = { make_0, make_1, make_2 };
 
 
 int STDCALL SolveBoard(
@@ -83,19 +83,19 @@ int STDCALL SolveBoard(
   return SolveBoard(outer_ctx, dl, target, solutions, mode, futp);
 }
 
-int SolveBoardInternal(
+auto solve_board_internal(
   SolverContext& ctx,
   const Deal& dl,
   const int target,
   const int solutions,
   const int mode,
-  FutureTricks * futp)
+  FutureTricks * futp) -> int
 {
   // ----------------------------------------------------------
   // Formal parameter checks.
   // ----------------------------------------------------------
 
-  int ret = BoardRangeChecks(dl, target, solutions, mode);
+  int ret = board_range_checks(dl, target, solutions, mode);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -170,7 +170,7 @@ int SolveBoardInternal(
   // Consistency checks.
   // ----------------------------------------------------------
 
-  ret = BoardValueChecks(ctx, dl, target, solutions, mode);
+  ret = board_value_checks(ctx, dl, target, solutions, mode);
   if (ret != RETURN_NO_FAULT)
     return ret;
 
@@ -183,7 +183,7 @@ int SolveBoardInternal(
   {
     int leadRank, leadSuit, leadSideWins;
 
-    LastTrickWinner(dl, thrp, handToPlay, hand_rel_first,
+    last_trick_winner(dl, thrp, handToPlay, hand_rel_first,
       leadRank, leadSuit, leadSideWins);
 
     futp->nodes = 0;
@@ -679,11 +679,11 @@ SOLVER_DONE:
 }
 
 
-int SolveSameBoard(
+auto solve_same_board(
   const std::shared_ptr<ThreadData>& thrp,
   const Deal& dl,
   FutureTricks * futp,
-  const int hint)
+  const int hint) -> int
 {
   // Specialized function for SolveChunkDDtable for repeat solves.
   // No further parameter checks! This function makes heavy reuse
@@ -740,7 +740,7 @@ int SolveSameBoard(
   /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, ini_depth);
-  thrp->val = ABsearch(
+  thrp->val = ab_search(
                   &thrp->lookAheadPos,
                   guess,
                   ini_depth,
@@ -808,13 +808,13 @@ int SolveSameBoard(
 }
 
 
-int AnalyseLaterBoard(
+auto analyse_later_board(
   const std::shared_ptr<ThreadData>& thrp,
   const int leadHand,
   MoveType const * move,
   const int hint,
   const int hintDir,
-  FutureTricks * futp)
+  FutureTricks * futp) -> int
 {
   // Specialized function for PlayAnalyser for cards after the
   // opening lead. No further parameter checks! This function
@@ -857,28 +857,28 @@ int AnalyseLaterBoard(
   {
     ctxLater.move_gen().make_specific(* move, trick + 1, 3);
   unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
-  Make3(&thrp->lookAheadPos, ourWinRanks, ini_depth + 1, move, ctxLater);
+  make_3(&thrp->lookAheadPos, ourWinRanks, ini_depth + 1, move, ctxLater);
   }
   else if (hand_rel_first == 1)
   {
     ctxLater.move_gen().make_specific(* move, trick, 0);
-    Make0(&thrp->lookAheadPos, ini_depth + 1, move);
+    make_0(&thrp->lookAheadPos, ini_depth + 1, move);
   }
   else if (hand_rel_first == 2)
   {
     ctxLater.move_gen().make_specific(* move, trick, 1);
-    Make1(&thrp->lookAheadPos, ini_depth + 1, move);
+    make_1(&thrp->lookAheadPos, ini_depth + 1, move);
   }
   else
   {
     ctxLater.move_gen().make_specific(* move, trick, 2);
-    Make2(&thrp->lookAheadPos, ini_depth + 1, move);
+    make_2(&thrp->lookAheadPos, ini_depth + 1, move);
   }
 
   if (cardCount <= 4)
   {
     // Last trick.
-    EvalType eval = EvaluateWithContext(&thrp->lookAheadPos, thrp->trump, ctxLater);
+    EvalType eval = evaluate_with_context(&thrp->lookAheadPos, thrp->trump, ctxLater);
     futp->score[0] = eval.tricks;
     futp->nodes = 0;
 
@@ -985,11 +985,11 @@ int AnalyseLaterBoard(
 }
 
 
-int BoardRangeChecks(
+auto board_range_checks(
   const Deal& dl,
   const int target,
   const int solutions,
-  const int mode)
+  const int mode) -> int
 {
   if (target < -1)
   {
@@ -1085,12 +1085,12 @@ int BoardRangeChecks(
 }
 
 
-int BoardValueChecks(
+auto board_value_checks(
   SolverContext& ctx,
   const Deal& dl,
   const int target,
   const int solutions,
-  const int mode)
+  const int mode) -> int
 {
   auto thrp = ctx.thread();
   int cardCount = ctx.search().ini_depth() + 4;
@@ -1176,14 +1176,14 @@ int BoardValueChecks(
 }
 
 
-void LastTrickWinner(
+auto last_trick_winner(
   const Deal& dl,
   const std::shared_ptr<ThreadData>& thrp,
   const int handToPlay,
   const int hand_rel_first,
   int& leadRank,
   int& leadSuit,
-  int& leadSideWins)
+  int& leadSideWins) -> void
 {
   int lastTrickSuit[DDS_HANDS],
       lastTrickRank[DDS_HANDS],

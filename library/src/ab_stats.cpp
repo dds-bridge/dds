@@ -11,10 +11,11 @@
    ABstats is a simple object for AB statistics and return values.
 */
 
-
 #include <iomanip>
 
 #include "ab_stats.hpp"
+
+using namespace std;
 
 
 ABstats::ABstats()
@@ -143,7 +144,7 @@ void ABstats::PrintHeaderPosition(ofstream& fout) const
     setw(6) << "%" <<
     setw(6) << "d_avg" << "\n";
 
-  fout << string(65, '-') << "\n";
+  fout << std::string(65, '-') << "\n";
 }
 
 
@@ -186,7 +187,7 @@ void ABstats::PrintHeaderDepth(ofstream& fout) const
     setw(6) << "Cumc%" <<
     setw(7) << "Branch" << "\n";
 
-  fout << string(38, '-') << "\n";
+  fout << std::string(38, '-') << "\n";
 }
 
 
@@ -264,7 +265,7 @@ void ABstats::PrintHeaderDetail(ofstream& fout) const
   for (int p = 0; p < AB_SIZE; p++)
     fout << setw(6) << p;
 
-  fout << "\n" << string(65, '-') << "\n";
+  fout << "\n" << std::string(65, '-') << "\n";
 }
 
 
@@ -287,7 +288,7 @@ void ABstats::PrintStatsDetail(
 
 void ABstats::PrintSumDetail(ofstream& fout) const
 {
-  fout << string(65, '-') << "\n";
+  fout << std::string(65, '-') << "\n";
 
   fout << setw(2) << "S" <<
     setw(7) << ABsides[1].sum <<

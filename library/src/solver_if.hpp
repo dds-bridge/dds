@@ -7,33 +7,30 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_SOLVERIF_H
-#define DDS_SOLVERIF_H
+#pragma once
 
 #include <api/dds.h>
 #include <solver_context/solver_context.hpp>
 #include <memory>
 
-int SolveBoardInternal(
+auto solve_board_internal(
   SolverContext& ctx,
   const Deal& dl,
   const int target,
   const int solutions,
   const int mode,
-  FutureTricks * futp);
+  FutureTricks * futp) -> int;
 
-int SolveSameBoard(
+auto solve_same_board(
   const std::shared_ptr<ThreadData>& thrp,
   const Deal& dl,
   FutureTricks * futp,
-  const int hint);
+  const int hint) -> int;
 
-int AnalyseLaterBoard(
+auto analyse_later_board(
   const std::shared_ptr<ThreadData>& thrp,
   const int leadHand,
   MoveType const * move,
   const int hint,
   const int hintDir,
-  FutureTricks * futp);
-
-#endif
+  FutureTricks * futp) -> int;

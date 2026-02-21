@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_INIT_H
-#define DDS_INIT_H
+#pragma once
 
 #include <api/dds.h>
 #include <system/memory.hpp>
@@ -26,5 +25,3 @@ void InitWinners(
   const std::shared_ptr<ThreadData>& thrp);
 
 void CloseDebugFiles();
-
-#endif

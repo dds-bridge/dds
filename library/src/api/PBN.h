@@ -21,7 +21,7 @@
  * @param remainCards Output array for remaining cards per hand and suit.
  * @return 1 if successful, 0 otherwise.
  */
-auto ConvertFromPBN(
+auto convert_from_pbn(
   char const * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int;
 
@@ -34,6 +34,6 @@ auto ConvertFromPBN(
  * @param playBin Output binary play trace structure.
  * @return 1 if successful, 0 otherwise.
  */
-auto ConvertPlayFromPBN(
+auto convert_play_from_pbn(
   const PlayTracePBN& playPBN,
   PlayTraceBin& playBin) -> int;
