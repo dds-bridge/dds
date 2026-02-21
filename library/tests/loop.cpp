@@ -62,7 +62,7 @@ void loop_solve(
     timer.end();
 
 #ifdef BATCHTIMES
-    timer.printRunning(i+count, number);
+    timer.print_running(i+count, number);
 #endif
 
     for (int j = 0; j < count; j++)
@@ -120,7 +120,7 @@ bool loop_calc(
     timer.end();
 
 #ifdef BATCHTIMES
-    timer.printRunning(i+count, number);
+    timer.print_running(i+count, number);
 #endif
 
     for (int j = 0; j < count; j++)
@@ -226,7 +226,7 @@ bool loop_dealerpar(
   timer.end();
 
 #ifdef BATCHTIMES
-  timer.printRunning(number, number);
+  timer.print_running(number, number);
 #endif
 
   return true;
@@ -277,7 +277,7 @@ bool loop_play(
     timer.end();
 
 #ifdef BATCHTIMES
-    timer.printRunning(i+count, number);
+    timer.print_running(i+count, number);
 #endif
 
     for (int j = 0; j < count; j++)

@@ -11,12 +11,12 @@
 #ifndef DTEST_ARGS_H
 #define DTEST_ARGS_H
 
-void Usage(
+void usage(
  const char base[]);
 
-void PrintOptions();
+void print_options();
 
-void ReadArgs(
+void read_args(
   int argc,
   char * argv[]);
 

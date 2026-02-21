@@ -24,12 +24,12 @@ OptionsType options;
 
 int main(int argc, char * argv[])
 {
-  ReadArgs(argc, argv);
+  read_args(argc, argv);
 
-  if (options.threading != DTEST_THREADING_DEFAULT)
-    SetThreading(static_cast<int>(options.threading));
+  if (options.threading_ != DTEST_THREADING_DEFAULT)
+    SetThreading(static_cast<int>(options.threading_));
 
-  SetResources(options.memoryMB, options.numThreads);
+  SetResources(options.memory_mb_, options.num_threads_);
 
   DDSInfo info;
   GetDDSInfo(&info);

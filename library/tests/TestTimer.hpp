@@ -22,14 +22,14 @@ using namespace std;
 class TestTimer
 {
   private:
-    string name;
-    long count;
-    long userCum;
-    long userCumOld;
-    long sysCum;
+    string name_;
+    long count_;
+    long user_cum_;
+    long user_cum_old_;
+    long sys_cum_;
 
-    time_point<Clock> user0;
-    clock_t sys0;
+    time_point<Clock> user0_;
+    clock_t sys0_;
 
   public:
 
@@ -38,16 +38,16 @@ class TestTimer
 
     void reset();
 
-    void setname(const string& s);
+    void set_name(const string& s);
 
     void start(const int number = 1);
     void end();
 
-    void printRunning(
+    void print_running(
       const int reached,
       const int number);
-    void printBasic() const;
-    void printHands() const;
+    void print_basic() const;
+    void print_hands() const;
 };
 
 #endif

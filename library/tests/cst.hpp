@@ -42,12 +42,12 @@ enum Threading
 
 struct OptionsType
 {
-  string fname;
-  Solver solver;
-  Threading threading;
-  int numThreads;
-  int memoryMB;
-  bool reportSlowBoards;
+  string fname_;
+  Solver solver_;
+  Threading threading_;
+  int num_threads_;
+  int memory_mb_;
+  bool report_slow_boards_;
 };
 
 #endif
