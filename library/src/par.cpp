@@ -7,12 +7,12 @@
    See LICENSE and README.
 */
 
-
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
-#include <api/dds.h>
+
 #include "pbn.hpp"
+#include <api/dds.h>
 
 using namespace std;
 

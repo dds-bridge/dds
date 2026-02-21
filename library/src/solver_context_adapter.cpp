@@ -1,5 +1,5 @@
-#include <solver_context/solver_context.hpp>
 #include "solver_if.hpp"
+#include <solver_context/solver_context.hpp>
 
 int SolveBoard(
   SolverContext& ctx,

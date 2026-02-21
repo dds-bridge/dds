@@ -7,17 +7,17 @@
    See LICENSE and README.
 */
 
-#include "solver_if.hpp"
-#include "init.hpp"
 #include "ab_search.hpp"
-#include <system/timer_list.hpp>
-#include <system/system.hpp>
-#include <system/scheduler.hpp>
-#include <trans_table/trans_table.hpp>
-#include <solver_context/solver_context.hpp>
 #include "dump.hpp"
-#include <lookup_tables/lookup_tables.hpp>
+#include "init.hpp"
+#include "solver_if.hpp"
 #include <api/solve_board.hpp>
+#include <lookup_tables/lookup_tables.hpp>
+#include <solver_context/solver_context.hpp>
+#include <system/scheduler.hpp>
+#include <system/system.hpp>
+#include <system/timer_list.hpp>
+#include <trans_table/trans_table.hpp>
 
 extern System sysdep;
 extern Memory memory;

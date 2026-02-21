@@ -7,14 +7,14 @@
    See LICENSE and README.
 */
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
-#include <trans_table/trans_table.hpp>
-#include <solver_context/solver_context.hpp>
 #include "dump.hpp"
+#include <solver_context/solver_context.hpp>
+#include <trans_table/trans_table.hpp>
 
 
 std::string PrintSuit(const unsigned short suitCode);

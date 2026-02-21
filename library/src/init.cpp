@@ -7,21 +7,20 @@
    See LICENSE and README.
 */
 
-
-#include "init.hpp"
 #include <cstring>
-#include <system/system.hpp>
-#include <system/scheduler.hpp>
-#include <system/thread_mgr.hpp>
-#include <utility/debug.h>
-#include <utility/constants.h>
-#include <lookup_tables/lookup_tables.hpp>
-#include "solve_board.hpp"
+
 #include "calc_tables.hpp"
+#include "init.hpp"
 #include "play_analyser.hpp"
-// Order matters: include TransTable to ensure complete type for virtual calls
-#include <trans_table/trans_table.hpp>
+#include "solve_board.hpp"
+#include <lookup_tables/lookup_tables.hpp>
 #include <solver_context/solver_context.hpp>
+#include <system/scheduler.hpp>
+#include <system/system.hpp>
+#include <system/thread_mgr.hpp>
+#include <trans_table/trans_table.hpp>
+#include <utility/constants.h>
+#include <utility/debug.h>
 
 System sysdep(
     &solve_chunk_common,

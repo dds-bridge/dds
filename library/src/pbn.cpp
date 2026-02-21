@@ -7,9 +7,8 @@
    See LICENSE and README.
 */
 
-
-#include <api/dds.h>
 #include "pbn.hpp"
+#include <api/dds.h>
 
 auto is_card(const char cardChar) -> int;
 

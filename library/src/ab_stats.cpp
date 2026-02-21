@@ -11,7 +11,6 @@
    ABstats is a simple object for AB statistics and return values.
 */
 
-
 #include <iomanip>
 
 #include "ab_stats.hpp"

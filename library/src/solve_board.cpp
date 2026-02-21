@@ -7,15 +7,15 @@
    See LICENSE and README.
 */
 
+#include <chrono>
 
-#include "solver_if.hpp"
 #include "solve_board.hpp"
-#include <system/system.hpp>
+#include "solver_if.hpp"
+#include <pbn.hpp>
 #include <system/memory.hpp>
 #include <system/scheduler.hpp>
-#include <pbn.hpp>
+#include <system/system.hpp>
 #include <utility/debug.h>
-#include <chrono>
 
 
 ParamType param;

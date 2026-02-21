@@ -8,12 +8,12 @@
 */
 
 #include "calc_tables.hpp"
-#include "solver_if.hpp"
+#include "pbn.hpp"
 #include "solve_board.hpp"
-#include <system/system.hpp>
+#include "solver_if.hpp"
 #include <system/memory.hpp>
 #include <system/scheduler.hpp>
-#include "pbn.hpp"
+#include <system/system.hpp>
 
 
 ParamType cparam;
