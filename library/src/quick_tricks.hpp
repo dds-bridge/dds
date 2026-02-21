@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_QUICKTRICKS_H
-#define DDS_QUICKTRICKS_H
+#pragma once
 
 #include <api/dds.h>
 #include <system/memory.hpp>
@@ -31,5 +30,3 @@ bool QuickTricksSecondHand(
   const int target,
   const int trump,
   SolverContext& ctx);
-
-#endif

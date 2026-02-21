@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_PBN_H
-#define DDS_PBN_H
+#pragma once
 
 #include <api/dll.h>
 
@@ -38,5 +37,3 @@ auto convert_from_pbn(
 auto convert_play_from_pbn(
   const PlayTracePBN& playPBN,
   PlayTraceBin& playBin) -> int;
-
-#endif

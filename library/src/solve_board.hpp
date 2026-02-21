@@ -7,14 +7,11 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_SOLVEBOARD_H
-#define DDS_SOLVEBOARD_H
+#pragma once
 
 #include <vector>
 
 #include <api/dll.h>
-
-using namespace std;
 
 
 auto solve_single_common(
@@ -22,14 +19,12 @@ auto solve_single_common(
   const int bno) -> void;
 
 auto copy_solve_single(
-  const vector<int>& crossrefs) -> void;
+  const std::vector<int>& crossrefs) -> void;
 
 auto solve_chunk_common(
   const int thrId) -> void;
 
 auto detect_solve_duplicates(
   const Boards& bds,
-  vector<int>& uniques,
-  vector<int>& crossrefs) -> void;
-
-#endif
+  std::vector<int>& uniques,
+  std::vector<int>& crossrefs) -> void;

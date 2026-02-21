@@ -7,14 +7,11 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_CALCTABLES_H
-#define DDS_CALCTABLES_H
+#pragma once
 
 #include <vector>
 
 #include <api/dll.h>
-
-using namespace std;
 
 
 /**
@@ -37,7 +34,7 @@ auto calc_single_common(
  * @param crossrefs Vector of cross-reference indices mapping Boards to be copied.
  */
 auto copy_calc_single(
-  const vector<int>& crossrefs) -> void;
+  const std::vector<int>& crossrefs) -> void;
 
 /**
  * @brief Perform common chunk calculations for a set of Boards.
@@ -60,7 +57,5 @@ auto calc_chunk_common(
  */
 auto detect_calc_duplicates(
   const Boards& bds,
-  vector<int>& uniques,
-  vector<int>& crossrefs) -> void;
-
-#endif
+  std::vector<int>& uniques,
+  std::vector<int>& crossrefs) -> void;

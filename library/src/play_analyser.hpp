@@ -7,14 +7,11 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_PLAYANALYSER_H
-#define DDS_PLAYANALYSER_H
+#pragma once
 
 #include <vector>
 
 #include <api/dll.h>
-
-using namespace std;
 
 
 void play_single_common(
@@ -26,10 +23,8 @@ void play_chunk_common(
 
 void detect_play_duplicates(
   const Boards& bds,
-  vector<int>& uniques,
-  vector<int>& crossrefs);
+  std::vector<int>& uniques,
+  std::vector<int>& crossrefs);
 
 void copy_play_single(
-  const vector<int>& crossrefs);
-
-#endif
+  const std::vector<int>& crossrefs);

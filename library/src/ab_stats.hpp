@@ -7,16 +7,13 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_ABSTATS_H
-#define DDS_ABSTATS_H
+#pragma once
 
 #include <iostream>
 #include <fstream>
 #include <string>
 
 #include <utility/debug.h>
-
-using namespace std;
 
 
 /*
@@ -69,7 +66,7 @@ class ABstats
 {
   private:
 
-    string name[AB_SIZE];
+    std::string name[AB_SIZE];
 
     // A node arises when a new move is generated.
     // Not every move leads to an AB termination.
@@ -82,33 +79,33 @@ class ABstats
 
     void SetNames();
 
-    void PrintHeaderPosition(ofstream& fout) const; 
+    void PrintHeaderPosition(std::ofstream& fout) const; 
 
     void PrintStatsPosition(
-      ofstream& fout,
+      std::ofstream& fout,
       const int no,
-      const string& text,
+      const std::string& text,
       const ABtracker& abt,
       const ABtracker& divisor) const;
 
-    void PrintHeaderDepth(ofstream& fout) const; 
+    void PrintHeaderDepth(std::ofstream& fout) const; 
 
     void PrintStatsDepth(
-      ofstream& fout,
+      std::ofstream& fout,
       const int depth,
       const int cum) const; 
 
     void PrintAverageDepth(
-      ofstream& fout,
+      std::ofstream& fout,
       const ABtracker& ABsidesSum) const; 
 
-    void PrintHeaderDetail(ofstream& fout) const; 
+    void PrintHeaderDetail(std::ofstream& fout) const; 
 
     void PrintStatsDetail(
-      ofstream& fout,
+      std::ofstream& fout,
       const int depth) const; 
 
-    void PrintSumDetail(ofstream& fout) const; 
+    void PrintSumDetail(std::ofstream& fout) const; 
 
   public:
 
@@ -139,7 +136,6 @@ class ABstats
 
     int GetNodes() const;
 
-    void PrintStats(ofstream& fout);
+    void PrintStats(std::ofstream& fout);
 };
 
-#endif

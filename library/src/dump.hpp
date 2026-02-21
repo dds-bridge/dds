@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_DUMP_H
-#define DDS_DUMP_H
+#pragma once
 
 #include <api/dds.h>
 #include "moves/moves.hpp"
@@ -52,6 +51,4 @@ void DumpStored(
   const NodeCards& node,
   const int target,
   const int depth);
-
-#endif
 

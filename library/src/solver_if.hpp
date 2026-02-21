@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DDS_SOLVERIF_H
-#define DDS_SOLVERIF_H
+#pragma once
 
 #include <api/dds.h>
 #include <solver_context/solver_context.hpp>
@@ -35,5 +34,3 @@ auto analyse_later_board(
   const int hint,
   const int hintDir,
   FutureTricks * futp) -> int;
-
-#endif
