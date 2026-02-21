@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DTEST_TESTTIMER_H
-#define DTEST_TESTTIMER_H
+#pragma once
 
 #include <string>
 #include <chrono>
@@ -16,13 +15,11 @@
 using Clock = std::chrono::steady_clock;
 using std::chrono::time_point;
 
-using namespace std;
-
 
 class TestTimer
 {
   private:
-    string name_;
+    std::string name_;
     long count_;
     long user_cum_;
     long user_cum_old_;
@@ -38,16 +35,14 @@ class TestTimer
 
     void reset();
 
-    void set_name(const string& s);
+    void set_name(const std::string& s);
 
     void start(const int number = 1);
     void end();
 
     void print_running(
-      const int reached,
-      const int number);
+        const int reached,
+        const int number);
     void print_basic() const;
     void print_hands() const;
 };
-
-#endif

@@ -8,17 +8,14 @@
 */
 
 
-#ifndef DTEST_ARGS_H
-#define DTEST_ARGS_H
+#pragma once
 
 void usage(
- const char base[]);
+    const char base[]);
 
 void print_options();
 
 void read_args(
-  int argc,
-  char * argv[]);
-
-#endif
+    int argc,
+    char * argv[]);
 

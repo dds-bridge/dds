@@ -8,14 +8,13 @@
 */
 
 
-#ifndef DTEST_PRINT_H
-#define DTEST_PRINT_H
+#pragma once
 
 #include <string>
 
 #include <api/dll.h>
 
-using namespace std;
+using std::string;
 
 
 void set_constants();
@@ -35,8 +34,6 @@ void print_PLAY(const PlayTracePBN& play);
 void print_TRACE(const SolvedPlay& solved);
 
 void print_double_TRACE(
-  const SolvedPlay& solved,
-  const SolvedPlay& ref);
-
-#endif
+    const SolvedPlay& solved,
+    const SolvedPlay& ref);
 

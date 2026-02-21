@@ -15,6 +15,15 @@
 
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;
+using std::chrono::duration;
+using std::cout;
+using std::endl;
+using std::setw;
+using std::string;
+using std::setprecision;
+using std::right;
+using std::fixed;
+using std::left;
 
 
 TestTimer::TestTimer()
@@ -57,7 +66,7 @@ void TestTimer::end()
   time_point<Clock> user1 = Clock::now();
   clock_t sys1 = clock();
 
-  chrono::duration<double, milli> d = user1 - user0_;
+  duration<double, std::milli> d = user1 - user0_;
   int tuser = static_cast<int>(1000. * d.count());
 
   user_cum_ += tuser;

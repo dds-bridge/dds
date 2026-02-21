@@ -13,7 +13,7 @@
 
 #include "compare.hpp"
 
-using namespace std;
+using std::vector;
 
 
 bool compare_PBN(

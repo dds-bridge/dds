@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DTEST_COMPARE_H
-#define DTEST_COMPARE_H
+#pragma once
 
 #include <api/dll.h>
 
@@ -34,8 +33,6 @@ bool compare_DEALERPAR(
   const ParResultsDealer& par2);
 
 bool compare_TRACE(
-  const SolvedPlay& trace1,
-  const SolvedPlay& trace2);
-
-#endif
+    const SolvedPlay& trace1,
+    const SolvedPlay& trace2);
 

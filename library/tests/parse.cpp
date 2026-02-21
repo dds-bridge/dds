@@ -17,7 +17,14 @@
 #include <api/dll.h>
 #include "parse.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::ifstream;
+using std::vector;
+using std::string;
+using std::getline;
+using std::invalid_argument;
+using std::out_of_range;
 
 
 bool parse_PBN(

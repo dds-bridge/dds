@@ -18,7 +18,11 @@
 #include "print.hpp"
 #include "moves/moves.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::setw;
+using std::left;
+using std::right;
 
 #define BATCHTIMES
 

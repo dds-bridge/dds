@@ -22,7 +22,10 @@
 #include "cst.hpp"
 #include "system/scheduler.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::setw;
+using std::vector;
 
 string GetSystem();
 string GetBits();

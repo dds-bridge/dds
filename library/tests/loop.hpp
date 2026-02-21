@@ -7,8 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DTEST_LOOP_H
-#define DTEST_LOOP_H
+#pragma once
 
 #include <api/dll.h>
 
@@ -54,6 +53,4 @@ bool loop_play(
   SolvedPlay * trace_list,
   const int number,
   const int stepsize);
-
-#endif
 

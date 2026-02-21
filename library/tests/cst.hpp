@@ -7,12 +7,11 @@
    See LICENSE and README.
 */
 
-#ifndef DTEST_CST_H
-#define DTEST_CST_H
+#pragma once
 
 #include <string>
 
-using namespace std;
+using std::string;
 
 
 enum Solver
@@ -42,13 +41,11 @@ enum Threading
 
 struct OptionsType
 {
-  string fname_;
+  std::string fname_;
   Solver solver_;
   Threading threading_;
   int num_threads_;
   int memory_mb_;
   bool report_slow_boards_;
 };
-
-#endif
 

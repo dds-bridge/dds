@@ -17,7 +17,9 @@
 #include "args.hpp"
 #include "cst.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::setw;
 
 OptionsType options;
 

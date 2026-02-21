@@ -20,11 +20,19 @@
 #include <cstring>
 #include <sys/stat.h>
 
-
 #include "args.hpp"
 #include "cst.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::setw;
+using std::right;
+using std::left;
+using std::vector;
+using std::string;
+using std::getline;
+using std::find;
+using std::remove;
 
 
 extern OptionsType options;

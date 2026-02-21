@@ -7,10 +7,7 @@
    See LICENSE and README.
 */
 
-#ifndef DTEST_TESTCOMMON_H
-#define DTEST_TESTCOMMON_H
+#pragma once
 
 int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[]);
-
-#endif
 
