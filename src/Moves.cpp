@@ -387,7 +387,7 @@ void Moves::WeightAllocTrump0(
     else if ((tpos.winner[suit].hand == lho[leadHand]) &&
              (tpos.secondBest[suit].hand == partner[leadHand]))
     {
-      /* This case was suggested by Joël Bradmetz. */
+      /* This case was suggested by Joel Bradmetz. */
       if (tpos.length[partner[leadHand]][suit] != 1)
         suitBonus += 27;
     }
@@ -689,7 +689,7 @@ void Moves::WeightAllocNT0(
       else if ((tpos.winner[suit].hand == lho[leadHand]) &&
                (tpos.secondBest[suit].hand == partner[leadHand]))
       {
-        /* This case was suggested by Joël Bradmetz. */
+        /* This case was suggested by Joel Bradmetz. */
         if (tpos.length[partner[leadHand]][suit] != 1)
           suitWeightDelta += 31;
       }
