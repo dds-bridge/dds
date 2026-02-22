@@ -67,7 +67,7 @@ void TestTimer::end()
   clock_t sys1 = clock();
 
   duration<double, std::milli> d = user1 - user0_;
-  int tuser = static_cast<int>(1000. * d.count());
+  int tuser = static_cast<int>(d.count());
 
   user_cum_ += tuser;
   sys_cum_ += static_cast<int>((1000 * (sys1 - sys0_)) /
@@ -147,10 +147,10 @@ void TestTimer::print_hands() const
   {
     cout << setw(21) << left << "User time (ms)" <<
       setw(12) << right << fixed << 
-        setprecision(0) << user_cum_ / 1000. << "\n";
+        setprecision(0) << user_cum_ << "\n";
     cout << setw(21) << left << "Avg user time (ms)" <<
       setw(12) << right << fixed << setprecision(2) << user_cum_ / 
-        static_cast<float>(1000. * count_) << "\n";
+        static_cast<float>(count_) << "\n";
   }
 
   if (sys_cum_ == 0)
@@ -165,7 +165,7 @@ void TestTimer::print_hands() const
         static_cast<float>(count_) << "\n";
     cout << setw(21) << left << "Ratio" << 
       setw(12) << right << fixed << setprecision(2) << 
-      1000. * sys_cum_ / static_cast<float>(user_cum_);
+      sys_cum_ / static_cast<float>(user_cum_);
   }
   cout << endl;
 }

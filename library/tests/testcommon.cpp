@@ -99,7 +99,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
 
   if (GIBmode && options.solver_ != Solver::DTEST_SOLVER_CALC)
   {
-    cout << "GIB file only works works with calc\n";
+    cout << "GIB file only works with calc\n";
     exit(0);
   }
 

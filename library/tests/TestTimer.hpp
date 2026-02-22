@@ -30,7 +30,7 @@ class TestTimer
     std::string name_;      ///< Timer name for display
     long count_;            ///< Number of times started/stopped
     long user_cum_;         ///< Cumulative user time (milliseconds)
-    long user_cum_old_;     ///< Previous cumulative user time
+    long user_cum_old_;     ///< Previous cumulative user time (milliseconds)
     long sys_cum_;          ///< Cumulative system time (milliseconds)
 
     time_point<Clock> user0_;  ///< Wall-clock start time
