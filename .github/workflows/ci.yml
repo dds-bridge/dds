@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux — shared library, default threading (OpenMP + STL)
+          - name: Linux GCC
+            os: ubuntu-latest
+            cxx: g++
+
+          - name: Linux Clang
+            os: ubuntu-latest
+            cxx: clang++
+
+          # Linux — static library, Boost threading backend
+          - name: Linux GCC / Boost (static)
+            os: ubuntu-latest
+            cxx: g++
+            cmake-extra: >-
+              -DBUILD_SHARED_LIBS=OFF
+              -DDDS_THREADS_BOOST=ON
+              -DDDS_THREADS_STL=ON
+            install-boost: true
+
+          # macOS — shared library, default threading (GCD + STL)
+          - name: macOS
+            os: macos-latest
+
+          # Windows — static library (avoids DLL path issues in CTest),
+          # default threading (WinAPI + OpenMP + STL)
+          - name: Windows MSVC (static)
+            os: windows-latest
+            cmake-extra: -DBUILD_SHARED_LIBS=OFF
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenMP (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y libomp-dev
+
+      - name: Install Boost (Linux)
+        if: matrix.install-boost == true
+        run: sudo apt-get install -y libboost-thread-dev libboost-system-dev
+
+      - name: Configure
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DDDS_BUILD_TESTS=ON \
+            -DDDS_BUILD_EXAMPLES=ON \
+            ${{ matrix.cmake-extra }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
