@@ -177,8 +177,8 @@ int GetNextArgToken(
 void SetDefaults()
 {
   options.fname_ = "input.txt";
-  options.solver_ = DTEST_SOLVER_SOLVE;
-  options.threading_ = DTEST_THREADING_DEFAULT;
+  options.solver_ = Solver::DTEST_SOLVER_SOLVE;
+  options.threading_ = Threading::DTEST_THREADING_DEFAULT;
   options.num_threads_ = 0;
   options.memory_mb_ = 0;
   options.report_slow_boards_ = false;
@@ -191,9 +191,9 @@ void print_options()
   cout << setw(12) << "file" << 
     setw(12) <<  options.fname_ << "\n";
   cout << setw(12) << "solver" << setw(12) <<  
-    solverList[options.solver_] << "\n";
+    solverList[static_cast<size_t>(options.solver_)] << "\n";
   cout << setw(12) << "threading" << setw(12) <<  
-    threadingList[options.threading_] << "\n";
+    threadingList[static_cast<size_t>(options.threading_)] << "\n";
   cout << setw(12) <<"threads" << setw(12) <<  
     options.num_threads_ << "\n";
   cout << setw(12) << "memory" << setw(12) <<  
@@ -256,7 +256,7 @@ void read_args(
         stmp = optarg;
         transform(stmp.begin(), stmp.end(), stmp.begin(), ::tolower);
 
-        for (unsigned i = 0; i < DTEST_SOLVER_SIZE && ! matchFlag; i++)
+        for (unsigned i = 0; i < static_cast<unsigned>(Solver::DTEST_SOLVER_SIZE) && ! matchFlag; i++)
         {
           string s = solverList[i];
           transform(s.begin(), s.end(), s.begin(), ::tolower); 
@@ -282,7 +282,7 @@ void read_args(
         stmp = optarg;
         transform(stmp.begin(), stmp.end(), stmp.begin(), ::tolower);
 
-        for (unsigned i = 0; i < DTEST_THREADING_SIZE && ! matchFlag; i++)
+        for (unsigned i = 0; i < static_cast<unsigned>(Threading::DTEST_THREADING_SIZE) && ! matchFlag; i++)
         {
           string s = threadingList[i];
           transform(s.begin(), s.end(), s.begin(), ::tolower); 
