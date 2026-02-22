@@ -10,6 +10,7 @@ test/[Mm]akefile
 examples/[Mm]akefile
 test/dtest
 test/itest
+build/
 
 *.exe
 *.swp
