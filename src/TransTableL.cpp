@@ -1051,7 +1051,7 @@ string TransTableL::MakeHolding(
 void TransTableL::DumpHands(
   ofstream& fout,
   const vector<vector<string>>& hands,
-  const unsigned char lengths[][DDS_SUITS]) const
+  const unsigned char lengths[DDS_HANDS][DDS_SUITS]) const
 {
   for (unsigned i = 0; i < DDS_SUITS; i++)
   {
