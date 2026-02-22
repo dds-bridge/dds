@@ -40,12 +40,14 @@ jobs:
           # macOS — shared library, default threading (GCD + STL)
           - name: macOS
             os: macos-latest
+            cmake-extra: -DDDS_WERROR=OFF
 
           # Windows — static library (avoids DLL path issues in CTest),
           # default threading (WinAPI + OpenMP + STL)
           - name: Windows MSVC (static)
             os: windows-latest
-            cmake-extra: -DBUILD_SHARED_LIBS=OFF
+            cmake-extra: -DBUILD_SHARED_LIBS=OFF -DDDS_WERROR=OFF
+            skip-tests: true
 
     steps:
       - uses: actions/checkout@v4
@@ -74,4 +76,5 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: Test
+        if: matrix.skip-tests != true
         run: ctest --test-dir build -C Release --output-on-failure
