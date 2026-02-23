@@ -57,8 +57,8 @@ DDS provides two API layers:
 | Legacy Function | Modern Replacement | Notes |
 |----------------|-------------------|-------|
 | `SetThreading(code)` | Create one `SolverContext` per thread | Threading is implicit |
-| `SetMaxThreads(n)` | `SolverConfig::tt_limit_mb_` | Configure memory instead |
-| `SetResources(mem, threads)` | `SolverConfig` fields | Per-instance configuration |
+| `SetMaxThreads(n)` | One `SolverContext` per worker thread | Control thread count in your app |
+| `SetResources(mem, threads)` | `SolverConfig::tt_mem_maximum_mb_` + per-thread contexts | Split memory and thread control |
 | `FreeMemory()` | Context destruction | Automatic via RAII |
 
 ### Core Solving Functions
@@ -115,7 +115,7 @@ int main() {
     // Per-instance configuration
     SolverConfig cfg;
     cfg.tt_kind_ = TTKind::Large;
-    cfg.tt_limit_mb_ = 2000;
+    cfg.tt_mem_maximum_mb_ = 2000;
     
     // Create context
     SolverContext ctx(std::make_shared<ThreadData>(), cfg);
@@ -163,7 +163,7 @@ void solve_many_boards(Deal* boards, int count) {
 void solve_many_boards(const std::vector<Deal>& boards) {
     SolverConfig cfg;
     cfg.tt_kind_ = TTKind::Large;
-    cfg.tt_limit_mb_ = 2000;
+    cfg.tt_mem_maximum_mb_ = 2000;
     
     SolverContext ctx(std::make_shared<ThreadData>(), cfg);
     
@@ -228,7 +228,7 @@ void worker(Deal dl) {
     // Each thread creates its own context
     SolverConfig cfg;
     cfg.tt_kind_ = TTKind::Large;
-    cfg.tt_limit_mb_ = 500;  // 500MB per thread
+    cfg.tt_mem_maximum_mb_ = 500;  // 500MB per thread
     
     SolverContext ctx(std::make_shared<ThreadData>(), cfg);
     
@@ -288,7 +288,7 @@ class BatchSolver
     {
         SolverConfig cfg;
         cfg.tt_kind_ = TTKind::Large;
-        cfg.tt_limit_mb_ = 2000;
+        cfg.tt_mem_maximum_mb_ = 2000;
         return cfg;
     }
 };
@@ -318,7 +318,7 @@ void solve_tournament(const std::vector<Deal>& boards) {
 SolverConfig make_small_config() {
     SolverConfig cfg;
     cfg.tt_kind_ = TTKind::Small;      // Use small TT implementation
-    cfg.tt_limit_mb_ = 100;            // Only 100MB
+    cfg.tt_mem_maximum_mb_ = 100;            // Only 100MB
     return cfg;
 }
 
@@ -335,7 +335,7 @@ void solve_on_embedded(const Deal& dl) {
 - **Legacy API**: Global pool shared across threads
 - **Modern API**: Per-context allocation (multiply by thread count)
 
-**Recommendation**: In multithreaded scenarios, reduce `tt_limit_mb_` per context to avoid over-allocation.
+**Recommendation**: In multithreaded scenarios, reduce `tt_mem_maximum_mb_` per context to avoid over-allocation.
 
 ### Transposition Table Efficiency
 The modern API gives you explicit control over TT lifecycle:

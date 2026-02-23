@@ -119,7 +119,7 @@ The modern API uses instance-scoped `SolverContext` with automatic resource mana
 // Configure solver
 SolverConfig cfg;
 cfg.tt_kind_ = TTKind::Large;
-cfg.tt_limit_mb_ = 2000;
+cfg.tt_mem_maximum_mb_ = 2000;
 
 // Create context (automatic cleanup on destruction)
 SolverContext ctx(std::make_shared<ThreadData>(), cfg);
@@ -158,6 +158,7 @@ FreeMemory();
 For detailed migration examples and best practices, see:
 - **[API Migration Guide](docs/api_migration.md)** - Step-by-step migration from legacy to modern API
 - **[Legacy C API Reference](docs/legacy_c_api.md)** - Full documentation of deprecated functions
+- **[Migration Example](examples/migration_example.cpp)** - Side-by-side legacy and modern API sample
 - **[SolverContext Documentation](library/src/README_SolverContext.md)** - Modern API details
 
 **Quick decision:**
