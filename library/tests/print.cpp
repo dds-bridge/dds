@@ -15,6 +15,14 @@
 #include "print.hpp"
 #include "cst.hpp"
 
+using std::cout;
+using std::endl;
+using std::setw;
+using std::string;
+using std::right;
+using std::left;
+using std::min;
+
 
 static unsigned short dbit_map_rank[16];
 static unsigned char dcard_rank[16];

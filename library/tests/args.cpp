@@ -20,11 +20,19 @@
 #include <cstring>
 #include <sys/stat.h>
 
-
 #include "args.hpp"
 #include "cst.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::setw;
+using std::right;
+using std::left;
+using std::vector;
+using std::string;
+using std::getline;
+using std::find;
+using std::remove;
 
 
 extern OptionsType options;
@@ -82,7 +90,7 @@ void SetDefaults();
 bool ParseRound();
 
 
-void Usage(
+void usage(
   const char base[])
 {
   string basename(base);
@@ -168,33 +176,33 @@ int GetNextArgToken(
 
 void SetDefaults()
 {
-  options.fname = "input.txt";
-  options.solver = DTEST_SOLVER_SOLVE;
-  options.threading = DTEST_THREADING_DEFAULT;
-  options.numThreads = 0;
-  options.memoryMB = 0;
-  options.reportSlowBoards = false;
+  options.fname_ = "input.txt";
+  options.solver_ = Solver::DTEST_SOLVER_SOLVE;
+  options.threading_ = Threading::DTEST_THREADING_DEFAULT;
+  options.num_threads_ = 0;
+  options.memory_mb_ = 0;
+  options.report_slow_boards_ = false;
 }
 
 
-void PrintOptions()
+void print_options()
 {
   cout << left;
   cout << setw(12) << "file" << 
-    setw(12) <<  options.fname << "\n";
+    setw(12) <<  options.fname_ << "\n";
   cout << setw(12) << "solver" << setw(12) <<  
-    solverList[options.solver] << "\n";
+    solverList[static_cast<size_t>(options.solver_)] << "\n";
   cout << setw(12) << "threading" << setw(12) <<  
-    threadingList[options.threading] << "\n";
+    threadingList[static_cast<size_t>(options.threading_)] << "\n";
   cout << setw(12) << "threads" << setw(12) <<  
-    options.numThreads << "\n";
+    options.num_threads_ << "\n";
   cout << setw(12) << "memory" << setw(12) <<  
-    options.memoryMB << " MB\n";
+    options.memory_mb_ << " MB\n";
   cout << "\n" << right;
 }
 
 
-void ReadArgs(
+void read_args(
   int argc,
   char * argv[])
 {
@@ -207,7 +215,7 @@ void ReadArgs(
 
   if (argc == 1)
   {
-    Usage(argv[0]);
+    usage(argv[0]);
     exit(0);
   }
 
@@ -226,14 +234,14 @@ void ReadArgs(
       case 'f':
         if (stat(optarg, &buffer) == 0)
         {
-          options.fname = string(optarg);
+          options.fname_ = string(optarg);
           break;
         }
 
         stmp = "../hands/list" + string(optarg) + ".txt";
         if (stat(stmp.c_str(), &buffer) == 0)
         {
-          options.fname = stmp;
+          options.fname_ = stmp;
           break;
         }
 
@@ -248,7 +256,7 @@ void ReadArgs(
         stmp = optarg;
         transform(stmp.begin(), stmp.end(), stmp.begin(), ::tolower);
 
-        for (unsigned i = 0; i < DTEST_SOLVER_SIZE && ! matchFlag; i++)
+        for (unsigned i = 0; i < static_cast<unsigned>(Solver::DTEST_SOLVER_SIZE) && ! matchFlag; i++)
         {
           string s = solverList[i];
           transform(s.begin(), s.end(), s.begin(), ::tolower); 
@@ -260,7 +268,7 @@ void ReadArgs(
         }
 
         if (matchFlag)
-          options.solver = static_cast<Solver>(m);
+          options.solver_ = static_cast<Solver>(m);
         else
         {
           cout << "Solver '" << optarg << "' not found\n";
@@ -274,7 +282,7 @@ void ReadArgs(
         stmp = optarg;
         transform(stmp.begin(), stmp.end(), stmp.begin(), ::tolower);
 
-        for (unsigned i = 0; i < DTEST_THREADING_SIZE && ! matchFlag; i++)
+        for (unsigned i = 0; i < static_cast<unsigned>(Threading::DTEST_THREADING_SIZE) && ! matchFlag; i++)
         {
           string s = threadingList[i];
           transform(s.begin(), s.end(), s.begin(), ::tolower); 
@@ -286,7 +294,7 @@ void ReadArgs(
         }
 
         if (matchFlag)
-          options.threading = static_cast<Threading>(m);
+          options.threading_ = static_cast<Threading>(m);
         else
         {
           cout << "Threading '" << optarg << "' not found\n";
@@ -303,7 +311,7 @@ void ReadArgs(
           nextToken -= 2;
           errFlag = true;
         }
-        options.numThreads = m;
+        options.num_threads_ = m;
         break;
 
       case 'm':
@@ -314,11 +322,11 @@ void ReadArgs(
           nextToken -= 2;
           errFlag = true;
         }
-        options.memoryMB = m;
+        options.memory_mb_ = m;
         break;
 
       case 'r':
-        options.reportSlowBoards = true;
+        options.report_slow_boards_ = true;
         break;
 
       default:

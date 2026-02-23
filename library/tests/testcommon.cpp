@@ -22,7 +22,11 @@
 #include "cst.hpp"
 #include "system/scheduler.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::setw;
+using std::string;
+using std::vector;
 
 string GetSystem();
 string GetBits();
@@ -56,20 +60,20 @@ extern Scheduler scheduler;
 void main_identify();
 
 
-int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
+int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
 {
   bool GIBmode = false;
 
   int stepsize = 0;
-  if (options.solver == DTEST_SOLVER_SOLVE)
+  if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
     stepsize = MAXNOOFBOARDS;
-  else if (options.solver == DTEST_SOLVER_CALC)
+  else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
     stepsize = MAXNOOFTABLES;
-  else if (options.solver == DTEST_SOLVER_PLAY)
+  else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
     stepsize = MAXNOOFBOARDS;
-  else if (options.solver == DTEST_SOLVER_PAR)
+  else if (options.solver_ == Solver::DTEST_SOLVER_PAR)
     stepsize = 1;
-  else if (options.solver == DTEST_SOLVER_DEALERPAR)
+  else if (options.solver_ == Solver::DTEST_SOLVER_DEALERPAR)
     stepsize = 1;
 
   set_constants();
@@ -85,7 +89,7 @@ int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   ParResultsDealer * dealerpar_list = nullptr;
   PlayTracePBN * play_list = nullptr;
   SolvedPlay * trace_list = nullptr;
-  if (read_file(options.fname, number, GIBmode, &dealer_list, &vul_list,
+  if (read_file(options.fname_, number, GIBmode, &dealer_list, &vul_list,
         &deal_list, &fut_list, &table_list, &par_list, &dealerpar_list,
         &play_list, &trace_list) == false)
   {
@@ -93,14 +97,14 @@ int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
     exit(0);
   }
 
-  if (GIBmode && options.solver != DTEST_SOLVER_CALC)
+  if (GIBmode && options.solver_ != Solver::DTEST_SOLVER_CALC)
   {
-    cout << "GIB file only works works with calc\n";
+    cout << "GIB file only works with calc\n";
     exit(0);
   }
 
   timer.reset();
-  timer.setname("Hand stats");
+  timer.set_name("Hand stats");
 
   BoardsPBN bop;
   SolvedBoards solvedbdp;
@@ -110,25 +114,25 @@ int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   PlayTracesPBN playsp;
   SolvedPlays solvedplp;
 
-  if (options.solver == DTEST_SOLVER_SOLVE)
+  if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
   {
     loop_solve(&bop, &solvedbdp, deal_list, fut_list, number, stepsize);
   }
-  else if (options.solver == DTEST_SOLVER_CALC)
+  else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {
     loop_calc(&dealsp, &resp, &parp, deal_list, table_list, 
       number, stepsize);
   }
-  else if (options.solver == DTEST_SOLVER_PLAY)
+  else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
   {
     loop_play(&bop, &playsp, &solvedplp, deal_list, play_list, trace_list, 
       number, stepsize);
   }
-  else if (options.solver == DTEST_SOLVER_PAR)
+  else if (options.solver_ == Solver::DTEST_SOLVER_PAR)
   {
     loop_par(vul_list, table_list, par_list, number, stepsize);
   }
-  else if (options.solver == DTEST_SOLVER_DEALERPAR)
+  else if (options.solver_ == Solver::DTEST_SOLVER_DEALERPAR)
   {
     loop_dealerpar(dealer_list, vul_list, table_list, dealerpar_list, 
       number, stepsize);
@@ -136,13 +140,13 @@ int realMain([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   else
   {
     cout << "Unknown type " << 
-      static_cast<unsigned>(options.solver) << "\n";
+      static_cast<unsigned>(options.solver_) << "\n";
     exit(0);
   }
 
-  timer.printHands();
+  timer.print_hands();
 
-  if (options.reportSlowBoards)
+  if (options.report_slow_boards_)
   {
     std::vector<std::pair<int,int>> times;
     scheduler.GetBoardTimes(times);
