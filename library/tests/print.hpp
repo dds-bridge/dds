@@ -9,11 +9,7 @@
 
 #pragma once
 
-#include <string>
-
 #include <api/dll.h>
-
-using std::string;
 
 /// @file print.hpp
 /// @brief Result formatting and display utilities.

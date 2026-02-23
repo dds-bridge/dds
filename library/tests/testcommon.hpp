@@ -13,7 +13,7 @@
 ///
 /// Entry point for test execution. Configures test parameters from command-line
 /// arguments and delegates to specific test loop implementations (solve, calc,
-/// par, par_dealer, play).
+/// par, dealerpar, play).
 ///
 /// @param argc Number of command-line arguments
 /// @param argv Array of command-line argument strings
