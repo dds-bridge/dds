@@ -26,9 +26,6 @@ int main(int argc, char * argv[])
 {
   read_args(argc, argv);
 
-  if (options.threading_ != Threading::DTEST_THREADING_DEFAULT)
-    SetThreading(static_cast<int>(options.threading_));
-
   SetResources(options.memory_mb_, options.num_threads_);
 
   DDSInfo info;

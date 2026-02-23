@@ -41,13 +41,12 @@ struct optEntry
   unsigned numArgs;
 };
 
-#define DTEST_NUM_OPTIONS 6
+#define DTEST_NUM_OPTIONS 5
 
 const optEntry optList[DTEST_NUM_OPTIONS] =
 {
   {"f", "file", 1},
   {"s", "solver", 1},
-  {"t", "threading", 1},
   {"n", "numthr", 1},
   {"m", "memory", 1},
   {"r", "report", 0}
@@ -60,20 +59,6 @@ const vector<string> solverList =
   "play",
   "par",
   "dealerpar"
-};
-
-const vector<string> threadingList =
-{
-  "none",
-  "WinAPI",
-  "OpenMP",
-  "GCD",
-  "Boost",
-  "STL",
-  "TBB",
-  "STLIMPL",
-  "PPLIMPL",
-  "default"
 };
 
 string shortOptsAll, shortOptsWithArg;
@@ -104,18 +89,13 @@ void usage(
     "-s, --solver       One of: solve, calc, play, par, dealerpar.\n" <<
     "                   (Default: solve)\n" <<
     "\n" <<
-    "-t, --threading t  Currently one of (case-insensitive):\n" <<
-    "                   default, none, winapi, openmp, gcd, boost,\n" <<
-      "\n" <<
-      "-r, --report       Print per-board timings sorted by longest first.\n" <<
-    "                   stl, tbb, stlimpl, pplimpl.\n" <<
-    "                   (Default: default meaning that DDS decides)\n" <<
-    "\n" <<
     "-n, --numthr n     Maximum number of threads.\n" <<
     "                   (Default: 0 meaning that DDS decides)\n" <<
     "\n" <<
     "-m, --memory n     Total DDS memory size in MB.\n" <<
     "                   (Default: 0 meaning that DDS decides)\n" <<
+    "\n" <<
+    "-r, --report       Print per-board timings sorted by longest first.\n" <<
     "\n" <<
     endl;
 }
@@ -175,7 +155,6 @@ void SetDefaults()
 {
   options.fname_ = "input.txt";
   options.solver_ = Solver::DTEST_SOLVER_SOLVE;
-  options.threading_ = Threading::DTEST_THREADING_DEFAULT;
   options.num_threads_ = 0;
   options.memory_mb_ = 0;
   options.report_slow_boards_ = false;
@@ -189,8 +168,6 @@ void print_options()
     setw(12) <<  options.fname_ << "\n";
   cout << setw(12) << "solver" << setw(12) <<  
     solverList[static_cast<size_t>(options.solver_)] << "\n";
-  cout << setw(12) << "threading" << setw(12) <<  
-    threadingList[static_cast<size_t>(options.threading_)] << "\n";
   cout << setw(12) << "threads" << setw(12) <<  
     options.num_threads_ << "\n";
   cout << setw(12) << "memory" << setw(12) <<  
@@ -269,32 +246,6 @@ void read_args(
         else
         {
           cout << "Solver '" << optarg << "' not found\n";
-          nextToken -= 2;
-          errFlag = true;
-        }
-        break;
-
-      case 't':
-        matchFlag = false;
-        stmp = optarg;
-        transform(stmp.begin(), stmp.end(), stmp.begin(), ::tolower);
-
-        for (unsigned i = 0; i < static_cast<unsigned>(Threading::DTEST_THREADING_SIZE) && ! matchFlag; i++)
-        {
-          string s = threadingList[i];
-          transform(s.begin(), s.end(), s.begin(), ::tolower); 
-          if (stmp == s)
-          {
-            m = static_cast<int>(i);
-            matchFlag = true;
-          }
-        }
-
-        if (matchFlag)
-          options.threading_ = static_cast<Threading>(m);
-        else
-        {
-          cout << "Threading '" << optarg << "' not found\n";
           nextToken -= 2;
           errFlag = true;
         }
