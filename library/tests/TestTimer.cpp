@@ -87,7 +87,7 @@ void TestTimer::print_running(
       100. * reached / 
         static_cast<float>(divisor) << "%)" <<
     setw(15) << right << fixed << setprecision(0) << 
-      (user_cum_ - user_cum_old_) / 1000. << endl;
+      (user_cum_ - user_cum_old_) << endl;
   
   user_cum_old_ = user_cum_;
 }
