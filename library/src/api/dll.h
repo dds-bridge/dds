@@ -431,7 +431,14 @@ struct DDSInfo
 /**
  * @brief Set the maximum number of threads used by the solver.
  *
+ * @deprecated Use SolverContext with SolverConfig::tt_limit_mb_ instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
  * @param userThreads Maximum number of threads to use
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which provides instance-scoped resource management and RAII cleanup.
  */
 EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
   int userThreads) -> void;
@@ -439,8 +446,15 @@ EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
 /**
  * @brief Set the threading backend used by the solver.
  *
+ * @deprecated Use SolverContext instead - threading is implicit (one context per thread).
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
  * @param code Threading backend code (see documentation)
  * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. The modern C++ API does not require threading configuration;
+ * instead, create one SolverContext instance per thread.
  */
 EXTERN_C DLLEXPORT auto STDCALL SetThreading(
   int code) -> int;
@@ -448,8 +462,15 @@ EXTERN_C DLLEXPORT auto STDCALL SetThreading(
 /**
  * @brief Set memory and thread resources for the solver.
  *
+ * @deprecated Use SolverContext with SolverConfig instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
  * @param maxMemoryMB Maximum memory in megabytes
  * @param maxThreads Maximum number of threads
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which provides per-instance configuration through SolverConfig.
  */
 EXTERN_C DLLEXPORT auto STDCALL SetResources(
   int maxMemoryMB,
@@ -457,6 +478,14 @@ EXTERN_C DLLEXPORT auto STDCALL SetResources(
 
 /**
  * @brief Free memory used by the solver.
+ *
+ * @deprecated Use SolverContext RAII instead - cleanup is automatic.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. The modern C++ API uses RAII (Resource Acquisition Is
+ * Initialization) through SolverContext, which automatically cleans up
+ * resources when the context goes out of scope. No explicit cleanup needed.
  */
 EXTERN_C DLLEXPORT auto STDCALL FreeMemory() -> void;
 

@@ -105,4 +105,62 @@ Please report bugs to bo.haglund@bahnhof.se and soren.hein@gmail.com.
 Version 3.0.0, preliminary change log
 ====
 
-To build with C api include `<api/dll.h>`, for the full C++ api use <dds/dds.hpp>
+## API Documentation
+
+DDS 3.0 provides two API levels to suit different use cases:
+
+### Modern C++ API (Recommended for New Projects)
+
+The modern API uses instance-scoped `SolverContext` with automatic resource management (RAII):
+
+```cpp
+#include <dds/dds.hpp>
+
+// Configure solver
+SolverConfig cfg;
+cfg.tt_kind_ = TTKind::Large;
+cfg.tt_limit_mb_ = 2000;
+
+// Create context (automatic cleanup on destruction)
+SolverContext ctx(std::make_shared<ThreadData>(), cfg);
+
+// Solve boards
+FutureTricks fut;
+SolveBoard(ctx, deal, -1, 3, 0, &fut);
+```
+
+**Benefits:**
+- Automatic memory management (no manual cleanup)
+- Per-context configuration (different settings per thread)
+- Better multithreading (no global state contention)
+- Explicit transposition table control
+
+### Legacy C API (Backward Compatible)
+
+The legacy API uses global state and is maintained for backward compatibility:
+
+```c
+#include <api/dll.h>
+
+SetMaxThreads(4);
+SetResources(2000, 4);
+
+FutureTricks fut;
+SolveBoard(deal, -1, 3, 0, &fut, 0);
+
+FreeMemory();
+```
+
+**Note:** Legacy initialization functions (`SetThreading`, `SetMaxThreads`, `SetResources`, `FreeMemory`) are deprecated but remain functional. See [docs/api_migration.md](docs/api_migration.md) for migration guidance.
+
+### Migration Guide
+
+For detailed migration examples and best practices, see:
+- **[API Migration Guide](docs/api_migration.md)** - Step-by-step migration from legacy to modern API
+- **[Legacy C API Reference](docs/legacy_c_api.md)** - Full documentation of deprecated functions
+- **[SolverContext Documentation](library/src/README_SolverContext.md)** - Modern API details
+
+**Quick decision:**
+- **New C++ projects**: Use modern API (`#include <dds/dds.hpp>`)
+- **Existing C projects**: Continue with legacy API (no changes required)
+- **Migration**: Follow incremental migration guide in docs/api_migration.md
