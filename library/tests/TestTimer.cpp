@@ -13,8 +13,6 @@
 
 #include "TestTimer.hpp"
 
-using std::chrono::duration_cast;
-using std::chrono::milliseconds;
 using std::chrono::duration;
 using std::cout;
 using std::endl;
@@ -114,15 +112,17 @@ void TestTimer::print_basic() const
   }
 
   if (sys_cum_ == 0)
-    cout << setw(19) << left << "Sys time" << ": " << "zero" << "\n";
+    cout << setw(19) << left << "Sys time (ms)" << ": " << "zero" << "\n";
   else
   {
     cout << setw(19) << left << "Sys time/ticks" << ": " <<
       sys_cum_ << "\n";
     cout << setw(19) << left << "Sys per call" << ": " <<
       setprecision(2) << sys_cum_ / static_cast<float>(count_) << "\n";
-    cout << setw(19) << left << "Ratio" << ": " <<
-      setprecision(2) << sys_cum_ / static_cast<float>(user_cum_);
+    if (user_cum_ > 0) {
+      cout << setw(19) << left << "Ratio" << ": " <<
+        setprecision(2) << sys_cum_ / static_cast<float>(user_cum_);
+    }
   }
   cout << endl;
 }
@@ -154,7 +154,7 @@ void TestTimer::print_hands() const
   }
 
   if (sys_cum_ == 0)
-    cout << setw(21) << left << "Sys time" << 
+    cout << setw(21) << left << "Sys time (ms)" << 
       setw(12) << right << "zero" << "\n";
   else
   {
@@ -163,9 +163,11 @@ void TestTimer::print_hands() const
     cout << setw(21) << left << "Avg sys time (ms)" <<
       setw(12) << right << fixed << setprecision(2) << sys_cum_ / 
         static_cast<float>(count_) << "\n";
-    cout << setw(21) << left << "Ratio" << 
-      setw(12) << right << fixed << setprecision(2) << 
-      sys_cum_ / static_cast<float>(user_cum_);
+    if (user_cum_ > 0) {
+      cout << setw(21) << left << "Ratio" << 
+        setw(12) << right << fixed << setprecision(2) << 
+        sys_cum_ / static_cast<float>(user_cum_);
+    }
   }
   cout << endl;
 }

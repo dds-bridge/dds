@@ -30,9 +30,6 @@ using std::right;
 using std::left;
 using std::vector;
 using std::string;
-using std::getline;
-using std::find;
-using std::remove;
 
 
 extern OptionsType options;

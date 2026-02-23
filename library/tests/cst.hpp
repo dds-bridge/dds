@@ -11,8 +11,6 @@
 
 #include <string>
 
-using std::string;
-
 /// @file cst.hpp
 /// @brief Test configuration constants and types.
 /// 
