@@ -194,7 +194,7 @@ void print_options()
     solverList[static_cast<size_t>(options.solver_)] << "\n";
   cout << setw(12) << "threading" << setw(12) <<  
     threadingList[static_cast<size_t>(options.threading_)] << "\n";
-  cout << setw(12) <<"threads" << setw(12) <<  
+  cout << setw(12) << "threads" << setw(12) <<  
     options.num_threads_ << "\n";
   cout << setw(12) << "memory" << setw(12) <<  
     options.memory_mb_ << " MB\n";
