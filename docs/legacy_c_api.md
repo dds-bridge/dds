@@ -62,7 +62,7 @@ New development should use the modern C++ API instead.
 4. Pass the context into solving functions.
 5. Remove manual `FreeMemory()` calls.
 
-For detailed steps and examples, see [docs/api_migration.md](docs/api_migration.md).
+For detailed steps and examples, see [api_migration.md](api_migration.md).
 
 ## Code Examples
 
