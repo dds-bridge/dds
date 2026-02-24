@@ -431,7 +431,7 @@ struct DDSInfo
 /**
  * @brief Set the maximum number of threads used by the solver.
  *
- * @deprecated Use SolverContext with SolverConfig::tt_limit_mb_ instead.
+ * @deprecated Use SolverContext with SolverConfig::tt_mem_maximum_mb_ instead.
  *             See docs/api_migration.md for modern C++ API examples.
  *
  * @param userThreads Maximum number of threads to use

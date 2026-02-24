@@ -711,10 +711,10 @@ auto solve_same_board(
     }
     else
     {
-        ctx.search().node_type_store(0) = MINNODE;
-        ctx.search().node_type_store(1) = MAXNODE;
-        ctx.search().node_type_store(2) = MINNODE;
-        ctx.search().node_type_store(3) = MAXNODE;
+      ctx.search().node_type_store(0) = MINNODE;
+      ctx.search().node_type_store(1) = MAXNODE;
+      ctx.search().node_type_store(2) = MINNODE;
+      ctx.search().node_type_store(3) = MAXNODE;
     }
   }
 
@@ -744,7 +744,7 @@ auto solve_same_board(
         &thrp->lookAheadPos,
         guess,
         ini_depth,
-      ctx);
+        ctx);
     TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
