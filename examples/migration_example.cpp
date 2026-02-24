@@ -7,11 +7,10 @@
    See LICENSE and README.
 */
 
-#include <api/dll.h>
-#include <dds/dds.hpp>
-
 #include <memory>
 
+#include <api/dll.h>
+#include <dds/dds.hpp>
 void solve_legacy(const Deal& deal)
 {
     SetMaxThreads(4);
