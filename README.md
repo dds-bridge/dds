@@ -114,19 +114,29 @@ DDS 3.0 provides two API levels to suit different use cases:
 The modern API uses instance-scoped `SolverContext` with automatic resource management (RAII):
 
 ```cpp
+#include <memory>
 #include <dds/dds.hpp>
 
-// Configure solver
-SolverConfig cfg;
-cfg.tt_kind_ = TTKind::Large;
-cfg.tt_mem_maximum_mb_ = 2000;
+auto main() -> int
+{
+    // Configure solver
+    SolverConfig cfg;
+    cfg.tt_kind_ = TTKind::Large;
+    cfg.tt_mem_maximum_mb_ = 2000;
 
-// Create context (automatic cleanup on destruction)
-SolverContext ctx(std::make_shared<ThreadData>(), cfg);
+    // Create context (automatic cleanup on destruction)
+    SolverContext ctx(std::make_shared<ThreadData>(), cfg);
 
-// Solve boards
-FutureTricks fut;
-SolveBoard(ctx, deal, -1, 3, 0, &fut);
+    // Define and populate the deal to be solved
+    Deal deal{};
+    // TODO: Initialize 'deal' with the hand you want to solve.
+
+    // Solve boards
+    FutureTricks fut{};
+    SolveBoard(ctx, deal, -1, 3, 0, &fut);
+
+    return 0;
+}
 ```
 
 **Benefits:**
