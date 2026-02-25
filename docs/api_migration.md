@@ -319,7 +319,8 @@ void solve_tournament(const std::vector<Deal>& boards) {
 SolverConfig make_small_config() {
     SolverConfig cfg;
     cfg.tt_kind_ = TTKind::Small;      // Use small TT implementation
-    cfg.tt_mem_maximum_mb_ = 100;            // Only 100MB
+    cfg.tt_mem_default_mb_ = 100;      // Default TT size 100MB
+    cfg.tt_mem_maximum_mb_ = 100;      // Hard cap 100MB
     return cfg;
 }
 
