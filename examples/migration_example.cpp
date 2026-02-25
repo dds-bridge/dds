@@ -28,6 +28,7 @@ void solve_modern(const Deal& deal)
 {
     SolverConfig cfg;
     cfg.tt_kind_ = TTKind::Large;
+    cfg.tt_mem_default_mb_ = 2000;
     cfg.tt_mem_maximum_mb_ = 2000;
 
     SolverContext ctx(cfg);
