@@ -38,7 +38,7 @@ void solve_modern(const Deal& deal)
     (void)res;
 }
 
-int main()
+auto main() -> int
 {
     Deal deal{};
     solve_legacy(deal);
