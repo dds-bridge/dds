@@ -431,14 +431,18 @@ struct DDSInfo
 /**
  * @brief Set the maximum number of threads used by the solver.
  *
- * @deprecated Use SolverContext with SolverConfig::tt_mem_maximum_mb_ instead.
+ * @deprecated In the modern C++ API, thread count is controlled by the
+ *             embedding application (typically one SolverContext per worker
+ *             thread). New code should create/destroy SolverContext instances
+ *             in the application rather than calling this function.
  *             See docs/api_migration.md for modern C++ API examples.
  *
  * @param userThreads Maximum number of threads to use
  *
  * This function is part of the legacy C API and is maintained for backward
- * compatibility. New code should use the modern C++ API with SolverContext,
- * which provides instance-scoped resource management and RAII cleanup.
+ * compatibility. It has no direct equivalent in the modern API, where both
+ * threading and TT memory limits are configured via SolverContext and
+ * SolverConfig on a per-instance basis.
  */
 EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
   int userThreads) -> void;
