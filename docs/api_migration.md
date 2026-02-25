@@ -164,6 +164,7 @@ void solve_many_boards(Deal* boards, int count) {
 void solve_many_boards(const std::vector<Deal>& boards) {
     SolverConfig cfg;
     cfg.tt_kind_ = TTKind::Large;
+    cfg.tt_mem_default_mb_ = 2000;
     cfg.tt_mem_maximum_mb_ = 2000;
     
     SolverContext ctx(cfg);
