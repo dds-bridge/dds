@@ -94,7 +94,7 @@ void solve_modern(const Deal& dl)
     cfg.tt_kind_ = TTKind::Large;
     cfg.tt_mem_maximum_mb_ = 2000;
 
-    SolverContext ctx(std::make_shared<ThreadData>(), cfg);
+    SolverContext ctx(cfg);
 
     FutureTricks fut;
     int res = SolveBoard(ctx, dl, -1, 3, 0, &fut);

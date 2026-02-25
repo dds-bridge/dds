@@ -114,7 +114,6 @@ DDS 3.0 provides two API levels to suit different use cases:
 The modern API uses instance-scoped `SolverContext` with automatic resource management (RAII):
 
 ```cpp
-#include <memory>
 #include <dds/dds.hpp>
 
 auto main() -> int
@@ -125,13 +124,12 @@ auto main() -> int
     cfg.tt_mem_maximum_mb_ = 2000;
 
     // Create context (automatic cleanup on destruction)
-    SolverContext ctx(std::make_shared<ThreadData>(), cfg);
-
-    // Define and populate the deal to be solved
-    Deal deal{};
-    // TODO: Initialize 'deal' with the hand you want to solve.
+    SolverContext ctx(cfg);
 
     // Solve boards
+    Deal deal{};
+    // ... initialize deal with cards ...
+    
     FutureTricks fut{};
     SolveBoard(ctx, deal, -1, 3, 0, &fut);
 

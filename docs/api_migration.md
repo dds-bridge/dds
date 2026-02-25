@@ -118,7 +118,7 @@ int main() {
     cfg.tt_mem_maximum_mb_ = 2000;
     
     // Create context
-    SolverContext ctx(std::make_shared<ThreadData>(), cfg);
+    SolverContext ctx(cfg);
     
     // Solve a board
     Deal dl;
@@ -165,7 +165,7 @@ void solve_many_boards(const std::vector<Deal>& boards) {
     cfg.tt_kind_ = TTKind::Large;
     cfg.tt_mem_maximum_mb_ = 2000;
     
-    SolverContext ctx(std::make_shared<ThreadData>(), cfg);
+    SolverContext ctx(cfg);
     
     for (const auto& board : boards) {
         FutureTricks fut;
@@ -230,7 +230,7 @@ void worker(Deal dl) {
     cfg.tt_kind_ = TTKind::Large;
     cfg.tt_mem_maximum_mb_ = 500;  // 500MB per thread
     
-    SolverContext ctx(std::make_shared<ThreadData>(), cfg);
+    SolverContext ctx(cfg);
     
     FutureTricks fut;
     SolveBoard(ctx, dl, -1, 3, 0, &fut);
@@ -265,7 +265,7 @@ class BatchSolver
 {
   public:
     BatchSolver() 
-    : ctx_(std::make_shared<ThreadData>(), default_config())
+    : ctx_(default_config())
     {
     }
     
@@ -298,7 +298,7 @@ class BatchSolver
 
 ```cpp
 void solve_tournament(const std::vector<Deal>& boards) {
-    SolverContext ctx(std::make_shared<ThreadData>());
+    SolverContext ctx;
     
     for (size_t i = 0; i < boards.size(); i++) {
         FutureTricks fut;
@@ -323,7 +323,7 @@ SolverConfig make_small_config() {
 }
 
 void solve_on_embedded(const Deal& dl) {
-    SolverContext ctx(std::make_shared<ThreadData>(), make_small_config());
+    SolverContext ctx(make_small_config());
     FutureTricks fut;
     SolveBoard(ctx, dl, -1, 3, 0, &fut);
 }
@@ -341,7 +341,7 @@ void solve_on_embedded(const Deal& dl) {
 The modern API gives you explicit control over TT lifecycle:
 
 ```cpp
-SolverContext ctx(std::make_shared<ThreadData>());
+SolverContext ctx;
 
 // Scenario 1: Related boards (same deal, different contracts)
 // Keep TT - it accumulates useful positions

@@ -56,7 +56,8 @@ auto calc_single_common(
   else
     cparam.error = res;
 
-  // Reuse the same ThreadData for subsequent same-board solves.
+  // Reuse the same SolverContext (including ThreadData and TransTable)
+  // for subsequent same-board solves.
   for (int k = 1; k < DDS_HANDS; k++)
   {
     int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);
