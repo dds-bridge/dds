@@ -228,7 +228,8 @@ void worker(Deal dl) {
     // Each thread creates its own context
     SolverConfig cfg;
     cfg.tt_kind_ = TTKind::Large;
-    cfg.tt_mem_maximum_mb_ = 500;  // 500MB per thread
+    cfg.tt_mem_default_mb_ = 500;   // 500MB per thread (default TT size)
+    cfg.tt_mem_maximum_mb_ = 500;   // Cap TT size at 500MB per thread
     
     SolverContext ctx(cfg);
     
