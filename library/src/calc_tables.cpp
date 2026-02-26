@@ -39,10 +39,11 @@ auto calc_single_common(
   deal.first = 0;
 
   // Use a default-constructed SolverContext for DD table calculation.
-  // Its TTKind and memory limits come from the SolverConfig defaults
-  // (see SolverConfig's default settings), matching the standard
-  // single-board solve behavior and intentionally reused for all
-  // declarers on the same board.
+  // Its TTKind (and other config) follow the SolverConfig defaults, while
+  // TT memory limits are obtained via SolverContext's own defaulting logic
+  // (THREADMEM_* constants and any environment overrides when config values
+  // are zero). The same context is intentionally reused for all declarers
+  // on the same board.
   SolverContext ctx;
 
   START_THREAD_TIMER(thrId);
