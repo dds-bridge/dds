@@ -151,10 +151,11 @@ The legacy API uses global state and is maintained for backward compatibility:
 ```c
 #include <api/dll.h>
 
+struct Deal deal = {0};
+struct FutureTricks fut = {0};
+
 SetMaxThreads(4);
 SetResources(2000, 4);
-
-FutureTricks fut;
 SolveBoard(deal, -1, 3, 0, &fut, 0);
 
 FreeMemory();
