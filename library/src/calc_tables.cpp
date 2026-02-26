@@ -38,9 +38,11 @@ auto calc_single_common(
   Deal deal = cparam.bop->deals[bno];  // Make a local copy
   deal.first = 0;
 
-  // Use a default-configured SolverContext for DD table calculation;
-  // this matches the standard single-board solve behavior and is
-  // intentionally reused for all declarers on the same board.
+  // Use a default-constructed SolverContext for DD table calculation.
+  // Its TTKind and memory limits come from the SolverConfig defaults
+  // (see SolverConfig's default settings), matching the standard
+  // single-board solve behavior and intentionally reused for all
+  // declarers on the same board.
   SolverContext ctx;
 
   START_THREAD_TIMER(thrId);
