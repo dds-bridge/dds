@@ -67,12 +67,12 @@ The solving functions remain compatible but have new overloads:
 
 ```cpp
 // Legacy C API
-int SolveBoard(Deal dl, int target, int solutions, int mode, 
-               FutureTricks* futp, int thrId);
+int SolveBoard(struct Deal dl, int target, int solutions, int mode,
+               struct FutureTricks* futp, int thrId);
 
 // Modern C++ API - new overload
-int SolveBoard(SolverContext& ctx, const Deal& dl, int target, 
-               int solutions, int mode, FutureTricks* futp);
+int SolveBoard(SolverContext& ctx, const Deal& dl, int target,
+               int solutions, int mode, struct FutureTricks* futp);
 ```
 
 ## Migration Examples
