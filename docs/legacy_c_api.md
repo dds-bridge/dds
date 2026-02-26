@@ -70,12 +70,12 @@ For detailed steps and examples, see [api_migration.md](api_migration.md).
 ```c
 #include <api/dll.h>
 
-void solve_legacy(Deal dl)
+void solve_legacy(struct Deal dl)
 {
     SetMaxThreads(4);
     SetResources(2000, 4);
 
-    FutureTricks fut;
+    struct FutureTricks fut;
     int res = SolveBoard(dl, -1, 3, 0, &fut, 0);
     (void)res;
 
