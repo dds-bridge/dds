@@ -680,7 +680,7 @@ SOLVER_DONE:
 
 
 auto solve_same_board(
-  const std::shared_ptr<ThreadData>& thrp,
+  SolverContext& ctx,
   const Deal& dl,
   FutureTricks * futp,
   const int hint) -> int
@@ -692,11 +692,11 @@ auto solve_same_board(
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
 
-  SolverContext ctxSame{thrp};
-  int ini_depth = ctxSame.search().ini_depth();
+  auto thrp = ctx.thread();
+  int ini_depth = ctx.search().ini_depth();
   int trick = (ini_depth + 3) >> 2;
   {
-    ctxSame.search().trick_nodes() = 0;
+    ctx.search().trick_nodes() = 0;
   }
 
   thrp->lookAheadPos.first[ini_depth] = dl.first;
@@ -704,17 +704,17 @@ auto solve_same_board(
   {
     if (dl.first == 0 || dl.first == 2)
     {
-      ctxSame.search().node_type_store(0) = MAXNODE;
-      ctxSame.search().node_type_store(1) = MINNODE;
-      ctxSame.search().node_type_store(2) = MAXNODE;
-      ctxSame.search().node_type_store(3) = MINNODE;
+      ctx.search().node_type_store(0) = MAXNODE;
+      ctx.search().node_type_store(1) = MINNODE;
+      ctx.search().node_type_store(2) = MAXNODE;
+      ctx.search().node_type_store(3) = MINNODE;
     }
     else
     {
-      ctxSame.search().node_type_store(0) = MINNODE;
-      ctxSame.search().node_type_store(1) = MAXNODE;
-      ctxSame.search().node_type_store(2) = MINNODE;
-      ctxSame.search().node_type_store(3) = MAXNODE;
+      ctx.search().node_type_store(0) = MINNODE;
+      ctx.search().node_type_store(1) = MAXNODE;
+      ctx.search().node_type_store(2) = MINNODE;
+      ctx.search().node_type_store(3) = MAXNODE;
     }
   }
 
@@ -725,11 +725,11 @@ auto solve_same_board(
 
 #ifdef DDS_TOP_LEVEL
   {
-    ctxSame.search().nodes() = 0;
+    ctx.search().nodes() = 0;
   }
 #endif
 
-  ctxSame.move_gen().reinit(trick, dl.first);
+  ctx.move_gen().reinit(trick, dl.first);
 
   int guess = hint;
   int lowerbound = 0;
@@ -740,11 +740,11 @@ auto solve_same_board(
   /* No per-iteration full reset here; preserve original behavior */
 
     TIMER_START(TIMER_NO_AB, ini_depth);
-  thrp->val = ab_search(
-                  &thrp->lookAheadPos,
-                  guess,
-                  ini_depth,
-          ctxSame);
+    thrp->val = ab_search(
+        &thrp->lookAheadPos,
+        guess,
+        ini_depth,
+        ctx);
     TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
@@ -762,7 +762,7 @@ auto solve_same_board(
   futp->cards = 1;
   futp->score[0] = lowerbound;
 
-  thrp->memUsed = ctxSame.trans_table()->memory_in_use() +
+  thrp->memUsed = ctx.trans_table()->memory_in_use() +
                     ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -777,27 +777,27 @@ auto solve_same_board(
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-  ctxSame.trans_table()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
-  ctxSame.trans_table()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-  ctxSame.trans_table()->print_node_stats(thrp->fileTTstats.GetStream());
-  ctxSame.trans_table()->print_reset_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_node_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_reset_stats(thrp->fileTTstats.GetStream());
   }
 #endif
 
 #ifdef DDS_MOVES
-  ctxSame.move_gen().print_trick_stats(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_trick_stats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  ctxSame.move_gen().print_trick_details(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_trick_details(thrp->fileMoves.GetStream());
 #endif
-  ctxSame.move_gen().print_function_stats(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_function_stats(thrp->fileMoves.GetStream());
 #endif
 
   {
-    futp->nodes = ctxSame.search().trick_nodes();
+    futp->nodes = ctx.search().trick_nodes();
   }
 
 #ifdef DDS_MEMORY_LEAKS_WIN32

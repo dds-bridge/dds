@@ -22,7 +22,7 @@ auto solve_board_internal(
   FutureTricks * futp) -> int;
 
 auto solve_same_board(
-  const std::shared_ptr<ThreadData>& thrp,
+  SolverContext& ctx,
   const Deal& dl,
   FutureTricks * futp,
   const int hint) -> int;

@@ -10,6 +10,7 @@
 #include "calc_tables.hpp"
 #include "pbn.hpp"
 #include "solve_board.hpp"
+#include <api/solve_board.hpp>
 #include "solver_if.hpp"
 #include <system/memory.hpp>
 #include <system/scheduler.hpp>
@@ -33,18 +34,26 @@ auto calc_single_common(
 {
   // Solves a single Deal and strain for all four declarers.
 
-  FutureTricks fut;
+  FutureTricks fut{};
   Deal deal = cparam.bop->deals[bno];  // Make a local copy
   deal.first = 0;
 
+  // Use a default-constructed SolverContext for DD table calculation.
+  // Its TTKind (and other config) follow the SolverConfig defaults, while
+  // TT memory limits are obtained via SolverContext's own defaulting logic
+  // (THREADMEM_* constants and any environment overrides when config values
+  // are zero). The same context is intentionally reused for all declarers
+  // on the same board.
+  SolverContext ctx;
+
   START_THREAD_TIMER(thrId);
   int res = SolveBoard(
+                ctx,
                 deal,
                 cparam.bop->target[bno],
                 cparam.bop->solutions[bno],
                 cparam.bop->mode[bno],
-                &fut,
-                thrId);
+                &fut);
 
   // SH: I'm making a terrible use of the fut structure here.
 
@@ -53,17 +62,17 @@ auto calc_single_common(
   else
     cparam.error = res;
 
-  // Create an owned context for this worker and use its ThreadData for
-  // subsequent same-board solves.
-  SolverContext outer_ctx;
-  auto thrp = outer_ctx.thread();
+  // Reuse the same SolverContext (including ThreadData and TransTable)
+  // for subsequent same-board solves to ensure all declarers on the same
+  // board share the same transposition table state, which is important
+  // for calculation consistency and fixes a previous consistency bug.
   for (int k = 1; k < DDS_HANDS; k++)
   {
     int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);
 
     deal.first = k; // Next declarer
 
-    res = solve_same_board(thrp, deal, &fut, hint);
+    res = solve_same_board(ctx, deal, &fut, hint);
 
     if (res == 1)
       cparam.solvedp->solved_board[bno].score[k] = fut.score[0];

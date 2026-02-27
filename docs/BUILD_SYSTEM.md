@@ -69,3 +69,20 @@ The heuristic sorting library depends on:
 2. **Phase 2**: Test with `--config=new_heuristic` for validation
 3. **Phase 3**: Switch default to new heuristic once fully validated
 4. **Phase 4**: Remove old heuristic code after confidence period
+
+## API Layers
+
+The library is structured into three API layers:
+
+1. **Core Solver** (`library/src/ab_search.cpp`, `library/src/solve_board.cpp`, etc.)
+2. **Modern C++ API** (`library/src/api/solve_board.hpp`)
+    - `SolverContext` wrapper
+    - Per-instance resource management
+3. **Legacy C API** (`library/src/api/dll.h`)
+    - C-compatible exports
+    - Global state management
+    - Backward compatibility layer
+
+When building applications:
+- Link against `//library/src:dds`
+- Include either `<dds/dds.hpp>` (modern) or `<api/dll.h>` (legacy)

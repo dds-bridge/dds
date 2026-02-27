@@ -16,7 +16,6 @@
 /// for test driver programs (dtest, itest). Options include:
 /// - Input file specification
 /// - Solver type selection (solve, calc, play, par, dealer_par)
-/// - Threading model
 /// - Number of threads
 /// - Memory allocation
 /// - Slow board reporting
