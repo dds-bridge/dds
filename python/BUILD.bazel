@@ -3,8 +3,12 @@ load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
 pybind_extension(
-    name = "dds3_ext",
-    srcs = ["src/bindings.cpp"],
+    name = "_dds3",
+    srcs = [
+        "src/bindings.cpp",
+        "src/converters.cpp",
+        "src/converters.hpp",
+    ],
     copts = DDS_CPPOPTS,
     deps = [
         "//library/src:dds",
@@ -15,7 +19,7 @@ pybind_extension(
 py_library(
     name = "dds3_lib",
     srcs = ["dds3/__init__.py"],
-    data = [":dds3_ext"],
+    data = [":_dds3"],
     imports = ["."],
     visibility = ["//visibility:public"],
 )
