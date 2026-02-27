@@ -34,7 +34,7 @@ auto calc_single_common(
 {
   // Solves a single Deal and strain for all four declarers.
 
-  FutureTricks fut;
+  FutureTricks fut{};
   Deal deal = cparam.bop->deals[bno];  // Make a local copy
   deal.first = 0;
 
@@ -63,7 +63,9 @@ auto calc_single_common(
     cparam.error = res;
 
   // Reuse the same SolverContext (including ThreadData and TransTable)
-  // for subsequent same-board solves.
+  // for subsequent same-board solves to ensure all declarers on the same
+  // board share the same transposition table state, which is important
+  // for calculation consistency and fixes a previous consistency bug.
   for (int k = 1; k < DDS_HANDS; k++)
   {
     int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);
