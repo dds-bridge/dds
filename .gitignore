@@ -40,6 +40,9 @@
 
 # Bazel Directories
 bazel-*
+
+# Python virtual environment
+
 #
 # Build artefacts are placed in these directories.
 #
