@@ -28,9 +28,17 @@ jobs:
       - name: Softlink Clang
         run: ln -s /opt/homebrew/opt/llvm@20 /opt/homebrew/opt/llvm
 
+      # Build Python extension
+      - name: Build Python extension
+        run: bazelisk build //python:_dds3
+
       # Build everything
       - name: Build all targets
         run: bazelisk build //...
+
+      # Run Python unit tests
+      - name: Run Python unit tests
+        run: bazelisk test //python/tests:*
 
       # Run all tests
       - name: Run all tests

@@ -25,10 +25,18 @@ jobs:
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen
 
-      # 4️⃣ Build everything
+      # 4️⃣ Build Python extension
+      - name: Build Python extension
+        run: bazelisk build //python:_dds3
+
+      # 5️⃣ Build everything
       - name: Build all targets
         run: bazelisk build //...
 
-      # 5️⃣ Run all tests
+      # 6️⃣ Run Python unit tests
+      - name: Run Python unit tests
+        run: bazelisk test //python/tests:*
+
+      # 7️⃣ Run all tests
       - name: Run all tests
         run: bazelisk test //...
