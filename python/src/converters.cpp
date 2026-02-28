@@ -231,4 +231,49 @@ auto par_results_to_dict(const ParResults& par_results) -> py::dict
     return result;
 }
 
+auto list_to_dd_table_deals_pbn(
+    const py::list& deals_pbn,
+    const std::size_t max_tables) -> DdTableDealsPBN
+{
+    if (deals_pbn.size() > static_cast<int>(max_tables)) {
+        throw py::value_error(
+            "Number of tables (" + std::to_string(deals_pbn.size()) +
+            ") exceeds maximum (" + std::to_string(max_tables) + ")");
+    }
+
+    DdTableDealsPBN result{};
+    result.no_of_tables = deals_pbn.size();
+
+    for (std::size_t i = 0; i < deals_pbn.size(); ++i) {
+        const auto pbn_str = py::cast<std::string>(deals_pbn[i]);
+        if (pbn_str.length() >= 80) {
+            throw py::value_error(
+                "PBN string at index " + std::to_string(i) +
+                " is too long (max 79 characters)");
+        }
+        // Copy PBN string to the cards field
+        std::strcpy(result.deals[i].cards, pbn_str.c_str());
+    }
+
+    return result;
+}
+
+auto dd_tables_res_to_list(const DdTablesRes& tables_res) -> py::list
+{
+    py::list result;
+    for (int i = 0; i < tables_res.no_of_boards; ++i) {
+        result.append(dd_table_results_to_dict(tables_res.results[i]));
+    }
+    return result;
+}
+
+auto all_par_results_to_list(const AllParResults& all_par_results, const int num_tables) -> py::list
+{
+    py::list result;
+    for (int i = 0; i < num_tables; ++i) {
+        result.append(par_results_to_dict(all_par_results.par_results[i]));
+    }
+    return result;
+}
+
 }  // namespace dds3_python

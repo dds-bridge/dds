@@ -140,6 +140,62 @@ auto register_table_bindings(py::module_& module) -> void
         "Raises:\n"
         "    ValueError: If input validation fails (invalid card distribution).\n"
         "    RuntimeError: If DDS solver returns error code.");
+
+    module.def(
+        "calc_all_tables_pbn",
+        [](const py::list& deals_pbn, const int mode, const py::list& trump_filter) {
+            // Validate and convert trump_filter
+            const auto trump_filter_vec = dds3_python::sequence_to_bounded_int_vector(
+                trump_filter,
+                DDS_STRAINS,
+                0,
+                1,
+                "trump_filter");
+
+            // Convert list of PBN strings to DdTableDealsPBN
+            const auto native_deals = dds3_python::list_to_dd_table_deals_pbn(
+                deals_pbn,
+                MAXNOOFTABLES * DDS_STRAINS);
+
+            // Allocate result structures
+            DdTablesRes tables_res{};
+            AllParResults all_par_results{};
+
+            // Call C++ API
+            const int code = CalcAllTablesPBN(
+                &native_deals,
+                mode,
+                trump_filter_vec.data(),
+                &tables_res,
+                &all_par_results);
+            throw_on_dds_error(code);
+
+            // Build result dict
+            py::dict result;
+            result["no_of_boards"] = tables_res.no_of_boards;
+            result["tables"] = dds3_python::dd_tables_res_to_list(tables_res);
+            result["par_results"] = dds3_python::all_par_results_to_list(
+                all_par_results,
+                native_deals.no_of_tables);
+            return result;
+        },
+        py::arg("deals_pbn"),
+        py::arg("mode") = -1,
+        py::arg("trump_filter") = py::make_tuple(0, 0, 0, 0, 0),
+        "Calculate double-dummy tables for multiple PBN deals with optional par scores.\n\n"
+        "Args:\n"
+        "    deals_pbn (list): List of PBN strings (e.g., ['N:AK.234.456.789T...', ...]).\n"
+        "    mode (int, optional): Par calculation mode (-1=none, 0=none, 1=both, 2=NS, 3=EW). Default: -1\n"
+        "    trump_filter (tuple, optional): Strains to skip (0=include, 1=skip). Default: (0,0,0,0,0)\n"
+        "                                     Order: [♠, ♥, ♦, ♣, NT]\n\n"
+        "Returns:\n"
+        "    dict: Result dict with keys:\n"
+        "          'no_of_boards' (int): Total number of calculated boards.\n"
+        "          'tables' (list): List of DD table dicts, one per input deal.\n"
+        "          'par_results' (list): List of par result dicts (if mode != -1).\n\n"
+        "Raises:\n"
+        "    ValueError: If PBN format is invalid, trump_filter invalid, or too many tables.\n"
+        "    RuntimeError: If DDS solver returns error code.");
 }
 
 auto register_par_bindings(py::module_& module) -> void

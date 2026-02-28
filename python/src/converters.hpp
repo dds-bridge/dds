@@ -36,4 +36,12 @@ auto future_tricks_to_dict(const FutureTricks& future_tricks) -> pybind11::dict;
 auto dd_table_results_to_dict(const DdTableResults& table_results) -> pybind11::dict;
 auto par_results_to_dict(const ParResults& par_results) -> pybind11::dict;
 
+auto list_to_dd_table_deals_pbn(
+    const pybind11::list& deals_pbn,
+    std::size_t max_tables) -> DdTableDealsPBN;
+
+auto dd_tables_res_to_list(const DdTablesRes& tables_res) -> pybind11::list;
+
+auto all_par_results_to_list(const AllParResults& all_par_results, int num_tables) -> pybind11::list;
+
 }  // namespace dds3_python
