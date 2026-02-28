@@ -15,6 +15,13 @@ auto sequence_to_int_vector(
     std::size_t expected_size,
     const std::string& field_name) -> std::vector<int>;
 
+auto sequence_to_bounded_int_vector(
+    const pybind11::sequence& values,
+    std::size_t expected_size,
+    int minimum_value,
+    int maximum_value,
+    const std::string& field_name) -> std::vector<int>;
+
 auto dict_to_deal(const pybind11::dict& deal_input) -> Deal;
 auto pbn_to_deal(
     const std::string& remain_cards,

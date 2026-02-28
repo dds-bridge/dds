@@ -29,19 +29,43 @@ auto sequence_to_int_vector(
     return result;
 }
 
+auto sequence_to_bounded_int_vector(
+    const py::sequence& values,
+    const std::size_t expected_size,
+    const int minimum_value,
+    const int maximum_value,
+    const std::string& field_name) -> std::vector<int>
+{
+    const auto result = sequence_to_int_vector(values, expected_size, field_name);
+    for (const int value : result) {
+        if (value < minimum_value || value > maximum_value) {
+            throw py::value_error(
+                field_name + " has invalid value " + std::to_string(value) +
+                " (expected range " + std::to_string(minimum_value) + ".." +
+                std::to_string(maximum_value) + ")");
+        }
+    }
+
+    return result;
+}
+
 auto dict_to_deal(const py::dict& deal_input) -> Deal
 {
     Deal deal{};
     deal.trump = py::cast<int>(deal_input["trump"]);
     deal.first = py::cast<int>(deal_input["first"]);
 
-    const auto trick_suit = sequence_to_int_vector(
+    const auto trick_suit = sequence_to_bounded_int_vector(
         py::cast<py::sequence>(deal_input["current_trick_suit"]),
         3,
+        0,
+        DDS_SUITS,
         "current_trick_suit");
-    const auto trick_rank = sequence_to_int_vector(
+    const auto trick_rank = sequence_to_bounded_int_vector(
         py::cast<py::sequence>(deal_input["current_trick_rank"]),
         3,
+        0,
+        14,
         "current_trick_rank");
 
     for (int i = 0; i < 3; ++i) {
@@ -78,8 +102,18 @@ auto pbn_to_deal(
     deal.trump = trump;
     deal.first = first;
 
-    const auto trick_suit = sequence_to_int_vector(current_trick_suit, 3, "current_trick_suit");
-    const auto trick_rank = sequence_to_int_vector(current_trick_rank, 3, "current_trick_rank");
+    const auto trick_suit = sequence_to_bounded_int_vector(
+        current_trick_suit,
+        3,
+        0,
+        DDS_SUITS,
+        "current_trick_suit");
+    const auto trick_rank = sequence_to_bounded_int_vector(
+        current_trick_rank,
+        3,
+        0,
+        14,
+        "current_trick_rank");
     for (int i = 0; i < 3; ++i) {
         deal.currentTrickSuit[i] = trick_suit[static_cast<std::size_t>(i)];
         deal.currentTrickRank[i] = trick_rank[static_cast<std::size_t>(i)];
