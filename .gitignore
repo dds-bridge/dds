@@ -42,6 +42,24 @@
 bazel-*
 
 # Python virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# pytest cache
+.pytest_cache/
+
+# Python build artifacts
+*.egg-info/
+dist/
+build/
 
 #
 # Build artefacts are placed in these directories.

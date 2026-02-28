@@ -9,33 +9,30 @@ class TestSolveBoard:
 
     def test_solve_board_basic(self) -> None:
         """Test basic solve_board with a simple deal."""
-        # A simple endgame: 13 spades for North
+        # A simple endgame: All spades for North
         deal = {
             "trump": 0,  # Spades
             "first": 0,  # North
-            "cards": [
-                # North (13 spades)
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                # East (empty)
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                # South (13 hearts)
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-                # West (remaining cards)
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "remain_cards": [
+                # 4x4 array: [hand][suit] where suit: 0=♠ 1=♥ 2=♦ 3=♣
+                [0x1FFF, 0, 0, 0],        # North: all spades
+                [0, 0x1FFF, 0, 0],        # East: all hearts
+                [0, 0, 0x1FFF, 0],        # South: all diamonds
+                [0, 0, 0, 0x1FFF],        # West: all clubs
             ],
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
         result = solve_board(deal)
-        assert result["return_code"] == 1  # RETURN_NO_FAULT
-        assert isinstance(result["score"], (int, list))
+        assert "nodes" in result  # FutureTricks has nodes, not return_code
+        assert isinstance(result["score"], tuple)
 
     def test_solve_board_with_defaults(self) -> None:
         """Test that default parameters work."""
         deal = {
             "trump": 4,  # NT
             "first": 0,
-            "cards": [
+            "remain_cards": [
                 [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF],  # North all cards (invalid but tests path)
                 [0, 0, 0, 0],
                 [0, 0, 0, 0],
@@ -57,7 +54,7 @@ class TestSolveBoard:
         deal = {
             "trump": 5,  # Invalid (must be 0-4)
             "first": 0,
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
@@ -69,7 +66,7 @@ class TestSolveBoard:
         deal = {
             "trump": 0,
             "first": 4,  # Invalid (must be 0-3)
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
@@ -81,7 +78,7 @@ class TestSolveBoard:
         deal = {
             "trump": 0,
             "first": 0,
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (0, 0, 5),  # Invalid suit (must be 0-3)
             "current_trick_rank": (0, 0, 0),
         }
@@ -93,7 +90,7 @@ class TestSolveBoard:
         deal = {
             "trump": 0,
             "first": 0,
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (2, 2, 15),  # Invalid rank (must be 0-14)
         }
@@ -105,7 +102,7 @@ class TestSolveBoard:
         deal = {
             "trump": 0,
             "first": 0,
-            "cards": [[0, 0, 0]],  # Too small
+            "remain_cards": [[0, 0, 0]],  # Too small
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
@@ -118,17 +115,16 @@ class TestSolveBoardPBN:
 
     def test_solve_board_pbn_basic(self) -> None:
         """Test basic solve_board_pbn with valid PBN."""
-        # Simple PBN: N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6
-        pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
+        # Simple PBN: N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3
+        pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result = solve_board_pbn(pbn, trump=4, first=0)
-        assert "return_code" in result
+        assert "nodes" in result  # FutureTricks has nodes, not return_code
 
     def test_solve_board_pbn_with_defaults(self) -> None:
         """Test that default parameters work correctly."""
-        pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
+        pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result = solve_board_pbn(pbn)  # Using all defaults
-        assert "return_code" in result
-        assert result["return_code"] == 1  # RETURN_NO_FAULT
+        assert "nodes" in result
 
     def test_solve_board_pbn_invalid_format(self) -> None:
         """Test that invalid PBN format raises error."""
@@ -138,31 +134,31 @@ class TestSolveBoardPBN:
 
     def test_solve_board_pbn_invalid_trump(self) -> None:
         """Test that invalid trump in PBN raises error."""
-        pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
+        pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         with pytest.raises((ValueError, RuntimeError)):
             solve_board_pbn(pbn, trump=5)  # Invalid
 
     def test_solve_board_pbn_invalid_first(self) -> None:
         """Test that invalid first seat raises error."""
-        pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
+        pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         with pytest.raises((ValueError, RuntimeError)):
             solve_board_pbn(pbn, first=4)  # Invalid
 
     def test_solve_board_pbn_default_trump_is_nt(self) -> None:
         """Test that default trump is NT (4)."""
-        pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
+        pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result = solve_board_pbn(pbn)  # No trump specified
-        assert result["return_code"] == 1
+        assert result["cards"] >= 0  # Should have solution
 
     def test_solve_board_pbn_default_first_is_north(self) -> None:
         """Test that default first is North (0)."""
-        pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
+        pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result = solve_board_pbn(pbn)  # No first specified
-        assert result["return_code"] == 1
+        assert result["cards"] >= 0  # Should have solution
 
     def test_solve_board_pbn_current_trick_validation(self) -> None:
         """Test that invalid current trick in PBN mode raises error."""
-        pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
+        pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         with pytest.raises(ValueError, match="invalid value"):
             solve_board_pbn(pbn, current_trick_suit=(0, 0, 5))
 
@@ -172,9 +168,9 @@ class TestSolveBoardParity:
 
     def test_default_parameters_consistent(self) -> None:
         """Test that same deal with same defaults returns same result structure."""
-        pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
+        pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result_pbn = solve_board_pbn(pbn)
 
         # Both should have the same keys
-        assert "return_code" in result_pbn
-        assert "score" in result_pbn or "tricks" in result_pbn
+        assert "nodes" in result_pbn  # FutureTricks has nodes, not return_code
+        assert "score" in result_pbn

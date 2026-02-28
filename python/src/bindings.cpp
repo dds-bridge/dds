@@ -181,7 +181,7 @@ auto register_table_bindings(py::module_& module) -> void
         },
         py::arg("deals_pbn"),
         py::arg("mode") = -1,
-        py::arg("trump_filter") = py::make_tuple(0, 0, 0, 0, 0),
+        py::arg("trump_filter") = py::list(py::make_tuple(0, 0, 0, 0, 0)),
         "Calculate double-dummy tables for multiple PBN deals with optional par scores.\n\n"
         "Args:\n"
         "    deals_pbn (list): List of PBN strings (e.g., ['N:AK.234.456.789T...', ...]).\n"
@@ -210,7 +210,7 @@ auto register_par_bindings(py::module_& module) -> void
             return dds3_python::par_results_to_dict(par_results);
         },
         py::arg("table_results"),
-        py::arg("vulnerable"),
+        py::arg("vulnerable") = 0,
         "Calculate par contracts and scores for a given double-dummy table.\n\n"
         "Args:\n"
         "    table_results (dict): DD table results dict with key 'res_table' (5x4 nested list).\n"
