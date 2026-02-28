@@ -175,3 +175,30 @@ For detailed migration examples and best practices, see:
 - **New C++ projects**: Use modern API (`#include <dds/dds.hpp>`)
 - **Existing C projects**: Continue with legacy API (no changes required)
 - **Migration**: Follow incremental migration guide in docs/api_migration.md
+## Python Interface
+
+DDS 3.0 includes a modern Python interface for bridge hand analysis:
+
+**Build the Python extension:**
+```bash
+bazel build //python:_dds3
+```
+
+**Run Python tests:**
+```bash
+export PYTHONPATH=python:bazel-bin/python
+bazel test //python/tests:*
+```
+
+**Use in Python:**
+```python
+from dds3 import solve_board_pbn
+
+pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
+result = solve_board_pbn(pbn, trump=1)  # Solve in hearts
+print(f"Tricks: {result['score']}")
+```
+
+**For complete documentation, see:**
+- **[Python Interface Guide](docs/python_interface.md)** - Full API reference, examples, and best practices
+- **Unit Tests** - See `python/tests/` for usage examples
