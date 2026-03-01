@@ -33,10 +33,17 @@ jobs:
       - name: Build all targets
         run: bazelisk build //...
 
-      # 6️⃣ Run Python unit tests
-      - name: Run Python unit tests
+      # 6️⃣ Run Python smoke test
+      - name: Run Python smoke test
         run: bazelisk test //python:python_interface_smoke_test
 
-      # 7️⃣ Run all tests
+      # 7️⃣ Run Python pytest suite
+      - name: Run Python pytest suite
+        run: |
+          python3 -m pip install --upgrade pip pytest
+          export PYTHONPATH=python:bazel-bin/python
+          pytest python/tests/ -v
+
+      # 8️⃣ Run all tests
       - name: Run all tests
         run: bazelisk test //...

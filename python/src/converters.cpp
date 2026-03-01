@@ -75,13 +75,15 @@ auto dict_to_deal(const py::dict& deal_input) -> Deal
 
     const auto remain_cards_rows = py::cast<py::sequence>(deal_input["remain_cards"]);
     if (remain_cards_rows.size() != DDS_HANDS) {
-        throw py::value_error("remain_cards must have DDS_HANDS rows");
+        throw py::value_error(
+            "remain_cards must have " + std::to_string(DDS_HANDS) + " rows");
     }
 
     for (int hand = 0; hand < DDS_HANDS; ++hand) {
         const auto row = py::cast<py::sequence>(remain_cards_rows[hand]);
         if (row.size() != DDS_SUITS) {
-            throw py::value_error("each remain_cards row must have DDS_SUITS values");
+            throw py::value_error(
+                "each remain_cards row must have " + std::to_string(DDS_SUITS) + " values");
         }
         for (int suit = 0; suit < DDS_SUITS; ++suit) {
             deal.remainCards[hand][suit] = py::cast<unsigned int>(row[suit]);
@@ -132,13 +134,15 @@ auto dict_to_dd_table_deal(const py::dict& table_input) -> DdTableDeal
     DdTableDeal table_deal{};
     const auto cards_rows = py::cast<py::sequence>(table_input["cards"]);
     if (cards_rows.size() != DDS_HANDS) {
-        throw py::value_error("cards must have DDS_HANDS rows");
+        throw py::value_error(
+            "cards must have " + std::to_string(DDS_HANDS) + " rows");
     }
 
     for (int hand = 0; hand < DDS_HANDS; ++hand) {
         const auto row = py::cast<py::sequence>(cards_rows[hand]);
         if (row.size() != DDS_SUITS) {
-            throw py::value_error("each cards row must have DDS_SUITS values");
+            throw py::value_error(
+                "each cards row must have " + std::to_string(DDS_SUITS) + " values");
         }
         for (int suit = 0; suit < DDS_SUITS; ++suit) {
             table_deal.cards[hand][suit] = py::cast<unsigned int>(row[suit]);
@@ -153,13 +157,15 @@ auto dict_to_dd_table_results(const py::dict& table_input) -> DdTableResults
     DdTableResults table_results{};
     const auto table_rows = py::cast<py::sequence>(table_input["res_table"]);
     if (table_rows.size() != DDS_STRAINS) {
-        throw py::value_error("res_table must have DDS_STRAINS rows");
+        throw py::value_error(
+            "res_table must have " + std::to_string(DDS_STRAINS) + " rows");
     }
 
     for (int strain = 0; strain < DDS_STRAINS; ++strain) {
         const auto row = py::cast<py::sequence>(table_rows[strain]);
         if (row.size() != DDS_HANDS) {
-            throw py::value_error("each res_table row must have DDS_HANDS values");
+            throw py::value_error(
+                "each res_table row must have " + std::to_string(DDS_HANDS) + " values");
         }
         for (int hand = 0; hand < DDS_HANDS; ++hand) {
             table_results.res_table[strain][hand] = py::cast<int>(row[hand]);
