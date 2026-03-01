@@ -180,26 +180,22 @@ auto future_tricks_to_dict(const FutureTricks& future_tricks) -> py::dict
     py::dict result;
     result["nodes"] = future_tricks.nodes;
     result["cards"] = future_tricks.cards;
-    result["suit"] = py::make_tuple(
-        future_tricks.suit[0], future_tricks.suit[1], future_tricks.suit[2], future_tricks.suit[3],
-        future_tricks.suit[4], future_tricks.suit[5], future_tricks.suit[6], future_tricks.suit[7],
-        future_tricks.suit[8], future_tricks.suit[9], future_tricks.suit[10], future_tricks.suit[11],
-        future_tricks.suit[12]);
-    result["rank"] = py::make_tuple(
-        future_tricks.rank[0], future_tricks.rank[1], future_tricks.rank[2], future_tricks.rank[3],
-        future_tricks.rank[4], future_tricks.rank[5], future_tricks.rank[6], future_tricks.rank[7],
-        future_tricks.rank[8], future_tricks.rank[9], future_tricks.rank[10], future_tricks.rank[11],
-        future_tricks.rank[12]);
-    result["equals"] = py::make_tuple(
-        future_tricks.equals[0], future_tricks.equals[1], future_tricks.equals[2], future_tricks.equals[3],
-        future_tricks.equals[4], future_tricks.equals[5], future_tricks.equals[6], future_tricks.equals[7],
-        future_tricks.equals[8], future_tricks.equals[9], future_tricks.equals[10], future_tricks.equals[11],
-        future_tricks.equals[12]);
-    result["score"] = py::make_tuple(
-        future_tricks.score[0], future_tricks.score[1], future_tricks.score[2], future_tricks.score[3],
-        future_tricks.score[4], future_tricks.score[5], future_tricks.score[6], future_tricks.score[7],
-        future_tricks.score[8], future_tricks.score[9], future_tricks.score[10], future_tricks.score[11],
-        future_tricks.score[12]);
+    
+    // Convert arrays to tuples using loops for maintainability
+    py::tuple suit(13);
+    py::tuple rank(13);
+    py::tuple equals(13);
+    py::tuple score(13);
+    for (int i = 0; i < 13; ++i) {
+        suit[i] = future_tricks.suit[i];
+        rank[i] = future_tricks.rank[i];
+        equals[i] = future_tricks.equals[i];
+        score[i] = future_tricks.score[i];
+    }
+    result["suit"] = suit;
+    result["rank"] = rank;
+    result["equals"] = equals;
+    result["score"] = score;
 
     return result;
 }

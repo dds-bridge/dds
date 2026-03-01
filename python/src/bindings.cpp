@@ -174,10 +174,13 @@ auto register_table_bindings(py::module_& module) -> void
             py::dict result;
             result["no_of_boards"] = tables_res.no_of_boards;
             result["tables"] = dds3_python::dd_tables_res_to_list(tables_res, native_deals.no_of_tables);
+            // Always include par_results for consistent API shape
             if (mode != -1) {
                 result["par_results"] = dds3_python::all_par_results_to_list(
                     all_par_results,
                     native_deals.no_of_tables);
+            } else {
+                result["par_results"] = py::list();  // Empty list when par disabled
             }
             return result;
         },
@@ -194,7 +197,7 @@ auto register_table_bindings(py::module_& module) -> void
         "    dict: Result dict with keys:\n"
         "          'no_of_boards' (int): Total number of calculated boards.\n"
         "          'tables' (list): List of DD table dicts, one per input deal.\n"
-        "          'par_results' (list): List of par result dicts (present only when mode != -1).\n\n"
+        "          'par_results' (list): List of par result dicts (empty when mode=-1).\n\n"
         "Raises:\n"
         "    ValueError: If PBN format is invalid, trump_filter invalid, or too many tables.\n"
         "    RuntimeError: If DDS solver returns error code.");

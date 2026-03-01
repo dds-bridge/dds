@@ -140,16 +140,17 @@ class TestCalcAllTablesPBN:
         assert isinstance(result, dict)
         assert "no_of_boards" in result
         assert "tables" in result
-        # par_results is NOT present when mode == -1 (the default)
-        assert "par_results" not in result
+        assert "par_results" in result
         
         assert isinstance(result["no_of_boards"], int)
         assert isinstance(result["tables"], list)
+        assert isinstance(result["par_results"], list)
+        # par_results is empty when mode == -1 (the default)
+        assert len(result["par_results"]) == 0
         
-        # Test with mode != -1 to verify par_results is included
+        # Test with mode != -1 to verify par_results is populated
         result_with_par = calc_all_tables_pbn(deals, mode=0)
-        assert "par_results" in result_with_par
-        assert isinstance(result_with_par["par_results"], list)
+        assert len(result_with_par["par_results"]) > 0
 
 
 class TestTableParity:

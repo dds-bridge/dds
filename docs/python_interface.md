@@ -163,16 +163,17 @@ Calculates double-dummy tables for multiple PBN deals with optional par scores.
 **Parameters:**
 - `deals_pbn` (list[str]): List of PBN strings
 - `mode` (int, default=-1): Par vulnerability / calculation mode
-    - `-1`: Disable par calculation
+    - `-1`: Disable par calculation (par_results will be empty list)
     - `0`: None vulnerable
     - `1`: Both vulnerable
     - `2`: North-South vulnerable
     - `3`: East-West vulnerable
-- `trump_filter` (list[int], default=[0,0,0,0,0]): Strains to skip (0=include, 1=skip)
+- `trump_filter` (sequence[int], default=(0,0,0,0,0)): Strains to skip (0=include, 1=skip)
+  - Accepts any sequence type (list, tuple, etc.)
   - Order: [♠, ♥, ♦, ♣, NT]
 
 **Returns:**
-- dict with keys: `no_of_boards`, `tables`, `par_results`
+- dict with keys: `no_of_boards`, `tables`, `par_results` (empty list when mode=-1)
 
 **Example:**
 ```python
@@ -336,7 +337,7 @@ export PYTHONPATH=python:bazel-bin/python
 
 ### "incompatible function arguments"
 Check that list/array types match expectations:
-- `trump_filter` must be a list, not tuple
+- `trump_filter` accepts any sequence (list, tuple, etc.)
 - `current_trick_suit` and `current_trick_rank` accept both lists and tuples
 - `cards` and `remain_cards` must be lists of lists
 

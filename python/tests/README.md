@@ -64,7 +64,7 @@ pytest python/tests/test_solve_board.py::TestSolveBoard::test_solve_board_basic 
 ### test_par.py
 - **TestPar**: Par score calculation
   - Happy path: par score computation
-  - Vulnerability levels (0=none, 1=NS, 2=EW, 3=both)
+  - Vulnerability levels (0=none, 1=both, 2=NS, 3=EW)
   - Result structure validation
 
 ### test_type_conversions.py
