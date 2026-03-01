@@ -43,9 +43,10 @@ jobs:
       # Run Python pytest suite
       - name: Run Python pytest suite
         run: |
-          python3 -m pip install --upgrade pip pytest
-          export PYTHONPATH=python:bazel-bin/python
-          pytest python/tests/ -v
+          bazelisk run @python_3_14//:python3 -- -m pip install --upgrade pip pytest
+          export DDS_PYTHON_EXT_DIR="$(bazelisk info bazel-bin)/python"
+          export PYTHONPATH="python:${DDS_PYTHON_EXT_DIR}"
+          bazelisk run @python_3_14//:python3 -- -m pytest python/tests/ -v
 
       # Run all tests
       - name: Run all tests
