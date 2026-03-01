@@ -16,7 +16,7 @@ auto sequence_to_int_vector(
     const std::size_t expected_size,
     const std::string& field_name) -> std::vector<int>
 {
-    if (values.size() != static_cast<py::ssize_t>(expected_size)) {
+    if (values.size() != expected_size) {
         throw py::value_error(field_name + " must have size " + std::to_string(expected_size));
     }
 
@@ -59,7 +59,7 @@ auto dict_to_deal(const py::dict& deal_input) -> Deal
         py::cast<py::sequence>(deal_input["current_trick_suit"]),
         3,
         0,
-        DDS_SUITS,
+        DDS_SUITS - 1,
         "current_trick_suit");
     const auto trick_rank = sequence_to_bounded_int_vector(
         py::cast<py::sequence>(deal_input["current_trick_rank"]),
@@ -106,7 +106,7 @@ auto pbn_to_deal(
         current_trick_suit,
         3,
         0,
-        DDS_SUITS,
+        DDS_SUITS - 1,
         "current_trick_suit");
     const auto trick_rank = sequence_to_bounded_int_vector(
         current_trick_rank,
@@ -235,16 +235,18 @@ auto list_to_dd_table_deals_pbn(
     const py::list& deals_pbn,
     const std::size_t max_tables) -> DdTableDealsPBN
 {
-    if (deals_pbn.size() > static_cast<int>(max_tables)) {
+    const auto table_count = static_cast<std::size_t>(deals_pbn.size());
+
+    if (table_count > max_tables) {
         throw py::value_error(
-            "Number of tables (" + std::to_string(deals_pbn.size()) +
+            "Number of tables (" + std::to_string(table_count) +
             ") exceeds maximum (" + std::to_string(max_tables) + ")");
     }
 
     DdTableDealsPBN result{};
-    result.no_of_tables = deals_pbn.size();
+    result.no_of_tables = static_cast<int>(table_count);
 
-    for (std::size_t i = 0; i < deals_pbn.size(); ++i) {
+    for (std::size_t i = 0; i < table_count; ++i) {
         const auto pbn_str = py::cast<std::string>(deals_pbn[i]);
         if (pbn_str.length() >= 80) {
             throw py::value_error(
@@ -258,10 +260,12 @@ auto list_to_dd_table_deals_pbn(
     return result;
 }
 
-auto dd_tables_res_to_list(const DdTablesRes& tables_res) -> py::list
+auto dd_tables_res_to_list(const DdTablesRes& tables_res, const int num_tables) -> py::list
 {
+    const int count = std::max(0, std::min(num_tables, MAXNOOFTABLES));
+
     py::list result;
-    for (int i = 0; i < tables_res.no_of_boards; ++i) {
+    for (int i = 0; i < count; ++i) {
         result.append(dd_table_results_to_dict(tables_res.results[i]));
     }
     return result;

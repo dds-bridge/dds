@@ -187,7 +187,7 @@ bazel build //python:_dds3
 **Run Python tests:**
 ```bash
 export PYTHONPATH=python:bazel-bin/python
-bazel test //python/tests:*
+bazel test //python:python_interface_smoke_test
 ```
 
 **Use in Python:**

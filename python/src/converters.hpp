@@ -40,7 +40,7 @@ auto list_to_dd_table_deals_pbn(
     const pybind11::list& deals_pbn,
     std::size_t max_tables) -> DdTableDealsPBN;
 
-auto dd_tables_res_to_list(const DdTablesRes& tables_res) -> pybind11::list;
+auto dd_tables_res_to_list(const DdTablesRes& tables_res, int num_tables) -> pybind11::list;
 
 auto all_par_results_to_list(const AllParResults& all_par_results, int num_tables) -> pybind11::list;
 

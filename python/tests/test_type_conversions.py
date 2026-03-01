@@ -43,7 +43,7 @@ class TestArrayConversions:
         deal = {
             "trump": 0,
             "first": 0,
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (0, 1),  # Should be 3 elements
             "current_trick_rank": (0, 0, 0),
         }
@@ -55,7 +55,7 @@ class TestArrayConversions:
         deal = {
             "trump": 0,
             "first": 0,
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0, 0),  # Should be 3 elements
         }
@@ -97,7 +97,7 @@ class TestArrayConversions:
         deal = {
             "trump": 0,
             "first": 0,
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (-1, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
@@ -152,7 +152,7 @@ class TestArrayConversions:
         deal = {
             "trump": 0,
             "first": 0,
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (-1, 0, 0),
         }
@@ -164,7 +164,7 @@ class TestArrayConversions:
         deal = {
             "trump": 0,
             "first": 0,
-            "cards": [[0, 0, 0, 0]] * 4,
+            "remain_cards": [[0, 0, 0, 0]] * 4,
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (15, 0, 0),
         }

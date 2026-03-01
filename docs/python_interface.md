@@ -43,8 +43,8 @@ pip install pytest
 # Set PYTHONPATH to include both source and extension
 export PYTHONPATH=python:bazel-bin/python
 
-# Run all Python tests
-bazel test //python/tests:*
+# Run Bazel smoke test for Python bindings
+bazel test //python:python_interface_smoke_test
 
 # Or use pytest directly
 pytest python/tests/ -v
@@ -66,7 +66,7 @@ The Python interface includes 65 comprehensive unit tests covering:
 
 ### Core Functions
 
-#### `solve_board(deal, target=-1, solutions=1, mode=0, thread_index=0)`
+#### `solve_board(deal, target=-1, solutions=3, mode=0, thread_index=0)`
 
 Solves a single bridge deal using binary card format.
 
@@ -102,7 +102,7 @@ result = solve_board(deal)
 print(f"Tricks available: {result['score']}")
 ```
 
-#### `solve_board_pbn(remain_cards, trump=4, first=0, current_trick_suit=(0,0,0), current_trick_rank=(0,0,0), target=-1, solutions=1, mode=0, thread_index=0)`
+#### `solve_board_pbn(remain_cards, trump=4, first=0, current_trick_suit=(0,0,0), current_trick_rank=(0,0,0), target=-1, solutions=3, mode=0, thread_index=0)`
 
 Solves a single bridge deal using PBN (Portable Bridge Notation).
 
@@ -135,7 +135,7 @@ Calculates the double-dummy table for all contracts and strains.
   - `cards` (list[list[int]]): 4x4 array of bitmasks, `[hand][suit]`
 
 **Returns:**
-- dict with keys: `return_code`, `res_table`
+- dict with key: `res_table`
   - `res_table`: 5x4 array where `res_table[strain][hand]` = tricks available
 
 **Example:**
@@ -162,7 +162,12 @@ Calculates double-dummy tables for multiple PBN deals with optional par scores.
 
 **Parameters:**
 - `deals_pbn` (list[str]): List of PBN strings
-- `mode` (int, default=-1): Par calculation mode (-1=none, 0=NS, 1=EW, 2=both)
+- `mode` (int, default=-1): Par vulnerability / calculation mode
+    - `-1`: Disable par calculation
+    - `0`: None vulnerable
+    - `1`: Both vulnerable
+    - `2`: North-South vulnerable
+    - `3`: East-West vulnerable
 - `trump_filter` (list[int], default=[0,0,0,0,0]): Strains to skip (0=include, 1=skip)
   - Order: [♠, ♥, ♦, ♣, NT]
 
@@ -190,10 +195,10 @@ Calculates par contracts and scores for a given double-dummy table.
 **Parameters:**
 - `table_results` (dict): DD table result with key:
   - `res_table`: 5x4 array from `calc_dd_table`
-- `vulnerable` (int, default=0): Vulnerability (0=none, 1=NS, 2=EW, 3=both)
+- `vulnerable` (int, default=0): Vulnerability (0=none, 1=both, 2=NS, 3=EW)
 
 **Returns:**
-- dict with keys: `return_code`, `par_contracts_string`, `par_score`
+- dict with keys: `par_contracts_string`, `par_score`
 
 **Example:**
 ```python

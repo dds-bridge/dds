@@ -10,7 +10,7 @@ pip install pytest
 ### Running All Tests
 ```bash
 cd /path/to/dds3/repository
-export PYTHONPATH=bazel-bin/python:$PYTHONPATH
+export PYTHONPATH=python:bazel-bin/python:$PYTHONPATH
 pytest python/tests/ -v
 ```
 
@@ -114,6 +114,7 @@ The PYTHONPATH must be set to include the bazel-bin/python build directory.
 Example CI command:
 ```bash
 bazel build //python:dds3_lib
-export PYTHONPATH=$PWD/bazel-bin/python
+bazel test //python:python_interface_smoke_test
+export PYTHONPATH=$PWD/python:$PWD/bazel-bin/python
 pytest python/tests/ -v --tb=short
 ```

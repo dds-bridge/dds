@@ -52,14 +52,14 @@ auto register_solve_bindings(py::module_& module) -> void
         py::arg("thread_index") = 0,
         "Solve a single bridge deal from binary format.\n\n"
         "Args:\n"
-        "    deal (dict): Deal dict with keys 'trump', 'first', 'cards', 'current_trick_suit', "
+        "    deal (dict): Deal dict with keys 'trump', 'first', 'remain_cards', 'current_trick_suit', "
         "'current_trick_rank'.\n"
         "    target (int, optional): Target number of tricks for optimization (-1 = no target). Default: -1\n"
         "    solutions (int, optional): Depth of search (1-3, higher = more branches). Default: 3\n"
         "    mode (int, optional): 0 = auto, 1 = thread depth 6, 2 = node depth 12. Default: 0\n"
         "    thread_index (int, optional): Thread ID for transposition table access. Default: 0\n\n"
         "Returns:\n"
-        "    dict: Result dict with keys 'return_code', 'solution_count', 'tricks', 'score'.\n\n"
+        "    dict: Result dict with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
         "Raises:\n"
         "    ValueError: If input validation fails (invalid suit/rank range).\n"
         "    RuntimeError: If DDS solver returns error code.");
@@ -113,7 +113,7 @@ auto register_solve_bindings(py::module_& module) -> void
         "    mode (int, optional): 0 = auto, 1 = thread depth 6, 2 = node depth 12. Default: 0\n"
         "    thread_index (int, optional): Thread ID for transposition table access. Default: 0\n\n"
         "Returns:\n"
-        "    dict: Result dict with keys 'return_code', 'solution_count', 'tricks', 'score'.\n\n"
+        "    dict: Result dict with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
         "Raises:\n"
         "    ValueError: If PBN format is invalid or input validation fails.\n"
         "    RuntimeError: If DDS solver returns error code.");
@@ -133,10 +133,10 @@ auto register_table_bindings(py::module_& module) -> void
         py::arg("table_deal"),
         "Calculate the double-dummy table for all contracts and strains.\n\n"
         "Args:\n"
-        "    table_deal (dict): DD table deal dict with key 'remain_cards' (52 integers).\n\n"
+        "    table_deal (dict): DD table deal dict with key 'cards' (4x4 nested list).\n\n"
         "Returns:\n"
-        "    dict: Double-dummy table with keys 'return_code' and 'res_table' (5x4 nested list).\n"
-        "          res_table[strain][suit] = tricks available for that strain/suit.\n\n"
+        "    dict: Double-dummy table with key 'res_table' (5x4 nested list).\n"
+        "          res_table[strain][hand] = tricks available for that strain/hand.\n\n"
         "Raises:\n"
         "    ValueError: If input validation fails (invalid card distribution).\n"
         "    RuntimeError: If DDS solver returns error code.");
@@ -155,7 +155,7 @@ auto register_table_bindings(py::module_& module) -> void
             // Convert list of PBN strings to DdTableDealsPBN
             const auto native_deals = dds3_python::list_to_dd_table_deals_pbn(
                 deals_pbn,
-                MAXNOOFTABLES * DDS_STRAINS);
+                MAXNOOFTABLES);
 
             // Allocate result structures
             DdTablesRes tables_res{};
@@ -173,7 +173,7 @@ auto register_table_bindings(py::module_& module) -> void
             // Build result dict
             py::dict result;
             result["no_of_boards"] = tables_res.no_of_boards;
-            result["tables"] = dds3_python::dd_tables_res_to_list(tables_res);
+            result["tables"] = dds3_python::dd_tables_res_to_list(tables_res, native_deals.no_of_tables);
             result["par_results"] = dds3_python::all_par_results_to_list(
                 all_par_results,
                 native_deals.no_of_tables);
@@ -185,7 +185,7 @@ auto register_table_bindings(py::module_& module) -> void
         "Calculate double-dummy tables for multiple PBN deals with optional par scores.\n\n"
         "Args:\n"
         "    deals_pbn (list): List of PBN strings (e.g., ['N:AK.234.456.789T...', ...]).\n"
-        "    mode (int, optional): Par calculation mode (-1=none, 0=none, 1=both, 2=NS, 3=EW). Default: -1\n"
+        "    mode (int, optional): Par vulnerability mode (-1=disabled, 0=none, 1=both, 2=NS, 3=EW). Default: -1\n"
         "    trump_filter (tuple, optional): Strains to skip (0=include, 1=skip). Default: (0,0,0,0,0)\n"
         "                                     Order: [♠, ♥, ♦, ♣, NT]\n\n"
         "Returns:\n"
@@ -214,10 +214,10 @@ auto register_par_bindings(py::module_& module) -> void
         "Calculate par contracts and scores for a given double-dummy table.\n\n"
         "Args:\n"
         "    table_results (dict): DD table results dict with key 'res_table' (5x4 nested list).\n"
-        "    vulnerable (int): Vulnerability (0=neither, 1=NS, 2=EW, 3=both).\n\n"
+        "    vulnerable (int): Vulnerability (0=none, 1=both, 2=NS, 3=EW).\n\n"
         "Returns:\n"
-        "    dict: Par results with keys 'return_code', 'par_scores', and 'par_contracts'.\n"
-        "          par_contracts[ns][contract_type] = contract string (e.g., '6NT+1', '7C=').\n\n"
+        "    dict: Par results with keys 'par_score' and 'par_contracts_string'.\n"
+        "          par_contracts_string[ns] = contract string (e.g., '6NT+1', '7C=').\n\n"
         "Raises:\n"
         "    ValueError: If input validation fails (invalid table or vulnerability).\n"
         "    RuntimeError: If DDS solver returns error code.");
