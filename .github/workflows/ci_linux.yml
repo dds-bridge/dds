@@ -35,7 +35,7 @@ jobs:
 
       # 6️⃣ Run Python unit tests
       - name: Run Python unit tests
-        run: bazelisk test //python/tests:*
+        run: bazelisk test //python:python_interface_smoke_test
 
       # 7️⃣ Run all tests
       - name: Run all tests
