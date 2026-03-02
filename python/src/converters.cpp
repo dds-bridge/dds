@@ -52,9 +52,23 @@ auto sequence_to_bounded_int_vector(
 auto dict_to_deal(const py::dict& deal_input) -> Deal
 {
     Deal deal{};
-    deal.trump = py::cast<int>(deal_input["trump"]);
-    deal.first = py::cast<int>(deal_input["first"]);
 
+    const int trump = py::cast<int>(deal_input["trump"]);
+    if (trump < 0 || trump > DDS_STRAINS - 1) {
+        throw py::value_error(
+            "trump has invalid value " + std::to_string(trump) +
+            " (expected range 0.." + std::to_string(DDS_STRAINS - 1) + ")");
+    }
+
+    const int first = py::cast<int>(deal_input["first"]);
+    if (first < 0 || first > DDS_HANDS - 1) {
+        throw py::value_error(
+            "first has invalid value " + std::to_string(first) +
+            " (expected range 0.." + std::to_string(DDS_HANDS - 1) + ")");
+    }
+
+    deal.trump = trump;
+    deal.first = first;
     const auto trick_suit = sequence_to_bounded_int_vector(
         py::cast<py::sequence>(deal_input["current_trick_suit"]),
         3,

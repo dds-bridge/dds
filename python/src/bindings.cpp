@@ -21,7 +21,19 @@ auto throw_on_dds_error(const int code) -> void
 
     std::array<char, 80> message{};
     ErrorMessage(code, message.data());
-    throw std::runtime_error("DDS error " + std::to_string(code) + ": " + std::string(message.data()));
+    const std::string error_text =
+        "DDS error " + std::to_string(code) + ": " + std::string(message.data());
+
+    switch (code) {
+    case RETURN_TRUMP_WRONG:
+    case RETURN_FIRST_WRONG:
+    case RETURN_PBN_FAULT:
+        // Input validation errors: expose as ValueError in Python.
+        throw py::value_error(error_text);
+    default:
+        // All other errors are treated as solver/runtime failures.
+        throw std::runtime_error(error_text);
+    }
 }
 
 auto register_solve_bindings(py::module_& module) -> void
