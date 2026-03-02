@@ -12,10 +12,10 @@ class TestPar:
         # First, create a DD table result
         table_deal = {
             "cards": [
-                [0x1FFF, 0, 0, 0],
-                [0, 0x1FFF, 0, 0],
-                [0, 0, 0x1FFF, 0],
-                [0, 0, 0, 0x1FFF],
+                [0x7FFC, 0, 0, 0],
+                [0, 0x7FFC, 0, 0],
+                [0, 0, 0x7FFC, 0],
+                [0, 0, 0, 0x7FFC],
             ],
         }
         
@@ -33,10 +33,10 @@ class TestPar:
         """Test par with vulnerable=0 (neither vulnerable)."""
         table_deal = {
             "cards": [
-                [0x1FFF, 0, 0, 0],
-                [0, 0x1FFF, 0, 0],
-                [0, 0, 0x1FFF, 0],
-                [0, 0, 0, 0x1FFF],
+                [0x7FFC, 0, 0, 0],
+                [0, 0x7FFC, 0, 0],
+                [0, 0, 0x7FFC, 0],
+                [0, 0, 0, 0x7FFC],
             ],
         }
         try:
@@ -50,10 +50,10 @@ class TestPar:
         """Test par with vulnerable=2 (NS vulnerable)."""
         table_deal = {
             "cards": [
-                [0x1FFF, 0, 0, 0],
-                [0, 0x1FFF, 0, 0],
-                [0, 0, 0x1FFF, 0],
-                [0, 0, 0, 0x1FFF],
+                [0x7FFC, 0, 0, 0],
+                [0, 0x7FFC, 0, 0],
+                [0, 0, 0x7FFC, 0],
+                [0, 0, 0, 0x7FFC],
             ],
         }
         try:
@@ -67,10 +67,10 @@ class TestPar:
         """Test par with vulnerable=3 (EW vulnerable)."""
         table_deal = {
             "cards": [
-                [0x1FFF, 0, 0, 0],
-                [0, 0x1FFF, 0, 0],
-                [0, 0, 0x1FFF, 0],
-                [0, 0, 0, 0x1FFF],
+                [0x7FFC, 0, 0, 0],
+                [0, 0x7FFC, 0, 0],
+                [0, 0, 0x7FFC, 0],
+                [0, 0, 0, 0x7FFC],
             ],
         }
         try:
@@ -85,10 +85,10 @@ class TestPar:
         # Note: DDS may not validate vulnerable parameter strictly
         table_deal = {
             "cards": [
-                [0x1FFF, 0, 0, 0],
-                [0, 0x1FFF, 0, 0],
-                [0, 0, 0x1FFF, 0],
-                [0, 0, 0, 0x1FFF],
+                [0x7FFC, 0, 0, 0],
+                [0, 0x7FFC, 0, 0],
+                [0, 0, 0x7FFC, 0],
+                [0, 0, 0, 0x7FFC],
             ],
         }
         try:
@@ -103,10 +103,10 @@ class TestPar:
         """Test that par result has expected structure."""
         table_deal = {
             "cards": [
-                [0x1FFF, 0, 0, 0],
-                [0, 0x1FFF, 0, 0],
-                [0, 0, 0x1FFF, 0],
-                [0, 0, 0, 0x1FFF],
+                [0x7FFC, 0, 0, 0],
+                [0, 0x7FFC, 0, 0],
+                [0, 0, 0x7FFC, 0],
+                [0, 0, 0, 0x7FFC],
             ],
         }
         try:
@@ -128,10 +128,10 @@ class TestPar:
         """Test that default vulnerable is 0 (none)."""
         table_deal = {
             "cards": [
-                [0x1FFF, 0, 0, 0],
-                [0, 0x1FFF, 0, 0],
-                [0, 0, 0x1FFF, 0],
-                [0, 0, 0, 0x1FFF],
+                [0x7FFC, 0, 0, 0],
+                [0, 0x7FFC, 0, 0],
+                [0, 0, 0x7FFC, 0],
+                [0, 0, 0, 0x7FFC],
             ],
         }
         try:

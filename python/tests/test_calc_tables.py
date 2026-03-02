@@ -12,10 +12,10 @@ class TestCalcDDTable:
         table_deal = {
             "cards": [
                 # 4x4 array: [hand][suit]
-                [0x1FFF, 0, 0, 0],        # North: all spades
-                [0, 0x1FFF, 0, 0],        # East: all hearts
-                [0, 0, 0x1FFF, 0],        # South: all diamonds
-                [0, 0, 0, 0x1FFF],        # West: all clubs
+                [0x7FFC, 0, 0, 0],        # North: all spades
+                [0, 0x7FFC, 0, 0],        # East: all hearts
+                [0, 0, 0x7FFC, 0],        # South: all diamonds
+                [0, 0, 0, 0x7FFC],        # West: all clubs
             ],
         }
         result = calc_dd_table(table_deal)
@@ -25,10 +25,10 @@ class TestCalcDDTable:
         """Test that result has correct structure."""
         table_deal = {
             "cards": [
-                [0x1FFF, 0, 0, 0],
-                [0, 0x1FFF, 0, 0],
-                [0, 0, 0x1FFF, 0],
-                [0, 0, 0, 0x1FFF],
+                [0x7FFC, 0, 0, 0],
+                [0, 0x7FFC, 0, 0],
+                [0, 0, 0x7FFC, 0],
+                [0, 0, 0, 0x7FFC],
             ],
         }
         result = calc_dd_table(table_deal)

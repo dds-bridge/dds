@@ -11,7 +11,7 @@ namespace py = pybind11;
 namespace dds3_python
 {
 
-constexpr int MaxSuitBitmask = 0x1FFF;
+constexpr int MaxSuitBitmask = 0x7FFC;
 
 auto sequence_to_int_vector(
     const py::sequence& values,
@@ -83,6 +83,13 @@ auto dict_to_deal(const py::dict& deal_input) -> Deal
         0,
         14,
         "current_trick_rank");
+    for (const int value : trick_rank) {
+        if (value != 0 && (value < 2 || value > 14)) {
+            throw py::value_error(
+                "current_trick_rank has invalid value " + std::to_string(value) +
+                " (expected 0 or 2..14)");
+        }
+    }
 
     for (int i = 0; i < 3; ++i) {
         deal.currentTrickSuit[i] = trick_suit[static_cast<std::size_t>(i)];
@@ -106,7 +113,7 @@ auto dict_to_deal(const py::dict& deal_input) -> Deal
             if (value < 0 || value > MaxSuitBitmask) {
                 throw py::value_error(
                     "remain_cards has invalid value " + std::to_string(value) +
-                    " (expected range 0..0x1FFF)");
+                    " (expected range 0..0x7FFC)");
             }
             deal.remainCards[hand][suit] = static_cast<unsigned int>(value);
         }
@@ -158,6 +165,13 @@ auto pbn_to_deal(
         0,
         14,
         "current_trick_rank");
+    for (const int value : trick_rank) {
+        if (value != 0 && (value < 2 || value > 14)) {
+            throw py::value_error(
+                "current_trick_rank has invalid value " + std::to_string(value) +
+                " (expected 0 or 2..14)");
+        }
+    }
     for (int i = 0; i < 3; ++i) {
         deal.currentTrickSuit[i] = trick_suit[static_cast<std::size_t>(i)];
         deal.currentTrickRank[i] = trick_rank[static_cast<std::size_t>(i)];
@@ -191,7 +205,7 @@ auto dict_to_dd_table_deal(const py::dict& table_input) -> DdTableDeal
             if (value < 0 || value > MaxSuitBitmask) {
                 throw py::value_error(
                     "cards has invalid value " + std::to_string(value) +
-                    " (expected range 0..0x1FFF)");
+                    " (expected range 0..0x7FFC)");
             }
             table_deal.cards[hand][suit] = static_cast<unsigned int>(value);
         }
@@ -313,7 +327,8 @@ auto list_to_dd_table_deals_pbn(
 
 auto dd_tables_res_to_list(const DdTablesRes& tables_res, const int num_tables) -> py::list
 {
-    const int count = std::max(0, std::min(num_tables, MAXNOOFTABLES));
+    const int max_tables = MAXNOOFTABLES * DDS_STRAINS;
+    const int count = std::max(0, std::min(num_tables, max_tables));
 
     py::list result;
     for (int i = 0; i < count; ++i) {

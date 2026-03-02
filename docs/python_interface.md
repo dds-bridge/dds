@@ -93,10 +93,10 @@ deal = {
     "trump": 0,        # Spades
     "first": 0,        # North leads
     "remain_cards": [
-        [0x1FFF, 0, 0, 0],        # North: all spades
-        [0, 0x1FFF, 0, 0],        # East: all hearts
-        [0, 0, 0x1FFF, 0],        # South: all diamonds
-        [0, 0, 0, 0x1FFF],        # West: all clubs
+        [0x7FFC, 0, 0, 0],        # North: all spades
+        [0, 0x7FFC, 0, 0],        # East: all hearts
+        [0, 0, 0x7FFC, 0],        # South: all diamonds
+        [0, 0, 0, 0x7FFC],        # West: all clubs
     ],
     "current_trick_suit": (0, 0, 0),
     "current_trick_rank": (0, 0, 0),
@@ -148,10 +148,10 @@ from dds3 import calc_dd_table
 
 table_deal = {
     "cards": [
-        [0x1FFF, 0, 0, 0],
-        [0, 0x1FFF, 0, 0],
-        [0, 0, 0x1FFF, 0],
-        [0, 0, 0, 0x1FFF],
+        [0x7FFC, 0, 0, 0],
+        [0, 0x7FFC, 0, 0],
+        [0, 0, 0x7FFC, 0],
+        [0, 0, 0, 0x7FFC],
     ],
 }
 
@@ -211,10 +211,10 @@ from dds3 import calc_dd_table, par
 
 table_deal = {
     "cards": [
-        [0x1FFF, 0, 0, 0],
-        [0, 0x1FFF, 0, 0],
-        [0, 0, 0x1FFF, 0],
-        [0, 0, 0, 0x1FFF],
+        [0x7FFC, 0, 0, 0],
+        [0, 0x7FFC, 0, 0],
+        [0, 0, 0x7FFC, 0],
+        [0, 0, 0, 0x7FFC],
     ],
 }
 
@@ -227,15 +227,17 @@ print(f"Contract: {par_result['par_contracts_string']}")
 ## Card Representation
 
 ### Binary Format (remain_cards)
-Cards are represented as 13-bit bitmasks where each bit represents a card rank:
-- Bit 0 = 2 (lowest)
-- Bit 12 = A (highest)
+Cards are represented using DDS rank bitmasks shifted left by 2:
+- 2 = `0x0004`
+- 3 = `0x0008`
+- ...
+- A = `0x4000`
 
 Examples:
-- `0x0001` = 2 only
-- `0x0002` = 3 only
-- `0x1000` = A only
-- `0x1FFF` = All cards (A-K-Q-J-T-9-8-7-6-5-4-3-2)
+- `0x0004` = 2 only
+- `0x0008` = 3 only
+- `0x4000` = A only
+- `0x7FFC` = All cards (A-K-Q-J-T-9-8-7-6-5-4-3-2)
 
 The `remain_cards` array format is `[hand][suit]`:
 ```python
@@ -261,7 +263,8 @@ Format: `[Seat]:[Spades].[Hearts].[Diamonds].[Clubs]`
 ### Input Validation
 The Python interface validates all inputs:
 - Suit values: 0-3 for bids, 0-4 for trump
-- Rank values: 0-14 for trick cards
+- Rank values: 0 or 2-14 for trick cards (`0` means unset)
+- Card bitmasks: 0..0x7FFC
 - Array dimensions: 4x4 for card arrays, 5x4 for results
 - PBN format: Must be valid PBN notation
 

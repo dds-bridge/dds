@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <stdexcept>
 #include <string>
@@ -183,10 +184,19 @@ auto register_table_bindings(py::module_& module) -> void
                 1,
                 "trump_filter");
 
+            const int included_strains = static_cast<int>(std::count(
+                trump_filter_vec.begin(),
+                trump_filter_vec.end(),
+                0));
+            const int max_tables =
+                (included_strains > 0)
+                    ? ((MAXNOOFTABLES * DDS_STRAINS) / included_strains)
+                    : MAXNOOFTABLES;
+
             // Convert list of PBN strings to DdTableDealsPBN
             const auto native_deals = dds3_python::list_to_dd_table_deals_pbn(
                 deals_pbn,
-                MAXNOOFTABLES);
+                static_cast<std::size_t>(max_tables));
 
             // Allocate result structures
             DdTablesRes tables_res{};

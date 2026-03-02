@@ -15,10 +15,10 @@ class TestSolveBoard:
             "first": 0,  # North
             "remain_cards": [
                 # 4x4 array: [hand][suit] where suit: 0=♠ 1=♥ 2=♦ 3=♣
-                [0x1FFF, 0, 0, 0],        # North: all spades
-                [0, 0x1FFF, 0, 0],        # East: all hearts
-                [0, 0, 0x1FFF, 0],        # South: all diamonds
-                [0, 0, 0, 0x1FFF],        # West: all clubs
+                [0x7FFC, 0, 0, 0],        # North: all spades
+                [0, 0x7FFC, 0, 0],        # East: all hearts
+                [0, 0, 0x7FFC, 0],        # South: all diamonds
+                [0, 0, 0, 0x7FFC],        # West: all clubs
             ],
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
@@ -33,7 +33,7 @@ class TestSolveBoard:
             "trump": 4,  # NT
             "first": 0,
             "remain_cards": [
-                [0x1FFF, 0, 0, 0],
+                [0x7FFC, 0, 0, 0],
                 [0, 0, 0, 0],
                 [0, 0, 0, 0],
                 [0, 0, 0, 0],
