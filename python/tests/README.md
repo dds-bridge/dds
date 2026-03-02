@@ -109,7 +109,8 @@ pytest python/tests/test_solve_board.py::TestSolveBoard::test_solve_board_basic 
 ## Continuous Integration
 
 Tests are designed to run deterministically on both Linux and macOS CI environments.
-The PYTHONPATH must be set to include the bazel-bin/python build directory.
+The PYTHONPATH should include both the source package directory and the Bazel extension output directory.
+`dds3` prefers `dds3._dds3` and falls back to top-level `_dds3` for local Bazel workflows.
 
 Example CI command:
 ```bash

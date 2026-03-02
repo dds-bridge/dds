@@ -33,7 +33,7 @@ class TestSolveBoard:
             "trump": 4,  # NT
             "first": 0,
             "remain_cards": [
-                [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF],  # North all cards (invalid but tests path)
+                [0x1FFF, 0, 0, 0],
                 [0, 0, 0, 0],
                 [0, 0, 0, 0],
                 [0, 0, 0, 0],
@@ -58,7 +58,7 @@ class TestSolveBoard:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises((ValueError, RuntimeError)):
+        with pytest.raises(ValueError, match="invalid value 5"):
             solve_board(deal)
 
     def test_solve_board_invalid_first(self) -> None:
@@ -70,7 +70,7 @@ class TestSolveBoard:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises((ValueError, RuntimeError)):
+        with pytest.raises(ValueError, match="invalid value 4"):
             solve_board(deal)
 
     def test_solve_board_invalid_trick_suit(self) -> None:

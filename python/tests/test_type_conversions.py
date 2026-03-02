@@ -113,8 +113,7 @@ class TestArrayConversions:
             "current_trick_suit": (4, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        # With empty deal, DDS may return error for invalid state
-        with pytest.raises((ValueError, RuntimeError)):
+        with pytest.raises(ValueError, match="invalid value 4"):
             solve_board(deal)
 
     def test_trick_rank_boundary_valid_0(self) -> None:

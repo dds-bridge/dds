@@ -14,8 +14,11 @@ The DDS (Double Dummy Solver) library provides a Python interface for analyzing 
 ### Build Instructions
 
 ```bash
-# Build the Python extension
-bazel build //python:_dds3
+# Build the Python extension and Python package wrapper
+bazel build //python:dds3_lib
+
+# Build wheel artifact
+bazel build //python:dds3_wheel_dist
 
 # Build with optimizations
 bazel build -c opt //python:_dds3
@@ -25,6 +28,7 @@ bazel build -c dbg //python:_dds3
 ```
 
 The compiled extension will be located at `bazel-bin/python/_dds3.so`.
+For wheel packaging, the extension is also copied into the package as `dds3/_dds3.so`.
 
 ## Installation and Testing
 
@@ -40,7 +44,7 @@ pip install pytest
 
 ### Running Unit Tests
 ```bash
-# Set PYTHONPATH to include both source and extension
+# Set PYTHONPATH to include source package and top-level extension fallback
 export PYTHONPATH=python:bazel-bin/python
 
 # Run Bazel smoke test for Python bindings

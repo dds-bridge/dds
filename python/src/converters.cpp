@@ -11,6 +11,8 @@ namespace py = pybind11;
 namespace dds3_python
 {
 
+constexpr int MaxSuitBitmask = 0x1FFF;
+
 auto sequence_to_int_vector(
     const py::sequence& values,
     const std::size_t expected_size,
@@ -100,7 +102,13 @@ auto dict_to_deal(const py::dict& deal_input) -> Deal
                 "each remain_cards row must have " + std::to_string(DDS_SUITS) + " values");
         }
         for (int suit = 0; suit < DDS_SUITS; ++suit) {
-            deal.remainCards[hand][suit] = py::cast<unsigned int>(row[suit]);
+            const int value = py::cast<int>(row[suit]);
+            if (value < 0 || value > MaxSuitBitmask) {
+                throw py::value_error(
+                    "remain_cards has invalid value " + std::to_string(value) +
+                    " (expected range 0..0x1FFF)");
+            }
+            deal.remainCards[hand][suit] = static_cast<unsigned int>(value);
         }
     }
 
@@ -179,7 +187,13 @@ auto dict_to_dd_table_deal(const py::dict& table_input) -> DdTableDeal
                 "each cards row must have " + std::to_string(DDS_SUITS) + " values");
         }
         for (int suit = 0; suit < DDS_SUITS; ++suit) {
-            table_deal.cards[hand][suit] = py::cast<unsigned int>(row[suit]);
+            const int value = py::cast<int>(row[suit]);
+            if (value < 0 || value > MaxSuitBitmask) {
+                throw py::value_error(
+                    "cards has invalid value " + std::to_string(value) +
+                    " (expected range 0..0x1FFF)");
+            }
+            table_deal.cards[hand][suit] = static_cast<unsigned int>(value);
         }
     }
 
@@ -289,8 +303,9 @@ auto list_to_dd_table_deals_pbn(
                 "PBN string at index " + std::to_string(i) +
                 " is too long (max 79 characters)");
         }
-        // Copy PBN string to the cards field
-        std::strcpy(result.deals[i].cards, pbn_str.c_str());
+        std::memset(result.deals[i].cards, 0, sizeof(result.deals[i].cards));
+        std::memcpy(result.deals[i].cards, pbn_str.data(), pbn_str.size());
+        result.deals[i].cards[pbn_str.size()] = '\0';
     }
 
     return result;

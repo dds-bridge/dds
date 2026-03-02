@@ -47,13 +47,17 @@ auto register_solve_bindings(py::module_& module) -> void
            const int thread_index) {
             FutureTricks future_tricks{};
             const Deal native_deal = dds3_python::dict_to_deal(deal);
-            const int code = SolveBoard(
-                native_deal,
-                target,
-                solutions,
-                mode,
-                &future_tricks,
-                thread_index);
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = SolveBoard(
+                    native_deal,
+                    target,
+                    solutions,
+                    mode,
+                    &future_tricks,
+                    thread_index);
+            }
             throw_on_dds_error(code);
             return dds3_python::future_tricks_to_dict(future_tricks);
         },
@@ -94,13 +98,17 @@ auto register_solve_bindings(py::module_& module) -> void
                 first,
                 current_trick_suit,
                 current_trick_rank);
-            const int code = SolveBoardPBN(
-                native_deal,
-                target,
-                solutions,
-                mode,
-                &future_tricks,
-                thread_index);
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = SolveBoardPBN(
+                    native_deal,
+                    target,
+                    solutions,
+                    mode,
+                    &future_tricks,
+                    thread_index);
+            }
             throw_on_dds_error(code);
             return dds3_python::future_tricks_to_dict(future_tricks);
         },
@@ -138,7 +146,11 @@ auto register_table_bindings(py::module_& module) -> void
         [](const py::dict& table_deal) {
             DdTableResults table_results{};
             const DdTableDeal native_deal = dds3_python::dict_to_dd_table_deal(table_deal);
-            const int code = CalcDDtable(native_deal, &table_results);
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = CalcDDtable(native_deal, &table_results);
+            }
             throw_on_dds_error(code);
             return dds3_python::dd_table_results_to_dict(table_results);
         },
@@ -181,12 +193,16 @@ auto register_table_bindings(py::module_& module) -> void
             AllParResults all_par_results{};
 
             // Call C++ API
-            const int code = CalcAllTablesPBN(
-                &native_deals,
-                mode,
-                trump_filter_vec.data(),
-                &tables_res,
-                &all_par_results);
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = CalcAllTablesPBN(
+                    &native_deals,
+                    mode,
+                    trump_filter_vec.data(),
+                    &tables_res,
+                    &all_par_results);
+            }
             throw_on_dds_error(code);
 
             // Build result dict
@@ -229,7 +245,11 @@ auto register_par_bindings(py::module_& module) -> void
         [](const py::dict& table_results, const int vulnerable) {
             const DdTableResults native_table = dds3_python::dict_to_dd_table_results(table_results);
             ParResults par_results{};
-            const int code = Par(&native_table, &par_results, vulnerable);
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = Par(&native_table, &par_results, vulnerable);
+            }
             throw_on_dds_error(code);
             return dds3_python::par_results_to_dict(par_results);
         },
