@@ -18,7 +18,7 @@ class TestArrayConversions:
         }
         try:
             result = solve_board(deal)
-            assert "return_code" in result
+            assert "nodes" in result
         except RuntimeError:
             # Invalid deal is ok, we're testing conversion
             pass
@@ -34,7 +34,7 @@ class TestArrayConversions:
         }
         try:
             result = solve_board(deal)
-            assert "return_code" in result
+            assert "nodes" in result
         except RuntimeError:
             pass
 
@@ -73,7 +73,7 @@ class TestArrayConversions:
         }
         try:
             result = solve_board(deal)
-            assert result["return_code"] == 1 or "return_code" in result
+            assert "nodes" in result
         except RuntimeError:
             pass
 
@@ -88,7 +88,7 @@ class TestArrayConversions:
         }
         try:
             result = solve_board(deal)
-            assert "return_code" in result
+            assert "nodes" in result
         except RuntimeError:
             pass
 
@@ -128,7 +128,7 @@ class TestArrayConversions:
         }
         try:
             result = solve_board(deal)
-            assert "return_code" in result
+            assert "nodes" in result
         except RuntimeError:
             pass
 
@@ -143,7 +143,7 @@ class TestArrayConversions:
         }
         try:
             result = solve_board(deal)
-            assert "return_code" in result
+            assert "nodes" in result
         except RuntimeError:
             pass
 

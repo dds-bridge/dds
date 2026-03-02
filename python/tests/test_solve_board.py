@@ -44,7 +44,7 @@ class TestSolveBoard:
         # Should not raise, error handling is DDS-side
         try:
             result = solve_board(deal)
-            assert "return_code" in result
+            assert "nodes" in result
         except RuntimeError:
             # Invalid deal may raise RuntimeError
             pass
