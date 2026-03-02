@@ -114,6 +114,26 @@ auto pbn_to_deal(
     const py::sequence& current_trick_suit,
     const py::sequence& current_trick_rank) -> DealPBN
 {
+    // Validate trump and first (same validation as dict_to_deal)
+    if (trump < 0 || trump > DDS_STRAINS - 1) {
+        throw py::value_error(
+            "trump has invalid value " + std::to_string(trump) +
+            " (expected range 0.." + std::to_string(DDS_STRAINS - 1) + ")");
+    }
+    if (first < 0 || first > DDS_HANDS - 1) {
+        throw py::value_error(
+            "first has invalid value " + std::to_string(first) +
+            " (expected range 0.." + std::to_string(DDS_HANDS - 1) + ")");
+    }
+
+    // Validate remain_cards length (PBN format expects specific size)
+    constexpr std::size_t expected_size = sizeof(DealPBN::remainCards) - 1U;
+    if (remain_cards.size() > expected_size) {
+        throw py::value_error(
+            "remain_cards PBN string is too long (" + std::to_string(remain_cards.size()) +
+            " bytes, maximum " + std::to_string(expected_size) + ")");
+    }
+
     DealPBN deal{};
     deal.trump = trump;
     deal.first = first;

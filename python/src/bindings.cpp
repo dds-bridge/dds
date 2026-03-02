@@ -156,6 +156,13 @@ auto register_table_bindings(py::module_& module) -> void
     module.def(
         "calc_all_tables_pbn",
         [](const py::list& deals_pbn, const int mode, const py::sequence& trump_filter) {
+            // Validate mode parameter
+            if (mode < -1 || mode > 3) {
+                throw py::value_error(
+                    "mode has invalid value " + std::to_string(mode) +
+                    " (expected -1=disabled, 0=none, 1=both, 2=NS, 3=EW)");
+            }
+
             // Validate and convert trump_filter
             const auto trump_filter_vec = dds3_python::sequence_to_bounded_int_vector(
                 trump_filter,
