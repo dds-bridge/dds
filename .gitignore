@@ -77,3 +77,8 @@ xcuserdata/
 .Rproj.user
 .aider*
 copilot/perf/artifacts
+
+#
+# Debug output from DDS3
+#
+dump.txt
