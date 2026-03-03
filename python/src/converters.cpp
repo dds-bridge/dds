@@ -339,8 +339,13 @@ auto dd_tables_res_to_list(const DdTablesRes& tables_res, const int num_tables) 
 
 auto all_par_results_to_list(const AllParResults& all_par_results, const int num_tables) -> py::list
 {
+    // AllParResults::par_results is sized MAXNOOFTABLES, so clamp num_tables
+    // to avoid out-of-bounds access
+    const int max_tables = MAXNOOFTABLES;
+    const int count = std::max(0, std::min(num_tables, max_tables));
+
     py::list result;
-    for (int i = 0; i < num_tables; ++i) {
+    for (int i = 0; i < count; ++i) {
         result.append(par_results_to_dict(all_par_results.par_results[i]));
     }
     return result;

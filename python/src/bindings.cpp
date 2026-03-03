@@ -26,10 +26,19 @@ auto throw_on_dds_error(const int code) -> void
         "DDS error " + std::to_string(code) + ": " + std::string(message.data());
 
     switch (code) {
+    // Input validation errors from user-provided data: expose as ValueError in Python.
     case RETURN_TRUMP_WRONG:
     case RETURN_FIRST_WRONG:
     case RETURN_PBN_FAULT:
-        // Input validation errors: expose as ValueError in Python.
+    case RETURN_TARGET_WRONG_LO:
+    case RETURN_TARGET_WRONG_HI:
+    case RETURN_SOLNS_WRONG_LO:
+    case RETURN_SOLNS_WRONG_HI:
+    case RETURN_THREAD_INDEX:
+    case RETURN_MODE_WRONG_LO:
+    case RETURN_MODE_WRONG_HI:
+    case RETURN_NO_SUIT:
+    case RETURN_TOO_MANY_TABLES:
         throw py::value_error(error_text);
     default:
         // All other errors are treated as solver/runtime failures.
@@ -188,10 +197,24 @@ auto register_table_bindings(py::module_& module) -> void
                 trump_filter_vec.begin(),
                 trump_filter_vec.end(),
                 0));
+
+            // Par results are only computed by DDS when all strains are included (count == 5).
+            // If par is requested but strains are filtered, reject the combination.
+            const bool wants_par = mode != -1;
+            const bool can_compute_par = included_strains == DDS_STRAINS;
+            if (wants_par && !can_compute_par) {
+                throw py::value_error(
+                    "Par computation (mode != -1) requires all strains to be included "
+                    "(trump_filter must be all zeros)");
+            }
+
+            // When par results are included, DDS limits to MAXNOOFTABLES.
+            // When par is disabled or strains are filtered, allow full multi-strain table range.
             const int max_tables =
-                (included_strains > 0)
-                    ? ((MAXNOOFTABLES * DDS_STRAINS) / included_strains)
-                    : MAXNOOFTABLES;
+                (wants_par && can_compute_par)
+                    ? MAXNOOFTABLES
+                    : ((included_strains > 0) ? ((MAXNOOFTABLES * DDS_STRAINS) / included_strains)
+                                              : MAXNOOFTABLES);
 
             // Convert list of PBN strings to DdTableDealsPBN
             const auto native_deals = dds3_python::list_to_dd_table_deals_pbn(
@@ -219,13 +242,13 @@ auto register_table_bindings(py::module_& module) -> void
             py::dict result;
             result["no_of_boards"] = tables_res.no_of_boards;
             result["tables"] = dds3_python::dd_tables_res_to_list(tables_res, native_deals.no_of_tables);
-            // Always include par_results for consistent API shape
-            if (mode != -1) {
+            // Only include par_results if par was actually computed (all strains included and mode != -1)
+            if (wants_par && can_compute_par) {
                 result["par_results"] = dds3_python::all_par_results_to_list(
                     all_par_results,
                     native_deals.no_of_tables);
             } else {
-                result["par_results"] = py::list();  // Empty list when par disabled
+                result["par_results"] = py::list();  // Empty list when par disabled or strains filtered
             }
             return result;
         },
