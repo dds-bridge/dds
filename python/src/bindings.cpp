@@ -198,18 +198,26 @@ auto register_table_bindings(py::module_& module) -> void
                 trump_filter_vec.end(),
                 0));
 
-            // Par results are only computed by DDS when all strains are included (count == 5).
-            // If par is requested but strains are filtered, reject the combination.
+            // Par computation constraints:
+            // - DDS only populates par results when ALL strains are included (see DDS CalcAllTables)
+            // - AllParResults::par_results has fixed capacity MAXNOOFTABLES (not MAXNOOFTABLES*DDS_STRAINS)
+            // - To ensure safe access, we either:
+            //   (a) Reject par computation (mode != -1) unless all strains are included, OR
+            //   (b) Cap max_tables to MAXNOOFTABLES when par is requested with all strains
+            // This implements approach (a): reject invalid combinations and approach (b): cap appropriately.
+
             const bool wants_par = mode != -1;
             const bool can_compute_par = included_strains == DDS_STRAINS;
+
             if (wants_par && !can_compute_par) {
                 throw py::value_error(
                     "Par computation (mode != -1) requires all strains to be included "
                     "(trump_filter must be all zeros)");
             }
 
-            // When par results are included, DDS limits to MAXNOOFTABLES.
-            // When par is disabled or strains are filtered, allow full multi-strain table range.
+            // Calculate max_tables based on par configuration:
+            // - With par (all strains): limited to MAXNOOFTABLES (par buffer capacity)
+            // - Without par (any filter): can use full MAXNOOFTABLES * DDS_STRAINS capacity
             const int max_tables =
                 (wants_par && can_compute_par)
                     ? MAXNOOFTABLES
@@ -242,13 +250,17 @@ auto register_table_bindings(py::module_& module) -> void
             py::dict result;
             result["no_of_boards"] = tables_res.no_of_boards;
             result["tables"] = dds3_python::dd_tables_res_to_list(tables_res, native_deals.no_of_tables);
-            // Only include par_results if par was actually computed (all strains included and mode != -1)
+            
+            // Include par_results only if par was actually computed:
+            // - Par computation requires mode != -1 AND all strains included
+            // - This ensures AllParResults buffer (capacity MAXNOOFTABLES) won't be accessed out-of-bounds
+            // - When conditions not met, return empty list for API consistency
             if (wants_par && can_compute_par) {
                 result["par_results"] = dds3_python::all_par_results_to_list(
                     all_par_results,
                     native_deals.no_of_tables);
             } else {
-                result["par_results"] = py::list();  // Empty list when par disabled or strains filtered
+                result["par_results"] = py::list();  // Empty when par disabled or strains filtered
             }
             return result;
         },
