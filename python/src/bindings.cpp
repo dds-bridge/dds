@@ -137,7 +137,7 @@ auto register_solve_bindings(py::module_& module) -> void
         "    trump (int, optional): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT). Default: 4\n"
         "    first (int, optional): Seat that plays first (0=N, 1=E, 2=S, 3=W). Default: 0\n"
         "    current_trick_suit (tuple, optional): Suits in current trick (3-tuple of ints, 0-3). Default: (0, 0, 0)\n"
-        "    current_trick_rank (tuple, optional): Ranks in current trick (3-tuple of ints, 0-14). Default: (0, 0, 0)\n"
+        "    current_trick_rank (tuple, optional): Ranks in current trick (3-tuple of ints, 0 or 2-14). Default: (0, 0, 0)\n"
         "    target (int, optional): Target number of tricks for optimization (-1 = no target). Default: -1\n"
         "    solutions (int, optional): Depth of search (1-3, higher = more branches). Default: 3\n"
         "    mode (int, optional): 0 = auto, 1 = thread depth 6, 2 = node depth 12. Default: 0\n"
@@ -288,6 +288,12 @@ auto register_par_bindings(py::module_& module) -> void
     module.def(
         "par",
         [](const py::dict& table_results, const int vulnerable) {
+            if (vulnerable < 0 || vulnerable > 3) {
+                throw py::value_error(
+                    "vulnerable has invalid value " + std::to_string(vulnerable) +
+                    " (expected 0=none, 1=both, 2=NS, 3=EW)");
+            }
+
             const DdTableResults native_table = dds3_python::dict_to_dd_table_results(table_results);
             ParResults par_results{};
             int code = RETURN_NO_FAULT;

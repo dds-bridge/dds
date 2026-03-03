@@ -64,7 +64,7 @@ The Python interface includes 65 comprehensive unit tests covering:
 - Array/sequence conversions
 - Error handling and exception propagation
 - Default parameter behavior
-- Solver function correctness
+- Solver invocation, result structure, and API integration (not full numerical validation of DDS solver results)
 
 ## API Reference
 
@@ -80,7 +80,7 @@ Solves a single bridge deal using binary card format.
   - `first` (int, 0-3): Player to lead (0=North, 1=East, 2=South, 3=West)
   - `remain_cards` (list[list[int]]): 4x4 array of bitmasks, `[hand][suit]`
   - `current_trick_suit` (tuple[int, int, int]): Current trick suits (0-3)
-  - `current_trick_rank` (tuple[int, int, int]): Current trick ranks (0-14)
+    - `current_trick_rank` (tuple[int, int, int]): Current trick ranks (0 or 2-14; 0 = unset)
 
 **Returns:**
 - dict with keys: `nodes`, `cards`, `suit`, `rank`, `equals`, `score`
@@ -115,7 +115,7 @@ Solves a single bridge deal using PBN (Portable Bridge Notation).
 - `trump` (int, default=4): Trump suit (0-4)
 - `first` (int, default=0): Player to lead
 - `current_trick_suit` (tuple, default=(0,0,0)): Current trick suits
-- `current_trick_rank` (tuple, default=(0,0,0)): Current trick ranks
+- `current_trick_rank` (tuple, default=(0,0,0)): Current trick ranks (0 or 2-14; 0 = unset)
 - Other parameters: same as `solve_board`
 
 **Returns:**

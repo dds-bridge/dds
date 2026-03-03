@@ -82,7 +82,6 @@ class TestPar:
 
     def test_par_invalid_vulnerable(self) -> None:
         """Test that invalid vulnerable parameter."""
-        # Note: DDS may not validate vulnerable parameter strictly
         table_deal = {
             "cards": [
                 [0x7FFC, 0, 0, 0],
@@ -93,11 +92,11 @@ class TestPar:
         }
         try:
             dd_table = calc_dd_table(table_deal)
-            # DDS may not strictly validate vulnerable, so we just test it doesn't crash
-            result = par(dd_table, vulnerable=4)  # May or may not be valid
-            assert "par_contracts_string" in result or "par_score" in result  # If it succeeds, should have result
-        except (ValueError, RuntimeError):
-            pass  # If it raises, that's also acceptable
+        except RuntimeError:
+            pytest.skip("Could not create valid DD table")
+
+        with pytest.raises(ValueError, match="vulnerable has invalid value"):
+            par(dd_table, vulnerable=4)
 
     def test_par_result_structure(self) -> None:
         """Test that par result has expected structure."""
