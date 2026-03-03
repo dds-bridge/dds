@@ -6,6 +6,8 @@ module(
 bazel_dep(name = "rules_cc", version = "0.2.16")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.1")
+bazel_dep(name = "pybind11_bazel", version = "3.0.0")
+bazel_dep(name = "rules_python", version = "1.7.0")
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 
 git_override(
@@ -21,5 +23,19 @@ git_override(
     patches = ["//patches:hedron_compile_commands_bazel9.patch"],
     patch_strip = 1,
 )
+
+git_override(
+    module_name = "pybind11_bazel",
+    remote = "https://github.com/pybind/pybind11_bazel.git",
+    commit = "536e9fd8415705fc788658c0e116106c62116c1f",  # Bazel 9 compatible
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    configure_coverage_tool = True,
+    is_default = True,
+    python_version = "3.14",
+)
+use_repo(python, "python_3_14")
 
 register_toolchains("//toolchain:brew_clang_toolchain")

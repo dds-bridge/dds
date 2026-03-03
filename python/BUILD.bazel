@@ -1,0 +1,56 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:packaging.bzl", "py_wheel", "py_wheel_dist")
+
+pybind_extension(
+    name = "_dds3",
+    srcs = [
+        "src/bindings.cpp",
+        "src/converters.cpp",
+        "src/converters.hpp",
+    ],
+    copts = DDS_CPPOPTS,
+    deps = [
+        "//library/src:dds",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Create a symlink or copy of the extension into the dds3 package directory
+genrule(
+    name = "_dds3_in_package",
+    srcs = [":_dds3"],
+    outs = ["dds3/_dds3.so"],
+    cmd = "cp $(SRCS) $@",
+)
+
+py_library(
+    name = "dds3_lib",
+    srcs = ["dds3/__init__.py"],
+    data = [":_dds3_in_package"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "python_interface_smoke_test",
+    main = "tests/test_import.py",
+    srcs = ["tests/test_import.py"],
+    deps = [":dds3_lib"],
+)
+
+py_wheel(
+    name = "dds3_wheel",
+    distribution = "dds3",
+    version = "1.0.0",
+    deps = [":dds3_lib", ":_dds3_in_package"],
+    strip_path_prefixes = ["python/"],
+    entry_points = {},
+)
+
+py_wheel_dist(
+    name = "dds3_wheel_dist",
+    out = "dist",
+    wheel = ":dds3_wheel",
+)
