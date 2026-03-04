@@ -7,16 +7,9 @@
    See LICENSE and README.
 */
 
-
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <cstring>
 
 #include "system.hpp"
-#include "scheduler.hpp"
-
-extern Scheduler scheduler;
 
 // Boost: Disable some header warnings.
 
