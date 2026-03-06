@@ -5,6 +5,7 @@
 
 #include <pybind11/pybind11.h>
 
+#include <api/calc_par.hpp>
 #include <dds/dds.hpp>
 
 #include "converters.hpp"
@@ -317,7 +318,94 @@ auto register_par_bindings(py::module_& module) -> void
         "    ValueError: If input validation fails (invalid table or vulnerability).\n"
         "    RuntimeError: If DDS solver returns error code.");
 }
+auto register_calc_par_bindings(py::module_& module) -> void
+{
+    module.def(
+        "calc_par",
+        [](const py::dict& table_deal, const int vulnerable) {
+            if (vulnerable < 0 || vulnerable > 3) {
+                throw py::value_error(
+                    "vulnerable has invalid value " + std::to_string(vulnerable) +
+                    " (expected 0=none, 1=both, 2=NS, 3=EW)");
+            }
 
+            const DdTableDeal native_deal = dds3_python::dict_to_dd_table_deal(table_deal);
+            DdTableResults table_results{};
+            ParResults par_results{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = calc_par(
+                    native_deal,
+                    vulnerable,
+                    &table_results,
+                    &par_results);
+            }
+            throw_on_dds_error(code);
+            
+            // Return both DD table and par results
+            py::dict result;
+            result["dd_table"] = dds3_python::dd_table_results_to_dict(table_results);
+            result["par_results"] = dds3_python::par_results_to_dict(par_results);
+            return result;
+        },
+        py::arg("table_deal"),
+        py::arg("vulnerable") = 0,
+        "Calculate double-dummy table and par contracts for a deal.\n\n"
+        "Combines CalcDDtable and Par operations in a single call. Creates a temporary\n"
+        "solver context internally. For multiple deals, calc_par_from_table is more efficient\n"
+        "if you already have DD tables.\n\n"
+        "Args:\n"
+        "    table_deal (dict): Deal dict with key 'cards' (4x4 nested list of card bitmasks).\n"
+        "                       cards[hand][suit] where hand=0-3 (N,E,S,W), suit=0-3 (♠,♥,♦,♣)\n"
+        "                       Each card bitmask has bits 2-14 set for present ranks (2-A).\n"
+        "    vulnerable (int): Vulnerability (0=none, 1=both, 2=NS, 3=EW). Default: 0\n\n"
+        "Returns:\n"
+        "    dict: Result dict with two keys:\n"
+        "        'dd_table': DD table results (key 'res_table' = 5x4 nested list)\n"
+        "        'par_results': Par results (keys 'par_score' and 'par_contracts_string')\n\n"
+        "Raises:\n"
+        "    ValueError: If input validation fails (invalid cards or vulnerability).\n"
+        "    RuntimeError: If DDS solver returns error code.");
+
+    module.def(
+        "calc_par_from_table",
+        [](const py::dict& table_results, const int vulnerable) {
+            if (vulnerable < 0 || vulnerable > 3) {
+                throw py::value_error(
+                    "vulnerable has invalid value " + std::to_string(vulnerable) +
+                    " (expected 0=none, 1=both, 2=NS, 3=EW)");
+            }
+
+            const DdTableResults native_table = dds3_python::dict_to_dd_table_results(table_results);
+            ParResults par_results{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = calc_par_from_table(
+                    &native_table,
+                    vulnerable,
+                    &par_results);
+            }
+            throw_on_dds_error(code);
+            return dds3_python::par_results_to_dict(par_results);
+        },
+        py::arg("table_results"),
+        py::arg("vulnerable") = 0,
+        "Calculate par contracts from a pre-computed double-dummy table.\n\n"
+        "Lightweight alternative to calc_par when the DD table is already available.\n"
+        "More efficient than calc_par when computing par for multiple deals with the same DD table,\n"
+        "or when par needs to be recalculated with different vulnerability.\n\n"
+        "Args:\n"
+        "    table_results (dict): DD table results dict with key 'res_table' (5x4 nested list).\n"
+        "    vulnerable (int): Vulnerability (0=none, 1=both, 2=NS, 3=EW). Default: 0\n\n"
+        "Returns:\n"
+        "    dict: Par results with keys 'par_score' and 'par_contracts_string'.\n"
+        "          par_contracts_string[ns] = contract string (e.g., '6NT+1', '7C=').\n\n"
+        "Raises:\n"
+        "    ValueError: If input validation fails (invalid table or vulnerability).\n"
+        "    RuntimeError: If DDS solver returns error code.");
+}
 }  // namespace
 
 PYBIND11_MODULE(_dds3, module)
@@ -327,6 +415,7 @@ PYBIND11_MODULE(_dds3, module)
     register_solve_bindings(module);
     register_table_bindings(module);
     register_par_bindings(module);
+    register_calc_par_bindings(module);
 
     module.def("api_root", []() {
         return "dds.hpp";
