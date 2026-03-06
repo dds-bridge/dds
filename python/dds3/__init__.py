@@ -6,6 +6,7 @@ try:
     from ._dds3 import calc_par_from_table
     from ._dds3 import module_name
     from ._dds3 import par
+    from ._dds3 import SolverContext
     from ._dds3 import solve_board
     from ._dds3 import solve_board_pbn
 except ImportError:
@@ -17,6 +18,7 @@ except ImportError:
     from _dds3 import calc_par_from_table
     from _dds3 import module_name
     from _dds3 import par
+    from _dds3 import SolverContext
     from _dds3 import solve_board
     from _dds3 import solve_board_pbn
 
@@ -28,6 +30,7 @@ __all__ = [
     "calc_par_from_table",
     "module_name",
     "par",
+    "SolverContext",
     "solve_board",
     "solve_board_pbn",
 ]
