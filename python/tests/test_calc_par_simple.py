@@ -1,6 +1,6 @@
 """Simple smoke tests for calc_par functions (no pytest required)."""
 
-from dds3 import calc_par, calc_par_from_table, calc_all_tables_pbn
+from dds3 import calc_par_from_table, calc_all_tables_pbn
 
 
 def test_calc_par_basic() -> None:

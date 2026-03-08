@@ -8,6 +8,7 @@
 
 #include <api/calc_par.hpp>
 #include <dds/dds.hpp>
+#include <pbn.hpp>
 #include <solver_context/solver_context.hpp>
 
 #include "converters.hpp"
@@ -149,15 +150,28 @@ auto register_solve_bindings(py::module_& module) -> void
                         &future_tricks,
                         thread_index);
                 } else {
-                    // Use provided context (note: context-based SolveBoardPBN may not be available)
-                    // For now, fall back to the C API version
-                    code = SolveBoardPBN(
-                        native_deal,
-                        target,
-                        solutions,
-                        mode,
-                        &future_tricks,
-                        thread_index);
+                    // Use provided context by converting PBN deal and calling
+                    // the context-aware C++ SolveBoard overload.
+                    Deal native_binary_deal{};
+                    if (convert_from_pbn(native_deal.remainCards, native_binary_deal.remainCards) != RETURN_NO_FAULT) {
+                        code = RETURN_PBN_FAULT;
+                    } else {
+                        for (int k = 0; k <= 2; ++k) {
+                            native_binary_deal.currentTrickRank[k] = native_deal.currentTrickRank[k];
+                            native_binary_deal.currentTrickSuit[k] = native_deal.currentTrickSuit[k];
+                        }
+                        native_binary_deal.first = native_deal.first;
+                        native_binary_deal.trump = native_deal.trump;
+
+                        auto context_ptr = py::cast<SolverContext*>(context_obj);
+                        code = SolveBoard(
+                            *context_ptr,
+                            native_binary_deal,
+                            target,
+                            solutions,
+                            mode,
+                            &future_tricks);
+                    }
                 }
             }
             throw_on_dds_error(code);
@@ -361,6 +375,7 @@ auto register_par_bindings(py::module_& module) -> void
         "    ValueError: If input validation fails (invalid table or vulnerability).\n"
         "    RuntimeError: If DDS solver returns error code.");
 }
+
 auto register_calc_par_bindings(py::module_& module) -> void
 {
     module.def(

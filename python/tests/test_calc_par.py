@@ -1,6 +1,5 @@
 """Tests for calc_par and calc_par_from_table wrappers."""
 
-import pytest
 from dds3 import calc_par, calc_par_from_table, calc_dd_table
 
 # Rank bitmask constants (matching C++ test data)
@@ -84,11 +83,17 @@ class TestCalcPar:
         """Test that invalid vulnerability raises ValueError."""
         table_deal = self._hand0_table_deal()
         
-        with pytest.raises(ValueError):
+        try:
             calc_par(table_deal, vulnerable=-1)
-        
-        with pytest.raises(ValueError):
+            assert False, "Expected ValueError for vulnerable=-1"
+        except ValueError:
+            pass  # Expected
+
+        try:
             calc_par(table_deal, vulnerable=4)
+            assert False, "Expected ValueError for vulnerable=4"
+        except ValueError:
+            pass  # Expected
 
     def test_calc_par_hand1(self) -> None:
         """Test calc_par with hand 1."""
@@ -159,11 +164,17 @@ class TestCalcParFromTable:
         table_deal = self._hand0_table_deal()
         dd_result = calc_dd_table(table_deal)
         
-        with pytest.raises(ValueError):
+        try:
             calc_par_from_table(dd_result, vulnerable=-1)
-        
-        with pytest.raises(ValueError):
+            assert False, "Expected ValueError for vulnerable=-1"
+        except ValueError:
+            pass  # Expected
+
+        try:
             calc_par_from_table(dd_result, vulnerable=4)
+            assert False, "Expected ValueError for vulnerable=4"
+        except ValueError:
+            pass  # Expected
 
 
 class TestCalcParIntegration:

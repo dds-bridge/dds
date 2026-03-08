@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <chrono>
+#include <api/calc_par.hpp>
 #include <api/dll.h>
 #include <solver_context/solver_context.hpp>
 #include "hands.hpp"
@@ -72,12 +73,22 @@ void example_with_context()
 
   for (int handno = 0; handno < 3; handno++)
   {
-    DdTableResults ddtable;
-    set_table(&ddtable, handno);
+    DdTableDeal table_deal{};
+    for (int h = 0; h < DDS_HANDS; ++h) {
+      for (int s = 0; s < DDS_SUITS; ++s) {
+        table_deal.cards[h][s] = holdings_[handno][h][s];
+      }
+    }
 
+    DdTableResults ddtable;
     ParResults pres;
-    // Note: Par API extended to accept context in C++ API
-    int res = Par(&ddtable, &pres, vulnerability_[handno]);
+    // Use context-aware calc_par API
+    int res = calc_par(
+      context,
+      table_deal,
+      vulnerability_[handno],
+      &ddtable,
+      &pres);
 
     if (res == RETURN_NO_FAULT)
     {
@@ -115,10 +126,21 @@ void example_mixed_usage()
 
   printf("2. Reuse for multiple calculations:\n");
   for (int i = 0; i < 3; i++) {
+    DdTableDeal table_deal{};
+    for (int h = 0; h < DDS_HANDS; ++h) {
+      for (int s = 0; s < DDS_SUITS; ++s) {
+        table_deal.cards[h][s] = holdings_[i][h][s];
+      }
+    }
+
     DdTableResults ddtable;
-    set_table(&ddtable, i);
     ParResults pres;
-    int res = Par(&ddtable, &pres, vulnerability_[i]);
+    int res = calc_par(
+      context,
+      table_deal,
+      vulnerability_[i],
+      &ddtable,
+      &pres);
     if (res == RETURN_NO_FAULT) {
       printf("   Hand %d Par: Score = %s\n", i + 1, pres.par_score[0]);
     }

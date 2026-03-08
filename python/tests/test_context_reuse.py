@@ -146,16 +146,21 @@ def test_calc_par_without_context() -> None:
     """Test calc_par works without explicit context (backward compatibility)."""
     # Use the test hands from examples/hands.cpp
     # Note: calc_par works on card distributions
+    # cards[hand][suit] where suit order is [Spades, Hearts, Diamonds, Clubs]
+    # North: QJ6.K652.J85.T98
+    # East: 873.J97.AT764.Q4
+    # South: K5.T83.KQ9.A7652
+    # West: AT942.AQ4.32.KJ3
     table_deal = {
         "cards": [
-            # Spades: QJ6, 873, K5, AT942
-            [RQ|RJ|R6, R8|R7|R3, RK|R5, RA|RT|R9|R4|R2],
-            # Hearts: K652, J97, T83, AQ4
-            [RK|R6|R5|R2, RJ|R9|R7, RT|R8|R3, RA|RQ|R4],
-            # Diamonds: J85, AT764, KQ9, 32
-            [RJ|R8|R5, RA|RT|R7|R6|R4, RK|RQ|R9, R3|R2],
-            # Clubs: T98, Q4, A7652, KJ3
-            [RT|R9|R8, RQ|R4, RA|R7|R6|R5|R2, RK|RJ|R3],
+            # North: [Spades, Hearts, Diamonds, Clubs]
+            [RQ|RJ|R6, RK|R6|R5|R2, RJ|R8|R5, RT|R9|R8],
+            # East: [Spades, Hearts, Diamonds, Clubs]
+            [R8|R7|R3, RJ|R9|R7, RA|RT|R7|R6|R4, RQ|R4],
+            # South: [Spades, Hearts, Diamonds, Clubs]
+            [RK|R5, RT|R8|R3, RK|RQ|R9, RA|R7|R6|R5|R2],
+            # West: [Spades, Hearts, Diamonds, Clubs]
+            [RA|RT|R9|R4|R2, RA|RQ|R4, R3|R2, RK|RJ|R3],
         ]
     }
     try:
@@ -171,12 +176,13 @@ def test_calc_par_without_context() -> None:
 
 def test_calc_par_results_consistency() -> None:
     """Test that repeated calc_par calls produce consistent results."""
+    # cards[hand][suit] format
     table_deal = {
         "cards": [
-            [RQ|RJ|R6, R8|R7|R3, RK|R5, RA|RT|R9|R4|R2],
-            [RK|R6|R5|R2, RJ|R9|R7, RT|R8|R3, RA|RQ|R4],
-            [RJ|R8|R5, RA|RT|R7|R6|R4, RK|RQ|R9, R3|R2],
-            [RT|R9|R8, RQ|R4, RA|R7|R6|R5|R2, RK|RJ|R3],
+            [RQ|RJ|R6, RK|R6|R5|R2, RJ|R8|R5, RT|R9|R8],
+            [R8|R7|R3, RJ|R9|R7, RA|RT|R7|R6|R4, RQ|R4],
+            [RK|R5, RT|R8|R3, RK|RQ|R9, RA|R7|R6|R5|R2],
+            [RA|RT|R9|R4|R2, RA|RQ|R4, R3|R2, RK|RJ|R3],
         ]
     }
 

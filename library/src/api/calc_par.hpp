@@ -40,9 +40,12 @@ auto calc_par(
  *
  * C++ overload that accepts an explicit SolverContext, allowing clients
  * to manage solver state and resources across multiple operations.
- * More efficient when computing par for multiple deals.
+ * 
+ * Note: The context parameter is currently accepted for API consistency
+ * but not yet utilized by the underlying implementation. This will be
+ * enhanced when CalcDDtable gains context support.
  *
- * @param ctx Solver context containing state and resources
+ * @param ctx Solver context (accepted for future use, not yet utilized)
  * @param table_deal Deal represented as card holdings for each hand
  * @param vulnerable Vulnerability (0=None, 1=Both, 2=NS, 3=EW)
  * @param table_results Output: double dummy table results
