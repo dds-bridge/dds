@@ -26,14 +26,14 @@ class TestCalcPar:
         """Test hand 0 from examples/hands.cpp."""
         return {
             "cards": [
-                # Spades:    North,      East,       South,      West
-                [RQ|RJ|R6,   R8|R7|R3,   RK|R5,      RA|RT|R9|R4|R2],
-                # Hearts:    North,      East,       South,      West
-                [RK|R6|R5|R2, RJ|R9|R7,  RT|R8|R3,   RA|RQ|R4],
-                # Diamonds:  North,      East,       South,      West
-                [RJ|R8|R5,   RA|RT|R7|R6|R4, RK|RQ|R9, R3|R2],
-                # Clubs:     North,      East,       South,      West
-                [RT|R9|R8,   RQ|R4,      RA|R7|R6|R5|R2, RK|RJ|R3],
+                # North: [Spades, Hearts, Diamonds, Clubs]
+                [RQ|RJ|R6,   RK|R6|R5|R2, RJ|R8|R5,   RT|R9|R8],
+                # East: [Spades, Hearts, Diamonds, Clubs]
+                [R8|R7|R3,   RJ|R9|R7,    RA|RT|R7|R6|R4, RQ|R4],
+                # South: [Spades, Hearts, Diamonds, Clubs]
+                [RK|R5,      RT|R8|R3,    RK|RQ|R9,   RA|R7|R6|R5|R2],
+                # West: [Spades, Hearts, Diamonds, Clubs]
+                [RA|RT|R9|R4|R2, RA|RQ|R4, R3|R2,     RK|RJ|R3],
             ]
         }
 
@@ -41,14 +41,14 @@ class TestCalcPar:
         """Test hand 1 from examples/hands.cpp."""
         return {
             "cards": [
-                # Spades
-                [RA|RK|R9|R6,      RQ|RJ|RT|R5|R4|R3|R2, 0,      R8|R7],
-                # Hearts
-                [RK|RQ|R8,         RT,                  RJ|R9|R7|R5|R4|R3, RA|R6|R2],
-                # Diamonds
-                [RA|R9|R8,         R6,                  RK|R7|R5|R3|R2, RQ|RJ|RT|R4],
-                # Clubs
-                [RK|R6|R3,         RQ|RJ|R8|R2,         R9|R4,  RA|RT|R7|R5],
+                # North: [Spades, Hearts, Diamonds, Clubs]
+                [RA|RK|R9|R6,      RK|RQ|R8,         RA|R9|R8,         RK|R6|R3],
+                # East: [Spades, Hearts, Diamonds, Clubs]
+                [RQ|RJ|RT|R5|R4|R3|R2, RT,           R6,               RQ|RJ|R8|R2],
+                # South: [Spades, Hearts, Diamonds, Clubs]
+                [0,                RJ|R9|R7|R5|R4|R3, RK|R7|R5|R3|R2, R9|R4],
+                # West: [Spades, Hearts, Diamonds, Clubs]
+                [R8|R7,            RA|R6|R2,         RQ|RJ|RT|R4,      RA|RT|R7|R5],
             ]
         }
 
@@ -118,10 +118,14 @@ class TestCalcParFromTable:
         """Test hand 0 from examples/hands.cpp."""
         return {
             "cards": [
-                [RQ|RJ|R6,   R8|R7|R3,   RK|R5,      RA|RT|R9|R4|R2],
-                [RK|R6|R5|R2, RJ|R9|R7,  RT|R8|R3,   RA|RQ|R4],
-                [RJ|R8|R5,   RA|RT|R7|R6|R4, RK|RQ|R9, R3|R2],
-                [RT|R9|R8,   RQ|R4,      RA|R7|R6|R5|R2, RK|RJ|R3],
+                # North: [Spades, Hearts, Diamonds, Clubs]
+                [RQ|RJ|R6,   RK|R6|R5|R2, RJ|R8|R5,   RT|R9|R8],
+                # East: [Spades, Hearts, Diamonds, Clubs]
+                [R8|R7|R3,   RJ|R9|R7,    RA|RT|R7|R6|R4, RQ|R4],
+                # South: [Spades, Hearts, Diamonds, Clubs]
+                [RK|R5,      RT|R8|R3,    RK|RQ|R9,   RA|R7|R6|R5|R2],
+                # West: [Spades, Hearts, Diamonds, Clubs]
+                [RA|RT|R9|R4|R2, RA|RQ|R4, R3|R2,     RK|RJ|R3],
             ]
         }
 
@@ -169,10 +173,14 @@ class TestCalcParIntegration:
         """Test hand 0 from examples/hands.cpp."""
         return {
             "cards": [
-                [RQ|RJ|R6,   R8|R7|R3,   RK|R5,      RA|RT|R9|R4|R2],
-                [RK|R6|R5|R2, RJ|R9|R7,  RT|R8|R3,   RA|RQ|R4],
-                [RJ|R8|R5,   RA|RT|R7|R6|R4, RK|RQ|R9, R3|R2],
-                [RT|R9|R8,   RQ|R4,      RA|R7|R6|R5|R2, RK|RJ|R3],
+                # North: [Spades, Hearts, Diamonds, Clubs]
+                [RQ|RJ|R6,   RK|R6|R5|R2, RJ|R8|R5,   RT|R9|R8],
+                # East: [Spades, Hearts, Diamonds, Clubs]
+                [R8|R7|R3,   RJ|R9|R7,    RA|RT|R7|R6|R4, RQ|R4],
+                # South: [Spades, Hearts, Diamonds, Clubs]
+                [RK|R5,      RT|R8|R3,    RK|RQ|R9,   RA|R7|R6|R5|R2],
+                # West: [Spades, Hearts, Diamonds, Clubs]
+                [RA|RT|R9|R4|R2, RA|RQ|R4, R3|R2,     RK|RJ|R3],
             ]
         }
 
