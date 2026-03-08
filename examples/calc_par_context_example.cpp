@@ -52,7 +52,7 @@ void example_without_context()
   auto end_time = std::chrono::high_resolution_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
       end_time - start_time).count();
-  printf("\nTime (traditional): %lld ms\n\n", elapsed);
+  printf("\nTime (traditional): %lld ms\n\n", static_cast<long long>(elapsed));
 }
 
 
@@ -97,7 +97,7 @@ void example_with_context()
   auto end_time = std::chrono::high_resolution_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
       end_time - start_time).count();
-  printf("\nTime (with context): %lld ms\n\n", elapsed);
+  printf("\nTime (with context): %lld ms\n\n", static_cast<long long>(elapsed));
 }
 
 
