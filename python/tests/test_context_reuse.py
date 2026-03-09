@@ -163,15 +163,11 @@ def test_calc_par_without_context() -> None:
             [RA|RT|R9|R4|R2, RA|RQ|R4, R3|R2, RK|RJ|R3],
         ]
     }
-    try:
-        result = calc_par(table_deal, vulnerable=0)
-        assert isinstance(result, dict)
-        assert "dd_table" in result
-        assert "par_results" in result
-        print("✓ test_calc_par_without_context passed")
-    except RuntimeError as e:
-        # If duplicate cards error, that's ok - just verify API works
-        print(f"✓ test_calc_par_without_context passed (API callable, error: {e})")
+    result = calc_par(table_deal, vulnerable=0)
+    assert isinstance(result, dict)
+    assert "dd_table" in result
+    assert "par_results" in result
+    print("✓ test_calc_par_without_context passed")
 
 
 def test_calc_par_results_consistency() -> None:
@@ -186,16 +182,12 @@ def test_calc_par_results_consistency() -> None:
         ]
     }
 
-    try:
-        result1 = calc_par(table_deal, vulnerable=0)
-        result2 = calc_par(table_deal, vulnerable=0)
+    result1 = calc_par(table_deal, vulnerable=0)
+    result2 = calc_par(table_deal, vulnerable=0)
 
-        # Results should be identical
-        assert result1["par_results"]["par_score"] == result2["par_results"]["par_score"]
-        print("✓ test_calc_par_results_consistency passed")
-    except RuntimeError as e:
-        # If duplicate cards error, just verify API is callable
-        print(f"✓ test_calc_par_results_consistency passed (API callable, error: {e})")
+    # Results should be identical
+    assert result1["par_results"]["par_score"] == result2["par_results"]["par_score"]
+    print("✓ test_calc_par_results_consistency passed")
 
 
 def run_all_tests() -> None:
