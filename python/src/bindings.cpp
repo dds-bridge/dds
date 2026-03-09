@@ -416,7 +416,9 @@ auto register_calc_par_bindings(py::module_& module) -> void
         py::arg("vulnerable") = 0,
         "Calculate double-dummy table and par contracts for a deal.\n\n"
         "Combines CalcDDtable and Par operations in a single call. Creates a temporary\n"
-        "solver context internally. For multiple deals, calc_par_from_table is more efficient\n"
+        "solver context internally. Note: explicit SolverContext reuse is not yet\n"
+        "supported for calc_par in Python, so this call does not currently gain\n"
+        "performance benefits from context reuse. For multiple deals, calc_par_from_table is more efficient\n"
         "if you already have DD tables.\n\n"
         "Args:\n"
         "    table_deal (dict): Deal dict with key 'cards' (4x4 nested list of card bitmasks).\n"

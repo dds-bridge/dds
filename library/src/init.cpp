@@ -8,6 +8,7 @@
 */
 
 #include <cstring>
+#include <cstdio>
 
 #include "calc_tables.hpp"
 #include "init.hpp"
@@ -87,6 +88,12 @@ void STDCALL SetResources(
 
   // Internal parallel execution has been removed.
   // Legacy API calls execute sequentially, so use a single internal thread.
+  if (maxThreadsIn > 1) {
+    std::fprintf(
+      stderr,
+      "DDS warning: SetResources maxThreadsIn=%d requested, but internal batch threading is disabled; using 1 thread.\n",
+      maxThreadsIn);
+  }
   (void) maxThreadsIn;
   (void) ncores;
   const int thrMax = 1;

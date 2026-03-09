@@ -65,9 +65,9 @@ void example_with_context()
   SolverContext context;
 
   printf("SolverContext provides:\n");
-  printf("  - Unified transposition table management\n");
-  printf("  - Consistent threading strategy\n");
-  printf("  - Memory efficiency for batch operations\n\n");
+  printf("  - Stable API surface for future context-aware par computation\n");
+  printf("  - Compatibility with other context-aware DDS APIs\n");
+  printf("  - Note: calc_par context is currently accepted but not yet utilized\n\n");
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -147,7 +147,7 @@ void example_mixed_usage()
   }
 
   printf("\n3. Transposition table reused across operations\n");
-  printf("   Better cache locality and memory efficiency\n\n");
+  printf("   (Planned) This optimization will apply once calc_par uses context internally\n\n");
 }
 
 
