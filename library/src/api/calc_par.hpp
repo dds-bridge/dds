@@ -41,14 +41,14 @@ auto calc_par(
 /**
  * @brief Calculate par score and contracts with explicit solver context.
  *
- * C++ overload that accepts an explicit SolverContext, allowing clients
- * to manage solver state and resources across multiple operations.
+ * C++ overload that accepts an explicit SolverContext. The context enables
+ * efficient reuse of solver resources (transposition table, threading state)
+ * across multiple par calculations.
  * 
- * Note: The context parameter is currently accepted for API consistency
- * but not yet utilized by the underlying implementation. This will be
- * enhanced when CalcDDtable gains context support.
+ * Internally computes the DD table using context-aware calc_dd_table(),
+ * then calculates par score from the table.
  *
- * @param ctx Solver context (accepted for future use, not yet utilized)
+ * @param ctx Solver context for resource management and TT reuse
  * @param table_deal Deal represented as card holdings for each hand
  * @param vulnerable Vulnerability (0=None, 1=Both, 2=NS, 3=EW)
  * @param table_results Output: double dummy table results
