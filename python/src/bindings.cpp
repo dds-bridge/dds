@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -63,11 +62,15 @@ auto register_solve_bindings(py::module_& module) -> void
            py::object context_obj) {
             FutureTricks future_tricks{};
             const Deal native_deal = dds3_python::dict_to_deal(deal);
+            SolverContext* context_ptr = nullptr;
+            if (!context_obj.is_none()) {
+                context_ptr = py::cast<SolverContext*>(context_obj);
+            }
             int code = RETURN_NO_FAULT;
             {
                 py::gil_scoped_release release;
-                
-                if (context_obj.is_none()) {
+
+                if (context_ptr == nullptr) {
                     // Create temporary context (old behavior)
                     code = SolveBoard(
                         native_deal,
@@ -78,7 +81,6 @@ auto register_solve_bindings(py::module_& module) -> void
                         thread_index);
                 } else {
                     // Use provided context
-                    auto context_ptr = py::cast<SolverContext*>(context_obj);
                     code = SolveBoard(
                         *context_ptr,
                         native_deal,
@@ -136,11 +138,15 @@ auto register_solve_bindings(py::module_& module) -> void
                 first,
                 current_trick_suit,
                 current_trick_rank);
+            SolverContext* context_ptr = nullptr;
+            if (!context_obj.is_none()) {
+                context_ptr = py::cast<SolverContext*>(context_obj);
+            }
             int code = RETURN_NO_FAULT;
             {
                 py::gil_scoped_release release;
-                
-                if (context_obj.is_none()) {
+
+                if (context_ptr == nullptr) {
                     // Create temporary context (old behavior)
                     code = SolveBoardPBN(
                         native_deal,
@@ -163,7 +169,6 @@ auto register_solve_bindings(py::module_& module) -> void
                         native_binary_deal.first = native_deal.first;
                         native_binary_deal.trump = native_deal.trump;
 
-                        auto context_ptr = py::cast<SolverContext*>(context_obj);
                         code = SolveBoard(
                             *context_ptr,
                             native_binary_deal,

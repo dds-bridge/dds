@@ -239,3 +239,29 @@ class TestCalcParIntegration:
             
             # Par results should match
             assert cp_result["par_results"]["par_score"] == cfp_result["par_score"]
+
+
+def run_all_tests() -> None:
+    """Run all calc_par tests when executed as a script."""
+    calc_par_tests = TestCalcPar()
+    calc_par_tests.test_calc_par_basic_hand0()
+    calc_par_tests.test_calc_par_vulnerability_variations()
+    calc_par_tests.test_calc_par_invalid_vulnerability()
+    calc_par_tests.test_calc_par_hand1()
+    calc_par_tests.test_calc_par_result_consistency()
+
+    from_table_tests = TestCalcParFromTable()
+    from_table_tests.test_calc_par_from_table_basic()
+    from_table_tests.test_calc_par_from_table_vulnerability_variations()
+    from_table_tests.test_calc_par_from_table_invalid_vulnerability()
+
+    integration_tests = TestCalcParIntegration()
+    integration_tests.test_calc_par_vs_from_table_consistency()
+    integration_tests.test_calc_par_dd_table_matches_calc_dd_table()
+    integration_tests.test_calc_par_multiple_vulnerabilities()
+
+    print("\n✓ All calc_par tests passed!")
+
+
+if __name__ == "__main__":
+    run_all_tests()

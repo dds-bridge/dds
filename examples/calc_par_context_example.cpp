@@ -76,7 +76,7 @@ void example_with_context()
     DdTableDeal table_deal{};
     for (int h = 0; h < DDS_HANDS; ++h) {
       for (int s = 0; s < DDS_SUITS; ++s) {
-        table_deal.cards[h][s] = holdings_[handno][h][s];
+        table_deal.cards[h][s] = holdings_[handno][s][h];
       }
     }
 
@@ -129,7 +129,7 @@ void example_mixed_usage()
     DdTableDeal table_deal{};
     for (int h = 0; h < DDS_HANDS; ++h) {
       for (int s = 0; s < DDS_SUITS; ++s) {
-        table_deal.cards[h][s] = holdings_[i][h][s];
+        table_deal.cards[h][s] = holdings_[i][s][h];
       }
     }
 
