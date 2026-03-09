@@ -10,18 +10,6 @@
 #include "api/calc_par.hpp"
 #include "api/dll.h"
 
-/**
- * @brief Calculate par score and contracts for a deal table (without context).
- *
- * This version creates a temporary SolverContext internally (or uses global
- * resources via the C API). For now, this delegates to the C API CalcPar.
- *
- * @param table_deal Deal represented as card holdings for each hand
- * @param vulnerable Vulnerability (0=None, 1=Both, 2=NS, 3=EW)
- * @param table_results Output: double dummy table results
- * @param par_results Output: par score and contract strings
- * @return Error code (RETURN_NO_FAULT on success)
- */
 auto calc_par(
     const DdTableDeal& table_deal,
     int vulnerable,
@@ -39,21 +27,6 @@ auto calc_par(
     );
 }
 
-/**
- * @brief Calculate par score and contracts with explicit solver context.
- *
- * C++ overload that accepts an explicit SolverContext. For now, the context
- * parameter is accepted for API consistency but not yet utilized, as the
- * underlying CalcDDtable function doesn't yet support context-based solving.
- * This will be enhanced when CalcDDtable gains context support.
- *
- * @param ctx Solver context (accepted but not yet utilized)
- * @param table_deal Deal represented as card holdings for each hand
- * @param vulnerable Vulnerability (0=None, 1=Both, 2=NS, 3=EW)
- * @param table_results Output: double dummy table results
- * @param par_results Output: par score and contract strings
- * @return Error code (RETURN_NO_FAULT on success)
- */
 auto calc_par(
     [[maybe_unused]] SolverContext& ctx,
     const DdTableDeal& table_deal,
@@ -74,18 +47,6 @@ auto calc_par(
     );
 }
 
-/**
- * @brief Calculate par from pre-computed double dummy table.
- *
- * When DD table is already available, this function computes only the par
- * analysis without recalculating the table. This is a thin wrapper around
- * the C API Par() function and does not require SolverContext.
- *
- * @param table_results Input: pre-computed double dummy table
- * @param vulnerable Vulnerability (0=None, 1=Both, 2=NS, 3=EW)
- * @param par_results Output: par score and contract strings
- * @return Error code (RETURN_NO_FAULT on success)
- */
 auto calc_par_from_table(
     const DdTableResults* table_results,
     int vulnerable,
