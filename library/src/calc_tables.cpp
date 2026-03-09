@@ -23,12 +23,30 @@ extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
+// Forward declarations for context-aware overloads
+auto calc_all_boards_n(
+  SolverContext& ctx,
+  Boards * bop,
+  SolvedBoards * solvedp) -> int;
+
+auto calc_single_common_internal(
+  SolverContext& ctx,
+  const int thrId,
+  const int bno) -> void;
+
+// Legacy overloads (create temporary context)
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp) -> int;
 
-
+// Legacy shim for system/threading infrastructure (not actively used)
 auto calc_single_common(
+  const int thrId,
+  const int bno) -> void;
+
+
+auto calc_single_common_internal(
+  SolverContext& ctx,
   const int thrId,
   const int bno) -> void
 {
@@ -38,13 +56,8 @@ auto calc_single_common(
   Deal deal = cparam.bop->deals[bno];  // Make a local copy
   deal.first = 0;
 
-  // Use a default-constructed SolverContext for DD table calculation.
-  // Its TTKind (and other config) follow the SolverConfig defaults, while
-  // TT memory limits are obtained via SolverContext's own defaulting logic
-  // (THREADMEM_* constants and any environment overrides when config values
-  // are zero). The same context is intentionally reused for all declarers
-  // on the same board.
-  SolverContext ctx;
+  // Use caller-provided SolverContext for DD table calculation.
+  // This allows transposition table reuse across multiple table calculations.
 
   START_THREAD_TIMER(thrId);
   int res = solve_board(
@@ -82,6 +95,15 @@ auto calc_single_common(
   END_THREAD_TIMER(thrId);
 }
 
+// Legacy shim for system/threading infrastructure (not actively used)
+auto calc_single_common(
+  const int thrId,
+  const int bno) -> void
+{
+  SolverContext ctx;
+  calc_single_common_internal(ctx, thrId, bno);
+}
+
 
 auto copy_calc_single(const vector<int>& crossrefs) -> void
 {
@@ -103,6 +125,9 @@ auto calc_chunk_common(
   const int thrId) -> void
 {
   // Solves each Deal and strain for all four declarers.
+  // NOTE: This function is legacy multi-threading infrastructure not actively used
+  // in current sequential execution mode.
+  
   vector<FutureTricks> fut;
   fut.resize(static_cast<unsigned>(cparam.no_of_boards));
 
@@ -134,6 +159,7 @@ auto calc_chunk_common(
 
 
 auto calc_all_boards_n(
+  SolverContext& ctx,
   Boards * bop,
   SolvedBoards * solvedp) -> int
 {
@@ -156,7 +182,7 @@ auto calc_all_boards_n(
   // Sequential execution: calculate each board in order
   // Thread ID 0 is used for all boards (single-threaded)
   for (int bno = 0; bno < bop->no_of_boards; bno++) {
-    calc_single_common(0, bno);
+    calc_single_common_internal(ctx, 0, bno);
     if (cparam.error != 0)
       return cparam.error;
   }
@@ -170,6 +196,15 @@ auto calc_all_boards_n(
 #endif
 
   return RETURN_NO_FAULT;
+}
+
+// Legacy overload: creates temporary context
+auto calc_all_boards_n(
+  Boards * bop,
+  SolvedBoards * solvedp) -> int
+{
+  SolverContext ctx;
+  return calc_all_boards_n(ctx, bop, solvedp);
 }
 
 
