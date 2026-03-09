@@ -81,7 +81,7 @@ auto register_solve_bindings(py::module_& module) -> void
                         thread_index);
                 } else {
                     // Use provided context
-                    code = SolveBoard(
+                    code = solve_board(
                         *context_ptr,
                         native_deal,
                         target,
@@ -169,7 +169,7 @@ auto register_solve_bindings(py::module_& module) -> void
                         native_binary_deal.first = native_deal.first;
                         native_binary_deal.trump = native_deal.trump;
 
-                        code = SolveBoard(
+                        code = solve_board(
                             *context_ptr,
                             native_binary_deal,
                             target,

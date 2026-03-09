@@ -2,7 +2,7 @@
  * @file solve_board.hpp
  * @brief C++ interface for double dummy solver with explicit solver context.
  *
- * This header provides a C++-only overload of SolveBoard that accepts an explicit
+ * This header provides C++-only overloads that accept an explicit
  * SolverContext, allowing clients to manage solver state across multiple solve operations.
  *
  * @copyright (C) 2006-2014 by Bo Haglund / 2014-2018 by Bo Haglund & Soren Hein.
@@ -30,6 +30,20 @@
  * @see SolveBoard() in dll.h for C API version
  */
 auto SolveBoard(
+    SolverContext& ctx,
+    const Deal& dl,
+    int target,
+    int solutions,
+    int mode,
+    FutureTricks* futp) -> int;
+
+/**
+ * @brief Backward-compatible PascalCase wrapper for solve_board.
+ *
+ * Kept for compatibility with existing C++ call sites. New C++ code should
+ * prefer solve_board() to follow DDS 3 snake_case naming conventions.
+ */
+auto solve_board(
     SolverContext& ctx,
     const Deal& dl,
     int target,

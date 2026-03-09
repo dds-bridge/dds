@@ -34,7 +34,7 @@ void solve_modern(const Deal& deal)
     SolverContext ctx(cfg);
 
     FutureTricks fut;
-    int res = SolveBoard(ctx, deal, -1, 3, 0, &fut);
+    int res = solve_board(ctx, deal, -1, 3, 0, &fut);
     (void)res;
 }
 

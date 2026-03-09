@@ -47,7 +47,7 @@ auto calc_single_common(
   SolverContext ctx;
 
   START_THREAD_TIMER(thrId);
-  int res = SolveBoard(
+  int res = solve_board(
                 ctx,
                 deal,
                 cparam.bop->target[bno],
