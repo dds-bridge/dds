@@ -134,17 +134,21 @@ auto solve_all_boards_n(
   param.no_of_boards = bds.no_of_boards;
 
   scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
-  sysdep.register_run(RunMode::DDS_RUN_SOLVE, bds);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solved.solved_board[k].cards = 0;
 
   START_BLOCK_TIMER;
-  int retRun = sysdep.run_threads();
+  
+  // Sequential execution: solve each board in order
+  // Thread ID 0 is used for all boards (single-threaded)
+  for (int bno = 0; bno < bds.no_of_boards; bno++) {
+    solve_single_common(0, bno);
+    if (param.error != 0)
+      return param.error;
+  }
+  
   END_BLOCK_TIMER;
-
-  if (retRun != RETURN_NO_FAULT)
-    return retRun;
 
   solved.no_of_boards = param.no_of_boards;
 
@@ -152,10 +156,7 @@ auto solve_all_boards_n(
   scheduler.PrintTiming();
 #endif
 
-  if (param.error == 0)
-    return RETURN_NO_FAULT;
-  else
-    return param.error;
+  return RETURN_NO_FAULT;
 }
 
 

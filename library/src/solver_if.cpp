@@ -80,7 +80,7 @@ int STDCALL SolveBoard(
 
   // Create an owned context for this call and delegate to the C++ overload.
   SolverContext outer_ctx;
-  return SolveBoard(outer_ctx, dl, target, solutions, mode, futp);
+  return solve_board(outer_ctx, dl, target, solutions, mode, futp);
 }
 
 auto solve_board_internal(

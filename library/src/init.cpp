@@ -8,6 +8,7 @@
 */
 
 #include <cstring>
+#include <cstdio>
 
 #include "calc_tables.hpp"
 #include "init.hpp"
@@ -85,20 +86,17 @@ void STDCALL SetResources(
   int memMaxMB = min(memMaxGivenMB, memMaxFreeMB);
   memMaxMB = min(memMaxMB, memMax32bMB);
 
-  // The number of threads will be limited by:
-  // - If threading set as single-threaded or compiled only 
-  //   single-threaded: 1
-  // - If threading set as one of the IMPL variants: ncores
-  //   whatever the user says (as we currently don't have control)
-  // - Otherwise the lower of maxThreads and ncores
-
-  int thrMax;
-  if (sysdep.is_single_threaded())
-    thrMax = 1;
-  else if (sysdep.is_impl() || maxThreadsIn <= 0)
-    thrMax = ncores;
-  else
-    thrMax = min(maxThreadsIn, ncores);
+  // Internal parallel execution has been removed.
+  // Legacy API calls execute sequentially, so use a single internal thread.
+  if (maxThreadsIn > 1) {
+    std::fprintf(
+      stderr,
+      "DDS warning: SetResources maxThreadsIn=%d requested, but internal batch threading is disabled; using 1 thread.\n",
+      maxThreadsIn);
+  }
+  (void) maxThreadsIn;
+  (void) ncores;
+  const int thrMax = 1;
 
   // For simplicity we won't vary the amount of memory per thread
   // in the small and large versions.

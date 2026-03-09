@@ -4,6 +4,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "api_definitions",
     hdrs = [
+        "calc_par.hpp",
         "dds.h",
         "dll.h",
         "portab.h",

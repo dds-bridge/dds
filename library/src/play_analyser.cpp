@@ -351,14 +351,18 @@ int STDCALL AnalyseAllPlaysBin(
   traceparam.solvedp = solvedp;
 
   scheduler.RegisterRun(RunMode::DDS_RUN_TRACE, * bop, * plp);
-  sysdep.register_run(RunMode::DDS_RUN_TRACE, * bop);
 
   START_BLOCK_TIMER;
-  int retRun = sysdep.run_threads();
+  
+  // Sequential execution: analyze each play in order
+  // Thread ID 0 is used for all plays (single-threaded)
+  for (int bno = 0; bno < bop->no_of_boards; bno++) {
+    play_single_common(0, bno);
+    if (playparam.error != 0)
+      return playparam.error;
+  }
+  
   END_BLOCK_TIMER;
-
-  if (retRun != RETURN_NO_FAULT)
-    return retRun;
 
   solvedp->no_of_boards = bop->no_of_boards;
 
@@ -366,10 +370,7 @@ int STDCALL AnalyseAllPlaysBin(
   scheduler.PrintTiming();
 #endif
 
-  if (playparam.error == 0)
-    return RETURN_NO_FAULT;
-  else
-    return playparam.error;
+  return RETURN_NO_FAULT;
 }
 
 

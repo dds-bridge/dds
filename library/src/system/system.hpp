@@ -41,37 +41,12 @@ typedef void (*FcopyType)(const vector<int>& crossrefs);
 class System
 {
   private:
-
-    RunMode run_cat_; // SOLVE / CALC / PLAY
-
     int num_threads_;
     int sys_mem_mb_;
 
     unsigned preferred_system_;
 
     vector<bool> available_system_;
-
-    array<FptrType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> callback_simple_list_;
-    array<FduplType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> callback_dupl_list_;
-    array<FsingleType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> callback_single_list_;
-    array<FcopyType, static_cast<size_t>(RunMode::DDS_RUN_SIZE)> callback_copy_list_;
-
-    typedef int (System::*RunPtr)();
-    vector<RunPtr> run_ptr_list_;
-
-    FptrType fptr_;
-
-    const Boards* boards_;
-
-    int run_threads_basic();
-    int run_threads_boost();
-    int run_threads_openmp();
-    int run_threads_gcd();
-    int run_threads_winapi();
-    int run_threads_stl();
-    int run_threads_tbb();
-    int run_threads_stlimpl();
-    int run_threads_pplimpl();
   
     public:
 
@@ -122,14 +97,6 @@ class System
       const int n_threads,
       const int mem_usable_mb);
 
-    int register_run(
-      const RunMode run_mode,
-      const Boards& boards);
-
-    bool is_single_threaded() const;
-
-    bool is_impl() const;
-
     bool thread_ok(const int thread_id) const;
 
     void get_hardware(
@@ -137,8 +104,6 @@ class System
       unsigned long long& kilobytes_free) const;
 
     int prefer_threading(const unsigned code);
-
-    int run_threads();
 };
 
 #endif

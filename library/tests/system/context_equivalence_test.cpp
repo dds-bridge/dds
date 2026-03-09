@@ -37,7 +37,7 @@ TEST(SystemContextEquivalence, LegacyVsContextReturnCode)
 
   // Construct a SolverContext-owned ThreadData for the context-based call.
   SolverContext ctx;
-  const int r_ctx = SolveBoard(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft_ctx);
+  const int r_ctx = solve_board(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft_ctx);
 
   EXPECT_EQ(r_legacy, r_ctx) << "Legacy and context return codes should match";
 }

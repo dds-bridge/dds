@@ -9,6 +9,7 @@ filegroup(
         exclude = [
             "itest.cpp",
             "context_equivalence.cpp",
+            "calc_par_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -38,6 +39,19 @@ cc_test(
     deps = [
         "//library/src:testable_dds",
         "//library/src/api:api_definitions",
+    ],
+)
+
+# Standalone calc_par API test
+cc_test(
+    name = "calc_par_test",
+    srcs = ["calc_par_test.cpp"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "@googletest//:gtest_main",
     ],
 )
 

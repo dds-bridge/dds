@@ -7,16 +7,13 @@
    See LICENSE and README.
 */
 
-
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <cstring>
 
-#include "system.hpp"
-#include "scheduler.hpp"
+#if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
+  #include <unistd.h>
+#endif
 
-extern Scheduler scheduler;
+#include "system.hpp"
 
 // Boost: Disable some header warnings.
 
@@ -130,48 +127,22 @@ const vector<string> DDS_SYSTEM_THREADING =
 
 
 System::System(
-    FptrType solve_chunk_common,
-    FptrType calc_chunk_common,
-    FptrType play_chunk_common,
-    FduplType detect_solve_duplicates,
-    FduplType detect_calc_duplicates,
-    FduplType detect_play_duplicates,
-    FsingleType solve_single_common,
-    FsingleType calc_single_common,
-    FsingleType play_single_common,
-    FcopyType copy_solve_single,
-    FcopyType copy_calc_single,
-    FcopyType copy_play_single
+    [[maybe_unused]] FptrType solve_chunk_common,
+    [[maybe_unused]] FptrType calc_chunk_common,
+    [[maybe_unused]] FptrType play_chunk_common,
+    [[maybe_unused]] FduplType detect_solve_duplicates,
+    [[maybe_unused]] FduplType detect_calc_duplicates,
+    [[maybe_unused]] FduplType detect_play_duplicates,
+    [[maybe_unused]] FsingleType solve_single_common,
+    [[maybe_unused]] FsingleType calc_single_common,
+    [[maybe_unused]] FsingleType play_single_common,
+    [[maybe_unused]] FcopyType copy_solve_single,
+    [[maybe_unused]] FcopyType copy_calc_single,
+    [[maybe_unused]] FcopyType copy_play_single
 )
 {
-  run_ptr_list_.resize(DDS_SYSTEM_THREAD_SIZE);
-  run_ptr_list_[DDS_SYSTEM_THREAD_BASIC] = &System::run_threads_basic; 
-  run_ptr_list_[DDS_SYSTEM_THREAD_WINAPI] = &System::run_threads_winapi; 
-  run_ptr_list_[DDS_SYSTEM_THREAD_OPENMP] = &System::run_threads_openmp; 
-  run_ptr_list_[DDS_SYSTEM_THREAD_GCD] = &System::run_threads_gcd; 
-  run_ptr_list_[DDS_SYSTEM_THREAD_BOOST] = &System::run_threads_boost; 
-  run_ptr_list_[DDS_SYSTEM_THREAD_STL] = &System::run_threads_stl; 
-  run_ptr_list_[DDS_SYSTEM_THREAD_TBB] = &System::run_threads_tbb; 
-  run_ptr_list_[DDS_SYSTEM_THREAD_STLIMPL] = 
-    &System::run_threads_stlimpl; 
-  run_ptr_list_[DDS_SYSTEM_THREAD_PPLIMPL] = 
-    &System::run_threads_pplimpl; 
-
-  callback_simple_list_[static_cast<size_t>(RunMode::DDS_RUN_SOLVE)] = solve_chunk_common;
-  callback_simple_list_[static_cast<size_t>(RunMode::DDS_RUN_CALC)] = calc_chunk_common;
-  callback_simple_list_[static_cast<size_t>(RunMode::DDS_RUN_TRACE)] = play_chunk_common;
-
-  callback_dupl_list_[static_cast<size_t>(RunMode::DDS_RUN_SOLVE)] = detect_solve_duplicates;
-  callback_dupl_list_[static_cast<size_t>(RunMode::DDS_RUN_CALC)] = detect_calc_duplicates;
-  callback_dupl_list_[static_cast<size_t>(RunMode::DDS_RUN_TRACE)] = detect_play_duplicates;
-
-  callback_single_list_[static_cast<size_t>(RunMode::DDS_RUN_SOLVE)] = solve_single_common;
-  callback_single_list_[static_cast<size_t>(RunMode::DDS_RUN_CALC)] = calc_single_common;
-  callback_single_list_[static_cast<size_t>(RunMode::DDS_RUN_TRACE)] = play_single_common;
-
-  callback_copy_list_[static_cast<size_t>(RunMode::DDS_RUN_SOLVE)] = copy_solve_single;
-  callback_copy_list_[static_cast<size_t>(RunMode::DDS_RUN_CALC)] = copy_calc_single;
-  callback_copy_list_[static_cast<size_t>(RunMode::DDS_RUN_TRACE)] = copy_play_single;
+  // Threading infrastructure removed: callbacks no longer registered.
+  // System now only provides hardware detection and configuration.
   System::reset();
 }
 
@@ -183,7 +154,6 @@ System::~System()
 
 void System::reset()
 {
-  run_cat_ = RunMode::DDS_RUN_SOLVE;
   num_threads_ = 1;
   preferred_system_ = DDS_SYSTEM_THREAD_BASIC;
 
@@ -310,31 +280,6 @@ int System::register_params(
 }
 
 
-int System::register_run(
-  const RunMode run_mode,
-  const Boards& boards)
-{
-  if (run_mode >= RunMode::DDS_RUN_SIZE)
-    return RETURN_THREAD_MISSING; // Not quite right;
-
-  run_cat_ = run_mode;
-  boards_ = &boards;
-  return RETURN_NO_FAULT;
-}
-
-
-bool System::is_single_threaded() const
-{
-  return (preferred_system_ == DDS_SYSTEM_THREAD_BASIC);
-}
-
-
-bool System::is_impl() const
-{
-  return (preferred_system_ >= DDS_SYSTEM_THREAD_STLIMPL);
-}
-
-
 bool System::thread_ok(const int thread_id) const
 {
   return (thread_id >= 0 && thread_id < num_threads_);
@@ -351,327 +296,6 @@ int System::prefer_threading(const unsigned code)
 
   preferred_system_ = code;
   return RETURN_NO_FAULT;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//                           Basic                                  //
-//////////////////////////////////////////////////////////////////////
-
-int System::run_threads_basic()
-{
-  (*fptr_)(0);
-  return RETURN_NO_FAULT;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//                           WinAPI                                 //
-//////////////////////////////////////////////////////////////////////
-
-#ifdef DDS_THREADS_WINAPI
-struct WinWrapType
-{
-  int thrId;
-  fptrType fptr;
-  HANDLE *waitPtr;
-};
-
-DWORD CALLBACK WinCallback(void * p);
-
-DWORD CALLBACK WinCallback(void * p)
-{
-  WinWrapType * winWrap = static_cast<WinWrapType *>(p);
-  (*(winWrap->fptr))(winWrap->thrId);
-
-  if (SetEvent(winWrap->waitPtr[winWrap->thrId]) == 0)
-    return 0;
-
-  return 1;
-}
-#endif
-
-
-int System::run_threads_winapi()
-{
-#ifdef DDS_THREADS_WINAPI
-  HANDLE * solveAllEvents = static_cast<HANDLE * >(
-    malloc(static_cast<unsigned>(num_threads_) * sizeof(HANDLE)));
-
-  for (int k = 0; k < num_threads_; k++)
-  {
-    solveAllEvents[k] = CreateEvent(NULL, FALSE, FALSE, 0);
-    if (solveAllEvents[k] == 0)
-      return RETURN_THREAD_CREATE;
-  }
-
-  vector<WinWrapType> winWrap;
-  const unsigned nt = static_cast<unsigned>(num_threads_);
-  winWrap.resize(nt);
-
-  for (unsigned k = 0; k < nt; k++)
-  {
-    winWrap[k].thrId = static_cast<int>(k);
-    winWrap[k].fptr = fptr;
-    winWrap[k].waitPtr = solveAllEvents;
-
-    int res = QueueUserWorkItem(WinCallback,
-      static_cast<void *>(&winWrap[k]), WT_EXECUTELONGFUNCTION);
-    if (res != 1)
-      return res;
-  }
-
-  DWORD solveAllWaitResult;
-  solveAllWaitResult = WaitForMultipleObjects(
-    static_cast<unsigned>(num_threads_), solveAllEvents, TRUE, INFINITE);
-
-  if (solveAllWaitResult != WAIT_OBJECT_0)
-    return RETURN_THREAD_WAIT;
-
-  for (int k = 0; k < num_threads_; k++)
-    CloseHandle(solveAllEvents[k]);
-
-  free(solveAllEvents);
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//                           OpenMP                                 //
-//////////////////////////////////////////////////////////////////////
-
-int System::run_threads_openmp()
-{
-#ifdef DDS_THREADS_OPENMP
-  // Added after suggestion by Dirk Willecke.
-  if (omp_get_dynamic())
-    omp_set_dynamic(0);
-
-  omp_set_num_threads(num_threads_);
-
-  #pragma omp parallel default(none)
-  {
-    #pragma omp for schedule(dynamic)
-    for (int k = 0; k < num_threads_; k++)
-    {
-      int thrId = omp_get_thread_num();
-      (*fptr_)(thrId);
-    }
-  }
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//                            GCD                                   //
-//////////////////////////////////////////////////////////////////////
-
-int System::run_threads_gcd()
-{
-#ifdef DDS_THREADS_GCD
-  dispatch_apply(static_cast<size_t>(num_threads_),
-    dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0),
-    ^(size_t t)
-  {
-    int thrId = static_cast<int>(t);
-    (*fptr_)(thrId);
-  });
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//                           Boost                                  //
-//////////////////////////////////////////////////////////////////////
-
-int System::run_threads_boost()
-{
-#ifdef DDS_THREADS_BOOST
-  vector<boost::thread *> threads;
-
-  const unsigned nu = static_cast<unsigned>(num_threads_);
-  threads.resize(nu);
-
-  for (unsigned k = 0; k < nu; k++)
-    threads[k] = new boost::thread(fptr, k);
-
-  for (unsigned k = 0; k < nu; k++)
-  {
-    threads[k]->join();
-    delete threads[k];
-  }
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//                            STL                                   //
-//////////////////////////////////////////////////////////////////////
-
-int System::run_threads_stl()
-{
-#ifdef DDS_THREADS_STL
-  vector<thread *> threads;
-
-  vector<int> uniques;
-  vector<int> crossrefs;
-  (* callback_dupl_list_[runCat])(* boards_, uniques, crossrefs);
-
-  const unsigned nu = static_cast<unsigned>(num_threads_);
-  threads.resize(nu);
-
-  for (unsigned k = 0; k < nu; k++)
-    threads[k] = new thread(fptr, k);
-
-  for (unsigned k = 0; k < nu; k++)
-  {
-    threads[k]->join();
-    delete threads[k];
-  }
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
-
-int System::run_threads_stlimpl()
-{
-#ifdef DDS_THREADS_STLIMPL
-  vector<int> uniques;
-  vector<int> crossrefs;
-  (* callback_dupl_list_[runCat])(* boards_, uniques, crossrefs);
-
-  static atomic<int> thrIdNext = 0;
-  bool err = false;
-
-  ThreadMgr::instance().Reset(num_threads_);
-
-  for_each(std::execution::par, uniques.begin(), uniques.end(),
-    [&](int &bno)
-  {
-    thread_local int thrId = -1;
-    thread_local int realThrId;
-    if (thrId == -1)
-      thrId = thrIdNext++;
-
-    realThrId = ThreadMgr::instance()::instance().Occupy(thrId);
-
-    if (realThrId == -1)
-      err = true;
-    else
-      (* callback_single_list_[run_cat_])(realThrId, bno);
-
-    if (! ThreadMgr::instance()::instance().Release(thrId))
-      err = true;
-  });
-
-  if (err)
-  {
-    cout << "Too many threads, num_threads_ " << num_threads_ << endl;
-    return RETURN_THREAD_INDEX;
-  }
-
-  (* CallbackCopyList[runCat])(crossrefs);
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//                            TBB                                   //
-//////////////////////////////////////////////////////////////////////
-
-int System::run_threads_tbb()
-{
-#ifdef DDS_THREADS_TBB
-  vector<tbb::tbb_thread *> threads;
-
-  const unsigned nu = static_cast<unsigned>(num_threads_);
-  threads.resize(nu);
-
-  for (unsigned k = 0; k < nu; k++)
-    threads[k] = new tbb::tbb_thread(fptr, k);
-
-  for (unsigned k = 0; k < nu; k++)
-  {
-    threads[k]->join();
-    delete threads[k];
-  }
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//                            PPL                                   //
-//////////////////////////////////////////////////////////////////////
-
-
-int System::run_threads_pplimpl()
-{
-#ifdef DDS_THREADS_PPLIMPL
-  vector<int> uniques;
-  vector<int> crossrefs;
-  (* callback_dupl_list_[runCat])(* boards_, uniques, crossrefs);
-
-  static atomic<int> thrIdNext = 0;
-  bool err = false, err2 = false;
-
-  ThreadMgr::instance().Reset(num_threads_);
-
-  Concurrency::parallel_for_each(uniques.begin(), uniques.end(),
-    [&](int &bno)
-  {
-    thread_local int thrId = -1;
-    thread_local int realThrId;
-    if (thrId == -1)
-      thrId = thrIdNext++;
-
-    realThrId = ThreadMgr::instance().Occupy(thrId);
-
-    if (realThrId == -1)
-      err = true;
-    else
-      (* CallbackSingleList[runCat])(realThrId, bno);
-
-    if (! ThreadMgr::instance().Release(thrId))
-      err2 = true;
-  });
-
-  if (err)
-  {
-    cout << "Too many threads, num_threads_ " << num_threads_ << endl;
-    return RETURN_THREAD_INDEX;
-  }
-  else if (err2)
-  {
-    cout << "Release failed, num_threads_ " << num_threads_ << endl;
-    return RETURN_THREAD_INDEX;
-  }
-
-  (* callback_copy_list_[run_cat_])(crossrefs);
-#endif
-
-  return RETURN_NO_FAULT;
-}
-
-
-
-int System::run_threads()
-{
-  fptr_ = callback_simple_list_[static_cast<size_t>(run_cat_)];
-
-  return (this->*run_ptr_list_[preferred_system_])();
 }
 
 

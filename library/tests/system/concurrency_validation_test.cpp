@@ -79,7 +79,7 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
     SolverContext ctx;
     for (size_t i = 0; i < N; ++i) {
       FutureTricks ft{};
-      const int rc = SolveBoard(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
+      const int rc = solve_board(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
       baseline_rc[i] = rc;
       baseline_ft[i] = ft; // copy
     }
@@ -95,7 +95,7 @@ TEST(ConcurrencyValidation, ParallelInstancesMatchSequentialBaseline)
     threads.emplace_back([i, &deals, &out_ft, &out_rc]() {
       SolverContext ctx;
       FutureTricks ft{};
-      const int rc = SolveBoard(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
+      const int rc = solve_board(ctx, deals[i], /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft);
       out_rc[i] = rc;
       out_ft[i] = ft;
     });

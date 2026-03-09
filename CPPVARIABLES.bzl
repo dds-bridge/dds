@@ -7,7 +7,6 @@ DDS_CPPOPTS = select({
         "-O3",
         "-mtune=generic",
         "-fPIC",
-        "-DDDS_THREADS_GCD",
         "-Wpedantic",
         "-Wall",
         "-Werror",
@@ -17,7 +16,6 @@ DDS_CPPOPTS = select({
         "-stdlib=libc++",
         "-mtune=generic",
         "-fPIC",
-        "-DDDS_THREADS_GCD",
         "-Wpedantic",
         "-Wall",
         "-Werror",
@@ -48,8 +46,8 @@ DDS_CPPOPTS = select({
 })
 
 DDS_LOCAL_DEFINES = select({
-    "//:build_macos": ["DDS_THREADS_GCD"],
-    "//:debug_build_macos": ["DDS_THREADS_GCD"],
+    "//:build_macos": [],
+    "//:debug_build_macos": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
     "//conditions:default": [],

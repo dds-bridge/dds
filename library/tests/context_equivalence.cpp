@@ -32,7 +32,7 @@ int main()
 
   // Act: context
   SolverContext ctx;
-  int r2 = SolveBoard(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft2);
+  int r2 = solve_board(ctx, dl, /*target=*/0, /*solutions=*/1, /*mode=*/0, &ft2);
 
   // Assert: return codes identical (both should be error on empty Deal)
   if (r1 != r2) {

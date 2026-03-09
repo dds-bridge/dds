@@ -47,7 +47,7 @@ auto calc_single_common(
   SolverContext ctx;
 
   START_THREAD_TIMER(thrId);
-  int res = SolveBoard(
+  int res = solve_board(
                 ctx,
                 deal,
                 cparam.bop->target[bno],
@@ -147,17 +147,21 @@ auto calc_all_boards_n(
   cparam.no_of_boards = bop->no_of_boards;
 
   scheduler.RegisterRun(RunMode::DDS_RUN_CALC, * bop);
-  sysdep.register_run(RunMode::DDS_RUN_CALC, * bop);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solved_board[k].cards = 0;
 
   START_BLOCK_TIMER;
-  int retRun = sysdep.run_threads();
+  
+  // Sequential execution: calculate each board in order
+  // Thread ID 0 is used for all boards (single-threaded)
+  for (int bno = 0; bno < bop->no_of_boards; bno++) {
+    calc_single_common(0, bno);
+    if (cparam.error != 0)
+      return cparam.error;
+  }
+  
   END_BLOCK_TIMER;
-
-  if (retRun != RETURN_NO_FAULT)
-    return retRun;
 
   solvedp->no_of_boards = cparam.no_of_boards;
 
@@ -165,10 +169,7 @@ auto calc_all_boards_n(
   scheduler.PrintTiming();
 #endif
 
-  if (cparam.error == 0)
-    return RETURN_NO_FAULT;
-  else
-    return cparam.error;
+  return RETURN_NO_FAULT;
 }
 
 

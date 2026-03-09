@@ -5,7 +5,10 @@
 
 #include <pybind11/pybind11.h>
 
+#include <api/calc_par.hpp>
 #include <dds/dds.hpp>
+#include <pbn.hpp>
+#include <solver_context/solver_context.hpp>
 
 #include "converters.hpp"
 
@@ -48,25 +51,44 @@ auto throw_on_dds_error(const int code) -> void
 
 auto register_solve_bindings(py::module_& module) -> void
 {
+    // Overload 1: solve_board with optional context
     module.def(
         "solve_board",
         [](const py::dict& deal,
            const int target,
            const int solutions,
            const int mode,
-           const int thread_index) {
+           const int thread_index,
+           py::object context_obj) {
             FutureTricks future_tricks{};
             const Deal native_deal = dds3_python::dict_to_deal(deal);
+            SolverContext* context_ptr = nullptr;
+            if (!context_obj.is_none()) {
+                context_ptr = py::cast<SolverContext*>(context_obj);
+            }
             int code = RETURN_NO_FAULT;
             {
                 py::gil_scoped_release release;
-                code = SolveBoard(
-                    native_deal,
-                    target,
-                    solutions,
-                    mode,
-                    &future_tricks,
-                    thread_index);
+
+                if (context_ptr == nullptr) {
+                    // Create temporary context (old behavior)
+                    code = SolveBoard(
+                        native_deal,
+                        target,
+                        solutions,
+                        mode,
+                        &future_tricks,
+                        thread_index);
+                } else {
+                    // Use provided context
+                    code = solve_board(
+                        *context_ptr,
+                        native_deal,
+                        target,
+                        solutions,
+                        mode,
+                        &future_tricks);
+                }
             }
             throw_on_dds_error(code);
             return dds3_python::future_tricks_to_dict(future_tricks);
@@ -76,6 +98,7 @@ auto register_solve_bindings(py::module_& module) -> void
         py::arg("solutions") = 3,
         py::arg("mode") = 0,
         py::arg("thread_index") = 0,
+        py::arg("context") = py::none(),
         "Solve a single bridge deal from binary format.\n\n"
         "Args:\n"
         "    deal (dict): Deal dict with keys 'trump', 'first', 'remain_cards', 'current_trick_suit', "
@@ -83,13 +106,19 @@ auto register_solve_bindings(py::module_& module) -> void
         "    target (int, optional): Target number of tricks for optimization (-1 = no target). Default: -1\n"
         "    solutions (int, optional): Depth of search (1-3, higher = more branches). Default: 3\n"
         "    mode (int, optional): 0 = auto, 1 = thread depth 6, 2 = node depth 12. Default: 0\n"
-        "    thread_index (int, optional): Thread ID for transposition table access. Default: 0\n\n"
+        "    thread_index (int, optional): Thread ID for transposition table access. Default: 0\n"
+        "    context (SolverContext, optional): Reusable solver context for efficiency. Default: None\n\n"
         "Returns:\n"
         "    dict: Result dict with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
         "Raises:\n"
         "    ValueError: If input validation fails (invalid suit/rank range).\n"
-        "    RuntimeError: If DDS solver returns error code.");
+        "    RuntimeError: If DDS solver returns error code.\n\n"
+        "Example (with context reuse for multiple boards):\n"
+        "    context = dds3.SolverContext()\n"
+        "    result1 = dds3.solve_board(deal1, context=context)\n"
+        "    result2 = dds3.solve_board(deal2, context=context)  # Reuses context");
 
+    // Overload 2: solve_board_pbn with optional context
     module.def(
         "solve_board_pbn",
         [](const std::string& remain_cards,
@@ -100,7 +129,8 @@ auto register_solve_bindings(py::module_& module) -> void
            const int target,
            const int solutions,
            const int mode,
-           const int thread_index) {
+           const int thread_index,
+           py::object context_obj) {
             FutureTricks future_tricks{};
             const DealPBN native_deal = dds3_python::pbn_to_deal(
                 remain_cards,
@@ -108,16 +138,46 @@ auto register_solve_bindings(py::module_& module) -> void
                 first,
                 current_trick_suit,
                 current_trick_rank);
+            SolverContext* context_ptr = nullptr;
+            if (!context_obj.is_none()) {
+                context_ptr = py::cast<SolverContext*>(context_obj);
+            }
             int code = RETURN_NO_FAULT;
             {
                 py::gil_scoped_release release;
-                code = SolveBoardPBN(
-                    native_deal,
-                    target,
-                    solutions,
-                    mode,
-                    &future_tricks,
-                    thread_index);
+
+                if (context_ptr == nullptr) {
+                    // Create temporary context (old behavior)
+                    code = SolveBoardPBN(
+                        native_deal,
+                        target,
+                        solutions,
+                        mode,
+                        &future_tricks,
+                        thread_index);
+                } else {
+                    // Use provided context by converting PBN deal and calling
+                    // the context-aware C++ SolveBoard overload.
+                    Deal native_binary_deal{};
+                    if (convert_from_pbn(native_deal.remainCards, native_binary_deal.remainCards) != RETURN_NO_FAULT) {
+                        code = RETURN_PBN_FAULT;
+                    } else {
+                        for (int k = 0; k <= 2; ++k) {
+                            native_binary_deal.currentTrickRank[k] = native_deal.currentTrickRank[k];
+                            native_binary_deal.currentTrickSuit[k] = native_deal.currentTrickSuit[k];
+                        }
+                        native_binary_deal.first = native_deal.first;
+                        native_binary_deal.trump = native_deal.trump;
+
+                        code = solve_board(
+                            *context_ptr,
+                            native_binary_deal,
+                            target,
+                            solutions,
+                            mode,
+                            &future_tricks);
+                    }
+                }
             }
             throw_on_dds_error(code);
             return dds3_python::future_tricks_to_dict(future_tricks);
@@ -131,6 +191,7 @@ auto register_solve_bindings(py::module_& module) -> void
         py::arg("solutions") = 3,
         py::arg("mode") = 0,
         py::arg("thread_index") = 0,
+        py::arg("context") = py::none(),
         "Solve a single bridge deal from PBN (Portable Bridge Notation) format.\n\n"
         "Args:\n"
         "    remain_cards (str): Remaining cards in PBN format (e.g., 'N:AK.234.456.789T...').\n"
@@ -141,13 +202,15 @@ auto register_solve_bindings(py::module_& module) -> void
         "    target (int, optional): Target number of tricks for optimization (-1 = no target). Default: -1\n"
         "    solutions (int, optional): Depth of search (1-3, higher = more branches). Default: 3\n"
         "    mode (int, optional): 0 = auto, 1 = thread depth 6, 2 = node depth 12. Default: 0\n"
-        "    thread_index (int, optional): Thread ID for transposition table access. Default: 0\n\n"
+        "    thread_index (int, optional): Thread ID for transposition table access. Default: 0\n"
+        "    context (SolverContext, optional): Reusable solver context for efficiency. Default: None\n\n"
         "Returns:\n"
         "    dict: Result dict with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
         "Raises:\n"
         "    ValueError: If PBN format is invalid or input validation fails.\n"
         "    RuntimeError: If DDS solver returns error code.");
 }
+
 
 auto register_table_bindings(py::module_& module) -> void
 {
@@ -318,15 +381,119 @@ auto register_par_bindings(py::module_& module) -> void
         "    RuntimeError: If DDS solver returns error code.");
 }
 
+auto register_calc_par_bindings(py::module_& module) -> void
+{
+    module.def(
+        "calc_par",
+        [](const py::dict& table_deal, const int vulnerable) {
+            if (vulnerable < 0 || vulnerable > 3) {
+                throw py::value_error(
+                    "vulnerable has invalid value " + std::to_string(vulnerable) +
+                    " (expected 0=none, 1=both, 2=NS, 3=EW)");
+            }
+
+            const DdTableDeal native_deal = dds3_python::dict_to_dd_table_deal(table_deal);
+            DdTableResults table_results{};
+            ParResults par_results{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = calc_par(
+                    native_deal,
+                    vulnerable,
+                    &table_results,
+                    &par_results);
+            }
+            throw_on_dds_error(code);
+            
+            // Return both DD table and par results
+            py::dict result;
+            result["dd_table"] = dds3_python::dd_table_results_to_dict(table_results);
+            result["par_results"] = dds3_python::par_results_to_dict(par_results);
+            return result;
+        },
+        py::arg("table_deal"),
+        py::arg("vulnerable") = 0,
+        "Calculate double-dummy table and par contracts for a deal.\n\n"
+        "Combines CalcDDtable and Par operations in a single call. Creates a temporary\n"
+        "solver context internally. Note: explicit SolverContext reuse is not yet\n"
+        "supported for calc_par in Python, so this call does not currently gain\n"
+        "performance benefits from context reuse. For multiple deals, calc_par_from_table is more efficient\n"
+        "if you already have DD tables.\n\n"
+        "Args:\n"
+        "    table_deal (dict): Deal dict with key 'cards' (4x4 nested list of card bitmasks).\n"
+        "                       cards[hand][suit] where hand=0-3 (N,E,S,W), suit=0-3 (♠,♥,♦,♣)\n"
+        "                       Each card bitmask has bits 2-14 set for present ranks (2-A).\n"
+        "    vulnerable (int): Vulnerability (0=none, 1=both, 2=NS, 3=EW). Default: 0\n\n"
+        "Returns:\n"
+        "    dict: Result dict with two keys:\n"
+        "        'dd_table': DD table results (key 'res_table' = 5x4 nested list)\n"
+        "        'par_results': Par results (keys 'par_score' and 'par_contracts_string')\n\n"
+        "Raises:\n"
+        "    ValueError: If input validation fails (invalid cards or vulnerability).\n"
+        "    RuntimeError: If DDS solver returns error code.");
+
+    module.def(
+        "calc_par_from_table",
+        [](const py::dict& table_results, const int vulnerable) {
+            if (vulnerable < 0 || vulnerable > 3) {
+                throw py::value_error(
+                    "vulnerable has invalid value " + std::to_string(vulnerable) +
+                    " (expected 0=none, 1=both, 2=NS, 3=EW)");
+            }
+
+            const DdTableResults native_table = dds3_python::dict_to_dd_table_results(table_results);
+            ParResults par_results{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = calc_par_from_table(
+                    &native_table,
+                    vulnerable,
+                    &par_results);
+            }
+            throw_on_dds_error(code);
+            return dds3_python::par_results_to_dict(par_results);
+        },
+        py::arg("table_results"),
+        py::arg("vulnerable") = 0,
+        "Calculate par contracts from a pre-computed double-dummy table.\n\n"
+        "Lightweight alternative to calc_par when the DD table is already available.\n"
+        "More efficient than calc_par when computing par for multiple deals with the same DD table,\n"
+        "or when par needs to be recalculated with different vulnerability.\n\n"
+        "Args:\n"
+        "    table_results (dict): DD table results dict with key 'res_table' (5x4 nested list).\n"
+        "    vulnerable (int): Vulnerability (0=none, 1=both, 2=NS, 3=EW). Default: 0\n\n"
+        "Returns:\n"
+        "    dict: Par results with keys 'par_score' and 'par_contracts_string'.\n"
+        "          par_contracts_string[ns] = contract string (e.g., '6NT+1', '7C=').\n\n"
+        "Raises:\n"
+        "    ValueError: If input validation fails (invalid table or vulnerability).\n"
+        "    RuntimeError: If DDS solver returns error code.");
+}
 }  // namespace
 
 PYBIND11_MODULE(_dds3, module)
 {
     module.doc() = "dds3 Python extension (MVP wrappers)";
 
+    // Register SolverContext class for context reuse
+    py::class_<SolverContext>(
+        module,
+        "SolverContext",
+        "A reusable solver context that maintains state across multiple solve operations.\n\n"
+        "Creating a single context and reusing it for multiple solve_board calls is more\n"
+        "efficient than creating a new context for each call.\n\n"
+        "Example:\n"
+        "    context = dds3.SolverContext()\n"
+        "    result1 = dds3.solve_board(deal1, context=context)\n"
+        "    result2 = dds3.solve_board(deal2, context=context)  # Reuses cached state\n")
+        .def(py::init<>(), "Create a new solver context.");
+
     register_solve_bindings(module);
     register_table_bindings(module);
     register_par_bindings(module);
+    register_calc_par_bindings(module);
 
     module.def("api_root", []() {
         return "dds.hpp";

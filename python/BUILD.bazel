@@ -40,6 +40,27 @@ py_test(
     deps = [":dds3_lib"],
 )
 
+py_test(
+    name = "calc_par_test",
+    main = "tests/test_calc_par_simple.py",
+    srcs = ["tests/test_calc_par_simple.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "calc_par_comprehensive_test",
+    main = "tests/test_calc_par.py",
+    srcs = ["tests/test_calc_par.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "context_reuse_test",
+    main = "tests/test_context_reuse.py",
+    srcs = ["tests/test_context_reuse.py"],
+    deps = [":dds3_lib"],
+)
+
 py_wheel(
     name = "dds3_wheel",
     distribution = "dds3",
