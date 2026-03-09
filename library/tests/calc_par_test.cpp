@@ -5,7 +5,6 @@
 /// using known test hands with verified par results.
 
 #include <gtest/gtest.h>
-#include <cstring>
 #include <dds/dds.hpp>
 
 // Rank bitmask constants  (bits 2-14 for ranks 2-A)
