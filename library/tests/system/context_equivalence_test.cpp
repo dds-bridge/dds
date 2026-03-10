@@ -31,14 +31,7 @@ static Deal make_empty_deal()
 static DdTableDeal make_known_deal()
 {
     DdTableDeal deal{};
-    // holdings[suit][hand] - transposed into deal.cards[hand][suit]
-    unsigned int holdings[4][4] = {
-        {0xA000 | 0x1800 | 0x0040, 0x0180, 0x6000, 0x4610},  // Spades
-        {0x6060, 0x0A80, 0x0500, 0x4030},                     // Hearts
-        {0x0910, 0x44D0, 0x6200, 0x000C},                     // Diamonds
-        {0x0700, 0x1010, 0x40E4, 0x2808}                      // Clubs
-    };
-    // Recompute correctly from rank bitmasks used in calc_par_test.cpp
+    // Construct using the same rank bitmasks as calc_par_test.cpp.
     // North: S=QJ6, H=K652, D=J85, C=T98
     deal.cards[0][0] = 0x1800 | 0x0040;          // Spades: Q J 6
     deal.cards[0][1] = 0x2000 | 0x0060 | 0x0004; // Hearts: K 6 5 2
@@ -59,7 +52,6 @@ static DdTableDeal make_known_deal()
     deal.cards[3][1] = 0x4000 | 0x1000 | 0x0010; // Hearts: A Q 4
     deal.cards[3][2] = 0x0008 | 0x0004;          // Diamonds: 3 2
     deal.cards[3][3] = 0x2000 | 0x0800 | 0x0008; // Clubs: K J 3
-    (void)holdings;
     return deal;
 }
 

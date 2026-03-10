@@ -57,7 +57,7 @@ auto calc_dd_table(
 
     // Call context-aware internal calculation
     int res = calc_all_boards_n(ctx, &bo, &solved);
-    if (res != 1)
+    if (res != RETURN_NO_FAULT)
         return res;
 
     // Populate result table from solved boards

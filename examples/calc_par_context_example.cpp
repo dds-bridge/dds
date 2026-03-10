@@ -65,7 +65,7 @@ void example_with_context()
   SolverContext context;
 
   printf("SolverContext provides:\n");
-  printf("  - Transposition table reuse across multiple par calculations\n");
+  printf("  - Reuse of allocated solver resources across calculations\n");
   printf("  - Persistent solver resources (no per-call allocation overhead)\n");
   printf("  - Consistent API with other context-aware DDS operations\n\n");
 
@@ -82,7 +82,7 @@ void example_with_context()
 
     DdTableResults ddtable;
     ParResults pres;
-    // Use context-aware calc_par API (internally uses calc_dd_table with TT reuse)
+    // Use context-aware calc_par API
     int res = calc_par(
       context,
       table_deal,
@@ -146,8 +146,8 @@ void example_mixed_usage()
     }
   }
 
-  printf("\n3. Transposition table automatically reused across operations\n");
-  printf("   This optimization is now active - calc_par(ctx, ...) uses context internally\n\n");
+  printf("\n3. Solver resources are reused across operations\n");
+  printf("   This is active now: calc_par(ctx, ...) uses the provided context\n\n");
 }
 
 

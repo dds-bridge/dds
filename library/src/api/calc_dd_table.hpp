@@ -38,17 +38,17 @@ auto calc_dd_table(
  * @brief Calculate double dummy table with explicit solver context.
  *
  * C++ overload that accepts an explicit SolverContext, allowing clients
- * to manage solver state and transposition table across multiple table
- * calculations. Reusing the same context can provide significant performance
- * benefits when calculating tables for similar deals.
+ * to reuse solver state and allocated resources across multiple table
+ * calculations.
  *
- * @param ctx Solver context containing state and TT resources
+ * @param ctx Solver context containing state and allocated solver resources
  * @param table_deal Deal represented as card holdings for each hand
  * @param table_results Output: double dummy table results (5 strains x 4 declarers)
  * @return Error code (RETURN_NO_FAULT on success)
  *
- * @note The context's transposition table is preserved across calls, enabling
- *       faster calculation of subsequent similar deals.
+ * @note Reusing the same context avoids per-call setup and allocation costs.
+ *       DD-table calculations iterate all strains, so TT entry reuse across
+ *       calls may be limited depending on call patterns.
  */
 auto calc_dd_table(
     SolverContext& ctx,
