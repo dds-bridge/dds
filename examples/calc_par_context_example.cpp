@@ -65,9 +65,9 @@ void example_with_context()
   SolverContext context;
 
   printf("SolverContext provides:\n");
-  printf("  - Stable API surface for future context-aware par computation\n");
-  printf("  - Compatibility with other context-aware DDS APIs\n");
-  printf("  - Note: calc_par context is currently accepted but not yet utilized\n\n");
+  printf("  - Reuse of allocated solver resources across calculations\n");
+  printf("  - Persistent solver resources (no per-call allocation overhead)\n");
+  printf("  - Consistent API with other context-aware DDS operations\n\n");
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -146,8 +146,8 @@ void example_mixed_usage()
     }
   }
 
-  printf("\n3. Transposition table reused across operations\n");
-  printf("   (Planned) This optimization will apply once calc_par uses context internally\n\n");
+  printf("\n3. Solver resources are reused across operations\n");
+  printf("   This is active now: calc_par(ctx, ...) uses the provided context\n\n");
 }
 
 

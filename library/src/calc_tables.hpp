@@ -12,12 +12,13 @@
 #include <vector>
 
 #include <api/dll.h>
+#include <solver_context/solver_context.hpp>
 
 
 /**
- * @brief Perform common single-board calculations for double dummy analysis.
+ * @brief Perform common single-board calculations (legacy threading interface).
  *
- * Computes results for a single board using the specified thread ID.
+ * Creates temporary context per call. Used by legacy threading infrastructure.
  *
  * @param thrID Thread identifier for parallel execution.
  * @param bno Board number to analyze.
@@ -25,6 +26,36 @@
 auto calc_single_common(
   const int thrID,
   const int bno) -> void;
+
+/**
+ * @brief Perform common single-board calculations with explicit solver context.
+ *
+ * Context-aware version that allows TT reuse across calculations.
+ * Internal helper function.
+ *
+ * @param ctx Solver context for resource management
+ * @param thrID Thread identifier for parallel execution.
+ * @param bno Board number to analyze.
+ */
+auto calc_single_common_internal(
+  SolverContext& ctx,
+  const int thrID,
+  const int bno) -> void;
+
+/**
+ * @brief Calculate all boards with explicit solver context.
+ *
+ * Context-aware version enabling transposition table reuse.
+ *
+ * @param ctx Solver context for resource management
+ * @param bop Input boards to solve
+ * @param solvedp Output solved boards
+ * @return Error code
+ */
+auto calc_all_boards_n(
+  SolverContext& ctx,
+  Boards * bop,
+  SolvedBoards * solvedp) -> int;
 
 /**
  * @brief Copy calculation results for single Boards based on cross-references.

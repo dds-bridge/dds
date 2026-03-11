@@ -346,6 +346,40 @@ TEST_F(CalcParTest, ConsistencyCalcParVsFromTable)
     }
 }
 
+// Test that context and non-context overloads produce identical results
+// (Regression guard for the calc_par context wiring in Task 05)
+TEST_F(CalcParTest, CalcParContextOverloadMatchesNonContext)
+{
+    for (int hand_idx = 0; hand_idx < 3; hand_idx++) {
+        DdTableDeal* deal;
+        if (hand_idx == 0) deal = &deal0_;
+        else if (hand_idx == 1) deal = &deal1_;
+        else deal = &deal2_;
+
+        // Non-context overload
+        DdTableResults table_no_ctx;
+        ParResults par_no_ctx;
+        int res1 = calc_par(*deal, vulnerability_[hand_idx], &table_no_ctx, &par_no_ctx);
+        ASSERT_EQ(res1, RETURN_NO_FAULT) << "Non-context call failed for hand " << hand_idx;
+
+        // Context overload - should produce identical output
+        SolverContext ctx;
+        DdTableResults table_with_ctx;
+        ParResults par_with_ctx;
+        int res2 = calc_par(ctx, *deal, vulnerability_[hand_idx], &table_with_ctx, &par_with_ctx);
+        ASSERT_EQ(res2, RETURN_NO_FAULT) << "Context call failed for hand " << hand_idx;
+
+        EXPECT_STREQ(par_no_ctx.par_score[0], par_with_ctx.par_score[0])
+            << "Hand " << hand_idx << " NS par scores differ";
+        EXPECT_STREQ(par_no_ctx.par_score[1], par_with_ctx.par_score[1])
+            << "Hand " << hand_idx << " EW par scores differ";
+        EXPECT_STREQ(par_no_ctx.par_contracts_string[0], par_with_ctx.par_contracts_string[0])
+            << "Hand " << hand_idx << " NS contracts differ";
+        EXPECT_STREQ(par_no_ctx.par_contracts_string[1], par_with_ctx.par_contracts_string[1])
+            << "Hand " << hand_idx << " EW contracts differ";
+    }
+}
+
 // Performance test: context reuse should work efficiently
 TEST_F(CalcParTest, ContextReusePerformance)
 {
