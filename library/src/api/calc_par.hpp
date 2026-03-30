@@ -45,7 +45,7 @@ auto calc_par(
  * efficient reuse of allocated solver resources (memory buffers, threading
  * state, and TT allocation metadata) across multiple par calculations.
  *
- * Note: DD table calculation evaluates all 5 strains and resets TT contents on
+ * @note DD table calculation evaluates all 5 strains and resets TT contents on
  * each trump change, so this path primarily reuses allocations/thread state
  * rather than TT entries between strains.
  * 
