@@ -89,7 +89,7 @@ auto calc_dd_table_pbn(
     DdTableResults* table_results) -> int
 {
     DdTableDeal table_deal;
-    if (convert_from_pbn(table_deal_pbn.cards, table_deal.cards) != 1)
+    if (convert_from_pbn(table_deal_pbn.cards, table_deal.cards) != RETURN_NO_FAULT)
         return RETURN_PBN_FAULT;
 
     return calc_dd_table(ctx, table_deal, table_results);

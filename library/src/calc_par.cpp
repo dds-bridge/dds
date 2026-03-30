@@ -17,14 +17,14 @@ auto calc_par(
     DdTableResults* table_results,
     ParResults* par_results) -> int
 {
-    // For now, delegate to C API CalcPar which handles the full computation
-    // (CalcDDtable + Par).
-    return CalcPar(
-        table_deal,
-        vulnerable,
-        table_results,
-        par_results
-    );
+        // For now, delegate to C API CalcPar which handles the full computation
+        // (CalcDDtable + Par).
+        return CalcPar(
+                table_deal,
+                vulnerable,
+                table_results,
+                par_results
+        );
 }
 
 auto calc_par(
@@ -36,11 +36,11 @@ auto calc_par(
 {
     // Context-aware path: compute table with context, then calculate par
     int res = calc_dd_table(ctx, table_deal, table_results);
-    
+
     if (res != RETURN_NO_FAULT) {
         return res;
     }
-    
+
     // Par calculation doesn't need context (pure computation on table results)
     return Par(table_results, par_results, vulnerable);
 }

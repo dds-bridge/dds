@@ -23,17 +23,6 @@ extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
-// Forward declarations for context-aware overloads
-auto calc_all_boards_n(
-  SolverContext& ctx,
-  Boards * bop,
-  SolvedBoards * solvedp) -> int;
-
-auto calc_single_common_internal(
-  SolverContext& ctx,
-  const int thrId,
-  const int bno) -> void;
-
 // Legacy overloads (create temporary context)
 auto calc_all_boards_n(
   Boards * bop,

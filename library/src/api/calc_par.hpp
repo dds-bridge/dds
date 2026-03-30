@@ -42,8 +42,9 @@ auto calc_par(
  * @brief Calculate par score and contracts with explicit solver context.
  *
  * C++ overload that accepts an explicit SolverContext. The context enables
- * efficient reuse of solver resources (transposition table, threading state)
- * across multiple par calculations.
+ * efficient reuse of allocated solver resources (memory buffers, threading state)
+ * across multiple par calculations. Note: The transposition table is reset on
+ * each trump change during DD table computation (all 5 strains).
  * 
  * Internally computes the DD table using context-aware calc_dd_table(),
  * then calculates par score from the table.
