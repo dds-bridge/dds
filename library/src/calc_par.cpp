@@ -17,14 +17,14 @@ auto calc_par(
     DdTableResults* table_results,
     ParResults* par_results) -> int
 {
-        // For now, delegate to C API CalcPar which handles the full computation
-        // (CalcDDtable + Par).
-        return CalcPar(
-                table_deal,
-                vulnerable,
-                table_results,
-                par_results
-        );
+    // For now, delegate to C API CalcPar which handles the full computation
+    // (CalcDDtable + Par).
+    return CalcPar(
+        table_deal,
+        vulnerable,
+        table_results,
+        par_results
+    );
 }
 
 auto calc_par(
