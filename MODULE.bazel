@@ -9,20 +9,11 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.1")
 bazel_dep(name = "pybind11_bazel", version = "3.0.0")
 bazel_dep(name = "rules_python", version = "1.7.0")
 bazel_dep(name = "toolchains_llvm", version = "1.6.0")
-bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 
 git_override(
     module_name = "googletest",
     remote = "https://github.com/google/googletest.git",
     commit = "85087857ad10bd407cd6ed2f52f7ea9752db621f",  # Override 1.17.0.bcr.1 with a commit known to be Bazel 9 compatible
-)
-
-git_override(
-    module_name = "hedron_compile_commands",
-    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
-    commit = "33658bab23a4858b513d767480b43d3d8fb6a3d1",
-    patches = ["//patches:hedron_compile_commands_bazel9.patch"],
-    patch_strip = 1,
 )
 
 git_override(
