@@ -335,8 +335,10 @@ sudo apt-get install build-essential python3-dev
 bazel build -c opt //python:_dds3
 ```
 
-On Linux, Bazel also resolves the pinned LLVM toolchain automatically during the
-build.
+On Linux hosts where a pinned LLVM toolchain is configured (for example,
+`linux-x86_64`), Bazel also resolves that pinned LLVM toolchain automatically
+during the build. On other Linux architectures, Bazel falls back to its
+default C++ toolchain resolution (typically using the system compiler).
 
 ### Windows
 Currently not officially supported. Contributions welcome!
