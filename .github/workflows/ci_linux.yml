@@ -39,10 +39,8 @@ jobs:
       # 7️⃣ Run Python pytest suite
       - name: Run Python pytest suite
         run: |
-          PYTHON_BIN="$(bazel cquery --output=files @python_3_14//:python3 | tail -n 1)"
-          if [[ "${PYTHON_BIN}" != /* ]]; then
-            PYTHON_BIN="$(bazel info execution_root)/${PYTHON_BIN}"
-          fi
+          PYTHON_BIN="$(bazel cquery @python_3_14//:python3 --output=starlark --starlark:expr='target.files_to_run.executable.path')"
+          PYTHON_BIN="$(bazel info execution_root)/${PYTHON_BIN}"
 
           "${PYTHON_BIN}" -m pip install --upgrade pip pytest
           export DDS_PYTHON_EXT_DIR="$(bazel info bazel-bin)/python"

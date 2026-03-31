@@ -25,7 +25,8 @@ git_override(
 git_override(
     module_name = "toolchains_llvm",
     remote = "https://github.com/bazel-contrib/toolchains_llvm.git",
-    commit = "3aad06c2d166cd89a09236694ecd9bf0f1c1b37d",  # v1.7.0, not yet in BCR
+    # Override bazel_dep(1.6.0) to a Bazel-9-compatible upstream commit.
+    commit = "3aad06c2d166cd89a09236694ecd9bf0f1c1b37d",  # v1.7.0 commit
 )
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
