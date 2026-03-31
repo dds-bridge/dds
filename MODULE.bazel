@@ -8,6 +8,8 @@ bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.1")
 bazel_dep(name = "pybind11_bazel", version = "3.0.0")
 bazel_dep(name = "rules_python", version = "1.7.0")
+# BCR currently has 1.6.0; overridden below to a Bazel-9-compatible upstream
+# commit from the v1.7.0 line until a newer BCR release is available.
 bazel_dep(name = "toolchains_llvm", version = "1.6.0")
 
 git_override(

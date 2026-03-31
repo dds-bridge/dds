@@ -319,7 +319,7 @@ except RuntimeError as e:
 brew install bazelisk
 
 # Build
-bazel build -c opt //python:_dds3
+bazelisk build -c opt //python:_dds3
 ```
 
 The Bazel build downloads the pinned LLVM toolchain automatically via
