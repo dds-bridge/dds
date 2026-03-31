@@ -158,8 +158,8 @@ TEST(TransTableSAdvancedTest, EdgeCaseScenarios) {
 TEST(TransTableSAdvancedTest, BoundsCheckingLogic) {
     // Test different bound scenarios
     struct TestBounds {
-        char ubound;
-        char lbound;
+        int ubound;
+        int lbound;
         bool valid;
     };
     
@@ -215,8 +215,8 @@ TEST(TransTableSAdvancedTest, MemoryManagementScenarios) {
 TEST(TransTableSAdvancedTest, DataValidationLogic) {
     // Test validation of transposition table entry data
     struct TTEntryData {
-        char tricks;
-        char bound_type;
+        int tricks;
+        int bound_type;
         bool valid;
     };
     
