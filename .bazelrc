@@ -1,5 +1,13 @@
 # Bazel configuration for DDS project
 
+common --enable_platform_specific_config
+
+# Platform-specific C++ standard flags
+build:macos --cxxopt=-std=c++20
+build:macos --host_cxxopt=-std=c++20
+build:linux --cxxopt=-std=c++20
+build:linux --host_cxxopt=-std=c++20
+
 # Performance optimization flags
 build:opt --compilation_mode=opt
 

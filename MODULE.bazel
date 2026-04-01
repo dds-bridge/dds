@@ -3,12 +3,14 @@ module(
     version = "0.1.0"
 )
 
-bazel_dep(name = "rules_cc", version = "0.2.16")
+bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.1")
 bazel_dep(name = "pybind11_bazel", version = "3.0.0")
 bazel_dep(name = "rules_python", version = "1.7.0")
-bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+# BCR currently has 1.6.0; overridden below to a Bazel-9-compatible upstream
+# commit from the v1.7.0 line until a newer BCR release is available.
+bazel_dep(name = "toolchains_llvm", version = "1.6.0")
 
 git_override(
     module_name = "googletest",
@@ -17,18 +19,27 @@ git_override(
 )
 
 git_override(
-    module_name = "hedron_compile_commands",
-    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
-    commit = "33658bab23a4858b513d767480b43d3d8fb6a3d1",
-    patches = ["//patches:hedron_compile_commands_bazel9.patch"],
-    patch_strip = 1,
-)
-
-git_override(
     module_name = "pybind11_bazel",
     remote = "https://github.com/pybind/pybind11_bazel.git",
     commit = "536e9fd8415705fc788658c0e116106c62116c1f",  # Bazel 9 compatible
 )
+
+git_override(
+    module_name = "toolchains_llvm",
+    remote = "https://github.com/bazel-contrib/toolchains_llvm.git",
+    # Override bazel_dep(1.6.0) to a Bazel-9-compatible upstream commit.
+    commit = "3aad06c2d166cd89a09236694ecd9bf0f1c1b37d",  # v1.7.0 commit
+)
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(
+    name = "llvm_toolchain",
+    llvm_versions = {
+        "darwin-aarch64": "20.1.8",
+        "linux-x86_64": "20.1.8",
+    },
+)
+use_repo(llvm, "llvm_toolchain")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
@@ -38,4 +49,4 @@ python.toolchain(
 )
 use_repo(python, "python_3_14")
 
-register_toolchains("//toolchain:brew_clang_toolchain")
+register_toolchains("@llvm_toolchain//:all")

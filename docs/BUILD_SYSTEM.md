@@ -1,5 +1,22 @@
 # Build System Documentation
 
+## C++ Toolchain
+
+DDS uses `bazel-contrib/toolchains_llvm` for C++ compilation on supported
+macOS and Linux hosts. The Bazel module configuration pins LLVM 20.1.8 for the
+specific host keys listed in `MODULE.bazel` and registers the downloaded
+toolchains via `@llvm_toolchain//:all`. Other hosts use Bazel's default C++
+toolchain resolution.
+
+This replaces the previous Homebrew-specific bespoke toolchain under
+`toolchain/`. Builds no longer depend on `/opt/homebrew/opt/llvm` or manual
+LLVM symlinks in CI.
+
+Project-specific warning and feature flags remain in `CPPVARIABLES.bzl`, while
+toolchain selection lives in `MODULE.bazel` and standard-language settings are
+primarily configured in `.bazelrc` (with a fallback default in
+`CPPVARIABLES.bzl`).
+
 ## Heuristic Sorting Library Build Configuration
 
 The DDS project now includes a modular heuristic sorting library that can be enabled through build-time configuration.

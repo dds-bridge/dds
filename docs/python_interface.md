@@ -316,11 +316,15 @@ except RuntimeError as e:
 ### macOS
 ```bash
 # Install prerequisites
-brew install bazelisk llvm@20
+brew install bazelisk
 
 # Build
-bazel build -c opt //python:_dds3
+bazelisk build -c opt //python:_dds3
 ```
+
+The Bazel build downloads the pinned LLVM toolchain automatically via
+`bazel-contrib/toolchains_llvm`, so no separate Homebrew LLVM installation is
+required.
 
 ### Linux
 ```bash
@@ -330,6 +334,11 @@ sudo apt-get install build-essential python3-dev
 # Build
 bazel build -c opt //python:_dds3
 ```
+
+On Linux hosts where a pinned LLVM toolchain is configured (for example,
+`linux-x86_64`), Bazel also resolves that pinned LLVM toolchain automatically
+during the build. On other Linux architectures, Bazel falls back to its
+default C++ toolchain resolution (typically using the system compiler).
 
 ### Windows
 Currently not officially supported. Contributions welcome!

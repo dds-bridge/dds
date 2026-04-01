@@ -17,9 +17,8 @@ jobs:
       # 2️⃣ Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
         uses: bazel-contrib/setup-bazel@0.15.0
-        # Optional: pin a specific Bazel version
-        # with:
-        #   bazel-version: 7.1.0
+        with:
+          bazelisk-version: "1.25.0"
 
       # 3️⃣ (Optional) Install Doxygen for documentation generation
       - name: Install Doxygen
@@ -27,24 +26,27 @@ jobs:
 
       # 4️⃣ Build Python extension
       - name: Build Python extension
-        run: bazelisk build //python:_dds3
+        run: bazel build //python:_dds3
 
       # 5️⃣ Build everything
       - name: Build all targets
-        run: bazelisk build //...
+        run: bazel build //...
 
       # 6️⃣ Run Python smoke test
       - name: Run Python smoke test
-        run: bazelisk test //python:python_interface_smoke_test
+        run: bazel test //python:python_interface_smoke_test
 
       # 7️⃣ Run Python pytest suite
       - name: Run Python pytest suite
         run: |
-          bazelisk run @python_3_14//:python3 -- -m pip install --upgrade pip pytest
-          export DDS_PYTHON_EXT_DIR="$(bazelisk info bazel-bin)/python"
+          PYTHON_BIN="$(bazel cquery @python_3_14//:python3 --output=starlark --starlark:expr='target.files_to_run.executable.path')"
+          PYTHON_BIN="$(bazel info execution_root)/${PYTHON_BIN}"
+
+          "${PYTHON_BIN}" -m pip install --upgrade pip pytest
+          export DDS_PYTHON_EXT_DIR="$(bazel info bazel-bin)/python"
           export PYTHONPATH="python:${DDS_PYTHON_EXT_DIR}"
-          bazelisk run @python_3_14//:python3 -- -m pytest python/tests/ -v
+          "${PYTHON_BIN}" -m pytest python/tests/ -v
 
       # 8️⃣ Run all tests
       - name: Run all tests
-        run: bazelisk test //...
+        run: bazel test //...
