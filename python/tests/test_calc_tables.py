@@ -116,13 +116,17 @@ class TestCalcAllTablesPBN:
         assert len(all_rows) == 5
         assert len(nt_only_rows) == 5
         assert len(exclude_nt_rows) == 5
+        assert all(len(row) == 4 for row in all_rows)
+        assert all(len(row) == 4 for row in nt_only_rows)
+        assert all(len(row) == 4 for row in exclude_nt_rows)
 
         # NT is the last row (index 4), and NT-only filtering should preserve only that row.
         assert nt_only_rows[4] == all_rows[4]
-        assert all(value == 0 for row in nt_only_rows[:4] for value in row)
+        for strain in range(4):
+            assert nt_only_rows[strain] == [0, 0, 0, 0]
 
         # Excluding NT should zero only row index 4 and preserve suit rows.
-        assert all(value == 0 for value in exclude_nt_rows[4])
+        assert exclude_nt_rows[4] == [0, 0, 0, 0]
         for strain in range(4):
             assert exclude_nt_rows[strain] == all_rows[strain]
 
