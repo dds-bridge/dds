@@ -21,7 +21,6 @@ SolverContext::SolverContext(SolverConfig cfg)
 #endif
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();
-  if (cfg_.rng_seed_ != 0ULL) utils_.seed(cfg_.rng_seed_);
   // Ensure persistent facades like SearchContext see the bound ThreadData.
   search_.set_thread(thr_);
   search_.set_owner(this);

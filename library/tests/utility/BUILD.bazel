@@ -20,15 +20,6 @@ cc_test(
     ],
 )
 
-cc_test(
-    name = "rng_determinism_test",
-    srcs = ["rng_determinism_test.cpp"],
-    deps = [
-        "//library/src:testable_dds",
-        "@googletest//:gtest_main",
-    ],
-)
-
 # Aggregate test suite combining constants and lookup tables tests
 cc_test(
     name = "utility_test_suite",

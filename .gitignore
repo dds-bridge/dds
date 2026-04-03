@@ -41,6 +41,10 @@
 # Bazel Directories
 bazel-*
 
+# System dependent helper files
+compile_commands.json
+.cache/
+
 # Python virtual environment
 venv/
 .venv/

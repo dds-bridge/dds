@@ -59,15 +59,6 @@ public:
     rng_->seed(static_cast<std::mt19937::result_type>(seed_value));
   }
 
-  std::mt19937& rng() {
-    if (!rng_) rng_ = std::make_unique<std::mt19937>();
-    return *rng_;
-  }
-  const std::mt19937& rng() const {
-    if (!rng_) rng_ = std::make_unique<std::mt19937>();
-    return *rng_;
-  }
-
   // Logging: a very simple append-only buffer; callers can flush and clear.
   void log_append(const std::string& s) { log_.push_back(s); }
   const std::vector<std::string>& log_buffer() const { return log_; }

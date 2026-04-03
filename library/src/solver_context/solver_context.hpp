@@ -10,7 +10,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -25,8 +24,8 @@ enum class TTKind { Small, Large };
 /**
  * @brief Configuration options for SolverContext instances.
  *
- * Provides per-context configuration for transposition tables, RNG seeding,
- * and optional arena sizing. Values are applied when creating or reconfiguring
+ * Provides per-context configuration for transposition tables.
+ * Values are applied when creating or reconfiguring
  * a SolverContext and persist across lazy TT creation.
  */
 struct SolverConfig
@@ -34,8 +33,6 @@ struct SolverConfig
   TTKind tt_kind_ = TTKind::Large;
   int tt_mem_default_mb_ = 0;
   int tt_mem_maximum_mb_ = 0;
-  // Optional deterministic RNG seed (0 means "no explicit seed").
-  unsigned long long rng_seed_ = 0ULL;
 };
 
 /**
@@ -53,9 +50,6 @@ public:
   explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
   : thr_(std::move(thread)), cfg_(cfg)
   {
-    if (cfg_.rng_seed_ != 0ULL) {
-      utils_.seed(cfg_.rng_seed_);
-    }
     // Bind the persistent facades to the underlying ThreadData.
     search_.set_thread(thr_);
     search_.set_owner(this);
@@ -110,21 +104,6 @@ public:
     auto util() const -> const ::dds::Utilities&
     {
       return *util_;
-    }
-
-    auto rng() -> std::mt19937&
-    {
-      return util_->rng();
-    }
-
-    auto rng() const -> const std::mt19937&
-    {
-      return util_->rng();
-    }
-
-    auto seed_rng(unsigned long long seed) -> void
-    {
-      util_->seed(seed);
     }
 
     auto log_append(const std::string& s) -> void
