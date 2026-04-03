@@ -65,8 +65,40 @@ genrule(
     srcs = ["Doxyfile"],
     outs = ["doxygen_docs.zip"],
     cmd = """
-      echo 'Doxygen docs temporarily disabled during migration' > dummy.txt && zip $@ dummy.txt
+      set -e
+            DOXYFILE_GEN="$(@D)/Doxyfile.generated"
+            OUT_DIR="$(@D)/doxygen_output"
+      OUT_ZIP="$$(pwd)/$@"
+
+            rm -rf "$$OUT_DIR"
+
+            cat > "$$DOXYFILE_GEN" <<'EOF'
+@INCLUDE = $(location Doxyfile)
+OUTPUT_DIRECTORY = $(@D)/doxygen_output
+EOF
+
+            DOXYGEN_BIN=""
+            if command -v doxygen >/dev/null 2>&1; then
+                DOXYGEN_BIN="$$(command -v doxygen)"
+            elif [ -x /opt/homebrew/bin/doxygen ]; then
+                DOXYGEN_BIN=/opt/homebrew/bin/doxygen
+            elif [ -x /usr/local/bin/doxygen ]; then
+                DOXYGEN_BIN=/usr/local/bin/doxygen
+            elif [ -x /usr/bin/doxygen ]; then
+                DOXYGEN_BIN=/usr/bin/doxygen
+            else
+                echo "doxygen executable not found" >&2
+                exit 1
+            fi
+
+            "$$DOXYGEN_BIN" "$$DOXYFILE_GEN"
+
+            test -f "$$OUT_DIR/html/index.html"
+
+            cd "$$OUT_DIR"
+            zip -rq "$$OUT_ZIP" html
     """,
+    local = 1,
     output_to_bindir = True,
 )
 

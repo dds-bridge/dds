@@ -2,8 +2,8 @@
 PROJECT_NAME           = "DDS Bridge Double Dummy Solver"
 PROJECT_BRIEF          = "Legacy double dummy solver library for bridge analysis."
 OUTPUT_DIRECTORY       = doxygen_output
-INPUT                  = src include
-FILE_PATTERNS          = *.cpp *.h
+INPUT                  = library/src examples
+FILE_PATTERNS          = *.cpp *.cc *.h *.hh *.hpp
 RECURSIVE              = YES
 GENERATE_LATEX         = NO
 GENERATE_HTML          = YES
