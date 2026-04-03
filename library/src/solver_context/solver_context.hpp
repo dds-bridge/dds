@@ -42,7 +42,7 @@ struct SolverConfig
  * state, move generation, and utilities. The context manages an instance-owned
  * transposition table (TT) and provides explicit reset and configuration hooks.
  *
- * @threadsafe Not inherently thread-safe. Use one SolverContext per thread.
+ * @note Thread safety: not inherently thread-safe. Use one SolverContext per thread.
  */
 class SolverContext
 {

@@ -160,18 +160,10 @@ auto solve_all_boards_n(
 }
 
 
-/**
- * @brief Solve a single bridge Deal in PBN format using double dummy analysis.
+/*
+ * Solve a single bridge Deal in PBN format.
  *
- * Converts a PBN Deal to internal format and calls SolveBoard.
- *
- * @param dlpbn The PBN Deal to analyze
- * @param target Target number of tricks
- * @param solutions Solution mode
- * @param mode Analysis mode
- * @param futp Pointer to result structure
- * @param thrId Index of thread to use
- * @return 1 on success, error code otherwise
+ * Public API documentation is maintained in the API headers.
  */
 int STDCALL SolveBoardPBN(
   DealPBN dlpbn, 

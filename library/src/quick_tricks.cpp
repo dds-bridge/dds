@@ -112,7 +112,7 @@ int QuickTricksPartnerHandNT(
  * @param target Target number of tricks
  * @param trump Trump suit
  * @param result Reference to store if the target is achievable
- * @param thrd Thread-local data
+ * @param ctx Solver context
  * @return Number of quick tricks found
  */
 int QuickTricks(

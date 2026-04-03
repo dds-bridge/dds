@@ -86,3 +86,6 @@ copilot/perf/artifacts
 # Debug output from DDS3
 #
 dump.txt
+
+# Generated documentation output
+doxygen_output/

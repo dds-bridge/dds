@@ -253,13 +253,13 @@ public:
      * @param initialRanks Initial ranks played
      * @param initialSuits Initial suits played
      * @param rank_in_suit Rank bitmaps by hand/suit
-     * @param trump Trump suit
-     * @param leadHand Absolute lead hand
+      * @param ourTrump Trump suit
+      * @param ourLeadHand Absolute lead hand
      */
     auto Init(const int tricks, const int relStartHand, const int initialRanks[],
         const int initialSuits[],
         const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
-        const int trump, const int leadHand) -> void;
+        const int ourTrump, const int ourLeadHand) -> void;
 
     /**
      * @brief Reset tracking state for a new lead hand.
