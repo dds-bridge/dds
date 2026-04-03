@@ -214,9 +214,6 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
   list.current = 0;
   list.last = numMoves - 1;
 
-#ifdef DDS_SKIP_HEURISTIC
-  return numMoves;
-#endif
   if (numMoves != 1)
     Moves::MergeSort();
   return numMoves;
@@ -275,9 +272,6 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
     list.last = numMoves - 1;
     if (numMoves == 1)
       return numMoves;
-#ifdef DDS_SKIP_HEURISTIC
-    return numMoves;
-#endif
     Moves::call_heuristic(tpos, MoveType{}, MoveType{}, nullptr);
 
     Moves::MergeSort();
@@ -320,9 +314,6 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
 
   list.current = 0;
   list.last = numMoves - 1;
-#ifdef DDS_SKIP_HEURISTIC
-  return numMoves;
-#endif
   if (numMoves != 1)
     Moves::MergeSort();
   return numMoves;

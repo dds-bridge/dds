@@ -47,9 +47,6 @@ DDS_LOCAL_DEFINES = select({
     "//:debug_build_linux": [],
     "//conditions:default": [],
 }) + select({
-    "//:skip_heuristic": ["DDS_SKIP_HEURISTIC"],
-    "//conditions:default": [],
-}) + select({
     "//:debug_all": ["DDS_DEBUG_ALL"],
     "//conditions:default": [],
 }) + select({
