@@ -11,6 +11,18 @@ build:linux --host_cxxopt=-std=c++20
 # Performance optimization flags
 build:opt --compilation_mode=opt
 
+# AddressSanitizer configuration
+# Usage: bazel test --config=asan //path:target
+# The LLVM toolchain bundles the ASAN runtime. On macOS tests run from the
+# runfiles tree, so use an @loader_path-based rpath that walks back to execroot
+# and then into external/toolchains_llvm...
+build:asan --copt=-fsanitize=address
+build:asan --linkopt=-fsanitize=address
+build:asan --linkopt=-Wl,-rpath,@loader_path/../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/21/lib/darwin
+build:asan --strip=never
+build:asan --features=dbg
+build:asan --compilation_mode=dbg
+
 # ThreadSanitizer configuration
 # Usage: bazel test --config=tsan //path:target
 build:tsan --copt=-fsanitize=thread
