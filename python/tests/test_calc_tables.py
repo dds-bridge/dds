@@ -100,6 +100,32 @@ class TestCalcAllTablesPBN:
         assert "no_of_boards" in result
         assert "tables" in result
 
+    def test_calc_all_tables_pbn_nt_row_and_filter_semantics(self) -> None:
+        """Regression test: NT is row index 4 and filtered strains are zero-filled rows."""
+        deals = ["N:Q87.K932.QJT32.7 AKJ9632.J84.6.Q5 .AQT765.K87.J962 T54..A954.AKT843"]
+
+        all_strains = calc_all_tables_pbn(deals, trump_filter=[0, 0, 0, 0, 0])
+        all_rows = all_strains["tables"][0]["res_table"]
+
+        nt_only = calc_all_tables_pbn(deals, trump_filter=[1, 1, 1, 1, 0])
+        nt_only_rows = nt_only["tables"][0]["res_table"]
+
+        exclude_nt = calc_all_tables_pbn(deals, trump_filter=[0, 0, 0, 0, 1])
+        exclude_nt_rows = exclude_nt["tables"][0]["res_table"]
+
+        assert len(all_rows) == 5
+        assert len(nt_only_rows) == 5
+        assert len(exclude_nt_rows) == 5
+
+        # NT is the last row (index 4), and NT-only filtering should preserve only that row.
+        assert nt_only_rows[4] == all_rows[4]
+        assert all(value == 0 for row in nt_only_rows[:4] for value in row)
+
+        # Excluding NT should zero only row index 4 and preserve suit rows.
+        assert all(value == 0 for value in exclude_nt_rows[4])
+        for strain in range(4):
+            assert exclude_nt_rows[strain] == all_rows[strain]
+
     def test_calc_all_tables_pbn_default_trump_filter_all_zeros(self) -> None:
         """Test that default trump_filter is (0,0,0,0,0) - include all."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]

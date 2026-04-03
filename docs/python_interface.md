@@ -178,6 +178,10 @@ Calculates double-dummy tables for multiple PBN deals with optional par scores.
 
 **Returns:**
 - dict with keys: `no_of_boards`, `tables`, `par_results` (empty list when mode=-1)
+    - `tables[i]['res_table']` is always a 5x4 matrix in fixed strain order:
+        `[♠, ♥, ♦, ♣, NT]`
+    - `res_table[strain][hand]` gives tricks for that strain/hand
+    - If a strain is skipped by `trump_filter`, that row is present but zero-filled
 
 **Example:**
 ```python

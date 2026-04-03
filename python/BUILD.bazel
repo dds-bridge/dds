@@ -61,6 +61,13 @@ py_test(
     deps = [":dds3_lib"],
 )
 
+py_test(
+    name = "calc_tables_regression_test",
+    main = "tests/test_calc_tables_regression.py",
+    srcs = ["tests/test_calc_tables_regression.py"],
+    deps = [":dds3_lib"],
+)
+
 py_wheel(
     name = "dds3_wheel",
     distribution = "dds3",
