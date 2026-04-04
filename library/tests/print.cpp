@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include "print.hpp"
-#include "cst.hpp"
 
 using std::cout;
 using std::endl;
