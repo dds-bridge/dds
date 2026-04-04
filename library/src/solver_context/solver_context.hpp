@@ -167,9 +167,6 @@ public:
   //     dispose_trans_table()  — destroys the owned TT immediately.
   // - Diagnostics: When built with DDS_UTILITIES_LOG / DDS_UTILITIES_STATS, TT
   //   lifecycle events append compact log entries and bump small counters.
-  //
-  // Arena support has been removed from the SolverContext; logging uses
-  // stack-allocated buffers only.
 
   // Returns the owned transposition table instance (creates if null)
   /**

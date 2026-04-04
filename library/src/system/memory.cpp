@@ -9,7 +9,6 @@
 
 
 #include "memory.hpp"
-#include <iostream>
 #include <cstdlib>
 #include <trans_table/trans_table.hpp>
 

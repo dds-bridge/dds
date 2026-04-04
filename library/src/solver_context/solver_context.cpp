@@ -14,11 +14,6 @@
 SolverContext::SolverContext(SolverConfig cfg)
   : thr_(nullptr), cfg_(cfg)
 {
-#ifdef DDS_DEFAULT_ARENA_BYTES
-  if (cfg_.arena_capacity_bytes_ == 0ULL) {
-    cfg_.arena_capacity_bytes_ = static_cast<std::size_t>(DDS_DEFAULT_ARENA_BYTES);
-  }
-#endif
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();
   // Ensure persistent facades like SearchContext see the bound ThreadData.
