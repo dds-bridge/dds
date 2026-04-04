@@ -1,13 +1,60 @@
-### Motivation for creating a version  3
-====================================
-I wanted to use DDS 2.9.0 for training declarer models but found that memory management prevented me from solving several hands in parallel whilst also preserving the transposition table. The latter is required to make several calls for the same hand training a declarer model against double dummy perfect defenders.
+## Introduction to DDS3
+
+DDS3 is a double dummy solver for bridge hands. Version 3.0 uses the same
+search algorithm as version 2.x, but the source code has been modernised. The
+project has been split into several subcomponents, each responsible for a
+specific part of the search algorithm. This modularisation makes the codebase
+easier to read and reason about, which helps not only humans but also modern
+coding agents. Throughout the codebase, you will find evidence that Claude
+Code and GitHub Copilot have made significant contributions to the
+modernisation.
+
+DDS3 is currently built with C++20. I am hoping to move towards C++ modules and
+C++23 in the next couple of months.
+
+There are build scripts for macOS and Linux, but not yet for Windows. The
+reason is simple: I do not currently have access to a Windows machine. Pull
+requests to support Windows builds are very welcome.
+
+### Motivation for creating version 3
+
+I wanted to use DDS 2.9.0 for training declarer models, but memory management
+prevented me from solving several hands in parallel while also preserving the
+transposition table. Preserving the table is required when making repeated
+calls for the same hand while training a declarer model against double-dummy
+perfect defenders.
 
 To address these issues, and also take advantage of modern C++ features, I had to update the project to a more modular build structure. This allowed me to create a library with dynamic memory management.
 
 It soon became obvious that merging these changes back into the original repository
 would not be feasible. 
 
-Martin Nygren, October 2025
+Martin Nygren, April 2026
+
+## Version 3.0 Release Status
+
+Current baseline for this branch:
+
+- C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 21.1.8 for
+    `darwin-aarch64` and `linux-x86_64`.
+- Full non-ASAN validation passes with `bazelisk test //...`.
+- Doxygen target is enabled via Bazel (`//:doxygen_docs`).
+
+Recommended pre-release verification:
+
+```bash
+bazelisk shutdown
+bazelisk test //... --test_output=errors --test_verbose_timeout_warnings
+bazelisk build //...
+bazel build //:doxygen_docs
+```
+
+### Sanitizer Status
+
+AddressSanitizer is enabled through `.bazelrc` (`--config=asan`). On macOS,
+ASAN runtime behavior can still vary by loader and sandbox context (especially
+for Python extension tests). Treat ASAN on macOS as a separate gate and verify
+it explicitly before final release tagging.
 
 ### Original project
 ================
