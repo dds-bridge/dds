@@ -1,124 +1,111 @@
-# Legacy C API Compatibility
+# Legacy C API Reference
 
-DDS 3.0 provides two API layers so existing C integrations keep working while
-new development can use the modern C++ interface.
+This document describes the legacy C API exposed by DDS for C and ABI-compatible integrations.
 
-## Overview
+Header:
 
-- **Modern C++ API**: `SolverContext` and `SolverConfig` with RAII and
-  per-instance configuration.
-- **Legacy C API**: Global state, manual cleanup, maintained for backward
-  compatibility.
+- `#include <api/dll.h>`
 
-**Recommendation:** New projects should use the modern C++ API. Existing C
-clients can remain on the legacy API without changes.
+## Scope
 
-## API Comparison
+The C API remains supported for existing clients and tools.
 
-| Feature | Legacy C API | Modern C++ API |
-| --- | --- | --- |
-| Header | `<api/dll.h>` | `<dds/dds.hpp>` |
-| Context | Global state | `SolverContext` instance |
-| Memory | Manual (`FreeMemory()`) | RAII automatic |
-| Threading | Global config | Implicit (one context per thread) |
-| TT lifecycle | Global pool | Per-context ownership |
-| Performance | Baseline | Equal or better |
+- Global/thread-indexed API style
+- C structs in `dds.h`
+- Integer status/error return codes
+- Manual lifecycle/configuration functions
 
-## Supported C API Functions
+For migration to the modern C++ interface, see `docs/api_migration.md`.
 
-### Fully Supported
-These functions remain fully supported and are expected to stay available:
+## Core C Data Structures
 
-- `SolveBoard`
-- `SolveBoardPBN`
-- `CalcDDtable`
-- `CalcDDtablePBN`
-- `AnalysePlayBin`
-- `AnalysePlayPBN`
-- `Par`
-- `DealerPar`
-- `GetDDSInfo`
-- `SetMaxThreads` (deprecated, still functional)
-- `SetResources` (deprecated, still functional)
+Common structs used by C entry points:
 
-### Deprecated but Functional
-These initialization functions are deprecated but remain operational for
-compatibility:
+- `Deal`, `DealPBN`
+- `FutureTricks`
+- `Boards`, `BoardsPBN`, `SolvedBoards`
+- `DdTableDeal`, `DdTableDealPBN`, `DdTableResults`
+- `ParResults`, `ParResultsDealer`
 
-- `SetThreading`
-- `SetMaxThreads`
-- `SetResources`
-- `FreeMemory`
+These are defined in `api/dds.h` and re-exported by `api/dll.h`.
 
-### For C Compatibility Only
-The legacy API exists for binary compatibility with existing C clients.
-New development should use the modern C++ API instead.
+## Solve Functions
 
-## Migration Guide (Summary)
+Single-board solve:
 
-1. Include the modern header: `#include <dds/dds.hpp>`
-2. Create a `SolverContext` instance per thread.
-3. Replace global configuration with `SolverConfig` fields.
-4. Pass the context into solving functions.
-5. Remove manual `FreeMemory()` calls.
+- `SolveBoard(Deal dl, int target, int solutions, int mode, FutureTricks* futp, int thrId)`
+- `SolveBoardPBN(DealPBN dlpbn, int target, int solutions, int mode, FutureTricks* futp, int thrId)`
 
-For detailed steps and examples, see [api_migration.md](api_migration.md).
+Batch solve:
 
-## Code Examples
+- `SolveAllBoards(BoardsPBN const* bop, SolvedBoards* solvedp)`
+- `SolveAllBoardsBin(Boards const* bop, SolvedBoards* solvedp)`
+- `SolveAllChunksPBN(BoardsPBN const* bop, SolvedBoards* solvedp, int chunkSize)`
+- `SolveAllChunksBin(Boards const* bop, SolvedBoards* solvedp, int chunkSize)`
 
-### Legacy C API (Global State)
+## DD Table Functions
+
+- `CalcDDtable(DdTableDeal tableDeal, DdTableResults* tablep)`
+- `CalcDDtablePBN(DdTableDealPBN tableDealPBN, DdTableResults* tablep)`
+- `CalcAllTables(Boards* bop, int mode, int trumpFilter[DDS_STRAINS], DdTablesRes* resp, AllParResults* presp)`
+- `CalcAllTablesPBN(BoardsPBN* bop, int mode, int trumpFilter[DDS_STRAINS], DdTablesRes* resp, AllParResults* presp)`
+
+## Play Analysis Functions
+
+- `AnalysePlayBin(Deal dl, PlayTraceBin play, SolvedPlay* solved, int thrId)`
+- `AnalysePlayPBN(DealPBN dlPBN, PlayTracePBN playPBN, SolvedPlay* solved, int thrId)`
+- `AnalyseAllPlaysBin(Boards* bop, PlayTracesBin* plp, SolvedPlays* solvedp, int chunkSize)`
+- `AnalyseAllPlaysPBN(BoardsPBN* bopPBN, PlayTracesPBN* plpPBN, SolvedPlays* solvedp, int chunkSize)`
+
+## Par Functions
+
+- `Par(DdTableResults* tablep, ParResults* presp, int vulnerable)`
+- `DealerPar(DdTableResults* tablep, ParResultsDealer* presp, int dealer, int vulnerable)`
+
+## Initialization and Resource Functions
+
+Legacy global configuration/lifecycle:
+
+- `SetThreading(int code)`
+- `SetMaxThreads(int userThreads)`
+- `SetResources(int maxMemoryMB, int maxThreads)`
+- `FreeMemory()`
+
+## Utility Functions
+
+- `ErrorMessage(int code, char line[80])`
+- `GetDDSInfo(DDSInfo* info)`
+
+## Return Codes
+
+Functions return integer status codes from `api/dds.h`.
+
+Examples:
+
+- `RETURN_NO_FAULT` (success)
+- `RETURN_PBN_FAULT`
+- `RETURN_TOO_MANY_BOARDS`
+- `RETURN_THREAD_INDEX`
+- `RETURN_CHUNK_SIZE`
+
+Use `ErrorMessage(code, buffer)` to map codes to human-readable messages.
+
+## Minimal C Example
+
 ```c
 #include <api/dll.h>
 
-void solve_legacy(struct Deal dl)
+int solve_one(struct Deal dl)
 {
-    SetMaxThreads(4);
-    SetResources(2000, 4);
-
     struct FutureTricks fut;
-    int res = SolveBoard(dl, -1, 3, 0, &fut, 0);
-    (void)res;
+    int rc;
+
+    SetMaxThreads(1);
+    SetResources(512, 1);
+
+    rc = SolveBoard(dl, -1, 3, 0, &fut, 0);
 
     FreeMemory();
+    return rc;
 }
 ```
-
-### Modern C++ API (Instance-Scoped)
-```cpp
-#include <dds/dds.hpp>
-#include <memory>
-
-void solve_modern(const Deal& dl)
-{
-    SolverConfig cfg;
-    cfg.tt_kind_ = TTKind::Large;
-    cfg.tt_mem_default_mb_ = 2000;   // requested TT size
-    cfg.tt_mem_maximum_mb_ = 2000;   // upper cap (must be >= default)
-
-    SolverContext ctx(cfg);
-
-    FutureTricks fut;
-    int res = SolveBoard(ctx, dl, -1, 3, 0, &fut);
-    (void)res;
-}
-```
-
-## FAQ
-
-**Will the C API be removed?**
-No. There is no removal plan; the C API remains for backward compatibility.
-
-**Can I mix both APIs in one program?**
-Yes, but avoid using global configuration calls while using `SolverContext`.
-Prefer the modern API for new work.
-
-**Is performance different?**
-Modern API performance is equal or better because it reduces global contention
-and allocations.
-
-## Deprecation Timeline
-
-- **Current:** Deprecated init functions are documented and remain functional.
-- **Future:** No removal planned; long-term support continues.
-- **Recommendation:** New development should use `SolverContext` and
-  `SolverConfig`.
