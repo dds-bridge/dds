@@ -10,7 +10,7 @@
 #pragma once
 
 #include <api/dds.h>
-#include "moves/moves.hpp"
+#include <moves/moves.hpp>
 #include <solver_context/solver_context.hpp>
 
 int DumpInput(

@@ -10,7 +10,7 @@
 #include <chrono>
 
 #include "solve_board.hpp"
-#include "solver_if.hpp"
+#include <solver_if.hpp>
 #include <pbn.hpp>
 #include <system/memory.hpp>
 #include <system/scheduler.hpp>

@@ -15,7 +15,7 @@
 #include <sstream>
 #include <string>
 
-#include "heuristic_sorting/heuristic_sorting.hpp"
+#include <heuristic_sorting/heuristic_sorting.hpp>
 #include <lookup_tables/lookup_tables.hpp>
 #include "moves.hpp"
 

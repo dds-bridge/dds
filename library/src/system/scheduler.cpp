@@ -15,7 +15,7 @@
 #include <iomanip>
 #include <lookup_tables/lookup_tables.hpp>
 #ifdef DDS_SCHEDULER
-#include "time_stat_list.hpp"
+#include <time_stat_list.hpp>
 
 // debug.hpp lives in the parent directory; some build configurations
 // may not expose it via include paths for this target. Provide

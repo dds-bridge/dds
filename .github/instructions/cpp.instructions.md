@@ -143,7 +143,7 @@ auto result = compute_area(
 - **Functions** – keep short; extract helpers if > 20 lines.
 - **Variables** – snake_case; classes – PascalCase.
 - **Header guards** – `#pragma once` or traditional guards.
-- **Include paths** – use paths provided by the bazel dependencies.
+- **Include paths** – use `<target/header.hpp>` (angle brackets) for headers from other Bazel targets; use `"header.hpp"` (quotes) only for the paired header of the current translation unit.
 
 ### Safety
 - Initialize all variables.

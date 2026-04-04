@@ -18,7 +18,7 @@
 #include <vector>
 #include <string>
 
-#include "trans_table.hpp"
+#include <trans_table/trans_table.hpp>
 
 
 enum

@@ -11,7 +11,7 @@
 #endif
 
 #ifdef DDS_TIMING
-  #include "timer_list.hpp"
+  #include <timer_list.hpp>
 #endif
 enum TTmemory
 {

@@ -8,7 +8,7 @@
 */
 
 #include "play_analyser.hpp"
-#include "solver_if.hpp"
+#include <solver_if.hpp>
 #include <pbn.hpp>
 #include <solver_context/solver_context.hpp>
 #include <system/memory.hpp>

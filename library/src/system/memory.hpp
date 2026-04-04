@@ -14,7 +14,7 @@
 
 #include <api/dds.h>
 #include <moves/moves.hpp>
-#include "thread_data.hpp"
+#include <thread_data.hpp>
 
 
 #ifdef DDS_AB_STATS
@@ -22,7 +22,7 @@
 #endif
 
 #ifdef DDS_TIMING
-  #include "timer_list.hpp"
+  #include <timer_list.hpp>
 #endif
 
 

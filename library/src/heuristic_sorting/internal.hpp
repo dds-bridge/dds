@@ -1,6 +1,6 @@
 #pragma once
 
-#include "heuristic_sorting.hpp"
+#include <heuristic_sorting/heuristic_sorting.hpp>
 
 /// @defgroup heuristic_sorting_internals Internal Heuristic Sorting Functions
 /// @brief Non-public helper functions used by heuristic move sorting.

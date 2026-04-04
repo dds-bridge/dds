@@ -7,9 +7,9 @@
    See LICENSE and README.
 */
 
-#include "ab_search.hpp"
-#include "dump.hpp"
-#include "init.hpp"
+#include <ab_search.hpp>
+#include <dump.hpp>
+#include <init.hpp>
 #include "solver_if.hpp"
 #include <api/solve_board.hpp>
 #include <lookup_tables/lookup_tables.hpp>

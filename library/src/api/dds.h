@@ -17,7 +17,7 @@
 #endif
 
 // Project headers
-#include "dll.h"
+#include <api/dll.h>
 
 
 #define THREADMEM_SMALL_MAX_MB 30
@@ -39,7 +39,7 @@ by Thomas Andrews.
 All hand identities are given as
 0=NORTH, 1=EAST, 2=SOUTH, 3=WEST. */
 
-#include "utility/constants.h"
+#include <utility/constants.h>
 
 /**
  * @brief Calculate relative hand position.

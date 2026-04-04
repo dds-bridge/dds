@@ -33,6 +33,7 @@ cc_binary(
 cc_test(
     name = "unit_tests",
     srcs = [":test_sources"],
+    size = "small",
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
@@ -46,6 +47,7 @@ cc_test(
 cc_test(
     name = "calc_par_test",
     srcs = ["calc_par_test.cpp"],
+    size = "small",
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,

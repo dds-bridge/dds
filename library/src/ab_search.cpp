@@ -10,10 +10,10 @@
 #include <cassert>
 
 #include "ab_search.hpp"
-#include "ab_stats.hpp"
-#include "dump.hpp"
-#include "later_tricks.hpp"
-#include "quick_tricks.hpp"
+#include <ab_stats.hpp>
+#include <dump.hpp>
+#include <later_tricks.hpp>
+#include <quick_tricks.hpp>
 #include <lookup_tables/lookup_tables.hpp>
 #include <solver_context/solver_context.hpp>
 #include <system/timer_list.hpp>

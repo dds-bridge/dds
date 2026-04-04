@@ -1,4 +1,4 @@
-#include "internal.hpp"
+#include <heuristic_sorting/internal.hpp>
 #include <utility/constants.h>
 #include <lookup_tables/lookup_tables.hpp>
 

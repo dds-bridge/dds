@@ -11,7 +11,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "pbn.hpp"
+#include <pbn.hpp>
 #include <api/dds.h>
 
 using namespace std;
