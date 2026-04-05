@@ -3,9 +3,10 @@
 ## C++ Toolchain
 
 DDS uses `bazel-contrib/toolchains_llvm` for C++ compilation on supported
-macOS and Linux hosts. The Bazel module configuration currently pins LLVM
-21.1.8 for `darwin-aarch64` and `linux-x86_64` in `MODULE.bazel`, and registers
-the downloaded toolchains via `@llvm_toolchain//:all`. Other hosts use Bazel's
+macOS and Linux hosts. The Bazel module configuration currently pins
+host-specific LLVM versions in `MODULE.bazel`, including LLVM 20.1.8 for
+`darwin-aarch64` and LLVM 21.1.8 for `linux-x86_64`, and registers the
+downloaded toolchains via `@llvm_toolchain//:all`. Other hosts use Bazel's
 default C++ toolchain resolution.
 
 This replaces the previous Homebrew-specific bespoke toolchain under
