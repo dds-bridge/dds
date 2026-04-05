@@ -60,8 +60,8 @@ class TimeStatList
     bool Used() const;
 
     std::string List() const;
-  // Release stored data early to speed up shutdown.
-  void Clear();
+    // Release stored data early to speed up shutdown.
+    void Clear();
 };
 
 #endif
