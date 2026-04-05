@@ -35,8 +35,8 @@ Martin Nygren, April 2026
 
 Current baseline for this branch:
 
-- C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 21.1.8 for
-    `darwin-aarch64` and `linux-x86_64`.
+- C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 20.1.8 for
+    `darwin-aarch64` and LLVM 21.1.8 for `linux-x86_64`.
 - Full non-ASAN validation passes with `bazelisk test //...`.
 - Doxygen target is enabled via Bazel (`//:doxygen_docs`).
 

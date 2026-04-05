@@ -13,9 +13,7 @@
 #include <string>
 #include <vector>
 
-#include <timer.hpp>
-
-using namespace std;
+#include <system/timer.hpp>
 
 
 /**
@@ -30,8 +28,8 @@ class TimerGroup
 {
   private:
 
-    vector<Timer> timers;
-    string bname;
+    std::vector<Timer> timers;
+    std::string bname;
 
   public:
 
@@ -51,7 +49,7 @@ class TimerGroup
 
     void Reset();
 
-    void SetNames(const string& baseName);
+    void SetNames(const std::string& baseName);
 
     void Start(const unsigned no);
 
@@ -65,12 +63,12 @@ class TimerGroup
 
     void operator -= (const TimerGroup& deduct);
 
-    string Header() const;
-    string DetailHeader() const;
-    string SumLine(const Timer& sumTotal) const;
-    string TimerLines(const Timer& sumTotal) const;
-    string DetailLines() const;
-    string DashLine() const;
+    std::string Header() const;
+    std::string DetailHeader() const;
+    std::string SumLine(const Timer& sumTotal) const;
+    std::string TimerLines(const Timer& sumTotal) const;
+    std::string DetailLines() const;
+    std::string DashLine() const;
 };
 
 #endif

@@ -14,13 +14,11 @@
 #include <vector>
 
 #include <api/dds.h>
-#include <timer.hpp>
+#include <system/timer.hpp>
 // TimeStatList is required when DDS_SCHEDULER is enabled.
 #ifdef DDS_SCHEDULER
-#include <time_stat_list.hpp>
+#include <system/time_stat_list.hpp>
 #endif
-
-using namespace std;
 
 #define HASH_MAX 200
 
@@ -103,21 +101,21 @@ class Scheduler
     int numGroups;
     int extraGroups;
 
-    atomic<int> currGroup;
+    std::atomic<int> currGroup;
 
     listType list[DDS_SUITS + 2][HASH_MAX];
 
     sortType sortList[MAXNOOFBOARDS];
     int sortLen;
 
-    vector<int> threadGroup;
-    vector<int> threadCurrGroup;
-    vector<int> threadToHand;
+    std::vector<int> threadGroup;
+    std::vector<int> threadCurrGroup;
+    std::vector<int> threadToHand;
 
     int numThreads;
     int numHands;
 
-    vector<int> highCards;
+    std::vector<int> highCards;
 
     void InitHighCards();
 
@@ -128,7 +126,7 @@ class Scheduler
 
     void Reset();
 
-    vector<Timer> timersThread;
+    std::vector<Timer> timersThread;
     Timer timerBlock;
 
     void MakeGroups(const Boards& bds);
