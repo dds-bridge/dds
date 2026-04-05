@@ -29,10 +29,12 @@ test:asan --test_timeout=120,300,900,3600
 # Keep the clang major version in these paths aligned with darwin-aarch64
 # in MODULE.bazel.
 # Bazel test binaries live at different depths under bazel-out/.../bin.
-# Provide a small set of @loader_path traversals to reach execroot/_main/external.
+# Provide a small set of distinct @loader_path traversals to reach
+# execroot/_main/external from common test binary depths.
 build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
 build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
 build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
+build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
 
 # ThreadSanitizer configuration
 # Usage: bazel test --config=tsan //path:target
