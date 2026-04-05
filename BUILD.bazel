@@ -66,40 +66,42 @@ genrule(
     outs = ["doxygen_docs.zip"],
     cmd = """
       set -e
-            DOXYFILE_GEN="$(@D)/Doxyfile.generated"
-            OUT_DIR="$(@D)/doxygen_output"
+      DOXYFILE_GEN="$(@D)/Doxyfile.generated"
+      OUT_DIR="$(@D)/doxygen_output"
       OUT_ZIP="$$(pwd)/$@"
 
-            rm -rf "$$OUT_DIR"
+      if ! command -v doxygen >/dev/null 2>&1; then
+          echo "doxygen_docs is a manual developer-only target and requires 'doxygen' on PATH" >&2
+          exit 1
+      fi
 
-            cat > "$$DOXYFILE_GEN" <<'EOF'
+      if ! command -v zip >/dev/null 2>&1; then
+          echo "doxygen_docs is a manual developer-only target and requires 'zip' on PATH" >&2
+          exit 1
+      fi
+
+      rm -rf "$$OUT_DIR"
+
+      cat > "$$DOXYFILE_GEN" <<'EOF'
 @INCLUDE = $(location Doxyfile)
 OUTPUT_DIRECTORY = $(@D)/doxygen_output
 EOF
 
-            DOXYGEN_BIN=""
-            if command -v doxygen >/dev/null 2>&1; then
-                DOXYGEN_BIN="$$(command -v doxygen)"
-            elif [ -x /opt/homebrew/bin/doxygen ]; then
-                DOXYGEN_BIN=/opt/homebrew/bin/doxygen
-            elif [ -x /usr/local/bin/doxygen ]; then
-                DOXYGEN_BIN=/usr/local/bin/doxygen
-            elif [ -x /usr/bin/doxygen ]; then
-                DOXYGEN_BIN=/usr/bin/doxygen
-            else
-                echo "doxygen executable not found" >&2
-                exit 1
-            fi
+      doxygen "$$DOXYFILE_GEN"
 
-            "$$DOXYGEN_BIN" "$$DOXYFILE_GEN"
+      test -f "$$OUT_DIR/html/index.html"
 
-            test -f "$$OUT_DIR/html/index.html"
-
-            cd "$$OUT_DIR"
-            zip -rq "$$OUT_ZIP" html
+      cd "$$OUT_DIR"
+      zip -rq "$$OUT_ZIP" html
     """,
     local = 1,
     output_to_bindir = True,
+    tags = [
+        "manual",
+        "local",
+        "no-remote",
+        "no-remote-cache",
+    ],
 )
 
 cc_library(

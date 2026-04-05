@@ -38,7 +38,8 @@ Current baseline for this branch:
 - C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 20.1.8 for
     `darwin-aarch64` and LLVM 21.1.8 for `linux-x86_64`.
 - Full non-ASAN validation passes with `bazelisk test //...`.
-- Doxygen target is enabled via Bazel (`//:doxygen_docs`).
+- Doxygen docs target is available as a manual developer target (`//:doxygen_docs`)
+    and requires `doxygen` and `zip` on `PATH`.
 
 Recommended pre-release verification:
 
@@ -46,7 +47,7 @@ Recommended pre-release verification:
 bazelisk shutdown
 bazelisk test //... --test_output=errors --test_verbose_timeout_warnings
 bazelisk build //...
-bazel build //:doxygen_docs
+bazelisk build //:doxygen_docs
 ```
 
 ### Sanitizer Status
