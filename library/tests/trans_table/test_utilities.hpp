@@ -5,10 +5,8 @@
 #pragma once
 
 // C++ standard library headers
-#include <array>
 #include <chrono>
 #include <map>
-#include <memory>
 #include <string>
 
 // Project headers
