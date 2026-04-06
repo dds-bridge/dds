@@ -27,8 +27,7 @@ Common structs used by C entry points:
 - `DdTableDeal`, `DdTableDealPBN`, `DdTableResults`
 - `ParResults`, `ParResultsDealer`
 
-These are defined in `api/dds.h` and re-exported by `api/dll.h`.
-These are defined directly in `api/dll.h`.
+These core structs are defined in `api/dds.h` and made available through `api/dll.h`. Additional legacy C API structs used by other functions, such as play-analysis and utility types, are declared directly in `api/dll.h`.
 
 ## Solve Functions
 
