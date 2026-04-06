@@ -126,7 +126,7 @@ public:
   };
 
   /**
-   * @brief Access utilities facade for logging, RNG, and stats.
+   * @brief Access utilities facade for logging and stats.
    */
   /**
    * @brief Access utilities facade for mutable contexts.
