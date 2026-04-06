@@ -58,7 +58,6 @@ for Python extension tests). Treat ASAN on macOS as a separate gate and verify
 it explicitly before final release tagging.
 
 ### Original project
-================
 
 You can find the original project [here](https://github.com/dds-bridge/dds) and
 below is the introduction and credits for DDS 2.9.0.

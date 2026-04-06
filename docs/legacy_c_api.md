@@ -11,7 +11,7 @@ Header:
 The C API remains supported for existing clients and tools.
 
 - Global/thread-indexed API style
-- C structs in `dds.h`
+- C structs in `dll.h`
 - Integer status/error return codes
 - Manual lifecycle/configuration functions
 
@@ -28,6 +28,7 @@ Common structs used by C entry points:
 - `ParResults`, `ParResultsDealer`
 
 These are defined in `api/dds.h` and re-exported by `api/dll.h`.
+These are defined directly in `api/dll.h`.
 
 ## Solve Functions
 
@@ -78,7 +79,7 @@ Legacy global configuration/lifecycle:
 
 ## Return Codes
 
-Functions return integer status codes from `api/dds.h`.
+Functions return integer status codes from `api/dll.h`.
 
 Examples:
 
