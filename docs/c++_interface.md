@@ -99,7 +99,7 @@ Par from precomputed table:
 
 ## Data Structures and Status Codes
 
-All core deal/result structs and return codes are defined in `api/dds.h` and exposed via `dds.hpp`.
+All core deal/result structs and return codes are defined in `api/dll.h` and exposed via `dds.hpp`.
 
 Examples include:
 
