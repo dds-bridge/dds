@@ -9,8 +9,8 @@
 
 #include <api/calc_dd_table.hpp>
 #include <api/dll.h>
-#include "calc_tables.hpp"
-#include "pbn.hpp"
+#include <calc_tables.hpp>
+#include <pbn.hpp>
 
 auto calc_dd_table(
     const DdTableDeal& table_deal,

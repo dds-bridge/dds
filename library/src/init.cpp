@@ -10,10 +10,10 @@
 #include <cstring>
 #include <cstdio>
 
-#include "calc_tables.hpp"
+#include <calc_tables.hpp>
 #include "init.hpp"
-#include "play_analyser.hpp"
-#include "solve_board.hpp"
+#include <play_analyser.hpp>
+#include <solve_board.hpp>
 #include <lookup_tables/lookup_tables.hpp>
 #include <solver_context/solver_context.hpp>
 #include <system/scheduler.hpp>
@@ -46,10 +46,10 @@ void InitDebugFiles();
 int _initialized = 0;
 
 
-/**
- * @brief Set the maximum number of threads used by the solver.
+/*
+ * Set the maximum number of threads used by the solver.
  *
- * @param userThreads Maximum number of threads to use
+ * Public API documentation is maintained in the API headers.
  */
 void STDCALL SetMaxThreads(
   int userThreads)
@@ -58,11 +58,10 @@ void STDCALL SetMaxThreads(
 }
 
 
-/**
- * @brief Set memory and thread resources for the solver.
+/*
+ * Set memory and thread resources for the solver.
  *
- * @param maxMemoryMB Maximum memory in megabytes
- * @param maxThreadsIn Maximum number of threads
+ * Public API documentation is maintained in the API headers.
  */
 void STDCALL SetResources(
   int maxMemoryMB,
@@ -155,11 +154,10 @@ void STDCALL SetResources(
 }
 
 
-/**
- * @brief Set the threading backend used by the solver.
+/*
+ * Set the threading backend used by the solver.
  *
- * @param code Threading backend code (see documentation)
- * @return 1 on success, error code otherwise
+ * Public API documentation is maintained in the API headers.
  */
 int STDCALL SetThreading(
   int code)

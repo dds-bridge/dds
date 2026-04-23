@@ -41,6 +41,10 @@
 # Bazel Directories
 bazel-*
 
+# System dependent helper files
+compile_commands.json
+.cache/
+
 # Python virtual environment
 venv/
 .venv/
@@ -82,3 +86,6 @@ copilot/perf/artifacts
 # Debug output from DDS3
 #
 dump.txt
+
+# Generated documentation output
+doxygen_output/

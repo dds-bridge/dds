@@ -29,16 +29,6 @@ config_setting(
 )
 
 config_setting(
-    name = "new_heuristic",
-    define_values = {"new_heuristic": "true"},
-)
-
-config_setting(
-    name = "skip_heuristic",
-    define_values = {"skip_heuristic": "true"},
-)
-
-config_setting(
     name = "debug_all",
     define_values = {"debug_all": "true"},
 )
@@ -75,9 +65,43 @@ genrule(
     srcs = ["Doxyfile"],
     outs = ["doxygen_docs.zip"],
     cmd = """
-      echo 'Doxygen docs temporarily disabled during migration' > dummy.txt && zip $@ dummy.txt
+      set -e
+      DOXYFILE_GEN="$(@D)/Doxyfile.generated"
+      OUT_DIR="$(@D)/doxygen_output"
+      OUT_ZIP="$$(pwd)/$@"
+
+      if ! command -v doxygen >/dev/null 2>&1; then
+          echo "doxygen_docs is a manual developer-only target and requires 'doxygen' on PATH" >&2
+          exit 1
+      fi
+
+      if ! command -v zip >/dev/null 2>&1; then
+          echo "doxygen_docs is a manual developer-only target and requires 'zip' on PATH" >&2
+          exit 1
+      fi
+
+      rm -rf "$$OUT_DIR"
+
+      cat > "$$DOXYFILE_GEN" <<'EOF'
+@INCLUDE = $(location Doxyfile)
+OUTPUT_DIRECTORY = $(@D)/doxygen_output
+EOF
+
+      doxygen "$$DOXYFILE_GEN"
+
+      test -f "$$OUT_DIR/html/index.html"
+
+      cd "$$OUT_DIR"
+      zip -rq "$$OUT_ZIP" html
     """,
+    local = 1,
     output_to_bindir = True,
+    tags = [
+        "manual",
+        "local",
+        "no-remote",
+        "no-remote-cache",
+    ],
 )
 
 cc_library(

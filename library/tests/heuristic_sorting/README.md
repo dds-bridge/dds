@@ -7,9 +7,7 @@ Prerequisites
 - Bazel installed and on PATH
 - A supported C++ toolchain; for coverage generation on macOS you will likely need GNU gcov (brew install gcc) or run coverage in a Linux container/CI
 
-Build with new heuristic enabled
-
-To build the workspace and enable the new heuristic library (this defines the runtime toggle `set_use_new_heuristic`):
+Build
 
 ```bash
 bazel build //...
@@ -60,10 +58,7 @@ bazel coverage //library/tests/heuristic_sorting:all \
 
 Notes and best practices
 
- The test package previously supported runtime toggling between legacy and new implementations when built with `--define=new_heuristic=true`. The new heuristic is now the default. Runtime toggling via `set_use_new_heuristic(...)` has been removed; update harnesses to run binaries built with the desired compile-time define instead.
 - Use `--test_output=all` when debugging tests to capture stdout from gtest.
-- Save golden outputs (normalize ordering JSON) under `build/compare-results` for triage when legacy vs new disagree.
-
 Contact
 
 If you want, I can add more golden unit tests or generate an HTML coverage report once a working gcov is available.

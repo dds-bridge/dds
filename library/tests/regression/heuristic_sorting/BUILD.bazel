@@ -4,6 +4,7 @@ load("@rules_cc//cc:defs.bzl", "cc_test")
 
 cc_test(
     name = "heuristic_sorting",
+    size = "small",
     srcs = ["heuristic_sorting_test.cpp"],
     deps = [
         "//library/src:testable_dds",

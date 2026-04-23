@@ -48,9 +48,7 @@
 #include <vector>
 #include <string>
 
-#include "timer_group.hpp"
-
-using namespace std;
+#include <system/timer_group.hpp>
 
 
 #ifdef DDS_TIMING
@@ -89,7 +87,7 @@ class TimerList
 {
   private:
 
-    vector<TimerGroup> timerGroups;
+    std::vector<TimerGroup> timerGroups;
 
   public:
     /**
@@ -118,7 +116,7 @@ class TimerList
 
     bool Used() const;
 
-    void PrintStats(ofstream& fout) const;
+    void PrintStats(std::ofstream& fout) const;
 };
 
 #endif

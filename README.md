@@ -1,12 +1,66 @@
-Work in progress towards version 3
-==================================
-I wanted to use DDS 2.9.0 for training declarer models but found that memory management prevented me from solving several hands in parallel whilst also preserving the transposition table. The latter is required to make several calls for the same hand training a declarer model against double dummy perfect defenders.
+## Introduction to DDS3
+
+DDS3 is a double dummy solver for bridge hands. Version 3.0 uses the same
+search algorithm as version 2.x, but the source code has been modernised. The
+project has been split into several subcomponents, each responsible for a
+specific part of the search algorithm. This modularisation makes the codebase
+easier to read and reason about, which helps not only humans but also modern
+coding agents. Throughout the codebase, you will find evidence that Claude
+Code and GitHub Copilot have made significant contributions to the
+modernisation.
+
+DDS3 is currently built with C++20. I am hoping to move towards C++ modules and
+C++23 in the next couple of months.
+
+There are build scripts for macOS and Linux, but not yet for Windows. The
+reason is simple: I do not currently have access to a Windows machine. Pull
+requests to support Windows builds are very welcome.
+
+### Motivation for creating version 3
+
+I wanted to use DDS 2.9.0 for training declarer models, but memory management
+prevented me from solving several hands in parallel while also preserving the
+transposition table. Preserving the table is required when making repeated
+calls for the same hand while training a declarer model against double-dummy
+perfect defenders.
 
 To address these issues, and also take advantage of modern C++ features, I had to update the project to a more modular build structure. This allowed me to create a library with dynamic memory management.
 
-There is no version 3 yet as the code is not ready to be released. It is, however, clear that merging these changes back into the original repository will not be feasible.
+It soon became obvious that merging these changes back into the original repository
+would not be feasible. 
 
-Martin Nygren, October 2025
+Martin Nygren, April 2026
+
+## Version 3.0 Release Status
+
+Current baseline for this branch:
+
+- C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 20.1.8 for
+    `darwin-aarch64` and LLVM 21.1.8 for `linux-x86_64`.
+- Full non-ASAN validation passes with `bazelisk test //...`.
+- Doxygen docs target is available as a manual developer target (`//:doxygen_docs`)
+    and requires `doxygen` and `zip` on `PATH`.
+
+Recommended pre-release verification:
+
+```bash
+bazelisk shutdown
+bazelisk test //... --test_output=errors --test_verbose_timeout_warnings
+bazelisk build //...
+bazelisk build //:doxygen_docs
+```
+
+### Sanitizer Status
+
+AddressSanitizer is enabled through `.bazelrc` (`--config=asan`). On macOS,
+ASAN runtime behavior can still vary by loader and sandbox context (especially
+for Python extension tests). Treat ASAN on macOS as a separate gate and verify
+it explicitly before final release tagging.
+
+### Original project
+
+You can find the original project [here](https://github.com/dds-bridge/dds) and
+below is the introduction and credits for DDS 2.9.0.
 
 Introduction
 ============
@@ -39,70 +93,6 @@ Pierre Cossard contributed the code for multi-threading on the Mac using GDS.
 
 Soren Hein made a number of contributions before becoming a co-author starting with v2.8 in 2014.
 
-
-Overview
-========
-
-The distribution consists of the following directories.
-
-* **src**, the source code for the library.
-* **include**, where the public interface of the library is specified.
-* **lib**, the place where the library file is "installed" for test purposes.
-* **doc**, where the library interface is documented and the algorithms behind DDS are explained at a high level.
-* **hands**, a repository for input files to the test programs.
-* **test**, a test program.
-* **examples**, some minimal programs showing how to interface in practice with a number of library functions.
-
-There is a parallel distribution, [**ddd**](https://github.com/dds-bridge/ddd).  It consisting of an old driver program for DDS contributed under the GPL (not under the Apache license) by Flip Cronje, and updated by us to support the multi-threaded library file.
-
-If you install ddd manually, put it in a directory parallel to these directories (src etc.) and then read the README file in that directory.  If you use GitHub, then dds is a sub-module.
-
-
-Supported systems
-=================
-The DLLs work out of the box on Windows systems.  There is a single-threaded version for old Windows versions, and there is a multi-threaded version that works on all modern Windows systems.  This is the one you should use if in doubt.  
-
-The distributed Windows DLL uses Windows multi-threading.  The code compiles on windows (see INSTALL) with at least:
-
-* Visual C++ 2010 Express editions or later.
-* The TDM-GCC/Mingw port of g++.
-* g++ on Cygwin.
-
-We have also compiled the code and/or had help from other contributors on the following systems.
-
-* Linux Ubuntu with g++ and with OpenMP multi-threading.
-* Mac OS 10.9 with g++ and with OpenMP multi-threading.  Also with clang without multi-threading.  Also with GCD multi-threading compiling with LLVM.
-
-Here the libraries are `.a` files, not DLLs.  There are also Makefiles for shared libraries available.
-
-Note that Apple stopped using g++ in Xcode a while back, DDS does compile using the clang compiler, but since DDS does not support pthreads multi-threading, DDS becomes single-threaded.  To get OpenMP multi-threading you need to use the Homebrew installer and do:
-
-    brew reinstall gcc --without-multilib
-
-The `without-multilib` is important because you won't get OpenMP otherwise, and that's the whole point.  *(Thanks to Matthew Kidd for these instructions.)*
-
-Thanks for Pierre Cossard's contribution, the Mac port now also supports GCD multi-threading with LLVM.
-
-There's an example .Net wrapper on https://github.com/anorsich/dds.net (not supported by us).
-
-Usage
-=====
-
-DDS tries to figure out the available number of cores and the available memory.  Based on this, DDS calculates a reasonable number of threads to use.  The user can override this by calling the `SetMaxThreads()` or the `SetResources()` function.  In principle these functions can be called multiple times, but there is overhead associated with this, so only call it at the beginning of your program unless you really want to change the number of threads dynamically.
-
-DDS on Windows calls SetMaxThreads itself when it is attached to a process, so you don't have to.  On Unix-like systems we use an equivalent mechanism, but we have had a report that this does not always happen in the right order of things, so you may want to call SetMaxThreads explicitly.
-
-Docs
-====
-The DDS library interface is documented. You find the docs, including a Markdown version which you can read online, in the /doc folder.  The Markdown version has not been updated since v2.8.4.
-
-Bugs
-====
-Version 2.9.0 has no known bugs.
-
-Please report bugs to bo.haglund@bahnhof.se and soren.hein@gmail.com.
-
-Version 3.0.0, preliminary change log
 ====
 
 ## API Documentation
@@ -161,7 +151,8 @@ SolveBoard(deal, -1, 3, 0, &fut, 0);
 FreeMemory();
 ```
 
-**Note:** Legacy initialization functions (`SetThreading`, `SetMaxThreads`, `SetResources`, `FreeMemory`) are deprecated but remain functional. See [docs/api_migration.md](docs/api_migration.md) for migration guidance.
+**Note:** Legacy initialization functions (`SetThreading`, `SetMaxThreads`, `SetResources`, `FreeMemory`) are deprecated but remain callable. Several of them
+are no ops. See [docs/api_migration.md](docs/api_migration.md) for migration guidance.
 
 ### Migration Guide
 
@@ -175,6 +166,7 @@ For detailed migration examples and best practices, see:
 - **New C++ projects**: Use modern API (`#include <dds/dds.hpp>`)
 - **Existing C projects**: Continue with legacy API (no changes required)
 - **Migration**: Follow incremental migration guide in docs/api_migration.md
+
 ## Python Interface
 
 DDS 3.0 includes a modern Python interface for bridge hand analysis:

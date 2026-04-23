@@ -8,10 +8,10 @@
 */
 
 #include "calc_tables.hpp"
-#include "pbn.hpp"
-#include "solve_board.hpp"
+#include <pbn.hpp>
+#include <solve_board.hpp>
 #include <api/solve_board.hpp>
-#include "solver_if.hpp"
+#include <solver_if.hpp>
 #include <system/memory.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>

@@ -3,10 +3,11 @@
 ## C++ Toolchain
 
 DDS uses `bazel-contrib/toolchains_llvm` for C++ compilation on supported
-macOS and Linux hosts. The Bazel module configuration pins LLVM 20.1.8 for the
-specific host keys listed in `MODULE.bazel` and registers the downloaded
-toolchains via `@llvm_toolchain//:all`. Other hosts use Bazel's default C++
-toolchain resolution.
+macOS and Linux hosts. The Bazel module configuration currently pins
+host-specific LLVM versions in `MODULE.bazel`, including LLVM 20.1.8 for
+`darwin-aarch64` and LLVM 21.1.8 for `linux-x86_64`, and registers the
+downloaded toolchains via `@llvm_toolchain//:all`. Other hosts use Bazel's
+default C++ toolchain resolution.
 
 This replaces the previous Homebrew-specific bespoke toolchain under
 `toolchain/`. Builds no longer depend on `/opt/homebrew/opt/llvm` or manual
@@ -17,75 +18,16 @@ toolchain selection lives in `MODULE.bazel` and standard-language settings are
 primarily configured in `.bazelrc` (with a fallback default in
 `CPPVARIABLES.bzl`).
 
-## Heuristic Sorting Library Build Configuration
+### macOS SDK and Runtime Compatibility
 
-The DDS project now includes a modular heuristic sorting library that can be enabled through build-time configuration.
+On macOS, binaries built against a newer SDK/runtime than the currently running
+OS can fail at startup (for example with `dyld` symbol lookup errors).
 
-### Build Configurations
+If you see runtime loader failures after a toolchain or OS change:
 
-#### Default Configuration (Original Heuristic)
-```bash
-bazel build //library/src:dds
-```
-Uses the original heuristic implementation embedded in moves.cpp.
-
-#### Heuristic Sorting
-The project uses the modular heuristic sorting library as the default implementation. The library target
-`//library/src/heuristic_sorting` is available and is included as a dependency by targets that need
-heuristic sorting.
-
-### Library Dependencies
-
-The heuristic sorting library is automatically included as a dependency:
-
-```starlark
-deps = [
-    "//library/src/utility:constants",
-    "//library/src/utility:lookup_tables",
-    "//library/src/heuristic_sorting",  # <- Heuristic sorting library
-],
-```
-
-### Configuration Details
-
-#### CPPVARIABLES.bzl
-The build variable mapping that previously injected `DDS_USE_NEW_HEURISTIC` has been removed. The
-heuristic sorting library is included by depending on `//library/src/heuristic_sorting` where required.
-
-#### BUILD.bazel
-The project no longer relies on a build-time define to select the heuristic implementation. Targets that need heuristic sorting should depend on `//library/src/heuristic_sorting`.
-
-### Testing Both Configurations
-
-To verify both configurations work:
-
-```bash
-# Test original heuristic
-bazel build //library/src/heuristic_sorting:heuristic_sorting
-
-# Test new heuristic
-bazel build //library/src/heuristic_sorting:heuristic_sorting --config=new_heuristic
-
-# Both should build successfully
-```
-
-### Library Structure
-
-
-### Visibility and Access
-
-The heuristic sorting library is marked with `visibility = ["//visibility:public"]` and can be used by any target in the project.
-
-### Dependencies
-
-The heuristic sorting library depends on:
-
-### Migration Path
-
-1. **Phase 1**: Use default configuration for production (original heuristic)
-2. **Phase 2**: Test with `--config=new_heuristic` for validation
-3. **Phase 3**: Switch default to new heuristic once fully validated
-4. **Phase 4**: Remove old heuristic code after confidence period
+1. Verify host OS and SDK versions (`sw_vers -productVersion`, `xcrun --show-sdk-version`).
+2. Re-resolve Bazel toolchains (`bazelisk shutdown`, then `bazelisk clean --expunge`).
+3. Re-run `bazelisk test //...` to confirm runtime compatibility.
 
 ## API Layers
 

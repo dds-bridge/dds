@@ -15,7 +15,7 @@
 #include <sstream>
 #include <string>
 
-#include "heuristic_sorting/heuristic_sorting.hpp"
+#include <heuristic_sorting/heuristic_sorting.hpp>
 #include <lookup_tables/lookup_tables.hpp>
 #include "moves.hpp"
 
@@ -107,12 +107,12 @@ Moves::~Moves() {}
 auto Moves::Init(const int tricks, const int relStartHand,
                  const int initialRanks[], const int initialSuits[],
                  const unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS],
-                 const int ourTrump, const int ourLeadHand) -> void {
+                 const int our_trump, const int our_lead_hand) -> void {
   currTrick = tricks;
-  trump = ourTrump;
+  trump = our_trump;
 
   if (relStartHand == 0)
-    track[tricks].lead_hand = ourLeadHand;
+    track[tricks].lead_hand = our_lead_hand;
 
   for (int m = 0; m < 13; m++) {
     for (int h = 0; h < DDS_HANDS; h++) {
@@ -214,9 +214,6 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
   list.current = 0;
   list.last = numMoves - 1;
 
-#ifdef DDS_SKIP_HEURISTIC
-  return numMoves;
-#endif
   if (numMoves != 1)
     Moves::MergeSort();
   return numMoves;
@@ -275,9 +272,6 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
     list.last = numMoves - 1;
     if (numMoves == 1)
       return numMoves;
-#ifdef DDS_SKIP_HEURISTIC
-    return numMoves;
-#endif
     Moves::call_heuristic(tpos, MoveType{}, MoveType{}, nullptr);
 
     Moves::MergeSort();
@@ -320,9 +314,6 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
 
   list.current = 0;
   list.last = numMoves - 1;
-#ifdef DDS_SKIP_HEURISTIC
-  return numMoves;
-#endif
   if (numMoves != 1)
     Moves::MergeSort();
   return numMoves;

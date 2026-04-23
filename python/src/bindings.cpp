@@ -340,6 +340,8 @@ auto register_table_bindings(py::module_& module) -> void
         "    dict: Result dict with keys:\n"
         "          'no_of_boards' (int): Total number of calculated boards.\n"
         "          'tables' (list): List of DD table dicts, one per input deal.\n"
+        "              Each table dict contains 'res_table' (5x4) in fixed strain order\n"
+        "              [♠, ♥, ♦, ♣, NT]. Rows for filtered-out strains are returned as zeros.\n"
         "          'par_results' (list): List of par result dicts (empty when mode=-1).\n\n"
         "Raises:\n"
         "    ValueError: If PBN format is invalid, trump_filter invalid, or too many tables.\n"

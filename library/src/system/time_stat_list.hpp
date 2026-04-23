@@ -13,9 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "time_stat.hpp"
-
-using namespace std;
+#include <system/time_stat.hpp>
 
 
 /**
@@ -29,9 +27,9 @@ class TimeStatList
 {
   private:
 
-    vector<TimeStat> list;
+    std::vector<TimeStat> list;
 
-    string name;
+    std::string name;
 
   public:
 
@@ -52,7 +50,7 @@ class TimeStatList
     void Reset();
 
     void Init(
-      const string& tname,
+      const std::string& tname,
       const unsigned len);
 
     void Add(
@@ -61,9 +59,9 @@ class TimeStatList
 
     bool Used() const;
 
-    string List() const;
-  // Release stored data early to speed up shutdown.
-  void Clear();
+    std::string List() const;
+    // Release stored data early to speed up shutdown.
+    void Clear();
 };
 
 #endif

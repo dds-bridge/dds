@@ -7,7 +7,7 @@
    See LICENSE and README.
 */
 
-#include "init.hpp"
+#include <init.hpp>
 #include <api/dll.h>
 
 #ifdef _MANAGED

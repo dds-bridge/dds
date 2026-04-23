@@ -7,9 +7,9 @@
    See LICENSE and README.
 */
 
-#include "api/calc_par.hpp"
-#include "api/calc_dd_table.hpp"
-#include "api/dll.h"
+#include <api/calc_par.hpp>
+#include <api/calc_dd_table.hpp>
+#include <api/dll.h>
 
 auto calc_par(
     const DdTableDeal& table_deal,

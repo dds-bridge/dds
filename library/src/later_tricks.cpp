@@ -24,7 +24,7 @@
  * @param depth Current search depth
  * @param target Target number of tricks
  * @param trump Trump suit
- * @param thrd Thread-local data
+ * @param ctx Solver context
  * @return true if target can be reached, false otherwise
  */
 bool LaterTricksMIN(
@@ -196,7 +196,7 @@ bool LaterTricksMIN(
  * @param depth Current search depth
  * @param target Target number of tricks
  * @param trump Trump suit
- * @param thrd Thread-local data
+ * @param ctx Solver context
  * @return true if target can be reached, false otherwise
  */
 bool LaterTricksMAX(

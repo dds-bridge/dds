@@ -10,7 +10,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -25,8 +24,8 @@ enum class TTKind { Small, Large };
 /**
  * @brief Configuration options for SolverContext instances.
  *
- * Provides per-context configuration for transposition tables, RNG seeding,
- * and optional arena sizing. Values are applied when creating or reconfiguring
+ * Provides per-context configuration for transposition tables.
+ * Values are applied when creating or reconfiguring
  * a SolverContext and persist across lazy TT creation.
  */
 struct SolverConfig
@@ -34,8 +33,6 @@ struct SolverConfig
   TTKind tt_kind_ = TTKind::Large;
   int tt_mem_default_mb_ = 0;
   int tt_mem_maximum_mb_ = 0;
-  // Optional deterministic RNG seed (0 means "no explicit seed").
-  unsigned long long rng_seed_ = 0ULL;
 };
 
 /**
@@ -45,7 +42,7 @@ struct SolverConfig
  * state, move generation, and utilities. The context manages an instance-owned
  * transposition table (TT) and provides explicit reset and configuration hooks.
  *
- * @threadsafe Not inherently thread-safe. Use one SolverContext per thread.
+ * @note Thread safety: not inherently thread-safe. Use one SolverContext per thread.
  */
 class SolverContext
 {
@@ -53,9 +50,6 @@ public:
   explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
   : thr_(std::move(thread)), cfg_(cfg)
   {
-    if (cfg_.rng_seed_ != 0ULL) {
-      utils_.seed(cfg_.rng_seed_);
-    }
     // Bind the persistent facades to the underlying ThreadData.
     search_.set_thread(thr_);
     search_.set_owner(this);
@@ -112,21 +106,6 @@ public:
       return *util_;
     }
 
-    auto rng() -> std::mt19937&
-    {
-      return util_->rng();
-    }
-
-    auto rng() const -> const std::mt19937&
-    {
-      return util_->rng();
-    }
-
-    auto seed_rng(unsigned long long seed) -> void
-    {
-      util_->seed(seed);
-    }
-
     auto log_append(const std::string& s) -> void
     {
       util_->log_append(s);
@@ -147,7 +126,7 @@ public:
   };
 
   /**
-   * @brief Access utilities facade for logging, RNG, and stats.
+   * @brief Access utilities facade for logging and stats.
    */
   /**
    * @brief Access utilities facade for mutable contexts.
@@ -188,9 +167,6 @@ public:
   //     dispose_trans_table()  — destroys the owned TT immediately.
   // - Diagnostics: When built with DDS_UTILITIES_LOG / DDS_UTILITIES_STATS, TT
   //   lifecycle events append compact log entries and bump small counters.
-  //
-  // Arena support has been removed from the SolverContext; logging uses
-  // stack-allocated buffers only.
 
   // Returns the owned transposition table instance (creates if null)
   /**
