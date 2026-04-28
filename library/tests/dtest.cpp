@@ -9,7 +9,9 @@
 
 
 #include <iostream>
-#include <unistd.h>
+#if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
+  #include <unistd.h>
+#endif
 
 #include <api/dll.h>
 #include "testcommon.hpp"
