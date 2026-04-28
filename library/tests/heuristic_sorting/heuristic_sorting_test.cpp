@@ -7,6 +7,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include "heuristic_sorting/internal.hpp"
