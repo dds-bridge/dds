@@ -2,10 +2,14 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 
 # Examples use legacy C-style code, so we need to suppress certain warnings
-EXAMPLES_CPPOPTS = DDS_CPPOPTS + [
-    "-Wno-deprecated-declarations",
-    "-Wno-unused-variable",
-]
+EXAMPLES_CPPOPTS = DDS_CPPOPTS + select({
+    "//:build_windows": [],
+    "//:debug_build_windows": [],
+    "//conditions:default": [
+        "-Wno-deprecated-declarations",
+        "-Wno-unused-variable",
+    ],
+})
 
 # Shared utilities used by all examples
 cc_library(
