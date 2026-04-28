@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 #include <vector>
 
 #include <api/dll.h>
