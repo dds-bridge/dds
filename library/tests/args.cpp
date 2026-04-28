@@ -231,12 +231,14 @@ void read_args(
       case 's':
         matchFlag = false;
         stmp = optarg;
-        transform(stmp.begin(), stmp.end(), stmp.begin(), ::tolower);
+        transform(stmp.begin(), stmp.end(), stmp.begin(),
+            [](unsigned char c) { return static_cast<char>(::tolower(c)); });
 
         for (unsigned i = 0; i < static_cast<unsigned>(Solver::DTEST_SOLVER_SIZE) && ! matchFlag; i++)
         {
           string s = solverList[i];
-          transform(s.begin(), s.end(), s.begin(), ::tolower); 
+          transform(s.begin(), s.end(), s.begin(),
+              [](unsigned char c) { return static_cast<char>(::tolower(c)); });
           if (stmp == s)
           {
             m = static_cast<int>(i);
