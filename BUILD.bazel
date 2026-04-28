@@ -29,6 +29,21 @@ config_setting(
 )
 
 config_setting(
+    name = "build_windows",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
+)
+
+config_setting(
+    name = "debug_build_windows",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
+    values = {"compilation_mode": "dbg"},
+)
+
+config_setting(
     name = "debug_all",
     define_values = {"debug_all": "true"},
 )

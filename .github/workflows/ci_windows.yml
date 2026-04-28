@@ -1,0 +1,28 @@
+name: CI – Windows (Phase 1)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build_and_test:
+    runs-on: windows-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install Bazelisk (recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-version: "1.25.0"
+
+      # Build everything
+      - name: Build all targets
+        run: bazel build //... --verbose_failures
+
+      # Run all tests
+      - name: Run all tests
+        run: bazel test //... --verbose_failures

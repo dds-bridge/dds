@@ -32,6 +32,18 @@ DDS_CPPOPTS = select({
         "-Wall",
         "-Werror"
     ],
+    "//:build_windows": [
+        "-O3",
+        "-Wpedantic",
+        "-Wall",
+        "-Werror",
+    ],
+    "//:debug_build_windows": [
+        "-g",
+        "-Wpedantic",
+        "-Wall",
+        "-Werror",
+    ],
     "//conditions:default": [
         "-std=c++20"
     ],
