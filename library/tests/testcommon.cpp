@@ -211,9 +211,9 @@ string GetSystem()
 
 string GetBits()
 {
-  if (sizeof(void *) == 4)
+  if constexpr (sizeof(void *) == 4)
     return "32 bits";
-  else if (sizeof(void *) == 8)
+  else if constexpr (sizeof(void *) == 8)
     return "64 bits";
   else
     return "unknown";
