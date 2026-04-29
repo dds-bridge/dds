@@ -21,8 +21,8 @@ jobs:
 
       # Build everything
       - name: Build all targets
-        run: bazel build //... --verbose_failures
+        run: bazel build //... -//python:all --verbose_failures
 
       # Run all tests
       - name: Run all tests
-        run: bazel test //... --verbose_failures
+        run: bazel test //... -//python:all --verbose_failures
