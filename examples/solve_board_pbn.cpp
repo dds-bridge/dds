@@ -27,7 +27,6 @@ auto main() -> int
   int target;
   int solutions;
   int mode;
-  int threadIndex = 0;
   int res;
   char line[80];
   bool match2,
