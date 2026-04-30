@@ -30,6 +30,7 @@ genrule(
     name = "_dds3_in_package_windows",
     srcs = [":_dds3"],
     outs = ["dds3/_dds3.pyd"],
+    cmd = "cp $(location :_dds3) $@",
     cmd_bat = "copy /Y $(location :_dds3) $@",
 )
 
