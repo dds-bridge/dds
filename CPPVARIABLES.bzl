@@ -34,6 +34,7 @@ DDS_CPPOPTS = select({
     ],
     "//:build_windows": [
         "/O2",
+        "/std:c++20",
         "/W4",
         "/WX",
         "/permissive-",
@@ -41,6 +42,7 @@ DDS_CPPOPTS = select({
     "//:debug_build_windows": [
         "/Od",
         "/Zi",
+        "/std:c++20",
         "/W4",
         "/WX",
         "/permissive-",

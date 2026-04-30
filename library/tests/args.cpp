@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <vector>
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <cctype>

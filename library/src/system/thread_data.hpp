@@ -94,7 +94,7 @@ struct ThreadData
 #endif
 
   // Initialize per-thread debug/stat files with a suffix (e.g., "<thrId>_suffix").
-  void init_debug_files(const std::string& suffix);
+  void init_debug_files([[maybe_unused]] const std::string& suffix);
 
   // Close any open per-thread debug/stat files.
   void close_debug_files();
