@@ -31,6 +31,14 @@ jobs:
       - name: Run Python smoke test
         run: bazel test --config=windows //python:python_interface_smoke_test
 
+      # Run Python pytest suite
+      - name: Run Python pytest suite
+        shell: pwsh
+        run: |
+          $bazelBin = (bazel info --config=windows bazel-bin).Trim()
+          $env:PYTHONPATH = "python;$bazelBin/python"
+          bazel run --config=windows @python_3_14//:python3 -- -c "import subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--quiet', 'pytest']); subprocess.check_call([sys.executable, '-m', 'pytest', 'python/tests/', '-v'])"
+
       # Run all tests
       - name: Run all tests
         run: bazel test --config=windows --verbose_failures //...
