@@ -1,4 +1,4 @@
-name: CI – Windows (Phase 1)
+name: CI – Windows
 
 on:
   pull_request:
@@ -19,10 +19,28 @@ jobs:
         with:
           bazelisk-version: "1.25.0"
 
+      # Build Python extension
+      - name: Build Python extension
+        run: bazel build --config=windows //python:_dds3
+
       # Build everything
       - name: Build all targets
-        run: bazel build --verbose_failures -- //... -//python/...
+        run: bazel build --config=windows --verbose_failures //...
+
+      # Run Python smoke test
+      - name: Run Python smoke test
+        run: bazel test --config=windows //python:python_interface_smoke_test
+
+      # Run Python pytest suite
+      - name: Run Python pytest suite
+        shell: pwsh
+        run: |
+          bazel run --config=windows @python_3_14//:python3 -- -m pip install --upgrade pip pytest
+          $bazelBin = bazel info --config=windows bazel-bin
+          $env:DDS_PYTHON_EXT_DIR = Join-Path $bazelBin "python"
+          $env:PYTHONPATH = "python;$env:DDS_PYTHON_EXT_DIR"
+          bazel run --config=windows @python_3_14//:python3 -- -m pytest python/tests/ -v
 
       # Run all tests
       - name: Run all tests
-        run: bazel test --verbose_failures -- //... -//python/...
+        run: bazel test --config=windows --verbose_failures //...
