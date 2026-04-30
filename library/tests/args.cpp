@@ -18,7 +18,6 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
-#include <cctype>
 #include <sys/stat.h>
 
 #include "args.hpp"
