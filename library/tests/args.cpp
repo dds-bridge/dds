@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <ctype>
 #include <sys/stat.h>
 
 #include "args.hpp"
