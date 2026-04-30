@@ -36,7 +36,7 @@ auto calc_single_common(
 
 auto calc_single_common_internal(
   SolverContext& ctx,
-  const int thrId,
+  [[maybe_unused]] const int thrId,
   const int bno) -> void
 {
   // Solves a single Deal and strain for all four declarers.

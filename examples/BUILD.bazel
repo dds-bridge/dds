@@ -2,10 +2,20 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 
 # Examples use legacy C-style code, so we need to suppress certain warnings
-EXAMPLES_CPPOPTS = DDS_CPPOPTS + [
-    "-Wno-deprecated-declarations",
-    "-Wno-unused-variable",
-]
+EXAMPLES_CPPOPTS = DDS_CPPOPTS + select({
+    "//:build_windows": [],
+    "//:debug_build_windows": [],
+    "//conditions:default": [
+        "-Wno-deprecated-declarations",
+        "-Wno-unused-variable",
+    ],
+})
+
+EXAMPLES_LOCAL_DEFINES = DDS_LOCAL_DEFINES + select({
+    "//:build_windows": ["_CRT_SECURE_NO_WARNINGS"],
+    "//:debug_build_windows": ["_CRT_SECURE_NO_WARNINGS"],
+    "//conditions:default": [],
+})
 
 # Shared utilities used by all examples
 cc_library(
@@ -13,7 +23,7 @@ cc_library(
     srcs = ["hands.cpp"],
     hdrs = ["hands.hpp"],
     copts = EXAMPLES_CPPOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         "//library/src:dds",
         "//library/src/api:api_definitions",
@@ -26,7 +36,7 @@ cc_binary(
     srcs = ["analyse_all_plays_bin.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -39,7 +49,7 @@ cc_binary(
     srcs = ["analyse_all_plays_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -52,7 +62,7 @@ cc_binary(
     srcs = ["analyse_play_bin.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -65,7 +75,7 @@ cc_binary(
     srcs = ["analyse_play_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -78,7 +88,7 @@ cc_binary(
     srcs = ["calc_all_tables.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -91,7 +101,7 @@ cc_binary(
     srcs = ["calc_all_tables_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -104,7 +114,7 @@ cc_binary(
     srcs = ["calc_dd_table.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -117,7 +127,7 @@ cc_binary(
     srcs = ["calc_dd_table_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -130,7 +140,7 @@ cc_binary(
     srcs = ["dealer_par.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -143,7 +153,7 @@ cc_binary(
     srcs = ["par.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -156,7 +166,7 @@ cc_binary(
     srcs = ["solve_all_boards.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -169,7 +179,7 @@ cc_binary(
     srcs = ["solve_board.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -182,7 +192,7 @@ cc_binary(
     srcs = ["solve_board_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",
@@ -195,7 +205,7 @@ cc_binary(
     srcs = ["migration_example.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         "//library/src:dds",
         "//library/src/api:api_definitions",
@@ -207,7 +217,7 @@ cc_binary(
     srcs = ["calc_par_context_example.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
         ":hands",
         "//library/src:dds",

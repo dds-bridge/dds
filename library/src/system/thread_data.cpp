@@ -4,7 +4,7 @@
 
 using std::string;
 
-void ThreadData::init_debug_files(const string& suffix)
+void ThreadData::init_debug_files([[maybe_unused]] const string& suffix)
 {
 #ifdef DDS_TOP_LEVEL
 	fileTopLevel.SetName(DDS_TOP_LEVEL_PREFIX + suffix);
