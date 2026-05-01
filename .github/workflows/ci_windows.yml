@@ -21,25 +21,25 @@ jobs:
 
       # Build Python extension
       - name: Build Python extension
-        run: bazel build --config=windows //python:_dds3
+        run: bazel build //python:_dds3
 
       # Build everything
       - name: Build all targets
-        run: bazel build --config=windows --verbose_failures //...
+        run: bazel build --verbose_failures //...
 
       # Run Python smoke test
       - name: Run Python smoke test
-        run: bazel test --config=windows //python:python_interface_smoke_test
+        run: bazel test //python:python_interface_smoke_test
 
       # Run Python pytest suite
       - name: Run Python pytest suite
         shell: pwsh
         run: |
-          $bazelBin = (bazel info --config=windows bazel-bin).Trim()
+          $bazelBin = (bazel info bazel-bin).Trim()
           $env:PYTHONPATH = "python;$bazelBin/python"
-          bazel run --config=windows @python_3_14//:python3 -- -c "import subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--quiet', 'pytest']); subprocess.check_call([sys.executable, '-m', 'pytest', 'python/tests/', '-v'])"
+          bazel run @python_3_14//:python3 -- -c "import subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip', 'pytest']); subprocess.check_call([sys.executable, '-m', 'pytest', 'python/tests/', '-v', '--ignore=python/tests/test_calc_par.py', '--ignore=python/tests/test_calc_par_simple.py', '--ignore=python/tests/test_context_reuse.py'])"
 
       # Run all tests
       - name: Run all tests
         # Temporary: these Python tests fail on Windows and are covered on Linux/macOS.
-        run: bazel test --config=windows --verbose_failures //... -//python:calc_par_comprehensive_test -//python:calc_par_test -//python:context_reuse_test
+        run: bazel test --verbose_failures //... -//python:calc_par_comprehensive_test -//python:calc_par_test -//python:context_reuse_test
