@@ -37,7 +37,11 @@ jobs:
         run: |
           $bazelBin = (bazel info bazel-bin).Trim()
           $env:PYTHONPATH = "python;$bazelBin/python"
-          bazel run @python_3_14//:python3 -- -c "import subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip', 'pytest']); subprocess.check_call([sys.executable, '-m', 'pytest', 'python/tests/', '-v', '--ignore=python/tests/test_calc_par.py', '--ignore=python/tests/test_calc_par_simple.py', '--ignore=python/tests/test_context_reuse.py'])"
+          bazel run @python_3_14//:python3 -- -m pip install --upgrade pip pytest
+          bazel run @python_3_14//:python3 -- -m pytest python/tests/ -v `
+            --ignore=python/tests/test_calc_par.py `
+            --ignore=python/tests/test_calc_par_simple.py `
+            --ignore=python/tests/test_context_reuse.py
 
       # Run all tests
       - name: Run all tests

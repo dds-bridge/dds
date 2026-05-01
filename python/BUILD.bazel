@@ -23,7 +23,7 @@ genrule(
     name = "_dds3_in_package_unix",
     srcs = [":_dds3"],
     outs = ["dds3/_dds3.so"],
-    cmd = "cp $(location :_dds3) $@",
+    cmd = "cp \"$(location :_dds3)\" \"$@\"",
 )
 
 genrule(
