@@ -42,4 +42,4 @@ jobs:
       # Run all tests
       - name: Run all tests
         # Temporary: these Python tests fail on Windows and are covered on Linux/macOS.
-        run: bazel test --verbose_failures //... -//python:calc_par_comprehensive_test -//python:calc_par_test -//python:context_reuse_test
+        run: bazel test --verbose_failures -- //... -//python:calc_par_comprehensive_test -//python:calc_par_test -//python:context_reuse_test
