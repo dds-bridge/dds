@@ -26,8 +26,8 @@ class TestSolveBoard(unittest.TestCase):
             "current_trick_rank": (0, 0, 0),
         }
         result = solve_board(deal)
-        assert "nodes" in result  # FutureTricks has nodes, not return_code
-        assert isinstance(result["score"], tuple)
+        self.assertIn("nodes", result)
+        self.assertIsInstance(result["score"], tuple)
 
     def test_solve_board_with_defaults(self) -> None:
         """Test that default parameters work."""
@@ -46,7 +46,7 @@ class TestSolveBoard(unittest.TestCase):
         # Should not raise, error handling is DDS-side
         try:
             result = solve_board(deal)
-            assert "nodes" in result
+            self.assertIn("nodes", result)
         except RuntimeError:
             # Invalid deal may raise RuntimeError
             pass
@@ -115,13 +115,13 @@ class TestSolveBoardPBN(unittest.TestCase):
         # Simple PBN: N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3
         pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result = solve_board_pbn(pbn, trump=4, first=0)
-        assert "nodes" in result  # FutureTricks has nodes, not return_code
+        self.assertIn("nodes", result)
 
     def test_solve_board_pbn_with_defaults(self) -> None:
         """Test that default parameters work correctly."""
         pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result = solve_board_pbn(pbn)  # Using all defaults
-        assert "nodes" in result
+        self.assertIn("nodes", result)
 
     def test_solve_board_pbn_invalid_format(self) -> None:
         """Test that invalid PBN format raises error."""
@@ -142,13 +142,13 @@ class TestSolveBoardPBN(unittest.TestCase):
         """Test that default trump is NT (4)."""
         pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result = solve_board_pbn(pbn)  # No trump specified
-        assert result["cards"] >= 0  # Should have solution
+        self.assertGreaterEqual(result["cards"], 0)
 
     def test_solve_board_pbn_default_first_is_north(self) -> None:
         """Test that default first is North (0)."""
         pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         result = solve_board_pbn(pbn)  # No first specified
-        assert result["cards"] >= 0  # Should have solution
+        self.assertGreaterEqual(result["cards"], 0)
 
     def test_solve_board_pbn_current_trick_validation(self) -> None:
         """Test that invalid current trick in PBN mode raises error."""
@@ -165,8 +165,8 @@ class TestSolveBoardParity(unittest.TestCase):
         result_pbn = solve_board_pbn(pbn)
 
         # Both should have the same keys
-        assert "nodes" in result_pbn  # FutureTricks has nodes, not return_code
-        assert "score" in result_pbn
+        self.assertIn("nodes", result_pbn)
+        self.assertIn("score", result_pbn)
 
 
 if __name__ == "__main__":

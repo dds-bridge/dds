@@ -21,7 +21,7 @@ class TestCalcDDTable(unittest.TestCase):
             ],
         }
         result = calc_dd_table(table_deal)
-        assert "return_code" in result or "res_table" in result
+        self.assertTrue("return_code" in result or "res_table" in result)
 
     def test_calc_dd_table_result_structure(self) -> None:
         """Test that result has correct structure."""
@@ -35,7 +35,7 @@ class TestCalcDDTable(unittest.TestCase):
         }
         result = calc_dd_table(table_deal)
         # Result should be a dict
-        assert isinstance(result, dict)
+        self.assertTrue(isinstance(result, dict))
 
     def test_calc_dd_table_invalid_remain_cards_size(self) -> None:
         """Test that invalid remain_cards size raises error."""
@@ -52,7 +52,7 @@ class TestCalcDDTable(unittest.TestCase):
         # May raise due to invalid deal, but should not crash
         try:
             result = calc_dd_table(table_deal)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
             # Invalid deal is acceptable
             pass
@@ -65,9 +65,9 @@ class TestCalcAllTablesPBN(unittest.TestCase):
         """Test calc_all_tables_pbn with a single PBN deal."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         result = calc_all_tables_pbn(deals)
-        assert "no_of_boards" in result
-        assert "tables" in result
-        assert isinstance(result["tables"], list)
+        self.assertTrue("no_of_boards" in result)
+        self.assertTrue("tables" in result)
+        self.assertTrue(isinstance(result["tables"], list))
 
     def test_calc_all_tables_pbn_multiple_deals(self) -> None:
         """Test calc_all_tables_pbn with multiple deals."""
@@ -76,30 +76,30 @@ class TestCalcAllTablesPBN(unittest.TestCase):
             "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3",
         ]
         result = calc_all_tables_pbn(deals)
-        assert "no_of_boards" in result
-        assert len(result["tables"]) >= 1  # At least one table per deal
+        self.assertTrue("no_of_boards" in result)
+        self.assertGreaterEqual(len(result["tables"]), 1)
 
     def test_calc_all_tables_pbn_with_mode(self) -> None:
         """Test calc_all_tables_pbn with par mode enabled."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         result = calc_all_tables_pbn(deals, mode=0)  # Calculate par
-        assert "tables" in result
-        assert "par_results" in result
+        self.assertTrue("tables" in result)
+        self.assertTrue("par_results" in result)
 
     def test_calc_all_tables_pbn_default_mode_is_no_par(self) -> None:
         """Test that default mode is -1 (no par)."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         result = calc_all_tables_pbn(deals)
         # With mode=-1, par_results may be empty or zero-filled
-        assert "tables" in result
+        self.assertTrue("tables" in result)
 
     def test_calc_all_tables_pbn_with_trump_filter(self) -> None:
         """Test calc_all_tables_pbn with trump filter to skip some strains."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         # Skip spades and hearts (1,1,0,0,0)
         result = calc_all_tables_pbn(deals, trump_filter=[1, 1, 0, 0, 0])
-        assert "no_of_boards" in result
-        assert "tables" in result
+        self.assertTrue("no_of_boards" in result)
+        self.assertTrue("tables" in result)
 
     def test_calc_all_tables_pbn_nt_row_and_filter_semantics(self) -> None:
         """Regression test: NT is row index 4 and filtered strains are zero-filled rows."""
@@ -114,28 +114,28 @@ class TestCalcAllTablesPBN(unittest.TestCase):
         exclude_nt = calc_all_tables_pbn(deals, trump_filter=[0, 0, 0, 0, 1])
         exclude_nt_rows = exclude_nt["tables"][0]["res_table"]
 
-        assert len(all_rows) == 5
-        assert len(nt_only_rows) == 5
-        assert len(exclude_nt_rows) == 5
-        assert all(len(row) == 4 for row in all_rows)
-        assert all(len(row) == 4 for row in nt_only_rows)
-        assert all(len(row) == 4 for row in exclude_nt_rows)
+        self.assertTrue(len(all_rows) == 5)
+        self.assertTrue(len(nt_only_rows) == 5)
+        self.assertTrue(len(exclude_nt_rows) == 5)
+        self.assertTrue(all(len(row) == 4 for row in all_rows))
+        self.assertTrue(all(len(row) == 4 for row in nt_only_rows))
+        self.assertTrue(all(len(row) == 4 for row in exclude_nt_rows))
 
         # NT is the last row (index 4), and NT-only filtering should preserve only that row.
-        assert nt_only_rows[4] == all_rows[4]
+        self.assertTrue(nt_only_rows[4] == all_rows[4])
         for strain in range(4):
-            assert nt_only_rows[strain] == [0, 0, 0, 0]
+            self.assertTrue(nt_only_rows[strain] == [0, 0, 0, 0])
 
         # Excluding NT should zero only row index 4 and preserve suit rows.
-        assert exclude_nt_rows[4] == [0, 0, 0, 0]
+        self.assertTrue(exclude_nt_rows[4] == [0, 0, 0, 0])
         for strain in range(4):
-            assert exclude_nt_rows[strain] == all_rows[strain]
+            self.assertTrue(exclude_nt_rows[strain] == all_rows[strain])
 
     def test_calc_all_tables_pbn_default_trump_filter_all_zeros(self) -> None:
         """Test that default trump_filter is (0,0,0,0,0) - include all."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         result = calc_all_tables_pbn(deals)  # Default trump_filter
-        assert "tables" in result
+        self.assertTrue("tables" in result)
 
     def test_calc_all_tables_pbn_invalid_pbn(self) -> None:
         """Test that invalid PBN raises error."""
@@ -147,8 +147,8 @@ class TestCalcAllTablesPBN(unittest.TestCase):
         deals = []
         # Empty list actually succeeds with 0 boards
         result = calc_all_tables_pbn(deals)
-        assert "no_of_boards" in result
-        assert "tables" in result
+        self.assertTrue("no_of_boards" in result)
+        self.assertTrue("tables" in result)
 
     def test_calc_all_tables_pbn_invalid_trump_filter_size(self) -> None:
         """Test that invalid trump_filter size raises error."""
@@ -171,20 +171,20 @@ class TestCalcAllTablesPBN(unittest.TestCase):
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         result = calc_all_tables_pbn(deals)
         
-        assert isinstance(result, dict)
-        assert "no_of_boards" in result
-        assert "tables" in result
-        assert "par_results" in result
+        self.assertTrue(isinstance(result, dict))
+        self.assertTrue("no_of_boards" in result)
+        self.assertTrue("tables" in result)
+        self.assertTrue("par_results" in result)
         
-        assert isinstance(result["no_of_boards"], int)
-        assert isinstance(result["tables"], list)
-        assert isinstance(result["par_results"], list)
+        self.assertTrue(isinstance(result["no_of_boards"], int))
+        self.assertTrue(isinstance(result["tables"], list))
+        self.assertTrue(isinstance(result["par_results"], list))
         # par_results is empty when mode == -1 (the default)
-        assert len(result["par_results"]) == 0
+        self.assertTrue(len(result["par_results"]) == 0)
         
         # Test with mode != -1 to verify par_results is populated
         result_with_par = calc_all_tables_pbn(deals, mode=0)
-        assert len(result_with_par["par_results"]) > 0
+        self.assertTrue(len(result_with_par["par_results"]) > 0)
 
 
 class TestTableParity(unittest.TestCase):
@@ -196,9 +196,9 @@ class TestTableParity(unittest.TestCase):
         batch_result = calc_all_tables_pbn(deals)
         
         # Single table from batch should have similar structure to calc_dd_table
-        assert len(batch_result["tables"]) >= 1
+        self.assertTrue(len(batch_result["tables"]) >= 1)
         single_table = batch_result["tables"][0]
-        assert isinstance(single_table, dict)
+        self.assertTrue(isinstance(single_table, dict))
 
 
 if __name__ == "__main__":

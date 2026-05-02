@@ -27,7 +27,7 @@ class TestPar(unittest.TestCase):
         try:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
             # Invalid table is acceptable
             raise SkipTest("Could not create valid DD table")
@@ -45,7 +45,7 @@ class TestPar(unittest.TestCase):
         try:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table, vulnerable=0)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
             raise SkipTest("Could not create valid DD table")
 
@@ -62,7 +62,7 @@ class TestPar(unittest.TestCase):
         try:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table, vulnerable=2)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
             raise SkipTest("Could not create valid DD table")
 
@@ -79,7 +79,7 @@ class TestPar(unittest.TestCase):
         try:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table, vulnerable=3)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
             raise SkipTest("Could not create valid DD table")
 
@@ -114,9 +114,9 @@ class TestPar(unittest.TestCase):
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table)
             
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
             # Should have par score and contracts
-            assert "par_score" in result or "par_contracts_string" in result
+            self.assertTrue("par_score" in result or "par_contracts_string" in result)
         except RuntimeError:
             raise SkipTest("Could not create valid DD table")
 
@@ -138,7 +138,7 @@ class TestPar(unittest.TestCase):
             dd_table = calc_dd_table(table_deal)
             # Should not raise when vulnerable is omitted
             result = par(dd_table)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
             raise SkipTest("Could not create valid DD table")
 

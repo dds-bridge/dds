@@ -20,7 +20,7 @@ class TestArrayConversions(unittest.TestCase):
         }
         try:
             result = solve_board(deal)
-            assert "nodes" in result
+            self.assertTrue("nodes" in result)
         except RuntimeError:
             # Invalid deal is ok, we're testing conversion
             pass
@@ -36,7 +36,7 @@ class TestArrayConversions(unittest.TestCase):
         }
         try:
             result = solve_board(deal)
-            assert "nodes" in result
+            self.assertTrue("nodes" in result)
         except RuntimeError:
             pass
 
@@ -73,7 +73,7 @@ class TestArrayConversions(unittest.TestCase):
         }
         try:
             result = solve_board(deal)
-            assert "nodes" in result
+            self.assertTrue("nodes" in result)
         except RuntimeError:
             pass
 
@@ -88,7 +88,7 @@ class TestArrayConversions(unittest.TestCase):
         }
         try:
             result = solve_board(deal)
-            assert "nodes" in result
+            self.assertTrue("nodes" in result)
         except RuntimeError:
             pass
 
@@ -125,7 +125,7 @@ class TestArrayConversions(unittest.TestCase):
         }
         try:
             result = solve_board(deal)
-            assert "nodes" in result
+            self.assertTrue("nodes" in result)
         except RuntimeError:
             pass
 
@@ -140,7 +140,7 @@ class TestArrayConversions(unittest.TestCase):
         }
         try:
             result = solve_board(deal)
-            assert "nodes" in result
+            self.assertTrue("nodes" in result)
         except RuntimeError:
             pass
 
@@ -175,7 +175,7 @@ class TestPBNConversions(unittest.TestCase):
         pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
         try:
             result = solve_board_pbn(pbn)
-            assert "nodes" in result  # FutureTricks has nodes, not return_code
+            self.assertIn("nodes", result)
         except RuntimeError:
             pass
 
@@ -207,7 +207,7 @@ class TestTrumpFilterValidation(unittest.TestCase):
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         try:
             result = calc_all_tables_pbn(deals, trump_filter=[0, 0, 0, 0, 0])
-            assert "tables" in result
+            self.assertTrue("tables" in result)
         except RuntimeError:
             pass
 
@@ -222,7 +222,7 @@ class TestTrumpFilterValidation(unittest.TestCase):
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         try:
             result = calc_all_tables_pbn(deals, trump_filter=[0, 1, 0, 0, 0])
-            assert "tables" in result
+            self.assertTrue("tables" in result)
         except RuntimeError:
             pass
 
@@ -231,7 +231,7 @@ class TestTrumpFilterValidation(unittest.TestCase):
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         try:
             result = calc_all_tables_pbn(deals, trump_filter=[0, 0, 0, 0, 0])
-            assert "tables" in result
+            self.assertTrue("tables" in result)
         except RuntimeError:
             pass
 
@@ -240,7 +240,7 @@ class TestTrumpFilterValidation(unittest.TestCase):
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         try:
             result = calc_all_tables_pbn(deals, trump_filter=[1, 0, 0, 0, 0])
-            assert "tables" in result
+            self.assertTrue("tables" in result)
         except RuntimeError:
             pass
 
