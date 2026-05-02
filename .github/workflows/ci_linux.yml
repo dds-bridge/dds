@@ -24,11 +24,7 @@ jobs:
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen
 
-      # 4️⃣ Build Python extension
-      - name: Build Python extension
-        run: bazel build //python:_dds3
-
-      # 5️⃣ Build everything
+      # 4️⃣ Build all targets
       - name: Build all targets
         run: bazel build //...
 

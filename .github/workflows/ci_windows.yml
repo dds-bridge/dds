@@ -19,11 +19,7 @@ jobs:
         with:
           bazelisk-version: "1.25.0"
 
-      # Build Python extension
-      - name: Build Python extension
-        run: bazel build //python:_dds3
-
-      # Build everything
+      # Build all targets
       - name: Build all targets
         run: bazel build --verbose_failures //...
 
