@@ -1,10 +1,13 @@
 """Tests for par wrapper."""
 
-import pytest
+import unittest
+from unittest import SkipTest
+
 from dds3 import par, calc_dd_table
+from test_utils import assert_raises
 
 
-class TestPar:
+class TestPar(unittest.TestCase):
     """Tests for par (par score calculation)."""
 
     def test_par_basic(self) -> None:
@@ -24,10 +27,10 @@ class TestPar:
         try:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
             # Invalid table is acceptable
-            pytest.skip("Could not create valid DD table")
+            raise SkipTest("Could not create valid DD table")
 
     def test_par_vulnerable_none(self) -> None:
         """Test par with vulnerable=0 (neither vulnerable)."""
@@ -42,9 +45,9 @@ class TestPar:
         try:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table, vulnerable=0)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
-            pytest.skip("Could not create valid DD table")
+            raise SkipTest("Could not create valid DD table")
 
     def test_par_vulnerable_ns(self) -> None:
         """Test par with vulnerable=2 (NS vulnerable)."""
@@ -59,9 +62,9 @@ class TestPar:
         try:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table, vulnerable=2)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
-            pytest.skip("Could not create valid DD table")
+            raise SkipTest("Could not create valid DD table")
 
     def test_par_vulnerable_ew(self) -> None:
         """Test par with vulnerable=3 (EW vulnerable)."""
@@ -76,9 +79,9 @@ class TestPar:
         try:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table, vulnerable=3)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
-            pytest.skip("Could not create valid DD table")
+            raise SkipTest("Could not create valid DD table")
 
     def test_par_invalid_vulnerable(self) -> None:
         """Test that invalid vulnerable parameter."""
@@ -93,10 +96,9 @@ class TestPar:
         try:
             dd_table = calc_dd_table(table_deal)
         except RuntimeError:
-            pytest.skip("Could not create valid DD table")
+            raise SkipTest("Could not create valid DD table")
 
-        with pytest.raises(ValueError, match="vulnerable has invalid value"):
-            par(dd_table, vulnerable=4)
+        assert_raises(ValueError, par, dd_table, vulnerable=4, match="vulnerable has invalid value")
 
     def test_par_result_structure(self) -> None:
         """Test that par result has expected structure."""
@@ -112,16 +114,15 @@ class TestPar:
             dd_table = calc_dd_table(table_deal)
             result = par(dd_table)
             
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
             # Should have par score and contracts
-            assert "par_score" in result or "par_contracts_string" in result
+            self.assertTrue("par_score" in result or "par_contracts_string" in result)
         except RuntimeError:
-            pytest.skip("Could not create valid DD table")
+            raise SkipTest("Could not create valid DD table")
 
     def test_par_requires_table_input(self) -> None:
         """Test that par requires a valid table input."""
-        with pytest.raises((KeyError, ValueError, RuntimeError, TypeError)):
-            par({"invalid": "structure"})
+        assert_raises((KeyError, ValueError, RuntimeError, TypeError), par, {"invalid": "structure"})
 
     def test_par_default_vulnerable_is_zero(self) -> None:
         """Test that default vulnerable is 0 (none)."""
@@ -137,6 +138,10 @@ class TestPar:
             dd_table = calc_dd_table(table_deal)
             # Should not raise when vulnerable is omitted
             result = par(dd_table)
-            assert isinstance(result, dict)
+            self.assertTrue(isinstance(result, dict))
         except RuntimeError:
-            pytest.skip("Could not create valid DD table")
+            raise SkipTest("Could not create valid DD table")
+
+
+if __name__ == "__main__":
+    unittest.main()

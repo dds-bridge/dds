@@ -1,4 +1,4 @@
-name: CI – Windows (Phase 1)
+name: CI – Windows
 
 on:
   pull_request:
@@ -19,10 +19,10 @@ jobs:
         with:
           bazelisk-version: "1.25.0"
 
-      # Build everything
+      # Build all targets
       - name: Build all targets
-        run: bazel build --verbose_failures -- //... -//python/...
+        run: bazel build --verbose_failures //...
 
-      # Run all tests
+      # Run all tests (including Python)
       - name: Run all tests
-        run: bazel test --verbose_failures -- //... -//python/...
+        run: bazel test --verbose_failures //...

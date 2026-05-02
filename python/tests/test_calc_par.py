@@ -1,5 +1,7 @@
 """Tests for calc_par and calc_par_from_table wrappers."""
 
+import unittest
+
 from dds3 import calc_par, calc_par_from_table, calc_dd_table
 
 # Rank bitmask constants (matching C++ test data)
@@ -18,7 +20,7 @@ RK = 0x2000
 RA = 0x4000
 
 
-class TestCalcPar:
+class TestCalcPar(unittest.TestCase):
     """Tests for calc_par (single call for DD table + par)."""
 
     def _hand0_table_deal(self) -> dict:
@@ -57,17 +59,17 @@ class TestCalcPar:
         result = calc_par(table_deal, vulnerable=0)
         
         # Result should have dd_table and par_results keys
-        assert isinstance(result, dict)
-        assert "dd_table" in result
-        assert "par_results" in result
+        self.assertTrue(isinstance(result, dict))
+        self.assertTrue("dd_table" in result)
+        self.assertTrue("par_results" in result)
         
         # DD table should have res_table
-        assert "res_table" in result["dd_table"]
-        assert isinstance(result["dd_table"]["res_table"], list)
+        self.assertTrue("res_table" in result["dd_table"])
+        self.assertTrue(isinstance(result["dd_table"]["res_table"], list))
         
         # Par results should have par_score and par_contracts_string
-        assert "par_score" in result["par_results"]
-        assert "par_contracts_string" in result["par_results"]
+        self.assertTrue("par_score" in result["par_results"])
+        self.assertTrue("par_contracts_string" in result["par_results"])
 
     def test_calc_par_vulnerability_variations(self) -> None:
         """Test calc_par with different vulnerability settings."""
@@ -75,9 +77,9 @@ class TestCalcPar:
         
         for vuln in [0, 1, 2, 3]:
             result = calc_par(table_deal, vulnerable=vuln)
-            assert isinstance(result, dict)
-            assert "dd_table" in result
-            assert "par_results" in result
+            self.assertTrue(isinstance(result, dict))
+            self.assertTrue("dd_table" in result)
+            self.assertTrue("par_results" in result)
 
     def test_calc_par_invalid_vulnerability(self) -> None:
         """Test that invalid vulnerability raises ValueError."""
@@ -85,13 +87,13 @@ class TestCalcPar:
         
         try:
             calc_par(table_deal, vulnerable=-1)
-            assert False, "Expected ValueError for vulnerable=-1"
+            self.fail("Expected ValueError for vulnerable=-1")
         except ValueError:
             pass  # Expected
 
         try:
             calc_par(table_deal, vulnerable=4)
-            assert False, "Expected ValueError for vulnerable=4"
+            self.fail("Expected ValueError for vulnerable=4")
         except ValueError:
             pass  # Expected
 
@@ -100,10 +102,10 @@ class TestCalcPar:
         table_deal = self._hand1_table_deal()
         result = calc_par(table_deal, vulnerable=2)  # NS vulnerable
         
-        assert isinstance(result, dict)
-        assert "dd_table" in result
-        assert "par_results" in result
-        assert "res_table" in result["dd_table"]
+        self.assertTrue(isinstance(result, dict))
+        self.assertTrue("dd_table" in result)
+        self.assertTrue("par_results" in result)
+        self.assertTrue("res_table" in result["dd_table"])
 
     def test_calc_par_result_consistency(self) -> None:
         """Test that repeated calls with same input give same results."""
@@ -113,10 +115,10 @@ class TestCalcPar:
         result2 = calc_par(table_deal, vulnerable=0)
         
         # Both should have same structure
-        assert result1["par_results"]["par_score"] == result2["par_results"]["par_score"]
+        self.assertTrue(result1["par_results"]["par_score"] == result2["par_results"]["par_score"])
 
 
-class TestCalcParFromTable:
+class TestCalcParFromTable(unittest.TestCase):
     """Tests for calc_par_from_table (par from pre-computed DD table)."""
 
     def _hand0_table_deal(self) -> dict:
@@ -144,9 +146,9 @@ class TestCalcParFromTable:
         par_result = calc_par_from_table(dd_result, vulnerable=0)
         
         # Result should have par_score and par_contracts_string
-        assert isinstance(par_result, dict)
-        assert "par_score" in par_result
-        assert "par_contracts_string" in par_result
+        self.assertTrue(isinstance(par_result, dict))
+        self.assertTrue("par_score" in par_result)
+        self.assertTrue("par_contracts_string" in par_result)
 
     def test_calc_par_from_table_vulnerability_variations(self) -> None:
         """Test calc_par_from_table with different vulnerability."""
@@ -156,8 +158,8 @@ class TestCalcParFromTable:
         # Test different vulnerability settings
         for vuln in [0, 1, 2, 3]:
             par_result = calc_par_from_table(dd_result, vulnerable=vuln)
-            assert isinstance(par_result, dict)
-            assert "par_score" in par_result
+            self.assertTrue(isinstance(par_result, dict))
+            self.assertTrue("par_score" in par_result)
 
     def test_calc_par_from_table_invalid_vulnerability(self) -> None:
         """Test that invalid vulnerability raises ValueError."""
@@ -166,18 +168,18 @@ class TestCalcParFromTable:
         
         try:
             calc_par_from_table(dd_result, vulnerable=-1)
-            assert False, "Expected ValueError for vulnerable=-1"
+            self.fail("Expected ValueError for vulnerable=-1")
         except ValueError:
             pass  # Expected
 
         try:
             calc_par_from_table(dd_result, vulnerable=4)
-            assert False, "Expected ValueError for vulnerable=4"
+            self.fail("Expected ValueError for vulnerable=4")
         except ValueError:
             pass  # Expected
 
 
-class TestCalcParIntegration:
+class TestCalcParIntegration(unittest.TestCase):
     """Integration tests comparing calc_par and calc_par_from_table."""
 
     def _hand0_table_deal(self) -> dict:
@@ -207,10 +209,10 @@ class TestCalcParIntegration:
         cfp_result = calc_par_from_table(dd_result, vulnerable=0)
         
         # Par scores should match
-        assert cp_result["par_results"]["par_score"] == cfp_result["par_score"]
+        self.assertTrue(cp_result["par_results"]["par_score"] == cfp_result["par_score"])
         
         # Par contract strings should match
-        assert cp_result["par_results"]["par_contracts_string"] == cfp_result["par_contracts_string"]
+        self.assertTrue(cp_result["par_results"]["par_contracts_string"] == cfp_result["par_contracts_string"])
 
     def test_calc_par_dd_table_matches_calc_dd_table(self) -> None:
         """Test that calc_par's DD table matches calc_dd_table result."""
@@ -223,7 +225,7 @@ class TestCalcParIntegration:
         dd_result = calc_dd_table(table_deal)
         
         # DD tables should match
-        assert cp_result["dd_table"]["res_table"] == dd_result["res_table"]
+        self.assertTrue(cp_result["dd_table"]["res_table"] == dd_result["res_table"])
 
     def test_calc_par_multiple_vulnerabilities(self) -> None:
         """Test calc_par and calc_par_from_table with multiple vulnerabilities."""
@@ -238,30 +240,8 @@ class TestCalcParIntegration:
             cfp_result = calc_par_from_table(dd_result, vulnerable=vuln)
             
             # Par results should match
-            assert cp_result["par_results"]["par_score"] == cfp_result["par_score"]
-
-
-def run_all_tests() -> None:
-    """Run all calc_par tests when executed as a script."""
-    calc_par_tests = TestCalcPar()
-    calc_par_tests.test_calc_par_basic_hand0()
-    calc_par_tests.test_calc_par_vulnerability_variations()
-    calc_par_tests.test_calc_par_invalid_vulnerability()
-    calc_par_tests.test_calc_par_hand1()
-    calc_par_tests.test_calc_par_result_consistency()
-
-    from_table_tests = TestCalcParFromTable()
-    from_table_tests.test_calc_par_from_table_basic()
-    from_table_tests.test_calc_par_from_table_vulnerability_variations()
-    from_table_tests.test_calc_par_from_table_invalid_vulnerability()
-
-    integration_tests = TestCalcParIntegration()
-    integration_tests.test_calc_par_vs_from_table_consistency()
-    integration_tests.test_calc_par_dd_table_matches_calc_dd_table()
-    integration_tests.test_calc_par_multiple_vulnerabilities()
-
-    print("\n✓ All calc_par tests passed!")
+            self.assertTrue(cp_result["par_results"]["par_score"] == cfp_result["par_score"])
 
 
 if __name__ == "__main__":
-    run_all_tests()
+    unittest.main()

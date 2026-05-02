@@ -24,29 +24,10 @@ jobs:
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen
 
-      # 4️⃣ Build Python extension
-      - name: Build Python extension
-        run: bazel build //python:_dds3
-
-      # 5️⃣ Build everything
+      # 4️⃣ Build all targets
       - name: Build all targets
-        run: bazel build //...
+        run: bazel build --verbose_failures //...
 
-      # 6️⃣ Run Python smoke test
-      - name: Run Python smoke test
-        run: bazel test //python:python_interface_smoke_test
-
-      # 7️⃣ Run Python pytest suite
-      - name: Run Python pytest suite
-        run: |
-          PYTHON_BIN="$(bazel cquery @python_3_14//:python3 --output=starlark --starlark:expr='target.files_to_run.executable.path')"
-          PYTHON_BIN="$(bazel info execution_root)/${PYTHON_BIN}"
-
-          "${PYTHON_BIN}" -m pip install --upgrade pip pytest
-          export DDS_PYTHON_EXT_DIR="$(bazel info bazel-bin)/python"
-          export PYTHONPATH="python:${DDS_PYTHON_EXT_DIR}"
-          "${PYTHON_BIN}" -m pytest python/tests/ -v
-
-      # 8️⃣ Run all tests
+      # 6️⃣ Run all tests (including Python)
       - name: Run all tests
-        run: bazel test //...
+        run: bazel test --verbose_failures //...

@@ -17,12 +17,29 @@ pybind_extension(
     visibility = ["//visibility:public"],
 )
 
-# Create a symlink or copy of the extension into the dds3 package directory
+# Copy the extension into the dds3 package directory with the platform-specific
+# filename Python expects for native modules.
 genrule(
-    name = "_dds3_in_package",
+    name = "_dds3_in_package_unix",
     srcs = [":_dds3"],
     outs = ["dds3/_dds3.so"],
-    cmd = "cp $(SRCS) $@",
+    cmd = "cp \"$(location :_dds3)\" \"$@\"",
+)
+
+genrule(
+    name = "_dds3_in_package_windows",
+    srcs = [":_dds3"],
+    outs = ["dds3/_dds3.pyd"],
+    cmd = "cp \"$(location :_dds3)\" \"$@\"",
+    cmd_bat = "copy /Y \"$(location :_dds3)\" \"$@\"",
+)
+
+alias(
+    name = "_dds3_in_package",
+    actual = select({
+        "//:build_windows": ":_dds3_in_package_windows",
+        "//conditions:default": ":_dds3_in_package_unix",
+    }),
 )
 
 py_library(
@@ -31,6 +48,11 @@ py_library(
     data = [":_dds3_in_package"],
     imports = ["."],
     visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "test_utils",
+    srcs = ["test_utils.py"],
 )
 
 py_test(
@@ -63,6 +85,50 @@ py_test(
     main = "tests/test_context_reuse.py",
     srcs = ["tests/test_context_reuse.py"],
     deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "solve_board_test",
+    size = "small",
+    main = "tests/test_solve_board.py",
+    srcs = ["tests/test_solve_board.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
+)
+
+py_test(
+    name = "calc_tables_test",
+    size = "small",
+    main = "tests/test_calc_tables.py",
+    srcs = ["tests/test_calc_tables.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
+)
+
+py_test(
+    name = "par_test",
+    size = "small",
+    main = "tests/test_par.py",
+    srcs = ["tests/test_par.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
+)
+
+py_test(
+    name = "type_conversions_test",
+    size = "small",
+    main = "tests/test_type_conversions.py",
+    srcs = ["tests/test_type_conversions.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
 )
 
 py_test(

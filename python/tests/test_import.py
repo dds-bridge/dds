@@ -1,3 +1,5 @@
+import unittest
+
 from dds3 import api_root
 from dds3 import calc_all_tables_pbn
 from dds3 import calc_dd_table
@@ -10,17 +12,23 @@ from dds3 import solve_board
 from dds3 import solve_board_pbn
 
 
-def test_import_and_api_root() -> None:
-    assert api_root() == "dds.hpp"
-    assert module_name() == "_dds3"
-    assert callable(solve_board)
-    assert callable(solve_board_pbn)
-    assert callable(calc_dd_table)
-    assert callable(calc_all_tables_pbn)
-    assert callable(par)
-    assert callable(calc_par)
-    assert callable(calc_par_from_table)
-    assert SolverContext is not None
-    # Verify SolverContext can be instantiated
-    ctx = SolverContext()
-    assert ctx is not None
+class TestImport(unittest.TestCase):
+    def test_import_and_api_root(self) -> None:
+        self.assertEqual(api_root(), "dds.hpp")
+        self.assertEqual(module_name(), "_dds3")
+        self.assertTrue(callable(solve_board))
+        self.assertTrue(callable(solve_board_pbn))
+        self.assertTrue(callable(calc_dd_table))
+        self.assertTrue(callable(calc_all_tables_pbn))
+        self.assertTrue(callable(par))
+        self.assertTrue(callable(calc_par))
+        self.assertTrue(callable(calc_par_from_table))
+        self.assertIsNotNone(SolverContext)
+
+        # Verify SolverContext can be instantiated.
+        ctx = SolverContext()
+        self.assertIsNotNone(ctx)
+
+
+if __name__ == "__main__":
+    unittest.main()
