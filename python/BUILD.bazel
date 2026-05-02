@@ -83,6 +83,38 @@ py_test(
 )
 
 py_test(
+    name = "solve_board_test",
+    size = "small",
+    main = "tests/test_solve_board.py",
+    srcs = ["tests/test_solve_board.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "calc_tables_test",
+    size = "small",
+    main = "tests/test_calc_tables.py",
+    srcs = ["tests/test_calc_tables.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "par_test",
+    size = "small",
+    main = "tests/test_par.py",
+    srcs = ["tests/test_par.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "type_conversions_test",
+    size = "small",
+    main = "tests/test_type_conversions.py",
+    srcs = ["tests/test_type_conversions.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
     name = "calc_tables_regression_test",
     size = "small",
     main = "tests/test_calc_tables_regression.py",

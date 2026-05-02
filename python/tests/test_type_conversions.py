@@ -1,7 +1,20 @@
 """Tests for type conversion and validation."""
 
-import pytest
 from dds3 import solve_board, solve_board_pbn, calc_all_tables_pbn
+
+
+def assert_raises(expected_exception, func, *args, match: str | None = None, **kwargs) -> None:
+    """Assert that a callable raises an expected exception type."""
+    try:
+        func(*args, **kwargs)
+    except expected_exception as exc:
+        if match is not None:
+            assert match in str(exc), f"Expected '{match}' in '{exc}'"
+        return
+    except Exception as exc:
+        assert False, f"Expected {expected_exception}, got {type(exc).__name__}: {exc}"
+
+    assert False, f"Expected {expected_exception} to be raised"
 
 
 class TestArrayConversions:
@@ -47,8 +60,7 @@ class TestArrayConversions:
             "current_trick_suit": (0, 1),  # Should be 3 elements
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises(ValueError):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal)
 
     def test_current_trick_rank_wrong_size(self) -> None:
         """Test that wrong-sized current_trick_rank raises error."""
@@ -59,8 +71,7 @@ class TestArrayConversions:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0, 0),  # Should be 3 elements
         }
-        with pytest.raises(ValueError):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal)
 
     def test_trick_suit_boundary_valid_0(self) -> None:
         """Test that trick suit 0 (spades) is valid."""
@@ -101,8 +112,7 @@ class TestArrayConversions:
             "current_trick_suit": (-1, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises(ValueError, match="invalid value -1"):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal, match="invalid value -1")
 
     def test_trick_suit_boundary_invalid_4(self) -> None:
         """Test that trick suit 4 is invalid."""
@@ -113,8 +123,7 @@ class TestArrayConversions:
             "current_trick_suit": (4, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises(ValueError, match="invalid value 4"):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal, match="invalid value 4")
 
     def test_trick_rank_boundary_valid_0(self) -> None:
         """Test that trick rank 0 (invalid card, but parsed) is valid."""
@@ -155,8 +164,7 @@ class TestArrayConversions:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (-1, 0, 0),
         }
-        with pytest.raises(ValueError, match="invalid value -1"):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal, match="invalid value -1")
 
     def test_trick_rank_boundary_invalid_15(self) -> None:
         """Test that trick rank 15 is invalid."""
@@ -167,8 +175,7 @@ class TestArrayConversions:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (15, 0, 0),
         }
-        with pytest.raises(ValueError, match="invalid value 15"):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal, match="invalid value 15")
 
 
 class TestPBNConversions:
@@ -186,25 +193,21 @@ class TestPBNConversions:
     def test_pbn_missing_seat(self) -> None:
         """Test that PBN missing a seat designation raises error."""
         pbn = "AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
-        with pytest.raises((ValueError, RuntimeError)):
-            solve_board_pbn(pbn)
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn)
 
     def test_pbn_invalid_seat(self) -> None:
         """Test that PBN with invalid seat raises error."""
         pbn = "X:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"
-        with pytest.raises((ValueError, RuntimeError)):
-            solve_board_pbn(pbn)
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn)
 
     def test_pbn_empty_string(self) -> None:
         """Test that empty PBN string raises error."""
-        with pytest.raises((ValueError, RuntimeError)):
-            solve_board_pbn("")
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, "")
 
     def test_pbn_truncated(self) -> None:
         """Test that truncated PBN raises error."""
         pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ"  # Incomplete
-        with pytest.raises((ValueError, RuntimeError)):
-            solve_board_pbn(pbn)
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn)
 
 
 class TestTrumpFilterValidation:
@@ -222,9 +225,8 @@ class TestTrumpFilterValidation:
     def test_trump_filter_all_ones(self) -> None:
         """Test that trump_filter (1,1,1,1,1) skips all strains."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
-        with pytest.raises((ValueError, RuntimeError)):
-            # Skipping all strains should be invalid
-            calc_all_tables_pbn(deals, trump_filter=[1, 1, 1, 1, 1])
+        # Skipping all strains should be invalid
+        assert_raises((ValueError, RuntimeError), calc_all_tables_pbn, deals, trump_filter=[1, 1, 1, 1, 1])
 
     def test_trump_filter_partial_skip(self) -> None:
         """Test that trump_filter can skip some strains."""
@@ -256,11 +258,9 @@ class TestTrumpFilterValidation:
     def test_trump_filter_boundary_invalid_minus1(self) -> None:
         """Test that trump_filter value -1 is invalid."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
-        with pytest.raises(ValueError, match="invalid value -1"):
-            calc_all_tables_pbn(deals, trump_filter=[-1, 0, 0, 0, 0])
+        assert_raises(ValueError, calc_all_tables_pbn, deals, trump_filter=[-1, 0, 0, 0, 0], match="invalid value -1")
 
     def test_trump_filter_boundary_invalid_2(self) -> None:
         """Test that trump_filter value 2 is invalid."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
-        with pytest.raises(ValueError, match="invalid value 2"):
-            calc_all_tables_pbn(deals, trump_filter=[0, 0, 2, 0, 0])
+        assert_raises(ValueError, calc_all_tables_pbn, deals, trump_filter=[0, 0, 2, 0, 0], match="invalid value 2")

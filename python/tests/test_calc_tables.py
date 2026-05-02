@@ -1,7 +1,20 @@
 """Tests for calc_dd_table and calc_all_tables_pbn wrappers."""
 
-import pytest
 from dds3 import calc_dd_table, calc_all_tables_pbn
+
+
+def assert_raises(expected_exception, func, *args, match: str | None = None, **kwargs) -> None:
+    """Assert that a callable raises an expected exception type."""
+    try:
+        func(*args, **kwargs)
+    except expected_exception as exc:
+        if match is not None:
+            assert match in str(exc), f"Expected '{match}' in '{exc}'"
+        return
+    except Exception as exc:
+        assert False, f"Expected {expected_exception}, got {type(exc).__name__}: {exc}"
+
+    assert False, f"Expected {expected_exception} to be raised"
 
 
 class TestCalcDDTable:
@@ -40,8 +53,7 @@ class TestCalcDDTable:
         table_deal = {
             "cards": [[0, 0, 0]],  # Wrong dimensions
         }
-        with pytest.raises(ValueError):
-            calc_dd_table(table_deal)
+        assert_raises(ValueError, calc_dd_table, table_deal)
 
     def test_calc_dd_table_remain_cards_all_zeros(self) -> None:
         """Test with all zeros (no cards dealt)."""
@@ -139,8 +151,7 @@ class TestCalcAllTablesPBN:
     def test_calc_all_tables_pbn_invalid_pbn(self) -> None:
         """Test that invalid PBN raises error."""
         deals = ["This is not a valid PBN"]
-        with pytest.raises((ValueError, RuntimeError)):
-            calc_all_tables_pbn(deals)
+        assert_raises((ValueError, RuntimeError), calc_all_tables_pbn, deals)
 
     def test_calc_all_tables_pbn_empty_list(self) -> None:
         """Test that empty deal list returns empty results."""
@@ -153,14 +164,18 @@ class TestCalcAllTablesPBN:
     def test_calc_all_tables_pbn_invalid_trump_filter_size(self) -> None:
         """Test that invalid trump_filter size raises error."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
-        with pytest.raises(ValueError):
-            calc_all_tables_pbn(deals, trump_filter=[0, 0, 0])  # Too small
+        assert_raises(ValueError, calc_all_tables_pbn, deals, trump_filter=[0, 0, 0])  # Too small
 
     def test_calc_all_tables_pbn_invalid_trump_filter_value(self) -> None:
         """Test that invalid trump_filter values raise error."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
-        with pytest.raises(ValueError, match="invalid value"):
-            calc_all_tables_pbn(deals, trump_filter=[0, 0, 2, 0, 0])  # 2 is invalid (must be 0-1)
+        assert_raises(
+            ValueError,
+            calc_all_tables_pbn,
+            deals,
+            trump_filter=[0, 0, 2, 0, 0],
+            match="invalid value",
+        )  # 2 is invalid (must be 0-1)
 
     def test_calc_all_tables_pbn_result_structure(self) -> None:
         """Test that result has expected structure."""

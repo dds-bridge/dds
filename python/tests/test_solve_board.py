@@ -1,7 +1,20 @@
 """Tests for solve_board and solve_board_pbn wrappers."""
 
-import pytest
 from dds3 import solve_board, solve_board_pbn
+
+
+def assert_raises(expected_exception, func, *args, match: str | None = None, **kwargs) -> None:
+    """Assert that a callable raises an expected exception type."""
+    try:
+        func(*args, **kwargs)
+    except expected_exception as exc:
+        if match is not None:
+            assert match in str(exc), f"Expected '{match}' in '{exc}'"
+        return
+    except Exception as exc:
+        assert False, f"Expected {expected_exception}, got {type(exc).__name__}: {exc}"
+
+    assert False, f"Expected {expected_exception} to be raised"
 
 
 class TestSolveBoard:
@@ -58,8 +71,7 @@ class TestSolveBoard:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises(ValueError, match="invalid value 5"):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal, match="invalid value 5")
 
     def test_solve_board_invalid_first(self) -> None:
         """Test that invalid first seat raises error."""
@@ -70,8 +82,7 @@ class TestSolveBoard:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises(ValueError, match="invalid value 4"):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal, match="invalid value 4")
 
     def test_solve_board_invalid_trick_suit(self) -> None:
         """Test that invalid current trick suit raises error."""
@@ -82,8 +93,7 @@ class TestSolveBoard:
             "current_trick_suit": (0, 0, 5),  # Invalid suit (must be 0-3)
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises(ValueError, match="invalid value 5"):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal, match="invalid value 5")
 
     def test_solve_board_invalid_trick_rank(self) -> None:
         """Test that invalid current trick rank raises error."""
@@ -94,8 +104,7 @@ class TestSolveBoard:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (2, 2, 15),  # Invalid rank (must be 0-14)
         }
-        with pytest.raises(ValueError, match="invalid value 15"):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal, match="invalid value 15")
 
     def test_solve_board_invalid_cards_size(self) -> None:
         """Test that invalid cards array size raises error."""
@@ -106,8 +115,7 @@ class TestSolveBoard:
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        with pytest.raises(ValueError):
-            solve_board(deal)
+        assert_raises(ValueError, solve_board, deal)
 
 
 class TestSolveBoardPBN:
@@ -129,20 +137,17 @@ class TestSolveBoardPBN:
     def test_solve_board_pbn_invalid_format(self) -> None:
         """Test that invalid PBN format raises error."""
         invalid_pbn = "This is not a valid PBN"
-        with pytest.raises((ValueError, RuntimeError)):
-            solve_board_pbn(invalid_pbn)
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, invalid_pbn)
 
     def test_solve_board_pbn_invalid_trump(self) -> None:
         """Test that invalid trump in PBN raises error."""
         pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
-        with pytest.raises((ValueError, RuntimeError)):
-            solve_board_pbn(pbn, trump=5)  # Invalid
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn, trump=5)  # Invalid
 
     def test_solve_board_pbn_invalid_first(self) -> None:
         """Test that invalid first seat raises error."""
         pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
-        with pytest.raises((ValueError, RuntimeError)):
-            solve_board_pbn(pbn, first=4)  # Invalid
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn, first=4)  # Invalid
 
     def test_solve_board_pbn_default_trump_is_nt(self) -> None:
         """Test that default trump is NT (4)."""
@@ -159,8 +164,7 @@ class TestSolveBoardPBN:
     def test_solve_board_pbn_current_trick_validation(self) -> None:
         """Test that invalid current trick in PBN mode raises error."""
         pbn = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
-        with pytest.raises(ValueError, match="invalid value"):
-            solve_board_pbn(pbn, current_trick_suit=(0, 0, 5))
+        assert_raises(ValueError, solve_board_pbn, pbn, current_trick_suit=(0, 0, 5), match="invalid value")
 
 
 class TestSolveBoardParity:
