@@ -1,23 +1,12 @@
 """Tests for calc_dd_table and calc_all_tables_pbn wrappers."""
 
+import unittest
+
 from dds3 import calc_dd_table, calc_all_tables_pbn
+from test_utils import assert_raises
 
 
-def assert_raises(expected_exception, func, *args, match: str | None = None, **kwargs) -> None:
-    """Assert that a callable raises an expected exception type."""
-    try:
-        func(*args, **kwargs)
-    except expected_exception as exc:
-        if match is not None:
-            assert match in str(exc), f"Expected '{match}' in '{exc}'"
-        return
-    except Exception as exc:
-        assert False, f"Expected {expected_exception}, got {type(exc).__name__}: {exc}"
-
-    assert False, f"Expected {expected_exception} to be raised"
-
-
-class TestCalcDDTable:
+class TestCalcDDTable(unittest.TestCase):
     """Tests for calc_dd_table (single table calculation)."""
 
     def test_calc_dd_table_basic(self) -> None:
@@ -69,7 +58,7 @@ class TestCalcDDTable:
             pass
 
 
-class TestCalcAllTablesPBN:
+class TestCalcAllTablesPBN(unittest.TestCase):
     """Tests for calc_all_tables_pbn (batch table calculation)."""
 
     def test_calc_all_tables_pbn_single_deal(self) -> None:
@@ -198,7 +187,7 @@ class TestCalcAllTablesPBN:
         assert len(result_with_par["par_results"]) > 0
 
 
-class TestTableParity:
+class TestTableParity(unittest.TestCase):
     """Tests for parity between single and batch table calculations."""
 
     def test_single_vs_batch_result_structure(self) -> None:
@@ -210,3 +199,7 @@ class TestTableParity:
         assert len(batch_result["tables"]) >= 1
         single_table = batch_result["tables"][0]
         assert isinstance(single_table, dict)
+
+
+if __name__ == "__main__":
+    unittest.main()

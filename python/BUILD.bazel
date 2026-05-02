@@ -50,6 +50,11 @@ py_library(
     visibility = ["//visibility:public"],
 )
 
+py_library(
+    name = "test_utils",
+    srcs = ["test_utils.py"],
+)
+
 py_test(
     name = "python_interface_smoke_test",
     size = "small",
@@ -87,7 +92,10 @@ py_test(
     size = "small",
     main = "tests/test_solve_board.py",
     srcs = ["tests/test_solve_board.py"],
-    deps = [":dds3_lib"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
 )
 
 py_test(
@@ -95,7 +103,10 @@ py_test(
     size = "small",
     main = "tests/test_calc_tables.py",
     srcs = ["tests/test_calc_tables.py"],
-    deps = [":dds3_lib"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
 )
 
 py_test(
@@ -103,7 +114,10 @@ py_test(
     size = "small",
     main = "tests/test_par.py",
     srcs = ["tests/test_par.py"],
-    deps = [":dds3_lib"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
 )
 
 py_test(
@@ -111,7 +125,10 @@ py_test(
     size = "small",
     main = "tests/test_type_conversions.py",
     srcs = ["tests/test_type_conversions.py"],
-    deps = [":dds3_lib"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
 )
 
 py_test(

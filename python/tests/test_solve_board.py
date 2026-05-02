@@ -1,23 +1,12 @@
 """Tests for solve_board and solve_board_pbn wrappers."""
 
+import unittest
+
 from dds3 import solve_board, solve_board_pbn
+from test_utils import assert_raises
 
 
-def assert_raises(expected_exception, func, *args, match: str | None = None, **kwargs) -> None:
-    """Assert that a callable raises an expected exception type."""
-    try:
-        func(*args, **kwargs)
-    except expected_exception as exc:
-        if match is not None:
-            assert match in str(exc), f"Expected '{match}' in '{exc}'"
-        return
-    except Exception as exc:
-        assert False, f"Expected {expected_exception}, got {type(exc).__name__}: {exc}"
-
-    assert False, f"Expected {expected_exception} to be raised"
-
-
-class TestSolveBoard:
+class TestSolveBoard(unittest.TestCase):
     """Tests for solve_board (binary format input)."""
 
     def test_solve_board_basic(self) -> None:
@@ -118,7 +107,7 @@ class TestSolveBoard:
         assert_raises(ValueError, solve_board, deal)
 
 
-class TestSolveBoardPBN:
+class TestSolveBoardPBN(unittest.TestCase):
     """Tests for solve_board_pbn (PBN string input)."""
 
     def test_solve_board_pbn_basic(self) -> None:
@@ -167,7 +156,7 @@ class TestSolveBoardPBN:
         assert_raises(ValueError, solve_board_pbn, pbn, current_trick_suit=(0, 0, 5), match="invalid value")
 
 
-class TestSolveBoardParity:
+class TestSolveBoardParity(unittest.TestCase):
     """Tests for parity between different calling conventions."""
 
     def test_default_parameters_consistent(self) -> None:
@@ -178,3 +167,7 @@ class TestSolveBoardParity:
         # Both should have the same keys
         assert "nodes" in result_pbn  # FutureTricks has nodes, not return_code
         assert "score" in result_pbn
+
+
+if __name__ == "__main__":
+    unittest.main()

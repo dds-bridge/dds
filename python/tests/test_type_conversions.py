@@ -1,23 +1,12 @@
 """Tests for type conversion and validation."""
 
+import unittest
+
 from dds3 import solve_board, solve_board_pbn, calc_all_tables_pbn
+from test_utils import assert_raises
 
 
-def assert_raises(expected_exception, func, *args, match: str | None = None, **kwargs) -> None:
-    """Assert that a callable raises an expected exception type."""
-    try:
-        func(*args, **kwargs)
-    except expected_exception as exc:
-        if match is not None:
-            assert match in str(exc), f"Expected '{match}' in '{exc}'"
-        return
-    except Exception as exc:
-        assert False, f"Expected {expected_exception}, got {type(exc).__name__}: {exc}"
-
-    assert False, f"Expected {expected_exception} to be raised"
-
-
-class TestArrayConversions:
+class TestArrayConversions(unittest.TestCase):
     """Tests for array/sequence type conversions and validation."""
 
     def test_current_trick_suit_tuple_conversion(self) -> None:
@@ -178,7 +167,7 @@ class TestArrayConversions:
         assert_raises(ValueError, solve_board, deal, match="invalid value 15")
 
 
-class TestPBNConversions:
+class TestPBNConversions(unittest.TestCase):
     """Tests for PBN string conversion and validation."""
 
     def test_pbn_valid_format(self) -> None:
@@ -210,7 +199,7 @@ class TestPBNConversions:
         assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn)
 
 
-class TestTrumpFilterValidation:
+class TestTrumpFilterValidation(unittest.TestCase):
     """Tests for trump_filter validation in calc_all_tables_pbn."""
 
     def test_trump_filter_all_zeros(self) -> None:
@@ -264,3 +253,7 @@ class TestTrumpFilterValidation:
         """Test that trump_filter value 2 is invalid."""
         deals = ["N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"]
         assert_raises(ValueError, calc_all_tables_pbn, deals, trump_filter=[0, 0, 2, 0, 0], match="invalid value 2")
+
+
+if __name__ == "__main__":
+    unittest.main()
