@@ -2,7 +2,8 @@ name: CI – macOS
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+  workflow_dispatch: {}
 
 jobs:
   build_and_test:
