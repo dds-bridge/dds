@@ -11,11 +11,13 @@ jobs:
     steps:
       # Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      # Install Bazelisk (the recommended Bazel launcher)
-      - name: Install Bazelisk
-        run: brew install bazelisk
+      # Install Bazelisk (recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: "1.29.0"
 
       # Install Doxygen, to generate documentation
       - name: Install Doxygen
