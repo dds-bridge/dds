@@ -5,31 +5,10 @@ module(
 
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "googletest", version = "1.17.0.bcr.1")
-bazel_dep(name = "pybind11_bazel", version = "3.0.0")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "1.7.0")
-# BCR currently has 1.6.0; overridden below to a Bazel-9-compatible upstream
-# commit from the v1.7.0 line until a newer BCR release is available.
-bazel_dep(name = "toolchains_llvm", version = "1.6.0")
-
-git_override(
-    module_name = "googletest",
-    remote = "https://github.com/google/googletest.git",
-    commit = "85087857ad10bd407cd6ed2f52f7ea9752db621f",  # Override 1.17.0.bcr.1 with a commit known to be Bazel 9 compatible
-)
-
-git_override(
-    module_name = "pybind11_bazel",
-    remote = "https://github.com/pybind/pybind11_bazel.git",
-    commit = "536e9fd8415705fc788658c0e116106c62116c1f",  # Bazel 9 compatible
-)
-
-git_override(
-    module_name = "toolchains_llvm",
-    remote = "https://github.com/bazel-contrib/toolchains_llvm.git",
-    # Override bazel_dep(1.6.0) to a Bazel-9-compatible upstream commit.
-    commit = "3aad06c2d166cd89a09236694ecd9bf0f1c1b37d",  # v1.7.0 commit
-)
+bazel_dep(name = "toolchains_llvm", version = "1.7.0")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
