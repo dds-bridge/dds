@@ -1,4 +1,7 @@
-The text files in this directory are all input files for the
+The text files in this directory are input files for the `dtest` program.
+
+For detailed information about the `dtest` program and the format of these input files, please see the [dtest documentation](../tests/README.md).
+
 test program.  Clearly large files take longer to run.
 
 For the curious, the hands are as below.

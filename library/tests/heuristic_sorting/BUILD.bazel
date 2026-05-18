@@ -1,0 +1,66 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_test", "cc_binary")
+
+cc_test(
+    name = "heuristic_sorting_test",
+    size = "small",
+    srcs = ["heuristic_sorting_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "merge_scratch_test",
+    size = "small",
+    srcs = ["merge_scratch_test.cpp"],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/api:api_definitions",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "minimal_new_test",
+    size = "small",
+    srcs = ["minimal_new_test.cpp"],
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "minimal_weight_test",
+    size = "small",
+    srcs = ["minimal_weight_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "targeted_unit_tests",
+    size = "small",
+    srcs = [
+        "targeted_unit_tests.cpp",
+        "test_utils.cpp",
+        "test_utils.hpp",
+    ],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/heuristic_sorting:testable_heuristic_sorting",
+        "//library/src/moves:moves",
+        "@googletest//:gtest_main",
+    ],
+)

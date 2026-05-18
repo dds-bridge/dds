@@ -1,0 +1,16 @@
+Checks: >
+  -clang-analyzer-*,
+  -llvm-*,
+  -modernize-*,
+  -readability-*,
+  bugprone-*,
+  cppcoreguidelines-avoid-non-const-global-variables,
+  cert-err58-cpp
+
+WarningsAsErrors: ''
+
+CheckOptions:
+  - key:             cert-err58-cpp.AnalyzeHeaders
+    value:           'false'
+  - key:             cppcoreguidelines-avoid-non-const-global-variables.IgnoreHeaders
+    value:           'true'

@@ -1,0 +1,155 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:packaging.bzl", "py_wheel", "py_wheel_dist")
+
+pybind_extension(
+    name = "_dds3",
+    srcs = [
+        "src/bindings.cpp",
+        "src/converters.cpp",
+        "src/converters.hpp",
+    ],
+    copts = DDS_CPPOPTS,
+    deps = [
+        "//library/src:dds",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Copy the extension into the dds3 package directory with the platform-specific
+# filename Python expects for native modules.
+genrule(
+    name = "_dds3_in_package_unix",
+    srcs = [":_dds3"],
+    outs = ["dds3/_dds3.so"],
+    cmd = "cp \"$(location :_dds3)\" \"$@\"",
+)
+
+genrule(
+    name = "_dds3_in_package_windows",
+    srcs = [":_dds3"],
+    outs = ["dds3/_dds3.pyd"],
+    cmd = "cp \"$(location :_dds3)\" \"$@\"",
+    cmd_bat = "copy /Y \"$(location :_dds3)\" \"$@\"",
+)
+
+alias(
+    name = "_dds3_in_package",
+    actual = select({
+        "//:build_windows": ":_dds3_in_package_windows",
+        "//conditions:default": ":_dds3_in_package_unix",
+    }),
+)
+
+py_library(
+    name = "dds3_lib",
+    srcs = ["dds3/__init__.py"],
+    data = [":_dds3_in_package"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "test_utils",
+    srcs = ["test_utils.py"],
+)
+
+py_test(
+    name = "python_interface_smoke_test",
+    size = "small",
+    main = "tests/test_import.py",
+    srcs = ["tests/test_import.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "calc_par_test",
+    size = "small",
+    main = "tests/test_calc_par_simple.py",
+    srcs = ["tests/test_calc_par_simple.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "calc_par_comprehensive_test",
+    size = "small",
+    main = "tests/test_calc_par.py",
+    srcs = ["tests/test_calc_par.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "context_reuse_test",
+    size = "small",
+    main = "tests/test_context_reuse.py",
+    srcs = ["tests/test_context_reuse.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "solve_board_test",
+    size = "small",
+    main = "tests/test_solve_board.py",
+    srcs = ["tests/test_solve_board.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
+)
+
+py_test(
+    name = "calc_tables_test",
+    size = "small",
+    main = "tests/test_calc_tables.py",
+    srcs = ["tests/test_calc_tables.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
+)
+
+py_test(
+    name = "par_test",
+    size = "small",
+    main = "tests/test_par.py",
+    srcs = ["tests/test_par.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
+)
+
+py_test(
+    name = "type_conversions_test",
+    size = "small",
+    main = "tests/test_type_conversions.py",
+    srcs = ["tests/test_type_conversions.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
+)
+
+py_test(
+    name = "calc_tables_regression_test",
+    size = "small",
+    main = "tests/test_calc_tables_regression.py",
+    srcs = ["tests/test_calc_tables_regression.py"],
+    deps = [":dds3_lib"],
+)
+
+py_wheel(
+    name = "dds3_wheel",
+    distribution = "dds3",
+    version = "1.0.0",
+    deps = [":dds3_lib", ":_dds3_in_package"],
+    strip_path_prefixes = ["python/"],
+    entry_points = {},
+)
+
+py_wheel_dist(
+    name = "dds3_wheel_dist",
+    out = "dist",
+    wheel = ":dds3_wheel",
+)

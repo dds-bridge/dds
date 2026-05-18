@@ -1,20 +1,91 @@
-!.gitignore
+# Ignore VS Code directory, but share specific settings
+.vscode/*
+!.vscode/launch.json
+!.vscode/c_cpp_properties.json
+!.vscode/mcp.json
+!.vscode/tasks.json
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
 *.o
-*.a
-*.so
-*.dll
 *.obj
-*.def
-src/[Mm]akefile
-test/[Mm]akefile
-examples/[Mm]akefile
-test/dtest
-test/itest
 
-*.exe
-*.swp
-*.bak
+# Precompiled Headers
+*.gch
+*.pch
 
-*.exp
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
 *.lib
-*.res
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Bazel Directories
+bazel-*
+
+# System dependent helper files
+compile_commands.json
+.cache/
+
+# Python virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# pytest cache
+.pytest_cache/
+
+# Python build artifacts
+*.egg-info/
+dist/
+build/
+
+#
+# Build artefacts are placed in these directories.
+#
+bin/
+build/
+lib/
+Frameworks/
+Carthage/Build
+Carthage/Checkouts
+xcuserdata/
+.DS_Store
+*.xccheckout
+*.xcscmblueprint
+.Rproj.user
+.aider*
+copilot/perf/artifacts
+
+#
+# Debug output from DDS3
+#
+dump.txt
+
+# Generated documentation output
+doxygen_output/

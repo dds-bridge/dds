@@ -10,11 +10,11 @@
 
 // General initialization of three hands to be used in examples.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "../include/dll.h"
-#include "hands.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <api/dll.h>
+#include "hands.hpp"
 
 #define SP 0
 #define HE 1
@@ -70,12 +70,12 @@
 //                     Inputs                           //
 //////////////////////////////////////////////////////////
 
-int trump [3] = { SPADES  , NOTRUMP, SPADES   };
-int first [3] = { NORTH   , EAST   , SOUTH    };
-int dealer[3] = { NORTH   , EAST   , NORTH    };
-int vul   [3] = { VUL_NONE, VUL_NS , VUL_NONE };
+int trump_suit_ [3] = { SPADES  , NOTRUMP, SPADES   };
+int first_hand_ [3] = { NORTH   , EAST   , SOUTH    };
+int dealer_hand_[3] = { NORTH   , EAST   , NORTH    };
+int vulnerability_ [3] = { VUL_NONE, VUL_NS , VUL_NONE };
 
-char PBN[3][80] = {
+char pbn_hands_[3][80] = {
 "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3",
 "E:QJT5432.T.6.QJ82 .J97543.K7532.94 87.A62.QJT4.AT75 AK96.KQ8.A98.K63",
 "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 5.A95432.7632.K6 AKJ9842.K.T8.J93"
@@ -83,7 +83,7 @@ char PBN[3][80] = {
 
 // The same hands in binary.  The second index is suit, the
 // third index is hand.
-unsigned int holdings[3][4][4] =
+unsigned int holdings_[3][4][4] =
 {
   { // North       East     South          West
     { RQ|RJ|R6, R8|R7|R3, RK|R5, RA|RT|R9|R4|R2 } , // spades
@@ -104,16 +104,16 @@ unsigned int holdings[3][4][4] =
 
 
 // Number of cards played during the played before claim
-int playNo[3] = { 45, 52, 12 };
+int play_count_[3] = { 45, 52, 12 };
 
 // Actual cards played before claim
-char play[3][106] = {
+char play_sequence_[3][106] = {
 "CTC4CACJH8H4HKH9D5DAD9D2S7S5S2SQD8D4DQD3H3HAH6H7C3C8CQC2S3SKSAS6HQH5HJHTCKC9D6C5S4SJS8C6DJ",
 "SQD2S8SAHKHTH3H2HQS2H4H6H8D6HJHAS7SKS4C4D8C2DKD4H9C5S6S3H7C7C3S5H5CTD9STD3DQDAC8S9SJC9DTCQD5CAC6DJCKCJD7",
 "HAHKHQH7D7D8DAD9C5CAC6C3" 
 };
 
-int playSuit[3][52] = {
+int play_suit_[3][52] = {
   { CL, CL, CL, CL,    HE, HE, HE, HE,    DI, DI, DI, DI,
     SP, SP, SP, SP,    DI, DI, DI, DI,    HE, HE, HE, HE,
     CL, CL, CL, CL,    SP, SP, SP, SP,    HE, HE, HE, HE,
@@ -130,7 +130,7 @@ int playSuit[3][52] = {
     -1, -1, -1, -1 }
 };
 
-int playRank[3][52] = {
+int play_rank_[3][52] = {
   { KT, K4, KA, KJ,    K8, K4, KK, K9,    K5, KA, K9, K2,
     K7, K5, K2, KQ,    K8, K4, KQ, K3,    K3, KA, K6, K7,
     K3, K8, KQ, K2,    K3, KK, KA, K6,    KQ, K5, KJ, KT,
@@ -155,35 +155,35 @@ int playRank[3][52] = {
 // Number of cards returned for solutions == 2, i.e. for
 // all cards leading to the optimal score (taking into
 // account equivalences.
-int cardsSoln2[3] = { 6, 3, 4 };
+int cards_solutions2_[3] = { 6, 3, 4 };
 
 // Number of cards returned for solutions == 3, i.e. for
 // all legally playable cards (taking into account equivalences).
-int cardsSoln3[3] = { 9, 7, 8 };
+int cards_solutions3_[3] = { 9, 7, 8 };
 
 // Suits of cards returned. Padded with zeroes.
-int cardsSuits[3][13] = {
+int card_suits_[3][13] = {
   { 2, 2, 2, 3, 0, 0, 1, 1, 1,    0, 0, 0, 0 },
   { 3, 3, 3, 1, 2, 0, 0,    0, 0, 0, 0, 0, 0 },
   { 1, 2, 2, 0, 1, 1, 3, 3,    0, 0, 0, 0, 0 }
 };
 
 // Ranks for cards returned (2 .. 14).  Padded with zeroes.
-int cardsRanks[3][13] = {
+int card_ranks_[3][13] = {
   { 5, 8,11,10, 6,12, 2, 6,13,    0, 0, 0, 0 },
   { 2, 8,12,10, 6,12, 5,    0, 0, 0, 0, 0, 0 },
   {14, 3, 7, 5, 5, 9, 6,13,    0, 0, 0, 0, 0 }
 };
 
 // Scores for cards returned.
-int cardsScores[3][13] = {
+int card_scores_[3][13] = {
   { 5, 5, 5, 5, 5, 5, 4, 4, 4,    0, 0, 0, 0 },
   { 4, 4, 4, 3, 3, 3, 2,    0, 0, 0, 0, 0, 0 },
   { 3, 3, 3, 3, 2, 2, 1, 1,    0, 0, 0, 0, 0 }
 };
 
 // Equals for cards returned, i.e. equivalent cards (rank vectors).
-int cardsEquals[3][13] = {
+int card_equals_[3][13] = {
   { 0,   0,   0, 768,   0,2048,   0,  32,   0,    0,0,0,0},
   { 0,   0,2048,   0,   0,3072,  28,          0,0,0,0,0,0},
   { 0,   4,  64,   0,  28,   0,   0,   0,       0,0,0,0,0}
@@ -193,7 +193,7 @@ int cardsEquals[3][13] = {
 // Spades: North, East, South, West
 // Hearts: same
 // etc.
-int DDtable[3][20] = {
+int dd_table_[3][20] = {
   { 5, 8, 5, 8,  6, 6, 6, 6,  5, 7, 5, 7,  7, 5, 7, 5,  6, 6, 6, 6 },
   { 4, 9, 4, 9, 10, 2,10, 2,  8, 3, 8, 3,  6, 7, 6, 7,  9, 3, 9, 3 },
   { 3,10, 3,10,  9, 4, 9, 4,  8, 4, 8, 4,  3, 9, 3, 9,  4, 8, 4, 8 }
@@ -204,10 +204,10 @@ int DDtable[3][20] = {
 // card is played, then there is a result before the opening lead
 // and after the opening lead.  Limited to 49 as the last trick 
 //holds no excitement.
-int traceNo[3] = { 46, 49, 13 };
+int trace_count_[3] = { 46, 49, 13 };
 
 // Results expected from the play analysis.  Padded with zeroes here.
-int trace[3][53] = {
+int trace_results_[3][53] = {
   {8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8, 
         8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8, 
         8, 8, 8, 8,   8, 8, 8, 8,   8, 8, 8, 8,   8, 0, 0, 0,
@@ -222,27 +222,27 @@ int trace[3][53] = {
         0, 0, 0, 0 }
 };
        
-char parScore[3][2][10] = {
+char par_scores_[3][2][10] = {
   { "NS -110", "EW 110"  },
   { "NS 100" , "EW -100" },
   { "NS -300", "EW 300"  }
 };
 
-char parString[3][2][10] = {
+char par_strings_[3][2][10] = {
   { "NS:EW 2S" , "EW:EW 2S"  },
   { "NS:EW 4Sx", "EW:EW 4Sx" },
   { "NS:NS 5Hx", "EW:NS 5Hx" }
 };
 
 // Number of dealer par contracts expected.
-int dealerParNo[3] = { 1, 1, 1 };
+int dealer_par_count_[3] = { 1, 1, 1 };
 
 // Dealer par scores expected.
-int dealerScore[3] = { -110, 100, -300 };
+int dealer_scores_[3] = { -110, 100, -300 };
 
-// Dealer par contracts expected, here only one per deal.
+// Dealer par contracts expected, here only one per Deal.
 // That is not always the case.
-char dealerContract[3][4][10] = { 
+char dealer_contracts_[3][4][10] = { 
   { "2S-EW"   , "", "", "" },
   { "4S*-EW-1", "", "", "" },
   { "5H*-NS-2", "", "", "" }
@@ -253,24 +253,24 @@ char dealerContract[3][4][10] = {
 //                 Useful constants                     //
 //////////////////////////////////////////////////////////
 
-unsigned short int dbitMapRank[16] =
+unsigned short int bit_map_rank_[16] =
 {
   0x0000, 0x0000, 0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020,
   0x0040, 0x0080, 0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000
 };
 
-unsigned char dcardRank[16] =
+unsigned char card_rank_chars_[16] =
 { 
   'x', 'x', '2', '3', '4', '5', '6', '7',
   '8', '9', 'T', 'J', 'Q', 'K', 'A', '-'
 };
 
-unsigned char dcardSuit[5] = { 'S', 'H', 'D', 'C', 'N' };
-unsigned char dcardHand[4] = { 'N', 'E', 'S', 'W' };
+unsigned char card_suit_chars_[5] = { 'S', 'H', 'D', 'C', 'N' };
+unsigned char card_hand_chars_[4] = { 'N', 'E', 'S', 'W' };
 
 
 
-void PrintFut(char title[], futureTricks * fut)
+auto print_future_tricks(char title[], FutureTricks * fut) -> void
 {
   printf("%s\n", title);
 
@@ -283,8 +283,8 @@ void PrintFut(char title[], futureTricks * fut)
     equals_to_string(fut->equals[i], res);
     printf("%6d %-6c %-6c %-6s %-6d\n",
            i,
-           dcardSuit[ fut->suit[i] ],
-           dcardRank[ fut->rank[i] ],
+           card_suit_chars_[ fut->suit[i] ],
+           card_rank_chars_[ fut->rank[i] ],
            res,
            fut->score[i]);
   }
@@ -292,55 +292,55 @@ void PrintFut(char title[], futureTricks * fut)
 }
 
 
-void equals_to_string(int equals, char * res)
+auto equals_to_string(int equals, char * res) -> void
 {
-  int p = 0;
-  int m = equals >> 2;
+  int pos = 0;
+  int mask = equals >> 2;
   for (int i = 15; i >= 2; i--)
   {
-    if (m & static_cast<int>(dbitMapRank[i]))
-      res[p++] = static_cast<char>(dcardRank[i]);
+    if (mask & static_cast<int>(bit_map_rank_[i]))
+      res[pos++] = static_cast<char>(card_rank_chars_[i]);
   }
-  res[p] = 0;
+  res[pos] = 0;
 }
 
 
-bool CompareFut(futureTricks * fut, int handno, int solutions)
+auto compare_future_tricks(FutureTricks * fut, int handno, int solutions) -> bool
 {
   if (solutions == 2)
   {
-    if (fut->cards != cardsSoln2[handno])
+    if (fut->cards != cards_solutions2_[handno])
       return false;
   }
-  else if (fut->cards != cardsSoln3[handno])
+  else if (fut->cards != cards_solutions3_[handno])
     return false;
 
   for (int i = 0; i < fut->cards; i++)
   {
-    if (fut->suit [i] != cardsSuits [handno][i]) return false;
-    if (fut->rank [i] != cardsRanks [handno][i]) return false;
-    if (fut->equals[i] != cardsEquals[handno][i]) return false;
-    if (fut->score [i] != cardsScores[handno][i]) return false;
+    if (fut->suit [i] != card_suits_ [handno][i]) return false;
+    if (fut->rank [i] != card_ranks_ [handno][i]) return false;
+    if (fut->equals[i] != card_equals_[handno][i]) return false;
+    if (fut->score [i] != card_scores_[handno][i]) return false;
   }
   return true;
 }
 
 
-void SetTable(ddTableResults * table, int handno)
+auto set_table(DdTableResults * table, int handno) -> void
 {
   for (int suit = 0; suit < DDS_STRAINS; suit++)
     for (int pl = 0; pl <= 3; pl++)
-      table->resTable[suit][pl] = DDtable[handno][4 * suit + pl];
+      table->res_table[suit][pl] = dd_table_[handno][4 * suit + pl];
 }
 
 
-bool CompareTable(ddTableResults * table, int handno)
+auto compare_table(DdTableResults * table, int handno) -> bool
 {
   for (int suit = 0; suit < DDS_STRAINS; suit++)
   {
     for (int pl = 0; pl <= 3; pl++)
     {
-      if (table->resTable[suit][pl] != DDtable[handno][4 * suit + pl])
+      if (table->res_table[suit][pl] != dd_table_[handno][4 * suit + pl])
         return false;
     }
   }
@@ -348,69 +348,69 @@ bool CompareTable(ddTableResults * table, int handno)
 }
 
 
-void PrintTable(ddTableResults * table)
+auto print_table(DdTableResults * table) -> void
 {
   printf("%5s %-5s %-5s %-5s %-5s\n",
          "", "North", "South", "East", "West");
 
   printf("%5s %5d %5d %5d %5d\n",
          "NT",
-         table->resTable[4][0],
-         table->resTable[4][2],
-         table->resTable[4][1],
-         table->resTable[4][3]);
+         table->res_table[4][0],
+         table->res_table[4][2],
+         table->res_table[4][1],
+         table->res_table[4][3]);
 
   for (int suit = 0; suit < DDS_SUITS; suit++)
   {
     printf("%5c %5d %5d %5d %5d\n",
-           dcardSuit[suit],
-           table->resTable[suit][0],
-           table->resTable[suit][2],
-           table->resTable[suit][1],
-           table->resTable[suit][3]);
+           card_suit_chars_[suit],
+           table->res_table[suit][0],
+           table->res_table[suit][2],
+           table->res_table[suit][1],
+           table->res_table[suit][3]);
   }
   printf("\n");
 }
 
 
-bool ComparePar(parResults * par, int handno)
+auto compare_par(ParResults * par, int handno) -> bool
 {
-  if (strcmp(par->parScore[0], parScore[handno][0])) return false;
-  if (strcmp(par->parScore[1], parScore[handno][1])) return false;
+  if (strcmp(par->par_score[0], par_scores_[handno][0])) return false;
+  if (strcmp(par->par_score[1], par_scores_[handno][1])) return false;
 
-  if (strcmp(par->parContractsString[0], parString[handno][0]))
+  if (strcmp(par->par_contracts_string[0], par_strings_[handno][0]))
     return false;
-  if (strcmp(par->parContractsString[1], parString[handno][1]))
+  if (strcmp(par->par_contracts_string[1], par_strings_[handno][1]))
     return false;
   return true;
 }
 
 
-bool CompareDealerPar(parResultsDealer * par, int handno)
+auto compare_dealer_par(ParResultsDealer * par, int handno) -> bool
 {
-  if (par->number != dealerParNo[handno]) return false;
-  if (par->score != dealerScore[handno]) return false;
+  if (par->number != dealer_par_count_[handno]) return false;
+  if (par->score != dealer_scores_[handno]) return false;
 
   for (int i = 0; i < par->number; i++)
   {
-    if (strcmp(par->contracts[i], dealerContract[handno][i]))
+    if (strcmp(par->contracts[i], dealer_contracts_[handno][i]))
       return false;
   }
   return true;
 }
 
 
-void PrintPar(parResults * par)
+auto print_par(ParResults * par) -> void
 {
-  printf("NS score: %s\n", par->parScore[0]);
-  printf("EW score: %s\n", par->parScore[1]);
-  printf("NS list : %s\n", par->parContractsString[0]);
-  printf("EW list : %s\n", par->parContractsString[1]);
+  printf("NS score: %s\n", par->par_score[0]);
+  printf("EW score: %s\n", par->par_score[1]);
+  printf("NS list : %s\n", par->par_contracts_string[0]);
+  printf("EW list : %s\n", par->par_contracts_string[1]);
   printf("\n");
 }
 
 
-void PrintDealerPar(parResultsDealer * par)
+auto print_dealer_par(ParResultsDealer * par) -> void
 {
   printf("Score : %d\n", par->score);
   printf("Pars : %d\n", par->number);
@@ -422,19 +422,19 @@ void PrintDealerPar(parResultsDealer * par)
 }
 
 
-bool ComparePlay(solvedPlay * solved, int handno)
+auto compare_play(SolvedPlay * solved, int handno) -> bool
 {
-  if (solved->number != traceNo[handno])
+  if (solved->number != trace_count_[handno])
   {
-    printf("err %d %d\n", solved->number, traceNo[handno]);
+    printf("err %d %d\n", solved->number, trace_count_[handno]);
     return false;
   }
 
   for (int i = 0; i < solved->number; i++)
-    if (solved->tricks[i] != trace[handno][i])
+    if (solved->tricks[i] != trace_results_[handno][i])
     {
       printf("error %d %d %d\n", i, solved->tricks[i],
-             trace[handno][i]);
+             trace_results_[handno][i]);
       return false;
     }
 
@@ -442,7 +442,7 @@ bool ComparePlay(solvedPlay * solved, int handno)
 }
 
 
-void PrintBinPlay(playTraceBin * playp, solvedPlay * solved)
+auto print_bin_play(PlayTraceBin * playp, SolvedPlay * solved) -> void
 {
   printf("Number : %d\n", solved->number);
 
@@ -453,15 +453,15 @@ void PrintBinPlay(playTraceBin * playp, solvedPlay * solved)
   {
     printf("Play %2d: %c%c %d\n",
            i,
-           dcardSuit[playp->suit[i - 1]],
-           dcardRank[playp->rank[i - 1]],
+           card_suit_chars_[playp->suit[i - 1]],
+           card_rank_chars_[playp->rank[i - 1]],
            solved->tricks[i]);
   }
   printf("\n");
 }
 
 
-void PrintPBNPlay(playTracePBN * playp, solvedPlay * solved)
+auto print_pbn_play(PlayTracePBN * playp, SolvedPlay * solved) -> void
 {
   printf("Number : %d\n", solved->number);
 
@@ -490,8 +490,8 @@ void PrintPBNPlay(playTracePBN * playp, solvedPlay * solved)
 #define DDS_HAND_OFFSET 12
 #define DDS_HAND_LINES 12
 
-void PrintHand(char title[],
-               unsigned int remainCards[DDS_HANDS][DDS_SUITS])
+auto print_hand(char title[],
+               unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> void
 {
   int c, h, s, r;
   char text[DDS_HAND_LINES][DDS_FULL_LINE];
@@ -531,8 +531,8 @@ void PrintHand(char title[],
       c = offset;
       for (r = 14; r >= 2; r--)
       {
-        if ((remainCards[h][s] >> 2) & dbitMapRank[r])
-          text[line + s][c++] = static_cast<char>(dcardRank[r]);
+        if ((remainCards[h][s] >> 2) & bit_map_rank_[r])
+          text[line + s][c++] = static_cast<char>(card_rank_chars_[r]);
       }
 
       if (c == offset)
@@ -555,98 +555,98 @@ void PrintHand(char title[],
 }
 
 
-void PrintPBNHand(char title[], char remainCardsPBN[])
+auto print_pbn_hand(char title[], char remainCardsPBN[]) -> void
 {
   unsigned int remainCards[DDS_HANDS][DDS_SUITS];
-  ConvertPBN(remainCardsPBN, remainCards);
-  PrintHand(title, remainCards);
+  convert_pbn(remainCardsPBN, remainCards);
+  print_hand(title, remainCards);
 }
 
 
-int ConvertPBN(char * dealBuff,
-               unsigned int remainCards[DDS_HANDS][DDS_SUITS])
+auto convert_pbn(char * dealBuff,
+               unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int
 {
-  int bp = 0, firstl, card, hand, handRelFirst, suitInHand, h, s;
+  int buffer_pos = 0, first_hand, card, hand, hand_rel_first, suit_in_hand, h, s;
 
   for (h = 0; h < DDS_HANDS; h++)
     for (s = 0; s < DDS_SUITS; s++)
       remainCards[h][s] = 0;
 
-  while (((dealBuff[bp] != 'W') && (dealBuff[bp] != 'N') &&
-          (dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
-          (dealBuff[bp] != 'w') && (dealBuff[bp] != 'n') &&
-          (dealBuff[bp] != 'e') && (dealBuff[bp] != 's')) && (bp < 3))
-    bp++;
+  while (((dealBuff[buffer_pos] != 'W') && (dealBuff[buffer_pos] != 'N') &&
+          (dealBuff[buffer_pos] != 'E') && (dealBuff[buffer_pos] != 'S') &&
+          (dealBuff[buffer_pos] != 'w') && (dealBuff[buffer_pos] != 'n') &&
+          (dealBuff[buffer_pos] != 'e') && (dealBuff[buffer_pos] != 's')) && (buffer_pos < 3))
+    buffer_pos++;
 
-  if (bp >= 3)
+  if (buffer_pos >= 3)
     return 0;
 
-  if ((dealBuff[bp] == 'N') || (dealBuff[bp] == 'n'))
-    firstl = 0;
-  else if ((dealBuff[bp] == 'E') || (dealBuff[bp] == 'e'))
-    firstl = 1;
-  else if ((dealBuff[bp] == 'S') || (dealBuff[bp] == 's'))
-    firstl = 2;
+  if ((dealBuff[buffer_pos] == 'N') || (dealBuff[buffer_pos] == 'n'))
+    first_hand = 0;
+  else if ((dealBuff[buffer_pos] == 'E') || (dealBuff[buffer_pos] == 'e'))
+    first_hand = 1;
+  else if ((dealBuff[buffer_pos] == 'S') || (dealBuff[buffer_pos] == 's'))
+    first_hand = 2;
   else
-    firstl = 3;
+    first_hand = 3;
 
-  bp++;
-  bp++;
+  buffer_pos++;
+  buffer_pos++;
 
-  handRelFirst = 0;
-  suitInHand = 0;
+  hand_rel_first = 0;
+  suit_in_hand = 0;
 
-  while ((bp < 80) && (dealBuff[bp] != '\0'))
+  while ((buffer_pos < 80) && (dealBuff[buffer_pos] != '\0'))
   {
-    card = IsACard(dealBuff[bp]);
+    card = is_a_card(dealBuff[buffer_pos]);
     if (card)
     {
-      switch (firstl)
+      switch (first_hand)
       {
         case 0:
-          hand = handRelFirst;
+          hand = hand_rel_first;
           break;
         case 1:
-          if (handRelFirst == 0)
+          if (hand_rel_first == 0)
             hand = 1;
-          else if (handRelFirst == 3)
+          else if (hand_rel_first == 3)
             hand = 0;
           else
-            hand = handRelFirst + 1;
+            hand = hand_rel_first + 1;
           break;
         case 2:
-          if (handRelFirst == 0)
+          if (hand_rel_first == 0)
             hand = 2;
-          else if (handRelFirst == 1)
+          else if (hand_rel_first == 1)
             hand = 3;
           else
-            hand = handRelFirst - 2;
+            hand = hand_rel_first - 2;
           break;
         default:
-          if (handRelFirst == 0)
+          if (hand_rel_first == 0)
             hand = 3;
           else
-            hand = handRelFirst - 1;
+            hand = hand_rel_first - 1;
       }
 
-      remainCards[hand][suitInHand] |=
-        static_cast<unsigned>((dbitMapRank[card] << 2));
+      remainCards[hand][suit_in_hand] |=
+        static_cast<unsigned>((bit_map_rank_[card] << 2));
 
     }
-    else if (dealBuff[bp] == '.')
-      suitInHand++;
-    else if (dealBuff[bp] == ' ')
+    else if (dealBuff[buffer_pos] == '.')
+      suit_in_hand++;
+    else if (dealBuff[buffer_pos] == ' ')
     {
-      handRelFirst++;
-      suitInHand = 0;
+      hand_rel_first++;
+      suit_in_hand = 0;
     }
-    bp++;
+    buffer_pos++;
   }
   return RETURN_NO_FAULT;
 }
 
 
-int IsACard(char cardChar)
+auto is_a_card(char cardChar) -> int
 {
   switch (cardChar)
   {
