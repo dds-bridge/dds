@@ -1,0 +1,38 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+# Utility tests: constants, lookup tables, and RNG determinism validation
+
+cc_test(
+    name = "constants_test",
+    size = "small",
+    srcs = ["constants_test.cpp"],
+    deps = [
+        "//library/src/utility:constants",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "lookup_tables_test",
+    size = "small",
+    srcs = ["lookup_tables_test.cpp"],
+    deps = [
+        "//library/src/lookup_tables:lookup_tables",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Aggregate test suite combining constants and lookup tables tests
+cc_test(
+    name = "utility_test_suite",
+    size = "small",
+    srcs = [
+        "constants_test.cpp",
+        "lookup_tables_test.cpp",
+    ],
+    deps = [
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/utility:constants",
+        "@googletest//:gtest_main",
+    ],
+)

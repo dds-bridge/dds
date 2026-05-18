@@ -1,0 +1,13 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+# Regression tests for heuristic sorting behavior
+
+cc_test(
+    name = "heuristic_sorting",
+    size = "small",
+    srcs = ["heuristic_sorting_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+)

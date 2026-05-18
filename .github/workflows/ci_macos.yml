@@ -1,0 +1,32 @@
+name: CI – macOS
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: {}
+
+jobs:
+  build_and_test:
+    runs-on: macos-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Install Bazelisk (recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: "1.29.0"
+
+      # Install Doxygen, to generate documentation
+      - name: Install Doxygen
+        run: brew install doxygen
+
+      # Build all targets
+      - name: Build all targets
+        run: bazelisk build --verbose_failures //...
+
+      # Run all tests (including Python)
+      - name: Run all tests
+        run: bazelisk test --verbose_failures //...

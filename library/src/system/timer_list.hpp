@@ -1,0 +1,122 @@
+/*
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund /
+   2014-2018 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+/*
+   TimerList consists of a number of groups, one for each piece
+  of the code being timed (ab_search etc).
+
+   Each group corresponds to something that should be timed at
+   multiple AB depths, i.e. cards played. The first card of a
+   new game is number 48, and the last card is number 0.
+
+   The AB timer is special, as the AB functions are recursive
+   and so their timing includes not only the other functions they
+   contain, but also their own recursive calls at lower depths.
+   The AB timer group must be the first one.
+
+   The object calculates an approximation to exclusive function
+   times, so it is a "poor man's profiler".
+
+   For AB, first the times at depth-1 are subtracted out, and then
+   the times for all calls at the same depth are subtracted out.
+   This still leaves the overhead of the timing itself. As an
+   approximation, there is one timing overhead left for each
+   function, and it is on the order of the execution time of
+   Evaluate(), which is a very fast function.
+
+   TIMER_START and TIMER_END are macros for bracketing code
+   to be timed, so
+
+   TIMER_START(TIMER_NO_AB, depth);
+  ab_search(...);
+   TIMER_END(TIMER_NO_AB, depth);
+
+   This avoids the tedious #ifdef's at every place of a timer.
+ */
+
+#ifndef DDS_TIMERLIST_H
+#define DDS_TIMERLIST_H
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+
+#include <system/timer_group.hpp>
+
+
+#ifdef DDS_TIMING
+  #define TIMER_START(g, a) thrp->timerList.Start(g, a)
+  #define TIMER_END(g, a) thrp->timerList.End(g, a)
+#else
+  #define TIMER_START(g, a)
+  #define TIMER_END(g, a)
+#endif
+
+enum ABTimerType
+{
+  TIMER_NO_AB = 0,
+  TIMER_NO_MAKE = 1,
+  TIMER_NO_UNDO = 2,
+  TIMER_NO_EVALUATE = 3,
+  TIMER_NO_NEXTMOVE = 4,
+  TIMER_NO_QT = 5,
+  TIMER_NO_LT = 6,
+  TIMER_NO_MOVEGEN = 7,
+  TIMER_NO_LOOKUP = 8,
+  TIMER_NO_BUILD = 9,
+  TIMER_NO_SIZE = 10
+};
+
+
+/**
+ * @brief List of named timer groups for profiling bridge double dummy solver phases.
+ *
+ * The TimerList class manages multiple TimerGroup objects, each associated with
+ * a specific solver phase or operation. It provides interfaces for resetting,
+ * starting, ending, and reporting timing data for all phases. Used internally
+ * for comprehensive profiling and optimization.
+ */
+class TimerList
+{
+  private:
+
+    std::vector<TimerGroup> timerGroups;
+
+  public:
+    /**
+     * @brief Construct a new TimerList object.
+     *
+     * Initializes the list of timer groups for profiling.
+     */
+    TimerList();
+
+    /**
+     * @brief Destroy the TimerList object and clean up resources.
+     *
+     * Releases all memory and resets the timer list state.
+     */
+    ~TimerList();
+
+    void Reset();
+
+    void Start(
+      const ABTimerType groupno,
+      const unsigned timerno);
+
+    void End(
+      const ABTimerType groupno,
+      const unsigned timerno);
+
+    bool Used() const;
+
+    void PrintStats(std::ofstream& fout) const;
+};
+
+#endif

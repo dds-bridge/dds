@@ -1,0 +1,142 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+external_headers = [
+    "dds.h",
+    "dds.hpp",
+]
+
+filegroup(
+    name = "dds_sources",
+    srcs = glob([
+        "*.cpp",
+        "*.hpp",
+        "*.h",
+    ],
+    exclude = external_headers,
+    )
+)
+
+filegroup(
+    name = "dds_headers",
+    srcs = external_headers,
+)
+
+cc_library(
+    name = "dds",
+    srcs = ["//library/src:dds_sources"],
+    hdrs = ["//library/src:dds_headers"],
+    includes = ["."],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = ["//visibility:public"],
+    include_prefix = "dds",
+    deps = [
+        "//library/src/api:api_definitions",
+        "//library/src/utility:constants",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/heuristic_sorting",
+        "//library/src/trans_table",
+        "//library/src/moves:moves",
+        "//library/src/system",
+        "//library/src/solver_context:solver_context",
+    ],
+)
+
+filegroup(
+    name = "testable_dds_sources",
+    srcs = glob([
+        "*.cpp",
+    ],),
+)
+
+filegroup(
+    name = "testable_dds_headers",
+    srcs = glob([
+        "*.hpp", "*.h",
+    ],),
+)
+
+cc_library(
+    name = "testable_dds",
+    srcs = ["//library/src:testable_dds_sources"],
+    hdrs = ["//library/src:testable_dds_headers"],
+    includes = ["."],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    include_prefix = "dds",
+    visibility = [
+        "//:__pkg__",  # allow root package to wrap/export
+        "//library/tests:__pkg__",
+        "//library/tests/heuristic_sorting:__pkg__",
+        "//library/tests/moves:__pkg__",
+        "//library/tests/system:__pkg__",
+        "//library/tests/utility:__pkg__",
+        "//library/tests/regression/heuristic_sorting:__pkg__",
+        "//library/tests/solve_board:__pkg__",
+    ],
+    deps = [
+        "//library/src/api:api_definitions",
+        "//library/src/utility:constants",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/heuristic_sorting",
+        "//library/src/trans_table",
+        "//library/src/moves:moves",
+        "//library/src/system",
+        "//library/src/solver_context:solver_context",
+    ],
+)
+
+# Variant of testable_dds with Utilities logging compiled in.
+cc_library(
+    name = "testable_dds_util_log",
+    srcs = ["//library/src:testable_dds_sources"],
+    hdrs = ["//library/src:testable_dds_headers"],
+    includes = ["."],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    include_prefix = "dds",
+    visibility = [
+        "//:__pkg__",
+        "//library/tests/system:__pkg__",
+    ],
+    deps = [
+        "//library/src/api:api_definitions",
+        "//library/src/utility:constants",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/heuristic_sorting",
+        "//library/src/trans_table",
+        "//library/src/moves:moves",
+        "//library/src/system:system_util_log",
+        "//library/src/solver_context:solver_context_log",
+    ],
+)
+
+cc_library(
+    name = "testable_dds_util_stats",
+    srcs = ["//library/src:testable_dds_sources"],
+    hdrs = ["//library/src:testable_dds_headers"],
+    includes = ["."],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    include_prefix = "dds",
+    visibility = [
+        "//:__pkg__",
+        "//library/tests/system:__pkg__",
+    ],
+    deps = [
+        "//library/src/api:api_definitions",
+        "//library/src/utility:constants",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/heuristic_sorting",
+        "//library/src/trans_table",
+        "//library/src/moves:moves",
+        "//library/src/system:system_util_stats",
+        "//library/src/solver_context:solver_context_stats",
+    ],
+)
+

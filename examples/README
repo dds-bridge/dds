@@ -1,12 +1,20 @@
 There are a number of simple examples for individual DDS functions.
 
-Copy the Makefile for your system from the Makefiles folder.
+## Building with Bazel (Recommended)
 
-Then make the example you want,
+Build all examples:
+    bazel build //examples:all_examples
 
-make CalcDDtable
-./CalcDDtable
+Build a specific example:
+    bazel build //examples:calc_dd_table
 
-This requires the DLL to be in the directory.  It will get there
-when you do a "make install" in the src directory after compiling
-the DLL there.
+Run an example:
+    bazel run //examples:calc_dd_table
+
+Available examples:
+- analyse_all_plays_bin, analyse_all_plays_pbn
+- analyse_play_bin, analyse_play_pbn
+- calc_all_tables, calc_all_tables_pbn
+- calc_dd_table, calc_dd_table_pbn
+- dealer_par, par
+- solve_all_boards, solve_board, solve_board_pbn

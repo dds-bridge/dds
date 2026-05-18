@@ -1,0 +1,137 @@
+config_setting(
+    name = "build_macos",
+    constraint_values = [
+        "@platforms//os:osx",
+    ],
+)
+
+config_setting(
+    name = "debug_build_macos",
+        constraint_values = [
+        "@platforms//os:osx",
+    ],
+    values = {"compilation_mode": "dbg"},
+)
+
+config_setting(
+    name = "build_linux",
+    constraint_values = [
+        "@platforms//os:linux",
+    ],
+)
+
+config_setting(
+    name = "debug_build_linux",
+        constraint_values = [
+        "@platforms//os:linux",
+    ],
+    values = {"compilation_mode": "dbg"},
+)
+
+config_setting(
+    name = "build_windows",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
+)
+
+config_setting(
+    name = "debug_build_windows",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
+    values = {"compilation_mode": "dbg"},
+)
+
+config_setting(
+    name = "debug_all",
+    define_values = {"debug_all": "true"},
+)
+
+# Enable DDS_SCHEDULER via --define=scheduler=true
+config_setting(
+    name = "scheduler",
+    define_values = {"scheduler": "true"},
+)
+
+# Enable DDS_TT_CONTEXT_OWNERSHIP via --define=tt_context_ownership=true
+config_setting(
+    name = "tt_context_ownership",
+    define_values = {"tt_context_ownership": "true"},
+)
+
+# Enable DDS_DEBUG_TT_RESET via --define=tt_reset_debug=true
+config_setting(
+    name = "tt_reset_debug",
+    define_values = {"tt_reset_debug": "true"},
+)
+
+# Enable AddressSanitizer via --define=asan=true
+config_setting(
+    name = "asan",
+    define_values = {"asan": "true"},
+)
+
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+genrule(
+    name = "doxygen_docs",
+    srcs = ["Doxyfile"],
+    outs = ["doxygen_docs.zip"],
+    cmd = """
+      set -e
+      DOXYFILE_GEN="$(@D)/Doxyfile.generated"
+      OUT_DIR="$(@D)/doxygen_output"
+      OUT_ZIP="$$(pwd)/$@"
+
+      if ! command -v doxygen >/dev/null 2>&1; then
+          echo "doxygen_docs is a manual developer-only target and requires 'doxygen' on PATH" >&2
+          exit 1
+      fi
+
+      if ! command -v zip >/dev/null 2>&1; then
+          echo "doxygen_docs is a manual developer-only target and requires 'zip' on PATH" >&2
+          exit 1
+      fi
+
+      rm -rf "$$OUT_DIR"
+
+      cat > "$$DOXYFILE_GEN" <<'EOF'
+@INCLUDE = $(location Doxyfile)
+OUTPUT_DIRECTORY = $(@D)/doxygen_output
+EOF
+
+      doxygen "$$DOXYFILE_GEN"
+
+      test -f "$$OUT_DIR/html/index.html"
+
+      cd "$$OUT_DIR"
+      zip -rq "$$OUT_ZIP" html
+    """,
+    local = 1,
+    output_to_bindir = True,
+    tags = [
+        "manual",
+        "local",
+        "no-remote",
+        "no-remote-cache",
+    ],
+)
+
+cc_library(
+    name = "dds",
+    deps = ["//library/src:dds"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "testable_dds",
+    deps = ["//library/src:testable_dds"],
+    visibility = [
+        "//library/tests:__pkg__",
+        "//library/tests/regression/heuristic_sorting:__pkg__",
+        "//library/tests/heuristic_sorting:__pkg__",
+        "//library/tests/system:__pkg__",
+    ],
+)

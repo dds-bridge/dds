@@ -1,0 +1,16 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "lookup_tables",
+    srcs = ["lookup_tables.cpp"],
+    hdrs = ["lookup_tables.hpp"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//library/src/utility:constants",
+    ],
+    include_prefix = "lookup_tables",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)

@@ -1,0 +1,28 @@
+name: CI – Windows
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: {}
+
+jobs:
+  build_and_test:
+    runs-on: windows-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Install Bazelisk (recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: "1.29.0"
+
+      # Build all targets
+      - name: Build all targets
+        run: bazel build --verbose_failures //...
+
+      # Run all tests (including Python)
+      - name: Run all tests
+        run: bazel test --verbose_failures //...
