@@ -1,0 +1,240 @@
+/*
+   DDS, a bridge double dummy solver.
+
+   Copyright (C) 2006-2014 by Bo Haglund /
+   2014-2018 by Bo Haglund & Soren Hein.
+
+   See LICENSE and README.
+*/
+
+#ifndef DDS_SCHEDULER_H
+#define DDS_SCHEDULER_H
+
+#include <atomic>
+#include <vector>
+#include <utility>
+
+#include <api/dds.h>
+#include <system/timer.hpp>
+// TimeStatList is required when DDS_SCHEDULER is enabled.
+#ifdef DDS_SCHEDULER
+#include <system/time_stat_list.hpp>
+#endif
+
+#define HASH_MAX 200
+
+#ifdef DDS_SCHEDULER
+  #define START_BLOCK_TIMER scheduler.StartBlockTimer()
+  #define END_BLOCK_TIMER scheduler.EndBlockTimer()
+  #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
+  #define END_THREAD_TIMER(a) scheduler.EndThreadTimer(a)
+#else
+  #define START_BLOCK_TIMER
+  #define END_BLOCK_TIMER
+  #define START_THREAD_TIMER(a)
+  #define END_THREAD_TIMER(a)
+#endif
+
+
+struct schedType
+{
+  int number;
+  int repeatOf;
+};
+
+
+/**
+ * @brief Scheduler for bridge double dummy solver threading and grouping.
+ *
+ * The Scheduler class manages the grouping, sorting, and distribution of Boards
+ * for parallel double dummy analysis. It handles thread registration, workload
+ * partitioning, and timing statistics, optimizing the use of available threads
+ * for efficient solving. Scheduler is an internal component and not part of the
+ * public API, but is crucial for high-performance analysis on multicore systems.
+ */
+class Scheduler
+{
+  private:
+
+    struct listType
+    {
+      int first;
+      int last;
+      int length;
+    };
+
+    struct groupType
+    {
+      int strain;
+      int hash;
+      int pred;
+      int actual;
+      int head;
+      int repeatNo;
+    };
+
+    struct sortType
+    {
+      int number;
+      int value;
+    };
+
+    struct handType
+    {
+      int next;
+      int spareKey;
+      unsigned remainCards[DDS_HANDS][DDS_SUITS];
+      int NTflag;
+      int first;
+      int strain;
+      int repeatNo;
+      int depth;
+      int strength;
+      int fanout;
+      int thread;
+      int selectFlag;
+      int time;
+    };
+
+    handType hands[MAXNOOFBOARDS];
+
+    groupType group[MAXNOOFBOARDS];
+    int numGroups;
+    int extraGroups;
+
+    std::atomic<int> currGroup;
+
+    listType list[DDS_SUITS + 2][HASH_MAX];
+
+    sortType sortList[MAXNOOFBOARDS];
+    int sortLen;
+
+    std::vector<int> threadGroup;
+    std::vector<int> threadCurrGroup;
+    std::vector<int> threadToHand;
+
+    int numThreads;
+    int numHands;
+
+    std::vector<int> highCards;
+
+    void InitHighCards();
+
+    void SortHands(const enum RunMode mode);
+
+    int Strength(const Deal& dl) const;
+    int Fanout(const Deal& dl) const;
+
+    void Reset();
+
+    std::vector<Timer> timersThread;
+    Timer timerBlock;
+
+    void MakeGroups(const Boards& bds);
+
+    void FinetuneGroups();
+
+    bool SameHand(
+      const int hno1,
+      const int hno2) const;
+
+    void SortSolve(),
+         SortCalc(),
+         SortTrace();
+
+#ifdef DDS_SCHEDULER
+
+    int timeHist[10000];
+    int timeHistNT[10000];
+    int timeHistSuit[10000];
+
+  TimeStatList timeStrain;
+  TimeStatList timeRepeat;
+  TimeStatList timeDepth;
+  TimeStatList timeStrength;
+  TimeStatList timeFanout;
+  TimeStatList timeThread;
+  TimeStatList timeGroupActualStrain;
+  TimeStatList timeGroupPredStrain;
+  TimeStatList timeGroupDiffStrain;
+
+    long long timeMax;
+    long long blockMax;
+    long long timeBlock;
+
+    void InitTimes();
+#endif
+
+    int PredictedTime(
+      Deal& dl,
+      int number) const;
+
+
+  public:
+
+    /**
+     * @brief Construct a new Scheduler object.
+     *
+     * Initializes all internal data structures, thread and board counters, and
+     * prepares the scheduler for use in parallel double dummy solving.
+     */
+    Scheduler();
+
+    /**
+     * @brief Destroy the Scheduler object and clean up resources.
+     *
+     * Releases all memory and performs cleanup of scheduler state.
+     */
+    /**
+     * @brief Destroy the Scheduler object and clean up resources.
+     *
+     * Releases all memory and performs cleanup of scheduler state.
+     */
+    ~Scheduler();
+
+    void RegisterThreads(
+      const int n);
+
+    void RegisterRun(
+      const enum RunMode mode,
+      const Boards& bds,
+      const PlayTracesBin& pl);
+
+    void RegisterRun(
+      const enum RunMode mode,
+      const Boards& bds);
+
+    schedType GetNumber(const int thrId);
+
+    int NumGroups() const;
+
+  /**
+   * @brief Retrieve per-board raw times collected by the scheduler.
+   *
+   * Fills outVec with pairs (boardIndex, userTimeMs) for each board in
+   * the current run. This is intended for post-run reporting.
+   */
+  void GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const;
+
+  // Lightweight API to set a board's time in ms for reporting when
+  // full DDS_SCHEDULER timing is not enabled. Thread-safe for single-writer per-board.
+  void SetBoardTime(int boardIndex, int timeMs);
+
+    // Release timing storage early to avoid heavy destructor work at exit.
+    void ClearTiming();
+
+#ifdef DDS_SCHEDULER
+    void StartThreadTimer(const int thrId);
+
+    void EndThreadTimer(const int thrId);
+
+    void StartBlockTimer();
+
+    void EndBlockTimer();
+
+    void PrintTiming() const;
+#endif
+
+};
+
+#endif

@@ -1,0 +1,15 @@
+# Solve_board regression tests
+
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "solve_board_test",
+    size = "small",
+    srcs = [
+        "trick_three_bug.cpp",
+    ],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+)

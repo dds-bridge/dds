@@ -1,0 +1,249 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+
+# Examples use legacy C-style code, so we need to suppress certain warnings
+EXAMPLES_CPPOPTS = DDS_CPPOPTS + select({
+    "//:build_windows": [],
+    "//:debug_build_windows": [],
+    "//conditions:default": [
+        "-Wno-deprecated-declarations",
+        "-Wno-unused-variable",
+    ],
+})
+
+EXAMPLES_LOCAL_DEFINES = DDS_LOCAL_DEFINES + select({
+    "//:build_windows": ["_CRT_SECURE_NO_WARNINGS"],
+    "//:debug_build_windows": ["_CRT_SECURE_NO_WARNINGS"],
+    "//conditions:default": [],
+})
+
+# Shared utilities used by all examples
+cc_library(
+    name = "hands",
+    srcs = ["hands.cpp"],
+    hdrs = ["hands.hpp"],
+    copts = EXAMPLES_CPPOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+# Example binaries
+cc_binary(
+    name = "analyse_all_plays_bin",
+    srcs = ["analyse_all_plays_bin.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "analyse_all_plays_pbn",
+    srcs = ["analyse_all_plays_pbn.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "analyse_play_bin",
+    srcs = ["analyse_play_bin.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "analyse_play_pbn",
+    srcs = ["analyse_play_pbn.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "calc_all_tables",
+    srcs = ["calc_all_tables.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "calc_all_tables_pbn",
+    srcs = ["calc_all_tables_pbn.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "calc_dd_table",
+    srcs = ["calc_dd_table.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "calc_dd_table_pbn",
+    srcs = ["calc_dd_table_pbn.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "dealer_par",
+    srcs = ["dealer_par.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "par",
+    srcs = ["par.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "solve_all_boards",
+    srcs = ["solve_all_boards.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "solve_board",
+    srcs = ["solve_board.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "solve_board_pbn",
+    srcs = ["solve_board_pbn.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "migration_example",
+    srcs = ["migration_example.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
+    name = "calc_par_context_example",
+    srcs = ["calc_par_context_example.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+        "//library/src/solver_context:solver_context",
+    ],
+)
+
+# Convenience target to build all examples
+filegroup(
+    name = "all_examples",
+    srcs = [
+        ":analyse_all_plays_bin",
+        ":analyse_all_plays_pbn",
+        ":analyse_play_bin",
+        ":analyse_play_pbn",
+        ":calc_all_tables",
+        ":calc_all_tables_pbn",
+        ":calc_dd_table",
+        ":calc_dd_table_pbn",
+        ":calc_par_context_example",
+        ":dealer_par",
+        ":par",
+        ":solve_all_boards",
+        ":solve_board",
+        ":solve_board_pbn",
+        ":migration_example",
+    ],
+)

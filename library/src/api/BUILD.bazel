@@ -1,0 +1,20 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "api_definitions",
+    hdrs = [
+        "calc_dd_table.hpp",
+        "calc_par.hpp",
+        "dds.h",
+        "dll.h",
+        "portab.h",
+        "PBN.h",           # Case-sensitive on consumers; cannot add pbn.h on macOS CI
+        "solve_board.hpp",
+    ],
+    include_prefix = "api",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//library/src/utility:constants",
+    ],
+)

@@ -1,0 +1,38 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "moves",
+    srcs = glob(["*.cpp"]),
+    hdrs = glob(["*.hpp"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/api:api_definitions",
+        "//library/src/heuristic_sorting",
+    ],
+    include_prefix = "moves",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_library(
+    name = "testable_moves",
+    srcs = glob(["*.cpp"]),
+    hdrs = glob(["*.hpp"]),
+    includes = ["."],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/api:api_definitions",
+        "//library/src/heuristic_sorting",
+    ],
+    visibility = [
+        "//library/tests/moves:__pkg__",
+    ],
+)

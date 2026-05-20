@@ -1,0 +1,50 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "trans_table",
+    srcs = [
+        "trans_table_l.cpp",
+        "trans_table_s.cpp",
+    ],
+    hdrs = [
+        "trans_table.hpp",
+        "trans_table_l.hpp",
+        "trans_table_s.hpp",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/api:api_definitions",
+    ],
+    include_prefix = "trans_table",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+cc_library(
+    name = "testable_trans_table",
+    srcs = [
+        "trans_table_l.cpp",
+        "trans_table_s.cpp",
+    ],
+    hdrs = [
+        "trans_table.hpp",
+        "trans_table_l.hpp",
+        "trans_table_s.hpp",
+    ],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/utility:constants",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/api:api_definitions",
+    ],
+    include_prefix = "trans_table",
+    visibility = [
+        "//library/tests/trans_table:__pkg__",
+    ],
+)

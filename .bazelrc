@@ -1,0 +1,47 @@
+# Bazel configuration for DDS project
+
+common --enable_platform_specific_config
+
+# Platform-specific C++ standard flags
+build:macos --cxxopt=-std=c++20
+build:macos --host_cxxopt=-std=c++20
+build:linux --cxxopt=-std=c++20
+build:linux --host_cxxopt=-std=c++20
+build:windows --cxxopt=/std:c++20
+build:windows --host_cxxopt=/std:c++20
+
+# Performance optimization flags
+build:opt --compilation_mode=opt
+
+# AddressSanitizer configuration
+# Usage:
+#   Linux: bazel test --config=asan //path:target
+#   macOS: bazel test --config=asan --config=asan_macos //path:target
+build:asan --copt=-fsanitize=address
+build:asan --linkopt=-fsanitize=address
+build:asan --strip=never
+build:asan --features=dbg
+build:asan --compilation_mode=dbg
+test:asan --test_timeout=120,300,900,3600
+
+# macOS-specific AddressSanitizer runtime lookup configuration.
+# The LLVM toolchain bundles the ASAN runtime. On macOS tests run from the
+# runfiles tree, so use @loader_path-based rpaths that walk back to execroot
+# and then into external/toolchains_llvm...
+# Keep the clang major version in these paths aligned with darwin-aarch64
+# in MODULE.bazel.
+# Bazel test binaries live at different depths under bazel-out/.../bin.
+# Provide a small set of distinct @loader_path traversals to reach
+# execroot/_main/external from common test binary depths.
+build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
+build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
+build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
+build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
+
+# ThreadSanitizer configuration
+# Usage: bazel test --config=tsan //path:target
+build:tsan --copt=-fsanitize=thread
+build:tsan --linkopt=-fsanitize=thread
+build:tsan --strip=never
+build:tsan --features=dbg
+build:tsan --compilation_mode=dbg

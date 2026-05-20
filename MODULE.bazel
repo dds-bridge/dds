@@ -1,0 +1,32 @@
+module(
+    name = "dds",
+    version = "0.1.0"
+)
+
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "pybind11_bazel", version = "3.0.1")
+bazel_dep(name = "rules_python", version = "1.7.0")
+bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(
+    name = "llvm_toolchain",
+    llvm_versions = {
+        "darwin-aarch64": "20.1.8",
+        "linux-x86_64": "21.1.8",
+        "windows-x86_64": "20.1.8",
+    },
+)
+use_repo(llvm, "llvm_toolchain")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    configure_coverage_tool = True,
+    is_default = True,
+    python_version = "3.14",
+)
+use_repo(python, "python_3_14")
+
+register_toolchains("@llvm_toolchain//:all")
