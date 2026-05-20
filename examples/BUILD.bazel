@@ -1,6 +1,120 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 
+filegroup(
+    name = "solve_board_wasm_inputs",
+    srcs = [
+        "hands.cpp",
+        "solve_board.cpp",
+        "//library/src:dds_wasm_sources",
+        "//library/src:testable_dds_headers",
+        "//library/src/heuristic_sorting:wasm_sources",
+        "//library/src/lookup_tables:wasm_sources",
+        "//library/src/moves:wasm_sources",
+        "//library/src/solver_context:wasm_sources",
+        "//library/src/system:wasm_sources",
+        "//library/src/trans_table:wasm_sources",
+        "//library/src/utility:wasm_sources",
+    ],
+)
+
+filegroup(
+    name = "analyse_play_bin_wasm_inputs",
+    srcs = [
+        "hands.cpp",
+        "analyse_play_bin.cpp",
+        "//library/src:dds_wasm_sources",
+        "//library/src:testable_dds_headers",
+        "//library/src/heuristic_sorting:wasm_sources",
+        "//library/src/lookup_tables:wasm_sources",
+        "//library/src/moves:wasm_sources",
+        "//library/src/solver_context:wasm_sources",
+        "//library/src/system:wasm_sources",
+        "//library/src/trans_table:wasm_sources",
+        "//library/src/utility:wasm_sources",
+    ],
+)
+
+genrule(
+    name = "solve_board_wasm",
+    srcs = [":solve_board_wasm_inputs"],
+    outs = [
+        "solve_board.js",
+        "solve_board.wasm",
+    ],
+    cmd = """
+      set -euo pipefail
+
+            EMXX_BIN=""
+            if command -v em++ >/dev/null 2>&1; then
+                EMXX_BIN="$$(command -v em++)"
+            elif [ -x "/workspaces/emsdk/upstream/emscripten/em++" ]; then
+                EMXX_BIN="/workspaces/emsdk/upstream/emscripten/em++"
+            elif [ -n "$${EMSDK:-}" ] && [ -x "$${EMSDK}/upstream/emscripten/em++" ]; then
+                EMXX_BIN="$${EMSDK}/upstream/emscripten/em++"
+            fi
+
+            if [ -z "$$EMXX_BIN" ]; then
+                echo "solve_board_wasm requires em++ (Emscripten). Tried PATH, /workspaces/emsdk/upstream/emscripten/em++, and EMSDK/upstream/emscripten/em++." >&2
+                exit 1
+            fi
+
+            CPP_SRCS="$$(for f in $(locations :solve_board_wasm_inputs); do
+                case "$$f" in
+                    *.cpp) printf '%s ' "$$f" ;;
+                esac
+            done)"
+
+                "$$EMXX_BIN" \
+        -O3 -flto -std=c++20 -D__WASM__ \
+                    -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=268435456 \
+        -I. -Ilibrary/src -Ilibrary/src/api \
+                $$CPP_SRCS \
+        -o "$(@D)/solve_board.js"
+    """,
+    tags = ["local"],
+)
+
+genrule(
+        name = "analyse_play_bin_wasm",
+        srcs = [":analyse_play_bin_wasm_inputs"],
+        outs = [
+                "AnalysePlayBin.js",
+                "AnalysePlayBin.wasm",
+        ],
+        cmd = """
+            set -euo pipefail
+
+            EMXX_BIN=""
+            if command -v em++ >/dev/null 2>&1; then
+                EMXX_BIN="$$(command -v em++)"
+            elif [ -x "/workspaces/emsdk/upstream/emscripten/em++" ]; then
+                EMXX_BIN="/workspaces/emsdk/upstream/emscripten/em++"
+            elif [ -n "$${EMSDK:-}" ] && [ -x "$${EMSDK}/upstream/emscripten/em++" ]; then
+                EMXX_BIN="$${EMSDK}/upstream/emscripten/em++"
+            fi
+
+            if [ -z "$$EMXX_BIN" ]; then
+                echo "analyse_play_bin_wasm requires em++ (Emscripten). Tried PATH, /workspaces/emsdk/upstream/emscripten/em++, and EMSDK/upstream/emscripten/em++." >&2
+                exit 1
+            fi
+
+            CPP_SRCS="$$(for f in $(locations :analyse_play_bin_wasm_inputs); do
+                case "$$f" in
+                    *.cpp) printf '%s ' "$$f" ;;
+                esac
+            done)"
+
+            "$$EMXX_BIN" \
+                -O3 -flto -std=c++20 -D__WASM__ \
+                -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=268435456 \
+                -I. -Ilibrary/src -Ilibrary/src/api \
+                $$CPP_SRCS \
+                -o "$(@D)/AnalysePlayBin.js"
+        """,
+        tags = ["local"],
+)
+
 # Examples use legacy C-style code, so we need to suppress certain warnings
 EXAMPLES_CPPOPTS = DDS_CPPOPTS + select({
     "//:build_windows": [],
@@ -252,5 +366,13 @@ filegroup(
         ":solve_board",
         ":solve_board_pbn",
         ":migration_example",
+    ],
+)
+
+filegroup(
+    name = "all_examples_wasm",
+    srcs = [
+        ":analyse_play_bin_wasm",
+        ":solve_board_wasm",
     ],
 )

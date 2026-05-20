@@ -77,8 +77,9 @@ config_setting(
 config_setting(
     name = "build_wasm",
     constraint_values = [
-        "@platforms//os:emscripten",
+        "@platforms//os:linux",
     ],
+    define_values = {"wasm": "true"},
 )
 
 

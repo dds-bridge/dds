@@ -56,3 +56,4 @@ build:tsan --compilation_mode=dbg
 build:wasm --cxxopt=-std=c++20
 build:wasm --host_cxxopt=-std=c++20
 build:wasm --compilation_mode=opt
+build:wasm --define=wasm=true

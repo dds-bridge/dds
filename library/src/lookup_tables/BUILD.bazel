@@ -14,3 +14,11 @@ cc_library(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
 )
+
+filegroup(
+    name = "wasm_sources",
+    srcs = ["lookup_tables.cpp"],
+    visibility = [
+        "//examples:__pkg__",
+    ],
+)
