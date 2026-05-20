@@ -22,6 +22,7 @@ DDS_CPPOPTS = select({
         "-fPIC",
         "-Wpedantic",
         "-Wall",
+        "-Wno-character-conversion",
         "-Werror",
     ],
     "//:debug_build_linux": [
@@ -30,7 +31,8 @@ DDS_CPPOPTS = select({
         "-fPIC",
         "-Wpedantic",
         "-Wall",
-        "-Werror"
+        "-Wno-character-conversion",
+        "-Werror",
     ],
     "//:build_windows": [
         "/O2",
