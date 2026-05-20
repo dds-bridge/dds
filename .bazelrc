@@ -45,3 +45,14 @@ build:tsan --linkopt=-fsanitize=thread
 build:tsan --strip=never
 build:tsan --features=dbg
 build:tsan --compilation_mode=dbg
+
+# WebAssembly (WASM) configuration
+# Usage: bazel build --config=wasm //...
+# Requires Emscripten SDK to be installed and em++ to be on PATH
+# Note: Users must set CC and CXX environment variables:
+#   export CC=emcc
+#   export CXX=em++
+#   export AR=emar
+build:wasm --cxxopt=-std=c++20
+build:wasm --host_cxxopt=-std=c++20
+build:wasm --compilation_mode=opt

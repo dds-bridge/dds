@@ -72,6 +72,15 @@ config_setting(
     define_values = {"asan": "true"},
 )
 
+# WebAssembly (WASM) build configuration
+# Usage: bazel build --config=wasm //...
+config_setting(
+    name = "build_wasm",
+    constraint_values = [
+        "@platforms//os:emscripten",
+    ],
+)
+
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 

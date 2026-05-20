@@ -7,8 +7,6 @@
    See LICENSE and README.
 */
 
-#include <stdio.h>
-#include <stdexcept>
 #include <algorithm>
 #include <cstdio>
 #include <cstring>

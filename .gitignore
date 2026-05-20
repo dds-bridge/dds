@@ -13,14 +13,6 @@
 *.lo
 *.o
 *.obj
-*.def
-src/[Mm]akefile
-test/[Mm]akefile
-examples/[Mm]akefile
-examples/*.js
-examples/*.wasm
-test/dtest
-test/itest
 
 # Precompiled Headers
 *.gch
