@@ -30,17 +30,21 @@ auto calc_single_common(
 /**
  * @brief Perform common single-board calculations with explicit solver context.
  *
- * Context-aware version that allows TT reuse across calculations.
- * Internal helper function.
+ * Context-aware version that allows TT reuse across calculations. All
+ * input/output buffers are passed by pointer so concurrent calls on
+ * distinct SolverContexts don't share any state.
  *
  * @param ctx Solver context for resource management
- * @param thrID Thread identifier for parallel execution.
+ * @param bop Input boards (read-only)
+ * @param solvedp Output solved boards (the bno-th slot is written)
  * @param bno Board number to analyze.
+ * @return RETURN_NO_FAULT on success, error code otherwise.
  */
 auto calc_single_common_internal(
   SolverContext& ctx,
-  const int thrID,
-  const int bno) -> void;
+  const Boards * bop,
+  SolvedBoards * solvedp,
+  const int bno) -> int;
 
 /**
  * @brief Calculate all boards with explicit solver context.
