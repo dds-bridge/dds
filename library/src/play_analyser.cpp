@@ -37,7 +37,6 @@ struct playparamType
 ParamType playparam;
 playparamType traceparam;
 
-extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
@@ -58,11 +57,8 @@ int STDCALL AnalysePlayBin(
   Deal dl,
   PlayTraceBin play,
   SolvedPlay * solvedp,
-  int thrId)
+  [[maybe_unused]] int thrId)
 {
-  if (! sysdep.thread_ok(thrId))
-    return RETURN_THREAD_INDEX;
-
   // Create an owned context for this analysis and obtain its ThreadData.
   SolverContext outer_ctx;
   auto thrp = outer_ctx.thread();
@@ -293,9 +289,7 @@ int STDCALL AnalysePlayPBN(
 }
 
 
-void play_single_common(
-  const int thrId,
-  const int bno)
+void play_single_common(const int bno)
 {
   SolvedPlay solved;
 
@@ -303,7 +297,7 @@ void play_single_common(
     playparam.bop->deals[bno],
     traceparam.plp->plays[bno],
     &solved,
-    thrId);
+    0);
 
   // If there are multiple errors, this will catch one of them.
   if (res == 1)
@@ -313,19 +307,19 @@ void play_single_common(
 }
 
 
-void play_chunk_common(const int thrId)
+void play_chunk_common()
 {
   int index;
   schedType st;
 
   while (1)
   {
-    st = scheduler.GetNumber(thrId);
+    st = scheduler.GetNumber(0);
     index = st.number;
     if (index == -1)
       break;
 
-    play_single_common(thrId, index);
+    play_single_common(index);
   }
 }
 
@@ -354,10 +348,8 @@ int STDCALL AnalyseAllPlaysBin(
 
   START_BLOCK_TIMER;
   
-  // Sequential execution: analyze each play in order
-  // Thread ID 0 is used for all plays (single-threaded)
   for (int bno = 0; bno < bop->no_of_boards; bno++) {
-    play_single_common(0, bno);
+    play_single_common(bno);
     if (playparam.error != 0)
       return playparam.error;
   }

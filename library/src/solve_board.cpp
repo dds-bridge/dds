@@ -20,7 +20,6 @@
 
 ParamType param;
 
-extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
@@ -34,16 +33,10 @@ auto same_board(
   const unsigned index2) -> bool;
 
 
-auto solve_single_common(
-  const int thrId,
-  const int bno) -> void
+auto solve_single_common(const int bno) -> void
 {
   FutureTricks fut;
 
-  // Fallback timing: measure per-board elapsed time (ms) even when
-  // DDS_SCHEDULER isn't enabled at compile time. This allows the
-  // dtest -r/--report option to print per-board timings.
-  START_THREAD_TIMER(thrId);
   auto t0 = std::chrono::steady_clock::now();
   int res = SolveBoard(
               param.bop->deals[bno],
@@ -51,9 +44,8 @@ auto solve_single_common(
               param.bop->solutions[bno],
               param.bop->mode[bno],
               &fut,
-              thrId);
+              0);
   auto t1 = std::chrono::steady_clock::now();
-  END_THREAD_TIMER(thrId);
 
   // Compute elapsed milliseconds and publish to scheduler as a
   // lightweight fallback. Scheduler will ignore or use this value
@@ -76,23 +68,20 @@ auto copy_solve_single(const vector<int>& crossrefs) -> void
     if (crossrefs[i] == -1)
       continue;
 
-    START_THREAD_TIMER(thrId);
-    param.solvedp->solved_board[i] = 
+    param.solvedp->solved_board[i] =
       param.solvedp->solved_board[crossrefs[i]];
-    END_THREAD_TIMER(thrId);
   }
 }
 
 
-auto solve_chunk_common(
-  const int thrId) -> void
+auto solve_chunk_common() -> void
 {
   int index;
   schedType st;
 
   while (1)
   {
-    st = scheduler.GetNumber(thrId);
+    st = scheduler.GetNumber(0);
     index = st.number;
     if (index == -1)
       break;
@@ -106,15 +95,13 @@ auto solve_chunk_common(
         param.bop->deals[index ].first ==
         param.bop->deals[st.repeatOf].first)
     {
-      START_THREAD_TIMER(thrId);
-      param.solvedp->solved_board[index] = 
+      param.solvedp->solved_board[index] =
         param.solvedp->solved_board[st.repeatOf];
-      END_THREAD_TIMER(thrId);
       continue;
     }
     else
     {
-      solve_single_common(thrId, index);
+      solve_single_common(index);
     }
   }
 }
@@ -139,11 +126,9 @@ auto solve_all_boards_n(
     solved.solved_board[k].cards = 0;
 
   START_BLOCK_TIMER;
-  
-  // Sequential execution: solve each board in order
-  // Thread ID 0 is used for all boards (single-threaded)
+
   for (int bno = 0; bno < bds.no_of_boards; bno++) {
-    solve_single_common(0, bno);
+    solve_single_common(bno);
     if (param.error != 0)
       return param.error;
   }

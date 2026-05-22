@@ -14,12 +14,9 @@
 #include <api/dll.h>
 
 
-void play_single_common(
-  const int thrId,
-  const int bno);
+void play_single_common(const int bno);
 
-void play_chunk_common(
-  const int thrId);
+void play_chunk_common();
 
 void detect_play_duplicates(
   const Boards& bds,

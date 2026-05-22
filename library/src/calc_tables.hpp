@@ -16,30 +16,15 @@
 
 
 /**
- * @brief Perform common single-board calculations (legacy threading interface).
- *
- * Creates temporary context per call. Used by legacy threading infrastructure.
- *
- * @param thrID Thread identifier for parallel execution.
- * @param bno Board number to analyze.
+ * @brief Solve a single board. Creates a temporary context per call.
  */
-auto calc_single_common(
-  const int thrID,
-  const int bno) -> void;
+auto calc_single_common(const int bno) -> void;
 
 /**
- * @brief Perform common single-board calculations with explicit solver context.
- *
- * Context-aware version that allows TT reuse across calculations.
- * Internal helper function.
- *
- * @param ctx Solver context for resource management
- * @param thrID Thread identifier for parallel execution.
- * @param bno Board number to analyze.
+ * @brief Solve a single board using an explicit solver context for TT reuse.
  */
 auto calc_single_common_internal(
   SolverContext& ctx,
-  const int thrID,
   const int bno) -> void;
 
 /**
@@ -68,14 +53,9 @@ auto copy_calc_single(
   const std::vector<int>& crossrefs) -> void;
 
 /**
- * @brief Perform common chunk calculations for a set of Boards.
- *
- * Computes results for a chunk (batch) of Boards using the specified thread ID.
- *
- * @param thrId Thread identifier for parallel execution.
+ * @brief Process all boards queued in the scheduler (sequential).
  */
-auto calc_chunk_common(
-  const int thrId) -> void;
+auto calc_chunk_common() -> void;
 
 /**
  * @brief Detect duplicate board calculations and build cross-reference maps.
