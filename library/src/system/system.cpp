@@ -133,20 +133,8 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_SIZE 9
 
 
-System::System(
-    [[maybe_unused]] FptrType solve_chunk_common,
-    [[maybe_unused]] FptrType play_chunk_common,
-    [[maybe_unused]] FduplType detect_solve_duplicates,
-    [[maybe_unused]] FduplType detect_calc_duplicates,
-    [[maybe_unused]] FduplType detect_play_duplicates,
-    [[maybe_unused]] FsingleType solve_single_common,
-    [[maybe_unused]] FsingleType play_single_common,
-    [[maybe_unused]] FcopyType copy_solve_single,
-    [[maybe_unused]] FcopyType copy_play_single
-)
+System::System()
 {
-  // Threading infrastructure removed: callbacks no longer registered.
-  // System now only provides hardware detection and configuration.
   System::reset();
 }
 

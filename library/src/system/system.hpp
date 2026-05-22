@@ -22,13 +22,6 @@
 
 using namespace std;
 
-typedef void (*FptrType)(const int thread_id);
-typedef void (*FduplType)(
-  const Boards& bds, vector<int>& uniques, vector<int>& crossrefs);
-typedef void (*FsingleType)(const int thread_id, const int board_number);
-typedef void (*FcopyType)(const vector<int>& crossrefs);
-
-
 /**
  * @brief System-dependent manager for bridge double dummy solver.
  *
@@ -69,17 +62,7 @@ class System
      * Initializes system-dependent state, threading, and memory management for
      * the double dummy solver.
      */
-    System(
-      FptrType solve_chunk_common,
-      FptrType play_chunk_common,
-      FduplType detect_solve_duplicates,
-      FduplType detect_calc_duplicates,
-      FduplType detect_play_duplicates,
-      FsingleType solve_single_common,
-      FsingleType play_single_common,
-      FcopyType copy_solve_single,
-      FcopyType copy_play_single
-    );
+    System();
 
     /**
      * @brief Destroy the System object and clean up resources.

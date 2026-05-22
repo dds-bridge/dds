@@ -439,7 +439,3 @@ void detect_play_duplicates(
   }
 }
 
-
-void copy_play_single([[maybe_unused]] const vector<int>& crossrefs)
-{ }
-

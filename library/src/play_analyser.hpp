@@ -25,6 +25,3 @@ void detect_play_duplicates(
   const Boards& bds,
   std::vector<int>& uniques,
   std::vector<int>& crossrefs);
-
-void copy_play_single(
-  const std::vector<int>& crossrefs);
