@@ -7,7 +7,11 @@
    See LICENSE and README.
 */
 
+#include <algorithm>
+#include <atomic>
 #include <chrono>
+#include <thread>
+#include <vector>
 
 #include "solve_board.hpp"
 #include <solver_if.hpp>
@@ -18,14 +22,8 @@
 #include <utility/debug.h>
 
 
-ParamType param;
-
 extern Memory memory;
 extern Scheduler scheduler;
-
-auto solve_all_boards_n(
-  Boards const & bds,
-  SolvedBoards& solved) -> int;
 
 auto same_board(
   const Boards& bds,
@@ -33,111 +31,66 @@ auto same_board(
   const unsigned index2) -> bool;
 
 
-auto solve_single_common(const int bno) -> void
-{
-  FutureTricks fut;
-
-  auto t0 = std::chrono::steady_clock::now();
-  int res = SolveBoard(
-              param.bop->deals[bno],
-              param.bop->target[bno],
-              param.bop->solutions[bno],
-              param.bop->mode[bno],
-              &fut,
-              0);
-  auto t1 = std::chrono::steady_clock::now();
-
-  // Compute elapsed milliseconds and publish to scheduler as a
-  // lightweight fallback. Scheduler will ignore or use this value
-  // when reporting if full DDS_SCHEDULER timing is not active.
-  auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-  if (dur < 0) dur = 0;
-  scheduler.SetBoardTime(bno, static_cast<int>(dur));
-
-  if (res == 1)
-    param.solvedp->solved_board[bno] = fut;
-  else
-    param.error = res;
-}
-
-
-auto copy_solve_single(const vector<int>& crossrefs) -> void
-{
-  for (unsigned i = 0; i < crossrefs.size(); i++)
-  {
-    if (crossrefs[i] == -1)
-      continue;
-
-    param.solvedp->solved_board[i] =
-      param.solvedp->solved_board[crossrefs[i]];
-  }
-}
-
-
-auto solve_chunk_common() -> void
-{
-  int index;
-  schedType st;
-
-  while (1)
-  {
-    st = scheduler.GetNumber(0);
-    index = st.number;
-    if (index == -1)
-      break;
-
-    // This is not a perfect repeat detector, as the hands in
-    // a group might have declarers N, S, N, N. Then the second
-    // N would not reuse the first N. However, must reuses are
-    // reasonably adjacent, and this is just an optimization anyway.
-
-    if (st.repeatOf != -1 &&
-        param.bop->deals[index ].first ==
-        param.bop->deals[st.repeatOf].first)
-    {
-      param.solvedp->solved_board[index] =
-        param.solvedp->solved_board[st.repeatOf];
-      continue;
-    }
-    else
-    {
-      solve_single_common(index);
-    }
-  }
-}
-
-
 auto solve_all_boards_n(
-  Boards const & bds,
+  Boards const& bds,
   SolvedBoards& solved) -> int
 {
-  param.error = 0;
-
-  if (bds.no_of_boards > MAXNOOFBOARDS)
+  const int n = bds.no_of_boards;
+  if (n > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
-
-  param.bop = &bds;
-  param.solvedp = &solved;
-  param.no_of_boards = bds.no_of_boards;
-
-  scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solved.solved_board[k].cards = 0;
 
-  START_BLOCK_TIMER;
+  scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
-  for (int bno = 0; bno < bds.no_of_boards; bno++) {
-    solve_single_common(bno);
-    if (param.error != 0)
-      return param.error;
+  const int nthreads = std::max(1,
+    std::min(static_cast<int>(std::thread::hardware_concurrency()), n));
+
+  std::atomic<int> next_board{0};
+  std::atomic<int> first_error{0};
+
+  auto worker = [&] {
+    for (;;) {
+      const int bno = next_board.fetch_add(1, std::memory_order_relaxed);
+      if (bno >= n || first_error.load(std::memory_order_relaxed) != 0)
+        break;
+
+      FutureTricks fut;
+      const auto t0 = std::chrono::steady_clock::now();
+      const int res = SolveBoard(
+        bds.deals[bno], bds.target[bno], bds.solutions[bno],
+        bds.mode[bno], &fut, 0);
+      auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - t0).count();
+      if (dur < 0) dur = 0;
+      scheduler.SetBoardTime(bno, static_cast<int>(dur));
+
+      if (res == 1)
+        solved.solved_board[bno] = fut;
+      else {
+        int expected = 0;
+        first_error.compare_exchange_strong(
+          expected, res, std::memory_order_relaxed);
+      }
+    }
+  };
+
+  START_BLOCK_TIMER;
+  {
+    std::vector<std::jthread> threads;
+    threads.reserve(static_cast<unsigned>(nthreads));
+    for (int i = 0; i < nthreads; ++i)
+      threads.emplace_back(worker);
   }
-  
   END_BLOCK_TIMER;
 
-  solved.no_of_boards = param.no_of_boards;
+  if (const int err = first_error.load(); err != 0)
+    return err;
 
-#ifdef DDS_SCHEDULER 
+  solved.no_of_boards = n;
+
+#ifdef DDS_SCHEDULER
   scheduler.PrintTiming();
 #endif
 

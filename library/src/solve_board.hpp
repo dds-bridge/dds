@@ -14,12 +14,6 @@
 #include <api/dll.h>
 
 
-auto solve_single_common(const int bno) -> void;
-
-auto copy_solve_single(const std::vector<int>& crossrefs) -> void;
-
-auto solve_chunk_common() -> void;
-
 auto detect_solve_duplicates(
   const Boards& bds,
   std::vector<int>& uniques,
