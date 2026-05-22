@@ -135,16 +135,13 @@ const vector<string> DDS_SYSTEM_THREADING =
 
 System::System(
     [[maybe_unused]] FptrType solve_chunk_common,
-    [[maybe_unused]] FptrType calc_chunk_common,
     [[maybe_unused]] FptrType play_chunk_common,
     [[maybe_unused]] FduplType detect_solve_duplicates,
     [[maybe_unused]] FduplType detect_calc_duplicates,
     [[maybe_unused]] FduplType detect_play_duplicates,
     [[maybe_unused]] FsingleType solve_single_common,
-    [[maybe_unused]] FsingleType calc_single_common,
     [[maybe_unused]] FsingleType play_single_common,
     [[maybe_unused]] FcopyType copy_solve_single,
-    [[maybe_unused]] FcopyType copy_calc_single,
     [[maybe_unused]] FcopyType copy_play_single
 )
 {

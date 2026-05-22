@@ -64,27 +64,6 @@ auto calc_single_common_internal(
   return RETURN_NO_FAULT;
 }
 
-// Legacy shims kept as no-op stubs so init.cpp's `System sysdep(...)` still
-// links. The System constructor marks these callbacks [[maybe_unused]] and
-// never invokes them in DDS 3, so empty bodies are safe.
-auto calc_single_common(
-  const int /*thrId*/,
-  const int /*bno*/) -> void
-{
-}
-
-
-auto copy_calc_single(const std::vector<int>& /*crossrefs*/) -> void
-{
-}
-
-
-auto calc_chunk_common(
-  const int /*thrId*/) -> void
-{
-}
-
-
 auto calc_all_boards_n(
   SolverContext& ctx,
   Boards * bop,

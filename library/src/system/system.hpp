@@ -71,16 +71,13 @@ class System
      */
     System(
       FptrType solve_chunk_common,
-      FptrType calc_chunk_common,
       FptrType play_chunk_common,
       FduplType detect_solve_duplicates,
       FduplType detect_calc_duplicates,
       FduplType detect_play_duplicates,
       FsingleType solve_single_common,
-      FsingleType calc_single_common,
       FsingleType play_single_common,
       FcopyType copy_solve_single,
-      FcopyType copy_calc_single,
       FcopyType copy_play_single
     );
 
