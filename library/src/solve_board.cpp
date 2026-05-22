@@ -217,6 +217,53 @@ int STDCALL SolveAllChunksBin(
 }
 
 
+auto solve_all_boards_n_seq(
+  Boards const& bds,
+  SolvedBoards& solved) -> int
+{
+  const int n = bds.no_of_boards;
+  if (n > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
+    solved.solved_board[k].cards = 0;
+
+  scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
+
+  int error = 0;
+
+  START_BLOCK_TIMER;
+  for (int bno = 0; bno < n && error == 0; bno++) {
+    FutureTricks fut;
+    const auto t0 = std::chrono::steady_clock::now();
+    const int res = SolveBoard(
+      bds.deals[bno], bds.target[bno], bds.solutions[bno],
+      bds.mode[bno], &fut, 0);
+    auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - t0).count();
+    if (dur < 0) dur = 0;
+    scheduler.SetBoardTime(bno, static_cast<int>(dur));
+
+    if (res == 1)
+      solved.solved_board[bno] = fut;
+    else
+      error = res;
+  }
+  END_BLOCK_TIMER;
+
+  if (error != 0)
+    return error;
+
+  solved.no_of_boards = n;
+
+#ifdef DDS_SCHEDULER
+  scheduler.PrintTiming();
+#endif
+
+  return RETURN_NO_FAULT;
+}
+
+
 auto detect_solve_duplicates(
   const Boards& bds,
   vector<int>& uniques,
