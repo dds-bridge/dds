@@ -7,7 +7,7 @@ on:
 
 jobs:
   build_and_test:
-    runs-on: macos-16
+    runs-on: macos-26
     steps:
       # Checkout the repository
       - name: Checkout repository
