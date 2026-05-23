@@ -5,6 +5,11 @@
 !.vscode/mcp.json
 !.vscode/tasks.json
 
+# Ignore Visual Studio directory and files
+.vs
+#*/.vs/*
+#*.vsidx
+
 # Prerequisites
 *.d
 
