@@ -148,6 +148,19 @@ cc_binary(
 )
 
 cc_binary(
+    name = "calc_dds",
+    srcs = ["calc_dds.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_binary(
     name = "dealer_par",
     srcs = ["dealer_par.cpp"],
     copts = EXAMPLES_CPPOPTS,
@@ -251,6 +264,7 @@ filegroup(
         ":calc_all_tables_pbn",
         ":calc_dd_table",
         ":calc_dd_table_pbn",
+        ":calc_dds",
         ":calc_par_context_example",
         ":dealer_par",
         ":par",
