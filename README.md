@@ -37,7 +37,7 @@ Martin Nygren, May 2026
 
 [Migrating to the modern API](docs/api_migration.md)
 
-[Notes about the buidl system](docs/BUILD_SYSTEM.md)
+[Notes about the build system](docs/BUILD_SYSTEM.md)
 
 
 ## Version 3.0 Release Status
