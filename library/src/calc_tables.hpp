@@ -16,16 +16,15 @@
 
 
 /**
- * @brief Solve a single board. Creates a temporary context per call.
- */
-auto calc_single_common(const int bno) -> void;
-
-/**
  * @brief Solve a single board using an explicit solver context for TT reuse.
+ *
+ * @return 1 on success, error code otherwise
  */
 auto calc_single_common_internal(
   SolverContext& ctx,
-  const int bno) -> void;
+  Boards const& bds,
+  SolvedBoards& solved,
+  const int bno) -> int;
 
 /**
  * @brief Calculate all boards with explicit solver context.
@@ -41,21 +40,6 @@ auto calc_all_boards_n(
   SolverContext& ctx,
   Boards * bop,
   SolvedBoards * solvedp) -> int;
-
-/**
- * @brief Copy calculation results for single Boards based on cross-references.
- *
- * Copies results from previously computed Boards as indicated by the cross-reference vector.
- *
- * @param crossrefs Vector of cross-reference indices mapping Boards to be copied.
- */
-auto copy_calc_single(
-  const std::vector<int>& crossrefs) -> void;
-
-/**
- * @brief Process all boards queued in the scheduler (sequential).
- */
-auto calc_chunk_common() -> void;
 
 /**
  * @brief Detect duplicate board calculations and build cross-reference maps.

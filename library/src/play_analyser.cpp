@@ -11,7 +11,6 @@
 #include <solver_if.hpp>
 #include <pbn.hpp>
 #include <solver_context/solver_context.hpp>
-#include <system/memory.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 
@@ -26,18 +25,6 @@ using namespace std;
   ofstream fout;
 #endif
 
-struct playparamType
-{
-  int no_of_boards;
-  PlayTracesBin const * plp;
-  SolvedPlays * solvedp;
-  int error;
-};
-
-ParamType playparam;
-playparamType traceparam;
-
-extern Memory memory;
 extern Scheduler scheduler;
 
 
@@ -289,71 +276,31 @@ int STDCALL AnalysePlayPBN(
 }
 
 
-void play_single_common(const int bno)
-{
-  SolvedPlay solved;
-
-  int res = AnalysePlayBin(
-    playparam.bop->deals[bno],
-    traceparam.plp->plays[bno],
-    &solved,
-    0);
-
-  // If there are multiple errors, this will catch one of them.
-  if (res == 1)
-    traceparam.solvedp->solved[bno] = solved;
-  else
-   playparam.error = res;
-}
-
-
-void play_chunk_common()
-{
-  int index;
-  schedType st;
-
-  while (1)
-  {
-    st = scheduler.GetNumber(0);
-    index = st.number;
-    if (index == -1)
-      break;
-
-    play_single_common(index);
-  }
-}
-
-
 int STDCALL AnalyseAllPlaysBin(
   Boards const * bop,
   PlayTracesBin const * plp,
   SolvedPlays * solvedp,
   [[maybe_unused]] int chunkSize)
 {
-  playparam.error = 0;
-
   if (bop->no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
   if (bop->no_of_boards != plp->no_of_boards)
     return RETURN_UNKNOWN_FAULT;
 
-  playparam.bop = bop;
-  traceparam.plp = plp;
-  playparam.no_of_boards = bop->no_of_boards;
-  traceparam.no_of_boards = bop->no_of_boards;
-  traceparam.solvedp = solvedp;
-
   scheduler.RegisterRun(RunMode::DDS_RUN_TRACE, * bop, * plp);
 
   START_BLOCK_TIMER;
-  
+
   for (int bno = 0; bno < bop->no_of_boards; bno++) {
-    play_single_common(bno);
-    if (playparam.error != 0)
-      return playparam.error;
+    SolvedPlay solved;
+    const int res = AnalysePlayBin(bop->deals[bno], plp->plays[bno], &solved, 0);
+    if (res == 1)
+      solvedp->solved[bno] = solved;
+    else
+      return res;
   }
-  
+
   END_BLOCK_TIMER;
 
   solvedp->no_of_boards = bop->no_of_boards;
@@ -432,6 +379,4 @@ void detect_play_duplicates(
 }
 
 
-void copy_play_single([[maybe_unused]] const vector<int>& crossrefs)
-{ }
 
