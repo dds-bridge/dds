@@ -137,7 +137,7 @@ cc_binary(
 
 cc_binary(
     name = "calc_dds",
-    srcs = ["calc_dds.cpp"],
+    srcs = ["calc_dd.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
@@ -146,6 +146,11 @@ cc_binary(
         "//library/src:dds",
         "//library/src/api:api_definitions",
     ],
+)
+
+alias(
+    name = "calc_dd",
+    actual = ":calc_dds",
 )
 
 cc_binary(
