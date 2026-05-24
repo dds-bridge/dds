@@ -22,10 +22,8 @@
 
 using namespace std;
 
-typedef void (*FptrType)(const int thread_id);
 typedef void (*FduplType)(
   const Boards& bds, vector<int>& uniques, vector<int>& crossrefs);
-typedef void (*FsingleType)(const int thread_id, const int board_number);
 typedef void (*FcopyType)(const vector<int>& crossrefs);
 
 
@@ -66,23 +64,9 @@ class System
     /**
      * @brief Construct a new System object.
      *
-     * Initializes system-dependent state, threading, and memory management for
-     * the double dummy solver.
+     * Initializes system-dependent state and hardware detection for the solver.
      */
-    System(
-      FptrType solve_chunk_common,
-      FptrType calc_chunk_common,
-      FptrType play_chunk_common,
-      FduplType detect_solve_duplicates,
-      FduplType detect_calc_duplicates,
-      FduplType detect_play_duplicates,
-      FsingleType solve_single_common,
-      FsingleType calc_single_common,
-      FsingleType play_single_common,
-      FcopyType copy_solve_single,
-      FcopyType copy_calc_single,
-      FcopyType copy_play_single
-    );
+    System();
 
     /**
      * @brief Destroy the System object and clean up resources.
@@ -96,8 +80,6 @@ class System
     int register_params(
       const int n_threads,
       const int mem_usable_mb);
-
-    bool thread_ok(const int thread_id) const;
 
     void get_hardware(
       int& core_count,

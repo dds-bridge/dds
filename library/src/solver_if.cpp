@@ -19,7 +19,6 @@
 #include <system/timer_list.hpp>
 #include <trans_table/trans_table.hpp>
 
-extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
@@ -73,12 +72,8 @@ int STDCALL SolveBoard(
   int solutions,
   int mode,
   FutureTricks * futp,
-  int thrId)
+  [[maybe_unused]] int thrId)
 {
-  if (! sysdep.thread_ok(thrId))
-    return RETURN_THREAD_INDEX;
-
-  // Create an owned context for this call and delegate to the C++ overload.
   SolverContext outer_ctx;
   return solve_board(outer_ctx, dl, target, solutions, mode, futp);
 }
