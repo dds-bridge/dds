@@ -33,7 +33,7 @@ The top-level `solution` folder contains a Visual Studio solution file `solution
 project files for the dds and all the samples. It also contains a `Directory.Build.props` 
 file which defines the common properties for all the projects. 
 
-Note this line in the `Directory.Build.props` file: `<BuildDir>$(SolutionDir)/../Build/</BuildDir>` 
+Note this line in the `Directory.Build.props` file: `<BuildDir>$(MSBuildThisFileDirectory)\..\Build\</BuildDir>` 
 defining the output directory for all the projects. 
 
 
