@@ -1,5 +1,5 @@
 # Build System Documentation
-DDS can be build using Bazel or Rider on supported platforms (macOS, Linux, Windows) 
+DDS can be built using Bazel or Rider on supported platforms (macOS, Linux, Windows) 
 and Visual Studio on Windows only. 
 
 ## C++ Toolchain
@@ -30,7 +30,7 @@ If you see runtime loader failures after a toolchain or OS change:
 
 ## Visual Studio and Rider Build
 The top-level `solution` folder contains a Visual Studio solution file `solution.sln` and 
-project files for the dds and all the samples. It allso contains a `Directory.Build.props` 
+project files for the dds and all the samples. It also contains a `Directory.Build.props` 
 file which defines the common properties for all the projects. 
 
 Note this line in the `Directory.Build.props` file: `<BuildDir>C:\Build\DDS3\</BuildDir>` 
