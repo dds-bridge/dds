@@ -1,7 +1,6 @@
 <Solution>
   <Configurations>
     <Platform Name="x64" />
-    <Platform Name="x86" />
   </Configurations>
   
   <Folder Name="/Solution Items/">
@@ -10,8 +9,8 @@
   <Project Path="analyse_all_plays_bin.vcxproj">
     <BuildDependency Project="DDS.vcxproj" />
     <BuildDependency Project="hands.vcxproj" />
-    <Platform Solution="Release|x64" Project="Win32" />
-  </Project>
+    <Platform Project="x64" />
+  </Project>  
   <Project Path="analyse_play_bin.vcxproj" Id="b50fce1e-c2e5-4b11-99f8-fb1a1e92197c">
     <BuildDependency Project="DDS.vcxproj" />
     <BuildDependency Project="hands.vcxproj" />
