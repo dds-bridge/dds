@@ -3,8 +3,10 @@
 	<!-- Globale egenskaber for alle projekter -->
 	<PropertyGroup Label="Globals">
 		<WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+		<SolutionDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), *.sln))\</SolutionDir>
 		<!--  Change this to your desired build directory -->
-		<BuildDir>C:\Build\DDS3\</BuildDir> 
+		<BuildDir>$(SolutionDir)/../Build/</BuildDir>
+		<!--<BuildDir>C:\Build\DDS3\</BuildDir>-->
 	</PropertyGroup>
 
 	<!-- Toolset Configuration -->

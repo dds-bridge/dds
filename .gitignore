@@ -9,6 +9,9 @@
 .vs
 #*/.vs/*
 #*.vsidx
+*.vcxproj.user
+Build/bin
+Build/int
 
 # Prerequisites
 *.d
