@@ -1,4 +1,6 @@
 # Build System Documentation
+DDS can be built using Bazel or Rider on supported platforms (macOS, Linux, Windows) 
+and Visual Studio on Windows only. 
 
 ## C++ Toolchain
 
@@ -24,6 +26,17 @@ If you see runtime loader failures after a toolchain or OS change:
 1. Verify host OS and SDK versions (`sw_vers -productVersion`, `xcrun --show-sdk-version`).
 2. Re-resolve Bazel toolchains (`bazelisk shutdown`, then `bazelisk clean --expunge`).
 3. Re-run `bazelisk test //...` to confirm runtime compatibility.
+
+
+## Visual Studio and Rider Build
+The top-level `solution` folder contains a Visual Studio solution file `solution.slnx` and 
+project files for the dds and all the samples. It also contains a `Directory.Build.props` 
+file which defines the common properties for all the projects. 
+
+Note this line in the `Directory.Build.props` file: `<BuildDir>$(MSBuildThisFileDirectory)\..\Build\</BuildDir>` 
+defining the output directory for all the projects. 
+
+
 
 ## API Layers
 
