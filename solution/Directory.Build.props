@@ -4,7 +4,7 @@
 	<PropertyGroup Label="Globals">
 		<WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
 		<!--  Change this to your desired build directory -->
-		<BuildDir>D:\Build\DDS3\</BuildDir> 
+		<BuildDir>C:\Build\DDS3\</BuildDir> 
 	</PropertyGroup>
 
 	<!-- Toolset Configuration -->
