@@ -228,7 +228,7 @@ auto main(int argc, char * argv[]) -> int
     return 1;
   }
 
-  sprintf(line, "calc_dds:\n");
+  sprintf(line, "calc_par:\n");
   print_pbn_hand(line, tableDealPBN.cards);
   print_table(&table);
 
