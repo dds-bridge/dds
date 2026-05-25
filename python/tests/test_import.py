@@ -8,6 +8,8 @@ from dds3 import calc_par_from_table
 from dds3 import module_name
 from dds3 import par
 from dds3 import SolverContext
+from dds3 import solve_all_boards_bin
+from dds3 import solve_all_boards_pbn
 from dds3 import solve_board
 from dds3 import solve_board_pbn
 
@@ -18,6 +20,8 @@ class TestImport(unittest.TestCase):
         self.assertEqual(module_name(), "_dds3")
         self.assertTrue(callable(solve_board))
         self.assertTrue(callable(solve_board_pbn))
+        self.assertTrue(callable(solve_all_boards_pbn))
+        self.assertTrue(callable(solve_all_boards_bin))
         self.assertTrue(callable(calc_dd_table))
         self.assertTrue(callable(calc_all_tables_pbn))
         self.assertTrue(callable(par))
