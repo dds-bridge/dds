@@ -80,8 +80,6 @@ auto calc_all_boards_n(
   if (bop->no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
-  scheduler.RegisterRun(RunMode::DDS_RUN_CALC, * bop);
-
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solved_board[k].cards = 0;
 
