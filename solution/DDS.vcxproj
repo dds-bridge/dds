@@ -8,7 +8,9 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <Import Project="Directory.Build.props" /> <!-- Gives a MSB4011 warning, but is still requered -->
+   <!-- Gives a MSB4011 warning, but is still requered -->
+  <Import Project="$(MSBuildProjectDirectory)/Directory.Build.props" Condition="Exists('$(MSBuildProjectDirectory)/Directory.Build.props')" />
+
  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
