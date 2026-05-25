@@ -139,6 +139,17 @@ py_test(
     deps = [":dds3_lib"],
 )
 
+py_test(
+    name = "solve_all_boards_test",
+    size = "small",
+    main = "tests/test_solve_all_boards.py",
+    srcs = ["tests/test_solve_all_boards.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
+)
+
 py_wheel(
     name = "dds3_wheel",
     distribution = "dds3",
