@@ -12,6 +12,7 @@
 *.vcxproj.user
 Build/bin
 Build/int
+obj
 
 # Prerequisites
 *.d
