@@ -27,8 +27,8 @@
   #include <stdbool.h> // make "bool" available
 #endif
 
-/* Version 2.9.0. Allowing for 2 digit minor versions */
-#define DDS_VERSION 20900
+/* Version 3.0.0. Allowing for 2 digit minor versions */
+#define DDS_VERSION 30000
 
 #define MAXNOOFBOARDS 200
 
@@ -599,6 +599,14 @@ EXTERN_C DLLEXPORT auto STDCALL SolveAllBoards(
   struct SolvedBoards * solvedp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBin(
+  struct Boards const * bop,
+  struct SolvedBoards * solvedp) -> int;
+
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsSeq(
+  struct BoardsPBN const * bop,
+  struct SolvedBoards * solvedp) -> int;
+
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBinSeq(
   struct Boards const * bop,
   struct SolvedBoards * solvedp) -> int;
 

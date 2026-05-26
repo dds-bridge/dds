@@ -8,9 +8,12 @@
 */
 
 #include <memory>
-
 #include <api/dll.h>
-#include <dds/dds.hpp>
+#ifdef _VCXPROJ
+    #include <dds.hpp>
+#else
+    #include <dds/dds.hpp>
+#endif 
 
 void solve_legacy(const Deal& deal)
 {

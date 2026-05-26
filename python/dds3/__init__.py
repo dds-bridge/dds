@@ -7,6 +7,8 @@ try:
     from ._dds3 import module_name
     from ._dds3 import par
     from ._dds3 import SolverContext
+    from ._dds3 import solve_all_boards_bin
+    from ._dds3 import solve_all_boards_pbn
     from ._dds3 import solve_board
     from ._dds3 import solve_board_pbn
 except ImportError:
@@ -19,6 +21,8 @@ except ImportError:
     from _dds3 import module_name
     from _dds3 import par
     from _dds3 import SolverContext
+    from _dds3 import solve_all_boards_bin
+    from _dds3 import solve_all_boards_pbn
     from _dds3 import solve_board
     from _dds3 import solve_board_pbn
 
@@ -31,6 +35,8 @@ __all__ = [
     "module_name",
     "par",
     "SolverContext",
+    "solve_all_boards_bin",
+    "solve_all_boards_pbn",
     "solve_board",
     "solve_board_pbn",
 ]

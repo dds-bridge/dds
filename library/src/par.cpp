@@ -35,8 +35,6 @@ struct parContr2Type
   int denom;
 };
 
-int stat_contr[5] = {0, 0, 0, 0, 0};
-
 /* index 1: 0=NT, 1=Major, 2=Minor index 2: contract level 1-7 */
 const int max_low[3][8] = {
   {0, 0, 1, 0, 1, 2, 0, 0}, 

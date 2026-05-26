@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+       <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{AD2B8ADD-D12A-3CBE-E346-CF3E1B595B98}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+   <!-- Gives a MSB4011 warning, but is still required -->
+  <Import Project="$(MSBuildProjectDirectory)/Directory.Build.props" Condition="Exists('$(MSBuildProjectDirectory)/Directory.Build.props')" />
+
+ 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+ 
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <!-- ====================== -->
+  <!--  INCLUDE PATHS Added   -->
+  <!-- ====================== -->
+  <PropertyGroup >
+    <OutDir>$(BuildDir)\bin\$(platform)\$(Configuration)\</OutDir>
+    <IntDir>$(BuildDir)\int\$(platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\library\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <BuildLog>
+      <Path>$(IntDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\library\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!-- ClCompile og ClInclude source files -->
+  <ItemGroup>
+    <ClCompile Include="..\library\src\ab_search.cpp" />
+    <ClCompile Include="..\library\src\ab_stats.cpp" />
+    <ClCompile Include="..\library\src\calc_dd_table.cpp" />
+    <ClCompile Include="..\library\src\calc_par.cpp" />
+    <ClCompile Include="..\library\src\calc_tables.cpp" />
+    <ClCompile Include="..\library\src\dds.cpp" />
+    <ClCompile Include="..\library\src\dealer_par.cpp" />
+    <ClCompile Include="..\library\src\dump.cpp" />
+    <ClCompile Include="..\library\src\heuristic_sorting\heuristic_sorting.cpp" />
+    <ClCompile Include="..\library\src\init.cpp" />
+    <ClCompile Include="..\library\src\later_tricks.cpp" />
+    <ClCompile Include="..\library\src\lookup_tables\lookup_tables.cpp" />
+    <ClCompile Include="..\library\src\moves\moves.cpp" />
+    <ClCompile Include="..\library\src\par.cpp" />
+    <ClCompile Include="..\library\src\pbn.cpp" />
+    <ClCompile Include="..\library\src\play_analyser.cpp" />
+    <ClCompile Include="..\library\src\quick_tricks.cpp" />
+    <ClCompile Include="..\library\src\solver_context\solver_context.cpp" />
+    <ClCompile Include="..\library\src\solver_context_adapter.cpp" />
+    <ClCompile Include="..\library\src\solver_if.cpp" />
+    <ClCompile Include="..\library\src\solve_board.cpp" />
+    <ClCompile Include="..\library\src\system\memory.cpp" />
+    <ClCompile Include="..\library\src\system\scheduler.cpp" />
+    <ClCompile Include="..\library\src\system\system.cpp" />
+    <ClCompile Include="..\library\src\system\thread_data.cpp" />
+    <ClCompile Include="..\library\src\system\thread_mgr.cpp" />
+    <ClCompile Include="..\library\src\system\timer.cpp" />
+    <ClCompile Include="..\library\src\system\timer_group.cpp" />
+    <ClCompile Include="..\library\src\system\timer_list.cpp" />
+    <ClCompile Include="..\library\src\system\time_stat.cpp" />
+    <ClCompile Include="..\library\src\system\time_stat_list.cpp" />
+    <ClCompile Include="..\library\src\trans_table\trans_table_l.cpp" />
+    <ClCompile Include="..\library\src\trans_table\trans_table_s.cpp" />
+    <ClCompile Include="..\library\src\utility\constants.cpp" />
+  </ItemGroup>
+  <!-- ClCompile og ClInclude header files -->
+  <ItemGroup>
+    <ClInclude Include="..\library\src\ab_search.hpp" />
+    <ClInclude Include="..\library\src\ab_stats.hpp" />
+    <ClInclude Include="..\library\src\api\calc_dd_table.hpp" />
+    <ClInclude Include="..\library\src\api\calc_par.hpp" />
+    <ClInclude Include="..\library\src\api\dds.h" />
+    <ClInclude Include="..\library\src\api\dll.h" />
+    <ClInclude Include="..\library\src\api\PBN.h" />
+    <ClInclude Include="..\library\src\api\portab.h" />
+    <ClInclude Include="..\library\src\api\solve_board.hpp" />
+    <ClInclude Include="..\library\src\calc_tables.hpp" />
+    <ClInclude Include="..\library\src\dds.h" />
+    <ClInclude Include="..\library\src\dds.hpp" />
+    <ClInclude Include="..\library\src\dump.hpp" />
+    <ClInclude Include="..\library\src\heuristic_sorting\heuristic_sorting.hpp" />
+    <ClInclude Include="..\library\src\heuristic_sorting\internal.hpp" />
+    <ClInclude Include="..\library\src\init.hpp" />
+    <ClInclude Include="..\library\src\later_tricks.hpp" />
+    <ClInclude Include="..\library\src\lookup_tables\lookup_tables.hpp" />
+    <ClInclude Include="..\library\src\moves\moves.hpp" />
+    <ClInclude Include="..\library\src\pbn.hpp" />
+    <ClInclude Include="..\library\src\play_analyser.hpp" />
+    <ClInclude Include="..\library\src\quick_tricks.hpp" />
+    <ClInclude Include="..\library\src\solver_context\solver_context.hpp" />
+    <ClInclude Include="..\library\src\solver_if.hpp" />
+    <ClInclude Include="..\library\src\solve_board.hpp" />
+    <ClInclude Include="..\library\src\system\memory.hpp" />
+    <ClInclude Include="..\library\src\system\scheduler.hpp" />
+    <ClInclude Include="..\library\src\system\system.hpp" />
+    <ClInclude Include="..\library\src\system\thread_data.hpp" />
+    <ClInclude Include="..\library\src\system\thread_mgr.hpp" />
+    <ClInclude Include="..\library\src\system\timer.hpp" />
+    <ClInclude Include="..\library\src\system\timer_group.hpp" />
+    <ClInclude Include="..\library\src\system\timer_list.hpp" />
+    <ClInclude Include="..\library\src\system\time_stat.hpp" />
+    <ClInclude Include="..\library\src\system\time_stat_list.hpp" />
+    <ClInclude Include="..\library\src\system\util\utilities.hpp" />
+    <ClInclude Include="..\library\src\trans_table\trans_table.hpp" />
+    <ClInclude Include="..\library\src\trans_table\trans_table_l.hpp" />
+    <ClInclude Include="..\library\src\trans_table\trans_table_s.hpp" />
+    <ClInclude Include="..\library\src\utility\constants.h" />
+    <ClInclude Include="..\library\src\utility\debug.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>
