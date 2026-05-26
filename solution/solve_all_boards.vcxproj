@@ -16,7 +16,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <!-- Gives a MSB4011 warning, but is still requered -->
+  <!-- Gives a MSB4011 warning, but is still required -->
   <Import Project="$(MSBuildProjectDirectory)/Directory.Build.props" Condition="Exists('$(MSBuildProjectDirectory)/Directory.Build.props')" />
 
   <ImportGroup Label="ExtensionSettings" />
