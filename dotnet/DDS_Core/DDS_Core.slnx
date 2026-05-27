@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="ProdTest" />
+    <BuildType Name="Profile" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Project Path="DDS_Core.csproj" />
+</Solution>

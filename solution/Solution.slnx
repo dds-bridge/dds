@@ -6,7 +6,6 @@
   <Folder Name="/Solution Items/">
     <File Path="Directory.Build.props" />
   </Folder>
-  <Project Path="../dotNet/DDS_CS.vcxproj" Id="a8c123bc-e0a4-1e10-60f5-a740e4fcca67" />
   <Project Path="analyse_all_plays_bin.vcxproj">
     <BuildDependency Project="DDS.vcxproj" />
     <BuildDependency Project="hands.vcxproj" />

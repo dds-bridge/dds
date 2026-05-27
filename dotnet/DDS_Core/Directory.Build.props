@@ -1,0 +1,8 @@
+﻿<Project>
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<WarningLevel>4</WarningLevel>
+		<BaseOutputPath>..\..\Build\bin\$(platform)\</BaseOutputPath>
+		<BaseIntermediateOutputPath>..\..\Build\int\$(platform)\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+	</PropertyGroup>
+</Project>
