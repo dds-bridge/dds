@@ -9,6 +9,7 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "2.0.1")
 bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+bazel_dep(name = "emsdk", version = "5.0.7")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
@@ -30,3 +31,4 @@ python.toolchain(
 use_repo(python, "python_3_14")
 
 register_toolchains("@llvm_toolchain//:all")
+register_toolchains("@emsdk//:all")

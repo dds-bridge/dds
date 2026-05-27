@@ -54,10 +54,10 @@ DDS_CPPOPTS = select({
     "//:build_wasm": [
         "-O3",
         "-flto",
-        "-mtune=generic",
         "-Wpedantic",
         "-Wall",
         "-Werror",
+        "-fexceptions",
     ],
     "//conditions:default": [
         "-std=c++20"

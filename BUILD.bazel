@@ -76,10 +76,7 @@ config_setting(
 # Usage: bazel build --config=wasm //...
 config_setting(
     name = "build_wasm",
-    constraint_values = [
-        "@platforms//os:linux",
-    ],
-    define_values = {"wasm": "true"},
+    values = {"cpu": "wasm"},
 )
 
 

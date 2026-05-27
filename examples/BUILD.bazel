@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 
 filegroup(
     name = "solve_board_wasm_inputs",
@@ -35,84 +36,22 @@ filegroup(
     ],
 )
 
-genrule(
+wasm_cc_binary(
     name = "solve_board_wasm",
-    srcs = [":solve_board_wasm_inputs"],
-    outs = [
+    cc_target = ":solve_board",
+    outputs = [
         "solve_board.js",
         "solve_board.wasm",
     ],
-    cmd = """
-      set -euo pipefail
-
-            EMXX_BIN=""
-            if command -v em++ >/dev/null 2>&1; then
-                EMXX_BIN="$$(command -v em++)"
-            elif [ -x "/workspaces/emsdk/upstream/emscripten/em++" ]; then
-                EMXX_BIN="/workspaces/emsdk/upstream/emscripten/em++"
-            elif [ -n "$${EMSDK:-}" ] && [ -x "$${EMSDK}/upstream/emscripten/em++" ]; then
-                EMXX_BIN="$${EMSDK}/upstream/emscripten/em++"
-            fi
-
-            if [ -z "$$EMXX_BIN" ]; then
-                echo "solve_board_wasm requires em++ (Emscripten). Tried PATH, /workspaces/emsdk/upstream/emscripten/em++, and EMSDK/upstream/emscripten/em++." >&2
-                exit 1
-            fi
-
-            CPP_SRCS="$$(for f in $(locations :solve_board_wasm_inputs); do
-                case "$$f" in
-                    *.cpp) printf '%s ' "$$f" ;;
-                esac
-            done)"
-
-                "$$EMXX_BIN" \
-        -O3 -flto -std=c++20 -D__WASM__ \
-                    -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=268435456 \
-        -I. -Ilibrary/src -Ilibrary/src/api \
-                $$CPP_SRCS \
-        -o "$(@D)/solve_board.js"
-    """,
-    tags = ["local"],
 )
 
-genrule(
-        name = "analyse_play_bin_wasm",
-        srcs = [":analyse_play_bin_wasm_inputs"],
-        outs = [
-                "AnalysePlayBin.js",
-                "AnalysePlayBin.wasm",
-        ],
-        cmd = """
-            set -euo pipefail
-
-            EMXX_BIN=""
-            if command -v em++ >/dev/null 2>&1; then
-                EMXX_BIN="$$(command -v em++)"
-            elif [ -x "/workspaces/emsdk/upstream/emscripten/em++" ]; then
-                EMXX_BIN="/workspaces/emsdk/upstream/emscripten/em++"
-            elif [ -n "$${EMSDK:-}" ] && [ -x "$${EMSDK}/upstream/emscripten/em++" ]; then
-                EMXX_BIN="$${EMSDK}/upstream/emscripten/em++"
-            fi
-
-            if [ -z "$$EMXX_BIN" ]; then
-                echo "analyse_play_bin_wasm requires em++ (Emscripten). Tried PATH, /workspaces/emsdk/upstream/emscripten/em++, and EMSDK/upstream/emscripten/em++." >&2
-                exit 1
-            fi
-
-            CPP_SRCS="$$(for f in $(locations :analyse_play_bin_wasm_inputs); do
-                case "$$f" in
-                    *.cpp) printf '%s ' "$$f" ;;
-                esac
-            done)"
-
-            "$$EMXX_BIN" \
-                -O3 -flto -std=c++20 -D__WASM__ \
-                -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=268435456 \
-                -I. -Ilibrary/src -Ilibrary/src/api \
-                $$CPP_SRCS \
-                -o "$(@D)/AnalysePlayBin.js"
-        """,
-        tags = ["local"],
+wasm_cc_binary(
+    name = "analyse_play_bin_wasm",
+    cc_target = ":analyse_play_bin",
+    outputs = [
+        "AnalysePlayBin.js",
+        "AnalysePlayBin.wasm",
+    ],
 )
 
 # Examples use legacy C-style code, so we need to suppress certain warnings
@@ -134,7 +73,12 @@ EXAMPLES_LOCAL_DEFINES = DDS_LOCAL_DEFINES + select({
 
 # WASM-specific link flags for em++ output (produces .html, .js, .wasm)
 EXAMPLES_LINKOPTS_WASM = select({
-    "//:build_wasm": ["-sWASM=1"],
+    "//:build_wasm": [
+        "-sWASM=1",
+        "-fexceptions",
+        "-sALLOW_MEMORY_GROWTH=1",
+        "-sINITIAL_MEMORY=268435456",
+    ],
     "//conditions:default": [],
 })
 
