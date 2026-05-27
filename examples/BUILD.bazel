@@ -47,7 +47,7 @@ wasm_cc_binary(
 
 wasm_cc_binary(
     name = "analyse_play_bin_wasm",
-    cc_target = ":analyse_play_bin",
+    cc_target = ":AnalysePlayBin",
     outputs = [
         "AnalysePlayBin.js",
         "AnalysePlayBin.wasm",
@@ -123,7 +123,7 @@ cc_binary(
 )
 
 cc_binary(
-    name = "analyse_play_bin",
+    name = "AnalysePlayBin",
     srcs = ["analyse_play_bin.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
@@ -297,7 +297,7 @@ filegroup(
     srcs = [
         ":analyse_all_plays_bin",
         ":analyse_all_plays_pbn",
-        ":analyse_play_bin",
+        ":AnalysePlayBin",
         ":analyse_play_pbn",
         ":calc_all_tables",
         ":calc_all_tables_pbn",

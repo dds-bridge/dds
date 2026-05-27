@@ -62,9 +62,12 @@ auto main() -> int
 
     if (res != RETURN_NO_FAULT)
     {
-#ifndef __WASM__
+ #ifdef __WASM__
+      // For WASM, we can't use ErrorMessage, so we'll just print the error code
+      snprintf(line, sizeof(line), "error code %d", res);
+ #else
       ErrorMessage(res, line);
-#endif
+ #endif
       printf("DDS error: %s\n", line);
     }
 

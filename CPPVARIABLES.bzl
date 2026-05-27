@@ -7,7 +7,6 @@ DDS_CPPOPTS = select({
         "-fPIC",
         "-Wpedantic",
         "-Wall",
-        "-Wno-character-conversion",
         "-Werror",
     ],
     "//:debug_build_macos": [
@@ -16,7 +15,6 @@ DDS_CPPOPTS = select({
         "-fPIC",
         "-Wpedantic",
         "-Wall",
-        "-Wno-character-conversion",
         "-Werror",
     ],
     "//:build_linux": [

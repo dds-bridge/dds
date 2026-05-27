@@ -17,18 +17,18 @@ The Emscripten SDK (emsdk) does NOT need to be manually installed. Bazel will au
 
 ```bash
 cd /workspaces/dds
-bazel build --config=wasm //examples:all
+bazel build //examples:all_examples_wasm
 ```
 
 ### Build Specific Example
 
 ```bash
-bazel build --config=wasm //examples:solve_board
+bazel build //examples:solve_board_wasm
 ```
 
 ### Output Files
 
-When building with `--config=wasm`, the output files will be located in:
+the output files will be located in:
 ```
 bazel-bin/examples/
 ```
@@ -36,32 +36,17 @@ bazel-bin/examples/
 Depending on the target, you'll get:
 - `target.js` - JavaScript bindings
 - `target.wasm` - WebAssembly binary
-- `target.html` - HTML shell (for some targets like `solve_board`)
+
 
 ## Available WASM Targets
 
 The following example targets are available for WASM builds:
 
-### Core Examples
-- `solve_board` - Solves a single board (produces .html)
-- `solve_board_pbn` - Solves a board from PBN notation (produces .html)
-- `solve_all_boards` - Solves multiple boards (produces .html)
-- `dds` - Main DDS example (produces .html)
+### Implemented Examples
+- `solve_board` - Solves a single board (produces .js and .wasm)
 
-### Analysis Examples
 - `analyse_play_bin` - Analyze play from binary format
-- `analyse_play_pbn` - Analyze play from PBN format
-- `analyse_all_plays_bin` - Analyze all plays from binary format
-- `analyse_all_plays_pbn` - Analyze all plays from PBN format
 
-### Calculation Examples
-- `calc_dd_table` - Calculate double dummy table
-- `calc_dd_table_pbn` - Calculate DD table from PBN
-- `calc_all_tables` - Calculate all tables
-- `calc_all_tables_pbn` - Calculate all tables from PBN
-- `dealer_par` - Calculate dealer par scores
-- `par` - Calculate par scores
-- `calc_par_context_example` - Par context example
 
 ## WASM Build Configuration
 
@@ -99,7 +84,7 @@ After building, you can run the examples:
 node bazel-bin/examples/solve_board.js
 ```
 
-### Web Browser
+### Web Browser (TODO)
 
 For HTML targets, open the generated HTML file in a web browser:
 ```bash
@@ -107,21 +92,6 @@ For HTML targets, open the generated HTML file in a web browser:
 cp bazel-bin/examples/solve_board.* /path/to/webserver/
 
 # Then open in browser at http://localhost:8000/solve_board.html
-```
-
-## Troubleshooting
-
-### Issue: Build fails with undefined reference errors
-
-**Solution:** This may indicate:
-1. Missing dependencies in the `deps` field of BUILD.bazel targets
-2. Emscripten-specific link flags needed
-
-### Issue: WASM binary is too large
-
-**Solution:** Try building with aggressive optimization:
-```bash
-bazel build --config=wasm -c opt //examples:solve_board
 ```
 
 ## Compilation Flags
@@ -156,12 +126,11 @@ build:wasm --cxxopt=-std=c++20
 
 To integrate WASM builds into CI/CD:
 1. See `.github/workflows/ci_linux.yml` and `.github/workflows/ci_macos.yml`
-2. Add a WASM build job with `--config=wasm`
-3. Store WASM artifacts for download/release
+2. Store WASM artifacts for download/release
 
 ## Development Notes
 
-- The `__WASM__` preprocessor constant is automatically defined for WASM builds
+- The `__WASM__` preprocessor constant is added initially to bypass error, need to check again whether we can remove
 - Some threading and platform-specific features are disabled for WASM
-- The build produces both `.js` and `.wasm` files
-- For HTML targets, em++ produces `.html`, `.js`, and `.wasm` files together
+- The build flow for a reusable library wasm 
+- A good HTML example
