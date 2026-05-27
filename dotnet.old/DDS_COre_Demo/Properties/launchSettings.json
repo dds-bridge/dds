@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DotNetDemo": {
+      "commandName": "Project",
+      "debugEngines": "managed-dotnet,native"
+    }
+  }
+}
