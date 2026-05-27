@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- ========================= -->
+  <!--   FILTER MAPPESTRUKTUR   -->
+  <!-- ========================= -->
+
+  <ItemGroup>
+    <Filter Include="library">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000001}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000002}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src\api">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000003}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src\heuristic_sorting">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000004}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src\lookup_tables">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000005}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src\moves">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000006}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src\solver_context">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000007}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src\system">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000008}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src\trans_table">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-000000000009}</UniqueIdentifier>
+    </Filter>
+
+    <Filter Include="library\src\utility">
+      <UniqueIdentifier>{F1000000-0000-4000-8000-00000000000A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+
+
+  <!-- ========================= -->
+  <!--     CPP FILER I FILTERS   -->
+  <!-- ========================= -->
+
+  <ItemGroup>
+    <ClCompile Include="..\library\src\ab_search.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\library\src\ab_stats.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\library\src\calc_dd_table.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\library\src\calc_par.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\library\src\calc_tables.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\library\src\dds.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\library\src\dealer_par.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\library\src\dump.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\heuristic_sorting\heuristic_sorting.cpp">
+      <Filter>library\src\heuristic_sorting</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\init.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\later_tricks.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\lookup_tables\lookup_tables.cpp">
+      <Filter>library\src\lookup_tables</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\moves\moves.cpp">
+      <Filter>library\src\moves</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\par.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\pbn.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\play_analyser.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\quick_tricks.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\solver_context\solver_context.cpp">
+      <Filter>library\src\solver_context</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\solver_context_adapter.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\solver_if.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\solve_board.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\memory.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\scheduler.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\system.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\thread_data.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\thread_mgr.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\timer.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\timer_group.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\timer_list.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\time_stat.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\system\time_stat_list.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\trans_table\trans_table_l.cpp">
+      <Filter>library\src\trans_table</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\trans_table\trans_table_s.cpp">
+      <Filter>library\src\trans_table</Filter>
+    </ClCompile>
+
+    <ClCompile Include="..\library\src\utility\constants.cpp">
+      <Filter>library\src\utility</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+
+  <!-- ========================= -->
+  <!--     HEADER FILER I FILTERS -->
+  <!-- ========================= -->
+
+  <ItemGroup>
+    <ClInclude Include="..\library\src\ab_search.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\ab_stats.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\calc_dd_table.hpp">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\calc_par.hpp">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\dds.h">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\dll.h">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\PBN.h">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\portab.h">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\solve_board.hpp">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\calc_tables.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\dds.h">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\dds.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\dump.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\heuristic_sorting\heuristic_sorting.hpp">
+      <Filter>library\src\heuristic_sorting</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\heuristic_sorting\internal.hpp">
+      <Filter>library\src\heuristic_sorting</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\init.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\later_tricks.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\lookup_tables\lookup_tables.hpp">
+      <Filter>library\src\lookup_tables</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\moves\moves.hpp">
+      <Filter>library\src\moves</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\pbn.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\play_analyser.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\quick_tricks.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\solver_context\solver_context.hpp">
+      <Filter>library\src\solver_context</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\solver_if.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\solve_board.hpp">
+      <Filter>library\src</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\memory.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\scheduler.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\system.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\thread_data.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\thread_mgr.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\timer.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\timer_group.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\timer_list.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\time_stat.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\time_stat_list.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\system\util\utilities.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\trans_table\trans_table.hpp">
+      <Filter>library\src\trans_table</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\trans_table\trans_table_l.hpp">
+      <Filter>library\src\trans_table</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\trans_table\trans_table_s.hpp">
+      <Filter>library\src\trans_table</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\utility\constants.h">
+      <Filter>library\src\utility</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\utility\debug.h">
+      <Filter>library\src\utility</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+</Project>
