@@ -4,21 +4,12 @@ This document explains how to build the DDS library and examples for WebAssembly
 
 ## Prerequisites
 
-### 1. Emscripten SDK
-
-You must have the Emscripten SDK installed and configured. Follow the official installation guide:
-https://emscripten.org/docs/getting_started/downloads.html
-
-After installation, ensure `em++` is available on your PATH:
-
-```bash
-which em++
-```
-
-### 2. Bazel
+### Bazel
 
 Bazel 7.x or later is required. Install using your package manager or download from:
 https://bazel.build/install
+
+The Emscripten SDK (emsdk) does NOT need to be manually installed. Bazel will automatically download, configure, and cache the appropriate hermetic Emscripten toolchain for your host platform as part of the build process.
 
 ## Building WASM Examples
 
@@ -77,22 +68,25 @@ The following example targets are available for WASM builds:
 The WASM build is configured through:
 
 1. **BUILD.bazel** - Defines the WASM config_setting:
-   ```
+   ```python
    config_setting(
        name = "build_wasm",
-       constraint_values = ["@platforms//os:emscripten"],
+       values = {"cpu": "wasm"},
    )
    ```
 
 2. **CPPVARIABLES.bzl** - Specifies WASM-specific compiler flags:
-   - Optimization: `-O3 -flto -mtune=generic`
+   - Optimization: `-O3 -flto`
+   - Exceptions: `-fexceptions`
    - Define: `-D__WASM__`
 
 3. **.bazelrc** - Contains the `wasm` profile:
    ```
-   build:wasm --compiler=emscripten
+   build:wasm --platforms=@emsdk//:platform_wasm
    build:wasm --cpu=wasm
    build:wasm --cxxopt=-std=c++20
+   build:wasm --host_cxxopt=-std=c++20
+   build:wasm --compilation_mode=opt
    ```
 
 ## Running WASM Examples
@@ -117,13 +111,6 @@ cp bazel-bin/examples/solve_board.* /path/to/webserver/
 
 ## Troubleshooting
 
-### Issue: `em++` not found
-
-**Solution:** Ensure Emscripten SDK is installed and sourced:
-```bash
-source /path/to/emsdk/emsdk_env.sh
-```
-
 ### Issue: Build fails with undefined reference errors
 
 **Solution:** This may indicate:
@@ -137,8 +124,6 @@ source /path/to/emsdk/emsdk_env.sh
 bazel build --config=wasm -c opt //examples:solve_board
 ```
 
-Use `--define=opt_level=3` for maximum optimization if available.
-
 ## Compilation Flags
 
 The WASM build uses the following key flags:
@@ -147,9 +132,11 @@ The WASM build uses the following key flags:
 |------|---------|
 | `-O3` | Aggressive optimization |
 | `-flto` | Link-time optimization |
-| `-mtune=generic` | Generic CPU tuning |
+| `-fexceptions` | Enable C++ exceptions |
 | `-D__WASM__` | Defines `__WASM__` preprocessor constant |
 | `-sWASM=1` | Emscripten WASM output (link flag) |
+| `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime |
+| `-sINITIAL_MEMORY=268435456` | Configure 256MB initial memory |
 
 ## C++ Standard
 
@@ -169,7 +156,7 @@ build:wasm --cxxopt=-std=c++20
 
 To integrate WASM builds into CI/CD:
 1. See `.github/workflows/ci_linux.yml` and `.github/workflows/ci_macos.yml`
-2. Add a WASM build job with `--config=wasm` and `em++` available
+2. Add a WASM build job with `--config=wasm`
 3. Store WASM artifacts for download/release
 
 ## Development Notes
