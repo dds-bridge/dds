@@ -35,6 +35,7 @@
     <BuildDependency Project="hands.vcxproj" />
   </Project>
   <Project Path="DDS.vcxproj" />
+  <Project Path="dds_native.vcxproj" Id="d38617a2-482a-1c00-7c88-02b17b693906" />
   <Project Path="dealer_par.vcxproj" Id="1d80fdb5-d939-4c1d-ac95-35059c00aa2c">
     <BuildDependency Project="DDS.vcxproj" />
     <BuildDependency Project="hands.vcxproj" />
