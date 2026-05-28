@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace DDS_Core.DataModel
+namespace DDS_Core
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ddTableDeal

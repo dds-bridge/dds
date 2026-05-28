@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
-using DDS_Core.DataModel;
+using DDS_Core;
 
-namespace DDS_Core.DataModel;
+namespace DDS_Core;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct Boards

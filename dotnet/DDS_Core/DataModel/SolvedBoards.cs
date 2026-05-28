@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-using DDS_Core.DataModel;
+using DDS_Core;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct SolvedBoards

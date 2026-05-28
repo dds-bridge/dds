@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DDS_Core.DataModel;
+namespace DDS_Core;
 
 #region Native structures for DDS.dll
     // Do not set [... , Pack = 1]
