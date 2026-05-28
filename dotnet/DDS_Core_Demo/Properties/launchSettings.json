@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DDS_Core_Demo": {
+      "commandName": "Project",
+      "debugEngines": "managed-dotnet,native"
+    }
+  }
+}

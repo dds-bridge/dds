@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using DDS_Core.DataModel;
+using DDS_Core;
 using DDS_Core.Native;
 
 namespace DDS_Core;
@@ -17,7 +17,7 @@ public class DDS
                                      , target
                                      , solutions
                                      , mode
-                                     , out  fut
+                                     , out fut
                                      , threadIndex);
 
 #if DEBUG

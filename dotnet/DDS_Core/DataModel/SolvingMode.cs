@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace DDS_Core.DataModel;
+namespace DDS_Core;
 
 public enum SolvingMode
 {
