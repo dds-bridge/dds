@@ -3,23 +3,26 @@
 namespace DDS_Core;
 
 /// <summary>
-/// Represents multiple bridge deals for batch analysis.
+/// Multiple boards in PBN format for batch solving.
+/// 
+/// Similar to Boards but uses PBN (Portable Bridge Notation) format
+/// for deal representation. Used for solving multiple boards efficiently.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public struct Boards
+public struct BoardsPBN
 {
-    /// <summary>Number of deals in this batch.</summary>
+    /// <summary>Number of boards to solve.</summary>
     public int no_of_boards;
 
-    /// <summary>Array of deals.</summary>
+    /// <summary>Array of deals in PBN format.</summary>
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
-    public Deal[] deals;
+    public DealPBN[] deals;
 
     /// <summary>Target tricks for each board.</summary>
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
     public int[] target;
 
-    /// <summary>Solution mode for each board (1=best, 2=all, 3=all+par).</summary>
+    /// <summary>Solution mode for each board.</summary>
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
     public int[] solutions;
 

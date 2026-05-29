@@ -1,10 +1,20 @@
 ﻿using System.Runtime.InteropServices;
 
-using DDS_Core;
+namespace DDS_Core;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+/// <summary>
+/// Solutions for multiple boards.
+/// 
+/// Container for results from batch board solving operations.
+/// Each entry contains the complete future tricks analysis for one board.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
 public struct SolvedBoards
 {
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 200)]
-    public FutureTricks[] solvedBoard;
+    /// <summary>Number of solved boards.</summary>
+    public int no_of_boards;
+
+    /// <summary>Array of solutions (future tricks for each board).</summary>
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
+    public FutureTricks[] solved_board;
 }

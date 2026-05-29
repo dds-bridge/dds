@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using static DDS_Core.ByteBuffer10x10;
+﻿using System.Runtime.InteropServices;
 
 namespace DDS_Core;
 
 /// <summary>
-/// Represents a bridge Deal for double dummy analysis.
+/// Represents a bridge Deal in PBN (Portable Bridge Notation) format.
+/// 
+/// PBN format is a standard text representation for bridge hands.
+/// Example: "N:AKQ.K.AKQ.AKQ8 J976.QJT.J42.Q2 T842.A542.T83.T3 53.9876.965.J976"
 /// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct Deal
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+public struct DealPBN
 {
     /// <summary>Trump suit (0 = NT, 1 = Spades, 2 = Hearts, 3 = Diamonds, 4 = Clubs).</summary>
     public int trump;
@@ -28,7 +25,6 @@ public struct Deal
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] currentTrickRank;
 
-    /// <summary>Remaining cards for each hand and suit (4 hands × 4 suits = 16 elements).</summary>
-    //[MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-    public UintBuffer4x4 remainCards;
+    /// <summary>PBN string describing remaining cards (max 80 characters).</summary>
+       public ByteBuffer80 remainCards;
 }

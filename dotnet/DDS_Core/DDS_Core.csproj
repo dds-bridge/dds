@@ -7,5 +7,12 @@
 		<Platforms>x64</Platforms>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<BaseOutputPath>..\..\Build\bin\</BaseOutputPath>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="DataModel\Hands.cs" />
+	  <Compile Remove="Helpers\Grid1D.cs" />
+	  <Compile Remove="Helpers\ParResultsBuffer.cs" />
+	</ItemGroup>
 </Project>

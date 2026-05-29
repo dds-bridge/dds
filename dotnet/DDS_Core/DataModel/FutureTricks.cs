@@ -1,24 +1,32 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace DDS_Core;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+/// <summary>
+/// Stores the result of a double dummy analysis for a single position.
+/// 
+/// Contains the number of nodes searched, the number of cards in the result,
+/// and arrays for each card's suit, rank, equality group, and score.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
 public struct FutureTricks
 {
-    public int Nodes;
-    public int  cards;
+    /// <summary>Number of nodes searched in the analysis.</summary>
+    public int nodes;
 
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 13)]
-    public int[] suit;
+    /// <summary>Number of cards in the results.</summary>
+    public int cards;
 
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 13)]
-    public int[] rank;
+    /// <summary>Suit of each card (13 entries).</summary>
+    public IntBuffer13 suit;
 
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 13)]
-    public int[] equals;
+    /// <summary>Rank of each card (13 entries).</summary>
+    public IntBuffer13 rank;
 
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 13)]
-    public int[] score;
+    /// <summary>Equality group for each card (13 entries).</summary>
+    public IntBuffer13 equals;
+
+    /// <summary>Score for each card (13 entries).</summary>
+    public IntBuffer13 score;
 }
