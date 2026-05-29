@@ -13,7 +13,7 @@
 	</PropertyGroup>
 
 	
-	<PropertyGroup Condition="'$(Configuration)'=='Profile'">
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
 		<DefineConstants>$(DefineConstants); RELEASE; </DefineConstants>
 		<Optimize>true</Optimize>
 		<DebugType>none</DebugType>

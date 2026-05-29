@@ -1,11 +1,25 @@
 ﻿using System.Runtime.InteropServices;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct parResults
-{
-    public int score_NS;
-    public int score_EW;
+namespace DDS_Core;
 
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
-    public int[] parScore;
+/// <summary>
+/// Par score and contracts for a single declarer/strain combination.
+/// 
+/// Includes both NS and EW perspectives.
+/// Index 0 = NS view, Index 1 = EW view.
+/// </summary>
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+public struct ParResults
+{
+    /// <summary>
+    /// Par score strings for NS and EW (2 entries, max 16 chars each).
+    /// Access: par_score[side, index] where side=0(NS) or 1(EW)
+    /// </summary>
+    public ByteBuffer2x16 par_score;
+
+    /// <summary>
+    /// Par contract strings for NS and EW (2 entries, max 128 chars each).
+    /// Access: par_contracts_string[side, index] where side=0(NS) or 1(EW)
+    /// </summary>
+    public ByteBuffer2x128 par_contracts_string;
 }

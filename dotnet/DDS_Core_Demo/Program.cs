@@ -5,56 +5,68 @@ namespace DDS_Core_Demo;
 
 internal class Program
 {
-
-    static string[]  contracts = ["spades","hearts", "diamonds", "clubs", "no trump" ];
+    private static string[] contracts = ["spades","hearts", "diamonds", "clubs", "no trump" ];
 
     static void Main(string[] args)
     {
+        uint[][] hands = [ new uint[]
+                           {
+                               (uint)(rJ|r6|r5|r2)
+                             , (uint)(rA|r7|r4)
+                             , (uint)None
+                             , (uint)(rK|rT|r9|r6|r4|r2)
+                           }
+
+                         , new uint[]
+                           {
+                               (uint)(rA|rT|r9|r8|r7|r3)
+                             , (uint)(rK|rJ|r5)
+                             , (uint)(rT|r8|r2)
+                             , (uint)r8
+                           }
+
+                         , new uint[]
+                           {
+                               (uint)r4
+                             , (uint)(rQ|rT|r9|r8|r2)
+                             , (uint)(rA|rK|rQ|r9|r3)
+                             , (uint)(rA|rJ)
+                           }
+
+                         , new uint[]
+                           {
+                               (uint)(rK|rQ)
+                             , (uint)(r6|r3)
+                             , (uint)(rJ|r7|r6|r5|r4)
+                             , (uint)(rQ|r7|r5|r3)
+                           }
+
+                         ];
+
         var dds  = new DDS();
-        var deal = new Deal()
+        var deal = new Deal
                    {
                        trump            = (int)Suit.Hearts
                      , first            = 0
                      , currentTrickSuit = new int[3] {0, 0, 0 }
                      , currentTrickRank = new int[3] {0, 0, 0 }
-                     , remainCards      = new uint[16]
-                                          {
-                                              (uint)(Jack|n6|n5|n2)
-                                            , (uint)(Ace|n7|n4)
-                                            , (uint)(None)
-                                            , (uint)(King|Ten|n9|n6|n4|n2)
-                                        //
-                                            , (uint)(Ace|Ten|n9|n8|n7|n3)
-                                            , (uint)(King|Jack|n5)
-                                            , (uint)(Ten|n8|n2)
-                                            , (uint)(n8)
-                                        //
-                                            , (uint)(n4)
-                                            , (uint)(Queen|Ten|n9|n8|n2)
-                                            , (uint)(Ace|King|Queen|n9|n3)
-                                            , (uint)(Ace|Jack)
-                                        //
-                                            , (uint)(King|Queen)
-                                            , (uint)(n6|n3)
-                                            , (uint)(Jack|n7|n6|n5|n4)
-                                            , (uint)(Queen|n7|n5|n3)
-                                          }
+                     , remainCards      = hands      
                    };
 
-
-        for (deal.trump = 0; deal.trump < 5; deal.trump++)
-            for (deal.first = 0; deal.first < 4; deal.first++)
+        // SolveBoard: Loop through all possible contracts and first players
+        for (deal.trump = 0; deal.trump <  5; deal.trump++)
+            for (deal.first = 0; deal.first <  4; deal.first++)
             {
-            var rc=dds.SolveBoard(deal, -1, 1, 2, out FutureTricks fut);
-            var deci = (deal.first+3)&3;
-            var decl = "NESW"[deci];
-            var cont = contracts[deal.trump];
+                var rc   =dds.SolveBoard(deal, -1, 1, 0, out FutureTricks fut);
+                var deci = (deal.first+3)&3;
+                var decl = "NESW"[deci];
+                var cont = contracts[deal.trump];
 
-            Console.WriteLine($"Tricks in {cont} for {decl}: {13 - fut.score[0]} ");
-        }
-            Console.WriteLine($"Press any key to continue...");
+                Console.WriteLine($"Tricks in {cont} for {decl}: {13 - fut.score[0]} ");
+            }
 
-
+        Console.WriteLine($"Press any key to continue...");
         Console.ReadKey();
+        return;
     }
 }
