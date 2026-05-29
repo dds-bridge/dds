@@ -13,3 +13,15 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "analyse_play_consistency_test",
+    size = "small",
+    srcs = [
+        "analyse_play_consistency.cpp",
+    ],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+)
