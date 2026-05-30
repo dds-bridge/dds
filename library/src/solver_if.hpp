@@ -28,7 +28,7 @@ auto solve_same_board(
   const int hint) -> int;
 
 auto analyse_later_board(
-  const std::shared_ptr<ThreadData>& thrp,
+  SolverContext& ctx,
   const int leadHand,
   MoveType const * move,
   const int hint,

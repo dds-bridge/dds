@@ -46,9 +46,11 @@ int STDCALL AnalysePlayBin(
   SolvedPlay * solvedp,
   [[maybe_unused]] int thrId)
 {
-  // Create an owned context for this analysis and obtain its ThreadData.
+  // Create an owned context for this analysis. The same context (and its
+  // transposition table) is reused for the initial solve and every subsequent
+  // analyse_later_board call, so the hint-bounded incremental searches see a
+  // warm TT -- see the analogous calc_dd_table fix (commit 27030ba).
   SolverContext outer_ctx;
-  auto thrp = outer_ctx.thread();
 
   MoveType move;
   FutureTricks fut;
@@ -196,7 +198,7 @@ int STDCALL AnalysePlayBin(
       if (usingCurrent)
         continue;
 
-      if ((ret = analyse_later_board(thrp, dl.first, &move, hint, 
+      if ((ret = analyse_later_board(ctx, dl.first, &move, hint,
         hintDir, &fut))
           != RETURN_NO_FAULT)
       {
