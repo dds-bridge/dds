@@ -209,6 +209,128 @@ auto register_solve_bindings(py::module_& module) -> void
         "Raises:\n"
         "    ValueError: If PBN format is invalid or input validation fails.\n"
         "    RuntimeError: If DDS solver returns error code.");
+
+    module.def(
+        "solve_all_boards_pbn",
+        [](const py::list& boards) {
+            const auto board_count = boards.size();
+            if (board_count > MAXNOOFBOARDS) {
+                throw py::value_error(
+                    "Number of boards (" + std::to_string(board_count) +
+                    ") exceeds maximum (" + std::to_string(MAXNOOFBOARDS) + ")");
+            }
+
+            BoardsPBN native_boards{};
+            native_boards.no_of_boards = static_cast<int>(board_count);
+
+            for (std::size_t i = 0; i < board_count; ++i) {
+                const py::dict board = py::cast<py::dict>(boards[i]);
+                const std::string remain_cards = py::cast<std::string>(board["remain_cards"]);
+                const int trump = board.contains("trump") ? py::cast<int>(board["trump"]) : 4;
+                const int first = board.contains("first") ? py::cast<int>(board["first"]) : 0;
+                const py::sequence trick_suit = board.contains("current_trick_suit")
+                    ? py::cast<py::sequence>(board["current_trick_suit"])
+                    : py::cast<py::sequence>(py::make_tuple(0, 0, 0));
+                const py::sequence trick_rank = board.contains("current_trick_rank")
+                    ? py::cast<py::sequence>(board["current_trick_rank"])
+                    : py::cast<py::sequence>(py::make_tuple(0, 0, 0));
+                native_boards.deals[i] =
+                    dds3_python::pbn_to_deal(remain_cards, trump, first, trick_suit, trick_rank);
+                native_boards.target[i] =
+                    board.contains("target") ? py::cast<int>(board["target"]) : -1;
+                native_boards.solutions[i] =
+                    board.contains("solutions") ? py::cast<int>(board["solutions"]) : 3;
+                native_boards.mode[i] =
+                    board.contains("mode") ? py::cast<int>(board["mode"]) : 0;
+            }
+
+            SolvedBoards solved_boards{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = SolveAllBoards(&native_boards, &solved_boards);
+            }
+            throw_on_dds_error(code);
+
+            py::list result;
+            for (int i = 0; i < solved_boards.no_of_boards; ++i) {
+                result.append(dds3_python::future_tricks_to_dict(solved_boards.solved_board[i]));
+            }
+            return result;
+        },
+        py::arg("boards"),
+        "Solve multiple bridge deals in PBN format.\n\n"
+        "Args:\n"
+        "    boards (list): List of board dicts, each with:\n"
+        "        remain_cards (str): Remaining cards in PBN format (e.g., 'N:AK.234.456.789T...').\n"
+        "        trump (int, optional): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT). Default: 4\n"
+        "        first (int, optional): Seat that plays first (0=N, 1=E, 2=S, 3=W). Default: 0\n"
+        "        current_trick_suit (tuple, optional): Suits in current trick. Default: (0, 0, 0)\n"
+        "        current_trick_rank (tuple, optional): Ranks in current trick. Default: (0, 0, 0)\n"
+        "        target (int, optional): Target number of tricks (-1 = no target). Default: -1\n"
+        "        solutions (int, optional): Depth of search (1-3). Default: 3\n"
+        "        mode (int, optional): 0=auto, 1=thread depth 6, 2=node depth 12. Default: 0\n\n"
+        "Returns:\n"
+        "    list: List of result dicts with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
+        "Raises:\n"
+        "    ValueError: If PBN format is invalid, input validation fails, or too many boards.\n"
+        "    RuntimeError: If DDS solver returns error code.");
+
+    module.def(
+        "solve_all_boards_bin",
+        [](const py::list& boards) {
+            const auto board_count = boards.size();
+            if (board_count > MAXNOOFBOARDS) {
+                throw py::value_error(
+                    "Number of boards (" + std::to_string(board_count) +
+                    ") exceeds maximum (" + std::to_string(MAXNOOFBOARDS) + ")");
+            }
+
+            Boards native_boards{};
+            native_boards.no_of_boards = static_cast<int>(board_count);
+
+            for (std::size_t i = 0; i < board_count; ++i) {
+                const py::dict board = py::cast<py::dict>(boards[i]);
+                native_boards.deals[i] = dds3_python::dict_to_deal(board);
+                native_boards.target[i] =
+                    board.contains("target") ? py::cast<int>(board["target"]) : -1;
+                native_boards.solutions[i] =
+                    board.contains("solutions") ? py::cast<int>(board["solutions"]) : 3;
+                native_boards.mode[i] =
+                    board.contains("mode") ? py::cast<int>(board["mode"]) : 0;
+            }
+
+            SolvedBoards solved_boards{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = SolveAllBoardsBin(&native_boards, &solved_boards);
+            }
+            throw_on_dds_error(code);
+
+            py::list result;
+            for (int i = 0; i < solved_boards.no_of_boards; ++i) {
+                result.append(dds3_python::future_tricks_to_dict(solved_boards.solved_board[i]));
+            }
+            return result;
+        },
+        py::arg("boards"),
+        "Solve multiple bridge deals in binary format.\n\n"
+        "Args:\n"
+        "    boards (list): List of board dicts, each with:\n"
+        "        trump (int): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT).\n"
+        "        first (int): Seat that plays first (0=N, 1=E, 2=S, 3=W).\n"
+        "        remain_cards (list): 4x4 nested list of card bitmasks (hand x suit, bits 2-14).\n"
+        "        current_trick_suit (tuple): Suits in current trick (3-tuple of ints, 0-3).\n"
+        "        current_trick_rank (tuple): Ranks in current trick (3-tuple of ints, 0 or 2-14).\n"
+        "        target (int, optional): Target number of tricks (-1 = no target). Default: -1\n"
+        "        solutions (int, optional): Depth of search (1-3). Default: 3\n"
+        "        mode (int, optional): 0=auto, 1=thread depth 6, 2=node depth 12. Default: 0\n\n"
+        "Returns:\n"
+        "    list: List of result dicts with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
+        "Raises:\n"
+        "    ValueError: If input validation fails or too many boards.\n"
+        "    RuntimeError: If DDS solver returns error code.");
 }
 
 

@@ -133,23 +133,8 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_SIZE 9
 
 
-System::System(
-    [[maybe_unused]] FptrType solve_chunk_common,
-    [[maybe_unused]] FptrType calc_chunk_common,
-    [[maybe_unused]] FptrType play_chunk_common,
-    [[maybe_unused]] FduplType detect_solve_duplicates,
-    [[maybe_unused]] FduplType detect_calc_duplicates,
-    [[maybe_unused]] FduplType detect_play_duplicates,
-    [[maybe_unused]] FsingleType solve_single_common,
-    [[maybe_unused]] FsingleType calc_single_common,
-    [[maybe_unused]] FsingleType play_single_common,
-    [[maybe_unused]] FcopyType copy_solve_single,
-    [[maybe_unused]] FcopyType copy_calc_single,
-    [[maybe_unused]] FcopyType copy_play_single
-)
+System::System()
 {
-  // Threading infrastructure removed: callbacks no longer registered.
-  // System now only provides hardware detection and configuration.
   System::reset();
 }
 
@@ -284,12 +269,6 @@ int System::register_params(
   num_threads_ = n_threads;
   sys_mem_mb_ = mem_usable_mb;
   return RETURN_NO_FAULT;
-}
-
-
-bool System::thread_ok(const int thread_id) const
-{
-  return (thread_id >= 0 && thread_id < num_threads_);
 }
 
 

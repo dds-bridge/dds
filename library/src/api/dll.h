@@ -602,6 +602,14 @@ EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBin(
   struct Boards const * bop,
   struct SolvedBoards * solvedp) -> int;
 
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsSeq(
+  struct BoardsPBN const * bop,
+  struct SolvedBoards * solvedp) -> int;
+
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBinSeq(
+  struct Boards const * bop,
+  struct SolvedBoards * solvedp) -> int;
+
 EXTERN_C DLLEXPORT auto STDCALL SolveAllChunks(
   struct BoardsPBN const * bop,
   struct SolvedBoards * solvedp,

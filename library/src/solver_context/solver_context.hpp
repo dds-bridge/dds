@@ -234,35 +234,44 @@ public:
     // Returns the owned transposition table instance (creates if null)
     auto trans_table() -> TransTable*;
     // Returns the TT instance if it exists, or nullptr
-    auto maybe_trans_table() const -> TransTable*;
+    auto maybe_trans_table() const -> TransTable* { return tt_.get(); }
     // Dispose and erase the TT instance owned by this context, if any.
-    auto dispose_trans_table() -> void;
-    // analysis flag used to control incremental analysis behavior
-    auto analysis_flag() -> bool&;
-    auto analysis_flag() const -> bool;
-    auto lowest_win(int depth, int suit) -> unsigned short&;
-    auto lowest_win(int depth, int suit) const -> const unsigned short&;
-    auto best_move(int depth) -> MoveType&;
-    auto best_move(int depth) const -> const MoveType&;
-    auto best_move_tt(int depth) -> MoveType&;
-    auto best_move_tt(int depth) const -> const MoveType&;
-    auto winners(int trickIndex) -> WinnersType&;
-    auto winners(int trickIndex) const -> const WinnersType&;
+    auto dispose_trans_table() -> void { tt_.reset(); }
+    // Trivial accessors defined in the header so call sites in hot inner
+    // loops (notably ab_search.cpp) get inlined direct field accesses
+    // instead of cross-TU function calls. The previous out-of-line
+    // definitions in solver_context.cpp added ~20% to total ab_search
+    // self-time on Linux/x86_64.
+    auto analysis_flag() -> bool& { return thr_->analysisFlag; }
+    auto analysis_flag() const -> bool { return thr_->analysisFlag; }
+    auto lowest_win(int depth, int suit) -> unsigned short& { return thr_->lowestWin[depth][suit]; }
+    auto lowest_win(int depth, int suit) const -> const unsigned short& { return thr_->lowestWin[depth][suit]; }
+    auto best_move(int depth) -> MoveType& { return thr_->bestMove[depth]; }
+    auto best_move(int depth) const -> const MoveType& { return thr_->bestMove[depth]; }
+    auto best_move_tt(int depth) -> MoveType& { return thr_->bestMoveTT[depth]; }
+    auto best_move_tt(int depth) const -> const MoveType& { return thr_->bestMoveTT[depth]; }
+    auto winners(int trickIndex) -> WinnersType& { return thr_->winners[trickIndex]; }
+    auto winners(int trickIndex) const -> const WinnersType& { return thr_->winners[trickIndex]; }
     // Node type store for each hand (MAXNODE/MINNODE)
-    auto node_type_store(int hand) -> int&;
-    auto node_type_store(int hand) const -> const int&;
+    auto node_type_store(int hand) -> int& { return thr_->nodeTypeStore[hand]; }
+    auto node_type_store(int hand) const -> const int& { return thr_->nodeTypeStore[hand]; }
     // Access to forbidden moves buffer used by Moves::Purge and solver loops
-    auto forbidden_moves() -> MoveType*;
-    auto forbidden_moves() const -> const MoveType*;
-    auto forbidden_move(int index) -> MoveType&;
-    auto forbidden_move(int index) const -> const MoveType&;
-    auto clear_forbidden_moves() -> void;
-    auto nodes() -> int&;
-    auto nodes() const -> const int&;
-    auto trick_nodes() -> int&;
-    auto trick_nodes() const -> const int&;
-    auto ini_depth() -> int&;
-    auto ini_depth() const -> int;
+    auto forbidden_moves() -> MoveType* { return thr_->forbiddenMoves; }
+    auto forbidden_moves() const -> const MoveType* { return thr_->forbiddenMoves; }
+    auto forbidden_move(int index) -> MoveType& { return thr_->forbiddenMoves[index]; }
+    auto forbidden_move(int index) const -> const MoveType& { return thr_->forbiddenMoves[index]; }
+    auto clear_forbidden_moves() -> void {
+      for (int k = 0; k <= 13; ++k) {
+        thr_->forbiddenMoves[k].rank = 0;
+        thr_->forbiddenMoves[k].suit = 0;
+      }
+    }
+    auto nodes() -> int& { return thr_->nodes; }
+    auto nodes() const -> const int& { return thr_->nodes; }
+    auto trick_nodes() -> int& { return thr_->trickNodes; }
+    auto trick_nodes() const -> const int& { return thr_->trickNodes; }
+    auto ini_depth() -> int& { return thr_->iniDepth; }
+    auto ini_depth() const -> int { return thr_->iniDepth; }
 
   public:
     // Allow SolverContext to bind or rebind the underlying ThreadData
@@ -311,8 +320,14 @@ public:
   class MoveGenContext
   {
   public:
-    explicit MoveGenContext(std::shared_ptr<ThreadData> thr)
-      : thr_(std::move(thr))
+    // Non-owning. `thr` must outlive this MoveGenContext; in practice the
+    // ThreadData is owned by the enclosing SolverContext's `thr_`
+    // shared_ptr, so a raw pointer here is safe and lets `SolverContext
+    // ::move_gen()` return a value-typed facade without an atomic
+    // shared_ptr refcount bump on every call (~22 calls per ab_search
+    // invocation, hot path).
+    explicit MoveGenContext(ThreadData* thr)
+      : thr_(thr)
     {
     }
 
@@ -389,7 +404,7 @@ public:
       const int relHand) -> void;
 
   private:
-    std::shared_ptr<ThreadData> thr_;
+    ThreadData* thr_ = nullptr;
   };
 
   /**
@@ -397,7 +412,7 @@ public:
    */
   auto move_gen() const -> MoveGenContext
   {
-    return MoveGenContext(thr_);
+    return MoveGenContext(thr_.get());
   }
 
 private:
