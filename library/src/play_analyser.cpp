@@ -46,9 +46,6 @@ int STDCALL AnalysePlayBin(
   SolvedPlay * solvedp,
   [[maybe_unused]] int thrId)
 {
-  if (! sysdep.thread_ok(thrId))
-    return RETURN_THREAD_INDEX;
-
   // Create an owned context for this analysis. The same context (and its
   // transposition table) is reused for the initial solve and every subsequent
   // analyse_later_board call, so the hint-bounded incremental searches see a
