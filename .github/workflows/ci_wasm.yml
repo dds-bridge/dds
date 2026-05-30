@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
       # 1️⃣ Checkout the repository
@@ -23,3 +23,7 @@ jobs:
       # 3️⃣ Build WASM targets (hermetic emsdk toolchain downloaded by Bazel)
       - name: Build WASM targets
         run: bazel build --config=wasm --verbose_failures //examples:all_examples_wasm
+
+      # 4️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
+      - name: Smoke test solve_board_wasm
+        run: node bazel-bin/examples/solve_board.js
