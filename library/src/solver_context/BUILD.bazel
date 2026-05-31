@@ -51,3 +51,11 @@ cc_library(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE + ["DDS_UTILITIES_STATS"],
 )
+
+filegroup(
+    name = "wasm_sources",
+    srcs = ["solver_context.cpp"],
+    visibility = [
+        "//examples:__pkg__",
+    ],
+)

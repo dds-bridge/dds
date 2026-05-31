@@ -19,4 +19,12 @@ cc_library(
     deps = [],
 )
 
+filegroup(
+    name = "wasm_sources",
+    srcs = ["constants.cpp"],
+    visibility = [
+        "//examples:__pkg__",
+    ],
+)
+
 
