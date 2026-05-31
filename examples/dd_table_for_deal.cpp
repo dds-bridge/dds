@@ -65,6 +65,39 @@ static auto read_pbn_file(const char * path, char * buf, size_t buf_size) -> boo
 }
 
 
+static auto read_pbn_file_workspace_relative(
+  const char * path,
+  char * buf,
+  size_t buf_size) -> bool
+{
+  if (read_pbn_file(path, buf, buf_size))
+  {
+    return true;
+  }
+
+  // bazel run uses a runfiles cwd; BUILD_WORKSPACE_DIRECTORY is the repo root.
+  const char * workspace = getenv("BUILD_WORKSPACE_DIRECTORY");
+  if (workspace == nullptr)
+  {
+    return false;
+  }
+
+  char combined[PBN_FILE_MAX];
+  const int n = snprintf(
+      combined,
+      sizeof(combined),
+      "%s/%s",
+      workspace,
+      path);
+  if (n < 0 || static_cast<size_t>(n) >= sizeof(combined))
+  {
+    return false;
+  }
+
+  return read_pbn_file(combined, buf, buf_size);
+}
+
+
 static auto extract_deal_tag(const char * text, char * deal, size_t deal_size) -> bool
 {
   const char * p = text;
@@ -125,7 +158,7 @@ static auto load_deal(const char * arg, char * deal, size_t deal_size) -> int
       return 1;
     }
   }
-  else if (read_pbn_file(arg, file_buf, sizeof(file_buf)))
+  else if (read_pbn_file_workspace_relative(arg, file_buf, sizeof(file_buf)))
   {
     source = arg;
   }
