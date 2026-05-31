@@ -16,6 +16,6 @@ Available examples:
 - analyse_play_bin, analyse_play_pbn
 - calc_all_tables, calc_all_tables_pbn
 - calc_dd_table, calc_dd_table_pbn
-- calc_par
+- dd_table_for_deal
 - dealer_par, par
 - solve_all_boards, solve_board, solve_board_pbn
