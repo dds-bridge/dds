@@ -8,7 +8,7 @@
 */
 
 
-// Calculate all 20 par results for a single deal from the command line or a PBN file.
+// Print the double-dummy table for a deal from the command line or a PBN file.
 
 // Coded by Cursor, based on calc_dd_table.cpp
 
@@ -228,7 +228,7 @@ auto main(int argc, char * argv[]) -> int
     return 1;
   }
 
-  sprintf(line, "calc_par:\n");
+  sprintf(line, "dd_table_for_deal:\n");
   print_pbn_hand(line, tableDealPBN.cards);
   print_table(&table);
 
