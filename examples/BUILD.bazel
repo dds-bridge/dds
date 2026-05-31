@@ -43,6 +43,7 @@ wasm_cc_binary(
         "solve_board.js",
         "solve_board.wasm",
     ],
+    tags = ["manual"],
 )
 
 wasm_cc_binary(
@@ -52,6 +53,7 @@ wasm_cc_binary(
         "AnalysePlayBin.js",
         "AnalysePlayBin.wasm",
     ],
+    tags = ["manual"],
 )
 
 # Examples use legacy C-style code, so we need to suppress certain warnings
@@ -319,4 +321,5 @@ filegroup(
         ":analyse_play_bin_wasm",
         ":solve_board_wasm",
     ],
+    tags = ["manual"],
 )
