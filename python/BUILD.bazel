@@ -121,6 +121,14 @@ py_test(
 )
 
 py_test(
+    name = "analyse_test",
+    size = "small",
+    main = "tests/test_analyse.py",
+    srcs = ["tests/test_analyse.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
     name = "type_conversions_test",
     size = "small",
     main = "tests/test_type_conversions.py",

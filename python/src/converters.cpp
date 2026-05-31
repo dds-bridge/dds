@@ -294,6 +294,20 @@ auto par_results_to_dict(const ParResults& par_results) -> py::dict
     return result;
 }
 
+auto solved_play_to_dict(const SolvedPlay& solved_play) -> py::dict
+{
+    py::list tricks;
+    const int count = std::max(0, std::min(solved_play.number, 53));
+    for (int i = 0; i < count; ++i) {
+        tricks.append(solved_play.tricks[i]);
+    }
+
+    py::dict result;
+    result["number"] = solved_play.number;
+    result["tricks"] = tricks;
+    return result;
+}
+
 auto list_to_dd_table_deals_pbn(
     const py::list& deals_pbn,
     const std::size_t max_tables) -> DdTableDealsPBN

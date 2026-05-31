@@ -228,6 +228,66 @@ print(f"Par: {par_result['par_score']}")
 print(f"Contract: {par_result['par_contracts_string']}")
 ```
 
+#### `dealer_par(table_results, dealer, vulnerable=0)`
+
+Calculates par contracts and score from the dealer's perspective (wraps `DealerPar`).
+
+**Parameters:**
+- `table_results` (dict): DD table result with key `res_table` (e.g. from `calc_dd_table`)
+- `dealer` (int): Dealer seat (0=N, 1=E, 2=S, 3=W)
+- `vulnerable` (int, default=0): Vulnerability (0=none, 1=both, 2=NS, 3=EW)
+
+**Returns:**
+- dict with keys: `score` (int), `number` (int), `contracts` (list[str], length `number`)
+
+```python
+from dds3 import calc_dd_table, dealer_par
+
+dd_result = calc_dd_table(table_deal)
+result = dealer_par(dd_result, dealer=0, vulnerable=0)
+print(result["score"], result["contracts"])
+```
+
+#### `analyse_play_pbn(remain_cards, play, trump=4, first=0, current_trick_suit=(0,0,0), current_trick_rank=(0,0,0), thread_index=0)`
+
+Returns the double-dummy trick count after each card of a played hand (wraps `AnalysePlayPBN`).
+
+**Parameters:**
+- `remain_cards` (str): Full deal in PBN format before any card of `play`
+- `play` (str): Cards played, 2 characters each (suit+rank), e.g. `"SAHK..."`
+- `trump` (int, default=4): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT)
+- `first` (int, default=0): Seat that leads (0=N, 1=E, 2=S, 3=W)
+- `current_trick_suit` / `current_trick_rank` (seq, default=(0,0,0)): Cards already in the trick
+- `thread_index` (int, default=0): Thread id
+
+**Returns:**
+- dict with keys: `number` (int), `tricks` (list[int]) — `tricks[i]` is the trick count for the side to play after `i` cards.
+
+```python
+from dds3 import analyse_play_pbn
+
+deal = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
+result = analyse_play_pbn(deal, play="S6", trump=4, first=0)
+print(result["tricks"])
+```
+
+#### `analyse_all_plays_pbn(deals)`
+
+Batched form of `analyse_play_pbn` (wraps `AnalyseAllPlaysPBN`).
+
+**Parameters:**
+- `deals` (list[dict]): Up to 200 dicts, each with `remain_cards` (str, required), `play`
+  (str, required), and optional `trump`, `first`, `current_trick_suit`, `current_trick_rank`.
+
+**Returns:**
+- list[dict]: one `{number, tricks}` dict per deal (same shape as `analyse_play_pbn`).
+
+#### `set_max_threads(user_threads=0)`
+
+Sets the maximum number of threads DDS uses for the batch APIs (`solve_all_boards_*`,
+`analyse_all_plays_pbn`). `0` auto-configures from CPU/memory. Per-board
+`solve_board` / `solve_board_pbn` calls use `SolverContext` for concurrency instead.
+
 ## Card Representation
 
 ### Binary Format (remain_cards)
