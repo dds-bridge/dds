@@ -205,6 +205,14 @@ void System::get_hardware(
   kilobytes_free = 0;
   core_count = System::get_cores();
 
+#if defined(__EMSCRIPTEN__)
+  // sysconf/physical memory queries are unreliable under Emscripten; use a
+  // conservative default so SetResources allocates a usable transposition table.
+  kilobytes_free = 512ULL * 1024;
+  core_count = 1;
+  return;
+#endif
+
 #if defined(_WIN32) || defined(__CYGWIN__)
   // Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
   // was suggested by Lorne Anderson.
@@ -255,6 +263,11 @@ void System::get_hardware(
   core_count = sysconf(_SC_NPROCESSORS_ONLN);
   return;
 #endif
+
+  if (kilobytes_free == 0)
+  {
+    kilobytes_free = 512ULL * 1024;
+  }
 }
 
 

@@ -18,10 +18,20 @@ wasm_cc_binary(
     ],
 )
 
+wasm_cc_binary(
+    name = "calc_dd_table_pbn_wasm",
+    cc_target = "//examples:calc_dd_table_pbn",
+    outputs = [
+        "calc_dd_table_pbn.js",
+        "calc_dd_table_pbn.wasm",
+    ],
+)
+
 filegroup(
     name = "all_examples_wasm",
     srcs = [
         ":analyse_play_bin_wasm",
+        ":calc_dd_table_pbn_wasm",
         ":solve_board_wasm",
     ],
     visibility = ["//visibility:public"],

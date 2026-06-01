@@ -135,8 +135,9 @@ cc_binary(
     name = "calc_dd_table_pbn",
     srcs = ["calc_dd_table_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
+    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    visibility = ["//examples/wasm:__pkg__"],
     deps = [
         ":hands",
         "//library/src:dds",

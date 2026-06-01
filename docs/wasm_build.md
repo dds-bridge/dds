@@ -35,6 +35,7 @@ Outputs are under `bazel-bin/examples/wasm/`:
 
 - `solve_board.js` / `solve_board.wasm`
 - `AnalysePlayBin.js` / `AnalysePlayBin.wasm`
+- `calc_dd_table_pbn.js` / `calc_dd_table_pbn.wasm`
 
 ## Available WASM targets
 
@@ -42,6 +43,7 @@ Rules in `examples/wasm/BUILD.bazel` wrap native examples in `examples/`:
 
 - `solve_board_wasm` — solves a single board
 - `analyse_play_bin_wasm` — analyze play from binary format
+- `calc_dd_table_pbn_wasm` — double-dummy table from PBN
 
 ## How it works
 
@@ -74,6 +76,7 @@ There is no checked-in HTML runner yet. To experiment manually, copy the built `
 | `-sWASM=1` | Emscripten WASM output (link flag) |
 | `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime |
 | `-sINITIAL_MEMORY=268435456` | 256MB initial memory |
+| `-sSTACK_SIZE=8388608` | 8MB stack (default 64KB is too small for DDS search) |
 
 ## C++ standard
 

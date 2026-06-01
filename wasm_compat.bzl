@@ -6,4 +6,6 @@ WASM_LINKOPTS = [
     "-fexceptions",
     "-sALLOW_MEMORY_GROWTH=1",
     "-sINITIAL_MEMORY=268435456",
+    # DDS search recursion needs more than Emscripten's 64KB default stack.
+    "-sSTACK_SIZE=8388608",
 ]
