@@ -61,9 +61,19 @@ Native builds (`bazel build //...`, `bazel test //library/tests/...`, Python bin
 node bazel-bin/examples/wasm/solve_board.js
 ```
 
-### Web browser (not yet supported)
+### Web browser (DDS MVP)
 
-There is no checked-in HTML runner yet. To experiment manually, copy the built `.js` and `.wasm` files from `bazel-bin/examples/wasm/` to a static file server and load the `.js` from a page that provides the Emscripten `Module` hooks.
+The `web/` demo calls `CalcDDtablePBN` in the browser via `//web:dds_mvp_wasm`:
+
+```bash
+./web/update_wasm.sh
+python3 -m http.server 8080 --directory web
+# open http://localhost:8080/dds_mvp.html
+```
+
+The MVP loads wasm from `dds_mvp_wasm_bin.js` (base64, no network fetch), so `file://` and HTTP both work. Run `./web/update_wasm.sh` to refresh `dds_mvp_wasm.{js,wasm,bin.js}`.
+
+For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/examples/wasm/` to any static file server.
 
 ## Compilation flags
 

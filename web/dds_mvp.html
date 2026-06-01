@@ -1,13 +1,15 @@
 <!doctype html>
 
-<!-- Copyright 2020 Adam Wildavsky and the Bridge Hackathon contributors
+<!-- Copyright 2020-2026 Adam Wildavsky
 
      Use of this source code is governed by an MIT-style
      license that can be found in the LICENSE file or at
      https://opensource.org/licenses/MIT
 
-     To try it out, start a local Flask server, then open this
-     file in a web browser.
+     Build WASM (from repo root): ./web/update_wasm.sh
+     Then open dds_mvp.html (file:// is OK). Hard-refresh if you rebuilt (Cmd+Shift+R).
+     Or serve this directory:
+       python3 -m http.server 8080 --directory web
 -->
 
 <html lang="en">
@@ -116,6 +118,8 @@
         </tr>
     </table>
 
+    <script src="dds_mvp_wasm_bin.js"></script>
+    <script src="dds_mvp_wasm.js"></script>
     <script src="dds_mvp.js"></script>
 </body>
 </html>

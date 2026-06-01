@@ -1,0 +1,38 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("//:wasm_compat.bzl", "WASM_LINKOPTS")
+
+# Emscripten flags for the browser MVP (modularized, no auto-run main).
+WASM_MVP_LINKOPTS = WASM_LINKOPTS + [
+    "-sMODULARIZE=1",
+    "-sEXPORT_NAME=createDdsModule",
+    "-sEXPORTED_FUNCTIONS=['_dds_mvp_calc_table','_malloc','_free']",
+    "-sEXPORTED_RUNTIME_METHODS=['ccall','getValue']",
+    "-sENVIRONMENT=web",
+]
+
+cc_binary(
+    name = "dds_mvp_wasm_cc",
+    srcs = ["dds_mvp_wasm.cpp"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS + select({
+        "//:build_wasm": WASM_MVP_LINKOPTS,
+        "//conditions:default": [],
+    }),
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = ["//web:__pkg__"],
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+wasm_cc_binary(
+    name = "dds_mvp_wasm",
+    cc_target = ":dds_mvp_wasm_cc",
+    outputs = [
+        "dds_mvp_wasm.js",
+        "dds_mvp_wasm.wasm",
+    ],
+)

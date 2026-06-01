@@ -1,4 +1,4 @@
-// Copyright 2020 Adam Wildavsky and the Bridge Hackathon contributors
+// Copyright Copyright 2020-2026 Adam Wildavsky
 //
 //   Use of this source code is governed by an MIT-style
 //   license that can be found in the LICENSE file or at
@@ -32,6 +32,10 @@ const PIPS = "AKQJT98765432";
 const DENOMINATIONS = ["C", "D", "H", "S", "N"];
 const DIRECTION_LETTERS = ["N", "E", "S", "W"];
 
+// DDS res_table strain index (S,H,D,C,N) to MVP table column key.
+const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
+const DIR_TO_HAND = { N: 0, E: 1, S: 2, W: 3 };
+
 // TODO: Clean up our HTML rendering, perhaps using custom elements.
 //       See https://developers.google.com/web/fundamentals/web-components/customelements
 const SUIT_SYMBOLS = {
@@ -40,6 +44,50 @@ const SUIT_SYMBOLS = {
     "D" : "<span style='color: red'>&diams;</span>",
     "C" : "&clubs;"
 };
+
+let ddsModulePromise = null;
+
+function loadDdsModule() {
+    if (typeof createDdsModule !== "function") {
+        return Promise.reject(new Error(
+            "WASM module not found. From the repo root run: ./web/update_wasm.sh"
+        ));
+    }
+
+    if (!ddsModulePromise) {
+        if (typeof ddsMvpWasmBytes !== "function") {
+            return Promise.reject(new Error(
+                "WASM bytes not found. From the repo root run: ./web/update_wasm.sh"
+            ));
+        }
+        ddsModulePromise = createDdsModule({
+            wasmBinary: ddsMvpWasmBytes()
+        }).then((module) => {
+            // MODULARIZE may return a Promise until the runtime is ready.
+            if (module != null && typeof module.then === "function") {
+                return module;
+            }
+            return module;
+        });
+    }
+
+    return ddsModulePromise;
+}
+
+function handsToPbn(hands) {
+    const handOrder = ["N", "E", "S", "W"];
+    const suitOrder = ["S", "H", "D", "C"];
+    const handStrings = handOrder.map((direction) => {
+        return suitOrder.map((suit) => {
+            return hands[direction]
+                .filter((card) => card.charAt(0) === suit)
+                .map((card) => card.charAt(1))
+                .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
+                .join("");
+        }).join(".");
+    });
+    return "N:" + handStrings.join(" ");
+}
 
 function fillFormWithTestData(nesw) {
     clear_results();
@@ -225,7 +273,7 @@ function clear_results() {
     }
 }
 
-function sendJSON() {
+async function sendJSON() {
     const result = document.getElementById("result");
     const result_table = document.getElementById("result-table");
 
@@ -238,39 +286,49 @@ function sendJSON() {
         result.innerHTML = error_message;
         return;
     }
-    
-    var xhr = new XMLHttpRequest();
-    
-    // For testing backend changes locally
-    // const URL = "http://localhost:5000/api/dds-table/";
-    
-    // const URL = "https://dds.globalbridge.app/api/dds-table/";
-    const URL = "https://dds.prod.globalbridge.app/api/dds-table/";
 
-    xhr.open("POST", URL, true);
+    clear_results();
+    result.innerHTML = "Computing…";
 
-    xhr.setRequestHeader("Content-Type", "application/json");
+    try {
+        const module = await loadDdsModule();
+        const pbn = handsToPbn(hands);
+        const outPtr = module._malloc(20 * 4);
 
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            const dd_table = JSON.parse(this.responseText);
+        try {
+            const rc = module.ccall(
+                "dds_mvp_calc_table",
+                "number",
+                ["string", "number"],
+                [pbn, outPtr]
+            );
+
+            if (rc !== 1) {
+                result.innerHTML = "DDS error (code " + rc + ").";
+                return;
+            }
 
             for (var row = 1; row <= 4; row++) {
                 for (var column = 1; column <= 5; column++) {
                     const cell = result_table.rows[row].cells[column];
                     const denomination = DENOMINATIONS[column - 1];
                     const direction = DIRECTION_LETTERS[row - 1];
-                    const tricks = dd_table[denomination][direction];
-                    cell.innerHTML = tricks;
+                    const strain = DENOM_TO_STRAIN[denomination];
+                    const hand = DIR_TO_HAND[direction];
+                    const index = strain * 4 + hand;
+                    cell.innerHTML = module.getValue(
+                        outPtr + index * 4,
+                        "i32"
+                    );
                 }
             }
+
+            result.innerHTML = "";
+        } finally {
+            module._free(outPtr);
         }
-    };
-
-    clear_results();
-
-    var deal = { "hands": hands };
-    var data = JSON.stringify(deal);
-
-    xhr.send(data);
+    } catch (err) {
+        clear_results();
+        result.innerHTML = err.message;
+    }
 }
