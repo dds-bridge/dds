@@ -303,7 +303,9 @@ auto solved_play_to_dict(const SolvedPlay& solved_play) -> py::dict
     }
 
     py::dict result;
-    result["number"] = solved_play.number;
+    // Report the count actually returned so len(tricks) == number always holds,
+    // even if DDS ever yields an out-of-range solved_play.number.
+    result["number"] = count;
     result["tricks"] = tricks;
     return result;
 }

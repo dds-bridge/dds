@@ -602,14 +602,26 @@ auto register_analysis_bindings(py::module_& module) -> void
     // APIs (solve_all_boards_*, analyse_all_plays_pbn). 0 = auto-configure.
     module.def(
         "set_max_threads",
-        [](const int user_threads) { SetMaxThreads(user_threads); },
+        [](const int user_threads) {
+            if (user_threads < 0) {
+                throw py::value_error(
+                    "user_threads has invalid value " + std::to_string(user_threads) +
+                    " (expected >= 0; 0 = auto)");
+            }
+            SetMaxThreads(user_threads);
+        },
         py::arg("user_threads") = 0,
-        "Set the maximum number of threads DDS uses for batch solving.\n\n"
+        "Legacy thread-resource hook (wraps the deprecated SetMaxThreads C API).\n\n"
+        "DDS 3.x removed internal batch parallelism: the legacy batch APIs run\n"
+        "single-threaded regardless of this value, so calling this does NOT enable\n"
+        "multi-threaded solving. It only sizes the (single) internal thread's memory\n"
+        "and is retained for backward compatibility. For concurrency, create one\n"
+        "SolverContext per worker thread and pass it to solve_board / solve_board_pbn.\n\n"
         "Args:\n"
-        "    user_threads (int, optional): Thread count; 0 = auto-configure. Default: 0\n\n"
-        "Notes:\n"
-        "    Affects the batch APIs (solve_all_boards_*, analyse_all_plays_pbn).\n"
-        "    Per-board solve_board / solve_board_pbn calls use SolverContext instead.");
+        "    user_threads (int, optional): Must be >= 0; 0 = auto. Values > 1 are\n"
+        "        accepted but clamped to a single internal thread. Default: 0\n\n"
+        "Raises:\n"
+        "    ValueError: If user_threads < 0.");
 
     // analyse_play_pbn: double-dummy trick count after each card of a played hand.
     module.def(
@@ -736,8 +748,9 @@ auto register_analysis_bindings(py::module_& module) -> void
             return results;
         },
         py::arg("deals"),
-        "Analyse multiple played deals in one batched, multi-threaded call.\n\n"
-        "Wraps the DDS AnalyseAllPlaysPBN C API.\n\n"
+        "Analyse multiple played deals in one batched call.\n\n"
+        "Wraps the DDS AnalyseAllPlaysPBN C API. Note: DDS 3.x runs the legacy\n"
+        "batch APIs single-threaded (internal parallelism was removed).\n\n"
         "Args:\n"
         "    deals (list[dict]): Up to 200 dicts, each with:\n"
         "        'remain_cards' (str, required): full deal in PBN format.\n"
@@ -784,7 +797,9 @@ auto register_analysis_bindings(py::module_& module) -> void
             }
             py::dict result;
             result["score"] = par_results.score;
-            result["number"] = par_results.number;
+            // Report the count actually returned so len(contracts) == number
+            // always holds, even if DDS yields an out-of-range number.
+            result["number"] = contract_count;
             result["contracts"] = contracts;
             return result;
         },

@@ -284,9 +284,17 @@ Batched form of `analyse_play_pbn` (wraps `AnalyseAllPlaysPBN`).
 
 #### `set_max_threads(user_threads=0)`
 
-Sets the maximum number of threads DDS uses for the batch APIs (`solve_all_boards_*`,
-`analyse_all_plays_pbn`). `0` auto-configures from CPU/memory. Per-board
-`solve_board` / `solve_board_pbn` calls use `SolverContext` for concurrency instead.
+Legacy thread-resource hook (wraps the **deprecated** `SetMaxThreads` C API).
+
+DDS 3.x removed internal batch parallelism: the legacy batch APIs
+(`solve_all_boards_*`, `analyse_all_plays_pbn`) run **single-threaded** regardless
+of this value, so calling it does **not** enable multi-threaded solving — it only
+sizes the single internal thread's memory and is kept for backward compatibility.
+`user_threads` must be `>= 0` (`0` = auto); values `> 1` are accepted but clamped
+to one thread. Raises `ValueError` for negative values.
+
+For real concurrency, create one `SolverContext` per worker thread and pass it to
+`solve_board` / `solve_board_pbn` (which release the GIL during the search).
 
 ## Card Representation
 
