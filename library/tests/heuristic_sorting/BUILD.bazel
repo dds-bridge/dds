@@ -1,11 +1,9 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_test", "cc_binary")
-load("//:wasm_compat.bzl", "NATIVE_ONLY")
 
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "heuristic_sorting_test",
     size = "small",
     srcs = ["heuristic_sorting_test.cpp"],
@@ -17,7 +15,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "merge_scratch_test",
     size = "small",
     srcs = ["merge_scratch_test.cpp"],
@@ -31,7 +28,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "minimal_new_test",
     size = "small",
     srcs = ["minimal_new_test.cpp"],
@@ -42,7 +38,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "minimal_weight_test",
     size = "small",
     srcs = ["minimal_weight_test.cpp"],
@@ -55,7 +50,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "targeted_unit_tests",
     size = "small",
     srcs = [

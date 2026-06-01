@@ -45,7 +45,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -59,7 +58,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -87,7 +85,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -101,7 +98,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -115,7 +111,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -129,7 +124,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -143,7 +137,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -157,7 +150,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -171,7 +163,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -185,7 +176,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -213,7 +203,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -227,7 +216,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         "//library/src:dds",
         "//library/src/api:api_definitions",
@@ -240,7 +228,6 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
-    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -252,7 +239,6 @@ cc_binary(
 # Convenience target to build all native examples
 filegroup(
     name = "all_examples",
-    tags = ["native-only"],
     srcs = [
         ":analyse_all_plays_bin",
         ":analyse_all_plays_pbn",

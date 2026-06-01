@@ -1,8 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
-load("//:wasm_compat.bzl", "NATIVE_ONLY")
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "concurrency_validation_test",
     size = "small",
     srcs = ["concurrency_validation_test.cpp"],
@@ -15,7 +13,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "configure_tt_api_test",
     size = "small",
     srcs = ["configure_tt_api_test.cpp"],
@@ -27,7 +24,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "context_equivalence_test",
     size = "small",
     srcs = ["context_equivalence_test.cpp"],
@@ -41,7 +37,6 @@ cc_test(
 
 # Same parity test, but with context TT ownership enabled to validate lazy TT path
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "context_equivalence_test_ctx_tt",
     size = "small",
     srcs = ["context_equivalence_test.cpp"],
@@ -56,7 +51,6 @@ cc_test(
 
 # New lifecycle test that validates SolverContext-managed TT behavior
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "context_tt_facade_test",
     size = "small",
     srcs = ["context_tt_facade_test.cpp"],
@@ -70,7 +64,6 @@ cc_test(
 
 # Utilities feature flags tests
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_feature_flags_test",
     size = "small",
     srcs = ["utilities_feature_flags_test.cpp"],
@@ -82,7 +75,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_feature_flags_test_with_log",
     size = "small",
     srcs = ["utilities_feature_flags_test_with_log.cpp"],
@@ -94,7 +86,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_feature_flags_test_with_stats",
     size = "small",
     srcs = ["utilities_feature_flags_test_with_stats.cpp"],
@@ -107,7 +98,6 @@ cc_test(
 
 # Utilities logging tests
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_log_contains_test",
     size = "small",
     srcs = ["utilities_log_contains_test.cpp"],
@@ -119,7 +109,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_log_ctx_ops_test",
     size = "small",
     srcs = ["utilities_log_ctx_ops_test.cpp"],
@@ -131,7 +120,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_log_ctx_ops_test_with_define",
     size = "small",
     srcs = ["utilities_log_ctx_ops_test_with_define.cpp"],
@@ -143,7 +131,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_log_test",
     size = "small",
     srcs = ["utilities_log_test.cpp"],
@@ -156,7 +143,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_log_test_with_define",
     size = "small",
     srcs = ["utilities_log_test_with_define.cpp"],
@@ -170,7 +156,6 @@ cc_test(
 # Utilities snapshot tests
 # DISABLED: Tests for unimplemented log_snapshot() feature
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_log_snapshot_test",
     srcs = ["utilities_log_snapshot_test.cpp"],
     tags = ["manual"],
@@ -183,7 +168,6 @@ cc_test(
 
 # Utilities stats tests
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "utilities_stats_test",
     size = "small",
     srcs = ["utilities_stats_test.cpp"],
@@ -197,7 +181,6 @@ cc_test(
 # Transposition table sharing tests
 # DISABLED: Tests for SolverContext TT sharing (incomplete API)
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "tt_sharing_test",
     srcs = ["tt_sharing_test.cpp"],
     tags = ["manual"],

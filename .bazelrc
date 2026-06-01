@@ -45,16 +45,3 @@ build:tsan --linkopt=-fsanitize=thread
 build:tsan --strip=never
 build:tsan --features=dbg
 build:tsan --compilation_mode=dbg
-
-# WebAssembly (WASM) configuration
-# Usage: bazel build --config=wasm //...
-# Compiles using the hermetic emsdk toolchain downloaded automatically by Bazel.
-# Targets tagged "native-only" (Python, tests, most examples) are skipped.
-build:wasm --platforms=@emsdk//:platform_wasm
-build:wasm --cpu=wasm
-build:wasm --cxxopt=-std=c++20
-build:wasm --host_cxxopt=-std=c++20
-build:wasm --compilation_mode=opt
-build:wasm --build_tag_filters=-native-only
-# Python bindings and C++ unit tests require the host toolchain.
-build:wasm --deleted_packages=python,library/tests

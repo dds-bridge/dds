@@ -1,11 +1,9 @@
 # Solve_board regression tests
 
 load("@rules_cc//cc:defs.bzl", "cc_test")
-load("//:wasm_compat.bzl", "NATIVE_ONLY")
 
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "solve_board_test",
     size = "small",
     srcs = [
@@ -18,7 +16,6 @@ cc_test(
 )
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "analyse_play_consistency_test",
     size = "small",
     srcs = [

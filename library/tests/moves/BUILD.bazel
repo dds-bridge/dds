@@ -1,9 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
-load("//:wasm_compat.bzl", "NATIVE_ONLY")
 
 
 cc_test(
-    target_compatible_with = NATIVE_ONLY,
     name = "moves_test",
     size = "small",
     srcs = ["moves_test.cpp"],

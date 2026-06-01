@@ -1,6 +1,6 @@
 # WebAssembly (WASM) Build Guide
 
-This document explains how to build the DDS library and examples for WebAssembly using Bazel.
+This document explains how to build DDS examples for WebAssembly using Bazel.
 
 ## Prerequisites
 
@@ -9,22 +9,16 @@ This document explains how to build the DDS library and examples for WebAssembly
 Bazel 7.x or later is required. Install using your package manager or download from:
 https://bazel.build/install
 
-The Emscripten SDK (emsdk) does NOT need to be manually installed. Bazel will automatically download, configure, and cache the appropriate hermetic Emscripten toolchain for your host platform as part of the build process.
+The Emscripten SDK (emsdk) does NOT need to be manually installed. Bazel downloads and caches a hermetic Emscripten toolchain when you build a `wasm_cc_binary` target.
 
 ## Building WASM Examples
 
-### Build all WASM-compatible targets
+WASM targets use `wasm_cc_binary`, which applies an Emscripten **platform transition** to the underlying `cc_binary`. You do **not** need `--config=wasm` or any other `.bazelrc` profile.
 
-Native-only targets (Python bindings, C++ tests, most examples) are skipped automatically:
-
-```bash
-bazel build --config=wasm //...
-```
-
-### Build WASM examples only
+### Build all WASM examples
 
 ```bash
-bazel build --config=wasm //examples/wasm:all_examples_wasm
+bazel build //examples/wasm:all_examples_wasm
 ```
 
 The alias `//examples:all_examples_wasm` points at the same filegroup.
@@ -32,33 +26,32 @@ The alias `//examples:all_examples_wasm` points at the same filegroup.
 ### Build a specific example
 
 ```bash
-bazel build --config=wasm //examples/wasm:solve_board_wasm
+bazel build //examples/wasm:solve_board_wasm
 ```
 
-### Output Files
+### Output files
 
-Output files are under `bazel-bin/examples/wasm/` (wasm_cc_binary output layout):
+Outputs are under `bazel-bin/examples/wasm/`:
 
 - `solve_board.js` / `solve_board.wasm`
 - `AnalysePlayBin.js` / `AnalysePlayBin.wasm`
 
-## Available WASM Targets
+## Available WASM targets
 
-WASM rules live in `examples/wasm/BUILD.bazel` and wrap native `cc_binary` targets in `examples/`:
+Rules in `examples/wasm/BUILD.bazel` wrap native examples in `examples/`:
 
 - `solve_board_wasm` — solves a single board
 - `analyse_play_bin_wasm` — analyze play from binary format
 
-## WASM Build Configuration
+## How it works
 
-1. **`BUILD.bazel`** — `//:build_wasm` matches `--cpu=wasm` from the `wasm` config
-2. **`wasm_compat.bzl`** — shared Emscripten link flags (`WASM_LINKOPTS`)
-3. **`CPPVARIABLES.bzl`** — WASM compiler flags and `__WASM__` define
-4. **`.bazelrc`** — `wasm` config (platform, `--build_tag_filters=-native-only`)
+1. **`wasm_cc_binary`** (from `@emsdk`) transitions its `cc_target` to `@emsdk//:platform_wasm` and sets `--cpu=wasm`.
+2. **`//:build_wasm`** in the root `BUILD.bazel` matches that CPU for `select()` in `CPPVARIABLES.bzl` and example link flags.
+3. **`wasm_compat.bzl`** — shared Emscripten link flags (`WASM_LINKOPTS`) on the WASM-capable `cc_binary` targets.
 
-Targets tagged `native-only` are excluded from `bazel build --config=wasm //...` (most examples, Doxygen). The `python` and `library/tests` packages are omitted entirely via `--deleted_packages`.
+Native builds (`bazel build //...`, `bazel test //library/tests/...`, Python bindings) are unchanged and use the host LLVM toolchain.
 
-## Running WASM Examples
+## Running WASM examples
 
 ### Node.js
 
@@ -66,7 +59,7 @@ Targets tagged `native-only` are excluded from `bazel build --config=wasm //...`
 node bazel-bin/examples/wasm/solve_board.js
 ```
 
-## Compilation Flags
+## Compilation flags
 
 | Flag | Purpose |
 |------|---------|
@@ -78,7 +71,7 @@ node bazel-bin/examples/wasm/solve_board.js
 | `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime |
 | `-sINITIAL_MEMORY=268435456` | 256MB initial memory |
 
-## Related Documentation
+## Related documentation
 
 - [Emscripten Documentation](https://emscripten.org/docs/)
 - [Bazel Build System](https://bazel.build/docs)

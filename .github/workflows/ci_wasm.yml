@@ -22,7 +22,7 @@ jobs:
 
       # 3️⃣ Build WASM targets (hermetic emsdk toolchain downloaded by Bazel)
       - name: Build WASM targets
-        run: bazel build --config=wasm --verbose_failures //...
+        run: bazel build --verbose_failures //examples/wasm:all_examples_wasm
 
       # 4️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
       - name: Smoke test solve_board_wasm

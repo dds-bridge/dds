@@ -72,8 +72,7 @@ config_setting(
     define_values = {"asan": "true"},
 )
 
-# WebAssembly (WASM) build configuration
-# Usage: bazel build --config=wasm //...
+# Matches cc_* targets built under the wasm_cc_binary platform transition (cpu=wasm).
 config_setting(
     name = "build_wasm",
     values = {"cpu": "wasm"},
@@ -121,7 +120,6 @@ EOF
     tags = [
         "manual",
         "local",
-        "native-only",
         "no-remote",
         "no-remote-cache",
     ],
@@ -135,7 +133,6 @@ cc_library(
 
 cc_library(
     name = "testable_dds",
-    tags = ["native-only"],
     deps = ["//library/src:testable_dds"],
     visibility = [
         "//library/tests:__pkg__",
