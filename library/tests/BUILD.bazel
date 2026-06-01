@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
+load("//:wasm_compat.bzl", "NATIVE_ONLY")
 
 # Test utility sources (glob used for convenience; excludes integration/context equivalence tests)
 filegroup(
@@ -17,6 +18,7 @@ filegroup(
 # Main test executable for manual invocation
 cc_binary(
     name = "dtest",
+    target_compatible_with = NATIVE_ONLY,
     srcs = [":test_sources"],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
@@ -32,6 +34,7 @@ cc_binary(
 # Uses testable_dds to expose internal symbols for unit testing
 cc_test(
     name = "unit_tests",
+    target_compatible_with = NATIVE_ONLY,
     srcs = [":test_sources"],
     size = "small",
     copts = DDS_CPPOPTS,
@@ -46,6 +49,7 @@ cc_test(
 # Standalone calc_par API test
 cc_test(
     name = "calc_par_test",
+    target_compatible_with = NATIVE_ONLY,
     srcs = ["calc_par_test.cpp"],
     size = "small",
     copts = DDS_CPPOPTS,

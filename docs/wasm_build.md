@@ -13,107 +13,70 @@ The Emscripten SDK (emsdk) does NOT need to be manually installed. Bazel will au
 
 ## Building WASM Examples
 
-### Build All Examples
+### Build all WASM-compatible targets
+
+Native-only targets (Python bindings, C++ tests, most examples) are skipped automatically:
 
 ```bash
-cd /workspaces/dds
-bazel build //examples:all_examples_wasm
+bazel build --config=wasm //...
 ```
 
-### Build Specific Example
+### Build WASM examples only
 
 ```bash
-bazel build //examples:solve_board_wasm
+bazel build --config=wasm //examples/wasm:all_examples_wasm
+```
+
+The alias `//examples:all_examples_wasm` points at the same filegroup.
+
+### Build a specific example
+
+```bash
+bazel build --config=wasm //examples/wasm:solve_board_wasm
 ```
 
 ### Output Files
 
-the output files will be located in:
-```
-bazel-bin/examples/
-```
+Output files are under `bazel-bin/examples/wasm/` (wasm_cc_binary output layout):
 
-Depending on the target, you'll get:
-- `target.js` - JavaScript bindings
-- `target.wasm` - WebAssembly binary
-
+- `solve_board.js` / `solve_board.wasm`
+- `AnalysePlayBin.js` / `AnalysePlayBin.wasm`
 
 ## Available WASM Targets
 
-The following example targets are available for WASM builds:
+WASM rules live in `examples/wasm/BUILD.bazel` and wrap native `cc_binary` targets in `examples/`:
 
-### Implemented Examples
-- `solve_board` - Solves a single board (produces .js and .wasm)
-
-- `analyse_play_bin` - Analyze play from binary format
-
+- `solve_board_wasm` — solves a single board
+- `analyse_play_bin_wasm` — analyze play from binary format
 
 ## WASM Build Configuration
 
-The WASM build is configured through:
+1. **`BUILD.bazel`** — `//:build_wasm` matches `--cpu=wasm` from the `wasm` config
+2. **`wasm_compat.bzl`** — shared Emscripten link flags (`WASM_LINKOPTS`)
+3. **`CPPVARIABLES.bzl`** — WASM compiler flags and `__WASM__` define
+4. **`.bazelrc`** — `wasm` config (platform, `--build_tag_filters=-native-only`)
 
-1. **BUILD.bazel** - Defines the WASM config_setting:
-   ```python
-   config_setting(
-       name = "build_wasm",
-       values = {"cpu": "wasm"},
-   )
-   ```
-
-2. **CPPVARIABLES.bzl** - Specifies WASM-specific compiler flags:
-   - Optimization: `-O3 -flto`
-   - Exceptions: `-fexceptions`
-   - Define: `-D__WASM__`
-
-3. **.bazelrc** - Contains the `wasm` profile:
-   ```
-   build:wasm --platforms=@emsdk//:platform_wasm
-   build:wasm --cpu=wasm
-   build:wasm --cxxopt=-std=c++20
-   build:wasm --host_cxxopt=-std=c++20
-   build:wasm --compilation_mode=opt
-   ```
+Targets tagged `native-only` are excluded from `bazel build --config=wasm //...` (most examples, Doxygen). The `python` and `library/tests` packages are omitted entirely via `--deleted_packages`.
 
 ## Running WASM Examples
 
-After building, you can run the examples:
-
-### Node.js (requires Node.js installed)
+### Node.js
 
 ```bash
-node bazel-bin/examples/solve_board.js
-```
-
-### Web Browser (TODO)
-
-For HTML targets, open the generated HTML file in a web browser:
-```bash
-# Copy the output files to a web-accessible location
-cp bazel-bin/examples/solve_board.* /path/to/webserver/
-
-# Then open in browser at http://localhost:8000/solve_board.html
+node bazel-bin/examples/wasm/solve_board.js
 ```
 
 ## Compilation Flags
-
-The WASM build uses the following key flags:
 
 | Flag | Purpose |
 |------|---------|
 | `-O3` | Aggressive optimization |
 | `-flto` | Link-time optimization |
 | `-fexceptions` | Enable C++ exceptions |
-| `-D__WASM__` | Defines `__WASM__` preprocessor constant |
+| `-D__WASM__` | Preprocessor constant for WASM builds |
 | `-sWASM=1` | Emscripten WASM output (link flag) |
 | `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime |
-| `-sINITIAL_MEMORY=268435456` | Configure 256MB initial memory |
-
-## C++ Standard
-
-The WASM build uses C++20 as specified in `.bazelrc`:
-```
-build:wasm --cxxopt=-std=c++20
-```
+| `-sINITIAL_MEMORY=268435456` | 256MB initial memory |
 
 ## Related Documentation
 
@@ -121,16 +84,3 @@ build:wasm --cxxopt=-std=c++20
 - [Bazel Build System](https://bazel.build/docs)
 - [DDS C++ API](c++_interface.md)
 - [Build System Overview](BUILD_SYSTEM.md)
-
-## Next Steps
-
-To integrate WASM builds into CI/CD:
-1. See `.github/workflows/ci_linux.yml` and `.github/workflows/ci_macos.yml`
-2. Store WASM artifacts for download/release
-
-## Development Notes
-
-- The `__WASM__` preprocessor constant is added initially to bypass error, need to check again whether we can remove
-- Some threading and platform-specific features are disabled for WASM
-- The build flow for a reusable library wasm 
-- A good HTML example

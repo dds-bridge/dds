@@ -48,14 +48,3 @@ cc_library(
         "//library/tests/trans_table:__pkg__",
     ],
 )
-
-filegroup(
-    name = "wasm_sources",
-    srcs = [
-        "trans_table_l.cpp",
-        "trans_table_s.cpp",
-    ],
-    visibility = [
-        "//examples:__pkg__",
-    ],
-)

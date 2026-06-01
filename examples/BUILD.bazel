@@ -1,60 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
-load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
-
-filegroup(
-    name = "solve_board_wasm_inputs",
-    srcs = [
-        "hands.cpp",
-        "solve_board.cpp",
-        "//library/src:dds_wasm_sources",
-        "//library/src:testable_dds_headers",
-        "//library/src/heuristic_sorting:wasm_sources",
-        "//library/src/lookup_tables:wasm_sources",
-        "//library/src/moves:wasm_sources",
-        "//library/src/solver_context:wasm_sources",
-        "//library/src/system:wasm_sources",
-        "//library/src/trans_table:wasm_sources",
-        "//library/src/utility:wasm_sources",
-    ],
-)
-
-filegroup(
-    name = "analyse_play_bin_wasm_inputs",
-    srcs = [
-        "hands.cpp",
-        "analyse_play_bin.cpp",
-        "//library/src:dds_wasm_sources",
-        "//library/src:testable_dds_headers",
-        "//library/src/heuristic_sorting:wasm_sources",
-        "//library/src/lookup_tables:wasm_sources",
-        "//library/src/moves:wasm_sources",
-        "//library/src/solver_context:wasm_sources",
-        "//library/src/system:wasm_sources",
-        "//library/src/trans_table:wasm_sources",
-        "//library/src/utility:wasm_sources",
-    ],
-)
-
-wasm_cc_binary(
-    name = "solve_board_wasm",
-    cc_target = ":solve_board",
-    outputs = [
-        "solve_board.js",
-        "solve_board.wasm",
-    ],
-    tags = ["manual"],
-)
-
-wasm_cc_binary(
-    name = "analyse_play_bin_wasm",
-    cc_target = ":AnalysePlayBin",
-    outputs = [
-        "AnalysePlayBin.js",
-        "AnalysePlayBin.wasm",
-    ],
-    tags = ["manual"],
-)
+load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
 # Examples use legacy C-style code, so we need to suppress certain warnings
 EXAMPLES_CPPOPTS = DDS_CPPOPTS + select({
@@ -73,14 +19,9 @@ EXAMPLES_LOCAL_DEFINES = DDS_LOCAL_DEFINES + select({
     "//conditions:default": [],
 })
 
-# WASM-specific link flags for em++ output (produces .html, .js, .wasm)
+# Emscripten link flags for examples built as WASM (see //examples/wasm).
 EXAMPLES_LINKOPTS_WASM = select({
-    "//:build_wasm": [
-        "-sWASM=1",
-        "-fexceptions",
-        "-sALLOW_MEMORY_GROWTH=1",
-        "-sINITIAL_MEMORY=268435456",
-    ],
+    "//:build_wasm": WASM_LINKOPTS,
     "//conditions:default": [],
 })
 
@@ -102,8 +43,9 @@ cc_binary(
     name = "analyse_all_plays_bin",
     srcs = ["analyse_all_plays_bin.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -115,8 +57,9 @@ cc_binary(
     name = "analyse_all_plays_pbn",
     srcs = ["analyse_all_plays_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -130,6 +73,7 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    visibility = ["//examples/wasm:__pkg__"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -141,8 +85,9 @@ cc_binary(
     name = "analyse_play_pbn",
     srcs = ["analyse_play_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -154,8 +99,9 @@ cc_binary(
     name = "calc_all_tables",
     srcs = ["calc_all_tables.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -167,8 +113,9 @@ cc_binary(
     name = "calc_all_tables_pbn",
     srcs = ["calc_all_tables_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -180,8 +127,9 @@ cc_binary(
     name = "calc_dd_table",
     srcs = ["calc_dd_table.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -193,8 +141,9 @@ cc_binary(
     name = "calc_dd_table_pbn",
     srcs = ["calc_dd_table_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -206,8 +155,9 @@ cc_binary(
     name = "dealer_par",
     srcs = ["dealer_par.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -219,8 +169,9 @@ cc_binary(
     name = "par",
     srcs = ["par.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -232,8 +183,9 @@ cc_binary(
     name = "solve_all_boards",
     srcs = ["solve_all_boards.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -247,6 +199,7 @@ cc_binary(
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    visibility = ["//examples/wasm:__pkg__"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -258,8 +211,9 @@ cc_binary(
     name = "solve_board_pbn",
     srcs = ["solve_board_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -271,8 +225,9 @@ cc_binary(
     name = "migration_example",
     srcs = ["migration_example.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         "//library/src:dds",
         "//library/src/api:api_definitions",
@@ -283,8 +238,9 @@ cc_binary(
     name = "calc_par_context_example",
     srcs = ["calc_par_context_example.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
+    linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    tags = ["native-only"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -293,9 +249,10 @@ cc_binary(
     ],
 )
 
-# Convenience target to build all examples
+# Convenience target to build all native examples
 filegroup(
     name = "all_examples",
+    tags = ["native-only"],
     srcs = [
         ":analyse_all_plays_bin",
         ":analyse_all_plays_pbn",
@@ -315,11 +272,8 @@ filegroup(
     ],
 )
 
-filegroup(
+# Backward-compatible alias; prefer //examples/wasm:all_examples_wasm.
+alias(
     name = "all_examples_wasm",
-    srcs = [
-        ":analyse_play_bin_wasm",
-        ":solve_board_wasm",
-    ],
-    tags = ["manual"],
+    actual = "//examples/wasm:all_examples_wasm",
 )

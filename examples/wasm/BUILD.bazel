@@ -1,0 +1,28 @@
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+
+wasm_cc_binary(
+    name = "solve_board_wasm",
+    cc_target = "//examples:solve_board",
+    outputs = [
+        "solve_board.js",
+        "solve_board.wasm",
+    ],
+)
+
+wasm_cc_binary(
+    name = "analyse_play_bin_wasm",
+    cc_target = "//examples:AnalysePlayBin",
+    outputs = [
+        "AnalysePlayBin.js",
+        "AnalysePlayBin.wasm",
+    ],
+)
+
+filegroup(
+    name = "all_examples_wasm",
+    srcs = [
+        ":analyse_play_bin_wasm",
+        ":solve_board_wasm",
+    ],
+    visibility = ["//visibility:public"],
+)

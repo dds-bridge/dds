@@ -1,8 +1,11 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
+load("//:wasm_compat.bzl", "NATIVE_ONLY")
+
 
 # Utility tests: constants, lookup tables, and RNG determinism validation
 
 cc_test(
+    target_compatible_with = NATIVE_ONLY,
     name = "constants_test",
     size = "small",
     srcs = ["constants_test.cpp"],
@@ -13,6 +16,7 @@ cc_test(
 )
 
 cc_test(
+    target_compatible_with = NATIVE_ONLY,
     name = "lookup_tables_test",
     size = "small",
     srcs = ["lookup_tables_test.cpp"],
@@ -24,6 +28,7 @@ cc_test(
 
 # Aggregate test suite combining constants and lookup tables tests
 cc_test(
+    target_compatible_with = NATIVE_ONLY,
     name = "utility_test_suite",
     size = "small",
     srcs = [

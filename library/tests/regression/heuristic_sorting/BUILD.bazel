@@ -1,8 +1,11 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
+load("//:wasm_compat.bzl", "NATIVE_ONLY")
+
 
 # Regression tests for heuristic sorting behavior
 
 cc_test(
+    target_compatible_with = NATIVE_ONLY,
     name = "heuristic_sorting",
     size = "small",
     srcs = ["heuristic_sorting_test.cpp"],
