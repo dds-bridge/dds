@@ -7,7 +7,16 @@ import sys
 from pathlib import Path
 
 
+def usage() -> None:
+    name = Path(sys.argv[0]).name
+    print(f"usage: {name} WASM_FILE", file=sys.stderr)
+
+
 def main() -> int:
+    if len(sys.argv) != 2:
+        usage()
+        return 2
+
     wasm_path = Path(sys.argv[1])
     wasm = wasm_path.read_bytes()
     print(f"{wasm_path}: {len(wasm)} bytes, magic={wasm[:4]!r}")

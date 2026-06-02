@@ -40,7 +40,16 @@ def patched_line(param: str) -> str:
     )
 
 
+def usage() -> None:
+    name = Path(sys.argv[0]).name
+    print(f"usage: {name} EMSCRIPTEN_JS", file=sys.stderr)
+
+
 def main() -> int:
+    if len(sys.argv) != 2:
+        usage()
+        return 2
+
     path = Path(sys.argv[1])
     text = path.read_text(encoding="utf-8")
 
