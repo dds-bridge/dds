@@ -45,16 +45,10 @@ def usage() -> None:
     print(f"usage: {name} EMSCRIPTEN_JS", file=sys.stderr)
 
 
-def main() -> int:
-    if len(sys.argv) != 2:
-        usage()
-        return 2
-
-    path = Path(sys.argv[1])
-    text = path.read_text(encoding="utf-8")
-
+def patch_text(text: str) -> tuple[str, int]:
+    """Return patched text and an exit code (0 success, 1 error)."""
     if PATCHED_IS_FILE_URI.search(text):
-        return 0
+        return text, 0
 
     matches = list(UNPATCHED_IS_FILE_URI.finditer(text))
     if not matches:
@@ -65,19 +59,33 @@ def main() -> int:
             "UNPATCHED_IS_FILE_URI in web/patch_mvp_wasm.py if the generator changed.",
             file=sys.stderr,
         )
-        return 1
+        return text, 1
     if len(matches) != 1:
         print(
             f"patch_mvp_wasm: expected 1 isFileURI declaration, found {len(matches)}",
             file=sys.stderr,
         )
-        return 1
+        return text, 1
 
     match = matches[0]
     param = match.group(1)
     replacement = patched_line(param)
     updated = text[: match.start()] + replacement + text[match.end() :]
-    path.write_text(updated, encoding="utf-8")
+    return updated, 0
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        usage()
+        return 2
+
+    path = Path(sys.argv[1])
+    text = path.read_text(encoding="utf-8")
+    updated, code = patch_text(text)
+    if code != 0:
+        return code
+    if updated != text:
+        path.write_text(updated, encoding="utf-8")
     return 0
 
 

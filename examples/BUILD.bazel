@@ -30,8 +30,10 @@ cc_library(
     name = "hands",
     srcs = ["hands.cpp"],
     hdrs = ["hands.hpp"],
+    includes = ["."],
     copts = EXAMPLES_CPPOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    visibility = ["//examples:__subpackages__"],
     deps = [
         "//library/src:dds",
         "//library/src/api:api_definitions",

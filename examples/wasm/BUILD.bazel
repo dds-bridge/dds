@@ -1,4 +1,6 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
 
 wasm_cc_binary(
     name = "solve_board_wasm",
@@ -35,4 +37,22 @@ filegroup(
         ":solve_board_wasm",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "calc_dd_table_pbn_test",
+    size = "small",
+    srcs = ["calc_dd_table_pbn_test.cpp"],
+    copts = DDS_CPPOPTS,
+    deps = [
+        "//examples:hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "all",
+    tests = [":calc_dd_table_pbn_test"],
 )

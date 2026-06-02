@@ -1,5 +1,6 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
@@ -34,5 +35,42 @@ wasm_cc_binary(
     outputs = [
         "dds_mvp_wasm.js",
         "dds_mvp_wasm.wasm",
+    ],
+)
+
+cc_test(
+    name = "dds_mvp_wasm_test",
+    size = "small",
+    srcs = [
+        "dds_mvp_wasm.cpp",
+        "dds_mvp_wasm_test.cpp",
+    ],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES + ["DDS_MVP_WASM_NO_MAIN"],
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "wasm_scripts_test",
+    size = "small",
+    main = "tests/test_wasm_scripts.py",
+    srcs = ["tests/test_wasm_scripts.py"],
+    data = [
+        "gen_wasm_bin_js.py",
+        "patch_mvp_wasm.py",
+        "verify_wasm_js.py",
+    ],
+)
+
+test_suite(
+    name = "web_tests",
+    tests = [
+        ":dds_mvp_wasm_test",
+        ":wasm_scripts_test",
     ],
 )

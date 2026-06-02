@@ -49,6 +49,6 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int {
 
 }  // extern "C"
 
-#if !defined(__EMSCRIPTEN__)
+#if !defined(__EMSCRIPTEN__) && !defined(DDS_MVP_WASM_NO_MAIN)
 auto main() -> int { return 0; }
 #endif

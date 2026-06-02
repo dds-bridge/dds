@@ -12,6 +12,10 @@ def usage() -> None:
     print(f"usage: {name} WASM_FILE", file=sys.stderr)
 
 
+def wasm_magic_ok(wasm: bytes) -> bool:
+    return len(wasm) >= 4 and wasm[:4] == b"\x00asm"
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         usage()
@@ -19,6 +23,9 @@ def main() -> int:
 
     wasm_path = Path(sys.argv[1])
     wasm = wasm_path.read_bytes()
+    if not wasm_magic_ok(wasm):
+        print(f"{wasm_path}: invalid wasm magic (got {wasm[:4]!r})", file=sys.stderr)
+        return 1
     print(f"{wasm_path}: {len(wasm)} bytes, magic={wasm[:4]!r}")
 
     tmp = Path("/tmp/dds_mvp_test.wasm")

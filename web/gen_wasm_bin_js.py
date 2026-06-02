@@ -26,6 +26,14 @@ def usage() -> None:
     print(f"usage: {name} WASM_FILE OUTPUT_JS", file=sys.stderr)
 
 
+def make_bin_js(wasm_bytes: bytes) -> str:
+    """Return the contents of dds_mvp_wasm_bin.js for the given wasm module."""
+    b64 = base64.b64encode(wasm_bytes).decode("ascii")
+    lines = [b64[i : i + 76] for i in range(0, len(b64), 76)]
+    body = 'const DDS_MVP_WASM_BASE64 =\n    "' + '" +\n    "'.join(lines) + '";\n\n'
+    return HEADER + body
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         usage()
@@ -33,11 +41,7 @@ def main() -> int:
 
     wasm_path = Path(sys.argv[1])
     out_path = Path(sys.argv[2])
-    b64 = base64.b64encode(wasm_path.read_bytes()).decode("ascii")
-    # Split base64 across lines to keep editors happy.
-    lines = [b64[i : i + 76] for i in range(0, len(b64), 76)]
-    body = 'const DDS_MVP_WASM_BASE64 =\n    "' + '" +\n    "'.join(lines) + '";\n\n'
-    out_path.write_text(HEADER + body, encoding="utf-8")
+    out_path.write_text(make_bin_js(wasm_path.read_bytes()), encoding="utf-8")
     print(f"wrote {out_path} ({wasm_path.stat().st_size} byte wasm)")
     return 0
 
