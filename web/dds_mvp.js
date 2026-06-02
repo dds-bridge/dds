@@ -286,7 +286,7 @@ async function sendJSON() {
     }
 
     clear_results();
-    result.innerHTML = "Computing…";
+    result.innerHTML = "Computing&hellip;"; // horizontal ellipsis
 
     try {
         const module = await loadDdsModule();
