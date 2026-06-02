@@ -35,6 +35,7 @@ auto dict_to_dd_table_results(const pybind11::dict& table_input) -> DdTableResul
 auto future_tricks_to_dict(const FutureTricks& future_tricks) -> pybind11::dict;
 auto dd_table_results_to_dict(const DdTableResults& table_results) -> pybind11::dict;
 auto par_results_to_dict(const ParResults& par_results) -> pybind11::dict;
+auto solved_play_to_dict(const SolvedPlay& solved_play) -> pybind11::dict;
 
 auto list_to_dd_table_deals_pbn(
     const pybind11::list& deals_pbn,
