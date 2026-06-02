@@ -264,10 +264,12 @@ void System::get_hardware(
   return;
 #endif
 
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__APPLE__) && !defined(__linux__)
   if (kilobytes_free == 0)
   {
     kilobytes_free = 512ULL * 1024;
   }
+#endif
 }
 
 
