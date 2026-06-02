@@ -109,12 +109,26 @@ build:linux --cxxopt=-std=c++20
 
 There is no separate `build:wasm` profile in `.bazelrc`; WASM builds are selected by targeting `//examples/wasm:*`.
 
+## Tests
+
+Unit and system tests (Node.js required for system tests; skipped if `node` is not on `PATH`):
+
+```bash
+bazel test //web:web_tests //web:web_system_tests
+bazel test //examples/wasm:all
+```
+
+- **`//web:dds_mvp_wasm_system_test`** — builds `//web:dds_mvp_wasm`, runs `patch_mvp_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_mvp_calc_table` via Node (`web/tests/dds_mvp_wasm_node.mjs`).
+- **`//examples/wasm:wasm_examples_system_test`** — runs `calc_dd_table_pbn.js` under Node and checks for `OK` on all three example hands.
+
+The MVP link flags include `-sENVIRONMENT=web,node` so the same `.js` / `.wasm` artifacts work in the browser and in Node system tests.
+
 ## Development notes
 
 - The `__WASM__` preprocessor constant is defined for WASM builds (`CPPVARIABLES.bzl`). It was added to work around platform-specific code paths; revisit whether it can be narrowed or removed as WASM support matures.
 - Some threading and platform-specific features are disabled or stubbed when `__WASM__` is set.
 - A reusable `cc_library` WASM artifact (not only example binaries) is not yet provided; today only `wasm_cc_binary` example targets are wired up.
-- Browser/HTML packaging (`.html` shell, assets) is not yet documented or automated; Node.js is the supported smoke-test runner for now.
+- The browser MVP lives under `web/`; see **Web browser (DDS MVP)** above and `//web:web_system_tests`.
 
 ## Next steps
 

@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
 
 wasm_cc_binary(
@@ -52,7 +53,23 @@ cc_test(
     ],
 )
 
+py_test(
+    name = "wasm_examples_system_test",
+    size = "medium",
+    main = "tests/test_wasm_examples_system.py",
+    srcs = ["tests/test_wasm_examples_system.py"],
+    data = [":calc_dd_table_pbn_wasm"],
+)
+
 test_suite(
     name = "all",
-    tests = [":calc_dd_table_pbn_test"],
+    tests = [
+        ":calc_dd_table_pbn_test",
+        ":wasm_examples_system_test",
+    ],
+)
+
+test_suite(
+    name = "wasm_system_tests",
+    tests = [":wasm_examples_system_test"],
 )

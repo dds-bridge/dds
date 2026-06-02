@@ -10,7 +10,7 @@ WASM_MVP_LINKOPTS = WASM_LINKOPTS + [
     "-sEXPORT_NAME=createDdsModule",
     "-sEXPORTED_FUNCTIONS=['_dds_mvp_calc_table','_malloc','_free']",
     "-sEXPORTED_RUNTIME_METHODS=['ccall','getValue']",
-    "-sENVIRONMENT=web",
+    "-sENVIRONMENT=web,node",
 ]
 
 cc_binary(
@@ -67,10 +67,29 @@ py_test(
     ],
 )
 
+py_test(
+    name = "dds_mvp_wasm_system_test",
+    size = "medium",
+    main = "tests/test_wasm_system.py",
+    srcs = ["tests/test_wasm_system.py"],
+    data = [
+        ":dds_mvp_wasm",
+        "gen_wasm_bin_js.py",
+        "patch_mvp_wasm.py",
+        "tests/dds_mvp_wasm_node.mjs",
+        "verify_wasm_js.py",
+    ],
+)
+
 test_suite(
     name = "web_tests",
     tests = [
         ":dds_mvp_wasm_test",
         ":wasm_scripts_test",
     ],
+)
+
+test_suite(
+    name = "web_system_tests",
+    tests = [":dds_mvp_wasm_system_test"],
 )
