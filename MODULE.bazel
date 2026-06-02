@@ -9,6 +9,8 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "2.0.1")
 bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+# WASM builds (//examples/wasm:*, //web:dds_mvp_wasm). If you bump this version,
+# rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_mvp_wasm.py.
 bazel_dep(name = "emsdk", version = "5.0.7")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")

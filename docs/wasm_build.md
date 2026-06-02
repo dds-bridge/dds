@@ -11,6 +11,14 @@ https://bazel.build/install
 
 The Emscripten SDK (emsdk) does NOT need to be manually installed. Bazel downloads and caches a hermetic Emscripten toolchain when you build a `wasm_cc_binary` target.
 
+### Emscripten / emsdk version
+
+WASM builds use the Bazel Central Registry package pinned in `MODULE.bazel`:
+
+- `bazel_dep(name = "emsdk", version = "5.0.7")` (Emscripten 3.1.x toolchain)
+
+If you upgrade `emsdk`, rebuild WASM targets and the web MVP (`./web/update_wasm.sh`). The post-build script `web/patch_mvp_wasm.py` patches one generated `isFileURI` helper for browser/file URL safety; if Emscripten changes that line, update the regex in that script and this note.
+
 ## Building WASM Examples
 
 WASM targets use `wasm_cc_binary`, which applies an Emscripten **platform transition** to the underlying `cc_binary`. You do **not** need `--config=wasm` or any other `.bazelrc` profile.
@@ -71,7 +79,7 @@ python3 -m http.server 8080 --directory web
 # open http://localhost:8080/dds_mvp.html
 ```
 
-The MVP loads wasm from `dds_mvp_wasm_bin.js` (base64, no network fetch), so `file://` and HTTP both work. Run `./web/update_wasm.sh` to refresh `dds_mvp_wasm.{js,wasm,bin.js}`.
+The MVP loads wasm from `dds_mvp_wasm_bin.js` (base64, no network fetch), so `file://` and HTTP both work. Run `./web/update_wasm.sh` to refresh `dds_mvp_wasm.{js,wasm,bin.js}` (includes a small post-process step for Emscripten `isFileURI`; see **Emscripten / emsdk version** above).
 
 For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/examples/wasm/` to any static file server.
 
