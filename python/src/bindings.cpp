@@ -612,14 +612,14 @@ auto register_analysis_bindings(py::module_& module) -> void
         },
         py::arg("user_threads") = 0,
         "Legacy thread-resource hook (wraps the deprecated SetMaxThreads C API).\n\n"
-        "DDS 3.x removed internal batch parallelism: the legacy batch APIs run\n"
-        "single-threaded regardless of this value, so calling this does NOT enable\n"
-        "multi-threaded solving. It only sizes the (single) internal thread's memory\n"
-        "and is retained for backward compatibility. For concurrency, create one\n"
+        "This does NOT control DDS's batch parallelism and is retained only for\n"
+        "backward compatibility. solve_all_boards_* already parallelise across the\n"
+        "machine's hardware threads automatically (see solve_boards_n); the value\n"
+        "passed here does not size that pool. analyse_all_plays_pbn currently runs\n"
+        "sequentially. For per-board concurrency from Python, create one\n"
         "SolverContext per worker thread and pass it to solve_board / solve_board_pbn.\n\n"
         "Args:\n"
-        "    user_threads (int, optional): Must be >= 0; 0 = auto. Values > 1 are\n"
-        "        accepted but clamped to a single internal thread. Default: 0\n\n"
+        "    user_threads (int, optional): Must be >= 0; 0 = auto. Default: 0\n\n"
         "Raises:\n"
         "    ValueError: If user_threads < 0.");
 
@@ -749,8 +749,8 @@ auto register_analysis_bindings(py::module_& module) -> void
         },
         py::arg("deals"),
         "Analyse multiple played deals in one batched call.\n\n"
-        "Wraps the DDS AnalyseAllPlaysPBN C API. Note: DDS 3.x runs the legacy\n"
-        "batch APIs single-threaded (internal parallelism was removed).\n\n"
+        "Wraps the DDS AnalyseAllPlaysPBN C API. Note: this batch entry point\n"
+        "currently solves the deals sequentially (one board at a time).\n\n"
         "Args:\n"
         "    deals (list[dict]): Up to 200 dicts, each with:\n"
         "        'remain_cards' (str, required): full deal in PBN format.\n"

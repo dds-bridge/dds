@@ -286,15 +286,15 @@ Batched form of `analyse_play_pbn` (wraps `AnalyseAllPlaysPBN`).
 
 Legacy thread-resource hook (wraps the **deprecated** `SetMaxThreads` C API).
 
-DDS 3.x removed internal batch parallelism: the legacy batch APIs
-(`solve_all_boards_*`, `analyse_all_plays_pbn`) run **single-threaded** regardless
-of this value, so calling it does **not** enable multi-threaded solving — it only
-sizes the single internal thread's memory and is kept for backward compatibility.
-`user_threads` must be `>= 0` (`0` = auto); values `> 1` are accepted but clamped
-to one thread. Raises `ValueError` for negative values.
+This does **not** control DDS's batch parallelism and is kept only for backward
+compatibility. `solve_all_boards_*` already parallelise across the machine's
+hardware threads automatically (via `solve_boards_n`) — the value passed here does
+not size that pool. `analyse_all_plays_pbn` currently runs sequentially.
+`user_threads` must be `>= 0` (`0` = auto); raises `ValueError` for negative values.
 
-For real concurrency, create one `SolverContext` per worker thread and pass it to
-`solve_board` / `solve_board_pbn` (which release the GIL during the search).
+For per-board concurrency from Python, create one `SolverContext` per worker thread
+and pass it to `solve_board` / `solve_board_pbn` (which release the GIL during the
+search).
 
 ## Card Representation
 
