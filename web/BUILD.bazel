@@ -1,6 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
@@ -55,6 +55,13 @@ cc_test(
     ],
 )
 
+py_library(
+    name = "mvp_site",
+    srcs = ["tests/mvp_site.py"],
+    imports = ["tests"],
+    visibility = ["//web:__pkg__"],
+)
+
 py_test(
     name = "wasm_scripts_test",
     size = "small",
@@ -67,17 +74,49 @@ py_test(
     ],
 )
 
+# Stages wasm artifacts and runs Node smoke (~1–2s; wasm build is a separate analysis action).
 py_test(
     name = "dds_mvp_wasm_system_test",
-    size = "medium",
+    size = "small",
+    timeout = "short",
     main = "tests/test_wasm_system.py",
     srcs = ["tests/test_wasm_system.py"],
     data = [
         ":dds_mvp_wasm",
+        "dds_mvp.css",
+        "dds_mvp.html",
+        "dds_mvp.js",
         "gen_wasm_bin_js.py",
         "patch_mvp_wasm.py",
         "tests/dds_mvp_wasm_node.mjs",
         "verify_wasm_js.py",
+    ],
+    deps = [":mvp_site"],
+)
+
+# Playwright usually finishes in ~30s; first run may download Chromium (requires-network).
+py_test(
+    name = "dds_mvp_e2e_test",
+    size = "small",
+    timeout = "short",
+    main = "tests/test_mvp_e2e.py",
+    srcs = ["tests/test_mvp_e2e.py"],
+    data = [
+        ":dds_mvp_wasm",
+        "dds_mvp.css",
+        "dds_mvp.html",
+        "dds_mvp.js",
+        "gen_wasm_bin_js.py",
+        "patch_mvp_wasm.py",
+    ],
+    deps = [
+        ":mvp_site",
+        "@pypi//playwright",
+    ],
+    tags = [
+        "e2e",
+        "no-sandbox",
+        "requires-network",
     ],
 )
 
@@ -91,5 +130,13 @@ test_suite(
 
 test_suite(
     name = "web_system_tests",
-    tests = [":dds_mvp_wasm_system_test"],
+    tests = [
+        ":dds_mvp_wasm_system_test",
+        ":dds_mvp_e2e_test",
+    ],
+)
+
+test_suite(
+    name = "web_e2e_tests",
+    tests = [":dds_mvp_e2e_test"],
 )

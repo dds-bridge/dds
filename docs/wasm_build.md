@@ -114,11 +114,12 @@ There is no separate `build:wasm` profile in `.bazelrc`; WASM builds are selecte
 Unit and system tests (Node.js required for system tests; skipped if `node` is not on `PATH`):
 
 ```bash
-bazel test //web:web_tests //web:web_system_tests
+bazel test //web:web_tests //web:web_system_tests //web:web_e2e_tests
 bazel test //examples/wasm:all
 ```
 
 - **`//web:dds_mvp_wasm_system_test`** — builds `//web:dds_mvp_wasm`, runs `patch_mvp_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_mvp_calc_table` via Node (`web/tests/dds_mvp_wasm_node.mjs`).
+- **`//web:dds_mvp_e2e_test`** — Playwright tests for `dds_mvp.html` over `file://` and HTTP (part-score deal table, validation error). Requires Node, network (Chromium download on first run), and `tags = ["no-sandbox"]`.
 - **`//examples/wasm:wasm_examples_system_test`** — runs `calc_dd_table_pbn.js` under Node and checks for `OK` on all three example hands.
 
 The MVP link flags include `-sENVIRONMENT=web,node` so the same `.js` / `.wasm` artifacts work in the browser and in Node system tests.

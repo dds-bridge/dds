@@ -21,7 +21,7 @@ jobs:
           bazelisk-version: "1.29.0"
 
       # 3️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel)
-      - name: Test web helpers, system tests, and CalcDDtablePBN
+      - name: Test web helpers, system tests, e2e, and CalcDDtablePBN
         run: bazel test --verbose_failures //web:web_tests //web:web_system_tests //examples/wasm:all
 
       - name: Build WASM targets

@@ -32,5 +32,13 @@ python.toolchain(
 )
 use_repo(python, "python_3_14")
 
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "pypi",
+    python_version = "3.14",
+    requirements_lock = "//web:requirements_lock.txt",
+)
+use_repo(pip, "pypi")
+
 register_toolchains("@llvm_toolchain//:all")
 register_toolchains("@emsdk//:all")
