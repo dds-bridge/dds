@@ -62,12 +62,10 @@ function loadDdsModule() {
         }
         ddsModulePromise = createDdsModule({
             wasmBinary: ddsMvpWasmBytes()
-        }).then((module) => {
-            // MODULARIZE may return a Promise until the runtime is ready.
-            if (module != null && typeof module.then === "function") {
-                return module;
-            }
-            return module;
+        }).catch((error) => {
+            // Allow retry after transient initialization failures.
+            ddsModulePromise = null;
+            throw error;
         });
     }
 
