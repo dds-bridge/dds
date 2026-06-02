@@ -1,5 +1,5 @@
 /*
-   Bridge Hackathon DDS MVP — browser entry point for CalcDDtablePBN.
+   Browser entry point for CalcDDtablePBN.
 
    Copyright 2020-2026 Adam Wildavsky
    Use of this source code is governed by the MIT license.
@@ -26,10 +26,11 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int {
   }
 
   DdTableDealPBN deal{};
-  if (std::strlen(pbn) >= sizeof(deal.cards)) {
+  const size_t pbn_len = std::strlen(pbn);
+  if (pbn_len >= sizeof(deal.cards)) {
     return RETURN_PBN_FAULT;
   }
-  std::strcpy(deal.cards, pbn);
+  std::memcpy(deal.cards, pbn, pbn_len + 1);
 
   DdTableResults table{};
   const int res = CalcDDtablePBN(deal, &table);
