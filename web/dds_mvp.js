@@ -199,10 +199,10 @@ function collectHands() {
 }
 
 function inputIsValid(hands) {
-    var deck = [];
-    var duplicates = [];
+    const deck = {};
+    const duplicates = [];
 
-    for (const direction in hands) {
+    for (const direction of Object.keys(hands)) {
         const hand = hands[direction];
 
         if (hand.length != 13) {
