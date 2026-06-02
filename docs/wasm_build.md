@@ -81,6 +81,14 @@ python3 -m http.server 8080 --directory web
 
 The MVP loads wasm from `dds_mvp_wasm_bin.js` (base64, no network fetch), so `file://` and HTTP both work. Run `./web/update_wasm.sh` to refresh `dds_mvp_wasm.{js,wasm,bin.js}` (includes a small post-process step for Emscripten `isFileURI`; see **Emscripten / emsdk version** above).
 
+`bazel clean` does not delete those copied files under `web/` (they live outside `bazel-out`). Use either:
+
+```bash
+./clean.sh              # bazel clean + remove web/dds_mvp_wasm.*
+./clean.sh --expunge
+./web/clean_wasm.sh     # web artifacts only
+```
+
 For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/examples/wasm/` to any static file server.
 
 ## Compilation flags
