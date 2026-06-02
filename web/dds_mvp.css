@@ -5,13 +5,56 @@
    https://opensource.org/licenses/MIT
 */
 
-.grid-container {
-  display: grid;
-  grid-template-columns: auto auto auto;
+.grid-outer {
   background-color: #2196F3;
   padding: 10px;
   max-width: 800px;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-areas:
+    "nw north ne"
+    "west center east"
+    "sw south se";
   grid-template-columns: 1fr 1fr 1fr;
+  background-color: #2196F3;
+}
+
+.hand-north {
+  grid-area: north;
+}
+
+.hand-east {
+  grid-area: east;
+}
+
+.hand-south {
+  grid-area: south;
+}
+
+.hand-west {
+  grid-area: west;
+}
+
+.grid-filler-nw {
+  grid-area: nw;
+}
+
+.grid-filler-ne {
+  grid-area: ne;
+}
+
+.grid-filler-center {
+  grid-area: center;
+}
+
+.grid-filler-sw {
+  grid-area: sw;
+}
+
+.grid-filler-se {
+  grid-area: se;
 }
 
 .grid-item {
@@ -20,6 +63,10 @@
   padding: 20px;
   font-size: 30px;
   text-align: center;
+}
+
+.grid-filler {
+  padding: 20px;
 }
 
 td {
