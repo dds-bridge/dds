@@ -15,16 +15,6 @@
 #define EMSCRIPTEN_KEEPALIVE
 #endif
 
-namespace {
-
-void ensure_initialized() {
-#if defined(__linux) || defined(__APPLE__) || defined(__WASM__)
-  SetMaxThreads(0);
-#endif
-}
-
-}  // namespace
-
 extern "C" {
 
 // Fills out_table[20] with res_table[strain][hand] (strain 0..4 = S,H,D,C,N).
@@ -34,8 +24,6 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int {
   if (pbn == nullptr || out_table == nullptr) {
     return RETURN_UNKNOWN_FAULT;
   }
-
-  ensure_initialized();
 
   DdTableDealPBN deal{};
   if (std::strlen(pbn) >= sizeof(deal.cards)) {
