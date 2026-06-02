@@ -32,21 +32,17 @@ config_setting(
     name = "build_windows",
     constraint_values = [
         "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
     ],
-    values = {
-        "cpu": "x64_windows",
-    },
 )
 
 config_setting(
     name = "debug_build_windows",
     constraint_values = [
         "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
     ],
-    values = {
-        "cpu": "x64_windows",
-        "compilation_mode": "dbg",
-    },
+    values = {"compilation_mode": "dbg"},
 )
 
 config_setting(

@@ -56,7 +56,7 @@ Rules in `examples/wasm/BUILD.bazel` wrap native examples in `examples/`:
 ## How it works
 
 1. **`wasm_cc_binary`** (from `@emsdk`) transitions its `cc_target` to `@emsdk//:platform_wasm` and sets `--cpu=wasm`.
-2. **`//:build_wasm`** in the root `BUILD.bazel` matches that CPU for `select()` in `CPPVARIABLES.bzl` and example link flags.
+2. **`//:build_wasm`** in the root `BUILD.bazel` matches `@platforms//cpu:wasm32` for `select()` in `CPPVARIABLES.bzl` and example link flags.
 3. **`wasm_compat.bzl`** — shared Emscripten link flags (`WASM_LINKOPTS`) on the WASM-capable `cc_binary` targets.
 
 Native builds (`bazel build //...`, `bazel test //library/tests/...`, Python bindings) are unchanged and use the host LLVM toolchain.
@@ -106,7 +106,7 @@ For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/examples
 
 ## C++ standard
 
-WASM example binaries are built as C++20. The Emscripten toolchain (via `wasm_cc_binary`) compiles the transitioned `cc_target`; project flags for that configuration come from `CPPVARIABLES.bzl` when `//:build_wasm` matches (`--cpu=wasm` set by the transition).
+WASM example binaries are built as C++20. The Emscripten toolchain (via `wasm_cc_binary`) compiles the transitioned `cc_target`; project flags for that configuration come from `CPPVARIABLES.bzl` when `//:build_wasm` matches (the Emscripten platform transition sets `wasm32`).
 
 Host-side Bazel actions still use the normal platform flags in `.bazelrc`:
 

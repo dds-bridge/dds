@@ -1,1 +1,2 @@
+# Regenerate: pip-compile --generate-hashes -o web/requirements_lock.txt web/requirements.in
 playwright==1.52.0
