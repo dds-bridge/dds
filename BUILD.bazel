@@ -33,6 +33,9 @@ config_setting(
     constraint_values = [
         "@platforms//os:windows",
     ],
+    values = {
+        "cpu": "x64_windows",
+    },
 )
 
 config_setting(
@@ -40,7 +43,10 @@ config_setting(
     constraint_values = [
         "@platforms//os:windows",
     ],
-    values = {"compilation_mode": "dbg"},
+    values = {
+        "cpu": "x64_windows",
+        "compilation_mode": "dbg",
+    },
 )
 
 config_setting(
