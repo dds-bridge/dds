@@ -96,10 +96,6 @@ DDS_LINKOPTS = select({
     "//conditions:default": [],
 })
 
-# Standard flags for cc_test targets (includes -Wno-character-conversion for GoogleTest).
-# Targets without explicit copts also get -Wno-character-conversion under test:macos/linux via .bazelrc.
-DDS_TEST_CPPOPTS = DDS_CPPOPTS
-
 # Per-target define to enable scheduler timing when desired.
 # Controlled with: --define=scheduler=true
 # Usage in BUILD files: local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE
