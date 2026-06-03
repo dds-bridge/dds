@@ -254,10 +254,8 @@ void System::get_hardware(
   core_count = sysconf(_SC_NPROCESSORS_ONLN);
 #else
   // Fallback if no platform is detected
-  if (kilobytes_free == 0)
-  {
-    kilobytes_free = 512ULL * 1024;
-  }
+  kilobytes_free = 512ULL * 1024;
+#endif
 #endif
 }
 
