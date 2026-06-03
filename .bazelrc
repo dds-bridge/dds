@@ -24,6 +24,10 @@ build:asan --features=dbg
 build:asan --compilation_mode=dbg
 test:asan --test_timeout=120,300,900,3600
 
+# GoogleTest headers can trigger conversion warnings on Clang; suppress for tests.
+# On Linux, use -Wno-conversion for portability when the system compiler is GCC.
+test:macos --cxxopt=-Wno-character-conversion
+test:linux --cxxopt=-Wno-conversion
 # macOS-specific AddressSanitizer runtime lookup configuration.
 # The LLVM toolchain bundles the ASAN runtime. On macOS tests run from the
 # runfiles tree, so use @loader_path-based rpaths that walk back to execroot
