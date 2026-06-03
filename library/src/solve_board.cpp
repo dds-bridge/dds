@@ -82,8 +82,15 @@ auto solve_all_boards_n(
     // provide it yet, while std::thread is widely available.
     std::vector<std::thread> threads;
     threads.reserve(static_cast<unsigned>(nthreads));
-    for (int i = 0; i < nthreads; ++i)
-      threads.emplace_back(worker);
+    try {
+      for (int i = 0; i < nthreads; ++i)
+        threads.emplace_back(worker);
+    } catch (...) {
+      for (auto& t : threads)
+        if (t.joinable())
+          t.join();
+      throw;
+    }
     for (auto& t : threads)
       t.join();
   }
