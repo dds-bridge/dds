@@ -1,7 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 load("@rules_python//python:defs.bzl", "py_test")
-load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LOCAL_DEFINES")
 
 wasm_cc_binary(
     name = "solve_board_wasm",
@@ -45,6 +45,7 @@ cc_test(
     size = "small",
     srcs = ["calc_dd_table_pbn_test.cpp"],
     copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
     deps = [
         "//examples:hands",
         "//library/src:dds",
