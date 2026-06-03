@@ -327,6 +327,10 @@ async function sendJSON() {
         }
     } catch (err) {
         clear_results();
-        result.innerHTML = err.message;
+        result.innerHTML = err instanceof Error
+            ? err.message
+            : err == null
+                ? "Unknown error"
+                : String(err);
     }
 }
