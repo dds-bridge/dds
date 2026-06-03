@@ -1,2 +1,5 @@
-# Regenerate: pip-compile --generate-hashes -o web/requirements_lock.txt web/requirements.in
+# Regenerate (must match MODULE.bazel python_version, currently 3.14):
+#   bazel run @python_3_14//:python3 -- -m pip install pip-tools
+#   bazel run @python_3_14//:python3 -- -m piptools compile --generate-hashes \
+#     --output-file=web/requirements_lock.txt web/requirements.in
 playwright==1.52.0
