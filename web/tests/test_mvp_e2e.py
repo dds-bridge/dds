@@ -89,123 +89,123 @@ class _HttpSite:
 
 @unittest.skipIf(sync_playwright is None, "playwright not installed")
 class DdsMvpHtmlE2eTest(unittest.TestCase):
-  browsers_dir: Path
-  site_dir: Path
+    browsers_dir: Path
+    site_dir: Path
 
-  @classmethod
-  def setUpClass(cls) -> None:
-      if not shutil.which("node"):
-          raise unittest.SkipTest("node not found (wasm sanity)")
-      cls.browsers_dir = Path(tempfile.mkdtemp(prefix="pw-browsers-"))
-      _ensure_playwright_chromium(cls.browsers_dir)
-      cls.site_dir = Path(tempfile.mkdtemp(prefix="dds-mvp-site-"))
-      stage_mvp_site(cls.site_dir)
+    @classmethod
+    def setUpClass(cls) -> None:
+        if not shutil.which("node"):
+            raise unittest.SkipTest("node not found (wasm sanity)")
+        cls.browsers_dir = Path(tempfile.mkdtemp(prefix="pw-browsers-"))
+        _ensure_playwright_chromium(cls.browsers_dir)
+        cls.site_dir = Path(tempfile.mkdtemp(prefix="dds-mvp-site-"))
+        stage_mvp_site(cls.site_dir)
 
-  @classmethod
-  def tearDownClass(cls) -> None:
-      shutil.rmtree(cls.browsers_dir, ignore_errors=True)
-      shutil.rmtree(cls.site_dir, ignore_errors=True)
+    @classmethod
+    def tearDownClass(cls) -> None:
+        shutil.rmtree(cls.browsers_dir, ignore_errors=True)
+        shutil.rmtree(cls.site_dir, ignore_errors=True)
 
-  def setUp(self) -> None:
-      os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(self.browsers_dir)
-      self._pw = sync_playwright().start()
-      self._browser = self._pw.chromium.launch(headless=True)
+    def setUp(self) -> None:
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(self.browsers_dir)
+        self._pw = sync_playwright().start()
+        self._browser = self._pw.chromium.launch(headless=True)
 
-  def tearDown(self) -> None:
-      self._browser.close()
-      self._pw.stop()
+    def tearDown(self) -> None:
+        self._browser.close()
+        self._pw.stop()
 
-  def _open_page(self, url: str):
-      page = self._browser.new_page()
-      errors: list[str] = []
-      page.on("pageerror", lambda exc: errors.append(str(exc)))
-      page.goto(url, wait_until="load")
-      page.wait_for_function(
-          "() => typeof createDdsModule === 'function' && typeof ddsMvpWasmBytes === 'function'"
-      )
-      return page, errors
+    def _open_page(self, url: str):
+        page = self._browser.new_page()
+        errors: list[str] = []
+        page.on("pageerror", lambda exc: errors.append(str(exc)))
+        page.goto(url, wait_until="load")
+        page.wait_for_function(
+            "() => typeof createDdsModule === 'function' && typeof ddsMvpWasmBytes === 'function'"
+        )
+        return page, errors
 
-  def _fill_part_score_deal(self, page) -> None:
-      page.get_by_role("button", name="Part-score test deal").click()
+    def _fill_part_score_deal(self, page) -> None:
+        page.get_by_role("button", name="Part-score test deal").click()
 
-  def _run_double_dummy(self, page) -> None:
-      page.get_by_role("button", name="Double-dummy it!").click()
-      page.wait_for_function(
-          """() => {
+    def _run_double_dummy(self, page) -> None:
+        page.get_by_role("button", name="Double-dummy it!").click()
+        page.wait_for_function(
+            """() => {
             const cell = document.getElementById('result-table').rows[1].cells[1];
             return cell && /^\\d+$/.test(cell.textContent.trim());
           }""",
-          timeout=120_000,
-      )
+            timeout=120_000,
+        )
 
-  def _read_table_cell(self, page, direction: str, denomination: str) -> str:
-      row = TABLE_ROW[direction]
-      col = TABLE_COL[denomination]
-      return page.evaluate(
-          f"""() => {{
+    def _read_table_cell(self, page, direction: str, denomination: str) -> str:
+        row = TABLE_ROW[direction]
+        col = TABLE_COL[denomination]
+        return page.evaluate(
+            f"""() => {{
             return document.getElementById('result-table')
               .rows[{row}].cells[{col}].textContent.trim();
           }}"""
-      )
+        )
 
-  def _assert_part_score_table(self, page) -> None:
-      for direction in ("N", "E", "S", "W"):
-          for denomination in ("C", "D", "H", "S", "N"):
-              expected = str(_expected_tricks(direction, denomination))
-              actual = self._read_table_cell(page, direction, denomination)
-              self.assertEqual(
-                  actual,
-                  expected,
-                  msg=f"{direction}/{denomination}",
-              )
-      result_text = page.locator("#result").inner_text()
-      self.assertEqual(result_text.strip(), "")
+    def _assert_part_score_table(self, page) -> None:
+        for direction in ("N", "E", "S", "W"):
+            for denomination in ("C", "D", "H", "S", "N"):
+                expected = str(_expected_tricks(direction, denomination))
+                actual = self._read_table_cell(page, direction, denomination)
+                self.assertEqual(
+                    actual,
+                    expected,
+                    msg=f"{direction}/{denomination}",
+                )
+        result_text = page.locator("#result").inner_text()
+        self.assertEqual(result_text.strip(), "")
 
-  def test_page_load_shows_valid_pips(self) -> None:
-      page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-      try:
-          pips = page.locator("#valid-pips").inner_text()
-          self.assertIn("A", pips)
-          self.assertIn("2", pips)
-          self.assertEqual(errors, [])
-      finally:
-          page.close()
+    def test_page_load_shows_valid_pips(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            pips = page.locator("#valid-pips").inner_text()
+            self.assertIn("A", pips)
+            self.assertIn("2", pips)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
 
-  def test_file_url_part_score_table(self) -> None:
-      url = self.site_dir.joinpath("dds_mvp.html").as_uri()
-      page, errors = self._open_page(url)
-      try:
-          self._fill_part_score_deal(page)
-          self._run_double_dummy(page)
-          self._assert_part_score_table(page)
-          self.assertEqual(errors, [])
-      finally:
-          page.close()
+    def test_file_url_part_score_table(self) -> None:
+        url = self.site_dir.joinpath("dds_mvp.html").as_uri()
+        page, errors = self._open_page(url)
+        try:
+            self._fill_part_score_deal(page)
+            self._run_double_dummy(page)
+            self._assert_part_score_table(page)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
 
-  def test_http_part_score_table(self) -> None:
-      with _HttpSite(self.site_dir) as site:
-          page, errors = self._open_page(site.url)
-          try:
-              self._fill_part_score_deal(page)
-              self._run_double_dummy(page)
-              self._assert_part_score_table(page)
-              self.assertEqual(errors, [])
-          finally:
-              page.close()
+    def test_http_part_score_table(self) -> None:
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                self._fill_part_score_deal(page)
+                self._run_double_dummy(page)
+                self._assert_part_score_table(page)
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
 
-  def test_validation_error_on_incomplete_deal(self) -> None:
-      page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-      try:
-          page.get_by_role("button", name="Clear entries").click()
-          page.get_by_role("button", name="Double-dummy it!").click()
-          page.wait_for_function(
-              """() => document.getElementById('result').textContent.includes('13 cards')"""
-          )
-          message = page.locator("#result").inner_text()
-          self.assertIn("13 cards", message)
-          self.assertEqual(errors, [])
-      finally:
-          page.close()
+    def test_validation_error_on_incomplete_deal(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            page.get_by_role("button", name="Clear entries").click()
+            page.get_by_role("button", name="Double-dummy it!").click()
+            page.wait_for_function(
+                """() => document.getElementById('result').textContent.includes('13 cards')"""
+            )
+            message = page.locator("#result").inner_text()
+            self.assertIn("13 cards", message)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
 
 
 if __name__ == "__main__":
