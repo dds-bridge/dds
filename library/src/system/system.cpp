@@ -256,7 +256,6 @@ void System::get_hardware(
   // Fallback if no platform is detected
   kilobytes_free = 512ULL * 1024;
 #endif
-#endif
 }
 
 
