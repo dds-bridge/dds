@@ -1,23 +1,29 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace DDS_Core
+namespace DDS_Core;
+
+/// <summary>
+/// Par contracts for both dealer and vulnerable combinations.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct ParResultsMaster
 {
+    /// <summary>Par score (sign according to NS view).</summary>
+    public int Score;
 
-    /// <summary>
-    /// Par contracts for both dealer and vulnerable combinations.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ParResultsMaster
-    {
-        /// <summary>Par score (sign according to NS view).</summary>
-        public int score;
+    /// <summary>Number of contracts giving the par score.</summary>
+    public int Number;
 
-        /// <summary>Number of contracts giving the par score.</summary>
-        public int number;
+    /// <summary>InlineArray of 10 par contracts.</summary>
+    public ContractTypes Contracts;
 
-        /// <summary>Array of par contracts (up to 10).</summary>
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
-        public ContractType[] contracts;
-    }
+    #region Nested Types
+        [InlineArray(10)]
+        public struct ContractTypes
+        {
+            private ContractType Contract;
+        }
+    #endregion
 }

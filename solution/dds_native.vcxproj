@@ -17,12 +17,10 @@
     <Keyword>NetCoreCProj</Keyword>
     <RootNamespace>ddsnative</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
- 
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-   <!-- Gives a MSB4011 warning, but is still required -->
+  <!-- Gives a MSB4011 warning, but is still required -->
   <Import Project="$(MSBuildProjectDirectory)/Directory.Build.props" Condition="Exists('$(MSBuildProjectDirectory)/Directory.Build.props')" />
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -31,8 +29,6 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
   </PropertyGroup>
-
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
@@ -46,7 +42,7 @@
   <!-- ====================== -->
   <!--  INCLUDE PATHS Added   -->
   <!-- ====================== -->
-  <PropertyGroup >
+  <PropertyGroup>
     <OutDir>$(BuildDir)\bin\$(platform)\$(Configuration)\</OutDir>
     <IntDir>$(BuildDir)\int\$(platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
@@ -106,6 +102,7 @@
   </ItemGroup>
   <!-- ClCompile og ClInclude header files -->
   <ItemGroup>
+    <ClInclude Include="..\library\src\api\dds_api.hpp" />
     <ClInclude Include="..\library\src\ab_search.hpp" />
     <ClInclude Include="..\library\src\ab_stats.hpp" />
     <ClInclude Include="..\library\src\api\calc_dd_table.hpp" />

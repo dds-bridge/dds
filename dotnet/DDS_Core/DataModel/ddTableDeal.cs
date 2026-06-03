@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using static DDS_Core.ByteBuffer10x10;
 
 namespace DDS_Core;
 
@@ -18,5 +17,5 @@ public struct DdTableDeal
     /// Access: cards[hand, suit] where hand=0-3 (N/E/S/W), suit=0-3 (S/H/D/C)
     /// Each uint is a bitmask of cards (bit 0 = Deuce, bit 12 = Ace)
     /// </summary>
-    public UintBuffer4x4 cards;
+    public FourHands Cards;
 }

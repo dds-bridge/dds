@@ -13,8 +13,8 @@ namespace DDS_Core;
 public struct SolvedPlay
 {
     /// <summary>Number of results.</summary>
-    public int number;
+    public int NumberOfResults;
 
     /// <summary>Tricks possible after each play (53 entries).</summary>
-    public IntBuffer53 tricks;
+    public IntArray53 Tricks;
 }

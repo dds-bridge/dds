@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace DDS_Core;
 
@@ -9,21 +10,47 @@ namespace DDS_Core;
 public struct Boards
 {
     /// <summary>Number of deals in this batch.</summary>
-    public int no_of_boards;
+    public int NumberOfBoards;
 
     /// <summary>Array of deals.</summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
-    public Deal[] deals;
+    public DealsArray Deals;
 
     /// <summary>Target tricks for each board.</summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
-    public int[] target;
+    public intArray200 Target;
 
     /// <summary>Solution mode for each board (1=best, 2=all, 3=all+par).</summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
-    public int[] solutions;
+    
+    public intArray200 Solutions;
 
     /// <summary>Solve mode for each board.</summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
-    public int[] mode;
+    public intArray200 Modes;
+
+    #region Nested Types
+        [InlineArray(DdsConstants.MaxNumberOfBoards)]
+        public struct DealsArray
+        {
+            private Deal item;
+
+            public static implicit operator DealsArray(Deal[] array)
+            {
+                var result = new DealsArray();
+
+                if (array != null)
+                {
+                    var span = result.AsSpan();
+
+                    for (int i = 0; i <  Math.Min(array.Length, span.Length); i++)
+                        span[i] = array[i];
+                }
+
+                return result;
+            }
+
+            // Implicit conversion from DealsArray to Span<Deal>
+            private Span<Deal> AsSpan()
+            {
+                return System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref item, DdsConstants.MaxNumberOfBoards);
+            }
+        }
+    #endregion
 }

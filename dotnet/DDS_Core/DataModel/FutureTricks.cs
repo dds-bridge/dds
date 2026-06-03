@@ -13,20 +13,20 @@ namespace DDS_Core;
 public struct FutureTricks
 {
     /// <summary>Number of nodes searched in the analysis.</summary>
-    public int nodes;
+    public int Nodes;
 
     /// <summary>Number of cards in the results.</summary>
-    public int cards;
+    public int NumberOfCards;
 
     /// <summary>Suit of each card (13 entries).</summary>
-    public IntBuffer13 suit;
+    public intArray13 Suit;
 
     /// <summary>Rank of each card (13 entries).</summary>
-    public IntBuffer13 rank;
+    public intArray13 Ranks;
 
     /// <summary>Equality group for each card (13 entries).</summary>
-    public IntBuffer13 equals;
+    public intArray13 EqualGroups;
 
     /// <summary>Score for each card (13 entries).</summary>
-    public IntBuffer13 score;
+    public intArray13 Score;
 }

@@ -15,5 +15,5 @@ public struct DdTableResults
     /// Tricks per strain and hand using 2D indexing.
     /// Access: res_table[strain, hand] where strain=0-4, hand=0-3
     /// </summary>
-    public IntBuffer5x4 res_table;
+    public ResultsTable ResultsTable;
 }

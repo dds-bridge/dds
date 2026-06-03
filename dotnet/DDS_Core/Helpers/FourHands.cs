@@ -3,16 +3,16 @@
 namespace DDS_Core;
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct UintBuffer4x4
+public unsafe struct FourHands
 {
     public const int ROWS = 4;
     public const int COLS = 4;
     public const int SIZE = ROWS * COLS;
 
-    private fixed  uint data[SIZE];
+    private fixed uint data[SIZE];
 
     public Span<uint> AsSpan()
-            => MemoryMarshal.CreateSpan(ref data[0], SIZE);
+                => MemoryMarshal.CreateSpan(ref data[0], SIZE);
 
     public Span<uint> RowAsSpan(int row)
     {
@@ -23,6 +23,21 @@ public unsafe struct UintBuffer4x4
         ref uint start = ref data[row * COLS];
 
         return MemoryMarshal.CreateSpan(ref start, COLS);
+    }
+
+    public Span<uint> this[int row]
+    {
+        get
+        {
+            if ((uint)row >= ROWS)
+                throw new IndexOutOfRangeException();
+
+            // ref to the first element in the specified row
+            ref uint start = ref data[row * COLS];
+
+            // correct way to create a span over the fixed buffer
+            return MemoryMarshal.CreateSpan(ref start, COLS);
+        }
     }
 
     public ref uint this[int row, int col]
@@ -36,29 +51,26 @@ public unsafe struct UintBuffer4x4
         }
     }
 
-    
-    public static implicit operator UintBuffer4x4(uint[] src)
+    public static implicit operator FourHands(uint[] src)
     {
-        var buf = new UintBuffer4x4();
+        var buf = new FourHands();
 
-        for (int c = 0; c < 16; c++)
-                buf.data[c] = src[c];
+        for (int c = 0; c <  16; c++)
+            buf.data[c] = src[c];
 
         return buf;
     }
-    
-    
-    public static implicit operator UintBuffer4x4(uint[][] src)
+
+    public static implicit operator FourHands(uint[][] src)
     {
-        var buf = new UintBuffer4x4();
+        var buf = new FourHands();
 
         int k = 0;
-        for (int r = 0; r < 4; r++)
-            for (int c = 0; c < 4; c++)
+
+        for (int r = 0; r <  4; r++)
+            for (int c = 0; c <  4; c++)
                 buf.data[k++] = src[r][c];
 
         return buf;
     }
-
-
 }
