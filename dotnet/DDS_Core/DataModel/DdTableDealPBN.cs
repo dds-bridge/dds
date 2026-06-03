@@ -11,6 +11,5 @@ namespace DDS_Core;
 public struct DdTableDealPBN
 {
     /// <summary>Cards in PBN format (max 80 characters).</summary>
-    
-           public ByteBuffer80 cards;
+    public string80 Cards;
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DDS_Core;
@@ -10,6 +11,14 @@ namespace DDS_Core;
 public struct AllParResults
 {
     /// <summary>Array of par results (up to MAXNOOFTABLES entries).</summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFTABLES)]
-    public ParResults[] par_results;
+    public ParResultsArray ParResults;
+
+    #region Nested Types
+    [InlineArray(DdsConstants.MaxNumberOfTables)]
+        public struct ParResultsArray
+        {
+            private ParResults item;
+        }
+    #endregion
+
 }

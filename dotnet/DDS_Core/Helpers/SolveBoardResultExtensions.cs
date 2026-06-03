@@ -1,4 +1,4 @@
-﻿namespace DDS_Core
+﻿namespace DDS_Core.Helpers
 {
     public static class SolveBoardResultExtensions
     {

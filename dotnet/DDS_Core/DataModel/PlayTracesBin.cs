@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DDS_Core;
-
 
 /// <summary>
 /// Multiple binary play traces for batch analysis.
@@ -11,9 +11,14 @@ namespace DDS_Core;
 public struct PlayTracesBin
 {
     /// <summary>Number of boards.</summary>
-    public int no_of_boards;
+    public int NumberOfBoards;
 
     /// <summary>Array of play traces (up to MAXNOOFBOARDS).</summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MAXNOOFBOARDS)]
-    public PlayTraceBin[] plays;
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DdsConstants.MaxNumberOfBoards)]
+    public PlayTraceBin[] Plays;
+
+    public PlayTracesBin()
+    {
+        Plays = new PlayTraceBin[DdsConstants.MaxNumberOfBoards];
+    }
 }

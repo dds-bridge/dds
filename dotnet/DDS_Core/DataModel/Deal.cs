@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using static DDS_Core.ByteBuffer10x10;
+using DDS_Core.Helpers;
 
 namespace DDS_Core;
 
@@ -15,20 +16,19 @@ namespace DDS_Core;
 public struct Deal
 {
     /// <summary>Trump suit (0 = NT, 1 = Spades, 2 = Hearts, 3 = Diamonds, 4 = Clubs).</summary>
-    public int trump;
+    public int Trump;
 
     /// <summary>Hand to play first (0 = N, 1 = E, 2 = S, 3 = W).</summary>
-    public int first;
+    public int First;
 
     /// <summary>Suits of cards played in the current trick (3 entries).</summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] currentTrickSuit;
+    public intArray3 CurrentTrickSuit;
 
     /// <summary>Ranks of cards played in the current trick (3 entries).</summary>
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] currentTrickRank;
+    public intArray3 CurrentTrickRank;
 
     /// <summary>Remaining cards for each hand and suit (4 hands × 4 suits = 16 elements).</summary>
-    //[MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-    public UintBuffer4x4 remainCards;
+    public FourHands RemainingCards;
+
+
 }

@@ -1,6 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
-using DDS_Core;
+using DDS_Core.Helpers;
 using DDS_Core.Native;
 
 namespace DDS_Core;
@@ -8,10 +9,50 @@ namespace DDS_Core;
 public class DDS
 {
     #region ====== Configuration and Resource Management ======
+        /// <summary>
+        /// Sets the maximum number of threads used by the solver.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Deprecated.</b> In the modern C++ API, thread count is controlled by the
+        /// embedding application — typically by creating one <c>SolverContext</c>
+        /// instance per worker thread.
+        /// </para>
+        /// <para>
+        /// New code should create and destroy <c>SolverContext</c> instances in the
+        /// application rather than calling this function. See <c>docs/api_migration.md</c>
+        /// for examples of the modern API.
+        /// </para>
+        /// <para>
+        /// This function is part of the legacy C API and is maintained for backward
+        /// compatibility. It has no direct equivalent in the modern API, where both
+        /// threading and transposition‑table memory limits are configured per instance
+        /// via <c>SolverContext</c> and <c>SolverConfig</c>.
+        /// </para>
+        /// </remarks>
+        /// <param name="userThreads">Maximum number of threads to use.</param>
+        [Obsolete("Use SolverContext instead.")]
         public void SetMaxThreads(int userThreads)
-                                                                                                        => DdsNative.SetMaxThreads(userThreads);
+                                    => DdsNative.SetMaxThreads(userThreads);
 
-        public int SetThreading(int code)
+        /// <summary>
+        /// Sets the threading backend used by the solver.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Deprecated.</b> Use <c>SolverContext</c> instead — threading is implicit
+        /// (one context per thread). See <c>docs/api_migration.md</c> for modern C++ API examples.
+        /// </para>
+        /// <para>
+        /// This function is part of the legacy C API and is maintained for backward
+        /// compatibility. The modern C++ API does not require explicit threading
+        /// configuration; instead, create one <c>SolverContext</c> instance per thread.
+        /// </para>
+        /// </remarks>
+        /// <param name="code">Threading backend code (see documentation).</param>
+        /// <returns>1 on success, error code otherwise.</returns>
+        [Obsolete("Use SolverContext instead.")]
+        public int SetThreading(in int code)
         {
             var rc = DdsNative.SetThreading( code);
 
@@ -19,22 +60,65 @@ public class DDS
             return rc;
         }
 
-        public void SetResources(int maxMemoryMB, int maxThreads)
-                                                                                                            => DdsNative.SetResources(maxMemoryMB, maxThreads);
+        /// <summary>
+        /// Sets memory and thread resources for the solver.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Deprecated.</b> Use <c>SolverContext</c> with <c>SolverConfig</c> instead.
+        /// See <c>docs/api_migration.md</c> for modern C++ API examples.
+        /// </para>
+        /// <para>
+        /// This function is part of the legacy C API and is maintained for backward
+        /// compatibility. New code should use the modern C++ API with <c>SolverContext</c>,
+        /// which provides per‑instance configuration through <c>SolverConfig</c>.
+        /// </para>
+        /// </remarks>
+        /// <param name="maxMemoryMB">Maximum memory in megabytes.</param>
+        /// <param name="maxThreads">Maximum number of threads.</param>
+        [Obsolete("Use SolverContext instead.")]
+        public void SetResources(in int maxMemoryMB, in int maxThreads)
 
-        public void FreeMemory()
-                                                                                                            => DdsNative.FreeMemory();
+                                    => DdsNative.SetResources(maxMemoryMB, maxThreads);
+
+        /// <summary>
+        /// Frees memory used by the solver.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Deprecated.</b> Use <c>SolverContext</c> RAII instead — cleanup is automatic.
+        /// See <c>docs/api_migration.md</c> for modern C++ API examples.
+        /// </para>
+        /// <para>
+        /// This function is part of the legacy C API and is maintained for backward
+        /// compatibility. The modern C++ API uses RAII (<i>Resource Acquisition Is
+        /// Initialization</i>) through <c>SolverContext</c>, which automatically cleans up
+        /// resources when the context goes out of scope.
+        /// </para>
+        /// </remarks>
+        //[Obsolete("Use SolverContext instead.")]
+        public void FreeMemory()                                    => DdsNative.FreeMemory();
     #endregion
 
     #region ====== Single Board Solving ======
+        /// <summary>
+        /// Solves a single bridge <c>Deal</c> using double dummy analysis.
+        /// </summary>
+        /// <param name="dl">The deal to analyze.</param>
+        /// <param name="target">Target number of tricks.</param>
+        /// <param name="solutions">Solution mode (1 = best, 2 = all, etc.).</param>
+        /// <param name="mode">Analysis mode.</param>
+        /// <param name="fut">The result.</param>
+        /// <param name="threadIndex">Index of the thread to use.</param>
+        /// <returns>1 on success, error code otherwise.</returns>
         public int SolveBoard( in Deal dl
-                             , int target
-                             , int solutions
-                             , int mode
+                             , in int target
+                             , in int solutions
+                             , in int mode
                              , out FutureTricks fut
                              , int threadIndex = 0)
         {
-            var rc = DdsNative.SolveBoard( in dl
+            var rc = DdsNative.SolveBoard( dl
                                          , target
                                          , solutions
                                          , mode
@@ -45,14 +129,25 @@ public class DDS
             return rc;
         }
 
-        public int SolveBoardPBN( DealPBN pbn
-                                , int target
-                                , int solutions
-                                , int mode
+        /// <summary>
+        /// Solves a single bridge deal in PBN format using double dummy analysis.
+        /// </summary>
+        /// <param name="pbn">The PBN deal to analyze.</param>
+        /// <param name="target">Target number of tricks.</param>
+        /// <param name="solutions">Solution mode.</param>
+        /// <param name="mode">Analysis mode.</param>
+        /// <param name="fut">The result.</param>
+        /// <param name="threadIndex">Index of the thread to use.</param>
+        /// <returns>1 on success, error code otherwise.</returns>
+        [Obsolete("Use SolverContext instead.")]
+        public int SolveBoardPBN( in DealPBN pbn
+                                , in int target
+                                , in int solutions
+                                , in int mode
                                 , out FutureTricks fut
-                                , int threadIndex)
+                                , int threadIndex = 0)
         {
-            var rc = DdsNative.SolveBoardPBN( pbn
+            var rc = DdsNative.SolveBoardPBN(  pbn
                                             , target
                                             , solutions
                                             , mode
@@ -65,21 +160,36 @@ public class DDS
     #endregion
 
     #region ====== Multiple Board Solving ======
-        public int SolveAllBoards( Boards boards
+        /// <summary>
+        /// Solves multiple bridge deals in PBN format.
+        /// </summary>
+        /// <param name="boards">Multiple PBN deals.</param>
+        /// <param name="solved">The results for solved boards.</param>
+        /// <returns>1 on success, error code otherwise.</returns>
+        public int SolveAllBoards( in BoardsPBN boards
                                  , out SolvedBoards solved)
         {
-            var rc = DdsNative.SolveAllBoards( in boards
+            solved = default;
+            //Note: To step into c++ code you must set a break in c++?
+            var rc = DdsNative.SolveAllBoards( boards
                                              , out  solved);
 
             ThrowIfError(rc, nameof(SolveAllBoards));
             return rc;
         }
 
+        /// <summary>
+        /// Solves multiple bridge deals in binary format.
+        /// </summary>
+        /// <param name="bop">Multiple deals.</param>
+        /// <param name="solvedp">The results for solved boards.</param>
+        /// <returns>1 on success, error code otherwise.</returns>
+        [Obsolete("Use SolverContext instead.")]
         public int SolveAllBoardsBin( in Boards bop
-                                    , out SolvedBoards solved
-                                    )
+                                    , out SolvedBoards solved)
         {
-            var rc = DdsNative.SolveAllBoardsBin( in bop
+            //Note: To step into c++ code you must set a break in c++?
+            var rc = DdsNative.SolveAllBoardsBin( bop
                                                 , out  solved);
 
             ThrowIfError(rc, nameof(SolveAllBoardsBin));
@@ -88,9 +198,10 @@ public class DDS
 
         public int SolveAllChunks( in BoardsPBN bop
                                  , out SolvedBoards solved
-                                 , int chunkSize)
+                                 , in int chunkSize)
         {
-            var rc = DdsNative.SolveAllChunks( in bop
+            //Note: To step into c++ code you must set a break in c++?
+            var rc = DdsNative.SolveAllChunks( bop
                                              , out  solved
                                              , chunkSize);
 
@@ -100,9 +211,10 @@ public class DDS
 
         public int SolveAllChunksBin( in Boards bop
                                     , out SolvedBoards solved
-                                    , int chunkSize)
+                                    , in int chunkSize)
         {
-            var rc = DdsNative.SolveAllChunksBin( in bop
+            //Note: To step into c++ code you must set a break in c++?
+            var rc = DdsNative.SolveAllChunksBin( bop
                                                 , out  solved
                                                 , chunkSize);
             ThrowIfError(rc, nameof(SolveAllChunksBin));
@@ -111,9 +223,10 @@ public class DDS
 
         public int SolveAllChunksPBN( in BoardsPBN bop
                                     , out SolvedBoards solved
-                                    , int chunkSize)
+                                    , in int chunkSize)
         {
-            var rc = DdsNative.SolveAllChunksPBN( in bop
+            //Note: To step into c++ code you must set a break in c++?
+            var rc = DdsNative.SolveAllChunksPBN( bop
                                                 , out  solved
                                                 , chunkSize);
             ThrowIfError(rc, nameof(SolveAllChunksPBN));
@@ -122,53 +235,83 @@ public class DDS
     #endregion
 
     #region ====== Double Dummy Table Calculation ======
-        public int CalcDDTable( DdTableDeal deal
+        /// <summary>
+        /// Calculates the double dummy table for a given deal.
+        /// </summary>
+        /// <param name="tableDeal">Deal for which to calculate the table.</param>
+        /// <param name="table">The result table.</param>
+        /// <returns>1 on success, error code otherwise.</returns>
+        public int CalcDdTable( in DdTableDeal deal
                               , out DdTableResults table)
         {
-            var rc = DdsNative.CalcDDtable( in deal
+            var rc = DdsNative.CalcDDtable( deal
                                           , out table);
 
-            ThrowIfError(rc, nameof(CalcDDTable));
+            ThrowIfError(rc, nameof(CalcDdTable));
             return rc;
         }
 
-        public int CalcDDtablePBN( in DdTableDealPBN tableDealPBN
+        /// <summary>
+        /// Calculates the double dummy table for a PBN deal.
+        /// </summary>
+        /// <param name="tableDealPBN">PBN deal for which to calculate the table.</param>
+        /// <param name="table">The result table.</param>
+        /// <returns>1 on success, error code otherwise.</returns>
+        public int CalcDdTablePBN( in DdTableDealPBN tableDealPBN
                                  , out DdTableResults table)
         {
-            var rc = DdsNative.CalcDDtablePBN( in tableDealPBN
+            var rc = DdsNative.CalcDDtablePBN( tableDealPBN
                                              , out table);
 
-            ThrowIfError(rc, nameof(CalcDDtablePBN));
+            ThrowIfError(rc, nameof(CalcDdTablePBN));
             return rc;
         }
 
-        public int CalcAllTables( in DdTableDeals dealsp
-                                , int mode
-                                , int[] trumpFilter //TODO: Tjekke denne    
-                                , out DdTablesRes resp
-                                , out AllParResults presp)
+        /// <summary>
+        /// Calculates double dummy tables for multiple deals.
+        /// </summary>
+        /// <param name="deals">Multiple deals.</param>
+        /// <param name="mode">Analysis mode.</param>
+        /// <param name="trumpFilter">Array of trump suit filters.</param>
+        /// <param name="resTables">The result tables.</param>
+        /// <param name="parResults">The par results.</param>
+        /// <returns>1 on success, error code otherwise.</returns>
+        public int CalcAllTables( in DdTableDeals deals
+                                , in int mode
+                                , in intArray5 trumpFilter
+                                , out DdTablesResult resTables
+                                , out AllParResults parResults)
         {
-            var rc = DdsNative.CalcAllTables( in dealsp
+            var rc = DdsNative.CalcAllTables( deals
                                             , mode
                                             , trumpFilter
-                                            , out resp
-                                            , out presp);
+                                            , out resTables
+                                            , out parResults);
 
             ThrowIfError(rc, nameof(CalcAllTables));
             return rc;
         }
 
+        /// <summary>
+        /// Calculates double dummy tables for multiple PBN deals.
+        /// </summary>
+        /// <param name="deals">Multiple PBN deals.</param>
+        /// <param name="mode">Analysis mode.</param>
+        /// <param name="trumpFilter">Array of trump suit filters.</param>
+        /// <param name="ResTables">The result tables.</param>
+        /// <param name="parResults">The par results.</param>
+        /// <returns>1 on success, error code otherwise.</returns>
         public int CalcAllTablesPBN( in DdTableDealsPBN dealsp
-                                   , int mode
-                                   , int[] trumpFilter
-                                   , out DdTablesRes resp
-                                   , out AllParResults presp)
+                                   , in int mode
+                                   , in intArray5 trumpFilter
+                                   , out DdTablesResult ResTables
+                                   , out AllParResults parResults)
         {
-            var rc = DdsNative.CalcAllTablesPBN( in dealsp
+            var rc = DdsNative.CalcAllTablesPBN(  dealsp
                                                , mode
                                                , trumpFilter
-                                               , out resp
-                                               , out presp);
+                                               , out ResTables
+                                               , out parResults);
 
             ThrowIfError(rc, nameof(CalcAllTablesPBN));
             return rc;
@@ -178,9 +321,9 @@ public class DDS
     #region ====== Par Score Calculation ======
         public int Par( in DdTableResults table
                       , out ParResults pres
-                      , int vulnerable)
+                      , in int vulnerable)
         {
-            var rc = DdsNative.Par( in table
+            var rc = DdsNative.Par(  table
                                   , out pres
                                   , vulnerable);
 
@@ -188,39 +331,97 @@ public class DDS
             return rc;
         }
 
+        /// <summary>
+        /// Calculates par score and contracts for a deal table.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Computes the double dummy table for the given deal, then calculates par score
+        /// and contracts based on vulnerability. This overload creates a temporary
+        /// <c>SolverContext</c> internally.
+        /// </para>
+        /// <para>
+        /// This function is equivalent to calling <c>CalcDDtable</c> followed by
+        /// <c>Par</c> in the legacy C API.
+        /// </para>
+        /// </remarks>
+        /// <param name="tableDeal">
+        /// Deal represented as card holdings for each hand.
+        /// </param>
+        /// <param name="vulnerable">
+        /// Vulnerability (0=None, 1=Both, 2=NS, 3=EW).
+        /// </param>
+        /// <param name="tableResults">
+        /// Output: double dummy table results.
+        /// </param>
+        /// <param name="parResults">
+        /// Output: par score and contract strings.
+        /// </param>
+        /// <returns>
+        /// Error code (<c>RETURN_NO_FAULT</c> on success).
+        /// </returns>
         public int CalcPar( in DdTableDeal tableDeal
-                          , int vulnerable
-                          , out DdTableResults table
-                          , out ParResults pres)
+                          , in int vulnerable
+                          , out DdTableResults tableResults
+                          , out ParResults parResults)
         {
-            var rc = DdsNative.CalcPar( in tableDeal
+            var rc = DdsNative.CalcPar(  tableDeal
                                       , vulnerable
-                                      , out table
-                                      , out pres);
+                                      , out tableResults
+                                      , out parResults);
             ThrowIfError(rc, nameof(CalcPar));
             return rc;
         }
 
+        /// <summary>
+        /// Calculates par score and contracts for a deal table in PBN format.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Computes the double dummy table for the given deal, then calculates par score
+        /// and contracts based on vulnerability. This overload creates a temporary
+        /// <c>SolverContext</c> internally.
+        /// </para>
+        /// <para>
+        /// This function is equivalent to calling <c>CalcDDtable</c> followed by
+        /// <c>Par</c> in the legacy C API.
+        /// </para>
+        /// </remarks>
+        /// <param name="tableDealPBN">
+        /// Deal represented as card holdings for each hand.
+        /// </param>     
+        /// <param name="tableResults">
+        /// Output: double dummy table results.
+        /// </param>
+        ///    /// <param name="vulnerable">
+        /// Vulnerability (0=None, 1=Both, 2=NS, 3=EW).
+        /// </param>
+        /// <param name="parResults">
+        /// Output: par score and contract strings.
+        /// </param>
+        /// <returns>
+        /// Error code (<c>RETURN_NO_FAULT</c> on success).
+        /// </returns>
         public int CalcParPBN( in DdTableDealPBN tableDealPBN
-                             , out DdTableResults table
-                             , int vulnerable
-                             , out ParResults pres)
+                             , out DdTableResults tableResults
+                             , in int vulnerable
+                             , out ParResults parResults)
         {
-            var rc = DdsNative.CalcParPBN( in tableDealPBN
-                                         , out table
+            var rc = DdsNative.CalcParPBN(  tableDealPBN
+                                         , out tableResults
                                          , vulnerable
-                                         , out pres);
+                                         , out parResults);
 
             ThrowIfError(rc, nameof(CalcParPBN));
             return rc;
         }
 
         public int SidesPar( in DdTableResults table
-                           , [Out] ParResultsDealer[] sidesRes
-                           , int vulnerable)
+                           , out ParResultsDealers sidesRes
+                           , in int vulnerable)
         {
-            var rc = DdsNative.SidesPar( in table
-                                       , sidesRes
+            var rc = DdsNative.SidesPar(  table
+                                       , out sidesRes
                                        , vulnerable);
 
             ThrowIfError(rc, nameof(SidesPar));
@@ -229,10 +430,10 @@ public class DDS
 
         public int DealerPar( in DdTableResults table
                             , out ParResultsDealer pres
-                            , int dealer
-                            , int vulnerable)
+                            , in int dealer
+                            , in int vulnerable)
         {
-            var rc = DdsNative.DealerPar( in table
+            var rc = DdsNative.DealerPar(  table
                                         , out pres
                                         , dealer
                                         , vulnerable);
@@ -243,10 +444,10 @@ public class DDS
 
         public int DealerParBin( in DdTableResults table
                                , out ParResultsMaster pres
-                               , int dealer
-                               , int vulnerable)
+                               , in int dealer
+                               , in int vulnerable)
         {
-            var rc = DdsNative.DealerParBin( in table
+            var rc = DdsNative.DealerParBin( table
                                            , out pres
                                            , dealer
                                            , vulnerable);
@@ -256,11 +457,11 @@ public class DDS
         }
 
         public int SidesParBin( in DdTableResults table
-                              , [Out] ParResultsMaster[] sidesRes
-                              , int vulnerable)
+                              , out ParResultsMasters sidesRes
+                              , in int vulnerable)
         {
-            var rc = DdsNative.SidesParBin( in table
-                                          , sidesRes
+            var rc = DdsNative.SidesParBin( table
+                                          , out sidesRes
                                           , vulnerable);
 
             ThrowIfError(rc, nameof(SidesParBin));
@@ -270,18 +471,20 @@ public class DDS
 
     #region ====== Par Text Conversion ======
         public int ConvertToDealerTextFormat( in ParResultsMaster pres
-                                            , StringBuilder resp)
+                                            , out string resp)
         {
-            var rc = DdsNative.ConvertToDealerTextFormat( in pres
-                                                        , resp);
+            var str = new StringBuilder(80);
+            var rc  = DdsNative.ConvertToDealerTextFormat( pres
+                                                         , str);
             ThrowIfError(rc, nameof(ConvertToDealerTextFormat));
+            resp = str.ToString();
             return rc;
         }
 
-        public int ConvertToSidesTextFormat( in ParResultsMaster pres
+        public int ConvertToSidesTextFormat( in ParResultsMasters pres
                                            , out ParTextResults resp)
         {
-            var rc = DdsNative.ConvertToSidesTextFormat( in pres
+            var rc = DdsNative.ConvertToSidesTextFormat( pres
                                                        , out resp);
             ThrowIfError(rc, nameof(ConvertToSidesTextFormat));
             return rc;
@@ -292,9 +495,9 @@ public class DDS
         public int AnalysePlayBin( in Deal dl
                                  , in PlayTraceBin play
                                  , out SolvedPlay solved
-                                 , int thrId)
+                                 , in int thrId)
         {
-            var rc = DdsNative.AnalysePlayBin( in dl
+            var rc = DdsNative.AnalysePlayBin( dl
                                              , in play
                                              , out solved
                                              , thrId);
@@ -305,9 +508,9 @@ public class DDS
         public int AnalysePlayPBN( in DealPBN dlPBN
                                  , in PlayTracePBN playPBN
                                  , out SolvedPlay solved
-                                 , int thrId)
+                                 , in int thrId)
         {
-            var rc = DdsNative.AnalysePlayPBN( in dlPBN
+            var rc = DdsNative.AnalysePlayPBN( dlPBN
                                              , in playPBN
                                              , out solved
                                              , thrId);
@@ -318,45 +521,118 @@ public class DDS
         public int AnalyseAllPlaysBin( in Boards bop
                                      , in PlayTracesBin plp
                                      , out SolvedPlays solved
-                                     , int chunkSize)
+                                     , in int chunkSize)
         {
-            var rc = DdsNative.AnalyseAllPlaysBin( in bop
-                                                 , in plp
-                                                 , out solved
-                                                 , chunkSize);
-            ThrowIfError(rc, nameof(AnalyseAllPlaysBin));
-            return rc;
+            try
+            {
+                solved = new();
+
+                var rc = DdsNative.AnalyseAllPlaysBin( bop
+                                                     ,  plp
+                                                     , out solved
+                                                     , chunkSize);
+
+                ThrowIfError(rc, nameof(AnalyseAllPlaysBin));
+                return rc;
+            }
+
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                throw ex;
+            }
         }
 
         public int AnalyseAllPlaysPBN( in BoardsPBN bopPBN
                                      , in PlayTracesPBN plpPBN
                                      , out SolvedPlays solved
-                                     , int chunkSize)
+                                     , in int chunkSize)
         {
-            var rc = DdsNative.AnalyseAllPlaysPBN( in bopPBN
-                                                 , in plpPBN
+            solved = new();
+            var rc = DdsNative.AnalyseAllPlaysPBN( bopPBN
+                                                 ,  plpPBN
                                                  , out solved
                                                  , chunkSize);
             ThrowIfError(rc, nameof(AnalyseAllPlaysPBN));
             return rc;
         }
+
+        ///// <summary>
+        ///// Benchmark variant: AnalyseAllPlaysBin with ref parameters for performance testing.
+        ///// Used to compare marshalling overhead between 'in' and 'ref' parameter passing.
+        ///// </summary>
+        //public int AnalyseAllPlaysBin_BenchRef( ref Boards bop
+        //                                      , in PlayTracesBin plp
+        //                                      , out SolvedPlays solved
+        //                                      , int chunkSize)
+        //{
+        //    try
+        //    {
+        //        solved = new();
+
+        //        var rc = DdsNative.AnalyseAllPlaysBin_Ref( ref bop
+        //                                                 , in plp
+        //                                                 , in solved
+        //                                                 , chunkSize);
+
+        //        ThrowIfError(rc, nameof(AnalyseAllPlaysBin_BenchRef));
+        //        return rc;
+        //    }
+
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine(ex);
+        //        throw ex;
+        //    }
+        //}
+
+        ///// <summary>
+        ///// Benchmark variant: AnalyseAllPlaysBin with ref parameters for performance testing.
+        ///// Used to compare marshalling overhead between 'in' and 'ref' parameter passing.
+        ///// </summary>
+        //public int AnalyseAllPlaysBin_Bench3( Boards bop
+        //                                    , PlayTracesBin plp
+        //                                    , out SolvedPlays solved
+        //                                    , int chunkSize)
+        //{
+        //    try
+        //    {
+        //        solved = new();
+
+        //        var rc = DdsNative.AnalyseAllPlaysBin_Ref( ref bop
+        //                                                 , in plp
+        //                                                 , in solved
+        //                                                 , chunkSize);
+
+        //        ThrowIfError(rc, nameof(AnalyseAllPlaysBin_BenchRef));
+        //        return rc;
+        //    }
+
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine(ex);
+        //        throw ex;
+        //    }
+        //}
     #endregion
 
     #region ====== Utility Functions ======
-        public void GetDDSInfo(out DDSInfo info)
+        public void GetDDSInfo(out DdsInfo info)
         {
             DdsNative.GetDDSInfo(out info);
         }
 
-        public void ErrorMessage( int code
-                                , StringBuilder line)
+        public void ErrorMessage( in int code
+                                , out string line)
         {
-            DdsNative.ErrorMessage(code, line);
+            var str = new StringBuilder(80);
+            DdsNative.ErrorMessage(code, str);
+            line = str.ToString();
         }
     #endregion
 
     #region private methods
-        private static void ThrowIfError(int result, string functionName)
+        private static void ThrowIfError(in int result, in string functionName)
         {
 #if DEBUG
             if (result != (int)SolveBoardResult.NoFault)

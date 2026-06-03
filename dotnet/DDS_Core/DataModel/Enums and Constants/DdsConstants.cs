@@ -8,21 +8,21 @@ namespace DDS_Core
     public static class DdsConstants
     {
         /// <summary>Number of bridge strains (4 suits + no trump).</summary>
-        public const int DDS_STRAINS = 5;
+        public const int DdsStrains = 5;
 
         /// <summary>Number of hands (N/E/S/W).</summary>
-        public const int DDS_HANDS = 4;
+        public const int DdsHands = 4;
 
         /// <summary>Number of suits (S/H/D/C).</summary>
-        public const int DDS_SUITS = 4;
+        public const int DdsSuits = 4;
 
         /// <summary>No trump strain index.</summary>
-        public const int DDS_NOTRUMP = 4;
+        public const int DdsNoTrump = 4;
 
         /// <summary>Maximum number of boards in batch operations.</summary>
-        public const int MAXNOOFBOARDS = 200;
+        public const int MaxNumberOfBoards = 200;
 
         /// <summary>Maximum number of DD tables.</summary>
-        public const int MAXNOOFTABLES = 40;
+        public const int MaxNumberOfTables = 40;
     }
 }

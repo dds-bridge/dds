@@ -98,3 +98,4 @@ dump.txt
 
 # Generated documentation output
 doxygen_output/
+/dotnet/DDS_Core/.github/copilot-instructions.md

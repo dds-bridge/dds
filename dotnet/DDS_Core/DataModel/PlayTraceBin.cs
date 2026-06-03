@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DDS_Core;
-
 
 /// <summary>
 /// Binary play trace (cards played in sequence).
@@ -13,11 +13,12 @@ namespace DDS_Core;
 public struct PlayTraceBin
 {
     /// <summary>Number of cards played (1-52).</summary>
-    public int number;
+    public int NumberOfCards;
 
-    /// <summary>Suit of each played card (52 entries).</summary>
-    public IntBuffer52 suit;
+    /// <summary>Suit of each card played (52 plays max).</summary>
+    public intArray52 Suits;
 
-    /// <summary>Rank of each played card (52 entries).</summary>
-    public IntBuffer52 rank;
+    /// <summary>Rank of each card played (52 plays max).</summary>
+    public intArray52 Ranks;
+
 }

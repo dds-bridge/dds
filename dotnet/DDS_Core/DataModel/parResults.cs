@@ -15,11 +15,12 @@ public struct ParResults
     /// Par score strings for NS and EW (2 entries, max 16 chars each).
     /// Access: par_score[side, index] where side=0(NS) or 1(EW)
     /// </summary>
-    public ByteBuffer2x16 par_score;
+    public intArray2x16 ParScores;
+
 
     /// <summary>
     /// Par contract strings for NS and EW (2 entries, max 128 chars each).
     /// Access: par_contracts_string[side, index] where side=0(NS) or 1(EW)
     /// </summary>
-    public ByteBuffer2x128 par_contracts_string;
+    public intArray2x128 ParContractStrings;
 }

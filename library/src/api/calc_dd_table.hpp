@@ -50,7 +50,7 @@ auto calc_dd_table(
  *       DD-table calculations iterate all strains, so TT entry reuse across
  *       calls may be limited depending on call patterns.
  */
-auto calc_dd_table(
+EXTERN_C DLLEXPORT auto calc_dd_table(
     SolverContext& ctx,
     const DdTableDeal& table_deal,
     DdTableResults* table_results) -> int;
@@ -80,7 +80,7 @@ auto calc_dd_table_pbn(
  * @param table_results Output: double dummy table results
  * @return Error code (RETURN_NO_FAULT on success, RETURN_PBN_FAULT on parse error)
  */
-auto calc_dd_table_pbn(
+EXTERN_C DLLEXPORT auto calc_dd_table_pbn(
     SolverContext& ctx,
     const DdTableDealPBN& table_deal_pbn,
     DdTableResults* table_results) -> int;
