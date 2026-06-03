@@ -1,5 +1,7 @@
 import base64
 import importlib.util
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -112,6 +114,38 @@ class VerifyWasmJsTest(unittest.TestCase):
             check=False,
         )
         self.assertEqual(proc.returncode, 1)
+
+    def test_cli_missing_node(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".wasm", delete=False) as tmp:
+            tmp.write(b"\x00asm\x01\x00\x00\x00")
+            path = Path(tmp.name)
+        self.addCleanup(path.unlink, missing_ok=True)
+        env = os.environ.copy()
+        env["PATH"] = ""
+        proc = subprocess.run(
+            [sys.executable, str(WEB_ROOT / "verify_wasm_js.py"), str(path)],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        self.assertEqual(proc.returncode, 127)
+        self.assertIn("node not found", proc.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "node not found")
+    def test_cli_compiles_valid_wasm(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".wasm", delete=False) as tmp:
+            tmp.write(b"\x00asm\x01\x00\x00\x00")
+            path = Path(tmp.name)
+        self.addCleanup(path.unlink, missing_ok=True)
+        proc = subprocess.run(
+            [sys.executable, str(WEB_ROOT / "verify_wasm_js.py"), str(path)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, msg=proc.stdout + proc.stderr)
+        self.assertIn("compile OK", proc.stdout)
 
 
 if __name__ == "__main__":

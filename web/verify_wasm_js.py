@@ -2,9 +2,17 @@
 """Verify MVP wasm bytes compile under Node."""
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+NODE_COMPILE_SNIPPET = (
+    "const fs=require('fs');"
+    "const b=fs.readFileSync(process.argv[1]);"
+    "WebAssembly.compile(b).then(()=>console.log('compile OK'),"
+    "e=>{console.error(e);process.exit(1);});"
+)
 
 
 def usage() -> None:
@@ -28,18 +36,13 @@ def main() -> int:
         return 1
     print(f"{wasm_path}: {len(wasm)} bytes, magic={wasm[:4]!r}")
 
-    tmp = Path("/tmp/dds_mvp_test.wasm")
-    tmp.write_bytes(wasm)
+    node = shutil.which("node")
+    if not node:
+        print("verify_wasm_js: node not found in PATH", file=sys.stderr)
+        return 127
+
     proc = subprocess.run(
-        [
-            "node",
-            "-e",
-            "const fs=require('fs');"
-            "const b=fs.readFileSync(process.argv[1]);"
-            "WebAssembly.compile(b).then(()=>console.log('compile OK'),"
-            "e=>{console.error(e);process.exit(1);});",
-            str(tmp),
-        ],
+        [node, "-e", NODE_COMPILE_SNIPPET, str(wasm_path)],
         capture_output=True,
         text=True,
     )
