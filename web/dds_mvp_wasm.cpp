@@ -20,7 +20,8 @@ extern "C" {
 // Fills out_table[20] with res_table[strain][hand] (strain 0..4 = S,H,D,C,N).
 // Returns RETURN_NO_FAULT (1) on success, or a DDS error code.
 EMSCRIPTEN_KEEPALIVE
-auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int {
+auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int
+{
   if (pbn == nullptr || out_table == nullptr) {
     return RETURN_UNKNOWN_FAULT;
   }
@@ -50,5 +51,8 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int {
 }  // extern "C"
 
 #if !defined(__EMSCRIPTEN__) && !defined(DDS_MVP_WASM_NO_MAIN)
-auto main() -> int { return 0; }
+auto main() -> int
+{
+  return 0;
+}
 #endif
