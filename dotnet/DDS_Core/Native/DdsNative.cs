@@ -138,20 +138,20 @@ internal static class DdsNative
         public static extern int SolveAllBoardsBin( in Boards bop
                                                   , out SolvedBoards solved);
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int SolveAllChunks( in BoardsPBN bop
-                                               , out SolvedBoards solved
-                                               , int chunkSize);
+        //[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        //public static extern int SolveAllChunks( in BoardsPBN bop
+        //                                       , out SolvedBoards solved
+        //                                       , int chunkSize);
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int SolveAllChunksBin( in Boards bop
-                                                  , out SolvedBoards solved
-                                                  , int chunkSize);
+        //[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        //public static extern int SolveAllChunksBin( in Boards bop
+        //                                          , out SolvedBoards solved
+        //                                          , int chunkSize);
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int SolveAllChunksPBN( in BoardsPBN bop
-                                                  , out SolvedBoards solved
-                                                  , int chunkSize);
+        //[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        //public static extern int SolveAllChunksPBN( in BoardsPBN bop
+        //                                          , out SolvedBoards solved
+        //                                          , int chunkSize);
     #endregion
 
     #region ====== Double Dummy Table Calculation ======

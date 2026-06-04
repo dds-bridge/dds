@@ -2,11 +2,11 @@
 
 namespace DDS_Core;
 
-internal sealed class intArray2xDebugView<T> where T : IBuffer
+internal sealed class stringArray2xDebugView<T> where T : IBuffer
 {
     private readonly T _buffer;
 
-    public intArray2xDebugView(T buffer)
+    public stringArray2xDebugView(T buffer)
     {
         _buffer = buffer;
     }

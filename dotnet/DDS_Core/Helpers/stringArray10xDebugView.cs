@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace DDS_Core
-{
-    internal sealed class intArray10xDebugView<T> where T : IBuffer
+namespace DDS_Core;
+
+    internal sealed class stringArray10xDebugView<T> where T : IBuffer
     {
         private readonly T _buffer;
 
-        public intArray10xDebugView(T buffer)
+        public stringArray10xDebugView(T buffer)
         {
             _buffer = buffer;
         }
@@ -25,4 +25,4 @@ namespace DDS_Core
         public string Row8 => _buffer.GetString(8);
         public string Row9 => _buffer.GetString(9);
     }
-}
+

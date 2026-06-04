@@ -79,14 +79,14 @@ public sealed class SolverContext : IDisposable
             return rc;
         }
 
-        public int CalcDdTablePBN( in DdTableDealPBN table_deal_pbn
+        public int CalcDdTable( in DdTableDealPBN table_deal_pbn
                                  , out DdTableResults table_results)
         {
             var rc = DdsNative.calc_dd_table_pbn( Handle
                                                 , in table_deal_pbn
                                                 , out table_results);
 
-            ThrowIfError(rc, nameof(CalcDdTablePBN));
+            ThrowIfError(rc, nameof(CalcDdTable));
             return rc;
         }
 

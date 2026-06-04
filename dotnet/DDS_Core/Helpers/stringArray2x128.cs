@@ -12,9 +12,9 @@ namespace DDS_Core;
 /// and padded with nulls if shorter than max length.
 /// </remarks>
 [DebuggerDisplay("{ToString()}")]
-[DebuggerTypeProxy(typeof(intArray2xDebugView<intArray2x128>))]
+[DebuggerTypeProxy(typeof(stringArray2xDebugView<stringArray2x128>))]
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct intArray2x128 : IBuffer
+public unsafe struct stringArray2x128 : IBuffer
 {
     public const int ROWS = 2;
     public const int COLS = 128;

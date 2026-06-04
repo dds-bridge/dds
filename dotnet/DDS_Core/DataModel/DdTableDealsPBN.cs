@@ -14,8 +14,8 @@ public struct DdTableDealsPBN
 
     /// <summary>Array of PBN deals (up to MAXNOOFTABLES * DDS_STRAINS).</summary>
     public DdTableDealsPBNArray Deals;
-    #region Nested Types
 
+    #region Nested Types
         [InlineArray(DdsConstants.DdsStrains)]
         public struct DdTableDealsPBNArray
         {

@@ -19,5 +19,5 @@ public struct ParResultsDealer
     public int Score;
 
     /// <summary>Par contract text strings (10 entries, max 10 chars each).</summary>
-    public intArray10x10 Contracts;
+    public stringArray10x10 Contracts;
 }
