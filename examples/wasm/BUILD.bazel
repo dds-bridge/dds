@@ -56,7 +56,8 @@ cc_test(
 
 py_test(
     name = "wasm_examples_system_test",
-    size = "medium",
+    size = "small",
+    timeout = "short",
     main = "tests/test_wasm_examples_system.py",
     srcs = ["tests/test_wasm_examples_system.py"],
     data = [":calc_dd_table_pbn_wasm"],
