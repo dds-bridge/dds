@@ -126,6 +126,8 @@ bazel test //web:web_tests //web:web_system_tests //web:web_e2e_tests
 bazel test //examples/wasm:all
 ```
 
+`bazel test //...` skips targets tagged `e2e` by default (see `.bazelrc`). Run Playwright tests explicitly, e.g. `bazel test //web:web_e2e_tests` or `bazel test --test_tag_filters=e2e //web:dds_mvp_e2e_test`. To run all tests, including the Playwright tests: `bazel test --test_tag_filters= /...`
+
 - **`//web:dds_mvp_wasm_system_test`** — builds `//web:dds_mvp_wasm`, runs `patch_mvp_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_mvp_calc_table` via Node (`web/tests/dds_mvp_wasm_node.mjs`).
 - **`//web:dds_mvp_e2e_test`** — Playwright tests for `dds_mvp.html` over `file://` and HTTP (part-score deal table, validation error). Requires Node, network (Chromium download on first run), and `tags = ["no-sandbox"]`.
 - **`//examples/wasm:wasm_examples_system_test`** — runs `calc_dd_table_pbn.js` under Node and checks for `OK` on all three example hands.
