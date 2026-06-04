@@ -6,8 +6,8 @@ namespace DDS_Core;
 public struct SolverConfig
 {
     public TTKind TTKind;
-    public int DefaultMemoryMB;
-    public int MaximumMemoryMB;
+    public int    DefaultMemoryMB;
+    public int    MaximumMemoryMB;
 
     public SolverConfig()
     {
@@ -16,7 +16,7 @@ public struct SolverConfig
 
     public SolverConfig(TTKind tTKind, int defaultMemoryMB, int maximumMemoryMB)
     {
-        TTKind = tTKind;
+        TTKind          = tTKind;
         DefaultMemoryMB = defaultMemoryMB;
         MaximumMemoryMB = maximumMemoryMB;
     }

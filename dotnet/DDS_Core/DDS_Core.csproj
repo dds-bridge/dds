@@ -23,6 +23,7 @@
 	  <Compile Remove="Helpers\IntBuffer3.cs" />
 	  <Compile Remove="Helpers\IntBuffer52.cs" />
 	  <Compile Remove="Helpers\ParResultsBuffer.cs" />
+	  <Compile Remove="Helpers\ResultsTable.cs" />
 	  <Compile Remove="Helpers\Tricks53.cs" />
 	</ItemGroup>
 

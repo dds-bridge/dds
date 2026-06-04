@@ -29,6 +29,4 @@ public struct Deal
 
     /// <summary>Remaining cards for each hand and suit (4 hands × 4 suits = 16 elements).</summary>
     public FourHands RemainingCards;
-
-
 }

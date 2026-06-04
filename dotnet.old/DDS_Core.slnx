@@ -1,9 +1,0 @@
-<Solution>
-  <Configurations>
-    <Platform Name="Any CPU" />
-    <Platform Name="x64" />
-    <Platform Name="x86" />
-  </Configurations>
-  <Project Path="DDS_Core/DDS_Core.vcxproj" />
-  <Project Path="DDS_Core_Demo/DotNetDemo.csproj" Id="16859e80-3126-47a5-8f15-24dd9f99fd90" />
-</Solution>

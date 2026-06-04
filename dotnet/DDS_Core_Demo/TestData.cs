@@ -1,4 +1,7 @@
-﻿using DDS_Core;
+﻿using System.Numerics;
+using System.Runtime.Intrinsics.X86;
+using System.Text;
+using DDS_Core;
 using static DDS_Core.CardRanks;
 
 namespace DDS_Core_Demo
@@ -25,28 +28,28 @@ namespace DDS_Core_Demo
 
         static TestData()
         {
-            hands = new uint[4][][];
+            hands = new uint[3][][];
 
             hands[0] = [
-                         [ (uint)(rJ|r6|r5|r2)
-                         , (uint)(rA|r7|r4)
-                         , (uint)None
-                         , (uint)(rK|rT|r9|r6|r4|r2)
+                         [ (uint)(rT|r8|r5)
+                         , (uint)(rA|rT|r7|r2)
+                         , (uint)(rK|rQ|r8)
+                         , (uint)(rA|r3|r2)
                          ]
-                       , [ (uint)(rA|rT|r9|r8|r7|r3)
-                         , (uint)(rK|rJ|r5)
-                         , (uint)(rT|r8|r2)
-                         , (uint)r8
+                       , [ (uint)(rJ|r2)
+                         , (uint)(rK|r9)
+                         , (uint)(rA|rJ|r7|r4|r3|r2)
+                         , (uint)(rJ|r8|r7)
                          ]
-                       , [ (uint)r4
-                         , (uint)(rQ|rT|r9|r8|r2)
-                         , (uint)(rA|rK|rQ|r9|r3)
-                         , (uint)(rA|rJ)
+                       , [ (uint)(rK|rQ|r3)
+                         , (uint)(rJ|r8|r6|r5|r4|r3)
+                         , (uint)(r5)
+                         , (uint)(rK|r9|r6)
                          ]
-                       , [ (uint)(rK|rQ)
-                         , (uint)(r6|r3)
-                         , (uint)(rJ|r7|r6|r5|r4)
-                         , (uint)(rQ|r7|r5|r3)
+                       , [ (uint)(rA|r9|r7|r6|r4)
+                         , (uint)(rQ)
+                         , (uint)(rT|r9|r6)
+                         , (uint)(rQ|rT|r5|r4)
                          ]
                        ];
 
@@ -100,7 +103,7 @@ namespace DDS_Core_Demo
                          ]
                        ];
 
-            pbn = [ "N:J652.A74..KT9642 AT9873.KJ5.T82.8 4.QT982.AKQ93.AJ KQ.63.J7654.Q753"
+            pbn = [ "N:T85.AT72.KQ8.A32 J2.K9.AJ7432.J87 KQ3.J86543.5.K96 A9764.Q.T96.QT54"
                   , "E:QJT5432.T.6.QJ82 .J97543.K7532.94 87.A62.QJT4.AT75 AK96.KQ8.A98.K63"
                   , "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 5.A95432.7632.K6 AKJ9842.K.T8.J93"
                   ];
@@ -139,12 +142,12 @@ namespace DDS_Core_Demo
                 boards.Deals[i]     = deals[i];
                 boards.Target[i]    = -1;
                 boards.Solutions[i] = 1;
-                boards.Modes[i]      = 0;
+                boards.Modes[i]     = 0;
 
                 boardsPBN.Deals[i]     = dealsPBN[i];
                 boardsPBN.Target[i]    = -1;
                 boardsPBN.Solutions[i] = 1;
-                boardsPBN.Modes[i]      = 0;
+                boardsPBN.Modes[i]     = 0;
             }
 
             // ddTableDeal(PBN)
@@ -175,13 +178,12 @@ namespace DDS_Core_Demo
             playTraceBin               = new();
             playTraceBin.NumberOfCards = 3;
             playTraceBin.Suits[0]      = 3;
-            playTraceBin.Ranks[0]      = 2;
+            playTraceBin.Suits[1]      = 3;
+            playTraceBin.Suits[2]      = 3;
 
-            playTraceBin.Suits[1] = 3;
-            playTraceBin.Ranks[1] = 8;
-
-            playTraceBin.Suits[2] = 3;
-            playTraceBin.Ranks[2] = 14;
+            playTraceBin.Ranks[0] = 2;
+            playTraceBin.Ranks[1] = 7;
+            playTraceBin.Ranks[2] = 6;
 
             var playTraceBin1           = new PlayTraceBin();
             playTraceBin1.NumberOfCards = 1;
@@ -191,34 +193,110 @@ namespace DDS_Core_Demo
             var playTraceBin2           = new PlayTraceBin();
             playTraceBin2.NumberOfCards = 4;
             playTraceBin2.Suits[0]      = 1;
-            playTraceBin2.Ranks[0]      = 12;
+            playTraceBin2.Suits[1]      = 1;
+            playTraceBin2.Suits[2]      = 1;
+            playTraceBin2.Suits[3]      = 1;
 
-            playTraceBin2.Suits[1] = 1;
+            playTraceBin2.Ranks[0] = 12;
             playTraceBin2.Ranks[1] = 8;
-
-            playTraceBin2.Suits[2] = 1;
             playTraceBin2.Ranks[2] = 2;
+            playTraceBin2.Ranks[3] = 13;
 
-            playTraceBin2.Suits[3] = 1;
-            playTraceBin2.Ranks[3]  = 13;
-
-            playTracePBN      = new PlayTracePBN {     NumberOfPlayedCards = 3, Cards = "C2C8CA" };
+            playTracePBN      = new PlayTracePBN {     NumberOfPlayedCards = 3, Cards = "C2C7C6" };
             var playTracePBN2 = new PlayTracePBN {NumberOfPlayedCards = 1, Cards = "SA" };
             var playTracePBN3 = new PlayTracePBN {NumberOfPlayedCards = 4, Cards = "HQH8H2HK" };
 
             // playTracesBin and PBN
-            playTracesBin = new();
+            playTracesBin                = new();
             playTracesBin.NumberOfBoards = 3;
             playTracesBin.Plays[0]       = playTraceBin;
             playTracesBin.Plays[1]       = playTraceBin1;
             playTracesBin.Plays[2]       = playTraceBin2;
 
-                        playTracesPBN = new();
+            playTracesPBN = new();
 
             playTracesPBN.NumberOfBoards = 3;
             playTracesPBN.Plays[0]       = playTracePBN;
             playTracesPBN.Plays[1]       = playTracePBN2;
             playTracesPBN.Plays[2]       = playTracePBN3;
+
+            validate();
+        }
+
+        private static void validate()
+        {
+            // Validation
+            Console.WriteLine("Validating TestData...");
+            var err =false;
+
+            for (int i = 0; i <  hands.Count(); i++)
+            {
+                //var arr = pbn[i][2..].Split(' ','.');
+                for (int s = 0; s <  4; s++)
+                {
+                    uint   ranks =0;
+                    string str   = "";
+
+                    for (int p = 0; p <  4; p++)
+                    {
+                        var r = hands[i][p][s]>>2;
+                        var d = ranks & r;
+
+                        if (d == 0)
+                        {
+                            ranks |= r;
+                            //Console.WriteLine($"TestData: valid rank(s)     in hands[{i}] suit[{s}] player: {p} rank(s):{Convert.ToString(r , 2).PadLeft(13,'0')}");
+                        }
+                        else
+                        {
+                            err = true;
+                            Console.WriteLine($"TestData: valid rank(s) in prior hands -                  rank(s):{Convert.ToString(ranks, 2).PadLeft(13, '0')}");
+                            Console.WriteLine($"TestData: Duplicate rank(s) in hands[{i}] suit[{s}] player: {p} rank(s):{Convert.ToString(d, 2).PadLeft(13, '0')}");
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i <  hands.Count(); i++)
+                for (int p = 0; p <  4; p++)
+                {
+                    var cnt = BitOperations.PopCount(hands[i][p][0])
+                            + BitOperations.PopCount(hands[i][p][1])
+                            + BitOperations.PopCount(hands[i][p][2])
+                            + BitOperations.PopCount(hands[i][p][3]);
+
+                    //int cnt = 0;
+                    if (cnt >  13 || cnt <  13)
+                    {
+                        err = true;
+                        Console.WriteLine($"TestData: hands[{i}] player:{p} :contains {cnt} cards");
+                        continue;
+                    }
+                }
+
+            for (int i = 0; i <  hands.Count(); i++)
+                for (int s = 0; s <  4; s++)
+                {
+                    var cnt = BitOperations.PopCount(hands[i][0][s])
+                            + BitOperations.PopCount(hands[i][1][s])
+                            + BitOperations.PopCount(hands[i][2][s])
+                            + BitOperations.PopCount(hands[i][3][s]);
+
+                    if (cnt >  13 || cnt <  13)
+                    {
+                        err = true;
+                        Console.WriteLine($"TestData: hands[{i}] suit:{s} contains {cnt} cards");
+                        continue;
+                    }
+                }
+
+            if (err)
+            {
+                Console.WriteLine("Validation failed.");
+                Console.ReadKey();
+                Environment.Exit(0);
+            }
         }
     }
 }

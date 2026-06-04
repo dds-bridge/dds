@@ -39,39 +39,46 @@ internal class Program
             return;
         }
 
+        int vulnability =2; // 0=none, 1=both, 2=NS, 3=EW
+        int dealer      = 1;    // 0=N, 1=E, 2=S, 3=W
+
         //
-        dds.SetMaxThreads(1);
         doSolveBoard(dds, TestData.deals[0]);
-        doSolveBoardPBN(dds, TestData.dealsPBN[0]);
+        doSolveBoard(dds, TestData.dealsPBN[0]);
+
+        doSolveAllBoards(dds, TestData.boards);
         doSolveAllBoards(dds, TestData.boardsPBN);
-        doSolveAllBoardsBin(dds, TestData.boards);
-        doSolveAllChunks(dds, TestData.boardsPBN, 10);
-        doSolveAllChunksBin(dds, TestData.boards, 10);
 
-        doSolveAllChunksPBN(dds, TestData.boardsPBN, 10);
+        // Obsolete methods - not recommended for use as they are not optimized and will be removed in future versions
+        //doSolveAllChunks(dds, TestData.boards, 10);
+        //doSolveAllChunks(dds, TestData.boardsPBN, 10);        
+        //doSolveAllChunksPBN(dds, TestData.boardsPBN, 10);
+        ////
         doCalcDdTable(dds, TestData.ddTableDeal);
-        doCalcDdTablePBN(dds, TestData.ddTableDealPBN);
-        doCalcAllTables(dds, TestData.ddTableDeals);
-        doCalcAllTablesPBN(dds, TestData.ddTableDealsPBN);
-        doPar(dds, TestData.ddTableResults, 0);
+        doCalcDdTable(dds, TestData.ddTableDealPBN);
 
-        doCalcPar(dds, TestData.ddTableDeal);
-        doCalcParPBN(dds, TestData.ddTableDealPBN);
-        doDealerPar(dds, TestData.ddTableResults);
-        doDealerParBin(dds, TestData.ddTableResults);
-        doConvertToDealerTextFormat(dds, TestData.parResultsMaster);
-        doConvertToSidesTextFormat(dds, TestData.parResultsMasters);
+        doCalcAllTables(dds, TestData.ddTableDeals);
+        doCalcAllTables(dds, TestData.ddTableDealsPBN);
         //
-        // These two methods should be tested together
-        doSidesParBin(dds, TestData.ddTableResults);
-        doAnalysePlayBin(dds, TestData.deals[0], TestData.parResultsMasters, TestData.playTraceBin);
+        doCalcPar(dds, TestData.ddTableDeal, vulnability);
+        doCalcPar(dds, TestData.ddTableDealPBN, vulnability);
+        doPar(dds, TestData.ddTableResults, vulnability);
+
+        doParDealer(dds, TestData.ddTableResults, dealer, vulnability);
+        doParDealerBothSides(dds, TestData.ddTableResults, dealer, vulnability);
+
+        doParAll(dds, TestData.ddTableResults, vulnability);
+        doParSide(dds, TestData.ddTableResults, vulnability);
+
+        doConvertToTextFormat(dds, TestData.parResultsMaster);
+        doConvertToTextFormat(dds, TestData.parResultsMasters);
+
+        doAnalysePlay(dds, TestData.deals[0], TestData.parResultsMasters, TestData.playTraceBin);
+        doAnalysePlay(dds, TestData.dealsPBN[0], TestData.parResultsMasters, TestData.playTracePBN);
         //
-        // These two methods should be tested together
-        doSidesPar(dds, TestData.ddTableResults);
-        doAnalysePlayPBN(dds, TestData.dealsPBN[0], TestData.parResultsMasters, TestData.playTracePBN);
+        doAnalyseAllPlays(dds, TestData.boards, TestData.playTracesBin);
+        doAnalyseAllPlays(dds, TestData.boardsPBN, TestData.playTracesPBN);
         //
-        doAnalyseAllPlayBin(dds, TestData.boards, TestData.playTracesBin);
-        doAnalyseAllPlayPBN(dds, TestData.boardsPBN, TestData.playTracesPBN);
         doGetDDSInfo(dds);
         doErrorMessage(dds, -14);
 
@@ -89,8 +96,7 @@ internal class Program
 
                 doSolveBoardV3(dds, ctx, TestData.deals[0]);
                 doCalcDdTableV3(dds, ctx, TestData.ddTableDeal);
-                doCalcDdTablePBNV3(dds, ctx, TestData.ddTableDealPBN);
-                doCalcPar(dds, TestData.ddTableDeal);
+                doCalcDdTableV3(dds, ctx, TestData.ddTableDealPBN);
             }
         #endregion
 
@@ -139,10 +145,10 @@ internal class Program
         DisplayTricks();
     }
 
-    private static void doSolveBoardPBN(DDS dds, DealPBN deal)
+    private static void doSolveBoard(DDS dds, DealPBN deal)
     {
         // SolveBoard: Loop through all possible contracts and first players
-        Console.WriteLine($"SolveBoardPBN");
+        Console.WriteLine($"SolveBoard PBN");
         tricks = new int[5, 4];
 
         for (deal.Trump = 0; deal.Trump <  5; deal.Trump++)
@@ -150,7 +156,7 @@ internal class Program
             for (deal.First = 0; deal.First <  4; deal.First++)
             {
                 var decl =(deal.First + 3) & 3;
-                var rc   = dds.SolveBoardPBN(deal, -1, 1, 0, out FutureTricks fut);
+                var rc   = dds.SolveBoard(deal, -1, 1, 0, out FutureTricks fut);
 
                 // record the number of tricks for declarer
                 tricks[deal.Trump, decl] = 13 - fut.Score[0];
@@ -163,7 +169,7 @@ internal class Program
 
     private static void doSolveAllBoards(DDS dds, BoardsPBN boards)
     {
-        Console.WriteLine($"SolveAllBoards");
+        Console.WriteLine($"SolveAllBoards PBN");
         tricks = new int[5, 4];
 
         for (boards.Deals[0].Trump = 0; boards.Deals[0].Trump <  5; boards.Deals[0].Trump++)
@@ -181,9 +187,9 @@ internal class Program
         DisplayTricks();
     }
 
-    private static void doSolveAllBoardsBin(DDS dds, Boards boards)
+    private static void doSolveAllBoards(DDS dds, Boards boards)
     {
-        Console.WriteLine($"SolveAllBoardsBin");
+        Console.WriteLine($"SolveAllBoards");
         tricks = new int[5, 4];
 
         // Here we loop over all trump suits and dealers which is't the normal thing to do!
@@ -203,66 +209,65 @@ internal class Program
         DisplayTricks();
     }
 
-    private static void doSolveAllChunks(DDS dds, BoardsPBN boards, int chunkSize)
-    {
-        Console.WriteLine($"SolveAllChunks");
-        tricks = new int[5, 4];
+    //private static void doSolveAllChunks(DDS dds, BoardsPBN boards, int chunkSize)
+    //{
+    //    Console.WriteLine($"SolveAllChunks PBN");
+    //    tricks = new int[5, 4];
 
-        for (boards.Deals[0].Trump = 0; boards.Deals[0].Trump <  5; boards.Deals[0].Trump++)
-            for (boards.Deals[0].First = 0; boards.Deals[0].First <  4; boards.Deals[0].First++)
-            {
-                var decl =(boards.Deals[0].First + 3) & 3;
-                var rc   = dds.SolveAllChunks(boards, out SolvedBoards solved, chunkSize);
+    //    for (boards.Deals[0].Trump = 0; boards.Deals[0].Trump <  5; boards.Deals[0].Trump++)
+    //        for (boards.Deals[0].First = 0; boards.Deals[0].First <  4; boards.Deals[0].First++)
+    //        {
+    //            var decl =(boards.Deals[0].First + 3) & 3;
+    //            var rc   = dds.SolveAllChunks(boards, out SolvedBoards solved, chunkSize);
 
-                // record the number of tricks for declarer
-                tricks[boards.Deals[0].Trump, decl] = 13 - solved.Tricks[0].Score[0];
+    //            // record the number of tricks for declarer
+    //            tricks[boards.Deals[0].Trump, decl] = 13 - solved.Tricks[0].Score[0];
 
-                dds.FreeMemory();
-            }
+    //            dds.FreeMemory();
+    //        }
 
-        DisplayTricks();
-    }
+    //    DisplayTricks();
+    //}
 
-    private static void doSolveAllChunksBin(DDS dds, Boards boards, int chunkSize)
-    {
-        Console.WriteLine($"SolveAllChunksBin");
-        tricks = new int[5, 4];
+    //private static void doSolveAllChunks(DDS dds, Boards boards, int chunkSize)
+    //{
+    //    Console.WriteLine($"SolveAllChunks");
+    //    tricks = new int[5, 4];
 
-        for (boards.Deals[0].Trump = 0; boards.Deals[0].Trump <  5; boards.Deals[0].Trump++)
-            for (boards.Deals[0].First = 0; boards.Deals[0].First <  4; boards.Deals[0].First++)
-            {
-                var decl =(boards.Deals[0].First + 3) & 3;
-                var rc   = dds.SolveAllChunksBin(boards, out SolvedBoards solved, chunkSize);
+    //    for (boards.Deals[0].Trump = 0; boards.Deals[0].Trump <  5; boards.Deals[0].Trump++)
+    //        for (boards.Deals[0].First = 0; boards.Deals[0].First <  4; boards.Deals[0].First++)
+    //        {
+    //            var decl =(boards.Deals[0].First + 3) & 3;
+    //            var rc   = dds.SolveAllChunksBin(boards, out SolvedBoards solved, chunkSize);
 
-                // record the number of tricks for declarer
-                tricks[boards.Deals[0].Trump, decl] = 13 - solved.Tricks[0].Score[0];
+    //            // record the number of tricks for declarer
+    //            tricks[boards.Deals[0].Trump, decl] = 13 - solved.Tricks[0].Score[0];
 
-                dds.FreeMemory();
-            }
+    //            dds.FreeMemory();
+    //        }
 
-        DisplayTricks();
-    }
+    //    DisplayTricks();
+    //}
 
-    private static void doSolveAllChunksPBN(DDS dds, BoardsPBN boards, int chunkSize)
-    {
-        Console.WriteLine($"SolveAllChunksPBN");
-        tricks = new int[5, 4];
+    //private static void doSolveAllChunksPBN(DDS dds, BoardsPBN boards, int chunkSize)
+    //{
+    //    Console.WriteLine($"SolveAllChunks PBN");
+    //    tricks = new int[5, 4];
 
-        for (boards.Deals[0].Trump = 0; boards.Deals[0].Trump <  5; boards.Deals[0].Trump++)
-            for (boards.Deals[0].First = 0; boards.Deals[0].First <  4; boards.Deals[0].First++)
-            {
-                var decl =(boards.Deals[0].First + 3) & 3;
-                var rc   = dds.SolveAllChunksPBN(boards, out SolvedBoards solved, chunkSize);
+    //    for (boards.Deals[0].Trump = 0; boards.Deals[0].Trump <  5; boards.Deals[0].Trump++)
+    //        for (boards.Deals[0].First = 0; boards.Deals[0].First <  4; boards.Deals[0].First++)
+    //        {
+    //            var decl =(boards.Deals[0].First + 3) & 3;
+    //            var rc   = dds.SolveAllChunksPBN(boards, out SolvedBoards solved, chunkSize);
 
-                // record the number of tricks for declarer
-                tricks[boards.Deals[0].Trump, decl] = 13 - solved.Tricks[0].Score[0];
+    //            // record the number of tricks for declarer
+    //            tricks[boards.Deals[0].Trump, decl] = 13 - solved.Tricks[0].Score[0];
 
-                dds.FreeMemory();
-            }
+    //            dds.FreeMemory();
+    //        }
 
-        DisplayTricks();
-    }
-
+    //    DisplayTricks();
+    //}
     private static void doCalcDdTable(DDS dds, DdTableDeal ddTableDeal)
     {
         Console.WriteLine($"CalcDdTable");
@@ -283,6 +288,8 @@ internal class Program
         dds.FreeMemory();
 
         DisplayTricks();
+
+        TestData.ddTableResults = results;
     }
 
     private static void doCalcDdTableV3(DDS dds, SolverContext ctx, DdTableDeal ddTableDeal)
@@ -307,13 +314,13 @@ internal class Program
         DisplayTricks();
     }
 
-    private static void doCalcDdTablePBN(
-                                          DDS dds, DdTableDealPBN ddTableDeal)
+    private static void doCalcDdTable(
+                                       DDS dds, DdTableDealPBN ddTableDeal)
     {
-        Console.WriteLine($"CalcDdTablePBN");
+        Console.WriteLine($"CalcDdTable PBN");
         tricks = new int[5, 4];
 
-        var rc = dds.CalcDdTablePBN(ddTableDeal, out DdTableResults results);
+        var rc = dds.CalcDdTable(ddTableDeal, out DdTableResults results);
 
         for (var trump = 0; trump <  5; trump++)
 
@@ -332,12 +339,12 @@ internal class Program
         TestData.ddTableResults = results;
     }
 
-    private static void doCalcDdTablePBNV3(DDS dds, SolverContext ctx, DdTableDealPBN ddTableDeal)
+    private static void doCalcDdTableV3(DDS dds, SolverContext ctx, DdTableDealPBN ddTableDeal)
     {
-        Console.WriteLine($"CalcDdTablePBN V3");
+        Console.WriteLine($"CalcDdTable PBN V3");
         tricks = new int[5, 4];
 
-        var rc = ctx.CalcDdTablePBN(ddTableDeal, out DdTableResults results);
+        var rc = ctx.CalcDdTable(ddTableDeal, out DdTableResults results);
 
         for (var trump = 0; trump <  5; trump++)
 
@@ -383,13 +390,13 @@ internal class Program
         DisplayTricks();
     }
 
-    private static void doCalcAllTablesPBN(DDS dds, DdTableDealsPBN ddTableDeals)
+    private static void doCalcAllTables(DDS dds, DdTableDealsPBN ddTableDeals)
     {
-        Console.WriteLine($"CalcAllTablesPBN");
+        Console.WriteLine($"CalcAllTables PBN");
         tricks                = new int[5, 4];
         intArray5 trumpFilter = new();
 
-        var rc = dds.CalcAllTablesPBN( in ddTableDeals
+        var rc = dds.CalcAllTables( in ddTableDeals
                                      , 0
                                      , trumpFilter
                                      , out DdTablesResult results
@@ -410,14 +417,14 @@ internal class Program
         DisplayTricks();
     }
 
-    private static void doPar(DDS dds, DdTableResults tableResults, int vulnerable)
+    private static void doPar(DDS dds, DdTableResults tableResults, int vulnability)
     {
         Console.WriteLine($"Par");
         tricks = new int[5, 4];
 
         var rc = dds.Par( in tableResults
                         , out ParResults results
-                        , vulnerable);
+                        , vulnability);
 
         Console.WriteLine(results.ParContractStrings);
         Console.WriteLine(results.ParScores);
@@ -426,13 +433,13 @@ internal class Program
         Console.WriteLine();
     }
 
-    private static void doCalcPar(DDS dds, DdTableDeal ddTableDeal)
+    private static void doCalcPar(DDS dds, DdTableDeal ddTableDeal, int vulnability)
     {
         Console.WriteLine($"CalcPar");
         tricks = new int[5, 4];
 
         var rc = dds.CalcPar( in ddTableDeal
-                            , 0
+                            , vulnability
                             , out DdTableResults tResults
                             , out ParResults results                        );
 
@@ -451,6 +458,7 @@ internal class Program
         dds.FreeMemory();
 
         DisplayTricks();
+        //Console.WriteLine();
     }
 
     private static void doCalcParV3(DDS dds, SolverContext ctx, DdTableDeal ddTableDeal)
@@ -466,28 +474,28 @@ internal class Program
         Console.WriteLine(results.ParContractStrings);
         Console.WriteLine(results.ParScores);
 
-        for (var trump = 0; trump <  5; trump++)
-            for (var first = 0; first <  4; first++)
-            {
-                var decl =(first + 3) & 3;
+        //for (var trump = 0; trump <  5; trump++)
+        //    for (var first = 0; first <  4; first++)
+        //    {
+        //        var decl =(first + 3) & 3;
 
-                // record the number of tricks for declarer
-                tricks[trump, decl] = tResults.ResultsTable[trump, decl];
-            }
-
+        //        // record the number of tricks for declarer
+        //        tricks[trump, decl] = tResults.ResultsTable[trump, decl];
+        //    }
         ctx.ResetForSolve();
         //dds.FreeMemory();
-        DisplayTricks();
+        //DisplayTricks();
+        Console.WriteLine();
     }
 
-    private static void doCalcParPBN(DDS dds, DdTableDealPBN ddTableDeal)
+    private static void doCalcPar(DDS dds, DdTableDealPBN ddTableDeal, int vulnability)
     {
-        Console.WriteLine($"CalcParPBN");
+        Console.WriteLine($"CalcPar PBN");
         tricks = new int[5, 4];
 
-        var rc = dds.CalcParPBN( in ddTableDeal
+        var rc = dds.CalcPar( in ddTableDeal
                                , out DdTableResults tResults
-                               , 0
+                               , vulnability
                                , out ParResults results                        );
 
         Console.WriteLine(results.ParContractStrings);
@@ -505,87 +513,39 @@ internal class Program
         dds.FreeMemory();
 
         DisplayTricks();
+        //Console.WriteLine();
     }
 
-    private static void doSidesPar(DDS dds, DdTableResults tResults)
+    private static void doParSide(DDS dds, DdTableResults tResults, int vulnability)
     {
-        Console.WriteLine($"SidesPar");
+        Console.WriteLine($"ParSide -> ParResultsDealers");
         tricks = new int[5, 4];
 
-        var rc = dds.SidesPar( in tResults
-                             , out ParResultsDealers results
-                             , 0);
+        var rc = dds.ParSide( in tResults
+                            , out ParResultsDealers results
+                            , vulnability);
 
         Console.WriteLine(results[0].NumberOfContracts);
         Console.WriteLine(results[0].Score);
         Console.WriteLine(results[0].Contracts);
-
         Console.WriteLine();
+
         Console.WriteLine(results[1].NumberOfContracts);
         Console.WriteLine(results[1].Score);
         Console.WriteLine(results[1].Contracts);
-        Console.WriteLine("");
-        dds.FreeMemory();
-    }
-
-    private static void doDealerPar(DDS dds, DdTableResults tResults)
-    {
-        Console.WriteLine($"DealerPar");
-        tricks = new int[5, 4];
-
-        var rc = dds.DealerPar( in tResults
-                              , out ParResultsDealer results
-                              , 0
-                              , 3);
-
-        Console.WriteLine(results.NumberOfContracts);
-        Console.WriteLine(results.Score);
-        Console.WriteLine(results.Contracts);
-        Console.WriteLine("");
+        Console.WriteLine();
 
         dds.FreeMemory();
     }
 
-    private static void doDealerParBin(DDS dds, DdTableResults tResults)
+    private static void doParAll(DDS dds, DdTableResults tResults, int vulnability)
     {
-        Console.WriteLine($"DealerParBin");
+        Console.WriteLine($"ParAll -> ParResultsMasters ");
         tricks = new int[5, 4];
 
-        var rc = dds.DealerParBin( in tResults
-                                 , out ParResultsMaster results
-                                 , 0
-                                 , 3);
-
-        Console.WriteLine(results.Number);
-        Console.WriteLine(results.Score);
-
-        for (int i = 0; i <  results.Number; i++)
-        {
-            var contract =results.Contracts[i];
-            var d        = c[contract.Denomination];
-
-            if (contract.UnderTricks >  0)
-                Console.WriteLine($"{contract.Level}{d}(-{contract.UnderTricks})");
-            else
-                if (contract.OverTricks >  0)
-                    Console.WriteLine($"{contract.Level}{d}(+{contract.OverTricks})");
-                else
-                    Console.WriteLine($"{contract.Level}{d}(=)");
-        }
-
-        Console.WriteLine("");
-        TestData.parResultsMaster = results;
-        dds.FreeMemory();
-    }
-
-    private static void doSidesParBin(DDS dds, DdTableResults tResults)
-    {
-        Console.WriteLine($"SidesParBin");
-        tricks = new int[5, 4];
-
-        var rc = dds.SidesParBin( in tResults
-                                , out ParResultsMasters results
-                                , 1);
+        var rc = dds.ParAll( in tResults
+                           , out ParResultsMasters results
+                           , vulnability);
 
         for (int s = 0; s <  2; s++)
         {
@@ -614,38 +574,79 @@ internal class Program
         dds.FreeMemory();
     }
 
-    private static void doConvertToDealerTextFormat(DDS dds, ParResultsMaster tResults)
+    private static void doParDealer(DDS dds, DdTableResults tResults, int dealer, int vulnability)
     {
-        Console.WriteLine($"ConvertToDealerTextFormat");
+        Console.WriteLine($"ParDealer");
+        tricks = new int[5, 4];
 
-        var rc = dds.ConvertToDealerTextFormat( in tResults
-                                              , out string str                                );
+        var rc = dds.ParDealer( in tResults
+                              , out ParResultsDealer results
+                              , dealer
+                              , vulnability
+                              );
+
+        Console.WriteLine(results.NumberOfContracts);
+        Console.WriteLine(results.Score);
+        Console.WriteLine(results.Contracts);
+        Console.WriteLine("");
+
+        dds.FreeMemory();
+    }
+
+    private static void doParDealerBothSides( DDS dds, DdTableResults tResults, int dealer
+                                            , int vulnability)
+    {
+        Console.WriteLine($"DealerParBothSides");
+        tricks = new int[5, 4];
+
+        var rc = dds.DealerParBothSides( in tResults
+                                       , out ParResultsMaster results
+                                       , dealer
+                                       , vulnability);
+
+        Console.WriteLine(results.Number);
+        Console.WriteLine(results.Score);
+
+        for (int i = 0; i <  results.Number; i++)
+            Console.WriteLine(results.Contracts[i]);
+
+        Console.WriteLine("");
+        TestData.parResultsMaster = results;
+        dds.FreeMemory();
+    }
+
+    private static void doConvertToTextFormat(DDS dds, ParResultsMaster tResults)
+    {
+        Console.WriteLine($"ConvertToTextFormat ParResultsMaster");
+
+        var rc = dds.ConvertToTextFormat( in tResults
+                                        , out string str                                );
 
         Console.WriteLine(str);
         Console.WriteLine("");
         dds.FreeMemory();
     }
 
-    private static void doConvertToSidesTextFormat(DDS dds, ParResultsMasters tResults)
+    private static void doConvertToTextFormat(DDS dds, ParResultsMasters tResults)
     {
-        Console.WriteLine($"ConvertToSidesTextFormat");
+        Console.WriteLine($"ConvertToTextFormat ParResultsMasters");
 
-        var rc = dds.ConvertToSidesTextFormat( in tResults
-                                             , out ParTextResults str                                );
+        var rc = dds.ConvertToTextFormat( in tResults
+                                        , out ParTextResults str                                );
 
         Console.WriteLine(str.ParTextStrings);
         Console.WriteLine("");
         dds.FreeMemory();
     }
 
-    private static void doAnalysePlayBin(DDS dds, Deal deal, ParResultsMasters tResults, PlayTraceBin ptrace)
+    private static void doAnalysePlay(DDS dds, Deal deal, ParResultsMasters tResults, PlayTraceBin ptrace)
     {
-        Console.WriteLine($"AnalysePlayBin");
+        Console.WriteLine($"AnalysePlay PlayTracesBin");
 
-        var rc = dds.AnalysePlayBin( in deal
-                                   , in ptrace
-                                   , out SolvedPlay solved
-                                   , 0);
+        var rc = dds.AnalysePlay( in deal
+                                , in ptrace
+                                , out SolvedPlay solved
+                                , 0);
 
         for (int i = 0; i <= ptrace.NumberOfCards; i++)
             Console.WriteLine($"{i,2}: {solved.Tricks[i]}");
@@ -654,11 +655,11 @@ internal class Program
         dds.FreeMemory();
     }
 
-    private static void doAnalysePlayPBN(DDS dds, DealPBN deal, ParResultsMasters tResults, PlayTracePBN ptrace)
+    private static void doAnalysePlay(DDS dds, DealPBN deal, ParResultsMasters tResults, PlayTracePBN ptrace)
     {
-        Console.WriteLine($"AnalysePlayPBN");
+        Console.WriteLine($"AnalysePlay PlayTracePBN");
 
-        var rc = dds.AnalysePlayPBN( in deal
+        var rc = dds.AnalysePlay( in deal
                                    , in ptrace
                                    , out SolvedPlay solved
                                    , 0);
@@ -670,15 +671,15 @@ internal class Program
         dds.FreeMemory();
     }
 
-    private static void doAnalyseAllPlayBin(DDS dds, Boards boards, PlayTracesBin ptrace)
+    private static void doAnalyseAllPlays(DDS dds, Boards boards, PlayTracesBin ptrace)
     {
         if (!isPerformanceTest)
-            Console.WriteLine($"AnalysePlayBin");
+            Console.WriteLine($"AnalysePlay PlayTracesBin");
 
-        var rc = dds.AnalyseAllPlaysBin( in boards
-                                       , in ptrace
-                                       , out SolvedPlays solved
-                                       , 0);
+        var rc = dds.AnalyseAllPlays( in boards
+                                    , in ptrace
+                                    , out SolvedPlays solved
+                                    , 0);
 
         if (isPerformanceTest)
         {
@@ -691,14 +692,14 @@ internal class Program
         dds.FreeMemory();
     }
 
-    private static void doAnalyseAllPlayPBN(DDS dds, BoardsPBN boards, PlayTracesPBN ptrace)
+    private static void doAnalyseAllPlays(DDS dds, BoardsPBN boards, PlayTracesPBN ptrace)
     {
-        Console.WriteLine($"AnalyseAllPlayPBN");
+        Console.WriteLine($"AnalyseAllPlay PlayTracesPBN");
 
-        var rc = dds.AnalyseAllPlaysPBN( in boards
-                                       , in ptrace
-                                       , out SolvedPlays solved
-                                       , 0);
+        var rc = dds.AnalyseAllPlays( in boards
+                                    , in ptrace
+                                    , out SolvedPlays solved
+                                    , 0);
 
         for (int i = 0; i <= ptrace.Plays[0].NumberOfPlayedCards; i++)
             Console.WriteLine($"{i,2}: {solved.Solved[0].Tricks[i]}");
@@ -768,7 +769,6 @@ internal class Program
             Console.WriteLine("\n=== Benchmark Complete ===");
             Console.Out.Flush();
         }
-
         catch (Exception ex)
         {
             Console.WriteLine($"\nERROR: {ex.GetType().Name}: {ex.Message}");
@@ -790,7 +790,7 @@ internal class Program
             GC.Collect();
 
             for (int i = 0; i <  5; i++)
-                dds.AnalyseAllPlaysBin(in boards, in playTracesBin, out SolvedPlays solved, 0);
+                dds.AnalyseAllPlays(in boards, in playTracesBin, out SolvedPlays solved, 0);
 
             dds.FreeMemory();
 
@@ -801,7 +801,7 @@ internal class Program
 
             for (int i = 0; i <  iterations; i++)
             {
-                dds.AnalyseAllPlaysBin(in boards, in playTracesBin, out SolvedPlays solved, 0);
+                dds.AnalyseAllPlays(in boards, in playTracesBin, out SolvedPlays solved, 0);
                 dds.FreeMemory();
             }
 
@@ -816,6 +816,7 @@ internal class Program
 
             return opsPerSecond;
         }
+
         catch (Exception ex)
         {
             Console.WriteLine($"ERROR in Variant1: {ex.Message}");

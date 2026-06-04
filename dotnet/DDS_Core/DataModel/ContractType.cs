@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using DDS_Core.Helpers;
 
 namespace DDS_Core;
 
@@ -23,4 +24,15 @@ public struct ContractType
 
     /// <summary>Seats playing contract (0 = N, 1 = E, 2 = S, 3 = W, 4 = NS, 5 = EW).</summary>
     public int Seats;
+
+    public override string ToString()
+    {
+        if (UnderTricks >  0)
+            return $"{Global.Seats[Seats]}:{Level}{Global.Denoms[Denomination]}(-{UnderTricks})";
+        else
+            if (OverTricks >  0)
+                return $"{Global.Seats[Seats]}:{Level}{Global.Denoms[Denomination]}(+{OverTricks})";
+            else
+                return $"{Global.Seats[Seats]}:{Level}{Global.Denoms[Denomination]}(=)";
+    }
 }

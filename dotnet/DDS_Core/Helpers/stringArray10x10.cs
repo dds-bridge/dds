@@ -12,12 +12,12 @@ namespace DDS_Core;
 /// and padded with nulls if shorter than max length.
 /// </remarks>
 [DebuggerDisplay("{ToString()}")]
-[DebuggerTypeProxy(typeof(intArray2xDebugView<intArray2x16>))]
+[DebuggerTypeProxy(typeof(stringArray10xDebugView<stringArray10x10>))]
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct intArray2x16 : IBuffer
+public unsafe struct stringArray10x10 : IBuffer
 {
-    public const int ROWS = 2;
-    public const int COLS = 16;
+    public const int ROWS = 10;
+    public const int COLS = 10;
     public const int SIZE = ROWS * COLS;
 
     private fixed byte data[SIZE];
