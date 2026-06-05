@@ -17,18 +17,10 @@ bazel run //python/examples:dd_table_for_deal hands/example.pbn
 
 *Run without Bazel*
 
-To run the examples directly, without Bazel, you'll need to do one of these:
+To run the examples directly, without Bazel, first build the native module and set `PYTHONPATH`:
 
-```bash
-export PYTHONPATH=python:bazel-bin/python
-```
-
-or
-
-```bash
-bazel run //python:install_dds3_so
-export PYTHONPATH=python
-```
+    bazel build //python:_dds3
+    export PYTHONPATH=python:bazel-bin/python
 
 Direct commands:
 
