@@ -186,14 +186,14 @@ public class DDS
         /// <param name="solvedp">The results for solved boards.</param>
         /// <returns>1 on success, error code otherwise.</returns>
         [Obsolete("Use SolverContext instead.")]
-        public int SolveAllBoardsBin( in Boards bop
+        public int SolveAllBoards( in Boards bop
                                     , out SolvedBoards solved)
         {
             //Note: To step into c++ code you must set a break in c++?
             var rc = DdsNative.SolveAllBoardsBin( bop
                                                 , out  solved);
 
-            ThrowIfError(rc, nameof(SolveAllBoardsBin));
+            ThrowIfError(rc, nameof(SolveAllBoards));
             return rc;
         }
 
