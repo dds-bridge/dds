@@ -150,12 +150,20 @@ function * hand_elements() {
     }
 }
 
+function focusNorthSpades() {
+    // To allow the user to quickly enter a deal
+
+    document.getElementById("north_spades").focus();
+}
+
 function clearTestData() {
     clear_results();
 
     for (const element of hand_elements()) {
         element.value = "";
     }
+
+    focusNorthSpades();
 }
 
 function rotateClockwise() {
@@ -255,6 +263,7 @@ function inputIsValid(hands) {
 
 function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
+    focusNorthSpades();
 }
 
 function clear_results() {
