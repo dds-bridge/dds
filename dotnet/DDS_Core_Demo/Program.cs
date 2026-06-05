@@ -198,7 +198,7 @@ internal class Program
             for (boards.Deals[0].First = 0; boards.Deals[0].First <  4; boards.Deals[0].First++)
             {
                 var decl =(boards.Deals[0].First + 3) & 3;
-                var rc   = dds.SolveAllBoardsBin(boards, out SolvedBoards solved);
+                var rc   = dds.SolveAllBoards(boards, out SolvedBoards solved);
 
                 // record the number of tricks for declarer
                 tricks[boards.Deals[0].Trump, decl] = 13 - solved.Tricks[0].Score[0];
