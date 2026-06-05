@@ -1,5 +1,10 @@
 # Bazel configuration for DDS project
 
+# Skip Playwright browser tests on `bazel test //...` (network, Chromium, no-sandbox).
+# Run e2e explicitly: bazel test --test_tag_filters=e2e //web:web_e2e_tests
+# Run every test: bazel test --test_tag_filters= /...
+test --test_tag_filters=-e2e
+
 common --enable_platform_specific_config
 
 # Platform-specific C++ standard flags
@@ -7,8 +12,8 @@ build:macos --cxxopt=-std=c++20
 build:macos --host_cxxopt=-std=c++20
 build:linux --cxxopt=-std=c++20
 build:linux --host_cxxopt=-std=c++20
-build:windows --cxxopt=/std:c++20
-build:windows --host_cxxopt=/std:c++20
+# Keep Windows C++ standard selection in CPPVARIABLES.bzl selects.
+# Avoid global /std flags here so wasm transitions on Windows don't inherit MSVC opts.
 
 # Performance optimization flags
 build:opt --compilation_mode=opt
@@ -24,6 +29,10 @@ build:asan --features=dbg
 build:asan --compilation_mode=dbg
 test:asan --test_timeout=120,300,900,3600
 
+# GoogleTest headers can trigger conversion warnings on Clang; suppress for tests.
+# On Linux, use -Wno-conversion for portability when the system compiler is GCC.
+test:macos --cxxopt=-Wno-character-conversion
+test:linux --cxxopt=-Wno-conversion
 # macOS-specific AddressSanitizer runtime lookup configuration.
 # The LLVM toolchain bundles the ASAN runtime. On macOS tests run from the
 # runfiles tree, so use @loader_path-based rpaths that walk back to execroot

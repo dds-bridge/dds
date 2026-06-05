@@ -27,7 +27,7 @@ auto main() -> int
   char line[80];
   bool match;
 
-#if defined(__linux) || defined(__APPLE__)
+#if defined(__linux) || defined(__APPLE__) || defined(__WASM__)
   SetMaxThreads(0);
 #endif
 

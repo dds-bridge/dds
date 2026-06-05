@@ -11,7 +11,6 @@
 #include <solver_if.hpp>
 #include <pbn.hpp>
 #include <solver_context/solver_context.hpp>
-#include <system/memory.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 
@@ -26,19 +25,6 @@ using namespace std;
   ofstream fout;
 #endif
 
-struct playparamType
-{
-  int no_of_boards;
-  PlayTracesBin const * plp;
-  SolvedPlays * solvedp;
-  int error;
-};
-
-ParamType playparam;
-playparamType traceparam;
-
-extern System sysdep;
-extern Memory memory;
 extern Scheduler scheduler;
 
 
@@ -58,14 +44,13 @@ int STDCALL AnalysePlayBin(
   Deal dl,
   PlayTraceBin play,
   SolvedPlay * solvedp,
-  int thrId)
+  [[maybe_unused]] int thrId)
 {
-  if (! sysdep.thread_ok(thrId))
-    return RETURN_THREAD_INDEX;
-
-  // Create an owned context for this analysis and obtain its ThreadData.
+  // Create an owned context for this analysis. The same context (and its
+  // transposition table) is reused for the initial solve and every subsequent
+  // analyse_later_board call, so the hint-bounded incremental searches see a
+  // warm TT -- see the analogous calc_dd_table fix (commit 27030ba).
   SolverContext outer_ctx;
-  auto thrp = outer_ctx.thread();
 
   MoveType move;
   FutureTricks fut;
@@ -213,7 +198,7 @@ int STDCALL AnalysePlayBin(
       if (usingCurrent)
         continue;
 
-      if ((ret = analyse_later_board(thrp, dl.first, &move, hint, 
+      if ((ret = analyse_later_board(ctx, dl.first, &move, hint,
         hintDir, &fut))
           != RETURN_NO_FAULT)
       {
@@ -293,75 +278,31 @@ int STDCALL AnalysePlayPBN(
 }
 
 
-void play_single_common(
-  const int thrId,
-  const int bno)
-{
-  SolvedPlay solved;
-
-  int res = AnalysePlayBin(
-    playparam.bop->deals[bno],
-    traceparam.plp->plays[bno],
-    &solved,
-    thrId);
-
-  // If there are multiple errors, this will catch one of them.
-  if (res == 1)
-    traceparam.solvedp->solved[bno] = solved;
-  else
-   playparam.error = res;
-}
-
-
-void play_chunk_common(const int thrId)
-{
-  int index;
-  schedType st;
-
-  while (1)
-  {
-    st = scheduler.GetNumber(thrId);
-    index = st.number;
-    if (index == -1)
-      break;
-
-    play_single_common(thrId, index);
-  }
-}
-
-
 int STDCALL AnalyseAllPlaysBin(
   Boards const * bop,
   PlayTracesBin const * plp,
   SolvedPlays * solvedp,
   [[maybe_unused]] int chunkSize)
 {
-  playparam.error = 0;
-
   if (bop->no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
 
   if (bop->no_of_boards != plp->no_of_boards)
     return RETURN_UNKNOWN_FAULT;
 
-  playparam.bop = bop;
-  traceparam.plp = plp;
-  playparam.no_of_boards = bop->no_of_boards;
-  traceparam.no_of_boards = bop->no_of_boards;
-  traceparam.solvedp = solvedp;
-
   scheduler.RegisterRun(RunMode::DDS_RUN_TRACE, * bop, * plp);
 
   START_BLOCK_TIMER;
-  
-  // Sequential execution: analyze each play in order
-  // Thread ID 0 is used for all plays (single-threaded)
+
   for (int bno = 0; bno < bop->no_of_boards; bno++) {
-    play_single_common(0, bno);
-    if (playparam.error != 0)
-      return playparam.error;
+    SolvedPlay solved;
+    const int res = AnalysePlayBin(bop->deals[bno], plp->plays[bno], &solved, 0);
+    if (res == 1)
+      solvedp->solved[bno] = solved;
+    else
+      return res;
   }
-  
+
   END_BLOCK_TIMER;
 
   solvedp->no_of_boards = bop->no_of_boards;
@@ -440,6 +381,4 @@ void detect_play_duplicates(
 }
 
 
-void copy_play_single([[maybe_unused]] const vector<int>& crossrefs)
-{ }
 

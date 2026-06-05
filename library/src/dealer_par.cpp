@@ -17,7 +17,7 @@ using namespace std;
 
 
 /* First index: 0 nonvul, 1 vul. Second index: tricks down */
-int DOUBLED_SCORES[2][14] =
+const int DOUBLED_SCORES[2][14] =
 {
   {
     0   ,  100,  300,  500,  800, 1100, 1400, 1700,
@@ -33,7 +33,7 @@ int DOUBLED_SCORES[2][14] =
    0 is pass, 1 is 1C, ..., 35 is 7NT.
    Second index is 0 nonvul, 1 vul. */
 
-int SCORES[36][2] =
+const int SCORES[36][2] =
 {
   {    0,   0},
   {   70,  70}, {  70,   70}, {  80,   80}, {  80,   80}, {  90,   90},
@@ -48,7 +48,7 @@ int SCORES[36][2] =
 /* Second index is contract number, 0 .. 35.
    First index is vul: none, only defender, only declarer, both. */
 
-int DOWN_TARGET[36][4] =
+const int DOWN_TARGET[36][4] =
 {
   {0, 0, 0, 0},
   {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
@@ -60,7 +60,7 @@ int DOWN_TARGET[36][4] =
   {6, 5, 8, 7}, {6, 5, 8, 7}, {6, 5, 8, 7}, {6, 5, 8, 7}, {6, 5, 8, 7}
 };
 
-int FLOOR_CONTRACT[36] =
+const int FLOOR_CONTRACT[36] =
 {
    0,  1,  2,  3,  4,  5,  1,  2,  3,  4,  5,
        1,  2,  3,  4, 15,  1,  2, 18, 19, 15,
@@ -84,14 +84,14 @@ const vector<string> NUMBER_TO_PLAYER = { "N", "E", "S", "W" };
 
 /* First index is vul: none, both, NS, EW.
    Second index is vul (0, 1) for NS and then EW. */
-int VUL_LOOKUP[4][2] = { {0, 0}, {1, 1}, {1, 0}, {0, 1} };
+const int VUL_LOOKUP[4][2] = { {0, 0}, {1, 1}, {1, 0}, {0, 1} };
 
 /* First vul is declarer (not necessarily NS), second is defender. */
-int VUL_TO_NO[2][2] = { {0, 1}, {2, 3} };
+const int VUL_TO_NO[2][2] = { {0, 1}, {2, 3} };
 
 
 /* Maps DDS order (S, H, D, C, NT) to par order (C, D, H, S, NT). */
-int DENOM_ORDER[5] = { 3, 2, 1, 0, 4 };
+const int DENOM_ORDER[5] = { 3, 2, 1, 0, 4 };
 
 
 struct data_type

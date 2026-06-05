@@ -1,0 +1,64 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Project Path="../dotNet/DDS_CS.vcxproj" Id="a8c123bc-e0a4-1e10-60f5-a740e4fcca67" />
+  <Project Path="analyse_all_plays_bin.vcxproj">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="analyse_play_bin.vcxproj" Id="b50fce1e-c2e5-4b11-99f8-fb1a1e92197c">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="analyse_play_pbn.vcxproj" Id="18b2f80d-9e3d-4f98-9fd8-42d36501c468">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="calc_all_tables.vcxproj" Id="35be946b-aedb-48d8-b7ad-fa9b8a01437a">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="calc_all_tables_pbn.vcxproj" Id="d0d13291-4019-4754-8b57-4f909129f9ab">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="calc_dd_table.vcxproj" Id="259aa4a1-6296-48c6-8be2-d8ad2314c4cc">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="calc_par_context_example.vcxproj" Id="f33ea033-655b-49f4-a7ae-9c4871dc74f0">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="DDS.vcxproj" />
+  <Project Path="dealer_par.vcxproj" Id="1d80fdb5-d939-4c1d-ac95-35059c00aa2c">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="hands.vcxproj" Id="c35b8b75-8ac9-4f81-9a32-c5b75a3b7bf6" />
+  <Project Path="migration_example.vcxproj" Id="4747ca4e-a7bc-4051-a0db-5858a4c13838">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="par.vcxproj" Id="6b98dbf5-2996-4c05-ba1b-bd5178ef712f">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="solve_all_boards.vcxproj" Id="ef070b24-0852-4bb7-a018-8eeda4c2dd06">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="solve_board.vcxproj" Id="b587d87a-b8c8-46db-9369-abb4bfbbc787">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+  <Project Path="solve_board_pbn.vcxproj" Id="07c6a322-2aa7-4d61-b1b5-c5a2788be513">
+    <BuildDependency Project="DDS.vcxproj" />
+    <BuildDependency Project="hands.vcxproj" />
+  </Project>
+</Solution>

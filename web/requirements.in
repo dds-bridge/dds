@@ -1,0 +1,19 @@
+# This file is a manifest used to regenerate requirements_lock.txt.
+# Regenerate the lock with the same Python version as MODULE.bazel (currently 3.14).
+# requirements_lock is used to ensure a consistent set of pinned Python dependencies
+# for Bazel across builds on different machines and in different environments.
+# For now, that means playwright and its deps.
+# playwright is used for the end-to-end tests in web/tests/test_mvp_e2e.py
+
+# Normal Bazel builds consume requirements_lock.txt; they do not regenerate it.
+# To update requirements_lock.txt after editing this file:
+#
+#   bazel run @python_3_14//:python3 -- -m pip install pip-tools
+#   bazel run @python_3_14//:python3 -- -m piptools compile --generate-hashes \
+#     --output-file=web/requirements_lock.txt web/requirements.in
+#
+# Todo: Consider adding a 'compile_pip_requirements' rules_python target that
+# would be invoked by 'bazel run … --update'. If done, though, requirements_lock.txt
+# should remain in the repo so that it stays versioned.
+
+playwright==1.52.0

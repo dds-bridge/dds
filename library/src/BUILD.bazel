@@ -49,6 +49,9 @@ filegroup(
     srcs = glob([
         "*.cpp",
     ],),
+    visibility = [
+        "//examples:__pkg__",
+    ],
 )
 
 filegroup(
@@ -56,6 +59,9 @@ filegroup(
     srcs = glob([
         "*.hpp", "*.h",
     ],),
+    visibility = [
+        "//examples:__pkg__",
+    ],
 )
 
 cc_library(

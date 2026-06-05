@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -208,6 +209,128 @@ auto register_solve_bindings(py::module_& module) -> void
         "    dict: Result dict with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
         "Raises:\n"
         "    ValueError: If PBN format is invalid or input validation fails.\n"
+        "    RuntimeError: If DDS solver returns error code.");
+
+    module.def(
+        "solve_all_boards_pbn",
+        [](const py::list& boards) {
+            const auto board_count = boards.size();
+            if (board_count > MAXNOOFBOARDS) {
+                throw py::value_error(
+                    "Number of boards (" + std::to_string(board_count) +
+                    ") exceeds maximum (" + std::to_string(MAXNOOFBOARDS) + ")");
+            }
+
+            BoardsPBN native_boards{};
+            native_boards.no_of_boards = static_cast<int>(board_count);
+
+            for (std::size_t i = 0; i < board_count; ++i) {
+                const py::dict board = py::cast<py::dict>(boards[i]);
+                const std::string remain_cards = py::cast<std::string>(board["remain_cards"]);
+                const int trump = board.contains("trump") ? py::cast<int>(board["trump"]) : 4;
+                const int first = board.contains("first") ? py::cast<int>(board["first"]) : 0;
+                const py::sequence trick_suit = board.contains("current_trick_suit")
+                    ? py::cast<py::sequence>(board["current_trick_suit"])
+                    : py::cast<py::sequence>(py::make_tuple(0, 0, 0));
+                const py::sequence trick_rank = board.contains("current_trick_rank")
+                    ? py::cast<py::sequence>(board["current_trick_rank"])
+                    : py::cast<py::sequence>(py::make_tuple(0, 0, 0));
+                native_boards.deals[i] =
+                    dds3_python::pbn_to_deal(remain_cards, trump, first, trick_suit, trick_rank);
+                native_boards.target[i] =
+                    board.contains("target") ? py::cast<int>(board["target"]) : -1;
+                native_boards.solutions[i] =
+                    board.contains("solutions") ? py::cast<int>(board["solutions"]) : 3;
+                native_boards.mode[i] =
+                    board.contains("mode") ? py::cast<int>(board["mode"]) : 0;
+            }
+
+            SolvedBoards solved_boards{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = SolveAllBoards(&native_boards, &solved_boards);
+            }
+            throw_on_dds_error(code);
+
+            py::list result;
+            for (int i = 0; i < solved_boards.no_of_boards; ++i) {
+                result.append(dds3_python::future_tricks_to_dict(solved_boards.solved_board[i]));
+            }
+            return result;
+        },
+        py::arg("boards"),
+        "Solve multiple bridge deals in PBN format.\n\n"
+        "Args:\n"
+        "    boards (list): List of board dicts, each with:\n"
+        "        remain_cards (str): Remaining cards in PBN format (e.g., 'N:AK.234.456.789T...').\n"
+        "        trump (int, optional): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT). Default: 4\n"
+        "        first (int, optional): Seat that plays first (0=N, 1=E, 2=S, 3=W). Default: 0\n"
+        "        current_trick_suit (tuple, optional): Suits in current trick. Default: (0, 0, 0)\n"
+        "        current_trick_rank (tuple, optional): Ranks in current trick. Default: (0, 0, 0)\n"
+        "        target (int, optional): Target number of tricks (-1 = no target). Default: -1\n"
+        "        solutions (int, optional): Depth of search (1-3). Default: 3\n"
+        "        mode (int, optional): 0=auto, 1=thread depth 6, 2=node depth 12. Default: 0\n\n"
+        "Returns:\n"
+        "    list: List of result dicts with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
+        "Raises:\n"
+        "    ValueError: If PBN format is invalid, input validation fails, or too many boards.\n"
+        "    RuntimeError: If DDS solver returns error code.");
+
+    module.def(
+        "solve_all_boards_bin",
+        [](const py::list& boards) {
+            const auto board_count = boards.size();
+            if (board_count > MAXNOOFBOARDS) {
+                throw py::value_error(
+                    "Number of boards (" + std::to_string(board_count) +
+                    ") exceeds maximum (" + std::to_string(MAXNOOFBOARDS) + ")");
+            }
+
+            Boards native_boards{};
+            native_boards.no_of_boards = static_cast<int>(board_count);
+
+            for (std::size_t i = 0; i < board_count; ++i) {
+                const py::dict board = py::cast<py::dict>(boards[i]);
+                native_boards.deals[i] = dds3_python::dict_to_deal(board);
+                native_boards.target[i] =
+                    board.contains("target") ? py::cast<int>(board["target"]) : -1;
+                native_boards.solutions[i] =
+                    board.contains("solutions") ? py::cast<int>(board["solutions"]) : 3;
+                native_boards.mode[i] =
+                    board.contains("mode") ? py::cast<int>(board["mode"]) : 0;
+            }
+
+            SolvedBoards solved_boards{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = SolveAllBoardsBin(&native_boards, &solved_boards);
+            }
+            throw_on_dds_error(code);
+
+            py::list result;
+            for (int i = 0; i < solved_boards.no_of_boards; ++i) {
+                result.append(dds3_python::future_tricks_to_dict(solved_boards.solved_board[i]));
+            }
+            return result;
+        },
+        py::arg("boards"),
+        "Solve multiple bridge deals in binary format.\n\n"
+        "Args:\n"
+        "    boards (list): List of board dicts, each with:\n"
+        "        trump (int): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT).\n"
+        "        first (int): Seat that plays first (0=N, 1=E, 2=S, 3=W).\n"
+        "        remain_cards (list): 4x4 nested list of card bitmasks (hand x suit, bits 2-14).\n"
+        "        current_trick_suit (tuple): Suits in current trick (3-tuple of ints, 0-3).\n"
+        "        current_trick_rank (tuple): Ranks in current trick (3-tuple of ints, 0 or 2-14).\n"
+        "        target (int, optional): Target number of tricks (-1 = no target). Default: -1\n"
+        "        solutions (int, optional): Depth of search (1-3). Default: 3\n"
+        "        mode (int, optional): 0=auto, 1=thread depth 6, 2=node depth 12. Default: 0\n\n"
+        "Returns:\n"
+        "    list: List of result dicts with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
+        "Raises:\n"
+        "    ValueError: If input validation fails or too many boards.\n"
         "    RuntimeError: If DDS solver returns error code.");
 }
 
@@ -472,6 +595,231 @@ auto register_calc_par_bindings(py::module_& module) -> void
         "    ValueError: If input validation fails (invalid table or vulnerability).\n"
         "    RuntimeError: If DDS solver returns error code.");
 }
+
+auto register_analysis_bindings(py::module_& module) -> void
+{
+    // set_max_threads: configure the worker-thread count used by the batch
+    // APIs (solve_all_boards_*, analyse_all_plays_pbn). 0 = auto-configure.
+    module.def(
+        "set_max_threads",
+        [](const int user_threads) {
+            if (user_threads < 0) {
+                throw py::value_error(
+                    "user_threads has invalid value " + std::to_string(user_threads) +
+                    " (expected >= 0; 0 = auto)");
+            }
+            SetMaxThreads(user_threads);
+        },
+        py::arg("user_threads") = 0,
+        "Legacy thread-resource hook (wraps the deprecated SetMaxThreads C API).\n\n"
+        "This does NOT control DDS's batch parallelism and is retained only for\n"
+        "backward compatibility. solve_all_boards_* already parallelise across the\n"
+        "machine's hardware threads automatically (see solve_boards_n); the value\n"
+        "passed here does not size that pool. analyse_all_plays_pbn currently runs\n"
+        "sequentially. For per-board concurrency from Python, create one\n"
+        "SolverContext per worker thread and pass it to solve_board / solve_board_pbn.\n\n"
+        "Args:\n"
+        "    user_threads (int, optional): Must be >= 0; 0 = auto. Default: 0\n\n"
+        "Raises:\n"
+        "    ValueError: If user_threads < 0.");
+
+    // analyse_play_pbn: double-dummy trick count after each card of a played hand.
+    module.def(
+        "analyse_play_pbn",
+        [](const std::string& remain_cards,
+           const std::string& play,
+           const int trump,
+           const int first,
+           const py::sequence& current_trick_suit,
+           const py::sequence& current_trick_rank,
+           const int thread_index) {
+            const DealPBN native_deal = dds3_python::pbn_to_deal(
+                remain_cards, trump, first, current_trick_suit, current_trick_rank);
+
+            constexpr std::size_t max_play = sizeof(PlayTracePBN::cards) - 1U;
+            if (play.size() > max_play) {
+                throw py::value_error(
+                    "play string is too long (" + std::to_string(play.size()) +
+                    " chars, maximum " + std::to_string(max_play) + ")");
+            }
+            if (play.size() % 2U != 0U) {
+                throw py::value_error(
+                    "play string length must be even (2 characters per card)");
+            }
+
+            PlayTracePBN trace{};
+            trace.number = static_cast<int>(play.size() / 2U);
+            play.copy(trace.cards, play.size());
+
+            SolvedPlay solved{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = AnalysePlayPBN(native_deal, trace, &solved, thread_index);
+            }
+            throw_on_dds_error(code);
+            return dds3_python::solved_play_to_dict(solved);
+        },
+        py::arg("remain_cards"),
+        py::arg("play"),
+        py::arg("trump") = 4,
+        py::arg("first") = 0,
+        py::arg("current_trick_suit") = py::make_tuple(0, 0, 0),
+        py::arg("current_trick_rank") = py::make_tuple(0, 0, 0),
+        py::arg("thread_index") = 0,
+        "Analyse a played deal: double-dummy trick count after each card played.\n\n"
+        "Wraps the DDS AnalysePlayPBN C API.\n\n"
+        "Args:\n"
+        "    remain_cards (str): Full deal in PBN format before any card of 'play'.\n"
+        "    play (str): Cards played, 2 chars each (suit+rank), e.g. 'SAHK...'.\n"
+        "    trump (int, optional): Trump suit (0=♠,1=♥,2=♦,3=♣,4=NT). Default: 4\n"
+        "    first (int, optional): Seat that leads (0=N,1=E,2=S,3=W). Default: 0\n"
+        "    current_trick_suit (seq, optional): Suits already in the trick. Default: (0,0,0)\n"
+        "    current_trick_rank (seq, optional): Ranks already in the trick. Default: (0,0,0)\n"
+        "    thread_index (int, optional): Thread id. Default: 0\n\n"
+        "Returns:\n"
+        "    dict: {'number': int, 'tricks': list[int]} -- tricks[i] is the\n"
+        "          double-dummy trick count for the side to play after i cards.\n\n"
+        "Raises:\n"
+        "    ValueError: If PBN or play format is invalid.\n"
+        "    RuntimeError: If DDS solver returns error code.");
+
+    // analyse_all_plays_pbn: batched play analysis.
+    module.def(
+        "analyse_all_plays_pbn",
+        [](const py::list& deals) {
+            const auto count = static_cast<std::size_t>(deals.size());
+            if (count > static_cast<std::size_t>(MAXNOOFBOARDS)) {
+                throw py::value_error(
+                    "analyse_all_plays_pbn: too many boards (" + std::to_string(count) +
+                    ", maximum " + std::to_string(MAXNOOFBOARDS) + ")");
+            }
+
+            auto boards = std::make_unique<BoardsPBN>();
+            auto traces = std::make_unique<PlayTracesPBN>();
+            auto solved = std::make_unique<SolvedPlays>();
+            boards->no_of_boards = static_cast<int>(count);
+            traces->no_of_boards = static_cast<int>(count);
+
+            constexpr std::size_t max_play = sizeof(PlayTracePBN::cards) - 1U;
+            const auto default_trick = py::make_tuple(0, 0, 0);
+            for (std::size_t i = 0; i < count; ++i) {
+                const auto deal = py::cast<py::dict>(deals[i]);
+
+                const auto remain_cards = py::cast<std::string>(deal["remain_cards"]);
+                const auto play = py::cast<std::string>(deal["play"]);
+                const int trump = deal.contains("trump") ? py::cast<int>(deal["trump"]) : 4;
+                const int first = deal.contains("first") ? py::cast<int>(deal["first"]) : 0;
+                const py::sequence trick_suit = deal.contains("current_trick_suit")
+                    ? py::cast<py::sequence>(deal["current_trick_suit"])
+                    : py::cast<py::sequence>(default_trick);
+                const py::sequence trick_rank = deal.contains("current_trick_rank")
+                    ? py::cast<py::sequence>(deal["current_trick_rank"])
+                    : py::cast<py::sequence>(default_trick);
+
+                boards->deals[i] = dds3_python::pbn_to_deal(
+                    remain_cards, trump, first, trick_suit, trick_rank);
+                boards->target[i] = -1;
+                boards->solutions[i] = 3;
+                boards->mode[i] = 0;
+
+                if (play.size() > max_play || play.size() % 2U != 0U) {
+                    throw py::value_error(
+                        "play string at index " + std::to_string(i) +
+                        " is invalid (even length, at most " + std::to_string(max_play) +
+                        " chars)");
+                }
+                traces->plays[i].number = static_cast<int>(play.size() / 2U);
+                play.copy(traces->plays[i].cards, play.size());
+            }
+
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                // chunkSize is forced to 1 internally by DDS; the value is irrelevant.
+                code = AnalyseAllPlaysPBN(boards.get(), traces.get(), solved.get(), 1);
+            }
+            throw_on_dds_error(code);
+
+            py::list results;
+            for (int i = 0; i < solved->no_of_boards; ++i) {
+                results.append(dds3_python::solved_play_to_dict(solved->solved[i]));
+            }
+            return results;
+        },
+        py::arg("deals"),
+        "Analyse multiple played deals in one batched call.\n\n"
+        "Wraps the DDS AnalyseAllPlaysPBN C API. Note: this batch entry point\n"
+        "currently solves the deals sequentially (one board at a time).\n\n"
+        "Args:\n"
+        "    deals (list[dict]): Up to 200 dicts, each with:\n"
+        "        'remain_cards' (str, required): full deal in PBN format.\n"
+        "        'play' (str, required): cards played, 2 chars each (suit+rank).\n"
+        "        'trump' (int, optional): 0-4. Default: 4\n"
+        "        'first' (int, optional): 0-3. Default: 0\n"
+        "        'current_trick_suit'/'current_trick_rank' (seq, optional): default (0,0,0)\n\n"
+        "Returns:\n"
+        "    list[dict]: one {'number', 'tricks'} dict per deal (see analyse_play_pbn).\n\n"
+        "Raises:\n"
+        "    ValueError: If more than 200 boards, or PBN/play format is invalid.\n"
+        "    KeyError: If a deal dict is missing 'remain_cards' or 'play'.\n"
+        "    RuntimeError: If DDS solver returns error code.");
+
+    // dealer_par: par contracts from the dealer's perspective.
+    module.def(
+        "dealer_par",
+        [](const py::dict& table_results, const int dealer, const int vulnerable) {
+            if (dealer < 0 || dealer > 3) {
+                throw py::value_error(
+                    "dealer has invalid value " + std::to_string(dealer) +
+                    " (expected 0=N, 1=E, 2=S, 3=W)");
+            }
+            if (vulnerable < 0 || vulnerable > 3) {
+                throw py::value_error(
+                    "vulnerable has invalid value " + std::to_string(vulnerable) +
+                    " (expected 0=none, 1=both, 2=NS, 3=EW)");
+            }
+
+            const DdTableResults native_table =
+                dds3_python::dict_to_dd_table_results(table_results);
+            ParResultsDealer par_results{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                code = DealerPar(&native_table, &par_results, dealer, vulnerable);
+            }
+            throw_on_dds_error(code);
+
+            py::list contracts;
+            const int contract_count = std::max(0, std::min(par_results.number, 10));
+            for (int i = 0; i < contract_count; ++i) {
+                contracts.append(std::string(par_results.contracts[i]));
+            }
+            py::dict result;
+            result["score"] = par_results.score;
+            // Report the count actually returned so len(contracts) == number
+            // always holds, even if DDS yields an out-of-range number.
+            result["number"] = contract_count;
+            result["contracts"] = contracts;
+            return result;
+        },
+        py::arg("table_results"),
+        py::arg("dealer"),
+        py::arg("vulnerable") = 0,
+        "Calculate par contracts from the dealer's perspective.\n\n"
+        "Wraps the DDS DealerPar C API.\n\n"
+        "Args:\n"
+        "    table_results (dict): DD table dict with key 'res_table' (5x4 nested list),\n"
+        "        e.g. the result of calc_dd_table.\n"
+        "    dealer (int): Dealer seat (0=N, 1=E, 2=S, 3=W).\n"
+        "    vulnerable (int, optional): Vulnerability (0=none, 1=both, 2=NS, 3=EW). Default: 0\n\n"
+        "Returns:\n"
+        "    dict: {'score': int, 'number': int, 'contracts': list[str]} -- 'number'\n"
+        "          par contract strings; 'score' is signed from the dealer's side view.\n\n"
+        "Raises:\n"
+        "    ValueError: If dealer/vulnerable out of range or table is invalid.\n"
+        "    RuntimeError: If DDS solver returns error code.");
+}
 }  // namespace
 
 PYBIND11_MODULE(_dds3, module)
@@ -495,6 +843,7 @@ PYBIND11_MODULE(_dds3, module)
     register_table_bindings(module);
     register_par_bindings(module);
     register_calc_par_bindings(module);
+    register_analysis_bindings(module);
 
     module.def("api_root", []() {
         return "dds.hpp";
