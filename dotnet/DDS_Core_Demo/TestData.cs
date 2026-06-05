@@ -103,6 +103,7 @@ namespace DDS_Core_Demo
                          ]
                        ];
 
+            //      "N:J652.A74..KT9642 AT9873.KJ5.T82.8 4.QT982.AKQ93.AJ KQ.63.J7654.Q753"
             pbn = [ "N:T85.AT72.KQ8.A32 J2.K9.AJ7432.J87 KQ3.J86543.5.K96 A9764.Q.T96.QT54"
                   , "E:QJT5432.T.6.QJ82 .J97543.K7532.94 87.A62.QJT4.AT75 AK96.KQ8.A98.K63"
                   , "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 5.A95432.7632.K6 AKJ9842.K.T8.J93"
