@@ -9,6 +9,8 @@
 
 #include <cstring>
 #include <cstdio>
+#include <iomanip>
+#include <sstream>
 
 #include <calc_tables.hpp>
 #include "init.hpp"

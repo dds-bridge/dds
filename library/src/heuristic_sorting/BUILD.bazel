@@ -45,11 +45,3 @@ cc_library(
         "//library/tests/regression/heuristic_sorting:__pkg__",
     ],
 )
-
-filegroup(
-    name = "wasm_sources",
-    srcs = ["heuristic_sorting.cpp"],
-    visibility = [
-        "//examples:__pkg__",
-    ],
-)

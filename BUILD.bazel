@@ -32,6 +32,7 @@ config_setting(
     name = "build_windows",
     constraint_values = [
         "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
     ],
 )
 
@@ -39,6 +40,7 @@ config_setting(
     name = "debug_build_windows",
     constraint_values = [
         "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
     ],
     values = {"compilation_mode": "dbg"},
 )
@@ -72,11 +74,14 @@ config_setting(
     define_values = {"asan": "true"},
 )
 
-# WebAssembly (WASM) build configuration
-# Usage: bazel build --config=wasm //...
+# Matches cc_* targets built under the wasm_cc_binary platform transition.
+# Use platform constraints (not deprecated `cpu` select) so this works
+# consistently across host OSes, including Windows.
 config_setting(
     name = "build_wasm",
-    values = {"cpu": "wasm"},
+    constraint_values = [
+        "@platforms//cpu:wasm32",
+    ],
 )
 
 

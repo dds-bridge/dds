@@ -1,6 +1,8 @@
 # Solve_board regression tests
 
 load("@rules_cc//cc:defs.bzl", "cc_test")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
+
 
 cc_test(
     name = "solve_board_test",
@@ -12,6 +14,7 @@ cc_test(
         "//library/src:testable_dds",
         "@googletest//:gtest_main",
     ],
+    copts = DDS_CPPOPTS,
 )
 
 cc_test(
@@ -24,4 +27,5 @@ cc_test(
         "//library/src:testable_dds",
         "@googletest//:gtest_main",
     ],
+    copts = DDS_CPPOPTS,
 )

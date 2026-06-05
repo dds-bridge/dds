@@ -2,6 +2,7 @@ load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_test", "cc_binary")
 
+
 cc_test(
     name = "heuristic_sorting_test",
     size = "small",

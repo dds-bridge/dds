@@ -205,7 +205,12 @@ void System::get_hardware(
   kilobytes_free = 0;
   core_count = System::get_cores();
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(__EMSCRIPTEN__)
+  // sysconf/physical memory queries are unreliable under Emscripten; use a
+  // conservative default so SetResources allocates a usable transposition table.
+  kilobytes_free = 512ULL * 1024;
+  core_count = 1;
+#elif defined(_WIN32) || defined(__CYGWIN__)
   // Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
   // was suggested by Lorne Anderson.
   MEMORYSTATUSEX statex;
@@ -217,10 +222,7 @@ void System::get_hardware(
   SYSTEM_INFO sysinfo;
   GetSystemInfo(&sysinfo);
   core_count = static_cast<int>(sysinfo.dwNumberOfProcessors);
-  return;
-#endif
-
-#ifdef __APPLE__
+#elif defined(__APPLE__)
   // The code for Mac OS X was suggested by Matthew Kidd.
 
   // This is physical memory, rather than "free" memory as below 
@@ -240,10 +242,7 @@ void System::get_hardware(
   }
 
   core_count = sysconf(_SC_NPROCESSORS_ONLN);
-  return;
-#endif
-
-#ifdef __linux__
+#elif defined(__linux__)
   // Use half of the physical memory
   long pages = sysconf (_SC_PHYS_PAGES);
   long pagesize = sysconf (_SC_PAGESIZE);
@@ -253,7 +252,9 @@ void System::get_hardware(
     kilobytes_free = 1024 * 1024; // guess 1GB
 
   core_count = sysconf(_SC_NPROCESSORS_ONLN);
-  return;
+#else
+  // Fallback if no platform is detected
+  kilobytes_free = 512ULL * 1024;
 #endif
 }
 

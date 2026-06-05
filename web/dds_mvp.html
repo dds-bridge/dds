@@ -1,0 +1,127 @@
+<!doctype html>
+
+<!-- Copyright 2020-2026 Adam Wildavsky
+
+     Use of this source code is governed by an MIT-style
+     license that can be found in the LICENSE file or at
+     https://opensource.org/licenses/MIT
+
+     Build WASM (from repo root): ./web/update_wasm.sh
+     Then open dds_mvp.html (file:// is OK). Hard-refresh if you rebuilt (Cmd+Shift+R).
+     Or serve this directory:
+       python3 -m http.server 8080 --directory web
+-->
+
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="dds_mvp.css">
+    <title>
+        DDS MVP
+    </title>
+</head>
+<body onload="pageLoad()">
+    <h1>
+    Enter a 52-card deal using only these pips: <span id=valid-pips></span><br/>
+    </h1>
+
+    <button  onclick="clearTestData()">Clear entries</button>
+    <button  onclick="fillFormWithGrandSlamTestData()">NS make 7 test deal</button>
+    <button  onclick="fillFormWithEveryoneMakes3nTestData()">Everyone makes 3N test deal</button>
+    <button  onclick="fillFormWithPartScoreTestData()">Part-score test deal</button>
+    <button  onclick="rotateClockwise()">Rotate the hands clockwise</button>
+
+    <br/>
+    <br/>
+
+    <div class="grid-outer">
+    <div class="grid-container">
+        <div class="grid-item hand-north">
+            &spades;&nbsp;<input id="north_spades" name="north spades" type="text"><br>
+            <span style="color: red">&hearts;&nbsp;</span><input id="north_hearts" name="north hearts" type="text"><br>
+            <span style="color: red">&diams;&nbsp;</span><input id="north_diamonds" name="north diamonds" type="text"><br>
+            &clubs;&nbsp;<input id="north_clubs" name="north clubs" type="text"><br>
+        </div>
+        <div class="grid-item hand-east">
+            &spades;&nbsp;<input id="east_spades" name="east spades" type="text"><br>
+            <span style="color: red">&hearts;&nbsp;</span><input id="east_hearts" name="east hearts" type="text"><br>
+            <span style="color: red">&diams;&nbsp;</span><input id="east_diamonds" name="east diamonds" type="text"><br>
+            &clubs;&nbsp;<input id="east_clubs" name="east clubs" type="text"><br>
+        </div>
+        <div class="grid-item hand-south">
+            &spades;&nbsp;<input id="south_spades" name="south spades" type="text"><br>
+            <span style="color: red">&hearts;&nbsp;</span><input id="south_hearts" name="south hearts" type="text"><br>
+            <span style="color: red">&diams;&nbsp;</span><input id="south_diamonds" name="south diamonds" type="text"><br>
+            &clubs;&nbsp;<input id="south_clubs" name="south clubs" type="text"><br>
+        </div>
+        <div class="grid-item hand-west">
+            &spades;&nbsp;<input id="west_spades" name="west spades" type="text"><br>
+            <span style="color: red">&hearts;&nbsp;</span><input id="west_hearts" name="west hearts" type="text"><br>
+            <span style="color: red">&diams;&nbsp;</span><input id="west_diamonds" name="west diamonds" type="text"><br>
+            &clubs;&nbsp;<input id="west_clubs" name="west clubs" type="text"><br>
+        </div>
+        <div class="grid-item grid-filler grid-filler-nw" aria-hidden="true"></div>
+        <div class="grid-item grid-filler grid-filler-ne" aria-hidden="true"></div>
+        <div class="grid-item grid-filler grid-filler-center" aria-hidden="true"></div>
+        <div class="grid-item grid-filler grid-filler-sw" aria-hidden="true"></div>
+        <div class="grid-item grid-filler grid-filler-se" aria-hidden="true"></div>
+    </div>
+    </div>
+
+    <br/>
+
+    <button  onclick="sendJSON()">Double-dummy it!</button>
+
+    <p id="result"></p>
+
+    <table id="result-table"
+           width="25%"
+           cellspacing="2"
+           cellpadding="2"
+           border="1">
+       <tr>
+            <th valign="top"></th>
+            <th valign="top">&clubs;</th>
+            <th valign="top"><span style="color: red">&diams;&nbsp;</span></th>
+            <th valign="top"><span style="color: red">&hearts;&nbsp;</span></th>
+            <th valign="top">&spades;</th>
+            <th valign="top">NT</th>
+        </tr>
+        <tr>
+            <th valign="top">N</th>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+        </tr>
+        <tr>
+            <th valign="top">E</th>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+        </tr>
+        <tr>
+            <th valign="top">S</th>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+        </tr>
+        <tr>
+            <th valign="top">W</th>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+            <td valign="top"><br></td>
+        </tr>
+    </table>
+
+    <script src="dds_mvp_wasm_bin.js"></script>
+    <script src="dds_mvp_wasm.js"></script>
+    <script src="dds_mvp.js"></script>
+</body>
+</html>

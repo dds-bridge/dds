@@ -64,16 +64,6 @@ filegroup(
     ],
 )
 
-filegroup(
-    name = "dds_wasm_sources",
-    srcs = glob([
-        "**/*.cpp",
-    ]),
-    visibility = [
-        "//examples:__pkg__",
-    ],
-)
-
 cc_library(
     name = "testable_dds",
     srcs = ["//library/src:testable_dds_sources"],

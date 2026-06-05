@@ -36,11 +36,3 @@ cc_library(
         "//library/tests/moves:__pkg__",
     ],
 )
-
-filegroup(
-    name = "wasm_sources",
-    srcs = glob(["*.cpp"]),
-    visibility = [
-        "//examples:__pkg__",
-    ],
-)

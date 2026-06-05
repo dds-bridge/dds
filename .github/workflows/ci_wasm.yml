@@ -20,10 +20,13 @@ jobs:
         with:
           bazelisk-version: "1.29.0"
 
-      # 3️⃣ Build WASM targets (hermetic emsdk toolchain downloaded by Bazel)
+      # 3️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel)
+      - name: Test web helpers, system tests, e2e, and CalcDDtablePBN
+        run: bazel test --verbose_failures //web:web_tests //web:web_system_tests //examples/wasm:all
+
       - name: Build WASM targets
-        run: bazel build --config=wasm --verbose_failures //examples:all_examples_wasm
+        run: bazel build --verbose_failures //examples/wasm:all_examples_wasm
 
       # 4️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
       - name: Smoke test solve_board_wasm
-        run: node bazel-bin/examples/solve_board.js
+        run: node bazel-bin/examples/wasm/solve_board.js

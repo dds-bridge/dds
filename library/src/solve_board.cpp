@@ -78,10 +78,21 @@ auto solve_all_boards_n(
 
   START_BLOCK_TIMER;
   {
-    std::vector<std::jthread> threads;
+    // Avoid std::jthread here: Emscripten's libc++ on Windows does not
+    // provide it yet, while std::thread is widely available.
+    std::vector<std::thread> threads;
     threads.reserve(static_cast<unsigned>(nthreads));
-    for (int i = 0; i < nthreads; ++i)
-      threads.emplace_back(worker);
+    try {
+      for (int i = 0; i < nthreads; ++i)
+        threads.emplace_back(worker);
+    } catch (...) {
+      for (auto& t : threads)
+        if (t.joinable())
+          t.join();
+      throw;
+    }
+    for (auto& t : threads)
+      t.join();
   }
   END_BLOCK_TIMER;
 
