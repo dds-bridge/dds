@@ -7,7 +7,6 @@ alwaysApply: false
 
 ## Overview
 This project uses GitHub as its primary version control and collaboration platform. All code contributions, fixes, and features must go through a pull request (PR) workflow.
-You have access to an MCP server named **`github`** (running `mcp-github`) which can create branches, push commits, and open PRs directly from the Continue.dev environment. See `.vscode/mcp.json` for configuration.
 
 ## Branching Strategy
 - **Default branch:** `main`
@@ -32,25 +31,14 @@ You have access to an MCP server named **`github`** (running `mcp-github`) which
 5. Small PRs are preferred — keep them focused on one logical change.
 
 ## Tooling
-Use the **`github`** MCP server (configured in `.vscode/mcp.json`) to:
+Use the github command line interface to:
    - Create branches
    - Commit and push changes
    - Open pull requests
    - Check PR status
-## Example MCP Server Commands
-You can instruct Continue.dev to:
-- `Use the github MCP server to create a new branch called fix/memory-leak`
-- `Push the current branch and open a pull request titled "Fix memory leak in cache manager"`
-- `List open pull requests for this repo`
-- `Merge PR #45 after approval`
 
 ## Automation
 - CI/CD runs automatically for all PRs.
 - Approved PRs can be merged by maintainers.
-- Use **squash merging** to keep history clean.
 
-## Notes for Continue.dev
-- You are allowed to automate branch creation and PR submission using the `github` MCP server.
-- If multiple PRs are required, ensure each is isolated to its own branch.
-- You may request human review before merging.
 ```
