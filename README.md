@@ -13,7 +13,7 @@ modernisation.
 
 There are build scripts for macOS, Linux, and Windows but I have myself only used the library on macOS.
 
-Plenty people like to use a double dummy solver for statistical analysis, typically in Python. I have added barebone Python interface to the solver.
+Plenty of people like to use a double dummy solver for statistical analysis, typically in Python. I have added a bare-bones Python interface to the solver.
 
 ### Motivation for creating version 3
 

@@ -1,9 +1,11 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
 # Examples use legacy C-style code, so we need to suppress certain warnings
 EXAMPLES_CPPOPTS = DDS_CPPOPTS + select({
     "//:build_windows": [],
+    "//:build_wasm": [],  # em++ has different warning flags
     "//:debug_build_windows": [],
     "//conditions:default": [
         "-Wno-deprecated-declarations",
@@ -17,13 +19,21 @@ EXAMPLES_LOCAL_DEFINES = DDS_LOCAL_DEFINES + select({
     "//conditions:default": [],
 })
 
+# Emscripten link flags for examples built as WASM (see //examples/wasm).
+EXAMPLES_LINKOPTS_WASM = select({
+    "//:build_wasm": WASM_LINKOPTS,
+    "//conditions:default": [],
+})
+
 # Shared utilities used by all examples
 cc_library(
     name = "hands",
     srcs = ["hands.cpp"],
     hdrs = ["hands.hpp"],
+    includes = ["."],
     copts = EXAMPLES_CPPOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    visibility = ["//examples:__subpackages__"],
     deps = [
         "//library/src:dds",
         "//library/src/api:api_definitions",
@@ -58,11 +68,12 @@ cc_binary(
 )
 
 cc_binary(
-    name = "analyse_play_bin",
+    name = "AnalysePlayBin",
     srcs = ["analyse_play_bin.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
+    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    visibility = ["//examples/wasm:__pkg__"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -126,8 +137,9 @@ cc_binary(
     name = "calc_dd_table_pbn",
     srcs = ["calc_dd_table_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
+    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    visibility = ["//examples/wasm:__pkg__"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -178,8 +190,9 @@ cc_binary(
     name = "solve_board",
     srcs = ["solve_board.cpp"],
     copts = EXAMPLES_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
+    linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
     local_defines = EXAMPLES_LOCAL_DEFINES,
+    visibility = ["//examples/wasm:__pkg__"],
     deps = [
         ":hands",
         "//library/src:dds",
@@ -226,13 +239,13 @@ cc_binary(
     ],
 )
 
-# Convenience target to build all examples
+# Convenience target to build all native examples
 filegroup(
     name = "all_examples",
     srcs = [
         ":analyse_all_plays_bin",
         ":analyse_all_plays_pbn",
-        ":analyse_play_bin",
+        ":AnalysePlayBin",
         ":analyse_play_pbn",
         ":calc_all_tables",
         ":calc_all_tables_pbn",
@@ -246,4 +259,10 @@ filegroup(
         ":solve_board_pbn",
         ":migration_example",
     ],
+)
+
+# Backward-compatible alias; prefer //examples/wasm:all_examples_wasm.
+alias(
+    name = "all_examples_wasm",
+    actual = "//examples/wasm:all_examples_wasm",
 )

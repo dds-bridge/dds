@@ -1,0 +1,1 @@
+# WASM helpers live in //:wasm_compat.bzl (no build targets in this package).

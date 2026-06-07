@@ -17,52 +17,39 @@
 #include <system/system.hpp>
 
 
-ParamType cparam;
-
-extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
-// Legacy overloads (create temporary context)
+// Legacy overload (creates temporary context)
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp) -> int;
 
-// Legacy shim for system/threading infrastructure (not actively used)
-auto calc_single_common(
-  const int thrId,
-  const int bno) -> void;
-
 
 auto calc_single_common_internal(
   SolverContext& ctx,
-  [[maybe_unused]] const int thrId,
-  const int bno) -> void
+  Boards const& bds,
+  SolvedBoards& solved,
+  const int bno) -> int
 {
-  // Solves a single Deal and strain for all four declarers.
-
   FutureTricks fut{};
-  Deal deal = cparam.bop->deals[bno];  // Make a local copy
+  Deal deal = bds.deals[bno];  // Make a local copy
   deal.first = 0;
 
-  // Use caller-provided SolverContext for DD table calculation.
-  // This allows transposition table reuse across multiple table calculations.
-
-  START_THREAD_TIMER(thrId);
   int res = solve_board(
                 ctx,
                 deal,
-                cparam.bop->target[bno],
-                cparam.bop->solutions[bno],
-                cparam.bop->mode[bno],
+                bds.target[bno],
+                bds.solutions[bno],
+                bds.mode[bno],
                 &fut);
 
   // SH: I'm making a terrible use of the fut structure here.
 
   if (res == 1)
-    cparam.solvedp->solved_board[bno].score[0] = fut.score[0];
+    solved.solved_board[bno].score[0] = fut.score[0];
   else
-    cparam.error = res;
+    return res;
 
   // Reuse the same SolverContext (including ThreadData and TransTable)
   // for subsequent same-board solves to ensure all declarers on the same
@@ -77,73 +64,11 @@ auto calc_single_common_internal(
     res = solve_same_board(ctx, deal, &fut, hint);
 
     if (res == 1)
-      cparam.solvedp->solved_board[bno].score[k] = fut.score[0];
+      solved.solved_board[bno].score[k] = fut.score[0];
     else
-      cparam.error = res;
+      return res;
   }
-  END_THREAD_TIMER(thrId);
-}
-
-// Legacy shim for system/threading infrastructure (not actively used)
-auto calc_single_common(
-  const int thrId,
-  const int bno) -> void
-{
-  SolverContext ctx;
-  calc_single_common_internal(ctx, thrId, bno);
-}
-
-
-auto copy_calc_single(const vector<int>& crossrefs) -> void
-{
-  for (unsigned i = 0; i < crossrefs.size(); i++)
-  {
-    if (crossrefs[i] == -1)
-      continue;
-
-    START_THREAD_TIMER(thrId);
-    for (int k = 0; k < DDS_HANDS; k++)
-      cparam.solvedp->solved_board[i].score[k] = 
-        cparam.solvedp->solved_board[ crossrefs[i] ].score[k];
-    END_THREAD_TIMER(thrId);
-  }
-}
-
-
-auto calc_chunk_common(
-  const int thrId) -> void
-{
-  // Solves each Deal and strain for all four declarers.
-  // NOTE: This function is legacy multi-threading infrastructure not actively used
-  // in current sequential execution mode.
-  
-  vector<FutureTricks> fut;
-  fut.resize(static_cast<unsigned>(cparam.no_of_boards));
-
-  int index;
-  schedType st;
-
-  while (1)
-  {
-    st = scheduler.GetNumber(thrId);
-    index = st.number;
-    if (index == -1)
-      break;
-
-    if (st.repeatOf != -1)
-    {
-      START_THREAD_TIMER(thrId);
-      for (int k = 0; k < DDS_HANDS; k++)
-      {
-        cparam.solvedp->solved_board[index].score[k] =
-          cparam.solvedp->solved_board[ st.repeatOf ].score[k];
-      }
-      END_THREAD_TIMER(thrId);
-      continue;
-    }
-
-    calc_single_common(thrId, index);
-  }
+  return 1;
 }
 
 
@@ -152,35 +77,25 @@ auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp) -> int
 {
-  cparam.error = 0;
-
   if (bop->no_of_boards > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
-
-  cparam.bop = bop;
-  cparam.solvedp = solvedp;
-  cparam.no_of_boards = bop->no_of_boards;
-
-  scheduler.RegisterRun(RunMode::DDS_RUN_CALC, * bop);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solvedp->solved_board[k].cards = 0;
 
   START_BLOCK_TIMER;
-  
-  // Sequential execution: calculate each board in order
-  // Thread ID 0 is used for all boards (single-threaded)
+
   for (int bno = 0; bno < bop->no_of_boards; bno++) {
-    calc_single_common_internal(ctx, 0, bno);
-    if (cparam.error != 0)
-      return cparam.error;
+    const int err = calc_single_common_internal(ctx, *bop, *solvedp, bno);
+    if (err != 1)
+      return err;
   }
-  
+
   END_BLOCK_TIMER;
 
-  solvedp->no_of_boards = cparam.no_of_boards;
+  solvedp->no_of_boards = bop->no_of_boards;
 
-#ifdef DDS_SCHEDULER 
+#ifdef DDS_SCHEDULER
   scheduler.PrintTiming();
 #endif
 
@@ -395,4 +310,3 @@ void detect_calc_duplicates(
   // only looks at the cards.
   return detect_solve_duplicates(bds, uniques, crossrefs);
 }
-

@@ -51,6 +51,14 @@ DDS_CPPOPTS = select({
         "/WX",
         "/permissive-",
     ],
+    "//:build_wasm": [
+        "-O3",
+        "-flto",
+        "-Wpedantic",
+        "-Wall",
+        "-Werror",
+        "-fexceptions",
+    ],
     "//conditions:default": [
         "-std=c++20"
     ],
@@ -64,6 +72,7 @@ DDS_LOCAL_DEFINES = select({
     "//:debug_build_macos": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
+    "//:build_wasm": ["__WASM__"],
     "//conditions:default": [],
 }) + select({
     "//:debug_all": ["DDS_DEBUG_ALL"],

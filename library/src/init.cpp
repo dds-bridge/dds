@@ -9,6 +9,8 @@
 
 #include <cstring>
 #include <cstdio>
+#include <iomanip>
+#include <sstream>
 
 #include <calc_tables.hpp>
 #include "init.hpp"
@@ -23,20 +25,7 @@
 #include <utility/constants.h>
 #include <utility/debug.h>
 
-System sysdep(
-    &solve_chunk_common,
-    &calc_chunk_common,
-    &play_chunk_common,
-    &detect_solve_duplicates,
-    &detect_calc_duplicates,
-    &detect_play_duplicates,
-    &solve_single_common,
-    &calc_single_common,
-    &play_single_common,
-    &copy_solve_single,
-    &copy_calc_single,
-    &copy_play_single
-);
+System sysdep;
 Memory memory;
 Scheduler scheduler;
 

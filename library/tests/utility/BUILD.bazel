@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
+
 # Utility tests: constants, lookup tables, and RNG determinism validation
 
 cc_test(

@@ -133,23 +133,8 @@ const vector<string> DDS_SYSTEM_THREADING =
 #define DDS_SYSTEM_THREAD_SIZE 9
 
 
-System::System(
-    [[maybe_unused]] FptrType solve_chunk_common,
-    [[maybe_unused]] FptrType calc_chunk_common,
-    [[maybe_unused]] FptrType play_chunk_common,
-    [[maybe_unused]] FduplType detect_solve_duplicates,
-    [[maybe_unused]] FduplType detect_calc_duplicates,
-    [[maybe_unused]] FduplType detect_play_duplicates,
-    [[maybe_unused]] FsingleType solve_single_common,
-    [[maybe_unused]] FsingleType calc_single_common,
-    [[maybe_unused]] FsingleType play_single_common,
-    [[maybe_unused]] FcopyType copy_solve_single,
-    [[maybe_unused]] FcopyType copy_calc_single,
-    [[maybe_unused]] FcopyType copy_play_single
-)
+System::System()
 {
-  // Threading infrastructure removed: callbacks no longer registered.
-  // System now only provides hardware detection and configuration.
   System::reset();
 }
 
@@ -220,7 +205,12 @@ void System::get_hardware(
   kilobytes_free = 0;
   core_count = System::get_cores();
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(__EMSCRIPTEN__)
+  // sysconf/physical memory queries are unreliable under Emscripten; use a
+  // conservative default so SetResources allocates a usable transposition table.
+  kilobytes_free = 512ULL * 1024;
+  core_count = 1;
+#elif defined(_WIN32) || defined(__CYGWIN__)
   // Using GlobalMemoryStatusEx instead of GlobalMemoryStatus
   // was suggested by Lorne Anderson.
   MEMORYSTATUSEX statex;
@@ -232,10 +222,7 @@ void System::get_hardware(
   SYSTEM_INFO sysinfo;
   GetSystemInfo(&sysinfo);
   core_count = static_cast<int>(sysinfo.dwNumberOfProcessors);
-  return;
-#endif
-
-#ifdef __APPLE__
+#elif defined(__APPLE__)
   // The code for Mac OS X was suggested by Matthew Kidd.
 
   // This is physical memory, rather than "free" memory as below 
@@ -255,10 +242,7 @@ void System::get_hardware(
   }
 
   core_count = sysconf(_SC_NPROCESSORS_ONLN);
-  return;
-#endif
-
-#ifdef __linux__
+#elif defined(__linux__)
   // Use half of the physical memory
   long pages = sysconf (_SC_PHYS_PAGES);
   long pagesize = sysconf (_SC_PAGESIZE);
@@ -268,7 +252,9 @@ void System::get_hardware(
     kilobytes_free = 1024 * 1024; // guess 1GB
 
   core_count = sysconf(_SC_NPROCESSORS_ONLN);
-  return;
+#else
+  // Fallback if no platform is detected
+  kilobytes_free = 512ULL * 1024;
 #endif
 }
 
@@ -284,12 +270,6 @@ int System::register_params(
   num_threads_ = n_threads;
   sys_mem_mb_ = mem_usable_mb;
   return RETURN_NO_FAULT;
-}
-
-
-bool System::thread_ok(const int thread_id) const
-{
-  return (thread_id >= 0 && thread_id < num_threads_);
 }
 
 
