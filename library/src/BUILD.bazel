@@ -44,26 +44,6 @@ cc_library(
     ],
 )
 
-cc_binary(
-    name = "dds_native",
-    srcs = ["//library/src:dds_sources"],
-    copts = DDS_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
-    linkshared = 1,
-    visibility = ["//visibility:public"],
-    deps = [
-        "//library/src/api:api_definitions",
-        "//library/src/utility:constants",
-        "//library/src/lookup_tables:lookup_tables",
-        "//library/src/heuristic_sorting",
-        "//library/src/trans_table",
-        "//library/src/moves:moves",
-        "//library/src/system",
-        "//library/src/solver_context:solver_context",
-    ],
-)
-
 filegroup(
     name = "testable_dds_sources",
     srcs = glob([
