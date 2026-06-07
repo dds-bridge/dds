@@ -32,7 +32,7 @@ auto main() -> int
   bool match2,
                 match3;
 
-#if defined(__linux) || defined(__APPLE__) || defined(__WASM__)
+#if defined(__APPLE__)
   SetMaxThreads(0);
 #endif
 

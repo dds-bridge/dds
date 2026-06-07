@@ -72,7 +72,7 @@ DDS_LOCAL_DEFINES = select({
     "//:debug_build_macos": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
-    "//:build_wasm": ["__WASM__"],
+    "//:build_wasm": [],
     "//conditions:default": [],
 }) + select({
     "//:debug_all": ["DDS_DEBUG_ALL"],
