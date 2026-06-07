@@ -34,20 +34,15 @@ public sealed class SolverContext : IDisposable
     #endregion
 
     #region TT Management
-        public void ConfigureTT(TTKind kind, int defaultMb, int maxMb)
-                                => DdsNative.dds_configure_tt(Handle, kind, defaultMb, maxMb);
+        public void ConfigureTT(TTKind kind, int defaultMb, int maxMb) => DdsNative.dds_configure_tt(Handle, kind, defaultMb, maxMb);
 
-        public void ResizeTT(int defaultMb, int maxMb)
-                                => DdsNative.dds_resize_tt(Handle, defaultMb, maxMb);
+        public void ResizeTT(int defaultMb, int maxMb) => DdsNative.dds_resize_tt(Handle, defaultMb, maxMb);
 
-        public void ClearTT()
-                                => DdsNative.dds_clear_tt(Handle);
+        public void ClearTT() => DdsNative.dds_clear_tt(Handle);
 
-        public void ResetForSolve()
-                                => DdsNative.dds_reset_for_solve(Handle);
+        public void ResetForSolve() => DdsNative.dds_reset_for_solve(Handle);
 
-        public void ResetBestMovesLite()
-                                => DdsNative.dds_reset_best_moves_lite(Handle);
+        public void ResetBestMovesLite() => DdsNative.dds_reset_best_moves_lite(Handle);
     #endregion
 
     #region Solving
@@ -68,78 +63,82 @@ public sealed class SolverContext : IDisposable
             return rc;
         }
 
-        public int CalcDdTable( in DdTableDeal table_deal
-                              , out DdTableResults table_results)
-        {
-            var rc = DdsNative.calc_dd_table( Handle
-                                            , in table_deal
-                                            , out table_results);
-
-            ThrowIfError(rc, nameof(SolveBoard));
-            return rc;
-        }
-
-        public int CalcDdTable( in DdTableDealPBN table_deal_pbn
-                                 , out DdTableResults table_results)
-        {
-            var rc = DdsNative.calc_dd_table_pbn( Handle
-                                                , in table_deal_pbn
+        #region CalcDdTable - Double Dummy Table and Par
+            public int CalcDdTable(in DdTableDeal table_deal, out DdTableResults table_results)
+            {
+                var rc = DdsNative.calc_dd_table( Handle
+                                                , in table_deal
                                                 , out table_results);
 
-            ThrowIfError(rc, nameof(CalcDdTable));
-            return rc;
-        }
+                ThrowIfError(rc, nameof(SolveBoard));
+                return rc;
+            }
 
-    /// <summary>
-/// Calculates par score and contracts for a deal table.
-/// </summary>
-/// <remarks>
-/// <para>
-/// Computes the double dummy table for the given deal, then calculates par score
-/// and contracts based on vulnerability.
-/// </para>
-/// <para>
-/// This function is equivalent to calling <c>CalcDDtable</c> followed by
-/// <c>Par</c> in the legacy C API.
-/// </para>
-/// </remarks>
-/// <param name="table_deal">
-/// Deal represented as card holdings for each hand.
-/// </param>
-/// <param name="vulnerable">
-/// Vulnerability (0=None, 1=Both, 2=NS, 3=EW).
-/// </param>
-/// <param name="table_results">
-/// Output: double dummy table results.
-/// </param>
-/// <param name="par_results">
-/// Output: par score and contract strings.
-/// </param>
-/// <returns>
-/// Error code (<c>RETURN_NO_FAULT</c> on success).
-/// </returns>
+            public int CalcDdTable(in DdTableDealPBN table_deal_pbn, out DdTableResults table_results)
+            {
+                var rc = DdsNative.calc_dd_table_pbn( Handle
+                                                    , in table_deal_pbn
+                                                    , out table_results);
 
-        public int CalcPar( in DdTableDeal table_deal
-                          , int vulnerable
-                          , out DdTableResults table_results
-                          , out ParResults par_results)
-        {
-            var rc = DdsNative.calc_par( Handle
-                                       , in table_deal
-                                       , vulnerable
-                                       , out table_results
-                                       , out par_results);
-            ThrowIfError(rc, nameof(CalcPar));
-            return rc;
-        }
+                ThrowIfError(rc, nameof(CalcDdTable));
+                return rc;
+            }
+
+            /// <summary>
+            /// Calculates par score and contracts for a deal table.
+            /// </summary>
+            /// <remarks>
+            /// <para>
+            /// Computes the double dummy table for the given deal, then calculates par score
+            /// and contracts based on vulnerability.
+            /// </para>
+            /// <para>
+            /// This function is equivalent to calling <c>CalcDDtable</c> followed by
+            /// <c>Par</c> in the legacy C API.
+            /// </para>
+            /// </remarks>
+            /// <param name="table_deal">
+            /// Deal represented as card holdings for each hand.
+            /// </param>
+            /// <param name="vulnerable">
+            /// Vulnerability (0=None, 1=Both, 2=NS, 3=EW).
+            /// </param>
+            /// <param name="table_results">
+            /// Output: double dummy table results.
+            /// </param>
+            /// <param name="par_results">
+            /// Output: par score and contract strings.
+            /// </param>
+            /// <returns>
+            /// Error code (<c>RETURN_NO_FAULT</c> on success).
+            /// </returns>
+            public int CalcPar( in DdTableDeal table_deal
+                              , int vulnerable
+                              , out DdTableResults table_results
+                              , out ParResults par_results)
+            {
+                var rc = DdsNative.calc_par( Handle
+                                           , in table_deal
+                                           , vulnerable
+                                           , out table_results
+                                           , out par_results);
+                ThrowIfError(rc, nameof(CalcPar));
+                return rc;
+            }
+        #endregion
     #endregion
 
     #region Logging
-        public void LogAppend(string message)
-                                        => DdsNative.dds_log_append(Handle, message);
+        /// <summary>
+        /// Appends a message to the DDS log.
+        /// </summary>
+        /// <param name="message">The message to append to the log.</param>
+        public void LogAppend(string message) => DdsNative.dds_log_append(Handle, message);
 
-        public void LogClear()
-                                => DdsNative.dds_log_clear(Handle);
+        /// <summary>
+        /// Clears the DDS log.
+        /// </summary>
+        public void LogClear() => DdsNative.dds_log_clear(Handle);
     #endregion
 
     #region private methods

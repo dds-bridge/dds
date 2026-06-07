@@ -13,6 +13,7 @@
 Build/bin
 Build/int
 obj
+.cr
 
 # Prerequisites
 *.d

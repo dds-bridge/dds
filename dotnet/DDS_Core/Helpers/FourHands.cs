@@ -11,6 +11,18 @@ public unsafe struct FourHands
 
     private fixed uint data[SIZE];
 
+    public FourHands()
+    {
+    }
+
+    public FourHands(uint[][] src)
+    {
+        int k = 0;
+
+        for (int r = 0; r <  Math.Min(ROWS ,src.Length); r++)
+            for (int c = 0; c <  Math.Min(COLS, src[r].Length); c++)
+                data[k++] = src[r][c];
+    }
     public Span<uint> AsSpan()
                 => MemoryMarshal.CreateSpan(ref data[0], SIZE);
 
@@ -67,8 +79,8 @@ public unsafe struct FourHands
 
         int k = 0;
 
-        for (int r = 0; r <  4; r++)
-            for (int c = 0; c <  4; c++)
+           for (int r = 0; r <  Math.Min(ROWS ,src.Length); r++)
+            for (int c = 0; c <  Math.Min(COLS, src[r].Length); c++)
                 buf.data[k++] = src[r][c];
 
         return buf;
