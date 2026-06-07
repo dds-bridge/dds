@@ -19,8 +19,6 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <!-- Gives a MSB4011 warning, but is still required -->
-  <Import Project="$(MSBuildProjectDirectory)/Directory.Build.props" Condition="Exists('$(MSBuildProjectDirectory)/Directory.Build.props')" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -42,9 +40,9 @@
   <!-- ====================== -->
   <!--  INCLUDE PATHS Added   -->
   <!-- ====================== -->
-  <PropertyGroup>
-    <OutDir>$(BuildDir)\bin\$(platform)\$(Configuration)\</OutDir>
-    <IntDir>$(BuildDir)\int\$(platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  <PropertyGroup >
+    <OutDir>..\Build\bin\$(platform)\$(Configuration)\</OutDir>
+    <IntDir>..\Build\int\$(platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
