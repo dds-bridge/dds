@@ -4,7 +4,10 @@
 //   license that can be found in the LICENSE file or at
 //   https://opensource.org/licenses/MIT
 
-// TODO: Add tests for the exported functions.
+// Unit tests: web/tests/dds_mvp_test.mjs
+// RUN WITH bazel test //web:dds_mvp_js_test)
+// or python -m unittest web.tests.test_dds_mvp_js
+// or node --test web/tests/dds_mvp_test.mjs
 
 // ESLint configuration
 // https://eslint.org/demo
