@@ -2,7 +2,6 @@
 #pragma once
 #include <solver_context/solver_context.hpp>
 #include <api/solve_board.hpp>
-#include <api/solve_board.hpp>
 
 extern "C" {
 
