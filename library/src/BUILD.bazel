@@ -44,17 +44,14 @@ cc_library(
     ],
 )
 
-cc_library(
+cc_binary(
     name = "dds_native",
-    hdrs = ["//library/src:dds_headers"],
     srcs = ["//library/src:dds_sources"],
-    includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
-    visibility = ["//visibility:public"],
-    include_prefix = "dds",
     linkshared = 1,
+    visibility = ["//visibility:public"],
     deps = [
         "//library/src/api:api_definitions",
         "//library/src/utility:constants",
