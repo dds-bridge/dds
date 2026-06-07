@@ -136,8 +136,6 @@ The MVP link flags include `-sENVIRONMENT=web,node` so the same `.js` / `.wasm` 
 
 ## Development notes
 
-- The `__WASM__` preprocessor constant is defined for WASM builds (`CPPVARIABLES.bzl`). It was added to work around platform-specific code paths; revisit whether it can be narrowed or removed as WASM support matures.
-- Some threading and platform-specific features are disabled or stubbed when `__WASM__` is set.
 - A reusable `cc_library` WASM artifact (not only example binaries) is not yet provided; today only `wasm_cc_binary` example targets are wired up.
 - The browser MVP lives under `web/`; see **Web browser (DDS MVP)** above and `//web:web_system_tests`.
 

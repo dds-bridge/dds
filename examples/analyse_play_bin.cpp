@@ -30,7 +30,7 @@ auto main() -> int
   char line[80];
   bool match;
 
-#if defined(__linux) || defined(__APPLE__) || defined(__WASM__)
+#if defined(__APPLE__)
   SetMaxThreads(0);
 #endif
 
@@ -62,12 +62,7 @@ auto main() -> int
 
     if (res != RETURN_NO_FAULT)
     {
- #ifdef __WASM__
-      // For WASM, we can't use ErrorMessage, so we'll just print the error code
-      snprintf(line, sizeof(line), "error code %d", res);
- #else
       ErrorMessage(res, line);
- #endif
       printf("DDS error: %s\n", line);
     }
 
