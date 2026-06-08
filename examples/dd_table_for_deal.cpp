@@ -12,10 +12,17 @@
 
 // Coded by Cursor, based on calc_dd_table.cpp
 
-#include <cctype>
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <optional>
+#include <regex>
+#include <string>
+#include <string_view>
 #if defined(_WIN32)
 #include <io.h>
 #else
@@ -25,7 +32,14 @@
 #include "hands.hpp"
 
 
-#define PBN_FILE_MAX 8192
+namespace {
+
+constexpr std::size_t PBN_FILE_MAX = 8192;
+constexpr std::size_t PBN_DEAL_MAX = sizeof(DdTableDealPBN::cards);
+
+const std::regex DEAL_TAG_RE{
+    R"re(\[Deal\s*"([^"]*)")re",
+    std::regex::icase};
 
 
 static auto stdin_is_tty() -> bool
@@ -38,157 +52,108 @@ static auto stdin_is_tty() -> bool
 }
 
 
-static auto read_pbn_stream(FILE * stream, char * buf, size_t buf_size) -> bool
+auto read_pbn_stream(std::istream& in) -> std::optional<std::string>
 {
-  const size_t n = fread(buf, 1, buf_size - 1, stream);
-  if (n == 0)
+  std::string text(PBN_FILE_MAX - 1, '\0');
+  in.read(text.data(), static_cast<std::streamsize>(PBN_FILE_MAX - 1));
+  const auto n = in.gcount();
+  if (n <= 0)
   {
-    return false;
+    return std::nullopt;
   }
 
-  buf[n] = '\0';
-  return true;
+  text.resize(static_cast<std::size_t>(n));
+  return text;
 }
 
 
-static auto read_pbn_file(const char * path, char * buf, size_t buf_size) -> bool
+auto read_pbn_file(const std::filesystem::path& path) -> std::optional<std::string>
 {
-  FILE * f = fopen(path, "rb");
-  if (f == nullptr)
+  std::ifstream file(path, std::ios::binary);
+  if (!file)
   {
-    return false;
+    return std::nullopt;
   }
 
-  const bool ok = read_pbn_stream(f, buf, buf_size);
-  fclose(f);
-  return ok;
+  return read_pbn_stream(file);
 }
 
 
-static auto read_pbn_file_workspace_relative(
-  const char * path,
-  char * buf,
-  size_t buf_size) -> bool
+auto read_pbn_file_workspace_relative(std::string_view path)
+    -> std::optional<std::string>
 {
-  if (read_pbn_file(path, buf, buf_size))
+  if (auto text = read_pbn_file(std::filesystem::path(path)))
   {
-    return true;
+    return text;
   }
 
   // bazel run uses a runfiles cwd; BUILD_WORKSPACE_DIRECTORY is the repo root.
-  const char * workspace = getenv("BUILD_WORKSPACE_DIRECTORY");
-  if (workspace == nullptr)
+  if (const char* workspace = std::getenv("BUILD_WORKSPACE_DIRECTORY"))
   {
-    return false;
+    return read_pbn_file(std::filesystem::path(workspace) / path);
   }
 
-  char combined[PBN_FILE_MAX];
-  const int n = snprintf(
-      combined,
-      sizeof(combined),
-      "%s/%s",
-      workspace,
-      path);
-  if (n < 0 || static_cast<size_t>(n) >= sizeof(combined))
-  {
-    return false;
-  }
-
-  return read_pbn_file(combined, buf, buf_size);
+  return std::nullopt;
 }
 
 
-static auto extract_deal_tag(const char * text, char * deal, size_t deal_size) -> bool
+auto extract_deal_tag(std::string_view text) -> std::optional<std::string>
 {
-  const char * p = text;
-
-  while ((p = strstr(p, "[Deal")) != nullptr)
+  std::match_results<std::string_view::const_iterator> match;
+  if (std::regex_search(text.cbegin(), text.cend(), match, DEAL_TAG_RE)
+      && match.size() > 1)
   {
-    p += 5;
-
-    while (*p != '\0' && isspace(static_cast<unsigned char>(*p)))
-    {
-      ++p;
-    }
-
-    if (*p != '"')
-    {
-      continue;
-    }
-
-    ++p;
-    const char * start = p;
-
-    while (*p != '\0' && *p != '"')
-    {
-      ++p;
-    }
-
-    if (*p != '"')
-    {
-      continue;
-    }
-
-    const size_t len = static_cast<size_t>(p - start);
-    if (len >= deal_size)
-    {
-      return false;
-    }
-
-    memcpy(deal, start, len);
-    deal[len] = '\0';
-    return true;
+    return std::string(match[1].first, match[1].second);
   }
 
-  return false;
+  return std::nullopt;
 }
 
 
-static auto load_deal(const char * arg, char * deal, size_t deal_size) -> int
+auto load_deal(std::string_view arg) -> std::optional<std::string>
 {
-  char file_buf[PBN_FILE_MAX];
-  const char * source = arg;
-
-  if (strcmp(arg, "-") == 0)
+  if (arg == "-")
   {
-    source = "stdin";
-    if (!read_pbn_stream(stdin, file_buf, sizeof(file_buf)))
+    const auto text = read_pbn_stream(std::cin);
+    if (!text)
     {
-      fprintf(stderr, "No PBN input on stdin\n");
-      return 1;
+      std::cerr << "No PBN input on stdin\n";
+      return std::nullopt;
     }
-  }
-  else if (read_pbn_file_workspace_relative(arg, file_buf, sizeof(file_buf)))
-  {
-    source = arg;
-  }
-  else
-  {
-    source = nullptr;
-  }
 
-  if (source != nullptr)
-  {
-    if (!extract_deal_tag(file_buf, deal, deal_size))
+    const auto deal = extract_deal_tag(*text);
+    if (!deal)
     {
-      fprintf(stderr, "No [Deal \"...\"] tag found in %s\n", source);
-      return 1;
+      std::cerr << "No [Deal \"...\"] tag found in stdin\n";
+      return std::nullopt;
     }
-  }
-  else if (strlen(arg) >= deal_size)
-  {
-    fprintf(stderr,
-            "PBN deal too long (max %zu characters)\n",
-            deal_size - 1);
-    return 1;
-  }
-  else
-  {
-    strcpy(deal, arg);
+
+    return deal;
   }
 
-  return 0;
+  if (const auto text = read_pbn_file_workspace_relative(arg))
+  {
+    const auto deal = extract_deal_tag(*text);
+    if (!deal)
+    {
+      std::cerr << "No [Deal \"...\"] tag found in " << arg << "\n";
+      return std::nullopt;
+    }
+
+    return deal;
+  }
+
+  if (arg.size() >= PBN_DEAL_MAX)
+  {
+    std::cerr << "PBN deal too long (max " << (PBN_DEAL_MAX - 1)
+              << " characters)\n";
+    return std::nullopt;
+  }
+
+  return std::string(arg);
 }
+
+}  // namespace
 
 
 static auto print_usage(const char * prog) -> void
@@ -240,14 +205,26 @@ auto main(int argc, char * argv[]) -> int
     return 1;
   }
 
-  DdTableDealPBN tableDealPBN;
-  DdTableResults table;
-  char line[80];
-
-  if (load_deal(input, tableDealPBN.cards, sizeof(tableDealPBN.cards)) != 0)
+  const auto deal = load_deal(input);
+  if (!deal)
   {
     return 1;
   }
+
+  DdTableDealPBN tableDealPBN{};
+  if (deal->size() >= sizeof(tableDealPBN.cards))
+  {
+    fprintf(stderr,
+            "PBN deal too long (max %zu characters)\n",
+            sizeof(tableDealPBN.cards) - 1);
+    return 1;
+  }
+
+  std::copy_n(deal->begin(), deal->size(), tableDealPBN.cards);
+  tableDealPBN.cards[deal->size()] = '\0';
+
+  DdTableResults table;
+  char line[80];
 
 #if defined(__linux) || defined(__APPLE__)
   SetMaxThreads(0);
