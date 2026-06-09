@@ -529,8 +529,7 @@ public class DDS
                                   , out SolvedPlays solved
                                   , in int chunkSize)
         {
-            try
-            {
+         
                 solved = new();
 
                 var rc = DdsNative.AnalyseAllPlaysBin( bop
@@ -540,12 +539,7 @@ public class DDS
 
                 ThrowIfError(rc, nameof(AnalyseAllPlays));
                 return rc;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-                throw ex;
-            }
+         
         }
 
         /// <summary>
