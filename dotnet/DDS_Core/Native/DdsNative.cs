@@ -39,13 +39,13 @@ internal static class DdsNative
             internal static extern void dds_reset_for_solve(SolverContextHandle ctx);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void dds_reset_best_moves_lite(in SolverContextHandle ctx);
+            internal static extern void dds_reset_best_moves_lite(SolverContextHandle ctx);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-            internal static extern void dds_log_append(in SolverContextHandle ctx, in string msg);
+            internal static extern void dds_log_append( SolverContextHandle ctx,  string msg);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void dds_log_clear(in SolverContextHandle ctx);
+            internal static extern void dds_log_clear( SolverContextHandle ctx);
         #endregion
 
         #region ====== SolverContext methods ======

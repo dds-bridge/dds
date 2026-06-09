@@ -60,6 +60,9 @@
     <ClCompile Include="..\library\src\dealer_par.cpp">
       <Filter>library\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\library\src\dds_api.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
     <ClCompile Include="..\library\src\dump.cpp">
       <Filter>library\src</Filter>
     </ClCompile>

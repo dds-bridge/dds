@@ -9,25 +9,4 @@
 		<BaseOutputPath>..\..\Build\bin\</BaseOutputPath>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <Compile Remove="DataModel\Hands.cs" />
-	  <Compile Remove="DataModel\SolverConfigNative.cs" />
-	  <Compile Remove="DataModel\TrumpFilter.cs" />
-	  <Compile Remove="Helpers\ByteBuffer100.cs" />
-	  <Compile Remove="Helpers\ByteBuffer32.cs" />
-	  <Compile Remove="Helpers\Grid1D.cs" />
-	  <Compile Remove="Helpers\intArray4x4.cs" />
-	  <Compile Remove="Helpers\intArray4xDebugView.cs" />
-	  <Compile Remove="Helpers\IntBuffer13.cs" />
-	  <Compile Remove="Helpers\IntBuffer3.cs" />
-	  <Compile Remove="Helpers\IntBuffer52.cs" />
-	  <Compile Remove="Helpers\ParResultsBuffer.cs" />
-	  <Compile Remove="Helpers\ResultsTable.cs" />
-	  <Compile Remove="Helpers\Tricks53.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include=".github\copilot-instructions.md" />
-	</ItemGroup>
 </Project>

@@ -29,7 +29,7 @@ internal class Program
         //
         // PERFORMANCE TEST: Measure AnalyseAllPlaysBin P/Invoke performance
         // Run in Release mode for accurate results
-        bool isPerformanceTest = args.Length >  0 && args[0] == "benchmark";
+        isPerformanceTest = args.Length >  0 && args[0] == "benchmark";
 
         if (isPerformanceTest)
         {
@@ -97,7 +97,9 @@ internal class Program
                 doSolveBoardV3(dds, ctx, TestData.deals[0]);
                 doCalcDdTableV3(dds, ctx, TestData.ddTableDeal);
                 doCalcDdTableV3(dds, ctx, TestData.ddTableDealPBN);
-            }
+            ctx.LogAppend("Completed V3.0.0 samples");
+            //ctx.LogClear();
+        }
         #endregion
 
         Console.WriteLine($"Press any key to continue...");
@@ -735,7 +737,7 @@ internal class Program
 
     private static void DisplayTricks()
     {
-        Console.WriteLine($"                       N  E  S  E");
+        Console.WriteLine($"                       N  E  S  W");
         Console.WriteLine($"                      __ __ __ __");
 
         for (var denonination = 0; denonination <  5; denonination++)
