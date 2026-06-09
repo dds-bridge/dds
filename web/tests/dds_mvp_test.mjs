@@ -50,6 +50,7 @@ function createMockDocument(initialValues = {}) {
             id,
             value: initialValues[id] ?? "",
             innerHTML: "",
+            focus() {},
         };
         store.set(id, element);
         return element;
