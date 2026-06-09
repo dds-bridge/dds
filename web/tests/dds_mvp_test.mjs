@@ -16,10 +16,14 @@ import { createContext, runInContext } from "node:vm";
 const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 
-function findWebRoot() {
+function findDdsMvpJsPath() {
+    if (process.env.DDS_MVP_JS && existsSync(process.env.DDS_MVP_JS)) {
+        return process.env.DDS_MVP_JS;
+    }
+
     const here = dirname(fileURLToPath(import.meta.url));
-    const adjacent = join(here, "..");
-    if (existsSync(join(adjacent, "dds_mvp.js"))) {
+    const adjacent = join(here, "..", "dds_mvp.js");
+    if (existsSync(adjacent)) {
         return adjacent;
     }
 
@@ -27,9 +31,9 @@ function findWebRoot() {
         if (!base) {
             continue;
         }
-        for (const sub of ["web", "_main/web"]) {
+        for (const sub of ["web/dds_mvp.js", "_main/web/dds_mvp.js"]) {
             const candidate = join(base, sub);
-            if (existsSync(join(candidate, "dds_mvp.js"))) {
+            if (existsSync(candidate)) {
                 return candidate;
             }
         }
@@ -46,6 +50,7 @@ function createMockDocument(initialValues = {}) {
             id,
             value: initialValues[id] ?? "",
             innerHTML: "",
+            focus() {},
         };
         store.set(id, element);
         return element;
@@ -92,8 +97,7 @@ function createMockDocument(initialValues = {}) {
 }
 
 function loadDdsMvp(document) {
-    const webRoot = findWebRoot();
-    const code = readFileSync(join(webRoot, "dds_mvp.js"), "utf8");
+    const code = readFileSync(findDdsMvpJsPath(), "utf8");
     const sandbox = {
         document,
         console,

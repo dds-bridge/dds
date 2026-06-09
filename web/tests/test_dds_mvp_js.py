@@ -38,11 +38,15 @@ class DdsMvpJsTest(unittest.TestCase):
         assert node is not None
 
         test_script = rlocation("web/tests/dds_mvp_test.mjs")
+        dds_mvp_js = rlocation("web/dds_mvp.js")
+        env = os.environ.copy()
+        env["DDS_MVP_JS"] = str(dds_mvp_js)
         proc = subprocess.run(
             [node, "--test", str(test_script)],
             capture_output=True,
             text=True,
             check=False,
+            env=env,
         )
         self.assertEqual(
             proc.returncode,
