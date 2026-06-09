@@ -2,7 +2,7 @@
 
 Run with: bazel test //web:dds_mvp_js_test
 or: python -m unittest web.tests.test_dds_mvp_js
-or: node --test web/tests/dds_mvp_test.mjs   
+or: node --test web/tests/dds_mvp_test.mjs
 """
 
 from __future__ import annotations
@@ -31,11 +31,24 @@ def rlocation(relpath: str) -> Path:
     raise FileNotFoundError(relpath)
 
 
-@unittest.skipUnless(shutil.which("node"), "node not found")
 class DdsMvpJsTest(unittest.TestCase):
     def test_dds_mvp_js(self) -> None:
         node = shutil.which("node")
-        assert node is not None
+        if not node:
+            raise unittest.SkipTest("node not found")
+
+        version = subprocess.run(
+            [node, "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout.strip()
+        try:
+            major = int(version.lstrip("v").split(".", 1)[0])
+        except ValueError:
+            raise unittest.SkipTest(f"could not parse node version: {version!r}")
+        if major < 18:
+            raise unittest.SkipTest(f"node >= 18 required for `node --test` (found {version})")
 
         test_script = rlocation("web/tests/dds_mvp_test.mjs")
         dds_mvp_js = rlocation("web/dds_mvp.js")
