@@ -237,3 +237,21 @@ test("loadDdsModule rejects missing wasm globals", async () => {
         /WASM module not found/
     );
 });
+
+test("fillFormWithGrandSlamTestData populates inputs", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFormWithGrandSlamTestData();
+    assert.equal(document.element("north_spades").value, "AKQJ");
+    assert.equal(document.element("east_clubs").value, "432");
+    assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+});
+
+test("fillFormWithEveryoneMakes3nTestData populates inputs", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFormWithEveryoneMakes3nTestData();
+    assert.equal(document.element("north_hearts").value, "A8765432");
+    assert.equal(document.element("west_spades").value, "");
+    assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+});
