@@ -2,7 +2,7 @@
 
 Run with: bazel test //web:dds_mvp_js_test
 or: python -m unittest web.tests.test_dds_mvp_js
-or: node --test web/tests/dds_mvp_test.mjs   
+or: node --test web/tests/dds_mvp_test.mjs
 """
 
 from __future__ import annotations
@@ -31,7 +31,6 @@ def rlocation(relpath: str) -> Path:
     raise FileNotFoundError(relpath)
 
 
-@unittest.skipUnless(shutil.which("node"), "node not found")
 class DdsMvpJsTest(unittest.TestCase):
     def test_dds_mvp_js(self) -> None:
         node = shutil.which("node")

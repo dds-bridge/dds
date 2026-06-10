@@ -31,3 +31,13 @@ jobs:
       # 6️⃣ Run all tests (including Python)
       - name: Run all tests
         run: bazel test --verbose_failures //...
+
+      # 7️⃣ Upload test logs
+      - name: Upload test logs - Linux
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
