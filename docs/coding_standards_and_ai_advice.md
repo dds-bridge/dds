@@ -14,13 +14,19 @@ Language servers are well known by most integrated development environments but 
 ### Serena
 https://github.com/oraios/serena
 
-Probably the most important tool at the time of writing.
+Probably the most important tool at the time of writing. Serena provides semantic analysis and instructions to help coding agents stay on target. 
 
 ### Code Context Engine
+https://github.com/elara-labs/code-context-engine
+
+Creates and maintains an index of the codebase. This means that a coding agent often can read only the relevant part of a file instead of searching all the content of several files. 
+
+As a side note, I find it interesting that vector embeddings were removed from Claude Code. My amatuer understanding is that Serena tells the agent what the code is doing and code context enginer where the interesting code. This differs from vector embeddnings which tells the coding agent which parts of the codebase looks similar. Knowing that calls to write to the database looks similar is not useful, but the information where they are and what they write is.
+
 
 ## Coding Standards
 
-Keeping a consistent coding style is more important than ever as it helps both humans and coding agents. Preferred styles are document in the `.github/instructions directory`
+Keeping a consistent coding style is more important than ever as it helps both humans and coding agents. Preferred styles are document in the `.github/instructions directory`, which is where Github Copilot looks for its permanent instructions.
 
 1. [C++](../.github/instructions/cpp.instructions.md)
 2. [Bazel](../.github/instructions/bazel.instructions.md)
@@ -28,6 +34,8 @@ Keeping a consistent coding style is more important than ever as it helps both h
 4. [GitHub](../.github/instructions/github.instructions.md)
 
 ## Documentation and code completion
+
+DDS3 
 
 ### Extracting compile_commands.json
 
