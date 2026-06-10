@@ -35,19 +35,24 @@ def rlocation(relpath: str) -> Path:
 class DdsMvpJsTest(unittest.TestCase):
     def test_dds_mvp_js(self) -> None:
         node = shutil.which("node")
-        assert node is not None
+        if not node:
+            raise unittest.SkipTest("node not found")
 
         test_script = rlocation("web/tests/dds_mvp_test.mjs")
         dds_mvp_js = rlocation("web/dds_mvp.js")
         env = os.environ.copy()
         env["DDS_MVP_JS"] = str(dds_mvp_js)
-        proc = subprocess.run(
-            [node, "--test", str(test_script)],
-            capture_output=True,
-            text=True,
-            check=False,
-            env=env,
-        )
+        try:
+            proc = subprocess.run(
+                [node, "--test", str(test_script)],
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+                timeout=60,
+            )
+        except subprocess.TimeoutExpired as exc:
+            self.fail(f"node --test timed out: {exc}")
         self.assertEqual(
             proc.returncode,
             0,
