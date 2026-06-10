@@ -30,3 +30,13 @@ jobs:
       # Run all tests (including Python)
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
+
+      # Upload test logs
+      - name: Upload test logs - macOS
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-macos
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30

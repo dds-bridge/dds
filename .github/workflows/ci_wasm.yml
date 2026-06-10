@@ -30,3 +30,13 @@ jobs:
       # 4️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
       - name: Smoke test solve_board_wasm
         run: node bazel-bin/examples/wasm/solve_board.js
+
+      # 5️⃣ Upload test logs
+      - name: Upload test logs - WASM
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-wasm
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
