@@ -37,6 +37,23 @@ class DdsMvpJsTest(unittest.TestCase):
         if not node:
             raise unittest.SkipTest("node not found")
 
+        try:
+            version = subprocess.run(
+                [node, "--version"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            ).stdout.strip()
+        except subprocess.TimeoutExpired:
+            raise unittest.SkipTest("node --version timed out")
+        try:
+            major = int(version.lstrip("v").split(".", 1)[0])
+        except ValueError:
+            raise unittest.SkipTest(f"could not parse node version: {version!r}")
+        if major < 18:
+            raise unittest.SkipTest(f"node >= 18 required for `node --test` (found {version})")
+
         test_script = rlocation("web/tests/dds_mvp_test.mjs")
         dds_mvp_js = rlocation("web/dds_mvp.js")
         env = os.environ.copy()
@@ -48,7 +65,7 @@ class DdsMvpJsTest(unittest.TestCase):
                 text=True,
                 check=False,
                 env=env,
-                timeout=60,
+                timeout=55,
             )
         except subprocess.TimeoutExpired as exc:
             self.fail(f"node --test timed out: {exc}")
