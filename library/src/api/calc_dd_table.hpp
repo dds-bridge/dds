@@ -80,7 +80,7 @@ auto calc_dd_table_pbn(
  * @param table_results Output: double dummy table results
  * @return Error code (RETURN_NO_FAULT on success, RETURN_PBN_FAULT on parse error)
  */
-auto calc_dd_table_pbn(
+ auto calc_dd_table_pbn(
     SolverContext& ctx,
     const DdTableDealPBN& table_deal_pbn,
     DdTableResults* table_results) -> int;

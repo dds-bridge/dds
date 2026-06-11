@@ -1,0 +1,21 @@
+﻿<Project>
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<WarningLevel>4</WarningLevel>
+		<BaseOutputPath>..\..\Build\bin\$(platform)\</BaseOutputPath>
+		<BaseIntermediateOutputPath>..\..\Build\int\$(platform)\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<DefineConstants>$(DefineConstants);DEBUG;</DefineConstants>
+		<Optimize>false</Optimize>
+		<DebugType>full</DebugType>
+	</PropertyGroup>
+
+	
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DefineConstants>$(DefineConstants); RELEASE; </DefineConstants>
+		<Optimize>true</Optimize>
+		<DebugType>none</DebugType>
+	</PropertyGroup>
+</Project>

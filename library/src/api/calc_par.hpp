@@ -59,7 +59,7 @@ auto calc_par(
  * @param par_results Output: par score and contract strings
  * @return Error code (RETURN_NO_FAULT on success)
  */
-auto calc_par(
+DLLEXPORT auto calc_par(
     SolverContext& ctx,
     const DdTableDeal& table_deal,
     int vulnerable,

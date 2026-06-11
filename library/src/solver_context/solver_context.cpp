@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <api/dds.h>
+//#include <api/dds_api.hpp>
 #include <trans_table/trans_table_l.hpp>
 #include <trans_table/trans_table_s.hpp>
 
@@ -12,7 +13,7 @@
 // SolverContext so callers can create a context at the top of the stack
 // and pass it down without a separate per-thread lookup.
 SolverContext::SolverContext(SolverConfig cfg)
-  : thr_(nullptr), cfg_(cfg)
+  : thr_(nullptr), cfg_(cfg) //TODO: remove thr_(nullptr) which is redundant 
 {
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();

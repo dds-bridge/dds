@@ -33,6 +33,8 @@ Martin Nygren, May 2026
 
 [Python Interface](docs/python_interface.md)
 
+[DotNet Interface](docs/dotnet_interface.md)
+
 [Legacy C Interface](docs/legacy_c_api.md)
 
 [Migrating to the modern API](docs/api_migration.md)

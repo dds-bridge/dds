@@ -1,0 +1,17 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path="../Directory.Build.props" />
+  </Folder>
+  <Project Path="../../solution/dds_native.vcxproj" Id="d38617a2-482a-1c00-7c88-02b17b693906" />
+  <Project Path="../DDS_Core_Demo/DDS_Core_Demo.csproj" Id="81f910e1-3d14-44f8-9b34-0482dd2a0b3c">
+    <BuildDependency Project="../../solution/dds_native.vcxproj" />
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="DDS_Core.csproj">
+    <BuildDependency Project="../../solution/dds_native.vcxproj" />
+    <Platform Project="x64" />
+  </Project>
+</Solution>
