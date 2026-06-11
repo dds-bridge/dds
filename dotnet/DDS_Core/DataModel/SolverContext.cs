@@ -66,7 +66,7 @@ public sealed class SolverContext : IDisposable
         #region CalcDdTable - Double Dummy Table and Par
             public int CalcDdTable(in DdTableDeal table_deal, out DdTableResults table_results)
             {
-                var rc = DdsNative.calc_dd_table( Handle
+                var rc = DdsNative.calc_ddtable( Handle
                                                 , in table_deal
                                                 , out table_results);
 
@@ -76,7 +76,7 @@ public sealed class SolverContext : IDisposable
 
             public int CalcDdTable(in DdTableDealPBN table_deal_pbn, out DdTableResults table_results)
             {
-                var rc = DdsNative.calc_dd_table_pbn( Handle
+                var rc = DdsNative.calc_ddtable_pbn( Handle
                                                     , in table_deal_pbn
                                                     , out table_results);
 

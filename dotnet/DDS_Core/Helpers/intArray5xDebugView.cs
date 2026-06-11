@@ -15,7 +15,6 @@ namespace DDS_Core
         public string Row1 => _buffer.GetString(1);
         public string Row2 => _buffer.GetString(2);
         public string Row3 => _buffer.GetString(3);
-
         public string Row4 => _buffer.GetString(4);
 
     }
