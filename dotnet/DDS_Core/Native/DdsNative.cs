@@ -59,10 +59,10 @@ internal static class DdsNative
 
             #region Call_dd
                 //    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                //public static extern int calc_dd_table( in DdTableDeal table_deal
+                //public static extern int calc_ddtable( in DdTableDeal table_deal
                 //                                      , out DdTableResults table_results);
                 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                public static extern int calc_dd_table( SolverContextHandle ctx
+                public static extern int calc_ddtable( SolverContextHandle ctx
                                                       , in DdTableDeal table_deal
                                                       , out DdTableResults table_results);
 
@@ -70,7 +70,7 @@ internal static class DdsNative
                 //public static extern int calc_dd_table_pbn( in DdTableDealPBN table_deal_pbn
                 //                                          , out DdTableResults table_results);
                 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                public static extern int calc_dd_table_pbn( SolverContextHandle ctx
+                public static extern int calc_ddtable_pbn( SolverContextHandle ctx
                                                           , in DdTableDealPBN table_deal_pbn
                                                           , out DdTableResults table_results);
             #endregion
@@ -220,7 +220,7 @@ internal static class DdsNative
     #endregion
 
     #region ====== Par Text Conversion ======
-        [DllImport("dds_native", CharSet = CharSet.Ansi)]
+      [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int ConvertToDealerTextFormat( in ParResultsMaster pres
                                                           , StringBuilder resp);
 
@@ -236,7 +236,7 @@ internal static class DdsNative
                                                , out SolvedPlay solved
                                                , int thrId);
 
-        [DllImport("dds_native", CharSet = CharSet.Ansi)]
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int AnalysePlayPBN( in DealPBN dlPBN
                                                , in PlayTracePBN playPBN
                                                , out SolvedPlay solved
@@ -259,7 +259,7 @@ internal static class DdsNative
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void GetDDSInfo(out DdsInfo info);
 
-        [DllImport("dds_native", CharSet = CharSet.Ansi)]
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern void ErrorMessage( int code
                                               , StringBuilder line);
     #endregion

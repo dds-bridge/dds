@@ -67,7 +67,7 @@ public unsafe struct FourHands
     {
         var buf = new FourHands();
 
-        for (int c = 0; c <  16; c++)
+        for (int c = 0; c <  SIZE; c++)
             buf.data[c] = src[c];
 
         return buf;

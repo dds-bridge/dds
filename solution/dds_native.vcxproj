@@ -69,7 +69,7 @@
     <ClCompile Include="..\library\src\calc_par.cpp" />
     <ClCompile Include="..\library\src\calc_tables.cpp" />
     <ClCompile Include="..\library\src\dds.cpp" />
-	    <ClCompile Include="..\library\src\dds_api.cpp" />
+	<ClCompile Include="..\library\src\dds_api.cpp" />
     <ClCompile Include="..\library\src\dealer_par.cpp" />
     <ClCompile Include="..\library\src\dump.cpp" />
     <ClCompile Include="..\library\src\heuristic_sorting\heuristic_sorting.cpp" />

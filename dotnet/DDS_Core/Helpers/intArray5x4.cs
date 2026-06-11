@@ -20,7 +20,7 @@ public unsafe struct intArray5x4 : IBuffer
 
     public Span<int> RowAsSpan(int row)
     {
-        if (row >= ROWS || row <  0)
+        if ((uint)row >= ROWS )
             throw new ArgumentOutOfRangeException(nameof(row));
 
         // ref to first byte in the array for the specified row
@@ -48,8 +48,7 @@ public unsafe struct intArray5x4 : IBuffer
     {
         get
         {
-            if (row >= ROWS || row <  0
-            ||  col >= COLS || col         <  0)
+            if ((uint)row >= ROWS || (uint)col >= COLS)
                 throw new IndexOutOfRangeException();
 
             return ref data[row * COLS + col];
@@ -59,8 +58,9 @@ public unsafe struct intArray5x4 : IBuffer
     public static implicit operator intArray5x4(int[] src)
     {
         var buf = new intArray5x4();
+        int count = Math.Min(src.Length, SIZE);
 
-        for (int c = 0; c <  16; c++)
+        for (int c = 0; c <  count; c++)
             buf.data[c] = src[c];
 
         return buf;
@@ -71,9 +71,11 @@ public unsafe struct intArray5x4 : IBuffer
         var buf = new intArray5x4();
 
         int k = 0;
+        int rows = Math.Min(src.Length, SIZE);
+        int cols = Math.Min(src[0].Length, COLS);
 
-        for (int r = 0; r <  4; r++)
-            for (int c = 0; c <  4; c++)
+        for (int r = 0; r <  rows; r++)
+            for (int c = 0; c <  cols; c++)
                 buf.data[k++] = src[r][c];
 
         return buf;
@@ -82,8 +84,6 @@ public unsafe struct intArray5x4 : IBuffer
     public string GetString(int row)
             => string.Join(",", RowAsSpan(row).ToArray());
 
-    //public override string ToString()
-    //        => "["+string.Join("],[", Enumerable.Range(0, ROWS).Select(GetString)) +"]";
     public override string ToString()
     {
         var parts = new string[ROWS];
