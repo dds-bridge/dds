@@ -113,10 +113,11 @@ def _convert_pbn(pbn_deal: str) -> list[list[int]]:
     bp = 0
     while (
         bp < 3
+        and bp < len(pbn_deal)
         and pbn_deal[bp] not in "NWESnwes"
     ):
         bp += 1
-    if bp >= 3:
+    if bp >= 3 or bp >= len(pbn_deal):
         return remain
 
     first = {"N": 0, "E": 1, "S": 2, "W": 3}[pbn_deal[bp].upper()]
