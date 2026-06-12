@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -70,7 +71,7 @@ public sealed class SolverContext : IDisposable
                                                 , in table_deal
                                                 , out table_results);
 
-                ThrowIfError(rc, nameof(SolveBoard));
+                ThrowIfError(rc, nameof(CalcDdTable));
                 return rc;
             }
 
@@ -117,7 +118,7 @@ public sealed class SolverContext : IDisposable
                               , out DdTableResults table_results
                               , out ParResults par_results)
             {
-                var rc = DdsNative.calc_par( Handle
+                var rc = DdsNative.calc_par_dll( Handle
                                            , in table_deal
                                            , vulnerable
                                            , out table_results
@@ -142,12 +143,12 @@ public sealed class SolverContext : IDisposable
     #endregion
 
     #region private methods
+        [Conditional("DEBUG")]
+
         private static void ThrowIfError(int result, string functionName)
         {
-#if DEBUG
             if (result != (int)SolveBoardResult.NoFault)
                 throw new InvalidOperationException($"{functionName} failed with code {result}: {result.GetRCErrorMessage()}");
-#endif
         }
     #endregion
 }

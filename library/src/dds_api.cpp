@@ -6,6 +6,7 @@
 */
 
 #include <api/dds_api.hpp>
+#include <api/calc_par.hpp>
 
 // Creation
 DLLEXPORT DDS_SOLVER_CTX dds_create_solvercontext_default()
@@ -83,3 +84,14 @@ DLLEXPORT auto calc_ddtable_pbn(DDS_SOLVER_CTX ctx, const DdTableDealPBN& table_
 
 	return calc_dd_table_pbn(*ctx, table_deal, table_results);
 }
+
+DLLEXPORT auto calc_par_dll(
+	SolverContext& ctx,
+	const DdTableDeal& table_deal,
+	int vulnerable,
+	DdTableResults* table_results,
+	ParResults* par_results) -> int
+{
+	return calc_par(ctx, table_deal, vulnerable, table_results, par_results);
+}
+
