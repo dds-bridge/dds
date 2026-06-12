@@ -74,24 +74,24 @@ DLLEXPORT auto dds_solve_board(DDS_SOLVER_CTX ctx, const Deal& dl, int target, i
 		futp);
 }
 
-DLLEXPORT auto calc_ddtable(DDS_SOLVER_CTX ctx, const DdTableDeal& table_deal, DdTableResults* table_results) -> int
+DLLEXPORT auto dds_calc_dd_table(DDS_SOLVER_CTX ctx, const DdTableDeal& table_deal, DdTableResults* table_results) -> int
 {
 	return calc_dd_table(*ctx, table_deal, table_results);
 }
 
-DLLEXPORT auto calc_ddtable_pbn(DDS_SOLVER_CTX ctx, const DdTableDealPBN& table_deal, DdTableResults* table_results) -> int
+DLLEXPORT auto dds_calc_dd_table_pbn(DDS_SOLVER_CTX ctx, const DdTableDealPBN& table_deal, DdTableResults* table_results) -> int
 {
 
 	return calc_dd_table_pbn(*ctx, table_deal, table_results);
 }
 
-DLLEXPORT auto calc_par_dll(
-	SolverContext& ctx,
+DLLEXPORT auto dds_calc_par(
+	DDS_SOLVER_CTX ctx,
 	const DdTableDeal& table_deal,
 	int vulnerable,
 	DdTableResults* table_results,
 	ParResults* par_results) -> int
 {
-	return calc_par(ctx, table_deal, vulnerable, table_results, par_results);
+	return calc_par(*ctx, table_deal, vulnerable, table_results, par_results);
 }
 

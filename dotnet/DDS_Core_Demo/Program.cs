@@ -1,12 +1,5 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
-using System.Net;
-using System.Text;
-using System.Transactions;
+﻿using System.Diagnostics;
 using DDS_Core;
-using Microsoft.Win32.SafeHandles;
-using static System.Net.Mime.MediaTypeNames;
-using static DDS_Core.CardRanks;
 
 namespace DDS_Core_Demo;
 
@@ -97,6 +90,7 @@ internal class Program
                 doSolveBoardV3(dds, ctx, TestData.deals[0]);
                 doCalcDdTableV3(dds, ctx, TestData.ddTableDeal);
                 doCalcDdTableV3(dds, ctx, TestData.ddTableDealPBN);
+            doCalcParV3(dds, ctx, TestData.ddTableDeal, vulnability);
             ctx.LogAppend("Completed V3.0.0 samples");
             //ctx.LogClear();
         }
@@ -435,6 +429,33 @@ internal class Program
         Console.WriteLine();
     }
 
+    private static void doCalcParV3(DDS dds, SolverContext ctx, DdTableDeal ddTableDeal, int vulnability)
+    {
+        Console.WriteLine($"CalcPar V3");
+        tricks = new int[5, 4];
+
+        var rc = ctx.CalcPar( in ddTableDeal
+                            , vulnability
+                            , out DdTableResults tResults
+                            , out ParResults results                        );
+
+        Console.WriteLine(results.ParContractStrings);
+        Console.WriteLine(results.ParScores);
+
+        for (var trump = 0; trump <  5; trump++)
+            for (var first = 0; first <  4; first++)
+            {
+                var decl =(first + 3) & 3;
+
+                // record the number of tricks for declarer
+                tricks[trump, decl] = tResults.ResultsTable[trump, decl];
+            }
+
+        dds.FreeMemory();
+
+        DisplayTricks();
+    }
+    
     private static void doCalcPar(DDS dds, DdTableDeal ddTableDeal, int vulnability)
     {
         Console.WriteLine($"CalcPar");
