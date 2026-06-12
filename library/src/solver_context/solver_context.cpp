@@ -13,7 +13,7 @@
 // SolverContext so callers can create a context at the top of the stack
 // and pass it down without a separate per-thread lookup.
 SolverContext::SolverContext(SolverConfig cfg)
-  : thr_(nullptr), cfg_(cfg) //TODO: remove thr_(nullptr) which is redundant 
+  : cfg_(cfg)
 {
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();
@@ -234,7 +234,8 @@ auto SolverContext::reset_best_moves_lite() const -> void
 
 auto ThreadMemoryUsed() -> double
 {
-  // TODO:  Only needed because SolverIF wants to set it. Avoid?
+  // Fixed per-thread lookup-table memory (RelRanksType) included in memUsed
+  // reporting; legacy SolverIF uses the same accounting.
   double memUsed =
     8192 * sizeof(RelRanksType)
     / static_cast<double>(1024.);
