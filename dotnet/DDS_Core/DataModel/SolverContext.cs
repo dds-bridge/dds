@@ -70,7 +70,7 @@ public sealed class SolverContext : IDisposable
                                                 , in table_deal
                                                 , out table_results);
 
-                ThrowIfError(rc, nameof(SolveBoard));
+                ThrowIfError(rc, nameof(CalcDdTable));
                 return rc;
             }
 
