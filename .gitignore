@@ -5,6 +5,9 @@
 !.vscode/mcp.json
 !.vscode/tasks.json
 
+# Ignore Cursor or VS Code workspace files
+*.code-workspace
+
 # Ignore Visual Studio directory and files
 .vs
 #*/.vs/*
@@ -109,6 +112,3 @@ doxygen_output/
 # Claude Code local settings written by cce init
 .claude/settings.local.json
 /dotnet/DDS_Core/.github/copilot-instructions.md
-
-# Cursor or VS Code workspace files
-*.code-workspace
