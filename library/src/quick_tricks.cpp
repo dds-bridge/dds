@@ -1116,8 +1116,6 @@ int QuickTricksPartnerHandNT(
         return qt;
       if ((countOwn <= 2) && (countLho <= 2) && (countRho <= 2))
       {
-        // TODO: Is the fix to qt correct?
-        // qtricks += countPart - 2;
         qt += countPart - 2;
         if (qt >= cutoff)
           return qt;

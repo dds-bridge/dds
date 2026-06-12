@@ -8,6 +8,7 @@
 */
 
 #include <cstring>
+#include <thread>
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
   #include <unistd.h>
@@ -388,17 +389,18 @@ string System::get_constructor(int& cons) const
 
 int System::get_cores() const
 {
+  const unsigned int hw = std::thread::hardware_concurrency();
+  if (hw > 0)
+    return static_cast<int>(hw);
+
   int cores = 0;
 #if defined(_WIN32) || defined(__CYGWIN__)
   SYSTEM_INFO sysinfo;
   GetSystemInfo(&sysinfo);
   cores = static_cast<int>(sysinfo.dwNumberOfProcessors);
 #elif defined(__APPLE__) || defined(__linux__)
-  cores = sysconf(_SC_NPROCESSORS_ONLN);
+  cores = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
 #endif
-
-  // TODO Think about thread::hardware_concurrency().
-  // This should be standard in C++11.
 
   return cores;
 }
