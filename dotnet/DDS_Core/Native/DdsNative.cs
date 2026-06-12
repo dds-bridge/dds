@@ -82,7 +82,7 @@ internal static class DdsNative
                 //                                 , out DdTableResults table_results
                 //                                 , out ParResults par_results);
                 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                public static extern int calc_par( SolverContextHandle ctx
+                public static extern int calc_par_dll( SolverContextHandle ctx
                                                  , in DdTableDeal table_deal
                                                  , int vulnerable
                                                  , out DdTableResults table_results

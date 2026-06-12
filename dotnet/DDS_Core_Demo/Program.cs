@@ -496,8 +496,8 @@ internal class Program
         tricks = new int[5, 4];
 
         var rc = dds.CalcPar( in ddTableDeal
-                               , out DdTableResults tResults
                                , vulnability
+                               , out DdTableResults tResults
                                , out ParResults results                        );
 
         Console.WriteLine(results.ParContractStrings);

@@ -362,13 +362,13 @@ public class DDS
         /// </para>
         /// </remarks>
         /// <param name="tableDealPBN">
-        /// Deal represented as card holdings for each hand.
+        /// Deal represented as a PBN string for each hand.
         /// </param>     
+        /// <param name="vulnerable">
+        /// Vulnerability (0=None, 1=Both, 2=NS, 3=EW).
+        /// </param>
         /// <param name="tableResults">
         /// Output: double dummy table results.
-        /// </param>
-        ///    /// <param name="vulnerable">
-        /// Vulnerability (0=None, 1=Both, 2=NS, 3=EW).
         /// </param>
         /// <param name="parResults">
         /// Output: par score and contract strings.
@@ -376,11 +376,11 @@ public class DDS
         /// <returns>
         /// Error code (<c>RETURN_NO_FAULT</c> on success).
         /// </returns>
-        public int CalcPar( in DdTableDealPBN tableDealPBN
-                          , out DdTableResults tableResults
+        public int CalcPar(in DdTableDealPBN tableDealPBN
                           , in int vulnerable
+                          , out DdTableResults tableResults
                           , out ParResults parResults)
-        {
+    {
             var rc = DdsNative.CalcParPBN( tableDealPBN
                                          , out tableResults
                                          , vulnerable
@@ -626,12 +626,11 @@ public class DDS
     #endregion
 
     #region private methods
-        private static void ThrowIfError(in int result, in string functionName)
+    [Conditional("DEBUG")]
+    private static void ThrowIfError(in int result, in string functionName)
         {
-#if DEBUG
             if (result != (int)SolveBoardResult.NoFault)
                 throw new InvalidOperationException($"{functionName} failed with code {result}: {result.GetRCErrorMessage()}");
-#endif
         }
     #endregion
 }
