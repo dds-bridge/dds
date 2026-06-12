@@ -1,8 +1,16 @@
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+py_library(
+    name = "dd_table_for_deal_lib",
+    srcs = ["dd_table_for_deal.py"],
+    imports = ["."],
+    deps = ["//python:dds3_lib"],
+    visibility = ["//python:__pkg__"],
+)
 
 py_binary(
     name = "dd_table_for_deal",
     srcs = ["dd_table_for_deal.py"],
     main = "dd_table_for_deal.py",
-    deps = ["//python:dds3_lib"],
+    deps = [":dd_table_for_deal_lib"],
 )

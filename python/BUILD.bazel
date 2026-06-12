@@ -158,6 +158,14 @@ py_test(
     ],
 )
 
+py_test(
+    name = "convert_pbn_test",
+    size = "small",
+    main = "tests/test_convert_pbn.py",
+    srcs = ["tests/test_convert_pbn.py"],
+    deps = ["//python/examples:dd_table_for_deal_lib"],
+)
+
 py_wheel(
     name = "dds3_wheel",
     distribution = "dds3",
