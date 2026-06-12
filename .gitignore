@@ -5,6 +5,9 @@
 !.vscode/mcp.json
 !.vscode/tasks.json
 
+# Ignore Cursor or VS Code workspace files
+*.code-workspace
+
 # Ignore Visual Studio directory and files
 .vs
 #*/.vs/*
@@ -14,9 +17,6 @@ Build/bin
 Build/int
 obj
 .cr
-
-# Ignore miscellaneous files
-.github
 
 # Prerequisites
 *.d
