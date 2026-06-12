@@ -75,9 +75,7 @@ public class DDS
         /// <param name="maxMemoryMB">Maximum memory in megabytes.</param>
         /// <param name="maxThreads">Maximum number of threads.</param>
         [Obsolete("Use SolverContext instead.")]
-        public void SetResources(in int maxMemoryMB, in int maxThreads)
-
-                                                            => DdsNative.SetResources(maxMemoryMB, maxThreads);
+        public void SetResources(in int maxMemoryMB, in int maxThreads) => DdsNative.SetResources(maxMemoryMB, maxThreads);
 
         /// <summary>
         /// Frees memory used by the solver.
