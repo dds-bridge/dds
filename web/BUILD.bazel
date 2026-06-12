@@ -74,6 +74,18 @@ py_test(
     ],
 )
 
+py_test(
+    name = "dds_mvp_js_test",
+    size = "small",
+    timeout = "short",
+    main = "tests/test_dds_mvp_js.py",
+    srcs = ["tests/test_dds_mvp_js.py"],
+    data = [
+        "dds_mvp.js",
+        "tests/dds_mvp_test.mjs",
+    ],
+)
+
 # Stages wasm artifacts and runs Node smoke (~1–2s; wasm build is a separate analysis action).
 py_test(
     name = "dds_mvp_wasm_system_test",
@@ -123,6 +135,7 @@ py_test(
 test_suite(
     name = "web_tests",
     tests = [
+        ":dds_mvp_js_test",
         ":dds_mvp_wasm_test",
         ":wasm_scripts_test",
     ],
