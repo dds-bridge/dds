@@ -110,3 +110,6 @@ doxygen_output/
 .claude/settings.local.json
 
 /dotnet/DDS_Core/.github/copilot-instructions.md
+
+# Cursor or VS Code workspace files
+*.code-workspace
