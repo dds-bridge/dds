@@ -1,51 +1,62 @@
 # Coding agents and coding standards
 
-Coding agents are becoming increasingly powerful and which tool and model that scores best in test changes if not by the week at least on a monthly basis. These recommendations and instructions for coding were collected in the first quarter of 2026 when the bulk of the work to modernise the codebase for release 3.0.0 was carried out.
+Coding agents are improving quickly, and the best tool or model for a task can change from one month to the next. This note collects the coding guidance and tooling recommendations that were assembled during the first quarter of 2026, when most of the modernisation work for release 3.0.0 was completed.
 
-Configurations for MCP (Model Content Protocol) servers are not included. MCP servers add a lot of power, but can also expose severe vulnerabilities. How they should be deployed is definitely not one size fits all.
+This document does not prescribe a specific MCP server setup. MCP servers can be powerful, but they also introduce security risks, so the right deployment strategy depends on the environment.
 
 ## Coding Standards
 
-Keeping a consistent coding style is more important than ever as it helps both humans and coding agents. Preferred styles are document in the `.github/instructions directory`, which is where Github Copilot looks for its permanent instructions.
+Consistent style matters even more when both humans and coding agents are reading and editing the same code. The preferred conventions are documented in the `.github/instructions` directory, which is where GitHub Copilot looks for its persistent instructions.
 
 1. [C++](../.github/instructions/cpp.instructions.md)
 2. [Bazel](../.github/instructions/bazel.instructions.md)
 3. [Git](../.github/instructions/git.instructions.md)
 4. [GitHub](../.github/instructions/github.instructions.md)
 
-## Recommended tools for coding agents
+## Recommended Tools for Coding Agents
 
 ### clangd
+
 https://clangd.llvm.org
 
-Language servers are well known to most integrated development environments but coding agents are typically not able to interact with them directly. There are several MCP wrappers that can surface a language server to a coding agent. This is, however, serving raw JSON responses that the coding agent has to interpret and reason around. If - as is highly recommended - you run serena then prefer to let serena handle the integration with language servers.
+Language servers are familiar to most IDE users, but coding agents usually cannot interact with them directly. MCP wrappers can expose a language server to an agent, but they often do so by forwarding raw JSON responses that still need to be interpreted. If you also run Serena, prefer to let Serena handle the language-server integration.
 
 ### Serena
+
 https://github.com/oraios/serena
 
-Probably the most important tool at the time of writing. Serena provides semantic analysis and instructions to help coding agents stay on target. 
+Serena is the most useful tool in this workflow. It provides semantic analysis and retrieval features that help coding agents stay focused on the right parts of the codebase and understand the structure of the language they are working in.
 
 ### Code Context Engine
+
 https://github.com/elara-labs/code-context-engine
 
-Creates and maintains an index of the codebase. This means that a coding agent often can read only the relevant part of a file instead of searching all the content of several files. 
+Code Context Engine builds and maintains an index of the codebase, which lets a coding agent inspect the relevant parts of a file without scanning unrelated content across many files.
 
-As a side note, I find it interesting that vector embeddings were removed from Claude Code. My amatuer understanding is that Serena tells the agent what the code is doing and code context enginer where the interesting code. This differs from vector embeddnings which tells the coding agent which parts of the codebase looks similar. Knowing that calls to write to the database looks similar is not useful, but the information where they are and what they write is.
+One observation from this tooling landscape is that different systems solve different problems. Serena helps explain what the code is doing, while a code index helps locate where the interesting code lives. That is more useful than simply surfacing syntactically similar code, which is often not enough to guide a change.
 
-## Documentation and code completion
+## Documentation and Code Completion
 
-Code documentation for DDS3 is generated through doxygen, which extracts formatted comments from the source code. The
-build command
+Code documentation for DDS3 is generated with Doxygen, which extracts formatted comments from the source code. Run the following command to generate the local documentation:
 
 ```
 bazelisk build //:doxygen_docs
 ```
 
-generates a stack of local html pages. Open `doxygen_output/html/pages.html` to read the documentation.
+The generated HTML pages are available under `doxygen_output/html/`. Open `doxygen_output/html/pages.html` to read the documentation.
 
 ### Extracting compile_commands.json
 
-Language servers, such as clangd, rely on a file called `compile_commands.json` which contains information about how project artefacts are build. 
+Language servers such as clangd rely on a `compile_commands.json` file, which describes how the project is built.
+
+On macOS or Linux, the following command generates that file when the `bazel-compile-commands` utility is installed:
+
+```
+bazel-compile-commands //...
+```
+
 https://github.com/kiron1/bazel-compile-commands
+
+An alternative is Hedron Compile Commands, which can be integrated into the Bazel build. It appears to be less actively maintained, but it is still worth knowing about:
 
 https://github.com/hedronvision/bazel-compile-commands-extractor
