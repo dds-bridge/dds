@@ -18,9 +18,6 @@ Build/int
 obj
 .cr
 
-# Ignore miscellaneous files
-.github
-
 # Prerequisites
 *.d
 
