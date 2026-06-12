@@ -1,9 +1,7 @@
 ﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using DDS_Core.Helpers;
 using DDS_Core.Native;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace DDS_Core;
 
@@ -79,7 +77,7 @@ public class DDS
         [Obsolete("Use SolverContext instead.")]
         public void SetResources(in int maxMemoryMB, in int maxThreads)
 
-                                                        => DdsNative.SetResources(maxMemoryMB, maxThreads);
+                                                            => DdsNative.SetResources(maxMemoryMB, maxThreads);
 
         /// <summary>
         /// Frees memory used by the solver.
@@ -189,6 +187,8 @@ public class DDS
         public int SolveAllBoards( in Boards bop
                                  , out SolvedBoards solved)
         {
+            solved = default;
+
             //Note: To step into c++ code you must set a break in c++?
             var rc = DdsNative.SolveAllBoardsBin( bop
                                                 , out solved);
@@ -376,11 +376,11 @@ public class DDS
         /// <returns>
         /// Error code (<c>RETURN_NO_FAULT</c> on success).
         /// </returns>
-        public int CalcPar(in DdTableDealPBN tableDealPBN
+        public int CalcPar( in DdTableDealPBN tableDealPBN
                           , in int vulnerable
                           , out DdTableResults tableResults
                           , out ParResults parResults)
-    {
+        {
             var rc = DdsNative.CalcParPBN( tableDealPBN
                                          , out tableResults
                                          , vulnerable
@@ -529,17 +529,15 @@ public class DDS
                                   , out SolvedPlays solved
                                   , in int chunkSize)
         {
-         
-                solved = new();
+            solved = new();
 
-                var rc = DdsNative.AnalyseAllPlaysBin( bop
-                                                     , plp
-                                                     , out solved
-                                                     , chunkSize);
+            var rc = DdsNative.AnalyseAllPlaysBin( bop
+                                                 , plp
+                                                 , out solved
+                                                 , chunkSize);
 
-                ThrowIfError(rc, nameof(AnalyseAllPlays));
-                return rc;
-         
+            ThrowIfError(rc, nameof(AnalyseAllPlays));
+            return rc;
         }
 
         /// <summary>
@@ -621,13 +619,11 @@ public class DDS
             DdsNative.ErrorMessage(code, str);
             line = str.ToString();
         }
-
-   
     #endregion
 
     #region private methods
-    [Conditional("DEBUG")]
-    private static void ThrowIfError(in int result, in string functionName)
+        [Conditional("DEBUG")]
+        private static void ThrowIfError(in int result, in string functionName)
         {
             if (result != (int)SolveBoardResult.NoFault)
                 throw new InvalidOperationException($"{functionName} failed with code {result}: {result.GetRCErrorMessage()}");

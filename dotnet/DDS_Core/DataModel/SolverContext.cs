@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using DDS_Core.Helpers;
 using DDS_Core.Native;
 
@@ -67,7 +61,7 @@ public sealed class SolverContext : IDisposable
         #region CalcDdTable - Double Dummy Table and Par
             public int CalcDdTable(in DdTableDeal table_deal, out DdTableResults table_results)
             {
-                var rc = DdsNative.calc_ddtable( Handle
+                var rc = DdsNative.dds_calc_dd_table( Handle
                                                 , in table_deal
                                                 , out table_results);
 
@@ -77,7 +71,7 @@ public sealed class SolverContext : IDisposable
 
             public int CalcDdTable(in DdTableDealPBN table_deal_pbn, out DdTableResults table_results)
             {
-                var rc = DdsNative.calc_ddtable_pbn( Handle
+                var rc = DdsNative.dds_calc_dd_table_pbn( Handle
                                                     , in table_deal_pbn
                                                     , out table_results);
 
@@ -118,7 +112,7 @@ public sealed class SolverContext : IDisposable
                               , out DdTableResults table_results
                               , out ParResults par_results)
             {
-                var rc = DdsNative.calc_par_dll( Handle
+                var rc = DdsNative.dds_calc_par( Handle
                                            , in table_deal
                                            , vulnerable
                                            , out table_results
@@ -144,7 +138,6 @@ public sealed class SolverContext : IDisposable
 
     #region private methods
         [Conditional("DEBUG")]
-
         private static void ThrowIfError(int result, string functionName)
         {
             if (result != (int)SolveBoardResult.NoFault)
