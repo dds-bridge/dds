@@ -138,6 +138,7 @@ internal class Program
                 ctx.ResetForSolve();
             }
 
+
         DisplayTricks();
     }
 
