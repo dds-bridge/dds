@@ -418,8 +418,8 @@ internal class Program
         tricks = new int[5, 4];
 
         var rc = dds.Par( in tableResults
-                        , out ParResults results
-                        , vulnability);
+                        , vulnability                        , out ParResults results
+);
 
         Console.WriteLine(results.ParContractStrings);
         Console.WriteLine(results.ParScores);
@@ -517,8 +517,8 @@ internal class Program
         tricks = new int[5, 4];
 
         var rc = dds.ParSide( in tResults
-                            , out ParResultsDealers results
-                            , vulnability);
+                            , vulnability                            , out ParResultsDealers results
+);
 
         Console.WriteLine(results[0].NumberOfContracts);
         Console.WriteLine(results[0].Score);
@@ -539,8 +539,8 @@ internal class Program
         tricks = new int[5, 4];
 
         var rc = dds.ParAll( in tResults
-                           , out ParResultsMasters results
-                           , vulnability);
+                           , vulnability                           , out ParResultsMasters results
+);
 
         for (int s = 0; s <  2; s++)
         {
@@ -575,9 +575,9 @@ internal class Program
         tricks = new int[5, 4];
 
         var rc = dds.ParDealer( in tResults
-                              , out ParResultsDealer results
                               , dealer
                               , vulnability
+                              , out ParResultsDealer results
                               );
 
         Console.WriteLine(results.NumberOfContracts);
@@ -595,9 +595,9 @@ internal class Program
         tricks = new int[5, 4];
 
         var rc = dds.DealerParBothSides( in tResults
-                                       , out ParResultsMaster results
                                        , dealer
-                                       , vulnability);
+                                       , vulnability                                       , out ParResultsMaster results
+);
 
         Console.WriteLine(results.Number);
         Console.WriteLine(results.Score);
@@ -640,8 +640,8 @@ internal class Program
 
         var rc = dds.AnalysePlay( in deal
                                 , in ptrace
-                                , out SolvedPlay solved
-                                , 0);
+                                , 0                                , out SolvedPlay solved
+);
 
         for (int i = 0; i <= ptrace.NumberOfCards; i++)
             Console.WriteLine($"{i,2}: {solved.Tricks[i]}");
@@ -656,8 +656,8 @@ internal class Program
 
         var rc = dds.AnalysePlay( in deal
                                 , in ptrace
-                                , out SolvedPlay solved
-                                , 0);
+                                , 0                                , out SolvedPlay solved
+);
 
         for (int i = 0; i <= ptrace.NumberOfPlayedCards; i++)
             Console.WriteLine($"{i,2}: {solved.Tricks[i]}");
@@ -673,8 +673,8 @@ internal class Program
 
         var rc = dds.AnalyseAllPlays( in boards
                                     , in ptrace
-                                    , out SolvedPlays solved
-                                    , 0);
+                                    , 0                                    , out SolvedPlays solved
+);
 
         if (isPerformanceTest)
         {
@@ -693,8 +693,8 @@ internal class Program
 
         var rc = dds.AnalyseAllPlays( in boards
                                     , in ptrace
-                                    , out SolvedPlays solved
-                                    , 0);
+                                    , 0                                    , out SolvedPlays solved
+);
 
         for (int i = 0; i <= ptrace.Plays[0].NumberOfPlayedCards; i++)
             Console.WriteLine($"{i,2}: {solved.Solved[0].Tricks[i]}");
@@ -786,7 +786,7 @@ internal class Program
             GC.Collect();
 
             for (int i = 0; i <  5; i++)
-                dds.AnalyseAllPlays(in boards, in playTracesBin, out SolvedPlays solved, 0);
+                dds.AnalyseAllPlays(in boards, in playTracesBin, 0, out SolvedPlays solved);
 
             dds.FreeMemory();
 
@@ -797,7 +797,7 @@ internal class Program
 
             for (int i = 0; i <  iterations; i++)
             {
-                dds.AnalyseAllPlays(in boards, in playTracesBin, out SolvedPlays solved, 0);
+                dds.AnalyseAllPlays(in boards, in playTracesBin, 0, out SolvedPlays solved);
                 dds.FreeMemory();
             }
 
