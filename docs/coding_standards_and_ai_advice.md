@@ -39,11 +39,9 @@ One observation from this tooling landscape is that different systems solve diff
 
 Code documentation for DDS3 is generated with Doxygen, which extracts formatted comments from the source code. Run the following command to generate the local documentation:
 
-```
-bazelisk build //:doxygen_docs
-```
+    bazelisk build //:doxygen_docs
 
-The generated HTML pages are available under `doxygen_output/html/`. Open `doxygen_output/html/pages.html` to read the documentation.
+The generated HTML pages are written under `bazel-bin/doxygen_output/html/` (and packaged as `bazel-bin/doxygen_docs.zip`). Open `bazel-bin/doxygen_output/html/index.html` to read the documentation.
 
 ### Extracting compile_commands.json
 
