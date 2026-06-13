@@ -31,7 +31,7 @@ This project uses GitHub as its primary version control and collaboration platfo
 5. Small PRs are preferred — keep them focused on one logical change.
 
 ## Tooling
-Use the github command line interface to:
+Use `git` for local version control, and the GitHub CLI (`gh`) for GitHub operations:
    - Create branches
    - Commit and push changes
    - Open pull requests
