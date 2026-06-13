@@ -89,10 +89,9 @@ void usage(
     "-s, --solver       One of: solve, calc, play, par, dealerpar.\n" <<
     "                   (Default: solve)\n" <<
     "\n" <<
-    "-n, --numthr n     Maximum number of threads (legacy option).\n" <<
-    "                   (Default: 0 uses DDS/library defaults; when using\n" <<
-    "                   the modern SolverContext API, prefer configuring\n" <<
-    "                   threads via SolverConfig instead of this option.)\n" <<
+    "-n, --numthr n     Worker threads for solve/calc/play batches.\n" <<
+    "                   0 = auto (hardware concurrency), 1 = sequential.\n" <<
+    "                   (Default: 0)\n" <<
     "\n" <<
     "-m, --memory n     Total DDS memory size in MB (legacy option).\n" <<
     "                   (Default: 0 uses DDS/library defaults; when using\n" <<

@@ -16,6 +16,8 @@
 #include "TestTimer.hpp"
 #include "compare.hpp"
 #include "print.hpp"
+#include "cst.hpp"
+#include "dtest_parallel.hpp"
 
 using std::cout;
 using std::endl;
@@ -26,6 +28,7 @@ using std::right;
 #define BATCHTIMES
 
 extern TestTimer timer;
+extern OptionsType options;
 
 
 void loop_solve(
@@ -57,7 +60,28 @@ void loop_solve(
 
     timer.start(count);
     int ret;
-    if ((ret = SolveAllChunks(bop, solvedbdp, 1)) != RETURN_NO_FAULT)
+    if (dtest_effective_threads(options.num_threads_, count) <= 1)
+    {
+      ret = SolveAllBoardsSeq(bop, solvedbdp);
+    }
+    else
+    {
+      solvedbdp->no_of_boards = count;
+      ret = dtest_run_parallel(count, options.num_threads_,
+        [&](const int j) -> int {
+          FutureTricks fut;
+          const int res = SolveBoardPBN(
+            bop->deals[j], bop->target[j], bop->solutions[j], bop->mode[j],
+            &fut, 0);
+          if (res == RETURN_NO_FAULT)
+          {
+            solvedbdp->solved_board[j] = fut;
+            return RETURN_NO_FAULT;
+          }
+          return res;
+        });
+    }
+    if (ret != RETURN_NO_FAULT)
     {
       cout << "loop_solve: i " << i << ", return " << ret << "\n";
       exit(0);
@@ -114,8 +138,29 @@ bool loop_calc(
 
     timer.start(count);
     int ret;
-    if ((ret = CalcAllTablesPBN(dealsp, -1, filter, resp, parp))
-        != RETURN_NO_FAULT)
+    if (dtest_effective_threads(options.num_threads_, count) <= 1)
+    {
+      ret = CalcAllTablesPBN(dealsp, -1, filter, resp, parp);
+    }
+    else
+    {
+      ret = dtest_run_parallel(count, options.num_threads_,
+        [&](const int j) -> int {
+          return CalcDDtablePBN(dealsp->deals[j], &resp->results[j]);
+        });
+      if (ret == RETURN_NO_FAULT)
+      {
+        int strains = 0;
+        for (int k = 0; k < DDS_STRAINS; k++)
+        {
+          if (!filter[k])
+            strains++;
+        }
+        // Match CalcAllTablesPBN accounting: 4 declarers per strain-board.
+        resp->no_of_boards = 4 * count * strains;
+      }
+    }
+    if (ret != RETURN_NO_FAULT)
     {
       cout << "loop_calc: i " << i << ", return " << ret << "\n";
       exit(0);
@@ -270,8 +315,20 @@ bool loop_play(
 
     timer.start(count);
     int ret;
-    if ((ret = AnalyseAllPlaysPBN(bop, playsp, solvedplp, 1))
-        != RETURN_NO_FAULT)
+    if (dtest_effective_threads(options.num_threads_, count) <= 1)
+    {
+      ret = AnalyseAllPlaysPBN(bop, playsp, solvedplp, 1);
+    }
+    else
+    {
+      solvedplp->no_of_boards = count;
+      ret = dtest_run_parallel(count, options.num_threads_,
+        [&](const int j) -> int {
+          return AnalysePlayPBN(
+            bop->deals[j], playsp->plays[j], &solvedplp->solved[j], 0);
+        });
+    }
+    if (ret != RETURN_NO_FAULT)
     {
       printf("loop_play i %i: Return %d\n", i, ret);
       cout << "loop_play: i " << i << ": " << "return " << ret << "\n";
