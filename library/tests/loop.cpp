@@ -16,6 +16,8 @@
 #include "TestTimer.hpp"
 #include "compare.hpp"
 #include "print.hpp"
+#include <vector>
+
 #include "cst.hpp"
 #include "dtest_parallel.hpp"
 
@@ -137,29 +139,7 @@ bool loop_calc(
       strcpy(dealsp->deals[j].cards, deal_list[i+j].remainCards);
 
     timer.start(count);
-    int ret;
-    if (dtest_effective_threads(options.num_threads_, count) <= 1)
-    {
-      ret = CalcAllTablesPBN(dealsp, -1, filter, resp, parp);
-    }
-    else
-    {
-      ret = dtest_run_parallel(count, options.num_threads_,
-        [&](const int j) -> int {
-          return CalcDDtablePBN(dealsp->deals[j], &resp->results[j]);
-        });
-      if (ret == RETURN_NO_FAULT)
-      {
-        int strains = 0;
-        for (int k = 0; k < DDS_STRAINS; k++)
-        {
-          if (!filter[k])
-            strains++;
-        }
-        // Match CalcAllTablesPBN accounting: 4 declarers per strain-board.
-        resp->no_of_boards = 4 * count * strains;
-      }
-    }
+    const int ret = CalcAllTablesPBN(dealsp, -1, filter, resp, parp);
     if (ret != RETURN_NO_FAULT)
     {
       cout << "loop_calc: i " << i << ", return " << ret << "\n";

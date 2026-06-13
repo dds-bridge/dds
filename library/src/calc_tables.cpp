@@ -8,6 +8,10 @@
 */
 
 #include "calc_tables.hpp"
+#include <atomic>
+#include <thread>
+#include <vector>
+
 #include <pbn.hpp>
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
@@ -102,13 +106,81 @@ auto calc_all_boards_n(
   return RETURN_NO_FAULT;
 }
 
-// Legacy overload: creates temporary context
+// Legacy overload: parallel across boards, one SolverContext per worker.
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp) -> int
 {
-  SolverContext ctx;
-  return calc_all_boards_n(ctx, bop, solvedp);
+  const int n = bop->no_of_boards;
+  if (n > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
+    solvedp->solved_board[k].cards = 0;
+
+  const int nthreads = std::max(1,
+    std::min(static_cast<int>(std::thread::hardware_concurrency()), n));
+
+  if (nthreads <= 1)
+  {
+    SolverContext ctx;
+    return calc_all_boards_n(ctx, bop, solvedp);
+  }
+
+  std::vector<SolverContext> contexts(static_cast<unsigned>(nthreads));
+  std::atomic<int> next_board{0};
+  std::atomic<int> first_error{0};
+
+  auto worker = [&](const int worker_id) {
+    for (;;)
+    {
+      const int bno = next_board.fetch_add(1, std::memory_order_relaxed);
+      if (bno >= n || first_error.load(std::memory_order_relaxed) != 0)
+        break;
+
+      const int err = calc_single_common_internal(
+        contexts[static_cast<unsigned>(worker_id)], *bop, *solvedp, bno);
+      if (err != 1)
+      {
+        int expected = 0;
+        first_error.compare_exchange_strong(
+          expected, err, std::memory_order_relaxed);
+        break;
+      }
+    }
+  };
+
+  START_BLOCK_TIMER;
+  {
+    std::vector<std::thread> threads;
+    threads.reserve(static_cast<unsigned>(nthreads));
+    try
+    {
+      for (int i = 0; i < nthreads; ++i)
+        threads.emplace_back(worker, i);
+    }
+    catch (...)
+    {
+      for (auto & t : threads)
+        if (t.joinable())
+          t.join();
+      throw;
+    }
+    for (auto & t : threads)
+      t.join();
+  }
+  END_BLOCK_TIMER;
+
+  if (const int err = first_error.load(); err != 0)
+    return err;
+
+  solvedp->no_of_boards = n;
+
+#ifdef DDS_SCHEDULER
+  scheduler.PrintTiming();
+#endif
+
+  return RETURN_NO_FAULT;
 }
 
 
