@@ -21,6 +21,6 @@ alwaysApply: false
 2. **Make changes** locally.  
 3. **Commit** with a clear message.  
 4. **Push** the branch.  
-5. **Open a PR** via the `github` command line interface.  
+5. **Open a PR** via the GitHub CLI (`gh`).
 
 ---
