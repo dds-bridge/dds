@@ -1,7 +1,5 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
-using static System.Net.WebRequestMethods;
 
 namespace DDS_Core.Native;
 
@@ -59,18 +57,18 @@ internal static class DdsNative
 
             #region Call_dd
                 //    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                //public static extern int calc_ddtable( in DdTableDeal table_deal
+                //public static extern int dds_calc_dd_table( in DdTableDeal table_deal
                 //                                      , out DdTableResults table_results);
                 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                public static extern int calc_ddtable( SolverContextHandle ctx
+                public static extern int dds_calc_dd_table( SolverContextHandle ctx
                                                       , in DdTableDeal table_deal
                                                       , out DdTableResults table_results);
 
                 //    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                //public static extern int calc_dd_table_pbn( in DdTableDealPBN table_deal_pbn
+                //public static extern int dds_calc_dd_table_pbn( in DdTableDealPBN table_deal_pbn
                 //                                          , out DdTableResults table_results);
                 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                public static extern int calc_ddtable_pbn( SolverContextHandle ctx
+                public static extern int dds_calc_dd_table_pbn( SolverContextHandle ctx
                                                           , in DdTableDealPBN table_deal_pbn
                                                           , out DdTableResults table_results);
             #endregion
@@ -82,7 +80,7 @@ internal static class DdsNative
                 //                                 , out DdTableResults table_results
                 //                                 , out ParResults par_results);
                 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-                public static extern int calc_par( SolverContextHandle ctx
+                public static extern int dds_calc_par( SolverContextHandle ctx
                                                  , in DdTableDeal table_deal
                                                  , int vulnerable
                                                  , out DdTableResults table_results
