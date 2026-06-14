@@ -28,7 +28,7 @@ This project uses GitHub as its primary version control and collaboration platfo
    - CI build
    - All unit and integration tests
    - Any lint/format checks
-5. Small PRs are preferred — keep them focused on one logical change.
+5. Small PRs are preferred — keep each focused on one logical change.
 
 ## Tooling
 Use `git` for local version control, and the GitHub CLI (`gh`) for GitHub operations:
@@ -38,7 +38,7 @@ Use `git` for local version control, and the GitHub CLI (`gh`) for GitHub operat
    - Check PR status
 
 ## Automation
-- CI/CD runs automatically for all PRs.
+- CI runs automatically for all PRs.
 - Approved PRs can be merged by maintainers.
 
 ```
