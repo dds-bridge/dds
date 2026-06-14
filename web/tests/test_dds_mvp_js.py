@@ -37,12 +37,16 @@ class DdsMvpJsTest(unittest.TestCase):
         if not node:
             raise unittest.SkipTest("node not found")
 
-        version = subprocess.run(
-            [node, "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
-        ).stdout.strip()
+        try:
+            version = subprocess.run(
+                [node, "--version"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            ).stdout.strip()
+        except subprocess.TimeoutExpired:
+            raise unittest.SkipTest("node --version timed out")
         try:
             major = int(version.lstrip("v").split(".", 1)[0])
         except ValueError:
@@ -54,13 +58,17 @@ class DdsMvpJsTest(unittest.TestCase):
         dds_mvp_js = rlocation("web/dds_mvp.js")
         env = os.environ.copy()
         env["DDS_MVP_JS"] = str(dds_mvp_js)
-        proc = subprocess.run(
-            [node, "--test", str(test_script)],
-            capture_output=True,
-            text=True,
-            check=False,
-            env=env,
-        )
+        try:
+            proc = subprocess.run(
+                [node, "--test", str(test_script)],
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+                timeout=55,
+            )
+        except subprocess.TimeoutExpired as exc:
+            self.fail(f"node --test timed out: {exc}")
         self.assertEqual(
             proc.returncode,
             0,
