@@ -8,15 +8,13 @@
 */
 
 #include <algorithm>
-#include <atomic>
 #include <chrono>
-#include <thread>
-#include <vector>
 
 #include "solve_board.hpp"
 #include <solver_if.hpp>
 #include <pbn.hpp>
 #include <system/memory.hpp>
+#include <system/parallel_boards.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 #include <utility/debug.h>
@@ -44,17 +42,11 @@ auto solve_all_boards_n(
 
   scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
-  const int nthreads = std::max(1,
-    std::min(static_cast<int>(std::thread::hardware_concurrency()), n));
+  START_BLOCK_TIMER;
 
-  std::atomic<int> next_board{0};
-  std::atomic<int> first_error{0};
-
-  auto worker = [&] {
-    for (;;) {
-      const int bno = next_board.fetch_add(1, std::memory_order_relaxed);
-      if (bno >= n || first_error.load(std::memory_order_relaxed) != 0)
-        break;
+  const int err = parallel_all_boards_n(n, 0,
+    [&](const int worker_id, const int bno) -> int {
+      (void)worker_id;
 
       FutureTricks fut;
       const auto t0 = std::chrono::steady_clock::now();
@@ -66,37 +58,14 @@ auto solve_all_boards_n(
       if (dur < 0) dur = 0;
       scheduler.SetBoardTime(bno, static_cast<int>(dur));
 
-      if (res == 1)
+      if (res == RETURN_NO_FAULT)
         solved.solved_board[bno] = fut;
-      else {
-        int expected = 0;
-        first_error.compare_exchange_strong(
-          expected, res, std::memory_order_relaxed);
-      }
-    }
-  };
+      return res;
+    });
 
-  START_BLOCK_TIMER;
-  {
-    // Avoid std::jthread here: Emscripten's libc++ on Windows does not
-    // provide it yet, while std::thread is widely available.
-    std::vector<std::thread> threads;
-    threads.reserve(static_cast<unsigned>(nthreads));
-    try {
-      for (int i = 0; i < nthreads; ++i)
-        threads.emplace_back(worker);
-    } catch (...) {
-      for (auto& t : threads)
-        if (t.joinable())
-          t.join();
-      throw;
-    }
-    for (auto& t : threads)
-      t.join();
-  }
   END_BLOCK_TIMER;
 
-  if (const int err = first_error.load(); err != 0)
+  if (err != RETURN_NO_FAULT)
     return err;
 
   solved.no_of_boards = n;
