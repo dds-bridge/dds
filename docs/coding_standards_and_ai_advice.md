@@ -1,6 +1,6 @@
-# Coding agents and coding standards
+# Coding Agents and Coding Standards
 
-Coding agents are improving quickly, and the best tool or model for a task can change from one month to the next. This note collects the coding guidance and tooling recommendations that were assembled during the first quarter of 2026, when most of the modernisation work for release 3.0.0 was completed.
+Coding agents are improving quickly, and the best tool or model for a task can change from one month to the next. This note collects coding guidance and tooling recommendations assembled during the first quarter of 2026, when most of the modernisation work for release 3.0.0 was completed.
 
 This document does not prescribe a specific MCP server setup. MCP servers can be powerful, but they also introduce security risks, so the right deployment strategy depends on the environment.
 
@@ -19,7 +19,7 @@ Consistent style matters even more when both humans and coding agents are readin
 
 https://clangd.llvm.org
 
-Language servers are familiar to most IDE users, but coding agents usually cannot interact with them directly. MCP wrappers can expose a language server to an agent, but they often do so by forwarding raw JSON responses that still need to be interpreted. If you also run Serena, prefer to let Serena handle the language-server integration.
+Language servers are familiar to most IDE users, but coding agents usually cannot interact with them directly. MCP wrappers can expose a language server to an agent, but they often do so by forwarding raw JSON responses that still need interpretation. If you also run Serena, prefer to let Serena handle the language-server integration.
 
 ### Serena
 
@@ -31,7 +31,7 @@ Serena is the most useful tool in this workflow. It provides semantic analysis a
 
 https://github.com/elara-labs/code-context-engine
 
-Code Context Engine builds and maintains an index of the codebase, which lets a coding agent inspect the relevant parts of a file without scanning unrelated content across many files.
+Code Context Engine builds and maintains an index of the codebase, letting a coding agent inspect relevant parts of a file without scanning unrelated content across many files.
 
 One observation from this tooling landscape is that different systems solve different problems. Serena helps explain what the code is doing, while a code index helps locate where the interesting code lives. That is more useful than simply surfacing syntactically similar code, which is often not enough to guide a change.
 
@@ -55,6 +55,10 @@ bazel-compile-commands //...
 
 https://github.com/kiron1/bazel-compile-commands
 
-An alternative is Hedron Compile Commands, which can be integrated into the Bazel build. It appears to be less actively maintained, but it is still worth knowing about:
+An alternative is Hedron Compile Commands, which can be integrated into the Bazel build. It appears to be less actively maintained, but is still worth knowing about:
 
 https://github.com/hedronvision/bazel-compile-commands-extractor
+
+## Other Tooling
+
+We are not maintaining an official list of recommended tools for working with the DDS codebase. The CI scripts use `homebrew` or `apt-get` to install `doxygen`, so you may have to update `PATH` variables in build scripts if you install it using another method.
