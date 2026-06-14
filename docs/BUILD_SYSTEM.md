@@ -16,6 +16,8 @@ toolchain selection lives in `MODULE.bazel` and standard-language settings are
 primarily configured in `.bazelrc` (with a fallback default in
 `CPPVARIABLES.bzl`).
 
+MODULE.bazel.lock is checked in and version managed as per current bazel best practises.
+
 ### macOS SDK and Runtime Compatibility
 
 On macOS, binaries built against a newer SDK/runtime than the currently running
@@ -29,14 +31,13 @@ If you see runtime loader failures after a toolchain or OS change:
 
 
 ## Visual Studio and Rider Build
+
 The top-level `solution` folder contains a Visual Studio solution file `solution.slnx` and 
 project files for the dds and all the samples. It also contains a `Directory.Build.props` 
 file which defines the common properties for all the projects. 
 
 Note this line in the `Directory.Build.props` file: `<BuildDir>$(MSBuildThisFileDirectory)\..\Build\</BuildDir>` 
 defining the output directory for all the projects. 
-
-
 
 ## API Layers
 
