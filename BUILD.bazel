@@ -93,6 +93,11 @@ genrule(
     outs = ["doxygen_docs.zip"],
     cmd = """
       set -e
+      case "$$(uname -s)" in
+        Darwin)  PATH="/opt/homebrew/bin:/usr/local/bin:$$PATH" ;;
+        Linux)   PATH="/usr/local/bin:$$PATH" ;;
+        MINGW*|MSYS*|CYGWIN*) PATH="/usr/bin:/usr/local/bin:$$PATH" ;;
+      esac
       DOXYFILE_GEN="$(@D)/Doxyfile.generated"
       OUT_DIR="$(@D)/doxygen_output"
       OUT_ZIP="$$(pwd)/$@"
