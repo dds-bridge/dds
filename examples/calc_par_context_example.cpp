@@ -170,10 +170,6 @@ auto main() -> int
   printf("DDS Examples: Par Calculation with SolverContext\n");
   printf("================================================\n");
 
-#if defined(__linux) || defined(__APPLE__)
-  SetMaxThreads(0);
-#endif
-
   // Run examples
   example_without_context();
   example_with_context();

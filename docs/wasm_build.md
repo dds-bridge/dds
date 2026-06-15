@@ -98,7 +98,6 @@ For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/examples
 | `-O3` | Aggressive optimization |
 | `-flto` | Link-time optimization |
 | `-fexceptions` | Enable C++ exceptions |
-| `-D__WASM__` | Preprocessor constant for WASM builds |
 | `-sWASM=1` | Emscripten WASM output (link flag) |
 | `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime |
 | `-sINITIAL_MEMORY=268435456` | 256MB initial memory |

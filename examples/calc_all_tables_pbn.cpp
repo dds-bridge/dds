@@ -30,10 +30,6 @@ auto main() -> int
   char line[80];
   bool match;
 
-#if defined(__linux) || defined(__APPLE__)
-  SetMaxThreads(0);
-#endif
-
   DDdealsPBN.no_of_tables = 3;
 
   for (int handno = 0; handno < 3; handno++)

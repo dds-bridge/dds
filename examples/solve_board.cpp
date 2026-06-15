@@ -33,10 +33,6 @@ auto main() -> int
   bool match2;
   bool match3;
 
-#if defined(__APPLE__)
-  SetMaxThreads(0);
-#endif
-
   for (int handno = 0; handno < 3; handno++)
   {
     dl.trump = trump_suit_[handno];
