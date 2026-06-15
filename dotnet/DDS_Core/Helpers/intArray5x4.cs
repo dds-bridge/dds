@@ -70,10 +70,10 @@ public unsafe struct intArray5x4 : IBuffer
     {
         var buf = new intArray5x4();
 
-        int k = 0;
-        int rows = Math.Min(src.Length, SIZE);
-        int cols = Math.Min(src[0].Length, COLS);
+        int rows = Math.Min(src.Length, ROWS);
+        int cols = src.Length > 0 ? Math.Min(src[0].Length, COLS) : 0;
 
+        int k = 0;
         for (int r = 0; r <  rows; r++)
             for (int c = 0; c <  cols; c++)
                 buf.data[k++] = src[r][c];
