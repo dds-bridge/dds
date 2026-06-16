@@ -13,9 +13,6 @@
 #include "hands.hpp"
 
 TEST(CalcDdTablePbnWasmTest, MatchesReferenceTables) {
-#if defined(__linux) || defined(__APPLE__) || defined(__WASM__)
-  SetMaxThreads(0);
-#endif
 
   for (int handno = 0; handno < 3; ++handno) {
     DdTableDealPBN deal{};

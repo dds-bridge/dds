@@ -27,10 +27,6 @@ auto main() -> int
   char line[80];
   bool match;
 
-#if defined(__linux) || defined(__APPLE__) || defined(__WASM__)
-  SetMaxThreads(0);
-#endif
-
   for (int handno = 0; handno < 3; handno++)
   {
     strcpy(tableDealPBN.cards, pbn_hands_[handno]);

@@ -251,8 +251,6 @@ auto hand_from_holdings(const std::array<std::string, 4>& suits) -> std::vector<
 
 class AnalysePlayConsistency : public ::testing::Test
 {
-protected:
-  void SetUp() override { SetMaxThreads(0); }
 };
 
 // The exact deal from dds-bridge/dds issue #156.
