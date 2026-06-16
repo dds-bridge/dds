@@ -78,6 +78,17 @@ public:
   }
 
   /**
+   * @brief Non-owning raw access to the underlying ThreadData.
+   *
+   * Avoids the atomic reference-count traffic of copying the shared_ptr in
+   * hot search paths. The pointer is valid for the lifetime of the context.
+   */
+  auto thread_ptr() const -> ThreadData*
+  {
+    return thr_.get();
+  }
+
+  /**
    * @brief Access the current configuration snapshot.
    *
    * @return Const reference to the configuration stored in this context.
