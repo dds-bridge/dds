@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include <calc_tables.hpp>
+#include <solver_context/worker_context_pool.hpp>
 #include "init.hpp"
 #include <play_analyser.hpp>
 #include <solve_board.hpp>
@@ -395,7 +395,7 @@ void STDCALL GetDDSInfo(DDSInfo * info)
  */
 void STDCALL FreeMemory()
 {
-  clear_calc_thread_contexts();
+  clear_worker_contexts();
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
     memory.ReturnThread(thrId);
 }

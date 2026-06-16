@@ -54,6 +54,3 @@ auto detect_calc_duplicates(
   const Boards& bds,
   std::vector<int>& uniques,
   std::vector<int>& crossrefs) -> void;
-
-/** Drop persistent calc worker SolverContext instances (e.g. on FreeMemory). */
-auto clear_calc_thread_contexts() -> void;

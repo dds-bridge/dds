@@ -8,20 +8,116 @@
 */
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
+#include <thread>
+#include <vector>
 
 #include "solve_board.hpp"
 #include <solver_if.hpp>
 #include <pbn.hpp>
-#include <system/memory.hpp>
-#include <system/parallel_boards.hpp>
+#include <solver_context/worker_context_pool.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 #include <utility/debug.h>
 
 
-extern Memory memory;
 extern Scheduler scheduler;
+extern System sysdep;
+
+namespace {
+
+struct SolveRunParam
+{
+  Boards const* bds = nullptr;
+  SolvedBoards* solved = nullptr;
+  std::atomic<int> error{RETURN_NO_FAULT};
+};
+
+void solve_chunk_common(const int thr_id, SolveRunParam& param)
+{
+  while (true)
+  {
+    const schedType st = scheduler.GetNumber(thr_id);
+    const int index = st.number;
+    if (index == -1)
+      break;
+
+    if (st.repeatOf != -1 &&
+        param.bds->deals[index].first == param.bds->deals[st.repeatOf].first)
+    {
+      START_THREAD_TIMER(thr_id);
+      param.solved->solved_board[index] =
+        param.solved->solved_board[st.repeatOf];
+      END_THREAD_TIMER(thr_id);
+      continue;
+    }
+
+    FutureTricks fut;
+    const auto t0 = std::chrono::steady_clock::now();
+    START_THREAD_TIMER(thr_id);
+    const int res = SolveBoard(
+      param.bds->deals[index],
+      param.bds->target[index],
+      param.bds->solutions[index],
+      param.bds->mode[index],
+      &fut,
+      thr_id);
+    END_THREAD_TIMER(thr_id);
+
+    auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - t0).count();
+    if (dur < 0)
+      dur = 0;
+    scheduler.SetBoardTime(index, static_cast<int>(dur));
+
+    if (res == RETURN_NO_FAULT)
+      param.solved->solved_board[index] = fut;
+    else
+    {
+      int expected = RETURN_NO_FAULT;
+      param.error.compare_exchange_strong(
+        expected, res, std::memory_order_relaxed);
+      break;
+    }
+  }
+}
+
+auto run_solve_threads(SolveRunParam& param) -> int
+{
+  const int num_threads = sysdep.get_num_threads();
+  ensure_worker_contexts(num_threads);
+
+  if (num_threads <= 1)
+  {
+    solve_chunk_common(0, param);
+    return RETURN_NO_FAULT;
+  }
+
+  std::vector<std::thread> threads;
+  threads.reserve(static_cast<unsigned>(num_threads));
+  try
+  {
+    for (int k = 0; k < num_threads; ++k)
+      threads.emplace_back(solve_chunk_common, k, std::ref(param));
+  }
+  catch (...)
+  {
+    for (auto& th : threads)
+    {
+      if (th.joinable())
+        th.join();
+    }
+    throw;
+  }
+
+  for (auto& th : threads)
+    th.join();
+
+  return RETURN_NO_FAULT;
+}
+
+} // namespace
 
 auto same_board(
   const Boards& bds,
@@ -42,29 +138,21 @@ auto solve_all_boards_n(
 
   scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
+  SolveRunParam param;
+  param.bds = &bds;
+  param.solved = &solved;
+  param.error.store(RETURN_NO_FAULT, std::memory_order_relaxed);
+
   START_BLOCK_TIMER;
 
-  const int err = parallel_all_boards_n(n, 0,
-    [&](const int worker_id, const int bno) -> int {
-      (void)worker_id;
-
-      FutureTricks fut;
-      const auto t0 = std::chrono::steady_clock::now();
-      const int res = SolveBoard(
-        bds.deals[bno], bds.target[bno], bds.solutions[bno],
-        bds.mode[bno], &fut, 0);
-      auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now() - t0).count();
-      if (dur < 0) dur = 0;
-      scheduler.SetBoardTime(bno, static_cast<int>(dur));
-
-      if (res == RETURN_NO_FAULT)
-        solved.solved_board[bno] = fut;
-      return res;
-    });
+  const int ret_run = run_solve_threads(param);
 
   END_BLOCK_TIMER;
 
+  if (ret_run != RETURN_NO_FAULT)
+    return ret_run;
+
+  const int err = param.error.load(std::memory_order_relaxed);
   if (err != RETURN_NO_FAULT)
     return err;
 
@@ -251,6 +339,8 @@ auto solve_all_boards_n_seq(
   scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
   int error = 0;
+
+  ensure_worker_contexts(sysdep.get_num_threads());
 
   START_BLOCK_TIMER;
   for (int bno = 0; bno < n && error == 0; bno++) {

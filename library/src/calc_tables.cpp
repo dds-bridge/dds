@@ -9,8 +9,6 @@
 
 #include "calc_tables.hpp"
 #include <atomic>
-#include <memory>
-#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -18,6 +16,7 @@
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
 #include <solver_if.hpp>
+#include <solver_context/worker_context_pool.hpp>
 #include <system/memory.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
@@ -36,46 +35,9 @@ struct CalcRunParam
   std::atomic<int> error{RETURN_NO_FAULT};
 };
 
-struct CalcThreadPool
-{
-  std::mutex mu;
-  std::vector<std::unique_ptr<SolverContext>> slots;
-};
-
-CalcThreadPool& calc_thread_pool()
-{
-  static CalcThreadPool pool;
-  return pool;
-}
-
-auto solver_config_for_thread(const unsigned thr_id) -> SolverConfig
-{
-  SolverConfig cfg;
-  if (thr_id < memory.NumThreads() && memory.ThreadSize(thr_id) == "S")
-    cfg.tt_kind_ = TTKind::Small;
-  return cfg;
-}
-
-void ensure_calc_contexts(const int num_threads)
-{
-  if (num_threads <= 0)
-    return;
-
-  auto& pool = calc_thread_pool();
-  std::lock_guard<std::mutex> lock(pool.mu);
-  const unsigned n = static_cast<unsigned>(num_threads);
-  if (pool.slots.size() < n)
-    pool.slots.resize(n);
-  for (unsigned k = 0; k < n; ++k)
-  {
-    if (!pool.slots[k])
-      pool.slots[k] = std::make_unique<SolverContext>(solver_config_for_thread(k));
-  }
-}
-
 void calc_chunk_common(const int thr_id, CalcRunParam& param)
 {
-  SolverContext& ctx = *calc_thread_pool().slots[static_cast<unsigned>(thr_id)];
+  SolverContext& ctx = worker_context_for(thr_id);
 
   while (true)
   {
@@ -115,7 +77,7 @@ void calc_chunk_common(const int thr_id, CalcRunParam& param)
 auto run_calc_threads(CalcRunParam& param) -> int
 {
   const int num_threads = sysdep.get_num_threads();
-  ensure_calc_contexts(num_threads);
+  ensure_worker_contexts(num_threads);
   if (num_threads <= 1)
   {
     calc_chunk_common(0, param);
@@ -146,12 +108,6 @@ auto run_calc_threads(CalcRunParam& param) -> int
 }
 
 } // namespace
-
-auto clear_calc_thread_contexts() -> void
-{
-  std::lock_guard<std::mutex> lock(calc_thread_pool().mu);
-  calc_thread_pool().slots.clear();
-}
 
 // Legacy overload (creates temporary context)
 auto calc_all_boards_n(
