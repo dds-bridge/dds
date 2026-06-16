@@ -10,6 +10,7 @@
 #include <api/calc_par.hpp>
 #include <api/calc_dd_table.hpp>
 #include <api/dll.h>
+#include <solver_context/solver_context.hpp>
 
 auto calc_par(
     const DdTableDeal& table_deal,
@@ -17,14 +18,8 @@ auto calc_par(
     DdTableResults* table_results,
     ParResults* par_results) -> int
 {
-    // For now, delegate to C API CalcPar which handles the full computation
-    // (CalcDDtable + Par).
-    return CalcPar(
-        table_deal,
-        vulnerable,
-        table_results,
-        par_results
-    );
+    SolverContext ctx;
+    return calc_par(ctx, table_deal, vulnerable, table_results, par_results);
 }
 
 auto calc_par(
