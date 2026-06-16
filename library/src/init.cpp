@@ -74,17 +74,14 @@ void STDCALL SetResources(
   int memMaxMB = min(memMaxGivenMB, memMaxFreeMB);
   memMaxMB = min(memMaxMB, memMax32bMB);
 
-  // Internal parallel execution has been removed.
-  // Legacy API calls execute sequentially, so use a single internal thread.
-  if (maxThreadsIn > 1) {
-    std::fprintf(
-      stderr,
-      "DDS warning: SetResources maxThreadsIn=%d requested, but internal batch threading is disabled; using 1 thread.\n",
-      maxThreadsIn);
-  }
-  (void) maxThreadsIn;
-  (void) ncores;
-  const int thrMax = 1;
+  // Limit worker count by memory budget and hardware.
+  int thrMax;
+  if (maxThreadsIn <= 0)
+    thrMax = ncores;
+  else
+    thrMax = std::min(maxThreadsIn, ncores);
+  if (thrMax < 1)
+    thrMax = 1;
 
   // For simplicity we won't vary the amount of memory per thread
   // in the small and large versions.
@@ -398,6 +395,7 @@ void STDCALL GetDDSInfo(DDSInfo * info)
  */
 void STDCALL FreeMemory()
 {
+  clear_calc_thread_contexts();
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
     memory.ReturnThread(thrId);
 }
