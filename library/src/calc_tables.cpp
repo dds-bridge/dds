@@ -8,11 +8,15 @@
 */
 
 #include "calc_tables.hpp"
+#include <thread>
+#include <vector>
+
 #include <pbn.hpp>
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
 #include <solver_if.hpp>
 #include <system/memory.hpp>
+#include <system/parallel_boards.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 
@@ -102,13 +106,56 @@ auto calc_all_boards_n(
   return RETURN_NO_FAULT;
 }
 
-// Legacy overload: creates temporary context
+// Legacy overload: parallel across boards, one SolverContext per worker.
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp) -> int
 {
-  SolverContext ctx;
-  return calc_all_boards_n(ctx, bop, solvedp);
+  const int n = bop->no_of_boards;
+  if (n > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
+    solvedp->solved_board[k].cards = 0;
+
+  START_BLOCK_TIMER;
+
+  const int nthreads = std::max(1,
+    std::min(static_cast<int>(std::thread::hardware_concurrency()), n));
+
+  int err = RETURN_NO_FAULT;
+  if (nthreads <= 1)
+  {
+    SolverContext ctx;
+    for (int bno = 0; bno < n; ++bno)
+    {
+      err = calc_single_common_internal(ctx, *bop, *solvedp, bno);
+      if (err != RETURN_NO_FAULT)
+        break;
+    }
+  }
+  else
+  {
+    std::vector<SolverContext> contexts(static_cast<unsigned>(nthreads));
+    err = parallel_all_boards_n(n, nthreads,
+      [&](const int worker_id, const int bno) -> int {
+        return calc_single_common_internal(
+          contexts[static_cast<unsigned>(worker_id)], *bop, *solvedp, bno);
+      });
+  }
+
+  END_BLOCK_TIMER;
+
+  if (err != RETURN_NO_FAULT)
+    return err;
+
+  solvedp->no_of_boards = n;
+
+#ifdef DDS_SCHEDULER
+  scheduler.PrintTiming();
+#endif
+
+  return RETURN_NO_FAULT;
 }
 
 

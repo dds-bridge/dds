@@ -33,6 +33,10 @@ int main(int argc, char * argv[])
   DDSInfo info;
   GetDDSInfo(&info);
   cout << info.systemString << endl;
+  if (options.num_threads_ == 0)
+    cout << "dtest worker threads: auto\n";
+  else
+    cout << "dtest worker threads: " << options.num_threads_ << "\n";
 
   real_main(argc, argv);
 
