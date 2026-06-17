@@ -1,1 +1,77 @@
-# WASM helpers live in //:wasm_compat.bzl (no build targets in this package).
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LOCAL_DEFINES")
+
+wasm_cc_binary(
+    name = "solve_board_wasm",
+    cc_target = "//examples:solve_board",
+    outputs = [
+        "solve_board.js",
+        "solve_board.wasm",
+    ],
+)
+
+wasm_cc_binary(
+    name = "analyse_play_bin_wasm",
+    cc_target = "//examples:AnalysePlayBin",
+    outputs = [
+        "AnalysePlayBin.js",
+        "AnalysePlayBin.wasm",
+    ],
+)
+
+wasm_cc_binary(
+    name = "calc_dd_table_pbn_wasm",
+    cc_target = "//examples:calc_dd_table_pbn",
+    outputs = [
+        "calc_dd_table_pbn.js",
+        "calc_dd_table_pbn.wasm",
+    ],
+)
+
+filegroup(
+    name = "all_examples_wasm",
+    srcs = [
+        ":analyse_play_bin_wasm",
+        ":calc_dd_table_pbn_wasm",
+        ":solve_board_wasm",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "calc_dd_table_pbn_test",
+    size = "small",
+    srcs = ["calc_dd_table_pbn_test.cpp"],
+    copts = DDS_CPPOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//examples:hands",
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "wasm_examples_system_test",
+    size = "small",
+    timeout = "short",
+    main = "tests/test_wasm_examples_system.py",
+    srcs = ["tests/test_wasm_examples_system.py"],
+    data = [":calc_dd_table_pbn_wasm"],
+)
+
+test_suite(
+    name = "all",
+    tests = [
+        ":calc_dd_table_pbn_test",
+        ":wasm_examples_system_test",
+    ],
+)
+
+test_suite(
+    name = "wasm_system_tests",
+    tests = [":wasm_examples_system_test"],
+)
