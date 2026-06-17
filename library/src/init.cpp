@@ -165,12 +165,8 @@ void InitDebugFiles()
 
 void CloseDebugFiles()
 {
-  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
-  {
-  SolverContext tmp_ctx;
-  [[maybe_unused]] auto thrp = tmp_ctx.thread();
-  thrp->close_debug_files();
-  }
+  // Per-context debug files are opened in SolverContext::bind_thread_data()
+  // and closed in ~SolverContext().
 }
 
 

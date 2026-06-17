@@ -1,13 +1,43 @@
 #include "solver_context.hpp"
 
+#include <atomic>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <string>
 
 #include <api/dds.h>
 //#include <api/dds_api.hpp>
 #include <trans_table/trans_table_l.hpp>
 #include <trans_table/trans_table_s.hpp>
+#include <utility/debug.h>
+
+namespace {
+
+#if defined(DDS_TOP_LEVEL) || defined(DDS_AB_STATS) || defined(DDS_AB_HITS) || \
+    defined(DDS_TT_STATS) || defined(DDS_TIMING) || defined(DDS_MOVES)
+std::string next_debug_file_suffix()
+{
+  static std::atomic<unsigned> serial{0};
+  return std::to_string(serial.fetch_add(1, std::memory_order_relaxed)) +
+         DDS_DEBUG_SUFFIX;
+}
+#endif
+
+}  // namespace
+
+void SolverContext::bind_thread_data()
+{
+  // Ensure persistent facades like SearchContext see the bound ThreadData.
+  search_.set_thread(thr_);
+  search_.set_owner(this);
+  if (!thr_) return;
+
+#if defined(DDS_TOP_LEVEL) || defined(DDS_AB_STATS) || defined(DDS_AB_HITS) || \
+    defined(DDS_TT_STATS) || defined(DDS_TIMING) || defined(DDS_MOVES)
+  thr_->init_debug_files(next_debug_file_suffix());
+#endif
+}
 
 // Owned-ThreadData constructor: allocate ThreadData as a member of the
 // SolverContext so callers can create a context at the top of the stack
@@ -17,9 +47,7 @@ SolverContext::SolverContext(SolverConfig cfg)
 {
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();
-  // Ensure persistent facades like SearchContext see the bound ThreadData.
-  search_.set_thread(thr_);
-  search_.set_owner(this);
+  bind_thread_data();
 }
 
 auto SolverContext::trans_table() const -> TransTable*
@@ -117,7 +145,10 @@ auto SolverContext::dispose_trans_table() const -> void
 // Defaulted destructor defined out-of-line so destruction of the
 // owned std::shared_ptr<ThreadData> happens where ThreadData is a
 // complete type.
-SolverContext::~SolverContext() = default;
+SolverContext::~SolverContext()
+{
+  if (thr_) thr_->close_debug_files();
+}
 
 auto SolverContext::reset_for_solve() const -> void
 {

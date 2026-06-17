@@ -1,13 +1,19 @@
 #ifndef DDS_THREAD_DATA_H
 #define DDS_THREAD_DATA_H
 
+#include <utility/debug.h>
+
 #include <api/dds.h>
 #include <moves/moves.hpp>
 #include <string>
 
-
 #ifdef DDS_AB_STATS
-  #include "ab_stats.hpp"
+#include "ab_stats.hpp"
+#endif
+
+#if defined(DDS_TOP_LEVEL) || defined(DDS_AB_STATS) || defined(DDS_AB_HITS) || \
+    defined(DDS_TT_STATS) || defined(DDS_TIMING) || defined(DDS_MOVES)
+#include "file.hpp"
 #endif
 
 #ifdef DDS_TIMING

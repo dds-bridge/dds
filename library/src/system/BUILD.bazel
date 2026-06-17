@@ -13,6 +13,7 @@ cc_library(
         "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
         # Utilities lives under system/util (header-only for now)
     ],
     include_prefix = "system",
@@ -34,6 +35,7 @@ cc_library(
     "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
     ],
     include_prefix = "system",
     copts = DDS_CPPOPTS,
@@ -53,6 +55,7 @@ cc_library(
     "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
     ],
     include_prefix = "system",
     copts = DDS_CPPOPTS,
