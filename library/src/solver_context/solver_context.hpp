@@ -50,9 +50,7 @@ public:
   explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
   : thr_(std::move(thread)), cfg_(cfg)
   {
-    // Bind the persistent facades to the underlying ThreadData.
-    search_.set_thread(thr_);
-    search_.set_owner(this);
+    bind_thread_data();
   }
 
   // NOTE: constructors that accepted raw ThreadData* were removed as part
@@ -431,6 +429,8 @@ private:
   // Transposition table is now owned per SearchContext and created lazily.
   //
   // See the developer note above for details on TT lifecycle and resets.
+
+  void bind_thread_data();
 };
 
 auto ThreadMemoryUsed() -> double;

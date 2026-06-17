@@ -6,6 +6,21 @@ external_headers = [
     "dds.hpp",
 ]
 
+cc_library(
+    name = "ab_stats",
+    srcs = ["ab_stats.cpp"],
+    hdrs = ["ab_stats.hpp"],
+    includes = ["."],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = [
+        "//library/src:__subpackages__",
+        "//library/tests:__subpackages__",
+    ],
+    deps = ["//library/src/utility:constants"],
+)
+
 filegroup(
     name = "dds_sources",
     srcs = glob([
@@ -13,7 +28,10 @@ filegroup(
         "*.hpp",
         "*.h",
     ],
-    exclude = external_headers,
+    exclude = external_headers + [
+        "ab_stats.cpp",
+        "ab_stats.hpp",
+    ],
     )
 )
 
@@ -39,6 +57,7 @@ cc_library(
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
         "//library/src/system",
         "//library/src/solver_context:solver_context",
     ],
