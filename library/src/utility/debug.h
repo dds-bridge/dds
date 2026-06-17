@@ -123,18 +123,4 @@
 #endif
 #endif
 
-/// @name Performance Counters
-/// @brief Statistics counters for profiling and analysis.
-/// @{
-
-/// @brief Number of available counter slots for performance tracking.
-constexpr int COUNTER_SLOTS = 200;
-
-/// @brief Global array of performance counters.
-/// Each thread may use these counters for statistics collection.
-/// Size: COUNTER_SLOTS (200) entries.
-extern long long counter[COUNTER_SLOTS];
-
-/// @}
-
 /// @}
