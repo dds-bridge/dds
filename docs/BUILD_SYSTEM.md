@@ -32,6 +32,7 @@ If you see runtime loader failures after a toolchain or OS change:
 ### AddressSanitizer and ThreadSanitizer (macOS)
 
 Sanitizer builds use `--config=asan` or `--config=tsan` (see `.bazelrc`).
+Do not use `--define=asan=true`; that path is not supported.
 macOS-specific settings are chained automatically; you do not pass a separate
 `asan_macos` or `tsan_macos` flag.
 
