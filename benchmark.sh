@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Compare dtest performance: DDS 3.0 (this repo) vs DDS 2.9 (libdds).
+# Compare dtest performance between two binaries (e.g. DDS 3.0 vs 2.9).
 #
 # Runs all combinations of solver (calc, solve) and hand file
 # (list1/10/100/1000), then prints per-run timings and a summary.
 # Does not pass -n to dtest (library default thread count).
 #
 # Usage:
-#   ./bench_dtest.sh
-#   REPEATS=3 ./bench_dtest.sh
-#   DTEST_30=/path/to/dtest DTEST_29=/path/to/dtest ./bench_dtest.sh
+#   ./benchmark.sh --dtest2 /path/to/other/dtest
+#   REPEATS=3 ./benchmark.sh --dtest2 /path/to/other/dtest
+#   DTEST1=/path/to/dtest1 DTEST2=/path/to/dtest2 ./benchmark.sh
 #
 # Environment:
-#   DTEST_30   Path to DDS 3.0 dtest (default: bazel-bin in this repo)
-#   DTEST_29   Path to DDS 2.9 dtest
+#   DTEST1     Path to first dtest (default: bazel-bin in this repo)
+#   DTEST2     Path to second dtest (required unless --dtest2 is given)
 #   HANDS_DIR  Directory containing list*.txt files (default: ./hands)
 #   REPEATS    Runs per combination per binary (default: 1)
 #   DRY_RUN    If 1, print commands only
@@ -20,8 +20,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DTEST_30="${DTEST_30:-$ROOT/bazel-bin/library/tests/dtest}"
-DTEST_29="${DTEST_29:-/Users/adamw/src/bridge-hackathon/dds/libdds/.build/test/dtest}"
+DTEST1="${DTEST1:-$ROOT/bazel-bin/library/tests/dtest}"
 HANDS_DIR="${HANDS_DIR:-$ROOT/hands}"
 REPEATS="${REPEATS:-1}"
 DRY_RUN="${DRY_RUN:-0}"
@@ -34,19 +33,21 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Compare dtest on DDS 3.0 vs 2.9 across all solver/file combinations.
+Compare dtest on two binaries across all solver/file combinations.
 
 Options:
-  -h, --help    Show this help
-  -n REPEATS    Runs per combination per binary (default: $REPEATS)
+  -h, --help       Show this help
+  -n REPEATS       Runs per combination per binary (default: $REPEATS)
+  --dtest1 PATH    First dtest binary (default: $DTEST1)
+  --dtest2 PATH    Second dtest binary (required if DTEST2 is unset)
 
 Environment:
-  DTEST_30, DTEST_29, HANDS_DIR, REPEATS, DRY_RUN
+  DTEST1, DTEST2, HANDS_DIR, REPEATS, DRY_RUN
 
 Examples:
-  ./bench_dtest.sh
-  ./bench_dtest.sh -n 5
-  DRY_RUN=1 ./bench_dtest.sh
+  ./benchmark.sh --dtest2 /path/to/dtest
+  ./benchmark.sh -n 5 --dtest2 /path/to/dtest
+  DRY_RUN=1 ./benchmark.sh --dtest2 /path/to/dtest
 EOF
 }
 
@@ -61,6 +62,16 @@ while [[ $# -gt 0 ]]; do
       REPEATS="${1:?missing value for -n}"
       shift
       ;;
+    --dtest1)
+      shift
+      DTEST1="${1:?missing value for --dtest1}"
+      shift
+      ;;
+    --dtest2)
+      shift
+      DTEST2="${1:?missing value for --dtest2}"
+      shift
+      ;;
     *)
       echo "Unknown option: $1" >&2
       usage >&2
@@ -69,14 +80,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ ! -x "$DTEST_30" ]]; then
-  echo "error: DDS 3.0 dtest not found or not executable: $DTEST_30" >&2
+if [[ -z "${DTEST2:-}" ]]; then
+  echo "error: dtest2 required (use --dtest2 PATH or set DTEST2)" >&2
+  usage >&2
+  exit 1
+fi
+
+if [[ ! -x "$DTEST1" ]]; then
+  echo "error: dtest1 not found or not executable: $DTEST1" >&2
   echo "hint: bazel build //library/tests:dtest" >&2
   exit 1
 fi
 
-if [[ ! -x "$DTEST_29" ]]; then
-  echo "error: DDS 2.9 dtest not found or not executable: $DTEST_29" >&2
+if [[ ! -x "$DTEST2" ]]; then
+  echo "error: dtest2 not found or not executable: $DTEST2" >&2
   exit 1
 fi
 
@@ -133,8 +150,8 @@ run_dtest() {
 
 echo "DDS dtest benchmark"
 echo "==================="
-echo "3.0 binary: $DTEST_30"
-echo "2.9 binary: $DTEST_29"
+echo "dtest1:     $DTEST1"
+echo "dtest2:     $DTEST2"
 echo "hands dir:  $HANDS_DIR"
 echo "branch:     $branch"
 echo "repeats:    $REPEATS"
@@ -151,7 +168,7 @@ run_no=0
 for solver in "${SOLVERS[@]}"; do
   for file in "${FILES[@]}"; do
     hands="$HANDS_DIR/$file"
-    for pair in "2.9:$DTEST_29" "3.0:$DTEST_30"; do
+    for pair in "dtest2:$DTEST2" "dtest1:$DTEST1"; do
       ver="${pair%%:*}"
       bin="${pair#*:}"
 
@@ -177,22 +194,22 @@ for solver in "${SOLVERS[@]}"; do
 done
 
 echo
-echo "Summary (3.0 vs 2.9, user time)"
-echo "==============================="
+echo "Summary (dtest1 vs dtest2, user time)"
+echo "====================================="
 printf "%-6s %-12s %10s %10s %10s %s\n" \
-  "solver" "file" "2.9_user" "3.0_user" "speedup" "note"
+  "solver" "file" "dtest2_user" "dtest1_user" "speedup" "note"
 printf "%-6s %-12s %10s %10s %10s %s\n" \
   "------" "------------" "----------" "----------" "----------" "----"
 
 awk -F'\t' '
   {
     base = $1 SUBSEP $2
-    if ($3 == "2.9") {
-      s29[base] += $5
-      c29[base]++
-    } else if ($3 == "3.0") {
-      s30[base] += $5
-      c30[base]++
+    if ($3 == "dtest2") {
+      s2[base] += $5
+      c2[base]++
+    } else if ($3 == "dtest1") {
+      s1[base] += $5
+      c1[base]++
     }
   }
   END {
@@ -202,13 +219,13 @@ awk -F'\t' '
     for (si = 1; si <= 2; si++) {
       for (fi = 1; fi <= 4; fi++) {
         base = solvers[si] SUBSEP files[fi]
-        if (!(base in c29) || !(base in c30)) continue
-        u29 = s29[base] / c29[base]
-        u30 = s30[base] / c30[base]
-        speedup = (u30 > 0) ? u29 / u30 : 0
-        note = (speedup >= 1) ? "3.0 faster" : "2.9 faster"
+        if (!(base in c2) || !(base in c1)) continue
+        u2 = s2[base] / c2[base]
+        u1 = s1[base] / c1[base]
+        speedup = (u1 > 0) ? u2 / u1 : 0
+        note = (speedup >= 1) ? "dtest1 faster" : "dtest2 faster"
         printf "%-6s %-12s %10.1f %10.1f %9.2fx %s\n",
-          solvers[si], files[fi], u29, u30, speedup, note
+          solvers[si], files[fi], u2, u1, speedup, note
       }
     }
   }
