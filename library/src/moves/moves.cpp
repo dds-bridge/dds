@@ -72,6 +72,8 @@ Moves::Moves() {
     for (int h = 0; h < DDS_HANDS; h++) {
       lastCall[t][h] = MgType::SIZE;
 
+      moveList[t][h] = {};
+
       trickTable[t][h].count = 0;
       trickSuitTable[t][h].count = 0;
 
