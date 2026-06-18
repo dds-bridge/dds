@@ -63,9 +63,6 @@ DDS_CPPOPTS = select({
     "//conditions:default": [
         "-std=c++20"
     ],
-}) + select({
-    "//:asan": ["-fsanitize=address"],
-    "//conditions:default": [],
 })
 
 DDS_LOCAL_DEFINES = select({
@@ -91,9 +88,6 @@ DDS_LINKOPTS = select({
     "//:debug_build_macos": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
-    "//conditions:default": [],
-}) + select({
-    "//:asan": ["-fsanitize=address"],
     "//conditions:default": [],
 })
 
