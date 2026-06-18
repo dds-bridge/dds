@@ -1,6 +1,8 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
+# system, system_util_log, and system_util_stats compile the same sources with
+# different feature defines. Link at most one variant into a binary.
 cc_library(
     name = "system",
     srcs = glob(["*.cpp"]),

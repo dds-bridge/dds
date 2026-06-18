@@ -26,7 +26,7 @@ cc_library(
     includes = ["."],
     include_prefix = "solver_context",
     deps = [
-        "//library/src/system",
+        "//library/src/system:system_util_log",
         "//library/src/api:api_definitions",
         "//library/src/trans_table",
     ],
@@ -43,7 +43,7 @@ cc_library(
     includes = ["."],
     include_prefix = "solver_context",
     deps = [
-        "//library/src/system",
+        "//library/src/system:system_util_stats",
         "//library/src/api:api_definitions",
         "//library/src/trans_table",
     ],
