@@ -71,6 +71,15 @@ binaries when the clang major matches.
 If TSAN fails to start after an Xcode upgrade (dyld cannot load the runtime),
 the rpath major is likely out of sync with the installed toolchain.
 
+**CI.** GitHub Actions runs sanitizer jobs on pull requests to `main` and
+`develop`:
+
+| Workflow | Job | Command |
+|----------|-----|---------|
+| `ci_linux.yml` | `asan` | `bazel test --config=asan //library/tests/...` |
+| `ci_linux.yml` | `tsan` | `bazel test --config=tsan //library/tests/system/...` |
+| `ci_macos.yml` | `sanitizers` | ASAN and TSAN on `//library/tests/system/...` (validates macOS toolchain/rpath wiring) |
+
 
 ## Visual Studio and Rider Build
 
