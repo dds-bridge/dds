@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Compare dtest performance between two binaries (e.g. DDS 3.0 vs 2.9).
+# Benchmark dtest performance on one or two binaries.
 #
 # Runs all combinations of solver (calc, solve) and hand file
-# (list1/10/100/1000), then prints per-run timings and a summary.
+# (list1/10/100/1000), then prints per-run timings and an optional summary.
 # Does not pass -n to dtest (library default thread count).
 #
 # Usage:
+#   ./benchmark.sh
 #   ./benchmark.sh --dtest2 /path/to/other/dtest
-#   REPEATS=3 ./benchmark.sh --dtest2 /path/to/other/dtest
-#   DTEST1=/path/to/dtest1 DTEST2=/path/to/dtest2 ./benchmark.sh
+#   REPEATS=3 ./benchmark.sh
 #
 # Environment:
 #   DTEST1     Path to first dtest (default: bazel-bin in this repo)
-#   DTEST2     Path to second dtest (required unless --dtest2 is given)
+#   DTEST2     Optional second dtest for comparison
 #   HANDS_DIR  Directory containing list*.txt files (default: ./hands)
 #   REPEATS    Runs per combination per binary (default: 1)
 #   DRY_RUN    If 1, print commands only
@@ -33,21 +33,22 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Compare dtest on two binaries across all solver/file combinations.
+Benchmark dtest across solver/file combinations. With --dtest2, compare two binaries.
 
 Options:
   -h, --help       Show this help
   -n REPEATS       Runs per combination per binary (default: $REPEATS)
   --dtest1 PATH    First dtest binary (default: $DTEST1)
-  --dtest2 PATH    Second dtest binary (required if DTEST2 is unset)
+  --dtest2 PATH    Optional second dtest binary for comparison
 
 Environment:
   DTEST1, DTEST2, HANDS_DIR, REPEATS, DRY_RUN
 
 Examples:
+  ./benchmark.sh
   ./benchmark.sh --dtest2 /path/to/dtest
   ./benchmark.sh -n 5 --dtest2 /path/to/dtest
-  DRY_RUN=1 ./benchmark.sh --dtest2 /path/to/dtest
+  DRY_RUN=1 ./benchmark.sh
 EOF
 }
 
@@ -80,22 +81,22 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "${DTEST2:-}" ]]; then
-  echo "error: dtest2 required (use --dtest2 PATH or set DTEST2)" >&2
-  usage >&2
-  exit 1
-fi
-
 if [[ ! -x "$DTEST1" ]]; then
   echo "error: dtest1 not found or not executable: $DTEST1" >&2
   echo "hint: bazel build //library/tests:dtest" >&2
   exit 1
 fi
 
-if [[ ! -x "$DTEST2" ]]; then
+if [[ -n "${DTEST2:-}" && ! -x "$DTEST2" ]]; then
   echo "error: dtest2 not found or not executable: $DTEST2" >&2
   exit 1
 fi
+
+BIN_PAIRS=("dtest1:$DTEST1")
+if [[ -n "${DTEST2:-}" ]]; then
+  BIN_PAIRS=("dtest2:$DTEST2" "dtest1:$DTEST1")
+fi
+num_bins=${#BIN_PAIRS[@]}
 
 for f in "${FILES[@]}"; do
   if [[ ! -f "$HANDS_DIR/$f" ]]; then
@@ -151,7 +152,9 @@ run_dtest() {
 echo "DDS dtest benchmark"
 echo "==================="
 echo "dtest1:     $DTEST1"
-echo "dtest2:     $DTEST2"
+if [[ -n "${DTEST2:-}" ]]; then
+  echo "dtest2:     $DTEST2"
+fi
 echo "hands dir:  $HANDS_DIR"
 echo "branch:     $branch"
 echo "repeats:    $REPEATS"
@@ -162,13 +165,13 @@ printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
 printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
   "------" "------------" "----" "--------" "--------" "----------" "------" "---"
 
-total_runs=$(( ${#SOLVERS[@]} * ${#FILES[@]} * 2 * REPEATS ))
+total_runs=$(( ${#SOLVERS[@]} * ${#FILES[@]} * num_bins * REPEATS ))
 run_no=0
 
 for solver in "${SOLVERS[@]}"; do
   for file in "${FILES[@]}"; do
     hands="$HANDS_DIR/$file"
-    for pair in "dtest2:$DTEST2" "dtest1:$DTEST1"; do
+    for pair in "${BIN_PAIRS[@]}"; do
       ver="${pair%%:*}"
       bin="${pair#*:}"
 
@@ -193,43 +196,45 @@ for solver in "${SOLVERS[@]}"; do
   done
 done
 
-echo
-echo "Summary (dtest1 vs dtest2, user time)"
-echo "====================================="
-printf "%-6s %-12s %10s %10s %10s %s\n" \
-  "solver" "file" "dtest2_user" "dtest1_user" "speedup" "note"
-printf "%-6s %-12s %10s %10s %10s %s\n" \
-  "------" "------------" "----------" "----------" "----------" "----"
+if [[ -n "${DTEST2:-}" ]]; then
+  echo
+  echo "Summary (dtest1 vs dtest2, user time)"
+  echo "====================================="
+  printf "%-6s %-12s %10s %10s %10s %s\n" \
+    "solver" "file" "dtest2_user" "dtest1_user" "speedup" "note"
+  printf "%-6s %-12s %10s %10s %10s %s\n" \
+    "------" "------------" "----------" "----------" "----------" "----"
 
-awk -F'\t' '
-  {
-    base = $1 SUBSEP $2
-    if ($3 == "dtest2") {
-      s2[base] += $5
-      c2[base]++
-    } else if ($3 == "dtest1") {
-      s1[base] += $5
-      c1[base]++
-    }
-  }
-  END {
-    split("calc solve", solvers, " ")
-    split("list1.txt list10.txt list100.txt list1000.txt", files, " ")
-
-    for (si = 1; si <= 2; si++) {
-      for (fi = 1; fi <= 4; fi++) {
-        base = solvers[si] SUBSEP files[fi]
-        if (!(base in c2) || !(base in c1)) continue
-        u2 = s2[base] / c2[base]
-        u1 = s1[base] / c1[base]
-        speedup = (u1 > 0) ? u2 / u1 : 0
-        note = (speedup >= 1) ? "dtest1 faster" : "dtest2 faster"
-        printf "%-6s %-12s %10.1f %10.1f %9.2fx %s\n",
-          solvers[si], files[fi], u2, u1, speedup, note
+  awk -F'\t' '
+    {
+      base = $1 SUBSEP $2
+      if ($3 == "dtest2") {
+        s2[base] += $5
+        c2[base]++
+      } else if ($3 == "dtest1") {
+        s1[base] += $5
+        c1[base]++
       }
     }
-  }
-' "$RESULTS"
+    END {
+      split("calc solve", solvers, " ")
+      split("list1.txt list10.txt list100.txt list1000.txt", files, " ")
+
+      for (si = 1; si <= 2; si++) {
+        for (fi = 1; fi <= 4; fi++) {
+          base = solvers[si] SUBSEP files[fi]
+          if (!(base in c2) || !(base in c1)) continue
+          u2 = s2[base] / c2[base]
+          u1 = s1[base] / c1[base]
+          speedup = (u1 > 0) ? u2 / u1 : 0
+          note = (speedup >= 1) ? "dtest1 faster" : "dtest2 faster"
+          printf "%-6s %-12s %10.1f %10.1f %9.2fx %s\n",
+            solvers[si], files[fi], u2, u1, speedup, note
+        }
+      }
+    }
+  ' "$RESULTS"
+fi
 
 echo
 echo "Completed $run_no runs ($total_runs expected)."
