@@ -9,6 +9,7 @@ on:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       # 1️⃣ Checkout the repository
       - name: Checkout repository
@@ -44,7 +45,7 @@ jobs:
 
   asan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -68,7 +69,7 @@ jobs:
 
   tsan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
