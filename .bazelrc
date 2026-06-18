@@ -20,12 +20,13 @@ build:opt --compilation_mode=opt
 
 # AddressSanitizer configuration
 # Usage: bazel test --config=asan //path:target
-# macOS-specific settings (Xcode toolchain) are pulled in automatically via asan_macos.
+# macOS uses the Xcode toolchain (build:asan_macos). See docs/BUILD_SYSTEM.md
+# ("AddressSanitizer and ThreadSanitizer (macOS)") for clang/Xcode version coupling.
 build:asan --config=asan_macos
 
 build:asan --copt=-fsanitize=address
 build:asan --linkopt=-fsanitize=address
-# U_FORTIFY_SOURCE conflicts with ASAN
+# Undefine _FORTIFY_SOURCE; it conflicts with ASAN instrumentation.
 build:asan --copt=-U_FORTIFY_SOURCE
 build:asan --strip=never
 build:asan --features=dbg
@@ -47,7 +48,9 @@ build:asan_macos --copt=-Wno-macro-redefined
 
 # ThreadSanitizer configuration
 # Usage: bazel test --config=tsan //path:target
-# macOS runtime rpath is pulled in automatically via tsan_macos.
+# macOS loads Xcode's compiler-rt via build:tsan_macos (rpath uses clang/N).
+# Keep N aligned with MODULE.bazel llvm_versions and installed Xcode; see
+# docs/BUILD_SYSTEM.md ("AddressSanitizer and ThreadSanitizer (macOS)").
 build:tsan --config=tsan_macos
 build:tsan --copt=-fsanitize=thread
 build:tsan --linkopt=-fsanitize=thread
@@ -55,8 +58,5 @@ build:tsan --strip=never
 build:tsan --features=dbg
 build:tsan --compilation_mode=dbg
 test:tsan --test_timeout=120,300,900,3600
-# macOS-specific ThreadSanitizer runtime lookup.
-# LLVM 21.1.8's bundled libclang_rt.tsan_osx_dynamic.dylib segfaults at startup on
-# current macOS; the Xcode toolchain's compiler-rt (same clang major) works with
-# LLVM-instrumented binaries. Keep clang/21 aligned with MODULE.bazel / Xcode.
+# Hardcoded rpath: .../lib/clang/21/... must match MODULE.bazel llvm major and Xcode.
 build:tsan_macos --linkopt=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin
