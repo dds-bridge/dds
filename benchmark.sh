@@ -42,8 +42,8 @@ Benchmark dtest across solver/file combinations. With --dtest2, compare two bina
 
 Options:
   -h, --help          Show this help
-  --repeats N         Runs per combination per binary (default: 1 or $REPEATS)
-  --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100 or $MAX_DEALS)
+  --repeats N         Runs per combination per binary (default: 1; env: REPEATS)
+  --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
   --build             Run bazel build //library/tests:dtest before benchmarking
   --dtest1 PATH       First dtest binary (default: $DTEST1)
@@ -140,7 +140,7 @@ select_hand_files() {
   shopt -u nullglob
 
   if ((${#candidates[@]} == 0)); then
-    echo "error: no list10^n.txt files with n <= $MAX_DEALS in $HANDS_DIR" >&2
+    echo "error: no list10^n.txt files with 10^n <= $MAX_DEALS in $HANDS_DIR" >&2
     exit 1
   fi
 
