@@ -47,8 +47,9 @@ struct SolverConfig
 class SolverContext
 {
 public:
-  // Wrap existing ThreadData (helper/sub-context). Does not open or close
-  // debug files; the owning context is responsible for debug file lifecycle.
+  // Wrap existing ThreadData (helper/sub-context). Does not initialize debug
+  // files; ~SolverContext() closes them only when this context is the last
+  // shared_ptr holder of that ThreadData.
   explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
   : thr_(std::move(thread)), cfg_(cfg)
   {
