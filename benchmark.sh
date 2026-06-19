@@ -10,7 +10,7 @@
 #   ./benchmark.sh --build
 #   ./benchmark.sh -- -n 8 -r
 #   ./benchmark.sh --build --dtest2 /path/to/other/dtest
-#   ./benchmark.sh -n 5 -- -n 4
+#   ./benchmark.sh --repeats 5 -- -n 4
 #   REPEATS=3 ./benchmark.sh
 #
 # Environment:
@@ -42,16 +42,14 @@ Benchmark dtest across solver/file combinations. With --dtest2, compare two bina
 
 Options:
   -h, --help          Show this help
-  -n REPEATS          Runs per combination per binary (default: $REPEATS)
-  --max-deals N       Include list10^n.txt files with 10^n <= N (default: $MAX_DEALS)
+  --repeats N         Runs per combination per binary (default: 1 or $REPEATS)
+  --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100 or $MAX_DEALS)
                       (alias: --max_deals)
   --build             Run bazel build //library/tests:dtest before benchmarking
   --dtest1 PATH       First dtest binary (default: $DTEST1)
   --dtest2 PATH       Optional second dtest binary for comparison
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
-
-Note: -n before -- sets benchmark repeat count; -n after -- sets dtest threads.
 
 Environment:
   DTEST1, DTEST2, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN
@@ -60,9 +58,9 @@ Examples:
   ./benchmark.sh
   ./benchmark.sh --build
   ./benchmark.sh -- -n 8
-  ./benchmark.sh -n 3 -- -n 4 -r
+  ./benchmark.sh --repeats 3 -- -n 4 -r
   ./benchmark.sh --dtest2 /path/to/dtest
-  ./benchmark.sh -n 5 --dtest2 /path/to/dtest
+  ./benchmark.sh --repeats 5 --dtest2 /path/to/dtest
   DRY_RUN=1 ./benchmark.sh
 EOF
 }
@@ -73,9 +71,9 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 0
       ;;
-    -n)
+    --repeats)
       shift
-      REPEATS="${1:?missing value for -n}"
+      REPEATS="${1:?missing value for --repeats}"
       shift
       ;;
     --dtest1)
@@ -223,7 +221,6 @@ run_dtest() {
 
   if [[ "$DRY_RUN" == "1" ]]; then
     echo "DRY_RUN: ${cmd[*]}" >&2
-    echo "0 0 0.00 0.00"
     return 0
   fi
 
@@ -252,10 +249,12 @@ if ((${#DTEST_EXTRA[@]} > 0)); then
 fi
 echo
 
-printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
-  "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
-printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
-  "------" "------------" "----" "--------" "--------" "----------" "------" "---"
+if [[ "$DRY_RUN" != "1" ]]; then
+  printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
+    "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
+  printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
+    "------" "------------" "----" "--------" "--------" "----------" "------" "---"
+fi
 
 total_runs=$(( ${#SOLVERS[@]} * ${#FILES[@]} * num_bins * REPEATS ))
 run_no=0
@@ -269,6 +268,12 @@ for solver in "${SOLVERS[@]}"; do
 
       for (( rep = 1; rep <= REPEATS; rep++ )); do
         run_no=$((run_no + 1))
+
+        if [[ "$DRY_RUN" == "1" ]]; then
+          run_dtest "$bin" "$solver" "$hands"
+          continue
+        fi
+
         if [[ "$REPEATS" -gt 1 ]]; then
           run_label="${rep}/${REPEATS}"
         else
@@ -288,7 +293,7 @@ for solver in "${SOLVERS[@]}"; do
   done
 done
 
-if [[ -n "${DTEST2:-}" ]]; then
+if [[ -n "${DTEST2:-}" && "$DRY_RUN" != "1" ]]; then
   echo
   echo "Summary (dtest1 vs dtest2, user time)"
   echo "====================================="
@@ -329,4 +334,8 @@ if [[ -n "${DTEST2:-}" ]]; then
 fi
 
 echo
-echo "Completed $run_no runs ($total_runs expected)."
+if [[ "$DRY_RUN" == "1" ]]; then
+  echo "DRY_RUN: $total_runs dtest invocations (not run)."
+else
+  echo "Completed $run_no runs ($total_runs expected)."
+fi
