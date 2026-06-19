@@ -297,10 +297,10 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo
   echo "Summary (branch vs compare, user time)"
   echo "======================================"
-  printf "%-6s %-13s %12s %12s %10s %s\n" \
+  printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "solver" "file" "compare_user" "branch_user" "speedup" "note"
-  printf "%-6s %-13s %12s %12s %10s %s\n" \
-    "------" "-------------" "------------" "------------" "----------" "----"
+  printf "%-6s %-13s %12s %12s %10s %-15s\n" \
+    "------" "-------------" "------------" "------------" "----------" "---------------"
 
   awk -F'\t' -v files="${FILES[*]}" '
     {
@@ -325,8 +325,9 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           u1 = s1[base] / c1[base]
           speedup = (u1 > 0) ? u2 / u1 : 0
           note = (speedup >= 1) ? "branch faster" : "compare faster"
-          printf "%-6s %-13s %12.1f %12.1f %10.2fx %s\n",
-            solvers[si], filearr[fi], u2, u1, speedup, note
+          sp = sprintf("%9.2fx", speedup)
+          printf "%-6s %-13s %12.1f %12.1f %10s %-15s\n",
+            solvers[si], filearr[fi], u2, u1, sp, note
         }
       }
     }
