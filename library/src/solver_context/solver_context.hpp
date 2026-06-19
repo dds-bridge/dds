@@ -47,6 +47,8 @@ struct SolverConfig
 class SolverContext
 {
 public:
+  // Wrap existing ThreadData (helper/sub-context). Does not open or close
+  // debug files; the owning context is responsible for debug file lifecycle.
   explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
   : thr_(std::move(thread)), cfg_(cfg)
   {
@@ -429,6 +431,9 @@ private:
   // Transposition table is now owned per SearchContext and created lazily.
   //
   // See the developer note above for details on TT lifecycle and resets.
+
+  // True when this context created thr_ via SolverContext(SolverConfig).
+  bool owns_thread_data_ = false;
 
   void bind_thread_data();
 };

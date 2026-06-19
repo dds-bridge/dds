@@ -35,7 +35,8 @@ void SolverContext::bind_thread_data()
 
 #if defined(DDS_TOP_LEVEL) || defined(DDS_AB_STATS) || defined(DDS_AB_HITS) || \
     defined(DDS_TT_STATS) || defined(DDS_TIMING) || defined(DDS_MOVES)
-  thr_->init_debug_files(next_debug_file_suffix());
+  if (owns_thread_data_)
+    thr_->init_debug_files(next_debug_file_suffix());
 #endif
 }
 
@@ -43,7 +44,7 @@ void SolverContext::bind_thread_data()
 // SolverContext so callers can create a context at the top of the stack
 // and pass it down without a separate per-thread lookup.
 SolverContext::SolverContext(SolverConfig cfg)
-  : cfg_(cfg)
+  : cfg_(cfg), owns_thread_data_(true)
 {
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();
@@ -147,7 +148,8 @@ auto SolverContext::dispose_trans_table() const -> void
 // complete type.
 SolverContext::~SolverContext()
 {
-  if (thr_) thr_->close_debug_files();
+  if (owns_thread_data_ && thr_)
+    thr_->close_debug_files();
 }
 
 auto SolverContext::reset_for_solve() const -> void
