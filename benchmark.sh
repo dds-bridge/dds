@@ -18,7 +18,7 @@
 #   COMPARE    Optional second dtest binary for comparison
 #   HANDS_DIR  Directory containing list*.txt files (default: ./hands)
 #   REPEATS    Runs per combination per binary (default: 1)
-#   MAX_DEALS  Include listN.txt files where N <= this value (default: 100)
+#   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
 #   DRY_RUN    If 1, print commands only
 
 set -euo pipefail
@@ -45,7 +45,7 @@ Options:
   --repeats N         Runs per combination per binary (default: 1; env: REPEATS)
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
-  --build             Run bazel build //library/tests:dtest before benchmarking
+  --build             Build branch dtest only (bazel build //library/tests:dtest)
   --branch PATH       Branch dtest binary (default: $BRANCH)
   --compare PATH      Optional second dtest binary for comparison
   --                  End benchmark options; remaining args are passed to dtest
@@ -113,6 +113,11 @@ if ! [[ "$MAX_DEALS" =~ ^[0-9]+$ ]] || (( MAX_DEALS < 1 )); then
   exit 1
 fi
 
+if ! [[ "$REPEATS" =~ ^[0-9]+$ ]] || (( REPEATS < 1 )); then
+  echo "error: repeats must be a positive integer (got: $REPEATS)" >&2
+  exit 1
+fi
+
 select_hand_files() {
   is_power_of_10() {
     local n="$1"
@@ -162,20 +167,22 @@ if [[ "$BUILD" == "1" ]]; then
   fi
 fi
 
-if [[ ! -x "$BRANCH" ]]; then
-  echo "error: branch binary not found or not executable: $BRANCH" >&2
-  echo "hint: bazel build //library/tests:dtest" >&2
-  exit 1
-fi
+if [[ "$DRY_RUN" != "1" ]]; then
+  if [[ ! -x "$BRANCH" ]]; then
+    echo "error: branch binary not found or not executable: $BRANCH" >&2
+    echo "hint: bazel build //library/tests:dtest" >&2
+    exit 1
+  fi
 
-if [[ -n "${COMPARE:-}" && ! -x "$COMPARE" ]]; then
-  echo "error: compare binary not found or not executable: $COMPARE" >&2
-  exit 1
+  if [[ -n "${COMPARE:-}" && ! -x "$COMPARE" ]]; then
+    echo "error: compare binary not found or not executable: $COMPARE" >&2
+    exit 1
+  fi
 fi
 
 BIN_PAIRS=("branch:$BRANCH")
 if [[ -n "${COMPARE:-}" ]]; then
-  BIN_PAIRS=("compare:$COMPARE" "branch:$BRANCH")
+  BIN_PAIRS=("branch:$BRANCH" "compare:$COMPARE")
 fi
 num_bins=${#BIN_PAIRS[@]}
 
@@ -186,9 +193,9 @@ for f in "${FILES[@]}"; do
   fi
 done
 
-branch="unknown"
+git_branch="unknown"
 if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  branch="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+  git_branch="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
 fi
 
 RESULTS="$(mktemp)"
@@ -196,10 +203,10 @@ trap 'rm -f "$RESULTS"' EXIT
 
 parse_dtest_output() {
   awk '
-    /User time \(ms\)/ { user = $4 }
-    /Sys time \(ms\)/  { sys = $4 }
-    /Avg user time \(ms\)/ { avg = $5 }
-    /Ratio/ { ratio = $2 }
+    /^User time \(ms\)/ { user = $NF }
+    /^Sys time \(ms\)/  { sys = $NF }
+    /^Avg user time \(ms\)/ { avg = $NF }
+    /^Ratio[[:space:]]/ { ratio = $NF }
     END {
       if (user == "") user = "NA"
       if (sys == "") sys = "NA"
@@ -230,7 +237,12 @@ run_dtest() {
     echo "$out" >&2
     exit 1
   fi
-  parse_dtest_output <<<"$out"
+  local parsed
+  parsed="$(parse_dtest_output <<<"$out")"
+  if [[ "$parsed" == *"NA"* ]]; then
+    echo "warning: incomplete dtest timing output: ${cmd[*]}" >&2
+  fi
+  echo "$parsed"
 }
 
 echo "DDS dtest benchmark"
@@ -242,7 +254,7 @@ fi
 printf "%-12s %s\n" "hands dir:" "$HANDS_DIR"
 printf "%-12s %s\n" "max_deals:" "$MAX_DEALS"
 printf "%-12s %s\n" "files:" "${FILES[*]}"
-printf "%-12s %s\n" "git branch:" "$branch"
+printf "%-12s %s\n" "git branch:" "$git_branch"
 printf "%-12s %s\n" "repeats:" "$REPEATS"
 if ((${#DTEST_EXTRA[@]} > 0)); then
   printf "%-12s %s\n" "dtest args:" "${DTEST_EXTRA[*]}"
@@ -295,10 +307,10 @@ done
 
 if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo
-  echo "Summary (branch vs compare, user time)"
-  echo "======================================"
+  echo "Summary (branch vs compare, total user ms; cmp/branch > 1 => branch faster)"
+  echo "=============================================================================="
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
-    "solver" "file" "compare_user" "branch_user" "speedup" "note"
+    "solver" "file" "compare_user" "branch_user" "cmp/branch" "note"
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "------" "-------------" "------------" "------------" "----------" "---------------"
 
@@ -323,9 +335,9 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           if (!(base in c2) || !(base in c1)) continue
           u2 = s2[base] / c2[base]
           u1 = s1[base] / c1[base]
-          speedup = (u1 > 0) ? u2 / u1 : 0
-          note = (speedup >= 1) ? "branch faster" : "compare faster"
-          sp = sprintf("%9.2fx", speedup)
+          cmp_branch = (u1 > 0) ? u2 / u1 : 0
+          note = (cmp_branch >= 1) ? "branch faster" : "compare faster"
+          sp = sprintf("%9.2fx", cmp_branch)
           printf "%-6s %-13s %12.1f %12.1f %10s %-15s\n",
             solvers[si], filearr[fi], u2, u1, sp, note
         }
