@@ -149,10 +149,13 @@ auto SolverContext::dispose_trans_table() const -> void
 // complete type.
 SolverContext::~SolverContext()
 {
-  // Close debug files only when this context holds the last shared_ptr to
-  // ThreadData. close_debug_files() is a no-op when files were never opened
-  // (e.g. non-owning wrappers over stack ThreadData).
-  if (thr_ && thr_.use_count() == 1)
+  if (!thr_)
+    return;
+
+  // SearchContext holds its own shared_ptr; release it before testing whether
+  // this context is the last owner of ThreadData.
+  search_.set_thread({});
+  if (thr_.use_count() == 1)
     thr_->close_debug_files();
 }
 
