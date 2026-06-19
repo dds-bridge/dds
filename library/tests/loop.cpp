@@ -68,20 +68,7 @@ void loop_solve(
     }
     else
     {
-      solvedbdp->no_of_boards = count;
-      ret = dtest_run_parallel(count, options.num_threads_,
-        [&](const int j) -> int {
-          FutureTricks fut;
-          const int res = SolveBoardPBN(
-            bop->deals[j], bop->target[j], bop->solutions[j], bop->mode[j],
-            &fut, 0);
-          if (res == RETURN_NO_FAULT)
-          {
-            solvedbdp->solved_board[j] = fut;
-            return RETURN_NO_FAULT;
-          }
-          return res;
-        });
+      ret = SolveAllBoards(bop, solvedbdp);
     }
     if (ret != RETURN_NO_FAULT)
     {

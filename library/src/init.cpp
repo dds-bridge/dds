@@ -157,9 +157,6 @@ int STDCALL SetThreading(
 
 void InitDebugFiles()
 {
-#ifdef DDS_SCHEDULER
-  InitFileScheduler();
-#endif
 }
 
 
