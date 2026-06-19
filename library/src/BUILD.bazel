@@ -1,4 +1,4 @@
-load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 external_headers = [
@@ -29,7 +29,7 @@ cc_library(
     includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     visibility = ["//visibility:public"],
     include_prefix = "dds",
     deps = [
@@ -71,7 +71,7 @@ cc_library(
     includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",  # allow root package to wrap/export
@@ -103,7 +103,7 @@ cc_library(
     includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",
@@ -128,7 +128,7 @@ cc_library(
     includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",
