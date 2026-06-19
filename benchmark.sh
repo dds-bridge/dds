@@ -3,12 +3,14 @@
 #
 # Runs all combinations of solver (calc, solve) and hand file
 # (list1/10/100/1000/10000), then prints per-run timings and an optional summary.
-# Does not pass -n to dtest (library default thread count).
+# Does not pass dtest options unless given after "--" (see below).
 #
 # Usage:
 #   ./benchmark.sh
 #   ./benchmark.sh --build
+#   ./benchmark.sh -- -n 8 -r
 #   ./benchmark.sh --build --dtest2 /path/to/other/dtest
+#   ./benchmark.sh -n 5 -- -n 4
 #   REPEATS=3 ./benchmark.sh
 #
 # Environment:
@@ -28,6 +30,7 @@ REPEATS="${REPEATS:-1}"
 MAX_DEALS="${MAX_DEALS:-100}"
 DRY_RUN="${DRY_RUN:-0}"
 BUILD=0
+DTEST_EXTRA=()
 
 SOLVERS=(calc solve)
 
@@ -45,6 +48,10 @@ Options:
   --build             Run bazel build //library/tests:dtest before benchmarking
   --dtest1 PATH       First dtest binary (default: $DTEST1)
   --dtest2 PATH       Optional second dtest binary for comparison
+  --                  End benchmark options; remaining args are passed to dtest
+                      (e.g. -- -n 8 -r for 8 threads and slow-board report)
+
+Note: -n before -- sets benchmark repeat count; -n after -- sets dtest threads.
 
 Environment:
   DTEST1, DTEST2, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN
@@ -52,6 +59,8 @@ Environment:
 Examples:
   ./benchmark.sh
   ./benchmark.sh --build
+  ./benchmark.sh -- -n 8
+  ./benchmark.sh -n 3 -- -n 4 -r
   ./benchmark.sh --dtest2 /path/to/dtest
   ./benchmark.sh -n 5 --dtest2 /path/to/dtest
   DRY_RUN=1 ./benchmark.sh
@@ -87,6 +96,11 @@ while [[ $# -gt 0 ]]; do
     --build)
       BUILD=1
       shift
+      ;;
+    --)
+      shift
+      DTEST_EXTRA=("$@")
+      break
       ;;
     *)
       echo "Unknown option: $1" >&2
@@ -202,16 +216,20 @@ run_dtest() {
   local binary="$1"
   local solver="$2"
   local hands="$3"
+  local -a cmd=("$binary" -f "$hands" -s "$solver")
+  if ((${#DTEST_EXTRA[@]} > 0)); then
+    cmd+=("${DTEST_EXTRA[@]}")
+  fi
 
   if [[ "$DRY_RUN" == "1" ]]; then
-    echo "DRY_RUN: $binary -f $hands -s $solver" >&2
+    echo "DRY_RUN: ${cmd[*]}" >&2
     echo "0 0 0.00 0.00"
     return 0
   fi
 
   local out
-  if ! out="$("$binary" -f "$hands" -s "$solver" 2>&1)"; then
-    echo "error: dtest failed: $binary -f $hands -s $solver" >&2
+  if ! out="$("${cmd[@]}" 2>&1)"; then
+    echo "error: dtest failed: ${cmd[*]}" >&2
     echo "$out" >&2
     exit 1
   fi
@@ -229,6 +247,9 @@ echo "max_deals:  $MAX_DEALS"
 echo "files:      ${FILES[*]}"
 echo "branch:     $branch"
 echo "repeats:    $REPEATS"
+if ((${#DTEST_EXTRA[@]} > 0)); then
+  echo "dtest args: ${DTEST_EXTRA[*]}"
+fi
 echo
 
 printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
