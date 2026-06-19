@@ -9,13 +9,13 @@
 #   ./benchmark.sh
 #   ./benchmark.sh --build
 #   ./benchmark.sh -- -n 8 -r
-#   ./benchmark.sh --build --dtest2 /path/to/other/dtest
+#   ./benchmark.sh --build --compare /path/to/other/dtest
 #   ./benchmark.sh --repeats 5 -- -n 4
 #   REPEATS=3 ./benchmark.sh
 #
 # Environment:
-#   DTEST1     Path to first dtest (default: bazel-bin in this repo)
-#   DTEST2     Optional second dtest for comparison
+#   BRANCH     Path to branch dtest (default: bazel-bin in this repo)
+#   COMPARE    Optional second dtest binary for comparison
 #   HANDS_DIR  Directory containing list*.txt files (default: ./hands)
 #   REPEATS    Runs per combination per binary (default: 1)
 #   MAX_DEALS  Include listN.txt files where N <= this value (default: 100)
@@ -24,7 +24,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DTEST1="${DTEST1:-$ROOT/bazel-bin/library/tests/dtest}"
+BRANCH="${BRANCH:-$ROOT/bazel-bin/library/tests/dtest}"
 HANDS_DIR="${HANDS_DIR:-$ROOT/hands}"
 REPEATS="${REPEATS:-1}"
 MAX_DEALS="${MAX_DEALS:-100}"
@@ -38,7 +38,7 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Benchmark dtest across solver/file combinations. With --dtest2, compare two binaries.
+Benchmark dtest across solver/file combinations. With --compare, compare two binaries.
 
 Options:
   -h, --help          Show this help
@@ -46,21 +46,21 @@ Options:
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
   --build             Run bazel build //library/tests:dtest before benchmarking
-  --dtest1 PATH       First dtest binary (default: $DTEST1)
-  --dtest2 PATH       Optional second dtest binary for comparison
+  --branch PATH       Branch dtest binary (default: $BRANCH)
+  --compare PATH      Optional second dtest binary for comparison
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
 Environment:
-  DTEST1, DTEST2, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN
+  BRANCH, COMPARE, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN
 
 Examples:
   ./benchmark.sh
   ./benchmark.sh --build
   ./benchmark.sh -- -n 8
   ./benchmark.sh --repeats 3 -- -n 4 -r
-  ./benchmark.sh --dtest2 /path/to/dtest
-  ./benchmark.sh --repeats 5 --dtest2 /path/to/dtest
+  ./benchmark.sh --compare /path/to/dtest
+  ./benchmark.sh --repeats 5 --compare /path/to/dtest
   DRY_RUN=1 ./benchmark.sh
 EOF
 }
@@ -76,14 +76,14 @@ while [[ $# -gt 0 ]]; do
       REPEATS="${1:?missing value for --repeats}"
       shift
       ;;
-    --dtest1)
+    --branch)
       shift
-      DTEST1="${1:?missing value for --dtest1}"
+      BRANCH="${1:?missing value for --branch}"
       shift
       ;;
-    --dtest2)
+    --compare)
       shift
-      DTEST2="${1:?missing value for --dtest2}"
+      COMPARE="${1:?missing value for --compare}"
       shift
       ;;
     --max-deals|--max_deals|-max-deals|-max_deals)
@@ -162,20 +162,20 @@ if [[ "$BUILD" == "1" ]]; then
   fi
 fi
 
-if [[ ! -x "$DTEST1" ]]; then
-  echo "error: dtest1 not found or not executable: $DTEST1" >&2
+if [[ ! -x "$BRANCH" ]]; then
+  echo "error: branch binary not found or not executable: $BRANCH" >&2
   echo "hint: bazel build //library/tests:dtest" >&2
   exit 1
 fi
 
-if [[ -n "${DTEST2:-}" && ! -x "$DTEST2" ]]; then
-  echo "error: dtest2 not found or not executable: $DTEST2" >&2
+if [[ -n "${COMPARE:-}" && ! -x "$COMPARE" ]]; then
+  echo "error: compare binary not found or not executable: $COMPARE" >&2
   exit 1
 fi
 
-BIN_PAIRS=("dtest1:$DTEST1")
-if [[ -n "${DTEST2:-}" ]]; then
-  BIN_PAIRS=("dtest2:$DTEST2" "dtest1:$DTEST1")
+BIN_PAIRS=("branch:$BRANCH")
+if [[ -n "${COMPARE:-}" ]]; then
+  BIN_PAIRS=("compare:$COMPARE" "branch:$BRANCH")
 fi
 num_bins=${#BIN_PAIRS[@]}
 
@@ -235,25 +235,25 @@ run_dtest() {
 
 echo "DDS dtest benchmark"
 echo "==================="
-echo "dtest1:     $DTEST1"
-if [[ -n "${DTEST2:-}" ]]; then
-  echo "dtest2:     $DTEST2"
+printf "%-12s %s\n" "branch:" "$BRANCH"
+if [[ -n "${COMPARE:-}" ]]; then
+  printf "%-12s %s\n" "compare:" "$COMPARE"
 fi
-echo "hands dir:  $HANDS_DIR"
-echo "max_deals:  $MAX_DEALS"
-echo "files:      ${FILES[*]}"
-echo "branch:     $branch"
-echo "repeats:    $REPEATS"
+printf "%-12s %s\n" "hands dir:" "$HANDS_DIR"
+printf "%-12s %s\n" "max_deals:" "$MAX_DEALS"
+printf "%-12s %s\n" "files:" "${FILES[*]}"
+printf "%-12s %s\n" "git branch:" "$branch"
+printf "%-12s %s\n" "repeats:" "$REPEATS"
 if ((${#DTEST_EXTRA[@]} > 0)); then
-  echo "dtest args: ${DTEST_EXTRA[*]}"
+  printf "%-12s %s\n" "dtest args:" "${DTEST_EXTRA[*]}"
 fi
 echo
 
 if [[ "$DRY_RUN" != "1" ]]; then
-  printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
+  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
     "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
-  printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
-    "------" "------------" "----" "--------" "--------" "----------" "------" "---"
+  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
+    "------" "-------------" "-------" "--------" "--------" "----------" "------" "---"
 fi
 
 total_runs=$(( ${#SOLVERS[@]} * ${#FILES[@]} * num_bins * REPEATS ))
@@ -282,7 +282,7 @@ for solver in "${SOLVERS[@]}"; do
 
         read -r user sys avg ratio < <(run_dtest "$bin" "$solver" "$hands")
 
-        printf "%-6s %-12s %4s %8s %8s %10s %6s %s\n" \
+        printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
           "$solver" "$file" "$ver" "$user" "$sys" "$avg" "$ratio" "$run_label"
 
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
@@ -293,22 +293,22 @@ for solver in "${SOLVERS[@]}"; do
   done
 done
 
-if [[ -n "${DTEST2:-}" && "$DRY_RUN" != "1" ]]; then
+if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo
-  echo "Summary (dtest1 vs dtest2, user time)"
-  echo "====================================="
-  printf "%-6s %-12s %10s %10s %10s %s\n" \
-    "solver" "file" "dtest2_user" "dtest1_user" "speedup" "note"
-  printf "%-6s %-12s %10s %10s %10s %s\n" \
-    "------" "------------" "----------" "----------" "----------" "----"
+  echo "Summary (branch vs compare, user time)"
+  echo "======================================"
+  printf "%-6s %-13s %12s %12s %10s %s\n" \
+    "solver" "file" "compare_user" "branch_user" "speedup" "note"
+  printf "%-6s %-13s %12s %12s %10s %s\n" \
+    "------" "-------------" "------------" "------------" "----------" "----"
 
   awk -F'\t' -v files="${FILES[*]}" '
     {
       base = $1 SUBSEP $2
-      if ($3 == "dtest2") {
+      if ($3 == "compare") {
         s2[base] += $5
         c2[base]++
-      } else if ($3 == "dtest1") {
+      } else if ($3 == "branch") {
         s1[base] += $5
         c1[base]++
       }
@@ -324,8 +324,8 @@ if [[ -n "${DTEST2:-}" && "$DRY_RUN" != "1" ]]; then
           u2 = s2[base] / c2[base]
           u1 = s1[base] / c1[base]
           speedup = (u1 > 0) ? u2 / u1 : 0
-          note = (speedup >= 1) ? "dtest1 faster" : "dtest2 faster"
-          printf "%-6s %-12s %10.1f %10.1f %9.2fx %s\n",
+          note = (speedup >= 1) ? "branch faster" : "compare faster"
+          printf "%-6s %-13s %12.1f %12.1f %10.2fx %s\n",
             solvers[si], filearr[fi], u2, u1, speedup, note
         }
       }
