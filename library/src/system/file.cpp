@@ -22,6 +22,10 @@ void File::Reset()
 
 void File::SetName(const std::string& fname_in)
 {
+  if (fname_in == fname_)
+    return;
+
+  Close();
   fname_ = fname_in;
 }
 
