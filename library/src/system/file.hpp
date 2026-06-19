@@ -22,7 +22,6 @@ class File
   private:
 
     std::string fname_;
-    bool file_open_ = false;
     std::ofstream fout_;
 
   public:

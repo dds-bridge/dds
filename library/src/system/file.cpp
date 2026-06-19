@@ -31,20 +31,14 @@ void File::SetName(const std::string& fname_in)
 
 std::ofstream& File::GetStream()
 {
-  if (!file_open_)
-  {
+  if (!fout_.is_open() && !fname_.empty())
     fout_.open(fname_);
-    file_open_ = true;
-  }
 
   return fout_;
 }
 
 void File::Close()
 {
-  if (file_open_)
-  {
+  if (fout_.is_open())
     fout_.close();
-    file_open_ = false;
-  }
 }
