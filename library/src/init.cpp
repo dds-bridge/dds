@@ -165,8 +165,8 @@ void InitDebugFiles()
 
 void CloseDebugFiles()
 {
-  // Per-context debug files are opened in SolverContext::bind_thread_data()
-  // and closed in ~SolverContext().
+  // Per-context debug files are opened when SolverContext owns its ThreadData
+  // (SolverContext(SolverConfig)) and closed in ~SolverContext() for owners only.
 }
 
 
