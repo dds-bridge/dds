@@ -16,8 +16,8 @@ File::~File()
 
 void File::Reset()
 {
+  Close();
   fname_.clear();
-  file_open_ = false;
 }
 
 void File::SetName(const std::string& fname_in)
