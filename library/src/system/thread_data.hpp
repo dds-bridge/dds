@@ -102,7 +102,8 @@ struct ThreadData
   // True after init_debug_files(); cleared by close_debug_files().
   bool debug_files_initialized_ = false;
 
-  // Initialize per-thread debug/stat files with a suffix (e.g., "<thrId>_suffix").
+  // Initialize per-thread debug/stat files. suffix is appended to each debug
+  // prefix (e.g. "0.txt" from SolverContext serial + DDS_DEBUG_SUFFIX).
   void init_debug_files([[maybe_unused]] const std::string& suffix);
 
   // Close any open per-thread debug/stat files.
