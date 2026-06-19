@@ -99,11 +99,19 @@ struct ThreadData
   File fileMoves;
 #endif
 
+  // True after init_debug_files(); cleared by close_debug_files().
+  bool debug_files_initialized_ = false;
+
   // Initialize per-thread debug/stat files with a suffix (e.g., "<thrId>_suffix").
   void init_debug_files([[maybe_unused]] const std::string& suffix);
 
   // Close any open per-thread debug/stat files.
   void close_debug_files();
+
+  auto debug_files_initialized() const -> bool
+  {
+    return debug_files_initialized_;
+  }
 };
 
 
