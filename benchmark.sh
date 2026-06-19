@@ -2,12 +2,13 @@
 # Benchmark dtest performance on one or two binaries.
 #
 # Runs all combinations of solver (calc, solve) and hand file
-# (list1/10/100/1000), then prints per-run timings and an optional summary.
+# (list1/10/100/1000/10000), then prints per-run timings and an optional summary.
 # Does not pass -n to dtest (library default thread count).
 #
 # Usage:
 #   ./benchmark.sh
-#   ./benchmark.sh --dtest2 /path/to/other/dtest
+#   ./benchmark.sh --build
+#   ./benchmark.sh --build --dtest2 /path/to/other/dtest
 #   REPEATS=3 ./benchmark.sh
 #
 # Environment:
@@ -26,6 +27,7 @@ HANDS_DIR="${HANDS_DIR:-$ROOT/hands}"
 REPEATS="${REPEATS:-1}"
 MAX_DEALS="${MAX_DEALS:-100}"
 DRY_RUN="${DRY_RUN:-0}"
+BUILD=0
 
 SOLVERS=(calc solve)
 
@@ -40,6 +42,7 @@ Options:
   -n REPEATS          Runs per combination per binary (default: $REPEATS)
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: $MAX_DEALS)
                       (alias: --max_deals)
+  --build             Run bazel build //library/tests:dtest before benchmarking
   --dtest1 PATH       First dtest binary (default: $DTEST1)
   --dtest2 PATH       Optional second dtest binary for comparison
 
@@ -48,6 +51,7 @@ Environment:
 
 Examples:
   ./benchmark.sh
+  ./benchmark.sh --build
   ./benchmark.sh --dtest2 /path/to/dtest
   ./benchmark.sh -n 5 --dtest2 /path/to/dtest
   DRY_RUN=1 ./benchmark.sh
@@ -78,6 +82,10 @@ while [[ $# -gt 0 ]]; do
     --max-deals|--max_deals|-max-deals|-max_deals)
       shift
       MAX_DEALS="${1:?missing value for --max-deals}"
+      shift
+      ;;
+    --build)
+      BUILD=1
       shift
       ;;
     *)
@@ -132,6 +140,15 @@ select_hand_files() {
 }
 
 select_hand_files
+
+if [[ "$BUILD" == "1" ]]; then
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
+  else
+    echo "Building //library/tests:dtest..." >&2
+    (cd "$ROOT" && bazel build //library/tests:dtest)
+  fi
+fi
 
 if [[ ! -x "$DTEST1" ]]; then
   echo "error: dtest1 not found or not executable: $DTEST1" >&2
