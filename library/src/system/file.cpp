@@ -9,18 +9,18 @@
 
 #include "file.hpp"
 
-File::~File()
+dds::File::~File()
 {
   Close();
 }
 
-void File::Reset()
+void dds::File::Reset()
 {
   Close();
   fname_.clear();
 }
 
-void File::SetName(const std::string& fname_in)
+void dds::File::SetName(const std::string& fname_in)
 {
   if (fname_in == fname_)
     return;
@@ -29,7 +29,7 @@ void File::SetName(const std::string& fname_in)
   fname_ = fname_in;
 }
 
-std::ofstream& File::GetStream()
+std::ofstream& dds::File::GetStream()
 {
   if (!fout_.is_open() && !fname_.empty())
     fout_.open(fname_);
@@ -37,7 +37,7 @@ std::ofstream& File::GetStream()
   return fout_;
 }
 
-void File::Close()
+void dds::File::Close()
 {
   if (fout_.is_open())
     fout_.close();
