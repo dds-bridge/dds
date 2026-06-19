@@ -1,6 +1,8 @@
 #include "solver_context.hpp"
 
+#include <algorithm>
 #include <atomic>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
