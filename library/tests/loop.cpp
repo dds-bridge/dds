@@ -20,6 +20,7 @@
 
 #include "cst.hpp"
 #include "dtest_parallel.hpp"
+#include <solve_board.hpp>
 
 using std::cout;
 using std::endl;
@@ -68,7 +69,8 @@ void loop_solve(
     }
     else
     {
-      ret = SolveAllBoards(bop, solvedbdp);
+      ret = solve_all_boards_pbn_n(*bop, *solvedbdp,
+        dtest_effective_threads(options.num_threads_, count));
     }
     if (ret != RETURN_NO_FAULT)
     {
