@@ -198,14 +198,14 @@ if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git_branch="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
 fi
 
-RESULTS="$(mktemp)"
+RESULTS="$(mktemp "${TMPDIR:-/tmp}/dds-benchmark.XXXXXX")"
 trap 'rm -f "$RESULTS"' EXIT
 
 parse_dtest_output() {
   awk '
-    /^User time \(ms\)/ { user = $NF }
-    /^Sys time \(ms\)/  { sys = $NF }
-    /^Avg user time \(ms\)/ { avg = $NF }
+    /^User time \(ms\)/ { user = ($NF == "zero" ? 0 : $NF) }
+    /^Sys time \(ms\)/  { sys = ($NF == "zero" ? 0 : $NF) }
+    /^Avg user time \(ms\)/ { avg = ($NF == "zero" ? 0 : $NF) }
     /^Ratio[[:space:]]/ { ratio = $NF }
     END {
       if (user == "") user = "NA"
@@ -239,7 +239,9 @@ run_dtest() {
   fi
   local parsed
   parsed="$(parse_dtest_output <<<"$out")"
-  if [[ "$parsed" == *"NA"* ]]; then
+  local parsed_user parsed_sys
+  read -r parsed_user parsed_sys _ _ <<<"$parsed"
+  if [[ "$parsed_user" == "NA" || "$parsed_sys" == "NA" ]]; then
     echo "warning: incomplete dtest timing output: ${cmd[*]}" >&2
   fi
   echo "$parsed"
@@ -307,7 +309,7 @@ done
 
 if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo
-  echo "Summary (branch vs compare, total user ms; cmp/branch > 1 => branch faster)"
+  echo "Summary (branch vs compare, avg user ms; cmp/branch > 1 => branch faster)"
   echo "=============================================================================="
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "solver" "file" "compare_user" "branch_user" "cmp/branch" "note"
