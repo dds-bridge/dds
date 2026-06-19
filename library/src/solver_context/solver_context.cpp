@@ -33,11 +33,12 @@ void SolverContext::bind_thread_data()
   search_.set_owner(this);
   if (!thr_) return;
 
+  if (owns_thread_data_) {
 #if defined(DDS_TOP_LEVEL) || defined(DDS_AB_STATS) || defined(DDS_AB_HITS) || \
     defined(DDS_TT_STATS) || defined(DDS_TIMING) || defined(DDS_MOVES)
-  if (owns_thread_data_)
     thr_->init_debug_files(next_debug_file_suffix());
 #endif
+  }
 }
 
 // Owned-ThreadData constructor: allocate ThreadData as a member of the
@@ -148,7 +149,10 @@ auto SolverContext::dispose_trans_table() const -> void
 // complete type.
 SolverContext::~SolverContext()
 {
-  if (owns_thread_data_ && thr_)
+  // Close debug files only when this context holds the last shared_ptr to
+  // ThreadData. close_debug_files() is a no-op when files were never opened
+  // (e.g. non-owning wrappers over stack ThreadData).
+  if (thr_ && thr_.use_count() == 1)
     thr_->close_debug_files();
 }
 

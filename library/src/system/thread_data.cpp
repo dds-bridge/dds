@@ -6,6 +6,9 @@ using std::string;
 
 void ThreadData::init_debug_files([[maybe_unused]] const string& suffix)
 {
+  if (debug_files_initialized_)
+    return;
+
 #ifdef DDS_TOP_LEVEL
 	fileTopLevel.SetName(DDS_TOP_LEVEL_PREFIX + suffix);
 #endif
@@ -30,10 +33,15 @@ void ThreadData::init_debug_files([[maybe_unused]] const string& suffix)
 #ifdef DDS_MOVES
 	fileMoves.SetName(DDS_MOVES_PREFIX + suffix);
 #endif
+
+  debug_files_initialized_ = true;
 }
 
 void ThreadData::close_debug_files()
 {
+  if (!debug_files_initialized_)
+    return;
+
 #ifdef DDS_TOP_LEVEL
 	fileTopLevel.Close();
 #endif
@@ -58,4 +66,6 @@ void ThreadData::close_debug_files()
 #ifdef DDS_MOVES
 	fileMoves.Close();
 #endif
+
+  debug_files_initialized_ = false;
 }

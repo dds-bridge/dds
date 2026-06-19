@@ -166,7 +166,8 @@ void InitDebugFiles()
 void CloseDebugFiles()
 {
   // Per-context debug files are opened when SolverContext owns its ThreadData
-  // (SolverContext(SolverConfig)) and closed in ~SolverContext() for owners only.
+  // (SolverContext(SolverConfig)) and closed in ~SolverContext() when the last
+  // shared_ptr to that ThreadData is released.
 }
 
 
