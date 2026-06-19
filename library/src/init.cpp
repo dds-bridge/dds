@@ -163,14 +163,6 @@ void InitDebugFiles()
 }
 
 
-void CloseDebugFiles()
-{
-  // Per-context debug files are opened when SolverContext owns its ThreadData
-  // (SolverContext(SolverConfig)) and closed in ~SolverContext() when the last
-  // shared_ptr to that ThreadData is released.
-}
-
-
 void SetDeal(
   const std::shared_ptr<ThreadData>& thrp)
 {
