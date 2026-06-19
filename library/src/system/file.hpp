@@ -40,5 +40,3 @@ class File
 };
 
 }  // namespace dds
-
-using dds::File;

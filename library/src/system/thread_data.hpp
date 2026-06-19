@@ -73,30 +73,30 @@ struct ThreadData
   Moves moves;
 
 #ifdef DDS_TOP_LEVEL
-  File fileTopLevel;
+  dds::File fileTopLevel;
 #endif
 
 #ifdef DDS_AB_STATS
   ABstats ABStats;
-  File fileABstats;
+  dds::File fileABstats;
 #endif
 
 #ifdef DDS_AB_HITS
-  File fileRetrieved;
-  File fileStored;
+  dds::File fileRetrieved;
+  dds::File fileStored;
 #endif
 
 #ifdef DDS_TT_STATS
-  File fileTTstats;
+  dds::File fileTTstats;
 #endif 
 
 #ifdef DDS_TIMING
   TimerList timerList;
-  File fileTimerList;
+  dds::File fileTimerList;
 #endif
 
 #ifdef DDS_MOVES
-  File fileMoves;
+  dds::File fileMoves;
 #endif
 
   // True after init_debug_files(); cleared by close_debug_files().
