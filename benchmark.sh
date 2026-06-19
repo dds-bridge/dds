@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Benchmark dtest performance on one or two binaries.
 #
-# Runs all combinations of solver (calc, solve) and hand file
-# (list1/10/100/1000/10000), then prints per-run timings and an optional summary.
+# Runs all combinations of solver (solve, calc) and hand file
+# (list100/1000/…/1), largest files first, then prints per-run timings and an optional summary.
 # Does not pass dtest options unless given after "--" (see below).
 #
 # Usage:
@@ -30,9 +30,10 @@ REPEATS="${REPEATS:-1}"
 MAX_DEALS="${MAX_DEALS:-100}"
 DRY_RUN="${DRY_RUN:-0}"
 BUILD=0
+REVERSE=0
 DTEST_EXTRA=()
 
-SOLVERS=(calc solve)
+SOLVERS=(solve calc)
 
 usage() {
   cat <<EOF
@@ -48,6 +49,7 @@ Options:
   --build             Build branch dtest only (bazel build //library/tests:dtest)
   --branch PATH       Branch dtest binary (default: $BRANCH)
   --compare PATH      Optional second dtest binary for comparison
+  --reverse           With --compare, run compare before branch (default: branch first)
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
@@ -60,6 +62,7 @@ Examples:
   ./benchmark.sh -- -n 8
   ./benchmark.sh --repeats 3 -- -n 4 -r
   ./benchmark.sh --compare /path/to/dtest
+  ./benchmark.sh --compare /path/to/dtest --reverse
   ./benchmark.sh --repeats 5 --compare /path/to/dtest
   DRY_RUN=1 ./benchmark.sh
 EOF
@@ -95,6 +98,10 @@ while [[ $# -gt 0 ]]; do
       BUILD=1
       shift
       ;;
+    --reverse)
+      REVERSE=1
+      shift
+      ;;
     --)
       shift
       DTEST_EXTRA=("$@")
@@ -115,6 +122,11 @@ fi
 
 if ! [[ "$REPEATS" =~ ^[0-9]+$ ]] || (( REPEATS < 1 )); then
   echo "error: repeats must be a positive integer (got: $REPEATS)" >&2
+  exit 1
+fi
+
+if [[ "$REVERSE" == "1" && -z "${COMPARE:-}" ]]; then
+  echo "error: --reverse requires --compare" >&2
   exit 1
 fi
 
@@ -153,7 +165,7 @@ select_hand_files() {
   local item
   while IFS= read -r item; do
     FILES+=("${item#*:}")
-  done < <(printf '%s\n' "${candidates[@]}" | sort -t: -k1,1n)
+  done < <(printf '%s\n' "${candidates[@]}" | sort -t: -k1,1rn)
 }
 
 select_hand_files
@@ -182,7 +194,11 @@ fi
 
 BIN_PAIRS=("branch:$BRANCH")
 if [[ -n "${COMPARE:-}" ]]; then
-  BIN_PAIRS=("branch:$BRANCH" "compare:$COMPARE")
+  if [[ "$REVERSE" == "1" ]]; then
+    BIN_PAIRS=("compare:$COMPARE" "branch:$BRANCH")
+  else
+    BIN_PAIRS=("branch:$BRANCH" "compare:$COMPARE")
+  fi
 fi
 num_bins=${#BIN_PAIRS[@]}
 
@@ -252,6 +268,11 @@ echo "==================="
 printf "%-12s %s\n" "branch:" "$BRANCH"
 if [[ -n "${COMPARE:-}" ]]; then
   printf "%-12s %s\n" "compare:" "$COMPARE"
+  if [[ "$REVERSE" == "1" ]]; then
+    printf "%-12s %s\n" "run order:" "compare, branch"
+  else
+    printf "%-12s %s\n" "run order:" "branch, compare"
+  fi
 fi
 printf "%-12s %s\n" "hands dir:" "$HANDS_DIR"
 printf "%-12s %s\n" "max_deals:" "$MAX_DEALS"
@@ -312,7 +333,7 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo "Summary (branch vs compare, avg user ms; cmp/branch > 1 => branch faster)"
   echo "=============================================================================="
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
-    "solver" "file" "compare_user" "branch_user" "cmp/branch" "note"
+    "solver" "file" "compare_avg" "branch_avg" "cmp/branch" "note"
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "------" "-------------" "------------" "------------" "----------" "---------------"
 
@@ -320,15 +341,15 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
     {
       base = $1 SUBSEP $2
       if ($3 == "compare") {
-        s2[base] += $5
+        s2[base] += $7
         c2[base]++
       } else if ($3 == "branch") {
-        s1[base] += $5
+        s1[base] += $7
         c1[base]++
       }
     }
     END {
-      split("calc solve", solvers, " ")
+      split("solve calc", solvers, " ")
       nfiles = split(files, filearr, " ")
 
       for (si = 1; si <= 2; si++) {
@@ -340,7 +361,7 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           cmp_branch = (u1 > 0) ? u2 / u1 : 0
           note = (cmp_branch >= 1) ? "branch faster" : "compare faster"
           sp = sprintf("%9.2fx", cmp_branch)
-          printf "%-6s %-13s %12.1f %12.1f %10s %-15s\n",
+          printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
             solvers[si], filearr[fi], u2, u1, sp, note
         }
       }
