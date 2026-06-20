@@ -552,6 +552,17 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtable(
   struct DdTableResults * tablep) -> int;
 
 /**
+ * @brief CalcDDtable with an explicit worker-thread cap.
+ *
+ * @param maxThreads Maximum worker threads; <= 0 selects the automatic
+ *        (hardware_concurrency) default.
+ */
+EXTERN_C DLLEXPORT auto STDCALL CalcDDtableN(
+  struct DdTableDeal tableDeal,
+  struct DdTableResults * tablep,
+  int maxThreads) -> int;
+
+/**
  * @brief Calculate the double dummy table for a PBN Deal.
  *
  * @param tableDealPBN PBN Deal for which to calculate the table
@@ -561,6 +572,17 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtable(
 EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBN(
   struct DdTableDealPBN tableDealPBN,
   struct DdTableResults * tablep) -> int;
+
+/**
+ * @brief CalcDDtablePBN with an explicit worker-thread cap.
+ *
+ * @param maxThreads Maximum worker threads; <= 0 selects the automatic
+ *        (hardware_concurrency) default.
+ */
+EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBNN(
+  struct DdTableDealPBN tableDealPBN,
+  struct DdTableResults * tablep,
+  int maxThreads) -> int;
 
 /**
  * @brief Calculate double dummy tables for multiple deals.
@@ -580,6 +602,20 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTables(
   struct AllParResults * presp) -> int;
 
 /**
+ * @brief CalcAllTables with an explicit worker-thread cap.
+ *
+ * @param maxThreads Maximum worker threads; <= 0 selects the automatic
+ *        (hardware_concurrency) default.
+ */
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesN(
+  struct DdTableDeals const * dealsp,
+  int mode,
+  int const trumpFilter[DDS_STRAINS],
+  struct DdTablesRes * resp,
+  struct AllParResults * presp,
+  int maxThreads) -> int;
+
+/**
  * @brief Calculate double dummy tables for multiple PBN deals.
  *
  * @param dealsp Pointer to multiple PBN deals
@@ -597,6 +633,20 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBN(
   struct AllParResults * presp) -> int;
 
 /**
+ * @brief CalcAllTablesPBN with an explicit worker-thread cap.
+ *
+ * @param maxThreads Maximum worker threads; <= 0 selects the automatic
+ *        (hardware_concurrency) default.
+ */
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNN(
+  struct DdTableDealsPBN const * dealsp,
+  int mode,
+  int const trumpFilter[DDS_STRAINS],
+  struct DdTablesRes * resp,
+  struct AllParResults * presp,
+  int maxThreads) -> int;
+
+/**
  * @brief Solve multiple bridge deals in PBN format.
  *
  * @param bop Pointer to multiple PBN deals
@@ -607,9 +657,31 @@ EXTERN_C DLLEXPORT auto STDCALL SolveAllBoards(
   struct BoardsPBN const * bop,
   struct SolvedBoards * solvedp) -> int;
 
+/**
+ * @brief SolveAllBoards with an explicit worker-thread cap.
+ *
+ * @param maxThreads Maximum worker threads; <= 0 selects the automatic
+ *        (hardware_concurrency) default.
+ */
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsN(
+  struct BoardsPBN const * bop,
+  struct SolvedBoards * solvedp,
+  int maxThreads) -> int;
+
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBin(
   struct Boards const * bop,
   struct SolvedBoards * solvedp) -> int;
+
+/**
+ * @brief SolveAllBoardsBin with an explicit worker-thread cap.
+ *
+ * @param maxThreads Maximum worker threads; <= 0 selects the automatic
+ *        (hardware_concurrency) default.
+ */
+EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBinN(
+  struct Boards const * bop,
+  struct SolvedBoards * solvedp,
+  int maxThreads) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsSeq(
   struct BoardsPBN const * bop,
