@@ -15,7 +15,7 @@ extern Memory memory;
 
 TEST(SystemContextTTFacades, ResetAndResizeAreNoopsWithoutTT)
 {
-  SetMaxThreads(1);
+  InitialiseStaticMemory();
   // Some environments may compute 0 allowable threads (e.g., macOS sandbox),
   // so ensure we have at least one thread allocated for the test.
   if (memory.NumThreads() == 0)
@@ -34,7 +34,7 @@ TEST(SystemContextTTFacades, ResetAndResizeAreNoopsWithoutTT)
 
 TEST(SystemContextTTFacades, ResizeCreatesWhenExisting)
 {
-  SetMaxThreads(1);
+  InitialiseStaticMemory();
   // Ensure at least one thread exists; fall back to a small thread config.
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
@@ -51,7 +51,7 @@ TEST(SystemContextTTFacades, ResizeCreatesWhenExisting)
 
 TEST(SystemContextTTFacades, Lifecycle_LookupAddClearDispose)
 {
-  SetMaxThreads(1);
+  InitialiseStaticMemory();
   if (memory.NumThreads() == 0)
     memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
 
