@@ -63,7 +63,7 @@ static auto boards_from_pbn(
 auto solve_all_boards_n(
   Boards const& bds,
   SolvedBoards& solved,
-  const int worker_cap) -> int
+  int max_threads = 0) -> int
 {
   const int n = bds.no_of_boards;
   if (n > MAXNOOFBOARDS)
@@ -76,7 +76,7 @@ auto solve_all_boards_n(
 
   START_BLOCK_TIMER;
 
-  const int err = parallel_all_boards_n(n, worker_cap,
+  const int err = parallel_all_boards_n(n, max_threads,
     [&](const int worker_id, const int bno) -> int {
       (void)worker_id;
 

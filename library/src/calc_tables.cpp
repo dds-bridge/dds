@@ -27,7 +27,8 @@ extern Scheduler scheduler;
 // Legacy overload (creates temporary context)
 auto calc_all_boards_n(
   Boards * bop,
-  SolvedBoards * solvedp) -> int;
+  SolvedBoards * solvedp,
+  int max_threads = 0) -> int;
 
 
 auto calc_single_common_internal(
@@ -109,7 +110,8 @@ auto calc_all_boards_n(
 // Legacy overload: parallel across boards, one SolverContext per worker.
 auto calc_all_boards_n(
   Boards * bop,
-  SolvedBoards * solvedp) -> int
+  SolvedBoards * solvedp,
+  int max_threads) -> int
 {
   const int n = bop->no_of_boards;
   if (n > MAXNOOFBOARDS)
@@ -120,8 +122,7 @@ auto calc_all_boards_n(
 
   START_BLOCK_TIMER;
 
-  const int nthreads = std::max(1,
-    std::min(static_cast<int>(std::thread::hardware_concurrency()), n));
+  const int nthreads = resolve_worker_count(max_threads, n);
 
   int err = RETURN_NO_FAULT;
   if (nthreads <= 1)
@@ -137,7 +138,7 @@ auto calc_all_boards_n(
   else
   {
     std::vector<SolverContext> contexts(static_cast<unsigned>(nthreads));
-    err = parallel_all_boards_n(n, nthreads,
+    err = parallel_all_boards_n(n, max_threads,
       [&](const int worker_id, const int bno) -> int {
         return calc_single_common_internal(
           contexts[static_cast<unsigned>(worker_id)], *bop, *solvedp, bno);
