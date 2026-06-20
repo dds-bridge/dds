@@ -30,6 +30,8 @@ public class DDS
         /// </para>
         /// </remarks>
         /// <param name="userThreads">Maximum number of threads to use.</param>
+        // The underlying C symbol SetMaxThreads was renamed to
+        // InitialiseStaticMemory; this P/Invoke still targets the deprecated alias.
         [Obsolete("Use SolverContext instead.")]
         public void SetMaxThreads(int userThreads) => DdsNative.SetMaxThreads(userThreads);
 

@@ -95,6 +95,8 @@ internal static class DdsNative
     #endregion
 
     #region ====== Configuration and Resource Management ======
+        // The C symbol SetMaxThreads is deprecated and now a thin alias of
+        // InitialiseStaticMemory; the userThreads argument is ignored.
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void SetMaxThreads( int userThreads);
 

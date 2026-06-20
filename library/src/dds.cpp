@@ -36,7 +36,7 @@ extern "C" BOOL APIENTRY DllMain(
 {
 
   if (ul_reason_for_call == DLL_PROCESS_ATTACH)
-    SetMaxThreads(0);
+    InitialiseStaticMemory();
   else if (ul_reason_for_call == DLL_PROCESS_DETACH)
   {
     FreeMemory();
@@ -61,9 +61,9 @@ void DDSInitialize(), DDSFinalize();
 /**
  * @brief Initialize the DDS library.
  */
-void DDSInitialize(void) 
+void DDSInitialize(void)
 {
-  SetMaxThreads(0);
+  InitialiseStaticMemory();
 }
 
 
@@ -84,7 +84,7 @@ void DDSFinalize(void)
  */
 static void __attribute__ ((constructor)) libInit(void)
 {
-  SetMaxThreads(0);
+  InitialiseStaticMemory();
 }
 
 #endif
