@@ -17,6 +17,20 @@
 #include <api/dll.h>
 
 
+auto resolve_worker_count(
+  const int max_threads,
+  const int count) -> int
+{
+  int workers = max_threads;
+  if (workers <= 0)
+  {
+    const unsigned hw = std::thread::hardware_concurrency();
+    workers = hw > 0 ? static_cast<int>(hw) : 1;
+  }
+  return std::max(1, std::min(workers, count));
+}
+
+
 auto parallel_all_boards_n(
   const int count,
   const int worker_cap,
@@ -27,13 +41,7 @@ auto parallel_all_boards_n(
     return RETURN_NO_FAULT;
   }
 
-  int workers = worker_cap;
-  if (workers <= 0)
-  {
-    const unsigned hw = std::thread::hardware_concurrency();
-    workers = hw > 0 ? static_cast<int>(hw) : 1;
-  }
-  workers = std::max(1, std::min(workers, count));
+  const int workers = resolve_worker_count(worker_cap, count);
 
   if (workers == 1)
   {

@@ -13,6 +13,15 @@
 
 
 /**
+ * @brief Resolve the number of worker threads to use.
+ *
+ * @param max_threads Requested cap; <= 0 means "auto" (use hardware concurrency).
+ * @param count Number of work items; the result is clamped to [1, count].
+ * @return The worker count to use.
+ */
+auto resolve_worker_count(int max_threads, int count) -> int;
+
+/**
  * @brief Process boards [0, count) with work-stealing parallelism.
  *
  * @param count Number of board indices to process.
