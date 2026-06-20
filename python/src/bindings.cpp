@@ -611,7 +611,8 @@ auto register_analysis_bindings(py::module_& module) -> void
             SetMaxThreads(user_threads);
         },
         py::arg("user_threads") = 0,
-        "Legacy thread-resource hook (wraps the deprecated SetMaxThreads C API).\n\n"
+        "Legacy thread-resource hook (wraps the deprecated SetMaxThreads C API,\n"
+        "now a thin alias of InitialiseStaticMemory).\n\n"
         "This does NOT control DDS's batch parallelism and is retained only for\n"
         "backward compatibility. solve_all_boards_* already parallelise across the\n"
         "machine's hardware threads automatically (see solve_boards_n); the value\n"

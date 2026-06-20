@@ -429,20 +429,29 @@ struct DDSInfo
 
 
 /**
+ * @brief Initialise the solver's static memory.
+ *
+ * Allocates the transposition-table memory pools, registers scheduler and
+ * thread-manager state, and performs one-time lookup-table initialisation.
+ * This does NOT control the number of worker threads — use the
+ * SolveAllBoardsN / CalcAllTablesN family for per-call thread caps.
+ */
+EXTERN_C DLLEXPORT auto STDCALL InitialiseStaticMemory() -> void;
+
+/**
  * @brief Set the maximum number of threads used by the solver.
  *
- * @deprecated In the modern C++ API, thread count is controlled by the
- *             embedding application (typically one SolverContext per worker
- *             thread). New code should create/destroy SolverContext instances
- *             in the application rather than calling this function.
+ * @deprecated Use InitialiseStaticMemory(); the thread count argument is
+ *             ignored (internal batch threading was removed). In the modern
+ *             C++ API, thread count is controlled by the embedding application
+ *             (typically one SolverContext per worker thread), or per call via
+ *             the SolveAllBoardsN / CalcAllTablesN family.
  *             See docs/api_migration.md for modern C++ API examples.
  *
- * @param userThreads Maximum number of threads to use
+ * @param userThreads Ignored; retained for backward compatibility.
  *
  * This function is part of the legacy C API and is maintained for backward
- * compatibility. It has no direct equivalent in the modern API, where both
- * threading and TT memory limits are configured via SolverContext and
- * SolverConfig on a per-instance basis.
+ * compatibility. It simply forwards to InitialiseStaticMemory().
  */
 EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
   int userThreads) -> void;
