@@ -445,7 +445,7 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           base = solvers[si] SUBSEP filearr[fi]
           if (!(base in c2) || !(base in c1)) continue
           # Every member of s1, c1, s2, and c2 should be positive.
-          # If not, it will be due to a rounding error. To fix, update
+          # If not, it will be due to rounding to zero. To fix, update
           # TestTimer.cpp to accumulate microseconds rather than milliseconds. 
           u2 = s2[base] / c2[base]
           u1 = s1[base] / c1[base]
