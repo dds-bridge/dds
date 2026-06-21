@@ -163,17 +163,6 @@ void InitDebugFiles()
 }
 
 
-void CloseDebugFiles()
-{
-  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
-  {
-  SolverContext tmp_ctx;
-  [[maybe_unused]] auto thrp = tmp_ctx.thread();
-  thrp->close_debug_files();
-  }
-}
-
-
 void SetDeal(
   const std::shared_ptr<ThreadData>& thrp)
 {

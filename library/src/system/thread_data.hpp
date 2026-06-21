@@ -1,13 +1,19 @@
 #ifndef DDS_THREAD_DATA_H
 #define DDS_THREAD_DATA_H
 
+#include <utility/debug.h>
+
 #include <api/dds.h>
 #include <moves/moves.hpp>
 #include <string>
 
-
 #ifdef DDS_AB_STATS
-  #include "ab_stats.hpp"
+#include "ab_stats.hpp"
+#endif
+
+#if defined(DDS_TOP_LEVEL) || defined(DDS_AB_STATS) || defined(DDS_AB_HITS) || \
+    defined(DDS_TT_STATS) || defined(DDS_TIMING) || defined(DDS_MOVES)
+#include "file.hpp"
 #endif
 
 #ifdef DDS_TIMING
@@ -67,37 +73,46 @@ struct ThreadData
   Moves moves;
 
 #ifdef DDS_TOP_LEVEL
-  File fileTopLevel;
+  dds::File fileTopLevel;
 #endif
 
 #ifdef DDS_AB_STATS
   ABstats ABStats;
-  File fileABstats;
+  dds::File fileABstats;
 #endif
 
 #ifdef DDS_AB_HITS
-  File fileRetrieved;
-  File fileStored;
+  dds::File fileRetrieved;
+  dds::File fileStored;
 #endif
 
 #ifdef DDS_TT_STATS
-  File fileTTstats;
+  dds::File fileTTstats;
 #endif 
 
 #ifdef DDS_TIMING
   TimerList timerList;
-  File fileTimerList;
+  dds::File fileTimerList;
 #endif
 
 #ifdef DDS_MOVES
-  File fileMoves;
+  dds::File fileMoves;
 #endif
 
-  // Initialize per-thread debug/stat files with a suffix (e.g., "<thrId>_suffix").
+  // True after init_debug_files(); cleared by close_debug_files().
+  bool debug_files_initialized_ = false;
+
+  // Initialize per-thread debug/stat files. suffix is appended to each debug
+  // prefix (e.g. "0.txt" from SolverContext serial + DDS_DEBUG_SUFFIX).
   void init_debug_files([[maybe_unused]] const std::string& suffix);
 
   // Close any open per-thread debug/stat files.
   void close_debug_files();
+
+  auto debug_files_initialized() const -> bool
+  {
+    return debug_files_initialized_;
+  }
 };
 
 
