@@ -63,7 +63,7 @@ static auto boards_from_pbn(
 auto solve_all_boards_n(
   Boards const& bds,
   SolvedBoards& solved,
-  int max_threads = 0) -> int
+  int max_threads) -> int
 {
   const int n = bds.no_of_boards;
   if (n > MAXNOOFBOARDS)
@@ -113,13 +113,13 @@ auto solve_all_boards_n(
 auto solve_all_boards_pbn_n(
   BoardsPBN const& bop,
   SolvedBoards& solved,
-  const int worker_cap) -> int
+  const int max_threads) -> int
 {
   Boards bo;
   const int rc = boards_from_pbn(bop, bo);
   if (rc != RETURN_NO_FAULT)
     return rc;
-  return solve_all_boards_n(bo, solved, worker_cap);
+  return solve_all_boards_n(bo, solved, max_threads);
 }
 
 

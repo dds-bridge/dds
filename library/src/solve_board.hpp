@@ -17,12 +17,12 @@
 auto solve_all_boards_n(
   Boards const& bds,
   SolvedBoards& solved,
-  int worker_cap = 0) -> int;
+  int max_threads = 0) -> int;
 
 auto solve_all_boards_pbn_n(
   BoardsPBN const& bop,
   SolvedBoards& solved,
-  int worker_cap = 0) -> int;
+  int max_threads = 0) -> int;
 
 auto solve_all_boards_n_seq(
   Boards const& bds,
