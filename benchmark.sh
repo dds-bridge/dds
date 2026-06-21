@@ -23,6 +23,7 @@
 #   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
 #   DRY_RUN    If 1, print commands only
 #   DETAILS    If 1 with --compare, keep per-run rows in output (default: transient on tty)
+#   EPSILON    With --compare, max % diff to treat branch/compare as equal (default: 0.5)
 
 set -euo pipefail
 
@@ -33,6 +34,7 @@ REPEATS="${REPEATS:-1}"
 MAX_DEALS="${MAX_DEALS:-100}"
 DRY_RUN="${DRY_RUN:-0}"
 DETAILS="${DETAILS:-0}"
+EPSILON="${EPSILON:-0.5}"
 BUILD=0
 REVERSE=0
 DTEST_EXTRA=()
@@ -55,12 +57,13 @@ Options:
   --branch PATH       Branch dtest binary (default: $BRANCH)
   --compare PATH      Optional second dtest binary (summary; transient progress on tty)
   --details           With --compare, keep per-run timing rows in final output
+  --epsilon PCT       With --compare, treat timings within PCT% as equal (default: 0.5; env: EPSILON)
   --reverse           With --compare, run compare before branch each repeat (default: branch first)
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
 Environment:
-  BRANCH, COMPARE, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS
+  BRANCH, COMPARE, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, EPSILON
 
 Examples:
   ./benchmark.sh
@@ -113,6 +116,11 @@ while [[ $# -gt 0 ]]; do
       DETAILS=1
       shift
       ;;
+    --epsilon)
+      shift
+      EPSILON="${1:?missing value for --epsilon}"
+      shift
+      ;;
     --)
       shift
       DTEST_EXTRA=("$@")
@@ -133,6 +141,11 @@ fi
 
 if ! [[ "$REPEATS" =~ ^[0-9]+$ ]] || (( REPEATS < 1 )); then
   echo "error: repeats must be a positive integer (got: $REPEATS)" >&2
+  exit 1
+fi
+
+if ! [[ "$EPSILON" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+  echo "error: epsilon must be a non-negative number (got: $EPSILON)" >&2
   exit 1
 fi
 
@@ -331,6 +344,7 @@ if [[ -n "${COMPARE:-}" ]]; then
   else
     printf "%-12s %s\n" "run order:" "interleaved branch, compare"
   fi
+  printf "%-12s %s\n" "epsilon:" "${EPSILON}%"
 fi
 printf "%-12s %s\n" "hands dir:" "$HANDS_DIR"
 printf "%-12s %s\n" "max_deals:" "$MAX_DEALS"
@@ -404,7 +418,12 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "------" "-------------" "------------" "------------" "----------" "---------------"
 
-  awk -F'\t' -v files="${FILES[*]}" '
+  awk -F'\t' -v files="${FILES[*]}" -v epsilon_pct="$EPSILON" '
+    function within_epsilon(a, b,    eps, hi, lo) {
+      eps = epsilon_pct / 100
+      if (a > b) { hi = a; lo = b } else { hi = b; lo = a }
+      return (hi <= 0 || (hi - lo) / hi <= eps)
+    }
     {
       base = $1 SUBSEP $2
       if ($3 == "compare") {
@@ -427,7 +446,13 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           u2 = s2[base] / c2[base]
           u1 = s1[base] / c1[base]
           cmp_branch = u2 / u1
-          note = (cmp_branch >= 1) ? "branch faster" : "compare faster"
+          if (within_epsilon(u1, u2)) {
+            note = "equal"
+          } else if (cmp_branch >= 1) {
+            note = "branch faster"
+          } else {
+            note = "compare faster"
+          }
           sp = sprintf("%9.2fx", cmp_branch)
           printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
             solvers[si], filearr[fi], u2, u1, sp, note
