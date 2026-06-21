@@ -135,7 +135,24 @@ void Scheduler::ClearTiming()
 void Scheduler::Reset()
 {
   for (int b = 0; b < MAXNOOFBOARDS; b++)
+  {
     hands[b].next = -1;
+    hands[b].repeatNo = 0;
+    hands[b].depth = 0;
+    hands[b].strength = 0;
+    hands[b].fanout = 0;
+    hands[b].thread = 0;
+    hands[b].selectFlag = 0;
+    hands[b].time = 0;
+  }
+
+  for (int g = 0; g < MAXNOOFBOARDS; g++)
+  {
+    group[g].head = -1;
+    group[g].actual = 0;
+    group[g].repeatNo = 0;
+    group[g].pred = 0;
+  }
 
   numGroups = 0;
   extraGroups = 0;
@@ -266,6 +283,9 @@ void Scheduler::MakeGroups(const Boards& bds)
 
       group[numGroups].strain = strain;
       group[numGroups].hash = key;
+      group[numGroups].head = -1;
+      group[numGroups].actual = 0;
+      group[numGroups].repeatNo = 0;
       numGroups++;
     }
     else
@@ -332,6 +352,9 @@ void Scheduler::FinetuneGroups()
 
       group[numGroups].strain = 5;
       group[numGroups].hash = extraGroups;
+      group[numGroups].head = -1;
+      group[numGroups].actual = 0;
+      group[numGroups].repeatNo = 0;
 
       numGroups++;
       extraGroups++;
@@ -422,6 +445,9 @@ void Scheduler::FinetuneGroups()
 
           group[numGroups].strain = 5;
           group[numGroups].hash = extraGroups;
+          group[numGroups].head = -1;
+          group[numGroups].actual = 0;
+          group[numGroups].repeatNo = 0;
 
           numGroups++;
           extraGroups++;
@@ -903,7 +929,7 @@ void Scheduler::EndBlockTimer()
     if (timeUser > blockMax)
       blockMax = timeUser;
 
-    if (hp->repeatNo == 0)
+    if (hp->repeatNo == 0 && timeUser > 0)
     {
       int bin = timeUser / 1000;
       timeHist[bin]++;
@@ -916,8 +942,11 @@ void Scheduler::EndBlockTimer()
 
   for (int g = 0; g < numGroups; g++)
   {
-    int head = group[g].head;
-    int NTflag = (hands[head].strain == 4 ? 1 : 0);
+    const int head = group[g].head;
+    if (head < 0 || head >= numHands)
+      continue;
+
+    const int NTflag = (hands[head].strain == 4 ? 1 : 0);
 
     TimeStat ts;
 

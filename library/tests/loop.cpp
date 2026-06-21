@@ -20,6 +20,7 @@
 
 #include "cst.hpp"
 #include "dtest_parallel.hpp"
+#include <solve_board.hpp>
 
 using std::cout;
 using std::endl;
@@ -68,20 +69,8 @@ void loop_solve(
     }
     else
     {
-      solvedbdp->no_of_boards = count;
-      ret = dtest_run_parallel(count, options.num_threads_,
-        [&](const int j) -> int {
-          FutureTricks fut;
-          const int res = SolveBoardPBN(
-            bop->deals[j], bop->target[j], bop->solutions[j], bop->mode[j],
-            &fut, 0);
-          if (res == RETURN_NO_FAULT)
-          {
-            solvedbdp->solved_board[j] = fut;
-            return RETURN_NO_FAULT;
-          }
-          return res;
-        });
+      ret = solve_all_boards_pbn_n(*bop, *solvedbdp,
+        dtest_effective_threads(options.num_threads_, count));
     }
     if (ret != RETURN_NO_FAULT)
     {
