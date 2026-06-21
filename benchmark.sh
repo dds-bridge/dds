@@ -3,7 +3,8 @@
 #
 # Runs all combinations of solver (solve, calc) and hand file
 # (list100/1000/…/1), largest files first. With --compare, prints summary only
-# unless --details; without --compare, prints per-run rows.
+# unless --details; without --compare, prints per-run rows. With --compare and a
+# tty, per-run rows appear during the run then are cleared before the summary.
 # Does not pass dtest options unless given after "--" (see below).
 #
 # Usage:
@@ -21,7 +22,7 @@
 #   REPEATS    Runs per combination per binary (default: 1)
 #   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
 #   DRY_RUN    If 1, print commands only
-#   DETAILS    If 1 with --compare, print per-run timing rows (default: summary only)
+#   DETAILS    If 1 with --compare, keep per-run rows in output (default: transient on tty)
 
 set -euo pipefail
 
@@ -52,8 +53,8 @@ Options:
                       (alias: --max_deals)
   --build             Build branch dtest only (bazel build //library/tests:dtest)
   --branch PATH       Branch dtest binary (default: $BRANCH)
-  --compare PATH      Optional second dtest binary for comparison (summary only)
-  --details           With --compare, also print per-run timing rows
+  --compare PATH      Optional second dtest binary (summary; transient progress on tty)
+  --details           With --compare, keep per-run timing rows in final output
   --reverse           With --compare, run compare before branch each repeat (default: branch first)
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
@@ -278,6 +279,41 @@ run_dtest() {
   echo "$parsed"
 }
 
+progress_lines=0
+TRANSIENT_PROGRESS=0
+show_run_lines=1
+
+print_run_table_header() {
+  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
+    "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
+  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
+    "------" "-------------" "-------" "--------" "--------" "----------" "------" "---"
+  if [[ "$TRANSIENT_PROGRESS" == "1" ]]; then
+    progress_lines=$((progress_lines + 2))
+  fi
+}
+
+print_run_row() {
+  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
+    "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8"
+  if [[ "$TRANSIENT_PROGRESS" == "1" ]]; then
+    progress_lines=$((progress_lines + 1))
+  fi
+}
+
+clear_transient_progress() {
+  if [[ "$TRANSIENT_PROGRESS" != "1" || progress_lines -le 0 ]]; then
+    return
+  fi
+  # Cursor rests on a blank line below the last row; erase it too.
+  local lines_to_clear=$((progress_lines + 1))
+  local i
+  for (( i = 0; i < lines_to_clear; i++ )); do
+    printf '\033[2K\033[1A'
+  done
+  progress_lines=0
+}
+
 echo "DDS dtest benchmark"
 echo "==================="
 printf "%-12s %s\n" "branch:" "$BRANCH"
@@ -285,6 +321,8 @@ if [[ -n "${COMPARE:-}" ]]; then
   printf "%-12s %s\n" "compare:" "$COMPARE"
   if [[ "$DETAILS" == "1" ]]; then
     printf "%-12s %s\n" "details:" "on"
+  elif [[ -t 1 ]]; then
+    printf "%-12s %s\n" "details:" "transient (cleared before summary)"
   else
     printf "%-12s %s\n" "details:" "off (summary only)"
   fi
@@ -305,15 +343,16 @@ fi
 echo
 
 show_run_lines=1
+TRANSIENT_PROGRESS=0
 if [[ -n "${COMPARE:-}" && "$DETAILS" != "1" ]]; then
   show_run_lines=0
+  if [[ -t 1 ]]; then
+    TRANSIENT_PROGRESS=1
+  fi
 fi
 
-if [[ "$DRY_RUN" != "1" && "$show_run_lines" == "1" ]]; then
-  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
-    "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
-  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
-    "------" "-------------" "-------" "--------" "--------" "----------" "------" "---"
+if [[ "$DRY_RUN" != "1" && ( "$show_run_lines" == "1" || "$TRANSIENT_PROGRESS" == "1" ) ]]; then
+  print_run_table_header
 fi
 
 total_runs=$(( ${#SOLVERS[@]} * ${#FILES[@]} * num_bins * REPEATS ))
@@ -342,9 +381,8 @@ for solver in "${SOLVERS[@]}"; do
 
         read -r user sys avg ratio < <(run_dtest "$bin" "$solver" "$hands")
 
-        if [[ "$show_run_lines" == "1" ]]; then
-          printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
-            "$solver" "$file" "$ver" "$user" "$sys" "$avg" "$ratio" "$run_label"
+        if [[ "$show_run_lines" == "1" || "$TRANSIENT_PROGRESS" == "1" ]]; then
+          print_run_row "$solver" "$file" "$ver" "$user" "$sys" "$avg" "$ratio" "$run_label"
         fi
 
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
@@ -354,6 +392,8 @@ for solver in "${SOLVERS[@]}"; do
     done
   done
 done
+
+clear_transient_progress
 
 if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo
