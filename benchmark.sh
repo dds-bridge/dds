@@ -12,6 +12,7 @@
 #   ./benchmark.sh --build
 #   ./benchmark.sh -- -n 8 -r
 #   ./benchmark.sh --build --compare /path/to/other/dtest
+#   ./benchmark.sh --compare /path/to/other/dtest --epsilon 1
 #   ./benchmark.sh --repeats 5 -- -n 4
 #   REPEATS=3 ./benchmark.sh
 #
@@ -72,6 +73,7 @@ Examples:
   ./benchmark.sh --repeats 3 -- -n 4 -r
   ./benchmark.sh --compare /path/to/dtest
   ./benchmark.sh --compare /path/to/dtest --details
+  ./benchmark.sh --compare /path/to/dtest --epsilon 1
   ./benchmark.sh --compare /path/to/dtest --reverse
   ./benchmark.sh --repeats 5 --compare /path/to/dtest
   DRY_RUN=1 ./benchmark.sh
