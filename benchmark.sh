@@ -219,6 +219,7 @@ trap 'rm -f "$RESULTS"' EXIT
 
 parse_dtest_output() {
   awk '
+    /^Number of hands/ { hands = $NF }
     /^User time \(ms\)/ { user = ($NF == "zero" ? 0 : $NF) }
     /^Sys time \(ms\)/  { sys = ($NF == "zero" ? 0 : $NF) }
     /^Avg user time \(ms\)/ { avg = ($NF == "zero" ? 0 : $NF) }
@@ -226,7 +227,11 @@ parse_dtest_output() {
     END {
       if (user == "") user = "NA"
       if (sys == "") sys = "NA"
-      if (avg == "") avg = "NA"
+      if (avg == "") {
+        if (user == 0) avg = 0
+        else if (hands != "" && user != "NA" && hands > 0) avg = user / hands
+        else avg = "NA"
+      }
       if (ratio == "") ratio = "NA"
       print user, sys, avg, ratio
     }
