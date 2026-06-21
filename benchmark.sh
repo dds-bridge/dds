@@ -363,18 +363,9 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           if (!(base in c2) || !(base in c1)) continue
           u2 = s2[base] / c2[base]
           u1 = s1[base] / c1[base]
-          if (u1 == 0 && u2 == 0) {
-            sp = "      n/a"
-            note = "equal"
-          } else if (u1 == 0) {
-            sp = "      inf"
-            note = "branch faster"
-          } else {
-            cmp_branch = u2 / u1
-            if (cmp_branch >= 1) note = "branch faster"
-            else note = "compare faster"
-            sp = sprintf("%9.2fx", cmp_branch)
-          }
+          cmp_branch = (u1 > 0) ? u2 / u1 : 0
+          note = (cmp_branch >= 1) ? "branch faster" : "compare faster"
+          sp = sprintf("%9.2fx", cmp_branch)
           printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
             solvers[si], filearr[fi], u2, u1, sp, note
         }
