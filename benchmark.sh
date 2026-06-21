@@ -397,7 +397,7 @@ clear_transient_progress
 
 if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo
-  echo "Summary (branch vs compare, avg user ms; cmp/branch > 1 => branch faster)"
+  echo "Summary (branch vs compare, avg user ms)"
   echo "=============================================================================="
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "solver" "file" "compare_avg" "branch_avg" "cmp/branch" "note"
