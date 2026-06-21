@@ -16,7 +16,7 @@
  * @brief Resolve the number of worker threads to use.
  *
  * @param max_threads Requested cap; <= 0 means "auto" (use hardware concurrency).
- * @param count Number of work items; the result is clamped to [1, count].
+ * @param count Number of work items; the result is clamped to [1, count] when count > 0 and to 1 when count <= 0.
  * @return The worker count to use.
  */
 auto resolve_worker_count(int max_threads, int count) -> int;
