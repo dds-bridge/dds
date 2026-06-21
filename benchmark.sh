@@ -49,7 +49,7 @@ Options:
   --build             Build branch dtest only (bazel build //library/tests:dtest)
   --branch PATH       Branch dtest binary (default: $BRANCH)
   --compare PATH      Optional second dtest binary for comparison
-  --reverse           With --compare, run compare before branch (default: branch first)
+  --reverse           With --compare, run compare before branch each repeat (default: branch first)
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
@@ -274,9 +274,9 @@ printf "%-12s %s\n" "branch:" "$BRANCH"
 if [[ -n "${COMPARE:-}" ]]; then
   printf "%-12s %s\n" "compare:" "$COMPARE"
   if [[ "$REVERSE" == "1" ]]; then
-    printf "%-12s %s\n" "run order:" "compare, branch"
+    printf "%-12s %s\n" "run order:" "interleaved compare, branch"
   else
-    printf "%-12s %s\n" "run order:" "branch, compare"
+    printf "%-12s %s\n" "run order:" "interleaved branch, compare"
   fi
 fi
 printf "%-12s %s\n" "hands dir:" "$HANDS_DIR"
@@ -302,22 +302,22 @@ run_no=0
 for solver in "${SOLVERS[@]}"; do
   for file in "${FILES[@]}"; do
     hands="$HANDS_DIR/$file"
-    for pair in "${BIN_PAIRS[@]}"; do
-      ver="${pair%%:*}"
-      bin="${pair#*:}"
 
-      for (( rep = 1; rep <= REPEATS; rep++ )); do
+    for (( rep = 1; rep <= REPEATS; rep++ )); do
+      if [[ "$REPEATS" -gt 1 ]]; then
+        run_label="${rep}/${REPEATS}"
+      else
+        run_label="1/1"
+      fi
+
+      for pair in "${BIN_PAIRS[@]}"; do
+        ver="${pair%%:*}"
+        bin="${pair#*:}"
         run_no=$((run_no + 1))
 
         if [[ "$DRY_RUN" == "1" ]]; then
           run_dtest "$bin" "$solver" "$hands"
           continue
-        fi
-
-        if [[ "$REPEATS" -gt 1 ]]; then
-          run_label="${rep}/${REPEATS}"
-        else
-          run_label="1/1"
         fi
 
         read -r user sys avg ratio < <(run_dtest "$bin" "$solver" "$hands")
