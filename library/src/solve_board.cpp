@@ -187,7 +187,7 @@ int STDCALL SolveAllBoardsN(
     }
 
     if (convert_from_pbn(bop->deals[k].remainCards, bo.deals[k].remainCards)
-        != 1)
+        != RETURN_NO_FAULT)
       return RETURN_PBN_FAULT;
   }
 

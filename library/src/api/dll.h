@@ -439,7 +439,7 @@ struct DDSInfo
 EXTERN_C DLLEXPORT auto STDCALL InitialiseStaticMemory() -> void;
 
 /**
- * @brief Set the maximum number of threads used by the solver.
+ * @brief Deprecated alias of InitialiseStaticMemory().
  *
  * @deprecated Use InitialiseStaticMemory(); the thread count argument is
  *             ignored (internal batch threading was removed). In the modern
