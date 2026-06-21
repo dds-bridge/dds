@@ -2,7 +2,8 @@
 # Benchmark dtest performance on one or two binaries.
 #
 # Runs all combinations of solver (solve, calc) and hand file
-# (list100/1000/…/1), largest files first, then prints per-run timings and an optional summary.
+# (list100/1000/…/1), largest files first. With --compare, prints summary only
+# unless --details; without --compare, prints per-run rows.
 # Does not pass dtest options unless given after "--" (see below).
 #
 # Usage:
@@ -20,6 +21,7 @@
 #   REPEATS    Runs per combination per binary (default: 1)
 #   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
 #   DRY_RUN    If 1, print commands only
+#   DETAILS    If 1 with --compare, print per-run timing rows (default: summary only)
 
 set -euo pipefail
 
@@ -29,6 +31,7 @@ HANDS_DIR="${HANDS_DIR:-$ROOT/hands}"
 REPEATS="${REPEATS:-1}"
 MAX_DEALS="${MAX_DEALS:-100}"
 DRY_RUN="${DRY_RUN:-0}"
+DETAILS="${DETAILS:-0}"
 BUILD=0
 REVERSE=0
 DTEST_EXTRA=()
@@ -39,7 +42,8 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Benchmark dtest across solver/file combinations. With --compare, compare two binaries.
+Benchmark dtest across solver/file combinations. With --compare, prints a summary
+by default; use --details for per-run rows.
 
 Options:
   -h, --help          Show this help
@@ -48,13 +52,14 @@ Options:
                       (alias: --max_deals)
   --build             Build branch dtest only (bazel build //library/tests:dtest)
   --branch PATH       Branch dtest binary (default: $BRANCH)
-  --compare PATH      Optional second dtest binary for comparison
+  --compare PATH      Optional second dtest binary for comparison (summary only)
+  --details           With --compare, also print per-run timing rows
   --reverse           With --compare, run compare before branch each repeat (default: branch first)
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
 Environment:
-  BRANCH, COMPARE, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN
+  BRANCH, COMPARE, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS
 
 Examples:
   ./benchmark.sh
@@ -62,6 +67,7 @@ Examples:
   ./benchmark.sh -- -n 8
   ./benchmark.sh --repeats 3 -- -n 4 -r
   ./benchmark.sh --compare /path/to/dtest
+  ./benchmark.sh --compare /path/to/dtest --details
   ./benchmark.sh --compare /path/to/dtest --reverse
   ./benchmark.sh --repeats 5 --compare /path/to/dtest
   DRY_RUN=1 ./benchmark.sh
@@ -100,6 +106,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --reverse)
       REVERSE=1
+      shift
+      ;;
+    --details)
+      DETAILS=1
       shift
       ;;
     --)
@@ -273,6 +283,11 @@ echo "==================="
 printf "%-12s %s\n" "branch:" "$BRANCH"
 if [[ -n "${COMPARE:-}" ]]; then
   printf "%-12s %s\n" "compare:" "$COMPARE"
+  if [[ "$DETAILS" == "1" ]]; then
+    printf "%-12s %s\n" "details:" "on"
+  else
+    printf "%-12s %s\n" "details:" "off (summary only)"
+  fi
   if [[ "$REVERSE" == "1" ]]; then
     printf "%-12s %s\n" "run order:" "interleaved compare, branch"
   else
@@ -289,7 +304,12 @@ if ((${#DTEST_EXTRA[@]} > 0)); then
 fi
 echo
 
-if [[ "$DRY_RUN" != "1" ]]; then
+show_run_lines=1
+if [[ -n "${COMPARE:-}" && "$DETAILS" != "1" ]]; then
+  show_run_lines=0
+fi
+
+if [[ "$DRY_RUN" != "1" && "$show_run_lines" == "1" ]]; then
   printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
     "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
   printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
@@ -322,8 +342,10 @@ for solver in "${SOLVERS[@]}"; do
 
         read -r user sys avg ratio < <(run_dtest "$bin" "$solver" "$hands")
 
-        printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
-          "$solver" "$file" "$ver" "$user" "$sys" "$avg" "$ratio" "$run_label"
+        if [[ "$show_run_lines" == "1" ]]; then
+          printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
+            "$solver" "$file" "$ver" "$user" "$sys" "$avg" "$ratio" "$run_label"
+        fi
 
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
           "$solver" "$file" "$ver" "$rep" "$user" "$sys" "$avg" "$ratio" \
