@@ -598,8 +598,26 @@ auto register_calc_par_bindings(py::module_& module) -> void
 
 auto register_analysis_bindings(py::module_& module) -> void
 {
-    // set_max_threads: configure the worker-thread count used by the batch
-    // APIs (solve_all_boards_*, analyse_all_plays_pbn). 0 = auto-configure.
+    // initialise_static_memory: allocate the solver's static memory pools and
+    // perform one-time lookup-table initialisation. This does NOT control the
+    // worker-thread count; use solve_all_boards_* (which parallelise across the
+    // machine's hardware threads automatically) or one SolverContext per worker
+    // thread for per-board concurrency.
+    module.def(
+        "initialise_static_memory",
+        []() {
+            InitialiseStaticMemory();
+        },
+        "Initialise the solver's static memory.\n\n"
+        "Allocates the transposition-table memory pools and performs one-time\n"
+        "lookup-table initialisation. This does NOT control the number of worker\n"
+        "threads: solve_all_boards_* parallelise across the machine's hardware\n"
+        "threads automatically, and for per-board concurrency from Python you\n"
+        "create one SolverContext per worker thread and pass it to solve_board /\n"
+        "solve_board_pbn.");
+
+    // set_max_threads: DEPRECATED alias of initialise_static_memory. The thread
+    // count argument is ignored; retained only for backward compatibility.
     module.def(
         "set_max_threads",
         [](const int user_threads) {
@@ -608,19 +626,26 @@ auto register_analysis_bindings(py::module_& module) -> void
                     "user_threads has invalid value " + std::to_string(user_threads) +
                     " (expected >= 0; 0 = auto)");
             }
+            if (PyErr_WarnEx(
+                    PyExc_DeprecationWarning,
+                    "set_max_threads() is deprecated; use initialise_static_memory(). "
+                    "The user_threads argument is ignored.",
+                    1) != 0) {
+                throw py::error_already_set();
+            }
             SetMaxThreads(user_threads);
         },
         py::arg("user_threads") = 0,
+        "DEPRECATED: use initialise_static_memory() instead.\n\n"
         "Legacy thread-resource hook (wraps the deprecated SetMaxThreads C API,\n"
-        "now a thin alias of InitialiseStaticMemory).\n\n"
+        "now a thin alias of InitialiseStaticMemory). Calling this emits a\n"
+        "DeprecationWarning.\n\n"
         "This does NOT control DDS's batch parallelism and is retained only for\n"
-        "backward compatibility. solve_all_boards_* already parallelise across the\n"
-        "machine's hardware threads automatically (see solve_boards_n); the value\n"
-        "passed here does not size that pool. analyse_all_plays_pbn currently runs\n"
-        "sequentially. For per-board concurrency from Python, create one\n"
-        "SolverContext per worker thread and pass it to solve_board / solve_board_pbn.\n\n"
+        "backward compatibility. analyse_all_plays_pbn currently runs sequentially. For\n"
+        "per-board concurrency from Python, create one SolverContext per worker\n"
+        "thread and pass it to solve_board / solve_board_pbn.\n\n"
         "Args:\n"
-        "    user_threads (int, optional): Must be >= 0; 0 = auto. Default: 0\n\n"
+        "    user_threads (int, optional): Ignored; must be >= 0. Default: 0\n\n"
         "Raises:\n"
         "    ValueError: If user_threads < 0.");
 
