@@ -7,7 +7,6 @@
    See LICENSE and README.
 */
 
-#include <algorithm>
 #include <chrono>
 
 #include "solve_board.hpp"
@@ -20,7 +19,6 @@
 #include <utility/debug.h>
 
 
-extern Memory memory;
 extern Scheduler scheduler;
 
 auto same_board(
@@ -167,32 +165,7 @@ int STDCALL SolveAllBoardsN(
   SolvedBoards * solvedp,
   int maxThreads)
 {
-  Boards bo;
-  bo.no_of_boards = bop->no_of_boards;
-  if (bo.no_of_boards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
-
-  for (int k = 0; k < bop->no_of_boards; k++)
-  {
-    bo.mode[k] = bop->mode[k];
-    bo.solutions[k] = bop->solutions[k];
-    bo.target[k] = bop->target[k];
-    bo.deals[k].first = bop->deals[k].first;
-    bo.deals[k].trump = bop->deals[k].trump;
-
-    for (int i = 0; i <= 2; i++)
-    {
-      bo.deals[k].currentTrickSuit[i] = bop->deals[k].currentTrickSuit[i];
-      bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
-    }
-
-    if (convert_from_pbn(bop->deals[k].remainCards, bo.deals[k].remainCards)
-        != RETURN_NO_FAULT)
-      return RETURN_PBN_FAULT;
-  }
-
-  int res = solve_all_boards_n(bo, * solvedp, maxThreads);
-  return res;
+  return solve_all_boards_pbn_n(* bop, * solvedp, maxThreads);
 }
 
 
