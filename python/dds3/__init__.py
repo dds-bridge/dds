@@ -7,6 +7,7 @@ try:
     from ._dds3 import calc_par
     from ._dds3 import calc_par_from_table
     from ._dds3 import dealer_par
+    from ._dds3 import initialise_static_memory
     from ._dds3 import module_name
     from ._dds3 import par
     from ._dds3 import set_max_threads
@@ -25,6 +26,7 @@ except ImportError:
     from _dds3 import calc_par
     from _dds3 import calc_par_from_table
     from _dds3 import dealer_par
+    from _dds3 import initialise_static_memory
     from _dds3 import module_name
     from _dds3 import par
     from _dds3 import set_max_threads
@@ -43,6 +45,7 @@ __all__ = [
     "calc_par",
     "calc_par_from_table",
     "dealer_par",
+    "initialise_static_memory",
     "module_name",
     "par",
     "set_max_threads",
