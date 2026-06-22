@@ -317,7 +317,7 @@ print_run_row() {
 }
 
 clear_transient_progress() {
-  if [[ "$TRANSIENT_PROGRESS" != "1" || progress_lines -le 0 ]]; then
+  if [[ "$TRANSIENT_PROGRESS" != "1" || $progress_lines -le 0 ]]; then
     return
   fi
   # Cursor rests on a blank line below the last row; erase it, then each table line.
