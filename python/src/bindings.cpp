@@ -606,6 +606,7 @@ auto register_analysis_bindings(py::module_& module) -> void
     module.def(
         "initialise_static_memory",
         []() {
+            py::gil_scoped_release release;
             InitialiseStaticMemory();
         },
         "Initialise the solver's static memory.\n\n"
@@ -633,6 +634,7 @@ auto register_analysis_bindings(py::module_& module) -> void
                     1) != 0) {
                 throw py::error_already_set();
             }
+            py::gil_scoped_release release;
             SetMaxThreads(user_threads);
         },
         py::arg("user_threads") = 0,
