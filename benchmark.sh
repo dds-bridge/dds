@@ -317,14 +317,15 @@ print_run_row() {
 }
 
 clear_transient_progress() {
-  if [[ "$TRANSIENT_PROGRESS" != "1" || progress_lines -le 0 ]]; then
+  if [[ "$TRANSIENT_PROGRESS" != "1" || $progress_lines -le 0 ]]; then
     return
   fi
-  # Cursor rests on a blank line below the last row; erase it too.
-  local lines_to_clear=$((progress_lines + 1))
+  # Cursor rests on a blank line below the last row; erase it, then each table line.
+  # Do not move up after clearing the topmost line (would hit the header above).
+  printf '\033[2K'
   local i
-  for (( i = 0; i < lines_to_clear; i++ )); do
-    printf '\033[2K\033[1A'
+  for (( i = 0; i < progress_lines; i++ )); do
+    printf '\033[1A\033[2K'
   done
   progress_lines=0
 }
