@@ -8,7 +8,6 @@
 */
 
 #include "calc_tables.hpp"
-#include <thread>
 #include <vector>
 
 #include <pbn.hpp>
@@ -138,7 +137,7 @@ auto calc_all_boards_n(
   else
   {
     std::vector<SolverContext> contexts(static_cast<unsigned>(nthreads));
-    err = parallel_all_boards_n(n, max_threads,
+    err = parallel_all_boards_n(n, nthreads,
       [&](const int worker_id, const int bno) -> int {
         return calc_single_common_internal(
           contexts[static_cast<unsigned>(worker_id)], *bop, *solvedp, bno);
