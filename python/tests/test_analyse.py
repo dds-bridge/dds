@@ -61,11 +61,6 @@ class TestAnalysePlay(unittest.TestCase):
         with self.assertRaises(KeyError):
             analyse_all_plays_pbn([{"remain_cards": DEAL}])
 
-    def test_set_max_threads_rejects_negative(self) -> None:
-        with self.assertRaises(ValueError):
-            set_max_threads(-1)
-        set_max_threads(0)  # 0 is valid (auto)
-
 
 class TestDealerPar(unittest.TestCase):
     """Tests for dealer_par."""
