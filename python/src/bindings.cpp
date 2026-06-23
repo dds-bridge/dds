@@ -622,11 +622,6 @@ auto register_analysis_bindings(py::module_& module) -> void
     module.def(
         "set_max_threads",
         [](const int user_threads) {
-            if (user_threads < 0) {
-                throw py::value_error(
-                    "user_threads has invalid value " + std::to_string(user_threads) +
-                    " (expected >= 0; 0 = auto)");
-            }
             if (PyErr_WarnEx(
                     PyExc_DeprecationWarning,
                     "set_max_threads() is deprecated; use initialise_static_memory(). "
