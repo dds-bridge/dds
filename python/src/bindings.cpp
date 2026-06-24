@@ -642,7 +642,7 @@ auto register_analysis_bindings(py::module_& module) -> void
         "per-board concurrency from Python, create one SolverContext per worker\n"
         "thread and pass it to solve_board / solve_board_pbn.\n\n"
         "Args:\n"
-        "    user_threads (int, optional): Ignored; must be >= 0. Default: 0\n\n"
+        "    user_threads (int, optional): Ignored;\n\n"
         "Raises:\n"
         "    ValueError: If user_threads < 0.");
 
