@@ -607,7 +607,7 @@ auto register_analysis_bindings(py::module_& module) -> void
         "initialise_static_memory",
         []() {
             py::gil_scoped_release release;
-            InitialiseStaticMemory();
+            InitializeStaticMemory();
         },
         "Initialise the solver's static memory.\n\n"
         "Allocates the transposition-table memory pools and performs one-time\n"
@@ -635,16 +635,14 @@ auto register_analysis_bindings(py::module_& module) -> void
         py::arg("user_threads") = 0,
         "DEPRECATED: use initialise_static_memory() instead.\n\n"
         "Legacy thread-resource hook (wraps the deprecated SetMaxThreads C API,\n"
-        "now a thin alias of InitialiseStaticMemory). Calling this emits a\n"
+        "now a thin alias of InitializeStaticMemory). Calling this emits a\n"
         "DeprecationWarning.\n\n"
         "This does NOT control DDS's batch parallelism and is retained only for\n"
         "backward compatibility. analyse_all_plays_pbn currently runs sequentially. For\n"
         "per-board concurrency from Python, create one SolverContext per worker\n"
         "thread and pass it to solve_board / solve_board_pbn.\n\n"
         "Args:\n"
-        "    user_threads (int, optional): Ignored;\n\n"
-        "Raises:\n"
-        "    ValueError: If user_threads < 0.");
+        "    user_threads (int, optional): Ignored;\n\n");
 
     // analyse_play_pbn: double-dummy trick count after each card of a played hand.
     module.def(
