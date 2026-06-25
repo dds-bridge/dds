@@ -53,6 +53,7 @@
 
 /// @brief Enable AB search statistics (node counts, timing, etc.).
 /// Records alpha-beta search performance metrics for optimization analysis.
+/// Enable via Bazel: --define=ab_stats=true
 // #define DDS_AB_STATS
 #define DDS_AB_STATS_PREFIX "ABstats"
 
