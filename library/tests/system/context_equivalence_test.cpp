@@ -58,7 +58,7 @@ static DdTableDeal make_known_deal()
 TEST(SystemContextEquivalence, LegacyVsContextReturnCode)
 {
   // Ensure DDS system and thread-local memory are initialized
-  InitialiseStaticMemory();
+  InitializeStaticMemory();
   const int thr = 0;
   FutureTricks ft_legacy{};
   FutureTricks ft_ctx{};

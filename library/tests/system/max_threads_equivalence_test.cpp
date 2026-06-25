@@ -49,7 +49,7 @@ void expect_tables_equal(const DdTableResults& a, const DdTableResults& b)
 // CalcDDtableN with maxThreads=1 must match the auto CalcDDtable.
 TEST(MaxThreadsEquivalence, CalcDDtableNMatchesAuto)
 {
-  InitialiseStaticMemory();
+  InitializeStaticMemory();
   DdTableDeal deal = make_known_deal();
 
   DdTableResults table_auto{};
@@ -70,7 +70,7 @@ TEST(MaxThreadsEquivalence, CalcDDtableNMatchesAuto)
 // SolveAllBoardsBinN with maxThreads=1 must match the auto SolveAllBoardsBin.
 TEST(MaxThreadsEquivalence, SolveAllBoardsBinNMatchesAuto)
 {
-  InitialiseStaticMemory();
+  InitializeStaticMemory();
   DdTableDeal table_deal = make_known_deal();
 
   // Solve all five strains as separate boards.
@@ -113,10 +113,10 @@ TEST(MaxThreadsEquivalence, SolveAllBoardsBinNMatchesAuto)
   }
 }
 
-// InitialiseStaticMemory leaves the library usable for a subsequent solve.
-TEST(MaxThreadsEquivalence, InitialiseStaticMemoryThenSolve)
+// InitializeStaticMemory leaves the library usable for a subsequent solve.
+TEST(MaxThreadsEquivalence, InitializeStaticMemoryThenSolve)
 {
-  InitialiseStaticMemory();
+  InitializeStaticMemory();
   DdTableDeal deal = make_known_deal();
   DdTableResults table{};
   EXPECT_EQ(CalcDDtable(deal, &table), RETURN_NO_FAULT);

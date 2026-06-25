@@ -436,12 +436,12 @@ struct DDSInfo
  * This does NOT control the number of worker threads — use the
  * SolveAllBoardsN / CalcAllTablesN family for per-call thread caps.
  */
-EXTERN_C DLLEXPORT auto STDCALL InitialiseStaticMemory() -> void;
+EXTERN_C DLLEXPORT auto STDCALL InitializeStaticMemory() -> void;
 
 /**
- * @brief Deprecated alias of InitialiseStaticMemory().
+ * @brief Deprecated alias of InitializeStaticMemory().
  *
- * @deprecated Use InitialiseStaticMemory(); the thread count argument is
+ * @deprecated Use InitializeStaticMemory(); the thread count argument is
  *             ignored (internal batch threading was removed). In the modern
  *             C++ API, thread count is controlled by the embedding application
  *             (typically one SolverContext per worker thread), or per call via
@@ -451,7 +451,7 @@ EXTERN_C DLLEXPORT auto STDCALL InitialiseStaticMemory() -> void;
  * @param userThreads Ignored; retained for backward compatibility.
  *
  * This function is part of the legacy C API and is maintained for backward
- * compatibility. It simply forwards to InitialiseStaticMemory().
+ * compatibility. It simply forwards to InitializeStaticMemory().
  */
 EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
   int userThreads) -> void;
