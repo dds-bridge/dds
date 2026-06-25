@@ -7,7 +7,6 @@
    See LICENSE and README.
 */
 
-#include <algorithm>
 #include <chrono>
 
 #include "solve_board.hpp"
@@ -20,7 +19,6 @@
 #include <utility/debug.h>
 
 
-extern Memory memory;
 extern Scheduler scheduler;
 
 auto same_board(
@@ -63,7 +61,7 @@ static auto boards_from_pbn(
 auto solve_all_boards_n(
   Boards const& bds,
   SolvedBoards& solved,
-  const int worker_cap) -> int
+  int max_threads) -> int
 {
   const int n = bds.no_of_boards;
   if (n > MAXNOOFBOARDS)
@@ -76,7 +74,7 @@ auto solve_all_boards_n(
 
   START_BLOCK_TIMER;
 
-  const int err = parallel_all_boards_n(n, worker_cap,
+  const int err = parallel_all_boards_n(n, max_threads,
     [&](const int worker_id, const int bno) -> int {
       (void)worker_id;
 
@@ -113,13 +111,13 @@ auto solve_all_boards_n(
 auto solve_all_boards_pbn_n(
   BoardsPBN const& bop,
   SolvedBoards& solved,
-  const int worker_cap) -> int
+  const int max_threads) -> int
 {
   Boards bo;
   const int rc = boards_from_pbn(bop, bo);
   if (rc != RETURN_NO_FAULT)
     return rc;
-  return solve_all_boards_n(bo, solved, worker_cap);
+  return solve_all_boards_n(bo, solved, max_threads);
 }
 
 
@@ -162,11 +160,29 @@ int STDCALL SolveBoardPBN(
  * @param solvedp Pointer to results for solved Boards
  * @return 1 on success, error code otherwise
  */
+int STDCALL SolveAllBoardsN(
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp,
+  int maxThreads)
+{
+  return solve_all_boards_pbn_n(* bop, * solvedp, maxThreads);
+}
+
+
 int STDCALL SolveAllBoards(
   BoardsPBN const * bop,
   SolvedBoards * solvedp)
 {
-  return solve_all_boards_pbn_n(*bop, *solvedp, 0);
+  return SolveAllBoardsN(bop, solvedp, 0);
+}
+
+
+int STDCALL SolveAllBoardsBinN(
+  Boards const * bop,
+  SolvedBoards * solvedp,
+  int maxThreads)
+{
+  return solve_all_boards_n(* bop, * solvedp, maxThreads);
 }
 
 
@@ -174,7 +190,7 @@ int STDCALL SolveAllBoardsBin(
   Boards const * bop,
   SolvedBoards * solvedp)
 {
-  return solve_all_boards_n(* bop, * solvedp);
+  return SolveAllBoardsBinN(bop, solvedp, 0);
 }
 
 

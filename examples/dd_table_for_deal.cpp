@@ -226,10 +226,6 @@ auto main(int argc, char * argv[]) -> int
   DdTableResults table;
   char line[80];
 
-#if defined(__linux) || defined(__APPLE__)
-  SetMaxThreads(0);
-#endif
-
   const int res = CalcDDtablePBN(tableDealPBN, &table);
   if (res != RETURN_NO_FAULT)
   {

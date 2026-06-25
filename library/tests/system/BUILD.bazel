@@ -59,6 +59,30 @@ cc_test(
     ],
 )
 
+# Worker-count helper unit test
+cc_test(
+    name = "worker_count_test",
+    size = "small",
+    srcs = ["worker_count_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# max_threads override equivalence + rename/alias initialisation test
+cc_test(
+    name = "max_threads_equivalence_test",
+    size = "small",
+    srcs = ["max_threads_equivalence_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # Utilities feature flags tests
 cc_test(
     name = "utilities_feature_flags_test",

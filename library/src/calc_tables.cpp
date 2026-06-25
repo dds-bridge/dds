@@ -8,7 +8,6 @@
 */
 
 #include "calc_tables.hpp"
-#include <thread>
 #include <vector>
 
 #include <pbn.hpp>
@@ -27,7 +26,8 @@ extern Scheduler scheduler;
 // Legacy overload (creates temporary context)
 auto calc_all_boards_n(
   Boards * bop,
-  SolvedBoards * solvedp) -> int;
+  SolvedBoards * solvedp,
+  int max_threads = 0) -> int;
 
 
 auto calc_single_common_internal(
@@ -109,7 +109,8 @@ auto calc_all_boards_n(
 // Legacy overload: parallel across boards, one SolverContext per worker.
 auto calc_all_boards_n(
   Boards * bop,
-  SolvedBoards * solvedp) -> int
+  SolvedBoards * solvedp,
+  int max_threads) -> int
 {
   const int n = bop->no_of_boards;
   if (n > MAXNOOFBOARDS)
@@ -120,8 +121,7 @@ auto calc_all_boards_n(
 
   START_BLOCK_TIMER;
 
-  const int nthreads = std::max(1,
-    std::min(static_cast<int>(std::thread::hardware_concurrency()), n));
+  const int nthreads = resolve_worker_count(max_threads, n);
 
   int err = RETURN_NO_FAULT;
   if (nthreads <= 1)
@@ -160,9 +160,10 @@ auto calc_all_boards_n(
 
 
 
-int STDCALL CalcDDtable(
+int STDCALL CalcDDtableN(
   DdTableDeal tableDeal,
-  DdTableResults * tablep)
+  DdTableResults * tablep,
+  int maxThreads)
 {
   Deal dl;
   Boards bo;
@@ -191,7 +192,7 @@ int STDCALL CalcDDtable(
     ind++;
   }
 
-  int res = calc_all_boards_n(&bo, &solved);
+  int res = calc_all_boards_n(&bo, &solved, maxThreads);
   if (res != 1)
     return res;
 
@@ -211,12 +212,21 @@ int STDCALL CalcDDtable(
 }
 
 
-int STDCALL CalcAllTables(
+int STDCALL CalcDDtable(
+  DdTableDeal tableDeal,
+  DdTableResults * tablep)
+{
+  return CalcDDtableN(tableDeal, tablep, 0);
+}
+
+
+int STDCALL CalcAllTablesN(
   DdTableDeals const * dealsp,
   int mode,
   int const trumpFilter[5],
   DdTablesRes * resp,
-  AllParResults * presp)
+  AllParResults * presp,
+  int maxThreads)
 {
   /* mode = 0: par calculation, vulnerability None
      mode = 1: par calculation, vulnerability All
@@ -278,7 +288,7 @@ int STDCALL CalcAllTables(
 
   bo.no_of_boards = lastIndex + 1;
 
-  int res = calc_all_boards_n(&bo, &solved);
+  int res = calc_all_boards_n(&bo, &solved, maxThreads);
   if (res != 1)
     return res;
 
@@ -316,12 +326,24 @@ int STDCALL CalcAllTables(
 }
 
 
-int STDCALL CalcAllTablesPBN(
-  DdTableDealsPBN const * dealsp,
+int STDCALL CalcAllTables(
+  DdTableDeals const * dealsp,
   int mode,
   int const trumpFilter[5],
   DdTablesRes * resp,
   AllParResults * presp)
+{
+  return CalcAllTablesN(dealsp, mode, trumpFilter, resp, presp, 0);
+}
+
+
+int STDCALL CalcAllTablesPBNN(
+  DdTableDealsPBN const * dealsp,
+  int mode,
+  int const trumpFilter[5],
+  DdTablesRes * resp,
+  AllParResults * presp,
+  int maxThreads)
 {
   DdTableDeals dls;
   for (int k = 0; k < dealsp->no_of_tables; k++)
@@ -330,7 +352,32 @@ int STDCALL CalcAllTablesPBN(
 
   dls.no_of_tables = dealsp->no_of_tables;
 
-  int res = CalcAllTables(&dls, mode, trumpFilter, resp, presp);
+  int res = CalcAllTablesN(&dls, mode, trumpFilter, resp, presp, maxThreads);
+  return res;
+}
+
+
+int STDCALL CalcAllTablesPBN(
+  DdTableDealsPBN const * dealsp,
+  int mode,
+  int const trumpFilter[5],
+  DdTablesRes * resp,
+  AllParResults * presp)
+{
+  return CalcAllTablesPBNN(dealsp, mode, trumpFilter, resp, presp, 0);
+}
+
+
+int STDCALL CalcDDtablePBNN(
+  DdTableDealPBN tableDealPBN,
+  DdTableResults * tablep,
+  int maxThreads)
+{
+  DdTableDeal tableDeal;
+  if (convert_from_pbn(tableDealPBN.cards, tableDeal.cards) != 1)
+    return RETURN_PBN_FAULT;
+
+  int res = CalcDDtableN(tableDeal, tablep, maxThreads);
   return res;
 }
 
@@ -339,12 +386,7 @@ int STDCALL CalcDDtablePBN(
   DdTableDealPBN tableDealPBN,
   DdTableResults * tablep)
 {
-  DdTableDeal tableDeal;
-  if (convert_from_pbn(tableDealPBN.cards, tableDeal.cards) != 1)
-    return RETURN_PBN_FAULT;
-
-  int res = CalcDDtable(tableDeal, tablep);
-  return res;
+  return CalcDDtablePBNN(tableDealPBN, tablep, 0);
 }
 
 
