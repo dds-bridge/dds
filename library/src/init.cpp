@@ -41,14 +41,14 @@ int _initialized = 0;
  *
  * Public API documentation is maintained in the API headers.
  */
-void STDCALL InitialiseStaticMemory()
+void STDCALL InitializeStaticMemory()
 {
   SetResources(0, 0);
 }
 
 
 /*
- * Deprecated alias for InitialiseStaticMemory(). The thread count is no
+ * Deprecated alias for InitializeStaticMemory(). The thread count is no
  * longer meaningful (internal batch threading was removed), so the argument
  * is ignored.
  *
@@ -58,7 +58,7 @@ void STDCALL SetMaxThreads(
   int userThreads)
 {
   (void) userThreads;
-  InitialiseStaticMemory();
+  InitializeStaticMemory();
 }
 
 

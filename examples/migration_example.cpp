@@ -17,7 +17,7 @@
 
 void solve_legacy(const Deal& deal)
 {
-    InitialiseStaticMemory();
+    InitializeStaticMemory();
     SetResources(2000, 4);
 
     FutureTricks fut;
