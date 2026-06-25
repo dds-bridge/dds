@@ -119,6 +119,12 @@ bool loop_calc(
 #endif
 
   int filter[5] = {0, 0, 0, 0, 0};
+  int strain_count = 0;
+  for (int k = 0; k < DDS_STRAINS; k++)
+  {
+    if (!filter[k])
+      strain_count++;
+  }
 
   for (int i = 0; i < number; i += stepsize)
   {
@@ -128,7 +134,9 @@ bool loop_calc(
       strcpy(dealsp->deals[j].cards, deal_list[i+j].remainCards);
 
     timer.start(count);
-    const int ret = CalcAllTablesPBN(dealsp, -1, filter, resp, parp);
+    const int workload = count * strain_count;
+    const int threads = dtest_effective_threads(options.num_threads_, workload);
+    const int ret = CalcAllTablesPBNN(dealsp, -1, filter, resp, parp, threads);
     if (ret != RETURN_NO_FAULT)
     {
       cout << "loop_calc: i " << i << ", return " << ret << "\n";
