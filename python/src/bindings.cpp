@@ -213,7 +213,7 @@ auto register_solve_bindings(py::module_& module) -> void
 
     module.def(
         "solve_all_boards_pbn",
-        [](const py::list& boards) {
+        [](const py::list& boards, const int max_threads) {
             const auto board_count = boards.size();
             if (board_count > MAXNOOFBOARDS) {
                 throw py::value_error(
@@ -249,7 +249,7 @@ auto register_solve_bindings(py::module_& module) -> void
             int code = RETURN_NO_FAULT;
             {
                 py::gil_scoped_release release;
-                code = SolveAllBoards(&native_boards, &solved_boards);
+                code = SolveAllBoardsN(&native_boards, &solved_boards, max_threads);
             }
             throw_on_dds_error(code);
 
@@ -260,6 +260,7 @@ auto register_solve_bindings(py::module_& module) -> void
             return result;
         },
         py::arg("boards"),
+        py::arg("max_threads") = 0,
         "Solve multiple bridge deals in PBN format.\n\n"
         "Args:\n"
         "    boards (list): List of board dicts, each with:\n"
@@ -270,7 +271,9 @@ auto register_solve_bindings(py::module_& module) -> void
         "        current_trick_rank (tuple, optional): Ranks in current trick. Default: (0, 0, 0)\n"
         "        target (int, optional): Target number of tricks (-1 = no target). Default: -1\n"
         "        solutions (int, optional): Depth of search (1-3). Default: 3\n"
-        "        mode (int, optional): 0=auto, 1=thread depth 6, 2=node depth 12. Default: 0\n\n"
+        "        mode (int, optional): 0=auto, 1=thread depth 6, 2=node depth 12. Default: 0\n"
+        "    max_threads (int, optional): Cap on worker threads for the batch. <=0 uses the\n"
+        "        automatic (hardware_concurrency) default. Default: 0\n\n"
         "Returns:\n"
         "    list: List of result dicts with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
         "Raises:\n"
@@ -279,7 +282,7 @@ auto register_solve_bindings(py::module_& module) -> void
 
     module.def(
         "solve_all_boards_bin",
-        [](const py::list& boards) {
+        [](const py::list& boards, const int max_threads) {
             const auto board_count = boards.size();
             if (board_count > MAXNOOFBOARDS) {
                 throw py::value_error(
@@ -305,7 +308,7 @@ auto register_solve_bindings(py::module_& module) -> void
             int code = RETURN_NO_FAULT;
             {
                 py::gil_scoped_release release;
-                code = SolveAllBoardsBin(&native_boards, &solved_boards);
+                code = SolveAllBoardsBinN(&native_boards, &solved_boards, max_threads);
             }
             throw_on_dds_error(code);
 
@@ -316,6 +319,7 @@ auto register_solve_bindings(py::module_& module) -> void
             return result;
         },
         py::arg("boards"),
+        py::arg("max_threads") = 0,
         "Solve multiple bridge deals in binary format.\n\n"
         "Args:\n"
         "    boards (list): List of board dicts, each with:\n"
@@ -326,7 +330,9 @@ auto register_solve_bindings(py::module_& module) -> void
         "        current_trick_rank (tuple): Ranks in current trick (3-tuple of ints, 0 or 2-14).\n"
         "        target (int, optional): Target number of tricks (-1 = no target). Default: -1\n"
         "        solutions (int, optional): Depth of search (1-3). Default: 3\n"
-        "        mode (int, optional): 0=auto, 1=thread depth 6, 2=node depth 12. Default: 0\n\n"
+        "        mode (int, optional): 0=auto, 1=thread depth 6, 2=node depth 12. Default: 0\n"
+        "    max_threads (int, optional): Cap on worker threads for the batch. <=0 uses the\n"
+        "        automatic (hardware_concurrency) default. Default: 0\n\n"
         "Returns:\n"
         "    list: List of result dicts with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
         "Raises:\n"
@@ -363,7 +369,8 @@ auto register_table_bindings(py::module_& module) -> void
 
     module.def(
         "calc_all_tables_pbn",
-        [](const py::list& deals_pbn, const int mode, const py::sequence& trump_filter) {
+        [](const py::list& deals_pbn, const int mode, const py::sequence& trump_filter,
+           const int max_threads) {
             // Validate mode parameter
             if (mode < -1 || mode > 3) {
                 throw py::value_error(
@@ -423,12 +430,13 @@ auto register_table_bindings(py::module_& module) -> void
             int code = RETURN_NO_FAULT;
             {
                 py::gil_scoped_release release;
-                code = CalcAllTablesPBN(
+                code = CalcAllTablesPBNN(
                     &native_deals,
                     mode,
                     trump_filter_vec.data(),
                     &tables_res,
-                    &all_par_results);
+                    &all_par_results,
+                    max_threads);
             }
             throw_on_dds_error(code);
 
@@ -453,12 +461,15 @@ auto register_table_bindings(py::module_& module) -> void
         py::arg("deals_pbn"),
         py::arg("mode") = -1,
         py::arg("trump_filter") = py::make_tuple(0, 0, 0, 0, 0),
+        py::arg("max_threads") = 0,
         "Calculate double-dummy tables for multiple PBN deals with optional par scores.\n\n"
         "Args:\n"
         "    deals_pbn (list): List of PBN strings (e.g., ['N:AK.234.456.789T...', ...]).\n"
         "    mode (int, optional): Par vulnerability mode (-1=disabled, 0=none, 1=both, 2=NS, 3=EW). Default: -1\n"
         "    trump_filter (sequence, optional): Strains to skip (0=include, 1=skip). Default: (0,0,0,0,0)\n"
-        "                                     Order: [♠, ♥, ♦, ♣, NT]\n\n"
+        "                                     Order: [♠, ♥, ♦, ♣, NT]\n"
+        "    max_threads (int, optional): Cap on worker threads for the batch. <=0 uses the\n"
+        "        automatic (hardware_concurrency) default. Default: 0\n\n"
         "Returns:\n"
         "    dict: Result dict with keys:\n"
         "          'no_of_boards' (int): Total number of calculated boards.\n"
