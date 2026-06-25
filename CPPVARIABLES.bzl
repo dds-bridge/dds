@@ -81,6 +81,9 @@ DDS_LOCAL_DEFINES = select({
 }) + select({
     "//:tt_reset_debug": ["DDS_DEBUG_TT_RESET"],
     "//conditions:default": [],
+}) + select({
+    "//:ab_stats": ["DDS_AB_STATS"],
+    "//conditions:default": [],
 })
 
 DDS_LINKOPTS = select({

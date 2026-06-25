@@ -56,6 +56,12 @@ config_setting(
     define_values = {"scheduler": "true"},
 )
 
+# Enable DDS_AB_STATS via --define=ab_stats=true
+config_setting(
+    name = "ab_stats",
+    define_values = {"ab_stats": "true"},
+)
+
 # Enable DDS_TT_CONTEXT_OWNERSHIP via --define=tt_context_ownership=true
 config_setting(
     name = "tt_context_ownership",
