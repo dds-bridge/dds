@@ -8,6 +8,7 @@ on:
 jobs:
   build_and_test:
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       # Checkout the repository
       - name: Checkout repository

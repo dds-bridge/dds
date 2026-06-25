@@ -476,24 +476,24 @@ bool Scheduler::SameHand(
 // that they scale somewhat proportionally to other cases.
 // The strength parameter is currently not used.
 
-int SORT_SOLVE_TIMES[2][8] =
+static int SORT_SOLVE_TIMES[2][8] =
 {
   { 284000,  91000, 37000, 23000, 17000, 15000, 13000, 4000 },
   { 388000, 140000, 60000, 40000, 30000, 23000, 18000, 6000 },
 };
 
-#define SORT_SOLVE_STRENGTH_CUTOFF 0
-
-double SORT_SOLVE_STRENGTH[2][3] =
-{
-  { 1.525, 1.810, 0.0285 },
-  { 1.585, 1.940, 0.0354 }
-};
+// #define SORT_SOLVE_STRENGTH_CUTOFF 0
+//
+// static double SORT_SOLVE_STRENGTH[2][3] =
+// {
+//   { 1.525, 1.810, 0.0285 },
+//   { 1.585, 1.940, 0.0354 }
+// };
 
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_SOLVE_FANOUT[2][5] =
+static double SORT_SOLVE_FANOUT[2][5] =
 {
   { 30., 50., 0.07577, 1.515, 12. },
   { 30., 50., 0.08144, 1.629, 12. }
@@ -569,7 +569,7 @@ void Scheduler::SortSolve()
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_CALC_FANOUT[2][5] =
+static double SORT_CALC_FANOUT[2][5] =
 {
   { 30., 50., 0.07812, 1.563, 13. },
   { 30., 50., 0.07739, 1.548, 12. }
@@ -625,7 +625,7 @@ void Scheduler::SortCalc()
 // These are specific times from a 12-core PC. The hope is
 // that they scale somewhat proportionally to other cases.
 
-int SORT_TRACE_TIMES[2][8] =
+static int SORT_TRACE_TIMES[2][8] =
 {
   { 157000, 47000, 26000, 18000, 16000, 14000, 10000,  6000 },
   { 205000, 87000, 45000, 36000, 32000, 28000, 24000, 20000 },
@@ -636,7 +636,7 @@ int SORT_TRACE_TIMES[2][8] =
 // Slope between 16 and 48 incl
 // Average for 49-52
 
-double SORT_TRACE_DEPTH[2][4] =
+static double SORT_TRACE_DEPTH[2][4] =
 {
   { 0.742, 0.411, 0.0414, 1.820 },
   { 0.669, 0.428, 0.0346, 1.606 }
@@ -645,7 +645,7 @@ double SORT_TRACE_DEPTH[2][4] =
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_TRACE_FANOUT[2][5] =
+static double SORT_TRACE_FANOUT[2][5] =
 {
   { 30., 50., 0.07577, 1.515, 12. },
   { 30., 50., 0.08166, 1.633, 13. }

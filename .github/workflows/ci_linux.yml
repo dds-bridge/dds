@@ -9,6 +9,7 @@ on:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       # 1️⃣ Checkout the repository
       - name: Checkout repository
@@ -38,6 +39,54 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: bazel-test-logs-linux
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  asan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazelisk
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: "1.29.0"
+
+      - name: Run tests (AddressSanitizer)
+        run: bazel test --config=asan --verbose_failures --test_output=errors //library/tests/...
+
+      - name: Upload ASAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-asan
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  tsan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazelisk
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: "1.29.0"
+
+      - name: Run system tests (ThreadSanitizer)
+        run: bazel test --config=tsan --verbose_failures --test_output=errors //library/tests/system/...
+
+      - name: Upload TSAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-tsan
           path: bazel-testlogs/
           if-no-files-found: ignore
           retention-days: 30

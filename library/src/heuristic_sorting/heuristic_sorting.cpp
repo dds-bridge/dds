@@ -883,7 +883,7 @@ int rank_forces_ace(const HeuristicContext& ctx, const int cards4th)
   while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))
     g--;
 
-  if (! g)
+  if (g <= 0)
     return -1;
 
   // RHO's second-highest rank.

@@ -68,12 +68,6 @@ config_setting(
     define_values = {"tt_reset_debug": "true"},
 )
 
-# Enable AddressSanitizer via --define=asan=true
-config_setting(
-    name = "asan",
-    define_values = {"asan": "true"},
-)
-
 # Matches cc_* targets built under the wasm_cc_binary platform transition.
 # Use platform constraints (not deprecated `cpu` select) so this works
 # consistently across host OSes, including Windows.

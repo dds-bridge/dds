@@ -41,8 +41,8 @@ bazel build -c opt //...
 # Build with debug symbols
 bazel build -c dbg //...
 
-# Build with specific flags (example: enable ASAN)
-bazel build --define=asan=true //...
+# Build with AddressSanitizer (see .bazelrc build:asan and docs/BUILD_SYSTEM.md)
+bazel build --config=asan //...
 ```
 
 ### Build Time Expectations
@@ -200,9 +200,9 @@ If CI fails:
 
 Before finalizing changes, optionally run:
 ```bash
-# Check for memory leaks (Linux only)
-bazel build --define=asan=true //...
-bazel test --define=asan=true //...
+# Check for memory leaks (see docs/BUILD_SYSTEM.md for macOS/Linux notes)
+bazel build --config=asan //...
+bazel test --config=asan //...
 
 # Performance test with real hands
 bazel build //library/tests:dtest
@@ -276,7 +276,7 @@ bazel build //library/tests:dtest
 
 **Problem**: Tests fail with "Segmentation fault"
 - **Cause**: Usually memory management bug or uninitialized variable
-- **Fix**: Run with ASAN: `bazel test --define=asan=true //library/tests:failing_test`
+- **Fix**: Run with ASAN: `bazel test --config=asan //library/tests:failing_test`
 
 **Problem**: Tests fail with different results than expected
 - **Cause**: Possibly heuristic sorting or transposition table issues

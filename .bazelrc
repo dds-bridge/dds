@@ -19,11 +19,15 @@ build:linux --host_cxxopt=-std=c++20
 build:opt --compilation_mode=opt
 
 # AddressSanitizer configuration
-# Usage:
-#   Linux: bazel test --config=asan //path:target
-#   macOS: bazel test --config=asan --config=asan_macos //path:target
+# Usage: bazel test --config=asan //path:target
+# macOS uses the Xcode toolchain (build:asan_macos). See docs/BUILD_SYSTEM.md
+# ("AddressSanitizer and ThreadSanitizer (macOS)") for clang/Xcode version coupling.
+build:asan --config=asan_macos
+
 build:asan --copt=-fsanitize=address
 build:asan --linkopt=-fsanitize=address
+# Undefine _FORTIFY_SOURCE; it conflicts with ASAN instrumentation.
+build:asan --copt=-U_FORTIFY_SOURCE
 build:asan --strip=never
 build:asan --features=dbg
 build:asan --compilation_mode=dbg
@@ -36,24 +40,23 @@ test:asan --test_timeout=120,300,900,3600
 # On Linux, use -Wno-conversion for portability when the system compiler is GCC.
 build:macos --cxxopt=-Wno-character-conversion
 build:linux --cxxopt=-Wno-conversion
-# macOS-specific AddressSanitizer runtime lookup configuration.
-# The LLVM toolchain bundles the ASAN runtime. On macOS tests run from the
-# runfiles tree, so use @loader_path-based rpaths that walk back to execroot
-# and then into external/toolchains_llvm...
-# Keep the clang major version in these paths aligned with darwin-aarch64
-# in MODULE.bazel.
-# Bazel test binaries live at different depths under bazel-out/.../bin.
-# Provide a small set of distinct @loader_path traversals to reach
-# execroot/_main/external from common test binary depths.
-build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
-build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
-build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
-build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
+# macOS AddressSanitizer must use the Xcode compiler/runtime. LLVM-instrumented
+# binaries hang with LLVM's ASAN dylib and abort with Xcode's (version mismatch).
+# Chained from build:asan; Apple toolchains do not match on Linux and are ignored.
+build:asan_macos --extra_toolchains=@local_config_apple_cc_toolchains//:all
+build:asan_macos --copt=-Wno-macro-redefined
 
 # ThreadSanitizer configuration
 # Usage: bazel test --config=tsan //path:target
+# macOS loads Xcode's compiler-rt via build:tsan_macos (rpath uses clang/N).
+# Keep N aligned with MODULE.bazel llvm_versions and installed Xcode; see
+# docs/BUILD_SYSTEM.md ("AddressSanitizer and ThreadSanitizer (macOS)").
+build:tsan --config=tsan_macos
 build:tsan --copt=-fsanitize=thread
 build:tsan --linkopt=-fsanitize=thread
 build:tsan --strip=never
 build:tsan --features=dbg
 build:tsan --compilation_mode=dbg
+test:tsan --test_timeout=120,300,900,3600
+# Hardcoded rpath: .../lib/clang/21/... must match MODULE.bazel llvm major and Xcode.
+build:tsan_macos --linkopt=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin
