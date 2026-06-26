@@ -118,9 +118,8 @@ bool loop_calc(
     setw(25) << right << "Time" << "\n";
 #endif
 
-  int filter[5] = {0, 0, 0, 0, 0};
+  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
   const int strain_count = DDS_STRAINS;
-
   for (int i = 0; i < number; i += stepsize)
   {
     int count = (i + stepsize > number ? number - i : stepsize);
