@@ -119,12 +119,7 @@ bool loop_calc(
 #endif
 
   int filter[5] = {0, 0, 0, 0, 0};
-  int strain_count = 0;
-  for (int k = 0; k < DDS_STRAINS; k++)
-  {
-    if (!filter[k])
-      strain_count++;
-  }
+  const int strain_count = DDS_STRAINS;
 
   for (int i = 0; i < number; i += stepsize)
   {
