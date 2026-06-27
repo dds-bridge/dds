@@ -13,7 +13,7 @@
 /// @brief Command-line argument parsing for test utilities.
 /// 
 /// Provides functions to parse and validate command-line options
-/// for test driver programs (dtest, itest). Options include:
+/// for the dtest driver program. Options include:
 /// - Input file specification
 /// - Solver type selection (solve, calc, play, par, dealer_par)
 /// - Number of threads
