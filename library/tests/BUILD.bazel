@@ -7,7 +7,6 @@ filegroup(
     srcs = glob(
         ["*.cpp", "*.hpp"],
         exclude = [
-            "itest.cpp",
             "context_equivalence.cpp",
             "calc_par_test.cpp",  # Uses GoogleTest, compiled separately
         ],
