@@ -15,6 +15,7 @@
 #include "dump.hpp"
 #include <solver_context/solver_context.hpp>
 #include <trans_table/trans_table.hpp>
+#include <utility/debug.h>
 
 
 std::string PrintSuit(const unsigned short suitCode);
@@ -334,4 +335,57 @@ void DumpTopLevel(
   fout << ctx.search().nodes() << " AB nodes, " <<
     ctx.search().trick_nodes() << " trick nodes\n\n";
 }
+
+
+#ifdef DDS_AB_HITS
+
+void DumpRetrieved(
+  std::ofstream& fout,
+  const Pos& tpos,
+  const NodeCards& node,
+  const int target,
+  const int depth)
+{
+  fout << "Retrieved entry\n";
+  fout << std::string(15, '-') << "\n";
+  fout << PosToText(tpos, target, depth) << "\n";
+  fout << FullNodeToText(node) << "\n";
+  fout << RankToDiagrams(tpos.rank_in_suit, node) << "\n";
+}
+
+
+void DumpStored(
+  std::ofstream& fout,
+  const Pos& tpos,
+  const Moves& moves,
+  const NodeCards& node,
+  const int target,
+  const int depth)
+{
+  fout << "Stored entry\n";
+  fout << std::string(12, '-') << "\n";
+  fout << PosToText(tpos, target, depth) << "\n";
+  fout << NodeToText(node);
+  fout << moves.TrickToText((depth >> 2) + 1) << "\n";
+  fout << PrintDeal(tpos.rank_in_suit, 16);
+}
+
+
+void DumpStored(
+  std::ofstream& fout,
+  const Pos& tpos,
+  SolverContext& ctx,
+  const NodeCards& node,
+  const int target,
+  const int depth)
+{
+  fout << "Stored entry\n";
+  fout << std::string(12, '-') << "\n";
+  fout << PosToText(tpos, target, depth) << "\n";
+  fout << NodeToText(node);
+  fout << ctx.move_gen().trick_to_text((depth >> 2) + 1) << "\n";
+  fout << PrintDeal(tpos.rank_in_suit, 16);
+}
+
+#endif // DDS_AB_HITS
 
