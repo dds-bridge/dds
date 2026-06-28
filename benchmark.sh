@@ -539,17 +539,16 @@ if ((${#DTEST_EXTRA[@]} > 0)); then
 fi
 echo
 
-show_run_lines=1
+show_run_lines=0
 TRANSIENT_PROGRESS=0
-# Per-run rows are detail: hide them from the final output (transient on a tty,
-# suppressed otherwise) when comparing or when repeating, unless --details asks
-# to keep them. With repeats > 1 the per-run rows are intermediate samples, so
-# they are treated as transient too.
-if [[ "$DETAILS" != "1" ]] && { [[ -n "${COMPARE:-}" ]] || (( REPEATS > 1 )); }; then
-  show_run_lines=0
-  if [[ -t 1 ]]; then
-    TRANSIENT_PROGRESS=1
-  fi
+# Per-run rows are detail: keep them in the final output only with --details.
+# Otherwise show them transiently as progress on a tty (cleared before the
+# summary) and suppress them entirely when output is not a tty. The summary is
+# always shown regardless.
+if [[ "$DETAILS" == "1" ]]; then
+  show_run_lines=1
+elif [[ -t 1 ]]; then
+  TRANSIENT_PROGRESS=1
 fi
 
 if [[ "$DRY_RUN" != "1" && ( "$show_run_lines" == "1" || "$TRANSIENT_PROGRESS" == "1" ) ]]; then
@@ -597,7 +596,7 @@ done
 clear_transient_progress
 
 if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
-  echo
+  echo  # compare summary (two binaries)
   # Column headers default to the generic labels, but show the actual branch
   # names when known: the current git branch for the branch binary, and the
   # --branch name for the compare binary. Truncated to the 12-char column.
@@ -693,6 +692,42 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
         printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
           "TOTAL", "elapsed (s)", tw2, tw1, "", ""
       }
+    }
+  ' "$RESULTS"
+elif [[ "$DRY_RUN" != "1" ]]; then
+  echo  # single-binary summary (no --compare)
+  br_label="branch_avg"
+  if [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
+    br_label="${git_branch:0:12}"
+  fi
+
+  echo "Summary (avg user ms)"
+  echo "============================================================"
+  printf "%-6s %-13s %12s %6s\n" "solver" "file" "$br_label" "runs"
+  printf "%-6s %-13s %12s %6s\n" \
+    "------" "-------------" "------------" "------"
+
+  awk -F'\t' -v files="${FILES[*]}" '
+    $3 == "branch" {
+      base = $1 SUBSEP $2
+      s[base] += $7
+      c[base]++
+      if ($9 != "NA") tw += $9   # total wall-clock elapsed
+    }
+    END {
+      split("solve calc", solvers, " ")
+      nfiles = split(files, filearr, " ")
+      for (si = 1; si <= 2; si++) {
+        for (fi = 1; fi <= nfiles; fi++) {
+          base = solvers[si] SUBSEP filearr[fi]
+          if (!(base in c)) continue
+          printf "%-6s %-13s %12.2f %6d\n",
+            solvers[si], filearr[fi], s[base] / c[base], c[base]
+        }
+      }
+      printf "%-6s %-13s %12s %6s\n",
+        "------", "-------------", "------------", "------"
+      printf "%-6s %-13s %12.2f %6s\n", "TOTAL", "elapsed (s)", tw, ""
     }
   ' "$RESULTS"
 fi
