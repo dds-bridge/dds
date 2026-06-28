@@ -567,6 +567,19 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
     br_label="${git_branch:0:12}"
   fi
 
+  # Names used in the "note" column ("<name> faster"); fall back to the generic
+  # "branch"/"compare" when no branch name is known.
+  note_branch="branch"
+  if [[ -n "$branch_branch_name" ]]; then
+    note_branch="$branch_branch_name"
+  elif [[ -n "$compare_branch_name" && -n "$git_branch" && "$git_branch" != "unknown" ]]; then
+    note_branch="$git_branch"
+  fi
+  note_compare="compare"
+  if [[ -n "$compare_branch_name" ]]; then
+    note_compare="$compare_branch_name"
+  fi
+
   echo "Summary (avg user ms)"
   echo "=============================================================================="
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
@@ -574,7 +587,8 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "------" "-------------" "------------" "------------" "----------" "---------------"
 
-  awk -F'\t' -v files="${FILES[*]}" -v epsilon_pct="$EPSILON" '
+  awk -F'\t' -v files="${FILES[*]}" -v epsilon_pct="$EPSILON" \
+      -v note_branch="$note_branch" -v note_compare="$note_compare" '
     function within_epsilon(a, b,    eps, hi, lo) {
       eps = epsilon_pct / 100
       if (a > b) { hi = a; lo = b } else { hi = b; lo = a }
@@ -607,9 +621,9 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           if (within_epsilon(u1, u2)) {
             note = "equal"
           } else if (cmp_branch >= 1) {
-            note = "branch faster"
+            note = note_branch " faster"
           } else {
-            note = "compare faster"
+            note = note_compare " faster"
           }
           sp = sprintf("%9.2fx", cmp_branch)
           printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
