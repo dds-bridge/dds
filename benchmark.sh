@@ -2,10 +2,11 @@
 # Benchmark dtest performance on one or two binaries.
 #
 # Runs all combinations of solver (solve, calc) and hand file
-# (list100/1000/…/1), largest files first. With --compare, prints summary only
-# unless --details; without --compare, prints per-run rows. With --compare and a
-# tty, per-run rows appear during the run then are cleared before the summary.
-# Does not pass dtest options unless given after "--" (see below).
+# (list100/1000/…/1), largest files first. Always prints a summary. Per-run
+# timing rows and build (git/bazel) output are shown only with --details;
+# otherwise build output is captured to a log (surfaced only on failure) and
+# per-run rows are suppressed. Does not pass dtest options unless given after
+# "--" (see below).
 #
 # Usage:
 #   ./benchmark.sh
@@ -25,7 +26,7 @@
 #   REPEATS    Runs per combination per binary (default: 1)
 #   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
 #   DRY_RUN    If 1, print commands only
-#   DETAILS    If 1 with --compare, keep per-run rows in output (default: transient on tty)
+#   DETAILS    If 1, keep per-run rows and build output (default: 0, summary only)
 #   EPSILON    With --compare, max % diff to treat branch/compare as equal (default: 0.5)
 
 set -euo pipefail
@@ -51,6 +52,7 @@ RESULTS=""
 ORIG_BRANCH=""
 COMPARE_TMP=""
 BRANCH_TMP=""
+BUILD_LOG=""
 
 cleanup() {
   if [[ -n "$ORIG_BRANCH" ]]; then
@@ -64,6 +66,7 @@ cleanup() {
   fi
   [[ -n "$COMPARE_TMP" ]] && rm -f "$COMPARE_TMP"
   [[ -n "$BRANCH_TMP" ]] && rm -f "$BRANCH_TMP"
+  [[ -n "$BUILD_LOG" ]] && rm -f "$BUILD_LOG"
   [[ -n "$RESULTS" ]] && rm -f "$RESULTS"
   return 0
 }
@@ -75,8 +78,8 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Benchmark dtest across solver/file combinations. With --compare, prints a summary
-by default; use --details for per-run rows.
+Benchmark dtest across solver/file combinations. Always prints a summary; use
+--details for per-run rows and build (git/bazel) output.
 
 Options:
   -h, --help          Show this help
@@ -92,7 +95,7 @@ Options:
                       saved; the original branch is then restored. Requires a clean tree.
   --compare PATH      Second dtest binary (summary; transient progress on tty). May be
                       combined with a single --branch NAME (NAME backs the branch binary).
-  --details           With --compare, keep per-run timing rows in final output
+  --details           Keep per-run timing rows and build (git/bazel) output
   --epsilon PCT       With --compare, treat timings within PCT% as equal (default: 0.5; env: EPSILON)
   --reverse           With --compare, run compare before branch each repeat (default: branch first)
   --                  End benchmark options; remaining args are passed to dtest
@@ -219,6 +222,30 @@ if [[ "$num_branches" -gt 2 ]]; then
 fi
 
 # Check out $1, build dtest, and copy the binary to $2.
+# Build output (git checkout + bazel) is noise unless --details was given.
+# Trying to show it live and erase it afterward with ANSI does not work: bazel
+# drives its own cursor save/restore for its progress display, clobbering any
+# saved position, so a restore+clear erases nothing. Instead, capture the
+# output to a log and surface it only on failure (or with --details). bazel sees
+# a non-tty here and emits plain, line-based output. The short "Building..."
+# labels are kept as progress markers.
+bazel_dtest() { ( cd "$ROOT" && bazel build //library/tests:dtest ); }
+checkout_and_build() { git -C "$ROOT" checkout "$1" && bazel_dtest; }
+
+run_build() {
+  if [[ "$DETAILS" == "1" ]]; then
+    "$@"
+    return
+  fi
+  if [[ -z "$BUILD_LOG" ]]; then
+    BUILD_LOG="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-build.XXXXXX")"
+  fi
+  if ! "$@" >"$BUILD_LOG" 2>&1; then
+    cat "$BUILD_LOG" >&2
+    return 1
+  fi
+}
+
 build_branch_binary() {
   local name="$1" dest="$2"
   local dtest_rel="bazel-bin/library/tests/dtest"
@@ -229,8 +256,7 @@ build_branch_binary() {
     return 0
   fi
   echo "Building dtest from '$name'..." >&2
-  git -C "$ROOT" checkout "$name"
-  (cd "$ROOT" && bazel build //library/tests:dtest)
+  run_build checkout_and_build "$name"
   cp -L "$ROOT/$dtest_rel" "$dest"
   chmod +x "$dest"
 }
@@ -270,7 +296,7 @@ setup_branches() {
       echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
     else
       echo "Restoring '$ORIG_BRANCH'..." >&2
-      git -C "$ROOT" checkout "$ORIG_BRANCH"
+      run_build git -C "$ROOT" checkout "$ORIG_BRANCH"
     fi
     BRANCH="$BRANCH_TMP"
   elif [[ "$num_branches" -eq 1 ]]; then
@@ -282,8 +308,7 @@ setup_branches() {
       echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
     else
       echo "Restoring '$ORIG_BRANCH' and rebuilding..." >&2
-      git -C "$ROOT" checkout "$ORIG_BRANCH"
-      (cd "$ROOT" && bazel build //library/tests:dtest)
+      run_build checkout_and_build "$ORIG_BRANCH"
     fi
     COMPARE="$COMPARE_TMP"
   else
@@ -296,7 +321,7 @@ setup_branches() {
       echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
     else
       echo "Restoring '$ORIG_BRANCH'..." >&2
-      git -C "$ROOT" checkout "$ORIG_BRANCH"
+      run_build git -C "$ROOT" checkout "$ORIG_BRANCH"
     fi
     BRANCH="$BRANCH_TMP"
     COMPARE="$COMPARE_TMP"
@@ -353,7 +378,7 @@ if [[ "$BUILD" == "1" ]]; then
     echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
   else
     echo "Building //library/tests:dtest..." >&2
-    (cd "$ROOT" && bazel build //library/tests:dtest)
+    run_build bazel_dtest
   fi
 fi
 
@@ -516,9 +541,7 @@ if [[ -n "${COMPARE:-}" ]]; then
     printf "%-12s %s\n" "compare:" "$COMPARE"
   fi
   if [[ "$DETAILS" == "1" ]]; then
-    printf "%-12s %s\n" "details:" "on"
-  elif [[ -t 1 ]]; then
-    printf "%-12s %s\n" "details:" "transient (cleared before summary)"
+    printf "%-12s %s\n" "details:" "on (per-run rows + build output)"
   else
     printf "%-12s %s\n" "details:" "off (summary only)"
   fi
