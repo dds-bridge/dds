@@ -398,8 +398,11 @@ run_dtest() {
     return 0
   fi
 
+  # Wrap with `time -p` so we can capture wall-clock elapsed for this run. Its
+  # "real/user/sys" lines go to the merged output but do not collide with the
+  # dtest lines parse_dtest_output looks for.
   local out
-  if ! out="$("${cmd[@]}" 2>&1)"; then
+  if ! out="$(/usr/bin/time -p "${cmd[@]}" 2>&1)"; then
     echo "error: dtest failed: ${cmd[*]}" >&2
     echo "$out" >&2
     exit 1
@@ -411,7 +414,10 @@ run_dtest() {
   if [[ "$parsed_user" == "NA" || "$parsed_sys" == "NA" ]]; then
     echo "warning: incomplete dtest timing output: ${cmd[*]}" >&2
   fi
-  echo "$parsed"
+  local wall
+  wall="$(awk '/^real[[:space:]]/ { print $2; exit }' <<<"$out")"
+  [[ -z "$wall" ]] && wall="NA"
+  echo "$parsed $wall"
 }
 
 progress_lines=0
@@ -539,14 +545,14 @@ for solver in "${SOLVERS[@]}"; do
           continue
         fi
 
-        read -r user sys avg ratio < <(run_dtest "$bin" "$solver" "$hands")
+        read -r user sys avg ratio wall < <(run_dtest "$bin" "$solver" "$hands")
 
         if [[ "$show_run_lines" == "1" || "$TRANSIENT_PROGRESS" == "1" ]]; then
           print_run_row "$solver" "$file" "$ver" "$user" "$sys" "$avg" "$ratio" "$run_label"
         fi
 
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-          "$solver" "$file" "$ver" "$rep" "$user" "$sys" "$avg" "$ratio" \
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+          "$solver" "$file" "$ver" "$rep" "$user" "$sys" "$avg" "$ratio" "$wall" \
           >>"$RESULTS"
       done
     done
@@ -603,9 +609,11 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
       if ($3 == "compare") {
         s2[base] += $7
         c2[base]++
+        if ($9 != "NA") tw2 += $9   # total wall-clock elapsed, compare
       } else if ($3 == "branch") {
         s1[base] += $7
         c1[base]++
+        if ($9 != "NA") tw1 += $9   # total wall-clock elapsed, branch
       }
     }
     END {
@@ -633,6 +641,22 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
             solvers[si], filearr[fi], u2, u1, sp, note
         }
+      }
+
+      # Total elapsed (wall-clock seconds) summed per binary across all runs.
+      printf "%-6s %-13s %12s %12s %10s %-15s\n",
+        "------", "-------------", "------------", "------------", "----------", "---------------"
+      if (tw2 > 0 && tw1 > 0) {
+        tnote = ""
+        if (within_epsilon(tw1, tw2)) tnote = "equal"
+        else if (tw2 / tw1 >= 1) tnote = note_branch " faster"
+        else tnote = note_compare " faster"
+        tsp = sprintf("%9.2fx", tw2 / tw1)
+        printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
+          "TOTAL", "elapsed (s)", tw2, tw1, tsp, tnote
+      } else {
+        printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
+          "TOTAL", "elapsed (s)", tw2, tw1, "", ""
       }
     }
   ' "$RESULTS"
