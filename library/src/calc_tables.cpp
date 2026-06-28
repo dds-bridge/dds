@@ -8,12 +8,15 @@
 */
 
 #include "calc_tables.hpp"
+#include <algorithm>
+#include <numeric>
 #include <vector>
 
 #include <pbn.hpp>
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
 #include <solver_if.hpp>
+#include <lookup_tables/lookup_tables.hpp>
 #include <system/memory.hpp>
 #include <system/parallel_boards.hpp>
 #include <system/scheduler.hpp>
@@ -22,6 +25,33 @@
 
 extern Memory memory;
 extern Scheduler scheduler;
+
+namespace
+{
+// Cheap structural difficulty estimate (cards only, trump-independent). Used to
+// dispatch the hardest boards first so the parallel tail is short. Mirrors
+// Scheduler::Fanout: per hand, sum the number of card groups per suit, with a
+// bonus for voids.
+auto deal_fanout(const Deal& dl) -> int
+{
+  int fanout = 0;
+  for (int h = 0; h < DDS_HANDS; h++)
+  {
+    int fanout_suit = 0;
+    int num_voids = 0;
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+      const int c = static_cast<int>(dl.remainCards[h][s] >> 2);
+      fanout_suit += group_data[c].last_group_ + 1;
+      if (c == 0)
+        num_voids++;
+    }
+    fanout_suit += num_voids * fanout_suit;
+    fanout += fanout_suit;
+  }
+  return fanout;
+}
+}
 
 // Legacy overload (creates temporary context)
 auto calc_all_boards_n(
@@ -137,11 +167,24 @@ auto calc_all_boards_n(
   else
   {
     std::vector<SolverContext> contexts(static_cast<unsigned>(nthreads));
+
+    // Dispatch hardest boards first to shorten the parallel tail.
+    std::vector<int> fanout(static_cast<unsigned>(n));
+    for (int i = 0; i < n; i++)
+      fanout[static_cast<unsigned>(i)] = deal_fanout(bop->deals[i]);
+    std::vector<int> order(static_cast<unsigned>(n));
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(),
+      [&](const int a, const int b) {
+        return fanout[static_cast<unsigned>(a)] > fanout[static_cast<unsigned>(b)];
+      });
+
     err = parallel_all_boards_n(n, nthreads,
       [&](const int worker_id, const int bno) -> int {
         return calc_single_common_internal(
           contexts[static_cast<unsigned>(worker_id)], *bop, *solvedp, bno);
-      });
+      },
+      &order);
   }
 
   END_BLOCK_TIMER;

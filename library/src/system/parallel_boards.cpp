@@ -34,20 +34,29 @@ auto resolve_worker_count(
 auto parallel_all_boards_n(
   const int count,
   const int worker_cap,
-  const std::function<int(int worker_id, int bno)>& process_board) -> int
+  const std::function<int(int worker_id, int bno)>& process_board,
+  const std::vector<int>* order) -> int
 {
   if (count <= 0)
   {
     return RETURN_NO_FAULT;
   }
 
+  // Map a dispatch slot to the board number to process. With an order, hand out
+  // boards in that sequence (e.g. hardest first); otherwise in index order.
+  const bool use_order =
+    (order != nullptr && static_cast<int>(order->size()) == count);
+  auto board_of = [&](const int slot) -> int {
+    return use_order ? (*order)[static_cast<unsigned>(slot)] : slot;
+  };
+
   const int workers = resolve_worker_count(worker_cap, count);
 
   if (workers == 1)
   {
-    for (int bno = 0; bno < count; ++bno)
+    for (int slot = 0; slot < count; ++slot)
     {
-      const int rc = process_board(0, bno);
+      const int rc = process_board(0, board_of(slot));
       if (rc != RETURN_NO_FAULT)
       {
         return rc;
@@ -62,11 +71,12 @@ auto parallel_all_boards_n(
   auto worker = [&](const int worker_id) {
     for (;;)
     {
-      const int bno = next.fetch_add(1, std::memory_order_relaxed);
-      if (bno >= count || first_error.load(std::memory_order_relaxed) != RETURN_NO_FAULT)
+      const int slot = next.fetch_add(1, std::memory_order_relaxed);
+      if (slot >= count || first_error.load(std::memory_order_relaxed) != RETURN_NO_FAULT)
       {
         break;
       }
+      const int bno = board_of(slot);
 
       const int rc = process_board(worker_id, bno);
       if (rc != RETURN_NO_FAULT)
