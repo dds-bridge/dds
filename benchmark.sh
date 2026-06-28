@@ -500,7 +500,11 @@ echo
 
 show_run_lines=1
 TRANSIENT_PROGRESS=0
-if [[ -n "${COMPARE:-}" && "$DETAILS" != "1" ]]; then
+# Per-run rows are detail: hide them from the final output (transient on a tty,
+# suppressed otherwise) when comparing or when repeating, unless --details asks
+# to keep them. With repeats > 1 the per-run rows are intermediate samples, so
+# they are treated as transient too.
+if [[ "$DETAILS" != "1" ]] && { [[ -n "${COMPARE:-}" ]] || (( REPEATS > 1 )); }; then
   show_run_lines=0
   if [[ -t 1 ]]; then
     TRANSIENT_PROGRESS=1
