@@ -220,6 +220,18 @@ int STDCALL CalcDDtable(
 }
 
 
+namespace
+{
+auto same_deal_cards(const DdTableDeal& a, const DdTableDeal& b) -> bool
+{
+  for (int h = 0; h < DDS_HANDS; h++)
+    for (int s = 0; s < DDS_SUITS; s++)
+      if (a.cards[h][s] != b.cards[h][s])
+        return false;
+  return true;
+}
+}
+
 int STDCALL CalcAllTablesN(
   DdTableDeals const * dealsp,
   int mode,
@@ -254,12 +266,40 @@ int STDCALL CalcAllTablesN(
   if (count * dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
     return RETURN_TOO_MANY_TABLES;
 
+  // Deduplicate identical deals: solve each distinct deal once and map every
+  // copy back to the canonical solve. Identical deals always produce identical
+  // double-dummy tables, so this is exact. Mirrors v2.9's crossref behaviour and
+  // avoids re-solving repeated deals in a batch.
+  std::vector<int> deal_to_unique(static_cast<unsigned>(dealsp->no_of_tables));
+  std::vector<int> unique_deals;
+  for (int m = 0; m < dealsp->no_of_tables; m++)
+  {
+    int found = -1;
+    for (unsigned u = 0; u < unique_deals.size(); u++)
+    {
+      if (same_deal_cards(dealsp->deals[unique_deals[u]], dealsp->deals[m]))
+      {
+        found = static_cast<int>(u);
+        break;
+      }
+    }
+    if (found < 0)
+    {
+      deal_to_unique[static_cast<unsigned>(m)] =
+        static_cast<int>(unique_deals.size());
+      unique_deals.push_back(m);
+    }
+    else
+      deal_to_unique[static_cast<unsigned>(m)] = found;
+  }
+
   int ind = 0;
   int lastIndex = 0;
   resp->no_of_boards = 0;
 
-  for (int m = 0; m < dealsp->no_of_tables; m++)
+  for (unsigned u = 0; u < unique_deals.size(); u++)
   {
+    const int m = unique_deals[u];
     for (int tr = DDS_STRAINS-1; tr >= 0; tr--)
     {
       if (trumpFilter[tr])
@@ -292,13 +332,14 @@ int STDCALL CalcAllTablesN(
   if (res != 1)
     return res;
 
-  resp->no_of_boards += 4 * solved.no_of_boards;
+  resp->no_of_boards += 4 * dealsp->no_of_tables * count;
 
   for (int m = 0; m < dealsp->no_of_tables; m++)
   {
+    const int u = deal_to_unique[static_cast<unsigned>(m)];
     for (int strainIndex = 0; strainIndex < count; strainIndex++)
     {
-      int index = m * count + strainIndex;
+      int index = u * count + strainIndex;
       int strain = bo.deals[index].trump;
 
       // SH: I'm making a terrible use of the fut structure here.
