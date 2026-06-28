@@ -12,6 +12,7 @@
 #   ./benchmark.sh --build
 #   ./benchmark.sh -- -n 8 -r
 #   ./benchmark.sh --build --compare /path/to/other/dtest
+#   ./benchmark.sh --branch develop -- -n 8
 #   ./benchmark.sh --compare /path/to/other/dtest --epsilon 1
 #   ./benchmark.sh --repeats 5 -- -n 4
 #   REPEATS=3 ./benchmark.sh
@@ -19,6 +20,7 @@
 # Environment:
 #   BRANCH     Path to branch dtest (default: bazel-bin in this repo)
 #   COMPARE    Optional second dtest binary for comparison
+#              (or use --branch NAME to build the compare binary from a git branch)
 #   HANDS_DIR  Directory containing list*.txt files (default: ./hands)
 #   REPEATS    Runs per combination per binary (default: 1)
 #   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
@@ -38,7 +40,30 @@ DETAILS="${DETAILS:-0}"
 EPSILON="${EPSILON:-0.5}"
 BUILD=0
 REVERSE=0
+COMPARE_BRANCH=""
 DTEST_EXTRA=()
+
+# Cleanup state (set later). The EXIT trap restores the original git branch if
+# --branch switched away, and removes temp files.
+RESULTS=""
+ORIG_BRANCH=""
+COMPARE_TMP=""
+
+cleanup() {
+  if [[ -n "$ORIG_BRANCH" ]]; then
+    local cur
+    cur="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null \
+      || git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
+    if [[ -n "$cur" && "$cur" != "$ORIG_BRANCH" ]]; then
+      echo "Restoring git branch '$ORIG_BRANCH'..." >&2
+      git -C "$ROOT" checkout "$ORIG_BRANCH" >/dev/null 2>&1 || true
+    fi
+  fi
+  [[ -n "$COMPARE_TMP" ]] && rm -f "$COMPARE_TMP"
+  [[ -n "$RESULTS" ]] && rm -f "$RESULTS"
+  return 0
+}
+trap cleanup EXIT
 
 SOLVERS=(solve calc)
 
@@ -55,7 +80,9 @@ Options:
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
   --build             Build branch dtest only (bazel build //library/tests:dtest)
-  --branch PATH       Branch dtest binary (default: $BRANCH)
+  --branch NAME       Git branch to compare against: check it out, build dtest, save the
+                      binary as the compare binary, restore the current branch, rebuild,
+                      then run. Mutually exclusive with --compare. Requires a clean tree.
   --compare PATH      Optional second dtest binary (summary; transient progress on tty)
   --details           With --compare, keep per-run timing rows in final output
   --epsilon PCT       With --compare, treat timings within PCT% as equal (default: 0.5; env: EPSILON)
@@ -71,6 +98,8 @@ Examples:
   ./benchmark.sh --build
   ./benchmark.sh -- -n 8
   ./benchmark.sh --repeats 3 -- -n 4 -r
+  ./benchmark.sh --branch develop
+  ./benchmark.sh --branch develop --repeats 3 -- -n 8
   ./benchmark.sh --compare /path/to/dtest
   ./benchmark.sh --compare /path/to/dtest --details
   ./benchmark.sh --compare /path/to/dtest --epsilon 1
@@ -93,7 +122,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --branch)
       shift
-      BRANCH="${1:?missing value for --branch}"
+      COMPARE_BRANCH="${1:?missing value for --branch}"
       shift
       ;;
     --compare)
@@ -151,9 +180,64 @@ if ! [[ "$EPSILON" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
   exit 1
 fi
 
-if [[ "$REVERSE" == "1" && -z "${COMPARE:-}" ]]; then
-  echo "error: --reverse requires --compare" >&2
+if [[ "$REVERSE" == "1" && -z "${COMPARE:-}" && -z "$COMPARE_BRANCH" ]]; then
+  echo "error: --reverse requires --compare or --branch" >&2
   exit 1
+fi
+
+if [[ -n "$COMPARE_BRANCH" && -n "${COMPARE:-}" ]]; then
+  echo "error: --branch and --compare are mutually exclusive" >&2
+  exit 1
+fi
+
+build_compare_from_branch() {
+  local dtest_rel="bazel-bin/library/tests/dtest"
+
+  if ! git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "error: --branch requires a git work tree at $ROOT" >&2
+    exit 1
+  fi
+
+  if ! git -C "$ROOT" rev-parse --verify --quiet "$COMPARE_BRANCH" >/dev/null; then
+    echo "error: --branch: unknown git ref '$COMPARE_BRANCH'" >&2
+    exit 1
+  fi
+
+  if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=no)" ]]; then
+    echo "error: tracked changes present; commit or stash before using --branch" >&2
+    exit 1
+  fi
+
+  ORIG_BRANCH="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null \
+    || git -C "$ROOT" rev-parse HEAD)"
+  COMPARE_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-compare.XXXXXX")"
+
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "DRY_RUN: git -C $ROOT checkout $COMPARE_BRANCH" >&2
+    echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
+    echo "DRY_RUN: cp -L $ROOT/$dtest_rel $COMPARE_TMP" >&2
+    echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
+    echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
+    COMPARE="$COMPARE_TMP"
+    return 0
+  fi
+
+  echo "Building compare binary from '$COMPARE_BRANCH' (current: '$ORIG_BRANCH')..." >&2
+  git -C "$ROOT" checkout "$COMPARE_BRANCH"
+  (cd "$ROOT" && bazel build //library/tests:dtest)
+  cp -L "$ROOT/$dtest_rel" "$COMPARE_TMP"
+  chmod +x "$COMPARE_TMP"
+
+  echo "Restoring '$ORIG_BRANCH' and rebuilding..." >&2
+  git -C "$ROOT" checkout "$ORIG_BRANCH"
+  (cd "$ROOT" && bazel build //library/tests:dtest)
+
+  COMPARE="$COMPARE_TMP"
+}
+
+if [[ -n "$COMPARE_BRANCH" ]]; then
+  build_compare_from_branch
+  BUILD=0  # build already done as part of the branch workflow
 fi
 
 select_hand_files() {
@@ -241,7 +325,7 @@ if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 fi
 
 RESULTS="$(mktemp "${TMPDIR:-/tmp}/dds-benchmark.XXXXXX")"
-trap 'rm -f "$RESULTS"' EXIT
+# Removal handled by the cleanup() EXIT trap installed near the top.
 
 parse_dtest_output() {
   awk '
@@ -334,7 +418,11 @@ echo "DDS dtest benchmark"
 echo "==================="
 printf "%-12s %s\n" "branch:" "$BRANCH"
 if [[ -n "${COMPARE:-}" ]]; then
-  printf "%-12s %s\n" "compare:" "$COMPARE"
+  if [[ -n "$COMPARE_BRANCH" ]]; then
+    printf "%-12s %s\n" "compare:" "branch '$COMPARE_BRANCH' ($COMPARE)"
+  else
+    printf "%-12s %s\n" "compare:" "$COMPARE"
+  fi
   if [[ "$DETAILS" == "1" ]]; then
     printf "%-12s %s\n" "details:" "on"
   elif [[ -t 1 ]]; then
