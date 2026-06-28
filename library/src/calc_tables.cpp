@@ -53,11 +53,14 @@ auto deal_fanout(const Deal& dl) -> int
 }
 }
 
-// Legacy overload (creates temporary context)
+// Legacy overload (creates temporary context). difficulty_sort dispatches the
+// hardest boards first; it only helps across distinct deals (batch calc), so it
+// is skipped for a single deal (all boards share one deal / one fanout).
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp,
-  int max_threads = 0) -> int;
+  int max_threads = 0,
+  bool difficulty_sort = true) -> int;
 
 
 auto calc_single_common_internal(
@@ -140,7 +143,8 @@ auto calc_all_boards_n(
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp,
-  int max_threads) -> int
+  int max_threads,
+  bool difficulty_sort) -> int
 {
   const int n = bop->no_of_boards;
   if (n > MAXNOOFBOARDS)
@@ -168,23 +172,29 @@ auto calc_all_boards_n(
   {
     std::vector<SolverContext> contexts(static_cast<unsigned>(nthreads));
 
-    // Dispatch hardest boards first to shorten the parallel tail.
-    std::vector<int> fanout(static_cast<unsigned>(n));
-    for (int i = 0; i < n; i++)
-      fanout[static_cast<unsigned>(i)] = deal_fanout(bop->deals[i]);
-    std::vector<int> order(static_cast<unsigned>(n));
-    std::iota(order.begin(), order.end(), 0);
-    std::stable_sort(order.begin(), order.end(),
-      [&](const int a, const int b) {
-        return fanout[static_cast<unsigned>(a)] > fanout[static_cast<unsigned>(b)];
-      });
+    // Dispatch hardest boards first to shorten the parallel tail. This only
+    // helps across distinct deals (batch calc); for a single deal every board
+    // shares one fanout, so the sort is skipped (it would be a no-op anyway).
+    std::vector<int> order;
+    if (difficulty_sort)
+    {
+      std::vector<int> fanout(static_cast<unsigned>(n));
+      for (int i = 0; i < n; i++)
+        fanout[static_cast<unsigned>(i)] = deal_fanout(bop->deals[i]);
+      order.resize(static_cast<unsigned>(n));
+      std::iota(order.begin(), order.end(), 0);
+      std::stable_sort(order.begin(), order.end(),
+        [&](const int a, const int b) {
+          return fanout[static_cast<unsigned>(a)] > fanout[static_cast<unsigned>(b)];
+        });
+    }
 
     err = parallel_all_boards_n(n, nthreads,
       [&](const int worker_id, const int bno) -> int {
         return calc_single_common_internal(
           contexts[static_cast<unsigned>(worker_id)], *bop, *solvedp, bno);
       },
-      &order);
+      order.empty() ? nullptr : &order);
   }
 
   END_BLOCK_TIMER;
@@ -235,7 +245,8 @@ int STDCALL CalcDDtableN(
     ind++;
   }
 
-  int res = calc_all_boards_n(&bo, &solved, maxThreads);
+  // Single deal: all boards share one deal, so hardest-first sorting is a no-op.
+  int res = calc_all_boards_n(&bo, &solved, maxThreads, /*difficulty_sort=*/false);
   if (res != 1)
     return res;
 
