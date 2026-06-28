@@ -1213,10 +1213,7 @@ void weight_alloc_trump_void2(HeuristicContext& ctx)
     mply[k].rank < ctx.move1_rank)
     {
       // Don't underruff.
-    unsigned char aggrSuit = static_cast<unsigned char>(tpos.aggr[suit]);
-    unsigned char moveRank = static_cast<unsigned char>(mply[k].rank);
-  unsigned char relRankValue = static_cast<unsigned char>(rel_rank[aggrSuit][moveRank]);
-    int r_rank = static_cast<int>(relRankValue);
+    int r_rank = rel_rank[tpos.aggr[suit]][mply[k].rank];
       suitAdd = (suitCount << 6) / 40;
       mply[k].weight = -32 + r_rank + suitAdd;
     }
@@ -1386,10 +1383,7 @@ void weight_alloc_trump_void3(HeuristicContext& ctx)
     {
       for (int k = last_num_moves; k < num_moves; k++)
       {
-    int r_rank = static_cast<int>(
-      static_cast<unsigned char>(
-  rel_rank[static_cast<unsigned char>(tpos.aggr[suit])]
-             [static_cast<unsigned char>(mply[k].rank)]));
+    int r_rank = rel_rank[tpos.aggr[suit]][mply[k].rank];
         if (mply[k].rank > ctx.move2_rank)
           mply[k].weight = 33 + r_rank; // Overruff
         else
@@ -1404,10 +1398,7 @@ void weight_alloc_trump_void3(HeuristicContext& ctx)
   {
     for (int k = last_num_moves; k < num_moves; k++)
     {
-    int r_rank = static_cast<int>(
-      static_cast<unsigned char>(
-  rel_rank[static_cast<unsigned char>(tpos.aggr[suit])]
-           [static_cast<unsigned char>(mply[k].rank)]));
+    int r_rank = rel_rank[tpos.aggr[suit]][mply[k].rank];
       mply[k].weight = 33 + r_rank;
     }
   }
