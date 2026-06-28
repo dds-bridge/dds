@@ -502,10 +502,22 @@ clear_transient_progress
 
 if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo
+  # Column headers default to the generic labels, but show the actual branch
+  # names when known: the current git branch for the branch binary, and the
+  # --branch name for the compare binary. Truncated to the 12-char column.
+  cmp_label="compare_avg"
+  if [[ -n "$COMPARE_BRANCH" ]]; then
+    cmp_label="${COMPARE_BRANCH:0:12}"
+  fi
+  br_label="branch_avg"
+  if [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
+    br_label="${git_branch:0:12}"
+  fi
+
   echo "Summary (branch vs compare, avg user ms)"
   echo "=============================================================================="
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
-    "solver" "file" "compare_avg" "branch_avg" "cmp/branch" "note"
+    "solver" "file" "$cmp_label" "$br_label" "cmp/branch" "note"
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "------" "-------------" "------------" "------------" "----------" "---------------"
 
