@@ -41,6 +41,7 @@ EPSILON="${EPSILON:-0.5}"
 BUILD=0
 REVERSE=0
 BRANCH_NAMES=()
+COMPARE_GIVEN=0
 DTEST_EXTRA=()
 
 # Cleanup state (set later). The EXIT trap restores the original git branch if
@@ -84,10 +85,12 @@ Options:
   --build             Build branch dtest only (bazel build //library/tests:dtest)
   --branch NAME       Git branch to build and compare. Once: compare the current branch
                       against NAME. Twice (--branch A --branch B): compare A vs B and
-                      ignore the current branch. Each branch is checked out, dtest is
-                      built and its binary saved; the original branch is then restored.
-                      Mutually exclusive with --compare. Requires a clean tree.
-  --compare PATH      Optional second dtest binary (summary; transient progress on tty)
+                      ignore the current branch. With --compare PATH: build NAME as the
+                      branch binary and compare it against PATH, ignoring the current
+                      branch. Each branch is checked out, dtest is built and its binary
+                      saved; the original branch is then restored. Requires a clean tree.
+  --compare PATH      Second dtest binary (summary; transient progress on tty). May be
+                      combined with a single --branch NAME (NAME backs the branch binary).
   --details           With --compare, keep per-run timing rows in final output
   --epsilon PCT       With --compare, treat timings within PCT% as equal (default: 0.5; env: EPSILON)
   --reverse           With --compare, run compare before branch each repeat (default: branch first)
@@ -104,6 +107,7 @@ Examples:
   ./benchmark.sh --repeats 3 -- -n 4 -r
   ./benchmark.sh --branch develop
   ./benchmark.sh --branch develop --branch opus-two-percent
+  ./benchmark.sh --branch opus-two-percent --compare /path/to/dtest
   ./benchmark.sh --branch develop --repeats 3 -- -n 8
   ./benchmark.sh --compare /path/to/dtest
   ./benchmark.sh --compare /path/to/dtest --details
@@ -133,6 +137,7 @@ while [[ $# -gt 0 ]]; do
     --compare)
       shift
       COMPARE="${1:?missing value for --compare}"
+      COMPARE_GIVEN=1
       shift
       ;;
     --max-deals|--max_deals|-max-deals|-max_deals)
@@ -185,6 +190,11 @@ if ! [[ "$EPSILON" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
   exit 1
 fi
 
+# A compare binary supplied via the COMPARE env var behaves like --compare PATH.
+if [[ "$COMPARE_GIVEN" == "0" && -n "${COMPARE:-}" ]]; then
+  COMPARE_GIVEN=1
+fi
+
 num_branches=${#BRANCH_NAMES[@]}
 
 if [[ "$REVERSE" == "1" && -z "${COMPARE:-}" && "$num_branches" -eq 0 ]]; then
@@ -192,8 +202,8 @@ if [[ "$REVERSE" == "1" && -z "${COMPARE:-}" && "$num_branches" -eq 0 ]]; then
   exit 1
 fi
 
-if [[ "$num_branches" -gt 0 && -n "${COMPARE:-}" ]]; then
-  echo "error: --branch and --compare are mutually exclusive" >&2
+if [[ "$num_branches" -gt 0 && "$COMPARE_GIVEN" == "1" && "$num_branches" -ne 1 ]]; then
+  echo "error: --compare accepts exactly one --branch (got $num_branches)" >&2
   exit 1
 fi
 
@@ -219,8 +229,12 @@ build_branch_binary() {
   chmod +x "$dest"
 }
 
-# With one --branch, compare the current branch against the named branch.
-# With two, compare the two named branches and ignore the current branch.
+# Branch-mode binary selection:
+#   --branch NAME                : branch = current checkout, compare = build(NAME)
+#   --branch NAME --compare PATH : branch = build(NAME), compare = PATH
+#                                  (the current branch's dtest is ignored)
+#   --branch A --branch B        : branch = build(A), compare = build(B)
+#                                  (the current branch's dtest is ignored)
 setup_branches() {
   if ! git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "error: --branch requires a git work tree at $ROOT" >&2
@@ -241,7 +255,19 @@ setup_branches() {
   ORIG_BRANCH="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null \
     || git -C "$ROOT" rev-parse HEAD)"
 
-  if [[ "$num_branches" -eq 1 ]]; then
+  if [[ "$COMPARE_GIVEN" == "1" ]]; then
+    # --branch NAME --compare PATH: build NAME as the branch binary and keep the
+    # user-supplied compare path. The current branch's dtest is not used.
+    BRANCH_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-branch.XXXXXX")"
+    build_branch_binary "${BRANCH_NAMES[0]}" "$BRANCH_TMP"
+    if [[ "$DRY_RUN" == "1" ]]; then
+      echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
+    else
+      echo "Restoring '$ORIG_BRANCH'..." >&2
+      git -C "$ROOT" checkout "$ORIG_BRANCH"
+    fi
+    BRANCH="$BRANCH_TMP"
+  elif [[ "$num_branches" -eq 1 ]]; then
     COMPARE_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-compare.XXXXXX")"
     build_branch_binary "${BRANCH_NAMES[0]}" "$COMPARE_TMP"
     # Restore the current branch and rebuild it as the branch binary.
@@ -462,7 +488,10 @@ echo "==================="
 # the branch binary is the current checkout; with two it is the first name.
 branch_branch_name=""
 compare_branch_name=""
-if [[ "$num_branches" -eq 1 ]]; then
+if [[ "$num_branches" -eq 1 && "$COMPARE_GIVEN" == "1" ]]; then
+  # --branch NAME --compare PATH: NAME backs the branch binary; compare is a path.
+  branch_branch_name="${BRANCH_NAMES[0]}"
+elif [[ "$num_branches" -eq 1 ]]; then
   compare_branch_name="${BRANCH_NAMES[0]}"
 elif [[ "$num_branches" -eq 2 ]]; then
   branch_branch_name="${BRANCH_NAMES[0]}"
