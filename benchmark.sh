@@ -87,12 +87,13 @@ Options:
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
   --build             Build branch dtest only (bazel build //library/tests:dtest)
-  --branch NAME       Git branch to build and compare. Once: compare the current branch
-                      against NAME. Twice (--branch A --branch B): compare A vs B and
-                      ignore the current branch. With --compare PATH: build NAME as the
-                      branch binary and compare it against PATH, ignoring the current
-                      branch. Each branch is checked out, dtest is built and its binary
-                      saved; the original branch is then restored. Requires a clean tree.
+  --branch NAME       Git branch to build and compare ("." means the current branch).
+                      Once: compare the current branch against NAME. Twice (--branch A
+                      --branch B): compare A vs B and ignore the current branch. With
+                      --compare PATH: build NAME as the branch binary and compare it
+                      against PATH, ignoring the current branch. Each branch is checked
+                      out, dtest is built and its binary saved; the original branch is
+                      then restored. Requires a clean tree.
   --compare PATH      Second dtest binary (summary; transient progress on tty). May be
                       combined with a single --branch NAME (NAME backs the branch binary).
   --details           Keep per-run timing rows and build (git/bazel) output
@@ -272,6 +273,18 @@ setup_branches() {
     echo "error: --branch requires a git work tree at $ROOT" >&2
     exit 1
   fi
+
+  ORIG_BRANCH="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null \
+    || git -C "$ROOT" rev-parse HEAD)"
+
+  # "." is shorthand for the current branch.
+  local i
+  for i in "${!BRANCH_NAMES[@]}"; do
+    if [[ "${BRANCH_NAMES[$i]}" == "." ]]; then
+      BRANCH_NAMES[$i]="$ORIG_BRANCH"
+    fi
+  done
+
   local name
   for name in "${BRANCH_NAMES[@]}"; do
     if ! git -C "$ROOT" rev-parse --verify --quiet "$name" >/dev/null; then
@@ -283,9 +296,6 @@ setup_branches() {
     echo "error: tracked changes present; commit or stash before using --branch" >&2
     exit 1
   fi
-
-  ORIG_BRANCH="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null \
-    || git -C "$ROOT" rev-parse HEAD)"
 
   if [[ "$COMPARE_GIVEN" == "1" ]]; then
     # --branch NAME --compare PATH: build NAME as the branch binary and keep the
