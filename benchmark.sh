@@ -541,14 +541,11 @@ echo
 
 show_run_lines=0
 TRANSIENT_PROGRESS=0
-# Per-run rows are detail: keep them in the final output only with --details.
-# Otherwise show them transiently as progress on a tty (cleared before the
-# summary) and suppress them entirely when output is not a tty. The summary is
-# always shown regardless.
+# Per-run rows are detail: show them only with --details. Without it they are
+# suppressed entirely (no transient progress table, which could otherwise scroll
+# off-screen and leave residue). The summary is always shown regardless.
 if [[ "$DETAILS" == "1" ]]; then
   show_run_lines=1
-elif [[ -t 1 ]]; then
-  TRANSIENT_PROGRESS=1
 fi
 
 if [[ "$DRY_RUN" != "1" && ( "$show_run_lines" == "1" || "$TRANSIENT_PROGRESS" == "1" ) ]]; then
