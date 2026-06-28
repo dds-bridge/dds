@@ -42,6 +42,7 @@ BUILD=0
 REVERSE=0
 BRANCH_NAMES=()
 COMPARE_GIVEN=0
+REPEATS_GIVEN=0
 DTEST_EXTRA=()
 
 # Cleanup state (set later). The EXIT trap restores the original git branch if
@@ -125,6 +126,11 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     --repeats)
+      if (( REPEATS_GIVEN )); then
+        echo "error: --repeats may be given only once" >&2
+        exit 1
+      fi
+      REPEATS_GIVEN=1
       shift
       REPEATS="${1:?missing value for --repeats}"
       shift
