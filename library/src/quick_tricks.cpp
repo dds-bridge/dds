@@ -1000,7 +1000,7 @@ int QuickTricksPartnerHandTrump(
     if (ctx.thread_ptr()->rel[ranks].abs_rank[3][suit].hand == partner[hand])
     {
       tpos.win_ranks[depth][suit] |= bit_map_rank[
-        static_cast<int>(static_cast<unsigned char>(ctx.thread_ptr()->rel[ranks].abs_rank[3][suit].rank)) ];
+        static_cast<int>(ctx.thread_ptr()->rel[ranks].abs_rank[3][suit].rank) ];
 
       tpos.win_ranks[depth][commSuit] |= bit_map_rank[commRank];
 
@@ -1110,7 +1110,7 @@ int QuickTricksPartnerHandNT(
     if (ctx.thread_ptr()->rel[ranks].abs_rank[3][suit].hand == partner[hand])
     {
       tpos.win_ranks[depth][suit] |= bit_map_rank[
-        static_cast<int>(static_cast<unsigned char>(ctx.thread_ptr()->rel[ranks].abs_rank[3][suit].rank)) ];
+        static_cast<int>(ctx.thread_ptr()->rel[ranks].abs_rank[3][suit].rank) ];
       qt++;
       if (qt >= cutoff)
         return qt;
