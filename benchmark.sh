@@ -55,6 +55,12 @@ BRANCH_TMP=""
 BUILD_LOG=""
 
 cleanup() {
+  # Leave the alternate screen first so any restore/error messages and the shell
+  # prompt land on the normal screen.
+  if [[ "${ALT_SCREEN_ACTIVE:-0}" == "1" ]]; then
+    printf '\033[?1049l' >/dev/tty 2>/dev/null || true
+    ALT_SCREEN_ACTIVE=0
+  fi
   if [[ -n "$ORIG_BRANCH" ]]; then
     local cur
     cur="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null \
@@ -468,6 +474,7 @@ run_dtest() {
   # Wrap with `time -p` so we can capture wall-clock elapsed for this run. Its
   # "real/user/sys" lines go to the merged output but do not collide with the
   # dtest lines parse_dtest_output looks for.
+  #
   local out
   if ! out="$(/usr/bin/time -p "${cmd[@]}" 2>&1)"; then
     echo "error: dtest failed: ${cmd[*]}" >&2
@@ -487,8 +494,6 @@ run_dtest() {
   echo "$parsed $wall"
 }
 
-progress_lines=0
-TRANSIENT_PROGRESS=0
 show_run_lines=1
 
 print_run_table_header() {
@@ -496,31 +501,11 @@ print_run_table_header() {
     "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
   printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
     "------" "-------------" "-------" "--------" "--------" "----------" "------" "---"
-  if [[ "$TRANSIENT_PROGRESS" == "1" ]]; then
-    progress_lines=$((progress_lines + 2))
-  fi
 }
 
 print_run_row() {
   printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
     "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8"
-  if [[ "$TRANSIENT_PROGRESS" == "1" ]]; then
-    progress_lines=$((progress_lines + 1))
-  fi
-}
-
-clear_transient_progress() {
-  if [[ "$TRANSIENT_PROGRESS" != "1" || $progress_lines -le 0 ]]; then
-    return
-  fi
-  # Cursor rests on a blank line below the last row; erase it, then each table line.
-  # Do not move up after clearing the topmost line (would hit the header above).
-  printf '\033[2K'
-  local i
-  for (( i = 0; i < progress_lines; i++ )); do
-    printf '\033[1A\033[2K'
-  done
-  progress_lines=0
 }
 
 echo "DDS dtest benchmark"
@@ -572,16 +557,28 @@ if ((${#DTEST_EXTRA[@]} > 0)); then
 fi
 echo
 
+# The per-run rows are the script's live progress. With --details they are kept
+# in the final output. Without --details, on a tty, they are shown on the
+# alternate screen so the user sees progress, then discarded when we switch back
+# to the main screen just before the summary; off a tty they are suppressed
+# (summary only), since there is nothing to hide them.
 show_run_lines=0
-TRANSIENT_PROGRESS=0
-# Per-run rows are detail: show them only with --details. Without it they are
-# suppressed entirely (no transient progress table, which could otherwise scroll
-# off-screen and leave residue). The summary is always shown regardless.
-if [[ "$DETAILS" == "1" ]]; then
-  show_run_lines=1
+ALT_SCREEN=0
+if [[ "$DRY_RUN" != "1" ]]; then
+  if [[ "$DETAILS" == "1" ]]; then
+    show_run_lines=1
+  elif [[ -t 1 ]]; then
+    show_run_lines=1
+    ALT_SCREEN=1
+  fi
 fi
 
-if [[ "$DRY_RUN" != "1" && ( "$show_run_lines" == "1" || "$TRANSIENT_PROGRESS" == "1" ) ]]; then
+if [[ "$ALT_SCREEN" == "1" ]]; then
+  printf '\033[?1049h\033[H\033[2J' >/dev/tty   # enter alt screen, home, clear
+  ALT_SCREEN_ACTIVE=1
+fi
+
+if [[ "$DRY_RUN" != "1" && "$show_run_lines" == "1" ]]; then
   print_run_table_header
 fi
 
@@ -611,7 +608,7 @@ for solver in "${SOLVERS[@]}"; do
 
         read -r user sys avg ratio wall < <(run_dtest "$bin" "$solver" "$hands")
 
-        if [[ "$show_run_lines" == "1" || "$TRANSIENT_PROGRESS" == "1" ]]; then
+        if [[ "$show_run_lines" == "1" ]]; then
           print_run_row "$solver" "$file" "$ver" "$user" "$sys" "$avg" "$ratio" "$run_label"
         fi
 
@@ -623,7 +620,12 @@ for solver in "${SOLVERS[@]}"; do
   done
 done
 
-clear_transient_progress
+# Return to the normal screen, discarding the live dtest output, before the
+# summary so the final output is just the header and the summary.
+if [[ "$ALT_SCREEN" == "1" ]]; then
+  printf '\033[?1049l' >/dev/tty
+  ALT_SCREEN_ACTIVE=0
+fi
 
 if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   echo  # compare summary (two binaries)
