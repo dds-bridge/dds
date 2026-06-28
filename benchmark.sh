@@ -40,7 +40,7 @@ DETAILS="${DETAILS:-0}"
 EPSILON="${EPSILON:-0.5}"
 BUILD=0
 REVERSE=0
-COMPARE_BRANCH=""
+BRANCH_NAMES=()
 DTEST_EXTRA=()
 
 # Cleanup state (set later). The EXIT trap restores the original git branch if
@@ -48,6 +48,7 @@ DTEST_EXTRA=()
 RESULTS=""
 ORIG_BRANCH=""
 COMPARE_TMP=""
+BRANCH_TMP=""
 
 cleanup() {
   if [[ -n "$ORIG_BRANCH" ]]; then
@@ -60,6 +61,7 @@ cleanup() {
     fi
   fi
   [[ -n "$COMPARE_TMP" ]] && rm -f "$COMPARE_TMP"
+  [[ -n "$BRANCH_TMP" ]] && rm -f "$BRANCH_TMP"
   [[ -n "$RESULTS" ]] && rm -f "$RESULTS"
   return 0
 }
@@ -80,9 +82,11 @@ Options:
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
   --build             Build branch dtest only (bazel build //library/tests:dtest)
-  --branch NAME       Git branch to compare against: check it out, build dtest, save the
-                      binary as the compare binary, restore the current branch, rebuild,
-                      then run. Mutually exclusive with --compare. Requires a clean tree.
+  --branch NAME       Git branch to build and compare. Once: compare the current branch
+                      against NAME. Twice (--branch A --branch B): compare A vs B and
+                      ignore the current branch. Each branch is checked out, dtest is
+                      built and its binary saved; the original branch is then restored.
+                      Mutually exclusive with --compare. Requires a clean tree.
   --compare PATH      Optional second dtest binary (summary; transient progress on tty)
   --details           With --compare, keep per-run timing rows in final output
   --epsilon PCT       With --compare, treat timings within PCT% as equal (default: 0.5; env: EPSILON)
@@ -99,6 +103,7 @@ Examples:
   ./benchmark.sh -- -n 8
   ./benchmark.sh --repeats 3 -- -n 4 -r
   ./benchmark.sh --branch develop
+  ./benchmark.sh --branch develop --branch opus-two-percent
   ./benchmark.sh --branch develop --repeats 3 -- -n 8
   ./benchmark.sh --compare /path/to/dtest
   ./benchmark.sh --compare /path/to/dtest --details
@@ -122,7 +127,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --branch)
       shift
-      COMPARE_BRANCH="${1:?missing value for --branch}"
+      BRANCH_NAMES+=("${1:?missing value for --branch}")
       shift
       ;;
     --compare)
@@ -180,29 +185,54 @@ if ! [[ "$EPSILON" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
   exit 1
 fi
 
-if [[ "$REVERSE" == "1" && -z "${COMPARE:-}" && -z "$COMPARE_BRANCH" ]]; then
+num_branches=${#BRANCH_NAMES[@]}
+
+if [[ "$REVERSE" == "1" && -z "${COMPARE:-}" && "$num_branches" -eq 0 ]]; then
   echo "error: --reverse requires --compare or --branch" >&2
   exit 1
 fi
 
-if [[ -n "$COMPARE_BRANCH" && -n "${COMPARE:-}" ]]; then
+if [[ "$num_branches" -gt 0 && -n "${COMPARE:-}" ]]; then
   echo "error: --branch and --compare are mutually exclusive" >&2
   exit 1
 fi
 
-build_compare_from_branch() {
-  local dtest_rel="bazel-bin/library/tests/dtest"
+if [[ "$num_branches" -gt 2 ]]; then
+  echo "error: --branch may be given at most twice (got $num_branches)" >&2
+  exit 1
+fi
 
+# Check out $1, build dtest, and copy the binary to $2.
+build_branch_binary() {
+  local name="$1" dest="$2"
+  local dtest_rel="bazel-bin/library/tests/dtest"
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "DRY_RUN: git -C $ROOT checkout $name" >&2
+    echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
+    echo "DRY_RUN: cp -L $ROOT/$dtest_rel $dest" >&2
+    return 0
+  fi
+  echo "Building dtest from '$name'..." >&2
+  git -C "$ROOT" checkout "$name"
+  (cd "$ROOT" && bazel build //library/tests:dtest)
+  cp -L "$ROOT/$dtest_rel" "$dest"
+  chmod +x "$dest"
+}
+
+# With one --branch, compare the current branch against the named branch.
+# With two, compare the two named branches and ignore the current branch.
+setup_branches() {
   if ! git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "error: --branch requires a git work tree at $ROOT" >&2
     exit 1
   fi
-
-  if ! git -C "$ROOT" rev-parse --verify --quiet "$COMPARE_BRANCH" >/dev/null; then
-    echo "error: --branch: unknown git ref '$COMPARE_BRANCH'" >&2
-    exit 1
-  fi
-
+  local name
+  for name in "${BRANCH_NAMES[@]}"; do
+    if ! git -C "$ROOT" rev-parse --verify --quiet "$name" >/dev/null; then
+      echo "error: --branch: unknown git ref '$name'" >&2
+      exit 1
+    fi
+  done
   if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=no)" ]]; then
     echo "error: tracked changes present; commit or stash before using --branch" >&2
     exit 1
@@ -210,33 +240,39 @@ build_compare_from_branch() {
 
   ORIG_BRANCH="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null \
     || git -C "$ROOT" rev-parse HEAD)"
-  COMPARE_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-compare.XXXXXX")"
 
-  if [[ "$DRY_RUN" == "1" ]]; then
-    echo "DRY_RUN: git -C $ROOT checkout $COMPARE_BRANCH" >&2
-    echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
-    echo "DRY_RUN: cp -L $ROOT/$dtest_rel $COMPARE_TMP" >&2
-    echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
-    echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
+  if [[ "$num_branches" -eq 1 ]]; then
+    COMPARE_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-compare.XXXXXX")"
+    build_branch_binary "${BRANCH_NAMES[0]}" "$COMPARE_TMP"
+    # Restore the current branch and rebuild it as the branch binary.
+    if [[ "$DRY_RUN" == "1" ]]; then
+      echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
+      echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
+    else
+      echo "Restoring '$ORIG_BRANCH' and rebuilding..." >&2
+      git -C "$ROOT" checkout "$ORIG_BRANCH"
+      (cd "$ROOT" && bazel build //library/tests:dtest)
+    fi
     COMPARE="$COMPARE_TMP"
-    return 0
+  else
+    # Two branches: build both, ignore the current branch's binary.
+    BRANCH_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-branch.XXXXXX")"
+    COMPARE_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-compare.XXXXXX")"
+    build_branch_binary "${BRANCH_NAMES[0]}" "$BRANCH_TMP"
+    build_branch_binary "${BRANCH_NAMES[1]}" "$COMPARE_TMP"
+    if [[ "$DRY_RUN" == "1" ]]; then
+      echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
+    else
+      echo "Restoring '$ORIG_BRANCH'..." >&2
+      git -C "$ROOT" checkout "$ORIG_BRANCH"
+    fi
+    BRANCH="$BRANCH_TMP"
+    COMPARE="$COMPARE_TMP"
   fi
-
-  echo "Building compare binary from '$COMPARE_BRANCH' (current: '$ORIG_BRANCH')..." >&2
-  git -C "$ROOT" checkout "$COMPARE_BRANCH"
-  (cd "$ROOT" && bazel build //library/tests:dtest)
-  cp -L "$ROOT/$dtest_rel" "$COMPARE_TMP"
-  chmod +x "$COMPARE_TMP"
-
-  echo "Restoring '$ORIG_BRANCH' and rebuilding..." >&2
-  git -C "$ROOT" checkout "$ORIG_BRANCH"
-  (cd "$ROOT" && bazel build //library/tests:dtest)
-
-  COMPARE="$COMPARE_TMP"
 }
 
-if [[ -n "$COMPARE_BRANCH" ]]; then
-  build_compare_from_branch
+if [[ "$num_branches" -gt 0 ]]; then
+  setup_branches
   BUILD=0  # build already done as part of the branch workflow
 fi
 
@@ -416,10 +452,25 @@ clear_transient_progress() {
 
 echo "DDS dtest benchmark"
 echo "==================="
-printf "%-12s %s\n" "branch:" "$BRANCH"
+# Branch names backing each binary, when --branch was used. With one --branch
+# the branch binary is the current checkout; with two it is the first name.
+branch_branch_name=""
+compare_branch_name=""
+if [[ "$num_branches" -eq 1 ]]; then
+  compare_branch_name="${BRANCH_NAMES[0]}"
+elif [[ "$num_branches" -eq 2 ]]; then
+  branch_branch_name="${BRANCH_NAMES[0]}"
+  compare_branch_name="${BRANCH_NAMES[1]}"
+fi
+
+if [[ -n "$branch_branch_name" ]]; then
+  printf "%-12s %s\n" "branch:" "branch '$branch_branch_name' ($BRANCH)"
+else
+  printf "%-12s %s\n" "branch:" "$BRANCH"
+fi
 if [[ -n "${COMPARE:-}" ]]; then
-  if [[ -n "$COMPARE_BRANCH" ]]; then
-    printf "%-12s %s\n" "compare:" "branch '$COMPARE_BRANCH' ($COMPARE)"
+  if [[ -n "$compare_branch_name" ]]; then
+    printf "%-12s %s\n" "compare:" "branch '$compare_branch_name' ($COMPARE)"
   else
     printf "%-12s %s\n" "compare:" "$COMPARE"
   fi
@@ -506,15 +557,17 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
   # names when known: the current git branch for the branch binary, and the
   # --branch name for the compare binary. Truncated to the 12-char column.
   cmp_label="compare_avg"
-  if [[ -n "$COMPARE_BRANCH" ]]; then
-    cmp_label="${COMPARE_BRANCH:0:12}"
+  if [[ -n "$compare_branch_name" ]]; then
+    cmp_label="${compare_branch_name:0:12}"
   fi
   br_label="branch_avg"
-  if [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
+  if [[ -n "$branch_branch_name" ]]; then
+    br_label="${branch_branch_name:0:12}"
+  elif [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
     br_label="${git_branch:0:12}"
   fi
 
-  echo "Summary (branch vs compare, avg user ms)"
+  echo "Summary (avg user ms)"
   echo "=============================================================================="
   printf "%-6s %-13s %12s %12s %10s %-15s\n" \
     "solver" "file" "$cmp_label" "$br_label" "cmp/branch" "note"
