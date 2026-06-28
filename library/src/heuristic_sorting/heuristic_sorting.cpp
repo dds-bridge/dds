@@ -681,7 +681,7 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
     if (tpos.rank_in_suit[rho_lh][lead_suit] >
         (tpos.rank_in_suit[partner_lh][lead_suit] |
          bit_map_rank[ctx.lead0_rank]))
-      // Partner can win.
+      // RHO can win.
       suitAdd = (suitCount << 6) / 44;
     else
     {
