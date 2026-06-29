@@ -19,7 +19,7 @@
 #   REPEATS=3 ./benchmark.sh
 #
 # Environment:
-#   BRANCH     Path to branch dtest (default: bazel-bin in this repo)
+#   BRANCH     Path to branch dtest (default: bazel-bin under the current dir)
 #   COMPARE    Optional second dtest binary for comparison
 #              (or use --branch NAME to build the compare binary from a git branch)
 #   HANDS_DIR  Directory containing list*.txt files (default: ./hands)
@@ -31,7 +31,17 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Operate on the current working directory (the repo you invoke this from),
+# not the directory the script happens to live in.
+ROOT="$(pwd)"
+
+# Fail fast if ROOT is not the root of a DDS checkout: the git/bazel operations
+# and the default branch-binary and hands paths are all relative to it.
+if [[ ! -f "$ROOT/MODULE.bazel" || ! -f "$ROOT/library/tests/BUILD.bazel" ]]; then
+  echo "error: '$ROOT' is not a DDS checkout root" >&2
+  echo "       cd to the root of the dds repository before running benchmark.sh" >&2
+  exit 1
+fi
 BRANCH="${BRANCH:-$ROOT/bazel-bin/library/tests/dtest}"
 HANDS_DIR="${HANDS_DIR:-$ROOT/hands}"
 REPEATS="${REPEATS:-1}"
