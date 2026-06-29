@@ -676,49 +676,17 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
   unsigned short suitCount = tpos.length[curr_hand][suit];
   int suitAdd;
 
-  if (suit == trump)
+  if (lead_suit == trump) // We pitch
   {
-    // We trump a non-trump card.
-    
-    if (tpos.length[partner_lh][lead_suit] != 0)
-    {
-      // 3rd hand will follow.
-  if ((tpos.rank_in_suit[rho_lh][lead_suit] >
-       (tpos.rank_in_suit[partner_lh][lead_suit] |
-    bit_map_rank[ctx.lead0_rank])) ||
-          ((tpos.length[rho_lh][lead_suit] == 0) &&
-           (tpos.length[rho_lh][trump] != 0)))
-      {
-        // Partner can win with a card or by ruffing.
-        suitAdd = 60 + (suitCount << 6) / 44;
-      }
-      else
-      {
-        suitAdd = -2 + (suitCount << 6) / 36;
-        // Don't ruff from Kx.
-        if ((suitCount == 2) &&
-            (tpos.second_best[suit].hand == curr_hand))
-          suitAdd += -4;
-      }
-    }
-    else if ((tpos.length[rho_lh][lead_suit] == 0) &&
-             (tpos.rank_in_suit[rho_lh][trump] >
-              tpos.rank_in_suit[partner_lh][trump]))
-    {
-      // Partner can overruff 3rd hand.
-      suitAdd = 60 + (suitCount << 6) / 44;
-    }
-  else if ((tpos.length[partner_lh][trump] == 0) &&
-       (tpos.rank_in_suit[rho_lh][lead_suit] >
-        bit_map_rank[ctx.lead0_rank]))
-    {
-      // 3rd hand has no trumps, and partner has suit winner.
-      suitAdd = 60 + (suitCount << 6) / 44;
-    }
+    if (tpos.rank_in_suit[rho_lh][lead_suit] >
+        (tpos.rank_in_suit[partner_lh][lead_suit] |
+         bit_map_rank[ctx.lead0_rank]))
+      // RHO can win.
+      suitAdd = (suitCount << 6) / 44;
     else
     {
-      suitAdd = -2 + (suitCount << 6) / 36;
-      // Don't ruff from Kx.
+      // Don't pitch from Kx.
+      suitAdd = (suitCount << 6) / 36;
       if ((suitCount == 2) &&
           (tpos.second_best[suit].hand == curr_hand))
         suitAdd += -4;
