@@ -499,14 +499,14 @@ run_dtest() {
 show_run_lines=1
 
 print_run_table_header() {
-  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
+  printf "%-6s %-13s %-12s %8s %8s %10s %6s %s\n" \
     "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
-  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
-    "------" "-------------" "-------" "--------" "--------" "----------" "------" "---"
+  printf "%-6s %-13s %-12s %8s %8s %10s %6s %s\n" \
+    "------" "-------------" "------------" "--------" "--------" "----------" "------" "---"
 }
 
 print_run_row() {
-  printf "%-6s %-13s %7s %8s %8s %10s %6s %s\n" \
+  printf "%-6s %-13s %-12s %8s %8s %10s %6s %s\n" \
     "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8"
 }
 
@@ -524,6 +524,20 @@ elif [[ "$num_branches" -eq 1 ]]; then
 elif [[ "$num_branches" -eq 2 ]]; then
   branch_branch_name="${BRANCH_NAMES[0]}"
   compare_branch_name="${BRANCH_NAMES[1]}"
+fi
+
+# Labels for the per-run details "ver" column: prefer the backing branch name
+# when known (the current git branch for the branch binary, the --branch name
+# for the compare binary), falling back to the generic "branch"/"compare".
+branch_ver_label="branch"
+if [[ -n "$branch_branch_name" ]]; then
+  branch_ver_label="$branch_branch_name"
+elif [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
+  branch_ver_label="$git_branch"
+fi
+compare_ver_label="compare"
+if [[ -n "$compare_branch_name" ]]; then
+  compare_ver_label="$compare_branch_name"
 fi
 
 if [[ -n "$branch_branch_name" ]]; then
@@ -611,7 +625,13 @@ for solver in "${SOLVERS[@]}"; do
         read -r user sys avg ratio wall < <(run_dtest "$bin" "$solver" "$hands")
 
         if [[ "$show_run_lines" == "1" ]]; then
-          print_run_row "$solver" "$file" "$ver" "$user" "$sys" "$avg" "$ratio" "$run_label"
+          if [[ "$ver" == "compare" ]]; then
+            ver_disp="$compare_ver_label"
+          else
+            ver_disp="$branch_ver_label"
+          fi
+          print_run_row "$solver" "$file" "${ver_disp:0:12}" \
+            "$user" "$sys" "$avg" "$ratio" "$run_label"
         fi
 
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
