@@ -31,6 +31,21 @@ auto resolve_worker_count(
 }
 
 
+static auto is_permutation_of_range(
+  const std::vector<int>& order,
+  const int count) -> bool
+{
+  std::vector<char> seen(static_cast<unsigned>(count), 0);
+  for (const int v : order)
+  {
+    if (v < 0 || v >= count || seen[static_cast<unsigned>(v)])
+      return false;
+    seen[static_cast<unsigned>(v)] = 1;
+  }
+  return true;
+}
+
+
 auto parallel_all_boards_n(
   const int count,
   const int worker_cap,
@@ -43,9 +58,13 @@ auto parallel_all_boards_n(
   }
 
   // Map a dispatch slot to the board number to process. With an order, hand out
-  // boards in that sequence (e.g. hardest first); otherwise in index order.
+  // boards in that sequence (e.g. hardest first); otherwise in index order. The
+  // order is only honored when it is a valid permutation of [0, count); a
+  // malformed order falls back to index order to avoid invalid board indices.
   const bool use_order =
-    (order != nullptr && static_cast<int>(order->size()) == count);
+    (order != nullptr &&
+     static_cast<int>(order->size()) == count &&
+     is_permutation_of_range(*order, count));
   auto board_of = [&](const int slot) -> int {
     return use_order ? (*order)[static_cast<unsigned>(slot)] : slot;
   };
