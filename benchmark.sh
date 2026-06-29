@@ -298,8 +298,10 @@ setup_branches() {
       exit 1
     fi
   done
-  if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=no)" ]]; then
-    echo "error: tracked changes present; commit or stash before using --branch" >&2
+  # Untracked files can also block a checkout ("would be overwritten"), so treat
+  # any working tree change (tracked or untracked) as non-clean.
+  if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=normal)" ]]; then
+    echo "error: working tree not clean; commit, stash, or remove changes (tracked or untracked) before using --branch" >&2
     exit 1
   fi
 
