@@ -450,15 +450,25 @@ if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
           # TestTimer.cpp to accumulate microseconds rather than milliseconds. 
           u2 = s2[base] / c2[base]
           u1 = s1[base] / c1[base]
-          cmp_branch = u2 / u1
+          if (u1 > 0) {
+            cmp_branch = u2 / u1
+            sp = sprintf("%9.2fx", cmp_branch)
+          } else if (u2 > 0) {
+            cmp_branch = "inf"
+            sp = sprintf("%10s", "inf")
+          } else {
+            cmp_branch = ""
+            sp = sprintf("%10s", "n/a")
+          }
           if (within_epsilon(u1, u2)) {
             note = "equal"
+          } else if (u1 == 0) {
+            note = "branch faster"
           } else if (cmp_branch >= 1) {
             note = "branch faster"
           } else {
             note = "compare faster"
           }
-          sp = sprintf("%9.2fx", cmp_branch)
           printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
             solvers[si], filearr[fi], u2, u1, sp, note
         }
