@@ -478,7 +478,7 @@ run_dtest() {
   # dtest lines parse_dtest_output looks for.
   #
   local out
-  if ! out="$(/usr/bin/time -p "${cmd[@]}" 2>&1)"; then
+  if ! out="$(command time -p "${cmd[@]}" 2>&1)"; then
     echo "error: dtest failed: ${cmd[*]}" >&2
     echo "$out" >&2
     exit 1
