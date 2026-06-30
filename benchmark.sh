@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Benchmark dtest performance on one or two binaries.
+# Benchmark dtest performance across one or more binaries.
 #
 # Runs all combinations of solver (solve, calc) and hand file
 # (list100/1000/…/1), largest files first. Always prints a summary. Per-run
@@ -19,15 +19,14 @@
 #   REPEATS=3 ./benchmark.sh
 #
 # Environment:
-#   BRANCH     Path to branch dtest (default: bazel-bin under the current dir)
-#   COMPARE    Optional second dtest binary for comparison
-#              (or use --branch NAME to build the compare binary from a git branch)
+#   BRANCH     Path to the baseline dtest (default: bazel-bin under the current dir)
+#   COMPARE    Optional extra dtest binary to benchmark (like a trailing --compare)
 #   HANDS_DIR  Directory containing list*.txt files (default: ./hands)
 #   REPEATS    Runs per combination per binary (default: 1)
 #   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
 #   DRY_RUN    If 1, print commands only
 #   DETAILS    If 1, keep per-run rows and build output (default: 0, summary only)
-#   EPSILON    With --compare, max % diff to treat branch/compare as equal (default: 0.5)
+#   EPSILON    For a two-binary comparison, max % diff treated as equal (default: 0.5)
 
 set -euo pipefail
 
@@ -51,8 +50,11 @@ DETAILS="${DETAILS:-0}"
 EPSILON="${EPSILON:-0.5}"
 BUILD=0
 REVERSE=0
-BRANCH_NAMES=()
-COMPARE_GIVEN=0
+# Ordered list of binaries to benchmark, captured in command-line order. Each
+# --branch/--compare appends one spec; the first spec is the baseline.
+SPEC_KINDS=()   # parallel: "branch" (git ref) or "compare" (path to a binary)
+SPEC_VALS=()
+CLI_COMPARE_GIVEN=0
 REPEATS_GIVEN=0
 DTEST_EXTRA=()
 
@@ -60,8 +62,7 @@ DTEST_EXTRA=()
 # --branch switched away, and removes temp files.
 RESULTS=""
 ORIG_BRANCH=""
-COMPARE_TMP=""
-BRANCH_TMP=""
+TMP_BINS=()
 BUILD_LOG=""
 
 cleanup() {
@@ -80,8 +81,9 @@ cleanup() {
       git -C "$ROOT" checkout "$ORIG_BRANCH" >/dev/null 2>&1 || true
     fi
   fi
-  [[ -n "$COMPARE_TMP" ]] && rm -f "$COMPARE_TMP"
-  [[ -n "$BRANCH_TMP" ]] && rm -f "$BRANCH_TMP"
+  if ((${#TMP_BINS[@]} > 0)); then
+    rm -f "${TMP_BINS[@]}"
+  fi
   [[ -n "$BUILD_LOG" ]] && rm -f "$BUILD_LOG"
   [[ -n "$RESULTS" ]] && rm -f "$RESULTS"
   return 0
@@ -103,20 +105,23 @@ Options:
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
   --build             Build branch dtest only (bazel build //library/tests:dtest)
-  --branch NAME       Git branch to build and compare ("." means the current branch).
-                      Once: compare the current branch against NAME. Twice (--branch A
-                      --branch B): compare A vs B and ignore the current branch. With
-                      --compare PATH: build NAME as the branch binary and compare it
-                      against PATH, ignoring the current branch. Each branch is checked
-                      out, dtest is built and its binary saved; the original branch is
-                      then restored. Requires a clean tree.
-  --compare PATH      Second dtest binary (summary; transient progress on tty). May be
-                      combined with a single --branch NAME (NAME backs the branch binary).
+  --branch NAME       Git branch to build and benchmark ("." means the current branch).
+                      Repeatable. Each named branch is checked out, dtest is built and
+                      its binary saved, then the original branch is restored (requires a
+                      clean tree).
+  --compare PATH      Path to a prebuilt dtest binary to benchmark. Repeatable.
   --details           Keep per-run timing rows and build (git/bazel) output
-  --epsilon PCT       With --compare, treat timings within PCT% as equal (default: 0.5; env: EPSILON)
-  --reverse           With --compare, run compare before branch each repeat (default: branch first)
+  --epsilon PCT       For a two-binary comparison, treat timings within PCT% as equal
+                      (default: 0.5; env: EPSILON)
+  --reverse           Reverse the per-repeat dispatch order of the binaries
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
+
+--branch and --compare may be given any number of times and combined freely; the
+binaries are benchmarked in the order specified and the first is the baseline. With
+exactly one spec, the current checkout is also benchmarked as the baseline. With two
+binaries the summary adds a ratio and a "faster" note; with three or more it shows
+only the per-binary averages (no note).
 
 Environment:
   BRANCH, COMPARE, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, EPSILON
@@ -128,6 +133,7 @@ Examples:
   ./benchmark.sh --repeats 3 -- -n 4 -r
   ./benchmark.sh --branch develop
   ./benchmark.sh --branch develop --branch opus-two-percent
+  ./benchmark.sh --branch develop --branch opus-two-percent --branch fastest
   ./benchmark.sh --branch opus-two-percent --compare /path/to/dtest
   ./benchmark.sh --branch develop --repeats 3 -- -n 8
   ./benchmark.sh --compare /path/to/dtest
@@ -157,13 +163,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     --branch)
       shift
-      BRANCH_NAMES+=("${1:?missing value for --branch}")
+      SPEC_KINDS+=("branch")
+      SPEC_VALS+=("${1:?missing value for --branch}")
       shift
       ;;
     --compare)
       shift
-      COMPARE="${1:?missing value for --compare}"
-      COMPARE_GIVEN=1
+      SPEC_KINDS+=("compare")
+      SPEC_VALS+=("${1:?missing value for --compare}")
+      CLI_COMPARE_GIVEN=1
       shift
       ;;
     --max-deals|--max_deals|-max-deals|-max_deals)
@@ -216,25 +224,23 @@ if ! [[ "$EPSILON" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
   exit 1
 fi
 
-# A compare binary supplied via the COMPARE env var behaves like --compare PATH.
-if [[ "$COMPARE_GIVEN" == "0" && -n "${COMPARE:-}" ]]; then
-  COMPARE_GIVEN=1
+# A compare binary supplied via the COMPARE env var behaves like a trailing
+# --compare PATH, unless --compare was already given on the command line.
+if [[ "$CLI_COMPARE_GIVEN" == "0" && -n "${COMPARE:-}" ]]; then
+  SPEC_KINDS+=("compare")
+  SPEC_VALS+=("$COMPARE")
 fi
 
-num_branches=${#BRANCH_NAMES[@]}
-
-if [[ "$REVERSE" == "1" && -z "${COMPARE:-}" && "$num_branches" -eq 0 ]]; then
-  echo "error: --reverse requires --compare or --branch" >&2
-  exit 1
+nspecs=${#SPEC_KINDS[@]}
+nbranch=0
+if (( nspecs > 0 )); then
+  for k in "${SPEC_KINDS[@]}"; do
+    [[ "$k" == "branch" ]] && nbranch=$((nbranch + 1))
+  done
 fi
 
-if [[ "$num_branches" -gt 0 && "$COMPARE_GIVEN" == "1" && "$num_branches" -ne 1 ]]; then
-  echo "error: --compare accepts exactly one --branch (got $num_branches)" >&2
-  exit 1
-fi
-
-if [[ "$num_branches" -gt 2 ]]; then
-  echo "error: --branch may be given at most twice (got $num_branches)" >&2
+if [[ "$REVERSE" == "1" && "$nspecs" -eq 0 ]]; then
+  echo "error: --reverse requires at least one --branch or --compare" >&2
   exit 1
 fi
 
@@ -278,33 +284,44 @@ build_branch_binary() {
   chmod +x "$dest"
 }
 
-# Branch-mode binary selection:
-#   --branch NAME                : branch = current checkout, compare = build(NAME)
-#   --branch NAME --compare PATH : branch = build(NAME), compare = PATH
-#                                  (the current branch's dtest is ignored)
-#   --branch A --branch B        : branch = build(A), compare = build(B)
-#                                  (the current branch's dtest is ignored)
-setup_branches() {
+# Display label for a compare binary given by path: its basename, or the raw
+# path if basename is somehow empty.
+label_for_path() {
+  local b
+  b="$(basename -- "$1")"
+  [[ -n "$b" ]] && printf '%s' "$b" || printf '%s' "$1"
+}
+
+# Label for the current checkout's binary: the git branch, else "branch".
+current_label() {
+  if [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
+    printf '%s' "$git_branch"
+  else
+    printf 'branch'
+  fi
+}
+
+# Validate the git work tree and branch refs before any checkout. Only called
+# when at least one --branch spec is present.
+git_prep_for_branches() {
   if ! git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "error: --branch requires a git work tree at $ROOT" >&2
     exit 1
   fi
-
   ORIG_BRANCH="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null \
     || git -C "$ROOT" rev-parse HEAD)"
 
-  # "." is shorthand for the current branch.
   local i
-  for i in "${!BRANCH_NAMES[@]}"; do
-    if [[ "${BRANCH_NAMES[$i]}" == "." ]]; then
-      BRANCH_NAMES[$i]="$ORIG_BRANCH"
+  # "." is shorthand for the current branch.
+  for i in "${!SPEC_VALS[@]}"; do
+    if [[ "${SPEC_KINDS[$i]}" == "branch" && "${SPEC_VALS[$i]}" == "." ]]; then
+      SPEC_VALS[$i]="$ORIG_BRANCH"
     fi
   done
-
-  local name
-  for name in "${BRANCH_NAMES[@]}"; do
-    if ! git -C "$ROOT" rev-parse --verify --quiet "$name" >/dev/null; then
-      echo "error: --branch: unknown git ref '$name'" >&2
+  for i in "${!SPEC_VALS[@]}"; do
+    if [[ "${SPEC_KINDS[$i]}" == "branch" ]] \
+       && ! git -C "$ROOT" rev-parse --verify --quiet "${SPEC_VALS[$i]}" >/dev/null; then
+      echo "error: --branch: unknown git ref '${SPEC_VALS[$i]}'" >&2
       exit 1
     fi
   done
@@ -314,50 +331,103 @@ setup_branches() {
     echo "error: working tree not clean; commit, stash, or remove changes (tracked or untracked) before using --branch" >&2
     exit 1
   fi
+}
 
-  if [[ "$COMPARE_GIVEN" == "1" ]]; then
-    # --branch NAME --compare PATH: build NAME as the branch binary and keep the
-    # user-supplied compare path. The current branch's dtest is not used.
-    BRANCH_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-branch.XXXXXX")"
-    build_branch_binary "${BRANCH_NAMES[0]}" "$BRANCH_TMP"
-    if [[ "$DRY_RUN" == "1" ]]; then
-      echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
-    else
-      echo "Restoring '$ORIG_BRANCH'..." >&2
-      run_build git -C "$ROOT" checkout "$ORIG_BRANCH"
-    fi
-    BRANCH="$BRANCH_TMP"
-  elif [[ "$num_branches" -eq 1 ]]; then
-    COMPARE_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-compare.XXXXXX")"
-    build_branch_binary "${BRANCH_NAMES[0]}" "$COMPARE_TMP"
-    # Restore the current branch and rebuild it as the branch binary.
-    if [[ "$DRY_RUN" == "1" ]]; then
-      echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
+# Restore the original branch. Pass 1 to also rebuild dtest (needed only when
+# the current checkout's bazel-bin binary is used as a baseline).
+restore_branch() {
+  local rebuild="$1"
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
+    [[ "$rebuild" == "1" ]] && \
       echo "DRY_RUN: (cd $ROOT && bazel build //library/tests:dtest)" >&2
-    else
-      echo "Restoring '$ORIG_BRANCH' and rebuilding..." >&2
-      run_build checkout_and_build "$ORIG_BRANCH"
-    fi
-    COMPARE="$COMPARE_TMP"
+    return 0
+  fi
+  if [[ "$rebuild" == "1" ]]; then
+    echo "Restoring '$ORIG_BRANCH' and rebuilding..." >&2
+    run_build checkout_and_build "$ORIG_BRANCH"
   else
-    # Two branches: build both, ignore the current branch's binary.
-    BRANCH_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-branch.XXXXXX")"
-    COMPARE_TMP="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-compare.XXXXXX")"
-    build_branch_binary "${BRANCH_NAMES[0]}" "$BRANCH_TMP"
-    build_branch_binary "${BRANCH_NAMES[1]}" "$COMPARE_TMP"
-    if [[ "$DRY_RUN" == "1" ]]; then
-      echo "DRY_RUN: git -C $ROOT checkout $ORIG_BRANCH" >&2
-    else
-      echo "Restoring '$ORIG_BRANCH'..." >&2
-      run_build git -C "$ROOT" checkout "$ORIG_BRANCH"
-    fi
-    BRANCH="$BRANCH_TMP"
-    COMPARE="$COMPARE_TMP"
+    echo "Restoring '$ORIG_BRANCH'..." >&2
+    run_build git -C "$ROOT" checkout "$ORIG_BRANCH"
   fi
 }
 
-if [[ "$num_branches" -gt 0 ]]; then
-  setup_branches
+new_tmp_bin() {
+  local t
+  t="$(mktemp "${TMPDIR:-/tmp}/dds-dtest-bin.XXXXXX")"
+  TMP_BINS+=("$t")
+  printf '%s' "$t"
+}
+
+# Build the ordered list of binaries to benchmark into BIN_LABELS / BIN_PATHS.
+# Binary-set selection:
+#   (no spec)                    : one binary, the current checkout
+#   one spec                     : current checkout (baseline) + that spec
+#   two or more specs            : exactly those specs in order; current ignored
+# In all cases the first binary is the baseline. --branch specs are built from
+# git; --compare specs are existing binary paths.
+build_binaries() {
+  BIN_LABELS=()
+  BIN_PATHS=()
+
+  if (( nspecs == 0 )); then
+    BIN_PATHS=("$BRANCH")
+    BIN_LABELS=("$(current_label)")
+    return 0
+  fi
+
+  if (( nbranch > 0 )); then
+    git_prep_for_branches
+  fi
+
+  local kind val t
+  if (( nspecs == 1 )); then
+    # Current checkout is the baseline; the single spec is the second binary.
+    BIN_PATHS=("$BRANCH")
+    BIN_LABELS=("$(current_label)")
+    kind="${SPEC_KINDS[0]}"
+    val="${SPEC_VALS[0]}"
+    if [[ "$kind" == "branch" ]]; then
+      t="$(new_tmp_bin)"
+      build_branch_binary "$val" "$t"
+      restore_branch 1   # rebuild current as the baseline binary
+      BIN_PATHS+=("$t")
+      BIN_LABELS+=("$val")
+    else
+      BIN_PATHS+=("$val")
+      BIN_LABELS+=("$(label_for_path "$val")")
+    fi
+    return 0
+  fi
+
+  # Two or more specs: benchmark exactly those, in order; ignore the checkout.
+  local i
+  for i in "${!SPEC_KINDS[@]}"; do
+    kind="${SPEC_KINDS[$i]}"
+    val="${SPEC_VALS[$i]}"
+    if [[ "$kind" == "branch" ]]; then
+      t="$(new_tmp_bin)"
+      build_branch_binary "$val" "$t"
+      BIN_PATHS+=("$t")
+      BIN_LABELS+=("$val")
+    else
+      BIN_PATHS+=("$val")
+      BIN_LABELS+=("$(label_for_path "$val")")
+    fi
+  done
+  if (( nbranch > 0 )); then
+    restore_branch 0
+  fi
+}
+
+git_branch="unknown"
+if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git_branch="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+fi
+
+build_binaries
+num_bins=${#BIN_PATHS[@]}
+if (( nbranch > 0 )); then
   BUILD=0  # build already done as part of the branch workflow
 fi
 
@@ -411,27 +481,29 @@ if [[ "$BUILD" == "1" ]]; then
 fi
 
 if [[ "$DRY_RUN" != "1" ]]; then
-  if [[ ! -x "$BRANCH" ]]; then
-    echo "error: branch binary not found or not executable: $BRANCH" >&2
-    echo "hint: bazel build //library/tests:dtest" >&2
-    exit 1
-  fi
-
-  if [[ -n "${COMPARE:-}" && ! -x "$COMPARE" ]]; then
-    echo "error: compare binary not found or not executable: $COMPARE" >&2
-    exit 1
-  fi
+  for i in "${!BIN_PATHS[@]}"; do
+    if [[ ! -x "${BIN_PATHS[$i]}" ]]; then
+      echo "error: binary not found or not executable: ${BIN_PATHS[$i]} (${BIN_LABELS[$i]})" >&2
+      (( i == 0 )) && echo "hint: bazel build //library/tests:dtest" >&2
+      exit 1
+    fi
+  done
 fi
 
-BIN_PAIRS=("branch:$BRANCH")
-if [[ -n "${COMPARE:-}" ]]; then
-  if [[ "$REVERSE" == "1" ]]; then
-    BIN_PAIRS=("compare:$COMPARE" "branch:$BRANCH")
-  else
-    BIN_PAIRS=("branch:$BRANCH" "compare:$COMPARE")
-  fi
+# Dispatch order of the binaries within each (solver, file, repeat). The
+# baseline (index 0) leads by default; --reverse flips it. The summary keys on
+# the stored binary index, so order never affects the reported results.
+RUN_ORDER=()
+for (( i = 0; i < num_bins; i++ )); do
+  RUN_ORDER+=("$i")
+done
+if [[ "$REVERSE" == "1" ]]; then
+  rev=()
+  for (( i = num_bins - 1; i >= 0; i-- )); do
+    rev+=("${RUN_ORDER[$i]}")
+  done
+  RUN_ORDER=("${rev[@]}")
 fi
-num_bins=${#BIN_PAIRS[@]}
 
 for f in "${FILES[@]}"; do
   if [[ ! -f "$HANDS_DIR/$f" ]]; then
@@ -439,11 +511,6 @@ for f in "${FILES[@]}"; do
     exit 1
   fi
 done
-
-git_branch="unknown"
-if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git_branch="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
-fi
 
 RESULTS="$(mktemp "${TMPDIR:-/tmp}/dds-benchmark.XXXXXX")"
 # Removal handled by the cleanup() EXIT trap installed near the top.
@@ -522,56 +589,28 @@ print_run_row() {
 
 echo "DDS dtest benchmark"
 echo "==================="
-# Branch names backing each binary, when --branch was used. With one --branch
-# the branch binary is the current checkout; with two it is the first name.
-branch_branch_name=""
-compare_branch_name=""
-if [[ "$num_branches" -eq 1 && "$COMPARE_GIVEN" == "1" ]]; then
-  # --branch NAME --compare PATH: NAME backs the branch binary; compare is a path.
-  branch_branch_name="${BRANCH_NAMES[0]}"
-elif [[ "$num_branches" -eq 1 ]]; then
-  compare_branch_name="${BRANCH_NAMES[0]}"
-elif [[ "$num_branches" -eq 2 ]]; then
-  branch_branch_name="${BRANCH_NAMES[0]}"
-  compare_branch_name="${BRANCH_NAMES[1]}"
-fi
-
-# Labels for the per-run details "ver" column: prefer the backing branch name
-# when known (the current git branch for the branch binary, the --branch name
-# for the compare binary), falling back to the generic "branch"/"compare".
-branch_ver_label="branch"
-if [[ -n "$branch_branch_name" ]]; then
-  branch_ver_label="$branch_branch_name"
-elif [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
-  branch_ver_label="$git_branch"
-fi
-compare_ver_label="compare"
-if [[ -n "$compare_branch_name" ]]; then
-  compare_ver_label="$compare_branch_name"
-fi
-
-if [[ -n "$branch_branch_name" ]]; then
-  printf "%-12s %s\n" "branch:" "branch '$branch_branch_name' ($BRANCH)"
-else
-  printf "%-12s %s\n" "branch:" "$BRANCH"
-fi
-if [[ -n "${COMPARE:-}" ]]; then
-  if [[ -n "$compare_branch_name" ]]; then
-    printf "%-12s %s\n" "compare:" "branch '$compare_branch_name' ($COMPARE)"
-  else
-    printf "%-12s %s\n" "compare:" "$COMPARE"
-  fi
+# One line per binary, baseline first. The label is the branch name (--branch),
+# the binary's basename (--compare), or the current git branch (checkout).
+for i in "${!BIN_PATHS[@]}"; do
+  tag="binary $((i + 1)):"
+  (( i == 0 )) && tag="baseline:"
+  printf "%-12s %s\n" "$tag" "${BIN_LABELS[$i]}  (${BIN_PATHS[$i]})"
+done
+if (( num_bins >= 2 )); then
   if [[ "$DETAILS" == "1" ]]; then
     printf "%-12s %s\n" "details:" "on (per-run rows + build output)"
   else
     printf "%-12s %s\n" "details:" "off (summary only)"
   fi
-  if [[ "$REVERSE" == "1" ]]; then
-    printf "%-12s %s\n" "run order:" "interleaved compare, branch"
-  else
-    printf "%-12s %s\n" "run order:" "interleaved branch, compare"
+  order_str=""
+  for idx in "${RUN_ORDER[@]}"; do
+    order_str+="${order_str:+, }${BIN_LABELS[$idx]}"
+  done
+  printf "%-12s %s\n" "run order:" "interleaved $order_str"
+  # The note column (and thus epsilon) only applies to a two-binary comparison.
+  if (( num_bins == 2 )); then
+    printf "%-12s %s\n" "epsilon:" "${EPSILON}%"
   fi
-  printf "%-12s %s\n" "epsilon:" "${EPSILON}%"
 fi
 printf "%-12s %s\n" "hands dir:" "$HANDS_DIR"
 printf "%-12s %s\n" "max_deals:" "$MAX_DEALS"
@@ -622,9 +661,8 @@ for solver in "${SOLVERS[@]}"; do
         run_label="1/1"
       fi
 
-      for pair in "${BIN_PAIRS[@]}"; do
-        ver="${pair%%:*}"
-        bin="${pair#*:}"
+      for idx in "${RUN_ORDER[@]}"; do
+        bin="${BIN_PATHS[$idx]}"
         run_no=$((run_no + 1))
 
         if [[ "$DRY_RUN" == "1" ]]; then
@@ -635,17 +673,13 @@ for solver in "${SOLVERS[@]}"; do
         read -r user sys avg ratio wall < <(run_dtest "$bin" "$solver" "$hands")
 
         if [[ "$show_run_lines" == "1" ]]; then
-          if [[ "$ver" == "compare" ]]; then
-            ver_disp="$compare_ver_label"
-          else
-            ver_disp="$branch_ver_label"
-          fi
-          print_run_row "$solver" "$file" "${ver_disp:0:12}" \
+          print_run_row "$solver" "$file" "${BIN_LABELS[$idx]:0:12}" \
             "$user" "$sys" "$avg" "$ratio" "$run_label"
         fi
 
+        # Column 3 is the binary index; the summary keys on it.
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-          "$solver" "$file" "$ver" "$rep" "$user" "$sys" "$avg" "$ratio" "$wall" \
+          "$solver" "$file" "$idx" "$rep" "$user" "$sys" "$avg" "$ratio" "$wall" \
           >>"$RESULTS"
       done
     done
@@ -659,139 +693,88 @@ if [[ "$ALT_SCREEN" == "1" ]]; then
   ALT_SCREEN_ACTIVE=0
 fi
 
-if [[ -n "${COMPARE:-}" && "$DRY_RUN" != "1" ]]; then
-  echo  # compare summary (two binaries)
-  # Column headers default to the generic labels, but show the actual branch
-  # names when known: the current git branch for the branch binary, and the
-  # --branch name for the compare binary. Truncated to the 12-char column.
-  cmp_label="compare_avg"
-  if [[ -n "$compare_branch_name" ]]; then
-    cmp_label="${compare_branch_name:0:12}"
-  fi
-  br_label="branch_avg"
-  if [[ -n "$branch_branch_name" ]]; then
-    br_label="${branch_branch_name:0:12}"
-  elif [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
-    br_label="${git_branch:0:12}"
-  fi
-
-  # Names used in the "note" column ("<name> faster"); fall back to the generic
-  # "branch"/"compare" when no branch name is known.
-  note_branch="branch"
-  if [[ -n "$branch_branch_name" ]]; then
-    note_branch="$branch_branch_name"
-  elif [[ -n "$compare_branch_name" && -n "$git_branch" && "$git_branch" != "unknown" ]]; then
-    note_branch="$git_branch"
-  fi
-  note_compare="compare"
-  if [[ -n "$compare_branch_name" ]]; then
-    note_compare="$compare_branch_name"
-  fi
-
+if [[ "$DRY_RUN" != "1" ]]; then
+  echo
   echo "Summary (avg user ms)"
   echo "=============================================================================="
-  printf "%-6s %-13s %12s %12s %10s %-15s\n" \
-    "solver" "file" "$cmp_label" "$br_label" "cmp/branch" "note"
-  printf "%-6s %-13s %12s %12s %10s %-15s\n" \
-    "------" "-------------" "------------" "------------" "----------" "---------------"
 
-  awk -F'\t' -v files="${FILES[*]}" -v epsilon_pct="$EPSILON" \
-      -v note_branch="$note_branch" -v note_compare="$note_compare" '
-    function within_epsilon(a, b,    eps, hi, lo) {
-      eps = epsilon_pct / 100
+  # One avg column per binary (baseline first). A ratio + note column are added
+  # only for a two-binary comparison; with three or more binaries the note has
+  # no single meaning and is dropped, leaving just the per-binary averages.
+  # Labels go through the environment (ENVIRON) rather than -v: BSD awk rejects
+  # newlines in a -v value, and labels are newline-joined.
+  labels_joined="$(printf '%s\n' "${BIN_LABELS[@]}")"
+
+  LABELS="$labels_joined" awk -F'\t' -v nb="$num_bins" \
+      -v files="${FILES[*]}" -v eps="$EPSILON" '
+    function within_epsilon(a, b,    e, hi, lo) {
+      e = eps / 100
       if (a > b) { hi = a; lo = b } else { hi = b; lo = a }
-      return (hi <= 0 || (hi - lo) / hi <= eps)
+      return (hi <= 0 || (hi - lo) / hi <= e)
     }
+    function L(b)  { return substr(lab[b + 1], 1, 12) }   # truncated, for columns
+    function Lf(b) { return lab[b + 1] }                  # full, for notes
+    function pdash(   b) {
+      printf "%-6s %-13s", "------", "-------------"
+      for (b = 0; b < nb; b++) printf " %12s", "------------"
+      if (nb == 2) printf " %10s %-15s", "----------", "---------------"
+      printf "\n"
+    }
+    BEGIN { split(ENVIRON["LABELS"], lab, "\n") }   # lab[1..nb]; trailing empty ignored
     {
       base = $1 SUBSEP $2
-      if ($3 == "compare") {
-        s2[base] += $7
-        c2[base]++
-        if ($9 != "NA") tw2 += $9   # total wall-clock elapsed, compare
-      } else if ($3 == "branch") {
-        s1[base] += $7
-        c1[base]++
-        if ($9 != "NA") tw1 += $9   # total wall-clock elapsed, branch
-      }
+      b = $3 + 0
+      s[base, b] += $7
+      c[base, b]++
+      if ($9 != "NA") tw[b] += $9   # total wall-clock elapsed, per binary
     }
     END {
-      split("solve calc", solvers, " ")
-      nfiles = split(files, filearr, " ")
+      printf "%-6s %-13s", "solver", "file"
+      for (b = 0; b < nb; b++) printf " %12s", L(b)
+      if (nb == 2) printf " %10s %-15s", "ratio", "note"
+      printf "\n"
+      pdash()
 
+      split("solve calc", solvers, " ")
+      nfiles = split(files, farr, " ")
       for (si = 1; si <= 2; si++) {
         for (fi = 1; fi <= nfiles; fi++) {
-          base = solvers[si] SUBSEP filearr[fi]
-          if (!(base in c2) || !(base in c1)) continue
-          # Every member of s1, c1, s2, and c2 should be positive.
-          # If not, it will be due to rounding to zero. To fix, update
-          # TestTimer.cpp to accumulate microseconds rather than milliseconds. 
-          u2 = s2[base] / c2[base]
-          u1 = s1[base] / c1[base]
-          cmp_branch = u2 / u1
-          if (within_epsilon(u1, u2)) {
-            note = "equal"
-          } else if (cmp_branch >= 1) {
-            note = note_branch " faster"
-          } else {
-            note = note_compare " faster"
+          base = solvers[si] SUBSEP farr[fi]
+          ok = 1
+          for (b = 0; b < nb; b++) if (!((base, b) in c)) ok = 0
+          if (!ok) continue
+          # Every average should be positive; a zero is rounding and means
+          # TestTimer.cpp should accumulate microseconds, not milliseconds.
+          printf "%-6s %-13s", solvers[si], farr[fi]
+          for (b = 0; b < nb; b++) { u[b] = s[base, b] / c[base, b]; printf " %12.2f", u[b] }
+          if (nb == 2) {
+            r = u[1] / u[0]
+            if (within_epsilon(u[0], u[1])) note = "equal"
+            else if (r >= 1) note = Lf(0) " faster"
+            else note = Lf(1) " faster"
+            printf " %10s %-15s", sprintf("%.2fx", r), note
           }
-          sp = sprintf("%9.2fx", cmp_branch)
-          printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
-            solvers[si], filearr[fi], u2, u1, sp, note
+          printf "\n"
         }
       }
 
+      pdash()
       # Total elapsed (wall-clock seconds) summed per binary across all runs.
-      printf "%-6s %-13s %12s %12s %10s %-15s\n",
-        "------", "-------------", "------------", "------------", "----------", "---------------"
-      if (tw2 > 0 && tw1 > 0) {
-        tnote = ""
-        if (within_epsilon(tw1, tw2)) tnote = "equal"
-        else if (tw2 / tw1 >= 1) tnote = note_branch " faster"
-        else tnote = note_compare " faster"
-        tsp = sprintf("%9.2fx", tw2 / tw1)
-        printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
-          "TOTAL", "elapsed (s)", tw2, tw1, tsp, tnote
-      } else {
-        printf "%-6s %-13s %12.2f %12.2f %10s %-15s\n",
-          "TOTAL", "elapsed (s)", tw2, tw1, "", ""
-      }
-    }
-  ' "$RESULTS"
-elif [[ "$DRY_RUN" != "1" ]]; then
-  echo  # single-binary summary (no --compare)
-  br_label="branch_avg"
-  if [[ -n "$git_branch" && "$git_branch" != "unknown" ]]; then
-    br_label="${git_branch:0:12}"
-  fi
-
-  echo "Summary (avg user ms)"
-  echo "============================================================"
-  printf "%-6s %-13s %12s %6s\n" "solver" "file" "$br_label" "runs"
-  printf "%-6s %-13s %12s %6s\n" \
-    "------" "-------------" "------------" "------"
-
-  awk -F'\t' -v files="${FILES[*]}" '
-    $3 == "branch" {
-      base = $1 SUBSEP $2
-      s[base] += $7
-      c[base]++
-      if ($9 != "NA") tw += $9   # total wall-clock elapsed
-    }
-    END {
-      split("solve calc", solvers, " ")
-      nfiles = split(files, filearr, " ")
-      for (si = 1; si <= 2; si++) {
-        for (fi = 1; fi <= nfiles; fi++) {
-          base = solvers[si] SUBSEP filearr[fi]
-          if (!(base in c)) continue
-          printf "%-6s %-13s %12.2f %6d\n",
-            solvers[si], filearr[fi], s[base] / c[base], c[base]
+      printf "%-6s %-13s", "TOTAL", "elapsed (s)"
+      allpos = 1
+      for (b = 0; b < nb; b++) { printf " %12.2f", tw[b] + 0; if (!(tw[b] > 0)) allpos = 0 }
+      if (nb == 2) {
+        if (allpos) {
+          r = tw[1] / tw[0]
+          if (within_epsilon(tw[0], tw[1])) tnote = "equal"
+          else if (r >= 1) tnote = Lf(0) " faster"
+          else tnote = Lf(1) " faster"
+          printf " %10s %-15s", sprintf("%.2fx", r), tnote
+        } else {
+          printf " %10s %-15s", "", ""
         }
       }
-      printf "%-6s %-13s %12s %6s\n",
-        "------", "-------------", "------------", "------"
-      printf "%-6s %-13s %12.2f %6s\n", "TOTAL", "elapsed (s)", tw, ""
+      printf "\n"
     }
   ' "$RESULTS"
 fi
