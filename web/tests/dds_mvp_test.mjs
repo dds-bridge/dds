@@ -1,10 +1,10 @@
 /**
  * Unit tests for web/dds_mvp.js (Node built-in test runner).
- * 
+ *
  * Run with:
  *    bazel test //web:dds_mvp_js_test
- * or python -m unittest web.tests.test_dds_mvp_js
- * or node --test web/tests/dds_mvp_test.mjs
+ * or: python -m unittest web.tests.test_dds_mvp_js
+ * or: node --test web/tests/dds_mvp_test.mjs
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -50,7 +50,9 @@ function createMockDocument(initialValues = {}) {
             id,
             value: initialValues[id] ?? "",
             innerHTML: "",
+            disabled: false,
             focus() {},
+            addEventListener() {},
         };
         store.set(id, element);
         return element;
@@ -63,6 +65,7 @@ function createMockDocument(initialValues = {}) {
     }
     makeElement("valid-pips");
     makeElement("result");
+    makeElement("fill-fourth-hand");
 
     const rows = [];
     for (let row = 0; row < 5; row++) {
@@ -107,6 +110,27 @@ function loadDdsMvp(document) {
     const context = createContext(sandbox);
     runInContext(code, context, { filename: "dds_mvp.js" });
     return context;
+}
+
+function threeHandsPartScoreDocument() {
+    return createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "",
+        west_hearts: "",
+        west_diamonds: "",
+        west_clubs: "",
+    });
 }
 
 test("handsToPbn formats part-score deal", () => {
@@ -254,4 +278,54 @@ test("fillFormWithEveryoneMakes3nTestData populates inputs", () => {
     assert.equal(document.element("north_hearts").value, "A8765432");
     assert.equal(document.element("west_spades").value, "");
     assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+});
+
+test("fourthHandFillState accepts three full hands and one empty", () => {
+    const document = threeHandsPartScoreDocument();
+    const ctx = loadDdsMvp(document);
+    const state = ctx.fourthHandFillState(ctx.collectHands());
+    assert.equal(state.canFill, true);
+    assert.equal(state.emptyHand, "W");
+});
+
+test("fourthHandFillState rejects partial fourth hand", () => {
+    const document = threeHandsPartScoreDocument();
+    document.setValue("west_spades", "K");
+    const ctx = loadDdsMvp(document);
+    assert.equal(ctx.fourthHandFillState(ctx.collectHands()).canFill, false);
+});
+
+test("fourthHandFillState rejects duplicate cards", () => {
+    const document = threeHandsPartScoreDocument();
+    document.setValue("north_spades", "AQ85A");
+    document.setValue("north_hearts", "AK975");
+    const ctx = loadDdsMvp(document);
+    assert.equal(ctx.fourthHandFillState(ctx.collectHands()).canFill, false);
+});
+
+test("fillFourthHand completes the part-score west hand", () => {
+    const document = threeHandsPartScoreDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFourthHand();
+    assert.equal(document.element("west_spades").value, "K643");
+    assert.equal(document.element("west_hearts").value, "T8");
+    assert.equal(document.element("west_diamonds").value, "AK742");
+    assert.equal(document.element("west_clubs").value, "T5");
+    assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+});
+
+test("updateFourthHandFill auto-fills and enables the button", () => {
+    const document = threeHandsPartScoreDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.updateFourthHandFill();
+    assert.equal(document.element("fill-fourth-hand").disabled, false);
+    assert.equal(document.element("west_spades").value, "K643");
+    assert.equal(document.element("west_clubs").value, "T5");
+});
+
+test("updateFourthHandFill keeps the button disabled without preconditions", () => {
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsMvp(document);
+    ctx.updateFourthHandFill();
+    assert.equal(document.element("fill-fourth-hand").disabled, true);
 });
