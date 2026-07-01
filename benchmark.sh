@@ -118,8 +118,8 @@ Options:
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
 --branch and --compare may be given any number of times and combined freely; the
-binaries are benchmarked in the order specified and the first is the baseline. With
-exactly one spec, the current checkout is also benchmarked as the baseline. With two
+binaries are benchmarked in the order specified and the first is the baseline. The
+current checkout is benchmarked by default only when neither flag is given. With two
 binaries the summary adds a ratio and a "faster" note; with three or more it shows
 only the per-binary averages (no note).
 
@@ -239,8 +239,8 @@ if (( nspecs > 0 )); then
   done
 fi
 
-if [[ "$REVERSE" == "1" && "$nspecs" -eq 0 ]]; then
-  echo "error: --reverse requires at least one --branch or --compare" >&2
+if [[ "$REVERSE" == "1" && "$nspecs" -lt 2 ]]; then
+  echo "error: --reverse requires at least two binaries (two or more --branch/--compare)" >&2
   exit 1
 fi
 
@@ -361,11 +361,10 @@ new_tmp_bin() {
 
 # Build the ordered list of binaries to benchmark into BIN_LABELS / BIN_PATHS.
 # Binary-set selection:
-#   (no spec)                    : one binary, the current checkout
-#   one spec                     : current checkout (baseline) + that spec
-#   two or more specs            : exactly those specs in order; current ignored
-# In all cases the first binary is the baseline. --branch specs are built from
-# git; --compare specs are existing binary paths.
+#   (no spec)          : one binary, the current checkout (the default)
+#   one or more specs  : exactly those specs, in order; the checkout is ignored
+# The first binary is the baseline. --branch specs are built from git; --compare
+# specs are existing binary paths.
 build_binaries() {
   BIN_LABELS=()
   BIN_PATHS=()
@@ -380,28 +379,9 @@ build_binaries() {
     git_prep_for_branches
   fi
 
-  local kind val t
-  if (( nspecs == 1 )); then
-    # Current checkout is the baseline; the single spec is the second binary.
-    BIN_PATHS=("$BRANCH")
-    BIN_LABELS=("$(current_label)")
-    kind="${SPEC_KINDS[0]}"
-    val="${SPEC_VALS[0]}"
-    if [[ "$kind" == "branch" ]]; then
-      t="$(new_tmp_bin)"
-      build_branch_binary "$val" "$t"
-      restore_branch 1   # rebuild current as the baseline binary
-      BIN_PATHS+=("$t")
-      BIN_LABELS+=("$val")
-    else
-      BIN_PATHS+=("$val")
-      BIN_LABELS+=("$(label_for_path "$val")")
-    fi
-    return 0
-  fi
-
-  # Two or more specs: benchmark exactly those, in order; ignore the checkout.
-  local i
+  # Benchmark exactly the specified binaries, in order; the current checkout is
+  # only used when no spec is given at all.
+  local i kind val t
   for i in "${!SPEC_KINDS[@]}"; do
     kind="${SPEC_KINDS[$i]}"
     val="${SPEC_VALS[$i]}"
