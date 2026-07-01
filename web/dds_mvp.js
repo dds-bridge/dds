@@ -22,6 +22,9 @@
             rotateClockwise
             pageLoad
             sendJSON
+            fourthHandFillState
+            fillFourthHand
+            updateFourthHandFill
             */
 
 // It's also useful to pass the code through
@@ -104,6 +107,8 @@ function fillFormWithTestData(nesw) {
     for (const element of hand_elements()) {
         element.value = holdings.shift();
     }
+
+    updateFourthHandFill();
 }
 
 function fillFormWithGrandSlamTestData() {
@@ -166,6 +171,7 @@ function clearTestData() {
         element.value = "";
     }
 
+    updateFourthHandFill();
     focusNorthSpades();
 }
 
@@ -187,6 +193,142 @@ function rotateClockwise() {
     for (const element of hand_elements()) {
         element.value = hands.shift();
     }
+
+    updateFourthHandFill();
+}
+
+function allDeckCards() {
+    const cards = [];
+
+    for (const suit of ["S", "H", "D", "C"]) {
+        for (const pip of PIPS) {
+            cards.push(suit + pip);
+        }
+    }
+
+    return cards;
+}
+
+function fourthHandFillState(hands) {
+    const handCounts = DIRECTION_LETTERS.map((direction) => hands[direction].length);
+    const fullHands = handCounts.filter((count) => count === 13).length;
+    const emptyHands = handCounts.filter((count) => count === 0).length;
+    const partialHands = handCounts.filter((count) => count > 0 && count < 13).length;
+
+    if (fullHands !== 3 || emptyHands !== 1 || partialHands > 0) {
+        return { canFill: false };
+    }
+
+    const emptyHand = DIRECTION_LETTERS[handCounts.indexOf(0)];
+    const usedCards = {};
+
+    for (const direction of DIRECTION_LETTERS) {
+        if (direction === emptyHand) {
+            continue;
+        }
+
+        for (const card of hands[direction]) {
+            const pip = card.substring(1);
+
+            if (!PIPS.includes(pip)) {
+                return { canFill: false };
+            }
+
+            if (usedCards[card]) {
+                return { canFill: false };
+            }
+
+            usedCards[card] = true;
+        }
+    }
+
+    if (Object.keys(usedCards).length !== 39) {
+        return { canFill: false };
+    }
+
+    return { canFill: true, emptyHand, usedCards };
+}
+
+function cardsToSuitHoldings(cards) {
+    const holdings = { S: "", H: "", D: "", C: "" };
+
+    for (const card of cards) {
+        holdings[card.charAt(0)] += card.charAt(1);
+    }
+
+    for (const suit of ["S", "H", "D", "C"]) {
+        holdings[suit] = holdings[suit]
+            .split("")
+            .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
+            .join("");
+    }
+
+    return holdings;
+}
+
+function directionName(directionLetter) {
+    return {
+        N: "north",
+        E: "east",
+        S: "south",
+        W: "west"
+    }[directionLetter];
+}
+
+function setHandInputs(directionLetter, holdings) {
+    const direction = directionName(directionLetter);
+
+    for (const suit of SUITS) {
+        const suitLetter = suit.charAt(0).toUpperCase();
+        document.getElementById(direction + "_" + suit).value = holdings[suitLetter];
+    }
+}
+
+function remainingCardsForEmptyHand(state) {
+    return allDeckCards().filter((card) => !state.usedCards[card]);
+}
+
+function applyFourthHandFill(hands, emptyHand) {
+    const state = fourthHandFillState(hands);
+
+    if (!state.canFill || state.emptyHand !== emptyHand) {
+        return false;
+    }
+
+    const remaining = remainingCardsForEmptyHand(state);
+
+    if (remaining.length !== 13) {
+        return false;
+    }
+
+    clear_results();
+    setHandInputs(emptyHand, cardsToSuitHoldings(remaining));
+    return true;
+}
+
+function updateFourthHandFill() {
+    const button = document.getElementById("fill-fourth-hand");
+    const hands = collectHands();
+    const state = fourthHandFillState(hands);
+
+    if (button) {
+        button.disabled = !state.canFill;
+    }
+
+    if (state.canFill) {
+        applyFourthHandFill(hands, state.emptyHand);
+    }
+}
+
+function fillFourthHand() {
+    const hands = collectHands();
+    const state = fourthHandFillState(hands);
+
+    if (!state.canFill) {
+        return;
+    }
+
+    applyFourthHandFill(hands, state.emptyHand);
 }
 
 function collectHands() {
@@ -266,6 +408,12 @@ function inputIsValid(hands) {
 
 function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
+
+    for (const element of hand_elements()) {
+        element.addEventListener("input", updateFourthHandFill);
+    }
+
+    updateFourthHandFill();
     focusNorthSpades();
 }
 
