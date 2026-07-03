@@ -108,6 +108,9 @@
     <ClCompile Include="..\library\src\system\memory.cpp">
       <Filter>library\src\system</Filter>
     </ClCompile>
+    <ClCompile Include="..\library\src\system\parallel_boards.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
     <ClCompile Include="..\library\src\system\scheduler.cpp">
       <Filter>library\src\system</Filter>
     </ClCompile>
@@ -228,6 +231,9 @@
       <Filter>library\src</Filter>
     </ClInclude>
     <ClInclude Include="..\library\src\system\memory.hpp">
+      <Filter>library\src\system</Filter>
+    </ClInclude>
+    <ClInclude Include="..\library\src\system\parallel_boards.hpp">
       <Filter>library\src\system</Filter>
     </ClInclude>
     <ClInclude Include="..\library\src\system\scheduler.hpp">
