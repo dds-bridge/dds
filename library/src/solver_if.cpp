@@ -14,6 +14,7 @@
 #include <api/solve_board.hpp>
 #include <lookup_tables/lookup_tables.hpp>
 #include <solver_context/solver_context.hpp>
+#include <solver_context/worker_context_pool.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 #include <system/timer_list.hpp>
@@ -21,6 +22,7 @@
 
 extern Memory memory;
 extern Scheduler scheduler;
+extern System sysdep;
 
 
 auto board_range_checks(
@@ -72,10 +74,13 @@ int STDCALL SolveBoard(
   int solutions,
   int mode,
   FutureTricks * futp,
-  [[maybe_unused]] int thrId)
+  int thrId)
 {
-  SolverContext outer_ctx;
-  return solve_board(outer_ctx, dl, target, solutions, mode, futp);
+  if (thrId < 0 || thrId >= sysdep.get_num_threads())
+    return RETURN_THREAD_INDEX;
+
+  ensure_worker_contexts(sysdep.get_num_threads());
+  return solve_board(worker_context_for(thrId), dl, target, solutions, mode, futp);
 }
 
 auto solve_board_internal(

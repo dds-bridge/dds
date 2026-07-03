@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include <calc_tables.hpp>
+#include <solver_context/worker_context_pool.hpp>
 #include "init.hpp"
 #include <play_analyser.hpp>
 #include <solve_board.hpp>
@@ -36,29 +36,14 @@ int _initialized = 0;
 
 
 /*
- * Initialise the solver's static memory: TT memory pools, scheduler /
- * thread-manager state, and one-time lookup-table setup.
- *
- * Public API documentation is maintained in the API headers.
- */
-void STDCALL InitializeStaticMemory()
-{
-  SetResources(0, 0);
-}
-
-
-/*
- * Deprecated alias for InitializeStaticMemory(). The thread count is no
- * longer meaningful (internal batch threading was removed), so the argument
- * is ignored.
+ * Set the maximum number of threads used by the solver.
  *
  * Public API documentation is maintained in the API headers.
  */
 void STDCALL SetMaxThreads(
   int userThreads)
 {
-  (void) userThreads;
-  InitializeStaticMemory();
+  SetResources(0, userThreads);
 }
 
 
@@ -89,17 +74,14 @@ void STDCALL SetResources(
   int memMaxMB = min(memMaxGivenMB, memMaxFreeMB);
   memMaxMB = min(memMaxMB, memMax32bMB);
 
-  // Internal parallel execution has been removed.
-  // Legacy API calls execute sequentially, so use a single internal thread.
-  if (maxThreadsIn > 1) {
-    std::fprintf(
-      stderr,
-      "DDS warning: SetResources maxThreadsIn=%d requested, but internal batch threading is disabled; using 1 thread.\n",
-      maxThreadsIn);
-  }
-  (void) maxThreadsIn;
-  (void) ncores;
-  const int thrMax = 1;
+  // Limit worker count by memory budget and hardware.
+  int thrMax;
+  if (maxThreadsIn <= 0)
+    thrMax = ncores;
+  else
+    thrMax = std::min(maxThreadsIn, ncores);
+  if (thrMax < 1)
+    thrMax = 1;
 
   // For simplicity we won't vary the amount of memory per thread
   // in the small and large versions.
@@ -172,6 +154,20 @@ int STDCALL SetThreading(
 
 void InitDebugFiles()
 {
+#ifdef DDS_SCHEDULER
+  InitFileScheduler();
+#endif
+}
+
+
+void CloseDebugFiles()
+{
+  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
+  {
+  SolverContext tmp_ctx;
+  [[maybe_unused]] auto thrp = tmp_ctx.thread();
+  thrp->close_debug_files();
+  }
 }
 
 
@@ -399,6 +395,7 @@ void STDCALL GetDDSInfo(DDSInfo * info)
  */
 void STDCALL FreeMemory()
 {
+  clear_worker_contexts();
   for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
     memory.ReturnThread(thrId);
 }

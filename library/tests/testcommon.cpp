@@ -153,15 +153,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
     scheduler.GetBoardTimes(times);
     if (times.empty())
     {
-      if (options.solver_ == Solver::DTEST_SOLVER_CALC)
-      {
-        cout << "Per-board timing data not available for calc (use -s solve -r)."
-             << std::endl;
-      }
-      else
-      {
-        cout << "Per-board timing data not available." << std::endl;
-      }
+      cout << "Per-board timing data not available. Rebuild with DDS_SCHEDULER enabled to collect per-board timings." << std::endl;
     }
     else
     {

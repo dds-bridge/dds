@@ -9,36 +9,38 @@
 
 #include "file.hpp"
 
-dds::File::~File()
+File::~File()
 {
   Close();
 }
 
-void dds::File::Reset()
+void File::Reset()
 {
-  Close();
   fname_.clear();
+  file_open_ = false;
 }
 
-void dds::File::SetName(const std::string& fname_in)
+void File::SetName(const std::string& fname_in)
 {
-  if (fname_in == fname_)
-    return;
-
-  Close();
   fname_ = fname_in;
 }
 
-std::ofstream& dds::File::GetStream()
+std::ofstream& File::GetStream()
 {
-  if (!fout_.is_open() && !fname_.empty())
+  if (!file_open_)
+  {
     fout_.open(fname_);
+    file_open_ = true;
+  }
 
   return fout_;
 }
 
-void dds::File::Close()
+void File::Close()
 {
-  if (fout_.is_open())
+  if (file_open_)
+  {
     fout_.close();
+    file_open_ = false;
+  }
 }

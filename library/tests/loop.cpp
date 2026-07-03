@@ -20,7 +20,6 @@
 
 #include "cst.hpp"
 #include "dtest_parallel.hpp"
-#include <solve_board.hpp>
 
 using std::cout;
 using std::endl;
@@ -69,8 +68,20 @@ void loop_solve(
     }
     else
     {
-      ret = solve_all_boards_pbn_n(*bop, *solvedbdp,
-        dtest_effective_threads(options.num_threads_, count));
+      solvedbdp->no_of_boards = count;
+      ret = dtest_run_parallel(count, options.num_threads_,
+        [&](const int j) -> int {
+          FutureTricks fut;
+          const int res = SolveBoardPBN(
+            bop->deals[j], bop->target[j], bop->solutions[j], bop->mode[j],
+            &fut, 0);
+          if (res == RETURN_NO_FAULT)
+          {
+            solvedbdp->solved_board[j] = fut;
+            return RETURN_NO_FAULT;
+          }
+          return res;
+        });
     }
     if (ret != RETURN_NO_FAULT)
     {
@@ -118,8 +129,8 @@ bool loop_calc(
     setw(25) << right << "Time" << "\n";
 #endif
 
-  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
-  const int strain_count = DDS_STRAINS;
+  int filter[5] = {0, 0, 0, 0, 0};
+
   for (int i = 0; i < number; i += stepsize)
   {
     int count = (i + stepsize > number ? number - i : stepsize);
@@ -128,9 +139,7 @@ bool loop_calc(
       strcpy(dealsp->deals[j].cards, deal_list[i+j].remainCards);
 
     timer.start(count);
-    const int workload = count * strain_count;
-    const int threads = dtest_effective_threads(options.num_threads_, workload);
-    const int ret = CalcAllTablesPBNN(dealsp, -1, filter, resp, parp, threads);
+    const int ret = CalcAllTablesPBN(dealsp, -1, filter, resp, parp);
     if (ret != RETURN_NO_FAULT)
     {
       cout << "loop_calc: i " << i << ", return " << ret << "\n";
