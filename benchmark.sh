@@ -408,6 +408,13 @@ fi
 
 build_binaries
 num_bins=${#BIN_PATHS[@]}
+if (( nspecs == 0 || nbranch == nspecs )); then
+  RUN_LABEL_COL="branch"
+elif (( nbranch == 0 )); then
+  RUN_LABEL_COL="binary"
+else
+  RUN_LABEL_COL="label"
+fi
 if (( nbranch > 0 )); then
   BUILD=0  # build already done as part of the branch workflow
 fi
@@ -557,7 +564,7 @@ show_run_lines=1
 
 print_run_table_header() {
   printf "%-6s %-13s %-12s %8s %8s %10s %6s %s\n" \
-    "solver" "file" "ver" "user_ms" "sys_ms" "avg_user" "ratio" "run"
+    "solver" "file" "$RUN_LABEL_COL" "user_ms" "sys_ms" "avg_user" "ratio" "run"
   printf "%-6s %-13s %-12s %8s %8s %10s %6s %s\n" \
     "------" "-------------" "------------" "--------" "--------" "----------" "------" "---"
 }
