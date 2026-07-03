@@ -619,7 +619,7 @@ if [[ "$DRY_RUN" != "1" ]]; then
 fi
 
 if [[ "$ALT_SCREEN" == "1" ]]; then
-  printf '\033[?1049h\033[H\033[2J' >/dev/tty   # enter alt screen, home, clear
+  printf '\033[?1049h\033[H\033[2J'   # enter alt screen, home, clear
   ALT_SCREEN_ACTIVE=1
 fi
 
@@ -669,7 +669,7 @@ done
 # Return to the normal screen, discarding the live dtest output, before the
 # summary so the final output is just the header and the summary.
 if [[ "$ALT_SCREEN" == "1" ]]; then
-  printf '\033[?1049l' >/dev/tty
+  printf '\033[?1049l'
   ALT_SCREEN_ACTIVE=0
 fi
 
