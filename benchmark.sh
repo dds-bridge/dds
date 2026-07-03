@@ -3,9 +3,8 @@
 #
 # Runs all combinations of solver (solve, calc) and hand file
 # (list100/1000/…/1), largest files first. Always prints a summary. Per-run
-# timing rows and build (git/bazel) output are shown only with --details;
-# otherwise build output is captured to a log (surfaced only on failure) and
-# per-run rows are suppressed. Does not pass dtest options unless given after
+# timing rows and build (git/bazel) output are shown transiently, then hidden
+# unless the --details flag is set. Passes dtest options if given after
 # "--" (see below).
 #
 # Usage:
