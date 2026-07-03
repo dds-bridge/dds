@@ -34,22 +34,7 @@ namespace
 // bonus for voids.
 auto deal_fanout(const Deal& dl) -> int
 {
-  int fanout = 0;
-  for (int h = 0; h < DDS_HANDS; h++)
-  {
-    int fanout_suit = 0;
-    int num_voids = 0;
-    for (int s = 0; s < DDS_SUITS; s++)
-    {
-      const int c = static_cast<int>(dl.remainCards[h][s] >> 2);
-      fanout_suit += group_data[c].last_group_ + 1;
-      if (c == 0)
-        num_voids++;
-    }
-    fanout_suit += num_voids * fanout_suit;
-    fanout += fanout_suit;
-  }
-  return fanout;
+  return scheduler.Fanout(dl);
 }
 }
 
