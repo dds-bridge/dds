@@ -705,7 +705,7 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
       if (tpos.rank_in_suit[rho_lh][lead_suit] >
           (tpos.rank_in_suit[partner_lh][lead_suit] |
            bit_map_rank[ctx.lead0_rank]))
-        // Partner has winning card.
+        // RHO can win.
         suitAdd = 60 + (suitCount << 6) / 44;
       else if ((tpos.length[rho_lh][lead_suit] == 0)
                && (tpos.length[rho_lh][trump] != 0))
@@ -1398,7 +1398,7 @@ void weight_alloc_trump_void3(HeuristicContext& ctx)
   {
     for (int k = last_num_moves; k < num_moves; k++)
     {
-    int r_rank = rel_rank[tpos.aggr[suit]][mply[k].rank];
+      int r_rank = rel_rank[tpos.aggr[suit]][mply[k].rank];
       mply[k].weight = 33 + r_rank;
     }
   }
