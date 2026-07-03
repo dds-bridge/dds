@@ -24,6 +24,7 @@
 
 
 extern Memory memory;
+extern Scheduler scheduler;
 
 auto calc_all_boards_n(
   Boards * bop,
