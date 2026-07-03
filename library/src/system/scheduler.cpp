@@ -759,6 +759,12 @@ int Scheduler::Strength(const Deal& dl) const
 
 int Scheduler::Fanout(const Deal& dl) const
 {
+  return deal_fanout(dl);
+}
+
+
+auto deal_fanout(const Deal& dl) -> int
+{
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups. In a given suit the
   // maximum number over all four players is 13.

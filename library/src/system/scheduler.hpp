@@ -237,4 +237,12 @@ class Scheduler
 
 };
 
+/**
+ * @brief Cheap structural difficulty estimate (cards only, trump-independent).
+ *
+ * Per hand, sum the number of card groups per suit, with a bonus for voids.
+ * Used to dispatch the hardest boards first in parallel batch calc.
+ */
+auto deal_fanout(const Deal& dl) -> int;
+
 #endif

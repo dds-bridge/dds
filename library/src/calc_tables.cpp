@@ -24,23 +24,7 @@
 
 
 extern Memory memory;
-extern Scheduler scheduler;
 
-namespace
-{
-// Cheap structural difficulty estimate (cards only, trump-independent). Used to
-// dispatch the hardest boards first so the parallel tail is short. Mirrors
-// Scheduler::Fanout: per hand, sum the number of card groups per suit, with a
-// bonus for voids.
-auto deal_fanout(const Deal& dl) -> int
-{
-  return scheduler.Fanout(dl);
-}
-}
-
-// Legacy overload (creates temporary context). difficulty_sort dispatches the
-// hardest boards first; it only helps across distinct deals (batch calc), so it
-// is skipped for a single deal (all boards share one deal / one fanout).
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp,
