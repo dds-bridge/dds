@@ -60,6 +60,7 @@ DTEST_EXTRA=()
 # Cleanup state (set later). The EXIT trap restores the original git branch if
 # --branch switched away, and removes temp files.
 RESULTS=""
+TIME_FILE=""
 ORIG_BRANCH=""
 TMP_BINS=()
 BUILD_LOG=""
@@ -85,6 +86,7 @@ cleanup() {
   fi
   [[ -n "$BUILD_LOG" ]] && rm -f "$BUILD_LOG"
   [[ -n "$RESULTS" ]] && rm -f "$RESULTS"
+  [[ -n "$TIME_FILE" ]] && rm -f "$TIME_FILE"
   return 0
 }
 trap cleanup EXIT
@@ -492,6 +494,7 @@ for f in "${FILES[@]}"; do
 done
 
 RESULTS="$(mktemp "${TMPDIR:-/tmp}/dds-benchmark.XXXXXX")"
+TIME_FILE="$(mktemp "${TMPDIR:-/tmp}/dds-benchmark-time.XXXXXX")"
 # Removal handled by the cleanup() EXIT trap installed near the top.
 
 parse_dtest_output() {
@@ -529,12 +532,11 @@ run_dtest() {
     return 0
   fi
 
-  # Wrap with `time -p` so we can capture wall-clock elapsed for this run. Its
-  # "real/user/sys" lines go to the merged output but do not collide with the
-  # dtest lines parse_dtest_output looks for.
-  #
-  local out
-  if ! out="$(command time -p "${cmd[@]}" 2>&1)"; then
+  # Bash time keyword (TIMEFORMAT=%R) captures wall-clock seconds on a side
+  # channel; dtest stdout/stderr stay separate for parse_dtest_output.
+  local out wall
+  local TIMEFORMAT='%R'
+  if ! { time out="$("${cmd[@]}" 2>&1)"; } 2>"$TIME_FILE"; then
     echo "error: dtest failed: ${cmd[*]}" >&2
     echo "$out" >&2
     exit 1
@@ -546,8 +548,7 @@ run_dtest() {
   if [[ "$parsed_user" == "NA" || "$parsed_sys" == "NA" ]]; then
     echo "warning: incomplete dtest timing output: ${cmd[*]}" >&2
   fi
-  local wall
-  wall="$(awk '/^real[[:space:]]/ { print $2; exit }' <<<"$out")"
+  wall="$(<"$TIME_FILE")"
   [[ -z "$wall" ]] && wall="NA"
   echo "$parsed $wall"
 }
