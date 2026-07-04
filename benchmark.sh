@@ -735,6 +735,7 @@ if [[ "$DRY_RUN" != "1" ]]; then
           ok = 1
           for (b = 0; b < nb; b++) if (!((base, b) in c)) ok = 0
           if (!ok) continue
+          # We intentionally do not test for averages that round to 0.
           # Every average should be positive; a zero is rounding and means
           # TestTimer.cpp should accumulate microseconds, not milliseconds.
           printf "%-6s %-13s", solvers[si], farr[fi]
