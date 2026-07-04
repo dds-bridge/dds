@@ -78,7 +78,7 @@ cleanup() {
       || git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
     if [[ -n "$cur" && "$cur" != "$ORIG_BRANCH" ]]; then
       echo "Restoring git branch '$ORIG_BRANCH'..." >&2
-      git -C "$ROOT" checkout "$ORIG_BRANCH" >/dev/null 2>&1 || true
+      git -C "$ROOT" checkout -- "$ORIG_BRANCH" >/dev/null 2>&1 || true
     fi
   fi
   if ((${#TMP_BINS[@]} > 0)); then
@@ -164,8 +164,13 @@ while [[ $# -gt 0 ]]; do
       ;;
     --branch)
       shift
+      val="${1:?missing value for --branch}"
+      if [[ "$val" == -* ]]; then
+        echo "error: --branch ref must not start with '-': $val" >&2
+        exit 1
+      fi
       SPEC_KINDS+=("branch")
-      SPEC_VALS+=("${1:?missing value for --branch}")
+      SPEC_VALS+=("$val")
       shift
       ;;
     --compare)
@@ -254,7 +259,7 @@ fi
 # a non-tty here and emits plain, line-based output. The short "Building..."
 # labels are kept as progress markers.
 bazel_dtest() { ( cd "$ROOT" && bazel build //library/tests:dtest ); }
-checkout_and_build() { git -C "$ROOT" checkout "$1" && bazel_dtest; }
+checkout_and_build() { git -C "$ROOT" checkout -- "$1" && bazel_dtest; }
 
 run_build() {
   if [[ "$DETAILS" == "1" ]]; then
@@ -321,7 +326,7 @@ git_prep_for_branches() {
   done
   for i in "${!SPEC_VALS[@]}"; do
     if [[ "${SPEC_KINDS[$i]}" == "branch" ]] \
-       && ! git -C "$ROOT" rev-parse --verify --quiet "${SPEC_VALS[$i]}" >/dev/null; then
+       && ! git -C "$ROOT" rev-parse --verify --quiet -- "${SPEC_VALS[$i]}" >/dev/null; then
       echo "error: --branch: unknown git ref '${SPEC_VALS[$i]}'" >&2
       exit 1
     fi
@@ -349,7 +354,7 @@ restore_branch() {
     run_build checkout_and_build "$ORIG_BRANCH"
   else
     echo "Restoring '$ORIG_BRANCH'..." >&2
-    run_build git -C "$ROOT" checkout "$ORIG_BRANCH"
+    run_build git -C "$ROOT" checkout -- "$ORIG_BRANCH"
   fi
 }
 
