@@ -78,7 +78,7 @@ cleanup() {
       || git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
     if [[ -n "$cur" && "$cur" != "$ORIG_BRANCH" ]]; then
       echo "Restoring git branch '$ORIG_BRANCH'..." >&2
-      git -C "$ROOT" checkout -- "$ORIG_BRANCH" >/dev/null 2>&1 || true
+      git -C "$ROOT" checkout "$ORIG_BRANCH" >/dev/null 2>&1 || true
     fi
   fi
   if ((${#TMP_BINS[@]} > 0)); then
@@ -259,7 +259,7 @@ fi
 # a non-tty here and emits plain, line-based output. The short "Building..."
 # labels are kept as progress markers.
 bazel_dtest() { ( cd "$ROOT" && bazel build //library/tests:dtest ); }
-checkout_and_build() { git -C "$ROOT" checkout -- "$1" && bazel_dtest; }
+checkout_and_build() { git -C "$ROOT" checkout "$1" && bazel_dtest; }
 
 run_build() {
   if [[ "$DETAILS" == "1" ]]; then
@@ -354,7 +354,7 @@ restore_branch() {
     run_build checkout_and_build "$ORIG_BRANCH"
   else
     echo "Restoring '$ORIG_BRANCH'..." >&2
-    run_build git -C "$ROOT" checkout -- "$ORIG_BRANCH"
+    run_build git -C "$ROOT" checkout "$ORIG_BRANCH"
   fi
 }
 
