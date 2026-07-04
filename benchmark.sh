@@ -326,7 +326,7 @@ git_prep_for_branches() {
   done
   for i in "${!SPEC_VALS[@]}"; do
     if [[ "${SPEC_KINDS[$i]}" == "branch" ]] \
-       && ! git -C "$ROOT" rev-parse --verify --quiet -- "${SPEC_VALS[$i]}" >/dev/null; then
+       && ! git -C "$ROOT" rev-parse --verify --quiet "${SPEC_VALS[$i]}" >/dev/null; then
       echo "error: --branch: unknown git ref '${SPEC_VALS[$i]}'" >&2
       exit 1
     fi
