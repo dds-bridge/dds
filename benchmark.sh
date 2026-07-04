@@ -105,7 +105,7 @@ Options:
   --repeats N         Runs per combination per binary (default: 1; env: REPEATS)
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
-  --build             Build branch dtest only (bazel build //library/tests:dtest)
+  --build             Build dtest for the current checkout (bazel build //library/tests:dtest)
   --branch NAME       Git branch to build and benchmark ("." means the current branch).
                       Repeatable. Each named branch is checked out, dtest is built and
                       its binary saved, then the original branch is restored (requires a
