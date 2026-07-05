@@ -169,7 +169,6 @@ public class DDS
                                  , out SolvedBoards solved)
         {
             solved = default;
-            //Note: To step into c++ code you must set a break in c++?
             var rc = DdsNative.SolveAllBoards( boards
                                              , out solved);
 
