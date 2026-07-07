@@ -26,7 +26,7 @@ WASM targets use `wasm_cc_binary`, which applies an Emscripten **platform transi
 ### Build all WASM examples
 
 ```bash
-bazel build //examples/wasm:all_examples_wasm
+bazel build //wasm:all_examples_wasm
 ```
 
 The alias `//examples:all_examples_wasm` points at the same filegroup.
@@ -34,12 +34,12 @@ The alias `//examples:all_examples_wasm` points at the same filegroup.
 ### Build a specific example
 
 ```bash
-bazel build //examples/wasm:solve_board_wasm
+bazel build //wasm:solve_board_wasm
 ```
 
 ### Output files
 
-Outputs are under `bazel-bin/examples/wasm/`:
+Outputs are under `bazel-bin/wasm/`:
 
 - `solve_board.js` / `solve_board.wasm`
 - `AnalysePlayBin.js` / `AnalysePlayBin.wasm`
@@ -47,7 +47,7 @@ Outputs are under `bazel-bin/examples/wasm/`:
 
 ## Available WASM targets
 
-Rules in `examples/wasm/BUILD.bazel` wrap native examples in `examples/`:
+Rules in `wasm/BUILD.bazel` wrap native examples in `examples/`:
 
 - `solve_board_wasm` — solves a single board
 - `analyse_play_bin_wasm` — analyze play from binary format
@@ -66,7 +66,7 @@ Native builds (`bazel build //...`, `bazel test //library/tests/...`, Python bin
 ### Node.js
 
 ```bash
-node bazel-bin/examples/wasm/solve_board.js
+node bazel-bin/wasm/solve_board.js
 ```
 
 ### Web browser (DDS MVP)
@@ -89,7 +89,7 @@ The MVP loads wasm from `dds_mvp_wasm_bin.js` (base64, no network fetch), so `fi
 ./web/clean_wasm.sh     # web artifacts only
 ```
 
-For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/examples/wasm/` to any static file server.
+For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/wasm/` to any static file server.
 
 ## Compilation flags
 
@@ -114,7 +114,7 @@ build:macos --cxxopt=-std=c++20
 build:linux --cxxopt=-std=c++20
 ```
 
-There is no separate `build:wasm` profile in `.bazelrc`; WASM builds are selected by targeting `//examples/wasm:*`.
+There is no separate `build:wasm` profile in `.bazelrc`; WASM builds are selected by targeting `//wasm:*`.
 
 ## Tests
 
@@ -122,14 +122,14 @@ Unit and system tests (Node.js required for system tests; skipped if `node` is n
 
 ```bash
 bazel test //web:web_tests //web:web_system_tests //web:web_e2e_tests
-bazel test //examples/wasm:all
+bazel test //wasm:all
 ```
 
 `bazel test //...` skips targets tagged `e2e` by default (see `.bazelrc`). Run Playwright tests explicitly, e.g. `bazel test //web:web_e2e_tests` or `bazel test --test_tag_filters=e2e //web:dds_mvp_e2e_test`. To run all tests, including the Playwright tests: `bazel test --test_tag_filters= /...`
 
 - **`//web:dds_mvp_wasm_system_test`** — builds `//web:dds_mvp_wasm`, runs `patch_mvp_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_mvp_calc_table` via Node (`web/tests/dds_mvp_wasm_node.mjs`).
 - **`//web:dds_mvp_e2e_test`** — Playwright tests for `dds_mvp.html` over `file://` and HTTP (part-score deal table, validation error). Requires Node, network (Chromium download on first run), and `tags = ["no-sandbox"]`.
-- **`//examples/wasm:wasm_examples_system_test`** — runs `calc_dd_table_pbn.js` under Node and checks for `OK` on all three example hands.
+- **`//wasm:wasm_examples_system_test`** — runs `calc_dd_table_pbn.js` under Node and checks for `OK` on all three example hands.
 
 The MVP link flags include `-sENVIRONMENT=web,node` so the same `.js` / `.wasm` artifacts work in the browser and in Node system tests.
 

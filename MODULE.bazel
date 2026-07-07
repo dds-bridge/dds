@@ -9,10 +9,12 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "2.0.1")
 bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+
 # Xcode CC toolchain for macOS AddressSanitizer builds (--config=asan). LLVM's ASAN
 # runtime hangs on current macOS; see .bazelrc build:asan_macos.
 bazel_dep(name = "apple_support", version = "1.24.2")
-# WASM builds (//examples/wasm:*, //web:dds_mvp_wasm). If you bump this version,
+
+# WASM builds (//wasm:*, //web:dds_mvp_wasm). If you bump this version,
 # rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_mvp_wasm.py.
 bazel_dep(name = "emsdk", version = "5.0.7")
 
