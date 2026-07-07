@@ -47,12 +47,13 @@ struct SolverConfig
 class SolverContext
 {
 public:
+  // Wrap existing ThreadData (helper/sub-context). Does not initialize debug
+  // files; ~SolverContext() closes them only when this context is the last
+  // shared_ptr holder of that ThreadData.
   explicit SolverContext(std::shared_ptr<ThreadData> thread, SolverConfig cfg = {})
   : thr_(std::move(thread)), cfg_(cfg)
   {
-    // Bind the persistent facades to the underlying ThreadData.
-    search_.set_thread(thr_);
-    search_.set_owner(this);
+    bind_thread_data();
   }
 
   // NOTE: constructors that accepted raw ThreadData* were removed as part
@@ -75,6 +76,17 @@ public:
   auto thread() const -> std::shared_ptr<ThreadData>
   {
     return thr_;
+  }
+
+  /**
+   * @brief Non-owning raw access to the underlying ThreadData.
+   *
+   * Avoids the atomic reference-count traffic of copying the shared_ptr in
+   * hot search paths. The pointer is valid for the lifetime of the context.
+   */
+  auto thread_ptr() const -> ThreadData*
+  {
+    return thr_.get();
   }
 
   /**
@@ -431,6 +443,11 @@ private:
   // Transposition table is now owned per SearchContext and created lazily.
   //
   // See the developer note above for details on TT lifecycle and resets.
+
+  // True when this context created thr_ via SolverContext(SolverConfig).
+  bool owns_thread_data_ = false;
+
+  void bind_thread_data();
 };
 
 auto ThreadMemoryUsed() -> double;

@@ -7,7 +7,6 @@
    See LICENSE and README.
 */
 
-#include <algorithm>
 #include <chrono>
 
 #include "solve_board.hpp"
@@ -20,7 +19,6 @@
 #include <utility/debug.h>
 
 
-extern Memory memory;
 extern Scheduler scheduler;
 
 auto same_board(
@@ -29,9 +27,41 @@ auto same_board(
   const unsigned index2) -> bool;
 
 
+static auto boards_from_pbn(
+  BoardsPBN const& bop,
+  Boards& bo) -> int
+{
+  bo.no_of_boards = bop.no_of_boards;
+  if (bo.no_of_boards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
+  for (int k = 0; k < bop.no_of_boards; k++)
+  {
+    bo.mode[k] = bop.mode[k];
+    bo.solutions[k] = bop.solutions[k];
+    bo.target[k] = bop.target[k];
+    bo.deals[k].first = bop.deals[k].first;
+    bo.deals[k].trump = bop.deals[k].trump;
+
+    for (int i = 0; i <= 2; i++)
+    {
+      bo.deals[k].currentTrickSuit[i] = bop.deals[k].currentTrickSuit[i];
+      bo.deals[k].currentTrickRank[i] = bop.deals[k].currentTrickRank[i];
+    }
+
+    if (convert_from_pbn(bop.deals[k].remainCards, bo.deals[k].remainCards)
+        != RETURN_NO_FAULT)
+      return RETURN_PBN_FAULT;
+  }
+
+  return RETURN_NO_FAULT;
+}
+
+
 auto solve_all_boards_n(
   Boards const& bds,
-  SolvedBoards& solved) -> int
+  SolvedBoards& solved,
+  int max_threads) -> int
 {
   const int n = bds.no_of_boards;
   if (n > MAXNOOFBOARDS)
@@ -44,7 +74,7 @@ auto solve_all_boards_n(
 
   START_BLOCK_TIMER;
 
-  const int err = parallel_all_boards_n(n, 0,
+  const int err = parallel_all_boards_n(n, max_threads,
     [&](const int worker_id, const int bno) -> int {
       (void)worker_id;
 
@@ -75,6 +105,19 @@ auto solve_all_boards_n(
 #endif
 
   return RETURN_NO_FAULT;
+}
+
+
+auto solve_all_boards_pbn_n(
+  BoardsPBN const& bop,
+  SolvedBoards& solved,
+  const int max_threads) -> int
+{
+  Boards bo;
+  const int rc = boards_from_pbn(bop, bo);
+  if (rc != RETURN_NO_FAULT)
+    return rc;
+  return solve_all_boards_n(bo, solved, max_threads);
 }
 
 
@@ -117,36 +160,29 @@ int STDCALL SolveBoardPBN(
  * @param solvedp Pointer to results for solved Boards
  * @return 1 on success, error code otherwise
  */
+int STDCALL SolveAllBoardsN(
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp,
+  int maxThreads)
+{
+  return solve_all_boards_pbn_n(* bop, * solvedp, maxThreads);
+}
+
+
 int STDCALL SolveAllBoards(
   BoardsPBN const * bop,
   SolvedBoards * solvedp)
 {
-  Boards bo;
-  bo.no_of_boards = bop->no_of_boards;
-  if (bo.no_of_boards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
+  return SolveAllBoardsN(bop, solvedp, 0);
+}
 
-  for (int k = 0; k < bop->no_of_boards; k++)
-  {
-    bo.mode[k] = bop->mode[k];
-    bo.solutions[k] = bop->solutions[k];
-    bo.target[k] = bop->target[k];
-    bo.deals[k].first = bop->deals[k].first;
-    bo.deals[k].trump = bop->deals[k].trump;
 
-    for (int i = 0; i <= 2; i++)
-    {
-      bo.deals[k].currentTrickSuit[i] = bop->deals[k].currentTrickSuit[i];
-      bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
-    }
-
-    if (convert_from_pbn(bop->deals[k].remainCards, bo.deals[k].remainCards) 
-        != 1)
-      return RETURN_PBN_FAULT;
-  }
-
-  int res = solve_all_boards_n(bo, * solvedp);
-  return res;
+int STDCALL SolveAllBoardsBinN(
+  Boards const * bop,
+  SolvedBoards * solvedp,
+  int maxThreads)
+{
+  return solve_all_boards_n(* bop, * solvedp, maxThreads);
 }
 
 
@@ -154,7 +190,7 @@ int STDCALL SolveAllBoardsBin(
   Boards const * bop,
   SolvedBoards * solvedp)
 {
-  return solve_all_boards_n(* bop, * solvedp);
+  return SolveAllBoardsBinN(bop, solvedp, 0);
 }
 
 
@@ -163,29 +199,9 @@ int STDCALL SolveAllBoardsSeq(
   SolvedBoards * solvedp)
 {
   Boards bo;
-  bo.no_of_boards = bop->no_of_boards;
-  if (bo.no_of_boards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
-
-  for (int k = 0; k < bop->no_of_boards; k++)
-  {
-    bo.mode[k] = bop->mode[k];
-    bo.solutions[k] = bop->solutions[k];
-    bo.target[k] = bop->target[k];
-    bo.deals[k].first = bop->deals[k].first;
-    bo.deals[k].trump = bop->deals[k].trump;
-
-    for (int i = 0; i <= 2; i++)
-    {
-      bo.deals[k].currentTrickSuit[i] = bop->deals[k].currentTrickSuit[i];
-      bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
-    }
-
-    if (convert_from_pbn(bop->deals[k].remainCards, bo.deals[k].remainCards)
-        != 1)
-      return RETURN_PBN_FAULT;
-  }
-
+  const int rc = boards_from_pbn(*bop, bo);
+  if (rc != RETURN_NO_FAULT)
+    return rc;
   return solve_all_boards_n_seq(bo, * solvedp);
 }
 

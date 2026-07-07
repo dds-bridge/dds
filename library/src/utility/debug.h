@@ -53,6 +53,7 @@
 
 /// @brief Enable AB search statistics (node counts, timing, etc.).
 /// Records alpha-beta search performance metrics for optimization analysis.
+/// Enable via Bazel: --define=ab_stats=true
 // #define DDS_AB_STATS
 #define DDS_AB_STATS_PREFIX "ABstats"
 
@@ -122,19 +123,5 @@
 #define DDS_MOVES_DETAILS
 #endif
 #endif
-
-/// @name Performance Counters
-/// @brief Statistics counters for profiling and analysis.
-/// @{
-
-/// @brief Number of available counter slots for performance tracking.
-constexpr int COUNTER_SLOTS = 200;
-
-/// @brief Global array of performance counters.
-/// Each thread may use these counters for statistics collection.
-/// Size: COUNTER_SLOTS (200) entries.
-extern long long counter[COUNTER_SLOTS];
-
-/// @}
 
 /// @}

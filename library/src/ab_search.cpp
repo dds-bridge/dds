@@ -90,7 +90,7 @@ bool ab_search(
      the value of the subtree is returned.
      This is a specialized AB function for hand_rel_first == 0. */
 
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
@@ -192,7 +192,7 @@ static bool ab_search_0_ctx(
      the value of the subtree is returned.
      This is a specialized AB function for hand_rel_first == 0. */
 
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int trump = thrp->trump;
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
@@ -225,7 +225,7 @@ static bool ab_search_0_ctx(
     {
 #ifdef DDS_AB_HITS
       DumpRetrieved(thrp->fileRetrieved.GetStream(), 
-        * posPoint, cardsP, target, depth);
+        * posPoint, *cardsP, target, depth);
 #endif
 
       for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -493,7 +493,7 @@ static bool ab_search_1_ctx(
   const int depth,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int trump = thrp->trump;
   int hand = HAND_ID(posPoint->first[depth], 1);
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
@@ -589,7 +589,9 @@ static bool ab_search_2_ctx(
   const int depth,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
+#ifdef DDS_AB_STATS
+  ThreadData* thrp = ctx.thread_ptr();
+#endif
   int hand = HAND_ID(posPoint->first[depth], 2);
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
@@ -680,7 +682,9 @@ static bool ab_search_3_ctx(
 
   unsigned short int makeWinRank[DDS_SUITS];
 
-  auto thrp = ctx.thread();
+#ifdef DDS_AB_STATS
+  ThreadData* thrp = ctx.thread_ptr();
+#endif
   int hand = HAND_ID(posPoint->first[depth], 3);
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
@@ -826,7 +830,7 @@ void make_3(
   MoveType const * mply,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int firstHand = posPoint->first[depth];
 
   const TrickDataType& data = ctx.move_gen().get_trick_data((depth + 3) >> 2);
@@ -892,7 +896,7 @@ static void make_3_ctx(
   MoveType const * mply,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int firstHand = posPoint->first[depth];
 
   const TrickDataType& data = ctx.move_gen().get_trick_data((depth + 3) >> 2);
@@ -1111,7 +1115,6 @@ EvalType evaluate_with_context(
   const int trump,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
   int s, h, hmax = 0, count = 0, k = 0;
   unsigned short rmax = 0;
   EvalType eval;

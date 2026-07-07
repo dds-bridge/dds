@@ -1,6 +1,8 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
+# system, system_util_log, and system_util_stats compile the same sources with
+# different feature defines. Link at most one variant into a binary.
 cc_library(
     name = "system",
     srcs = glob(["*.cpp"]),
@@ -13,6 +15,7 @@ cc_library(
         "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
         # Utilities lives under system/util (header-only for now)
     ],
     include_prefix = "system",
@@ -34,6 +37,7 @@ cc_library(
     "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
     ],
     include_prefix = "system",
     copts = DDS_CPPOPTS,
@@ -53,6 +57,7 @@ cc_library(
     "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
     ],
     include_prefix = "system",
     copts = DDS_CPPOPTS,

@@ -28,7 +28,7 @@ int main(int argc, char * argv[])
 {
   read_args(argc, argv);
 
-  SetResources(options.memory_mb_, options.num_threads_);
+  SetResources(options.memory_mb_, 0);
 
   DDSInfo info;
   GetDDSInfo(&info);

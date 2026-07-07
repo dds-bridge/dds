@@ -135,7 +135,24 @@ void Scheduler::ClearTiming()
 void Scheduler::Reset()
 {
   for (int b = 0; b < MAXNOOFBOARDS; b++)
+  {
     hands[b].next = -1;
+    hands[b].repeatNo = 0;
+    hands[b].depth = 0;
+    hands[b].strength = 0;
+    hands[b].fanout = 0;
+    hands[b].thread = 0;
+    hands[b].selectFlag = 0;
+    hands[b].time = 0;
+  }
+
+  for (int g = 0; g < MAXNOOFBOARDS; g++)
+  {
+    group[g].head = -1;
+    group[g].actual = 0;
+    group[g].repeatNo = 0;
+    group[g].pred = 0;
+  }
 
   numGroups = 0;
   extraGroups = 0;
@@ -266,6 +283,9 @@ void Scheduler::MakeGroups(const Boards& bds)
 
       group[numGroups].strain = strain;
       group[numGroups].hash = key;
+      group[numGroups].head = -1;
+      group[numGroups].actual = 0;
+      group[numGroups].repeatNo = 0;
       numGroups++;
     }
     else
@@ -332,6 +352,9 @@ void Scheduler::FinetuneGroups()
 
       group[numGroups].strain = 5;
       group[numGroups].hash = extraGroups;
+      group[numGroups].head = -1;
+      group[numGroups].actual = 0;
+      group[numGroups].repeatNo = 0;
 
       numGroups++;
       extraGroups++;
@@ -422,6 +445,9 @@ void Scheduler::FinetuneGroups()
 
           group[numGroups].strain = 5;
           group[numGroups].hash = extraGroups;
+          group[numGroups].head = -1;
+          group[numGroups].actual = 0;
+          group[numGroups].repeatNo = 0;
 
           numGroups++;
           extraGroups++;
@@ -450,24 +476,17 @@ bool Scheduler::SameHand(
 // that they scale somewhat proportionally to other cases.
 // The strength parameter is currently not used.
 
-int SORT_SOLVE_TIMES[2][8] =
+static int SORT_SOLVE_TIMES[2][8] =
 {
   { 284000,  91000, 37000, 23000, 17000, 15000, 13000, 4000 },
   { 388000, 140000, 60000, 40000, 30000, 23000, 18000, 6000 },
 };
 
-#define SORT_SOLVE_STRENGTH_CUTOFF 0
-
-double SORT_SOLVE_STRENGTH[2][3] =
-{
-  { 1.525, 1.810, 0.0285 },
-  { 1.585, 1.940, 0.0354 }
-};
 
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_SOLVE_FANOUT[2][5] =
+static double SORT_SOLVE_FANOUT[2][5] =
 {
   { 30., 50., 0.07577, 1.515, 12. },
   { 30., 50., 0.08144, 1.629, 12. }
@@ -543,7 +562,7 @@ void Scheduler::SortSolve()
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_CALC_FANOUT[2][5] =
+static double SORT_CALC_FANOUT[2][5] =
 {
   { 30., 50., 0.07812, 1.563, 13. },
   { 30., 50., 0.07739, 1.548, 12. }
@@ -599,7 +618,7 @@ void Scheduler::SortCalc()
 // These are specific times from a 12-core PC. The hope is
 // that they scale somewhat proportionally to other cases.
 
-int SORT_TRACE_TIMES[2][8] =
+static int SORT_TRACE_TIMES[2][8] =
 {
   { 157000, 47000, 26000, 18000, 16000, 14000, 10000,  6000 },
   { 205000, 87000, 45000, 36000, 32000, 28000, 24000, 20000 },
@@ -610,7 +629,7 @@ int SORT_TRACE_TIMES[2][8] =
 // Slope between 16 and 48 incl
 // Average for 49-52
 
-double SORT_TRACE_DEPTH[2][4] =
+static double SORT_TRACE_DEPTH[2][4] =
 {
   { 0.742, 0.411, 0.0414, 1.820 },
   { 0.669, 0.428, 0.0346, 1.606 }
@@ -619,7 +638,7 @@ double SORT_TRACE_DEPTH[2][4] =
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_TRACE_FANOUT[2][5] =
+static double SORT_TRACE_FANOUT[2][5] =
 {
   { 30., 50., 0.07577, 1.515, 12. },
   { 30., 50., 0.08166, 1.633, 13. }
@@ -903,7 +922,7 @@ void Scheduler::EndBlockTimer()
     if (timeUser > blockMax)
       blockMax = timeUser;
 
-    if (hp->repeatNo == 0)
+    if (hp->repeatNo == 0 && timeUser > 0)
     {
       int bin = timeUser / 1000;
       timeHist[bin]++;
@@ -916,8 +935,11 @@ void Scheduler::EndBlockTimer()
 
   for (int g = 0; g < numGroups; g++)
   {
-    int head = group[g].head;
-    int NTflag = (hands[head].strain == 4 ? 1 : 0);
+    const int head = group[g].head;
+    if (head < 0 || head >= numHands)
+      continue;
+
+    const int NTflag = (hands[head].strain == 4 ? 1 : 0);
 
     TimeStat ts;
 

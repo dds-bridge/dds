@@ -3,6 +3,7 @@
 DDS_CPPOPTS = select({
     "//:build_macos": [
         "-O3",
+        "-flto=thin",
         "-mtune=generic",
         "-fPIC",
         "-Wpedantic",
@@ -62,9 +63,6 @@ DDS_CPPOPTS = select({
     "//conditions:default": [
         "-std=c++20"
     ],
-}) + select({
-    "//:asan": ["-fsanitize=address"],
-    "//conditions:default": [],
 })
 
 DDS_LOCAL_DEFINES = select({
@@ -83,16 +81,16 @@ DDS_LOCAL_DEFINES = select({
 }) + select({
     "//:tt_reset_debug": ["DDS_DEBUG_TT_RESET"],
     "//conditions:default": [],
+}) + select({
+    "//:ab_stats": ["DDS_AB_STATS"],
+    "//conditions:default": [],
 })
 
 DDS_LINKOPTS = select({
-    "//:build_macos": [],
+    "//:build_macos": ["-flto=thin"],
     "//:debug_build_macos": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
-    "//conditions:default": [],
-}) + select({
-    "//:asan": ["-fsanitize=address"],
     "//conditions:default": [],
 })
 

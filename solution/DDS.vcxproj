@@ -91,6 +91,7 @@
     <ClCompile Include="..\library\src\solver_if.cpp" />
     <ClCompile Include="..\library\src\solve_board.cpp" />
     <ClCompile Include="..\library\src\system\memory.cpp" />
+    <ClCompile Include="..\library\src\system\parallel_boards.cpp" />
     <ClCompile Include="..\library\src\system\scheduler.cpp" />
     <ClCompile Include="..\library\src\system\system.cpp" />
     <ClCompile Include="..\library\src\system\thread_data.cpp" />
@@ -132,6 +133,7 @@
     <ClInclude Include="..\library\src\solver_if.hpp" />
     <ClInclude Include="..\library\src\solve_board.hpp" />
     <ClInclude Include="..\library\src\system\memory.hpp" />
+    <ClInclude Include="..\library\src\system\parallel_boards.hpp" />
     <ClInclude Include="..\library\src\system\scheduler.hpp" />
     <ClInclude Include="..\library\src\system\system.hpp" />
     <ClInclude Include="..\library\src\system\thread_data.hpp" />

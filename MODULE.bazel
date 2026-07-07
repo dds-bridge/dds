@@ -9,6 +9,11 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "2.0.1")
 bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+
+# Xcode CC toolchain for macOS AddressSanitizer builds (--config=asan). LLVM's ASAN
+# runtime hangs on current macOS; see .bazelrc build:asan_macos.
+bazel_dep(name = "apple_support", version = "1.24.2")
+
 # WASM builds (//wasm:*, //web:dds_mvp_wasm). If you bump this version,
 # rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_mvp_wasm.py.
 bazel_dep(name = "emsdk", version = "5.0.7")
@@ -16,6 +21,8 @@ bazel_dep(name = "emsdk", version = "5.0.7")
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
     name = "llvm_toolchain",
+    # When bumping these versions, also update .bazelrc build:tsan_macos rpath
+    # (clang/N) and confirm Xcode ships the same major; see docs/BUILD_SYSTEM.md.
     llvm_versions = {
         "darwin-aarch64": "21.1.8",
         "linux-x86_64": "21.1.8",
@@ -23,6 +30,10 @@ llvm.toolchain(
     },
 )
 use_repo(llvm, "llvm_toolchain")
+
+# Apple toolchain repo; selected only for --config=asan via .bazelrc (not registered globally).
+apple_cc_configure = use_extension("@apple_support//crosstool:setup.bzl", "apple_cc_configure_extension")
+use_repo(apple_cc_configure, "local_config_apple_cc", "local_config_apple_cc_toolchains")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
