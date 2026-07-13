@@ -115,6 +115,20 @@ class TestSolveAllBoardsPBN(unittest.TestCase):
         results = solve_all_boards_pbn(boards)
         self.assertTrue(_result_shape_ok(results[0]))
 
+    def test_max_threads_accepted_and_matches_default(self) -> None:
+        """Passing an explicit max_threads must be accepted and give the same results as the default."""
+        boards = [{"remain_cards": _PBN, "trump": 4, "first": 0}] * 3
+        default = solve_all_boards_pbn(boards)
+        for max_threads in (1, 2):
+            capped = solve_all_boards_pbn(boards, max_threads=max_threads)
+            self.assertEqual(len(capped), len(default))
+            for capped_r, default_r in zip(capped, default):
+                # Only the first `cards` entries of a result are meaningful.
+                cards = capped_r["cards"]
+                self.assertEqual(cards, default_r["cards"])
+                for key in ("suit", "rank", "equals", "score"):
+                    self.assertEqual(capped_r[key][:cards], default_r[key][:cards])
+
 
 class TestSolveAllBoardsBin(unittest.TestCase):
     """Tests for solve_all_boards_bin (binary format batch input)."""
@@ -175,6 +189,20 @@ class TestSolveAllBoardsBin(unittest.TestCase):
             board = {**_BINARY_DEAL, "trump": trump}
             results = solve_all_boards_bin([board])
             self.assertEqual(len(results), 1)
+
+    def test_max_threads_accepted_and_matches_default(self) -> None:
+        """Passing an explicit max_threads must be accepted and give the same results as the default."""
+        boards = [_BINARY_DEAL] * 3
+        default = solve_all_boards_bin(boards)
+        for max_threads in (1, 2):
+            capped = solve_all_boards_bin(boards, max_threads=max_threads)
+            self.assertEqual(len(capped), len(default))
+            for capped_r, default_r in zip(capped, default):
+                # Only the first `cards` entries of a result are meaningful.
+                cards = capped_r["cards"]
+                self.assertEqual(cards, default_r["cards"])
+                for key in ("suit", "rank", "equals", "score"):
+                    self.assertEqual(capped_r[key][:cards], default_r[key][:cards])
 
 
 class TestSolveAllBoardsParity(unittest.TestCase):
