@@ -16,7 +16,8 @@ namespace
 
 std::string make_temp_input_file()
 {
-  const std::string path = "args_test_input.txt";
+  const std::string path =
+    std::string(::testing::TempDir()) + "args_test_input.txt";
   std::ofstream out(path);
   out << "placeholder\n";
   return path;
