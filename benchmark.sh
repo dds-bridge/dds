@@ -11,15 +11,15 @@
 #   ./benchmark.sh
 #   ./benchmark.sh --build
 #   ./benchmark.sh -- -n 8 -r
-#   ./benchmark.sh --build --compare /path/to/other/dtest
+#   ./benchmark.sh --build --binary /path/to/other/dtest
 #   ./benchmark.sh --branch develop -- -n 8
-#   ./benchmark.sh --compare /path/to/other/dtest --epsilon 1
+#   ./benchmark.sh --binary /path/to/other/dtest --epsilon 1
 #   ./benchmark.sh --repeats 5 -- -n 4
 #   REPEATS=3 ./benchmark.sh
 #
 # Environment:
 #   BRANCH     Path to the baseline dtest (default: bazel-bin under the current dir)
-#   COMPARE    Optional extra dtest binary to benchmark (like a trailing --compare)
+#   BINARY    Optional extra dtest binary to benchmark (like a trailing --binary)
 #   HANDS_DIR  Directory containing list*.txt files (default: ./hands)
 #   REPEATS    Runs per combination per binary (default: 1)
 #   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
@@ -50,10 +50,10 @@ EPSILON="${EPSILON:-0.5}"
 BUILD=0
 REVERSE=0
 # Ordered list of binaries to benchmark, captured in command-line order. Each
-# --branch/--compare appends one spec; the first spec is the baseline.
-SPEC_KINDS=()   # parallel: "branch" (git ref) or "compare" (path to a binary)
+# --branch/--binary appends one spec; the first spec is the baseline.
+SPEC_KINDS=()   # parallel: "branch" (git ref) or "binary" (path to a binary)
 SPEC_VALS=()
-CLI_COMPARE_GIVEN=0
+CLI_BINARY_GIVEN=0
 REPEATS_GIVEN=0
 DTEST_EXTRA=()
 
@@ -110,7 +110,7 @@ Options:
                       Repeatable. Each named branch is checked out, dtest is built and
                       its binary saved, then the original branch is restored (requires a
                       clean tree).
-  --compare PATH      Path to a prebuilt dtest binary to benchmark. Repeatable.
+  --binary PATH      Path to a prebuilt dtest binary to benchmark. Repeatable.
   --details           Keep per-run timing rows and build (git/bazel) output
   --epsilon PCT       For a two-binary comparison, treat timings within PCT% as equal
                       (default: 0.5; env: EPSILON)
@@ -118,14 +118,14 @@ Options:
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
---branch and --compare may be given any number of times and combined freely; the
+--branch and --binary may be given any number of times and combined freely; the
 binaries are benchmarked in the order specified and the first is the baseline. The
 current checkout is benchmarked by default only when neither flag is given. With two
 binaries the summary adds a ratio and a "faster" note; with three or more it shows
 only the per-binary averages (no note).
 
 Environment:
-  BRANCH, COMPARE, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, EPSILON
+  BRANCH, BINARY, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, EPSILON
 
 Examples:
   ./benchmark.sh
@@ -135,13 +135,13 @@ Examples:
   ./benchmark.sh --branch develop
   ./benchmark.sh --branch develop --branch opus-two-percent
   ./benchmark.sh --branch develop --branch opus-two-percent --branch fastest
-  ./benchmark.sh --branch opus-two-percent --compare /path/to/dtest
+  ./benchmark.sh --branch opus-two-percent --binary /path/to/dtest
   ./benchmark.sh --branch develop --repeats 3 -- -n 8
-  ./benchmark.sh --compare /path/to/dtest
-  ./benchmark.sh --compare /path/to/dtest --details
-  ./benchmark.sh --compare /path/to/dtest --epsilon 1
-  ./benchmark.sh --compare /path/to/dtest --reverse
-  ./benchmark.sh --repeats 5 --compare /path/to/dtest
+  ./benchmark.sh --binary /path/to/dtest
+  ./benchmark.sh --binary /path/to/dtest --details
+  ./benchmark.sh --binary /path/to/dtest --epsilon 1
+  ./benchmark.sh --binary /path/to/dtest --reverse
+  ./benchmark.sh --repeats 5 --binary /path/to/dtest
   DRY_RUN=1 ./benchmark.sh
 EOF
 }
@@ -173,11 +173,11 @@ while [[ $# -gt 0 ]]; do
       SPEC_VALS+=("$val")
       shift
       ;;
-    --compare)
+    --binary)
       shift
-      SPEC_KINDS+=("compare")
-      SPEC_VALS+=("${1:?missing value for --compare}")
-      CLI_COMPARE_GIVEN=1
+      SPEC_KINDS+=("binary")
+      SPEC_VALS+=("${1:?missing value for --binary}")
+      CLI_BINARY_GIVEN=1
       shift
       ;;
     --max-deals|--max_deals|-max-deals|-max_deals)
@@ -230,11 +230,11 @@ if ! [[ "$EPSILON" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
   exit 1
 fi
 
-# A compare binary supplied via the COMPARE env var behaves like a trailing
-# --compare PATH, unless --compare was already given on the command line.
-if [[ "$CLI_COMPARE_GIVEN" == "0" && -n "${COMPARE:-}" ]]; then
-  SPEC_KINDS+=("compare")
-  SPEC_VALS+=("$COMPARE")
+# A binary supplied via the BINARY env var behaves like a trailing
+# --binary PATH, unless --binary was already given on the command line.
+if [[ "$CLI_BINARY_GIVEN" == "0" && -n "${BINARY:-}" ]]; then
+  SPEC_KINDS+=("binary")
+  SPEC_VALS+=("$BINARY")
 fi
 
 nspecs=${#SPEC_KINDS[@]}
@@ -246,7 +246,7 @@ if (( nspecs > 0 )); then
 fi
 
 if [[ "$REVERSE" == "1" && "$nspecs" -lt 2 ]]; then
-  echo "error: --reverse requires at least two binaries (two or more --branch/--compare)" >&2
+  echo "error: --reverse requires at least two binaries (two or more --branch/--binary)" >&2
   exit 1
 fi
 
@@ -290,7 +290,7 @@ build_branch_binary() {
   chmod +x "$dest"
 }
 
-# Display label for a compare binary given by path: its basename, or the raw
+# Display label for a binary given by path: its basename, or the raw
 # path if basename is somehow empty.
 label_for_path() {
   local b
@@ -369,7 +369,7 @@ new_tmp_bin() {
 # Binary-set selection:
 #   (no spec)          : one binary, the current checkout (the default)
 #   one or more specs  : exactly those specs, in order; the checkout is ignored
-# The first binary is the baseline. --branch specs are built from git; --compare
+# The first binary is the baseline. --branch specs are built from git; --binary
 # specs are existing binary paths.
 build_binaries() {
   BIN_LABELS=()
@@ -582,7 +582,7 @@ print_run_row() {
 echo "DDS dtest benchmark"
 echo "==================="
 # One line per binary, baseline first. The label is the branch name (--branch),
-# the binary's basename (--compare), or the current git branch (checkout).
+# the binary's basename (--binary), or the current git branch (checkout).
 for i in "${!BIN_PATHS[@]}"; do
   tag="binary $((i + 1)):"
   (( i == 0 )) && tag="baseline:"
