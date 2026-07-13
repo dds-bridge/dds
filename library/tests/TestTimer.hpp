@@ -12,6 +12,7 @@
 #include <ostream>
 #include <string>
 #include <chrono>
+#include <ctime>
 #include <iostream>
 
 using Clock = std::chrono::steady_clock;
