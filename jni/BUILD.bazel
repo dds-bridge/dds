@@ -1,0 +1,37 @@
+load("@rules_cc//cc:defs.bzl", "cc_shared_library")
+
+# Export lists that constrain the shared library's ABI to the public C API.
+# Regenerate with gen_export_lists.py after changing dll.h or dds_c_api.h; the
+# checked-in .lds files are the source of truth consumed at link time.
+exports_files([
+    "version_script.lds",
+    "exported_symbols.lds",
+    "gen_export_lists.py",
+])
+
+# One self-contained native shared library exporting the stable C ABI
+# (dll.h flat API + dds_c_* shim). All internal sub-libraries are linked in
+# statically, so the JVM's System.loadLibrary("dds") needs only this one file.
+cc_shared_library(
+    name = "dds_shared",
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:dds_c_api",
+    ],
+    shared_lib_name = select({
+        "//:build_windows": "dds.dll",
+        "//:build_macos": "libdds.dylib",
+        "//conditions:default": "libdds.so",
+    }),
+    additional_linker_inputs = select({
+        "//:build_macos": [":exported_symbols.lds"],
+        "//:build_windows": [],
+        "//conditions:default": [":version_script.lds"],
+    }),
+    user_link_flags = select({
+        "//:build_macos": ["-Wl,-exported_symbols_list,$(location :exported_symbols.lds)"],
+        "//:build_windows": [],
+        "//conditions:default": ["-Wl,--version-script=$(location :version_script.lds)"],
+    }),
+    visibility = ["//visibility:public"],
+)

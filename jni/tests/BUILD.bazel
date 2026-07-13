@@ -1,0 +1,22 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+# Verifies the shared library exports exactly the public C API (dll.h flat API
+# plus the dds_c_* shim) and that no C++-mangled symbol leaks. Windows uses a
+# different export mechanism (__declspec) and a different symbol dumper, so the
+# nm-based check is scoped to Unix hosts.
+py_test(
+    name = "export_set_test",
+    srcs = ["export_set_test.py"],
+    args = [
+        "$(location //jni:dds_shared)",
+        "$(location //jni:version_script.lds)",
+    ],
+    data = [
+        "//jni:dds_shared",
+        "//jni:version_script.lds",
+    ],
+    target_compatible_with = select({
+        "//:build_windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
