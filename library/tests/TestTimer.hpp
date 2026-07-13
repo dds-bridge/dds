@@ -66,6 +66,7 @@ class TestTimer
     /// Record one completed batch without wall-clock measurement.
     /// Updates cumulative totals and per-hand min/max extremes.
     /// Used by end() and by unit tests for deterministic extremes.
+    /// Non-positive hands is ignored (no cumulative or extreme updates).
     /// @param hands Number of hands in the batch
     /// @param user_ms Batch user (wall) time in milliseconds
     /// @param sys_ms Batch system (CPU) time in milliseconds

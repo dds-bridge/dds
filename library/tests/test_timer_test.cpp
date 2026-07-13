@@ -64,6 +64,26 @@ TEST(TestTimer, UnevenBatchSizesUsePerHandNotBatchTotal)
   EXPECT_DOUBLE_EQ(timer.sys_max_ms(), 2.0);
 }
 
+TEST(TestTimer, RecordIgnoresNonPositiveHands)
+{
+  TestTimer timer;
+  timer.record(10, 100, 50);
+  timer.record(0, 999, 999);
+  timer.record(-3, 999, 999);
+
+  EXPECT_TRUE(timer.has_batch_times());
+  EXPECT_DOUBLE_EQ(timer.user_min_ms(), 10.0);
+  EXPECT_DOUBLE_EQ(timer.user_max_ms(), 10.0);
+  EXPECT_DOUBLE_EQ(timer.sys_min_ms(), 5.0);
+  EXPECT_DOUBLE_EQ(timer.sys_max_ms(), 5.0);
+
+  const std::string out = capture_print_hands(timer, false, false);
+  EXPECT_NE(out.find("Number of hands"), std::string::npos);
+  EXPECT_NE(out.find("100"), std::string::npos);
+  EXPECT_NE(out.find("10.00"), std::string::npos);
+  EXPECT_EQ(out.find("999"), std::string::npos);
+}
+
 TEST(TestTimer, ResetClearsBatchExtremes)
 {
   TestTimer timer;

@@ -84,28 +84,28 @@ void TestTimer::end()
 
 void TestTimer::record(const int hands, const long user_ms, const long sys_ms)
 {
+  if (hands <= 0)
+    return;
+
   count_ += hands;
   user_cum_ += user_ms;
   sys_cum_ += sys_ms;
 
-  if (hands > 0)
+  const double user_per_hand = user_ms / static_cast<double>(hands);
+  const double sys_per_hand = sys_ms / static_cast<double>(hands);
+  if (batch_count_ == 0)
   {
-    const double user_per_hand = user_ms / static_cast<double>(hands);
-    const double sys_per_hand = sys_ms / static_cast<double>(hands);
-    if (batch_count_ == 0)
-    {
-      user_min_ = user_max_ = user_per_hand;
-      sys_min_ = sys_max_ = sys_per_hand;
-    }
-    else
-    {
-      user_min_ = std::min(user_min_, user_per_hand);
-      user_max_ = std::max(user_max_, user_per_hand);
-      sys_min_ = std::min(sys_min_, sys_per_hand);
-      sys_max_ = std::max(sys_max_, sys_per_hand);
-    }
-    batch_count_++;
+    user_min_ = user_max_ = user_per_hand;
+    sys_min_ = sys_max_ = sys_per_hand;
   }
+  else
+  {
+    user_min_ = std::min(user_min_, user_per_hand);
+    user_max_ = std::max(user_max_, user_per_hand);
+    sys_min_ = std::min(sys_min_, sys_per_hand);
+    sys_max_ = std::max(sys_max_, sys_per_hand);
+  }
+  batch_count_++;
 }
 
 
