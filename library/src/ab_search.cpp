@@ -878,10 +878,10 @@ void make_3(
 
       int aggr = posPoint->aggr[st];
 
-  posPoint->winner[st].rank = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[1][st].rank);
-  posPoint->winner[st].hand = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[1][st].hand);
-  posPoint->second_best[st].rank = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[2][st].rank);
-  posPoint->second_best[st].hand = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[2][st].hand);
+      posPoint->winner[st].rank = thrp->rel[aggr].abs_rank[1][st].rank;
+      posPoint->winner[st].hand = thrp->rel[aggr].abs_rank[1][st].hand;
+      posPoint->second_best[st].rank = thrp->rel[aggr].abs_rank[2][st].rank;
+      posPoint->second_best[st].hand = thrp->rel[aggr].abs_rank[2][st].hand;
 
     }
   }
@@ -944,10 +944,10 @@ static void make_3_ctx(
 
       int aggr = posPoint->aggr[st];
 
-      posPoint->winner[st].rank = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[1][st].rank);
-      posPoint->winner[st].hand = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[1][st].hand);
-      posPoint->second_best[st].rank = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[2][st].rank);
-      posPoint->second_best[st].hand = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[2][st].hand);
+      posPoint->winner[st].rank = thrp->rel[aggr].abs_rank[1][st].rank;
+      posPoint->winner[st].hand = thrp->rel[aggr].abs_rank[1][st].hand;
+      posPoint->second_best[st].rank = thrp->rel[aggr].abs_rank[2][st].rank;
+      posPoint->second_best[st].hand = thrp->rel[aggr].abs_rank[2][st].hand;
 
     }
   }
