@@ -199,6 +199,31 @@ void TestTimer::print_hands(
   const bool show_min,
   const bool show_max) const
 {
+  struct StreamFormatGuard
+  {
+    explicit StreamFormatGuard(ostream& os)
+      : os_(os),
+        flags_(os.flags()),
+        precision_(os.precision()),
+        fill_(os.fill())
+    {
+    }
+
+    ~StreamFormatGuard()
+    {
+      os_.flags(flags_);
+      os_.precision(precision_);
+      os_.fill(fill_);
+    }
+
+    ostream& os_;
+    const std::ios_base::fmtflags flags_;
+    const std::streamsize precision_;
+    const char fill_;
+  };
+
+  const StreamFormatGuard format_guard(out);
+
   if (name_ != "")
     out << setw(21) << left << "Timer name" << 
       setw(12) << right << name_ << "\n";

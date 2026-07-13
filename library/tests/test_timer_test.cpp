@@ -2,6 +2,7 @@
 /// @brief Unit tests for TestTimer batch min/max tracking and optional reporting.
 
 #include <gtest/gtest.h>
+#include <iomanip>
 #include <sstream>
 #include <string>
 
@@ -117,4 +118,20 @@ TEST(TestTimer, PrintHandsShowsMaxWhenRequested)
   EXPECT_EQ(out.find("Min sys time (ms)"), std::string::npos);
   EXPECT_NE(out.find("10.00"), std::string::npos);
   EXPECT_NE(out.find("4.00"), std::string::npos);
+}
+
+TEST(TestTimer, PrintHandsRestoresStreamFormatState)
+{
+  TestTimer timer;
+  timer.record(2, 20, 4);
+
+  std::ostringstream out;
+  out << std::scientific << std::setprecision(5);
+  const auto flags_before = out.flags();
+  const auto precision_before = out.precision();
+
+  timer.print_hands(out, true, true);
+
+  EXPECT_EQ(out.flags(), flags_before);
+  EXPECT_EQ(out.precision(), precision_before);
 }
