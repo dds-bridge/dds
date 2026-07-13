@@ -124,8 +124,10 @@ class TestSolveAllBoardsPBN(unittest.TestCase):
             self.assertEqual(len(capped), len(default))
             for capped_r, default_r in zip(capped, default):
                 # Only the first `cards` entries of a result are meaningful.
-                self.assertEqual(capped_r["cards"], default_r["cards"])
-                self.assertEqual(capped_r["score"][0], default_r["score"][0])
+                cards = capped_r["cards"]
+                self.assertEqual(cards, default_r["cards"])
+                for key in ("suit", "rank", "equals", "score"):
+                    self.assertEqual(capped_r[key][:cards], default_r[key][:cards])
 
 
 class TestSolveAllBoardsBin(unittest.TestCase):
@@ -197,8 +199,10 @@ class TestSolveAllBoardsBin(unittest.TestCase):
             self.assertEqual(len(capped), len(default))
             for capped_r, default_r in zip(capped, default):
                 # Only the first `cards` entries of a result are meaningful.
-                self.assertEqual(capped_r["cards"], default_r["cards"])
-                self.assertEqual(capped_r["score"][0], default_r["score"][0])
+                cards = capped_r["cards"]
+                self.assertEqual(cards, default_r["cards"])
+                for key in ("suit", "rank", "equals", "score"):
+                    self.assertEqual(capped_r[key][:cards], default_r[key][:cards])
 
 
 class TestSolveAllBoardsParity(unittest.TestCase):
