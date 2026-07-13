@@ -7,6 +7,15 @@ test --test_tag_filters=-e2e
 
 common --enable_platform_specific_config
 
+# Java toolchain for the FFM bindings (//jni:*). JDK 25 is the hermetic remote
+# JDK shipped by rules_java 9.6.1; being >= 22 it exposes java.lang.foreign as a
+# stable (non-preview) API, so no --enable-preview is needed. Inert for the
+# C++/WASM/Python targets. Per-test native-access flags live on the java_test.
+build --java_language_version=25
+build --java_runtime_version=remotejdk_25
+build --tool_java_language_version=25
+build --tool_java_runtime_version=remotejdk_25
+
 # Platform-specific C++ standard flags
 build:macos --cxxopt=-std=c++20
 build:macos --host_cxxopt=-std=c++20

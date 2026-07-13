@@ -17,6 +17,11 @@ bazel_dep(name = "apple_support", version = "1.24.2")
 # WASM builds (//wasm:*, //web:dds_mvp_wasm). If you bump this version,
 # rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_mvp_wasm.py.
 bazel_dep(name = "emsdk", version = "5.0.7")
+# Java bindings (//jni:*). Provides the hermetic remote JDK used to build and run
+# the FFM (java.lang.foreign) smoke test. rules_java 9.6.1 registers remotejdk_21
+# and remotejdk_25; we pin JDK 25 (>= 22, so the Foreign Function & Memory API is
+# stable, not preview) via --java_*_version in .bazelrc.
+bazel_dep(name = "rules_java", version = "9.6.1")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
