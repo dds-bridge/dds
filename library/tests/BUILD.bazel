@@ -9,6 +9,8 @@ filegroup(
         exclude = [
             "context_equivalence.cpp",
             "calc_par_test.cpp",  # Uses GoogleTest, compiled separately
+            "test_timer_test.cpp",  # Uses GoogleTest, compiled separately
+            "args_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -52,6 +54,39 @@ cc_test(
     local_defines = DDS_LOCAL_DEFINES,
     deps = [
         "//library/src:dds",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_timer_test",
+    srcs = [
+        "test_timer_test.cpp",
+        "TestTimer.cpp",
+        "TestTimer.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "args_test",
+    srcs = [
+        "args_test.cpp",
+        "args.cpp",
+        "args.hpp",
+        "cst.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
         "@googletest//:gtest_main",
     ],
 )
