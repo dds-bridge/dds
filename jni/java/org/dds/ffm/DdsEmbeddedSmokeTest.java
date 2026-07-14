@@ -30,9 +30,12 @@ public final class DdsEmbeddedSmokeTest {
     private static final long DEAL_REMAIN = Dds.DEAL.byteOffset(PathElement.groupElement("remainCards"));
     private static final long FT_CARDS = Dds.FUTURE_TRICKS.byteOffset(PathElement.groupElement("cards"));
     private static final long FT_SCORE = Dds.FUTURE_TRICKS.byteOffset(PathElement.groupElement("score"));
+    private static final long INFO_MAJOR = Dds.DDS_INFO.byteOffset(PathElement.groupElement("major"));
+    private static final long INFO_MINOR = Dds.DDS_INFO.byteOffset(PathElement.groupElement("minor"));
 
     public static void main(String[] args) {
         try (Dds dds = Dds.loadEmbedded(); Arena arena = Arena.ofConfined()) {
+            checkCoordinateMatchesLibrary(dds, arena);
             // North all spades (trump), East hearts, South diamonds, West clubs;
             // North ruffs every trick -> 13 tricks. Cross-checked in DdsSmokeTest.
             MemorySegment deal = arena.allocate(Dds.DEAL);
@@ -57,6 +60,28 @@ public final class DdsEmbeddedSmokeTest {
             }
         }
         System.out.println("DDS embedded FFM smoke test passed.");
+    }
+
+    private static void checkCoordinateMatchesLibrary(Dds dds, Arena arena) {
+        // Guard against the published Maven version silently diverging from the
+        // embedded native library: the coordinate's major.minor must match the
+        // library's GetDDSInfo. Patch may differ (package vs C-API versioning).
+        String coordinate = System.getProperty("dds.coordinate.version");
+        if (coordinate == null || coordinate.isBlank()) {
+            return; // only enforced when the build passes the coordinate version
+        }
+        MemorySegment info = arena.allocate(Dds.DDS_INFO);
+        dds.getDdsInfo(info);
+        int libMajor = info.get(JAVA_INT, INFO_MAJOR);
+        int libMinor = info.get(JAVA_INT, INFO_MINOR);
+        String[] parts = coordinate.split("\\.");
+        int coordMajor = Integer.parseInt(parts[0]);
+        int coordMinor = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+        System.out.println("version check: coordinate=" + coordinate
+                + " library=" + libMajor + "." + libMinor);
+        check(libMajor == coordMajor && libMinor == coordMinor,
+                "Maven coordinate " + coordinate + " major.minor does not match library "
+                        + libMajor + "." + libMinor);
     }
 
     private static void setRemain(MemorySegment deal, int hand, int suit, int holding) {
