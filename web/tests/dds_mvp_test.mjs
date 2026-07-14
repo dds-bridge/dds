@@ -44,6 +44,7 @@ function findDdsMvpJsPath() {
 
 function createMockDocument(initialValues = {}) {
     const store = new Map();
+    const listeners = new Map();
 
     const makeElement = (id) => {
         const element = {
@@ -66,6 +67,7 @@ function createMockDocument(initialValues = {}) {
     makeElement("valid-pips");
     makeElement("result");
     makeElement("fill-fourth-hand");
+    makeElement("double-dummy-it");
 
     const rows = [];
     for (let row = 0; row < 5; row++) {
@@ -78,6 +80,16 @@ function createMockDocument(initialValues = {}) {
     store.set("result-table", { rows });
 
     return {
+        addEventListener(type, listener) {
+            const typeListeners = listeners.get(type) ?? [];
+            typeListeners.push(listener);
+            listeners.set(type, typeListeners);
+        },
+        dispatch(type, event) {
+            for (const listener of listeners.get(type) ?? []) {
+                listener(event);
+            }
+        },
         getElementById(id) {
             return store.get(id) ?? null;
         },
@@ -312,20 +324,115 @@ test("fillFourthHand completes the part-score west hand", () => {
     assert.equal(document.element("west_diamonds").value, "AK742");
     assert.equal(document.element("west_clubs").value, "T5");
     assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+    assert.equal(document.element("fill-fourth-hand").disabled, true);
+    assert.equal(document.element("double-dummy-it").disabled, false);
 });
 
-test("updateFourthHandFill auto-fills and enables the button", () => {
+test("updateActionButtons enables fill without enabling double-dummy for three hands", () => {
     const document = threeHandsPartScoreDocument();
     const ctx = loadDdsMvp(document);
-    ctx.updateFourthHandFill();
+    ctx.updateActionButtons();
     assert.equal(document.element("fill-fourth-hand").disabled, false);
-    assert.equal(document.element("west_spades").value, "K643");
-    assert.equal(document.element("west_clubs").value, "T5");
+    assert.equal(document.element("double-dummy-it").disabled, true);
+    assert.equal(document.element("west_spades").value, "");
+    assert.equal(document.element("west_clubs").value, "");
 });
 
-test("updateFourthHandFill keeps the button disabled without preconditions", () => {
+test("updateActionButtons enables double-dummy when every hand has 13 cards", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFormWithPartScoreTestData();
+    ctx.updateActionButtons();
+    assert.equal(document.element("fill-fourth-hand").disabled, true);
+    assert.equal(document.element("double-dummy-it").disabled, false);
+});
+
+test("updateActionButtons keeps both action buttons disabled without preconditions", () => {
     const document = createMockDocument({ north_spades: "AKQ" });
     const ctx = loadDdsMvp(document);
-    ctx.updateFourthHandFill();
+    ctx.updateActionButtons();
     assert.equal(document.element("fill-fourth-hand").disabled, true);
+    assert.equal(document.element("double-dummy-it").disabled, true);
+});
+
+test("handleHandKeydown fills the fourth hand on Enter when eligible", () => {
+    const document = threeHandsPartScoreDocument();
+    const ctx = loadDdsMvp(document);
+    let sendCalled = false;
+    ctx.sendJSON = () => {
+        sendCalled = true;
+    };
+    let prevented = false;
+    ctx.handleHandKeydown({
+        key: "Enter",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, true);
+    assert.equal(sendCalled, false);
+    assert.equal(document.element("west_spades").value, "K643");
+    assert.equal(document.element("west_clubs").value, "T5");
+    assert.equal(document.element("fill-fourth-hand").disabled, true);
+    assert.equal(document.element("double-dummy-it").disabled, false);
+});
+
+test("handleHandKeydown runs double-dummy on Enter when every hand has 13 cards", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFormWithPartScoreTestData();
+    let sendCalled = false;
+    ctx.sendJSON = () => {
+        sendCalled = true;
+    };
+    let prevented = false;
+    ctx.handleHandKeydown({
+        key: "Enter",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, true);
+    assert.equal(sendCalled, true);
+});
+
+test("page default runs double-dummy on Enter after loading a complete deal", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFormWithPartScoreTestData();
+    let sendCalled = false;
+    ctx.sendJSON = () => {
+        sendCalled = true;
+    };
+    ctx.pageLoad();
+    let prevented = false;
+
+    document.dispatch("keydown", {
+        key: "Enter",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+
+    assert.equal(prevented, true);
+    assert.equal(sendCalled, true);
+});
+
+test("handleHandKeydown ignores Enter when neither action is eligible", () => {
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsMvp(document);
+    let sendCalled = false;
+    ctx.sendJSON = () => {
+        sendCalled = true;
+    };
+    let prevented = false;
+    ctx.handleHandKeydown({
+        key: "Enter",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, false);
+    assert.equal(sendCalled, false);
+    assert.equal(document.element("west_spades").value, "");
 });
