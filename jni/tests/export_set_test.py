@@ -28,14 +28,17 @@ def expected_symbols(header_paths):
 
 
 def exported_symbols(lib_path):
-    """Return the set of externally-defined text symbols in the library."""
+    """Return the set of externally-defined text symbols in the library.
+
+    Only `-g` (external symbols) is passed; defined-vs-undefined is decided from
+    the symbol-type column (uppercase `T` = external defined text), so we do not
+    depend on `-U`, whose meaning differs between BSD nm and llvm/GNU nm.
+    """
     if sys.platform == "darwin":
-        out = subprocess.check_output(["nm", "-gU", lib_path], text=True)
+        out = subprocess.check_output(["nm", "-g", lib_path], text=True)
         strip_underscore = True
     else:
-        out = subprocess.check_output(
-            ["nm", "-D", "--defined-only", lib_path], text=True
-        )
+        out = subprocess.check_output(["nm", "-D", "-g", lib_path], text=True)
         strip_underscore = False
 
     names = set()
@@ -44,7 +47,7 @@ def exported_symbols(lib_path):
         if len(parts) < 2:
             continue
         sym_type, name = parts[-2], parts[-1]
-        if sym_type != "T":  # exported code symbols only
+        if sym_type != "T":  # external defined text symbols only ('U'/'t' excluded)
             continue
         if strip_underscore and name.startswith("_"):
             name = name[1:]
