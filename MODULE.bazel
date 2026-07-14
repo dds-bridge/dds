@@ -22,6 +22,10 @@ bazel_dep(name = "emsdk", version = "5.0.7")
 # and remotejdk_25; we pin JDK 25 (>= 22, so the Foreign Function & Memory API is
 # stable, not preview) via --java_*_version in .bazelrc.
 bazel_dep(name = "rules_java", version = "9.6.1")
+# Java packaging (//jni:dds_ffm_dist). Provides java_export -> a Maven-coordinate
+# jar plus a generated .publish target that supports file:// local repos, used to
+# install into ~/.m2 (Phase 1; no remote/public publishing yet).
+bazel_dep(name = "rules_jvm_external", version = "7.0")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
