@@ -120,3 +120,19 @@ java_test(
         "//conditions:default": [],
     }),
 )
+
+# Validates the packaging path: loads the native lib via Dds.loadEmbedded() from
+# the jar's classpath resource (depends on dds_ffm_dist, which embeds it) and
+# solves the known deal. Off Windows like the other jni tests.
+java_test(
+    name = "dds_ffm_embedded_smoke_test",
+    srcs = ["java/org/dds/ffm/DdsEmbeddedSmokeTest.java"],
+    main_class = "org.dds.ffm.DdsEmbeddedSmokeTest",
+    use_testrunner = False,
+    jvm_flags = ["--enable-native-access=ALL-UNNAMED"],
+    deps = [":dds_ffm_dist"],
+    target_compatible_with = select({
+        "//:build_windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
