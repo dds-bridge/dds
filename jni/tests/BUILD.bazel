@@ -32,3 +32,14 @@ py_test(
     srcs = ["gen_export_lists_test.py"],
     deps = ["//jni:gen_export_lists_lib"],
 )
+
+# Inspects the built jar directly (not the Bazel classpath) to prove java_export
+# bundled both the binding classes and the native library into the artifact a
+# Maven consumer would actually receive. Inherits dds_ffm_dist's platform
+# compatibility, so it is skipped on unsupported host os/cpu.
+py_test(
+    name = "jar_self_contained_test",
+    srcs = ["jar_self_contained_test.py"],
+    args = ["$(location //jni:dds_ffm_dist)"],
+    data = ["//jni:dds_ffm_dist"],
+)
