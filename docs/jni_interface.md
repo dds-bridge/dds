@@ -16,8 +16,9 @@ bindings work — see [python_interface.md](python_interface.md),
 4. [Using the FFM bindings](#using-the-ffm-bindings)
 5. [Worked example](#worked-example)
 6. [Loading and running](#loading-and-running)
-7. [Threading and lifecycle](#threading-and-lifecycle)
-8. [Not yet supported](#not-yet-supported)
+7. [Packaging & local install](#packaging--local-install)
+8. [Threading and lifecycle](#threading-and-lifecycle)
+9. [Not yet supported](#not-yet-supported)
 
 ---
 
@@ -141,21 +142,58 @@ tested program including `GetDDSInfo`.
 
 ## Loading and running
 
-`Dds.load(Path)` uses `SymbolLookup.libraryLookup`, so you pass the shared
-library's path directly — there is no reliance on `System.loadLibrary` and
-`java.library.path`. In Bazel, make the artifact a `data` dependency and hand
-its runfiles path to the program, e.g.
-`-Ddds.library.path=$(rootpath //jni:dds_shared)`.
+There are two ways to load the native library:
+
+- **`Dds.loadEmbedded()`** (default) — extracts the library bundled in the jar
+  for the current OS/arch (from the classpath resource
+  `native/<os>-<arch>/<lib>`) to a temp file and loads it. Zero configuration;
+  this is what the published jar (below) is for. Host-platform only for now.
+- **`Dds.load(Path)`** — loads a library at an explicit filesystem path via
+  `SymbolLookup.libraryLookup`, with no reliance on `System.loadLibrary` /
+  `java.library.path`. Useful when you built `//jni:dds_shared` yourself; in
+  Bazel, make it a `data` dependency and pass its runfiles path, e.g.
+  `-Ddds.library.path=$(rootpath //jni:dds_shared)`.
 
 FFM downcalls are restricted native operations. Run with
 `--enable-native-access=ALL-UNNAMED` (as a `jvm_flag` or on the `java`
 command line) to grant access and silence the runtime warning.
 
-The end-to-end smoke test wires all of this together:
+The end-to-end smoke tests wire all of this together:
 
 ```bash
-bazel test //jni:dds_ffm_smoke_test
+bazel test //jni:dds_ffm_smoke_test           # explicit-path loading
+bazel test //jni:dds_ffm_embedded_smoke_test  # loadEmbedded() from the jar
 ```
+
+## Packaging & local install
+
+`//jni:dds_ffm_dist` is a `java_export` producing a Maven-coordinate jar,
+`org.dds:dds-ffm:3.0.1`, that **embeds the host-platform native library** under
+`native/<os>-<arch>/` — so a consumer needs only the jar and
+`Dds.loadEmbedded()`, no separate `.so`/`.dylib`/`.dll` to locate.
+
+Install it into your local Maven repository (`~/.m2`):
+
+```bash
+bazel run //jni:dds_ffm_dist.publish \
+    --define maven_repo="file://$HOME/.m2/repository" \
+    --define gpg_sign=false
+```
+
+This deposits the main jar plus `-sources`, `-javadoc`, and the generated POM
+under `org/dds/dds-ffm/3.0.1/`. Another project on the same machine can then
+depend on it:
+
+```kotlin
+implementation("org.dds:dds-ffm:3.0.1")   // Gradle
+```
+```xml
+<dependency><groupId>org.dds</groupId><artifactId>dds-ffm</artifactId><version>3.0.1</version></dependency>
+```
+
+The bundled native library is **host-platform only** — the jar built on macOS
+contains the macOS `.dylib` and so on. A single multi-OS/arch ("fat") jar and
+publishing to a public/remote repository are not yet available (see below).
 
 ## Threading and lifecycle
 
@@ -168,8 +206,11 @@ through the shim.
 
 ## Not yet supported
 
+- **Remote/public publishing** — only local `~/.m2` installs are wired today.
+  Publishing to Maven Central (OSSRH + GPG signing) or GitHub Packages is not
+  yet set up.
+- **Multi-OS/arch "fat" jar** — the jar bundles only the host platform's native
+  library. Producing one jar with every triplet requires a CI matrix building
+  each platform and a final assembly step.
 - **Hand-written JNI convenience API** (idiomatic `native`-method Java classes)
   — deferred; the FFM path above is the supported route.
-- **Native-in-JAR packaging** (bundling per-OS/arch libraries inside a JAR and
-  extracting at runtime for Maven distribution) — deferred; consumers currently
-  point `Dds.load` at the built artifact directly.
