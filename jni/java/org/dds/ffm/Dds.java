@@ -67,6 +67,12 @@ public final class Dds implements AutoCloseable {
             MemoryLayout.sequenceLayout(20, JAVA_INT).withName("resTable"))
             .withName("DdTableResults");
 
+    /** struct ParResults — par_score[2][16], par_contracts_string[2][128]. */
+    public static final MemoryLayout PAR_RESULTS = MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(2 * 16, JAVA_BYTE).withName("parScore"),
+            MemoryLayout.sequenceLayout(2 * 128, JAVA_BYTE).withName("parContractsString"))
+            .withName("ParResults");
+
     /** struct DDSInfo. The char[10] version_string forces 2 bytes of padding. */
     public static final MemoryLayout DDS_INFO = MemoryLayout.structLayout(
             JAVA_INT.withName("major"),

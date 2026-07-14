@@ -30,6 +30,16 @@ public final class DdsSmokeTest {
     private static final int FULL_SUIT = 0x7FFC;
     private static final int RETURN_NO_FAULT = 1;
 
+    // Double dummy table for the known deal, res_table[strain][hand] flattened
+    // (5 strains x 4 hands). Cross-checked against the Python binding.
+    private static final int[] EXPECTED_DD_TABLE = {
+        13, 0, 13, 0,   // spades
+        0, 13, 0, 13,   // hearts
+        13, 0, 13, 0,   // diamonds
+        0, 13, 0, 13,   // clubs
+        0, 0, 0, 0,     // no-trump
+    };
+
     // Byte offsets derived once from the public layouts (robust to edits).
     private static final long DEAL_TRUMP = Dds.DEAL.byteOffset(PathElement.groupElement("trump"));
     private static final long DEAL_FIRST = Dds.DEAL.byteOffset(PathElement.groupElement("first"));
@@ -40,6 +50,12 @@ public final class DdsSmokeTest {
             Dds.DDS_INFO.byteOffset(PathElement.groupElement("systemString"));
     private static final long INFO_NO_OF_THREADS =
             Dds.DDS_INFO.byteOffset(PathElement.groupElement("noOfThreads"));
+    private static final long DTD_CARDS =
+            Dds.DD_TABLE_DEAL.byteOffset(PathElement.groupElement("cards"));
+    private static final long DTR_RES_TABLE =
+            Dds.DD_TABLE_RESULTS.byteOffset(PathElement.groupElement("resTable"));
+    private static final long PAR_SCORE =
+            Dds.PAR_RESULTS.byteOffset(PathElement.groupElement("parScore"));
 
     public static void main(String[] args) throws Exception {
         Path library = locateLibrary();
@@ -48,6 +64,9 @@ public final class DdsSmokeTest {
         try (Dds dds = Dds.load(library); Arena arena = Arena.ofConfined()) {
             checkDdsInfo(dds, arena);
             checkSolveKnownDeal(dds, arena);
+            checkSolveRejectsInvalidDeal(dds, arena);
+            checkCalcDdTable(dds, arena);
+            checkCalcPar(dds, arena);
         }
         System.out.println("DDS FFM smoke test passed.");
     }
@@ -93,9 +112,79 @@ public final class DdsSmokeTest {
         }
     }
 
+    private static void checkSolveRejectsInvalidDeal(Dds dds, Arena arena) {
+        // trump = 5 is out of range (valid 0..4); the shim must surface the
+        // solver's error code rather than succeeding or crashing.
+        MemorySegment deal = arena.allocate(Dds.DEAL);
+        deal.set(JAVA_INT, DEAL_TRUMP, 5);
+        setRemain(deal, 0, 0, FULL_SUIT);
+
+        MemorySegment ctx = dds.createSolverContext();
+        try {
+            MemorySegment fut = arena.allocate(Dds.FUTURE_TRICKS);
+            int rc = dds.solveBoard(ctx, deal, -1, 1, 1, fut);
+            System.out.println("solve_board(invalid trump): rc=" + rc);
+            check(rc != RETURN_NO_FAULT, "invalid deal should not return success, got " + rc);
+        } finally {
+            dds.destroySolverContext(ctx);
+        }
+    }
+
+    private static void checkCalcDdTable(Dds dds, Arena arena) {
+        // Same holdings as the solve fixture; DdTableDeal.cards is [hand][suit].
+        MemorySegment tableDeal = arena.allocate(Dds.DD_TABLE_DEAL);
+        setHolding(tableDeal, DTD_CARDS, 0, 0, FULL_SUIT);
+        setHolding(tableDeal, DTD_CARDS, 1, 1, FULL_SUIT);
+        setHolding(tableDeal, DTD_CARDS, 2, 2, FULL_SUIT);
+        setHolding(tableDeal, DTD_CARDS, 3, 3, FULL_SUIT);
+
+        MemorySegment ctx = dds.createSolverContext();
+        try {
+            MemorySegment results = arena.allocate(Dds.DD_TABLE_RESULTS);
+            int rc = dds.calcDdTable(ctx, tableDeal, results);
+            check(rc == RETURN_NO_FAULT, "dds_c_calc_dd_table returned " + rc);
+
+            for (int i = 0; i < EXPECTED_DD_TABLE.length; i++) {
+                int got = results.get(JAVA_INT, DTR_RES_TABLE + (long) i * Integer.BYTES);
+                check(got == EXPECTED_DD_TABLE[i],
+                        "resTable[" + i + "] expected " + EXPECTED_DD_TABLE[i] + ", got " + got);
+            }
+            System.out.println("calc_dd_table: 5x4 table matches expected.");
+        } finally {
+            dds.destroySolverContext(ctx);
+        }
+    }
+
+    private static void checkCalcPar(Dds dds, Arena arena) {
+        MemorySegment tableDeal = arena.allocate(Dds.DD_TABLE_DEAL);
+        setHolding(tableDeal, DTD_CARDS, 0, 0, FULL_SUIT);
+        setHolding(tableDeal, DTD_CARDS, 1, 1, FULL_SUIT);
+        setHolding(tableDeal, DTD_CARDS, 2, 2, FULL_SUIT);
+        setHolding(tableDeal, DTD_CARDS, 3, 3, FULL_SUIT);
+
+        MemorySegment ctx = dds.createSolverContext();
+        try {
+            MemorySegment results = arena.allocate(Dds.DD_TABLE_RESULTS);
+            MemorySegment par = arena.allocate(Dds.PAR_RESULTS);
+            int rc = dds.calcPar(ctx, tableDeal, 0 /* vulnerable: none */, results, par);
+            check(rc == RETURN_NO_FAULT, "dds_c_calc_par returned " + rc);
+
+            String parScore = readCString(par, PAR_SCORE);
+            System.out.println("calc_par: NS par score = \"" + parScore + "\"");
+            check(!parScore.isBlank(), "calc_par NS par_score should be non-empty");
+        } finally {
+            dds.destroySolverContext(ctx);
+        }
+    }
+
     private static void setRemain(MemorySegment deal, int hand, int suit, int holding) {
         // remainCards[hand][suit], row-major with DDS_SUITS = 4 columns.
-        deal.set(JAVA_INT, DEAL_REMAIN + (long) (hand * 4 + suit) * Integer.BYTES, holding);
+        setHolding(deal, DEAL_REMAIN, hand, suit, holding);
+    }
+
+    private static void setHolding(MemorySegment struct, long base, int hand, int suit, int holding) {
+        // [hand][suit] array, row-major with DDS_SUITS = 4 columns.
+        struct.set(JAVA_INT, base + (long) (hand * 4 + suit) * Integer.BYTES, holding);
     }
 
     private static String readCString(MemorySegment struct, long offset) {

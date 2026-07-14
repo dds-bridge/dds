@@ -20,3 +20,11 @@ py_test(
         "//conditions:default": [],
     }),
 )
+
+# Unit-tests the export-list generator's parser directly (header snippets in,
+# symbol set out) — independent of the linked library.
+py_test(
+    name = "gen_export_lists_test",
+    srcs = ["gen_export_lists_test.py"],
+    deps = ["//jni:gen_export_lists_lib"],
+)
