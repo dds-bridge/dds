@@ -19,6 +19,9 @@ import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -26,7 +29,9 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /**
  * FFM bindings for the DDS native shared library. Load one instance per library
@@ -128,6 +133,62 @@ public final class Dds implements AutoCloseable {
         Arena arena = Arena.ofShared();
         SymbolLookup lookup = SymbolLookup.libraryLookup(libraryFile, arena);
         return new Dds(arena, lookup);
+    }
+
+    /**
+     * Load the DDS library bundled inside this jar for the current OS/arch,
+     * extracting it to a temp file first. Requires the native library to be on
+     * the classpath at {@code /native/<os>-<arch>/<lib>} (host platform only).
+     */
+    public static Dds loadEmbedded() {
+        String os = osToken();
+        String arch = archToken();
+        String lib = libFileName(os);
+        String resource = "/native/" + os + "-" + arch + "/" + lib;
+        try (InputStream in = Dds.class.getResourceAsStream(resource)) {
+            if (in == null) {
+                throw new IllegalStateException("no embedded DDS library at " + resource);
+            }
+            Path tmp = Files.createTempFile("dds", lib.substring(lib.lastIndexOf('.')));
+            Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            tmp.toFile().deleteOnExit();
+            return load(tmp);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static String osToken() {
+        String name = System.getProperty("os.name", "").toLowerCase();
+        if (name.contains("mac") || name.contains("darwin")) {
+            return "macos";
+        }
+        if (name.contains("win")) {
+            return "windows";
+        }
+        return "linux";
+    }
+
+    private static String archToken() {
+        String arch = System.getProperty("os.arch", "").toLowerCase();
+        if (arch.equals("aarch64") || arch.equals("arm64")) {
+            return "aarch64";
+        }
+        if (arch.equals("x86_64") || arch.equals("amd64")) {
+            return "x86_64";
+        }
+        return arch;
+    }
+
+    private static String libFileName(String os) {
+        switch (os) {
+            case "macos":
+                return "libdds.dylib";
+            case "windows":
+                return "dds.dll";
+            default:
+                return "libdds.so";
+        }
     }
 
     /** Arena scoping this library; use it to allocate struct segments. */
