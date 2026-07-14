@@ -5,6 +5,8 @@ module(
 
 bazel_dep(name = "rules_cc", version = "0.2.18")
 bazel_dep(name = "platforms", version = "1.1.0")
+# copy_file (shell-free, cross-platform) for staging the native lib into the jar.
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "2.0.1")

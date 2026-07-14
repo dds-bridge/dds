@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_cc//cc:defs.bzl", "cc_shared_library")
 load("@rules_java//java:defs.bzl", "java_library", "java_test")
 load("@rules_jvm_external//:defs.bzl", "java_export")
@@ -80,18 +81,16 @@ java_library(
 )
 
 # Stage the host shared library under native/<os>-<arch>/ for jar embedding.
-# genrule outs are not configurable, so there is one per os+arch triplet gated by
-# target_compatible_with; only the host's is analysed, and its output path's arch
-# matches what Dds.loadEmbedded() looks up at runtime. Host platform only
-# (Phase 1) — a multi-arch fat jar is a separate follow-up.
+# copy_file outputs are not configurable, so there is one per os+arch triplet
+# gated by target_compatible_with; only the host's is analysed, and its output
+# path's arch matches what Dds.loadEmbedded() looks up at runtime. copy_file is
+# shell-free, so no cp/copy toolchain assumption on any host (incl. Windows).
+# Host platform only (Phase 1) — a multi-arch fat jar is a separate follow-up.
 [
-    genrule(
+    copy_file(
         name = "native_in_jar_" + triplet.replace("-", "_"),
-        srcs = ["//jni:dds_shared"],
-        outs = ["native/" + triplet + "/" + libname],
-        # cp for POSIX hosts; copy for Windows (no msys/coreutils assumption).
-        cmd = "cp $(location //jni:dds_shared) $@",
-        cmd_bat = "copy /Y $(location //jni:dds_shared) $@",
+        src = "//jni:dds_shared",
+        out = "native/" + triplet + "/" + libname,
         target_compatible_with = cvs,
     )
     for triplet, libname, cvs in [
@@ -107,7 +106,9 @@ java_library(
 # plus the embedded native library extracted at runtime by Dds.loadEmbedded().
 # java_export also generates the runnable //jni:dds_ffm_dist.publish target
 # (supports file:// local ~/.m2). The native resource is selected by host
-# os+arch so its embedded path matches loadEmbedded()'s lookup.
+# os+arch so its embedded path matches loadEmbedded()'s lookup; on any other
+# platform the target is incompatible (skipped by //...) rather than a hard
+# "no matching conditions" failure that would poison unrelated builds.
 java_export(
     name = "dds_ffm_dist",
     exports = [":dds_ffm"],
@@ -119,6 +120,15 @@ java_export(
         ":linux_arm64": [":native_in_jar_linux_aarch64"],
         ":linux_x86_64": [":native_in_jar_linux_x86_64"],
         ":windows_x86_64": [":native_in_jar_windows_x86_64"],
+        "//conditions:default": [],
+    }),
+    target_compatible_with = select({
+        ":macos_arm64": [],
+        ":macos_x86_64": [],
+        ":linux_arm64": [],
+        ":linux_x86_64": [],
+        ":windows_x86_64": [],
+        "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = ["//visibility:public"],
 )
