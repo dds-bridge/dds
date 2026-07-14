@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_shared_library")
 load("@rules_java//java:defs.bzl", "java_library", "java_test")
+load("@rules_jvm_external//:defs.bzl", "java_export")
 load("@rules_python//python:defs.bzl", "py_library")
 
 # Export lists that constrain the shared library's ABI to the public C API.
@@ -52,6 +53,50 @@ cc_shared_library(
 java_library(
     name = "dds_ffm",
     srcs = ["java/org/dds/ffm/Dds.java"],
+    visibility = ["//visibility:public"],
+)
+
+# Stage the host shared library under native/<os>-<arch>/ for jar embedding.
+# genrule outs are not configurable, so there is one per OS gated by
+# target_compatible_with; only the host's is analysed. Host platform only
+# (Phase 1); the triplet matches the toolchains in MODULE.bazel.
+genrule(
+    name = "native_in_jar_macos",
+    srcs = ["//jni:dds_shared"],
+    outs = ["native/macos-aarch64/libdds.dylib"],
+    cmd = "cp $(location //jni:dds_shared) $@",
+    target_compatible_with = ["@platforms//os:osx"],
+)
+
+genrule(
+    name = "native_in_jar_windows",
+    srcs = ["//jni:dds_shared"],
+    outs = ["native/windows-x86_64/dds.dll"],
+    cmd = "cp $(location //jni:dds_shared) $@",
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+genrule(
+    name = "native_in_jar_linux",
+    srcs = ["//jni:dds_shared"],
+    outs = ["native/linux-x86_64/libdds.so"],
+    cmd = "cp $(location //jni:dds_shared) $@",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Publishable Maven jar: FFM binding classes plus the embedded native library,
+# extracted at runtime by Dds.loadEmbedded(). java_export also generates the
+# runnable //jni:dds_ffm_dist.publish target (supports file:// local ~/.m2).
+java_export(
+    name = "dds_ffm_dist",
+    srcs = ["java/org/dds/ffm/Dds.java"],
+    maven_coordinates = "org.dds:dds-ffm:3.0.1",
+    resource_strip_prefix = "jni",
+    resources = select({
+        "//:build_macos": [":native_in_jar_macos"],
+        "//:build_windows": [":native_in_jar_windows"],
+        "//conditions:default": [":native_in_jar_linux"],
+    }),
     visibility = ["//visibility:public"],
 )
 
