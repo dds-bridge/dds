@@ -24,7 +24,8 @@
             sendJSON
             fourthHandFillState
             fillFourthHand
-            updateFourthHandFill
+            updateActionButtons
+            handleHandKeydown
             */
 
 // It's also useful to pass the code through
@@ -108,7 +109,7 @@ function fillFormWithTestData(nesw) {
         element.value = holdings.shift();
     }
 
-    updateFourthHandFill();
+    updateActionButtons();
 }
 
 function fillFormWithGrandSlamTestData() {
@@ -171,7 +172,7 @@ function clearTestData() {
         element.value = "";
     }
 
-    updateFourthHandFill();
+    updateActionButtons();
     focusNorthSpades();
 }
 
@@ -194,7 +195,7 @@ function rotateClockwise() {
         element.value = hands.shift();
     }
 
-    updateFourthHandFill();
+    updateActionButtons();
 }
 
 function allDeckCards() {
@@ -306,17 +307,22 @@ function applyFourthHandFill(hands, emptyHand) {
     return true;
 }
 
-function updateFourthHandFill() {
-    const button = document.getElementById("fill-fourth-hand");
-    const hands = collectHands();
-    const state = fourthHandFillState(hands);
+function allHandsHaveThirteenCards(hands) {
+    return DIRECTION_LETTERS.every((direction) => hands[direction].length === 13);
+}
 
-    if (button) {
-        button.disabled = !state.canFill;
+function updateActionButtons() {
+    const hands = collectHands();
+    const fillState = fourthHandFillState(hands);
+    const fillButton = document.getElementById("fill-fourth-hand");
+    const doubleDummyButton = document.getElementById("double-dummy-it");
+
+    if (fillButton) {
+        fillButton.disabled = !fillState.canFill;
     }
 
-    if (state.canFill) {
-        applyFourthHandFill(hands, state.emptyHand);
+    if (doubleDummyButton) {
+        doubleDummyButton.disabled = !allHandsHaveThirteenCards(hands);
     }
 }
 
@@ -329,6 +335,28 @@ function fillFourthHand() {
     }
 
     applyFourthHandFill(hands, state.emptyHand);
+    updateActionButtons();
+}
+
+function handleHandKeydown(event) {
+    if (event.key !== "Enter") {
+        return;
+    }
+
+    const hands = collectHands();
+    const fillState = fourthHandFillState(hands);
+
+    if (fillState.canFill) {
+        event.preventDefault();
+        applyFourthHandFill(hands, fillState.emptyHand);
+        updateActionButtons();
+        return;
+    }
+
+    if (allHandsHaveThirteenCards(hands)) {
+        event.preventDefault();
+        sendJSON();
+    }
 }
 
 function collectHands() {
@@ -410,10 +438,11 @@ function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
 
     for (const element of hand_elements()) {
-        element.addEventListener("input", updateFourthHandFill);
+        element.addEventListener("input", updateActionButtons);
     }
 
-    updateFourthHandFill();
+    document.addEventListener("keydown", handleHandKeydown);
+    updateActionButtons();
     focusNorthSpades();
 }
 

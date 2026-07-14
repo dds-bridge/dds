@@ -193,16 +193,65 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             finally:
                 page.close()
 
+    def test_enter_runs_double_dummy_after_loading_a_complete_deal(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            self._fill_part_score_deal(page)
+
+            page.keyboard.press("Enter")
+            page.wait_for_function(
+                """() => {
+                const cell = document.getElementById('result-table').rows[1].cells[1];
+                return cell && /^\\d+$/.test(cell.textContent.trim());
+              }""",
+                timeout=120_000,
+            )
+
+            self._assert_part_score_table(page)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_validation_error_on_incomplete_deal(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
             page.get_by_role("button", name="Clear entries").click()
-            page.get_by_role("button", name="Double-dummy it!").click()
+            double_dummy = page.get_by_role("button", name="Double-dummy it!")
+            self.assertTrue(double_dummy.is_disabled())
+            page.evaluate("() => sendJSON()")
             page.wait_for_function(
                 """() => document.getElementById('result').textContent.includes('13 cards')"""
             )
             message = page.locator("#result").inner_text()
             self.assertIn("13 cards", message)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_enter_fills_fourth_hand_when_three_hands_are_complete(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            self._fill_part_score_deal(page)
+            for suit in ("spades", "hearts", "diamonds", "clubs"):
+                page.locator(f"#west_{suit}").fill("")
+
+            fill_button = page.get_by_role("button", name="Fill fourth hand")
+            double_dummy = page.get_by_role("button", name="Double-dummy it!")
+            self.assertTrue(fill_button.is_enabled())
+            self.assertTrue(double_dummy.is_disabled())
+            self.assertEqual(page.locator("#west_spades").input_value(), "")
+
+            page.locator("#north_spades").press("Enter")
+
+            self.assertEqual(page.locator("#west_spades").input_value(), "K643")
+            self.assertEqual(page.locator("#west_hearts").input_value(), "T8")
+            self.assertEqual(page.locator("#west_diamonds").input_value(), "AK742")
+            self.assertEqual(page.locator("#west_clubs").input_value(), "T5")
+            # Enter must activate Fill fourth hand, not Double-dummy it!
+            self.assertEqual(self._read_table_cell(page, "N", "C"), "")
+            self.assertEqual(page.locator("#result").inner_text().strip(), "")
+            self.assertTrue(fill_button.is_disabled())
+            self.assertTrue(double_dummy.is_enabled())
             self.assertEqual(errors, [])
         finally:
             page.close()
