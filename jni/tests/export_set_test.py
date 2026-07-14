@@ -1,36 +1,30 @@
 #!/usr/bin/env python3
 """Assert the shared library exports exactly the public C API and nothing else.
 
-Given the built shared library and the checked-in Linux version script (used
-here purely as the canonical list of expected symbol names), this test:
+The expected symbol set is derived directly from the public headers (dll.h,
+dds_c_api.h) via the same parser that generates the export lists — NOT from the
+generated .lds. This is deliberate: driving "expected" from the .lds would be
+tautological (the .lds also drives what the linker exports), so a public symbol
+added to a header but never regenerated into the .lds would go undetected. By
+parsing the headers instead, a stale .lds surfaces as a missing export.
 
-  * confirms every expected public symbol is exported, and
+This test:
+  * confirms every symbol declared in the headers is actually exported, and
   * confirms no C++-mangled symbol (Itanium `_Z...`) leaks into the ABI.
 
-Invoked as: export_set_test.py <shared-lib> <version_script.lds>
+Invoked as: export_set_test.py <shared-lib> <header>...
 """
 
 import re
 import subprocess
 import sys
 
+import gen_export_lists
 
-def expected_symbols(lds_path):
-    """Parse the `global:` block of a version script into a symbol set."""
-    symbols = set()
-    in_global = False
-    with open(lds_path, encoding="utf-8") as handle:
-        for raw in handle:
-            line = raw.strip()
-            if line == "global:":
-                in_global = True
-                continue
-            if line == "local:":
-                in_global = False
-                continue
-            if in_global and line.endswith(";") and line != "*;":
-                symbols.add(line[:-1].strip())
-    return symbols
+
+def expected_symbols(header_paths):
+    """Public symbols declared in the headers (source of truth for the ABI)."""
+    return set(gen_export_lists.parse_symbols(header_paths))
 
 
 def exported_symbols(lib_path):
@@ -59,8 +53,8 @@ def exported_symbols(lib_path):
 
 
 def main(argv):
-    lib_path, lds_path = argv[1], argv[2]
-    expected = expected_symbols(lds_path)
+    lib_path, header_paths = argv[1], argv[2:]
+    expected = expected_symbols(header_paths)
     exported = exported_symbols(lib_path)
 
     missing = sorted(expected - exported)
