@@ -8,6 +8,7 @@
 */
 
 #include "calc_tables.hpp"
+#include <bit>
 #include <vector>
 
 #include <pbn.hpp>
@@ -253,6 +254,22 @@ int STDCALL CalcAllTablesN(
 
   if (count * dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
     return RETURN_TOO_MANY_TABLES;
+
+  // Each hand must hold exactly 13 cards. A malformed deal otherwise reaches
+  // the multi-threaded solver, which can read out of bounds and crash the
+  // process -- intermittently, depending on the number of tables and heap
+  // layout -- before the per-board card-count check fires. Reject up front so
+  // batch calls fail cleanly with RETURN_CARD_COUNT, matching the contract the
+  // single-board solver already enforces.
+  for (int m = 0; m < dealsp->no_of_tables; m++)
+    for (int h = 0; h < DDS_HANDS; h++)
+    {
+      int cardsInHand = 0;
+      for (int s = 0; s < DDS_SUITS; s++)
+        cardsInHand += std::popcount(dealsp->deals[m].cards[h][s]);
+      if (cardsInHand != 13)
+        return RETURN_CARD_COUNT;
+    }
 
   int ind = 0;
   int lastIndex = 0;
