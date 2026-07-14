@@ -131,8 +131,16 @@ public final class Dds implements AutoCloseable {
     /** Load the DDS shared library at {@code libraryFile} and bind its symbols. */
     public static Dds load(Path libraryFile) {
         Arena arena = Arena.ofShared();
-        SymbolLookup lookup = SymbolLookup.libraryLookup(libraryFile, arena);
-        return new Dds(arena, lookup);
+        try {
+            SymbolLookup lookup = SymbolLookup.libraryLookup(libraryFile, arena);
+            return new Dds(arena, lookup);
+        } catch (RuntimeException | Error e) {
+            // A shared arena is not auto-managed; close it so a failed load (e.g.
+            // wrong-arch/missing library, or a missing symbol) does not leak the
+            // native memory session for the JVM lifetime.
+            arena.close();
+            throw e;
+        }
     }
 
     /**
