@@ -221,13 +221,19 @@ public final class DdsSmokeTest {
 
     private static Path locateLibrary() throws Exception {
         String prop = System.getProperty("dds.library.path");
-        if (prop != null) {
+        if (prop != null && !prop.isBlank()) {
+            // An explicitly-set property is authoritative: use it or fail fast.
+            // Do not fall back to scanning, which could non-deterministically
+            // load a different libdds.* found elsewhere in the tree.
             Path p = Path.of(prop);
-            if (Files.exists(p)) {
+            if (Files.isRegularFile(p)) {
                 return p;
             }
+            throw new IllegalStateException(
+                    "dds.library.path does not point to a file: " + prop);
         }
-        // Fall back to searching the runfiles tree for the built artifact.
+        // No property set: fall back to searching the runfiles tree for the
+        // built artifact.
         // Bound the walk depth so a missing/incorrect dds.library.path does not
         // send us traversing an arbitrarily large checkout or runfiles tree.
         String[] names = {"libdds.dylib", "libdds.so", "dds.dll"};

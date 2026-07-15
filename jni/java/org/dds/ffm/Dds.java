@@ -274,6 +274,12 @@ public final class Dds implements AutoCloseable {
         if (t instanceof RuntimeException re) {
             return re;
         }
+        if (t instanceof Error err) {
+            // Propagate JVM-fatal conditions (OutOfMemoryError, LinkageError,
+            // ...) unchanged; wrapping them would hide them behind callers'
+            // RuntimeException handling.
+            throw err;
+        }
         return new RuntimeException(t);
     }
 }
