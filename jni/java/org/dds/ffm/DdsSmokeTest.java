@@ -188,16 +188,20 @@ public final class DdsSmokeTest {
     }
 
     private static String readCString(MemorySegment struct, long offset) {
-        // Read a fixed char[] field as a NUL-terminated string.
+        // Read a fixed char[] field as a NUL-terminated string. Bound the scan
+        // to the segment so a missing terminator (or a bad offset) fails with a
+        // clear error instead of reading out of bounds.
         StringBuilder sb = new StringBuilder();
-        for (long i = offset; ; i++) {
+        long limit = struct.byteSize();
+        for (long i = offset; i < limit; i++) {
             byte b = struct.get(JAVA_BYTE, i);
             if (b == 0) {
-                break;
+                return sb.toString();
             }
             sb.append((char) (b & 0xFF));
         }
-        return sb.toString();
+        throw new IllegalStateException(
+                "unterminated C string at offset " + offset + " within " + limit + " bytes");
     }
 
     private static Path locateLibrary() throws Exception {
@@ -209,9 +213,12 @@ public final class DdsSmokeTest {
             }
         }
         // Fall back to searching the runfiles tree for the built artifact.
+        // Bound the walk depth so a missing/incorrect dds.library.path does not
+        // send us traversing an arbitrarily large checkout or runfiles tree.
         String[] names = {"libdds.dylib", "libdds.so", "dds.dll"};
         Path root = Path.of(System.getProperty("user.dir"));
-        try (Stream<Path> walk = Files.walk(root)) {
+        int maxDepth = 12;
+        try (Stream<Path> walk = Files.walk(root, maxDepth)) {
             return walk.filter(Files::isRegularFile)
                     .filter(p -> {
                         String n = p.getFileName().toString();

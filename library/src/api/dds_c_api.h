@@ -29,7 +29,7 @@ typedef void* DDS_C_SOLVER_CTX;
 DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext_default(void);
 DLLEXPORT void             dds_c_destroy_solvercontext(DDS_C_SOLVER_CTX ctx);
 
-/* Solve a single board. Returns an RETURN_* status code. */
+/* Solve a single board. Returns a RETURN_* status code. */
 DLLEXPORT int dds_c_solve_board(DDS_C_SOLVER_CTX ctx,
                                 const struct Deal* dl,
                                 int target, int solutions, int mode,
