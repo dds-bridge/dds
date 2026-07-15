@@ -52,6 +52,7 @@ function createMockDocument(initialValues = {}) {
             value: initialValues[id] ?? "",
             innerHTML: "",
             disabled: false,
+            hidden: false,
             focus() {},
             addEventListener() {},
         };
@@ -69,6 +70,9 @@ function createMockDocument(initialValues = {}) {
     makeElement("fill-fourth-hand");
     makeElement("double-dummy-it");
     makeElement("deck-status");
+    for (const direction of DIRECTIONS) {
+        makeElement(`${direction}-card-count`);
+    }
 
     const rows = [];
     for (let row = 0; row < 5; row++) {
@@ -386,6 +390,35 @@ test("updateActionButtons grays cards entered in any hand", () => {
         deckStatus,
         /class="deck-card" data-card="SK"/
     );
+});
+
+test("updateActionButtons shows a card-count note for a hand over 13 cards", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765432A",
+    });
+    const ctx = loadDdsMvp(document);
+
+    ctx.updateActionButtons();
+
+    const note = document.element("north-card-count");
+    assert.equal(note.hidden, false);
+    assert.equal(note.innerHTML, "14 cards");
+    assert.equal(document.element("east-card-count").hidden, true);
+});
+
+test("updateActionButtons hides the card-count note at the 13-card boundary", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765432A",
+    });
+    const ctx = loadDdsMvp(document);
+    ctx.updateActionButtons();
+    document.setValue("north_spades", "AKQJT98765432");
+
+    ctx.updateActionButtons();
+
+    const note = document.element("north-card-count");
+    assert.equal(note.hidden, true);
+    assert.equal(note.innerHTML, "");
 });
 
 test("handleHandKeydown fills the fourth hand on Enter when eligible", () => {

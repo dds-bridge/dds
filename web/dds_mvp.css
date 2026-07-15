@@ -69,6 +69,11 @@
   padding: 20px;
 }
 
+.hand-card-count {
+  font-size: 1rem;
+  margin-top: 0.25rem;
+}
+
 td {
   text-align: center;
 }

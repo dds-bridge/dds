@@ -262,6 +262,20 @@ function updateDeckStatus(hands) {
     }
 }
 
+function updateHandCardCounts(hands) {
+    for (const direction of DIRECTION_LETTERS) {
+        const count = hands[direction].length;
+        const note = document.getElementById(
+            directionName(direction) + "-card-count"
+        );
+
+        if (note) {
+            note.hidden = count <= 13;
+            note.innerHTML = count > 13 ? count + " cards" : "";
+        }
+    }
+}
+
 function fourthHandFillState(hands) {
     const handCounts = DIRECTION_LETTERS.map((direction) => hands[direction].length);
     const fullHands = handCounts.filter((count) => count === 13).length;
@@ -370,6 +384,7 @@ function updateActionButtons() {
     const doubleDummyButton = document.getElementById("double-dummy-it");
 
     updateDeckStatus(hands);
+    updateHandCardCounts(hands);
 
     if (fillButton) {
         fillButton.disabled = !fillState.canFill;
