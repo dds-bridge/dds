@@ -88,6 +88,9 @@ public final class DdsSmokeTest {
         // the double dummy result is 13 tricks (score[0]) taking the ace of
         // spades (verified against the Python binding).
         MemorySegment deal = arena.allocate(Dds.DEAL);
+        // Arena.allocate does not guarantee zeroed memory; clear the input
+        // struct so currentTrick* and untouched remainCards entries are 0.
+        deal.fill((byte) 0);
         deal.set(JAVA_INT, DEAL_TRUMP, 0); // trump = spades
         deal.set(JAVA_INT, DEAL_FIRST, 0); // first = North
         setRemain(deal, 0, 0, FULL_SUIT); // North spades
@@ -116,6 +119,7 @@ public final class DdsSmokeTest {
         // trump = 5 is out of range (valid 0..4); the shim must surface the
         // solver's error code rather than succeeding or crashing.
         MemorySegment deal = arena.allocate(Dds.DEAL);
+        deal.fill((byte) 0); // allocate is not guaranteed zero-initialized
         deal.set(JAVA_INT, DEAL_TRUMP, 5);
         setRemain(deal, 0, 0, FULL_SUIT);
 
@@ -133,6 +137,8 @@ public final class DdsSmokeTest {
     private static void checkCalcDdTable(Dds dds, Arena arena) {
         // Same holdings as the solve fixture; DdTableDeal.cards is [hand][suit].
         MemorySegment tableDeal = arena.allocate(Dds.DD_TABLE_DEAL);
+        // allocate is not guaranteed zero-initialized; clear the 12 unset cards.
+        tableDeal.fill((byte) 0);
         setHolding(tableDeal, DTD_CARDS, 0, 0, FULL_SUIT);
         setHolding(tableDeal, DTD_CARDS, 1, 1, FULL_SUIT);
         setHolding(tableDeal, DTD_CARDS, 2, 2, FULL_SUIT);
@@ -157,6 +163,7 @@ public final class DdsSmokeTest {
 
     private static void checkCalcPar(Dds dds, Arena arena) {
         MemorySegment tableDeal = arena.allocate(Dds.DD_TABLE_DEAL);
+        tableDeal.fill((byte) 0); // allocate is not guaranteed zero-initialized
         setHolding(tableDeal, DTD_CARDS, 0, 0, FULL_SUIT);
         setHolding(tableDeal, DTD_CARDS, 1, 1, FULL_SUIT);
         setHolding(tableDeal, DTD_CARDS, 2, 2, FULL_SUIT);

@@ -39,6 +39,9 @@ public final class DdsEmbeddedSmokeTest {
             // North all spades (trump), East hearts, South diamonds, West clubs;
             // North ruffs every trick -> 13 tricks. Cross-checked in DdsSmokeTest.
             MemorySegment deal = arena.allocate(Dds.DEAL);
+            // Arena.allocate is not guaranteed zero-initialized; clear the input
+            // struct so currentTrick* and untouched remainCards entries are 0.
+            deal.fill((byte) 0);
             deal.set(JAVA_INT, DEAL_TRUMP, 0);
             setRemain(deal, 0, 0, FULL_SUIT);
             setRemain(deal, 1, 1, FULL_SUIT);

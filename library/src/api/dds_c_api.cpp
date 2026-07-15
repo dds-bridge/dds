@@ -35,7 +35,14 @@ DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext_default(void)
 
 DLLEXPORT void dds_c_destroy_solvercontext(DDS_C_SOLVER_CTX ctx)
 {
-	dds_destroy_solvercontext(static_cast<SolverContext*>(ctx));
+	if (ctx == nullptr)
+		return;
+
+	try {
+		dds_destroy_solvercontext(static_cast<SolverContext*>(ctx));
+	} catch (...) {
+		// A destructor must not let an exception escape the C ABI boundary.
+	}
 }
 
 DLLEXPORT int dds_c_solve_board(DDS_C_SOLVER_CTX ctx,

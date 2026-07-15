@@ -115,8 +115,9 @@ try (Dds dds = Dds.load(Path.of(System.getProperty("dds.library.path")));
      Arena arena = Arena.ofConfined()) {
 
     long remain = Dds.DEAL.byteOffset(PathElement.groupElement("remainCards"));
-    MemorySegment deal = arena.allocate(Dds.DEAL);          // zero-initialised
-    // trump = spades (0), first = North (0) are already 0.
+    MemorySegment deal = arena.allocate(Dds.DEAL);
+    deal.fill((byte) 0);   // allocate() is not guaranteed to zero the memory
+    // trump = spades (0), first = North (0) are now 0.
     deal.set(JAVA_INT, remain + 0L * 4, 0x7FFC);            // North spades
     deal.set(JAVA_INT, remain + 5L * 4, 0x7FFC);            // East hearts
     deal.set(JAVA_INT, remain + 10L * 4, 0x7FFC);           // South diamonds
