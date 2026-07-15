@@ -84,9 +84,10 @@ public final class DdsSmokeTest {
 
     private static void checkSolveKnownDeal(Dds dds, Arena arena) {
         // North holds all spades, East all hearts, South all diamonds, West all
-        // clubs; spades are trump and North leads. North ruffs every trick, so
-        // the double dummy result is 13 tricks (score[0]) taking the ace of
-        // spades (verified against the Python binding).
+        // clubs; spades are trump and North leads. North leads a trump (spade)
+        // every trick and no other hand can follow, so North wins all 13 tricks
+        // (score[0]) taking the ace of spades (verified against the Python
+        // binding).
         MemorySegment deal = arena.allocate(Dds.DEAL);
         // Arena.allocate does not guarantee zeroed memory; clear the input
         // struct so currentTrick* and untouched remainCards entries are 0.

@@ -37,7 +37,8 @@ public final class DdsEmbeddedSmokeTest {
         try (Dds dds = Dds.loadEmbedded(); Arena arena = Arena.ofConfined()) {
             checkCoordinateMatchesLibrary(dds, arena);
             // North all spades (trump), East hearts, South diamonds, West clubs;
-            // North ruffs every trick -> 13 tricks. Cross-checked in DdsSmokeTest.
+            // North leads a trump every trick -> 13 tricks. Cross-checked in
+            // DdsSmokeTest.
             MemorySegment deal = arena.allocate(Dds.DEAL);
             // Arena.allocate is not guaranteed zero-initialized; clear the input
             // struct so currentTrick* and untouched remainCards entries are 0.
