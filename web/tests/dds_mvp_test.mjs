@@ -68,6 +68,7 @@ function createMockDocument(initialValues = {}) {
     makeElement("result");
     makeElement("fill-fourth-hand");
     makeElement("double-dummy-it");
+    makeElement("deck-status");
 
     const rows = [];
     for (let row = 0; row < 5; row++) {
@@ -345,6 +346,46 @@ test("updateActionButtons keeps both action buttons disabled without preconditio
     ctx.updateActionButtons();
     assert.equal(document.element("fill-fourth-hand").disabled, true);
     assert.equal(document.element("double-dummy-it").disabled, true);
+});
+
+test("updateActionButtons displays all 52 cards in the deck status", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+
+    ctx.updateActionButtons();
+
+    const deckStatus = document.element("deck-status").innerHTML;
+    assert.equal((deckStatus.match(/data-card=/g) ?? []).length, 52);
+    assert.equal((deckStatus.match(/&spades;/g) ?? []).length, 1);
+    assert.equal((deckStatus.match(/&hearts;/g) ?? []).length, 1);
+    assert.equal((deckStatus.match(/&diams;/g) ?? []).length, 1);
+    assert.equal((deckStatus.match(/&clubs;/g) ?? []).length, 1);
+    assert.match(deckStatus, /data-card="SA"/);
+    assert.match(deckStatus, /data-card="C2"/);
+});
+
+test("updateActionButtons grays cards entered in any hand", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "k",
+    });
+    const ctx = loadDdsMvp(document);
+
+    ctx.updateActionButtons();
+
+    const deckStatus = document.element("deck-status").innerHTML;
+    assert.match(
+        deckStatus,
+        /class="deck-card deck-card-entered" data-card="SA"/
+    );
+    assert.match(
+        deckStatus,
+        /class="deck-card deck-card-red deck-card-entered" data-card="HK"/
+    );
+    assert.match(
+        deckStatus,
+        /class="deck-card" data-card="SK"/
+    );
 });
 
 test("handleHandKeydown fills the fourth hand on Enter when eligible", () => {
