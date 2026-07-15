@@ -51,6 +51,12 @@ const SUIT_SYMBOLS = {
     "D" : "<span style='color: red'>&diams;</span>",
     "C" : "&clubs;"
 };
+const DECK_SUIT_SYMBOLS = {
+    "S" : "&spades;",
+    "H" : "&hearts;",
+    "D" : "&diams;",
+    "C" : "&clubs;"
+};
 
 let ddsModulePromise = null;
 
@@ -210,6 +216,52 @@ function allDeckCards() {
     return cards;
 }
 
+function deckStatusHtml(hands) {
+    const enteredCards = {};
+
+    for (const direction of DIRECTION_LETTERS) {
+        for (const card of hands[direction]) {
+            enteredCards[card] = true;
+        }
+    }
+
+    return ["S", "H", "D", "C"].map((suit) => {
+        const redSuit = suit === "H" || suit === "D";
+        const symbolClasses = ["deck-suit-symbol"];
+
+        if (redSuit) {
+            symbolClasses.push("deck-card-red");
+        }
+
+        const cardsHtml = PIPS.split("").map((pip) => {
+            const card = suit + pip;
+            const classes = ["deck-card"];
+
+            if (redSuit) {
+                classes.push("deck-card-red");
+            }
+            if (enteredCards[card]) {
+                classes.push("deck-card-entered");
+            }
+
+            return "<span class=\"" + classes.join(" ") +
+                "\" data-card=\"" + card + "\">" + pip + "</span>";
+        }).join("");
+
+        return "<span class=\"deck-suit-group\"><span class=\"" +
+            symbolClasses.join(" ") + "\">" + DECK_SUIT_SYMBOLS[suit] +
+            "</span>" + cardsHtml + "</span>";
+    }).join("");
+}
+
+function updateDeckStatus(hands) {
+    const deckStatus = document.getElementById("deck-status");
+
+    if (deckStatus) {
+        deckStatus.innerHTML = deckStatusHtml(hands);
+    }
+}
+
 function fourthHandFillState(hands) {
     const handCounts = DIRECTION_LETTERS.map((direction) => hands[direction].length);
     const fullHands = handCounts.filter((count) => count === 13).length;
@@ -316,6 +368,8 @@ function updateActionButtons() {
     const fillState = fourthHandFillState(hands);
     const fillButton = document.getElementById("fill-fourth-hand");
     const doubleDummyButton = document.getElementById("double-dummy-it");
+
+    updateDeckStatus(hands);
 
     if (fillButton) {
         fillButton.disabled = !fillState.canFill;

@@ -171,6 +171,25 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_deck_status_grays_cards_entered_in_the_diagram(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            cards = page.locator("#deck-status .deck-card")
+            self.assertEqual(cards.count(), 52)
+            self.assertEqual(
+                page.locator('#deck-status [data-card="SA"]').get_attribute("class"),
+                "deck-card",
+            )
+
+            page.locator("#north_spades").fill("A")
+
+            entered_card = page.locator('#deck-status [data-card="SA"]')
+            self.assertIn("deck-card-entered", entered_card.get_attribute("class"))
+            self.assertLess(float(entered_card.evaluate("el => getComputedStyle(el).opacity")), 1.0)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_file_url_part_score_table(self) -> None:
         url = self.site_dir.joinpath("dds_mvp.html").as_uri()
         page, errors = self._open_page(url)
