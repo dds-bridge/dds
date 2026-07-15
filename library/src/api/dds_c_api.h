@@ -1,12 +1,19 @@
 /*
    DDS, a bridge double dummy solver.
 
-   Pure-C ABI shim over the modern SolverContext API (dds_api.hpp).
+   C-ABI shim over the modern SolverContext API (dds_api.hpp).
 
    Every function here is C-callable and takes only pointers and plain-old-data
    by value: the opaque handle is a void*, and non-POD C++ types (SolverConfig,
    TTKind, C++ references) never appear. This gives Java (FFM/jextract), .NET,
    and ctypes a single clean, stable ABI to bind against.
+
+   NOTE: the *exported symbols* are a pure C ABI, but this header is not itself
+   compilable by a C front-end: it includes <api/dll.h>, whose flat API is
+   declared with C++ trailing-return syntax (auto ... -> int). Consume the ABI
+   by binding to the compiled library's symbols (FFM/ctypes/.NET) or by parsing
+   the headers with a C++ mode (jextract); do not #include this from a C
+   translation unit.
 
    See LICENSE and README.
 */
