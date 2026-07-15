@@ -190,6 +190,21 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_hand_over_13_cards_shows_its_card_count(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            note = page.locator(".hand-north #north-card-count")
+            self.assertTrue(note.is_hidden())
+
+            page.locator("#north_spades").fill("AKQJT98765432A")
+
+            self.assertTrue(note.is_visible())
+            self.assertEqual(note.inner_text(), "14 cards")
+            self.assertTrue(page.locator("#east-card-count").is_hidden())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_file_url_part_score_table(self) -> None:
         url = self.site_dir.joinpath("dds_mvp.html").as_uri()
         page, errors = self._open_page(url)
