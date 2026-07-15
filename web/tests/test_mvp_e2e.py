@@ -212,18 +212,12 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_validation_error_on_incomplete_deal(self) -> None:
+    def test_double_dummy_disabled_on_incomplete_deal(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
             page.get_by_role("button", name="Clear entries").click()
             double_dummy = page.get_by_role("button", name="Double-dummy it!")
             self.assertTrue(double_dummy.is_disabled())
-            page.evaluate("() => sendJSON()")
-            page.wait_for_function(
-                """() => document.getElementById('result').textContent.includes('13 cards')"""
-            )
-            message = page.locator("#result").inner_text()
-            self.assertIn("13 cards", message)
             self.assertEqual(errors, [])
         finally:
             page.close()

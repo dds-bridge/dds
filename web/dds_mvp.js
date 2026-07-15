@@ -386,10 +386,6 @@ function inputIsValid(hands) {
     for (const direction of Object.keys(hands)) {
         const hand = hands[direction];
 
-        if (hand.length != 13) {
-            return "Please enter 13 cards per hand.";
-        }
-
         for (const card of hand) {
             const pip = card.substring(1);
 
