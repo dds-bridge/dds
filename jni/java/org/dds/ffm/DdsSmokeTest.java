@@ -117,12 +117,19 @@ public final class DdsSmokeTest {
     }
 
     private static void checkSolveRejectsInvalidDeal(Dds dds, Arena arena) {
-        // trump = 5 is out of range (valid 0..4); the shim must surface the
-        // solver's error code rather than succeeding or crashing.
+        // Reuse the valid 52-card fixture and change only the trump: trump = 5
+        // is out of range (valid 0..4), so the rejection is attributable to
+        // trump-range validation and not to an incomplete/invalid deal. The
+        // shim must surface the solver's error code rather than succeeding or
+        // crashing.
         MemorySegment deal = arena.allocate(Dds.DEAL);
         deal.fill((byte) 0); // allocate is not guaranteed zero-initialized
-        deal.set(JAVA_INT, DEAL_TRUMP, 5);
-        setRemain(deal, 0, 0, FULL_SUIT);
+        deal.set(JAVA_INT, DEAL_TRUMP, 5); // out of range (valid 0..4)
+        deal.set(JAVA_INT, DEAL_FIRST, 0); // first = North
+        setRemain(deal, 0, 0, FULL_SUIT); // North spades
+        setRemain(deal, 1, 1, FULL_SUIT); // East hearts
+        setRemain(deal, 2, 2, FULL_SUIT); // South diamonds
+        setRemain(deal, 3, 3, FULL_SUIT); // West clubs
 
         MemorySegment ctx = dds.createSolverContext();
         try {

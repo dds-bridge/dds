@@ -174,7 +174,11 @@ public final class Dds implements AutoCloseable {
         if (name.contains("win")) {
             return "windows";
         }
-        return "linux";
+        if (name.contains("linux")) {
+            return "linux";
+        }
+        throw new UnsupportedOperationException(
+                "unsupported OS for embedded DDS library: " + System.getProperty("os.name"));
     }
 
     private static String archToken() {
@@ -185,7 +189,8 @@ public final class Dds implements AutoCloseable {
         if (arch.equals("x86_64") || arch.equals("amd64")) {
             return "x86_64";
         }
-        return arch;
+        throw new UnsupportedOperationException(
+                "unsupported architecture for embedded DDS library: " + System.getProperty("os.arch"));
     }
 
     private static String libFileName(String os) {
