@@ -164,7 +164,16 @@ public final class Dds implements AutoCloseable {
                     : Files.createTempFile(Path.of(extractDir), "dds", suffix);
             Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
             tmp.toFile().deleteOnExit();
-            return load(tmp);
+            try {
+                return load(tmp);
+            } catch (RuntimeException | Error e) {
+                try {
+                    Files.deleteIfExists(tmp);
+                } catch (IOException ignored) {
+                    // Best-effort cleanup; deleteOnExit still applies.
+                }
+                throw e;
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
