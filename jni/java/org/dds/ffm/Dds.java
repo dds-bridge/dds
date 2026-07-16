@@ -180,7 +180,7 @@ public final class Dds implements AutoCloseable {
     }
 
     private static String osToken() {
-        String name = System.getProperty("os.name", "").toLowerCase();
+        String name = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
         if (name.contains("mac") || name.contains("darwin")) {
             return "macos";
         }
@@ -195,7 +195,7 @@ public final class Dds implements AutoCloseable {
     }
 
     private static String archToken() {
-        String arch = System.getProperty("os.arch", "").toLowerCase();
+        String arch = System.getProperty("os.arch", "").toLowerCase(java.util.Locale.ROOT);
         if (arch.equals("aarch64") || arch.equals("arm64")) {
             return "aarch64";
         }
