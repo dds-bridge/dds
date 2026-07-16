@@ -367,10 +367,6 @@ public void sample()
         throw new InvalidOperationException(error);               
     }
 
-    if (!(int)ctx.SolveBoard(deal, -1, 1, 0, out FutureTricks fut))
-        throw new InvalidOperationException("DDS_Core failed to solve the board.");
-
-
     ...
 
     var ddTableDeal = new() {Cards = hands };
