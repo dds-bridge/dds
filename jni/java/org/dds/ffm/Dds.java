@@ -157,7 +157,11 @@ public final class Dds implements AutoCloseable {
             if (in == null) {
                 throw new IllegalStateException("no embedded DDS library at " + resource);
             }
-            Path tmp = Files.createTempFile("dds", lib.substring(lib.lastIndexOf('.')));
+            String suffix = lib.substring(lib.lastIndexOf('.'));
+            String extractDir = System.getProperty("dds.extract.dir");
+            Path tmp = (extractDir == null || extractDir.isBlank())
+                    ? Files.createTempFile("dds", suffix)
+                    : Files.createTempFile(Path.of(extractDir), "dds", suffix);
             Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
             tmp.toFile().deleteOnExit();
             return load(tmp);
