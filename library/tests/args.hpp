@@ -19,6 +19,7 @@
 /// - Number of threads
 /// - Memory allocation
 /// - Slow board reporting
+/// - Optional min/max per-hand timing summary across batches
 
 /// Print usage information.
 /// @param base Command name for usage message

@@ -41,7 +41,18 @@ struct optEntry
   unsigned numArgs;
 };
 
-#define DTEST_NUM_OPTIONS 5
+#define DTEST_NUM_OPTIONS 7
+
+enum DtestOpt
+{
+  OPT_FILE = 0,
+  OPT_SOLVER = 1,
+  OPT_NUMTHR = 2,
+  OPT_MEMORY = 3,
+  OPT_REPORT = 4,
+  OPT_MAX = 5,
+  OPT_MIN = 6
+};
 
 const optEntry optList[DTEST_NUM_OPTIONS] =
 {
@@ -49,7 +60,9 @@ const optEntry optList[DTEST_NUM_OPTIONS] =
   {"s", "solver", 1},
   {"n", "numthr", 1},
   {"m", "memory", 1},
-  {"r", "report", 0}
+  {"r", "report", 0},
+  {"", "max", 0},
+  {"", "min", 0}
 };
 
 const vector<string> solverList =
@@ -100,6 +113,10 @@ void usage(
     "\n" <<
     "-r, --report       Print per-board timings sorted by longest first.\n" <<
     "\n" <<
+    "    --max          Also print max per-hand user/sys time across batches.\n" <<
+    "\n" <<
+    "    --min          Also print min per-hand user/sys time across batches.\n" <<
+    "\n" <<
     endl;
 }
 
@@ -133,7 +150,9 @@ int GetNextArgToken(
 
   for (unsigned i = 0; i < DTEST_NUM_OPTIONS; i++)
   {
-    if (str == optList[i].shortName || str == optList[i].longName)
+    const bool short_ok =
+      !optList[i].shortName.empty() && str == optList[i].shortName;
+    if (short_ok || str == optList[i].longName)
     {
       if (optList[i].numArgs == 1)
       {
@@ -146,7 +165,9 @@ int GetNextArgToken(
       else
         nextToken++;
 
-      return str[0];
+      // Return 1-based option index so --max/--min do not collide with
+      // --memory on the shared leading 'm'.
+      return static_cast<int>(i) + 1;
     }
   }
 
@@ -161,6 +182,8 @@ void SetDefaults()
   options.num_threads_ = 0;
   options.memory_mb_ = 0;
   options.report_slow_boards_ = false;
+  options.show_min_ = false;
+  options.show_max_ = false;
 }
 
 
@@ -183,6 +206,10 @@ void read_args(
   int argc,
   char * argv[])
 {
+  nextToken = 1;
+  shortOptsAll.clear();
+  shortOptsWithArg.clear();
+
   for (unsigned i = 0; i < DTEST_NUM_OPTIONS; i++)
   {
     shortOptsAll += optList[i].shortName;
@@ -206,9 +233,9 @@ void read_args(
 
   while ((c = GetNextArgToken(argc, argv)) > 0)
   {
-    switch(c)
+    switch(c - 1)
     {
-      case 'f':
+      case OPT_FILE:
         if (stat(optarg, &buffer) == 0)
         {
           options.fname_ = string(optarg);
@@ -228,7 +255,7 @@ void read_args(
         errFlag = true;
         break;
 
-      case 's':
+      case OPT_SOLVER:
         matchFlag = false;
         stmp = optarg;
         transform(stmp.begin(), stmp.end(), stmp.begin(),
@@ -256,7 +283,7 @@ void read_args(
         }
         break;
 
-      case 'n':
+      case OPT_NUMTHR:
         m = static_cast<int>(strtol(optarg, &ctmp, 0));
         if (m < 0)
         {
@@ -267,7 +294,7 @@ void read_args(
         options.num_threads_ = m;
         break;
 
-      case 'm':
+      case OPT_MEMORY:
         m = static_cast<int>(strtol(optarg, &ctmp, 0));
         if (m < 0)
         {
@@ -278,8 +305,16 @@ void read_args(
         options.memory_mb_ = m;
         break;
 
-      case 'r':
+      case OPT_REPORT:
         options.report_slow_boards_ = true;
+        break;
+
+      case OPT_MAX:
+        options.show_max_ = true;
+        break;
+
+      case OPT_MIN:
+        options.show_min_ = true;
         break;
 
       default:
