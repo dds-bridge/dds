@@ -101,8 +101,8 @@ td {
   opacity: 0.45;
 }
 
-/* Default action button: bold outline when available, grayed when not. */
-#double-dummy-it:enabled {
+/* Bold outline only when Enter would activate Double-dummy it! */
+#double-dummy-it.default-action {
   outline: 3px solid #222;
   outline-offset: 2px;
 }

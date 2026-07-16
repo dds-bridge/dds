@@ -35,13 +35,24 @@ class DdsMvpCssTest(unittest.TestCase):
         self.assertIsNotNone(opacity, "entered cards should set opacity")
         self.assertLess(float(opacity.group(1)), 1.0)
 
-    def test_double_dummy_button_has_bold_outline_when_enabled(self) -> None:
+    def test_double_dummy_button_has_bold_outline_when_default(self) -> None:
         css = (WEB_ROOT / "dds_mvp.css").read_text(encoding="utf-8")
-        body = _rule_body_for_selector(css, "#double-dummy-it:enabled")
+        body = _rule_body_for_selector(css, "#double-dummy-it.default-action")
         self.assertRegex(body, r"outline\s*:")
         width = re.search(r"outline\s*:\s*(\d+)px", body)
         self.assertIsNotNone(width, "double-dummy-it outline should set pixel width")
         self.assertGreaterEqual(int(width.group(1)), 2)
+        enabled_body = None
+        try:
+            enabled_body = _rule_body_for_selector(css, "#double-dummy-it:enabled")
+        except AssertionError:
+            pass
+        if enabled_body is not None:
+            self.assertNotRegex(
+                enabled_body,
+                r"outline\s*:",
+                "outline should not apply merely because the button is enabled",
+            )
 
     def test_double_dummy_button_is_grayed_out_when_disabled(self) -> None:
         css = (WEB_ROOT / "dds_mvp.css").read_text(encoding="utf-8")

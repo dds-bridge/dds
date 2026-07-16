@@ -227,11 +227,26 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             finally:
                 page.close()
 
+    def test_test_deal_button_focuses_double_dummy(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            page.get_by_role("button", name="Part-score test deal").click()
+            page.wait_for_function(
+                "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
+            )
+            self.assertFalse(page.get_by_role("button", name="Double-dummy it!").is_disabled())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_enter_runs_double_dummy_after_loading_a_complete_deal(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
             self._fill_part_score_deal(page)
 
+            page.wait_for_function(
+                "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
+            )
             page.keyboard.press("Enter")
             page.wait_for_function(
                 """() => {
