@@ -35,23 +35,21 @@ class DdsMvpCssTest(unittest.TestCase):
         self.assertIsNotNone(opacity, "entered cards should set opacity")
         self.assertLess(float(opacity.group(1)), 1.0)
 
-    def test_default_action_buttons_have_bold_outline_when_enabled(self) -> None:
+    def test_double_dummy_button_has_bold_outline_when_enabled(self) -> None:
         css = (WEB_ROOT / "dds_mvp.css").read_text(encoding="utf-8")
-        for button_id in ("fill-fourth-hand", "double-dummy-it"):
-            body = _rule_body_for_selector(css, f"#{button_id}:enabled")
-            self.assertRegex(body, r"outline\s*:")
-            width = re.search(r"outline\s*:\s*(\d+)px", body)
-            self.assertIsNotNone(width, f"{button_id} outline should set pixel width")
-            self.assertGreaterEqual(int(width.group(1)), 2)
+        body = _rule_body_for_selector(css, "#double-dummy-it:enabled")
+        self.assertRegex(body, r"outline\s*:")
+        width = re.search(r"outline\s*:\s*(\d+)px", body)
+        self.assertIsNotNone(width, "double-dummy-it outline should set pixel width")
+        self.assertGreaterEqual(int(width.group(1)), 2)
 
-    def test_default_action_buttons_are_grayed_out_when_disabled(self) -> None:
+    def test_double_dummy_button_is_grayed_out_when_disabled(self) -> None:
         css = (WEB_ROOT / "dds_mvp.css").read_text(encoding="utf-8")
-        for button_id in ("fill-fourth-hand", "double-dummy-it"):
-            body = _rule_body_for_selector(css, f"#{button_id}:disabled")
-            self.assertRegex(body, r"opacity\s*:")
-            opacity = re.search(r"opacity\s*:\s*([0-9.]+)", body)
-            self.assertIsNotNone(opacity, f"{button_id} disabled rule should set opacity")
-            self.assertLess(float(opacity.group(1)), 1.0)
+        body = _rule_body_for_selector(css, "#double-dummy-it:disabled")
+        self.assertRegex(body, r"opacity\s*:")
+        opacity = re.search(r"opacity\s*:\s*([0-9.]+)", body)
+        self.assertIsNotNone(opacity, "double-dummy-it disabled rule should set opacity")
+        self.assertLess(float(opacity.group(1)), 1.0)
 
 
 if __name__ == "__main__":

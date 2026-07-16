@@ -101,14 +101,12 @@ td {
   opacity: 0.45;
 }
 
-/* Default action buttons: bold outline when available, grayed when not. */
-#fill-fourth-hand:enabled,
+/* Default action button: bold outline when available, grayed when not. */
 #double-dummy-it:enabled {
   outline: 3px solid #222;
   outline-offset: 2px;
 }
 
-#fill-fourth-hand:disabled,
 #double-dummy-it:disabled {
   opacity: 0.45;
   color: #777;
