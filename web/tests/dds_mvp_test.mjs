@@ -198,6 +198,14 @@ test("handsToPbn formats part-score deal", () => {
     );
 });
 
+test("inputIsValid rejects incomplete deal", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    assert.equal(
+        ctx.inputIsValid({ N: ["SA"], E: [], S: [], W: [] }),
+        "Please enter 13 cards per hand."
+    );
+});
+
 test("inputIsValid rejects invalid pip", () => {
     const ctx = loadDdsMvp(createMockDocument());
     const hands = {
