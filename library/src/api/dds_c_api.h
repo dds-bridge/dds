@@ -47,7 +47,7 @@ DLLEXPORT int dds_c_calc_dd_table(DDS_C_SOLVER_CTX ctx,
                                   const struct DdTableDeal* deal,
                                   struct DdTableResults* results);
 
-/* Compute the par result for a deal's double dummy table. */
+/* Compute the par result for a deal (computes the DD table internally). */
 DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
                              const struct DdTableDeal* deal,
                              int vulnerable,
