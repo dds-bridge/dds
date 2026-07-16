@@ -26,23 +26,23 @@ extern "C" {
 
 DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext_default(void)
 {
-	try {
-		return static_cast<DDS_C_SOLVER_CTX>(dds_create_solvercontext_default());
-	} catch (...) {
-		return nullptr;
-	}
+    try {
+        return static_cast<DDS_C_SOLVER_CTX>(dds_create_solvercontext_default());
+    } catch (...) {
+        return nullptr;
+    }
 }
 
 DLLEXPORT void dds_c_destroy_solvercontext(DDS_C_SOLVER_CTX ctx)
 {
-	if (ctx == nullptr)
-		return;
+    if (ctx == nullptr)
+        return;
 
-	try {
-		dds_destroy_solvercontext(static_cast<SolverContext*>(ctx));
-	} catch (...) {
-		// A destructor must not let an exception escape the C ABI boundary.
-	}
+    try {
+        dds_destroy_solvercontext(static_cast<SolverContext*>(ctx));
+    } catch (...) {
+        // A destructor must not let an exception escape the C ABI boundary.
+    }
 }
 
 DLLEXPORT int dds_c_solve_board(DDS_C_SOLVER_CTX ctx,
@@ -50,29 +50,29 @@ DLLEXPORT int dds_c_solve_board(DDS_C_SOLVER_CTX ctx,
                                 int target, int solutions, int mode,
                                 struct FutureTricks* futp)
 {
-	if (ctx == nullptr || dl == nullptr || futp == nullptr)
-		return RETURN_UNKNOWN_FAULT;
+    if (ctx == nullptr || dl == nullptr || futp == nullptr)
+        return RETURN_UNKNOWN_FAULT;
 
-	try {
-		return dds_solve_board(static_cast<SolverContext*>(ctx),
-			*dl, target, solutions, mode, futp);
-	} catch (...) {
-		return RETURN_UNKNOWN_FAULT;
-	}
+    try {
+        return dds_solve_board(static_cast<SolverContext*>(ctx),
+            *dl, target, solutions, mode, futp);
+    } catch (...) {
+        return RETURN_UNKNOWN_FAULT;
+    }
 }
 
 DLLEXPORT int dds_c_calc_dd_table(DDS_C_SOLVER_CTX ctx,
                                   const struct DdTableDeal* deal,
                                   struct DdTableResults* results)
 {
-	if (ctx == nullptr || deal == nullptr || results == nullptr)
-		return RETURN_UNKNOWN_FAULT;
+    if (ctx == nullptr || deal == nullptr || results == nullptr)
+        return RETURN_UNKNOWN_FAULT;
 
-	try {
-		return dds_calc_dd_table(static_cast<SolverContext*>(ctx), *deal, results);
-	} catch (...) {
-		return RETURN_UNKNOWN_FAULT;
-	}
+    try {
+        return dds_calc_dd_table(static_cast<SolverContext*>(ctx), *deal, results);
+    } catch (...) {
+        return RETURN_UNKNOWN_FAULT;
+    }
 }
 
 DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
@@ -81,15 +81,15 @@ DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
                              struct DdTableResults* results,
                              struct ParResults* par)
 {
-	if (ctx == nullptr || deal == nullptr || results == nullptr || par == nullptr)
-		return RETURN_UNKNOWN_FAULT;
+    if (ctx == nullptr || deal == nullptr || results == nullptr || par == nullptr)
+        return RETURN_UNKNOWN_FAULT;
 
-	try {
-		return dds_calc_par(static_cast<SolverContext*>(ctx),
-			*deal, vulnerable, results, par);
-	} catch (...) {
-		return RETURN_UNKNOWN_FAULT;
-	}
+    try {
+        return dds_calc_par(static_cast<SolverContext*>(ctx),
+            *deal, vulnerable, results, par);
+    } catch (...) {
+        return RETURN_UNKNOWN_FAULT;
+    }
 }
 
 } // extern "C"
