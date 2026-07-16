@@ -28,7 +28,7 @@ bindings work — see [python_interface.md](python_interface.md),
   `--enable-preview` is needed. The Bazel build is hermetic: `rules_java`
   supplies the JDK (currently pinned to `remotejdk_25` in
   [`.bazelrc`](../.bazelrc)); you do **not** need a system JDK installed.
-- **Bazel 7.x or later**, as for the rest of the project.
+- **Bazel 8.x or later.** (The committed `MODULE.bazel.lock` uses lockFileVersion 28; Bazel 7 users must delete/regenerate the lock file.)
 
 No `jextract` install is required — the bindings are hand-written (see
 [Using the FFM bindings](#using-the-ffm-bindings)).
