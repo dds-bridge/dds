@@ -47,14 +47,46 @@ function createMockDocument(initialValues = {}) {
     const listeners = new Map();
 
     const makeElement = (id) => {
+        const elementListeners = new Map();
         const element = {
             id,
             value: initialValues[id] ?? "",
             innerHTML: "",
             disabled: false,
             hidden: false,
-            focus() {},
-            addEventListener() {},
+            className: "",
+            classList: {
+                add(name) {
+                    const classes = new Set(
+                        element.className.split(/\s+/).filter(Boolean)
+                    );
+                    classes.add(name);
+                    element.className = [...classes].join(" ");
+                },
+                remove(name) {
+                    const classes = new Set(
+                        element.className.split(/\s+/).filter(Boolean)
+                    );
+                    classes.delete(name);
+                    element.className = [...classes].join(" ");
+                },
+                contains(name) {
+                    return element.className.split(/\s+/).includes(name);
+                },
+            },
+            focus() {
+                documentRef.activeElement = element;
+            },
+            addEventListener(type, listener) {
+                const typeListeners = elementListeners.get(type) ?? [];
+                typeListeners.push(listener);
+                elementListeners.set(type, typeListeners);
+            },
+            dispatch(type, event) {
+                for (const listener of elementListeners.get(type) ?? []) {
+                    listener({ ...event, target: element });
+                }
+            },
         };
         store.set(id, element);
         return element;
@@ -83,7 +115,8 @@ function createMockDocument(initialValues = {}) {
     }
     store.set("result-table", { rows });
 
-    return {
+    const documentRef = {
+        activeElement: null,
         addEventListener(type, listener) {
             const typeListeners = listeners.get(type) ?? [];
             typeListeners.push(listener);
@@ -100,6 +133,9 @@ function createMockDocument(initialValues = {}) {
         element(id) {
             return store.get(id);
         },
+        setActiveElement(id) {
+            this.activeElement = store.get(id) ?? null;
+        },
         setValue(id, value) {
             store.get(id).value = value;
         },
@@ -113,6 +149,7 @@ function createMockDocument(initialValues = {}) {
             return out;
         },
     };
+    return documentRef;
 }
 
 function loadDdsMvp(document) {
@@ -122,6 +159,7 @@ function loadDdsMvp(document) {
         console,
         Promise,
         Error,
+        setTimeout,
     };
     const context = createContext(sandbox);
     runInContext(code, context, { filename: "dds_mvp.js" });
@@ -255,6 +293,25 @@ test("fillFormWithPartScoreTestData populates inputs", () => {
     assert.equal(document.element("west_clubs").value, "T5");
 });
 
+test("fillFormWithTestData focuses the double-dummy button", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    document.setActiveElement("north_spades");
+
+    ctx.fillFormWithPartScoreTestData();
+
+    // Focus is deferred so the clicked toolbar button cannot reclaim it.
+    assert.notEqual(document.activeElement, document.element("double-dummy-it"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.equal(document.activeElement, document.element("double-dummy-it"));
+    assert.equal(document.element("double-dummy-it").disabled, false);
+    assert.equal(
+        document.element("double-dummy-it").className.includes("default-action"),
+        true
+    );
+});
+
 test("pageLoad shows valid pips", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
@@ -348,6 +405,49 @@ test("updateActionButtons keeps double-dummy disabled without preconditions", ()
     assert.equal(document.element("double-dummy-it").disabled, true);
 });
 
+test("updateDefaultAction outlines double-dummy only when Enter would activate it", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFormWithPartScoreTestData();
+    ctx.updateActionButtons();
+
+    document.setActiveElement("north_spades");
+    ctx.updateDefaultAction();
+    assert.equal(
+        document.element("double-dummy-it").className.includes("default-action"),
+        true
+    );
+
+    document.setActiveElement("double-dummy-it");
+    ctx.updateDefaultAction();
+    assert.equal(
+        document.element("double-dummy-it").className.includes("default-action"),
+        true
+    );
+
+    document.setActiveElement(null);
+    // Simulate focus on a toolbar button that is not a hand input.
+    const clearLike = { id: "clear-entries" };
+    document.activeElement = clearLike;
+    ctx.updateDefaultAction();
+    assert.equal(
+        document.element("double-dummy-it").className.includes("default-action"),
+        false
+    );
+});
+
+test("updateDefaultAction does not outline double-dummy on incomplete deals", () => {
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsMvp(document);
+    document.setActiveElement("north_spades");
+    ctx.updateActionButtons();
+    ctx.updateDefaultAction();
+    assert.equal(
+        document.element("double-dummy-it").className.includes("default-action"),
+        false
+    );
+});
+
 test("updateActionButtons displays all 52 cards in the deck status", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
@@ -417,7 +517,7 @@ test("updateActionButtons hides the card-count note at the 13-card boundary", ()
     assert.equal(note.innerHTML, "");
 });
 
-test("handleHandKeydown runs double-dummy on Enter when every hand has 13 cards", () => {
+test("handleHandKeydown runs double-dummy on Enter from a hand input", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
     ctx.fillFormWithPartScoreTestData();
@@ -428,6 +528,7 @@ test("handleHandKeydown runs double-dummy on Enter when every hand has 13 cards"
     let prevented = false;
     ctx.handleHandKeydown({
         key: "Enter",
+        target: document.element("north_spades"),
         preventDefault() {
             prevented = true;
         },
@@ -436,7 +537,49 @@ test("handleHandKeydown runs double-dummy on Enter when every hand has 13 cards"
     assert.equal(sendCalled, true);
 });
 
-test("page default runs double-dummy on Enter after loading a complete deal", () => {
+test("handleHandKeydown ignores Enter from a non-hand control", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFormWithPartScoreTestData();
+    let sendCalled = false;
+    ctx.sendJSON = () => {
+        sendCalled = true;
+    };
+    let prevented = false;
+    ctx.handleHandKeydown({
+        key: "Enter",
+        target: document.element("double-dummy-it"),
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, false);
+    assert.equal(sendCalled, false);
+});
+
+test("Enter on a hand input runs double-dummy after loading a complete deal", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.fillFormWithPartScoreTestData();
+    let sendCalled = false;
+    ctx.sendJSON = () => {
+        sendCalled = true;
+    };
+    ctx.pageLoad();
+    let prevented = false;
+
+    document.element("north_spades").dispatch("keydown", {
+        key: "Enter",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+
+    assert.equal(prevented, true);
+    assert.equal(sendCalled, true);
+});
+
+test("document Enter does not run double-dummy when focus is elsewhere", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
     ctx.fillFormWithPartScoreTestData();
@@ -449,13 +592,14 @@ test("page default runs double-dummy on Enter after loading a complete deal", ()
 
     document.dispatch("keydown", {
         key: "Enter",
+        target: document.element("double-dummy-it"),
         preventDefault() {
             prevented = true;
         },
     });
 
-    assert.equal(prevented, true);
-    assert.equal(sendCalled, true);
+    assert.equal(prevented, false);
+    assert.equal(sendCalled, false);
 });
 
 test("handleHandKeydown ignores Enter when neither action is eligible", () => {
@@ -468,6 +612,7 @@ test("handleHandKeydown ignores Enter when neither action is eligible", () => {
     let prevented = false;
     ctx.handleHandKeydown({
         key: "Enter",
+        target: document.element("north_spades"),
         preventDefault() {
             prevented = true;
         },

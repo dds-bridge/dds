@@ -24,6 +24,7 @@
             sendJSON
             fourthHandFillState
             updateActionButtons
+            updateDefaultAction
             handleHandKeydown
             */
 
@@ -99,6 +100,21 @@ function handsToPbn(hands) {
     return "N:" + handStrings.join(" ");
 }
 
+function focusNorthSpades() {
+    // To allow the user to quickly enter a deal
+
+    document.getElementById("north_spades").focus();
+}
+
+function focusDoubleDummyButton() {
+    const doubleDummyButton = document.getElementById("double-dummy-it");
+
+    if (doubleDummyButton && !doubleDummyButton.disabled) {
+        doubleDummyButton.focus();
+        updateDefaultAction();
+    }
+}
+
 function fillFormWithTestData(nesw) {
     clear_results();
 
@@ -115,6 +131,8 @@ function fillFormWithTestData(nesw) {
     }
 
     updateActionButtons();
+    // Defer so the clicked test-deal button cannot reclaim focus after click.
+    setTimeout(focusDoubleDummyButton, 0);
 }
 
 function fillFormWithGrandSlamTestData() {
@@ -162,12 +180,6 @@ function * hand_elements() {
         var element = document.getElementById(element_index);
         yield element;
     }
-}
-
-function focusNorthSpades() {
-    // To allow the user to quickly enter a deal
-
-    document.getElementById("north_spades").focus();
 }
 
 function clearTestData() {
@@ -376,6 +388,45 @@ function allHandsHaveThirteenCards(hands) {
     return DIRECTION_LETTERS.every((direction) => hands[direction].length === 13);
 }
 
+function isHandInput(element) {
+    if (!element) {
+        return false;
+    }
+
+    for (const handElement of hand_elements()) {
+        if (handElement === element) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function enterWouldActivateDoubleDummy() {
+    const doubleDummyButton = document.getElementById("double-dummy-it");
+    const activeElement = document.activeElement;
+
+    if (!doubleDummyButton || doubleDummyButton.disabled) {
+        return false;
+    }
+
+    return isHandInput(activeElement) || activeElement === doubleDummyButton;
+}
+
+function updateDefaultAction() {
+    const doubleDummyButton = document.getElementById("double-dummy-it");
+
+    if (!doubleDummyButton) {
+        return;
+    }
+
+    if (enterWouldActivateDoubleDummy()) {
+        doubleDummyButton.classList.add("default-action");
+    } else {
+        doubleDummyButton.classList.remove("default-action");
+    }
+}
+
 function updateActionButtons() {
     let hands = collectHands();
     const fillState = fourthHandFillState(hands);
@@ -392,10 +443,12 @@ function updateActionButtons() {
     if (doubleDummyButton) {
         doubleDummyButton.disabled = !allHandsHaveThirteenCards(hands);
     }
+
+    updateDefaultAction();
 }
 
 function handleHandKeydown(event) {
-    if (event.key !== "Enter") {
+    if (event.key !== "Enter" || !isHandInput(event.target)) {
         return;
     }
 
@@ -483,9 +536,11 @@ function pageLoad() {
 
     for (const element of hand_elements()) {
         element.addEventListener("input", updateActionButtons);
+        element.addEventListener("keydown", handleHandKeydown);
     }
 
-    document.addEventListener("keydown", handleHandKeydown);
+    document.addEventListener("focusin", updateDefaultAction);
+    document.addEventListener("focusout", updateDefaultAction);
     updateActionButtons();
     focusNorthSpades();
 }
