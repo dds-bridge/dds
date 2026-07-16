@@ -48,6 +48,8 @@ public final class DdsSmokeTest {
     private static final long FT_SCORE = Dds.FUTURE_TRICKS.byteOffset(PathElement.groupElement("score"));
     private static final long INFO_SYSTEM_STRING =
             Dds.DDS_INFO.byteOffset(PathElement.groupElement("systemString"));
+    private static final long INFO_SYSTEM_STRING_LEN =
+            Dds.DDS_INFO.select(PathElement.groupElement("systemString")).byteSize();
     private static final long INFO_NO_OF_THREADS =
             Dds.DDS_INFO.byteOffset(PathElement.groupElement("noOfThreads"));
     private static final long DTD_CARDS =
@@ -56,6 +58,9 @@ public final class DdsSmokeTest {
             Dds.DD_TABLE_RESULTS.byteOffset(PathElement.groupElement("resTable"));
     private static final long PAR_SCORE =
             Dds.PAR_RESULTS.byteOffset(PathElement.groupElement("parScore"));
+    // parScore is char[2][16] (NS entry then EW); we read only the NS entry.
+    private static final long PAR_SCORE_NS_LEN =
+            Dds.PAR_RESULTS.select(PathElement.groupElement("parScore")).byteSize() / 2;
 
     public static void main(String[] args) throws Exception {
         Path library = locateLibrary();
@@ -75,7 +80,7 @@ public final class DdsSmokeTest {
         MemorySegment info = arena.allocate(Dds.DDS_INFO);
         dds.getDdsInfo(info);
 
-        String systemString = readCString(info, INFO_SYSTEM_STRING);
+        String systemString = readCString(info, INFO_SYSTEM_STRING, INFO_SYSTEM_STRING_LEN);
         int threads = info.get(JAVA_INT, INFO_NO_OF_THREADS);
         System.out.println("GetDDSInfo: threads=" + threads + " system=\"" + systemString + "\"");
         check(!systemString.isBlank(), "GetDDSInfo systemString should be non-empty");
@@ -184,7 +189,7 @@ public final class DdsSmokeTest {
             int rc = dds.calcPar(ctx, tableDeal, 0 /* vulnerable: none */, results, par);
             check(rc == RETURN_NO_FAULT, "dds_c_calc_par returned " + rc);
 
-            String parScore = readCString(par, PAR_SCORE);
+            String parScore = readCString(par, PAR_SCORE, PAR_SCORE_NS_LEN);
             System.out.println("calc_par: NS par score = \"" + parScore + "\"");
             check(!parScore.isBlank(), "calc_par NS par_score should be non-empty");
         } finally {
@@ -202,12 +207,13 @@ public final class DdsSmokeTest {
         struct.set(JAVA_INT, base + (long) (hand * 4 + suit) * Integer.BYTES, holding);
     }
 
-    private static String readCString(MemorySegment struct, long offset) {
-        // Read a fixed char[] field as a NUL-terminated string. Bound the scan
-        // to the segment so a missing terminator (or a bad offset) fails with a
-        // clear error instead of reading out of bounds.
+    private static String readCString(MemorySegment struct, long offset, long maxLength) {
+        // Read a fixed-size char[] field as a NUL-terminated string. Bound the
+        // scan to the field length (clamped to the segment) so a missing
+        // terminator cannot run into an adjacent field and return a bogus
+        // concatenated string; instead it fails with a clear error.
+        long limit = Math.min(offset + maxLength, struct.byteSize());
         StringBuilder sb = new StringBuilder();
-        long limit = struct.byteSize();
         for (long i = offset; i < limit; i++) {
             byte b = struct.get(JAVA_BYTE, i);
             if (b == 0) {
@@ -216,7 +222,7 @@ public final class DdsSmokeTest {
             sb.append((char) (b & 0xFF));
         }
         throw new IllegalStateException(
-                "unterminated C string at offset " + offset + " within " + limit + " bytes");
+                "unterminated C string at offset " + offset + " within " + maxLength + " bytes");
     }
 
     private static Path locateLibrary() throws Exception {
