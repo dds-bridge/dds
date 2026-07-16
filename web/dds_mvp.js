@@ -23,7 +23,6 @@
             pageLoad
             sendJSON
             fourthHandFillState
-            fillFourthHand
             updateActionButtons
             handleHandKeydown
             */
@@ -378,33 +377,21 @@ function allHandsHaveThirteenCards(hands) {
 }
 
 function updateActionButtons() {
-    const hands = collectHands();
+    let hands = collectHands();
     const fillState = fourthHandFillState(hands);
-    const fillButton = document.getElementById("fill-fourth-hand");
     const doubleDummyButton = document.getElementById("double-dummy-it");
+
+    if (fillState.canFill) {
+        applyFourthHandFill(hands, fillState.emptyHand);
+        hands = collectHands();
+    }
 
     updateDeckStatus(hands);
     updateHandCardCounts(hands);
 
-    if (fillButton) {
-        fillButton.disabled = !fillState.canFill;
-    }
-
     if (doubleDummyButton) {
         doubleDummyButton.disabled = !allHandsHaveThirteenCards(hands);
     }
-}
-
-function fillFourthHand() {
-    const hands = collectHands();
-    const state = fourthHandFillState(hands);
-
-    if (!state.canFill) {
-        return;
-    }
-
-    applyFourthHandFill(hands, state.emptyHand);
-    updateActionButtons();
 }
 
 function handleHandKeydown(event) {
@@ -413,14 +400,6 @@ function handleHandKeydown(event) {
     }
 
     const hands = collectHands();
-    const fillState = fourthHandFillState(hands);
-
-    if (fillState.canFill) {
-        event.preventDefault();
-        applyFourthHandFill(hands, fillState.emptyHand);
-        updateActionButtons();
-        return;
-    }
 
     if (allHandsHaveThirteenCards(hands)) {
         event.preventDefault();
