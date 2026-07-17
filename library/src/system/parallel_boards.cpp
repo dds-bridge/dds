@@ -63,7 +63,7 @@ auto parallel_all_boards_n(
   // malformed order falls back to index order to avoid invalid board indices.
   const bool use_order =
     (order != nullptr &&
-     static_cast<int>(order->size()) == count &&
+     order->size() == static_cast<std::size_t>(count) &&
      is_permutation_of_range(*order, count));
   auto board_of = [&](const int slot) -> int {
     return use_order ? (*order)[static_cast<unsigned>(slot)] : slot;

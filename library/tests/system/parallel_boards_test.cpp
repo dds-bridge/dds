@@ -99,6 +99,18 @@ TEST(ParallelAllBoards, OutOfRangeOrderFallsBackToIndexOrder)
   EXPECT_EQ(boards, (std::vector<int>{0, 1, 2, 3}));
 }
 
+TEST(ParallelAllBoards, WrongSizedOrderFallsBackToIndexOrder)
+{
+  // Arrange: valid values, but length does not match count.
+  const std::vector<int> order{3, 1, 0};
+
+  // Act
+  const std::vector<int> boards = dispatched_boards(4, order);
+
+  // Assert
+  EXPECT_EQ(boards, (std::vector<int>{0, 1, 2, 3}));
+}
+
 TEST(ParallelAllBoards, PermutationValidationUsesAtMostOneAllocation)
 {
   // Arrange
