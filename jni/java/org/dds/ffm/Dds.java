@@ -39,7 +39,7 @@ import java.nio.file.StandardCopyOption;
  * library and any segments allocated from {@link #arena()}. Not thread-safe:
  * use one native SolverContext per thread.
  */
-public final class Dds implements AutoCloseable {
+public class Dds implements AutoCloseable {
 
     // ---- Struct memory layouts (match library/src/api/dll.h exactly) ----
 
