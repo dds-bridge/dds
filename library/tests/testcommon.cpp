@@ -145,7 +145,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
     exit(0);
   }
 
-  timer.print_hands();
+  timer.print_hands(cout, options.show_min_, options.show_max_);
 
   if (options.report_slow_boards_)
   {

@@ -482,13 +482,6 @@ static int SORT_SOLVE_TIMES[2][8] =
   { 388000, 140000, 60000, 40000, 30000, 23000, 18000, 6000 },
 };
 
-// #define SORT_SOLVE_STRENGTH_CUTOFF 0
-//
-// static double SORT_SOLVE_STRENGTH[2][3] =
-// {
-//   { 1.525, 1.810, 0.0285 },
-//   { 1.585, 1.940, 0.0354 }
-// };
 
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.

@@ -186,6 +186,20 @@ class TestCalcAllTablesPBN(unittest.TestCase):
         result_with_par = calc_all_tables_pbn(deals, mode=0)
         self.assertTrue(len(result_with_par["par_results"]) > 0)
 
+    def test_calc_all_tables_pbn_max_threads_matches_default(self) -> None:
+        """Passing an explicit max_threads must be accepted and give the same tables as the default."""
+        deals = [
+            "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3",
+            "N:Q87.K932.QJT32.7 AKJ9632.J84.6.Q5 .AQT765.K87.J962 T54..A954.AKT843",
+        ]
+        default = calc_all_tables_pbn(deals)
+        for max_threads in (1, 2):
+            capped = calc_all_tables_pbn(deals, max_threads=max_threads)
+            self.assertEqual(capped["no_of_boards"], default["no_of_boards"])
+            self.assertEqual(len(capped["tables"]), len(default["tables"]))
+            for capped_t, default_t in zip(capped["tables"], default["tables"]):
+                self.assertEqual(capped_t["res_table"], default_t["res_table"])
+
 
 class TestTableParity(unittest.TestCase):
     """Tests for parity between single and batch table calculations."""

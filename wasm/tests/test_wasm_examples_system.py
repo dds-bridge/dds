@@ -26,7 +26,7 @@ def rlocation(relpath: str) -> Path:
 @unittest.skipUnless(shutil.which("node"), "node not found")
 class WasmExamplesSystemTest(unittest.TestCase):
     def test_calc_dd_table_pbn_wasm(self) -> None:
-        js = rlocation("examples/wasm/calc_dd_table_pbn.js")
+        js = rlocation("wasm/calc_dd_table_pbn.js")
         proc = subprocess.run(
             ["node", str(js)],
             capture_output=True,
