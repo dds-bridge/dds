@@ -85,6 +85,17 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "parallel_boards_test",
+    size = "small",
+    srcs = ["parallel_boards_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # max_threads override equivalence + rename/alias initialisation test
 cc_test(
     name = "max_threads_equivalence_test",

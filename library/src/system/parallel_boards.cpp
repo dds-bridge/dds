@@ -11,8 +11,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <iterator>
-#include <numeric>
 #include <thread>
 #include <vector>
 
@@ -37,20 +35,14 @@ static auto is_permutation_of_range(
   const std::vector<int>& order,
   const int count) -> bool
 {
-  std::vector<int> sorted(order);
-  std::sort(sorted.begin(), sorted.end());
-
-  std::vector<int> expected(static_cast<unsigned>(count));
-  std::iota(expected.begin(), expected.end(), 0);
-
-  std::vector<int> common;
-  common.reserve(static_cast<unsigned>(count));
-  std::set_intersection(
-    sorted.begin(), sorted.end(),
-    expected.begin(), expected.end(),
-    std::back_inserter(common));
-
-  return static_cast<int>(common.size()) == count;
+  std::vector<char> seen(static_cast<unsigned>(count), 0);
+  for (const int v : order)
+  {
+    if (v < 0 || v >= count || seen[static_cast<unsigned>(v)])
+      return false;
+    seen[static_cast<unsigned>(v)] = 1;
+  }
+  return true;
 }
 
 
