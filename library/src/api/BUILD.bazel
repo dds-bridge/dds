@@ -3,10 +3,13 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 # Public C-ABI headers, exposed as files so tooling (e.g. the export-set test and
 # gen_export_lists.py) can parse them for the exported symbol set.
-exports_files([
-    "dll.h",
-    "dds_c_api.h",
-])
+exports_files(
+    [
+        "dll.h",
+        "dds_c_api.h",
+    ],
+    visibility = ["//visibility:public"],
+)
 
 cc_library(
     name = "api_definitions",
