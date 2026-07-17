@@ -201,7 +201,12 @@ test("handsToPbn formats part-score deal", () => {
 test("inputIsValid rejects incomplete deal", () => {
     const ctx = loadDdsMvp(createMockDocument());
     assert.equal(
-        ctx.inputIsValid({ N: ["SA"], E: [], S: [], W: [] }),
+        ctx.inputIsValid({
+            north: ["SA"],
+            east: [],
+            south: [],
+            west: [],
+        }),
         "Please enter 13 cards per hand."
     );
 });
@@ -209,10 +214,10 @@ test("inputIsValid rejects incomplete deal", () => {
 test("inputIsValid rejects invalid pip", () => {
     const ctx = loadDdsMvp(createMockDocument());
     const hands = {
-        N: ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ", "SK"],
-        E: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
-        S: ["DA", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK"],
-        W: ["CA", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK"],
+        north: ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ", "SK"],
+        east: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
+        south: ["DA", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK"],
+        west: ["CA", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK"],
     };
     assert.match(ctx.inputIsValid(hands), /^Please use only these pips:/);
 });
@@ -220,10 +225,10 @@ test("inputIsValid rejects invalid pip", () => {
 test("inputIsValid rejects duplicate cards", () => {
     const ctx = loadDdsMvp(createMockDocument());
     const hands = {
-        N: ["SA", "SA", "HA", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ"],
-        E: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
-        S: ["DA", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK"],
-        W: ["CA", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK"],
+        north: ["SA", "SA", "HA", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ"],
+        east: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
+        south: ["DA", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK"],
+        west: ["CA", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK"],
     };
     const message = ctx.inputIsValid(hands);
     assert.match(message, /^Duplicated card/);
@@ -262,13 +267,13 @@ test("collectHands reads suit holdings from inputs", () => {
     });
     const ctx = loadDdsMvp(document);
     const hands = ctx.collectHands();
-    assert.equal(hands.N.length, 13);
-    assert.equal(hands.E.length, 13);
-    assert.equal(hands.S.length, 13);
-    assert.equal(hands.W.length, 13);
-    assert.ok(hands.N.includes("SA"));
-    assert.ok(hands.N.includes("SK"));
-    assert.ok(hands.E.includes("CJ"));
+    assert.equal(hands.north.length, 13);
+    assert.equal(hands.east.length, 13);
+    assert.equal(hands.south.length, 13);
+    assert.equal(hands.west.length, 13);
+    assert.ok(hands.north.includes("SA"));
+    assert.ok(hands.north.includes("SK"));
+    assert.ok(hands.east.includes("CJ"));
 });
 
 test("clearTestData clears all hand inputs", () => {
@@ -362,7 +367,7 @@ test("fourthHandFillState accepts three full hands and one empty", () => {
     const ctx = loadDdsMvp(document);
     const state = ctx.fourthHandFillState(ctx.collectHands());
     assert.equal(state.canFill, true);
-    assert.equal(state.emptyHand, "W");
+    assert.equal(state.emptyHand, "west");
 });
 
 test("fourthHandFillState rejects partial fourth hand", () => {

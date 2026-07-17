@@ -37,11 +37,10 @@ const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 const PIPS = "AKQJT98765432";
 const DENOMINATIONS = ["C", "D", "H", "S", "N"];
-const DIRECTION_LETTERS = ["N", "E", "S", "W"];
 
 // DDS res_table strain index (S,H,D,C,N) to MVP table column key.
 const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
-const DIR_TO_HAND = { N: 0, E: 1, S: 2, W: 3 };
+const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
 
 // TODO: Clean up our HTML rendering, perhaps using custom elements.
 //       See https://developers.google.com/web/fundamentals/web-components/customelements
@@ -94,9 +93,8 @@ function loadDdsModule() {
 }
 
 function handsToPbn(hands) {
-    const handOrder = ["N", "E", "S", "W"];
     const suitOrder = ["S", "H", "D", "C"];
-    const handStrings = handOrder.map((direction) => {
+    const handStrings = DIRECTIONS.map((direction) => {
         return suitOrder.map((suit) => {
             return hands[direction]
                 .filter((card) => card.charAt(0) === suit)
@@ -238,7 +236,7 @@ function allDeckCards() {
 function deckStatusHtml(hands) {
     const enteredCards = {};
 
-    for (const direction of DIRECTION_LETTERS) {
+    for (const direction of DIRECTIONS) {
         for (const card of hands[direction]) {
             enteredCards[card] = true;
         }
@@ -279,11 +277,9 @@ function updateDeckStatus(hands) {
 }
 
 function updateHandCardCounts(hands) {
-    for (const direction of DIRECTION_LETTERS) {
+    for (const direction of DIRECTIONS) {
         const count = hands[direction].length;
-        const note = document.getElementById(
-            directionName(direction) + "-card-count"
-        );
+        const note = document.getElementById(direction + "-card-count");
 
         if (note) {
             note.hidden = count <= 13;
@@ -293,7 +289,7 @@ function updateHandCardCounts(hands) {
 }
 
 function fourthHandFillState(hands) {
-    const handCounts = DIRECTION_LETTERS.map((direction) => hands[direction].length);
+    const handCounts = DIRECTIONS.map((direction) => hands[direction].length);
     const fullHands = handCounts.filter((count) => count === 13).length;
     const emptyHands = handCounts.filter((count) => count === 0).length;
     const partialHands = handCounts.filter((count) => count > 0 && count < 13).length;
@@ -302,10 +298,10 @@ function fourthHandFillState(hands) {
         return { canFill: false };
     }
 
-    const emptyHand = DIRECTION_LETTERS[handCounts.indexOf(0)];
+    const emptyHand = DIRECTIONS[handCounts.indexOf(0)];
     const usedCards = {};
 
-    for (const direction of DIRECTION_LETTERS) {
+    for (const direction of DIRECTIONS) {
         if (direction === emptyHand) {
             continue;
         }
@@ -349,18 +345,7 @@ function cardsToSuitHoldings(cards) {
     return holdings;
 }
 
-function directionName(directionLetter) {
-    return {
-        N: "north",
-        E: "east",
-        S: "south",
-        W: "west"
-    }[directionLetter];
-}
-
-function setHandInputs(directionLetter, holdings) {
-    const direction = directionName(directionLetter);
-
+function setHandInputs(direction, holdings) {
     for (const suit of SUITS) {
         const suitLetter = suit.charAt(0).toUpperCase();
         document.getElementById(direction + "_" + suit).value = holdings[suitLetter];
@@ -390,7 +375,7 @@ function applyFourthHandFill(hands, emptyHand) {
 }
 
 function allHandsHaveThirteenCards(hands) {
-    return DIRECTION_LETTERS.every((direction) => hands[direction].length === 13);
+    return DIRECTIONS.every((direction) => hands[direction].length === 13);
 }
 
 function isHandInput(element) {
@@ -469,16 +454,14 @@ function collectHands() {
     var hands = {};
 
     for (const ds of directions_and_suits()) {
-        var direction_letter = ds.direction.charAt(0).toUpperCase();
-
-        hands[direction_letter] = hands[direction_letter] || [];
+        hands[ds.direction] = hands[ds.direction] || [];
 
         var suit_letter = ds.suit.charAt(0).toUpperCase();
         var element_index = ds.direction + "_" + ds.suit;
         var holding = document.getElementById(element_index).value;
 
         for (const card of holding) {
-            hands[direction_letter].push(suit_letter + card.toUpperCase());
+            hands[ds.direction].push(suit_letter + card.toUpperCase());
         }
     }
 
@@ -607,7 +590,7 @@ async function sendJSON() {
                 for (var column = 1; column <= 5; column++) {
                     const cell = result_table.rows[row].cells[column];
                     const denomination = DENOMINATIONS[column - 1];
-                    const direction = DIRECTION_LETTERS[row - 1];
+                    const direction = DIRECTIONS[row - 1];
                     const strain = DENOM_TO_STRAIN[denomination];
                     const hand = DIR_TO_HAND[direction];
                     const index = strain * 4 + hand;
