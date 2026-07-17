@@ -1,6 +1,6 @@
 # Naming
 
-For C and C++ code, use snake_case for functions, methods, variables, and parameters.
+For C and C++ code, use snake_case for functions, methods, variables, and parameters. For C++ types use PascalCase, and for member variables use snake_case with a trailing underscore.
 
 Prefer:
 - `deal_fanout`
