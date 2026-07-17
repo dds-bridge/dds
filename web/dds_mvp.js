@@ -35,6 +35,7 @@
 
 const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
+const SUIT_LETTERS = ["S", "H", "D", "C"];
 const PIPS = "AKQJT98765432";
 const DENOMINATIONS = ["C", "D", "H", "S", "N"];
 
@@ -93,9 +94,8 @@ function loadDdsModule() {
 }
 
 function handsToPbn(hands) {
-    const suitOrder = ["S", "H", "D", "C"];
     const handStrings = DIRECTIONS.map((direction) => {
-        return suitOrder.map((suit) => {
+        return SUIT_LETTERS.map((suit) => {
             return hands[direction]
                 .filter((card) => card.charAt(0) === suit)
                 .map((card) => card.charAt(1))
@@ -224,7 +224,7 @@ function rotateClockwise() {
 function allDeckCards() {
     const cards = [];
 
-    for (const suit of ["S", "H", "D", "C"]) {
+    for (const suit of SUIT_LETTERS) {
         for (const pip of PIPS) {
             cards.push(suit + pip);
         }
@@ -242,7 +242,7 @@ function deckStatusHtml(hands) {
         }
     }
 
-    return ["S", "H", "D", "C"].map((suit) => {
+    return SUIT_LETTERS.map((suit) => {
         const redSuit = isRedSuit(suit);
         const symbolClasses = ["deck-suit-symbol"];
 
@@ -335,7 +335,7 @@ function cardsToSuitHoldings(cards) {
         holdings[card.charAt(0)] += card.charAt(1);
     }
 
-    for (const suit of ["S", "H", "D", "C"]) {
+    for (const suit of SUIT_LETTERS) {
         holdings[suit] = holdings[suit]
             .split("")
             .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))

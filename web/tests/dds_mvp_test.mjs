@@ -187,6 +187,21 @@ function threeHandsPartScoreDocument() {
     });
 }
 
+test("deck status lists suits in S H D C order", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.updateActionButtons();
+    const deckStatus = document.element("deck-status").innerHTML;
+    const suitIndexes = ["&spades;", "&hearts;", "&diams;", "&clubs;"].map(
+        (symbol) => deckStatus.indexOf(symbol)
+    );
+    assert.ok(suitIndexes.every((index) => index >= 0));
+    assert.deepEqual(
+        [...suitIndexes].sort((a, b) => a - b),
+        suitIndexes
+    );
+});
+
 test("handsToPbn formats part-score deal", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
