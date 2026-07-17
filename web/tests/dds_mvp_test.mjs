@@ -474,6 +474,18 @@ test("updateActionButtons displays all 52 cards in the deck status", () => {
     assert.equal((deckStatus.match(/&clubs;/g) ?? []).length, 1);
     assert.match(deckStatus, /data-card="SA"/);
     assert.match(deckStatus, /data-card="C2"/);
+    assert.match(
+        deckStatus,
+        /class="deck-suit-symbol suit-red">&hearts;<\/span>/
+    );
+    assert.match(
+        deckStatus,
+        /class="deck-card" data-card="HA"/
+    );
+    assert.doesNotMatch(
+        deckStatus,
+        /class="deck-card [^"]*red[^"]*" data-card="HA"/
+    );
 });
 
 test("updateActionButtons grays cards entered in any hand", () => {
@@ -492,7 +504,7 @@ test("updateActionButtons grays cards entered in any hand", () => {
     );
     assert.match(
         deckStatus,
-        /class="deck-card deck-card-red deck-card-entered" data-card="HK"/
+        /class="deck-card deck-card-entered" data-card="HK"/
     );
     assert.match(
         deckStatus,

@@ -249,16 +249,13 @@ function deckStatusHtml(hands) {
         const symbolClasses = ["deck-suit-symbol"];
 
         if (redSuit) {
-            symbolClasses.push("deck-card-red");
+            symbolClasses.push("suit-red");
         }
 
         const cardsHtml = PIPS.split("").map((pip) => {
             const card = suit + pip;
             const classes = ["deck-card"];
 
-            if (redSuit) {
-                classes.push("deck-card-red");
-            }
             if (enteredCards[card]) {
                 classes.push("deck-card-entered");
             }
