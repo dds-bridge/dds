@@ -9,8 +9,8 @@ load("@rules_python//python:defs.bzl", "py_library")
 # major.minor against the library's GetDDSInfo so a gross divergence is caught.
 DDS_FFM_VERSION = "3.0.1"
 
-# Host os+cpu combinations we can package a native library for. The genrule that
-# stages the library encodes <os>-<arch> in its output path, which must match the
+# Host os+cpu combinations we can package a native library for. The copy_file rule
+# that stages the library encodes <os>-<arch> in its output path, which must match the
 # arch Dds.loadEmbedded() resolves at runtime (os.arch) — so the arch is part of
 # the build config here, not hardcoded per-OS.
 [
