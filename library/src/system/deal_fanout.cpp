@@ -24,21 +24,21 @@ auto deal_fanout(const Deal& dl) -> int
   // A void counts as the sum of the other players' groups.
 
   int fanout = 0;
-  int fanoutSuit, numVoids, c;
+  int fanout_suit, num_voids, c;
 
   for (int h = 0; h < DDS_HANDS; h++)
   {
-    fanoutSuit = 0;
-    numVoids = 0;
+    fanout_suit = 0;
+    num_voids = 0;
     for (int s = 0; s < DDS_SUITS; s++)
     {
       c = static_cast<int>(dl.remainCards[h][s] >> 2);
-      fanoutSuit += group_data[c].last_group_ + 1;
+      fanout_suit += group_data[c].last_group_ + 1;
       if (c == 0)
-        numVoids++;
+        num_voids++;
     }
-    fanoutSuit += numVoids * fanoutSuit;
-    fanout += fanoutSuit;
+    fanout_suit += num_voids * fanout_suit;
+    fanout += fanout_suit;
   }
 
   return fanout;
