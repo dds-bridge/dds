@@ -150,7 +150,7 @@ auto calc_all_boards_n(
     {
       std::vector<int> fanout(static_cast<unsigned>(n));
       for (int i = 0; i < n; i++)
-        fanout[static_cast<unsigned>(i)] = deal_fanout(bop->deals[i]);
+        fanout[static_cast<unsigned>(i)] = bop->deals[i].fanout();
       order.resize(static_cast<unsigned>(n));
       std::iota(order.begin(), order.end(), 0);
       std::stable_sort(order.begin(), order.end(),

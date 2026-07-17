@@ -11,7 +11,6 @@ cc_library(
     includes = ["."],
     deps = [
         "//library/src/utility:constants",
-        "//library/src/lookup_tables:lookup_tables",
         "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",
@@ -33,7 +32,6 @@ cc_library(
     includes = ["."],
     deps = [
         "//library/src/utility:constants",
-        "//library/src/lookup_tables:lookup_tables",
     "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",
@@ -53,7 +51,6 @@ cc_library(
     includes = ["."],
     deps = [
         "//library/src/utility:constants",
-        "//library/src/lookup_tables:lookup_tables",
     "//library/src/api:api_definitions",
         "//library/src/trans_table",
         "//library/src/moves:moves",

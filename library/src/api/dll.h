@@ -186,6 +186,16 @@ struct Deal
   int currentTrickSuit[3];
   int currentTrickRank[3];
   unsigned int remainCards[DDS_HANDS][DDS_SUITS];
+
+#ifdef __cplusplus
+  /**
+   * @brief Cheap structural difficulty estimate (cards only, trump-independent).
+   *
+   * Per hand, sum the number of card groups per suit, with a bonus for voids.
+   * Used to dispatch the hardest boards first in parallel batch calc.
+   */
+  auto fanout() const -> int;
+#endif
 };
 
 
