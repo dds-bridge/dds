@@ -83,7 +83,11 @@ exposes:
 
 - Public `MemoryLayout` constants matching the C structs: `DEAL`,
   `FUTURE_TRICKS`, `DD_TABLE_DEAL`, `DD_TABLE_RESULTS`, `DDS_INFO`.
-- Typed downcall wrappers for the shim functions plus `getDdsInfo`.
+- Typed downcall wrappers for the shim functions plus `getDdsInfo`. These
+  return an `int` [`DdsStatus`](../jni/java/org/dds/ffm/DdsStatus.java)
+  `RETURN_*` code (`RETURN_NO_FAULT == 1` on success); compare against the named
+  constants rather than magic numbers, and use `DdsStatus.name(rc)` for
+  diagnostics.
 - `Dds.load(Path)` — loads the library via `SymbolLookup.libraryLookup` over an
   owned `Arena`; `Dds` is `AutoCloseable`.
 

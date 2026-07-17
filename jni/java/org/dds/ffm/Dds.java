@@ -241,7 +241,7 @@ public final class Dds implements AutoCloseable {
         invokeVoid(destroyContext, ctx);
     }
 
-    /** Solve a single board. Returns a RETURN_* status code. */
+    /** Solve a single board. Returns a {@link DdsStatus} {@code RETURN_*} code. */
     public int solveBoard(MemorySegment ctx, MemorySegment deal, int target,
             int solutions, int mode, MemorySegment futureTricks) {
         try {
@@ -251,7 +251,7 @@ public final class Dds implements AutoCloseable {
         }
     }
 
-    /** Compute the double dummy table for a deal. Returns a RETURN_* code. */
+    /** Compute the double dummy table for a deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
     public int calcDdTable(MemorySegment ctx, MemorySegment deal, MemorySegment results) {
         try {
             return (int) calcDdTable.invoke(ctx, deal, results);
@@ -260,7 +260,7 @@ public final class Dds implements AutoCloseable {
         }
     }
 
-    /** Compute the par result for a deal. Returns a RETURN_* code. */
+    /** Compute the par result for a deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
     public int calcPar(MemorySegment ctx, MemorySegment deal, int vulnerable,
             MemorySegment results, MemorySegment par) {
         try {

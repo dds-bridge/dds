@@ -16,6 +16,7 @@ package org.dds.ffm;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static org.dds.ffm.DdsStatus.RETURN_NO_FAULT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout.PathElement;
@@ -28,7 +29,6 @@ public final class DdsSmokeTest {
 
     // Full 13-card holding bitmask (ranks 2..A), matching the Python fixtures.
     private static final int FULL_SUIT = 0x7FFC;
-    private static final int RETURN_NO_FAULT = 1;
 
     // Double dummy table for the known deal, res_table[strain][hand] flattened
     // (5 strains x 4 hands). Cross-checked against the Python binding.
@@ -140,8 +140,9 @@ public final class DdsSmokeTest {
         try {
             MemorySegment fut = arena.allocate(Dds.FUTURE_TRICKS);
             int rc = dds.solveBoard(ctx, deal, -1, 1, 1, fut);
-            System.out.println("solve_board(invalid trump): rc=" + rc);
-            check(rc != RETURN_NO_FAULT, "invalid deal should not return success, got " + rc);
+            System.out.println("solve_board(invalid trump): rc=" + rc + " (" + DdsStatus.name(rc) + ")");
+            check(rc != RETURN_NO_FAULT,
+                    "invalid deal should not return success, got " + DdsStatus.name(rc));
         } finally {
             dds.destroySolverContext(ctx);
         }

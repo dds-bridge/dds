@@ -76,7 +76,10 @@ cc_shared_library(
 # plus GetDDSInfo. Requires the JDK 22+ toolchain configured in .bazelrc.
 java_library(
     name = "dds_ffm",
-    srcs = ["java/org/dds/ffm/Dds.java"],
+    srcs = [
+        "java/org/dds/ffm/Dds.java",
+        "java/org/dds/ffm/DdsStatus.java",
+    ],
     visibility = ["//visibility:public"],
 )
 

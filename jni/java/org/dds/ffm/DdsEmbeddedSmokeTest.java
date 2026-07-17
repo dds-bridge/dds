@@ -16,6 +16,7 @@
 package org.dds.ffm;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static org.dds.ffm.DdsStatus.RETURN_NO_FAULT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout.PathElement;
@@ -24,7 +25,6 @@ import java.lang.foreign.MemorySegment;
 public final class DdsEmbeddedSmokeTest {
 
     private static final int FULL_SUIT = 0x7FFC;
-    private static final int RETURN_NO_FAULT = 1;
 
     private static final long DEAL_TRUMP = Dds.DEAL.byteOffset(PathElement.groupElement("trump"));
     private static final long DEAL_REMAIN = Dds.DEAL.byteOffset(PathElement.groupElement("remainCards"));
