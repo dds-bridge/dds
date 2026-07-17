@@ -446,12 +446,34 @@ test("fourthHandFillState rejects partial fourth hand", () => {
     assert.equal(ctx.fourthHandFillState(ctx.collectHands()).canFill, false);
 });
 
-test("fourthHandFillState rejects duplicate cards", () => {
+test("fourthHandFillState rejects a duplicate card across three full hands", () => {
+    // Arrange: keep all three hands at 13 cards but duplicate D9 (east & north).
     const document = threeHandsPartScoreDocument();
-    document.setValue("north_spades", "AQ85A");
-    document.setValue("north_hearts", "AK975");
+    document.setValue("north_diamonds", "9");
     const ctx = loadDdsMvp(document);
-    assert.equal(ctx.fourthHandFillState(ctx.collectHands()).canFill, false);
+
+    // Act
+    const state = ctx.fourthHandFillState(ctx.collectHands());
+
+    // Assert: 39 slots yield only 38 distinct cards, so the deal is not fillable.
+    assert.equal(state.canFill, false);
+});
+
+test("updateActionButtons does not auto-fill when a hand has a non-bridge pip", () => {
+    // Arrange: three full hands, but north holds an invalid pip (CX) instead of C7.
+    const document = threeHandsPartScoreDocument();
+    document.setValue("north_clubs", "J8X");
+    const ctx = loadDdsMvp(document);
+
+    // Act
+    ctx.updateActionButtons();
+
+    // Assert: the fourth hand stays empty and double-dummy remains disabled.
+    assert.equal(document.element("west_spades").value, "");
+    assert.equal(document.element("west_hearts").value, "");
+    assert.equal(document.element("west_diamonds").value, "");
+    assert.equal(document.element("west_clubs").value, "");
+    assert.equal(document.element("double-dummy-it").disabled, true);
 });
 
 test("updateActionButtons auto-fills the fourth hand for three complete hands", () => {

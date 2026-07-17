@@ -340,18 +340,12 @@ function fourthHandFillState(hands) {
         }
 
         for (const card of hands[direction]) {
-            if (!PIPS.includes(card.pip)) {
-                return { canFill: false };
-            }
-
-            if (usedCards[card.key()]) {
-                return { canFill: false };
-            }
-
             usedCards[card.key()] = true;
         }
     }
 
+    // Three full hands hold 39 cards; fewer distinct keys means a duplicate,
+    // so the remaining 13 cannot be dealt to the empty hand.
     if (Object.keys(usedCards).length !== 39) {
         return { canFill: false };
     }
