@@ -16,7 +16,6 @@
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
 #include <solver_if.hpp>
-#include <lookup_tables/lookup_tables.hpp>
 #include <system/deal_fanout.hpp>
 #include <system/memory.hpp>
 #include <system/parallel_boards.hpp>
