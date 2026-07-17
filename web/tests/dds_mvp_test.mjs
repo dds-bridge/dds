@@ -166,6 +166,19 @@ function loadDdsMvp(document) {
     return context;
 }
 
+function cardsFromKeys(ctx, keys) {
+    return keys.map(ctx.Card.fromKey);
+}
+
+function handsFromKeys(ctx, hands) {
+    return Object.fromEntries(
+        Object.entries(hands).map(([direction, keys]) => [
+            direction,
+            cardsFromKeys(ctx, keys),
+        ])
+    );
+}
+
 function threeHandsPartScoreDocument() {
     return createMockDocument({
         north_spades: "AQ85",
@@ -187,10 +200,39 @@ function threeHandsPartScoreDocument() {
     });
 }
 
+test("Card converts between named suits and compact keys", () => {
+    // Arrange / Act
+    const ctx = loadDdsMvp(createMockDocument());
+    const card = new ctx.Card("hearts", "K");
+    const decoded = ctx.Card.fromKey("D2");
+
+    // Assert
+    assert.equal(card.suit, "hearts");
+    assert.equal(card.pip, "K");
+    assert.equal(card.key(), "HK");
+    assert.equal(card.toString(), "HK");
+    assert.equal(decoded.suit, "diamonds");
+    assert.equal(decoded.pip, "2");
+});
+
+test("Card.compare sorts cards from ace through deuce", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+    const cards = ["S2", "SK", "SA"].map(ctx.Card.fromKey);
+
+    // Act
+    cards.sort(ctx.Card.compare);
+
+    // Assert
+    assert.deepEqual(cards.map((card) => card.key()), ["SA", "SK", "S2"]);
+});
+
 test("cardsToSuitHoldings groups cards by suit name", () => {
     const ctx = loadDdsMvp(createMockDocument());
     // Copy out of the VM realm so deepEqual compares same-realm prototypes.
-    const holdings = { ...ctx.cardsToSuitHoldings(["SA", "SK", "HA", "C2"]) };
+    const holdings = {
+        ...ctx.cardsToSuitHoldings(cardsFromKeys(ctx, ["SA", "SK", "HA", "C2"])),
+    };
     assert.deepEqual(holdings, {
         spades: "AK",
         hearts: "A",
@@ -228,35 +270,35 @@ test("handsToPbn formats part-score deal", () => {
 test("inputIsValid rejects incomplete deal", () => {
     const ctx = loadDdsMvp(createMockDocument());
     assert.equal(
-        ctx.inputIsValid({
+        ctx.inputIsValid(handsFromKeys(ctx, {
             north: ["SA"],
             east: [],
             south: [],
             west: [],
-        }),
+        })),
         "Please enter 13 cards per hand."
     );
 });
 
 test("inputIsValid rejects invalid pip", () => {
     const ctx = loadDdsMvp(createMockDocument());
-    const hands = {
+    const hands = handsFromKeys(ctx, {
         north: ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ", "SK"],
         east: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
         south: ["DA", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK"],
         west: ["CA", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK"],
-    };
+    });
     assert.match(ctx.inputIsValid(hands), /^Please use only these pips:/);
 });
 
 test("inputIsValid rejects duplicate cards", () => {
     const ctx = loadDdsMvp(createMockDocument());
-    const hands = {
+    const hands = handsFromKeys(ctx, {
         north: ["SA", "SA", "HA", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ"],
         east: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
         south: ["DA", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK"],
         west: ["CA", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK"],
-    };
+    });
     const message = ctx.inputIsValid(hands);
     assert.match(message, /^Duplicated card/);
     // Black suit symbols render bare.
@@ -298,9 +340,9 @@ test("collectHands reads suit holdings from inputs", () => {
     assert.equal(hands.east.length, 13);
     assert.equal(hands.south.length, 13);
     assert.equal(hands.west.length, 13);
-    assert.ok(hands.north.includes("SA"));
-    assert.ok(hands.north.includes("SK"));
-    assert.ok(hands.east.includes("CJ"));
+    assert.ok(hands.north.some((card) => card.key() === "SA"));
+    assert.ok(hands.north.some((card) => card.key() === "SK"));
+    assert.ok(hands.east.some((card) => card.key() === "CJ"));
 });
 
 test("clearTestData clears all hand inputs", () => {

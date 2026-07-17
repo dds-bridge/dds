@@ -65,6 +65,25 @@ function suitFromLetter(letter) {
     return undefined;
 }
 
+function Card(suit, pip) {
+    this.suit = suit;
+    this.pip = pip;
+}
+
+Card.prototype.key = function () {
+    return suitLetter(this.suit) + this.pip;
+};
+
+Card.prototype.toString = Card.prototype.key;
+
+Card.fromKey = function (key) {
+    return new Card(suitFromLetter(key.charAt(0)), key.charAt(1));
+};
+
+Card.compare = function (left, right) {
+    return PIPS.indexOf(left.pip) - PIPS.indexOf(right.pip);
+};
+
 function isRedSuit(suit) {
     return suit === "hearts" || suit === "diamonds";
 }
@@ -109,11 +128,10 @@ function loadDdsModule() {
 function handsToPbn(hands) {
     const handStrings = DIRECTIONS.map((direction) => {
         return SUITS.map((suit) => {
-            const letter = suitLetter(suit);
             return hands[direction]
-                .filter((card) => card.charAt(0) === letter)
-                .map((card) => card.charAt(1))
-                .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
+                .filter((card) => card.suit === suit)
+                .sort(Card.compare)
+                .map((card) => card.pip)
                 .join("");
         }).join(".");
     });
@@ -239,10 +257,8 @@ function allDeckCards() {
     const cards = [];
 
     for (const suit of SUITS) {
-        const letter = suitLetter(suit);
-
         for (const pip of PIPS) {
-            cards.push(letter + pip);
+            cards.push(new Card(suit, pip));
         }
     }
 
@@ -254,12 +270,11 @@ function deckStatusHtml(hands) {
 
     for (const direction of DIRECTIONS) {
         for (const card of hands[direction]) {
-            enteredCards[card] = true;
+            enteredCards[card.key()] = true;
         }
     }
 
     return SUITS.map((suit) => {
-        const letter = suitLetter(suit);
         const redSuit = isRedSuit(suit);
         const symbolClasses = ["deck-suit-symbol"];
 
@@ -268,15 +283,16 @@ function deckStatusHtml(hands) {
         }
 
         const cardsHtml = PIPS.split("").map((pip) => {
-            const card = letter + pip;
+            const card = new Card(suit, pip);
+            const key = card.key();
             const classes = ["deck-card"];
 
-            if (enteredCards[card]) {
+            if (enteredCards[key]) {
                 classes.push("deck-card-entered");
             }
 
             return "<span class=\"" + classes.join(" ") +
-                "\" data-card=\"" + card + "\">" + pip + "</span>";
+                "\" data-card=\"" + key + "\">" + pip + "</span>";
         }).join("");
 
         return "<span class=\"deck-suit-group\"><span class=\"" +
@@ -324,17 +340,15 @@ function fourthHandFillState(hands) {
         }
 
         for (const card of hands[direction]) {
-            const pip = card.substring(1);
-
-            if (!PIPS.includes(pip)) {
+            if (!PIPS.includes(card.pip)) {
                 return { canFill: false };
             }
 
-            if (usedCards[card]) {
+            if (usedCards[card.key()]) {
                 return { canFill: false };
             }
 
-            usedCards[card] = true;
+            usedCards[card.key()] = true;
         }
     }
 
@@ -353,8 +367,7 @@ function cardsToSuitHoldings(cards) {
     }
 
     for (const card of cards) {
-        const suit = suitFromLetter(card.charAt(0));
-        holdings[suit] += card.charAt(1);
+        holdings[card.suit] += card.pip;
     }
 
     for (const suit of SUITS) {
@@ -374,7 +387,7 @@ function setHandInputs(direction, holdings) {
 }
 
 function remainingCardsForEmptyHand(state) {
-    return allDeckCards().filter((card) => !state.usedCards[card]);
+    return allDeckCards().filter((card) => !state.usedCards[card.key()]);
 }
 
 function applyFourthHandFill(hands, emptyHand) {
@@ -477,12 +490,11 @@ function collectHands() {
     for (const ds of directions_and_suits()) {
         hands[ds.direction] = hands[ds.direction] || [];
 
-        var letter = suitLetter(ds.suit);
         var element_index = ds.direction + "_" + ds.suit;
         var holding = document.getElementById(element_index).value;
 
-        for (const card of holding) {
-            hands[ds.direction].push(letter + card.toUpperCase());
+        for (const pip of holding) {
+            hands[ds.direction].push(new Card(ds.suit, pip.toUpperCase()));
         }
     }
 
@@ -501,20 +513,19 @@ function inputIsValid(hands) {
         }
 
         for (const card of hand) {
-            const pip = card.substring(1);
-
-            if (!PIPS.includes(pip)) {
+            if (!PIPS.includes(card.pip)) {
                 return "Please use only these pips: " + PIPS;
             }
 
-            if (deck[card]) {
-                if (deck[card] == 1) {
+            const key = card.key();
+            if (deck[key]) {
+                if (deck[key] == 1) {
                     duplicates.push(card);
                 }
 
-                deck[card]++;
+                deck[key]++;
             } else {
-                deck[card] = 1;
+                deck[key] = 1;
             }
         }
     }
@@ -529,12 +540,10 @@ function inputIsValid(hands) {
         error_message += ": ";
 
         for (const card of duplicates) {
-            const suit = suitFromLetter(card.substring(0, 1));
-            const pip = card.substring(1);
-            const suit_symbol = suitSymbolHtml(suit);
+            const suit_symbol = suitSymbolHtml(card.suit);
 
             error_message += suit_symbol;
-            error_message += pip;
+            error_message += card.pip;
             error_message += " ";
         }
 
