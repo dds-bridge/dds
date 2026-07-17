@@ -10,6 +10,7 @@
 #pragma once
 
 #include <functional>
+#include <vector>
 
 
 /**
@@ -28,9 +29,17 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  * @param worker_cap Maximum worker threads; <= 0 uses hardware concurrency.
  * @param process_board Called for each board; must return RETURN_NO_FAULT (1)
  *        on success. Receives the worker's thread index and board number.
+ * @param order Optional dispatch order: a permutation of [0, count) giving the
+ *        sequence in which board numbers are handed out (e.g. hardest first to
+ *        shorten the tail). When null/empty, boards are dispatched in index
+ *        order. Only the dispatch order changes; @p process_board still receives
+ *        the real board number, so result placement is unaffected. When
+ *        non-null, the vector must remain valid and must not be mutated until
+ *        this function returns because worker threads read it concurrently.
  * @return First non-success code from @p process_board, or RETURN_NO_FAULT.
  */
 auto parallel_all_boards_n(
   int count,
   int worker_cap,
-  const std::function<int(int worker_id, int bno)>& process_board) -> int;
+  const std::function<int(int worker_id, int bno)>& process_board,
+  const std::vector<int>* order = nullptr) -> int;

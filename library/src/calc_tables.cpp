@@ -8,12 +8,15 @@
 */
 
 #include "calc_tables.hpp"
+#include <algorithm>
+#include <numeric>
 #include <vector>
 
 #include <pbn.hpp>
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
 #include <solver_if.hpp>
+#include <system/deal_fanout.hpp>
 #include <system/memory.hpp>
 #include <system/parallel_boards.hpp>
 #include <system/scheduler.hpp>
@@ -23,11 +26,11 @@
 extern Memory memory;
 extern Scheduler scheduler;
 
-// Legacy overload (creates temporary context)
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp,
-  int max_threads = 0) -> int;
+  int max_threads = 0,
+  bool difficulty_sort = true) -> int;
 
 
 auto calc_single_common_internal(
@@ -110,7 +113,8 @@ auto calc_all_boards_n(
 auto calc_all_boards_n(
   Boards * bop,
   SolvedBoards * solvedp,
-  int max_threads) -> int
+  int max_threads,
+  bool difficulty_sort) -> int
 {
   const int n = bop->no_of_boards;
   if (n > MAXNOOFBOARDS)
@@ -137,11 +141,31 @@ auto calc_all_boards_n(
   else
   {
     std::vector<SolverContext> contexts(static_cast<unsigned>(nthreads));
+
+    // Dispatch hardest boards first to shorten the parallel tail. This only
+    // helps across distinct deals (batch calc); for a single deal every board
+    // shares one fanout, so the sort is skipped (it would be a no-op anyway).
+    std::vector<int> order;
+    if (difficulty_sort)
+    {
+      std::vector<int> fanout(static_cast<unsigned>(n));
+      for (int i = 0; i < n; i++)
+        fanout[static_cast<unsigned>(i)] =
+          dds::internal::deal_fanout(bop->deals[i]);
+      order.resize(static_cast<unsigned>(n));
+      std::iota(order.begin(), order.end(), 0);
+      std::stable_sort(order.begin(), order.end(),
+        [&](const int a, const int b) {
+          return fanout[static_cast<unsigned>(a)] > fanout[static_cast<unsigned>(b)];
+        });
+    }
+
     err = parallel_all_boards_n(n, nthreads,
       [&](const int worker_id, const int bno) -> int {
         return calc_single_common_internal(
           contexts[static_cast<unsigned>(worker_id)], *bop, *solvedp, bno);
-      });
+      },
+      order.empty() ? nullptr : &order);
   }
 
   END_BLOCK_TIMER;
@@ -192,7 +216,8 @@ int STDCALL CalcDDtableN(
     ind++;
   }
 
-  int res = calc_all_boards_n(&bo, &solved, maxThreads);
+  // Single deal: all boards share one deal, so hardest-first sorting is a no-op.
+  int res = calc_all_boards_n(&bo, &solved, maxThreads, /*difficulty_sort=*/false);
   if (res != 1)
     return res;
 

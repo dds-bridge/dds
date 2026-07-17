@@ -10,10 +10,10 @@
 #include <cmath>
 #include <iostream>
 
+#include "deal_fanout.hpp"
 #include "scheduler.hpp"
 #include <fstream>
 #include <iomanip>
-#include <lookup_tables/lookup_tables.hpp>
 #ifdef DDS_SCHEDULER
 #include <system/time_stat_list.hpp>
 
@@ -270,7 +270,7 @@ void Scheduler::MakeGroups(const Boards& bds)
     hands[b].NTflag = (strain == 4 ? 1 : 0);
     hands[b].first = dl->first;
     hands[b].strain = strain;
-    hands[b].fanout = Scheduler::Fanout(* dl);
+    hands[b].fanout = dds::internal::deal_fanout(*dl);
     // hands[b].strength = Scheduler::Strength(* dl);
 
     lp = &list[strain][key];
@@ -747,35 +747,6 @@ int Scheduler::Strength(const Deal& dl) const
   if (dev >= 50) dev = 49;
 
   return dev;
-}
-
-
-int Scheduler::Fanout(const Deal& dl) const
-{
-  // The fanout for a given suit and a given player is the number
-  // of bit groups, so KT982 has 3 groups. In a given suit the
-  // maximum number over all four players is 13.
-  // A void counts as the sum of the other players' groups.
-
-  int fanout = 0;
-  int fanoutSuit, numVoids, c;
-
-  for (int h = 0; h < DDS_HANDS; h++)
-  {
-    fanoutSuit = 0;
-    numVoids = 0;
-    for (int s = 0; s < DDS_SUITS; s++)
-    {
-      c = static_cast<int>(dl.remainCards[h][s] >> 2);
-      fanoutSuit += group_data[c].last_group_ + 1;
-      if (c == 0)
-        numVoids++;
-    }
-    fanoutSuit += numVoids * fanoutSuit;
-    fanout += fanoutSuit;
-  }
-
-  return fanout;
 }
 
 

@@ -59,11 +59,36 @@ cc_test(
     ],
 )
 
+# Internal deal fanout structural difficulty estimate
+cc_test(
+    name = "deal_fanout_test",
+    size = "small",
+    srcs = ["deal_fanout_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "//library/src/lookup_tables:lookup_tables",
+        "//library/src/utility:constants",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # Worker-count helper unit test
 cc_test(
     name = "worker_count_test",
     size = "small",
     srcs = ["worker_count_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "parallel_boards_test",
+    size = "small",
+    srcs = ["parallel_boards_test.cpp"],
     deps = [
         "//library/src:testable_dds",
         "//library/src/api:api_definitions",
