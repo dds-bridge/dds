@@ -22,7 +22,9 @@ void* operator new(const std::size_t size)
   if (allocation_tracking::enabled.load(std::memory_order_relaxed))
     allocation_tracking::allocations.fetch_add(1, std::memory_order_relaxed);
 
-  if (void* const memory = std::malloc(size))
+  // C++ requires successful zero-size allocations to return non-null;
+  // malloc(0) is allowed to return nullptr, so request at least one byte.
+  if (void* const memory = std::malloc(size == 0 ? 1 : size))
     return memory;
   throw std::bad_alloc();
 }
@@ -120,4 +122,13 @@ TEST(ParallelAllBoards, PermutationValidationUsesAtMostOneAllocation)
   EXPECT_EQ(result, RETURN_NO_FAULT);
   EXPECT_LE(
     allocation_tracking::allocations.load(std::memory_order_relaxed), 1u);
+}
+
+TEST(ParallelAllBoards, ZeroSizeNewReturnsNonNull)
+{
+  // C++ requires a successful zero-size allocation to return a distinct
+  // non-null pointer; malloc(0) is allowed to return nullptr.
+  void* const memory = ::operator new(0);
+  EXPECT_NE(memory, nullptr);
+  ::operator delete(memory);
 }
