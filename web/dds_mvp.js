@@ -35,7 +35,6 @@
 
 const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
-const SUIT_LETTERS = ["S", "H", "D", "C"];
 const PIPS = "AKQJT98765432";
 const DENOMINATIONS = ["C", "D", "H", "S", "N"];
 
@@ -46,14 +45,28 @@ const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
 // TODO: Clean up our HTML rendering, perhaps using custom elements.
 //       See https://developers.google.com/web/fundamentals/web-components/customelements
 const SUIT_SYMBOLS = {
-    "S" : "&spades;",
-    "H" : "&hearts;",
-    "D" : "&diams;",
-    "C" : "&clubs;"
+    spades: "&spades;",
+    hearts: "&hearts;",
+    diamonds: "&diams;",
+    clubs: "&clubs;"
 };
 
+function suitLetter(suit) {
+    return suit.charAt(0).toUpperCase();
+}
+
+function suitFromLetter(letter) {
+    for (const suit of SUITS) {
+        if (suitLetter(suit) === letter) {
+            return suit;
+        }
+    }
+
+    return undefined;
+}
+
 function isRedSuit(suit) {
-    return suit === "H" || suit === "D";
+    return suit === "hearts" || suit === "diamonds";
 }
 
 // Suit symbols are always black or red; the red is applied via CSS so callers
@@ -95,9 +108,10 @@ function loadDdsModule() {
 
 function handsToPbn(hands) {
     const handStrings = DIRECTIONS.map((direction) => {
-        return SUIT_LETTERS.map((suit) => {
+        return SUITS.map((suit) => {
+            const letter = suitLetter(suit);
             return hands[direction]
-                .filter((card) => card.charAt(0) === suit)
+                .filter((card) => card.charAt(0) === letter)
                 .map((card) => card.charAt(1))
                 .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
                 .join("");
@@ -224,9 +238,11 @@ function rotateClockwise() {
 function allDeckCards() {
     const cards = [];
 
-    for (const suit of SUIT_LETTERS) {
+    for (const suit of SUITS) {
+        const letter = suitLetter(suit);
+
         for (const pip of PIPS) {
-            cards.push(suit + pip);
+            cards.push(letter + pip);
         }
     }
 
@@ -242,7 +258,8 @@ function deckStatusHtml(hands) {
         }
     }
 
-    return SUIT_LETTERS.map((suit) => {
+    return SUITS.map((suit) => {
+        const letter = suitLetter(suit);
         const redSuit = isRedSuit(suit);
         const symbolClasses = ["deck-suit-symbol"];
 
@@ -251,7 +268,7 @@ function deckStatusHtml(hands) {
         }
 
         const cardsHtml = PIPS.split("").map((pip) => {
-            const card = suit + pip;
+            const card = letter + pip;
             const classes = ["deck-card"];
 
             if (enteredCards[card]) {
@@ -329,13 +346,18 @@ function fourthHandFillState(hands) {
 }
 
 function cardsToSuitHoldings(cards) {
-    const holdings = { S: "", H: "", D: "", C: "" };
+    const holdings = {};
 
-    for (const card of cards) {
-        holdings[card.charAt(0)] += card.charAt(1);
+    for (const suit of SUITS) {
+        holdings[suit] = "";
     }
 
-    for (const suit of SUIT_LETTERS) {
+    for (const card of cards) {
+        const suit = suitFromLetter(card.charAt(0));
+        holdings[suit] += card.charAt(1);
+    }
+
+    for (const suit of SUITS) {
         holdings[suit] = holdings[suit]
             .split("")
             .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
@@ -347,8 +369,7 @@ function cardsToSuitHoldings(cards) {
 
 function setHandInputs(direction, holdings) {
     for (const suit of SUITS) {
-        const suitLetter = suit.charAt(0).toUpperCase();
-        document.getElementById(direction + "_" + suit).value = holdings[suitLetter];
+        document.getElementById(direction + "_" + suit).value = holdings[suit];
     }
 }
 
@@ -456,12 +477,12 @@ function collectHands() {
     for (const ds of directions_and_suits()) {
         hands[ds.direction] = hands[ds.direction] || [];
 
-        var suit_letter = ds.suit.charAt(0).toUpperCase();
+        var letter = suitLetter(ds.suit);
         var element_index = ds.direction + "_" + ds.suit;
         var holding = document.getElementById(element_index).value;
 
         for (const card of holding) {
-            hands[ds.direction].push(suit_letter + card.toUpperCase());
+            hands[ds.direction].push(letter + card.toUpperCase());
         }
     }
 
@@ -508,9 +529,9 @@ function inputIsValid(hands) {
         error_message += ": ";
 
         for (const card of duplicates) {
-            const suit_letter = card.substring(0, 1);
+            const suit = suitFromLetter(card.substring(0, 1));
             const pip = card.substring(1);
-            const suit_symbol = suitSymbolHtml(suit_letter);
+            const suit_symbol = suitSymbolHtml(suit);
 
             error_message += suit_symbol;
             error_message += pip;

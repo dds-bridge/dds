@@ -187,6 +187,18 @@ function threeHandsPartScoreDocument() {
     });
 }
 
+test("cardsToSuitHoldings groups cards by suit name", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    // Copy out of the VM realm so deepEqual compares same-realm prototypes.
+    const holdings = { ...ctx.cardsToSuitHoldings(["SA", "SK", "HA", "C2"]) };
+    assert.deepEqual(holdings, {
+        spades: "AK",
+        hearts: "A",
+        diamonds: "",
+        clubs: "2",
+    });
+});
+
 test("deck status lists suits in S H D C order", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
