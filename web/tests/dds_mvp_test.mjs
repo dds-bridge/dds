@@ -220,14 +220,18 @@ test("inputIsValid rejects invalid pip", () => {
 test("inputIsValid rejects duplicate cards", () => {
     const ctx = loadDdsMvp(createMockDocument());
     const hands = {
-        N: ["SA", "SA", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ"],
+        N: ["SA", "SA", "HA", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ"],
         E: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
         S: ["DA", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK"],
         W: ["CA", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK"],
     };
     const message = ctx.inputIsValid(hands);
     assert.match(message, /^Duplicated card/);
+    // Black suit symbols render bare.
     assert.match(message, /&spades;A/);
+    // Red suit symbols are colored via a CSS class, never an inline style.
+    assert.match(message, /<span class="suit-red">&hearts;<\/span>A/);
+    assert.doesNotMatch(message, /style=['"]color: red['"]/);
 });
 
 test("inputIsValid accepts part-score deal", () => {

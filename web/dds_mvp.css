@@ -92,6 +92,7 @@ td {
   flex: 0 0 auto;
 }
 
+.suit-red,
 .deck-card-red {
   color: #c00;
 }

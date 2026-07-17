@@ -47,16 +47,24 @@ const DIR_TO_HAND = { N: 0, E: 1, S: 2, W: 3 };
 //       See https://developers.google.com/web/fundamentals/web-components/customelements
 const SUIT_SYMBOLS = {
     "S" : "&spades;",
-    "H" : "<span style='color: red'>&hearts;</span>",
-    "D" : "<span style='color: red'>&diams;</span>",
-    "C" : "&clubs;"
-};
-const DECK_SUIT_SYMBOLS = {
-    "S" : "&spades;",
     "H" : "&hearts;",
     "D" : "&diams;",
     "C" : "&clubs;"
 };
+
+function isRedSuit(suit) {
+    return suit === "H" || suit === "D";
+}
+
+// Suit symbols are always black or red; the red is applied via CSS so callers
+// that also gray out card pips (e.g. the deck status) can color independently.
+function suitSymbolHtml(suit) {
+    const symbol = SUIT_SYMBOLS[suit];
+
+    return isRedSuit(suit)
+        ? "<span class=\"suit-red\">" + symbol + "</span>"
+        : symbol;
+}
 
 let ddsModulePromise = null;
 
@@ -237,7 +245,7 @@ function deckStatusHtml(hands) {
     }
 
     return ["S", "H", "D", "C"].map((suit) => {
-        const redSuit = suit === "H" || suit === "D";
+        const redSuit = isRedSuit(suit);
         const symbolClasses = ["deck-suit-symbol"];
 
         if (redSuit) {
@@ -260,7 +268,7 @@ function deckStatusHtml(hands) {
         }).join("");
 
         return "<span class=\"deck-suit-group\"><span class=\"" +
-            symbolClasses.join(" ") + "\">" + DECK_SUIT_SYMBOLS[suit] +
+            symbolClasses.join(" ") + "\">" + SUIT_SYMBOLS[suit] +
             "</span>" + cardsHtml + "</span>";
     }).join("");
 }
@@ -522,7 +530,7 @@ function inputIsValid(hands) {
         for (const card of duplicates) {
             const suit_letter = card.substring(0, 1);
             const pip = card.substring(1);
-            const suit_symbol = SUIT_SYMBOLS[suit_letter];
+            const suit_symbol = suitSymbolHtml(suit_letter);
 
             error_message += suit_symbol;
             error_message += pip;
