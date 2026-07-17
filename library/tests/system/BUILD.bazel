@@ -59,7 +59,7 @@ cc_test(
     ],
 )
 
-# Deal::fanout structural difficulty estimate
+# Internal deal fanout structural difficulty estimate
 cc_test(
     name = "deal_fanout_test",
     size = "small",

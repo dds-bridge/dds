@@ -17,6 +17,7 @@
 #include <api/solve_board.hpp>
 #include <solver_if.hpp>
 #include <lookup_tables/lookup_tables.hpp>
+#include <system/deal_fanout.hpp>
 #include <system/memory.hpp>
 #include <system/parallel_boards.hpp>
 #include <system/scheduler.hpp>
@@ -150,7 +151,8 @@ auto calc_all_boards_n(
     {
       std::vector<int> fanout(static_cast<unsigned>(n));
       for (int i = 0; i < n; i++)
-        fanout[static_cast<unsigned>(i)] = bop->deals[i].fanout();
+        fanout[static_cast<unsigned>(i)] =
+          dds::internal::deal_fanout(bop->deals[i]);
       order.resize(static_cast<unsigned>(n));
       std::iota(order.begin(), order.end(), 0);
       std::stable_sort(order.begin(), order.end(),

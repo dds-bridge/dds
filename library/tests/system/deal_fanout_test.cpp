@@ -1,10 +1,11 @@
 /// @file deal_fanout_test.cpp
-/// @brief Unit tests for Deal::fanout (structural difficulty estimate).
+/// @brief Unit tests for the internal deal fanout estimate.
 
 #include <gtest/gtest.h>
 
 #include <api/dll.h>
 #include <lookup_tables/lookup_tables.hpp>
+#include <system/deal_fanout.hpp>
 #include <utility/constants.h>
 
 namespace
@@ -30,7 +31,7 @@ TEST(DealFanout, EmptyDealIsZero)
   const Deal dl = empty_deal();
 
   // Act / Assert
-  EXPECT_EQ(dl.fanout(), 0);
+  EXPECT_EQ(dds::internal::deal_fanout(dl), 0);
 }
 
 TEST(DealFanout, SingleCardCountsAsOneGroupWithVoidBonus)
@@ -41,7 +42,7 @@ TEST(DealFanout, SingleCardCountsAsOneGroupWithVoidBonus)
   dl.remainCards[0][0] = holding(bit_map_rank[2]);
 
   // Act / Assert
-  EXPECT_EQ(dl.fanout(), 4);
+  EXPECT_EQ(dds::internal::deal_fanout(dl), 4);
 }
 
 TEST(DealFanout, ConsecutiveRanksAreOneGroup)
@@ -60,7 +61,7 @@ TEST(DealFanout, ConsecutiveRanksAreOneGroup)
 
   // Act / Assert
   EXPECT_EQ(group_data[kt982].last_group_ + 1, 3);
-  EXPECT_EQ(dl.fanout(), 12);
+  EXPECT_EQ(dds::internal::deal_fanout(dl), 12);
 }
 
 TEST(DealFanout, SolidSuitIsOneGroup)
@@ -75,5 +76,5 @@ TEST(DealFanout, SolidSuitIsOneGroup)
 
   // Act / Assert
   EXPECT_EQ(group_data[akq].last_group_ + 1, 1);
-  EXPECT_EQ(dl.fanout(), 4);
+  EXPECT_EQ(dds::internal::deal_fanout(dl), 4);
 }

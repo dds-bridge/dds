@@ -10,6 +10,7 @@
 #include <cmath>
 #include <iostream>
 
+#include "deal_fanout.hpp"
 #include "scheduler.hpp"
 #include <fstream>
 #include <iomanip>
@@ -269,7 +270,7 @@ void Scheduler::MakeGroups(const Boards& bds)
     hands[b].NTflag = (strain == 4 ? 1 : 0);
     hands[b].first = dl->first;
     hands[b].strain = strain;
-    hands[b].fanout = dl->fanout();
+    hands[b].fanout = dds::internal::deal_fanout(*dl);
     // hands[b].strength = Scheduler::Strength(* dl);
 
     lp = &list[strain][key];

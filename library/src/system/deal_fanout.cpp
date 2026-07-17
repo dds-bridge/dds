@@ -7,11 +7,16 @@
    See LICENSE and README.
 */
 
-#include <api/dll.h>
+#include "deal_fanout.hpp"
+
 #include <lookup_tables/lookup_tables.hpp>
 
+namespace dds
+{
+namespace internal
+{
 
-auto Deal::fanout() const -> int
+auto deal_fanout(const Deal& dl) -> int
 {
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups. In a given suit the
@@ -27,7 +32,7 @@ auto Deal::fanout() const -> int
     numVoids = 0;
     for (int s = 0; s < DDS_SUITS; s++)
     {
-      c = static_cast<int>(remainCards[h][s] >> 2);
+      c = static_cast<int>(dl.remainCards[h][s] >> 2);
       fanoutSuit += group_data[c].last_group_ + 1;
       if (c == 0)
         numVoids++;
@@ -38,3 +43,6 @@ auto Deal::fanout() const -> int
 
   return fanout;
 }
+
+}  // namespace internal
+}  // namespace dds

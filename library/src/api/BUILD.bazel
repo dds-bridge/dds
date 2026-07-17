@@ -3,9 +3,6 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "api_definitions",
-    srcs = [
-        "deal.cpp",
-    ],
     hdrs = [
         "calc_dd_table.hpp",
         "calc_par.hpp",
@@ -19,10 +16,6 @@ cc_library(
     include_prefix = "api",
     visibility = ["//visibility:public"],
     deps = [
-        "//library/src/lookup_tables:lookup_tables",
         "//library/src/utility:constants",
     ],
-    copts = DDS_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
 )
