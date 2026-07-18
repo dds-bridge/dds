@@ -16,7 +16,35 @@ toolchain selection lives in `MODULE.bazel` and standard-language settings are
 primarily configured in `.bazelrc` (with a fallback default in
 `CPPVARIABLES.bzl`).
 
-MODULE.bazel.lock is checked in and version managed as per current bazel best practises.
+### Bazel version and MODULE.bazel.lock
+
+Use [bazelisk](https://github.com/bazelbuild/bazelisk) (CI already does). The
+repo pins the Bazel version in `.bazelversion`; keep that in sync with the
+committed `MODULE.bazel.lock` when upgrading Bazel.
+
+`MODULE.bazel.lock` is checked in. `.bazelrc` sets `--lockfile_mode=error` so
+builds fail instead of silently rewriting the lockfile. That keeps resolution
+reproducible and avoids ambient lockfile diffs in unrelated PRs.
+
+When you change `MODULE.bazel` (or intentionally refresh deps), update the
+lockfile and commit it:
+
+```bash
+bazelisk mod deps --lockfile_mode=update
+```
+
+Do not hand-edit the lockfile. For merge conflicts, restore it and regenerate
+after resolving `MODULE.bazel`, or use Bazel's lockfile merge driver
+(`.gitattributes` already declares `merge=bazel-lockfile-merge`). Register the
+driver once per machine (requires `jq`):
+
+```bash
+jq_script=$(curl -fsSL https://raw.githubusercontent.com/bazelbuild/bazel/master/scripts/bazel-lockfile-merge.jq)
+git config --global merge.bazel-lockfile-merge.name \
+  "Merge driver for the Bazel lockfile (MODULE.bazel.lock)"
+git config --global merge.bazel-lockfile-merge.driver \
+  "jq -s '${jq_script}' -- %O %A %B > %A.jq_tmp && mv %A.jq_tmp %A"
+```
 
 ### macOS SDK and Runtime Compatibility
 
@@ -57,8 +85,8 @@ binaries when the clang major matches.
 
 **When upgrading LLVM or Xcode**, update all coupled paths together:
 
-1. Bump `llvm_versions` in `MODULE.bazel` (and run `bazel mod deps` to refresh
-   `MODULE.bazel.lock`).
+1. Bump `llvm_versions` in `MODULE.bazel` (and run
+   `bazelisk mod deps --lockfile_mode=update` to refresh `MODULE.bazel.lock`).
 2. Update the `clang/N` segment in `build:tsan_macos` in `.bazelrc` to match the
    new major version.
 3. Confirm Xcode ships that major:  

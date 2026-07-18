@@ -7,6 +7,12 @@ test --test_tag_filters=-e2e
 
 common --enable_platform_specific_config
 
+# Fail (don't rewrite) when MODULE.bazel.lock is missing or stale. Keeps
+# dependency resolution reproducible and stops casual builds from polluting
+# PRs with lockfile churn. After intentional MODULE.bazel changes, refresh with:
+#   bazelisk mod deps --lockfile_mode=update
+common --lockfile_mode=error
+
 # Platform-specific C++ standard flags
 build:macos --cxxopt=-std=c++20
 build:macos --host_cxxopt=-std=c++20

@@ -1,0 +1,4 @@
+# Custom merge driver for the Bazel lockfile.
+# https://bazel.build/external/lockfile#automatic-resolution
+# Register once per machine (requires jq): see docs/BUILD_SYSTEM.md.
+MODULE.bazel.lock merge=bazel-lockfile-merge
