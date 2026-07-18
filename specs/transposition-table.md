@@ -1,8 +1,8 @@
 ---
 capability: transposition-table
 owners: [trans_table]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Transposition Table
@@ -41,22 +41,27 @@ its two concrete strategies, trading memory against speed.
 - **Two-tier memory limits.** `set_memory_default` is a soft limit the table
   tries to stay under (may briefly exceed, triggering cleanup/harvesting);
   `set_memory_maximum` is a hard cap — allocations that would exceed it are
-  refused and trigger a reset. `0` default means unlimited. The owning context
-  seeds these from `SolverConfig` and the `DDS_TT_DEFAULT_MB` / `DDS_TT_LIMIT_MB`
-  env overrides.
+  refused and trigger a reset. On the raw `TransTable` interface, `0` default
+  means unlimited; the owning [[solver-context]] replaces `<= 0` config values
+  with `THREADMEM_*` constants before construct, so context-owned tables never
+  start as unlimited. Env overrides: `DDS_TT_DEFAULT_MB` / `DDS_TT_LIMIT_MB`.
 - **Resets are reason-tagged and tiered.** `reset_memory(ResetReason)` clears
   cached positions and statistics but retains the allocated structures for reuse;
-  `return_all_memory()` deallocates everything (requires `make_tt()` before reuse).
-  `ResetReason` (`TooManyNodes`, `NewDeal`, `NewTrump`, `MemoryExhausted`,
-  `FreeMemory`, …) records *why* a reset happened for diagnostics.
+  `return_all_memory()` deallocates everything (requires `make_tt()` / in-table
+  reallocation before reuse). `ResetReason` (`TooManyNodes`, `NewDeal`,
+  `NewTrump`, `MemoryExhausted`, `FreeMemory`, …) records *why* a reset happened
+  for diagnostics.
 - **Allocation failures throw `std::bad_alloc`** (post-modernization); non-critical
   allocations may fall back rather than throw.
-- **Lifecycle order:** `init(hand_lookup)` → `set_memory_*` → `make_tt()` before
-  any `lookup`/`add`. The context performs this lazily on first TT access.
+- **Lifecycle on the production context path:** first TT access does
+  `set_memory_*` → `make_tt()`; per-deal `init(hand_lookup)` runs later in
+  `init.cpp` before search. Standalone/header examples may show `init` first —
+  that is not what `SearchContext::trans_table()` does.
 - **Build-flag-gated diagnostics.** `tt_reset_debug` (`DDS_DEBUG_TT_RESET`) enables
-  reset-tracking diagnostics in `TransTableL`; `tt_context_ownership`
-  (`DDS_TT_CONTEXT_OWNERSHIP`) is the TT-ownership build toggle. Both are wired
-  through [[build-system]] and off by default.
+  reset-tracking diagnostics in `TransTableL` (wired through [[build-system]], off
+  by default). `tt_context_ownership` / `DDS_TT_CONTEXT_OWNERSHIP` remains a Bazel
+  `--define` in `CPPVARIABLES.bzl` but is **unused in library sources** today —
+  ownership is always instance-scoped via `SearchContext`.
 - **`testable_trans_table`** is the same sources exposed to
   `//library/tests/trans_table` for white-box testing; behaviour is identical to
   `trans_table`.

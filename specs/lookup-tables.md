@@ -1,8 +1,8 @@
 ---
 capability: lookup-tables
 owners: [lookup_tables]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Lookup Tables

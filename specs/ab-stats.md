@@ -1,8 +1,8 @@
 ---
 capability: ab-stats
-owners: [library/src]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+owners: [ab_stats]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Alpha-Beta Statistics
@@ -32,15 +32,18 @@ costs the hot path.
   `--define=ab_stats=true` → the `ab_stats` config setting → `DDS_AB_STATS` in
   `DDS_LOCAL_DEFINES` (see [[build-system]]). Uncommenting `DDS_AB_STATS` in
   `debug.h` or enabling `DDS_DEBUG_ALL` also works (see [[constants-and-debug]]).
-- **The accumulator lives on `ThreadData`.** Each solving thread's `ABStats`
-  member is incremented via the macro, so counts are per-thread; results are
-  written to per-thread `ABstats`-prefixed diagnostic files on teardown.
-- **What it measures.** `ABCountType` enumerates the termination sites
+- **The accumulator lives on `ThreadData` only when stats are on.** The `ABStats`
+  member itself is `#ifdef DDS_AB_STATS`, so the field is absent in normal builds.
+  When enabled, counts are per-thread; `PrintStats` writes to the per-thread
+  `ABstats`-prefixed diagnostic stream **during search** (e.g. at `ABexit` in
+  `ab_search.cpp`), not only on teardown — teardown closes `fileABstats`.
+- **What it measures.** `ABCountType` names termination sites
   (`AB_TARGET_REACHED`, `AB_DEPTH_ZERO`, `AB_QUICKTRICKS`, `AB_QUICKTRICKS_2ND`,
-  `AB_LATERTRICKS`, `AB_MAIN_LOOKUP`, `AB_SIDE_LOOKUP`, `AB_MOVE_LOOP`); counts are
-  tracked per side and per depth (up to `DDS_MAXDEPTH = 49`), with cumulative
-  variants across solves. `IncrNode` counts generated nodes; `PrintStats` renders
-  the breakdown.
+  `AB_LATERTRICKS`, `AB_MAIN_LOOKUP`, `AB_SIDE_LOOKUP`, `AB_MOVE_LOOP`).
+  `AB_SIDE_LOOKUP` ("Other lookup") is a reserved enum slot with a `SetNames`
+  label but is **never incremented** anywhere in the tree today. `IncrNode`
+  counts generated nodes; `PrintStats` renders the live breakdown per side and
+  depth (up to `DDS_MAXDEPTH = 49`).
 - **The `ab_stats` library is always linked, the counting is not.** The
   `//library/src:ab_stats` `cc_library` is a normal dependency of
   [[system-concurrency]]; whether its counters actually run is decided by the

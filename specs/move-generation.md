@@ -1,8 +1,8 @@
 ---
 capability: move-generation
 owners: [moves]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Move Generation
@@ -28,8 +28,9 @@ and transposition-table hits. `Moves` is an internal component — it is not par
 - **Stateful, single-solve object with a fixed lifecycle.** Typical order:
   `Init()` (new deal state) → `MoveGen0()` for the opening lead **or**
   `MoveGen123()` for 2nd/3rd/4th hand → iterate with
-  `MakeNext()` / `MakeNextSimple()` → `MakeSpecific()` to record the chosen play →
-  `RegisterHit()` for statistics. `Reinit()` resets for a new lead hand.
+  `MakeNext()` / `MakeNextSimple()` → `MakeSpecific()` to record the chosen play.
+  `Reinit()` resets for a new lead hand. `RegisterHit()` is diagnostic-only
+  (`#ifdef DDS_MOVES`), not part of the production hot path.
 - **No dynamic allocation; RAII stack storage.** Move lists (`moveList[13][DDS_HANDS]`)
   and per-trick tracking (`track[13]`) are stack-allocated arrays. The `trackp`
   and `mply` cursors are **non-owning** pointers into those arrays and are valid

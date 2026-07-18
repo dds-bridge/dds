@@ -1,8 +1,8 @@
 ---
 capability: dds-public-api
 owners: [api]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # DDS Public API
@@ -34,15 +34,17 @@ capability defines what crosses the boundary and promises to stay stable.
      `SetResources`, `FreeMemory`, `GetDDSInfo`, `ErrorMessage`, …). Declared
      `EXTERN_C DLLEXPORT auto STDCALL … -> int`; this is the historical
      Haglund/Hein ABI kept for backward compatibility.
-  2. **Modern context C++ API** — `dds_api.hpp` (`dds_solve_board`,
-     `dds_calc_dd_table(_pbn)`, `dds_calc_par`, plus context lifecycle
-     `dds_create_solvercontext(_default)`, `dds_destroy_solvercontext`, and TT
-     controls `dds_configure_tt`/`dds_resize_tt`/`dds_clear_tt`). These take an
-     explicit `DDS_SOLVER_CTX` (= `SolverContext*`) handle and use C++ types
-     (`const Deal&`, `SolverConfig`, `TTKind`). See [[solver-context]].
+  2. **Modern context C++ API** — `dds_api.hpp`: context-handle entry points
+     (`dds_solve_board`, `dds_calc_dd_table` / `_pbn`, `dds_calc_par`, lifecycle,
+     TT controls, and related helpers). These take an explicit `DDS_SOLVER_CTX`
+     (= `SolverContext*`) and use C++ types (`const Deal&`, `SolverConfig`,
+     `TTKind`). See [[solver-context]] and the header for the full set.
   3. **Pure-C ABI shim** — `dds_c_api.h` (`dds_c_*`). Pointer-only, POD-only,
      opaque `void*` handle (`DDS_C_SOLVER_CTX`); no C++ types cross the boundary.
      It forwards to layer 2 and is the surface non-C++ languages bind against.
+     Today the shim is a thin subset (`dds_c_solve_board`, `dds_c_calc_dd_table`,
+     `dds_c_calc_par` plus context lifecycle) — **no `*PBN` twins and no TT
+     configure** in the shim.
 - **The shim is the stable binding surface, not the C++ API.** Java (FFM), .NET,
   and ctypes bind to the `dds_c_*` symbols. The header is C-ABI but not
   C-includable (it pulls in `dll.h`, which uses C++ trailing-return syntax) — bind
@@ -53,14 +55,16 @@ capability defines what crosses the boundary and promises to stay stable.
   `SetMaxThreads`/`SetResources`/`FreeMemory` instead.
 - **Integer status returns.** Solver entry points return `RETURN_*` status codes
   (success is positive/`RETURN_NO_FAULT`); `ErrorMessage` maps a code to text.
-- **PBN and binary variants are paired.** Most entry points have a `*PBN` twin
-  taking deals in PBN string form instead of the binary `Deal`/`DdTableDeal`
-  structs; both compute identical results.
-- **The exported symbol set is contract, and it is enforced.** The public ABI is
-  exactly the symbols in `dll.h` + `dds_c_api.h` (both `exports_files`d so tooling
-  can parse them). The shared library's exports are pinned by
-  `jni/version_script.lds` and checked by the export-set test — adding or removing
-  a public symbol must update both. Details in [[jni-ffm-binding]].
+- **PBN and binary variants are paired on the legacy / modern C++ layers.** Most
+  flat `dll.h` and many `dds_api.hpp` entry points have a `*PBN` twin; both
+  compute identical results from the same deal. That pairing does **not** extend
+  to the C shim.
+- **The pinned binding export set is `dll.h` + `dds_c_api.h`.** On Linux/macOS
+  the JNI shared library exports are constrained by `jni/version_script.lds` /
+  `exported_symbols.lds` and checked by the export-set test. That is the *stable
+  binding ABI*, not every `DLLEXPORT` symbol in the tree: `dds_api.hpp` also
+  marks modern `dds_*` symbols `DLLEXPORT`, and on Windows (no `.lds`) the DLL
+  exports that broader `DLLEXPORT` set. Details in [[jni-ffm-binding]].
 
 ## Key entry points
 

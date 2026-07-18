@@ -1,8 +1,8 @@
 ---
 capability: system-concurrency
 owners: [system]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # System & Concurrency
@@ -31,8 +31,11 @@ place so the search and API layers stay portable. It is internal — not part of
   parallel entry point derives its thread count this way — a request for more
   threads than there are boards never spawns idle workers. Guarded by
   `//library/tests/system:worker_count_test`.
-- **Board parallelism is work-stealing and fail-fast.** `parallel_all_boards_n(
-  count, worker_cap, process_board)` processes indices `[0, count)`; each
+- **Board parallelism is shared-queue dispatch and fail-fast.** 
+  `parallel_all_boards_n(count, worker_cap, process_board, order = nullptr)`
+  hands out indices via a shared atomic counter (`fetch_add`) — not classic
+  per-worker steal queues, despite the header's "work-stealing" wording. Optional
+  `order` is a permutation of `[0, count)` for dispatch priority. Each
   `process_board(worker_id, bno)` must return `RETURN_NO_FAULT` (1) on success.
   The function returns the **first non-success code** encountered (or
   `RETURN_NO_FAULT`). Guarded by `concurrency_validation_test`.

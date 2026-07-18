@@ -1,8 +1,8 @@
 ---
 capability: solver-context
 owners: [solver_context]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Solver Context
@@ -49,14 +49,16 @@ the opaque handle. See [[dds-public-api]].
   `reset_for_solve()` clears a subset of search state and resets TT memory
   (`ResetReason::FreeMemory`) while preserving the allocation for reuse;
   `reset_best_moves_lite()` clears only best-move ranks (hot per-iteration path);
-  `clear_tt()` returns all TT memory to the system but keeps the config for lazy
-  recreation; `dispose_trans_table()` destroys the TT immediately.
-- **Hot-path facades are value-typed and inline-friendly.** `search()`,
-  `move_gen()`, and `utilities()` return lightweight facades that hold a raw
-  `ThreadData*` (not a `shared_ptr`) to avoid atomic refcount traffic in the
-  ab-search inner loop; trivial `SearchContext` accessors are defined in the
-  header so call sites inline direct field accesses. Treat this as a performance
-  contract: keep those accessors header-inlined.
+  `clear_tt()` calls `return_all_memory()` on the existing TT object (it does not
+  destroy the `unique_ptr`; the next deal's `init` / use reallocates inside the
+  same table); `dispose_trans_table()` destroys the TT immediately.
+- **Hot-path facades are value-typed and inline-friendly, with different holds.**
+  `MoveGenContext` holds a raw `ThreadData*` so `move_gen()` can return a
+  value-typed facade without an atomic `shared_ptr` bump on every call.
+  `SearchContext` holds `shared_ptr<ThreadData>` (and owns the TT); its trivial
+  accessors are header-defined so call sites inline direct field accesses.
+  `UtilitiesContext` wraps a `dds::Utilities*`, not `ThreadData`. Treat the
+  header-inlined `SearchContext` accessors as a performance contract.
 - **Log/stats are build-time variants.** `solver_context` (plain),
   `solver_context_log` (`DDS_UTILITIES_LOG`), and `solver_context_stats`
   (`DDS_UTILITIES_STATS`) compile the same source with different defines; TT

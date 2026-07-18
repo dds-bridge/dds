@@ -1,8 +1,8 @@
 ---
 capability: python-binding
 owners: [python]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Python Binding
@@ -30,11 +30,11 @@ context API and the flat API from [[dds-public-api]].
   The `dds3` package (`dds3/__init__.py`) re-exports the extension's symbols and
   is what users import; it falls back from `._dds3` to a top-level `_dds3` import
   so it works both in-package and when the extension is a bare module.
-- **Public surface.** `solve_board(_pbn)`, `solve_all_boards_bin/_pbn`,
-  `calc_dd_table`, `calc_all_tables_pbn`, `calc_par`, `calc_par_from_table`, `par`,
-  `dealer_par`, `analyse_play_pbn`, `analyse_all_plays_pbn`, `SolverContext`,
-  `set_max_threads`, `initialise_static_memory`, `api_root`, `module_name`
-  (`__all__` in `__init__.py` is the authoritative list).
+- **Public surface is the package `__all__`.** `python/dds3/__init__.py` re-exports
+  the extension symbols; see that list and `docs/python_interface.md` rather than
+  duplicating names here. Notable capability-wide pieces: a Python `SolverContext`
+  for TT reuse, and threading helpers such as `set_max_threads` whose semantics
+  follow the C++ core.
 - **In-package native staging is platform-specific.** `_dds3_in_package` copies
   the built extension into `dds3/` under the filename Python expects —
   `dds3/_dds3.so` on unix, `dds3/_dds3.pyd` on Windows (selected via
@@ -52,9 +52,9 @@ context API and the flat API from [[dds-public-api]].
   packages `dds3_lib` + the staged extension; `dds3_wheel_dist` produces the
   distributable `dist/`. Requires Python 3.10+.
 - **Behaviour tracks the C++ core.** The binding adds no solving logic of its own;
-  results must match the C++ API for the same inputs. The `py_test` suite
-  (smoke, solve_board, calc_tables(+regression), calc_par(+comprehensive), par,
-  analyse, solve_all_boards, convert_pbn) enforces this.
+  the `py_test` suite exercises the main entry paths (smoke, solve, tables, par,
+  analyse, convert_pbn, context reuse) against the same core. It is coverage of
+  the binding surface, not a claimed full parity matrix.
 
 ## Key entry points
 

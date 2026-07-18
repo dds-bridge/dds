@@ -1,14 +1,14 @@
 ---
 capability: wasm-emscripten
 owners: [wasm]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # WASM (Emscripten) Build
 
-> **Specs vs. docs.** Build commands, emsdk pinning, and the post-build patch are
-> in `docs/wasm_build.md`. This spec records what the WASM build covers, the
+> **Specs vs. docs.** Build commands and emsdk pinning live in
+> `docs/wasm_build.md`. This spec records what the WASM build covers, the
 > toolchain contract, and the single-thread assumption.
 
 ## Purpose
@@ -37,16 +37,13 @@ core solver builds and runs correctly under Emscripten.
 - **WASM builds are single-threaded.** The Emscripten build does not use the host
   threading in [[system-concurrency]]; solves run on one thread. Link flags come
   from `WASM_LINKOPTS` ([[build-system]]) — notably an 8 MB stack, because DDS
-  search recursion overflows Emscripten's 64 KB default.
+  search recursion overflows Emscripten's 64 KB default. Example binaries also
+  attach those flags via `EXAMPLES_LINKOPTS_WASM` in `examples/BUILD.bazel`.
 - **Correctness is checked two ways.** `calc_dd_table_pbn_test` is a native
   `cc_test` over the same example logic (fast feedback without a JS runtime); the
   `wasm_examples_system_test` py_test actually runs the built
   `calc_dd_table_pbn_wasm` module end to end. The `all` and `wasm_system_tests`
   suites bundle these.
-- **A generated helper is patched post-build.** `web/patch_mvp_wasm.py` fixes one
-  Emscripten-generated `isFileURI` helper for browser/`file://` safety; if an
-  emsdk upgrade moves that line, the regex (and the note in `docs/wasm_build.md`)
-  must be updated. Regenerate with `./web/update_wasm.sh` after an emsdk bump.
 
 ## Key entry points
 
@@ -60,5 +57,6 @@ core solver builds and runs correctly under Emscripten.
 
 - **Only three examples are ported**, not the full [[examples-cli]] set.
 - **No threaded WASM** — single-thread only.
-- Browser wiring, the site, and its JS/e2e tests belong to [[web-mvp]]; this
-  capability provides the modules, not the page.
+- Browser wiring, the site, MVP post-build JS patches (`web/patch_mvp_wasm.py`),
+  and JS/e2e tests belong to [[web-mvp]]; this capability provides the example
+  modules, not the page.

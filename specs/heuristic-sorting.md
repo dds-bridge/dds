@@ -1,8 +1,8 @@
 ---
 capability: heuristic-sorting
 owners: [heuristic_sorting]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Heuristic Sorting
@@ -34,20 +34,20 @@ solve.
   and the transposition-table best move (`best_move`, `best_move_tt` in the
   context) are weighted to sort to the front, so known-good moves are re-tried
   first. See [[transposition-table]].
-- **Leading/void hands get a per-suit top-card bonus.** When the hand to play
-  leads the trick or is void in the led suit, the highest-weight card of each
-  present suit receives a large additional bonus (per `doc/heuristic-sorting.md`).
-- **`call_heuristic` takes a pre-built `HeuristicContext`.** This is the
-  refactor's central invariant: the caller constructs one `HeuristicContext`
-  (position, move array, best moves, relative ranks, and cached per-trick
-  snapshots such as `removed_ranks`, `move1_rank`, `high1`) and passes it by
-  const reference. The context localises the mutable buffers and snapshots the few
-  `trackp` fields hot helpers need, so the heuristics no longer read through
-  `Moves::trackp` mutation. Prefer this overload — it minimises per-call
-  construction overhead on the hot path.
-- **`TrackType` is the shared per-trick position state** consumed by both
-  [[move-generation]] and the heuristics; it is defined here because the
-  heuristics are its primary reader.
+- **Scoring policy detail lives in `doc/heuristic-sorting.md`.** That narrative
+  (including lead/void per-suit top-card bonuses) may lag the code; treat the
+  doc as algorithm intent and the `weight_alloc_*` helpers as ground truth when
+  they disagree.
+- **`call_heuristic` takes a pre-built `HeuristicContext`.** The caller constructs
+  one context (position, move array, best moves, relative ranks, and cached
+  per-trick snapshots such as `removed_ranks`, `move1_rank`, `high1`) and passes
+  it by const reference. Implementations `const_cast` and mutate move weights
+  in place. There is a single free overload — the older parameterized form is
+  gone.
+- **`TrackType` is shared per-trick position state** defined here and consumed by
+  both [[move-generation]] and the heuristics. `Moves` owns the `track[]` array
+  and mutates `trackp`; heuristics read the snapshots copied into
+  `HeuristicContext`.
 - **`testable_heuristic_sorting`** exposes the same sources to the heuristic-sorting
   test packages; behaviour matches `heuristic_sorting`.
 

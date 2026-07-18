@@ -1,8 +1,8 @@
 ---
 capability: build-system
-owners: [//, CPPVARIABLES.bzl, wasm_compat.bzl]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+owners: [//, .bazelrc, MODULE.bazel, CPPVARIABLES.bzl, wasm_compat.bzl]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Build System
@@ -36,8 +36,9 @@ than re-encoding toolchain knowledge.
   `select()`s in `CPPVARIABLES.bzl` — it should not hand-roll `-O3`/`/O2`.
 - **Optimised builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
   `-Wall -Wpedantic -Werror`; Windows uses `/O2 /W4 /WX /permissive-`. macOS and
-  WASM add LTO. C++20 is the baseline everywhere. Treat `-Werror` as a standing
-  invariant: warnings break the build.
+  WASM add LTO. C++20 is the baseline (`--cxxopt=-std=c++20` in `.bazelrc` for
+  macOS/Linux; Windows `/std:c++20` in `DDS_CPPOPTS`). Treat `-Werror` as a
+  standing invariant: warnings break the build.
 - **Feature flags are `--define`-driven `config_setting`s**, surfaced through
   `DDS_LOCAL_DEFINES` / `DDS_SCHEDULER_DEFINE`:
   | config setting | `--define` | preprocessor define | capability |
@@ -45,7 +46,7 @@ than re-encoding toolchain knowledge.
   | `debug_all` | `debug_all=true` | `DDS_DEBUG_ALL` | [[constants-and-debug]] |
   | `ab_stats` | `ab_stats=true` | `DDS_AB_STATS` | [[ab-stats]] |
   | `scheduler` | `scheduler=true` | `DDS_SCHEDULER` | [[system-concurrency]] |
-  | `tt_context_ownership` | `tt_context_ownership=true` | `DDS_TT_CONTEXT_OWNERSHIP` | [[transposition-table]] |
+  | `tt_context_ownership` | `tt_context_ownership=true` | `DDS_TT_CONTEXT_OWNERSHIP` | [[transposition-table]] (define wired; unused in library sources today) |
   | `tt_reset_debug` | `tt_reset_debug=true` | `DDS_DEBUG_TT_RESET` | [[transposition-table]] |
 - **`DDS_LOCAL_DEFINES` is the standard `local_defines` for every core
   `cc_library`; `DDS_SCHEDULER_DEFINE` is appended only where scheduler timing is
@@ -69,6 +70,8 @@ than re-encoding toolchain knowledge.
 
 - `BUILD.bazel` (root) — all `config_setting`s, the `//:dds` / `//:testable_dds`
   façades, and the `doxygen_docs` genrule.
+- `.bazelrc` — C++20 cxxopts, hermetic JDK, default test tag filters (e.g. `-e2e`),
+  sanitizer configs.
 - `CPPVARIABLES.bzl` — `DDS_CPPOPTS`, `DDS_LINKOPTS`, `DDS_LOCAL_DEFINES`,
   `DDS_SCHEDULER_DEFINE`.
 - `wasm_compat.bzl` — `WASM_LINKOPTS`.

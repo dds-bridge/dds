@@ -1,8 +1,8 @@
 ---
 capability: constants-and-debug
 owners: [utility]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Constants & Debug
@@ -44,8 +44,10 @@ single, authoritative definition of "how a card/hand/strain is represented" and
 - **Debug flags are compile-time, opt-in, and off by default.** Each flag in
   `debug.h` is commented out; enabling one makes the solver emit one diagnostic
   file per thread with a fixed name prefix (e.g. `ABstats`, `TTstats`, `timer`).
-  `DDS_DEBUG_ALL` turns on the full set. Because they are compile-time, a normal
-  build carries zero cost from them.
+  `DDS_DEBUG_ALL` turns on the debug.h diagnostic set it wraps (AB stats/details,
+  TT stats, timing, moves, …) but **not** build-gated flags such as
+  `DDS_SCHEDULER`. Because they are compile-time, a normal build carries zero
+  cost from them.
 - **`DDS_AB_STATS` is also driven by the build system** (`--define=ab_stats=true`
   → the `ab_stats` config setting), which is the supported way to enable
   alpha-beta statistics without editing `debug.h`. See [[ab-stats]] and

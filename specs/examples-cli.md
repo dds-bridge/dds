@@ -1,8 +1,8 @@
 ---
 capability: examples-cli
-owners: [examples, hands]
-last-updated: 2026-07-16
-related-plans: [write_specs]
+owners: [examples]
+last-updated: 2026-07-18
+related-plans: []
 ---
 
 # Example CLIs
@@ -31,10 +31,10 @@ build ports to the browser. They are demonstrations, not a supported product CLI
     `analyse_play_pbn`, `analyse_all_plays_bin`, `analyse_all_plays_pbn`.
   - **Modern context API demos:** `migration_example`,
     `calc_par_context_example`.
-- **PBN and binary variants come in pairs.** Most examples have a `*` (binary
-  `Deal`/`DdTableDeal`) and a `*_pbn` (PBN string) twin, mirroring the paired
-  entry points of [[dds-public-api]]; both produce the same results from the same
-  underlying deal.
+- **Many entry points have PBN and binary twins.** Solve/table/play pairs often
+  have both a binary `Deal`/`DdTableDeal` example and a `*_pbn` twin, mirroring
+  [[dds-public-api]]. Not every binary has a twin (`solve_all_boards`, `par`,
+  `dealer_par`, `dd_table_for_deal`, and the context demos do not).
 - **`migration_example` and `calc_par_context_example` are the context-API
   references.** They demonstrate creating a [[solver-context]] and driving solves
   through it (the modern path), as opposed to the flat legacy calls the other
@@ -42,17 +42,17 @@ build ports to the browser. They are demonstrations, not a supported product CLI
 - **Sample deals are shared, not duplicated.** The `hands` `cc_library`
   (`hands.cpp`) provides known test deals reused across examples and by the WASM
   `calc_dd_table_pbn_test` — so example outputs are comparable and stable.
-- **`all_examples` bundles them** (with `all_examples_wasm` grouping the WASM
-  ports); building it is the cheap "do all examples still compile/link" check.
+- **`all_examples` bundles the native CLIs.** The WASM grouping is
+  `//wasm:all_examples_wasm`; `examples/BUILD.bazel` may alias it, but ownership
+  of the WASM ports sits with [[wasm-emscripten]].
 
 ## Key entry points
 
 - `examples/BUILD.bazel` — all example `cc_binary` targets, the `hands` library,
-  and the `all_examples` / `all_examples_wasm` groupings.
+  and the `all_examples` grouping.
 - `examples/migration_example.cpp`, `examples/calc_par_context_example.cpp` —
   modern context-API usage.
 - `examples/hands.cpp` — shared sample deals.
-- The paired `*` / `*_pbn` sources for each capability above.
 
 ## Known gaps / non-goals
 
