@@ -63,7 +63,8 @@ jobs:
             if [ "$i" -lt "$max" ]; then
               echo "Build failed (attempt $i/$max). Retrying in 20s..."
               sleep 20
-              bazel clean --expunge_async || true
+              # Restart server only — keep downloaded external repos / disk cache.
+              bazel shutdown || true
             fi
           done
           exit 1

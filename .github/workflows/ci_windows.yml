@@ -46,7 +46,8 @@ jobs:
             if ($i -lt $max) {
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
               Start-Sleep -Seconds 20
-              bazel clean --expunge_async
+              # Restart server only — keep downloaded external repos / disk cache.
+              bazel shutdown
             }
           }
           exit 1
