@@ -7,6 +7,16 @@ test --test_tag_filters=-e2e
 
 common --enable_platform_specific_config
 
+# We build nothing for Android, but rules_jvm_external (the //jni Maven jar)
+# depends on rules_android, whose android_sdk_repository extension probes
+# $ANDROID_HOME while analysing *any* target. When ANDROID_HOME is exported but
+# the SDK has no platform APIs installed — as on GitHub's ubuntu runners after
+# the free-disk-space step removes the SDK — that extension hard-fails and takes
+# down unrelated builds (e.g. //wasm, //web). Pinning the var to empty makes the
+# extension emit its empty stub repo instead, which is the path non-Android
+# builds are meant to take.
+common --repo_env=ANDROID_HOME=
+
 # Java toolchain for the FFM bindings (//jni:*). JDK 25 is the hermetic remote
 # JDK shipped by rules_java 9.6.1; being >= 22 it exposes java.lang.foreign as a
 # stable (non-preview) API, so no --enable-preview is needed. These are
