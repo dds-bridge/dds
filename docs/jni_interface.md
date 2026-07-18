@@ -29,6 +29,7 @@ bindings work — see [python_interface.md](python_interface.md),
   supplies the JDK (currently pinned to `remotejdk_25` in
   [`.bazelrc`](../.bazelrc)); you do **not** need a system JDK installed.
 - **Bazel 8.x or later.** (The committed `MODULE.bazel.lock` uses lockFileVersion 28; Bazel 7 users must delete/regenerate the lock file.)
+- **JVM runtime.** These FFM bindings presume a 64-bit JVM
 
 No `jextract` install is required — the bindings are hand-written (see
 [Using the FFM bindings](#using-the-ffm-bindings)).
@@ -82,7 +83,8 @@ non-hermetic early-access binaries, and the generated output is just plain
 exposes:
 
 - Public `MemoryLayout` constants matching the C structs: `DEAL`,
-  `FUTURE_TRICKS`, `DD_TABLE_DEAL`, `DD_TABLE_RESULTS`, `DDS_INFO`.
+  `FUTURE_TRICKS`, `DD_TABLE_DEAL`, `DD_TABLE_RESULTS`, `PAR_RESULTS`,
+  `DDS_INFO`.
 - Typed downcall wrappers for the shim functions plus `getDdsInfo`. These
   return an `int` [`DdsStatus`](../jni/java/org/dds/ffm/DdsStatus.java)
   `RETURN_*` code (`RETURN_NO_FAULT == 1` on success); compare against the named
