@@ -2,7 +2,6 @@
 capability: ab-stats
 owners: [ab_stats]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Alpha-Beta Statistics
@@ -30,8 +29,8 @@ costs the hot path.
   builds must remain free of AB counting cost.**
 - **Enabled through the build system, not source edits.** The supported switch is
   `--define=ab_stats=true` → the `ab_stats` config setting → `DDS_AB_STATS` in
-  `DDS_LOCAL_DEFINES` (see [[build-system]]). Uncommenting `DDS_AB_STATS` in
-  `debug.h` or enabling `DDS_DEBUG_ALL` also works (see [[constants-and-debug]]).
+  `DDS_LOCAL_DEFINES` (see [build-system](build-system.md)). Uncommenting `DDS_AB_STATS` in
+  `debug.h` or enabling `DDS_DEBUG_ALL` also works (see [constants-and-debug](constants-and-debug.md)).
 - **The accumulator lives on `ThreadData` only when stats are on.** The `ABStats`
   member itself is `#ifdef DDS_AB_STATS`, so the field is absent in normal builds.
   When enabled, counts are per-thread; `PrintStats` writes to the per-thread
@@ -46,7 +45,7 @@ costs the hot path.
   depth (up to `DDS_MAXDEPTH = 49`).
 - **The `ab_stats` library is always linked, the counting is not.** The
   `//library/src:ab_stats` `cc_library` is a normal dependency of
-  [[system-concurrency]]; whether its counters actually run is decided by the
+  [system-concurrency](system-concurrency.md); whether its counters actually run is decided by the
   define, not by linkage. This mirrors the `testable_dds_util_stats` /
   `system_util_stats` stats variants but is a distinct, search-specific flag.
 
@@ -55,7 +54,8 @@ costs the hot path.
 - `library/src/ab_stats.hpp` — `ABstats`, `ABCountType`, `ABtracker`, and the
   `AB_COUNT` macro. Doxygen documents the class.
 - `library/src/ab_stats.cpp` — accumulation and reporting.
-- Call sites: `library/src/ab_search.cpp`, `solver_if.cpp` (via `AB_COUNT`);
+- Call sites: `library/src/ab_search.cpp` (via `AB_COUNT`); `solver_if.cpp`
+  (direct `ABStats::Reset` / `ResetCum`);
   storage on `system/thread_data.hpp`.
 - Build target / flag: `//library/src:ab_stats`; config setting `ab_stats`
   (`--define=ab_stats=true`).
@@ -65,6 +65,6 @@ costs the hot path.
 - Not a public API and not a result-affecting feature — enabling it never changes
   what the solver returns, only what it reports.
 - Distinct from the `DDS_UTILITIES_STATS` logging/stats variants in
-  [[system-concurrency]] / [[solver-context]]; those track utilities/TT events,
+  [system-concurrency](system-concurrency.md) / [solver-context](solver-context.md); those track utilities/TT events,
   this tracks alpha-beta search internals.
 - Output is offline diagnostic files, not a queryable runtime API.

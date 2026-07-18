@@ -2,7 +2,6 @@
 capability: system-concurrency
 owners: [system]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # System & Concurrency
@@ -19,7 +18,7 @@ threads to use, distributes boards across them, owns per-thread scratch memory,
 provides file/timer utilities, and carries the logging/stats plumbing
 (`Utilities`). It exists to keep system- and threading-dependent behaviour in one
 place so the search and API layers stay portable. It is internal — not part of
-[[dds-public-api]].
+[dds-public-api](dds-public-api.md).
 
 ## Behaviour & invariants
 
@@ -45,17 +44,17 @@ place so the search and API layers stay portable. It is internal — not part of
   count is a performance knob only, never a correctness input.
 - **Per-thread state is context-owned, not centrally pooled.** `Memory` no longer
   holds a central vector of `ThreadData`; each `ThreadData` is owned by its
-  [[solver-context]] and passed down. `Memory` keeps only lightweight per-thread
+  [solver-context](solver-context.md) and passed down. `Memory` keeps only lightweight per-thread
   size records for diagnostics. This is the ownership-migration end state.
 - **Scheduler timing is build-gated.** The `Scheduler` block/thread timers compile
   to no-ops unless `DDS_SCHEDULER` is defined (the `scheduler` config setting,
-  applied via `DDS_SCHEDULER_DEFINE` — see [[build-system]]). Off by default,
+  applied via `DDS_SCHEDULER_DEFINE` — see [build-system](build-system.md)). Off by default,
   zero cost.
 - **Feature variants share one source set.** `system`, `system_util_log`
   (`DDS_UTILITIES_LOG`), and `system_util_stats` (`DDS_UTILITIES_STATS`) compile
   the same `.cpp`/`.hpp` glob with different defines; the log/stats variants make
   `Utilities` accumulate a log buffer / bump counters. **Link at most one variant
-  into a binary.** The [[solver-context]] variants pair with these. Guarded by the
+  into a binary.** The [solver-context](solver-context.md) variants pair with these. Guarded by the
   `utilities_log*` / `utilities_stats*` / `utilities_feature_flags*` tests.
 - **`Utilities` is the logging/stats sink** surfaced through
   `SolverContext::UtilitiesContext` (`log_append`, `log_buffer`, `log_clear`);
@@ -72,15 +71,15 @@ place so the search and API layers stay portable. It is internal — not part of
 - `library/src/system/file.{hpp,cpp}` and `system/util/utilities.hpp` — file and
   logging/stats utilities.
 - Build targets: `//library/src/system:{system,system_util_log,system_util_stats}`.
-- Guarded by `//library/tests/system` (worker-count, equivalence, concurrency,
+- Guarded by `//library/tests/system/...` (worker-count, equivalence, concurrency,
   TT-facade, utilities log/stats).
 
 ## Known gaps / non-goals
 
 - **WASM builds are single-threaded** — the concurrency here assumes hosted
-  threads; the Emscripten build does not use them. See [[wasm-emscripten]].
+  threads; the Emscripten build does not use them. See [wasm-emscripten](wasm-emscripten.md).
 - This layer does not decide TT sizing or search policy; it schedules work and
-  owns scratch memory. TT ownership/config belongs to [[solver-context]] /
-  [[transposition-table]].
+  owns scratch memory. TT ownership/config belongs to [solver-context](solver-context.md) /
+  [transposition-table](transposition-table.md).
 - The log/stats variants are for tests and diagnostics; production binaries link
   the plain `system` variant.

@@ -2,7 +2,6 @@
 capability: move-generation
 owners: [moves]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Move Generation
@@ -17,7 +16,7 @@ The `Moves` class generates and iterates the legal card plays the alpha-beta
 search explores at each trick, ordered so the most promising moves come first.
 Good ordering is what makes the search tractable: it maximises alpha-beta cutoffs
 and transposition-table hits. `Moves` is an internal component — it is not part of
-[[dds-public-api]] — consumed by the search through the [[solver-context]]
+[dds-public-api](dds-public-api.md) — consumed by the search through the [solver-context](solver-context.md)
 `MoveGenContext` facade.
 
 ## Behaviour & invariants
@@ -37,7 +36,7 @@ and transposition-table hits. `Moves` is an internal component — it is not par
   only for the lifetime of the `Moves` object — they must not outlive it.
 - **Ordering is heuristic-weight-driven.** `Sort()` / `MergeSort()` order the
   current list by weight; `call_heuristic()` delegates the weighting to
-  [[heuristic-sorting]], seeded with the search's best move and the TT's best move
+  [heuristic-sorting](heuristic-sorting.md), seeded with the search's best move and the TT's best move
   so those are tried first. `Reward()` bumps the weight of the last chosen move.
 - **Iteration is explicit and rewindable.** `Step()` advances, `Rewind()` resets
   to the list head, `MakeNext(win_ranks)` returns the next move satisfying the
@@ -51,9 +50,9 @@ and transposition-table hits. `Moves` is an internal component — it is not par
   prior initialisation; violations trip asserts in debug builds. The move-finding
   methods signal "no move" by returning `nullptr`, not by throwing.
 - **Statistics/printing are diagnostic-only** and emit under `DDS_MOVES` /
-  `DDS_MOVES_DETAILS` (see [[constants-and-debug]]); they are off the hot path in
+  `DDS_MOVES_DETAILS` (see [constants-and-debug](constants-and-debug.md)); they are off the hot path in
   normal builds.
-- **`testable_moves`** exposes the same sources to `//library/tests/moves` for
+- **`testable_moves`** exposes the same sources to `//library/tests/moves/...` for
   white-box testing; behaviour is identical to `moves`.
 
 ## Key entry points
@@ -62,13 +61,13 @@ and transposition-table hits. `Moves` is an internal component — it is not par
   structs. Doxygen documents each method.
 - `library/src/moves/moves.cpp` — generation, ordering, and iteration logic.
 - Build targets: `//library/src/moves:{moves,testable_moves}`.
-- Guarded by `//library/tests/moves`.
+- Guarded by `//library/tests/moves/...`.
 
 ## Known gaps / non-goals
 
 - `Moves` does not evaluate positions or decide cutoffs — it only produces and
   orders candidate plays; the search owns the alpha-beta decisions.
-- It computes move *weights* via [[heuristic-sorting]] rather than embedding the
+- It computes move *weights* via [heuristic-sorting](heuristic-sorting.md) rather than embedding the
   scoring policy itself.
 - Not thread-safe and not reusable across threads; one instance per solving
-  thread, consistent with [[solver-context]].
+  thread, consistent with [solver-context](solver-context.md).

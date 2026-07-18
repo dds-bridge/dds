@@ -2,7 +2,6 @@
 capability: constants-and-debug
 owners: [utility]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Constants & Debug
@@ -50,8 +49,8 @@ single, authoritative definition of "how a card/hand/strain is represented" and
   cost from them.
 - **`DDS_AB_STATS` is also driven by the build system** (`--define=ab_stats=true`
   → the `ab_stats` config setting), which is the supported way to enable
-  alpha-beta statistics without editing `debug.h`. See [[ab-stats]] and
-  [[build-system]].
+  alpha-beta statistics without editing `debug.h`. See [ab-stats](ab-stats.md) and
+  [build-system](build-system.md).
 
 ## Key entry points
 
@@ -71,4 +70,4 @@ single, authoritative definition of "how a card/hand/strain is represented" and
   capability.
 - This capability defines representations, not behaviour: it computes nothing and
   owns no algorithm. Precomputed *derived* tables (bit/rank/trick tables built for
-  the search) live in [[lookup-tables]], not here.
+  the search) live in [lookup-tables](lookup-tables.md), not here.

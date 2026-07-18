@@ -2,7 +2,6 @@
 capability: lookup-tables
 owners: [lookup_tables]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Lookup Tables
@@ -19,7 +18,7 @@ consults on every node of the search: for any suit holding it can answer "highes
 card", "lowest card", "how many cards", "relative rank of a card", "the top-N
 cards", and "decompose this holding into runs of adjacent ranks". Computing these
 by table lookup instead of on the fly is a core performance decision — the hot
-inner loops of [[move-generation]] and the search index these arrays directly.
+inner loops of [move-generation](move-generation.md) and the search index these arrays directly.
 
 ## Behaviour & invariants
 
@@ -45,9 +44,10 @@ inner loops of [[move-generation]] and the search index these arrays directly.
   concurrently; nothing mutates them post-initialisation.
 - **`MoveGroupType` is the run-decomposition contract** consumed by move
   generation: `last_group_` (−1 for empty, up to 6), and per-group `rank_`,
-  `sequence_`, `fullseq_`, and `gap_` arrays, valid only for indices
-  `0..last_group_`. `fullseq_[g] == bit_map_rank[rank_[g]] | sequence_[g]`, tying
-  it back to [[constants-and-debug]].
+  `sequence_`, `fullseq_`, and `gap_` arrays. `rank_`, `sequence_` and
+  `fullseq_` are valid for indices `0..last_group_`; `gap_` only for
+  `1..last_group_` (a gap sits *between* runs, so `gap_[0]` is unused). `fullseq_[g] == bit_map_rank[rank_[g]] | sequence_[g]`, tying
+  it back to [constants-and-debug](constants-and-debug.md).
 
 ## Key entry points
 
@@ -60,7 +60,7 @@ inner loops of [[move-generation]] and the search index these arrays directly.
 ## Known gaps / non-goals
 
 - These are *derived* tables computed from the fixed vocabulary in
-  [[constants-and-debug]] — that capability owns the primitive constants; this one
+  [constants-and-debug](constants-and-debug.md) — that capability owns the primitive constants; this one
   owns the precomputed analysis over them.
 - The tables are static and global by design; they are not per-context state and
-  do not participate in [[solver-context]] lifecycle or reset.
+  do not participate in [solver-context](solver-context.md) lifecycle or reset.

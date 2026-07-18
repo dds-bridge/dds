@@ -2,7 +2,6 @@
 capability: wasm-emscripten
 owners: [wasm]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # WASM (Emscripten) Build
@@ -15,7 +14,7 @@ related-plans: []
 
 This capability compiles selected example CLIs to WebAssembly so the solver runs
 in a browser or Node without a native install. It is the WASM module layer that
-the [[web-mvp]] site and the WASM system tests consume. It exists to prove the
+the [web-mvp](web-mvp.md) site and the WASM system tests consume. It exists to prove the
 core solver builds and runs correctly under Emscripten.
 
 ## Behaviour & invariants
@@ -24,7 +23,7 @@ core solver builds and runs correctly under Emscripten.
 > capability-wide facts.
 
 - **A curated subset of examples is ported.** `wasm_cc_binary` wraps three
-  [[examples-cli]] binaries: `solve_board_wasm` (← `//examples:solve_board`),
+  [examples-cli](examples-cli.md) binaries: `solve_board_wasm` (← `//examples:solve_board`),
   `analyse_play_bin_wasm` (← `//examples:AnalysePlayBin`), and
   `calc_dd_table_pbn_wasm` (← `//examples:calc_dd_table_pbn`), each emitting a
   `.js` loader + `.wasm`. `all_examples_wasm` groups them.
@@ -33,10 +32,10 @@ core solver builds and runs correctly under Emscripten.
   `--config=wasm` or `.bazelrc` profile is needed. The emsdk toolchain is
   downloaded/cached by Bazel (pinned in `MODULE.bazel`, currently `emsdk 5.0.7`).
   The transition is what makes the `//:build_wasm` config setting
-  (`@platforms//cpu:wasm32`) active — see [[build-system]].
+  (`@platforms//cpu:wasm32`) active — see [build-system](build-system.md).
 - **WASM builds are single-threaded.** The Emscripten build does not use the host
-  threading in [[system-concurrency]]; solves run on one thread. Link flags come
-  from `WASM_LINKOPTS` ([[build-system]]) — notably an 8 MB stack, because DDS
+  threading in [system-concurrency](system-concurrency.md); solves run on one thread. Link flags come
+  from `WASM_LINKOPTS` ([build-system](build-system.md)) — notably an 8 MB stack, because DDS
   search recursion overflows Emscripten's 64 KB default. Example binaries also
   attach those flags via `EXAMPLES_LINKOPTS_WASM` in `examples/BUILD.bazel`.
 - **Correctness is checked two ways.** `calc_dd_table_pbn_test` is a native
@@ -55,8 +54,8 @@ core solver builds and runs correctly under Emscripten.
 
 ## Known gaps / non-goals
 
-- **Only three examples are ported**, not the full [[examples-cli]] set.
+- **Only three examples are ported**, not the full [examples-cli](examples-cli.md) set.
 - **No threaded WASM** — single-thread only.
 - Browser wiring, the site, MVP post-build JS patches (`web/patch_mvp_wasm.py`),
-  and JS/e2e tests belong to [[web-mvp]]; this capability provides the example
+  and JS/e2e tests belong to [web-mvp](web-mvp.md); this capability provides the example
   modules, not the page.

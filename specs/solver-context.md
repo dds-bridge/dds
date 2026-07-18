@@ -2,7 +2,6 @@
 capability: solver-context
 owners: [solver_context]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Solver Context
@@ -20,7 +19,7 @@ create one context at the top of a call stack, drive multiple solves through it,
 and reuse the (expensive) transposition table across them — instead of relying on
 process-global state that forced serialised, non-reentrant use. It is the object
 the modern C++ API (`dds_api.hpp`) and its C shim (`dds_c_api.h`) hand around as
-the opaque handle. See [[dds-public-api]].
+the opaque handle. See [dds-public-api](dds-public-api.md).
 
 ## Behaviour & invariants
 
@@ -39,7 +38,7 @@ the opaque handle. See [[dds-public-api]].
   `SearchContext` owns its `TransTable` via a `unique_ptr`, allocated on first
   access. There is **no global TT registry and no `ThreadData`-owned TT** — TT
   reuse comes from reusing the *same context* across solves, not from a shared
-  global. See [[transposition-table]].
+  global. See [transposition-table](transposition-table.md).
 - **TT configuration is `SolverConfig` + optional env overrides.** `SolverConfig`
   carries `tt_kind_` (`TTKind::{Small,Large}`, default `Large`) and default/max MB.
   `configure_tt(kind, defMB, maxMB)` persists a new config and applies it to an
@@ -49,9 +48,17 @@ the opaque handle. See [[dds-public-api]].
   `reset_for_solve()` clears a subset of search state and resets TT memory
   (`ResetReason::FreeMemory`) while preserving the allocation for reuse;
   `reset_best_moves_lite()` clears only best-move ranks (hot per-iteration path);
-  `clear_tt()` calls `return_all_memory()` on the existing TT object (it does not
-  destroy the `unique_ptr`; the next deal's `init` / use reallocates inside the
-  same table); `dispose_trans_table()` destroys the TT immediately.
+  `clear_tt()` calls `return_all_memory()` on the existing TT object;
+  `dispose_trans_table()` destroys the TT immediately.
+- **`clear_tt()` does not leave a reusable table.** It keeps the `unique_ptr`
+  alive but deallocates the table's storage, and nothing re-runs `make_tt()`:
+  `SearchContext::trans_table()` returns early whenever `tt_` is non-null, and
+  `TransTable::init()` only fills the aggregate lookup arrays — it allocates
+  nothing. A context reused after `clear_tt()` therefore degrades to a silently
+  dead cache (`TransTableL::add` drops entries while `last_block_seen_` is null;
+  `TransTableS` short-circuits on `!tt_in_use_`) rather than erroring. Use
+  `dispose_trans_table()` when you want the next solve to get a fresh table.
+  No test guards this today.
 - **Hot-path facades are value-typed and inline-friendly, with different holds.**
   `MoveGenContext` holds a raw `ThreadData*` so `move_gen()` can return a
   value-typed facade without an atomic `shared_ptr` bump on every call.
@@ -63,7 +70,7 @@ the opaque handle. See [[dds-public-api]].
   `solver_context_log` (`DDS_UTILITIES_LOG`), and `solver_context_stats`
   (`DDS_UTILITIES_STATS`) compile the same source with different defines; TT
   lifecycle events emit log entries / bump counters only in those variants. Link
-  at most one variant into a binary. See [[system-concurrency]] and [[build-system]].
+  at most one variant into a binary. See [system-concurrency](system-concurrency.md) and [build-system](build-system.md).
 
 ## Key entry points
 
@@ -80,7 +87,7 @@ the opaque handle. See [[dds-public-api]].
 ## Known gaps / non-goals
 
 - Not thread-safe by design — concurrency is achieved with one context per
-  worker, coordinated by [[system-concurrency]], not by locking a shared context.
+  worker, coordinated by [system-concurrency](system-concurrency.md), not by locking a shared context.
 - The context does not persist across processes; the TT is in-memory only.
 - The class header still describes itself as "scaffolding … no-behavior-change
   adapter" from the migration; the instance-scoped ownership model above is the

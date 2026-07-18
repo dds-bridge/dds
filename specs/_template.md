@@ -2,7 +2,6 @@
 capability: <kebab-case-name>
 owners: [<top-level dirs or components, e.g. parser, fixed_array]
 last-updated: <YYYY-MM-DD>
-related-plans: [<plan-name>, ...]
 ---
 
 # <Capability Title>
@@ -29,8 +28,8 @@ One short paragraph: what this capability provides and to whom. Intent and the
 - Things consumers may rely on; assumptions that must remain true.
 - Non-obvious behaviours no single symbol owns (stall guards, void-type gating,
   lock-step delegation, error-type conventions).
-- Keep these current — `action-tasks` updates them when a plan's "Spec impact"
-  names this file. (Per-API drift is doxygen's job, not yours.)
+- Keep these current — a change that alters any guarantee here updates this
+  section in the same commit. (Per-API drift is doxygen's job, not yours.)
 
 ## Key entry points
 

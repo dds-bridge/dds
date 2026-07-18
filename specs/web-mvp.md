@@ -2,7 +2,6 @@
 capability: web-mvp
 owners: [web]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Web MVP
@@ -29,9 +28,9 @@ a full application.
   with `WASM_MVP_LINKOPTS`: `MODULARIZE=1`, `EXPORT_NAME=createDdsModule`,
   a single exported entry `_dds_mvp_calc_table` (plus `_malloc`/`_free`),
   `EXPORTED_RUNTIME_METHODS=['ccall','getValue']`, and `ENVIRONMENT=web,node`. This
-  is distinct from [[wasm-emscripten]]'s example ports — the MVP wants one small,
+  is distinct from [wasm-emscripten](wasm-emscripten.md)'s example ports — the MVP wants one small,
   callable table function, not a CLI. Shared base flags come from `WASM_LINKOPTS`
-  ([[build-system]]).
+  ([build-system](build-system.md)).
 - **The page is a static trio plus JS glue.** `dds_mvp.html` / `dds_mvp.css` /
   `dds_mvp.js` load the module (`createDdsModule`), marshal a deal into WASM
   memory, call `dds_mvp_calc_table` via `ccall`, and read results with `getValue`.
@@ -55,7 +54,7 @@ a full application.
   CLIs. If an emsdk upgrade moves that line, update the regex and the note in
   `docs/wasm_build.md`.
 - **The MVP's WASM inherits the single-thread assumption** of
-  [[wasm-emscripten]]; results come from the same [[dds-public-api]] core.
+  [wasm-emscripten](wasm-emscripten.md); results come from the same [dds-public-api](dds-public-api.md) core.
 
 ## Key entry points
 

@@ -2,7 +2,6 @@
 capability: python-binding
 owners: [python]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Python Binding
@@ -18,7 +17,7 @@ This capability exposes the solver to Python as the `dds3` package, backed by a
 pybind11 native extension. It exists so Python users get double-dummy analysis
 (solve, DD tables, par, play analysis) as an ordinary importable module and
 installable wheel, without touching the C ABI directly. It wraps the modern
-context API and the flat API from [[dds-public-api]].
+context API and the flat API from [dds-public-api](dds-public-api.md).
 
 ## Behaviour & invariants
 
@@ -41,7 +40,7 @@ context API and the flat API from [[dds-public-api]].
   `//:build_windows`). `dds3_lib` bundles `__init__.py` + that staged extension as
   its `data`.
 - **`SolverContext` is exposed for reuse.** A Python `SolverContext` maps to the
-  C++ [[solver-context]]; holding one across multiple solves reuses its
+  C++ [solver-context](solver-context.md); holding one across multiple solves reuses its
   transposition table, mirroring the C++ reuse model. Guarded by
   `context_reuse_test`.
 - **Type conversions are centralised.** `converters.{cpp,hpp}` marshal Python

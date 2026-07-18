@@ -2,7 +2,6 @@
 capability: heuristic-sorting
 owners: [heuristic_sorting]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Heuristic Sorting
@@ -16,7 +15,7 @@ related-plans: []
 ## Purpose
 
 Heuristic sorting assigns a *weight* to each candidate card in a move list so
-[[move-generation]] can order the most promising plays first, which is what makes
+[move-generation](move-generation.md) can order the most promising plays first, which is what makes
 the alpha-beta search prune effectively. It exists as a separate capability
 because the weighting policy is intricate (position-, trump-, and
 void-situation-dependent) and is the single hottest inner-loop computation in a
@@ -33,7 +32,7 @@ solve.
 - **The two "best moves" get bonus priority.** The search's alpha-beta best move
   and the transposition-table best move (`best_move`, `best_move_tt` in the
   context) are weighted to sort to the front, so known-good moves are re-tried
-  first. See [[transposition-table]].
+  first. See [transposition-table](transposition-table.md).
 - **Scoring policy detail lives in `doc/heuristic-sorting.md`.** That narrative
   (including lead/void per-suit top-card bonuses) may lag the code; treat the
   doc as algorithm intent and the `weight_alloc_*` helpers as ground truth when
@@ -45,7 +44,7 @@ solve.
   in place. There is a single free overload — the older parameterized form is
   gone.
 - **`TrackType` is shared per-trick position state** defined here and consumed by
-  both [[move-generation]] and the heuristics. `Moves` owns the `track[]` array
+  both [move-generation](move-generation.md) and the heuristics. `Moves` owns the `track[]` array
   and mutates `trackp`; heuristics read the snapshots copied into
   `HeuristicContext`.
 - **`testable_heuristic_sorting`** exposes the same sources to the heuristic-sorting
@@ -60,7 +59,7 @@ solve.
   `internal.hpp` — the per-situation weighting helpers.
 - Narrative algorithm: `doc/heuristic-sorting.md`.
 - Build targets: `//library/src/heuristic_sorting:{heuristic_sorting,testable_heuristic_sorting}`.
-- Guarded by `//library/tests/heuristic_sorting` and
+- Guarded by `//library/tests/heuristic_sorting/...` and
   `//library/tests/regression/heuristic_sorting`.
 
 ## Known gaps / non-goals

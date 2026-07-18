@@ -2,7 +2,6 @@
 capability: jni-ffm-binding
 owners: [jni]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # JVM Binding (Foreign Function & Memory)
@@ -20,7 +19,7 @@ ships two things: a single self-contained native shared library that exports the
 stable C ABI, and hand-written Foreign Function & Memory (Project Panama) bindings
 that downcall into it. It exists so JVM consumers get the solver as an ordinary
 Maven dependency with the native library embedded in the jar. It binds the pure-C
-shim from [[dds-public-api]], not the C++ API.
+shim from [dds-public-api](dds-public-api.md), not the C++ API.
 
 ## Behaviour & invariants
 
@@ -41,7 +40,7 @@ shim from [[dds-public-api]], not the C++ API.
   parser is unit-tested by `gen_export_lists_test`. **Windows has no `.lds`
   branch:** the DLL exports whatever is marked `DLLEXPORT`, which is a
   **superset** of the Unix list (it also includes the modern `dds_*` context API
-  from `dds_api.hpp`). See [[dds-public-api]].
+  from `dds_api.hpp`). See [dds-public-api](dds-public-api.md).
 - **Bindings are hand-written, not jextract-generated.** `//jni:dds_ffm`
   (`java_library`, `java/org/dds/ffm/Dds.java`) declares the struct
   `MemoryLayout`s and `Linker` downcall handles for the `dds_c_*` shim plus
@@ -94,4 +93,4 @@ shim from [[dds-public-api]], not the C++ API.
 - Windows is buildable; smoke tests and `export_set_test` are excluded there.
   `jar_self_contained_test` follows `dds_ffm_dist` compatibility instead.
 - Threading follows the C shim: one solver-context handle per thread (see
-  [[solver-context]]).
+  [solver-context](solver-context.md)).

@@ -2,7 +2,6 @@
 capability: build-system
 owners: [//, .bazelrc, MODULE.bazel, CPPVARIABLES.bzl, wasm_compat.bzl]
 last-updated: 2026-07-18
-related-plans: []
 ---
 
 # Build System
@@ -29,7 +28,10 @@ than re-encoding toolchain knowledge.
 > the literal strings.
 
 - **Platform selection is by OS constraint, plus a `dbg` compilation-mode twin.**
-  `build_{macos,linux,windows}` match the OS; each has a `debug_build_*` sibling
+  `build_{macos,linux,windows}` match the OS — `build_windows` additionally
+  requires `@platforms//cpu:x86_64`, so a Windows-arm64 build matches no
+  `build_*` setting and falls through to `//conditions:default`. Each has a
+  `debug_build_*` sibling
   gated on `compilation_mode = dbg`. `build_wasm` matches
   `@platforms//cpu:wasm32` (set by the `wasm_cc_binary` platform transition, not
   the host OS). Any target that wants per-platform flags does so through the
@@ -43,11 +45,11 @@ than re-encoding toolchain knowledge.
   `DDS_LOCAL_DEFINES` / `DDS_SCHEDULER_DEFINE`:
   | config setting | `--define` | preprocessor define | capability |
   |---|---|---|---|
-  | `debug_all` | `debug_all=true` | `DDS_DEBUG_ALL` | [[constants-and-debug]] |
-  | `ab_stats` | `ab_stats=true` | `DDS_AB_STATS` | [[ab-stats]] |
-  | `scheduler` | `scheduler=true` | `DDS_SCHEDULER` | [[system-concurrency]] |
-  | `tt_context_ownership` | `tt_context_ownership=true` | `DDS_TT_CONTEXT_OWNERSHIP` | [[transposition-table]] (define wired; unused in library sources today) |
-  | `tt_reset_debug` | `tt_reset_debug=true` | `DDS_DEBUG_TT_RESET` | [[transposition-table]] |
+  | `debug_all` | `debug_all=true` | `DDS_DEBUG_ALL` | [constants-and-debug](constants-and-debug.md) |
+  | `ab_stats` | `ab_stats=true` | `DDS_AB_STATS` | [ab-stats](ab-stats.md) |
+  | `scheduler` | `scheduler=true` | `DDS_SCHEDULER` | [system-concurrency](system-concurrency.md) |
+  | `tt_context_ownership` | `tt_context_ownership=true` | `DDS_TT_CONTEXT_OWNERSHIP` | [transposition-table](transposition-table.md) (define wired but inert — no source `#ifdef`s it) |
+  | `tt_reset_debug` | `tt_reset_debug=true` | `DDS_DEBUG_TT_RESET` | [transposition-table](transposition-table.md) |
 - **`DDS_LOCAL_DEFINES` is the standard `local_defines` for every core
   `cc_library`; `DDS_SCHEDULER_DEFINE` is appended only where scheduler timing is
   wanted** (`local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE`). Off by
@@ -55,10 +57,10 @@ than re-encoding toolchain knowledge.
 - **WASM link flags are centralised** in `wasm_compat.bzl` (`WASM_LINKOPTS`):
   memory growth, 256 MB initial memory, and an 8 MB stack (DDS search recursion
   overflows Emscripten's 64 KB default). WASM binaries must use these — see
-  [[wasm-emscripten]].
+  [wasm-emscripten](wasm-emscripten.md).
 - **The dependency graph is pinned in `MODULE.bazel`** (rules_cc, platforms,
   googletest, pybind11_bazel, rules_python, toolchains_llvm, apple_support, emsdk,
-  plus the JVM rules for [[jni-ffm-binding]]). Toolchains are hermetic
+  plus the JVM rules for [jni-ffm-binding](jni-ffm-binding.md)). Toolchains are hermetic
   (LLVM via `toolchains_llvm`, Emscripten via `emsdk`). Exact versions live in the
   file and drift; do not hard-code them elsewhere.
 - **`//:dds`** is the public façade library (re-exports `//library/src:dds`);
