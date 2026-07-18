@@ -1,6 +1,16 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
+# Public C-ABI headers, exposed as files so tooling (e.g. the export-set test and
+# gen_export_lists.py) can parse them for the exported symbol set.
+exports_files(
+    [
+        "dll.h",
+        "dds_c_api.h",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 cc_library(
     name = "api_definitions",
     hdrs = [
@@ -8,7 +18,8 @@ cc_library(
         "calc_par.hpp",
         "dds.h",
         "dll.h",
-		"dds_api.hpp",
+        "dds_api.hpp",
+        "dds_c_api.h",
         "portab.h",
         "PBN.h",           # Case-sensitive on consumers; cannot add pbn.h on macOS CI
         "solve_board.hpp",
@@ -17,5 +28,22 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//library/src/utility:constants",
+    ],
+)
+
+# Pure-C ABI shim over the modern SolverContext API. Pointer-only, POD-only,
+# opaque void* handle — the stable surface Java (FFM), .NET, and ctypes bind to.
+cc_library(
+    name = "dds_c_api",
+    srcs = ["dds_c_api.cpp"],
+    hdrs = ["dds_c_api.h"],
+    include_prefix = "api",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":api_definitions",
+        "//library/src:dds",
     ],
 )
