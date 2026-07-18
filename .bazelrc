@@ -13,6 +13,27 @@ common --enable_platform_specific_config
 #   bazelisk mod deps --lockfile_mode=update
 common --lockfile_mode=error
 
+# We build nothing for Android, but rules_jvm_external (the //jni Maven jar)
+# depends on rules_android, whose android_sdk_repository extension probes
+# $ANDROID_HOME while analysing *any* target. When ANDROID_HOME is exported but
+# the SDK has no platform APIs installed — as on GitHub's ubuntu runners after
+# the free-disk-space step removes the SDK — that extension hard-fails and takes
+# down unrelated builds (e.g. //wasm, //web). Pinning the var to empty makes the
+# extension emit its empty stub repo instead, which is the path non-Android
+# builds are meant to take.
+common --repo_env=ANDROID_HOME=
+
+# Java toolchain for the FFM bindings (//jni:*). JDK 25 is the hermetic remote
+# JDK shipped by rules_java 9.6.1; being >= 22 it exposes java.lang.foreign as a
+# stable (non-preview) API, so no --enable-preview is needed. These are
+# unconditional build flags (they apply to every build), but only Java compile
+# and run actions consult the Java toolchain, so they have no effect on the
+# C++/WASM/Python targets. Per-test native-access flags live on the java_test.
+build --java_language_version=25
+build --java_runtime_version=remotejdk_25
+build --tool_java_language_version=25
+build --tool_java_runtime_version=remotejdk_25
+
 # Platform-specific C++ standard flags
 build:macos --cxxopt=-std=c++20
 build:macos --host_cxxopt=-std=c++20
