@@ -41,17 +41,25 @@ its two concrete strategies, trading memory against speed.
   `set_memory_default` is a soft limit (may briefly exceed, triggering
   cleanup/harvesting) and `set_memory_maximum` is a hard cap. On `TransTableS`,
   `set_memory_default` is a **no-op**; only `set_memory_maximum` is enforced.
-  On the raw interface, `0` default means unlimited for Large; the owning
-  [solver-context](solver-context.md) replaces `<= 0` config values with
-  `THREADMEM_*` constants before construct, so context-owned tables never start
-  as unlimited. Env overrides: `DDS_TT_DEFAULT_MB` / `DDS_TT_LIMIT_MB`.
+  The header documents `0` as "unlimited" for the default limit, but `TransTableL`
+  does not implement it that way — `set_memory_default(0)` yields
+  `pages_default_ == 0`, and the next `reset_memory` then frees *every* pooled
+  page. Treat `0` as unsupported rather than unlimited. It does not arise on the
+  production path: the owning [solver-context](solver-context.md) replaces `<= 0`
+  config values with `THREADMEM_*` constants before construct. (Reconciling the
+  header's doxygen is out of scope here.) Env overrides: `DDS_TT_DEFAULT_MB` /
+  `DDS_TT_LIMIT_MB`.
 - **Resets are reason-tagged and tiered.** `reset_memory(ResetReason)` clears
-  cached positions and statistics but retains the allocated structures for reuse;
+  cached positions and bumps the per-reason reset counters — it does **not** clear
+  statistics, which accumulate across resets by design — but retains the allocated
+  structures for reuse;
   `return_all_memory()` deallocates everything and the table **must** be
   re-created with `make_tt()` before further use — `init()` does not reallocate.
   `ResetReason` (`TooManyNodes`, `NewDeal`,
-  `NewTrump`, `MemoryExhausted`, `FreeMemory`, …) records *why* a reset happened
-  for diagnostics.
+  `NewTrump`, `MemoryExhausted`, `FreeMemory`, …) records *why* a reset happened,
+  accumulating a per-reason histogram for diagnostics. `TransTableL` keeps its
+  reset/calloc counters unconditionally; `TransTableS`'s are compiled in only
+  under `DDS_TT_STATS`.
 - **Allocation failures throw `std::bad_alloc`** (post-modernization); non-critical
   allocations may fall back rather than throw.
 - **Lifecycle on the production context path:** first TT access does

@@ -32,8 +32,10 @@ context API and the flat API from [dds-public-api](dds-public-api.md).
 - **Public surface is the package `__all__`.** `python/dds3/__init__.py` re-exports
   the extension symbols; see that list and `docs/python_interface.md` rather than
   duplicating names here. Notable capability-wide pieces: a Python `SolverContext`
-  for TT reuse, and threading helpers such as `set_max_threads` whose semantics
-  follow the C++ core.
+  for TT reuse, and `initialise_static_memory` for lookup-table setup. Note
+  `set_max_threads` is exported but **deprecated** — it is an alias of
+  `initialise_static_memory` that ignores its argument and warns; it does not set
+  a worker count.
 - **In-package native staging is platform-specific.** `_dds3_in_package` copies
   the built extension into `dds3/` under the filename Python expects —
   `dds3/_dds3.so` on unix, `dds3/_dds3.pyd` on Windows (selected via

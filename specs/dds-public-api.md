@@ -75,7 +75,10 @@ capability defines what crosses the boundary and promises to stay stable.
 - `library/src/api/{solve_board,calc_dd_table,calc_par}.hpp`, `PBN.h`,
   `portab.h`, `dds.h` — supporting public headers (`api_definitions`).
 - Build targets: `//library/src/api:dds_c_api`, `:api_definitions`, `//:dds`
-  (façade), `//:testable_dds`.
+  (façade), `//:testable_dds`, plus the logging/stats variants
+  `//library/src:{testable_dds_util_log,testable_dds_util_stats}` — same sources,
+  swapping in the `_log` / `_stats` builds of `system` and `solver_context`
+  (see [system-concurrency](system-concurrency.md), [ab-stats](ab-stats.md)).
 
 ## Known gaps / non-goals
 
