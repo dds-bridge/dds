@@ -15,24 +15,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # 2️⃣ Install Bazelisk (recommended Bazel launcher)
+      # 2️⃣ Free disk space — LLVM 21.1.8 is ~2 GB compressed / ~5 GB extracted;
+      #    ubuntu-latest ships with Android SDK, .NET, Haskell, etc. that we don't need.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # 3️⃣ Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: "1.29.0"
 
-      # 3️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel)
+      # 4️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel)
       - name: Test web helpers, system tests, e2e, and CalcDDtablePBN
         run: bazel test --verbose_failures //web:web_tests //web:web_system_tests //wasm:all
 
       - name: Build WASM targets
         run: bazel build --verbose_failures //wasm:all_examples_wasm
 
-      # 4️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
+      # 5️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
       - name: Smoke test solve_board_wasm
         run: node bazel-bin/wasm/solve_board.js
 
-      # 5️⃣ Upload test logs
+      # 6️⃣ Upload test logs
       - name: Upload test logs - WASM
         if: always()
         uses: actions/upload-artifact@v6
