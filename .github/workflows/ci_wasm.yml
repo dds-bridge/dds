@@ -34,18 +34,45 @@ jobs:
         with:
           bazelisk-version: "1.29.0"
 
-      # 4️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel)
+      # 4️⃣ Prefetch emsdk / toolchain archives (retry transient network timeouts)
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazel fetch //web/... //wasm/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      # 5️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel)
       - name: Test web helpers, system tests, e2e, and CalcDDtablePBN
         run: bazel test --verbose_failures //web:web_tests //web:web_system_tests //wasm:all
 
       - name: Build WASM targets
-        run: bazel build --verbose_failures //wasm:all_examples_wasm
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazel build --verbose_failures //wasm:all_examples_wasm; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Build failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+              bazel clean --expunge_async || true
+            fi
+          done
+          exit 1
 
-      # 5️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
+      # 6️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
       - name: Smoke test solve_board_wasm
         run: node bazel-bin/wasm/solve_board.js
 
-      # 6️⃣ Upload test logs
+      # 7️⃣ Upload test logs
       - name: Upload test logs - WASM
         if: always()
         uses: actions/upload-artifact@v6

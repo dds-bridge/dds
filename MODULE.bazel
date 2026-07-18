@@ -18,6 +18,18 @@ bazel_dep(name = "apple_support", version = "1.24.2")
 # rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_mvp_wasm.py.
 bazel_dep(name = "emsdk", version = "5.0.7")
 
+# Prefer GitHub, fall back to codeload CDN on transient timeouts (see CI flakes).
+# Integrity and strip_prefix match BCR emsdk 5.0.7 source.json.
+archive_override(
+    module_name = "emsdk",
+    integrity = "sha256-Jm30uWRN3hgwOvBdzn0EhUJzsLtSckbLf7aglZF3TM8=",
+    strip_prefix = "emsdk-5.0.7/bazel",
+    urls = [
+        "https://github.com/emscripten-core/emsdk/archive/refs/tags/5.0.7.tar.gz",
+        "https://codeload.github.com/emscripten-core/emsdk/tar.gz/refs/tags/5.0.7",
+    ],
+)
+
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
     name = "llvm_toolchain",

@@ -25,7 +25,22 @@ jobs:
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen
 
-      # 4️⃣ Build all targets
+      # 4️⃣ Prefetch external repos (emsdk via //..., LLVM); retry network flakes only
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazel fetch //...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      # 5️⃣ Build all targets
       - name: Build all targets
         run: bazel build --verbose_failures //...
 
