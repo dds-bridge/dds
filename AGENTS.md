@@ -1,16 +1,10 @@
+# General
+
+Follow .github/instructions/cpp.instructions.md
+
 # Naming
 
-For C and C++ code, use snake_case for functions, methods, variables, and parameters.
-
-Prefer:
-- `deal_fanout`
-- `fanout_suit`
-- `num_voids`
-
-Avoid:
-- `dealFanout`
-- `fanoutSuit`
-- `numVoids`
+Follow .github/instructions/cpp.instructions.md
 
 Exceptions:
 - Match existing external or legacy APIs (for example, public C API names and types that already use a different style).
