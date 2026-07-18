@@ -121,7 +121,7 @@ try (Dds dds = Dds.load(Path.of(System.getProperty("dds.library.path")));
     long remain = Dds.DEAL.byteOffset(PathElement.groupElement("remainCards"));
     MemorySegment deal = arena.allocate(Dds.DEAL);
     deal.fill((byte) 0);   // allocate() is not guaranteed to zero the memory
-    // trump = spades (0), first = North (0) are now 0.
+    // deal.fill(...) zeroes the struct; Deal.trump uses strain index 0=S,1=H,2=D,3=C,4=NT (DDS_NOTRUMP), and first=0 is North.
     deal.set(JAVA_INT, remain + 0L * 4, 0x7FFC);            // North spades
     deal.set(JAVA_INT, remain + 5L * 4, 0x7FFC);            // East hearts
     deal.set(JAVA_INT, remain + 10L * 4, 0x7FFC);           // South diamonds
