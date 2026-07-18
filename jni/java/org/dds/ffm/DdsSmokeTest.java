@@ -23,6 +23,8 @@ import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class DdsSmokeTest {
@@ -246,8 +248,12 @@ public final class DdsSmokeTest {
         String[] names = {"libdds.dylib", "libdds.so", "dds.dll"};
         Path root = Path.of(System.getProperty("user.dir"));
         int maxDepth = 12;
+        List<Path> matches;
         try (Stream<Path> walk = Files.walk(root, maxDepth)) {
-            return walk.filter(Files::isRegularFile)
+            // Collect every match rather than taking the first: Files.walk order
+            // is filesystem-dependent, so findFirst() would pick a different
+            // library run to run when more than one is present.
+            matches = walk.filter(Files::isRegularFile)
                     .filter(p -> {
                         String n = p.getFileName().toString();
                         for (String name : names) {
@@ -257,10 +263,19 @@ public final class DdsSmokeTest {
                         }
                         return false;
                     })
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException(
-                            "DDS shared library not found (dds.library.path=" + prop + ")"));
+                    .sorted()
+                    .collect(Collectors.toList());
         }
+        if (matches.isEmpty()) {
+            throw new IllegalStateException(
+                    "DDS shared library not found under " + root + " (set -Ddds.library.path)");
+        }
+        if (matches.size() > 1) {
+            throw new IllegalStateException(
+                    "ambiguous DDS shared library: found " + matches.size() + " candidates under "
+                            + root + " " + matches + "; set -Ddds.library.path to disambiguate");
+        }
+        return matches.get(0);
     }
 
     private static void check(boolean condition, String message) {

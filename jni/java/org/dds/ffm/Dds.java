@@ -41,7 +41,18 @@ import java.nio.file.StandardCopyOption;
  */
 public class Dds implements AutoCloseable {
 
-    // ---- Struct memory layouts (match library/src/api/dll.h exactly) ----
+    // ---- Struct memory layouts ----
+    //
+    // Sizes, offsets and padding match the C structs in library/src/api/dll.h
+    // exactly. Field *names* are Java-idiomatic camelCase, so a few differ from
+    // the C identifiers when cross-checking against the header:
+    //
+    //     resTable           <- res_table       (DdTableResults)
+    //     parScore           <- par_score       (ParResults)
+    //     parContractsString <- par_contracts_string
+    //     versionString      <- version_string  (DDSInfo)
+    //
+    // All other names are identical to the header's.
 
     /** struct Deal — DDS_HANDS = DDS_SUITS = 4. */
     public static final MemoryLayout DEAL = MemoryLayout.structLayout(

@@ -47,6 +47,17 @@ py_library(
 # One self-contained native shared library exporting the stable C ABI
 # (dll.h flat API + dds_c_* shim). All internal sub-libraries are linked in
 # statically, so the JVM's System.loadLibrary("dds") needs only this one file.
+#
+# The export set is constrained at link time on Linux (--version-script) and
+# macOS (-exported_symbols_list) from the checked-in .lds files, and asserted by
+# //jni/tests:export_set_test. Windows has no export-list branch: the DLL
+# exports whatever is marked DLLEXPORT, which is a superset of the .lds set (it
+# includes the modern dds_* context API from api/dds_api.hpp). So the exported
+# ABI is deliberately platform-dependent today. Closing that gap needs a .def
+# file generated from the same header-derived symbol set as the .lds files, plus
+# a Windows arm of export_set_test (dumpbin instead of nm) — tracked as a
+# follow-up alongside the other Windows JNI work (the jni tests are
+# target_compatible_with-excluded on Windows for the same reason).
 cc_shared_library(
     name = "dds_shared",
     deps = [

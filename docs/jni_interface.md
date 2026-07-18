@@ -51,7 +51,9 @@ This produces one self-contained native library rolling up the entire solver
 
 Only the public C API is exported. Exports are constrained at link time by the
 generated `jni/version_script.lds` (Linux) and `jni/exported_symbols.lds`
-(macOS); on Windows the existing `__declspec(dllexport)` markers drive exports.
+(macOS); on Windows the existing `__declspec(dllexport)` markers drive exports,
+so the DLL's export set is a **superset** of the Linux/macOS one (see
+[Not yet supported](#not-yet-supported)).
 The lists are generated from the headers by `jni/gen_export_lists.py` and
 verified by `//jni/tests:export_set_test`, which asserts the library exports
 exactly the public symbols and leaks no internal C++ symbols.
@@ -219,5 +221,11 @@ through the shim.
 - **Multi-OS/arch "fat" jar** — the jar bundles only the host platform's native
   library. Producing one jar with every triplet requires a CI matrix building
   each platform and a final assembly step.
+- **A pinned Windows export set** — the Linux and macOS libraries are linked
+  against a header-derived export list and verified by
+  `//jni/tests:export_set_test`, but the Windows DLL exports everything marked
+  `__declspec(dllexport)`, including the modern `dds_*` context API. Matching
+  the other platforms needs a generated `.def` file and a `dumpbin`-based arm of
+  the export test; the `//jni` tests are excluded on Windows meanwhile.
 - **Hand-written JNI convenience API** (idiomatic `native`-method Java classes)
   — deferred; the FFM path above is the supported route.
