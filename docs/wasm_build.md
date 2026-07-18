@@ -96,12 +96,21 @@ For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/wasm/` t
 | Flag | Purpose |
 |------|---------|
 | `-O3` | Aggressive optimization |
-| `-flto` | Link-time optimization |
-| `-fexceptions` | Enable C++ exceptions |
+| `-flto` | Link-time optimization at compile time only (see note below) |
+| `-fwasm-exceptions` | Native WebAssembly exception handling (replaces the slower JS-trampoline exception emulation of `-fexceptions`) |
 | `-sWASM=1` | Emscripten WASM output (link flag) |
 | `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime |
 | `-sINITIAL_MEMORY=268435456` | 256MB initial memory |
 | `-sSTACK_SIZE=8388608` | 8MB stack (default 64KB is too small for DDS search) |
+
+`-flto` is applied at compile time (`DDS_CPPOPTS`) but deliberately **not** at
+link time. Passing `-flto` to the wasm link step was tried and reverted: the
+`emsdk 5.0.7` package pinned in `MODULE.bazel` ships a frozen, pre-built cache
+containing only non-LTO system libraries, and requesting link-time LTO makes
+Emscripten require LTO-bitcode variants of core sysroot libraries (e.g.
+`libprintf_long_double`) that the frozen cache can't build on demand inside
+Bazel's hermetic sandbox. Revisit only if the emsdk packaging changes to ship
+a populated LTO cache.
 
 ## C++ standard
 
