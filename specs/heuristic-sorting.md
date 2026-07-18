@@ -33,10 +33,10 @@ solve.
   and the transposition-table best move (`best_move`, `best_move_tt` in the
   context) are weighted to sort to the front, so known-good moves are re-tried
   first. See [transposition-table](transposition-table.md).
-- **Scoring policy detail lives in `doc/heuristic-sorting.md`.** That narrative
-  (including lead/void per-suit top-card bonuses) may lag the code; treat the
-  doc as algorithm intent and the `weight_alloc_*` helpers as ground truth when
-  they disagree.
+- **Scoring policy ground truth is the `weight_alloc_*` helpers.** 
+  `doc/heuristic-sorting.md` is narrative intent (including lead/void per-suit
+  top-card bonuses) and may lag the code; when they disagree, trust the
+  implementation.
 - **`call_heuristic` takes a pre-built `HeuristicContext`.** The caller constructs
   one context (position, move array, best moves, relative ranks, and cached
   per-trick snapshots such as `removed_ranks`, `move1_rank`, `high1`) and passes
@@ -67,5 +67,6 @@ solve.
 - Heuristic sorting only *orders* moves; it never changes which moves are legal or
   what the search concludes. A wrong weight can only slow the search, not
   mis-solve a board — the regression tests exist to catch ordering drift.
-- The scoring policy is intentionally not restated here; `doc/heuristic-sorting.md`
-  is the algorithm's source of truth.
+- The scoring policy is intentionally not restated here; see
+  `doc/heuristic-sorting.md` for narrative and `weight_alloc_*` for what the
+  solver actually does.

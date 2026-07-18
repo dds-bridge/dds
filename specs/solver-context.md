@@ -42,8 +42,8 @@ the opaque handle. See [dds-public-api](dds-public-api.md).
 - **TT configuration is `SolverConfig` + optional env overrides.** `SolverConfig`
   carries `tt_kind_` (`TTKind::{Small,Large}`, default `Large`) and default/max MB.
   `configure_tt(kind, defMB, maxMB)` persists a new config and applies it to an
-  existing TT (resize in place, or recreate if the kind changes). Env overrides:
-  `DDS_TT_DEFAULT_MB` (raise default) and `DDS_TT_LIMIT_MB` (cap maximum) when > 0.
+  existing TT (resize in place, or recreate if the kind changes).   Env overrides when > 0: `DDS_TT_DEFAULT_MB` **replaces** the configured default
+  MB; `DDS_TT_LIMIT_MB` caps the maximum.
 - **Explicit, tiered reset hooks** (no-ops when no TT exists yet):
   `reset_for_solve()` clears a subset of search state and resets TT memory
   (`ResetReason::FreeMemory`) while preserving the allocation for reuse;
@@ -51,14 +51,16 @@ the opaque handle. See [dds-public-api](dds-public-api.md).
   `clear_tt()` calls `return_all_memory()` on the existing TT object;
   `dispose_trans_table()` destroys the TT immediately.
 - **`clear_tt()` does not leave a reusable table.** It keeps the `unique_ptr`
-  alive but deallocates the table's storage, and nothing re-runs `make_tt()`:
+  alive but frees the table's storage, and nothing re-runs `make_tt()`:
   `SearchContext::trans_table()` returns early whenever `tt_` is non-null, and
-  `TransTable::init()` only fills the aggregate lookup arrays — it allocates
-  nothing. A context reused after `clear_tt()` therefore degrades to a silently
-  dead cache (`TransTableL::add` drops entries while `last_block_seen_` is null;
-  `TransTableS` short-circuits on `!tt_in_use_`) rather than erroring. Use
-  `dispose_trans_table()` when you want the next solve to get a fresh table.
-  No test guards this today.
+  `TransTable::init()` only fills aggregate lookup arrays — it does not
+  reallocate. Reusing the context after `clear_tt()` without
+  `dispose_trans_table()` (or recreating the context) is **unsafe**: the next
+  `lookup`/`add` can touch freed memory. Do not treat this as a quiet "dead
+  cache" — `TransTableS` does not gate `lookup`/`add` on `tt_in_use_`, and
+  `TransTableL::return_all_memory()` does not put the table into a reliably
+  inert state. Use `dispose_trans_table()` when the next solve should get a
+  fresh table. No test guards this today.
 - **Hot-path facades are value-typed and inline-friendly, with different holds.**
   `MoveGenContext` holds a raw `ThreadData*` so `move_gen()` can return a
   value-typed facade without an atomic `shared_ptr` bump on every call.

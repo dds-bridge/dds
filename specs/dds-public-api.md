@@ -27,27 +27,26 @@ capability defines what crosses the boundary and promises to stay stable.
 > facts.
 
 - **Three layers, one library:**
-  1. **Flat legacy C API** — `dll.h` (`SolveBoard`, `SolveBoardPBN`,
-     `CalcDDtable(PBN/N)`, `CalcAllTables*`, `SolveAllBoards*`, `CalcPar`,
-     `CalcParPBN`, `Par`, `DealerPar*`, `AnalysePlay*`, `SetMaxThreads`,
-     `SetResources`, `FreeMemory`, `GetDDSInfo`, `ErrorMessage`, …). Declared
-     `EXTERN_C DLLEXPORT auto STDCALL …`; this is the historical
-     Haglund/Hein ABI kept for backward compatibility.
+  1. **Flat legacy C API** — `dll.h`: historical Haglund/Hein ABI
+     (`EXTERN_C DLLEXPORT … STDCALL`), kept for backward compatibility. Full
+     symbol list is in the header / doxygen, not here.
   2. **Modern context C++ API** — `dds_api.hpp`: context-handle entry points
-     (`dds_solve_board`, `dds_calc_dd_table` / `_pbn`, `dds_calc_par`, lifecycle,
-     TT controls, and related helpers). These take an explicit `DDS_SOLVER_CTX`
-     (= `SolverContext*`) and use C++ types (`const Deal&`, `SolverConfig`,
-     `TTKind`). See [solver-context](solver-context.md) and the header for the full set.
+     taking `DDS_SOLVER_CTX` (= `SolverContext*`) with C++ types (`const Deal&`,
+     `SolverConfig`, `TTKind`). See [solver-context](solver-context.md) and the
+     header for the full set.
   3. **Pure-C ABI shim** — `dds_c_api.h` (`dds_c_*`). Pointer-only, POD-only,
      opaque `void*` handle (`DDS_C_SOLVER_CTX`); no C++ types cross the boundary.
-     It forwards to layer 2 and is the surface non-C++ languages bind against.
-     Today the shim is a thin subset (`dds_c_solve_board`, `dds_c_calc_dd_table`,
-     `dds_c_calc_par` plus context lifecycle) — **no `*PBN` twins and no TT
-     configure** in the shim.
-- **The shim is the stable binding surface, not the C++ API.** Java (FFM), .NET,
-  and ctypes bind to the `dds_c_*` symbols. The header is C-ABI but not
-  C-includable (it pulls in `dll.h`, which uses C++ trailing-return syntax) — bind
-  to the compiled symbols or parse in C++ mode (jextract).
+     It forwards to layer 2. Today it is a thin subset (`dds_c_solve_board`,
+     `dds_c_calc_dd_table`, `dds_c_calc_par` plus context lifecycle) — **no
+     `*PBN` twins and no TT configure** in the shim.
+- **Bindings pick different layers.** Java/FFM binds the shim (`dds_c_*` plus
+  `GetDDSInfo` from `dll.h`) — see [jni-ffm-binding](jni-ffm-binding.md). .NET
+  P/Invokes the modern `dds_*` symbols from `dds_api.hpp`
+  (`dotnet/DDS_Core/Native/DdsNative.cs`). Python wraps the C++ API via pybind11
+  ([python-binding](python-binding.md)), not the C shim. There is no shipped
+  ctypes binding. The shim header is C-ABI but not C-includable (it pulls in
+  `dll.h`, which uses C++ trailing-return syntax) — bind to compiled symbols or
+  parse in C++ mode (jextract).
 - **Handles are single-threaded.** One `DDS_SOLVER_CTX` / `DDS_C_SOLVER_CTX` per
   thread; the handle owns per-context solver state and its transposition table.
   Create → use → destroy. The legacy flat API manages global/threaded state via
@@ -72,7 +71,7 @@ capability defines what crosses the boundary and promises to stay stable.
   narrative in `docs/legacy_c_api.md`.
 - `library/src/api/dds_api.hpp` — modern context C++ API. Narrative in
   `docs/c++_interface.md`; migration in `docs/api_migration.md`.
-- `library/src/api/dds_c_api.h` — pure-C ABI shim (the binding surface).
+- `library/src/api/dds_c_api.h` — pure-C ABI shim (Java/FFM binding surface).
 - `library/src/api/{solve_board,calc_dd_table,calc_par}.hpp`, `PBN.h`,
   `portab.h`, `dds.h` — supporting public headers (`api_definitions`).
 - Build targets: `//library/src/api:dds_c_api`, `:api_definitions`, `//:dds`

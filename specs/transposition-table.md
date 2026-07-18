@@ -37,13 +37,14 @@ its two concrete strategies, trading memory against speed.
   best-move suit/rank, per-suit `least_win` encoding). The compactness is
   deliberate — it caps the per-entry footprint of large tables. A pointer
   returned by `lookup()` is valid only until the next `add()` or reset.
-- **Two-tier memory limits.** `set_memory_default` is a soft limit the table
-  tries to stay under (may briefly exceed, triggering cleanup/harvesting);
-  `set_memory_maximum` is a hard cap — allocations that would exceed it are
-  refused and trigger a reset. On the raw `TransTable` interface, `0` default
-  means unlimited; the owning [solver-context](solver-context.md) replaces `<= 0` config values
-  with `THREADMEM_*` constants before construct, so context-owned tables never
-  start as unlimited. Env overrides: `DDS_TT_DEFAULT_MB` / `DDS_TT_LIMIT_MB`.
+- **Memory limits differ by implementation.** On `TransTableL`,
+  `set_memory_default` is a soft limit (may briefly exceed, triggering
+  cleanup/harvesting) and `set_memory_maximum` is a hard cap. On `TransTableS`,
+  `set_memory_default` is a **no-op**; only `set_memory_maximum` is enforced.
+  On the raw interface, `0` default means unlimited for Large; the owning
+  [solver-context](solver-context.md) replaces `<= 0` config values with
+  `THREADMEM_*` constants before construct, so context-owned tables never start
+  as unlimited. Env overrides: `DDS_TT_DEFAULT_MB` / `DDS_TT_LIMIT_MB`.
 - **Resets are reason-tagged and tiered.** `reset_memory(ResetReason)` clears
   cached positions and statistics but retains the allocated structures for reuse;
   `return_all_memory()` deallocates everything and the table **must** be

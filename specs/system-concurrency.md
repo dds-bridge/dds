@@ -34,10 +34,12 @@ place so the search and API layers stay portable. It is internal — not part of
   `parallel_all_boards_n(count, worker_cap, process_board, order = nullptr)`
   hands out indices via a shared atomic counter (`fetch_add`) — not classic
   per-worker steal queues, despite the header's "work-stealing" wording. Optional
-  `order` is a permutation of `[0, count)` for dispatch priority. Each
-  `process_board(worker_id, bno)` must return `RETURN_NO_FAULT` (1) on success.
-  The function returns the **first non-success code** encountered (or
-  `RETURN_NO_FAULT`). Guarded by `concurrency_validation_test`.
+  `order` must be a permutation of `[0, count)` (correct size, in-range, no
+  duplicates) to control dispatch priority; a malformed `order` **falls back to
+  index order** rather than rejecting. Each `process_board(worker_id, bno)` must
+  return `RETURN_NO_FAULT` (1) on success. The function returns the **first
+  non-success code** encountered (or `RETURN_NO_FAULT`). Guarded by
+  `concurrency_validation_test` and `parallel_boards_test`.
 - **Result equivalence across thread counts is an invariant.** Solving the same
   boards single-threaded and multi-threaded must produce identical results;
   `max_threads_equivalence_test` and `context_equivalence_test*` guard this. Thread

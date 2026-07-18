@@ -1,6 +1,6 @@
 ---
 capability: build-system
-owners: [//, .bazelrc, MODULE.bazel, CPPVARIABLES.bzl, wasm_compat.bzl]
+owners: [build-root]
 last-updated: 2026-07-18
 ---
 
