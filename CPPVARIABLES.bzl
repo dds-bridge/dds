@@ -55,6 +55,7 @@ DDS_CPPOPTS = select({
     "//:build_wasm": [
         "-O3",
         "-flto",
+        "-std=c++20",
         "-Wpedantic",
         "-Wall",
         "-Werror",
