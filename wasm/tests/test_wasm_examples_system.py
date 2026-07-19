@@ -39,6 +39,25 @@ class WasmExamplesSystemTest(unittest.TestCase):
             self.assertIn(f"CalcDDtable, hand {hand}: OK", proc.stdout)
         self.assertNotIn("ERROR", proc.stdout)
 
+    def test_dtest_wasm_solve_list1(self) -> None:
+        js = rlocation("wasm/dtest.js")
+        hands = rlocation("hands/list1.txt")
+        proc = subprocess.run(
+            ["node", str(js), "-f", str(hands), "-s", "solve", "-n", "1"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+            cwd=str(js.parent),
+        )
+        self.assertEqual(
+            proc.returncode,
+            0,
+            msg=f"stdout:\n{proc.stdout}\nstderr:\n{proc.stderr}",
+        )
+        self.assertIn("Number of hands", proc.stdout)
+        self.assertNotIn(" ERROR", proc.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

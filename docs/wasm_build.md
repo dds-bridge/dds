@@ -44,15 +44,27 @@ Outputs are under `bazel-bin/wasm/`:
 - `solve_board.js` / `solve_board.wasm`
 - `AnalysePlayBin.js` / `AnalysePlayBin.wasm`
 - `calc_dd_table_pbn.js` / `calc_dd_table_pbn.wasm`
+- `dtest.js` / `dtest.wasm` (from `//wasm:dtest_wasm`)
 
 ## Available WASM targets
 
-Rules in `wasm/BUILD.bazel` wrap native examples in `examples/`:
+Rules in `wasm/BUILD.bazel` wrap native binaries:
 
-- `solve_board_wasm` — solves a single board
+- `solve_board_wasm` — solves a single board (`//examples:solve_board`)
 - `analyse_play_bin_wasm` — analyze play from binary format
 - `calc_dd_table_pbn_wasm` — double-dummy table from PBN
+- `dtest_wasm` — the `dtest` hand-list harness for Node (`//library/tests:dtest`)
 
+`dtest_wasm` is linked with `NODERAWFS` so Node can pass a real host path to
+`-f` (for example `hands/list1.txt`). Use `-n 1` (WASM is single-threaded).
+
+```bash
+bazel build //wasm:dtest_wasm
+node bazel-bin/wasm/dtest.js -f hands/list1.txt -s solve -n 1
+
+# Or via Bazel (forwards args after -- to dtest; cwd is your shell's directory):
+bazel run //wasm:run_dtest_wasm -- -f hands/list1.txt -s solve -n 1
+```
 ## How it works
 
 1. **`wasm_cc_binary`** (from `@emsdk`) transitions its `cc_target` to `@emsdk//:platform_wasm` and sets `--cpu=wasm`.
@@ -129,13 +141,13 @@ bazel test //wasm:all
 
 - **`//web:dds_mvp_wasm_system_test`** — builds `//web:dds_mvp_wasm`, runs `patch_mvp_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_mvp_calc_table` via Node (`web/tests/dds_mvp_wasm_node.mjs`).
 - **`//web:dds_mvp_e2e_test`** — Playwright tests for `dds_mvp.html` over `file://` and HTTP (part-score deal table, validation error). Requires Node, network (Chromium download on first run), and `tags = ["no-sandbox"]`.
-- **`//wasm:wasm_examples_system_test`** — runs `calc_dd_table_pbn.js` under Node and checks for `OK` on all three example hands.
+- **`//wasm:wasm_examples_system_test`** — runs `calc_dd_table_pbn.js` under Node (expects `OK` on all three example hands) and `dtest.js` on `hands/list1.txt` (`-s solve -n 1`).
 
 The MVP link flags include `-sENVIRONMENT=web,node` so the same `.js` / `.wasm` artifacts work in the browser and in Node system tests.
 
 ## Development notes
 
-- A reusable `cc_library` WASM artifact (not only example binaries) is not yet provided; today only `wasm_cc_binary` example targets are wired up.
+- A reusable `cc_library` WASM artifact (not only CLI binaries) is not yet provided; today `wasm_cc_binary` wraps selected examples plus `dtest`.
 - The browser MVP lives under `web/`; see **Web browser (DDS MVP)** above and `//web:web_system_tests`.
 
 ## Next steps

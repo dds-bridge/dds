@@ -328,7 +328,7 @@
     "@@emsdk+//:emscripten_deps.bzl%emscripten_deps": {
       "general": {
         "bzlTransitiveDigest": "F42/mZKtzkBQnTUD4cHY6FUWdyW5Gm0Z1zmvUVFI0NY=",
-        "usagesDigest": "lqS0hMGr6MqmX63BGZOskMFcqzqO53K0UlYFxuE3QSU=",
+        "usagesDigest": "wvQRffIp8pEJeKXankBKEQBAOCI8HTtmw9TvnW7/e1c=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

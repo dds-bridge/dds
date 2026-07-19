@@ -1,0 +1,4 @@
+# Hand list files used by dtest and WASM system tests.
+exports_files([
+    "list1.txt",
+])
