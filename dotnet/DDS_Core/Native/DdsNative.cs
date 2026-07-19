@@ -10,6 +10,10 @@ internal static class DdsNative
     // libdds.dylib, libdds.so, and dds.dll.
     private const string DllName = "dds";
 
+    // Runs before this type's first P/Invoke, so the DDS_LIBRARY_PATH override
+    // is always in place without consumers having to call anything.
+    static DdsNative() => DdsNativeResolver.Register();
+
     // The modern context entry points below bind the pure-C shim (dds_c_*)
     // rather than the reference-taking dds_* functions in dds_api.hpp. Only the
     // shim is exported by the shared library on Linux and macOS; the managed
