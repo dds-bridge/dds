@@ -24,6 +24,21 @@ jobs:
       - name: Install Doxygen
         run: brew install doxygen
 
+      # Prefetch external repos (emsdk via //..., LLVM); retry network flakes only
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch //...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
       # Build all targets
       - name: Build all targets
         run: bazelisk build --verbose_failures //...
@@ -53,6 +68,21 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: "1.29.0"
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=asan //library/tests/system/... \
+              && bazelisk fetch --config=tsan //library/tests/system/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
 
       - name: Run system tests (AddressSanitizer)
         run: bazelisk test --config=asan --verbose_failures --test_output=errors //library/tests/system/...
