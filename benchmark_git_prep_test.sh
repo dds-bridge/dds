@@ -33,7 +33,6 @@ resolve_benchmark() {
 
 BENCHMARK="$(resolve_benchmark)"
 [[ -f "$BENCHMARK" ]] || fail "benchmark.sh not found at $BENCHMARK"
-[[ -x "$BENCHMARK" ]] || chmod +x "$BENCHMARK"
 
 command -v git >/dev/null 2>&1 || fail "git is required"
 
@@ -72,7 +71,8 @@ setup_repo() {
 run_bench() {
   local repo="$1"
   shift
-  ( cd "$repo" && DRY_RUN=1 "$BENCHMARK" "$@" ) 2>&1
+  # Invoke via bash: Bazel runfiles may be read-only (no chmod +x).
+  ( cd "$repo" && DRY_RUN=1 bash "$BENCHMARK" "$@" ) 2>&1
 }
 
 setup_repo "$TMP/repo"
