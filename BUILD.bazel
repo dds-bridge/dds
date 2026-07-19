@@ -86,6 +86,21 @@ config_setting(
 
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+# benchmark.sh --branch dirty-tree gate (clean tree only when switching commits).
+# Needs bash + git; skipped on Windows like other host-tool shell checks.
+sh_test(
+    name = "benchmark_git_prep_test",
+    size = "small",
+    srcs = ["benchmark_git_prep_test.sh"],
+    data = ["benchmark.sh"],
+    deps = ["@rules_shell//shell/runfiles"],
+    target_compatible_with = select({
+        "//:build_windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
 
 genrule(
     name = "doxygen_docs",
