@@ -340,6 +340,10 @@ function fourthHandFillState(hands) {
         }
 
         for (const card of hands[direction]) {
+            if (!card || !SUITS.includes(card.suit) || !PIPS.includes(card.pip)) {
+                return { canFill: false };
+            }
+
             usedCards[card.key()] = true;
         }
     }
