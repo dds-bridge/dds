@@ -459,6 +459,30 @@ test("fourthHandFillState rejects a duplicate card across three full hands", () 
     assert.equal(state.canFill, false);
 });
 
+test("fourthHandFillState rejects a non-bridge pip among three full hands", () => {
+    // Arrange: 13 cards per filled hand, but north clubs uses X instead of a real pip.
+    const document = threeHandsPartScoreDocument();
+    document.setValue("north_clubs", "J8X");
+    const ctx = loadDdsMvp(document);
+
+    // Act
+    const state = ctx.fourthHandFillState(ctx.collectHands());
+
+    // Assert: invalid pips must not be treated as used cards for auto-fill.
+    assert.equal(state.canFill, false);
+});
+
+test("fourthHandFillState rejects a missing card object among three full hands", () => {
+    // Arrange: three full hands and one empty, then corrupt one card entry.
+    const document = threeHandsPartScoreDocument();
+    const ctx = loadDdsMvp(document);
+    const hands = ctx.collectHands();
+    hands.north[0] = null;
+
+    // Act / Assert
+    assert.equal(ctx.fourthHandFillState(hands).canFill, false);
+});
+
 test("updateActionButtons does not auto-fill when a hand has a non-bridge pip", () => {
     // Arrange: three full hands, but north holds an invalid pip (CX) instead of C7.
     const document = threeHandsPartScoreDocument();
