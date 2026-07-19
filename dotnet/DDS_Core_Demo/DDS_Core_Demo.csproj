@@ -5,7 +5,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Platforms>x64</Platforms>
+    <!-- Architecture-neutral: only the native library is RID-specific. -->
+    <Platforms>AnyCPU</Platforms>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <BaseOutputPath>..\..\Build\bin\</BaseOutputPath>
   </PropertyGroup>
