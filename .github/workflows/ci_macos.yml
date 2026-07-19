@@ -49,6 +49,25 @@ jobs:
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
 
+      # .NET binding — this job is the only CI coverage of the AArch64 ABI, which
+      # is what the managed struct-layout tests exist to guard: a layout mismatch
+      # there corrupts results silently rather than throwing. Linux covers SysV
+      # x86-64 and Windows covers Win64, so all three ABIs are exercised.
+      # Pinned to 8.0.x to match what DDS_Core targets.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # bazel-bin is a configuration-dependent convenience symlink, so ask Bazel
+      # for it rather than hardcoding a path that a different --config would move.
+      - name: Test .NET binding
+        run: |
+          bazelisk build --verbose_failures //jni:dds_shared
+          export DDS_LIBRARY_PATH="$(bazelisk info bazel-bin)/jni/libdds.dylib"
+          test -f "$DDS_LIBRARY_PATH" || { echo "native library not found at $DDS_LIBRARY_PATH"; exit 1; }
+          dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
+
       # Upload test logs
       - name: Upload test logs - macOS
         if: always()
