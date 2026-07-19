@@ -339,7 +339,7 @@ git_prep_for_branches() {
   head_commit="$(git -C "$ROOT" rev-parse HEAD)"
   for i in "${!SPEC_VALS[@]}"; do
     if [[ "${SPEC_KINDS[$i]}" == "branch" ]]; then
-      ref_commit="$(git -C "$ROOT" rev-parse "${SPEC_VALS[$i]}^{commit}")"
+      ref_commit="$(git -C "$ROOT" rev-parse --verify --quiet "${SPEC_VALS[$i]}^{commit}")"
       if [[ "$ref_commit" != "$head_commit" ]]; then
         needs_switch=1
         break

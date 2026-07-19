@@ -64,6 +64,9 @@ setup_repo() {
   git_q -C "$repo" commit -q -m "other"
   git_q -C "$repo" checkout -q main
 
+  # Tag at HEAD so --branch can name the same commit without switching.
+  git_q -C "$repo" tag head-tag
+
   # Dirty tracked change on main.
   echo "dirty" >>"$repo/MODULE.bazel"
 }
@@ -86,6 +89,11 @@ pass "dirty + --branch main allowed"
 out="$(run_bench "$TMP/repo" --branch .)" || fail "dirty + --branch . exited $?"
 [[ "$out" != *"working tree not clean"* ]] || fail "dirty + --branch . wrongly rejected: $out"
 pass "dirty + --branch . allowed"
+
+# Dirty tree + tag at HEAD (same commit, peeled via ^{commit}) must succeed.
+out="$(run_bench "$TMP/repo" --branch head-tag)" || fail "dirty + --branch head-tag exited $?"
+[[ "$out" != *"working tree not clean"* ]] || fail "dirty + --branch head-tag wrongly rejected: $out"
+pass "dirty + --branch head-tag allowed"
 
 # Dirty tree + --branch other (different commit) must fail with the clean-tree error.
 set +e
