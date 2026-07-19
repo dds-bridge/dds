@@ -14,6 +14,7 @@ filegroup(
             "args_test.cpp",  # Uses GoogleTest, compiled separately
             "report_board_timings_test.cpp",  # Uses GoogleTest, compiled separately
             "parse_par_test.cpp",  # Uses GoogleTest, compiled separately
+            "dds_c_api_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -70,6 +71,29 @@ cc_test(
     local_defines = DDS_LOCAL_DEFINES,
     deps = [
         "//library/src:dds",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Exercises the pure-C shim through its own ABI, including the null guards and
+# catch-all wrappers that exist only at that boundary and would be bypassed by
+# calling the reference-taking dds_* functions directly.
+#
+# Depends on //library/src:dds explicitly, not just transitively through
+# dds_c_api: dds.cpp carries the __attribute__((constructor)) that initializes
+# static solver memory, and without a direct edge the linker drops that object
+# file — leaving TransTableS::init_tt() to dereference null on the first solve
+# after a TT-kind switch. The shipped //jni:dds_shared already depends on both.
+cc_test(
+    name = "dds_c_api_test",
+    srcs = ["dds_c_api_test.cpp"],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:dds_c_api",
         "@googletest//:gtest_main",
     ],
 )
