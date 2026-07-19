@@ -43,7 +43,8 @@ git_q() {
   git -c core.fsmonitor=false -c advice.detachedHead=false "$@"
 }
 
-setup_repo() {
+# Minimal two-branch repo at $1. Caller adds dirtiness (tracked and/or untracked).
+setup_repo_base() {
   local repo="$1"
   mkdir -p "$repo/library/tests" "$repo/hands"
   # Minimal DDS root markers that benchmark.sh requires.
@@ -66,9 +67,6 @@ setup_repo() {
 
   # Tag at HEAD so --branch can name the same commit without switching.
   git_q -C "$repo" tag head-tag
-
-  # Dirty tracked change on main.
-  echo "dirty" >>"$repo/MODULE.bazel"
 }
 
 run_bench() {
@@ -78,7 +76,9 @@ run_bench() {
   ( cd "$repo" && DRY_RUN=1 bash "$BENCHMARK" "$@" ) 2>&1
 }
 
-setup_repo "$TMP/repo"
+# --- Tracked dirty tree ---
+setup_repo_base "$TMP/repo"
+echo "dirty" >>"$TMP/repo/MODULE.bazel"
 
 # Dirty tree + --branch for the current branch (by name) must succeed: no switch.
 out="$(run_bench "$TMP/repo" --branch main)" || fail "dirty + --branch main exited $?"
@@ -112,5 +112,26 @@ set -e
 [[ "$rc" -ne 0 ]] || fail "HEAD^{tree} should fail"
 [[ "$out" == *"unknown git ref"* ]] || fail "HEAD^{tree} missing unknown-ref error: $out"
 pass "non-commit revspec rejected"
+
+# --- Untracked-only dirty tree (status --porcelain --untracked-files=normal) ---
+setup_repo_base "$TMP/repo_untracked"
+echo "untracked" >"$TMP/repo_untracked/scratch.txt"
+
+# Untracked + --branch main (no switch) must succeed.
+out="$(run_bench "$TMP/repo_untracked" --branch main)" \
+  || fail "untracked + --branch main exited $?"
+[[ "$out" != *"working tree not clean"* ]] \
+  || fail "untracked + --branch main wrongly rejected: $out"
+pass "untracked + --branch main allowed"
+
+# Untracked + --branch other (switch) must fail: untracked can block checkout.
+set +e
+out="$(run_bench "$TMP/repo_untracked" --branch other 2>&1)"
+rc=$?
+set -e
+[[ "$rc" -ne 0 ]] || fail "untracked + --branch other should fail"
+[[ "$out" == *"working tree not clean"* ]] \
+  || fail "untracked + --branch other missing clean-tree error: $out"
+pass "untracked + --branch other rejected"
 
 echo "All benchmark git-prep tests passed."
