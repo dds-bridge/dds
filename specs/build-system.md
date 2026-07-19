@@ -1,7 +1,7 @@
 ---
 capability: build-system
 owners: [//, CPPVARIABLES.bzl, wasm_compat.bzl]
-last-updated: 2026-07-18
+last-updated: 2026-07-19
 ---
 
 # Build System
@@ -37,10 +37,13 @@ than re-encoding toolchain knowledge.
   the host OS). Any target that wants per-platform flags does so through the
   `select()`s in `CPPVARIABLES.bzl` — it should not hand-roll `-O3`/`/O2`.
 - **Optimised builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
-  `-Wall -Wpedantic -Werror`; Windows uses `/O2 /W4 /WX /permissive-`. macOS and
-  WASM add LTO. C++20 is the baseline (`--cxxopt=-std=c++20` in `.bazelrc` for
-  macOS/Linux; Windows `/std:c++20` in `DDS_CPPOPTS`). Treat `-Werror` as a
-  standing invariant: warnings break the build.
+  `-Wall -Wpedantic -Werror`; Windows uses `/O2 /W4 /WX /permissive-`. macOS adds
+  LTO at both compile and link (`-flto=thin`); WASM adds `-flto` at compile time
+  only — link-time LTO is not currently possible under the pinned hermetic emsdk
+  toolchain (see [wasm-emscripten](wasm-emscripten.md)). C++20 is the baseline
+  (`--cxxopt=-std=c++20` in `.bazelrc` for macOS/Linux; Windows `/std:c++20` in
+  `DDS_CPPOPTS`). Treat `-Werror` as a standing invariant: warnings break the
+  build.
 - **Feature flags are `--define`-driven `config_setting`s**, surfaced through
   `DDS_LOCAL_DEFINES` / `DDS_SCHEDULER_DEFINE`:
   | config setting | `--define` | preprocessor define | capability |

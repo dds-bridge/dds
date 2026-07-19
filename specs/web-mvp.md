@@ -1,7 +1,7 @@
 ---
 capability: web-mvp
 owners: [web]
-last-updated: 2026-07-18
+last-updated: 2026-07-19
 ---
 
 # Web MVP
@@ -53,8 +53,19 @@ a full application.
   browser/`file://` safety on `//web:dds_mvp_wasm` only — not the example WASM
   CLIs. If an emsdk upgrade moves that line, update the regex and the note in
   `docs/wasm_build.md`.
+- **The module holds one session-scoped `SolverContext` for its lifetime.**
+  `dds_mvp_calc_table` (`web/dds_mvp_wasm.cpp`) constructs a function-local
+  `static SolverContext` lazily on first call and reuses it — including its
+  transposition table — for every subsequent call in that module instance,
+  calling `reset_for_solve()` between deals to recycle the TT memory pool
+  without freeing the underlying allocation. This mirrors a WASM module
+  instance's own lifetime (one `WebAssembly.Memory`, static constructors run
+  once) instead of allocating a fresh [solver-context](solver-context.md) per
+  call. Because the context is shared, it is **not safe for concurrent
+  solves** — a future move to Web Workers would need one context per worker.
 - **The MVP's WASM inherits the single-thread assumption** of
-  [wasm-emscripten](wasm-emscripten.md); results come from the same [dds-public-api](dds-public-api.md) core.
+  [wasm-emscripten](wasm-emscripten.md) — which is what makes sharing that
+  single context safe today; results come from the same [dds-public-api](dds-public-api.md) core.
 
 ## Key entry points
 
