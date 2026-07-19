@@ -50,6 +50,7 @@ public final class DdsEmbeddedSmokeTest {
             setRemain(deal, 3, 3, FULL_SUIT);
 
             MemorySegment ctx = dds.createSolverContext();
+            check(!ctx.equals(MemorySegment.NULL), "createSolverContext returned NULL");
             try {
                 MemorySegment fut = arena.allocate(Dds.FUTURE_TRICKS);
                 int rc = dds.solveBoard(ctx, deal, -1, 1, 1, fut);
