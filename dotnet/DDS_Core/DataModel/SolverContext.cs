@@ -17,7 +17,11 @@ public sealed class SolverContext : IDisposable
 
         public SolverContext(SolverConfig config)
         {
-            Handle = DdsNative.dds_create_solvercontext(config)
+            // Unpacked into scalars: the native shim is pointer-only and
+            // POD-only, so SolverConfig never crosses the ABI boundary.
+            Handle = DdsNative.dds_create_solvercontext( (int) config.TTKind
+                                                       , config.DefaultMemoryMB
+                                                       , config.MaximumMemoryMB)
                   ?? throw new InvalidOperationException("Failed to create SolverContext.");
         }
 
