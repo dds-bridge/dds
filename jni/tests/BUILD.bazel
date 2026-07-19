@@ -7,6 +7,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # dumper, so the nm-based check is scoped to Unix hosts.
 py_test(
     name = "export_set_test",
+    size = "small",
     srcs = ["export_set_test.py"],
     args = [
         "$(location //jni:dds_shared)",
@@ -29,6 +30,7 @@ py_test(
 # symbol set out) — independent of the linked library.
 py_test(
     name = "gen_export_lists_test",
+    size = "small",
     srcs = ["gen_export_lists_test.py"],
     deps = ["//jni:gen_export_lists_lib"],
 )
@@ -39,6 +41,7 @@ py_test(
 # compatibility, so it is skipped on unsupported host os/cpu.
 py_test(
     name = "jar_self_contained_test",
+    size = "small",
     srcs = ["jar_self_contained_test.py"],
     args = ["$(location //jni:dds_ffm_dist)"],
     data = ["//jni:dds_ffm_dist"],

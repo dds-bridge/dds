@@ -153,6 +153,7 @@ java_export(
 # access is enabled for the FFM downcalls. Off Windows (nm-free / dll path).
 java_test(
     name = "dds_ffm_smoke_test",
+    size = "small",
     srcs = ["java/org/dds/ffm/DdsSmokeTest.java"],
     main_class = "org.dds.ffm.DdsSmokeTest",
     use_testrunner = False,
@@ -173,6 +174,7 @@ java_test(
 # solves the known deal. Off Windows like the other jni tests.
 java_test(
     name = "dds_ffm_embedded_smoke_test",
+    size = "small",
     srcs = ["java/org/dds/ffm/DdsEmbeddedSmokeTest.java"],
     main_class = "org.dds.ffm.DdsEmbeddedSmokeTest",
     use_testrunner = False,
