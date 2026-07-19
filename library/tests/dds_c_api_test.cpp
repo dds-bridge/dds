@@ -182,22 +182,12 @@ TEST(DdsCApiResets, ResetsLeaveContextUsable)
     dds_c_destroy_solvercontext(ctx);
 }
 
-// Pre-existing library bug, NOT a shim defect — disabled so it documents the
-// fault without breaking the build.
-//
-// Sequence: solve, switch the TT kind to Small, clear_tt(), then
-// reset_for_solve(). clear_tt() routes to TransTableS::return_all_memory(),
-// which releases the pools; reset_for_solve() then calls
-// reset_memory(ResetReason::FreeMemory) -> init_tt(), which dereferences the
-// now-null pw_/pl_ pools and segfaults.
-//
-// Verified reachable through the reference-taking C++ API
-// (dds_configure_tt / dds_clear_tt / dds_reset_for_solve) with no dds_c_*
-// call involved, so it predates this shim and affects the existing Windows
-// .NET path too. The Large TT (the default) is unaffected.
-//
-// Re-enable once TransTableS reallocates its pools on reset.
-TEST(DdsCApiTtConfiguration, DISABLED_SmallTtClearThenResetForSolve)
+// Regression: on a Small TT, clear_tt() returns the pools and a following
+// reset_for_solve() used to re-init over them, dereferencing null in
+// TransTableS::init_tt(). The Large TT (the default) was never affected
+// because TransTableL::reset_memory() already guarded the equivalent case.
+// Reachable from the public API, so this covers the C++ and .NET paths too.
+TEST(DdsCApiTtConfiguration, SmallTtClearThenResetForSolve)
 {
     DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
     ASSERT_NE(ctx, nullptr);
@@ -205,7 +195,7 @@ TEST(DdsCApiTtConfiguration, DISABLED_SmallTtClearThenResetForSolve)
     ASSERT_EQ(SolveReference(ctx), kExpectedTricks);
     dds_c_configure_tt(ctx, 0 /* Small */, 1, 2);
     dds_c_clear_tt(ctx);
-    dds_c_reset_for_solve(ctx);   // <-- segfaults today
+    dds_c_reset_for_solve(ctx);
     EXPECT_EQ(SolveReference(ctx), kExpectedTricks);
 
     dds_c_destroy_solvercontext(ctx);

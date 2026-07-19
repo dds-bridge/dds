@@ -343,6 +343,15 @@ auto TransTableS::init_tt() -> void
 auto TransTableS::reset_memory(
   [[maybe_unused]] const ResetReason reason) -> void
 {
+  // Nothing to reset when the pools have been returned: return_all_memory()
+  // frees pw_/pn_/pl_ and clears tt_in_use_, and make_tt() reallocates lazily
+  // before the next lookup. Without this guard init_tt() below dereferences
+  // the freed pools (pw_[0]) and segfaults — reachable from the public API as
+  // configure_tt(Small) -> clear_tt() -> reset_for_solve(). TransTableL's
+  // reset_memory() already guards the equivalent case with `pool_ == nullptr`.
+  if (!tt_in_use_)
+    return;
+
   wipe();
 
   init_tt();
