@@ -325,8 +325,11 @@ git_prep_for_branches() {
     fi
   done
   for i in "${!SPEC_VALS[@]}"; do
+    # Require a commit-ish: plain rev-parse accepts trees/blobs, but later
+    # ^{commit} peels (and checkout) need a commit.
     if [[ "${SPEC_KINDS[$i]}" == "branch" ]] \
-       && ! git -C "$ROOT" rev-parse --verify --quiet "${SPEC_VALS[$i]}" >/dev/null; then
+       && ! git -C "$ROOT" rev-parse --verify --quiet \
+            "${SPEC_VALS[$i]}^{commit}" >/dev/null; then
       echo "error: --branch: unknown git ref '${SPEC_VALS[$i]}'" >&2
       exit 1
     fi

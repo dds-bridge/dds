@@ -104,4 +104,13 @@ set -e
 [[ "$out" == *"working tree not clean"* ]] || fail "dirty + --branch other missing clean-tree error: $out"
 pass "dirty + --branch other rejected"
 
+# Non-commit revspec must fail at validation with a clear error (not a later ^{commit} crash).
+set +e
+out="$(run_bench "$TMP/repo" --branch 'HEAD^{tree}' 2>&1)"
+rc=$?
+set -e
+[[ "$rc" -ne 0 ]] || fail "HEAD^{tree} should fail"
+[[ "$out" == *"unknown git ref"* ]] || fail "HEAD^{tree} missing unknown-ref error: $out"
+pass "non-commit revspec rejected"
+
 echo "All benchmark git-prep tests passed."
