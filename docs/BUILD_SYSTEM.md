@@ -36,14 +36,20 @@ bazelisk mod deps --lockfile_mode=update
 Do not hand-edit the lockfile. For merge conflicts, restore it and regenerate
 after resolving `MODULE.bazel`, or use Bazel's lockfile merge driver
 (`.gitattributes` already declares `merge=bazel-lockfile-merge`). Register the
-driver once per machine (requires `jq`):
+driver once per machine (requires `jq` 1.5+). Download the merge script to a
+file (do not embed it in git config) and pin the URL to the Bazel version in
+`.bazelversion`; re-download when you bump that pin:
 
 ```bash
-jq_script=$(curl -fsSL https://raw.githubusercontent.com/bazelbuild/bazel/master/scripts/bazel-lockfile-merge.jq)
+mkdir -p "${HOME}/.local/share/bazel"
+curl -fsSL \
+  "https://raw.githubusercontent.com/bazelbuild/bazel/9.1.0/scripts/bazel-lockfile-merge.jq" \
+  -o "${HOME}/.local/share/bazel/bazel-lockfile-merge.jq"
+# Optionally inspect: less "${HOME}/.local/share/bazel/bazel-lockfile-merge.jq"
 git config --global merge.bazel-lockfile-merge.name \
   "Merge driver for the Bazel lockfile (MODULE.bazel.lock)"
 git config --global merge.bazel-lockfile-merge.driver \
-  "jq -s '${jq_script}' -- %O %A %B > %A.jq_tmp && mv %A.jq_tmp %A"
+  "jq -s -f ${HOME}/.local/share/bazel/bazel-lockfile-merge.jq -- %O %A %B > %A.jq_tmp && mv %A.jq_tmp %A"
 ```
 
 ### macOS SDK and Runtime Compatibility
