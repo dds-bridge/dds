@@ -200,8 +200,18 @@ auto SolverContext::clear_tt() const -> void
 #ifdef DDS_UTILITIES_LOG
   utilities().log_append("tt:clear");
 #endif
-  if (auto* tt = search_.maybe_trans_table())
-    tt->return_all_memory();
+  // Dispose the instance rather than calling return_all_memory() on it. Both
+  // free the pools — the TT destructor returns all memory — but returning the
+  // memory while keeping the object leaves a husk whose pool pointers dangle,
+  // and SearchContext::trans_table() hands that husk straight back because it
+  // only checks whether tt_ is non-null. The next lookup then reads freed
+  // memory (ASan: heap-use-after-free in TransTable{L,S}::lookup).
+  //
+  // Disposing instead makes the documented "recreates lazily on demand"
+  // behaviour real: tt_ becomes null, so the next trans_table() rebuilds from
+  // the owner's config. Nothing is lost, because the kind and memory limits
+  // live in SolverContext::cfg_, not in the TT instance.
+  const_cast<SolverContext*>(this)->search_.dispose_trans_table();
 }
 
 auto SolverContext::resize_tt(int defMB, int maxMB) const -> void

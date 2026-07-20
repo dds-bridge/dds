@@ -168,6 +168,23 @@ TEST(DdsCApiTtConfiguration, ContextRemainsUsableAfterReconfiguration)
     dds_c_destroy_solvercontext(ctx);
 }
 
+// Regression: clear_tt() used to return the TT's memory while keeping the
+// instance, so the next lookup read freed pools (ASan: heap-use-after-free in
+// TransTableL::lookup_suit). This is the default-configuration path — no TT
+// kind switch involved — and is reachable from every binding as
+// clear_tt() followed by a solve.
+TEST(DdsCApiTtConfiguration, ClearTtThenSolveOnDefaultTt)
+{
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    ASSERT_EQ(SolveReference(ctx), kExpectedTricks);
+    dds_c_clear_tt(ctx);
+    EXPECT_EQ(SolveReference(ctx), kExpectedTricks);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
 TEST(DdsCApiResets, ResetsLeaveContextUsable)
 {
     DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();

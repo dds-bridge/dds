@@ -216,9 +216,14 @@ public:
    */
   auto reset_best_moves_lite() const -> void;
   /**
-   * @brief Return all TT memory to the system without destroying the TT.
+   * @brief Return all TT memory to the system.
+   *
+   * Disposes the TT instance; the configured kind and memory limits persist on
+   * the context, so the next use recreates an empty table from them. Keeping a
+   * memory-less instance alive instead would leave dangling pool pointers for
+   * the next lookup to read.
    */
-  auto clear_tt() const -> void;         // Calls ReturnAllMemory()
+  auto clear_tt() const -> void;
   /**
    * @brief Resize TT memory defaults and limits in-place if TT exists.
    */
