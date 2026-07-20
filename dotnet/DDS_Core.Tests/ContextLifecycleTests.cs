@@ -25,6 +25,21 @@ public class ContextLifecycleTests
         Assert.Equal(TestDeals.ExpectedTricks, fut.Score[0]);
     }
 
+    /// <summary>
+    /// Failures must throw at the public surface in every build configuration,
+    /// not only in DEBUG. `solutions = 4` is out of range and the solver returns
+    /// RETURN_SOLNS_WRONG_HI (-9); if ThrowIfError is ever made conditional
+    /// again, this test fails in Release.
+    /// </summary>
+    [Fact]
+    public void SolveBoard_WithInvalidSolutions_Throws()
+    {
+        using var ctx = new SolverContext();
+
+        Assert.Throws<InvalidOperationException>(
+            () => ctx.SolveBoard(TestDeals.Reference(), -1, 4, 1, out FutureTricks _));
+    }
+
     [Fact]
     public void TtReconfiguration_LeavesContextUsable()
     {

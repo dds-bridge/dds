@@ -61,7 +61,10 @@ the C++ API.
   context per thread, as with every binding (see
   [solver-context](solver-context.md)).
 - **Integer status returns.** Entry points return `RETURN_*` codes as elsewhere
-  in the API; the wrapper converts failures to exceptions at its public surface.
+  in the API; the wrapper converts failures to exceptions at its public surface,
+  in every build configuration. The check must not be made conditional on
+  `DEBUG` — that silently downgrades Release consumers to unchecked return
+  codes, which is the opposite of what this bullet promises.
 - **All three ABIs are covered by CI.** The managed tests run on Linux (SysV
   x86-64), Windows (Win64), and macOS (AArch64), each against the Bazel-built
   shared library located via `bazel info bazel-bin`. Windows matters most: it is

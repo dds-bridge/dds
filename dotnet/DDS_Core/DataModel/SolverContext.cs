@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using DDS_Core.Helpers;
+﻿using DDS_Core.Helpers;
 using DDS_Core.Native;
 
 namespace DDS_Core;
@@ -141,7 +140,11 @@ public sealed class SolverContext : IDisposable
     #endregion
 
     #region private methods
-        [Conditional("DEBUG")]
+        // Deliberately not [Conditional("DEBUG")]: that elided every call site in
+        // Release, so the configuration consumers actually ship returned the raw
+        // RETURN_* code and never threw, contradicting the documented contract in
+        // specs/dotnet-binding.md. The check is one integer compare on a call that
+        // has just run a search.
         private static void ThrowIfError(int result, string functionName)
         {
             if (result != (int)SolveBoardResult.NoFault)
