@@ -10,18 +10,35 @@ public sealed class SolverContext : IDisposable
     #region Constructors and destructors
         public SolverContext()
         {
-            Handle = DdsNative.dds_create_solvercontext_default()
-                  ?? throw new InvalidOperationException("Failed to create SolverContext.");
+            Handle = Validated(DdsNative.dds_create_solvercontext_default());
         }
 
         public SolverContext(SolverConfig config)
         {
             // Unpacked into scalars: the native shim is pointer-only and
             // POD-only, so SolverConfig never crosses the ABI boundary.
-            Handle = DdsNative.dds_create_solvercontext( (int) config.TTKind
-                                                       , config.DefaultMemoryMB
-                                                       , config.MaximumMemoryMB)
-                  ?? throw new InvalidOperationException("Failed to create SolverContext.");
+            Handle = Validated(DdsNative.dds_create_solvercontext( (int) config.TTKind
+                                                                 , config.DefaultMemoryMB
+                                                                 , config.MaximumMemoryMB));
+        }
+
+        /// <summary>
+        /// Rejects a failed native creation. The shim returns NULL on failure,
+        /// but a P/Invoke returning a SafeHandle-derived type never yields null:
+        /// the marshaller constructs an instance and stores whatever pointer came
+        /// back, so failure surfaces as IsInvalid, not as a null reference. A
+        /// `?? throw` here would never fire, leaving every later call to pass
+        /// IntPtr.Zero into the shim and quietly collect RETURN_UNKNOWN_FAULT.
+        /// </summary>
+        private static SolverContextHandle Validated(SolverContextHandle handle)
+        {
+            if (handle is null || handle.IsInvalid)
+            {
+                handle?.Dispose();
+                throw new InvalidOperationException("Failed to create SolverContext.");
+            }
+
+            return handle;
         }
 
         public void Dispose()

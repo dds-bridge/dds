@@ -26,6 +26,25 @@ public class ContextLifecycleTests
     }
 
     /// <summary>
+    /// A successfully created context must hold a valid native handle. The
+    /// creation guard cannot test the reference for null — the SafeHandle
+    /// marshaller never returns one — so it tests IsInvalid, and this pins that
+    /// the successful path actually produces a live pointer rather than
+    /// IntPtr.Zero silently sailing through.
+    /// </summary>
+    [Theory]
+    [InlineData(TTKind.Small)]
+    [InlineData(TTKind.Large)]
+    public void Construction_YieldsValidHandle(TTKind kind)
+    {
+        using var fromConfig = new SolverContext(new SolverConfig(kind, 0, 0));
+        Assert.False(fromConfig.Handle.IsInvalid);
+
+        using var fromDefault = new SolverContext();
+        Assert.False(fromDefault.Handle.IsInvalid);
+    }
+
+    /// <summary>
     /// Failures must throw at the public surface in every build configuration,
     /// not only in DEBUG. `solutions = 4` is out of range and the solver returns
     /// RETURN_SOLNS_WRONG_HI (-9); if ThrowIfError is ever made conditional
