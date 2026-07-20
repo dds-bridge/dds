@@ -58,8 +58,11 @@ TEST(TransTableSMemoryTest, ResetAfterReturnAllMemoryIsInert) {
     tt.init(handLookup);
     tt.reset_memory(ResetReason::NewDeal);
 
-    unsigned short aggrTarget[DDS_SUITS];
-    CreateTestAggrTarget(aggrTarget);
+    // aggr_target entries index aggp_ (8192 = 2^13 slots), so each must be a
+    // 13-bit rank mask; a wider value reads past the array. An all-zero
+    // hand_dist matches the tree root init_tt() rebuilt, so this reaches the
+    // aggp_ indexing and the pos_search_point_ null check on the rebuilt table.
+    unsigned short aggrTarget[DDS_SUITS] = {0, 0, 0, 0};
     int hand_dist[4] = {0, 0, 0, 0};
     bool lowerFlag = false;
 
