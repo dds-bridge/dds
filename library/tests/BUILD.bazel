@@ -79,11 +79,12 @@ cc_test(
 # catch-all wrappers that exist only at that boundary and would be bypassed by
 # calling the reference-taking dds_* functions directly.
 #
-# Depends on //library/src:dds explicitly, not just transitively through
-# dds_c_api: dds.cpp carries the __attribute__((constructor)) that initializes
-# static solver memory, and without a direct edge the linker drops that object
-# file — leaving TransTableS::init_tt() to dereference null on the first solve
-# after a TT-kind switch. The shipped //jni:dds_shared already depends on both.
+# //library/src:dds is listed explicitly for readability; //library/src/api:dds_c_api
+# already depends on it. The test needs no static-memory initialization:
+# SolverContext(SolverConfig) allocates its own ThreadData, so every entry point
+# here is driven from context-owned state rather than InitializeStaticMemory().
+# A test that does need it should call InitializeStaticMemory() in a fixture, as
+# library/tests/system/context_tt_facade_test.cpp does.
 cc_test(
     name = "dds_c_api_test",
     srcs = ["dds_c_api_test.cpp"],
