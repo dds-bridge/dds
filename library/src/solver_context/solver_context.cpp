@@ -211,7 +211,7 @@ auto SolverContext::clear_tt() const -> void
   // behaviour real: tt_ becomes null, so the next trans_table() rebuilds from
   // the owner's config. Nothing is lost, because the kind and memory limits
   // live in SolverContext::cfg_, not in the TT instance.
-  const_cast<SolverContext*>(this)->search_.dispose_trans_table();
+  dispose_trans_table();
 }
 
 auto SolverContext::resize_tt(int defMB, int maxMB) const -> void
