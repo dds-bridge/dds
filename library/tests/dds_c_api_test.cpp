@@ -199,11 +199,11 @@ TEST(DdsCApiResets, ResetsLeaveContextUsable)
     dds_c_destroy_solvercontext(ctx);
 }
 
-// Regression: on a Small TT, clear_tt() returns the pools and a following
-// reset_for_solve() used to re-init over them, dereferencing null in
-// TransTableS::init_tt(). The Large TT (the default) was never affected
-// because TransTableL::reset_memory() already guarded the equivalent case.
-// Reachable from the public API, so this covers the C++ and .NET paths too.
+// A Small-TT context survives clear_tt() followed by reset_for_solve() and
+// still solves. clear_tt() disposes the TT, so reset_for_solve() finds no
+// table and the following solve rebuilds one lazily from the context's config.
+// The TransTableS::reset_memory() guard is not on this path — it is covered
+// directly by //library/tests/trans_table:trans_table.
 TEST(DdsCApiTtConfiguration, SmallTtClearThenResetForSolve)
 {
     DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();

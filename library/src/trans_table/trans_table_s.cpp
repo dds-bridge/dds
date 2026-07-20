@@ -346,9 +346,12 @@ auto TransTableS::reset_memory(
   // Nothing to reset when the pools have been returned: return_all_memory()
   // frees pw_/pn_/pl_ and clears tt_in_use_, and make_tt() reallocates lazily
   // before the next lookup. Without this guard init_tt() below dereferences
-  // the freed pools (pw_[0]) and segfaults — reachable from the public API as
-  // configure_tt(Small) -> clear_tt() -> reset_for_solve(). TransTableL's
-  // reset_memory() already guards the equivalent case with `pool_ == nullptr`.
+  // the freed pools (pw_[0]) and segfaults. TransTableL's reset_memory()
+  // already guards the equivalent case with `pool_ == nullptr`.
+  //
+  // Defensive: SolverContext::clear_tt() disposes the TT instance rather than
+  // returning its memory, so no public-API sequence reaches this today. It is
+  // covered directly by TransTableSMemoryTest.ResetAfterReturnAllMemoryIsInert.
   if (!tt_in_use_)
     return;
 

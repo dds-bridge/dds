@@ -4,7 +4,7 @@
 // Include DDS types first
 #include <api/dll.h>
 
-// No TransTable dependencies needed in this file; remove legacy forward declarations.
+#include <trans_table/trans_table_s.hpp>
 
 namespace dds_test {
 
@@ -31,6 +31,40 @@ static void CreateTestWinRanks(unsigned short win_ranks[DDS_SUITS]) {
     win_ranks[1] = 0x6666; // Hearts
     win_ranks[2] = 0x7777; // Diamonds  
     win_ranks[3] = 0x8888; // Clubs
+}
+
+// Regression: reset_memory() after return_all_memory() must be inert.
+// return_all_memory() frees pw_/pn_/pl_ and clears tt_in_use_; without the
+// guard in TransTableS::reset_memory(), init_tt() dereferences the freed pools
+// (pw_[0]) and segfaults. TransTableL::reset_memory() already guards the
+// equivalent case with `pool_ == nullptr`.
+TEST(TransTableSMemoryTest, ResetAfterReturnAllMemoryIsInert) {
+    TransTableS tt;
+
+    tt.set_memory_maximum(1);
+    tt.make_tt();
+    tt.return_all_memory();
+
+    // The guard under test. Without it this call segfaults: init_tt()
+    // dereferences pw_[0], which return_all_memory() has already freed.
+    // Reaching this line at all is the regression assertion.
+    tt.reset_memory(ResetReason::FreeMemory);
+
+    // The table is usable again once the pools are reallocated.
+    tt.make_tt();
+
+    int handLookup[15][15];
+    CreateBasicHandLookup(handLookup);
+    tt.init(handLookup);
+    tt.reset_memory(ResetReason::NewDeal);
+
+    unsigned short aggrTarget[DDS_SUITS];
+    CreateTestAggrTarget(aggrTarget);
+    int hand_dist[4] = {0, 0, 0, 0};
+    bool lowerFlag = false;
+
+    // Nothing was added, so the rebuilt table must miss rather than crash.
+    EXPECT_EQ(tt.lookup(1, 0, aggrTarget, hand_dist, 0, lowerFlag), nullptr);
 }
 
 // Test that verifies DDS constants are available

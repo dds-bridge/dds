@@ -53,14 +53,15 @@ public class ContextLifecycleTests
     }
 
     /// <summary>
-    /// Regression for the Small-TT crash fixed alongside this binding work:
-    /// ClearTT() released the transposition-table pools and a following
-    /// ResetForSolve() re-initialised over them, faulting inside
-    /// TransTableS::init_tt(). Reachable from managed code exactly as written
-    /// here, so this is the .NET-side guard for that fix.
+    /// A Small-TT context survives ClearTT() followed by ResetForSolve() and
+    /// still solves. ClearTT() disposes the transposition table, so the
+    /// following solve rebuilds one lazily from the context's configuration.
+    /// This exercises the managed TT-lifecycle path; the native
+    /// TransTableS::reset_memory() guard is covered by
+    /// //library/tests/trans_table:trans_table.
     /// </summary>
     [Fact]
-    public void SmallTt_ClearThenResetForSolve_DoesNotCrash()
+    public void SmallTt_ClearThenResetForSolve_StillSolves()
     {
         using var ctx = new SolverContext();
         ctx.SolveBoard(TestDeals.Reference(), -1, 1, 1, out FutureTricks _);
