@@ -175,8 +175,8 @@ public:
   //                               tt->reset_memory(FreeMemory) when a TT exists;
   //                               preserves the TT allocation for reuse.
   //     reset_best_moves_lite() — clears only best-move ranks and updates memUsed.
-  //     clear_tt()              — returns all TT memory to the system; preserves
-  //                               future config and recreates lazily on demand.
+  //     clear_tt()              — disposes the TT instance; preserves future
+  //                               config and recreates lazily on demand.
   //     dispose_trans_table()  — destroys the owned TT immediately.
   // - Diagnostics: When built with DDS_UTILITIES_LOG / DDS_UTILITIES_STATS, TT
   //   lifecycle events append compact log entries and bump small counters.
