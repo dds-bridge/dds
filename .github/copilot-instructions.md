@@ -12,7 +12,7 @@
 
 **Current State**: Work in progress towards version 3.0. The project has been refactored from the legacy 2.9.0 codebase to use modern C++ features, Bazel build system, and modular architecture.
 
-**Languages & Tools**: C++20, Bazel 7.x, GoogleTest for testing
+**Languages & Tools**: C++20, Bazel (version pinned in `.bazelversion`), GoogleTest for testing
 
 **Repository Size**: ~50 C++ source files in library/src, ~20 test files, several examples
 

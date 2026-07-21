@@ -8,7 +8,9 @@ The DDS (Double Dummy Solver) library provides a Python interface for analyzing 
 
 ### Prerequisites
 - Python 3.10+ (tested with 3.10, 3.11, 3.12, 3.14)
-- Bazel 7.x
+- Bazel as pinned in [`.bazelversion`](../.bazelversion) (use
+  [bazelisk](https://github.com/bazelbuild/bazelisk), which picks it up
+  automatically)
 - C++ compiler (clang 15+ or GCC 11+)
 
 ### Build Instructions

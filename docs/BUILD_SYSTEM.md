@@ -42,8 +42,9 @@ file (do not embed it in git config) and pin the URL to the Bazel version in
 
 ```bash
 mkdir -p "${HOME}/.local/share/bazel"
+# Run from the repo root so .bazelversion supplies the pin.
 curl -fsSL \
-  "https://raw.githubusercontent.com/bazelbuild/bazel/9.1.0/scripts/bazel-lockfile-merge.jq" \
+  "https://raw.githubusercontent.com/bazelbuild/bazel/$(cat .bazelversion)/scripts/bazel-lockfile-merge.jq" \
   -o "${HOME}/.local/share/bazel/bazel-lockfile-merge.jq"
 # Optionally inspect: less "${HOME}/.local/share/bazel/bazel-lockfile-merge.jq"
 git config --global merge.bazel-lockfile-merge.name \
