@@ -80,7 +80,11 @@ jobs:
             Write-Host "native library not found at $env:DDS_LIBRARY_PATH"
             exit 1
           }
+          # Both configurations: ThrowIfError is unconditional, so a regression to
+          # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
           dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       # Upload test logs

@@ -80,10 +80,13 @@ jobs:
       # for it rather than hardcoding a path that a different --config would move.
       - name: Test .NET binding
         run: |
-            bazel build --verbose_failures //jni:dds_shared
-            export DDS_LIBRARY_PATH="$(bazel info bazel-bin)/jni/libdds.so"
-            test -f "$DDS_LIBRARY_PATH" || { echo "native library not found at $DDS_LIBRARY_PATH"; exit 1; }
-            dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
+          bazel build --verbose_failures //jni:dds_shared
+          export DDS_LIBRARY_PATH="$(bazel info bazel-bin)/jni/libdds.so"
+          test -f "$DDS_LIBRARY_PATH" || { echo "native library not found at $DDS_LIBRARY_PATH"; exit 1; }
+          # Both configurations: ThrowIfError is unconditional, so a regression to
+          # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
+          dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
+          dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
 
       # 11 Upload test logs
       - name: Upload test logs - Linux
