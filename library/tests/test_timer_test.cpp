@@ -5,6 +5,7 @@
 #include <ctime>
 #include <gtest/gtest.h>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -31,12 +32,20 @@ long wrapped_i32_clock_delta_to_ms(const clock_t delta)
   return static_cast<long>(prod / static_cast<double>(CLOCKS_PER_SEC));
 }
 
+/// Smallest tick count where `1000 * ticks` no longer fits in int32.
+/// Independent of CLOCKS_PER_SEC (1000 on Windows, 1e6 on POSIX/wasm).
+clock_t ticks_that_overflow_i32_multiply()
+{
+  constexpr auto kMaxI32 = std::numeric_limits<std::int32_t>::max();
+  return static_cast<clock_t>(
+    static_cast<std::int64_t>(kMaxI32) / 1000 + 1);
+}
+
 }  // namespace
 
 TEST(TestTimer, ClockDeltaToMsAvoids32BitOverflowForMultiSecondBatches)
 {
-  // ~3.478s of CLOCKS_PER_SEC ticks: integer `1000 * ticks` overflows int32.
-  const clock_t ticks = static_cast<clock_t>(3.478 * CLOCKS_PER_SEC);
+  const clock_t ticks = ticks_that_overflow_i32_multiply();
   const long expected_ms = static_cast<long>(
     (1000.0 * static_cast<double>(ticks)) /
     static_cast<double>(CLOCKS_PER_SEC));
