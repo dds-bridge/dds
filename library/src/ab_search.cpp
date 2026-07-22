@@ -246,17 +246,17 @@ static bool ab_search_0_ctx(
     }
   }
 
-  if (posPoint->tricks_max >= target) [[likely]]
+  if (posPoint->tricks_max >= target)
   {
     AB_COUNT(AB_TARGET_REACHED, true, depth);
     return true;
   }
-  else if (posPoint->tricks_max + tricks + 1 < target) [[unlikely]]
+  else if (posPoint->tricks_max + tricks + 1 < target)
   {
     AB_COUNT(AB_TARGET_REACHED, false, depth);
     return false;
   }
-  else if (depth == 0) [[unlikely]] /* Maximum depth? */
+  else if (depth == 0) /* Maximum depth? */
   {
     TIMER_START(TIMER_NO_EVALUATE, depth);
     EvalType evalData = evaluate_with_context(posPoint, trump, ctx);
@@ -279,7 +279,7 @@ static bool ab_search_0_ctx(
 
   if (ctx.search().node_type_store(hand) == MAXNODE)
   {
-    if (res) [[unlikely]]
+    if (res)
     {
       AB_COUNT(AB_QUICKTRICKS, 1, depth);
       return (qtricks == 0 ? false : true);
@@ -289,7 +289,7 @@ static bool ab_search_0_ctx(
   res = LaterTricksMIN(* posPoint, hand, depth, target, trump, ctx);
   TIMER_END(TIMER_NO_LT, depth);
 
-    if (! res) [[unlikely]]
+    if (! res)
     {
       AB_COUNT(AB_LATERTRICKS, true, depth);
       return false;
@@ -297,7 +297,7 @@ static bool ab_search_0_ctx(
   }
   else
   {
-    if (res) [[unlikely]]
+    if (res)
     {
       AB_COUNT(AB_QUICKTRICKS, false, depth);
       return (qtricks == 0 ? true : false);
@@ -307,7 +307,7 @@ static bool ab_search_0_ctx(
   res = LaterTricksMAX(* posPoint, hand, depth, target, trump, ctx);
   TIMER_END(TIMER_NO_LT, depth);
 
-    if (res) [[unlikely]]
+    if (res)
     {
       AB_COUNT(AB_LATERTRICKS, false, depth);
       return true;
@@ -507,7 +507,7 @@ static bool ab_search_1_ctx(
   TIMER_START(TIMER_NO_QT, depth);
   int res = QuickTricksSecondHand(* posPoint, hand, depth, target, trump, ctx);
   TIMER_END(TIMER_NO_QT, depth);
-  if (res) [[unlikely]]
+  if (res) 
   {
     AB_COUNT(AB_QUICKTRICKS_2ND, true, depth);
     return success;
