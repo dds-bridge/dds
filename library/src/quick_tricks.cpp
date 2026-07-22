@@ -234,9 +234,9 @@ int QuickTricks(
     int countPart = len[partner[hand]][suit];
     int opps = countLho | countRho;
 
-    if (!opps && (countPart == 0))
+    if (!opps && (countPart == 0)) [[unlikely]]
     {
-      if (countOwn == 0)
+      if (countOwn == 0) [[unlikely]]
       {
         /* Continue with next suit. */
         if ((trump != DDS_NOTRUMP) && (trump != suit))
@@ -263,7 +263,7 @@ int QuickTricks(
       /* Long tricks when only leading hand have cards in the suit. */
       if ((trump != DDS_NOTRUMP) && (trump != suit))
       {
-        if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
+        if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0)) [[unlikely]]
         {
           qtricks += countOwn;
           if (qtricks >= cutoff)
@@ -273,7 +273,7 @@ int QuickTricks(
             suit++;
           continue;
         }
-        else
+        else [[likely]]
         {
           suit++;
           if ((trump != DDS_NOTRUMP) && (suit == trump))
@@ -281,7 +281,7 @@ int QuickTricks(
           continue;
         }
       }
-      else
+      else [[likely]]
       {
         qtricks += countOwn;
         if (qtricks >= cutoff)
@@ -303,9 +303,9 @@ int QuickTricks(
         continue;
       }
     }
-    else
+    else [[likely]]
     {
-      if (!opps && (trump != DDS_NOTRUMP) && (suit == trump))
+      if (!opps && (trump != DDS_NOTRUMP) && (suit == trump)) [[unlikely]]
       {
         /* The partner but not the opponents have cards in
            the trump suit. */
@@ -328,7 +328,7 @@ int QuickTricks(
         if (sum >= cutoff)
           return sum;
       }
-      else if (!opps)
+      else if (!opps) [[unlikely]]
       {
         /* The partner but not the opponents have cards in the suit. */
         int sum = std::min(countOwn, countPart);
@@ -348,11 +348,11 @@ int QuickTricks(
 
       if (commPartner)
       {
-        if (!opps && (countOwn == 0))
+        if (!opps && (countOwn == 0)) [[unlikely]]
         {
           if ((trump != DDS_NOTRUMP) && (trump != suit))
           {
-            if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0))
+            if ((lhoTrumpRanks == 0) && (rhoTrumpRanks == 0)) [[unlikely]]
             {
               qtricks += countPart;
               tpos.win_ranks[depth][commSuit] |=
@@ -366,7 +366,7 @@ int QuickTricks(
                 suit++;
               continue;
             }
-            else
+            else [[likely]]
             {
               suit++;
               if ((trump != DDS_NOTRUMP) && (suit == trump))
@@ -374,7 +374,7 @@ int QuickTricks(
               continue;
             }
           }
-          else
+          else [[likely]]
           {
             qtricks += countPart;
             tpos.win_ranks[depth][commSuit] |=
@@ -399,9 +399,9 @@ int QuickTricks(
             continue;
           }
         }
-        else
+        else [[likely]]
         {
-          if (!opps && (trump != DDS_NOTRUMP) && (suit == trump))
+          if (!opps && (trump != DDS_NOTRUMP) && (suit == trump)) [[unlikely]]
           {
             int sum = std::max(countOwn, countPart);
             for (int s = 0; s < DDS_SUITS; s++)
@@ -423,7 +423,7 @@ int QuickTricks(
               return sum;
             }
           }
-          else if (!opps)
+          else if (!opps) [[unlikely]]
           {
             int sum = std::min(countOwn, countPart);
             if (trump == DDS_NOTRUMP)
@@ -443,7 +443,7 @@ int QuickTricks(
       }
     }
 
-    if (winner[suit].rank == 0)
+    if (winner[suit].rank == 0) [[unlikely]]
     {
       if ((trump != DDS_NOTRUMP) && (suit == trump))
       {
