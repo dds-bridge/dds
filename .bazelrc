@@ -7,6 +7,12 @@ test --test_tag_filters=-e2e
 
 common --enable_platform_specific_config
 
+# Fail (don't rewrite) when MODULE.bazel.lock is missing or stale. Keeps
+# dependency resolution reproducible and stops casual builds from polluting
+# PRs with lockfile churn. After intentional MODULE.bazel changes, refresh with:
+#   bazelisk mod deps --lockfile_mode=update
+common --lockfile_mode=error
+
 # We build nothing for Android, but rules_jvm_external (the //jni Maven jar)
 # depends on rules_android, whose android_sdk_repository extension probes
 # $ANDROID_HOME while analysing *any* target. When ANDROID_HOME is exported but
