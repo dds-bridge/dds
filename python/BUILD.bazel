@@ -1,6 +1,6 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
 load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 load("@rules_python//python:packaging.bzl", "py_wheel", "py_wheel_dist")
 
 pybind_extension(
@@ -53,6 +53,32 @@ py_library(
 py_library(
     name = "test_utils",
     srcs = ["test_utils.py"],
+)
+
+py_library(
+    name = "benchmark_lib",
+    srcs = ["tests/benchmark.py"],
+    imports = ["tests"],
+)
+
+py_binary(
+    name = "benchmark",
+    srcs = ["tests/benchmark.py"],
+    main = "tests/benchmark.py",
+    deps = [":benchmark_lib"],
+)
+
+# Unit + git-prep tests for benchmark.py (needs git on the host).
+py_test(
+    name = "benchmark_test",
+    size = "small",
+    main = "tests/benchmark_test.py",
+    srcs = ["tests/benchmark_test.py"],
+    deps = [":benchmark_lib"],
+    target_compatible_with = select({
+        "//:build_windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 py_test(
