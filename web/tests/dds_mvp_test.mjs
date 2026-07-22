@@ -304,9 +304,9 @@ test("inputIsValid rejects duplicate cards", () => {
     });
     const message = ctx.inputIsValid(hands);
     assert.match(message, /^Duplicated card/);
-    // Suit glyphs come from CSS :before on custom tags.
-    assert.match(message, /<spade-suit><\/spade-suit>A/);
-    assert.match(message, /<heart-suit><\/heart-suit>A/);
+    // Suit glyphs are real DOM text (not CSS :before) for accessibility.
+    assert.match(message, /<spade-suit>\u2660<\/spade-suit>A/);
+    assert.match(message, /<heart-suit>\u2665<\/heart-suit>A/);
     assert.doesNotMatch(message, /style=['"]color: red['"]/);
     assert.doesNotMatch(message, /&spades;|&hearts;|&diams;|&clubs;/);
 });
@@ -591,16 +591,16 @@ test("updateActionButtons displays all 52 cards in the deck status", () => {
 
     const deckStatus = document.element("deck-status").innerHTML;
     assert.equal((deckStatus.match(/data-card=/g) ?? []).length, 52);
-    assert.match(deckStatus, /<spade-suit>/);
-    assert.match(deckStatus, /<heart-suit>/);
-    assert.match(deckStatus, /<diamond-suit>/);
-    assert.match(deckStatus, /<club-suit>/);
+    assert.match(deckStatus, /<spade-suit>\u2660/);
+    assert.match(deckStatus, /<heart-suit>\u2665/);
+    assert.match(deckStatus, /<diamond-suit>\u2666/);
+    assert.match(deckStatus, /<club-suit>\u2663/);
     assert.doesNotMatch(deckStatus, /&spades;|&hearts;|&diams;|&clubs;/);
     assert.match(deckStatus, /data-card="SA"/);
     assert.match(deckStatus, /data-card="C2"/);
     assert.match(
         deckStatus,
-        /<heart-suit><span class="deck-card" data-card="HA">/
+        /<heart-suit>\u2665<span class="deck-card" data-card="HA">/
     );
     assert.doesNotMatch(
         deckStatus,

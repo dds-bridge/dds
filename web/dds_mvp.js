@@ -42,12 +42,19 @@ const DENOMINATIONS = ["C", "D", "H", "S", "N"];
 const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
 const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
 
-// Suit glyphs come from CSS :before on these custom tags (see dds_mvp.css).
+// Suit glyphs are real text in these custom tags (see dds_mvp.css for color).
 const SUIT_TAGS = {
     spades: "spade-suit",
     hearts: "heart-suit",
     diamonds: "diamond-suit",
     clubs: "club-suit"
+};
+
+const SUIT_GLYPHS = {
+    spades: "\u2660",
+    hearts: "\u2665",
+    diamonds: "\u2666",
+    clubs: "\u2663"
 };
 
 function suitLetter(suit) {
@@ -90,7 +97,7 @@ function suitTag(suit) {
 function suitSymbolHtml(suit) {
     const tag = suitTag(suit);
 
-    return "<" + tag + "></" + tag + ">";
+    return "<" + tag + ">" + SUIT_GLYPHS[suit] + "</" + tag + ">";
 }
 
 let ddsModulePromise = null;
@@ -284,7 +291,7 @@ function deckStatusHtml(hands) {
                 "\" data-card=\"" + key + "\">" + pip + "</span>";
         }).join("");
 
-        return "<" + tag + ">" + cardsHtml + "</" + tag + ">";
+        return "<" + tag + ">" + SUIT_GLYPHS[suit] + cardsHtml + "</" + tag + ">";
     }).join("");
 }
 

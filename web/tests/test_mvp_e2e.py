@@ -218,27 +218,32 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_suit_tags_draw_symbols_via_before_pseudo(self) -> None:
+    def test_suit_tags_expose_glyphs_in_dom(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
-            for tag, glyph in (
-                ("spade-suit", "♠"),
-                ("heart-suit", "♥"),
-                ("diamond-suit", "♦"),
-                ("club-suit", "♣"),
+            for tag, glyph, red in (
+                ("spade-suit", "♠", False),
+                ("heart-suit", "♥", True),
+                ("diamond-suit", "♦", True),
+                ("club-suit", "♣", False),
             ):
                 el = page.locator(f".hand-north {tag}").first
-                before = el.evaluate(
-                    """el => {
-                    const s = getComputedStyle(el, '::before');
-                    return { content: s.content, color: s.color };
-                  }"""
-                )
-                self.assertIn(glyph, before["content"].replace('"', "").replace("'", ""))
+                self.assertEqual(el.inner_text(), glyph)
                 tag_color = el.evaluate("el => getComputedStyle(el).color")
-                self.assertEqual(tag_color, "rgb(0, 0, 0)", msg=f"{tag} pip text stays black")
-                if tag in ("heart-suit", "diamond-suit"):
-                    self.assertNotEqual(before["color"], "rgb(0, 0, 0)", msg=f"{tag} glyph is red")
+                if red:
+                    self.assertNotEqual(
+                        tag_color, "rgb(0, 0, 0)", msg=f"{tag} glyph is red"
+                    )
+                else:
+                    self.assertEqual(
+                        tag_color, "rgb(0, 0, 0)", msg=f"{tag} glyph is black"
+                    )
+
+            # Deck pips are nested inside suit tags; they must stay black/gray.
+            pip_color = page.locator('#deck-status [data-card="HA"]').evaluate(
+                "el => getComputedStyle(el).color"
+            )
+            self.assertEqual(pip_color, "rgb(0, 0, 0)", msg="heart Ace pip stays black")
             self.assertEqual(errors, [])
         finally:
             page.close()
