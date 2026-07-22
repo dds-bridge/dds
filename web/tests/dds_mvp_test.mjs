@@ -634,7 +634,8 @@ test("updateActionButtons grays cards entered in any hand, including lowercase p
 
 test("updateActionButtons shows a card-count note for a hand over 13 cards", () => {
     const document = createMockDocument({
-        north_spades: "AKQJT98765432A",
+        north_spades: "AKQJT98765432",
+        north_hearts:  "A",
     });
     const ctx = loadDdsMvp(document);
 
@@ -648,11 +649,12 @@ test("updateActionButtons shows a card-count note for a hand over 13 cards", () 
 
 test("updateActionButtons hides the card-count note at the 13-card boundary", () => {
     const document = createMockDocument({
-        north_spades: "AKQJT98765432A",
+        north_spades:  "AKQJT98765432",
+        north_hearts:  "A",
     });
     const ctx = loadDdsMvp(document);
     ctx.updateActionButtons();
-    document.setValue("north_spades", "AKQJT98765432");
+    document.setValue("north_hearts", "");
 
     ctx.updateActionButtons();
 
