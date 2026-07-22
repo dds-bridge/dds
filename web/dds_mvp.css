@@ -120,7 +120,6 @@ club-suit:before {
 
 .deck-card-entered {
   color: #888;
-  opacity: 0.45;
 }
 
 /* Bold outline only when Enter would activate Double-dummy it! */
@@ -130,6 +129,5 @@ club-suit:before {
 }
 
 #double-dummy-it:disabled {
-  opacity: 0.45;
   color: #777;
 }

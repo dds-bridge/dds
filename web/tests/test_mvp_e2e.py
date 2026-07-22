@@ -185,7 +185,80 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
 
             entered_card = page.locator('#deck-status [data-card="SA"]')
             self.assertIn("deck-card-entered", entered_card.get_attribute("class"))
-            self.assertLess(float(entered_card.evaluate("el => getComputedStyle(el).opacity")), 1.0)
+            self.assertEqual(
+                float(entered_card.evaluate("el => getComputedStyle(el).opacity")),
+                1.0,
+            )
+            self.assertNotEqual(
+                entered_card.evaluate("el => getComputedStyle(el).color"),
+                "rgb(0, 0, 0)",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_deck_status_displays_all_cards_in_one_row(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            deck = page.locator("#deck-status")
+            style = deck.evaluate(
+                """el => {
+                const s = getComputedStyle(el);
+                return {
+                  display: s.display,
+                  flexWrap: s.flexWrap,
+                  overflowX: s.overflowX,
+                };
+              }"""
+            )
+            self.assertEqual(style["display"], "flex")
+            self.assertEqual(style["flexWrap"], "nowrap")
+            self.assertNotIn(style["overflowX"], ("auto", "scroll"))
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_suit_tags_draw_symbols_via_before_pseudo(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            for tag, glyph in (
+                ("spade-suit", "♠"),
+                ("heart-suit", "♥"),
+                ("diamond-suit", "♦"),
+                ("club-suit", "♣"),
+            ):
+                el = page.locator(f".hand-north {tag}").first
+                before = el.evaluate(
+                    """el => {
+                    const s = getComputedStyle(el, '::before');
+                    return { content: s.content, color: s.color };
+                  }"""
+                )
+                self.assertIn(glyph, before["content"].replace('"', "").replace("'", ""))
+                tag_color = el.evaluate("el => getComputedStyle(el).color")
+                self.assertEqual(tag_color, "rgb(0, 0, 0)", msg=f"{tag} pip text stays black")
+                if tag in ("heart-suit", "diamond-suit"):
+                    self.assertNotEqual(before["color"], "rgb(0, 0, 0)", msg=f"{tag} glyph is red")
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_double_dummy_button_has_bold_outline_when_default(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            button = page.locator("#double-dummy-it")
+            self.assertNotIn("default-action", button.get_attribute("class") or "")
+
+            self._fill_part_score_deal(page)
+            page.wait_for_function(
+                "() => document.getElementById('double-dummy-it').classList.contains('default-action')"
+            )
+
+            self.assertIn("default-action", button.get_attribute("class"))
+            outline_width = float(
+                button.evaluate("el => parseFloat(getComputedStyle(el).outlineWidth)")
+            )
+            self.assertGreaterEqual(outline_width, 2.0)
             self.assertEqual(errors, [])
         finally:
             page.close()
@@ -267,6 +340,14 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.get_by_role("button", name="Clear entries").click()
             double_dummy = page.get_by_role("button", name="Double-dummy it!")
             self.assertTrue(double_dummy.is_disabled())
+            self.assertEqual(
+                float(double_dummy.evaluate("el => getComputedStyle(el).opacity")),
+                1.0,
+            )
+            self.assertNotEqual(
+                double_dummy.evaluate("el => getComputedStyle(el).color"),
+                "rgb(0, 0, 0)",
+            )
             self.assertEqual(errors, [])
         finally:
             page.close()
