@@ -35,6 +35,33 @@ class DdsMvpCssTest(unittest.TestCase):
         self.assertIsNotNone(opacity, "entered cards should set opacity")
         self.assertLess(float(opacity.group(1)), 1.0)
 
+    def test_suit_tags_draw_symbols_via_before_pseudo(self) -> None:
+        css = (WEB_ROOT / "dds_mvp.css").read_text(encoding="utf-8")
+        for tag, glyph in (
+            ("spade-suit", r"\\2660"),
+            ("heart-suit", r"\\2665"),
+            ("diamond-suit", r"\\2666"),
+            ("club-suit", r"\\2663"),
+        ):
+            body = _rule_body_for_selector(css, f"{tag}:before")
+            self.assertRegex(body, rf"content\s*:\s*['\"]{glyph}['\"]")
+
+        heart_before = _rule_body_for_selector(css, "heart-suit:before")
+        diamond_before = _rule_body_for_selector(css, "diamond-suit:before")
+        self.assertRegex(heart_before, r"color\s*:")
+        self.assertRegex(diamond_before, r"color\s*:")
+        # Red lives on the glyph, not the pip text inside the tag.
+        for tag in ("heart-suit", "diamond-suit"):
+            try:
+                tag_body = _rule_body_for_selector(css, tag)
+            except AssertionError:
+                continue
+            self.assertNotRegex(
+                tag_body,
+                r"color\s*:\s*(?:red|#c00|#cc0000)",
+                f"{tag} itself should not be red; only :before",
+            )
+
     def test_double_dummy_button_has_bold_outline_when_default(self) -> None:
         css = (WEB_ROOT / "dds_mvp.css").read_text(encoding="utf-8")
         body = _rule_body_for_selector(css, "#double-dummy-it.default-action")

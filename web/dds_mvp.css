@@ -92,8 +92,30 @@ td {
   flex: 0 0 auto;
 }
 
-.suit-red {
+/* Suit glyphs via custom tags; red color lives on :before so pips stay black. */
+spade-suit,
+heart-suit,
+diamond-suit,
+club-suit {
+  color: #000;
+}
+
+spade-suit:before {
+  content: '\2660';
+}
+
+heart-suit:before {
+  content: '\2665';
   color: #c00;
+}
+
+diamond-suit:before {
+  content: '\2666';
+  color: #c00;
+}
+
+club-suit:before {
+  content: '\2663';
 }
 
 .deck-card-entered {

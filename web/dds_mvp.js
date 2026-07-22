@@ -42,13 +42,12 @@ const DENOMINATIONS = ["C", "D", "H", "S", "N"];
 const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
 const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
 
-// TODO: Clean up our HTML rendering, perhaps using custom elements.
-//       See https://developers.google.com/web/fundamentals/web-components/customelements
-const SUIT_SYMBOLS = {
-    spades: "&spades;",
-    hearts: "&hearts;",
-    diamonds: "&diams;",
-    clubs: "&clubs;"
+// Suit glyphs come from CSS :before on these custom tags (see dds_mvp.css).
+const SUIT_TAGS = {
+    spades: "spade-suit",
+    hearts: "heart-suit",
+    diamonds: "diamond-suit",
+    clubs: "club-suit"
 };
 
 function suitLetter(suit) {
@@ -84,18 +83,14 @@ Card.compare = function (left, right) {
     return PIPS.indexOf(left.pip) - PIPS.indexOf(right.pip);
 };
 
-function isRedSuit(suit) {
-    return suit === "hearts" || suit === "diamonds";
+function suitTag(suit) {
+    return SUIT_TAGS[suit];
 }
 
-// Suit symbols are always black or red; the red is applied via CSS so callers
-// that also gray out card pips (e.g. the deck status) can color independently.
 function suitSymbolHtml(suit) {
-    const symbol = SUIT_SYMBOLS[suit];
+    const tag = suitTag(suit);
 
-    return isRedSuit(suit)
-        ? "<span class=\"suit-red\">" + symbol + "</span>"
-        : symbol;
+    return "<" + tag + "></" + tag + ">";
 }
 
 let ddsModulePromise = null;
@@ -275,13 +270,7 @@ function deckStatusHtml(hands) {
     }
 
     return SUITS.map((suit) => {
-        const redSuit = isRedSuit(suit);
-        const symbolClasses = ["deck-suit-symbol"];
-
-        if (redSuit) {
-            symbolClasses.push("suit-red");
-        }
-
+        const tag = suitTag(suit);
         const cardsHtml = PIPS.split("").map((pip) => {
             const card = new Card(suit, pip);
             const key = card.key();
@@ -295,9 +284,7 @@ function deckStatusHtml(hands) {
                 "\" data-card=\"" + key + "\">" + pip + "</span>";
         }).join("");
 
-        return "<span class=\"deck-suit-group\"><span class=\"" +
-            symbolClasses.join(" ") + "\">" + SUIT_SYMBOLS[suit] +
-            "</span>" + cardsHtml + "</span>";
+        return "<" + tag + ">" + cardsHtml + "</" + tag + ">";
     }).join("");
 }
 
