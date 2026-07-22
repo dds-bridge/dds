@@ -1,6 +1,8 @@
 /// @file test_timer_test.cpp
 /// @brief Unit tests for TestTimer batch min/max tracking and optional reporting.
 
+#include <cstdint>
+#include <ctime>
 #include <gtest/gtest.h>
 #include <iomanip>
 #include <sstream>
@@ -21,7 +23,30 @@ std::string capture_print_hands(
   return out.str();
 }
 
+/// What the old `1000 * delta` path produces when `long` is 32-bit (wasm32).
+long wrapped_i32_clock_delta_to_ms(const clock_t delta)
+{
+  const auto prod =
+    static_cast<std::int32_t>(1000 * static_cast<std::int64_t>(delta));
+  return static_cast<long>(prod / static_cast<double>(CLOCKS_PER_SEC));
+}
+
 }  // namespace
+
+TEST(TestTimer, ClockDeltaToMsAvoids32BitOverflowForMultiSecondBatches)
+{
+  // ~3.478s of CLOCKS_PER_SEC ticks: integer `1000 * ticks` overflows int32.
+  const clock_t ticks = static_cast<clock_t>(3.478 * CLOCKS_PER_SEC);
+  const long expected_ms = static_cast<long>(
+    (1000.0 * static_cast<double>(ticks)) /
+    static_cast<double>(CLOCKS_PER_SEC));
+  const long wrapped_ms = wrapped_i32_clock_delta_to_ms(ticks);
+
+  ASSERT_NE(wrapped_ms, expected_ms)
+    << "fixture requires a delta that wraps under 32-bit multiply";
+  EXPECT_EQ(clock_delta_to_ms(ticks), expected_ms);
+  EXPECT_NE(clock_delta_to_ms(ticks), wrapped_ms);
+}
 
 TEST(TestTimer, RecordTracksMinAndMaxPerHandAcrossBatches)
 {
