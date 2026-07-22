@@ -608,7 +608,7 @@ test("updateActionButtons displays all 52 cards in the deck status", () => {
     );
 });
 
-test("updateActionButtons grays cards entered in any hand", () => {
+test("updateActionButtons grays cards entered in any hand, including lowercase pips", () => {
     const document = createMockDocument({
         north_spades: "A",
         east_hearts: "k",
