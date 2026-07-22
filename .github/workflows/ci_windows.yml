@@ -47,7 +47,7 @@ jobs:
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
               Start-Sleep -Seconds 20
               # Restart server only — keep downloaded external repos / disk cache.
-              bazel shutdown
+              bazel shutdown || $true
             }
           }
           exit 1
