@@ -320,6 +320,62 @@ def _setup_repo(repo: Path) -> None:
     _git(repo, "tag", "head-tag")
 
 
+class TestRejectCheckoutBinaryWithBranch(unittest.TestCase):
+    def test_rejects_relative_checkout_dtest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            old_cwd = Path.cwd()
+            try:
+                os.chdir(root)
+                with self.assertRaises(benchmark.BenchmarkError) as ctx:
+                    benchmark.reject_checkout_binary_with_branch(
+                        root,
+                        [
+                            ("branch", "develop"),
+                            ("binary", str(benchmark.DTEST_REL)),
+                        ],
+                    )
+            finally:
+                os.chdir(old_cwd)
+            self.assertIn("checkout's", str(ctx.exception))
+            self.assertIn(str(benchmark.DTEST_REL), str(ctx.exception))
+
+    def test_rejects_absolute_checkout_dtest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            abs_path = root / benchmark.DTEST_REL
+            with self.assertRaises(benchmark.BenchmarkError) as ctx:
+                benchmark.reject_checkout_binary_with_branch(
+                    root,
+                    [("branch", "develop"), ("binary", str(abs_path))],
+                )
+            self.assertIn("checkout's", str(ctx.exception))
+
+    def test_allows_external_binary_with_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            benchmark.reject_checkout_binary_with_branch(
+                root,
+                [("branch", "develop"), ("binary", "/tmp/other-dtest")],
+            )
+
+    def test_allows_checkout_binary_without_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            benchmark.reject_checkout_binary_with_branch(
+                root,
+                [("binary", str(root / benchmark.DTEST_REL))],
+            )
+
+    def test_allows_branch_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            benchmark.reject_checkout_binary_with_branch(
+                root,
+                [("branch", "develop")],
+            )
+
+
 class TestGitPrepForBranches(unittest.TestCase):
     def test_dirty_same_commit_allowed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

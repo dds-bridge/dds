@@ -396,11 +396,13 @@ Options:
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
---branch and --binary may be given any number of times and combined freely; the
-binaries are benchmarked in the order specified and the first is the baseline. The
-current checkout is benchmarked by default only when neither flag is given. With two
-binaries the summary adds a ratio and a "faster" note; with three or more it shows
-only the per-binary averages (no note).
+--branch and --binary may be given any number of times and combined; the binaries
+are benchmarked in the order specified and the first is the baseline. --binary
+must not point at the checkout's bazel-bin dtest when --branch is also used
+(branch builds overwrite that path). The current checkout is benchmarked by
+default only when neither flag is given. With two binaries the summary adds a
+ratio and a "faster" note; with three or more it shows only the per-binary
+averages (no note).
 
 Environment:
   BRANCH, BINARY, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, EPSILON
@@ -435,6 +437,28 @@ def _git(root: Path, *args: str, check: bool = True) -> subprocess.CompletedProc
 
 def _git_out(root: Path, *args: str) -> str:
     return _git(root, *args).stdout.strip()
+
+
+def reject_checkout_binary_with_branch(
+    root: Path, specs: Sequence[tuple[str, str]]
+) -> None:
+    """Disallow --binary pointing at checkout dtest when --branch is used.
+
+    --branch builds overwrite root/DTEST_REL, so an explicit --binary at that
+    path would run the wrong executable after the branch is restored.
+    """
+    if not any(kind == "branch" for kind, _ in specs):
+        return
+    checkout_dtest = (root / DTEST_REL).resolve()
+    for kind, val in specs:
+        if kind != "binary":
+            continue
+        if Path(val).resolve() == checkout_dtest:
+            raise BenchmarkError(
+                f"--binary may not target the checkout's {DTEST_REL} when "
+                "--branch is used (branch builds overwrite that path); "
+                "copy the binary elsewhere or use --branch . for HEAD"
+            )
 
 
 def git_prep_for_branches(
@@ -629,6 +653,8 @@ class BenchmarkRunner:
         if nspecs == 0:
             assert self.cfg.branch_binary is not None
             return [self.current_label()], [self.cfg.branch_binary]
+
+        reject_checkout_binary_with_branch(self.root, specs)
 
         if nbranch > 0:
             specs, self.orig_branch = git_prep_for_branches(self.root, specs)
