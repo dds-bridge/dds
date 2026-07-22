@@ -108,8 +108,8 @@ Options:
   --build             Build dtest for the current checkout (bazel build //library/tests:dtest)
   --branch NAME       Git branch to build and benchmark ("." means the current branch).
                       Repeatable. Each named branch is checked out, dtest is built and
-                      its binary saved, then the original branch is restored (requires a
-                      clean tree).
+                      its binary saved, then the original branch is restored. A clean
+                      tree is required only when a ref would switch away from HEAD.
   --binary PATH      Path to a prebuilt dtest binary to benchmark. Repeatable.
   --details           Keep per-run timing rows and build (git/bazel) output
   --epsilon PCT       For a two-binary comparison, treat timings within PCT% as equal
@@ -325,16 +325,33 @@ git_prep_for_branches() {
     fi
   done
   for i in "${!SPEC_VALS[@]}"; do
+    # Require a commit-ish: plain rev-parse accepts trees/blobs, but later
+    # ^{commit} peels (and checkout) need a commit.
     if [[ "${SPEC_KINDS[$i]}" == "branch" ]] \
-       && ! git -C "$ROOT" rev-parse --verify --quiet "${SPEC_VALS[$i]}" >/dev/null; then
+       && ! git -C "$ROOT" rev-parse --verify --quiet \
+            "${SPEC_VALS[$i]}^{commit}" >/dev/null; then
       echo "error: --branch: unknown git ref '${SPEC_VALS[$i]}'" >&2
       exit 1
     fi
   done
-  # Untracked files can also block a checkout ("would be overwritten"), so treat
-  # any working tree change (tracked or untracked) as non-clean.
-  if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=normal)" ]]; then
-    echo "error: working tree not clean; commit, stash, or remove changes (tracked or untracked) before using --branch" >&2
+  # A dirty tree only blocks when a --branch ref would leave HEAD's commit
+  # (git checkout of a different commit can refuse or overwrite local changes).
+  # Benchmarking the current branch / HEAD commit itself needs no switch, so
+  # uncommitted work is fine. Untracked files can also block a foreign checkout.
+  local head_commit needs_switch=0 ref_commit
+  head_commit="$(git -C "$ROOT" rev-parse HEAD)"
+  for i in "${!SPEC_VALS[@]}"; do
+    if [[ "${SPEC_KINDS[$i]}" == "branch" ]]; then
+      ref_commit="$(git -C "$ROOT" rev-parse --verify --quiet "${SPEC_VALS[$i]}^{commit}")"
+      if [[ "$ref_commit" != "$head_commit" ]]; then
+        needs_switch=1
+        break
+      fi
+    fi
+  done
+  if (( needs_switch )) \
+     && [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=normal)" ]]; then
+    echo "error: working tree not clean; commit, stash, or remove changes (tracked or untracked) before using --branch with a different commit" >&2
     exit 1
   fi
 }
