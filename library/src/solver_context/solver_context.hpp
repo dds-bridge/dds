@@ -9,6 +9,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -451,3 +452,19 @@ private:
 };
 
 auto ThreadMemoryUsed() -> double;
+
+namespace dds::internal
+{
+
+// Persistent per-thread SolverContext for batch worker threads. Created
+// lazily on first use and kept alive for the thread's lifetime, so the
+// transposition table survives across boards, chunks and consecutive batch
+// calls instead of being reallocated each time. Combined with the persistent
+// worker pool this removes per-batch TT churn (the unported half of the ddss
+// fork's batching optimization).
+auto worker_solver_context() -> SolverContext&;
+
+// Cumulative count of worker contexts ever created (test seam).
+auto worker_solver_contexts_created() -> std::uint64_t;
+
+}  // namespace dds::internal

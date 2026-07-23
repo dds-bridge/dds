@@ -10,6 +10,7 @@
 #include <chrono>
 
 #include "solve_board.hpp"
+#include <api/solve_board.hpp>
 #include <solver_if.hpp>
 #include <pbn.hpp>
 #include <system/memory.hpp>
@@ -80,9 +81,12 @@ auto solve_all_boards_n(
 
       FutureTricks fut;
       const auto t0 = std::chrono::steady_clock::now();
-      const int res = SolveBoard(
+      // Persistent per-thread context: reuses the worker's TT across boards
+      // and consecutive batch calls instead of allocating one per board.
+      const int res = solve_board(
+        dds::internal::worker_solver_context(),
         bds.deals[bno], bds.target[bno], bds.solutions[bno],
-        bds.mode[bno], &fut, 0);
+        bds.mode[bno], &fut);
       auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now() - t0).count();
       if (dur < 0) dur = 0;
@@ -272,9 +276,10 @@ auto solve_all_boards_n_seq(
   for (int bno = 0; bno < n && error == 0; bno++) {
     FutureTricks fut;
     const auto t0 = std::chrono::steady_clock::now();
-    const int res = SolveBoard(
+    const int res = solve_board(
+      dds::internal::worker_solver_context(),
       bds.deals[bno], bds.target[bno], bds.solutions[bno],
-      bds.mode[bno], &fut, 0);
+      bds.mode[bno], &fut);
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::steady_clock::now() - t0).count();
     if (dur < 0) dur = 0;

@@ -130,7 +130,7 @@ auto calc_all_boards_n(
   int err = RETURN_NO_FAULT;
   if (nthreads <= 1)
   {
-    SolverContext ctx;
+    SolverContext& ctx = dds::internal::worker_solver_context();
     for (int bno = 0; bno < n; ++bno)
     {
       err = calc_single_common_internal(ctx, *bop, *solvedp, bno);
@@ -140,8 +140,6 @@ auto calc_all_boards_n(
   }
   else
   {
-    std::vector<SolverContext> contexts(static_cast<unsigned>(nthreads));
-
     // Dispatch hardest boards first to shorten the parallel tail. This only
     // helps across distinct deals (batch calc); for a single deal every board
     // shares one fanout, so the sort is skipped (it would be a no-op anyway).
@@ -162,8 +160,11 @@ auto calc_all_boards_n(
 
     err = parallel_all_boards_n(n, nthreads,
       [&](const int worker_id, const int bno) -> int {
+        (void)worker_id;
+        // Persistent per-thread context: pool worker threads survive across
+        // batches, so the TT allocated here is reused for the whole run.
         return calc_single_common_internal(
-          contexts[static_cast<unsigned>(worker_id)], *bop, *solvedp, bno);
+          dds::internal::worker_solver_context(), *bop, *solvedp, bno);
       },
       order.empty() ? nullptr : &order);
   }
