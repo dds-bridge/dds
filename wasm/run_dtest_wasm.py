@@ -31,6 +31,25 @@ def rlocation(relpath: str) -> Path:
         candidates.append(root / relpath)
         candidates.append(root / "_main" / relpath)
 
+    manifest = os.environ.get("RUNFILES_MANIFEST_FILE")
+    if manifest:
+        def manifest_lookup(key: str) -> Path | None:
+            try:
+                with open(manifest, encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith(key + " "):
+                            _, path = line.rstrip("\n").split(" ", 1)
+                            return Path(path)
+            except OSError:
+                return None
+            return None
+
+        for key in (relpath, f"_main/{relpath}"):
+            resolved = manifest_lookup(key)
+            if resolved is not None:
+                candidates.append(resolved)
+                break
+
     for candidate in candidates:
         if candidate.exists():
             return candidate
