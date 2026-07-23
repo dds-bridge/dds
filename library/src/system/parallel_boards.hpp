@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <vector>
 
@@ -37,9 +38,21 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  *        non-null, the vector must remain valid and must not be mutated until
  *        this function returns because worker threads read it concurrently.
  * @return First non-success code from @p process_board, or RETURN_NO_FAULT.
+ *
+ * Multi-worker runs use a process-local persistent thread pool so consecutive
+ * calls reuse OS threads instead of create/join each time. Single-worker runs
+ * stay on the calling thread.
  */
 auto parallel_all_boards_n(
   int count,
   int worker_cap,
   const std::function<int(int worker_id, int bno)>& process_board,
   const std::vector<int>* order = nullptr) -> int;
+
+/**
+ * @brief Cumulative number of OS worker threads created by the board pool.
+ *
+ * Used by tests to verify that consecutive multi-worker runs reuse threads
+ * rather than spawning a fresh set each call.
+ */
+auto parallel_boards_worker_threads_created() -> std::uint64_t;

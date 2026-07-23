@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <functional>
 #include <new>
+#include <thread>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -143,4 +144,71 @@ TEST(ParallelAllBoards, ZeroSizeNewReturnsNonNull)
   void* const memory = ::operator new(0);
   EXPECT_NE(memory, nullptr);
   ::operator delete(memory);
+}
+
+TEST(ParallelAllBoards, MultiWorkerProcessesEachBoardOnce)
+{
+  // Arrange
+  constexpr int count = 32;
+  constexpr int workers = 4;
+  std::vector<std::atomic<int>> hits(static_cast<unsigned>(count));
+  for (auto& h : hits)
+    h.store(0, std::memory_order_relaxed);
+
+  // Act
+  const int result = parallel_all_boards_n(
+    count,
+    workers,
+    [&](const int worker_id, const int bno) {
+      EXPECT_GE(worker_id, 0);
+      EXPECT_LT(worker_id, workers);
+      EXPECT_GE(bno, 0);
+      EXPECT_LT(bno, count);
+      hits[static_cast<unsigned>(bno)].fetch_add(1, std::memory_order_relaxed);
+      return RETURN_NO_FAULT;
+    });
+
+  // Assert
+  EXPECT_EQ(result, RETURN_NO_FAULT);
+  for (int i = 0; i < count; ++i)
+    EXPECT_EQ(hits[static_cast<unsigned>(i)].load(), 1) << "board " << i;
+}
+
+TEST(ParallelAllBoards, FailFastReturnsFirstError)
+{
+  // Arrange / Act
+  const int result = parallel_all_boards_n(
+    16,
+    4,
+    [](const int, const int bno) {
+      return bno == 7 ? RETURN_TOO_MANY_BOARDS : RETURN_NO_FAULT;
+    });
+
+  // Assert
+  EXPECT_EQ(result, RETURN_TOO_MANY_BOARDS);
+}
+
+TEST(ParallelAllBoards, ReusesWorkerThreadsAcrossConsecutiveCalls)
+{
+  // Persistent pool should create workers once and reuse them. Spawn-per-call
+  // creates a fresh set of threads on every multi-worker invocation.
+  if (std::thread::hardware_concurrency() < 2)
+    GTEST_SKIP() << "Need at least 2 hardware threads";
+
+  constexpr int count = 64;
+  constexpr int workers = 4;
+  const auto noop = [](const int, const int) { return RETURN_NO_FAULT; };
+
+  // Arrange: grow/warm the pool to the requested size.
+  ASSERT_EQ(parallel_all_boards_n(count, workers, noop), RETURN_NO_FAULT);
+  const auto created_after_warm = parallel_boards_worker_threads_created();
+  ASSERT_GE(created_after_warm, static_cast<std::uint64_t>(workers));
+
+  // Act: two more multi-worker runs at the same width.
+  ASSERT_EQ(parallel_all_boards_n(count, workers, noop), RETURN_NO_FAULT);
+  ASSERT_EQ(parallel_all_boards_n(count, workers, noop), RETURN_NO_FAULT);
+  const auto created_after_reuse = parallel_boards_worker_threads_created();
+
+  // Assert: reuse must not create additional OS threads.
+  EXPECT_EQ(created_after_reuse, created_after_warm);
 }
