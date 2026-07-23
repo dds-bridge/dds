@@ -162,11 +162,15 @@ TEST(ParallelAllBoards, MultiWorkerProcessesEachBoardOnce)
   const int result = parallel_all_boards_n(
     count,
     workers,
-    [&](const int worker_id, const int bno) {
-      EXPECT_GE(worker_id, 0);
-      EXPECT_LT(worker_id, workers);
-      EXPECT_GE(bno, 0);
-      EXPECT_LT(bno, count);
+    [&](const int worker_id, const int bno) -> int {
+      // EXPECT does not abort; guard before indexing so a bad bno fails the
+      // test cleanly instead of crashing with an out-of-range access.
+      if (worker_id < 0 || worker_id >= workers || bno < 0 || bno >= count)
+      {
+        ADD_FAILURE() << "Invalid dispatch: worker_id=" << worker_id
+                      << " bno=" << bno;
+        return RETURN_UNKNOWN_FAULT;
+      }
       hits[static_cast<unsigned>(bno)].fetch_add(1, std::memory_order_relaxed);
       return RETURN_NO_FAULT;
     });
