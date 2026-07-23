@@ -1,4 +1,4 @@
-/// @file context_warm_tt_benchmark.cpp
+/// @file warm_tt_benchmark.cpp
 /// @brief Quantifies the warm-transposition-table win from reusing one
 ///        DDS_C_SOLVER_CTX across successive similar solves.
 ///
@@ -22,9 +22,14 @@
 /// Reports total ms and the B/A ratios for K = 4 and K = 6.
 ///
 /// This is a timing benchmark, so the only *hard* assertions are correctness
-/// ones: every solve succeeds, and warm and cold agree on every lead's score
-/// (i.e. TT reuse never changes the answer). The speed story is printed, not
-/// asserted, to keep the test non-flaky under CI load.
+/// ones: every solve succeeds and returns at least one card, and warm and cold
+/// agree on every lead's score (i.e. TT reuse never changes the answer). The
+/// speed story is printed, not asserted, to keep the test non-flaky under CI
+/// load.
+///
+/// The sibling benchmark here, //benchmarks:dds_replay, measures the same reuse
+/// on a recorded client workload; this one isolates it on a single synthetic
+/// pattern, cheaply enough to run on every build.
 
 #include <algorithm>
 #include <array>
@@ -45,6 +50,33 @@ using Hands = std::array<std::vector<Card>, 4>;   // indexed N,E,S,W
 
 constexpr int kWest = 3;                          // opening leader vs a South declarer
 constexpr int kStrainNT = 4, kStrainSpades = 0;   // DDS trump encoding
+
+// Owns a solver-context handle. The gtest ASSERT_* macros expand to a bare
+// `return`, so any explicit destroy call can be jumped over on a failing path;
+// this releases the handle however the scope is left.
+class ScopedContext {
+public:
+  ScopedContext() : ctx_(dds_c_create_solvercontext_default()) {}
+  ~ScopedContext() { destroy(); }
+
+  ScopedContext(const ScopedContext&) = delete;
+  auto operator=(const ScopedContext&) -> ScopedContext& = delete;
+
+  [[nodiscard]] auto get() const -> DDS_C_SOLVER_CTX { return ctx_; }
+
+  // Release early, so the cost of destruction lands inside the timed region
+  // rather than at the end of the enclosing scope. Idempotent.
+  auto destroy() -> void
+  {
+    if (ctx_ != nullptr) {
+      dds_c_destroy_solvercontext(ctx_);
+      ctx_ = nullptr;
+    }
+  }
+
+private:
+  DDS_C_SOLVER_CTX ctx_;
+};
 
 // Deal 52 cards into four hands from the caller's generator. This is only as
 // reproducible as `rng` is: the determinism comes from the caller seeding it,
@@ -125,15 +157,20 @@ auto run(const std::vector<Hands>& deals, int trump, int leader, int k,
 
     // --- A: one fresh-context solutions=3 solve valuing all leads. ---
     const Deal full = make_position(hands, trump, leader);
-    FutureTricks futA;
-    const auto tA = Clock::now();
-    DDS_C_SOLVER_CTX ctx_a = dds_c_create_solvercontext_default();
-    ASSERT_NE(nullptr, ctx_a) << label << " deal " << d << ": context alloc failed";
-    const int rcA = dds_c_solve_board(ctx_a, &full, -1, 3, 1, &futA);
-    dds_c_destroy_solvercontext(ctx_a);
-    t.a += ms_since(tA);
+    FutureTricks futA{};
+    int rcA = RETURN_UNKNOWN_FAULT;
+    {
+      const auto tA = Clock::now();
+      ScopedContext ctx_a;
+      ASSERT_NE(nullptr, ctx_a.get()) << label << " deal " << d << ": context alloc failed";
+      rcA = dds_c_solve_board(ctx_a.get(), &full, -1, 3, 1, &futA);
+      ctx_a.destroy();
+      t.a += ms_since(tA);
+    }
     ASSERT_EQ(RETURN_NO_FAULT, rcA) << label << " deal " << d << ": A solve failed";
-    if (futA.cards <= 0) continue;
+    // A full-deal solve always has playable cards; none would mean the solver
+    // answered something we cannot compare, not a deal worth skipping.
+    ASSERT_GT(futA.cards, 0) << label << " deal " << d << ": A returned no cards";
 
     // Precompute the post-lead positions (excluded from the timings).
     std::vector<Deal> positions;
@@ -144,29 +181,33 @@ auto run(const std::vector<Hands>& deals, int trump, int leader, int k,
     std::vector<int> cold_scores;
     const auto tCold = Clock::now();
     for (const auto& pos : positions) {
-      DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
-      ASSERT_NE(nullptr, ctx) << label << " deal " << d << ": context alloc failed";
-      FutureTricks fut;
-      const int rc = dds_c_solve_board(ctx, &pos, -1, 1, 0, &fut);
-      dds_c_destroy_solvercontext(ctx);
+      ScopedContext ctx;
+      ASSERT_NE(nullptr, ctx.get()) << label << " deal " << d << ": context alloc failed";
+      FutureTricks fut{};
+      const int rc = dds_c_solve_board(ctx.get(), &pos, -1, 1, 0, &fut);
+      ctx.destroy();
       ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_cold solve failed";
+      ASSERT_GT(fut.cards, 0) << label << " deal " << d << ": B_cold returned no cards";
       cold_scores.push_back(fut.score[0]);
     }
     t.b_cold += ms_since(tCold);
 
     // --- B_warm: ONE context reused across the K leads (warm TT). ---
     std::vector<int> warm_scores;
-    const auto tWarm = Clock::now();
-    DDS_C_SOLVER_CTX ctx_w = dds_c_create_solvercontext_default();
-    ASSERT_NE(nullptr, ctx_w) << label << " deal " << d << ": context alloc failed";
-    for (const auto& pos : positions) {
-      FutureTricks fut;
-      const int rc = dds_c_solve_board(ctx_w, &pos, -1, 1, 0, &fut);
-      ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_warm solve failed";
-      warm_scores.push_back(fut.score[0]);
+    {
+      const auto tWarm = Clock::now();
+      ScopedContext ctx_w;
+      ASSERT_NE(nullptr, ctx_w.get()) << label << " deal " << d << ": context alloc failed";
+      for (const auto& pos : positions) {
+        FutureTricks fut{};
+        const int rc = dds_c_solve_board(ctx_w.get(), &pos, -1, 1, 0, &fut);
+        ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_warm solve failed";
+        ASSERT_GT(fut.cards, 0) << label << " deal " << d << ": B_warm returned no cards";
+        warm_scores.push_back(fut.score[0]);
+      }
+      ctx_w.destroy();
+      t.b_warm += ms_since(tWarm);
     }
-    dds_c_destroy_solvercontext(ctx_w);
-    t.b_warm += ms_since(tWarm);
 
     // --- Correctness: warm TT reuse must not change any answer. ---
     ASSERT_EQ(cold_scores, warm_scores)
@@ -204,11 +245,10 @@ TEST(WarmTtBenchmark, ContextReuseKeepsTranspositionTableWarm)
   // Warm up process-wide one-time init so it doesn't bias the first timer.
   {
     const Deal w = make_position(deals[0], kStrainNT, kWest);
-    FutureTricks fut;
-    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
-    ASSERT_NE(nullptr, ctx);
-    (void) dds_c_solve_board(ctx, &w, -1, 3, 1, &fut);
-    dds_c_destroy_solvercontext(ctx);
+    FutureTricks fut{};
+    ScopedContext ctx;
+    ASSERT_NE(nullptr, ctx.get());
+    (void) dds_c_solve_board(ctx.get(), &w, -1, 3, 1, &fut);
   }
 
   std::printf("\n[warm-TT benchmark] declarer South; opening leader West; "

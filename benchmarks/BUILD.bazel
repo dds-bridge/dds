@@ -17,7 +17,7 @@ cc_library(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
     deps = [
-        "//library/src:dds",
+        # Only the public C ABI; it already pulls in //library/src:dds.
         "//library/src/api:dds_c_api",
     ],
 )
@@ -53,6 +53,23 @@ filegroup(
         "testdata/dds-camrose-1-32.jsonl",
     ],
     visibility = ["//visibility:public"],
+)
+
+# Quantifies the warm-transposition-table win from reusing one DDS_C_SOLVER_CTX
+# across successive similar solves, on a synthetic opening-lead workload. Unlike
+# dds_replay it needs no recording, so it runs in the default test cycle: it
+# fails if warm and cold contexts ever disagree on a score.
+cc_test(
+    name = "warm_tt_benchmark",
+    size = "medium",
+    srcs = ["warm_tt_benchmark.cpp"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/api:dds_c_api",
+        "@googletest//:gtest_main",
+    ],
 )
 
 # Smoke test over a small committed recording, so the replay path (JSON parsing,

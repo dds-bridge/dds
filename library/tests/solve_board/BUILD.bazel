@@ -29,20 +29,3 @@ cc_test(
     ],
     copts = DDS_CPPOPTS,
 )
-
-# Quantifies the warm-transposition-table win from reusing one DDS_C_SOLVER_CTX
-# across successive similar solves. Binds to the public C ABI (//library/src/api:dds_c_api)
-# rather than testable_dds, since it exercises only the exported surface.
-cc_test(
-    name = "context_warm_tt_benchmark",
-    size = "medium",
-    srcs = [
-        "context_warm_tt_benchmark.cpp",
-    ],
-    deps = [
-        "//library/src:dds",
-        "//library/src/api:dds_c_api",
-        "@googletest//:gtest_main",
-    ],
-    copts = DDS_CPPOPTS,
-)
