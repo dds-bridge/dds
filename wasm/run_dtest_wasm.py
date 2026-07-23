@@ -16,6 +16,37 @@ def _runfiles_root() -> Path | None:
     return None
 
 
+def _rlocation_from_manifest(relpath: str) -> Path | None:
+    """Look up ``relpath`` in RUNFILES_MANIFEST_FILE (Windows-style runfiles)."""
+    manifest = os.environ.get("RUNFILES_MANIFEST_FILE")
+    if not manifest:
+        return None
+    keys = {relpath, f"_main/{relpath}"}
+    try:
+        with open(manifest, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.rstrip("\n")
+                if not line or line.startswith("["):
+                    # Skip empty lines and JSON/ndjson manifest entries.
+                    continue
+                # Classic format: "<runfiles_path> <absolute_path>"
+                # Escaped keys (paths with spaces) start with a leading space;
+                # we only need unescaped wasm/... keys here.
+                if line.startswith(" "):
+                    continue
+                space = line.find(" ")
+                if space < 0:
+                    continue
+                key, value = line[:space], line[space + 1 :]
+                if key in keys and value:
+                    path = Path(value)
+                    if path.exists():
+                        return path
+    except OSError:
+        return None
+    return None
+
+
 def rlocation(relpath: str) -> Path:
     """Resolve a runfiles path such as ``wasm/dtest.js``."""
     name = Path(relpath).name
@@ -34,6 +65,11 @@ def rlocation(relpath: str) -> Path:
     for candidate in candidates:
         if candidate.exists():
             return candidate
+
+    from_manifest = _rlocation_from_manifest(relpath)
+    if from_manifest is not None:
+        return from_manifest
+
     raise FileNotFoundError(relpath)
 
 

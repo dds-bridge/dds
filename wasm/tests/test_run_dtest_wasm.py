@@ -56,6 +56,48 @@ class RunDtestWasmTest(unittest.TestCase):
                     found = rlocation("wasm/dtest.js")
             self.assertTrue(found.samefile(sibling))
 
+    def test_rlocation_uses_runfiles_manifest_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            real = root / "actual_dtest.js"
+            real.write_text("// stub\n", encoding="utf-8")
+            manifest = root / "MANIFEST"
+            manifest.write_text(
+                f"_main/wasm/dtest.js {real}\n",
+                encoding="utf-8",
+            )
+            # No sibling data dep beside the script (manifest-only platforms).
+            fake_script = root / "pkg" / "run_dtest_wasm.py"
+            fake_script.parent.mkdir()
+            fake_script.write_text("#\n", encoding="utf-8")
+            with mock.patch("run_dtest_wasm.__file__", str(fake_script)):
+                with mock.patch.dict(
+                    "os.environ",
+                    {"RUNFILES_MANIFEST_FILE": str(manifest)},
+                    clear=True,
+                ):
+                    found = rlocation("wasm/dtest.js")
+            self.assertTrue(found.samefile(real))
+
+    def test_rlocation_manifest_accepts_unprefixed_key(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            real = root / "dtest.js"
+            real.write_text("// stub\n", encoding="utf-8")
+            manifest = root / "MANIFEST"
+            manifest.write_text(f"wasm/dtest.js {real}\n", encoding="utf-8")
+            fake_script = root / "pkg" / "run_dtest_wasm.py"
+            fake_script.parent.mkdir()
+            fake_script.write_text("#\n", encoding="utf-8")
+            with mock.patch("run_dtest_wasm.__file__", str(fake_script)):
+                with mock.patch.dict(
+                    "os.environ",
+                    {"RUNFILES_MANIFEST_FILE": str(manifest)},
+                    clear=True,
+                ):
+                    found = rlocation("wasm/dtest.js")
+            self.assertTrue(found.samefile(real))
+
 
 if __name__ == "__main__":
     unittest.main()
