@@ -97,7 +97,7 @@ For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/wasm/` t
 |------|---------|
 | `-O3` | Aggressive optimization |
 | `-flto` | Link-time optimization at compile time only (see note below) |
-| `-fwasm-exceptions` | Native WebAssembly exception handling (replaces the slower JS-trampoline exception emulation of `-fexceptions`) |
+| `-fwasm-exceptions` | Native WebAssembly exception handling (use together with `-fexceptions`; replaces the slower JS-trampoline EH lowering used when linking with `-fexceptions` alone) |
 | `-sWASM=1` | Emscripten WASM output (link flag) |
 | `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime |
 | `-sINITIAL_MEMORY=268435456` | 256MB initial memory |
