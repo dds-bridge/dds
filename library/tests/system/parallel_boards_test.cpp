@@ -181,6 +181,30 @@ TEST(ParallelAllBoards, MultiWorkerProcessesEachBoardOnce)
     EXPECT_EQ(hits[static_cast<unsigned>(i)].load(), 1) << "board " << i;
 }
 
+TEST(ParallelAllBoards, CallerSeesNonAtomicWorkerWritesAfterReturn)
+{
+  // Completion must establish happens-before from each worker's process_board
+  // stores into the caller's buffers before parallel_all_boards_n returns.
+  // Plain (non-atomic) writes make missing mutex/condvar sync visible to TSan.
+  constexpr int count = 64;
+  constexpr int workers = 4;
+  std::vector<int> results(static_cast<unsigned>(count), -1);
+
+  // Act
+  const int result = parallel_all_boards_n(
+    count,
+    workers,
+    [&](const int, const int bno) {
+      results[static_cast<unsigned>(bno)] = bno * 10;
+      return RETURN_NO_FAULT;
+    });
+
+  // Assert: every slot is visible without further synchronization.
+  EXPECT_EQ(result, RETURN_NO_FAULT);
+  for (int i = 0; i < count; ++i)
+    EXPECT_EQ(results[static_cast<unsigned>(i)], i * 10) << "board " << i;
+}
+
 TEST(ParallelAllBoards, FailFastReturnsFirstError)
 {
   // Arrange / Act

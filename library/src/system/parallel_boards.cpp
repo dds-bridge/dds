@@ -67,7 +67,10 @@ public:
 
     std::atomic<int> next{0};
     std::atomic<int> first_error{RETURN_NO_FAULT};
-    std::atomic<int> finished{0};
+    // finished is protected by mu_: every worker increments it under that lock
+    // so the unlock→lock handoff through cv_done_ happens-before the caller's
+    // continued use of process_board side effects (e.g. result buffers).
+    int finished{0};
 
     Job job{
       &process_board,
@@ -88,9 +91,7 @@ public:
 
     {
       std::unique_lock<std::mutex> lock(mu_);
-      cv_done_.wait(lock, [&] {
-        return finished.load(std::memory_order_acquire) >= workers;
-      });
+      cv_done_.wait(lock, [&] { return finished >= workers; });
       job_ = nullptr;
     }
 
@@ -105,7 +106,7 @@ private:
     const std::function<int(int)>* board_of = nullptr;
     std::atomic<int>* next = nullptr;
     std::atomic<int>* first_error = nullptr;
-    std::atomic<int>* finished = nullptr;
+    int* finished = nullptr;
     int count = 0;
     int workers = 0;
   };
@@ -163,11 +164,17 @@ private:
             break;
           }
         }
-        if (local.finished->fetch_add(1, std::memory_order_acq_rel) + 1 >=
-            local.workers)
+        // Account completion under mu_ so (1) the predicate change cannot race
+        // with cv_done_.wait's check-and-sleep (lost wakeup) and (2) unlocking
+        // mu_ after process_board writes publishes those writes to the caller
+        // when wait reacquires the mutex.
+        bool notify = false;
         {
-          cv_done_.notify_one();
+          std::lock_guard<std::mutex> lock(mu_);
+          notify = ++(*local.finished) >= local.workers;
         }
+        if (notify)
+          cv_done_.notify_one();
       }
     }
   }
