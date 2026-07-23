@@ -70,6 +70,16 @@ Moves::Moves() {
   trackp = nullptr;
   mply = nullptr;
 
+  // Scalars snapshotted by make_heuristic_context must not be indeterminate.
+  leadHand = 0;
+  currHand = 0;
+  leadSuit = 0;
+  currTrick = 0;
+  trump = DDS_NOTRUMP;
+  suit = 0;
+  numMoves = 0;
+  lastNumMoves = 0;
+
   funcName[static_cast<int>(MgType::NT0)] = "NT0";
   funcName[static_cast<int>(MgType::TRUMP0)] = "Trump0";
   funcName[static_cast<int>(MgType::NT_VOID1)] = "NT_Void1";
@@ -187,7 +197,12 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
   mply = list.move;
   for (int s = 0; s < DDS_SUITS; s++)
     trackp->lowest_win[0][s] = 0;
+  // Reset fields snapshotted by make_heuristic_context before the hoist;
+  // suit/lastNumMoves are overwritten again before each call_heuristic.
   numMoves = 0;
+  lastNumMoves = 0;
+  suit = 0;
+  leadSuit = 0;
 
   // Leading-hand dispatch case, known here once instead of re-derived per
   // suit inside the heuristic dispatcher.
@@ -262,7 +277,12 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
 
   for (int s = 0; s < DDS_SUITS; s++)
     trackp->lowest_win[handRel][s] = 0;
+  // Reset fields snapshotted by make_heuristic_context before either hoist.
+  // Follow-suit uses suit == leadSuit; the void path overwrites suit per
+  // iteration before call_heuristic.
   numMoves = 0;
+  lastNumMoves = 0;
+  suit = leadSuit;
 
   int findex;
   const int ftest = trump_winner_findex(tpos, trump);

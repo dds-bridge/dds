@@ -67,6 +67,17 @@ TEST_F(MovesTest, ConstructorInitializesState) {
   // Verify statistics are zeroed
   EXPECT_EQ(moves->trickFuncTable.nfuncs, 0);
   EXPECT_EQ(moves->trickFuncSuitTable.nfuncs, 0);
+
+  // make_heuristic_context snapshots these; they must not be indeterminate
+  // after construction (and MoveGen0/123 re-set them before hoisting a context).
+  EXPECT_EQ(moves->leadHand, 0);
+  EXPECT_EQ(moves->currHand, 0);
+  EXPECT_EQ(moves->leadSuit, 0);
+  EXPECT_EQ(moves->currTrick, 0);
+  EXPECT_EQ(moves->trump, DDS_NOTRUMP);
+  EXPECT_EQ(moves->suit, 0);
+  EXPECT_EQ(moves->numMoves, 0);
+  EXPECT_EQ(moves->lastNumMoves, 0);
 }
 
 TEST_F(MovesTest, InitializesTrackingState) {
@@ -391,6 +402,50 @@ TEST_F(MovesTest, MoveGen123OutOfRangeTrumpMatchesNoTrump)
     const auto bad = run(bad_trump);
     EXPECT_EQ(bad, nt) << "trump=" << bad_trump;
   }
+}
+
+// Hoisted make_heuristic_context must not observe stale suit/lastNumMoves from
+// a prior call. Poison those members; MoveGen should reset them before
+// snapshotting so weights match a clean instance.
+TEST_F(MovesTest, MoveGenResetsSnapshottedFieldsBeforeHeuristicContext)
+{
+  static RelRanksType rel[8192] = {};
+  constexpr int tricks = 5;
+  constexpr int lead_suit = 0;
+  const unsigned short (*rank_in_suit)[4] = getSampleRankInSuit();
+  Pos tpos = make_pos(rank_in_suit);
+  // Force a void-in-lead path for hand_rel=1 so suit/lastNumMoves are used
+  // by the void weight functions after the hoisted context is built.
+  tpos.rank_in_suit[1][lead_suit] = 0;
+  tpos.length[1][lead_suit] = 0;
+  const MoveType best{};
+
+  auto run_gen0 = [&](Moves& m) {
+    m.Init(tricks, 0, nullptr, nullptr, rank_in_suit, DDS_NOTRUMP, 0);
+    return move_list_weights(
+      m, tricks, 0, m.MoveGen0(tricks, tpos, best, best, rel));
+  };
+  auto run_gen123 = [&](Moves& m) {
+    m.Init(tricks, 0, nullptr, nullptr, rank_in_suit, DDS_NOTRUMP, 0);
+    m.track[tricks].lead_suit = lead_suit;
+    m.track[tricks].move[0] = ExtCard{lead_suit, 8, 0};
+    return move_list_weights(
+      m, tricks, 1, m.MoveGen123(tricks, /*handRel=*/1, tpos));
+  };
+
+  Moves clean;
+  const auto gen0_clean = run_gen0(clean);
+  const auto gen123_clean = run_gen123(clean);
+
+  Moves poisoned;
+  poisoned.suit = 3;
+  poisoned.lastNumMoves = 99;
+  poisoned.leadSuit = 2;
+  EXPECT_EQ(run_gen0(poisoned), gen0_clean);
+  poisoned.suit = 3;
+  poisoned.lastNumMoves = 99;
+  poisoned.leadSuit = 2;
+  EXPECT_EQ(run_gen123(poisoned), gen123_clean);
 }
 
 /**
