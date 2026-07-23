@@ -37,7 +37,7 @@ class WasmExamplesSystemTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, msg=proc.stderr)
         for hand in (1, 2, 3):
             self.assertIn(f"CalcDDtable, hand {hand}: OK", proc.stdout)
-        self.assertNotIn("ERROR", proc.stdout)
+        self.assertNotIn("ERROR", proc.stdout + proc.stderr)
 
     def test_dtest_wasm_solve_list1(self) -> None:
         js = rlocation("wasm/dtest.js")
@@ -56,7 +56,7 @@ class WasmExamplesSystemTest(unittest.TestCase):
             msg=f"stdout:\n{proc.stdout}\nstderr:\n{proc.stderr}",
         )
         self.assertIn("Number of hands", proc.stdout)
-        self.assertNotIn(" ERROR", proc.stdout)
+        self.assertNotIn("ERROR", proc.stdout + proc.stderr)
 
 
 if __name__ == "__main__":
