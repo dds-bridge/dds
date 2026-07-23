@@ -6,8 +6,10 @@ This document explains how to build DDS examples for WebAssembly using Bazel.
 
 ### Bazel
 
-Bazel 7.x or later is required. Install using your package manager or download from:
-https://bazel.build/install
+The Bazel version is pinned in [`.bazelversion`](../.bazelversion). Use
+[bazelisk](https://github.com/bazelbuild/bazelisk), which reads that file and
+fetches the matching Bazel automatically:
+https://github.com/bazelbuild/bazelisk
 
 The Emscripten SDK (emsdk) does NOT need to be manually installed. Bazel downloads and caches a hermetic Emscripten toolchain when you build a `wasm_cc_binary` target.
 
