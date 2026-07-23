@@ -20,13 +20,15 @@ namespace
 {
 
 constexpr int kNumMoves = 4;
+constexpr int kNumRelRanks = 8192;
+static RelRanksType rel_ranks[kNumRelRanks] = {};
 
 struct DispatchFixture
 {
   Pos tpos{};
   MoveType best_move{};
   MoveType best_move_tt{};
-  RelRanksType rel[8192] = {};
+  RelRanksType* rel = rel_ranks;
   TrackType track{};
   MoveType moves_legacy[kNumMoves]{};
   MoveType moves_findex[kNumMoves]{};
