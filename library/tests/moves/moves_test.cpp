@@ -263,6 +263,45 @@ TEST_F(MovesTest, MemorySafetyFeaturesArePresent) {
 }
 
 /**
+ * make_heuristic_context must take an explicit TrackType rather than
+ * dereferencing Moves::trackp (which starts as nullptr). Callers pass the
+ * bound track; snapshots must come from that argument, not a nullable member.
+ */
+TEST_F(MovesTest, MakeHeuristicContextSnapshotsExplicitTrack)
+{
+  Pos tpos{};
+  const MoveType best{};
+  const MoveType best_tt{};
+  TrackType tr{};
+  for (int s = 0; s < DDS_SUITS; ++s)
+    tr.removed_ranks[s] = 0x10 + s;
+  tr.move[0].rank = 14;
+  tr.move[1].rank = 12;
+  tr.move[1].suit = 2;
+  tr.high[1] = 1;
+  tr.move[2].rank = 9;
+  tr.move[2].suit = 3;
+  tr.high[2] = 0;
+
+  // trackp remains nullptr after construction — the API must not need it.
+  ASSERT_EQ(moves->trackp, nullptr);
+
+  const HeuristicContext ctx =
+      moves->make_heuristic_context(tpos, best, best_tt, nullptr, tr);
+
+  for (int s = 0; s < DDS_SUITS; ++s)
+    EXPECT_EQ(ctx.removed_ranks[s], 0x10 + s) << "suit=" << s;
+  EXPECT_EQ(ctx.lead0_rank, 14);
+  EXPECT_EQ(ctx.move1_rank, 12);
+  EXPECT_EQ(ctx.move1_suit, 2);
+  EXPECT_EQ(ctx.high1, 1);
+  EXPECT_EQ(ctx.move2_rank, 9);
+  EXPECT_EQ(ctx.move2_suit, 3);
+  EXPECT_EQ(ctx.high2, 0);
+  EXPECT_EQ(ctx.trackp, &tr);
+}
+
+/**
  * @section Performance Tests
  */
 

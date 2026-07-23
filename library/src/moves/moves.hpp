@@ -193,10 +193,13 @@ public:
    * @param best_move Best move from search (must outlive the context)
    * @param best_move_tt Best move from transposition table (must outlive the context)
    * @param thrp_rel Relative ranks per hand
+   * @param tr Bound trick track (must outlive the context). Passed explicitly
+   *           so callers cannot accidentally dereference a null Moves::trackp.
    */
   auto make_heuristic_context(const Pos &tpos, const MoveType &best_move,
                               const MoveType &best_move_tt,
-                              const RelRanksType thrp_rel[]) const
+                              const RelRanksType thrp_rel[],
+                              const TrackType &tr) const
       -> HeuristicContext;
 
   // (logging accessors removed)

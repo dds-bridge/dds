@@ -179,7 +179,8 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
   const int lead_findex =
       ((trump != DDS_NOTRUMP) && (tpos.winner[trump].rank != 0)) ? 1 : 0;
   HeuristicContext hctx =
-      make_heuristic_context(tpos, bestMove, bestMoveTT, thrp_rel);
+      make_heuristic_context(tpos, bestMove, bestMoveTT, thrp_rel,
+                             track[tricks]);
 
   for (suit = 0; suit < DDS_SUITS; suit++) {
     unsigned short ris = tpos.rank_in_suit[leadHand][suit];
@@ -290,7 +291,8 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
       return numMoves;
 
     HeuristicContext hctx =
-        make_heuristic_context(tpos, empty_move, empty_move, nullptr);
+        make_heuristic_context(tpos, empty_move, empty_move, nullptr,
+                               track[tricks]);
     ::call_heuristic(hctx, findex);
 
     Moves::MergeSort();
@@ -304,7 +306,8 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
 #endif
 
   HeuristicContext hctx =
-      make_heuristic_context(tpos, empty_move, empty_move, nullptr);
+      make_heuristic_context(tpos, empty_move, empty_move, nullptr,
+                             track[tricks]);
 
   for (suit = 0; suit < DDS_SUITS; suit++) {
     ris = tpos.rank_in_suit[currHand][suit];
@@ -669,19 +672,22 @@ auto Moves::Sort(const int tricks, const int relHand) -> void {
  * suit/num_moves/last_num_moves fields per iteration and dispatch with the
  * findex they already computed, avoiding per-suit reconstruction and
  * re-derivation of the dispatch case (hot path).
+ *
+ * @param tr Bound trick track passed by the caller (MoveGen0/MoveGen123),
+ *           never read from the nullable Moves::trackp member.
  */
 auto Moves::make_heuristic_context(const Pos &tpos, const MoveType &best_move,
                                    const MoveType &best_move_tt,
-                                   const RelRanksType thrp_rel[]) const
+                                   const RelRanksType thrp_rel[],
+                                   const TrackType &tr) const
     -> HeuristicContext {
   HeuristicContext context{
       tpos,  best_move, best_move_tt, thrp_rel,  mply,     numMoves, lastNumMoves,
-      trump, suit,     trackp,     currTrick, currHand, leadHand, leadSuit};
+      trump, suit,     &tr,     currTrick, currHand, leadHand, leadSuit};
 
   // Snapshot removed_ranks and minimal trick state into the context to avoid
   // direct dependence on the mutable Moves::trackp buffer inside heuristic
-  // code. trackp is always bound by MoveGen0/MoveGen123 before this runs.
-  const TrackType &tr = *trackp;
+  // code.
   for (int s = 0; s < DDS_SUITS; ++s)
     context.removed_ranks[s] = tr.removed_ranks[s];
   context.move1_rank = tr.move[1].rank;
