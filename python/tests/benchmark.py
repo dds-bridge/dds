@@ -231,18 +231,28 @@ def format_summary(
 
     for solver in SOLVERS:
         for fname in files:
-            if not all((solver, fname, b) in counts for b in range(nb)):
+            avgs: list[float | None] = []
+            for b in range(nb):
+                key = (solver, fname, b)
+                if key in counts:
+                    avgs.append(sums[key] / counts[key])
+                else:
+                    avgs.append(None)
+            if all(u is None for u in avgs):
                 continue
-            avgs = [sums[(solver, fname, b)] / counts[(solver, fname, b)] for b in range(nb)]
             line = f"{solver:<6} {fname:<13}"
             for u in avgs:
-                line += f" {u:12.2f}"
+                if u is None:
+                    line += f" {'NA':>12}"
+                else:
+                    line += f" {u:12.2f}"
             if nb == 2:
-                if avgs[0] > 0:
-                    # If avgs[0] ever becomes zero, we should switch dtest timing from
+                a0, a1 = avgs[0], avgs[1]
+                if a0 is not None and a1 is not None and a0 > 0:
+                    # If a0 ever becomes zero, we should switch dtest timing from
                     # milliseconds to microseconds.
-                    r = avgs[1] / avgs[0]
-                    if within_epsilon(avgs[0], avgs[1], epsilon):
+                    r = a1 / a0
+                    if within_epsilon(a0, a1, epsilon):
                         note = "equal"
                     elif r >= 1:
                         note = f"{Lf(0)} faster"

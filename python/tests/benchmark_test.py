@@ -325,6 +325,45 @@ class TestSummary(unittest.TestCase):
         self.assertNotIn("faster", solve_line)
         self.assertNotIn("equal", solve_line)
 
+    def test_missing_avg_prints_na_and_keeps_row(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
+            # Incomplete dtest output: avg_user missing for binary 1
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, None, None, None, None, 0.5),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list1.txt"],
+            epsilon=0.5,
+        )
+        solve_line = next(
+            line for line in text.splitlines() if line.startswith("solve ")
+        )
+        self.assertRegex(solve_line, r"\b1\.00\b")
+        self.assertRegex(solve_line, r"\bNA\b")
+        self.assertNotRegex(solve_line, r"\d+\.\d+x")
+        self.assertNotIn("faster", solve_line)
+        self.assertNotIn("equal", solve_line)
+
+    def test_missing_avg_suppresses_ratio_either_side(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, None, None, None, None, 0.1),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 0.5),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list1.txt"],
+            epsilon=0.5,
+        )
+        solve_line = next(
+            line for line in text.splitlines() if line.startswith("solve ")
+        )
+        self.assertRegex(solve_line, r"\bNA\b")
+        self.assertRegex(solve_line, r"\b0\.50\b")
+        self.assertNotRegex(solve_line, r"\d+\.\d+x")
+
 
 class TestIsDdsRoot(unittest.TestCase):
     def test_valid(self) -> None:
