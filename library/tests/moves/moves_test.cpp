@@ -312,6 +312,87 @@ TEST_F(MovesTest, MakeHeuristicContextSnapshotsExplicitTrack)
   EXPECT_EQ(ctx.trackp, &tr);
 }
 
+namespace
+{
+
+auto make_pos(const unsigned short (*rank_in_suit)[4]) -> Pos
+{
+  Pos tpos{};
+  for (int h = 0; h < DDS_HANDS; ++h)
+  {
+    for (int s = 0; s < DDS_SUITS; ++s)
+    {
+      tpos.rank_in_suit[h][s] = rank_in_suit[h][s];
+      tpos.length[h][s] = 13;
+    }
+  }
+  return tpos;
+}
+
+auto move_list_weights(const Moves& m, const int tricks, const int hand_rel,
+                       const int n) -> std::vector<int>
+{
+  std::vector<int> weights;
+  weights.reserve(static_cast<unsigned>(n));
+  for (int i = 0; i < n; ++i)
+    weights.push_back(m.moveList[tricks][hand_rel].move[i].weight);
+  return weights;
+}
+
+}  // namespace
+
+// MoveGen0 must range-check trump before reading winner[trump], matching the
+// legacy heuristic dispatcher. Out-of-range values behave like no-trump.
+TEST_F(MovesTest, MoveGen0OutOfRangeTrumpMatchesNoTrump)
+{
+  static RelRanksType rel[8192] = {};
+  constexpr int tricks = 5;
+  const unsigned short (*rank_in_suit)[4] = getSampleRankInSuit();
+  const Pos tpos = make_pos(rank_in_suit);
+  const MoveType best{};
+
+  auto run = [&](const int trump) {
+    auto local = std::make_unique<Moves>();
+    local->Init(tricks, 0, nullptr, nullptr, rank_in_suit, trump, 0);
+    const int n = local->MoveGen0(tricks, tpos, best, best, rel);
+    return move_list_weights(*local, tricks, 0, n);
+  };
+
+  const auto nt = run(DDS_NOTRUMP);
+  // DDS_NOTRUMP == DDS_SUITS, so use values strictly outside [0, DDS_SUITS).
+  for (const int bad_trump : {-1, DDS_SUITS + 1, 99})
+  {
+    const auto bad = run(bad_trump);
+    EXPECT_EQ(bad, nt) << "trump=" << bad_trump;
+  }
+}
+
+// MoveGen123 likewise must not index winner[trump] when trump is out of range.
+TEST_F(MovesTest, MoveGen123OutOfRangeTrumpMatchesNoTrump)
+{
+  constexpr int tricks = 5;
+  constexpr int hand_rel = 1;
+  constexpr int lead_suit = 0;
+  const unsigned short (*rank_in_suit)[4] = getSampleRankInSuit();
+  const Pos tpos = make_pos(rank_in_suit);
+
+  auto run = [&](const int trump) {
+    auto local = std::make_unique<Moves>();
+    local->Init(tricks, 0, nullptr, nullptr, rank_in_suit, trump, 0);
+    local->track[tricks].lead_suit = lead_suit;
+    local->track[tricks].move[0] = ExtCard{lead_suit, 8, 0};
+    const int n = local->MoveGen123(tricks, hand_rel, tpos);
+    return move_list_weights(*local, tricks, hand_rel, n);
+  };
+
+  const auto nt = run(DDS_NOTRUMP);
+  for (const int bad_trump : {-1, DDS_SUITS + 1, 99})
+  {
+    const auto bad = run(bad_trump);
+    EXPECT_EQ(bad, nt) << "trump=" << bad_trump;
+  }
+}
+
 /**
  * @section Performance Tests
  */

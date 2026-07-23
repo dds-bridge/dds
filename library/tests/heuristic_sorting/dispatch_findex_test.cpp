@@ -10,7 +10,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <cstring>
 
 #include "heuristic_sorting/heuristic_sorting.hpp"
 #include "heuristic_sorting/internal.hpp"
@@ -88,7 +87,7 @@ void fill_position(DispatchFixture& f, const bool trump_game, const bool is_void
 }
 
 HeuristicContext make_context(DispatchFixture& f, MoveType* mply,
-                              const bool trump_game, const bool is_void,
+                              const int trump, const bool is_void,
                               const int curr_hand, const int lead_hand,
                               const int lead_suit)
 {
@@ -101,7 +100,7 @@ HeuristicContext make_context(DispatchFixture& f, MoveType* mply,
     mply,
     kNumMoves,     // num_moves
     0,             // last_num_moves
-    trump_game ? 1 : DDS_NOTRUMP,
+    trump,
     move_suit,     // suit under consideration
     &f.track,
     5,             // curr_trick
@@ -141,15 +140,40 @@ TEST(DispatchFindex, LeadHandMatchesLegacyDispatch)
     const int lead_hand = 2;
     fill_position(f, trump_game, /*is_void=*/false, lead_hand, /*lead_suit=*/0);
 
+    const int trump = trump_game ? 1 : DDS_NOTRUMP;
     HeuristicContext legacy = make_context(
-      f, f.moves_legacy, trump_game, false, lead_hand, lead_hand, 0);
+      f, f.moves_legacy, trump, false, lead_hand, lead_hand, 0);
     HeuristicContext with_findex = make_context(
-      f, f.moves_findex, trump_game, false, lead_hand, lead_hand, 0);
+      f, f.moves_findex, trump, false, lead_hand, lead_hand, 0);
 
     call_heuristic(legacy);
     call_heuristic(with_findex, trump_game ? 1 : 0);
 
     expect_same_weights(f, trump_game ? 1 : 0);
+  }
+}
+
+// Out-of-range trump must not index winner[trump]; treat as no trump winner
+// (same range guard Moves::MoveGen0 / MoveGen123 must apply).
+TEST(DispatchFindex, LegacyTreatsOutOfRangeTrumpAsNoWinner)
+{
+  // DDS_NOTRUMP == DDS_SUITS, so use values strictly outside [0, DDS_SUITS).
+  for (const int bad_trump : {-1, DDS_SUITS + 1, 99})
+  {
+    DispatchFixture f;
+    const int lead_hand = 0;
+    fill_position(f, /*trump_game=*/false, /*is_void=*/false, lead_hand,
+                  /*lead_suit=*/0);
+
+    HeuristicContext legacy = make_context(
+      f, f.moves_legacy, bad_trump, false, lead_hand, lead_hand, 0);
+    HeuristicContext with_findex = make_context(
+      f, f.moves_findex, DDS_NOTRUMP, false, lead_hand, lead_hand, 0);
+
+    call_heuristic(legacy);
+    call_heuristic(with_findex, /*findex=*/0);
+
+    expect_same_weights(f, /*findex=*/0);
   }
 }
 
@@ -164,9 +188,9 @@ TEST(DispatchFindex, LeadHandTrumpWithoutWinnerUsesFindex0)
   f.tpos.winner[1].rank = 0;
 
   HeuristicContext legacy = make_context(
-    f, f.moves_legacy, /*trump_game=*/true, false, lead_hand, lead_hand, 0);
+    f, f.moves_legacy, /*trump=*/1, false, lead_hand, lead_hand, 0);
   HeuristicContext with_findex = make_context(
-    f, f.moves_findex, /*trump_game=*/true, false, lead_hand, lead_hand, 0);
+    f, f.moves_findex, /*trump=*/1, false, lead_hand, lead_hand, 0);
 
   call_heuristic(legacy);
   call_heuristic(with_findex, /*findex=*/0);
@@ -206,9 +230,9 @@ TEST(DispatchFindex, InvalidFindexFallsBackToBasicNt0Weights)
     }
 
     HeuristicContext expected = make_context(
-      f, f.moves_legacy, /*trump_game=*/false, false, lead_hand, lead_hand, 0);
+      f, f.moves_legacy, DDS_NOTRUMP, false, lead_hand, lead_hand, 0);
     HeuristicContext with_findex = make_context(
-      f, f.moves_findex, /*trump_game=*/false, false, lead_hand, lead_hand, 0);
+      f, f.moves_findex, DDS_NOTRUMP, false, lead_hand, lead_hand, 0);
 
     weight_alloc_nt0(expected);
     call_heuristic(with_findex, bad_findex);
@@ -245,11 +269,12 @@ TEST(DispatchFindex, FollowingHandsMatchLegacyDispatchForAllFindexes)
         DispatchFixture f;
         fill_position(f, trump_game, is_void, curr_hand, lead_suit);
 
+        const int trump = trump_game ? 1 : DDS_NOTRUMP;
         HeuristicContext legacy = make_context(
-          f, f.moves_legacy, trump_game, is_void, curr_hand, lead_hand,
+          f, f.moves_legacy, trump, is_void, curr_hand, lead_hand,
           lead_suit);
         HeuristicContext with_findex = make_context(
-          f, f.moves_findex, trump_game, is_void, curr_hand, lead_hand,
+          f, f.moves_findex, trump, is_void, curr_hand, lead_hand,
           lead_suit);
 
         call_heuristic(legacy);

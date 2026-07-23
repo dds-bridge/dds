@@ -71,11 +71,11 @@ struct HeuristicContext
 ///
 /// @param context Pre-constructed HeuristicContext containing position data,
 ///                move arrays, and cached snapshots for efficient evaluation.
+///                Non-const because weighting writes through context.mply.
 ///
-/// @note This function mutates the context's move weighting arrays.
 /// @note Prefer this overload over parameterized versions to minimize
 ///       construction overhead in hot paths.
-void call_heuristic(const HeuristicContext& context);
+void call_heuristic(HeuristicContext& context);
 
 /// @brief Apply heuristic sorting using a precomputed dispatch index.
 ///
@@ -85,12 +85,14 @@ void call_heuristic(const HeuristicContext& context);
 ///
 /// Encoding (matches the findex used by Moves::MoveGen0 / MoveGen123):
 ///   - Leading hand:   0 = no trump winner available, 1 = trump winner available
-///     (trump != DDS_NOTRUMP && winner[trump].rank != 0)
+///     (trump in [0, DDS_SUITS) && trump != DDS_NOTRUMP &&
+///      winner[trump].rank != 0)
 ///   - Following hand: 4 * hand_rel + trump_winner + (void_in_lead_suit ? 2 : 0)
 ///     for hand_rel in 1..3, i.e. values 4..15, where trump_winner is the
 ///     same 0/1 bit as for the leading hand.
 ///
 /// @param context Pre-constructed HeuristicContext (see other overload).
+///                Non-const because weighting writes through context.mply.
 /// @param findex  Precomputed dispatch index as encoded above.
-void call_heuristic(const HeuristicContext& context, int findex);
+void call_heuristic(HeuristicContext& context, int findex);
 

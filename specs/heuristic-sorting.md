@@ -53,7 +53,7 @@ solve.
 ## Key entry points
 
 - `library/src/heuristic_sorting/heuristic_sorting.hpp` — `HeuristicContext`,
-  `TrackType`, and `call_heuristic(const HeuristicContext&)`. Doxygen documents the
+  `TrackType`, and `call_heuristic(HeuristicContext&)`. Doxygen documents the
   fields.
 - `library/src/heuristic_sorting/heuristic_sorting.cpp` +
   `internal.hpp` — the per-situation weighting helpers.

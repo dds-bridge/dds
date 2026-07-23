@@ -4,35 +4,34 @@
 
 // Hot-path overload: the caller passes the dispatch case it already knows,
 // so nothing is re-derived from the context here.
-void call_heuristic(const HeuristicContext& context, const int findex)
+void call_heuristic(HeuristicContext& context, const int findex)
 {
-  auto& ctx = const_cast<HeuristicContext&>(context);
   switch (findex) {
-    case 0:  weight_alloc_nt0(ctx); break;               // leading, no trump winner
-    case 1:  weight_alloc_trump0(ctx); break;            // leading, trump winner available
-    case 4:  weight_alloc_nt_notvoid1(ctx); break;       // hand_rel=1, can follow, no trump winner
-    case 5:  weight_alloc_trump_notvoid1(ctx); break;    // hand_rel=1, can follow, trump winner
-    case 6:  weight_alloc_nt_void1(ctx); break;          // hand_rel=1, void, no trump winner
-    case 7:  weight_alloc_trump_void1(ctx); break;       // hand_rel=1, void, trump winner
-    case 8:  weight_alloc_nt_notvoid2(ctx); break;       // hand_rel=2, can follow, no trump winner
-    case 9:  weight_alloc_trump_notvoid2(ctx); break;    // hand_rel=2, can follow, trump winner
-    case 10: weight_alloc_nt_void2(ctx); break;          // hand_rel=2, void, no trump winner
-    case 11: weight_alloc_trump_void2(ctx); break;       // hand_rel=2, void, trump winner
-    case 12: weight_alloc_combined_notvoid3(ctx); break; // hand_rel=3, can follow, no trump winner
-    case 13: weight_alloc_combined_notvoid3(ctx); break; // hand_rel=3, can follow, trump winner
-    case 14: weight_alloc_nt_void3(ctx); break;          // hand_rel=3, void, no trump winner
-    case 15: weight_alloc_trump_void3(ctx); break;       // hand_rel=3, void, trump winner
+    case 0:  weight_alloc_nt0(context); break;               // leading, no trump winner
+    case 1:  weight_alloc_trump0(context); break;            // leading, trump winner available
+    case 4:  weight_alloc_nt_notvoid1(context); break;       // hand_rel=1, can follow, no trump winner
+    case 5:  weight_alloc_trump_notvoid1(context); break;    // hand_rel=1, can follow, trump winner
+    case 6:  weight_alloc_nt_void1(context); break;          // hand_rel=1, void, no trump winner
+    case 7:  weight_alloc_trump_void1(context); break;       // hand_rel=1, void, trump winner
+    case 8:  weight_alloc_nt_notvoid2(context); break;       // hand_rel=2, can follow, no trump winner
+    case 9:  weight_alloc_trump_notvoid2(context); break;    // hand_rel=2, can follow, trump winner
+    case 10: weight_alloc_nt_void2(context); break;          // hand_rel=2, void, no trump winner
+    case 11: weight_alloc_trump_void2(context); break;       // hand_rel=2, void, trump winner
+    case 12: weight_alloc_combined_notvoid3(context); break; // hand_rel=3, can follow, no trump winner
+    case 13: weight_alloc_combined_notvoid3(context); break; // hand_rel=3, can follow, trump winner
+    case 14: weight_alloc_nt_void3(context); break;          // hand_rel=3, void, no trump winner
+    case 15: weight_alloc_trump_void3(context); break;       // hand_rel=3, void, trump winner
     default:
       // Should not happen; fall back to NT leading weights so moves get
       // deterministic ordering instead of stale/uninitialized weights.
-      weight_alloc_nt0(ctx);
+      weight_alloc_nt0(context);
       break;
   }
 }
 
 // Legacy overload: derives the dispatch case from the context, then
 // delegates. Kept for callers/tests that do not have the findex at hand.
-void call_heuristic(const HeuristicContext& context)
+void call_heuristic(HeuristicContext& context)
 {
   // Determine which position in trick (0=leading, 1-3=following)
   int hand_rel = 0;

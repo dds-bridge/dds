@@ -49,6 +49,22 @@ const MgType RegisterList[16] = {MgType::NT0,           MgType::TRUMP0,
 #define MG_REGISTER(a, b) 1;
 #endif
 
+namespace
+{
+
+// Same trump-winner bit as the legacy call_heuristic dispatcher: never index
+// winner[trump] unless trump is a suit in [0, DDS_SUITS).
+auto trump_winner_findex(const Pos& tpos, const int trump) -> int
+{
+  return ((trump != DDS_NOTRUMP) &&
+          (trump >= 0 && trump < DDS_SUITS) &&
+          (tpos.winner[trump].rank != 0))
+           ? 1
+           : 0;
+}
+
+}  // namespace
+
 Moves::Moves() {
   // Initialize non-owning pointers to nullptr for safety
   trackp = nullptr;
@@ -174,10 +190,8 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
   numMoves = 0;
 
   // Leading-hand dispatch case, known here once instead of re-derived per
-  // suit inside the heuristic dispatcher. trump is always DDS_NOTRUMP or a
-  // valid suit at this point.
-  const int lead_findex =
-      ((trump != DDS_NOTRUMP) && (tpos.winner[trump].rank != 0)) ? 1 : 0;
+  // suit inside the heuristic dispatcher.
+  const int lead_findex = trump_winner_findex(tpos, trump);
   HeuristicContext hctx =
       make_heuristic_context(tpos, bestMove, bestMoveTT, thrp_rel,
                              track[tricks]);
@@ -251,8 +265,7 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
   numMoves = 0;
 
   int findex;
-  int ftest =
-      ((trump != DDS_NOTRUMP) && (tpos.winner[trump].rank != 0) ? 1 : 0);
+  const int ftest = trump_winner_findex(tpos, trump);
 
   // Empty best-move placeholders must outlive the hoisted context, which
   // holds references to them.
