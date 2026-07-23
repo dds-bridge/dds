@@ -24,11 +24,26 @@ std::string capture_print_hands(
   return out.str();
 }
 
+/// Map a 64-bit value into signed int32 via explicit two's-complement wrap.
+/// Avoids implementation-defined narrowing of out-of-range values to int32.
+std::int32_t wrap_i64_to_i32(const std::int64_t value)
+{
+  constexpr auto kMod = std::uint64_t{1} << 32;
+  const auto bits =
+    static_cast<std::uint64_t>(value) % kMod;  // low 32 bits
+  if (bits > static_cast<std::uint64_t>(
+        std::numeric_limits<std::int32_t>::max())) {
+    return static_cast<std::int32_t>(
+      static_cast<std::int64_t>(bits) - static_cast<std::int64_t>(kMod));
+  }
+  return static_cast<std::int32_t>(bits);
+}
+
 /// What the old `1000 * delta` path produces when `long` is 32-bit (wasm32).
 long wrapped_i32_clock_delta_to_ms(const clock_t delta)
 {
   const auto prod =
-    static_cast<std::int32_t>(1000 * static_cast<std::int64_t>(delta));
+    wrap_i64_to_i32(1000 * static_cast<std::int64_t>(delta));
   return static_cast<long>(prod / static_cast<double>(CLOCKS_PER_SEC));
 }
 
@@ -42,6 +57,25 @@ clock_t ticks_that_overflow_i32_multiply()
 }
 
 }  // namespace
+
+TEST(TestTimer, WrapI64ToI32UsesDefinedTwosComplement)
+{
+  constexpr auto kMaxI32 = std::numeric_limits<std::int32_t>::max();
+  constexpr auto kMinI32 = std::numeric_limits<std::int32_t>::min();
+
+  EXPECT_EQ(wrap_i64_to_i32(0), 0);
+  EXPECT_EQ(wrap_i64_to_i32(kMaxI32), kMaxI32);
+  EXPECT_EQ(wrap_i64_to_i32(kMinI32), kMinI32);
+  EXPECT_EQ(wrap_i64_to_i32(static_cast<std::int64_t>(kMaxI32) + 1), kMinI32);
+  EXPECT_EQ(
+    wrap_i64_to_i32(static_cast<std::int64_t>(kMinI32) - 1),
+    kMaxI32);
+  // 1000 * ticks_that_overflow_i32_multiply()
+  EXPECT_EQ(
+    wrap_i64_to_i32(
+      1000 * static_cast<std::int64_t>(ticks_that_overflow_i32_multiply())),
+    -2147483296);
+}
 
 TEST(TestTimer, ClockDeltaToMsAvoids32BitOverflowForMultiSecondBatches)
 {
