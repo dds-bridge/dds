@@ -57,6 +57,12 @@ public:
     const std::function<int(int worker_id, int bno)>& process_board,
     const std::function<int(int slot)>& board_of) -> int
   {
+    // The pool tracks exactly one outstanding job (job_, workers_for_job_,
+    // generation_). Serialize whole runs so a second concurrent caller queues
+    // up instead of overwriting the first caller's job, which would leave the
+    // first run waiting forever for workers that never saw its job.
+    std::lock_guard<std::mutex> run_lock(run_mu_);
+
     ensure_workers(workers);
 
     std::atomic<int> next{0};
@@ -166,6 +172,8 @@ private:
     }
   }
 
+  // Held for the duration of run(); see the comment there.
+  std::mutex run_mu_;
   std::mutex mu_;
   std::condition_variable cv_start_;
   std::condition_variable cv_done_;

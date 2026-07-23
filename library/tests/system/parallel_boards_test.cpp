@@ -1,6 +1,9 @@
+#include <array>
 #include <atomic>
+#include <chrono>
 #include <cstdlib>
 #include <functional>
+#include <future>
 #include <new>
 #include <thread>
 #include <vector>
@@ -186,6 +189,82 @@ TEST(ParallelAllBoards, FailFastReturnsFirstError)
 
   // Assert
   EXPECT_EQ(result, RETURN_TOO_MANY_BOARDS);
+}
+
+TEST(ParallelAllBoards, ConcurrentCallersBothCompleteAndProcessAllBoards)
+{
+  // The pool is process-global; two threads dispatching batches at the same
+  // time must not clobber each other's job (which would drop boards or hang
+  // one caller forever waiting for workers that never picked its job up).
+  constexpr int callers = 2;
+  constexpr int count = 64;
+  constexpr int workers = 2;
+  constexpr auto deadline = std::chrono::seconds(20);
+
+  // Arrange: per-caller hit counters and a start barrier so both callers
+  // enter the dispatcher at the same moment.
+  std::array<std::vector<std::atomic<int>>, callers> hits;
+  for (auto& caller_hits : hits)
+    caller_hits = std::vector<std::atomic<int>>(count);
+  std::atomic<int> ready{0};
+  std::array<std::promise<int>, callers> results;
+  std::array<std::future<int>, callers> futures;
+  for (int c = 0; c < callers; ++c)
+    futures[static_cast<unsigned>(c)] =
+      results[static_cast<unsigned>(c)].get_future();
+
+  // Act
+  std::vector<std::thread> threads;
+  threads.reserve(callers);
+  for (int c = 0; c < callers; ++c)
+  {
+    threads.emplace_back([&, c] {
+      ready.fetch_add(1, std::memory_order_relaxed);
+      while (ready.load(std::memory_order_relaxed) < callers)
+        std::this_thread::yield();
+
+      const int rc = parallel_all_boards_n(
+        count,
+        workers,
+        [&, c](const int, const int bno) {
+          hits[static_cast<unsigned>(c)][static_cast<unsigned>(bno)]
+            .fetch_add(1, std::memory_order_relaxed);
+          std::this_thread::sleep_for(std::chrono::microseconds(200));
+          return RETURN_NO_FAULT;
+        });
+      results[static_cast<unsigned>(c)].set_value(rc);
+    });
+  }
+
+  bool timed_out = false;
+  for (auto& fut : futures)
+  {
+    if (fut.wait_for(deadline) != std::future_status::ready)
+      timed_out = true;
+  }
+
+  // A hung caller can never be joined; detach so the failure is reportable.
+  for (auto& th : threads)
+  {
+    if (timed_out)
+      th.detach();
+    else
+      th.join();
+  }
+  ASSERT_FALSE(timed_out)
+      << "a concurrent caller hung: its job was lost by the shared pool";
+
+  // Assert: both callers succeeded and every board was processed exactly once
+  // per caller.
+  for (int c = 0; c < callers; ++c)
+  {
+    EXPECT_EQ(futures[static_cast<unsigned>(c)].get(), RETURN_NO_FAULT)
+        << "caller " << c;
+    for (int i = 0; i < count; ++i)
+      EXPECT_EQ(
+        hits[static_cast<unsigned>(c)][static_cast<unsigned>(i)].load(), 1)
+          << "caller " << c << " board " << i;
+  }
 }
 
 TEST(ParallelAllBoards, ReusesWorkerThreadsAcrossConsecutiveCalls)

@@ -41,7 +41,9 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  *
  * Multi-worker runs use a process-local persistent thread pool so consecutive
  * calls reuse OS threads instead of create/join each time. Single-worker runs
- * stay on the calling thread.
+ * stay on the calling thread. The pool handles one job at a time; concurrent
+ * multi-worker calls from different threads are safe but serialize against
+ * each other.
  */
 auto parallel_all_boards_n(
   int count,
