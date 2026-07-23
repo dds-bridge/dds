@@ -43,7 +43,9 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  * calls reuse OS threads instead of create/join each time. Single-worker runs
  * stay on the calling thread. The pool handles one job at a time; concurrent
  * multi-worker calls from different threads are safe but serialize against
- * each other.
+ * each other. Not re-entrant: calling this again with worker_cap > 1 from
+ * inside @p process_board of another multi-worker run deadlocks (the inner
+ * call blocks on the pool mutex while the outer run waits for that worker).
  */
 auto parallel_all_boards_n(
   int count,
