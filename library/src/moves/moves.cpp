@@ -718,18 +718,28 @@ auto Moves::make_heuristic_context(const Pos &tpos, const MoveType &best_move,
       tpos,  best_move, best_move_tt, thrp_rel,  mply,     numMoves, lastNumMoves,
       trump, suit,     &tr,     currTrick, currHand, leadHand, leadSuit};
 
-  // Snapshot removed_ranks and minimal trick state into the context to avoid
-  // direct dependence on the mutable Moves::trackp buffer inside heuristic
-  // code.
+  // Snapshot removed_ranks and only those trick-card fields that are defined
+  // for the current relative hand. Earlier slots may be unpopulated (MoveGen0
+  // / hand_rel 1–2), so leave the rest at HeuristicContext's zero defaults.
   for (int s = 0; s < DDS_SUITS; ++s)
     context.removed_ranks[s] = tr.removed_ranks[s];
-  context.move1_rank = tr.move[1].rank;
-  context.high1 = tr.high[1];
-  context.move1_suit = tr.move[1].suit;
-  context.move2_rank = tr.move[2].rank;
-  context.move2_suit = tr.move[2].suit;
-  context.high2 = tr.high[2];
-  context.lead0_rank = tr.move[0].rank;
+
+  const int hand_rel =
+    (currHand == leadHand) ? 0 : (currHand + 4 - leadHand) % 4;
+  if (hand_rel >= 1)
+    context.lead0_rank = tr.move[0].rank;
+  if (hand_rel >= 2)
+  {
+    context.move1_rank = tr.move[1].rank;
+    context.move1_suit = tr.move[1].suit;
+    context.high1 = tr.high[1];
+  }
+  if (hand_rel >= 3)
+  {
+    context.move2_rank = tr.move[2].rank;
+    context.move2_suit = tr.move[2].suit;
+    context.high2 = tr.high[2];
+  }
   return context;
 }
 

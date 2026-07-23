@@ -273,6 +273,43 @@ TEST_F(MovesTest, MemorySafetyFeaturesArePresent) {
   EXPECT_FALSE(moves->funcName[0].empty());  // funcName array exists and is initialized
 }
 
+namespace
+{
+
+auto poisoned_track() -> TrackType
+{
+  TrackType tr{};
+  for (int s = 0; s < DDS_SUITS; ++s)
+    tr.removed_ranks[s] = 0x10 + s;
+  // Non-zero trick slots: only those defined for the current hand_rel should
+  // appear in the HeuristicContext snapshot.
+  tr.move[0] = ExtCard{0, 14, 0};
+  tr.move[1] = ExtCard{2, 12, 0};
+  tr.high[1] = 1;
+  tr.move[2] = ExtCard{3, 9, 0};
+  tr.high[2] = 2;
+  return tr;
+}
+
+auto context_for_hand_rel(Moves& m, const TrackType& tr, const int hand_rel)
+    -> HeuristicContext
+{
+  Pos tpos{};
+  const MoveType best{};
+  const MoveType best_tt{};
+  m.leadHand = 0;
+  m.currHand = hand_rel;  // leadHand 0 ⇒ hand_rel == currHand
+  m.leadSuit = 0;
+  m.currTrick = 0;
+  m.trump = DDS_NOTRUMP;
+  m.suit = 0;
+  m.numMoves = 0;
+  m.lastNumMoves = 0;
+  return m.make_heuristic_context(tpos, best, best_tt, nullptr, tr);
+}
+
+}  // namespace
+
 /**
  * make_heuristic_context must take an explicit TrackType rather than
  * dereferencing Moves::trackp (which starts as nullptr). Callers pass the
@@ -280,36 +317,10 @@ TEST_F(MovesTest, MemorySafetyFeaturesArePresent) {
  */
 TEST_F(MovesTest, MakeHeuristicContextSnapshotsExplicitTrack)
 {
-  Pos tpos{};
-  const MoveType best{};
-  const MoveType best_tt{};
-  TrackType tr{};
-  for (int s = 0; s < DDS_SUITS; ++s)
-    tr.removed_ranks[s] = 0x10 + s;
-  tr.move[0].rank = 14;
-  tr.move[1].rank = 12;
-  tr.move[1].suit = 2;
-  tr.high[1] = 1;
-  tr.move[2].rank = 9;
-  tr.move[2].suit = 3;
-  tr.high[2] = 0;
-
-  // trackp remains nullptr after construction — the API must not need it.
+  const TrackType tr = poisoned_track();
   ASSERT_EQ(moves->trackp, nullptr);
 
-  // Initialize Moves state used by make_heuristic_context() to avoid reading
-  // uninitialized members in tests.
-  moves->leadHand = 0;
-  moves->currHand = 0;
-  moves->leadSuit = 0;
-  moves->currTrick = 0;
-  moves->trump = DDS_NOTRUMP;
-  moves->suit = 0;
-  moves->numMoves = 0;
-  moves->lastNumMoves = 0;
-
-  const HeuristicContext ctx =
-      moves->make_heuristic_context(tpos, best, best_tt, nullptr, tr);
+  const HeuristicContext ctx = context_for_hand_rel(*moves, tr, /*hand_rel=*/3);
 
   for (int s = 0; s < DDS_SUITS; ++s)
     EXPECT_EQ(ctx.removed_ranks[s], 0x10 + s) << "suit=" << s;
@@ -319,8 +330,54 @@ TEST_F(MovesTest, MakeHeuristicContextSnapshotsExplicitTrack)
   EXPECT_EQ(ctx.high1, 1);
   EXPECT_EQ(ctx.move2_rank, 9);
   EXPECT_EQ(ctx.move2_suit, 3);
-  EXPECT_EQ(ctx.high2, 0);
+  EXPECT_EQ(ctx.high2, 2);
   EXPECT_EQ(ctx.trackp, &tr);
+}
+
+// Leading hand: move[0..2] are not played yet — leave trick snapshots at 0
+// even if the TrackType buffer holds stale/poisoned values.
+TEST_F(MovesTest, MakeHeuristicContextLeadHandOmitsUnsetTrickCards)
+{
+  const TrackType tr = poisoned_track();
+  const HeuristicContext ctx = context_for_hand_rel(*moves, tr, /*hand_rel=*/0);
+
+  EXPECT_EQ(ctx.lead0_rank, 0);
+  EXPECT_EQ(ctx.move1_rank, 0);
+  EXPECT_EQ(ctx.move1_suit, 0);
+  EXPECT_EQ(ctx.high1, 0);
+  EXPECT_EQ(ctx.move2_rank, 0);
+  EXPECT_EQ(ctx.move2_suit, 0);
+  EXPECT_EQ(ctx.high2, 0);
+}
+
+// Second hand: only the lead card is defined.
+TEST_F(MovesTest, MakeHeuristicContextSecondHandSnapshotsOnlyLead)
+{
+  const TrackType tr = poisoned_track();
+  const HeuristicContext ctx = context_for_hand_rel(*moves, tr, /*hand_rel=*/1);
+
+  EXPECT_EQ(ctx.lead0_rank, 14);
+  EXPECT_EQ(ctx.move1_rank, 0);
+  EXPECT_EQ(ctx.move1_suit, 0);
+  EXPECT_EQ(ctx.high1, 0);
+  EXPECT_EQ(ctx.move2_rank, 0);
+  EXPECT_EQ(ctx.move2_suit, 0);
+  EXPECT_EQ(ctx.high2, 0);
+}
+
+// Third hand: lead + second-hand card/high are defined; move[2] is not.
+TEST_F(MovesTest, MakeHeuristicContextThirdHandSnapshotsThroughMove1)
+{
+  const TrackType tr = poisoned_track();
+  const HeuristicContext ctx = context_for_hand_rel(*moves, tr, /*hand_rel=*/2);
+
+  EXPECT_EQ(ctx.lead0_rank, 14);
+  EXPECT_EQ(ctx.move1_rank, 12);
+  EXPECT_EQ(ctx.move1_suit, 2);
+  EXPECT_EQ(ctx.high1, 1);
+  EXPECT_EQ(ctx.move2_rank, 0);
+  EXPECT_EQ(ctx.move2_suit, 0);
+  EXPECT_EQ(ctx.high2, 0);
 }
 
 namespace
