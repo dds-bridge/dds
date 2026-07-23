@@ -9,19 +9,19 @@ void call_heuristic(const HeuristicContext& context, const int findex)
   auto& ctx = const_cast<HeuristicContext&>(context);
   switch (findex) {
     case 0:  weight_alloc_nt0(ctx); break;               // leading, no trump winner
-    case 1:  weight_alloc_trump0(ctx); break;            // leading, trump game
-    case 4:  weight_alloc_nt_notvoid1(ctx); break;       // hand_rel=1, can follow, no trump
-    case 5:  weight_alloc_trump_notvoid1(ctx); break;    // hand_rel=1, can follow, trump
-    case 6:  weight_alloc_nt_void1(ctx); break;          // hand_rel=1, void, no trump
-    case 7:  weight_alloc_trump_void1(ctx); break;       // hand_rel=1, void, trump
-    case 8:  weight_alloc_nt_notvoid2(ctx); break;       // hand_rel=2, can follow, no trump
-    case 9:  weight_alloc_trump_notvoid2(ctx); break;    // hand_rel=2, can follow, trump
-    case 10: weight_alloc_nt_void2(ctx); break;          // hand_rel=2, void, no trump
-    case 11: weight_alloc_trump_void2(ctx); break;       // hand_rel=2, void, trump
-    case 12: weight_alloc_combined_notvoid3(ctx); break; // hand_rel=3, can follow, no trump
-    case 13: weight_alloc_combined_notvoid3(ctx); break; // hand_rel=3, can follow, trump
-    case 14: weight_alloc_nt_void3(ctx); break;          // hand_rel=3, void, no trump
-    case 15: weight_alloc_trump_void3(ctx); break;       // hand_rel=3, void, trump
+    case 1:  weight_alloc_trump0(ctx); break;            // leading, trump winner available
+    case 4:  weight_alloc_nt_notvoid1(ctx); break;       // hand_rel=1, can follow, no trump winner
+    case 5:  weight_alloc_trump_notvoid1(ctx); break;    // hand_rel=1, can follow, trump winner
+    case 6:  weight_alloc_nt_void1(ctx); break;          // hand_rel=1, void, no trump winner
+    case 7:  weight_alloc_trump_void1(ctx); break;       // hand_rel=1, void, trump winner
+    case 8:  weight_alloc_nt_notvoid2(ctx); break;       // hand_rel=2, can follow, no trump winner
+    case 9:  weight_alloc_trump_notvoid2(ctx); break;    // hand_rel=2, can follow, trump winner
+    case 10: weight_alloc_nt_void2(ctx); break;          // hand_rel=2, void, no trump winner
+    case 11: weight_alloc_trump_void2(ctx); break;       // hand_rel=2, void, trump winner
+    case 12: weight_alloc_combined_notvoid3(ctx); break; // hand_rel=3, can follow, no trump winner
+    case 13: weight_alloc_combined_notvoid3(ctx); break; // hand_rel=3, can follow, trump winner
+    case 14: weight_alloc_nt_void3(ctx); break;          // hand_rel=3, void, no trump winner
+    case 15: weight_alloc_trump_void3(ctx); break;       // hand_rel=3, void, trump winner
     default:
       // Should not happen, but default to basic sorting
       break;

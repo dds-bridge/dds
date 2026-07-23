@@ -127,8 +127,9 @@ void expect_same_weights(const DispatchFixture& f, const int findex)
 
 }  // namespace
 
-// Leading hand: findex 0 (NT) and 1 (trump) must match the legacy dispatch,
-// which selects the weight function from the trump/winner state.
+// Leading hand: findex 0 (NT) and 1 (trump winner available) must match the
+// legacy dispatch, which selects the weight function from the trump/winner
+// state — not merely whether a trump suit is set.
 TEST(DispatchFindex, LeadHandMatchesLegacyDispatch)
 {
   for (const bool trump_game : {false, true})
@@ -149,8 +150,42 @@ TEST(DispatchFindex, LeadHandMatchesLegacyDispatch)
   }
 }
 
-// Following hands: findex 4..15 (4*hand_rel + trump + 2*void) must match the
-// legacy dispatch that re-derives hand_rel, trump state and voidness.
+// findex bit 0/1 is "trump winner available", not "trump suit set".
+// A trump deal with winner[trump].rank == 0 must dispatch as findex 0.
+TEST(DispatchFindex, LeadHandTrumpWithoutWinnerUsesFindex0)
+{
+  DispatchFixture f;
+  const int lead_hand = 2;
+  fill_position(f, /*trump_game=*/true, /*is_void=*/false, lead_hand,
+                /*lead_suit=*/0);
+  f.tpos.winner[1].rank = 0;
+
+  HeuristicContext legacy = make_context(
+    f, f.moves_legacy, /*trump_game=*/true, false, lead_hand, lead_hand, 0);
+  HeuristicContext with_findex = make_context(
+    f, f.moves_findex, /*trump_game=*/true, false, lead_hand, lead_hand, 0);
+
+  call_heuristic(legacy);
+  call_heuristic(with_findex, /*findex=*/0);
+
+  expect_same_weights(f, /*findex=*/0);
+
+  // Passing 1 ("trump game") would select the wrong weight function.
+  for (int k = 0; k < kNumMoves; k++)
+    f.moves_findex[k].weight = 0;
+  call_heuristic(with_findex, /*findex=*/1);
+  bool any_differ = false;
+  for (int k = 0; k < kNumMoves; k++)
+  {
+    if (f.moves_legacy[k].weight != f.moves_findex[k].weight)
+      any_differ = true;
+  }
+  EXPECT_TRUE(any_differ)
+      << "findex 1 must not match when trump is set but no winner is available";
+}
+
+// Following hands: findex 4..15 (4*hand_rel + trump_winner + 2*void) must match
+// the legacy dispatch that re-derives hand_rel, trump-winner state and voidness.
 TEST(DispatchFindex, FollowingHandsMatchLegacyDispatchForAllFindexes)
 {
   const int lead_hand = 1;

@@ -83,10 +83,12 @@ void call_heuristic(const HeuristicContext& context);
 /// re-deriving the relative hand, trump state and voidness from the context
 /// on every call (hot path).
 ///
-/// Encoding (matches the findex used by Moves::MoveGen123):
-///   - Leading hand:   0 = no trump winner available, 1 = trump game
-///   - Following hand: 4 * hand_rel + trump_game + (void_in_lead_suit ? 2 : 0)
-///     for hand_rel in 1..3, i.e. values 4..15.
+/// Encoding (matches the findex used by Moves::MoveGen0 / MoveGen123):
+///   - Leading hand:   0 = no trump winner available, 1 = trump winner available
+///     (trump != DDS_NOTRUMP && winner[trump].rank != 0)
+///   - Following hand: 4 * hand_rel + trump_winner + (void_in_lead_suit ? 2 : 0)
+///     for hand_rel in 1..3, i.e. values 4..15, where trump_winner is the
+///     same 0/1 bit as for the leading hand.
 ///
 /// @param context Pre-constructed HeuristicContext (see other overload).
 /// @param findex  Precomputed dispatch index as encoded above.
