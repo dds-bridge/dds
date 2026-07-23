@@ -117,6 +117,8 @@ TEST(ParallelAllBoards, WrongSizedOrderFallsBackToIndexOrder)
 
 TEST(ParallelAllBoards, PermutationValidationUsesAtMostOneAllocation)
 {
+  // Permutation checks may allocate a temporary "seen" bitmap; the board-slot
+  // mapping itself must stay allocation-free (plain data, not std::function).
   // Arrange
   const std::vector<int> order{3, 1, 0, 2};
   std::vector<int> boards;

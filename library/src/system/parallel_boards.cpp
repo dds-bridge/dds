@@ -55,7 +55,8 @@ public:
     const int workers,
     const int count,
     const std::function<int(int worker_id, int bno)>& process_board,
-    const std::function<int(int slot)>& board_of) -> int
+    const bool use_order,
+    const std::vector<int>* order) -> int
   {
     // The pool tracks exactly one outstanding job (job_, workers_for_job_,
     // generation_). Serialize whole runs so a second concurrent caller queues
@@ -74,12 +75,13 @@ public:
 
     Job job{
       &process_board,
-      &board_of,
+      order,
       &next,
       &first_error,
       &finished,
       count,
-      workers};
+      workers,
+      use_order};
 
     {
       std::lock_guard<std::mutex> lock(mu_);
@@ -103,12 +105,13 @@ private:
   struct Job
   {
     const std::function<int(int, int)>* process_board = nullptr;
-    const std::function<int(int)>* board_of = nullptr;
+    const std::vector<int>* order = nullptr;
     std::atomic<int>* next = nullptr;
     std::atomic<int>* first_error = nullptr;
     int* finished = nullptr;
     int count = 0;
     int workers = 0;
+    bool use_order = false;
   };
 
   void ensure_workers(const int workers)
@@ -154,7 +157,10 @@ private:
           {
             break;
           }
-          const int bno = (*local.board_of)(slot);
+          const int bno =
+            local.use_order
+              ? (*local.order)[static_cast<unsigned>(slot)]
+              : slot;
           const int rc = (*local.process_board)(worker_id, bno);
           if (rc != RETURN_NO_FAULT)
           {
@@ -255,9 +261,6 @@ auto parallel_all_boards_n(
     (order != nullptr &&
      order->size() == static_cast<std::size_t>(count) &&
      is_permutation_of_range(*order, count));
-  const std::function<int(int)> board_of = [use_order, order](const int slot) {
-    return use_order ? (*order)[static_cast<unsigned>(slot)] : slot;
-  };
 
   const int workers = resolve_worker_count(worker_cap, count);
 
@@ -265,7 +268,9 @@ auto parallel_all_boards_n(
   {
     for (int slot = 0; slot < count; ++slot)
     {
-      const int rc = process_board(0, board_of(slot));
+      const int bno =
+        use_order ? (*order)[static_cast<unsigned>(slot)] : slot;
+      const int rc = process_board(0, bno);
       if (rc != RETURN_NO_FAULT)
       {
         return rc;
@@ -274,5 +279,5 @@ auto parallel_all_boards_n(
     return RETURN_NO_FAULT;
   }
 
-  return default_pool().run(workers, count, process_board, board_of);
+  return default_pool().run(workers, count, process_board, use_order, order);
 }
