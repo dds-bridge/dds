@@ -137,8 +137,11 @@ auto describe_mismatch(const ResultMap& expected, const ResultMap& actual)
 class ReplayEngine::Impl
 {
 public:
-  Impl(int threads, int dds_mode)
-    : n_(threads), dds_mode_(dds_mode), results_(nullptr), deals_(nullptr)
+  // The DDS mode is not held here: it travels per call, as the `mode` argument
+  // to solve_batch(), so a single pool can replay calls that used different
+  // modes.
+  explicit Impl(int threads)
+    : n_(threads), results_(nullptr), deals_(nullptr)
   {
     workers_.reserve(static_cast<size_t>(n_));
     for (int t = 0; t < n_; ++t)
@@ -240,7 +243,6 @@ private:
   }
 
   int n_;
-  int dds_mode_;
   std::vector<std::thread> workers_;
 
   std::mutex m_;
@@ -268,7 +270,7 @@ public:
 };
 
 ReplayEngine::ReplayEngine(int threads, int dds_mode)
-  : impl_(new Impl(threads, dds_mode)), threads_(threads), dds_mode_(dds_mode)
+  : impl_(new Impl(threads)), threads_(threads), dds_mode_(dds_mode)
 {
 }
 
