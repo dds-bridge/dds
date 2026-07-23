@@ -13,6 +13,7 @@
 #include <cstring>
 
 #include "heuristic_sorting/heuristic_sorting.hpp"
+#include "heuristic_sorting/internal.hpp"
 #include <api/dds.h>
 
 namespace
@@ -182,6 +183,44 @@ TEST(DispatchFindex, LeadHandTrumpWithoutWinnerUsesFindex0)
   }
   EXPECT_TRUE(any_differ)
       << "findex 1 must not match when trump is set but no winner is available";
+}
+
+// Out-of-range findex must still assign deterministic weights (NT0 fallback),
+// not leave stale/uninitialized move weights that would scramble MergeSort.
+TEST(DispatchFindex, InvalidFindexFallsBackToBasicNt0Weights)
+{
+  for (const int bad_findex : {2, 3, 16, -1, 99})
+  {
+    DispatchFixture f;
+    const int lead_hand = 0;
+    fill_position(f, /*trump_game=*/false, /*is_void=*/false, lead_hand,
+                  /*lead_suit=*/0);
+
+    constexpr int kStale = 0x7f0f0f0f;
+    for (int k = 0; k < kNumMoves; k++)
+    {
+      f.moves_legacy[k].weight = 0;
+      f.moves_findex[k].weight = kStale;
+    }
+
+    HeuristicContext expected = make_context(
+      f, f.moves_legacy, /*trump_game=*/false, false, lead_hand, lead_hand, 0);
+    HeuristicContext with_findex = make_context(
+      f, f.moves_findex, /*trump_game=*/false, false, lead_hand, lead_hand, 0);
+
+    weight_alloc_nt0(expected);
+    call_heuristic(with_findex, bad_findex);
+
+    for (int k = 0; k < kNumMoves; k++)
+    {
+      EXPECT_NE(f.moves_findex[k].weight, kStale)
+          << "findex=" << bad_findex << " move=" << k
+          << " left a stale weight";
+      EXPECT_EQ(f.moves_legacy[k].weight, f.moves_findex[k].weight)
+          << "findex=" << bad_findex << " move=" << k
+          << " must match weight_alloc_nt0 fallback";
+    }
+  }
 }
 
 // Following hands: findex 4..15 (4*hand_rel + trump_winner + 2*void) must match

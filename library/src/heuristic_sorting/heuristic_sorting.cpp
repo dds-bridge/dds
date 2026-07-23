@@ -23,7 +23,9 @@ void call_heuristic(const HeuristicContext& context, const int findex)
     case 14: weight_alloc_nt_void3(ctx); break;          // hand_rel=3, void, no trump winner
     case 15: weight_alloc_trump_void3(ctx); break;       // hand_rel=3, void, trump winner
     default:
-      // Should not happen, but default to basic sorting
+      // Should not happen; fall back to NT leading weights so moves get
+      // deterministic ordering instead of stale/uninitialized weights.
+      weight_alloc_nt0(ctx);
       break;
   }
 }
