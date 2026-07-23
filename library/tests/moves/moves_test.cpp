@@ -286,6 +286,17 @@ TEST_F(MovesTest, MakeHeuristicContextSnapshotsExplicitTrack)
   // trackp remains nullptr after construction — the API must not need it.
   ASSERT_EQ(moves->trackp, nullptr);
 
+  // Initialize Moves state used by make_heuristic_context() to avoid reading
+  // uninitialized members in tests.
+  moves->leadHand = 0;
+  moves->currHand = 0;
+  moves->leadSuit = 0;
+  moves->currTrick = 0;
+  moves->trump = DDS_NOTRUMP;
+  moves->suit = 0;
+  moves->numMoves = 0;
+  moves->lastNumMoves = 0;
+
   const HeuristicContext ctx =
       moves->make_heuristic_context(tpos, best, best_tt, nullptr, tr);
 
