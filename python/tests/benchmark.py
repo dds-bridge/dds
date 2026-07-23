@@ -43,9 +43,17 @@ from pathlib import Path
 from typing import Mapping, Sequence, TextIO
 
 SOLVERS = ("solve", "calc")
-DTEST_REL = Path("bazel-bin/library/tests/dtest")
 ALT_ENTER = "\033[?1049h\033[H\033[2J"
 ALT_LEAVE = "\033[?1049l"
+
+
+def dtest_rel(*, os_name: str = os.name) -> Path:
+    """Relative path to Bazel's dtest binary for the given OS."""
+    name = "dtest.exe" if os_name == "nt" else "dtest"
+    return Path(f"bazel-bin/library/tests/{name}")
+
+
+DTEST_REL = dtest_rel()
 
 
 class BenchmarkError(Exception):

@@ -106,6 +106,23 @@ class TestLabelForPath(unittest.TestCase):
         self.assertEqual(benchmark.label_for_path("/tmp/foo/dtest"), "dtest")
 
 
+class TestDtestRel(unittest.TestCase):
+    def test_posix_path_omits_exe(self) -> None:
+        self.assertEqual(
+            benchmark.dtest_rel(os_name="posix"),
+            Path("bazel-bin/library/tests/dtest"),
+        )
+
+    def test_windows_path_uses_exe(self) -> None:
+        self.assertEqual(
+            benchmark.dtest_rel(os_name="nt"),
+            Path("bazel-bin/library/tests/dtest.exe"),
+        )
+
+    def test_module_constant_matches_current_platform(self) -> None:
+        self.assertEqual(benchmark.DTEST_REL, benchmark.dtest_rel())
+
+
 class TestRunnerCleanup(unittest.TestCase):
     def test_alt_leave_goes_to_injected_out(self) -> None:
         out = io.StringIO()
