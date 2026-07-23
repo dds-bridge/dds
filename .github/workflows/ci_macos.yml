@@ -24,17 +24,14 @@ jobs:
 
       - name: Setup Bazelisk (attempt 2)
         id: setup_bazelisk_2
-        if: steps.setup_bazelisk_1.outcome == 'failure'
-        continue-on-error: true
+        if: steps.setup_bazelisk_1.outcome != 'success'
+        continue-on-error: false
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: "1.29.0"
 
-      - name: Ensure Bazelisk setup succeeded
-        if: steps.setup_bazelisk_1.outcome == 'failure' && steps.setup_bazelisk_2.outcome == 'failure'
-        run: |
-          echo "Bazelisk setup failed after 2 attempts."
-          exit 1
+      - name: Verify Bazelisk installation
+        run: bazelisk version || (echo "Failed to install Bazelisk after two setup attempts, or Bazelisk is not available on PATH." && exit 1)
 
       # Install Doxygen, to generate documentation
       - name: Install Doxygen
