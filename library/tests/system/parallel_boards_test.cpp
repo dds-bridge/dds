@@ -233,7 +233,11 @@ TEST(ParallelAllBoards, ConcurrentCallersBothCompleteAndProcessAllBoards)
   // enter the dispatcher at the same moment.
   std::array<std::vector<std::atomic<int>>, callers> hits;
   for (auto& caller_hits : hits)
+  {
     caller_hits = std::vector<std::atomic<int>>(count);
+    for (auto& h : caller_hits)
+      h.store(0, std::memory_order_relaxed);
+  }
   std::atomic<int> ready{0};
   std::array<std::promise<int>, callers> results;
   std::array<std::future<int>, callers> futures;
