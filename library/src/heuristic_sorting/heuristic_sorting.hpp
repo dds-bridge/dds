@@ -73,8 +73,9 @@ struct HeuristicContext
 ///                move arrays, and cached snapshots for efficient evaluation.
 ///                Non-const because weighting writes through context.mply.
 ///
-/// @note Prefer this overload over parameterized versions to minimize
-///       construction overhead in hot paths.
+/// @note Prefer the `call_heuristic(context, findex)` overload when the dispatch
+///       index is already known (hot path). Use this overload when callers do
+///       not have `findex` available.
 void call_heuristic(HeuristicContext& context);
 
 /// @brief Apply heuristic sorting using a precomputed dispatch index.
