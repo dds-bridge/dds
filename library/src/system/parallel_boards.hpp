@@ -51,10 +51,10 @@ auto parallel_all_boards_n(
   const std::function<int(int worker_id, int bno)>& process_board,
   const std::vector<int>* order = nullptr) -> int;
 
-/**
- * @brief Cumulative number of OS worker threads created by the board pool.
- *
- * Used by tests to verify that consecutive multi-worker runs reuse threads
- * rather than spawning a fresh set each call.
- */
+namespace dds::internal
+{
+
+// Cumulative number of OS worker threads created by the board pool (test seam).
 auto parallel_boards_worker_threads_created() -> std::uint64_t;
+
+}  // namespace dds::internal

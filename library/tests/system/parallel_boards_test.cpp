@@ -314,13 +314,15 @@ TEST(ParallelAllBoards, ReusesWorkerThreadsAcrossConsecutiveCalls)
 
   // Arrange: grow/warm the pool to the requested size.
   ASSERT_EQ(parallel_all_boards_n(count, workers, noop), RETURN_NO_FAULT);
-  const auto created_after_warm = parallel_boards_worker_threads_created();
+  const auto created_after_warm =
+    dds::internal::parallel_boards_worker_threads_created();
   ASSERT_GE(created_after_warm, static_cast<std::uint64_t>(workers));
 
   // Act: two more multi-worker runs at the same width.
   ASSERT_EQ(parallel_all_boards_n(count, workers, noop), RETURN_NO_FAULT);
   ASSERT_EQ(parallel_all_boards_n(count, workers, noop), RETURN_NO_FAULT);
-  const auto created_after_reuse = parallel_boards_worker_threads_created();
+  const auto created_after_reuse =
+    dds::internal::parallel_boards_worker_threads_created();
 
   // Assert: reuse must not create additional OS threads.
   EXPECT_EQ(created_after_reuse, created_after_warm);

@@ -236,10 +236,15 @@ static auto is_permutation_of_range(
 }
 
 
+namespace dds::internal
+{
+
 auto parallel_boards_worker_threads_created() -> std::uint64_t
 {
   return g_threads_created.load(std::memory_order_relaxed);
 }
+
+}  // namespace dds::internal
 
 
 auto parallel_all_boards_n(
