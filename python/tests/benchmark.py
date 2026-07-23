@@ -632,7 +632,7 @@ class BenchmarkRunner:
         dest.chmod(dest.stat().st_mode | 0o111)
 
     def new_tmp_bin(self) -> Path:
-        fd, name = tempfile.mkstemp(prefix="dds-dtest-bin.")
+        fd, name = tempfile.mkstemp(prefix="dds-dtest-bin.", suffix=".exe" if os.name == "nt" else "")
         os.close(fd)
         path = Path(name)
         self.tmp_bins.append(path)
