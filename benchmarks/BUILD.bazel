@@ -1,0 +1,73 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# Reader + replay engine for recorded DDS workloads. Split from the CLI so the
+# parsing and result-canonicalisation logic can be unit tested.
+cc_library(
+    name = "replay_lib",
+    srcs = [
+        "recording.cpp",
+        "replay.cpp",
+    ],
+    hdrs = [
+        "recording.hpp",
+        "replay.hpp",
+    ],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:dds_c_api",
+    ],
+)
+
+# Benchmark driver. Takes a recording produced by an application that logged its
+# own DDS traffic:
+#
+#   bazel run -c opt //benchmarks:dds_replay -- /path/to/recording.jsonl
+#   bazel run -c opt //benchmarks:dds_replay -- rec.jsonl --threads 8 --threads 16
+#
+# Tagged manual: it needs a recording to be useful, and recordings are large
+# enough that they live outside the repository.
+cc_binary(
+    name = "dds_replay",
+    srcs = ["dds_replay_main.cpp"],
+    copts = DDS_CPPOPTS,
+    data = [":camrose_recording"],
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+    deps = [":replay_lib"],
+)
+
+# The reference workload: every DDS call BEN made playing the 32 boards of
+# Camrose 2024, together with the deals those boards came from. Committed so the
+# benchmark is runnable as-is -- the recording cannot be regenerated without BEN
+# and its neural models. See README.md for how it was produced.
+filegroup(
+    name = "camrose_recording",
+    srcs = [
+        "testdata/camrose-1-32.pbn",
+        "testdata/dds-camrose-1-32.jsonl",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Smoke test over a small committed recording, so the replay path (JSON parsing,
+# PBN decoding, batching, result canonicalisation, verification) stays correct
+# without needing a large recording. The sample was cut from a real session.
+cc_test(
+    name = "replay_test",
+    size = "small",
+    srcs = ["replay_test.cpp"],
+    copts = DDS_CPPOPTS,
+    data = ["testdata/sample-recording.jsonl"],
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        ":replay_lib",
+        "@googletest//:gtest_main",
+    ],
+)
