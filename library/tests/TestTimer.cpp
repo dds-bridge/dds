@@ -60,6 +60,14 @@ void TestTimer::set_name(const string& s)
 }
 
 
+long clock_delta_to_ms(clock_t delta)
+{
+  return static_cast<long>(
+    (1000.0 * static_cast<double>(delta)) /
+    static_cast<double>(CLOCKS_PER_SEC));
+}
+
+
 void TestTimer::start(const int number)
 {
   pending_hands_ = number;
@@ -75,8 +83,7 @@ void TestTimer::end()
 
   duration<double, std::milli> d = user1 - user0_;
   const long tuser = static_cast<long>(d.count());
-  const long tsys = static_cast<long>((1000 * (sys1 - sys0_)) /
-    static_cast<double>(CLOCKS_PER_SEC));
+  const long tsys = clock_delta_to_ms(sys1 - sys0_);
 
   TestTimer::record(pending_hands_, tuser, tsys);
   pending_hands_ = 0;

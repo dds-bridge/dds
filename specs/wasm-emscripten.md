@@ -1,7 +1,7 @@
 ---
 capability: wasm-emscripten
 owners: [wasm]
-last-updated: 2026-07-18
+last-updated: 2026-07-19
 ---
 
 # WASM (Emscripten) Build
@@ -22,11 +22,15 @@ core solver builds and runs correctly under Emscripten.
 > Per-target detail is in the BUILD file and `docs/wasm_build.md`; these are the
 > capability-wide facts.
 
-- **A curated subset of examples is ported.** `wasm_cc_binary` wraps three
+- **A curated subset of CLIs is ported.** `wasm_cc_binary` wraps three
   [examples-cli](examples-cli.md) binaries: `solve_board_wasm` (← `//examples:solve_board`),
   `analyse_play_bin_wasm` (← `//examples:AnalysePlayBin`), and
   `calc_dd_table_pbn_wasm` (← `//examples:calc_dd_table_pbn`), each emitting a
-  `.js` loader + `.wasm`. `all_examples_wasm` groups them.
+  `.js` loader + `.wasm`. `all_examples_wasm` groups them. Separately,
+  `dtest_wasm` (← `//library/tests:dtest`) ports the hand-list test harness for
+  Node (host file access via `NODERAWFS`); it is not part of `all_examples_wasm`.
+  `//wasm:run_dtest_wasm` is a `py_binary` that runs that module under Node
+  (`bazel run //wasm:run_dtest_wasm -- …`).
 - **The toolchain is hermetic and transition-driven.** `wasm_cc_binary` applies an
   Emscripten **platform transition** to the underlying `cc_binary` — no
   `--config=wasm` or `.bazelrc` profile is needed. The emsdk toolchain is
@@ -38,16 +42,21 @@ core solver builds and runs correctly under Emscripten.
   from `WASM_LINKOPTS` ([build-system](build-system.md)) — notably an 8 MB stack, because DDS
   search recursion overflows Emscripten's 64 KB default. Example binaries also
   attach those flags via `EXAMPLES_LINKOPTS_WASM` in `examples/BUILD.bazel`.
+  `dtest` adds Node-oriented flags (`ENVIRONMENT=node`, `NODERAWFS`,
+  `EXIT_RUNTIME`) under the same `build_wasm` select.
 - **Correctness is checked two ways.** `calc_dd_table_pbn_test` is a native
   `cc_test` over the same example logic (fast feedback without a JS runtime); the
-  `wasm_examples_system_test` py_test actually runs the built
-  `calc_dd_table_pbn_wasm` module end to end. The `all` and `wasm_system_tests`
+  `wasm_examples_system_test` py_test runs `calc_dd_table_pbn_wasm` and
+  `dtest_wasm` under Node end to end. `run_dtest_wasm_test` covers the Node
+  runner helpers. The `all` and `wasm_system_tests`
   suites bundle these.
 
 ## Key entry points
 
-- `wasm/BUILD.bazel` — the three `wasm_cc_binary` targets, `all_examples_wasm`,
-  `calc_dd_table_pbn_test`, `wasm_examples_system_test`, and the test suites.
+- `wasm/BUILD.bazel` — the example `wasm_cc_binary` targets, `dtest_wasm`,
+  `run_dtest_wasm`, `all_examples_wasm`, `calc_dd_table_pbn_test`,
+  `wasm_examples_system_test`, and the test suites.
+- `wasm/run_dtest_wasm.py` — `bazel run` entry that invokes `dtest.js` via Node.
 - `wasm/tests/test_wasm_examples_system.py` — the end-to-end runner.
 - Consumer guide: `docs/wasm_build.md`. Shared link flags: `WASM_LINKOPTS` in
   `wasm_compat.bzl`.
@@ -55,6 +64,7 @@ core solver builds and runs correctly under Emscripten.
 ## Known gaps / non-goals
 
 - **Only three examples are ported**, not the full [examples-cli](examples-cli.md) set.
+  `dtest_wasm` is an additional harness port, not an example CLI.
 - **No threaded WASM** — single-thread only.
 - Browser wiring, the site, MVP post-build JS patches (`web/patch_mvp_wasm.py`),
   and JS/e2e tests belong to [web-mvp](web-mvp.md); this capability provides the example

@@ -69,6 +69,51 @@
   padding: 20px;
 }
 
+.hand-card-count {
+  font-size: 1rem;
+  margin-top: 0.25rem;
+}
+
 td {
   text-align: center;
+}
+
+#deck-status {
+  display: flex;
+  flex-wrap: nowrap;
+  font-size: calc(1em + 1pt);
+  gap: 0.35rem;
+  max-width: 800px;
+  padding: 0.5rem 0;
+  white-space: nowrap;
+}
+
+.deck-card {
+  color: #000;
+  flex: 0 0 auto;
+}
+
+/* Suit glyphs are DOM text; .deck-card sets its own color so nested pips stay black. */
+spade-suit,
+club-suit {
+  color: #000;
+}
+
+heart-suit,
+diamond-suit {
+  color: #c00;
+}
+
+.deck-card-entered {
+  color: #888;
+}
+
+/* Bold outline only when Enter would activate Double-dummy it! */
+#double-dummy-it.default-action {
+  outline: 3px solid #222;
+  outline-offset: 2px;
+}
+
+#double-dummy-it:disabled {
+  color: #777;
 }

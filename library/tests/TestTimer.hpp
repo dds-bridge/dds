@@ -25,6 +25,11 @@ using std::chrono::time_point;
 /// of test execution. Useful for performance regression detection
 /// and identifying slow test hands.
 
+/// Convert a `clock()` tick delta to milliseconds.
+/// Uses floating-point so `1000 * ticks` cannot overflow 32-bit `long`
+/// (wasm32 batches longer than ~2.15s when CLOCKS_PER_SEC is 1e6).
+long clock_delta_to_ms(clock_t delta);
+
 /// Timer for measuring test performance.
 /// Tracks both wall-clock (user) and CPU (system) time for test execution.
 class TestTimer
