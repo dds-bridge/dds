@@ -486,10 +486,12 @@ def git_prep_for_branches(
 
     Returns (resolved_specs, orig_branch).
     """
-    probe = _git(root, "rev-parse", "--is-inside-work-tree", check=False)
+    try:
+        probe = _git(root, "rev-parse", "--is-inside-work-tree", check=False)
+    except OSError as e:
+        raise BenchmarkError("--branch requires git to be installed and on PATH") from e
     if probe.returncode != 0:
         raise BenchmarkError(f"--branch requires a git work tree at {root}")
-
     sym = _git(root, "symbolic-ref", "--quiet", "--short", "HEAD", check=False)
     if sym.returncode == 0 and sym.stdout.strip():
         orig_branch = sym.stdout.strip()
