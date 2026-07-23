@@ -184,16 +184,20 @@ public:
   auto MergeSort() -> void;
 
   /**
-   * @brief Invoke heuristic sorting for current move list.
+   * @brief Build a HeuristicContext snapshot from current move-gen state.
+   *
+   * Built once per move-generation call; the caller updates suit and move
+   * counts per suit iteration and dispatches via call_heuristic(ctx, findex).
    *
    * @param tpos Current position
-   * @param best_move Best move from search
-   * @param best_move_tt Best move from transposition table
+   * @param best_move Best move from search (must outlive the context)
+   * @param best_move_tt Best move from transposition table (must outlive the context)
    * @param thrp_rel Relative ranks per hand
    */
-  auto call_heuristic(const Pos &tpos, const MoveType &best_move,
-                     const MoveType &best_move_tt, const RelRanksType thrp_rel[])
-      -> void;
+  auto make_heuristic_context(const Pos &tpos, const MoveType &best_move,
+                              const MoveType &best_move_tt,
+                              const RelRanksType thrp_rel[]) const
+      -> HeuristicContext;
 
   // (logging accessors removed)
 

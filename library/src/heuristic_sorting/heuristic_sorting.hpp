@@ -35,7 +35,9 @@ struct HeuristicContext
     int num_moves;
     int last_num_moves;
     const int trump;
-    const int suit; // For MoveGen0, the suit being considered
+    // For MoveGen0, the suit being considered. Mutable so callers can build
+    // the context once per move generation and update it per suit iteration.
+    int suit;
     const TrackType* trackp;
     const int curr_trick;
     const int curr_hand;
@@ -74,4 +76,19 @@ struct HeuristicContext
 /// @note Prefer this overload over parameterized versions to minimize
 ///       construction overhead in hot paths.
 void call_heuristic(const HeuristicContext& context);
+
+/// @brief Apply heuristic sorting using a precomputed dispatch index.
+///
+/// Move generation already knows the dispatch case; passing it avoids
+/// re-deriving the relative hand, trump state and voidness from the context
+/// on every call (hot path).
+///
+/// Encoding (matches the findex used by Moves::MoveGen123):
+///   - Leading hand:   0 = no trump winner available, 1 = trump game
+///   - Following hand: 4 * hand_rel + trump_game + (void_in_lead_suit ? 2 : 0)
+///     for hand_rel in 1..3, i.e. values 4..15.
+///
+/// @param context Pre-constructed HeuristicContext (see other overload).
+/// @param findex  Precomputed dispatch index as encoded above.
+void call_heuristic(const HeuristicContext& context, int findex);
 
