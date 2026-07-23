@@ -326,23 +326,54 @@ TEST_F(MovesTest, MakeHeuristicContextSnapshotsExplicitTrack)
 namespace
 {
 
-auto make_pos(const unsigned short (*rank_in_suit)[4]) -> Pos
+// Compact deal for MoveGen*: lead hand has only a few cards so the move list
+// stays within MovePlyType::move[14]. The Init-only sample (0x3fff in every
+// suit) overflows that buffer and trips ASan.
+struct CompactDeal
 {
+  unsigned short rank_in_suit[DDS_HANDS][DDS_SUITS]{};
   Pos tpos{};
+};
+
+auto popcount16(unsigned short bits) -> int
+{
+  int n = 0;
+  for (; bits != 0; bits = static_cast<unsigned short>(bits & (bits - 1)))
+    ++n;
+  return n;
+}
+
+auto make_compact_deal() -> CompactDeal
+{
+  CompactDeal d{};
+  // Hand 0 (lead): AK of suit 0, Q of suit 1.
+  d.rank_in_suit[0][0] = 0x1800;
+  d.rank_in_suit[0][1] = 0x0400;
+  // Other hands: one card each for length/winner lookups.
+  d.rank_in_suit[1][0] = 0x0200;
+  d.rank_in_suit[1][2] = 0x0100;
+  d.rank_in_suit[2][0] = 0x0080;
+  d.rank_in_suit[3][1] = 0x0040;
+
   for (int h = 0; h < DDS_HANDS; ++h)
   {
     for (int s = 0; s < DDS_SUITS; ++s)
     {
-      tpos.rank_in_suit[h][s] = rank_in_suit[h][s];
-      tpos.length[h][s] = 13;
+      d.tpos.rank_in_suit[h][s] = d.rank_in_suit[h][s];
+      d.tpos.length[h][s] =
+        static_cast<unsigned char>(popcount16(d.rank_in_suit[h][s]));
+      d.tpos.aggr[s] =
+        static_cast<unsigned short>(d.tpos.aggr[s] | d.rank_in_suit[h][s]);
     }
   }
-  return tpos;
+  return d;
 }
 
 auto move_list_weights(const Moves& m, const int tricks, const int hand_rel,
                        const int n) -> std::vector<int>
 {
+  EXPECT_GT(n, 0);
+  EXPECT_LE(n, 14);
   std::vector<int> weights;
   weights.reserve(static_cast<unsigned>(n));
   for (int i = 0; i < n; ++i)
@@ -358,14 +389,13 @@ TEST_F(MovesTest, MoveGen0OutOfRangeTrumpMatchesNoTrump)
 {
   static RelRanksType rel[8192] = {};
   constexpr int tricks = 5;
-  const unsigned short (*rank_in_suit)[4] = getSampleRankInSuit();
-  const Pos tpos = make_pos(rank_in_suit);
+  const CompactDeal deal = make_compact_deal();
   const MoveType best{};
 
   auto run = [&](const int trump) {
     auto local = std::make_unique<Moves>();
-    local->Init(tricks, 0, nullptr, nullptr, rank_in_suit, trump, 0);
-    const int n = local->MoveGen0(tricks, tpos, best, best, rel);
+    local->Init(tricks, 0, nullptr, nullptr, deal.rank_in_suit, trump, 0);
+    const int n = local->MoveGen0(tricks, deal.tpos, best, best, rel);
     return move_list_weights(*local, tricks, 0, n);
   };
 
@@ -384,15 +414,14 @@ TEST_F(MovesTest, MoveGen123OutOfRangeTrumpMatchesNoTrump)
   constexpr int tricks = 5;
   constexpr int hand_rel = 1;
   constexpr int lead_suit = 0;
-  const unsigned short (*rank_in_suit)[4] = getSampleRankInSuit();
-  const Pos tpos = make_pos(rank_in_suit);
+  const CompactDeal deal = make_compact_deal();
 
   auto run = [&](const int trump) {
     auto local = std::make_unique<Moves>();
-    local->Init(tricks, 0, nullptr, nullptr, rank_in_suit, trump, 0);
+    local->Init(tricks, 0, nullptr, nullptr, deal.rank_in_suit, trump, 0);
     local->track[tricks].lead_suit = lead_suit;
     local->track[tricks].move[0] = ExtCard{lead_suit, 8, 0};
-    const int n = local->MoveGen123(tricks, hand_rel, tpos);
+    const int n = local->MoveGen123(tricks, hand_rel, deal.tpos);
     return move_list_weights(*local, tricks, hand_rel, n);
   };
 
@@ -412,25 +441,25 @@ TEST_F(MovesTest, MoveGenResetsSnapshottedFieldsBeforeHeuristicContext)
   static RelRanksType rel[8192] = {};
   constexpr int tricks = 5;
   constexpr int lead_suit = 0;
-  const unsigned short (*rank_in_suit)[4] = getSampleRankInSuit();
-  Pos tpos = make_pos(rank_in_suit);
+  CompactDeal deal = make_compact_deal();
   // Force a void-in-lead path for hand_rel=1 so suit/lastNumMoves are used
   // by the void weight functions after the hoisted context is built.
-  tpos.rank_in_suit[1][lead_suit] = 0;
-  tpos.length[1][lead_suit] = 0;
+  deal.rank_in_suit[1][lead_suit] = 0;
+  deal.tpos.rank_in_suit[1][lead_suit] = 0;
+  deal.tpos.length[1][lead_suit] = 0;
   const MoveType best{};
 
   auto run_gen0 = [&](Moves& m) {
-    m.Init(tricks, 0, nullptr, nullptr, rank_in_suit, DDS_NOTRUMP, 0);
+    m.Init(tricks, 0, nullptr, nullptr, deal.rank_in_suit, DDS_NOTRUMP, 0);
     return move_list_weights(
-      m, tricks, 0, m.MoveGen0(tricks, tpos, best, best, rel));
+      m, tricks, 0, m.MoveGen0(tricks, deal.tpos, best, best, rel));
   };
   auto run_gen123 = [&](Moves& m) {
-    m.Init(tricks, 0, nullptr, nullptr, rank_in_suit, DDS_NOTRUMP, 0);
+    m.Init(tricks, 0, nullptr, nullptr, deal.rank_in_suit, DDS_NOTRUMP, 0);
     m.track[tricks].lead_suit = lead_suit;
     m.track[tricks].move[0] = ExtCard{lead_suit, 8, 0};
     return move_list_weights(
-      m, tricks, 1, m.MoveGen123(tricks, /*handRel=*/1, tpos));
+      m, tricks, 1, m.MoveGen123(tricks, /*handRel=*/1, deal.tpos));
   };
 
   Moves clean;
