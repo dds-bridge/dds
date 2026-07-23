@@ -66,6 +66,14 @@ core solver builds and runs correctly under Emscripten.
 - **Only three examples are ported**, not the full [examples-cli](examples-cli.md) set.
   `dtest_wasm` is an additional harness port, not an example CLI.
 - **No threaded WASM** — single-thread only.
+- **No link-time LTO.** `-flto` applies at WASM compile time only
+  ([build-system](build-system.md)); enabling it at link time was tried and
+  reverted because the `emsdk 5.0.7` toolchain pinned in `MODULE.bazel` ships a
+  frozen, pre-built cache containing only non-LTO system libraries. Link-time
+  LTO requires LTO-bitcode variants of core sysroot libraries (e.g.
+  `libprintf_long_double`) that the frozen cache cannot build on demand inside
+  Bazel's hermetic sandbox. Revisit only if the emsdk packaging ships a
+  populated LTO cache.
 - Browser wiring, the site, MVP post-build JS patches (`web/patch_mvp_wasm.py`),
   and JS/e2e tests belong to [web-mvp](web-mvp.md); this capability provides the example
   modules, not the page.

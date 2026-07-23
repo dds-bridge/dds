@@ -7,13 +7,21 @@
 
 #include <cstring>
 
-#include <api/dll.h>
+#include <api/calc_dd_table.hpp>
 
 #if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
 #else
 #define EMSCRIPTEN_KEEPALIVE
 #endif
+
+namespace {
+auto mvp_context() -> SolverContext& {
+  static SolverContext ctx;   // lazily constructed on first call, lives for
+                               // the module instance's lifetime (the session)
+  return ctx;
+}
+}  // namespace
 
 extern "C" {
 
@@ -33,8 +41,12 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int
   }
   std::memcpy(deal.cards, pbn, pbn_len + 1);
 
+  SolverContext& ctx = mvp_context();
+  ctx.reset_for_solve();   // recycle TT memory pool + search bookkeeping
+                            // between deals; keeps the underlying allocation
+
   DdTableResults table{};
-  const int res = CalcDDtablePBN(deal, &table);
+  const int res = calc_dd_table_pbn(ctx, deal, &table);
   if (res != RETURN_NO_FAULT) {
     return res;
   }
