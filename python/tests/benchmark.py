@@ -535,8 +535,8 @@ class BenchmarkRunner:
     def cleanup(self) -> None:
         if self.alt_screen_active:
             try:
-                sys.stdout.write(ALT_LEAVE)
-                sys.stdout.flush()
+                self.out.write(ALT_LEAVE)
+                self.out.flush()
             except OSError:
                 pass
             self.alt_screen_active = False
@@ -818,13 +818,13 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
     if not cfg.dry_run:
         if cfg.details:
             show_run_lines = True
-        elif sys.stdout.isatty():
+        elif runner.out.isatty():
             show_run_lines = True
             alt_screen = True
 
     if alt_screen:
-        sys.stdout.write(ALT_ENTER)
-        sys.stdout.flush()
+        runner.out.write(ALT_ENTER)
+        runner.out.flush()
         runner.alt_screen_active = True
 
     def print_run_header() -> None:
@@ -897,8 +897,8 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                     )
 
     if alt_screen:
-        sys.stdout.write(ALT_LEAVE)
-        sys.stdout.flush()
+        runner.out.write(ALT_LEAVE)
+        runner.out.flush()
         runner.alt_screen_active = False
 
     if not cfg.dry_run:

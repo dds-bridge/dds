@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import io
 import os
 import subprocess
 import tempfile
@@ -103,6 +104,36 @@ class TestWithinEpsilon(unittest.TestCase):
 class TestLabelForPath(unittest.TestCase):
     def test_basename(self) -> None:
         self.assertEqual(benchmark.label_for_path("/tmp/foo/dtest"), "dtest")
+
+
+class TestRunnerCleanup(unittest.TestCase):
+    def test_alt_leave_goes_to_injected_out(self) -> None:
+        out = io.StringIO()
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = benchmark.BenchmarkRunner(
+                Path(tmp),
+                benchmark.Config(),
+                out=out,
+                err=err,
+            )
+            runner.alt_screen_active = True
+            with mock.patch("sys.stdout", new_callable=io.StringIO) as fake_stdout:
+                runner.cleanup()
+            self.assertEqual(out.getvalue(), benchmark.ALT_LEAVE)
+            self.assertEqual(fake_stdout.getvalue(), "")
+            self.assertFalse(runner.alt_screen_active)
+
+    def test_cleanup_noop_when_alt_screen_inactive(self) -> None:
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = benchmark.BenchmarkRunner(
+                Path(tmp),
+                benchmark.Config(),
+                out=out,
+            )
+            runner.cleanup()
+            self.assertEqual(out.getvalue(), "")
 
 
 class TestRunOrder(unittest.TestCase):
