@@ -596,7 +596,7 @@ class BenchmarkRunner:
                 check=False,
             )
         if proc.returncode != 0:
-            sys.stderr.write(self.build_log.read_text(encoding="utf-8", errors="replace"))
+            self.err.write(self.build_log.read_text(encoding="utf-8", errors="replace"))
             raise subprocess.CalledProcessError(proc.returncode, cmd)
 
     def bazel_dtest(self) -> None:

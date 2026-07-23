@@ -136,6 +136,30 @@ class TestRunnerCleanup(unittest.TestCase):
             self.assertEqual(out.getvalue(), "")
 
 
+class TestRunBuild(unittest.TestCase):
+    def test_failed_build_output_goes_to_injected_err(self) -> None:
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = benchmark.BenchmarkRunner(
+                Path(tmp),
+                benchmark.Config(details=False),
+                err=err,
+            )
+
+            def fake_run(cmd, **kwargs):  # type: ignore[no-untyped-def]
+                log = kwargs["stdout"]
+                log.write("build blew up\n")
+                log.flush()
+                return mock.Mock(returncode=1)
+
+            with mock.patch("subprocess.run", side_effect=fake_run):
+                with mock.patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        runner.run_build(["false"])
+            self.assertIn("build blew up", err.getvalue())
+            self.assertEqual(fake_stderr.getvalue(), "")
+
+
 class TestRunOrder(unittest.TestCase):
     def test_default(self) -> None:
         self.assertEqual(benchmark.run_order(3, reverse=False), [0, 1, 2])
