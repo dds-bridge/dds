@@ -26,7 +26,7 @@ them. That makes this a regression test as well as a benchmark: any change that
 alters a trick count shows up as a mismatch, on a workload of 154,370 solved
 deals.
 
-## Running it
+### Running the replay benchmark
 
 ```sh
 bazel run -c opt //benchmarks:dds_replay
@@ -75,12 +75,34 @@ transposition table across consecutive solves on the same `SolverContext`, and
 work is handed to threads first-come-first-served, so a single run has a few
 percent of variation.
 
-## The committed workload
+### The committed workload
 
-`testdata/dds-camrose-1-32.jsonl` (11.7 MB) is every DDS call made while playing
-the 32 boards of **Camrose 2024**, whose deals are in
-`testdata/camrose-1-32.pbn`. It totals 2,708 solve calls over 154,370 sampled
-deals plus 32 par calculations — 178 s of DDS time as recorded.
+The deals are real, not generated. `testdata/camrose-1-32.pbn` holds the 32
+boards of **Camrose 2024** — the Camrose Trophy is the annual home
+internationals, contested by the national bridge teams of England, Ireland,
+Northern Ireland, Scotland and Wales — so every hand in the workload was dealt
+for, and played in, a real international match.
+
+Tournament boards are computer-dealt as well, so the point is not that these
+deals are statistically unlike generated ones. It is that everything around them
+is real: which calls got made, in what order, at what trick depth, over batches
+of what size, is whatever a full session of bidding and play actually produced —
+not a shape someone chose while writing a benchmark.
+
+The play, however, is not the tournament's: `testdata/dds-camrose-1-32.jsonl`
+(11.7 MB) is every DDS call made while **BEN** bid and played those 32 deals,
+all four seats, from first call to last card. So the deals come from the event
+and the DDS traffic is an engine's. It totals 2,708 solve calls over 154,370
+sampled deals plus 32 par calculations — 178 s of DDS time as recorded.
+
+DDS is a helper there, not the player. BEN consults it and then makes its own
+choice, so the card DDS scored best is not necessarily the card that got played,
+and a call's answer does not determine the next call. Each `solve` record is
+self-contained — it carries the hands and the current trick it was asked about —
+so replaying one depends on nothing else in the file. That is what makes the
+benchmark's freedom legitimate: calls can be re-issued in any order, spread
+across any number of threads, or filtered down to a subset with `--purpose` or
+`--min-trick`, and every answer is still checkable against what was recorded.
 
 It is committed rather than generated because it cannot be regenerated from this
 repository: producing it needs [BEN](https://github.com/ThorvaldAagaard/ben), a
@@ -94,7 +116,37 @@ python game.py --boards "Camrose 1-32.pbn" --auto True \
 `testdata/sample-recording.jsonl` is a 6-call excerpt of the same file. It backs
 the fast `//benchmarks:replay_test` smoke test, so CI exercises the replay path
 (JSON parsing, PBN decoding, batching, result canonicalisation, verification)
-without spending two minutes on the full workload.
+without spending two minutes on the full workload. Run it on its own with:
+
+```sh
+bazel test //benchmarks:replay_test
+```
+
+### Recording format
+
+JSON Lines; one object per line, each tagged with `t`.
+
+| `t` | meaning |
+| --- | --- |
+| `meta` | one per file: when/where it was recorded, DDS version, `dds_mode`, thread count |
+| `board` | a marker for the deal being played |
+| `solve` | one DDS solve call over a batch of sampled hands |
+| `par` | one par calculation |
+
+A `solve` record carries `strain_i`, `leader_i`, `current_trick` (card codes),
+`solutions`, `hands_pbn` (one PBN deal per sampled board), the `result`, and the
+`ms` it took. Cards are encoded as `suit * 13 + (14 - rank)`, and the trump
+passed to DDS is `(strain_i - 1) % 5`.
+
+`result` is a map of named integer lists, one entry per board in the batch:
+
+* `solutions == 1` — `"max"` and `"min"`: the best and worst trick counts for
+  the side to play.
+* `solutions == 3` — one list per playable card, keyed by card code, including
+  cards equivalent to the one DDS reported (its `equals` bitmap).
+
+Any recorder that emits this format can be replayed; nothing here is specific to
+the engine that produced this file.
 
 ## Warm-transposition-table benchmark
 
@@ -120,34 +172,13 @@ context reused:
 Reuse roughly halves the cost of the lead-by-lead approach, which is what makes
 it cheaper than scoring every lead at once.
 
+Unlike the replay, these deals are randomly generated rather than taken from
+play, which is the point: the effect being measured is a property of the solver,
+not of any particular workload, so a synthetic sample keeps it isolated and
+lets the benchmark run with nothing committed alongside it.
+
 The timings are printed, not asserted — CI load would make that flaky. What is
 asserted is correctness: every solve succeeds and returns a card, and the warm
 and cold runs agree on every lead's score. So a change that makes TT reuse
 return a different answer fails this test, on any machine, on the same 100
 deals (the seed is fixed; see the comment on it).
-
-## Recording format
-
-JSON Lines; one object per line, each tagged with `t`.
-
-| `t` | meaning |
-| --- | --- |
-| `meta` | one per file: when/where it was recorded, DDS version, `dds_mode`, thread count |
-| `board` | a marker for the deal being played |
-| `solve` | one DDS solve call over a batch of sampled hands |
-| `par` | one par calculation |
-
-A `solve` record carries `strain_i`, `leader_i`, `current_trick` (card codes),
-`solutions`, `hands_pbn` (one PBN deal per sampled board), the `result`, and the
-`ms` it took. Cards are encoded as `suit * 13 + (14 - rank)`, and the trump
-passed to DDS is `(strain_i - 1) % 5`.
-
-`result` is a map of named integer lists, one entry per board in the batch:
-
-* `solutions == 1` — `"max"` and `"min"`: the best and worst trick counts for
-  the side to play.
-* `solutions == 3` — one list per playable card, keyed by card code, including
-  cards equivalent to the one DDS reported (its `equals` bitmap).
-
-Any recorder that emits this format can be replayed; nothing here is specific to
-the engine that produced this file.
