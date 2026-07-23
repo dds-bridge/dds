@@ -15,10 +15,26 @@ jobs:
         uses: actions/checkout@v6
 
       # Install Bazelisk (recommended Bazel launcher)
-      - name: Setup Bazelisk
+      - name: Setup Bazelisk (attempt 1)
+        id: setup_bazelisk_1
+        continue-on-error: true
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: "1.29.0"
+
+      - name: Setup Bazelisk (attempt 2)
+        id: setup_bazelisk_2
+        if: steps.setup_bazelisk_1.outcome == 'failure'
+        continue-on-error: true
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: "1.29.0"
+
+      - name: Ensure Bazelisk setup succeeded
+        if: steps.setup_bazelisk_1.outcome == 'failure' && steps.setup_bazelisk_2.outcome == 'failure'
+        run: |
+          echo "Bazelisk setup failed after 2 attempts."
+          exit 1
 
       # Install Doxygen, to generate documentation
       - name: Install Doxygen
