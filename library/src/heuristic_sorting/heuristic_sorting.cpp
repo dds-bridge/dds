@@ -2,8 +2,8 @@
 #include <utility/constants.h>
 #include <lookup_tables/lookup_tables.hpp>
 
-// Hot-path overload: the caller passes the dispatch case it already knows,
-// so nothing is re-derived from the context here.
+// The caller passes the dispatch case it already knows, so nothing is
+// re-derived from the context here.
 void call_heuristic(HeuristicContext& context, const int findex)
 {
   switch (findex) {
@@ -27,39 +27,6 @@ void call_heuristic(HeuristicContext& context, const int findex)
       weight_alloc_nt0(context);
       break;
   }
-}
-
-// Legacy overload: derives the dispatch case from the context, then
-// delegates. Kept for callers/tests that do not have the findex at hand.
-void call_heuristic(HeuristicContext& context)
-{
-  // Determine which position in trick (0=leading, 1-3=following)
-  int hand_rel = 0;
-  if (context.curr_hand != context.lead_hand) {
-    // Calculate relative position: 1, 2, or 3 based on lead hand
-    hand_rel = (context.curr_hand + 4 - context.lead_hand) % 4;
-  }
-
-  // Check if trump game with trump winner available
-  const int ftest = ((context.trump != DDS_NOTRUMP) &&
-         (context.trump >= 0 && context.trump < DDS_SUITS) &&
-         (context.tpos.winner[context.trump].rank != 0) ? 1 : 0);
-
-  // Leading hand (hand_rel == 0) - MoveGen0 logic
-  if (hand_rel == 0) {
-    call_heuristic(context, ftest);
-    return;
-  }
-
-  // Following hands (hand_rel 1-3) - MoveGen123 logic
-  // Check if current hand can follow suit (not void)
-  const unsigned short ris =
-    context.tpos.rank_in_suit[context.curr_hand][context.lead_suit];
-  const bool can_follow_suit = (ris != 0);
-
-  // Calculate function index using same logic as original
-  const int findex = 4 * hand_rel + ftest + (can_follow_suit ? 0 : 2);
-  call_heuristic(context, findex);
 }
 
 // The following functions are extracted from Moves.cpp and refactored to be

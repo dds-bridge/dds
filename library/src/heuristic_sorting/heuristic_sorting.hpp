@@ -62,27 +62,13 @@ struct HeuristicContext
     int lead0_rank = 0; // trackp->move[0].rank
 };
 
-/// @brief Apply heuristic sorting to candidate moves in the given context.
+/// @brief Apply heuristic sorting using a precomputed dispatch index.
 ///
 /// Evaluates candidate moves using position-dependent heuristics to assign
 /// weights that guide search algorithms toward the most promising lines.
-/// Heuristics vary based on position characteristics (leading/following hand,
-/// trump presence, suit availability) to optimize move ordering efficiency.
-///
-/// @param context Pre-constructed HeuristicContext containing position data,
-///                move arrays, and cached snapshots for efficient evaluation.
-///                Non-const because weighting writes through context.mply.
-///
-/// @note Prefer the `call_heuristic(context, findex)` overload when the dispatch
-///       index is already known (hot path). Use this overload when callers do
-///       not have `findex` available.
-void call_heuristic(HeuristicContext& context);
-
-/// @brief Apply heuristic sorting using a precomputed dispatch index.
-///
 /// Move generation already knows the dispatch case; passing it avoids
 /// re-deriving the relative hand, trump state and voidness from the context
-/// on every call (hot path).
+/// on every call.
 ///
 /// Encoding (matches the findex used by Moves::MoveGen0 / MoveGen123):
 ///   - Leading hand:   0 = no trump winner available, 1 = trump winner available
@@ -92,7 +78,8 @@ void call_heuristic(HeuristicContext& context);
 ///     for hand_rel in 1..3, i.e. values 4..15, where trump_winner is the
 ///     same 0/1 bit as for the leading hand.
 ///
-/// @param context Pre-constructed HeuristicContext (see other overload).
+/// @param context Pre-constructed HeuristicContext containing position data,
+///                move arrays, and cached snapshots for efficient evaluation.
 ///                Non-const because weighting writes through context.mply.
 /// @param findex  Precomputed dispatch index as encoded above.
 void call_heuristic(HeuristicContext& context, int findex);

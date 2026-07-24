@@ -52,8 +52,8 @@ const MgType RegisterList[16] = {MgType::NT0,           MgType::TRUMP0,
 namespace
 {
 
-// Same trump-winner bit as the legacy call_heuristic dispatcher: never index
-// winner[trump] unless trump is a suit in [0, DDS_SUITS).
+// Trump-winner bit of the heuristic findex: never index winner[trump]
+// unless trump is a suit in [0, DDS_SUITS).
 auto trump_winner_findex(const Pos& tpos, const int trump) -> int
 {
   return ((trump != DDS_NOTRUMP) &&

@@ -1,7 +1,7 @@
 ---
 capability: heuristic-sorting
 owners: [heuristic_sorting]
-last-updated: 2026-07-23
+last-updated: 2026-07-24
 ---
 
 # Heuristic Sorting
@@ -37,14 +37,12 @@ solve.
   `doc/heuristic-sorting.md` is narrative intent (including lead/void per-suit
   top-card bonuses) and may lag the code; when they disagree, trust the
   implementation.
-- **`call_heuristic` takes a pre-built `HeuristicContext&`.** The caller constructs
-  one context (position, move array, best moves, relative ranks, and cached
-  per-trick snapshots such as `removed_ranks`, `move1_rank`, `high1`) and passes
-  it by mutable reference; weighting writes through `context.mply`. Two free
-  overloads exist: a legacy form that derives the dispatch case from the
-  context, and a hot-path form that takes a precomputed `findex` from move
-  generation (`MoveGen0` / `MoveGen123`) so that case is not re-derived per
-  suit.
+- **`call_heuristic` takes a pre-built `HeuristicContext&` and a `findex`.** The
+  caller constructs one context (position, move array, best moves, relative
+  ranks, and cached per-trick snapshots such as `removed_ranks`, `move1_rank`,
+  `high1`) and passes it by mutable reference; weighting writes through
+  `context.mply`. Move generation (`MoveGen0` / `MoveGen123`) always passes the
+  precomputed dispatch `findex` so the case is not re-derived per suit.
 - **`TrackType` is shared per-trick position state** defined here and consumed by
   both [move-generation](move-generation.md) and the heuristics. `Moves` owns the `track[]` array
   and mutates `trackp`; heuristics read the snapshots copied into
@@ -55,8 +53,8 @@ solve.
 ## Key entry points
 
 - `library/src/heuristic_sorting/heuristic_sorting.hpp` — `HeuristicContext`,
-  `TrackType`, and both `call_heuristic` overloads (`HeuristicContext&`, and
-  with `findex`). Doxygen documents the fields.
+  `TrackType`, and `call_heuristic(context, findex)`. Doxygen documents the
+  fields.
 - `library/src/heuristic_sorting/heuristic_sorting.cpp` +
   `internal.hpp` — the per-situation weighting helpers.
 - Narrative algorithm: `doc/heuristic-sorting.md`.
