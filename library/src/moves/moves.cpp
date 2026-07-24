@@ -698,17 +698,6 @@ auto Moves::Sort(const int tricks, const int relHand) -> void {
     mply[j] = tmp;                                                             \
   }
 
-/**
- * @brief Build a heuristic context snapshot from current move-gen state.
- *
- * Built once per move-generation call (not per suit); callers update the
- * suit/num_moves/last_num_moves fields per iteration and dispatch with the
- * findex they already computed, avoiding per-suit reconstruction and
- * re-derivation of the dispatch case (hot path).
- *
- * @param tr Bound trick track passed by the caller (MoveGen0/MoveGen123),
- *           never read from the nullable Moves::trackp member.
- */
 auto Moves::make_heuristic_context(const Pos &tpos, const MoveType &best_move,
                                    const MoveType &best_move_tt,
                                    const RelRanksType thrp_rel[],
