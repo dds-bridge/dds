@@ -89,7 +89,7 @@ def make_isolated_http_handler(
                 self.send_header(key, value)
             super().end_headers()
 
-        def log_message(self, format: str, *args) -> None:  # noqa: A003
+        def log_message(self, format: str, *args) -> None:  # noqa: A002
             if not quiet:
                 super().log_message(format, *args)
 
