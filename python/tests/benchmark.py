@@ -224,7 +224,7 @@ def format_summary(
     for b in range(nb):
         header += f" {L(b):>12}"
     if nb == 2:
-        header += f" {'ratio':>10} {'note':<15}"
+        header += f" {'rel':>10} {'note':<15}"
     lines.append(header)
 
     def dash() -> None:
@@ -419,7 +419,7 @@ are benchmarked in the order specified and the first is the baseline. --binary
 must not point at the checkout's bazel-bin dtest when --branch is also used
 (branch builds overwrite that path). The current checkout is benchmarked by
 default only when neither flag is given. With two binaries the summary adds a
-ratio and a "faster" note; with three or more it shows only the per-binary
+rel and a "faster" note; with three or more it shows only the per-binary
 averages (no note).
 
 Environment:

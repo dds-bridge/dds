@@ -289,6 +289,9 @@ class TestSummary(unittest.TestCase):
             files=["list100.txt"],
             epsilon=0.5,
         )
+        header = text.splitlines()[0]
+        self.assertRegex(header, r"\brel\b")
+        self.assertNotRegex(header, r"\bratio\b")
         self.assertIn("base", text)
         self.assertIn("fast", text)
         self.assertIn("0.50x", text)
@@ -319,7 +322,7 @@ class TestSummary(unittest.TestCase):
             files=["list1.txt"],
             epsilon=0.5,
         )
-        self.assertNotIn("ratio", text)
+        self.assertNotIn("rel", text)
         self.assertNotIn("note", text)
 
     def test_zero_baseline_avg_skips_ratio(self) -> None:
