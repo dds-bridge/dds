@@ -25,6 +25,7 @@ Environment:
   MAX_DEALS  Include list10^n.txt files with 10^n <= N (default: 100)
   DRY_RUN    If 1, print commands only
   DETAILS    If 1, keep per-run rows and build output (default: 0, summary only)
+  SYS_USER   If 1, include a sys/user column per binary in the summary
   EPSILON    For a two-binary comparison, max % diff treated as equal (default: 0.5)
 """
 
@@ -88,6 +89,7 @@ class Config:
     epsilon: float = 0.5
     dry_run: bool = False
     details: bool = False
+    sys_user: bool = False
     build: bool = False
     reverse: bool = False
     branch_binary: Path | None = None  # BRANCH env / default dtest path
@@ -226,10 +228,13 @@ def format_summary(
     labels: Sequence[str],
     files: Sequence[str],
     epsilon: float,
+    sys_user: bool = False,
 ) -> str:
     nb = len(labels)
     sums: dict[tuple[str, str, int], float] = {}
     counts: dict[tuple[str, str, int], int] = {}
+    su_sums: dict[tuple[str, str, int], float] = {}
+    su_counts: dict[tuple[str, str, int], int] = {}
     total_wall: list[float] = [0.0] * nb
     wall_seen: list[bool] = [False] * nb
 
@@ -238,6 +243,9 @@ def format_summary(
         if row.avg_user is not None:
             sums[key] = sums.get(key, 0.0) + row.avg_user
             counts[key] = counts.get(key, 0) + 1
+        if row.sys_user is not None:
+            su_sums[key] = su_sums.get(key, 0.0) + row.sys_user
+            su_counts[key] = su_counts.get(key, 0) + 1
         if row.wall_s is not None:
             total_wall[row.bin_idx] += row.wall_s
             wall_seen[row.bin_idx] = True
@@ -248,10 +256,33 @@ def format_summary(
     def Lf(b: int) -> str:
         return labels[b]
 
+    def append_sys_user_header(s: str) -> str:
+        if sys_user:
+            s += f" {'sys/user':>8}"
+        return s
+
+    def append_sys_user_dash(s: str) -> str:
+        if sys_user:
+            s += f" {'--------':>8}"
+        return s
+
+    def append_sys_user_blank(s: str) -> str:
+        if sys_user:
+            s += f" {'':>8}"
+        return s
+
+    def append_sys_user_value(s: str, v: float | None) -> str:
+        if not sys_user:
+            return s
+        if v is None:
+            return s + f" {'NA':>8}"
+        return s + f" {v:8.2f}"
+
     lines: list[str] = []
     header = f"{'solver':<6} {'file':<13}"
     for b in range(nb):
         header += f" {L(b):>12}"
+        header = append_sys_user_header(header)
     if nb == 2:
         header += f" {'rel':>10} {'note':<15}"
     lines.append(header)
@@ -260,6 +291,7 @@ def format_summary(
         d = f"{'------':<6} {'-------------':<13}"
         for _ in range(nb):
             d += f" {'------------':>12}"
+            d = append_sys_user_dash(d)
         if nb == 2:
             d += f" {'----------':>10} {'---------------':<15}"
         lines.append(d)
@@ -269,20 +301,26 @@ def format_summary(
     for solver in SOLVERS:
         for fname in files:
             avgs: list[float | None] = []
+            su_avgs: list[float | None] = []
             for b in range(nb):
                 key = (solver, fname, b)
                 if key in counts:
                     avgs.append(sums[key] / counts[key])
                 else:
                     avgs.append(None)
+                if key in su_counts:
+                    su_avgs.append(su_sums[key] / su_counts[key])
+                else:
+                    su_avgs.append(None)
             if all(u is None for u in avgs):
                 continue
             line = f"{solver:<6} {fname:<13}"
-            for u in avgs:
+            for b, u in enumerate(avgs):
                 if u is None:
                     line += f" {'NA':>12}"
                 else:
                     line += f" {u:12.2f}"
+                line = append_sys_user_value(line, su_avgs[b])
             if nb == 2:
                 a0, a1 = avgs[0], avgs[1]
                 if a0 is not None and a1 is not None and a0 > 0:
@@ -306,6 +344,7 @@ def format_summary(
     for b in range(nb):
         tw = total_wall[b] if wall_seen[b] else 0.0
         tot += f" {tw:12.2f}"
+        tot = append_sys_user_blank(tot)
         if not (tw > 0):
             allpos = False
     if nb == 2:
@@ -348,6 +387,7 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
         epsilon=_parse_nonneg_float(env.get("EPSILON", "0.5"), "epsilon"),
         dry_run=_env_truthy(env, "DRY_RUN"),
         details=_env_truthy(env, "DETAILS"),
+        sys_user=_env_truthy(env, "SYS_USER"),
     )
     if env.get("HANDS_DIR"):
         cfg.hands_dir = Path(env["HANDS_DIR"])
@@ -396,6 +436,8 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
             cfg.reverse = True
         elif a == "--details":
             cfg.details = True
+        elif a == "--sys-user":
+            cfg.sys_user = True
         elif a == "--epsilon":
             i += 1
             if i >= len(args):
@@ -437,6 +479,8 @@ Options:
                       tree is required only when a ref would switch away from HEAD.
   --binary PATH       Path to a prebuilt dtest binary to benchmark. Repeatable.
   --details           Keep per-run timing rows and build (git/bazel) output
+  --sys-user          Include a sys/user column per binary in the summary
+                      (env: SYS_USER=1)
   --epsilon PCT       For a two-binary comparison, treat timings within PCT% as equal
                       (default: 0.5; env: EPSILON)
   --reverse           Reverse the per-repeat dispatch order of the binaries
@@ -452,7 +496,7 @@ rel and a "faster" note; with three or more it shows only the per-binary
 averages (no note).
 
 Environment:
-  BRANCH, BINARY, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, EPSILON
+  BRANCH, BINARY, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, SYS_USER, EPSILON
 
 Examples:
   python/tests/benchmark.py
@@ -466,6 +510,7 @@ Examples:
   python/tests/benchmark.py --branch develop --repeats 3 -- -n 8
   python/tests/benchmark.py --binary /path/to/dtest
   python/tests/benchmark.py --binary /path/to/dtest --details
+  python/tests/benchmark.py --binary /path/to/dtest --sys-user
   python/tests/benchmark.py --binary /path/to/dtest --epsilon 1
   python/tests/benchmark.py --binary /path/to/dtest --reverse
   python/tests/benchmark.py --repeats 5 --binary /path/to/dtest
@@ -852,6 +897,8 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
         print(f"{'run order:':<12} interleaved {order_str}")
         if num_bins == 2:
             print(f"{'epsilon:':<12} {cfg.epsilon}%")
+    if cfg.sys_user:
+        print(f"{'sys-user:':<12} on")
     print(f"{'hands dir:':<12} {cfg.hands_dir}")
     print(f"{'max_deals:':<12} {cfg.max_deals}")
     print(f"{'files:':<12} {' '.join(files)}")
@@ -956,6 +1003,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                 labels=labels,
                 files=files,
                 epsilon=cfg.epsilon,
+                sys_user=cfg.sys_user,
             )
         )
 
