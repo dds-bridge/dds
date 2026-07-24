@@ -15,23 +15,8 @@ jobs:
         uses: actions/checkout@v6
 
       # Install Bazelisk (recommended Bazel launcher)
-      - name: Setup Bazelisk (attempt 1)
-        id: setup_bazelisk_1
-        continue-on-error: true
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: "1.29.0"
-
-      - name: Setup Bazelisk (attempt 2)
-        id: setup_bazelisk_2
-        if: steps.setup_bazelisk_1.outcome != 'success'
-        continue-on-error: false
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: "1.29.0"
-
-      - name: Verify Bazelisk installation
-        run: bazelisk version || (echo "Failed to install Bazelisk after two setup attempts, or Bazelisk is not available on PATH." && exit 1)
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
 
       # Install Doxygen, to generate documentation
       - name: Install Doxygen
@@ -77,23 +62,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bazelisk (attempt 1)
-        id: setup_bazelisk_1
-        continue-on-error: true
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: "1.29.0"
-
-      - name: Setup Bazelisk (attempt 2)
-        id: setup_bazelisk_2
-        if: steps.setup_bazelisk_1.outcome != 'success'
-        continue-on-error: false
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: "1.29.0"
-
-      - name: Verify Bazelisk installation
-        run: bazelisk version || (echo "Failed to install Bazelisk after two setup attempts, or Bazelisk is not available on PATH." && exit 1)
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
 
       - name: Prefetch external repos
         run: |

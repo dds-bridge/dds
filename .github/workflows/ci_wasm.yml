@@ -30,9 +30,7 @@ jobs:
 
       # 3️⃣ Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: "1.29.0"
+        uses: ./.github/actions/setup-bazelisk
 
       # 4️⃣ Prefetch emsdk / toolchain archives (retry transient network timeouts)
       - name: Prefetch external repos
