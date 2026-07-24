@@ -11,3 +11,14 @@ cc_test(
     ],
     copts = DDS_CPPOPTS,
 )
+
+cc_test(
+    name = "make3_test",
+    size = "small",
+    srcs = ["make3_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+)

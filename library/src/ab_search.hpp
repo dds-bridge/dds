@@ -64,6 +64,12 @@ auto make_3(
     const MoveType* mply,
     SolverContext& ctx) -> void;
 
+auto undo_0(
+    Pos* pos_point,
+    int depth,
+    const MoveType& mply,
+    SolverContext& ctx) -> void;
+
 auto undo_1(
     Pos* pos_point,
     int depth,
