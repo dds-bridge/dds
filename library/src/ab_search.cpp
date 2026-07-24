@@ -59,23 +59,38 @@ void undo_0_simple(
   const int depth,
   const MoveType& mply);
 
-void undo_1(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply);
-
-void undo_2(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply);
-
-void undo_3(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply);
-
 
 const int handDelta[DDS_SUITS] = { 256, 16, 1, 0 };
+
+
+static void remove_card(
+  Pos * posPoint,
+  const int hand,
+  MoveType const * mply)
+{
+  int s = mply->suit;
+  int r = mply->rank;
+
+  posPoint->rank_in_suit[hand][s] &= (~bit_map_rank[r]);
+  posPoint->aggr[s] ^= bit_map_rank[r];
+  posPoint->hand_dist[hand] -= handDelta[s];
+  posPoint->length[hand][s]--;
+}
+
+
+static void restore_card(
+  Pos * posPoint,
+  const int hand,
+  const MoveType& mply)
+{
+  int s = mply.suit;
+  int r = mply.rank;
+
+  posPoint->rank_in_suit[hand][s] |= bit_map_rank[r];
+  posPoint->aggr[s] |= bit_map_rank[r];
+  posPoint->hand_dist[hand] += handDelta[s];
+  posPoint->length[hand][s]++;
+}
 
 
 bool ab_search(
@@ -770,16 +785,10 @@ void make_0(
 {
   /* First hand is not changed in next move */
   int h = posPoint->first[depth];
-  int s = mply->suit;
-  int r = mply->rank;
 
   posPoint->first[depth - 1] = h;
   posPoint->move[depth] = * mply;
-
-  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
-  posPoint->length[h][s]--;
+  remove_card(posPoint, h, mply);
 }
 
 
@@ -791,15 +800,7 @@ void make_1(
   /* First hand is not changed in next move */
   int firstHand = posPoint->first[depth];
   posPoint->first[depth - 1] = firstHand;
-
-  int h = HAND_ID(firstHand, 1);
-  int s = mply->suit;
-  int r = mply->rank;
-
-  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
-  posPoint->length[h][s]--;
+  remove_card(posPoint, HAND_ID(firstHand, 1), mply);
 }
 
 
@@ -811,15 +812,7 @@ void make_2(
   /* First hand is not changed in next move */
   int firstHand = posPoint->first[depth];
   posPoint->first[depth - 1] = firstHand;
-
-  int h = HAND_ID(firstHand, 2);
-  int s = mply->suit;
-  int r = mply->rank;
-
-  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
-  posPoint->length[h][s]--;
+  remove_card(posPoint, HAND_ID(firstHand, 2), mply);
 }
 
 
@@ -1067,14 +1060,7 @@ void undo_1(
   const int depth,
   const MoveType& mply)
 {
-  int h = posPoint->first[depth];
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-  posPoint->length[h][s]++;
+  restore_card(posPoint, posPoint->first[depth], mply);
 }
 
 
@@ -1083,14 +1069,7 @@ void undo_2(
   const int depth,
   const MoveType& mply)
 {
-  int h = HAND_ID(posPoint->first[depth], 1);
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-  posPoint->length[h][s]++;
+  restore_card(posPoint, HAND_ID(posPoint->first[depth], 1), mply);
 }
 
 
@@ -1099,14 +1078,7 @@ void undo_3(
   const int depth,
   const MoveType& mply)
 {
-  int h = HAND_ID(posPoint->first[depth], 2);
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-  posPoint->length[h][s]++;
+  restore_card(posPoint, HAND_ID(posPoint->first[depth], 2), mply);
 }
 
 

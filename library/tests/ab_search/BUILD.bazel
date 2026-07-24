@@ -1,0 +1,13 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
+
+cc_test(
+    name = "make_undo_test",
+    size = "small",
+    srcs = ["make_undo_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+)

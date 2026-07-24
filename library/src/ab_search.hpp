@@ -64,6 +64,21 @@ auto make_3(
     const MoveType* mply,
     SolverContext& ctx) -> void;
 
+auto undo_1(
+    Pos* pos_point,
+    int depth,
+    const MoveType& mply) -> void;
+
+auto undo_2(
+    Pos* pos_point,
+    int depth,
+    const MoveType& mply) -> void;
+
+auto undo_3(
+    Pos* pos_point,
+    int depth,
+    const MoveType& mply) -> void;
+
 // Evaluate terminal position using the provided context.
 auto evaluate_with_context(
     const Pos* pos_point,
