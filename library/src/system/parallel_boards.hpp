@@ -38,6 +38,9 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  *        non-null, the vector must remain valid and must not be mutated until
  *        this function returns because worker threads read it concurrently.
  * @return First non-success code from @p process_board, or RETURN_NO_FAULT.
+ *         If @p process_board throws during a multi-worker run, the exception is
+ *         caught on the worker, the run returns RETURN_UNKNOWN_FAULT, and the
+ *         pool stays usable. Single-worker runs leave exceptions to the caller.
  *
  * Multi-worker runs use a process-local persistent thread pool so consecutive
  * calls reuse OS threads instead of create/join each time. Single-worker runs

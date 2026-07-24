@@ -149,26 +149,38 @@ private:
       // only the selected prefix participates and signals completion.
       if (worker_id < local.workers)
       {
-        for (;;)
+        try
         {
-          const int slot = local.next->fetch_add(1, std::memory_order_relaxed);
-          if (slot >= local.count ||
-              local.first_error->load(std::memory_order_relaxed) != RETURN_NO_FAULT)
+          for (;;)
           {
-            break;
+            const int slot = local.next->fetch_add(1, std::memory_order_relaxed);
+            if (slot >= local.count ||
+                local.first_error->load(std::memory_order_relaxed) != RETURN_NO_FAULT)
+            {
+              break;
+            }
+            const int bno =
+              local.use_order
+                ? (*local.order)[static_cast<unsigned>(slot)]
+                : slot;
+            const int rc = (*local.process_board)(worker_id, bno);
+            if (rc != RETURN_NO_FAULT)
+            {
+              int expected = RETURN_NO_FAULT;
+              local.first_error->compare_exchange_strong(
+                expected, rc, std::memory_order_relaxed);
+              break;
+            }
           }
-          const int bno =
-            local.use_order
-              ? (*local.order)[static_cast<unsigned>(slot)]
-              : slot;
-          const int rc = (*local.process_board)(worker_id, bno);
-          if (rc != RETURN_NO_FAULT)
-          {
-            int expected = RETURN_NO_FAULT;
-            local.first_error->compare_exchange_strong(
-              expected, rc, std::memory_order_relaxed);
-            break;
-          }
+        }
+        catch (...)
+        {
+          // process_board must not leave the pool hanging or abort the process
+          // via std::terminate. Record a fault and fall through to the finished
+          // accounting below so cv_done_ is always signaled for this worker.
+          int expected = RETURN_NO_FAULT;
+          local.first_error->compare_exchange_strong(
+            expected, RETURN_UNKNOWN_FAULT, std::memory_order_relaxed);
         }
         // Account completion under mu_ so (1) the predicate change cannot race
         // with cv_done_.wait's check-and-sleep (lost wakeup) and (2) unlocking

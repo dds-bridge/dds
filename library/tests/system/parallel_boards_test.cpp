@@ -5,6 +5,7 @@
 #include <functional>
 #include <future>
 #include <new>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -219,6 +220,49 @@ TEST(ParallelAllBoards, FailFastReturnsFirstError)
 
   // Assert
   EXPECT_EQ(result, RETURN_TOO_MANY_BOARDS);
+}
+
+TEST(ParallelAllBoards, ProcessBoardExceptionDoesNotHangCaller)
+{
+  // If process_board throws on a pool worker, that worker must still account
+  // completion and wake cv_done_; otherwise the caller waits forever (or the
+  // process aborts via std::terminate when the exception leaves the thread).
+  if (std::thread::hardware_concurrency() < 2)
+    GTEST_SKIP() << "Need at least 2 hardware threads";
+
+  constexpr int count = 8;
+  constexpr int workers = 2;
+  constexpr auto deadline = std::chrono::seconds(10);
+
+  std::promise<int> done;
+  std::future<int> fut = done.get_future();
+  std::thread caller([&] {
+    const int rc = parallel_all_boards_n(
+      count,
+      workers,
+      [](const int, const int bno) -> int {
+        if (bno == 0)
+          throw std::runtime_error("process_board failed");
+        return RETURN_NO_FAULT;
+      });
+    done.set_value(rc);
+  });
+
+  const bool ready = fut.wait_for(deadline) == std::future_status::ready;
+  if (!ready)
+  {
+    caller.detach();
+    FAIL() << "caller hung after process_board threw on a pool worker";
+  }
+  caller.join();
+
+  EXPECT_EQ(fut.get(), RETURN_UNKNOWN_FAULT);
+
+  // Pool workers must remain usable after the exceptional run.
+  EXPECT_EQ(
+    parallel_all_boards_n(
+      count, workers, [](const int, const int) { return RETURN_NO_FAULT; }),
+    RETURN_NO_FAULT);
 }
 
 TEST(ParallelAllBoards, ConcurrentCallersBothCompleteAndProcessAllBoards)
