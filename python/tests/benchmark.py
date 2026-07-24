@@ -235,8 +235,9 @@ def format_summary(
     counts: dict[tuple[str, str, int], int] = {}
     su_sums: dict[tuple[str, str, int], float] = {}
     su_counts: dict[tuple[str, str, int], int] = {}
-    total_wall: list[float] = [0.0] * nb
-    wall_seen: list[bool] = [False] * nb
+    # Per-solver wall totals: solver -> [bin0, bin1, ...]
+    total_wall: dict[str, list[float]] = {s: [0.0] * nb for s in SOLVERS}
+    wall_seen: dict[str, list[bool]] = {s: [False] * nb for s in SOLVERS}
 
     for row in rows:
         key = (row.solver, row.file, row.bin_idx)
@@ -246,9 +247,9 @@ def format_summary(
         if row.sys_user is not None:
             su_sums[key] = su_sums.get(key, 0.0) + row.sys_user
             su_counts[key] = su_counts.get(key, 0) + 1
-        if row.wall_s is not None:
-            total_wall[row.bin_idx] += row.wall_s
-            wall_seen[row.bin_idx] = True
+        if row.wall_s is not None and row.solver in total_wall:
+            total_wall[row.solver][row.bin_idx] += row.wall_s
+            wall_seen[row.solver][row.bin_idx] = True
 
     def L(b: int) -> str:
         return labels[b][:12]
@@ -339,27 +340,32 @@ def format_summary(
             lines.append(line)
 
     dash()
-    tot = f"{'TOTAL':<6} {'elapsed (s)':<13}"
-    allpos = True
-    for b in range(nb):
-        tw = total_wall[b] if wall_seen[b] else 0.0
-        tot += f" {tw:12.2f}"
-        tot = append_sys_user_blank(tot)
-        if not (tw > 0):
-            allpos = False
-    if nb == 2:
-        if allpos:
-            r = total_wall[1] / total_wall[0]
-            if within_epsilon(total_wall[0], total_wall[1], epsilon):
-                tnote = "equal"
-            elif r >= 1:
-                tnote = f"{Lf(0)} faster"
+    for solver in SOLVERS:
+        if not any(wall_seen[solver]):
+            continue
+        tot = f"{'TOTAL':<6} {solver:<13}"
+        allpos = True
+        walls = total_wall[solver]
+        seen = wall_seen[solver]
+        for b in range(nb):
+            tw = walls[b] if seen[b] else 0.0
+            tot += f" {tw:12.2f}"
+            tot = append_sys_user_blank(tot)
+            if not (tw > 0):
+                allpos = False
+        if nb == 2:
+            if allpos:
+                r = walls[1] / walls[0]
+                if within_epsilon(walls[0], walls[1], epsilon):
+                    tnote = "equal"
+                elif r >= 1:
+                    tnote = f"{Lf(0)} faster"
+                else:
+                    tnote = f"{Lf(1)} faster"
+                tot += f" {r:9.2f}x {tnote:<15}"
             else:
-                tnote = f"{Lf(1)} faster"
-            tot += f" {r:9.2f}x {tnote:<15}"
-        else:
-            tot += f" {'':>10} {'':<15}"
-    lines.append(tot)
+                tot += f" {'':>10} {'':<15}"
+        lines.append(tot)
     return "\n".join(lines)
 
 

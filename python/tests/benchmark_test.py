@@ -313,7 +313,35 @@ class TestSummary(unittest.TestCase):
         self.assertIn("fast", text)
         self.assertIn("0.50x", text)
         self.assertIn("fast faster", text)
-        self.assertIn("TOTAL", text)
+        self.assertIn("TOTAL  solve", text)
+        self.assertNotIn("TOTAL  calc", text)
+
+    def test_separate_total_lines_per_solver(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 0.5),
+            benchmark.ResultRow("calc", "list100.txt", 0, 1, 200.0, 1.0, 2.0, 1.0, 2.0),
+            benchmark.ResultRow("calc", "list100.txt", 1, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "fast"],
+            files=["list100.txt"],
+            epsilon=0.5,
+        )
+        lines = text.splitlines()
+        solve_tot = next(line for line in lines if line.startswith("TOTAL  solve"))
+        calc_tot = next(line for line in lines if line.startswith("TOTAL  calc"))
+        self.assertRegex(solve_tot, r"\b1\.00\b")
+        self.assertRegex(solve_tot, r"\b0\.50\b")
+        self.assertRegex(solve_tot, r"0\.50x")
+        self.assertIn("fast faster", solve_tot)
+        self.assertRegex(calc_tot, r"\b2\.00\b")
+        self.assertRegex(calc_tot, r"\b1\.00\b")
+        self.assertRegex(calc_tot, r"0\.50x")
+        self.assertIn("fast faster", calc_tot)
+        # No combined grand-total line.
+        self.assertEqual(sum(1 for line in lines if line.startswith("TOTAL")), 2)
 
     def test_default_summary_omits_sys_user_column(self) -> None:
         rows = [
