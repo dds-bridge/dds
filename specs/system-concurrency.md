@@ -1,7 +1,7 @@
 ---
 capability: system-concurrency
 owners: [system]
-last-updated: 2026-07-23
+last-updated: 2026-07-24
 ---
 
 # System & Concurrency
@@ -43,8 +43,12 @@ place so the search and API layers stay portable. It is internal — not part of
   threads; `workers == 1` stays on the calling thread. Concurrent multi-worker
   callers serialize on the pool, but the API is **not re-entrant** from inside
   `process_board` of another multi-worker run (that nests a second
-  `run_mu_` acquisition on a pool worker and deadlocks). Guarded by
-  `concurrency_validation_test` and `parallel_boards_test`.
+  `run_mu_` acquisition on a pool worker and deadlocks).
+  `dds::internal::shutdown_parallel_boards_pool()` joins and drops the pool
+  (idempotent; the next multi-worker call recreates it) — used before process
+  exit on Emscripten so pthread Workers are not torn down under live
+  `std::thread`s. Guarded by `concurrency_validation_test` and
+  `parallel_boards_test`.
 - **Result equivalence across thread counts is an invariant.** Solving the same
   boards single-threaded and multi-threaded must produce identical results;
   `max_threads_equivalence_test` and `context_equivalence_test*` guard this. Thread
@@ -83,8 +87,10 @@ place so the search and API layers stay portable. It is internal — not part of
 
 ## Known gaps / non-goals
 
-- **WASM builds are single-threaded** — the concurrency here assumes hosted
-  threads; the Emscripten build does not use them. See [wasm-emscripten](wasm-emscripten.md).
+- **Browser SharedArrayBuffer needs cross-origin isolation** — the Emscripten
+  pthread build works under Node without special headers; browsers require
+  COOP/COEP (see [web-mvp](web-mvp.md) / `web/serve_mvp.py`). See
+  [wasm-emscripten](wasm-emscripten.md).
 - This layer does not decide TT sizing or search policy; it schedules work and
   owns scratch memory. TT ownership/config belongs to [solver-context](solver-context.md) /
   [transposition-table](transposition-table.md).

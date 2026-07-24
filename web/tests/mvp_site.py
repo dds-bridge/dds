@@ -1,12 +1,19 @@
 """Stage a self-contained DDS MVP site directory for tests."""
 from __future__ import annotations
 
+import http.server
 import importlib.util
 import os
 import shutil
 from pathlib import Path
 
 STATIC_FILES = ("dds_mvp.html", "dds_mvp.css", "dds_mvp.js")
+
+# Required for SharedArrayBuffer / WASM pthreads in Chromium.
+CROSS_ORIGIN_ISOLATION_HEADERS = {
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Embedder-Policy": "require-corp",
+}
 
 
 def runfiles_root() -> Path:
@@ -63,3 +70,27 @@ def stage_mvp_site(dest: Path) -> Path:
         encoding="utf-8",
     )
     return dest
+
+
+def make_isolated_http_handler(
+    directory: Path,
+    *,
+    quiet: bool = True,
+) -> type[http.server.SimpleHTTPRequestHandler]:
+    """HTTP handler that serves *directory* with cross-origin isolation headers."""
+    root = str(directory)
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, request, client_address, server) -> None:
+            super().__init__(request, client_address, server, directory=root)
+
+        def end_headers(self) -> None:
+            for key, value in CROSS_ORIGIN_ISOLATION_HEADERS.items():
+                self.send_header(key, value)
+            super().end_headers()
+
+        def log_message(self, format: str, *args) -> None:  # noqa: A003
+            if not quiet:
+                super().log_message(format, *args)
+
+    return Handler

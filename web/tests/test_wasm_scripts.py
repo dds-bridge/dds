@@ -26,6 +26,9 @@ gen_wasm_bin_js = _load_module("gen_wasm_bin_js")
 verify_wasm_js = _load_module("verify_wasm_js")
 
 UNPATCHED_LINE = (
+    'var isFileURI = filename => filename.startsWith("file://");\n'
+)
+UNPATCHED_LINE_PAREN = (
     "var isFileURI = (filename) => filename.startsWith('file://');\n"
 )
 
@@ -40,6 +43,11 @@ class PatchMvpWasmTest(unittest.TestCase):
         updated, code = patch_mvp_wasm.patch_text(UNPATCHED_LINE)
         self.assertEqual(code, 0)
         self.assertNotEqual(updated, UNPATCHED_LINE)
+        self.assertRegex(updated, patch_mvp_wasm.PATCHED_IS_FILE_URI)
+
+    def test_patch_text_replaces_parenthesized_param(self) -> None:
+        updated, code = patch_mvp_wasm.patch_text(UNPATCHED_LINE_PAREN)
+        self.assertEqual(code, 0)
         self.assertRegex(updated, patch_mvp_wasm.PATCHED_IS_FILE_URI)
 
     def test_patch_text_idempotent(self) -> None:
@@ -147,6 +155,20 @@ class VerifyWasmJsTest(unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0, msg=proc.stdout + proc.stderr)
         self.assertIn("compile OK", proc.stdout)
+
+
+class IsolationHeadersTest(unittest.TestCase):
+    def test_cross_origin_isolation_headers(self) -> None:
+        from mvp_site import CROSS_ORIGIN_ISOLATION_HEADERS
+
+        self.assertEqual(
+            CROSS_ORIGIN_ISOLATION_HEADERS["Cross-Origin-Opener-Policy"],
+            "same-origin",
+        )
+        self.assertEqual(
+            CROSS_ORIGIN_ISOLATION_HEADERS["Cross-Origin-Embedder-Policy"],
+            "require-corp",
+        )
 
 
 if __name__ == "__main__":

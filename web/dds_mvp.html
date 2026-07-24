@@ -7,9 +7,10 @@
      https://opensource.org/licenses/MIT
 
      Build WASM (from repo root): ./web/update_wasm.sh
-     Then open dds_mvp.html (file:// is OK). Hard-refresh if you rebuilt (Cmd+Shift+R).
-     Or serve this directory:
-       python3 -m http.server 8080 --directory web
+     Serve with cross-origin isolation (required for WASM threads):
+       python3 web/serve_mvp.py
+     Then open http://127.0.0.1:8080/dds_mvp.html
+     (file:// UI works; solving needs SharedArrayBuffer via HTTP + COOP/COEP.)
 -->
 
 <html lang="en">

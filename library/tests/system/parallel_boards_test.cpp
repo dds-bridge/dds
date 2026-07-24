@@ -327,3 +327,27 @@ TEST(ParallelAllBoards, ReusesWorkerThreadsAcrossConsecutiveCalls)
   // Assert: reuse must not create additional OS threads.
   EXPECT_EQ(created_after_reuse, created_after_warm);
 }
+
+
+TEST(ParallelAllBoards, ShutdownJoinsPoolAndAllowsRecreation)
+{
+  if (std::thread::hardware_concurrency() < 2)
+    GTEST_SKIP() << "Need at least 2 hardware threads";
+
+  constexpr int count = 32;
+  constexpr int workers = 4;
+  const auto noop = [](const int, const int) { return RETURN_NO_FAULT; };
+
+  ASSERT_EQ(parallel_all_boards_n(count, workers, noop), RETURN_NO_FAULT);
+  const auto created_before =
+    dds::internal::parallel_boards_worker_threads_created();
+  ASSERT_GE(created_before, static_cast<std::uint64_t>(workers));
+
+  dds::internal::shutdown_parallel_boards_pool();
+  dds::internal::shutdown_parallel_boards_pool();  // idempotent
+
+  ASSERT_EQ(parallel_all_boards_n(count, workers, noop), RETURN_NO_FAULT);
+  const auto created_after =
+    dds::internal::parallel_boards_worker_threads_created();
+  EXPECT_GE(created_after, created_before + static_cast<std::uint64_t>(workers));
+}
