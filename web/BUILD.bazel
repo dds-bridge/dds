@@ -143,6 +143,7 @@ py_test(
 test_suite(
     name = "web_tests",
     tests = [
+        ":dds_mvp_html_test",
         ":dds_mvp_js_test",
         ":dds_mvp_wasm_test",
         ":wasm_scripts_test",
