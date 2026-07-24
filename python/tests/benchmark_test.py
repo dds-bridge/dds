@@ -417,12 +417,14 @@ class TestSummary(unittest.TestCase):
         ]
         text = benchmark.format_summary(
             rows,
-            labels=["a", "b", "c"],
+            # Label substring "rel" must not be mistaken for the rel column.
+            labels=["release", "b", "c"],
             files=["list1.txt"],
             epsilon=0.5,
         )
-        self.assertNotIn("rel", text)
-        self.assertNotIn("note", text)
+        header = text.splitlines()[0]
+        self.assertNotRegex(header, r"\brel\b")
+        self.assertNotRegex(header, r"\bnote\b")
 
     def test_zero_baseline_avg_skips_ratio(self) -> None:
         rows = [
