@@ -25,6 +25,7 @@ namespace
 {
 
 std::atomic<std::uint64_t> g_threads_created{0};
+std::atomic<int> g_last_job_board_count{0};
 
 
 class BoardWorkerPool
@@ -274,6 +275,10 @@ auto parallel_boards_worker_threads_created() -> std::uint64_t
   return g_threads_created.load(std::memory_order_relaxed);
 }
 
+auto parallel_boards_last_job_board_count() -> int
+{
+  return g_last_job_board_count.load(std::memory_order_relaxed);
+}
 
 void shutdown_parallel_boards_pool()
 {
@@ -301,6 +306,8 @@ auto parallel_all_boards_n(
   {
     return RETURN_NO_FAULT;
   }
+
+  g_last_job_board_count.store(count, std::memory_order_relaxed);
 
   // Map a dispatch slot to the board number to process. With an order, hand out
   // boards in that sequence (e.g. hardest first); otherwise in index order. The

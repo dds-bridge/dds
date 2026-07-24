@@ -647,6 +647,43 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNN(
   int maxThreads) -> int;
 
 /**
+ * @brief Unbounded CalcAllTables: any number of deals, one parallel board job.
+ *
+ * Legacy CalcAllTablesN remains capped at MAXNOOFTABLES. This entry point
+ * expands all deal×strain boards and solves them in a single
+ * parallel_all_boards_n dispatch (heap-backed), matching the ddss large-batch
+ * shape while preserving the fixed-size ABI of the legacy structs.
+ *
+ * @param numDeals Number of deals (may exceed MAXNOOFTABLES)
+ * @param deals Flat array of numDeals deals
+ * @param mode Par mode (-1 = no par); par requires all strains and non-null par
+ * @param trumpFilter Per-strain filter (0 = include)
+ * @param results Output array of numDeals tables
+ * @param par Optional par output (numDeals); required when mode requests par
+ * @param maxThreads Worker cap; <= 0 means auto
+ */
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesx(
+  int numDeals,
+  struct DdTableDeal const * deals,
+  int mode,
+  int const trumpFilter[DDS_STRAINS],
+  struct DdTableResults * results,
+  struct ParResults * par,
+  int maxThreads) -> int;
+
+/**
+ * @brief PBN variant of CalcAllTablesx.
+ */
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNx(
+  int numDeals,
+  struct DdTableDealPBN const * deals,
+  int mode,
+  int const trumpFilter[DDS_STRAINS],
+  struct DdTableResults * results,
+  struct ParResults * par,
+  int maxThreads) -> int;
+
+/**
  * @brief Solve multiple bridge deals in PBN format.
  *
  * @param bop Pointer to multiple PBN deals
