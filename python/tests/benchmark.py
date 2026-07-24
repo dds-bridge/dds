@@ -65,7 +65,7 @@ class DtestTiming:
     user_ms: float | None
     sys_ms: float | None
     avg_user: float | None
-    ratio: float | None
+    sys_user: float | None
 
 
 @dataclass(frozen=True)
@@ -77,7 +77,7 @@ class ResultRow:
     user_ms: float | None
     sys_ms: float | None
     avg_user: float | None
-    ratio: float | None
+    sys_user: float | None
     wall_s: float | None
 
 
@@ -161,7 +161,7 @@ def parse_dtest_output(text: str) -> DtestTiming:
     user: float | None = None
     sys_ms: float | None = None
     avg: float | None = None
-    ratio: float | None = None
+    sys_user: float | None = None
     for line in text.splitlines():
         if line.startswith("Number of hands"):
             hands = _parse_ms(line.split()[-1])
@@ -174,13 +174,13 @@ def parse_dtest_output(text: str) -> DtestTiming:
         elif line.startswith("Ratio"):
             # Match awk: /^Ratio[[:space:]]/
             if len(line) > 5 and line[5].isspace():
-                ratio = _parse_ms(line.split()[-1])
+                sys_user = _parse_ms(line.split()[-1])
     if avg is None:
         if user == 0:
             avg = 0.0
         elif hands is not None and user is not None and hands > 0:
             avg = user / hands
-    return DtestTiming(user_ms=user, sys_ms=sys_ms, avg_user=avg, ratio=ratio)
+    return DtestTiming(user_ms=user, sys_ms=sys_ms, avg_user=avg, sys_user=sys_user)
 
 
 def _fmt_timing(v: float | None) -> str:
@@ -189,6 +189,35 @@ def _fmt_timing(v: float | None) -> str:
     if v == int(v):
         return str(int(v))
     return str(v)
+
+
+def format_run_table_header(run_label_col: str) -> tuple[str, str]:
+    """Return (header, separator) for the per-run timing table."""
+    header = (
+        f"{'solver':<6} {'file':<13} {run_label_col:<12} "
+        f"{'user_ms':>8} {'sys_ms':>8} {'avg_user':>10} {'sys/user':>8} run"
+    )
+    sep = (
+        f"{'------':<6} {'-------------':<13} {'------------':<12} "
+        f"{'--------':>8} {'--------':>8} {'----------':>10} {'--------':>8} ---"
+    )
+    return header, sep
+
+
+def format_run_table_row(
+    solver: str,
+    file: str,
+    lab: str,
+    user: str,
+    sys_ms: str,
+    avg: str,
+    sys_user: str,
+    run_label: str,
+) -> str:
+    return (
+        f"{solver:<6} {file:<13} {lab:<12} "
+        f"{user:>8} {sys_ms:>8} {avg:>10} {sys_user:>8} {run_label}"
+    )
 
 
 def format_summary(
@@ -848,14 +877,9 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
         runner.alt_screen_active = True
 
     def print_run_header() -> None:
-        print(
-            f"{'solver':<6} {'file':<13} {run_label_col:<12} "
-            f"{'user_ms':>8} {'sys_ms':>8} {'avg_user':>10} {'ratio':>6} run"
-        )
-        print(
-            f"{'------':<6} {'-------------':<13} {'------------':<12} "
-            f"{'--------':>8} {'--------':>8} {'----------':>10} {'------':>6} ---"
-        )
+        header, sep = format_run_table_header(run_label_col)
+        print(header)
+        print(sep)
 
     def print_run_row(
         solver: str,
@@ -864,12 +888,13 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
         user: str,
         sys_ms: str,
         avg: str,
-        ratio: str,
+        sys_user: str,
         run_label: str,
     ) -> None:
         print(
-            f"{solver:<6} {file:<13} {lab:<12} "
-            f"{user:>8} {sys_ms:>8} {avg:>10} {ratio:>6} {run_label}"
+            format_run_table_row(
+                solver, file, lab, user, sys_ms, avg, sys_user, run_label
+            )
         )
 
     if not cfg.dry_run and show_run_lines:
@@ -899,7 +924,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                             _fmt_timing(parsed.user_ms),
                             _fmt_timing(parsed.sys_ms),
                             _fmt_timing(parsed.avg_user),
-                            _fmt_timing(parsed.ratio),
+                            _fmt_timing(parsed.sys_user),
                             run_label,
                         )
                     results.append(
@@ -911,7 +936,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                             parsed.user_ms,
                             parsed.sys_ms,
                             parsed.avg_user,
-                            parsed.ratio,
+                            parsed.sys_user,
                             wall,
                         )
                     )

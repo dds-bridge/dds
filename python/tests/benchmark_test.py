@@ -61,7 +61,7 @@ class TestParseDtestOutput(unittest.TestCase):
         self.assertEqual(parsed.user_ms, 250.0)
         self.assertEqual(parsed.sys_ms, 10.0)
         self.assertEqual(parsed.avg_user, 2.5)
-        self.assertEqual(parsed.ratio, 1.23)
+        self.assertEqual(parsed.sys_user, 1.23)
 
     def test_zero_tokens(self) -> None:
         out = (
@@ -89,7 +89,17 @@ class TestParseDtestOutput(unittest.TestCase):
         self.assertIsNone(parsed.user_ms)
         self.assertIsNone(parsed.sys_ms)
         self.assertIsNone(parsed.avg_user)
-        self.assertIsNone(parsed.ratio)
+        self.assertIsNone(parsed.sys_user)
+
+
+class TestRunTableHeader(unittest.TestCase):
+    def test_sys_user_column_not_ratio(self) -> None:
+        header, sep = benchmark.format_run_table_header("branch")
+        self.assertRegex(header, r"\bsys/user\b")
+        self.assertNotRegex(header, r"\bratio\b")
+        self.assertIn("user_ms", header)
+        self.assertIn("sys_ms", header)
+        self.assertEqual(len(header.split()), len(sep.split()))
 
 
 class TestWithinEpsilon(unittest.TestCase):
