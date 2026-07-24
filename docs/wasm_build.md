@@ -125,7 +125,8 @@ For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/wasm/` t
 | `-fwasm-exceptions` | Native WebAssembly exception handling (use together with `-fexceptions`; replaces the slower JS-trampoline EH lowering used when linking with `-fexceptions` alone) |
 | `-pthread` / `USE_PTHREADS` | Enable SharedArrayBuffer atomics and `std::thread` (via `wasm_cc_binary(threads = "emscripten")`) |
 | `-sWASM=1` | Emscripten WASM output (link flag) |
-| `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime (emits `-Wpthreads-mem-growth` with `-pthread`; intentional) |
+| `-sALLOW_MEMORY_GROWTH=1` | Allow heap growth at runtime (with `-pthread`; warning silenced via `-Wno-pthreads-mem-growth`) |
+| `-Wno-pthreads-mem-growth` | Keep growth+pthreads without the emcc advisory on slower JS paths after grow |
 | `-sINITIAL_MEMORY=268435456` | 256MB initial memory |
 | `-sSTACK_SIZE=8388608` | 8MB stack (default 64KB is too small for DDS search) |
 | `-sPTHREAD_POOL_SIZE=8` | Pre-create a modest pthread worker pool (more threads allocate on demand; Node `dtest` shuts the pool down cleanly before exit) |

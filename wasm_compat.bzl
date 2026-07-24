@@ -6,6 +6,9 @@
 WASM_LINKOPTS = [
     "-sWASM=1",
     "-fwasm-exceptions",
+    # Growth + pthreads is intentional for DDS TT heaps; silence the advisory
+    # about slower non-wasm (JS) paths when the SharedArrayBuffer grows.
+    "-Wno-pthreads-mem-growth",
     "-sALLOW_MEMORY_GROWTH=1",
     "-sINITIAL_MEMORY=268435456",
     # DDS search recursion needs more than Emscripten's 64KB default stack.

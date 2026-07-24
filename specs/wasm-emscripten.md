@@ -84,5 +84,5 @@ core solver builds and runs correctly under Emscripten.
 - Browser wiring, the site, MVP post-build JS patches (`web/patch_mvp_wasm.py`),
   COOP/COEP serving, and JS/e2e tests belong to [web-mvp](web-mvp.md); this
   capability provides the example modules, not the page.
-- `-pthread` + `ALLOW_MEMORY_GROWTH` emits an Emscripten advisory
-  (`-Wpthreads-mem-growth`); kept intentionally for DDS's large TT heaps.
+- `-pthread` + `ALLOW_MEMORY_GROWTH` is intentional for DDS TT heaps; the emcc
+  advisory is silenced with `-Wno-pthreads-mem-growth` in `WASM_LINKOPTS`.
