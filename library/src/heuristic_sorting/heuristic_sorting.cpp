@@ -2,25 +2,27 @@
 #include <utility/constants.h>
 #include <lookup_tables/lookup_tables.hpp>
 
-// The caller passes the dispatch case it already knows, so nothing is
+// The caller passes the weight case it already knows, so nothing is
 // re-derived from the context here.
-void call_heuristic(HeuristicContext& context, const int findex)
+void call_heuristic(HeuristicContext& context, const WeightCase weight_case)
 {
-  switch (findex) {
-    case 0:  weight_alloc_nt0(context); break;               // leading, no trump winner
-    case 1:  weight_alloc_trump0(context); break;            // leading, trump winner available
-    case 4:  weight_alloc_nt_notvoid1(context); break;       // hand_rel=1, can follow, no trump winner
-    case 5:  weight_alloc_trump_notvoid1(context); break;    // hand_rel=1, can follow, trump winner
-    case 6:  weight_alloc_nt_void1(context); break;          // hand_rel=1, void, no trump winner
-    case 7:  weight_alloc_trump_void1(context); break;       // hand_rel=1, void, trump winner
-    case 8:  weight_alloc_nt_notvoid2(context); break;       // hand_rel=2, can follow, no trump winner
-    case 9:  weight_alloc_trump_notvoid2(context); break;    // hand_rel=2, can follow, trump winner
-    case 10: weight_alloc_nt_void2(context); break;          // hand_rel=2, void, no trump winner
-    case 11: weight_alloc_trump_void2(context); break;       // hand_rel=2, void, trump winner
-    case 12: weight_alloc_combined_notvoid3(context); break; // hand_rel=3, can follow, no trump winner
-    case 13: weight_alloc_combined_notvoid3(context); break; // hand_rel=3, can follow, trump winner
-    case 14: weight_alloc_nt_void3(context); break;          // hand_rel=3, void, no trump winner
-    case 15: weight_alloc_trump_void3(context); break;       // hand_rel=3, void, trump winner
+  switch (weight_case) {
+    case WeightCase::Nt0:                weight_alloc_nt0(context); break;
+    case WeightCase::Trump0:             weight_alloc_trump0(context); break;
+    case WeightCase::NtNotVoid1:         weight_alloc_nt_notvoid1(context); break;
+    case WeightCase::TrumpNotVoid1:      weight_alloc_trump_notvoid1(context); break;
+    case WeightCase::NtVoid1:            weight_alloc_nt_void1(context); break;
+    case WeightCase::TrumpVoid1:         weight_alloc_trump_void1(context); break;
+    case WeightCase::NtNotVoid2:         weight_alloc_nt_notvoid2(context); break;
+    case WeightCase::TrumpNotVoid2:      weight_alloc_trump_notvoid2(context); break;
+    case WeightCase::NtVoid2:            weight_alloc_nt_void2(context); break;
+    case WeightCase::TrumpVoid2:         weight_alloc_trump_void2(context); break;
+    case WeightCase::CombinedNotVoid3:
+    case WeightCase::CombinedNotVoid3Trump:
+      weight_alloc_combined_notvoid3(context);
+      break;
+    case WeightCase::NtVoid3:            weight_alloc_nt_void3(context); break;
+    case WeightCase::TrumpVoid3:         weight_alloc_trump_void3(context); break;
     default:
       // Should not happen; fall back to NT leading weights so moves get
       // deterministic ordering instead of stale/uninitialized weights.

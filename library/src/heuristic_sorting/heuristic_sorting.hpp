@@ -62,7 +62,30 @@ struct HeuristicContext
     int lead0_rank = 0; // trackp->move[0].rank
 };
 
-/// @brief Apply heuristic sorting using a precomputed dispatch index.
+/// @brief Which weight_alloc_* helper to run for the current move list.
+///
+/// Move generation already knows the lead/follow, trump-winner, and void
+/// situation; it passes the matching case so call_heuristic does not re-derive
+/// it from the context. Numeric values match the historical findex encoding
+/// used by Moves::MoveGen0 / MoveGen123 (and DDS_MOVES RegisterList).
+enum class WeightCase : int {
+  Nt0 = 0,                   ///< Leading hand, no trump winner available
+  Trump0 = 1,                ///< Leading hand, trump winner available
+  NtNotVoid1 = 4,            ///< 2nd hand, can follow, no trump winner
+  TrumpNotVoid1 = 5,         ///< 2nd hand, can follow, trump winner
+  NtVoid1 = 6,               ///< 2nd hand, void in lead suit, no trump winner
+  TrumpVoid1 = 7,            ///< 2nd hand, void in lead suit, trump winner
+  NtNotVoid2 = 8,            ///< 3rd hand, can follow, no trump winner
+  TrumpNotVoid2 = 9,         ///< 3rd hand, can follow, trump winner
+  NtVoid2 = 10,              ///< 3rd hand, void in lead suit, no trump winner
+  TrumpVoid2 = 11,           ///< 3rd hand, void in lead suit, trump winner
+  CombinedNotVoid3 = 12,     ///< 4th hand, can follow, no trump winner
+  CombinedNotVoid3Trump = 13,///< 4th hand, can follow, trump winner
+  NtVoid3 = 14,              ///< 4th hand, void in lead suit, no trump winner
+  TrumpVoid3 = 15,           ///< 4th hand, void in lead suit, trump winner
+};
+
+/// @brief Apply heuristic sorting using a precomputed weight case.
 ///
 /// Evaluates candidate moves using position-dependent heuristics to assign
 /// weights that guide search algorithms toward the most promising lines.
@@ -70,17 +93,9 @@ struct HeuristicContext
 /// re-deriving the relative hand, trump state and voidness from the context
 /// on every call.
 ///
-/// Encoding (matches the findex used by Moves::MoveGen0 / MoveGen123):
-///   - Leading hand:   0 = no trump winner available, 1 = trump winner available
-///     (trump in [0, DDS_SUITS) && trump != DDS_NOTRUMP &&
-///      winner[trump].rank != 0)
-///   - Following hand: 4 * hand_rel + trump_winner + (void_in_lead_suit ? 2 : 0)
-///     for hand_rel in 1..3, i.e. values 4..15, where trump_winner is the
-///     same 0/1 bit as for the leading hand.
-///
 /// @param context Pre-constructed HeuristicContext containing position data,
 ///                move arrays, and cached snapshots for efficient evaluation.
 ///                Non-const because weighting writes through context.mply.
-/// @param findex  Precomputed dispatch index as encoded above.
-void call_heuristic(HeuristicContext& context, int findex);
+/// @param weight_case Precomputed weight case (see WeightCase).
+void call_heuristic(HeuristicContext& context, WeightCase weight_case);
 

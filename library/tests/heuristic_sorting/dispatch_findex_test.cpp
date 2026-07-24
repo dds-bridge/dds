@@ -1,9 +1,9 @@
 /**
  * @file dispatch_findex_test.cpp
- * @brief Behaviour of findex-based heuristic dispatch.
+ * @brief Behaviour of WeightCase-based heuristic dispatch.
  *
- * Move generation always passes a precomputed findex. This file covers the
- * dispatcher's fallback when an out-of-range findex reaches call_heuristic.
+ * Move generation always passes a precomputed WeightCase. This file covers the
+ * dispatcher's fallback when an unrecognized case reaches call_heuristic.
  */
 
 #include <gtest/gtest.h>
@@ -27,7 +27,7 @@ struct DispatchFixture
   RelRanksType* rel = rel_ranks;
   TrackType track{};
   MoveType moves_expected[kNumMoves]{};
-  MoveType moves_findex[kNumMoves]{};
+  MoveType moves_dispatched[kNumMoves]{};
 };
 
 void fill_position(DispatchFixture& f, const int curr_hand, const int lead_suit)
@@ -63,7 +63,7 @@ void fill_position(DispatchFixture& f, const int curr_hand, const int lead_suit)
   for (int k = 0; k < kNumMoves; k++)
   {
     f.moves_expected[k] = MoveType{lead_suit, 12 - 2 * k, 0, 0};
-    f.moves_findex[k] = f.moves_expected[k];
+    f.moves_dispatched[k] = f.moves_expected[k];
   }
 }
 
@@ -101,11 +101,12 @@ HeuristicContext make_context(DispatchFixture& f, MoveType* mply,
 
 }  // namespace
 
-// Out-of-range findex must still assign deterministic weights (NT0 fallback),
-// not leave stale/uninitialized move weights that would scramble MergeSort.
-TEST(DispatchFindex, InvalidFindexFallsBackToBasicNt0Weights)
+// Unrecognized WeightCase values must still assign deterministic weights
+// (Nt0 fallback), not leave stale/uninitialized move weights that would
+// scramble MergeSort.
+TEST(DispatchWeightCase, InvalidWeightCaseFallsBackToBasicNt0Weights)
 {
-  for (const int bad_findex : {2, 3, 16, -1, 99})
+  for (const int bad_value : {2, 3, 16, -1, 99})
   {
     DispatchFixture f;
     const int lead_hand = 0;
@@ -115,25 +116,45 @@ TEST(DispatchFindex, InvalidFindexFallsBackToBasicNt0Weights)
     for (int k = 0; k < kNumMoves; k++)
     {
       f.moves_expected[k].weight = 0;
-      f.moves_findex[k].weight = kStale;
+      f.moves_dispatched[k].weight = kStale;
     }
 
     HeuristicContext expected = make_context(
       f, f.moves_expected, lead_hand, lead_hand, 0);
-    HeuristicContext with_findex = make_context(
-      f, f.moves_findex, lead_hand, lead_hand, 0);
+    HeuristicContext dispatched = make_context(
+      f, f.moves_dispatched, lead_hand, lead_hand, 0);
 
     weight_alloc_nt0(expected);
-    call_heuristic(with_findex, bad_findex);
+    call_heuristic(dispatched, static_cast<WeightCase>(bad_value));
 
     for (int k = 0; k < kNumMoves; k++)
     {
-      EXPECT_NE(f.moves_findex[k].weight, kStale)
-          << "findex=" << bad_findex << " move=" << k
+      EXPECT_NE(f.moves_dispatched[k].weight, kStale)
+          << "weight_case=" << bad_value << " move=" << k
           << " left a stale weight";
-      EXPECT_EQ(f.moves_expected[k].weight, f.moves_findex[k].weight)
-          << "findex=" << bad_findex << " move=" << k
+      EXPECT_EQ(f.moves_expected[k].weight, f.moves_dispatched[k].weight)
+          << "weight_case=" << bad_value << " move=" << k
           << " must match weight_alloc_nt0 fallback";
     }
   }
+}
+
+// Known WeightCase values must select the matching weight_alloc_* helper.
+TEST(DispatchWeightCase, Nt0DispatchesToWeightAllocNt0)
+{
+  DispatchFixture f;
+  const int lead_hand = 0;
+  fill_position(f, lead_hand, /*lead_suit=*/0);
+
+  HeuristicContext expected = make_context(
+    f, f.moves_expected, lead_hand, lead_hand, 0);
+  HeuristicContext dispatched = make_context(
+    f, f.moves_dispatched, lead_hand, lead_hand, 0);
+
+  weight_alloc_nt0(expected);
+  call_heuristic(dispatched, WeightCase::Nt0);
+
+  for (int k = 0; k < kNumMoves; k++)
+    EXPECT_EQ(f.moves_expected[k].weight, f.moves_dispatched[k].weight)
+        << "move=" << k;
 }

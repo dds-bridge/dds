@@ -187,7 +187,7 @@ public:
    * @brief Build a HeuristicContext snapshot from current move-gen state.
    *
    * Built once per move-generation call; the caller updates suit and move
-   * counts per suit iteration and dispatches via call_heuristic(ctx, findex).
+   * counts per suit iteration and dispatches via call_heuristic(ctx, weight_case).
    *
    * @param tpos Current position
    * @param best_move Best move from search (must outlive the context)

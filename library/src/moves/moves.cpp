@@ -52,15 +52,23 @@ const MgType RegisterList[16] = {MgType::NT0,           MgType::TRUMP0,
 namespace
 {
 
-// Trump-winner bit of the heuristic findex: never index winner[trump]
+// Trump-winner bit of WeightCase: never index winner[trump]
 // unless trump is a suit in [0, DDS_SUITS).
-auto trump_winner_findex(const Pos& tpos, const int trump) -> int
+auto trump_winner_bit(const Pos& tpos, const int trump) -> int
 {
   return ((trump != DDS_NOTRUMP) &&
           (trump >= 0 && trump < DDS_SUITS) &&
           (tpos.winner[trump].rank != 0))
            ? 1
            : 0;
+}
+
+// Encode following-hand WeightCase: 4 * hand_rel + trump_winner + (void ? 2 : 0).
+auto weight_case_follow(const int hand_rel, const int trump_winner,
+                        const bool is_void) -> WeightCase
+{
+  return static_cast<WeightCase>(
+      4 * hand_rel + trump_winner + (is_void ? 2 : 0));
 }
 
 }  // namespace
@@ -204,9 +212,11 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
   suit = 0;
   leadSuit = 0;
 
-  // Leading-hand dispatch case, known here once instead of re-derived per
+  // Leading-hand weight case, known here once instead of re-derived per
   // suit inside the heuristic dispatcher.
-  const int lead_findex = trump_winner_findex(tpos, trump);
+  const WeightCase lead_case = trump_winner_bit(tpos, trump)
+                                   ? WeightCase::Trump0
+                                   : WeightCase::Nt0;
   HeuristicContext hctx =
       make_heuristic_context(tpos, bestMove, bestMoveTT, thrp_rel,
                              track[tricks]);
@@ -243,11 +253,11 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
     hctx.suit = suit;
     hctx.last_num_moves = lastNumMoves;
     hctx.num_moves = numMoves;
-    ::call_heuristic(hctx, lead_findex);
+    ::call_heuristic(hctx, lead_case);
   }
 
 #ifdef DDS_MOVES
-  if (lead_findex)
+  if (lead_case == WeightCase::Trump0)
     MG_REGISTER(MgType::TRUMP0, 0);
   else
     MG_REGISTER(MgType::NT0, 0);
@@ -284,8 +294,8 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
   lastNumMoves = 0;
   suit = leadSuit;
 
-  int findex;
-  const int ftest = trump_winner_findex(tpos, trump);
+  WeightCase weight_case;
+  const int trump_winner = trump_winner_bit(tpos, trump);
 
   // Empty best-move placeholders must outlive the hoisted context, which
   // holds references to them.
@@ -313,9 +323,9 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
       g--;
     }
 
-    findex = 4 * handRel + ftest;
+    weight_case = weight_case_follow(handRel, trump_winner, /*is_void=*/false);
 #ifdef DDS_MOVES
-    MG_REGISTER(RegisterList[findex], handRel);
+    MG_REGISTER(RegisterList[static_cast<int>(weight_case)], handRel);
 #endif
 
     list.current = 0;
@@ -326,16 +336,16 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
     HeuristicContext hctx =
         make_heuristic_context(tpos, empty_move, empty_move, nullptr,
                                track[tricks]);
-    ::call_heuristic(hctx, findex);
+    ::call_heuristic(hctx, weight_case);
 
     Moves::MergeSort();
     return numMoves;
   }
 
-  findex = 4 * handRel + ftest + 2;
+  weight_case = weight_case_follow(handRel, trump_winner, /*is_void=*/true);
 
 #ifdef DDS_MOVES
-  MG_REGISTER(RegisterList[findex], handRel);
+  MG_REGISTER(RegisterList[static_cast<int>(weight_case)], handRel);
 #endif
 
   HeuristicContext hctx =
@@ -370,7 +380,7 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
     hctx.suit = suit;
     hctx.last_num_moves = lastNumMoves;
     hctx.num_moves = numMoves;
-    ::call_heuristic(hctx, findex);
+    ::call_heuristic(hctx, weight_case);
   }
 
   list.current = 0;

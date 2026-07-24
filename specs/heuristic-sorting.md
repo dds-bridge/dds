@@ -37,12 +37,12 @@ solve.
   `doc/heuristic-sorting.md` is narrative intent (including lead/void per-suit
   top-card bonuses) and may lag the code; when they disagree, trust the
   implementation.
-- **`call_heuristic` takes a pre-built `HeuristicContext&` and a `findex`.** The
-  caller constructs one context (position, move array, best moves, relative
+- **`call_heuristic` takes a pre-built `HeuristicContext&` and a `WeightCase`.**
+  The caller constructs one context (position, move array, best moves, relative
   ranks, and cached per-trick snapshots such as `removed_ranks`, `move1_rank`,
   `high1`) and passes it by mutable reference; weighting writes through
   `context.mply`. Move generation (`MoveGen0` / `MoveGen123`) always passes the
-  precomputed dispatch `findex` so the case is not re-derived per suit.
+  precomputed `WeightCase` so the case is not re-derived per suit.
 - **`TrackType` is shared per-trick position state** defined here and consumed by
   both [move-generation](move-generation.md) and the heuristics. `Moves` owns the `track[]` array
   and mutates `trackp`; heuristics read the snapshots copied into
@@ -53,8 +53,8 @@ solve.
 ## Key entry points
 
 - `library/src/heuristic_sorting/heuristic_sorting.hpp` — `HeuristicContext`,
-  `TrackType`, and `call_heuristic(context, findex)`. Doxygen documents the
-  fields.
+  `TrackType`, `WeightCase`, and `call_heuristic(context, weight_case)`.
+  Doxygen documents the fields.
 - `library/src/heuristic_sorting/heuristic_sorting.cpp` +
   `internal.hpp` — the per-situation weighting helpers.
 - Narrative algorithm: `doc/heuristic-sorting.md`.
