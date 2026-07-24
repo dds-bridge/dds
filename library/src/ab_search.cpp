@@ -30,6 +30,55 @@ EvalType evaluate_with_context(Pos const * posPoint, int trump, SolverContext& c
 const int handDelta[DDS_SUITS] = { 256, 16, 1, 0 };
 
 
+auto apply_ab_tt_lookup(
+  Pos * posPoint,
+  const int target,
+  const int depth,
+  const int tricks,
+  const int hand,
+  SolverContext& ctx,
+  bool& scoreFlag) -> bool
+{
+  int limit;
+  if (ctx.search().node_type_store(0) == MAXNODE)
+    limit = target - posPoint->tricks_max - 1;
+  else
+    limit = tricks - (target - posPoint->tricks_max - 1);
+
+  bool lowerFlag;
+  TIMER_START(TIMER_NO_LOOKUP, depth);
+  NodeCards const * cardsP =
+      ctx.trans_table()->lookup(
+        tricks, hand, posPoint->aggr, posPoint->hand_dist,
+        limit, lowerFlag);
+  TIMER_END(TIMER_NO_LOOKUP, depth);
+
+  if (!cardsP)
+    return false;
+
+#ifdef DDS_AB_HITS
+  DumpRetrieved(ctx.thread_ptr()->fileRetrieved.GetStream(),
+    * posPoint, *cardsP, target, depth);
+#endif
+
+  for (int ss = 0; ss < DDS_SUITS; ss++)
+    posPoint->win_ranks[depth][ss] =
+      win_ranks[ posPoint->aggr[ss] ]
+      [ static_cast<unsigned char>(cardsP->least_win[ss]) ];
+
+  if (cardsP->best_move_rank != 0)
+  {
+    ctx.search().best_move_tt(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
+    ctx.search().best_move_tt(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
+  }
+
+  scoreFlag = (ctx.search().node_type_store(0) == MAXNODE ? lowerFlag : ! lowerFlag);
+
+  AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
+  return true;
+}
+
+
 static void remove_card(
   Pos * posPoint,
   const int hand,
@@ -188,44 +237,9 @@ static bool ab_search_0_ctx(
 
   if (depth >= 20)
   {
-    /* Find node that fits the suit lengths */
-    int limit;
-    if (ctx.search().node_type_store(0) == MAXNODE)
-      limit = target - posPoint->tricks_max - 1;
-    else
-      limit = tricks - (target - posPoint->tricks_max - 1);
-
-    bool lowerFlag;
-    TIMER_START(TIMER_NO_LOOKUP, depth);
-  NodeCards const * cardsP =
-      ctx.trans_table()->lookup(
-        tricks, hand, posPoint->aggr, posPoint->hand_dist,
-        limit, lowerFlag);
-    TIMER_END(TIMER_NO_LOOKUP, depth);
-
-    if (cardsP)
-    {
-#ifdef DDS_AB_HITS
-      DumpRetrieved(thrp->fileRetrieved.GetStream(), 
-        * posPoint, *cardsP, target, depth);
-#endif
-
-      for (int ss = 0; ss < DDS_SUITS; ss++)
-        posPoint->win_ranks[depth][ss] =
-          win_ranks[ posPoint->aggr[ss] ]
-          [ static_cast<unsigned char>(cardsP->least_win[ss]) ];
-
-      if (cardsP->best_move_rank != 0)
-      {
-        ctx.search().best_move_tt(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
-        ctx.search().best_move_tt(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
-      }
-
-      bool scoreFlag = (ctx.search().node_type_store(0) == MAXNODE ? lowerFlag : ! lowerFlag);
-
-      AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
+    bool scoreFlag;
+    if (apply_ab_tt_lookup(posPoint, target, depth, tricks, hand, ctx, scoreFlag))
       return scoreFlag;
-    }
   }
 
   if (posPoint->tricks_max >= target)
@@ -298,44 +312,9 @@ static bool ab_search_0_ctx(
 
   if (depth < 20)
   {
-    /* Find node that fits the suit lengths */
-    int limit;
-    if (ctx.search().node_type_store(0) == MAXNODE)
-      limit = target - posPoint->tricks_max - 1;
-    else
-      limit = tricks - (target - posPoint->tricks_max - 1);
-
-    bool lowerFlag;
-    TIMER_START(TIMER_NO_LOOKUP, depth);
-  NodeCards const * cardsP =
-      ctx.trans_table()->lookup(
-        tricks, hand, posPoint->aggr, posPoint->hand_dist,
-        limit, lowerFlag);
-    TIMER_END(TIMER_NO_LOOKUP, depth);
-
-    if (cardsP)
-    {
-#ifdef DDS_AB_HITS
-      DumpRetrieved(thrp->fileRetrieved.GetStream(), 
-        * posPoint, * cardsP, target, depth);
-#endif
-
-      for (int ss = 0; ss < DDS_SUITS; ss++)
-        posPoint->win_ranks[depth][ss] =
-          win_ranks[ posPoint->aggr[ss] ]
-          [ static_cast<unsigned char>(cardsP->least_win[ss]) ];
-
-      if (cardsP->best_move_rank != 0)
-      {
-        ctx.search().best_move_tt(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
-        ctx.search().best_move_tt(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
-      }
-
-      bool scoreFlag = (ctx.search().node_type_store(0) == MAXNODE ? lowerFlag : ! lowerFlag);
-
-      AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
+    bool scoreFlag;
+    if (apply_ab_tt_lookup(posPoint, target, depth, tricks, hand, ctx, scoreFlag))
       return scoreFlag;
-    }
   }
 
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
