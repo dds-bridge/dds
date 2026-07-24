@@ -291,12 +291,15 @@ auto poisoned_track() -> TrackType
   return tr;
 }
 
+// HeuristicContext stores references to these; they must outlive the returned
+// value (locals in context_for_hand_rel would dangle after return).
+static const Pos kTpos{};
+static const MoveType kBest{};
+static const MoveType kBestTt{};
+
 auto context_for_hand_rel(Moves& m, const TrackType& tr, const int hand_rel)
     -> HeuristicContext
 {
-  Pos tpos{};
-  const MoveType best{};
-  const MoveType best_tt{};
   m.leadHand = 0;
   m.currHand = hand_rel;  // leadHand 0 ⇒ hand_rel == currHand
   m.leadSuit = 0;
@@ -305,7 +308,7 @@ auto context_for_hand_rel(Moves& m, const TrackType& tr, const int hand_rel)
   m.suit = 0;
   m.numMoves = 0;
   m.lastNumMoves = 0;
-  return m.make_heuristic_context(tpos, best, best_tt, nullptr, tr);
+  return m.make_heuristic_context(kTpos, kBest, kBestTt, nullptr, tr);
 }
 
 }  // namespace
@@ -332,6 +335,18 @@ TEST_F(MovesTest, MakeHeuristicContextSnapshotsExplicitTrack)
   EXPECT_EQ(ctx.move2_suit, 3);
   EXPECT_EQ(ctx.high2, 2);
   EXPECT_EQ(ctx.trackp, &tr);
+}
+
+// HeuristicContext holds references to tpos / best_move / best_move_tt; the
+// helper must bind them to storage that outlives the returned context.
+TEST_F(MovesTest, MakeHeuristicContextBindsStableRefs)
+{
+  const TrackType tr = poisoned_track();
+  const HeuristicContext ctx = context_for_hand_rel(*moves, tr, /*hand_rel=*/0);
+
+  EXPECT_EQ(&ctx.tpos, &kTpos);
+  EXPECT_EQ(&ctx.best_move, &kBest);
+  EXPECT_EQ(&ctx.best_move_tt, &kBestTt);
 }
 
 // Leading hand: move[0..2] are not played yet — leave trick snapshots at 0
