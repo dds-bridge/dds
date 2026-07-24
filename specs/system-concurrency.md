@@ -1,7 +1,7 @@
 ---
 capability: system-concurrency
 owners: [system]
-last-updated: 2026-07-18
+last-updated: 2026-07-23
 ---
 
 # System & Concurrency
@@ -38,7 +38,12 @@ place so the search and API layers stay portable. It is internal — not part of
   duplicates) to control dispatch priority; a malformed `order` **falls back to
   index order** rather than rejecting. Each `process_board(worker_id, bno)` must
   return `RETURN_NO_FAULT` (1) on success. The function returns the **first
-  non-success code** encountered (or `RETURN_NO_FAULT`). Guarded by
+  non-success code** encountered (or `RETURN_NO_FAULT`). Multi-worker runs use a
+  process-local persistent thread pool (grow-only) so consecutive calls reuse OS
+  threads; `workers == 1` stays on the calling thread. Concurrent multi-worker
+  callers serialize on the pool, but the API is **not re-entrant** from inside
+  `process_board` of another multi-worker run (that nests a second
+  `run_mu_` acquisition on a pool worker and deadlocks). Guarded by
   `concurrency_validation_test` and `parallel_boards_test`.
 - **Result equivalence across thread counts is an invariant.** Solving the same
   boards single-threaded and multi-threaded must produce identical results;

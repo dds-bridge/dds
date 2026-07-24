@@ -274,6 +274,39 @@ auto SolverContext::reset_best_moves_lite() const -> void
 #endif
 }
 
+namespace dds::internal
+{
+
+namespace
+{
+
+std::atomic<std::uint64_t> g_worker_contexts_created{0};
+
+struct CountedWorkerContext
+{
+  CountedWorkerContext()
+  {
+    g_worker_contexts_created.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  SolverContext ctx;
+};
+
+}  // namespace
+
+auto worker_solver_context() -> SolverContext&
+{
+  thread_local CountedWorkerContext holder;
+  return holder.ctx;
+}
+
+auto worker_solver_contexts_created() -> std::uint64_t
+{
+  return g_worker_contexts_created.load(std::memory_order_relaxed);
+}
+
+}  // namespace dds::internal
+
 auto ThreadMemoryUsed() -> double
 {
   // Fixed per-thread lookup-table memory (RelRanksType) included in memUsed
