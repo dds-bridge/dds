@@ -23,9 +23,15 @@ runs:
       with:
         bazelisk-version: ${{ inputs.bazelisk-version }}
 
-    # pwsh is available on all GitHub-hosted runners (Linux/macOS/Windows) and
-    # matches the Windows CI job's shell, so we avoid a Bash-only dependency.
+    # Composite run steps need an explicit shell. Use bash on Linux/macOS (pwsh
+    # is not always present after free-disk-space) and pwsh on Windows.
     - name: Verify Bazelisk installation
+      if: runner.os != 'Windows'
+      shell: bash
+      run: bazelisk version || (echo "Failed to install Bazelisk after two setup attempts, or Bazelisk is not available on PATH." && exit 1)
+
+    - name: Verify Bazelisk installation
+      if: runner.os == 'Windows'
       shell: pwsh
       run: |
         bazelisk version
