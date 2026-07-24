@@ -25,11 +25,11 @@ struct CardFixture {
   int suit = 0;
   int rank = 14;  // Ace
 
-  CardFixture(int first_hand, int relative_hand, int card_suit, int card_rank)
+  CardFixture(int first_hand, int relative_hand, int suit, int rank)
       : leader(first_hand),
         player(HAND_ID(first_hand, relative_hand)),
-        suit(card_suit),
-        rank(card_rank)
+        suit(suit),
+        rank(rank)
   {
     std::memset(&pos, 0, sizeof(pos));
     pos.first[kDepth] = leader;
