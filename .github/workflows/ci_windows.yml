@@ -16,9 +16,7 @@ jobs:
 
       # Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: "1.29.0"
+        uses: ./.github/actions/setup-bazelisk
 
       # Warm external deps (emsdk, LLVM, …); retry transient network fetch failures
       - name: Prefetch external repos

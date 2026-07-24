@@ -1,0 +1,41 @@
+name: Setup Bazelisk
+description: Install Bazelisk with one retry, then verify it is on PATH
+inputs:
+  bazelisk-version:
+    description: Bazelisk version to install
+    required: false
+    default: "1.29.0"
+runs:
+  using: composite
+  steps:
+    - name: Setup Bazelisk (attempt 1)
+      id: setup_bazelisk_1
+      continue-on-error: true
+      uses: bazel-contrib/setup-bazel@0.19.0
+      with:
+        bazelisk-version: ${{ inputs.bazelisk-version }}
+
+    - name: Setup Bazelisk (attempt 2)
+      id: setup_bazelisk_2
+      if: steps.setup_bazelisk_1.outcome != 'success'
+      continue-on-error: false
+      uses: bazel-contrib/setup-bazel@0.19.0
+      with:
+        bazelisk-version: ${{ inputs.bazelisk-version }}
+
+    # Composite run steps need an explicit shell. Use bash on Linux/macOS (pwsh
+    # is not always present after free-disk-space) and pwsh on Windows.
+    - name: Verify Bazelisk installation
+      if: runner.os != 'Windows'
+      shell: bash
+      run: bazelisk version || (echo "Failed to install Bazelisk after two setup attempts, or Bazelisk is not available on PATH." && exit 1)
+
+    - name: Verify Bazelisk installation
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        bazelisk version
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Failed to install Bazelisk after two setup attempts, or Bazelisk is not available on PATH."
+          exit 1
+        }
