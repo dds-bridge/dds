@@ -9,9 +9,6 @@ bazel_dep(name = "platforms", version = "1.1.0")
 # Pin to the version the graph resolves (via rules_jvm_external) to avoid a
 # direct-dependency mismatch warning on every invocation.
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
-# sh_test for //:benchmark_git_prep_test (already pulled in transitively;
-# pin directly so the load path stays stable).
-bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "2.0.1")
