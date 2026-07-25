@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <functional>
 #include <future>
+#include <memory>
 #include <new>
 #include <stdexcept>
 #include <thread>
@@ -234,10 +235,11 @@ TEST(ParallelAllBoards, ProcessBoardExceptionDoesNotHangCaller)
   constexpr int workers = 2;
   constexpr auto deadline = std::chrono::seconds(10);
 
-  std::promise<int> done;
-  std::future<int> fut = done.get_future();
-  std::thread caller([&] {
-    const int rc = parallel_all_boards_n(
+  // packaged_task owns the shared state; if wait times out we can detach the
+  // thread without UAF when locals here are destroyed (unlike a promise
+  // captured by reference).
+  std::packaged_task<int()> task([] {
+    return parallel_all_boards_n(
       count,
       workers,
       [](const int, const int bno) -> int {
@@ -245,8 +247,9 @@ TEST(ParallelAllBoards, ProcessBoardExceptionDoesNotHangCaller)
           throw std::runtime_error("process_board failed");
         return RETURN_NO_FAULT;
       });
-    done.set_value(rc);
   });
+  std::future<int> fut = task.get_future();
+  std::thread caller(std::move(task));
 
   const bool ready = fut.wait_for(deadline) == std::future_status::ready;
   if (!ready)
@@ -263,6 +266,59 @@ TEST(ParallelAllBoards, ProcessBoardExceptionDoesNotHangCaller)
     parallel_all_boards_n(
       count, workers, [](const int, const int) { return RETURN_NO_FAULT; }),
     RETURN_NO_FAULT);
+}
+
+TEST(ParallelAllBoards, ProcessBoardExceptionOverridesPriorReturnCode)
+{
+  // Contract: any thrown exception maps the run to RETURN_UNKNOWN_FAULT, even
+  // when another worker has already recorded a non-success return code.
+  if (std::thread::hardware_concurrency() < 2)
+    GTEST_SKIP() << "Need at least 2 hardware threads";
+
+  constexpr int count = 2;
+  constexpr int workers = 2;
+  constexpr auto deadline = std::chrono::seconds(10);
+
+  // Heap-backed sync so a timeout detach cannot UAF stack atomics.
+  struct Sync
+  {
+    std::atomic<bool> board1_started{false};
+    std::atomic<bool> board0_returned_error{false};
+  };
+  const auto sync = std::make_shared<Sync>();
+
+  std::packaged_task<int()> task([sync] {
+    return parallel_all_boards_n(
+      count,
+      workers,
+      [sync](const int, const int bno) -> int {
+        if (bno == 0)
+        {
+          while (!sync->board1_started.load(std::memory_order_acquire))
+            std::this_thread::yield();
+          sync->board0_returned_error.store(true, std::memory_order_release);
+          return RETURN_TOO_MANY_BOARDS;
+        }
+        sync->board1_started.store(true, std::memory_order_release);
+        while (!sync->board0_returned_error.load(std::memory_order_acquire))
+          std::this_thread::yield();
+        // Let the other worker's compare_exchange publish first_error first.
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        throw std::runtime_error("process_board failed after prior error");
+      });
+  });
+  std::future<int> fut = task.get_future();
+  std::thread caller(std::move(task));
+
+  const bool ready = fut.wait_for(deadline) == std::future_status::ready;
+  if (!ready)
+  {
+    caller.detach();
+    FAIL() << "caller hung when exception raced with a prior return code";
+  }
+  caller.join();
+
+  EXPECT_EQ(fut.get(), RETURN_UNKNOWN_FAULT);
 }
 
 TEST(ParallelAllBoards, ConcurrentCallersBothCompleteAndProcessAllBoards)
