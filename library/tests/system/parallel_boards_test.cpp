@@ -237,11 +237,15 @@ TEST(ParallelAllBoards, ProcessBoardExceptionDoesNotHangCaller)
 
   // packaged_task owns the shared state; if wait times out we can detach the
   // thread without UAF when locals here are destroyed (unlike a promise
-  // captured by reference).
+  // captured by reference). Define count/workers inside the lambda so MSVC
+  // does not require a capture (C3493) and clang does not warn about an
+  // unnecessary one (-Wunused-lambda-capture).
   std::packaged_task<int()> task([] {
+    constexpr int board_count = 8;
+    constexpr int worker_count = 2;
     return parallel_all_boards_n(
-      count,
-      workers,
+      board_count,
+      worker_count,
       [](const int, const int bno) -> int {
         if (bno == 0)
           throw std::runtime_error("process_board failed");
@@ -275,8 +279,6 @@ TEST(ParallelAllBoards, ProcessBoardExceptionOverridesPriorReturnCode)
   if (std::thread::hardware_concurrency() < 2)
     GTEST_SKIP() << "Need at least 2 hardware threads";
 
-  constexpr int count = 2;
-  constexpr int workers = 2;
   constexpr auto deadline = std::chrono::seconds(10);
 
   // Heap-backed sync so a timeout detach cannot UAF stack atomics.
@@ -288,9 +290,11 @@ TEST(ParallelAllBoards, ProcessBoardExceptionOverridesPriorReturnCode)
   const auto sync = std::make_shared<Sync>();
 
   std::packaged_task<int()> task([sync] {
+    constexpr int board_count = 2;
+    constexpr int worker_count = 2;
     return parallel_all_boards_n(
-      count,
-      workers,
+      board_count,
+      worker_count,
       [sync](const int, const int bno) -> int {
         if (bno == 0)
         {
