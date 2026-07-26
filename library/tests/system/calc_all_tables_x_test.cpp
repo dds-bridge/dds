@@ -106,7 +106,8 @@ TEST(CalcAllTablesX, LegacyRejectsMoreThanMaxTables)
   DdTableDeals deals{};
   deals.no_of_tables = MAXNOOFTABLES + 1;
   const DdTableDeal known = make_known_deal();
-  for (int i = 0; i < deals.no_of_tables; i++)
+  // Fill only the in-bounds slots; CalcAllTablesN must reject on count alone.
+  for (int i = 0; i < MAXNOOFTABLES; i++)
     deals.deals[i] = known;
 
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
