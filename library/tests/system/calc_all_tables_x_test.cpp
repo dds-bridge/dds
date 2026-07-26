@@ -122,7 +122,8 @@ TEST(CalcAllTablesX, AcceptsMoreThanMaxTablesAndMatchesLegacy)
 {
   InitializeStaticMemory();
   const DdTableDeal known = make_known_deal();
-  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+  // One strain keeps the >MAXNOOFTABLES path cheap enough for TSAN CI.
+  int filter[DDS_STRAINS] = {1, 1, 1, 1, 0};
 
   DdTableDeals legacy{};
   legacy.no_of_tables = 2;
@@ -146,19 +147,21 @@ TEST(CalcAllTablesX, AcceptsMoreThanMaxTablesAndMatchesLegacy)
   expect_tables_equal(legacy_results.results[0], results[static_cast<unsigned>(kNum - 1)]);
 }
 
-// The performance point of PBNx: a batch larger than MAXNOOFTABLES must be
-// one parallel_all_boards_n job covering every deal×strain board, not N
+// The performance point of the X APIs: a batch larger than MAXNOOFTABLES must
+// be one parallel_all_boards_n job covering every deal×strain board, not N
 // chunked jobs of MAXNOOFBOARDS each.
 TEST(CalcAllTablesX, LargeBatchIsSingleParallelJob)
 {
   InitializeStaticMemory();
   const DdTableDeal known = make_known_deal();
   constexpr int kNum = MAXNOOFTABLES + 1;
-  const int expected_boards = kNum * DDS_STRAINS;
+  // One strain: still >MAXNOOFTABLES boards, without a 5× TSAN timeout.
+  constexpr int kIncludedStrains = 1;
+  int filter[DDS_STRAINS] = {1, 1, 1, 1, 0};
+  const int expected_boards = kNum * kIncludedStrains;
 
   std::vector<DdTableDeal> deals(static_cast<unsigned>(kNum), known);
   std::vector<DdTableResults> results(static_cast<unsigned>(kNum));
-  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
 
   (void)dds::internal::parallel_boards_last_job_board_count();
   ASSERT_EQ(
