@@ -8,6 +8,8 @@
     CalcAllTablesN;
     CalcAllTablesPBN;
     CalcAllTablesPBNN;
+    CalcAllTablesPBNX;
+    CalcAllTablesX;
     CalcDDtable;
     CalcDDtableN;
     CalcDDtablePBN;

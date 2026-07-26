@@ -123,7 +123,7 @@ bool loop_calc(
     setw(25) << right << "Time" << "\n";
 #endif
 
-  // One CalcAllTablesPBNx call for the whole file: expands to number×strains
+  // One CalcAllTablesPBNX call for the whole file: expands to number×strains
   // boards and solves them in a single parallel job (ddss large-batch shape).
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
   const int strain_count = DDS_STRAINS;
@@ -135,12 +135,12 @@ bool loop_calc(
   timer.start(number);
   const int workload = number * strain_count;
   const int threads = dtest_effective_threads(options.num_threads_, workload);
-  const int ret = CalcAllTablesPBNx(
+  const int ret = CalcAllTablesPBNX(
     number, deals.data(), -1, filter, results.data(), nullptr, threads);
   timer.end();
   if (ret != RETURN_NO_FAULT)
   {
-    cout << "loop_calc: CalcAllTablesPBNx return " << ret << "\n";
+    cout << "loop_calc: CalcAllTablesPBNX return " << ret << "\n";
     exit(0);
   }
 

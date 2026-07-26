@@ -1,5 +1,5 @@
 /// @file calc_all_tables_x_test.cpp
-/// @brief Tests for unbounded CalcAllTablesx / CalcAllTablesPBNx.
+/// @brief Tests for unbounded CalcAllTablesX / CalcAllTablesPBNX.
 ///
 /// The unbounded APIs must accept more than MAXNOOFTABLES deals and run all
 /// deal×strain boards as a single parallel job (ddss-style), not as repeated
@@ -92,7 +92,7 @@ TEST(CalcAllTablesX, AcceptsMoreThanMaxTablesAndMatchesLegacy)
   std::vector<DdTableDeal> deals(static_cast<unsigned>(kNum), known);
   std::vector<DdTableResults> results(static_cast<unsigned>(kNum));
   ASSERT_EQ(
-    CalcAllTablesx(
+    CalcAllTablesX(
       kNum, deals.data(), -1, filter, results.data(), nullptr, 1),
     RETURN_NO_FAULT);
 
@@ -116,7 +116,7 @@ TEST(CalcAllTablesX, LargeBatchIsSingleParallelJob)
 
   (void)dds::internal::parallel_boards_last_job_board_count();
   ASSERT_EQ(
-    CalcAllTablesx(
+    CalcAllTablesX(
       kNum, deals.data(), -1, filter, results.data(), nullptr,
       /*maxThreads=*/2),
     RETURN_NO_FAULT);
@@ -136,7 +136,7 @@ TEST(CalcAllTablesX, PbnVariantMatchesBinary)
   std::vector<DdTableResults> binary_results(static_cast<unsigned>(kNum));
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
   ASSERT_EQ(
-    CalcAllTablesx(
+    CalcAllTablesX(
       kNum, binary.data(), -1, filter, binary_results.data(), nullptr, 1),
     RETURN_NO_FAULT);
 
@@ -148,7 +148,7 @@ TEST(CalcAllTablesX, PbnVariantMatchesBinary)
     std::strncpy(pbn_deals[static_cast<unsigned>(i)].cards, pbn, sizeof(pbn_deals[0].cards));
   std::vector<DdTableResults> pbn_results(static_cast<unsigned>(kNum));
   ASSERT_EQ(
-    CalcAllTablesPBNx(
+    CalcAllTablesPBNX(
       kNum, pbn_deals.data(), -1, filter, pbn_results.data(), nullptr, 1),
     RETURN_NO_FAULT);
 

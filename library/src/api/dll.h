@@ -662,7 +662,7 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNN(
  * @param par Optional par output (numDeals); required when mode requests par
  * @param maxThreads Worker cap; <= 0 means auto
  */
-EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesx(
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesX(
   int numDeals,
   struct DdTableDeal const * deals,
   int mode,
@@ -672,9 +672,9 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesx(
   int maxThreads) -> int;
 
 /**
- * @brief PBN variant of CalcAllTablesx.
+ * @brief PBN variant of CalcAllTablesX.
  */
-EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNx(
+EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNX(
   int numDeals,
   struct DdTableDealPBN const * deals,
   int mode,

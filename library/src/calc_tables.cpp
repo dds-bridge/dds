@@ -437,7 +437,7 @@ auto calc_single_deal_scores(
 }  // namespace
 
 
-int STDCALL CalcAllTablesx(
+int STDCALL CalcAllTablesX(
   int numDeals,
   DdTableDeal const * deals,
   int mode,
@@ -550,7 +550,7 @@ int STDCALL CalcAllTablesx(
 }
 
 
-int STDCALL CalcAllTablesPBNx(
+int STDCALL CalcAllTablesPBNX(
   int numDeals,
   DdTableDealPBN const * deals,
   int mode,
@@ -573,7 +573,7 @@ int STDCALL CalcAllTablesPBNx(
       return RETURN_PBN_FAULT;
   }
 
-  return CalcAllTablesx(
+  return CalcAllTablesX(
     numDeals, binary.data(), mode, trumpFilter, results, par, maxThreads);
 }
 

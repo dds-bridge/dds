@@ -32,7 +32,7 @@ void loop_solve(
     const int number,
     const int stepsize);
 
-/// Calculate loop: CalcAllTablesPBNx for the full deal list in one parallel job.
+/// Calculate loop: CalcAllTablesPBNX for the full deal list in one parallel job.
 bool loop_calc(
     DdTableDealsPBN * dealsp,
     DdTablesRes * resp,
