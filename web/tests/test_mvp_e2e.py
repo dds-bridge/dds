@@ -308,6 +308,11 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
+                self.assertEqual(
+                    page.evaluate("() => document.characterSet"),
+                    "UTF-8",
+                    msg="HTTP must decode HTML as UTF-8 so suit glyphs are not mojibake",
+                )
                 self._fill_part_score_deal(page)
                 self._run_double_dummy(page)
                 self._assert_part_score_table(page)

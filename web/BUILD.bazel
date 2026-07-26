@@ -78,6 +78,14 @@ py_test(
 )
 
 py_test(
+    name = "dds_mvp_html_test",
+    size = "small",
+    main = "tests/test_mvp_html.py",
+    srcs = ["tests/test_mvp_html.py"],
+    data = ["dds_mvp.html"],
+)
+
+py_test(
     name = "dds_mvp_js_test",
     size = "small",
     timeout = "short",
@@ -138,6 +146,7 @@ py_test(
 test_suite(
     name = "web_tests",
     tests = [
+        ":dds_mvp_html_test",
         ":dds_mvp_js_test",
         ":dds_mvp_wasm_test",
         ":wasm_scripts_test",
