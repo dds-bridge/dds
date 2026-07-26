@@ -127,10 +127,18 @@ bool loop_calc(
   // boards and solves them in a single parallel job (ddss large-batch shape).
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
   const int strain_count = DDS_STRAINS;
+  if (number <= 0)
+    return true;
   std::vector<DdTableDealPBN> deals(static_cast<unsigned>(number));
   std::vector<DdTableResults> results(static_cast<unsigned>(number));
   for (int i = 0; i < number; i++)
-    std::strcpy(deals[static_cast<unsigned>(i)].cards, deal_list[i].remainCards);
+  {
+    std::strncpy(
+      deals[static_cast<unsigned>(i)].cards,
+      deal_list[i].remainCards,
+      sizeof(deals[0].cards));
+    deals[static_cast<unsigned>(i)].cards[sizeof(deals[0].cards) - 1] = '\0';
+  }
 
   timer.start(number);
   const int workload = number * strain_count;
