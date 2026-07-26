@@ -464,7 +464,7 @@ int STDCALL CalcAllTablesX(
 
   const bool want_par = (mode > -1) && (mode < 4) && (included == DDS_STRAINS);
   if (want_par && par == nullptr)
-    return RETURN_TOO_MANY_TABLES;
+    return RETURN_UNKNOWN_FAULT;
 
   // Expand every deal×included-strain into one board list and solve in a
   // single parallel_all_boards_n job (heap-backed). This is the ddss-style

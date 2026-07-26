@@ -72,6 +72,10 @@ TEST(CalcAllTablesX, NullPointersReturnUnknownFault)
   EXPECT_EQ(
     CalcAllTablesX(1, &deal, -1, nullptr, &result, nullptr, 1),
     RETURN_UNKNOWN_FAULT);
+  // mode in [0, 3] with all strains included requests par output.
+  EXPECT_EQ(
+    CalcAllTablesX(1, &deal, /*mode=*/0, filter, &result, nullptr, 1),
+    RETURN_UNKNOWN_FAULT);
 }
 
 TEST(CalcAllTablesPBNX, NullPointersReturnUnknownFault)
