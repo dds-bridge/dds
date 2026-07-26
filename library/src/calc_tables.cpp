@@ -450,8 +450,8 @@ int STDCALL CalcAllTablesX(
     return RETURN_TOO_MANY_TABLES;
   if (numDeals == 0)
     return RETURN_NO_FAULT;
-  if (deals == nullptr || results == nullptr)
-    return RETURN_TOO_MANY_TABLES;
+  if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
+    return RETURN_UNKNOWN_FAULT;
 
   int included = 0;
   for (int k = 0; k < DDS_STRAINS; k++)
@@ -563,8 +563,8 @@ int STDCALL CalcAllTablesPBNX(
     return RETURN_TOO_MANY_TABLES;
   if (numDeals == 0)
     return RETURN_NO_FAULT;
-  if (deals == nullptr || results == nullptr)
-    return RETURN_TOO_MANY_TABLES;
+  if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
+    return RETURN_UNKNOWN_FAULT;
 
   std::vector<DdTableDeal> binary(static_cast<unsigned>(numDeals));
   for (int i = 0; i < numDeals; ++i)

@@ -55,6 +55,47 @@ TEST(CalcAllTablesX, ChunkDealsMatchesBoardBudget)
   EXPECT_EQ(calc_all_tables_chunk_deals(0), 0);
 }
 
+TEST(CalcAllTablesX, NullPointersReturnUnknownFault)
+{
+  InitializeStaticMemory();
+  const DdTableDeal known = make_known_deal();
+  DdTableDeal deal = known;
+  DdTableResults result{};
+  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+
+  EXPECT_EQ(
+    CalcAllTablesX(1, nullptr, -1, filter, &result, nullptr, 1),
+    RETURN_UNKNOWN_FAULT);
+  EXPECT_EQ(
+    CalcAllTablesX(1, &deal, -1, filter, nullptr, nullptr, 1),
+    RETURN_UNKNOWN_FAULT);
+  EXPECT_EQ(
+    CalcAllTablesX(1, &deal, -1, nullptr, &result, nullptr, 1),
+    RETURN_UNKNOWN_FAULT);
+}
+
+TEST(CalcAllTablesPBNX, NullPointersReturnUnknownFault)
+{
+  InitializeStaticMemory();
+  DdTableDealPBN deal{};
+  std::strncpy(
+    deal.cards,
+    "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3",
+    sizeof(deal.cards));
+  DdTableResults result{};
+  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+
+  EXPECT_EQ(
+    CalcAllTablesPBNX(1, nullptr, -1, filter, &result, nullptr, 1),
+    RETURN_UNKNOWN_FAULT);
+  EXPECT_EQ(
+    CalcAllTablesPBNX(1, &deal, -1, filter, nullptr, nullptr, 1),
+    RETURN_UNKNOWN_FAULT);
+  EXPECT_EQ(
+    CalcAllTablesPBNX(1, &deal, -1, nullptr, &result, nullptr, 1),
+    RETURN_UNKNOWN_FAULT);
+}
+
 TEST(CalcAllTablesX, LegacyRejectsMoreThanMaxTables)
 {
   InitializeStaticMemory();
