@@ -4,7 +4,9 @@
 #include <cstdlib>
 #include <functional>
 #include <future>
+#include <memory>
 #include <new>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -219,6 +221,108 @@ TEST(ParallelAllBoards, FailFastReturnsFirstError)
 
   // Assert
   EXPECT_EQ(result, RETURN_TOO_MANY_BOARDS);
+}
+
+TEST(ParallelAllBoards, ProcessBoardExceptionDoesNotHangCaller)
+{
+  // If process_board throws on a pool worker, that worker must still account
+  // completion and wake cv_done_; otherwise the caller waits forever (or the
+  // process aborts via std::terminate when the exception leaves the thread).
+  if (std::thread::hardware_concurrency() < 2)
+    GTEST_SKIP() << "Need at least 2 hardware threads";
+
+  constexpr int count = 8;
+  constexpr int workers = 2;
+  constexpr auto deadline = std::chrono::seconds(10);
+
+  // packaged_task owns the shared state; if wait times out we can detach the
+  // thread without UAF when locals here are destroyed (unlike a promise
+  // captured by reference). Define count/workers inside the lambda so MSVC
+  // does not require a capture (C3493) and clang does not warn about an
+  // unnecessary one (-Wunused-lambda-capture).
+  std::packaged_task<int()> task([] {
+    constexpr int board_count = 8;
+    constexpr int worker_count = 2;
+    return parallel_all_boards_n(
+      board_count,
+      worker_count,
+      [](const int, const int bno) -> int {
+        if (bno == 0)
+          throw std::runtime_error("process_board failed");
+        return RETURN_NO_FAULT;
+      });
+  });
+  std::future<int> fut = task.get_future();
+  std::thread caller(std::move(task));
+
+  const bool ready = fut.wait_for(deadline) == std::future_status::ready;
+  if (!ready)
+  {
+    caller.detach();
+    FAIL() << "caller hung after process_board threw on a pool worker";
+  }
+  caller.join();
+
+  EXPECT_EQ(fut.get(), RETURN_UNKNOWN_FAULT);
+
+  // Pool workers must remain usable after the exceptional run.
+  EXPECT_EQ(
+    parallel_all_boards_n(
+      count, workers, [](const int, const int) { return RETURN_NO_FAULT; }),
+    RETURN_NO_FAULT);
+}
+
+TEST(ParallelAllBoards, ProcessBoardExceptionOverridesPriorReturnCode)
+{
+  // Contract: any thrown exception maps the run to RETURN_UNKNOWN_FAULT, even
+  // when another worker has already recorded a non-success return code.
+  if (std::thread::hardware_concurrency() < 2)
+    GTEST_SKIP() << "Need at least 2 hardware threads";
+
+  constexpr auto deadline = std::chrono::seconds(10);
+
+  // Heap-backed sync so a timeout detach cannot UAF stack atomics.
+  struct Sync
+  {
+    std::atomic<bool> board1_started{false};
+    std::atomic<bool> board0_returned_error{false};
+  };
+  const auto sync = std::make_shared<Sync>();
+
+  std::packaged_task<int()> task([sync] {
+    constexpr int board_count = 2;
+    constexpr int worker_count = 2;
+    return parallel_all_boards_n(
+      board_count,
+      worker_count,
+      [sync](const int, const int bno) -> int {
+        if (bno == 0)
+        {
+          while (!sync->board1_started.load(std::memory_order_acquire))
+            std::this_thread::yield();
+          sync->board0_returned_error.store(true, std::memory_order_release);
+          return RETURN_TOO_MANY_BOARDS;
+        }
+        sync->board1_started.store(true, std::memory_order_release);
+        while (!sync->board0_returned_error.load(std::memory_order_acquire))
+          std::this_thread::yield();
+        // Let the other worker's compare_exchange publish first_error first.
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        throw std::runtime_error("process_board failed after prior error");
+      });
+  });
+  std::future<int> fut = task.get_future();
+  std::thread caller(std::move(task));
+
+  const bool ready = fut.wait_for(deadline) == std::future_status::ready;
+  if (!ready)
+  {
+    caller.detach();
+    FAIL() << "caller hung when exception raced with a prior return code";
+  }
+  caller.join();
+
+  EXPECT_EQ(fut.get(), RETURN_UNKNOWN_FAULT);
 }
 
 TEST(ParallelAllBoards, ConcurrentCallersBothCompleteAndProcessAllBoards)
