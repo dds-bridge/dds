@@ -6,6 +6,7 @@ load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LOCAL_DEFINES")
 wasm_cc_binary(
     name = "solve_board_wasm",
     cc_target = "//examples:solve_board",
+    threads = "emscripten",
     outputs = [
         "solve_board.js",
         "solve_board.wasm",
@@ -15,6 +16,7 @@ wasm_cc_binary(
 wasm_cc_binary(
     name = "analyse_play_bin_wasm",
     cc_target = "//examples:AnalysePlayBin",
+    threads = "emscripten",
     outputs = [
         "AnalysePlayBin.js",
         "AnalysePlayBin.wasm",
@@ -24,6 +26,7 @@ wasm_cc_binary(
 wasm_cc_binary(
     name = "calc_dd_table_pbn_wasm",
     cc_target = "//examples:calc_dd_table_pbn",
+    threads = "emscripten",
     outputs = [
         "calc_dd_table_pbn.js",
         "calc_dd_table_pbn.wasm",
@@ -34,13 +37,14 @@ wasm_cc_binary(
 wasm_cc_binary(
     name = "dtest_wasm",
     cc_target = "//library/tests:dtest",
+    threads = "emscripten",
     outputs = [
         "dtest.js",
         "dtest.wasm",
     ],
 )
 
-# `bazel run //wasm:run_dtest_wasm -- -f hands/list1.txt -s solve -n 1`
+# `bazel run //wasm:run_dtest_wasm -- -f hands/list2.txt -s solve -n 2`
 py_binary(
     name = "run_dtest_wasm",
     srcs = ["run_dtest_wasm.py"],
@@ -93,6 +97,7 @@ py_test(
         ":calc_dd_table_pbn_wasm",
         ":dtest_wasm",
         "//hands:list1.txt",
+        "//hands:list2.txt",
     ],
 )
 

@@ -1,7 +1,7 @@
 ---
 capability: web-mvp
 owners: [web]
-last-updated: 2026-07-19
+last-updated: 2026-07-24
 ---
 
 # Web MVP
@@ -24,24 +24,34 @@ a full application.
 > capability-wide facts.
 
 - **A dedicated, modularised WASM module — not the example CLIs.** `dds_mvp_wasm`
-  (`wasm_cc_binary` over `dds_mvp_wasm_cc`, source `dds_mvp_wasm.cpp`) is built
-  with `WASM_MVP_LINKOPTS`: `MODULARIZE=1`, `EXPORT_NAME=createDdsModule`,
-  a single exported entry `_dds_mvp_calc_table` (plus `_malloc`/`_free`),
-  `EXPORTED_RUNTIME_METHODS=['ccall','getValue']`, and `ENVIRONMENT=web,node`. This
-  is distinct from [wasm-emscripten](wasm-emscripten.md)'s example ports — the MVP wants one small,
+  (`wasm_cc_binary` over `dds_mvp_wasm_cc`, source `dds_mvp_wasm.cpp`,
+  `threads = "emscripten"`) is built with `WASM_MVP_LINKOPTS`: `MODULARIZE=1`,
+  `EXPORT_NAME=createDdsModule`, a single exported entry `_dds_mvp_calc_table`
+  (plus `_malloc`/`_free`), `EXPORTED_RUNTIME_METHODS=['ccall','getValue']`, and
+  `ENVIRONMENT=web,worker,node`. This is distinct from
+  [wasm-emscripten](wasm-emscripten.md)'s example ports — the MVP wants one small,
   callable table function, not a CLI. Shared base flags come from `WASM_LINKOPTS`
-  ([build-system](build-system.md)).
+  ([build-system](build-system.md)), including pthreads / `PTHREAD_POOL_SIZE`.
 - **The page is a static trio plus JS glue.** `dds_mvp.html` / `dds_mvp.css` /
   `dds_mvp.js` load the module (`createDdsModule`), marshal a deal into WASM
   memory, call `dds_mvp_calc_table` via `ccall`, and read results with `getValue`.
-  `mvp_site` (`tests/mvp_site.py`) serves the site for system/e2e tests. Helper
-  scripts `gen_wasm_bin_js.py`, `patch_mvp_wasm.py`, `verify_wasm_js.py` generate
-  and sanity-check the JS/wasm glue.
+  `mvp_site` (`tests/mvp_site.py`) stages the site and provides
+  `make_isolated_http_handler` (COOP/COEP) for system/e2e tests and
+  `web/serve_mvp.py`. Helper scripts `gen_wasm_bin_js.py`, `patch_mvp_wasm.py`,
+  `verify_wasm_js.py` generate and sanity-check the JS/wasm glue.
+- **Browser solves require cross-origin isolation.** Pthread WASM needs
+  `SharedArrayBuffer`, which Chromium only exposes when
+  `Cross-Origin-Opener-Policy: same-origin` and
+  `Cross-Origin-Embedder-Policy: require-corp` are set. Serve with
+  `python3 web/serve_mvp.py` (not plain `http.server`). `file://` remains useful
+  for UI-only checks; instantiating the solver module for a solve needs HTTP +
+  those headers. Guarded by `dds_mvp_e2e_test` (`test_http_is_cross_origin_isolated`,
+  HTTP part-score / Enter-to-solve).
 - **Three test tiers, with suite membership as wired in BUILD:**
   - **Unit / JS** (`web_tests`): `dds_mvp_wasm_test` (native `cc_test` over the
     solve logic with `DDS_MVP_WASM_NO_MAIN`), `dds_mvp_js_test` (Node runs
     `dds_mvp.js` against `dds_mvp_test.mjs`), `wasm_scripts_test` (the Python
-    helper scripts).
+    helper scripts + isolation-header constants).
   - **System + e2e bundle** (`web_system_tests`): includes both
     `dds_mvp_wasm_system_test` (stages wasm artifacts and runs a Node smoke via
     `dds_mvp_wasm_node.mjs`) **and** `dds_mvp_e2e_test`.
@@ -63,9 +73,9 @@ a full application.
   once) instead of allocating a fresh [solver-context](solver-context.md) per
   call. Because the context is shared, it is **not safe for concurrent
   solves** — a future move to Web Workers would need one context per worker.
-- **The MVP's WASM inherits the single-thread assumption** of
-  [wasm-emscripten](wasm-emscripten.md) — which is what makes sharing that
-  single context safe today; results come from the same [dds-public-api](dds-public-api.md) core.
+  The MVP table path itself remains sequential over strains; batch/multi-hand
+  APIs under [wasm-emscripten](wasm-emscripten.md) can use pthreads via
+  [system-concurrency](system-concurrency.md).
 
 ## Key entry points
 
@@ -74,6 +84,7 @@ a full application.
   `web_tests` / `web_system_tests` / `web_e2e_tests` suites; `WASM_MVP_LINKOPTS`.
 - `web/dds_mvp_wasm.cpp` — the MVP native entry (`dds_mvp_calc_table`).
 - `web/{dds_mvp.html,dds_mvp.css,dds_mvp.js}` — the page and JS glue.
+- `web/serve_mvp.py` — local HTTP server with COOP/COEP.
 - `web/{gen_wasm_bin_js,patch_mvp_wasm,verify_wasm_js}.py` — build/patch helpers.
 
 ## Known gaps / non-goals

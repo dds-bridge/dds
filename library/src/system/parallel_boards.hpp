@@ -46,6 +46,8 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  * each other. Not re-entrant: calling this again with worker_cap > 1 from
  * inside @p process_board of another multi-worker run deadlocks (the inner
  * call blocks on the pool mutex while the outer run waits for that worker).
+ * Call dds::internal::shutdown_parallel_boards_pool() before process exit
+ * when hosts (notably Emscripten) tear down pthread Workers eagerly.
  */
 auto parallel_all_boards_n(
   int count,
@@ -58,5 +60,9 @@ namespace dds::internal
 
 // Cumulative number of OS worker threads created by the board pool (test seam).
 auto parallel_boards_worker_threads_created() -> std::uint64_t;
+
+// Join and destroy the process-local board worker pool. Safe to call with no
+// pool, and again after a later parallel_all_boards_n recreates it.
+void shutdown_parallel_boards_pool();
 
 }  // namespace dds::internal

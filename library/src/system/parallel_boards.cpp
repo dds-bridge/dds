@@ -13,6 +13,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -198,10 +199,27 @@ private:
 };
 
 
-auto default_pool() -> BoardWorkerPool&
+struct PoolHolder
 {
-  static BoardWorkerPool pool;
-  return pool;
+  std::mutex mu;
+  std::shared_ptr<BoardWorkerPool> pool;
+};
+
+
+auto pool_holder() -> PoolHolder&
+{
+  static PoolHolder holder;
+  return holder;
+}
+
+
+auto default_pool() -> std::shared_ptr<BoardWorkerPool>
+{
+  auto& h = pool_holder();
+  std::lock_guard<std::mutex> lock(h.mu);
+  if (!h.pool)
+    h.pool = std::make_shared<BoardWorkerPool>();
+  return h.pool;
 }
 
 }  // namespace
@@ -244,6 +262,20 @@ auto parallel_boards_worker_threads_created() -> std::uint64_t
   return g_threads_created.load(std::memory_order_relaxed);
 }
 
+
+void shutdown_parallel_boards_pool()
+{
+  std::shared_ptr<BoardWorkerPool> dying;
+  {
+    auto& h = pool_holder();
+    std::lock_guard<std::mutex> lock(h.mu);
+    dying = std::move(h.pool);
+  }
+  // Drop the last shared_ptr outside the holder lock so joins cannot deadlock
+  // against a concurrent parallel_all_boards_n that needs the mutex to recreate
+  // the pool. In-flight runs keep their own shared_ptr alive until run returns.
+}
+
 }  // namespace dds::internal
 
 
@@ -284,5 +316,5 @@ auto parallel_all_boards_n(
     return RETURN_NO_FAULT;
   }
 
-  return default_pool().run(workers, count, process_board, use_order, order);
+  return default_pool()->run(workers, count, process_board, use_order, order);
 }

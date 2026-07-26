@@ -19,15 +19,16 @@ from pathlib import Path
 # Keep in sync with bazel_dep(name = "emsdk", version = "...") in MODULE.bazel.
 EXPECTED_EMSDK_BAZEL_DEP_VERSION = "5.0.7"
 
-# Emscripten ~3.1.x (emsdk 5.0.7): var isFileURI = (filename) => filename.startsWith('file://');
+# Emscripten 5.x (emsdk 5.0.7): var isFileURI = filename => filename.startsWith("file://");
+# Older emsdk also emitted parentheses around the parameter.
 UNPATCHED_IS_FILE_URI = re.compile(
-    r"var\s+isFileURI\s*=\s*\(\s*(\w+)\s*\)\s*=>\s*"
+    r"var\s+isFileURI\s*=\s*(?:\(\s*)?(\w+)(?:\s*\))?\s*=>\s*"
     r"\1\.startsWith\(\s*['\"]file://['\"]\s*\)\s*;",
 )
 
 # Already patched by a previous run of this script.
 PATCHED_IS_FILE_URI = re.compile(
-    r"var\s+isFileURI\s*=\s*\(\s*(\w+)\s*\)\s*=>\s*"
+    r"var\s+isFileURI\s*=\s*(?:\(\s*)?(\w+)(?:\s*\))?\s*=>\s*"
     r"\(\s*typeof\s+\1\s*===\s*['\"]string['\"]",
 )
 

@@ -58,8 +58,9 @@ than re-encoding toolchain knowledge.
   wanted** (`local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE`). Off by
   default, these add zero cost.
 - **WASM link flags are centralised** in `wasm_compat.bzl` (`WASM_LINKOPTS`):
-  memory growth, 256 MB initial memory, and an 8 MB stack (DDS search recursion
-  overflows Emscripten's 64 KB default). WASM binaries must use these — see
+  memory growth, 256 MB initial memory, an 8 MB stack (DDS search recursion
+  overflows Emscripten's 64 KB default), and `PTHREAD_POOL_SIZE=8`. WASM
+  `wasm_cc_binary` targets also set `threads = "emscripten"` — see
   [wasm-emscripten](wasm-emscripten.md).
 - **The dependency graph is pinned in `MODULE.bazel`** (rules_cc, platforms,
   googletest, pybind11_bazel, rules_python, toolchains_llvm, apple_support, emsdk,

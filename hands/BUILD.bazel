@@ -2,6 +2,7 @@
 exports_files(
     [
         "list1.txt",
+        "list2.txt",
     ],
     visibility = ["//visibility:public"],
 )

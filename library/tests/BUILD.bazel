@@ -17,12 +17,12 @@ filegroup(
 )
 
 # Emscripten flags when //library/tests:dtest is built under wasm_cc_binary.
-# NODERAWFS lets Node read host hand-list paths; ENVIRONMENT=node matches dtest CLI use.
+# NODERAWFS lets Node read host hand-list paths; worker is required for pthreads.
+# EXIT_RUNTIME is off: dtest shuts the pthread pool down cleanly then process.exit.
 DTEST_LINKOPTS_WASM = select({
     "//:build_wasm": WASM_LINKOPTS + [
-        "-sENVIRONMENT=node",
+        "-sENVIRONMENT=node,worker",
         "-sNODERAWFS=1",
-        "-sEXIT_RUNTIME=1",
     ],
     "//conditions:default": [],
 })

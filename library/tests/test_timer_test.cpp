@@ -176,6 +176,21 @@ TEST(TestTimer, PrintHandsOmitsMinMaxByDefault)
   EXPECT_EQ(out.find("Max sys time (ms)"), std::string::npos);
 }
 
+TEST(TestTimer, PrintHandsShowsSysNaWhenClockUnavailable)
+{
+  // wasm32+pthread: clock() always returns -1 (process CPU clock is epoch-based
+  // and does not fit in 32-bit clock_t). That must not be printed as "zero".
+  TestTimer timer;
+  timer.mark_sys_time_unavailable();
+  timer.record(10, 100, 0);
+
+  const std::string out = capture_print_hands(timer, false, false);
+
+  EXPECT_NE(out.find("Sys time (ms)"), std::string::npos);
+  EXPECT_NE(out.find("n/a"), std::string::npos);
+  EXPECT_EQ(out.find("zero"), std::string::npos);
+}
+
 TEST(TestTimer, PrintHandsShowsMinWhenRequested)
 {
   TestTimer timer;

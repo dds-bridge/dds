@@ -1,14 +1,14 @@
 ---
 capability: wasm-emscripten
 owners: [wasm]
-last-updated: 2026-07-19
+last-updated: 2026-07-24
 ---
 
 # WASM (Emscripten) Build
 
 > **Specs vs. docs.** Build commands and emsdk pinning live in
 > `docs/wasm_build.md`. This spec records what the WASM build covers, the
-> toolchain contract, and the single-thread assumption.
+> toolchain contract, and how multithreading is enabled.
 
 ## Purpose
 
@@ -37,19 +37,27 @@ core solver builds and runs correctly under Emscripten.
   downloaded/cached by Bazel (pinned in `MODULE.bazel`, currently `emsdk 5.0.7`).
   The transition is what makes the `//:build_wasm` config setting
   (`@platforms//cpu:wasm32`) active — see [build-system](build-system.md).
-- **WASM builds are single-threaded.** The Emscripten build does not use the host
-  threading in [system-concurrency](system-concurrency.md); solves run on one thread. Link flags come
-  from `WASM_LINKOPTS` ([build-system](build-system.md)) — notably an 8 MB stack, because DDS
-  search recursion overflows Emscripten's 64 KB default. Example binaries also
-  attach those flags via `EXAMPLES_LINKOPTS_WASM` in `examples/BUILD.bazel`.
-  `dtest` adds Node-oriented flags (`ENVIRONMENT=node`, `NODERAWFS`,
-  `EXIT_RUNTIME`) under the same `build_wasm` select.
+- **WASM builds use pthreads.** Every `wasm_cc_binary` sets
+  `threads = "emscripten"` so the toolchain passes `-pthread` / `USE_PTHREADS`
+  (SharedArrayBuffer + atomics). Shared link flags come from `WASM_LINKOPTS`
+  ([build-system](build-system.md)) — notably an 8 MB stack (DDS search recursion
+  overflows Emscripten's 64 KB default) and `PTHREAD_POOL_SIZE=8` so
+  [system-concurrency](system-concurrency.md) workers can start without blocking
+  the browser main thread. On-demand Workers beyond the pool are fine; Node
+  `dtest` joins the board pool and drains pending Worker messages before
+  `terminateAllThreads` / `process.exit` so high `-n` does not race
+  `EXIT_RUNTIME`. Example binaries attach those flags via
+  `EXAMPLES_LINKOPTS_WASM` in `examples/BUILD.bazel`. `dtest` adds Node-oriented
+  flags (`ENVIRONMENT=node,worker`, `NODERAWFS`) under the same `build_wasm`
+  select. Under Emscripten, `System::get_hardware` still overrides free-memory
+  estimates but uses `hardware_concurrency` for core count (no forced
+  single-core clamp).
 - **Correctness is checked two ways.** `calc_dd_table_pbn_test` is a native
   `cc_test` over the same example logic (fast feedback without a JS runtime); the
   `wasm_examples_system_test` py_test runs `calc_dd_table_pbn_wasm` and
-  `dtest_wasm` under Node end to end. `run_dtest_wasm_test` covers the Node
-  runner helpers. The `all` and `wasm_system_tests`
-  suites bundle these.
+  `dtest_wasm` under Node end to end (including a multi-thread `dtest -n 2` case).
+  `run_dtest_wasm_test` covers the Node runner helpers. The `all` and
+  `wasm_system_tests` suites bundle these.
 
 ## Key entry points
 
@@ -65,7 +73,6 @@ core solver builds and runs correctly under Emscripten.
 
 - **Only three examples are ported**, not the full [examples-cli](examples-cli.md) set.
   `dtest_wasm` is an additional harness port, not an example CLI.
-- **No threaded WASM** — single-thread only.
 - **No link-time LTO.** `-flto` applies at WASM compile time only
   ([build-system](build-system.md)); enabling it at link time was tried and
   reverted because the `emsdk 5.0.7` toolchain pinned in `MODULE.bazel` ships a
@@ -75,5 +82,7 @@ core solver builds and runs correctly under Emscripten.
   Bazel's hermetic sandbox. Revisit only if the emsdk packaging ships a
   populated LTO cache.
 - Browser wiring, the site, MVP post-build JS patches (`web/patch_mvp_wasm.py`),
-  and JS/e2e tests belong to [web-mvp](web-mvp.md); this capability provides the example
-  modules, not the page.
+  COOP/COEP serving, and JS/e2e tests belong to [web-mvp](web-mvp.md); this
+  capability provides the example modules, not the page.
+- `-pthread` + `ALLOW_MEMORY_GROWTH` is intentional for DDS TT heaps; the emcc
+  advisory is silenced with `-Wno-pthreads-mem-growth` in `WASM_LINKOPTS`.
