@@ -250,7 +250,7 @@ int STDCALL CalcDDtable(
 int STDCALL CalcAllTablesN(
   DdTableDeals const * dealsp,
   int mode,
-  int const trumpFilter[5],
+  int const trumpFilter[DDS_STRAINS],
   DdTablesRes * resp,
   AllParResults * presp,
   int maxThreads)
@@ -356,7 +356,7 @@ int STDCALL CalcAllTablesN(
 int STDCALL CalcAllTables(
   DdTableDeals const * dealsp,
   int mode,
-  int const trumpFilter[5],
+  int const trumpFilter[DDS_STRAINS],
   DdTablesRes * resp,
   AllParResults * presp)
 {
@@ -367,7 +367,7 @@ int STDCALL CalcAllTables(
 int STDCALL CalcAllTablesPBNN(
   DdTableDealsPBN const * dealsp,
   int mode,
-  int const trumpFilter[5],
+  int const trumpFilter[DDS_STRAINS],
   DdTablesRes * resp,
   AllParResults * presp,
   int maxThreads)
@@ -387,7 +387,7 @@ int STDCALL CalcAllTablesPBNN(
 int STDCALL CalcAllTablesPBN(
   DdTableDealsPBN const * dealsp,
   int mode,
-  int const trumpFilter[5],
+  int const trumpFilter[DDS_STRAINS],
   DdTablesRes * resp,
   AllParResults * presp)
 {
@@ -433,7 +433,7 @@ int STDCALL CalcAllTablesX(
   int numDeals,
   DdTableDeal const * deals,
   int mode,
-  int const trumpFilter[5],
+  int const trumpFilter[DDS_STRAINS],
   DdTableResults * results,
   ParResults * par,
   int maxThreads)
@@ -563,7 +563,7 @@ int STDCALL CalcAllTablesPBNX(
   int numDeals,
   DdTableDealPBN const * deals,
   int mode,
-  int const trumpFilter[5],
+  int const trumpFilter[DDS_STRAINS],
   DdTableResults * results,
   ParResults * par,
   int maxThreads)
