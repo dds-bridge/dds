@@ -302,12 +302,14 @@ auto parallel_all_boards_n(
   const std::function<int(int worker_id, int bno)>& process_board,
   const std::vector<int>* order) -> int
 {
+  // Always record the requested count, including early-return paths, so the
+  // test seam cannot report a stale prior job.
+  g_last_job_board_count.store(count, std::memory_order_relaxed);
+
   if (count <= 0)
   {
     return RETURN_NO_FAULT;
   }
-
-  g_last_job_board_count.store(count, std::memory_order_relaxed);
 
   // Map a dispatch slot to the board number to process. With an order, hand out
   // boards in that sequence (e.g. hardest first); otherwise in index order. The

@@ -64,8 +64,9 @@ namespace dds::internal
 // Cumulative number of OS worker threads created by the board pool (test seam).
 auto parallel_boards_worker_threads_created() -> std::uint64_t;
 
-// Board count of the most recent parallel_all_boards_n call (test seam).
-// Used to assert unbounded calc submits one job covering the full batch.
+// Board count of the most recent parallel_all_boards_n call (test seam),
+// including calls that return early for count <= 0. Used to assert unbounded
+// calc submits one job covering the full batch.
 auto parallel_boards_last_job_board_count() -> int;
 
 // Join and destroy the process-local board worker pool. Safe to call with no
