@@ -438,107 +438,117 @@ int STDCALL CalcAllTablesX(
   ParResults * par,
   int maxThreads)
 {
-  if (numDeals < 0)
-    return RETURN_TOO_MANY_TABLES;
-  if (numDeals == 0)
+  // C ABI: exceptions must not unwind into a foreign caller (UB). Heap
+  // allocations below (and parallel_all_boards_n) may throw; map any throw
+  // to RETURN_UNKNOWN_FAULT.
+  try
+  {
+    if (numDeals < 0)
+      return RETURN_TOO_MANY_TABLES;
+    if (numDeals == 0)
+      return RETURN_NO_FAULT;
+    if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
+      return RETURN_UNKNOWN_FAULT;
+
+    int included = 0;
+    for (int k = 0; k < DDS_STRAINS; k++)
+    {
+      if (!trumpFilter[k])
+        included++;
+    }
+    if (included == 0)
+      return RETURN_NO_SUIT;
+
+    const bool want_par = (mode > -1) && (mode < 4) && (included == DDS_STRAINS);
+    if (want_par && par == nullptr)
+      return RETURN_UNKNOWN_FAULT;
+
+    // Expand every deal×included-strain into one board list and solve in a
+    // single parallel_all_boards_n job (heap-backed). This is the ddss-style
+    // large-batch shape; legacy CalcAllTablesN remains capped at MAXNOOFTABLES.
+    const int nboards = numDeals * included;
+    std::vector<Deal> boards(static_cast<unsigned>(nboards));
+    std::vector<std::array<int, DDS_HANDS>> scores(static_cast<unsigned>(nboards));
+
+    int ind = 0;
+    for (int m = 0; m < numDeals; m++)
+    {
+      for (int tr = DDS_STRAINS - 1; tr >= 0; tr--)
+      {
+        if (trumpFilter[tr])
+          continue;
+
+        Deal& dl = boards[static_cast<unsigned>(ind)];
+        for (int h = 0; h < DDS_HANDS; h++)
+          for (int s = 0; s < DDS_SUITS; s++)
+            dl.remainCards[h][s] = deals[m].cards[h][s];
+        dl.trump = tr;
+        dl.first = 0;
+        for (int k = 0; k <= 2; k++)
+        {
+          dl.currentTrickRank[k] = 0;
+          dl.currentTrickSuit[k] = 0;
+        }
+        ind++;
+      }
+    }
+
+    // Hardest-first dispatch across the full batch (same idea as calc_all_boards_n).
+    std::vector<int> order(static_cast<unsigned>(nboards));
+    std::iota(order.begin(), order.end(), 0);
+    std::vector<int> fanout(static_cast<unsigned>(nboards));
+    for (int i = 0; i < nboards; i++)
+      fanout[static_cast<unsigned>(i)] =
+        dds::internal::deal_fanout(boards[static_cast<unsigned>(i)]);
+    std::stable_sort(order.begin(), order.end(),
+      [&](const int a, const int b) {
+        return fanout[static_cast<unsigned>(a)] > fanout[static_cast<unsigned>(b)];
+      });
+
+    const int nthreads = resolve_worker_count(maxThreads, nboards);
+    const int err = parallel_all_boards_n(nboards, nthreads,
+      [&](const int worker_id, const int bno) -> int {
+        (void)worker_id;
+        return calc_single_deal_scores(
+          dds::internal::worker_solver_context(),
+          boards[static_cast<unsigned>(bno)],
+          -1, 1, 1,
+          scores[static_cast<unsigned>(bno)].data());
+      },
+      &order);
+    if (err != RETURN_NO_FAULT)
+      return err;
+
+    for (int m = 0; m < numDeals; m++)
+    {
+      for (int strainIndex = 0; strainIndex < included; strainIndex++)
+      {
+        const int index = m * included + strainIndex;
+        const int strain = boards[static_cast<unsigned>(index)].trump;
+        for (int first = 0; first < DDS_HANDS; first++)
+        {
+          results[m].res_table[strain][rho[first]] =
+            13 - scores[static_cast<unsigned>(index)][static_cast<unsigned>(first)];
+        }
+      }
+    }
+
+    if (want_par)
+    {
+      for (int k = 0; k < numDeals; k++)
+      {
+        const int res = Par(&results[k], &par[k], mode);
+        if (res != RETURN_NO_FAULT)
+          return res;
+      }
+    }
+
     return RETURN_NO_FAULT;
-  if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
+  }
+  catch (...)
+  {
     return RETURN_UNKNOWN_FAULT;
-
-  int included = 0;
-  for (int k = 0; k < DDS_STRAINS; k++)
-  {
-    if (!trumpFilter[k])
-      included++;
   }
-  if (included == 0)
-    return RETURN_NO_SUIT;
-
-  const bool want_par = (mode > -1) && (mode < 4) && (included == DDS_STRAINS);
-  if (want_par && par == nullptr)
-    return RETURN_UNKNOWN_FAULT;
-
-  // Expand every deal×included-strain into one board list and solve in a
-  // single parallel_all_boards_n job (heap-backed). This is the ddss-style
-  // large-batch shape; legacy CalcAllTablesN remains capped at MAXNOOFTABLES.
-  const int nboards = numDeals * included;
-  std::vector<Deal> boards(static_cast<unsigned>(nboards));
-  std::vector<std::array<int, DDS_HANDS>> scores(static_cast<unsigned>(nboards));
-
-  int ind = 0;
-  for (int m = 0; m < numDeals; m++)
-  {
-    for (int tr = DDS_STRAINS - 1; tr >= 0; tr--)
-    {
-      if (trumpFilter[tr])
-        continue;
-
-      Deal& dl = boards[static_cast<unsigned>(ind)];
-      for (int h = 0; h < DDS_HANDS; h++)
-        for (int s = 0; s < DDS_SUITS; s++)
-          dl.remainCards[h][s] = deals[m].cards[h][s];
-      dl.trump = tr;
-      dl.first = 0;
-      for (int k = 0; k <= 2; k++)
-      {
-        dl.currentTrickRank[k] = 0;
-        dl.currentTrickSuit[k] = 0;
-      }
-      ind++;
-    }
-  }
-
-  // Hardest-first dispatch across the full batch (same idea as calc_all_boards_n).
-  std::vector<int> order(static_cast<unsigned>(nboards));
-  std::iota(order.begin(), order.end(), 0);
-  std::vector<int> fanout(static_cast<unsigned>(nboards));
-  for (int i = 0; i < nboards; i++)
-    fanout[static_cast<unsigned>(i)] =
-      dds::internal::deal_fanout(boards[static_cast<unsigned>(i)]);
-  std::stable_sort(order.begin(), order.end(),
-    [&](const int a, const int b) {
-      return fanout[static_cast<unsigned>(a)] > fanout[static_cast<unsigned>(b)];
-    });
-
-  const int nthreads = resolve_worker_count(maxThreads, nboards);
-  const int err = parallel_all_boards_n(nboards, nthreads,
-    [&](const int worker_id, const int bno) -> int {
-      (void)worker_id;
-      return calc_single_deal_scores(
-        dds::internal::worker_solver_context(),
-        boards[static_cast<unsigned>(bno)],
-        -1, 1, 1,
-        scores[static_cast<unsigned>(bno)].data());
-    },
-    &order);
-  if (err != RETURN_NO_FAULT)
-    return err;
-
-  for (int m = 0; m < numDeals; m++)
-  {
-    for (int strainIndex = 0; strainIndex < included; strainIndex++)
-    {
-      const int index = m * included + strainIndex;
-      const int strain = boards[static_cast<unsigned>(index)].trump;
-      for (int first = 0; first < DDS_HANDS; first++)
-      {
-        results[m].res_table[strain][rho[first]] =
-          13 - scores[static_cast<unsigned>(index)][static_cast<unsigned>(first)];
-      }
-    }
-  }
-
-  if (want_par)
-  {
-    for (int k = 0; k < numDeals; k++)
-    {
-      const int res = Par(&results[k], &par[k], mode);
-      if (res != RETURN_NO_FAULT)
-        return res;
-    }
-  }
-
-  return RETURN_NO_FAULT;
 }
 
 
@@ -551,22 +561,30 @@ int STDCALL CalcAllTablesPBNX(
   ParResults * par,
   int maxThreads)
 {
-  if (numDeals < 0)
-    return RETURN_TOO_MANY_TABLES;
-  if (numDeals == 0)
-    return RETURN_NO_FAULT;
-  if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
-    return RETURN_UNKNOWN_FAULT;
-
-  std::vector<DdTableDeal> binary(static_cast<unsigned>(numDeals));
-  for (int i = 0; i < numDeals; ++i)
+  // C ABI: same catch-all contract as CalcAllTablesX / dds_c_api.cpp.
+  try
   {
-    if (convert_from_pbn(deals[i].cards, binary[static_cast<unsigned>(i)].cards) != 1)
-      return RETURN_PBN_FAULT;
-  }
+    if (numDeals < 0)
+      return RETURN_TOO_MANY_TABLES;
+    if (numDeals == 0)
+      return RETURN_NO_FAULT;
+    if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
+      return RETURN_UNKNOWN_FAULT;
 
-  return CalcAllTablesX(
-    numDeals, binary.data(), mode, trumpFilter, results, par, maxThreads);
+    std::vector<DdTableDeal> binary(static_cast<unsigned>(numDeals));
+    for (int i = 0; i < numDeals; ++i)
+    {
+      if (convert_from_pbn(deals[i].cards, binary[static_cast<unsigned>(i)].cards) != 1)
+        return RETURN_PBN_FAULT;
+    }
+
+    return CalcAllTablesX(
+      numDeals, binary.data(), mode, trumpFilter, results, par, maxThreads);
+  }
+  catch (...)
+  {
+    return RETURN_UNKNOWN_FAULT;
+  }
 }
 
 

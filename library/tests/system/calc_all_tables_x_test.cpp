@@ -73,6 +73,9 @@ TEST(CalcAllTablesX, NullPointersReturnUnknownFault)
 
 TEST(CalcAllTablesPBNX, NullPointersReturnUnknownFault)
 {
+  // Also documents the C ABI contract: heap allocation failure (or any throw)
+  // inside CalcAllTablesPBNX must surface as RETURN_UNKNOWN_FAULT, never as an
+  // exception crossing the C boundary.
   InitializeStaticMemory();
   DdTableDealPBN deal{};
   std::strncpy(
@@ -91,6 +94,21 @@ TEST(CalcAllTablesPBNX, NullPointersReturnUnknownFault)
   EXPECT_EQ(
     CalcAllTablesPBNX(1, &deal, -1, nullptr, &result, nullptr, 1),
     RETURN_UNKNOWN_FAULT);
+}
+
+TEST(CalcAllTablesPBNX, InvalidPbnReturnsPbnFault)
+{
+  InitializeStaticMemory();
+  DdTableDealPBN deal{};
+  // Must not start with N/E/S/W (case-insensitive) or convert_from_pbn may
+  // attempt a partial parse and fail later with a different code.
+  std::strncpy(deal.cards, "ZZZ:not-a-deal", sizeof(deal.cards));
+  DdTableResults result{};
+  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+
+  EXPECT_EQ(
+    CalcAllTablesPBNX(1, &deal, -1, filter, &result, nullptr, 1),
+    RETURN_PBN_FAULT);
 }
 
 TEST(CalcAllTablesX, LegacyRejectsMoreThanMaxTables)
