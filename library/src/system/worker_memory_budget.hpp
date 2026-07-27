@@ -13,8 +13,9 @@
  * @brief Clamp a worker count to a memory budget (MB).
  *
  * Each parallel worker owns a SolverContext with a Large transposition table
- * plus stack; under Emscripten the wasm32 heap tops out near 2 GiB. Kept in
- * its own TU so native parallel_boards codegen stays identical to develop.
+ * plus stack; under Emscripten the wasm32 heap tops out near 2 GiB. The
+ * implementation is in worker_memory_budget.cpp so this helper stays out of the
+ * native parallel_boards translation unit.
  *
  * @param workers Requested workers (values < 1 become 1)
  * @param budget_mb Total MB available for worker TT/stack footprints
