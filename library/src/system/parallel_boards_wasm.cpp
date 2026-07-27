@@ -15,6 +15,8 @@
 #include <vector>
 
 #include <api/dll.h>
+#include <api/dds.h>
+#include "worker_memory_budget.hpp"
 
 
 auto resolve_worker_count(
@@ -27,7 +29,11 @@ auto resolve_worker_count(
     const unsigned hw = std::thread::hardware_concurrency();
     workers = hw > 0 ? static_cast<int>(hw) : 1;
   }
-  return std::max(1, std::min(workers, count));
+  workers = std::max(1, std::min(workers, count));
+  // Cap workers so Large TT footprints fit under the wasm32 ~2 GiB heap.
+  constexpr int kHeapBudgetMB = 1400;
+  constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
+  return clamp_workers_to_memory_budget(workers, kHeapBudgetMB, kPerWorkerMB);
 }
 
 

@@ -10,6 +10,7 @@
 
 #include <api/dds.h>
 #include <system/parallel_boards.hpp>
+#include <system/worker_memory_budget.hpp>
 
 namespace
 {

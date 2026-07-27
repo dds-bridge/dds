@@ -1,11 +1,27 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
+# Native keeps develop's parallel_boards.cpp unchanged. Emscripten builds swap
+# in parallel_boards_wasm.cpp so the wasm32 heap worker cap cannot affect host
+# codegen of the hot parallel_all_boards_n translation unit.
+_PARALLEL_BOARDS_SRC = select({
+    "//:build_wasm": ["parallel_boards_wasm.cpp"],
+    "//conditions:default": ["parallel_boards.cpp"],
+})
+
+_SYSTEM_SRCS = glob(
+    ["*.cpp"],
+    exclude = [
+        "parallel_boards.cpp",
+        "parallel_boards_wasm.cpp",
+    ],
+) + _PARALLEL_BOARDS_SRC
+
 # system, system_util_log, and system_util_stats compile the same sources with
 # different feature defines. Link at most one variant into a binary.
 cc_library(
     name = "system",
-    srcs = glob(["*.cpp"]),
+    srcs = _SYSTEM_SRCS,
     hdrs = glob(["*.hpp", "util/*.hpp"]),
     visibility = ["//visibility:public"],
     includes = ["."],
@@ -27,7 +43,7 @@ cc_library(
 # Variant with Utilities logging enabled for tests that assert log behavior
 cc_library(
     name = "system_util_log",
-    srcs = glob(["*.cpp"]),
+    srcs = _SYSTEM_SRCS,
     hdrs = glob(["*.hpp", "util/*.hpp"]),
     visibility = ["//visibility:public"],
     includes = ["."],
@@ -47,7 +63,7 @@ cc_library(
 
 cc_library(
     name = "system_util_stats",
-    srcs = glob(["*.cpp"]),
+    srcs = _SYSTEM_SRCS,
     hdrs = glob(["*.hpp", "util/*.hpp"]),
     visibility = ["//visibility:public"],
     includes = ["."],
