@@ -14,7 +14,20 @@
 #include <thread>
 #include <vector>
 
+#include <api/dds.h>
 #include <api/dll.h>
+
+
+auto clamp_workers_to_memory_budget(
+  const int workers,
+  const int budget_mb,
+  const int per_worker_mb) -> int
+{
+  const int safe_workers = std::max(1, workers);
+  if (budget_mb <= 0 || per_worker_mb <= 0)
+    return safe_workers;
+  return std::max(1, std::min(safe_workers, budget_mb / per_worker_mb));
+}
 
 
 auto resolve_worker_count(
@@ -27,7 +40,19 @@ auto resolve_worker_count(
     const unsigned hw = std::thread::hardware_concurrency();
     workers = hw > 0 ? static_cast<int>(hw) : 1;
   }
-  return std::max(1, std::min(workers, count));
+  workers = std::max(1, std::min(workers, count));
+
+  // Parallel workers each keep a Large TT (via SolverContext). On wasm32 /
+  // other ILP32 targets the heap cannot grow past ~2 GiB; uncapped auto
+  // (= HW concurrency) OOMs large multi-board batches. Leave headroom under
+  // that ceiling for the main module, board vectors, and growth slack.
+#if defined(__EMSCRIPTEN__) || UINTPTR_MAX == 0xffffffffu
+  constexpr int kHeapBudgetMB = 1400;
+  constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
+  workers = clamp_workers_to_memory_budget(workers, kHeapBudgetMB, kPerWorkerMB);
+#endif
+
+  return workers;
 }
 
 

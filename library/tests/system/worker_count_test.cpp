@@ -6,8 +6,10 @@
 
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <cstdint>
 #include <thread>
 
+#include <api/dds.h>
 #include <system/parallel_boards.hpp>
 
 namespace
@@ -47,3 +49,36 @@ TEST(ResolveWorkerCount, SingleItemAlwaysOneWorker)
   EXPECT_EQ(resolve_worker_count(16, 1), 1);
   EXPECT_EQ(resolve_worker_count(1, 1), 1);
 }
+
+TEST(ClampWorkersToMemoryBudget, CapsByBudgetPerWorker)
+{
+  EXPECT_EQ(clamp_workers_to_memory_budget(18, 1400, 95 + 24), 11);
+  EXPECT_EQ(clamp_workers_to_memory_budget(4, 1400, 95 + 24), 4);
+  EXPECT_EQ(clamp_workers_to_memory_budget(0, 1400, 119), 1);
+  EXPECT_EQ(clamp_workers_to_memory_budget(8, 100, 200), 1);
+}
+
+TEST(ClampWorkersToMemoryBudget, PlatformCapMatchesWasmBudgetConstants)
+{
+  // Document the wasm32 / ILP32 budget used by resolve_worker_count so a
+  // quiet change to THREADMEM_* cannot silently re-OOM large WASM batches.
+  constexpr int kHeapBudgetMB = 1400;
+  constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
+  constexpr int kExpectedCap = kHeapBudgetMB / kPerWorkerMB;
+  static_assert(kExpectedCap >= 1);
+  EXPECT_EQ(kExpectedCap, 11);
+  EXPECT_EQ(
+    clamp_workers_to_memory_budget(64, kHeapBudgetMB, kPerWorkerMB),
+    kExpectedCap);
+}
+
+#if defined(__EMSCRIPTEN__) || UINTPTR_MAX == 0xffffffffu
+TEST(ResolveWorkerCount, AddressSpaceCapLimitsAutoWorkers)
+{
+  constexpr int kHeapBudgetMB = 1400;
+  constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
+  const int mem_cap = kHeapBudgetMB / kPerWorkerMB;
+  EXPECT_EQ(resolve_worker_count(0, 5000), std::min(auto_workers(5000), mem_cap));
+  EXPECT_EQ(resolve_worker_count(64, 5000), mem_cap);
+}
+#endif

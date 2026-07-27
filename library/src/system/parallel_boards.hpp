@@ -23,6 +23,23 @@
 auto resolve_worker_count(int max_threads, int count) -> int;
 
 /**
+ * @brief Clamp a worker count to a memory budget (MB).
+ *
+ * Each parallel worker owns a SolverContext with a Large transposition table
+ * plus stack; on wasm32 / ILP32 the process heap tops out near 2 GiB. Tests and
+ * resolve_worker_count share this helper so the budget math stays in one place.
+ *
+ * @param workers Requested workers (values < 1 become 1)
+ * @param budget_mb Total MB available for worker TT/stack footprints
+ * @param per_worker_mb Assumed MB cost of one worker
+ * @return workers clamped to max(1, budget_mb / per_worker_mb)
+ */
+auto clamp_workers_to_memory_budget(
+  int workers,
+  int budget_mb,
+  int per_worker_mb) -> int;
+
+/**
  * @brief Process boards [0, count) with work-stealing parallelism.
  *
  * @param count Number of board indices to process.
