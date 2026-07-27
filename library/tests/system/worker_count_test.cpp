@@ -6,7 +6,6 @@
 
 #include <gtest/gtest.h>
 #include <algorithm>
-#include <cstdint>
 #include <thread>
 
 #include <api/dds.h>
@@ -60,8 +59,8 @@ TEST(ClampWorkersToMemoryBudget, CapsByBudgetPerWorker)
 
 TEST(ClampWorkersToMemoryBudget, PlatformCapMatchesWasmBudgetConstants)
 {
-  // Document the wasm32 / ILP32 budget used by resolve_worker_count so a
-  // quiet change to THREADMEM_* cannot silently re-OOM large WASM batches.
+  // Document the Emscripten budget used by resolve_worker_count so a quiet
+  // change to THREADMEM_* cannot silently re-OOM large WASM batches.
   constexpr int kHeapBudgetMB = 1400;
   constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
   constexpr int kExpectedCap = kHeapBudgetMB / kPerWorkerMB;
@@ -72,13 +71,21 @@ TEST(ClampWorkersToMemoryBudget, PlatformCapMatchesWasmBudgetConstants)
     kExpectedCap);
 }
 
-#if defined(__EMSCRIPTEN__) || UINTPTR_MAX == 0xffffffffu
-TEST(ResolveWorkerCount, AddressSpaceCapLimitsAutoWorkers)
+#if defined(__EMSCRIPTEN__)
+TEST(ResolveWorkerCount, WasmMemoryCapLimitsAutoWorkers)
 {
   constexpr int kHeapBudgetMB = 1400;
   constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
   const int mem_cap = kHeapBudgetMB / kPerWorkerMB;
   EXPECT_EQ(resolve_worker_count(0, 5000), std::min(auto_workers(5000), mem_cap));
   EXPECT_EQ(resolve_worker_count(64, 5000), mem_cap);
+}
+#else
+TEST(ResolveWorkerCount, NativeBuildsDoNotApplyWasmMemoryCap)
+{
+  // Explicit high caps must remain uncapped on native hosts; the WASM heap
+  // budget is Emscripten-only.
+  EXPECT_EQ(resolve_worker_count(64, 5000), 64);
+  EXPECT_EQ(resolve_worker_count(0, 5000), auto_workers(5000));
 }
 #endif

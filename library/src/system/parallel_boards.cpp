@@ -42,11 +42,12 @@ auto resolve_worker_count(
   }
   workers = std::max(1, std::min(workers, count));
 
-  // Parallel workers each keep a Large TT (via SolverContext). On wasm32 /
-  // other ILP32 targets the heap cannot grow past ~2 GiB; uncapped auto
-  // (= HW concurrency) OOMs large multi-board batches. Leave headroom under
-  // that ceiling for the main module, board vectors, and growth slack.
-#if defined(__EMSCRIPTEN__) || UINTPTR_MAX == 0xffffffffu
+  // Parallel workers each keep a Large TT (via SolverContext). Under
+  // Emscripten the wasm32 heap cannot grow past ~2 GiB; uncapped auto
+  // (= HW concurrency) OOMs large multi-board batches. Native builds keep
+  // the uncapped count. Leave headroom under the WASM ceiling for the main
+  // module, board vectors, and growth slack.
+#if defined(__EMSCRIPTEN__)
   constexpr int kHeapBudgetMB = 1400;
   constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
   workers = clamp_workers_to_memory_budget(workers, kHeapBudgetMB, kPerWorkerMB);

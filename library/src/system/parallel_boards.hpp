@@ -26,7 +26,7 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  * @brief Clamp a worker count to a memory budget (MB).
  *
  * Each parallel worker owns a SolverContext with a Large transposition table
- * plus stack; on wasm32 / ILP32 the process heap tops out near 2 GiB. Tests and
+ * plus stack; under Emscripten the wasm32 heap tops out near 2 GiB. Tests and
  * resolve_worker_count share this helper so the budget math stays in one place.
  *
  * @param workers Requested workers (values < 1 become 1)
