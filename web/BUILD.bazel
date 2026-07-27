@@ -5,12 +5,13 @@ load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
 # Emscripten flags for the browser MVP (modularized, no auto-run main).
+# ENVIRONMENT includes worker for pthread bootstrap; Node stays for system tests.
 WASM_MVP_LINKOPTS = WASM_LINKOPTS + [
     "-sMODULARIZE=1",
     "-sEXPORT_NAME=createDdsModule",
     "-sEXPORTED_FUNCTIONS=['_dds_mvp_calc_table','_malloc','_free']",
     "-sEXPORTED_RUNTIME_METHODS=['ccall','getValue']",
-    "-sENVIRONMENT=web,node",
+    "-sENVIRONMENT=web,worker,node",
 ]
 
 cc_binary(
@@ -32,6 +33,7 @@ cc_binary(
 wasm_cc_binary(
     name = "dds_mvp_wasm",
     cc_target = ":dds_mvp_wasm_cc",
+    threads = "emscripten",
     outputs = [
         "dds_mvp_wasm.js",
         "dds_mvp_wasm.wasm",
@@ -72,6 +74,15 @@ py_test(
         "patch_mvp_wasm.py",
         "verify_wasm_js.py",
     ],
+    deps = [":mvp_site"],
+)
+
+py_test(
+    name = "dds_mvp_html_test",
+    size = "small",
+    main = "tests/test_mvp_html.py",
+    srcs = ["tests/test_mvp_html.py"],
+    data = ["dds_mvp.html"],
 )
 
 py_test(
@@ -135,6 +146,7 @@ py_test(
 test_suite(
     name = "web_tests",
     tests = [
+        ":dds_mvp_html_test",
         ":dds_mvp_js_test",
         ":dds_mvp_wasm_test",
         ":wasm_scripts_test",

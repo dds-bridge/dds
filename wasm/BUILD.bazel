@@ -1,11 +1,12 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LOCAL_DEFINES")
 
 wasm_cc_binary(
     name = "solve_board_wasm",
     cc_target = "//examples:solve_board",
+    threads = "emscripten",
     outputs = [
         "solve_board.js",
         "solve_board.wasm",
@@ -15,6 +16,7 @@ wasm_cc_binary(
 wasm_cc_binary(
     name = "analyse_play_bin_wasm",
     cc_target = "//examples:AnalysePlayBin",
+    threads = "emscripten",
     outputs = [
         "AnalysePlayBin.js",
         "AnalysePlayBin.wasm",
@@ -24,10 +26,41 @@ wasm_cc_binary(
 wasm_cc_binary(
     name = "calc_dd_table_pbn_wasm",
     cc_target = "//examples:calc_dd_table_pbn",
+    threads = "emscripten",
     outputs = [
         "calc_dd_table_pbn.js",
         "calc_dd_table_pbn.wasm",
     ],
+)
+
+# dtest harness under Node (reads host hand-list files via NODERAWFS).
+wasm_cc_binary(
+    name = "dtest_wasm",
+    cc_target = "//library/tests:dtest",
+    threads = "emscripten",
+    outputs = [
+        "dtest.js",
+        "dtest.wasm",
+    ],
+)
+
+# `bazel run //wasm:run_dtest_wasm -- -f hands/list2.txt -s solve -n 2`
+py_binary(
+    name = "run_dtest_wasm",
+    srcs = ["run_dtest_wasm.py"],
+    main = "run_dtest_wasm.py",
+    data = [":dtest_wasm"],
+)
+
+py_test(
+    name = "run_dtest_wasm_test",
+    size = "small",
+    srcs = [
+        "run_dtest_wasm.py",
+        "tests/test_run_dtest_wasm.py",
+    ],
+    main = "tests/test_run_dtest_wasm.py",
+    imports = ["."],
 )
 
 filegroup(
@@ -60,13 +93,19 @@ py_test(
     timeout = "short",
     main = "tests/test_wasm_examples_system.py",
     srcs = ["tests/test_wasm_examples_system.py"],
-    data = [":calc_dd_table_pbn_wasm"],
+    data = [
+        ":calc_dd_table_pbn_wasm",
+        ":dtest_wasm",
+        "//hands:list1.txt",
+        "//hands:list2.txt",
+    ],
 )
 
 test_suite(
     name = "all",
     tests = [
         ":calc_dd_table_pbn_test",
+        ":run_dtest_wasm_test",
         ":wasm_examples_system_test",
     ],
 )

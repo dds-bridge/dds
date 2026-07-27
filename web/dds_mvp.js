@@ -22,6 +22,10 @@
             rotateClockwise
             pageLoad
             sendJSON
+            fourthHandFillState
+            updateActionButtons
+            updateDefaultAction
+            handleHandKeydown
             */
 
 // It's also useful to pass the code through
@@ -33,20 +37,68 @@ const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 const PIPS = "AKQJT98765432";
 const DENOMINATIONS = ["C", "D", "H", "S", "N"];
-const DIRECTION_LETTERS = ["N", "E", "S", "W"];
 
 // DDS res_table strain index (S,H,D,C,N) to MVP table column key.
 const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
-const DIR_TO_HAND = { N: 0, E: 1, S: 2, W: 3 };
+const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
 
-// TODO: Clean up our HTML rendering, perhaps using custom elements.
-//       See https://developers.google.com/web/fundamentals/web-components/customelements
-const SUIT_SYMBOLS = {
-    "S" : "&spades;",
-    "H" : "<span style='color: red'>&hearts;</span>",
-    "D" : "<span style='color: red'>&diams;</span>",
-    "C" : "&clubs;"
+// Suit glyphs are real text in these custom tags (see dds_mvp.css for color).
+const SUIT_TAGS = {
+    spades: "spade-suit",
+    hearts: "heart-suit",
+    diamonds: "diamond-suit",
+    clubs: "club-suit"
 };
+
+const SUIT_GLYPHS = {
+    spades: "\u2660",
+    hearts: "\u2665",
+    diamonds: "\u2666",
+    clubs: "\u2663"
+};
+
+function suitLetter(suit) {
+    return suit.charAt(0).toUpperCase();
+}
+
+function suitFromLetter(letter) {
+    for (const suit of SUITS) {
+        if (suitLetter(suit) === letter) {
+            return suit;
+        }
+    }
+
+    return undefined;
+}
+
+function Card(suit, pip) {
+    this.suit = suit;
+    this.pip = pip;
+}
+
+Card.prototype.key = function () {
+    return suitLetter(this.suit) + this.pip;
+};
+
+Card.prototype.toString = Card.prototype.key;
+
+Card.fromKey = function (key) {
+    return new Card(suitFromLetter(key.charAt(0)), key.charAt(1));
+};
+
+Card.compare = function (left, right) {
+    return PIPS.indexOf(left.pip) - PIPS.indexOf(right.pip);
+};
+
+function suitTag(suit) {
+    return SUIT_TAGS[suit];
+}
+
+function suitSymbolHtml(suit) {
+    const tag = suitTag(suit);
+
+    return "<" + tag + ">" + SUIT_GLYPHS[suit] + "</" + tag + ">";
+}
 
 let ddsModulePromise = null;
 
@@ -76,18 +128,31 @@ function loadDdsModule() {
 }
 
 function handsToPbn(hands) {
-    const handOrder = ["N", "E", "S", "W"];
-    const suitOrder = ["S", "H", "D", "C"];
-    const handStrings = handOrder.map((direction) => {
-        return suitOrder.map((suit) => {
+    const handStrings = DIRECTIONS.map((direction) => {
+        return SUITS.map((suit) => {
             return hands[direction]
-                .filter((card) => card.charAt(0) === suit)
-                .map((card) => card.charAt(1))
-                .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
+                .filter((card) => card.suit === suit)
+                .sort(Card.compare)
+                .map((card) => card.pip)
                 .join("");
         }).join(".");
     });
     return "N:" + handStrings.join(" ");
+}
+
+function focusNorthSpades() {
+    // To allow the user to quickly enter a deal
+
+    document.getElementById("north_spades").focus();
+}
+
+function focusDoubleDummyButton() {
+    const doubleDummyButton = document.getElementById("double-dummy-it");
+
+    if (doubleDummyButton && !doubleDummyButton.disabled) {
+        doubleDummyButton.focus();
+        updateDefaultAction();
+    }
 }
 
 function fillFormWithTestData(nesw) {
@@ -104,6 +169,10 @@ function fillFormWithTestData(nesw) {
     for (const element of hand_elements()) {
         element.value = holdings.shift();
     }
+
+    updateActionButtons();
+    // Defer so the clicked test-deal button cannot reclaim focus after click.
+    setTimeout(focusDoubleDummyButton, 0);
 }
 
 function fillFormWithGrandSlamTestData() {
@@ -153,12 +222,6 @@ function * hand_elements() {
     }
 }
 
-function focusNorthSpades() {
-    // To allow the user to quickly enter a deal
-
-    document.getElementById("north_spades").focus();
-}
-
 function clearTestData() {
     clear_results();
 
@@ -166,6 +229,7 @@ function clearTestData() {
         element.value = "";
     }
 
+    updateActionButtons();
     focusNorthSpades();
 }
 
@@ -187,22 +251,242 @@ function rotateClockwise() {
     for (const element of hand_elements()) {
         element.value = hands.shift();
     }
+
+    updateActionButtons();
+}
+
+function allDeckCards() {
+    const cards = [];
+
+    for (const suit of SUITS) {
+        for (const pip of PIPS) {
+            cards.push(new Card(suit, pip));
+        }
+    }
+
+    return cards;
+}
+
+function deckStatusHtml(hands) {
+    const enteredCards = {};
+
+    for (const direction of DIRECTIONS) {
+        for (const card of hands[direction]) {
+            enteredCards[card.key()] = true;
+        }
+    }
+
+    return SUITS.map((suit) => {
+        const tag = suitTag(suit);
+        const cardsHtml = PIPS.split("").map((pip) => {
+            const card = new Card(suit, pip);
+            const key = card.key();
+            const classes = ["deck-card"];
+
+            if (enteredCards[key]) {
+                classes.push("deck-card-entered");
+            }
+
+            return "<span class=\"" + classes.join(" ") +
+                "\" data-card=\"" + key + "\">" + pip + "</span>";
+        }).join("");
+
+        return "<" + tag + ">" + SUIT_GLYPHS[suit] + cardsHtml + "</" + tag + ">";
+    }).join("");
+}
+
+function updateDeckStatus(hands) {
+    const deckStatus = document.getElementById("deck-status");
+
+    if (deckStatus) {
+        deckStatus.innerHTML = deckStatusHtml(hands);
+    }
+}
+
+function updateHandCardCounts(hands) {
+    for (const direction of DIRECTIONS) {
+        const count = hands[direction].length;
+        const note = document.getElementById(direction + "-card-count");
+
+        if (note) {
+            note.hidden = count <= 13;
+            note.innerHTML = count > 13 ? count + " cards" : "";
+        }
+    }
+}
+
+function fourthHandFillState(hands) {
+    const handCounts = DIRECTIONS.map((direction) => hands[direction].length);
+    const fullHands = handCounts.filter((count) => count === 13).length;
+    const emptyHands = handCounts.filter((count) => count === 0).length;
+    const partialHands = handCounts.filter((count) => count > 0 && count < 13).length;
+
+    if (fullHands !== 3 || emptyHands !== 1 || partialHands > 0) {
+        return { canFill: false };
+    }
+
+    const emptyHand = DIRECTIONS[handCounts.indexOf(0)];
+    const usedCards = {};
+
+    for (const direction of DIRECTIONS) {
+        if (direction === emptyHand) {
+            continue;
+        }
+
+        for (const card of hands[direction]) {
+            if (!card || !SUITS.includes(card.suit) || !PIPS.includes(card.pip)) {
+                return { canFill: false };
+            }
+
+            usedCards[card.key()] = true;
+        }
+    }
+
+    // Three full hands hold 39 cards; fewer distinct keys means a duplicate,
+    // so the remaining 13 cannot be dealt to the empty hand.
+    if (Object.keys(usedCards).length !== 39) {
+        return { canFill: false };
+    }
+
+    return { canFill: true, emptyHand, usedCards };
+}
+
+function cardsToSuitHoldings(cards) {
+    const holdings = {};
+
+    for (const suit of SUITS) {
+        holdings[suit] = "";
+    }
+
+    for (const card of cards) {
+        holdings[card.suit] += card.pip;
+    }
+
+    for (const suit of SUITS) {
+        holdings[suit] = holdings[suit]
+            .split("")
+            .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
+            .join("");
+    }
+
+    return holdings;
+}
+
+function setHandInputs(direction, holdings) {
+    for (const suit of SUITS) {
+        document.getElementById(direction + "_" + suit).value = holdings[suit];
+    }
+}
+
+function remainingCardsForEmptyHand(state) {
+    return allDeckCards().filter((card) => !state.usedCards[card.key()]);
+}
+
+function applyFourthHandFill(hands, emptyHand) {
+    const state = fourthHandFillState(hands);
+
+    if (!state.canFill || state.emptyHand !== emptyHand) {
+        return false;
+    }
+
+    const remaining = remainingCardsForEmptyHand(state);
+
+    if (remaining.length !== 13) {
+        return false;
+    }
+
+    clear_results();
+    setHandInputs(emptyHand, cardsToSuitHoldings(remaining));
+    return true;
+}
+
+function allHandsHaveThirteenCards(hands) {
+    return DIRECTIONS.every((direction) => hands[direction].length === 13);
+}
+
+function isHandInput(element) {
+    if (!element) {
+        return false;
+    }
+
+    for (const handElement of hand_elements()) {
+        if (handElement === element) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function enterWouldActivateDoubleDummy() {
+    const doubleDummyButton = document.getElementById("double-dummy-it");
+    const activeElement = document.activeElement;
+
+    if (!doubleDummyButton || doubleDummyButton.disabled) {
+        return false;
+    }
+
+    return isHandInput(activeElement) || activeElement === doubleDummyButton;
+}
+
+function updateDefaultAction() {
+    const doubleDummyButton = document.getElementById("double-dummy-it");
+
+    if (!doubleDummyButton) {
+        return;
+    }
+
+    if (enterWouldActivateDoubleDummy()) {
+        doubleDummyButton.classList.add("default-action");
+    } else {
+        doubleDummyButton.classList.remove("default-action");
+    }
+}
+
+function updateActionButtons() {
+    let hands = collectHands();
+    const fillState = fourthHandFillState(hands);
+    const doubleDummyButton = document.getElementById("double-dummy-it");
+
+    if (fillState.canFill) {
+        applyFourthHandFill(hands, fillState.emptyHand);
+        hands = collectHands();
+    }
+
+    updateDeckStatus(hands);
+    updateHandCardCounts(hands);
+
+    if (doubleDummyButton) {
+        doubleDummyButton.disabled = !allHandsHaveThirteenCards(hands);
+    }
+
+    updateDefaultAction();
+}
+
+function handleHandKeydown(event) {
+    if (event.key !== "Enter" || !isHandInput(event.target)) {
+        return;
+    }
+
+    const hands = collectHands();
+
+    if (allHandsHaveThirteenCards(hands)) {
+        event.preventDefault();
+        sendJSON();
+    }
 }
 
 function collectHands() {
     var hands = {};
 
     for (const ds of directions_and_suits()) {
-        var direction_letter = ds.direction.charAt(0).toUpperCase();
+        hands[ds.direction] = hands[ds.direction] || [];
 
-        hands[direction_letter] = hands[direction_letter] || [];
-
-        var suit_letter = ds.suit.charAt(0).toUpperCase();
         var element_index = ds.direction + "_" + ds.suit;
         var holding = document.getElementById(element_index).value;
 
-        for (const card of holding) {
-            hands[direction_letter].push(suit_letter + card.toUpperCase());
+        for (const pip of holding) {
+            hands[ds.direction].push(new Card(ds.suit, pip.toUpperCase()));
         }
     }
 
@@ -221,20 +505,19 @@ function inputIsValid(hands) {
         }
 
         for (const card of hand) {
-            const pip = card.substring(1);
-
-            if (!PIPS.includes(pip)) {
+            if (!PIPS.includes(card.pip)) {
                 return "Please use only these pips: " + PIPS;
             }
 
-            if (deck[card]) {
-                if (deck[card] == 1) {
+            const key = card.key();
+            if (deck[key]) {
+                if (deck[key] == 1) {
                     duplicates.push(card);
                 }
 
-                deck[card]++;
+                deck[key]++;
             } else {
-                deck[card] = 1;
+                deck[key] = 1;
             }
         }
     }
@@ -249,12 +532,10 @@ function inputIsValid(hands) {
         error_message += ": ";
 
         for (const card of duplicates) {
-            const suit_letter = card.substring(0, 1);
-            const pip = card.substring(1);
-            const suit_symbol = SUIT_SYMBOLS[suit_letter];
+            const suit_symbol = suitSymbolHtml(card.suit);
 
             error_message += suit_symbol;
-            error_message += pip;
+            error_message += card.pip;
             error_message += " ";
         }
 
@@ -266,6 +547,15 @@ function inputIsValid(hands) {
 
 function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
+
+    for (const element of hand_elements()) {
+        element.addEventListener("input", updateActionButtons);
+        element.addEventListener("keydown", handleHandKeydown);
+    }
+
+    document.addEventListener("focusin", updateDefaultAction);
+    document.addEventListener("focusout", updateDefaultAction);
+    updateActionButtons();
     focusNorthSpades();
 }
 
@@ -322,7 +612,7 @@ async function sendJSON() {
                 for (var column = 1; column <= 5; column++) {
                     const cell = result_table.rows[row].cells[column];
                     const denomination = DENOMINATIONS[column - 1];
-                    const direction = DIRECTION_LETTERS[row - 1];
+                    const direction = DIRECTIONS[row - 1];
                     const strain = DENOM_TO_STRAIN[denomination];
                     const hand = DIR_TO_HAND[direction];
                     const index = strain * 4 + hand;

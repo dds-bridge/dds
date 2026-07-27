@@ -1,4 +1,4 @@
-"""End-to-end browser tests for web/dds_mvp.html (file:// and HTTP)."""
+"""End-to-end browser tests for web/dds_mvp.html (file:// UI and isolated HTTP)."""
 from __future__ import annotations
 
 import http.server
@@ -11,7 +11,7 @@ import threading
 import unittest
 from pathlib import Path
 
-from mvp_site import stage_mvp_site
+from mvp_site import CROSS_ORIGIN_ISOLATION_HEADERS, make_isolated_http_handler, stage_mvp_site
 
 try:
     from playwright.sync_api import sync_playwright
@@ -52,16 +52,6 @@ def _ensure_playwright_chromium(browsers_dir: Path) -> None:
         )
 
 
-def _make_http_handler(directory: Path) -> type[http.server.SimpleHTTPRequestHandler]:
-    root = str(directory)
-
-    class Handler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, request, client_address, server) -> None:
-            super().__init__(request, client_address, server, directory=root)
-
-    return Handler
-
-
 class _HttpSite:
     def __init__(self, directory: Path) -> None:
         self._directory = directory
@@ -72,7 +62,7 @@ class _HttpSite:
     def __enter__(self) -> _HttpSite:
         self._httpd = http.server.ThreadingHTTPServer(
             ("127.0.0.1", 0),
-            _make_http_handler(self._directory),
+            make_isolated_http_handler(self._directory),
         )
         port = self._httpd.server_address[1]
         self.url = f"http://127.0.0.1:{port}/dds_mvp.html"
@@ -171,21 +161,158 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_file_url_part_score_table(self) -> None:
-        url = self.site_dir.joinpath("dds_mvp.html").as_uri()
-        page, errors = self._open_page(url)
+    def test_deck_status_grays_cards_entered_in_the_diagram(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
-            self._fill_part_score_deal(page)
-            self._run_double_dummy(page)
-            self._assert_part_score_table(page)
+            cards = page.locator("#deck-status .deck-card")
+            self.assertEqual(cards.count(), 52)
+            self.assertEqual(
+                page.locator('#deck-status [data-card="SA"]').get_attribute("class"),
+                "deck-card",
+            )
+
+            page.locator("#north_spades").fill("A")
+
+            entered_card = page.locator('#deck-status [data-card="SA"]')
+            self.assertIn("deck-card-entered", entered_card.get_attribute("class"))
+            self.assertEqual(
+                float(entered_card.evaluate("el => getComputedStyle(el).opacity")),
+                1.0,
+            )
+            self.assertNotEqual(
+                entered_card.evaluate("el => getComputedStyle(el).color"),
+                "rgb(0, 0, 0)",
+            )
             self.assertEqual(errors, [])
         finally:
             page.close()
+
+    def test_deck_status_displays_all_cards_in_one_row(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            deck = page.locator("#deck-status")
+            style = deck.evaluate(
+                """el => {
+                const s = getComputedStyle(el);
+                return {
+                  display: s.display,
+                  flexWrap: s.flexWrap,
+                  overflowX: s.overflowX,
+                };
+              }"""
+            )
+            self.assertEqual(style["display"], "flex")
+            self.assertEqual(style["flexWrap"], "nowrap")
+            self.assertNotIn(style["overflowX"], ("auto", "scroll"))
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_suit_tags_expose_glyphs_in_dom(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            for tag, glyph, red in (
+                ("spade-suit", "♠", False),
+                ("heart-suit", "♥", True),
+                ("diamond-suit", "♦", True),
+                ("club-suit", "♣", False),
+            ):
+                el = page.locator(f".hand-north {tag}").first
+                self.assertEqual(el.inner_text(), glyph)
+                tag_color = el.evaluate("el => getComputedStyle(el).color")
+                if red:
+                    self.assertNotEqual(
+                        tag_color, "rgb(0, 0, 0)", msg=f"{tag} glyph is red"
+                    )
+                else:
+                    self.assertEqual(
+                        tag_color, "rgb(0, 0, 0)", msg=f"{tag} glyph is black"
+                    )
+
+            # Deck pips are nested inside suit tags; they must stay black/gray.
+            pip_color = page.locator('#deck-status [data-card="HA"]').evaluate(
+                "el => getComputedStyle(el).color"
+            )
+            self.assertEqual(pip_color, "rgb(0, 0, 0)", msg="heart Ace pip stays black")
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_double_dummy_button_has_bold_outline_when_default(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            button = page.locator("#double-dummy-it")
+            self.assertNotIn("default-action", button.get_attribute("class") or "")
+
+            self._fill_part_score_deal(page)
+            page.wait_for_function(
+                "() => document.getElementById('double-dummy-it').classList.contains('default-action')"
+            )
+
+            self.assertIn("default-action", button.get_attribute("class"))
+            outline_width = float(
+                button.evaluate("el => parseFloat(getComputedStyle(el).outlineWidth)")
+            )
+            self.assertGreaterEqual(outline_width, 2.0)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_hand_over_13_cards_shows_its_card_count(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            note = page.locator(".hand-north #north-card-count")
+            self.assertTrue(note.is_hidden())
+
+            page.locator("#north_spades").fill("AKQJT98765432A")
+
+            self.assertTrue(note.is_visible())
+            self.assertEqual(note.inner_text(), "14 cards")
+            self.assertTrue(page.locator("#east-card-count").is_hidden())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_http_is_cross_origin_isolated(self) -> None:
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                self.assertTrue(page.evaluate("() => window.crossOriginIsolated"))
+                self.assertTrue(
+                    page.evaluate("() => typeof SharedArrayBuffer === 'function'")
+                )
+                headers = page.evaluate(
+                    """async () => {
+                      const res = await fetch(location.href, { cache: 'no-store' });
+                      return {
+                        coop: res.headers.get('Cross-Origin-Opener-Policy'),
+                        coep: res.headers.get('Cross-Origin-Embedder-Policy'),
+                      };
+                    }"""
+                )
+                self.assertEqual(
+                    headers["coop"], CROSS_ORIGIN_ISOLATION_HEADERS[
+                        "Cross-Origin-Opener-Policy"
+                    ]
+                )
+                self.assertEqual(
+                    headers["coep"], CROSS_ORIGIN_ISOLATION_HEADERS[
+                        "Cross-Origin-Embedder-Policy"
+                    ]
+                )
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
 
     def test_http_part_score_table(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
+                self.assertEqual(
+                    page.evaluate("() => document.characterSet"),
+                    "UTF-8",
+                    msg="HTTP must decode HTML as UTF-8 so suit glyphs are not mojibake",
+                )
                 self._fill_part_score_deal(page)
                 self._run_double_dummy(page)
                 self._assert_part_score_table(page)
@@ -193,16 +320,73 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             finally:
                 page.close()
 
-    def test_validation_error_on_incomplete_deal(self) -> None:
+    def test_test_deal_button_focuses_double_dummy(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            page.get_by_role("button", name="Part-score test deal").click()
+            page.wait_for_function(
+                "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
+            )
+            self.assertFalse(page.get_by_role("button", name="Double-dummy it!").is_disabled())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_enter_runs_double_dummy_after_loading_a_complete_deal(self) -> None:
+        # Solving needs SharedArrayBuffer → cross-origin isolation → HTTP only.
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                self._fill_part_score_deal(page)
+
+                page.wait_for_function(
+                    "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
+                )
+                page.keyboard.press("Enter")
+                page.wait_for_function(
+                    """() => {
+                    const cell = document.getElementById('result-table').rows[1].cells[1];
+                    return cell && /^\\d+$/.test(cell.textContent.trim());
+                  }""",
+                    timeout=120_000,
+                )
+
+                self._assert_part_score_table(page)
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
+
+    def test_double_dummy_disabled_on_incomplete_deal(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
             page.get_by_role("button", name="Clear entries").click()
-            page.get_by_role("button", name="Double-dummy it!").click()
-            page.wait_for_function(
-                """() => document.getElementById('result').textContent.includes('13 cards')"""
+            double_dummy = page.get_by_role("button", name="Double-dummy it!")
+            self.assertTrue(double_dummy.is_disabled())
+            self.assertEqual(
+                float(double_dummy.evaluate("el => getComputedStyle(el).opacity")),
+                1.0,
             )
-            message = page.locator("#result").inner_text()
-            self.assertIn("13 cards", message)
+            self.assertNotEqual(
+                double_dummy.evaluate("el => getComputedStyle(el).color"),
+                "rgb(0, 0, 0)",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_auto_fills_fourth_hand_when_three_hands_are_complete(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            self._fill_part_score_deal(page)
+            for suit in ("spades", "hearts", "diamonds", "clubs"):
+                page.locator(f"#west_{suit}").fill("")
+
+            double_dummy = page.get_by_role("button", name="Double-dummy it!")
+            self.assertEqual(page.locator("#west_spades").input_value(), "K643")
+            self.assertEqual(page.locator("#west_hearts").input_value(), "T8")
+            self.assertEqual(page.locator("#west_diamonds").input_value(), "AK742")
+            self.assertEqual(page.locator("#west_clubs").input_value(), "T5")
+            self.assertTrue(double_dummy.is_enabled())
             self.assertEqual(errors, [])
         finally:
             page.close()

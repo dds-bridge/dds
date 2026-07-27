@@ -16,15 +16,41 @@ jobs:
 
       # Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: "1.29.0"
+        uses: ./.github/actions/setup-bazelisk
 
-      # Build all targets
-      - name: Build all targets
-        run: bazel build --verbose_failures //...
+      # Warm external deps (emsdk, LLVM, …); retry transient network fetch failures
+      - name: Prefetch external repos
+        shell: pwsh
+        run: |
+          $max = 3
+          for ($i = 1; $i -le $max; $i++) {
+            bazel fetch //...
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($i -lt $max) {
+              Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              Start-Sleep -Seconds 20
+            }
+          }
+          exit 1
 
-      # Run all tests (including Python)
+      # Build all targets (retry: fetch flakes can still surface on first analysis)
+      - name: Bazel build (retry on transient fetch failure)
+        shell: pwsh
+        run: |
+          $max = 3
+          for ($i = 1; $i -le $max; $i++) {
+            bazel build --verbose_failures //...
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($i -lt $max) {
+              Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
+              Start-Sleep -Seconds 20
+              # Restart server only — keep downloaded external repos / disk cache.
+              bazel shutdown || $true
+            }
+          }
+          exit 1
+
+      # Run all tests (including Python) — no retry so real test failures surface quickly
       - name: Run all tests
         run: bazel test --verbose_failures //...
 

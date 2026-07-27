@@ -15,25 +15,49 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # 2️⃣ Install Bazelisk (recommended Bazel launcher)
-      - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
+      # 2️⃣ Free up disk space (LLVM toolchain ~4 GB extracted; runners ship ~14 GB free)
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
         with:
-          bazelisk-version: "1.29.0"
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
 
-      # 3️⃣ (Optional) Install Doxygen for documentation generation
+      # 3️⃣ Install Bazelisk (recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      # 4️⃣ (Optional) Install Doxygen for documentation generation
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen
 
-      # 4️⃣ Build all targets
+      # 5️⃣ Prefetch external repos (emsdk via //..., LLVM); retry network flakes only
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazel fetch //...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      # 6️⃣ Build all targets
       - name: Build all targets
         run: bazel build --verbose_failures //...
 
-      # 6️⃣ Run all tests (including Python)
+      # 7️⃣ Run all tests (including Python)
       - name: Run all tests
         run: bazel test --verbose_failures //...
 
-      # 7️⃣ Upload test logs
+      # 8️⃣ Upload test logs
       - name: Upload test logs - Linux
         if: always()
         uses: actions/upload-artifact@v6
@@ -50,10 +74,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
         with:
-          bazelisk-version: "1.29.0"
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazel fetch --config=asan //library/tests/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
 
       - name: Run tests (AddressSanitizer)
         run: bazel test --config=asan --verbose_failures --test_output=errors //library/tests/...
@@ -74,10 +120,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
         with:
-          bazelisk-version: "1.29.0"
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazel fetch --config=tsan //library/tests/system/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
 
       - name: Run system tests (ThreadSanitizer)
         run: bazel test --config=tsan --verbose_failures --test_output=errors //library/tests/system/...

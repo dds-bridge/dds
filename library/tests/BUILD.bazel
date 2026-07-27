@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
+load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
 # Test utility sources (glob used for convenience; excludes integration/context equivalence tests)
 filegroup(
@@ -15,12 +16,23 @@ filegroup(
     ),
 )
 
-# Main test executable for manual invocation
+# Emscripten flags when //library/tests:dtest is built under wasm_cc_binary.
+# NODERAWFS lets Node read host hand-list paths; worker is required for pthreads.
+# EXIT_RUNTIME is off: dtest shuts the pthread pool down cleanly then process.exit.
+DTEST_LINKOPTS_WASM = select({
+    "//:build_wasm": WASM_LINKOPTS + [
+        "-sENVIRONMENT=node,worker",
+        "-sNODERAWFS=1",
+    ],
+    "//conditions:default": [],
+})
+
+# Main test executable for manual invocation (also the cc_target for //wasm:dtest_wasm)
 cc_binary(
     name = "dtest",
     srcs = [":test_sources"],
     copts = DDS_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
+    linkopts = DDS_LINKOPTS + DTEST_LINKOPTS_WASM,
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     deps = [
         "//library/src:dds",

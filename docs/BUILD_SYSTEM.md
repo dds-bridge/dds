@@ -16,7 +16,42 @@ toolchain selection lives in `MODULE.bazel` and standard-language settings are
 primarily configured in `.bazelrc` (with a fallback default in
 `CPPVARIABLES.bzl`).
 
-MODULE.bazel.lock is checked in and version managed as per current bazel best practises.
+### Bazel version and MODULE.bazel.lock
+
+Use [bazelisk](https://github.com/bazelbuild/bazelisk) (CI already does). The
+repo pins the Bazel version in `.bazelversion`; keep that in sync with the
+committed `MODULE.bazel.lock` when upgrading Bazel.
+
+`MODULE.bazel.lock` is checked in. `.bazelrc` sets `--lockfile_mode=error` so
+builds fail instead of silently rewriting the lockfile. That keeps resolution
+reproducible and avoids ambient lockfile diffs in unrelated PRs.
+
+When you change `MODULE.bazel` (or intentionally refresh deps), update the
+lockfile and commit it:
+
+```bash
+bazelisk mod deps --lockfile_mode=update
+```
+
+Do not hand-edit the lockfile. For merge conflicts, restore it and regenerate
+after resolving `MODULE.bazel`, or use Bazel's lockfile merge driver
+(`.gitattributes` already declares `merge=bazel-lockfile-merge`). Register the
+driver once per machine (requires `jq` 1.5+). Download the merge script to a
+file (do not embed it in git config) and pin the URL to the Bazel version in
+`.bazelversion`; re-download when you bump that pin:
+
+```bash
+mkdir -p "${HOME}/.local/share/bazel"
+# Run from the repo root so .bazelversion supplies the pin.
+curl -fsSL \
+  "https://raw.githubusercontent.com/bazelbuild/bazel/$(cat .bazelversion)/scripts/bazel-lockfile-merge.jq" \
+  -o "${HOME}/.local/share/bazel/bazel-lockfile-merge.jq"
+# Optionally inspect: less "${HOME}/.local/share/bazel/bazel-lockfile-merge.jq"
+git config --global merge.bazel-lockfile-merge.name \
+  "Merge driver for the Bazel lockfile (MODULE.bazel.lock)"
+git config --global merge.bazel-lockfile-merge.driver \
+  "jq -s -f ${HOME}/.local/share/bazel/bazel-lockfile-merge.jq -- %O %A %B > %A.jq_tmp && mv %A.jq_tmp %A"
+```
 
 ### macOS SDK and Runtime Compatibility
 
@@ -57,8 +92,8 @@ binaries when the clang major matches.
 
 **When upgrading LLVM or Xcode**, update all coupled paths together:
 
-1. Bump `llvm_versions` in `MODULE.bazel` (and run `bazel mod deps` to refresh
-   `MODULE.bazel.lock`).
+1. Bump `llvm_versions` in `MODULE.bazel` (and run
+   `bazelisk mod deps --lockfile_mode=update` to refresh `MODULE.bazel.lock`).
 2. Update the `clang/N` segment in `build:tsan_macos` in `.bazelrc` to match the
    new major version.
 3. Confirm Xcode ships that major:  

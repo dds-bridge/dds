@@ -11,10 +11,230 @@
 
 #include <algorithm>
 #include <atomic>
+#include <condition_variable>
+#include <cstdint>
+#include <memory>
+#include <mutex>
 #include <thread>
 #include <vector>
 
 #include <api/dll.h>
+
+
+namespace
+{
+
+std::atomic<std::uint64_t> g_threads_created{0};
+
+
+class BoardWorkerPool
+{
+public:
+  BoardWorkerPool() = default;
+
+  ~BoardWorkerPool()
+  {
+    {
+      std::lock_guard<std::mutex> lock(mu_);
+      stopping_ = true;
+      ++generation_;
+      job_ = nullptr;
+      workers_for_job_ = 0;
+    }
+    cv_start_.notify_all();
+    for (auto& th : threads_)
+    {
+      if (th.joinable())
+        th.join();
+    }
+  }
+
+  BoardWorkerPool(const BoardWorkerPool&) = delete;
+  auto operator=(const BoardWorkerPool&) -> BoardWorkerPool& = delete;
+
+  auto run(
+    const int workers,
+    const int count,
+    const std::function<int(int worker_id, int bno)>& process_board,
+    const bool use_order,
+    const std::vector<int>* order) -> int
+  {
+    // The pool tracks exactly one outstanding job (job_, workers_for_job_,
+    // generation_). Serialize whole runs so a second concurrent caller queues
+    // up instead of overwriting the first caller's job, which would leave the
+    // first run waiting forever for workers that never saw its job.
+    std::lock_guard<std::mutex> run_lock(run_mu_);
+
+    ensure_workers(workers);
+
+    std::atomic<int> next{0};
+    std::atomic<int> first_error{RETURN_NO_FAULT};
+    // finished is protected by mu_: every worker increments it under that lock
+    // so the unlock→lock handoff through cv_done_ happens-before the caller's
+    // continued use of process_board side effects (e.g. result buffers).
+    int finished{0};
+
+    Job job{
+      &process_board,
+      order,
+      &next,
+      &first_error,
+      &finished,
+      count,
+      workers,
+      use_order};
+
+    {
+      std::lock_guard<std::mutex> lock(mu_);
+      job_ = &job;
+      workers_for_job_ = workers;
+      ++generation_;
+    }
+    cv_start_.notify_all();
+
+    {
+      std::unique_lock<std::mutex> lock(mu_);
+      cv_done_.wait(lock, [&] { return finished >= workers; });
+      job_ = nullptr;
+    }
+
+    const int err = first_error.load(std::memory_order_relaxed);
+    return err != RETURN_NO_FAULT ? err : RETURN_NO_FAULT;
+  }
+
+private:
+  struct Job
+  {
+    const std::function<int(int, int)>* process_board = nullptr;
+    const std::vector<int>* order = nullptr;
+    std::atomic<int>* next = nullptr;
+    std::atomic<int>* first_error = nullptr;
+    int* finished = nullptr;
+    int count = 0;
+    int workers = 0;
+    bool use_order = false;
+  };
+
+  void ensure_workers(const int workers)
+  {
+    std::lock_guard<std::mutex> lock(mu_);
+    while (static_cast<int>(threads_.size()) < workers)
+    {
+      const int worker_id = static_cast<int>(threads_.size());
+      threads_.emplace_back([this, worker_id] { worker_main(worker_id); });
+      g_threads_created.fetch_add(1, std::memory_order_relaxed);
+    }
+  }
+
+  void worker_main(const int worker_id)
+  {
+    std::uint64_t seen_generation = 0;
+    for (;;)
+    {
+      Job local{};
+      {
+        std::unique_lock<std::mutex> lock(mu_);
+        cv_start_.wait(lock, [&] {
+          return stopping_ ||
+            (job_ != nullptr &&
+             generation_ != seen_generation &&
+             worker_id < workers_for_job_);
+        });
+        if (stopping_)
+          return;
+        seen_generation = generation_;
+        local = *job_;
+      }
+
+      // Workers with id >= local.workers for this job still wake on notify_all;
+      // only the selected prefix participates and signals completion.
+      if (worker_id < local.workers)
+      {
+        try
+        {
+          for (;;)
+          {
+            const int slot = local.next->fetch_add(1, std::memory_order_relaxed);
+            if (slot >= local.count ||
+                local.first_error->load(std::memory_order_relaxed) != RETURN_NO_FAULT)
+            {
+              break;
+            }
+            const int bno =
+              local.use_order
+                ? (*local.order)[static_cast<unsigned>(slot)]
+                : slot;
+            const int rc = (*local.process_board)(worker_id, bno);
+            if (rc != RETURN_NO_FAULT)
+            {
+              int expected = RETURN_NO_FAULT;
+              local.first_error->compare_exchange_strong(
+                expected, rc, std::memory_order_relaxed);
+              break;
+            }
+          }
+        }
+        catch (...)
+        {
+          // process_board must not leave the pool hanging or abort the process
+          // via std::terminate. Any throw maps the run to RETURN_UNKNOWN_FAULT
+          // (even if another worker already recorded a non-success return code),
+          // then fall through to finished accounting so cv_done_ is signaled.
+          local.first_error->store(
+            RETURN_UNKNOWN_FAULT, std::memory_order_relaxed);
+        }
+        // Account completion under mu_ so (1) the predicate change cannot race
+        // with cv_done_.wait's check-and-sleep (lost wakeup) and (2) unlocking
+        // mu_ after process_board writes publishes those writes to the caller
+        // when wait reacquires the mutex.
+        bool notify = false;
+        {
+          std::lock_guard<std::mutex> lock(mu_);
+          notify = ++(*local.finished) >= local.workers;
+        }
+        if (notify)
+          cv_done_.notify_one();
+      }
+    }
+  }
+
+  // Held for the duration of run(); see the comment there.
+  std::mutex run_mu_;
+  std::mutex mu_;
+  std::condition_variable cv_start_;
+  std::condition_variable cv_done_;
+  std::vector<std::thread> threads_;
+  bool stopping_ = false;
+  std::uint64_t generation_ = 0;
+  Job* job_ = nullptr;
+  int workers_for_job_ = 0;
+};
+
+
+struct PoolHolder
+{
+  std::mutex mu;
+  std::shared_ptr<BoardWorkerPool> pool;
+};
+
+
+auto pool_holder() -> PoolHolder&
+{
+  static PoolHolder holder;
+  return holder;
+}
+
+
+auto default_pool() -> std::shared_ptr<BoardWorkerPool>
+{
+  auto& h = pool_holder();
+  std::lock_guard<std::mutex> lock(h.mu);
+  if (!h.pool)
+    h.pool = std::make_shared<BoardWorkerPool>();
+  return h.pool;
+}
+
+}  // namespace
 
 
 auto resolve_worker_count(
@@ -46,6 +266,31 @@ static auto is_permutation_of_range(
 }
 
 
+namespace dds::internal
+{
+
+auto parallel_boards_worker_threads_created() -> std::uint64_t
+{
+  return g_threads_created.load(std::memory_order_relaxed);
+}
+
+
+void shutdown_parallel_boards_pool()
+{
+  std::shared_ptr<BoardWorkerPool> dying;
+  {
+    auto& h = pool_holder();
+    std::lock_guard<std::mutex> lock(h.mu);
+    dying = std::move(h.pool);
+  }
+  // Drop the last shared_ptr outside the holder lock so joins cannot deadlock
+  // against a concurrent parallel_all_boards_n that needs the mutex to recreate
+  // the pool. In-flight runs keep their own shared_ptr alive until run returns.
+}
+
+}  // namespace dds::internal
+
+
 auto parallel_all_boards_n(
   const int count,
   const int worker_cap,
@@ -65,9 +310,6 @@ auto parallel_all_boards_n(
     (order != nullptr &&
      order->size() == static_cast<std::size_t>(count) &&
      is_permutation_of_range(*order, count));
-  auto board_of = [&](const int slot) -> int {
-    return use_order ? (*order)[static_cast<unsigned>(slot)] : slot;
-  };
 
   const int workers = resolve_worker_count(worker_cap, count);
 
@@ -75,7 +317,9 @@ auto parallel_all_boards_n(
   {
     for (int slot = 0; slot < count; ++slot)
     {
-      const int rc = process_board(0, board_of(slot));
+      const int bno =
+        use_order ? (*order)[static_cast<unsigned>(slot)] : slot;
+      const int rc = process_board(0, bno);
       if (rc != RETURN_NO_FAULT)
       {
         return rc;
@@ -84,56 +328,5 @@ auto parallel_all_boards_n(
     return RETURN_NO_FAULT;
   }
 
-  std::atomic<int> next{0};
-  std::atomic<int> first_error{RETURN_NO_FAULT};
-
-  auto worker = [&](const int worker_id) {
-    for (;;)
-    {
-      const int slot = next.fetch_add(1, std::memory_order_relaxed);
-      if (slot >= count || first_error.load(std::memory_order_relaxed) != RETURN_NO_FAULT)
-      {
-        break;
-      }
-      const int bno = board_of(slot);
-
-      const int rc = process_board(worker_id, bno);
-      if (rc != RETURN_NO_FAULT)
-      {
-        int expected = RETURN_NO_FAULT;
-        first_error.compare_exchange_strong(
-          expected, rc, std::memory_order_relaxed);
-        break;
-      }
-    }
-  };
-
-  std::vector<std::thread> threads;
-  threads.reserve(static_cast<unsigned>(workers));
-  try
-  {
-    for (int t = 0; t < workers; ++t)
-    {
-      threads.emplace_back(worker, t);
-    }
-  }
-  catch (...)
-  {
-    for (auto & th : threads)
-    {
-      if (th.joinable())
-      {
-        th.join();
-      }
-    }
-    throw;
-  }
-
-  for (auto & th : threads)
-  {
-    th.join();
-  }
-
-  const int err = first_error.load(std::memory_order_relaxed);
-  return err != RETURN_NO_FAULT ? err : RETURN_NO_FAULT;
+  return default_pool()->run(workers, count, process_board, use_order, order);
 }

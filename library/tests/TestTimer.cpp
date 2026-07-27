@@ -51,6 +51,19 @@ void TestTimer::reset()
   sys_max_ = 0;
   batch_count_ = 0;
   pending_hands_ = 0;
+  sys_time_known_ = true;
+}
+
+
+void TestTimer::mark_sys_time_unavailable()
+{
+  sys_time_known_ = false;
+}
+
+
+bool TestTimer::sys_time_known() const
+{
+  return sys_time_known_;
 }
 
 
@@ -60,11 +73,21 @@ void TestTimer::set_name(const string& s)
 }
 
 
+long clock_delta_to_ms(clock_t delta)
+{
+  return static_cast<long>(
+    (1000.0 * static_cast<double>(delta)) /
+    static_cast<double>(CLOCKS_PER_SEC));
+}
+
+
 void TestTimer::start(const int number)
 {
   pending_hands_ = number;
   user0_ = Clock::now();
   sys0_ = clock();
+  if (sys0_ == static_cast<clock_t>(-1))
+    sys_time_known_ = false;
 }
 
 
@@ -75,8 +98,14 @@ void TestTimer::end()
 
   duration<double, std::milli> d = user1 - user0_;
   const long tuser = static_cast<long>(d.count());
-  const long tsys = static_cast<long>((1000 * (sys1 - sys0_)) /
-    static_cast<double>(CLOCKS_PER_SEC));
+  long tsys = 0;
+  if (sys_time_known_)
+  {
+    if (sys1 == static_cast<clock_t>(-1))
+      sys_time_known_ = false;
+    else
+      tsys = clock_delta_to_ms(sys1 - sys0_);
+  }
 
   TestTimer::record(pending_hands_, tuser, tsys);
   pending_hands_ = 0;
@@ -178,7 +207,9 @@ void TestTimer::print_basic() const
       setprecision(2) << user_cum_ / static_cast<float>(count_) << "\n";
   }
 
-  if (sys_cum_ == 0)
+  if (!sys_time_known_)
+    cout << setw(19) << left << "Sys time (ms)" << ": " << "n/a" << "\n";
+  else if (sys_cum_ == 0)
     cout << setw(19) << left << "Sys time (ms)" << ": " << "zero" << "\n";
   else
   {
@@ -254,7 +285,10 @@ void TestTimer::print_hands(
         setw(12) << right << fixed << setprecision(2) << user_max_ << "\n";
   }
 
-  if (sys_cum_ == 0)
+  if (!sys_time_known_)
+    out << setw(21) << left << "Sys time (ms)" <<
+      setw(12) << right << "n/a" << "\n";
+  else if (sys_cum_ == 0)
     out << setw(21) << left << "Sys time (ms)" << 
       setw(12) << right << "zero" << "\n";
   else

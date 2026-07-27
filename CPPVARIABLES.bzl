@@ -55,10 +55,16 @@ DDS_CPPOPTS = select({
     "//:build_wasm": [
         "-O3",
         "-flto",
+        "-std=c++20",
         "-Wpedantic",
         "-Wall",
         "-Werror",
+        # -fexceptions must precede -fwasm-exceptions: the toolchain's default
+        # -fno-exceptions is otherwise not overridden at the clang frontend
+        # level by -fwasm-exceptions alone (it only selects the EH lowering
+        # mechanism, not the "exceptions enabled" toggle, in this LLVM build).
         "-fexceptions",
+        "-fwasm-exceptions",
     ],
     "//conditions:default": [
         "-std=c++20"
