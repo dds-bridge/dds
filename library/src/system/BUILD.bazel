@@ -1,8 +1,8 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-# Native keeps develop's parallel_boards.cpp unchanged. Emscripten builds swap
-# in parallel_boards_wasm.cpp so the wasm32 heap worker cap cannot affect host
+# Native builds keep parallel_boards.cpp unchanged. Emscripten builds swap in
+# parallel_boards_wasm.cpp so the wasm32 heap worker cap cannot affect host
 # codegen of the hot parallel_all_boards_n translation unit.
 _PARALLEL_BOARDS_SRC = select({
     "//:build_wasm": ["parallel_boards_wasm.cpp"],
