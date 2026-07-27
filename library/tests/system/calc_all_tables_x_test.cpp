@@ -46,6 +46,13 @@ void expect_tables_equal(const DdTableResults& a, const DdTableResults& b)
           << "Mismatch at strain=" << strain << " hand=" << hand;
 }
 
+// strncpy does not guarantee NUL-termination when src length >= dest size.
+void copy_pbn_cards(char* dest, const std::size_t dest_size, const char* src)
+{
+  std::strncpy(dest, src, dest_size - 1);
+  dest[dest_size - 1] = '\0';
+}
+
 }  // namespace
 
 TEST(CalcAllTablesX, NullPointersReturnUnknownFault)
@@ -78,10 +85,10 @@ TEST(CalcAllTablesPBNX, NullPointersReturnUnknownFault)
   // exception crossing the C boundary.
   InitializeStaticMemory();
   DdTableDealPBN deal{};
-  std::strncpy(
+  copy_pbn_cards(
     deal.cards,
-    "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3",
-    sizeof(deal.cards));
+    sizeof(deal.cards),
+    "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3");
   DdTableResults result{};
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
 
@@ -102,7 +109,7 @@ TEST(CalcAllTablesPBNX, InvalidPbnReturnsPbnFault)
   DdTableDealPBN deal{};
   // Must not start with N/E/S/W (case-insensitive) or convert_from_pbn may
   // attempt a partial parse and fail later with a different code.
-  std::strncpy(deal.cards, "ZZZ:not-a-deal", sizeof(deal.cards));
+  copy_pbn_cards(deal.cards, sizeof(deal.cards), "ZZZ:not-a-deal");
   DdTableResults result{};
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
 
@@ -205,7 +212,12 @@ TEST(CalcAllTablesX, PbnVariantMatchesBinary)
     "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3";
   std::vector<DdTableDealPBN> pbn_deals(static_cast<unsigned>(kNum));
   for (int i = 0; i < kNum; i++)
-    std::strncpy(pbn_deals[static_cast<unsigned>(i)].cards, pbn, sizeof(pbn_deals[0].cards));
+  {
+    copy_pbn_cards(
+      pbn_deals[static_cast<unsigned>(i)].cards,
+      sizeof(pbn_deals[0].cards),
+      pbn);
+  }
   std::vector<DdTableResults> pbn_results(static_cast<unsigned>(kNum));
   ASSERT_EQ(
     CalcAllTablesPBNX(
