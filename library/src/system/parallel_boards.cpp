@@ -14,8 +14,11 @@
 #include <thread>
 #include <vector>
 
-#include <api/dds.h>
 #include <api/dll.h>
+
+#if defined(__EMSCRIPTEN__)
+#include <api/dds.h>
+#endif
 
 
 auto clamp_workers_to_memory_budget(
@@ -40,20 +43,20 @@ auto resolve_worker_count(
     const unsigned hw = std::thread::hardware_concurrency();
     workers = hw > 0 ? static_cast<int>(hw) : 1;
   }
-  workers = std::max(1, std::min(workers, count));
-
+#if defined(__EMSCRIPTEN__)
   // Parallel workers each keep a Large TT (via SolverContext). Under
   // Emscripten the wasm32 heap cannot grow past ~2 GiB; uncapped auto
-  // (= HW concurrency) OOMs large multi-board batches. Native builds keep
-  // the uncapped count. Leave headroom under the WASM ceiling for the main
-  // module, board vectors, and growth slack.
-#if defined(__EMSCRIPTEN__)
+  // (= HW concurrency) OOMs large multi-board batches. Leave headroom under
+  // that ceiling for the main module, board vectors, and growth slack.
+  // Native builds keep the develop resolve_worker_count body unchanged so
+  // host codegen of this TU is unaffected.
+  workers = std::max(1, std::min(workers, count));
   constexpr int kHeapBudgetMB = 1400;
   constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
-  workers = clamp_workers_to_memory_budget(workers, kHeapBudgetMB, kPerWorkerMB);
+  return clamp_workers_to_memory_budget(workers, kHeapBudgetMB, kPerWorkerMB);
+#else
+  return std::max(1, std::min(workers, count));
 #endif
-
-  return workers;
 }
 
 
