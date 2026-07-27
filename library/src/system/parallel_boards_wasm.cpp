@@ -9,6 +9,11 @@
 
 #include "parallel_boards.hpp"
 
+// NOTE: This is a wasm-only copy of parallel_boards.cpp so the Emscripten
+// worker-count memory cap does not affect native codegen. Keep the worker pool
+// and parallel_all_boards_n logic in sync with parallel_boards.cpp; only
+// resolve_worker_count should differ (WASM heap cap via worker_memory_budget).
+
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
