@@ -52,9 +52,10 @@ TEST(ResolveWorkerCount, SingleItemAlwaysOneWorker)
 
 TEST(ClampWorkersToMemoryBudget, CapsByBudgetPerWorker)
 {
-  EXPECT_EQ(clamp_workers_to_memory_budget(18, 1400, 95 + 24), 11);
-  EXPECT_EQ(clamp_workers_to_memory_budget(4, 1400, 95 + 24), 4);
-  EXPECT_EQ(clamp_workers_to_memory_budget(0, 1400, 119), 1);
+  constexpr int kPerWorkerMB = THREADMEM_LARGE_DEF_MB + 24;
+  EXPECT_EQ(clamp_workers_to_memory_budget(18, 1400, kPerWorkerMB), 11);
+  EXPECT_EQ(clamp_workers_to_memory_budget(4, 1400, kPerWorkerMB), 4);
+  EXPECT_EQ(clamp_workers_to_memory_budget(0, 1400, kPerWorkerMB), 1);
   EXPECT_EQ(clamp_workers_to_memory_budget(8, 100, 200), 1);
 }
 
