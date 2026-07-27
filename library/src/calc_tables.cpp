@@ -493,19 +493,26 @@ int STDCALL CalcAllTablesX(
       }
     }
 
-    // Hardest-first dispatch across the full batch (same idea as calc_all_boards_n).
-    std::vector<int> order(static_cast<unsigned>(nboards));
-    std::iota(order.begin(), order.end(), 0);
-    std::vector<int> fanout(static_cast<unsigned>(nboards));
-    for (int i = 0; i < nboards; i++)
-      fanout[static_cast<unsigned>(i)] =
-        dds::internal::deal_fanout(boards[static_cast<unsigned>(i)]);
-    std::stable_sort(order.begin(), order.end(),
-      [&](const int a, const int b) {
-        return fanout[static_cast<unsigned>(a)] > fanout[static_cast<unsigned>(b)];
-      });
-
     const int nthreads = resolve_worker_count(maxThreads, nboards);
+
+    // Hardest-first dispatch only helps with multiple workers (same idea as
+    // calc_all_boards_n). Skip fanout+sort on the single-thread path so large
+    // single-worker batches avoid O(n log n) overhead.
+    std::vector<int> order;
+    if (nthreads > 1)
+    {
+      order.resize(static_cast<unsigned>(nboards));
+      std::iota(order.begin(), order.end(), 0);
+      std::vector<int> fanout(static_cast<unsigned>(nboards));
+      for (int i = 0; i < nboards; i++)
+        fanout[static_cast<unsigned>(i)] =
+          dds::internal::deal_fanout(boards[static_cast<unsigned>(i)]);
+      std::stable_sort(order.begin(), order.end(),
+        [&](const int a, const int b) {
+          return fanout[static_cast<unsigned>(a)] > fanout[static_cast<unsigned>(b)];
+        });
+    }
+
     const int err = parallel_all_boards_n(nboards, nthreads,
       [&](const int worker_id, const int bno) -> int {
         (void)worker_id;
@@ -515,7 +522,7 @@ int STDCALL CalcAllTablesX(
           -1, 1, 1,
           scores[static_cast<unsigned>(bno)].data());
       },
-      &order);
+      order.empty() ? nullptr : &order);
     if (err != RETURN_NO_FAULT)
       return err;
 

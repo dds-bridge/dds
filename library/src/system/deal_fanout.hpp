@@ -15,5 +15,8 @@ namespace internal
  */
 auto deal_fanout(const Deal& dl) -> int;
 
+/** Test seam: how many times deal_fanout() has been called process-wide. */
+auto deal_fanout_call_count() -> int;
+
 }  // namespace internal
 }  // namespace dds

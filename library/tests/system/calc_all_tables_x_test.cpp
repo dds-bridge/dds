@@ -11,6 +11,7 @@
 
 #include <api/dll.h>
 #include <dds/dds.hpp>
+#include <system/deal_fanout.hpp>
 #include <system/parallel_boards.hpp>
 
 namespace
@@ -163,6 +164,41 @@ TEST(CalcAllTablesX, AcceptsMoreThanMaxTablesAndMatchesLegacy)
 
   expect_tables_equal(legacy_results.results[0], results[0]);
   expect_tables_equal(legacy_results.results[0], results[static_cast<unsigned>(kNum - 1)]);
+}
+
+// Single-worker path must not pay for hardest-first fanout+sort (mirrors
+// calc_all_boards_n). Multi-worker still estimates every board once.
+TEST(CalcAllTablesX, SingleWorkerSkipsFanoutSort)
+{
+  InitializeStaticMemory();
+  const DdTableDeal known = make_known_deal();
+  constexpr int kNum = MAXNOOFTABLES + 1;
+  constexpr int kIncludedStrains = 1;
+  int filter[DDS_STRAINS] = {1, 1, 1, 1, 0};
+  const int expected_boards = kNum * kIncludedStrains;
+
+  std::vector<DdTableDeal> deals(static_cast<unsigned>(kNum), known);
+  std::vector<DdTableResults> results(static_cast<unsigned>(kNum));
+
+  const int before_single = dds::internal::deal_fanout_call_count();
+  ASSERT_EQ(
+    CalcAllTablesX(
+      kNum, deals.data(), -1, filter, results.data(), nullptr,
+      /*maxThreads=*/1),
+    RETURN_NO_FAULT);
+  EXPECT_EQ(dds::internal::deal_fanout_call_count(), before_single)
+      << "single-worker CalcAllTablesX must skip deal_fanout/sort";
+
+  const int before_multi = dds::internal::deal_fanout_call_count();
+  ASSERT_EQ(
+    CalcAllTablesX(
+      kNum, deals.data(), -1, filter, results.data(), nullptr,
+      /*maxThreads=*/2),
+    RETURN_NO_FAULT);
+  EXPECT_EQ(
+    dds::internal::deal_fanout_call_count() - before_multi,
+    expected_boards)
+      << "multi-worker CalcAllTablesX must fanout-sort every board once";
 }
 
 // The performance point of the X APIs: a batch larger than MAXNOOFTABLES must

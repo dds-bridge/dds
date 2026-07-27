@@ -9,6 +9,8 @@
 
 #include "deal_fanout.hpp"
 
+#include <atomic>
+
 #include <lookup_tables/lookup_tables.hpp>
 
 namespace dds
@@ -16,8 +18,20 @@ namespace dds
 namespace internal
 {
 
+namespace
+{
+std::atomic<int> g_deal_fanout_call_count{0};
+}  // namespace
+
+auto deal_fanout_call_count() -> int
+{
+  return g_deal_fanout_call_count.load(std::memory_order_relaxed);
+}
+
 auto deal_fanout(const Deal& dl) -> int
 {
+  g_deal_fanout_call_count.fetch_add(1, std::memory_order_relaxed);
+
   // The fanout for a given suit and a given player is the number
   // of bit groups, so KT982 has 3 groups. In a given suit the
   // maximum number over all four players is 13.
