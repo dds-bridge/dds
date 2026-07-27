@@ -105,19 +105,10 @@ void loop_solve(
 
 
 bool loop_calc(
-  DdTableDealsPBN * dealsp,
-  DdTablesRes * resp,
-  AllParResults * parp,
   DealPBN * deal_list,
   DdTableResults * table_list,
-  const int number,
-  const int stepsize)
+  const int number)
 {
-  (void)dealsp;
-  (void)resp;
-  (void)parp;
-  (void)stepsize;
-
 #ifdef BATCHTIMES
   cout << setw(8) << left << "Hand no." <<
     setw(25) << right << "Time" << "\n";
