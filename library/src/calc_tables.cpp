@@ -395,14 +395,6 @@ int STDCALL CalcAllTablesPBN(
 }
 
 
-auto calc_all_tables_chunk_deals(const int included_strains) -> int
-{
-  if (included_strains <= 0)
-    return 0;
-  return MAXNOOFBOARDS / included_strains;
-}
-
-
 namespace
 {
 

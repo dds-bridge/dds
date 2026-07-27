@@ -11,7 +11,6 @@
 
 #include <api/dll.h>
 #include <dds/dds.hpp>
-#include <calc_tables.hpp>
 #include <system/parallel_boards.hpp>
 
 namespace
@@ -48,12 +47,6 @@ void expect_tables_equal(const DdTableResults& a, const DdTableResults& b)
 }
 
 }  // namespace
-
-TEST(CalcAllTablesX, ChunkDealsMatchesBoardBudget)
-{
-  EXPECT_EQ(calc_all_tables_chunk_deals(DDS_STRAINS), MAXNOOFBOARDS / DDS_STRAINS);
-  EXPECT_EQ(calc_all_tables_chunk_deals(0), 0);
-}
 
 TEST(CalcAllTablesX, NullPointersReturnUnknownFault)
 {

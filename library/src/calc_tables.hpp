@@ -54,6 +54,3 @@ auto detect_calc_duplicates(
   const Boards& bds,
   std::vector<int>& uniques,
   std::vector<int>& crossrefs) -> void;
-
-/// Legacy board-budget deal chunk size (MAXNOOFBOARDS / included strains).
-auto calc_all_tables_chunk_deals(int included_strains) -> int;
