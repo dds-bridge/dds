@@ -46,6 +46,7 @@ class TestTimer
     double sys_max_;        ///< Max per-hand system time across batches (ms)
     long batch_count_;      ///< Number of completed batches
     int pending_hands_;     ///< Hands counted into the open start()/end() batch
+    bool sys_time_known_;   ///< False when clock() is unusable (e.g. wasm32)
 
     time_point<Clock> user0_;  ///< Wall-clock start time
     clock_t sys0_;             ///< CPU start time
@@ -57,6 +58,15 @@ class TestTimer
 
     /// Reset timer to zero.
     void reset();
+
+    /// Mark process-CPU (`clock()`) measurements as unavailable.
+    /// Used when `clock()` returns `(clock_t)-1` (seen under wasm32 Emscripten
+    /// pthreads, where the process CPU clock is epoch-based and overflows
+    /// 32-bit `clock_t`). Also a test seam.
+    void mark_sys_time_unavailable();
+
+    /// Whether process-CPU time is available for reporting.
+    bool sys_time_known() const;
 
     /// Set the name for this timer.
     /// @param s Name to display with timer results

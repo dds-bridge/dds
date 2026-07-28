@@ -13,6 +13,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -149,26 +150,38 @@ private:
       // only the selected prefix participates and signals completion.
       if (worker_id < local.workers)
       {
-        for (;;)
+        try
         {
-          const int slot = local.next->fetch_add(1, std::memory_order_relaxed);
-          if (slot >= local.count ||
-              local.first_error->load(std::memory_order_relaxed) != RETURN_NO_FAULT)
+          for (;;)
           {
-            break;
+            const int slot = local.next->fetch_add(1, std::memory_order_relaxed);
+            if (slot >= local.count ||
+                local.first_error->load(std::memory_order_relaxed) != RETURN_NO_FAULT)
+            {
+              break;
+            }
+            const int bno =
+              local.use_order
+                ? (*local.order)[static_cast<unsigned>(slot)]
+                : slot;
+            const int rc = (*local.process_board)(worker_id, bno);
+            if (rc != RETURN_NO_FAULT)
+            {
+              int expected = RETURN_NO_FAULT;
+              local.first_error->compare_exchange_strong(
+                expected, rc, std::memory_order_relaxed);
+              break;
+            }
           }
-          const int bno =
-            local.use_order
-              ? (*local.order)[static_cast<unsigned>(slot)]
-              : slot;
-          const int rc = (*local.process_board)(worker_id, bno);
-          if (rc != RETURN_NO_FAULT)
-          {
-            int expected = RETURN_NO_FAULT;
-            local.first_error->compare_exchange_strong(
-              expected, rc, std::memory_order_relaxed);
-            break;
-          }
+        }
+        catch (...)
+        {
+          // process_board must not leave the pool hanging or abort the process
+          // via std::terminate. Any throw maps the run to RETURN_UNKNOWN_FAULT
+          // (even if another worker already recorded a non-success return code),
+          // then fall through to finished accounting so cv_done_ is signaled.
+          local.first_error->store(
+            RETURN_UNKNOWN_FAULT, std::memory_order_relaxed);
         }
         // Account completion under mu_ so (1) the predicate change cannot race
         // with cv_done_.wait's check-and-sleep (lost wakeup) and (2) unlocking
@@ -198,10 +211,27 @@ private:
 };
 
 
-auto default_pool() -> BoardWorkerPool&
+struct PoolHolder
 {
-  static BoardWorkerPool pool;
-  return pool;
+  std::mutex mu;
+  std::shared_ptr<BoardWorkerPool> pool;
+};
+
+
+auto pool_holder() -> PoolHolder&
+{
+  static PoolHolder holder;
+  return holder;
+}
+
+
+auto default_pool() -> std::shared_ptr<BoardWorkerPool>
+{
+  auto& h = pool_holder();
+  std::lock_guard<std::mutex> lock(h.mu);
+  if (!h.pool)
+    h.pool = std::make_shared<BoardWorkerPool>();
+  return h.pool;
 }
 
 }  // namespace
@@ -244,6 +274,20 @@ auto parallel_boards_worker_threads_created() -> std::uint64_t
   return g_threads_created.load(std::memory_order_relaxed);
 }
 
+
+void shutdown_parallel_boards_pool()
+{
+  std::shared_ptr<BoardWorkerPool> dying;
+  {
+    auto& h = pool_holder();
+    std::lock_guard<std::mutex> lock(h.mu);
+    dying = std::move(h.pool);
+  }
+  // Drop the last shared_ptr outside the holder lock so joins cannot deadlock
+  // against a concurrent parallel_all_boards_n that needs the mutex to recreate
+  // the pool. In-flight runs keep their own shared_ptr alive until run returns.
+}
+
 }  // namespace dds::internal
 
 
@@ -284,5 +328,5 @@ auto parallel_all_boards_n(
     return RETURN_NO_FAULT;
   }
 
-  return default_pool().run(workers, count, process_board, use_order, order);
+  return default_pool()->run(workers, count, process_board, use_order, order);
 }

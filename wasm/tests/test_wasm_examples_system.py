@@ -58,6 +58,49 @@ class WasmExamplesSystemTest(unittest.TestCase):
         self.assertIn("Number of hands", proc.stdout)
         self.assertNotIn("ERROR", proc.stdout + proc.stderr)
 
+    def test_dtest_wasm_solve_list2_multithreaded(self) -> None:
+        """Threaded WASM must accept -n > 1 (std::thread / SharedArrayBuffer)."""
+        js = rlocation("wasm/dtest.js")
+        hands = rlocation("hands/list2.txt")
+        proc = subprocess.run(
+            ["node", str(js), "-f", str(hands), "-s", "solve", "-n", "2"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+            cwd=str(js.parent),
+        )
+        self.assertEqual(
+            proc.returncode,
+            0,
+            msg=f"stdout:\n{proc.stdout}\nstderr:\n{proc.stderr}",
+        )
+        self.assertIn("dtest worker threads: 2", proc.stdout)
+        self.assertIn("Number of hands", proc.stdout)
+        self.assertNotIn("ERROR", proc.stdout + proc.stderr)
+
+    def test_dtest_wasm_calc_high_thread_count_no_terminated_workers(self) -> None:
+        """Clean pthread shutdown must not race Worker 'loaded' vs terminate."""
+        js = rlocation("wasm/dtest.js")
+        hands = rlocation("hands/list2.txt")
+        proc = subprocess.run(
+            ["node", str(js), "-f", str(hands), "-s", "calc", "-n", "16"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+            cwd=str(js.parent),
+        )
+        self.assertEqual(
+            proc.returncode,
+            0,
+            msg=f"stdout:\n{proc.stdout}\nstderr:\n{proc.stderr}",
+        )
+        self.assertIn("dtest worker threads: 16", proc.stdout)
+        self.assertIn("Number of hands", proc.stdout)
+        self.assertNotIn("terminated worker", proc.stderr)
+        self.assertNotIn("ERROR", proc.stdout + proc.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

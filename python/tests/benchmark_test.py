@@ -61,7 +61,7 @@ class TestParseDtestOutput(unittest.TestCase):
         self.assertEqual(parsed.user_ms, 250.0)
         self.assertEqual(parsed.sys_ms, 10.0)
         self.assertEqual(parsed.avg_user, 2.5)
-        self.assertEqual(parsed.ratio, 1.23)
+        self.assertEqual(parsed.sys_user, 1.23)
 
     def test_zero_tokens(self) -> None:
         out = (
@@ -89,7 +89,17 @@ class TestParseDtestOutput(unittest.TestCase):
         self.assertIsNone(parsed.user_ms)
         self.assertIsNone(parsed.sys_ms)
         self.assertIsNone(parsed.avg_user)
-        self.assertIsNone(parsed.ratio)
+        self.assertIsNone(parsed.sys_user)
+
+
+class TestRunTableHeader(unittest.TestCase):
+    def test_sys_user_column_not_ratio(self) -> None:
+        header, sep = benchmark.format_run_table_header("branch")
+        self.assertRegex(header, r"\bsys/user\b")
+        self.assertNotRegex(header, r"\bratio\b")
+        self.assertIn("user_ms", header)
+        self.assertIn("sys_ms", header)
+        self.assertEqual(len(header.split()), len(sep.split()))
 
 
 class TestWithinEpsilon(unittest.TestCase):
@@ -193,6 +203,7 @@ class TestParseArgs(unittest.TestCase):
         self.assertEqual(cfg.epsilon, 0.5)
         self.assertFalse(cfg.build)
         self.assertFalse(cfg.details)
+        self.assertFalse(cfg.sys_user)
         self.assertFalse(cfg.reverse)
         self.assertEqual(cfg.specs, [])
         self.assertEqual(cfg.dtest_extra, [])
@@ -206,6 +217,7 @@ class TestParseArgs(unittest.TestCase):
                 "EPSILON": "1.5",
                 "DRY_RUN": "1",
                 "DETAILS": "1",
+                "SYS_USER": "1",
             },
         )
         self.assertEqual(cfg.repeats, 3)
@@ -213,6 +225,7 @@ class TestParseArgs(unittest.TestCase):
         self.assertEqual(cfg.epsilon, 1.5)
         self.assertTrue(cfg.dry_run)
         self.assertTrue(cfg.details)
+        self.assertTrue(cfg.sys_user)
 
     def test_binary_env_appended(self) -> None:
         cfg = benchmark.parse_args([], env={"BINARY": "/tmp/other"})
@@ -272,6 +285,10 @@ class TestParseArgs(unittest.TestCase):
         with self.assertRaises(benchmark.BenchmarkError):
             benchmark.parse_args(["--repeats", "0"], env={})
 
+    def test_sys_user_flag(self) -> None:
+        cfg = benchmark.parse_args(["--sys-user"], env={})
+        self.assertTrue(cfg.sys_user)
+
     def test_invalid_epsilon(self) -> None:
         with self.assertRaises(benchmark.BenchmarkError):
             benchmark.parse_args(["--epsilon", "-1"], env={})
@@ -289,11 +306,96 @@ class TestSummary(unittest.TestCase):
             files=["list100.txt"],
             epsilon=0.5,
         )
+        header = text.splitlines()[0]
+        self.assertRegex(header, r"\brel\b")
+        self.assertNotRegex(header, r"\bratio\b")
         self.assertIn("base", text)
         self.assertIn("fast", text)
         self.assertIn("0.50x", text)
         self.assertIn("fast faster", text)
-        self.assertIn("TOTAL", text)
+        self.assertIn("TOTAL  solve", text)
+        self.assertNotIn("TOTAL  calc", text)
+
+    def test_separate_total_lines_per_solver(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 0.5),
+            benchmark.ResultRow("calc", "list100.txt", 0, 1, 200.0, 1.0, 2.0, 1.0, 2.0),
+            benchmark.ResultRow("calc", "list100.txt", 1, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "fast"],
+            files=["list100.txt"],
+            epsilon=0.5,
+        )
+        lines = text.splitlines()
+        solve_tot = next(line for line in lines if line.startswith("TOTAL  solve"))
+        calc_tot = next(line for line in lines if line.startswith("TOTAL  calc"))
+        self.assertRegex(solve_tot, r"\b1\.00\b")
+        self.assertRegex(solve_tot, r"\b0\.50\b")
+        self.assertRegex(solve_tot, r"0\.50x")
+        self.assertIn("fast faster", solve_tot)
+        self.assertRegex(calc_tot, r"\b2\.00\b")
+        self.assertRegex(calc_tot, r"\b1\.00\b")
+        self.assertRegex(calc_tot, r"0\.50x")
+        self.assertIn("fast faster", calc_tot)
+        # No combined grand-total line.
+        self.assertEqual(sum(1 for line in lines if line.startswith("TOTAL")), 2)
+
+    def test_default_summary_omits_sys_user_column(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base"],
+            files=["list1.txt"],
+            epsilon=0.5,
+        )
+        self.assertNotIn("sys/user", text)
+
+    def test_sys_user_column_per_binary(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 20.0, 0.5, 0.40, 0.5),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "fast"],
+            files=["list1.txt"],
+            epsilon=0.5,
+            sys_user=True,
+        )
+        header = text.splitlines()[0]
+        # sys/user appears once per binary, immediately after each label column.
+        self.assertEqual(header.count("sys/user"), 2)
+        self.assertRegex(header, r"base\s+sys/user\s+fast\s+sys/user")
+        solve_line = next(
+            line for line in text.splitlines() if line.startswith("solve ")
+        )
+        self.assertRegex(solve_line, r"\b0\.10\b")
+        self.assertRegex(solve_line, r"\b0\.40\b")
+        self.assertIn("0.50x", text)
+
+    def test_sys_user_averages_repeats_and_missing_is_na(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
+            benchmark.ResultRow("solve", "list1.txt", 0, 2, 100.0, 10.0, 1.0, 0.30, 1.0),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, None, 0.5),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list1.txt"],
+            epsilon=0.5,
+            sys_user=True,
+        )
+        solve_line = next(
+            line for line in text.splitlines() if line.startswith("solve ")
+        )
+        self.assertRegex(solve_line, r"\b0\.20\b")  # mean of 0.10 and 0.30
+        self.assertRegex(solve_line, r"\bNA\b")
 
     def test_equal_within_epsilon(self) -> None:
         rows = [
@@ -315,12 +417,14 @@ class TestSummary(unittest.TestCase):
         ]
         text = benchmark.format_summary(
             rows,
-            labels=["a", "b", "c"],
+            # Label substring "rel" must not be mistaken for the rel column.
+            labels=["release", "b", "c"],
             files=["list1.txt"],
             epsilon=0.5,
         )
-        self.assertNotIn("ratio", text)
-        self.assertNotIn("note", text)
+        header = text.splitlines()[0]
+        self.assertNotRegex(header, r"\brel\b")
+        self.assertNotRegex(header, r"\bnote\b")
 
     def test_zero_baseline_avg_skips_ratio(self) -> None:
         rows = [

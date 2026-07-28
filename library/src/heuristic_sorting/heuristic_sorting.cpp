@@ -2,66 +2,31 @@
 #include <utility/constants.h>
 #include <lookup_tables/lookup_tables.hpp>
 
-// New overload: accepts a pre-built HeuristicContext. This contains the
-// same inline logic that used to be in the previous function body.
-void call_heuristic(const HeuristicContext& context)
+// The caller passes the weight case it already knows, so nothing is
+// re-derived from the context here.
+void call_heuristic(HeuristicContext& context, const WeightCase weight_case)
 {
-  // Determine which position in trick (0=leading, 1-3=following)
-  int hand_rel = 0;
-  if (context.curr_hand != context.lead_hand) {
-    // Calculate relative position: 1, 2, or 3 based on lead hand
-    hand_rel = (context.curr_hand + 4 - context.lead_hand) % 4;
-  }
-
-  // Leading hand (hand_rel == 0) - MoveGen0 logic
-  if (hand_rel == 0) {
-    // Check if trump game with trump winner available
-    bool trump_game = (context.trump != DDS_NOTRUMP) && 
-            (context.trump >= 0 && context.trump < DDS_SUITS) &&
-            (context.tpos.winner[context.trump].rank != 0);
-      
-    if (trump_game) {
-      weight_alloc_trump0(const_cast<HeuristicContext&>(context));
-    } else {
-      weight_alloc_nt0(const_cast<HeuristicContext&>(context));
-    }
-    return;
-  }
-
-  // Following hands (hand_rel 1-3) - MoveGen123 logic
-  // Check trump game condition
-  int ftest = ((context.trump != DDS_NOTRUMP) &&
-         (context.trump >= 0 && context.trump < DDS_SUITS) &&
-         (context.tpos.winner[context.trump].rank != 0) ? 1 : 0);
-
-  // Check if current hand can follow suit (not void)
-  unsigned short ris = context.tpos.rank_in_suit[context.curr_hand][context.lead_suit];
-  bool can_follow_suit = (ris != 0);
-
-  // Calculate function index using same logic as original
-  int findex;
-  if (can_follow_suit) {
-    findex = 4 * hand_rel + ftest;
-  } else {
-    findex = 4 * hand_rel + ftest + 2;
-  }
-
-  // Following hands function dispatch table (MoveGen123 logic)
-  switch (findex) {
-    case 4:  weight_alloc_nt_notvoid1(const_cast<HeuristicContext&>(context)); break;  // hand_rel=1, can follow, no trump
-    case 5:  weight_alloc_trump_notvoid1(const_cast<HeuristicContext&>(context)); break;  // hand_rel=1, can follow, trump
-    case 6:  weight_alloc_nt_void1(const_cast<HeuristicContext&>(context)); break;  // hand_rel=1, void, no trump
-    case 7:  weight_alloc_trump_void1(const_cast<HeuristicContext&>(context)); break;  // hand_rel=1, void, trump
-    case 8:  weight_alloc_nt_notvoid2(const_cast<HeuristicContext&>(context)); break;  // hand_rel=2, can follow, no trump
-    case 9:  weight_alloc_trump_notvoid2(const_cast<HeuristicContext&>(context)); break;  // hand_rel=2, can follow, trump
-    case 10: weight_alloc_nt_void2(const_cast<HeuristicContext&>(context)); break; // hand_rel=2, void, no trump
-    case 11: weight_alloc_trump_void2(const_cast<HeuristicContext&>(context)); break; // hand_rel=2, void, trump
-    case 12: weight_alloc_combined_notvoid3(const_cast<HeuristicContext&>(context)); break; // hand_rel=3, can follow, no trump
-    case 13: weight_alloc_combined_notvoid3(const_cast<HeuristicContext&>(context)); break; // hand_rel=3, can follow, trump
-    case 14: weight_alloc_nt_void3(const_cast<HeuristicContext&>(context)); break; // hand_rel=3, void, no trump
-    case 15: weight_alloc_trump_void3(const_cast<HeuristicContext&>(context)); break; // hand_rel=3, void, trump
-    default: 
-      // Should not happen, but default to basic sorting
+  switch (weight_case) {
+    case WeightCase::Nt0:                weight_alloc_nt0(context); break;
+    case WeightCase::Trump0:             weight_alloc_trump0(context); break;
+    case WeightCase::NtNotVoid1:         weight_alloc_nt_notvoid1(context); break;
+    case WeightCase::TrumpNotVoid1:      weight_alloc_trump_notvoid1(context); break;
+    case WeightCase::NtVoid1:            weight_alloc_nt_void1(context); break;
+    case WeightCase::TrumpVoid1:         weight_alloc_trump_void1(context); break;
+    case WeightCase::NtNotVoid2:         weight_alloc_nt_notvoid2(context); break;
+    case WeightCase::TrumpNotVoid2:      weight_alloc_trump_notvoid2(context); break;
+    case WeightCase::NtVoid2:            weight_alloc_nt_void2(context); break;
+    case WeightCase::TrumpVoid2:         weight_alloc_trump_void2(context); break;
+    case WeightCase::CombinedNotVoid3:
+    case WeightCase::CombinedNotVoid3Trump:
+      weight_alloc_combined_notvoid3(context);
+      break;
+    case WeightCase::NtVoid3:            weight_alloc_nt_void3(context); break;
+    case WeightCase::TrumpVoid3:         weight_alloc_trump_void3(context); break;
+    default:
+      // Should not happen; fall back to NT leading weights so moves get
+      // deterministic ordering instead of stale/uninitialized weights.
+      weight_alloc_nt0(context);
       break;
   }
 }

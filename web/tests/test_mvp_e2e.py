@@ -1,4 +1,4 @@
-"""End-to-end browser tests for web/dds_mvp.html (file:// and HTTP)."""
+"""End-to-end browser tests for web/dds_mvp.html (file:// UI and isolated HTTP)."""
 from __future__ import annotations
 
 import http.server
@@ -11,7 +11,7 @@ import threading
 import unittest
 from pathlib import Path
 
-from mvp_site import stage_mvp_site
+from mvp_site import CROSS_ORIGIN_ISOLATION_HEADERS, make_isolated_http_handler, stage_mvp_site
 
 try:
     from playwright.sync_api import sync_playwright
@@ -52,16 +52,6 @@ def _ensure_playwright_chromium(browsers_dir: Path) -> None:
         )
 
 
-def _make_http_handler(directory: Path) -> type[http.server.SimpleHTTPRequestHandler]:
-    root = str(directory)
-
-    class Handler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, request, client_address, server) -> None:
-            super().__init__(request, client_address, server, directory=root)
-
-    return Handler
-
-
 class _HttpSite:
     def __init__(self, directory: Path) -> None:
         self._directory = directory
@@ -72,7 +62,7 @@ class _HttpSite:
     def __enter__(self) -> _HttpSite:
         self._httpd = http.server.ThreadingHTTPServer(
             ("127.0.0.1", 0),
-            _make_http_handler(self._directory),
+            make_isolated_http_handler(self._directory),
         )
         port = self._httpd.server_address[1]
         self.url = f"http://127.0.0.1:{port}/dds_mvp.html"
@@ -283,21 +273,46 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_file_url_part_score_table(self) -> None:
-        url = self.site_dir.joinpath("dds_mvp.html").as_uri()
-        page, errors = self._open_page(url)
-        try:
-            self._fill_part_score_deal(page)
-            self._run_double_dummy(page)
-            self._assert_part_score_table(page)
-            self.assertEqual(errors, [])
-        finally:
-            page.close()
+    def test_http_is_cross_origin_isolated(self) -> None:
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                self.assertTrue(page.evaluate("() => window.crossOriginIsolated"))
+                self.assertTrue(
+                    page.evaluate("() => typeof SharedArrayBuffer === 'function'")
+                )
+                headers = page.evaluate(
+                    """async () => {
+                      const res = await fetch(location.href, { cache: 'no-store' });
+                      return {
+                        coop: res.headers.get('Cross-Origin-Opener-Policy'),
+                        coep: res.headers.get('Cross-Origin-Embedder-Policy'),
+                      };
+                    }"""
+                )
+                self.assertEqual(
+                    headers["coop"], CROSS_ORIGIN_ISOLATION_HEADERS[
+                        "Cross-Origin-Opener-Policy"
+                    ]
+                )
+                self.assertEqual(
+                    headers["coep"], CROSS_ORIGIN_ISOLATION_HEADERS[
+                        "Cross-Origin-Embedder-Policy"
+                    ]
+                )
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
 
     def test_http_part_score_table(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
+                self.assertEqual(
+                    page.evaluate("() => document.characterSet"),
+                    "UTF-8",
+                    msg="HTTP must decode HTML as UTF-8 so suit glyphs are not mojibake",
+                )
                 self._fill_part_score_deal(page)
                 self._run_double_dummy(page)
                 self._assert_part_score_table(page)
@@ -318,26 +333,28 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_enter_runs_double_dummy_after_loading_a_complete_deal(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-        try:
-            self._fill_part_score_deal(page)
+        # Solving needs SharedArrayBuffer → cross-origin isolation → HTTP only.
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                self._fill_part_score_deal(page)
 
-            page.wait_for_function(
-                "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
-            )
-            page.keyboard.press("Enter")
-            page.wait_for_function(
-                """() => {
-                const cell = document.getElementById('result-table').rows[1].cells[1];
-                return cell && /^\\d+$/.test(cell.textContent.trim());
-              }""",
-                timeout=120_000,
-            )
+                page.wait_for_function(
+                    "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
+                )
+                page.keyboard.press("Enter")
+                page.wait_for_function(
+                    """() => {
+                    const cell = document.getElementById('result-table').rows[1].cells[1];
+                    return cell && /^\\d+$/.test(cell.textContent.trim());
+                  }""",
+                    timeout=120_000,
+                )
 
-            self._assert_part_score_table(page)
-            self.assertEqual(errors, [])
-        finally:
-            page.close()
+                self._assert_part_score_table(page)
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
 
     def test_double_dummy_disabled_on_incomplete_deal(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())

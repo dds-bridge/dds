@@ -38,6 +38,9 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  *        non-null, the vector must remain valid and must not be mutated until
  *        this function returns because worker threads read it concurrently.
  * @return First non-success code from @p process_board, or RETURN_NO_FAULT.
+ *         If @p process_board throws during a multi-worker run, the exception is
+ *         caught on the worker, the run returns RETURN_UNKNOWN_FAULT, and the
+ *         pool stays usable. Single-worker runs leave exceptions to the caller.
  *
  * Multi-worker runs use a process-local persistent thread pool so consecutive
  * calls reuse OS threads instead of create/join each time. Single-worker runs
@@ -46,6 +49,8 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  * each other. Not re-entrant: calling this again with worker_cap > 1 from
  * inside @p process_board of another multi-worker run deadlocks (the inner
  * call blocks on the pool mutex while the outer run waits for that worker).
+ * Call dds::internal::shutdown_parallel_boards_pool() before process exit
+ * when hosts (notably Emscripten) tear down pthread Workers eagerly.
  */
 auto parallel_all_boards_n(
   int count,
@@ -58,5 +63,9 @@ namespace dds::internal
 
 // Cumulative number of OS worker threads created by the board pool (test seam).
 auto parallel_boards_worker_threads_created() -> std::uint64_t;
+
+// Join and destroy the process-local board worker pool. Safe to call with no
+// pool, and again after a later parallel_all_boards_n recreates it.
+void shutdown_parallel_boards_pool();
 
 }  // namespace dds::internal
