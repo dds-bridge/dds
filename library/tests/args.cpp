@@ -432,8 +432,9 @@ void read_args(
 
         cout << "Input file '" << optarg << "' not found\n";
         cout << "Also tried hands/list" << optarg <<
-          ".txt under the current directory and relative to the "
-          "dtest binary\n";
+          ".txt under the current directory, "
+          "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
+          "and relative to the dtest binary\n";
         nextToken -= 2;
         errFlag = true;
         break;

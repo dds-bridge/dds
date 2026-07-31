@@ -3,15 +3,14 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <vector>
 
 #ifdef _WIN32
 #include <direct.h>
-#include <stdlib.h>
 #else
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
@@ -60,6 +59,55 @@ void make_dir(const std::string& path)
   mkdir(path.c_str(), 0755);
 #endif
 }
+
+void set_env_var(const char* name, const char* value)
+{
+#ifdef _WIN32
+  _putenv_s(name, value != nullptr ? value : "");
+#else
+  if (value == nullptr || value[0] == '\0')
+    unsetenv(name);
+  else
+    setenv(name, value, 1);
+#endif
+}
+
+/// Saves and restores one environment variable for the lifetime of the guard.
+class EnvVarGuard
+{
+ public:
+  explicit EnvVarGuard(const char* name)
+    : name_(name)
+  {
+    const char* prev = std::getenv(name_);
+    if (prev != nullptr)
+    {
+      had_value_ = true;
+      previous_ = prev;
+    }
+  }
+
+  ~EnvVarGuard()
+  {
+    if (had_value_)
+      set_env_var(name_, previous_.c_str());
+    else
+      set_env_var(name_, nullptr);
+  }
+
+  EnvVarGuard(const EnvVarGuard&) = delete;
+  auto operator=(const EnvVarGuard&) -> EnvVarGuard& = delete;
+
+  void set(const char* value) const
+  {
+    set_env_var(name_, value);
+  }
+
+ private:
+  const char* name_;
+  bool had_value_ = false;
+  std::string previous_;
+};
 
 std::string make_temp_input_file()
 {
@@ -186,21 +234,15 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
     std::string(::testing::TempDir()) + "dtest_hands_runfiles/";
   make_dir(runfiles);
   ASSERT_EQ(change_dir(runfiles.c_str()), 0);
-#ifdef _WIN32
-  _putenv_s("BUILD_WORKING_DIRECTORY", root_.c_str());
-  _putenv_s("BUILD_WORKSPACE_DIRECTORY", "");
-#else
-  ASSERT_EQ(setenv("BUILD_WORKING_DIRECTORY", root_.c_str(), 1), 0);
-  ASSERT_EQ(unsetenv("BUILD_WORKSPACE_DIRECTORY"), 0);
-#endif
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(nullptr);
+
   EXPECT_EQ(
     resolve_dtest_input_file("42", "dtest"),
     root_ + "hands/list42.txt");
-#ifdef _WIN32
-  _putenv_s("BUILD_WORKING_DIRECTORY", "");
-#else
-  unsetenv("BUILD_WORKING_DIRECTORY");
-#endif
 }
 
 TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
@@ -209,21 +251,15 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
     std::string(::testing::TempDir()) + "dtest_hands_runfiles_ws/";
   make_dir(runfiles);
   ASSERT_EQ(change_dir(runfiles.c_str()), 0);
-#ifdef _WIN32
-  _putenv_s("BUILD_WORKING_DIRECTORY", "");
-  _putenv_s("BUILD_WORKSPACE_DIRECTORY", root_.c_str());
-#else
-  ASSERT_EQ(unsetenv("BUILD_WORKING_DIRECTORY"), 0);
-  ASSERT_EQ(setenv("BUILD_WORKSPACE_DIRECTORY", root_.c_str(), 1), 0);
-#endif
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(root_.c_str());
+
   EXPECT_EQ(
     resolve_dtest_input_file("42", "dtest"),
     root_ + "hands/list42.txt");
-#ifdef _WIN32
-  _putenv_s("BUILD_WORKSPACE_DIRECTORY", "");
-#else
-  unsetenv("BUILD_WORKSPACE_DIRECTORY");
-#endif
 }
 
 TEST_F(HandsLayoutFixture, ResolveNumericWithRelativeArgv0FromOtherCwd)
