@@ -337,7 +337,8 @@ string resolve_dtest_input_file(
     string base(dir);
     while (base.size() > 1 && (base.back() == '/' || base.back() == '\\'))
       base.pop_back();
-    const string candidate = base + "/hands/" + list_name;
+    const string candidate =
+      normalize_logical_path(base + "/hands/" + list_name);
     if (stat(candidate.c_str(), &buffer) == 0)
       return candidate;
     return string();
@@ -365,7 +366,8 @@ string resolve_dtest_input_file(
     dir = (slash == 0) ? dir.substr(0, 1) : dir.substr(0, slash);
   }
 
-  const string bin_candidate = dir + "/hands/" + list_name;
+  const string bin_candidate =
+    normalize_logical_path(dir + "/hands/" + list_name);
   if (stat(bin_candidate.c_str(), &buffer) == 0)
     return bin_candidate;
 

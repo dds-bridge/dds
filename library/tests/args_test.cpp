@@ -118,6 +118,22 @@ std::string make_temp_input_file()
   return path;
 }
 
+/// Compare paths ignoring '\\' vs '/' so Windows TempDir / resolver mixes match.
+bool same_path(std::string a, std::string b)
+{
+  for (char& c : a)
+  {
+    if (c == '\\')
+      c = '/';
+  }
+  for (char& c : b)
+  {
+    if (c == '\\')
+      c = '/';
+  }
+  return a == b;
+}
+
 /// Temporary tree: `{root}/hands/list{N}.txt` and
 /// `{root}/bazel-bin/library/tests/` (binary path only; no real binary).
 class HandsLayoutFixture : public ::testing::Test
@@ -221,9 +237,9 @@ TEST_F(HandsLayoutFixture, ResolveNumericFallsBackRelativeToBinary)
 {
   // CWD has no hands/; argv0 points at the usual bazel-bin layout.
   ASSERT_EQ(change_dir(original_cwd_.c_str()), 0);
-  EXPECT_EQ(
+  EXPECT_TRUE(same_path(
     resolve_dtest_input_file("42", binary_path_),
-    root_ + "hands/list42.txt");
+    root_ + "hands/list42.txt"));
 }
 
 TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
@@ -240,9 +256,9 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
   working.set(root_.c_str());
   workspace.set(nullptr);
 
-  EXPECT_EQ(
+  EXPECT_TRUE(same_path(
     resolve_dtest_input_file("42", "dtest"),
-    root_ + "hands/list42.txt");
+    root_ + "hands/list42.txt"));
 }
 
 TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
@@ -257,9 +273,9 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
   working.set(nullptr);
   workspace.set(root_.c_str());
 
-  EXPECT_EQ(
+  EXPECT_TRUE(same_path(
     resolve_dtest_input_file("42", "dtest"),
-    root_ + "hands/list42.txt");
+    root_ + "hands/list42.txt"));
 }
 
 TEST_F(HandsLayoutFixture, ResolveNumericWithRelativeArgv0FromOtherCwd)
@@ -275,9 +291,9 @@ TEST_F(HandsLayoutFixture, ResolveNumericWithRelativeArgv0FromOtherCwd)
   // argv0 reaches the fixture binary path.
   const std::string rel_argv0 =
     "../dtest_hands_layout/bazel-bin/library/tests/dtest";
-  EXPECT_EQ(
+  EXPECT_TRUE(same_path(
     resolve_dtest_input_file("42", rel_argv0),
-    root_ + "hands/list42.txt");
+    root_ + "hands/list42.txt"));
 }
 
 TEST_F(HandsLayoutFixture, ResolveNumericPrefersCwdOverBinaryRelative)
