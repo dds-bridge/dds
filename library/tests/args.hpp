@@ -9,9 +9,11 @@
 
 #pragma once
 
+#include <string>
+
 /// @file args.hpp
 /// @brief Command-line argument parsing for test utilities.
-/// 
+///
 /// Provides functions to parse and validate command-line options
 /// for the dtest driver program. Options include:
 /// - Input file specification
@@ -28,6 +30,16 @@ void usage(
 
 /// Print current option values.
 void print_options();
+
+/// Resolve `-f` / `--file` to an existing path.
+///
+/// Order: (1) `arg` as a literal path; (2) `hands/list{arg}.txt` under the
+/// current working directory; (3) `../../../hands/list{arg}.txt` relative to
+/// the directory of `argv0` (the usual `bazel-bin/library/tests/dtest` layout).
+/// @return Resolved path, or empty if nothing exists
+std::string resolve_dtest_input_file(
+    const std::string& arg,
+    const std::string& argv0);
 
 /// Parse command-line arguments into global options.
 /// @param argc Argument count from main()

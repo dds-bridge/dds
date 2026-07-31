@@ -20,6 +20,12 @@
 #include <cstring>
 #include <sys/stat.h>
 
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
+
 #include "args.hpp"
 #include "cst.hpp"
 
@@ -96,7 +102,9 @@ void usage(
   cout <<
     "Usage: " << basename << " [options]\n\n" <<
     "-f, --file s       Input file, or the number n;\n" <<
-    "                   '100' means ../hands/list100.txt).\n" <<
+    "                   '100' means hands/list100.txt under the current\n" <<
+    "                   directory, else ../../../hands/list100.txt relative\n" <<
+    "                   to the dtest binary (bazel-bin/library/tests/).\n" <<
     "                   (Default: input.txt)\n" <<
     "\n" <<
     "-s, --solver       One of: solve, calc, play, par, dealerpar.\n" <<
@@ -187,6 +195,154 @@ void SetDefaults()
 }
 
 
+bool is_absolute_path(const string& path)
+{
+  if (path.empty())
+    return false;
+#ifdef _WIN32
+  return path.size() >= 2 && std::isalpha(static_cast<unsigned char>(path[0])) &&
+    path[1] == ':';
+#else
+  return path[0] == '/' || path[0] == '\\';
+#endif
+}
+
+
+// Collapse "." / ".." path segments without resolving symlinks.
+string normalize_logical_path(const string& path)
+{
+  if (path.empty())
+    return path;
+
+  const bool absolute = is_absolute_path(path);
+  string drive;
+  size_t start = 0;
+#ifdef _WIN32
+  if (absolute && path.size() >= 2 && path[1] == ':')
+  {
+    drive = path.substr(0, 2);
+    start = 2;
+    if (start < path.size() && (path[start] == '/' || path[start] == '\\'))
+      ++start;
+  }
+#else
+  if (absolute)
+    start = 1;
+#endif
+
+  vector<string> parts;
+  string cur;
+  auto flush = [&]()
+  {
+    if (cur.empty())
+      return;
+    if (cur == ".")
+    {
+      cur.clear();
+      return;
+    }
+    if (cur == "..")
+    {
+      if (!parts.empty())
+        parts.pop_back();
+      else if (!absolute)
+        parts.push_back("..");
+      cur.clear();
+      return;
+    }
+    parts.push_back(cur);
+    cur.clear();
+  };
+
+  for (size_t i = start; i < path.size(); ++i)
+  {
+    const char c = path[i];
+    if (c == '/' || c == '\\')
+      flush();
+    else
+      cur.push_back(c);
+  }
+  flush();
+
+  string out = drive;
+  if (absolute)
+#ifdef _WIN32
+    out += '\\';
+#else
+    out += '/';
+#endif
+
+  for (size_t i = 0; i < parts.size(); ++i)
+  {
+    if (i > 0)
+      out += '/';
+    out += parts[i];
+  }
+  if (absolute && parts.empty())
+    return out.empty() ? string("/") : out;
+  return out.empty() ? string(".") : out;
+}
+
+
+// Logical absolute path for argv0 without resolving symlinks (so climbing out
+// of bazel-bin still lands on the workspace, not the execroot).
+string absolute_path_logical(const string& path)
+{
+  if (is_absolute_path(path))
+    return normalize_logical_path(path);
+
+  char cwd[4096];
+#ifdef _WIN32
+  if (_getcwd(cwd, static_cast<int>(sizeof(cwd))) == nullptr)
+    return normalize_logical_path(path);
+#else
+  if (getcwd(cwd, sizeof(cwd)) == nullptr)
+    return normalize_logical_path(path);
+#endif
+  if (path.empty())
+    return normalize_logical_path(string(cwd));
+  return normalize_logical_path(string(cwd) + "/" + path);
+}
+
+
+string resolve_dtest_input_file(
+  const string& arg,
+  const string& argv0)
+{
+  struct stat buffer;
+  if (stat(arg.c_str(), &buffer) == 0)
+    return arg;
+
+  const string list_name = "list" + arg + ".txt";
+  const string cwd_candidate = "hands/" + list_name;
+  if (stat(cwd_candidate.c_str(), &buffer) == 0)
+    return cwd_candidate;
+
+  // Climb parents in the path *string* (do not use "/../" with stat — that
+  // follows a bazel-bin symlink into the execroot and misses the workspace
+  // hands/ directory). bazel-bin/library/tests → three levels up to repo root.
+  const string abs_argv0 = absolute_path_logical(argv0);
+  size_t slash = abs_argv0.find_last_of("\\/");
+  if (slash == string::npos)
+    return string();
+
+  string dir = abs_argv0.substr(0, slash);
+  for (unsigned i = 0; i < 3; ++i)
+  {
+    slash = dir.find_last_of("\\/");
+    if (slash == string::npos)
+      return string();
+    dir = (slash == 0) ? dir.substr(0, 1) : dir.substr(0, slash);
+  }
+
+  const string bin_candidate = dir + "/hands/" + list_name;
+  if (stat(bin_candidate.c_str(), &buffer) == 0)
+    return bin_candidate;
+
+  return string();
+}
+
+
 void print_options()
 {
   cout << left;
@@ -229,31 +385,29 @@ void read_args(
   bool errFlag = false, matchFlag;
   string stmp;
   char * ctmp;
-  struct stat buffer;
 
   while ((c = GetNextArgToken(argc, argv)) > 0)
   {
     switch(c - 1)
     {
       case OPT_FILE:
-        if (stat(optarg, &buffer) == 0)
+      {
+        const string resolved =
+          resolve_dtest_input_file(string(optarg), string(argv[0]));
+        if (!resolved.empty())
         {
-          options.fname_ = string(optarg);
-          break;
-        }
-
-        stmp = "../hands/list" + string(optarg) + ".txt";
-        if (stat(stmp.c_str(), &buffer) == 0)
-        {
-          options.fname_ = stmp;
+          options.fname_ = resolved;
           break;
         }
 
         cout << "Input file '" << optarg << "' not found\n";
-        cout << "Input file '" << stmp << "' not found\n";
+        cout << "Also tried hands/list" << optarg <<
+          ".txt under the current directory and relative to the "
+          "dtest binary\n";
         nextToken -= 2;
         errFlag = true;
         break;
+      }
 
       case OPT_SOLVER:
         matchFlag = false;
