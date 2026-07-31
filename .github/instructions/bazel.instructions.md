@@ -19,7 +19,7 @@ alwaysApply: false
 - Use `cc_library`, `cc_binary`, `cc_test` for C++ targets.
 - Keep test suites small & fast.
 - Restrict visibility (`visibility = ["//visibility:private"]`) when appropriate.
-- Run `bazel build //...` & `bazel test //...` locally before pushing.
+- Run `bazelisk build //...` & `bazelisk test //...` locally before pushing.
 - Document any non-trivial macros or build logic in comments.
 
 ## Working with bazel commands
@@ -31,6 +31,6 @@ bazel validate //path/to:BUILD
 bazel deps //my:target
 
 # Generate a build command for a target
-bazel build //my:target
+bazelisk build //my:target
 ```
 

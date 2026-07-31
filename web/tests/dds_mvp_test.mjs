@@ -2,7 +2,7 @@
  * Unit tests for web/dds_mvp.js (Node built-in test runner).
  *
  * Run with:
- *    bazel test //web:dds_mvp_js_test
+ *    bazelisk test //web:dds_mvp_js_test
  * or: python -m unittest web.tests.test_dds_mvp_js
  * or: node --test web/tests/dds_mvp_test.mjs
  */

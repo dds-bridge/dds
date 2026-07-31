@@ -2,8 +2,13 @@
 # Copy Bazel WASM artifacts next to dds_mvp.html for local static serving.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-bazel build //web:dds_mvp_wasm
-bin="$(bazel info bazel-bin)/web"
+if command -v bazelisk >/dev/null 2>&1; then
+  BAZEL=bazelisk
+else
+  BAZEL=bazel
+fi
+"$BAZEL" build //web:dds_mvp_wasm
+bin="$("$BAZEL" info bazel-bin)/web"
 cp -f "${bin}/dds_mvp_wasm.js" web/
 cp -f "${bin}/dds_mvp_wasm.wasm" web/
 chmod u+w web/dds_mvp_wasm.js

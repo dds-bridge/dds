@@ -30,7 +30,7 @@ core solver builds and runs correctly under Emscripten.
   `dtest_wasm` (← `//library/tests:dtest`) ports the hand-list test harness for
   Node (host file access via `NODERAWFS`); it is not part of `all_examples_wasm`.
   `//wasm:run_dtest_wasm` is a `py_binary` that runs that module under Node
-  (`bazel run //wasm:run_dtest_wasm -- …`).
+  (`bazelisk run //wasm:run_dtest_wasm -- …`).
 - **The toolchain is hermetic and transition-driven.** `wasm_cc_binary` applies an
   Emscripten **platform transition** to the underlying `cc_binary` — no
   `--config=wasm` or `.bazelrc` profile is needed. The emsdk toolchain is
@@ -64,7 +64,7 @@ core solver builds and runs correctly under Emscripten.
 - `wasm/BUILD.bazel` — the example `wasm_cc_binary` targets, `dtest_wasm`,
   `run_dtest_wasm`, `all_examples_wasm`, `calc_dd_table_pbn_test`,
   `wasm_examples_system_test`, and the test suites.
-- `wasm/run_dtest_wasm.py` — `bazel run` entry that invokes `dtest.js` via Node.
+- `wasm/run_dtest_wasm.py` — `bazelisk run` entry that invokes `dtest.js` via Node.
 - `wasm/tests/test_wasm_examples_system.py` — the end-to-end runner.
 - Consumer guide: `docs/wasm_build.md`. Shared link flags: `WASM_LINKOPTS` in
   `wasm_compat.bzl`.

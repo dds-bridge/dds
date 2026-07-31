@@ -114,8 +114,8 @@ The PYTHONPATH should include both the source package directory and the Bazel ex
 
 Example CI command:
 ```bash
-bazel build //python:dds3_lib
-bazel test //python:python_interface_smoke_test
+bazelisk build //python:dds3_lib
+bazelisk test //python:python_interface_smoke_test
 export PYTHONPATH=$PWD/python:$PWD/bazel-bin/python
 pytest python/tests/ -v --tb=short
 ```

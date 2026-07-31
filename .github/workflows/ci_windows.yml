@@ -24,7 +24,7 @@ jobs:
         run: |
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazel fetch //...
+            bazelisk fetch //...
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
@@ -39,20 +39,20 @@ jobs:
         run: |
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazel build --verbose_failures //...
+            bazelisk build --verbose_failures //...
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
               Start-Sleep -Seconds 20
               # Restart server only — keep downloaded external repos / disk cache.
-              bazel shutdown || $true
+              bazelisk shutdown || $true
             }
           }
           exit 1
 
       # Run all tests (including Python) — no retry so real test failures surface quickly
       - name: Run all tests
-        run: bazel test --verbose_failures //...
+        run: bazelisk test --verbose_failures //...
 
       # Upload test logs
       - name: Upload test logs - Windows

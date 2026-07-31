@@ -87,7 +87,7 @@ auto read_pbn_file_workspace_relative(std::string_view path)
     return text;
   }
 
-  // bazel run uses a runfiles cwd; BUILD_WORKSPACE_DIRECTORY is the repo root.
+  // bazelisk run uses a runfiles cwd; BUILD_WORKSPACE_DIRECTORY is the repo root.
   if (const char* workspace = std::getenv("BUILD_WORKSPACE_DIRECTORY"))
   {
     return read_pbn_file(std::filesystem::path(workspace) / path);

@@ -81,6 +81,15 @@ py_test(
     }),
 )
 
+# Guard: CI workflows must invoke bazelisk rather than bare bazel.
+py_test(
+    name = "ci_bazelisk_test",
+    size = "small",
+    main = "tests/ci_bazelisk_test.py",
+    srcs = ["tests/ci_bazelisk_test.py"],
+    data = ["//.github/workflows:all_workflows"],
+)
+
 py_test(
     name = "python_interface_smoke_test",
     size = "small",

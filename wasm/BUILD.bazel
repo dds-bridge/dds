@@ -44,7 +44,7 @@ wasm_cc_binary(
     ],
 )
 
-# `bazel run //wasm:run_dtest_wasm -- -f hands/list2.txt -s solve -n 2`
+# `bazelisk run //wasm:run_dtest_wasm -- -f hands/list2.txt -s solve -n 2`
 py_binary(
     name = "run_dtest_wasm",
     srcs = ["run_dtest_wasm.py"],

@@ -28,7 +28,7 @@ WASM targets use `wasm_cc_binary`, which applies an Emscripten **platform transi
 ### Build all WASM examples
 
 ```bash
-bazel build //wasm:all_examples_wasm
+bazelisk build //wasm:all_examples_wasm
 ```
 
 The alias `//examples:all_examples_wasm` points at the same filegroup.
@@ -36,7 +36,7 @@ The alias `//examples:all_examples_wasm` points at the same filegroup.
 ### Build a specific example
 
 ```bash
-bazel build //wasm:solve_board_wasm
+bazelisk build //wasm:solve_board_wasm
 ```
 
 ### Output files
@@ -62,11 +62,11 @@ Rules in `wasm/BUILD.bazel` wrap native binaries:
 use `-n N` for N workers (or omit / `0` for auto).
 
 ```bash
-bazel build //wasm:dtest_wasm
+bazelisk build //wasm:dtest_wasm
 node bazel-bin/wasm/dtest.js -f hands/list2.txt -s solve -n 2
 
 # Or via Bazel (forwards args after -- to dtest; cwd is your shell's directory):
-bazel run //wasm:run_dtest_wasm -- -f hands/list2.txt -s solve -n 2
+bazelisk run //wasm:run_dtest_wasm -- -f hands/list2.txt -s solve -n 2
 ```
 ## How it works
 
@@ -74,7 +74,7 @@ bazel run //wasm:run_dtest_wasm -- -f hands/list2.txt -s solve -n 2
 2. **`//:build_wasm`** in the root `BUILD.bazel` matches `@platforms//cpu:wasm32` for `select()` in `CPPVARIABLES.bzl` and example link flags.
 3. **`wasm_compat.bzl`** — shared Emscripten link flags (`WASM_LINKOPTS`) on the WASM-capable `cc_binary` targets.
 
-Native builds (`bazel build //...`, `bazel test //library/tests/...`, Python bindings) are unchanged and use the host LLVM toolchain.
+Native builds (`bazelisk build //...`, `bazelisk test //library/tests/...`, Python bindings) are unchanged and use the host LLVM toolchain.
 
 ## Running WASM examples
 
@@ -106,10 +106,10 @@ The MVP loads wasm from `dds_mvp_wasm_bin.js` (base64, no network fetch). Run
 small post-process step for Emscripten `isFileURI`; see **Emscripten / emsdk
 version** above).
 
-`bazel clean` does not delete those copied files under `web/` (they live outside `bazel-out`). Use either:
+`bazelisk clean` does not delete those copied files under `web/` (they live outside `bazel-out`). Use either:
 
 ```bash
-./clean.sh              # bazel clean + remove web/dds_mvp_wasm.*
+./clean.sh              # bazelisk clean + remove web/dds_mvp_wasm.*
 ./clean.sh --expunge
 ./web/clean_wasm.sh     # web artifacts only
 ```
@@ -158,11 +158,11 @@ There is no separate `build:wasm` profile in `.bazelrc`; WASM builds are selecte
 Unit and system tests (Node.js required for system tests; skipped if `node` is not on `PATH`):
 
 ```bash
-bazel test //web:web_tests //web:web_system_tests //web:web_e2e_tests
-bazel test //wasm:all
+bazelisk test //web:web_tests //web:web_system_tests //web:web_e2e_tests
+bazelisk test //wasm:all
 ```
 
-`bazel test //...` skips targets tagged `e2e` by default (see `.bazelrc`). Run Playwright tests explicitly, e.g. `bazel test //web:web_e2e_tests` or `bazel test --test_tag_filters=e2e //web:dds_mvp_e2e_test`. To run all tests, including the Playwright tests: `bazel test --test_tag_filters= /...`
+`bazelisk test //...` skips targets tagged `e2e` by default (see `.bazelrc`). Run Playwright tests explicitly, e.g. `bazelisk test //web:web_e2e_tests` or `bazelisk test --test_tag_filters=e2e //web:dds_mvp_e2e_test`. To run all tests, including the Playwright tests: `bazelisk test --test_tag_filters= /...`
 
 - **`//web:dds_mvp_wasm_system_test`** — builds `//web:dds_mvp_wasm`, runs `patch_mvp_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_mvp_calc_table` via Node (`web/tests/dds_mvp_wasm_node.mjs`).
 - **`//web:dds_mvp_e2e_test`** — Playwright tests for `dds_mvp.html` over `file://` (UI) and isolated HTTP (part-score solve, COOP/COEP). Requires Node, network (Chromium download on first run), and `tags = ["no-sandbox"]`.

@@ -17,16 +17,16 @@ The DDS (Double Dummy Solver) library provides a Python interface for analyzing 
 
 ```bash
 # Build the Python extension and Python package wrapper
-bazel build //python:dds3_lib
+bazelisk build //python:dds3_lib
 
 # Build wheel artifact
-bazel build //python:dds3_wheel_dist
+bazelisk build //python:dds3_wheel_dist
 
 # Build with optimizations
-bazel build -c opt //python:_dds3
+bazelisk build -c opt //python:_dds3
 
 # Build with debug symbols
-bazel build -c dbg //python:_dds3
+bazelisk build -c dbg //python:_dds3
 ```
 
 The compiled extension will be located at `bazel-bin/python/_dds3.so`.
@@ -50,7 +50,7 @@ pip install pytest
 export PYTHONPATH=python:bazel-bin/python
 
 # Run Bazel smoke test for Python bindings
-bazel test //python:python_interface_smoke_test
+bazelisk test //python:python_interface_smoke_test
 
 # Or use pytest directly
 pytest python/tests/ -v
@@ -383,7 +383,7 @@ except RuntimeError as e:
 - The extension is thread-safe for most operations
 - Use `thread_index` parameter for multi-threaded solving (0-based index)
 - For batch processing, prefer `calc_all_tables_pbn` over multiple `solve_board_pbn` calls
-- Consider using optimized builds (`bazel build -c opt`) for performance-critical code
+- Consider using optimized builds (`bazelisk build -c opt`) for performance-critical code
 
 ## Building from Source
 
@@ -406,7 +406,7 @@ required.
 sudo apt-get install build-essential python3-dev
 
 # Build
-bazel build -c opt //python:_dds3
+bazelisk build -c opt //python:_dds3
 ```
 
 On Linux hosts where a pinned LLVM toolchain is configured (for example,

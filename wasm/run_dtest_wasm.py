@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run //wasm:dtest_wasm under Node.js (for `bazel run //wasm:run_dtest_wasm`)."""
+"""Run //wasm:dtest_wasm under Node.js (for `bazelisk run //wasm:run_dtest_wasm`)."""
 from __future__ import annotations
 
 import os
@@ -52,7 +52,7 @@ def rlocation(relpath: str) -> Path:
     name = Path(relpath).name
     candidates: list[Path] = []
 
-    # Same Bazel package: data deps land beside this script under bazel run.
+    # Same Bazel package: data deps land beside this script under bazelisk run.
     # Do not Path.resolve() — that follows the runfiles symlink into the
     # source tree and loses the sibling .js/.wasm data deps.
     candidates.append(Path(__file__).absolute().parent / name)
@@ -97,7 +97,7 @@ def build_node_command(*, js_path: str, argv: list[str]) -> list[str]:
 
 
 def resolve_cwd(env: dict[str, str]) -> str | None:
-    # `bazel run` sets this to the directory where the user invoked Bazel, so
+    # `bazelisk run` sets this to the directory where the user invoked Bazel, so
     # relative -f paths like hands/list1.txt resolve under NODERAWFS.
     return env.get("BUILD_WORKING_DIRECTORY") or None
 

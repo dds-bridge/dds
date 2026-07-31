@@ -3,16 +3,16 @@ There are a number of simple examples for individual DDS functions.
 ## Building with Bazel (Recommended)
 
 Build all examples:
-    bazel build //examples:all_examples
+    bazelisk build //examples:all_examples
 
 Build a specific example:
-    bazel build //examples:calc_dd_table
+    bazelisk build //examples:calc_dd_table
 
 Run an example:
-    bazel run //examples:calc_dd_table
+    bazelisk run //examples:calc_dd_table
 
 Python `dd_table_for_deal` (see `python/examples/`):
-    bazel run //python/examples:dd_table_for_deal -- hands/example.pbn
+    bazelisk run //python/examples:dd_table_for_deal -- hands/example.pbn
 
 Available examples:
 - analyse_all_plays_bin, analyse_all_plays_pbn

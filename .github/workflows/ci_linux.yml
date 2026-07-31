@@ -39,7 +39,7 @@ jobs:
         run: |
           max=3
           for i in $(seq 1 "$max"); do
-            if bazel fetch //...; then
+            if bazelisk fetch //...; then
               exit 0
             fi
             if [ "$i" -lt "$max" ]; then
@@ -51,11 +51,11 @@ jobs:
 
       # 6️⃣ Build all targets
       - name: Build all targets
-        run: bazel build --verbose_failures //...
+        run: bazelisk build --verbose_failures //...
 
       # 7️⃣ Run all tests (including Python)
       - name: Run all tests
-        run: bazel test --verbose_failures //...
+        run: bazelisk test --verbose_failures //...
 
       # 8️⃣ Upload test logs
       - name: Upload test logs - Linux
@@ -91,7 +91,7 @@ jobs:
         run: |
           max=3
           for i in $(seq 1 "$max"); do
-            if bazel fetch --config=asan //library/tests/...; then
+            if bazelisk fetch --config=asan //library/tests/...; then
               exit 0
             fi
             if [ "$i" -lt "$max" ]; then
@@ -102,7 +102,7 @@ jobs:
           exit 1
 
       - name: Run tests (AddressSanitizer)
-        run: bazel test --config=asan --verbose_failures --test_output=errors //library/tests/...
+        run: bazelisk test --config=asan --verbose_failures --test_output=errors //library/tests/...
 
       - name: Upload ASAN test logs
         if: always()
@@ -137,7 +137,7 @@ jobs:
         run: |
           max=3
           for i in $(seq 1 "$max"); do
-            if bazel fetch --config=tsan //library/tests/system/...; then
+            if bazelisk fetch --config=tsan //library/tests/system/...; then
               exit 0
             fi
             if [ "$i" -lt "$max" ]; then
@@ -148,7 +148,7 @@ jobs:
           exit 1
 
       - name: Run system tests (ThreadSanitizer)
-        run: bazel test --config=tsan --verbose_failures --test_output=errors //library/tests/system/...
+        run: bazelisk test --config=tsan --verbose_failures --test_output=errors //library/tests/system/...
 
       - name: Upload TSAN test logs
         if: always()
