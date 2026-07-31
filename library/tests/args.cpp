@@ -208,7 +208,7 @@ bool is_absolute_path(const string& path)
   return path.size() >= 2 && std::isalpha(static_cast<unsigned char>(path[0])) &&
     path[1] == ':';
 #else
-  return path[0] == '/' || path[0] == '\\';
+  return path[0] == '/';
 #endif
 }
 
