@@ -243,6 +243,12 @@ bool is_absolute_path(const string& path)
 #ifdef _WIN32
   if (is_unc_path(path))
     return true;
+  // Current-drive rooted: "\foo" or "/foo" (single leading separator, not UNC).
+  if ((path[0] == '\\' || path[0] == '/') &&
+    (path.size() == 1 || (path[1] != '\\' && path[1] != '/')))
+  {
+    return true;
+  }
   // Drive-rooted absolute: "C:\..." or "C:/...". "C:foo" is drive-relative.
   return path.size() >= 3 &&
     std::isalpha(static_cast<unsigned char>(path[0])) &&
@@ -290,6 +296,11 @@ string normalize_logical_path(const string& path)
     start = 2;
     if (start < path.size() && (path[start] == '/' || path[start] == '\\'))
       ++start;
+  }
+  else if (absolute && (path[0] == '\\' || path[0] == '/'))
+  {
+    // Current-drive rooted without a drive letter; keep a leading separator.
+    start = 1;
   }
 #else
   if (absolute)
@@ -367,7 +378,23 @@ string normalize_logical_path(const string& path)
 string absolute_path_logical(const string& path)
 {
   if (is_absolute_path(path))
+  {
+#ifdef _WIN32
+    // Current-drive rooted "\foo" → "X:\foo" using the cwd drive letter.
+    if ((path[0] == '\\' || path[0] == '/') &&
+      (path.size() == 1 || (path[1] != '\\' && path[1] != '/')))
+    {
+      char cwd[4096];
+      if (_getcwd(cwd, static_cast<int>(sizeof(cwd))) != nullptr &&
+        std::isalpha(static_cast<unsigned char>(cwd[0])) &&
+        cwd[1] == ':')
+      {
+        return normalize_logical_path(string(1, cwd[0]) + ":" + path);
+      }
+    }
+#endif
     return normalize_logical_path(path);
+  }
 
   char cwd[4096];
 #ifdef _WIN32

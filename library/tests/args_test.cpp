@@ -341,12 +341,16 @@ TEST(Args, AbsolutePathDetection)
   EXPECT_TRUE(is_dtest_absolute_path("C:\\bin\\dtest"));
   EXPECT_TRUE(is_dtest_absolute_path("C:/bin/dtest"));
   EXPECT_TRUE(is_dtest_absolute_path("c:\\"));
+  // Current-drive rooted (leading single separator) is absolute on Windows.
+  EXPECT_TRUE(is_dtest_absolute_path("\\repo\\bazel-bin\\dtest"));
+  EXPECT_TRUE(is_dtest_absolute_path("/repo/bazel-bin/dtest"));
+  EXPECT_TRUE(is_dtest_absolute_path("\\"));
+  EXPECT_TRUE(is_dtest_absolute_path("/"));
   EXPECT_TRUE(is_dtest_absolute_path("\\\\server\\share"));
   EXPECT_TRUE(is_dtest_absolute_path("\\\\server\\share\\bazel-bin\\dtest"));
   EXPECT_TRUE(is_dtest_absolute_path("//server/share/dtest"));
   EXPECT_FALSE(is_dtest_absolute_path("\\\\server"));
   EXPECT_FALSE(is_dtest_absolute_path("\\\\server\\"));
-  EXPECT_FALSE(is_dtest_absolute_path("/tmp/dtest"));
 #endif
 }
 
@@ -369,6 +373,31 @@ TEST_F(HandsLayoutFixture, ResolveNumericWithDriveRelativeArgv0)
   const std::string drive_rel = std::string(1, root_[0]) + ":dtest";
   EXPECT_TRUE(same_path(
     resolve_dtest_input_file("42", drive_rel),
+    root_ + "hands/list42.txt"));
+}
+
+TEST_F(HandsLayoutFixture, ResolveNumericWithCurrentDriveRootedArgv0)
+{
+  // "\path\..." is absolute on the current drive; do not prepend cwd.
+  ASSERT_GE(root_.size(), 2u);
+  ASSERT_EQ(root_[1], ':');
+  const std::string sibling =
+    std::string(::testing::TempDir()) + "dtest_hands_rootrel_cwd/";
+  ASSERT_TRUE(make_dir(sibling));
+  ASSERT_EQ(change_dir(sibling.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(nullptr);
+
+  // Drop the drive letter so argv0 is current-drive rooted.
+  const std::string root_rel_argv0 =
+    root_.substr(2) + "bazel-bin/library/tests/dtest";
+  ASSERT_TRUE(
+    root_rel_argv0[0] == '\\' || root_rel_argv0[0] == '/');
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("42", root_rel_argv0),
     root_ + "hands/list42.txt"));
 }
 #endif
