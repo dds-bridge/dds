@@ -353,12 +353,20 @@ TEST(Args, AbsolutePathDetection)
 #ifdef _WIN32
 TEST_F(HandsLayoutFixture, ResolveNumericWithDriveRelativeArgv0)
 {
-  // "X:rel" is relative to the current directory on drive X, not rooted at X:\.
-  ASSERT_EQ(change_dir(root_.c_str()), 0);
+  // Sit in the fake binary dir so cwd has no hands/ (otherwise the numeric
+  // lookup would short-circuit before argv0). "X:dtest" is drive-relative to
+  // that directory — not rooted at X:\.
+  const std::string bin_dir = root_ + "bazel-bin/library/tests";
+  ASSERT_EQ(change_dir(bin_dir.c_str()), 0);
   ASSERT_GE(root_.size(), 2u);
   ASSERT_EQ(root_[1], ':');
-  const std::string drive_rel =
-    std::string(1, root_[0]) + ":bazel-bin/library/tests/dtest";
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(nullptr);
+
+  const std::string drive_rel = std::string(1, root_[0]) + ":dtest";
   EXPECT_TRUE(same_path(
     resolve_dtest_input_file("42", drive_rel),
     root_ + "hands/list42.txt"));
