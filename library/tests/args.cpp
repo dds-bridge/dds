@@ -197,6 +197,9 @@ void SetDefaults()
 }
 
 
+namespace
+{
+
 bool is_absolute_path(const string& path)
 {
   if (path.empty())
@@ -305,6 +308,8 @@ string absolute_path_logical(const string& path)
     return normalize_logical_path(string(cwd));
   return normalize_logical_path(string(cwd) + "/" + path);
 }
+
+}  // namespace
 
 
 string resolve_dtest_input_file(
