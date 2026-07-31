@@ -269,22 +269,24 @@ string normalize_logical_path(const string& path)
   }
   flush();
 
+#ifdef _WIN32
+  const char sep = '\\';
+#else
+  const char sep = '/';
+#endif
+
   string out = drive;
   if (absolute)
-#ifdef _WIN32
-    out += '\\';
-#else
-    out += '/';
-#endif
+    out += sep;
 
   for (size_t i = 0; i < parts.size(); ++i)
   {
     if (i > 0)
-      out += '/';
+      out += sep;
     out += parts[i];
   }
   if (absolute && parts.empty())
-    return out.empty() ? string("/") : out;
+    return out.empty() ? string(1, sep) : out;
   return out.empty() ? string(".") : out;
 }
 
