@@ -11,6 +11,7 @@
 #ifdef _WIN32
 #include <direct.h>
 #include <errno.h>
+#include <sys/stat.h>
 #else
 #include <errno.h>
 #include <sys/stat.h>
@@ -53,7 +54,16 @@ std::string current_dir()
 }
 #endif
 
-/// Creates a directory. Succeeds if it already exists; fails on other errors.
+bool path_is_directory(const std::string& path)
+{
+  struct stat st;
+  if (stat(path.c_str(), &st) != 0)
+    return false;
+  return S_ISDIR(st.st_mode);
+}
+
+/// Creates a directory. Succeeds if it already exists as a directory;
+/// fails if the path exists as a non-directory or on other errors.
 bool make_dir(const std::string& path)
 {
 #ifdef _WIN32
@@ -63,7 +73,7 @@ bool make_dir(const std::string& path)
   if (mkdir(path.c_str(), 0755) == 0)
     return true;
 #endif
-  return errno == EEXIST;
+  return path_is_directory(path);
 }
 
 void set_env_var(const char* name, const char* value)
@@ -187,6 +197,25 @@ TEST(Args, MaxAndMinFlagsDefaultOff)
   read_args(3, argv);
   EXPECT_FALSE(options.show_min_);
   EXPECT_FALSE(options.show_max_);
+}
+
+TEST(Args, MakeDirSucceedsWhenDirectoryAlreadyExists)
+{
+  const std::string dir =
+    std::string(::testing::TempDir()) + "args_make_dir_ok/";
+  ASSERT_TRUE(make_dir(dir));
+  EXPECT_TRUE(make_dir(dir));
+}
+
+TEST(Args, MakeDirFailsWhenPathIsExistingFile)
+{
+  const std::string path =
+    std::string(::testing::TempDir()) + "args_make_dir_file";
+  {
+    std::ofstream out(path);
+    out << "not-a-directory\n";
+  }
+  EXPECT_FALSE(make_dir(path));
 }
 
 TEST(Args, MaxFlagEnablesShowMax)
