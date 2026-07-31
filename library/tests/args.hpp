@@ -34,8 +34,9 @@ void print_options();
 /// Resolve `-f` / `--file` to an existing path.
 ///
 /// Order: (1) `arg` as a literal path; (2) `hands/list{arg}.txt` under the
-/// current working directory; (3) `../../../hands/list{arg}.txt` relative to
-/// the directory of `argv0` (the usual `bazel-bin/library/tests/dtest` layout).
+/// current working directory; (3) the same under `BUILD_WORKING_DIRECTORY` /
+/// `BUILD_WORKSPACE_DIRECTORY` (set by `bazel run`); (4) relative to the
+/// directory of `argv0` (the usual `bazel-bin/library/tests/dtest` layout).
 /// @return Resolved path, or empty if nothing exists
 std::string resolve_dtest_input_file(
     const std::string& arg,

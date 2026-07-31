@@ -9,7 +9,9 @@
 
 #ifdef _WIN32
 #include <direct.h>
+#include <stdlib.h>
 #else
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
@@ -174,6 +176,54 @@ TEST_F(HandsLayoutFixture, ResolveNumericFallsBackRelativeToBinary)
   EXPECT_EQ(
     resolve_dtest_input_file("42", binary_path_),
     root_ + "hands/list42.txt");
+}
+
+TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
+{
+  // bazel run sets CWD to the runfiles tree (no hands/) and exports
+  // BUILD_WORKING_DIRECTORY as the invoke-time shell cwd.
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles/";
+  make_dir(runfiles);
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+#ifdef _WIN32
+  _putenv_s("BUILD_WORKING_DIRECTORY", root_.c_str());
+  _putenv_s("BUILD_WORKSPACE_DIRECTORY", "");
+#else
+  ASSERT_EQ(setenv("BUILD_WORKING_DIRECTORY", root_.c_str(), 1), 0);
+  ASSERT_EQ(unsetenv("BUILD_WORKSPACE_DIRECTORY"), 0);
+#endif
+  EXPECT_EQ(
+    resolve_dtest_input_file("42", "dtest"),
+    root_ + "hands/list42.txt");
+#ifdef _WIN32
+  _putenv_s("BUILD_WORKING_DIRECTORY", "");
+#else
+  unsetenv("BUILD_WORKING_DIRECTORY");
+#endif
+}
+
+TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
+{
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_ws/";
+  make_dir(runfiles);
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+#ifdef _WIN32
+  _putenv_s("BUILD_WORKING_DIRECTORY", "");
+  _putenv_s("BUILD_WORKSPACE_DIRECTORY", root_.c_str());
+#else
+  ASSERT_EQ(unsetenv("BUILD_WORKING_DIRECTORY"), 0);
+  ASSERT_EQ(setenv("BUILD_WORKSPACE_DIRECTORY", root_.c_str(), 1), 0);
+#endif
+  EXPECT_EQ(
+    resolve_dtest_input_file("42", "dtest"),
+    root_ + "hands/list42.txt");
+#ifdef _WIN32
+  _putenv_s("BUILD_WORKSPACE_DIRECTORY", "");
+#else
+  unsetenv("BUILD_WORKSPACE_DIRECTORY");
+#endif
 }
 
 TEST_F(HandsLayoutFixture, ResolveNumericWithRelativeArgv0FromOtherCwd)

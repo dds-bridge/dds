@@ -103,8 +103,10 @@ void usage(
     "Usage: " << basename << " [options]\n\n" <<
     "-f, --file s       Input file, or the number n;\n" <<
     "                   '100' means hands/list100.txt under the current\n" <<
-    "                   directory, else ../../../hands/list100.txt relative\n" <<
-    "                   to the dtest binary (bazel-bin/library/tests/).\n" <<
+    "                   directory (or BUILD_WORKING_DIRECTORY /\n" <<
+    "                   BUILD_WORKSPACE_DIRECTORY under bazel run), else\n" <<
+    "                   relative to the dtest binary\n" <<
+    "                   (bazel-bin/library/tests/).\n" <<
     "                   (Default: input.txt)\n" <<
     "\n" <<
     "-s, --solver       One of: solve, calc, play, par, dealerpar.\n" <<
@@ -317,6 +319,27 @@ string resolve_dtest_input_file(
   const string cwd_candidate = "hands/" + list_name;
   if (stat(cwd_candidate.c_str(), &buffer) == 0)
     return cwd_candidate;
+
+  // bazel run moves CWD into the runfiles tree; it exports the invoke-time
+  // shell cwd and the workspace root so we can still find hands/.
+  auto from_env_dir = [&](const char* env_name) -> string
+  {
+    const char* dir = std::getenv(env_name);
+    if (dir == nullptr || dir[0] == '\0')
+      return string();
+    string base(dir);
+    while (base.size() > 1 && (base.back() == '/' || base.back() == '\\'))
+      base.pop_back();
+    const string candidate = base + "/hands/" + list_name;
+    if (stat(candidate.c_str(), &buffer) == 0)
+      return candidate;
+    return string();
+  };
+
+  if (const string found = from_env_dir("BUILD_WORKING_DIRECTORY"); !found.empty())
+    return found;
+  if (const string found = from_env_dir("BUILD_WORKSPACE_DIRECTORY"); !found.empty())
+    return found;
 
   // Climb parents in the path *string* (do not use "/../" with stat — that
   // follows a bazel-bin symlink into the execroot and misses the workspace
