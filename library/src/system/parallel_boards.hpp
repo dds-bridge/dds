@@ -15,6 +15,23 @@
 
 
 /**
+ * @brief Clamp a worker count to a memory budget (MB).
+ *
+ * Each parallel worker owns a SolverContext with a Large transposition table
+ * plus stack; under Emscripten the wasm32 heap tops out near 2 GiB.
+ * resolve_worker_count applies this only when __EMSCRIPTEN__ is defined.
+ *
+ * @param workers Requested workers (values < 1 become 1)
+ * @param budget_mb Total MB available for worker TT/stack footprints
+ * @param per_worker_mb Assumed MB cost of one worker
+ * @return workers clamped to max(1, budget_mb / per_worker_mb)
+ */
+auto clamp_workers_to_memory_budget(
+  int workers,
+  int budget_mb,
+  int per_worker_mb) -> int;
+
+/**
  * @brief Resolve the number of worker threads to use.
  *
  * @param max_threads Requested cap; <= 0 means "auto" (use hardware concurrency).
