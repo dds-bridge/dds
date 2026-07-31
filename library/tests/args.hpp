@@ -42,6 +42,11 @@ std::string resolve_dtest_input_file(
     const std::string& arg,
     const std::string& argv0);
 
+/// True for a rooted absolute path: POSIX `/...`, Windows `C:\...` / `C:/...`,
+/// or UNC `\\server\share\...` / `//server/share/...`. Drive-relative forms
+/// like `C:bin\dtest` are not absolute.
+bool is_dtest_absolute_path(const std::string& path);
+
 /// Parse command-line arguments into global options.
 /// @param argc Argument count from main()
 /// @param argv Argument vector from main()

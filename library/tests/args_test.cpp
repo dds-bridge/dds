@@ -10,7 +10,9 @@
 
 #ifdef _WIN32
 #include <direct.h>
+#include <errno.h>
 #else
+#include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
@@ -51,13 +53,17 @@ std::string current_dir()
 }
 #endif
 
-void make_dir(const std::string& path)
+/// Creates a directory. Succeeds if it already exists; fails on other errors.
+bool make_dir(const std::string& path)
 {
 #ifdef _WIN32
-  _mkdir(path.c_str());
+  if (_mkdir(path.c_str()) == 0)
+    return true;
 #else
-  mkdir(path.c_str(), 0755);
+  if (mkdir(path.c_str(), 0755) == 0)
+    return true;
 #endif
+  return errno == EEXIST;
 }
 
 void set_env_var(const char* name, const char* value)
@@ -145,11 +151,11 @@ class HandsLayoutFixture : public ::testing::Test
     ASSERT_FALSE(original_cwd_.empty());
 
     root_ = std::string(::testing::TempDir()) + "dtest_hands_layout/";
-    make_dir(root_);
-    make_dir(root_ + "hands");
-    make_dir(root_ + "bazel-bin");
-    make_dir(root_ + "bazel-bin/library");
-    make_dir(root_ + "bazel-bin/library/tests");
+    ASSERT_TRUE(make_dir(root_));
+    ASSERT_TRUE(make_dir(root_ + "hands"));
+    ASSERT_TRUE(make_dir(root_ + "bazel-bin"));
+    ASSERT_TRUE(make_dir(root_ + "bazel-bin/library"));
+    ASSERT_TRUE(make_dir(root_ + "bazel-bin/library/tests"));
 
     {
       std::ofstream out(root_ + "hands/list42.txt");
@@ -248,7 +254,7 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
   // BUILD_WORKING_DIRECTORY as the invoke-time shell cwd.
   const std::string runfiles =
     std::string(::testing::TempDir()) + "dtest_hands_runfiles/";
-  make_dir(runfiles);
+  ASSERT_TRUE(make_dir(runfiles));
   ASSERT_EQ(change_dir(runfiles.c_str()), 0);
 
   const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
@@ -265,7 +271,7 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
 {
   const std::string runfiles =
     std::string(::testing::TempDir()) + "dtest_hands_runfiles_ws/";
-  make_dir(runfiles);
+  ASSERT_TRUE(make_dir(runfiles));
   ASSERT_EQ(change_dir(runfiles.c_str()), 0);
 
   const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
@@ -284,7 +290,7 @@ TEST_F(HandsLayoutFixture, ResolveNumericWithRelativeArgv0FromOtherCwd)
   // the repo root: argv0 is relative, CWD is not the repo root.
   const std::string sibling =
     std::string(::testing::TempDir()) + "dtest_hands_sibling/";
-  make_dir(sibling);
+  ASSERT_TRUE(make_dir(sibling));
   ASSERT_EQ(change_dir(sibling.c_str()), 0);
 
   // root_ and sibling share the same parent (TempDir), so this relative
@@ -302,8 +308,8 @@ TEST_F(HandsLayoutFixture, ResolveNumericPrefersCwdOverBinaryRelative)
   // also exists.
   const std::string other_root =
     std::string(::testing::TempDir()) + "dtest_hands_cwd_wins/";
-  make_dir(other_root);
-  make_dir(other_root + "hands");
+  ASSERT_TRUE(make_dir(other_root));
+  ASSERT_TRUE(make_dir(other_root + "hands"));
   const std::string cwd_file = other_root + "hands/list42.txt";
   {
     std::ofstream out(cwd_file);
@@ -318,3 +324,43 @@ TEST(Args, ResolveReturnsEmptyWhenMissing)
 {
   EXPECT_TRUE(resolve_dtest_input_file("no-such-list-999001", "dtest").empty());
 }
+
+TEST(Args, AbsolutePathDetection)
+{
+  EXPECT_FALSE(is_dtest_absolute_path("tmp/dtest"));
+  EXPECT_FALSE(is_dtest_absolute_path(""));
+#ifndef _WIN32
+  EXPECT_TRUE(is_dtest_absolute_path("/tmp/dtest"));
+  // On POSIX, leading backslash is not absolute.
+  EXPECT_FALSE(is_dtest_absolute_path("\\tmp\\dtest"));
+#else
+  // Drive-relative (no root separator after the colon) is not absolute.
+  EXPECT_FALSE(is_dtest_absolute_path("C:bin\\dtest"));
+  EXPECT_FALSE(is_dtest_absolute_path("C:bin/dtest"));
+  EXPECT_FALSE(is_dtest_absolute_path("C:"));
+  EXPECT_TRUE(is_dtest_absolute_path("C:\\bin\\dtest"));
+  EXPECT_TRUE(is_dtest_absolute_path("C:/bin/dtest"));
+  EXPECT_TRUE(is_dtest_absolute_path("c:\\"));
+  EXPECT_TRUE(is_dtest_absolute_path("\\\\server\\share"));
+  EXPECT_TRUE(is_dtest_absolute_path("\\\\server\\share\\bazel-bin\\dtest"));
+  EXPECT_TRUE(is_dtest_absolute_path("//server/share/dtest"));
+  EXPECT_FALSE(is_dtest_absolute_path("\\\\server"));
+  EXPECT_FALSE(is_dtest_absolute_path("\\\\server\\"));
+  EXPECT_FALSE(is_dtest_absolute_path("/tmp/dtest"));
+#endif
+}
+
+#ifdef _WIN32
+TEST_F(HandsLayoutFixture, ResolveNumericWithDriveRelativeArgv0)
+{
+  // "X:rel" is relative to the current directory on drive X, not rooted at X:\.
+  ASSERT_EQ(change_dir(root_.c_str()), 0);
+  ASSERT_GE(root_.size(), 2u);
+  ASSERT_EQ(root_[1], ':');
+  const std::string drive_rel =
+    std::string(1, root_[0]) + ":bazel-bin/library/tests/dtest";
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("42", drive_rel),
+    root_ + "hands/list42.txt"));
+}
+#endif

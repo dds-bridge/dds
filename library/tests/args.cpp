@@ -200,13 +200,54 @@ void SetDefaults()
 namespace
 {
 
+#ifdef _WIN32
+bool is_unc_path(const string& path)
+{
+  if (path.size() < 5)
+    return false;
+  const bool unc_slash =
+    (path[0] == '\\' && path[1] == '\\') ||
+    (path[0] == '/' && path[1] == '/');
+  if (!unc_slash)
+    return false;
+
+  size_t i = 2;
+  while (i < path.size() && (path[i] == '\\' || path[i] == '/'))
+    ++i;
+  if (i >= path.size())
+    return false;
+
+  const size_t server_start = i;
+  while (i < path.size() && path[i] != '\\' && path[i] != '/')
+    ++i;
+  if (i == server_start || i >= path.size())
+    return false;
+
+  while (i < path.size() && (path[i] == '\\' || path[i] == '/'))
+    ++i;
+  if (i >= path.size())
+    return false;
+
+  const size_t share_start = i;
+  while (i < path.size() && path[i] != '\\' && path[i] != '/')
+    ++i;
+  return i > share_start;
+}
+#endif
+
+
 bool is_absolute_path(const string& path)
 {
   if (path.empty())
     return false;
 #ifdef _WIN32
-  return path.size() >= 2 && std::isalpha(static_cast<unsigned char>(path[0])) &&
-    path[1] == ':';
+  if (is_unc_path(path))
+    return true;
+  // Drive-rooted absolute: "C:\..." or "C:/...". "C:foo" is drive-relative.
+  return path.size() >= 3 &&
+    std::isalpha(static_cast<unsigned char>(path[0])) &&
+    path[1] == ':' &&
+    (path[2] == '\\' || path[2] == '/');
 #else
   return path[0] == '/';
 #endif
@@ -223,7 +264,27 @@ string normalize_logical_path(const string& path)
   string drive;
   size_t start = 0;
 #ifdef _WIN32
-  if (absolute && path.size() >= 2 && path[1] == ':')
+  if (absolute && is_unc_path(path))
+  {
+    size_t i = 2;
+    while (i < path.size() && (path[i] == '\\' || path[i] == '/'))
+      ++i;
+    const size_t server_start = i;
+    while (i < path.size() && path[i] != '\\' && path[i] != '/')
+      ++i;
+    const string server = path.substr(server_start, i - server_start);
+    while (i < path.size() && (path[i] == '\\' || path[i] == '/'))
+      ++i;
+    const size_t share_start = i;
+    while (i < path.size() && path[i] != '\\' && path[i] != '/')
+      ++i;
+    const string share = path.substr(share_start, i - share_start);
+    drive = string("\\\\") + server + "\\" + share;
+    start = i;
+    if (start < path.size() && (path[start] == '/' || path[start] == '\\'))
+      ++start;
+  }
+  else if (absolute && path.size() >= 2 && path[1] == ':')
   {
     drive = path.substr(0, 2);
     start = 2;
@@ -276,12 +337,22 @@ string normalize_logical_path(const string& path)
 #endif
 
   string out = drive;
+#ifdef _WIN32
+  const bool unc = absolute && drive.size() >= 2 && drive[0] == '\\';
+  if (absolute && !unc)
+    out += sep;
+#else
   if (absolute)
     out += sep;
+#endif
 
   for (size_t i = 0; i < parts.size(); ++i)
   {
+#ifdef _WIN32
+    if (i > 0 || unc)
+#else
     if (i > 0)
+#endif
       out += sep;
     out += parts[i];
   }
@@ -306,12 +377,37 @@ string absolute_path_logical(const string& path)
   if (getcwd(cwd, sizeof(cwd)) == nullptr)
     return normalize_logical_path(path);
 #endif
+
+#ifdef _WIN32
+  // Drive-relative "C:foo": resolve against cwd when cwd is on the same drive.
+  if (path.size() >= 2 &&
+    std::isalpha(static_cast<unsigned char>(path[0])) &&
+    path[1] == ':')
+  {
+    const string cwd_s(cwd);
+    if (cwd_s.size() >= 2 &&
+      std::tolower(static_cast<unsigned char>(cwd_s[0])) ==
+        std::tolower(static_cast<unsigned char>(path[0])) &&
+      cwd_s[1] == ':')
+    {
+      return normalize_logical_path(cwd_s + "/" + path.substr(2));
+    }
+    return normalize_logical_path(path);
+  }
+#endif
+
   if (path.empty())
     return normalize_logical_path(string(cwd));
   return normalize_logical_path(string(cwd) + "/" + path);
 }
 
 }  // namespace
+
+
+bool is_dtest_absolute_path(const string& path)
+{
+  return is_absolute_path(path);
+}
 
 
 string resolve_dtest_input_file(
