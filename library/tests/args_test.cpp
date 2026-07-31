@@ -59,7 +59,11 @@ bool path_is_directory(const std::string& path)
   struct stat st;
   if (stat(path.c_str(), &st) != 0)
     return false;
+#ifdef _WIN32
+  return (st.st_mode & S_IFMT) == S_IFDIR;
+#else
   return S_ISDIR(st.st_mode);
+#endif
 }
 
 /// Creates a directory. Succeeds if it already exists as a directory;
