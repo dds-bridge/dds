@@ -10,8 +10,9 @@ from pathlib import Path
 
 
 # Matches a bare `bazel` launcher token followed by a Bazel subcommand.
-# Intentionally does not match paths (bazel-bin), artifact names, or
-# bazelisk / bazelisk-version / bazel-contrib.
+# Lookbehind excludes word chars / `.` / `-` so `bazelisk`, `bazel-bin`, and
+# `bazel-contrib` do not match. Absolute or drive-qualified paths such as
+# `/usr/bin/bazel build` still match — CI should use bazelisk, not bare bazel.
 _BARE_BAZEL_CMD = re.compile(
     r"(?<![\w.-])bazel\s+(build|test|fetch|run|clean|shutdown|coverage|info|mod|query)\b"
 )
@@ -27,6 +28,23 @@ def _repo_root(start: Path | None = None) -> Path:
         if workflows.is_dir() and any(workflows.glob("ci_*.yml")):
             return parent
     raise AssertionError("could not locate repository root from test file path")
+
+
+class TestBareBazelCmd(unittest.TestCase):
+    def test_matches_bare_bazel_subcommand(self) -> None:
+        self.assertIsNotNone(_BARE_BAZEL_CMD.search("bazel build //..."))
+        self.assertIsNotNone(_BARE_BAZEL_CMD.search("  bazel test --verbose_failures //..."))
+
+    def test_matches_path_qualified_bare_bazel(self) -> None:
+        """CI must not sneak past the guard via an absolute bazel path."""
+        self.assertIsNotNone(_BARE_BAZEL_CMD.search("/usr/bin/bazel build //..."))
+        self.assertIsNotNone(_BARE_BAZEL_CMD.search(r"C:\tools\bazel test //..."))
+
+    def test_does_not_match_bazelisk_or_artifact_names(self) -> None:
+        self.assertIsNone(_BARE_BAZEL_CMD.search("bazelisk build //..."))
+        self.assertIsNone(_BARE_BAZEL_CMD.search("bazelisk-version: 1.0"))
+        self.assertIsNone(_BARE_BAZEL_CMD.search("path: bazel-bin/library/tests/dtest"))
+        self.assertIsNone(_BARE_BAZEL_CMD.search("https://github.com/bazel-contrib/rules_python"))
 
 
 class TestRepoRoot(unittest.TestCase):
