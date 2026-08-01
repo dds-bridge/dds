@@ -2,7 +2,7 @@
 
 # Skip Playwright browser tests on `bazel test //...` (network, Chromium, no-sandbox).
 # Run e2e explicitly: bazel test --test_tag_filters=e2e //web:web_e2e_tests
-# Run every test: bazel test --test_tag_filters= /...
+# Run every test: bazelisk test --test_tag_filters= //...
 test --test_tag_filters=-e2e
 
 common --enable_platform_specific_config
