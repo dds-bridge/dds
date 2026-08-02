@@ -65,6 +65,13 @@
   text-align: center;
 }
 
+.grid-item.hand-north,
+.grid-item.hand-east,
+.grid-item.hand-south,
+.grid-item.hand-west {
+  text-align: left;
+}
+
 .grid-filler {
   padding: 20px;
 }
@@ -72,6 +79,50 @@
 .hand-card-count {
   font-size: 1rem;
   margin-top: 0.25rem;
+}
+
+.hand-holding {
+  display: inline;
+}
+
+.hand-suit {
+  cursor: text;
+  display: inline-block;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.hand-suit-input {
+  background: transparent;
+  border: none;
+  caret-color: #111;
+  color: transparent;
+  font: inherit;
+  margin: 0;
+  min-width: 0.65em;
+  outline: none;
+  padding: 0;
+  width: 0.65em;
+}
+
+.hand-suit-input:focus {
+  caret-color: #111;
+}
+
+.hand-card {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  margin: 0;
+  padding: 0 0.05em;
+}
+
+.hand-card:hover,
+.hand-card:focus-visible {
+  text-decoration: underline;
+  outline: none;
 }
 
 td {

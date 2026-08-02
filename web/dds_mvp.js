@@ -26,6 +26,11 @@
             updateActionButtons
             updateDefaultAction
             handleHandKeydown
+            handCardHtml
+            updateHandCardDisplays
+            handleHandCardClick
+            handleHandSuitClick
+            onHandCardClick
             */
 
 // It's also useful to pass the code through
@@ -55,6 +60,22 @@ const SUIT_GLYPHS = {
     hearts: "\u2665",
     diamonds: "\u2666",
     clubs: "\u2663"
+};
+
+const PIP_NAMES = {
+    A: "ace",
+    K: "king",
+    Q: "queen",
+    J: "jack",
+    T: "ten",
+    "9": "nine",
+    "8": "eight",
+    "7": "seven",
+    "6": "six",
+    "5": "five",
+    "4": "four",
+    "3": "three",
+    "2": "two"
 };
 
 function suitLetter(suit) {
@@ -303,6 +324,111 @@ function updateDeckStatus(hands) {
     }
 }
 
+function capitalize(word) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+function handCardAriaLabel(direction, card) {
+    const suitName = card.suit.replace(/s$/, "");
+    const pipName = PIP_NAMES[card.pip] || card.pip;
+
+    return capitalize(direction) + " " + suitName + " " + pipName;
+}
+
+function handCardHtml(direction, card) {
+    return "<button type=\"button\" class=\"hand-card\"" +
+        " data-direction=\"" + direction + "\"" +
+        " data-card=\"" + card.key() + "\"" +
+        " aria-label=\"" + handCardAriaLabel(direction, card) + "\">" +
+        card.pip +
+        "</button>";
+}
+
+function handHoldingHtml(direction, suit, cards) {
+    return cards
+        .filter((card) => card.suit === suit)
+        .sort(Card.compare)
+        .map((card) => handCardHtml(direction, card))
+        .join("");
+}
+
+function updateHandCardDisplays(hands) {
+    for (const direction of DIRECTIONS) {
+        for (const suit of SUITS) {
+            const holder = document.getElementById(direction + "_" + suit + "_cards");
+
+            if (holder) {
+                holder.innerHTML = handHoldingHtml(
+                    direction,
+                    suit,
+                    hands[direction] || []
+                );
+            }
+        }
+    }
+}
+
+function onHandCardClick(_direction, _card) {
+    // Hook for a future play-through PR; intentionally a no-op for now.
+}
+
+function handleHandSuitClick(event) {
+    const target = event.target;
+
+    if (!target || typeof target.closest !== "function") {
+        return;
+    }
+
+    if (target.closest(".hand-card")) {
+        return;
+    }
+
+    const suitRow = target.closest(".hand-suit");
+
+    if (!suitRow || typeof suitRow.querySelector !== "function") {
+        return;
+    }
+
+    const input = suitRow.querySelector(".hand-suit-input");
+
+    if (input && typeof input.focus === "function") {
+        input.focus();
+    }
+}
+
+function handleHandCardClick(event) {
+    const target = event.target;
+
+    if (!target || typeof target.closest !== "function") {
+        return;
+    }
+
+    const button = target.closest(".hand-card");
+
+    if (!button) {
+        return;
+    }
+
+    const direction = button.getAttribute("data-direction");
+    const key = button.getAttribute("data-card");
+
+    if (!direction || !key || !DIRECTIONS.includes(direction)) {
+        return;
+    }
+
+    const card = Card.fromKey(key);
+
+    if (!card.suit || !card.pip) {
+        return;
+    }
+
+    if (event.preventDefault) {
+        event.preventDefault();
+    }
+
+    onHandCardClick(direction, card);
+}
+
 function updateHandCardCounts(hands) {
     for (const direction of DIRECTIONS) {
         const count = hands[direction].length;
@@ -454,6 +580,7 @@ function updateActionButtons() {
     }
 
     updateDeckStatus(hands);
+    updateHandCardDisplays(hands);
     updateHandCardCounts(hands);
 
     if (doubleDummyButton) {
@@ -553,6 +680,8 @@ function pageLoad() {
         element.addEventListener("keydown", handleHandKeydown);
     }
 
+    document.addEventListener("click", handleHandCardClick);
+    document.addEventListener("click", handleHandSuitClick);
     document.addEventListener("focusin", updateDefaultAction);
     document.addEventListener("focusout", updateDefaultAction);
     updateActionButtons();

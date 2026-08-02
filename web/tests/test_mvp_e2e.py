@@ -187,6 +187,64 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_hand_diagram_cards_are_clickable(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("AQ")
+            north_ace = page.locator(
+                '#north_spades_cards .hand-card[data-card="SA"]'
+            )
+            self.assertEqual(north_ace.count(), 1)
+            self.assertEqual(north_ace.get_attribute("data-direction"), "north")
+            self.assertEqual(north_ace.get_attribute("type"), "button")
+            self.assertEqual(north_ace.get_attribute("aria-label"), "North spade ace")
+            self.assertEqual(north_ace.inner_text(), "A")
+            self.assertTrue(north_ace.is_enabled())
+
+            clicked = page.evaluate(
+                """() => {
+                const seen = [];
+                window.onHandCardClick = (direction, card) => {
+                  seen.push({ direction, key: card.key() });
+                };
+                document
+                  .querySelector('#north_spades_cards .hand-card[data-card="SA"]')
+                  .click();
+                return seen;
+              }"""
+            )
+            self.assertEqual(clicked, [{"direction": "north", "key": "SA"}])
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_typed_pips_appear_only_as_hand_card_glyphs(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            north_spades = page.locator("#north_spades")
+            north_spades.click()
+            north_spades.type("AK")
+
+            self.assertEqual(north_spades.input_value(), "AK")
+            cards = page.locator("#north_spades_cards .hand-card")
+            self.assertEqual(cards.count(), 2)
+            self.assertEqual(cards.nth(0).inner_text(), "A")
+            self.assertEqual(cards.nth(1).inner_text(), "K")
+
+            input_style = north_spades.evaluate(
+                """el => {
+                const s = getComputedStyle(el);
+                return { color: s.color, caretColor: s.caretColor, width: s.width };
+              }"""
+            )
+            self.assertEqual(input_style["color"], "rgba(0, 0, 0, 0)")
+            self.assertNotEqual(input_style["caretColor"], "rgba(0, 0, 0, 0)")
+            # Typed text must not consume layout width beside the glyphs.
+            self.assertLess(float(input_style["width"].replace("px", "")), 40.0)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_deck_status_displays_all_cards_in_one_row(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:

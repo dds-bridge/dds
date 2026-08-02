@@ -95,6 +95,7 @@ function createMockDocument(initialValues = {}) {
     for (const direction of DIRECTIONS) {
         for (const suit of SUITS) {
             makeElement(`${direction}_${suit}`);
+            makeElement(`${direction}_${suit}_cards`);
         }
     }
     makeElement("valid-pips");
@@ -766,4 +767,282 @@ test("handleHandKeydown ignores Enter when neither action is eligible", () => {
     assert.equal(prevented, false);
     assert.equal(sendCalled, false);
     assert.equal(document.element("west_spades").value, "");
+});
+
+test("handCardHtml renders a clickable button for a card in a hand", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+    const card = new ctx.Card("spades", "A");
+
+    // Act
+    const html = ctx.handCardHtml("north", card);
+
+    // Assert
+    assert.match(html, /<button\b/);
+    assert.match(html, /type="button"/);
+    assert.match(html, /class="hand-card"/);
+    assert.match(html, /data-direction="north"/);
+    assert.match(html, /data-card="SA"/);
+    assert.match(html, />A<\/button>/);
+    assert.match(html, /aria-label="North spade ace"/);
+});
+
+test("updateHandCardDisplays mirrors suit holdings as hand-card buttons", () => {
+    // Arrange
+    const document = createMockDocument({
+        north_spades: "AQ",
+        north_hearts: "k",
+        east_clubs: "",
+    });
+    const ctx = loadDdsMvp(document);
+
+    // Act
+    ctx.updateHandCardDisplays(ctx.collectHands());
+
+    // Assert
+    const northSpades = document.element("north_spades_cards").innerHTML;
+    assert.match(
+        northSpades,
+        /data-direction="north" data-card="SA"[^>]*>A<\/button>/
+    );
+    assert.match(
+        northSpades,
+        /data-direction="north" data-card="SQ"[^>]*>Q<\/button>/
+    );
+    assert.equal((northSpades.match(/class="hand-card"/g) ?? []).length, 2);
+
+    const northHearts = document.element("north_hearts_cards").innerHTML;
+    assert.match(
+        northHearts,
+        /data-direction="north" data-card="HK"[^>]*>K<\/button>/
+    );
+
+    assert.equal(document.element("east_clubs_cards").innerHTML, "");
+});
+
+test("updateActionButtons refreshes hand-card displays from inputs", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "JT" });
+    const ctx = loadDdsMvp(document);
+
+    // Act
+    ctx.updateActionButtons();
+
+    // Assert
+    const html = document.element("north_spades_cards").innerHTML;
+    assert.match(html, /data-card="SJ"/);
+    assert.match(html, /data-card="ST"/);
+});
+
+test("handleHandCardClick notifies onHandCardClick with direction and card", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const clicks = [];
+    ctx.onHandCardClick = (direction, card) => {
+        clicks.push({ direction, key: card.key() });
+    };
+    const target = {
+        closest(selector) {
+            assert.equal(selector, ".hand-card");
+            return {
+                getAttribute(name) {
+                    if (name === "data-direction") {
+                        return "south";
+                    }
+                    if (name === "data-card") {
+                        return "HK";
+                    }
+                    return null;
+                },
+            };
+        },
+    };
+
+    // Act
+    ctx.handleHandCardClick({ target, preventDefault() {} });
+
+    // Assert
+    assert.deepEqual(clicks, [{ direction: "south", key: "HK" }]);
+});
+
+test("handleHandCardClick ignores clicks outside a hand-card", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+    let called = false;
+    ctx.onHandCardClick = () => {
+        called = true;
+    };
+
+    // Act
+    ctx.handleHandCardClick({
+        target: {
+            closest() {
+                return null;
+            },
+        },
+        preventDefault() {},
+    });
+
+    // Assert
+    assert.equal(called, false);
+});
+
+test("pageLoad wires hand-card clicks on the diagram", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const clicks = [];
+    ctx.onHandCardClick = (direction, card) => {
+        clicks.push({ direction, key: card.key() });
+    };
+
+    // Act
+    ctx.pageLoad();
+    document.dispatch("click", {
+        target: {
+            closest(selector) {
+                if (selector !== ".hand-card") {
+                    return null;
+                }
+                return {
+                    getAttribute(name) {
+                        if (name === "data-direction") {
+                            return "west";
+                        }
+                        if (name === "data-card") {
+                            return "C2";
+                        }
+                        return null;
+                    },
+                };
+            },
+        },
+        preventDefault() {},
+    });
+
+    // Assert
+    assert.deepEqual(clicks, [{ direction: "west", key: "C2" }]);
+});
+
+test("hand diagram markup uses hand-suit rows with concealed text inputs", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const htmlPath = join(here, "..", "dds_mvp.html");
+    const cssPath = join(here, "..", "dds_mvp.css");
+
+    // Act
+    const html = readFileSync(htmlPath, "utf8");
+    const css = readFileSync(cssPath, "utf8");
+
+    // Assert: each suit is a hand-suit row; cards replace visible text.
+    assert.match(
+        html,
+        /<span class="hand-suit">\s*<spade-suit>[\s\S]*?id="north_spades_cards"[\s\S]*?id="north_spades"[^>]*class="[^"]*hand-suit-input/
+    );
+    assert.equal((html.match(/class="hand-suit"/g) ?? []).length, 16);
+    assert.equal((html.match(/class="hand-suit-input"/g) ?? []).length, 16);
+    assert.match(css, /\.hand-suit-input\s*\{[^}]*color:\s*transparent/s);
+    assert.match(css, /\.hand-suit-input\s*\{[^}]*caret-color:/s);
+});
+
+test("hand seats left-align suit symbols in the diagram", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert: beat .grid-item { text-align: center } via higher specificity
+    // and source order so filled holdings stay left-aligned, not centered.
+    const gridItemAlign = css.search(/\.grid-item\s*\{[^}]*text-align:\s*center/s);
+    const handAlign = css.search(
+        /\.grid-item\.hand-north,\s*\n\s*\.grid-item\.hand-east,\s*\n\s*\.grid-item\.hand-south,\s*\n\s*\.grid-item\.hand-west\s*\{[^}]*text-align:\s*left/s
+    );
+
+    assert.ok(gridItemAlign >= 0, "grid-item centers by default");
+    assert.ok(handAlign >= 0, "hand seats declare left alignment");
+    assert.ok(
+        handAlign > gridItemAlign,
+        "hand left-align must follow .grid-item so it wins the cascade"
+    );
+});
+
+test("typing a pip into a suit input inserts the matching hand-card glyph", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.pageLoad();
+
+    // Act: type as the user would — set value then fire input.
+    document.setValue("north_spades", "A");
+    document.element("north_spades").dispatch("input", {});
+
+    // Assert
+    assert.equal(document.element("north_spades").value, "A");
+    assert.match(
+        document.element("north_spades_cards").innerHTML,
+        /class="hand-card"[^>]*data-card="SA"[^>]*>A<\/button>/
+    );
+});
+
+test("handleHandSuitClick focuses the suit input for further typing", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const input = document.element("north_spades");
+    const suitRow = {
+        querySelector(selector) {
+            assert.equal(selector, ".hand-suit-input");
+            return input;
+        },
+    };
+    const target = {
+        closest(selector) {
+            if (selector === ".hand-card") {
+                return null;
+            }
+            if (selector === ".hand-suit") {
+                return suitRow;
+            }
+            return null;
+        },
+    };
+
+    // Act
+    ctx.handleHandSuitClick({ target });
+
+    // Assert
+    assert.equal(document.activeElement, input);
+});
+
+test("handleHandSuitClick does not steal focus from a hand-card click", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    document.setActiveElement("east_hearts");
+    let focused = false;
+    const input = document.element("north_spades");
+    input.focus = () => {
+        focused = true;
+    };
+    const target = {
+        closest(selector) {
+            if (selector === ".hand-card") {
+                return { className: "hand-card" };
+            }
+            if (selector === ".hand-suit") {
+                return {
+                    querySelector() {
+                        return input;
+                    },
+                };
+            }
+            return null;
+        },
+    };
+
+    // Act
+    ctx.handleHandSuitClick({ target });
+
+    // Assert
+    assert.equal(focused, false);
 });
