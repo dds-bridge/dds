@@ -189,8 +189,10 @@ function wasmSolveEnvironmentError() {
     }
 
     if (typeof SharedArrayBuffer === "undefined") {
-        return "Solving needs SharedArrayBuffer. " +
-            "Serve with COOP/COEP via: python3 web/serve_mvp.py";
+        return "Solving needs SharedArrayBuffer (cross-origin isolation). " +
+            "Serve responses with Cross-Origin-Opener-Policy: same-origin and " +
+            "Cross-Origin-Embedder-Policy: require-corp " +
+            "(locally: python3 web/serve_mvp.py).";
     }
 
     return null;

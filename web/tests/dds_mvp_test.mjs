@@ -591,6 +591,30 @@ test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () =
     );
 });
 
+test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () => {
+    // Arrange: HTTPS page without cross-origin isolation (no SAB).
+    const code = readFileSync(findDdsMvpJsPath(), "utf8");
+    const sandbox = {
+        document: createMockDocument(),
+        console,
+        Promise,
+        Error,
+        setTimeout,
+        location: { protocol: "https:" },
+        SharedArrayBuffer: undefined,
+    };
+    const context = createContext(sandbox);
+    runInContext(code, context, { filename: "dds_mvp.js" });
+
+    // Act
+    const message = context.wasmSolveEnvironmentError();
+
+    // Assert: name the headers so any host can be fixed.
+    assert.match(message, /SharedArrayBuffer/);
+    assert.match(message, /Cross-Origin-Opener-Policy:\s*same-origin/);
+    assert.match(message, /Cross-Origin-Embedder-Policy:\s*require-corp/);
+});
+
 test("wasmSolveEnvironmentError is null in non-browser sandboxes", () => {
     const ctx = loadDdsMvp(createMockDocument());
     assert.equal(ctx.wasmSolveEnvironmentError(), null);

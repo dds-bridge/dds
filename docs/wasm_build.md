@@ -98,6 +98,8 @@ Pthread WASM needs `SharedArrayBuffer`, which requires cross-origin isolation
 (`Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp`). `web/serve_mvp.py` sets those
 headers; plain `python3 -m http.server` does not, so solving will fail there.
+Any other host must send the same response headers. Without them the page can
+load but solving reports that `SharedArrayBuffer` is unavailable.
 `file://` is still fine for UI-only browsing; run a solve over the isolated HTTP
 server.
 
