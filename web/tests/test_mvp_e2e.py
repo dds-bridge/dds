@@ -294,26 +294,44 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
                 status.locator(".contract-status-denom").inner_text(), "♣"
             )
             self.assertEqual(
+                status.locator(".contract-status-by").inner_text(), "by"
+            )
+            self.assertEqual(
                 status.locator(".contract-status-declarer").inner_text(), "N"
             )
             layout = page.evaluate(
                 """() => {
-                const denom = document.querySelector('.contract-status-denom')
-                  .getBoundingClientRect();
+                const denom = document.querySelector('.contract-status-denom');
+                const by = document.querySelector('.contract-status-by');
                 const declarer = document.querySelector(
                   '.contract-status-declarer'
-                ).getBoundingClientRect();
+                );
+                const denomRect = denom.getBoundingClientRect();
+                const byRect = by.getBoundingClientRect();
+                const declarerRect = declarer.getBoundingClientRect();
+                const denomSize = parseFloat(getComputedStyle(denom).fontSize);
+                const declarerSize = parseFloat(
+                  getComputedStyle(declarer).fontSize
+                );
                 return {
-                  denomRight: denom.right,
-                  declarerLeft: declarer.left,
-                  denomMidY: denom.top + denom.height / 2,
-                  declarerMidY: declarer.top + declarer.height / 2,
+                  denomRight: denomRect.right,
+                  byLeft: byRect.left,
+                  byRight: byRect.right,
+                  declarerLeft: declarerRect.left,
+                  denomMidY: denomRect.top + denomRect.height / 2,
+                  declarerMidY: declarerRect.top + declarerRect.height / 2,
+                  denomSize,
+                  declarerSize,
                 };
               }"""
             )
-            self.assertGreater(layout["declarerLeft"], layout["denomRight"] - 1.0)
+            self.assertGreater(layout["byLeft"], layout["denomRight"] - 1.0)
+            self.assertGreater(layout["declarerLeft"], layout["byRight"] - 1.0)
             self.assertLess(
                 abs(layout["declarerMidY"] - layout["denomMidY"]), 8.0
+            )
+            self.assertAlmostEqual(
+                layout["declarerSize"], layout["denomSize"], delta=0.5
             )
             self.assertEqual(
                 status.locator("[aria-label]").get_attribute("aria-label"),
@@ -335,6 +353,9 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             )
             self.assertEqual(
                 status.locator(".contract-status-denom").inner_text(), "NT"
+            )
+            self.assertEqual(
+                status.locator(".contract-status-by").inner_text(), "by"
             )
             self.assertEqual(
                 status.locator(".contract-status-declarer").inner_text(), "W"

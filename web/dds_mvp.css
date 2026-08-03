@@ -105,7 +105,12 @@
   font-size: 1.6em;
 }
 
+.contract-status-by {
+  font-size: 1em;
+}
+
 .contract-status-declarer {
+  font-size: 1.6em;
   font-weight: 700;
 }
 

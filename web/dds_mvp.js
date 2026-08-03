@@ -447,6 +447,7 @@ function contractStatusHtml(contract) {
 
     return "<div class=\"contract-status-panel\" aria-label=\"" + aria + "\">" +
         "<div class=\"contract-status-denom\">" + denomHtml + "</div>" +
+        "<div class=\"contract-status-by\">by</div>" +
         "<div class=\"contract-status-declarer\">" + declarerLetter + "</div>" +
         "</div>";
 }

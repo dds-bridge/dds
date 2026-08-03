@@ -1323,10 +1323,15 @@ test("contractStatusHtml shows denomination and declarer", () => {
     // Act
     const html = ctx.contractStatusHtml({ direction: "east", denomination: "H" });
 
-    // Assert
+    // Assert: denomination, then "by", then declarer on one row.
     assert.match(html, /class="contract-status-denom"/);
     assert.match(html, /<heart-suit>♥<\/heart-suit>/);
+    assert.match(html, /class="contract-status-by"[^>]*>by</);
     assert.match(html, /class="contract-status-declarer"[^>]*>E</);
+    assert.match(
+        html,
+        /contract-status-denom[\s\S]*contract-status-by[\s\S]*contract-status-declarer/
+    );
     assert.match(html, /aria-label="Hearts; East declares"/);
 });
 
@@ -1335,6 +1340,7 @@ test("contractStatusHtml uses NT and South when South declares notrump", () => {
     const html = ctx.contractStatusHtml({ direction: "south", denomination: "N" });
 
     assert.match(html, /class="contract-status-denom"[^>]*>NT</);
+    assert.match(html, /class="contract-status-by"[^>]*>by</);
     assert.match(html, /class="contract-status-declarer"[^>]*>S</);
     assert.match(html, /aria-label="Notrump; South declares"/);
 });
@@ -1386,6 +1392,7 @@ test("handleResultTableClick selects declarer and denomination from a cell", () 
     const status = document.element("contract-status");
     assert.equal(status.hidden, false);
     assert.match(status.innerHTML, /<heart-suit>♥<\/heart-suit>/);
+    assert.match(status.innerHTML, /class="contract-status-by"[^>]*>by</);
     assert.match(status.innerHTML, /class="contract-status-declarer"[^>]*>E</);
 });
 
@@ -1511,8 +1518,17 @@ test("contract status lives in the hand diagram northeast corner", () => {
     assert.doesNotMatch(neMatch[0], /aria-hidden="true"/);
     assert.match(css, /\.grid-item\.grid-filler-ne\s*\{[^}]*font-size:/s);
     assert.match(css, /\.contract-status-denom/);
+    assert.match(css, /\.contract-status-by/);
     assert.match(css, /\.contract-status-declarer/);
-    // Declarer sits to the right of the denomination (same row).
+    // Declarer matches denomination size; "by" sits between them on one row.
+    assert.match(
+        css,
+        /\.contract-status-denom\s*\{[^}]*font-size:\s*1\.6em/s
+    );
+    assert.match(
+        css,
+        /\.contract-status-declarer\s*\{[^}]*font-size:\s*1\.6em/s
+    );
     assert.match(
         css,
         /\.contract-status-panel\s*\{[^}]*display:\s*flex/s
