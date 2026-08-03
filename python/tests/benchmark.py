@@ -41,7 +41,7 @@ import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Mapping, Sequence, TextIO
+from typing import Callable, Mapping, Sequence, TextIO
 
 SOLVERS = ("solve", "calc")
 ALT_ENTER = "\033[?1049h\033[H\033[2J"
@@ -55,6 +55,14 @@ def dtest_rel(*, os_name: str = os.name) -> Path:
 
 
 DTEST_REL = dtest_rel()
+
+
+def resolve_bazel_command(*, which: Callable[[str], str | None] | None = None) -> str:
+    """Prefer bazelisk; fall back to bazel for older local installs."""
+    finder = which or shutil.which
+    if finder("bazelisk"):
+        return "bazelisk"
+    return "bazel"
 
 
 class BenchmarkError(Exception):
@@ -478,7 +486,7 @@ Options:
   --repeats N         Runs per combination per binary (default: 1; env: REPEATS)
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
-  --build             Build dtest for the current checkout (bazel build //library/tests:dtest)
+  --build             Build dtest for the current checkout (bazelisk build //library/tests:dtest)
   --branch NAME       Git branch to build and benchmark ("." means the current branch).
                       Repeatable. Each named branch is checked out, dtest is built and
                       its binary saved, then the original branch is restored. A clean
@@ -700,7 +708,10 @@ class BenchmarkRunner:
             raise subprocess.CalledProcessError(proc.returncode, cmd)
 
     def bazel_dtest(self) -> None:
-        self.run_build(["bazel", "build", "//library/tests:dtest"], cwd=self.root)
+        self.run_build(
+            [resolve_bazel_command(), "build", "//library/tests:dtest"],
+            cwd=self.root,
+        )
 
     def checkout_and_build(self, name: str) -> None:
         self.run_build(["git", "-C", str(self.root), "checkout", name])
@@ -708,9 +719,10 @@ class BenchmarkRunner:
 
     def build_branch_binary(self, name: str, dest: Path) -> None:
         if self.cfg.dry_run:
+            bazel = resolve_bazel_command()
             print(f"DRY_RUN: git -C {self.root} checkout {name}", file=self.err)
             print(
-                f"DRY_RUN: (cd {self.root} && bazel build //library/tests:dtest)",
+                f"DRY_RUN: (cd {self.root} && {bazel} build //library/tests:dtest)",
                 file=self.err,
             )
             print(f"DRY_RUN: cp -L {self.root / DTEST_REL} {dest}", file=self.err)
@@ -733,8 +745,9 @@ class BenchmarkRunner:
         if self.cfg.dry_run:
             print(f"DRY_RUN: git -C {self.root} checkout {self.orig_branch}", file=self.err)
             if rebuild:
+                bazel = resolve_bazel_command()
                 print(
-                    f"DRY_RUN: (cd {self.root} && bazel build //library/tests:dtest)",
+                    f"DRY_RUN: (cd {self.root} && {bazel} build //library/tests:dtest)",
                     file=self.err,
                 )
             return
@@ -860,8 +873,9 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
 
     if cfg.build:
         if cfg.dry_run:
+            bazel = resolve_bazel_command()
             print(
-                f"DRY_RUN: (cd {root} && bazel build //library/tests:dtest)",
+                f"DRY_RUN: (cd {root} && {bazel} build //library/tests:dtest)",
                 file=sys.stderr,
             )
         else:
@@ -879,7 +893,10 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                     file=sys.stderr,
                 )
                 if i == 0:
-                    print("hint: bazel build //library/tests:dtest", file=sys.stderr)
+                    print(
+                        f"hint: {resolve_bazel_command()} build //library/tests:dtest",
+                        file=sys.stderr,
+                    )
                 return 1
 
     order = run_order(num_bins, reverse=cfg.reverse)

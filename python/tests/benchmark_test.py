@@ -187,6 +187,55 @@ class TestRunBuild(unittest.TestCase):
             self.assertEqual(fake_stderr.getvalue(), "")
 
 
+class TestResolveBazelCommand(unittest.TestCase):
+    def test_prefers_bazelisk_when_available(self) -> None:
+        def fake_which(name: str) -> str | None:
+            return "/usr/bin/bazelisk" if name == "bazelisk" else None
+
+        self.assertEqual(benchmark.resolve_bazel_command(which=fake_which), "bazelisk")
+
+    def test_falls_back_to_bazel_when_bazelisk_missing(self) -> None:
+        def fake_which(name: str) -> str | None:
+            return "/usr/bin/bazel" if name == "bazel" else None
+
+        self.assertEqual(benchmark.resolve_bazel_command(which=fake_which), "bazel")
+
+    def test_falls_back_to_bazel_when_neither_on_path(self) -> None:
+        self.assertEqual(benchmark.resolve_bazel_command(which=lambda _name: None), "bazel")
+
+
+class TestBazelDtestCommand(unittest.TestCase):
+    def test_bazel_dtest_invokes_resolved_launcher(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = benchmark.BenchmarkRunner(Path(tmp), benchmark.Config())
+            seen: list[list[str]] = []
+
+            def capture(cmd, **_kwargs):  # type: ignore[no-untyped-def]
+                seen.append(list(cmd))
+
+            with mock.patch.object(runner, "run_build", side_effect=capture):
+                with mock.patch.object(
+                    benchmark, "resolve_bazel_command", return_value="bazelisk"
+                ):
+                    runner.bazel_dtest()
+            self.assertEqual(seen, [["bazelisk", "build", "//library/tests:dtest"]])
+
+    def test_dry_run_build_message_uses_resolved_launcher(self) -> None:
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = benchmark.BenchmarkRunner(
+                Path(tmp),
+                benchmark.Config(dry_run=True),
+                err=err,
+            )
+            with mock.patch.object(
+                benchmark, "resolve_bazel_command", return_value="bazelisk"
+            ):
+                runner.build_branch_binary("develop", Path(tmp) / "out")
+            self.assertIn("bazelisk build //library/tests:dtest", err.getvalue())
+            self.assertNotIn("bazel build //library/tests:dtest", err.getvalue())
+
+
 class TestRunOrder(unittest.TestCase):
     def test_default(self) -> None:
         self.assertEqual(benchmark.run_order(3, reverse=False), [0, 1, 2])

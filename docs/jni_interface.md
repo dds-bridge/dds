@@ -41,7 +41,7 @@ No `jextract` install is required — the bindings are hand-written (see
 ## Building the shared library
 
 ```bash
-bazel build //jni:dds_shared
+bazelisk build //jni:dds_shared
 ```
 
 This produces one self-contained native library rolling up the entire solver
@@ -174,8 +174,8 @@ command line) to grant access and silence the runtime warning.
 The end-to-end smoke tests wire all of this together:
 
 ```bash
-bazel test //jni:dds_ffm_smoke_test           # explicit-path loading
-bazel test //jni:dds_ffm_embedded_smoke_test  # loadEmbedded() from the jar
+bazelisk test //jni:dds_ffm_smoke_test           # explicit-path loading
+bazelisk test //jni:dds_ffm_embedded_smoke_test  # loadEmbedded() from the jar
 ```
 
 ## Packaging & local install
@@ -188,7 +188,7 @@ bazel test //jni:dds_ffm_embedded_smoke_test  # loadEmbedded() from the jar
 Install it into your local Maven repository (`~/.m2`):
 
 ```bash
-bazel run //jni:dds_ffm_dist.publish \
+bazelisk run //jni:dds_ffm_dist.publish \
     --define maven_repo="file://$HOME/.m2/repository" \
     --define gpg_sign=false
 ```

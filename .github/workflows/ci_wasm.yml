@@ -37,7 +37,7 @@ jobs:
         run: |
           max=3
           for i in $(seq 1 "$max"); do
-            if bazel fetch //web/... //wasm/...; then
+            if bazelisk fetch //web/... //wasm/...; then
               exit 0
             fi
             if [ "$i" -lt "$max" ]; then
@@ -49,20 +49,20 @@ jobs:
 
       # 5️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel)
       - name: Test web helpers, system tests, e2e, and CalcDDtablePBN
-        run: bazel test --verbose_failures //web:web_tests //web:web_system_tests //wasm:all
+        run: bazelisk test --verbose_failures //web:web_tests //web:web_system_tests //wasm:all
 
       - name: Build WASM targets
         run: |
           max=3
           for i in $(seq 1 "$max"); do
-            if bazel build --verbose_failures //wasm:all_examples_wasm; then
+            if bazelisk build --verbose_failures //wasm:all_examples_wasm; then
               exit 0
             fi
             if [ "$i" -lt "$max" ]; then
               echo "Build failed (attempt $i/$max). Retrying in 20s..."
               sleep 20
               # Restart server only — keep downloaded external repos / disk cache.
-              bazel shutdown || true
+              bazelisk shutdown || true
             fi
           done
           exit 1

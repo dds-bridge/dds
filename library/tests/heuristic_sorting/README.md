@@ -10,7 +10,7 @@ Prerequisites
 Build
 
 ```bash
-bazel build //...
+bazelisk build //...
 ```
 
 Run tests (no cached results)
@@ -18,7 +18,7 @@ Run tests (no cached results)
 Run the whole heuristic-sorting test suite with the new heuristic and force tests to re-run:
 
 ```bash
-bazel test //library/tests/heuristic_sorting:all \
+bazelisk test //library/tests/heuristic_sorting:all \
   --nocache_test_results \
   --test_output=errors
 ```
@@ -26,14 +26,14 @@ bazel test //library/tests/heuristic_sorting:all \
 Run a single test target (faster iteration):
 
 ```bash
-bazel test //library/tests/heuristic_sorting:targeted_unit_tests \
+bazelisk test //library/tests/heuristic_sorting:targeted_unit_tests \
   --nocache_test_results \
   --test_output=errors
 ```
 
 Coverage notes
 
-I attempted a `bazel coverage` run; Bazel invoked `gcov` with flags that do not match the macOS-provided toolchain, producing no coverage data (errors like "gcov: Unknown command line argument '-output'" in the test logs).
+I attempted a `bazelisk coverage` run; Bazel invoked `gcov` with flags that do not match the macOS-provided toolchain, producing no coverage data (errors like "gcov: Unknown command line argument '-output'" in the test logs).
 
 Quick fixes:
 
@@ -49,7 +49,7 @@ brew install gcc
 - Re-run coverage once gcov is GNU-compatible:
 
 ```bash
-bazel coverage //library/tests/heuristic_sorting:all \
+bazelisk coverage //library/tests/heuristic_sorting:all \
   --nocache_test_results \
   --test_output=errors
 ```

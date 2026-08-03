@@ -41,7 +41,7 @@ cc_binary(
     visibility = ["//visibility:public"],
 )
 
-# Test target for Bazel test execution (`bazel test //library/tests:all`)
+# Test target for Bazel test execution (`bazelisk test //library/tests:all`)
 # Uses testable_dds to expose internal symbols for unit testing
 cc_test(
     name = "unit_tests",

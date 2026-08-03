@@ -11,7 +11,7 @@ Details
 - Build: `library/src/BUILD.bazel` excludes legacy `SolverContext.cpp`; route context through `system/SolverContext.*` and `SolverContextAdapter`.
 
 Validation
-- `bazel test //...` passes with and without `--define=tt_context_ownership=true`.
+- `bazelisk test //...` passes with and without `--define=tt_context_ownership=true`.
 - `dtest` builds and runs with both default and constrained TT sizes, no segfaults.
 
 Next steps (separate PR)

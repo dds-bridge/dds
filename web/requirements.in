@@ -8,12 +8,12 @@
 # Normal Bazel builds consume requirements_lock.txt; they do not regenerate it.
 # To update requirements_lock.txt after editing this file:
 #
-#   bazel run @python_3_14//:python3 -- -m pip install pip-tools
-#   bazel run @python_3_14//:python3 -- -m piptools compile --generate-hashes \
+#   bazelisk run @python_3_14//:python3 -- -m pip install pip-tools
+#   bazelisk run @python_3_14//:python3 -- -m piptools compile --generate-hashes \
 #     --output-file=web/requirements_lock.txt web/requirements.in
 #
 # Todo: Consider adding a 'compile_pip_requirements' rules_python target that
-# would be invoked by 'bazel run … --update'. If done, though, requirements_lock.txt
+# would be invoked by 'bazelisk run … --update'. If done, though, requirements_lock.txt
 # should remain in the repo so that it stays versioned.
 
 playwright==1.52.0

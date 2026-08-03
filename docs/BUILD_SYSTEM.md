@@ -100,8 +100,8 @@ binaries when the clang major matches.
    `xcrun clang++ --version`  
    `xcrun clang -print-file-name=libclang_rt.tsan_osx_dynamic.dylib`
 4. Re-run sanitizer smoke tests, e.g.  
-   `bazel test --config=asan //library/tests/system:context_tt_facade_test`  
-   `bazel test --config=tsan //library/tests/system:thread_safety_stress_test`
+   `bazelisk test --config=asan //library/tests/system:context_tt_facade_test`  
+   `bazelisk test --config=tsan //library/tests/system:thread_safety_stress_test`
 
 If TSAN fails to start after an Xcode upgrade (dyld cannot load the runtime),
 the rpath major is likely out of sync with the installed toolchain.
@@ -111,8 +111,8 @@ the rpath major is likely out of sync with the installed toolchain.
 
 | Workflow | Job | Command |
 |----------|-----|---------|
-| `ci_linux.yml` | `asan` | `bazel test --config=asan //library/tests/...` |
-| `ci_linux.yml` | `tsan` | `bazel test --config=tsan //library/tests/system/...` |
+| `ci_linux.yml` | `asan` | `bazelisk test --config=asan //library/tests/...` |
+| `ci_linux.yml` | `tsan` | `bazelisk test --config=tsan //library/tests/system/...` |
 | `ci_macos.yml` | `sanitizers` | ASAN and TSAN on `//library/tests/system/...` (validates macOS toolchain/rpath wiring) |
 
 

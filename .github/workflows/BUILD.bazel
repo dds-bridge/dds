@@ -1,0 +1,7 @@
+exports_files(glob(["*.yml"]))
+
+filegroup(
+    name = "all_workflows",
+    srcs = glob(["*.yml"]),
+    visibility = ["//visibility:public"],
+)
