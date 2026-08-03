@@ -29,6 +29,7 @@
             updateActionButtons
             handCardHtml
             handHoldingHtml
+            escapeHtml
             updateHandCardDisplays
             handleHandCardClick
             handleHandSuitClick
@@ -519,6 +520,19 @@ function capitalize(word) {
     return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
+function escapeHtml(value) {
+    if (value == null) {
+        return "";
+    }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 function handCardAriaLabel(direction, card) {
     const suitName = card.suit.replace(/s$/, "");
     const pipName = PIP_NAMES[card.pip] || card.pip;
@@ -531,16 +545,16 @@ function handCardHtml(direction, card, index, leadTricks) {
     const classes = hasTricks ? "hand-card hand-card-with-tricks" : "hand-card";
     const badge = hasTricks
         ? "<span class=\"hand-card-tricks\" aria-hidden=\"true\">" +
-            leadTricks +
+            escapeHtml(leadTricks) +
             "</span>"
         : "";
 
     return "<button type=\"button\" class=\"" + classes + "\"" +
-        " data-direction=\"" + direction + "\"" +
-        " data-card=\"" + card.key() + "\"" +
-        " data-index=\"" + index + "\"" +
-        " aria-label=\"" + handCardAriaLabel(direction, card) + "\">" +
-        card.pip +
+        " data-direction=\"" + escapeHtml(direction) + "\"" +
+        " data-card=\"" + escapeHtml(card.key()) + "\"" +
+        " data-index=\"" + escapeHtml(index) + "\"" +
+        " aria-label=\"" + escapeHtml(handCardAriaLabel(direction, card)) + "\">" +
+        escapeHtml(card.pip) +
         badge +
         "</button>";
 }

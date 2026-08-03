@@ -883,6 +883,41 @@ test("handCardHtml renders a clickable button for a card in a hand", () => {
     assert.match(html, /aria-label="North spade ace"/);
 });
 
+test("escapeHtml encodes characters unsafe in HTML text and attributes", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+
+    assert.equal(ctx.escapeHtml("&"), "&amp;");
+    assert.equal(ctx.escapeHtml("<"), "&lt;");
+    assert.equal(ctx.escapeHtml(">"), "&gt;");
+    assert.equal(ctx.escapeHtml("\""), "&quot;");
+    assert.equal(ctx.escapeHtml("'"), "&#39;");
+    assert.equal(ctx.escapeHtml("A&B<C>\"D'"), "A&amp;B&lt;C&gt;&quot;D&#39;");
+    assert.equal(ctx.escapeHtml(7), "7");
+    assert.equal(ctx.escapeHtml(null), "");
+    assert.equal(ctx.escapeHtml(undefined), "");
+});
+
+test("handCardHtml escapes pip-derived markup from raw suit input", () => {
+    // Arrange: collectHands uppercases each typed character into Card.pip.
+    const ctx = loadDdsMvp(createMockDocument());
+    const card = new ctx.Card("spades", "\"&<>'");
+
+    // Act
+    const html = ctx.handCardHtml("north", card, 0);
+    const aria = ctx.handCardAriaLabel("north", card);
+
+    // Assert: aria text stays plain; HTML embedding is escaped.
+    assert.equal(aria, "North spade \"&<>'");
+    assert.match(html, /data-card="S&quot;&amp;&lt;&gt;&#39;"/);
+    assert.match(
+        html,
+        /aria-label="North spade &quot;&amp;&lt;&gt;&#39;"/
+    );
+    assert.match(html, />&quot;&amp;&lt;&gt;&#39;</);
+    assert.doesNotMatch(html, /data-card="S"/);
+    assert.doesNotMatch(html, />"</);
+});
+
 test("hand holdings render pips in input order, not sorted", () => {
     // Arrange: caret mapping requires display order to match the input string.
     const document = createMockDocument({ north_spades: "QA" });
