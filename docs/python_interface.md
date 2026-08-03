@@ -40,23 +40,11 @@ For wheel packaging, the extension is also copied into the package as `dds3/_dds
 python -m venv venv
 source venv/bin/activate
 
-# Install pytest (if not already installed)
-pip install pytest
-```
-
-### Running Unit Tests
 ```bash
-# Set PYTHONPATH to include source package and top-level extension fallback
-export PYTHONPATH=python:bazel-bin/python
-
-# Run Bazel smoke test for Python bindings
-bazelisk test //python:python_interface_smoke_test
-
-# Or use pytest directly
-pytest python/tests/ -v
-
-# Run specific test file
-pytest python/tests/test_solve_board.py -v
+# Run all Python tests via Bazelisk (recommended)
+bazelisk test //python/...
+# Run a specific test
+bazelisk test //python:solve_board_test
 ```
 
 ### Test Coverage
