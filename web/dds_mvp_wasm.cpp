@@ -30,8 +30,15 @@ auto mvp_leads_context() -> SolverContext& {
   return ctx;
 }
 
-void append_lead_card(int* out_leads, int& n, int suit, int rank, int score)
+// Caller buffer is out_leads[0] count plus at most 13 (suit,rank,score) triples.
+constexpr int kMaxExpandedLeads = 13;
+
+void append_lead_card(
+    int* out_leads, int& n, int capacity, int suit, int rank, int score)
 {
+  if (n >= capacity) {
+    return;
+  }
   out_leads[1 + 3 * n] = suit;
   out_leads[1 + 3 * n + 1] = rank;
   out_leads[1 + 3 * n + 2] = score;
@@ -42,13 +49,21 @@ void write_expanded_leads(const FutureTricks& fut, int* out_leads)
 {
   int n = 0;
   for (int i = 0; i < fut.cards; ++i) {
-    append_lead_card(out_leads, n, fut.suit[i], fut.rank[i], fut.score[i]);
+    if (n >= kMaxExpandedLeads) {
+      break;
+    }
+    append_lead_card(
+        out_leads, n, kMaxExpandedLeads, fut.suit[i], fut.rank[i], fut.score[i]);
     // Holding encoding (see equals_to_string): equals is sequence << 2, so
     // rank r is present when bit (r - 2) is set in (equals >> 2).
     const int equals_ranks = fut.equals[i] >> 2;
     for (int rank = 2; rank <= 14; ++rank) {
+      if (n >= kMaxExpandedLeads) {
+        break;
+      }
       if ((equals_ranks & (1 << (rank - 2))) != 0) {
-        append_lead_card(out_leads, n, fut.suit[i], rank, fut.score[i]);
+        append_lead_card(
+            out_leads, n, kMaxExpandedLeads, fut.suit[i], rank, fut.score[i]);
       }
     }
   }
@@ -108,7 +123,7 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int
 // Solves all opening leads from `first` in `trump`.
 // out_leads[0] = n; then n triples (suit, rank, score) with equals expanded.
 // suit 0..3 = S,H,D,C; rank 2..14; score = tricks for the side on lead.
-// Caller must provide at least 1 + 13*3 ints.
+// n is capped at 13. Caller must provide at least 1 + 13*3 ints.
 EMSCRIPTEN_KEEPALIVE
 auto dds_mvp_solve_leads(
     const char* pbn, int trump, int first, int* out_leads) -> int

@@ -170,3 +170,38 @@ TEST(DdsMvpWasmTest, ExpandedLeadsUseHoldingEncodedEqualsBitmask) {
   EXPECT_EQ(out[5], 12);  // queen from equals
   EXPECT_EQ(out[6], 7);
 }
+
+TEST(DdsMvpWasmTest, ExpandedLeadsHardCapsAtThirteenCards) {
+  // One representative with equals for ranks 2-13 expands to 13 cards; a second
+  // FutureTricks entry must not write past the caller buffer (1 + 13*3).
+  FutureTricks fut{};
+  fut.cards = 2;
+  fut.suit[0] = 0;
+  fut.rank[0] = 14;  // ace
+  int equals = 0;
+  for (int rank = 2; rank <= 13; ++rank) {
+    equals |= 1 << (rank - 2);
+  }
+  fut.equals[0] = equals << 2;
+  fut.score[0] = 7;
+
+  fut.suit[1] = 1;
+  fut.rank[1] = 14;
+  fut.equals[1] = 0x0400 << 2;  // would be a 14th/15th card without a cap
+  fut.score[1] = 6;
+
+  constexpr int kCap = 13;
+  constexpr int kSlots = 1 + kCap * 3;
+  constexpr int kCanary = 0x7EFEFEFE;
+  int out[kSlots + 3];
+  for (int i = 0; i < kSlots + 3; ++i) {
+    out[i] = kCanary;
+  }
+
+  dds_mvp_test_write_expanded_leads(&fut, out);
+
+  ASSERT_EQ(out[0], kCap);
+  EXPECT_EQ(out[kSlots], kCanary);
+  EXPECT_EQ(out[kSlots + 1], kCanary);
+  EXPECT_EQ(out[kSlots + 2], kCanary);
+}
