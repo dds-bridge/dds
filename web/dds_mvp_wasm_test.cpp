@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 
+#include <api/dds.h>
 #include <api/dll.h>
 
 extern "C" int dds_mvp_calc_table(const char* pbn, int* out_table);
@@ -17,6 +18,8 @@ extern "C" int dds_mvp_solve_leads(
     const char* pbn, int trump, int first, int* out_leads);
 extern "C" void dds_mvp_test_write_expanded_leads(
     const FutureTricks* fut, int* out_leads);
+extern "C" void dds_mvp_test_mvp_context_tt_config(
+    int which, int* kind_is_small, int* def_mb, int* max_mb);
 
 namespace {
 
@@ -35,6 +38,20 @@ constexpr char kPbnHand1[] =
     "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 5.A95432.7632.K6 AKJ9842.K.T8.J93";
 
 }  // namespace
+
+TEST(DdsMvpWasmTest, MvpContextsUseSmallTranspositionTables) {
+  // Dual session contexts must not each default to Large (~95MB) TT heaps.
+  for (int which = 0; which < 2; ++which) {
+    int kind_is_small = 0;
+    int def_mb = -1;
+    int max_mb = -1;
+    dds_mvp_test_mvp_context_tt_config(
+        which, &kind_is_small, &def_mb, &max_mb);
+    EXPECT_EQ(kind_is_small, 1) << "context " << which;
+    EXPECT_EQ(def_mb, THREADMEM_SMALL_DEF_MB) << "context " << which;
+    EXPECT_EQ(max_mb, THREADMEM_SMALL_MAX_MB) << "context " << which;
+  }
+}
 
 TEST(DdsMvpWasmTest, RejectsNullPointers) {
   int out[20]{};

@@ -7,8 +7,9 @@
 
 #include <cstring>
 
-#include <api/PBN.h>
 #include <api/calc_dd_table.hpp>
+#include <api/dds.h>
+#include <api/PBN.h>
 #include <api/solve_board.hpp>
 
 #if defined(__EMSCRIPTEN__)
@@ -18,15 +19,25 @@
 #endif
 
 namespace {
+// Cap browser TT heaps: two session contexts at Large defaults would be ~190MB.
+auto mvp_solver_config() -> SolverConfig
+{
+  return SolverConfig{
+      .tt_kind_ = TTKind::Small,
+      .tt_mem_default_mb_ = THREADMEM_SMALL_DEF_MB,
+      .tt_mem_maximum_mb_ = THREADMEM_SMALL_MAX_MB,
+  };
+}
+
 // Separate contexts so CalcDDtable worker pools cannot disturb SolveBoard
 // (and vice versa) when the UI auto-fills the table then analyzes leads.
 auto mvp_table_context() -> SolverContext& {
-  static SolverContext ctx;
+  static SolverContext ctx(mvp_solver_config());
   return ctx;
 }
 
 auto mvp_leads_context() -> SolverContext& {
-  static SolverContext ctx;
+  static SolverContext ctx(mvp_solver_config());
   return ctx;
 }
 
@@ -80,6 +91,24 @@ extern "C" void dds_mvp_test_write_expanded_leads(
     return;
   }
   write_expanded_leads(*fut, out_leads);
+}
+
+// which: 0 = table context, 1 = leads context.
+extern "C" void dds_mvp_test_mvp_context_tt_config(
+    int which, int* kind_is_small, int* def_mb, int* max_mb)
+{
+  SolverContext& ctx =
+      (which == 0) ? mvp_table_context() : mvp_leads_context();
+  const SolverConfig& cfg = ctx.config();
+  if (kind_is_small != nullptr) {
+    *kind_is_small = (cfg.tt_kind_ == TTKind::Small) ? 1 : 0;
+  }
+  if (def_mb != nullptr) {
+    *def_mb = cfg.tt_mem_default_mb_;
+  }
+  if (max_mb != nullptr) {
+    *max_mb = cfg.tt_mem_maximum_mb_;
+  }
 }
 #endif
 
