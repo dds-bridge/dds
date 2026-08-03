@@ -14,6 +14,11 @@
 #include <solver_context/solver_context.hpp>
 
 
+/// Advance to the next suit in QuickTricks iteration order.
+/// Trump is visited first (when playing a trump contract); afterwards
+/// non-trump suits are visited in order while skipping trump.
+auto next_quick_trick_suit(int suit, int trump) -> int;
+
 int QuickTricks(
   Pos& tpos,
   const int hand,
