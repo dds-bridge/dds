@@ -38,6 +38,9 @@
             selectedContract
             onContractSelect
             openingLeader
+            denominationDisplayHtml
+            contractStatusHtml
+            updateContractStatus
             pipFromDdsRank
             leadTricksMapFromSolverOutput
             wasmSolveEnvironmentError
@@ -371,6 +374,73 @@ function openingLeader(declarerDirection) {
     }
 
     return DIRECTIONS[(index + 1) % 4];
+}
+
+const DENOM_TO_SUIT = {
+    C: "clubs",
+    D: "diamonds",
+    H: "hearts",
+    S: "spades"
+};
+
+const DENOM_ARIA_NAMES = {
+    C: "Clubs",
+    D: "Diamonds",
+    H: "Hearts",
+    S: "Spades",
+    N: "Notrump"
+};
+
+function denominationDisplayHtml(denomination) {
+    if (denomination === "N") {
+        return "NT";
+    }
+
+    const suit = DENOM_TO_SUIT[denomination];
+
+    if (!suit) {
+        return "";
+    }
+
+    return suitSymbolHtml(suit);
+}
+
+function contractStatusHtml(contract) {
+    const denomHtml = denominationDisplayHtml(contract.denomination);
+    const denomName = DENOM_ARIA_NAMES[contract.denomination];
+    const declarer = contract.direction;
+
+    if (!DIRECTIONS.includes(declarer) || !denomHtml || !denomName) {
+        return "";
+    }
+
+    const declarerLetter = declarer.charAt(0).toUpperCase();
+    const declarerName = capitalize(declarer);
+    const aria = denomName + "; " + declarerName + " declares";
+
+    return "<div class=\"contract-status-panel\" aria-label=\"" + aria + "\">" +
+        "<div class=\"contract-status-denom\">" + denomHtml + "</div>" +
+        "<div class=\"contract-status-declarer\">" + declarerLetter + "</div>" +
+        "</div>";
+}
+
+function updateContractStatus() {
+    const status = document.getElementById("contract-status");
+
+    if (!status) {
+        return;
+    }
+
+    const contract = selectedContractState;
+
+    if (!contract) {
+        status.hidden = true;
+        status.innerHTML = "";
+        return;
+    }
+
+    status.innerHTML = contractStatusHtml(contract);
+    status.hidden = false;
 }
 
 function pipFromDdsRank(rank) {
@@ -731,6 +801,7 @@ function applyResultCellSelection(direction, denomination) {
     }
 
     selectedContractState = { direction, denomination };
+    updateContractStatus();
     onContractSelect(direction, denomination);
     void refreshOpeningLeadTricks();
 }

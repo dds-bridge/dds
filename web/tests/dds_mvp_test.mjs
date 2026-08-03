@@ -108,6 +108,7 @@ function createMockDocument(initialValues = {}) {
     makeElement("result");
     makeElement("double-dummy-it");
     makeElement("deck-status");
+    makeElement("contract-status");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
     }
@@ -1305,6 +1306,58 @@ test("hand-card-tricks CSS places a small numeral in the lower-right corner", ()
     assert.match(css, /\.hand-card-tricks\s*\{[^}]*font-size:\s*0\.\d+em/s);
 });
 
+test("denominationDisplayHtml renders suit glyphs and NT", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+
+    // Act / Assert
+    assert.match(ctx.denominationDisplayHtml("H"), /<heart-suit>♥<\/heart-suit>/);
+    assert.match(ctx.denominationDisplayHtml("S"), /<spade-suit>♠<\/spade-suit>/);
+    assert.match(ctx.denominationDisplayHtml("D"), /<diamond-suit>♦<\/diamond-suit>/);
+    assert.match(ctx.denominationDisplayHtml("C"), /<club-suit>♣<\/club-suit>/);
+    assert.equal(ctx.denominationDisplayHtml("N"), "NT");
+    assert.equal(ctx.denominationDisplayHtml("X"), "");
+});
+
+test("contractStatusHtml shows denomination and declarer", () => {
+    // Arrange: East declares hearts.
+    const ctx = loadDdsMvp(createMockDocument());
+
+    // Act
+    const html = ctx.contractStatusHtml({ direction: "east", denomination: "H" });
+
+    // Assert
+    assert.match(html, /class="contract-status-denom"/);
+    assert.match(html, /<heart-suit>♥<\/heart-suit>/);
+    assert.match(html, /class="contract-status-declarer"[^>]*>E</);
+    assert.match(html, /aria-label="Hearts; East declares"/);
+});
+
+test("contractStatusHtml uses NT and South when South declares notrump", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    const html = ctx.contractStatusHtml({ direction: "south", denomination: "N" });
+
+    assert.match(html, /class="contract-status-denom"[^>]*>NT</);
+    assert.match(html, /class="contract-status-declarer"[^>]*>S</);
+    assert.match(html, /aria-label="Notrump; South declares"/);
+});
+
+test("updateContractStatus hides the NE panel when no contract is selected", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const status = document.element("contract-status");
+    status.hidden = false;
+    status.innerHTML = "stale";
+
+    // Act
+    ctx.updateContractStatus();
+
+    // Assert
+    assert.equal(status.hidden, true);
+    assert.equal(status.innerHTML, "");
+});
+
 test("handleResultTableClick selects declarer and denomination from a cell", () => {
     // Arrange
     const document = createMockDocument();
@@ -1332,6 +1385,11 @@ test("handleResultTableClick selects declarer and denomination from a cell", () 
     assert.equal(selected.denomination, "H");
     assert.deepEqual(selections, [{ direction: "east", denomination: "H" }]);
     assert.equal(cell.classList.contains("result-cell-selected"), true);
+
+    const status = document.element("contract-status");
+    assert.equal(status.hidden, false);
+    assert.match(status.innerHTML, /<heart-suit>♥<\/heart-suit>/);
+    assert.match(status.innerHTML, /class="contract-status-declarer"[^>]*>E</);
 });
 
 test("handleResultTableClick moves the highlight to the newly clicked cell", () => {
@@ -1439,6 +1497,34 @@ test("result table lives in the hand diagram southeast corner", () => {
     // SE cell must be readable (not aria-hidden) and sized for the table.
     assert.doesNotMatch(seMatch[0], /aria-hidden="true"/);
     assert.match(css, /\.grid-item\.grid-filler-se\s*\{[^}]*font-size:/s);
+});
+
+test("contract status lives in the hand diagram northeast corner", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert
+    const neMatch = html.match(
+        /<div class="[^"]*grid-filler-ne[^"]*"[^>]*>([\s\S]*?)<\/div>/
+    );
+    assert.ok(neMatch, "northeast filler cell present");
+    assert.match(neMatch[1], /id="contract-status"/);
+    assert.doesNotMatch(neMatch[0], /aria-hidden="true"/);
+    assert.match(css, /\.grid-item\.grid-filler-ne\s*\{[^}]*font-size:/s);
+    assert.match(css, /\.contract-status-denom/);
+    assert.match(css, /\.contract-status-declarer/);
+    // Declarer sits to the right of the denomination (same row).
+    assert.match(
+        css,
+        /\.contract-status-panel\s*\{[^}]*display:\s*flex/s
+    );
+    assert.doesNotMatch(
+        css,
+        /\.contract-status-panel\s*\{[^}]*flex-direction:\s*column/s
+    );
+    assert.doesNotMatch(css, /\.contract-status-declarer\s*\{[^}]*margin-top:/s);
 });
 
 test("hand diagram markup uses hand-suit rows with concealed text inputs", () => {

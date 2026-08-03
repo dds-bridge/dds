@@ -236,6 +236,9 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         try:
             north_clubs = page.locator("#result-table tr").nth(1).locator("td").nth(0)
             west_nt = page.locator("#result-table tr").nth(4).locator("td").nth(4)
+            status = page.locator("#contract-status")
+
+            self.assertTrue(status.is_hidden())
 
             north_clubs.click()
             self.assertIn(
@@ -245,6 +248,36 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             selected = page.evaluate("() => selectedContract()")
             self.assertEqual(
                 selected, {"direction": "north", "denomination": "C"}
+            )
+            self.assertTrue(status.is_visible())
+            self.assertEqual(
+                status.locator(".contract-status-denom").inner_text(), "♣"
+            )
+            self.assertEqual(
+                status.locator(".contract-status-declarer").inner_text(), "N"
+            )
+            layout = page.evaluate(
+                """() => {
+                const denom = document.querySelector('.contract-status-denom')
+                  .getBoundingClientRect();
+                const declarer = document.querySelector(
+                  '.contract-status-declarer'
+                ).getBoundingClientRect();
+                return {
+                  denomRight: denom.right,
+                  declarerLeft: declarer.left,
+                  denomMidY: denom.top + denom.height / 2,
+                  declarerMidY: declarer.top + declarer.height / 2,
+                };
+              }"""
+            )
+            self.assertGreater(layout["declarerLeft"], layout["denomRight"] - 1.0)
+            self.assertLess(
+                abs(layout["declarerMidY"] - layout["denomMidY"]), 8.0
+            )
+            self.assertEqual(
+                status.locator("[aria-label]").get_attribute("aria-label"),
+                "Clubs; North declares",
             )
 
             west_nt.click()
@@ -259,6 +292,16 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             selected = page.evaluate("() => selectedContract()")
             self.assertEqual(
                 selected, {"direction": "west", "denomination": "N"}
+            )
+            self.assertEqual(
+                status.locator(".contract-status-denom").inner_text(), "NT"
+            )
+            self.assertEqual(
+                status.locator(".contract-status-declarer").inner_text(), "W"
+            )
+            self.assertEqual(
+                status.locator("[aria-label]").get_attribute("aria-label"),
+                "Notrump; West declares",
             )
             self.assertEqual(errors, [])
         finally:
