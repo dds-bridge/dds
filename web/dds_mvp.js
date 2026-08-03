@@ -834,6 +834,14 @@ function applyResultCellSelection(direction, denomination) {
     void scheduleDealSolve();
 }
 
+function clearResultCellSelection() {
+    clearResultCellSelectionHighlight();
+    selectedContractState = null;
+    updateContractStatus();
+    onContractSelect(null, null);
+    void scheduleDealSolve();
+}
+
 async function solveOpeningLeadTricks(hands, contract) {
     const leader = openingLeader(contract.direction);
     const trump = DENOM_TO_STRAIN[contract.denomination];
@@ -953,6 +961,15 @@ function handleResultTableClick(event) {
     const contract = contractFromResultCell(cell);
 
     if (!contract) {
+        return;
+    }
+
+    const current = selectedContractState;
+
+    if (current &&
+            current.direction === contract.direction &&
+            current.denomination === contract.denomination) {
+        clearResultCellSelection();
         return;
     }
 

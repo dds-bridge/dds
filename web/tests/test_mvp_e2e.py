@@ -364,6 +364,14 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
                 status.locator("[aria-label]").get_attribute("aria-label"),
                 "Notrump; West declares",
             )
+
+            west_nt.click()
+            self.assertNotIn(
+                "result-cell-selected",
+                west_nt.get_attribute("class") or "",
+            )
+            self.assertIsNone(page.evaluate("() => selectedContract()"))
+            self.assertTrue(status.is_hidden())
             self.assertEqual(errors, [])
         finally:
             page.close()

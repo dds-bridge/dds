@@ -1428,6 +1428,46 @@ test("handleResultTableClick moves the highlight to the newly clicked cell", () 
     assert.equal(selected.denomination, "N");
 });
 
+test("handleResultTableClick clears selection when the selected cell is clicked again", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const table = document.element("result-table");
+    const cell = table.rows[2].cells[3]; // East / Hearts
+    const selections = [];
+    ctx.onContractSelect = (direction, denomination) => {
+        selections.push({ direction, denomination });
+    };
+
+    // Act: select, then click the same cell again.
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+
+    // Assert
+    assert.equal(ctx.selectedContract(), null);
+    assert.equal(cell.classList.contains("result-cell-selected"), false);
+    assert.deepEqual(selections, [
+        { direction: "east", denomination: "H" },
+        { direction: null, denomination: null },
+    ]);
+
+    const status = document.element("contract-status");
+    assert.equal(status.hidden, true);
+    assert.equal(status.innerHTML, "");
+});
+
 test("handleResultTableClick ignores clicks outside a result data cell", () => {
     // Arrange
     const document = createMockDocument();
