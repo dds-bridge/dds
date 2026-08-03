@@ -140,19 +140,21 @@
   border-radius: 0.15em;
   color: inherit;
   cursor: text;
-  font: inherit;
+  /* Below the seat's 30px so corner trick digits clear the pip glyph. */
+  font-size: 0.72em;
+  line-height: 1.15;
   margin: 0 0.04em;
-  padding: 0 0.12em;
+  padding: 0 0.28em 0.18em 0.1em;
   position: relative;
 }
 
 .hand-card-tricks {
-  bottom: 0;
-  font-size: 0.38em;
+  bottom: 0.02em;
+  font-size: 0.42em;
   font-weight: 700;
   line-height: 1;
   position: absolute;
-  right: 0.05em;
+  right: 0.04em;
 }
 
 .hand-card:hover,

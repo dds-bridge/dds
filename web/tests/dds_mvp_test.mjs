@@ -1290,9 +1290,15 @@ test("hand-card-tricks CSS places a small numeral in the lower-right corner", ()
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const handCardMatch = css.match(/\.hand-card\s*\{([^}]*)\}/s);
 
     // Assert
-    assert.match(css, /\.hand-card\s*\{[^}]*position:\s*relative/s);
+    assert.ok(handCardMatch, ".hand-card rule present");
+    const handCardRules = handCardMatch[1];
+    assert.match(handCardRules, /position:\s*relative/);
+    // Smaller than the seat's 30px so the corner tricks digit does not intersect the pip.
+    assert.match(handCardRules, /font-size:\s*(?:0\.\d+em|[1-2]?\d(?:\.\d+)?px)/);
+    assert.doesNotMatch(handCardRules, /font-size:\s*30px/);
     assert.match(css, /\.hand-card-tricks\s*\{[^}]*position:\s*absolute/s);
     assert.match(css, /\.hand-card-tricks\s*\{[^}]*right:/s);
     assert.match(css, /\.hand-card-tricks\s*\{[^}]*bottom:/s);
