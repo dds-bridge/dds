@@ -29,6 +29,9 @@
             updateActionButtons
             sanitizeSuitHolding
             sanitizeHandSuitInputs
+            suitHoldingHasIllegalChars
+            playIllegalInputBeep
+            handleHandSuitInput
             handCardHtml
             handHoldingHtml
             escapeHtml
@@ -1131,6 +1134,68 @@ function sanitizeSuitHolding(value) {
     return sanitized;
 }
 
+function suitHoldingHasIllegalChars(value) {
+    if (value == null) {
+        return false;
+    }
+
+    for (const ch of String(value)) {
+        if (!PIPS.includes(ch.toUpperCase())) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+let illegalInputAudioContext = null;
+
+function playIllegalInputBeep() {
+    try {
+        const AudioCtx = typeof window !== "undefined"
+            ? (window.AudioContext || window.webkitAudioContext)
+            : null;
+
+        if (typeof AudioCtx !== "function") {
+            return;
+        }
+
+        if (!illegalInputAudioContext) {
+            illegalInputAudioContext = new AudioCtx();
+        }
+
+        const audio = illegalInputAudioContext;
+
+        if (audio.state === "suspended" && typeof audio.resume === "function") {
+            void audio.resume();
+        }
+
+        const oscillator = audio.createOscillator();
+        const gain = audio.createGain();
+        oscillator.type = "square";
+        oscillator.frequency.value = 880;
+        gain.gain.value = 0.04;
+        oscillator.connect(gain);
+        gain.connect(audio.destination);
+        const now = audio.currentTime;
+        oscillator.start(now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+        oscillator.stop(now + 0.08);
+    } catch (_err) {
+        // Beep is best-effort; ignore missing Web Audio support.
+    }
+}
+
+function handleHandSuitInput(event) {
+    const input = event && event.target;
+
+    if (input && suitHoldingHasIllegalChars(input.value)) {
+        playIllegalInputBeep();
+    }
+
+    updateActionButtons();
+}
+
 function sanitizeHandSuitInputs() {
     for (const element of hand_elements()) {
         const oldValue = element.value || "";
@@ -1258,7 +1323,7 @@ function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
 
     for (const element of hand_elements()) {
-        element.addEventListener("input", updateActionButtons);
+        element.addEventListener("input", handleHandSuitInput);
     }
 
     document.addEventListener("mousedown", handleHandCardMouseDown);

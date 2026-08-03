@@ -710,6 +710,68 @@ test("sanitizeSuitHolding keeps only bridge pips and uppercases them", () => {
     assert.equal(ctx.sanitizeSuitHolding(null), "");
 });
 
+test("suitHoldingHasIllegalChars is true when any non-pip is present", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+
+    assert.equal(ctx.suitHoldingHasIllegalChars("AKQ"), false);
+    assert.equal(ctx.suitHoldingHasIllegalChars("akq"), false);
+    assert.equal(ctx.suitHoldingHasIllegalChars("AKx"), true);
+    assert.equal(ctx.suitHoldingHasIllegalChars("!"), true);
+    assert.equal(ctx.suitHoldingHasIllegalChars(""), false);
+    assert.equal(ctx.suitHoldingHasIllegalChars(null), false);
+});
+
+test("handleHandSuitInput beeps when the user enters a non-pip character", () => {
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsMvp(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const input = document.element("north_spades");
+
+    // Act: type an illegal character (as the browser would leave it before sanitize).
+    input.value = "AKx";
+    ctx.handleHandSuitInput({ target: input });
+
+    // Assert
+    assert.equal(beeps, 1);
+    assert.equal(input.value, "AK");
+});
+
+test("handleHandSuitInput does not beep for lowercase legal pips", () => {
+    const document = createMockDocument({ north_spades: "" });
+    const ctx = loadDdsMvp(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const input = document.element("north_spades");
+
+    input.value = "akq";
+    ctx.handleHandSuitInput({ target: input });
+
+    assert.equal(beeps, 0);
+    assert.equal(input.value, "AKQ");
+});
+
+test("pageLoad wires suit inputs to handleHandSuitInput", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    ctx.pageLoad();
+
+    const input = document.element("north_spades");
+    input.value = "X";
+    input.dispatch("input", { target: input });
+
+    assert.equal(beeps, 1);
+    assert.equal(input.value, "");
+});
+
 test("updateActionButtons strips non-pip characters from suit inputs", () => {
     const document = createMockDocument({ north_spades: "AKx7" });
     const ctx = loadDdsMvp(document);
