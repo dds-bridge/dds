@@ -1447,6 +1447,89 @@ test("leadTricksMapFromSolverOutput expands suit/rank/score triples to card keys
     assert.equal(map.CT, 5);
 });
 
+test("solveOpeningLeadTricks rejects when WASM reports more than 13 leads", async () => {
+    // Arrange: corrupted out_leads[0] past the fixed 13-card buffer.
+    const ctx = loadDdsMvp(createMockDocument());
+    const heap = new Int32Array(1 + 13 * 3);
+    heap[0] = 14;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall: () => 1,
+        getValue(ptr) {
+            return heap[(ptr / 4) | 0] ?? 0;
+        },
+    });
+    const hands = {
+        north: [],
+        east: [],
+        south: [],
+        west: [],
+    };
+
+    // Act / Assert: must not walk past the malloc'd buffer.
+    await assert.rejects(
+        () => ctx.solveOpeningLeadTricks(hands, {
+            direction: "south",
+            denomination: "N",
+        }),
+        /invalid card count \(14\)/
+    );
+});
+
+test("solveOpeningLeadTricks rejects a negative lead count from WASM", async () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    const heap = new Int32Array(1);
+    heap[0] = -1;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall: () => 1,
+        getValue(ptr) {
+            return heap[(ptr / 4) | 0] ?? 0;
+        },
+    });
+
+    await assert.rejects(
+        () => ctx.solveOpeningLeadTricks(
+            { north: [], east: [], south: [], west: [] },
+            { direction: "south", denomination: "N" }
+        ),
+        /invalid card count \(-1\)/
+    );
+});
+
+test("solveOpeningLeadTricks accepts a full 13-lead buffer from WASM", async () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    const heap = new Int32Array(1 + 13 * 3);
+    heap[0] = 13;
+    for (let i = 0; i < 13; i++) {
+        heap[1 + 3 * i] = 0; // spades
+        heap[1 + 3 * i + 1] = 14 - i; // A..2
+        heap[1 + 3 * i + 2] = i;
+    }
+    let getValueCalls = 0;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall: () => 1,
+        getValue(ptr) {
+            getValueCalls += 1;
+            return heap[(ptr / 4) | 0] ?? 0;
+        },
+    });
+
+    const map = await ctx.solveOpeningLeadTricks(
+        { north: [], east: [], south: [], west: [] },
+        { direction: "south", denomination: "N" }
+    );
+
+    assert.equal(map.SA, 0);
+    assert.equal(map.S2, 12);
+    // 1 count + 13 * 3 fields
+    assert.equal(getValueCalls, 1 + 13 * 3);
+});
+
 test("handCardHtml renders a lower-right tricks numeral when provided", () => {
     // Arrange
     const ctx = loadDdsMvp(createMockDocument());

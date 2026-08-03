@@ -898,6 +898,11 @@ async function solveOpeningLeadTricks(hands, contract) {
         }
 
         const n = module.getValue(outPtr, "i32");
+        if (n < 0 || n > 13) {
+            throw new Error(
+                "DDS lead solve returned invalid card count (" + n + ")"
+            );
+        }
         const out = [n];
 
         for (let i = 0; i < n; i++) {
