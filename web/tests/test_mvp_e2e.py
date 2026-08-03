@@ -187,6 +187,42 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_result_table_is_in_diagram_southeast_corner(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            metrics = page.evaluate(
+                """() => {
+                const outer = document.querySelector('.grid-outer').getBoundingClientRect();
+                const table = document.getElementById('result-table').getBoundingClientRect();
+                const se = document.querySelector('.grid-filler-se').getBoundingClientRect();
+                return {
+                  outerRight: outer.right,
+                  outerBottom: outer.bottom,
+                  outerMidX: outer.left + outer.width / 2,
+                  outerMidY: outer.top + outer.height / 2,
+                  tableLeft: table.left,
+                  tableTop: table.top,
+                  tableRight: table.right,
+                  tableBottom: table.bottom,
+                  seLeft: se.left,
+                  seTop: se.top,
+                  seRight: se.right,
+                  seBottom: se.bottom,
+                  tableInsideSe: document
+                    .querySelector('.grid-filler-se')
+                    .contains(document.getElementById('result-table')),
+                };
+              }"""
+            )
+            self.assertTrue(metrics["tableInsideSe"])
+            self.assertGreater(metrics["tableLeft"], metrics["outerMidX"])
+            self.assertGreater(metrics["tableTop"], metrics["outerMidY"])
+            self.assertLessEqual(metrics["tableRight"], metrics["seRight"] + 1.0)
+            self.assertLessEqual(metrics["tableBottom"], metrics["seBottom"] + 1.0)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_hand_diagram_cards_are_clickable(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:

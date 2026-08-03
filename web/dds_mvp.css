@@ -78,6 +78,19 @@
   padding: 20px;
 }
 
+/* After .grid-item so font-size wins over the hand diagram's 30px. */
+.grid-item.grid-filler-se {
+  align-items: center;
+  display: flex;
+  font-size: 1rem;
+  justify-content: center;
+}
+
+#result-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
 .hand-card-count {
   font-size: 1rem;
   margin-top: 0.25rem;

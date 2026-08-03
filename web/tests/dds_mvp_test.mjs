@@ -1128,6 +1128,23 @@ test("pageLoad wires hand-card clicks on the diagram", () => {
     assert.deepEqual(clicks, [{ direction: "west", key: "C2" }]);
 });
 
+test("result table lives in the hand diagram southeast corner", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert: table is a child of the SE filler cell, not below the diagram.
+    const seMatch = html.match(
+        /<div class="[^"]*grid-filler-se[^"]*"[^>]*>([\s\S]*?)<\/div>/
+    );
+    assert.ok(seMatch, "southeast filler cell present");
+    assert.match(seMatch[1], /id="result-table"/);
+    // SE cell must be readable (not aria-hidden) and sized for the table.
+    assert.doesNotMatch(seMatch[0], /aria-hidden="true"/);
+    assert.match(css, /\.grid-item\.grid-filler-se\s*\{[^}]*font-size:/s);
+});
+
 test("hand diagram markup uses hand-suit rows with concealed text inputs", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));

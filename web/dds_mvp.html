@@ -69,7 +69,53 @@
         <div class="grid-item grid-filler grid-filler-ne" aria-hidden="true"></div>
         <div class="grid-item grid-filler grid-filler-center" aria-hidden="true"></div>
         <div class="grid-item grid-filler grid-filler-sw" aria-hidden="true"></div>
-        <div class="grid-item grid-filler grid-filler-se" aria-hidden="true"></div>
+        <div class="grid-item grid-filler grid-filler-se">
+            <table id="result-table"
+                   cellspacing="2"
+                   cellpadding="2"
+                   border="1">
+               <tr>
+                    <th valign="top"></th>
+                    <th valign="top"><club-suit>♣</club-suit></th>
+                    <th valign="top"><diamond-suit>♦</diamond-suit></th>
+                    <th valign="top"><heart-suit>♥</heart-suit></th>
+                    <th valign="top"><spade-suit>♠</spade-suit></th>
+                    <th valign="top">NT</th>
+                </tr>
+                <tr>
+                    <th valign="top">N</th>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                </tr>
+                <tr>
+                    <th valign="top">E</th>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                </tr>
+                <tr>
+                    <th valign="top">S</th>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                </tr>
+                <tr>
+                    <th valign="top">W</th>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                    <td valign="top"><br></td>
+                </tr>
+            </table>
+        </div>
     </div>
     </div>
 
@@ -83,53 +129,6 @@
     <button type="button" id="double-dummy-it" onclick="sendJSON()" disabled>Double-dummy it!</button>
 
     <p id="result"></p>
-
-    <table id="result-table"
-           width="25%"
-           cellspacing="2"
-           cellpadding="2"
-           border="1">
-       <tr>
-            <th valign="top"></th>
-            <th valign="top"><club-suit>♣</club-suit></th>
-            <th valign="top"><diamond-suit>♦</diamond-suit></th>
-            <th valign="top"><heart-suit>♥</heart-suit></th>
-            <th valign="top"><spade-suit>♠</spade-suit></th>
-            <th valign="top">NT</th>
-        </tr>
-        <tr>
-            <th valign="top">N</th>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-        </tr>
-        <tr>
-            <th valign="top">E</th>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-        </tr>
-        <tr>
-            <th valign="top">S</th>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-        </tr>
-        <tr>
-            <th valign="top">W</th>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-            <td valign="top"><br></td>
-        </tr>
-    </table>
 
     <script src="dds_mvp_wasm_bin.js"></script>
     <script src="dds_mvp_wasm.js"></script>
