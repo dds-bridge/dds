@@ -15,6 +15,8 @@
 extern "C" int dds_mvp_calc_table(const char* pbn, int* out_table);
 extern "C" int dds_mvp_solve_leads(
     const char* pbn, int trump, int first, int* out_leads);
+extern "C" void dds_mvp_test_write_expanded_leads(
+    const FutureTricks* fut, int* out_leads);
 
 namespace {
 
@@ -144,4 +146,27 @@ TEST(DdsMvpWasmTest, SolveLeadsWorksAfterCalcTableOnSharedSession) {
   ASSERT_EQ(dds_mvp_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
             RETURN_NO_FAULT);
   EXPECT_EQ(out[0], 13);
+}
+
+TEST(DdsMvpWasmTest, ExpandedLeadsUseHoldingEncodedEqualsBitmask) {
+  // Holding encoding (dll-description / equals_to_string): equals stores
+  // sequence << 2, so rank r is bit (r-2) after >> 2 — not (1 << r) on the
+  // shifted-down value. Queen alone in equals is sequence 0x0400 → 0x1000.
+  FutureTricks fut{};
+  fut.cards = 1;
+  fut.suit[0] = 0;   // spades
+  fut.rank[0] = 13;  // king (representative)
+  fut.equals[0] = 0x0400 << 2;  // queen equivalent
+  fut.score[0] = 7;
+
+  int out[40]{};
+  dds_mvp_test_write_expanded_leads(&fut, out);
+
+  ASSERT_EQ(out[0], 2);
+  EXPECT_EQ(out[1], 0);
+  EXPECT_EQ(out[2], 13);
+  EXPECT_EQ(out[3], 7);
+  EXPECT_EQ(out[4], 0);
+  EXPECT_EQ(out[5], 12);  // queen from equals
+  EXPECT_EQ(out[6], 7);
 }

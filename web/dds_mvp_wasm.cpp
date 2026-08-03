@@ -43,9 +43,11 @@ void write_expanded_leads(const FutureTricks& fut, int* out_leads)
   int n = 0;
   for (int i = 0; i < fut.cards; ++i) {
     append_lead_card(out_leads, n, fut.suit[i], fut.rank[i], fut.score[i]);
-    // equals uses Holding encoding: bit r set means rank r is equivalent.
+    // Holding encoding (see equals_to_string): equals is sequence << 2, so
+    // rank r is present when bit (r - 2) is set in (equals >> 2).
+    const int equals_ranks = fut.equals[i] >> 2;
     for (int rank = 2; rank <= 14; ++rank) {
-      if ((fut.equals[i] & (1 << rank)) != 0) {
+      if ((equals_ranks & (1 << (rank - 2))) != 0) {
         append_lead_card(out_leads, n, fut.suit[i], rank, fut.score[i]);
       }
     }
@@ -53,6 +55,18 @@ void write_expanded_leads(const FutureTricks& fut, int* out_leads)
   out_leads[0] = n;
 }
 }  // namespace
+
+#if !defined(__EMSCRIPTEN__)
+// Native unit-test hook for Holding-encoded equals expansion.
+extern "C" void dds_mvp_test_write_expanded_leads(
+    const FutureTricks* fut, int* out_leads)
+{
+  if (fut == nullptr || out_leads == nullptr) {
+    return;
+  }
+  write_expanded_leads(*fut, out_leads);
+}
+#endif
 
 extern "C" {
 

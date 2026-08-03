@@ -839,7 +839,11 @@ function applyResultCellSelection(direction, denomination) {
 function clearResultCellSelection() {
     clearResultCellSelectionHighlight();
     selectedContractState = null;
+    // Drop in-flight lead solves so a late completion cannot revive numerals.
+    leadTricksRequestId += 1;
+    leadTricksByCardKey = null;
     updateContractStatus();
+    updateHandCardDisplays(collectHands());
     onContractSelect(null, null);
     void scheduleDealSolve();
 }

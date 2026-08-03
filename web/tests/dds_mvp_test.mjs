@@ -1492,6 +1492,59 @@ test("handleResultTableClick clears selection when the selected cell is clicked 
     assert.equal(status.innerHTML, "");
 });
 
+test("clearing contract ignores an in-flight opening-lead solve", async () => {
+    // Arrange: select a contract, start a lead solve, then clear without the
+    // deal-solve queue cleaning up afterward (so only request invalidation
+    // protects against a late write).
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[3].cells[5]; // South / NT
+    let resolveSolve;
+    let tricksPassedToHolding = null;
+
+    ctx.fillFormWithPartScoreTestData();
+    ctx.scheduleDealSolve = () => Promise.resolve();
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+    assert.equal(ctx.selectedContract().direction, "south");
+
+    ctx.solveOpeningLeadTricks = () => new Promise((resolve) => {
+        resolveSolve = resolve;
+    });
+    const inflight = ctx.refreshOpeningLeadTricks();
+
+    // Act: clear selection while the lead solve is still pending.
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+    assert.equal(ctx.selectedContract(), null);
+
+    // Watch handHoldingHtml after clear for a late leadTricksByCardKey write.
+    const origHolding = ctx.handHoldingHtml;
+    ctx.handHoldingHtml = (direction, suit, cards, caretIndex, tricksByKey) => {
+        if (tricksByKey) {
+            tricksPassedToHolding = { ...tricksByKey };
+        }
+        return origHolding(direction, suit, cards, caretIndex, tricksByKey);
+    };
+
+    resolveSolve({ SK: 7, HA: 5 });
+    await inflight;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Assert: late completion must not feed tricks into the hand diagram.
+    assert.equal(tricksPassedToHolding, null);
+});
+
 test("handleResultTableClick ignores clicks outside a result data cell", () => {
     // Arrange
     const document = createMockDocument();
