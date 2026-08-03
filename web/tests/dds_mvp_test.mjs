@@ -464,6 +464,32 @@ test("loadDdsModule rejects missing wasm globals", async () => {
     );
 });
 
+test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () => {
+    // Arrange: browser opened as a local file (origin null).
+    const code = readFileSync(findDdsMvpJsPath(), "utf8");
+    const sandbox = {
+        document: createMockDocument(),
+        console,
+        Promise,
+        Error,
+        setTimeout,
+        location: { protocol: "file:" },
+    };
+    const context = createContext(sandbox);
+    runInContext(code, context, { filename: "dds_mvp.js" });
+
+    // Act / Assert
+    assert.match(
+        context.wasmSolveEnvironmentError(),
+        /python3 web\/serve_mvp\.py/
+    );
+});
+
+test("wasmSolveEnvironmentError is null in non-browser sandboxes", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    assert.equal(ctx.wasmSolveEnvironmentError(), null);
+});
+
 test("fillFormWithGrandSlamTestData populates inputs", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
@@ -1167,6 +1193,110 @@ test("pageLoad wires hand-card clicks on the diagram", () => {
 
     // Assert
     assert.deepEqual(clicks, [{ direction: "west", key: "C2" }]);
+});
+
+test("openingLeader is the declarer LHO", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+
+    // Assert
+    assert.equal(ctx.openingLeader("south"), "west");
+    assert.equal(ctx.openingLeader("west"), "north");
+    assert.equal(ctx.openingLeader("north"), "east");
+    assert.equal(ctx.openingLeader("east"), "south");
+});
+
+test("pipFromDdsRank maps DDS ranks 2-14 onto pips", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+
+    assert.equal(ctx.pipFromDdsRank(14), "A");
+    assert.equal(ctx.pipFromDdsRank(13), "K");
+    assert.equal(ctx.pipFromDdsRank(12), "Q");
+    assert.equal(ctx.pipFromDdsRank(11), "J");
+    assert.equal(ctx.pipFromDdsRank(10), "T");
+    assert.equal(ctx.pipFromDdsRank(9), "9");
+    assert.equal(ctx.pipFromDdsRank(2), "2");
+});
+
+test("leadTricksMapFromSolverOutput expands suit/rank/score triples to card keys", () => {
+    // Arrange: flat buffer from dds_mvp_solve_leads
+    const ctx = loadDdsMvp(createMockDocument());
+    const out = [
+        2,
+        0, 14, 7, // SA → 7
+        3, 10, 5, // CT → 5
+    ];
+
+    // Act
+    const map = ctx.leadTricksMapFromSolverOutput(out);
+
+    // Assert
+    assert.equal(map.SA, 7);
+    assert.equal(map.CT, 5);
+});
+
+test("handCardHtml renders a lower-right tricks numeral when provided", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+    const card = new ctx.Card("spades", "K");
+
+    // Act
+    const html = ctx.handCardHtml("west", card, 0, 7);
+
+    // Assert
+    assert.match(html, /class="hand-card[^"]*hand-card-with-tricks/);
+    assert.match(
+        html,
+        /<span class="hand-card-tricks"[^>]*>7<\/span>/
+    );
+    assert.match(html, />K<span class="hand-card-tricks"/);
+});
+
+test("handCardHtml omits tricks numeral when score is absent", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    const html = ctx.handCardHtml("west", new ctx.Card("spades", "K"), 0);
+
+    assert.doesNotMatch(html, /hand-card-tricks/);
+    assert.doesNotMatch(html, /hand-card-with-tricks/);
+});
+
+test("handHoldingHtml badges only cards present in the lead-tricks map", () => {
+    // Arrange
+    const document = createMockDocument({ west_spades: "KQ" });
+    const ctx = loadDdsMvp(document);
+    const cards = ctx.collectHands().west;
+
+    // Act
+    const html = ctx.handHoldingHtml(
+        "west",
+        "spades",
+        cards,
+        -1,
+        { SK: 8, SQ: 5 }
+    );
+
+    // Assert
+    assert.match(
+        html,
+        /data-card="SK"[^>]*>K<span class="hand-card-tricks"[^>]*>8<\/span>/
+    );
+    assert.match(
+        html,
+        /data-card="SQ"[^>]*>Q<span class="hand-card-tricks"[^>]*>5<\/span>/
+    );
+});
+
+test("hand-card-tricks CSS places a small numeral in the lower-right corner", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert
+    assert.match(css, /\.hand-card\s*\{[^}]*position:\s*relative/s);
+    assert.match(css, /\.hand-card-tricks\s*\{[^}]*position:\s*absolute/s);
+    assert.match(css, /\.hand-card-tricks\s*\{[^}]*right:/s);
+    assert.match(css, /\.hand-card-tricks\s*\{[^}]*bottom:/s);
+    assert.match(css, /\.hand-card-tricks\s*\{[^}]*font-size:\s*0\.\d+em/s);
 });
 
 test("handleResultTableClick selects declarer and denomination from a cell", () => {

@@ -13,6 +13,8 @@
 #include <api/dll.h>
 
 extern "C" int dds_mvp_calc_table(const char* pbn, int* out_table);
+extern "C" int dds_mvp_solve_leads(
+    const char* pbn, int trump, int first, int* out_leads);
 
 namespace {
 
@@ -79,4 +81,49 @@ TEST(DdsMvpWasmTest, FillsFlatStrainHandTableAcrossReuse) {
   for (int i = 0; i < 20; ++i) {
     EXPECT_EQ(out0_again[i], kExpectedHand0[i]) << "hand0 repeat index " << i;
   }
+}
+
+// Part-score deal from the MVP page (fillFormWithPartScoreTestData).
+constexpr char kPbnPartScore[] =
+    "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5";
+
+TEST(DdsMvpWasmTest, SolveLeadsRejectsNullPointers) {
+  int out[40]{};
+  EXPECT_EQ(dds_mvp_solve_leads(nullptr, 4, 3, out), RETURN_UNKNOWN_FAULT);
+  EXPECT_EQ(
+      dds_mvp_solve_leads(kPbnPartScore, 4, 3, nullptr), RETURN_UNKNOWN_FAULT);
+}
+
+TEST(DdsMvpWasmTest, SolveLeadsReturnsOpeningLeadTricksForEachCard) {
+  // South declares NT → West leads. CalcDDtable says South takes 6 in NT, so
+  // the best EW opening lead scores 7 tricks for the side on lead.
+  int out[40]{};
+  ASSERT_EQ(dds_mvp_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
+            RETURN_NO_FAULT);
+
+  const int n = out[0];
+  ASSERT_EQ(n, 13);
+
+  int max_score = -1;
+  bool saw_sk = false;
+  for (int i = 0; i < n; ++i) {
+    const int suit = out[1 + 3 * i];
+    const int rank = out[1 + 3 * i + 1];
+    const int score = out[1 + 3 * i + 2];
+    EXPECT_GE(suit, 0);
+    EXPECT_LE(suit, 3);
+    EXPECT_GE(rank, 2);
+    EXPECT_LE(rank, 14);
+    EXPECT_GE(score, 0);
+    EXPECT_LE(score, 13);
+    if (score > max_score) {
+      max_score = score;
+    }
+    // West holds ♠K.
+    if (suit == 0 && rank == 13) {
+      saw_sk = true;
+    }
+  }
+  EXPECT_TRUE(saw_sk);
+  EXPECT_EQ(max_score, 7);
 }

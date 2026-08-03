@@ -9,7 +9,7 @@ load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 WASM_MVP_LINKOPTS = WASM_LINKOPTS + [
     "-sMODULARIZE=1",
     "-sEXPORT_NAME=createDdsModule",
-    "-sEXPORTED_FUNCTIONS=['_dds_mvp_calc_table','_malloc','_free']",
+    "-sEXPORTED_FUNCTIONS=['_dds_mvp_calc_table','_dds_mvp_solve_leads','_malloc','_free']",
     "-sEXPORTED_RUNTIME_METHODS=['ccall','getValue']",
     "-sENVIRONMENT=web,worker,node",
 ]

@@ -37,6 +37,10 @@
             handleResultTableClick
             selectedContract
             onContractSelect
+            openingLeader
+            pipFromDdsRank
+            leadTricksMapFromSolverOutput
+            wasmSolveEnvironmentError
             */
 
 // It's also useful to pass the code through
@@ -54,6 +58,8 @@ const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
 const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
 
 let selectedContractState = null;
+let leadTricksByCardKey = null;
+let leadTricksRequestId = 0;
 
 // Suit glyphs are real text in these custom tags (see dds_mvp.css for color).
 const SUIT_TAGS = {
@@ -131,6 +137,24 @@ function suitSymbolHtml(suit) {
 
 let ddsModulePromise = null;
 
+function wasmSolveEnvironmentError() {
+    if (typeof location === "undefined" || !location) {
+        return null;
+    }
+
+    if (location.protocol === "file:") {
+        return "Solving needs HTTP with cross-origin isolation. " +
+            "From the repo root run: python3 web/serve_mvp.py";
+    }
+
+    if (typeof SharedArrayBuffer === "undefined") {
+        return "Solving needs SharedArrayBuffer. " +
+            "Serve with COOP/COEP via: python3 web/serve_mvp.py";
+    }
+
+    return null;
+}
+
 function loadDdsModule() {
     if (typeof createDdsModule !== "function") {
         return Promise.reject(new Error(
@@ -138,12 +162,19 @@ function loadDdsModule() {
         ));
     }
 
+    if (typeof ddsMvpWasmBytes !== "function") {
+        return Promise.reject(new Error(
+            "WASM bytes not found. From the repo root run: ./web/update_wasm.sh"
+        ));
+    }
+
+    const envError = wasmSolveEnvironmentError();
+
+    if (envError) {
+        return Promise.reject(new Error(envError));
+    }
+
     if (!ddsModulePromise) {
-        if (typeof ddsMvpWasmBytes !== "function") {
-            return Promise.reject(new Error(
-                "WASM bytes not found. From the repo root run: ./web/update_wasm.sh"
-            ));
-        }
         ddsModulePromise = createDdsModule({
             wasmBinary: ddsMvpWasmBytes()
         }).catch((error) => {
@@ -332,6 +363,58 @@ function updateDeckStatus(hands) {
     }
 }
 
+function openingLeader(declarerDirection) {
+    const index = DIRECTIONS.indexOf(declarerDirection);
+
+    if (index < 0) {
+        return null;
+    }
+
+    return DIRECTIONS[(index + 1) % 4];
+}
+
+function pipFromDdsRank(rank) {
+    if (rank === 14) {
+        return "A";
+    }
+    if (rank === 13) {
+        return "K";
+    }
+    if (rank === 12) {
+        return "Q";
+    }
+    if (rank === 11) {
+        return "J";
+    }
+    if (rank === 10) {
+        return "T";
+    }
+    if (rank >= 2 && rank <= 9) {
+        return String(rank);
+    }
+
+    return null;
+}
+
+function leadTricksMapFromSolverOutput(out) {
+    const map = {};
+    const n = out[0] | 0;
+
+    for (let i = 0; i < n; i++) {
+        const suitIndex = out[1 + 3 * i];
+        const rank = out[1 + 3 * i + 1];
+        const score = out[1 + 3 * i + 2];
+        const suit = SUITS[suitIndex];
+        const pip = pipFromDdsRank(rank);
+
+        if (suit && pip) {
+            map[suitLetter(suit) + pip] = score;
+        }
+    }
+
+    return map;
+}
+
 function capitalize(word) {
     return word.charAt(0).toUpperCase() + word.slice(1);
 }
@@ -343,13 +426,22 @@ function handCardAriaLabel(direction, card) {
     return capitalize(direction) + " " + suitName + " " + pipName;
 }
 
-function handCardHtml(direction, card, index) {
-    return "<button type=\"button\" class=\"hand-card\"" +
+function handCardHtml(direction, card, index, leadTricks) {
+    const hasTricks = leadTricks != null && leadTricks !== undefined;
+    const classes = hasTricks ? "hand-card hand-card-with-tricks" : "hand-card";
+    const badge = hasTricks
+        ? "<span class=\"hand-card-tricks\" aria-hidden=\"true\">" +
+            leadTricks +
+            "</span>"
+        : "";
+
+    return "<button type=\"button\" class=\"" + classes + "\"" +
         " data-direction=\"" + direction + "\"" +
         " data-card=\"" + card.key() + "\"" +
         " data-index=\"" + index + "\"" +
         " aria-label=\"" + handCardAriaLabel(direction, card) + "\">" +
         card.pip +
+        badge +
         "</button>";
 }
 
@@ -357,7 +449,7 @@ function handCaretHtml() {
     return "<span class=\"hand-caret\" aria-hidden=\"true\"></span>";
 }
 
-function handHoldingHtml(direction, suit, cards, caretIndex) {
+function handHoldingHtml(direction, suit, cards, caretIndex, tricksByKey) {
     const suitCards = cards.filter((card) => card.suit === suit);
     let html = "";
 
@@ -366,7 +458,15 @@ function handHoldingHtml(direction, suit, cards, caretIndex) {
             html += handCaretHtml();
         }
 
-        html += handCardHtml(direction, suitCards[i], i);
+        const key = suitCards[i].key();
+        const tricks = tricksByKey && Object.prototype.hasOwnProperty.call(
+            tricksByKey,
+            key
+        )
+            ? tricksByKey[key]
+            : undefined;
+
+        html += handCardHtml(direction, suitCards[i], i, tricks);
     }
 
     if (caretIndex === suitCards.length) {
@@ -475,7 +575,8 @@ function updateHandCardDisplays(hands) {
                     direction,
                     suit,
                     hands[direction] || [],
-                    caretIndex
+                    caretIndex,
+                    leadTricksByCardKey
                 );
             }
         }
@@ -631,6 +732,90 @@ function applyResultCellSelection(direction, denomination) {
 
     selectedContractState = { direction, denomination };
     onContractSelect(direction, denomination);
+    void refreshOpeningLeadTricks();
+}
+
+async function solveOpeningLeadTricks(hands, contract) {
+    const leader = openingLeader(contract.direction);
+    const trump = DENOM_TO_STRAIN[contract.denomination];
+    const first = DIR_TO_HAND[leader];
+
+    if (trump == null || first == null) {
+        throw new Error("Invalid contract for lead analysis");
+    }
+
+    const module = await loadDdsModule();
+    const pbn = handsToPbn(hands);
+    const outPtr = module._malloc((1 + 13 * 3) * 4);
+
+    try {
+        const rc = module.ccall(
+            "dds_mvp_solve_leads",
+            "number",
+            ["string", "number", "number", "number"],
+            [pbn, trump, first, outPtr]
+        );
+
+        if (rc !== 1) {
+            throw new Error("DDS lead solve error (code " + rc + ")");
+        }
+
+        const n = module.getValue(outPtr, "i32");
+        const out = [n];
+
+        for (let i = 0; i < n; i++) {
+            const base = outPtr + (1 + 3 * i) * 4;
+            out.push(module.getValue(base, "i32"));
+            out.push(module.getValue(base + 4, "i32"));
+            out.push(module.getValue(base + 8, "i32"));
+        }
+
+        return leadTricksMapFromSolverOutput(out);
+    } finally {
+        module._free(outPtr);
+    }
+}
+
+async function refreshOpeningLeadTricks() {
+    const requestId = ++leadTricksRequestId;
+    const contract = selectedContractState;
+    const hands = collectHands();
+
+    if (!contract || inputIsValid(hands).length) {
+        leadTricksByCardKey = null;
+        if (requestId === leadTricksRequestId) {
+            updateHandCardDisplays(hands);
+        }
+        return;
+    }
+
+    try {
+        const map = await solveOpeningLeadTricks(hands, contract);
+
+        if (requestId !== leadTricksRequestId) {
+            return;
+        }
+
+        leadTricksByCardKey = map;
+        updateHandCardDisplays(collectHands());
+    } catch (err) {
+        if (requestId !== leadTricksRequestId) {
+            return;
+        }
+
+        leadTricksByCardKey = null;
+        updateHandCardDisplays(collectHands());
+
+        const result = document.getElementById("result");
+
+        if (result) {
+            result.innerHTML = err instanceof Error
+                ? err.message
+                : err == null
+                    ? "Unknown error"
+                    : String(err);
+        }
+    }
 }
 
 function contractFromResultCell(cell) {
@@ -826,8 +1011,17 @@ function updateActionButtons() {
     }
 
     updateDeckStatus(hands);
-    updateHandCardDisplays(hands);
     updateHandCardCounts(hands);
+
+    if (!selectedContractState) {
+        leadTricksByCardKey = null;
+    }
+
+    updateHandCardDisplays(hands);
+
+    if (selectedContractState) {
+        void refreshOpeningLeadTricks();
+    }
 
     if (doubleDummyButton) {
         doubleDummyButton.disabled = !allHandsHaveThirteenCards(hands);

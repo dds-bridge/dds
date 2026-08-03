@@ -187,6 +187,50 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_http_opening_lead_tricks_appear_on_leader_cards(self) -> None:
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                page.get_by_role("button", name="Part-score test deal").click()
+                page.get_by_role("button", name="Double-dummy it!").click()
+                page.wait_for_function(
+                    """() => {
+                      const cell = document.getElementById('result-table')
+                        .rows[3].cells[5];
+                      return cell && cell.textContent.trim() !== '';
+                    }"""
+                )
+
+                # South / NT → West leads.
+                page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                      '#west_spades_cards .hand-card-tricks').length > 0"""
+                )
+
+                west_sk = page.locator(
+                    '#west_spades_cards .hand-card[data-card="SK"]'
+                )
+                self.assertIn(
+                    "hand-card-with-tricks",
+                    west_sk.get_attribute("class") or "",
+                )
+                tricks = west_sk.locator(".hand-card-tricks")
+                self.assertEqual(tricks.count(), 1)
+                score = int(tricks.inner_text())
+                self.assertGreaterEqual(score, 0)
+                self.assertLessEqual(score, 13)
+
+                self.assertEqual(
+                    page.locator(
+                        "#north_spades_cards .hand-card-tricks"
+                    ).count(),
+                    0,
+                )
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
+
     def test_result_table_cell_click_selects_contract_and_highlights(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:

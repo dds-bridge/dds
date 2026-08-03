@@ -143,6 +143,16 @@
   font: inherit;
   margin: 0 0.04em;
   padding: 0 0.12em;
+  position: relative;
+}
+
+.hand-card-tricks {
+  bottom: 0;
+  font-size: 0.38em;
+  font-weight: 700;
+  line-height: 1;
+  position: absolute;
+  right: 0.05em;
 }
 
 .hand-card:hover,
