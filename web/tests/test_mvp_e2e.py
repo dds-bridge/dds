@@ -400,6 +400,31 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             self.assertGreater(metrics["tableTop"], metrics["outerMidY"])
             self.assertLessEqual(metrics["tableRight"], metrics["seRight"] + 1.0)
             self.assertLessEqual(metrics["tableBottom"], metrics["seBottom"] + 1.0)
+
+            hint = page.locator(".result-table-hint")
+            self.assertEqual(
+                hint.inner_text(), "Click to set declarer and denomination"
+            )
+            hint_layout = page.evaluate(
+                """() => {
+                const hint = document.querySelector('.result-table-hint')
+                  .getBoundingClientRect();
+                const table = document.getElementById('result-table')
+                  .getBoundingClientRect();
+                const se = document.querySelector('.grid-filler-se');
+                return {
+                  hintBottom: hint.bottom,
+                  tableTop: table.top,
+                  hintInsideSe: se.contains(
+                    document.querySelector('.result-table-hint')
+                  ),
+                };
+              }"""
+            )
+            self.assertTrue(hint_layout["hintInsideSe"])
+            self.assertLessEqual(
+                hint_layout["hintBottom"], hint_layout["tableTop"] + 1.0
+            )
             self.assertEqual(errors, [])
         finally:
             page.close()

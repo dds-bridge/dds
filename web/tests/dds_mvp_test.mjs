@@ -1493,14 +1493,26 @@ test("result table lives in the hand diagram southeast corner", () => {
     const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
 
     // Assert: table is a child of the SE filler cell, not below the diagram.
-    const seMatch = html.match(
-        /<div class="[^"]*grid-filler-se[^"]*"[^>]*>([\s\S]*?)<\/div>/
+    const seOpen = html.match(
+        /<div class="[^"]*grid-filler-se[^"]*"[^>]*>/
     );
-    assert.ok(seMatch, "southeast filler cell present");
-    assert.match(seMatch[1], /id="result-table"/);
+    assert.ok(seOpen, "southeast filler cell present");
+    const afterSe = html.slice(html.indexOf(seOpen[0]) + seOpen[0].length);
+    // Hint sits above the table inside the SE cell.
+    assert.match(
+        afterSe,
+        /class="[^"]*result-table-hint[^"]*"[^>]*>Click to set declarer and denomination</
+    );
+    assert.match(
+        afterSe,
+        /result-table-hint[\s\S]*?id="result-table"/
+    );
+    assert.match(afterSe, /id="result-table"/);
     // SE cell must be readable (not aria-hidden) and sized for the table.
-    assert.doesNotMatch(seMatch[0], /aria-hidden="true"/);
+    assert.doesNotMatch(seOpen[0], /aria-hidden="true"/);
     assert.match(css, /\.grid-item\.grid-filler-se\s*\{[^}]*font-size:/s);
+    assert.match(css, /\.grid-item\.grid-filler-se\s*\{[^}]*flex-direction:\s*column/s);
+    assert.match(css, /\.result-table-hint\s*\{/s);
 });
 
 test("contract status lives in the hand diagram northeast corner", () => {
