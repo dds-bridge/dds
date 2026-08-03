@@ -34,6 +34,9 @@
             handleHandCardMouseDown
             handleSuitSelectionChange
             onHandCardClick
+            handleResultTableClick
+            selectedContract
+            onContractSelect
             */
 
 // It's also useful to pass the code through
@@ -49,6 +52,8 @@ const DENOMINATIONS = ["C", "D", "H", "S", "N"];
 // DDS res_table strain index (S,H,D,C,N) to MVP table column key.
 const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
 const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
+
+let selectedContractState = null;
 
 // Suit glyphs are real text in these custom tags (see dds_mvp.css for color).
 const SUIT_TAGS = {
@@ -572,6 +577,104 @@ function handleHandCardClick(event) {
     onHandCardClick(direction, card);
 }
 
+function selectedContract() {
+    return selectedContractState;
+}
+
+function onContractSelect(_direction, _denomination) {
+    // Hook for play-through / UI that needs the chosen contract.
+}
+
+function clearResultCellSelectionHighlight() {
+    const table = document.getElementById("result-table");
+
+    if (!table || !table.rows) {
+        return;
+    }
+
+    for (let row = 1; row <= 4; row++) {
+        for (let column = 1; column <= 5; column++) {
+            const cell = table.rows[row].cells[column];
+
+            if (cell && cell.classList) {
+                cell.classList.remove("result-cell-selected");
+            }
+        }
+    }
+}
+
+function resultCellForContract(direction, denomination) {
+    const row = DIRECTIONS.indexOf(direction) + 1;
+    const column = DENOMINATIONS.indexOf(denomination) + 1;
+
+    if (row < 1 || column < 1) {
+        return null;
+    }
+
+    const table = document.getElementById("result-table");
+
+    if (!table || !table.rows || !table.rows[row]) {
+        return null;
+    }
+
+    return table.rows[row].cells[column] || null;
+}
+
+function applyResultCellSelection(direction, denomination) {
+    clearResultCellSelectionHighlight();
+
+    const cell = resultCellForContract(direction, denomination);
+
+    if (cell && cell.classList) {
+        cell.classList.add("result-cell-selected");
+    }
+
+    selectedContractState = { direction, denomination };
+    onContractSelect(direction, denomination);
+}
+
+function contractFromResultCell(cell) {
+    if (!cell) {
+        return null;
+    }
+
+    const row = cell.parentElement && typeof cell.parentElement.rowIndex === "number"
+        ? cell.parentElement.rowIndex
+        : -1;
+    const column = typeof cell.cellIndex === "number" ? cell.cellIndex : -1;
+
+    if (row < 1 || row > 4 || column < 1 || column > 5) {
+        return null;
+    }
+
+    return {
+        direction: DIRECTIONS[row - 1],
+        denomination: DENOMINATIONS[column - 1]
+    };
+}
+
+function handleResultTableClick(event) {
+    const target = event.target;
+
+    if (!target || typeof target.closest !== "function") {
+        return;
+    }
+
+    const cell = target.closest("#result-table td");
+
+    if (!cell) {
+        return;
+    }
+
+    const contract = contractFromResultCell(cell);
+
+    if (!contract) {
+        return;
+    }
+
+    applyResultCellSelection(contract.direction, contract.denomination);
+}
+
 function updateHandCardCounts(hands) {
     for (const direction of DIRECTIONS) {
         const count = hands[direction].length;
@@ -826,6 +929,7 @@ function pageLoad() {
     document.addEventListener("mousedown", handleHandCardMouseDown);
     document.addEventListener("click", handleHandCardClick);
     document.addEventListener("click", handleHandSuitClick);
+    document.addEventListener("click", handleResultTableClick);
     document.addEventListener("selectionchange", handleSuitSelectionChange);
     document.addEventListener("focusin", updateDefaultAction);
     document.addEventListener("focusout", updateDefaultAction);

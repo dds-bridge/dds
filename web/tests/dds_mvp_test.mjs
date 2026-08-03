@@ -115,12 +115,53 @@ function createMockDocument(initialValues = {}) {
     const rows = [];
     for (let row = 0; row < 5; row++) {
         const cells = [];
+        const rowObj = { cells, rowIndex: row };
         for (let column = 0; column < 6; column++) {
-            cells.push({ innerHTML: "" });
+            const cell = {
+                innerHTML: "",
+                className: "",
+                cellIndex: column,
+                parentElement: rowObj,
+                tagName: row === 0 || column === 0 ? "TH" : "TD",
+                classList: {
+                    add(name) {
+                        const classes = new Set(
+                            cell.className.split(/\s+/).filter(Boolean)
+                        );
+                        classes.add(name);
+                        cell.className = [...classes].join(" ");
+                    },
+                    remove(name) {
+                        const classes = new Set(
+                            cell.className.split(/\s+/).filter(Boolean)
+                        );
+                        classes.delete(name);
+                        cell.className = [...classes].join(" ");
+                    },
+                    contains(name) {
+                        return cell.className.split(/\s+/).includes(name);
+                    },
+                },
+            };
+            cells.push(cell);
         }
-        rows.push({ cells });
+        rows.push(rowObj);
     }
-    store.set("result-table", { rows });
+    store.set("result-table", {
+        rows,
+        querySelectorAll(selector) {
+            if (selector !== "td") {
+                return [];
+            }
+            const tds = [];
+            for (let row = 1; row < rows.length; row++) {
+                for (let column = 1; column < rows[row].cells.length; column++) {
+                    tds.push(rows[row].cells[column]);
+                }
+            }
+            return tds;
+        },
+    });
 
     const documentRef = {
         activeElement: null,
@@ -1126,6 +1167,125 @@ test("pageLoad wires hand-card clicks on the diagram", () => {
 
     // Assert
     assert.deepEqual(clicks, [{ direction: "west", key: "C2" }]);
+});
+
+test("handleResultTableClick selects declarer and denomination from a cell", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const table = document.element("result-table");
+    const cell = table.rows[2].cells[3]; // East / Hearts
+    const selections = [];
+    ctx.onContractSelect = (direction, denomination) => {
+        selections.push({ direction, denomination });
+    };
+
+    // Act
+    ctx.handleResultTableClick({
+        target: {
+            closest(selector) {
+                assert.equal(selector, "#result-table td");
+                return cell;
+            },
+        },
+    });
+
+    // Assert
+    const selected = ctx.selectedContract();
+    assert.equal(selected.direction, "east");
+    assert.equal(selected.denomination, "H");
+    assert.deepEqual(selections, [{ direction: "east", denomination: "H" }]);
+    assert.equal(cell.classList.contains("result-cell-selected"), true);
+});
+
+test("handleResultTableClick moves the highlight to the newly clicked cell", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const table = document.element("result-table");
+    const first = table.rows[1].cells[1]; // North / Clubs
+    const second = table.rows[4].cells[5]; // West / NT
+
+    // Act
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return first;
+            },
+        },
+    });
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return second;
+            },
+        },
+    });
+
+    // Assert
+    assert.equal(first.classList.contains("result-cell-selected"), false);
+    assert.equal(second.classList.contains("result-cell-selected"), true);
+    const selected = ctx.selectedContract();
+    assert.equal(selected.direction, "west");
+    assert.equal(selected.denomination, "N");
+});
+
+test("handleResultTableClick ignores clicks outside a result data cell", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let called = false;
+    ctx.onContractSelect = () => {
+        called = true;
+    };
+
+    // Act
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return null;
+            },
+        },
+    });
+
+    // Assert
+    assert.equal(called, false);
+    assert.equal(ctx.selectedContract(), null);
+});
+
+test("pageLoad wires result-table cell clicks", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[3].cells[4]; // South / Spades
+    const selections = [];
+    ctx.onContractSelect = (direction, denomination) => {
+        selections.push({ direction, denomination });
+    };
+
+    // Act
+    ctx.pageLoad();
+    document.dispatch("click", {
+        target: {
+            closest(selector) {
+                return selector === "#result-table td" ? cell : null;
+            },
+        },
+    });
+
+    // Assert
+    assert.deepEqual(selections, [{ direction: "south", denomination: "S" }]);
+    assert.equal(cell.classList.contains("result-cell-selected"), true);
+});
+
+test("result-cell-selected highlight is defined in CSS", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert
+    assert.match(css, /#result-table\s+td\.result-cell-selected\s*\{/s);
+    assert.match(css, /#result-table\s+td\s*\{[^}]*cursor:\s*pointer/s);
 });
 
 test("result table lives in the hand diagram southeast corner", () => {

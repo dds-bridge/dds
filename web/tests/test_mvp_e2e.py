@@ -187,6 +187,39 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_result_table_cell_click_selects_contract_and_highlights(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            north_clubs = page.locator("#result-table tr").nth(1).locator("td").nth(0)
+            west_nt = page.locator("#result-table tr").nth(4).locator("td").nth(4)
+
+            north_clubs.click()
+            self.assertIn(
+                "result-cell-selected",
+                north_clubs.get_attribute("class") or "",
+            )
+            selected = page.evaluate("() => selectedContract()")
+            self.assertEqual(
+                selected, {"direction": "north", "denomination": "C"}
+            )
+
+            west_nt.click()
+            self.assertNotIn(
+                "result-cell-selected",
+                north_clubs.get_attribute("class") or "",
+            )
+            self.assertIn(
+                "result-cell-selected",
+                west_nt.get_attribute("class") or "",
+            )
+            selected = page.evaluate("() => selectedContract()")
+            self.assertEqual(
+                selected, {"direction": "west", "denomination": "N"}
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_result_table_is_in_diagram_southeast_corner(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
