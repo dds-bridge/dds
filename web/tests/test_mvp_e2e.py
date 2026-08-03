@@ -194,7 +194,13 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
                 self._wait_for_dd_table(page)
 
                 # South / NT → West leads.
+                # td nth is among <td> only (C=0 … S=3, NT=4); not HTML cells[]
+                # which includes the direction <th> at index 0.
                 page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
+                self.assertEqual(
+                    page.evaluate("() => selectedContract()"),
+                    {"direction": "south", "denomination": "N"},
+                )
                 page.wait_for_function(
                     """() => document.querySelectorAll(
                       '#west_spades_cards .hand-card-tricks').length > 0"""
@@ -252,7 +258,13 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             try:
                 page.get_by_role("button", name="Part-score test deal").click()
                 # Click South/NT immediately — cells may still be empty.
+                # td nth is among <td> only (C=0 … S=3, NT=4); not HTML cells[]
+                # which includes the direction <th> at index 0.
                 page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
+                self.assertEqual(
+                    page.evaluate("() => selectedContract()"),
+                    {"direction": "south", "denomination": "N"},
+                )
                 page.wait_for_function(
                     """() => document.querySelectorAll(
                       '#west_spades_cards .hand-card-tricks').length > 0""",
