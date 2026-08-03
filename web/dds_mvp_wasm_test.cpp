@@ -190,6 +190,28 @@ TEST(DdsMvpWasmTest, ExpandedLeadsUseHoldingEncodedEqualsBitmask) {
   EXPECT_EQ(out[6], 7);
 }
 
+TEST(DdsMvpWasmTest, ExpandedLeadsIgnoresEqualsBitsAtOrAboveRepresentative) {
+  // dll-description: equals are *lower*-ranked equivalents only. A bit for the
+  // representative (or higher) must not produce a duplicate out_leads triple.
+  FutureTricks fut{};
+  fut.cards = 1;
+  fut.suit[0] = 0;
+  fut.rank[0] = 13;  // king
+  // Queen (correct lower equal) | King (invalid self bit) | Ace (invalid higher).
+  const int queen = 1 << (12 - 2);
+  const int king = 1 << (13 - 2);
+  const int ace = 1 << (14 - 2);
+  fut.equals[0] = (queen | king | ace) << 2;
+  fut.score[0] = 5;
+
+  int out[40]{};
+  dds_mvp_test_write_expanded_leads(&fut, out);
+
+  ASSERT_EQ(out[0], 2);
+  EXPECT_EQ(out[2], 13);  // king once
+  EXPECT_EQ(out[5], 12);  // queen only
+}
+
 TEST(DdsMvpWasmTest, ExpandedLeadsHardCapsAtThirteenCards) {
   // One representative with equals for ranks 2-13 expands to 13 cards; a second
   // FutureTricks entry must not write past the caller buffer (1 + 13*3).

@@ -53,32 +53,40 @@ void write_lead_triple(
   out_leads[1 + 3 * slot + 2] = score;
 }
 
-// FutureTricks is not one row per leadable card: each of fut.cards is a
-// representative rank plus an equals bitmask of other ranks that share the
-// same score. Expand to one triple per physical card so the UI can badge
-// every pip. Cap at 13 (one full hand on lead).
+// True when Holding-encoded `equals` lists `rank` among lower equivalents.
+// Encoding (dll-description / equals_to_string): equals stores sequence << 2,
+// so rank r is present iff bit (r - 2) is set after >> 2.
+auto equals_lists_rank(int equals_holding, int rank) -> bool
+{
+  if (rank < 2 || rank > 14) {
+    return false;
+  }
+  const unsigned bits = static_cast<unsigned>(equals_holding) >> 2;
+  return (bits & (1u << (rank - 2))) != 0;
+}
+
+// FutureTricks packs leads: each of fut.cards is the highest card of an
+// equivalence group, with fut.equals[i] naming *lower* ranks that score the
+// same (not a second copy of fut.rank[i]). Expand to one triple per physical
+// card so the UI can badge every pip. Cap at 13 (one full hand on lead).
 void write_expanded_leads(const FutureTricks& fut, int* out_leads)
 {
   int n = 0;
-  for (int i = 0; i < fut.cards; ++i) {
-    if (n >= kMaxExpandedLeads) {
-      break;
-    }
-    write_lead_triple(
-        out_leads, n, fut.suit[i], fut.rank[i], fut.score[i]);
+  for (int i = 0; i < fut.cards && n < kMaxExpandedLeads; ++i) {
+    const int suit = fut.suit[i];
+    const int score = fut.score[i];
+    const int representative = fut.rank[i];
+
+    write_lead_triple(out_leads, n, suit, representative, score);
     ++n;
 
-    // Holding encoding (see equals_to_string): equals is sequence << 2, so
-    // rank r is present when bit (r - 2) is set in (equals >> 2).
-    const int equals_ranks = fut.equals[i] >> 2;
-    for (int rank = 2; rank <= 14; ++rank) {
-      if (n >= kMaxExpandedLeads) {
-        break;
+    // Only ranks strictly below the representative are valid equals.
+    for (int rank = 2; rank < representative && n < kMaxExpandedLeads; ++rank) {
+      if (!equals_lists_rank(fut.equals[i], rank)) {
+        continue;
       }
-      if ((equals_ranks & (1 << (rank - 2))) != 0) {
-        write_lead_triple(out_leads, n, fut.suit[i], rank, fut.score[i]);
-        ++n;
-      }
+      write_lead_triple(out_leads, n, suit, rank, score);
+      ++n;
     }
   }
   out_leads[0] = n;
