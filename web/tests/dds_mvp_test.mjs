@@ -405,21 +405,29 @@ test("clearTestData clears all hand inputs", () => {
 });
 
 test("rotateClockwise shifts holdings west to north", () => {
+    // Markers must be valid pips — rotateClockwise ends in updateActionButtons,
+    // which strips non-pip characters.
     const document = createMockDocument();
-    let index = 1;
+    const markers = [
+        "A", "K", "Q", "J",
+        "T", "9", "8", "7",
+        "6", "5", "4", "3",
+        "2", "AK", "AQ", "AJ",
+    ];
+    let index = 0;
     for (const direction of DIRECTIONS) {
         for (const suit of SUITS) {
-            document.setValue(`${direction}_${suit}`, String(index));
+            document.setValue(`${direction}_${suit}`, markers[index]);
             index += 1;
         }
     }
     const ctx = loadDdsMvp(document);
     ctx.rotateClockwise();
-    assert.equal(document.element("north_spades").value, "13");
-    assert.equal(document.element("north_hearts").value, "14");
-    assert.equal(document.element("north_diamonds").value, "15");
-    assert.equal(document.element("north_clubs").value, "16");
-    assert.equal(document.element("east_spades").value, "1");
+    assert.equal(document.element("north_spades").value, "2");
+    assert.equal(document.element("north_hearts").value, "AK");
+    assert.equal(document.element("north_diamonds").value, "AQ");
+    assert.equal(document.element("north_clubs").value, "AJ");
+    assert.equal(document.element("east_spades").value, "A");
 });
 
 test("fillFormWithPartScoreTestData populates inputs", () => {
@@ -667,13 +675,14 @@ test("fourthHandFillState rejects a duplicate card across three full hands", () 
 });
 
 test("fourthHandFillState rejects a non-bridge pip among three full hands", () => {
-    // Arrange: 13 cards per filled hand, but north clubs uses X instead of a real pip.
+    // Arrange: three full hands and one empty, then inject an invalid pip.
     const document = threeHandsPartScoreDocument();
-    document.setValue("north_clubs", "J8X");
     const ctx = loadDdsMvp(document);
+    const hands = ctx.collectHands();
+    hands.north[12] = new ctx.Card("clubs", "X");
 
     // Act
-    const state = ctx.fourthHandFillState(ctx.collectHands());
+    const state = ctx.fourthHandFillState(hands);
 
     // Assert: invalid pips must not be treated as used cards for auto-fill.
     assert.equal(state.canFill, false);
@@ -690,8 +699,37 @@ test("fourthHandFillState rejects a missing card object among three full hands",
     assert.equal(ctx.fourthHandFillState(hands).canFill, false);
 });
 
-test("updateActionButtons does not auto-fill when a hand has a non-bridge pip", async () => {
-    // Arrange: three full hands, but north holds an invalid pip (CX) instead of C7.
+test("sanitizeSuitHolding keeps only bridge pips and uppercases them", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+
+    assert.equal(ctx.sanitizeSuitHolding("akq"), "AKQ");
+    assert.equal(ctx.sanitizeSuitHolding("t9"), "T9");
+    assert.equal(ctx.sanitizeSuitHolding("AKx!7x"), "AK7");
+    assert.equal(ctx.sanitizeSuitHolding("\"&<>'"), "");
+    assert.equal(ctx.sanitizeSuitHolding(""), "");
+    assert.equal(ctx.sanitizeSuitHolding(null), "");
+});
+
+test("updateActionButtons strips non-pip characters from suit inputs", () => {
+    const document = createMockDocument({ north_spades: "AKx7" });
+    const ctx = loadDdsMvp(document);
+
+    ctx.updateActionButtons();
+
+    assert.equal(document.element("north_spades").value, "AK7");
+});
+
+test("updateActionButtons uppercases lowercase pips in suit inputs", () => {
+    const document = createMockDocument({ east_hearts: "kq" });
+    const ctx = loadDdsMvp(document);
+
+    ctx.updateActionButtons();
+
+    assert.equal(document.element("east_hearts").value, "KQ");
+});
+
+test("updateActionButtons strips a non-bridge pip and does not auto-fill", async () => {
+    // Arrange: three full hands, but north clubs has an invalid pip (X).
     const document = threeHandsPartScoreDocument();
     document.setValue("north_clubs", "J8X");
     const ctx = loadDdsMvp(document);
@@ -704,7 +742,8 @@ test("updateActionButtons does not auto-fill when a hand has a non-bridge pip", 
     ctx.updateActionButtons();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    // Assert: the fourth hand stays empty and the table is not solved.
+    // Assert: X is removed (north incomplete) and the fourth hand stays empty.
+    assert.equal(document.element("north_clubs").value, "J8");
     assert.equal(document.element("west_spades").value, "");
     assert.equal(document.element("west_hearts").value, "");
     assert.equal(document.element("west_diamonds").value, "");
@@ -818,6 +857,7 @@ test("updateActionButtons grays cards entered in any hand, including lowercase p
 
     ctx.updateActionButtons();
 
+    assert.equal(document.element("east_hearts").value, "K");
     const deckStatus = document.element("deck-status").innerHTML;
     assert.match(
         deckStatus,

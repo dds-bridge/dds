@@ -27,6 +27,8 @@
             scheduleDealSolve
             fourthHandFillState
             updateActionButtons
+            sanitizeSuitHolding
+            sanitizeHandSuitInputs
             handCardHtml
             handHoldingHtml
             escapeHtml
@@ -1111,7 +1113,58 @@ function isHandInput(element) {
     return false;
 }
 
+function sanitizeSuitHolding(value) {
+    if (value == null) {
+        return "";
+    }
+
+    let sanitized = "";
+
+    for (const ch of String(value)) {
+        const pip = ch.toUpperCase();
+
+        if (PIPS.includes(pip)) {
+            sanitized += pip;
+        }
+    }
+
+    return sanitized;
+}
+
+function sanitizeHandSuitInputs() {
+    for (const element of hand_elements()) {
+        const oldValue = element.value || "";
+        const sanitized = sanitizeSuitHolding(oldValue);
+
+        if (sanitized === oldValue) {
+            continue;
+        }
+
+        const caret = typeof element.selectionStart === "number"
+            ? element.selectionStart
+            : oldValue.length;
+        let keptBefore = 0;
+
+        for (let i = 0; i < oldValue.length && i < caret; i++) {
+            if (PIPS.includes(oldValue.charAt(i).toUpperCase())) {
+                keptBefore += 1;
+            }
+        }
+
+        element.value = sanitized;
+
+        if (typeof element.setSelectionRange === "function") {
+            element.setSelectionRange(keptBefore, keptBefore);
+        } else {
+            element.selectionStart = keptBefore;
+            element.selectionEnd = keptBefore;
+        }
+    }
+}
+
 function updateActionButtons() {
+    sanitizeHandSuitInputs();
+
     let hands = collectHands();
     const fillState = fourthHandFillState(hands);
 
