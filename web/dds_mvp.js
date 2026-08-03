@@ -75,6 +75,7 @@ let ddTableRequestId = 0;
 let lastDdTablePbn = null;
 let solveQueue = Promise.resolve();
 let dealSolveEpoch = 0;
+let dealSolveQueued = false;
 
 function enqueueSolve(task) {
     const run = solveQueue.then(task, task);
@@ -85,26 +86,53 @@ function enqueueSolve(task) {
 }
 
 // Coalesce DD-table + lead solves onto one queued job so rapid hand edits and
-// contract clicks cannot interleave CalcDDtable with SolveBoard.
+// contract clicks cannot interleave CalcDDtable with SolveBoard, and so
+// intermediate schedules do not each add a stale promise-chain callback.
 function scheduleDealSolve() {
-    const epoch = ++dealSolveEpoch;
+    dealSolveEpoch += 1;
 
+    if (dealSolveQueued) {
+        return solveQueue;
+    }
+
+    dealSolveQueued = true;
     return enqueueSolve(async () => {
-        if (epoch !== dealSolveEpoch) {
-            return;
-        }
+        try {
+            while (true) {
+                const epoch = dealSolveEpoch;
 
-        await refreshDdTable();
+                await refreshDdTable();
 
-        if (epoch !== dealSolveEpoch) {
-            return;
-        }
+                if (epoch !== dealSolveEpoch) {
+                    continue;
+                }
 
-        if (selectedContractState) {
-            await refreshOpeningLeadTricks();
-        } else if (leadTricksByCardKey) {
-            leadTricksByCardKey = null;
-            updateHandCardDisplays(collectHands());
+                if (selectedContractState) {
+                    await refreshOpeningLeadTricks();
+                } else if (leadTricksByCardKey) {
+                    leadTricksByCardKey = null;
+                    updateHandCardDisplays(collectHands());
+                }
+
+                if (epoch !== dealSolveEpoch) {
+                    continue;
+                }
+
+                // Release the gate only once the epoch is stable; if a schedule
+                // sneaks in between the check and the clear, take the flag back
+                // and loop again instead of dropping the trailing request.
+                dealSolveQueued = false;
+
+                if (epoch !== dealSolveEpoch) {
+                    dealSolveQueued = true;
+                    continue;
+                }
+
+                break;
+            }
+        } catch (err) {
+            dealSolveQueued = false;
+            throw err;
         }
     });
 }

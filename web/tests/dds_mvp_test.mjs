@@ -579,6 +579,56 @@ test("rapid scheduleDealSolve coalesces to one trailing leads refresh", async ()
     assert.ok(dd >= 1);
 });
 
+test("rapid scheduleDealSolve does not enqueue one queue job per call", async () => {
+    // Arrange: block the first DD solve so later schedules land while a job runs.
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let enqueued = 0;
+    const realEnqueue = ctx.enqueueSolve;
+    ctx.enqueueSolve = (task) => {
+        enqueued += 1;
+        return realEnqueue(task);
+    };
+
+    let releaseDd;
+    let ddRuns = 0;
+    ctx.refreshDdTable = () => {
+        ddRuns += 1;
+        return new Promise((resolve) => {
+            releaseDd = resolve;
+        });
+    };
+    ctx.refreshOpeningLeadTricks = async () => {};
+
+    // fillForm → updateActionButtons → scheduleDealSolve (one queue job).
+    ctx.fillFormWithPartScoreTestData();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(enqueued, 1);
+    assert.equal(ddRuns, 1);
+    const enqueuedWhileBlocked = enqueued;
+
+    // Act: contract click + many schedules while that job is in flight.
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[3].cells[5];
+            },
+        },
+    });
+    for (let i = 0; i < 20; i++) {
+        ctx.scheduleDealSolve();
+    }
+
+    // Assert: no additional promise-chain entries for the burst.
+    assert.equal(enqueued, enqueuedWhileBlocked);
+
+    releaseDd();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    // Trailing epoch may re-run work inside the same job, but still one enqueue.
+    assert.equal(enqueued, enqueuedWhileBlocked);
+    assert.ok(ddRuns >= 2);
+});
+
 test("pageLoad shows valid pips", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
