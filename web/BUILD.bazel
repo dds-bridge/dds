@@ -117,11 +117,12 @@ py_test(
     deps = [":mvp_site"],
 )
 
-# Playwright usually finishes in ~30s; first run may download Chromium (requires-network).
+# Playwright usually finishes in ~30–45s; first run may download Chromium
+# (requires-network). Full suite can approach 60s under load, so allow moderate.
 py_test(
     name = "dds_mvp_e2e_test",
-    size = "small",
-    timeout = "short",
+    size = "medium",
+    timeout = "moderate",
     main = "tests/test_mvp_e2e.py",
     srcs = ["tests/test_mvp_e2e.py"],
     data = [
