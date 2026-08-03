@@ -1642,6 +1642,72 @@ test("handleResultTableClick moves the highlight to the newly clicked cell", () 
     assert.equal(selected.denomination, "N");
 });
 
+test("switching contracts clears lead-trick badges before the next lead solve finishes", async () => {
+    // Arrange: first contract has numerals; switch while a follow-up solve is slow.
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.refreshDdTable = async () => {};
+
+    let leadCalls = 0;
+    let resolveSecondSolve;
+    const contractsSeen = [];
+    ctx.solveOpeningLeadTricks = (_hands, contract) => {
+        leadCalls += 1;
+        contractsSeen.push({ ...contract });
+        if (leadCalls === 1) {
+            return Promise.resolve({ SK: 7, HA: 5 });
+        }
+        return new Promise((resolve) => {
+            resolveSecondSolve = resolve;
+        });
+    };
+
+    ctx.fillFormWithPartScoreTestData();
+    const southNt = document.element("result-table").rows[3].cells[5];
+    const northClubs = document.element("result-table").rows[1].cells[1];
+
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return southNt;
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.match(
+        document.element("west_spades_cards").innerHTML,
+        /hand-card-tricks/
+    );
+
+    // Act: select a different contract.
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return northClubs;
+            },
+        },
+    });
+
+    // Assert: old numerals are gone immediately; selection already moved.
+    assert.equal(ctx.selectedContract().direction, "north");
+    assert.equal(ctx.selectedContract().denomination, "C");
+    assert.doesNotMatch(
+        document.element("west_spades_cards").innerHTML,
+        /hand-card-tricks/
+    );
+    assert.doesNotMatch(
+        document.element("west_hearts_cards").innerHTML,
+        /hand-card-tricks/
+    );
+
+    if (typeof resolveSecondSolve === "function") {
+        resolveSecondSolve({ CK: 4 });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.ok(contractsSeen.length >= 1);
+    assert.equal(contractsSeen[0].direction, "south");
+});
+
 test("handleResultTableClick clears selection when the selected cell is clicked again", () => {
     // Arrange
     const document = createMockDocument();

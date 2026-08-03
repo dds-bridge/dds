@@ -850,7 +850,12 @@ function applyResultCellSelection(direction, denomination) {
     }
 
     selectedContractState = { direction, denomination };
+    // Drop prior-contract numerals / in-flight solves immediately so a slow
+    // queued lead solve cannot repaint stale badges after the switch.
+    leadTricksRequestId += 1;
+    leadTricksByCardKey = null;
     updateContractStatus();
+    updateHandCardDisplays(collectHands());
     onContractSelect(direction, denomination);
     void scheduleDealSolve();
 }
