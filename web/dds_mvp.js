@@ -42,6 +42,7 @@
             handleSuitSelectionChange
             onHandCardClick
             handleResultTableClick
+            handleResultTableKeyDown
             selectedContract
             onContractSelect
             openingLeader
@@ -980,19 +981,47 @@ function contractFromResultCell(cell) {
     };
 }
 
-function handleResultTableClick(event) {
-    const target = event.target;
+function resultCellAriaLabel(direction, denomination) {
+    const denomName = DENOM_ARIA_NAMES[denomination];
 
-    if (!target || typeof target.closest !== "function") {
+    if (!DIRECTIONS.includes(direction) || !denomName) {
+        return "";
+    }
+
+    return denomName + "; " + capitalize(direction) + " declares";
+}
+
+function enhanceResultTableCells() {
+    const table = document.getElementById("result-table");
+
+    if (!table || !table.rows) {
         return;
     }
 
-    const cell = target.closest("#result-table td");
+    for (let row = 1; row <= 4; row++) {
+        for (let column = 1; column <= 5; column++) {
+            const cell = table.rows[row] && table.rows[row].cells[column];
 
-    if (!cell) {
-        return;
+            if (!cell) {
+                continue;
+            }
+
+            const direction = DIRECTIONS[row - 1];
+            const denomination = DENOMINATIONS[column - 1];
+            cell.tabIndex = 0;
+
+            if (typeof cell.setAttribute === "function") {
+                cell.setAttribute("role", "button");
+                cell.setAttribute(
+                    "aria-label",
+                    resultCellAriaLabel(direction, denomination)
+                );
+            }
+        }
     }
+}
 
+function activateResultCell(cell) {
     const contract = contractFromResultCell(cell);
 
     if (!contract) {
@@ -1009,6 +1038,46 @@ function handleResultTableClick(event) {
     }
 
     applyResultCellSelection(contract.direction, contract.denomination);
+}
+
+function handleResultTableClick(event) {
+    const target = event.target;
+
+    if (!target || typeof target.closest !== "function") {
+        return;
+    }
+
+    const cell = target.closest("#result-table td");
+
+    if (!cell) {
+        return;
+    }
+
+    activateResultCell(cell);
+}
+
+function handleResultTableKeyDown(event) {
+    if (event.key !== "Enter" && event.key !== " ") {
+        return;
+    }
+
+    const target = event.target;
+
+    if (!target || typeof target.closest !== "function") {
+        return;
+    }
+
+    const cell = target.closest("#result-table td");
+
+    if (!cell || cell !== target) {
+        return;
+    }
+
+    if (event.key === " " && typeof event.preventDefault === "function") {
+        event.preventDefault();
+    }
+
+    activateResultCell(cell);
 }
 
 function updateHandCardCounts(hands) {
@@ -1339,10 +1408,12 @@ function pageLoad() {
         element.addEventListener("input", handleHandSuitInput);
     }
 
+    enhanceResultTableCells();
     document.addEventListener("mousedown", handleHandCardMouseDown);
     document.addEventListener("click", handleHandCardClick);
     document.addEventListener("click", handleHandSuitClick);
     document.addEventListener("click", handleResultTableClick);
+    document.addEventListener("keydown", handleResultTableKeyDown);
     document.addEventListener("selectionchange", handleSuitSelectionChange);
     updateActionButtons();
     focusNorthSpades();

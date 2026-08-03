@@ -123,6 +123,22 @@ function createMockDocument(initialValues = {}) {
                 cellIndex: column,
                 parentElement: rowObj,
                 tagName: row === 0 || column === 0 ? "TH" : "TD",
+                tabIndex: -1,
+                attributes: {},
+                setAttribute(name, value) {
+                    this.attributes[name] = String(value);
+                    if (name === "tabindex") {
+                        this.tabIndex = Number(value);
+                    }
+                },
+                getAttribute(name) {
+                    return Object.prototype.hasOwnProperty.call(
+                        this.attributes,
+                        name
+                    )
+                        ? this.attributes[name]
+                        : null;
+                },
                 classList: {
                     add(name) {
                         const classes = new Set(
@@ -1932,6 +1948,135 @@ test("pageLoad wires result-table cell clicks", () => {
     assert.equal(cell.classList.contains("result-cell-selected"), true);
 });
 
+test("pageLoad makes result data cells keyboard-operable buttons", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const table = document.element("result-table");
+
+    // Act
+    ctx.pageLoad();
+
+    // Assert: every data cell is a focusable button with a contract label.
+    const northClubs = table.rows[1].cells[1];
+    assert.equal(northClubs.tabIndex, 0);
+    assert.equal(northClubs.getAttribute("role"), "button");
+    assert.equal(
+        northClubs.getAttribute("aria-label"),
+        "Clubs; North declares"
+    );
+
+    const southNt = table.rows[3].cells[5];
+    assert.equal(southNt.tabIndex, 0);
+    assert.equal(southNt.getAttribute("role"), "button");
+    assert.equal(
+        southNt.getAttribute("aria-label"),
+        "Notrump; South declares"
+    );
+
+    // Header cells stay non-interactive.
+    assert.notEqual(table.rows[0].cells[1].tabIndex, 0);
+    assert.equal(table.rows[0].cells[1].getAttribute("role"), null);
+    assert.notEqual(table.rows[1].cells[0].tabIndex, 0);
+});
+
+test("handleResultTableKeyDown selects a contract on Enter", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[2].cells[3]; // East / Hearts
+    cell.closest = (selector) =>
+        selector === "#result-table td" ? cell : null;
+    const selections = [];
+    ctx.onContractSelect = (direction, denomination) => {
+        selections.push({ direction, denomination });
+    };
+
+    // Act
+    ctx.handleResultTableKeyDown({
+        key: "Enter",
+        target: cell,
+        preventDefault() {
+            assert.fail("Enter should not call preventDefault");
+        },
+    });
+
+    // Assert
+    assert.deepEqual(selections, [{ direction: "east", denomination: "H" }]);
+    assert.equal(ctx.selectedContract().direction, "east");
+    assert.equal(ctx.selectedContract().denomination, "H");
+});
+
+test("handleResultTableKeyDown selects a contract on Space and prevents scroll", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[4].cells[5]; // West / NT
+    cell.closest = (selector) =>
+        selector === "#result-table td" ? cell : null;
+    let prevented = false;
+
+    // Act
+    ctx.handleResultTableKeyDown({
+        key: " ",
+        target: cell,
+        preventDefault() {
+            prevented = true;
+        },
+    });
+
+    // Assert
+    assert.equal(prevented, true);
+    assert.equal(ctx.selectedContract().direction, "west");
+    assert.equal(ctx.selectedContract().denomination, "N");
+});
+
+test("handleResultTableKeyDown ignores keys outside result cells", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let prevented = false;
+
+    ctx.handleResultTableKeyDown({
+        key: "Enter",
+        target: {
+            closest() {
+                return null;
+            },
+        },
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    ctx.handleResultTableKeyDown({
+        key: "Tab",
+        target: document.element("result-table").rows[1].cells[1],
+        preventDefault() {
+            prevented = true;
+        },
+    });
+
+    assert.equal(prevented, false);
+    assert.equal(ctx.selectedContract(), null);
+});
+
+test("pageLoad wires result-table keyboard activation", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[3].cells[4];
+    cell.closest = (selector) =>
+        selector === "#result-table td" ? cell : null;
+
+    ctx.pageLoad();
+    document.dispatch("keydown", {
+        key: "Enter",
+        target: cell,
+        preventDefault() {},
+    });
+
+    assert.equal(ctx.selectedContract().direction, "south");
+    assert.equal(ctx.selectedContract().denomination, "S");
+});
+
 test("result-cell-selected highlight is defined in CSS", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
@@ -1940,6 +2085,7 @@ test("result-cell-selected highlight is defined in CSS", () => {
     // Assert
     assert.match(css, /#result-table\s+td\.result-cell-selected\s*\{/s);
     assert.match(css, /#result-table\s+td\s*\{[^}]*cursor:\s*pointer/s);
+    assert.match(css, /#result-table\s+td:focus-visible\s*\{/s);
 });
 
 test("result table lives in the hand diagram southeast corner", () => {
