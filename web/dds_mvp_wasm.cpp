@@ -18,9 +18,15 @@
 #endif
 
 namespace {
-auto mvp_context() -> SolverContext& {
-  static SolverContext ctx;   // lazily constructed on first call, lives for
-                               // the module instance's lifetime (the session)
+// Separate contexts so CalcDDtable worker pools cannot disturb SolveBoard
+// (and vice versa) when the UI auto-fills the table then analyzes leads.
+auto mvp_table_context() -> SolverContext& {
+  static SolverContext ctx;
+  return ctx;
+}
+
+auto mvp_leads_context() -> SolverContext& {
+  static SolverContext ctx;
   return ctx;
 }
 
@@ -66,7 +72,7 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int
   }
   std::memcpy(deal.cards, pbn, pbn_len + 1);
 
-  SolverContext& ctx = mvp_context();
+  SolverContext& ctx = mvp_table_context();
   ctx.reset_for_solve();   // recycle TT memory pool + search bookkeeping
                             // between deals; keeps the underlying allocation
 
@@ -114,7 +120,7 @@ auto dds_mvp_solve_leads(
     return RETURN_PBN_FAULT;
   }
 
-  SolverContext& ctx = mvp_context();
+  SolverContext& ctx = mvp_leads_context();
   ctx.reset_for_solve();
 
   FutureTricks fut{};

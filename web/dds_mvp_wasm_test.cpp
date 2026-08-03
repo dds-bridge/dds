@@ -127,3 +127,21 @@ TEST(DdsMvpWasmTest, SolveLeadsReturnsOpeningLeadTricksForEachCard) {
   EXPECT_TRUE(saw_sk);
   EXPECT_EQ(max_score, 7);
 }
+
+TEST(DdsMvpWasmTest, SolveLeadsWorksAfterCalcTableOnSharedSession) {
+  // Auto-solve fills the DD table first, then a contract click runs leads on
+  // the same module session — leads must still return 13 cards.
+  int table[20]{};
+  ASSERT_EQ(dds_mvp_calc_table(kPbnPartScore, table), RETURN_NO_FAULT);
+
+  int out[40]{};
+  ASSERT_EQ(dds_mvp_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
+            RETURN_NO_FAULT);
+  ASSERT_EQ(out[0], 13);
+
+  // A second table solve must not poison a following lead solve either.
+  ASSERT_EQ(dds_mvp_calc_table(kPbnPartScore, table), RETURN_NO_FAULT);
+  ASSERT_EQ(dds_mvp_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
+            RETURN_NO_FAULT);
+  EXPECT_EQ(out[0], 13);
+}

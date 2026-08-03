@@ -106,7 +106,6 @@ function createMockDocument(initialValues = {}) {
     }
     makeElement("valid-pips");
     makeElement("result");
-    makeElement("double-dummy-it");
     makeElement("deck-status");
     makeElement("contract-status");
     for (const direction of DIRECTIONS) {
@@ -431,23 +430,129 @@ test("fillFormWithPartScoreTestData populates inputs", () => {
     assert.equal(document.element("west_clubs").value, "T5");
 });
 
-test("fillFormWithTestData focuses the double-dummy button", async () => {
+test("fillFormWithTestData does not require a double-dummy button", async () => {
+    // Arrange
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
-    document.setActiveElement("north_spades");
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
 
+    // Act
     ctx.fillFormWithPartScoreTestData();
-
-    // Focus is deferred so the clicked toolbar button cannot reclaim it.
-    assert.notEqual(document.activeElement, document.element("double-dummy-it"));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    assert.equal(document.activeElement, document.element("double-dummy-it"));
-    assert.equal(document.element("double-dummy-it").disabled, false);
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        true
-    );
+    // Assert: loading a complete deal auto-refreshes the table (no button to focus).
+    assert.equal(refreshed, 1);
+    assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+});
+
+test("page has no double-dummy button", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert
+    assert.doesNotMatch(html, /double-dummy-it/);
+    assert.doesNotMatch(html, /Double-dummy it!/);
+    assert.doesNotMatch(css, /#double-dummy-it/);
+});
+
+test("updateActionButtons finishes dd table before opening-lead refresh", async () => {
+    // Arrange: a selected contract must not race CalcDDtable vs SolveBoard.
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const order = [];
+
+    ctx.refreshDdTable = async () => {
+        order.push("dd-start");
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        order.push("dd-end");
+    };
+    ctx.refreshOpeningLeadTricks = async () => {
+        order.push("leads");
+    };
+
+    ctx.fillFormWithPartScoreTestData();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    order.length = 0;
+
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[3].cells[5];
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    // Assert: contract click runs DD (skip/no-op ok) then leads in one job.
+    assert.deepEqual(order, ["dd-start", "dd-end", "leads"]);
+});
+
+test("contract selection waits for an in-flight dd table before lead refresh", async () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const order = [];
+
+    ctx.refreshDdTable = async () => {
+        order.push("dd-start");
+        await new Promise((resolve) => setTimeout(resolve, 40));
+        order.push("dd-end");
+    };
+    ctx.refreshOpeningLeadTricks = async () => {
+        order.push("leads");
+    };
+
+    // Act: start auto-solve, then select a contract before it finishes.
+    ctx.fillFormWithPartScoreTestData();
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[3].cells[5];
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    // Assert: coalesced jobs still run DD before leads; obsolete jobs no-op.
+    assert.ok(order.indexOf("dd-start") >= 0);
+    assert.ok(order.indexOf("dd-end") >= 0);
+    assert.equal(order[order.length - 1], "leads");
+    assert.ok(order.lastIndexOf("dd-end") < order.lastIndexOf("leads"));
+});
+
+test("rapid scheduleDealSolve coalesces to one trailing leads refresh", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let leads = 0;
+    let dd = 0;
+
+    ctx.refreshDdTable = async () => {
+        dd += 1;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    };
+    ctx.refreshOpeningLeadTricks = async () => {
+        leads += 1;
+    };
+
+    ctx.fillFormWithPartScoreTestData();
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[3].cells[5];
+            },
+        },
+    });
+    ctx.scheduleDealSolve();
+    ctx.scheduleDealSolve();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    assert.equal(leads, 1);
+    assert.ok(dd >= 1);
 });
 
 test("pageLoad shows valid pips", () => {
@@ -561,101 +666,98 @@ test("fourthHandFillState rejects a missing card object among three full hands",
     assert.equal(ctx.fourthHandFillState(hands).canFill, false);
 });
 
-test("updateActionButtons does not auto-fill when a hand has a non-bridge pip", () => {
+test("updateActionButtons does not auto-fill when a hand has a non-bridge pip", async () => {
     // Arrange: three full hands, but north holds an invalid pip (CX) instead of C7.
     const document = threeHandsPartScoreDocument();
     document.setValue("north_clubs", "J8X");
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
 
     // Act
     ctx.updateActionButtons();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    // Assert: the fourth hand stays empty and double-dummy remains disabled.
+    // Assert: the fourth hand stays empty and the table is not solved.
     assert.equal(document.element("west_spades").value, "");
     assert.equal(document.element("west_hearts").value, "");
     assert.equal(document.element("west_diamonds").value, "");
     assert.equal(document.element("west_clubs").value, "");
-    assert.equal(document.element("double-dummy-it").disabled, true);
+    assert.equal(refreshed, 1);
 });
 
-test("updateActionButtons auto-fills the fourth hand for three complete hands", () => {
+test("updateActionButtons auto-fills the fourth hand for three complete hands", async () => {
     const document = threeHandsPartScoreDocument();
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
     ctx.updateActionButtons();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(document.element("west_spades").value, "K643");
     assert.equal(document.element("west_hearts").value, "T8");
     assert.equal(document.element("west_diamonds").value, "AK742");
     assert.equal(document.element("west_clubs").value, "T5");
     assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
-    assert.equal(document.element("double-dummy-it").disabled, false);
+    assert.equal(refreshed, 1);
 });
 
-test("updateActionButtons does not auto-fill with a partial fourth hand", () => {
+test("updateActionButtons does not auto-fill with a partial fourth hand", async () => {
     const document = threeHandsPartScoreDocument();
     document.setValue("west_spades", "K");
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
     ctx.updateActionButtons();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(document.element("west_spades").value, "K");
     assert.equal(document.element("west_hearts").value, "");
-    assert.equal(document.element("double-dummy-it").disabled, true);
+    assert.equal(refreshed, 1);
 });
 
-test("updateActionButtons enables double-dummy when every hand has 13 cards", () => {
+test("updateActionButtons auto-solves when every hand has 13 cards", async () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
     ctx.fillFormWithPartScoreTestData();
-    ctx.updateActionButtons();
-    assert.equal(document.element("double-dummy-it").disabled, false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(refreshed, 1);
 });
 
-test("updateActionButtons keeps double-dummy disabled without preconditions", () => {
+test("updateActionButtons refreshes the table state for incomplete deals", async () => {
     const document = createMockDocument({ north_spades: "AKQ" });
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
     ctx.updateActionButtons();
-    assert.equal(document.element("double-dummy-it").disabled, true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(refreshed, 1);
 });
 
-test("updateDefaultAction outlines double-dummy only when Enter would activate it", () => {
-    const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    ctx.updateActionButtons();
-
-    document.setActiveElement("north_spades");
-    ctx.updateDefaultAction();
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        true
-    );
-
-    document.setActiveElement("double-dummy-it");
-    ctx.updateDefaultAction();
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        true
-    );
-
-    document.setActiveElement(null);
-    // Simulate focus on a toolbar button that is not a hand input.
-    const clearLike = { id: "clear-entries" };
-    document.activeElement = clearLike;
-    ctx.updateDefaultAction();
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        false
-    );
-});
-
-test("updateDefaultAction does not outline double-dummy on incomplete deals", () => {
+test("refreshDdTable clears the results table when the deal is incomplete", () => {
+    // Arrange
     const document = createMockDocument({ north_spades: "AKQ" });
     const ctx = loadDdsMvp(document);
-    document.setActiveElement("north_spades");
-    ctx.updateActionButtons();
-    ctx.updateDefaultAction();
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        false
-    );
+    const cell = document.element("result-table").rows[1].cells[1];
+    cell.innerHTML = "9";
+    document.element("result").innerHTML = "stale";
+
+    // Act
+    ctx.refreshDdTable();
+
+    // Assert
+    assert.equal(cell.innerHTML, "");
+    assert.equal(document.element("result").innerHTML, "");
 });
 
 test("updateActionButtons displays all 52 cards in the deck status", () => {
@@ -736,111 +838,6 @@ test("updateActionButtons hides the card-count note at the 13-card boundary", ()
     const note = document.element("north-card-count");
     assert.equal(note.hidden, true);
     assert.equal(note.innerHTML, "");
-});
-
-test("handleHandKeydown runs double-dummy on Enter from a hand input", () => {
-    const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
-    };
-    let prevented = false;
-    ctx.handleHandKeydown({
-        key: "Enter",
-        target: document.element("north_spades"),
-        preventDefault() {
-            prevented = true;
-        },
-    });
-    assert.equal(prevented, true);
-    assert.equal(sendCalled, true);
-});
-
-test("handleHandKeydown ignores Enter from a non-hand control", () => {
-    const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
-    };
-    let prevented = false;
-    ctx.handleHandKeydown({
-        key: "Enter",
-        target: document.element("double-dummy-it"),
-        preventDefault() {
-            prevented = true;
-        },
-    });
-    assert.equal(prevented, false);
-    assert.equal(sendCalled, false);
-});
-
-test("Enter on a hand input runs double-dummy after loading a complete deal", () => {
-    const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
-    };
-    ctx.pageLoad();
-    let prevented = false;
-
-    document.element("north_spades").dispatch("keydown", {
-        key: "Enter",
-        preventDefault() {
-            prevented = true;
-        },
-    });
-
-    assert.equal(prevented, true);
-    assert.equal(sendCalled, true);
-});
-
-test("document Enter does not run double-dummy when focus is elsewhere", () => {
-    const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
-    };
-    ctx.pageLoad();
-    let prevented = false;
-
-    document.dispatch("keydown", {
-        key: "Enter",
-        target: document.element("double-dummy-it"),
-        preventDefault() {
-            prevented = true;
-        },
-    });
-
-    assert.equal(prevented, false);
-    assert.equal(sendCalled, false);
-});
-
-test("handleHandKeydown ignores Enter when neither action is eligible", () => {
-    const document = createMockDocument({ north_spades: "AKQ" });
-    const ctx = loadDdsMvp(document);
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
-    };
-    let prevented = false;
-    ctx.handleHandKeydown({
-        key: "Enter",
-        target: document.element("north_spades"),
-        preventDefault() {
-            prevented = true;
-        },
-    });
-    assert.equal(prevented, false);
-    assert.equal(sendCalled, false);
-    assert.equal(document.element("west_spades").value, "");
 });
 
 test("handCardHtml renders a clickable button for a card in a hand", () => {

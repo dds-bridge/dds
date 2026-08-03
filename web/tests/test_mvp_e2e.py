@@ -118,8 +118,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
     def _fill_part_score_deal(self, page) -> None:
         page.get_by_role("button", name="Part-score test deal").click()
 
-    def _run_double_dummy(self, page) -> None:
-        page.get_by_role("button", name="Double-dummy it!").click()
+    def _wait_for_dd_table(self, page) -> None:
         page.wait_for_function(
             """() => {
             const cell = document.getElementById('result-table').rows[1].cells[1];
@@ -192,14 +191,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page, errors = self._open_page(site.url)
             try:
                 page.get_by_role("button", name="Part-score test deal").click()
-                page.get_by_role("button", name="Double-dummy it!").click()
-                page.wait_for_function(
-                    """() => {
-                      const cell = document.getElementById('result-table')
-                        .rows[3].cells[5];
-                      return cell && cell.textContent.trim() !== '';
-                    }"""
-                )
+                self._wait_for_dd_table(page)
 
                 # South / NT → West leads.
                 page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
@@ -226,6 +218,54 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
                         "#north_spades_cards .hand-card-tricks"
                     ).count(),
                     0,
+                )
+                # Stickiness: numerals must survive a short settle period and a
+                # leader-card click (caret placement re-renders holdings).
+                page.wait_for_timeout(2000)
+                self.assertGreater(
+                    page.locator(
+                        "#west_spades_cards .hand-card-tricks"
+                    ).count(),
+                    0,
+                    msg=f"tricks vanished; result={page.locator('#result').inner_text()!r}",
+                )
+                page.locator(
+                    '#west_spades_cards .hand-card[data-card="SK"]'
+                ).click()
+                page.wait_for_timeout(500)
+                self.assertGreater(
+                    page.locator(
+                        "#west_spades_cards .hand-card-tricks"
+                    ).count(),
+                    0,
+                    msg=f"tricks lost after card click; result={page.locator('#result').inner_text()!r}",
+                )
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
+
+    def test_http_opening_lead_tricks_when_contract_clicked_during_dd(self) -> None:
+        """Selecting a contract while the table is still computing must still
+        show lead-trick numerals after both solves finish."""
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                page.get_by_role("button", name="Part-score test deal").click()
+                # Click South/NT immediately — cells may still be empty.
+                page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                      '#west_spades_cards .hand-card-tricks').length > 0""",
+                    timeout=120_000,
+                )
+                self._wait_for_dd_table(page)
+                page.wait_for_timeout(1500)
+                self.assertGreater(
+                    page.locator(
+                        "#west_spades_cards .hand-card-tricks"
+                    ).count(),
+                    0,
+                    msg=f"tricks missing after race; result={page.locator('#result').inner_text()!r}",
                 )
                 self.assertEqual(errors, [])
             finally:
@@ -561,26 +601,6 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_double_dummy_button_has_bold_outline_when_default(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-        try:
-            button = page.locator("#double-dummy-it")
-            self.assertNotIn("default-action", button.get_attribute("class") or "")
-
-            self._fill_part_score_deal(page)
-            page.wait_for_function(
-                "() => document.getElementById('double-dummy-it').classList.contains('default-action')"
-            )
-
-            self.assertIn("default-action", button.get_attribute("class"))
-            outline_width = float(
-                button.evaluate("el => parseFloat(getComputedStyle(el).outlineWidth)")
-            )
-            self.assertGreaterEqual(outline_width, 2.0)
-            self.assertEqual(errors, [])
-        finally:
-            page.close()
-
     def test_hand_over_13_cards_shows_its_card_count(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
@@ -627,7 +647,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             finally:
                 page.close()
 
-    def test_http_part_score_table(self) -> None:
+    def test_http_part_score_table_auto_fills_on_complete_deal(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
@@ -636,66 +656,31 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
                     "UTF-8",
                     msg="HTTP must decode HTML as UTF-8 so suit glyphs are not mojibake",
                 )
+                self.assertEqual(page.locator("#double-dummy-it").count(), 0)
                 self._fill_part_score_deal(page)
-                self._run_double_dummy(page)
+                self._wait_for_dd_table(page)
                 self._assert_part_score_table(page)
                 self.assertEqual(errors, [])
             finally:
                 page.close()
 
-    def test_test_deal_button_focuses_double_dummy(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-        try:
-            page.get_by_role("button", name="Part-score test deal").click()
-            page.wait_for_function(
-                "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
-            )
-            self.assertFalse(page.get_by_role("button", name="Double-dummy it!").is_disabled())
-            self.assertEqual(errors, [])
-        finally:
-            page.close()
-
-    def test_enter_runs_double_dummy_after_loading_a_complete_deal(self) -> None:
-        # Solving needs SharedArrayBuffer → cross-origin isolation → HTTP only.
+    def test_clearing_deal_clears_results_table(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
                 self._fill_part_score_deal(page)
-
-                page.wait_for_function(
-                    "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
-                )
-                page.keyboard.press("Enter")
+                self._wait_for_dd_table(page)
+                page.get_by_role("button", name="Clear entries").click()
                 page.wait_for_function(
                     """() => {
-                    const cell = document.getElementById('result-table').rows[1].cells[1];
-                    return cell && /^\\d+$/.test(cell.textContent.trim());
-                  }""",
-                    timeout=120_000,
+                    const cell = document.getElementById('result-table')
+                      .rows[1].cells[1];
+                    return cell && cell.textContent.trim() === '';
+                  }"""
                 )
-
-                self._assert_part_score_table(page)
                 self.assertEqual(errors, [])
             finally:
                 page.close()
-
-    def test_double_dummy_disabled_on_incomplete_deal(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-        try:
-            page.get_by_role("button", name="Clear entries").click()
-            double_dummy = page.get_by_role("button", name="Double-dummy it!")
-            self.assertTrue(double_dummy.is_disabled())
-            self.assertEqual(
-                float(double_dummy.evaluate("el => getComputedStyle(el).opacity")),
-                1.0,
-            )
-            self.assertNotEqual(
-                double_dummy.evaluate("el => getComputedStyle(el).color"),
-                "rgb(0, 0, 0)",
-            )
-            self.assertEqual(errors, [])
-        finally:
-            page.close()
 
     def test_auto_fills_fourth_hand_when_three_hands_are_complete(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
@@ -704,12 +689,10 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             for suit in ("spades", "hearts", "diamonds", "clubs"):
                 page.locator(f"#west_{suit}").fill("")
 
-            double_dummy = page.get_by_role("button", name="Double-dummy it!")
             self.assertEqual(page.locator("#west_spades").input_value(), "K643")
             self.assertEqual(page.locator("#west_hearts").input_value(), "T8")
             self.assertEqual(page.locator("#west_diamonds").input_value(), "AK742")
             self.assertEqual(page.locator("#west_clubs").input_value(), "T5")
-            self.assertTrue(double_dummy.is_enabled())
             self.assertEqual(errors, [])
         finally:
             page.close()

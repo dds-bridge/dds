@@ -22,10 +22,11 @@
             rotateClockwise
             pageLoad
             sendJSON
+            refreshDdTable
+            refreshOpeningLeadTricks
+            scheduleDealSolve
             fourthHandFillState
             updateActionButtons
-            updateDefaultAction
-            handleHandKeydown
             handCardHtml
             handHoldingHtml
             updateHandCardDisplays
@@ -63,6 +64,43 @@ const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
 let selectedContractState = null;
 let leadTricksByCardKey = null;
 let leadTricksRequestId = 0;
+let ddTableRequestId = 0;
+let lastDdTablePbn = null;
+let solveQueue = Promise.resolve();
+let dealSolveEpoch = 0;
+
+function enqueueSolve(task) {
+    const run = solveQueue.then(task, task);
+
+    // Keep the queue alive after a rejected solve.
+    solveQueue = run.catch(() => {});
+    return run;
+}
+
+// Coalesce DD-table + lead solves onto one queued job so rapid hand edits and
+// contract clicks cannot interleave CalcDDtable with SolveBoard.
+function scheduleDealSolve() {
+    const epoch = ++dealSolveEpoch;
+
+    return enqueueSolve(async () => {
+        if (epoch !== dealSolveEpoch) {
+            return;
+        }
+
+        await refreshDdTable();
+
+        if (epoch !== dealSolveEpoch) {
+            return;
+        }
+
+        if (selectedContractState) {
+            await refreshOpeningLeadTricks();
+        } else if (leadTricksByCardKey) {
+            leadTricksByCardKey = null;
+            updateHandCardDisplays(collectHands());
+        }
+    });
+}
 
 // Suit glyphs are real text in these custom tags (see dds_mvp.css for color).
 const SUIT_TAGS = {
@@ -209,15 +247,6 @@ function focusNorthSpades() {
     document.getElementById("north_spades").focus();
 }
 
-function focusDoubleDummyButton() {
-    const doubleDummyButton = document.getElementById("double-dummy-it");
-
-    if (doubleDummyButton && !doubleDummyButton.disabled) {
-        doubleDummyButton.focus();
-        updateDefaultAction();
-    }
-}
-
 function fillFormWithTestData(nesw) {
     clear_results();
 
@@ -234,8 +263,6 @@ function fillFormWithTestData(nesw) {
     }
 
     updateActionButtons();
-    // Defer so the clicked test-deal button cannot reclaim focus after click.
-    setTimeout(focusDoubleDummyButton, 0);
 }
 
 function fillFormWithGrandSlamTestData() {
@@ -803,7 +830,7 @@ function applyResultCellSelection(direction, denomination) {
     selectedContractState = { direction, denomination };
     updateContractStatus();
     onContractSelect(direction, denomination);
-    void refreshOpeningLeadTricks();
+    void scheduleDealSolve();
 }
 
 async function solveOpeningLeadTricks(hands, contract) {
@@ -1046,35 +1073,9 @@ function isHandInput(element) {
     return false;
 }
 
-function enterWouldActivateDoubleDummy() {
-    const doubleDummyButton = document.getElementById("double-dummy-it");
-    const activeElement = document.activeElement;
-
-    if (!doubleDummyButton || doubleDummyButton.disabled) {
-        return false;
-    }
-
-    return isHandInput(activeElement) || activeElement === doubleDummyButton;
-}
-
-function updateDefaultAction() {
-    const doubleDummyButton = document.getElementById("double-dummy-it");
-
-    if (!doubleDummyButton) {
-        return;
-    }
-
-    if (enterWouldActivateDoubleDummy()) {
-        doubleDummyButton.classList.add("default-action");
-    } else {
-        doubleDummyButton.classList.remove("default-action");
-    }
-}
-
 function updateActionButtons() {
     let hands = collectHands();
     const fillState = fourthHandFillState(hands);
-    const doubleDummyButton = document.getElementById("double-dummy-it");
 
     if (fillState.canFill) {
         applyFourthHandFill(hands, fillState.emptyHand);
@@ -1084,34 +1085,13 @@ function updateActionButtons() {
     updateDeckStatus(hands);
     updateHandCardCounts(hands);
 
-    if (!selectedContractState) {
+    if (!selectedContractState && leadTricksByCardKey) {
         leadTricksByCardKey = null;
     }
 
     updateHandCardDisplays(hands);
 
-    if (selectedContractState) {
-        void refreshOpeningLeadTricks();
-    }
-
-    if (doubleDummyButton) {
-        doubleDummyButton.disabled = !allHandsHaveThirteenCards(hands);
-    }
-
-    updateDefaultAction();
-}
-
-function handleHandKeydown(event) {
-    if (event.key !== "Enter" || !isHandInput(event.target)) {
-        return;
-    }
-
-    const hands = collectHands();
-
-    if (allHandsHaveThirteenCards(hands)) {
-        event.preventDefault();
-        sendJSON();
-    }
+    void scheduleDealSolve();
 }
 
 function collectHands() {
@@ -1188,7 +1168,6 @@ function pageLoad() {
 
     for (const element of hand_elements()) {
         element.addEventListener("input", updateActionButtons);
-        element.addEventListener("keydown", handleHandKeydown);
     }
 
     document.addEventListener("mousedown", handleHandCardMouseDown);
@@ -1196,8 +1175,6 @@ function pageLoad() {
     document.addEventListener("click", handleHandSuitClick);
     document.addEventListener("click", handleResultTableClick);
     document.addEventListener("selectionchange", handleSuitSelectionChange);
-    document.addEventListener("focusin", updateDefaultAction);
-    document.addEventListener("focusout", updateDefaultAction);
     updateActionButtons();
     focusNorthSpades();
 }
@@ -1206,6 +1183,7 @@ function clear_results() {
     var result = document.getElementById("result");
     var result_table = document.getElementById("result-table");
 
+    lastDdTablePbn = null;
     result.innerHTML = "";
 
     for (var row = 1; row <= 4; row++) {
@@ -1216,26 +1194,50 @@ function clear_results() {
     }
 }
 
-async function sendJSON() {
+async function refreshDdTable() {
+    const requestId = ++ddTableRequestId;
     const result = document.getElementById("result");
     const result_table = document.getElementById("result-table");
+    const hands = collectHands();
 
-    var hands = collectHands();
+    if (!allHandsHaveThirteenCards(hands)) {
+        if (requestId === ddTableRequestId) {
+            lastDdTablePbn = null;
+            clear_results();
+        }
+        return;
+    }
 
     const error_message = inputIsValid(hands);
 
     if (error_message.length) {
-        clear_results();
-        result.innerHTML = error_message;
+        if (requestId === ddTableRequestId) {
+            lastDdTablePbn = null;
+            clear_results();
+            if (result) {
+                result.innerHTML = error_message;
+            }
+        }
+        return;
+    }
+
+    const pbn = handsToPbn(hands);
+
+    if (pbn === lastDdTablePbn && ddTableLooksPopulated(result_table)) {
+        return;
+    }
+
+    if (requestId !== ddTableRequestId) {
         return;
     }
 
     clear_results();
-    result.innerHTML = "Computing&hellip;"; // horizontal ellipsis
+    if (result) {
+        result.innerHTML = "Computing&hellip;"; // horizontal ellipsis
+    }
 
     try {
         const module = await loadDdsModule();
-        const pbn = handsToPbn(hands);
         const outPtr = module._malloc(20 * 4);
 
         try {
@@ -1246,8 +1248,15 @@ async function sendJSON() {
                 [pbn, outPtr]
             );
 
+            if (requestId !== ddTableRequestId) {
+                return;
+            }
+
             if (rc !== 1) {
-                result.innerHTML = "DDS error (code " + rc + ").";
+                lastDdTablePbn = null;
+                if (result) {
+                    result.innerHTML = "DDS error (code " + rc + ").";
+                }
                 return;
             }
 
@@ -1266,16 +1275,41 @@ async function sendJSON() {
                 }
             }
 
-            result.innerHTML = "";
+            lastDdTablePbn = pbn;
+
+            if (result) {
+                result.innerHTML = "";
+            }
         } finally {
             module._free(outPtr);
         }
     } catch (err) {
+        if (requestId !== ddTableRequestId) {
+            return;
+        }
+
+        lastDdTablePbn = null;
         clear_results();
-        result.innerHTML = err instanceof Error
-            ? err.message
-            : err == null
-                ? "Unknown error"
-                : String(err);
+        if (result) {
+            result.innerHTML = err instanceof Error
+                ? err.message
+                : err == null
+                    ? "Unknown error"
+                    : String(err);
+        }
     }
+}
+
+function ddTableLooksPopulated(result_table) {
+    if (!result_table || !result_table.rows || !result_table.rows[1]) {
+        return false;
+    }
+
+    const cell = result_table.rows[1].cells[1];
+
+    return !!(cell && cell.innerHTML && /\d/.test(String(cell.innerHTML)));
+}
+
+function sendJSON() {
+    return refreshDdTable();
 }
