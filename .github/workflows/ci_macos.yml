@@ -20,7 +20,11 @@ jobs:
 
       # Install Doxygen, to generate documentation
       - name: Install Doxygen
-        run: brew install doxygen
+        run: |
+          # GitHub macOS runners ship aws/tap untrusted under Homebrew 6;
+          # untap it so brew install does not warn on every run.
+          brew untap aws/tap || true
+          brew install doxygen
 
       # Prefetch external repos (emsdk via //..., LLVM); retry network flakes only
       - name: Prefetch external repos
