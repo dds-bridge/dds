@@ -1241,7 +1241,10 @@ function updateActionButtons() {
     updateDeckStatus(hands);
     updateHandCardCounts(hands);
 
-    if (!selectedContractState && leadTricksByCardKey) {
+    // Drop cached lead numerals immediately on any hand change so a slow
+    // follow-up solve cannot leave stale badges on screen.
+    if (leadTricksByCardKey || selectedContractState) {
+        leadTricksRequestId += 1;
         leadTricksByCardKey = null;
     }
 

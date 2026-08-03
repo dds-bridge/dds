@@ -857,6 +857,59 @@ test("updateActionButtons auto-solves when every hand has 13 cards", async () =>
     assert.equal(refreshed, 1);
 });
 
+test("hand edit clears lead-trick badges before the next lead solve finishes", async () => {
+    // Arrange: selected contract with lead numerals, then a slow follow-up solve.
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.refreshDdTable = async () => {};
+
+    let leadCalls = 0;
+    let resolveSecondSolve;
+    ctx.solveOpeningLeadTricks = () => {
+        leadCalls += 1;
+        if (leadCalls === 1) {
+            return Promise.resolve({ SK: 7, HA: 5 });
+        }
+        return new Promise((resolve) => {
+            resolveSecondSolve = resolve;
+        });
+    };
+
+    ctx.fillFormWithPartScoreTestData();
+    const cell = document.element("result-table").rows[3].cells[5]; // South / NT
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.match(
+        document.element("west_spades_cards").innerHTML,
+        /hand-card-tricks/
+    );
+
+    // Act: edit a holding while a contract is still selected.
+    document.element("north_spades").value = "AQ8";
+    ctx.updateActionButtons();
+
+    // Assert: stale numerals are gone immediately (before the next solve settles).
+    assert.doesNotMatch(
+        document.element("west_spades_cards").innerHTML,
+        /hand-card-tricks/
+    );
+    assert.doesNotMatch(
+        document.element("west_hearts_cards").innerHTML,
+        /hand-card-tricks/
+    );
+
+    if (typeof resolveSecondSolve === "function") {
+        resolveSecondSolve({ SK: 6 });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0));
+});
+
 test("updateActionButtons refreshes the table state for incomplete deals", async () => {
     const document = createMockDocument({ north_spades: "AKQ" });
     const ctx = loadDdsMvp(document);
@@ -1823,6 +1876,16 @@ test("hand diagram markup uses hand-suit rows with concealed text inputs", () =>
     );
     assert.equal((html.match(/class="hand-suit"/g) ?? []).length, 16);
     assert.equal((html.match(/class="hand-suit-input"/g) ?? []).length, 16);
+    // Concealed inputs still need accessible names for keyboard/AT users.
+    assert.match(
+        html,
+        /id="north_spades"[^>]*aria-label="North spades"/
+    );
+    assert.match(
+        html,
+        /id="west_clubs"[^>]*aria-label="West clubs"/
+    );
+    assert.equal((html.match(/class="hand-suit-input"[^>]*aria-label="/g) ?? []).length, 16);
     assert.match(css, /\.hand-suit-input\s*\{[^}]*color:\s*transparent/s);
     assert.match(css, /\.hand-suit-input\s*\{[^}]*caret-color:/s);
 });
