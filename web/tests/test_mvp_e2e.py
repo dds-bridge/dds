@@ -238,9 +238,118 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
               }"""
             )
             self.assertEqual(input_style["color"], "rgba(0, 0, 0, 0)")
-            self.assertNotEqual(input_style["caretColor"], "rgba(0, 0, 0, 0)")
+            # Native caret is hidden; insertion point is the .hand-caret among glyphs.
+            self.assertEqual(input_style["caretColor"], "rgba(0, 0, 0, 0)")
+            self.assertEqual(page.locator("#north_spades_cards .hand-caret").count(), 1)
             # Typed text must not consume layout width beside the glyphs.
             self.assertLess(float(input_style["width"].replace("px", "")), 40.0)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_click_places_caret_so_backspace_edits_holding(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            north_spades = page.locator("#north_spades")
+            north_spades.fill("AQ8")
+
+            # Click the right half of Q → caret after Q; Backspace removes Q.
+            q = page.locator('#north_spades_cards .hand-card[data-card="SQ"]')
+            box = q.bounding_box()
+            self.assertIsNotNone(box)
+            page.mouse.click(box["x"] + box["width"] * 0.75, box["y"] + box["height"] / 2)
+            page.keyboard.press("Backspace")
+
+            self.assertEqual(north_spades.input_value(), "A8")
+            cards = page.locator("#north_spades_cards .hand-card")
+            self.assertEqual(cards.count(), 2)
+            self.assertEqual(cards.nth(0).inner_text(), "A")
+            self.assertEqual(cards.nth(1).inner_text(), "8")
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_everyone_makes_3n_east_eight_card_suit_stays_in_diagram(self) -> None:
+        """East's 8-card diamond suit must not expand/jump the diagram past .grid-outer."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            outer_before = page.locator(".grid-outer").bounding_box()
+            self.assertIsNotNone(outer_before)
+
+            page.get_by_role("button", name="Everyone makes 3N test deal").click()
+            page.wait_for_function(
+                "() => document.querySelectorAll('#east_diamonds_cards .hand-card').length === 8"
+            )
+
+            metrics = page.evaluate(
+                """() => {
+                const outer = document.querySelector('.grid-outer').getBoundingClientRect();
+                const holding = document
+                  .querySelector('#east_diamonds_cards')
+                  .getBoundingClientRect();
+                const east = document.querySelector('.hand-east').getBoundingClientRect();
+                return {
+                  outerRight: outer.right,
+                  outerWidth: outer.width,
+                  holdingRight: holding.right,
+                  eastLeft: east.left,
+                  eastWidth: east.width,
+                };
+              }"""
+            )
+            self.assertAlmostEqual(
+                metrics["outerWidth"],
+                outer_before["width"],
+                delta=2.0,
+                msg="diagram width must not jump when east fills an 8-card suit",
+            )
+            self.assertLessEqual(
+                metrics["holdingRight"],
+                metrics["outerRight"] + 1.0,
+                msg="east 8-card suit must stay within the diagram",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_everyone_makes_3n_eight_card_suits_stay_in_hand_cells(self) -> None:
+        """N/S/W 8-card suits must not spill out of their hand cells (washed-out overflow)."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            page.get_by_role("button", name="Everyone makes 3N test deal").click()
+            page.wait_for_function(
+                "() => document.querySelectorAll('#north_hearts_cards .hand-card').length === 8"
+            )
+
+            spills = page.evaluate(
+                """() => {
+                const checks = [
+                  ['#north_hearts_cards', '.hand-north'],
+                  ['#south_spades_cards', '.hand-south'],
+                  ['#west_clubs_cards', '.hand-west'],
+                  ['#east_diamonds_cards', '.hand-east'],
+                ];
+                return checks.map(([holdingSel, handSel]) => {
+                  const holding = document.querySelector(holdingSel).getBoundingClientRect();
+                  const hand = document.querySelector(handSel).getBoundingClientRect();
+                  const last = document
+                    .querySelector(holdingSel + ' .hand-card:last-child')
+                    .getBoundingClientRect();
+                  return {
+                    holdingSel,
+                    lastRight: last.right,
+                    handRight: hand.right,
+                    overflows: last.right > hand.right + 1,
+                  };
+                });
+              }"""
+            )
+            for item in spills:
+                self.assertFalse(
+                    item["overflows"],
+                    msg=f"{item['holdingSel']} last pip spills past hand cell "
+                    f"({item['lastRight']} > {item['handRight']})",
+                )
             self.assertEqual(errors, [])
         finally:
             page.close()

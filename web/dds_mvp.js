@@ -27,9 +27,12 @@
             updateDefaultAction
             handleHandKeydown
             handCardHtml
+            handHoldingHtml
             updateHandCardDisplays
             handleHandCardClick
             handleHandSuitClick
+            handleHandCardMouseDown
+            handleSuitSelectionChange
             onHandCardClick
             */
 
@@ -335,33 +338,139 @@ function handCardAriaLabel(direction, card) {
     return capitalize(direction) + " " + suitName + " " + pipName;
 }
 
-function handCardHtml(direction, card) {
+function handCardHtml(direction, card, index) {
     return "<button type=\"button\" class=\"hand-card\"" +
         " data-direction=\"" + direction + "\"" +
         " data-card=\"" + card.key() + "\"" +
+        " data-index=\"" + index + "\"" +
         " aria-label=\"" + handCardAriaLabel(direction, card) + "\">" +
         card.pip +
         "</button>";
 }
 
-function handHoldingHtml(direction, suit, cards) {
-    return cards
-        .filter((card) => card.suit === suit)
-        .sort(Card.compare)
-        .map((card) => handCardHtml(direction, card))
-        .join("");
+function handCaretHtml() {
+    return "<span class=\"hand-caret\" aria-hidden=\"true\"></span>";
+}
+
+function handHoldingHtml(direction, suit, cards, caretIndex) {
+    const suitCards = cards.filter((card) => card.suit === suit);
+    let html = "";
+
+    for (let i = 0; i < suitCards.length; i++) {
+        if (caretIndex === i) {
+            html += handCaretHtml();
+        }
+
+        html += handCardHtml(direction, suitCards[i], i);
+    }
+
+    if (caretIndex === suitCards.length) {
+        html += handCaretHtml();
+    }
+
+    return html;
+}
+
+function parseHandInputId(id) {
+    if (!id) {
+        return null;
+    }
+
+    const parts = id.split("_");
+
+    if (parts.length !== 2) {
+        return null;
+    }
+
+    const direction = parts[0];
+    const suit = parts[1];
+
+    if (!DIRECTIONS.includes(direction) || !SUITS.includes(suit)) {
+        return null;
+    }
+
+    return { direction, suit };
+}
+
+function focusedSuitCaret() {
+    const active = document.activeElement;
+
+    if (!isHandInput(active)) {
+        return null;
+    }
+
+    const parsed = parseHandInputId(active.id);
+
+    if (!parsed) {
+        return null;
+    }
+
+    const index = typeof active.selectionStart === "number"
+        ? active.selectionStart
+        : active.value.length;
+
+    return {
+        direction: parsed.direction,
+        suit: parsed.suit,
+        index: index
+    };
+}
+
+function placeCaretInSuitInput(input, pos) {
+    if (!input) {
+        return;
+    }
+
+    if (typeof input.focus === "function") {
+        input.focus();
+    }
+
+    const max = input.value ? input.value.length : 0;
+    const clamped = Math.max(0, Math.min(pos, max));
+
+    if (typeof input.setSelectionRange === "function") {
+        input.setSelectionRange(clamped, clamped);
+    } else {
+        input.selectionStart = clamped;
+        input.selectionEnd = clamped;
+    }
+}
+
+function caretPosForCardClick(index, event, button) {
+    let pos = index + 1;
+
+    if (typeof event.clientX === "number" &&
+            button && typeof button.getBoundingClientRect === "function") {
+        const rect = button.getBoundingClientRect();
+
+        if (rect && typeof rect.left === "number" && typeof rect.width === "number" &&
+                event.clientX < rect.left + rect.width / 2) {
+            pos = index;
+        }
+    }
+
+    return pos;
 }
 
 function updateHandCardDisplays(hands) {
+    const caret = focusedSuitCaret();
+
     for (const direction of DIRECTIONS) {
         for (const suit of SUITS) {
             const holder = document.getElementById(direction + "_" + suit + "_cards");
 
             if (holder) {
+                const caretIndex = caret &&
+                    caret.direction === direction &&
+                    caret.suit === suit
+                    ? caret.index
+                    : -1;
+
                 holder.innerHTML = handHoldingHtml(
                     direction,
                     suit,
-                    hands[direction] || []
+                    hands[direction] || [],
+                    caretIndex
                 );
             }
         }
@@ -370,6 +479,27 @@ function updateHandCardDisplays(hands) {
 
 function onHandCardClick(_direction, _card) {
     // Hook for a future play-through PR; intentionally a no-op for now.
+}
+
+function handleHandCardMouseDown(event) {
+    const target = event.target;
+
+    if (!target || typeof target.closest !== "function") {
+        return;
+    }
+
+    if (target.closest(".hand-card") && event.preventDefault) {
+        // Keep the suit input focused for editing instead of the button.
+        event.preventDefault();
+    }
+}
+
+function handleSuitSelectionChange() {
+    if (!isHandInput(document.activeElement)) {
+        return;
+    }
+
+    updateHandCardDisplays(collectHands());
 }
 
 function handleHandSuitClick(event) {
@@ -391,8 +521,9 @@ function handleHandSuitClick(event) {
 
     const input = suitRow.querySelector(".hand-suit-input");
 
-    if (input && typeof input.focus === "function") {
-        input.focus();
+    if (input) {
+        placeCaretInSuitInput(input, input.value ? input.value.length : 0);
+        updateHandCardDisplays(collectHands());
     }
 }
 
@@ -411,6 +542,7 @@ function handleHandCardClick(event) {
 
     const direction = button.getAttribute("data-direction");
     const key = button.getAttribute("data-card");
+    const indexAttr = button.getAttribute("data-index");
 
     if (!direction || !key || !DIRECTIONS.includes(direction)) {
         return;
@@ -424,6 +556,17 @@ function handleHandCardClick(event) {
 
     if (event.preventDefault) {
         event.preventDefault();
+    }
+
+    const index = indexAttr == null ? -1 : parseInt(indexAttr, 10);
+    const input = document.getElementById(direction + "_" + card.suit);
+
+    if (input && index >= 0 && !isNaN(index)) {
+        placeCaretInSuitInput(
+            input,
+            caretPosForCardClick(index, event, button)
+        );
+        updateHandCardDisplays(collectHands());
     }
 
     onHandCardClick(direction, card);
@@ -680,8 +823,10 @@ function pageLoad() {
         element.addEventListener("keydown", handleHandKeydown);
     }
 
+    document.addEventListener("mousedown", handleHandCardMouseDown);
     document.addEventListener("click", handleHandCardClick);
     document.addEventListener("click", handleHandSuitClick);
+    document.addEventListener("selectionchange", handleSuitSelectionChange);
     document.addEventListener("focusin", updateDefaultAction);
     document.addEventListener("focusout", updateDefaultAction);
     updateActionButtons();

@@ -55,6 +55,8 @@ function createMockDocument(initialValues = {}) {
             disabled: false,
             hidden: false,
             className: "",
+            selectionStart: 0,
+            selectionEnd: 0,
             classList: {
                 add(name) {
                     const classes = new Set(
@@ -76,6 +78,10 @@ function createMockDocument(initialValues = {}) {
             },
             focus() {
                 documentRef.activeElement = element;
+            },
+            setSelectionRange(start, end = start) {
+                this.selectionStart = start;
+                this.selectionEnd = end;
             },
             addEventListener(type, listener) {
                 const typeListeners = elementListeners.get(type) ?? [];
@@ -775,7 +781,7 @@ test("handCardHtml renders a clickable button for a card in a hand", () => {
     const card = new ctx.Card("spades", "A");
 
     // Act
-    const html = ctx.handCardHtml("north", card);
+    const html = ctx.handCardHtml("north", card, 0);
 
     // Assert
     assert.match(html, /<button\b/);
@@ -783,8 +789,50 @@ test("handCardHtml renders a clickable button for a card in a hand", () => {
     assert.match(html, /class="hand-card"/);
     assert.match(html, /data-direction="north"/);
     assert.match(html, /data-card="SA"/);
+    assert.match(html, /data-index="0"/);
     assert.match(html, />A<\/button>/);
     assert.match(html, /aria-label="North spade ace"/);
+});
+
+test("hand holdings render pips in input order, not sorted", () => {
+    // Arrange: caret mapping requires display order to match the input string.
+    const document = createMockDocument({ north_spades: "QA" });
+    const ctx = loadDdsMvp(document);
+
+    // Act
+    const html = ctx.handHoldingHtml("north", "spades", ctx.collectHands().north, -1);
+
+    // Assert
+    const q = html.indexOf('data-card="SQ"');
+    const a = html.indexOf('data-card="SA"');
+    assert.ok(q >= 0 && a >= 0);
+    assert.ok(q < a, "Q before A matches typed order QA");
+});
+
+test("handHoldingHtml inserts a caret marker at the given index", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsMvp(document);
+    const cards = ctx.collectHands().north;
+
+    // Act
+    const beforeFirst = ctx.handHoldingHtml("north", "spades", cards, 0);
+    const between = ctx.handHoldingHtml("north", "spades", cards, 1);
+    const atEnd = ctx.handHoldingHtml("north", "spades", cards, 2);
+
+    // Assert
+    assert.match(
+        beforeFirst,
+        /^<span class="hand-caret"[^>]*><\/span><button/
+    );
+    assert.match(
+        between,
+        /data-card="SA"[^>]*>A<\/button><span class="hand-caret"[^>]*><\/span><button[^>]*data-card="SK"/
+    );
+    assert.match(
+        atEnd,
+        /data-card="SK"[^>]*>K<\/button><span class="hand-caret"[^>]*><\/span>$/
+    );
 });
 
 test("updateHandCardDisplays mirrors suit holdings as hand-card buttons", () => {
@@ -836,7 +884,7 @@ test("updateActionButtons refreshes hand-card displays from inputs", () => {
 
 test("handleHandCardClick notifies onHandCardClick with direction and card", () => {
     // Arrange
-    const document = createMockDocument();
+    const document = createMockDocument({ south_hearts: "KQ" });
     const ctx = loadDdsMvp(document);
     const clicks = [];
     ctx.onHandCardClick = (direction, card) => {
@@ -853,6 +901,9 @@ test("handleHandCardClick notifies onHandCardClick with direction and card", () 
                     if (name === "data-card") {
                         return "HK";
                     }
+                    if (name === "data-index") {
+                        return "0";
+                    }
                     return null;
                 },
             };
@@ -864,6 +915,158 @@ test("handleHandCardClick notifies onHandCardClick with direction and card", () 
 
     // Assert
     assert.deepEqual(clicks, [{ direction: "south", key: "HK" }]);
+});
+
+test("handleHandCardClick places the suit-input caret for editing", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AQ8" });
+    const ctx = loadDdsMvp(document);
+    const input = document.element("north_spades");
+    const button = {
+        getAttribute(name) {
+            const attrs = {
+                "data-direction": "north",
+                "data-card": "SQ",
+                "data-index": "1",
+            };
+            return attrs[name] ?? null;
+        },
+        getBoundingClientRect() {
+            return { left: 100, width: 20 };
+        },
+    };
+
+    // Act: click the right half → caret after Q (index 2).
+    ctx.handleHandCardClick({
+        target: {
+            closest(selector) {
+                return selector === ".hand-card" ? button : null;
+            },
+        },
+        clientX: 115,
+        preventDefault() {},
+    });
+
+    // Assert
+    assert.equal(document.activeElement, input);
+    assert.equal(input.selectionStart, 2);
+    assert.equal(input.selectionEnd, 2);
+    assert.match(
+        document.element("north_spades_cards").innerHTML,
+        /data-card="SQ"[^>]*>Q<\/button><span class="hand-caret"/
+    );
+});
+
+test("handleHandCardClick places the caret before a card on a left-half click", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AQ8" });
+    const ctx = loadDdsMvp(document);
+    const input = document.element("north_spades");
+    const button = {
+        getAttribute(name) {
+            const attrs = {
+                "data-direction": "north",
+                "data-card": "SQ",
+                "data-index": "1",
+            };
+            return attrs[name] ?? null;
+        },
+        getBoundingClientRect() {
+            return { left: 100, width: 20 };
+        },
+    };
+
+    // Act: click the left half → caret before Q (index 1).
+    ctx.handleHandCardClick({
+        target: {
+            closest(selector) {
+                return selector === ".hand-card" ? button : null;
+            },
+        },
+        clientX: 105,
+        preventDefault() {},
+    });
+
+    // Assert
+    assert.equal(document.activeElement, input);
+    assert.equal(input.selectionStart, 1);
+});
+
+test("backspace at the caret removes the pip to the left", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AQ8" });
+    const ctx = loadDdsMvp(document);
+    ctx.pageLoad();
+    const input = document.element("north_spades");
+    input.focus();
+    input.setSelectionRange(2, 2); // after Q
+
+    // Act: simulate Backspace editing the value, then the input event.
+    input.value = "A8";
+    input.setSelectionRange(1, 1);
+    input.dispatch("input", {});
+
+    // Assert
+    assert.equal(input.value, "A8");
+    const html = document.element("north_spades_cards").innerHTML;
+    assert.match(html, /data-card="SA"/);
+    assert.match(html, /data-card="S8"/);
+    assert.doesNotMatch(html, /data-card="SQ"/);
+});
+
+test("typing at the caret inserts a pip at the insertion point", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "A8" });
+    const ctx = loadDdsMvp(document);
+    ctx.pageLoad();
+    const input = document.element("north_spades");
+    input.focus();
+    input.setSelectionRange(1, 1); // between A and 8
+
+    // Act
+    input.value = "AQ8";
+    input.setSelectionRange(2, 2);
+    input.dispatch("input", {});
+
+    // Assert
+    assert.equal(input.value, "AQ8");
+    const html = document.element("north_spades_cards").innerHTML;
+    const a = html.indexOf('data-card="SA"');
+    const q = html.indexOf('data-card="SQ"');
+    const eight = html.indexOf('data-card="S8"');
+    assert.ok(a < q && q < eight);
+});
+
+test("handleHandSuitClick focuses the suit input at end of the holding", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsMvp(document);
+    const input = document.element("north_spades");
+    const suitRow = {
+        querySelector(selector) {
+            assert.equal(selector, ".hand-suit-input");
+            return input;
+        },
+    };
+    const target = {
+        closest(selector) {
+            if (selector === ".hand-card") {
+                return null;
+            }
+            if (selector === ".hand-suit") {
+                return suitRow;
+            }
+            return null;
+        },
+    };
+
+    // Act
+    ctx.handleHandSuitClick({ target });
+
+    // Assert
+    assert.equal(document.activeElement, input);
+    assert.equal(input.selectionStart, 2);
+    assert.equal(input.selectionEnd, 2);
 });
 
 test("handleHandCardClick ignores clicks outside a hand-card", () => {
@@ -964,6 +1167,30 @@ test("hand seats left-align suit symbols in the diagram", () => {
         handAlign > gridItemAlign,
         "hand left-align must follow .grid-item so it wins the cascade"
     );
+    // All seats need room for typical 8-card suits (e.g. Everyone makes 3N).
+    // min-width:0 stops longer holdings from expanding columns (layout jump).
+    assert.match(
+        css,
+        /\.grid-container\s*\{[^}]*grid-template-columns:\s*1\.5fr\s+1\.5fr\s+1\.6fr/s
+    );
+    assert.match(css, /\.grid-item\s*\{[^}]*min-width:\s*0/s);
+    assert.match(css, /\.grid-outer\s*\{[^}]*max-width:\s*1100px/s);
+});
+
+test("hand-card pips show a light outline affordance for clickability", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const handCardMatch = css.match(/\.hand-card\s*\{([^}]*)\}/s);
+
+    // Assert: resting state (not only :hover) has a visible clickable cue.
+    assert.ok(handCardMatch, ".hand-card rule present");
+    const rules = handCardMatch[1];
+    assert.doesNotMatch(rules, /border:\s*none/);
+    assert.match(
+        rules,
+        /(?:outline:\s*1px\s+solid|border:\s*1px\s+solid|box-shadow:\s*0\s+0\s+0\s+1px)/
+    );
 });
 
 test("typing a pip into a suit input inserts the matching hand-card glyph", () => {
@@ -982,36 +1209,6 @@ test("typing a pip into a suit input inserts the matching hand-card glyph", () =
         document.element("north_spades_cards").innerHTML,
         /class="hand-card"[^>]*data-card="SA"[^>]*>A<\/button>/
     );
-});
-
-test("handleHandSuitClick focuses the suit input for further typing", () => {
-    // Arrange
-    const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
-    const input = document.element("north_spades");
-    const suitRow = {
-        querySelector(selector) {
-            assert.equal(selector, ".hand-suit-input");
-            return input;
-        },
-    };
-    const target = {
-        closest(selector) {
-            if (selector === ".hand-card") {
-                return null;
-            }
-            if (selector === ".hand-suit") {
-                return suitRow;
-            }
-            return null;
-        },
-    };
-
-    // Act
-    ctx.handleHandSuitClick({ target });
-
-    // Assert
-    assert.equal(document.activeElement, input);
 });
 
 test("handleHandSuitClick does not steal focus from a hand-card click", () => {
