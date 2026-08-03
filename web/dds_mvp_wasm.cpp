@@ -44,18 +44,19 @@ auto mvp_leads_context() -> SolverContext& {
 // Caller buffer is out_leads[0] count plus at most 13 (suit,rank,score) triples.
 constexpr int kMaxExpandedLeads = 13;
 
-void append_lead_card(
-    int* out_leads, int& n, int capacity, int suit, int rank, int score)
+// Write one expanded lead at out_leads index `slot` (0-based among triples).
+void write_lead_triple(
+    int* out_leads, int slot, int suit, int rank, int score)
 {
-  if (n >= capacity) {
-    return;
-  }
-  out_leads[1 + 3 * n] = suit;
-  out_leads[1 + 3 * n + 1] = rank;
-  out_leads[1 + 3 * n + 2] = score;
-  ++n;
+  out_leads[1 + 3 * slot] = suit;
+  out_leads[1 + 3 * slot + 1] = rank;
+  out_leads[1 + 3 * slot + 2] = score;
 }
 
+// FutureTricks is not one row per leadable card: each of fut.cards is a
+// representative rank plus an equals bitmask of other ranks that share the
+// same score. Expand to one triple per physical card so the UI can badge
+// every pip. Cap at 13 (one full hand on lead).
 void write_expanded_leads(const FutureTricks& fut, int* out_leads)
 {
   int n = 0;
@@ -63,8 +64,10 @@ void write_expanded_leads(const FutureTricks& fut, int* out_leads)
     if (n >= kMaxExpandedLeads) {
       break;
     }
-    append_lead_card(
-        out_leads, n, kMaxExpandedLeads, fut.suit[i], fut.rank[i], fut.score[i]);
+    write_lead_triple(
+        out_leads, n, fut.suit[i], fut.rank[i], fut.score[i]);
+    ++n;
+
     // Holding encoding (see equals_to_string): equals is sequence << 2, so
     // rank r is present when bit (r - 2) is set in (equals >> 2).
     const int equals_ranks = fut.equals[i] >> 2;
@@ -73,8 +76,8 @@ void write_expanded_leads(const FutureTricks& fut, int* out_leads)
         break;
       }
       if ((equals_ranks & (1 << (rank - 2))) != 0) {
-        append_lead_card(
-            out_leads, n, kMaxExpandedLeads, fut.suit[i], rank, fut.score[i]);
+        write_lead_triple(out_leads, n, fut.suit[i], rank, fut.score[i]);
+        ++n;
       }
     }
   }
@@ -150,7 +153,8 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int
 }
 
 // Solves all opening leads from `first` in `trump`.
-// out_leads[0] = n; then n triples (suit, rank, score) with equals expanded.
+// out_leads[0] = n; then n triples (suit, rank, score) with FutureTricks
+// equals bitmasks expanded to one triple per physical card.
 // suit 0..3 = S,H,D,C; rank 2..14; score = tricks for the side on lead.
 // n is capped at 13. Caller must provide at least 1 + 13*3 ints.
 EMSCRIPTEN_KEEPALIVE

@@ -17,7 +17,7 @@
     "nw north ne"
     "west center east"
     "sw south se";
-  grid-template-columns: 1.5fr 1.5fr 1.6fr;
+  grid-template-columns: 1.5fr 1.5fr 1.5fr;
   background-color: #2196F3;
 }
 

@@ -2088,6 +2088,17 @@ test("result-cell-selected highlight is defined in CSS", () => {
     assert.match(css, /#result-table\s+td:focus-visible\s*\{/s);
 });
 
+test("mvp html does not cache-bust css or js with query params", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+
+    // Assert: plain asset URLs; deploy/HTTP caching is enough for the MVP.
+    assert.match(html, /href="dds_mvp\.css"/);
+    assert.match(html, /src="dds_mvp\.js"/);
+    assert.doesNotMatch(html, /dds_mvp\.(css|js)\?/);
+});
+
 test("result table lives in the hand diagram southeast corner", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
@@ -2204,10 +2215,11 @@ test("hand seats left-align suit symbols in the diagram", () => {
         "hand left-align must follow .grid-item so it wins the cascade"
     );
     // All seats need room for typical 8-card suits (e.g. Everyone makes 3N).
-    // min-width:0 stops longer holdings from expanding columns (layout jump).
+    // Equal fractional columns; min-width:0 stops longer holdings from
+    // expanding a column (layout jump).
     assert.match(
         css,
-        /\.grid-container\s*\{[^}]*grid-template-columns:\s*1\.5fr\s+1\.5fr\s+1\.6fr/s
+        /\.grid-container\s*\{[^}]*grid-template-columns:\s*1\.5fr\s+1\.5fr\s+1\.5fr/s
     );
     assert.match(css, /\.grid-item\s*\{[^}]*min-width:\s*0/s);
     assert.match(css, /\.grid-outer\s*\{[^}]*max-width:\s*1100px/s);

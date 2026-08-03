@@ -166,9 +166,11 @@ TEST(DdsMvpWasmTest, SolveLeadsWorksAfterCalcTableOnSharedSession) {
 }
 
 TEST(DdsMvpWasmTest, ExpandedLeadsUseHoldingEncodedEqualsBitmask) {
-  // Holding encoding (dll-description / equals_to_string): equals stores
-  // sequence << 2, so rank r is bit (r-2) after >> 2 — not (1 << r) on the
-  // shifted-down value. Queen alone in equals is sequence 0x0400 → 0x1000.
+  // FutureTricks packs equivalent leads (not one entry per card). Holding
+  // encoding (dll-description / equals_to_string): equals stores sequence << 2,
+  // so rank r is bit (r-2) after >> 2 — not (1 << r) on the shifted-down value.
+  // Queen alone in equals is sequence 0x0400 → 0x1000. Expansion writes both
+  // the representative king and the equal queen so the UI can badge each pip.
   FutureTricks fut{};
   fut.cards = 1;
   fut.suit[0] = 0;   // spades
