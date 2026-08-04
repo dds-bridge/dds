@@ -338,6 +338,8 @@ public:
      * @return Pointer to chosen move, or nullptr if list exhausted
      */
     auto MakeNextSimple(const int trick, const int relHand) -> MoveType const *;
+    auto apply_move_to_track(const MoveType& move, const int relHand,
+                             const int trick) -> void;
 
     /**
      * @brief Advance to next move in list.
