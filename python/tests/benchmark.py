@@ -206,6 +206,14 @@ def parse_dtest_output(text: str) -> DtestTiming:
     return DtestTiming(user_ms=user, sys_ms=sys_ms, avg_user=avg, sys_user=sys_user)
 
 
+def dtest_timing_usable(parsed: DtestTiming) -> bool:
+    """True when output has the user timing the summary needs.
+
+    Sys time may be n/a on platforms without a process CPU clock (e.g. wasm32).
+    """
+    return parsed.user_ms is not None
+
+
 def _fmt_timing(v: float | None) -> str:
     if v is None:
         return "NA"
@@ -922,7 +930,7 @@ class BenchmarkRunner:
             print(out, file=self.err)
             raise SystemExit(1)
         parsed = parse_dtest_output(out)
-        if parsed.user_ms is None or parsed.sys_ms is None:
+        if not dtest_timing_usable(parsed):
             print(f"warning: incomplete dtest timing output: {' '.join(cmd)}", file=self.err)
         return parsed, wall
 

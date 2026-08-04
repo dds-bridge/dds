@@ -91,6 +91,24 @@ class TestParseDtestOutput(unittest.TestCase):
         self.assertIsNone(parsed.avg_user)
         self.assertIsNone(parsed.sys_user)
 
+    def test_sys_time_na_keeps_user_timing(self) -> None:
+        # wasm32: clock() is unavailable; dtest prints Sys time (ms) n/a.
+        out = (
+            "Number of hands                 1\n"
+            "User time (ms)                 21\n"
+            "Avg user time (ms)          21.00\n"
+            "Sys time (ms)                 n/a\n"
+        )
+        parsed = benchmark.parse_dtest_output(out)
+        self.assertEqual(parsed.user_ms, 21.0)
+        self.assertEqual(parsed.avg_user, 21.0)
+        self.assertIsNone(parsed.sys_ms)
+        self.assertTrue(benchmark.dtest_timing_usable(parsed))
+
+    def test_missing_user_is_not_usable(self) -> None:
+        parsed = benchmark.parse_dtest_output("Sys time (ms)             10\n")
+        self.assertFalse(benchmark.dtest_timing_usable(parsed))
+
 
 class TestRunTableHeader(unittest.TestCase):
     def test_sys_user_column_not_ratio(self) -> None:
@@ -915,6 +933,35 @@ class TestRunDtestWasm(unittest.TestCase):
             self.assertEqual(seen["cwd"], js.parent)
             self.assertEqual(parsed.user_ms, 10.0)
             self.assertIsNotNone(wall)
+
+    def test_wasm_sys_na_does_not_warn(self) -> None:
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            js = root / "dtest.js"
+            js.write_text("// stub\n")
+            hands = root / "list1.txt"
+            hands.write_text("hand\n")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config(), err=err)
+
+            def fake_run(cmd, **_kwargs):  # type: ignore[no-untyped-def]
+                return subprocess.CompletedProcess(
+                    cmd,
+                    0,
+                    stdout=(
+                        "Number of hands                 1\n"
+                        "User time (ms)                 21\n"
+                        "Avg user time (ms)          21.00\n"
+                        "Sys time (ms)                 n/a\n"
+                    ),
+                    stderr="",
+                )
+
+            with mock.patch("benchmark.subprocess.run", side_effect=fake_run):
+                parsed, _wall = runner.run_dtest(js, "solve", hands)
+            self.assertEqual(parsed.user_ms, 21.0)
+            self.assertIsNone(parsed.sys_ms)
+            self.assertNotIn("incomplete dtest timing", err.getvalue())
 
     def test_dry_run_js_prints_node_command(self) -> None:
         err = io.StringIO()
