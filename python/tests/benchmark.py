@@ -40,7 +40,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Mapping, Sequence, TextIO
@@ -92,7 +91,6 @@ class ResultRow:
     sys_ms: float | None
     avg_user: float | None
     sys_user: float | None
-    wall_s: float | None
 
 
 @dataclass
@@ -209,9 +207,10 @@ def parse_dtest_output(text: str) -> DtestTiming:
 def dtest_timing_usable(parsed: DtestTiming) -> bool:
     """True when output has the user timing the summary needs.
 
-    Sys time may be n/a on platforms without a process CPU clock (e.g. wasm32).
+    Requires avg_user (ms/deal) as well as user_ms. Sys time may be n/a on
+    platforms without a process CPU clock (e.g. wasm32).
     """
-    return parsed.user_ms is not None
+    return parsed.user_ms is not None and parsed.avg_user is not None
 
 
 def _fmt_timing(v: float | None) -> str:
@@ -916,18 +915,16 @@ class BenchmarkRunner:
             return ["node", str(binary), *args]
         return [str(binary), *args]
 
-    def run_dtest(self, binary: Path, solver: str, hands: Path) -> tuple[DtestTiming, float | None]:
+    def run_dtest(self, binary: Path, solver: str, hands: Path) -> DtestTiming:
         cmd = self.dtest_command(binary, solver, hands)
         if self.cfg.dry_run:
             print(f"DRY_RUN: {' '.join(cmd)}", file=self.err)
-            return DtestTiming(None, None, None, None), None
+            return DtestTiming(None, None, None, None)
 
         cwd = binary.parent if binary.suffix == ".js" else None
-        t0 = time.perf_counter()
         proc = subprocess.run(
             cmd, capture_output=True, text=True, check=False, cwd=cwd
         )
-        wall = time.perf_counter() - t0
         out = proc.stdout + proc.stderr
         if proc.returncode != 0:
             print(f"error: dtest failed: {' '.join(cmd)}", file=self.err)
@@ -936,7 +933,7 @@ class BenchmarkRunner:
         parsed = parse_dtest_output(out)
         if not dtest_timing_usable(parsed):
             print(f"warning: incomplete dtest timing output: {' '.join(cmd)}", file=self.err)
-        return parsed, wall
+        return parsed
 
     def detect_git_branch(self) -> None:
         probe = _git(self.root, "rev-parse", "--is-inside-work-tree", check=False)
@@ -1137,7 +1134,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                     if cfg.dry_run:
                         runner.run_dtest(bin_path, solver, hands)
                         continue
-                    parsed, wall = runner.run_dtest(bin_path, solver, hands)
+                    parsed = runner.run_dtest(bin_path, solver, hands)
                     if show_run_lines:
                         print_run_row(
                             solver,
@@ -1159,7 +1156,6 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                             parsed.sys_ms,
                             parsed.avg_user,
                             parsed.sys_user,
-                            wall,
                         )
                     )
 

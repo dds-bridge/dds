@@ -109,6 +109,14 @@ class TestParseDtestOutput(unittest.TestCase):
         parsed = benchmark.parse_dtest_output("Sys time (ms)             10\n")
         self.assertFalse(benchmark.dtest_timing_usable(parsed))
 
+    def test_user_without_avg_is_not_usable(self) -> None:
+        # User time present but no hands / avg line -> cannot form avg_user.
+        out = "User time (ms)            250\nSys time (ms)             10\n"
+        parsed = benchmark.parse_dtest_output(out)
+        self.assertEqual(parsed.user_ms, 250.0)
+        self.assertIsNone(parsed.avg_user)
+        self.assertFalse(benchmark.dtest_timing_usable(parsed))
+
 
 class TestRunTableHeader(unittest.TestCase):
     def test_sys_user_column_not_ratio(self) -> None:
@@ -474,8 +482,8 @@ class TestParseArgs(unittest.TestCase):
 class TestSummary(unittest.TestCase):
     def test_two_binary_ratio_and_note(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
-            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 0.5),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -494,13 +502,12 @@ class TestSummary(unittest.TestCase):
         self.assertNotIn("TOTAL  calc", text)
 
     def test_separate_total_lines_per_solver(self) -> None:
-        # wall_s deliberately differs from user_ms so TOTAL cannot be wall.
         # TOTAL is avg user ms: sum(user_ms) / deals (list100 => 100).
         rows = [
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 9.0),
-            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 9.0),
-            benchmark.ResultRow("calc", "list100.txt", 0, 1, 200.0, 1.0, 2.0, 1.0, 9.0),
-            benchmark.ResultRow("calc", "list100.txt", 1, 1, 100.0, 1.0, 1.0, 1.0, 9.0),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0),
+            benchmark.ResultRow("calc", "list100.txt", 0, 1, 200.0, 1.0, 2.0, 1.0),
+            benchmark.ResultRow("calc", "list100.txt", 1, 1, 100.0, 1.0, 1.0, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -520,20 +527,19 @@ class TestSummary(unittest.TestCase):
         self.assertRegex(calc_tot, r"0\.50x")
         self.assertIn("fast faster", calc_tot)
         self.assertNotRegex(solve_tot, r"\b100\.00\b")
-        self.assertNotRegex(solve_tot, r"\b9\.00\b")
         # No combined grand-total line.
         self.assertEqual(sum(1 for line in lines if line.startswith("TOTAL")), 2)
 
     def test_total_is_user_ms_per_deal_across_files_and_repeats(self) -> None:
         rows = [
             # solve base: user 100+30+20=150, deals 100+10+10=120 -> 1.25
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 9.0),
-            benchmark.ResultRow("solve", "list10.txt", 0, 1, 30.0, 1.0, 3.0, 1.0, 9.0),
-            benchmark.ResultRow("solve", "list10.txt", 0, 2, 20.0, 1.0, 2.0, 1.0, 9.0),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list10.txt", 0, 1, 30.0, 1.0, 3.0, 1.0),
+            benchmark.ResultRow("solve", "list10.txt", 0, 2, 20.0, 1.0, 2.0, 1.0),
             # solve fast: 50+15+10=75 / 120 = 0.625 -> 0.50x
-            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 9.0),
-            benchmark.ResultRow("solve", "list10.txt", 1, 1, 15.0, 1.0, 1.5, 1.0, 9.0),
-            benchmark.ResultRow("solve", "list10.txt", 1, 2, 10.0, 1.0, 1.0, 1.0, 9.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0),
+            benchmark.ResultRow("solve", "list10.txt", 1, 1, 15.0, 1.0, 1.5, 1.0),
+            benchmark.ResultRow("solve", "list10.txt", 1, 2, 10.0, 1.0, 1.0, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -553,9 +559,9 @@ class TestSummary(unittest.TestCase):
 
     def test_total_prints_na_for_missing_binary_timing(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 9.0),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
             # Binary 1: incomplete dtest output (no user_ms)
-            benchmark.ResultRow("solve", "list100.txt", 1, 1, None, None, None, None, 9.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, None, None, None, None),
         ]
         text = benchmark.format_summary(
             rows,
@@ -575,7 +581,7 @@ class TestSummary(unittest.TestCase):
 
     def test_default_summary_omits_sys_user_column(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10),
         ]
         text = benchmark.format_summary(
             rows,
@@ -587,8 +593,8 @@ class TestSummary(unittest.TestCase):
 
     def test_sys_user_column_per_binary(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 20.0, 0.5, 0.40, 0.5),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 20.0, 0.5, 0.40),
         ]
         text = benchmark.format_summary(
             rows,
@@ -610,9 +616,9 @@ class TestSummary(unittest.TestCase):
 
     def test_sys_user_averages_repeats_and_missing_is_na(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
-            benchmark.ResultRow("solve", "list1.txt", 0, 2, 100.0, 10.0, 1.0, 0.30, 1.0),
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, None, 0.5),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10),
+            benchmark.ResultRow("solve", "list1.txt", 0, 2, 100.0, 10.0, 1.0, 0.30),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, None),
         ]
         text = benchmark.format_summary(
             rows,
@@ -629,8 +635,8 @@ class TestSummary(unittest.TestCase):
 
     def test_equal_within_epsilon(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
-            benchmark.ResultRow("solve", "list100.txt", 1, 1, 100.2, 1.0, 1.002, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 100.2, 1.0, 1.002, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -642,7 +648,7 @@ class TestSummary(unittest.TestCase):
 
     def test_three_binaries_no_note(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", b, 1, 10.0, 0.0, 1.0, None, 0.1)
+            benchmark.ResultRow("solve", "list1.txt", b, 1, 10.0, 0.0, 1.0, None)
             for b in (0, 1, 2)
         ]
         text = benchmark.format_summary(
@@ -658,8 +664,8 @@ class TestSummary(unittest.TestCase):
 
     def test_zero_baseline_avg_skips_ratio(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 0.0, 0.0, 0.0, None, 0.0),
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, 1.0, 0.0, 1.0, None, 0.1),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 0.0, 0.0, 0.0, None),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 1.0, 0.0, 1.0, None),
         ]
         text = benchmark.format_summary(
             rows,
@@ -678,9 +684,9 @@ class TestSummary(unittest.TestCase):
 
     def test_missing_avg_prints_na_and_keeps_row(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
             # Incomplete dtest output: avg_user missing for binary 1
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, None, None, None, None, 0.5),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, None, None, None, None),
         ]
         text = benchmark.format_summary(
             rows,
@@ -699,8 +705,8 @@ class TestSummary(unittest.TestCase):
 
     def test_missing_avg_suppresses_ratio_either_side(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, None, None, None, None, 0.1),
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 0.5),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, None, None, None, None),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -947,14 +953,13 @@ class TestRunDtestWasm(unittest.TestCase):
                 )
 
             with mock.patch("benchmark.subprocess.run", side_effect=fake_run):
-                parsed, wall = runner.run_dtest(js, "solve", hands)
+                parsed = runner.run_dtest(js, "solve", hands)
             self.assertEqual(
                 seen["cmd"],
                 ["node", str(js), "-f", str(hands), "-s", "solve"],
             )
             self.assertEqual(seen["cwd"], js.parent)
             self.assertEqual(parsed.user_ms, 10.0)
-            self.assertIsNotNone(wall)
 
     def test_wasm_sys_na_does_not_warn(self) -> None:
         err = io.StringIO()
@@ -980,7 +985,7 @@ class TestRunDtestWasm(unittest.TestCase):
                 )
 
             with mock.patch("benchmark.subprocess.run", side_effect=fake_run):
-                parsed, _wall = runner.run_dtest(js, "solve", hands)
+                parsed = runner.run_dtest(js, "solve", hands)
             self.assertEqual(parsed.user_ms, 21.0)
             self.assertIsNone(parsed.sys_ms)
             self.assertNotIn("incomplete dtest timing", err.getvalue())
