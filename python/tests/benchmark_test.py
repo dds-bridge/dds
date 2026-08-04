@@ -62,6 +62,7 @@ class TestParseDtestOutput(unittest.TestCase):
         self.assertEqual(parsed.sys_ms, 10.0)
         self.assertEqual(parsed.avg_user, 2.5)
         self.assertEqual(parsed.sys_user, 1.23)
+        self.assertEqual(parsed.hands, 100)
 
     def test_zero_tokens(self) -> None:
         out = (
@@ -559,7 +560,7 @@ class TestSummary(unittest.TestCase):
 
     def test_total_prints_na_for_missing_binary_timing(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, hands=100),
             # Binary 1: incomplete dtest output (no user_ms)
             benchmark.ResultRow("solve", "list100.txt", 1, 1, None, None, None, None),
         ]
@@ -578,6 +579,30 @@ class TestSummary(unittest.TestCase):
         self.assertNotRegex(solve_tot, r"\d+\.\d+x")
         self.assertNotIn("faster", solve_tot)
         self.assertNotIn("equal", solve_tot)
+
+    def test_total_weights_by_reported_hands_not_filename(self) -> None:
+        # Filename says 100, but dtest reported 50 hands processed.
+        rows = [
+            benchmark.ResultRow(
+                "solve", "list100.txt", 0, 1, 100.0, 1.0, 2.0, 1.0, hands=50
+            ),
+            benchmark.ResultRow(
+                "solve", "list100.txt", 1, 1, 50.0, 1.0, 1.0, 1.0, hands=50
+            ),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "fast"],
+            files=["list100.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b2\.00\b")  # 100/50
+        self.assertRegex(solve_tot, r"\b1\.00\b")  # 50/50
+        self.assertNotRegex(solve_tot, r"\b0\.50\b")  # would be 50/100 if filename used
+        self.assertRegex(solve_tot, r"0\.50x")
 
     def test_default_summary_omits_sys_user_column(self) -> None:
         rows = [
@@ -956,9 +981,9 @@ class TestRunDtestWasm(unittest.TestCase):
                 parsed = runner.run_dtest(js, "solve", hands)
             self.assertEqual(
                 seen["cmd"],
-                ["node", str(js), "-f", str(hands.resolve()), "-s", "solve"],
+                ["node", str(js.resolve()), "-f", str(hands.resolve()), "-s", "solve"],
             )
-            self.assertEqual(seen["cwd"], js.parent)
+            self.assertEqual(seen["cwd"], js.resolve().parent)
             self.assertEqual(parsed.user_ms, 10.0)
 
     def test_js_resolves_relative_hands_path(self) -> None:
@@ -980,6 +1005,27 @@ class TestRunDtestWasm(unittest.TestCase):
             self.assertEqual(cmd[0], "node")
             self.assertEqual(cmd[cmd.index("-f") + 1], str((root / "hands" / "list1.txt").resolve()))
             self.assertTrue(Path(cmd[cmd.index("-f") + 1]).is_absolute())
+
+    def test_js_resolves_relative_script_path(self) -> None:
+        # Relative --binary .js must not be re-resolved against cwd=js.parent.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            js = root / "bazel-bin" / "wasm" / "dtest.js"
+            js.parent.mkdir(parents=True)
+            js.write_text("// stub\n")
+            (root / "hands" / "list1.txt").parent.mkdir(parents=True, exist_ok=True)
+            (root / "hands" / "list1.txt").write_text("hand\n")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config())
+            old = Path.cwd()
+            try:
+                os.chdir(root)
+                rel_js = Path("bazel-bin/wasm/dtest.js")
+                cmd = runner.dtest_command(rel_js, "solve", Path("hands/list1.txt"))
+            finally:
+                os.chdir(old)
+            self.assertEqual(cmd[0], "node")
+            self.assertEqual(cmd[1], str(js.resolve()))
+            self.assertTrue(Path(cmd[1]).is_absolute())
 
     def test_wasm_sys_na_does_not_warn(self) -> None:
         err = io.StringIO()

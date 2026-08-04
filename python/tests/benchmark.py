@@ -79,6 +79,7 @@ class DtestTiming:
     sys_ms: float | None
     avg_user: float | None
     sys_user: float | None
+    hands: int | None = None
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,7 @@ class ResultRow:
     sys_ms: float | None
     avg_user: float | None
     sys_user: float | None
+    hands: int | None = None
 
 
 @dataclass
@@ -178,14 +180,14 @@ def _parse_ms(token: str) -> float | None:
 
 
 def parse_dtest_output(text: str) -> DtestTiming:
-    hands: float | None = None
+    hands_f: float | None = None
     user: float | None = None
     sys_ms: float | None = None
     avg: float | None = None
     sys_user: float | None = None
     for line in text.splitlines():
         if line.startswith("Number of hands"):
-            hands = _parse_ms(line.split()[-1])
+            hands_f = _parse_ms(line.split()[-1])
         elif line.startswith("User time (ms)"):
             user = _parse_ms(line.split()[-1])
         elif line.startswith("Sys time (ms)"):
@@ -196,12 +198,17 @@ def parse_dtest_output(text: str) -> DtestTiming:
             # Match awk: /^Ratio[[:space:]]/
             if len(line) > 5 and line[5].isspace():
                 sys_user = _parse_ms(line.split()[-1])
+    hands: int | None = None
+    if hands_f is not None and hands_f >= 0 and hands_f == int(hands_f):
+        hands = int(hands_f)
     if avg is None:
         if user == 0:
             avg = 0.0
         elif hands is not None and user is not None and hands > 0:
             avg = user / hands
-    return DtestTiming(user_ms=user, sys_ms=sys_ms, avg_user=avg, sys_user=sys_user)
+    return DtestTiming(
+        user_ms=user, sys_ms=sys_ms, avg_user=avg, sys_user=sys_user, hands=hands
+    )
 
 
 def dtest_timing_usable(parsed: DtestTiming) -> bool:
@@ -276,7 +283,11 @@ def format_summary(
         if row.sys_user is not None:
             su_sums[key] = su_sums.get(key, 0.0) + row.sys_user
             su_counts[key] = su_counts.get(key, 0) + 1
-        deals = deals_from_hand_file(row.file)
+        deals = (
+            row.hands
+            if row.hands is not None and row.hands > 0
+            else deals_from_hand_file(row.file)
+        )
         if (
             row.user_ms is not None
             and deals is not None
@@ -910,10 +921,11 @@ class BenchmarkRunner:
         return labels, paths
 
     def dtest_command(self, binary: Path, solver: str, hands: Path) -> list[str]:
-        # Absolute -f so wasm runs (cwd = js parent) still find HANDS_DIR paths.
-        args = ["-f", str(hands.resolve()), "-s", solver, *self.cfg.dtest_extra]
+        # Absolute -f / script so wasm runs (cwd = js parent) still resolve paths.
+        hands_arg = str(hands.resolve())
+        args = ["-f", hands_arg, "-s", solver, *self.cfg.dtest_extra]
         if binary.suffix == ".js":
-            return ["node", str(binary), *args]
+            return ["node", str(binary.resolve()), *args]
         return [str(binary), *args]
 
     def run_dtest(self, binary: Path, solver: str, hands: Path) -> DtestTiming:
@@ -922,7 +934,7 @@ class BenchmarkRunner:
             print(f"DRY_RUN: {' '.join(cmd)}", file=self.err)
             return DtestTiming(None, None, None, None)
 
-        cwd = binary.parent if binary.suffix == ".js" else None
+        cwd = binary.resolve().parent if binary.suffix == ".js" else None
         proc = subprocess.run(
             cmd, capture_output=True, text=True, check=False, cwd=cwd
         )
@@ -1157,6 +1169,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                             parsed.sys_ms,
                             parsed.avg_user,
                             parsed.sys_user,
+                            parsed.hands,
                         )
                     )
 
