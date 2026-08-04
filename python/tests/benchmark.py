@@ -243,9 +243,9 @@ def format_summary(
     counts: dict[tuple[str, str, int], int] = {}
     su_sums: dict[tuple[str, str, int], float] = {}
     su_counts: dict[tuple[str, str, int], int] = {}
-    # Per-solver wall totals: solver -> [bin0, bin1, ...]
-    total_wall: dict[str, list[float]] = {s: [0.0] * nb for s in SOLVERS}
-    wall_seen: dict[str, list[bool]] = {s: [False] * nb for s in SOLVERS}
+    # Per-solver user_ms totals: solver -> [bin0, bin1, ...]
+    total_user: dict[str, list[float]] = {s: [0.0] * nb for s in SOLVERS}
+    user_seen: dict[str, list[bool]] = {s: [False] * nb for s in SOLVERS}
 
     for row in rows:
         key = (row.solver, row.file, row.bin_idx)
@@ -255,9 +255,9 @@ def format_summary(
         if row.sys_user is not None:
             su_sums[key] = su_sums.get(key, 0.0) + row.sys_user
             su_counts[key] = su_counts.get(key, 0) + 1
-        if row.wall_s is not None and row.solver in total_wall:
-            total_wall[row.solver][row.bin_idx] += row.wall_s
-            wall_seen[row.solver][row.bin_idx] = True
+        if row.user_ms is not None and row.solver in total_user:
+            total_user[row.solver][row.bin_idx] += row.user_ms
+            user_seen[row.solver][row.bin_idx] = True
 
     def L(b: int) -> str:
         return labels[b][:12]
@@ -349,22 +349,22 @@ def format_summary(
 
     dash()
     for solver in SOLVERS:
-        if not any(wall_seen[solver]):
+        if not any(user_seen[solver]):
             continue
         tot = f"{'TOTAL':<6} {solver:<13}"
         allpos = True
-        walls = total_wall[solver]
-        seen = wall_seen[solver]
+        users = total_user[solver]
+        seen = user_seen[solver]
         for b in range(nb):
-            tw = walls[b] if seen[b] else 0.0
-            tot += f" {tw:12.2f}"
+            tu = users[b] if seen[b] else 0.0
+            tot += f" {tu:12.2f}"
             tot = append_sys_user_blank(tot)
-            if not (tw > 0):
+            if not (tu > 0):
                 allpos = False
         if nb == 2:
             if allpos:
-                r = walls[1] / walls[0]
-                if within_epsilon(walls[0], walls[1], epsilon):
+                r = users[1] / users[0]
+                if within_epsilon(users[0], users[1], epsilon):
                     tnote = "equal"
                 elif r >= 1:
                     tnote = f"{Lf(0)} faster"
