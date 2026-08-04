@@ -367,6 +367,7 @@ class TestSummary(unittest.TestCase):
 
     def test_separate_total_lines_per_solver(self) -> None:
         # wall_s deliberately differs from user_ms so TOTAL cannot be wall.
+        # TOTAL is avg user ms: sum(user_ms) / deals (list100 => 100).
         rows = [
             benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 9.0),
             benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 9.0),
@@ -382,25 +383,26 @@ class TestSummary(unittest.TestCase):
         lines = text.splitlines()
         solve_tot = next(line for line in lines if line.startswith("TOTAL  solve"))
         calc_tot = next(line for line in lines if line.startswith("TOTAL  calc"))
-        self.assertRegex(solve_tot, r"\b100\.00\b")
-        self.assertRegex(solve_tot, r"\b50\.00\b")
+        self.assertRegex(solve_tot, r"\b1\.00\b")  # 100/100
+        self.assertRegex(solve_tot, r"\b0\.50\b")  # 50/100
         self.assertRegex(solve_tot, r"0\.50x")
         self.assertIn("fast faster", solve_tot)
-        self.assertRegex(calc_tot, r"\b200\.00\b")
-        self.assertRegex(calc_tot, r"\b100\.00\b")
+        self.assertRegex(calc_tot, r"\b2\.00\b")  # 200/100
+        self.assertRegex(calc_tot, r"\b1\.00\b")  # 100/100
         self.assertRegex(calc_tot, r"0\.50x")
         self.assertIn("fast faster", calc_tot)
+        self.assertNotRegex(solve_tot, r"\b100\.00\b")
         self.assertNotRegex(solve_tot, r"\b9\.00\b")
         # No combined grand-total line.
         self.assertEqual(sum(1 for line in lines if line.startswith("TOTAL")), 2)
 
-    def test_total_sums_user_ms_across_files_and_repeats(self) -> None:
+    def test_total_is_user_ms_per_deal_across_files_and_repeats(self) -> None:
         rows = [
-            # solve base: 100 + 30 + 20 (rep2) = 150
+            # solve base: user 100+30+20=150, deals 100+10+10=120 -> 1.25
             benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 9.0),
             benchmark.ResultRow("solve", "list10.txt", 0, 1, 30.0, 1.0, 3.0, 1.0, 9.0),
             benchmark.ResultRow("solve", "list10.txt", 0, 2, 20.0, 1.0, 2.0, 1.0, 9.0),
-            # solve fast: 50 + 15 + 10 = 75 -> 0.50x
+            # solve fast: 50+15+10=75 / 120 = 0.625 -> 0.50x
             benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 9.0),
             benchmark.ResultRow("solve", "list10.txt", 1, 1, 15.0, 1.0, 1.5, 1.0, 9.0),
             benchmark.ResultRow("solve", "list10.txt", 1, 2, 10.0, 1.0, 1.0, 1.0, 9.0),
@@ -414,10 +416,12 @@ class TestSummary(unittest.TestCase):
         solve_tot = next(
             line for line in text.splitlines() if line.startswith("TOTAL  solve")
         )
-        self.assertRegex(solve_tot, r"\b150\.00\b")
-        self.assertRegex(solve_tot, r"\b75\.00\b")
+        self.assertRegex(solve_tot, r"\b1\.25\b")
+        self.assertRegex(solve_tot, r"\b0\.62\b")  # 0.625 -> 0.62 with :.2f
         self.assertRegex(solve_tot, r"0\.50x")
         self.assertIn("fast faster", solve_tot)
+        self.assertNotRegex(solve_tot, r"\b150\.00\b")
+        self.assertNotRegex(solve_tot, r"\b75\.00\b")
 
     def test_default_summary_omits_sys_user_column(self) -> None:
         rows = [

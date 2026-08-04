@@ -157,6 +157,14 @@ def select_hand_files(hands_dir: Path, max_deals: int) -> list[str]:
     return [name for _, name in candidates]
 
 
+def deals_from_hand_file(name: str) -> int | None:
+    """Return deal count encoded in listN.txt, or None if not that pattern."""
+    m = re.fullmatch(r"list([0-9]+)\.txt", name)
+    if not m:
+        return None
+    return int(m.group(1))
+
+
 def _parse_ms(token: str) -> float | None:
     if token == "zero":
         return 0.0
@@ -243,8 +251,9 @@ def format_summary(
     counts: dict[tuple[str, str, int], int] = {}
     su_sums: dict[tuple[str, str, int], float] = {}
     su_counts: dict[tuple[str, str, int], int] = {}
-    # Per-solver user_ms totals: solver -> [bin0, bin1, ...]
+    # Per-solver totals for overall avg user ms = sum(user_ms) / sum(deals).
     total_user: dict[str, list[float]] = {s: [0.0] * nb for s in SOLVERS}
+    total_deals: dict[str, list[int]] = {s: [0] * nb for s in SOLVERS}
     user_seen: dict[str, list[bool]] = {s: [False] * nb for s in SOLVERS}
 
     for row in rows:
@@ -255,8 +264,15 @@ def format_summary(
         if row.sys_user is not None:
             su_sums[key] = su_sums.get(key, 0.0) + row.sys_user
             su_counts[key] = su_counts.get(key, 0) + 1
-        if row.user_ms is not None and row.solver in total_user:
+        deals = deals_from_hand_file(row.file)
+        if (
+            row.user_ms is not None
+            and deals is not None
+            and deals > 0
+            and row.solver in total_user
+        ):
             total_user[row.solver][row.bin_idx] += row.user_ms
+            total_deals[row.solver][row.bin_idx] += deals
             user_seen[row.solver][row.bin_idx] = True
 
     def L(b: int) -> str:
@@ -354,17 +370,23 @@ def format_summary(
         tot = f"{'TOTAL':<6} {solver:<13}"
         allpos = True
         users = total_user[solver]
+        deals = total_deals[solver]
         seen = user_seen[solver]
+        avgs: list[float] = []
         for b in range(nb):
-            tu = users[b] if seen[b] else 0.0
-            tot += f" {tu:12.2f}"
+            if seen[b] and deals[b] > 0:
+                avg = users[b] / deals[b]
+            else:
+                avg = 0.0
+            avgs.append(avg)
+            tot += f" {avg:12.2f}"
             tot = append_sys_user_blank(tot)
-            if not (tu > 0):
+            if not (avg > 0):
                 allpos = False
         if nb == 2:
             if allpos:
-                r = users[1] / users[0]
-                if within_epsilon(users[0], users[1], epsilon):
+                r = avgs[1] / avgs[0]
+                if within_epsilon(avgs[0], avgs[1], epsilon):
                     tnote = "equal"
                 elif r >= 1:
                     tnote = f"{Lf(0)} faster"
