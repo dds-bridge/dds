@@ -910,7 +910,8 @@ class BenchmarkRunner:
         return labels, paths
 
     def dtest_command(self, binary: Path, solver: str, hands: Path) -> list[str]:
-        args = ["-f", str(hands), "-s", solver, *self.cfg.dtest_extra]
+        # Absolute -f so wasm runs (cwd = js parent) still find HANDS_DIR paths.
+        args = ["-f", str(hands.resolve()), "-s", solver, *self.cfg.dtest_extra]
         if binary.suffix == ".js":
             return ["node", str(binary), *args]
         return [str(binary), *args]

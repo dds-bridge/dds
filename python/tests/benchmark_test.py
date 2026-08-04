@@ -956,10 +956,30 @@ class TestRunDtestWasm(unittest.TestCase):
                 parsed = runner.run_dtest(js, "solve", hands)
             self.assertEqual(
                 seen["cmd"],
-                ["node", str(js), "-f", str(hands), "-s", "solve"],
+                ["node", str(js), "-f", str(hands.resolve()), "-s", "solve"],
             )
             self.assertEqual(seen["cwd"], js.parent)
             self.assertEqual(parsed.user_ms, 10.0)
+
+    def test_js_resolves_relative_hands_path(self) -> None:
+        # cwd for node is the wasm artifact dir; relative -f must not resolve there.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            js = root / "wasm_out" / "dtest.js"
+            js.parent.mkdir()
+            js.write_text("// stub\n")
+            (root / "hands").mkdir()
+            (root / "hands" / "list1.txt").write_text("hand\n")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config())
+            old = Path.cwd()
+            try:
+                os.chdir(root)
+                cmd = runner.dtest_command(js, "solve", Path("hands/list1.txt"))
+            finally:
+                os.chdir(old)
+            self.assertEqual(cmd[0], "node")
+            self.assertEqual(cmd[cmd.index("-f") + 1], str((root / "hands" / "list1.txt").resolve()))
+            self.assertTrue(Path(cmd[cmd.index("-f") + 1]).is_absolute())
 
     def test_wasm_sys_na_does_not_warn(self) -> None:
         err = io.StringIO()
