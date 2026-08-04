@@ -551,6 +551,28 @@ class TestSummary(unittest.TestCase):
         self.assertNotRegex(solve_tot, r"\b150\.00\b")
         self.assertNotRegex(solve_tot, r"\b75\.00\b")
 
+    def test_total_prints_na_for_missing_binary_timing(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 9.0),
+            # Binary 1: incomplete dtest output (no user_ms)
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, None, None, None, None, 9.0),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list100.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b1\.00\b")
+        self.assertRegex(solve_tot, r"\bNA\b")
+        self.assertNotRegex(solve_tot, r"\b0\.00\b")
+        self.assertNotRegex(solve_tot, r"\d+\.\d+x")
+        self.assertNotIn("faster", solve_tot)
+        self.assertNotIn("equal", solve_tot)
+
     def test_default_summary_omits_sys_user_column(self) -> None:
         rows = [
             benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),

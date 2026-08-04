@@ -385,19 +385,23 @@ def format_summary(
         users = total_user[solver]
         deals = total_deals[solver]
         seen = user_seen[solver]
-        avgs: list[float] = []
+        avgs: list[float | None] = []
         for b in range(nb):
             if seen[b] and deals[b] > 0:
-                avg = users[b] / deals[b]
+                avg: float | None = users[b] / deals[b]
             else:
-                avg = 0.0
+                avg = None
             avgs.append(avg)
-            tot += f" {avg:12.2f}"
-            tot = append_sys_user_blank(tot)
-            if not (avg > 0):
+            if avg is None:
+                tot += f" {'NA':>12}"
                 allpos = False
+            else:
+                tot += f" {avg:12.2f}"
+                if not (avg > 0):
+                    allpos = False
+            tot = append_sys_user_blank(tot)
         if nb == 2:
-            if allpos:
+            if allpos and avgs[0] is not None and avgs[1] is not None:
                 r = avgs[1] / avgs[0]
                 if within_epsilon(avgs[0], avgs[1], epsilon):
                     tnote = "equal"
