@@ -12,6 +12,8 @@ Usage:
   python/tests/benchmark.py -- -n 8 -r
   python/tests/benchmark.py --build --binary /path/to/other/dtest
   python/tests/benchmark.py --branch develop -- -n 8
+  python/tests/benchmark.py --wasm_branch develop -- -n 2
+  python/tests/benchmark.py --branch develop --wasm_branch develop
   python/tests/benchmark.py --binary /path/to/other/dtest --epsilon 1
   python/tests/benchmark.py --repeats 5 -- -n 4
   REPEATS=3 python/tests/benchmark.py
@@ -46,6 +48,7 @@ from typing import Callable, Mapping, Sequence, TextIO
 SOLVERS = ("solve", "calc")
 ALT_ENTER = "\033[?1049h\033[H\033[2J"
 ALT_LEAVE = "\033[?1049l"
+GIT_SPEC_KINDS = frozenset({"branch", "wasm_branch"})
 
 
 def dtest_rel(*, os_name: str = os.name) -> Path:
@@ -55,6 +58,8 @@ def dtest_rel(*, os_name: str = os.name) -> Path:
 
 
 DTEST_REL = dtest_rel()
+DTEST_WASM_JS_REL = Path("bazel-bin/wasm/dtest.js")
+DTEST_WASM_WASM_REL = Path("bazel-bin/wasm/dtest.wasm")
 
 
 def resolve_bazel_command(*, which: Callable[[str], str | None] | None = None) -> str:
@@ -455,6 +460,14 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
             if val.startswith("-"):
                 raise BenchmarkError(f"--branch ref must not start with '-': {val}")
             cfg.specs.append(("branch", val))
+        elif a in ("--wasm_branch", "--wasm-branch"):
+            i += 1
+            if i >= len(args):
+                raise BenchmarkError(f"missing value for {a}")
+            val = args[i]
+            if val.startswith("-"):
+                raise BenchmarkError(f"{a} ref must not start with '-': {val}")
+            cfg.specs.append(("wasm_branch", val))
         elif a == "--binary":
             i += 1
             if i >= len(args):
@@ -491,7 +504,8 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
 
     if cfg.reverse and len(cfg.specs) < 2:
         raise BenchmarkError(
-            "--reverse requires at least two binaries (two or more --branch/--binary)"
+            "--reverse requires at least two binaries "
+            "(two or more --branch/--wasm_branch/--binary)"
         )
     return cfg
 
@@ -513,7 +527,10 @@ Options:
                       Repeatable. Each named branch is checked out, dtest is built and
                       its binary saved, then the original branch is restored. A clean
                       tree is required only when a ref would switch away from HEAD.
+  --wasm_branch NAME  Like --branch, but builds //wasm:dtest_wasm and runs it under Node.
+                      Alias: --wasm-branch. Labels appear as wasm:NAME.
   --binary PATH       Path to a prebuilt dtest binary to benchmark. Repeatable.
+                      A .js path (dtest_wasm) is run via node with the sibling .wasm.
   --details           Keep per-run timing rows and build (git/bazel) output
   --sys-user          Include a sys/user column per binary in the summary
                       (env: SYS_USER=1)
@@ -523,11 +540,12 @@ Options:
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
 
---branch and --binary may be given any number of times and combined; the binaries
-are benchmarked in the order specified and the first is the baseline. --binary
-must not point at the checkout's bazel-bin dtest when --branch is also used
-(branch builds overwrite that path). The current checkout is benchmarked by
-default only when neither flag is given. With two binaries the summary adds a
+--branch, --wasm_branch, and --binary may be given any number of times and
+combined; the binaries are benchmarked in the order specified and the first is
+the baseline. --binary must not point at the checkout's bazel-bin dtest (or
+wasm dtest.js) when the matching --branch/--wasm_branch is also used (those
+builds overwrite that path). The current checkout is benchmarked by default
+only when none of those flags is given. With two binaries the summary adds a
 rel and a "faster" note; with three or more it shows only the per-binary
 averages (no note).
 
@@ -544,6 +562,8 @@ Examples:
   python/tests/benchmark.py --branch develop --branch opus-two-percent --branch fastest
   python/tests/benchmark.py --branch opus-two-percent --binary /path/to/dtest
   python/tests/benchmark.py --branch develop --repeats 3 -- -n 8
+  python/tests/benchmark.py --wasm_branch develop
+  python/tests/benchmark.py --branch develop --wasm_branch develop
   python/tests/benchmark.py --binary /path/to/dtest
   python/tests/benchmark.py --binary /path/to/dtest --details
   python/tests/benchmark.py --binary /path/to/dtest --sys-user
@@ -570,22 +590,33 @@ def _git_out(root: Path, *args: str) -> str:
 def reject_checkout_binary_with_branch(
     root: Path, specs: Sequence[tuple[str, str]]
 ) -> None:
-    """Disallow --binary pointing at checkout dtest when --branch is used.
+    """Disallow --binary pointing at checkout artifacts overwritten by branch builds.
 
-    --branch builds overwrite root/DTEST_REL, so an explicit --binary at that
-    path would run the wrong executable after the branch is restored.
+    --branch overwrites root/DTEST_REL; --wasm_branch overwrites the wasm dtest.js
+    (and sibling .wasm). An explicit --binary at those paths would run the wrong
+    artifact after the original branch is restored.
     """
-    if not any(kind == "branch" for kind, _ in specs):
+    has_native = any(kind == "branch" for kind, _ in specs)
+    has_wasm = any(kind == "wasm_branch" for kind, _ in specs)
+    if not has_native and not has_wasm:
         return
     checkout_dtest = (root / DTEST_REL).resolve()
+    checkout_wasm_js = (root / DTEST_WASM_JS_REL).resolve()
     for kind, val in specs:
         if kind != "binary":
             continue
-        if Path(val).resolve() == checkout_dtest:
+        resolved = Path(val).resolve()
+        if has_native and resolved == checkout_dtest:
             raise BenchmarkError(
                 f"--binary may not target the checkout's {DTEST_REL} when "
                 "--branch is used (branch builds overwrite that path); "
                 "copy the binary elsewhere or use --branch . for HEAD"
+            )
+        if has_wasm and resolved == checkout_wasm_js:
+            raise BenchmarkError(
+                f"--binary may not target the checkout's {DTEST_WASM_JS_REL} when "
+                "--wasm_branch is used (wasm branch builds overwrite that path); "
+                "copy the artifacts elsewhere or use --wasm_branch . for HEAD"
             )
 
 
@@ -594,14 +625,19 @@ def git_prep_for_branches(
 ) -> tuple[list[tuple[str, str]], str]:
     """Validate git state and resolve '.' branch shorthand.
 
+    Applies to both --branch and --wasm_branch specs.
     Returns (resolved_specs, orig_branch).
     """
     try:
         probe = _git(root, "rev-parse", "--is-inside-work-tree", check=False)
     except OSError as e:
-        raise BenchmarkError("--branch requires git to be installed and on PATH") from e
+        raise BenchmarkError(
+            "--branch/--wasm_branch requires git to be installed and on PATH"
+        ) from e
     if probe.returncode != 0:
-        raise BenchmarkError(f"--branch requires a git work tree at {root}")
+        raise BenchmarkError(
+            f"--branch/--wasm_branch requires a git work tree at {root}"
+        )
     sym = _git(root, "symbolic-ref", "--quiet", "--short", "HEAD", check=False)
     if sym.returncode == 0 and sym.stdout.strip():
         orig_branch = sym.stdout.strip()
@@ -610,22 +646,23 @@ def git_prep_for_branches(
 
     resolved: list[tuple[str, str]] = []
     for kind, val in specs:
-        if kind == "branch" and val == ".":
+        if kind in GIT_SPEC_KINDS and val == ".":
             resolved.append((kind, orig_branch))
         else:
             resolved.append((kind, val))
 
     for kind, val in resolved:
-        if kind != "branch":
+        if kind not in GIT_SPEC_KINDS:
             continue
         ok = _git(root, "rev-parse", "--verify", "--quiet", f"{val}^{{commit}}", check=False)
         if ok.returncode != 0:
-            raise BenchmarkError(f"--branch: unknown git ref '{val}'")
+            flag = "--wasm_branch" if kind == "wasm_branch" else "--branch"
+            raise BenchmarkError(f"{flag}: unknown git ref '{val}'")
 
     head_commit = _git_out(root, "rev-parse", "HEAD")
     needs_switch = False
     for kind, val in resolved:
-        if kind != "branch":
+        if kind not in GIT_SPEC_KINDS:
             continue
         ref_commit = _git_out(root, "rev-parse", "--verify", "--quiet", f"{val}^{{commit}}")
         if ref_commit != head_commit:
@@ -637,7 +674,8 @@ def git_prep_for_branches(
         if status:
             raise BenchmarkError(
                 "working tree not clean; commit, stash, or remove changes "
-                "(tracked or untracked) before using --branch with a different commit"
+                "(tracked or untracked) before using --branch/--wasm_branch "
+                "with a different commit"
             )
     return resolved, orig_branch
 
@@ -656,6 +694,7 @@ class BenchmarkRunner:
         self.err = err
         self.out = out
         self.tmp_bins: list[Path] = []
+        self.tmp_dirs: list[Path] = []
         self.build_log: Path | None = None
         self.orig_branch: str | None = None
         self.alt_screen_active = False
@@ -697,6 +736,12 @@ class BenchmarkRunner:
             except OSError:
                 pass
         self.tmp_bins.clear()
+        for d in self.tmp_dirs:
+            try:
+                shutil.rmtree(d, ignore_errors=True)
+            except OSError:
+                pass
+        self.tmp_dirs.clear()
         if self.build_log is not None:
             try:
                 self.build_log.unlink(missing_ok=True)
@@ -735,6 +780,12 @@ class BenchmarkRunner:
             cwd=self.root,
         )
 
+    def bazel_dtest_wasm(self) -> None:
+        self.run_build(
+            [resolve_bazel_command(), "build", "//wasm:dtest_wasm"],
+            cwd=self.root,
+        )
+
     def checkout_and_build(self, name: str) -> None:
         self.run_build(["git", "-C", str(self.root), "checkout", name])
         self.bazel_dtest()
@@ -755,11 +806,43 @@ class BenchmarkRunner:
         shutil.copy2(src, dest, follow_symlinks=True)
         dest.chmod(dest.stat().st_mode | 0o111)
 
+    def build_wasm_branch(self, name: str, dest_dir: Path) -> Path:
+        """Checkout, build dtest_wasm, copy js+wasm into dest_dir; return js path."""
+        dest_js = dest_dir / "dtest.js"
+        dest_wasm = dest_dir / "dtest.wasm"
+        if self.cfg.dry_run:
+            bazel = resolve_bazel_command()
+            print(f"DRY_RUN: git -C {self.root} checkout {name}", file=self.err)
+            print(
+                f"DRY_RUN: (cd {self.root} && {bazel} build //wasm:dtest_wasm)",
+                file=self.err,
+            )
+            print(
+                f"DRY_RUN: cp -L {self.root / DTEST_WASM_JS_REL} {dest_js}",
+                file=self.err,
+            )
+            print(
+                f"DRY_RUN: cp -L {self.root / DTEST_WASM_WASM_REL} {dest_wasm}",
+                file=self.err,
+            )
+            return dest_js
+        print(f"Building dtest_wasm from '{name}'...", file=self.err)
+        self.run_build(["git", "-C", str(self.root), "checkout", name])
+        self.bazel_dtest_wasm()
+        shutil.copy2(self.root / DTEST_WASM_JS_REL, dest_js, follow_symlinks=True)
+        shutil.copy2(self.root / DTEST_WASM_WASM_REL, dest_wasm, follow_symlinks=True)
+        return dest_js
+
     def new_tmp_bin(self) -> Path:
         fd, name = tempfile.mkstemp(prefix="dds-dtest-bin.", suffix=".exe" if os.name == "nt" else "")
         os.close(fd)
         path = Path(name)
         self.tmp_bins.append(path)
+        return path
+
+    def new_tmp_wasm_dir(self) -> Path:
+        path = Path(tempfile.mkdtemp(prefix="dds-dtest-wasm."))
+        self.tmp_dirs.append(path)
         return path
 
     def restore_branch(self, rebuild: bool) -> None:
@@ -783,7 +866,7 @@ class BenchmarkRunner:
     def build_binaries(self) -> tuple[list[str], list[Path]]:
         specs = list(self.cfg.specs)
         nspecs = len(specs)
-        nbranch = sum(1 for k, _ in specs if k == "branch")
+        ngit = sum(1 for k, _ in specs if k in GIT_SPEC_KINDS)
 
         if nspecs == 0:
             assert self.cfg.branch_binary is not None
@@ -791,7 +874,7 @@ class BenchmarkRunner:
 
         reject_checkout_binary_with_branch(self.root, specs)
 
-        if nbranch > 0:
+        if ngit > 0:
             specs, self.orig_branch = git_prep_for_branches(self.root, specs)
 
         labels: list[str] = []
@@ -802,22 +885,36 @@ class BenchmarkRunner:
                 self.build_branch_binary(val, t)
                 paths.append(t)
                 labels.append(val)
+            elif kind == "wasm_branch":
+                d = self.new_tmp_wasm_dir()
+                js = self.build_wasm_branch(val, d)
+                paths.append(js)
+                labels.append(f"wasm:{val}")
             else:
                 paths.append(Path(val))
                 labels.append(label_for_path(val))
 
-        if nbranch > 0:
+        if ngit > 0:
             self.restore_branch(False)
         return labels, paths
 
+    def dtest_command(self, binary: Path, solver: str, hands: Path) -> list[str]:
+        args = ["-f", str(hands), "-s", solver, *self.cfg.dtest_extra]
+        if binary.suffix == ".js":
+            return ["node", str(binary), *args]
+        return [str(binary), *args]
+
     def run_dtest(self, binary: Path, solver: str, hands: Path) -> tuple[DtestTiming, float | None]:
-        cmd = [str(binary), "-f", str(hands), "-s", solver, *self.cfg.dtest_extra]
+        cmd = self.dtest_command(binary, solver, hands)
         if self.cfg.dry_run:
             print(f"DRY_RUN: {' '.join(cmd)}", file=self.err)
             return DtestTiming(None, None, None, None), None
 
+        cwd = binary.parent if binary.suffix == ".js" else None
         t0 = time.perf_counter()
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, check=False, cwd=cwd
+        )
         wall = time.perf_counter() - t0
         out = proc.stdout + proc.stderr
         if proc.returncode != 0:
@@ -875,16 +972,16 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
 
     num_bins = len(paths)
     nspecs = len(cfg.specs)
-    nbranch = sum(1 for k, _ in cfg.specs if k == "branch")
+    ngit = sum(1 for k, _ in cfg.specs if k in GIT_SPEC_KINDS)
     # After git_prep, specs may have changed on the runner via build_binaries;
-    # recompute nbranch from original cfg (branch count is stable).
-    if nspecs == 0 or nbranch == nspecs:
+    # recompute ngit from original cfg (git-spec count is stable).
+    if nspecs == 0 or ngit == nspecs:
         run_label_col = "branch"
-    elif nbranch == 0:
+    elif ngit == 0:
         run_label_col = "binary"
     else:
         run_label_col = "label"
-    if nbranch > 0:
+    if ngit > 0:
         cfg.build = False
 
     try:
@@ -909,6 +1006,27 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
 
     if not cfg.dry_run:
         for i, p in enumerate(paths):
+            if p.suffix == ".js":
+                wasm = p.with_suffix(".wasm")
+                if not p.is_file() or not wasm.is_file():
+                    print(
+                        f"error: wasm dtest artifacts not found: {p} / {wasm} "
+                        f"({labels[i]})",
+                        file=sys.stderr,
+                    )
+                    if i == 0:
+                        print(
+                            f"hint: {resolve_bazel_command()} build //wasm:dtest_wasm",
+                            file=sys.stderr,
+                        )
+                    return 1
+                if shutil.which("node") is None:
+                    print(
+                        "error: node is required on PATH to run dtest_wasm (.js)",
+                        file=sys.stderr,
+                    )
+                    return 1
+                continue
             if not (p.is_file() and os.access(p, os.X_OK)):
                 print(
                     f"error: binary not found or not executable: {p} ({labels[i]})",

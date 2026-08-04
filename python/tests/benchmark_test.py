@@ -235,6 +235,71 @@ class TestBazelDtestCommand(unittest.TestCase):
             self.assertIn("bazelisk build //library/tests:dtest", err.getvalue())
             self.assertNotIn("bazel build //library/tests:dtest", err.getvalue())
 
+    def test_bazel_dtest_wasm_invokes_resolved_launcher(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = benchmark.BenchmarkRunner(Path(tmp), benchmark.Config())
+            seen: list[list[str]] = []
+
+            def capture(cmd, **_kwargs):  # type: ignore[no-untyped-def]
+                seen.append(list(cmd))
+
+            with mock.patch.object(runner, "run_build", side_effect=capture):
+                with mock.patch.object(
+                    benchmark, "resolve_bazel_command", return_value="bazelisk"
+                ):
+                    runner.bazel_dtest_wasm()
+            self.assertEqual(seen, [["bazelisk", "build", "//wasm:dtest_wasm"]])
+
+    def test_dry_run_wasm_branch_build_message(self) -> None:
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "wasm_out"
+            dest.mkdir()
+            runner = benchmark.BenchmarkRunner(
+                Path(tmp),
+                benchmark.Config(dry_run=True),
+                err=err,
+            )
+            with mock.patch.object(
+                benchmark, "resolve_bazel_command", return_value="bazelisk"
+            ):
+                js = runner.build_wasm_branch("develop", dest)
+            text = err.getvalue()
+            self.assertEqual(js, dest / "dtest.js")
+            self.assertIn("bazelisk build //wasm:dtest_wasm", text)
+            self.assertIn("dtest.js", text)
+            self.assertIn("dtest.wasm", text)
+
+
+class TestBuildBinariesWasm(unittest.TestCase):
+    def test_wasm_branch_label_and_js_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            err = io.StringIO()
+            runner = benchmark.BenchmarkRunner(
+                root,
+                benchmark.Config(
+                    dry_run=True,
+                    specs=[("wasm_branch", "develop")],
+                ),
+                err=err,
+            )
+            with mock.patch.object(
+                benchmark,
+                "git_prep_for_branches",
+                return_value=([("wasm_branch", "develop")], "main"),
+            ):
+                with mock.patch.object(
+                    benchmark, "resolve_bazel_command", return_value="bazelisk"
+                ):
+                    labels, paths = runner.build_binaries()
+            self.assertEqual(labels, ["wasm:develop"])
+            self.assertEqual(len(paths), 1)
+            self.assertEqual(paths[0].name, "dtest.js")
+            self.assertTrue(paths[0].parent.is_dir())
+            self.assertIn("checkout main", err.getvalue())
+            self.assertIn("//wasm:dtest_wasm", err.getvalue())
+
 
 class TestRunOrder(unittest.TestCase):
     def test_default(self) -> None:
@@ -341,6 +406,51 @@ class TestParseArgs(unittest.TestCase):
     def test_invalid_epsilon(self) -> None:
         with self.assertRaises(benchmark.BenchmarkError):
             benchmark.parse_args(["--epsilon", "-1"], env={})
+
+    def test_wasm_branch_spec(self) -> None:
+        cfg = benchmark.parse_args(["--wasm_branch", "develop"], env={})
+        self.assertEqual(cfg.specs, [("wasm_branch", "develop")])
+
+    def test_wasm_branch_hyphen_alias(self) -> None:
+        cfg = benchmark.parse_args(["--wasm-branch", "develop"], env={})
+        self.assertEqual(cfg.specs, [("wasm_branch", "develop")])
+
+    def test_wasm_branch_repeatable_with_branch(self) -> None:
+        cfg = benchmark.parse_args(
+            [
+                "--branch",
+                "develop",
+                "--wasm_branch",
+                "develop",
+                "--wasm_branch",
+                "feature",
+            ],
+            env={},
+        )
+        self.assertEqual(
+            cfg.specs,
+            [
+                ("branch", "develop"),
+                ("wasm_branch", "develop"),
+                ("wasm_branch", "feature"),
+            ],
+        )
+
+    def test_wasm_branch_must_not_start_with_dash(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["--wasm_branch", "-bad"], env={})
+        self.assertIn("must not start with '-'", str(ctx.exception))
+
+    def test_reverse_accepts_wasm_branch_pair(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--reverse", "--branch", "develop", "--wasm_branch", "develop"],
+            env={},
+        )
+        self.assertTrue(cfg.reverse)
+        self.assertEqual(
+            cfg.specs,
+            [("branch", "develop"), ("wasm_branch", "develop")],
+        )
 
 
 class TestSummary(unittest.TestCase):
@@ -670,6 +780,26 @@ class TestRejectCheckoutBinaryWithBranch(unittest.TestCase):
                 [("branch", "develop")],
             )
 
+    def test_rejects_checkout_wasm_js_with_wasm_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            abs_path = root / benchmark.DTEST_WASM_JS_REL
+            with self.assertRaises(benchmark.BenchmarkError) as ctx:
+                benchmark.reject_checkout_binary_with_branch(
+                    root,
+                    [("wasm_branch", "develop"), ("binary", str(abs_path))],
+                )
+            self.assertIn("checkout's", str(ctx.exception))
+            self.assertIn(str(benchmark.DTEST_WASM_JS_REL), str(ctx.exception))
+
+    def test_allows_external_binary_with_wasm_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            benchmark.reject_checkout_binary_with_branch(
+                root,
+                [("wasm_branch", "develop"), ("binary", "/tmp/other-dtest")],
+            )
+
 
 class TestGitPrepForBranches(unittest.TestCase):
     def test_dirty_same_commit_allowed(self) -> None:
@@ -724,6 +854,80 @@ class TestGitPrepForBranches(unittest.TestCase):
             with self.assertRaises(benchmark.BenchmarkError) as ctx:
                 benchmark.git_prep_for_branches(repo, [("branch", "HEAD^{tree}")])
             self.assertIn("unknown git ref", str(ctx.exception))
+
+    def test_wasm_branch_dot_resolved_like_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            _setup_repo(repo)
+            resolved, orig = benchmark.git_prep_for_branches(
+                repo, [("wasm_branch", ".")]
+            )
+            self.assertEqual(orig, "main")
+            self.assertEqual(resolved, [("wasm_branch", "main")])
+
+    def test_wasm_branch_dirty_other_commit_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            _setup_repo(repo)
+            (repo / "MODULE.bazel").write_text(
+                (repo / "MODULE.bazel").read_text() + "dirty\n"
+            )
+            with self.assertRaises(benchmark.BenchmarkError) as ctx:
+                benchmark.git_prep_for_branches(repo, [("wasm_branch", "other")])
+            self.assertIn("working tree not clean", str(ctx.exception))
+
+
+class TestRunDtestWasm(unittest.TestCase):
+    def test_js_binary_invokes_node_with_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            js = root / "dtest.js"
+            wasm = root / "dtest.wasm"
+            js.write_text("// stub\n")
+            wasm.write_bytes(b"\0")
+            hands = root / "list1.txt"
+            hands.write_text("hand\n")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config())
+            seen: dict[str, object] = {}
+
+            def fake_run(cmd, **kwargs):  # type: ignore[no-untyped-def]
+                seen["cmd"] = list(cmd)
+                seen["cwd"] = kwargs.get("cwd")
+                return subprocess.CompletedProcess(
+                    cmd,
+                    0,
+                    stdout=(
+                        "Number of hands          1\n"
+                        "User time (ms)           10\n"
+                        "Sys time (ms)            1\n"
+                    ),
+                    stderr="",
+                )
+
+            with mock.patch("benchmark.subprocess.run", side_effect=fake_run):
+                parsed, wall = runner.run_dtest(js, "solve", hands)
+            self.assertEqual(
+                seen["cmd"],
+                ["node", str(js), "-f", str(hands), "-s", "solve"],
+            )
+            self.assertEqual(seen["cwd"], js.parent)
+            self.assertEqual(parsed.user_ms, 10.0)
+            self.assertIsNotNone(wall)
+
+    def test_dry_run_js_prints_node_command(self) -> None:
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            js = Path(tmp) / "dtest.js"
+            runner = benchmark.BenchmarkRunner(
+                Path(tmp),
+                benchmark.Config(dry_run=True),
+                err=err,
+            )
+            runner.run_dtest(js, "calc", Path(tmp) / "list1.txt")
+            self.assertIn("DRY_RUN: node ", err.getvalue())
+            self.assertIn(str(js), err.getvalue())
 
 
 class TestDryRunMain(unittest.TestCase):
