@@ -290,6 +290,7 @@ def format_summary(
         )
         if (
             row.user_ms is not None
+            and row.avg_user is not None
             and deals is not None
             and deals > 0
             and row.solver in total_user

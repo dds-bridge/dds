@@ -580,6 +580,30 @@ class TestSummary(unittest.TestCase):
         self.assertNotIn("faster", solve_tot)
         self.assertNotIn("equal", solve_tot)
 
+    def test_total_excludes_rows_missing_avg_user(self) -> None:
+        # user_ms alone is incomplete (per-file would print NA for avg_user).
+        rows = [
+            benchmark.ResultRow(
+                "solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, hands=100
+            ),
+            benchmark.ResultRow(
+                "solve", "list100.txt", 1, 1, 50.0, 1.0, None, None, hands=100
+            ),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list100.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b1\.00\b")
+        self.assertRegex(solve_tot, r"\bNA\b")
+        self.assertNotRegex(solve_tot, r"\b0\.50\b")
+        self.assertNotRegex(solve_tot, r"\d+\.\d+x")
+
     def test_total_weights_by_reported_hands_not_filename(self) -> None:
         # Filename says 100, but dtest reported 50 hands processed.
         rows = [
