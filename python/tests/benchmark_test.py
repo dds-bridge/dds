@@ -604,6 +604,30 @@ class TestSummary(unittest.TestCase):
         self.assertNotRegex(solve_tot, r"\b0\.50\b")
         self.assertNotRegex(solve_tot, r"\d+\.\d+x")
 
+    def test_total_excludes_zero_reported_hands(self) -> None:
+        # hands=0 is real dtest output, not missing — do not fall back to list1.txt => 1.
+        rows = [
+            benchmark.ResultRow(
+                "solve", "list1.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, hands=1
+            ),
+            benchmark.ResultRow(
+                "solve", "list1.txt", 1, 1, 0.0, 0.0, 0.0, None, hands=0
+            ),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list1.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b100\.00\b")
+        self.assertRegex(solve_tot, r"\bNA\b")
+        self.assertNotRegex(solve_tot, r"\b0\.00\b")
+        self.assertNotRegex(solve_tot, r"\d+\.\d+x")
+
     def test_total_weights_by_reported_hands_not_filename(self) -> None:
         # Filename says 100, but dtest reported 50 hands processed.
         rows = [

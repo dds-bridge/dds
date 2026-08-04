@@ -283,11 +283,10 @@ def format_summary(
         if row.sys_user is not None:
             su_sums[key] = su_sums.get(key, 0.0) + row.sys_user
             su_counts[key] = su_counts.get(key, 0) + 1
-        deals = (
-            row.hands
-            if row.hands is not None and row.hands > 0
-            else deals_from_hand_file(row.file)
-        )
+        if row.hands is not None:
+            deals = row.hands
+        else:
+            deals = deals_from_hand_file(row.file)
         if (
             row.user_ms is not None
             and row.avg_user is not None
