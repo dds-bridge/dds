@@ -583,3 +583,44 @@ TEST_F(MovesTest, GetLengthIsQuick) {
   // Should complete 100k calls in reasonable time
   EXPECT_LT(duration.count(), 500);  // Less than 500ms for 100k
 }
+
+TEST_F(MovesTest, ApplyMoveToTrackLeadHand) {
+  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
+  moves->trackp = &moves->track[5];
+
+  MoveType move;
+  move.suit = 2;  // Diamonds
+  move.rank = 10;
+  move.sequence = 0;
+
+  moves->apply_move_to_track(move, 0, 5);
+
+  EXPECT_EQ(moves->trackp->move[0].suit, 2);
+  EXPECT_EQ(moves->trackp->move[0].rank, 10);
+  EXPECT_EQ(moves->trackp->high[0], 0);
+  EXPECT_EQ(moves->trackp->lead_suit, 2);
+  EXPECT_EQ(moves->trackp->play_suits[0], 2);
+  EXPECT_EQ(moves->trackp->play_ranks[0], 10);
+}
+
+TEST_F(MovesTest, ApplyMoveToTrackFollowSuit) {
+  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
+  moves->trackp = &moves->track[5];
+
+  // Lead with Ace of Spades
+  MoveType lead;
+  lead.suit = 0;  lead.rank = 14;  lead.sequence = 0;
+  moves->apply_move_to_track(lead, 0, 5);
+
+  // Follow with King of Spades — higher rank wins
+  MoveType follow;
+  follow.suit = 0;  follow.rank = 13;  follow.sequence = 0;
+  moves->apply_move_to_track(follow, 1, 5);
+
+  // King < Ace so high stays at 0 (lead hand wins)
+  EXPECT_EQ(moves->trackp->high[1], 0);
+  EXPECT_EQ(moves->trackp->play_suits[1], 0);
+  EXPECT_EQ(moves->trackp->play_ranks[1], 13);
+}
