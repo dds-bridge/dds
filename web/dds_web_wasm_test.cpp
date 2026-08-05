@@ -39,7 +39,7 @@ constexpr char kPbnHand1[] =
 
 }  // namespace
 
-TEST(DdsMvpWasmTest, MvpContextsUseSmallTranspositionTables) {
+TEST(DdsWebWasmTest, WebContextsUseSmallTranspositionTables) {
   // Dual session contexts must not each default to Large (~95MB) TT heaps.
   for (int which = 0; which < 2; ++which) {
     int kind_is_small = 0;
@@ -53,26 +53,26 @@ TEST(DdsMvpWasmTest, MvpContextsUseSmallTranspositionTables) {
   }
 }
 
-TEST(DdsMvpWasmTest, RejectsNullPointers) {
+TEST(DdsWebWasmTest, RejectsNullPointers) {
   int out[20]{};
   EXPECT_EQ(dds_web_calc_table(nullptr, out), RETURN_UNKNOWN_FAULT);
   EXPECT_EQ(dds_web_calc_table(kPbnHand0, nullptr), RETURN_UNKNOWN_FAULT);
 }
 
-TEST(DdsMvpWasmTest, RejectsPbnTooLong) {
+TEST(DdsWebWasmTest, RejectsPbnTooLong) {
   int out[20]{};
   const std::string too_long(80, 'A');
   EXPECT_EQ(dds_web_calc_table(too_long.c_str(), out), RETURN_PBN_FAULT);
 }
 
-TEST(DdsMvpWasmTest, RejectsInvalidPbn) {
+TEST(DdsWebWasmTest, RejectsInvalidPbn) {
   int out[20]{};
   const int res = dds_web_calc_table("not-a-valid-pbn", out);
   EXPECT_NE(res, RETURN_NO_FAULT);
   EXPECT_LT(res, RETURN_NO_FAULT);
 }
 
-TEST(DdsMvpWasmTest, FillsFlatStrainHandTable) {
+TEST(DdsWebWasmTest, FillsFlatStrainHandTable) {
   int out[20]{};
   ASSERT_EQ(dds_web_calc_table(kPbnHand0, out), RETURN_NO_FAULT);
   for (int i = 0; i < 20; ++i) {
@@ -80,7 +80,7 @@ TEST(DdsMvpWasmTest, FillsFlatStrainHandTable) {
   }
 }
 
-TEST(DdsMvpWasmTest, FillsFlatStrainHandTableAcrossReuse) {
+TEST(DdsWebWasmTest, FillsFlatStrainHandTableAcrossReuse) {
   int out0[20]{};
   ASSERT_EQ(dds_web_calc_table(kPbnHand0, out0), RETURN_NO_FAULT);
   for (int i = 0; i < 20; ++i) {
@@ -106,14 +106,14 @@ TEST(DdsMvpWasmTest, FillsFlatStrainHandTableAcrossReuse) {
 constexpr char kPbnPartScore[] =
     "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5";
 
-TEST(DdsMvpWasmTest, SolveLeadsRejectsNullPointers) {
+TEST(DdsWebWasmTest, SolveLeadsRejectsNullPointers) {
   int out[40]{};
   EXPECT_EQ(dds_web_solve_leads(nullptr, 4, 3, out), RETURN_UNKNOWN_FAULT);
   EXPECT_EQ(
       dds_web_solve_leads(kPbnPartScore, 4, 3, nullptr), RETURN_UNKNOWN_FAULT);
 }
 
-TEST(DdsMvpWasmTest, SolveLeadsReturnsOpeningLeadTricksForEachCard) {
+TEST(DdsWebWasmTest, SolveLeadsReturnsOpeningLeadTricksForEachCard) {
   // South declares NT → West leads. CalcDDtable says South takes 6 in NT, so
   // the best EW opening lead scores 7 tricks for the side on lead.
   int out[40]{};
@@ -147,7 +147,7 @@ TEST(DdsMvpWasmTest, SolveLeadsReturnsOpeningLeadTricksForEachCard) {
   EXPECT_EQ(max_score, 7);
 }
 
-TEST(DdsMvpWasmTest, SolveLeadsWorksAfterCalcTableOnSharedSession) {
+TEST(DdsWebWasmTest, SolveLeadsWorksAfterCalcTableOnSharedSession) {
   // Auto-solve fills the DD table first, then a contract click runs leads on
   // the same module session — leads must still return 13 cards.
   int table[20]{};
@@ -165,7 +165,7 @@ TEST(DdsMvpWasmTest, SolveLeadsWorksAfterCalcTableOnSharedSession) {
   EXPECT_EQ(out[0], 13);
 }
 
-TEST(DdsMvpWasmTest, ExpandedLeadsUseHoldingEncodedEqualsBitmask) {
+TEST(DdsWebWasmTest, ExpandedLeadsUseHoldingEncodedEqualsBitmask) {
   // FutureTricks packs equivalent leads (not one entry per card). Holding
   // encoding (dll-description / equals_to_string): equals stores sequence << 2,
   // so rank r is bit (r-2) after >> 2 — not (1 << r) on the shifted-down value.
@@ -190,7 +190,7 @@ TEST(DdsMvpWasmTest, ExpandedLeadsUseHoldingEncodedEqualsBitmask) {
   EXPECT_EQ(out[6], 7);
 }
 
-TEST(DdsMvpWasmTest, ExpandedLeadsIgnoresEqualsBitsAtOrAboveRepresentative) {
+TEST(DdsWebWasmTest, ExpandedLeadsIgnoresEqualsBitsAtOrAboveRepresentative) {
   // dll-description: equals are *lower*-ranked equivalents only. A bit for the
   // representative (or higher) must not produce a duplicate out_leads triple.
   FutureTricks fut{};
@@ -212,7 +212,7 @@ TEST(DdsMvpWasmTest, ExpandedLeadsIgnoresEqualsBitsAtOrAboveRepresentative) {
   EXPECT_EQ(out[5], 12);  // queen only
 }
 
-TEST(DdsMvpWasmTest, ExpandedLeadsHardCapsAtThirteenCards) {
+TEST(DdsWebWasmTest, ExpandedLeadsHardCapsAtThirteenCards) {
   // One representative with equals for ranks 2-13 expands to 13 cards; a second
   // FutureTricks entry must not write past the caller buffer (1 + 13*3).
   FutureTricks fut{};

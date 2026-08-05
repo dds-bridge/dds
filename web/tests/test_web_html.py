@@ -9,7 +9,7 @@ WEB_ROOT = Path(__file__).resolve().parents[1]
 HTML_PATH = WEB_ROOT / "dds_web.html"
 
 
-class DdsMvpHtmlCharsetTest(unittest.TestCase):
+class DdsWebHtmlCharsetTest(unittest.TestCase):
     def test_declares_utf8_charset_within_first_1024_bytes(self) -> None:
         # Browsers only honor <meta charset> in the first 1024 bytes. Without it,
         # servers that send Content-Type: text/html (no charset) may decode

@@ -78,7 +78,7 @@ class _HttpSite:
 
 
 @unittest.skipIf(sync_playwright is None, "playwright not installed")
-class DdsMvpHtmlE2eTest(unittest.TestCase):
+class DdsWebHtmlE2eTest(unittest.TestCase):
     browsers_dir: Path
     site_dir: Path
 

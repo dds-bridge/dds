@@ -31,7 +31,7 @@ def rlocation(relpath: str) -> Path:
     raise FileNotFoundError(relpath)
 
 
-class DdsMvpJsTest(unittest.TestCase):
+class DdsWebJsTest(unittest.TestCase):
     def test_dds_web_js(self) -> None:
         node = shutil.which("node")
         if not node:

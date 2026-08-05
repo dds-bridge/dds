@@ -16,7 +16,7 @@ import { createContext, runInContext } from "node:vm";
 const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 
-function findDdsMvpJsPath() {
+function findDdsWebJsPath() {
     if (process.env.DDS_WEB_JS && existsSync(process.env.DDS_WEB_JS)) {
         return process.env.DDS_WEB_JS;
     }
@@ -216,8 +216,8 @@ function createMockDocument(initialValues = {}) {
     return documentRef;
 }
 
-function loadDdsMvp(document) {
-    const code = readFileSync(findDdsMvpJsPath(), "utf8");
+function loadDdsWeb(document) {
+    const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document,
         console,
@@ -266,7 +266,7 @@ function threeHandsPartScoreDocument() {
 
 test("Card converts between named suits and compact keys", () => {
     // Arrange / Act
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const card = new ctx.Card("hearts", "K");
     const decoded = ctx.Card.fromKey("D2");
 
@@ -281,7 +281,7 @@ test("Card converts between named suits and compact keys", () => {
 
 test("Card.compare sorts cards from ace through deuce", () => {
     // Arrange
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const cards = ["S2", "SK", "SA"].map(ctx.Card.fromKey);
 
     // Act
@@ -292,7 +292,7 @@ test("Card.compare sorts cards from ace through deuce", () => {
 });
 
 test("cardsToSuitHoldings groups cards by suit name", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     // Copy out of the VM realm so deepEqual compares same-realm prototypes.
     const holdings = {
         ...ctx.cardsToSuitHoldings(cardsFromKeys(ctx, ["SA", "SK", "HA", "C2"])),
@@ -307,7 +307,7 @@ test("cardsToSuitHoldings groups cards by suit name", () => {
 
 test("deck status lists suits in S H D C order", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.updateActionButtons();
     const deckStatus = document.element("deck-status").innerHTML;
     const suitIndexes = [
@@ -325,7 +325,7 @@ test("deck status lists suits in S H D C order", () => {
 
 test("handsToPbn formats part-score deal", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.fillFormWithPartScoreTestData();
     const pbn = ctx.handsToPbn(ctx.collectHands());
     assert.equal(
@@ -335,7 +335,7 @@ test("handsToPbn formats part-score deal", () => {
 });
 
 test("inputIsValid rejects incomplete deal", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     assert.equal(
         ctx.inputIsValid(handsFromKeys(ctx, {
             north: ["SA"],
@@ -348,7 +348,7 @@ test("inputIsValid rejects incomplete deal", () => {
 });
 
 test("inputIsValid rejects invalid pip", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const hands = handsFromKeys(ctx, {
         north: ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ", "SK"],
         east: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
@@ -359,7 +359,7 @@ test("inputIsValid rejects invalid pip", () => {
 });
 
 test("inputIsValid rejects duplicate cards", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const hands = handsFromKeys(ctx, {
         north: ["SA", "SA", "HA", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ"],
         east: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
@@ -377,7 +377,7 @@ test("inputIsValid rejects duplicate cards", () => {
 
 test("inputIsValid accepts part-score deal", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.fillFormWithPartScoreTestData();
     assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
 });
@@ -401,7 +401,7 @@ test("collectHands reads suit holdings from inputs", () => {
         west_diamonds: "JT",
         west_clubs: "AKQ",
     });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const hands = ctx.collectHands();
     assert.equal(hands.north.length, 13);
     assert.equal(hands.east.length, 13);
@@ -414,7 +414,7 @@ test("collectHands reads suit holdings from inputs", () => {
 
 test("clearTestData clears all hand inputs", () => {
     const document = createMockDocument({ north_spades: "AKQ", west_clubs: "JT" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.clearTestData();
     assert.equal(document.element("north_spades").value, "");
     assert.equal(document.element("west_clubs").value, "");
@@ -437,7 +437,7 @@ test("rotateClockwise shifts holdings west to north", () => {
             index += 1;
         }
     }
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.rotateClockwise();
     assert.equal(document.element("north_spades").value, "2");
     assert.equal(document.element("north_hearts").value, "AK");
@@ -448,7 +448,7 @@ test("rotateClockwise shifts holdings west to north", () => {
 
 test("fillFormWithPartScoreTestData populates inputs", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.fillFormWithPartScoreTestData();
     assert.equal(document.element("north_spades").value, "AQ85");
     assert.equal(document.element("west_clubs").value, "T5");
@@ -457,7 +457,7 @@ test("fillFormWithPartScoreTestData populates inputs", () => {
 test("fillFormWithTestData does not require a double-dummy button", async () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let refreshed = 0;
     ctx.refreshDdTable = () => {
         refreshed += 1;
@@ -487,7 +487,7 @@ test("page has no double-dummy button", () => {
 test("updateActionButtons finishes dd table before opening-lead refresh", async () => {
     // Arrange: a selected contract must not race CalcDDtable vs SolveBoard.
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const order = [];
 
     ctx.refreshDdTable = async () => {
@@ -519,7 +519,7 @@ test("updateActionButtons finishes dd table before opening-lead refresh", async 
 test("contract selection waits for an in-flight dd table before lead refresh", async () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const order = [];
 
     ctx.refreshDdTable = async () => {
@@ -551,7 +551,7 @@ test("contract selection waits for an in-flight dd table before lead refresh", a
 
 test("rapid scheduleDealSolve coalesces to one trailing leads refresh", async () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let leads = 0;
     let dd = 0;
 
@@ -582,7 +582,7 @@ test("rapid scheduleDealSolve coalesces to one trailing leads refresh", async ()
 test("rapid scheduleDealSolve does not enqueue one queue job per call", async () => {
     // Arrange: block the first DD solve so later schedules land while a job runs.
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let enqueued = 0;
     const realEnqueue = ctx.enqueueSolve;
     ctx.enqueueSolve = (task) => {
@@ -631,13 +631,13 @@ test("rapid scheduleDealSolve does not enqueue one queue job per call", async ()
 
 test("pageLoad shows valid pips", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.pageLoad();
     assert.equal(document.element("valid-pips").innerHTML, "AKQJT98765432");
 });
 
 test("loadDdsModule rejects missing wasm globals", async () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     await assert.rejects(
         () => ctx.loadDdsModule(),
         /WASM module not found/
@@ -646,7 +646,7 @@ test("loadDdsModule rejects missing wasm globals", async () => {
 
 test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () => {
     // Arrange: browser opened as a local file (origin null).
-    const code = readFileSync(findDdsMvpJsPath(), "utf8");
+    const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document: createMockDocument(),
         console,
@@ -667,7 +667,7 @@ test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () =
 
 test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () => {
     // Arrange: HTTPS page without cross-origin isolation (no SAB).
-    const code = readFileSync(findDdsMvpJsPath(), "utf8");
+    const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document: createMockDocument(),
         console,
@@ -690,13 +690,13 @@ test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () 
 });
 
 test("wasmSolveEnvironmentError is null in non-browser sandboxes", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     assert.equal(ctx.wasmSolveEnvironmentError(), null);
 });
 
 test("fillFormWithGrandSlamTestData populates inputs", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.fillFormWithGrandSlamTestData();
     assert.equal(document.element("north_spades").value, "AKQJ");
     assert.equal(document.element("east_clubs").value, "432");
@@ -705,7 +705,7 @@ test("fillFormWithGrandSlamTestData populates inputs", () => {
 
 test("fillFormWithEveryoneMakes3nTestData populates inputs", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.fillFormWithEveryoneMakes3nTestData();
     assert.equal(document.element("north_hearts").value, "A8765432");
     assert.equal(document.element("west_spades").value, "");
@@ -714,7 +714,7 @@ test("fillFormWithEveryoneMakes3nTestData populates inputs", () => {
 
 test("fourthHandFillState accepts three full hands and one empty", () => {
     const document = threeHandsPartScoreDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const state = ctx.fourthHandFillState(ctx.collectHands());
     assert.equal(state.canFill, true);
     assert.equal(state.emptyHand, "west");
@@ -723,7 +723,7 @@ test("fourthHandFillState accepts three full hands and one empty", () => {
 test("fourthHandFillState rejects partial fourth hand", () => {
     const document = threeHandsPartScoreDocument();
     document.setValue("west_spades", "K");
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     assert.equal(ctx.fourthHandFillState(ctx.collectHands()).canFill, false);
 });
 
@@ -731,7 +731,7 @@ test("fourthHandFillState rejects a duplicate card across three full hands", () 
     // Arrange: keep all three hands at 13 cards but duplicate D9 (east & north).
     const document = threeHandsPartScoreDocument();
     document.setValue("north_diamonds", "9");
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     // Act
     const state = ctx.fourthHandFillState(ctx.collectHands());
@@ -743,7 +743,7 @@ test("fourthHandFillState rejects a duplicate card across three full hands", () 
 test("fourthHandFillState rejects a non-bridge pip among three full hands", () => {
     // Arrange: three full hands and one empty, then inject an invalid pip.
     const document = threeHandsPartScoreDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const hands = ctx.collectHands();
     hands.north[12] = new ctx.Card("clubs", "X");
 
@@ -757,7 +757,7 @@ test("fourthHandFillState rejects a non-bridge pip among three full hands", () =
 test("fourthHandFillState rejects a missing card object among three full hands", () => {
     // Arrange: three full hands and one empty, then corrupt one card entry.
     const document = threeHandsPartScoreDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const hands = ctx.collectHands();
     hands.north[0] = null;
 
@@ -766,7 +766,7 @@ test("fourthHandFillState rejects a missing card object among three full hands",
 });
 
 test("sanitizeSuitHolding keeps only bridge pips and uppercases them", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
 
     assert.equal(ctx.sanitizeSuitHolding("akq"), "AKQ");
     assert.equal(ctx.sanitizeSuitHolding("t9"), "T9");
@@ -777,7 +777,7 @@ test("sanitizeSuitHolding keeps only bridge pips and uppercases them", () => {
 });
 
 test("suitHoldingHasIllegalChars is true when any non-pip is present", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
 
     assert.equal(ctx.suitHoldingHasIllegalChars("AKQ"), false);
     assert.equal(ctx.suitHoldingHasIllegalChars("akq"), false);
@@ -789,7 +789,7 @@ test("suitHoldingHasIllegalChars is true when any non-pip is present", () => {
 
 test("handleHandSuitInput beeps when the user enters a non-pip character", () => {
     const document = createMockDocument({ north_spades: "AK" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let beeps = 0;
     ctx.playIllegalInputBeep = () => {
         beeps += 1;
@@ -807,7 +807,7 @@ test("handleHandSuitInput beeps when the user enters a non-pip character", () =>
 
 test("handleHandSuitInput does not beep for lowercase legal pips", () => {
     const document = createMockDocument({ north_spades: "" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let beeps = 0;
     ctx.playIllegalInputBeep = () => {
         beeps += 1;
@@ -823,7 +823,7 @@ test("handleHandSuitInput does not beep for lowercase legal pips", () => {
 
 test("pageLoad wires suit inputs to handleHandSuitInput", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let beeps = 0;
     ctx.playIllegalInputBeep = () => {
         beeps += 1;
@@ -840,7 +840,7 @@ test("pageLoad wires suit inputs to handleHandSuitInput", () => {
 
 test("updateActionButtons strips non-pip characters from suit inputs", () => {
     const document = createMockDocument({ north_spades: "AKx7" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     ctx.updateActionButtons();
 
@@ -849,7 +849,7 @@ test("updateActionButtons strips non-pip characters from suit inputs", () => {
 
 test("updateActionButtons uppercases lowercase pips in suit inputs", () => {
     const document = createMockDocument({ east_hearts: "kq" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     ctx.updateActionButtons();
 
@@ -860,7 +860,7 @@ test("updateActionButtons strips a non-bridge pip and does not auto-fill", async
     // Arrange: three full hands, but north clubs has an invalid pip (X).
     const document = threeHandsPartScoreDocument();
     document.setValue("north_clubs", "J8X");
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let refreshed = 0;
     ctx.refreshDdTable = () => {
         refreshed += 1;
@@ -881,7 +881,7 @@ test("updateActionButtons strips a non-bridge pip and does not auto-fill", async
 
 test("updateActionButtons auto-fills the fourth hand for three complete hands", async () => {
     const document = threeHandsPartScoreDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let refreshed = 0;
     ctx.refreshDdTable = () => {
         refreshed += 1;
@@ -899,7 +899,7 @@ test("updateActionButtons auto-fills the fourth hand for three complete hands", 
 test("updateActionButtons does not auto-fill with a partial fourth hand", async () => {
     const document = threeHandsPartScoreDocument();
     document.setValue("west_spades", "K");
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let refreshed = 0;
     ctx.refreshDdTable = () => {
         refreshed += 1;
@@ -913,7 +913,7 @@ test("updateActionButtons does not auto-fill with a partial fourth hand", async 
 
 test("updateActionButtons auto-solves when every hand has 13 cards", async () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let refreshed = 0;
     ctx.refreshDdTable = () => {
         refreshed += 1;
@@ -926,7 +926,7 @@ test("updateActionButtons auto-solves when every hand has 13 cards", async () =>
 test("hand edit clears lead-trick badges before the next lead solve finishes", async () => {
     // Arrange: selected contract with lead numerals, then a slow follow-up solve.
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.refreshDdTable = async () => {};
 
     let leadCalls = 0;
@@ -978,7 +978,7 @@ test("hand edit clears lead-trick badges before the next lead solve finishes", a
 
 test("updateActionButtons refreshes the table state for incomplete deals", async () => {
     const document = createMockDocument({ north_spades: "AKQ" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let refreshed = 0;
     ctx.refreshDdTable = () => {
         refreshed += 1;
@@ -991,7 +991,7 @@ test("updateActionButtons refreshes the table state for incomplete deals", async
 test("refreshDdTable clears the results table when the deal is incomplete", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "AKQ" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const cell = document.element("result-table").rows[1].cells[1];
     cell.innerHTML = "9";
     document.element("result").innerHTML = "stale";
@@ -1006,7 +1006,7 @@ test("refreshDdTable clears the results table when the deal is incomplete", () =
 
 test("updateActionButtons displays all 52 cards in the deck status", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     ctx.updateActionButtons();
 
@@ -1034,7 +1034,7 @@ test("updateActionButtons grays cards entered in any hand, including lowercase p
         north_spades: "A",
         east_hearts: "k",
     });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     ctx.updateActionButtons();
 
@@ -1059,7 +1059,7 @@ test("updateActionButtons shows a card-count note for a hand over 13 cards", () 
         north_spades: "AKQJT98765432",
         north_hearts:  "A",
     });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     ctx.updateActionButtons();
 
@@ -1074,7 +1074,7 @@ test("updateActionButtons hides the card-count note at the 13-card boundary", ()
         north_spades:  "AKQJT98765432",
         north_hearts:  "A",
     });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.updateActionButtons();
     document.setValue("north_hearts", "");
 
@@ -1087,7 +1087,7 @@ test("updateActionButtons hides the card-count note at the 13-card boundary", ()
 
 test("handCardHtml renders a clickable button for a card in a hand", () => {
     // Arrange
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const card = new ctx.Card("spades", "A");
 
     // Act
@@ -1105,7 +1105,7 @@ test("handCardHtml renders a clickable button for a card in a hand", () => {
 });
 
 test("escapeHtml encodes characters unsafe in HTML text and attributes", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
 
     assert.equal(ctx.escapeHtml("&"), "&amp;");
     assert.equal(ctx.escapeHtml("<"), "&lt;");
@@ -1120,7 +1120,7 @@ test("escapeHtml encodes characters unsafe in HTML text and attributes", () => {
 
 test("handCardHtml escapes pip-derived markup from raw suit input", () => {
     // Arrange: collectHands uppercases each typed character into Card.pip.
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const card = new ctx.Card("spades", "\"&<>'");
 
     // Act
@@ -1142,7 +1142,7 @@ test("handCardHtml escapes pip-derived markup from raw suit input", () => {
 test("hand holdings render pips in input order, not sorted", () => {
     // Arrange: caret mapping requires display order to match the input string.
     const document = createMockDocument({ north_spades: "QA" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     // Act
     const html = ctx.handHoldingHtml("north", "spades", ctx.collectHands().north, -1);
@@ -1157,7 +1157,7 @@ test("hand holdings render pips in input order, not sorted", () => {
 test("handHoldingHtml inserts a caret marker at the given index", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "AK" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const cards = ctx.collectHands().north;
 
     // Act
@@ -1187,7 +1187,7 @@ test("updateHandCardDisplays mirrors suit holdings as hand-card buttons", () => 
         north_hearts: "k",
         east_clubs: "",
     });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     // Act
     ctx.updateHandCardDisplays(ctx.collectHands());
@@ -1216,7 +1216,7 @@ test("updateHandCardDisplays mirrors suit holdings as hand-card buttons", () => 
 test("updateActionButtons refreshes hand-card displays from inputs", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "JT" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
 
     // Act
     ctx.updateActionButtons();
@@ -1230,7 +1230,7 @@ test("updateActionButtons refreshes hand-card displays from inputs", () => {
 test("handleHandCardClick notifies onHandCardClick with direction and card", () => {
     // Arrange
     const document = createMockDocument({ south_hearts: "KQ" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const clicks = [];
     ctx.onHandCardClick = (direction, card) => {
         clicks.push({ direction, key: card.key() });
@@ -1265,7 +1265,7 @@ test("handleHandCardClick notifies onHandCardClick with direction and card", () 
 test("handleHandCardClick places the suit-input caret for editing", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "AQ8" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const input = document.element("north_spades");
     const button = {
         getAttribute(name) {
@@ -1305,7 +1305,7 @@ test("handleHandCardClick places the suit-input caret for editing", () => {
 test("handleHandCardClick places the caret before a card on a left-half click", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "AQ8" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const input = document.element("north_spades");
     const button = {
         getAttribute(name) {
@@ -1340,7 +1340,7 @@ test("handleHandCardClick places the caret before a card on a left-half click", 
 test("backspace at the caret removes the pip to the left", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "AQ8" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.pageLoad();
     const input = document.element("north_spades");
     input.focus();
@@ -1362,7 +1362,7 @@ test("backspace at the caret removes the pip to the left", () => {
 test("typing at the caret inserts a pip at the insertion point", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "A8" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.pageLoad();
     const input = document.element("north_spades");
     input.focus();
@@ -1385,7 +1385,7 @@ test("typing at the caret inserts a pip at the insertion point", () => {
 test("handleHandSuitClick focuses the suit input at end of the holding", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "AK" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const input = document.element("north_spades");
     const suitRow = {
         querySelector(selector) {
@@ -1416,7 +1416,7 @@ test("handleHandSuitClick focuses the suit input at end of the holding", () => {
 
 test("handleHandCardClick ignores clicks outside a hand-card", () => {
     // Arrange
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     let called = false;
     ctx.onHandCardClick = () => {
         called = true;
@@ -1439,7 +1439,7 @@ test("handleHandCardClick ignores clicks outside a hand-card", () => {
 test("pageLoad wires hand-card clicks on the diagram", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const clicks = [];
     ctx.onHandCardClick = (direction, card) => {
         clicks.push({ direction, key: card.key() });
@@ -1475,7 +1475,7 @@ test("pageLoad wires hand-card clicks on the diagram", () => {
 
 test("openingLeader is the declarer LHO", () => {
     // Arrange
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
 
     // Assert
     assert.equal(ctx.openingLeader("south"), "west");
@@ -1485,7 +1485,7 @@ test("openingLeader is the declarer LHO", () => {
 });
 
 test("pipFromDdsRank maps DDS ranks 2-14 onto pips", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
 
     assert.equal(ctx.pipFromDdsRank(14), "A");
     assert.equal(ctx.pipFromDdsRank(13), "K");
@@ -1498,7 +1498,7 @@ test("pipFromDdsRank maps DDS ranks 2-14 onto pips", () => {
 
 test("leadTricksMapFromSolverOutput expands suit/rank/score triples to card keys", () => {
     // Arrange: flat buffer from dds_web_solve_leads
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const out = [
         2,
         0, 14, 7, // SA → 7
@@ -1515,7 +1515,7 @@ test("leadTricksMapFromSolverOutput expands suit/rank/score triples to card keys
 
 test("solveOpeningLeadTricks rejects when WASM reports more than 13 leads", async () => {
     // Arrange: corrupted out_leads[0] past the fixed 13-card buffer.
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const heap = new Int32Array(1 + 13 * 3);
     heap[0] = 14;
     ctx.loadDdsModule = async () => ({
@@ -1544,7 +1544,7 @@ test("solveOpeningLeadTricks rejects when WASM reports more than 13 leads", asyn
 });
 
 test("solveOpeningLeadTricks rejects a negative lead count from WASM", async () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const heap = new Int32Array(1);
     heap[0] = -1;
     ctx.loadDdsModule = async () => ({
@@ -1566,7 +1566,7 @@ test("solveOpeningLeadTricks rejects a negative lead count from WASM", async () 
 });
 
 test("solveOpeningLeadTricks accepts a full 13-lead buffer from WASM", async () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const heap = new Int32Array(1 + 13 * 3);
     heap[0] = 13;
     for (let i = 0; i < 13; i++) {
@@ -1598,7 +1598,7 @@ test("solveOpeningLeadTricks accepts a full 13-lead buffer from WASM", async () 
 
 test("handCardHtml renders a lower-right tricks numeral when provided", () => {
     // Arrange
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const card = new ctx.Card("spades", "K");
 
     // Act
@@ -1614,7 +1614,7 @@ test("handCardHtml renders a lower-right tricks numeral when provided", () => {
 });
 
 test("handCardHtml omits tricks numeral when score is absent", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const html = ctx.handCardHtml("west", new ctx.Card("spades", "K"), 0);
 
     assert.doesNotMatch(html, /hand-card-tricks/);
@@ -1624,7 +1624,7 @@ test("handCardHtml omits tricks numeral when score is absent", () => {
 test("handHoldingHtml badges only cards present in the lead-tricks map", () => {
     // Arrange
     const document = createMockDocument({ west_spades: "KQ" });
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const cards = ctx.collectHands().west;
 
     // Act
@@ -1668,7 +1668,7 @@ test("hand-card-tricks CSS places a small numeral in the lower-right corner", ()
 
 test("denominationDisplayHtml renders suit glyphs and NT", () => {
     // Arrange
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
 
     // Act / Assert
     assert.match(ctx.denominationDisplayHtml("H"), /<heart-suit>♥<\/heart-suit>/);
@@ -1681,7 +1681,7 @@ test("denominationDisplayHtml renders suit glyphs and NT", () => {
 
 test("contractStatusHtml shows denomination and declarer", () => {
     // Arrange: East declares hearts.
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
 
     // Act
     const html = ctx.contractStatusHtml({ direction: "east", denomination: "H" });
@@ -1699,7 +1699,7 @@ test("contractStatusHtml shows denomination and declarer", () => {
 });
 
 test("contractStatusHtml uses NT and South when South declares notrump", () => {
-    const ctx = loadDdsMvp(createMockDocument());
+    const ctx = loadDdsWeb(createMockDocument());
     const html = ctx.contractStatusHtml({ direction: "south", denomination: "N" });
 
     assert.match(html, /class="contract-status-denom"[^>]*>NT</);
@@ -1711,7 +1711,7 @@ test("contractStatusHtml uses NT and South when South declares notrump", () => {
 test("updateContractStatus hides the NE panel when no contract is selected", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const status = document.element("contract-status");
     status.hidden = false;
     status.innerHTML = "stale";
@@ -1727,7 +1727,7 @@ test("updateContractStatus hides the NE panel when no contract is selected", () 
 test("handleResultTableClick selects declarer and denomination from a cell", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const table = document.element("result-table");
     const cell = table.rows[2].cells[3]; // East / Hearts
     const selections = [];
@@ -1762,7 +1762,7 @@ test("handleResultTableClick selects declarer and denomination from a cell", () 
 test("handleResultTableClick moves the highlight to the newly clicked cell", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const table = document.element("result-table");
     const first = table.rows[1].cells[1]; // North / Clubs
     const second = table.rows[4].cells[5]; // West / NT
@@ -1794,7 +1794,7 @@ test("handleResultTableClick moves the highlight to the newly clicked cell", () 
 test("switching contracts clears lead-trick badges before the next lead solve finishes", async () => {
     // Arrange: first contract has numerals; switch while a follow-up solve is slow.
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.refreshDdTable = async () => {};
 
     let leadCalls = 0;
@@ -1860,7 +1860,7 @@ test("switching contracts clears lead-trick badges before the next lead solve fi
 test("handleResultTableClick clears selection when the selected cell is clicked again", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const table = document.element("result-table");
     const cell = table.rows[2].cells[3]; // East / Hearts
     const selections = [];
@@ -1902,7 +1902,7 @@ test("clearing contract ignores an in-flight opening-lead solve", async () => {
     // deal-solve queue cleaning up afterward (so only request invalidation
     // protects against a late write).
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const cell = document.element("result-table").rows[3].cells[5]; // South / NT
     let resolveSolve;
     let tricksPassedToHolding = null;
@@ -1953,7 +1953,7 @@ test("clearing contract ignores an in-flight opening-lead solve", async () => {
 test("handleResultTableClick ignores clicks outside a result data cell", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let called = false;
     ctx.onContractSelect = () => {
         called = true;
@@ -1976,7 +1976,7 @@ test("handleResultTableClick ignores clicks outside a result data cell", () => {
 test("pageLoad wires result-table cell clicks", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const cell = document.element("result-table").rows[3].cells[4]; // South / Spades
     const selections = [];
     ctx.onContractSelect = (direction, denomination) => {
@@ -2001,7 +2001,7 @@ test("pageLoad wires result-table cell clicks", () => {
 test("pageLoad makes result data cells keyboard-operable buttons", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const table = document.element("result-table");
 
     // Act
@@ -2033,7 +2033,7 @@ test("pageLoad makes result data cells keyboard-operable buttons", () => {
 test("handleResultTableKeyDown selects a contract on Enter", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const cell = document.element("result-table").rows[2].cells[3]; // East / Hearts
     cell.closest = (selector) =>
         selector === "#result-table td" ? cell : null;
@@ -2060,7 +2060,7 @@ test("handleResultTableKeyDown selects a contract on Enter", () => {
 test("handleResultTableKeyDown selects a contract on Space and prevents scroll", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const cell = document.element("result-table").rows[4].cells[5]; // West / NT
     cell.closest = (selector) =>
         selector === "#result-table td" ? cell : null;
@@ -2083,7 +2083,7 @@ test("handleResultTableKeyDown selects a contract on Space and prevents scroll",
 
 test("handleResultTableKeyDown ignores keys outside result cells", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     let prevented = false;
 
     ctx.handleResultTableKeyDown({
@@ -2111,7 +2111,7 @@ test("handleResultTableKeyDown ignores keys outside result cells", () => {
 
 test("pageLoad wires result-table keyboard activation", () => {
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     const cell = document.element("result-table").rows[3].cells[4];
     cell.closest = (selector) =>
         selector === "#result-table td" ? cell : null;
@@ -2294,7 +2294,7 @@ test("hand-card pips show a light outline affordance for clickability", () => {
 test("typing a pip into a suit input inserts the matching hand-card glyph", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     ctx.pageLoad();
 
     // Act: type as the user would — set value then fire input.
@@ -2312,7 +2312,7 @@ test("typing a pip into a suit input inserts the matching hand-card glyph", () =
 test("handleHandSuitClick does not steal focus from a hand-card click", () => {
     // Arrange
     const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
+    const ctx = loadDdsWeb(document);
     document.setActiveElement("east_hearts");
     let focused = false;
     const input = document.element("north_spades");

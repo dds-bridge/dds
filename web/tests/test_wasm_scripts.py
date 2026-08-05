@@ -33,7 +33,7 @@ UNPATCHED_LINE_PAREN = (
 )
 
 
-class PatchMvpWasmTest(unittest.TestCase):
+class PatchWebWasmTest(unittest.TestCase):
     def test_patched_line_checks_type(self) -> None:
         line = patch_web_wasm.patched_line("filename")
         self.assertIn("typeof filename", line)

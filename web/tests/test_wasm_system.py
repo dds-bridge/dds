@@ -19,7 +19,7 @@ def _require_node() -> str:
 
 
 @unittest.skipUnless(shutil.which("node"), "node not found")
-class DdsMvpWasmSystemTest(unittest.TestCase):
+class DdsWebWasmSystemTest(unittest.TestCase):
     def test_update_pipeline_and_node_smoke(self) -> None:
         import tempfile
 
