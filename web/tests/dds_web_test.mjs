@@ -1,10 +1,10 @@
 /**
- * Unit tests for web/dds_mvp.js (Node built-in test runner).
+ * Unit tests for web/dds_web.js (Node built-in test runner).
  *
  * Run with:
- *    bazelisk test //web:dds_mvp_js_test
- * or: python -m unittest web.tests.test_dds_mvp_js
- * or: node --test web/tests/dds_mvp_test.mjs
+ *    bazelisk test //web:dds_web_js_test
+ * or: python -m unittest web.tests.test_dds_web_js
+ * or: node --test web/tests/dds_web_test.mjs
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -17,12 +17,12 @@ const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 
 function findDdsMvpJsPath() {
-    if (process.env.DDS_MVP_JS && existsSync(process.env.DDS_MVP_JS)) {
-        return process.env.DDS_MVP_JS;
+    if (process.env.DDS_WEB_JS && existsSync(process.env.DDS_WEB_JS)) {
+        return process.env.DDS_WEB_JS;
     }
 
     const here = dirname(fileURLToPath(import.meta.url));
-    const adjacent = join(here, "..", "dds_mvp.js");
+    const adjacent = join(here, "..", "dds_web.js");
     if (existsSync(adjacent)) {
         return adjacent;
     }
@@ -31,7 +31,7 @@ function findDdsMvpJsPath() {
         if (!base) {
             continue;
         }
-        for (const sub of ["web/dds_mvp.js", "_main/web/dds_mvp.js"]) {
+        for (const sub of ["web/dds_web.js", "_main/web/dds_web.js"]) {
             const candidate = join(base, sub);
             if (existsSync(candidate)) {
                 return candidate;
@@ -39,7 +39,7 @@ function findDdsMvpJsPath() {
         }
     }
 
-    throw new Error("dds_mvp.js not found");
+    throw new Error("dds_web.js not found");
 }
 
 function createMockDocument(initialValues = {}) {
@@ -226,7 +226,7 @@ function loadDdsMvp(document) {
         setTimeout,
     };
     const context = createContext(sandbox);
-    runInContext(code, context, { filename: "dds_mvp.js" });
+    runInContext(code, context, { filename: "dds_web.js" });
     return context;
 }
 
@@ -475,8 +475,8 @@ test("fillFormWithTestData does not require a double-dummy button", async () => 
 test("page has no double-dummy button", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
-    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
     // Assert
     assert.doesNotMatch(html, /double-dummy-it/);
@@ -656,12 +656,12 @@ test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () =
         location: { protocol: "file:" },
     };
     const context = createContext(sandbox);
-    runInContext(code, context, { filename: "dds_mvp.js" });
+    runInContext(code, context, { filename: "dds_web.js" });
 
     // Act / Assert
     assert.match(
         context.wasmSolveEnvironmentError(),
-        /python3 web\/serve_mvp\.py/
+        /python3 web\/serve_web\.py/
     );
 });
 
@@ -678,7 +678,7 @@ test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () 
         SharedArrayBuffer: undefined,
     };
     const context = createContext(sandbox);
-    runInContext(code, context, { filename: "dds_mvp.js" });
+    runInContext(code, context, { filename: "dds_web.js" });
 
     // Act
     const message = context.wasmSolveEnvironmentError();
@@ -1497,7 +1497,7 @@ test("pipFromDdsRank maps DDS ranks 2-14 onto pips", () => {
 });
 
 test("leadTricksMapFromSolverOutput expands suit/rank/score triples to card keys", () => {
-    // Arrange: flat buffer from dds_mvp_solve_leads
+    // Arrange: flat buffer from dds_web_solve_leads
     const ctx = loadDdsMvp(createMockDocument());
     const out = [
         2,
@@ -1650,7 +1650,7 @@ test("handHoldingHtml badges only cards present in the lead-tricks map", () => {
 test("hand-card-tricks CSS places a small numeral in the lower-right corner", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
     const handCardMatch = css.match(/\.hand-card\s*\{([^}]*)\}/s);
 
     // Assert
@@ -2130,7 +2130,7 @@ test("pageLoad wires result-table keyboard activation", () => {
 test("result-cell-selected highlight is defined in CSS", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
     // Assert
     assert.match(css, /#result-table\s+td\.result-cell-selected\s*\{/s);
@@ -2138,22 +2138,22 @@ test("result-cell-selected highlight is defined in CSS", () => {
     assert.match(css, /#result-table\s+td:focus-visible\s*\{/s);
 });
 
-test("mvp html does not cache-bust css or js with query params", () => {
+test("dds_web html does not cache-bust css or js with query params", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+    const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
 
-    // Assert: plain asset URLs; deploy/HTTP caching is enough for the MVP.
-    assert.match(html, /href="dds_mvp\.css"/);
-    assert.match(html, /src="dds_mvp\.js"/);
-    assert.doesNotMatch(html, /dds_mvp\.(css|js)\?/);
+    // Assert: plain asset URLs; deploy/HTTP caching is enough for DDS Web.
+    assert.match(html, /href="dds_web\.css"/);
+    assert.match(html, /src="dds_web\.js"/);
+    assert.doesNotMatch(html, /dds_web\.(css|js)\?/);
 });
 
 test("result table lives in the hand diagram southeast corner", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
-    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
     // Assert: table is a child of the SE filler cell, not below the diagram.
     const seOpen = html.match(
@@ -2181,8 +2181,8 @@ test("result table lives in the hand diagram southeast corner", () => {
 test("contract status lives in the hand diagram northeast corner", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
-    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
     // Assert
     const neMatch = html.match(
@@ -2218,8 +2218,8 @@ test("contract status lives in the hand diagram northeast corner", () => {
 test("hand diagram markup uses hand-suit rows with concealed text inputs", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const htmlPath = join(here, "..", "dds_mvp.html");
-    const cssPath = join(here, "..", "dds_mvp.css");
+    const htmlPath = join(here, "..", "dds_web.html");
+    const cssPath = join(here, "..", "dds_web.css");
 
     // Act
     const html = readFileSync(htmlPath, "utf8");
@@ -2249,7 +2249,7 @@ test("hand diagram markup uses hand-suit rows with concealed text inputs", () =>
 test("hand seats left-align suit symbols in the diagram", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
     // Assert: beat .grid-item { text-align: center } via higher specificity
     // and source order so filled holdings stay left-aligned, not centered.
@@ -2278,7 +2278,7 @@ test("hand seats left-align suit symbols in the diagram", () => {
 test("hand-card pips show a light outline affordance for clickability", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
     const handCardMatch = css.match(/\.hand-card\s*\{([^}]*)\}/s);
 
     // Assert: resting state (not only :hover) has a visible clickable cue.

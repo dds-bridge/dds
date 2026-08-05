@@ -1,5 +1,5 @@
 /*
-   Unit tests for the browser MVP WASM bridge (dds_mvp_calc_table).
+   Unit tests for the DDS Web WASM bridge (dds_web_calc_table).
 
    Copyright 2020-2026 Adam Wildavsky
    Use of this source code is governed by the MIT license.
@@ -13,12 +13,12 @@
 #include <api/dds.h>
 #include <api/dll.h>
 
-extern "C" int dds_mvp_calc_table(const char* pbn, int* out_table);
-extern "C" int dds_mvp_solve_leads(
+extern "C" int dds_web_calc_table(const char* pbn, int* out_table);
+extern "C" int dds_web_solve_leads(
     const char* pbn, int trump, int first, int* out_leads);
-extern "C" void dds_mvp_test_write_expanded_leads(
+extern "C" void dds_web_test_write_expanded_leads(
     const FutureTricks* fut, int* out_leads);
-extern "C" void dds_mvp_test_mvp_context_tt_config(
+extern "C" void dds_web_test_context_tt_config(
     int which, int* kind_is_small, int* def_mb, int* max_mb);
 
 namespace {
@@ -45,7 +45,7 @@ TEST(DdsMvpWasmTest, MvpContextsUseSmallTranspositionTables) {
     int kind_is_small = 0;
     int def_mb = -1;
     int max_mb = -1;
-    dds_mvp_test_mvp_context_tt_config(
+    dds_web_test_context_tt_config(
         which, &kind_is_small, &def_mb, &max_mb);
     EXPECT_EQ(kind_is_small, 1) << "context " << which;
     EXPECT_EQ(def_mb, THREADMEM_SMALL_DEF_MB) << "context " << which;
@@ -55,26 +55,26 @@ TEST(DdsMvpWasmTest, MvpContextsUseSmallTranspositionTables) {
 
 TEST(DdsMvpWasmTest, RejectsNullPointers) {
   int out[20]{};
-  EXPECT_EQ(dds_mvp_calc_table(nullptr, out), RETURN_UNKNOWN_FAULT);
-  EXPECT_EQ(dds_mvp_calc_table(kPbnHand0, nullptr), RETURN_UNKNOWN_FAULT);
+  EXPECT_EQ(dds_web_calc_table(nullptr, out), RETURN_UNKNOWN_FAULT);
+  EXPECT_EQ(dds_web_calc_table(kPbnHand0, nullptr), RETURN_UNKNOWN_FAULT);
 }
 
 TEST(DdsMvpWasmTest, RejectsPbnTooLong) {
   int out[20]{};
   const std::string too_long(80, 'A');
-  EXPECT_EQ(dds_mvp_calc_table(too_long.c_str(), out), RETURN_PBN_FAULT);
+  EXPECT_EQ(dds_web_calc_table(too_long.c_str(), out), RETURN_PBN_FAULT);
 }
 
 TEST(DdsMvpWasmTest, RejectsInvalidPbn) {
   int out[20]{};
-  const int res = dds_mvp_calc_table("not-a-valid-pbn", out);
+  const int res = dds_web_calc_table("not-a-valid-pbn", out);
   EXPECT_NE(res, RETURN_NO_FAULT);
   EXPECT_LT(res, RETURN_NO_FAULT);
 }
 
 TEST(DdsMvpWasmTest, FillsFlatStrainHandTable) {
   int out[20]{};
-  ASSERT_EQ(dds_mvp_calc_table(kPbnHand0, out), RETURN_NO_FAULT);
+  ASSERT_EQ(dds_web_calc_table(kPbnHand0, out), RETURN_NO_FAULT);
   for (int i = 0; i < 20; ++i) {
     EXPECT_EQ(out[i], kExpectedHand0[i]) << "index " << i;
   }
@@ -82,13 +82,13 @@ TEST(DdsMvpWasmTest, FillsFlatStrainHandTable) {
 
 TEST(DdsMvpWasmTest, FillsFlatStrainHandTableAcrossReuse) {
   int out0[20]{};
-  ASSERT_EQ(dds_mvp_calc_table(kPbnHand0, out0), RETURN_NO_FAULT);
+  ASSERT_EQ(dds_web_calc_table(kPbnHand0, out0), RETURN_NO_FAULT);
   for (int i = 0; i < 20; ++i) {
     EXPECT_EQ(out0[i], kExpectedHand0[i]) << "hand0 index " << i;
   }
 
   int out1[20]{};
-  ASSERT_EQ(dds_mvp_calc_table(kPbnHand1, out1), RETURN_NO_FAULT);
+  ASSERT_EQ(dds_web_calc_table(kPbnHand1, out1), RETURN_NO_FAULT);
   for (int i = 0; i < 20; ++i) {
     EXPECT_EQ(out1[i], kExpectedHand1[i]) << "hand1 index " << i;
   }
@@ -96,28 +96,28 @@ TEST(DdsMvpWasmTest, FillsFlatStrainHandTableAcrossReuse) {
   // Solve hand0 again through the same reused context to confirm the
   // intervening different-deal solve didn't leave stale state behind.
   int out0_again[20]{};
-  ASSERT_EQ(dds_mvp_calc_table(kPbnHand0, out0_again), RETURN_NO_FAULT);
+  ASSERT_EQ(dds_web_calc_table(kPbnHand0, out0_again), RETURN_NO_FAULT);
   for (int i = 0; i < 20; ++i) {
     EXPECT_EQ(out0_again[i], kExpectedHand0[i]) << "hand0 repeat index " << i;
   }
 }
 
-// Part-score deal from the MVP page (fillFormWithPartScoreTestData).
+// Part-score deal from the DDS Web page (fillFormWithPartScoreTestData).
 constexpr char kPbnPartScore[] =
     "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5";
 
 TEST(DdsMvpWasmTest, SolveLeadsRejectsNullPointers) {
   int out[40]{};
-  EXPECT_EQ(dds_mvp_solve_leads(nullptr, 4, 3, out), RETURN_UNKNOWN_FAULT);
+  EXPECT_EQ(dds_web_solve_leads(nullptr, 4, 3, out), RETURN_UNKNOWN_FAULT);
   EXPECT_EQ(
-      dds_mvp_solve_leads(kPbnPartScore, 4, 3, nullptr), RETURN_UNKNOWN_FAULT);
+      dds_web_solve_leads(kPbnPartScore, 4, 3, nullptr), RETURN_UNKNOWN_FAULT);
 }
 
 TEST(DdsMvpWasmTest, SolveLeadsReturnsOpeningLeadTricksForEachCard) {
   // South declares NT → West leads. CalcDDtable says South takes 6 in NT, so
   // the best EW opening lead scores 7 tricks for the side on lead.
   int out[40]{};
-  ASSERT_EQ(dds_mvp_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
+  ASSERT_EQ(dds_web_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
             RETURN_NO_FAULT);
 
   const int n = out[0];
@@ -151,16 +151,16 @@ TEST(DdsMvpWasmTest, SolveLeadsWorksAfterCalcTableOnSharedSession) {
   // Auto-solve fills the DD table first, then a contract click runs leads on
   // the same module session — leads must still return 13 cards.
   int table[20]{};
-  ASSERT_EQ(dds_mvp_calc_table(kPbnPartScore, table), RETURN_NO_FAULT);
+  ASSERT_EQ(dds_web_calc_table(kPbnPartScore, table), RETURN_NO_FAULT);
 
   int out[40]{};
-  ASSERT_EQ(dds_mvp_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
+  ASSERT_EQ(dds_web_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
             RETURN_NO_FAULT);
   ASSERT_EQ(out[0], 13);
 
   // A second table solve must not poison a following lead solve either.
-  ASSERT_EQ(dds_mvp_calc_table(kPbnPartScore, table), RETURN_NO_FAULT);
-  ASSERT_EQ(dds_mvp_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
+  ASSERT_EQ(dds_web_calc_table(kPbnPartScore, table), RETURN_NO_FAULT);
+  ASSERT_EQ(dds_web_solve_leads(kPbnPartScore, /*trump=*/4, /*first=*/3, out),
             RETURN_NO_FAULT);
   EXPECT_EQ(out[0], 13);
 }
@@ -179,7 +179,7 @@ TEST(DdsMvpWasmTest, ExpandedLeadsUseHoldingEncodedEqualsBitmask) {
   fut.score[0] = 7;
 
   int out[40]{};
-  dds_mvp_test_write_expanded_leads(&fut, out);
+  dds_web_test_write_expanded_leads(&fut, out);
 
   ASSERT_EQ(out[0], 2);
   EXPECT_EQ(out[1], 0);
@@ -205,7 +205,7 @@ TEST(DdsMvpWasmTest, ExpandedLeadsIgnoresEqualsBitsAtOrAboveRepresentative) {
   fut.score[0] = 5;
 
   int out[40]{};
-  dds_mvp_test_write_expanded_leads(&fut, out);
+  dds_web_test_write_expanded_leads(&fut, out);
 
   ASSERT_EQ(out[0], 2);
   EXPECT_EQ(out[2], 13);  // king once
@@ -239,7 +239,7 @@ TEST(DdsMvpWasmTest, ExpandedLeadsHardCapsAtThirteenCards) {
     out[i] = kCanary;
   }
 
-  dds_mvp_test_write_expanded_leads(&fut, out);
+  dds_web_test_write_expanded_leads(&fut, out);
 
   ASSERT_EQ(out[0], kCap);
   EXPECT_EQ(out[kSlots], kCanary);

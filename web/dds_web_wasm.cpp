@@ -20,7 +20,7 @@
 
 namespace {
 // Cap browser TT heaps: two session contexts at Large defaults would be ~190MB.
-auto mvp_solver_config() -> SolverConfig
+auto web_solver_config() -> SolverConfig
 {
   return SolverConfig{
       .tt_kind_ = TTKind::Small,
@@ -31,13 +31,13 @@ auto mvp_solver_config() -> SolverConfig
 
 // Separate contexts so CalcDDtable worker pools cannot disturb SolveBoard
 // (and vice versa) when the UI auto-fills the table then analyzes leads.
-auto mvp_table_context() -> SolverContext& {
-  static SolverContext ctx(mvp_solver_config());
+auto web_table_context() -> SolverContext& {
+  static SolverContext ctx(web_solver_config());
   return ctx;
 }
 
-auto mvp_leads_context() -> SolverContext& {
-  static SolverContext ctx(mvp_solver_config());
+auto web_leads_context() -> SolverContext& {
+  static SolverContext ctx(web_solver_config());
   return ctx;
 }
 
@@ -95,7 +95,7 @@ void write_expanded_leads(const FutureTricks& fut, int* out_leads)
 
 #if !defined(__EMSCRIPTEN__)
 // Native unit-test hook for Holding-encoded equals expansion.
-extern "C" void dds_mvp_test_write_expanded_leads(
+extern "C" void dds_web_test_write_expanded_leads(
     const FutureTricks* fut, int* out_leads)
 {
   if (fut == nullptr || out_leads == nullptr) {
@@ -105,11 +105,11 @@ extern "C" void dds_mvp_test_write_expanded_leads(
 }
 
 // which: 0 = table context, 1 = leads context.
-extern "C" void dds_mvp_test_mvp_context_tt_config(
+extern "C" void dds_web_test_context_tt_config(
     int which, int* kind_is_small, int* def_mb, int* max_mb)
 {
   SolverContext& ctx =
-      (which == 0) ? mvp_table_context() : mvp_leads_context();
+      (which == 0) ? web_table_context() : web_leads_context();
   const SolverConfig& cfg = ctx.config();
   if (kind_is_small != nullptr) {
     *kind_is_small = (cfg.tt_kind_ == TTKind::Small) ? 1 : 0;
@@ -128,7 +128,7 @@ extern "C" {
 // Fills out_table[20] with res_table[strain][hand] (strain 0..4 = S,H,D,C,N).
 // Returns RETURN_NO_FAULT (1) on success, or a DDS error code.
 EMSCRIPTEN_KEEPALIVE
-auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int
+auto dds_web_calc_table(const char* pbn, int* out_table) -> int
 {
   if (pbn == nullptr || out_table == nullptr) {
     return RETURN_UNKNOWN_FAULT;
@@ -141,7 +141,7 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int
   }
   std::memcpy(deal.cards, pbn, pbn_len + 1);
 
-  SolverContext& ctx = mvp_table_context();
+  SolverContext& ctx = web_table_context();
   ctx.reset_for_solve();   // recycle TT memory pool + search bookkeeping
                             // between deals; keeps the underlying allocation
 
@@ -166,7 +166,7 @@ auto dds_mvp_calc_table(const char* pbn, int* out_table) -> int
 // suit 0..3 = S,H,D,C; rank 2..14; score = tricks for the side on lead.
 // n is capped at 13. Caller must provide at least 1 + 13*3 ints.
 EMSCRIPTEN_KEEPALIVE
-auto dds_mvp_solve_leads(
+auto dds_web_solve_leads(
     const char* pbn, int trump, int first, int* out_leads) -> int
 {
   if (pbn == nullptr || out_leads == nullptr) {
@@ -190,7 +190,7 @@ auto dds_mvp_solve_leads(
     return RETURN_PBN_FAULT;
   }
 
-  SolverContext& ctx = mvp_leads_context();
+  SolverContext& ctx = web_leads_context();
   ctx.reset_for_solve();
 
   FutureTricks fut{};
@@ -206,7 +206,7 @@ auto dds_mvp_solve_leads(
 
 }  // extern "C"
 
-#if !defined(__EMSCRIPTEN__) && !defined(DDS_MVP_WASM_NO_MAIN)
+#if !defined(__EMSCRIPTEN__) && !defined(DDS_WEB_WASM_NO_MAIN)
 auto main() -> int
 {
   return 0;

@@ -1,4 +1,4 @@
-"""End-to-end system tests for the web MVP WASM build and Node smoke harness."""
+"""End-to-end system tests for the DDS Web WASM build and Node smoke harness."""
 from __future__ import annotations
 
 import shutil
@@ -6,7 +6,7 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from mvp_site import stage_mvp_site
+from web_site import stage_web_site
 
 TESTS_ROOT = Path(__file__).resolve().parent
 
@@ -27,14 +27,14 @@ class DdsMvpWasmSystemTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
-            stage_mvp_site(tmp)
+            stage_web_site(tmp)
 
             proc = subprocess.run(
                 [
                     node,
-                    str(TESTS_ROOT / "dds_mvp_wasm_node.mjs"),
-                    str(tmp / "dds_mvp_wasm.js"),
-                    str(tmp / "dds_mvp_wasm.wasm"),
+                    str(TESTS_ROOT / "dds_web_wasm_node.mjs"),
+                    str(tmp / "dds_web_wasm.js"),
+                    str(tmp / "dds_web_wasm.wasm"),
                 ],
                 capture_output=True,
                 text=True,
@@ -45,7 +45,7 @@ class DdsMvpWasmSystemTest(unittest.TestCase):
                 0,
                 msg=proc.stdout + proc.stderr,
             )
-            self.assertIn("dds_mvp_wasm_node: OK", proc.stdout)
+            self.assertIn("dds_web_wasm_node: OK", proc.stdout)
 
 
 if __name__ == "__main__":

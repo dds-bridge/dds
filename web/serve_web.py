@@ -7,12 +7,12 @@ import http.server
 import sys
 from pathlib import Path
 
-# Allow `python3 web/serve_mvp.py` from the repo root without installing a package.
+# Allow `python3 web/serve_web.py` from the repo root without installing a package.
 _TESTS = Path(__file__).resolve().parent / "tests"
 if str(_TESTS) not in sys.path:
     sys.path.insert(0, str(_TESTS))
 
-from mvp_site import CROSS_ORIGIN_ISOLATION_HEADERS, make_isolated_http_handler  # noqa: E402
+from web_site import CROSS_ORIGIN_ISOLATION_HEADERS, make_isolated_http_handler  # noqa: E402
 
 
 def main() -> int:
@@ -28,14 +28,14 @@ def main() -> int:
     args = parser.parse_args()
 
     directory = args.directory.resolve()
-    if not (directory / "dds_mvp.html").is_file():
-        print(f"error: {directory}/dds_mvp.html not found", file=sys.stderr)
+    if not (directory / "dds_web.html").is_file():
+        print(f"error: {directory}/dds_web.html not found", file=sys.stderr)
         return 1
 
     handler = make_isolated_http_handler(directory, quiet=False)
 
     httpd = http.server.ThreadingHTTPServer((args.host, args.port), handler)
-    print(f"Serving {directory} at http://{args.host}:{args.port}/dds_mvp.html")
+    print(f"Serving {directory} at http://{args.host}:{args.port}/dds_web.html")
     print(
         "Cross-origin isolation:",
         ", ".join(f"{k}: {v}" for k, v in CROSS_ORIGIN_ISOLATION_HEADERS.items()),
