@@ -45,8 +45,8 @@ a full application.
   `Cross-Origin-Embedder-Policy: require-corp` are set. Serve with
   `python3 web/serve_mvp.py` (not plain `http.server`). `file://` remains useful
   for UI-only checks; instantiating the solver module for a solve needs HTTP +
-  those headers. Guarded by `dds_mvp_e2e_test` (`test_http_is_cross_origin_isolated`,
-  HTTP part-score / Enter-to-solve).
+  those headers on any host. Guarded by `dds_mvp_e2e_test` (`test_http_is_cross_origin_isolated`,
+  HTTP part-score solve / auto-filled DD table).
 - **Three test tiers, with suite membership as wired in BUILD:**
   - **Unit / JS** (`web_tests`): `dds_mvp_wasm_test` (native `cc_test` over the
     solve logic with `DDS_MVP_WASM_NO_MAIN`), `dds_mvp_js_test` (Node runs

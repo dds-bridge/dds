@@ -58,10 +58,29 @@ async function main() {
         fail(`table[${i}] = ${out[i]}, expected ${EXPECTED_DEFAULT[i]}`);
       }
     }
-
-    console.log("dds_mvp_wasm_node: OK");
   } finally {
     module._free(outPtr);
+  }
+
+  const leadsPtr = module._malloc((1 + 13 * 3) * 4);
+  try {
+    // North declares NT → East leads.
+    const leadRc = module.ccall(
+      "dds_mvp_solve_leads",
+      "number",
+      ["string", "number", "number", "number"],
+      [pbn, 4, 1, leadsPtr],
+    );
+    if (leadRc !== 1) {
+      fail(`dds_mvp_solve_leads returned ${leadRc}`);
+    }
+    const n = module.getValue(leadsPtr, "i32");
+    if (n < 1 || n > 13) {
+      fail(`dds_mvp_solve_leads card count ${n}`);
+    }
+    console.log("dds_mvp_wasm_node: OK");
+  } finally {
+    module._free(leadsPtr);
   }
 }
 

@@ -55,6 +55,8 @@ function createMockDocument(initialValues = {}) {
             disabled: false,
             hidden: false,
             className: "",
+            selectionStart: 0,
+            selectionEnd: 0,
             classList: {
                 add(name) {
                     const classes = new Set(
@@ -77,6 +79,10 @@ function createMockDocument(initialValues = {}) {
             focus() {
                 documentRef.activeElement = element;
             },
+            setSelectionRange(start, end = start) {
+                this.selectionStart = start;
+                this.selectionEnd = end;
+            },
             addEventListener(type, listener) {
                 const typeListeners = elementListeners.get(type) ?? [];
                 typeListeners.push(listener);
@@ -95,12 +101,13 @@ function createMockDocument(initialValues = {}) {
     for (const direction of DIRECTIONS) {
         for (const suit of SUITS) {
             makeElement(`${direction}_${suit}`);
+            makeElement(`${direction}_${suit}_cards`);
         }
     }
     makeElement("valid-pips");
     makeElement("result");
-    makeElement("double-dummy-it");
     makeElement("deck-status");
+    makeElement("contract-status");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
     }
@@ -108,12 +115,69 @@ function createMockDocument(initialValues = {}) {
     const rows = [];
     for (let row = 0; row < 5; row++) {
         const cells = [];
+        const rowObj = { cells, rowIndex: row };
         for (let column = 0; column < 6; column++) {
-            cells.push({ innerHTML: "" });
+            const cell = {
+                innerHTML: "",
+                className: "",
+                cellIndex: column,
+                parentElement: rowObj,
+                tagName: row === 0 || column === 0 ? "TH" : "TD",
+                tabIndex: -1,
+                attributes: {},
+                setAttribute(name, value) {
+                    this.attributes[name] = String(value);
+                    if (name === "tabindex") {
+                        this.tabIndex = Number(value);
+                    }
+                },
+                getAttribute(name) {
+                    return Object.prototype.hasOwnProperty.call(
+                        this.attributes,
+                        name
+                    )
+                        ? this.attributes[name]
+                        : null;
+                },
+                classList: {
+                    add(name) {
+                        const classes = new Set(
+                            cell.className.split(/\s+/).filter(Boolean)
+                        );
+                        classes.add(name);
+                        cell.className = [...classes].join(" ");
+                    },
+                    remove(name) {
+                        const classes = new Set(
+                            cell.className.split(/\s+/).filter(Boolean)
+                        );
+                        classes.delete(name);
+                        cell.className = [...classes].join(" ");
+                    },
+                    contains(name) {
+                        return cell.className.split(/\s+/).includes(name);
+                    },
+                },
+            };
+            cells.push(cell);
         }
-        rows.push({ cells });
+        rows.push(rowObj);
     }
-    store.set("result-table", { rows });
+    store.set("result-table", {
+        rows,
+        querySelectorAll(selector) {
+            if (selector !== "td") {
+                return [];
+            }
+            const tds = [];
+            for (let row = 1; row < rows.length; row++) {
+                for (let column = 1; column < rows[row].cells.length; column++) {
+                    tds.push(rows[row].cells[column]);
+                }
+            }
+            return tds;
+        },
+    });
 
     const documentRef = {
         activeElement: null,
@@ -357,21 +421,29 @@ test("clearTestData clears all hand inputs", () => {
 });
 
 test("rotateClockwise shifts holdings west to north", () => {
+    // Markers must be valid pips — rotateClockwise ends in updateActionButtons,
+    // which strips non-pip characters.
     const document = createMockDocument();
-    let index = 1;
+    const markers = [
+        "A", "K", "Q", "J",
+        "T", "9", "8", "7",
+        "6", "5", "4", "3",
+        "2", "AK", "AQ", "AJ",
+    ];
+    let index = 0;
     for (const direction of DIRECTIONS) {
         for (const suit of SUITS) {
-            document.setValue(`${direction}_${suit}`, String(index));
+            document.setValue(`${direction}_${suit}`, markers[index]);
             index += 1;
         }
     }
     const ctx = loadDdsMvp(document);
     ctx.rotateClockwise();
-    assert.equal(document.element("north_spades").value, "13");
-    assert.equal(document.element("north_hearts").value, "14");
-    assert.equal(document.element("north_diamonds").value, "15");
-    assert.equal(document.element("north_clubs").value, "16");
-    assert.equal(document.element("east_spades").value, "1");
+    assert.equal(document.element("north_spades").value, "2");
+    assert.equal(document.element("north_hearts").value, "AK");
+    assert.equal(document.element("north_diamonds").value, "AQ");
+    assert.equal(document.element("north_clubs").value, "AJ");
+    assert.equal(document.element("east_spades").value, "A");
 });
 
 test("fillFormWithPartScoreTestData populates inputs", () => {
@@ -382,23 +454,179 @@ test("fillFormWithPartScoreTestData populates inputs", () => {
     assert.equal(document.element("west_clubs").value, "T5");
 });
 
-test("fillFormWithTestData focuses the double-dummy button", async () => {
+test("fillFormWithTestData does not require a double-dummy button", async () => {
+    // Arrange
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
-    document.setActiveElement("north_spades");
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
 
+    // Act
     ctx.fillFormWithPartScoreTestData();
-
-    // Focus is deferred so the clicked toolbar button cannot reclaim it.
-    assert.notEqual(document.activeElement, document.element("double-dummy-it"));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    assert.equal(document.activeElement, document.element("double-dummy-it"));
-    assert.equal(document.element("double-dummy-it").disabled, false);
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        true
-    );
+    // Assert: loading a complete deal auto-refreshes the table (no button to focus).
+    assert.equal(refreshed, 1);
+    assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+});
+
+test("page has no double-dummy button", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert
+    assert.doesNotMatch(html, /double-dummy-it/);
+    assert.doesNotMatch(html, /Double-dummy it!/);
+    assert.doesNotMatch(css, /#double-dummy-it/);
+});
+
+test("updateActionButtons finishes dd table before opening-lead refresh", async () => {
+    // Arrange: a selected contract must not race CalcDDtable vs SolveBoard.
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const order = [];
+
+    ctx.refreshDdTable = async () => {
+        order.push("dd-start");
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        order.push("dd-end");
+    };
+    ctx.refreshOpeningLeadTricks = async () => {
+        order.push("leads");
+    };
+
+    ctx.fillFormWithPartScoreTestData();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    order.length = 0;
+
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[3].cells[5];
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    // Assert: contract click runs DD (skip/no-op ok) then leads in one job.
+    assert.deepEqual(order, ["dd-start", "dd-end", "leads"]);
+});
+
+test("contract selection waits for an in-flight dd table before lead refresh", async () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const order = [];
+
+    ctx.refreshDdTable = async () => {
+        order.push("dd-start");
+        await new Promise((resolve) => setTimeout(resolve, 40));
+        order.push("dd-end");
+    };
+    ctx.refreshOpeningLeadTricks = async () => {
+        order.push("leads");
+    };
+
+    // Act: start auto-solve, then select a contract before it finishes.
+    ctx.fillFormWithPartScoreTestData();
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[3].cells[5];
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    // Assert: coalesced jobs still run DD before leads; obsolete jobs no-op.
+    assert.ok(order.indexOf("dd-start") >= 0);
+    assert.ok(order.indexOf("dd-end") >= 0);
+    assert.equal(order[order.length - 1], "leads");
+    assert.ok(order.lastIndexOf("dd-end") < order.lastIndexOf("leads"));
+});
+
+test("rapid scheduleDealSolve coalesces to one trailing leads refresh", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let leads = 0;
+    let dd = 0;
+
+    ctx.refreshDdTable = async () => {
+        dd += 1;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    };
+    ctx.refreshOpeningLeadTricks = async () => {
+        leads += 1;
+    };
+
+    ctx.fillFormWithPartScoreTestData();
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[3].cells[5];
+            },
+        },
+    });
+    ctx.scheduleDealSolve();
+    ctx.scheduleDealSolve();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    assert.equal(leads, 1);
+    assert.ok(dd >= 1);
+});
+
+test("rapid scheduleDealSolve does not enqueue one queue job per call", async () => {
+    // Arrange: block the first DD solve so later schedules land while a job runs.
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let enqueued = 0;
+    const realEnqueue = ctx.enqueueSolve;
+    ctx.enqueueSolve = (task) => {
+        enqueued += 1;
+        return realEnqueue(task);
+    };
+
+    let releaseDd;
+    let ddRuns = 0;
+    ctx.refreshDdTable = () => {
+        ddRuns += 1;
+        return new Promise((resolve) => {
+            releaseDd = resolve;
+        });
+    };
+    ctx.refreshOpeningLeadTricks = async () => {};
+
+    // fillForm → updateActionButtons → scheduleDealSolve (one queue job).
+    ctx.fillFormWithPartScoreTestData();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(enqueued, 1);
+    assert.equal(ddRuns, 1);
+    const enqueuedWhileBlocked = enqueued;
+
+    // Act: contract click + many schedules while that job is in flight.
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[3].cells[5];
+            },
+        },
+    });
+    for (let i = 0; i < 20; i++) {
+        ctx.scheduleDealSolve();
+    }
+
+    // Assert: no additional promise-chain entries for the burst.
+    assert.equal(enqueued, enqueuedWhileBlocked);
+
+    releaseDd();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    // Trailing epoch may re-run work inside the same job, but still one enqueue.
+    assert.equal(enqueued, enqueuedWhileBlocked);
+    assert.ok(ddRuns >= 2);
 });
 
 test("pageLoad shows valid pips", () => {
@@ -414,6 +642,56 @@ test("loadDdsModule rejects missing wasm globals", async () => {
         () => ctx.loadDdsModule(),
         /WASM module not found/
     );
+});
+
+test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () => {
+    // Arrange: browser opened as a local file (origin null).
+    const code = readFileSync(findDdsMvpJsPath(), "utf8");
+    const sandbox = {
+        document: createMockDocument(),
+        console,
+        Promise,
+        Error,
+        setTimeout,
+        location: { protocol: "file:" },
+    };
+    const context = createContext(sandbox);
+    runInContext(code, context, { filename: "dds_mvp.js" });
+
+    // Act / Assert
+    assert.match(
+        context.wasmSolveEnvironmentError(),
+        /python3 web\/serve_mvp\.py/
+    );
+});
+
+test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () => {
+    // Arrange: HTTPS page without cross-origin isolation (no SAB).
+    const code = readFileSync(findDdsMvpJsPath(), "utf8");
+    const sandbox = {
+        document: createMockDocument(),
+        console,
+        Promise,
+        Error,
+        setTimeout,
+        location: { protocol: "https:" },
+        SharedArrayBuffer: undefined,
+    };
+    const context = createContext(sandbox);
+    runInContext(code, context, { filename: "dds_mvp.js" });
+
+    // Act
+    const message = context.wasmSolveEnvironmentError();
+
+    // Assert: name the headers so any host can be fixed.
+    assert.match(message, /SharedArrayBuffer/);
+    assert.match(message, /Cross-Origin-Opener-Policy:\s*same-origin/);
+    assert.match(message, /Cross-Origin-Embedder-Policy:\s*require-corp/);
+});
+
+test("wasmSolveEnvironmentError is null in non-browser sandboxes", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    assert.equal(ctx.wasmSolveEnvironmentError(), null);
 });
 
 test("fillFormWithGrandSlamTestData populates inputs", () => {
@@ -463,13 +741,14 @@ test("fourthHandFillState rejects a duplicate card across three full hands", () 
 });
 
 test("fourthHandFillState rejects a non-bridge pip among three full hands", () => {
-    // Arrange: 13 cards per filled hand, but north clubs uses X instead of a real pip.
+    // Arrange: three full hands and one empty, then inject an invalid pip.
     const document = threeHandsPartScoreDocument();
-    document.setValue("north_clubs", "J8X");
     const ctx = loadDdsMvp(document);
+    const hands = ctx.collectHands();
+    hands.north[12] = new ctx.Card("clubs", "X");
 
     // Act
-    const state = ctx.fourthHandFillState(ctx.collectHands());
+    const state = ctx.fourthHandFillState(hands);
 
     // Assert: invalid pips must not be treated as used cards for auto-fill.
     assert.equal(state.canFill, false);
@@ -486,101 +765,243 @@ test("fourthHandFillState rejects a missing card object among three full hands",
     assert.equal(ctx.fourthHandFillState(hands).canFill, false);
 });
 
-test("updateActionButtons does not auto-fill when a hand has a non-bridge pip", () => {
-    // Arrange: three full hands, but north holds an invalid pip (CX) instead of C7.
+test("sanitizeSuitHolding keeps only bridge pips and uppercases them", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+
+    assert.equal(ctx.sanitizeSuitHolding("akq"), "AKQ");
+    assert.equal(ctx.sanitizeSuitHolding("t9"), "T9");
+    assert.equal(ctx.sanitizeSuitHolding("AKx!7x"), "AK7");
+    assert.equal(ctx.sanitizeSuitHolding("\"&<>'"), "");
+    assert.equal(ctx.sanitizeSuitHolding(""), "");
+    assert.equal(ctx.sanitizeSuitHolding(null), "");
+});
+
+test("suitHoldingHasIllegalChars is true when any non-pip is present", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+
+    assert.equal(ctx.suitHoldingHasIllegalChars("AKQ"), false);
+    assert.equal(ctx.suitHoldingHasIllegalChars("akq"), false);
+    assert.equal(ctx.suitHoldingHasIllegalChars("AKx"), true);
+    assert.equal(ctx.suitHoldingHasIllegalChars("!"), true);
+    assert.equal(ctx.suitHoldingHasIllegalChars(""), false);
+    assert.equal(ctx.suitHoldingHasIllegalChars(null), false);
+});
+
+test("handleHandSuitInput beeps when the user enters a non-pip character", () => {
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsMvp(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const input = document.element("north_spades");
+
+    // Act: type an illegal character (as the browser would leave it before sanitize).
+    input.value = "AKx";
+    ctx.handleHandSuitInput({ target: input });
+
+    // Assert
+    assert.equal(beeps, 1);
+    assert.equal(input.value, "AK");
+});
+
+test("handleHandSuitInput does not beep for lowercase legal pips", () => {
+    const document = createMockDocument({ north_spades: "" });
+    const ctx = loadDdsMvp(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const input = document.element("north_spades");
+
+    input.value = "akq";
+    ctx.handleHandSuitInput({ target: input });
+
+    assert.equal(beeps, 0);
+    assert.equal(input.value, "AKQ");
+});
+
+test("pageLoad wires suit inputs to handleHandSuitInput", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    ctx.pageLoad();
+
+    const input = document.element("north_spades");
+    input.value = "X";
+    input.dispatch("input", { target: input });
+
+    assert.equal(beeps, 1);
+    assert.equal(input.value, "");
+});
+
+test("updateActionButtons strips non-pip characters from suit inputs", () => {
+    const document = createMockDocument({ north_spades: "AKx7" });
+    const ctx = loadDdsMvp(document);
+
+    ctx.updateActionButtons();
+
+    assert.equal(document.element("north_spades").value, "AK7");
+});
+
+test("updateActionButtons uppercases lowercase pips in suit inputs", () => {
+    const document = createMockDocument({ east_hearts: "kq" });
+    const ctx = loadDdsMvp(document);
+
+    ctx.updateActionButtons();
+
+    assert.equal(document.element("east_hearts").value, "KQ");
+});
+
+test("updateActionButtons strips a non-bridge pip and does not auto-fill", async () => {
+    // Arrange: three full hands, but north clubs has an invalid pip (X).
     const document = threeHandsPartScoreDocument();
     document.setValue("north_clubs", "J8X");
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
 
     // Act
     ctx.updateActionButtons();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    // Assert: the fourth hand stays empty and double-dummy remains disabled.
+    // Assert: X is removed (north incomplete) and the fourth hand stays empty.
+    assert.equal(document.element("north_clubs").value, "J8");
     assert.equal(document.element("west_spades").value, "");
     assert.equal(document.element("west_hearts").value, "");
     assert.equal(document.element("west_diamonds").value, "");
     assert.equal(document.element("west_clubs").value, "");
-    assert.equal(document.element("double-dummy-it").disabled, true);
+    assert.equal(refreshed, 1);
 });
 
-test("updateActionButtons auto-fills the fourth hand for three complete hands", () => {
+test("updateActionButtons auto-fills the fourth hand for three complete hands", async () => {
     const document = threeHandsPartScoreDocument();
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
     ctx.updateActionButtons();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(document.element("west_spades").value, "K643");
     assert.equal(document.element("west_hearts").value, "T8");
     assert.equal(document.element("west_diamonds").value, "AK742");
     assert.equal(document.element("west_clubs").value, "T5");
     assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
-    assert.equal(document.element("double-dummy-it").disabled, false);
+    assert.equal(refreshed, 1);
 });
 
-test("updateActionButtons does not auto-fill with a partial fourth hand", () => {
+test("updateActionButtons does not auto-fill with a partial fourth hand", async () => {
     const document = threeHandsPartScoreDocument();
     document.setValue("west_spades", "K");
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
     ctx.updateActionButtons();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(document.element("west_spades").value, "K");
     assert.equal(document.element("west_hearts").value, "");
-    assert.equal(document.element("double-dummy-it").disabled, true);
+    assert.equal(refreshed, 1);
 });
 
-test("updateActionButtons enables double-dummy when every hand has 13 cards", () => {
+test("updateActionButtons auto-solves when every hand has 13 cards", async () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
     ctx.fillFormWithPartScoreTestData();
-    ctx.updateActionButtons();
-    assert.equal(document.element("double-dummy-it").disabled, false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(refreshed, 1);
 });
 
-test("updateActionButtons keeps double-dummy disabled without preconditions", () => {
-    const document = createMockDocument({ north_spades: "AKQ" });
-    const ctx = loadDdsMvp(document);
-    ctx.updateActionButtons();
-    assert.equal(document.element("double-dummy-it").disabled, true);
-});
-
-test("updateDefaultAction outlines double-dummy only when Enter would activate it", () => {
+test("hand edit clears lead-trick badges before the next lead solve finishes", async () => {
+    // Arrange: selected contract with lead numerals, then a slow follow-up solve.
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
+    ctx.refreshDdTable = async () => {};
+
+    let leadCalls = 0;
+    let resolveSecondSolve;
+    ctx.solveOpeningLeadTricks = () => {
+        leadCalls += 1;
+        if (leadCalls === 1) {
+            return Promise.resolve({ SK: 7, HA: 5 });
+        }
+        return new Promise((resolve) => {
+            resolveSecondSolve = resolve;
+        });
+    };
+
     ctx.fillFormWithPartScoreTestData();
+    const cell = document.element("result-table").rows[3].cells[5]; // South / NT
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.match(
+        document.element("west_spades_cards").innerHTML,
+        /hand-card-tricks/
+    );
+
+    // Act: edit a holding while a contract is still selected.
+    document.element("north_spades").value = "AQ8";
     ctx.updateActionButtons();
 
-    document.setActiveElement("north_spades");
-    ctx.updateDefaultAction();
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        true
+    // Assert: stale numerals are gone immediately (before the next solve settles).
+    assert.doesNotMatch(
+        document.element("west_spades_cards").innerHTML,
+        /hand-card-tricks/
+    );
+    assert.doesNotMatch(
+        document.element("west_hearts_cards").innerHTML,
+        /hand-card-tricks/
     );
 
-    document.setActiveElement("double-dummy-it");
-    ctx.updateDefaultAction();
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        true
-    );
-
-    document.setActiveElement(null);
-    // Simulate focus on a toolbar button that is not a hand input.
-    const clearLike = { id: "clear-entries" };
-    document.activeElement = clearLike;
-    ctx.updateDefaultAction();
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        false
-    );
+    if (typeof resolveSecondSolve === "function") {
+        resolveSecondSolve({ SK: 6 });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0));
 });
 
-test("updateDefaultAction does not outline double-dummy on incomplete deals", () => {
+test("updateActionButtons refreshes the table state for incomplete deals", async () => {
     const document = createMockDocument({ north_spades: "AKQ" });
     const ctx = loadDdsMvp(document);
-    document.setActiveElement("north_spades");
+    let refreshed = 0;
+    ctx.refreshDdTable = () => {
+        refreshed += 1;
+    };
     ctx.updateActionButtons();
-    ctx.updateDefaultAction();
-    assert.equal(
-        document.element("double-dummy-it").className.includes("default-action"),
-        false
-    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(refreshed, 1);
+});
+
+test("refreshDdTable clears the results table when the deal is incomplete", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[1].cells[1];
+    cell.innerHTML = "9";
+    document.element("result").innerHTML = "stale";
+
+    // Act
+    ctx.refreshDdTable();
+
+    // Assert
+    assert.equal(cell.innerHTML, "");
+    assert.equal(document.element("result").innerHTML, "");
 });
 
 test("updateActionButtons displays all 52 cards in the deck status", () => {
@@ -617,6 +1038,7 @@ test("updateActionButtons grays cards entered in any hand, including lowercase p
 
     ctx.updateActionButtons();
 
+    assert.equal(document.element("east_hearts").value, "K");
     const deckStatus = document.element("deck-status").innerHTML;
     assert.match(
         deckStatus,
@@ -663,107 +1085,1259 @@ test("updateActionButtons hides the card-count note at the 13-card boundary", ()
     assert.equal(note.innerHTML, "");
 });
 
-test("handleHandKeydown runs double-dummy on Enter from a hand input", () => {
-    const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
-    };
-    let prevented = false;
-    ctx.handleHandKeydown({
-        key: "Enter",
-        target: document.element("north_spades"),
-        preventDefault() {
-            prevented = true;
-        },
-    });
-    assert.equal(prevented, true);
-    assert.equal(sendCalled, true);
+test("handCardHtml renders a clickable button for a card in a hand", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+    const card = new ctx.Card("spades", "A");
+
+    // Act
+    const html = ctx.handCardHtml("north", card, 0);
+
+    // Assert
+    assert.match(html, /<button\b/);
+    assert.match(html, /type="button"/);
+    assert.match(html, /class="hand-card"/);
+    assert.match(html, /data-direction="north"/);
+    assert.match(html, /data-card="SA"/);
+    assert.match(html, /data-index="0"/);
+    assert.match(html, />A<\/button>/);
+    assert.match(html, /aria-label="North spade ace"/);
 });
 
-test("handleHandKeydown ignores Enter from a non-hand control", () => {
+test("escapeHtml encodes characters unsafe in HTML text and attributes", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+
+    assert.equal(ctx.escapeHtml("&"), "&amp;");
+    assert.equal(ctx.escapeHtml("<"), "&lt;");
+    assert.equal(ctx.escapeHtml(">"), "&gt;");
+    assert.equal(ctx.escapeHtml("\""), "&quot;");
+    assert.equal(ctx.escapeHtml("'"), "&#39;");
+    assert.equal(ctx.escapeHtml("A&B<C>\"D'"), "A&amp;B&lt;C&gt;&quot;D&#39;");
+    assert.equal(ctx.escapeHtml(7), "7");
+    assert.equal(ctx.escapeHtml(null), "");
+    assert.equal(ctx.escapeHtml(undefined), "");
+});
+
+test("handCardHtml escapes pip-derived markup from raw suit input", () => {
+    // Arrange: collectHands uppercases each typed character into Card.pip.
+    const ctx = loadDdsMvp(createMockDocument());
+    const card = new ctx.Card("spades", "\"&<>'");
+
+    // Act
+    const html = ctx.handCardHtml("north", card, 0);
+    const aria = ctx.handCardAriaLabel("north", card);
+
+    // Assert: aria text stays plain; HTML embedding is escaped.
+    assert.equal(aria, "North spade \"&<>'");
+    assert.match(html, /data-card="S&quot;&amp;&lt;&gt;&#39;"/);
+    assert.match(
+        html,
+        /aria-label="North spade &quot;&amp;&lt;&gt;&#39;"/
+    );
+    assert.match(html, />&quot;&amp;&lt;&gt;&#39;</);
+    assert.doesNotMatch(html, /data-card="S"/);
+    assert.doesNotMatch(html, />"</);
+});
+
+test("hand holdings render pips in input order, not sorted", () => {
+    // Arrange: caret mapping requires display order to match the input string.
+    const document = createMockDocument({ north_spades: "QA" });
+    const ctx = loadDdsMvp(document);
+
+    // Act
+    const html = ctx.handHoldingHtml("north", "spades", ctx.collectHands().north, -1);
+
+    // Assert
+    const q = html.indexOf('data-card="SQ"');
+    const a = html.indexOf('data-card="SA"');
+    assert.ok(q >= 0 && a >= 0);
+    assert.ok(q < a, "Q before A matches typed order QA");
+});
+
+test("handHoldingHtml inserts a caret marker at the given index", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsMvp(document);
+    const cards = ctx.collectHands().north;
+
+    // Act
+    const beforeFirst = ctx.handHoldingHtml("north", "spades", cards, 0);
+    const between = ctx.handHoldingHtml("north", "spades", cards, 1);
+    const atEnd = ctx.handHoldingHtml("north", "spades", cards, 2);
+
+    // Assert
+    assert.match(
+        beforeFirst,
+        /^<span class="hand-caret"[^>]*><\/span><button/
+    );
+    assert.match(
+        between,
+        /data-card="SA"[^>]*>A<\/button><span class="hand-caret"[^>]*><\/span><button[^>]*data-card="SK"/
+    );
+    assert.match(
+        atEnd,
+        /data-card="SK"[^>]*>K<\/button><span class="hand-caret"[^>]*><\/span>$/
+    );
+});
+
+test("updateHandCardDisplays mirrors suit holdings as hand-card buttons", () => {
+    // Arrange
+    const document = createMockDocument({
+        north_spades: "AQ",
+        north_hearts: "k",
+        east_clubs: "",
+    });
+    const ctx = loadDdsMvp(document);
+
+    // Act
+    ctx.updateHandCardDisplays(ctx.collectHands());
+
+    // Assert
+    const northSpades = document.element("north_spades_cards").innerHTML;
+    assert.match(
+        northSpades,
+        /data-direction="north" data-card="SA"[^>]*>A<\/button>/
+    );
+    assert.match(
+        northSpades,
+        /data-direction="north" data-card="SQ"[^>]*>Q<\/button>/
+    );
+    assert.equal((northSpades.match(/class="hand-card"/g) ?? []).length, 2);
+
+    const northHearts = document.element("north_hearts_cards").innerHTML;
+    assert.match(
+        northHearts,
+        /data-direction="north" data-card="HK"[^>]*>K<\/button>/
+    );
+
+    assert.equal(document.element("east_clubs_cards").innerHTML, "");
+});
+
+test("updateActionButtons refreshes hand-card displays from inputs", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "JT" });
+    const ctx = loadDdsMvp(document);
+
+    // Act
+    ctx.updateActionButtons();
+
+    // Assert
+    const html = document.element("north_spades_cards").innerHTML;
+    assert.match(html, /data-card="SJ"/);
+    assert.match(html, /data-card="ST"/);
+});
+
+test("handleHandCardClick notifies onHandCardClick with direction and card", () => {
+    // Arrange
+    const document = createMockDocument({ south_hearts: "KQ" });
+    const ctx = loadDdsMvp(document);
+    const clicks = [];
+    ctx.onHandCardClick = (direction, card) => {
+        clicks.push({ direction, key: card.key() });
+    };
+    const target = {
+        closest(selector) {
+            assert.equal(selector, ".hand-card");
+            return {
+                getAttribute(name) {
+                    if (name === "data-direction") {
+                        return "south";
+                    }
+                    if (name === "data-card") {
+                        return "HK";
+                    }
+                    if (name === "data-index") {
+                        return "0";
+                    }
+                    return null;
+                },
+            };
+        },
+    };
+
+    // Act
+    ctx.handleHandCardClick({ target, preventDefault() {} });
+
+    // Assert
+    assert.deepEqual(clicks, [{ direction: "south", key: "HK" }]);
+});
+
+test("handleHandCardClick places the suit-input caret for editing", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AQ8" });
+    const ctx = loadDdsMvp(document);
+    const input = document.element("north_spades");
+    const button = {
+        getAttribute(name) {
+            const attrs = {
+                "data-direction": "north",
+                "data-card": "SQ",
+                "data-index": "1",
+            };
+            return attrs[name] ?? null;
+        },
+        getBoundingClientRect() {
+            return { left: 100, width: 20 };
+        },
+    };
+
+    // Act: click the right half → caret after Q (index 2).
+    ctx.handleHandCardClick({
+        target: {
+            closest(selector) {
+                return selector === ".hand-card" ? button : null;
+            },
+        },
+        clientX: 115,
+        preventDefault() {},
+    });
+
+    // Assert
+    assert.equal(document.activeElement, input);
+    assert.equal(input.selectionStart, 2);
+    assert.equal(input.selectionEnd, 2);
+    assert.match(
+        document.element("north_spades_cards").innerHTML,
+        /data-card="SQ"[^>]*>Q<\/button><span class="hand-caret"/
+    );
+});
+
+test("handleHandCardClick places the caret before a card on a left-half click", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AQ8" });
+    const ctx = loadDdsMvp(document);
+    const input = document.element("north_spades");
+    const button = {
+        getAttribute(name) {
+            const attrs = {
+                "data-direction": "north",
+                "data-card": "SQ",
+                "data-index": "1",
+            };
+            return attrs[name] ?? null;
+        },
+        getBoundingClientRect() {
+            return { left: 100, width: 20 };
+        },
+    };
+
+    // Act: click the left half → caret before Q (index 1).
+    ctx.handleHandCardClick({
+        target: {
+            closest(selector) {
+                return selector === ".hand-card" ? button : null;
+            },
+        },
+        clientX: 105,
+        preventDefault() {},
+    });
+
+    // Assert
+    assert.equal(document.activeElement, input);
+    assert.equal(input.selectionStart, 1);
+});
+
+test("backspace at the caret removes the pip to the left", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AQ8" });
+    const ctx = loadDdsMvp(document);
+    ctx.pageLoad();
+    const input = document.element("north_spades");
+    input.focus();
+    input.setSelectionRange(2, 2); // after Q
+
+    // Act: simulate Backspace editing the value, then the input event.
+    input.value = "A8";
+    input.setSelectionRange(1, 1);
+    input.dispatch("input", {});
+
+    // Assert
+    assert.equal(input.value, "A8");
+    const html = document.element("north_spades_cards").innerHTML;
+    assert.match(html, /data-card="SA"/);
+    assert.match(html, /data-card="S8"/);
+    assert.doesNotMatch(html, /data-card="SQ"/);
+});
+
+test("typing at the caret inserts a pip at the insertion point", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "A8" });
+    const ctx = loadDdsMvp(document);
+    ctx.pageLoad();
+    const input = document.element("north_spades");
+    input.focus();
+    input.setSelectionRange(1, 1); // between A and 8
+
+    // Act
+    input.value = "AQ8";
+    input.setSelectionRange(2, 2);
+    input.dispatch("input", {});
+
+    // Assert
+    assert.equal(input.value, "AQ8");
+    const html = document.element("north_spades_cards").innerHTML;
+    const a = html.indexOf('data-card="SA"');
+    const q = html.indexOf('data-card="SQ"');
+    const eight = html.indexOf('data-card="S8"');
+    assert.ok(a < q && q < eight);
+});
+
+test("handleHandSuitClick focuses the suit input at end of the holding", () => {
+    // Arrange
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsMvp(document);
+    const input = document.element("north_spades");
+    const suitRow = {
+        querySelector(selector) {
+            assert.equal(selector, ".hand-suit-input");
+            return input;
+        },
+    };
+    const target = {
+        closest(selector) {
+            if (selector === ".hand-card") {
+                return null;
+            }
+            if (selector === ".hand-suit") {
+                return suitRow;
+            }
+            return null;
+        },
+    };
+
+    // Act
+    ctx.handleHandSuitClick({ target });
+
+    // Assert
+    assert.equal(document.activeElement, input);
+    assert.equal(input.selectionStart, 2);
+    assert.equal(input.selectionEnd, 2);
+});
+
+test("handleHandCardClick ignores clicks outside a hand-card", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+    let called = false;
+    ctx.onHandCardClick = () => {
+        called = true;
+    };
+
+    // Act
+    ctx.handleHandCardClick({
+        target: {
+            closest() {
+                return null;
+            },
+        },
+        preventDefault() {},
+    });
+
+    // Assert
+    assert.equal(called, false);
+});
+
+test("pageLoad wires hand-card clicks on the diagram", () => {
+    // Arrange
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
+    const clicks = [];
+    ctx.onHandCardClick = (direction, card) => {
+        clicks.push({ direction, key: card.key() });
     };
-    let prevented = false;
-    ctx.handleHandKeydown({
+
+    // Act
+    ctx.pageLoad();
+    document.dispatch("click", {
+        target: {
+            closest(selector) {
+                if (selector !== ".hand-card") {
+                    return null;
+                }
+                return {
+                    getAttribute(name) {
+                        if (name === "data-direction") {
+                            return "west";
+                        }
+                        if (name === "data-card") {
+                            return "C2";
+                        }
+                        return null;
+                    },
+                };
+            },
+        },
+        preventDefault() {},
+    });
+
+    // Assert
+    assert.deepEqual(clicks, [{ direction: "west", key: "C2" }]);
+});
+
+test("openingLeader is the declarer LHO", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+
+    // Assert
+    assert.equal(ctx.openingLeader("south"), "west");
+    assert.equal(ctx.openingLeader("west"), "north");
+    assert.equal(ctx.openingLeader("north"), "east");
+    assert.equal(ctx.openingLeader("east"), "south");
+});
+
+test("pipFromDdsRank maps DDS ranks 2-14 onto pips", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+
+    assert.equal(ctx.pipFromDdsRank(14), "A");
+    assert.equal(ctx.pipFromDdsRank(13), "K");
+    assert.equal(ctx.pipFromDdsRank(12), "Q");
+    assert.equal(ctx.pipFromDdsRank(11), "J");
+    assert.equal(ctx.pipFromDdsRank(10), "T");
+    assert.equal(ctx.pipFromDdsRank(9), "9");
+    assert.equal(ctx.pipFromDdsRank(2), "2");
+});
+
+test("leadTricksMapFromSolverOutput expands suit/rank/score triples to card keys", () => {
+    // Arrange: flat buffer from dds_mvp_solve_leads
+    const ctx = loadDdsMvp(createMockDocument());
+    const out = [
+        2,
+        0, 14, 7, // SA → 7
+        3, 10, 5, // CT → 5
+    ];
+
+    // Act
+    const map = ctx.leadTricksMapFromSolverOutput(out);
+
+    // Assert
+    assert.equal(map.SA, 7);
+    assert.equal(map.CT, 5);
+});
+
+test("solveOpeningLeadTricks rejects when WASM reports more than 13 leads", async () => {
+    // Arrange: corrupted out_leads[0] past the fixed 13-card buffer.
+    const ctx = loadDdsMvp(createMockDocument());
+    const heap = new Int32Array(1 + 13 * 3);
+    heap[0] = 14;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall: () => 1,
+        getValue(ptr) {
+            return heap[(ptr / 4) | 0] ?? 0;
+        },
+    });
+    const hands = {
+        north: [],
+        east: [],
+        south: [],
+        west: [],
+    };
+
+    // Act / Assert: must not walk past the malloc'd buffer.
+    await assert.rejects(
+        () => ctx.solveOpeningLeadTricks(hands, {
+            direction: "south",
+            denomination: "N",
+        }),
+        /invalid card count \(14\)/
+    );
+});
+
+test("solveOpeningLeadTricks rejects a negative lead count from WASM", async () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    const heap = new Int32Array(1);
+    heap[0] = -1;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall: () => 1,
+        getValue(ptr) {
+            return heap[(ptr / 4) | 0] ?? 0;
+        },
+    });
+
+    await assert.rejects(
+        () => ctx.solveOpeningLeadTricks(
+            { north: [], east: [], south: [], west: [] },
+            { direction: "south", denomination: "N" }
+        ),
+        /invalid card count \(-1\)/
+    );
+});
+
+test("solveOpeningLeadTricks accepts a full 13-lead buffer from WASM", async () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    const heap = new Int32Array(1 + 13 * 3);
+    heap[0] = 13;
+    for (let i = 0; i < 13; i++) {
+        heap[1 + 3 * i] = 0; // spades
+        heap[1 + 3 * i + 1] = 14 - i; // A..2
+        heap[1 + 3 * i + 2] = i;
+    }
+    let getValueCalls = 0;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall: () => 1,
+        getValue(ptr) {
+            getValueCalls += 1;
+            return heap[(ptr / 4) | 0] ?? 0;
+        },
+    });
+
+    const map = await ctx.solveOpeningLeadTricks(
+        { north: [], east: [], south: [], west: [] },
+        { direction: "south", denomination: "N" }
+    );
+
+    assert.equal(map.SA, 0);
+    assert.equal(map.S2, 12);
+    // 1 count + 13 * 3 fields
+    assert.equal(getValueCalls, 1 + 13 * 3);
+});
+
+test("handCardHtml renders a lower-right tricks numeral when provided", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+    const card = new ctx.Card("spades", "K");
+
+    // Act
+    const html = ctx.handCardHtml("west", card, 0, 7);
+
+    // Assert
+    assert.match(html, /class="hand-card[^"]*hand-card-with-tricks/);
+    assert.match(
+        html,
+        /<span class="hand-card-tricks"[^>]*>7<\/span>/
+    );
+    assert.match(html, />K<span class="hand-card-tricks"/);
+});
+
+test("handCardHtml omits tricks numeral when score is absent", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    const html = ctx.handCardHtml("west", new ctx.Card("spades", "K"), 0);
+
+    assert.doesNotMatch(html, /hand-card-tricks/);
+    assert.doesNotMatch(html, /hand-card-with-tricks/);
+});
+
+test("handHoldingHtml badges only cards present in the lead-tricks map", () => {
+    // Arrange
+    const document = createMockDocument({ west_spades: "KQ" });
+    const ctx = loadDdsMvp(document);
+    const cards = ctx.collectHands().west;
+
+    // Act
+    const html = ctx.handHoldingHtml(
+        "west",
+        "spades",
+        cards,
+        -1,
+        { SK: 8, SQ: 5 }
+    );
+
+    // Assert
+    assert.match(
+        html,
+        /data-card="SK"[^>]*>K<span class="hand-card-tricks"[^>]*>8<\/span>/
+    );
+    assert.match(
+        html,
+        /data-card="SQ"[^>]*>Q<span class="hand-card-tricks"[^>]*>5<\/span>/
+    );
+});
+
+test("hand-card-tricks CSS places a small numeral in the lower-right corner", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const handCardMatch = css.match(/\.hand-card\s*\{([^}]*)\}/s);
+
+    // Assert
+    assert.ok(handCardMatch, ".hand-card rule present");
+    const handCardRules = handCardMatch[1];
+    assert.match(handCardRules, /position:\s*relative/);
+    // Smaller than the seat's 30px so the corner tricks digit does not intersect the pip.
+    assert.match(handCardRules, /font-size:\s*(?:0\.\d+em|[1-2]?\d(?:\.\d+)?px)/);
+    assert.doesNotMatch(handCardRules, /font-size:\s*30px/);
+    assert.match(css, /\.hand-card-tricks\s*\{[^}]*position:\s*absolute/s);
+    assert.match(css, /\.hand-card-tricks\s*\{[^}]*right:/s);
+    assert.match(css, /\.hand-card-tricks\s*\{[^}]*bottom:/s);
+    assert.match(css, /\.hand-card-tricks\s*\{[^}]*font-size:\s*0\.\d+em/s);
+});
+
+test("denominationDisplayHtml renders suit glyphs and NT", () => {
+    // Arrange
+    const ctx = loadDdsMvp(createMockDocument());
+
+    // Act / Assert
+    assert.match(ctx.denominationDisplayHtml("H"), /<heart-suit>♥<\/heart-suit>/);
+    assert.match(ctx.denominationDisplayHtml("S"), /<spade-suit>♠<\/spade-suit>/);
+    assert.match(ctx.denominationDisplayHtml("D"), /<diamond-suit>♦<\/diamond-suit>/);
+    assert.match(ctx.denominationDisplayHtml("C"), /<club-suit>♣<\/club-suit>/);
+    assert.equal(ctx.denominationDisplayHtml("N"), "NT");
+    assert.equal(ctx.denominationDisplayHtml("X"), "");
+});
+
+test("contractStatusHtml shows denomination and declarer", () => {
+    // Arrange: East declares hearts.
+    const ctx = loadDdsMvp(createMockDocument());
+
+    // Act
+    const html = ctx.contractStatusHtml({ direction: "east", denomination: "H" });
+
+    // Assert: denomination, then "by", then declarer on one row.
+    assert.match(html, /class="contract-status-denom"/);
+    assert.match(html, /<heart-suit>♥<\/heart-suit>/);
+    assert.match(html, /class="contract-status-by"[^>]*>by</);
+    assert.match(html, /class="contract-status-declarer"[^>]*>E</);
+    assert.match(
+        html,
+        /contract-status-denom[\s\S]*contract-status-by[\s\S]*contract-status-declarer/
+    );
+    assert.match(html, /aria-label="Hearts; East declares"/);
+});
+
+test("contractStatusHtml uses NT and South when South declares notrump", () => {
+    const ctx = loadDdsMvp(createMockDocument());
+    const html = ctx.contractStatusHtml({ direction: "south", denomination: "N" });
+
+    assert.match(html, /class="contract-status-denom"[^>]*>NT</);
+    assert.match(html, /class="contract-status-by"[^>]*>by</);
+    assert.match(html, /class="contract-status-declarer"[^>]*>S</);
+    assert.match(html, /aria-label="Notrump; South declares"/);
+});
+
+test("updateContractStatus hides the NE panel when no contract is selected", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const status = document.element("contract-status");
+    status.hidden = false;
+    status.innerHTML = "stale";
+
+    // Act
+    ctx.updateContractStatus();
+
+    // Assert
+    assert.equal(status.hidden, true);
+    assert.equal(status.innerHTML, "");
+});
+
+test("handleResultTableClick selects declarer and denomination from a cell", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const table = document.element("result-table");
+    const cell = table.rows[2].cells[3]; // East / Hearts
+    const selections = [];
+    ctx.onContractSelect = (direction, denomination) => {
+        selections.push({ direction, denomination });
+    };
+
+    // Act
+    ctx.handleResultTableClick({
+        target: {
+            closest(selector) {
+                assert.equal(selector, "#result-table td");
+                return cell;
+            },
+        },
+    });
+
+    // Assert
+    const selected = ctx.selectedContract();
+    assert.equal(selected.direction, "east");
+    assert.equal(selected.denomination, "H");
+    assert.deepEqual(selections, [{ direction: "east", denomination: "H" }]);
+    assert.equal(cell.classList.contains("result-cell-selected"), true);
+
+    const status = document.element("contract-status");
+    assert.equal(status.hidden, false);
+    assert.match(status.innerHTML, /<heart-suit>♥<\/heart-suit>/);
+    assert.match(status.innerHTML, /class="contract-status-by"[^>]*>by</);
+    assert.match(status.innerHTML, /class="contract-status-declarer"[^>]*>E</);
+});
+
+test("handleResultTableClick moves the highlight to the newly clicked cell", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const table = document.element("result-table");
+    const first = table.rows[1].cells[1]; // North / Clubs
+    const second = table.rows[4].cells[5]; // West / NT
+
+    // Act
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return first;
+            },
+        },
+    });
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return second;
+            },
+        },
+    });
+
+    // Assert
+    assert.equal(first.classList.contains("result-cell-selected"), false);
+    assert.equal(second.classList.contains("result-cell-selected"), true);
+    const selected = ctx.selectedContract();
+    assert.equal(selected.direction, "west");
+    assert.equal(selected.denomination, "N");
+});
+
+test("switching contracts clears lead-trick badges before the next lead solve finishes", async () => {
+    // Arrange: first contract has numerals; switch while a follow-up solve is slow.
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    ctx.refreshDdTable = async () => {};
+
+    let leadCalls = 0;
+    let resolveSecondSolve;
+    const contractsSeen = [];
+    ctx.solveOpeningLeadTricks = (_hands, contract) => {
+        leadCalls += 1;
+        contractsSeen.push({ ...contract });
+        if (leadCalls === 1) {
+            return Promise.resolve({ SK: 7, HA: 5 });
+        }
+        return new Promise((resolve) => {
+            resolveSecondSolve = resolve;
+        });
+    };
+
+    ctx.fillFormWithPartScoreTestData();
+    const southNt = document.element("result-table").rows[3].cells[5];
+    const northClubs = document.element("result-table").rows[1].cells[1];
+
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return southNt;
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.match(
+        document.element("west_spades_cards").innerHTML,
+        /hand-card-tricks/
+    );
+
+    // Act: select a different contract.
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return northClubs;
+            },
+        },
+    });
+
+    // Assert: old numerals are gone immediately; selection already moved.
+    assert.equal(ctx.selectedContract().direction, "north");
+    assert.equal(ctx.selectedContract().denomination, "C");
+    assert.doesNotMatch(
+        document.element("west_spades_cards").innerHTML,
+        /hand-card-tricks/
+    );
+    assert.doesNotMatch(
+        document.element("west_hearts_cards").innerHTML,
+        /hand-card-tricks/
+    );
+
+    if (typeof resolveSecondSolve === "function") {
+        resolveSecondSolve({ CK: 4 });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.ok(contractsSeen.length >= 1);
+    assert.equal(contractsSeen[0].direction, "south");
+});
+
+test("handleResultTableClick clears selection when the selected cell is clicked again", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const table = document.element("result-table");
+    const cell = table.rows[2].cells[3]; // East / Hearts
+    const selections = [];
+    ctx.onContractSelect = (direction, denomination) => {
+        selections.push({ direction, denomination });
+    };
+
+    // Act: select, then click the same cell again.
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+
+    // Assert
+    assert.equal(ctx.selectedContract(), null);
+    assert.equal(cell.classList.contains("result-cell-selected"), false);
+    assert.deepEqual(selections, [
+        { direction: "east", denomination: "H" },
+        { direction: null, denomination: null },
+    ]);
+
+    const status = document.element("contract-status");
+    assert.equal(status.hidden, true);
+    assert.equal(status.innerHTML, "");
+});
+
+test("clearing contract ignores an in-flight opening-lead solve", async () => {
+    // Arrange: select a contract, start a lead solve, then clear without the
+    // deal-solve queue cleaning up afterward (so only request invalidation
+    // protects against a late write).
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[3].cells[5]; // South / NT
+    let resolveSolve;
+    let tricksPassedToHolding = null;
+
+    ctx.fillFormWithPartScoreTestData();
+    ctx.scheduleDealSolve = () => Promise.resolve();
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+    assert.equal(ctx.selectedContract().direction, "south");
+
+    ctx.solveOpeningLeadTricks = () => new Promise((resolve) => {
+        resolveSolve = resolve;
+    });
+    const inflight = ctx.refreshOpeningLeadTricks();
+
+    // Act: clear selection while the lead solve is still pending.
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return cell;
+            },
+        },
+    });
+    assert.equal(ctx.selectedContract(), null);
+
+    // Watch handHoldingHtml after clear for a late leadTricksByCardKey write.
+    const origHolding = ctx.handHoldingHtml;
+    ctx.handHoldingHtml = (direction, suit, cards, caretIndex, tricksByKey) => {
+        if (tricksByKey) {
+            tricksPassedToHolding = { ...tricksByKey };
+        }
+        return origHolding(direction, suit, cards, caretIndex, tricksByKey);
+    };
+
+    resolveSolve({ SK: 7, HA: 5 });
+    await inflight;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Assert: late completion must not feed tricks into the hand diagram.
+    assert.equal(tricksPassedToHolding, null);
+});
+
+test("handleResultTableClick ignores clicks outside a result data cell", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let called = false;
+    ctx.onContractSelect = () => {
+        called = true;
+    };
+
+    // Act
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return null;
+            },
+        },
+    });
+
+    // Assert
+    assert.equal(called, false);
+    assert.equal(ctx.selectedContract(), null);
+});
+
+test("pageLoad wires result-table cell clicks", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[3].cells[4]; // South / Spades
+    const selections = [];
+    ctx.onContractSelect = (direction, denomination) => {
+        selections.push({ direction, denomination });
+    };
+
+    // Act
+    ctx.pageLoad();
+    document.dispatch("click", {
+        target: {
+            closest(selector) {
+                return selector === "#result-table td" ? cell : null;
+            },
+        },
+    });
+
+    // Assert
+    assert.deepEqual(selections, [{ direction: "south", denomination: "S" }]);
+    assert.equal(cell.classList.contains("result-cell-selected"), true);
+});
+
+test("pageLoad makes result data cells keyboard-operable buttons", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const table = document.element("result-table");
+
+    // Act
+    ctx.pageLoad();
+
+    // Assert: every data cell is a focusable button with a contract label.
+    const northClubs = table.rows[1].cells[1];
+    assert.equal(northClubs.tabIndex, 0);
+    assert.equal(northClubs.getAttribute("role"), "button");
+    assert.equal(
+        northClubs.getAttribute("aria-label"),
+        "Clubs; North declares"
+    );
+
+    const southNt = table.rows[3].cells[5];
+    assert.equal(southNt.tabIndex, 0);
+    assert.equal(southNt.getAttribute("role"), "button");
+    assert.equal(
+        southNt.getAttribute("aria-label"),
+        "Notrump; South declares"
+    );
+
+    // Header cells stay non-interactive.
+    assert.notEqual(table.rows[0].cells[1].tabIndex, 0);
+    assert.equal(table.rows[0].cells[1].getAttribute("role"), null);
+    assert.notEqual(table.rows[1].cells[0].tabIndex, 0);
+});
+
+test("handleResultTableKeyDown selects a contract on Enter", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[2].cells[3]; // East / Hearts
+    cell.closest = (selector) =>
+        selector === "#result-table td" ? cell : null;
+    const selections = [];
+    ctx.onContractSelect = (direction, denomination) => {
+        selections.push({ direction, denomination });
+    };
+
+    // Act
+    ctx.handleResultTableKeyDown({
         key: "Enter",
-        target: document.element("double-dummy-it"),
+        target: cell,
+        preventDefault() {
+            assert.fail("Enter should not call preventDefault");
+        },
+    });
+
+    // Assert
+    assert.deepEqual(selections, [{ direction: "east", denomination: "H" }]);
+    assert.equal(ctx.selectedContract().direction, "east");
+    assert.equal(ctx.selectedContract().denomination, "H");
+});
+
+test("handleResultTableKeyDown selects a contract on Space and prevents scroll", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    const cell = document.element("result-table").rows[4].cells[5]; // West / NT
+    cell.closest = (selector) =>
+        selector === "#result-table td" ? cell : null;
+    let prevented = false;
+
+    // Act
+    ctx.handleResultTableKeyDown({
+        key: " ",
+        target: cell,
         preventDefault() {
             prevented = true;
         },
     });
+
+    // Assert
+    assert.equal(prevented, true);
+    assert.equal(ctx.selectedContract().direction, "west");
+    assert.equal(ctx.selectedContract().denomination, "N");
+});
+
+test("handleResultTableKeyDown ignores keys outside result cells", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    let prevented = false;
+
+    ctx.handleResultTableKeyDown({
+        key: "Enter",
+        target: {
+            closest() {
+                return null;
+            },
+        },
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    ctx.handleResultTableKeyDown({
+        key: "Tab",
+        target: document.element("result-table").rows[1].cells[1],
+        preventDefault() {
+            prevented = true;
+        },
+    });
+
     assert.equal(prevented, false);
-    assert.equal(sendCalled, false);
+    assert.equal(ctx.selectedContract(), null);
 });
 
-test("Enter on a hand input runs double-dummy after loading a complete deal", () => {
+test("pageLoad wires result-table keyboard activation", () => {
     const document = createMockDocument();
     const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
-    };
+    const cell = document.element("result-table").rows[3].cells[4];
+    cell.closest = (selector) =>
+        selector === "#result-table td" ? cell : null;
+
     ctx.pageLoad();
-    let prevented = false;
-
-    document.element("north_spades").dispatch("keydown", {
-        key: "Enter",
-        preventDefault() {
-            prevented = true;
-        },
-    });
-
-    assert.equal(prevented, true);
-    assert.equal(sendCalled, true);
-});
-
-test("document Enter does not run double-dummy when focus is elsewhere", () => {
-    const document = createMockDocument();
-    const ctx = loadDdsMvp(document);
-    ctx.fillFormWithPartScoreTestData();
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
-    };
-    ctx.pageLoad();
-    let prevented = false;
-
     document.dispatch("keydown", {
         key: "Enter",
-        target: document.element("double-dummy-it"),
-        preventDefault() {
-            prevented = true;
-        },
+        target: cell,
+        preventDefault() {},
     });
 
-    assert.equal(prevented, false);
-    assert.equal(sendCalled, false);
+    assert.equal(ctx.selectedContract().direction, "south");
+    assert.equal(ctx.selectedContract().denomination, "S");
 });
 
-test("handleHandKeydown ignores Enter when neither action is eligible", () => {
-    const document = createMockDocument({ north_spades: "AKQ" });
+test("result-cell-selected highlight is defined in CSS", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert
+    assert.match(css, /#result-table\s+td\.result-cell-selected\s*\{/s);
+    assert.match(css, /#result-table\s+td\s*\{[^}]*cursor:\s*pointer/s);
+    assert.match(css, /#result-table\s+td:focus-visible\s*\{/s);
+});
+
+test("mvp html does not cache-bust css or js with query params", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+
+    // Assert: plain asset URLs; deploy/HTTP caching is enough for the MVP.
+    assert.match(html, /href="dds_mvp\.css"/);
+    assert.match(html, /src="dds_mvp\.js"/);
+    assert.doesNotMatch(html, /dds_mvp\.(css|js)\?/);
+});
+
+test("result table lives in the hand diagram southeast corner", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert: table is a child of the SE filler cell, not below the diagram.
+    const seOpen = html.match(
+        /<div class="[^"]*grid-filler-se[^"]*"[^>]*>/
+    );
+    assert.ok(seOpen, "southeast filler cell present");
+    const afterSe = html.slice(html.indexOf(seOpen[0]) + seOpen[0].length);
+    // Hint sits above the table inside the SE cell.
+    assert.match(
+        afterSe,
+        /class="[^"]*result-table-hint[^"]*"[^>]*>Click to set declarer and denomination</
+    );
+    assert.match(
+        afterSe,
+        /result-table-hint[\s\S]*?id="result-table"/
+    );
+    assert.match(afterSe, /id="result-table"/);
+    // SE cell must be readable (not aria-hidden) and sized for the table.
+    assert.doesNotMatch(seOpen[0], /aria-hidden="true"/);
+    assert.match(css, /\.grid-item\.grid-filler-se\s*\{[^}]*font-size:/s);
+    assert.match(css, /\.grid-item\.grid-filler-se\s*\{[^}]*flex-direction:\s*column/s);
+    assert.match(css, /\.result-table-hint\s*\{/s);
+});
+
+test("contract status lives in the hand diagram northeast corner", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_mvp.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert
+    const neMatch = html.match(
+        /<div class="[^"]*grid-filler-ne[^"]*"[^>]*>([\s\S]*?)<\/div>/
+    );
+    assert.ok(neMatch, "northeast filler cell present");
+    assert.match(neMatch[1], /id="contract-status"/);
+    assert.doesNotMatch(neMatch[0], /aria-hidden="true"/);
+    assert.match(css, /\.grid-item\.grid-filler-ne\s*\{[^}]*font-size:/s);
+    assert.match(css, /\.contract-status-denom/);
+    assert.match(css, /\.contract-status-by/);
+    assert.match(css, /\.contract-status-declarer/);
+    // Declarer matches denomination size; "by" sits between them on one row.
+    assert.match(
+        css,
+        /\.contract-status-denom\s*\{[^}]*font-size:\s*1\.6em/s
+    );
+    assert.match(
+        css,
+        /\.contract-status-declarer\s*\{[^}]*font-size:\s*1\.6em/s
+    );
+    assert.match(
+        css,
+        /\.contract-status-panel\s*\{[^}]*display:\s*flex/s
+    );
+    assert.doesNotMatch(
+        css,
+        /\.contract-status-panel\s*\{[^}]*flex-direction:\s*column/s
+    );
+    assert.doesNotMatch(css, /\.contract-status-declarer\s*\{[^}]*margin-top:/s);
+});
+
+test("hand diagram markup uses hand-suit rows with concealed text inputs", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const htmlPath = join(here, "..", "dds_mvp.html");
+    const cssPath = join(here, "..", "dds_mvp.css");
+
+    // Act
+    const html = readFileSync(htmlPath, "utf8");
+    const css = readFileSync(cssPath, "utf8");
+
+    // Assert: each suit is a hand-suit row; cards replace visible text.
+    assert.match(
+        html,
+        /<span class="hand-suit">\s*<spade-suit>[\s\S]*?id="north_spades_cards"[\s\S]*?id="north_spades"[^>]*class="[^"]*hand-suit-input/
+    );
+    assert.equal((html.match(/class="hand-suit"/g) ?? []).length, 16);
+    assert.equal((html.match(/class="hand-suit-input"/g) ?? []).length, 16);
+    // Concealed inputs still need accessible names for keyboard/AT users.
+    assert.match(
+        html,
+        /id="north_spades"[^>]*aria-label="North spades"/
+    );
+    assert.match(
+        html,
+        /id="west_clubs"[^>]*aria-label="West clubs"/
+    );
+    assert.equal((html.match(/class="hand-suit-input"[^>]*aria-label="/g) ?? []).length, 16);
+    assert.match(css, /\.hand-suit-input\s*\{[^}]*color:\s*transparent/s);
+    assert.match(css, /\.hand-suit-input\s*\{[^}]*caret-color:/s);
+});
+
+test("hand seats left-align suit symbols in the diagram", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+
+    // Assert: beat .grid-item { text-align: center } via higher specificity
+    // and source order so filled holdings stay left-aligned, not centered.
+    const gridItemAlign = css.search(/\.grid-item\s*\{[^}]*text-align:\s*center/s);
+    const handAlign = css.search(
+        /\.grid-item\.hand-north,\s*\n\s*\.grid-item\.hand-east,\s*\n\s*\.grid-item\.hand-south,\s*\n\s*\.grid-item\.hand-west\s*\{[^}]*text-align:\s*left/s
+    );
+
+    assert.ok(gridItemAlign >= 0, "grid-item centers by default");
+    assert.ok(handAlign >= 0, "hand seats declare left alignment");
+    assert.ok(
+        handAlign > gridItemAlign,
+        "hand left-align must follow .grid-item so it wins the cascade"
+    );
+    // All seats need room for typical 8-card suits (e.g. Everyone makes 3N).
+    // Equal fractional columns; min-width:0 stops longer holdings from
+    // expanding a column (layout jump).
+    assert.match(
+        css,
+        /\.grid-container\s*\{[^}]*grid-template-columns:\s*1\.5fr\s+1\.5fr\s+1\.5fr/s
+    );
+    assert.match(css, /\.grid-item\s*\{[^}]*min-width:\s*0/s);
+    assert.match(css, /\.grid-outer\s*\{[^}]*max-width:\s*1100px/s);
+});
+
+test("hand-card pips show a light outline affordance for clickability", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_mvp.css"), "utf8");
+    const handCardMatch = css.match(/\.hand-card\s*\{([^}]*)\}/s);
+
+    // Assert: resting state (not only :hover) has a visible clickable cue.
+    assert.ok(handCardMatch, ".hand-card rule present");
+    const rules = handCardMatch[1];
+    assert.doesNotMatch(rules, /border:\s*none/);
+    assert.match(
+        rules,
+        /(?:outline:\s*1px\s+solid|border:\s*1px\s+solid|box-shadow:\s*0\s+0\s+0\s+1px)/
+    );
+});
+
+test("typing a pip into a suit input inserts the matching hand-card glyph", () => {
+    // Arrange
+    const document = createMockDocument();
     const ctx = loadDdsMvp(document);
-    let sendCalled = false;
-    ctx.sendJSON = () => {
-        sendCalled = true;
+    ctx.pageLoad();
+
+    // Act: type as the user would — set value then fire input.
+    document.setValue("north_spades", "A");
+    document.element("north_spades").dispatch("input", {});
+
+    // Assert
+    assert.equal(document.element("north_spades").value, "A");
+    assert.match(
+        document.element("north_spades_cards").innerHTML,
+        /class="hand-card"[^>]*data-card="SA"[^>]*>A<\/button>/
+    );
+});
+
+test("handleHandSuitClick does not steal focus from a hand-card click", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsMvp(document);
+    document.setActiveElement("east_hearts");
+    let focused = false;
+    const input = document.element("north_spades");
+    input.focus = () => {
+        focused = true;
     };
-    let prevented = false;
-    ctx.handleHandKeydown({
-        key: "Enter",
-        target: document.element("north_spades"),
-        preventDefault() {
-            prevented = true;
+    const target = {
+        closest(selector) {
+            if (selector === ".hand-card") {
+                return { className: "hand-card" };
+            }
+            if (selector === ".hand-suit") {
+                return {
+                    querySelector() {
+                        return input;
+                    },
+                };
+            }
+            return null;
         },
-    });
-    assert.equal(prevented, false);
-    assert.equal(sendCalled, false);
-    assert.equal(document.element("west_spades").value, "");
+    };
+
+    // Act
+    ctx.handleHandSuitClick({ target });
+
+    // Assert
+    assert.equal(focused, false);
 });

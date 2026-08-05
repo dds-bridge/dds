@@ -8,7 +8,7 @@
 .grid-outer {
   background-color: #2196F3;
   padding: 10px;
-  max-width: 800px;
+  max-width: 1100px;
 }
 
 .grid-container {
@@ -17,7 +17,7 @@
     "nw north ne"
     "west center east"
     "sw south se";
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1.5fr 1.5fr 1.5fr;
   background-color: #2196F3;
 }
 
@@ -60,18 +60,165 @@
 .grid-item {
   background-color: rgba(255, 255, 255, 0.8);
   border: 0px solid rgba(0, 0, 0, 0.8);
+  /* Allow long holdings to overflow the cell instead of widening the column. */
+  min-width: 0;
   padding: 20px;
   font-size: 30px;
   text-align: center;
+}
+
+.grid-item.hand-north,
+.grid-item.hand-east,
+.grid-item.hand-south,
+.grid-item.hand-west {
+  text-align: left;
 }
 
 .grid-filler {
   padding: 20px;
 }
 
+/* After .grid-item so font-size wins over the hand diagram's 30px. */
+.grid-item.grid-filler-ne {
+  align-items: center;
+  display: flex;
+  font-size: 1.25rem;
+  justify-content: center;
+}
+
+.grid-item.grid-filler-se {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  justify-content: center;
+}
+
+.result-table-hint {
+  font-size: 0.85rem;
+  line-height: 1.2;
+  margin-bottom: 0.35em;
+  text-align: center;
+}
+
+.contract-status-panel {
+  align-items: baseline;
+  display: flex;
+  gap: 0.2em;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.contract-status-denom {
+  font-size: 1.6em;
+}
+
+.contract-status-by {
+  font-size: 1em;
+}
+
+.contract-status-declarer {
+  font-size: 1.6em;
+  font-weight: 700;
+}
+
+#result-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#result-table td {
+  cursor: pointer;
+}
+
+#result-table td:focus-visible {
+  outline: 2px solid #1565c0;
+  outline-offset: -2px;
+}
+
+#result-table td.result-cell-selected {
+  background-color: #bbdefb;
+  outline: 2px solid #1565c0;
+  outline-offset: -2px;
+}
+
 .hand-card-count {
   font-size: 1rem;
   margin-top: 0.25rem;
+}
+
+.hand-holding {
+  display: inline;
+}
+
+.hand-suit {
+  cursor: text;
+  display: inline-block;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.hand-suit-input {
+  background: transparent;
+  border: none;
+  caret-color: transparent;
+  color: transparent;
+  font: inherit;
+  margin: 0;
+  min-width: 0.65em;
+  outline: none;
+  padding: 0;
+  width: 0.65em;
+}
+
+.hand-suit-input:focus {
+  caret-color: transparent;
+}
+
+.hand-card {
+  background: transparent;
+  border: 1px solid #bbb;
+  border-radius: 0.15em;
+  color: inherit;
+  cursor: text;
+  /* Below the seat's 30px so corner trick digits clear the pip glyph. */
+  font-size: 0.72em;
+  line-height: 1.15;
+  margin: 0 0.04em;
+  padding: 0 0.28em 0.18em 0.1em;
+  position: relative;
+}
+
+.hand-card-tricks {
+  bottom: 0.02em;
+  font-size: 0.42em;
+  font-weight: 700;
+  line-height: 1;
+  position: absolute;
+  right: 0.04em;
+}
+
+.hand-card:hover,
+.hand-card:focus-visible {
+  border-color: #555;
+  outline: none;
+  text-decoration: none;
+}
+
+.hand-caret {
+  animation: hand-caret-blink 1s step-end infinite;
+  background: #111;
+  display: inline-block;
+  height: 0.85em;
+  margin: 0 0.02em;
+  vertical-align: middle;
+  width: 1px;
+}
+
+@keyframes hand-caret-blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 td {
@@ -106,14 +253,4 @@ diamond-suit {
 
 .deck-card-entered {
   color: #888;
-}
-
-/* Bold outline only when Enter would activate Double-dummy it! */
-#double-dummy-it.default-action {
-  outline: 3px solid #222;
-  outline-offset: 2px;
-}
-
-#double-dummy-it:disabled {
-  color: #777;
 }

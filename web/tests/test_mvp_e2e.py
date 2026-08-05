@@ -118,8 +118,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
     def _fill_part_score_deal(self, page) -> None:
         page.get_by_role("button", name="Part-score test deal").click()
 
-    def _run_double_dummy(self, page) -> None:
-        page.get_by_role("button", name="Double-dummy it!").click()
+    def _wait_for_dd_table(self, page) -> None:
         page.wait_for_function(
             """() => {
             const cell = document.getElementById('result-table').rows[1].cells[1];
@@ -187,6 +186,436 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_http_opening_lead_tricks_appear_on_leader_cards(self) -> None:
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                page.get_by_role("button", name="Part-score test deal").click()
+                self._wait_for_dd_table(page)
+
+                # South / NT → West leads.
+                # td nth is among <td> only (C=0 … S=3, NT=4); not HTML cells[]
+                # which includes the direction <th> at index 0.
+                page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
+                self.assertEqual(
+                    page.evaluate("() => selectedContract()"),
+                    {"direction": "south", "denomination": "N"},
+                )
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                      '#west_spades_cards .hand-card-tricks').length > 0"""
+                )
+
+                west_sk = page.locator(
+                    '#west_spades_cards .hand-card[data-card="SK"]'
+                )
+                self.assertIn(
+                    "hand-card-with-tricks",
+                    west_sk.get_attribute("class") or "",
+                )
+                tricks = west_sk.locator(".hand-card-tricks")
+                self.assertEqual(tricks.count(), 1)
+                score = int(tricks.inner_text())
+                self.assertGreaterEqual(score, 0)
+                self.assertLessEqual(score, 13)
+
+                self.assertEqual(
+                    page.locator(
+                        "#north_spades_cards .hand-card-tricks"
+                    ).count(),
+                    0,
+                )
+                # Stickiness: numerals must survive a short settle period and a
+                # leader-card click (caret placement re-renders holdings).
+                page.wait_for_timeout(2000)
+                self.assertGreater(
+                    page.locator(
+                        "#west_spades_cards .hand-card-tricks"
+                    ).count(),
+                    0,
+                    msg=f"tricks vanished; result={page.locator('#result').inner_text()!r}",
+                )
+                page.locator(
+                    '#west_spades_cards .hand-card[data-card="SK"]'
+                ).click()
+                page.wait_for_timeout(500)
+                self.assertGreater(
+                    page.locator(
+                        "#west_spades_cards .hand-card-tricks"
+                    ).count(),
+                    0,
+                    msg=f"tricks lost after card click; result={page.locator('#result').inner_text()!r}",
+                )
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
+
+    def test_http_opening_lead_tricks_when_contract_clicked_during_dd(self) -> None:
+        """Selecting a contract while the table is still computing must still
+        show lead-trick numerals after both solves finish."""
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                page.get_by_role("button", name="Part-score test deal").click()
+                # Click South/NT immediately — cells may still be empty.
+                # td nth is among <td> only (C=0 … S=3, NT=4); not HTML cells[]
+                # which includes the direction <th> at index 0.
+                page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
+                self.assertEqual(
+                    page.evaluate("() => selectedContract()"),
+                    {"direction": "south", "denomination": "N"},
+                )
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                      '#west_spades_cards .hand-card-tricks').length > 0""",
+                    timeout=120_000,
+                )
+                self._wait_for_dd_table(page)
+                page.wait_for_timeout(1500)
+                self.assertGreater(
+                    page.locator(
+                        "#west_spades_cards .hand-card-tricks"
+                    ).count(),
+                    0,
+                    msg=f"tricks missing after race; result={page.locator('#result').inner_text()!r}",
+                )
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
+
+    def test_result_table_cell_click_selects_contract_and_highlights(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            north_clubs = page.locator("#result-table tr").nth(1).locator("td").nth(0)
+            west_nt = page.locator("#result-table tr").nth(4).locator("td").nth(4)
+            status = page.locator("#contract-status")
+
+            self.assertTrue(status.is_hidden())
+
+            north_clubs.click()
+            self.assertIn(
+                "result-cell-selected",
+                north_clubs.get_attribute("class") or "",
+            )
+            selected = page.evaluate("() => selectedContract()")
+            self.assertEqual(
+                selected, {"direction": "north", "denomination": "C"}
+            )
+            self.assertTrue(status.is_visible())
+            self.assertEqual(
+                status.locator(".contract-status-denom").inner_text(), "♣"
+            )
+            self.assertEqual(
+                status.locator(".contract-status-by").inner_text(), "by"
+            )
+            self.assertEqual(
+                status.locator(".contract-status-declarer").inner_text(), "N"
+            )
+            layout = page.evaluate(
+                """() => {
+                const denom = document.querySelector('.contract-status-denom');
+                const by = document.querySelector('.contract-status-by');
+                const declarer = document.querySelector(
+                  '.contract-status-declarer'
+                );
+                const denomRect = denom.getBoundingClientRect();
+                const byRect = by.getBoundingClientRect();
+                const declarerRect = declarer.getBoundingClientRect();
+                const denomSize = parseFloat(getComputedStyle(denom).fontSize);
+                const declarerSize = parseFloat(
+                  getComputedStyle(declarer).fontSize
+                );
+                return {
+                  denomRight: denomRect.right,
+                  byLeft: byRect.left,
+                  byRight: byRect.right,
+                  declarerLeft: declarerRect.left,
+                  denomMidY: denomRect.top + denomRect.height / 2,
+                  declarerMidY: declarerRect.top + declarerRect.height / 2,
+                  denomSize,
+                  declarerSize,
+                };
+              }"""
+            )
+            self.assertGreater(layout["byLeft"], layout["denomRight"] - 1.0)
+            self.assertGreater(layout["declarerLeft"], layout["byRight"] - 1.0)
+            self.assertLess(
+                abs(layout["declarerMidY"] - layout["denomMidY"]), 8.0
+            )
+            self.assertAlmostEqual(
+                layout["declarerSize"], layout["denomSize"], delta=0.5
+            )
+            self.assertEqual(
+                status.locator("[aria-label]").get_attribute("aria-label"),
+                "Clubs; North declares",
+            )
+
+            west_nt.click()
+            self.assertNotIn(
+                "result-cell-selected",
+                north_clubs.get_attribute("class") or "",
+            )
+            self.assertIn(
+                "result-cell-selected",
+                west_nt.get_attribute("class") or "",
+            )
+            selected = page.evaluate("() => selectedContract()")
+            self.assertEqual(
+                selected, {"direction": "west", "denomination": "N"}
+            )
+            self.assertEqual(
+                status.locator(".contract-status-denom").inner_text(), "NT"
+            )
+            self.assertEqual(
+                status.locator(".contract-status-by").inner_text(), "by"
+            )
+            self.assertEqual(
+                status.locator(".contract-status-declarer").inner_text(), "W"
+            )
+            self.assertEqual(
+                status.locator("[aria-label]").get_attribute("aria-label"),
+                "Notrump; West declares",
+            )
+
+            west_nt.click()
+            self.assertNotIn(
+                "result-cell-selected",
+                west_nt.get_attribute("class") or "",
+            )
+            self.assertIsNone(page.evaluate("() => selectedContract()"))
+            self.assertTrue(status.is_hidden())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_result_table_is_in_diagram_southeast_corner(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            metrics = page.evaluate(
+                """() => {
+                const outer = document.querySelector('.grid-outer').getBoundingClientRect();
+                const table = document.getElementById('result-table').getBoundingClientRect();
+                const se = document.querySelector('.grid-filler-se').getBoundingClientRect();
+                return {
+                  outerRight: outer.right,
+                  outerBottom: outer.bottom,
+                  outerMidX: outer.left + outer.width / 2,
+                  outerMidY: outer.top + outer.height / 2,
+                  tableLeft: table.left,
+                  tableTop: table.top,
+                  tableRight: table.right,
+                  tableBottom: table.bottom,
+                  seLeft: se.left,
+                  seTop: se.top,
+                  seRight: se.right,
+                  seBottom: se.bottom,
+                  tableInsideSe: document
+                    .querySelector('.grid-filler-se')
+                    .contains(document.getElementById('result-table')),
+                };
+              }"""
+            )
+            self.assertTrue(metrics["tableInsideSe"])
+            self.assertGreater(metrics["tableLeft"], metrics["outerMidX"])
+            self.assertGreater(metrics["tableTop"], metrics["outerMidY"])
+            self.assertLessEqual(metrics["tableRight"], metrics["seRight"] + 1.0)
+            self.assertLessEqual(metrics["tableBottom"], metrics["seBottom"] + 1.0)
+
+            hint = page.locator(".result-table-hint")
+            self.assertEqual(
+                hint.inner_text(), "Click to set declarer and denomination"
+            )
+            hint_layout = page.evaluate(
+                """() => {
+                const hint = document.querySelector('.result-table-hint')
+                  .getBoundingClientRect();
+                const table = document.getElementById('result-table')
+                  .getBoundingClientRect();
+                const se = document.querySelector('.grid-filler-se');
+                return {
+                  hintBottom: hint.bottom,
+                  tableTop: table.top,
+                  hintInsideSe: se.contains(
+                    document.querySelector('.result-table-hint')
+                  ),
+                };
+              }"""
+            )
+            self.assertTrue(hint_layout["hintInsideSe"])
+            self.assertLessEqual(
+                hint_layout["hintBottom"], hint_layout["tableTop"] + 1.0
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_hand_diagram_cards_are_clickable(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("AQ")
+            north_ace = page.locator(
+                '#north_spades_cards .hand-card[data-card="SA"]'
+            )
+            self.assertEqual(north_ace.count(), 1)
+            self.assertEqual(north_ace.get_attribute("data-direction"), "north")
+            self.assertEqual(north_ace.get_attribute("type"), "button")
+            self.assertEqual(north_ace.get_attribute("aria-label"), "North spade ace")
+            self.assertEqual(north_ace.inner_text(), "A")
+            self.assertTrue(north_ace.is_enabled())
+
+            clicked = page.evaluate(
+                """() => {
+                const seen = [];
+                window.onHandCardClick = (direction, card) => {
+                  seen.push({ direction, key: card.key() });
+                };
+                document
+                  .querySelector('#north_spades_cards .hand-card[data-card="SA"]')
+                  .click();
+                return seen;
+              }"""
+            )
+            self.assertEqual(clicked, [{"direction": "north", "key": "SA"}])
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_typed_pips_appear_only_as_hand_card_glyphs(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            north_spades = page.locator("#north_spades")
+            north_spades.click()
+            north_spades.type("AK")
+
+            self.assertEqual(north_spades.input_value(), "AK")
+            cards = page.locator("#north_spades_cards .hand-card")
+            self.assertEqual(cards.count(), 2)
+            self.assertEqual(cards.nth(0).inner_text(), "A")
+            self.assertEqual(cards.nth(1).inner_text(), "K")
+
+            input_style = north_spades.evaluate(
+                """el => {
+                const s = getComputedStyle(el);
+                return { color: s.color, caretColor: s.caretColor, width: s.width };
+              }"""
+            )
+            self.assertEqual(input_style["color"], "rgba(0, 0, 0, 0)")
+            # Native caret is hidden; insertion point is the .hand-caret among glyphs.
+            self.assertEqual(input_style["caretColor"], "rgba(0, 0, 0, 0)")
+            self.assertEqual(page.locator("#north_spades_cards .hand-caret").count(), 1)
+            # Typed text must not consume layout width beside the glyphs.
+            self.assertLess(float(input_style["width"].replace("px", "")), 40.0)
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_click_places_caret_so_backspace_edits_holding(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            north_spades = page.locator("#north_spades")
+            north_spades.fill("AQ8")
+
+            # Click the right half of Q → caret after Q; Backspace removes Q.
+            q = page.locator('#north_spades_cards .hand-card[data-card="SQ"]')
+            box = q.bounding_box()
+            self.assertIsNotNone(box)
+            page.mouse.click(box["x"] + box["width"] * 0.75, box["y"] + box["height"] / 2)
+            page.keyboard.press("Backspace")
+
+            self.assertEqual(north_spades.input_value(), "A8")
+            cards = page.locator("#north_spades_cards .hand-card")
+            self.assertEqual(cards.count(), 2)
+            self.assertEqual(cards.nth(0).inner_text(), "A")
+            self.assertEqual(cards.nth(1).inner_text(), "8")
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_everyone_makes_3n_east_eight_card_suit_stays_in_diagram(self) -> None:
+        """East's 8-card diamond suit must not expand/jump the diagram past .grid-outer."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            outer_before = page.locator(".grid-outer").bounding_box()
+            self.assertIsNotNone(outer_before)
+
+            page.get_by_role("button", name="Everyone makes 3N test deal").click()
+            page.wait_for_function(
+                "() => document.querySelectorAll('#east_diamonds_cards .hand-card').length === 8"
+            )
+
+            metrics = page.evaluate(
+                """() => {
+                const outer = document.querySelector('.grid-outer').getBoundingClientRect();
+                const holding = document
+                  .querySelector('#east_diamonds_cards')
+                  .getBoundingClientRect();
+                const east = document.querySelector('.hand-east').getBoundingClientRect();
+                return {
+                  outerRight: outer.right,
+                  outerWidth: outer.width,
+                  holdingRight: holding.right,
+                  eastLeft: east.left,
+                  eastWidth: east.width,
+                };
+              }"""
+            )
+            self.assertAlmostEqual(
+                metrics["outerWidth"],
+                outer_before["width"],
+                delta=2.0,
+                msg="diagram width must not jump when east fills an 8-card suit",
+            )
+            self.assertLessEqual(
+                metrics["holdingRight"],
+                metrics["outerRight"] + 1.0,
+                msg="east 8-card suit must stay within the diagram",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_everyone_makes_3n_eight_card_suits_stay_in_hand_cells(self) -> None:
+        """N/S/W 8-card suits must not spill out of their hand cells (washed-out overflow)."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        try:
+            page.get_by_role("button", name="Everyone makes 3N test deal").click()
+            page.wait_for_function(
+                "() => document.querySelectorAll('#north_hearts_cards .hand-card').length === 8"
+            )
+
+            spills = page.evaluate(
+                """() => {
+                const checks = [
+                  ['#north_hearts_cards', '.hand-north'],
+                  ['#south_spades_cards', '.hand-south'],
+                  ['#west_clubs_cards', '.hand-west'],
+                  ['#east_diamonds_cards', '.hand-east'],
+                ];
+                return checks.map(([holdingSel, handSel]) => {
+                  const holding = document.querySelector(holdingSel).getBoundingClientRect();
+                  const hand = document.querySelector(handSel).getBoundingClientRect();
+                  const last = document
+                    .querySelector(holdingSel + ' .hand-card:last-child')
+                    .getBoundingClientRect();
+                  return {
+                    holdingSel,
+                    lastRight: last.right,
+                    handRight: hand.right,
+                    overflows: last.right > hand.right + 1,
+                  };
+                });
+              }"""
+            )
+            for item in spills:
+                self.assertFalse(
+                    item["overflows"],
+                    msg=f"{item['holdingSel']} last pip spills past hand cell "
+                    f"({item['lastRight']} > {item['handRight']})",
+                )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_deck_status_displays_all_cards_in_one_row(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
@@ -238,26 +667,6 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_double_dummy_button_has_bold_outline_when_default(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-        try:
-            button = page.locator("#double-dummy-it")
-            self.assertNotIn("default-action", button.get_attribute("class") or "")
-
-            self._fill_part_score_deal(page)
-            page.wait_for_function(
-                "() => document.getElementById('double-dummy-it').classList.contains('default-action')"
-            )
-
-            self.assertIn("default-action", button.get_attribute("class"))
-            outline_width = float(
-                button.evaluate("el => parseFloat(getComputedStyle(el).outlineWidth)")
-            )
-            self.assertGreaterEqual(outline_width, 2.0)
-            self.assertEqual(errors, [])
-        finally:
-            page.close()
-
     def test_hand_over_13_cards_shows_its_card_count(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
         try:
@@ -304,7 +713,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             finally:
                 page.close()
 
-    def test_http_part_score_table(self) -> None:
+    def test_http_part_score_table_auto_fills_on_complete_deal(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
@@ -313,66 +722,31 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
                     "UTF-8",
                     msg="HTTP must decode HTML as UTF-8 so suit glyphs are not mojibake",
                 )
+                self.assertEqual(page.locator("#double-dummy-it").count(), 0)
                 self._fill_part_score_deal(page)
-                self._run_double_dummy(page)
+                self._wait_for_dd_table(page)
                 self._assert_part_score_table(page)
                 self.assertEqual(errors, [])
             finally:
                 page.close()
 
-    def test_test_deal_button_focuses_double_dummy(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-        try:
-            page.get_by_role("button", name="Part-score test deal").click()
-            page.wait_for_function(
-                "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
-            )
-            self.assertFalse(page.get_by_role("button", name="Double-dummy it!").is_disabled())
-            self.assertEqual(errors, [])
-        finally:
-            page.close()
-
-    def test_enter_runs_double_dummy_after_loading_a_complete_deal(self) -> None:
-        # Solving needs SharedArrayBuffer → cross-origin isolation → HTTP only.
+    def test_clearing_deal_clears_results_table(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
                 self._fill_part_score_deal(page)
-
-                page.wait_for_function(
-                    "() => document.activeElement && document.activeElement.id === 'double-dummy-it'"
-                )
-                page.keyboard.press("Enter")
+                self._wait_for_dd_table(page)
+                page.get_by_role("button", name="Clear entries").click()
                 page.wait_for_function(
                     """() => {
-                    const cell = document.getElementById('result-table').rows[1].cells[1];
-                    return cell && /^\\d+$/.test(cell.textContent.trim());
-                  }""",
-                    timeout=120_000,
+                    const cell = document.getElementById('result-table')
+                      .rows[1].cells[1];
+                    return cell && cell.textContent.trim() === '';
+                  }"""
                 )
-
-                self._assert_part_score_table(page)
                 self.assertEqual(errors, [])
             finally:
                 page.close()
-
-    def test_double_dummy_disabled_on_incomplete_deal(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
-        try:
-            page.get_by_role("button", name="Clear entries").click()
-            double_dummy = page.get_by_role("button", name="Double-dummy it!")
-            self.assertTrue(double_dummy.is_disabled())
-            self.assertEqual(
-                float(double_dummy.evaluate("el => getComputedStyle(el).opacity")),
-                1.0,
-            )
-            self.assertNotEqual(
-                double_dummy.evaluate("el => getComputedStyle(el).color"),
-                "rgb(0, 0, 0)",
-            )
-            self.assertEqual(errors, [])
-        finally:
-            page.close()
 
     def test_auto_fills_fourth_hand_when_three_hands_are_complete(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
@@ -381,12 +755,10 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             for suit in ("spades", "hearts", "diamonds", "clubs"):
                 page.locator(f"#west_{suit}").fill("")
 
-            double_dummy = page.get_by_role("button", name="Double-dummy it!")
             self.assertEqual(page.locator("#west_spades").input_value(), "K643")
             self.assertEqual(page.locator("#west_hearts").input_value(), "T8")
             self.assertEqual(page.locator("#west_diamonds").input_value(), "AK742")
             self.assertEqual(page.locator("#west_clubs").input_value(), "T5")
-            self.assertTrue(double_dummy.is_enabled())
             self.assertEqual(errors, [])
         finally:
             page.close()
