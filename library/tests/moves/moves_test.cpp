@@ -624,3 +624,46 @@ TEST_F(MovesTest, ApplyMoveToTrackFollowSuit) {
   EXPECT_EQ(moves->trackp->play_suits[1], 0);
   EXPECT_EQ(moves->trackp->play_ranks[1], 13);
 }
+
+TEST_F(MovesTest, ApplyMoveToTrackTrumpBeatsNonTrump) {
+  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  // trump = 0 (Spades)
+  moves->Init(5, 0, nullptr, nullptr, rankInSuit, 0, 0);
+  moves->trackp = &moves->track[5];
+
+  // Lead with Hearts (non-trump)
+  MoveType lead;
+  lead.suit = 1;  lead.rank = 14;  lead.sequence = 0;
+  moves->apply_move_to_track(lead, 0, 5);
+
+  // Follow with Spades (trump) — trump wins
+  MoveType trump_card;
+  trump_card.suit = 0;  trump_card.rank = 2;  trump_card.sequence = 0;
+  moves->apply_move_to_track(trump_card, 1, 5);
+
+  EXPECT_EQ(moves->trackp->high[1], 1);  // hand 1 wins with trump
+  EXPECT_EQ(moves->trackp->move[1].suit, 0);
+  EXPECT_EQ(moves->trackp->move[1].rank, 2);
+}
+
+TEST_F(MovesTest, ApplyMoveToTrackTrickCompletion) {
+  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
+  moves->trackp = &moves->track[5];
+  moves->track[5].lead_hand = 0;
+
+  MoveType cards[4];
+  for (int h = 0; h < 4; h++) {
+    cards[h].suit = 0;
+    cards[h].rank = 14 - h;  // A K Q J
+    cards[h].sequence = 0;
+    moves->apply_move_to_track(cards[h], h, 5);
+  }
+
+  // Hand 0 played Ace — should win
+  EXPECT_EQ(moves->trackp->high[3], 0);
+  // Next trick lead_hand should be hand 0
+  EXPECT_EQ(moves->track[4].lead_hand, 0);
+  // removed_ranks should include all played cards
+  EXPECT_NE(moves->track[4].removed_ranks[0], 0);
+}
