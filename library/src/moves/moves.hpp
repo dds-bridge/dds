@@ -338,7 +338,14 @@ public:
      * @return Pointer to chosen move, or nullptr if list exhausted
      */
     auto MakeNextSimple(const int trick, const int relHand) -> MoveType const *;
-    auto apply_move_to_track(const MoveType& move, const int relHand,
+    /**
+     * @brief Update TrackType state to reflect a played move.
+     *
+     * @param move Move to apply
+     * @param relHand Relative hand index within the current trick (0..3)
+     * @param trick Trick index (1..12); when relHand==3 updates next trick state
+     */
+    auto apply_move_to_track(const MoveType &move, const int relHand,
                              const int trick) -> void;
 
     /**

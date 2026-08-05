@@ -439,8 +439,12 @@ auto Moves::GetLength(const int trick, const int relHand) const -> int {
   return moveList[trick][relHand].last + 1;
 }
 
-auto Moves::apply_move_to_track(const MoveType& move, const int relHand,
+auto Moves::apply_move_to_track(const MoveType &move, const int relHand,
                                 const int trick) -> void {
+  assert(trackp != nullptr && "apply_move_to_track: trackp must be set");
+  assert(relHand >= 0 && relHand < DDS_HANDS);
+  if (relHand == 3)
+    assert(trick > 0 && "apply_move_to_track: trick must be > 0 when relHand==3");
   if (relHand == 0) {
     trackp->move[0].suit = move.suit;
     trackp->move[0].rank = move.rank;

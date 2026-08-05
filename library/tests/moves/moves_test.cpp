@@ -614,7 +614,7 @@ TEST_F(MovesTest, ApplyMoveToTrackFollowSuit) {
   lead.suit = 0;  lead.rank = 14;  lead.sequence = 0;
   moves->apply_move_to_track(lead, 0, 5);
 
-  // Follow with King of Spades — higher rank wins
+  // Follow with King of Spades — lower rank loses
   MoveType follow;
   follow.suit = 0;  follow.rank = 13;  follow.sequence = 0;
   moves->apply_move_to_track(follow, 1, 5);
