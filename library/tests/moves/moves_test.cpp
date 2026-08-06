@@ -611,12 +611,16 @@ TEST_F(MovesTest, ApplyMoveToTrackFollowSuit) {
 
   // Lead with Ace of Spades
   MoveType lead;
-  lead.suit = 0;  lead.rank = 14;  lead.sequence = 0;
+  lead.suit = 0;
+  lead.rank = 14;
+  lead.sequence = 0;
   moves->apply_move_to_track(lead, 0, 5);
 
   // Follow with King of Spades — lower rank loses
   MoveType follow;
-  follow.suit = 0;  follow.rank = 13;  follow.sequence = 0;
+  follow.suit = 0;
+  follow.rank = 13;
+  follow.sequence = 0;
   moves->apply_move_to_track(follow, 1, 5);
 
   // King < Ace so high stays at 0 (lead hand wins)
@@ -633,12 +637,16 @@ TEST_F(MovesTest, ApplyMoveToTrackTrumpBeatsNonTrump) {
 
   // Lead with Hearts (non-trump)
   MoveType lead;
-  lead.suit = 1;  lead.rank = 14;  lead.sequence = 0;
+  lead.suit = 1;
+  lead.rank = 14;
+  lead.sequence = 0;
   moves->apply_move_to_track(lead, 0, 5);
 
   // Follow with Spades (trump) — trump wins
   MoveType trump_card;
-  trump_card.suit = 0;  trump_card.rank = 2;  trump_card.sequence = 0;
+  trump_card.suit = 0;
+  trump_card.rank = 2;
+  trump_card.sequence = 0;
   moves->apply_move_to_track(trump_card, 1, 5);
 
   EXPECT_EQ(moves->trackp->high[1], 1);  // hand 1 wins with trump
@@ -651,25 +659,27 @@ TEST_F(MovesTest, ApplyMoveToTrackTrickCompletion) {
   moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
   moves->trackp = &moves->track[5];
   moves->track[5].lead_hand = 0;
-
+  // Zero removed_ranks so we can verify apply_move_to_track sets specific bits
+  for (int s = 0; s < DDS_SUITS; s++) {
+    moves->track[5].removed_ranks[s] = 0;
+    moves->track[4].removed_ranks[s] = 0;
+  }
+  // All four hands play spades: A K Q J
   MoveType cards[4];
   for (int h = 0; h < 4; h++) {
     cards[h].suit = 0;
-    cards[h].rank = 14 - h;  // A K Q J
+    cards[h].rank = 14 - h;
     cards[h].sequence = 0;
     moves->apply_move_to_track(cards[h], h, 5);
   }
-
-  // Hand 0 played Ace — should win
+  // Hand 0 played Ace - should win
   EXPECT_EQ(moves->trackp->high[3], 0);
   // Next trick lead_hand should be hand 0
   EXPECT_EQ(moves->track[4].lead_hand, 0);
-  // Capture removed_ranks before and after to confirm apply_move_to_track updates them
-  unsigned short before = moves->track[4].removed_ranks[0];
-  moves->track[4].removed_ranks[0] = 0;
-  // Re-run just relHand==3 to trigger the update
-  moves->apply_move_to_track(cards[3], 3, 5);
-  // removed_ranks[0] should now include spades played this trick
+  // removed_ranks[0] (spades) should have bits set for A K Q J
   EXPECT_NE(moves->track[4].removed_ranks[0], 0);
-  (void)before;
+  // Other suits untouched - should remain 0
+  EXPECT_EQ(moves->track[4].removed_ranks[1], 0);
+  EXPECT_EQ(moves->track[4].removed_ranks[2], 0);
+  EXPECT_EQ(moves->track[4].removed_ranks[3], 0);
 }
