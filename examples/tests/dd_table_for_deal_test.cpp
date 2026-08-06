@@ -9,6 +9,8 @@
 
 #include <gtest/gtest.h>
 
+#include <sstream>
+
 #include <api/dll.h>
 #include "dd_table_for_deal.hpp"
 
@@ -53,6 +55,27 @@ TEST(ParseVulnerable, RejectsUnknown)
   EXPECT_FALSE(dd_table_for_deal::parse_vulnerable("").has_value());
   EXPECT_FALSE(dd_table_for_deal::parse_vulnerable("maybe").has_value());
   EXPECT_FALSE(dd_table_for_deal::parse_vulnerable("4").has_value());
+}
+
+
+TEST(ShouldReportFailedStreamRead, TrueOnEofOrBad)
+{
+  std::istringstream empty("");
+  empty.get();
+  EXPECT_TRUE(empty.eof());
+  EXPECT_TRUE(dd_table_for_deal::should_report_failed_stream_read(empty));
+
+  std::istringstream bad_stream("x");
+  bad_stream.setstate(std::ios::badbit);
+  EXPECT_TRUE(dd_table_for_deal::should_report_failed_stream_read(bad_stream));
+}
+
+
+TEST(ShouldReportFailedStreamRead, FalseWhenStreamStillReadable)
+{
+  // Oversized reads stop early without setting eof/bad; do not re-report.
+  std::istringstream mid("still-readable");
+  EXPECT_FALSE(dd_table_for_deal::should_report_failed_stream_read(mid));
 }
 
 

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <istream>
 #include <regex>
 #include <string>
 #include <unordered_set>
@@ -138,6 +139,12 @@ auto looks_like_path(std::string_view arg) -> bool
       return true;
   }
   return false;
+}
+
+
+auto should_report_failed_stream_read(std::istream const& in) -> bool
+{
+  return in.eof() || in.bad();
 }
 
 

@@ -41,6 +41,7 @@ using dd_table_for_deal::extract_deal_tags;
 using dd_table_for_deal::format_par_line;
 using dd_table_for_deal::looks_like_path;
 using dd_table_for_deal::parse_vulnerable;
+using dd_table_for_deal::should_report_failed_stream_read;
 using dd_table_for_deal::unique_deals;
 
 
@@ -114,7 +115,9 @@ auto load_deals(std::string_view arg) -> std::optional<std::vector<std::string>>
     const auto text = read_pbn_stream(std::cin);
     if (!text)
     {
-      std::cerr << "Cannot read PBN from stdin\n";
+      // Oversized input is already reported by read_pbn_stream.
+      if (should_report_failed_stream_read(std::cin))
+        std::cerr << "Cannot read PBN from stdin\n";
       return std::nullopt;
     }
 

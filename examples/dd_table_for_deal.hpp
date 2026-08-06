@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <iosfwd>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -29,6 +30,10 @@ auto unique_deals(std::vector<std::string> const& deals)
     -> std::vector<std::string>;
 
 auto looks_like_path(std::string_view arg) -> bool;
+
+// True when a failed stream read should report empty/IO failure to the user.
+// False when the stream is still readable (e.g. oversize already reported).
+auto should_report_failed_stream_read(std::istream const& in) -> bool;
 
 auto format_par_line(ParResultsMaster const sidesRes[2])
     -> std::optional<std::string>;
