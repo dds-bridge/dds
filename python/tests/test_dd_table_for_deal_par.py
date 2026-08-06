@@ -183,6 +183,17 @@ class FormatParLineTest(unittest.TestCase):
             "Par: EW 2S = 110",
         )
 
+    def test_making_contract_expands_multi_level_encoding(self) -> None:
+        """DDS Par strings encode overtricks as concatenated levels (e.g. 45S)."""
+        par_results = {
+            "par_score": ["NS -450", "EW 450"],
+            "par_contracts_string": ["NS:EW 45S", "EW:EW 45S"],
+        }
+        self.assertEqual(
+            _format_par_line(par_results, vulnerable=0),
+            "Par: EW 4S +1 450",
+        )
+
     def test_multiple_sacrifice_contracts_on_one_line(self) -> None:
         par_results = {
             "par_score": ["NS 100", "EW -100"],

@@ -222,6 +222,46 @@ def _contract_body(side_contracts: str) -> str | None:
     return body or None
 
 
+def _normalize_contract_piece(piece: str) -> tuple[str, str] | None:
+    """Expand DDS multi-level encodings like 'EW 45S' into ('EW 4S', '+1')."""
+    match = _CONTRACT_RE.match(piece.strip())
+    if match is None:
+        return None
+
+    seats, levels, denom, doubled = match.groups()
+    seats = seats.upper()
+    denom = denom.upper()
+    digits = [int(ch) for ch in levels]
+    level = digits[0]
+    over = digits[-1] - digits[0]
+
+    if doubled:
+        return f"{seats} {level}{denom}x", "="
+
+    contract = f"{seats} {level}{denom}"
+    result = f"+{over}" if over > 0 else "="
+    return contract, result
+
+
+def _normalize_par_body(body: str) -> tuple[str, str] | None:
+    """Normalize comma-separated contracts; result comes from the first make."""
+    pieces = [p.strip() for p in body.split(",") if p.strip()]
+    if not pieces:
+        return None
+
+    normalized: list[str] = []
+    result = "="
+    for i, piece in enumerate(pieces):
+        parsed = _normalize_contract_piece(piece)
+        if parsed is None:
+            return None
+        contract, piece_result = parsed
+        normalized.append(contract)
+        if i == 0:
+            result = piece_result
+    return ",".join(normalized), result
+
+
 def _first_seats(body: str) -> str | None:
     match = _CONTRACT_RE.match(body.split(",", 1)[0].strip())
     if match is None:
@@ -256,12 +296,17 @@ def _format_par_line(par_results: dict, *, vulnerable: int) -> str | None:
     if seats is None:
         return None
 
+    normalized = _normalize_par_body(body)
+    if normalized is None:
+        return None
+    body, make_result = normalized
+
     score = _declaring_score(par_results, seats)
     is_sacrifice = "x" in body.lower()
     if is_sacrifice:
         result = f"-{_sacrifice_undertricks(score, vulnerable, seats)}"
     else:
-        result = "="
+        result = make_result
 
     return f"Par: {body} {result} {score}"
 
@@ -365,7 +410,7 @@ def _print_pbn_hand(title: str, pbn_deal: str) -> None:
     print("-" * dash_len)
     for i in range(_DDS_HAND_LINES):
         print("".join(text[i][: row_ends[i]]))
-    print("\n")
+    print()
 
 
 def _print_table(res_table: list[list[int]]) -> None:
