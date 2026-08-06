@@ -67,19 +67,44 @@ class ParseVulnerableTest(unittest.TestCase):
 
 class ParseCliTest(unittest.TestCase):
     def test_deal_only_defaults_vulnerable_to_none(self) -> None:
-        deal, vulnerable = _parse_cli(["prog", _EXAMPLE_DEAL])
+        deal, vulnerable, limit = _parse_cli(["prog", _EXAMPLE_DEAL])
         self.assertEqual(deal, _EXAMPLE_DEAL)
         self.assertEqual(vulnerable, 0)
+        self.assertIsNone(limit)
 
     def test_vul_flag_before_deal(self) -> None:
-        deal, vulnerable = _parse_cli(["prog", "--vul", "ns", _EXAMPLE_DEAL])
+        deal, vulnerable, limit = _parse_cli(["prog", "--vul", "ns", _EXAMPLE_DEAL])
         self.assertEqual(deal, _EXAMPLE_DEAL)
         self.assertEqual(vulnerable, 2)
+        self.assertIsNone(limit)
 
     def test_vul_flag_after_deal(self) -> None:
-        deal, vulnerable = _parse_cli(["prog", _EXAMPLE_DEAL, "--vul", "both"])
+        deal, vulnerable, limit = _parse_cli(["prog", _EXAMPLE_DEAL, "--vul", "both"])
         self.assertEqual(deal, _EXAMPLE_DEAL)
         self.assertEqual(vulnerable, 1)
+        self.assertIsNone(limit)
+
+    def test_limit_flag(self) -> None:
+        deal, vulnerable, limit = _parse_cli(
+            ["prog", "--limit", "3", _EXAMPLE_DEAL]
+        )
+        self.assertEqual(deal, _EXAMPLE_DEAL)
+        self.assertEqual(vulnerable, 0)
+        self.assertEqual(limit, 3)
+
+    def test_limit_and_vul_together(self) -> None:
+        deal, vulnerable, limit = _parse_cli(
+            ["prog", "--vul", "ns", "--limit", "1", "boards.pbn"]
+        )
+        self.assertEqual(deal, "boards.pbn")
+        self.assertEqual(vulnerable, 2)
+        self.assertEqual(limit, 1)
+
+    def test_rejects_non_positive_limit(self) -> None:
+        for bad in ("0", "-1", "x", ""):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    _parse_cli(["prog", "--limit", bad, _EXAMPLE_DEAL])
 
     def test_help_returns_none(self) -> None:
         self.assertIsNone(_parse_cli(["prog", "-h"]))
@@ -92,6 +117,12 @@ class ParseCliTest(unittest.TestCase):
         text = buf.getvalue()
         self.assertIn("none|both|ns|ew", text)
         self.assertIn("0|1|2|3", text)
+
+    def test_usage_documents_limit(self) -> None:
+        buf = io.StringIO()
+        with redirect_stderr(buf):
+            _print_usage("prog")
+        self.assertIn("--limit", buf.getvalue())
 
     def test_rejects_unknown_flags(self) -> None:
         with self.assertRaises(ValueError):
@@ -346,6 +377,41 @@ class MainParOutputTest(unittest.TestCase):
         out = buf.getvalue()
         self.assertIn("Par: 0\n\n", out)
         self.assertEqual(out.count("Par: 0\n\n"), 2)
+
+    def test_main_limit_solves_only_first_n_unique_deals(self) -> None:
+        duplicate_pbn = (
+            f'[Deal "{_EXAMPLE_DEAL}"]\n'
+            f'[Deal "{_EXAMPLE_DEAL}"]\n'
+            f'[Deal "{_HAND0_DEAL}"]\n'
+            f'[Deal "{_EXAMPLE_DEAL}"]\n'
+        )
+        fake_tables = {
+            "tables": [{"res_table": [[0] * 4 for _ in range(5)]}],
+        }
+        fake_par = {
+            "par_score": ["NS 0", "EW 0"],
+            "par_contracts_string": ["NS:", "EW:"],
+        }
+        with mock.patch(
+            "dd_table_for_deal._read_pbn_file", return_value=duplicate_pbn
+        ), mock.patch(
+            "dd_table_for_deal.calc_all_tables_pbn", return_value=fake_tables
+        ) as calc_mock, mock.patch(
+            "dd_table_for_deal.calc_par_from_table", return_value=fake_par
+        ), mock.patch(
+            "dd_table_for_deal._print_pbn_hand"
+        ) as hand_mock, mock.patch(
+            "dd_table_for_deal._print_table"
+        ), redirect_stdout(io.StringIO()):
+            rc = main(["dd_table_for_deal", "--limit", "1", "dupes.pbn"])
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(
+            [call.args[0] for call in calc_mock.call_args_list],
+            [[_EXAMPLE_DEAL]],
+        )
+        self.assertEqual(hand_mock.call_count, 1)
+        self.assertEqual(hand_mock.call_args.args[0], "dd_table_for_deal:\n")
 
     def test_main_solves_duplicate_deals_only_once(self) -> None:
         duplicate_pbn = (

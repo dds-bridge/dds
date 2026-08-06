@@ -132,13 +132,23 @@ def _parse_vulnerable(text: str) -> int:
         ) from exc
 
 
-def _parse_cli(argv: list[str]) -> tuple[str, int] | None:
-    """Return (deal_arg, vulnerable) or None for help. Raises ValueError on bad args."""
+def _parse_limit(text: str) -> int:
+    if not text.isdigit() or int(text) < 1:
+        raise ValueError("Invalid --limit value (use a positive integer)")
+    return int(text)
+
+
+def _parse_cli(argv: list[str]) -> tuple[str, int, int | None] | None:
+    """Return (deal_arg, vulnerable, limit) or None for help.
+
+    limit is None when unrestricted. Raises ValueError on bad args.
+    """
     if len(argv) >= 2 and argv[1] in ("-h", "--help"):
         return None
 
     deal: str | None = None
     vulnerable = 0
+    limit: int | None = None
     i = 1
     while i < len(argv):
         arg = argv[i]
@@ -146,6 +156,12 @@ def _parse_cli(argv: list[str]) -> tuple[str, int] | None:
             if i + 1 >= len(argv):
                 raise ValueError("--vul requires a value (none|both|ns|ew or 0|1|2|3)")
             vulnerable = _parse_vulnerable(argv[i + 1])
+            i += 2
+            continue
+        if arg == "--limit":
+            if i + 1 >= len(argv):
+                raise ValueError("--limit requires a positive integer")
+            limit = _parse_limit(argv[i + 1])
             i += 2
             continue
         if arg.startswith("-") and arg != "-":
@@ -161,12 +177,13 @@ def _parse_cli(argv: list[str]) -> tuple[str, int] | None:
         else:
             raise ValueError("missing deal argument")
 
-    return deal, vulnerable
+    return deal, vulnerable, limit
 
 
 def _print_usage(prog: str) -> None:
     print(
-        f"Usage: {prog} [--vul none|both|ns|ew|0|1|2|3] <pbn_deal_or_file>\n"
+        f"Usage: {prog} [--vul none|both|ns|ew|0|1|2|3] [--limit N] "
+        f"<pbn_deal_or_file>\n"
         f"       {prog} -h | --help\n"
         "\n"
         "Calculate double-dummy tricks and par for all strains and leads.\n"
@@ -175,6 +192,7 @@ def _print_usage(prog: str) -> None:
         "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
         "  --vul              Vulnerability: none|both|ns|ew or 0|1|2|3"
         " (default: none)\n"
+        "  --limit            Solve only the first N unique deals\n"
         "\n"
         'If stdin is not a terminal, PBN is read from stdin (all [Deal "..."] tags).\n'
         "\n"
@@ -182,6 +200,7 @@ def _print_usage(prog: str) -> None:
         f'  {prog} "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 '
         f'5.A95432.7632.K6 AKJ9842.K.T8.J93"\n'
         f"  {prog} --vul ns hands/example.pbn\n"
+        f"  {prog} --limit 3 hands/multi_board.pbn\n"
         f"  {prog} < hands/example.pbn\n",
         file=sys.stderr,
     )
@@ -455,13 +474,16 @@ def main(argv: list[str] | None = None) -> int:
         _print_usage(prog)
         return 0
 
-    input_arg, vulnerable = parsed
+    input_arg, vulnerable, limit = parsed
 
     try:
         pbn_deals = _unique_deals(_load_deals(input_arg))
     except ValueError as exc:
         print(exc, file=sys.stderr)
         return 1
+
+    if limit is not None:
+        pbn_deals = pbn_deals[:limit]
 
     if any(len(deal) >= PBN_DEAL_MAX for deal in pbn_deals):
         print(

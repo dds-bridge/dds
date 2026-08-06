@@ -37,9 +37,11 @@ namespace {
 
 using dd_table_for_deal::PBN_DEAL_MAX;
 using dd_table_for_deal::PBN_FILE_MAX;
+using dd_table_for_deal::apply_deal_limit;
 using dd_table_for_deal::extract_deal_tags;
 using dd_table_for_deal::format_par_line;
 using dd_table_for_deal::looks_like_path;
+using dd_table_for_deal::parse_limit;
 using dd_table_for_deal::parse_vulnerable;
 using dd_table_for_deal::should_report_failed_stream_read;
 using dd_table_for_deal::unique_deals;
@@ -242,7 +244,8 @@ auto process_deal(
 static auto print_usage(const char * prog) -> void
 {
   fprintf(stderr,
-          "Usage: %s [--vul none|both|ns|ew|0|1|2|3] <pbn_deal_or_file>\n"
+          "Usage: %s [--vul none|both|ns|ew|0|1|2|3] [--limit N] "
+          "<pbn_deal_or_file>\n"
           "       %s -h | --help\n"
           "\n"
           "Calculate double-dummy tricks and par for all strains and leads.\n"
@@ -251,6 +254,7 @@ static auto print_usage(const char * prog) -> void
           "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
           "  --vul              Vulnerability: none|both|ns|ew or 0|1|2|3"
           " (default: none)\n"
+          "  --limit            Solve only the first N unique deals\n"
           "\n"
           "If stdin is not a terminal, PBN is read from stdin (all [Deal \"...\"] tags).\n"
           "\n"
@@ -258,7 +262,9 @@ static auto print_usage(const char * prog) -> void
           "  %s \"N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 "
           "5.A95432.7632.K6 AKJ9842.K.T8.J93\"\n"
           "  %s --vul ns hands/example.pbn\n"
+          "  %s --limit 3 hands/multi_board.pbn\n"
           "  %s < hands/example.pbn\n",
+          prog,
           prog,
           prog,
           prog,
@@ -271,6 +277,7 @@ auto main(int argc, char * argv[]) -> int
 {
   const char * input = nullptr;
   int vulnerable = 0;
+  std::optional<std::size_t> limit;
 
   for (int i = 1; i < argc; ++i)
   {
@@ -295,6 +302,24 @@ auto main(int argc, char * argv[]) -> int
         return 1;
       }
       vulnerable = *vul;
+      continue;
+    }
+    if (strcmp(argv[i], "--limit") == 0)
+    {
+      if (i + 1 >= argc)
+      {
+        fprintf(stderr, "--limit requires a positive integer\n");
+        print_usage(argv[0]);
+        return 1;
+      }
+      const auto parsed_limit = parse_limit(argv[++i]);
+      if (!parsed_limit)
+      {
+        fprintf(stderr, "Invalid --limit value (use a positive integer)\n");
+        print_usage(argv[0]);
+        return 1;
+      }
+      limit = parsed_limit;
       continue;
     }
     if (argv[i][0] == '-' && strcmp(argv[i], "-") != 0)
@@ -328,7 +353,7 @@ auto main(int argc, char * argv[]) -> int
     return 1;
   }
 
-  const auto deals = unique_deals(*loaded);
+  const auto deals = apply_deal_limit(unique_deals(*loaded), limit);
 
   for (std::size_t i = 0; i < deals.size(); ++i)
   {

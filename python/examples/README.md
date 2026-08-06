@@ -13,6 +13,7 @@ or
 ```bash
 bazelisk run //python/examples:dd_table_for_deal -- hands/example.pbn
 bazelisk run //python/examples:dd_table_for_deal -- --vul ns hands/example.pbn
+bazelisk run //python/examples:dd_table_for_deal -- --limit 3 hands/multi_board.pbn
 ```
 
 

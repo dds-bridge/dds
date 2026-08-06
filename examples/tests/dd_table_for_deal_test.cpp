@@ -58,6 +58,38 @@ TEST(ParseVulnerable, RejectsUnknown)
 }
 
 
+TEST(ParseLimit, AcceptsPositiveIntegers)
+{
+  EXPECT_EQ(dd_table_for_deal::parse_limit("1"), 1u);
+  EXPECT_EQ(dd_table_for_deal::parse_limit("25"), 25u);
+}
+
+
+TEST(ParseLimit, RejectsNonPositiveAndNonNumeric)
+{
+  EXPECT_FALSE(dd_table_for_deal::parse_limit("").has_value());
+  EXPECT_FALSE(dd_table_for_deal::parse_limit("0").has_value());
+  EXPECT_FALSE(dd_table_for_deal::parse_limit("-1").has_value());
+  EXPECT_FALSE(dd_table_for_deal::parse_limit("3x").has_value());
+  EXPECT_FALSE(dd_table_for_deal::parse_limit("1.5").has_value());
+}
+
+
+TEST(ApplyDealLimit, KeepsPrefixWhenLimited)
+{
+  const std::vector<std::string> deals{"a", "b", "c"};
+  EXPECT_EQ(
+      dd_table_for_deal::apply_deal_limit(deals, 2),
+      (std::vector<std::string>{"a", "b"}));
+  EXPECT_EQ(
+      dd_table_for_deal::apply_deal_limit(deals, std::nullopt),
+      deals);
+  EXPECT_EQ(
+      dd_table_for_deal::apply_deal_limit(deals, 10),
+      deals);
+}
+
+
 TEST(ShouldReportFailedStreamRead, TrueOnEofOrBad)
 {
   std::istringstream empty("");

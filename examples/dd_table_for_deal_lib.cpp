@@ -13,6 +13,7 @@
 #include <cctype>
 #include <cstdio>
 #include <istream>
+#include <limits>
 #include <regex>
 #include <string>
 #include <unordered_set>
@@ -111,6 +112,38 @@ auto parse_vulnerable(std::string_view text) -> std::optional<int>
   if (lower == "ew" || lower == "3")
     return 3;
   return std::nullopt;
+}
+
+
+auto parse_limit(std::string_view text) -> std::optional<std::size_t>
+{
+  if (text.empty())
+    return std::nullopt;
+
+  std::size_t value = 0;
+  for (char ch : text)
+  {
+    if (ch < '0' || ch > '9')
+      return std::nullopt;
+    const std::size_t digit = static_cast<std::size_t>(ch - '0');
+    if (value > (std::numeric_limits<std::size_t>::max() - digit) / 10)
+      return std::nullopt;
+    value = value * 10 + digit;
+  }
+  if (value == 0)
+    return std::nullopt;
+  return value;
+}
+
+
+auto apply_deal_limit(
+    std::vector<std::string> deals,
+    std::optional<std::size_t> limit) -> std::vector<std::string>
+{
+  if (!limit.has_value() || *limit >= deals.size())
+    return deals;
+  deals.resize(*limit);
+  return deals;
 }
 
 
