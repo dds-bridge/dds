@@ -1,7 +1,7 @@
 ---
 capability: examples-cli
 owners: [examples]
-last-updated: 2026-07-18
+last-updated: 2026-08-06
 ---
 
 # Example CLIs
@@ -24,7 +24,8 @@ build ports to the browser. They are demonstrations, not a supported product CLI
 - **Grouped by what they demonstrate:**
   - **Solve a board:** `solve_board`, `solve_board_pbn`, `solve_all_boards`.
   - **Double-dummy tables:** `calc_dd_table`, `calc_dd_table_pbn`,
-    `calc_all_tables`, `calc_all_tables_pbn`, `dd_table_for_deal`.
+    `calc_all_tables`, `calc_all_tables_pbn`, `dd_table_for_deal`
+    (also prints `Par()` results; optional `--vul`).
   - **Par scoring:** `par`, `dealer_par`.
   - **Play analysis:** `AnalysePlayBin` (source `analyse_play_bin.cpp`),
     `analyse_play_pbn`, `analyse_all_plays_bin`, `analyse_all_plays_pbn`.

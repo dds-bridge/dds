@@ -13,6 +13,7 @@ Run an example:
 
 Python `dd_table_for_deal` (see `python/examples/`):
     bazelisk run //python/examples:dd_table_for_deal -- hands/example.pbn
+    bazelisk run //python/examples:dd_table_for_deal -- --vul ns hands/example.pbn
 
 Available examples:
 - analyse_all_plays_bin, analyse_all_plays_pbn

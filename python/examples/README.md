@@ -11,7 +11,8 @@ bazelisk run //python/examples:dd_table_for_deal "N:73.QJT.AQ54.T752 QT6.876.KJ9
 or
 
 ```bash
-bazelisk run //python/examples:dd_table_for_deal hands/example.pbn
+bazelisk run //python/examples:dd_table_for_deal -- hands/example.pbn
+bazelisk run //python/examples:dd_table_for_deal -- --vul ns hands/example.pbn
 ```
 
 

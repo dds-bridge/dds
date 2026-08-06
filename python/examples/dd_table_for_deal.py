@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the double-dummy table for a deal from PBN on the command line or a file.
+"""Print the double-dummy table and par for a deal from PBN on the CLI or a file.
 
 Python counterpart to examples/dd_table_for_deal.cpp.
 """
@@ -11,9 +11,25 @@ import re
 import sys
 from pathlib import Path
 
-from dds3 import calc_all_tables_pbn
+from dds3 import calc_all_tables_pbn, calc_par_from_table
 
 PBN_FILE_MAX = 8192
+
+_CONTRACT_RE = re.compile(
+    r"^(N|E|S|W|NS|EW)\s+(\d+)([SHDCN])(x)?$",
+    re.IGNORECASE,
+)
+
+_VULNERABLE_ALIASES = {
+    "none": 0,
+    "0": 0,
+    "both": 1,
+    "1": 1,
+    "ns": 2,
+    "2": 2,
+    "ew": 3,
+    "3": 3,
+}
 
 # res_table[strain][hand]: strain 0-3 = S,H,D,C; 4 = NT. Columns match C++ print_table.
 _STRAIN_ROWS = (("NT", 4), ("S", 0), ("H", 1), ("D", 2), ("C", 3))
@@ -80,25 +96,158 @@ def _load_deal(arg: str) -> str:
     return arg
 
 
+def _parse_vulnerable(text: str) -> int:
+    try:
+        return _VULNERABLE_ALIASES[text.lower()]
+    except KeyError as exc:
+        raise ValueError(
+            "Invalid --vul value (use none|both|ns|ew or 0|1|2|3)"
+        ) from exc
+
+
+def _parse_cli(argv: list[str]) -> tuple[str, int] | None:
+    """Return (deal_arg, vulnerable) or None for help. Raises ValueError on bad args."""
+    if len(argv) >= 2 and argv[1] in ("-h", "--help"):
+        return None
+
+    deal: str | None = None
+    vulnerable = 0
+    i = 1
+    while i < len(argv):
+        arg = argv[i]
+        if arg == "--vul":
+            if i + 1 >= len(argv):
+                raise ValueError("--vul requires a value (none|both|ns|ew or 0|1|2|3)")
+            vulnerable = _parse_vulnerable(argv[i + 1])
+            i += 2
+            continue
+        if arg.startswith("-") and arg != "-":
+            raise ValueError(f"Unknown option: {arg}")
+        if deal is not None:
+            raise ValueError("Only one deal argument is allowed")
+        deal = arg
+        i += 1
+
+    if deal is None:
+        if not sys.stdin.isatty():
+            deal = "-"
+        else:
+            raise ValueError("missing deal argument")
+
+    return deal, vulnerable
+
+
 def _print_usage(prog: str) -> None:
     print(
-        f"Usage: {prog} <pbn_deal_or_file>\n"
+        f"Usage: {prog} [--vul none|both|ns|ew] <pbn_deal_or_file>\n"
         f"       {prog} -h | --help\n"
         "\n"
-        "Calculate double-dummy tricks for all strains and leads.\n"
+        "Calculate double-dummy tricks and par for all strains and leads.\n"
         "\n"
         "Arguments:\n"
         "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
+        "  --vul              Vulnerability: none, both, ns, ew (default: none)\n"
         "\n"
         'If stdin is not a terminal, PBN is read from stdin (uses [Deal "..."]).\n'
         "\n"
         "Examples:\n"
         f'  {prog} "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 '
         f'5.A95432.7632.K6 AKJ9842.K.T8.J93"\n'
-        f"  {prog} hands/example.pbn\n"
+        f"  {prog} --vul ns hands/example.pbn\n"
         f"  {prog} < hands/example.pbn\n",
         file=sys.stderr,
     )
+
+
+def _rawscore_undertricks(tricks: int, is_vul: bool) -> int:
+    """Match library/src/par.cpp rawscore(-1, tricks, is_vul)."""
+    if is_vul:
+        return -300 * tricks + 100
+    if tricks <= 3:
+        return -200 * tricks + 100
+    return -300 * tricks + 400
+
+
+def _side_vulnerable(seats: str, vulnerable: int) -> bool:
+    if vulnerable == 1:
+        return True
+    if seats in ("NS", "N", "S"):
+        return vulnerable == 2
+    if seats in ("EW", "E", "W"):
+        return vulnerable == 3
+    return False
+
+
+def _sacrifice_undertricks(score: int, vulnerable: int, seats: str) -> int:
+    """Infer sacrifice undertricks from the NS-view par score."""
+    is_vul = _side_vulnerable(seats, vulnerable)
+    for tricks in range(1, 14):
+        sacrifice_score = _rawscore_undertricks(tricks, is_vul)
+        if sacrifice_score == score or -sacrifice_score == score:
+            return tricks
+    raise ValueError(f"cannot infer undertricks for par score {score}")
+
+
+def _contract_body(side_contracts: str) -> str | None:
+    if ":" not in side_contracts:
+        return None
+    body = side_contracts.split(":", 1)[1].strip()
+    if not body or "," in body:
+        return None
+    return body
+
+
+def _format_par_line(par_results: dict, *, vulnerable: int) -> str | None:
+    """Return a one-line par summary, or None when verbose output is needed."""
+    scores = par_results["par_score"]
+    contracts = par_results["par_contracts_string"]
+
+    ns_score = int(scores[0].split()[1])
+    if ns_score == 0 and int(scores[1].split()[1]) == 0:
+        body = _contract_body(contracts[0])
+        if body is None:
+            return "Par: 0"
+        return "Par: 0"
+
+    body = _contract_body(contracts[0])
+    if body is None:
+        return None
+
+    match = _CONTRACT_RE.match(body)
+    if match is None:
+        return None
+
+    seats, level, denom, doubled = match.groups()
+    seats = seats.upper()
+    contract = f"{level}{denom.upper()}"
+    if doubled:
+        contract += "x"
+
+    if doubled:
+        result = f"-{_sacrifice_undertricks(ns_score, vulnerable, seats)}"
+    else:
+        result = "+0"
+
+    return f"Par: {seats} {contract} {result} {ns_score}"
+
+
+def _print_par_verbose(par_results: dict) -> None:
+    """Match examples/hands.cpp print_par."""
+    scores = par_results["par_score"]
+    contracts = par_results["par_contracts_string"]
+    print(f"NS score: {scores[0]}")
+    print(f"EW score: {scores[1]}")
+    print(f"NS list : {contracts[0]}")
+    print(f"EW list : {contracts[1]}")
+    print()
+
+
+def _print_par(par_results: dict, *, vulnerable: int = 0) -> None:
+    line = _format_par_line(par_results, vulnerable=vulnerable)
+    if line is None:
+        _print_par_verbose(par_results)
+    else:
+        print(line)
 
 
 def _is_card(ch: str) -> int:
@@ -212,16 +361,18 @@ def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv if argv is None else argv)
     prog = Path(argv[0]).name
 
-    if len(argv) == 2:
-        if argv[1] in ("-h", "--help"):
-            _print_usage(prog)
-            return 0
-        input_arg = argv[1]
-    elif len(argv) == 1 and not sys.stdin.isatty():
-        input_arg = "-"
-    else:
+    try:
+        parsed = _parse_cli(argv)
+    except ValueError as exc:
+        print(exc, file=sys.stderr)
         _print_usage(prog)
         return 1
+
+    if parsed is None:
+        _print_usage(prog)
+        return 0
+
+    input_arg, vulnerable = parsed
 
     try:
         pbn_deal = _load_deal(input_arg)
@@ -240,9 +391,16 @@ def main(argv: list[str] | None = None) -> int:
         print("DDS error: no table returned", file=sys.stderr)
         return 1
 
-    res_table = tables[0]["res_table"]
+    table = tables[0]
+    try:
+        par_results = calc_par_from_table(table, vulnerable=vulnerable)
+    except (ValueError, RuntimeError) as exc:
+        print(f"DDS error: {exc}", file=sys.stderr)
+        return 1
+
     _print_pbn_hand("dd_table_for_deal:\n", pbn_deal)
-    _print_table(res_table)
+    _print_table(table["res_table"])
+    _print_par(par_results, vulnerable=vulnerable)
     return 0
 
 

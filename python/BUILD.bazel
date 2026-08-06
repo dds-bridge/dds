@@ -201,6 +201,14 @@ py_test(
     deps = ["//python/examples:dd_table_for_deal_lib"],
 )
 
+py_test(
+    name = "dd_table_for_deal_par_test",
+    size = "small",
+    main = "tests/test_dd_table_for_deal_par.py",
+    srcs = ["tests/test_dd_table_for_deal_par.py"],
+    deps = ["//python/examples:dd_table_for_deal_lib"],
+)
+
 py_wheel(
     name = "dds3_wheel",
     distribution = "dds3",
