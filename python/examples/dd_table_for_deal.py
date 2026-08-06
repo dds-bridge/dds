@@ -13,7 +13,8 @@ from pathlib import Path
 
 from dds3 import calc_all_tables_pbn, calc_par_from_table
 
-PBN_FILE_MAX = 8192
+PBN_FILE_MAX = 16 * 1024 * 1024  # safety cap for whole PBN exports
+PBN_DEAL_MAX = 80  # matches DdTableDealPBN::cards
 
 _CONTRACT_RE = re.compile(
     r"^(N|E|S|W|NS|EW)\s+(\d+)([SHDCN])(x)?$",
@@ -49,10 +50,13 @@ _DEAL_TAG_RE = re.compile(r'\[Deal\s*"([^"]*)"', re.IGNORECASE)
 
 
 def _read_pbn_stream(stream) -> str | None:
-    data = stream.read(PBN_FILE_MAX - 1)
+    data = stream.read(PBN_FILE_MAX)
     if not data:
         return None
-    return data if isinstance(data, str) else data.decode("utf-8", errors="replace")
+    text = data if isinstance(data, str) else data.decode("utf-8", errors="replace")
+    if len(text) >= PBN_FILE_MAX:
+        raise ValueError(f"PBN input too large (max {PBN_FILE_MAX} characters)")
+    return text
 
 
 def _read_pbn_file(path: str) -> str | None:
@@ -62,20 +66,28 @@ def _read_pbn_file(path: str) -> str | None:
         candidates.append(Path(workspace) / path)
     for candidate in candidates:
         try:
-            return candidate.read_text(encoding="utf-8", errors="replace")[
-                : PBN_FILE_MAX - 1
-            ]
+            text = candidate.read_text(encoding="utf-8", errors="replace")
+            if len(text) > PBN_FILE_MAX:
+                raise ValueError(f"PBN file too large (max {PBN_FILE_MAX} characters)")
+            return text
         except OSError:
             continue
     return None
 
 
-def _extract_deal_tag(text: str) -> str | None:
-    match = _DEAL_TAG_RE.search(text)
-    return match.group(1) if match else None
+def _extract_deal_tags(text: str) -> list[str]:
+    return [match.group(1) for match in _DEAL_TAG_RE.finditer(text)]
 
 
-def _load_deal(arg: str) -> str:
+def _looks_like_path(arg: str) -> bool:
+    """True when arg is more likely a filename than a raw PBN deal string."""
+    if "/" in arg or "\\" in arg:
+        return True
+    lower = arg.lower()
+    return lower.endswith(".pbn") or lower.endswith(".txt")
+
+
+def _load_deals(arg: str) -> list[str]:
     if arg == "-":
         text = _read_pbn_stream(sys.stdin)
         if text is None:
@@ -86,14 +98,17 @@ def _load_deal(arg: str) -> str:
         source = arg if text is not None else None
 
     if source is not None:
-        deal = _extract_deal_tag(text)
-        if deal is None:
+        deals = _extract_deal_tags(text)
+        if not deals:
             raise ValueError(f'No [Deal "..."] tag found in {source}')
-        return deal
+        return deals
 
-    if len(arg) >= PBN_FILE_MAX:
-        raise ValueError(f"PBN deal too long (max {PBN_FILE_MAX - 1} characters)")
-    return arg
+    if _looks_like_path(arg):
+        raise ValueError(f"Cannot read file: {arg}")
+
+    if len(arg) >= PBN_DEAL_MAX:
+        raise ValueError(f"PBN deal too long (max {PBN_DEAL_MAX - 1} characters)")
+    return [arg]
 
 
 def _parse_vulnerable(text: str) -> int:
@@ -148,7 +163,7 @@ def _print_usage(prog: str) -> None:
         "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
         "  --vul              Vulnerability: none, both, ns, ew (default: none)\n"
         "\n"
-        'If stdin is not a terminal, PBN is read from stdin (uses [Deal "..."]).\n'
+        'If stdin is not a terminal, PBN is read from stdin (all [Deal "..."] tags).\n'
         "\n"
         "Examples:\n"
         f'  {prog} "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 '
@@ -375,32 +390,48 @@ def main(argv: list[str] | None = None) -> int:
     input_arg, vulnerable = parsed
 
     try:
-        pbn_deal = _load_deal(input_arg)
+        pbn_deals = _load_deals(input_arg)
     except ValueError as exc:
         print(exc, file=sys.stderr)
         return 1
 
-    try:
-        result = calc_all_tables_pbn([pbn_deal])
-    except (ValueError, RuntimeError) as exc:
-        print(f"DDS error: {exc}", file=sys.stderr)
+    if any(len(deal) >= PBN_DEAL_MAX for deal in pbn_deals):
+        print(
+            f"PBN deal too long (max {PBN_DEAL_MAX - 1} characters)",
+            file=sys.stderr,
+        )
         return 1
 
-    tables = result.get("tables")
-    if not tables:
-        print("DDS error: no table returned", file=sys.stderr)
-        return 1
+    deal_count = len(pbn_deals)
+    for deal_no, pbn_deal in enumerate(pbn_deals, start=1):
+        try:
+            result = calc_all_tables_pbn([pbn_deal])
+        except (ValueError, RuntimeError) as exc:
+            print(f"DDS error: {exc}", file=sys.stderr)
+            return 1
 
-    table = tables[0]
-    try:
-        par_results = calc_par_from_table(table, vulnerable=vulnerable)
-    except (ValueError, RuntimeError) as exc:
-        print(f"DDS error: {exc}", file=sys.stderr)
-        return 1
+        tables = result.get("tables")
+        if not tables:
+            print("DDS error: no table returned", file=sys.stderr)
+            return 1
 
-    _print_pbn_hand("dd_table_for_deal:\n", pbn_deal)
-    _print_table(table["res_table"])
-    _print_par(par_results, vulnerable=vulnerable)
+        table = tables[0]
+        try:
+            par_results = calc_par_from_table(table, vulnerable=vulnerable)
+        except (ValueError, RuntimeError) as exc:
+            print(f"DDS error: {exc}", file=sys.stderr)
+            return 1
+
+        title = (
+            "dd_table_for_deal:\n"
+            if deal_count == 1
+            else f"Deal {deal_no}:\n"
+        )
+        _print_pbn_hand(title, pbn_deal)
+        _print_table(table["res_table"])
+        _print_par(par_results, vulnerable=vulnerable)
+        if deal_count > 1:
+            print()
     return 0
 
 

@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import io
+import tempfile
 import unittest
 from contextlib import redirect_stdout
+from pathlib import Path
 from unittest import mock
 
 from dd_table_for_deal import (
+    _extract_deal_tags,
     _format_par_line,
+    _load_deals,
     _parse_cli,
     _parse_vulnerable,
     _print_par,
@@ -18,6 +22,17 @@ from dd_table_for_deal import (
 _EXAMPLE_DEAL = (
     "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 "
     "5.A95432.7632.K6 AKJ9842.K.T8.J93"
+)
+_HAND0_DEAL = (
+    "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 "
+    "K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
+)
+_MULTI_DEAL_PBN = (
+    '{Board 1}\n'
+    f'[Deal "{_EXAMPLE_DEAL}"]\n'
+    "\n"
+    "{Board 2}\n"
+    f'[Deal "{_HAND0_DEAL}"]\n'
 )
 
 
@@ -71,6 +86,73 @@ class ParseCliTest(unittest.TestCase):
     def test_rejects_unknown_flags(self) -> None:
         with self.assertRaises(ValueError):
             _parse_cli(["prog", "--oops", _EXAMPLE_DEAL])
+
+
+class ExtractDealTagsTest(unittest.TestCase):
+    def test_finds_all_deal_tags_in_pbn_text(self) -> None:
+        self.assertEqual(
+            _extract_deal_tags(_MULTI_DEAL_PBN),
+            [_EXAMPLE_DEAL, _HAND0_DEAL],
+        )
+
+    def test_returns_empty_list_when_no_tags(self) -> None:
+        self.assertEqual(_extract_deal_tags("{comment only}"), [])
+
+
+class ReadPbnFileTest(unittest.TestCase):
+    def test_reads_entire_file_past_old_8k_limit(self) -> None:
+        """Regression: large PBN files must not be truncated at 8192 bytes."""
+        from dd_table_for_deal import _read_pbn_file
+
+        deals = [
+            f"N:{i:02d}.QJT.AQ54.T752 QT6.876.KJ9.AQ84 "
+            f"5.A95432.7632.K6 AKJ9842.K.T8.J93"
+            for i in range(10)
+        ]
+        chunks: list[str] = []
+        for deal in deals:
+            pad = "x" * max(0, 900 - len(deal))
+            chunks.append(f'{{pad {pad}}}\n[Deal "{deal}"]\n')
+        text = "".join(chunks)
+        self.assertGreater(len(text), 8192)
+
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".pbn", delete=False, encoding="utf-8"
+        ) as tmp:
+            tmp.write(text)
+            path = tmp.name
+        try:
+            loaded = _read_pbn_file(path)
+            self.assertIsNotNone(loaded)
+            assert loaded is not None
+            self.assertEqual(len(loaded), len(text))
+            self.assertEqual(_extract_deal_tags(loaded), deals)
+        finally:
+            Path(path).unlink(missing_ok=True)
+
+
+class LoadDealsTest(unittest.TestCase):
+    def test_raw_string_returns_single_deal(self) -> None:
+        self.assertEqual(_load_deals(_EXAMPLE_DEAL), [_EXAMPLE_DEAL])
+
+    def test_pbn_file_returns_all_deals(self) -> None:
+        with mock.patch(
+            "dd_table_for_deal._read_pbn_file", return_value=_MULTI_DEAL_PBN
+        ):
+            self.assertEqual(
+                _load_deals("boards.pbn"),
+                [_EXAMPLE_DEAL, _HAND0_DEAL],
+            )
+
+    def test_missing_pbn_path_reports_file_not_found(self) -> None:
+        with mock.patch("dd_table_for_deal._read_pbn_file", return_value=None):
+            with self.assertRaisesRegex(ValueError, r"Cannot read file: boards\.pbn"):
+                _load_deals("boards.pbn")
+
+    def test_missing_path_with_slash_reports_file_not_found(self) -> None:
+        with mock.patch("dd_table_for_deal._read_pbn_file", return_value=None):
+            with self.assertRaisesRegex(ValueError, r"Cannot read file: hands/x\.pbn"):
+                _load_deals("hands/x.pbn")
 
 
 class FormatParLineTest(unittest.TestCase):
@@ -170,6 +252,44 @@ class MainParOutputTest(unittest.TestCase):
         par_mock.assert_called_once()
         args, kwargs = par_mock.call_args
         self.assertEqual(kwargs.get("vulnerable", args[1] if len(args) > 1 else None), 3)
+
+    def test_main_processes_all_deals_from_pbn_file(self) -> None:
+        fake_tables = {
+            "tables": [
+                {"res_table": [[0] * 4 for _ in range(5)]},
+                {"res_table": [[1] * 4 for _ in range(5)]},
+            ]
+        }
+        fake_par = {
+            "par_score": ["NS 0", "EW 0"],
+            "par_contracts_string": ["NS:", "EW:"],
+        }
+        with mock.patch(
+            "dd_table_for_deal._read_pbn_file", return_value=_MULTI_DEAL_PBN
+        ), mock.patch(
+            "dd_table_for_deal.calc_all_tables_pbn", return_value=fake_tables
+        ) as calc_mock, mock.patch(
+            "dd_table_for_deal.calc_par_from_table", return_value=fake_par
+        ) as par_mock, mock.patch(
+            "dd_table_for_deal._print_pbn_hand"
+        ) as hand_mock, mock.patch(
+            "dd_table_for_deal._print_table"
+        ), redirect_stdout(io.StringIO()) as buf:
+            rc = main(["dd_table_for_deal", "boards.pbn"])
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(
+            [call.args[0] for call in calc_mock.call_args_list],
+            [[_EXAMPLE_DEAL], [_HAND0_DEAL]],
+        )
+        self.assertEqual(par_mock.call_count, 2)
+        self.assertEqual(hand_mock.call_count, 2)
+        titles = [call.args[0] for call in hand_mock.call_args_list]
+        self.assertEqual(titles[0], "Deal 1:\n")
+        self.assertEqual(titles[1], "Deal 2:\n")
+        out = buf.getvalue()
+        self.assertIn("Par: 0\n\n", out)
+        self.assertEqual(out.count("Par: 0\n\n"), 2)
 
 
 if __name__ == "__main__":

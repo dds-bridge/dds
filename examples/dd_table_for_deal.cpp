@@ -24,6 +24,7 @@
 #include <regex>
 #include <string>
 #include <string_view>
+#include <vector>
 #if defined(_WIN32)
 #include <io.h>
 #else
@@ -35,7 +36,7 @@
 
 namespace {
 
-constexpr std::size_t PBN_FILE_MAX = 8192;
+constexpr std::size_t PBN_FILE_MAX = 16 * 1024 * 1024;
 constexpr std::size_t PBN_DEAL_MAX = sizeof(DdTableDealPBN::cards);
 
 const std::regex DEAL_TAG_RE{
@@ -55,15 +56,23 @@ static auto stdin_is_tty() -> bool
 
 auto read_pbn_stream(std::istream& in) -> std::optional<std::string>
 {
-  std::string text(PBN_FILE_MAX - 1, '\0');
-  in.read(text.data(), static_cast<std::streamsize>(PBN_FILE_MAX - 1));
-  const auto n = in.gcount();
-  if (n <= 0)
+  std::string text;
+  text.reserve(64 * 1024);
+  char buffer[4096];
+  while (in)
   {
-    return std::nullopt;
+    in.read(buffer, static_cast<std::streamsize>(sizeof(buffer)));
+    const auto n = in.gcount();
+    if (n > 0)
+      text.append(buffer, static_cast<std::size_t>(n));
+    if (text.size() > PBN_FILE_MAX)
+    {
+      std::cerr << "PBN input too large (max " << PBN_FILE_MAX << " characters)\n";
+      return std::nullopt;
+    }
   }
-
-  text.resize(static_cast<std::size_t>(n));
+  if (text.empty())
+    return std::nullopt;
   return text;
 }
 
@@ -98,16 +107,18 @@ auto read_pbn_file_workspace_relative(std::string_view path)
 }
 
 
-auto extract_deal_tag(std::string_view text) -> std::optional<std::string>
+auto extract_deal_tags(std::string_view text) -> std::vector<std::string>
 {
+  std::vector<std::string> deals;
+  auto begin = text.cbegin();
+  const auto end = text.cend();
   std::match_results<std::string_view::const_iterator> match;
-  if (std::regex_search(text.cbegin(), text.cend(), match, DEAL_TAG_RE)
-      && match.size() > 1)
+  while (std::regex_search(begin, end, match, DEAL_TAG_RE) && match.size() > 1)
   {
-    return std::string(match[1].first, match[1].second);
+    deals.emplace_back(match[1].first, match[1].second);
+    begin = match[0].second;
   }
-
-  return std::nullopt;
+  return deals;
 }
 
 
@@ -129,7 +140,29 @@ auto parse_vulnerable(std::string_view text) -> std::optional<int>
 }
 
 
-auto load_deal(std::string_view arg) -> std::optional<std::string>
+auto looks_like_path(std::string_view arg) -> bool
+{
+  if (arg.find('/') != std::string_view::npos
+      || arg.find('\\') != std::string_view::npos)
+  {
+    return true;
+  }
+
+  if (arg.size() >= 4)
+  {
+    std::string lower(arg.substr(arg.size() - 4));
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](unsigned char c) {
+                     return static_cast<char>(std::tolower(c));
+                   });
+    if (lower == ".pbn" || lower == ".txt")
+      return true;
+  }
+  return false;
+}
+
+
+auto load_deals(std::string_view arg) -> std::optional<std::vector<std::string>>
 {
   if (arg == "-")
   {
@@ -140,26 +173,32 @@ auto load_deal(std::string_view arg) -> std::optional<std::string>
       return std::nullopt;
     }
 
-    const auto deal = extract_deal_tag(*text);
-    if (!deal)
+    const auto deals = extract_deal_tags(*text);
+    if (deals.empty())
     {
       std::cerr << "No [Deal \"...\"] tag found in stdin\n";
       return std::nullopt;
     }
 
-    return deal;
+    return deals;
   }
 
   if (const auto text = read_pbn_file_workspace_relative(arg))
   {
-    const auto deal = extract_deal_tag(*text);
-    if (!deal)
+    const auto deals = extract_deal_tags(*text);
+    if (deals.empty())
     {
       std::cerr << "No [Deal \"...\"] tag found in " << arg << "\n";
       return std::nullopt;
     }
 
-    return deal;
+    return deals;
+  }
+
+  if (looks_like_path(arg))
+  {
+    std::cerr << "Cannot read file: " << arg << "\n";
+    return std::nullopt;
   }
 
   if (arg.size() >= PBN_DEAL_MAX)
@@ -169,7 +208,7 @@ auto load_deal(std::string_view arg) -> std::optional<std::string>
     return std::nullopt;
   }
 
-  return std::string(arg);
+  return std::vector<std::string>{std::string(arg)};
 }
 
 
@@ -280,6 +319,49 @@ auto print_par_or_verbose(
   print_par(&par);
 }
 
+
+auto process_deal(
+    std::string const& deal,
+    std::size_t deal_no,
+    std::size_t deal_count,
+    int vulnerable) -> bool
+{
+  DdTableDealPBN tableDealPBN{};
+  if (deal.size() >= sizeof(tableDealPBN.cards))
+  {
+    fprintf(stderr,
+            "PBN deal too long (max %zu characters)\n",
+            sizeof(tableDealPBN.cards) - 1);
+    return false;
+  }
+
+  std::copy_n(deal.begin(), deal.size(), tableDealPBN.cards);
+  tableDealPBN.cards[deal.size()] = '\0';
+
+  DdTableResults table;
+  char line[80];
+
+  const int res = CalcDDtablePBN(tableDealPBN, &table);
+  if (res != RETURN_NO_FAULT)
+  {
+    ErrorMessage(res, line);
+    fprintf(stderr, "DDS error: %s\n", line);
+    return false;
+  }
+
+  if (deal_count == 1)
+    sprintf(line, "dd_table_for_deal:\n");
+  else
+    sprintf(line, "Deal %zu:\n", deal_no);
+
+  print_pbn_hand(line, tableDealPBN.cards);
+  print_table(&table);
+  print_par_or_verbose(&table, vulnerable);
+  if (deal_count > 1)
+    printf("\n");
+  return true;
+}
+
 }  // namespace
 
 
@@ -295,7 +377,7 @@ static auto print_usage(const char * prog) -> void
           "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
           "  --vul              Vulnerability: none, both, ns, ew (default: none)\n"
           "\n"
-          "If stdin is not a terminal, PBN is read from stdin (uses [Deal \"...\"]).\n"
+          "If stdin is not a terminal, PBN is read from stdin (all [Deal \"...\"] tags).\n"
           "\n"
           "Examples:\n"
           "  %s \"N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 "
@@ -365,39 +447,17 @@ auto main(int argc, char * argv[]) -> int
     }
   }
 
-  const auto deal = load_deal(input);
-  if (!deal)
+  const auto deals = load_deals(input);
+  if (!deals)
   {
     return 1;
   }
 
-  DdTableDealPBN tableDealPBN{};
-  if (deal->size() >= sizeof(tableDealPBN.cards))
+  for (std::size_t i = 0; i < deals->size(); ++i)
   {
-    fprintf(stderr,
-            "PBN deal too long (max %zu characters)\n",
-            sizeof(tableDealPBN.cards) - 1);
-    return 1;
+    if (!process_deal((*deals)[i], i + 1, deals->size(), vulnerable))
+      return 1;
   }
-
-  std::copy_n(deal->begin(), deal->size(), tableDealPBN.cards);
-  tableDealPBN.cards[deal->size()] = '\0';
-
-  DdTableResults table;
-  char line[80];
-
-  const int res = CalcDDtablePBN(tableDealPBN, &table);
-  if (res != RETURN_NO_FAULT)
-  {
-    ErrorMessage(res, line);
-    fprintf(stderr, "DDS error: %s\n", line);
-    return 1;
-  }
-
-  sprintf(line, "dd_table_for_deal:\n");
-  print_pbn_hand(line, tableDealPBN.cards);
-  print_table(&table);
-  print_par_or_verbose(&table, vulnerable);
 
   return 0;
 }
