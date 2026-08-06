@@ -226,7 +226,17 @@ class FormatParLineTest(unittest.TestCase):
         }
         self.assertEqual(
             _format_par_line(par_results, vulnerable=0),
-            "Par: EW 3Dx,EW 3Cx -1 -100",
+            "Par: EW 3Dx, 3Cx -1 -100",
+        )
+
+    def test_omits_repeated_declaring_side_when_seats_differ(self) -> None:
+        par_results = {
+            "par_score": ["NS 100", "EW -100"],
+            "par_contracts_string": ["NS:EW 4Hx,E 5Cx", "EW:EW 4Hx,E 5Cx"],
+        }
+        self.assertEqual(
+            _format_par_line(par_results, vulnerable=0),
+            "Par: EW 4Hx, 5Cx -1 -100",
         )
 
     def test_passed_out(self) -> None:
@@ -256,7 +266,7 @@ class PrintParTest(unittest.TestCase):
         buf = io.StringIO()
         with redirect_stdout(buf):
             _print_par(par_results, vulnerable=0)
-        self.assertEqual(buf.getvalue(), "Par: EW 3Dx,EW 3Cx -1 -100\n")
+        self.assertEqual(buf.getvalue(), "Par: EW 3Dx, 3Cx -1 -100\n")
         self.assertNotIn("NS score:", buf.getvalue())
 
 

@@ -184,7 +184,25 @@ TEST(FormatParLine, MultipleSacrificesOnOneLine)
 
   const auto line = dd_table_for_deal::format_par_line(sides);
   ASSERT_TRUE(line.has_value());
-  EXPECT_EQ(*line, "Par: EW 3Dx,EW 3Cx -1 -100");
+  EXPECT_EQ(*line, "Par: EW 3Dx, 3Cx -1 -100");
+}
+
+
+TEST(FormatParLine, OmitsRepeatedDeclaringSideWhenSeatsDiffer)
+{
+  ParResultsMaster sides[2]{};
+  sides[0].score = 100;
+  sides[0].number = 2;
+  sides[0].contracts[0] = make_contract(/*EW*/ 5, 4, /*H*/ 2, 1, 0);
+  sides[0].contracts[1] = make_contract(/*E*/ 1, 5, /*C*/ 4, 1, 0);
+  sides[1].score = -100;
+  sides[1].number = 2;
+  sides[1].contracts[0] = make_contract(/*EW*/ 5, 4, /*H*/ 2, 1, 0);
+  sides[1].contracts[1] = make_contract(/*E*/ 1, 5, /*C*/ 4, 1, 0);
+
+  const auto line = dd_table_for_deal::format_par_line(sides);
+  ASSERT_TRUE(line.has_value());
+  EXPECT_EQ(*line, "Par: EW 4Hx, 5Cx -1 -100");
 }
 
 

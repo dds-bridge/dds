@@ -43,16 +43,41 @@ auto seat_name(int seats) -> const char *
 }
 
 
-auto format_contract(const ContractType& contract) -> std::optional<std::string>
+auto format_contract(
+    const ContractType& contract,
+    bool include_seats) -> std::optional<std::string>
 {
   char out[16];
-  if (contract.under_tricks > 0)
+  const char doubled = contract.under_tricks > 0 ? 'x' : '\0';
+  if (include_seats)
+  {
+    if (doubled)
+    {
+      std::snprintf(
+          out,
+          sizeof(out),
+          "%s %d%cx",
+          seat_name(contract.seats),
+          contract.level,
+          denom_char(contract.denom));
+    }
+    else
+    {
+      std::snprintf(
+          out,
+          sizeof(out),
+          "%s %d%c",
+          seat_name(contract.seats),
+          contract.level,
+          denom_char(contract.denom));
+    }
+  }
+  else if (doubled)
   {
     std::snprintf(
         out,
         sizeof(out),
-        "%s %d%cx",
-        seat_name(contract.seats),
+        "%d%cx",
         contract.level,
         denom_char(contract.denom));
   }
@@ -61,8 +86,7 @@ auto format_contract(const ContractType& contract) -> std::optional<std::string>
     std::snprintf(
         out,
         sizeof(out),
-        "%s %d%c",
-        seat_name(contract.seats),
+        "%d%c",
         contract.level,
         denom_char(contract.denom));
   }
@@ -166,11 +190,11 @@ auto format_par_line(ParResultsMaster const sidesRes[2])
   std::string body;
   for (int i = 0; i < chosen.number; ++i)
   {
-    const auto piece = format_contract(chosen.contracts[i]);
+    const auto piece = format_contract(chosen.contracts[i], /*include_seats=*/i == 0);
     if (!piece)
       return std::nullopt;
     if (i > 0)
-      body += ',';
+      body += ", ";
     body += *piece;
   }
 

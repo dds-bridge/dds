@@ -223,8 +223,8 @@ def _contract_body(side_contracts: str) -> str | None:
     return body or None
 
 
-def _normalize_contract_piece(piece: str) -> tuple[str, str] | None:
-    """Expand DDS multi-level encodings like 'EW 45S' into ('EW 4S', '+1')."""
+def _normalize_contract_piece(piece: str) -> tuple[str, str, str] | None:
+    """Expand DDS multi-level encodings like 'EW 45S' into ('EW', '4S', '+1')."""
     match = _CONTRACT_RE.match(piece.strip())
     if match is None:
         return None
@@ -236,12 +236,12 @@ def _normalize_contract_piece(piece: str) -> tuple[str, str] | None:
     level = digits[0]
     over = digits[-1] - digits[0]
 
+    contract = f"{level}{denom}{'x' if doubled else ''}"
     if doubled:
-        return f"{seats} {level}{denom}x", "="
+        return seats, contract, "="
 
-    contract = f"{seats} {level}{denom}"
     result = f"+{over}" if over > 0 else "="
-    return contract, result
+    return seats, contract, result
 
 
 def _normalize_par_body(body: str) -> tuple[str, str] | None:
@@ -256,11 +256,13 @@ def _normalize_par_body(body: str) -> tuple[str, str] | None:
         parsed = _normalize_contract_piece(piece)
         if parsed is None:
             return None
-        contract, piece_result = parsed
-        normalized.append(contract)
+        seats, contract, piece_result = parsed
         if i == 0:
+            normalized.append(f"{seats} {contract}")
             result = piece_result
-    return ",".join(normalized), result
+        else:
+            normalized.append(contract)
+    return ", ".join(normalized), result
 
 
 def _first_seats(body: str) -> str | None:
