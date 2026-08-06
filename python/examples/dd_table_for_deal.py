@@ -79,6 +79,18 @@ def _extract_deal_tags(text: str) -> list[str]:
     return [match.group(1) for match in _DEAL_TAG_RE.finditer(text)]
 
 
+def _unique_deals(deals: list[str]) -> list[str]:
+    """Return deals in first-seen order with exact duplicates removed."""
+    unique: list[str] = []
+    seen: set[str] = set()
+    for deal in deals:
+        if deal in seen:
+            continue
+        seen.add(deal)
+        unique.append(deal)
+    return unique
+
+
 def _looks_like_path(arg: str) -> bool:
     """True when arg is more likely a filename than a raw PBN deal string."""
     if "/" in arg or "\\" in arg:
@@ -398,7 +410,7 @@ def main(argv: list[str] | None = None) -> int:
     input_arg, vulnerable = parsed
 
     try:
-        pbn_deals = _load_deals(input_arg)
+        pbn_deals = _unique_deals(_load_deals(input_arg))
     except ValueError as exc:
         print(exc, file=sys.stderr)
         return 1

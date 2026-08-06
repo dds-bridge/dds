@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <regex>
 #include <string>
+#include <unordered_set>
 
 namespace dd_table_for_deal {
 namespace {
@@ -100,6 +101,21 @@ auto extract_deal_tags(std::string_view text) -> std::vector<std::string>
     begin = match[0].second;
   }
   return deals;
+}
+
+
+auto unique_deals(std::vector<std::string> const& deals)
+    -> std::vector<std::string>
+{
+  std::vector<std::string> unique;
+  std::unordered_set<std::string> seen;
+  unique.reserve(deals.size());
+  for (const auto& deal : deals)
+  {
+    if (seen.insert(deal).second)
+      unique.push_back(deal);
+  }
+  return unique;
 }
 
 

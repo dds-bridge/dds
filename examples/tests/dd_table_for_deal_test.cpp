@@ -86,6 +86,24 @@ TEST(ExtractDealTags, EmptyWhenNoTags)
 }
 
 
+TEST(UniqueDeals, PreservesFirstSeenOrderAndDropsDuplicates)
+{
+  const std::vector<std::string> deals = {
+      "deal-a",
+      "deal-b",
+      "deal-a",
+      "deal-c",
+      "deal-b",
+      "deal-a",
+  };
+  const auto unique = dd_table_for_deal::unique_deals(deals);
+  ASSERT_EQ(unique.size(), 3u);
+  EXPECT_EQ(unique[0], "deal-a");
+  EXPECT_EQ(unique[1], "deal-b");
+  EXPECT_EQ(unique[2], "deal-c");
+}
+
+
 TEST(LooksLikePath, DetectsPathsAndExtensions)
 {
   EXPECT_TRUE(dd_table_for_deal::looks_like_path("boards.pbn"));

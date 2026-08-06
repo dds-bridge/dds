@@ -41,6 +41,7 @@ using dd_table_for_deal::extract_deal_tags;
 using dd_table_for_deal::format_par_line;
 using dd_table_for_deal::looks_like_path;
 using dd_table_for_deal::parse_vulnerable;
+using dd_table_for_deal::unique_deals;
 
 
 static auto stdin_is_tty() -> bool
@@ -317,15 +318,17 @@ auto main(int argc, char * argv[]) -> int
     }
   }
 
-  const auto deals = load_deals(input);
-  if (!deals)
+  const auto loaded = load_deals(input);
+  if (!loaded)
   {
     return 1;
   }
 
-  for (std::size_t i = 0; i < deals->size(); ++i)
+  const auto deals = unique_deals(*loaded);
+
+  for (std::size_t i = 0; i < deals.size(); ++i)
   {
-    if (!process_deal((*deals)[i], i + 1, deals->size(), vulnerable))
+    if (!process_deal(deals[i], i + 1, deals.size(), vulnerable))
       return 1;
   }
 

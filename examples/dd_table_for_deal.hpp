@@ -25,6 +25,9 @@ auto parse_vulnerable(std::string_view text) -> std::optional<int>;
 
 auto extract_deal_tags(std::string_view text) -> std::vector<std::string>;
 
+auto unique_deals(std::vector<std::string> const& deals)
+    -> std::vector<std::string>;
+
 auto looks_like_path(std::string_view arg) -> bool;
 
 auto format_par_line(ParResultsMaster const sidesRes[2])

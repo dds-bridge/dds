@@ -16,6 +16,7 @@ from dd_table_for_deal import (
     _parse_cli,
     _parse_vulnerable,
     _print_par,
+    _unique_deals,
     main,
 )
 
@@ -97,6 +98,12 @@ class ExtractDealTagsTest(unittest.TestCase):
 
     def test_returns_empty_list_when_no_tags(self) -> None:
         self.assertEqual(_extract_deal_tags("{comment only}"), [])
+
+
+class UniqueDealsTest(unittest.TestCase):
+    def test_preserves_first_seen_order_and_drops_duplicates(self) -> None:
+        deals = ["deal-a", "deal-b", "deal-a", "deal-c", "deal-b", "deal-a"]
+        self.assertEqual(_unique_deals(deals), ["deal-a", "deal-b", "deal-c"])
 
 
 class ReadPbnFileTest(unittest.TestCase):
@@ -293,6 +300,40 @@ class MainParOutputTest(unittest.TestCase):
         out = buf.getvalue()
         self.assertIn("Par: 0\n\n", out)
         self.assertEqual(out.count("Par: 0\n\n"), 2)
+
+    def test_main_solves_duplicate_deals_only_once(self) -> None:
+        duplicate_pbn = (
+            f'[Deal "{_EXAMPLE_DEAL}"]\n'
+            f'[Deal "{_EXAMPLE_DEAL}"]\n'
+            f'[Deal "{_HAND0_DEAL}"]\n'
+            f'[Deal "{_EXAMPLE_DEAL}"]\n'
+        )
+        fake_tables = {
+            "tables": [{"res_table": [[0] * 4 for _ in range(5)]}],
+        }
+        fake_par = {
+            "par_score": ["NS 0", "EW 0"],
+            "par_contracts_string": ["NS:", "EW:"],
+        }
+        with mock.patch(
+            "dd_table_for_deal._read_pbn_file", return_value=duplicate_pbn
+        ), mock.patch(
+            "dd_table_for_deal.calc_all_tables_pbn", return_value=fake_tables
+        ) as calc_mock, mock.patch(
+            "dd_table_for_deal.calc_par_from_table", return_value=fake_par
+        ), mock.patch(
+            "dd_table_for_deal._print_pbn_hand"
+        ) as hand_mock, mock.patch(
+            "dd_table_for_deal._print_table"
+        ), redirect_stdout(io.StringIO()):
+            rc = main(["dd_table_for_deal", "dupes.pbn"])
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(
+            [call.args[0] for call in calc_mock.call_args_list],
+            [[_EXAMPLE_DEAL], [_HAND0_DEAL]],
+        )
+        self.assertEqual(hand_mock.call_count, 2)
 
 
 if __name__ == "__main__":
