@@ -343,7 +343,7 @@ public:
      *
      * @param move Move to apply
      * @param relHand Relative hand index within the current trick (0..3)
-     * @param trick Trick index (1..12); when relHand==3 updates next trick state
+     * @param trick Trick index (0..12); must be > 0 when relHand==3 (updates track[trick-1])
      */
     auto apply_move_to_track(const MoveType &move, const int relHand,
                              const int trick) -> void;
