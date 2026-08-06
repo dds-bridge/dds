@@ -230,9 +230,39 @@ auto seat_name(int seats) -> const char *
 }
 
 
+auto format_contract(const ContractType& contract, char * out, std::size_t out_size)
+    -> bool
+{
+  if (out_size < 8)
+    return false;
+
+  if (contract.under_tricks > 0)
+  {
+    std::snprintf(
+        out,
+        out_size,
+        "%s %d%cx",
+        seat_name(contract.seats),
+        contract.level,
+        denom_char(contract.denom));
+  }
+  else
+  {
+    std::snprintf(
+        out,
+        out_size,
+        "%s %d%c",
+        seat_name(contract.seats),
+        contract.level,
+        denom_char(contract.denom));
+  }
+  return true;
+}
+
+
 auto format_par_line(
     ParResultsMaster const sidesRes[2],
-    int vulnerable,
+    int /*vulnerable*/,
     char * line,
     std::size_t line_size) -> bool
 {
@@ -245,44 +275,50 @@ auto format_par_line(
     return true;
   }
 
-  if (sidesRes[0].number != 1 || sidesRes[1].number != 1)
+  // Prefer the side whose score matches the declaring side's viewpoint.
+  const ContractType& first = sidesRes[0].number > 0
+      ? sidesRes[0].contracts[0]
+      : sidesRes[1].contracts[0];
+  const int side =
+      (first.seats == 4 || first.seats == 0 || first.seats == 2) ? 0 : 1;
+  const ParResultsMaster& chosen = sidesRes[side];
+  if (chosen.number <= 0)
     return false;
 
-  const ContractType& contract = sidesRes[0].contracts[0];
-  const char * seats = seat_name(contract.seats);
-  const char result_sign = contract.under_tricks > 0 ? '-' : '+';
-  const int result_value =
-      contract.under_tricks > 0 ? contract.under_tricks : contract.over_tricks;
+  std::string body;
+  for (int i = 0; i < chosen.number; ++i)
+  {
+    char piece[16];
+    if (!format_contract(chosen.contracts[i], piece, sizeof(piece)))
+      return false;
+    if (i > 0)
+      body += ',';
+    body += piece;
+  }
 
+  const ContractType& contract = chosen.contracts[0];
+  char result[8];
   if (contract.under_tricks > 0)
   {
-    std::snprintf(
-        line,
-        line_size,
-        "Par: %s %d%c%c %c%d %d",
-        seats,
-        contract.level,
-        denom_char(contract.denom),
-        'x',
-        result_sign,
-        result_value,
-        sidesRes[0].score);
+    std::snprintf(result, sizeof(result), "-%d", contract.under_tricks);
+  }
+  else if (contract.over_tricks > 0)
+  {
+    std::snprintf(result, sizeof(result), "+%d", contract.over_tricks);
   }
   else
   {
-    std::snprintf(
-        line,
-        line_size,
-        "Par: %s %d%c %c%d %d",
-        seats,
-        contract.level,
-        denom_char(contract.denom),
-        result_sign,
-        result_value,
-        sidesRes[0].score);
+    std::snprintf(result, sizeof(result), "=");
   }
 
-  return true;
+  const int written = std::snprintf(
+      line,
+      line_size,
+      "Par: %s %s %d",
+      body.c_str(),
+      result,
+      chosen.score);
+  return written > 0 && static_cast<std::size_t>(written) < line_size;
 }
 
 
@@ -300,7 +336,7 @@ auto print_par_or_verbose(
     return;
   }
 
-  char line[80];
+  char line[256];
   if (format_par_line(sidesRes, vulnerable, line, sizeof(line)))
   {
     printf("%s\n", line);

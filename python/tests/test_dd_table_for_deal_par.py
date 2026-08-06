@@ -173,15 +173,18 @@ class FormatParLineTest(unittest.TestCase):
         }
         self.assertEqual(
             _format_par_line(par_results, vulnerable=0),
-            "Par: EW 2S +0 -110",
+            "Par: EW 2S = 110",
         )
 
-    def test_multiple_contracts_returns_none(self) -> None:
+    def test_multiple_sacrifice_contracts_on_one_line(self) -> None:
         par_results = {
-            "par_score": ["NS -600", "EW 600"],
-            "par_contracts_string": ["NS:EW 2S,EW 3S", "EW:EW 2S,EW 3S"],
+            "par_score": ["NS 100", "EW -100"],
+            "par_contracts_string": ["NS:EW 3Dx,EW 3Cx", "EW:EW 3Dx,EW 3Cx"],
         }
-        self.assertIsNone(_format_par_line(par_results, vulnerable=0))
+        self.assertEqual(
+            _format_par_line(par_results, vulnerable=0),
+            "Par: EW 3Dx,EW 3Cx -1 -100",
+        )
 
     def test_passed_out(self) -> None:
         par_results = {
@@ -202,16 +205,16 @@ class PrintParTest(unittest.TestCase):
             _print_par(par_results, vulnerable=0)
         self.assertEqual(buf.getvalue(), "Par: NS 5Hx -2 -300\n")
 
-    def test_multiple_pars_use_verbose_format(self) -> None:
+    def test_multiple_pars_use_compact_line(self) -> None:
         par_results = {
-            "par_score": ["NS -600", "EW 600"],
-            "par_contracts_string": ["NS:EW 2S,EW 3S", "EW:EW 2S,EW 3S"],
+            "par_score": ["NS 100", "EW -100"],
+            "par_contracts_string": ["NS:EW 3Dx,EW 3Cx", "EW:EW 3Dx,EW 3Cx"],
         }
         buf = io.StringIO()
         with redirect_stdout(buf):
             _print_par(par_results, vulnerable=0)
-        self.assertIn("NS score:", buf.getvalue())
-        self.assertIn("NS list :", buf.getvalue())
+        self.assertEqual(buf.getvalue(), "Par: EW 3Dx,EW 3Cx -1 -100\n")
+        self.assertNotIn("NS score:", buf.getvalue())
 
 
 class MainParOutputTest(unittest.TestCase):

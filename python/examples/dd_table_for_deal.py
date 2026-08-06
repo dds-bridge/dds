@@ -207,43 +207,51 @@ def _contract_body(side_contracts: str) -> str | None:
     if ":" not in side_contracts:
         return None
     body = side_contracts.split(":", 1)[1].strip()
-    if not body or "," in body:
+    return body or None
+
+
+def _first_seats(body: str) -> str | None:
+    match = _CONTRACT_RE.match(body.split(",", 1)[0].strip())
+    if match is None:
         return None
-    return body
+    return match.group(1).upper()
+
+
+def _declaring_score(par_results: dict, seats: str) -> int:
+    scores = par_results["par_score"]
+    ns_score = int(scores[0].split()[1])
+    ew_score = int(scores[1].split()[1])
+    if seats in ("NS", "N", "S"):
+        return ns_score
+    return ew_score
 
 
 def _format_par_line(par_results: dict, *, vulnerable: int) -> str | None:
-    """Return a one-line par summary, or None when verbose output is needed."""
+    """Return a one-line par summary for the declaring side."""
     scores = par_results["par_score"]
     contracts = par_results["par_contracts_string"]
 
     ns_score = int(scores[0].split()[1])
-    if ns_score == 0 and int(scores[1].split()[1]) == 0:
-        body = _contract_body(contracts[0])
-        if body is None:
-            return "Par: 0"
+    ew_score = int(scores[1].split()[1])
+    if ns_score == 0 and ew_score == 0:
         return "Par: 0"
 
     body = _contract_body(contracts[0])
     if body is None:
         return None
 
-    match = _CONTRACT_RE.match(body)
-    if match is None:
+    seats = _first_seats(body)
+    if seats is None:
         return None
 
-    seats, level, denom, doubled = match.groups()
-    seats = seats.upper()
-    contract = f"{level}{denom.upper()}"
-    if doubled:
-        contract += "x"
-
-    if doubled:
-        result = f"-{_sacrifice_undertricks(ns_score, vulnerable, seats)}"
+    score = _declaring_score(par_results, seats)
+    is_sacrifice = "x" in body.lower()
+    if is_sacrifice:
+        result = f"-{_sacrifice_undertricks(score, vulnerable, seats)}"
     else:
-        result = "+0"
+        result = "="
 
-    return f"Par: {seats} {contract} {result} {ns_score}"
+    return f"Par: {body} {result} {score}"
 
 
 def _print_par_verbose(par_results: dict) -> None:
