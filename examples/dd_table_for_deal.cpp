@@ -114,7 +114,7 @@ auto load_deals(std::string_view arg) -> std::optional<std::vector<std::string>>
     const auto text = read_pbn_stream(std::cin);
     if (!text)
     {
-      std::cerr << "No PBN input on stdin\n";
+      std::cerr << "Cannot read PBN from stdin\n";
       return std::nullopt;
     }
 
@@ -239,14 +239,15 @@ auto process_deal(
 static auto print_usage(const char * prog) -> void
 {
   fprintf(stderr,
-          "Usage: %s [--vul none|both|ns|ew] <pbn_deal_or_file>\n"
+          "Usage: %s [--vul none|both|ns|ew|0|1|2|3] <pbn_deal_or_file>\n"
           "       %s -h | --help\n"
           "\n"
           "Calculate double-dummy tricks and par for all strains and leads.\n"
           "\n"
           "Arguments:\n"
           "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
-          "  --vul              Vulnerability: none, both, ns, ew (default: none)\n"
+          "  --vul              Vulnerability: none|both|ns|ew or 0|1|2|3"
+          " (default: none)\n"
           "\n"
           "If stdin is not a terminal, PBN is read from stdin (all [Deal \"...\"] tags).\n"
           "\n"

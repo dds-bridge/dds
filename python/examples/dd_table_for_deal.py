@@ -166,14 +166,15 @@ def _parse_cli(argv: list[str]) -> tuple[str, int] | None:
 
 def _print_usage(prog: str) -> None:
     print(
-        f"Usage: {prog} [--vul none|both|ns|ew] <pbn_deal_or_file>\n"
+        f"Usage: {prog} [--vul none|both|ns|ew|0|1|2|3] <pbn_deal_or_file>\n"
         f"       {prog} -h | --help\n"
         "\n"
         "Calculate double-dummy tricks and par for all strains and leads.\n"
         "\n"
         "Arguments:\n"
         "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
-        "  --vul              Vulnerability: none, both, ns, ew (default: none)\n"
+        "  --vul              Vulnerability: none|both|ns|ew or 0|1|2|3"
+        " (default: none)\n"
         "\n"
         'If stdin is not a terminal, PBN is read from stdin (all [Deal "..."] tags).\n'
         "\n"

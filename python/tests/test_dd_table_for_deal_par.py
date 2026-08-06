@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
@@ -16,6 +16,7 @@ from dd_table_for_deal import (
     _parse_cli,
     _parse_vulnerable,
     _print_par,
+    _print_usage,
     _unique_deals,
     main,
 )
@@ -83,6 +84,14 @@ class ParseCliTest(unittest.TestCase):
     def test_help_returns_none(self) -> None:
         self.assertIsNone(_parse_cli(["prog", "-h"]))
         self.assertIsNone(_parse_cli(["prog", "--help"]))
+
+    def test_usage_documents_numeric_vul_codes(self) -> None:
+        buf = io.StringIO()
+        with redirect_stderr(buf):
+            _print_usage("prog")
+        text = buf.getvalue()
+        self.assertIn("none|both|ns|ew", text)
+        self.assertIn("0|1|2|3", text)
 
     def test_rejects_unknown_flags(self) -> None:
         with self.assertRaises(ValueError):
