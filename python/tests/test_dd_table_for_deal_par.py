@@ -138,6 +138,22 @@ class ReadPbnFileTest(unittest.TestCase):
             Path(path).unlink(missing_ok=True)
 
 
+class ReadPbnStreamTest(unittest.TestCase):
+    def test_allows_input_exactly_at_max(self) -> None:
+        import dd_table_for_deal as mod
+
+        with mock.patch.object(mod, "PBN_FILE_MAX", 16):
+            text = mod._read_pbn_stream(io.StringIO("x" * 16))
+        self.assertEqual(text, "x" * 16)
+
+    def test_rejects_input_over_max(self) -> None:
+        import dd_table_for_deal as mod
+
+        with mock.patch.object(mod, "PBN_FILE_MAX", 16):
+            with self.assertRaises(ValueError):
+                mod._read_pbn_stream(io.StringIO("x" * 17))
+
+
 class LoadDealsTest(unittest.TestCase):
     def test_raw_string_returns_single_deal(self) -> None:
         self.assertEqual(_load_deals(_EXAMPLE_DEAL), [_EXAMPLE_DEAL])

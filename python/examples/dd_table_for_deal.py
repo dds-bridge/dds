@@ -50,11 +50,11 @@ _DEAL_TAG_RE = re.compile(r'\[Deal\s*"([^"]*)"', re.IGNORECASE)
 
 
 def _read_pbn_stream(stream) -> str | None:
-    data = stream.read(PBN_FILE_MAX)
+    data = stream.read(PBN_FILE_MAX + 1)
     if not data:
         return None
     text = data if isinstance(data, str) else data.decode("utf-8", errors="replace")
-    if len(text) >= PBN_FILE_MAX:
+    if len(text) > PBN_FILE_MAX:
         raise ValueError(f"PBN input too large (max {PBN_FILE_MAX} characters)")
     return text
 

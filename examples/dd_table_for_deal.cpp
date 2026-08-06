@@ -221,9 +221,9 @@ auto process_deal(
   }
 
   if (deal_count == 1)
-    sprintf(line, "dd_table_for_deal:\n");
+    std::snprintf(line, sizeof(line), "dd_table_for_deal:\n");
   else
-    sprintf(line, "Deal %zu:\n", deal_no);
+    std::snprintf(line, sizeof(line), "Deal %zu:\n", deal_no);
 
   print_pbn_hand(line, tableDealPBN.cards);
   print_table(&table);
