@@ -13,7 +13,6 @@
 // Coded by Cursor, based on calc_dd_table.cpp
 
 #include <algorithm>
-#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -21,7 +20,6 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
-#include <regex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -31,17 +29,18 @@
 #include <unistd.h>
 #endif
 #include <api/dll.h>
+#include "dd_table_for_deal.hpp"
 #include "hands.hpp"
 
 
 namespace {
 
-constexpr std::size_t PBN_FILE_MAX = 16 * 1024 * 1024;
-constexpr std::size_t PBN_DEAL_MAX = sizeof(DdTableDealPBN::cards);
-
-const std::regex DEAL_TAG_RE{
-    R"re(\[Deal\s*"([^"]*)")re",
-    std::regex::icase};
+using dd_table_for_deal::PBN_DEAL_MAX;
+using dd_table_for_deal::PBN_FILE_MAX;
+using dd_table_for_deal::extract_deal_tags;
+using dd_table_for_deal::format_par_line;
+using dd_table_for_deal::looks_like_path;
+using dd_table_for_deal::parse_vulnerable;
 
 
 static auto stdin_is_tty() -> bool
@@ -107,61 +106,6 @@ auto read_pbn_file_workspace_relative(std::string_view path)
 }
 
 
-auto extract_deal_tags(std::string_view text) -> std::vector<std::string>
-{
-  std::vector<std::string> deals;
-  auto begin = text.cbegin();
-  const auto end = text.cend();
-  std::match_results<std::string_view::const_iterator> match;
-  while (std::regex_search(begin, end, match, DEAL_TAG_RE) && match.size() > 1)
-  {
-    deals.emplace_back(match[1].first, match[1].second);
-    begin = match[0].second;
-  }
-  return deals;
-}
-
-
-auto parse_vulnerable(std::string_view text) -> std::optional<int>
-{
-  std::string lower(text);
-  std::transform(lower.begin(), lower.end(), lower.begin(),
-                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-
-  if (lower == "none" || lower == "0")
-    return 0;
-  if (lower == "both" || lower == "1")
-    return 1;
-  if (lower == "ns" || lower == "2")
-    return 2;
-  if (lower == "ew" || lower == "3")
-    return 3;
-  return std::nullopt;
-}
-
-
-auto looks_like_path(std::string_view arg) -> bool
-{
-  if (arg.find('/') != std::string_view::npos
-      || arg.find('\\') != std::string_view::npos)
-  {
-    return true;
-  }
-
-  if (arg.size() >= 4)
-  {
-    std::string lower(arg.substr(arg.size() - 4));
-    std::transform(lower.begin(), lower.end(), lower.begin(),
-                   [](unsigned char c) {
-                     return static_cast<char>(std::tolower(c));
-                   });
-    if (lower == ".pbn" || lower == ".txt")
-      return true;
-  }
-  return false;
-}
-
-
 auto load_deals(std::string_view arg) -> std::optional<std::vector<std::string>>
 {
   if (arg == "-")
@@ -212,116 +156,6 @@ auto load_deals(std::string_view arg) -> std::optional<std::vector<std::string>>
 }
 
 
-auto denom_char(int denom) -> char
-{
-  static constexpr char kDenomChars[] = "NSHDC";
-  if (denom < 0 || denom > 4)
-    return '?';
-  return kDenomChars[denom];
-}
-
-
-auto seat_name(int seats) -> const char *
-{
-  static const char * kSeatNames[] = {"N", "E", "S", "W", "NS", "EW"};
-  if (seats < 0 || seats > 5)
-    return "?";
-  return kSeatNames[seats];
-}
-
-
-auto format_contract(const ContractType& contract, char * out, std::size_t out_size)
-    -> bool
-{
-  if (out_size < 8)
-    return false;
-
-  if (contract.under_tricks > 0)
-  {
-    std::snprintf(
-        out,
-        out_size,
-        "%s %d%cx",
-        seat_name(contract.seats),
-        contract.level,
-        denom_char(contract.denom));
-  }
-  else
-  {
-    std::snprintf(
-        out,
-        out_size,
-        "%s %d%c",
-        seat_name(contract.seats),
-        contract.level,
-        denom_char(contract.denom));
-  }
-  return true;
-}
-
-
-auto format_par_line(
-    ParResultsMaster const sidesRes[2],
-    int /*vulnerable*/,
-    char * line,
-    std::size_t line_size) -> bool
-{
-  if (line_size < 32)
-    return false;
-
-  if (sidesRes[0].score == 0 && sidesRes[1].score == 0)
-  {
-    std::snprintf(line, line_size, "Par: 0");
-    return true;
-  }
-
-  // Prefer the side whose score matches the declaring side's viewpoint.
-  const ContractType& first = sidesRes[0].number > 0
-      ? sidesRes[0].contracts[0]
-      : sidesRes[1].contracts[0];
-  const int side =
-      (first.seats == 4 || first.seats == 0 || first.seats == 2) ? 0 : 1;
-  const ParResultsMaster& chosen = sidesRes[side];
-  if (chosen.number <= 0)
-    return false;
-
-  std::string body;
-  for (int i = 0; i < chosen.number; ++i)
-  {
-    char piece[16];
-    if (!format_contract(chosen.contracts[i], piece, sizeof(piece)))
-      return false;
-    if (i > 0)
-      body += ',';
-    body += piece;
-  }
-
-  const ContractType& contract = chosen.contracts[0];
-  char result[8];
-  if (contract.under_tricks > 0)
-  {
-    std::snprintf(result, sizeof(result), "-%d", contract.under_tricks);
-  }
-  else if (contract.over_tricks > 0)
-  {
-    std::snprintf(result, sizeof(result), "+%d", contract.over_tricks);
-  }
-  else
-  {
-    std::snprintf(result, sizeof(result), "=");
-  }
-
-  const int written = std::snprintf(
-      line,
-      line_size,
-      "Par: %s %s %d",
-      body.c_str(),
-      result,
-      chosen.score);
-  return written > 0 && static_cast<std::size_t>(written) < line_size;
-}
-
-
 auto print_par_or_verbose(
     DdTableResults const * table,
     int vulnerable) -> void
@@ -336,19 +170,19 @@ auto print_par_or_verbose(
     return;
   }
 
-  char line[256];
-  if (format_par_line(sidesRes, vulnerable, line, sizeof(line)))
+  if (const auto line = format_par_line(sidesRes))
   {
-    printf("%s\n", line);
+    printf("%s\n", line->c_str());
     return;
   }
 
   ParResults par;
+  char err[80];
   const int par_res = Par(table, &par, vulnerable);
   if (par_res != RETURN_NO_FAULT)
   {
-    ErrorMessage(par_res, line);
-    fprintf(stderr, "DDS error: %s\n", line);
+    ErrorMessage(par_res, err);
+    fprintf(stderr, "DDS error: %s\n", err);
     return;
   }
 
