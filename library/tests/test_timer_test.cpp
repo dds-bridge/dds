@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 #include <iomanip>
 #include <limits>
+#include <regex>
 #include <sstream>
 #include <string>
 
@@ -124,8 +125,10 @@ TEST(TestTimer, ResetClearsAccumulatedStats)
   timer.reset();
 
   const std::string out = capture_print_hands(timer);
-  EXPECT_NE(out.find("Number of hands"), std::string::npos);
-  EXPECT_NE(out.find("0"), std::string::npos);
+  // Require the hands count field itself to be 0 (not a substring match like
+  // "10", which also contains '0').
+  EXPECT_TRUE(std::regex_search(
+    out, std::regex(R"(Number of hands\s+0\s*(?:\n|$))")));
   EXPECT_EQ(out.find("User time (ms)"), std::string::npos);
 }
 
