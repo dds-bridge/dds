@@ -156,7 +156,7 @@ auto load_deals(std::string_view arg) -> std::optional<std::vector<std::string>>
 
 auto print_par_or_verbose(
     DdTableResults const * table,
-    int vulnerable) -> void
+    int vulnerable) -> bool
 {
   ParResultsMaster sidesRes[2];
   const int res = SidesParBin(table, sidesRes, vulnerable);
@@ -165,13 +165,13 @@ auto print_par_or_verbose(
     char line[80];
     ErrorMessage(res, line);
     fprintf(stderr, "DDS error: %s\n", line);
-    return;
+    return false;
   }
 
   if (const auto line = format_par_line(sidesRes))
   {
     printf("%s\n", line->c_str());
-    return;
+    return true;
   }
 
   ParResults par;
@@ -181,10 +181,11 @@ auto print_par_or_verbose(
   {
     ErrorMessage(par_res, err);
     fprintf(stderr, "DDS error: %s\n", err);
-    return;
+    return false;
   }
 
   print_par(&par);
+  return true;
 }
 
 
@@ -224,7 +225,8 @@ auto process_deal(
 
   print_pbn_hand(line, tableDealPBN.cards);
   print_table(&table);
-  print_par_or_verbose(&table, vulnerable);
+  if (!print_par_or_verbose(&table, vulnerable))
+    return false;
   if (deal_count > 1)
     printf("\n");
   return true;

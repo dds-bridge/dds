@@ -340,6 +340,25 @@ class MainParOutputTest(unittest.TestCase):
         args, kwargs = par_mock.call_args
         self.assertEqual(kwargs.get("vulnerable", args[1] if len(args) > 1 else None), 3)
 
+    def test_main_returns_error_when_par_fails(self) -> None:
+        fake_tables = {
+            "tables": [{"res_table": [[0] * 4 for _ in range(5)]}],
+        }
+        with mock.patch(
+            "dd_table_for_deal.calc_all_tables_pbn", return_value=fake_tables
+        ), mock.patch(
+            "dd_table_for_deal.calc_par_from_table",
+            side_effect=RuntimeError("par failed"),
+        ), mock.patch(
+            "dd_table_for_deal._print_pbn_hand"
+        ), mock.patch(
+            "dd_table_for_deal._print_table"
+        ), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()) as err:
+            rc = main(["dd_table_for_deal", _EXAMPLE_DEAL])
+
+        self.assertEqual(rc, 1)
+        self.assertIn("DDS error:", err.getvalue())
+
     def test_main_processes_all_deals_from_pbn_file(self) -> None:
         fake_tables = {
             "tables": [
