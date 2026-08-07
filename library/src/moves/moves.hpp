@@ -341,6 +341,8 @@ public:
     /**
      * @brief Update TrackType state to reflect a played move.
      *
+     * Sets trackp to &track[trick] internally before updating state.
+     *
      * @param move Move to apply
      * @param relHand Relative hand index within the current trick (0..3)
      * @param trick Trick index (0..12); must be > 0 when relHand==3 (updates track[trick-1])

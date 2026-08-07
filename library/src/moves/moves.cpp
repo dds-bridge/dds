@@ -441,10 +441,11 @@ auto Moves::GetLength(const int trick, const int relHand) const -> int {
 
 auto Moves::apply_move_to_track(const MoveType &move, const int relHand,
                                 const int trick) -> void {
-  assert(trackp != nullptr && "apply_move_to_track: trackp must be set");
+  assert(trick >= 0 && trick < 13 && "apply_move_to_track: trick out of range");
   assert(relHand >= 0 && relHand < DDS_HANDS);
   if (relHand == 3)
     assert(trick > 0 && "apply_move_to_track: trick must be > 0 when relHand==3");
+  trackp = &track[trick];
   if (relHand == 0) {
     trackp->move[0].suit = move.suit;
     trackp->move[0].rank = move.rank;
@@ -488,7 +489,6 @@ auto Moves::apply_move_to_track(const MoveType &move, const int relHand,
 
 auto Moves::MakeSpecific(const MoveType &ourMply, const int trick,
                           const int relHand) -> void {
-  trackp = &track[trick];
   apply_move_to_track(ourMply, relHand, trick);
 }
 
@@ -497,7 +497,6 @@ auto Moves::MakeNext(const int trick, const int relHand,
     -> MoveType const * {
   int *lwp = track[trick].lowest_win[relHand];
   MovePlyType &list = moveList[trick][relHand];
-  trackp = &track[trick];
 
   MoveType *currp = nullptr, *prevp;
 
@@ -543,7 +542,6 @@ auto Moves::MakeNextSimple(const int trick, const int relHand)
 
   const MoveType &curr = list.move[list.current];
 
-  trackp = &track[trick];
   apply_move_to_track(curr, relHand, trick);
 
   list.current++;

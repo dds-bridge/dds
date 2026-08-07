@@ -676,8 +676,8 @@ TEST_F(MovesTest, ApplyMoveToTrackTrickCompletion) {
   EXPECT_EQ(moves->trackp->high[3], 0);
   // Next trick lead_hand should be hand 0
   EXPECT_EQ(moves->track[4].lead_hand, 0);
-  // removed_ranks[0] (spades) should have bits set for A K Q J
-  EXPECT_NE(moves->track[4].removed_ranks[0], 0);
+  // removed_ranks[0] (spades) should have bits set for A(0x1000) K(0x0800) Q(0x0400) J(0x0200)
+  EXPECT_EQ(moves->track[4].removed_ranks[0], 0x1E00);
   // Other suits untouched - should remain 0
   EXPECT_EQ(moves->track[4].removed_ranks[1], 0);
   EXPECT_EQ(moves->track[4].removed_ranks[2], 0);
