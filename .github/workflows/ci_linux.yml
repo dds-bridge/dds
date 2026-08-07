@@ -204,3 +204,51 @@ jobs:
           path: bazel-testlogs/
           if-no-files-found: ignore
           retention-days: 30
+
+  msan:
+    # Pin to 22.04: MODULE.bazel's MSAN LLVM + instrumented libc++ overlay are
+    # the Ubuntu 22.04 builds; ubuntu-latest drift would break the overlay match.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=msan //library/tests/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Run tests (MemorySanitizer)
+        run: bazelisk test --config=msan --verbose_failures --test_output=errors //library/tests/...
+
+      - name: Upload MSAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-msan
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30

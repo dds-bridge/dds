@@ -46,6 +46,9 @@ bazelisk build --config=asan //...
 
 # Build with UndefinedBehaviorSanitizer (standalone; see docs/BUILD_SYSTEM.md)
 bazelisk build --config=ubsan //...
+
+# Build with MemorySanitizer (Linux x86_64 only; see docs/BUILD_SYSTEM.md)
+bazelisk build --config=msan //...
 ```
 
 ### Build Time Expectations
@@ -209,6 +212,9 @@ bazelisk test --config=asan //...
 
 # Check for undefined behavior
 bazelisk test --config=ubsan //...
+
+# Check for uninitialized reads (Linux x86_64 only)
+bazelisk test --config=msan //...
 
 # Performance test with real hands
 bazelisk build //library/tests:dtest

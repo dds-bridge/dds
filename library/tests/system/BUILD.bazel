@@ -119,6 +119,14 @@ cc_test(
     ],
 )
 
+exports_files(["parallel_boards_test.cpp"])
+
+filegroup(
+    name = "parallel_boards_test_src",
+    srcs = ["parallel_boards_test.cpp"],
+    visibility = ["//python:__pkg__"],
+)
+
 # max_threads override equivalence + rename/alias initialisation test
 cc_test(
     name = "max_threads_equivalence_test",
