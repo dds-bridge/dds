@@ -47,9 +47,11 @@ jobs:
           done
           exit 1
 
-      # 5️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel)
+      # 5️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel).
+      # Empty --test_tag_filters= overrides .bazelrc's -e2e so Playwright in
+      # //web:web_system_tests actually runs (dds_mvp_e2e_test is tagged e2e).
       - name: Test web helpers, system tests, e2e, and CalcDDtablePBN
-        run: bazelisk test --verbose_failures //web:web_tests //web:web_system_tests //wasm:all
+        run: bazelisk test --verbose_failures --test_tag_filters= //web:web_tests //web:web_system_tests //wasm:all
 
       - name: Build WASM targets
         run: |

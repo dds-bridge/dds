@@ -103,6 +103,18 @@ py_test(
     ],
 )
 
+# Guard: WASM CI clears .bazelrc's -e2e filter so Playwright e2e tests run.
+py_test(
+    name = "ci_wasm_e2e_test",
+    size = "small",
+    main = "tests/ci_wasm_e2e_test.py",
+    srcs = ["tests/ci_wasm_e2e_test.py"],
+    data = [
+        "//:.bazelrc",
+        "//.github/workflows:all_workflows",
+    ],
+)
+
 py_test(
     name = "python_interface_smoke_test",
     size = "small",
