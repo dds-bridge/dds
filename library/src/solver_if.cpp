@@ -153,7 +153,6 @@ auto solve_board_internal(
   ctx.search().trick_nodes() = 0;
 
   thrp->lookAheadPos.hand_rel_first = hand_rel_first;
-  thrp->lookAheadPos.first[ini_depth] = dl.first;
   thrp->lookAheadPos.tricks_max = 0;
 
   MoveType mv = {0, 0, 0, 0};
@@ -190,6 +189,9 @@ auto solve_board_internal(
 
     goto SOLVER_DONE;
   }
+
+  // Validated cardCount > 4 ⇒ ini_depth >= 1; safe to index first[].
+  thrp->lookAheadPos.first[ini_depth] = dl.first;
 
 
   // ----------------------------------------------------------

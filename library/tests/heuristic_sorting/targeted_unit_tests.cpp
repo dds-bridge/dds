@@ -71,11 +71,9 @@ TEST(TargetedUnitTests, GetTopNumberEdgeCases) {
   TrackType track_dummy = {};
   HeuristicContext ctx = { tpos, bm, bmtt, thrp_rel_dummy, mply_dummy, 0, 0, DDS_NOTRUMP, 0, &track_dummy, 0, 0, 0, 0 };
 
-  // Call the free helper get_top_number from internal.hpp
+  // Empty suit (ris == 0): no groups; must not index fullseq_[-1].
   get_top_number(ctx, 0, 14, topNumber, mno);
-  // topNumber may be -1 if no candidate found; ensure values are in expected ranges
-  EXPECT_GE(topNumber, -1);
-  EXPECT_LE(topNumber, 14);
+  EXPECT_EQ(topNumber, -1);
   EXPECT_GE(mno, 0);
   EXPECT_LE(mno, 13);
 

@@ -43,6 +43,9 @@ bazelisk build -c dbg //...
 
 # Build with AddressSanitizer (see .bazelrc build:asan and docs/BUILD_SYSTEM.md)
 bazelisk build --config=asan //...
+
+# Build with UndefinedBehaviorSanitizer (standalone; see docs/BUILD_SYSTEM.md)
+bazelisk build --config=ubsan //...
 ```
 
 ### Build Time Expectations
@@ -203,6 +206,9 @@ Before finalizing changes, optionally run:
 # Check for memory leaks (see docs/BUILD_SYSTEM.md for macOS/Linux notes)
 bazelisk build --config=asan //...
 bazelisk test --config=asan //...
+
+# Check for undefined behavior
+bazelisk test --config=ubsan //...
 
 # Performance test with real hands
 bazelisk build //library/tests:dtest

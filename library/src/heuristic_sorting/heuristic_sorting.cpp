@@ -864,6 +864,13 @@ void get_top_number(const HeuristicContext& ctx, const int ris, const int prank,
   int removed = static_cast<int>(ctx.removed_ranks[ctx.lead_suit] |
                                  bit_map_rank[prank]);
 
+  // Empty suit: last_group_ == -1; no sequence to measure.
+  if (g < 0)
+  {
+    top_number = -1;
+    return;
+  }
+
   int fullseq = mp.fullseq_[g];
 
   while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))

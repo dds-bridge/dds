@@ -64,21 +64,21 @@ If you see runtime loader failures after a toolchain or OS change:
 2. Re-resolve Bazel toolchains (`bazelisk shutdown`, then `bazelisk clean --expunge`).
 3. Re-run `bazelisk test //...` to confirm runtime compatibility.
 
-### AddressSanitizer and ThreadSanitizer (macOS)
+### AddressSanitizer, ThreadSanitizer, and UndefinedBehaviorSanitizer (macOS)
 
-Sanitizer builds use `--config=asan` or `--config=tsan` (see `.bazelrc`).
-Do not use `--define=asan=true`; that path is not supported.
+Sanitizer builds use `--config=asan`, `--config=tsan`, or `--config=ubsan`
+(see `.bazelrc`). Do not use `--define=asan=true`; that path is not supported.
 macOS-specific settings are chained automatically; you do not pass a separate
-`asan_macos` or `tsan_macos` flag.
+`asan_macos`, `tsan_macos`, or `ubsan_macos` flag.
 
 **Clang / Xcode version coupling.** Three places must stay on the same **clang
 major** version (currently **21**):
 
 | Location | Role |
 |----------|------|
-| `MODULE.bazel` → `llvm_versions` | Hermetic LLVM used for normal builds and for TSAN instrumentation |
-| Installed Xcode (`xcrun clang++ --version`) | ASAN compiler/runtime; TSAN `compiler-rt` dylib |
-| `.bazelrc` → `build:tsan_macos` rpath (`.../lib/clang/21/lib/darwin`) | Lets LLVM-instrumented TSAN binaries load Xcode's TSAN runtime |
+| `MODULE.bazel` → `llvm_versions` | Hermetic LLVM used for normal builds and for TSAN/UBSAN instrumentation |
+| Installed Xcode (`xcrun clang++ --version`) | ASAN compiler/runtime; TSAN/UBSAN `compiler-rt` dylibs |
+| `.bazelrc` → `build:tsan_macos` / `build:ubsan_macos` rpath (`.../lib/clang/21/lib/darwin`) | Lets LLVM-instrumented TSAN/UBSAN binaries load Xcode's runtimes |
 
 **ASAN (`--config=asan`).** macOS builds select the Xcode CC toolchain via
 `apple_support` (`build:asan_macos`). LLVM's bundled ASAN runtime hangs at
@@ -90,21 +90,29 @@ toolchain; only the **runtime** comes from Xcode's `compiler-rt`. LLVM's TSAN
 dylib segfaults on current macOS, but Xcode's dylib works with LLVM-instrumented
 binaries when the clang major matches.
 
+**UBSAN (`--config=ubsan`).** Standalone config (not combined with ASAN) so
+failure attribution stays clear and ASAN's Xcode-toolchain coupling is not
+shared. Like TSAN, instrumentation uses hermetic LLVM and the runtime is loaded
+from Xcode via `build:ubsan_macos`. `-fno-sanitize-recover=undefined` makes the
+first UB report abort the process (required for CI).
+
 **When upgrading LLVM or Xcode**, update all coupled paths together:
 
 1. Bump `llvm_versions` in `MODULE.bazel` (and run
    `bazelisk mod deps --lockfile_mode=update` to refresh `MODULE.bazel.lock`).
-2. Update the `clang/N` segment in `build:tsan_macos` in `.bazelrc` to match the
-   new major version.
+2. Update the `clang/N` segment in `build:tsan_macos` and `build:ubsan_macos` in
+   `.bazelrc` to match the new major version.
 3. Confirm Xcode ships that major:  
    `xcrun clang++ --version`  
-   `xcrun clang -print-file-name=libclang_rt.tsan_osx_dynamic.dylib`
+   `xcrun clang -print-file-name=libclang_rt.tsan_osx_dynamic.dylib`  
+   `xcrun clang -print-file-name=libclang_rt.ubsan_osx_dynamic.dylib`
 4. Re-run sanitizer smoke tests, e.g.  
    `bazelisk test --config=asan //library/tests/system:context_tt_facade_test`  
-   `bazelisk test --config=tsan //library/tests/system:thread_safety_stress_test`
+   `bazelisk test --config=tsan //library/tests/system:thread_safety_stress_test`  
+   `bazelisk test --config=ubsan //library/tests/system:context_tt_facade_test`
 
-If TSAN fails to start after an Xcode upgrade (dyld cannot load the runtime),
-the rpath major is likely out of sync with the installed toolchain.
+If TSAN or UBSAN fails to start after an Xcode upgrade (dyld cannot load the
+runtime), the rpath major is likely out of sync with the installed toolchain.
 
 **CI.** GitHub Actions runs sanitizer jobs on pull requests to `main` and
 `develop`:
@@ -113,7 +121,8 @@ the rpath major is likely out of sync with the installed toolchain.
 |----------|-----|---------|
 | `ci_linux.yml` | `asan` | `bazelisk test --config=asan //library/tests/...` |
 | `ci_linux.yml` | `tsan` | `bazelisk test --config=tsan //library/tests/system/...` |
-| `ci_macos.yml` | `sanitizers` | ASAN and TSAN on `//library/tests/system/...` (validates macOS toolchain/rpath wiring) |
+| `ci_linux.yml` | `ubsan` | `bazelisk test --config=ubsan //library/tests/...` |
+| `ci_macos.yml` | `sanitizers` | ASAN, TSAN, and UBSAN on `//library/tests/system/...` (validates macOS toolchain/rpath wiring) |
 
 
 ## Visual Studio and Rider Build
