@@ -219,8 +219,11 @@ TEST(Args, UnknownMinMaxFlagsAreRejected)
   char arg0[] = "dtest";
   char arg_f[] = "-f";
   char arg_min[] = "--min";
-  char* argv[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_min};
-  EXPECT_EXIT(read_args(4, argv), ::testing::ExitedWithCode(0), ".*");
+  char arg_max[] = "--max";
+  char* argv_min[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_min};
+  char* argv_max[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_max};
+  EXPECT_EXIT(read_args(4, argv_min), ::testing::ExitedWithCode(0), ".*");
+  EXPECT_EXIT(read_args(4, argv_max), ::testing::ExitedWithCode(0), ".*");
 }
 
 TEST(Args, ResolvePrefersLiteralExistingPath)
