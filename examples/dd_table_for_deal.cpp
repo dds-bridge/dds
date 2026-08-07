@@ -36,7 +36,6 @@
 namespace {
 
 using dd_table_for_deal::PBN_DEAL_MAX;
-using dd_table_for_deal::PBN_FILE_MAX;
 using dd_table_for_deal::apply_deal_limit;
 using dd_table_for_deal::extract_deal_tags;
 using dd_table_for_deal::format_par_line;

@@ -242,6 +242,9 @@ auto format_par_line(ParResultsMaster const sidesRes[2])
   if (sidesRes[0].score == 0 && sidesRes[1].score == 0)
     return std::string("Par: 0");
 
+  if (sidesRes[0].number <= 0 && sidesRes[1].number <= 0)
+    return std::nullopt;
+
   const ContractType& first = sidesRes[0].number > 0
       ? sidesRes[0].contracts[0]
       : sidesRes[1].contracts[0];

@@ -290,3 +290,15 @@ TEST(FormatParLine, PassedOut)
   ASSERT_TRUE(line.has_value());
   EXPECT_EQ(*line, "Par: 0");
 }
+
+
+TEST(FormatParLine, ReturnsNulloptWhenNoContractsDespiteScores)
+{
+  ParResultsMaster sides[2]{};
+  sides[0].score = -100;
+  sides[0].number = 0;
+  sides[1].score = 100;
+  sides[1].number = 0;
+
+  EXPECT_FALSE(dd_table_for_deal::format_par_line(sides).has_value());
+}
