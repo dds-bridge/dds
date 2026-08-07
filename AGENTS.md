@@ -23,3 +23,5 @@ For every code change, follow strict TDD:
 Structure tests with Arrange-Act-Assert and use descriptive names that capture intent, including negative and boundary cases.
 
 Never write production code first and wrap tests around it afterward. Tests must be written first and must fail before implementation.
+
+Tests are not necessary for changes to documentation, unless the change is coupled to a code or configuration change.
