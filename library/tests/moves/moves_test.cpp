@@ -82,7 +82,7 @@ TEST_F(MovesTest, ConstructorInitializesState) {
 
 TEST_F(MovesTest, InitializesTrackingState) {
   // Initialize with trick 5, starting from relative hand 0
-  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
   moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
   
   // Verify state is initialized
@@ -90,7 +90,7 @@ TEST_F(MovesTest, InitializesTrackingState) {
   EXPECT_EQ(moves->trump, 3);  // 3 = notrump
   
   // Verify move lists are reset
-  for (int h = 0; h < 4; h++) {
+  for (int h = 0; h < DDS_HANDS; h++) {
     EXPECT_EQ(moves->moveList[5][h].current, 0);
     EXPECT_EQ(moves->moveList[5][h].last, 0);
   }
@@ -98,7 +98,7 @@ TEST_F(MovesTest, InitializesTrackingState) {
 
 TEST_F(MovesTest, ReinitUpdateLeadHand) {
   // Initialize first
-  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
   moves->Init(7, 0, nullptr, nullptr, rankInSuit, 0, 1);
   
   // Reinit with different lead hand
@@ -120,7 +120,7 @@ TEST_F(MovesTest, GetLengthReturnsCorrectCount) {
 TEST_F(MovesTest, GetLengthHandlesEmptyList) {
   // Verify list lengths are reasonable (0-14 for max 13 cards)
   for (int t = 0; t < 13; t++) {
-    for (int h = 0; h < 4; h++) {
+    for (int h = 0; h < DDS_HANDS; h++) {
       int length = moves->GetLength(t, h);
       EXPECT_GE(length, 0);
       EXPECT_LE(length, 14);
@@ -149,7 +149,7 @@ TEST_F(MovesTest, PointersInitializedToNullptr) {
 
 TEST_F(MovesTest, PointersSetCorrectlyDuringInit) {
   // After init, trackp should still be nullptr (it's set later in MoveGen0)
-  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
   moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
   
   // After init, trackp should still be nullptr (it's set later in MoveGen0)
@@ -230,7 +230,7 @@ TEST_F(MovesTest, CreateAndDestroySuccessfully) {
 
 TEST_F(MovesTest, MultipleInitializeCallsWork) {
   // Verify multiple Init calls work correctly
-  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
   
   for (int t = 0; t < 13; t++) {
     moves->Init(t, 0, nullptr, nullptr, rankInSuit, 0, t % 4);
@@ -241,7 +241,7 @@ TEST_F(MovesTest, MultipleInitializeCallsWork) {
 TEST_F(MovesTest, GetLengthWithValidBounds) {
   // Verify GetLength works for all valid bounds
   for (int t = 0; t < 13; t++) {
-    for (int h = 0; h < 4; h++) {
+    for (int h = 0; h < DDS_HANDS; h++) {
       auto length = moves->GetLength(t, h);
       EXPECT_GE(length, 0);
       EXPECT_LE(length, 13);
@@ -585,7 +585,7 @@ TEST_F(MovesTest, GetLengthIsQuick) {
 }
 
 TEST_F(MovesTest, ApplyMoveToTrackLeadHand) {
-  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
   moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
   moves->trackp = &moves->track[5];
 
@@ -605,7 +605,7 @@ TEST_F(MovesTest, ApplyMoveToTrackLeadHand) {
 }
 
 TEST_F(MovesTest, ApplyMoveToTrackFollowSuit) {
-  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
   moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
   moves->trackp = &moves->track[5];
 
@@ -630,7 +630,7 @@ TEST_F(MovesTest, ApplyMoveToTrackFollowSuit) {
 }
 
 TEST_F(MovesTest, ApplyMoveToTrackTrumpBeatsNonTrump) {
-  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
   // trump = 0 (Spades)
   moves->Init(5, 0, nullptr, nullptr, rankInSuit, 0, 0);
   moves->trackp = &moves->track[5];
@@ -655,7 +655,7 @@ TEST_F(MovesTest, ApplyMoveToTrackTrumpBeatsNonTrump) {
 }
 
 TEST_F(MovesTest, ApplyMoveToTrackTrickCompletion) {
-  const unsigned short (*rankInSuit)[4] = getSampleRankInSuit();
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
   moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
   moves->trackp = &moves->track[5];
   moves->track[5].lead_hand = 0;
@@ -665,8 +665,8 @@ TEST_F(MovesTest, ApplyMoveToTrackTrickCompletion) {
     moves->track[4].removed_ranks[s] = 0;
   }
   // All four hands play spades: A K Q J
-  MoveType cards[4];
-  for (int h = 0; h < 4; h++) {
+  MoveType cards[DDS_HANDS];
+  for (int h = 0; h < DDS_HANDS; h++) {
     cards[h].suit = 0;
     cards[h].rank = 14 - h;
     cards[h].sequence = 0;
