@@ -226,7 +226,7 @@ def _side_vulnerable(seats: str, vulnerable: int) -> bool:
 
 
 def _sacrifice_undertricks(score: int, vulnerable: int, seats: str) -> int:
-    """Infer sacrifice undertricks from the NS-view par score."""
+    """Infer sacrifice undertricks from the declaring-side par score."""
     is_vul = _side_vulnerable(seats, vulnerable)
     for tricks in range(1, 14):
         sacrifice_score = _rawscore_undertricks(tricks, is_vul)
