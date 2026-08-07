@@ -96,10 +96,14 @@ TEST(TestTimer, RecordAccumulatesHandsAndTimes)
   timer.record(5, 20, 10);
 
   const std::string out = capture_print_hands(timer);
-  EXPECT_NE(out.find("Number of hands"), std::string::npos);
-  EXPECT_NE(out.find("15"), std::string::npos);   // 10 + 5 hands
-  EXPECT_NE(out.find("120"), std::string::npos);  // 100 + 20 user ms
-  EXPECT_NE(out.find("8.00"), std::string::npos); // avg user 120/15
+  // Anchor values to their labels so digits elsewhere in the report cannot
+  // satisfy the assertions (e.g. "15" matching inside "150").
+  EXPECT_TRUE(std::regex_search(
+    out, std::regex(R"(Number of hands\s+15\s*(?:\n|$))")));  // 10 + 5
+  EXPECT_TRUE(std::regex_search(
+    out, std::regex(R"(User time \(ms\)\s+120\s*(?:\n|$))")));  // 100 + 20
+  EXPECT_TRUE(std::regex_search(
+    out, std::regex(R"(Avg user time \(ms\)\s+8\.00\s*(?:\n|$))")));  // 120/15
   EXPECT_EQ(out.find("Min user time (ms)"), std::string::npos);
   EXPECT_EQ(out.find("Max user time (ms)"), std::string::npos);
 }
@@ -112,9 +116,12 @@ TEST(TestTimer, RecordIgnoresNonPositiveHands)
   timer.record(-3, 999, 999);
 
   const std::string out = capture_print_hands(timer);
-  EXPECT_NE(out.find("Number of hands"), std::string::npos);
-  EXPECT_NE(out.find("100"), std::string::npos);
-  EXPECT_NE(out.find("10.00"), std::string::npos);
+  EXPECT_TRUE(std::regex_search(
+    out, std::regex(R"(Number of hands\s+10\s*(?:\n|$))")));
+  EXPECT_TRUE(std::regex_search(
+    out, std::regex(R"(User time \(ms\)\s+100\s*(?:\n|$))")));
+  EXPECT_TRUE(std::regex_search(
+    out, std::regex(R"(Avg user time \(ms\)\s+10\.00\s*(?:\n|$))")));
   EXPECT_EQ(out.find("999"), std::string::npos);
 }
 
