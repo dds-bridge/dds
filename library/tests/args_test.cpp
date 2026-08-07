@@ -358,6 +358,15 @@ TEST(Args, ResolveReturnsEmptyWhenMissing)
   EXPECT_TRUE(resolve_dtest_input_file("no-such-list-999001", "dtest").empty());
 }
 
+TEST_F(HandsLayoutFixture, ResolveRejectsDirectoryAsLiteralPath)
+{
+  // -f is an input *file*; an existing directory must not short-circuit
+  // resolution (otherwise read_file later fails with a confusing parse error).
+  ASSERT_EQ(change_dir(root_.c_str()), 0);
+  EXPECT_TRUE(resolve_dtest_input_file("hands", "dtest").empty());
+  EXPECT_TRUE(resolve_dtest_input_file(root_ + "hands", "dtest").empty());
+}
+
 TEST(Args, AbsolutePathDetection)
 {
   EXPECT_FALSE(is_dtest_absolute_path("tmp/dtest"));

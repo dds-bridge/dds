@@ -264,7 +264,9 @@ string normalize_logical_path(const string& path)
 bool path_exists(const fs::path& path)
 {
   std::error_code ec;
-  return fs::exists(path, ec);
+  // -f / resolve_dtest_input_file expect a readable input *file*; directories
+  // must not count (exists() is true for them and leads to a later parse error).
+  return fs::is_regular_file(path, ec);
 }
 
 
