@@ -97,13 +97,15 @@ shared. Like TSAN, instrumentation uses hermetic LLVM and the runtime is loaded
 from Xcode via `build:ubsan_macos`. `-fno-sanitize-recover=undefined` makes the
 first UB report abort the process (required for CI).
 
-**MSAN (`--config=msan`).** Linux x86_64 only. MemorySanitizer reports false
-positives unless the C++ standard library is also instrumented, so
-`--config=msan` selects `@llvm_toolchain_msan` (not registered globally) and
-enables `--features=msan`. That toolchain ships an instrumented libc++ overlay
-(`libcxx_url` / `libcxx_sha256` in `MODULE.bazel`) built against the same
-Ubuntu 22.04 LLVM release as `MSAN_LLVM_VERSION`. Keep those pins aligned when
-bumping LLVM. Do not combine MSAN with ASAN/TSAN/UBSAN.
+**MSAN (`--config=msan`).** Linux x86_64 only. See the
+[Clang MemorySanitizer documentation](https://clang.llvm.org/docs/MemorySanitizer.html)
+for what MSAN detects and its limits (it is not a complete memory-safety proof).
+MemorySanitizer reports false positives unless the C++ standard library is also
+instrumented, so `--config=msan` selects `@llvm_toolchain_msan` (not registered
+globally) and enables `--features=msan`. That toolchain ships an instrumented
+libc++ overlay (`libcxx_url` / `libcxx_sha256` in `MODULE.bazel`) built against
+the same Ubuntu 22.04 LLVM release as `MSAN_LLVM_VERSION`. Keep those pins
+aligned when bumping LLVM. Do not combine MSAN with ASAN/TSAN/UBSAN.
 
 `MODULE.bazel` currently `archive_override`s `toolchains_llvm` past BCR 1.8.0
 to include [#791](https://github.com/bazel-contrib/toolchains_llvm/pull/791)

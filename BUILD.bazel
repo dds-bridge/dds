@@ -89,6 +89,7 @@ config_setting(
 exports_files([
     ".bazelrc",
     "MODULE.bazel",
+    "docs/BUILD_SYSTEM.md",
 ])
 
 filegroup(
@@ -96,6 +97,7 @@ filegroup(
     srcs = [
         ".bazelrc",
         "MODULE.bazel",
+        "docs/BUILD_SYSTEM.md",
     ],
     visibility = ["//python:__pkg__"],
 )
