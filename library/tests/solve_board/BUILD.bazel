@@ -17,9 +17,11 @@ cc_test(
     copts = DDS_CPPOPTS,
 )
 
+# medium: MSAN can exceed the small-test limit (120s under --config=msan) on the
+# random-playout consistency suite, so keep headroom against runner load variance.
 cc_test(
     name = "analyse_play_consistency_test",
-    size = "small",
+    size = "medium",
     srcs = [
         "analyse_play_consistency.cpp",
     ],
