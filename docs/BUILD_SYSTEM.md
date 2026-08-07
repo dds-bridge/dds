@@ -140,7 +140,7 @@ runtime), the rpath major is likely out of sync with the installed toolchain.
 | `ci_linux.yml` | `asan` | `bazelisk test --config=asan //library/tests/...` |
 | `ci_linux.yml` | `tsan` | `bazelisk test --config=tsan //library/tests/system/...` |
 | `ci_linux.yml` | `ubsan` | `bazelisk test --config=ubsan //library/tests/...` |
-| `ci_linux.yml` | `msan` | `bazelisk test --config=msan //library/tests/...` (Linux only) |
+| `ci_linux.yml` | `msan` | `bazelisk test --config=msan //library/tests/...` on `ubuntu-22.04` (matches LLVM/libcxx overlay) |
 | `ci_macos.yml` | `sanitizers` | ASAN, TSAN, and UBSAN on `//library/tests/system/...` (validates macOS toolchain/rpath wiring) |
 
 

@@ -87,6 +87,13 @@ class TestMsanLinuxCi(unittest.TestCase):
             r"(?m)^  msan:\s*$",
             "expected a dedicated msan job in ci_linux.yml",
         )
+        # MODULE.bazel pins the MSAN LLVM + instrumented libc++ to the Ubuntu
+        # 22.04 distribution; keep the runner on that OS so the overlay matches.
+        self.assertRegex(
+            text,
+            r"(?m)^  msan:\s*\n(?:[ \t]+[^\n]*\n)*?[ \t]+runs-on:\s*ubuntu-22\.04\s*$",
+            "msan CI must pin ubuntu-22.04 to match the MSAN toolchain overlay",
+        )
         self.assertRegex(
             text,
             r"bazelisk\s+test\s+--config=msan\b",
@@ -135,6 +142,19 @@ class TestMsanCompatibleParallelBoardsAllocHooks(unittest.TestCase):
             text,
             r"__has_feature\s*\(\s*memory_sanitizer\s*\)",
             "expected MSAN detection via __has_feature(memory_sanitizer)",
+        )
+        # Both Clang feature-test and GCC-style __SANITIZE_MEMORY__ may be set;
+        # defining DDS_TEST_MEMORY_SANITIZER twice triggers -Wmacro-redefined.
+        self.assertRegex(
+            text,
+            r"#\s*ifndef\s+DDS_TEST_MEMORY_SANITIZER[\s\S]*?"
+            r"#\s*if\s+defined\s*\(\s*__SANITIZE_MEMORY__\s*\)",
+            "second MSAN detect must be guarded to avoid macro redefinition",
+        )
+        self.assertEqual(
+            len(re.findall(r"#\s*define\s+DDS_TEST_MEMORY_SANITIZER\s+1\b", text)),
+            2,
+            "expected two paths that set DDS_TEST_MEMORY_SANITIZER to 1",
         )
         # Custom replacements must not be linked under MSAN (duplicate symbols).
         self.assertRegex(

@@ -31,8 +31,10 @@ std::atomic<unsigned> allocations{0};
 #    define DDS_TEST_MEMORY_SANITIZER 1
 #  endif
 #endif
-#if defined(__SANITIZE_MEMORY__)
-#  define DDS_TEST_MEMORY_SANITIZER 1
+#ifndef DDS_TEST_MEMORY_SANITIZER
+#  if defined(__SANITIZE_MEMORY__)
+#    define DDS_TEST_MEMORY_SANITIZER 1
+#  endif
 #endif
 #ifndef DDS_TEST_MEMORY_SANITIZER
 #  define DDS_TEST_MEMORY_SANITIZER 0
