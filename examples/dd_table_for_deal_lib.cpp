@@ -12,6 +12,9 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <istream>
 #include <limits>
 #include <regex>
@@ -196,6 +199,34 @@ auto looks_like_path(std::string_view arg) -> bool
       return true;
   }
   return false;
+}
+
+
+auto read_pbn_stream(std::istream& in) -> std::optional<std::string>
+{
+  std::string text;
+  text.reserve(64 * 1024);
+  char buffer[4096];
+  while (in)
+  {
+    in.read(buffer, static_cast<std::streamsize>(sizeof(buffer)));
+    const auto n = in.gcount();
+    if (n > 0)
+      text.append(buffer, static_cast<std::size_t>(n));
+    if (text.size() > PBN_FILE_MAX)
+    {
+      std::cerr << "PBN input too large (max " << PBN_FILE_MAX << " characters)\n";
+      return std::nullopt;
+    }
+  }
+  return text;
+}
+
+
+auto path_is_openable(std::string_view path) -> bool
+{
+  std::ifstream file(std::filesystem::path(path), std::ios::binary);
+  return static_cast<bool>(file);
 }
 
 

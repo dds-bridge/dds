@@ -43,6 +43,8 @@ using dd_table_for_deal::format_par_line;
 using dd_table_for_deal::looks_like_path;
 using dd_table_for_deal::parse_limit;
 using dd_table_for_deal::parse_vulnerable;
+using dd_table_for_deal::path_is_openable;
+using dd_table_for_deal::read_pbn_stream;
 using dd_table_for_deal::should_report_failed_stream_read;
 using dd_table_for_deal::unique_deals;
 
@@ -54,29 +56,6 @@ static auto stdin_is_tty() -> bool
 #else
   return isatty(STDIN_FILENO) != 0;
 #endif
-}
-
-
-auto read_pbn_stream(std::istream& in) -> std::optional<std::string>
-{
-  std::string text;
-  text.reserve(64 * 1024);
-  char buffer[4096];
-  while (in)
-  {
-    in.read(buffer, static_cast<std::streamsize>(sizeof(buffer)));
-    const auto n = in.gcount();
-    if (n > 0)
-      text.append(buffer, static_cast<std::size_t>(n));
-    if (text.size() > PBN_FILE_MAX)
-    {
-      std::cerr << "PBN input too large (max " << PBN_FILE_MAX << " characters)\n";
-      return std::nullopt;
-    }
-  }
-  if (text.empty())
-    return std::nullopt;
-  return text;
 }
 
 
@@ -107,6 +86,18 @@ auto read_pbn_file_workspace_relative(std::string_view path)
   }
 
   return std::nullopt;
+}
+
+
+auto path_openable_workspace_relative(std::string_view path) -> bool
+{
+  if (path_is_openable(path))
+    return true;
+  if (const char* workspace = std::getenv("BUILD_WORKSPACE_DIRECTORY"))
+  {
+    return path_is_openable((std::filesystem::path(workspace) / path).string());
+  }
+  return false;
 }
 
 
@@ -147,7 +138,9 @@ auto load_deals(std::string_view arg) -> std::optional<std::vector<std::string>>
 
   if (looks_like_path(arg))
   {
-    std::cerr << "Cannot read file: " << arg << "\n";
+    // Missing file vs openable-but-failed (e.g. oversize already reported).
+    if (!path_openable_workspace_relative(arg))
+      std::cerr << "Cannot read file: " << arg << "\n";
     return std::nullopt;
   }
 
@@ -330,6 +323,7 @@ auto main(int argc, char * argv[]) -> int
     }
     if (input != nullptr)
     {
+      fprintf(stderr, "Only one deal argument is allowed\n");
       print_usage(argv[0]);
       return 1;
     }

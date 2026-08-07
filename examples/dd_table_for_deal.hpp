@@ -39,6 +39,12 @@ auto unique_deals(std::vector<std::string> const& deals)
 
 auto looks_like_path(std::string_view arg) -> bool;
 
+// Read until EOF. Empty input yields an empty string. Oversized input prints an
+// error and returns nullopt.
+auto read_pbn_stream(std::istream& in) -> std::optional<std::string>;
+
+auto path_is_openable(std::string_view path) -> bool;
+
 // True when a failed stream read should report empty/IO failure to the user.
 // False when the stream is still readable (e.g. oversize already reported).
 auto should_report_failed_stream_read(std::istream const& in) -> bool;

@@ -9,6 +9,8 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
+#include <fstream>
 #include <sstream>
 
 #include <api/dll.h>
@@ -87,6 +89,44 @@ TEST(ApplyDealLimit, KeepsPrefixWhenLimited)
   EXPECT_EQ(
       dd_table_for_deal::apply_deal_limit(deals, 10),
       deals);
+}
+
+
+TEST(ReadPbnStream, EmptyInputReturnsEmptyString)
+{
+  std::istringstream in("");
+  const auto text = dd_table_for_deal::read_pbn_stream(in);
+  ASSERT_TRUE(text.has_value());
+  EXPECT_TRUE(text->empty());
+}
+
+
+TEST(ReadPbnStream, ReturnsContents)
+{
+  std::istringstream in("[Deal \"N:..\"]\n");
+  const auto text = dd_table_for_deal::read_pbn_stream(in);
+  ASSERT_TRUE(text.has_value());
+  EXPECT_EQ(*text, "[Deal \"N:..\"]\n");
+}
+
+
+TEST(PathIsOpenable, TrueForExistingFile)
+{
+  const auto path =
+      std::filesystem::temp_directory_path() / "dds_dd_table_for_deal_openable.pbn";
+  {
+    std::ofstream out(path);
+    out << "[Deal \"x\"]\n";
+  }
+  EXPECT_TRUE(dd_table_for_deal::path_is_openable(path.string()));
+  std::filesystem::remove(path);
+}
+
+
+TEST(PathIsOpenable, FalseForMissingFile)
+{
+  EXPECT_FALSE(dd_table_for_deal::path_is_openable(
+      "/definitely/missing/dds_dd_table_for_deal_no_such.pbn"));
 }
 
 
