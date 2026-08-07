@@ -432,6 +432,21 @@ TEST(ParallelAllBoards, ReusesWorkerThreadsAcrossConsecutiveCalls)
   EXPECT_EQ(created_after_reuse, created_after_warm);
 }
 
+TEST(ParallelAllBoards, LastJobBoardCountReflectsZeroBoardCall)
+{
+  // The test seam must record the most recent call's board count, including
+  // early-return paths (count <= 0), so a prior job cannot leave a stale value.
+  const auto noop = [](const int, const int) { return RETURN_NO_FAULT; };
+
+  ASSERT_EQ(parallel_all_boards_n(4, 1, noop), RETURN_NO_FAULT);
+  ASSERT_EQ(dds::internal::parallel_boards_last_job_board_count(), 4);
+
+  ASSERT_EQ(parallel_all_boards_n(0, 1, noop), RETURN_NO_FAULT);
+  EXPECT_EQ(dds::internal::parallel_boards_last_job_board_count(), 0);
+
+  ASSERT_EQ(parallel_all_boards_n(-3, 1, noop), RETURN_NO_FAULT);
+  EXPECT_EQ(dds::internal::parallel_boards_last_job_board_count(), -3);
+}
 
 TEST(ParallelAllBoards, ShutdownJoinsPoolAndAllowsRecreation)
 {
