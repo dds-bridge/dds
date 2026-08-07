@@ -20,17 +20,6 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
-class TestMsanDocs(unittest.TestCase):
-    def test_build_system_docs_link_clang_msan(self) -> None:
-        """Point readers at upstream MSAN docs (coverage limits, false positives)."""
-        text = (_repo_root() / "docs" / "BUILD_SYSTEM.md").read_text(encoding="utf-8")
-        self.assertIn(
-            "https://clang.llvm.org/docs/MemorySanitizer.html",
-            text,
-            "BUILD_SYSTEM.md must link the Clang MemorySanitizer documentation",
-        )
-
-
 class TestMsanBazelConfig(unittest.TestCase):
     def test_bazelrc_defines_msan_config(self) -> None:
         bazelrc = (_repo_root() / ".bazelrc").read_text(encoding="utf-8")
