@@ -17,14 +17,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
-#include <cstring>
-#include <sys/stat.h>
-
-#ifdef _WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
+#include <filesystem>
+#include <system_error>
 
 #include "args.hpp"
 #include "cst.hpp"
@@ -36,6 +30,7 @@ using std::right;
 using std::left;
 using std::vector;
 using std::string;
+namespace fs = std::filesystem;
 
 
 extern OptionsType options;
@@ -94,10 +89,7 @@ bool ParseRound();
 void usage(
   const char base[])
 {
-  string basename(base);
-  const size_t l = basename.find_last_of("\\/");
-  if (l != string::npos)
-    basename.erase(0, l+1);
+  const string basename = fs::path(base).filename().string();
 
   cout <<
     "Usage: " << basename << " [options]\n\n" <<
@@ -265,111 +257,14 @@ string normalize_logical_path(const string& path)
 {
   if (path.empty())
     return path;
+  return fs::path(path).lexically_normal().make_preferred().string();
+}
 
-  const bool absolute = is_absolute_path(path);
-  string drive;
-  size_t start = 0;
-#ifdef _WIN32
-  if (absolute && is_unc_path(path))
-  {
-    size_t i = 2;
-    while (i < path.size() && (path[i] == '\\' || path[i] == '/'))
-      ++i;
-    const size_t server_start = i;
-    while (i < path.size() && path[i] != '\\' && path[i] != '/')
-      ++i;
-    const string server = path.substr(server_start, i - server_start);
-    while (i < path.size() && (path[i] == '\\' || path[i] == '/'))
-      ++i;
-    const size_t share_start = i;
-    while (i < path.size() && path[i] != '\\' && path[i] != '/')
-      ++i;
-    const string share = path.substr(share_start, i - share_start);
-    drive = string("\\\\") + server + "\\" + share;
-    start = i;
-    if (start < path.size() && (path[start] == '/' || path[start] == '\\'))
-      ++start;
-  }
-  else if (absolute && path.size() >= 2 && path[1] == ':')
-  {
-    drive = path.substr(0, 2);
-    start = 2;
-    if (start < path.size() && (path[start] == '/' || path[start] == '\\'))
-      ++start;
-  }
-  else if (absolute && (path[0] == '\\' || path[0] == '/'))
-  {
-    // Current-drive rooted without a drive letter; keep a leading separator.
-    start = 1;
-  }
-#else
-  if (absolute)
-    start = 1;
-#endif
 
-  vector<string> parts;
-  string cur;
-  auto flush = [&]()
-  {
-    if (cur.empty())
-      return;
-    if (cur == ".")
-    {
-      cur.clear();
-      return;
-    }
-    if (cur == "..")
-    {
-      if (!parts.empty())
-        parts.pop_back();
-      else if (!absolute)
-        parts.push_back("..");
-      cur.clear();
-      return;
-    }
-    parts.push_back(cur);
-    cur.clear();
-  };
-
-  for (size_t i = start; i < path.size(); ++i)
-  {
-    const char c = path[i];
-    if (c == '/' || c == '\\')
-      flush();
-    else
-      cur.push_back(c);
-  }
-  flush();
-
-#ifdef _WIN32
-  const char sep = '\\';
-#else
-  const char sep = '/';
-#endif
-
-  string out = drive;
-#ifdef _WIN32
-  const bool unc = absolute && drive.size() >= 2 && drive[0] == '\\';
-  if (absolute && !unc)
-    out += sep;
-#else
-  if (absolute)
-    out += sep;
-#endif
-
-  for (size_t i = 0; i < parts.size(); ++i)
-  {
-#ifdef _WIN32
-    if (i > 0 || unc)
-#else
-    if (i > 0)
-#endif
-      out += sep;
-    out += parts[i];
-  }
-  if (absolute && parts.empty())
-    return out.empty() ? string(1, sep) : out;
-  return out.empty() ? string(".") : out;
+bool path_exists(const fs::path& path)
+{
+  std::error_code ec;
+  return fs::exists(path, ec);
 }
 
 
@@ -377,33 +272,26 @@ string normalize_logical_path(const string& path)
 // of bazel-bin still lands on the workspace, not the execroot).
 string absolute_path_logical(const string& path)
 {
+  std::error_code ec;
+  const fs::path cwd = fs::current_path(ec);
+
   if (is_absolute_path(path))
   {
 #ifdef _WIN32
     // Current-drive rooted "\foo" → "X:\foo" using the cwd drive letter.
+    // std::filesystem treats these as relative (no root-name), so handle here.
     if ((path[0] == '\\' || path[0] == '/') &&
       (path.size() == 1 || (path[1] != '\\' && path[1] != '/')))
     {
-      char cwd[4096];
-      if (_getcwd(cwd, static_cast<int>(sizeof(cwd))) != nullptr &&
-        std::isalpha(static_cast<unsigned char>(cwd[0])) &&
-        cwd[1] == ':')
-      {
-        return normalize_logical_path(string(1, cwd[0]) + ":" + path);
-      }
+      if (!ec && cwd.has_root_name())
+        return normalize_logical_path(cwd.root_name().string() + path);
     }
 #endif
     return normalize_logical_path(path);
   }
 
-  char cwd[4096];
-#ifdef _WIN32
-  if (_getcwd(cwd, static_cast<int>(sizeof(cwd))) == nullptr)
+  if (ec)
     return normalize_logical_path(path);
-#else
-  if (getcwd(cwd, sizeof(cwd)) == nullptr)
-    return normalize_logical_path(path);
-#endif
 
 #ifdef _WIN32
   // Drive-relative "C:foo": resolve against cwd when cwd is on the same drive.
@@ -411,21 +299,21 @@ string absolute_path_logical(const string& path)
     std::isalpha(static_cast<unsigned char>(path[0])) &&
     path[1] == ':')
   {
-    const string cwd_s(cwd);
+    const string cwd_s = cwd.string();
     if (cwd_s.size() >= 2 &&
       std::tolower(static_cast<unsigned char>(cwd_s[0])) ==
         std::tolower(static_cast<unsigned char>(path[0])) &&
       cwd_s[1] == ':')
     {
-      return normalize_logical_path(cwd_s + "/" + path.substr(2));
+      return normalize_logical_path((cwd / path.substr(2)).string());
     }
     return normalize_logical_path(path);
   }
 #endif
 
   if (path.empty())
-    return normalize_logical_path(string(cwd));
-  return normalize_logical_path(string(cwd) + "/" + path);
+    return normalize_logical_path(cwd.string());
+  return normalize_logical_path((cwd / path).string());
 }
 
 }  // namespace
@@ -441,13 +329,14 @@ string resolve_dtest_input_file(
   const string& arg,
   const string& argv0)
 {
-  struct stat buffer;
-  if (stat(arg.c_str(), &buffer) == 0)
+  if (path_exists(arg))
     return arg;
 
   const string list_name = "list" + arg + ".txt";
-  const string cwd_candidate = "hands/" + list_name;
-  if (stat(cwd_candidate.c_str(), &buffer) == 0)
+  // Keep generic separators so cwd hits match the documented hands/listN.txt form.
+  const string cwd_candidate =
+    (fs::path("hands") / list_name).generic_string();
+  if (path_exists(cwd_candidate))
     return cwd_candidate;
 
   // bazel run moves CWD into the runfiles tree; it exports the invoke-time
@@ -457,12 +346,9 @@ string resolve_dtest_input_file(
     const char* dir = std::getenv(env_name);
     if (dir == nullptr || dir[0] == '\0')
       return string();
-    string base(dir);
-    while (base.size() > 1 && (base.back() == '/' || base.back() == '\\'))
-      base.pop_back();
-    const string candidate =
-      normalize_logical_path(base + "/hands/" + list_name);
-    if (stat(candidate.c_str(), &buffer) == 0)
+    const string candidate = normalize_logical_path(
+      (fs::path(dir) / "hands" / list_name).string());
+    if (path_exists(candidate))
       return candidate;
     return string();
   };
@@ -472,26 +358,22 @@ string resolve_dtest_input_file(
   if (const string found = from_env_dir("BUILD_WORKSPACE_DIRECTORY"); !found.empty())
     return found;
 
-  // Climb parents in the path *string* (do not use "/../" with stat — that
-  // follows a bazel-bin symlink into the execroot and misses the workspace
-  // hands/ directory). bazel-bin/library/tests → three levels up to repo root.
-  const string abs_argv0 = absolute_path_logical(argv0);
-  size_t slash = abs_argv0.find_last_of("\\/");
-  if (slash == string::npos)
-    return string();
-
-  string dir = abs_argv0.substr(0, slash);
-  for (unsigned i = 0; i < 3; ++i)
+  // Climb parents in the path *string* (do not use "/../" with filesystem
+  // resolution — that follows a bazel-bin symlink into the execroot and misses
+  // the workspace hands/ directory). bazel-bin/library/tests/dtest → four
+  // parent_path steps to the repo root.
+  fs::path dir(absolute_path_logical(argv0));
+  for (unsigned i = 0; i < 4; ++i)
   {
-    slash = dir.find_last_of("\\/");
-    if (slash == string::npos)
+    const fs::path parent = dir.parent_path();
+    if (parent.empty())
       return string();
-    dir = (slash == 0) ? dir.substr(0, 1) : dir.substr(0, slash);
+    dir = parent;
   }
 
   const string bin_candidate =
-    normalize_logical_path(dir + "/hands/" + list_name);
-  if (stat(bin_candidate.c_str(), &buffer) == 0)
+    normalize_logical_path((dir / "hands" / list_name).string());
+  if (path_exists(bin_candidate))
     return bin_candidate;
 
   return string();
