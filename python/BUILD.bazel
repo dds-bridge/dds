@@ -99,6 +99,7 @@ py_test(
     data = [
         "//:msan_ci_config_files",
         "//.github/workflows:all_workflows",
+        "//library/tests/system:parallel_boards_test_src",
     ],
 )
 

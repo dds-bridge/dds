@@ -111,5 +111,39 @@ class TestMsanNotOnMacosCi(unittest.TestCase):
         )
 
 
+class TestMsanCompatibleParallelBoardsAllocHooks(unittest.TestCase):
+    def test_custom_new_delete_are_disabled_under_memory_sanitizer(self) -> None:
+        """MSAN's runtime owns operator new/delete; custom defs duplicate-symbol.
+
+        parallel_boards_test.cpp overrides global new/delete for allocation
+        counting. Those symbols must not be compiled under MemorySanitizer.
+        """
+        path = (
+            _repo_root()
+            / "library"
+            / "tests"
+            / "system"
+            / "parallel_boards_test.cpp"
+        )
+        text = path.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r"void\*\s+operator\s+new\s*\(",
+            "expected a custom operator new for allocation tracking",
+        )
+        self.assertRegex(
+            text,
+            r"__has_feature\s*\(\s*memory_sanitizer\s*\)",
+            "expected MSAN detection via __has_feature(memory_sanitizer)",
+        )
+        # Custom replacements must not be linked under MSAN (duplicate symbols).
+        self.assertRegex(
+            text,
+            r"#\s*if\s*!DDS_TEST_MEMORY_SANITIZER[\s\S]*?"
+            r"void\*\s+operator\s+new\s*\(",
+            "custom operator new must be compiled only when MSAN is off",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
