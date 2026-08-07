@@ -90,6 +90,18 @@ py_test(
     data = ["//.github/workflows:all_workflows"],
 )
 
+# Guard: MemorySanitizer config + Linux CI job stay wired together.
+py_test(
+    name = "ci_msan_test",
+    size = "small",
+    main = "tests/ci_msan_test.py",
+    srcs = ["tests/ci_msan_test.py"],
+    data = [
+        "//:msan_ci_config_files",
+        "//.github/workflows:all_workflows",
+    ],
+)
+
 py_test(
     name = "python_interface_smoke_test",
     size = "small",
