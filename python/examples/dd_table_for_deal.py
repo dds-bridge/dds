@@ -143,15 +143,14 @@ def _parse_cli(argv: list[str]) -> tuple[str, int, int | None] | None:
 
     limit is None when unrestricted. Raises ValueError on bad args.
     """
-    if len(argv) >= 2 and argv[1] in ("-h", "--help"):
-        return None
-
     deal: str | None = None
     vulnerable = 0
     limit: int | None = None
     i = 1
     while i < len(argv):
         arg = argv[i]
+        if arg in ("-h", "--help"):
+            return None
         if arg == "--vul":
             if i + 1 >= len(argv):
                 raise ValueError("--vul requires a value (none|both|ns|ew or 0|1|2|3)")

@@ -110,6 +110,10 @@ class ParseCliTest(unittest.TestCase):
         self.assertIsNone(_parse_cli(["prog", "-h"]))
         self.assertIsNone(_parse_cli(["prog", "--help"]))
 
+    def test_help_accepted_after_other_flags(self) -> None:
+        self.assertIsNone(_parse_cli(["prog", "--vul", "ns", "--help"]))
+        self.assertIsNone(_parse_cli(["prog", _EXAMPLE_DEAL, "-h"]))
+
     def test_usage_documents_numeric_vul_codes(self) -> None:
         buf = io.StringIO()
         with redirect_stderr(buf):
