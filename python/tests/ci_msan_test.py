@@ -57,6 +57,25 @@ class TestMsanBazelConfig(unittest.TestCase):
             "msan libcxx_url must be pinned with libcxx_sha256",
         )
 
+    def test_module_pins_toolchains_llvm_past_unused_stdlib_fix(self) -> None:
+        """BCR 1.8.0 emits unused -stdlib=libc++; -Werror breaks Linux builds.
+
+        toolchains_llvm #791 drops the redundant flag. Until BCR ships a release
+        that includes it, MODULE.bazel must archive_override past that commit.
+        """
+        module = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
+        self.assertRegex(
+            module,
+            r'archive_override\(\s*\n\s*module_name\s*=\s*"toolchains_llvm"',
+            "expected archive_override for toolchains_llvm until BCR > 1.8.0",
+        )
+        # Merge commit of bazel-contrib/toolchains_llvm#791.
+        self.assertIn(
+            "c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c",
+            module,
+            "toolchains_llvm override must include the unused -stdlib=libc++ fix",
+        )
+
 
 class TestMsanLinuxCi(unittest.TestCase):
     def test_ci_linux_runs_msan_job(self) -> None:

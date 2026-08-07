@@ -13,6 +13,8 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "2.0.1")
 # 1.8.0+ adds --features=msan and libcxx_url for an instrumented libc++ overlay.
+# BCR 1.8.0 still emits unused `-stdlib=libc++` under `-nostdinc++`, which fails
+# our Linux `-Werror` builds. Override to the #791 fix until BCR publishes >1.8.0.
 bazel_dep(name = "toolchains_llvm", version = "1.8.0")
 
 # Xcode CC toolchain for macOS AddressSanitizer builds (--config=asan). LLVM's ASAN
@@ -41,6 +43,19 @@ archive_override(
     urls = [
         "https://github.com/emscripten-core/emsdk/archive/refs/tags/5.0.7.tar.gz",
         "https://codeload.github.com/emscripten-core/emsdk/tar.gz/refs/tags/5.0.7",
+    ],
+)
+
+# toolchains_llvm#791: drop redundant `-stdlib=libc++` (unused with `-nostdinc++`).
+# Commit is the merge of that PR; drop this override when BCR ships a release
+# that includes it.
+archive_override(
+    module_name = "toolchains_llvm",
+    integrity = "sha256-spaFpVBa8JGs27s/9vk0Xb4gd8fJ9OFmnxaBYPeOt4o=",
+    strip_prefix = "toolchains_llvm-c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c",
+    urls = [
+        "https://github.com/bazel-contrib/toolchains_llvm/archive/c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c.tar.gz",
+        "https://codeload.github.com/bazel-contrib/toolchains_llvm/tar.gz/c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c",
     ],
 )
 
