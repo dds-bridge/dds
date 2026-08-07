@@ -192,17 +192,6 @@ class HandsLayoutFixture : public ::testing::Test
 
 }  // namespace
 
-TEST(Args, MaxAndMinFlagsDefaultOff)
-{
-  const std::string path = make_temp_input_file();
-  char arg0[] = "dtest";
-  char arg_f[] = "-f";
-  char* argv[] = {arg0, arg_f, const_cast<char*>(path.c_str())};
-  read_args(3, argv);
-  EXPECT_FALSE(options.show_min_);
-  EXPECT_FALSE(options.show_max_);
-}
-
 TEST(Args, MakeDirSucceedsWhenDirectoryAlreadyExists)
 {
   const std::string dir =
@@ -222,42 +211,16 @@ TEST(Args, MakeDirFailsWhenPathIsExistingFile)
   EXPECT_FALSE(make_dir(path));
 }
 
-TEST(Args, MaxFlagEnablesShowMax)
+TEST(Args, UnknownMinMaxFlagsAreRejected)
 {
-  const std::string path = make_temp_input_file();
-  char arg0[] = "dtest";
-  char arg_f[] = "-f";
-  char arg_max[] = "--max";
-  char* argv[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_max};
-  read_args(4, argv);
-  EXPECT_TRUE(options.show_max_);
-  EXPECT_FALSE(options.show_min_);
-}
-
-TEST(Args, MinFlagEnablesShowMin)
-{
+  // Former --min/--max batch-extreme flags must not be accepted.
+  // read_args prints to cout and exits(0); death tests only match stderr.
   const std::string path = make_temp_input_file();
   char arg0[] = "dtest";
   char arg_f[] = "-f";
   char arg_min[] = "--min";
   char* argv[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_min};
-  read_args(4, argv);
-  EXPECT_TRUE(options.show_min_);
-  EXPECT_FALSE(options.show_max_);
-}
-
-TEST(Args, MaxAndMinFlagsCanCombine)
-{
-  const std::string path = make_temp_input_file();
-  char arg0[] = "dtest";
-  char arg_f[] = "-f";
-  char arg_max[] = "--max";
-  char arg_min[] = "--min";
-  char* argv[] = {
-    arg0, arg_f, const_cast<char*>(path.c_str()), arg_max, arg_min};
-  read_args(5, argv);
-  EXPECT_TRUE(options.show_min_);
-  EXPECT_TRUE(options.show_max_);
+  EXPECT_EXIT(read_args(4, argv), ::testing::ExitedWithCode(0), ".*");
 }
 
 TEST(Args, ResolvePrefersLiteralExistingPath)
