@@ -683,3 +683,111 @@ TEST_F(MovesTest, ApplyMoveToTrackTrickCompletion) {
   EXPECT_EQ(moves->track[4].removed_ranks[2], 0);
   EXPECT_EQ(moves->track[4].removed_ranks[3], 0);
 }
+
+TEST_F(MovesTest, MakeNextSimplePropagatesRemovedRanksOnTrickCompletion) {
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
+  moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
+  moves->track[5].lead_hand = 0;
+
+  for (int s = 0; s < DDS_SUITS; s++) {
+    moves->track[5].removed_ranks[s] = 0;
+    moves->track[4].removed_ranks[s] = 0xFFFF;
+  }
+
+  for (int h = 0; h < 3; h++) {
+    MoveType played;
+    played.suit = 0;
+    played.rank = 14 - h;
+    played.sequence = 0;
+    moves->apply_move_to_track(played, h, 5);
+  }
+
+  MovePlyType &list = moves->moveList[5][3];
+  list.current = 0;
+  list.last = 0;
+  list.move[0].suit = 0;
+  list.move[0].rank = 11;
+  list.move[0].sequence = 0;
+
+  MoveType const *mp = moves->MakeNextSimple(5, 3);
+  ASSERT_NE(mp, nullptr);
+  EXPECT_EQ(mp->rank, 11);
+
+  EXPECT_EQ(moves->track[4].removed_ranks[0], 0x1E00);
+  EXPECT_EQ(moves->track[4].removed_ranks[1], 0);
+  EXPECT_EQ(moves->track[4].removed_ranks[2], 0);
+  EXPECT_EQ(moves->track[4].removed_ranks[3], 0);
+  EXPECT_EQ(moves->track[4].lead_hand, 0);
+}
+
+TEST_F(MovesTest, MakeNextSimplePropagatesRemovedRanksOnTrickCompletion) {
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
+  moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
+  moves->track[5].lead_hand = 0;
+
+  for (int s = 0; s < DDS_SUITS; s++) {
+    moves->track[5].removed_ranks[s] = 0;
+    moves->track[4].removed_ranks[s] = 0xFFFF;
+  }
+
+  for (int h = 0; h < 3; h++) {
+    MoveType played;
+    played.suit = 0;
+    played.rank = 14 - h;
+    played.sequence = 0;
+    moves->apply_move_to_track(played, h, 5);
+  }
+
+  MovePlyType &list = moves->moveList[5][3];
+  list.current = 0;
+  list.last = 0;
+  list.move[0].suit = 0;
+  list.move[0].rank = 11;
+  list.move[0].sequence = 0;
+
+  MoveType const *mp = moves->MakeNextSimple(5, 3);
+  ASSERT_NE(mp, nullptr);
+  EXPECT_EQ(mp->rank, 11);
+
+  EXPECT_EQ(moves->track[4].removed_ranks[0], 0x1E00);
+  EXPECT_EQ(moves->track[4].removed_ranks[1], 0);
+  EXPECT_EQ(moves->track[4].removed_ranks[2], 0);
+  EXPECT_EQ(moves->track[4].removed_ranks[3], 0);
+  EXPECT_EQ(moves->track[4].lead_hand, 0);
+}
+
+TEST_F(MovesTest, MakeNextSimplePropagatesRemovedRanksOnTrickCompletion) {
+  const unsigned short (*rankInSuit)[DDS_SUITS] = getSampleRankInSuit();
+  moves->Init(5, 0, nullptr, nullptr, rankInSuit, 3, 0);
+  moves->track[5].lead_hand = 0;
+
+  for (int s = 0; s < DDS_SUITS; s++) {
+    moves->track[5].removed_ranks[s] = 0;
+    moves->track[4].removed_ranks[s] = 0xFFFF;
+  }
+
+  for (int h = 0; h < 3; h++) {
+    MoveType played;
+    played.suit = 0;
+    played.rank = 14 - h;
+    played.sequence = 0;
+    moves->apply_move_to_track(played, h, 5);
+  }
+
+  MovePlyType &list = moves->moveList[5][3];
+  list.current = 0;
+  list.last = 0;
+  list.move[0].suit = 0;
+  list.move[0].rank = 11;
+  list.move[0].sequence = 0;
+
+  MoveType const *mp = moves->MakeNextSimple(5, 3);
+  ASSERT_NE(mp, nullptr);
+  EXPECT_EQ(mp->rank, 11);
+
+  EXPECT_EQ(moves->track[4].removed_ranks[0], 0x1E00);
+  EXPECT_EQ(moves->track[4].removed_ranks[1], 0);
+  EXPECT_EQ(moves->track[4].removed_ranks[2], 0);
+  EXPECT_EQ(moves->track[4].removed_ranks[3], 0);
+  EXPECT_EQ(moves->track[4].lead_hand, 0);
+}
