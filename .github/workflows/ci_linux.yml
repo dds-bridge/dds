@@ -57,11 +57,15 @@ jobs:
       - name: Build with ab_stats define
         run: bazelisk build --define=ab_stats=true --verbose_failures //library/src:dds
 
-      # 8️⃣ Run all tests (including Python)
+      # 8️⃣ Build with DDS_SCHEDULER (off by default; compile-gated timing path)
+      - name: Build with scheduler define
+        run: bazelisk build --define=scheduler=true --verbose_failures //library/src:dds
+
+      # 9️⃣ Run all tests (including Python)
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
 
-      # 9️⃣ Upload test logs
+      # 🔟 Upload test logs
       - name: Upload test logs - Linux
         if: always()
         uses: actions/upload-artifact@v6
