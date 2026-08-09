@@ -139,7 +139,7 @@ runtime), the rpath major is likely out of sync with the installed toolchain.
 
 | Workflow | Job | Command |
 |----------|-----|---------|
-| `ci_linux.yml` | `build_and_test` | also `bazelisk build --define=ab_stats=true //library/src:dds` and `--define=scheduler=true` (gated diagnostic paths) |
+| `ci_linux.yml` | `build_and_test` | also `bazelisk build --define=ab_stats=true //library/src:dds`, `bazelisk test --define=ab_stats=true //library/tests/ab_search:ab_stats_test //library/tests/ab_search:tt_lookup_test`, and `bazelisk build --define=scheduler=true //library/src:dds` |
 | `ci_linux.yml` | `asan` | `bazelisk test --config=asan //library/tests/...` |
 | `ci_linux.yml` | `tsan` | `bazelisk test --config=tsan //library/tests/system/...` |
 | `ci_linux.yml` | `ubsan` | `bazelisk test --config=ubsan //library/tests/...` |

@@ -62,6 +62,9 @@ void ABstats::Reset()
 
 void ABstats::ResetCum()
 {
+  for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
+    ABnodesCum.list[depth] = 0;
+
   ABnodesCum.sumCum = 0;
   ABnodesCum.sumCumWeighted = 0;
 

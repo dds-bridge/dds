@@ -57,6 +57,9 @@ jobs:
       - name: Build with ab_stats define
         run: bazelisk build --define=ab_stats=true --verbose_failures //library/src:dds
 
+      - name: Test with ab_stats define
+        run: bazelisk test --define=ab_stats=true --verbose_failures --test_output=errors //library/tests/ab_search:ab_stats_test //library/tests/ab_search:tt_lookup_test
+
       # 8️⃣ Build with DDS_SCHEDULER (off by default; compile-gated timing path)
       - name: Build with scheduler define
         run: bazelisk build --define=scheduler=true --verbose_failures //library/src:dds

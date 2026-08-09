@@ -36,3 +36,13 @@ TEST(ABstatsTest, GetPosCountRejectsOutOfRangePlace)
   EXPECT_EQ(stats.GetPosCount(AB_SIZE), 0);
   EXPECT_EQ(stats.GetPosCount(100), 0);
 }
+
+TEST(ABstatsTest, IncrNodeAfterConstructionUsesZeroedCumNodeList)
+{
+  // ResetCum must clear ABnodesCum.list[]; otherwise IncrNode increments
+  // indeterminate values (UBSan) and PrintStatsDepth reads garbage.
+  ABstats stats;
+  stats.IncrNode(/*depth=*/5);
+
+  EXPECT_EQ(stats.GetNodes(), 1);
+}
