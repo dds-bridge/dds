@@ -68,10 +68,8 @@ its two concrete strategies, trading memory against speed.
   that is not what `SearchContext::trans_table()` does.
 - **Build-flag-gated diagnostics.** `tt_reset_debug` (`DDS_DEBUG_TT_RESET`) enables
   reset-tracking diagnostics in `TransTableL` (wired through [build-system](build-system.md), off
-  by default). `tt_context_ownership` / `DDS_TT_CONTEXT_OWNERSHIP` remains a Bazel
-  `--define` in `CPPVARIABLES.bzl` but is **inert** today — no source `#ifdef`s
-  it, and no target currently enables it; ownership is always instance-scoped
-  via `SearchContext`.
+  by default). TT ownership itself is not build-flag-gated — it is always
+  instance-scoped via `SearchContext`.
 - **`testable_trans_table`** is the same sources exposed to
   `//library/tests/trans_table/...` for white-box testing; behaviour is identical to
   `trans_table`.

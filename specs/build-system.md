@@ -51,7 +51,6 @@ than re-encoding toolchain knowledge.
   | `debug_all` | `debug_all=true` | `DDS_DEBUG_ALL` | [constants-and-debug](constants-and-debug.md) |
   | `ab_stats` | `ab_stats=true` | `DDS_AB_STATS` | [ab-stats](ab-stats.md) |
   | `scheduler` | `scheduler=true` | `DDS_SCHEDULER` | [system-concurrency](system-concurrency.md) |
-  | `tt_context_ownership` | `tt_context_ownership=true` | `DDS_TT_CONTEXT_OWNERSHIP` | [transposition-table](transposition-table.md) (define wired but inert — no source `#ifdef`s it) |
   | `tt_reset_debug` | `tt_reset_debug=true` | `DDS_DEBUG_TT_RESET` | [transposition-table](transposition-table.md) |
 - **`DDS_LOCAL_DEFINES` is the standard `local_defines` for every core
   `cc_library`; `DDS_SCHEDULER_DEFINE` is appended only where scheduler timing is
