@@ -29,6 +29,7 @@ TEST(ABstatsTest, GetPosCountRejectsOutOfRangePlace)
   ABstats stats;
   stats.Reset();
 
-  EXPECT_EQ(stats.GetPosCount(static_cast<ABCountType>(-1)), 0);
+  EXPECT_EQ(stats.GetPosCount(-1), 0);
   EXPECT_EQ(stats.GetPosCount(AB_SIZE), 0);
+  EXPECT_EQ(stats.GetPosCount(100), 0);
 }

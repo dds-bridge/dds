@@ -134,7 +134,7 @@ int ABstats::GetNodes() const
 }
 
 
-int ABstats::GetPosCount(const ABCountType no) const
+int ABstats::GetPosCount(const int no) const
 {
   if (no < 0 || no >= AB_SIZE)
     return 0;

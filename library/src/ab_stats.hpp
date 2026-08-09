@@ -135,7 +135,7 @@ class ABstats
 
     int GetNodes() const;
 
-    int GetPosCount(ABCountType no) const;
+    int GetPosCount(int no) const;
 
     void PrintStats(std::ofstream& fout);
 };
