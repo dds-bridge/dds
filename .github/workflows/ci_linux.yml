@@ -53,11 +53,15 @@ jobs:
       - name: Build all targets
         run: bazelisk build --verbose_failures //...
 
-      # 7️⃣ Run all tests (including Python)
+      # 7️⃣ Build with DDS_AB_STATS (off by default; compile-gated AB counters)
+      - name: Build with ab_stats define
+        run: bazelisk build --define=ab_stats=true --verbose_failures //library/src:dds
+
+      # 8️⃣ Run all tests (including Python)
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
 
-      # 8️⃣ Upload test logs
+      # 9️⃣ Upload test logs
       - name: Upload test logs - Linux
         if: always()
         uses: actions/upload-artifact@v6

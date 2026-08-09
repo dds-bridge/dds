@@ -39,6 +39,8 @@ auto apply_ab_tt_lookup(
   SolverContext& ctx,
   bool& scoreFlag) -> bool
 {
+  [[maybe_unused]] ThreadData* thrp = ctx.thread_ptr();
+
   int limit;
   if (ctx.search().node_type_store(0) == MAXNODE)
     limit = target - posPoint->tricks_max - 1;
@@ -57,7 +59,7 @@ auto apply_ab_tt_lookup(
     return false;
 
 #ifdef DDS_AB_HITS
-  DumpRetrieved(ctx.thread_ptr()->fileRetrieved.GetStream(),
+  DumpRetrieved(thrp->fileRetrieved.GetStream(),
     * posPoint, *cardsP, target, depth);
 #endif
 

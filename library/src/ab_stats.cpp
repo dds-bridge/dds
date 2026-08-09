@@ -134,6 +134,15 @@ int ABstats::GetNodes() const
 }
 
 
+int ABstats::GetPosCount(const ABCountType no) const
+{
+  if (no < 0 || no >= AB_SIZE)
+    return 0;
+
+  return ABplaces[no].sum;
+}
+
+
 void ABstats::PrintHeaderPosition(ofstream& fout) const
 {
   fout << "No " <<

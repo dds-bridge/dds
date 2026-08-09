@@ -134,3 +134,33 @@ TEST_F(AbTtLookupTest, WorksForShallowDepthPath)
   EXPECT_EQ(ctx_->search().best_move_tt(shallow_depth).suit, 1);
   EXPECT_EQ(ctx_->search().best_move_tt(shallow_depth).rank, 13);
 }
+
+#ifdef DDS_AB_STATS
+TEST_F(AbTtLookupTest, HitCountsMainLookup)
+{
+  // AB_COUNT(AB_MAIN_LOOKUP, ...) must resolve thrp from the SolverContext.
+  SeedTtEntry(/*suit*/ 0, /*rank*/ 0);
+  ThreadData* thrp = ctx_->thread_ptr();
+  ASSERT_NE(thrp, nullptr);
+  thrp->ABStats.Reset();
+
+  bool score_flag = false;
+  ASSERT_TRUE(apply_ab_tt_lookup(
+      &pos_, target_, depth_, tricks_, hand_, *ctx_, score_flag));
+
+  EXPECT_EQ(thrp->ABStats.GetPosCount(AB_MAIN_LOOKUP), 1);
+}
+
+TEST_F(AbTtLookupTest, MissDoesNotCountMainLookup)
+{
+  ThreadData* thrp = ctx_->thread_ptr();
+  ASSERT_NE(thrp, nullptr);
+  thrp->ABStats.Reset();
+
+  bool score_flag = true;
+  ASSERT_FALSE(apply_ab_tt_lookup(
+      &pos_, target_, depth_, tricks_, hand_, *ctx_, score_flag));
+
+  EXPECT_EQ(thrp->ABStats.GetPosCount(AB_MAIN_LOOKUP), 0);
+}
+#endif
