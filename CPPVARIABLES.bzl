@@ -37,15 +37,15 @@ DDS_CPPOPTS = select({
         "-Wno-character-conversion",
         "-Werror",
     ],
+    # Optimisation (/O2, /Od) comes from Bazel's compilation_mode — restating
+    # them here overrides the toolchain defaults and triggers MSVC D9025.
     "//:build_windows": [
-        "/O2",
         "/std:c++20",
         "/W4",
         "/WX",
         "/permissive-",
     ],
     "//:debug_build_windows": [
-        "/Od",
         "/Zi",
         "/std:c++20",
         "/W4",

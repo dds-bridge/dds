@@ -39,8 +39,14 @@ build:macos --cxxopt=-std=c++20
 build:macos --host_cxxopt=-std=c++20
 build:linux --cxxopt=-std=c++20
 build:linux --host_cxxopt=-std=c++20
-# Keep Windows C++ standard selection in CPPVARIABLES.bzl selects.
-# Avoid global /std flags here so wasm transitions on Windows don't inherit MSVC opts.
+# Windows native targets set /std:c++20 in DDS_CPPOPTS (MSVC syntax). Do not put
+# --cxxopt=/std:... under build:windows: enable_platform_specific_config keys
+# off the host OS, so that flag would leak into wasm transitions on Windows.
+# rules_cc's default_cpp_std feature also injects /std:c++17; disable it so
+# DDS_CPPOPTS is the only language-standard flag (avoids cl D9025). Host tools
+# still need an explicit standard after that disable.
+build:windows --features=-default_cpp_std
+build:windows --host_cxxopt=/std:c++20
 
 # Performance optimization flags
 build:opt --compilation_mode=opt

@@ -33,13 +33,15 @@ jobs:
           }
           exit 1
 
-      # Build all targets (retry: fetch flakes can still surface on first analysis)
+      # Build all targets (retry: fetch flakes can still surface on first analysis).
+      # --config=opt: DDS_CPPOPTS no longer forces /O2 (that fought Bazel's /Od and
+      # triggered MSVC D9025); opt mode is how Windows keeps release-level codegen.
       - name: Bazel build (retry on transient fetch failure)
         shell: pwsh
         run: |
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazelisk build --verbose_failures //...
+            bazelisk build --config=opt --verbose_failures //...
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
@@ -52,7 +54,7 @@ jobs:
 
       # Run all tests (including Python) — no retry so real test failures surface quickly
       - name: Run all tests
-        run: bazelisk test --verbose_failures //...
+        run: bazelisk test --config=opt --verbose_failures //...
 
       # Upload test logs
       - name: Upload test logs - Windows

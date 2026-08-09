@@ -1,7 +1,7 @@
 ---
 capability: build-system
 owners: [//, CPPVARIABLES.bzl, wasm_compat.bzl]
-last-updated: 2026-07-19
+last-updated: 2026-08-09
 ---
 
 # Build System
@@ -37,13 +37,16 @@ than re-encoding toolchain knowledge.
   the host OS). Any target that wants per-platform flags does so through the
   `select()`s in `CPPVARIABLES.bzl` — it should not hand-roll `-O3`/`/O2`.
 - **Optimised builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
-  `-Wall -Wpedantic -Werror`; Windows uses `/O2 /W4 /WX /permissive-`. macOS adds
-  LTO at both compile and link (`-flto=thin`); WASM adds `-flto` at compile time
-  only — link-time LTO is not currently possible under the pinned hermetic emsdk
-  toolchain (see [wasm-emscripten](wasm-emscripten.md)). C++20 is the baseline
+  `-Wall -Wpedantic -Werror`; Windows uses `/W4 /WX /permissive-` and takes
+  `/O2`/`/Od` from Bazel's `compilation_mode` (do not restate them in
+  `DDS_CPPOPTS` — that triggers MSVC D9025). macOS adds LTO at both compile and
+  link (`-flto=thin`); WASM adds `-flto` at compile time only — link-time LTO is
+  not currently possible under the pinned hermetic emsdk toolchain (see
+  [wasm-emscripten](wasm-emscripten.md)). C++20 is the baseline
   (`--cxxopt=-std=c++20` in `.bazelrc` for macOS/Linux; Windows `/std:c++20` in
-  `DDS_CPPOPTS`). Treat `-Werror` as a standing invariant: warnings break the
-  build.
+  `DDS_CPPOPTS`, with `build:windows --features=-default_cpp_std` so rules_cc
+  does not also inject `/std:c++17`). Treat `-Werror` as a standing invariant:
+  warnings break the build.
 - **Feature flags are `--define`-driven `config_setting`s**, surfaced through
   `DDS_LOCAL_DEFINES` / `DDS_SCHEDULER_DEFINE`:
   | config setting | `--define` | preprocessor define | capability |
@@ -76,7 +79,8 @@ than re-encoding toolchain knowledge.
 
 - `BUILD.bazel` (root) — all `config_setting`s, the `//:dds` / `//:testable_dds`
   façades, and the `doxygen_docs` genrule.
-- `.bazelrc` — C++20 cxxopts, hermetic JDK, default test tag filters (e.g. `-e2e`),
+- `.bazelrc` — C++20 cxxopts (macOS/Linux), Windows `-default_cpp_std` + host
+  `/std:c++20`, hermetic JDK, default test tag filters (e.g. `-e2e`),
   sanitizer configs.
 - `CPPVARIABLES.bzl` — `DDS_CPPOPTS`, `DDS_LINKOPTS`, `DDS_LOCAL_DEFINES`,
   `DDS_SCHEDULER_DEFINE`.
