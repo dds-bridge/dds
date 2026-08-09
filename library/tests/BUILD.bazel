@@ -56,11 +56,13 @@ cc_test(
     ],
 )
 
-# Standalone calc_par API test
+# Standalone calc_par API test.
+# medium: MSAN can spend ~80s on the remaining suite alone (small = 120s under
+# --config=msan), so keep headroom against runner load variance.
 cc_test(
     name = "calc_par_test",
     srcs = ["calc_par_test.cpp"],
-    size = "small",
+    size = "medium",
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
