@@ -76,7 +76,8 @@ than re-encoding toolchain knowledge.
 
 - `BUILD.bazel` (root) — all `config_setting`s, the `//:dds` / `//:testable_dds`
   façades, and the `doxygen_docs` genrule.
-- `.bazelrc` — C++20 cxxopts, hermetic JDK, default test tag filters (e.g. `-e2e`),
+- `.bazelrc` — C++20 cxxopts, hermetic JDK, default test tag filters (e.g. `-e2e`;
+  WASM CI clears the filter so Playwright runs),
   sanitizer configs (`asan` / `tsan` / `ubsan` / Linux-only `msan`).
 - `CPPVARIABLES.bzl` — `DDS_CPPOPTS`, `DDS_LINKOPTS`, `DDS_LOCAL_DEFINES`,
   `DDS_SCHEDULER_DEFINE`.
