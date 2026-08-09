@@ -17,8 +17,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
-#include <cstring>
-#include <sys/stat.h>
+#include <filesystem>
+#include <system_error>
 
 #include "args.hpp"
 #include "cst.hpp"
@@ -30,6 +30,7 @@ using std::right;
 using std::left;
 using std::vector;
 using std::string;
+namespace fs = std::filesystem;
 
 
 extern OptionsType options;
@@ -88,15 +89,16 @@ bool ParseRound();
 void usage(
   const char base[])
 {
-  string basename(base);
-  const size_t l = basename.find_last_of("\\/");
-  if (l != string::npos)
-    basename.erase(0, l+1);
+  const string basename = fs::path(base).filename().string();
 
   cout <<
     "Usage: " << basename << " [options]\n\n" <<
     "-f, --file s       Input file, or the number n;\n" <<
-    "                   '100' means ../hands/list100.txt).\n" <<
+    "                   '100' means hands/list100.txt under the current\n" <<
+    "                   directory (or BUILD_WORKING_DIRECTORY /\n" <<
+    "                   BUILD_WORKSPACE_DIRECTORY under bazel run), else\n" <<
+    "                   relative to the dtest binary\n" <<
+    "                   (bazel-bin/library/tests/).\n" <<
     "                   (Default: input.txt)\n" <<
     "\n" <<
     "-s, --solver       One of: solve, calc, play, par, dealerpar.\n" <<
@@ -187,6 +189,199 @@ void SetDefaults()
 }
 
 
+namespace
+{
+
+#ifdef _WIN32
+bool is_unc_path(const string& path)
+{
+  if (path.size() < 5)
+    return false;
+  const bool unc_slash =
+    (path[0] == '\\' && path[1] == '\\') ||
+    (path[0] == '/' && path[1] == '/');
+  if (!unc_slash)
+    return false;
+
+  size_t i = 2;
+  while (i < path.size() && (path[i] == '\\' || path[i] == '/'))
+    ++i;
+  if (i >= path.size())
+    return false;
+
+  const size_t server_start = i;
+  while (i < path.size() && path[i] != '\\' && path[i] != '/')
+    ++i;
+  if (i == server_start || i >= path.size())
+    return false;
+
+  while (i < path.size() && (path[i] == '\\' || path[i] == '/'))
+    ++i;
+  if (i >= path.size())
+    return false;
+
+  const size_t share_start = i;
+  while (i < path.size() && path[i] != '\\' && path[i] != '/')
+    ++i;
+  return i > share_start;
+}
+#endif
+
+
+bool is_absolute_path(const string& path)
+{
+  if (path.empty())
+    return false;
+#ifdef _WIN32
+  if (is_unc_path(path))
+    return true;
+  // Current-drive rooted: "\foo" or "/foo" (single leading separator, not UNC).
+  if ((path[0] == '\\' || path[0] == '/') &&
+    (path.size() == 1 || (path[1] != '\\' && path[1] != '/')))
+  {
+    return true;
+  }
+  // Drive-rooted absolute: "C:\..." or "C:/...". "C:foo" is drive-relative.
+  return path.size() >= 3 &&
+    std::isalpha(static_cast<unsigned char>(path[0])) &&
+    path[1] == ':' &&
+    (path[2] == '\\' || path[2] == '/');
+#else
+  return path[0] == '/';
+#endif
+}
+
+
+// Collapse "." / ".." path segments without resolving symlinks.
+string normalize_logical_path(const string& path)
+{
+  if (path.empty())
+    return path;
+  return fs::path(path).lexically_normal().make_preferred().string();
+}
+
+
+bool path_exists(const fs::path& path)
+{
+  std::error_code ec;
+  // -f / resolve_dtest_input_file expect a readable input *file*; directories
+  // must not count (exists() is true for them and leads to a later parse error).
+  return fs::is_regular_file(path, ec);
+}
+
+
+// Logical absolute path for argv0 without resolving symlinks (so climbing out
+// of bazel-bin still lands on the workspace, not the execroot).
+string absolute_path_logical(const string& path)
+{
+  std::error_code ec;
+  const fs::path cwd = fs::current_path(ec);
+
+  if (is_absolute_path(path))
+  {
+#ifdef _WIN32
+    // Current-drive rooted "\foo" → "X:\foo" using the cwd drive letter.
+    // std::filesystem treats these as relative (no root-name), so handle here.
+    if ((path[0] == '\\' || path[0] == '/') &&
+      (path.size() == 1 || (path[1] != '\\' && path[1] != '/')))
+    {
+      if (!ec && cwd.has_root_name())
+        return normalize_logical_path(cwd.root_name().string() + path);
+    }
+#endif
+    return normalize_logical_path(path);
+  }
+
+  if (ec)
+    return normalize_logical_path(path);
+
+#ifdef _WIN32
+  // Drive-relative "C:foo": resolve against cwd when cwd is on the same drive.
+  if (path.size() >= 2 &&
+    std::isalpha(static_cast<unsigned char>(path[0])) &&
+    path[1] == ':')
+  {
+    const string cwd_s = cwd.string();
+    if (cwd_s.size() >= 2 &&
+      std::tolower(static_cast<unsigned char>(cwd_s[0])) ==
+        std::tolower(static_cast<unsigned char>(path[0])) &&
+      cwd_s[1] == ':')
+    {
+      return normalize_logical_path((cwd / path.substr(2)).string());
+    }
+    return normalize_logical_path(path);
+  }
+#endif
+
+  if (path.empty())
+    return normalize_logical_path(cwd.string());
+  return normalize_logical_path((cwd / path).string());
+}
+
+}  // namespace
+
+
+bool is_dtest_absolute_path(const string& path)
+{
+  return is_absolute_path(path);
+}
+
+
+string resolve_dtest_input_file(
+  const string& arg,
+  const string& argv0)
+{
+  if (path_exists(arg))
+    return arg;
+
+  const string list_name = "list" + arg + ".txt";
+  // Keep generic separators so cwd hits match the documented hands/listN.txt form.
+  const string cwd_candidate =
+    (fs::path("hands") / list_name).generic_string();
+  if (path_exists(cwd_candidate))
+    return cwd_candidate;
+
+  // bazel run moves CWD into the runfiles tree; it exports the invoke-time
+  // shell cwd and the workspace root so we can still find hands/.
+  auto from_env_dir = [&](const char* env_name) -> string
+  {
+    const char* dir = std::getenv(env_name);
+    if (dir == nullptr || dir[0] == '\0')
+      return string();
+    const string candidate = normalize_logical_path(
+      (fs::path(dir) / "hands" / list_name).string());
+    if (path_exists(candidate))
+      return candidate;
+    return string();
+  };
+
+  if (const string found = from_env_dir("BUILD_WORKING_DIRECTORY"); !found.empty())
+    return found;
+  if (const string found = from_env_dir("BUILD_WORKSPACE_DIRECTORY"); !found.empty())
+    return found;
+
+  // Climb parents in the path *string* (do not use "/../" with filesystem
+  // resolution — that follows a bazel-bin symlink into the execroot and misses
+  // the workspace hands/ directory). bazel-bin/library/tests/dtest → four
+  // parent_path steps to the repo root.
+  fs::path dir(absolute_path_logical(argv0));
+  for (unsigned i = 0; i < 4; ++i)
+  {
+    const fs::path parent = dir.parent_path();
+    if (parent.empty())
+      return string();
+    dir = parent;
+  }
+
+  const string bin_candidate =
+    normalize_logical_path((dir / "hands" / list_name).string());
+  if (path_exists(bin_candidate))
+    return bin_candidate;
+
+  return string();
+}
+
+
 void print_options()
 {
   cout << left;
@@ -229,31 +424,30 @@ void read_args(
   bool errFlag = false, matchFlag;
   string stmp;
   char * ctmp;
-  struct stat buffer;
 
   while ((c = GetNextArgToken(argc, argv)) > 0)
   {
     switch(c - 1)
     {
       case OPT_FILE:
-        if (stat(optarg, &buffer) == 0)
+      {
+        const string resolved =
+          resolve_dtest_input_file(string(optarg), string(argv[0]));
+        if (!resolved.empty())
         {
-          options.fname_ = string(optarg);
-          break;
-        }
-
-        stmp = "../hands/list" + string(optarg) + ".txt";
-        if (stat(stmp.c_str(), &buffer) == 0)
-        {
-          options.fname_ = stmp;
+          options.fname_ = resolved;
           break;
         }
 
         cout << "Input file '" << optarg << "' not found\n";
-        cout << "Input file '" << stmp << "' not found\n";
+        cout << "Also tried hands/list" << optarg <<
+          ".txt under the current directory, "
+          "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
+          "and relative to the dtest binary\n";
         nextToken -= 2;
         errFlag = true;
         break;
+      }
 
       case OPT_SOLVER:
         matchFlag = false;

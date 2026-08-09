@@ -6,6 +6,8 @@ _CalcAllTables
 _CalcAllTablesN
 _CalcAllTablesPBN
 _CalcAllTablesPBNN
+_CalcAllTablesPBNX
+_CalcAllTablesX
 _CalcDDtable
 _CalcDDtableN
 _CalcDDtablePBN

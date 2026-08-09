@@ -1,7 +1,7 @@
 ---
 capability: web
 owners: [web]
-last-updated: 2026-08-05
+last-updated: 2026-08-09
 ---
 
 # DDS Web
@@ -56,7 +56,8 @@ DOM wiring) with an automated test pyramid.
     `dds_web_wasm_node.mjs`) **and** `dds_web_e2e_test`.
   - **E2E-only** (`web_e2e_tests`): `dds_web_e2e_test` alone — Playwright/Chromium
     against the served page, tagged `e2e`, `no-sandbox`, `requires-network`
-    (first run downloads Chromium). Default `.bazelrc` filters `-e2e`.
+    (first run downloads Chromium). Default `.bazelrc` filters `-e2e`; WASM CI
+    (`ci_wasm.yml`) clears that filter so `web_system_tests` runs e2e there.
 - **Post-build patch is web-owned.** `web/patch_web_wasm.py` (driven by
   `./web/update_wasm.sh`) fixes Emscripten's generated `isFileURI` helper for
   browser/`file://` safety on `//web:dds_web_wasm` only — not the example WASM

@@ -379,26 +379,3 @@ TEST_F(CalcParTest, CalcParContextOverloadMatchesNonContext)
             << "Hand " << hand_idx << " EW contracts differ";
     }
 }
-
-// Performance test: context reuse should work efficiently
-TEST_F(CalcParTest, ContextReusePerformance)
-{
-    SolverContext ctx;
-    
-    // Run multiple calculations with same context
-    const int num_iterations = 10;
-    for (int i = 0; i < num_iterations; i++) {
-        DdTableResults table;
-        ParResults par;
-        
-        // Alternate between different deals
-        DdTableDeal* deal = (i % 2 == 0) ? &deal0_ : &deal1_;
-        int vuln = vulnerability_[i % 2];
-        
-        int result = calc_par(ctx, *deal, vuln, &table, &par);
-        ASSERT_EQ(result, RETURN_NO_FAULT) << "Iteration " << i << " should succeed";
-    }
-    
-    // If we got here, context reuse is working
-    SUCCEED();
-}

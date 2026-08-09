@@ -164,7 +164,7 @@ bazelisk test //web:web_tests //web:web_system_tests //web:web_e2e_tests
 bazelisk test //wasm:all
 ```
 
-`bazelisk test //...` skips targets tagged `e2e` by default (see `.bazelrc`). Run Playwright tests explicitly, e.g. `bazelisk test //web:web_e2e_tests` or `bazelisk test --test_tag_filters=e2e //web:dds_web_e2e_test`. To run all tests, including the Playwright tests: `bazelisk test --test_tag_filters= //...`
+`bazelisk test //...` skips targets tagged `e2e` by default (see `.bazelrc`). Run Playwright tests explicitly, e.g. `bazelisk test //web:web_e2e_tests` or `bazelisk test --test_tag_filters=e2e //web:dds_web_e2e_test`. To run all tests, including the Playwright tests: `bazelisk test --test_tag_filters= //...`. The WASM CI workflow (`.github/workflows/ci_wasm.yml`) passes empty `--test_tag_filters=` so `//web:web_system_tests` includes Playwright.
 
 - **`//web:dds_web_wasm_system_test`** — builds `//web:dds_web_wasm`, runs `patch_web_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_web_calc_table` via Node (`web/tests/dds_web_wasm_node.mjs`).
 - **`//web:dds_web_e2e_test`** — Playwright tests for `dds_web.html` over `file://` (UI) and isolated HTTP (part-score solve, COOP/COEP). Requires Node, network (Chromium download on first run), and `tags = ["no-sandbox"]`.

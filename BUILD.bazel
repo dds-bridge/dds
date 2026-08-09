@@ -84,6 +84,21 @@ config_setting(
     ],
 )
 
+# Config surfaces for CI guards (python/tests:ci_msan_test). Kept as a filegroup
+# so runfiles include the real paths under the repo root, not resolved execroots.
+exports_files([
+    ".bazelrc",
+    "MODULE.bazel",
+])
+
+filegroup(
+    name = "msan_ci_config_files",
+    srcs = [
+        ".bazelrc",
+        "MODULE.bazel",
+    ],
+    visibility = ["//python:__pkg__"],
+)
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 

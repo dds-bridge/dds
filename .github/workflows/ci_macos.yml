@@ -74,7 +74,8 @@ jobs:
           max=3
           for i in $(seq 1 "$max"); do
             if bazelisk fetch --config=asan //library/tests/system/... \
-              && bazelisk fetch --config=tsan //library/tests/system/...; then
+              && bazelisk fetch --config=tsan //library/tests/system/... \
+              && bazelisk fetch --config=ubsan //library/tests/system/...; then
               exit 0
             fi
             if [ "$i" -lt "$max" ]; then
@@ -89,6 +90,9 @@ jobs:
 
       - name: Run system tests (ThreadSanitizer)
         run: bazelisk test --config=tsan --verbose_failures --test_output=errors //library/tests/system/...
+
+      - name: Run system tests (UndefinedBehaviorSanitizer)
+        run: bazelisk test --config=ubsan --verbose_failures --test_output=errors //library/tests/system/...
 
       - name: Upload sanitizer test logs
         if: always()

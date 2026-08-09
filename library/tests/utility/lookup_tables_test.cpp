@@ -133,6 +133,19 @@ TEST_F(LookupTablesTest, EmptySetHandling) {
     // Other values for i=0 depend on implementation but should be well-defined
     EXPECT_NO_THROW((void)highest_rank[0]);
     EXPECT_NO_THROW((void)lowest_rank[0]);
+    EXPECT_EQ(group_data[0].last_group_, -1);
+}
+
+TEST_F(LookupTablesTest, SingleCardSuitsOpenGroupZeroWithoutPriorGap) {
+    // Power-of-two bitmasks are single-card suits: copied from the empty suit
+    // (last_group_ == -1), then opened as group 0. gap_[0] is unused and must
+    // stay 0 — never computed via rank_[g-1] (which would be rank_[-1]).
+    for (int bit = 0; bit < 13; ++bit) {
+        const int ris = 1 << bit;
+        EXPECT_EQ(group_data[ris].last_group_, 0) << "ris=" << ris;
+        EXPECT_EQ(group_data[ris].gap_[0], 0) << "ris=" << ris;
+        EXPECT_EQ(group_data[ris].rank_[0], bit + 2) << "ris=" << ris;
+    }
 }
 
 TEST_F(LookupTablesTest, FullSetHandling) {

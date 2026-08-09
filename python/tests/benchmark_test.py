@@ -62,6 +62,7 @@ class TestParseDtestOutput(unittest.TestCase):
         self.assertEqual(parsed.sys_ms, 10.0)
         self.assertEqual(parsed.avg_user, 2.5)
         self.assertEqual(parsed.sys_user, 1.23)
+        self.assertEqual(parsed.hands, 100)
 
     def test_zero_tokens(self) -> None:
         out = (
@@ -90,6 +91,32 @@ class TestParseDtestOutput(unittest.TestCase):
         self.assertIsNone(parsed.sys_ms)
         self.assertIsNone(parsed.avg_user)
         self.assertIsNone(parsed.sys_user)
+
+    def test_sys_time_na_keeps_user_timing(self) -> None:
+        # wasm32: clock() is unavailable; dtest prints Sys time (ms) n/a.
+        out = (
+            "Number of hands                 1\n"
+            "User time (ms)                 21\n"
+            "Avg user time (ms)          21.00\n"
+            "Sys time (ms)                 n/a\n"
+        )
+        parsed = benchmark.parse_dtest_output(out)
+        self.assertEqual(parsed.user_ms, 21.0)
+        self.assertEqual(parsed.avg_user, 21.0)
+        self.assertIsNone(parsed.sys_ms)
+        self.assertTrue(benchmark.dtest_timing_usable(parsed))
+
+    def test_missing_user_is_not_usable(self) -> None:
+        parsed = benchmark.parse_dtest_output("Sys time (ms)             10\n")
+        self.assertFalse(benchmark.dtest_timing_usable(parsed))
+
+    def test_user_without_avg_is_not_usable(self) -> None:
+        # User time present but no hands / avg line -> cannot form avg_user.
+        out = "User time (ms)            250\nSys time (ms)             10\n"
+        parsed = benchmark.parse_dtest_output(out)
+        self.assertEqual(parsed.user_ms, 250.0)
+        self.assertIsNone(parsed.avg_user)
+        self.assertFalse(benchmark.dtest_timing_usable(parsed))
 
 
 class TestRunTableHeader(unittest.TestCase):
@@ -235,6 +262,71 @@ class TestBazelDtestCommand(unittest.TestCase):
             self.assertIn("bazelisk build //library/tests:dtest", err.getvalue())
             self.assertNotIn("bazel build //library/tests:dtest", err.getvalue())
 
+    def test_bazel_dtest_wasm_invokes_resolved_launcher(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = benchmark.BenchmarkRunner(Path(tmp), benchmark.Config())
+            seen: list[list[str]] = []
+
+            def capture(cmd, **_kwargs):  # type: ignore[no-untyped-def]
+                seen.append(list(cmd))
+
+            with mock.patch.object(runner, "run_build", side_effect=capture):
+                with mock.patch.object(
+                    benchmark, "resolve_bazel_command", return_value="bazelisk"
+                ):
+                    runner.bazel_dtest_wasm()
+            self.assertEqual(seen, [["bazelisk", "build", "//wasm:dtest_wasm"]])
+
+    def test_dry_run_wasm_branch_build_message(self) -> None:
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "wasm_out"
+            dest.mkdir()
+            runner = benchmark.BenchmarkRunner(
+                Path(tmp),
+                benchmark.Config(dry_run=True),
+                err=err,
+            )
+            with mock.patch.object(
+                benchmark, "resolve_bazel_command", return_value="bazelisk"
+            ):
+                js = runner.build_wasm_branch("develop", dest)
+            text = err.getvalue()
+            self.assertEqual(js, dest / "dtest.js")
+            self.assertIn("bazelisk build //wasm:dtest_wasm", text)
+            self.assertIn("dtest.js", text)
+            self.assertIn("dtest.wasm", text)
+
+
+class TestBuildBinariesWasm(unittest.TestCase):
+    def test_wasm_branch_label_and_js_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            err = io.StringIO()
+            runner = benchmark.BenchmarkRunner(
+                root,
+                benchmark.Config(
+                    dry_run=True,
+                    specs=[("wasm_branch", "develop")],
+                ),
+                err=err,
+            )
+            with mock.patch.object(
+                benchmark,
+                "git_prep_for_branches",
+                return_value=([("wasm_branch", "develop")], "main"),
+            ):
+                with mock.patch.object(
+                    benchmark, "resolve_bazel_command", return_value="bazelisk"
+                ):
+                    labels, paths = runner.build_binaries()
+            self.assertEqual(labels, ["wasm:develop"])
+            self.assertEqual(len(paths), 1)
+            self.assertEqual(paths[0].name, "dtest.js")
+            self.assertTrue(paths[0].parent.is_dir())
+            self.assertIn("checkout main", err.getvalue())
+            self.assertIn("//wasm:dtest_wasm", err.getvalue())
+
 
 class TestRunOrder(unittest.TestCase):
     def test_default(self) -> None:
@@ -342,12 +434,57 @@ class TestParseArgs(unittest.TestCase):
         with self.assertRaises(benchmark.BenchmarkError):
             benchmark.parse_args(["--epsilon", "-1"], env={})
 
+    def test_wasm_branch_spec(self) -> None:
+        cfg = benchmark.parse_args(["--wasm_branch", "develop"], env={})
+        self.assertEqual(cfg.specs, [("wasm_branch", "develop")])
+
+    def test_wasm_branch_hyphen_alias(self) -> None:
+        cfg = benchmark.parse_args(["--wasm-branch", "develop"], env={})
+        self.assertEqual(cfg.specs, [("wasm_branch", "develop")])
+
+    def test_wasm_branch_repeatable_with_branch(self) -> None:
+        cfg = benchmark.parse_args(
+            [
+                "--branch",
+                "develop",
+                "--wasm_branch",
+                "develop",
+                "--wasm_branch",
+                "feature",
+            ],
+            env={},
+        )
+        self.assertEqual(
+            cfg.specs,
+            [
+                ("branch", "develop"),
+                ("wasm_branch", "develop"),
+                ("wasm_branch", "feature"),
+            ],
+        )
+
+    def test_wasm_branch_must_not_start_with_dash(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["--wasm_branch", "-bad"], env={})
+        self.assertIn("must not start with '-'", str(ctx.exception))
+
+    def test_reverse_accepts_wasm_branch_pair(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--reverse", "--branch", "develop", "--wasm_branch", "develop"],
+            env={},
+        )
+        self.assertTrue(cfg.reverse)
+        self.assertEqual(
+            cfg.specs,
+            [("branch", "develop"), ("wasm_branch", "develop")],
+        )
+
 
 class TestSummary(unittest.TestCase):
     def test_two_binary_ratio_and_note(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
-            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 0.5),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -366,11 +503,12 @@ class TestSummary(unittest.TestCase):
         self.assertNotIn("TOTAL  calc", text)
 
     def test_separate_total_lines_per_solver(self) -> None:
+        # TOTAL is avg user ms: sum(user_ms) / deals (list100 => 100).
         rows = [
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
-            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 0.5),
-            benchmark.ResultRow("calc", "list100.txt", 0, 1, 200.0, 1.0, 2.0, 1.0, 2.0),
-            benchmark.ResultRow("calc", "list100.txt", 1, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0),
+            benchmark.ResultRow("calc", "list100.txt", 0, 1, 200.0, 1.0, 2.0, 1.0),
+            benchmark.ResultRow("calc", "list100.txt", 1, 1, 100.0, 1.0, 1.0, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -381,20 +519,142 @@ class TestSummary(unittest.TestCase):
         lines = text.splitlines()
         solve_tot = next(line for line in lines if line.startswith("TOTAL  solve"))
         calc_tot = next(line for line in lines if line.startswith("TOTAL  calc"))
-        self.assertRegex(solve_tot, r"\b1\.00\b")
-        self.assertRegex(solve_tot, r"\b0\.50\b")
+        self.assertRegex(solve_tot, r"\b1\.00\b")  # 100/100
+        self.assertRegex(solve_tot, r"\b0\.50\b")  # 50/100
         self.assertRegex(solve_tot, r"0\.50x")
         self.assertIn("fast faster", solve_tot)
-        self.assertRegex(calc_tot, r"\b2\.00\b")
-        self.assertRegex(calc_tot, r"\b1\.00\b")
+        self.assertRegex(calc_tot, r"\b2\.00\b")  # 200/100
+        self.assertRegex(calc_tot, r"\b1\.00\b")  # 100/100
         self.assertRegex(calc_tot, r"0\.50x")
         self.assertIn("fast faster", calc_tot)
+        self.assertNotRegex(solve_tot, r"\b100\.00\b")
         # No combined grand-total line.
         self.assertEqual(sum(1 for line in lines if line.startswith("TOTAL")), 2)
 
+    def test_total_is_user_ms_per_deal_across_files_and_repeats(self) -> None:
+        rows = [
+            # solve base: user 100+30+20=150, deals 100+10+10=120 -> 1.25
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list10.txt", 0, 1, 30.0, 1.0, 3.0, 1.0),
+            benchmark.ResultRow("solve", "list10.txt", 0, 2, 20.0, 1.0, 2.0, 1.0),
+            # solve fast: 50+15+10=75 / 120 = 0.625 -> 0.50x
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 50.0, 1.0, 0.5, 1.0),
+            benchmark.ResultRow("solve", "list10.txt", 1, 1, 15.0, 1.0, 1.5, 1.0),
+            benchmark.ResultRow("solve", "list10.txt", 1, 2, 10.0, 1.0, 1.0, 1.0),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "fast"],
+            files=["list100.txt", "list10.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b1\.25\b")
+        self.assertRegex(solve_tot, r"\b0\.62\b")  # 0.625 -> 0.62 with :.2f
+        self.assertRegex(solve_tot, r"0\.50x")
+        self.assertIn("fast faster", solve_tot)
+        self.assertNotRegex(solve_tot, r"\b150\.00\b")
+        self.assertNotRegex(solve_tot, r"\b75\.00\b")
+
+    def test_total_prints_na_for_missing_binary_timing(self) -> None:
+        rows = [
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, hands=100),
+            # Binary 1: incomplete dtest output (no user_ms)
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, None, None, None, None),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list100.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b1\.00\b")
+        self.assertRegex(solve_tot, r"\bNA\b")
+        self.assertNotRegex(solve_tot, r"\b0\.00\b")
+        self.assertNotRegex(solve_tot, r"\d+\.\d+x")
+        self.assertNotIn("faster", solve_tot)
+        self.assertNotIn("equal", solve_tot)
+
+    def test_total_excludes_rows_missing_avg_user(self) -> None:
+        # user_ms alone is incomplete (per-file would print NA for avg_user).
+        rows = [
+            benchmark.ResultRow(
+                "solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, hands=100
+            ),
+            benchmark.ResultRow(
+                "solve", "list100.txt", 1, 1, 50.0, 1.0, None, None, hands=100
+            ),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list100.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b1\.00\b")
+        self.assertRegex(solve_tot, r"\bNA\b")
+        self.assertNotRegex(solve_tot, r"\b0\.50\b")
+        self.assertNotRegex(solve_tot, r"\d+\.\d+x")
+
+    def test_total_excludes_zero_reported_hands(self) -> None:
+        # hands=0 is real dtest output, not missing — do not fall back to list1.txt => 1.
+        rows = [
+            benchmark.ResultRow(
+                "solve", "list1.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, hands=1
+            ),
+            benchmark.ResultRow(
+                "solve", "list1.txt", 1, 1, 0.0, 0.0, 0.0, None, hands=0
+            ),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "other"],
+            files=["list1.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b100\.00\b")
+        self.assertRegex(solve_tot, r"\bNA\b")
+        self.assertNotRegex(solve_tot, r"\b0\.00\b")
+        self.assertNotRegex(solve_tot, r"\d+\.\d+x")
+
+    def test_total_weights_by_reported_hands_not_filename(self) -> None:
+        # Filename says 100, but dtest reported 50 hands processed.
+        rows = [
+            benchmark.ResultRow(
+                "solve", "list100.txt", 0, 1, 100.0, 1.0, 2.0, 1.0, hands=50
+            ),
+            benchmark.ResultRow(
+                "solve", "list100.txt", 1, 1, 50.0, 1.0, 1.0, 1.0, hands=50
+            ),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base", "fast"],
+            files=["list100.txt"],
+            epsilon=0.5,
+        )
+        solve_tot = next(
+            line for line in text.splitlines() if line.startswith("TOTAL  solve")
+        )
+        self.assertRegex(solve_tot, r"\b2\.00\b")  # 100/50
+        self.assertRegex(solve_tot, r"\b1\.00\b")  # 50/50
+        self.assertNotRegex(solve_tot, r"\b0\.50\b")  # would be 50/100 if filename used
+        self.assertRegex(solve_tot, r"0\.50x")
+
     def test_default_summary_omits_sys_user_column(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10),
         ]
         text = benchmark.format_summary(
             rows,
@@ -406,8 +666,8 @@ class TestSummary(unittest.TestCase):
 
     def test_sys_user_column_per_binary(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 20.0, 0.5, 0.40, 0.5),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 20.0, 0.5, 0.40),
         ]
         text = benchmark.format_summary(
             rows,
@@ -429,9 +689,9 @@ class TestSummary(unittest.TestCase):
 
     def test_sys_user_averages_repeats_and_missing_is_na(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10, 1.0),
-            benchmark.ResultRow("solve", "list1.txt", 0, 2, 100.0, 10.0, 1.0, 0.30, 1.0),
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, None, 0.5),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 10.0, 1.0, 0.10),
+            benchmark.ResultRow("solve", "list1.txt", 0, 2, 100.0, 10.0, 1.0, 0.30),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, None),
         ]
         text = benchmark.format_summary(
             rows,
@@ -448,8 +708,8 @@ class TestSummary(unittest.TestCase):
 
     def test_equal_within_epsilon(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
-            benchmark.ResultRow("solve", "list100.txt", 1, 1, 100.2, 1.0, 1.002, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list100.txt", 1, 1, 100.2, 1.0, 1.002, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -461,7 +721,7 @@ class TestSummary(unittest.TestCase):
 
     def test_three_binaries_no_note(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", b, 1, 10.0, 0.0, 1.0, None, 0.1)
+            benchmark.ResultRow("solve", "list1.txt", b, 1, 10.0, 0.0, 1.0, None)
             for b in (0, 1, 2)
         ]
         text = benchmark.format_summary(
@@ -477,8 +737,8 @@ class TestSummary(unittest.TestCase):
 
     def test_zero_baseline_avg_skips_ratio(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 0.0, 0.0, 0.0, None, 0.0),
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, 1.0, 0.0, 1.0, None, 0.1),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 0.0, 0.0, 0.0, None),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 1.0, 0.0, 1.0, None),
         ]
         text = benchmark.format_summary(
             rows,
@@ -497,9 +757,9 @@ class TestSummary(unittest.TestCase):
 
     def test_missing_avg_prints_na_and_keeps_row(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 1.0, 1.0, 1.0, 1.0),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, 100.0, 1.0, 1.0, 1.0),
             # Incomplete dtest output: avg_user missing for binary 1
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, None, None, None, None, 0.5),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, None, None, None, None),
         ]
         text = benchmark.format_summary(
             rows,
@@ -518,8 +778,8 @@ class TestSummary(unittest.TestCase):
 
     def test_missing_avg_suppresses_ratio_either_side(self) -> None:
         rows = [
-            benchmark.ResultRow("solve", "list1.txt", 0, 1, None, None, None, None, 0.1),
-            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, 1.0, 0.5),
+            benchmark.ResultRow("solve", "list1.txt", 0, 1, None, None, None, None),
+            benchmark.ResultRow("solve", "list1.txt", 1, 1, 50.0, 1.0, 0.5, 1.0),
         ]
         text = benchmark.format_summary(
             rows,
@@ -639,6 +899,26 @@ class TestRejectCheckoutBinaryWithBranch(unittest.TestCase):
                 [("branch", "develop")],
             )
 
+    def test_rejects_checkout_wasm_js_with_wasm_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            abs_path = root / benchmark.DTEST_WASM_JS_REL
+            with self.assertRaises(benchmark.BenchmarkError) as ctx:
+                benchmark.reject_checkout_binary_with_branch(
+                    root,
+                    [("wasm_branch", "develop"), ("binary", str(abs_path))],
+                )
+            self.assertIn("checkout's", str(ctx.exception))
+            self.assertIn(str(benchmark.DTEST_WASM_JS_REL), str(ctx.exception))
+
+    def test_allows_external_binary_with_wasm_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            benchmark.reject_checkout_binary_with_branch(
+                root,
+                [("wasm_branch", "develop"), ("binary", "/tmp/other-dtest")],
+            )
+
 
 class TestGitPrepForBranches(unittest.TestCase):
     def test_dirty_same_commit_allowed(self) -> None:
@@ -693,6 +973,149 @@ class TestGitPrepForBranches(unittest.TestCase):
             with self.assertRaises(benchmark.BenchmarkError) as ctx:
                 benchmark.git_prep_for_branches(repo, [("branch", "HEAD^{tree}")])
             self.assertIn("unknown git ref", str(ctx.exception))
+
+    def test_wasm_branch_dot_resolved_like_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            _setup_repo(repo)
+            resolved, orig = benchmark.git_prep_for_branches(
+                repo, [("wasm_branch", ".")]
+            )
+            self.assertEqual(orig, "main")
+            self.assertEqual(resolved, [("wasm_branch", "main")])
+
+    def test_wasm_branch_dirty_other_commit_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            _setup_repo(repo)
+            (repo / "MODULE.bazel").write_text(
+                (repo / "MODULE.bazel").read_text() + "dirty\n"
+            )
+            with self.assertRaises(benchmark.BenchmarkError) as ctx:
+                benchmark.git_prep_for_branches(repo, [("wasm_branch", "other")])
+            self.assertIn("working tree not clean", str(ctx.exception))
+
+
+class TestRunDtestWasm(unittest.TestCase):
+    def test_js_binary_invokes_node_with_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            js = root / "dtest.js"
+            wasm = root / "dtest.wasm"
+            js.write_text("// stub\n")
+            wasm.write_bytes(b"\0")
+            hands = root / "list1.txt"
+            hands.write_text("hand\n")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config())
+            seen: dict[str, object] = {}
+
+            def fake_run(cmd, **kwargs):  # type: ignore[no-untyped-def]
+                seen["cmd"] = list(cmd)
+                seen["cwd"] = kwargs.get("cwd")
+                return subprocess.CompletedProcess(
+                    cmd,
+                    0,
+                    stdout=(
+                        "Number of hands          1\n"
+                        "User time (ms)           10\n"
+                        "Sys time (ms)            1\n"
+                    ),
+                    stderr="",
+                )
+
+            with mock.patch("benchmark.subprocess.run", side_effect=fake_run):
+                parsed = runner.run_dtest(js, "solve", hands)
+            self.assertEqual(
+                seen["cmd"],
+                ["node", str(js.resolve()), "-f", str(hands.resolve()), "-s", "solve"],
+            )
+            self.assertEqual(seen["cwd"], js.resolve().parent)
+            self.assertEqual(parsed.user_ms, 10.0)
+
+    def test_js_resolves_relative_hands_path(self) -> None:
+        # cwd for node is the wasm artifact dir; relative -f must not resolve there.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            js = root / "wasm_out" / "dtest.js"
+            js.parent.mkdir()
+            js.write_text("// stub\n")
+            (root / "hands").mkdir()
+            (root / "hands" / "list1.txt").write_text("hand\n")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config())
+            old = Path.cwd()
+            try:
+                os.chdir(root)
+                cmd = runner.dtest_command(js, "solve", Path("hands/list1.txt"))
+            finally:
+                os.chdir(old)
+            self.assertEqual(cmd[0], "node")
+            self.assertEqual(cmd[cmd.index("-f") + 1], str((root / "hands" / "list1.txt").resolve()))
+            self.assertTrue(Path(cmd[cmd.index("-f") + 1]).is_absolute())
+
+    def test_js_resolves_relative_script_path(self) -> None:
+        # Relative --binary .js must not be re-resolved against cwd=js.parent.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            js = root / "bazel-bin" / "wasm" / "dtest.js"
+            js.parent.mkdir(parents=True)
+            js.write_text("// stub\n")
+            (root / "hands" / "list1.txt").parent.mkdir(parents=True, exist_ok=True)
+            (root / "hands" / "list1.txt").write_text("hand\n")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config())
+            old = Path.cwd()
+            try:
+                os.chdir(root)
+                rel_js = Path("bazel-bin/wasm/dtest.js")
+                cmd = runner.dtest_command(rel_js, "solve", Path("hands/list1.txt"))
+            finally:
+                os.chdir(old)
+            self.assertEqual(cmd[0], "node")
+            self.assertEqual(cmd[1], str(js.resolve()))
+            self.assertTrue(Path(cmd[1]).is_absolute())
+
+    def test_wasm_sys_na_does_not_warn(self) -> None:
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            js = root / "dtest.js"
+            js.write_text("// stub\n")
+            hands = root / "list1.txt"
+            hands.write_text("hand\n")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config(), err=err)
+
+            def fake_run(cmd, **_kwargs):  # type: ignore[no-untyped-def]
+                return subprocess.CompletedProcess(
+                    cmd,
+                    0,
+                    stdout=(
+                        "Number of hands                 1\n"
+                        "User time (ms)                 21\n"
+                        "Avg user time (ms)          21.00\n"
+                        "Sys time (ms)                 n/a\n"
+                    ),
+                    stderr="",
+                )
+
+            with mock.patch("benchmark.subprocess.run", side_effect=fake_run):
+                parsed = runner.run_dtest(js, "solve", hands)
+            self.assertEqual(parsed.user_ms, 21.0)
+            self.assertIsNone(parsed.sys_ms)
+            self.assertNotIn("incomplete dtest timing", err.getvalue())
+
+    def test_dry_run_js_prints_node_command(self) -> None:
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            js = Path(tmp) / "dtest.js"
+            runner = benchmark.BenchmarkRunner(
+                Path(tmp),
+                benchmark.Config(dry_run=True),
+                err=err,
+            )
+            runner.run_dtest(js, "calc", Path(tmp) / "list1.txt")
+            self.assertIn("DRY_RUN: node ", err.getvalue())
+            self.assertIn(str(js), err.getvalue())
 
 
 class TestDryRunMain(unittest.TestCase):

@@ -109,9 +109,6 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
 
   BoardsPBN bop;
   SolvedBoards solvedbdp;
-  DdTableDealsPBN dealsp;
-  DdTablesRes resp;
-  AllParResults parp;
   PlayTracesPBN playsp;
   SolvedPlays solvedplp;
 
@@ -121,8 +118,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {
-    loop_calc(&dealsp, &resp, &parp, deal_list, table_list, 
-      number, stepsize);
+    loop_calc(deal_list, table_list, number);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
   {

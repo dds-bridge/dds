@@ -90,6 +90,31 @@ py_test(
     data = ["//.github/workflows:all_workflows"],
 )
 
+# Guard: MemorySanitizer config + Linux CI job stay wired together.
+py_test(
+    name = "ci_msan_test",
+    size = "small",
+    main = "tests/ci_msan_test.py",
+    srcs = ["tests/ci_msan_test.py"],
+    data = [
+        "//:msan_ci_config_files",
+        "//.github/workflows:all_workflows",
+        "//library/tests/system:parallel_boards_test_src",
+    ],
+)
+
+# Guard: WASM CI clears .bazelrc's -e2e filter so Playwright e2e tests run.
+py_test(
+    name = "ci_wasm_e2e_test",
+    size = "small",
+    main = "tests/ci_wasm_e2e_test.py",
+    srcs = ["tests/ci_wasm_e2e_test.py"],
+    data = [
+        "//:.bazelrc",
+        "//.github/workflows:all_workflows",
+    ],
+)
+
 py_test(
     name = "python_interface_smoke_test",
     size = "small",
