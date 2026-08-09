@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
@@ -150,6 +150,31 @@ cc_binary(
     ],
 )
 
+cc_library(
+    name = "dd_table_for_deal_lib",
+    srcs = ["dd_table_for_deal_lib.cpp"],
+    hdrs = ["dd_table_for_deal.hpp"],
+    includes = ["."],
+    copts = EXAMPLES_CPPOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        "//library/src/api:api_definitions",
+    ],
+)
+
+cc_test(
+    name = "dd_table_for_deal_test",
+    size = "small",
+    srcs = ["tests/dd_table_for_deal_test.cpp"],
+    copts = EXAMPLES_CPPOPTS,
+    local_defines = EXAMPLES_LOCAL_DEFINES,
+    deps = [
+        ":dd_table_for_deal_lib",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_binary(
     name = "dd_table_for_deal",
     srcs = ["dd_table_for_deal.cpp"],
@@ -157,6 +182,7 @@ cc_binary(
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
     deps = [
+        ":dd_table_for_deal_lib",
         ":hands",
         "//library/src:dds",
         "//library/src/api:api_definitions",
