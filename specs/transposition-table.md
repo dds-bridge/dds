@@ -70,9 +70,8 @@ its two concrete strategies, trading memory against speed.
   reset-tracking diagnostics in `TransTableL` (wired through [build-system](build-system.md), off
   by default). `tt_context_ownership` / `DDS_TT_CONTEXT_OWNERSHIP` remains a Bazel
   `--define` in `CPPVARIABLES.bzl` but is **inert** today — no source `#ifdef`s
-  it. It is applied to one test target (`context_equivalence_test_ctx_tt` in
-  `library/tests/system/BUILD.bazel`), where it likewise has no effect;
-  ownership is always instance-scoped via `SearchContext`.
+  it, and no target currently enables it; ownership is always instance-scoped
+  via `SearchContext`.
 - **`testable_trans_table`** is the same sources exposed to
   `//library/tests/trans_table/...` for white-box testing; behaviour is identical to
   `trans_table`.
