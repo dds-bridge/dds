@@ -42,6 +42,16 @@ def _debug_windows_cppopts_block(cppvariables: str) -> str:
     return match.group(1)
 
 
+def _bazelisk_invocation_has_config_opt(text: str, subcommand: str) -> bool:
+    """True if any bazelisk <subcommand> invocation includes --config=opt.
+
+    Flag order after the subcommand is not significant, and a YAML `run:`
+    prefix on the same line is allowed.
+    """
+    pattern = rf"bazelisk\s+{re.escape(subcommand)}\b[^\n]*--config=opt\b"
+    return re.search(pattern, text) is not None
+
+
 class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
     def test_windows_cppopts_do_not_override_bazel_optimization(self) -> None:
         """Bazel already sets /Od (fastbuild/dbg) or /O2 (opt); re-stating them
@@ -99,21 +109,94 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
         )
 
 
+class TestBazeliskConfigOptMatching(unittest.TestCase):
+    def test_matches_when_config_opt_is_first_flag(self) -> None:
+        self.assertTrue(
+            _bazelisk_invocation_has_config_opt(
+                "bazelisk build --config=opt //...",
+                "build",
+            )
+        )
+
+    def test_matches_when_other_flags_precede_config_opt(self) -> None:
+        self.assertTrue(
+            _bazelisk_invocation_has_config_opt(
+                "bazelisk build --verbose_failures --config=opt //...",
+                "build",
+            )
+        )
+
+    def test_matches_when_config_opt_is_not_adjacent_to_subcommand(self) -> None:
+        self.assertTrue(
+            _bazelisk_invocation_has_config_opt(
+                "    bazelisk test --test_output=errors --config=opt //...",
+                "test",
+            )
+        )
+
+    def test_matches_yaml_run_prefix_on_same_line(self) -> None:
+        self.assertTrue(
+            _bazelisk_invocation_has_config_opt(
+                "        run: bazelisk test --verbose_failures --config=opt //...",
+                "test",
+            )
+        )
+
+    def test_rejects_missing_config_opt(self) -> None:
+        self.assertFalse(
+            _bazelisk_invocation_has_config_opt(
+                "bazelisk build --verbose_failures //...",
+                "build",
+            )
+        )
+
+    def test_rejects_config_opt_on_unrelated_subcommand(self) -> None:
+        self.assertFalse(
+            _bazelisk_invocation_has_config_opt(
+                "bazelisk fetch --config=opt //...\nbazelisk build //...",
+                "build",
+            )
+        )
+
+
 class TestWindowsCiUsesOpt(unittest.TestCase):
     def test_windows_ci_passes_config_opt(self) -> None:
         """Without /O2 in DDS_CPPOPTS, CI must opt in via --config=opt."""
         text = (
             _repo_root() / ".github" / "workflows" / "ci_windows.yml"
         ).read_text(encoding="utf-8")
-        self.assertRegex(
-            text,
-            r"bazelisk\s+build\s+--config=opt\b",
+        self.assertTrue(
+            _bazelisk_invocation_has_config_opt(text, "build"),
             "expected Windows CI build to use --config=opt",
         )
-        self.assertRegex(
-            text,
-            r"bazelisk\s+test\s+--config=opt\b",
+        self.assertTrue(
+            _bazelisk_invocation_has_config_opt(text, "test"),
             "expected Windows CI test to use --config=opt",
+        )
+
+
+class TestWindowsCppoptsConfigExportsVisibility(unittest.TestCase):
+    def test_exports_files_visibility_matches_filegroup(self) -> None:
+        """exports_files defaults to public; keep it aligned with the restricted
+        windows_cppopts_config_files filegroup so these roots are not world-readable
+        labels.
+        """
+        text = (_repo_root() / "BUILD.bazel").read_text(encoding="utf-8")
+        match = re.search(
+            r"exports_files\(\s*"
+            r"\[\s*"
+            r'"\.bazelrc",\s*'
+            r'"CPPVARIABLES\.bzl",\s*'
+            r"\]\s*,\s*"
+            r"visibility\s*=\s*\[\s*\"//python:__pkg__\"\s*\]\s*,?\s*"
+            r"\)",
+            text,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(
+            match,
+            "expected exports_files([.bazelrc, CPPVARIABLES.bzl], "
+            'visibility = ["//python:__pkg__"])',
         )
 
 

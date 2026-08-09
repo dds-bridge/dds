@@ -85,15 +85,19 @@ config_setting(
 )
 
 # Config surfaces for CI guards (python/tests:ci_windows_cppopts_test).
-exports_files([
-    ".bazelrc",
-    "CPPVARIABLES.bzl",
-])
+exports_files(
+    [
+        ".bazelrc",
+        "CPPVARIABLES.bzl",
+    ],
+    visibility = ["//python:__pkg__"],
+)
 
 filegroup(
     name = "windows_cppopts_config_files",
     srcs = [
         ".bazelrc",
+        "BUILD.bazel",
         "CPPVARIABLES.bzl",
     ],
     visibility = ["//python:__pkg__"],
