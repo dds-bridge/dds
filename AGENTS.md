@@ -1,3 +1,7 @@
+# Intended audience
+
+These instructions have been created to help Cursor but are expected to be generally helpful.
+
 # General
 
 Follow .github/instructions/cpp.instructions.md
