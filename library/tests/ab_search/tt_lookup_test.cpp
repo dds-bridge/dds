@@ -143,6 +143,7 @@ TEST_F(AbTtLookupTest, HitCountsMainLookup)
   ThreadData* thrp = ctx_->thread_ptr();
   ASSERT_NE(thrp, nullptr);
   thrp->ABStats.Reset();
+  thrp->ABStats.ResetCum();
 
   bool score_flag = false;
   ASSERT_TRUE(apply_ab_tt_lookup(
@@ -156,6 +157,7 @@ TEST_F(AbTtLookupTest, MissDoesNotCountMainLookup)
   ThreadData* thrp = ctx_->thread_ptr();
   ASSERT_NE(thrp, nullptr);
   thrp->ABStats.Reset();
+  thrp->ABStats.ResetCum();
 
   bool score_flag = true;
   ASSERT_FALSE(apply_ab_tt_lookup(

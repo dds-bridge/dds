@@ -9,6 +9,7 @@ TEST(ABstatsTest, GetPosCountStartsAtZeroAfterReset)
 {
   ABstats stats;
   stats.Reset();
+  stats.ResetCum();
 
   EXPECT_EQ(stats.GetPosCount(AB_MAIN_LOOKUP), 0);
 }
@@ -17,6 +18,7 @@ TEST(ABstatsTest, IncrPosIncrementsGetPosCount)
 {
   ABstats stats;
   stats.Reset();
+  stats.ResetCum();
 
   stats.IncrPos(AB_MAIN_LOOKUP, /*side=*/true, /*depth=*/20);
 
@@ -28,6 +30,7 @@ TEST(ABstatsTest, GetPosCountRejectsOutOfRangePlace)
 {
   ABstats stats;
   stats.Reset();
+  stats.ResetCum();
 
   EXPECT_EQ(stats.GetPosCount(-1), 0);
   EXPECT_EQ(stats.GetPosCount(AB_SIZE), 0);

@@ -22,6 +22,7 @@ using namespace std;
 ABstats::ABstats()
 {
   ABstats::Reset();
+  ABstats::ResetCum();
   ABstats::SetNames();
 }
 
