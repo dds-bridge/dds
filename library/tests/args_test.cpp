@@ -213,8 +213,6 @@ TEST(Args, MakeDirFailsWhenPathIsExistingFile)
 
 TEST(Args, UnknownMinMaxFlagsAreRejected)
 {
-  // Former --min/--max batch-extreme flags must not be accepted.
-  // read_args prints to cout and exits(0); death tests only match stderr.
   const std::string path = make_temp_input_file();
   char arg0[] = "dtest";
   char arg_f[] = "-f";
