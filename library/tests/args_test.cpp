@@ -192,17 +192,6 @@ class HandsLayoutFixture : public ::testing::Test
 
 }  // namespace
 
-TEST(Args, MaxAndMinFlagsDefaultOff)
-{
-  const std::string path = make_temp_input_file();
-  char arg0[] = "dtest";
-  char arg_f[] = "-f";
-  char* argv[] = {arg0, arg_f, const_cast<char*>(path.c_str())};
-  read_args(3, argv);
-  EXPECT_FALSE(options.show_min_);
-  EXPECT_FALSE(options.show_max_);
-}
-
 TEST(Args, MakeDirSucceedsWhenDirectoryAlreadyExists)
 {
   const std::string dir =
@@ -222,42 +211,17 @@ TEST(Args, MakeDirFailsWhenPathIsExistingFile)
   EXPECT_FALSE(make_dir(path));
 }
 
-TEST(Args, MaxFlagEnablesShowMax)
-{
-  const std::string path = make_temp_input_file();
-  char arg0[] = "dtest";
-  char arg_f[] = "-f";
-  char arg_max[] = "--max";
-  char* argv[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_max};
-  read_args(4, argv);
-  EXPECT_TRUE(options.show_max_);
-  EXPECT_FALSE(options.show_min_);
-}
-
-TEST(Args, MinFlagEnablesShowMin)
+TEST(Args, UnknownMinMaxFlagsAreRejected)
 {
   const std::string path = make_temp_input_file();
   char arg0[] = "dtest";
   char arg_f[] = "-f";
   char arg_min[] = "--min";
-  char* argv[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_min};
-  read_args(4, argv);
-  EXPECT_TRUE(options.show_min_);
-  EXPECT_FALSE(options.show_max_);
-}
-
-TEST(Args, MaxAndMinFlagsCanCombine)
-{
-  const std::string path = make_temp_input_file();
-  char arg0[] = "dtest";
-  char arg_f[] = "-f";
   char arg_max[] = "--max";
-  char arg_min[] = "--min";
-  char* argv[] = {
-    arg0, arg_f, const_cast<char*>(path.c_str()), arg_max, arg_min};
-  read_args(5, argv);
-  EXPECT_TRUE(options.show_min_);
-  EXPECT_TRUE(options.show_max_);
+  char* argv_min[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_min};
+  char* argv_max[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_max};
+  EXPECT_EXIT(read_args(4, argv_min), ::testing::ExitedWithCode(0), ".*");
+  EXPECT_EXIT(read_args(4, argv_max), ::testing::ExitedWithCode(0), ".*");
 }
 
 TEST(Args, ResolvePrefersLiteralExistingPath)
