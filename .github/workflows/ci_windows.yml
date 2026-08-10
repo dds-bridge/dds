@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}\.bazel-cache\disk
-          key: windows-bazel-disk-cache-${{ runner.os }}-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'BUILD.bazel', 'CPPVARIABLES.bzl') }}
+          key: windows-bazel-disk-cache-${{ runner.os }}-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'MODULE.bazel.lock', 'BUILD.bazel', 'CPPVARIABLES.bzl') }}
           restore-keys: |
             windows-bazel-disk-cache-${{ runner.os }}-
 
@@ -88,8 +88,14 @@ jobs:
 
       # Summarize profile hotspots for follow-up CI tuning
       - name: Analyze Bazel profile
+        if: always()
         shell: pwsh
-        run: bazelisk analyze-profile "$env:BAZEL_PROFILE_JSON" | Out-File -FilePath "$env:BAZEL_PROFILE_TXT" -Encoding utf8
+        run: |
+          if (Test-Path "$env:BAZEL_PROFILE_JSON") {
+            bazelisk analyze-profile "$env:BAZEL_PROFILE_JSON" | Out-File -FilePath "$env:BAZEL_PROFILE_TXT" -Encoding utf8
+          } else {
+            Write-Host "No Bazel profile found at $env:BAZEL_PROFILE_JSON; skipping analyze-profile."
+          }
 
       # Upload test logs
       - name: Upload test logs - Windows
