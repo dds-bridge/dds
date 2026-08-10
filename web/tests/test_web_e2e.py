@@ -615,23 +615,62 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_deck_status_displays_all_cards_in_one_row(self) -> None:
+    def test_deck_status_lives_in_diagram_center_as_four_suit_rows(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
-            deck = page.locator("#deck-status")
+            deck = page.locator(".grid-filler-center #deck-status")
+            self.assertEqual(deck.count(), 1)
             style = deck.evaluate(
                 """el => {
                 const s = getComputedStyle(el);
                 return {
                   display: s.display,
-                  flexWrap: s.flexWrap,
-                  overflowX: s.overflowX,
+                  flexDirection: s.flexDirection,
                 };
               }"""
             )
             self.assertEqual(style["display"], "flex")
-            self.assertEqual(style["flexWrap"], "nowrap")
-            self.assertNotIn(style["overflowX"], ("auto", "scroll"))
+            self.assertEqual(style["flexDirection"], "column")
+            rows = page.locator("#deck-status .deck-suit-row")
+            self.assertEqual(rows.count(), 4)
+            tags = [
+                rows.nth(i).locator(":scope > *").first.evaluate("el => el.tagName")
+                for i in range(4)
+            ]
+            self.assertEqual(
+                tags,
+                ["SPADE-SUIT", "HEART-SUIT", "DIAMOND-SUIT", "CLUB-SUIT"],
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_undeployed_cards_left_align_with_ns_suit_symbols(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            lefts = page.evaluate(
+                """() => {
+                  const leftOf = (sel) =>
+                    document.querySelector(sel).getBoundingClientRect().left;
+                  return {
+                    north: leftOf('.hand-north spade-suit'),
+                    south: leftOf('.hand-south spade-suit'),
+                    undeployed: leftOf('#deck-status .deck-suit-row spade-suit'),
+                  };
+                }"""
+            )
+            self.assertAlmostEqual(
+                lefts["undeployed"],
+                lefts["north"],
+                delta=1,
+                msg="undeployed spades must share N's left edge",
+            )
+            self.assertAlmostEqual(
+                lefts["undeployed"],
+                lefts["south"],
+                delta=1,
+                msg="undeployed spades must share S's left edge",
+            )
             self.assertEqual(errors, [])
         finally:
             page.close()

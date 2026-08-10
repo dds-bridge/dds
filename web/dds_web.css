@@ -49,6 +49,13 @@
   grid-area: center;
 }
 
+.grid-item.grid-filler-center {
+  align-items: center;
+  display: flex;
+  font-size: 1rem;
+  justify-content: flex-start;
+}
+
 .grid-filler-sw {
   grid-area: sw;
 }
@@ -227,17 +234,20 @@ td {
 
 #deck-status {
   display: flex;
-  flex-wrap: nowrap;
+  flex-direction: column;
   font-size: calc(1em + 1pt);
-  gap: 0.35rem;
-  max-width: 800px;
-  padding: 0.5rem 0;
+  gap: 0.15rem;
+  line-height: 1.25;
+  text-align: left;
   white-space: nowrap;
+}
+
+.deck-suit-row {
+  min-height: 1.2em;
 }
 
 .deck-card {
   color: #000;
-  flex: 0 0 auto;
 }
 
 /* Suit glyphs are DOM text; .deck-card sets its own color so nested pips stay black. */

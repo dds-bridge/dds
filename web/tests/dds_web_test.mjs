@@ -323,6 +323,24 @@ test("deck status lists suits in S H D C order", () => {
     );
 });
 
+test("deck status puts each suit in its own row wrapper", () => {
+    // Arrange
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+
+    // Act
+    ctx.updateActionButtons();
+    const deckStatus = document.element("deck-status").innerHTML;
+
+    // Assert: four rows, spades on top through clubs at the bottom.
+    const rows = [...deckStatus.matchAll(/class="deck-suit-row"/g)];
+    assert.equal(rows.length, 4);
+    assert.match(
+        deckStatus,
+        /class="deck-suit-row"[^>]*>\s*<spade-suit>[\s\S]*?<\/spade-suit>\s*<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<heart-suit>[\s\S]*?<\/heart-suit>\s*<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<diamond-suit>[\s\S]*?<\/diamond-suit>\s*<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<club-suit>/
+    );
+});
+
 test("handsToPbn formats part-score deal", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
@@ -2154,6 +2172,43 @@ test("dds_web html does not cache-bust css or js with query params", () => {
     assert.match(html, /href="dds_web\.css"/);
     assert.match(html, /src="dds_web\.js"/);
     assert.doesNotMatch(html, /dds_web\.(css|js)\?/);
+});
+
+test("undeployed cards live in the hand diagram center in four suit rows", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    // Assert: deck-status is inside the center filler, not below the diagram.
+    const centerMatch = html.match(
+        /<div class="[^"]*grid-filler-center[^"]*"[^>]*>([\s\S]*?)<\/div>/
+    );
+    assert.ok(centerMatch, "center filler cell present");
+    assert.match(centerMatch[1], /id="deck-status"/);
+    assert.doesNotMatch(centerMatch[0], /aria-hidden="true"/);
+    assert.equal(
+        (html.match(/id="deck-status"/g) || []).length,
+        1,
+        "deck-status appears once"
+    );
+
+    assert.match(
+        css,
+        /#deck-status\s*\{[^}]*flex-direction:\s*column/s
+    );
+    assert.match(css, /\.deck-suit-row\s*\{/s);
+    assert.match(css, /\.grid-item\.grid-filler-center\s*\{/s);
+    // Same middle column as N/S: left-align with their suit symbols, do not
+    // horizontally center the undeployed strip inside the cell.
+    assert.match(
+        css,
+        /\.grid-item\.grid-filler-center\s*\{[^}]*justify-content:\s*flex-start/s
+    );
+    assert.doesNotMatch(
+        css,
+        /\.grid-item\.grid-filler-center\s*\{[^}]*justify-content:\s*center/s
+    );
 });
 
 test("result table lives in the hand diagram southeast corner", () => {

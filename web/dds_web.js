@@ -420,7 +420,8 @@ function deckStatusHtml(hands) {
         }).join("");
         const tag = suitTag(suit);
 
-        return "<" + tag + ">" + SUIT_GLYPHS[suit] + cardsHtml + "</" + tag + ">";
+        return "<div class=\"deck-suit-row\"><" + tag + ">" +
+            SUIT_GLYPHS[suit] + cardsHtml + "</" + tag + "></div>";
     }).join("");
 }
 
