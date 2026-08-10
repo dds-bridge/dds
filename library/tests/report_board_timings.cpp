@@ -62,7 +62,7 @@ void print_per_board_timings(
   const int ms_width = ms_column_width(times);
   const int board_width = board_column_width(times);
 
-  out << "Per-board timings (ms) sorted by longest first:\n";
+  out << "\nPer-board timings (ms) sorted by longest first:\n\n";
   out << std::right << std::setw(ms_width) << "ms" << "  "
       << std::setw(board_width) << "board" << "\n";
   out << std::fixed << std::setprecision(1);
@@ -72,7 +72,6 @@ void print_per_board_timings(
         << (static_cast<double>(p.second) / 1000.0) << "  "
         << std::setw(board_width) << p.first << "\n";
   }
-  out << "\n";
 }
 
 void append_batch_board_times(

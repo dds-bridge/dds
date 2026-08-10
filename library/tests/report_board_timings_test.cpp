@@ -28,12 +28,12 @@ TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
   // Assert
   EXPECT_EQ(
     out.str(),
-    "Per-board timings (ms) sorted by longest first:\n"
+    "\nPer-board timings (ms) sorted by longest first:\n"
+    "\n"
     "  ms  board\n"
     "42.5      5\n"
     "10.1      2\n"
-    " 7.0      1\n"
-    "\n");
+    " 7.0      1\n");
 }
 
 TEST(ReportBoardTimings, RightAlignsBoardWiderThanHeader)
@@ -48,11 +48,11 @@ TEST(ReportBoardTimings, RightAlignsBoardWiderThanHeader)
 
   EXPECT_EQ(
     out.str(),
-    "Per-board timings (ms) sorted by longest first:\n"
+    "\nPer-board timings (ms) sorted by longest first:\n"
+    "\n"
     " ms  board\n"
     "2.0   3456\n"
-    "1.0     12\n"
-    "\n");
+    "1.0     12\n");
 }
 
 TEST(ReportBoardTimings, RightAlignsMixedMsWidthsWithSpaces)
@@ -71,13 +71,13 @@ TEST(ReportBoardTimings, RightAlignsMixedMsWidthsWithSpaces)
 
   EXPECT_EQ(
     out.str(),
-    "Per-board timings (ms) sorted by longest first:\n"
+    "\nPer-board timings (ms) sorted by longest first:\n"
+    "\n"
     "   ms  board\n"
     "202.0      1\n"
     "164.1     13\n"
     "158.4      7\n"
-    "148.3     92\n"
-    "\n");
+    "148.3     92\n");
 }
 
 TEST(ReportBoardTimings, EmptyInputPrintsTitleAndHeadingsOnly)
@@ -87,9 +87,9 @@ TEST(ReportBoardTimings, EmptyInputPrintsTitleAndHeadingsOnly)
 
   EXPECT_EQ(
     out.str(),
-    "Per-board timings (ms) sorted by longest first:\n"
-    "ms  board\n"
-    "\n");
+    "\nPer-board timings (ms) sorted by longest first:\n"
+    "\n"
+    "ms  board\n");
 }
 
 TEST(AppendBatchBoardTimes, RemapsBatchLocalIndicesByFileOffset)
