@@ -8,17 +8,16 @@
 */
 
 
-#include <iostream>
-#include <iomanip>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <utility>
+#include <vector>
 
 #include "loop.hpp"
 #include "TestTimer.hpp"
 #include "compare.hpp"
 #include "print.hpp"
-#include <vector>
-#include <utility>
-
 #include "cst.hpp"
 #include "dtest_parallel.hpp"
 #include "report_board_timings.hpp"
