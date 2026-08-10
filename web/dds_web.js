@@ -4,10 +4,10 @@
 //   license that can be found in the LICENSE file or at
 //   https://opensource.org/licenses/MIT
 
-// Unit tests: web/tests/dds_mvp_test.mjs
-// Run with: bazelisk test //web:dds_mvp_js_test
-// or: python -m unittest web.tests.test_dds_mvp_js
-// or: node --test web/tests/dds_mvp_test.mjs
+// Unit tests: web/tests/dds_web_test.mjs
+// Run with: bazelisk test //web:dds_web_js_test
+// or: python -m unittest web.tests.test_dds_web_js
+// or: node --test web/tests/dds_web_test.mjs
 
 // ESLint configuration
 // https://eslint.org/demo
@@ -64,7 +64,7 @@ const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 const PIPS = "AKQJT98765432";
 const DENOMINATIONS = ["C", "D", "H", "S", "N"];
 
-// DDS res_table strain index (S,H,D,C,N) to MVP table column key.
+// DDS res_table strain index (S,H,D,C,N) to DDS Web table column key.
 const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
 const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
 
@@ -137,7 +137,7 @@ function scheduleDealSolve() {
     });
 }
 
-// Suit glyphs are real text in these custom tags (see dds_mvp.css for color).
+// Suit glyphs are real text in these custom tags (see dds_web.css for color).
 const SUIT_TAGS = {
     spades: "spade-suit",
     hearts: "heart-suit",
@@ -220,14 +220,14 @@ function wasmSolveEnvironmentError() {
 
     if (location.protocol === "file:") {
         return "Solving needs HTTP with cross-origin isolation. " +
-            "From the repo root run: python3 web/serve_mvp.py";
+            "From the repo root run: python3 web/serve_web.py";
     }
 
     if (typeof SharedArrayBuffer === "undefined") {
         return "Solving needs SharedArrayBuffer (cross-origin isolation). " +
             "Serve responses with Cross-Origin-Opener-Policy: same-origin and " +
             "Cross-Origin-Embedder-Policy: require-corp " +
-            "(locally: python3 web/serve_mvp.py).";
+            "(locally: python3 web/serve_web.py).";
     }
 
     return null;
@@ -240,7 +240,7 @@ function loadDdsModule() {
         ));
     }
 
-    if (typeof ddsMvpWasmBytes !== "function") {
+    if (typeof ddsWebWasmBytes !== "function") {
         return Promise.reject(new Error(
             "WASM bytes not found. From the repo root run: ./web/update_wasm.sh"
         ));
@@ -254,7 +254,7 @@ function loadDdsModule() {
 
     if (!ddsModulePromise) {
         ddsModulePromise = createDdsModule({
-            wasmBinary: ddsMvpWasmBytes()
+            wasmBinary: ddsWebWasmBytes()
         }).catch((error) => {
             // Allow retry after transient initialization failures.
             ddsModulePromise = null;
@@ -916,7 +916,7 @@ async function solveOpeningLeadTricks(hands, contract) {
 
     try {
         const rc = module.ccall(
-            "dds_mvp_solve_leads",
+            "dds_web_solve_leads",
             "number",
             ["string", "number", "number", "number"],
             [pbn, trump, first, outPtr]
@@ -1510,7 +1510,7 @@ async function refreshDdTable() {
 
         try {
             const rc = module.ccall(
-                "dds_mvp_calc_table",
+                "dds_web_calc_table",
                 "number",
                 ["string", "number"],
                 [pbn, outPtr]

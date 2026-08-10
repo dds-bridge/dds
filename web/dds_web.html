@@ -8,17 +8,17 @@
 
      Build WASM (from repo root): ./web/update_wasm.sh
      Serve with cross-origin isolation (required for WASM threads):
-       python3 web/serve_mvp.py
-     Then open http://127.0.0.1:8080/dds_mvp.html
+       python3 web/serve_web.py
+     Then open http://127.0.0.1:8080/dds_web.html
      (file:// UI works; solving needs SharedArrayBuffer via HTTP + COOP/COEP.)
 -->
 
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="dds_mvp.css">
+    <link rel="stylesheet" type="text/css" href="dds_web.css">
     <title>
-        DDS MVP
+        DDS Web
     </title>
 </head>
 <body onload="pageLoad()">
@@ -129,8 +129,8 @@
 
     <p id="result"></p>
 
-    <script src="dds_mvp_wasm_bin.js"></script>
-    <script src="dds_mvp_wasm.js"></script>
-    <script src="dds_mvp.js"></script>
+    <script src="dds_web_wasm_bin.js"></script>
+    <script src="dds_web_wasm.js"></script>
+    <script src="dds_web.js"></script>
 </body>
 </html>

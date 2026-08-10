@@ -94,7 +94,7 @@ place so the search and API layers stay portable. It is internal — not part of
 
 - **Browser SharedArrayBuffer needs cross-origin isolation** — the Emscripten
   pthread build works under Node without special headers; browsers require
-  COOP/COEP (see [web-mvp](web-mvp.md) / `web/serve_mvp.py`). See
+  COOP/COEP (see [web](web.md) / `web/serve_web.py`). See
   [wasm-emscripten](wasm-emscripten.md).
 - This layer does not decide TT sizing or search policy; it schedules work and
   owns scratch memory. TT ownership/config belongs to [solver-context](solver-context.md) /

@@ -1,4 +1,4 @@
-"""Static checks for web/dds_mvp.html encoding."""
+"""Static checks for web/dds_web.html encoding."""
 from __future__ import annotations
 
 import re
@@ -6,10 +6,10 @@ import unittest
 from pathlib import Path
 
 WEB_ROOT = Path(__file__).resolve().parents[1]
-HTML_PATH = WEB_ROOT / "dds_mvp.html"
+HTML_PATH = WEB_ROOT / "dds_web.html"
 
 
-class DdsMvpHtmlCharsetTest(unittest.TestCase):
+class DdsWebHtmlCharsetTest(unittest.TestCase):
     def test_declares_utf8_charset_within_first_1024_bytes(self) -> None:
         # Browsers only honor <meta charset> in the first 1024 bytes. Without it,
         # servers that send Content-Type: text/html (no charset) may decode
@@ -19,7 +19,7 @@ class DdsMvpHtmlCharsetTest(unittest.TestCase):
         self.assertRegex(
             prefix,
             rb'<meta\s+charset\s*=\s*["\']?utf-8["\']?\s*/?>',
-            msg="dds_mvp.html must declare UTF-8 early so suit symbols render",
+            msg="dds_web.html must declare UTF-8 early so suit symbols render",
         )
 
     def test_meta_charset_is_first_in_head(self) -> None:

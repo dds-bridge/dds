@@ -4,22 +4,22 @@ load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
-# Emscripten flags for the browser MVP (modularized, no auto-run main).
+# Emscripten flags for the DDS Web (modularized, no auto-run main).
 # ENVIRONMENT includes worker for pthread bootstrap; Node stays for system tests.
-WASM_MVP_LINKOPTS = WASM_LINKOPTS + [
+WASM_WEB_LINKOPTS = WASM_LINKOPTS + [
     "-sMODULARIZE=1",
     "-sEXPORT_NAME=createDdsModule",
-    "-sEXPORTED_FUNCTIONS=['_dds_mvp_calc_table','_dds_mvp_solve_leads','_malloc','_free']",
+    "-sEXPORTED_FUNCTIONS=['_dds_web_calc_table','_dds_web_solve_leads','_malloc','_free']",
     "-sEXPORTED_RUNTIME_METHODS=['ccall','getValue']",
     "-sENVIRONMENT=web,worker,node",
 ]
 
 cc_binary(
-    name = "dds_mvp_wasm_cc",
-    srcs = ["dds_mvp_wasm.cpp"],
+    name = "dds_web_wasm_cc",
+    srcs = ["dds_web_wasm.cpp"],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS + select({
-        "//:build_wasm": WASM_MVP_LINKOPTS,
+        "//:build_wasm": WASM_WEB_LINKOPTS,
         "//conditions:default": [],
     }),
     local_defines = DDS_LOCAL_DEFINES,
@@ -31,25 +31,25 @@ cc_binary(
 )
 
 wasm_cc_binary(
-    name = "dds_mvp_wasm",
-    cc_target = ":dds_mvp_wasm_cc",
+    name = "dds_web_wasm",
+    cc_target = ":dds_web_wasm_cc",
     threads = "emscripten",
     outputs = [
-        "dds_mvp_wasm.js",
-        "dds_mvp_wasm.wasm",
+        "dds_web_wasm.js",
+        "dds_web_wasm.wasm",
     ],
 )
 
 cc_test(
-    name = "dds_mvp_wasm_test",
+    name = "dds_web_wasm_test",
     size = "small",
     srcs = [
-        "dds_mvp_wasm.cpp",
-        "dds_mvp_wasm_test.cpp",
+        "dds_web_wasm.cpp",
+        "dds_web_wasm_test.cpp",
     ],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES + ["DDS_MVP_WASM_NO_MAIN"],
+    local_defines = DDS_LOCAL_DEFINES + ["DDS_WEB_WASM_NO_MAIN"],
     deps = [
         "//library/src:dds",
         "//library/src/api:api_definitions",
@@ -58,8 +58,8 @@ cc_test(
 )
 
 py_library(
-    name = "mvp_site",
-    srcs = ["tests/mvp_site.py"],
+    name = "web_site",
+    srcs = ["tests/web_site.py"],
     imports = ["tests"],
     visibility = ["//web:__pkg__"],
 )
@@ -71,70 +71,70 @@ py_test(
     srcs = ["tests/test_wasm_scripts.py"],
     data = [
         "gen_wasm_bin_js.py",
-        "patch_mvp_wasm.py",
+        "patch_web_wasm.py",
         "verify_wasm_js.py",
     ],
-    deps = [":mvp_site"],
+    deps = [":web_site"],
 )
 
 py_test(
-    name = "dds_mvp_html_test",
+    name = "dds_web_html_test",
     size = "small",
-    main = "tests/test_mvp_html.py",
-    srcs = ["tests/test_mvp_html.py"],
-    data = ["dds_mvp.html"],
+    main = "tests/test_web_html.py",
+    srcs = ["tests/test_web_html.py"],
+    data = ["dds_web.html"],
 )
 
 py_test(
-    name = "dds_mvp_js_test",
+    name = "dds_web_js_test",
     size = "small",
     timeout = "short",
-    main = "tests/test_dds_mvp_js.py",
-    srcs = ["tests/test_dds_mvp_js.py"],
+    main = "tests/test_dds_web_js.py",
+    srcs = ["tests/test_dds_web_js.py"],
     data = [
-        "dds_mvp.js",
-        "tests/dds_mvp_test.mjs",
+        "dds_web.js",
+        "tests/dds_web_test.mjs",
     ],
 )
 
 # Stages wasm artifacts and runs Node smoke (~1–2s; wasm build is a separate analysis action).
 py_test(
-    name = "dds_mvp_wasm_system_test",
+    name = "dds_web_wasm_system_test",
     size = "small",
     timeout = "short",
     main = "tests/test_wasm_system.py",
     srcs = ["tests/test_wasm_system.py"],
     data = [
-        ":dds_mvp_wasm",
-        "dds_mvp.css",
-        "dds_mvp.html",
-        "dds_mvp.js",
+        ":dds_web_wasm",
+        "dds_web.css",
+        "dds_web.html",
+        "dds_web.js",
         "gen_wasm_bin_js.py",
-        "patch_mvp_wasm.py",
-        "tests/dds_mvp_wasm_node.mjs",
+        "patch_web_wasm.py",
+        "tests/dds_web_wasm_node.mjs",
         "verify_wasm_js.py",
     ],
-    deps = [":mvp_site"],
+    deps = [":web_site"],
 )
 
 # Playwright usually finishes in ~30–45s; first run may download Chromium
 # (requires-network). Full suite can approach 60s under load, so allow moderate.
 py_test(
-    name = "dds_mvp_e2e_test",
+    name = "dds_web_e2e_test",
     size = "medium",
     timeout = "moderate",
-    main = "tests/test_mvp_e2e.py",
-    srcs = ["tests/test_mvp_e2e.py"],
+    main = "tests/test_web_e2e.py",
+    srcs = ["tests/test_web_e2e.py"],
     data = [
-        ":dds_mvp_wasm",
-        "dds_mvp.css",
-        "dds_mvp.html",
-        "dds_mvp.js",
+        ":dds_web_wasm",
+        "dds_web.css",
+        "dds_web.html",
+        "dds_web.js",
         "gen_wasm_bin_js.py",
-        "patch_mvp_wasm.py",
+        "patch_web_wasm.py",
     ],
     deps = [
-        ":mvp_site",
+        ":web_site",
         "@pypi//playwright",
     ],
     tags = [
@@ -147,9 +147,9 @@ py_test(
 test_suite(
     name = "web_tests",
     tests = [
-        ":dds_mvp_html_test",
-        ":dds_mvp_js_test",
-        ":dds_mvp_wasm_test",
+        ":dds_web_html_test",
+        ":dds_web_js_test",
+        ":dds_web_wasm_test",
         ":wasm_scripts_test",
     ],
 )
@@ -157,12 +157,12 @@ test_suite(
 test_suite(
     name = "web_system_tests",
     tests = [
-        ":dds_mvp_wasm_system_test",
-        ":dds_mvp_e2e_test",
+        ":dds_web_wasm_system_test",
+        ":dds_web_e2e_test",
     ],
 )
 
 test_suite(
     name = "web_e2e_tests",
-    tests = [":dds_mvp_e2e_test"],
+    tests = [":dds_web_e2e_test"],
 )

@@ -19,7 +19,7 @@ WASM builds use the Bazel Central Registry package pinned in `MODULE.bazel`:
 
 - `bazel_dep(name = "emsdk", version = "5.0.7")` (Emscripten 5.0.x toolchain)
 
-If you upgrade `emsdk`, rebuild WASM targets and the web MVP (`./web/update_wasm.sh`). The post-build script `web/patch_mvp_wasm.py` patches one generated `isFileURI` helper for browser/file URL safety; if Emscripten changes that line, update the regex in that script and this note.
+If you upgrade `emsdk`, rebuild WASM targets and the DDS Web (`./web/update_wasm.sh`). The post-build script `web/patch_web_wasm.py` patches one generated `isFileURI` helper for browser/file URL safety; if Emscripten changes that line, update the regex in that script and this note.
 
 ## Building WASM Examples
 
@@ -84,34 +84,34 @@ Native builds (`bazelisk build //...`, `bazelisk test //library/tests/...`, Pyth
 node bazel-bin/wasm/solve_board.js
 ```
 
-### Web browser (DDS MVP)
+### Web browser (DDS Web)
 
-The `web/` demo calls `CalcDDtablePBN` in the browser via `//web:dds_mvp_wasm`:
+The `web/` demo calls `CalcDDtablePBN` in the browser via `//web:dds_web_wasm`:
 
 ```bash
 ./web/update_wasm.sh
-python3 web/serve_mvp.py
-# open http://127.0.0.1:8080/dds_mvp.html
+python3 web/serve_web.py
+# open http://127.0.0.1:8080/dds_web.html
 ```
 
 Pthread WASM needs `SharedArrayBuffer`, which requires cross-origin isolation
 (`Cross-Origin-Opener-Policy: same-origin` and
-`Cross-Origin-Embedder-Policy: require-corp`). `web/serve_mvp.py` sets those
+`Cross-Origin-Embedder-Policy: require-corp`). `web/serve_web.py` sets those
 headers; plain `python3 -m http.server` does not, so solving will fail there.
 Any other host must send the same response headers. Without them the page can
 load but solving reports that `SharedArrayBuffer` is unavailable.
 `file://` is still fine for UI-only browsing; run a solve over the isolated HTTP
 server.
 
-The MVP loads wasm from `dds_mvp_wasm_bin.js` (base64, no network fetch). Run
-`./web/update_wasm.sh` to refresh `dds_mvp_wasm.{js,wasm,bin.js}` (includes a
+DDS Web loads wasm from `dds_web_wasm_bin.js` (base64, no network fetch). Run
+`./web/update_wasm.sh` to refresh `dds_web_wasm.{js,wasm,bin.js}` (includes a
 small post-process step for Emscripten `isFileURI`; see **Emscripten / emsdk
 version** above).
 
 `bazelisk clean` does not delete those copied files under `web/` (they live outside `bazel-out`). Use either:
 
 ```bash
-./clean.sh              # bazelisk clean + remove web/dds_mvp_wasm.*
+./clean.sh              # bazelisk clean + remove web/dds_web_wasm.*
 ./clean.sh --expunge
 ./web/clean_wasm.sh     # web artifacts only
 ```
@@ -164,18 +164,18 @@ bazelisk test //web:web_tests //web:web_system_tests //web:web_e2e_tests
 bazelisk test //wasm:all
 ```
 
-`bazelisk test //...` skips targets tagged `e2e` by default (see `.bazelrc`). Run Playwright tests explicitly, e.g. `bazelisk test //web:web_e2e_tests` or `bazelisk test --test_tag_filters=e2e //web:dds_mvp_e2e_test`. To run all tests, including the Playwright tests: `bazelisk test --test_tag_filters= //...`. The WASM CI workflow (`.github/workflows/ci_wasm.yml`) passes empty `--test_tag_filters=` so `//web:web_system_tests` includes Playwright.
+`bazelisk test //...` skips targets tagged `e2e` by default (see `.bazelrc`). Run Playwright tests explicitly, e.g. `bazelisk test //web:web_e2e_tests` or `bazelisk test --test_tag_filters=e2e //web:dds_web_e2e_test`. To run all tests, including the Playwright tests: `bazelisk test --test_tag_filters= //...`. The WASM CI workflow (`.github/workflows/ci_wasm.yml`) passes empty `--test_tag_filters=` so `//web:web_system_tests` includes Playwright.
 
-- **`//web:dds_mvp_wasm_system_test`** — builds `//web:dds_mvp_wasm`, runs `patch_mvp_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_mvp_calc_table` via Node (`web/tests/dds_mvp_wasm_node.mjs`).
-- **`//web:dds_mvp_e2e_test`** — Playwright tests for `dds_mvp.html` over `file://` (UI) and isolated HTTP (part-score solve, COOP/COEP). Requires Node, network (Chromium download on first run), and `tags = ["no-sandbox"]`.
+- **`//web:dds_web_wasm_system_test`** — builds `//web:dds_web_wasm`, runs `patch_web_wasm` / `gen_wasm_bin_js` / `verify_wasm_js`, then calls `dds_web_calc_table` via Node (`web/tests/dds_web_wasm_node.mjs`).
+- **`//web:dds_web_e2e_test`** — Playwright tests for `dds_web.html` over `file://` (UI) and isolated HTTP (part-score solve, COOP/COEP). Requires Node, network (Chromium download on first run), and `tags = ["no-sandbox"]`.
 - **`//wasm:wasm_examples_system_test`** — runs `calc_dd_table_pbn.js` under Node (expects `OK` on all three example hands) and `dtest.js` on `hands/list1.txt` (`-s solve -n 1`) plus `hands/list2.txt` (`-n 2`).
 
-The MVP link flags include `-sENVIRONMENT=web,worker,node` so the same `.js` / `.wasm` artifacts work in the browser (with pthread workers) and in Node system tests.
+The DDS Web link flags include `-sENVIRONMENT=web,worker,node` so the same `.js` / `.wasm` artifacts work in the browser (with pthread workers) and in Node system tests.
 
 ## Development notes
 
 - A reusable `cc_library` WASM artifact (not only CLI binaries) is not yet provided; today `wasm_cc_binary` wraps selected examples plus `dtest`.
-- The browser MVP lives under `web/`; see **Web browser (DDS MVP)** above and `//web:web_system_tests`.
+- The DDS Web lives under `web/`; see **Web browser (DDS Web)** above and `//web:web_system_tests`.
 
 ## Next steps
 

@@ -1,4 +1,4 @@
-"""End-to-end browser tests for web/dds_mvp.html (file:// UI and isolated HTTP)."""
+"""End-to-end browser tests for web/dds_web.html (file:// UI and isolated HTTP)."""
 from __future__ import annotations
 
 import http.server
@@ -11,7 +11,7 @@ import threading
 import unittest
 from pathlib import Path
 
-from mvp_site import CROSS_ORIGIN_ISOLATION_HEADERS, make_isolated_http_handler, stage_mvp_site
+from web_site import CROSS_ORIGIN_ISOLATION_HEADERS, make_isolated_http_handler, stage_web_site
 
 try:
     from playwright.sync_api import sync_playwright
@@ -65,7 +65,7 @@ class _HttpSite:
             make_isolated_http_handler(self._directory),
         )
         port = self._httpd.server_address[1]
-        self.url = f"http://127.0.0.1:{port}/dds_mvp.html"
+        self.url = f"http://127.0.0.1:{port}/dds_web.html"
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
         return self
@@ -78,7 +78,7 @@ class _HttpSite:
 
 
 @unittest.skipIf(sync_playwright is None, "playwright not installed")
-class DdsMvpHtmlE2eTest(unittest.TestCase):
+class DdsWebHtmlE2eTest(unittest.TestCase):
     browsers_dir: Path
     site_dir: Path
 
@@ -88,8 +88,8 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             raise unittest.SkipTest("node not found (wasm sanity)")
         cls.browsers_dir = Path(tempfile.mkdtemp(prefix="pw-browsers-"))
         _ensure_playwright_chromium(cls.browsers_dir)
-        cls.site_dir = Path(tempfile.mkdtemp(prefix="dds-mvp-site-"))
-        stage_mvp_site(cls.site_dir)
+        cls.site_dir = Path(tempfile.mkdtemp(prefix="dds-web-site-"))
+        stage_web_site(cls.site_dir)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -111,7 +111,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         page.on("pageerror", lambda exc: errors.append(str(exc)))
         page.goto(url, wait_until="load")
         page.wait_for_function(
-            "() => typeof createDdsModule === 'function' && typeof ddsMvpWasmBytes === 'function'"
+            "() => typeof createDdsModule === 'function' && typeof ddsWebWasmBytes === 'function'"
         )
         return page, errors
 
@@ -151,7 +151,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
         self.assertEqual(result_text.strip(), "")
 
     def test_page_load_shows_valid_pips(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             pips = page.locator("#valid-pips").inner_text()
             self.assertIn("A", pips)
@@ -161,7 +161,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_deck_status_grays_cards_entered_in_the_diagram(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             cards = page.locator("#deck-status .deck-card")
             self.assertEqual(cards.count(), 52)
@@ -284,7 +284,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
                 page.close()
 
     def test_result_table_cell_click_selects_contract_and_highlights(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             north_clubs = page.locator("#result-table tr").nth(1).locator("td").nth(0)
             west_nt = page.locator("#result-table tr").nth(4).locator("td").nth(4)
@@ -389,7 +389,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_result_table_is_in_diagram_southeast_corner(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             metrics = page.evaluate(
                 """() => {
@@ -450,7 +450,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_hand_diagram_cards_are_clickable(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             page.locator("#north_spades").fill("AQ")
             north_ace = page.locator(
@@ -481,7 +481,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_typed_pips_appear_only_as_hand_card_glyphs(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             north_spades = page.locator("#north_spades")
             north_spades.click()
@@ -510,7 +510,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_click_places_caret_so_backspace_edits_holding(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             north_spades = page.locator("#north_spades")
             north_spades.fill("AQ8")
@@ -533,7 +533,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
 
     def test_everyone_makes_3n_east_eight_card_suit_stays_in_diagram(self) -> None:
         """East's 8-card diamond suit must not expand/jump the diagram past .grid-outer."""
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             outer_before = page.locator(".grid-outer").bounding_box()
             self.assertIsNotNone(outer_before)
@@ -576,7 +576,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
 
     def test_everyone_makes_3n_eight_card_suits_stay_in_hand_cells(self) -> None:
         """N/S/W 8-card suits must not spill out of their hand cells (washed-out overflow)."""
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             page.get_by_role("button", name="Everyone makes 3N test deal").click()
             page.wait_for_function(
@@ -617,7 +617,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_deck_status_displays_all_cards_in_one_row(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             deck = page.locator("#deck-status")
             style = deck.evaluate(
@@ -638,7 +638,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_suit_tags_expose_glyphs_in_dom(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             for tag, glyph, red in (
                 ("spade-suit", "♠", False),
@@ -668,7 +668,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_hand_over_13_cards_shows_its_card_count(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             note = page.locator(".hand-north #north-card-count")
             self.assertTrue(note.is_hidden())
@@ -749,7 +749,7 @@ class DdsMvpHtmlE2eTest(unittest.TestCase):
                 page.close()
 
     def test_auto_fills_fourth_hand_when_three_hands_are_complete(self) -> None:
-        page, errors = self._open_page(self.site_dir.joinpath("dds_mvp.html").as_uri())
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             self._fill_part_score_deal(page)
             for suit in ("spades", "hearts", "diamonds", "clubs"):

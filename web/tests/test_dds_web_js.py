@@ -1,8 +1,8 @@
-"""Unit tests for web/dds_mvp.js via Node's built-in test runner.
+"""Unit tests for web/dds_web.js via Node's built-in test runner.
 
-Run with: bazelisk test //web:dds_mvp_js_test
-or: python -m unittest web.tests.test_dds_mvp_js
-or: node --test web/tests/dds_mvp_test.mjs
+Run with: bazelisk test //web:dds_web_js_test
+or: python -m unittest web.tests.test_dds_web_js
+or: node --test web/tests/dds_web_test.mjs
 """
 
 from __future__ import annotations
@@ -31,8 +31,8 @@ def rlocation(relpath: str) -> Path:
     raise FileNotFoundError(relpath)
 
 
-class DdsMvpJsTest(unittest.TestCase):
-    def test_dds_mvp_js(self) -> None:
+class DdsWebJsTest(unittest.TestCase):
+    def test_dds_web_js(self) -> None:
         node = shutil.which("node")
         if not node:
             raise unittest.SkipTest("node not found")
@@ -54,10 +54,10 @@ class DdsMvpJsTest(unittest.TestCase):
         if major < 18:
             raise unittest.SkipTest(f"node >= 18 required for `node --test` (found {version})")
 
-        test_script = rlocation("web/tests/dds_mvp_test.mjs")
-        dds_mvp_js = rlocation("web/dds_mvp.js")
+        test_script = rlocation("web/tests/dds_web_test.mjs")
+        dds_web_js = rlocation("web/dds_web.js")
         env = os.environ.copy()
-        env["DDS_MVP_JS"] = str(dds_mvp_js)
+        env["DDS_WEB_JS"] = str(dds_web_js)
         try:
             proc = subprocess.run(
                 [node, "--test", str(test_script)],
