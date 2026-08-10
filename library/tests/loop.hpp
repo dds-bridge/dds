@@ -9,9 +9,10 @@
 
 #pragma once
 
-#include <api/dll.h>
 #include <utility>
 #include <vector>
+
+#include <api/dll.h>
 
 /// @file loop.hpp
 /// @brief Main test loop implementations for DDS solver testing.
