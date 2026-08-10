@@ -51,17 +51,18 @@ def _bazelisk_invocation_has_config_opt(text: str, subcommand: str) -> bool:
     """True if any bazelisk <subcommand> invocation includes --config=opt.
 
     Flag order after the subcommand is not significant, and a YAML `run:`
-    prefix on the same line is allowed. Full-line comments (leading `#`) are
-    ignored so a commented-out invocation cannot satisfy the CI guard.
+    prefix on the same line is allowed. Full-line comments (leading `#`) and
+    trailing inline `# ...` comments are ignored so a commented-out
+    `--config=opt` cannot satisfy the CI guard.
     """
     pattern = re.compile(
-        rf"^[ \t]*(?:run:[ \t]+)?bazelisk\s+{re.escape(subcommand)}\b[^\n]*--config=opt\b",
-        re.MULTILINE,
+        rf"^[ \t]*(?:run:[ \t]+)?bazelisk\s+{re.escape(subcommand)}\b.*--config=opt\b"
     )
     for line in text.splitlines():
-        if line.lstrip().startswith("#"):
+        code = line.split("#", 1)[0]
+        if not code.strip():
             continue
-        if pattern.search(line):
+        if pattern.search(code):
             return True
     return False
 
@@ -328,6 +329,30 @@ class TestBazeliskConfigOptMatching(unittest.TestCase):
             _bazelisk_invocation_has_config_opt(
                 "# bazelisk build //...\n"
                 "bazelisk build --verbose_failures --config=opt //...",
+                "build",
+            )
+        )
+
+    def test_rejects_trailing_comment_containing_config_opt(self) -> None:
+        self.assertFalse(
+            _bazelisk_invocation_has_config_opt(
+                "bazelisk build //... # --config=opt\n",
+                "build",
+            )
+        )
+
+    def test_rejects_yaml_run_line_with_trailing_config_opt_comment(self) -> None:
+        self.assertFalse(
+            _bazelisk_invocation_has_config_opt(
+                "        run: bazelisk test --verbose_failures //...  # --config=opt\n",
+                "test",
+            )
+        )
+
+    def test_matches_when_config_opt_precedes_trailing_comment(self) -> None:
+        self.assertTrue(
+            _bazelisk_invocation_has_config_opt(
+                "bazelisk build --config=opt //...  # release codegen\n",
                 "build",
             )
         )
