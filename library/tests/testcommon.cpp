@@ -10,7 +10,6 @@
 
 #include <iostream>
 #include <iomanip>
-#include <algorithm>
 #include <vector>
 
 #include <api/dll.h>
@@ -21,6 +20,7 @@
 #include "loop.hpp"
 #include "print.hpp"
 #include "cst.hpp"
+#include "report_board_timings.hpp"
 #include "system/scheduler.hpp"
 
 using std::cout;
@@ -161,15 +161,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
     }
     else
     {
-      // Sort by time desc
-      std::sort(times.begin(), times.end(), [](const auto &a, const auto &b){
-        return a.second > b.second;
-      });
-
-      cout << "Per-board timings (ms) sorted by longest first:\n";
-      for (const auto &p : times)
-        cout << p.second << "\t" << p.first << "\n";
-      cout << endl;
+      print_per_board_timings(cout, times);
     }
   }
 
