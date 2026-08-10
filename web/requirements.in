@@ -3,7 +3,7 @@
 # requirements_lock is used to ensure a consistent set of pinned Python dependencies
 # for Bazel across builds on different machines and in different environments.
 # For now, that means playwright and its deps.
-# playwright is used for the end-to-end tests in web/tests/test_mvp_e2e.py
+# playwright is used for the end-to-end tests in web/tests/test_web_e2e.py
 
 # Normal Bazel builds consume requirements_lock.txt; they do not regenerate it.
 # To update requirements_lock.txt after editing this file:

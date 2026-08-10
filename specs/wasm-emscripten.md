@@ -14,7 +14,7 @@ last-updated: 2026-07-24
 
 This capability compiles selected example CLIs to WebAssembly so the solver runs
 in a browser or Node without a native install. It is the WASM module layer that
-the [web-mvp](web-mvp.md) site and the WASM system tests consume. It exists to prove the
+the [web](web.md) site and the WASM system tests consume. It exists to prove the
 core solver builds and runs correctly under Emscripten.
 
 ## Behaviour & invariants
@@ -81,8 +81,8 @@ core solver builds and runs correctly under Emscripten.
   `libprintf_long_double`) that the frozen cache cannot build on demand inside
   Bazel's hermetic sandbox. Revisit only if the emsdk packaging ships a
   populated LTO cache.
-- Browser wiring, the site, MVP post-build JS patches (`web/patch_mvp_wasm.py`),
-  COOP/COEP serving, and JS/e2e tests belong to [web-mvp](web-mvp.md); this
+- Browser wiring, the site, post-build JS patches (`web/patch_web_wasm.py`),
+  COOP/COEP serving, and JS/e2e tests belong to [web](web.md); this
   capability provides the example modules, not the page.
 - `-pthread` + `ALLOW_MEMORY_GROWTH` is intentional for DDS TT heaps; the emcc
   advisory is silenced with `-Wno-pthreads-mem-growth` in `WASM_LINKOPTS`.

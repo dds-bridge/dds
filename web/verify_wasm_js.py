@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify MVP wasm bytes compile under Node."""
+"""Verify DDS Web wasm bytes compile under Node."""
 from __future__ import annotations
 
 import shutil

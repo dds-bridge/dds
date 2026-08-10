@@ -53,11 +53,15 @@ jobs:
       - name: Build all targets
         run: bazelisk build --verbose_failures //...
 
-      # 7️⃣ Run all tests (including Python)
+      # 7️⃣ Build with DDS_SCHEDULER (off by default; compile-gated timing path)
+      - name: Build with scheduler define
+        run: bazelisk build --define=scheduler=true --verbose_failures //library/src:dds
+
+      # 8️⃣ Run all tests (including Python)
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
 
-      # 8️⃣ Upload test logs
+      # 9️⃣ Upload test logs
       - name: Upload test logs - Linux
         if: always()
         uses: actions/upload-artifact@v6
@@ -155,6 +159,100 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: bazel-test-logs-linux-tsan
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  ubsan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=ubsan //library/tests/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Run tests (UndefinedBehaviorSanitizer)
+        run: bazelisk test --config=ubsan --verbose_failures --test_output=errors //library/tests/...
+
+      - name: Upload UBSAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-ubsan
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  msan:
+    # Pin to 22.04: MODULE.bazel's MSAN LLVM + instrumented libc++ overlay are
+    # the Ubuntu 22.04 builds; ubuntu-latest drift would break the overlay match.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=msan //library/tests/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Run tests (MemorySanitizer)
+        run: bazelisk test --config=msan --verbose_failures --test_output=errors //library/tests/...
+
+      - name: Upload MSAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-msan
           path: bazel-testlogs/
           if-no-files-found: ignore
           retention-days: 30

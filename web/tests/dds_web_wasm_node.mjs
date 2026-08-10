@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * System smoke test: load Emscripten MVP module and call dds_mvp_calc_table.
+ * System smoke test: load Emscripten DDS Web module and call dds_web_calc_table.
  *
- * Usage: node dds_mvp_wasm_node.mjs EMSCRIPTEN_JS WASM_FILE [PBN]
+ * Usage: node dds_web_wasm_node.mjs EMSCRIPTEN_JS WASM_FILE [PBN]
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -25,7 +25,7 @@ function fail(message) {
 async function main() {
   const [jsPath, wasmPath, pbnArg] = process.argv.slice(2);
   if (!jsPath || !wasmPath) {
-    fail("usage: node dds_mvp_wasm_node.mjs EMSCRIPTEN_JS WASM_FILE [PBN]");
+    fail("usage: node dds_web_wasm_node.mjs EMSCRIPTEN_JS WASM_FILE [PBN]");
   }
 
   const wasmBinary = fs.readFileSync(wasmPath);
@@ -39,13 +39,13 @@ async function main() {
   const outPtr = module._malloc(20 * 4);
   try {
     const rc = module.ccall(
-      "dds_mvp_calc_table",
+      "dds_web_calc_table",
       "number",
       ["string", "number"],
       [pbn, outPtr],
     );
     if (rc !== 1) {
-      fail(`dds_mvp_calc_table returned ${rc}`);
+      fail(`dds_web_calc_table returned ${rc}`);
     }
 
     const out = [];
@@ -66,19 +66,19 @@ async function main() {
   try {
     // North declares NT → East leads.
     const leadRc = module.ccall(
-      "dds_mvp_solve_leads",
+      "dds_web_solve_leads",
       "number",
       ["string", "number", "number", "number"],
       [pbn, 4, 1, leadsPtr],
     );
     if (leadRc !== 1) {
-      fail(`dds_mvp_solve_leads returned ${leadRc}`);
+      fail(`dds_web_solve_leads returned ${leadRc}`);
     }
     const n = module.getValue(leadsPtr, "i32");
     if (n < 1 || n > 13) {
-      fail(`dds_mvp_solve_leads card count ${n}`);
+      fail(`dds_web_solve_leads card count ${n}`);
     }
-    console.log("dds_mvp_wasm_node: OK");
+    console.log("dds_web_wasm_node: OK");
   } finally {
     module._free(leadsPtr);
   }

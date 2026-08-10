@@ -80,12 +80,14 @@ than re-encoding toolchain knowledge.
 - `BUILD.bazel` (root) — all `config_setting`s, the `//:dds` / `//:testable_dds`
   façades, and the `doxygen_docs` genrule.
 - `.bazelrc` — C++20 cxxopts (macOS/Linux), Windows `-default_cpp_std` + host
-  `/std:c++20`, hermetic JDK, default test tag filters (e.g. `-e2e`),
-  sanitizer configs.
+  `/std:c++20`, hermetic JDK, default test tag filters (e.g. `-e2e`; WASM CI
+  clears the filter so Playwright runs), sanitizer configs (`asan` / `tsan` /
+  `ubsan` / Linux-only `msan`).
 - `CPPVARIABLES.bzl` — `DDS_CPPOPTS`, `DDS_LINKOPTS`, `DDS_LOCAL_DEFINES`,
   `DDS_SCHEDULER_DEFINE`.
 - `wasm_compat.bzl` — `WASM_LINKOPTS`.
-- `MODULE.bazel` — the Bazel module and its `bazel_dep` graph.
+- `MODULE.bazel` — the Bazel module and its `bazel_dep` graph (including
+  `@llvm_toolchain_msan` for MemorySanitizer).
 - Consumer guide: `docs/BUILD_SYSTEM.md`.
 
 ## Known gaps / non-goals

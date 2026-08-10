@@ -32,15 +32,16 @@ void loop_solve(
     const int number,
     const int stepsize);
 
-/// Calculate loop: execute calc_dd_table for multiple deals.
+/// Calculate loop: CalcAllTablesPBNX for the full deal list in one parallel job.
+/// Allocates its own flat deal/result buffers (unbounded X API); no legacy
+/// DdTableDealsPBN / DdTablesRes batch structs.
+/// @param deal_list Input deals in PBN format
+/// @param table_list Expected DD table results
+/// @param number Number of deals in the test set
 bool loop_calc(
-    DdTableDealsPBN * dealsp,
-    DdTablesRes * resp,
-    AllParResults * parp,
     DealPBN * deal_list,
     DdTableResults * table_list,
-    const int number,
-    const int stepsize);
+    const int number);
 
 /// PAR loop: calculate PAR scores for multiple deals.
 bool loop_par(

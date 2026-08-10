@@ -105,55 +105,58 @@ void loop_solve(
 
 
 bool loop_calc(
-  DdTableDealsPBN * dealsp,
-  DdTablesRes * resp,
-  AllParResults * parp,
   DealPBN * deal_list,
   DdTableResults * table_list,
-  const int number,
-  const int stepsize)
+  const int number)
 {
 #ifdef BATCHTIMES
-  cout << setw(8) << left << "Hand no." << 
+  cout << setw(8) << left << "Hand no." <<
     setw(25) << right << "Time" << "\n";
 #endif
 
+  // One CalcAllTablesPBNX call for the whole file: expands to number×strains
+  // boards and solves them in a single parallel job (ddss large-batch shape).
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
   const int strain_count = DDS_STRAINS;
-  for (int i = 0; i < number; i += stepsize)
+  if (number <= 0)
+    return true;
+  std::vector<DdTableDealPBN> deals(static_cast<unsigned>(number));
+  std::vector<DdTableResults> results(static_cast<unsigned>(number));
+  for (int i = 0; i < number; i++)
   {
-    int count = (i + stepsize > number ? number - i : stepsize);
-    dealsp->no_of_tables = count;
-    for (int j = 0; j < count; j++)
-      strcpy(dealsp->deals[j].cards, deal_list[i+j].remainCards);
+    std::strncpy(
+      deals[static_cast<unsigned>(i)].cards,
+      deal_list[i].remainCards,
+      sizeof(deals[0].cards));
+    deals[static_cast<unsigned>(i)].cards[sizeof(deals[0].cards) - 1] = '\0';
+  }
 
-    timer.start(count);
-    const int workload = count * strain_count;
-    const int threads = dtest_effective_threads(options.num_threads_, workload);
-    const int ret = CalcAllTablesPBNN(dealsp, -1, filter, resp, parp, threads);
-    if (ret != RETURN_NO_FAULT)
-    {
-      cout << "loop_calc: i " << i << ", return " << ret << "\n";
-      exit(0);
-    }
-    timer.end();
+  timer.start(number);
+  const int workload = number * strain_count;
+  const int threads = dtest_effective_threads(options.num_threads_, workload);
+  const int ret = CalcAllTablesPBNX(
+    number, deals.data(), -1, filter, results.data(), nullptr, threads);
+  timer.end();
+  if (ret != RETURN_NO_FAULT)
+  {
+    cout << "loop_calc: CalcAllTablesPBNX return " << ret << "\n";
+    exit(0);
+  }
 
 #ifdef BATCHTIMES
-    timer.print_running(i+count, number);
+  timer.print_running(number, number);
 #endif
 
-    for (int j = 0; j < count; j++)
-    {
-      if (compare_TABLE(resp->results[j], table_list[i + j]))
-        continue;
+  for (int j = 0; j < number; j++)
+  {
+    if (compare_TABLE(results[static_cast<unsigned>(j)], table_list[j]))
+      continue;
 
-      cout << "loop_calc: i " << i << ", j " << j << ": " <<
-        "Difference\n\n";
-      print_TABLE(resp->results[j] );
-      cout << "\n";
-      print_TABLE(table_list[i + j]) ;
-      cout << "\n";
-    }
+    cout << "loop_calc: j " << j << ": Difference\n\n";
+    print_TABLE(results[static_cast<unsigned>(j)]);
+    cout << "\n";
+    print_TABLE(table_list[j]);
+    cout << "\n";
   }
 
 #ifdef BATCHTIMES

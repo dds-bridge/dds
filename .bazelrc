@@ -83,7 +83,7 @@ build:asan_macos --copt=-Wno-macro-redefined
 # Usage: bazel test --config=tsan //path:target
 # macOS loads Xcode's compiler-rt via build:tsan_macos (rpath uses clang/N).
 # Keep N aligned with MODULE.bazel llvm_versions and installed Xcode; see
-# docs/BUILD_SYSTEM.md ("AddressSanitizer and ThreadSanitizer (macOS)").
+# docs/BUILD_SYSTEM.md (sanitizer macOS section).
 build:tsan --config=tsan_macos
 build:tsan --copt=-fsanitize=thread
 build:tsan --linkopt=-fsanitize=thread
@@ -93,3 +93,33 @@ build:tsan --compilation_mode=dbg
 test:tsan --test_timeout=120,300,900,3600
 # Hardcoded rpath: .../lib/clang/21/... must match MODULE.bazel llvm major and Xcode.
 build:tsan_macos --linkopt=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin
+
+# UndefinedBehaviorSanitizer configuration
+# Usage: bazel test --config=ubsan //path:target
+# Standalone (not combined with asan): keeps failure attribution clear and
+# avoids macOS ASAN's Xcode-toolchain coupling. Instrumentation uses hermetic
+# LLVM; macOS loads Xcode's UBSAN runtime via build:ubsan_macos (same clang/N
+# coupling as tsan_macos — see docs/BUILD_SYSTEM.md).
+build:ubsan --config=ubsan_macos
+build:ubsan --copt=-fsanitize=undefined
+build:ubsan --linkopt=-fsanitize=undefined
+# Fail the process on the first UB report (default is to continue).
+build:ubsan --copt=-fno-sanitize-recover=undefined
+build:ubsan --strip=never
+build:ubsan --features=dbg
+build:ubsan --compilation_mode=dbg
+test:ubsan --test_timeout=120,300,900,3600
+# Hardcoded rpath: .../lib/clang/21/... must match MODULE.bazel llvm major and Xcode.
+build:ubsan_macos --linkopt=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin
+
+# MemorySanitizer configuration (Linux x86_64 only)
+# Usage: bazel test --config=msan //path:target
+# Selects @llvm_toolchain_msan (instrumented libc++ overlay) and enables the
+# toolchains_llvm `msan` feature. See docs/BUILD_SYSTEM.md (MSAN section).
+# Not supported on macOS/Windows; do not combine with asan/tsan/ubsan.
+build:msan --extra_toolchains=@llvm_toolchain_msan//:all
+build:msan --features=msan
+build:msan --strip=never
+build:msan --features=dbg
+build:msan --compilation_mode=dbg
+test:msan --test_timeout=120,300,900,3600

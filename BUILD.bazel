@@ -84,11 +84,13 @@ config_setting(
     ],
 )
 
-# Config surfaces for CI guards (python/tests:ci_windows_cppopts_test).
+# Config surfaces for CI guards. Kept as filegroups so runfiles include the real
+# paths under the repo root, not resolved execroots.
 exports_files(
     [
         ".bazelrc",
         "CPPVARIABLES.bzl",
+        "MODULE.bazel",
     ],
     visibility = ["//python:__pkg__"],
 )
@@ -99,6 +101,15 @@ filegroup(
         ".bazelrc",
         "BUILD.bazel",
         "CPPVARIABLES.bzl",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+
+filegroup(
+    name = "msan_ci_config_files",
+    srcs = [
+        ".bazelrc",
+        "MODULE.bazel",
     ],
     visibility = ["//python:__pkg__"],
 )

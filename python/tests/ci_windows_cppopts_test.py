@@ -187,6 +187,7 @@ class TestWindowsCppoptsConfigExportsVisibility(unittest.TestCase):
             r"\[\s*"
             r'"\.bazelrc",\s*'
             r'"CPPVARIABLES\.bzl",\s*'
+            r'"MODULE\.bazel",\s*'
             r"\]\s*,\s*"
             r"visibility\s*=\s*\[\s*\"//python:__pkg__\"\s*\]\s*,?\s*"
             r"\)",
@@ -195,7 +196,7 @@ class TestWindowsCppoptsConfigExportsVisibility(unittest.TestCase):
         )
         self.assertIsNotNone(
             match,
-            "expected exports_files([.bazelrc, CPPVARIABLES.bzl], "
+            "expected exports_files([.bazelrc, CPPVARIABLES.bzl, MODULE.bazel], "
             'visibility = ["//python:__pkg__"])',
         )
 

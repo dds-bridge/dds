@@ -8,7 +8,6 @@
 */
 
 
-#include <algorithm>
 #include <ctime>
 #include <iostream>
 #include <iomanip>
@@ -45,11 +44,6 @@ void TestTimer::reset()
   user_cum_ = 0;
   user_cum_old_ = 0;
   sys_cum_ = 0;
-  user_min_ = 0;
-  user_max_ = 0;
-  sys_min_ = 0;
-  sys_max_ = 0;
-  batch_count_ = 0;
   pending_hands_ = 0;
   sys_time_known_ = true;
 }
@@ -120,52 +114,6 @@ void TestTimer::record(const int hands, const long user_ms, const long sys_ms)
   count_ += hands;
   user_cum_ += user_ms;
   sys_cum_ += sys_ms;
-
-  const double user_per_hand = user_ms / static_cast<double>(hands);
-  const double sys_per_hand = sys_ms / static_cast<double>(hands);
-  if (batch_count_ == 0)
-  {
-    user_min_ = user_max_ = user_per_hand;
-    sys_min_ = sys_max_ = sys_per_hand;
-  }
-  else
-  {
-    user_min_ = std::min(user_min_, user_per_hand);
-    user_max_ = std::max(user_max_, user_per_hand);
-    sys_min_ = std::min(sys_min_, sys_per_hand);
-    sys_max_ = std::max(sys_max_, sys_per_hand);
-  }
-  batch_count_++;
-}
-
-
-bool TestTimer::has_batch_times() const
-{
-  return batch_count_ > 0;
-}
-
-
-double TestTimer::user_min_ms() const
-{
-  return user_min_;
-}
-
-
-double TestTimer::user_max_ms() const
-{
-  return user_max_;
-}
-
-
-double TestTimer::sys_min_ms() const
-{
-  return sys_min_;
-}
-
-
-double TestTimer::sys_max_ms() const
-{
-  return sys_max_;
 }
 
 
@@ -226,10 +174,7 @@ void TestTimer::print_basic() const
 }
 
 
-void TestTimer::print_hands(
-  ostream& out,
-  const bool show_min,
-  const bool show_max) const
+void TestTimer::print_hands(ostream& out) const
 {
   struct StreamFormatGuard
   {
@@ -277,12 +222,6 @@ void TestTimer::print_hands(
     out << setw(21) << left << "Avg user time (ms)" <<
       setw(12) << right << fixed << setprecision(2) << user_cum_ / 
         static_cast<float>(count_) << "\n";
-    if (show_min && has_batch_times())
-      out << setw(21) << left << "Min user time (ms)" <<
-        setw(12) << right << fixed << setprecision(2) << user_min_ << "\n";
-    if (show_max && has_batch_times())
-      out << setw(21) << left << "Max user time (ms)" <<
-        setw(12) << right << fixed << setprecision(2) << user_max_ << "\n";
   }
 
   if (!sys_time_known_)
@@ -298,12 +237,6 @@ void TestTimer::print_hands(
     out << setw(21) << left << "Avg sys time (ms)" <<
       setw(12) << right << fixed << setprecision(2) << sys_cum_ / 
         static_cast<float>(count_) << "\n";
-    if (show_min && has_batch_times())
-      out << setw(21) << left << "Min sys time (ms)" <<
-        setw(12) << right << fixed << setprecision(2) << sys_min_ << "\n";
-    if (show_max && has_batch_times())
-      out << setw(21) << left << "Max sys time (ms)" <<
-        setw(12) << right << fixed << setprecision(2) << sys_max_ << "\n";
     if (user_cum_ > 0) {
       out << setw(21) << left << "Ratio" << 
         setw(12) << right << fixed << setprecision(2) << 

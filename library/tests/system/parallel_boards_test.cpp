@@ -23,6 +23,25 @@ std::atomic<unsigned> allocations{0};
 
 }  // namespace allocation_tracking
 
+// MemorySanitizer ships its own operator new/delete in libclang_rt.msan_cxx;
+// linking custom replacements produces duplicate-symbol errors. Allocation
+// counting therefore runs only when MSAN is off.
+#if defined(__has_feature)
+#  if __has_feature(memory_sanitizer)
+#    define DDS_TEST_MEMORY_SANITIZER 1
+#  endif
+#endif
+#ifndef DDS_TEST_MEMORY_SANITIZER
+#  if defined(__SANITIZE_MEMORY__)
+#    define DDS_TEST_MEMORY_SANITIZER 1
+#  endif
+#endif
+#ifndef DDS_TEST_MEMORY_SANITIZER
+#  define DDS_TEST_MEMORY_SANITIZER 0
+#endif
+
+#if !DDS_TEST_MEMORY_SANITIZER
+
 void* operator new(const std::size_t size)
 {
   if (allocation_tracking::enabled.load(std::memory_order_relaxed))
@@ -44,6 +63,8 @@ void operator delete(void* const memory, std::size_t) noexcept
 {
   std::free(memory);
 }
+
+#endif  // !DDS_TEST_MEMORY_SANITIZER
 
 namespace
 {
@@ -119,6 +140,9 @@ TEST(ParallelAllBoards, WrongSizedOrderFallsBackToIndexOrder)
 
 TEST(ParallelAllBoards, PermutationValidationUsesAtMostOneAllocation)
 {
+#if DDS_TEST_MEMORY_SANITIZER
+  GTEST_SKIP() << "Allocation counting needs custom operator new; disabled under MSAN";
+#else
   // Permutation checks may allocate a temporary "seen" bitmap; the board-slot
   // mapping itself must stay allocation-free (plain data, not std::function).
   // Arrange
@@ -142,6 +166,7 @@ TEST(ParallelAllBoards, PermutationValidationUsesAtMostOneAllocation)
   EXPECT_EQ(result, RETURN_NO_FAULT);
   EXPECT_LE(
     allocation_tracking::allocations.load(std::memory_order_relaxed), 1u);
+#endif
 }
 
 TEST(ParallelAllBoards, ZeroSizeNewReturnsNonNull)
@@ -432,6 +457,21 @@ TEST(ParallelAllBoards, ReusesWorkerThreadsAcrossConsecutiveCalls)
   EXPECT_EQ(created_after_reuse, created_after_warm);
 }
 
+TEST(ParallelAllBoards, LastJobBoardCountReflectsZeroBoardCall)
+{
+  // The test seam must record the most recent call's board count, including
+  // early-return paths (count <= 0), so a prior job cannot leave a stale value.
+  const auto noop = [](const int, const int) { return RETURN_NO_FAULT; };
+
+  ASSERT_EQ(parallel_all_boards_n(4, 1, noop), RETURN_NO_FAULT);
+  ASSERT_EQ(dds::internal::parallel_boards_last_job_board_count(), 4);
+
+  ASSERT_EQ(parallel_all_boards_n(0, 1, noop), RETURN_NO_FAULT);
+  EXPECT_EQ(dds::internal::parallel_boards_last_job_board_count(), 0);
+
+  ASSERT_EQ(parallel_all_boards_n(-3, 1, noop), RETURN_NO_FAULT);
+  EXPECT_EQ(dds::internal::parallel_boards_last_job_board_count(), -3);
+}
 
 TEST(ParallelAllBoards, ShutdownJoinsPoolAndAllowsRecreation)
 {

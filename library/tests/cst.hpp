@@ -36,7 +36,5 @@ struct OptionsType
   int num_threads_;                         ///< Number of threads to use
   int memory_mb_;                           ///< Memory allocation in MB
   bool report_slow_boards_;                 ///< Report slow-executing hands
-  bool show_min_;                           ///< Report min per-hand time across batches
-  bool show_max_;                           ///< Report max per-hand time across batches
 };
 

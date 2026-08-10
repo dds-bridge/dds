@@ -12,14 +12,17 @@ bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
 bazel_dep(name = "rules_python", version = "2.0.1")
-bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+# 1.8.0+ adds --features=msan and libcxx_url for an instrumented libc++ overlay.
+# BCR 1.8.0 still emits unused `-stdlib=libc++` under `-nostdinc++`, which fails
+# our Linux `-Werror` builds. Override to the #791 fix until BCR publishes >1.8.0.
+bazel_dep(name = "toolchains_llvm", version = "1.8.0")
 
 # Xcode CC toolchain for macOS AddressSanitizer builds (--config=asan). LLVM's ASAN
 # runtime hangs on current macOS; see .bazelrc build:asan_macos.
 bazel_dep(name = "apple_support", version = "1.24.2")
 
-# WASM builds (//wasm:*, //web:dds_mvp_wasm). If you bump this version,
-# rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_mvp_wasm.py.
+# WASM builds (//wasm:*, //web:dds_web_wasm). If you bump this version,
+# rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_web_wasm.py.
 bazel_dep(name = "emsdk", version = "5.0.7")
 # Java bindings (//jni:*). Provides the hermetic remote JDK used to build and run
 # the FFM (java.lang.foreign) smoke test. rules_java 9.6.1 registers remotejdk_21
@@ -43,11 +46,25 @@ archive_override(
     ],
 )
 
+# toolchains_llvm#791: drop redundant `-stdlib=libc++` (unused with `-nostdinc++`).
+# Commit is the merge of that PR; drop this override when BCR ships a release
+# that includes it.
+archive_override(
+    module_name = "toolchains_llvm",
+    integrity = "sha256-spaFpVBa8JGs27s/9vk0Xb4gd8fJ9OFmnxaBYPeOt4o=",
+    strip_prefix = "toolchains_llvm-c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c",
+    urls = [
+        "https://github.com/bazel-contrib/toolchains_llvm/archive/c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c.tar.gz",
+        "https://codeload.github.com/bazel-contrib/toolchains_llvm/tar.gz/c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c",
+    ],
+)
+
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
     name = "llvm_toolchain",
     # When bumping these versions, also update .bazelrc build:tsan_macos rpath
     # (clang/N) and confirm Xcode ships the same major; see docs/BUILD_SYSTEM.md.
+    # Keep MSAN_LLVM_VERSION / MSAN_DISTRIBUTION below on the same LLVM release.
     llvm_versions = {
         "darwin-aarch64": "21.1.8",
         "linux-x86_64": "21.1.8",
@@ -55,6 +72,29 @@ llvm.toolchain(
     },
 )
 use_repo(llvm, "llvm_toolchain")
+
+# MemorySanitizer toolchain (Linux x86_64 only). Not registered globally —
+# selected via --config=msan (--extra_toolchains=@llvm_toolchain_msan//:all).
+# Pinned to the exact Ubuntu 22.04 LLVM build that the instrumented libc++
+# overlay was compiled against; see toolchains_llvm tests/MODULE.bazel and
+# docs/BUILD_SYSTEM.md (MSAN section).
+MSAN_LLVM_VERSION = "21.1.8"
+MSAN_DISTRIBUTION = "clang+llvm-%s-x86_64-linux-gnu-ubuntu-22.04.tar.zst" % MSAN_LLVM_VERSION
+
+llvm.toolchain(
+    name = "llvm_toolchain_msan",
+    alternative_llvm_sources = [
+        "https://github.com/RealtimeRoboticsGroup/toolchains/releases/download/{llvm_version}/{basename}",
+    ],
+    distribution = MSAN_DISTRIBUTION,
+    extra_llvm_distributions = {
+        MSAN_DISTRIBUTION: "3e9ab559182f45143c36d761fcee6818935187a8f54354ecb043643b642769f0",
+    },
+    libcxx_sha256 = "56e33981bb71aba8704026534093f81ba9783cff0bf701681f1781d2ecb50a87",
+    libcxx_url = "https://github.com/RealtimeRoboticsGroup/toolchains/releases/download/%s/libcxx-msan-%s-x86_64-linux-gnu-ubuntu-22.04.tar.zst" % (MSAN_LLVM_VERSION, MSAN_LLVM_VERSION),
+    llvm_versions = {"": MSAN_LLVM_VERSION},
+)
+use_repo(llvm, "llvm_toolchain_msan")
 
 # Apple toolchain repo; selected only for --config=asan via .bazelrc (not registered globally).
 apple_cc_configure = use_extension("@apple_support//crosstool:setup.bzl", "apple_cc_configure_extension")
