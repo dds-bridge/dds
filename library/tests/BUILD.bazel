@@ -12,6 +12,7 @@ filegroup(
             "calc_par_test.cpp",  # Uses GoogleTest, compiled separately
             "test_timer_test.cpp",  # Uses GoogleTest, compiled separately
             "args_test.cpp",  # Uses GoogleTest, compiled separately
+            "report_board_timings_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -95,6 +96,22 @@ cc_test(
         "args.cpp",
         "args.hpp",
         "cst.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "report_board_timings_test",
+    srcs = [
+        "report_board_timings_test.cpp",
+        "report_board_timings.cpp",
+        "report_board_timings.hpp",
     ],
     size = "small",
     copts = DDS_CPPOPTS,

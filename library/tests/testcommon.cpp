@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include <algorithm>
+#include <utility>
 #include <vector>
 
 #include <api/dll.h>
@@ -21,6 +21,7 @@
 #include "loop.hpp"
 #include "print.hpp"
 #include "cst.hpp"
+#include "report_board_timings.hpp"
 #include "system/scheduler.hpp"
 
 using std::cout;
@@ -112,9 +113,20 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   PlayTracesPBN playsp;
   SolvedPlays solvedplp;
 
+  std::vector<std::pair<int, int>> board_times;
+  if (options.report_slow_boards_)
+    board_times.reserve(static_cast<std::size_t>(number));
+
   if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
   {
-    loop_solve(&bop, &solvedbdp, deal_list, fut_list, number, stepsize);
+    loop_solve(
+      &bop,
+      &solvedbdp,
+      deal_list,
+      fut_list,
+      number,
+      stepsize,
+      options.report_slow_boards_ ? &board_times : nullptr);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {
@@ -145,9 +157,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
 
   if (options.report_slow_boards_)
   {
-    std::vector<std::pair<int,int>> times;
-    scheduler.GetBoardTimes(times);
-    if (times.empty())
+    if (board_times.empty())
     {
       if (options.solver_ == Solver::DTEST_SOLVER_CALC)
       {
@@ -161,15 +171,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
     }
     else
     {
-      // Sort by time desc
-      std::sort(times.begin(), times.end(), [](const auto &a, const auto &b){
-        return a.second > b.second;
-      });
-
-      cout << "Per-board timings (ms) sorted by longest first:\n";
-      for (const auto &p : times)
-        cout << p.second << "\t" << p.first << "\n";
-      cout << endl;
+      print_per_board_timings(cout, std::move(board_times));
     }
   }
 
