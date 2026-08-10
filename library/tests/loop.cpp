@@ -8,19 +8,21 @@
 */
 
 
-#include <iostream>
-#include <iomanip>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <utility>
+#include <vector>
 
 #include "loop.hpp"
 #include "TestTimer.hpp"
 #include "compare.hpp"
 #include "print.hpp"
-#include <vector>
-
 #include "cst.hpp"
 #include "dtest_parallel.hpp"
+#include "report_board_timings.hpp"
 #include <solve_board.hpp>
+#include "system/scheduler.hpp"
 
 using std::cout;
 using std::endl;
@@ -32,6 +34,7 @@ using std::right;
 
 extern TestTimer timer;
 extern OptionsType options;
+extern Scheduler scheduler;
 
 
 void loop_solve(
@@ -40,7 +43,8 @@ void loop_solve(
   DealPBN * deal_list,
   FutureTricks * fut_list,
   const int number,
-  const int stepsize)
+  const int stepsize,
+  std::vector<std::pair<int, int>>* board_times)
 {
 #ifdef BATCHTIMES
   cout << setw(8) << left << "Hand no." << 
@@ -78,6 +82,13 @@ void loop_solve(
       exit(0);
     }
     timer.end();
+
+    if (board_times != nullptr)
+    {
+      std::vector<std::pair<int, int>> batch_times;
+      scheduler.GetBoardTimes(batch_times);
+      append_batch_board_times(*board_times, batch_times, i);
+    }
 
 #ifdef BATCHTIMES
     timer.print_running(i+count, number);
