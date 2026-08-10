@@ -1,4 +1,4 @@
-"""Static checks for web/dds_web.html encoding."""
+"""Static checks for web/dds_web.html encoding and GitHub Pages COI wiring."""
 from __future__ import annotations
 
 import re
@@ -7,6 +7,7 @@ from pathlib import Path
 
 WEB_ROOT = Path(__file__).resolve().parents[1]
 HTML_PATH = WEB_ROOT / "dds_web.html"
+COI_PATH = WEB_ROOT / "coi-serviceworker.js"
 
 
 class DdsWebHtmlCharsetTest(unittest.TestCase):
@@ -37,6 +38,33 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         text = HTML_PATH.read_text(encoding="utf-8")
         for glyph in ("♠", "♥", "♦", "♣"):
             self.assertIn(glyph, text)
+
+
+class DdsWebHtmlCoiTest(unittest.TestCase):
+    def test_loads_coi_serviceworker_in_head_before_app_scripts(self) -> None:
+        # GitHub Pages cannot set COOP/COEP; coi-serviceworker.js injects them.
+        # Load it in <head> before the large WASM scripts so the first-visit
+        # reload does not waste a full module download.
+        text = HTML_PATH.read_text(encoding="utf-8")
+        head_match = re.search(r"<head\b[^>]*>(.*?)</head>", text, re.I | re.S)
+        self.assertIsNotNone(head_match)
+        self.assertRegex(
+            head_match.group(1),
+            r'<script\s+src="coi-serviceworker\.js"\s*>\s*</script>',
+        )
+        coi_at = text.index('src="coi-serviceworker.js"')
+        wasm_at = text.index('src="dds_web_wasm.js"')
+        app_at = text.index('src="dds_web.js"')
+        self.assertLess(coi_at, wasm_at)
+        self.assertLess(coi_at, app_at)
+
+    def test_coi_serviceworker_sets_cross_origin_isolation_headers(self) -> None:
+        self.assertTrue(COI_PATH.is_file(), msg="vendored coi-serviceworker.js missing")
+        text = COI_PATH.read_text(encoding="utf-8")
+        self.assertIn("Cross-Origin-Opener-Policy", text)
+        self.assertIn("same-origin", text)
+        self.assertIn("Cross-Origin-Embedder-Policy", text)
+        self.assertIn("require-corp", text)
 
 
 if __name__ == "__main__":

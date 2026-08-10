@@ -103,6 +103,30 @@ load but solving reports that `SharedArrayBuffer` is unavailable.
 `file://` is still fine for UI-only browsing; run a solve over the isolated HTTP
 server.
 
+### GitHub Pages
+
+GitHub Pages cannot set custom COOP/COEP headers. DDS Web vendors
+`web/coi-serviceworker.js` (MIT, [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker))
+and loads it from `dds_web.html` so a service worker can inject the headers on
+first visit. Local `serve_web.py` already isolates the origin, so the worker
+does not register there.
+
+Deploy workflow: `.github/workflows/deploy_pages.yml` (push to `main` under
+`web/` / WASM deps, or `workflow_dispatch`). It builds WASM, stages with
+`python3 web/stage_github_pages.py --out _site`, and publishes via
+`actions/deploy-pages`.
+
+One-time repo setup: **Settings → Pages → Build and deployment → Source:
+GitHub Actions**. After a successful run the site is at
+`https://<owner>.github.io/<repo>/` (`index.html` is a copy of `dds_web.html`).
+
+Manual stage (after `./web/update_wasm.sh`):
+
+```bash
+python3 web/stage_github_pages.py --out _site
+# serve _site with COOP/COEP, or rely on coi-serviceworker.js on Pages
+```
+
 DDS Web loads wasm from `dds_web_wasm_bin.js` (base64, no network fetch). Run
 `./web/update_wasm.sh` to refresh `dds_web_wasm.{js,wasm,bin.js}` (includes a
 small post-process step for Emscripten `isFileURI`; see **Emscripten / emsdk

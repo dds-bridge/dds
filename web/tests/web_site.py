@@ -7,7 +7,12 @@ import os
 import shutil
 from pathlib import Path
 
-STATIC_FILES = ("dds_web.html", "dds_web.css", "dds_web.js")
+STATIC_FILES = (
+    "dds_web.html",
+    "dds_web.css",
+    "dds_web.js",
+    "coi-serviceworker.js",
+)
 
 # Required for SharedArrayBuffer / WASM pthreads in Chromium.
 CROSS_ORIGIN_ISOLATION_HEADERS = {

@@ -82,7 +82,18 @@ py_test(
     size = "small",
     main = "tests/test_web_html.py",
     srcs = ["tests/test_web_html.py"],
-    data = ["dds_web.html"],
+    data = [
+        "coi-serviceworker.js",
+        "dds_web.html",
+    ],
+)
+
+py_test(
+    name = "stage_github_pages_test",
+    size = "small",
+    main = "tests/test_stage_github_pages.py",
+    srcs = ["tests/test_stage_github_pages.py"],
+    data = ["stage_github_pages.py"],
 )
 
 py_test(
@@ -106,6 +117,7 @@ py_test(
     srcs = ["tests/test_wasm_system.py"],
     data = [
         ":dds_web_wasm",
+        "coi-serviceworker.js",
         "dds_web.css",
         "dds_web.html",
         "dds_web.js",
@@ -127,6 +139,7 @@ py_test(
     srcs = ["tests/test_web_e2e.py"],
     data = [
         ":dds_web_wasm",
+        "coi-serviceworker.js",
         "dds_web.css",
         "dds_web.html",
         "dds_web.js",
@@ -150,6 +163,7 @@ test_suite(
         ":dds_web_html_test",
         ":dds_web_js_test",
         ":dds_web_wasm_test",
+        ":stage_github_pages_test",
         ":wasm_scripts_test",
     ],
 )

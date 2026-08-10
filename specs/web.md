@@ -1,7 +1,7 @@
 ---
 capability: web
 owners: [web]
-last-updated: 2026-08-09
+last-updated: 2026-08-10
 ---
 
 # DDS Web
@@ -45,7 +45,10 @@ DOM wiring) with an automated test pyramid.
   `python3 web/serve_web.py` (not plain `http.server`). `file://` remains useful
   for UI-only checks; instantiating the solver module for a solve needs HTTP +
   those headers on any host. Guarded by `dds_web_e2e_test` (`test_http_is_cross_origin_isolated`,
-  HTTP part-score solve / auto-filled DD table).
+  HTTP part-score solve / auto-filled DD table). GitHub Pages cannot set those
+  headers; `coi-serviceworker.js` (loaded from `dds_web.html`) injects them via
+  a service worker. Staging for Pages is `web/stage_github_pages.py`; deploy is
+  `.github/workflows/deploy_pages.yml`.
 - **Three test tiers, with suite membership as wired in BUILD:**
   - **Unit / JS** (`web_tests`): `dds_web_wasm_test` (native `cc_test` over the
     solve logic with `DDS_WEB_WASM_NO_MAIN`), `dds_web_js_test` (Node runs
@@ -79,11 +82,14 @@ DOM wiring) with an automated test pyramid.
 
 ## Key entry points
 
-- `web/BUILD.bazel` — `dds_web_wasm(_cc)`, `web_site`, the five test targets
-  (`dds_web_wasm_test`, three `py_test`s, `dds_web_e2e_test`), and the
+- `web/BUILD.bazel` — `dds_web_wasm(_cc)`, `web_site`, the test targets
+  (`dds_web_wasm_test`, py_tests, `dds_web_e2e_test`), and the
   `web_tests` / `web_system_tests` / `web_e2e_tests` suites; `WASM_WEB_LINKOPTS`.
 - `web/dds_web_wasm.cpp` — the native WASM bridge (`dds_web_calc_table`).
 - `web/{dds_web.html,dds_web.css,dds_web.js}` — the page and JS glue.
+- `web/coi-serviceworker.js` — COOP/COEP via service worker for hosts without
+  custom headers (GitHub Pages).
+- `web/stage_github_pages.py` — stage static site + `index.html` for Pages.
 - `web/serve_web.py` — local HTTP server with COOP/COEP.
 - `web/{gen_wasm_bin_js,patch_web_wasm,verify_wasm_js}.py` — build/patch helpers.
 

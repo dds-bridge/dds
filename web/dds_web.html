@@ -11,11 +11,13 @@
        python3 web/serve_web.py
      Then open http://127.0.0.1:8080/dds_web.html
      (file:// UI works; solving needs SharedArrayBuffer via HTTP + COOP/COEP.)
+     GitHub Pages cannot set COOP/COEP; coi-serviceworker.js supplies them.
 -->
 
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <script src="coi-serviceworker.js"></script>
     <link rel="stylesheet" type="text/css" href="dds_web.css">
     <title>
         DDS Web
