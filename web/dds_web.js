@@ -404,19 +404,21 @@ function deckStatusHtml(hands) {
     }
 
     return SUITS.map((suit) => {
-        const tag = suitTag(suit);
-        const cardsHtml = PIPS.split("").map((pip) => {
-            const card = new Card(suit, pip);
-            const key = card.key();
-            const classes = ["deck-card"];
+        const remaining = PIPS.split("").filter((pip) => {
+            return !enteredCards[new Card(suit, pip).key()];
+        });
 
-            if (enteredCards[key]) {
-                classes.push("deck-card-entered");
-            }
+        if (remaining.length === 0) {
+            return "";
+        }
 
-            return "<span class=\"" + classes.join(" ") +
-                "\" data-card=\"" + key + "\">" + pip + "</span>";
+        const cardsHtml = remaining.map((pip) => {
+            const key = new Card(suit, pip).key();
+
+            return "<span class=\"deck-card\" data-card=\"" + key + "\">" +
+                pip + "</span>";
         }).join("");
+        const tag = suitTag(suit);
 
         return "<" + tag + ">" + SUIT_GLYPHS[suit] + cardsHtml + "</" + tag + ">";
     }).join("");

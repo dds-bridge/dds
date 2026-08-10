@@ -160,27 +160,26 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_deck_status_grays_cards_entered_in_the_diagram(self) -> None:
+    def test_deck_status_omits_cards_entered_in_the_diagram(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             cards = page.locator("#deck-status .deck-card")
             self.assertEqual(cards.count(), 52)
             self.assertEqual(
-                page.locator('#deck-status [data-card="SA"]').get_attribute("class"),
-                "deck-card",
+                page.locator('#deck-status [data-card="SA"]').count(),
+                1,
             )
 
             page.locator("#north_spades").fill("A")
 
-            entered_card = page.locator('#deck-status [data-card="SA"]')
-            self.assertIn("deck-card-entered", entered_card.get_attribute("class"))
             self.assertEqual(
-                float(entered_card.evaluate("el => getComputedStyle(el).opacity")),
-                1.0,
+                page.locator('#deck-status [data-card="SA"]').count(),
+                0,
             )
-            self.assertNotEqual(
-                entered_card.evaluate("el => getComputedStyle(el).color"),
-                "rgb(0, 0, 0)",
+            self.assertEqual(page.locator("#deck-status .deck-card").count(), 51)
+            self.assertEqual(
+                page.locator("#deck-status .deck-card-entered").count(),
+                0,
             )
             self.assertEqual(errors, [])
         finally:
@@ -658,7 +657,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                         tag_color, "rgb(0, 0, 0)", msg=f"{tag} glyph is black"
                     )
 
-            # Deck pips are nested inside suit tags; they must stay black/gray.
+            # Deck pips are nested inside suit tags; they must stay black.
             pip_color = page.locator('#deck-status [data-card="HA"]').evaluate(
                 "el => getComputedStyle(el).color"
             )

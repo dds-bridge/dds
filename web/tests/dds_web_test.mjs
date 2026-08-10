@@ -1029,7 +1029,7 @@ test("updateActionButtons displays all 52 cards in the deck status", () => {
     );
 });
 
-test("updateActionButtons grays cards entered in any hand, including lowercase pips", () => {
+test("updateActionButtons omits cards entered in any hand, including lowercase pips", () => {
     const document = createMockDocument({
         north_spades: "A",
         east_hearts: "k",
@@ -1040,18 +1040,25 @@ test("updateActionButtons grays cards entered in any hand, including lowercase p
 
     assert.equal(document.element("east_hearts").value, "K");
     const deckStatus = document.element("deck-status").innerHTML;
-    assert.match(
-        deckStatus,
-        /class="deck-card deck-card-entered" data-card="SA"/
-    );
-    assert.match(
-        deckStatus,
-        /class="deck-card deck-card-entered" data-card="HK"/
-    );
-    assert.match(
-        deckStatus,
-        /class="deck-card" data-card="SK"/
-    );
+    assert.equal((deckStatus.match(/data-card=/g) ?? []).length, 50);
+    assert.doesNotMatch(deckStatus, /data-card="SA"/);
+    assert.doesNotMatch(deckStatus, /data-card="HK"/);
+    assert.match(deckStatus, /class="deck-card" data-card="SK"/);
+    assert.doesNotMatch(deckStatus, /deck-card-entered/);
+});
+
+test("updateActionButtons hides a suit row when all of its cards are in the diagram", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765432",
+    });
+    const ctx = loadDdsWeb(document);
+
+    ctx.updateActionButtons();
+
+    const deckStatus = document.element("deck-status").innerHTML;
+    assert.doesNotMatch(deckStatus, /<spade-suit>/);
+    assert.match(deckStatus, /<heart-suit>/);
+    assert.equal((deckStatus.match(/data-card=/g) ?? []).length, 39);
 });
 
 test("updateActionButtons shows a card-count note for a hand over 13 cards", () => {
