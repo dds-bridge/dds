@@ -142,3 +142,19 @@ TEST(AppendBatchBoardTimes, EmptyBatchIsNoOp)
   ASSERT_EQ(accumulated.size(), 1u);
   EXPECT_EQ(accumulated[0], (std::pair<int, int>{7, 1}));
 }
+
+TEST(AppendBatchBoardTimes, PreReserveKeepsCapacityAcrossBatches)
+{
+  // Arrange: dtest -r reserves one slot per input deal before multi-batch appends.
+  std::vector<std::pair<int, int>> accumulated;
+  accumulated.reserve(4);
+  const auto capacity_before = accumulated.capacity();
+
+  // Act
+  append_batch_board_times(accumulated, {{0, 11}, {1, 22}}, /*file_offset=*/0);
+  append_batch_board_times(accumulated, {{0, 33}, {1, 44}}, /*file_offset=*/2);
+
+  // Assert: no reallocation beyond the file-wide reserve.
+  ASSERT_EQ(accumulated.size(), 4u);
+  EXPECT_EQ(accumulated.capacity(), capacity_before);
+}

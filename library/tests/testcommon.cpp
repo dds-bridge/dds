@@ -114,6 +114,8 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   SolvedPlays solvedplp;
 
   std::vector<std::pair<int, int>> board_times;
+  if (options.report_slow_boards_)
+    board_times.reserve(static_cast<std::size_t>(number));
 
   if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
   {
