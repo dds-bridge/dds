@@ -49,10 +49,10 @@ jobs:
       - name: Prefetch external repos
         shell: pwsh
         run: |
-          $fastbuild_targets = $env:WINDOWS_FASTBUILD_TARGETS -split ' '
+          [string[]]$fastbuild_targets = $env:WINDOWS_FASTBUILD_TARGETS -split '\s+' | Where-Object { $_ -ne '' }
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazelisk fetch --disk_cache="$env:BAZEL_DISK_CACHE" --verbose_failures $fastbuild_targets
+            bazelisk fetch --disk_cache="$env:BAZEL_DISK_CACHE" --verbose_failures @fastbuild_targets
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
@@ -65,17 +65,17 @@ jobs:
       - name: Run Windows test targets
         shell: pwsh
         run: |
-          $fastbuild_targets = $env:WINDOWS_FASTBUILD_TARGETS -split ' '
-          bazelisk test --disk_cache="$env:BAZEL_DISK_CACHE" --profile="$env:BAZEL_PROFILE_JSON" --verbose_failures $fastbuild_targets
+          [string[]]$fastbuild_targets = $env:WINDOWS_FASTBUILD_TARGETS -split '\s+' | Where-Object { $_ -ne '' }
+          bazelisk test --disk_cache="$env:BAZEL_DISK_CACHE" --profile="$env:BAZEL_PROFILE_JSON" --verbose_failures @fastbuild_targets
 
       # Keep a narrow release-level check on Windows with --config=opt
       - name: Build Windows opt smoke targets (retry on transient fetch failure)
         shell: pwsh
         run: |
-          $opt_targets = $env:WINDOWS_OPT_TARGETS -split ' '
+          [string[]]$opt_targets = $env:WINDOWS_OPT_TARGETS -split '\s+' | Where-Object { $_ -ne '' }
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazelisk build --config=opt --disk_cache="$env:BAZEL_DISK_CACHE" --verbose_failures $opt_targets
+            bazelisk build --config=opt --disk_cache="$env:BAZEL_DISK_CACHE" --verbose_failures @opt_targets
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
