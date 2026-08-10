@@ -90,7 +90,8 @@ py_test(
     data = ["//.github/workflows:all_workflows"],
 )
 
-# Guard: Windows MSVC DDS_CPPOPTS must not fight Bazel's /Od and /std:c++17.
+# Guard: Windows MSVC must not restate /Od or /std (D9025); C++20 comes from
+# the patched rules_cc default_cpp_std feature.
 py_test(
     name = "ci_windows_cppopts_test",
     size = "small",

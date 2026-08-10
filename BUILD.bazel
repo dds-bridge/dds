@@ -91,6 +91,7 @@ exports_files(
         ".bazelrc",
         "CPPVARIABLES.bzl",
         "MODULE.bazel",
+        "patches/rules_cc_msvc_default_cpp_std_cxx20.patch",
     ],
     visibility = ["//python:__pkg__"],
 )
@@ -101,6 +102,8 @@ filegroup(
         ".bazelrc",
         "BUILD.bazel",
         "CPPVARIABLES.bzl",
+        "MODULE.bazel",
+        "patches/rules_cc_msvc_default_cpp_std_cxx20.patch",
     ],
     visibility = ["//python:__pkg__"],
 )

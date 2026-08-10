@@ -68,27 +68,27 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
                 f"{label} must not set /Od or /O2; use compilation_mode instead",
             )
 
-    def test_windows_cppopts_still_request_cxx20(self) -> None:
+    def test_windows_cppopts_do_not_override_toolchain_cxx_standard(self) -> None:
+        """MSVC /std comes from the patched rules_cc default_cpp_std feature
+        (/std:c++20). Restating it in DDS_CPPOPTS yields cl D9025 against that
+        default. Keep language-standard selection out of build:windows --cxxopt
+        so wasm transitions on Windows hosts do not see MSVC /std flags.
+        """
         text = (_repo_root() / "CPPVARIABLES.bzl").read_text(encoding="utf-8")
         for label, block in (
             ("build_windows", _windows_cppopts_block(text)),
             ("debug_build_windows", _debug_windows_cppopts_block(text)),
         ):
-            self.assertIn(
-                '"/std:c++20"',
+            self.assertNotRegex(
                 block,
-                f"{label} must keep /std:c++20 (MSVC-only; not via build:windows "
-                "cxxopt, which would leak into wasm transitions on Windows hosts)",
+                r'"/std:',
+                f"{label} must not set /std:; MSVC default_cpp_std is C++20",
             )
 
-    def test_windows_bazelrc_keeps_default_cpp_std_feature(self) -> None:
-        """rules_cc's default_cpp_std supplies /std:c++17 for every MSVC compile,
-        including @googletest and cc_* targets that do not use DDS_CPPOPTS.
-
-        Disabling it leaves those TUs with no language standard; googletest then
-        fails with C1189 (C++17 required). DDS_CPPOPTS may still add /std:c++20
-        (a benign D9025 override on those targets). Do not put /std in
-        build:windows --cxxopt — that leaks into wasm transitions on Windows.
+    def test_windows_bazelrc_keeps_default_cpp_std_without_host_cxxopt(self) -> None:
+        """default_cpp_std (patched to /std:c++20) covers googletest and every
+        MSVC cc_* compile. Do not disable it, and do not add build:windows
+        --cxxopt=/std (leaks into wasm).
         """
         bazelrc = (_repo_root() / ".bazelrc").read_text(encoding="utf-8")
         self.assertIsNone(
@@ -96,8 +96,7 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
                 r"(?m)^build:windows\s+--features=-default_cpp_std\b",
                 bazelrc,
             ),
-            "build:windows must not disable default_cpp_std (breaks googletest "
-            "and targets without DDS_CPPOPTS)",
+            "build:windows must not disable default_cpp_std",
         )
         self.assertIsNone(
             re.search(r"(?m)^build:windows\s+--cxxopt=/std:", bazelrc),
@@ -105,8 +104,50 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
         )
         self.assertIsNone(
             re.search(r"(?m)^build:windows\s+--host_cxxopt=/std:", bazelrc),
-            "build:windows must not set --host_cxxopt=/std:...; host tools use "
-            "default_cpp_std",
+            "build:windows must not set --host_cxxopt=/std:...",
+        )
+
+
+class TestRulesCcMsvcDefaultCppStdCxx20(unittest.TestCase):
+    _PATCH = "patches/rules_cc_msvc_default_cpp_std_cxx20.patch"
+
+    def test_module_applies_rules_cc_msvc_cxx20_patch(self) -> None:
+        text = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
+        match = re.search(
+            r"single_version_override\(\s*"
+            r'module_name\s*=\s*"rules_cc"\s*,\s*'
+            r'version\s*=\s*"0\.2\.18"\s*,\s*'
+            r"patches\s*=\s*\[\s*"
+            r'"//:patches/rules_cc_msvc_default_cpp_std_cxx20\.patch"\s*,?\s*'
+            r"\]\s*,\s*"
+            r"patch_strip\s*=\s*1\s*,?\s*"
+            r"\)",
+            text,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(
+            match,
+            "expected single_version_override(rules_cc 0.2.18) with "
+            "patches=[//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch], "
+            "patch_strip=1",
+        )
+
+    def test_patch_raises_msvc_default_cpp_std_to_cxx20(self) -> None:
+        patch = (_repo_root() / self._PATCH).read_text(encoding="utf-8")
+        self.assertIn(
+            "windows_cc_toolchain_config.bzl",
+            patch,
+            f"{self._PATCH} must target windows_cc_toolchain_config.bzl",
+        )
+        self.assertRegex(
+            patch,
+            r"(?m)^-\s*flags = \[\"/std:c\+\+17\"\],",
+            f"{self._PATCH} must remove /std:c++17 from default_cpp_std",
+        )
+        self.assertRegex(
+            patch,
+            r"(?m)^\+\s*flags = \[\"/std:c\+\+20\"\],",
+            f"{self._PATCH} must set /std:c++20 in default_cpp_std",
         )
 
 
@@ -189,6 +230,7 @@ class TestWindowsCppoptsConfigExportsVisibility(unittest.TestCase):
             r'"\.bazelrc",\s*'
             r'"CPPVARIABLES\.bzl",\s*'
             r'"MODULE\.bazel",\s*'
+            r'"patches/rules_cc_msvc_default_cpp_std_cxx20\.patch",\s*'
             r"\]\s*,\s*"
             r"visibility\s*=\s*\[\s*\"//python:__pkg__\"\s*\]\s*,?\s*"
             r"\)",
@@ -197,7 +239,8 @@ class TestWindowsCppoptsConfigExportsVisibility(unittest.TestCase):
         )
         self.assertIsNotNone(
             match,
-            "expected exports_files([.bazelrc, CPPVARIABLES.bzl, MODULE.bazel], "
+            "expected exports_files([.bazelrc, CPPVARIABLES.bzl, MODULE.bazel, "
+            "patches/rules_cc_msvc_default_cpp_std_cxx20.patch], "
             'visibility = ["//python:__pkg__"])',
         )
 

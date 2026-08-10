@@ -39,12 +39,10 @@ build:macos --cxxopt=-std=c++20
 build:macos --host_cxxopt=-std=c++20
 build:linux --cxxopt=-std=c++20
 build:linux --host_cxxopt=-std=c++20
-# Windows native targets set /std:c++20 in DDS_CPPOPTS (MSVC syntax). Do not put
-# --cxxopt=/std:... under build:windows: enable_platform_specific_config keys
-# off the host OS, so that flag would leak into wasm transitions on Windows.
-# Keep rules_cc default_cpp_std (/std:c++17): googletest and cc_* targets that
-# omit DDS_CPPOPTS still need a language standard. DDS_CPPOPTS may override to
-# /std:c++20 (MSVC D9025 on those targets only — benign command-line warning).
+# Windows MSVC C++20 comes from the patched rules_cc default_cpp_std feature
+# (see MODULE.bazel single_version_override + patches/rules_cc_msvc_default_...).
+# Do not put --cxxopt=/std:... under build:windows: enable_platform_specific_config
+# keys off the host OS, so that flag would leak into wasm transitions on Windows.
 
 # Performance optimization flags
 build:opt --compilation_mode=opt

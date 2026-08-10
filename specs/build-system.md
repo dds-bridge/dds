@@ -43,10 +43,11 @@ than re-encoding toolchain knowledge.
   link (`-flto=thin`); WASM adds `-flto` at compile time only — link-time LTO is
   not currently possible under the pinned hermetic emsdk toolchain (see
   [wasm-emscripten](wasm-emscripten.md)). C++20 is the baseline
-  (`--cxxopt=-std=c++20` in `.bazelrc` for macOS/Linux; Windows `/std:c++20` in
-  `DDS_CPPOPTS`, while rules_cc `default_cpp_std` still supplies `/std:c++17` for
-  googletest and targets that omit `DDS_CPPOPTS`). Treat `-Werror` as a standing
-  invariant: warnings break the build.
+  (`--cxxopt=-std=c++20` in `.bazelrc` for macOS/Linux; Windows MSVC gets
+  `/std:c++20` from a patched rules_cc `default_cpp_std`, so googletest and
+  targets that omit `DDS_CPPOPTS` match the baseline without restating `/std` in
+  `DDS_CPPOPTS` or host `--cxxopt`). Treat `-Werror` as a standing invariant:
+  warnings break the build.
 - **Feature flags are `--define`-driven `config_setting`s**, surfaced through
   `DDS_LOCAL_DEFINES` / `DDS_SCHEDULER_DEFINE`:
   | config setting | `--define` | preprocessor define | capability |
@@ -79,13 +80,15 @@ than re-encoding toolchain knowledge.
 
 - `BUILD.bazel` (root) — all `config_setting`s, the `//:dds` / `//:testable_dds`
   façades, and the `doxygen_docs` genrule.
-- `.bazelrc` — C++20 cxxopts (macOS/Linux), Windows std via `DDS_CPPOPTS` +
+- `.bazelrc` — C++20 cxxopts (macOS/Linux); Windows MSVC C++20 via patched
   rules_cc `default_cpp_std` (no host `/std` cxxopt — that leaks into wasm),
   hermetic JDK, default test tag filters (e.g. `-e2e`; WASM CI clears the
   filter so Playwright runs), sanitizer configs (`asan` / `tsan` / `ubsan` /
   Linux-only `msan`).
 - `CPPVARIABLES.bzl` — `DDS_CPPOPTS`, `DDS_LINKOPTS`, `DDS_LOCAL_DEFINES`,
   `DDS_SCHEDULER_DEFINE`.
+- `patches/rules_cc_msvc_default_cpp_std_cxx20.patch` — raises MSVC
+  `default_cpp_std` from `/std:c++17` to `/std:c++20` (wired in `MODULE.bazel`).
 - `wasm_compat.bzl` — `WASM_LINKOPTS`.
 - `MODULE.bazel` — the Bazel module and its `bazel_dep` graph (including
   `@llvm_toolchain_msan` for MemorySanitizer).
