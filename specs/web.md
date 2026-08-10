@@ -25,17 +25,19 @@ DOM wiring) with an automated test pyramid.
 - **A dedicated, modularised WASM module — not the example CLIs.** `dds_web_wasm`
   (`wasm_cc_binary` over `dds_web_wasm_cc`, source `dds_web_wasm.cpp`,
   `threads = "emscripten"`) is built with `WASM_WEB_LINKOPTS`: `MODULARIZE=1`,
-  `EXPORT_NAME=createDdsModule`, a single exported entry `_dds_web_calc_table`
-  (plus `_malloc`/`_free`), `EXPORTED_RUNTIME_METHODS=['ccall','getValue']`, and
+  `EXPORT_NAME=createDdsModule`, exported entries `_dds_web_calc_table` and
+  `_dds_web_solve_leads` (plus `_malloc`/`_free`),
+  `EXPORTED_RUNTIME_METHODS=['ccall','getValue']`, and
   `ENVIRONMENT=web,worker,node`. This is distinct from
-  [wasm-emscripten](wasm-emscripten.md)'s example ports — DDS Web wants one small,
-  callable table function, not a CLI. Shared base flags come from `WASM_LINKOPTS`
-  ([build-system](build-system.md)), including pthreads / `PTHREAD_POOL_SIZE`.
+  [wasm-emscripten](wasm-emscripten.md)'s example ports — DDS Web wants a small
+  callable surface for the DD table and opening-lead analysis, not a CLI. Shared
+  base flags come from `WASM_LINKOPTS` ([build-system](build-system.md)),
+  including pthreads / `PTHREAD_POOL_SIZE`.
 - **The page is a static trio plus JS glue.** `dds_web.html` / `dds_web.css` /
   `dds_web.js` load the module (`createDdsModule`), marshal a deal into WASM
-  memory, call `dds_web_calc_table` via `ccall`, and read results with `getValue`.
-  `web_site` (`tests/web_site.py`) stages the site and provides
-  `make_isolated_http_handler` (COOP/COEP) for system/e2e tests and
+  memory, call `dds_web_calc_table` and `dds_web_solve_leads` via `ccall`, and
+  read results with `getValue`. `web_site` (`tests/web_site.py`) stages the site
+  and provides `make_isolated_http_handler` (COOP/COEP) for system/e2e tests and
   `web/serve_web.py`. Helper scripts `gen_wasm_bin_js.py`, `patch_web_wasm.py`,
   `verify_wasm_js.py` generate and sanity-check the JS/wasm glue.
 - **Browser solves require cross-origin isolation.** Pthread WASM needs
@@ -66,26 +68,29 @@ DOM wiring) with an automated test pyramid.
   browser/`file://` safety on `//web:dds_web_wasm` only — not the example WASM
   CLIs. If an emsdk upgrade moves that line, update the regex and the note in
   `docs/wasm_build.md`.
-- **The module holds one session-scoped `SolverContext` for its lifetime.**
-  `dds_web_calc_table` (`web/dds_web_wasm.cpp`) constructs a function-local
-  `static SolverContext` lazily on first call and reuses it — including its
-  transposition table — for every subsequent call in that module instance,
-  calling `reset_for_solve()` between deals to recycle the TT memory pool
-  without freeing the underlying allocation. This mirrors a WASM module
-  instance's own lifetime (one `WebAssembly.Memory`, static constructors run
-  once) instead of allocating a fresh [solver-context](solver-context.md) per
-  call. Because the context is shared, it is **not safe for concurrent
-  solves** — a future move to Web Workers would need one context per worker.
-  The DD-table path itself remains sequential over strains; batch/multi-hand
-  APIs under [wasm-emscripten](wasm-emscripten.md) can use pthreads via
-  [system-concurrency](system-concurrency.md).
+- **The module holds two session-scoped `SolverContext`s for its lifetime.**
+  `dds_web_calc_table` and `dds_web_solve_leads` (`web/dds_web_wasm.cpp`) each
+  use a dedicated lazily-initialized `static SolverContext` — table vs leads —
+  so CalcDDtable worker pools cannot disturb SolveBoard (and vice versa) when
+  the UI auto-fills the table then analyzes leads. Each context reuses its
+  transposition table across calls in that module instance, calling
+  `reset_for_solve()` between deals to recycle the TT memory pool without
+  freeing the underlying allocation. This mirrors a WASM module instance's own
+  lifetime (one `WebAssembly.Memory`, static constructors run once) instead of
+  allocating a fresh [solver-context](solver-context.md) per call. Because each
+  context is shared across calls on that path, it is **not safe for concurrent
+  solves on the same entry** — a future move to Web Workers would need one
+  context per worker. The DD-table path itself remains sequential over strains;
+  batch/multi-hand APIs under [wasm-emscripten](wasm-emscripten.md) can use
+  pthreads via [system-concurrency](system-concurrency.md).
 
 ## Key entry points
 
 - `web/BUILD.bazel` — `dds_web_wasm(_cc)`, `web_site`, the test targets
   (`dds_web_wasm_test`, py_tests, `dds_web_e2e_test`), and the
   `web_tests` / `web_system_tests` / `web_e2e_tests` suites; `WASM_WEB_LINKOPTS`.
-- `web/dds_web_wasm.cpp` — the native WASM bridge (`dds_web_calc_table`).
+- `web/dds_web_wasm.cpp` — the native WASM bridge (`dds_web_calc_table`,
+  `dds_web_solve_leads`).
 - `web/{dds_web.html,dds_web.css,dds_web.js}` — the page and JS glue.
 - `web/coi-serviceworker.js` — COOP/COEP via service worker for hosts without
   custom headers (GitHub Pages).

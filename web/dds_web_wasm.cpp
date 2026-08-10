@@ -31,12 +31,14 @@ auto web_solver_config() -> SolverConfig
 
 // Separate contexts so CalcDDtable worker pools cannot disturb SolveBoard
 // (and vice versa) when the UI auto-fills the table then analyzes leads.
-auto web_table_context() -> SolverContext& {
+auto web_table_context() -> SolverContext&
+{
   static SolverContext ctx(web_solver_config());
   return ctx;
 }
 
-auto web_leads_context() -> SolverContext& {
+auto web_leads_context() -> SolverContext&
+{
   static SolverContext ctx(web_solver_config());
   return ctx;
 }
