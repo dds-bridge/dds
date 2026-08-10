@@ -4,6 +4,7 @@
 #include "report_board_timings.hpp"
 
 #include <algorithm>
+#include <iomanip>
 
 void print_per_board_timings(
   std::ostream& out,
@@ -15,8 +16,9 @@ void print_per_board_timings(
 
   out << "Per-board timings (ms) sorted by longest first:\n";
   out << "ms\tboard\n";
+  out << std::fixed << std::setprecision(1);
   for (const auto& p : times)
-    out << p.second << "\t" << p.first << "\n";
+    out << (static_cast<double>(p.second) / 1000.0) << "\t" << p.first << "\n";
   out << "\n";
 }
 

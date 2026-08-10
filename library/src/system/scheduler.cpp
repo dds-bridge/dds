@@ -990,13 +990,13 @@ void Scheduler::GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const
 }
 
 
-void Scheduler::SetBoardTime(int boardIndex, int timeMs)
+void Scheduler::SetBoardTime(int boardIndex, int time_us)
 {
   if (boardIndex < 0 || boardIndex >= MAXNOOFBOARDS) return;
   // store in the hand time field; this is a lightweight fallback
   // for when DDS_SCHEDULER isn't enabled. No locking required for
   // single-writer per-board usage pattern from the solver threads.
-  hands[boardIndex].time = timeMs;
+  hands[boardIndex].time = time_us;
 }
 
 

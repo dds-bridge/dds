@@ -12,11 +12,11 @@
 
 TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
 {
-  // Arrange
+  // Arrange: stored times are microseconds; report shows ms with one decimal.
   std::vector<std::pair<int, int>> times = {
-    {2, 10},
-    {5, 42},
-    {1, 7},
+    {2, 10100},
+    {5, 42500},
+    {1, 7000},
   };
   std::ostringstream out;
 
@@ -28,9 +28,9 @@ TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
     out.str(),
     "Per-board timings (ms) sorted by longest first:\n"
     "ms\tboard\n"
-    "42\t5\n"
-    "10\t2\n"
-    "7\t1\n"
+    "42.5\t5\n"
+    "10.1\t2\n"
+    "7.0\t1\n"
     "\n");
 }
 

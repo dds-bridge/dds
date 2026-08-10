@@ -210,14 +210,15 @@ class Scheduler
   /**
    * @brief Retrieve per-board raw times collected by the scheduler.
    *
-   * Fills outVec with pairs (boardIndex, userTimeMs) for each board in
-   * the current run. This is intended for post-run reporting.
+   * Fills outVec with pairs (boardIndex, userTimeUs) for each board in
+   * the current run. Times are wall-clock microseconds. This is intended
+   * for post-run reporting.
    */
   void GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const;
 
-  // Lightweight API to set a board's time in ms for reporting when
+  // Lightweight API to set a board's time in microseconds for reporting when
   // full DDS_SCHEDULER timing is not enabled. Thread-safe for single-writer per-board.
-  void SetBoardTime(int boardIndex, int timeMs);
+  void SetBoardTime(int boardIndex, int time_us);
 
     // Release timing storage early to avoid heavy destructor work at exit.
     void ClearTiming();

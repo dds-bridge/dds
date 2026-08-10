@@ -87,7 +87,7 @@ auto solve_all_boards_n(
         dds::internal::worker_solver_context(),
         bds.deals[bno], bds.target[bno], bds.solutions[bno],
         bds.mode[bno], &fut);
-      auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
+      auto dur = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::steady_clock::now() - t0).count();
       if (dur < 0) dur = 0;
       scheduler.SetBoardTime(bno, static_cast<int>(dur));
@@ -280,7 +280,7 @@ auto solve_all_boards_n_seq(
       dds::internal::worker_solver_context(),
       bds.deals[bno], bds.target[bno], bds.solutions[bno],
       bds.mode[bno], &fut);
-    auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(
+    auto dur = std::chrono::duration_cast<std::chrono::microseconds>(
       std::chrono::steady_clock::now() - t0).count();
     if (dur < 0) dur = 0;
     scheduler.SetBoardTime(bno, static_cast<int>(dur));
