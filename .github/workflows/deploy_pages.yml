@@ -6,7 +6,7 @@ name: Deploy DDS Web to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
     paths:
       - "web/**"
       - "library/**"

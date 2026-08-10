@@ -111,7 +111,7 @@ and loads it from `dds_web.html` so a service worker can inject the headers on
 first visit. Local `serve_web.py` already isolates the origin, so the worker
 does not register there.
 
-Deploy workflow: `.github/workflows/deploy_pages.yml` (push to `main` under
+Deploy workflow: `.github/workflows/deploy_pages.yml` (push to `develop` under
 `web/` / WASM deps, or `workflow_dispatch`). It builds WASM, stages with
 `python3 web/stage_github_pages.py --out _site`, and publishes via
 `actions/deploy-pages`.
