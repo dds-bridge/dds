@@ -52,7 +52,7 @@
 .grid-item.grid-filler-center {
   align-items: center;
   display: flex;
-  font-size: 1rem;
+  font-size: 30px;
   justify-content: flex-start;
 }
 
@@ -235,7 +235,6 @@ td {
 #deck-status {
   display: flex;
   flex-direction: column;
-  font-size: calc(1em + 1pt);
   gap: 0.15rem;
   line-height: 1.25;
   text-align: left;
@@ -246,11 +245,8 @@ td {
   min-height: 1.2em;
 }
 
-.deck-card {
-  color: #000;
-}
-
-/* Suit glyphs are DOM text; .deck-card sets its own color so nested pips stay black. */
+/* Suit glyphs are DOM text; .hand-card sets color: inherit so nested/sibling
+   pips stay black even when the suit glyph is red. */
 spade-suit,
 club-suit {
   color: #000;

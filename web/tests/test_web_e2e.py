@@ -163,7 +163,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
     def test_deck_status_omits_cards_entered_in_the_diagram(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
-            cards = page.locator("#deck-status .deck-card")
+            cards = page.locator("#deck-status .hand-card")
             self.assertEqual(cards.count(), 52)
             self.assertEqual(
                 page.locator('#deck-status [data-card="SA"]').count(),
@@ -176,7 +176,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                 page.locator('#deck-status [data-card="SA"]').count(),
                 0,
             )
-            self.assertEqual(page.locator("#deck-status .deck-card").count(), 51)
+            self.assertEqual(page.locator("#deck-status .hand-card").count(), 51)
             self.assertEqual(
                 page.locator("#deck-status .deck-card-entered").count(),
                 0,
@@ -675,6 +675,38 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_undeployed_cards_match_dealt_hand_card_chrome(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("K")
+            page.locator("#north_spades").dispatch_event("input")
+
+            styles = page.evaluate(
+                """() => {
+                  const props = [
+                    'borderTopWidth', 'borderTopStyle', 'borderTopColor',
+                    'borderRadius', 'fontSize', 'paddingTop', 'paddingRight',
+                    'paddingBottom', 'paddingLeft', 'lineHeight', 'color',
+                  ];
+                  const read = (sel) => {
+                    const s = getComputedStyle(document.querySelector(sel));
+                    return Object.fromEntries(props.map((p) => [p, s[p]]));
+                  };
+                  return {
+                    dealt: read('.hand-north .hand-card[data-card="SK"]'),
+                    undeployed: read('#deck-status .hand-card[data-card="SA"]'),
+                  };
+                }"""
+            )
+            self.assertEqual(
+                styles["undeployed"],
+                styles["dealt"],
+                msg="undeployed pips must use the same hand-card chrome as dealt",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_suit_tags_expose_glyphs_in_dom(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
@@ -696,7 +728,8 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                         tag_color, "rgb(0, 0, 0)", msg=f"{tag} glyph is black"
                     )
 
-            # Deck pips are nested inside suit tags; they must stay black.
+            # Undeployed pips use .hand-card (color: inherit) outside the suit
+            # tag, so they stay black even for hearts/diamonds.
             pip_color = page.locator('#deck-status [data-card="HA"]').evaluate(
                 "el => getComputedStyle(el).color"
             )

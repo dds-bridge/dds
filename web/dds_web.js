@@ -33,6 +33,7 @@
             playIllegalInputBeep
             handleHandSuitInput
             handCardHtml
+            undeployedCardHtml
             handHoldingHtml
             escapeHtml
             updateHandCardDisplays
@@ -394,6 +395,14 @@ function allDeckCards() {
     return cards;
 }
 
+function undeployedCardHtml(card) {
+    return "<button type=\"button\" class=\"hand-card\"" +
+        " data-card=\"" + escapeHtml(card.key()) + "\"" +
+        " tabindex=\"-1\" aria-hidden=\"true\">" +
+        escapeHtml(card.pip) +
+        "</button>";
+}
+
 function deckStatusHtml(hands) {
     const enteredCards = {};
 
@@ -413,15 +422,13 @@ function deckStatusHtml(hands) {
         }
 
         const cardsHtml = remaining.map((pip) => {
-            const key = new Card(suit, pip).key();
-
-            return "<span class=\"deck-card\" data-card=\"" + key + "\">" +
-                pip + "</span>";
+            return undeployedCardHtml(new Card(suit, pip));
         }).join("");
         const tag = suitTag(suit);
 
+        // Match dealt holdings: colored suit glyph, then hand-card pips.
         return "<div class=\"deck-suit-row\"><" + tag + ">" +
-            SUIT_GLYPHS[suit] + cardsHtml + "</" + tag + "></div>";
+            SUIT_GLYPHS[suit] + "</" + tag + ">&nbsp;" + cardsHtml + "</div>";
     }).join("");
 }
 

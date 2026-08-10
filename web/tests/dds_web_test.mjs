@@ -337,7 +337,7 @@ test("deck status puts each suit in its own row wrapper", () => {
     assert.equal(rows.length, 4);
     assert.match(
         deckStatus,
-        /class="deck-suit-row"[^>]*>\s*<spade-suit>[\s\S]*?<\/spade-suit>\s*<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<heart-suit>[\s\S]*?<\/heart-suit>\s*<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<diamond-suit>[\s\S]*?<\/diamond-suit>\s*<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<club-suit>/
+        /class="deck-suit-row"[^>]*>\s*<spade-suit>[\s\S]*?<\/spade-suit>[\s\S]*?<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<heart-suit>[\s\S]*?<\/heart-suit>[\s\S]*?<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<diamond-suit>[\s\S]*?<\/diamond-suit>[\s\S]*?<\/div>\s*<div class="deck-suit-row"[^>]*>\s*<club-suit>/
     );
 });
 
@@ -1037,14 +1037,13 @@ test("updateActionButtons displays all 52 cards in the deck status", () => {
     assert.doesNotMatch(deckStatus, /&spades;|&hearts;|&diams;|&clubs;/);
     assert.match(deckStatus, /data-card="SA"/);
     assert.match(deckStatus, /data-card="C2"/);
+    // Same pip chrome as dealt holdings: suit glyph, then hand-card buttons.
     assert.match(
         deckStatus,
-        /<heart-suit>\u2665<span class="deck-card" data-card="HA">/
+        /<heart-suit>\u2665<\/heart-suit>&nbsp;<button\b[^>]*class="hand-card"[^>]*data-card="HA"/
     );
-    assert.doesNotMatch(
-        deckStatus,
-        /class="deck-card [^"]*red[^"]*" data-card="HA"/
-    );
+    assert.doesNotMatch(deckStatus, /deck-card/);
+    assert.equal((deckStatus.match(/class="hand-card"/g) ?? []).length, 52);
 });
 
 test("updateActionButtons omits cards entered in any hand, including lowercase pips", () => {
@@ -1061,8 +1060,9 @@ test("updateActionButtons omits cards entered in any hand, including lowercase p
     assert.equal((deckStatus.match(/data-card=/g) ?? []).length, 50);
     assert.doesNotMatch(deckStatus, /data-card="SA"/);
     assert.doesNotMatch(deckStatus, /data-card="HK"/);
-    assert.match(deckStatus, /class="deck-card" data-card="SK"/);
+    assert.match(deckStatus, /class="hand-card"[^>]*data-card="SK"/);
     assert.doesNotMatch(deckStatus, /deck-card-entered/);
+    assert.doesNotMatch(deckStatus, /deck-card/);
 });
 
 test("updateActionButtons hides a suit row when all of its cards are in the diagram", () => {
@@ -2209,6 +2209,27 @@ test("undeployed cards live in the hand diagram center in four suit rows", () =>
         css,
         /\.grid-item\.grid-filler-center\s*\{[^}]*justify-content:\s*center/s
     );
+    // Match dealt-hand type size so .hand-card 0.72em chrome matches N/S.
+    assert.match(
+        css,
+        /\.grid-item\.grid-filler-center\s*\{[^}]*font-size:\s*30px/s
+    );
+    assert.doesNotMatch(css, /\.deck-card\s*\{/);
+});
+
+test("undeployedCardHtml matches dealt hand-card button chrome", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const card = new ctx.Card("hearts", "A");
+
+    const html = ctx.undeployedCardHtml(card);
+
+    assert.match(html, /<button\b/);
+    assert.match(html, /type="button"/);
+    assert.match(html, /class="hand-card"/);
+    assert.match(html, /data-card="HA"/);
+    assert.match(html, />A<\/button>/);
+    assert.doesNotMatch(html, /data-direction=/);
+    assert.doesNotMatch(html, /deck-card/);
 });
 
 test("result table lives in the hand diagram southeast corner", () => {
