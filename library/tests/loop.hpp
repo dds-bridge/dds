@@ -10,6 +10,8 @@
 #pragma once
 
 #include <api/dll.h>
+#include <utility>
+#include <vector>
 
 /// @file loop.hpp
 /// @brief Main test loop implementations for DDS solver testing.
@@ -23,14 +25,17 @@
 /// @param deal_list Input deals in PBN format
 /// @param fut_list Expected future tricks results
 /// @param number Number of deals in test set
-/// @param stepsize Reporting frequency
+/// @param stepsize Boards per solve batch (typically `MAXNOOFBOARDS`)
+/// @param board_times When non-null, appends per-deal timings for every batch
+///        with file-relative board indices (for `dtest -r`)
 void loop_solve(
     BoardsPBN * bop,
     SolvedBoards * solvedbdp,
     DealPBN * deal_list,
     FutureTricks * fut_list,
     const int number,
-    const int stepsize);
+    const int stepsize,
+    std::vector<std::pair<int, int>>* board_times = nullptr);
 
 /// Calculate loop: CalcAllTablesPBNX for the full deal list in one parallel job.
 /// Allocates its own flat deal/result buffers (unbounded X API); no legacy

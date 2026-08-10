@@ -19,3 +19,13 @@ void print_per_board_timings(
     out << p.second << "\t" << p.first << "\n";
   out << "\n";
 }
+
+void append_batch_board_times(
+  std::vector<std::pair<int, int>>& accumulated,
+  const std::vector<std::pair<int, int>>& batch_times,
+  int file_offset)
+{
+  accumulated.reserve(accumulated.size() + batch_times.size());
+  for (const auto& p : batch_times)
+    accumulated.emplace_back(p.first + file_offset, p.second);
+}

@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <utility>
 #include <vector>
 
 #include <api/dll.h>
@@ -112,9 +113,18 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   PlayTracesPBN playsp;
   SolvedPlays solvedplp;
 
+  std::vector<std::pair<int, int>> board_times;
+
   if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
   {
-    loop_solve(&bop, &solvedbdp, deal_list, fut_list, number, stepsize);
+    loop_solve(
+      &bop,
+      &solvedbdp,
+      deal_list,
+      fut_list,
+      number,
+      stepsize,
+      options.report_slow_boards_ ? &board_times : nullptr);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {
@@ -145,9 +155,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
 
   if (options.report_slow_boards_)
   {
-    std::vector<std::pair<int,int>> times;
-    scheduler.GetBoardTimes(times);
-    if (times.empty())
+    if (board_times.empty())
     {
       if (options.solver_ == Solver::DTEST_SOLVER_CALC)
       {
@@ -161,7 +169,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
     }
     else
     {
-      print_per_board_timings(cout, times);
+      print_per_board_timings(cout, board_times);
     }
   }
 

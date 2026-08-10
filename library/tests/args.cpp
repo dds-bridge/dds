@@ -109,7 +109,8 @@ void usage(
     "                   the modern SolverContext API, prefer configuring\n" <<
     "                   memory via SolverConfig instead of this option.)\n" <<
     "\n" <<
-    "-r, --report       Print per-board timings sorted by longest first.\n" <<
+    "-r, --report       Print per-deal timings for every hand in the input\n"
+    "                   (solve mode), sorted by longest first.\n" <<
     "\n" <<
     endl;
 }
