@@ -42,20 +42,34 @@ def _debug_windows_cppopts_block(cppvariables: str) -> str:
     return match.group(1)
 
 
+# MSVC optimisation-level flags that fight Bazel's compilation_mode (/Od vs /O2
+# D9025). Broader than /Od|/O2 so /O1, /Ox, etc. cannot sneak back in.
+_MSVC_OPT_LEVEL_COPT = re.compile(r'"/O[0-9a-zA-Z]')
+
+
 def _bazelisk_invocation_has_config_opt(text: str, subcommand: str) -> bool:
     """True if any bazelisk <subcommand> invocation includes --config=opt.
 
     Flag order after the subcommand is not significant, and a YAML `run:`
-    prefix on the same line is allowed.
+    prefix on the same line is allowed. Full-line comments (leading `#`) are
+    ignored so a commented-out invocation cannot satisfy the CI guard.
     """
-    pattern = rf"bazelisk\s+{re.escape(subcommand)}\b[^\n]*--config=opt\b"
-    return re.search(pattern, text) is not None
+    pattern = re.compile(
+        rf"^[ \t]*(?:run:[ \t]+)?bazelisk\s+{re.escape(subcommand)}\b[^\n]*--config=opt\b",
+        re.MULTILINE,
+    )
+    for line in text.splitlines():
+        if line.lstrip().startswith("#"):
+            continue
+        if pattern.search(line):
+            return True
+    return False
 
 
 class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
     def test_windows_cppopts_do_not_override_bazel_optimization(self) -> None:
-        """Bazel already sets /Od (fastbuild/dbg) or /O2 (opt); re-stating them
-        in DDS_CPPOPTS produces cl D9025 ('overriding /Od with /O2').
+        """Bazel already sets /Od (fastbuild/dbg) or /O2 (opt); re-stating any
+        MSVC /O* level flag in DDS_CPPOPTS produces cl D9025.
         """
         text = (_repo_root() / "CPPVARIABLES.bzl").read_text(encoding="utf-8")
         for label, block in (
@@ -64,9 +78,22 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
         ):
             self.assertNotRegex(
                 block,
-                r'"/O[d2]"',
-                f"{label} must not set /Od or /O2; use compilation_mode instead",
+                _MSVC_OPT_LEVEL_COPT,
+                f"{label} must not set /O* level flags; use compilation_mode instead",
             )
+
+    def test_msvc_opt_level_copt_rejects_common_overrides(self) -> None:
+        for flag in ('"/Od"', '"/O1"', '"/O2"', '"/Ox"', '"/Og"'):
+            self.assertRegex(
+                flag,
+                _MSVC_OPT_LEVEL_COPT,
+                f"expected {flag} to be treated as an optimisation-level override",
+            )
+        self.assertNotRegex(
+            '"/W4"',
+            _MSVC_OPT_LEVEL_COPT,
+            "/W4 is a warning flag, not an /O* level override",
+        )
 
     def test_windows_cppopts_do_not_override_toolchain_cxx_standard(self) -> None:
         """MSVC /std comes from the patched rules_cc default_cpp_std feature
@@ -275,6 +302,32 @@ class TestBazeliskConfigOptMatching(unittest.TestCase):
         self.assertFalse(
             _bazelisk_invocation_has_config_opt(
                 "bazelisk fetch --config=opt //...\nbazelisk build //...",
+                "build",
+            )
+        )
+
+    def test_rejects_commented_out_bazelisk_invocation(self) -> None:
+        self.assertFalse(
+            _bazelisk_invocation_has_config_opt(
+                "# bazelisk build --config=opt //...\nbazelisk build //...",
+                "build",
+            )
+        )
+
+    def test_rejects_indented_commented_out_bazelisk_invocation(self) -> None:
+        self.assertFalse(
+            _bazelisk_invocation_has_config_opt(
+                "        # run: bazelisk test --config=opt //...\n"
+                "        run: bazelisk test --verbose_failures //...",
+                "test",
+            )
+        )
+
+    def test_matches_active_line_when_commented_sibling_exists(self) -> None:
+        self.assertTrue(
+            _bazelisk_invocation_has_config_opt(
+                "# bazelisk build //...\n"
+                "bazelisk build --verbose_failures --config=opt //...",
                 "build",
             )
         )
