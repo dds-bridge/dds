@@ -81,31 +81,32 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
                 "cxxopt, which would leak into wasm transitions on Windows hosts)",
             )
 
-    def test_windows_bazelrc_disables_default_cpp_std_feature(self) -> None:
-        """rules_cc injects /std:c++17 via default_cpp_std; without disabling it,
-        Windows DDS_CPPOPTS /std:c++20 yields cl D9025.
-        """
-        bazelrc = (_repo_root() / ".bazelrc").read_text(encoding="utf-8")
-        self.assertRegex(
-            bazelrc,
-            r"(?m)^build:windows\s+--features=-default_cpp_std\b",
-            "expected build:windows to disable default_cpp_std so /std:c++20 "
-            "in DDS_CPPOPTS is the only language standard flag",
-        )
+    def test_windows_bazelrc_keeps_default_cpp_std_feature(self) -> None:
+        """rules_cc's default_cpp_std supplies /std:c++17 for every MSVC compile,
+        including @googletest and cc_* targets that do not use DDS_CPPOPTS.
 
-    def test_windows_bazelrc_sets_host_cxx20_without_target_cxxopt(self) -> None:
-        """Host tools still need C++20 after -default_cpp_std; target /std must
-        stay out of build:windows --cxxopt so emscripten wasm builds are safe.
+        Disabling it leaves those TUs with no language standard; googletest then
+        fails with C1189 (C++17 required). DDS_CPPOPTS may still add /std:c++20
+        (a benign D9025 override on those targets). Do not put /std in
+        build:windows --cxxopt — that leaks into wasm transitions on Windows.
         """
         bazelrc = (_repo_root() / ".bazelrc").read_text(encoding="utf-8")
-        self.assertRegex(
-            bazelrc,
-            r"(?m)^build:windows\s+--host_cxxopt=/std:c\+\+20\b",
-            "expected build:windows host_cxxopt=/std:c++20 for host tools",
+        self.assertIsNone(
+            re.search(
+                r"(?m)^build:windows\s+--features=-default_cpp_std\b",
+                bazelrc,
+            ),
+            "build:windows must not disable default_cpp_std (breaks googletest "
+            "and targets without DDS_CPPOPTS)",
         )
         self.assertIsNone(
             re.search(r"(?m)^build:windows\s+--cxxopt=/std:", bazelrc),
             "build:windows must not set --cxxopt=/std:... (leaks into wasm)",
+        )
+        self.assertIsNone(
+            re.search(r"(?m)^build:windows\s+--host_cxxopt=/std:", bazelrc),
+            "build:windows must not set --host_cxxopt=/std:...; host tools use "
+            "default_cpp_std",
         )
 
 

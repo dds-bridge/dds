@@ -42,11 +42,9 @@ build:linux --host_cxxopt=-std=c++20
 # Windows native targets set /std:c++20 in DDS_CPPOPTS (MSVC syntax). Do not put
 # --cxxopt=/std:... under build:windows: enable_platform_specific_config keys
 # off the host OS, so that flag would leak into wasm transitions on Windows.
-# rules_cc's default_cpp_std feature also injects /std:c++17; disable it so
-# DDS_CPPOPTS is the only language-standard flag (avoids cl D9025). Host tools
-# still need an explicit standard after that disable.
-build:windows --features=-default_cpp_std
-build:windows --host_cxxopt=/std:c++20
+# Keep rules_cc default_cpp_std (/std:c++17): googletest and cc_* targets that
+# omit DDS_CPPOPTS still need a language standard. DDS_CPPOPTS may override to
+# /std:c++20 (MSVC D9025 on those targets only — benign command-line warning).
 
 # Performance optimization flags
 build:opt --compilation_mode=opt

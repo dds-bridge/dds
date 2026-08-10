@@ -44,9 +44,9 @@ than re-encoding toolchain knowledge.
   not currently possible under the pinned hermetic emsdk toolchain (see
   [wasm-emscripten](wasm-emscripten.md)). C++20 is the baseline
   (`--cxxopt=-std=c++20` in `.bazelrc` for macOS/Linux; Windows `/std:c++20` in
-  `DDS_CPPOPTS`, with `build:windows --features=-default_cpp_std` so rules_cc
-  does not also inject `/std:c++17`). Treat `-Werror` as a standing invariant:
-  warnings break the build.
+  `DDS_CPPOPTS`, while rules_cc `default_cpp_std` still supplies `/std:c++17` for
+  googletest and targets that omit `DDS_CPPOPTS`). Treat `-Werror` as a standing
+  invariant: warnings break the build.
 - **Feature flags are `--define`-driven `config_setting`s**, surfaced through
   `DDS_LOCAL_DEFINES` / `DDS_SCHEDULER_DEFINE`:
   | config setting | `--define` | preprocessor define | capability |
@@ -79,10 +79,11 @@ than re-encoding toolchain knowledge.
 
 - `BUILD.bazel` (root) — all `config_setting`s, the `//:dds` / `//:testable_dds`
   façades, and the `doxygen_docs` genrule.
-- `.bazelrc` — C++20 cxxopts (macOS/Linux), Windows `-default_cpp_std` + host
-  `/std:c++20`, hermetic JDK, default test tag filters (e.g. `-e2e`; WASM CI
-  clears the filter so Playwright runs), sanitizer configs (`asan` / `tsan` /
-  `ubsan` / Linux-only `msan`).
+- `.bazelrc` — C++20 cxxopts (macOS/Linux), Windows std via `DDS_CPPOPTS` +
+  rules_cc `default_cpp_std` (no host `/std` cxxopt — that leaks into wasm),
+  hermetic JDK, default test tag filters (e.g. `-e2e`; WASM CI clears the
+  filter so Playwright runs), sanitizer configs (`asan` / `tsan` / `ubsan` /
+  Linux-only `msan`).
 - `CPPVARIABLES.bzl` — `DDS_CPPOPTS`, `DDS_LINKOPTS`, `DDS_LOCAL_DEFINES`,
   `DDS_SCHEDULER_DEFINE`.
 - `wasm_compat.bzl` — `WASM_LINKOPTS`.
