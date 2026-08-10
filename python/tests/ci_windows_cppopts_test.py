@@ -109,35 +109,52 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
 
 
 def _rules_cc_bazel_dep_version(module_bazel: str) -> str:
-    match = re.search(
-        r'bazel_dep\(\s*name\s*=\s*"rules_cc"\s*,\s*version\s*=\s*"([^"]+)"\s*\)',
-        module_bazel,
-    )
-    if match is None:
-        raise AssertionError('expected bazel_dep(name = "rules_cc", version = "...")')
-    return match.group(1)
+    for match in re.finditer(r'bazel_dep\(\s*([^)]*)\)', module_bazel, flags=re.DOTALL):
+        body = match.group(1)
+        name = re.search(r'name\s*=\s*"rules_cc"', body)
+        version = re.search(r'version\s*=\s*"([^"]+)"', body)
+        if name and version:
+            return version.group(1)
+    raise AssertionError('expected bazel_dep(... name = "rules_cc" ... version = "...")')
 
 
 def _rules_cc_override_version(module_bazel: str) -> str:
-    match = re.search(
-        r"single_version_override\(\s*"
-        r'module_name\s*=\s*"rules_cc"\s*,\s*'
-        r'version\s*=\s*"([^"]+)"\s*,\s*'
-        r"patches\s*=\s*\[\s*"
-        r'"//:patches/rules_cc_msvc_default_cpp_std_cxx20\.patch"\s*,?\s*'
-        r"\]\s*,\s*"
-        r"patch_strip\s*=\s*1\s*,?\s*"
-        r"\)",
+    patch = r'"//:patches/rules_cc_msvc_default_cpp_std_cxx20\.patch"'
+    for match in re.finditer(
+        r"single_version_override\(\s*([^)]*)\)",
         module_bazel,
         flags=re.DOTALL,
+    ):
+        body = match.group(1)
+        if re.search(r'module_name\s*=\s*"rules_cc"', body) is None:
+            continue
+        if re.search(patch, body) is None:
+            continue
+        if re.search(r"patch_strip\s*=\s*1\b", body) is None:
+            continue
+        version = re.search(r'version\s*=\s*"([^"]+)"', body)
+        if version:
+            return version.group(1)
+    raise AssertionError(
+        "expected single_version_override(module_name=\"rules_cc\", version=..., "
+        "patches=[//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch], patch_strip=1)"
     )
-    if match is None:
-        raise AssertionError(
-            "expected single_version_override(module_name=\"rules_cc\", "
-            "version=..., patches=[//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch], "
-            "patch_strip=1)"
-        )
-    return match.group(1)
+
+
+def _exports_files_python_visibility_block(build_bazel: str) -> str | None:
+    """Return the exports_files(...) body for the CI-guard config exports."""
+    for match in re.finditer(
+        r"exports_files\(\s*(\[[^\]]*\])\s*,\s*visibility\s*=\s*\[[^\]]*\]\s*,?\s*\)",
+        build_bazel,
+        flags=re.DOTALL,
+    ):
+        block = match.group(1)
+        if re.search(r'"\.bazelrc"', block) and re.search(
+            r'"patches/rules_cc_msvc_default_cpp_std_cxx20\.patch"',
+            block,
+        ):
+            return block
+    return None
 
 
 class TestRulesCcMsvcDefaultCppStdCxx20(unittest.TestCase):
@@ -175,6 +192,24 @@ single_version_override(
 """
         self.assertEqual(_rules_cc_bazel_dep_version(sample), "1.2.3")
         self.assertEqual(_rules_cc_override_version(sample), "1.2.3")
+
+    def test_rules_cc_version_helpers_tolerate_reordered_args(self) -> None:
+        sample = """
+bazel_dep(
+    version = "4.5.6",
+    name = "rules_cc",
+)
+single_version_override(
+    patch_strip = 1,
+    patches = ["//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch"],
+    version = "4.5.6",
+    module_name = "rules_cc",
+    # extra fields must not break the guard
+    registry = "https://example.com",
+)
+"""
+        self.assertEqual(_rules_cc_bazel_dep_version(sample), "4.5.6")
+        self.assertEqual(_rules_cc_override_version(sample), "4.5.6")
 
     def test_patch_raises_msvc_default_cpp_std_to_cxx20(self) -> None:
         patch = (_repo_root() / self._PATCH).read_text(encoding="utf-8")
@@ -268,25 +303,47 @@ class TestWindowsCppoptsConfigExportsVisibility(unittest.TestCase):
         labels.
         """
         text = (_repo_root() / "BUILD.bazel").read_text(encoding="utf-8")
-        match = re.search(
-            r"exports_files\(\s*"
-            r"\[\s*"
-            r'"\.bazelrc",\s*'
-            r'"CPPVARIABLES\.bzl",\s*'
-            r'"MODULE\.bazel",\s*'
-            r'"patches/rules_cc_msvc_default_cpp_std_cxx20\.patch",\s*'
-            r"\]\s*,\s*"
-            r"visibility\s*=\s*\[\s*\"//python:__pkg__\"\s*\]\s*,?\s*"
-            r"\)",
-            text,
-            flags=re.DOTALL,
-        )
+        block = _exports_files_python_visibility_block(text)
         self.assertIsNotNone(
-            match,
-            "expected exports_files([.bazelrc, CPPVARIABLES.bzl, MODULE.bazel, "
-            "patches/rules_cc_msvc_default_cpp_std_cxx20.patch], "
-            'visibility = ["//python:__pkg__"])',
+            block,
+            "expected exports_files([...], visibility = [\"//python:__pkg__\"]) "
+            "for CI guard config roots",
         )
+        assert block is not None
+        for entry in (
+            ".bazelrc",
+            "CPPVARIABLES.bzl",
+            "MODULE.bazel",
+            "patches/rules_cc_msvc_default_cpp_std_cxx20.patch",
+        ):
+            self.assertIn(
+                f'"{entry}"',
+                block,
+                f"exports_files must include {entry}",
+            )
+        self.assertRegex(
+            text,
+            r"exports_files\(\s*\[[^\]]*\]\s*,\s*visibility\s*=\s*\[\s*\"//python:__pkg__\"\s*\]\s*,?\s*\)",
+            'exports_files visibility must be restricted to ["//python:__pkg__"]',
+        )
+
+    def test_exports_files_guard_tolerates_reordered_entries(self) -> None:
+        sample = """
+exports_files(
+    [
+        "MODULE.bazel",
+        ".bazelrc",
+        "patches/rules_cc_msvc_default_cpp_std_cxx20.patch",
+        "CPPVARIABLES.bzl",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+"""
+        block = _exports_files_python_visibility_block(sample)
+        self.assertIsNotNone(block)
+        assert block is not None
+        self.assertIn('"MODULE.bazel"', block)
+        self.assertIn('"patches/rules_cc_msvc_default_cpp_std_cxx20.patch"', block)
 
 
 if __name__ == "__main__":
