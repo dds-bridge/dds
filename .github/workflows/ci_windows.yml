@@ -10,6 +10,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     env:
+      BAZELISK_HOME: ${{ github.workspace }}\.bazel-cache\bazelisk
       BAZEL_DISK_CACHE: ${{ github.workspace }}\.bazel-cache\disk
       BAZEL_PROFILE_JSON: ${{ github.workspace }}\windows-fastbuild-profile.json.gz
       BAZEL_PROFILE_TXT: ${{ github.workspace }}\windows-fastbuild-profile.txt
@@ -21,6 +22,15 @@ jobs:
       # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      # Reuse downloaded Bazel binaries across workflow runs
+      - name: Restore Bazelisk cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BAZELISK_HOME }}
+          key: windows-bazelisk-cache-${{ runner.os }}-${{ hashFiles('.bazelversion') }}
+          restore-keys: |
+            windows-bazelisk-cache-${{ runner.os }}-
 
       # Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
