@@ -4,6 +4,17 @@ module(
 )
 
 bazel_dep(name = "rules_cc", version = "0.2.18")
+# MSVC default_cpp_std is hardcoded to /std:c++17 in rules_cc. Raise it to
+# /std:c++20 so googletest and every Windows cc_* compile match the project
+# baseline without restating /std in DDS_CPPOPTS (D9025) or build:windows
+# --cxxopt (which would leak into wasm transitions on Windows hosts).
+single_version_override(
+    module_name = "rules_cc",
+    version = "0.2.18",
+    patches = ["//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch"],
+    patch_strip = 1,
+)
+
 bazel_dep(name = "platforms", version = "1.1.0")
 # copy_file (shell-free, cross-platform) for staging the native lib into the jar.
 # Pin to the version the graph resolves (via rules_jvm_external) to avoid a
