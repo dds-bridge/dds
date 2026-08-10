@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 
 #include "deal_fanout.hpp"
 #include "scheduler.hpp"
@@ -990,13 +991,23 @@ void Scheduler::GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const
 }
 
 
-void Scheduler::SetBoardTime(int boardIndex, int time_us)
+void Scheduler::SetBoardTime(int boardIndex, long long time_us)
 {
   if (boardIndex < 0 || boardIndex >= MAXNOOFBOARDS) return;
   // store in the hand time field; this is a lightweight fallback
   // for when DDS_SCHEDULER isn't enabled. No locking required for
   // single-writer per-board usage pattern from the solver threads.
-  hands[boardIndex].time = time_us;
+  hands[boardIndex].time = saturate_board_time_us(time_us);
+}
+
+auto saturate_board_time_us(long long time_us) -> int
+{
+  if (time_us <= 0)
+    return 0;
+  constexpr auto kMax = static_cast<long long>(std::numeric_limits<int>::max());
+  if (time_us >= kMax)
+    return std::numeric_limits<int>::max();
+  return static_cast<int>(time_us);
 }
 
 

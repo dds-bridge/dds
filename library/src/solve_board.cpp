@@ -89,8 +89,7 @@ auto solve_all_boards_n(
         bds.mode[bno], &fut);
       auto dur = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::steady_clock::now() - t0).count();
-      if (dur < 0) dur = 0;
-      scheduler.SetBoardTime(bno, static_cast<int>(dur));
+      scheduler.SetBoardTime(bno, dur);
 
       if (res == RETURN_NO_FAULT)
         solved.solved_board[bno] = fut;
@@ -282,8 +281,7 @@ auto solve_all_boards_n_seq(
       bds.mode[bno], &fut);
     auto dur = std::chrono::duration_cast<std::chrono::microseconds>(
       std::chrono::steady_clock::now() - t0).count();
-    if (dur < 0) dur = 0;
-    scheduler.SetBoardTime(bno, static_cast<int>(dur));
+    scheduler.SetBoardTime(bno, dur);
 
     if (res == 1)
       solved.solved_board[bno] = fut;

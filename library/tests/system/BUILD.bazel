@@ -229,18 +229,17 @@ cc_test(
     ],
 )
 
-# Utilities snapshot tests
-# DISABLED: Tests for unimplemented log_snapshot() feature
 cc_test(
-    name = "utilities_log_snapshot_test",
-    srcs = ["utilities_log_snapshot_test.cpp"],
-    tags = ["manual"],
+    name = "scheduler_board_time_test",
+    size = "small",
+    srcs = ["scheduler_board_time_test.cpp"],
     deps = [
         "//library/src:testable_dds",
         "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
+
 
 # Utilities stats tests
 cc_test(

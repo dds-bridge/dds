@@ -218,7 +218,8 @@ class Scheduler
 
   // Lightweight API to set a board's time in microseconds for reporting when
   // full DDS_SCHEDULER timing is not enabled. Thread-safe for single-writer per-board.
-  void SetBoardTime(int boardIndex, int time_us);
+  // Values outside `[0, INT_MAX]` are saturated into `HandType::time` storage.
+  void SetBoardTime(int boardIndex, long long time_us);
 
     // Release timing storage early to avoid heavy destructor work at exit.
     void ClearTiming();
@@ -236,5 +237,8 @@ class Scheduler
 #endif
 
 };
+
+/// Saturate a microsecond duration into the `int` used by `HandType::time`.
+auto saturate_board_time_us(long long time_us) -> int;
 
 #endif
