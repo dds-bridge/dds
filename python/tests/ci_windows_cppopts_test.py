@@ -67,6 +67,10 @@ def _bazelisk_invocation_has_config_opt(text: str, subcommand: str) -> bool:
     return False
 
 
+def _workflow_lines_with(text: str, needle: str) -> list[str]:
+    return [line for line in text.splitlines() if needle in line]
+
+
 class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
     def test_windows_cppopts_do_not_override_bazel_optimization(self) -> None:
         """Bazel already sets /Od (fastbuild/dbg) or /O2 (opt); re-stating any
@@ -360,17 +364,37 @@ class TestBazeliskConfigOptMatching(unittest.TestCase):
 
 class TestWindowsCiUsesOpt(unittest.TestCase):
     def test_windows_ci_passes_config_opt(self) -> None:
-        """Without /O2 in DDS_CPPOPTS, CI must opt in via --config=opt."""
+        """Windows CI keeps opt only for a focused release validation step."""
         text = (
             _repo_root() / ".github" / "workflows" / "ci_windows.yml"
         ).read_text(encoding="utf-8")
-        self.assertTrue(
-            _bazelisk_invocation_has_config_opt(text, "build"),
-            "expected Windows CI build to use --config=opt",
+        self.assertFalse(
+            _bazelisk_invocation_has_config_opt(text, "test"),
+            "expected broad Windows test coverage to run in fastbuild",
         )
         self.assertTrue(
-            _bazelisk_invocation_has_config_opt(text, "test"),
-            "expected Windows CI test to use --config=opt",
+            _bazelisk_invocation_has_config_opt(text, "build"),
+            "expected a focused Windows build step to keep --config=opt",
+        )
+
+    def test_windows_ci_limits_scope_and_collects_profile(self) -> None:
+        text = (
+            _repo_root() / ".github" / "workflows" / "ci_windows.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("WINDOWS_FASTBUILD_TARGETS", text)
+        self.assertNotIn("bazelisk fetch //...", text)
+        self.assertNotIn("bazelisk test --verbose_failures //...", text)
+        self.assertNotIn("bazelisk build --config=opt --verbose_failures //...", text)
+        self.assertIn("bazelisk analyze-profile", text)
+        self.assertRegex(
+            text,
+            r"actions/cache@v4",
+            "expected Windows workflow to enable cross-run Bazel caching",
+        )
+        test_lines = _workflow_lines_with(text, "bazelisk test")
+        self.assertTrue(
+            any("--profile=" in line for line in test_lines),
+            "expected Windows test command to emit a Bazel profile",
         )
 
 

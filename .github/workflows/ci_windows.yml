@@ -9,6 +9,14 @@ jobs:
   build_and_test:
     runs-on: windows-latest
     timeout-minutes: 20
+    env:
+      BAZEL_DISK_CACHE: ${{ github.workspace }}\.bazel-cache\disk
+      BAZEL_PROFILE_JSON: ${{ github.workspace }}\windows-fastbuild-profile.json.gz
+      BAZEL_PROFILE_TXT: ${{ github.workspace }}\windows-fastbuild-profile.txt
+      WINDOWS_FASTBUILD_TARGETS: >-
+        //library/... //examples/... //python/... //jni/...
+      WINDOWS_OPT_TARGETS: >-
+        //library/src:dds //examples:analyse_play_pbn
     steps:
       # Checkout the repository
       - name: Checkout repository
@@ -18,13 +26,23 @@ jobs:
       - name: Setup Bazelisk
         uses: ./.github/actions/setup-bazelisk
 
-      # Warm external deps (emsdk, LLVM, …); retry transient network fetch failures
+      # Reuse compiled/action cache artifacts across workflow runs
+      - name: Restore Bazel disk cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}\.bazel-cache\disk
+          key: windows-bazel-disk-cache-${{ runner.os }}-${{ hashFiles('.bazelversion', '.bazelrc', 'MODULE.bazel', 'BUILD.bazel', 'CPPVARIABLES.bzl') }}
+          restore-keys: |
+            windows-bazel-disk-cache-${{ runner.os }}-
+
+      # Warm external deps for the same scope tested on Windows
       - name: Prefetch external repos
         shell: pwsh
         run: |
+          $fastbuild_targets = $env:WINDOWS_FASTBUILD_TARGETS -split ' '
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazelisk fetch //...
+            bazelisk fetch --disk_cache="$env:BAZEL_DISK_CACHE" --verbose_failures $fastbuild_targets
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
@@ -33,15 +51,21 @@ jobs:
           }
           exit 1
 
-      # Build all targets (retry: fetch flakes can still surface on first analysis).
-      # --config=opt: DDS_CPPOPTS no longer forces /O2 (that fought Bazel's /Od and
-      # triggered MSVC D9025); opt mode is how Windows keeps release-level codegen.
-      - name: Bazel build (retry on transient fetch failure)
+      # Run Windows-native coverage in fastbuild (test-centric flow)
+      - name: Run Windows test targets
         shell: pwsh
         run: |
+          $fastbuild_targets = $env:WINDOWS_FASTBUILD_TARGETS -split ' '
+          bazelisk test --disk_cache="$env:BAZEL_DISK_CACHE" --profile="$env:BAZEL_PROFILE_JSON" --verbose_failures $fastbuild_targets
+
+      # Keep a narrow release-level check on Windows with --config=opt
+      - name: Build Windows opt smoke targets (retry on transient fetch failure)
+        shell: pwsh
+        run: |
+          $opt_targets = $env:WINDOWS_OPT_TARGETS -split ' '
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazelisk build --config=opt --verbose_failures //...
+            bazelisk build --config=opt --disk_cache="$env:BAZEL_DISK_CACHE" --verbose_failures $opt_targets
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
@@ -52,9 +76,10 @@ jobs:
           }
           exit 1
 
-      # Run all tests (including Python) — no retry so real test failures surface quickly
-      - name: Run all tests
-        run: bazelisk test --config=opt --verbose_failures //...
+      # Summarize profile hotspots for follow-up CI tuning
+      - name: Analyze Bazel profile
+        shell: pwsh
+        run: bazelisk analyze-profile "$env:BAZEL_PROFILE_JSON" | Out-File -FilePath "$env:BAZEL_PROFILE_TXT" -Encoding utf8
 
       # Upload test logs
       - name: Upload test logs - Windows
@@ -63,5 +88,17 @@ jobs:
         with:
           name: bazel-test-logs-windows
           path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # Upload profile artifacts
+      - name: Upload Bazel profile - Windows
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-profile-windows
+          path: |
+            ${{ github.workspace }}\windows-fastbuild-profile.json.gz
+            ${{ github.workspace }}\windows-fastbuild-profile.txt
           if-no-files-found: ignore
           retention-days: 30
