@@ -13,6 +13,8 @@
 TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
 {
   // Arrange: stored times are microseconds; report shows ms with one decimal.
+  // Both columns are space-padded and right-aligned (no tabs — tab stops
+  // shift when the ms field width varies).
   std::vector<std::pair<int, int>> times = {
     {2, 10100},
     {5, 42500},
@@ -27,10 +29,54 @@ TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
   EXPECT_EQ(
     out.str(),
     "Per-board timings (ms) sorted by longest first:\n"
-    "ms\tboard\n"
-    "42.5\t5\n"
-    "10.1\t2\n"
-    "7.0\t1\n"
+    "  ms  board\n"
+    "42.5      5\n"
+    "10.1      2\n"
+    " 7.0      1\n"
+    "\n");
+}
+
+TEST(ReportBoardTimings, RightAlignsBoardWiderThanHeader)
+{
+  std::vector<std::pair<int, int>> times = {
+    {12, 1000},
+    {3456, 2000},
+  };
+  std::ostringstream out;
+
+  print_per_board_timings(out, times);
+
+  EXPECT_EQ(
+    out.str(),
+    "Per-board timings (ms) sorted by longest first:\n"
+    " ms  board\n"
+    "2.0   3456\n"
+    "1.0     12\n"
+    "\n");
+}
+
+TEST(ReportBoardTimings, RightAlignsMixedMsWidthsWithSpaces)
+{
+  // Tab-separated layout breaks once ms strings cross a tab stop; spaces keep
+  // the board column fixed.
+  std::vector<std::pair<int, int>> times = {
+    {1, 202000},
+    {13, 164100},
+    {7, 158400},
+    {92, 148300},
+  };
+  std::ostringstream out;
+
+  print_per_board_timings(out, times);
+
+  EXPECT_EQ(
+    out.str(),
+    "Per-board timings (ms) sorted by longest first:\n"
+    "   ms  board\n"
+    "202.0      1\n"
+    "164.1     13\n"
+    "158.4      7\n"
+    "148.3     92\n"
     "\n");
 }
 
@@ -42,7 +88,7 @@ TEST(ReportBoardTimings, EmptyInputPrintsTitleAndHeadingsOnly)
   EXPECT_EQ(
     out.str(),
     "Per-board timings (ms) sorted by longest first:\n"
-    "ms\tboard\n"
+    "ms  board\n"
     "\n");
 }
 

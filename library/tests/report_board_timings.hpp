@@ -12,8 +12,8 @@
 /// Each element of @p times is `(board_index, time_us)`, where `board_index`
 /// is the 0-based deal index in the input file and `time_us` is wall time in
 /// microseconds. Printed times are milliseconds with one decimal place.
-/// Output includes a title line, a column-heading line (`ms` then `board`),
-/// then one row per board as `ms\\tboard`.
+/// Both the `ms` and `board` columns are right-aligned with spaces (no tabs).
+/// Output includes a title line, a heading line, then one row per board.
 void print_per_board_timings(
   std::ostream& out,
   std::vector<std::pair<int, int>> times);

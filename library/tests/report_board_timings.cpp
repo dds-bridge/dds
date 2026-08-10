@@ -4,7 +4,52 @@
 #include "report_board_timings.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 #include <iomanip>
+#include <sstream>
+
+namespace
+{
+
+int decimal_digits(int value)
+{
+  const int n = std::abs(value);
+  int digits = 1;
+  int x = n;
+  while (x >= 10)
+  {
+    x /= 10;
+    ++digits;
+  }
+  if (value < 0)
+    ++digits;
+  return digits;
+}
+
+int board_column_width(const std::vector<std::pair<int, int>>& times)
+{
+  constexpr int kHeaderWidth = 5;  // "board"
+  int width = kHeaderWidth;
+  for (const auto& p : times)
+    width = std::max(width, decimal_digits(p.first));
+  return width;
+}
+
+int ms_column_width(const std::vector<std::pair<int, int>>& times)
+{
+  constexpr int kHeaderWidth = 2;  // "ms"
+  int width = kHeaderWidth;
+  for (const auto& p : times)
+  {
+    std::ostringstream formatted;
+    formatted << std::fixed << std::setprecision(1)
+              << (static_cast<double>(p.second) / 1000.0);
+    width = std::max(width, static_cast<int>(formatted.str().size()));
+  }
+  return width;
+}
+
+}  // namespace
 
 void print_per_board_timings(
   std::ostream& out,
@@ -14,11 +59,19 @@ void print_per_board_timings(
     return a.second > b.second;
   });
 
+  const int ms_width = ms_column_width(times);
+  const int board_width = board_column_width(times);
+
   out << "Per-board timings (ms) sorted by longest first:\n";
-  out << "ms\tboard\n";
+  out << std::right << std::setw(ms_width) << "ms" << "  "
+      << std::setw(board_width) << "board" << "\n";
   out << std::fixed << std::setprecision(1);
   for (const auto& p : times)
-    out << (static_cast<double>(p.second) / 1000.0) << "\t" << p.first << "\n";
+  {
+    out << std::right << std::setw(ms_width)
+        << (static_cast<double>(p.second) / 1000.0) << "  "
+        << std::setw(board_width) << p.first << "\n";
+  }
   out << "\n";
 }
 
