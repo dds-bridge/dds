@@ -62,6 +62,10 @@ void print_per_board_timings(
   const int ms_width = ms_column_width(times);
   const int board_width = board_column_width(times);
 
+  // Preserve caller formatting; setw is one-shot but fixed/precision/align persist.
+  const auto saved_flags = out.flags();
+  const auto saved_precision = out.precision();
+
   out << "\nPer-board timings (ms) sorted by longest first:\n\n";
   out << std::right << std::setw(ms_width) << "ms" << "  "
       << std::setw(board_width) << "board" << "\n";
@@ -72,6 +76,9 @@ void print_per_board_timings(
         << (static_cast<double>(p.second) / 1000.0) << "  "
         << std::setw(board_width) << p.first << "\n";
   }
+
+  out.flags(saved_flags);
+  out.precision(saved_precision);
 }
 
 void append_batch_board_times(

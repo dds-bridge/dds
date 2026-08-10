@@ -169,7 +169,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
     }
     else
     {
-      print_per_board_timings(cout, board_times);
+      print_per_board_timings(cout, std::move(board_times));
     }
   }
 

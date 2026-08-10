@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -90,6 +91,22 @@ TEST(ReportBoardTimings, EmptyInputPrintsTitleAndHeadingsOnly)
     "\nPer-board timings (ms) sorted by longest first:\n"
     "\n"
     "ms  board\n");
+}
+
+TEST(ReportBoardTimings, RestoresStreamFormattingState)
+{
+  // Arrange: caller-owned formatting that must survive the report printer.
+  std::ostringstream out;
+  out << std::scientific << std::setprecision(4) << std::left;
+  const auto flags_before = out.flags();
+  const auto precision_before = out.precision();
+
+  // Act
+  print_per_board_timings(out, {{1, 1000}});
+
+  // Assert
+  EXPECT_EQ(out.flags(), flags_before);
+  EXPECT_EQ(out.precision(), precision_before);
 }
 
 TEST(AppendBatchBoardTimes, RemapsBatchLocalIndicesByFileOffset)
