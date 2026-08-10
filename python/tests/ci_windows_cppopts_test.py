@@ -108,29 +108,73 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
         )
 
 
+def _rules_cc_bazel_dep_version(module_bazel: str) -> str:
+    match = re.search(
+        r'bazel_dep\(\s*name\s*=\s*"rules_cc"\s*,\s*version\s*=\s*"([^"]+)"\s*\)',
+        module_bazel,
+    )
+    if match is None:
+        raise AssertionError('expected bazel_dep(name = "rules_cc", version = "...")')
+    return match.group(1)
+
+
+def _rules_cc_override_version(module_bazel: str) -> str:
+    match = re.search(
+        r"single_version_override\(\s*"
+        r'module_name\s*=\s*"rules_cc"\s*,\s*'
+        r'version\s*=\s*"([^"]+)"\s*,\s*'
+        r"patches\s*=\s*\[\s*"
+        r'"//:patches/rules_cc_msvc_default_cpp_std_cxx20\.patch"\s*,?\s*'
+        r"\]\s*,\s*"
+        r"patch_strip\s*=\s*1\s*,?\s*"
+        r"\)",
+        module_bazel,
+        flags=re.DOTALL,
+    )
+    if match is None:
+        raise AssertionError(
+            "expected single_version_override(module_name=\"rules_cc\", "
+            "version=..., patches=[//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch], "
+            "patch_strip=1)"
+        )
+    return match.group(1)
+
+
 class TestRulesCcMsvcDefaultCppStdCxx20(unittest.TestCase):
     _PATCH = "patches/rules_cc_msvc_default_cpp_std_cxx20.patch"
 
     def test_module_applies_rules_cc_msvc_cxx20_patch(self) -> None:
+        """Patch wiring must track MODULE.bazel versions — do not hard-code the
+        rules_cc pin in this guard (versions live only in MODULE.bazel / lock).
+        """
         text = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
-        match = re.search(
-            r"single_version_override\(\s*"
-            r'module_name\s*=\s*"rules_cc"\s*,\s*'
-            r'version\s*=\s*"0\.2\.18"\s*,\s*'
-            r"patches\s*=\s*\[\s*"
-            r'"//:patches/rules_cc_msvc_default_cpp_std_cxx20\.patch"\s*,?\s*'
-            r"\]\s*,\s*"
-            r"patch_strip\s*=\s*1\s*,?\s*"
-            r"\)",
-            text,
-            flags=re.DOTALL,
+        dep_version = _rules_cc_bazel_dep_version(text)
+        override_version = _rules_cc_override_version(text)
+        self.assertEqual(
+            dep_version,
+            override_version,
+            "rules_cc bazel_dep version must match single_version_override "
+            "version so the MSVC C++20 patch applies to the resolved module",
         )
-        self.assertIsNotNone(
-            match,
-            "expected single_version_override(rules_cc 0.2.18) with "
-            "patches=[//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch], "
-            "patch_strip=1",
-        )
+
+    def test_rules_cc_version_helpers_reject_missing_wiring(self) -> None:
+        with self.assertRaises(AssertionError):
+            _rules_cc_bazel_dep_version('bazel_dep(name = "platforms", version = "1.0")')
+        with self.assertRaises(AssertionError):
+            _rules_cc_override_version('bazel_dep(name = "rules_cc", version = "9.9.9")')
+
+    def test_rules_cc_version_helpers_accept_any_matching_pin(self) -> None:
+        sample = """
+bazel_dep(name = "rules_cc", version = "1.2.3")
+single_version_override(
+    module_name = "rules_cc",
+    version = "1.2.3",
+    patches = ["//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch"],
+    patch_strip = 1,
+)
+"""
+        self.assertEqual(_rules_cc_bazel_dep_version(sample), "1.2.3")
+        self.assertEqual(_rules_cc_override_version(sample), "1.2.3")
 
     def test_patch_raises_msvc_default_cpp_std_to_cxx20(self) -> None:
         patch = (_repo_root() / self._PATCH).read_text(encoding="utf-8")
