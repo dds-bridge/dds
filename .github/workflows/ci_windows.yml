@@ -13,7 +13,6 @@ jobs:
       BAZELISK_HOME: ${{ github.workspace }}\.bazel-cache\bazelisk
       BAZEL_DISK_CACHE: ${{ github.workspace }}\.bazel-cache\disk
       BAZEL_PROFILE_JSON: ${{ github.workspace }}\windows-fastbuild-profile.json.gz
-      BAZEL_PROFILE_TXT: ${{ github.workspace }}\windows-fastbuild-profile.txt
       WINDOWS_FASTBUILD_TARGETS: >-
         //library/... //examples/... //python/... //jni/...
       WINDOWS_OPT_TARGETS: >-
@@ -86,17 +85,6 @@ jobs:
           }
           exit 1
 
-      # Summarize profile hotspots for follow-up CI tuning
-      - name: Analyze Bazel profile
-        if: always()
-        shell: pwsh
-        run: |
-          if (Test-Path "$env:BAZEL_PROFILE_JSON") {
-            bazelisk analyze-profile "$env:BAZEL_PROFILE_JSON" | Out-File -FilePath "$env:BAZEL_PROFILE_TXT" -Encoding utf8
-          } else {
-            Write-Host "No Bazel profile found at $env:BAZEL_PROFILE_JSON; skipping analyze-profile."
-          }
-
       # Upload test logs
       - name: Upload test logs - Windows
         if: always()
@@ -115,6 +103,5 @@ jobs:
           name: bazel-profile-windows
           path: |
             ${{ github.workspace }}\windows-fastbuild-profile.json.gz
-            ${{ github.workspace }}\windows-fastbuild-profile.txt
           if-no-files-found: ignore
           retention-days: 30
