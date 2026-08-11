@@ -970,7 +970,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_duplicate_card_entry_is_rejected(self) -> None:
+    def test_typing_moves_a_card_from_another_hand(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             page.locator("#north_spades").fill("A")
@@ -979,15 +979,15 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             page.locator("#east_spades").fill("A")
             page.locator("#east_spades").dispatch_event("input")
 
-            self.assertEqual(page.locator("#north_spades").input_value(), "A")
-            self.assertEqual(page.locator("#east_spades").input_value(), "")
+            self.assertEqual(page.locator("#north_spades").input_value(), "")
+            self.assertEqual(page.locator("#east_spades").input_value(), "A")
             self.assertEqual(
                 page.locator('#north_spades_cards .hand-card[data-card="SA"]').count(),
-                1,
+                0,
             )
             self.assertEqual(
                 page.locator('#east_spades_cards .hand-card[data-card="SA"]').count(),
-                0,
+                1,
             )
             self.assertEqual(errors, [])
         finally:

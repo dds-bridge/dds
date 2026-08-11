@@ -865,7 +865,7 @@ test("handleHandSuitInput rejects a duplicate pip within the same suit", () => {
     assert.equal(input.value, "A");
 });
 
-test("handleHandSuitInput rejects a card already held in another hand", () => {
+test("handleHandSuitInput moves a card typed from another hand", () => {
     const document = createMockDocument({
         north_spades: "A",
         east_spades: "",
@@ -880,9 +880,9 @@ test("handleHandSuitInput rejects a card already held in another hand", () => {
     east.value = "A";
     ctx.handleHandSuitInput({ target: east });
 
-    assert.equal(beeps, 1);
-    assert.equal(document.element("north_spades").value, "A");
-    assert.equal(east.value, "");
+    assert.equal(beeps, 0);
+    assert.equal(document.element("north_spades").value, "");
+    assert.equal(east.value, "A");
 });
 
 test("handleHandSuitInput rejects typing that would take a hand over 13 cards", () => {
@@ -904,6 +904,27 @@ test("handleHandSuitInput rejects typing that would take a hand over 13 cards", 
     assert.equal(document.element("north_spades").value, "AKQJT98765432");
     assert.equal(hearts.value, "");
     assert.equal(document.element("north-card-count").hidden, true);
+});
+
+test("handleHandSuitInput does not steal when the typed hand is already full", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765432",
+        north_hearts: "",
+        east_hearts: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const hearts = document.element("north_hearts");
+
+    hearts.value = "A";
+    ctx.handleHandSuitInput({ target: hearts });
+
+    assert.equal(beeps, 1);
+    assert.equal(hearts.value, "");
+    assert.equal(document.element("east_hearts").value, "A");
 });
 
 test("handleHandSuitInput accepts typing that fills a hand to exactly 13 cards", () => {
@@ -946,19 +967,46 @@ test("handleHandSuitInput keeps only cards that fit when pasting past 13", () =>
     assert.equal(hearts.value, "AKQ");
 });
 
-test("handleHandSuitInput keeps other-hand ownership when typing a duplicate", () => {
+test("handleHandSuitInput moves only kept pips when pasting from another hand past the limit", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765",
+        east_hearts: "AKQJ",
+        north_hearts: "",
+    });
+    const ctx = loadDdsWeb(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const hearts = document.element("north_hearts");
+
+    // 10 spades already; only three hearts fit. Steal AKQ, leave J on east.
+    hearts.value = "AKQJ";
+    ctx.handleHandSuitInput({ target: hearts });
+
+    assert.equal(beeps, 1);
+    assert.equal(hearts.value, "AKQ");
+    assert.equal(document.element("east_hearts").value, "J");
+});
+
+test("handleHandSuitInput moves typed pips out of another hand and keeps the rest", () => {
     const document = createMockDocument({
         east_spades: "AK",
         north_spades: "",
     });
     const ctx = loadDdsWeb(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
     const north = document.element("north_spades");
 
     north.value = "AQ";
     ctx.handleHandSuitInput({ target: north });
 
-    assert.equal(document.element("east_spades").value, "AK");
-    assert.equal(north.value, "Q");
+    assert.equal(beeps, 0);
+    assert.equal(document.element("east_spades").value, "K");
+    assert.equal(north.value, "AQ");
 });
 
 test("pageLoad wires suit inputs to handleHandSuitInput", () => {

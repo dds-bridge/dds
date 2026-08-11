@@ -1701,54 +1701,6 @@ function suitHoldingHasDuplicatePips(value) {
     return false;
 }
 
-function suitHoldingConflictsWithOtherHands(element) {
-    if (!element || !element.id) {
-        return false;
-    }
-
-    const parsed = parseHandInputId(element.id);
-
-    if (!parsed) {
-        return false;
-    }
-
-    const claimed = {};
-
-    for (const other of hand_elements()) {
-        if (other === element) {
-            continue;
-        }
-
-        const otherParsed = parseHandInputId(other && other.id);
-
-        if (!otherParsed) {
-            continue;
-        }
-
-        for (const ch of other.value || "") {
-            const pip = ch.toUpperCase();
-
-            if (PIPS.includes(pip)) {
-                claimed[new Card(otherParsed.suit, pip).key()] = true;
-            }
-        }
-    }
-
-    for (const ch of element.value || "") {
-        const pip = ch.toUpperCase();
-
-        if (!PIPS.includes(pip)) {
-            continue;
-        }
-
-        if (claimed[new Card(parsed.suit, pip).key()]) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 function suitHoldingHasIllegalChars(value) {
     if (value == null) {
         return false;
@@ -1838,10 +1790,6 @@ function handleHandSuitInput(event) {
             beep = true;
         }
 
-        if (suitHoldingConflictsWithOtherHands(input)) {
-            beep = true;
-        }
-
         if (suitHoldingWouldExceedHandLimit(input)) {
             beep = true;
         }
@@ -1854,7 +1802,52 @@ function handleHandSuitInput(event) {
     updateActionButtons(input);
 }
 
+function sameHandCardCountExcludingSuit(direction, excludedSuit) {
+    let count = 0;
+
+    for (const suit of SUITS) {
+        if (suit === excludedSuit) {
+            continue;
+        }
+
+        const input = document.getElementById(suitInputId(direction, suit));
+
+        if (input) {
+            count += sanitizeSuitHolding(input.value).length;
+        }
+    }
+
+    return count;
+}
+
+function transferTypedCardsFromOtherHands(activeElement) {
+    const parsed = parseHandInputId(activeElement && activeElement.id);
+
+    if (!parsed) {
+        return;
+    }
+
+    const room = Math.max(0, 13 - sameHandCardCountExcludingSuit(parsed.direction, parsed.suit));
+    const kept = sanitizeSuitHolding(activeElement.value, null, null, room);
+
+    for (const pip of kept) {
+        const card = new Card(parsed.suit, pip);
+
+        for (const direction of DIRECTIONS) {
+            if (direction === parsed.direction) {
+                continue;
+            }
+
+            removeCardFromHand(direction, card);
+        }
+    }
+}
+
 function sanitizeHandSuitInputs(activeElement) {
+    if (activeElement) {
+        transferTypedCardsFromOtherHands(activeElement);
+    }
+
     const elements = Array.from(hand_elements());
     const ordered = activeElement && elements.indexOf(activeElement) >= 0
         ? elements.filter((element) => element !== activeElement).concat([activeElement])
