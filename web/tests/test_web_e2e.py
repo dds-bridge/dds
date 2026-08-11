@@ -979,6 +979,12 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             self.assertTrue(note.is_visible())
             self.assertEqual(note.inner_text(), "3 cards")
 
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+
+            self.assertTrue(note.is_visible())
+            self.assertEqual(note.inner_text(), "1 card")
+
             page.locator("#north_spades").fill("AKQJT98765432")
             page.locator("#north_spades").dispatch_event("input")
 

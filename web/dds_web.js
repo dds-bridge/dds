@@ -1387,7 +1387,9 @@ function updateHandCardCounts(hands) {
         if (note) {
             const show = count !== 0 && count !== 13;
             note.hidden = !show;
-            note.innerHTML = show ? count + " cards" : "";
+            note.innerHTML = show
+                ? count + (count === 1 ? " card" : " cards")
+                : "";
         }
     }
 }

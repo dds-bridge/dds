@@ -1109,6 +1109,19 @@ test("updateActionButtons shows a card-count note for a partial hand", () => {
     assert.equal(document.element("east-card-count").hidden, true);
 });
 
+test("updateActionButtons uses singular card for a one-card hand", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+    });
+    const ctx = loadDdsWeb(document);
+
+    ctx.updateActionButtons();
+
+    const note = document.element("north-card-count");
+    assert.equal(note.hidden, false);
+    assert.equal(note.innerHTML, "1 card");
+});
+
 test("updateActionButtons hides the card-count note at 0 and 13 cards", () => {
     const document = createMockDocument({
         north_spades: "AKQ",
