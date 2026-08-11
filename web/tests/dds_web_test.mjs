@@ -2336,6 +2336,22 @@ test("undeployedCardHtml matches dealt hand-card button chrome", () => {
     // Buttons must not be aria-hidden while remaining focusable (tabindex=-1).
     assert.doesNotMatch(html, /aria-hidden=/);
     assert.match(html, /tabindex="-1"/);
+    // Suit+pip name like dealt cards; "Undeployed" replaces seat so identical
+    // pips across suits are distinguishable to assistive tech.
+    assert.match(html, /aria-label="Undeployed heart ace"/);
+    assert.equal(ctx.handCardAriaLabel("undeployed", card), "Undeployed heart ace");
+});
+
+test("undeployedCardHtml escapes aria-label like handCardHtml", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const card = new ctx.Card("spades", "\"&<>'");
+
+    const html = ctx.undeployedCardHtml(card);
+
+    assert.match(
+        html,
+        /aria-label="Undeployed spade &quot;&amp;&lt;&gt;&#39;"/
+    );
 });
 
 test("addCardToHand inserts a pip in high-to-low order", () => {

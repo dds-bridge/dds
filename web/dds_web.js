@@ -410,7 +410,9 @@ function allDeckCards() {
 function undeployedCardHtml(card) {
     return "<button type=\"button\" class=\"hand-card\" draggable=\"true\"" +
         " data-card=\"" + escapeHtml(card.key()) + "\"" +
-        " tabindex=\"-1\">" +
+        " tabindex=\"-1\"" +
+        " aria-label=\"" +
+        escapeHtml(handCardAriaLabel("undeployed", card)) + "\">" +
         escapeHtml(card.pip) +
         "</button>";
 }
