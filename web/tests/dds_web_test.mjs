@@ -2822,6 +2822,17 @@ test("suit rows pin glyphs so card columns left-align vertically", () => {
     );
 });
 
+test("hand card-count note indents to the suit pip column", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    const count = css.match(/\.hand-card-count\s*\{([^}]*)\}/s);
+
+    assert.ok(count, ".hand-card-count rule present");
+    // Count uses font-size 1rem, so em would be wrong; match the seat's
+    // 30px glyph column (.grid-item font-size × 1em suit width).
+    assert.match(count[1], /padding-left:\s*30px/);
+});
+
 test("center undeployed pips share dealt hand-card spacing", () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");

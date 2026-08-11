@@ -993,6 +993,35 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_card_count_left_aligns_with_suit_pips(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("AKQ")
+            page.locator("#north_spades").dispatch_event("input")
+
+            lefts = page.evaluate(
+                """() => {
+                  const note = document.querySelector('#north-card-count');
+                  const pip = document.querySelector(
+                    '.hand-north .hand-card[data-card="SA"]'
+                  );
+                  const pad = parseFloat(getComputedStyle(note).paddingLeft);
+                  return {
+                    countText: note.getBoundingClientRect().left + pad,
+                    pip: pip.getBoundingClientRect().left,
+                  };
+                }"""
+            )
+            self.assertAlmostEqual(
+                lefts["countText"],
+                lefts["pip"],
+                delta=1,
+                msg="card-count text must share the suit pips' left edge",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_http_is_cross_origin_isolated(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)

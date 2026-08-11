@@ -154,6 +154,8 @@
 .hand-card-count {
   font-size: 1rem;
   margin-top: 0.25rem;
+  /* Match .grid-item's 30px × 1em suit-glyph column (not 1em of 1rem). */
+  padding-left: 30px;
 }
 
 .hand-holding {
