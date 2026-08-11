@@ -196,6 +196,19 @@
   position: relative;
 }
 
+.hand-card[draggable="true"] {
+  cursor: grab;
+}
+
+.hand-card-dragging {
+  opacity: 0.45;
+}
+
+.drop-target-active {
+  outline: 2px dashed #333;
+  outline-offset: -4px;
+}
+
 .hand-card-tricks {
   bottom: 0.02em;
   font-size: 0.42em;

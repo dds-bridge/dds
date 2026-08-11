@@ -789,6 +789,7 @@ test("sanitizeSuitHolding keeps only bridge pips and uppercases them", () => {
     assert.equal(ctx.sanitizeSuitHolding("akq"), "AKQ");
     assert.equal(ctx.sanitizeSuitHolding("t9"), "T9");
     assert.equal(ctx.sanitizeSuitHolding("AKx!7x"), "AK7");
+    assert.equal(ctx.sanitizeSuitHolding("QA2"), "AQ2");
     assert.equal(ctx.sanitizeSuitHolding("\"&<>'"), "");
     assert.equal(ctx.sanitizeSuitHolding(""), "");
     assert.equal(ctx.sanitizeSuitHolding(null), "");
@@ -1122,6 +1123,7 @@ test("handCardHtml renders a clickable button for a card in a hand", () => {
     assert.match(html, /<button\b/);
     assert.match(html, /type="button"/);
     assert.match(html, /class="hand-card"/);
+    assert.match(html, /draggable="true"/);
     assert.match(html, /data-direction="north"/);
     assert.match(html, /data-card="SA"/);
     assert.match(html, /data-index="0"/);
@@ -1164,19 +1166,21 @@ test("handCardHtml escapes pip-derived markup from raw suit input", () => {
     assert.doesNotMatch(html, />"</);
 });
 
-test("hand holdings render pips in input order, not sorted", () => {
-    // Arrange: caret mapping requires display order to match the input string.
+test("hand holdings appear high to low after sanitize", () => {
+    // Arrange: typed order may be arbitrary; display follows PIPS rank.
     const document = createMockDocument({ north_spades: "QA" });
     const ctx = loadDdsWeb(document);
 
     // Act
-    const html = ctx.handHoldingHtml("north", "spades", ctx.collectHands().north, -1);
+    ctx.updateActionButtons();
+    const html = document.element("north_spades_cards").innerHTML;
 
     // Assert
-    const q = html.indexOf('data-card="SQ"');
+    assert.equal(document.element("north_spades").value, "AQ");
     const a = html.indexOf('data-card="SA"');
-    assert.ok(q >= 0 && a >= 0);
-    assert.ok(q < a, "Q before A matches typed order QA");
+    const q = html.indexOf('data-card="SQ"');
+    assert.ok(a >= 0 && q >= 0);
+    assert.ok(a < q, "A before Q matches high-to-low order");
 });
 
 test("handHoldingHtml inserts a caret marker at the given index", () => {
@@ -2226,10 +2230,417 @@ test("undeployedCardHtml matches dealt hand-card button chrome", () => {
     assert.match(html, /<button\b/);
     assert.match(html, /type="button"/);
     assert.match(html, /class="hand-card"/);
+    assert.match(html, /draggable="true"/);
     assert.match(html, /data-card="HA"/);
     assert.match(html, />A<\/button>/);
     assert.doesNotMatch(html, /data-direction=/);
     assert.doesNotMatch(html, /deck-card/);
+});
+
+test("addCardToHand inserts a pip in high-to-low order", () => {
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsWeb(document);
+    const card = new ctx.Card("spades", "Q");
+
+    assert.equal(ctx.addCardToHand("north", card), true);
+    assert.equal(document.element("north_spades").value, "AKQ");
+});
+
+test("addCardToHand inserts between existing ranks", () => {
+    const document = createMockDocument({ north_spades: "A" });
+    const ctx = loadDdsWeb(document);
+
+    assert.equal(ctx.addCardToHand("north", new ctx.Card("spades", "K")), true);
+    assert.equal(document.element("north_spades").value, "AK");
+});
+
+test("addCardToHand rejects a card already present in any hand", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "K",
+    });
+    const ctx = loadDdsWeb(document);
+
+    assert.equal(ctx.addCardToHand("south", new ctx.Card("spades", "A")), false);
+    assert.equal(document.element("south_spades").value, "");
+    assert.equal(ctx.addCardToHand("west", new ctx.Card("hearts", "K")), false);
+});
+
+test("removeCardFromHand deletes the first matching pip", () => {
+    const document = createMockDocument({ north_spades: "AKA" });
+    const ctx = loadDdsWeb(document);
+
+    assert.equal(ctx.removeCardFromHand("north", new ctx.Card("spades", "A")), true);
+    assert.equal(document.element("north_spades").value, "KA");
+    assert.equal(ctx.removeCardFromHand("north", new ctx.Card("spades", "Q")), false);
+});
+
+test("undeployCard removes the card from every hand", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "K",
+    });
+    const ctx = loadDdsWeb(document);
+
+    assert.equal(ctx.undeployCard(new ctx.Card("spades", "A")), true);
+    assert.equal(document.element("north_spades").value, "");
+    assert.equal(document.element("east_hearts").value, "K");
+});
+
+test("moveCardToHand moves from undeployed into a hand in rank order", () => {
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsWeb(document);
+
+    assert.equal(ctx.moveCardToHand(new ctx.Card("spades", "Q"), "north"), true);
+    assert.equal(document.element("north_spades").value, "AKQ");
+});
+
+test("moveCardToHand moves a card between hands", () => {
+    const document = createMockDocument({ north_spades: "AQ", east_spades: "K" });
+    const ctx = loadDdsWeb(document);
+
+    assert.equal(ctx.moveCardToHand(new ctx.Card("spades", "A"), "east"), true);
+    assert.equal(document.element("north_spades").value, "Q");
+    assert.equal(document.element("east_spades").value, "AK");
+});
+
+test("moveCardToHand rejects drag-and-drop within the same hand", () => {
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsWeb(document);
+
+    assert.equal(ctx.moveCardToHand(new ctx.Card("spades", "A"), "north"), false);
+    assert.equal(document.element("north_spades").value, "AKQ");
+});
+
+test("moveCardToHand rejects a drop onto a full 13-card hand from outside", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765432",
+        east_hearts: "A",
+    });
+    const ctx = loadDdsWeb(document);
+
+    assert.equal(ctx.moveCardToHand(new ctx.Card("hearts", "A"), "north"), false);
+    assert.equal(document.element("north_spades").value, "AKQJT98765432");
+    assert.equal(document.element("north_hearts").value, "");
+    assert.equal(document.element("east_hearts").value, "A");
+});
+
+test("handleHandCardMouseDown does not preventDefault so HTML5 drag can start", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    let prevented = false;
+
+    ctx.handleHandCardMouseDown({
+        target: {
+            closest(selector) {
+                return selector === ".hand-card" ? {} : null;
+            },
+        },
+        preventDefault() {
+            prevented = true;
+        },
+    });
+
+    assert.equal(prevented, false);
+});
+
+test("handleCardDragStart sets the card payload and dragging class", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const button = {
+        className: "hand-card",
+        classList: {
+            add(name) {
+                button.className += " " + name;
+            },
+            remove() {},
+            contains() {
+                return false;
+            },
+        },
+        getAttribute(name) {
+            if (name === "data-card") {
+                return "SA";
+            }
+            if (name === "data-direction") {
+                return "north";
+            }
+            return null;
+        },
+    };
+    let stored = null;
+    const event = {
+        target: {
+            closest(selector) {
+                return selector === ".hand-card" ? button : null;
+            },
+        },
+        dataTransfer: {
+            setData(type, value) {
+                stored = { type, value };
+            },
+            effectAllowed: "none",
+        },
+    };
+
+    ctx.handleCardDragStart(event);
+
+    assert.equal(stored.type, "application/x-dds-card");
+    assert.deepEqual(JSON.parse(stored.value), {
+        key: "SA",
+        sourceDirection: "north",
+    });
+    assert.equal(event.dataTransfer.effectAllowed, "move");
+    assert.match(button.className, /hand-card-dragging/);
+});
+
+test("handleCardDragOver accepts a drop on a hand that is not full", () => {
+    const document = createMockDocument({ north_spades: "A" });
+    const ctx = loadDdsWeb(document);
+    let prevented = false;
+    let dropEffect = "none";
+    const hand = {
+        classList: {
+            add() {},
+            remove() {},
+            contains() {
+                return false;
+            },
+        },
+        className: "grid-item hand-north",
+    };
+    const sourceButton = {
+        className: "hand-card",
+        classList: {
+            add() {},
+            remove() {},
+            contains() {
+                return false;
+            },
+        },
+        getAttribute(name) {
+            if (name === "data-card") {
+                return "SK";
+            }
+            return null;
+        },
+    };
+
+    ctx.handleCardDragStart({
+        target: {
+            closest(selector) {
+                return selector === ".hand-card" ? sourceButton : null;
+            },
+        },
+        dataTransfer: {
+            setData() {},
+            effectAllowed: "none",
+        },
+    });
+
+    ctx.handleCardDragOver({
+        preventDefault() {
+            prevented = true;
+        },
+        dataTransfer: {
+            types: ["application/x-dds-card"],
+            getData() {
+                return "";
+            },
+            set dropEffect(value) {
+                dropEffect = value;
+            },
+            get dropEffect() {
+                return dropEffect;
+            },
+        },
+        target: {
+            closest(selector) {
+                if (selector === ".hand-north") {
+                    return hand;
+                }
+                return null;
+            },
+        },
+    });
+
+    assert.equal(prevented, true);
+    assert.equal(dropEffect, "move");
+});
+
+test("handleCardDrop moves an undeployed card onto a hand in rank order", () => {
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsWeb(document);
+    const targetCard = {
+        getAttribute(name) {
+            if (name === "data-card") {
+                return "SK";
+            }
+            if (name === "data-direction") {
+                return "north";
+            }
+            if (name === "data-index") {
+                return "1";
+            }
+            return null;
+        },
+        getBoundingClientRect() {
+            return { left: 100, width: 20 };
+        },
+    };
+    const hand = {
+        className: "grid-item hand-north",
+        classList: { add() {}, remove() {}, contains() { return false; } },
+    };
+
+    ctx.handleCardDrop({
+        preventDefault() {},
+        clientX: 105,
+        dataTransfer: {
+            getData(type) {
+                assert.equal(type, "application/x-dds-card");
+                return JSON.stringify({ key: "SQ", sourceDirection: null });
+            },
+        },
+        target: {
+            closest(selector) {
+                if (selector === ".hand-card") {
+                    return targetCard;
+                }
+                if (
+                    selector === ".hand-north, .hand-east, .hand-south, .hand-west" ||
+                    selector === ".hand-north"
+                ) {
+                    return hand;
+                }
+                return null;
+            },
+        },
+    });
+
+    // Drop position is ignored; Q sorts between K and … → AKQ
+    assert.equal(document.element("north_spades").value, "AKQ");
+});
+
+test("handleCardDrop ignores a drop within the same hand", () => {
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsWeb(document);
+    const hand = {
+        className: "grid-item hand-north",
+        classList: { add() {}, remove() {}, contains() { return false; } },
+    };
+
+    ctx.handleCardDrop({
+        preventDefault() {},
+        dataTransfer: {
+            getData() {
+                return JSON.stringify({ key: "SA", sourceDirection: "north" });
+            },
+        },
+        target: {
+            closest(selector) {
+                if (selector === ".hand-north") {
+                    return hand;
+                }
+                return null;
+            },
+        },
+    });
+
+    assert.equal(document.element("north_spades").value, "AKQ");
+});
+
+test("handleCardDrop undeploys a card dropped on the center", () => {
+    const document = createMockDocument({ north_spades: "A" });
+    const ctx = loadDdsWeb(document);
+    const center = {
+        className: "grid-item grid-filler grid-filler-center",
+        id: "deck-status",
+        classList: { add() {}, remove() {}, contains() { return false; } },
+    };
+
+    ctx.handleCardDrop({
+        preventDefault() {},
+        dataTransfer: {
+            getData() {
+                return JSON.stringify({ key: "SA", sourceDirection: "north" });
+            },
+        },
+        target: {
+            closest(selector) {
+                if (
+                    selector === "#deck-status, .grid-filler-center" ||
+                    selector === "#deck-status" ||
+                    selector === ".grid-filler-center"
+                ) {
+                    return center;
+                }
+                return null;
+            },
+        },
+    });
+
+    assert.equal(document.element("north_spades").value, "");
+});
+
+test("handleCardDrop rejects dropping onto a full hand from outside", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765432",
+        east_hearts: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    const hand = {
+        className: "grid-item hand-north",
+        classList: { add() {}, remove() {}, contains() { return false; } },
+    };
+
+    ctx.handleCardDrop({
+        preventDefault() {},
+        dataTransfer: {
+            getData() {
+                return JSON.stringify({ key: "HA", sourceDirection: "east" });
+            },
+        },
+        target: {
+            closest(selector) {
+                if (
+                    selector === ".hand-north, .hand-east, .hand-south, .hand-west" ||
+                    selector === ".hand-north"
+                ) {
+                    return hand;
+                }
+                return null;
+            },
+        },
+    });
+
+    assert.equal(document.element("north_hearts").value, "");
+    assert.equal(document.element("east_hearts").value, "A");
+});
+
+test("pageLoad wires card drag-and-drop listeners", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const types = [];
+    const original = document.addEventListener.bind(document);
+    document.addEventListener = (type, listener) => {
+        types.push(type);
+        original(type, listener);
+    };
+
+    ctx.pageLoad();
+
+    for (const type of ["dragstart", "dragover", "drop", "dragend", "dragleave"]) {
+        assert.ok(types.includes(type), "pageLoad listens for " + type);
+    }
+});
+
+test("card drag CSS provides grab cursor and drop-target affordances", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    assert.match(css, /\.hand-card\[draggable="true"\]\s*\{[^}]*cursor:\s*grab/s);
+    assert.match(css, /\.hand-card-dragging\s*\{/s);
+    assert.match(css, /\.drop-target-active\s*\{/s);
 });
 
 test("result table lives in the hand diagram southeast corner", () => {

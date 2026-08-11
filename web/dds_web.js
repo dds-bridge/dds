@@ -37,9 +37,20 @@
             handHoldingHtml
             escapeHtml
             updateHandCardDisplays
+            addCardToHand
+            removeCardFromHand
+            removeCardFromAllHands
+            undeployCard
+            moveCardToHand
+            handContainsCard
             handleHandCardClick
             handleHandSuitClick
             handleHandCardMouseDown
+            handleCardDragStart
+            handleCardDragOver
+            handleCardDragLeave
+            handleCardDrop
+            handleCardDragEnd
             handleSuitSelectionChange
             onHandCardClick
             handleResultTableClick
@@ -396,7 +407,7 @@ function allDeckCards() {
 }
 
 function undeployedCardHtml(card) {
-    return "<button type=\"button\" class=\"hand-card\"" +
+    return "<button type=\"button\" class=\"hand-card\" draggable=\"true\"" +
         " data-card=\"" + escapeHtml(card.key()) + "\"" +
         " tabindex=\"-1\" aria-hidden=\"true\">" +
         escapeHtml(card.pip) +
@@ -593,7 +604,7 @@ function handCardHtml(direction, card, index, leadTricks) {
             "</span>"
         : "";
 
-    return "<button type=\"button\" class=\"" + classes + "\"" +
+    return "<button type=\"button\" class=\"" + classes + "\" draggable=\"true\"" +
         " data-direction=\"" + escapeHtml(direction) + "\"" +
         " data-card=\"" + escapeHtml(card.key()) + "\"" +
         " data-index=\"" + escapeHtml(index) + "\"" +
@@ -745,17 +756,267 @@ function onHandCardClick(_direction, _card) {
     // Hook for a future play-through PR; intentionally a no-op for now.
 }
 
-function handleHandCardMouseDown(event) {
+function handleHandCardMouseDown(_event) {
+    // Intentionally empty: preventDefault on mousedown blocks HTML5 dragstart.
+    // Click handlers refocus the suit input via placeCaretInSuitInput.
+}
+
+const DDS_CARD_MIME = "application/x-dds-card";
+let activeCardDrag = null;
+let activeDropTarget = null;
+
+function clearActiveDropTarget() {
+    if (activeDropTarget && activeDropTarget.classList) {
+        activeDropTarget.classList.remove("drop-target-active");
+    }
+
+    activeDropTarget = null;
+}
+
+function setActiveDropTarget(element) {
+    if (activeDropTarget === element) {
+        return;
+    }
+
+    clearActiveDropTarget();
+
+    if (element && element.classList) {
+        element.classList.add("drop-target-active");
+        activeDropTarget = element;
+    }
+}
+
+function parseCardDragPayload(raw) {
+    if (!raw) {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+
+        if (!parsed || typeof parsed.key !== "string") {
+            return null;
+        }
+
+        return {
+            key: parsed.key,
+            sourceDirection: parsed.sourceDirection || null,
+        };
+    } catch (_err) {
+        return null;
+    }
+}
+
+function readCardDragPayload(dataTransfer) {
+    if (activeCardDrag) {
+        return {
+            key: activeCardDrag.key,
+            sourceDirection: activeCardDrag.sourceDirection,
+        };
+    }
+
+    if (!dataTransfer || typeof dataTransfer.getData !== "function") {
+        return null;
+    }
+
+    return parseCardDragPayload(dataTransfer.getData(DDS_CARD_MIME));
+}
+
+function handDirectionFromElement(element) {
+    if (!element || typeof element.closest !== "function") {
+        return null;
+    }
+
+    for (const direction of DIRECTIONS) {
+        if (element.closest(".hand-" + direction)) {
+            return direction;
+        }
+    }
+
+    return null;
+}
+
+function centerDropElement(element) {
+    if (!element || typeof element.closest !== "function") {
+        return null;
+    }
+
+    return element.closest("#deck-status, .grid-filler-center");
+}
+
+function canDropCardOnHand(card, toDirection) {
+    if (!card || !DIRECTIONS.includes(toDirection)) {
+        return false;
+    }
+
+    // No drag-and-drop within a hand; holdings stay high-to-low.
+    if (handContainsCard(toDirection, card)) {
+        return false;
+    }
+
+    return handCardCount(toDirection) < 13;
+}
+
+function handleCardDragStart(event) {
     const target = event.target;
 
     if (!target || typeof target.closest !== "function") {
         return;
     }
 
-    if (target.closest(".hand-card") && event.preventDefault) {
-        // Keep the suit input focused for editing instead of the button.
+    const button = target.closest(".hand-card");
+
+    if (!button || typeof button.getAttribute !== "function") {
+        return;
+    }
+
+    const key = button.getAttribute("data-card");
+
+    if (!key) {
+        return;
+    }
+
+    const sourceDirection = button.getAttribute("data-direction");
+    const payload = {
+        key: key,
+        sourceDirection: sourceDirection || null,
+    };
+
+    activeCardDrag = {
+        key: payload.key,
+        sourceDirection: payload.sourceDirection,
+        element: button,
+    };
+
+    if (event.dataTransfer) {
+        if (typeof event.dataTransfer.setData === "function") {
+            event.dataTransfer.setData(DDS_CARD_MIME, JSON.stringify(payload));
+        }
+
+        event.dataTransfer.effectAllowed = "move";
+    }
+
+    if (button.classList) {
+        button.classList.add("hand-card-dragging");
+    }
+}
+
+function handleCardDragOver(event) {
+    const payload = readCardDragPayload(event.dataTransfer);
+
+    if (!payload) {
+        return;
+    }
+
+    const card = Card.fromKey(payload.key);
+
+    if (!card.suit || !card.pip) {
+        return;
+    }
+
+    const center = centerDropElement(event.target);
+
+    if (center) {
+        if (event.preventDefault) {
+            event.preventDefault();
+        }
+
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "move";
+        }
+
+        setActiveDropTarget(center);
+        return;
+    }
+
+    const toDirection = handDirectionFromElement(event.target);
+
+    if (!toDirection || !canDropCardOnHand(card, toDirection)) {
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "none";
+        }
+
+        clearActiveDropTarget();
+        return;
+    }
+
+    if (event.preventDefault) {
         event.preventDefault();
     }
+
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "move";
+    }
+
+    const handEl = event.target.closest
+        ? event.target.closest(".hand-" + toDirection)
+        : null;
+    setActiveDropTarget(handEl);
+}
+
+function handleCardDragLeave(event) {
+    const related = event.relatedTarget;
+
+    if (activeDropTarget && related && typeof activeDropTarget.contains === "function") {
+        if (activeDropTarget.contains(related)) {
+            return;
+        }
+    }
+
+    clearActiveDropTarget();
+}
+
+function handleCardDrop(event) {
+    const payload = readCardDragPayload(event.dataTransfer);
+
+    clearActiveDropTarget();
+
+    if (!payload) {
+        return;
+    }
+
+    const card = Card.fromKey(payload.key);
+
+    if (!card.suit || !card.pip) {
+        return;
+    }
+
+    if (event.preventDefault) {
+        event.preventDefault();
+    }
+
+    const center = centerDropElement(event.target);
+
+    if (center) {
+        if (undeployCard(card)) {
+            updateActionButtons();
+        }
+
+        return;
+    }
+
+    const toDirection = handDirectionFromElement(event.target);
+
+    if (!toDirection) {
+        return;
+    }
+
+    if (!canDropCardOnHand(card, toDirection)) {
+        return;
+    }
+
+    if (moveCardToHand(card, toDirection)) {
+        updateActionButtons();
+    }
+}
+
+function handleCardDragEnd(_event) {
+    if (activeCardDrag && activeCardDrag.element && activeCardDrag.element.classList) {
+        activeCardDrag.element.classList.remove("hand-card-dragging");
+    }
+
+    activeCardDrag = null;
+    clearActiveDropTarget();
 }
 
 function handleSuitSelectionChange() {
@@ -1193,6 +1454,135 @@ function setHandInputs(direction, holdings) {
     }
 }
 
+function suitInputId(direction, suit) {
+    return direction + "_" + suit;
+}
+
+function handContainsCard(direction, card) {
+    if (!direction || !card || !card.suit || !card.pip) {
+        return false;
+    }
+
+    const input = document.getElementById(suitInputId(direction, card.suit));
+
+    if (!input || !input.value) {
+        return false;
+    }
+
+    return input.value.toUpperCase().includes(card.pip.toUpperCase());
+}
+
+function cardHeldSomewhere(card) {
+    for (const direction of DIRECTIONS) {
+        if (handContainsCard(direction, card)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function handCardCount(direction) {
+    const hands = collectHands();
+
+    return hands[direction] ? hands[direction].length : 0;
+}
+
+function removeCardFromHand(direction, card) {
+    if (!direction || !card || !card.suit || !card.pip) {
+        return false;
+    }
+
+    const input = document.getElementById(suitInputId(direction, card.suit));
+
+    if (!input) {
+        return false;
+    }
+
+    const value = String(input.value);
+    const pip = card.pip.toUpperCase();
+    const index = value.toUpperCase().indexOf(pip);
+
+    if (index < 0) {
+        return false;
+    }
+
+    input.value = value.slice(0, index) + value.slice(index + 1);
+    return true;
+}
+
+function removeCardFromAllHands(card) {
+    let removed = false;
+
+    for (const direction of DIRECTIONS) {
+        if (removeCardFromHand(direction, card)) {
+            removed = true;
+        }
+    }
+
+    return removed;
+}
+
+function undeployCard(card) {
+    return removeCardFromAllHands(card);
+}
+
+function sortedPipInsertIndex(holding, pip) {
+    const rank = PIPS.indexOf(pip);
+
+    for (let i = 0; i < holding.length; i++) {
+        if (PIPS.indexOf(holding.charAt(i)) > rank) {
+            return i;
+        }
+    }
+
+    return holding.length;
+}
+
+function addCardToHand(direction, card) {
+    if (!DIRECTIONS.includes(direction) || !card || !card.suit || !card.pip) {
+        return false;
+    }
+
+    if (!SUITS.includes(card.suit) || !PIPS.includes(card.pip.toUpperCase())) {
+        return false;
+    }
+
+    if (cardHeldSomewhere(card)) {
+        return false;
+    }
+
+    const input = document.getElementById(suitInputId(direction, card.suit));
+
+    if (!input) {
+        return false;
+    }
+
+    const pip = card.pip.toUpperCase();
+    const value = sanitizeSuitHolding(String(input.value));
+    const at = sortedPipInsertIndex(value, pip);
+
+    input.value = value.slice(0, at) + pip + value.slice(at);
+    return true;
+}
+
+function moveCardToHand(card, toDirection) {
+    if (!DIRECTIONS.includes(toDirection) || !card || !card.suit || !card.pip) {
+        return false;
+    }
+
+    if (handContainsCard(toDirection, card)) {
+        return false;
+    }
+
+    if (handCardCount(toDirection) >= 13) {
+        return false;
+    }
+
+    removeCardFromAllHands(card);
+    return addCardToHand(toDirection, card);
+}
+
 function remainingCardsForEmptyHand(state) {
     return allDeckCards().filter((card) => !state.usedCards[card.key()]);
 }
@@ -1238,17 +1628,18 @@ function sanitizeSuitHolding(value) {
         return "";
     }
 
-    let sanitized = "";
+    const pips = [];
 
     for (const ch of String(value)) {
         const pip = ch.toUpperCase();
 
         if (PIPS.includes(pip)) {
-            sanitized += pip;
+            pips.push(pip);
         }
     }
 
-    return sanitized;
+    pips.sort((left, right) => PIPS.indexOf(left) - PIPS.indexOf(right));
+    return pips.join("");
 }
 
 function suitHoldingHasIllegalChars(value) {
@@ -1326,20 +1717,33 @@ function sanitizeHandSuitInputs() {
             ? element.selectionStart
             : oldValue.length;
         let keptBefore = 0;
+        let pipBeforeCaret = "";
 
         for (let i = 0; i < oldValue.length && i < caret; i++) {
-            if (PIPS.includes(oldValue.charAt(i).toUpperCase())) {
+            const pip = oldValue.charAt(i).toUpperCase();
+
+            if (PIPS.includes(pip)) {
                 keptBefore += 1;
+                pipBeforeCaret = pip;
             }
         }
 
         element.value = sanitized;
 
+        let newCaret = sanitized.length;
+
+        if (keptBefore <= 0) {
+            newCaret = 0;
+        } else if (pipBeforeCaret) {
+            const at = sanitized.indexOf(pipBeforeCaret);
+            newCaret = at >= 0 ? at + 1 : sanitized.length;
+        }
+
         if (typeof element.setSelectionRange === "function") {
-            element.setSelectionRange(keptBefore, keptBefore);
+            element.setSelectionRange(newCaret, newCaret);
         } else {
-            element.selectionStart = keptBefore;
-            element.selectionEnd = keptBefore;
+            element.selectionStart = newCaret;
+            element.selectionEnd = newCaret;
         }
     }
 }
@@ -1450,6 +1854,11 @@ function pageLoad() {
     document.addEventListener("mousedown", handleHandCardMouseDown);
     document.addEventListener("click", handleHandCardClick);
     document.addEventListener("click", handleHandSuitClick);
+    document.addEventListener("dragstart", handleCardDragStart);
+    document.addEventListener("dragover", handleCardDragOver);
+    document.addEventListener("dragleave", handleCardDragLeave);
+    document.addEventListener("drop", handleCardDrop);
+    document.addEventListener("dragend", handleCardDragEnd);
     document.addEventListener("click", handleResultTableClick);
     document.addEventListener("keydown", handleResultTableKeyDown);
     document.addEventListener("selectionchange", handleSuitSelectionChange);

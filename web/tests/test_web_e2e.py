@@ -185,6 +185,111 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_drag_undeployed_card_onto_north_hand(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator('#deck-status .hand-card[data-card="SA"]').drag_to(
+                page.locator(".hand-north")
+            )
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "A")
+            self.assertEqual(
+                page.locator('#deck-status .hand-card[data-card="SA"]').count(),
+                0,
+            )
+            self.assertEqual(
+                page.locator(
+                    '#north_spades_cards .hand-card[data-card="SA"]'
+                ).count(),
+                1,
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_card_onto_hand_sorts_high_to_low(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("A2")
+            page.locator("#north_spades").dispatch_event("input")
+            page.locator('#deck-status .hand-card[data-card="SK"]').drag_to(
+                page.locator(".hand-north")
+            )
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "AK2")
+            cards = page.locator("#north_spades_cards .hand-card")
+            self.assertEqual(
+                [cards.nth(i).get_attribute("data-card") for i in range(3)],
+                ["SA", "SK", "S2"],
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_within_same_hand_is_ignored(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("AKQ")
+            page.locator("#north_spades").dispatch_event("input")
+            page.locator(
+                '#north_spades_cards .hand-card[data-card="SA"]'
+            ).drag_to(page.locator(".hand-north"))
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "AKQ")
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_card_between_hands_then_back_to_center(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+
+            page.locator(
+                '#north_spades_cards .hand-card[data-card="SA"]'
+            ).drag_to(page.locator(".hand-east"))
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "")
+            self.assertEqual(page.locator("#east_spades").input_value(), "A")
+
+            page.locator(
+                '#east_spades_cards .hand-card[data-card="SA"]'
+            ).drag_to(page.locator("#deck-status"))
+
+            self.assertEqual(page.locator("#east_spades").input_value(), "")
+            self.assertEqual(
+                page.locator('#deck-status .hand-card[data-card="SA"]').count(),
+                1,
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_onto_full_hand_is_rejected(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("AKQJT98765432")
+            page.locator("#north_spades").dispatch_event("input")
+            self.assertEqual(
+                page.locator("#deck-status .hand-card").count(),
+                39,
+            )
+
+            page.locator('#deck-status .hand-card[data-card="HA"]').drag_to(
+                page.locator(".hand-north")
+            )
+
+            self.assertEqual(page.locator("#north_hearts").input_value(), "")
+            self.assertEqual(page.locator("#north_spades").input_value(), "AKQJT98765432")
+            self.assertEqual(
+                page.locator('#deck-status .hand-card[data-card="HA"]').count(),
+                1,
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_http_opening_lead_tricks_appear_on_leader_cards(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
