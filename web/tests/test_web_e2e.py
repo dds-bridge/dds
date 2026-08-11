@@ -967,6 +967,26 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_partial_hand_shows_its_card_count(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            note = page.locator(".hand-north #north-card-count")
+            self.assertTrue(note.is_hidden())
+
+            page.locator("#north_spades").fill("AKQ")
+            page.locator("#north_spades").dispatch_event("input")
+
+            self.assertTrue(note.is_visible())
+            self.assertEqual(note.inner_text(), "3 cards")
+
+            page.locator("#north_spades").fill("AKQJT98765432")
+            page.locator("#north_spades").dispatch_event("input")
+
+            self.assertTrue(note.is_hidden())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_http_is_cross_origin_isolated(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)

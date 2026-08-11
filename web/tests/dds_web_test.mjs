@@ -1095,15 +1095,36 @@ test("updateActionButtons shows a card-count note for a hand over 13 cards", () 
     assert.equal(document.element("east-card-count").hidden, true);
 });
 
-test("updateActionButtons hides the card-count note at the 13-card boundary", () => {
+test("updateActionButtons shows a card-count note for a partial hand", () => {
     const document = createMockDocument({
-        north_spades:  "AKQJT98765432",
-        north_hearts:  "A",
+        north_spades: "AKQ",
     });
     const ctx = loadDdsWeb(document);
-    ctx.updateActionButtons();
-    document.setValue("north_hearts", "");
 
+    ctx.updateActionButtons();
+
+    const note = document.element("north-card-count");
+    assert.equal(note.hidden, false);
+    assert.equal(note.innerHTML, "3 cards");
+    assert.equal(document.element("east-card-count").hidden, true);
+});
+
+test("updateActionButtons hides the card-count note at 0 and 13 cards", () => {
+    const document = createMockDocument({
+        north_spades: "AKQ",
+        east_spades: "AKQJT98765432",
+    });
+    const ctx = loadDdsWeb(document);
+
+    ctx.updateActionButtons();
+
+    assert.equal(document.element("north-card-count").hidden, false);
+    assert.equal(document.element("east-card-count").hidden, true);
+    assert.equal(document.element("east-card-count").innerHTML, "");
+    assert.equal(document.element("south-card-count").hidden, true);
+    assert.equal(document.element("south-card-count").innerHTML, "");
+
+    document.setValue("north_spades", "");
     ctx.updateActionButtons();
 
     const note = document.element("north-card-count");
