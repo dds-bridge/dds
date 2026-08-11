@@ -1041,7 +1041,7 @@ test("updateActionButtons displays all 52 cards in the deck status", () => {
     // Same pip chrome as dealt holdings: suit glyph, then hand-card buttons.
     assert.match(
         deckStatus,
-        /<heart-suit>\u2665<\/heart-suit>&nbsp;<button\b[^>]*class="hand-card"[^>]*data-card="HA"/
+        /<heart-suit>\u2665<\/heart-suit><button\b[^>]*class="hand-card"[^>]*data-card="HA"/
     );
     assert.doesNotMatch(deckStatus, /deck-card/);
     assert.equal((deckStatus.match(/class="hand-card"/g) ?? []).length, 52);
@@ -2767,6 +2767,38 @@ test("hand seats left-align suit symbols in the diagram", () => {
     );
     assert.match(css, /\.grid-item\s*\{[^}]*min-width:\s*0/s);
     assert.match(css, /\.grid-outer\s*\{[^}]*max-width:\s*1100px/s);
+});
+
+test("suit rows pin glyphs so card columns left-align vertically", () => {
+    // Arrange
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    // Assert: fixed-width suit glyph column for hands and center undeployed.
+    assert.match(css, /\.hand-suit\s*\{[^}]*display:\s*inline-flex/s);
+    assert.match(css, /\.deck-suit-row\s*\{[^}]*display:\s*flex/s);
+    // Tight glyph-to-card gap shared by hands and center.
+    assert.match(
+        css,
+        /\.hand-suit,\s*\n\s*\.deck-suit-row\s*\{[^}]*gap:\s*0(?:em|px)?/s
+    );
+    assert.match(
+        css,
+        /\.hand-suit\s*>\s*:is\(spade-suit,\s*heart-suit,\s*diamond-suit,\s*club-suit\)\s*,\s*\n\s*\.deck-suit-row\s*>\s*:is\(spade-suit,\s*heart-suit,\s*diamond-suit,\s*club-suit\)\s*\{[^}]*flex:\s*0\s+0\s+1em/s
+    );
+});
+
+test("center undeployed pips share dealt hand-card spacing", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    const dealt = css.match(/\.hand-card\s*\{([^}]*)\}/s);
+
+    assert.ok(dealt, ".hand-card rule present");
+    assert.match(dealt[1], /margin:\s*0\s+0\.04em\s+0\s+0/);
+    assert.match(dealt[1], /padding:\s*0\s+0\.28em\s+0\.18em\s+0\.02em/);
+    // No center-only spacing override — undeployed cards match dealt pips.
+    assert.doesNotMatch(css, /#deck-status\s+\.hand-card\s*\{[^}]*margin/s);
+    assert.doesNotMatch(css, /#deck-status\s+\.hand-card\s*\{[^}]*padding/s);
 });
 
 test("hand-card pips show a light outline affordance for clickability", () => {

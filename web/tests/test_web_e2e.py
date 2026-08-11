@@ -780,6 +780,114 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_ns_cards_left_align_with_center_cards(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+            page.locator("#south_spades").fill("K")
+            page.locator("#south_spades").dispatch_event("input")
+
+            lefts = page.evaluate(
+                """() => {
+                  const leftOf = (sel) =>
+                    document.querySelector(sel).getBoundingClientRect().left;
+                  return {
+                    north: leftOf('.hand-north .hand-card'),
+                    south: leftOf('.hand-south .hand-card'),
+                    center: leftOf('#deck-status .hand-card'),
+                  };
+                }"""
+            )
+            self.assertAlmostEqual(
+                lefts["north"],
+                lefts["center"],
+                delta=1,
+                msg="North cards must share the center cards' left edge",
+            )
+            self.assertAlmostEqual(
+                lefts["south"],
+                lefts["center"],
+                delta=1,
+                msg="South cards must share the center cards' left edge",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_suit_card_columns_left_align_vertically_in_hands_and_center(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            for suit, pips in (
+                ("spades", "A"),
+                ("hearts", "K"),
+                ("diamonds", "Q"),
+                ("clubs", "J"),
+            ):
+                page.locator(f"#north_{suit}").fill(pips)
+                page.locator(f"#north_{suit}").dispatch_event("input")
+
+            def first_card_lefts(scope: str) -> list[float]:
+                return page.evaluate(
+                    """(scope) => {
+                      const root = document.querySelector(scope);
+                      const cards = [...root.querySelectorAll('.hand-card')]
+                        .filter((el, _, all) => {
+                          const row = el.closest('.hand-suit, .deck-suit-row');
+                          return row && el === row.querySelector('.hand-card');
+                        });
+                      return cards.map((el) => el.getBoundingClientRect().left);
+                    }""",
+                    scope,
+                )
+
+            north_lefts = first_card_lefts(".hand-north")
+            self.assertEqual(len(north_lefts), 4)
+            for left in north_lefts[1:]:
+                self.assertAlmostEqual(
+                    left,
+                    north_lefts[0],
+                    delta=1,
+                    msg="north suit card columns must share a left edge",
+                )
+
+            center_lefts = first_card_lefts("#deck-status")
+            self.assertGreaterEqual(len(center_lefts), 4)
+            for left in center_lefts[1:]:
+                self.assertAlmostEqual(
+                    left,
+                    center_lefts[0],
+                    delta=1,
+                    msg="center suit card columns must share a left edge",
+                )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_center_undeployed_full_suit_stays_clear_of_east(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            bounds = page.evaluate(
+                """() => {
+                  const last = document.querySelector(
+                    '#deck-status .deck-suit-row .hand-card[data-card="S2"]'
+                  );
+                  const east = document.querySelector('.hand-east');
+                  return {
+                    lastRight: last.getBoundingClientRect().right,
+                    eastLeft: east.getBoundingClientRect().left,
+                  };
+                }"""
+            )
+            self.assertLessEqual(
+                bounds["lastRight"],
+                bounds["eastLeft"] - 1,
+                msg="full undeployed spade row must not run into East",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_undeployed_cards_match_dealt_hand_card_chrome(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
@@ -791,7 +899,8 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                   const props = [
                     'borderTopWidth', 'borderTopStyle', 'borderTopColor',
                     'borderRadius', 'fontSize', 'paddingTop', 'paddingRight',
-                    'paddingBottom', 'paddingLeft', 'lineHeight', 'color',
+                    'paddingBottom', 'paddingLeft', 'marginTop', 'marginRight',
+                    'marginBottom', 'marginLeft', 'lineHeight', 'color',
                   ];
                   const read = (sel) => {
                     const s = getComputedStyle(document.querySelector(sel));

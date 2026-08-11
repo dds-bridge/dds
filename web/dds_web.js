@@ -439,7 +439,7 @@ function deckStatusHtml(hands) {
 
         // Match dealt holdings: colored suit glyph, then hand-card pips.
         return "<div class=\"deck-suit-row\"><" + tag + ">" +
-            SUIT_GLYPHS[suit] + "</" + tag + ">&nbsp;" + cardsHtml + "</div>";
+            SUIT_GLYPHS[suit] + "</" + tag + ">" + cardsHtml + "</div>";
     }).join("");
 }
 
