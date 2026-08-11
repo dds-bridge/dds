@@ -43,6 +43,7 @@
             undeployCard
             moveCardToHand
             handContainsCard
+            handCardCount
             handleHandCardClick
             handleHandSuitClick
             handleHandCardMouseDown
@@ -1486,9 +1487,21 @@ function cardHeldSomewhere(card) {
 }
 
 function handCardCount(direction) {
-    const hands = collectHands();
+    if (!DIRECTIONS.includes(direction)) {
+        return 0;
+    }
 
-    return hands[direction] ? hands[direction].length : 0;
+    let count = 0;
+
+    for (const suit of SUITS) {
+        const input = document.getElementById(suitInputId(direction, suit));
+
+        if (input) {
+            count += String(input.value).length;
+        }
+    }
+
+    return count;
 }
 
 function removeCardFromHand(direction, card) {

@@ -2367,6 +2367,28 @@ test("addCardToHand rejects a card already present in any hand", () => {
     assert.equal(ctx.addCardToHand("west", new ctx.Card("hearts", "K")), false);
 });
 
+test("handCardCount sums suit inputs without rebuilding every hand", () => {
+    const document = createMockDocument({
+        north_spades: "AKQ",
+        north_hearts: "JT9",
+        north_diamonds: "87",
+        north_clubs: "65432",
+        east_spades: "T",
+    });
+    const ctx = loadDdsWeb(document);
+    let collectCalls = 0;
+    const originalCollect = ctx.collectHands;
+    ctx.collectHands = (...args) => {
+        collectCalls += 1;
+        return originalCollect(...args);
+    };
+
+    assert.equal(ctx.handCardCount("north"), 13);
+    assert.equal(ctx.handCardCount("east"), 1);
+    assert.equal(ctx.handCardCount("south"), 0);
+    assert.equal(collectCalls, 0);
+});
+
 test("removeCardFromHand deletes the first matching pip", () => {
     const document = createMockDocument({ north_spades: "AKA" });
     const ctx = loadDdsWeb(document);
