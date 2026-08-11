@@ -2382,7 +2382,11 @@ test("addCardToHand rejects a card already present in any hand", () => {
 
     assert.equal(ctx.addCardToHand("south", new ctx.Card("spades", "A")), false);
     assert.equal(document.element("south_spades").value, "");
+    assert.equal(document.element("north_spades").value, "A");
+
     assert.equal(ctx.addCardToHand("west", new ctx.Card("hearts", "K")), false);
+    assert.equal(document.element("west_hearts").value, "");
+    assert.equal(document.element("east_hearts").value, "K");
 });
 
 test("handCardCount sums suit inputs without rebuilding every hand", () => {
@@ -2407,13 +2411,14 @@ test("handCardCount sums suit inputs without rebuilding every hand", () => {
     assert.equal(collectCalls, 0);
 });
 
-test("removeCardFromHand deletes the first matching pip", () => {
-    const document = createMockDocument({ north_spades: "AKA" });
+test("removeCardFromHand deletes a matching pip and leaves remaining ranks ordered", () => {
+    const document = createMockDocument({ north_spades: "AKQ" });
     const ctx = loadDdsWeb(document);
 
     assert.equal(ctx.removeCardFromHand("north", new ctx.Card("spades", "A")), true);
-    assert.equal(document.element("north_spades").value, "KA");
-    assert.equal(ctx.removeCardFromHand("north", new ctx.Card("spades", "Q")), false);
+    assert.equal(document.element("north_spades").value, "KQ");
+    assert.equal(ctx.removeCardFromHand("north", new ctx.Card("spades", "A")), false);
+    assert.equal(document.element("north_spades").value, "KQ");
 });
 
 test("undeployCard removes the card from every hand", () => {
