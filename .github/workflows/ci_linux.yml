@@ -53,15 +53,22 @@ jobs:
       - name: Build all targets
         run: bazelisk build --verbose_failures //...
 
-      # 7️⃣ Build with DDS_SCHEDULER (off by default; compile-gated timing path)
+      # 7️⃣ Build with DDS_AB_STATS (off by default; compile-gated AB counters)
+      - name: Build with ab_stats define
+        run: bazelisk build --define=ab_stats=true --verbose_failures //library/src:dds
+
+      - name: Test with ab_stats define
+        run: bazelisk test --define=ab_stats=true --verbose_failures --test_output=errors //library/tests/ab_search:ab_stats_test //library/tests/ab_search:tt_lookup_test
+
+      # 8️⃣ Build with DDS_SCHEDULER (off by default; compile-gated timing path)
       - name: Build with scheduler define
         run: bazelisk build --define=scheduler=true --verbose_failures //library/src:dds
 
-      # 8️⃣ Run all tests (including Python)
+      # 9️⃣ Run all tests (including Python)
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
 
-      # 9️⃣ Upload test logs
+      # 🔟 Upload test logs
       - name: Upload test logs - Linux
         if: always()
         uses: actions/upload-artifact@v6

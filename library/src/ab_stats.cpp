@@ -22,6 +22,7 @@ using namespace std;
 ABstats::ABstats()
 {
   ABstats::Reset();
+  ABstats::ResetCum();
   ABstats::SetNames();
 }
 
@@ -61,6 +62,9 @@ void ABstats::Reset()
 
 void ABstats::ResetCum()
 {
+  for (int depth = 0; depth < DDS_MAXDEPTH; depth++)
+    ABnodesCum.list[depth] = 0;
+
   ABnodesCum.sumCum = 0;
   ABnodesCum.sumCumWeighted = 0;
 
@@ -131,6 +135,15 @@ void ABstats::IncrNode(const int depth)
 int ABstats::GetNodes() const
 {
   return ABnodes.sum;
+}
+
+
+int ABstats::GetPosCount(const int no) const
+{
+  if (no < 0 || no >= AB_SIZE)
+    return 0;
+
+  return ABplaces[no].sum;
 }
 
 

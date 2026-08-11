@@ -33,3 +33,14 @@ cc_test(
     ],
     copts = DDS_CPPOPTS,
 )
+
+cc_test(
+    name = "ab_stats_test",
+    size = "small",
+    srcs = ["ab_stats_test.cpp"],
+    deps = [
+        "//library/src:ab_stats",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+)
