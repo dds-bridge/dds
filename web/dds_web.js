@@ -1626,23 +1626,107 @@ function isHandInput(element) {
     return false;
 }
 
-function sanitizeSuitHolding(value) {
+function sanitizeSuitHolding(value, claimedKeys, suit) {
     if (value == null) {
         return "";
     }
 
     const pips = [];
+    const seen = {};
 
     for (const ch of String(value)) {
         const pip = ch.toUpperCase();
 
-        if (PIPS.includes(pip)) {
-            pips.push(pip);
+        if (!PIPS.includes(pip) || seen[pip]) {
+            continue;
         }
+
+        if (claimedKeys && suit) {
+            const key = new Card(suit, pip).key();
+
+            if (claimedKeys[key]) {
+                continue;
+            }
+        }
+
+        seen[pip] = true;
+        pips.push(pip);
     }
 
     pips.sort((left, right) => PIPS.indexOf(left) - PIPS.indexOf(right));
     return pips.join("");
+}
+
+function suitHoldingHasDuplicatePips(value) {
+    if (value == null) {
+        return false;
+    }
+
+    const seen = {};
+
+    for (const ch of String(value)) {
+        const pip = ch.toUpperCase();
+
+        if (!PIPS.includes(pip)) {
+            continue;
+        }
+
+        if (seen[pip]) {
+            return true;
+        }
+
+        seen[pip] = true;
+    }
+
+    return false;
+}
+
+function suitHoldingConflictsWithOtherHands(element) {
+    if (!element || !element.id) {
+        return false;
+    }
+
+    const parsed = parseHandInputId(element.id);
+
+    if (!parsed) {
+        return false;
+    }
+
+    const claimed = {};
+
+    for (const other of hand_elements()) {
+        if (other === element) {
+            continue;
+        }
+
+        const otherParsed = parseHandInputId(other && other.id);
+
+        if (!otherParsed) {
+            continue;
+        }
+
+        for (const ch of other.value || "") {
+            const pip = ch.toUpperCase();
+
+            if (PIPS.includes(pip)) {
+                claimed[new Card(otherParsed.suit, pip).key()] = true;
+            }
+        }
+    }
+
+    for (const ch of element.value || "") {
+        const pip = ch.toUpperCase();
+
+        if (!PIPS.includes(pip)) {
+            continue;
+        }
+
+        if (claimed[new Card(parsed.suit, pip).key()]) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function suitHoldingHasIllegalChars(value) {
@@ -1699,60 +1783,87 @@ function playIllegalInputBeep() {
 
 function handleHandSuitInput(event) {
     const input = event && event.target;
+    let beep = false;
 
-    if (input && suitHoldingHasIllegalChars(input.value)) {
+    if (input) {
+        if (suitHoldingHasIllegalChars(input.value)) {
+            beep = true;
+        }
+
+        if (suitHoldingHasDuplicatePips(input.value)) {
+            beep = true;
+        }
+
+        if (suitHoldingConflictsWithOtherHands(input)) {
+            beep = true;
+        }
+    }
+
+    if (beep) {
         playIllegalInputBeep();
     }
 
-    updateActionButtons();
+    updateActionButtons(input);
 }
 
-function sanitizeHandSuitInputs() {
-    for (const element of hand_elements()) {
+function sanitizeHandSuitInputs(activeElement) {
+    const elements = Array.from(hand_elements());
+    const ordered = activeElement && elements.indexOf(activeElement) >= 0
+        ? elements.filter((element) => element !== activeElement).concat([activeElement])
+        : elements;
+    const claimed = {};
+
+    for (const element of ordered) {
+        const parsed = parseHandInputId(element && element.id);
+        const suit = parsed && parsed.suit;
         const oldValue = element.value || "";
-        const sanitized = sanitizeSuitHolding(oldValue);
+        const sanitized = sanitizeSuitHolding(oldValue, claimed, suit);
 
-        if (sanitized === oldValue) {
-            continue;
-        }
+        if (sanitized !== oldValue) {
+            const caret = typeof element.selectionStart === "number"
+                ? element.selectionStart
+                : oldValue.length;
+            let keptBefore = 0;
+            let pipBeforeCaret = "";
 
-        const caret = typeof element.selectionStart === "number"
-            ? element.selectionStart
-            : oldValue.length;
-        let keptBefore = 0;
-        let pipBeforeCaret = "";
+            for (let i = 0; i < oldValue.length && i < caret; i++) {
+                const pip = oldValue.charAt(i).toUpperCase();
 
-        for (let i = 0; i < oldValue.length && i < caret; i++) {
-            const pip = oldValue.charAt(i).toUpperCase();
+                if (PIPS.includes(pip)) {
+                    keptBefore += 1;
+                    pipBeforeCaret = pip;
+                }
+            }
 
-            if (PIPS.includes(pip)) {
-                keptBefore += 1;
-                pipBeforeCaret = pip;
+            element.value = sanitized;
+
+            let newCaret = sanitized.length;
+
+            if (keptBefore <= 0) {
+                newCaret = 0;
+            } else if (pipBeforeCaret) {
+                const at = sanitized.indexOf(pipBeforeCaret);
+                newCaret = at >= 0 ? at + 1 : sanitized.length;
+            }
+
+            if (typeof element.setSelectionRange === "function") {
+                element.setSelectionRange(newCaret, newCaret);
+            } else {
+                element.selectionStart = newCaret;
+                element.selectionEnd = newCaret;
             }
         }
 
-        element.value = sanitized;
-
-        let newCaret = sanitized.length;
-
-        if (keptBefore <= 0) {
-            newCaret = 0;
-        } else if (pipBeforeCaret) {
-            const at = sanitized.indexOf(pipBeforeCaret);
-            newCaret = at >= 0 ? at + 1 : sanitized.length;
-        }
-
-        if (typeof element.setSelectionRange === "function") {
-            element.setSelectionRange(newCaret, newCaret);
-        } else {
-            element.selectionStart = newCaret;
-            element.selectionEnd = newCaret;
+        if (suit) {
+            for (const pip of sanitized) {
+                claimed[new Card(suit, pip).key()] = true;
+            }
         }
     }
 }
 
-function updateActionButtons() {
-    sanitizeHandSuitInputs();
+function updateActionButtons(activeElement) {
+    sanitizeHandSuitInputs(activeElement);
 
     let hands = collectHands();
     const fillState = fourthHandFillState(hands);

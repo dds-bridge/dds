@@ -795,6 +795,15 @@ test("sanitizeSuitHolding keeps only bridge pips and uppercases them", () => {
     assert.equal(ctx.sanitizeSuitHolding(null), "");
 });
 
+test("sanitizeSuitHolding drops duplicate pips within a suit", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+
+    assert.equal(ctx.sanitizeSuitHolding("AA"), "A");
+    assert.equal(ctx.sanitizeSuitHolding("AKA"), "AK");
+    assert.equal(ctx.sanitizeSuitHolding("aKa"), "AK");
+    assert.equal(ctx.sanitizeSuitHolding("AKQJT98765432A"), "AKQJT98765432");
+});
+
 test("suitHoldingHasIllegalChars is true when any non-pip is present", () => {
     const ctx = loadDdsWeb(createMockDocument());
 
@@ -838,6 +847,57 @@ test("handleHandSuitInput does not beep for lowercase legal pips", () => {
 
     assert.equal(beeps, 0);
     assert.equal(input.value, "AKQ");
+});
+
+test("handleHandSuitInput rejects a duplicate pip within the same suit", () => {
+    const document = createMockDocument({ north_spades: "A" });
+    const ctx = loadDdsWeb(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const input = document.element("north_spades");
+
+    input.value = "AA";
+    ctx.handleHandSuitInput({ target: input });
+
+    assert.equal(beeps, 1);
+    assert.equal(input.value, "A");
+});
+
+test("handleHandSuitInput rejects a card already held in another hand", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_spades: "",
+    });
+    const ctx = loadDdsWeb(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const east = document.element("east_spades");
+
+    east.value = "A";
+    ctx.handleHandSuitInput({ target: east });
+
+    assert.equal(beeps, 1);
+    assert.equal(document.element("north_spades").value, "A");
+    assert.equal(east.value, "");
+});
+
+test("handleHandSuitInput keeps other-hand ownership when typing a duplicate", () => {
+    const document = createMockDocument({
+        east_spades: "AK",
+        north_spades: "",
+    });
+    const ctx = loadDdsWeb(document);
+    const north = document.element("north_spades");
+
+    north.value = "AQ";
+    ctx.handleHandSuitInput({ target: north });
+
+    assert.equal(document.element("east_spades").value, "AK");
+    assert.equal(north.value, "Q");
 });
 
 test("pageLoad wires suit inputs to handleHandSuitInput", () => {
@@ -1125,7 +1185,7 @@ test("updateActionButtons uses singular card for a one-card hand", () => {
 test("updateActionButtons hides the card-count note at 0 and 13 cards", () => {
     const document = createMockDocument({
         north_spades: "AKQ",
-        east_spades: "AKQJT98765432",
+        east_hearts: "AKQJT98765432",
     });
     const ctx = loadDdsWeb(document);
 
