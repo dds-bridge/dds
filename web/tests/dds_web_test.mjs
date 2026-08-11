@@ -2278,13 +2278,17 @@ test("undeployed cards live in the hand diagram center in four suit rows", () =>
     const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
-    // Assert: deck-status is inside the center filler, not below the diagram.
-    const centerMatch = html.match(
-        /<div class="[^"]*grid-filler-center[^"]*"[^>]*>([\s\S]*?)<\/div>/
+    // Assert: deck-status is the direct child of the center filler (not
+    // below the diagram). Match opening tags only — a non-greedy </div>
+    // stops at #deck-status's closer and misses nested structure.
+    assert.match(
+        html,
+        /<div class="[^"]*grid-filler-center[^"]*"[^>]*>\s*<div id="deck-status"/
     );
-    assert.ok(centerMatch, "center filler cell present");
-    assert.match(centerMatch[1], /id="deck-status"/);
-    assert.doesNotMatch(centerMatch[0], /aria-hidden="true"/);
+    assert.doesNotMatch(
+        html,
+        /<div class="[^"]*grid-filler-center[^"]*"[^>]*aria-hidden="true"/
+    );
     assert.equal(
         (html.match(/id="deck-status"/g) || []).length,
         1,
