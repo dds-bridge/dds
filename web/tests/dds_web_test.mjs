@@ -2269,6 +2269,9 @@ test("undeployedCardHtml matches dealt hand-card button chrome", () => {
     assert.match(html, />A<\/button>/);
     assert.doesNotMatch(html, /data-direction=/);
     assert.doesNotMatch(html, /deck-card/);
+    // Buttons must not be aria-hidden while remaining focusable (tabindex=-1).
+    assert.doesNotMatch(html, /aria-hidden=/);
+    assert.match(html, /tabindex="-1"/);
 });
 
 test("addCardToHand inserts a pip in high-to-low order", () => {

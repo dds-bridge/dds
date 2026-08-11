@@ -409,7 +409,7 @@ function allDeckCards() {
 function undeployedCardHtml(card) {
     return "<button type=\"button\" class=\"hand-card\" draggable=\"true\"" +
         " data-card=\"" + escapeHtml(card.key()) + "\"" +
-        " tabindex=\"-1\" aria-hidden=\"true\">" +
+        " tabindex=\"-1\">" +
         escapeHtml(card.pip) +
         "</button>";
 }
