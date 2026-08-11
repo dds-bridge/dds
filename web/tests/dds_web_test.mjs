@@ -2434,10 +2434,10 @@ test("undeployCard removes the card from every hand", () => {
 });
 
 test("moveCardToHand moves from undeployed into a hand in rank order", () => {
-    const document = createMockDocument({ north_spades: "AK" });
+    const document = createMockDocument({ north_spades: "AQ" });
     const ctx = loadDdsWeb(document);
 
-    assert.equal(ctx.moveCardToHand(new ctx.Card("spades", "Q"), "north"), true);
+    assert.equal(ctx.moveCardToHand(new ctx.Card("spades", "K"), "north"), true);
     assert.equal(document.element("north_spades").value, "AKQ");
 });
 
