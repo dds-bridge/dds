@@ -85,15 +85,6 @@ jobs:
           }
           exit 1
 
-      # Summarise the profile captured during the test run
-      - name: Analyze Bazel profile
-        if: always()
-        shell: pwsh
-        run: |
-          if (Test-Path "$env:BAZEL_PROFILE_JSON") {
-            bazelisk analyze-profile "$env:BAZEL_PROFILE_JSON"
-          }
-
       # Upload test logs
       - name: Upload test logs - Windows
         if: always()

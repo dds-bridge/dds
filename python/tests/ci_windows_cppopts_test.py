@@ -385,7 +385,6 @@ class TestWindowsCiUsesOpt(unittest.TestCase):
         self.assertNotIn("bazelisk fetch //...", text)
         self.assertNotIn("bazelisk test --verbose_failures //...", text)
         self.assertNotIn("bazelisk build --config=opt --verbose_failures //...", text)
-        self.assertIn("bazelisk analyze-profile", text)
         self.assertRegex(
             text,
             r"actions/cache@v4",
