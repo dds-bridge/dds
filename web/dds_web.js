@@ -1641,7 +1641,7 @@ function isHandInput(element) {
     return false;
 }
 
-function sanitizeSuitHolding(value, claimedKeys, suit) {
+function sanitizeSuitHolding(value, claimedKeys, suit, maxPips) {
     if (value == null) {
         return "";
     }
@@ -1669,6 +1669,11 @@ function sanitizeSuitHolding(value, claimedKeys, suit) {
     }
 
     pips.sort((left, right) => PIPS.indexOf(left) - PIPS.indexOf(right));
+
+    if (typeof maxPips === "number" && maxPips >= 0 && pips.length > maxPips) {
+        return pips.slice(0, maxPips).join("");
+    }
+
     return pips.join("");
 }
 
@@ -1758,6 +1763,30 @@ function suitHoldingHasIllegalChars(value) {
     return false;
 }
 
+function suitHoldingWouldExceedHandLimit(element) {
+    const parsed = parseHandInputId(element && element.id);
+
+    if (!parsed) {
+        return false;
+    }
+
+    let otherCount = 0;
+
+    for (const suit of SUITS) {
+        if (suit === parsed.suit) {
+            continue;
+        }
+
+        const other = document.getElementById(suitInputId(parsed.direction, suit));
+
+        if (other) {
+            otherCount += sanitizeSuitHolding(other.value).length;
+        }
+    }
+
+    return otherCount + sanitizeSuitHolding(element.value).length > 13;
+}
+
 let illegalInputAudioContext = null;
 
 function playIllegalInputBeep() {
@@ -1812,6 +1841,10 @@ function handleHandSuitInput(event) {
         if (suitHoldingConflictsWithOtherHands(input)) {
             beep = true;
         }
+
+        if (suitHoldingWouldExceedHandLimit(input)) {
+            beep = true;
+        }
     }
 
     if (beep) {
@@ -1827,12 +1860,16 @@ function sanitizeHandSuitInputs(activeElement) {
         ? elements.filter((element) => element !== activeElement).concat([activeElement])
         : elements;
     const claimed = {};
+    const handCounts = {};
 
     for (const element of ordered) {
         const parsed = parseHandInputId(element && element.id);
         const suit = parsed && parsed.suit;
+        const direction = parsed && parsed.direction;
+        const used = direction ? (handCounts[direction] || 0) : 0;
+        const room = direction ? Math.max(0, 13 - used) : undefined;
         const oldValue = element.value || "";
-        const sanitized = sanitizeSuitHolding(oldValue, claimed, suit);
+        const sanitized = sanitizeSuitHolding(oldValue, claimed, suit, room);
 
         if (sanitized !== oldValue) {
             const caret = typeof element.selectionStart === "number"
@@ -1873,6 +1910,10 @@ function sanitizeHandSuitInputs(activeElement) {
             for (const pip of sanitized) {
                 claimed[new Card(suit, pip).key()] = true;
             }
+        }
+
+        if (direction) {
+            handCounts[direction] = used + sanitized.length;
         }
     }
 }

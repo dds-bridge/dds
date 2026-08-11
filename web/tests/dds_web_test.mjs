@@ -885,6 +885,67 @@ test("handleHandSuitInput rejects a card already held in another hand", () => {
     assert.equal(east.value, "");
 });
 
+test("handleHandSuitInput rejects typing that would take a hand over 13 cards", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765432",
+        north_hearts: "",
+    });
+    const ctx = loadDdsWeb(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const hearts = document.element("north_hearts");
+
+    hearts.value = "A";
+    ctx.handleHandSuitInput({ target: hearts });
+
+    assert.equal(beeps, 1);
+    assert.equal(document.element("north_spades").value, "AKQJT98765432");
+    assert.equal(hearts.value, "");
+    assert.equal(document.element("north-card-count").hidden, true);
+});
+
+test("handleHandSuitInput accepts typing that fills a hand to exactly 13 cards", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT9876543",
+        north_hearts: "",
+    });
+    const ctx = loadDdsWeb(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const hearts = document.element("north_hearts");
+
+    hearts.value = "A";
+    ctx.handleHandSuitInput({ target: hearts });
+
+    assert.equal(beeps, 0);
+    assert.equal(hearts.value, "A");
+    assert.equal(document.element("north-card-count").hidden, true);
+});
+
+test("handleHandSuitInput keeps only cards that fit when pasting past 13", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765",
+        north_hearts: "",
+    });
+    const ctx = loadDdsWeb(document);
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const hearts = document.element("north_hearts");
+
+    // 10 spades already; only three hearts may be kept.
+    hearts.value = "AKQJ";
+    ctx.handleHandSuitInput({ target: hearts });
+
+    assert.equal(beeps, 1);
+    assert.equal(hearts.value, "AKQ");
+});
+
 test("handleHandSuitInput keeps other-hand ownership when typing a duplicate", () => {
     const document = createMockDocument({
         east_spades: "AK",
@@ -1140,19 +1201,19 @@ test("updateActionButtons hides a suit row when all of its cards are in the diag
     assert.equal((deckStatus.match(/data-card=/g) ?? []).length, 39);
 });
 
-test("updateActionButtons shows a card-count note for a hand over 13 cards", () => {
+test("updateActionButtons trims a hand that already exceeds 13 cards", () => {
     const document = createMockDocument({
         north_spades: "AKQJT98765432",
-        north_hearts:  "A",
+        north_hearts: "A",
     });
     const ctx = loadDdsWeb(document);
 
     ctx.updateActionButtons();
 
-    const note = document.element("north-card-count");
-    assert.equal(note.hidden, false);
-    assert.equal(note.innerHTML, "14 cards");
-    assert.equal(document.element("east-card-count").hidden, true);
+    assert.equal(document.element("north_spades").value, "AKQJT98765432");
+    assert.equal(document.element("north_hearts").value, "");
+    assert.equal(document.element("north-card-count").hidden, true);
+    assert.equal(document.element("north-card-count").innerHTML, "");
 });
 
 test("updateActionButtons shows a card-count note for a partial hand", () => {

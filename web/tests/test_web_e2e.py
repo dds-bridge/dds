@@ -952,21 +952,20 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_hand_over_13_cards_shows_its_card_count(self) -> None:
+    def test_typing_past_13_cards_is_rejected(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             note = page.locator(".hand-north #north-card-count")
             self.assertTrue(note.is_hidden())
 
-            # 13 spades plus a heart — not a within-suit duplicate Ace.
             page.locator("#north_spades").fill("AKQJT98765432")
             page.locator("#north_spades").dispatch_event("input")
             page.locator("#north_hearts").fill("A")
             page.locator("#north_hearts").dispatch_event("input")
 
-            self.assertTrue(note.is_visible())
-            self.assertEqual(note.inner_text(), "14 cards")
-            self.assertTrue(page.locator("#east-card-count").is_hidden())
+            self.assertEqual(page.locator("#north_spades").input_value(), "AKQJT98765432")
+            self.assertEqual(page.locator("#north_hearts").input_value(), "")
+            self.assertTrue(note.is_hidden())
             self.assertEqual(errors, [])
         finally:
             page.close()
