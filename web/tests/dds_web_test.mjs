@@ -2357,18 +2357,20 @@ test("undeployedCardHtml escapes aria-label like handCardHtml", () => {
 test("addCardToHand inserts a pip in high-to-low order", () => {
     const document = createMockDocument({ north_spades: "AK" });
     const ctx = loadDdsWeb(document);
-    const card = new ctx.Card("spades", "Q");
 
-    assert.equal(ctx.addCardToHand("north", card), true);
-    assert.equal(document.element("north_spades").value, "AKQ");
+    // Out-of-order inserts must still yield sorted high→low; appending would not.
+    for (const pip of ["5", "2", "Q", "T", "7"]) {
+        assert.equal(ctx.addCardToHand("north", new ctx.Card("spades", pip)), true);
+    }
+    assert.equal(document.element("north_spades").value, "AKQT752");
 });
 
 test("addCardToHand inserts between existing ranks", () => {
-    const document = createMockDocument({ north_spades: "A" });
+    const document = createMockDocument({ north_spades: "AQ" });
     const ctx = loadDdsWeb(document);
 
     assert.equal(ctx.addCardToHand("north", new ctx.Card("spades", "K")), true);
-    assert.equal(document.element("north_spades").value, "AK");
+    assert.equal(document.element("north_spades").value, "AKQ");
 });
 
 test("addCardToHand rejects a card already present in any hand", () => {
