@@ -226,6 +226,14 @@ Card.fromKey = function (key) {
     return new Card(suit, key.charAt(1));
 };
 
+function cardFromKeySafe(key) {
+    try {
+        return Card.fromKey(key);
+    } catch (error) {
+        return null;
+    }
+}
+
 Card.compare = function (left, right) {
     return PIPS.indexOf(left.pip) - PIPS.indexOf(right.pip);
 };
@@ -927,9 +935,14 @@ function handleCardDragOver(event) {
         return;
     }
 
-    const card = Card.fromKey(payload.key);
+    const card = cardFromKeySafe(payload.key);
 
-    if (!card.suit || !card.pip) {
+    if (!card) {
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "none";
+        }
+
+        clearActiveDropTarget();
         return;
     }
 
@@ -994,9 +1007,9 @@ function handleCardDrop(event) {
         return;
     }
 
-    const card = Card.fromKey(payload.key);
+    const card = cardFromKeySafe(payload.key);
 
-    if (!card.suit || !card.pip) {
+    if (!card) {
         return;
     }
 

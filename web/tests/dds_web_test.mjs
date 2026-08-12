@@ -2849,6 +2849,58 @@ test("handleCardDrop rejects dropping onto a full hand from outside", () => {
     assert.equal(document.element("east_hearts").value, "A");
 });
 
+test("handleCardDragOver ignores invalid drag payload keys", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    let dropEffect = "move";
+
+    assert.doesNotThrow(() => {
+        ctx.handleCardDragOver({
+            preventDefault() {},
+            dataTransfer: {
+                getData() {
+                    return JSON.stringify({ key: "XX" });
+                },
+                get dropEffect() {
+                    return dropEffect;
+                },
+                set dropEffect(value) {
+                    dropEffect = value;
+                },
+            },
+            target: {
+                closest() {
+                    return null;
+                },
+            },
+        });
+    });
+
+    assert.equal(dropEffect, "none");
+});
+
+test("handleCardDrop ignores invalid drag payload keys", () => {
+    const document = createMockDocument({ north_spades: "A" });
+    const ctx = loadDdsWeb(document);
+
+    assert.doesNotThrow(() => {
+        ctx.handleCardDrop({
+            preventDefault() {},
+            dataTransfer: {
+                getData() {
+                    return JSON.stringify({ key: "XX" });
+                },
+            },
+            target: {
+                closest() {
+                    return null;
+                },
+            },
+        });
+    });
+
+    assert.equal(document.element("north_spades").value, "A");
+});
+
 test("pageLoad wires card drag-and-drop listeners", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
