@@ -2383,6 +2383,10 @@ test("undeployed cards live in the hand diagram center in four suit rows", () =>
         1,
         "deck-status appears once"
     );
+    assert.match(
+        html,
+        /id="deck-status"[^>]*role="group"[^>]*aria-label="Cards not yet entered in the diagram"|id="deck-status"[^>]*aria-label="Cards not yet entered in the diagram"[^>]*role="group"/
+    );
 
     assert.match(
         css,
