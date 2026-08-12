@@ -58,6 +58,25 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertLess(coi_at, wasm_at)
         self.assertLess(coi_at, app_at)
 
+    def test_disables_coep_credentialless_before_coi_serviceworker(self) -> None:
+        # coi-serviceworker defaults to COEP: credentialless. Safari / iOS WebKit
+        # (including Firefox on iPhone) do not honor that value for isolation, so
+        # SharedArrayBuffer stays unavailable. DDS Web is same-origin only, so
+        # require-corp is correct — configure window.coi before the worker script.
+        text = HTML_PATH.read_text(encoding="utf-8")
+        head_match = re.search(r"<head\b[^>]*>(.*?)</head>", text, re.I | re.S)
+        self.assertIsNotNone(head_match)
+        head = head_match.group(1)
+        config_at = head.find("coepCredentialless")
+        worker_at = head.find('src="coi-serviceworker.js"')
+        self.assertNotEqual(config_at, -1, msg="must set window.coi.coepCredentialless")
+        self.assertNotEqual(worker_at, -1)
+        self.assertLess(config_at, worker_at)
+        self.assertRegex(
+            head,
+            r"coepCredentialless\s*:\s*\(\)\s*=>\s*false",
+        )
+
     def test_coi_serviceworker_sets_cross_origin_isolation_headers(self) -> None:
         self.assertTrue(COI_PATH.is_file(), msg="vendored coi-serviceworker.js missing")
         text = COI_PATH.read_text(encoding="utf-8")

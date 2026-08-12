@@ -17,6 +17,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <!-- Safari / iOS WebKit (incl. Firefox on iPhone) ignore COEP credentialless
+         for isolation. DDS assets are same-origin, so require-corp is enough. -->
+    <script>
+    window.coi = { coepCredentialless: () => false };
+    </script>
     <script src="coi-serviceworker.js"></script>
     <link rel="stylesheet" type="text/css" href="dds_web.css">
     <title>
