@@ -13,7 +13,9 @@
 /// is the 0-based deal index in the input file and `time_us` is wall time in
 /// microseconds. Printed times are milliseconds with one decimal place.
 /// Both the `ms` and `board` columns are right-aligned with spaces (no tabs).
-/// Output includes a title line, a heading line, then one row per board.
+/// Output includes a title line, a heading line, one row per board, then a
+/// blank line and a summary of min/max/mean/median when @p times is non-empty.
+/// For an even count, median is the average of the two middle values.
 void print_per_board_timings(
     std::ostream& out,
     std::vector<std::pair<int, int>> times);

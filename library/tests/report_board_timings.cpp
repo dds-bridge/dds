@@ -49,6 +49,42 @@ int ms_column_width(const std::vector<std::pair<int, int>>& times)
   return width;
 }
 
+/// @p times must be non-empty and sorted longest-first by time_us.
+struct TimingSummaryMs
+{
+  double min;
+  double max;
+  double mean;
+  double median;
+};
+
+auto timing_summary_ms(const std::vector<std::pair<int, int>>& times)
+    -> TimingSummaryMs
+{
+  const double min_ms = static_cast<double>(times.back().second) / 1000.0;
+  const double max_ms = static_cast<double>(times.front().second) / 1000.0;
+
+  double sum_us = 0.0;
+  for (const auto& p : times)
+    sum_us += static_cast<double>(p.second);
+  const double mean_ms = (sum_us / static_cast<double>(times.size())) / 1000.0;
+
+  const std::size_t n = times.size();
+  double median_ms = 0.0;
+  if (n % 2 == 1)
+  {
+    median_ms = static_cast<double>(times[n / 2].second) / 1000.0;
+  }
+  else
+  {
+    const double lo = static_cast<double>(times[n / 2].second);
+    const double hi = static_cast<double>(times[n / 2 - 1].second);
+    median_ms = ((lo + hi) / 2.0) / 1000.0;
+  }
+
+  return TimingSummaryMs{min_ms, max_ms, mean_ms, median_ms};
+}
+
 }  // namespace
 
 void print_per_board_timings(
@@ -75,6 +111,17 @@ void print_per_board_timings(
     out << std::right << std::setw(ms_width)
         << (static_cast<double>(p.second) / 1000.0) << "  "
         << std::setw(board_width) << p.first << "\n";
+  }
+
+  if (!times.empty())
+  {
+    const TimingSummaryMs summary = timing_summary_ms(times);
+    out << "\n"
+        << "min " << summary.min
+        << "  max " << summary.max
+        << "  mean " << summary.mean
+        << "  median " << summary.median
+        << "\n";
   }
 
   out.flags(saved_flags);
