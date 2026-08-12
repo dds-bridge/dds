@@ -196,8 +196,18 @@ function suitFromLetter(letter) {
 }
 
 function Card(suit, pip) {
+    if (!SUITS.includes(suit)) {
+        throw new Error("Invalid card suit: " + suit);
+    }
+
+    const normalizedPip = String(pip).toUpperCase();
+
+    if (!PIPS.includes(normalizedPip)) {
+        throw new Error("Invalid card pip: " + pip);
+    }
+
     this.suit = suit;
-    this.pip = pip;
+    this.pip = normalizedPip;
 }
 
 Card.prototype.key = function () {
@@ -207,7 +217,13 @@ Card.prototype.key = function () {
 Card.prototype.toString = Card.prototype.key;
 
 Card.fromKey = function (key) {
-    return new Card(suitFromLetter(key.charAt(0)), key.charAt(1));
+    const suit = suitFromLetter(key.charAt(0));
+
+    if (!suit) {
+        throw new Error("Invalid card key: " + key);
+    }
+
+    return new Card(suit, key.charAt(1));
 };
 
 Card.compare = function (left, right) {
@@ -852,9 +868,9 @@ function canDropCardOnHand(card, toDirection) {
         return false;
     }
 
-    // No drag-and-drop within a hand; holdings stay high-to-low.
+    // Dropping back onto the same hand is a no-op, not an error.
     if (handContainsCard(toDirection, card)) {
-        return false;
+        return true;
     }
 
     return handCardCount(toDirection) < 13;
@@ -1590,7 +1606,7 @@ function moveCardToHand(card, toDirection) {
     }
 
     if (handContainsCard(toDirection, card)) {
-        return false;
+        return true;
     }
 
     if (handCardCount(toDirection) >= 13) {
@@ -1947,7 +1963,11 @@ function collectHands() {
         var holding = document.getElementById(element_index).value;
 
         for (const pip of holding) {
-            hands[ds.direction].push(new Card(ds.suit, pip.toUpperCase()));
+            const upper = pip.toUpperCase();
+
+            if (PIPS.includes(upper)) {
+                hands[ds.direction].push(new Card(ds.suit, upper));
+            }
         }
     }
 

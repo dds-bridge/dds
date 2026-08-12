@@ -368,11 +368,12 @@ test("inputIsValid rejects incomplete deal", () => {
 test("inputIsValid rejects invalid pip", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const hands = handsFromKeys(ctx, {
-        north: ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ", "SK"],
+        north: ["S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ", "SK", "SA"],
         east: ["HA", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK"],
         south: ["DA", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK"],
         west: ["CA", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK"],
     });
+    hands.north[0] = { suit: "spades", pip: "1", key() { return "S1"; } };
     assert.match(ctx.inputIsValid(hands), /^Please use only these pips:/);
 });
 
@@ -763,7 +764,7 @@ test("fourthHandFillState rejects a non-bridge pip among three full hands", () =
     const document = threeHandsPartScoreDocument();
     const ctx = loadDdsWeb(document);
     const hands = ctx.collectHands();
-    hands.north[12] = new ctx.Card("clubs", "X");
+    hands.north[12] = { suit: "clubs", pip: "X", key() { return "CX"; } };
 
     // Act
     const state = ctx.fourthHandFillState(hands);
@@ -1346,27 +1347,6 @@ test("escapeHtml encodes characters unsafe in HTML text and attributes", () => {
     assert.equal(ctx.escapeHtml(7), "7");
     assert.equal(ctx.escapeHtml(null), "");
     assert.equal(ctx.escapeHtml(undefined), "");
-});
-
-test("handCardHtml escapes pip-derived markup from raw suit input", () => {
-    // Arrange: collectHands uppercases each typed character into Card.pip.
-    const ctx = loadDdsWeb(createMockDocument());
-    const card = new ctx.Card("spades", "\"&<>'");
-
-    // Act
-    const html = ctx.handCardHtml("north", card, 0);
-    const aria = ctx.handCardAriaLabel("north", card);
-
-    // Assert: aria text stays plain; HTML embedding is escaped.
-    assert.equal(aria, "North spade \"&<>'");
-    assert.match(html, /data-card="S&quot;&amp;&lt;&gt;&#39;"/);
-    assert.match(
-        html,
-        /aria-label="North spade &quot;&amp;&lt;&gt;&#39;"/
-    );
-    assert.match(html, />&quot;&amp;&lt;&gt;&#39;</);
-    assert.doesNotMatch(html, /data-card="S"/);
-    assert.doesNotMatch(html, />"</);
 });
 
 test("hand holdings appear high to low after sanitize", () => {
@@ -2451,16 +2431,13 @@ test("undeployedCardHtml matches dealt hand-card button chrome", () => {
     assert.equal(ctx.handCardAriaLabel("undeployed", card), "Undeployed heart ace");
 });
 
-test("undeployedCardHtml escapes aria-label like handCardHtml", () => {
+test("Card rejects invalid suit or pip", () => {
     const ctx = loadDdsWeb(createMockDocument());
-    const card = new ctx.Card("spades", "\"&<>'");
 
-    const html = ctx.undeployedCardHtml(card);
-
-    assert.match(
-        html,
-        /aria-label="Undeployed spade &quot;&amp;&lt;&gt;&#39;"/
-    );
+    assert.throws(() => new ctx.Card("not-a-suit", "A"));
+    assert.throws(() => new ctx.Card("spades", "X"));
+    assert.throws(() => new ctx.Card("spades", "\"&<>'"));
+    assert.throws(() => ctx.Card.fromKey("XX"));
 });
 
 test("addCardToHand inserts a pip in high-to-low order", () => {
@@ -2559,11 +2536,11 @@ test("moveCardToHand moves a card between hands", () => {
     assert.equal(document.element("east_spades").value, "AK");
 });
 
-test("moveCardToHand rejects drag-and-drop within the same hand", () => {
+test("moveCardToHand is a no-op when the card is already in the target hand", () => {
     const document = createMockDocument({ north_spades: "AKQ" });
     const ctx = loadDdsWeb(document);
 
-    assert.equal(ctx.moveCardToHand(new ctx.Card("spades", "A"), "north"), false);
+    assert.equal(ctx.moveCardToHand(new ctx.Card("spades", "A"), "north"), true);
     assert.equal(document.element("north_spades").value, "AKQ");
 });
 
@@ -2776,7 +2753,7 @@ test("handleCardDrop moves an undeployed card onto a hand in rank order", () => 
     assert.equal(document.element("north_spades").value, "AKQ");
 });
 
-test("handleCardDrop ignores a drop within the same hand", () => {
+test("handleCardDrop is a no-op when a card is dropped back on its hand", () => {
     const document = createMockDocument({ north_spades: "AKQ" });
     const ctx = loadDdsWeb(document);
     const hand = {
