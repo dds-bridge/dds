@@ -11,7 +11,7 @@
 ///
 /// Each element of @p times is `(board_index, time_us)`, where `board_index`
 /// is the 0-based deal index in the input file and `time_us` is wall time in
-/// microseconds. Printed times are milliseconds with one decimal place.
+/// microseconds. Printed times are milliseconds with two decimal places.
 /// Both the `ms` and `board` columns are right-aligned with spaces (no tabs).
 /// Output includes a title line, a heading line, one row per board, then a
 /// blank line and a summary of min/max/mean/median when @p times is non-empty.

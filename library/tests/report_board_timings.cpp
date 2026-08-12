@@ -42,7 +42,7 @@ int ms_column_width(const std::vector<std::pair<int, int>>& times)
   for (const auto& p : times)
   {
     std::ostringstream formatted;
-    formatted << std::fixed << std::setprecision(1)
+    formatted << std::fixed << std::setprecision(2)
               << (static_cast<double>(p.second) / 1000.0);
     width = std::max(width, static_cast<int>(formatted.str().size()));
   }
@@ -105,7 +105,7 @@ void print_per_board_timings(
   out << "\nPer-board timings (ms) sorted by longest first:\n\n";
   out << std::right << std::setw(ms_width) << "ms" << "  "
       << std::setw(board_width) << "board" << "\n";
-  out << std::fixed << std::setprecision(1);
+  out << std::fixed << std::setprecision(2);
   for (const auto& p : times)
   {
     out << std::right << std::setw(ms_width)
