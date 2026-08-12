@@ -229,7 +229,7 @@ Card.fromKey = function (key) {
 function cardFromKeySafe(key) {
     try {
         return Card.fromKey(key);
-    } catch (error) {
+    } catch (_err) {
         return null;
     }
 }
