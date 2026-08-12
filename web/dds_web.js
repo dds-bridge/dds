@@ -217,13 +217,18 @@ Card.prototype.key = function () {
 Card.prototype.toString = Card.prototype.key;
 
 Card.fromKey = function (key) {
-    const suit = suitFromLetter(key.charAt(0));
+    if (typeof key !== "string" || key.length !== 2) {
+        throw new Error("Invalid card key: " + key);
+    }
+
+    const normalized = key.toUpperCase();
+    const suit = suitFromLetter(normalized.charAt(0));
 
     if (!suit) {
         throw new Error("Invalid card key: " + key);
     }
 
-    return new Card(suit, key.charAt(1));
+    return new Card(suit, normalized.charAt(1));
 };
 
 function cardFromKeySafe(key) {

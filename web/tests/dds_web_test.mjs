@@ -2431,6 +2431,26 @@ test("undeployedCardHtml matches dealt hand-card button chrome", () => {
     assert.equal(ctx.handCardAriaLabel("undeployed", card), "Undeployed heart ace");
 });
 
+test("Card.fromKey accepts a two-character key and normalizes case", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const card = ctx.Card.fromKey("sa");
+
+    assert.equal(card.suit, "spades");
+    assert.equal(card.pip, "A");
+    assert.equal(card.key(), "SA");
+});
+
+test("Card.fromKey rejects malformed keys", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+
+    assert.throws(() => ctx.Card.fromKey("SAX"));
+    assert.throws(() => ctx.Card.fromKey("S"));
+    assert.throws(() => ctx.Card.fromKey(""));
+    assert.throws(() => ctx.Card.fromKey(null));
+    assert.throws(() => ctx.Card.fromKey(undefined));
+    assert.throws(() => ctx.Card.fromKey(42));
+});
+
 test("Card rejects invalid suit or pip", () => {
     const ctx = loadDdsWeb(createMockDocument());
 
