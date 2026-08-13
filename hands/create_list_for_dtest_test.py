@@ -3,6 +3,7 @@
 
 import contextlib
 import io
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -296,6 +297,24 @@ class ParseArgsAndOutputTest(unittest.TestCase):
     def test_parse_args_accepts_count_at_dtest_limit(self):
         args = cld._parse_args(["-n", "100000"])
         self.assertEqual(args.count, 100_000)
+
+    def test_main_writes_one_filled_deal_to_output_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "list1.txt"
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = cld.main(["-n", "1", "--seed", "1", "-o", str(out)])
+            self.assertEqual(rc, 0)
+            text = out.read_text(encoding="utf-8")
+            self.assertTrue(text.startswith("NUMBER 1 \n"))
+            tags = [line.split()[0] for line in text.splitlines() if line.strip()]
+            self.assertEqual(
+                tags,
+                ["NUMBER", "PBN", "FUT", "TABLE", "PAR", "PAR2", "PLAY", "TRACE"],
+            )
+            play_line = next(line for line in text.splitlines() if line.startswith("PLAY "))
+            self.assertRegex(play_line, r'^PLAY 52 "')
+            self.assertIn(f"Wrote 1 deals -> {out}", err.getvalue())
 
 
 if __name__ == "__main__":
