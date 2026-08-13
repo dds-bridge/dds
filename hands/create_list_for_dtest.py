@@ -391,10 +391,8 @@ def solve_fut(
     deal: DealSpec,
     *,
     solve_fn: Callable[..., dict[str, Any]] | None = None,
-    max_threads: int = 0,
 ) -> dict[str, Any]:
     """Solve FUT for one deal matching ``dtest -s solve`` parameters."""
-    del max_threads  # single-board solve ignores thread pool sizing
     if solve_fn is None:
         solve_fn = solve_board_pbn
 
@@ -449,12 +447,6 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Output hand-list path (default: stdout)",
     )
-    p.add_argument(
-        "--max-threads",
-        type=int,
-        default=0,
-        help="DDS worker threads for solving (0 = auto)",
-    )
     return p
 
 
@@ -476,7 +468,7 @@ def main(argv: list[str] | None = None) -> int:
         ):
             if i == 1:
                 print("Generating and solving deals…", file=sys.stderr)
-            fut = solve_fut(deal, max_threads=args.max_threads)
+            fut = solve_fut(deal)
             stream.write(format_filled_deal_block(deal, fut))
             if i % 100 == 0:
                 print(f"  {i}/{args.count} deals…", file=sys.stderr)
