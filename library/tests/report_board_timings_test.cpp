@@ -13,9 +13,12 @@
 
 TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
 {
-  // Arrange: stored times are microseconds; report shows ms with one decimal.
+  // Arrange: stored times are microseconds; report shows ms with two decimals.
   // Both columns are space-padded and right-aligned (no tabs — tab stops
   // shift when the ms field width varies).
+  // Summary uses the same ms scale: min 7.00, max 42.50,
+  // mean (42.50+10.10+7.00)/3 = 19.87, median 10.10,
+  // sample stddev = 19.66.
   std::vector<std::pair<int, int>> times = {
     {2, 10100},
     {5, 42500},
@@ -31,14 +34,17 @@ TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
     out.str(),
     "\nPer-board timings (ms) sorted by longest first:\n"
     "\n"
-    "  ms  board\n"
-    "42.5      5\n"
-    "10.1      2\n"
-    " 7.0      1\n");
+    "   ms  board\n"
+    "42.50      5\n"
+    "10.10      2\n"
+    " 7.00      1\n"
+    "\n"
+    "ms min 7.00  max 42.50  mean 19.87  median 10.10  stddev 19.66\n");
 }
 
 TEST(ReportBoardTimings, RightAlignsBoardWiderThanHeader)
 {
+  // Even count: median is the average of the two middle values.
   std::vector<std::pair<int, int>> times = {
     {12, 1000},
     {3456, 2000},
@@ -51,15 +57,20 @@ TEST(ReportBoardTimings, RightAlignsBoardWiderThanHeader)
     out.str(),
     "\nPer-board timings (ms) sorted by longest first:\n"
     "\n"
-    " ms  board\n"
-    "2.0   3456\n"
-    "1.0     12\n");
+    "  ms  board\n"
+    "2.00   3456\n"
+    "1.00     12\n"
+    "\n"
+    "ms min 1.00  max 2.00  mean 1.50  median 1.50  stddev 0.71\n");
 }
 
 TEST(ReportBoardTimings, RightAlignsMixedMsWidthsWithSpaces)
 {
   // Tab-separated layout breaks once ms strings cross a tab stop; spaces keep
   // the board column fixed.
+  // mean (202.00+164.10+158.40+148.30)/4 = 168.20;
+  // median avg(158.40, 164.10) = 161.25;
+  // sample stddev = 23.46.
   std::vector<std::pair<int, int>> times = {
     {1, 202000},
     {13, 164100},
@@ -74,11 +85,13 @@ TEST(ReportBoardTimings, RightAlignsMixedMsWidthsWithSpaces)
     out.str(),
     "\nPer-board timings (ms) sorted by longest first:\n"
     "\n"
-    "   ms  board\n"
-    "202.0      1\n"
-    "164.1     13\n"
-    "158.4      7\n"
-    "148.3     92\n");
+    "    ms  board\n"
+    "202.00      1\n"
+    "164.10     13\n"
+    "158.40      7\n"
+    "148.30     92\n"
+    "\n"
+    "ms min 148.30  max 202.00  mean 168.20  median 161.25  stddev 23.46\n");
 }
 
 TEST(ReportBoardTimings, EmptyInputPrintsTitleAndHeadingsOnly)
@@ -107,6 +120,21 @@ TEST(ReportBoardTimings, RestoresStreamFormattingState)
   // Assert
   EXPECT_EQ(out.flags(), flags_before);
   EXPECT_EQ(out.precision(), precision_before);
+}
+
+TEST(ReportBoardTimings, SingleBoardSummaryHasEqualStats)
+{
+  std::ostringstream out;
+  print_per_board_timings(out, {{3, 12500}});
+
+  EXPECT_EQ(
+    out.str(),
+    "\nPer-board timings (ms) sorted by longest first:\n"
+    "\n"
+    "   ms  board\n"
+    "12.50      3\n"
+    "\n"
+    "ms min 12.50  max 12.50  mean 12.50  median 12.50  stddev 0.00\n");
 }
 
 TEST(AppendBatchBoardTimes, RemapsBatchLocalIndicesByFileOffset)

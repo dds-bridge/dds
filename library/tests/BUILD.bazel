@@ -13,6 +13,7 @@ filegroup(
             "test_timer_test.cpp",  # Uses GoogleTest, compiled separately
             "args_test.cpp",  # Uses GoogleTest, compiled separately
             "report_board_timings_test.cpp",  # Uses GoogleTest, compiled separately
+            "parse_par_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -118,6 +119,23 @@ cc_test(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
     deps = [
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "parse_par_test",
+    srcs = [
+        "parse_par_test.cpp",
+        "parse.cpp",
+        "parse.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
