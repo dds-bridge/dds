@@ -62,12 +62,6 @@ config_setting(
     define_values = {"ab_stats": "true"},
 )
 
-# Enable DDS_TT_CONTEXT_OWNERSHIP via --define=tt_context_ownership=true
-config_setting(
-    name = "tt_context_ownership",
-    define_values = {"tt_context_ownership": "true"},
-)
-
 # Enable DDS_DEBUG_TT_RESET via --define=tt_reset_debug=true
 config_setting(
     name = "tt_reset_debug",

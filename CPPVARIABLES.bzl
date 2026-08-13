@@ -81,9 +81,6 @@ DDS_LOCAL_DEFINES = select({
     "//:debug_all": ["DDS_DEBUG_ALL"],
     "//conditions:default": [],
 }) + select({
-    "//:tt_context_ownership": ["DDS_TT_CONTEXT_OWNERSHIP"],
-    "//conditions:default": [],
-}) + select({
     "//:tt_reset_debug": ["DDS_DEBUG_TT_RESET"],
     "//conditions:default": [],
 }) + select({
