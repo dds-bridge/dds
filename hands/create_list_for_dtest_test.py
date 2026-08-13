@@ -5,6 +5,7 @@ import contextlib
 import io
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import create_list_for_dtest as cld
@@ -185,8 +186,11 @@ class ParseRemainCardsTest(unittest.TestCase):
         self.assertTrue(cld._hands_to_pbn(hands).startswith("N:"))
 
     def test_rejects_missing_seat_prefix(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as ctx:
             cld._parse_remain_cards("bad deal")
+        message = str(ctx.exception)
+        self.assertIn("remain cards must start with N:/E:/S:/W:, got", message)
+        self.assertNotIn("W::", message)
 
 
 class FillDealBlockTest(unittest.TestCase):
@@ -297,6 +301,58 @@ class ParseArgsAndOutputTest(unittest.TestCase):
     def test_parse_args_accepts_count_at_dtest_limit(self):
         args = cld._parse_args(["-n", "100000"])
         self.assertEqual(args.count, 100_000)
+
+    def test_parse_args_count_help_mentions_cost(self):
+        help_text = cld._build_parser().format_help()
+        self.assertRegex(help_text, r"(?i)slow|long|expensive|time")
+
+    def test_large_count_warning_message_for_big_n(self):
+        warning = cld._large_count_warning(1000)
+        self.assertIsNotNone(warning)
+        self.assertIn("1000", warning)
+        self.assertRegex(warning, r"(?i)slow|long|time")
+
+    def test_large_count_warning_message_none_for_small_n(self):
+        self.assertIsNone(cld._large_count_warning(10))
+
+    def test_main_prints_large_count_warning(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "out.txt"
+            err = io.StringIO()
+            fake_deal = cld.DealSpec(
+                dealer=0, vul=0, trump=0, first=0, cards=_DEAL_CARDS
+            )
+            with contextlib.redirect_stderr(err), unittest.mock.patch.object(
+                cld,
+                "iter_deals",
+                return_value=iter([fake_deal]),
+            ), unittest.mock.patch.object(
+                cld,
+                "solve_fut",
+                return_value={
+                    "cards": 0,
+                    "suit": (),
+                    "rank": (),
+                    "equals": (),
+                    "score": (),
+                },
+            ), unittest.mock.patch.object(
+                cld,
+                "format_filled_deal_block",
+                return_value=(
+                    'PBN 0 0 0 0 "N:..." \n'
+                    "FUT 0 \n"
+                    "TABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n"
+                    'PAR "NS 0" "EW 0" "NS:EW 2S" "EW:EW 2S" \n'
+                    'PAR2 "0" "pass" \n'
+                    'PLAY 0 "" \n'
+                    "TRACE 1 0 \n"
+                ),
+            ):
+                # NUMBER header uses args.count (1000); we only generate one mocked deal.
+                rc = cld.main(["-n", "1000", "--seed", "1", "-o", str(out)])
+            self.assertEqual(rc, 0)
+            self.assertRegex(err.getvalue(), r"(?i)slow|long|time")
 
     def test_main_writes_one_filled_deal_to_output_file(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -36,6 +36,8 @@ _RANKS = "AKQJT98765432"
 _SUITS = 4
 _HANDS = 4
 _MAX_DEALS = 100_000
+# Each deal runs dozens of DDS solves for PLAY/TRACE; warn above this count.
+_LARGE_COUNT_THRESHOLD = 1000
 
 # Intermediate stubs; ``fill_deal_block`` replaces them.
 _STUB_TABLE = "TABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n"
@@ -201,7 +203,7 @@ def _parse_remain_cards(cards: str) -> list[list[tuple[int, int]]]:
     """Parse a PBN remain-cards string into hands[N,E,S,W] of (suit, rank)."""
     text = cards.strip()
     if len(text) < 2 or text[1] != ":" or text[0] not in _SEAT_OFFSET:
-        raise ValueError(f"remain cards must start with N:/E:/S:/W:: {cards!r}")
+        raise ValueError(f"remain cards must start with N:/E:/S:/W:, got {cards!r}")
     start = _SEAT_OFFSET[text[0]]
     hand_strs = text[2:].split()
     if len(hand_strs) != 4:
@@ -415,6 +417,17 @@ def _open_output_stream(output: Path | None) -> tuple[TextIO, bool]:
     return (path.open("w", encoding="utf-8"), True)
 
 
+def _large_count_warning(count: int) -> str | None:
+    """Return a stderr warning when ``count`` is large enough to be slow."""
+    if count < _LARGE_COUNT_THRESHOLD:
+        return None
+    return (
+        f"Warning: generating {count} deals may take a long time "
+        f"(each deal runs many DDS solves.)\n"
+        f"A fast machine can produce ~5 deals per second."
+    )
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument(
@@ -422,7 +435,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--count",
         type=int,
         default=10,
-        help="Number of deals (default: 10)",
+        help=(
+            "Number of deals (default: 10). Large counts are slow because each "
+            "deal runs many DDS solves"
+        ),
     )
     p.add_argument(
         "--seed",
@@ -456,6 +472,9 @@ def main(argv: list[str] | None = None) -> int:
         _build_parser().print_help()
         return 2
     args = _parse_args(args_list)
+    warning = _large_count_warning(args.count)
+    if warning:
+        print(warning, file=sys.stderr)
     stream, should_close = _open_output_stream(args.output)
     try:
         stream.write(f"NUMBER {args.count} \n")
