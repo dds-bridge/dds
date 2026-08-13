@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Create dtest hand-list files.
 
-Generate unique random deals for use with the dtest program.
+Generate random deals for use with the dtest program.
 
-Conventionally we will use ``--seed NNN`` to create listNNN.txt, for reproducibility
-and to ensure unique deals across list files.
+Conventionally use ``--seed NNN`` with ``listNNN.txt`` so runs are reproducible
+and duplicates between files are almost certainly avoided.
+
+Duplicate deals within a file, or across files with different seeds,
+are possible but vanishingly unlikely.
 
 Example::
 
@@ -78,37 +81,24 @@ def _deal_cards(rng: random.Random) -> str:
     return "N:" + " ".join(parts)
 
 
-def iter_unique_deals(count: int, *, seed: int) -> Iterator[DealSpec]:
-    """Yield ``count`` deals with unique card layouts."""
+def iter_deals(count: int, *, seed: int) -> Iterator[DealSpec]:
+    """Yield ``count`` random deals."""
     if count <= 0:
         raise ValueError("count must be positive")
     rng = random.Random(seed)
-    seen: set[str] = set()
-    yielded = 0
-    # Bound retries; collisions are vanishingly rare for 10k of ~52!/ (13!)^4.
-    attempts = 0
-    max_attempts = count * 20 + 1000
-    while yielded < count:
-        attempts += 1
-        if attempts > max_attempts:
-            raise RuntimeError(f"failed to generate {count} unique deals")
-        cards = _deal_cards(rng)
-        if cards in seen:
-            continue
-        seen.add(cards)
-        yielded += 1
+    for _ in range(count):
         yield DealSpec(
             dealer=rng.randrange(4),
             vul=rng.randrange(4),
             trump=rng.randrange(5),
             first=rng.randrange(4),
-            cards=cards,
+            cards=_deal_cards(rng),
         )
 
 
-def generate_unique_deals(count: int, *, seed: int) -> list[DealSpec]:
-    """Generate ``count`` deals with unique card layouts."""
-    return list(iter_unique_deals(count, seed=seed))
+def generate_deals(count: int, *, seed: int) -> list[DealSpec]:
+    """Generate ``count`` random deals."""
+    return list(iter_deals(count, seed=seed))
 
 
 def format_fut_line(result: dict[str, Any]) -> str:
@@ -433,7 +423,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--count",
         type=int,
         default=10,
-        help="Number of unique deals (default: 10)",
+        help="Number of deals (default: 10)",
     )
     p.add_argument(
         "--seed",
@@ -471,7 +461,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         stream.write(f"NUMBER {args.count} \n")
         for i, deal in enumerate(
-            iter_unique_deals(args.count, seed=args.seed), start=1
+            iter_deals(args.count, seed=args.seed), start=1
         ):
             if i == 1:
                 print("Generating and solving deals…", file=sys.stderr)

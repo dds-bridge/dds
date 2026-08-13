@@ -83,11 +83,9 @@ class GenerateDdPlayTest(unittest.TestCase):
 
 
 class CreateListForDtestTest(unittest.TestCase):
-    def test_generate_unique_deals_are_unique_by_cards(self):
-        deals = cld.generate_unique_deals(50, seed=1)
+    def test_generate_deals_returns_requested_count_and_valid_fields(self):
+        deals = cld.generate_deals(50, seed=1)
         self.assertEqual(len(deals), 50)
-        cards = [d.cards for d in deals]
-        self.assertEqual(len(cards), len(set(cards)))
         for d in deals:
             self.assertRegex(d.cards, r"^[NESW]:")
             self.assertEqual(d.cards.count(" "), 3)
@@ -96,9 +94,9 @@ class CreateListForDtestTest(unittest.TestCase):
             self.assertIn(d.dealer, range(4))
             self.assertIn(d.vul, range(4))
 
-    def test_generate_unique_deals_is_deterministic_for_seed(self):
-        a = cld.generate_unique_deals(20, seed=42)
-        b = cld.generate_unique_deals(20, seed=42)
+    def test_generate_deals_is_deterministic_for_seed(self):
+        a = cld.generate_deals(20, seed=42)
+        b = cld.generate_deals(20, seed=42)
         self.assertEqual([d.cards for d in a], [d.cards for d in b])
         self.assertEqual([(d.trump, d.first) for d in a], [(d.trump, d.first) for d in b])
 
