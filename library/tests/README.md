@@ -8,9 +8,8 @@ The test cases are located in the `hands` directory. Each `.txt` file in this di
 
 ### Input File Format
 
-The input files use a specific format with keywords to define the test parameters for each deal. The key components are:
+The input files use a specific format with keywords to define the test parameters for each deal. The first line is `NUMBER N`, where `N` is the count of deals in the file. Each deal is then a block of lines in this order:
 
-- **`NUMBER`**: An identifier for the test case.
 - **`PBN`**: The deal definition in Portable Bridge Notation, describing the cards held by each of the four players (North, East, South, West).
 - **`FUT`**: The expected number of future tricks for each player in different trump suits.
 - **`TABLE`**: A table representing the number of tricks that can be taken by each partnership for each of the 13 possible opening leads.
