@@ -111,7 +111,7 @@ void usage(
     "\n" <<
     "-r, --report       Print per-deal timings in ms (two decimals) for every\n" <<
     "                   hand in the input (solve mode), longest first, plus\n" <<
-    "                   a min/max/mean/median summary.\n" <<
+    "                   a min/max/mean/median/stddev summary.\n" <<
     "\n" <<
     endl;
 }

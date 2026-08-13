@@ -4,6 +4,7 @@
 #include "report_board_timings.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iomanip>
 #include <sstream>
@@ -56,6 +57,7 @@ struct TimingSummaryMs
   double max;
   double mean;
   double median;
+  double stddev;
 };
 
 auto timing_summary_ms(const std::vector<std::pair<int, int>>& times)
@@ -82,7 +84,20 @@ auto timing_summary_ms(const std::vector<std::pair<int, int>>& times)
     median_ms = ((lo + hi) / 2.0) / 1000.0;
   }
 
-  return TimingSummaryMs{min_ms, max_ms, mean_ms, median_ms};
+  double stddev_ms = 0.0;
+  if (n > 1)
+  {
+    const double mean_us = sum_us / static_cast<double>(n);
+    double sum_sq_us = 0.0;
+    for (const auto& p : times)
+    {
+      const double d = static_cast<double>(p.second) - mean_us;
+      sum_sq_us += d * d;
+    }
+    stddev_ms = std::sqrt(sum_sq_us / static_cast<double>(n - 1)) / 1000.0;
+  }
+
+  return TimingSummaryMs{min_ms, max_ms, mean_ms, median_ms, stddev_ms};
 }
 
 }  // namespace
@@ -117,10 +132,11 @@ void print_per_board_timings(
   {
     const TimingSummaryMs summary = timing_summary_ms(times);
     out << "\n"
-        << "min " << summary.min
+        << "ms min " << summary.min
         << "  max " << summary.max
         << "  mean " << summary.mean
         << "  median " << summary.median
+        << "  stddev " << summary.stddev
         << "\n";
   }
 

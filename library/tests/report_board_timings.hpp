@@ -14,8 +14,10 @@
 /// microseconds. Printed times are milliseconds with two decimal places.
 /// Both the `ms` and `board` columns are right-aligned with spaces (no tabs).
 /// Output includes a title line, a heading line, one row per board, then a
-/// blank line and a summary of min/max/mean/median when @p times is non-empty.
-/// For an even count, median is the average of the two middle values.
+/// blank line and a summary of min/max/mean/median/stddev when @p times is
+/// non-empty. For an even count, median is the average of the two middle
+/// values. ``stddev`` is the sample standard deviation (n-1); for a single
+/// board it is 0.
 void print_per_board_timings(
     std::ostream& out,
     std::vector<std::pair<int, int>> times);

@@ -17,7 +17,8 @@ TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
   // Both columns are space-padded and right-aligned (no tabs — tab stops
   // shift when the ms field width varies).
   // Summary uses the same ms scale: min 7.00, max 42.50,
-  // mean (42.50+10.10+7.00)/3 = 19.87, median 10.10.
+  // mean (42.50+10.10+7.00)/3 = 19.87, median 10.10,
+  // sample stddev = 19.66.
   std::vector<std::pair<int, int>> times = {
     {2, 10100},
     {5, 42500},
@@ -38,7 +39,7 @@ TEST(ReportBoardTimings, PrintsColumnHeadingsThenSortedRows)
     "10.10      2\n"
     " 7.00      1\n"
     "\n"
-    "min 7.00  max 42.50  mean 19.87  median 10.10\n");
+    "ms min 7.00  max 42.50  mean 19.87  median 10.10  stddev 19.66\n");
 }
 
 TEST(ReportBoardTimings, RightAlignsBoardWiderThanHeader)
@@ -60,7 +61,7 @@ TEST(ReportBoardTimings, RightAlignsBoardWiderThanHeader)
     "2.00   3456\n"
     "1.00     12\n"
     "\n"
-    "min 1.00  max 2.00  mean 1.50  median 1.50\n");
+    "ms min 1.00  max 2.00  mean 1.50  median 1.50  stddev 0.71\n");
 }
 
 TEST(ReportBoardTimings, RightAlignsMixedMsWidthsWithSpaces)
@@ -68,7 +69,8 @@ TEST(ReportBoardTimings, RightAlignsMixedMsWidthsWithSpaces)
   // Tab-separated layout breaks once ms strings cross a tab stop; spaces keep
   // the board column fixed.
   // mean (202.00+164.10+158.40+148.30)/4 = 168.20;
-  // median avg(158.40, 164.10) = 161.25.
+  // median avg(158.40, 164.10) = 161.25;
+  // sample stddev = 23.46.
   std::vector<std::pair<int, int>> times = {
     {1, 202000},
     {13, 164100},
@@ -89,7 +91,7 @@ TEST(ReportBoardTimings, RightAlignsMixedMsWidthsWithSpaces)
     "158.40      7\n"
     "148.30     92\n"
     "\n"
-    "min 148.30  max 202.00  mean 168.20  median 161.25\n");
+    "ms min 148.30  max 202.00  mean 168.20  median 161.25  stddev 23.46\n");
 }
 
 TEST(ReportBoardTimings, EmptyInputPrintsTitleAndHeadingsOnly)
@@ -132,7 +134,7 @@ TEST(ReportBoardTimings, SingleBoardSummaryHasEqualStats)
     "   ms  board\n"
     "12.50      3\n"
     "\n"
-    "min 12.50  max 12.50  mean 12.50  median 12.50\n");
+    "ms min 12.50  max 12.50  mean 12.50  median 12.50  stddev 0.00\n");
 }
 
 TEST(AppendBatchBoardTimes, RemapsBatchLocalIndicesByFileOffset)
