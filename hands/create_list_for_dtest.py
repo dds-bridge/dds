@@ -3,8 +3,7 @@
 
 Generate random deals for use with the dtest program.
 
-Conventionally use ``--seed NNN`` with ``listNNN.txt`` so runs are reproducible
-and duplicates between files are almost certainly avoided.
+Conventionally use ``--seed NNN`` with ``listNNN.txt`` so runs are reproducible.
 
 Duplicate deals within a file, or across files with different seeds,
 are possible but vanishingly unlikely.
