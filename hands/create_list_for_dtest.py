@@ -33,6 +33,7 @@ from dds3 import (
 _RANKS = "AKQJT98765432"
 _SUITS = 4
 _HANDS = 4
+_MAX_DEALS = 100_000
 
 # Intermediate stubs; ``fill_deal_block`` replaces them.
 _STUB_TABLE = "TABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n"
@@ -451,7 +452,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    return _build_parser().parse_args(argv)
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    if args.count <= 0:
+        parser.error("count must be positive")
+    if args.count > _MAX_DEALS:
+        parser.error(f"count must not exceed {_MAX_DEALS}")
+    return args
 
 
 def main(argv: list[str] | None = None) -> int:

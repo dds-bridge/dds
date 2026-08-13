@@ -157,6 +157,18 @@ class ParseArgsAndOutputTest(unittest.TestCase):
         args = cld._parse_args(["--seed", "1"])
         self.assertEqual(args.count, 10)
 
+    def test_parse_args_rejects_non_positive_count(self):
+        with self.assertRaises(SystemExit):
+            cld._parse_args(["-n", "0"])
+
+    def test_parse_args_rejects_count_over_dtest_limit(self):
+        with self.assertRaises(SystemExit):
+            cld._parse_args(["-n", "100001"])
+
+    def test_parse_args_accepts_count_at_dtest_limit(self):
+        args = cld._parse_args(["-n", "100000"])
+        self.assertEqual(args.count, 100_000)
+
 
 if __name__ == "__main__":
     unittest.main()
