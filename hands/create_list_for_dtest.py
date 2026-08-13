@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Create dtest hand-list files.
 
-Generate unique random deals (``-n`` / ``--seed``) with FUT solved for
-``dtest -s solve`` and TABLE/PAR/PAR2/PLAY/TRACE filled from DDS.
+Generate unique random deals for use with the dtest program.
 
-Examples::
+Conventionally we will use ``--seed NNN`` to create listNNN.txt, for reproducibility
+and to ensure unique deals across list files.
 
-  bazel run //hands:create_list_for_dtest -- -n 10000 --seed 1 -o hands/random10000.txt
-  bazel run //hands:create_list_for_dtest -- -n 3 --seed 1 > hands/random3.txt
+Example::
+
+  bazel run //hands:create_list_for_dtest -- -n 100 --seed 100 -o hands/list100.txt
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterator, Sequence, TextIO
+from typing import Any, Callable, Iterator, TextIO
 
 from dds3 import (
     analyse_play_pbn,
@@ -33,7 +34,7 @@ _RANKS = "AKQJT98765432"
 _SUITS = 4
 _HANDS = 4
 
-# Intermediate stubs; ``build_hand_list`` replaces them via fill_fn.
+# Intermediate stubs; ``fill_deal_block`` replaces them.
 _STUB_TABLE = "TABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n"
 _STUB_PAR = 'PAR "NS 0" "EW 0" "NS:" "EW:" \n'
 _STUB_PAR2 = 'PAR2 "0" "1N-NS" \n'
@@ -386,38 +387,6 @@ def format_filled_deal_block(deal: DealSpec, fut: dict[str, Any]) -> str:
     return fill_deal_block(format_deal_block(deal, fut))
 
 
-def build_hand_list(
-    deals: Sequence[DealSpec],
-    futs: Sequence[dict[str, Any]],
-    *,
-    fill_fn: Callable[[str], str] | None = None,
-) -> str:
-    """Build a hand list with TABLE/PAR/PAR2/PLAY/TRACE filled from DDS.
-
-    Pass an identity (or other) ``fill_fn`` in tests to skip DDS fill work.
-    """
-    if len(deals) != len(futs):
-        raise ValueError("deals and futs length mismatch")
-
-    if fill_fn is None:
-        parts = [f"NUMBER {len(deals)} \n"]
-        for deal, fut in zip(deals, futs):
-            parts.append(format_filled_deal_block(deal, fut))
-        text = "".join(parts)
-    else:
-        parts = [f"NUMBER {len(deals)} \n"]
-        for deal, fut in zip(deals, futs):
-            parts.append(format_deal_block(deal, fut))
-        text = "".join(parts)
-        if text and not text.endswith("\n"):
-            text += "\n"
-        text = fill_fn(text)
-
-    if text and not text.endswith("\n"):
-        text += "\n"
-    return text
-
-
 def solve_fut(
     deal: DealSpec,
     *,
@@ -448,33 +417,14 @@ def _resolve_output_path(path: Path) -> Path:
     return path
 
 
-def _open_output_stream(
-    output: Path | None,
-    *,
-    stdout: TextIO | None = None,
-) -> tuple[TextIO, bool]:
+def _open_output_stream(output: Path | None) -> tuple[TextIO, bool]:
     """Return ``(stream, should_close)`` for incremental hand-list output."""
     if output is None:
-        return (sys.stdout if stdout is None else stdout, False)
+        return (sys.stdout, False)
 
     path = _resolve_output_path(output)
     path.parent.mkdir(parents=True, exist_ok=True)
     return (path.open("w", encoding="utf-8"), True)
-
-
-def write_hand_list_output(
-    text: str,
-    *,
-    output: Path | None,
-    stdout: TextIO | None = None,
-) -> None:
-    """Write ``text`` to ``output`` or to stdout when ``output`` is None."""
-    stream, should_close = _open_output_stream(output, stdout=stdout)
-    try:
-        stream.write(text)
-    finally:
-        if should_close:
-            stream.close()
 
 
 def _build_parser() -> argparse.ArgumentParser:

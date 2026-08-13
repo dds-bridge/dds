@@ -3,7 +3,6 @@
 
 import contextlib
 import io
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -133,65 +132,6 @@ class CreateListForDtestTest(unittest.TestCase):
         self.assertEqual(tags, ["PBN", "FUT", "TABLE", "PAR", "PAR2", "PLAY", "TRACE"])
         self.assertIn('PBN 0 1 4 2 "N:AKQ.AKQ.AKQ.AKQ2', block)
 
-    def test_build_hand_list_rewrites_number_header(self):
-        deals = cld.generate_unique_deals(2, seed=7)
-        futs = [
-            {"cards": 0, "suit": (), "rank": (), "equals": (), "score": ()},
-            {"cards": 0, "suit": (), "rank": (), "equals": (), "score": ()},
-        ]
-        text = cld.build_hand_list(deals, futs, fill_fn=lambda t: t)
-        self.assertTrue(text.startswith("NUMBER 2 \n"))
-        self.assertEqual(sum(1 for line in text.splitlines() if line.startswith("PBN ")), 2)
-        self.assertTrue(text.endswith("\n"))
-
-    def test_build_hand_list_runs_fill_fn_on_stub_list(self):
-        deals = cld.generate_unique_deals(1, seed=1)
-        futs = [{"cards": 0, "suit": (), "rank": (), "equals": (), "score": ()}]
-        seen: list[str] = []
-
-        def fake_fill(text: str) -> str:
-            seen.append(text)
-            return text.replace(
-                "TABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n",
-                "TABLE 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 \n",
-            )
-
-        out = cld.build_hand_list(deals, futs, fill_fn=fake_fill)
-        self.assertEqual(len(seen), 1)
-        self.assertIn("TABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n", seen[0])
-        self.assertIn(
-            "TABLE 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 \n",
-            out,
-        )
-
-    def test_build_hand_list_default_fill_populates_table_par_play(self):
-        deals = [
-            cld.DealSpec(
-                dealer=0,
-                vul=0,
-                trump=0,
-                first=0,
-                cards=_DEAL_CARDS,
-            )
-        ]
-        futs = [
-            {
-                "cards": 1,
-                "suit": (0,),
-                "rank": (14,),
-                "equals": (0,),
-                "score": (5,),
-            }
-        ]
-        text = cld.build_hand_list(deals, futs)
-        self.assertIn(_EXPECTED_TABLE, text)
-        self.assertIn('PAR "NS -110" "EW 110"', text)
-        self.assertIn('PAR2 "-110" "2S-EW"', text)
-        self.assertRegex(
-            next(line for line in text.splitlines() if line.startswith("PLAY ")),
-            r'^PLAY 52 "',
-        )
-
 
 class ParseArgsAndOutputTest(unittest.TestCase):
     def test_main_with_no_args_prints_usage_and_returns_2(self):
@@ -216,17 +156,6 @@ class ParseArgsAndOutputTest(unittest.TestCase):
     def test_parse_args_default_count_is_10(self):
         args = cld._parse_args(["--seed", "1"])
         self.assertEqual(args.count, 10)
-
-    def test_write_output_to_stdout_when_path_is_none(self):
-        buf = io.StringIO()
-        cld.write_hand_list_output("NUMBER 1 \n", output=None, stdout=buf)
-        self.assertEqual(buf.getvalue(), "NUMBER 1 \n")
-
-    def test_write_output_to_file_when_path_given(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "out.txt"
-            cld.write_hand_list_output("NUMBER 2 \n", output=path, stdout=None)
-            self.assertEqual(path.read_text(encoding="utf-8"), "NUMBER 2 \n")
 
 
 if __name__ == "__main__":
