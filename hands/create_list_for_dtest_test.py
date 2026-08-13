@@ -7,15 +7,96 @@ import unittest
 from pathlib import Path
 
 import create_list_for_dtest as cld
-from dds3 import analyse_play_pbn
+from dds3 import analyse_play_pbn, solve_board_pbn
 
 
 # list1.txt deal 1.
 _DEAL_CARDS = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
+_EAST_START_CARDS = (
+    "E:QJT5432.T.6.QJ82 .J97543.K7532.94 87.A62.QJT4.AT75 AK96.KQ8.A98.K63"
+)
 
 _EXPECTED_TABLE = "TABLE 5 8 5 8 6 6 6 6 5 7 5 7 7 5 7 5 6 6 6 6 \n"
 _EXPECTED_PAR = 'PAR "NS -110" "EW 110" "NS:EW 2S" "EW:EW 2S" \n'
 _EXPECTED_PAR2 = 'PAR2 "-110" "2S-EW" \n'
+
+_SUIT_INDEX = {"S": 0, "H": 1, "D": 2, "C": 3}
+
+
+def _play_to_cards(play: str) -> list[tuple[int, int]]:
+    cards: list[tuple[int, int]] = []
+    for i in range(0, len(play), 2):
+        cards.append((_SUIT_INDEX[play[i]], cld._char_to_rank(play[i + 1])))
+    return cards
+
+
+def _solve_max(
+    trump: int,
+    leader: int,
+    cur_trick: list[tuple[int, int]],
+    hands: list[list[tuple[int, int]]],
+) -> int:
+    cur_suits = [0, 0, 0]
+    cur_ranks = [0, 0, 0]
+    for i, (suit, rank) in enumerate(cur_trick):
+        cur_suits[i] = suit
+        cur_ranks[i] = rank
+    fut = solve_board_pbn(
+        cld._hands_to_pbn(hands),
+        trump=trump,
+        first=leader,
+        current_trick_suit=tuple(cur_suits),
+        current_trick_rank=tuple(cur_ranks),
+        target=-1,
+        solutions=1,
+        mode=1,
+    )
+    return int(fut["score"][0])
+
+
+def _check_play_self_consistency(
+    test_case: unittest.TestCase,
+    remain_cards: str,
+    *,
+    trump: int,
+    first: int,
+    play: str,
+) -> None:
+    """Match analyse_play_consistency.cpp: AnalysePlay vs SolveBoard each ply."""
+    hands = cld._parse_remain_cards(remain_cards)
+    cards = _play_to_cards(play)
+    solved = analyse_play_pbn(remain_cards, play=play, trump=trump, first=first)
+
+    decl_parity = 1 - (first % 2)
+    cur_hands = [list(hand) for hand in hands]
+    cur: list[tuple[int, int]] = []
+    leader = first
+    completed = 0
+    decl_won = 0
+
+    for k, card in enumerate(cards):
+        if k < solved["number"]:
+            remaining = 13 - completed
+            player_to_act = (leader + len(cur)) % 4
+            sb = _solve_max(trump, leader, cur, cur_hands)
+            decl_remaining = sb if player_to_act % 2 == decl_parity else remaining - sb
+            expected = decl_won + decl_remaining
+            test_case.assertEqual(
+                expected,
+                solved["tricks"][k],
+                f"AnalysePlay disagrees with SolveBoard at ply {k}",
+            )
+
+        player = (leader + len(cur)) % 4
+        cur_hands[player].remove(card)
+        cur.append(card)
+        if len(cur) == 4:
+            winner = cld._trick_winner(cur, trump, leader)
+            if winner % 2 == decl_parity:
+                decl_won += 1
+            completed += 1
+            leader = winner
+            cur.clear()
 
 
 class FormatLinesTest(unittest.TestCase):
@@ -69,17 +150,66 @@ class FormatLinesTest(unittest.TestCase):
         self.assertEqual(cld.format_trace_line(solved), "TRACE 3 8 8 7 \n")
 
 
+class TrickWinnerTest(unittest.TestCase):
+    def test_nt_highest_of_lead_suit_wins(self):
+        trick = [(0, 14), (0, 13), (0, 12), (0, 2)]
+        self.assertEqual(cld._trick_winner(trick, trump=4, leader=0), 0)
+
+    def test_trump_beats_lead_suit(self):
+        trick = [(0, 14), (1, 5), (0, 13), (1, 14)]
+        self.assertEqual(cld._trick_winner(trick, trump=1, leader=0), 3)
+
+    def test_higher_trump_beats_lower_trump(self):
+        trick = [(1, 10), (1, 14), (0, 2), (0, 3)]
+        self.assertEqual(cld._trick_winner(trick, trump=1, leader=1), 2)
+
+    def test_off_suit_discard_does_not_win(self):
+        trick = [(2, 14), (2, 13), (0, 2), (1, 5)]
+        self.assertEqual(cld._trick_winner(trick, trump=4, leader=2), 2)
+
+
+class ParseRemainCardsTest(unittest.TestCase):
+    def test_parses_north_start_deal_into_four_hands(self):
+        hands = cld._parse_remain_cards(_DEAL_CARDS)
+        self.assertEqual(len(hands), 4)
+        for hand in hands:
+            self.assertEqual(len(hand), 13)
+
+    def test_east_start_rotates_first_hand_to_east(self):
+        hands = cld._parse_remain_cards(_EAST_START_CARDS)
+        self.assertIn((0, 12), hands[1])  # East holds spade queen from first chunk
+
+    def test_roundtrip_normalizes_to_north_start(self):
+        hands = cld._parse_remain_cards(_EAST_START_CARDS)
+        self.assertTrue(cld._hands_to_pbn(hands).startswith("N:"))
+
+    def test_rejects_missing_seat_prefix(self):
+        with self.assertRaises(ValueError):
+            cld._parse_remain_cards("bad deal")
+
+
+class FillDealBlockTest(unittest.TestCase):
+    def test_raises_when_pbn_line_missing(self):
+        stub = "FUT 0 \nTABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n"
+        with self.assertRaisesRegex(ValueError, "deal block missing PBN line"):
+            cld.fill_deal_block(stub)
+
+
 class GenerateDdPlayTest(unittest.TestCase):
     def test_generate_dd_play_has_fifty_two_cards(self):
         play = cld.generate_dd_play(_DEAL_CARDS, trump=0, first=0)
         self.assertEqual(len(play), 104)
         self.assertTrue(all(c in "SHDC23456789TJQKA" for c in play))
 
-    def test_generate_dd_play_is_legal_for_analyse(self):
+    def test_generate_dd_play_matches_solve_board_at_each_ply(self):
         play = cld.generate_dd_play(_DEAL_CARDS, trump=0, first=0)
-        solved = analyse_play_pbn(_DEAL_CARDS, play=play, trump=0, first=0)
-        self.assertGreater(solved["number"], 0)
-        self.assertEqual(len(solved["tricks"]), solved["number"])
+        _check_play_self_consistency(
+            self,
+            _DEAL_CARDS,
+            trump=0,
+            first=0,
+            play=play,
+        )
 
 
 class CreateListForDtestTest(unittest.TestCase):
