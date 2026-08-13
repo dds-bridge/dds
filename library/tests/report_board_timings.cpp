@@ -60,8 +60,7 @@ struct TimingSummaryMs
   double stddev;
 };
 
-auto timing_summary_ms(const std::vector<std::pair<int, int>>& times)
-    -> TimingSummaryMs
+TimingSummaryMs timing_summary_ms(const std::vector<std::pair<int, int>>& times)
 {
   const double min_ms = static_cast<double>(times.back().second) / 1000.0;
   const double max_ms = static_cast<double>(times.front().second) / 1000.0;
