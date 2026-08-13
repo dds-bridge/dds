@@ -19,7 +19,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Sequence, TextIO
+from typing import Any, Callable, Iterator, Sequence, TextIO
 
 from dds3 import (
     analyse_play_pbn,
@@ -32,8 +32,6 @@ from dds3 import (
 _RANKS = "AKQJT98765432"
 _SUITS = 4
 _HANDS = 4
-_SEATS = "NESW"
-_BATCH = 200  # MAXNOOFBOARDS
 
 # Intermediate stubs; ``build_hand_list`` replaces them via fill_fn.
 _STUB_TABLE = "TABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n"
@@ -41,10 +39,6 @@ _STUB_PAR = 'PAR "NS 0" "EW 0" "NS:" "EW:" \n'
 _STUB_PAR2 = 'PAR2 "0" "1N-NS" \n'
 _STUB_PLAY = 'PLAY 0 "" \n'
 _STUB_TRACE = "TRACE 1 0 \n"
-
-# calc_all_tables_pbn rejects batches larger than MAXNOOFTABLES when all
-# strains are included (40 * 5 / 5).
-MAX_TABLES_PER_BATCH = 40
 
 _PBN_RE = re.compile(
     r'^PBN\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+"([^"]*)"'
@@ -82,17 +76,17 @@ def _deal_cards(rng: random.Random) -> str:
     return "N:" + " ".join(parts)
 
 
-def generate_unique_deals(count: int, *, seed: int) -> list[DealSpec]:
-    """Generate ``count`` deals with unique card layouts."""
+def iter_unique_deals(count: int, *, seed: int) -> Iterator[DealSpec]:
+    """Yield ``count`` deals with unique card layouts."""
     if count <= 0:
         raise ValueError("count must be positive")
     rng = random.Random(seed)
     seen: set[str] = set()
-    deals: list[DealSpec] = []
+    yielded = 0
     # Bound retries; collisions are vanishingly rare for 10k of ~52!/ (13!)^4.
     attempts = 0
     max_attempts = count * 20 + 1000
-    while len(deals) < count:
+    while yielded < count:
         attempts += 1
         if attempts > max_attempts:
             raise RuntimeError(f"failed to generate {count} unique deals")
@@ -100,16 +94,19 @@ def generate_unique_deals(count: int, *, seed: int) -> list[DealSpec]:
         if cards in seen:
             continue
         seen.add(cards)
-        deals.append(
-            DealSpec(
-                dealer=rng.randrange(4),
-                vul=rng.randrange(4),
-                trump=rng.randrange(5),
-                first=rng.randrange(4),
-                cards=cards,
-            )
+        yielded += 1
+        yield DealSpec(
+            dealer=rng.randrange(4),
+            vul=rng.randrange(4),
+            trump=rng.randrange(5),
+            first=rng.randrange(4),
+            cards=cards,
         )
-    return deals
+
+
+def generate_unique_deals(count: int, *, seed: int) -> list[DealSpec]:
+    """Generate ``count`` deals with unique card layouts."""
+    return list(iter_unique_deals(count, seed=seed))
 
 
 def format_fut_line(result: dict[str, Any]) -> str:
@@ -144,35 +141,6 @@ def format_deal_block(deal: DealSpec, fut: dict[str, Any]) -> str:
         + _STUB_PLAY
         + _STUB_TRACE
     )
-
-
-def calc_tables_batched(
-    cards: list[str],
-    *,
-    calc_fn=None,
-    batch_size: int = MAX_TABLES_PER_BATCH,
-) -> list[dict]:
-    """Compute DD tables for ``cards``, chunked to ``batch_size``."""
-    if batch_size <= 0:
-        raise ValueError(f"batch_size must be positive, got {batch_size}")
-    if not cards:
-        return []
-
-    if calc_fn is None:
-        calc_fn = calc_all_tables_pbn
-
-    tables: list[dict] = []
-    for start in range(0, len(cards), batch_size):
-        chunk = cards[start : start + batch_size]
-        batch = calc_fn(chunk)
-        chunk_tables = batch["tables"]
-        if len(chunk_tables) != len(chunk):
-            raise RuntimeError(
-                f"calc_all_tables_pbn returned {len(chunk_tables)} tables "
-                f"for {len(chunk)} deals"
-            )
-        tables.extend(chunk_tables)
-    return tables
 
 
 def format_table_line(res_table: list[list[int]]) -> str:
@@ -348,47 +316,48 @@ def generate_dd_play(remain_cards: str, trump: int, first: int) -> str:
     return "".join(play)
 
 
-def fill_hand_list_text(text: str) -> str:
-    """Return ``text`` with TABLE/PAR/PAR2/PLAY/TRACE filled from DDS."""
-    lines = text.splitlines(keepends=True)
+def _fill_deal_fields(
+    dealer: int,
+    vul: int,
+    trump: int,
+    first: int,
+    remain: str,
+    *,
+    calc_fn=None,
+) -> dict[str, str]:
+    """Compute filled TABLE/PAR/PAR2/PLAY/TRACE lines for one deal."""
+    if calc_fn is None:
+        calc_fn = calc_all_tables_pbn
 
-    deals: list[tuple[int, int, int, int, str]] = []
-    for line in lines:
-        if line.startswith("PBN "):
-            deals.append(_parse_pbn_line(line))
-
-    if not deals:
-        return text
-
-    cards = [c for (_dealer, _vul, _trump, _first, c) in deals]
-    tables = calc_tables_batched(cards)
-    if len(tables) != len(deals):
+    tables = calc_fn([remain])["tables"]
+    if len(tables) != 1:
         raise RuntimeError(
-            f"calc_tables_batched returned {len(tables)} tables "
-            f"for {len(deals)} deals"
+            f"calc_all_tables_pbn returned {len(tables)} tables for 1 deal"
         )
 
-    filled: dict[str, list[str]] = {
-        "TABLE": [],
-        "PAR": [],
-        "PAR2": [],
-        "PLAY": [],
-        "TRACE": [],
+    table = tables[0]
+    table_dict = {"res_table": table["res_table"]}
+    play = generate_dd_play(remain, trump=trump, first=first)
+    solved = analyse_play_pbn(remain, play=play, trump=trump, first=first)
+    return {
+        "TABLE": format_table_line(table["res_table"]),
+        "PAR": format_par_line(par(table_dict, vul)),
+        "PAR2": format_par2_line(dealer_par(table_dict, dealer, vul)),
+        "PLAY": format_play_line(play),
+        "TRACE": format_trace_line(solved),
     }
-    for (dealer, vul, trump, first, remain), table in zip(deals, tables):
-        table_dict = {"res_table": table["res_table"]}
-        filled["TABLE"].append(format_table_line(table["res_table"]))
-        filled["PAR"].append(format_par_line(par(table_dict, vul)))
-        filled["PAR2"].append(
-            format_par2_line(dealer_par(table_dict, dealer, vul))
-        )
 
-        play = generate_dd_play(remain, trump=trump, first=first)
-        filled["PLAY"].append(format_play_line(play))
-        solved = analyse_play_pbn(remain, play=play, trump=trump, first=first)
-        filled["TRACE"].append(format_trace_line(solved))
 
-    cursors = {key: 0 for key in filled}
+def fill_deal_block(stub_block: str) -> str:
+    """Return one deal block with TABLE/PAR/PAR2/PLAY/TRACE filled from DDS."""
+    lines = stub_block.splitlines(keepends=True)
+    pbn_line = next((line for line in lines if line.startswith("PBN ")), None)
+    if pbn_line is None:
+        raise ValueError("deal block missing PBN line")
+
+    dealer, vul, trump, first, remain = _parse_pbn_line(pbn_line)
+    filled = _fill_deal_fields(dealer, vul, trump, first, remain)
+
     out: list[str] = []
     for line in lines:
         key = None
@@ -407,19 +376,14 @@ def fill_hand_list_text(text: str) -> str:
             out.append(line)
             continue
 
-        idx = cursors[key]
-        if idx >= len(filled[key]):
-            raise RuntimeError(f"more {key} lines than PBN deals")
-        out.append(filled[key][idx])
-        cursors[key] = idx + 1
-
-    for key, idx in cursors.items():
-        if idx != len(filled[key]):
-            raise RuntimeError(
-                f"expected {len(filled[key])} {key} lines, found {idx}"
-            )
+        out.append(filled[key])
 
     return "".join(out)
+
+
+def format_filled_deal_block(deal: DealSpec, fut: dict[str, Any]) -> str:
+    """Build one deal block with TABLE/PAR/PAR2/PLAY/TRACE filled from DDS."""
+    return fill_deal_block(format_deal_block(deal, fut))
 
 
 def build_hand_list(
@@ -428,52 +392,51 @@ def build_hand_list(
     *,
     fill_fn: Callable[[str], str] | None = None,
 ) -> str:
-    """Build a hand list, then fill TABLE/PAR/PAR2/PLAY/TRACE.
+    """Build a hand list with TABLE/PAR/PAR2/PLAY/TRACE filled from DDS.
 
-    By default ``fill_fn`` is ``fill_hand_list_text``.
-    Pass an identity (or other) function in tests to skip DDS fill work.
+    Pass an identity (or other) ``fill_fn`` in tests to skip DDS fill work.
     """
     if len(deals) != len(futs):
         raise ValueError("deals and futs length mismatch")
-    parts = [f"NUMBER {len(deals)} \n"]
-    for deal, fut in zip(deals, futs):
-        parts.append(format_deal_block(deal, fut))
-    text = "".join(parts)
-    if text and not text.endswith("\n"):
-        text += "\n"
 
     if fill_fn is None:
-        fill_fn = fill_hand_list_text
+        parts = [f"NUMBER {len(deals)} \n"]
+        for deal, fut in zip(deals, futs):
+            parts.append(format_filled_deal_block(deal, fut))
+        text = "".join(parts)
+    else:
+        parts = [f"NUMBER {len(deals)} \n"]
+        for deal, fut in zip(deals, futs):
+            parts.append(format_deal_block(deal, fut))
+        text = "".join(parts)
+        if text and not text.endswith("\n"):
+            text += "\n"
+        text = fill_fn(text)
 
-    return fill_fn(text)
+    if text and not text.endswith("\n"):
+        text += "\n"
+    return text
 
 
-def solve_futs(
-    deals: Sequence[DealSpec],
+def solve_fut(
+    deal: DealSpec,
     *,
-    solve_batch: Callable[..., list[dict[str, Any]]] | None = None,
+    solve_fn: Callable[..., dict[str, Any]] | None = None,
     max_threads: int = 0,
-) -> list[dict[str, Any]]:
-    """Solve deals in batches matching ``dtest`` solve parameters."""
-    if solve_batch is None:
-        from dds3 import solve_all_boards_pbn as solve_batch  # type: ignore
+) -> dict[str, Any]:
+    """Solve FUT for one deal matching ``dtest -s solve`` parameters."""
+    del max_threads  # single-board solve ignores thread pool sizing
+    if solve_fn is None:
+        solve_fn = solve_board_pbn
 
-    futs: list[dict[str, Any]] = []
-    for start in range(0, len(deals), _BATCH):
-        chunk = deals[start : start + _BATCH]
-        boards = [
-            {
-                "remain_cards": d.cards,
-                "trump": d.trump,
-                "first": d.first,
-                "target": -1,
-                "solutions": 3,
-                "mode": 1,
-            }
-            for d in chunk
-        ]
-        futs.extend(solve_batch(boards, max_threads=max_threads))
-    return futs
+    return solve_fn(
+        deal.cards,
+        trump=deal.trump,
+        first=deal.first,
+        target=-1,
+        solutions=3,
+        mode=1,
+    )
 
 
 def _resolve_output_path(path: Path) -> Path:
@@ -485,6 +448,20 @@ def _resolve_output_path(path: Path) -> Path:
     return path
 
 
+def _open_output_stream(
+    output: Path | None,
+    *,
+    stdout: TextIO | None = None,
+) -> tuple[TextIO, bool]:
+    """Return ``(stream, should_close)`` for incremental hand-list output."""
+    if output is None:
+        return (sys.stdout if stdout is None else stdout, False)
+
+    path = _resolve_output_path(output)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return (path.open("w", encoding="utf-8"), True)
+
+
 def write_hand_list_output(
     text: str,
     *,
@@ -492,14 +469,12 @@ def write_hand_list_output(
     stdout: TextIO | None = None,
 ) -> None:
     """Write ``text`` to ``output`` or to stdout when ``output`` is None."""
-    if output is None:
-        out_stream = sys.stdout if stdout is None else stdout
-        out_stream.write(text)
-        return
-
-    path = _resolve_output_path(output)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    stream, should_close = _open_output_stream(output, stdout=stdout)
+    try:
+        stream.write(text)
+    finally:
+        if should_close:
+            stream.close()
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -543,17 +518,27 @@ def main(argv: list[str] | None = None) -> int:
         _build_parser().print_help()
         return 2
     args = _parse_args(args_list)
-    deals = generate_unique_deals(args.count, seed=args.seed)
-    print(f"Generated {len(deals)} unique deals; solving FUT…", file=sys.stderr)
-    futs = solve_futs(deals, max_threads=args.max_threads)
-    print("Filling TABLE/PAR/PAR2/PLAY/TRACE…", file=sys.stderr)
-    text = build_hand_list(deals, futs)
-    write_hand_list_output(text, output=args.output)
+    stream, should_close = _open_output_stream(args.output)
+    try:
+        stream.write(f"NUMBER {args.count} \n")
+        for i, deal in enumerate(
+            iter_unique_deals(args.count, seed=args.seed), start=1
+        ):
+            if i == 1:
+                print("Generating and solving deals…", file=sys.stderr)
+            fut = solve_fut(deal, max_threads=args.max_threads)
+            stream.write(format_filled_deal_block(deal, fut))
+            if i % 100 == 0:
+                print(f"  {i}/{args.count} deals…", file=sys.stderr)
+    finally:
+        if should_close:
+            stream.close()
+
     if args.output is None:
-        print(f"Wrote {len(deals)} deals -> stdout", file=sys.stderr)
+        print(f"Wrote {args.count} deals -> stdout", file=sys.stderr)
     else:
         out = _resolve_output_path(args.output)
-        print(f"Wrote {len(deals)} deals -> {out}", file=sys.stderr)
+        print(f"Wrote {args.count} deals -> {out}", file=sys.stderr)
     return 0
 
 

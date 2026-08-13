@@ -11,49 +11,12 @@ import create_list_for_dtest as cld
 from dds3 import analyse_play_pbn
 
 
-# list1.txt deal 1 with stub TABLE/PAR/PAR2/PLAY/TRACE.
-_STUB_INPUT = (
-    "NUMBER 1 \n"
-    'PBN 0 0 0 0 "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3" \n'
-    "FUT 9 2 2 2 3 0 0 1 1 1 5 8 11 10 6 12 2 6 13 0 0 0 768 0 2048 0 32 0 5 5 5 5 5 5 4 4 4 \n"
-    "TABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n"
-    'PAR "NS 0" "EW 0" "NS:NS 1N" "EW:EW 1N" \n'
-    'PAR2 "0" "1N-NS" \n'
-    'PLAY 0 "" \n'
-    "TRACE 1 0 \n"
-)
+# list1.txt deal 1.
+_DEAL_CARDS = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
 
 _EXPECTED_TABLE = "TABLE 5 8 5 8 6 6 6 6 5 7 5 7 7 5 7 5 6 6 6 6 \n"
 _EXPECTED_PAR = 'PAR "NS -110" "EW 110" "NS:EW 2S" "EW:EW 2S" \n'
 _EXPECTED_PAR2 = 'PAR2 "-110" "2S-EW" \n'
-
-_DEAL_CARDS = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
-
-
-class CalcTablesBatchedTest(unittest.TestCase):
-    def test_batches_above_max_no_of_tables(self):
-        calls: list[int] = []
-
-        def fake_calc(cards: list[str]):
-            calls.append(len(cards))
-            if len(cards) > cld.MAX_TABLES_PER_BATCH:
-                raise ValueError(
-                    f"Number of tables ({len(cards)}) exceeds maximum "
-                    f"({cld.MAX_TABLES_PER_BATCH})"
-                )
-            return {
-                "tables": [
-                    {"res_table": [[0, 0, 0, 0] for _ in range(5)]} for _ in cards
-                ]
-            }
-
-        cards = [_DEAL_CARDS] * 85
-        tables = cld.calc_tables_batched(cards, calc_fn=fake_calc)
-        self.assertEqual(calls, [40, 40, 5])
-        self.assertEqual(len(tables), 85)
-
-    def test_empty_input_returns_empty(self):
-        self.assertEqual(cld.calc_tables_batched([], calc_fn=lambda c: None), [])
 
 
 class FormatLinesTest(unittest.TestCase):
@@ -118,26 +81,6 @@ class GenerateDdPlayTest(unittest.TestCase):
         solved = analyse_play_pbn(_DEAL_CARDS, play=play, trump=0, first=0)
         self.assertGreater(solved["number"], 0)
         self.assertEqual(len(solved["tricks"]), solved["number"])
-
-
-class FillHandListTextTest(unittest.TestCase):
-    def test_fills_table_par_par2_play_and_trace(self):
-        out = cld.fill_hand_list_text(_STUB_INPUT)
-        self.assertIn(_EXPECTED_TABLE, out)
-        self.assertIn(_EXPECTED_PAR, out)
-        self.assertIn(_EXPECTED_PAR2, out)
-        play_line = next(
-            line for line in out.splitlines() if line.startswith("PLAY ")
-        )
-        trace_line = next(
-            line for line in out.splitlines() if line.startswith("TRACE ")
-        )
-        self.assertRegex(play_line, r'^PLAY 52 "[SHDC23456789TJQKA]{104}"\s*$')
-        self.assertNotEqual(play_line.rstrip(), 'PLAY 0 ""')
-        self.assertNotEqual(trace_line.rstrip(), "TRACE 1 0")
-        play = play_line.split('"', 2)[1]
-        solved = analyse_play_pbn(_DEAL_CARDS, play=play, trump=0, first=0)
-        self.assertEqual(trace_line + "\n", cld.format_trace_line(solved))
 
 
 class CreateListForDtestTest(unittest.TestCase):
