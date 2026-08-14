@@ -3,8 +3,8 @@
 # Stops at the first dtest failure (non-zero exit or failure text on stdout).
 #
 # Usage:
-#   ./hands/verify_lists.sh hands/list1.txt hands/list2.txt
-#   ./hands/verify_lists.sh --dtest ../bazel-bin/library/tests/dtest list1.txt
+#   hands/verify_lists.sh hands/list1.txt hands/list2.txt
+#   hands/verify_lists.sh --dtest bazel-bin/library/tests/dtest hands/list1.txt
 set -euo pipefail
 
 usage() {
@@ -113,7 +113,7 @@ run_dtest() {
   local file_abs="$2"
   local solver="$3"
   local out
-  out="$(mktemp)"
+  out="$(mktemp "${TMPDIR:-/tmp}/verify_lists.XXXXXX")"
 
   if $USE_BAZELISK; then
     if ! (cd "$ROOT" && bazelisk run //library/tests:dtest -- -f "$file_abs" -s "$solver") \

@@ -10,7 +10,7 @@ The test cases are located in the `hands` directory. Each `.txt` file in this di
 
 The input files use a specific format with keywords to define the test parameters for each deal. The first line is `NUMBER N`, where `N` is the count of deals in the file. Each deal is then a block of lines in this order:
 
-- **`PBN`**: The deal definition in Portable Bridge Notation, describing the cards held by each of the four players (North, East, South, West), plus dealer, vulnerability, trump, and leader.
+- **`PBN`**: Deal header with four integer fields — dealer, vulnerability, trump, and leader — followed by a quoted PBN `remainCards` string listing the cards held by each player (North, East, South, West).
 - **`FUT`**: Expected `SolveBoard` future-tricks result for the deal (card count plus suit/rank/equals/score arrays).
 - **`TABLE`**: Expected double-dummy table: 20 integers, `res_table[strain][hand]` for 5 strains (♠♥♦♣NT) × 4 seats (N/E/S/W).
 - **`PAR`**: Expected par scores and contract strings for NS and EW views.
