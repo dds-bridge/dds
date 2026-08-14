@@ -205,6 +205,19 @@ class ParseRemainCardsTest(unittest.TestCase):
         self.assertNotIn("W::", message)
 
 
+class ParsePbnLineTest(unittest.TestCase):
+    def test_parses_valid_line_with_trailing_whitespace(self):
+        line = 'PBN 0 1 4 2 "N:AKQ.AKQ.AKQ.AKQ2 JT98.JT9.JT9.JT98 T765.T876.T876.T7 432.5432.5432.543"  \n'
+        dealer, vul, trump, first, cards = cld._parse_pbn_line(line)
+        self.assertEqual((dealer, vul, trump, first), (0, 1, 4, 2))
+        self.assertTrue(cards.startswith("N:"))
+
+    def test_rejects_trailing_garbage_after_quoted_cards(self):
+        line = 'PBN 0 0 0 0 "N:AKQ.AKQ.AKQ.AKQ2 JT98.JT9.JT9.JT98 T765.T876.T876.T7 432.5432.5432.543" extra\n'
+        with self.assertRaisesRegex(ValueError, "unrecognized PBN line"):
+            cld._parse_pbn_line(line)
+
+
 class FillDealBlockTest(unittest.TestCase):
     def test_raises_when_pbn_line_missing(self):
         stub = "FUT 0 \nTABLE 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n"

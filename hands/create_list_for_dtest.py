@@ -47,7 +47,7 @@ _STUB_PLAY = 'PLAY 0 "" \n'
 _STUB_TRACE = "TRACE 1 0 \n"
 
 _PBN_RE = re.compile(
-    r'^PBN\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+"([^"]*)"'
+    r'^PBN\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+"([^"]*)"\s*$'
 )
 
 _SUIT_CHARS = "SHDC"
