@@ -1191,8 +1191,11 @@ class TestRunDtestWasm(unittest.TestCase):
                 err=err,
             )
             runner.run_dtest(js, "calc", Path(tmp) / "list1.txt")
-            self.assertIn("DRY_RUN: node ", err.getvalue())
-            self.assertIn(str(js), err.getvalue())
+            out = err.getvalue()
+            self.assertIn("DRY_RUN: node ", out)
+            # dtest_command uses Path.resolve(); on Windows tempfile may be an
+            # 8.3 short path (RUNNER~1) while resolve() expands it.
+            self.assertIn(str(js.resolve()), out)
 
 
 class TestDryRunMain(unittest.TestCase):
