@@ -23,6 +23,7 @@ Python `dd_table_for_deal` (see `python/examples/`):
     dotnet run --project dotnet/DdTableForDeal/ -- --vul ns hands/example.pbn
     dotnet run --project dotnet/DdTableForDeal/ -- --limit 3 hands/multi_board.pbn
     dotnet test dotnet/DdTableForDeal.Tests/
+    ./dotnet/DdTableForDeal/e2e.sh   # requires DDS_LIBRARY_PATH; Windows: e2e.ps1
 
 Available examples:
 - analyse_all_plays_bin, analyse_all_plays_pbn

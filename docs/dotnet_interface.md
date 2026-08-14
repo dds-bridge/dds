@@ -98,6 +98,7 @@ setting `DDS_LIBRARY_PATH` as above:
 dotnet run --project dotnet/DdTableForDeal/ -- hands/example.pbn
 dotnet run --project dotnet/DdTableForDeal/ -- --vul ns hands/example.pbn
 dotnet test dotnet/DdTableForDeal.Tests/
+./dotnet/DdTableForDeal/e2e.sh          # Linux/macOS; Windows: e2e.ps1
 ```
 
 ## Which native symbols are used

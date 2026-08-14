@@ -86,10 +86,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          # Pure managed CLI helpers (no native library required).
+          # DdTableForDeal unit helpers (no native library required).
           dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
           if ($LASTEXITCODE -ne 0) { exit 1 }
           dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          # CLI e2e: PowerShell drives `dotnet run` against the native library.
+          ./dotnet/DdTableForDeal/e2e.ps1
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       # Upload test logs

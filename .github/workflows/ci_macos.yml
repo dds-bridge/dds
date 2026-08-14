@@ -70,9 +70,12 @@ jobs:
           # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
           dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
           dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
-          # Pure managed CLI helpers (no native library required).
+          # DdTableForDeal unit helpers (no native library required).
           dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
           dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
+          # CLI e2e: bash drives `dotnet run` against the native library.
+          chmod +x dotnet/DdTableForDeal/e2e.sh
+          ./dotnet/DdTableForDeal/e2e.sh
 
       # Upload test logs
       - name: Upload test logs - macOS
