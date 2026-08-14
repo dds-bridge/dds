@@ -231,6 +231,20 @@ class GenerateDdPlayTest(unittest.TestCase):
         self.assertEqual(len(play), 104)
         self.assertTrue(all(c in "SHDC23456789TJQKA" for c in play))
 
+    def test_generate_dd_play_passes_same_solver_context_to_each_solve(self):
+        contexts: list[object | None] = []
+
+        def tracking_solve(*args, **kwargs):  # type: ignore[no-untyped-def]
+            contexts.append(kwargs.get("context"))
+            return solve_board_pbn(*args, **kwargs)
+
+        with unittest.mock.patch.object(cld, "solve_board_pbn", side_effect=tracking_solve):
+            cld.generate_dd_play(_DEAL_CARDS, trump=0, first=0)
+
+        self.assertEqual(len(contexts), 52)
+        self.assertIsNotNone(contexts[0])
+        self.assertTrue(all(ctx is contexts[0] for ctx in contexts))
+
     def test_generate_dd_play_matches_solve_board_at_each_ply(self):
         play = cld.generate_dd_play(_DEAL_CARDS, trump=0, first=0)
         _check_play_self_consistency(

@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterator, TextIO
 
 from dds3 import (
+    SolverContext,
     analyse_play_pbn,
     calc_all_tables_pbn,
     dealer_par,
@@ -269,6 +270,7 @@ def generate_dd_play(remain_cards: str, trump: int, first: int) -> str:
     play: list[str] = []
     leader = first
     trick: list[tuple[int, int]] = []
+    ctx = SolverContext()
 
     for _ in range(52):
         player = (leader + len(trick)) % 4
@@ -290,6 +292,7 @@ def generate_dd_play(remain_cards: str, trump: int, first: int) -> str:
             target=-1,
             solutions=1,
             mode=1,
+            context=ctx,
         )
         if fut["cards"] < 1:
             raise RuntimeError("solve_board_pbn returned no cards")
