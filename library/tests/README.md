@@ -16,7 +16,7 @@ The input files use a specific format with keywords to define the test parameter
 - **`PAR`**: Expected par scores and contract strings for NS and EW views.
 - **`PAR2`**: Expected dealer-par result (score plus one or more contract strings).
 - **`PLAY`**: A specific sequence of cards to be played, used to test the solver's analysis of a particular line of play.
-- **`TRACE`**: Expected `AnalysePlay` `SolvedPlay` output: initial trick count plus one integer per ply (up to DDS's internal limit). The value count need not match `PLAY`'s card count (e.g. `PLAY 52` with `TRACE 49`). Use `TRACE 0` to skip trace verification.
+- **`TRACE`**: Expected `AnalysePlay` `SolvedPlay` output: initial trick count plus one integer per ply (up to DDS's internal limit). The value count need not match `PLAY`'s card count (e.g. `PLAY 52` with `TRACE 49`). Use `TRACE 0` only with `PLAY 0` (empty play line); dtest does not treat `TRACE 0` as a skip when `PLAY` lists cards.
 
 ## Usage
 
