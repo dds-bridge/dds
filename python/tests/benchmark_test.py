@@ -166,7 +166,7 @@ class TestEnsureExecutable(unittest.TestCase):
             path = Path(tmp) / "tool"
             path.write_text("x")
             with mock.patch("benchmark.os.name", "nt"):
-                with mock.patch.object(Path, "chmod") as chmod_mock:
+                with mock.patch.object(type(path), "chmod") as chmod_mock:
                     benchmark.ensure_executable(path)
             chmod_mock.assert_not_called()
 
@@ -175,8 +175,8 @@ class TestEnsureExecutable(unittest.TestCase):
             path = Path(tmp) / "tool"
             path.write_text("x")
             with mock.patch("benchmark.os.name", "posix"):
-                with mock.patch.object(Path, "stat") as stat_mock:
-                    with mock.patch.object(Path, "chmod") as chmod_mock:
+                with mock.patch.object(type(path), "stat") as stat_mock:
+                    with mock.patch.object(type(path), "chmod") as chmod_mock:
                         stat_mock.return_value.st_mode = 0o100644
                         benchmark.ensure_executable(path)
             chmod_mock.assert_called_once_with(0o100755)
