@@ -132,6 +132,13 @@ def label_for_path(path: str | Path) -> str:
     return name if name else str(path)
 
 
+def ensure_executable(path: Path) -> None:
+    """Mark ``path`` executable on platforms that use Unix mode bits."""
+    if os.name == "nt":
+        return
+    path.chmod(path.stat().st_mode | 0o111)
+
+
 def run_order(num_bins: int, *, reverse: bool) -> list[int]:
     order = list(range(num_bins))
     if reverse:
@@ -826,7 +833,7 @@ class BenchmarkRunner:
         self.checkout_and_build(name)
         src = self.root / DTEST_REL
         shutil.copy2(src, dest, follow_symlinks=True)
-        dest.chmod(dest.stat().st_mode | 0o111)
+        ensure_executable(dest)
 
     def build_wasm_branch(self, name: str, dest_dir: Path) -> Path:
         """Checkout, build dtest_wasm, copy js+wasm into dest_dir; return js path."""

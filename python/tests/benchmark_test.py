@@ -160,6 +160,26 @@ class TestDtestRel(unittest.TestCase):
         self.assertEqual(benchmark.DTEST_REL, benchmark.dtest_rel())
 
 
+class TestEnsureExecutable(unittest.TestCase):
+    def test_skips_chmod_on_windows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tool"
+            path.write_text("x")
+            mode_before = path.stat().st_mode
+            with mock.patch("benchmark.os.name", "nt"):
+                benchmark.ensure_executable(path)
+            self.assertEqual(path.stat().st_mode, mode_before)
+
+    def test_sets_execute_bit_on_posix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tool"
+            path.write_text("x")
+            path.chmod(0o644)
+            with mock.patch("benchmark.os.name", "posix"):
+                benchmark.ensure_executable(path)
+            self.assertEqual(path.stat().st_mode & 0o111, 0o111)
+
+
 class TestRunnerCleanup(unittest.TestCase):
     def test_alt_leave_goes_to_injected_out(self) -> None:
         out = io.StringIO()
