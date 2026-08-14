@@ -88,6 +88,9 @@ jobs:
           # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
           dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
           dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
+          # Pure managed CLI helpers (no native library required).
+          dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
+          dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
 
       # 11 Upload test logs
       - name: Upload test logs - Linux

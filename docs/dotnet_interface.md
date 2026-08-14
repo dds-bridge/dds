@@ -88,6 +88,18 @@ three artifacts above. There are two ways to point it at a library:
   If the variable is set but the library cannot be loaded, the error names the
   path you gave rather than reporting a missing entry point later.
 
+## Example: `dd_table_for_deal`
+
+`dotnet/DdTableForDeal/` is the .NET counterpart of `examples/dd_table_for_deal`
+and `python/examples/dd_table_for_deal.py`. After building the native library and
+setting `DDS_LIBRARY_PATH` as above:
+
+```bash
+dotnet run --project dotnet/DdTableForDeal/ -- hands/example.pbn
+dotnet run --project dotnet/DdTableForDeal/ -- --vul ns hands/example.pbn
+dotnet test dotnet/DdTableForDeal.Tests/
+```
+
 ## Which native symbols are used
 
 The modern context API binds the pure-C shim (`dds_c_*`, from

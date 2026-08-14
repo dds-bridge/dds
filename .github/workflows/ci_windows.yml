@@ -86,6 +86,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          # Pure managed CLI helpers (no native library required).
+          dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       # Upload test logs
       - name: Upload test logs - Windows
