@@ -254,6 +254,37 @@ class TestResolveBazelCommand(unittest.TestCase):
         self.assertEqual(benchmark.resolve_bazel_command(which=lambda _name: None), "bazel")
 
 
+class TestGitExecutable(unittest.TestCase):
+    def test_prefers_which_hit(self) -> None:
+        self.assertEqual(
+            benchmark.git_executable(
+                which=lambda name: "/usr/bin/git" if name == "git" else None
+            ),
+            "/usr/bin/git",
+        )
+
+    def test_windows_falls_back_to_program_files_cmd(self) -> None:
+        cmd = Path(r"C:\Program Files\Git\cmd\git.exe")
+
+        def is_file(path: Path) -> bool:
+            return path == cmd
+
+        self.assertEqual(
+            benchmark.git_executable(
+                which=lambda _name: None,
+                os_name="nt",
+                is_file=is_file,
+            ),
+            str(cmd),
+        )
+
+    def test_posix_without_which_returns_git(self) -> None:
+        self.assertEqual(
+            benchmark.git_executable(which=lambda _name: None, os_name="posix"),
+            "git",
+        )
+
+
 class TestBazelDtestCommand(unittest.TestCase):
     def test_bazel_dtest_invokes_resolved_launcher(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -832,10 +863,15 @@ class TestIsDdsRoot(unittest.TestCase):
             self.assertFalse(benchmark.is_dds_root(Path(tmp)))
 
 
+def _temp_dir() -> tempfile.TemporaryDirectory[str]:
+    # Windows git can keep handles open; don't fail the suite on rmtree.
+    return tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+
+
 def _git(repo: Path, *args: str) -> str:
     return subprocess.check_output(
         [
-            "git",
+            benchmark.git_executable(),
             "-c",
             "core.fsmonitor=false",
             "-c",
@@ -863,6 +899,8 @@ def _setup_repo(repo: Path) -> None:
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "test@example.com")
     _git(repo, "config", "user.name", "Test")
+    _git(repo, "config", "core.autocrlf", "false")
+    _git(repo, "config", "core.eol", "lf")
     _git(repo, "add", "MODULE.bazel", "library/tests/BUILD.bazel", "hands/list100.txt")
     _git(repo, "commit", "-q", "-m", "initial")
     _git(repo, "checkout", "-q", "-b", "other")
@@ -951,7 +989,7 @@ class TestRejectCheckoutBinaryWithBranch(unittest.TestCase):
 
 class TestGitPrepForBranches(unittest.TestCase):
     def test_setup_repo_leaves_clean_worktree(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with _temp_dir() as tmp:
             repo = Path(tmp) / "repo"
             repo.mkdir()
             _setup_repo(repo)
@@ -961,7 +999,7 @@ class TestGitPrepForBranches(unittest.TestCase):
             self.assertEqual(status, "")
 
     def test_dirty_same_commit_allowed(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with _temp_dir() as tmp:
             repo = Path(tmp) / "repo"
             repo.mkdir()
             _setup_repo(repo)
@@ -975,7 +1013,7 @@ class TestGitPrepForBranches(unittest.TestCase):
                 self.assertNotEqual(resolved[0][1], ".")
 
     def test_dirty_other_commit_rejected(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with _temp_dir() as tmp:
             repo = Path(tmp) / "repo"
             repo.mkdir()
             _setup_repo(repo)
@@ -987,7 +1025,7 @@ class TestGitPrepForBranches(unittest.TestCase):
             self.assertIn("working tree not clean", str(ctx.exception))
 
     def test_untracked_other_commit_rejected(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with _temp_dir() as tmp:
             repo = Path(tmp) / "repo"
             repo.mkdir()
             _setup_repo(repo)
@@ -997,7 +1035,7 @@ class TestGitPrepForBranches(unittest.TestCase):
             self.assertIn("working tree not clean", str(ctx.exception))
 
     def test_untracked_same_commit_allowed(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with _temp_dir() as tmp:
             repo = Path(tmp) / "repo"
             repo.mkdir()
             _setup_repo(repo)
@@ -1005,7 +1043,7 @@ class TestGitPrepForBranches(unittest.TestCase):
             benchmark.git_prep_for_branches(repo, [("branch", "main")])
 
     def test_non_commit_revspec_rejected(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with _temp_dir() as tmp:
             repo = Path(tmp) / "repo"
             repo.mkdir()
             _setup_repo(repo)
@@ -1014,7 +1052,7 @@ class TestGitPrepForBranches(unittest.TestCase):
             self.assertIn("unknown git ref", str(ctx.exception))
 
     def test_wasm_branch_dot_resolved_like_branch(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with _temp_dir() as tmp:
             repo = Path(tmp) / "repo"
             repo.mkdir()
             _setup_repo(repo)
@@ -1025,7 +1063,7 @@ class TestGitPrepForBranches(unittest.TestCase):
             self.assertEqual(resolved, [("wasm_branch", "main")])
 
     def test_wasm_branch_dirty_other_commit_rejected(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with _temp_dir() as tmp:
             repo = Path(tmp) / "repo"
             repo.mkdir()
             _setup_repo(repo)

@@ -69,6 +69,28 @@ def resolve_bazel_command(*, which: Callable[[str], str | None] | None = None) -
     return "bazel"
 
 
+def git_executable(
+    *,
+    which: Callable[[str], str | None] | None = None,
+    os_name: str = os.name,
+    is_file: Callable[[Path], bool] | None = None,
+) -> str:
+    """Resolve git, including Windows Program Files fallbacks."""
+    finder = which or shutil.which
+    found = finder("git") or finder("git.exe")
+    if found:
+        return found
+    if os_name == "nt":
+        exists = is_file or (lambda path: path.is_file())
+        for candidate in (
+            Path(r"C:\Program Files\Git\cmd\git.exe"),
+            Path(r"C:\Program Files\Git\bin\git.exe"),
+        ):
+            if exists(candidate):
+                return str(candidate)
+    return "git"
+
+
 class BenchmarkError(Exception):
     """User-facing configuration or validation error."""
 
@@ -605,7 +627,7 @@ Examples:
 
 def _git(root: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["git", "-C", str(root), *args],
+        [git_executable(), "-C", str(root), *args],
         check=check,
         text=True,
         capture_output=True,
@@ -816,7 +838,7 @@ class BenchmarkRunner:
         )
 
     def checkout_and_build(self, name: str) -> None:
-        self.run_build(["git", "-C", str(self.root), "checkout", name])
+        self.run_build([git_executable(), "-C", str(self.root), "checkout", name])
         self.bazel_dtest()
 
     def build_branch_binary(self, name: str, dest: Path) -> None:
@@ -856,7 +878,7 @@ class BenchmarkRunner:
             )
             return dest_js
         print(f"Building dtest_wasm from '{name}'...", file=self.err)
-        self.run_build(["git", "-C", str(self.root), "checkout", name])
+        self.run_build([git_executable(), "-C", str(self.root), "checkout", name])
         self.bazel_dtest_wasm()
         shutil.copy2(self.root / DTEST_WASM_JS_REL, dest_js, follow_symlinks=True)
         shutil.copy2(self.root / DTEST_WASM_WASM_REL, dest_wasm, follow_symlinks=True)
@@ -890,7 +912,9 @@ class BenchmarkRunner:
             self.checkout_and_build(self.orig_branch)
         else:
             print(f"Restoring '{self.orig_branch}'...", file=self.err)
-            self.run_build(["git", "-C", str(self.root), "checkout", self.orig_branch])
+            self.run_build(
+                [git_executable(), "-C", str(self.root), "checkout", self.orig_branch]
+            )
 
     def build_binaries(self) -> tuple[list[str], list[Path]]:
         specs = list(self.cfg.specs)
