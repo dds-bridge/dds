@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Build create_list_for_dtest and regenerate listN.txt for every list<number>.txt size.
+#
+# Convention: listNNN.txt uses --seed NNN (see create_list_for_dtest docstring).
+#
+# Usage:
+#   ./hands/regenerate_hand_lists.sh
+#   OUT_DIR=/tmp/my-lists ./hands/regenerate_hand_lists.sh
+set -euo pipefail
+
+HANDS_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$HANDS_DIR/.." && pwd)"
+cd "$ROOT"
+
+OUT_DIR="${OUT_DIR:-/tmp/dds-hand-lists-$(date +%Y%m%d-%H%M%S)}"
+
+echo "Output directory: $OUT_DIR"
+mkdir -p "$OUT_DIR"
+
+counts=()
+while IFS= read -r n; do
+  counts+=("$n")
+done < <(
+  for f in "$HANDS_DIR"/list*.txt; do
+    [[ -f "$f" ]] || continue
+    base="${f##*/}"
+    base="${base%.txt}"
+    if [[ "$base" =~ ^list([0-9]+)$ ]]; then
+      echo "${BASH_REMATCH[1]}"
+    fi
+  done | sort -n | uniq
+)
+
+if ((${#counts[@]} == 0)); then
+  echo "No list<number>.txt files found in $HANDS_DIR." >&2
+  exit 1
+fi
+
+echo "Counts to generate: ${counts[*]}"
+
+bazel build //hands:create_list_for_dtest
+GEN="$ROOT/bazel-bin/hands/create_list_for_dtest"
+
+for n in "${counts[@]}"; do
+  out="$OUT_DIR/list${n}.txt"
+  echo "Generating list${n}.txt (--seed ${n}) -> $out"
+  "$GEN" -n "$n" --seed "$n" -o "$out"
+done
+
+echo "Done. Wrote ${#counts[@]} files to $OUT_DIR"
+ls -lh "$OUT_DIR"/list*.txt
