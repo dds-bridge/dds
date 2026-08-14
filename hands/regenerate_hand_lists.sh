@@ -38,7 +38,7 @@ fi
 
 echo "Counts to generate: ${counts[*]}"
 
-bazel build //hands:create_list_for_dtest
+bazelisk build //hands:create_list_for_dtest
 GEN="$ROOT/bazel-bin/hands/create_list_for_dtest"
 
 for n in "${counts[@]}"; do
