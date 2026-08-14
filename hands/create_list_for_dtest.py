@@ -157,6 +157,8 @@ def format_par_line(par_result: dict) -> str:
 def format_par2_line(dealer_par_result: dict) -> str:
     score = dealer_par_result["score"]
     contracts = dealer_par_result["contracts"][: dealer_par_result["number"]]
+    if not contracts:
+        contracts = ["pass"]
     quoted = " ".join(f'"{c}"' for c in contracts)
     return f'PAR2 "{score}" {quoted} \n'
 

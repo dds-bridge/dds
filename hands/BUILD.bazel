@@ -22,7 +22,7 @@ py_binary(
     srcs = ["create_list_for_dtest.py"],
     main = "create_list_for_dtest.py",
     visibility = ["//visibility:public"],
-    deps = ["//python:dds3_lib"],
+    deps = [":create_list_for_dtest_lib"],
 )
 
 py_test(

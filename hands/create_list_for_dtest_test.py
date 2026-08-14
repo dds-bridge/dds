@@ -138,6 +138,14 @@ class FormatLinesTest(unittest.TestCase):
             'PAR2 "100" "3C*-EW-1" "2N*-EW-1" \n',
         )
 
+    def test_format_par2_line_empty_contracts_emits_pass(self):
+        dealer_par = {
+            "score": 0,
+            "number": 0,
+            "contracts": [],
+        }
+        self.assertEqual(cld.format_par2_line(dealer_par), 'PAR2 "0" "pass" \n')
+
     def test_format_play_line_counts_cards(self):
         self.assertEqual(
             cld.format_play_line("CTC4CA"),
