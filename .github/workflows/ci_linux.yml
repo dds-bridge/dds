@@ -81,8 +81,8 @@ jobs:
       # for it rather than hardcoding a path that a different --config would move.
       - name: Test .NET binding
         run: |
-          bazel build --verbose_failures //jni:dds_shared
-          export DDS_LIBRARY_PATH="$(bazel info bazel-bin)/jni/libdds.so"
+          bazelisk build --verbose_failures //jni:dds_shared
+          export DDS_LIBRARY_PATH="$(bazelisk info bazel-bin)/jni/libdds.so"
           test -f "$DDS_LIBRARY_PATH" || { echo "native library not found at $DDS_LIBRARY_PATH"; exit 1; }
           # Both configurations: ThrowIfError is unconditional, so a regression to
           # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.

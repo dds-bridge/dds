@@ -72,9 +72,9 @@ jobs:
       - name: Test .NET binding
         shell: pwsh
         run: |
-          bazel build --verbose_failures //jni:dds_shared
+          bazelisk build --verbose_failures //jni:dds_shared
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          $binDir = bazel info bazel-bin
+          $binDir = bazelisk info bazel-bin
           $env:DDS_LIBRARY_PATH = Join-Path $binDir "jni\dds.dll"
           if (-not (Test-Path $env:DDS_LIBRARY_PATH)) {
             Write-Host "native library not found at $env:DDS_LIBRARY_PATH"
