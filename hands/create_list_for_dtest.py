@@ -168,9 +168,12 @@ def format_play_line(play_cards: str) -> str:
 
 
 def format_trace_line(solved: dict) -> str:
-    tricks = solved["tricks"][: solved["number"]]
+    number = solved["number"]
+    if number == 0:
+        return "TRACE 0 \n"
+    tricks = solved["tricks"][:number]
     body = " ".join(str(t) for t in tricks)
-    return f'TRACE {solved["number"]} {body} \n'
+    return f"TRACE {number} {body} \n"
 
 
 def _parse_pbn_line(line: str) -> tuple[int, int, int, int, str]:

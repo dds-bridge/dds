@@ -151,6 +151,10 @@ class FormatLinesTest(unittest.TestCase):
         solved = {"number": 3, "tricks": [8, 8, 7]}
         self.assertEqual(cld.format_trace_line(solved), "TRACE 3 8 8 7 \n")
 
+    def test_format_trace_line_zero_has_no_trick_field(self):
+        solved = {"number": 0, "tricks": []}
+        self.assertEqual(cld.format_trace_line(solved), "TRACE 0 \n")
+
 
 class TrickWinnerTest(unittest.TestCase):
     def test_nt_highest_of_lead_suit_wins(self):
