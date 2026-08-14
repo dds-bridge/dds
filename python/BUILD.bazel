@@ -75,6 +75,8 @@ py_test(
     main = "tests/benchmark_test.py",
     srcs = ["tests/benchmark_test.py"],
     deps = [":benchmark_lib"],
+    # Git lives outside Bazel's default test PATH on Windows runners.
+    env_inherit = ["PATH"],
 )
 
 # Guard: CI workflows must invoke bazelisk rather than bare bazel.

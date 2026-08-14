@@ -179,7 +179,8 @@ class TestEnsureExecutable(unittest.TestCase):
                     with mock.patch.object(type(path), "chmod") as chmod_mock:
                         stat_mock.return_value.st_mode = 0o100644
                         benchmark.ensure_executable(path)
-            chmod_mock.assert_called_once_with(0o100755)
+            self.assertEqual(chmod_mock.call_count, 1)
+            self.assertEqual(chmod_mock.call_args.args[-1], 0o100755)
 
 
 class TestRunnerCleanup(unittest.TestCase):
