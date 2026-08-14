@@ -136,7 +136,7 @@ def ensure_executable(path: Path) -> None:
     """Mark ``path`` executable on platforms that use Unix mode bits."""
     if os.name == "nt":
         return
-    path.chmod(path.stat().st_mode | 0o111)
+    os.chmod(path, os.stat(path).st_mode | 0o111)
 
 
 def run_order(num_bins: int, *, reverse: bool) -> list[int]:

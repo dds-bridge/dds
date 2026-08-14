@@ -166,7 +166,7 @@ class TestEnsureExecutable(unittest.TestCase):
             path = Path(tmp) / "tool"
             path.write_text("x")
             with mock.patch("benchmark.os.name", "nt"):
-                with mock.patch.object(type(path), "chmod") as chmod_mock:
+                with mock.patch("benchmark.os.chmod") as chmod_mock:
                     benchmark.ensure_executable(path)
             chmod_mock.assert_not_called()
 
@@ -175,12 +175,12 @@ class TestEnsureExecutable(unittest.TestCase):
             path = Path(tmp) / "tool"
             path.write_text("x")
             with mock.patch("benchmark.os.name", "posix"):
-                with mock.patch.object(type(path), "stat") as stat_mock:
-                    with mock.patch.object(type(path), "chmod") as chmod_mock:
+                with mock.patch("benchmark.os.stat") as stat_mock:
+                    with mock.patch("benchmark.os.chmod") as chmod_mock:
                         stat_mock.return_value.st_mode = 0o100644
                         benchmark.ensure_executable(path)
-            self.assertEqual(chmod_mock.call_count, 1)
-            self.assertEqual(chmod_mock.call_args.args[-1], 0o100755)
+            stat_mock.assert_called_once_with(path)
+            chmod_mock.assert_called_once_with(path, 0o100755)
 
 
 class TestRunnerCleanup(unittest.TestCase):
@@ -840,6 +840,12 @@ def _git(repo: Path, *args: str) -> str:
             "core.fsmonitor=false",
             "-c",
             "advice.detachedHead=false",
+            "-c",
+            "core.autocrlf=false",
+            "-c",
+            "core.eol=lf",
+            "-c",
+            "safe.directory=*",
             "-C",
             str(repo),
             *args,
@@ -944,6 +950,16 @@ class TestRejectCheckoutBinaryWithBranch(unittest.TestCase):
 
 
 class TestGitPrepForBranches(unittest.TestCase):
+    def test_setup_repo_leaves_clean_worktree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            _setup_repo(repo)
+            status = _git(
+                repo, "status", "--porcelain", "--untracked-files=normal"
+            )
+            self.assertEqual(status, "")
+
     def test_dirty_same_commit_allowed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp) / "repo"
