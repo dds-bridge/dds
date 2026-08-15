@@ -409,16 +409,28 @@ auto ReplayEngine::run(const std::vector<Call>& calls, bool verify)
         table_deal.cards[k] = pbn[k];
       table_deal.cards[n] = '\0';
 
+      // SidesParBin is what the string-returning Par() computes internally
+      // before formatting; sides[0].score is the NS-view par, the signed
+      // integer the recorder stored (Par() prints it as "NS <score>").
       DdTableResults table{};
-      ParResults par{};
+      ParResultsMaster sides[2]{};
       const auto t0 = Clock::now();
       const int rc1 = CalcDDtablePBN(table_deal, &table);
-      const int rc2 = (rc1 == RETURN_NO_FAULT) ? Par(&table, &par, v) : rc1;
+      const int rc2 = (rc1 == RETURN_NO_FAULT) ? SidesParBin(&table, sides, v) : rc1;
       elapsed = seconds_since(t0);
 
-      if (verify && rc2 != RETURN_NO_FAULT)
-        stats.mismatches.push_back(
-          {call.seq, "par", "DDS error " + std::to_string(rc2)});
+      if (verify) {
+        if (rc2 != RETURN_NO_FAULT)
+          stats.mismatches.push_back(
+            {call.seq, "par", "DDS error " + std::to_string(rc2)});
+        else if (sides[0].score != call.par_result)
+          // Same shape as describe_mismatch's line, so par regressions read
+          // like solve regressions in the report.
+          stats.mismatches.push_back(
+            {call.seq, "par",
+             "recorded [" + std::to_string(call.par_result) +
+             "] vs replayed [" + std::to_string(sides[0].score) + "]"});
+      }
     }
 
     const std::string purpose = call.purpose.empty() ? "(none)" : call.purpose;
