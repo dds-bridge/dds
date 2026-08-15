@@ -432,7 +432,7 @@ def _large_count_warning(count: int) -> str | None:
     return (
         f"Warning: generating {count} deals may take a long time "
         f"(each deal runs many DDS solves.)\n"
-        f"A fast machine can produce ~5 deals per second."
+        f"A fast machine can produce ~20 deals per second."
     )
 
 
