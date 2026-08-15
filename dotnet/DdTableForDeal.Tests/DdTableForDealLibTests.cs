@@ -232,7 +232,24 @@ public class FormatParLineTests
     }
 
     [Fact]
-    public void OmitsRepeatedDeclaringSideWhenSeatsDiffer()
+    public void IncludesDeclaringSideWhenSeatsDiffer()
+    {
+        // thomas1-style: W can sacrifice in hearts, E in clubs — both seats matter.
+        var sides = new ParResultsMaster[2];
+        sides[0].Score = 100;
+        sides[0].Number = 2;
+        sides[0].Contracts[0] = MakeContract(/*W*/ 3, 3, /*H*/ 2, 1, 0);
+        sides[0].Contracts[1] = MakeContract(/*E*/ 1, 3, /*C*/ 4, 1, 0);
+        sides[1].Score = -100;
+        sides[1].Number = 2;
+        sides[1].Contracts[0] = MakeContract(/*W*/ 3, 3, /*H*/ 2, 1, 0);
+        sides[1].Contracts[1] = MakeContract(/*E*/ 1, 3, /*C*/ 4, 1, 0);
+
+        Assert.Equal("Par: W 3Hx, E 3Cx -1 -100", DdTableForDealLib.FormatParLine(sides));
+    }
+
+    [Fact]
+    public void IncludesSeatWhenSecondContractNarrowsDeclaringSide()
     {
         var sides = new ParResultsMaster[2];
         sides[0].Score = 100;
@@ -244,7 +261,7 @@ public class FormatParLineTests
         sides[1].Contracts[0] = MakeContract(/*EW*/ 5, 4, /*H*/ 2, 1, 0);
         sides[1].Contracts[1] = MakeContract(/*E*/ 1, 5, /*C*/ 4, 1, 0);
 
-        Assert.Equal("Par: EW 4Hx, 5Cx -1 -100", DdTableForDealLib.FormatParLine(sides));
+        Assert.Equal("Par: EW 4Hx, E 5Cx -1 -100", DdTableForDealLib.FormatParLine(sides));
     }
 
     [Fact]

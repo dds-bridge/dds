@@ -191,7 +191,9 @@ public static partial class DdTableForDealLib
         var body = new StringBuilder();
         for (int i = 0; i < chosen.Number; i++)
         {
-            string? piece = FormatContract(chosen.Contracts[i], includeSeats: i == 0);
+            bool includeSeats =
+                i == 0 || chosen.Contracts[i].Seats != chosen.Contracts[i - 1].Seats;
+            string? piece = FormatContract(chosen.Contracts[i], includeSeats);
             if (piece is null)
                 return null;
             if (i > 0)
