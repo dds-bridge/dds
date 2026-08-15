@@ -33,12 +33,25 @@
             playIllegalInputBeep
             handleHandSuitInput
             handCardHtml
+            undeployedCardHtml
             handHoldingHtml
             escapeHtml
             updateHandCardDisplays
+            addCardToHand
+            removeCardFromHand
+            removeCardFromAllHands
+            undeployCard
+            moveCardToHand
+            handContainsCard
+            handCardCount
             handleHandCardClick
             handleHandSuitClick
             handleHandCardMouseDown
+            handleCardDragStart
+            handleCardDragOver
+            handleCardDragLeave
+            handleCardDrop
+            handleCardDragEnd
             handleSuitSelectionChange
             onHandCardClick
             handleResultTableClick
@@ -183,8 +196,18 @@ function suitFromLetter(letter) {
 }
 
 function Card(suit, pip) {
+    if (!SUITS.includes(suit)) {
+        throw new Error("Invalid card suit: " + suit);
+    }
+
+    const normalizedPip = String(pip).toUpperCase();
+
+    if (!PIPS.includes(normalizedPip)) {
+        throw new Error("Invalid card pip: " + pip);
+    }
+
     this.suit = suit;
-    this.pip = pip;
+    this.pip = normalizedPip;
 }
 
 Card.prototype.key = function () {
@@ -194,8 +217,27 @@ Card.prototype.key = function () {
 Card.prototype.toString = Card.prototype.key;
 
 Card.fromKey = function (key) {
-    return new Card(suitFromLetter(key.charAt(0)), key.charAt(1));
+    if (typeof key !== "string" || key.length !== 2) {
+        throw new Error("Invalid card key: " + key);
+    }
+
+    const normalized = key.toUpperCase();
+    const suit = suitFromLetter(normalized.charAt(0));
+
+    if (!suit) {
+        throw new Error("Invalid card key: " + key);
+    }
+
+    return new Card(suit, normalized.charAt(1));
 };
+
+function cardFromKeySafe(key) {
+    try {
+        return Card.fromKey(key);
+    } catch (_err) {
+        return null;
+    }
+}
 
 Card.compare = function (left, right) {
     return PIPS.indexOf(left.pip) - PIPS.indexOf(right.pip);
@@ -394,6 +436,16 @@ function allDeckCards() {
     return cards;
 }
 
+function undeployedCardHtml(card) {
+    return "<button type=\"button\" class=\"hand-card\" draggable=\"true\"" +
+        " data-card=\"" + escapeHtml(card.key()) + "\"" +
+        " tabindex=\"-1\"" +
+        " aria-label=\"" +
+        escapeHtml(handCardAriaLabel("undeployed", card)) + "\">" +
+        escapeHtml(card.pip) +
+        "</button>";
+}
+
 function deckStatusHtml(hands) {
     const enteredCards = {};
 
@@ -404,21 +456,22 @@ function deckStatusHtml(hands) {
     }
 
     return SUITS.map((suit) => {
-        const tag = suitTag(suit);
-        const cardsHtml = PIPS.split("").map((pip) => {
-            const card = new Card(suit, pip);
-            const key = card.key();
-            const classes = ["deck-card"];
+        const remaining = PIPS.split("").filter((pip) => {
+            return !enteredCards[new Card(suit, pip).key()];
+        });
 
-            if (enteredCards[key]) {
-                classes.push("deck-card-entered");
-            }
+        if (remaining.length === 0) {
+            return "";
+        }
 
-            return "<span class=\"" + classes.join(" ") +
-                "\" data-card=\"" + key + "\">" + pip + "</span>";
+        const cardsHtml = remaining.map((pip) => {
+            return undeployedCardHtml(new Card(suit, pip));
         }).join("");
+        const tag = suitTag(suit);
 
-        return "<" + tag + ">" + SUIT_GLYPHS[suit] + cardsHtml + "</" + tag + ">";
+        // Match dealt holdings: colored suit glyph, then hand-card pips.
+        return "<div class=\"deck-suit-row\"><" + tag + ">" +
+            SUIT_GLYPHS[suit] + "</" + tag + ">" + cardsHtml + "</div>";
     }).join("");
 }
 
@@ -583,7 +636,7 @@ function handCardHtml(direction, card, index, leadTricks) {
             "</span>"
         : "";
 
-    return "<button type=\"button\" class=\"" + classes + "\"" +
+    return "<button type=\"button\" class=\"" + classes + "\" draggable=\"true\"" +
         " data-direction=\"" + escapeHtml(direction) + "\"" +
         " data-card=\"" + escapeHtml(card.key()) + "\"" +
         " data-index=\"" + escapeHtml(index) + "\"" +
@@ -735,17 +788,272 @@ function onHandCardClick(_direction, _card) {
     // Hook for a future play-through PR; intentionally a no-op for now.
 }
 
-function handleHandCardMouseDown(event) {
+function handleHandCardMouseDown(_event) {
+    // Intentionally empty: preventDefault on mousedown blocks HTML5 dragstart.
+    // Click handlers refocus the suit input via placeCaretInSuitInput.
+}
+
+const DDS_CARD_MIME = "application/x-dds-card";
+let activeCardDrag = null;
+let activeDropTarget = null;
+
+function clearActiveDropTarget() {
+    if (activeDropTarget && activeDropTarget.classList) {
+        activeDropTarget.classList.remove("drop-target-active");
+    }
+
+    activeDropTarget = null;
+}
+
+function setActiveDropTarget(element) {
+    if (activeDropTarget === element) {
+        return;
+    }
+
+    clearActiveDropTarget();
+
+    if (element && element.classList) {
+        element.classList.add("drop-target-active");
+        activeDropTarget = element;
+    }
+}
+
+function parseCardDragPayload(raw) {
+    if (!raw) {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+
+        if (!parsed || typeof parsed.key !== "string") {
+            return null;
+        }
+
+        return {
+            key: parsed.key,
+            sourceDirection: parsed.sourceDirection || null,
+        };
+    } catch (_err) {
+        return null;
+    }
+}
+
+function readCardDragPayload(dataTransfer) {
+    if (activeCardDrag) {
+        return {
+            key: activeCardDrag.key,
+            sourceDirection: activeCardDrag.sourceDirection,
+        };
+    }
+
+    if (!dataTransfer || typeof dataTransfer.getData !== "function") {
+        return null;
+    }
+
+    return parseCardDragPayload(dataTransfer.getData(DDS_CARD_MIME));
+}
+
+function handDirectionFromElement(element) {
+    if (!element || typeof element.closest !== "function") {
+        return null;
+    }
+
+    for (const direction of DIRECTIONS) {
+        if (element.closest(".hand-" + direction)) {
+            return direction;
+        }
+    }
+
+    return null;
+}
+
+function centerDropElement(element) {
+    if (!element || typeof element.closest !== "function") {
+        return null;
+    }
+
+    return element.closest("#deck-status, .grid-filler-center");
+}
+
+function canDropCardOnHand(card, toDirection) {
+    if (!card || !DIRECTIONS.includes(toDirection)) {
+        return false;
+    }
+
+    // Dropping back onto the same hand is a no-op, not an error.
+    if (handContainsCard(toDirection, card)) {
+        return true;
+    }
+
+    return handCardCount(toDirection) < 13;
+}
+
+function handleCardDragStart(event) {
     const target = event.target;
 
     if (!target || typeof target.closest !== "function") {
         return;
     }
 
-    if (target.closest(".hand-card") && event.preventDefault) {
-        // Keep the suit input focused for editing instead of the button.
+    const button = target.closest(".hand-card");
+
+    if (!button || typeof button.getAttribute !== "function") {
+        return;
+    }
+
+    const key = button.getAttribute("data-card");
+
+    if (!key) {
+        return;
+    }
+
+    const sourceDirection = button.getAttribute("data-direction");
+    const payload = {
+        key: key,
+        sourceDirection: sourceDirection || null,
+    };
+
+    activeCardDrag = {
+        key: payload.key,
+        sourceDirection: payload.sourceDirection,
+        element: button,
+    };
+
+    if (event.dataTransfer) {
+        if (typeof event.dataTransfer.setData === "function") {
+            event.dataTransfer.setData(DDS_CARD_MIME, JSON.stringify(payload));
+        }
+
+        event.dataTransfer.effectAllowed = "move";
+    }
+
+    if (button.classList) {
+        button.classList.add("hand-card-dragging");
+    }
+}
+
+function handleCardDragOver(event) {
+    const payload = readCardDragPayload(event.dataTransfer);
+
+    if (!payload) {
+        return;
+    }
+
+    const card = cardFromKeySafe(payload.key);
+
+    if (!card) {
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "none";
+        }
+
+        clearActiveDropTarget();
+        return;
+    }
+
+    const center = centerDropElement(event.target);
+
+    if (center) {
+        if (event.preventDefault) {
+            event.preventDefault();
+        }
+
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "move";
+        }
+
+        setActiveDropTarget(center);
+        return;
+    }
+
+    const toDirection = handDirectionFromElement(event.target);
+
+    if (!toDirection || !canDropCardOnHand(card, toDirection)) {
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "none";
+        }
+
+        clearActiveDropTarget();
+        return;
+    }
+
+    if (event.preventDefault) {
         event.preventDefault();
     }
+
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "move";
+    }
+
+    const handEl = event.target.closest
+        ? event.target.closest(".hand-" + toDirection)
+        : null;
+    setActiveDropTarget(handEl);
+}
+
+function handleCardDragLeave(event) {
+    const related = event.relatedTarget;
+
+    if (activeDropTarget && related && typeof activeDropTarget.contains === "function") {
+        if (activeDropTarget.contains(related)) {
+            return;
+        }
+    }
+
+    clearActiveDropTarget();
+}
+
+function handleCardDrop(event) {
+    const payload = readCardDragPayload(event.dataTransfer);
+
+    clearActiveDropTarget();
+
+    if (!payload) {
+        return;
+    }
+
+    const card = cardFromKeySafe(payload.key);
+
+    if (!card) {
+        return;
+    }
+
+    if (event.preventDefault) {
+        event.preventDefault();
+    }
+
+    const center = centerDropElement(event.target);
+
+    if (center) {
+        if (undeployCard(card)) {
+            updateActionButtons();
+        }
+
+        return;
+    }
+
+    const toDirection = handDirectionFromElement(event.target);
+
+    if (!toDirection) {
+        return;
+    }
+
+    if (!canDropCardOnHand(card, toDirection)) {
+        return;
+    }
+
+    if (moveCardToHand(card, toDirection)) {
+        updateActionButtons();
+    }
+}
+
+function handleCardDragEnd(_event) {
+    if (activeCardDrag && activeCardDrag.element && activeCardDrag.element.classList) {
+        activeCardDrag.element.classList.remove("hand-card-dragging");
+    }
+
+    activeCardDrag = null;
+    clearActiveDropTarget();
 }
 
 function handleSuitSelectionChange() {
@@ -1114,8 +1422,11 @@ function updateHandCardCounts(hands) {
         const note = document.getElementById(direction + "-card-count");
 
         if (note) {
-            note.hidden = count <= 13;
-            note.innerHTML = count > 13 ? count + " cards" : "";
+            const show = count !== 0 && count !== 13;
+            note.hidden = !show;
+            note.innerHTML = show
+                ? count + (count === 1 ? " card" : " cards")
+                : "";
         }
     }
 }
@@ -1183,6 +1494,147 @@ function setHandInputs(direction, holdings) {
     }
 }
 
+function suitInputId(direction, suit) {
+    return direction + "_" + suit;
+}
+
+function handContainsCard(direction, card) {
+    if (!direction || !card || !card.suit || !card.pip) {
+        return false;
+    }
+
+    const input = document.getElementById(suitInputId(direction, card.suit));
+
+    if (!input || !input.value) {
+        return false;
+    }
+
+    return input.value.toUpperCase().includes(card.pip.toUpperCase());
+}
+
+function cardHeldSomewhere(card) {
+    for (const direction of DIRECTIONS) {
+        if (handContainsCard(direction, card)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function handCardCount(direction) {
+    if (!DIRECTIONS.includes(direction)) {
+        return 0;
+    }
+
+    let count = 0;
+
+    for (const suit of SUITS) {
+        const input = document.getElementById(suitInputId(direction, suit));
+
+        if (input) {
+            count += String(input.value).length;
+        }
+    }
+
+    return count;
+}
+
+function removeCardFromHand(direction, card) {
+    if (!direction || !card || !card.suit || !card.pip) {
+        return false;
+    }
+
+    const input = document.getElementById(suitInputId(direction, card.suit));
+
+    if (!input) {
+        return false;
+    }
+
+    const value = String(input.value);
+    const pip = card.pip.toUpperCase();
+    const index = value.toUpperCase().indexOf(pip);
+
+    if (index < 0) {
+        return false;
+    }
+
+    input.value = value.slice(0, index) + value.slice(index + 1);
+    return true;
+}
+
+function removeCardFromAllHands(card) {
+    let removed = false;
+
+    for (const direction of DIRECTIONS) {
+        if (removeCardFromHand(direction, card)) {
+            removed = true;
+        }
+    }
+
+    return removed;
+}
+
+function undeployCard(card) {
+    return removeCardFromAllHands(card);
+}
+
+function sortedPipInsertIndex(holding, pip) {
+    const rank = PIPS.indexOf(pip);
+
+    for (let i = 0; i < holding.length; i++) {
+        if (PIPS.indexOf(holding.charAt(i)) > rank) {
+            return i;
+        }
+    }
+
+    return holding.length;
+}
+
+function addCardToHand(direction, card) {
+    if (!DIRECTIONS.includes(direction) || !card || !card.suit || !card.pip) {
+        return false;
+    }
+
+    if (!SUITS.includes(card.suit) || !PIPS.includes(card.pip.toUpperCase())) {
+        return false;
+    }
+
+    if (cardHeldSomewhere(card)) {
+        return false;
+    }
+
+    const input = document.getElementById(suitInputId(direction, card.suit));
+
+    if (!input) {
+        return false;
+    }
+
+    const pip = card.pip.toUpperCase();
+    const value = sanitizeSuitHolding(String(input.value));
+    const at = sortedPipInsertIndex(value, pip);
+
+    input.value = value.slice(0, at) + pip + value.slice(at);
+    return true;
+}
+
+function moveCardToHand(card, toDirection) {
+    if (!DIRECTIONS.includes(toDirection) || !card || !card.suit || !card.pip) {
+        return false;
+    }
+
+    if (handContainsCard(toDirection, card)) {
+        return true;
+    }
+
+    if (handCardCount(toDirection) >= 13) {
+        return false;
+    }
+
+    removeCardFromAllHands(card);
+    return addCardToHand(toDirection, card);
+}
+
 function remainingCardsForEmptyHand(state) {
     return allDeckCards().filter((card) => !state.usedCards[card.key()]);
 }
@@ -1223,22 +1675,64 @@ function isHandInput(element) {
     return false;
 }
 
-function sanitizeSuitHolding(value) {
+function sanitizeSuitHolding(value, claimedKeys, suit, maxPips) {
     if (value == null) {
         return "";
     }
 
-    let sanitized = "";
+    const pips = [];
+    const seen = {};
 
     for (const ch of String(value)) {
         const pip = ch.toUpperCase();
 
-        if (PIPS.includes(pip)) {
-            sanitized += pip;
+        if (!PIPS.includes(pip) || seen[pip]) {
+            continue;
         }
+
+        if (claimedKeys && suit) {
+            const key = new Card(suit, pip).key();
+
+            if (claimedKeys[key]) {
+                continue;
+            }
+        }
+
+        seen[pip] = true;
+        pips.push(pip);
     }
 
-    return sanitized;
+    pips.sort((left, right) => PIPS.indexOf(left) - PIPS.indexOf(right));
+
+    if (typeof maxPips === "number" && maxPips >= 0 && pips.length > maxPips) {
+        return pips.slice(0, maxPips).join("");
+    }
+
+    return pips.join("");
+}
+
+function suitHoldingHasDuplicatePips(value) {
+    if (value == null) {
+        return false;
+    }
+
+    const seen = {};
+
+    for (const ch of String(value)) {
+        const pip = ch.toUpperCase();
+
+        if (!PIPS.includes(pip)) {
+            continue;
+        }
+
+        if (seen[pip]) {
+            return true;
+        }
+
+        seen[pip] = true;
+    }
+
+    return false;
 }
 
 function suitHoldingHasIllegalChars(value) {
@@ -1253,6 +1747,86 @@ function suitHoldingHasIllegalChars(value) {
     }
 
     return false;
+}
+
+function suitHoldingWouldExceedHandLimit(element) {
+    const parsed = parseHandInputId(element && element.id);
+
+    if (!parsed) {
+        return false;
+    }
+
+    let otherCount = 0;
+
+    for (const suit of SUITS) {
+        if (suit === parsed.suit) {
+            continue;
+        }
+
+        const other = document.getElementById(suitInputId(parsed.direction, suit));
+
+        if (other) {
+            otherCount += sanitizeSuitHolding(other.value).length;
+        }
+    }
+
+    return otherCount + sanitizeSuitHolding(element.value).length > 13;
+}
+
+function suitHoldingPipsAreSubset(candidate, allowed) {
+    const allowedSet = {};
+
+    for (const pip of allowed) {
+        allowedSet[pip] = true;
+    }
+
+    for (const pip of candidate) {
+        if (!allowedSet[pip]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+let lastSuitHoldings = {};
+
+function rememberedSuitHolding(elementId) {
+    if (!elementId || !Object.prototype.hasOwnProperty.call(lastSuitHoldings, elementId)) {
+        return "";
+    }
+
+    return lastSuitHoldings[elementId];
+}
+
+function rememberSuitHoldings() {
+    for (const element of hand_elements()) {
+        if (element && element.id) {
+            lastSuitHoldings[element.id] = sanitizeSuitHolding(element.value);
+        }
+    }
+}
+
+function suitHoldingRejectsFullHandEdit(element) {
+    const parsed = parseHandInputId(element && element.id);
+
+    if (!parsed) {
+        return false;
+    }
+
+    const previousHolding = rememberedSuitHolding(element.id);
+    const previousTotal =
+        sameHandCardCountExcludingSuit(parsed.direction, parsed.suit) +
+        previousHolding.length;
+
+    if (previousTotal < 13) {
+        return false;
+    }
+
+    const proposed = sanitizeSuitHolding(element.value);
+
+    return proposed.length > previousHolding.length ||
+        !suitHoldingPipsAreSubset(proposed, previousHolding);
 }
 
 let illegalInputAudioContext = null;
@@ -1295,47 +1869,158 @@ function playIllegalInputBeep() {
 
 function handleHandSuitInput(event) {
     const input = event && event.target;
+    let beep = false;
 
-    if (input && suitHoldingHasIllegalChars(input.value)) {
+    if (input) {
+        if (suitHoldingHasIllegalChars(input.value)) {
+            beep = true;
+        }
+
+        if (suitHoldingHasDuplicatePips(input.value)) {
+            beep = true;
+        }
+
+        if (suitHoldingWouldExceedHandLimit(input)) {
+            beep = true;
+        }
+
+        if (suitHoldingRejectsFullHandEdit(input)) {
+            beep = true;
+        }
+    }
+
+    if (beep) {
         playIllegalInputBeep();
     }
 
-    updateActionButtons();
+    updateActionButtons(input);
 }
 
-function sanitizeHandSuitInputs() {
-    for (const element of hand_elements()) {
-        const oldValue = element.value || "";
-        const sanitized = sanitizeSuitHolding(oldValue);
+function sameHandCardCountExcludingSuit(direction, excludedSuit) {
+    let count = 0;
 
-        if (sanitized === oldValue) {
+    for (const suit of SUITS) {
+        if (suit === excludedSuit) {
             continue;
         }
 
-        const caret = typeof element.selectionStart === "number"
-            ? element.selectionStart
-            : oldValue.length;
-        let keptBefore = 0;
+        const input = document.getElementById(suitInputId(direction, suit));
 
-        for (let i = 0; i < oldValue.length && i < caret; i++) {
-            if (PIPS.includes(oldValue.charAt(i).toUpperCase())) {
-                keptBefore += 1;
-            }
+        if (input) {
+            count += sanitizeSuitHolding(input.value).length;
         }
+    }
 
-        element.value = sanitized;
+    return count;
+}
 
-        if (typeof element.setSelectionRange === "function") {
-            element.setSelectionRange(keptBefore, keptBefore);
+function transferTypedCardsFromOtherHands(activeElement) {
+    const parsed = parseHandInputId(activeElement && activeElement.id);
+
+    if (!parsed) {
+        return;
+    }
+
+    const otherCount = sameHandCardCountExcludingSuit(parsed.direction, parsed.suit);
+    const previousHolding = rememberedSuitHolding(activeElement.id);
+    const previousTotal = otherCount + previousHolding.length;
+    const proposed = sanitizeSuitHolding(activeElement.value);
+    let kept;
+
+    if (previousTotal >= 13) {
+        // Full hand: removals only — never add or swap pips via high-rank clamp.
+        if (
+            proposed.length > previousHolding.length ||
+            !suitHoldingPipsAreSubset(proposed, previousHolding)
+        ) {
+            kept = previousHolding;
         } else {
-            element.selectionStart = keptBefore;
-            element.selectionEnd = keptBefore;
+            kept = proposed;
+        }
+    } else {
+        const room = Math.max(0, 13 - otherCount);
+        kept = sanitizeSuitHolding(activeElement.value, null, null, room);
+    }
+
+    activeElement.value = kept;
+
+    for (const pip of kept) {
+        const card = new Card(parsed.suit, pip);
+
+        for (const direction of DIRECTIONS) {
+            if (direction === parsed.direction) {
+                continue;
+            }
+
+            removeCardFromHand(direction, card);
         }
     }
 }
 
-function updateActionButtons() {
-    sanitizeHandSuitInputs();
+function sanitizeHandSuitInputs(activeElement) {
+    if (activeElement) {
+        transferTypedCardsFromOtherHands(activeElement);
+    }
+
+    const elements = Array.from(hand_elements());
+    const ordered = activeElement && elements.indexOf(activeElement) >= 0
+        ? elements.filter((element) => element !== activeElement).concat([activeElement])
+        : elements;
+    const claimed = {};
+
+    for (const element of ordered) {
+        const parsed = parseHandInputId(element && element.id);
+        const suit = parsed && parsed.suit;
+        const oldValue = element.value || "";
+        const sanitized = sanitizeSuitHolding(oldValue, claimed, suit);
+
+        if (sanitized !== oldValue) {
+            const caret = typeof element.selectionStart === "number"
+                ? element.selectionStart
+                : oldValue.length;
+            let keptBefore = 0;
+            let pipBeforeCaret = "";
+
+            for (let i = 0; i < oldValue.length && i < caret; i++) {
+                const pip = oldValue.charAt(i).toUpperCase();
+
+                if (PIPS.includes(pip)) {
+                    keptBefore += 1;
+                    pipBeforeCaret = pip;
+                }
+            }
+
+            element.value = sanitized;
+
+            let newCaret = sanitized.length;
+
+            if (keptBefore <= 0) {
+                newCaret = 0;
+            } else if (pipBeforeCaret) {
+                const at = sanitized.indexOf(pipBeforeCaret);
+                newCaret = at >= 0 ? at + 1 : sanitized.length;
+            }
+
+            if (typeof element.setSelectionRange === "function") {
+                element.setSelectionRange(newCaret, newCaret);
+            } else {
+                element.selectionStart = newCaret;
+                element.selectionEnd = newCaret;
+            }
+        }
+
+        if (suit) {
+            for (const pip of sanitized) {
+                claimed[new Card(suit, pip).key()] = true;
+            }
+        }
+    }
+
+    rememberSuitHoldings();
+}
+
+function updateActionButtons(activeElement) {
+    sanitizeHandSuitInputs(activeElement);
 
     let hands = collectHands();
     const fillState = fourthHandFillState(hands);
@@ -1370,7 +2055,11 @@ function collectHands() {
         var holding = document.getElementById(element_index).value;
 
         for (const pip of holding) {
-            hands[ds.direction].push(new Card(ds.suit, pip.toUpperCase()));
+            const upper = pip.toUpperCase();
+
+            if (PIPS.includes(upper)) {
+                hands[ds.direction].push(new Card(ds.suit, upper));
+            }
         }
     }
 
@@ -1440,6 +2129,11 @@ function pageLoad() {
     document.addEventListener("mousedown", handleHandCardMouseDown);
     document.addEventListener("click", handleHandCardClick);
     document.addEventListener("click", handleHandSuitClick);
+    document.addEventListener("dragstart", handleCardDragStart);
+    document.addEventListener("dragover", handleCardDragOver);
+    document.addEventListener("dragleave", handleCardDragLeave);
+    document.addEventListener("drop", handleCardDrop);
+    document.addEventListener("dragend", handleCardDragEnd);
     document.addEventListener("click", handleResultTableClick);
     document.addEventListener("keydown", handleResultTableKeyDown);
     document.addEventListener("selectionchange", handleSuitSelectionChange);
