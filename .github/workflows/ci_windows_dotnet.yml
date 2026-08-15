@@ -1,0 +1,71 @@
+# .NET binding CI on Windows (Win64 ABI + Bazel-built dds.dll).
+# Split out of CI – Windows so the managed tests can run without waiting on
+# the full Bazel //... build/test matrix.
+name: CI – Windows .NET
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: {}
+
+jobs:
+  build_and_test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # Windows is the platform the shim retarget can regress: the binding now
+      # loads Bazel-built dds.dll via dds_c_*, a path no other test covers (JNI
+      # smoke tests and export_set_test are target_compatible_with-excluded here).
+      # bazel-bin is configuration-dependent, so ask Bazel for it rather than
+      # hardcoding a path that a different --config would move.
+      # Pinned to 8.0.x to match what DDS_Core targets.
+      - name: Build native library and test .NET binding
+        shell: pwsh
+        run: |
+          $max = 3
+          for ($i = 1; $i -le $max; $i++) {
+            bazelisk build --verbose_failures //jni:dds_shared
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($i -lt $max) {
+              Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
+              Start-Sleep -Seconds 20
+              bazelisk shutdown || $true
+            } else {
+              exit 1
+            }
+          }
+
+          $binDir = bazelisk info bazel-bin
+          $env:DDS_LIBRARY_PATH = Join-Path $binDir "jni\dds.dll"
+          if (-not (Test-Path $env:DDS_LIBRARY_PATH)) {
+            Write-Host "native library not found at $env:DDS_LIBRARY_PATH"
+            exit 1
+          }
+
+          # Both configurations: ThrowIfError is unconditional, so a regression to
+          # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
+          dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          # DdTableForDeal unit helpers (no native library required).
+          dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          # CLI e2e: PowerShell drives `dotnet run` against the native library.
+          ./dotnet/DdTableForDeal/e2e.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }

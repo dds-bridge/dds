@@ -56,44 +56,7 @@ jobs:
       - name: Run all tests
         run: bazelisk test --config=opt --verbose_failures //...
 
-      # .NET binding — this is the platform the shim retarget can regress.
-      # Windows was previously the only place the binding worked, via
-      # dds_native.dll and dds_api.hpp's dds_* symbols; it now binds dds_c_*
-      # in the Bazel-built dds.dll, a path no other test covers (the JNI smoke
-      # tests and export_set_test are target_compatible_with-excluded here).
-      # Pinned to 8.0.x to match what DDS_Core targets.
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-
-      # bazel-bin is a configuration-dependent convenience symlink, so ask Bazel
-      # for it rather than hardcoding a path that a different --config would move.
-      - name: Test .NET binding
-        shell: pwsh
-        run: |
-          bazelisk build --verbose_failures //jni:dds_shared
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          $binDir = bazelisk info bazel-bin
-          $env:DDS_LIBRARY_PATH = Join-Path $binDir "jni\dds.dll"
-          if (-not (Test-Path $env:DDS_LIBRARY_PATH)) {
-            Write-Host "native library not found at $env:DDS_LIBRARY_PATH"
-            exit 1
-          }
-          # Both configurations: ThrowIfError is unconditional, so a regression to
-          # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
-          dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          # DdTableForDeal unit helpers (no native library required).
-          dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          # CLI e2e: PowerShell drives `dotnet run` against the native library.
-          ./dotnet/DdTableForDeal/e2e.ps1
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+      # .NET binding lives in CI – Windows .NET (ci_windows_dotnet.yml).
 
       # Upload test logs
       - name: Upload test logs - Windows
