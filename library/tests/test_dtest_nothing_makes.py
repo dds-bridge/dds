@@ -1,4 +1,4 @@
-"""CI coverage: dtest must parse and solve hands/nothing_makes.txt.
+"""CI coverage: dtest must parse hands/nothing_makes.txt under `-s par`.
 
 Pass-out PAR lines ("NS:" / "EW:") used to fail dtest parsing through v3.0.0.
 """
