@@ -9,7 +9,7 @@ import unittest.mock
 from pathlib import Path
 
 import create_list_for_dtest as cld
-from dds3 import analyse_play_pbn, solve_board_pbn
+from dds3 import SolverContext, analyse_play_pbn, solve_board_pbn
 
 
 # list1.txt deal 1.
@@ -245,6 +245,20 @@ class GenerateDdPlayTest(unittest.TestCase):
         self.assertIsNotNone(contexts[0])
         self.assertTrue(all(ctx is contexts[0] for ctx in contexts))
 
+    def test_generate_dd_play_reuses_caller_provided_context(self):
+        contexts: list[object | None] = []
+        provided = SolverContext()
+
+        def tracking_solve(*args, **kwargs):  # type: ignore[no-untyped-def]
+            contexts.append(kwargs.get("context"))
+            return solve_board_pbn(*args, **kwargs)
+
+        with unittest.mock.patch.object(cld, "solve_board_pbn", side_effect=tracking_solve):
+            cld.generate_dd_play(_DEAL_CARDS, trump=0, first=0, context=provided)
+
+        self.assertEqual(len(contexts), 52)
+        self.assertTrue(all(ctx is provided for ctx in contexts))
+
     def test_generate_dd_play_matches_solve_board_at_each_ply(self):
         play = cld.generate_dd_play(_DEAL_CARDS, trump=0, first=0)
         _check_play_self_consistency(
@@ -254,6 +268,26 @@ class GenerateDdPlayTest(unittest.TestCase):
             first=0,
             play=play,
         )
+
+
+class SolveFutTest(unittest.TestCase):
+    def test_solve_fut_passes_context_to_solve_fn(self):
+        seen: dict[str, object | None] = {"context": None}
+        deal = cld.DealSpec(dealer=0, vul=0, trump=0, first=0, cards=_DEAL_CARDS)
+        provided = object()
+
+        def tracking_solve(*args, **kwargs):  # type: ignore[no-untyped-def]
+            seen["context"] = kwargs.get("context")
+            return {
+                "cards": 1,
+                "suit": [0],
+                "rank": [14],
+                "equals": [0],
+                "score": [13],
+            }
+
+        cld.solve_fut(deal, solve_fn=tracking_solve, context=provided)
+        self.assertIs(seen["context"], provided)
 
 
 class CreateListForDtestTest(unittest.TestCase):

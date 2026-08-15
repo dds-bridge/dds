@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Build create_list_for_dtest and regenerate listN.txt for every list<number>.txt size.
+# Build create_list_for_dtest and regenerate listN.txt for every list<number>.txt
+# size into OUT_DIR (default: a fresh directory under /tmp). Does not overwrite
+# hands/listN.txt in the repository unless OUT_DIR points there.
 #
 # Convention: listNNN.txt uses --seed NNN (see create_list_for_dtest docstring).
 #

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Run dtest on each hand-list file with every -s/--solver mode.
-# Stops at the first dtest failure (non-zero exit or failure text on stdout).
+# Stops at the first dtest failure (non-zero exit or failure text in the
+# combined stdout/stderr capture).
 #
 # Usage:
 #   utilities/src/verify_lists.sh hands/list1.txt hands/list2.txt

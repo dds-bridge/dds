@@ -264,13 +264,19 @@ def _trick_winner(
     return (leader + best) % 4
 
 
-def generate_dd_play(remain_cards: str, trump: int, first: int) -> str:
+def generate_dd_play(
+    remain_cards: str,
+    trump: int,
+    first: int,
+    *,
+    context: Any | None = None,
+) -> str:
     """Return a 52-card DD-optimal play string (suit+rank pairs)."""
     hands = _parse_remain_cards(remain_cards)
     play: list[str] = []
     leader = first
     trick: list[tuple[int, int]] = []
-    ctx = SolverContext()
+    ctx = SolverContext() if context is None else context
 
     for _ in range(52):
         player = (leader + len(trick)) % 4
@@ -325,6 +331,7 @@ def _fill_deal_fields(
     remain: str,
     *,
     calc_fn=None,
+    context: Any | None = None,
 ) -> dict[str, str]:
     """Compute filled TABLE/PAR/PAR2/PLAY/TRACE lines for one deal."""
     if calc_fn is None:
@@ -338,7 +345,7 @@ def _fill_deal_fields(
 
     table = tables[0]
     table_dict = {"res_table": table["res_table"]}
-    play = generate_dd_play(remain, trump=trump, first=first)
+    play = generate_dd_play(remain, trump=trump, first=first, context=context)
     solved = analyse_play_pbn(remain, play=play, trump=trump, first=first)
     return {
         "TABLE": format_table_line(table["res_table"]),
@@ -349,7 +356,7 @@ def _fill_deal_fields(
     }
 
 
-def fill_deal_block(stub_block: str) -> str:
+def fill_deal_block(stub_block: str, *, context: Any | None = None) -> str:
     """Return one deal block with TABLE/PAR/PAR2/PLAY/TRACE filled from DDS."""
     lines = stub_block.splitlines(keepends=True)
     pbn_line = next((line for line in lines if line.startswith("PBN ")), None)
@@ -357,7 +364,7 @@ def fill_deal_block(stub_block: str) -> str:
         raise ValueError("deal block missing PBN line")
 
     dealer, vul, trump, first, remain = _parse_pbn_line(pbn_line)
-    filled = _fill_deal_fields(dealer, vul, trump, first, remain)
+    filled = _fill_deal_fields(dealer, vul, trump, first, remain, context=context)
 
     out: list[str] = []
     for line in lines:
@@ -382,15 +389,21 @@ def fill_deal_block(stub_block: str) -> str:
     return "".join(out)
 
 
-def format_filled_deal_block(deal: DealSpec, fut: dict[str, Any]) -> str:
+def format_filled_deal_block(
+    deal: DealSpec,
+    fut: dict[str, Any],
+    *,
+    context: Any | None = None,
+) -> str:
     """Build one deal block with TABLE/PAR/PAR2/PLAY/TRACE filled from DDS."""
-    return fill_deal_block(format_deal_block(deal, fut))
+    return fill_deal_block(format_deal_block(deal, fut), context=context)
 
 
 def solve_fut(
     deal: DealSpec,
     *,
     solve_fn: Callable[..., dict[str, Any]] | None = None,
+    context: Any | None = None,
 ) -> dict[str, Any]:
     """Solve FUT for one deal matching ``dtest -s solve`` parameters."""
     if solve_fn is None:
@@ -403,6 +416,7 @@ def solve_fut(
         target=-1,
         solutions=3,
         mode=1,
+        context=context,
     )
 
 
@@ -484,6 +498,7 @@ def main(argv: list[str] | None = None) -> int:
     if warning:
         print(warning, file=sys.stderr)
     stream, should_close = _open_output_stream(args.output)
+    ctx = SolverContext()
     try:
         stream.write(f"NUMBER {args.count} \n")
         for i, deal in enumerate(
@@ -491,8 +506,8 @@ def main(argv: list[str] | None = None) -> int:
         ):
             if i == 1:
                 print("Generating and solving deals…", file=sys.stderr)
-            fut = solve_fut(deal)
-            stream.write(format_filled_deal_block(deal, fut))
+            fut = solve_fut(deal, context=ctx)
+            stream.write(format_filled_deal_block(deal, fut, context=ctx))
             if i % 100 == 0:
                 print(f"  {i}/{args.count} deals…", file=sys.stderr)
     finally:
