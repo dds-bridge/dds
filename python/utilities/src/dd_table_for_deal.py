@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Print the double-dummy table and par for a deal from PBN on the CLI or a file.
 
-Python counterpart to examples/dd_table_for_deal.cpp.
+Python counterpart to utilities/src/dd_table_for_deal/dd_table_for_deal.cpp.
 """
 
 from __future__ import annotations
