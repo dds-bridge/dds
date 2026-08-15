@@ -339,18 +339,34 @@ auto ReplayEngine::run(const std::vector<Call>& calls, bool verify)
                                          dds_mode_);
       elapsed = seconds_since(t0);
 
+      // `solved_ok` tracks whether we have a well-formed result to compare. It
+      // stays false when the solve failed, or when a board came back with no
+      // cards -- both of which must be reported, not silently skipped.
+      bool solved_ok = ok;
+
       if (!ok) {
         if (verify)
           stats.mismatches.push_back({call.seq, call.purpose, "DDS error"});
       } else if (call.solutions == 1) {
-        // Only the best and worst trick counts for the side to play.
-        std::vector<int>& mx = actual["max"];
-        std::vector<int>& mn = actual["min"];
-        mx.reserve(solved.size());
-        mn.reserve(solved.size());
-        for (const FutureTricks& fut : solved) {
-          mx.push_back(fut.score[0]);
-          mn.push_back(fut.score[fut.cards > 0 ? fut.cards - 1 : 0]);
+        // Only the best and worst trick counts for the side to play. A board
+        // with no cards is a solver fault, not a 0 to index blindly.
+        bool no_cards = false;
+        for (const FutureTricks& fut : solved)
+          if (fut.cards <= 0) { no_cards = true; break; }
+        if (no_cards) {
+          solved_ok = false;
+          if (verify)
+            stats.mismatches.push_back(
+              {call.seq, call.purpose, "DDS returned a board with no cards"});
+        } else {
+          std::vector<int>& mx = actual["max"];
+          std::vector<int>& mn = actual["min"];
+          mx.reserve(solved.size());
+          mn.reserve(solved.size());
+          for (const FutureTricks& fut : solved) {
+            mx.push_back(fut.score[0]);
+            mn.push_back(fut.score[fut.cards - 1]);
+          }
         }
       } else {
         // One list per playable card, including cards that are equivalent to
@@ -370,7 +386,10 @@ auto ReplayEngine::run(const std::vector<Call>& calls, bool verify)
         }
       }
 
-      if (verify && !actual.empty() && actual != call.result)
+      // Compare whenever the solve produced a result, even an empty one: an
+      // empty map where the recording has entries is itself a regression and
+      // must surface, not be skipped by an `!actual.empty()` guard.
+      if (verify && solved_ok && actual != call.result)
         stats.mismatches.push_back(
           {call.seq, call.purpose, describe_mismatch(call.result, actual)});
     } else {

@@ -289,6 +289,11 @@ auto load_recording(const std::string& path, Recording& out, std::string& error)
     return false;
   }
 
+  // Start from a clean slate so reloading into a reused Recording (common in a
+  // CLI or benchmark loop) does not accumulate calls from a previous load. Only
+  // after the file opened, so a failed open leaves the caller's value untouched.
+  out = Recording{};
+
   std::set<int> boards;
   std::string line;
   size_t line_no = 0;

@@ -254,10 +254,19 @@ auto print_report(const Recording& rec, const std::vector<Call>& calls,
 auto main(int argc, char* argv[]) -> int
 {
   Options opt;
+  bool missing_value = false;
   for (int i = 1; i < argc; ++i) {
     const std::string a = argv[i];
+    // A numeric option with no following value is a usage error, not a silent
+    // no-op -- otherwise a typo like `--repeat` at the end of the line just runs
+    // with the default and looks like it worked.
     auto next_int = [&](int& dst) {
-      if (i + 1 < argc) dst = std::atoi(argv[++i]);
+      if (i + 1 < argc)
+        dst = std::atoi(argv[++i]);
+      else {
+        std::fprintf(stderr, "%s requires a value\n", a.c_str());
+        missing_value = true;
+      }
     };
     if (a == "--threads" && i + 1 < argc) opt.threads.push_back(std::atoi(argv[++i]));
     else if (a == "--purpose" && i + 1 < argc) opt.purpose.emplace_back(argv[++i]);
@@ -277,6 +286,9 @@ auto main(int argc, char* argv[]) -> int
     else if (!a.empty() && a[0] == '-') { std::fprintf(stderr, "unknown option %s\n", a.c_str()); return usage(); }
     else if (opt.path.empty()) opt.path = a;
     else { std::fprintf(stderr, "unexpected argument %s\n", a.c_str()); return usage(); }
+
+    if (missing_value)
+      return usage();
   }
 
   if (opt.path.empty()) {
