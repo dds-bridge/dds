@@ -257,7 +257,9 @@ auto format_par_line(ParResultsMaster const sidesRes[2])
   std::string body;
   for (int i = 0; i < chosen.number; ++i)
   {
-    const auto piece = format_contract(chosen.contracts[i], /*include_seats=*/i == 0);
+    const bool include_seats =
+        i == 0 || chosen.contracts[i].seats != chosen.contracts[i - 1].seats;
+    const auto piece = format_contract(chosen.contracts[i], include_seats);
     if (!piece)
       return std::nullopt;
     if (i > 0)

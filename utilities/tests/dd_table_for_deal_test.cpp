@@ -260,7 +260,26 @@ TEST(FormatParLine, MultipleSacrificesOnOneLine)
 }
 
 
-TEST(FormatParLine, OmitsRepeatedDeclaringSideWhenSeatsDiffer)
+TEST(FormatParLine, IncludesDeclaringSideWhenSeatsDiffer)
+{
+  // thomas1-style: W can sacrifice in hearts, E in clubs — both seats matter.
+  ParResultsMaster sides[2]{};
+  sides[0].score = 100;
+  sides[0].number = 2;
+  sides[0].contracts[0] = make_contract(/*W*/ 3, 3, /*H*/ 2, 1, 0);
+  sides[0].contracts[1] = make_contract(/*E*/ 1, 3, /*C*/ 4, 1, 0);
+  sides[1].score = -100;
+  sides[1].number = 2;
+  sides[1].contracts[0] = make_contract(/*W*/ 3, 3, /*H*/ 2, 1, 0);
+  sides[1].contracts[1] = make_contract(/*E*/ 1, 3, /*C*/ 4, 1, 0);
+
+  const auto line = dd_table_for_deal::format_par_line(sides);
+  ASSERT_TRUE(line.has_value());
+  EXPECT_EQ(*line, "Par: W 3Hx, E 3Cx -1 -100");
+}
+
+
+TEST(FormatParLine, IncludesSeatWhenSecondContractNarrowsDeclaringSide)
 {
   ParResultsMaster sides[2]{};
   sides[0].score = 100;
@@ -274,7 +293,7 @@ TEST(FormatParLine, OmitsRepeatedDeclaringSideWhenSeatsDiffer)
 
   const auto line = dd_table_for_deal::format_par_line(sides);
   ASSERT_TRUE(line.has_value());
-  EXPECT_EQ(*line, "Par: EW 4Hx, 5Cx -1 -100");
+  EXPECT_EQ(*line, "Par: EW 4Hx, E 5Cx -1 -100");
 }
 
 
