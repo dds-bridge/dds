@@ -6,22 +6,56 @@ from __future__ import annotations
 
 import os
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
-def _runfiles_root() -> Path:
+def _runfiles_root() -> Path | None:
     for key in ("RUNFILES_DIR", "TEST_SRCDIR"):
         if key in os.environ:
             return Path(os.environ[key])
-    raise RuntimeError("not running under Bazel test")
+    return None
+
+
+def _rlocation_from_manifest(relpath: str) -> Path | None:
+    """Look up ``relpath`` in RUNFILES_MANIFEST_FILE (Windows-style runfiles)."""
+    manifest = os.environ.get("RUNFILES_MANIFEST_FILE")
+    if not manifest:
+        return None
+    keys = {relpath, f"_main/{relpath}"}
+    try:
+        with open(manifest, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.rstrip("\n")
+                if not line or line.startswith("[") or line.startswith(" "):
+                    continue
+                space = line.find(" ")
+                if space < 0:
+                    continue
+                key, value = line[:space], line[space + 1 :]
+                if key in keys and value:
+                    path = Path(value)
+                    if path.exists():
+                        return path
+    except OSError:
+        return None
+    return None
 
 
 def rlocation(relpath: str) -> Path:
+    """Resolve a runfiles path such as ``hands/nothing_makes.txt``."""
     root = _runfiles_root()
-    for candidate in (root / relpath, root / "_main" / relpath):
-        if candidate.exists():
-            return candidate
+    if root is not None:
+        for candidate in (root / relpath, root / "_main" / relpath):
+            if candidate.exists():
+                return candidate
+
+    from_manifest = _rlocation_from_manifest(relpath)
+    if from_manifest is not None:
+        return from_manifest
+
     raise FileNotFoundError(relpath)
 
 
@@ -32,6 +66,44 @@ def _dtest_binary() -> Path:
         except FileNotFoundError:
             continue
     raise FileNotFoundError("library/tests/dtest[.exe]")
+
+
+class RlocationTest(unittest.TestCase):
+    def test_rlocation_uses_runfiles_manifest_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            real = root / "nothing_makes.txt"
+            real.write_text("NUMBER 1\n", encoding="utf-8")
+            manifest = root / "MANIFEST"
+            manifest.write_text(
+                f"_main/hands/nothing_makes.txt {real}\n",
+                encoding="utf-8",
+            )
+            with mock.patch.dict(
+                "os.environ",
+                {"RUNFILES_MANIFEST_FILE": str(manifest)},
+                clear=True,
+            ):
+                found = rlocation("hands/nothing_makes.txt")
+            self.assertTrue(found.samefile(real))
+
+    def test_rlocation_manifest_accepts_unprefixed_key(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            real = root / "dtest.exe"
+            real.write_text("", encoding="utf-8")
+            manifest = root / "MANIFEST"
+            manifest.write_text(
+                f"library/tests/dtest.exe {real}\n",
+                encoding="utf-8",
+            )
+            with mock.patch.dict(
+                "os.environ",
+                {"RUNFILES_MANIFEST_FILE": str(manifest)},
+                clear=True,
+            ):
+                found = rlocation("library/tests/dtest.exe")
+            self.assertTrue(found.samefile(real))
 
 
 class DtestNothingMakesTest(unittest.TestCase):
