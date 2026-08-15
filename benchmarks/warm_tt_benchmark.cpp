@@ -51,6 +51,16 @@ using Hands = std::array<std::vector<Card>, 4>;   // indexed N,E,S,W
 constexpr int kWest = 3;                          // opening leader vs a South declarer
 constexpr int kStrainNT = 4, kStrainSpades = 0;   // DDS trump encoding
 
+// solve_board's `mode` argument, held uniform across every solve here. The
+// values that matter to this benchmark -- 0 and 1 -- differ only in a
+// single-legal-move shortcut that cannot fire at trick 1 (there is never one
+// legal card with 12+ in hand), and their TT-reset logic is identical: only
+// mode 2 suppresses the reset, and warm reuse here comes from the solver's
+// similar-deal detection, not from the mode. So the choice is immaterial to the
+// timings; it is fixed at one value so no reader has to wonder whether a
+// difference between the A and B solves was meant to signify something.
+constexpr int kMode = 0;
+
 // Owns a solver-context handle. The gtest ASSERT_* macros expand to a bare
 // `return`, so any explicit destroy call can be jumped over on a failing path;
 // this releases the handle however the scope is left.
@@ -163,7 +173,7 @@ auto run(const std::vector<Hands>& deals, int trump, int leader, int k,
       const auto tA = Clock::now();
       ScopedContext ctx_a;
       ASSERT_NE(nullptr, ctx_a.get()) << label << " deal " << d << ": context alloc failed";
-      rcA = dds_c_solve_board(ctx_a.get(), &full, -1, 3, 1, &futA);
+      rcA = dds_c_solve_board(ctx_a.get(), &full, -1, 3, kMode, &futA);
       ctx_a.destroy();
       t.a += ms_since(tA);
     }
@@ -184,7 +194,7 @@ auto run(const std::vector<Hands>& deals, int trump, int leader, int k,
       ScopedContext ctx;
       ASSERT_NE(nullptr, ctx.get()) << label << " deal " << d << ": context alloc failed";
       FutureTricks fut{};
-      const int rc = dds_c_solve_board(ctx.get(), &pos, -1, 1, 0, &fut);
+      const int rc = dds_c_solve_board(ctx.get(), &pos, -1, 1, kMode, &fut);
       ctx.destroy();
       ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_cold solve failed";
       ASSERT_GT(fut.cards, 0) << label << " deal " << d << ": B_cold returned no cards";
@@ -200,7 +210,7 @@ auto run(const std::vector<Hands>& deals, int trump, int leader, int k,
       ASSERT_NE(nullptr, ctx_w.get()) << label << " deal " << d << ": context alloc failed";
       for (const auto& pos : positions) {
         FutureTricks fut{};
-        const int rc = dds_c_solve_board(ctx_w.get(), &pos, -1, 1, 0, &fut);
+        const int rc = dds_c_solve_board(ctx_w.get(), &pos, -1, 1, kMode, &fut);
         ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_warm solve failed";
         ASSERT_GT(fut.cards, 0) << label << " deal " << d << ": B_warm returned no cards";
         warm_scores.push_back(fut.score[0]);
@@ -248,7 +258,7 @@ TEST(WarmTtBenchmark, ContextReuseKeepsTranspositionTableWarm)
     FutureTricks fut{};
     ScopedContext ctx;
     ASSERT_NE(nullptr, ctx.get());
-    (void) dds_c_solve_board(ctx.get(), &w, -1, 3, 1, &fut);
+    (void) dds_c_solve_board(ctx.get(), &w, -1, 3, kMode, &fut);
   }
 
   std::printf("\n[warm-TT benchmark] declarer South; opening leader West; "

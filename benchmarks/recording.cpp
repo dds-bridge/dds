@@ -269,6 +269,14 @@ auto parse_json(const std::string& text, JsonValue& out, std::string& error)
     error = p.error;
     return false;
   }
+  // A recording line is exactly one JSON value; anything after it (past
+  // whitespace) means the line is malformed, not a value we should accept.
+  p.skip_ws();
+  if (p.i != text.size()) {
+    p.fail("trailing characters after JSON value");
+    error = p.error;
+    return false;
+  }
   return true;
 }
 

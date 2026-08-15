@@ -68,24 +68,29 @@ auto pbn_to_remain_cards(const std::string& pbn, unsigned int remain[4][4])
     default: return false;
   }
 
+  // Exactly four dot-separated hands, each with exactly four suits (three dots),
+  // running clockwise from <seat>. Reject anything else -- a truncated line, a
+  // hand missing a suit, an extra hand -- so the caller reports it as
+  // unparseable rather than silently solving a partial, wrong deal.
   int hand = first_hand;
   int suit = 0;
   int hands_seen = 0;
+  bool in_hand = false;   // any suit/rank content since the last separator?
 
   for (size_t i = colon + 1; i <= pbn.size(); ++i) {
-    const char c = (i < pbn.size()) ? pbn[i] : ' ';
+    const char c = (i < pbn.size()) ? pbn[i] : ' ';   // trailing sentinel
     if (c == ' ' || c == '\t') {
-      if (suit != 0 || hands_seen == 0 || i == pbn.size()) {
-        // finished a hand
+      if (in_hand) {          // a hand just ended; it must have held four suits
+        if (suit != 3)
+          return false;
+        ++hands_seen;
+        hand = (hand + 1) % 4;
+        suit = 0;
+        in_hand = false;
       }
-      hand = (hand + 1) % 4;
-      suit = 0;
-      ++hands_seen;
-      // Skip any run of separators.
-      while (i + 1 < pbn.size() && (pbn[i + 1] == ' ' || pbn[i + 1] == '\t'))
-        ++i;
-      continue;
+      continue;               // fold runs of separators, ignore leading ones
     }
+    in_hand = true;
     if (c == '.') {
       if (++suit > 3)
         return false;
@@ -96,7 +101,7 @@ auto pbn_to_remain_cards(const std::string& pbn, unsigned int remain[4][4])
       return false;
     remain[hand][suit] |= (1u << static_cast<unsigned>(r));
   }
-  return true;
+  return hands_seen == 4;
 }
 
 auto describe_mismatch(const ResultMap& expected, const ResultMap& actual)
