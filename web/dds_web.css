@@ -49,6 +49,15 @@
   grid-area: center;
 }
 
+.grid-item.grid-filler-center {
+  align-items: center;
+  display: flex;
+  font-size: 30px;
+  justify-content: flex-start;
+  /* Keep left padding so suit glyphs line up with N/S; free space toward East. */
+  padding-right: 0.25rem;
+}
+
 .grid-filler-sw {
   grid-area: sw;
 }
@@ -145,17 +154,39 @@
 .hand-card-count {
   font-size: 1rem;
   margin-top: 0.25rem;
+  /* Match .grid-item's 30px × 1em suit-glyph column (not 1em of 1rem). */
+  padding-left: 30px;
 }
 
 .hand-holding {
   display: inline;
 }
 
-.hand-suit {
-  cursor: text;
-  display: inline-block;
+.hand-suit,
+.deck-suit-row {
+  align-items: baseline;
+  gap: 0;
   text-align: left;
   white-space: nowrap;
+}
+
+.hand-suit {
+  cursor: text;
+  display: inline-flex;
+}
+
+.deck-suit-row {
+  display: flex;
+  min-height: 1.2em;
+}
+
+/* Fixed glyph column so first pip of each suit / seat shares one vertical edge. */
+.hand-suit > :is(spade-suit, heart-suit, diamond-suit, club-suit),
+.deck-suit-row > :is(spade-suit, heart-suit, diamond-suit, club-suit) {
+  display: inline-block;
+  flex: 0 0 1em;
+  text-align: center;
+  width: 1em;
 }
 
 .hand-suit-input {
@@ -184,9 +215,23 @@
   /* Below the seat's 30px so corner trick digits clear the pip glyph. */
   font-size: 0.72em;
   line-height: 1.15;
-  margin: 0 0.04em;
-  padding: 0 0.28em 0.18em 0.1em;
+  /* No left margin: suit glyph sits flush; right margin separates dealt pips. */
+  margin: 0 0.04em 0 0;
+  padding: 0 0.28em 0.18em 0.02em;
   position: relative;
+}
+
+.hand-card[draggable="true"] {
+  cursor: grab;
+}
+
+.hand-card-dragging {
+  opacity: 0.45;
+}
+
+.drop-target-active {
+  outline: 2px dashed #333;
+  outline-offset: -4px;
 }
 
 .hand-card-tricks {
@@ -227,20 +272,15 @@ td {
 
 #deck-status {
   display: flex;
-  flex-wrap: nowrap;
-  font-size: calc(1em + 1pt);
-  gap: 0.35rem;
-  max-width: 800px;
-  padding: 0.5rem 0;
+  flex-direction: column;
+  gap: 0.15rem;
+  line-height: 1.25;
+  text-align: left;
   white-space: nowrap;
 }
 
-.deck-card {
-  color: #000;
-  flex: 0 0 auto;
-}
-
-/* Suit glyphs are DOM text; .deck-card sets its own color so nested pips stay black. */
+/* Suit glyphs are DOM text; .hand-card sets color: inherit so nested/sibling
+   pips stay black even when the suit glyph is red. */
 spade-suit,
 club-suit {
   color: #000;
@@ -249,8 +289,4 @@ club-suit {
 heart-suit,
 diamond-suit {
   color: #c00;
-}
-
-.deck-card-entered {
-  color: #888;
 }

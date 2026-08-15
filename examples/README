@@ -11,16 +11,16 @@ Build a specific example:
 Run an example:
     bazelisk run //examples:calc_dd_table
 
-Python `dd_table_for_deal` (see `python/examples/`):
-    bazelisk run //python/examples:dd_table_for_deal -- hands/example.pbn
-    bazelisk run //python/examples:dd_table_for_deal -- --vul ns hands/example.pbn
-    bazelisk run //python/examples:dd_table_for_deal -- --limit 3 hands/multi_board.pbn
+`dd_table_for_deal` lives under `utilities/` (C++) and `python/utilities/` (Python):
+    bazelisk run //utilities:dd_table_for_deal -- hands/example.pbn
+    bazelisk run //python/utilities:dd_table_for_deal -- hands/example.pbn
+    bazelisk run //python/utilities:dd_table_for_deal -- --vul ns hands/example.pbn
+    bazelisk run //python/utilities:dd_table_for_deal -- --limit 3 hands/multi_board.pbn
 
 Available examples:
 - analyse_all_plays_bin, analyse_all_plays_pbn
 - analyse_play_bin, analyse_play_pbn
 - calc_all_tables, calc_all_tables_pbn
 - calc_dd_table, calc_dd_table_pbn
-- dd_table_for_deal (C++; Python: //python/examples:dd_table_for_deal)
 - dealer_par, par
 - solve_all_boards, solve_board, solve_board_pbn

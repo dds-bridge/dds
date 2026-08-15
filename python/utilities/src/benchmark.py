@@ -7,16 +7,16 @@ timing rows and build (git/bazel) output are shown transiently, then hidden
 unless the --details flag is set. Passes dtest options if given after "--".
 
 Usage:
-  python/tests/benchmark.py
-  python/tests/benchmark.py --build
-  python/tests/benchmark.py -- -n 8 -r
-  python/tests/benchmark.py --build --binary /path/to/other/dtest
-  python/tests/benchmark.py --branch develop -- -n 8
-  python/tests/benchmark.py --wasm_branch develop -- -n 2
-  python/tests/benchmark.py --branch develop --wasm_branch develop
-  python/tests/benchmark.py --binary /path/to/other/dtest --epsilon 1
-  python/tests/benchmark.py --repeats 5 -- -n 4
-  REPEATS=3 python/tests/benchmark.py
+  python/utilities/src/benchmark.py
+  python/utilities/src/benchmark.py --build
+  python/utilities/src/benchmark.py -- -n 8 -r
+  python/utilities/src/benchmark.py --build --binary /path/to/other/dtest
+  python/utilities/src/benchmark.py --branch develop -- -n 8
+  python/utilities/src/benchmark.py --wasm_branch develop -- -n 2
+  python/utilities/src/benchmark.py --branch develop --wasm_branch develop
+  python/utilities/src/benchmark.py --binary /path/to/other/dtest --epsilon 1
+  python/utilities/src/benchmark.py --repeats 5 -- -n 4
+  REPEATS=3 python/utilities/src/benchmark.py
   ./benchmark.sh   # equivalent wrapper at repo root
 
 Environment:
@@ -604,24 +604,24 @@ Environment:
   BRANCH, BINARY, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, SYS_USER, EPSILON
 
 Examples:
-  python/tests/benchmark.py
-  python/tests/benchmark.py --build
-  python/tests/benchmark.py -- -n 8
-  python/tests/benchmark.py --repeats 3 -- -n 4 -r
-  python/tests/benchmark.py --branch develop
-  python/tests/benchmark.py --branch develop --branch opus-two-percent
-  python/tests/benchmark.py --branch develop --branch opus-two-percent --branch fastest
-  python/tests/benchmark.py --branch opus-two-percent --binary /path/to/dtest
-  python/tests/benchmark.py --branch develop --repeats 3 -- -n 8
-  python/tests/benchmark.py --wasm_branch develop
-  python/tests/benchmark.py --branch develop --wasm_branch develop
-  python/tests/benchmark.py --binary /path/to/dtest
-  python/tests/benchmark.py --binary /path/to/dtest --details
-  python/tests/benchmark.py --binary /path/to/dtest --sys-user
-  python/tests/benchmark.py --binary /path/to/dtest --epsilon 1
-  python/tests/benchmark.py --binary /path/to/dtest --reverse
-  python/tests/benchmark.py --repeats 5 --binary /path/to/dtest
-  DRY_RUN=1 python/tests/benchmark.py
+  python/utilities/src/benchmark.py
+  python/utilities/src/benchmark.py --build
+  python/utilities/src/benchmark.py -- -n 8
+  python/utilities/src/benchmark.py --repeats 3 -- -n 4 -r
+  python/utilities/src/benchmark.py --branch develop
+  python/utilities/src/benchmark.py --branch develop --branch opus-two-percent
+  python/utilities/src/benchmark.py --branch develop --branch opus-two-percent --branch fastest
+  python/utilities/src/benchmark.py --branch opus-two-percent --binary /path/to/dtest
+  python/utilities/src/benchmark.py --branch develop --repeats 3 -- -n 8
+  python/utilities/src/benchmark.py --wasm_branch develop
+  python/utilities/src/benchmark.py --branch develop --wasm_branch develop
+  python/utilities/src/benchmark.py --binary /path/to/dtest
+  python/utilities/src/benchmark.py --binary /path/to/dtest --details
+  python/utilities/src/benchmark.py --binary /path/to/dtest --sys-user
+  python/utilities/src/benchmark.py --binary /path/to/dtest --epsilon 1
+  python/utilities/src/benchmark.py --binary /path/to/dtest --reverse
+  python/utilities/src/benchmark.py --repeats 5 --binary /path/to/dtest
+  DRY_RUN=1 python/utilities/src/benchmark.py
   ./benchmark.sh"""
 
 

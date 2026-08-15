@@ -160,27 +160,131 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_deck_status_grays_cards_entered_in_the_diagram(self) -> None:
+    def test_deck_status_omits_cards_entered_in_the_diagram(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
-            cards = page.locator("#deck-status .deck-card")
+            cards = page.locator("#deck-status .hand-card")
             self.assertEqual(cards.count(), 52)
             self.assertEqual(
-                page.locator('#deck-status [data-card="SA"]').get_attribute("class"),
-                "deck-card",
+                page.locator('#deck-status [data-card="SA"]').count(),
+                1,
             )
 
             page.locator("#north_spades").fill("A")
 
-            entered_card = page.locator('#deck-status [data-card="SA"]')
-            self.assertIn("deck-card-entered", entered_card.get_attribute("class"))
             self.assertEqual(
-                float(entered_card.evaluate("el => getComputedStyle(el).opacity")),
-                1.0,
+                page.locator('#deck-status [data-card="SA"]').count(),
+                0,
             )
-            self.assertNotEqual(
-                entered_card.evaluate("el => getComputedStyle(el).color"),
-                "rgb(0, 0, 0)",
+            self.assertEqual(page.locator("#deck-status .hand-card").count(), 51)
+            self.assertEqual(
+                page.locator("#deck-status .deck-card-entered").count(),
+                0,
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_undeployed_card_onto_north_hand(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator('#deck-status .hand-card[data-card="SA"]').drag_to(
+                page.locator(".hand-north")
+            )
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "A")
+            self.assertEqual(
+                page.locator('#deck-status .hand-card[data-card="SA"]').count(),
+                0,
+            )
+            self.assertEqual(
+                page.locator(
+                    '#north_spades_cards .hand-card[data-card="SA"]'
+                ).count(),
+                1,
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_card_onto_hand_sorts_high_to_low(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("A2")
+            page.locator("#north_spades").dispatch_event("input")
+            page.locator('#deck-status .hand-card[data-card="SK"]').drag_to(
+                page.locator(".hand-north")
+            )
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "AK2")
+            cards = page.locator("#north_spades_cards .hand-card")
+            self.assertEqual(
+                [cards.nth(i).get_attribute("data-card") for i in range(3)],
+                ["SA", "SK", "S2"],
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_within_same_hand_is_ignored(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("AKQ")
+            page.locator("#north_spades").dispatch_event("input")
+            page.locator(
+                '#north_spades_cards .hand-card[data-card="SA"]'
+            ).drag_to(page.locator(".hand-north"))
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "AKQ")
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_card_between_hands_then_back_to_center(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+
+            page.locator(
+                '#north_spades_cards .hand-card[data-card="SA"]'
+            ).drag_to(page.locator(".hand-east"))
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "")
+            self.assertEqual(page.locator("#east_spades").input_value(), "A")
+
+            page.locator(
+                '#east_spades_cards .hand-card[data-card="SA"]'
+            ).drag_to(page.locator("#deck-status"))
+
+            self.assertEqual(page.locator("#east_spades").input_value(), "")
+            self.assertEqual(
+                page.locator('#deck-status .hand-card[data-card="SA"]').count(),
+                1,
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_drag_onto_full_hand_is_rejected(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("AKQJT98765432")
+            page.locator("#north_spades").dispatch_event("input")
+            self.assertEqual(
+                page.locator("#deck-status .hand-card").count(),
+                39,
+            )
+
+            page.locator('#deck-status .hand-card[data-card="HA"]').drag_to(
+                page.locator(".hand-north")
+            )
+
+            self.assertEqual(page.locator("#north_hearts").input_value(), "")
+            self.assertEqual(page.locator("#north_spades").input_value(), "AKQJT98765432")
+            self.assertEqual(
+                page.locator('#deck-status .hand-card[data-card="HA"]').count(),
+                1,
             )
             self.assertEqual(errors, [])
         finally:
@@ -616,23 +720,203 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_deck_status_displays_all_cards_in_one_row(self) -> None:
+    def test_deck_status_lives_in_diagram_center_as_four_suit_rows(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
-            deck = page.locator("#deck-status")
+            deck = page.locator(".grid-filler-center #deck-status")
+            self.assertEqual(deck.count(), 1)
             style = deck.evaluate(
                 """el => {
                 const s = getComputedStyle(el);
                 return {
                   display: s.display,
-                  flexWrap: s.flexWrap,
-                  overflowX: s.overflowX,
+                  flexDirection: s.flexDirection,
                 };
               }"""
             )
             self.assertEqual(style["display"], "flex")
-            self.assertEqual(style["flexWrap"], "nowrap")
-            self.assertNotIn(style["overflowX"], ("auto", "scroll"))
+            self.assertEqual(style["flexDirection"], "column")
+            rows = page.locator("#deck-status .deck-suit-row")
+            self.assertEqual(rows.count(), 4)
+            tags = [
+                rows.nth(i).locator(":scope > *").first.evaluate("el => el.tagName")
+                for i in range(4)
+            ]
+            self.assertEqual(
+                tags,
+                ["SPADE-SUIT", "HEART-SUIT", "DIAMOND-SUIT", "CLUB-SUIT"],
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_undeployed_cards_left_align_with_ns_suit_symbols(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            lefts = page.evaluate(
+                """() => {
+                  const leftOf = (sel) =>
+                    document.querySelector(sel).getBoundingClientRect().left;
+                  return {
+                    north: leftOf('.hand-north spade-suit'),
+                    south: leftOf('.hand-south spade-suit'),
+                    undeployed: leftOf('#deck-status .deck-suit-row spade-suit'),
+                  };
+                }"""
+            )
+            self.assertAlmostEqual(
+                lefts["undeployed"],
+                lefts["north"],
+                delta=1,
+                msg="undeployed spades must share N's left edge",
+            )
+            self.assertAlmostEqual(
+                lefts["undeployed"],
+                lefts["south"],
+                delta=1,
+                msg="undeployed spades must share S's left edge",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_ns_cards_left_align_with_center_cards(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+            page.locator("#south_spades").fill("K")
+            page.locator("#south_spades").dispatch_event("input")
+
+            lefts = page.evaluate(
+                """() => {
+                  const leftOf = (sel) =>
+                    document.querySelector(sel).getBoundingClientRect().left;
+                  return {
+                    north: leftOf('.hand-north .hand-card'),
+                    south: leftOf('.hand-south .hand-card'),
+                    center: leftOf('#deck-status .hand-card'),
+                  };
+                }"""
+            )
+            self.assertAlmostEqual(
+                lefts["north"],
+                lefts["center"],
+                delta=1,
+                msg="North cards must share the center cards' left edge",
+            )
+            self.assertAlmostEqual(
+                lefts["south"],
+                lefts["center"],
+                delta=1,
+                msg="South cards must share the center cards' left edge",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_suit_card_columns_left_align_vertically_in_hands_and_center(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            for suit, pips in (
+                ("spades", "A"),
+                ("hearts", "K"),
+                ("diamonds", "Q"),
+                ("clubs", "J"),
+            ):
+                page.locator(f"#north_{suit}").fill(pips)
+                page.locator(f"#north_{suit}").dispatch_event("input")
+
+            def first_card_lefts(scope: str) -> list[float]:
+                return page.evaluate(
+                    """(scope) => {
+                      const root = document.querySelector(scope);
+                      const cards = [...root.querySelectorAll('.hand-card')]
+                        .filter((el, _, all) => {
+                          const row = el.closest('.hand-suit, .deck-suit-row');
+                          return row && el === row.querySelector('.hand-card');
+                        });
+                      return cards.map((el) => el.getBoundingClientRect().left);
+                    }""",
+                    scope,
+                )
+
+            north_lefts = first_card_lefts(".hand-north")
+            self.assertEqual(len(north_lefts), 4)
+            for left in north_lefts[1:]:
+                self.assertAlmostEqual(
+                    left,
+                    north_lefts[0],
+                    delta=1,
+                    msg="north suit card columns must share a left edge",
+                )
+
+            center_lefts = first_card_lefts("#deck-status")
+            self.assertGreaterEqual(len(center_lefts), 4)
+            for left in center_lefts[1:]:
+                self.assertAlmostEqual(
+                    left,
+                    center_lefts[0],
+                    delta=1,
+                    msg="center suit card columns must share a left edge",
+                )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_center_undeployed_full_suit_stays_clear_of_east(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            bounds = page.evaluate(
+                """() => {
+                  const last = document.querySelector(
+                    '#deck-status .deck-suit-row .hand-card[data-card="S2"]'
+                  );
+                  const east = document.querySelector('.hand-east');
+                  return {
+                    lastRight: last.getBoundingClientRect().right,
+                    eastLeft: east.getBoundingClientRect().left,
+                  };
+                }"""
+            )
+            self.assertLessEqual(
+                bounds["lastRight"],
+                bounds["eastLeft"] - 1,
+                msg="full undeployed spade row must not run into East",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_undeployed_cards_match_dealt_hand_card_chrome(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("K")
+            page.locator("#north_spades").dispatch_event("input")
+
+            styles = page.evaluate(
+                """() => {
+                  const props = [
+                    'borderTopWidth', 'borderTopStyle', 'borderTopColor',
+                    'borderRadius', 'fontSize', 'paddingTop', 'paddingRight',
+                    'paddingBottom', 'paddingLeft', 'marginTop', 'marginRight',
+                    'marginBottom', 'marginLeft', 'lineHeight', 'color',
+                  ];
+                  const read = (sel) => {
+                    const s = getComputedStyle(document.querySelector(sel));
+                    return Object.fromEntries(props.map((p) => [p, s[p]]));
+                  };
+                  return {
+                    dealt: read('.hand-north .hand-card[data-card="SK"]'),
+                    undeployed: read('#deck-status .hand-card[data-card="SA"]'),
+                  };
+                }"""
+            )
+            self.assertEqual(
+                styles["undeployed"],
+                styles["dealt"],
+                msg="undeployed pips must use the same hand-card chrome as dealt",
+            )
             self.assertEqual(errors, [])
         finally:
             page.close()
@@ -658,7 +942,8 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                         tag_color, "rgb(0, 0, 0)", msg=f"{tag} glyph is black"
                     )
 
-            # Deck pips are nested inside suit tags; they must stay black/gray.
+            # Undeployed pips use .hand-card (color: inherit) outside the suit
+            # tag, so they stay black even for hearts/diamonds.
             pip_color = page.locator('#deck-status [data-card="HA"]').evaluate(
                 "el => getComputedStyle(el).color"
             )
@@ -667,17 +952,98 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_hand_over_13_cards_shows_its_card_count(self) -> None:
+    def test_typing_past_13_cards_is_rejected(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             note = page.locator(".hand-north #north-card-count")
             self.assertTrue(note.is_hidden())
 
-            page.locator("#north_spades").fill("AKQJT98765432A")
+            page.locator("#north_spades").fill("AKQJT98765432")
+            page.locator("#north_spades").dispatch_event("input")
+            page.locator("#north_hearts").fill("A")
+            page.locator("#north_hearts").dispatch_event("input")
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "AKQJT98765432")
+            self.assertEqual(page.locator("#north_hearts").input_value(), "")
+            self.assertTrue(note.is_hidden())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_typing_moves_a_card_from_another_hand(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+
+            page.locator("#east_spades").fill("A")
+            page.locator("#east_spades").dispatch_event("input")
+
+            self.assertEqual(page.locator("#north_spades").input_value(), "")
+            self.assertEqual(page.locator("#east_spades").input_value(), "A")
+            self.assertEqual(
+                page.locator('#north_spades_cards .hand-card[data-card="SA"]').count(),
+                0,
+            )
+            self.assertEqual(
+                page.locator('#east_spades_cards .hand-card[data-card="SA"]').count(),
+                1,
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_partial_hand_shows_its_card_count(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            note = page.locator(".hand-north #north-card-count")
+            self.assertTrue(note.is_hidden())
+
+            page.locator("#north_spades").fill("AKQ")
+            page.locator("#north_spades").dispatch_event("input")
 
             self.assertTrue(note.is_visible())
-            self.assertEqual(note.inner_text(), "14 cards")
-            self.assertTrue(page.locator("#east-card-count").is_hidden())
+            self.assertEqual(note.inner_text(), "3 cards")
+
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+
+            self.assertTrue(note.is_visible())
+            self.assertEqual(note.inner_text(), "1 card")
+
+            page.locator("#north_spades").fill("AKQJT98765432")
+            page.locator("#north_spades").dispatch_event("input")
+
+            self.assertTrue(note.is_hidden())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_card_count_left_aligns_with_suit_pips(self) -> None:
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#north_spades").fill("AKQ")
+            page.locator("#north_spades").dispatch_event("input")
+
+            lefts = page.evaluate(
+                """() => {
+                  const note = document.querySelector('#north-card-count');
+                  const pip = document.querySelector(
+                    '.hand-north .hand-card[data-card="SA"]'
+                  );
+                  const pad = parseFloat(getComputedStyle(note).paddingLeft);
+                  return {
+                    countText: note.getBoundingClientRect().left + pad,
+                    pip: pip.getBoundingClientRect().left,
+                  };
+                }"""
+            )
+            self.assertAlmostEqual(
+                lefts["countText"],
+                lefts["pip"],
+                delta=1,
+                msg="card-count text must share the suit pips' left edge",
+            )
             self.assertEqual(errors, [])
         finally:
             page.close()
