@@ -22,14 +22,17 @@ cc_library(
     ],
 )
 
-# Benchmark driver. Takes a recording produced by an application that logged its
-# own DDS traffic:
+# Benchmark driver. With no argument it replays the committed recording
+# (:camrose_recording); pass a path to replay your own instead:
 #
+#   bazel run -c opt //benchmarks:dds_replay
 #   bazel run -c opt //benchmarks:dds_replay -- /path/to/recording.jsonl
 #   bazel run -c opt //benchmarks:dds_replay -- rec.jsonl --threads 8 --threads 16
 #
-# Tagged manual: it needs a recording to be useful, and recordings are large
-# enough that they live outside the repository.
+# Not tagged manual: `bazel test //...` builds it (never runs it), so the driver
+# stays compiled on every platform. It is a measuring instrument, not a test --
+# running it means the several-minute full replay -- so it is a cc_binary, not a
+# cc_test; the fast correctness check on the replay path is :replay_test.
 cc_binary(
     name = "dds_replay",
     srcs = ["dds_replay_main.cpp"],
@@ -37,7 +40,6 @@ cc_binary(
     data = [":camrose_recording"],
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
-    tags = ["manual"],
     visibility = ["//visibility:public"],
     deps = [":replay_lib"],
 )
