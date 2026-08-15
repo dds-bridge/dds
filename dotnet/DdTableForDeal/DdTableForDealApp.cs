@@ -169,13 +169,22 @@ public static class DdTableForDealApp
             return text;
 
         string? workspace = Environment.GetEnvironmentVariable("BUILD_WORKSPACE_DIRECTORY");
-        if (workspace is not null
-            && TryReadPbnFile(Path.Combine(workspace, path), out text))
+        if (workspace is null)
+            return null;
+
+        string combined;
+        try
         {
-            return text;
+            combined = Path.Combine(workspace, path);
+        }
+        catch (ArgumentException)
+        {
+            // Invalid path characters (or other Path.Combine argument errors)
+            // should fall through to LoadDeals' "Cannot read file" handling.
+            return null;
         }
 
-        return null;
+        return TryReadPbnFile(combined, out text) ? text : null;
     }
 
     private static bool TryReadPbnFile(string path, out string? text)

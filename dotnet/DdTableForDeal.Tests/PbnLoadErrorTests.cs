@@ -98,4 +98,34 @@ public class PbnLoadErrorTests
         Assert.Equal(1, rc);
         Assert.Contains("Cannot read file:", stderr.ToString());
     }
+
+    [Fact]
+    public void Run_InvalidPathCharacters_WithWorkspaceEnv_ReportsCannotReadFile()
+    {
+        // Path.Combine(workspace, path) throws ArgumentException when path has
+        // invalid characters; that must not escape as a low-level CLI error.
+        string path = "bad\0name.pbn";
+        string? previous = Environment.GetEnvironmentVariable("BUILD_WORKSPACE_DIRECTORY");
+        Environment.SetEnvironmentVariable(
+            "BUILD_WORKSPACE_DIRECTORY",
+            Path.GetTempPath());
+        try
+        {
+            var stdout = new StringWriter();
+            var stderr = new StringWriter();
+
+            int rc = DdTableForDealApp.Run(
+                ["dd_table_for_deal", path],
+                stdout,
+                stderr);
+
+            Assert.Equal(1, rc);
+            Assert.Contains("Cannot read file:", stderr.ToString());
+            Assert.DoesNotContain("ArgumentException", stderr.ToString());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("BUILD_WORKSPACE_DIRECTORY", previous);
+        }
+    }
 }
