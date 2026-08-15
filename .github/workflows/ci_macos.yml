@@ -55,7 +55,7 @@ jobs:
       # x86-64 and Windows covers Win64, so all three ABIs are exercised.
       # Pinned to 8.0.x to match what DDS_Core targets.
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "8.0.x"
 

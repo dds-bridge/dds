@@ -63,7 +63,7 @@ jobs:
       # tests and export_set_test are target_compatible_with-excluded here).
       # Pinned to 8.0.x to match what DDS_Core targets.
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "8.0.x"
 

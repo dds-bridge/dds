@@ -73,7 +73,7 @@ jobs:
       #    targets; the test project's RollForward only matters where no 8.0
       #    runtime exists, which is not the case here.
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with: 
           dotnet-version: "8.0.x"
         
