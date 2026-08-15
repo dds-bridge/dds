@@ -25,8 +25,10 @@ namespace
 
 auto write_temp_hand_list(const std::string& body) -> std::string
 {
-  const std::string path = "loop_par_test_hand.txt";
-  std::ofstream out(path);
+  // Bazel runfiles CWD can be read-only; write under TEST_TMPDIR via TempDir().
+  const std::string path =
+    std::string(::testing::TempDir()) + "loop_par_test_hand.txt";
+  std::ofstream out(path, std::ios::out | std::ios::trunc);
   out << "NUMBER 1 \n" << body;
   out.close();
   return path;
