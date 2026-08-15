@@ -42,6 +42,15 @@ function findDdsWebJsPath() {
     throw new Error("dds_web.js not found");
 }
 
+/** Reject if `promise` does not settle within `ms` (clears the timer either way). */
+function withTimeout(promise, ms, message) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function createMockDocument(initialValues = {}) {
     const store = new Map();
     const listeners = new Map();
@@ -503,6 +512,20 @@ test("page has no double-dummy button", () => {
     assert.doesNotMatch(css, /#double-dummy-it/);
 });
 
+test("withTimeout rejects when the promise never settles", async () => {
+    await assert.rejects(
+        () => withTimeout(new Promise(() => {}), 20, "timed out waiting"),
+        /timed out waiting/
+    );
+});
+
+test("withTimeout propagates rejection from the wrapped promise", async () => {
+    await assert.rejects(
+        () => withTimeout(Promise.reject(new Error("lead failed")), 1000, "timed out"),
+        /lead failed/
+    );
+});
+
 test("updateActionButtons finishes dd table before opening-lead refresh", async () => {
     // Arrange: a selected contract must not race CalcDDtable vs SolveBoard.
     const document = createMockDocument();
@@ -523,11 +546,15 @@ test("updateActionButtons finishes dd table before opening-lead refresh", async 
     await ctx.scheduleDealSolve();
     order.length = 0;
 
-    const leadsDone = new Promise((resolve) => {
+    const leadsDone = new Promise((resolve, reject) => {
         const refreshLeads = ctx.refreshOpeningLeadTricks;
         ctx.refreshOpeningLeadTricks = async () => {
-            await refreshLeads();
-            resolve();
+            try {
+                await refreshLeads();
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
         };
     });
 
@@ -538,7 +565,11 @@ test("updateActionButtons finishes dd table before opening-lead refresh", async 
             },
         },
     });
-    await leadsDone;
+    await withTimeout(
+        leadsDone,
+        1000,
+        "timed out waiting for refreshOpeningLeadTricks"
+    );
 
     // Assert: contract click runs DD then leads in one job.
     assert.deepEqual(order, ["dd-start", "dd-end", "leads"]);
