@@ -20,9 +20,10 @@ C++ sources: `utilities/src/dd_table_for_deal/`.
 ## Hand-list scripts
 
 ```bash
-bazelisk run //python/utilities:create_list_for_dtest -- -n 100 --seed 100 -o /tmp/list100.txt
+bazelisk run //python/utilities:create_list_for_dtest -- -n 42 --seed 42 -o /tmp/list42.txt
 ./utilities/src/regenerate_hand_lists.sh
 ./utilities/src/verify_lists.sh hands/list1.txt
 ```
 
 These rebuild and verify `hands/listN.txt` inputs for `dtest`.
+See [hands/README](../hands/README).
