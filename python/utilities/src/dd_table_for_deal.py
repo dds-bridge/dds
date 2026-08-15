@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Print the double-dummy table and par for a deal from PBN on the CLI or a file.
 
-Python counterpart to examples/dd_table_for_deal.cpp.
+Python counterpart to utilities/src/dd_table_for_deal/dd_table_for_deal.cpp.
 """
 
 from __future__ import annotations
@@ -270,16 +270,19 @@ def _normalize_par_body(body: str) -> tuple[str, str] | None:
 
     normalized: list[str] = []
     result = "="
+    prev_seats: str | None = None
     for i, piece in enumerate(pieces):
         parsed = _normalize_contract_piece(piece)
         if parsed is None:
             return None
         seats, contract, piece_result = parsed
-        if i == 0:
+        if i == 0 or seats != prev_seats:
             normalized.append(f"{seats} {contract}")
-            result = piece_result
+            if i == 0:
+                result = piece_result
         else:
             normalized.append(contract)
+        prev_seats = seats
     return ", ".join(normalized), result
 
 

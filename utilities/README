@@ -1,0 +1,29 @@
+# Utilities
+
+Command-line tools built on DDS (not API demos).
+
+## `dd_table_for_deal`
+
+Print the double-dummy table and par for a deal from the CLI or a PBN file.
+
+```bash
+bazelisk run //utilities:dd_table_for_deal -- hands/example.pbn
+bazelisk run //utilities:dd_table_for_deal -- --vul ns hands/example.pbn
+bazelisk run //utilities:dd_table_for_deal -- --limit 3 hands/multi_board.pbn
+bazelisk test //utilities:dd_table_for_deal_test
+```
+
+Python counterpart: `//python/utilities:dd_table_for_deal`.
+
+C++ sources: `utilities/src/dd_table_for_deal/`.
+
+## Hand-list scripts
+
+```bash
+bazelisk run //python/utilities:create_list_for_dtest -- -n 42 --seed 42 -o /tmp/list42.txt
+./utilities/src/regenerate_hand_lists.sh
+./utilities/src/verify_lists.sh hands/list1.txt
+```
+
+These rebuild and verify `hands/listN.txt` inputs for `dtest`.
+See [hands/README](../hands/README).
