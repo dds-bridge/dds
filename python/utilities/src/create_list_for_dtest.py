@@ -10,7 +10,7 @@ are possible but vanishingly unlikely.
 
 Example::
 
-  bazelisk run //hands:create_list_for_dtest -- -n 100 --seed 100 -o hands/list100.txt
+  bazelisk run //python/utilities:create_list_for_dtest -- -n 100 --seed 100 -o hands/list100.txt
 """
 
 from __future__ import annotations

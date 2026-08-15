@@ -3,8 +3,8 @@
 # Stops at the first dtest failure (non-zero exit or failure text on stdout).
 #
 # Usage:
-#   hands/verify_lists.sh hands/list1.txt hands/list2.txt
-#   hands/verify_lists.sh --dtest bazel-bin/library/tests/dtest hands/list1.txt
+#   utilities/src/verify_lists.sh hands/list1.txt hands/list2.txt
+#   utilities/src/verify_lists.sh --dtest bazel-bin/library/tests/dtest hands/list1.txt
 set -euo pipefail
 
 usage() {
@@ -65,7 +65,7 @@ done
 ((${#FILES[@]} > 0)) || usage
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 USE_BAZELISK=false
 if [[ -z "$DTEST" ]]; then

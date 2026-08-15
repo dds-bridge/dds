@@ -4,12 +4,13 @@
 # Convention: listNNN.txt uses --seed NNN (see create_list_for_dtest docstring).
 #
 # Usage:
-#   ./hands/regenerate_hand_lists.sh
-#   OUT_DIR=/tmp/my-lists ./hands/regenerate_hand_lists.sh
+#   ./utilities/src/regenerate_hand_lists.sh
+#   OUT_DIR=/tmp/my-lists ./utilities/src/regenerate_hand_lists.sh
 set -euo pipefail
 
-HANDS_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HANDS_DIR/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+HANDS_DIR="$ROOT/hands"
 cd "$ROOT"
 
 OUT_DIR="${OUT_DIR:-/tmp/dds-hand-lists-$(date +%Y%m%d-%H%M%S)}"
@@ -38,8 +39,8 @@ fi
 
 echo "Counts to generate: ${counts[*]}"
 
-bazelisk build //hands:create_list_for_dtest
-GEN="$ROOT/bazel-bin/hands/create_list_for_dtest"
+bazelisk build //python/utilities:create_list_for_dtest
+GEN="$ROOT/bazel-bin/python/utilities/create_list_for_dtest"
 
 for n in "${counts[@]}"; do
   out="$OUT_DIR/list${n}.txt"

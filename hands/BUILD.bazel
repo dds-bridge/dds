@@ -1,36 +1,8 @@
 # Hand list files used by dtest and WASM system tests.
-load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
-
 exports_files(
     [
         "list1.txt",
         "list2.txt",
     ],
     visibility = ["//visibility:public"],
-)
-
-py_library(
-    name = "create_list_for_dtest_lib",
-    srcs = ["create_list_for_dtest.py"],
-    imports = ["."],
-    visibility = ["//visibility:private"],
-    deps = ["//python:dds3_lib"],
-)
-
-py_binary(
-    name = "create_list_for_dtest",
-    srcs = ["create_list_for_dtest.py"],
-    main = "create_list_for_dtest.py",
-    visibility = ["//visibility:public"],
-    deps = [":create_list_for_dtest_lib"],
-)
-
-py_test(
-    name = "create_list_for_dtest_test",
-    size = "small",
-    srcs = ["create_list_for_dtest_test.py"],
-    deps = [
-        ":create_list_for_dtest_lib",
-        "//python:dds3_lib",
-    ],
 )

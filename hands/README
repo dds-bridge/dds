@@ -2,6 +2,14 @@ The text files in this directory are input files for the `dtest` program.
 
 For detailed information about the `dtest` program and the format of these input files, please see the [dtest documentation](../library/tests/README.md).
 
+Related utilities (outside this directory):
+
+- Generate a new list: `bazelisk run //python/utilities:create_list_for_dtest -- -n 42 --seed 42 -o hands/list42.txt`
+- Regenerate every `listN.txt` size found in the hands directory: `./utilities/src/regenerate_hand_lists.sh`
+- Verify lists with every dtest solver mode: `./utilities/src/verify_lists.sh hands/list*.txt`
+
+See also [python/utilities/README.md](../python/utilities/README.md) and [utilities/README](../utilities/README).
+
 For the curious, the hands are as below.
 
 masterDD.txt

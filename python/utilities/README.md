@@ -47,10 +47,22 @@ bazelisk run //python/utilities:benchmark
 python python/utilities/src/benchmark.py --build -- -n 8
 ```
 
+## `create_list_for_dtest`
+
+Generate random `dtest` hand-list files (conventionally `listNNN.txt` with `--seed NNN`).
+
+```bash
+bazelisk run //python/utilities:create_list_for_dtest -- -n 100 --seed 100 -o hands/list100.txt
+bazelisk test //python/utilities:create_list_for_dtest_test
+```
+
+See also `utilities/src/regenerate_hand_lists.sh` and `utilities/src/verify_lists.sh`.
+
 ## Tests
 
 ```bash
 bazelisk test //python/utilities:benchmark_test
 bazelisk test //python/utilities:convert_pbn_test
 bazelisk test //python/utilities:dd_table_for_deal_par_test
+bazelisk test //python/utilities:create_list_for_dtest_test
 ```

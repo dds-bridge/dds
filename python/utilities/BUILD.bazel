@@ -55,3 +55,30 @@ py_test(
     srcs = ["tests/test_dd_table_for_deal_par.py"],
     deps = [":dd_table_for_deal_lib"],
 )
+
+py_library(
+    name = "create_list_for_dtest_lib",
+    srcs = ["src/create_list_for_dtest.py"],
+    imports = ["src"],
+    visibility = ["//visibility:private"],
+    deps = ["//python:dds3_lib"],
+)
+
+py_binary(
+    name = "create_list_for_dtest",
+    srcs = ["src/create_list_for_dtest.py"],
+    main = "src/create_list_for_dtest.py",
+    visibility = ["//visibility:public"],
+    deps = [":create_list_for_dtest_lib"],
+)
+
+py_test(
+    name = "create_list_for_dtest_test",
+    size = "small",
+    main = "tests/create_list_for_dtest_test.py",
+    srcs = ["tests/create_list_for_dtest_test.py"],
+    deps = [
+        ":create_list_for_dtest_lib",
+        "//python:dds3_lib",
+    ],
+)
