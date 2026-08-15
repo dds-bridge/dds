@@ -4,7 +4,7 @@
 #
 #   bazelisk build //jni:dds_shared
 #   export DDS_LIBRARY_PATH="$(bazelisk info bazel-bin)/jni/libdds.dylib"  # .so / dds.dll
-#   ./dotnet/DdTableForDeal/e2e.sh
+#   bash dotnet/DdTableForDeal/e2e.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
