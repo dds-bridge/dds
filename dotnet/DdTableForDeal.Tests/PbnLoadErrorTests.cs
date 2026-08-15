@@ -79,4 +79,23 @@ public class PbnLoadErrorTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void Run_InvalidPathCharacters_ReportsCannotReadFile()
+    {
+        // Null in the path throws ArgumentException from File.OpenRead on every OS.
+        string path = "bad\0name.pbn";
+        Assert.True(DdTableForDealLib.LooksLikePath(path));
+
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+
+        int rc = DdTableForDealApp.Run(
+            ["dd_table_for_deal", path],
+            stdout,
+            stderr);
+
+        Assert.Equal(1, rc);
+        Assert.Contains("Cannot read file:", stderr.ToString());
+    }
 }

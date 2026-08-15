@@ -354,4 +354,16 @@ public class ConvertPbnTests
         // North's hearts: QJT
         Assert.Equal(0x1000u | 0x0800u | 0x0400u, remain[0, 1]);
     }
+
+    [Fact]
+    public void StopsScanningAtPbnDealMax()
+    {
+        // Ace at index PbnDealMax is past the scan limit (bp < PbnDealMax).
+        string deal = "N:" + new string('.', DdTableForDealLib.PbnDealMax - 2) + "A";
+        Assert.Equal(DdTableForDealLib.PbnDealMax + 1, deal.Length);
+        Assert.Equal('A', deal[DdTableForDealLib.PbnDealMax]);
+
+        var remain = DdTableForDealLib.ConvertPbn(deal);
+        Assert.Equal(0u, remain[0, 0]);
+    }
 }

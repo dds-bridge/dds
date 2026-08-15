@@ -308,7 +308,7 @@ public static partial class DdTableForDealLib
         int handRelFirst = 0;
         int suitInHand = 0;
 
-        while (bp < 80 && bp < pbnDeal.Length)
+        while (bp < PbnDealMax && bp < pbnDeal.Length)
         {
             char ch = pbnDeal[bp];
             int card = IsCard(ch);

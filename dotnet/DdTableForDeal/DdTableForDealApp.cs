@@ -188,7 +188,10 @@ public static class DdTableForDealApp
             text = ReadPbnStream(reader);
             return true;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException
+                                       or UnauthorizedAccessException
+                                       or ArgumentException
+                                       or NotSupportedException)
         {
             return false;
         }
