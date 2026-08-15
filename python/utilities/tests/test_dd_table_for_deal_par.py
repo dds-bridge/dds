@@ -264,14 +264,25 @@ class FormatParLineTest(unittest.TestCase):
             "Par: EW 3Dx, 3Cx -1 -100",
         )
 
-    def test_omits_repeated_declaring_side_when_seats_differ(self) -> None:
+    def test_includes_declaring_side_when_seats_differ(self) -> None:
+        # thomas1-style: W hearts / E clubs sacrifices — both seats matter.
+        par_results = {
+            "par_score": ["NS 100", "EW -100"],
+            "par_contracts_string": ["NS:W 3Hx,E 3Cx", "EW:W 3Hx,E 3Cx"],
+        }
+        self.assertEqual(
+            _format_par_line(par_results, vulnerable=0),
+            "Par: W 3Hx, E 3Cx -1 -100",
+        )
+
+    def test_includes_seat_when_second_contract_narrows_declaring_side(self) -> None:
         par_results = {
             "par_score": ["NS 100", "EW -100"],
             "par_contracts_string": ["NS:EW 4Hx,E 5Cx", "EW:EW 4Hx,E 5Cx"],
         }
         self.assertEqual(
             _format_par_line(par_results, vulnerable=0),
-            "Par: EW 4Hx, 5Cx -1 -100",
+            "Par: EW 4Hx, E 5Cx -1 -100",
         )
 
     def test_passed_out(self) -> None:
