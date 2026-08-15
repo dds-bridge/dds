@@ -54,7 +54,7 @@ jobs:
 
       # Run all tests (including Python) — no retry so real test failures surface quickly
       - name: Run all tests
-        run: bazelisk test --config=opt --verbose_failures //...
+        run: bazelisk test --config=opt --verbose_failures --test_output=errors //...
 
       # Upload test logs
       - name: Upload test logs - Windows

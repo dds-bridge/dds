@@ -373,6 +373,22 @@ class TestWindowsCiUsesOpt(unittest.TestCase):
             "expected Windows CI test to use --config=opt",
         )
 
+    def test_windows_ci_test_prints_failing_output(self) -> None:
+        """Python test.log is not in the Windows bazel-testlogs artifact."""
+        text = (
+            _repo_root() / ".github" / "workflows" / "ci_windows.yml"
+        ).read_text(encoding="utf-8")
+        test_lines = [
+            line.split("#", 1)[0]
+            for line in text.splitlines()
+            if re.search(r"bazelisk\s+test\b", line.split("#", 1)[0])
+        ]
+        self.assertTrue(
+            any("--test_output=errors" in line for line in test_lines),
+            "expected Windows CI test to use --test_output=errors so "
+            "failing unittest output appears in the job log",
+        )
+
 
 class TestWindowsCppoptsConfigExportsVisibility(unittest.TestCase):
     def test_exports_files_visibility_matches_filegroup(self) -> None:

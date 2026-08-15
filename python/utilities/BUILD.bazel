@@ -34,10 +34,10 @@ py_test(
     main = "tests/benchmark_test.py",
     srcs = ["tests/benchmark_test.py"],
     deps = [":benchmark_lib"],
-    target_compatible_with = select({
-        "//:build_windows": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
+    # Shells out to git. env_inherit keeps Git for Windows on PATH; local skips
+    # remote execution/caching and runs the test on the runner machine.
+    env_inherit = ["PATH"],
+    tags = ["local"],
 )
 
 py_test(
