@@ -519,8 +519,17 @@ test("updateActionButtons finishes dd table before opening-lead refresh", async 
     };
 
     ctx.fillFormWithPartScoreTestData();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Drain fillForm's auto-solve so a late dd-end cannot land after we clear.
+    await ctx.scheduleDealSolve();
     order.length = 0;
+
+    const leadsDone = new Promise((resolve) => {
+        const refreshLeads = ctx.refreshOpeningLeadTricks;
+        ctx.refreshOpeningLeadTricks = async () => {
+            await refreshLeads();
+            resolve();
+        };
+    });
 
     ctx.handleResultTableClick({
         target: {
@@ -529,9 +538,9 @@ test("updateActionButtons finishes dd table before opening-lead refresh", async 
             },
         },
     });
-    await new Promise((resolve) => setTimeout(resolve, 80));
+    await leadsDone;
 
-    // Assert: contract click runs DD (skip/no-op ok) then leads in one job.
+    // Assert: contract click runs DD then leads in one job.
     assert.deepEqual(order, ["dd-start", "dd-end", "leads"]);
 });
 
