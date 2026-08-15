@@ -33,11 +33,8 @@ static void CreateTestWinRanks(unsigned short win_ranks[DDS_SUITS]) {
     win_ranks[3] = 0x8888; // Clubs
 }
 
-// Regression: reset_memory() after return_all_memory() must be inert.
-// return_all_memory() frees pw_/pn_/pl_ and clears tt_in_use_; without the
-// guard in TransTableS::reset_memory(), init_tt() dereferences the freed pools
-// (pw_[0]) and segfaults. TransTableL::reset_memory() already guards the
-// equivalent case with `pool_ == nullptr`.
+// Test that verifies that calling reset_memory() after return_all_memory()
+// is inert and does not cause a crash.
 TEST(TransTableSMemoryTest, ResetAfterReturnAllMemoryIsInert) {
     TransTableS tt;
 
