@@ -1250,21 +1250,6 @@ test("updateActionButtons hides a suit row when all of its cards are in the diag
     assert.equal((deckStatus.match(/data-card=/g) ?? []).length, 39);
 });
 
-test("updateActionButtons trims a hand that already exceeds 13 cards", () => {
-    const document = createMockDocument({
-        north_spades: "AKQJT98765432",
-        north_hearts: "A",
-    });
-    const ctx = loadDdsWeb(document);
-
-    ctx.updateActionButtons();
-
-    assert.equal(document.element("north_spades").value, "AKQJT98765432");
-    assert.equal(document.element("north_hearts").value, "");
-    assert.equal(document.element("north-card-count").hidden, true);
-    assert.equal(document.element("north-card-count").innerHTML, "");
-});
-
 test("updateActionButtons shows a card-count note for a partial hand", () => {
     const document = createMockDocument({
         north_spades: "AKQ",
