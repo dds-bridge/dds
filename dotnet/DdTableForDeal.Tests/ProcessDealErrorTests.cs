@@ -24,4 +24,18 @@ public class ProcessDealErrorTests
 
         Assert.Equal("Unexpected error: simulated stdout failure", message);
     }
+
+    [Theory]
+    [InlineData(typeof(DllNotFoundException), true)]
+    [InlineData(typeof(EntryPointNotFoundException), true)]
+    [InlineData(typeof(BadImageFormatException), true)]
+    [InlineData(typeof(InvalidOperationException), false)]
+    [InlineData(typeof(IOException), false)]
+    public void IsNativeLibraryLoadFailure_ClassifiesLoaderVsOther(
+        Type exceptionType, bool expected)
+    {
+        Exception ex = (Exception)Activator.CreateInstance(exceptionType, "simulated")!;
+
+        Assert.Equal(expected, DdTableForDealApp.IsNativeLibraryLoadFailure(ex));
+    }
 }

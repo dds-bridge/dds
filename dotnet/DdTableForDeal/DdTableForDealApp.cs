@@ -71,8 +71,7 @@ public static class DdTableForDealApp
                 }
             }
         }
-        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException
-                                       or BadImageFormatException)
+        catch (Exception ex) when (IsNativeLibraryLoadFailure(ex))
         {
             stderr.WriteLine(
                 "Failed to load native DDS library. Build //jni:dds_shared and set "
@@ -127,10 +126,22 @@ public static class DdTableForDealApp
         }
         catch (Exception ex)
         {
+            // Let loader failures reach Run's remediation message instead of
+            // being misreported as a per-deal unexpected error.
+            if (IsNativeLibraryLoadFailure(ex))
+                throw;
+
             stderr.WriteLine(FormatProcessDealFailure(ex));
             return false;
         }
     }
+
+    /// <summary>
+    /// True for exceptions that mean the native DDS shared library failed to load
+    /// or resolve entry points (handled by <see cref="Run"/> with setup guidance).
+    /// </summary>
+    public static bool IsNativeLibraryLoadFailure(Exception ex) =>
+        ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException;
 
     /// <summary>
     /// Maps ProcessDeal exceptions to CLI stderr lines: DDS return-code failures

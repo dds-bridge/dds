@@ -50,7 +50,8 @@ run_and_check() {
   echo "==> ${label}"
 
   local err_file out rc
-  err_file="$(mktemp)"
+  # BSD mktemp (macOS) requires a template; GNU mktemp accepts one too.
+  err_file="$(mktemp "${TMPDIR:-/tmp}/dd_table_for_deal.XXXXXX")"
   set +e
   out="$(dotnet run --project "$PROJECT" -- "$@" 2>"$err_file")"
   rc=$?
