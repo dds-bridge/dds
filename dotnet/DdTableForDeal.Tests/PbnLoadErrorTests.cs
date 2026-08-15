@@ -1,7 +1,7 @@
 namespace DdTableForDeal.Tests;
 
 /// <summary>
-/// Error-path coverage for CLI PBN loading (Copilot review on PR #321).
+/// Error-path coverage for CLI PBN loading.
 /// </summary>
 public class PbnLoadErrorTests
 {

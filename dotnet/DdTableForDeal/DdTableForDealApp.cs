@@ -127,10 +127,19 @@ public static class DdTableForDealApp
         }
         catch (Exception ex)
         {
-            stderr.WriteLine($"DDS error: {ex.Message}");
+            stderr.WriteLine(FormatProcessDealFailure(ex));
             return false;
         }
     }
+
+    /// <summary>
+    /// Maps ProcessDeal exceptions to CLI stderr lines: DDS return-code failures
+    /// surface as <c>InvalidOperationException</c>; everything else is unexpected.
+    /// </summary>
+    public static string FormatProcessDealFailure(Exception ex) =>
+        ex is InvalidOperationException
+            ? $"DDS error: {ex.Message}"
+            : $"Unexpected error: {ex.Message}";
 
     private static IReadOnlyList<string> LoadDeals(
         string arg, TextReader? stdin)
