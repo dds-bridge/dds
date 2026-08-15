@@ -1773,6 +1773,62 @@ function suitHoldingWouldExceedHandLimit(element) {
     return otherCount + sanitizeSuitHolding(element.value).length > 13;
 }
 
+function suitHoldingPipsAreSubset(candidate, allowed) {
+    const allowedSet = {};
+
+    for (const pip of allowed) {
+        allowedSet[pip] = true;
+    }
+
+    for (const pip of candidate) {
+        if (!allowedSet[pip]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+let lastSuitHoldings = {};
+
+function rememberedSuitHolding(elementId) {
+    if (!elementId || !Object.prototype.hasOwnProperty.call(lastSuitHoldings, elementId)) {
+        return "";
+    }
+
+    return lastSuitHoldings[elementId];
+}
+
+function rememberSuitHoldings() {
+    for (const element of hand_elements()) {
+        if (element && element.id) {
+            lastSuitHoldings[element.id] = sanitizeSuitHolding(element.value);
+        }
+    }
+}
+
+function suitHoldingRejectsFullHandEdit(element) {
+    const parsed = parseHandInputId(element && element.id);
+
+    if (!parsed) {
+        return false;
+    }
+
+    const previousHolding = rememberedSuitHolding(element.id);
+    const previousTotal =
+        sameHandCardCountExcludingSuit(parsed.direction, parsed.suit) +
+        previousHolding.length;
+
+    if (previousTotal < 13) {
+        return false;
+    }
+
+    const proposed = sanitizeSuitHolding(element.value);
+
+    return proposed.length > previousHolding.length ||
+        !suitHoldingPipsAreSubset(proposed, previousHolding);
+}
+
 let illegalInputAudioContext = null;
 
 function playIllegalInputBeep() {
@@ -1827,6 +1883,10 @@ function handleHandSuitInput(event) {
         if (suitHoldingWouldExceedHandLimit(input)) {
             beep = true;
         }
+
+        if (suitHoldingRejectsFullHandEdit(input)) {
+            beep = true;
+        }
     }
 
     if (beep) {
@@ -1861,8 +1921,28 @@ function transferTypedCardsFromOtherHands(activeElement) {
         return;
     }
 
-    const room = Math.max(0, 13 - sameHandCardCountExcludingSuit(parsed.direction, parsed.suit));
-    const kept = sanitizeSuitHolding(activeElement.value, null, null, room);
+    const otherCount = sameHandCardCountExcludingSuit(parsed.direction, parsed.suit);
+    const previousHolding = rememberedSuitHolding(activeElement.id);
+    const previousTotal = otherCount + previousHolding.length;
+    const proposed = sanitizeSuitHolding(activeElement.value);
+    let kept;
+
+    if (previousTotal >= 13) {
+        // Full hand: removals only — never add or swap pips via high-rank clamp.
+        if (
+            proposed.length > previousHolding.length ||
+            !suitHoldingPipsAreSubset(proposed, previousHolding)
+        ) {
+            kept = previousHolding;
+        } else {
+            kept = proposed;
+        }
+    } else {
+        const room = Math.max(0, 13 - otherCount);
+        kept = sanitizeSuitHolding(activeElement.value, null, null, room);
+    }
+
+    activeElement.value = kept;
 
     for (const pip of kept) {
         const card = new Card(parsed.suit, pip);
@@ -1887,16 +1967,12 @@ function sanitizeHandSuitInputs(activeElement) {
         ? elements.filter((element) => element !== activeElement).concat([activeElement])
         : elements;
     const claimed = {};
-    const handCounts = {};
 
     for (const element of ordered) {
         const parsed = parseHandInputId(element && element.id);
         const suit = parsed && parsed.suit;
-        const direction = parsed && parsed.direction;
-        const used = direction ? (handCounts[direction] || 0) : 0;
-        const room = direction ? Math.max(0, 13 - used) : undefined;
         const oldValue = element.value || "";
-        const sanitized = sanitizeSuitHolding(oldValue, claimed, suit, room);
+        const sanitized = sanitizeSuitHolding(oldValue, claimed, suit);
 
         if (sanitized !== oldValue) {
             const caret = typeof element.selectionStart === "number"
@@ -1938,11 +2014,9 @@ function sanitizeHandSuitInputs(activeElement) {
                 claimed[new Card(suit, pip).key()] = true;
             }
         }
-
-        if (direction) {
-            handCounts[direction] = used + sanitized.length;
-        }
     }
+
+    rememberSuitHoldings();
 }
 
 function updateActionButtons(activeElement) {

@@ -928,6 +928,68 @@ test("handleHandSuitInput does not steal when the typed hand is already full", (
     assert.equal(document.element("east_hearts").value, "A");
 });
 
+test("handleHandSuitInput rejects adding a card that would replace another on a full hand", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765",
+        north_hearts: "QJT",
+    });
+    const ctx = loadDdsWeb(document);
+    ctx.updateActionButtons();
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const hearts = document.element("north_hearts");
+
+    // At 13 cards, typing A must not displace T (high-rank clamp).
+    hearts.value = "QJTA";
+    ctx.handleHandSuitInput({ target: hearts });
+
+    assert.equal(beeps, 1);
+    assert.equal(hearts.value, "QJT");
+    assert.equal(document.element("north_spades").value, "AKQJT98765");
+});
+
+test("handleHandSuitInput rejects switching pips on a full hand without changing count", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765",
+        north_hearts: "QJT",
+    });
+    const ctx = loadDdsWeb(document);
+    ctx.updateActionButtons();
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const hearts = document.element("north_hearts");
+
+    hearts.value = "AJT";
+    ctx.handleHandSuitInput({ target: hearts });
+
+    assert.equal(beeps, 1);
+    assert.equal(hearts.value, "QJT");
+});
+
+test("handleHandSuitInput allows deleting a card from a full hand", () => {
+    const document = createMockDocument({
+        north_spades: "AKQJT98765",
+        north_hearts: "QJT",
+    });
+    const ctx = loadDdsWeb(document);
+    ctx.updateActionButtons();
+    let beeps = 0;
+    ctx.playIllegalInputBeep = () => {
+        beeps += 1;
+    };
+    const hearts = document.element("north_hearts");
+
+    hearts.value = "QJ";
+    ctx.handleHandSuitInput({ target: hearts });
+
+    assert.equal(beeps, 0);
+    assert.equal(hearts.value, "QJ");
+});
+
 test("handleHandSuitInput accepts typing that fills a hand to exactly 13 cards", () => {
     const document = createMockDocument({
         north_spades: "AKQJT9876543",
