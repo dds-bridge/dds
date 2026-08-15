@@ -8,6 +8,9 @@
 # Ignore Cursor or VS Code workspace files
 *.code-workspace
 
+# Ignore Cursor settings - For now, they are developer-specific.
+.cursor/*
+
 # Ignore Visual Studio directory and files
 .vs
 #*/.vs/*
