@@ -17,10 +17,20 @@ Run an example:
     bazelisk run //python/utilities:dd_table_for_deal -- --vul ns hands/example.pbn
     bazelisk run //python/utilities:dd_table_for_deal -- --limit 3 hands/multi_board.pbn
 
+.NET `dd_table_for_deal` (see `dotnet/DdTableForDeal/`):
+    bazelisk build //jni:dds_shared
+    export DDS_LIBRARY_PATH="$(bazelisk info bazel-bin)/jni/libdds.dylib"   # .so on Linux, dds.dll on Windows
+    dotnet run --project dotnet/DdTableForDeal/ -- hands/example.pbn
+    dotnet run --project dotnet/DdTableForDeal/ -- --vul ns hands/example.pbn
+    dotnet run --project dotnet/DdTableForDeal/ -- --limit 3 hands/multi_board.pbn
+    dotnet test dotnet/DdTableForDeal.Tests/
+    ./dotnet/DdTableForDeal/e2e.sh   # requires DDS_LIBRARY_PATH; Windows: e2e.ps1
+
 Available examples:
 - analyse_all_plays_bin, analyse_all_plays_pbn
 - analyse_play_bin, analyse_play_pbn
 - calc_all_tables, calc_all_tables_pbn
 - calc_dd_table, calc_dd_table_pbn
+- dd_table_for_deal (C++; Python: //python/examples:dd_table_for_deal; .NET: dotnet/DdTableForDeal)
 - dealer_par, par
 - solve_all_boards, solve_board, solve_board_pbn

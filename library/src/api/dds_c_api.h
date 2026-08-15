@@ -54,6 +54,33 @@ DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
                              struct DdTableResults* results,
                              struct ParResults* par);
 
+/* Creation with explicit transposition-table configuration. The C++ SolverConfig
+   is decomposed into scalars rather than mirrored as a struct: passing a struct
+   by value is exactly the ABI question this shim exists to avoid, and a mirror
+   type would be a second definition to keep in sync. tt_kind: 0 = Small,
+   1 = Large (matching enum class TTKind). Returns NULL on failure. */
+DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext(int tt_kind,
+                                                      int def_mb, int max_mb);
+
+/* Compute the double dummy table from a PBN-format deal. */
+DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
+                                      const struct DdTableDealPBN* deal,
+                                      struct DdTableResults* results);
+
+/* Transposition-table configuration. */
+DLLEXPORT void dds_c_configure_tt(DDS_C_SOLVER_CTX ctx, int tt_kind,
+                                  int def_mb, int max_mb);
+DLLEXPORT void dds_c_resize_tt(DDS_C_SOLVER_CTX ctx, int def_mb, int max_mb);
+DLLEXPORT void dds_c_clear_tt(DDS_C_SOLVER_CTX ctx);
+
+/* Per-solve state resets. */
+DLLEXPORT void dds_c_reset_for_solve(DDS_C_SOLVER_CTX ctx);
+DLLEXPORT void dds_c_reset_best_moves_lite(DDS_C_SOLVER_CTX ctx);
+
+/* Logging passthrough. msg is a NUL-terminated UTF-8 string. */
+DLLEXPORT void dds_c_log_append(DDS_C_SOLVER_CTX ctx, const char* msg);
+DLLEXPORT void dds_c_log_clear(DDS_C_SOLVER_CTX ctx);
+
 #ifdef __cplusplus
 }
 #endif

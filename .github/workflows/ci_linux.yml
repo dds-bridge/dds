@@ -68,7 +68,34 @@ jobs:
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
 
-      # 🔟 Upload test logs
+      # 🔟 .NET binding — build and test the managed wrapper against the shared
+      #    library just built. Pinned to 8.0.x because that is what DDS_Core
+      #    targets; the test project's RollForward only matters where no 8.0
+      #    runtime exists, which is not the case here.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with: 
+          dotnet-version: "8.0.x"
+        
+      # bazel-bin is a configuration-dependent convenience symlink, so ask Bazel
+      # for it rather than hardcoding a path that a different --config would move.
+      - name: Test .NET binding
+        run: |
+          bazelisk build --verbose_failures //jni:dds_shared
+          export DDS_LIBRARY_PATH="$(bazelisk info bazel-bin)/jni/libdds.so"
+          test -f "$DDS_LIBRARY_PATH" || { echo "native library not found at $DDS_LIBRARY_PATH"; exit 1; }
+          # Both configurations: ThrowIfError is unconditional, so a regression to
+          # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
+          dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
+          dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
+          # DdTableForDeal unit helpers (no native library required).
+          dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
+          dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
+          # CLI e2e: bash drives `dotnet run` against the native library.
+          chmod +x dotnet/DdTableForDeal/e2e.sh
+          ./dotnet/DdTableForDeal/e2e.sh
+
+      # 11 Upload test logs
       - name: Upload test logs - Linux
         if: always()
         uses: actions/upload-artifact@v6

@@ -1,7 +1,7 @@
 ---
 capability: jni-ffm-binding
 owners: [jni]
-last-updated: 2026-07-18
+last-updated: 2026-07-19
 ---
 
 # JVM Binding (Foreign Function & Memory)
@@ -30,7 +30,9 @@ shim from [dds-public-api](dds-public-api.md), not the C++ API.
   links every internal sub-library statically so `System.loadLibrary("dds")`
   needs exactly one file. Per-OS name: `dds.dll` / `libdds.dylib` / `libdds.so`.
   On Unix the export set is the stable C ABI (`dll.h` + `dds_c_*`); on Windows
-  it is broader — see the next bullet.
+  it is broader — see the next bullet. Despite living under `//jni`, this target
+  is the shared native artifact for the .NET binding too
+  ([dotnet-binding](dotnet-binding.md)).
 - **The exported ABI is pinned by checked-in export lists on Unix.** Linux links
   with `version_script.lds` (`-Wl,--version-script`), macOS with
   `exported_symbols.lds` (`-Wl,-exported_symbols_list`). Those `.lds` files are
@@ -40,7 +42,10 @@ shim from [dds-public-api](dds-public-api.md), not the C++ API.
   parser is unit-tested by `gen_export_lists_test`. **Windows has no `.lds`
   branch:** the DLL exports whatever is marked `DLLEXPORT`, which is a
   **superset** of the Unix list (it also includes the modern `dds_*` context API
-  from `dds_api.hpp`). See [dds-public-api](dds-public-api.md).
+  from `dds_api.hpp`). No shipped binding relies on that surplus any more: the
+  shim now covers the whole modern surface, so the JVM and .NET bindings bind
+  the same pinned set on every platform. See
+  [dds-public-api](dds-public-api.md) and [dotnet-binding](dotnet-binding.md).
 - **Bindings are hand-written, not jextract-generated.** `//jni:dds_ffm`
   (`java_library`, `java/org/dds/ffm/Dds.java`) declares the struct
   `MemoryLayout`s and `Linker` downcall handles for the `dds_c_*` shim plus

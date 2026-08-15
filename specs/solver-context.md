@@ -1,7 +1,7 @@
 ---
 capability: solver-context
 owners: [solver_context]
-last-updated: 2026-07-18
+last-updated: 2026-07-20
 ---
 
 # Solver Context
@@ -48,19 +48,19 @@ the opaque handle. See [dds-public-api](dds-public-api.md).
   `reset_for_solve()` clears a subset of search state and resets TT memory
   (`ResetReason::FreeMemory`) while preserving the allocation for reuse;
   `reset_best_moves_lite()` clears only best-move ranks (hot per-iteration path);
-  `clear_tt()` calls `return_all_memory()` on the existing TT object;
-  `dispose_trans_table()` destroys the TT immediately.
-- **`clear_tt()` does not leave a reusable table.** It keeps the `unique_ptr`
-  alive but frees the table's storage, and nothing re-runs `make_tt()`:
-  `SearchContext::trans_table()` returns early whenever `tt_` is non-null, and
-  `TransTable::init()` only fills aggregate lookup arrays — it does not
-  reallocate. Reusing the context after `clear_tt()` without
-  `dispose_trans_table()` (or recreating the context) is **unsafe**: the next
-  `lookup`/`add` can touch freed memory. Do not treat this as a quiet "dead
-  cache" — `TransTableS` does not gate `lookup`/`add` on `tt_in_use_`, and
-  `TransTableL::return_all_memory()` does not put the table into a reliably
-  inert state. Use `dispose_trans_table()` when the next solve should get a
-  fresh table. No test guards this today.
+  `clear_tt()` disposes the TT instance; `dispose_trans_table()` destroys the
+  TT immediately.
+- **`clear_tt()` leaves the context reusable.** It disposes the TT instance
+  rather than calling `return_all_memory()` on it, so `tt_` becomes null and
+  the next `SearchContext::trans_table()` rebuilds an empty table lazily. The
+  configured kind and memory limits survive, because they live in
+  `SolverContext::cfg_` and not in the TT instance. Calling `return_all_memory()`
+  while keeping the object was the earlier behaviour and was **unsafe**: it left
+  a husk whose pool pointers dangled, which `trans_table()` handed straight back
+  because it only checks whether `tt_` is non-null — the next `lookup`/`add`
+  read freed memory. `clear_tt()` and `dispose_trans_table()` now differ only in
+  their log/stats trace. Guarded by `//library/tests:dds_c_api_test`
+  (`DdsCApiTtConfiguration.ClearTtThenSolveOnDefaultTt`).
 - **Hot-path facades are value-typed and inline-friendly, with different holds.**
   `MoveGenContext` holds a raw `ThreadData*` so `move_gen()` can return a
   value-typed facade without an atomic `shared_ptr` bump on every call.

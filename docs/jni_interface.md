@@ -72,12 +72,16 @@ and ctypes can all bind to:
 
 - The solver handle is opaque: `typedef void* DDS_C_SOLVER_CTX`.
 - Every struct is passed by pointer; no non-POD C++ type crosses the boundary.
+  `SolverConfig` is decomposed into scalar arguments and `TTKind` crosses as an
+  `int`, so nothing is passed by value either.
 
-Shim entry points: `dds_c_create_solvercontext_default`,
-`dds_c_destroy_solvercontext`, `dds_c_solve_board`, `dds_c_calc_dd_table`,
-`dds_c_calc_par`. The flat legacy C API from `dll.h` (`SolveBoard`,
-`CalcDDtable`, `GetDDSInfo`, `ErrorMessage`, …) is exported unchanged and is
-also callable from FFM.
+The shim covers the modern API's full surface: context lifecycle (default and
+config-based creation, destroy), `dds_c_solve_board`, `dds_c_calc_dd_table` and
+its `_pbn` twin, `dds_c_calc_par`, transposition-table configure/resize/clear,
+both resets, and the logging passthroughs. The Java bindings here use a subset;
+the .NET binding uses all of it ([dotnet_interface.md](dotnet_interface.md)).
+The flat legacy C API from `dll.h` (`SolveBoard`, `CalcDDtable`, `GetDDSInfo`,
+`ErrorMessage`, …) is exported unchanged and is also callable from FFM.
 
 ## Using the FFM bindings
 

@@ -15,6 +15,7 @@ filegroup(
             "args_test.cpp",  # Uses GoogleTest, compiled separately
             "report_board_timings_test.cpp",  # Uses GoogleTest, compiled separately
             "parse_par_test.cpp",  # Uses GoogleTest, compiled separately
+            "dds_c_api_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -72,6 +73,30 @@ cc_test(
     local_defines = DDS_LOCAL_DEFINES,
     deps = [
         "//library/src:dds",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Exercises the pure-C shim through its own ABI, including the null guards and
+# catch-all wrappers that exist only at that boundary and would be bypassed by
+# calling the reference-taking dds_* functions directly.
+#
+# //library/src:dds is listed explicitly for readability; //library/src/api:dds_c_api
+# already depends on it. The test needs no static-memory initialization:
+# SolverContext(SolverConfig) allocates its own ThreadData, so every entry point
+# here is driven from context-owned state rather than InitializeStaticMemory().
+# A test that does need it should call InitializeStaticMemory() in a fixture, as
+# library/tests/system/context_tt_facade_test.cpp does.
+cc_test(
+    name = "dds_c_api_test",
+    srcs = ["dds_c_api_test.cpp"],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:dds_c_api",
         "@googletest//:gtest_main",
     ],
 )
