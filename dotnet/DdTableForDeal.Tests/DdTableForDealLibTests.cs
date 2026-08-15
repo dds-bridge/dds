@@ -310,3 +310,48 @@ public class FormatPbnHandTests
         Assert.EndsWith("\n\n", text);
     }
 }
+
+public class ConvertPbnTests
+{
+    [Theory]
+    [InlineData("")]
+    [InlineData("N")]
+    [InlineData("N:")]
+    [InlineData("12")]
+    [InlineData("abc")]
+    public void ShortOrMalformedDealStringsDoNotRaise(string deal)
+    {
+        var remain = DdTableForDealLib.ConvertPbn(deal);
+        Assert.Equal(4, remain.GetLength(0));
+        Assert.Equal(4, remain.GetLength(1));
+        for (int h = 0; h < 4; h++)
+            for (int s = 0; s < 4; s++)
+                Assert.Equal(0u, remain[h, s]);
+    }
+
+    [Fact]
+    public void ExtraSuitsAndHandsDoNotRaise()
+    {
+        // Extra '.' beyond 4 suits and extra ' ' beyond 4 hands must not
+        // IndexOutOfRange when indexing remain[hand, suit].
+        const string deal = "N:A.K.Q.J.T W.E.S.T.X E.A.S.T.Y S.O.U.T.H Z.Z.Z.Z";
+        var remain = DdTableForDealLib.ConvertPbn(deal);
+        Assert.NotNull(remain);
+        Assert.Equal(4, remain.GetLength(0));
+        Assert.Equal(4, remain.GetLength(1));
+    }
+
+    [Fact]
+    public void ValidDealParsesCardBitmasks()
+    {
+        const string deal =
+            "N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 "
+            + "5.A95432.7632.K6 AKJ9842.K.T8.J93";
+        var remain = DdTableForDealLib.ConvertPbn(deal);
+
+        // North's spades: 73
+        Assert.Equal(0x0080u | 0x0008u, remain[0, 0]);
+        // North's hearts: QJT
+        Assert.Equal(0x1000u | 0x0800u | 0x0400u, remain[0, 1]);
+    }
+}

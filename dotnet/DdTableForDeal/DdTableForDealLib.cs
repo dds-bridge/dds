@@ -314,6 +314,11 @@ public static partial class DdTableForDealLib
             int card = IsCard(ch);
             if (card != 0)
             {
+                if (handRelFirst is < 0 or > 3 || suitInHand is < 0 or > 3)
+                {
+                    bp++;
+                    continue;
+                }
                 int hand = first switch
                 {
                     0 => handRelFirst,
@@ -325,11 +330,17 @@ public static partial class DdTableForDealLib
             }
             else if (ch == '.')
             {
-                suitInHand++;
+                if (suitInHand < 3)
+                    suitInHand++;
+                else
+                    suitInHand = 4;
             }
             else if (ch == ' ')
             {
-                handRelFirst++;
+                if (handRelFirst < 3)
+                    handRelFirst++;
+                else
+                    handRelFirst = 4;
                 suitInHand = 0;
             }
             bp++;

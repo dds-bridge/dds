@@ -38,9 +38,11 @@ public static class DdTableForDealApp
         try
         {
             deals = DdTableForDealLib.UniqueDeals(
-                LoadDeals(parsed.Value.DealArg, stderr, stdin));
+                LoadDeals(parsed.Value.DealArg, stdin));
         }
-        catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or IOException
+                                       or InvalidOperationException
+                                       or UnauthorizedAccessException)
         {
             stderr.WriteLine(ex.Message);
             return 1;
@@ -131,20 +133,18 @@ public static class DdTableForDealApp
     }
 
     private static IReadOnlyList<string> LoadDeals(
-        string arg, TextWriter stderr, TextReader? stdin)
+        string arg, TextReader? stdin)
     {
         if (arg == "-")
         {
-            string? text = ReadPbnStream(stdin ?? Console.In, stderr);
-            if (text is null)
-                throw new InvalidOperationException("Cannot read PBN from stdin");
+            string text = ReadPbnStream(stdin ?? Console.In);
             var deals = DdTableForDealLib.ExtractDealTags(text);
             if (deals.Count == 0)
                 throw new InvalidOperationException("No [Deal \"...\"] tag found in stdin");
             return deals;
         }
 
-        string? fileText = ReadPbnFileWorkspaceRelative(arg, stderr);
+        string? fileText = ReadPbnFileWorkspaceRelative(arg);
         if (fileText is not null)
         {
             var deals = DdTableForDealLib.ExtractDealTags(fileText);
@@ -163,14 +163,14 @@ public static class DdTableForDealApp
         return [arg];
     }
 
-    private static string? ReadPbnFileWorkspaceRelative(string path, TextWriter stderr)
+    private static string? ReadPbnFileWorkspaceRelative(string path)
     {
-        if (TryReadPbnFile(path, stderr, out string? text))
+        if (TryReadPbnFile(path, out string? text))
             return text;
 
         string? workspace = Environment.GetEnvironmentVariable("BUILD_WORKSPACE_DIRECTORY");
         if (workspace is not null
-            && TryReadPbnFile(Path.Combine(workspace, path), stderr, out text))
+            && TryReadPbnFile(Path.Combine(workspace, path), out text))
         {
             return text;
         }
@@ -178,23 +178,23 @@ public static class DdTableForDealApp
         return null;
     }
 
-    private static bool TryReadPbnFile(string path, TextWriter stderr, out string? text)
+    private static bool TryReadPbnFile(string path, out string? text)
     {
         text = null;
         try
         {
             using var stream = File.OpenRead(path);
             using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-            text = ReadPbnStream(reader, stderr);
-            return text is not null;
+            text = ReadPbnStream(reader);
+            return true;
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return false;
         }
     }
 
-    private static string? ReadPbnStream(TextReader reader, TextWriter stderr)
+    private static string ReadPbnStream(TextReader reader)
     {
         var sb = new StringBuilder();
         char[] buffer = new char[4096];
@@ -206,9 +206,8 @@ public static class DdTableForDealApp
             sb.Append(buffer, 0, n);
             if (sb.Length > DdTableForDealLib.PbnFileMax)
             {
-                stderr.WriteLine(
+                throw new InvalidOperationException(
                     $"PBN input too large (max {DdTableForDealLib.PbnFileMax} characters)");
-                return null;
             }
         }
         return sb.ToString();
