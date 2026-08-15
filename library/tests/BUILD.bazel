@@ -1,4 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
@@ -138,6 +139,18 @@ cc_test(
     deps = [
         "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
+    ],
+)
+
+# Regression: pass-out PAR deals in hands/nothing_makes.txt must parse and run.
+py_test(
+    name = "dtest_nothing_makes_test",
+    size = "small",
+    srcs = ["test_dtest_nothing_makes.py"],
+    main = "test_dtest_nothing_makes.py",
+    data = [
+        ":dtest",
+        "//hands:nothing_makes.txt",
     ],
 )
 

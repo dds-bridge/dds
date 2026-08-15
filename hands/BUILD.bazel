@@ -3,6 +3,7 @@ exports_files(
     [
         "list1.txt",
         "list2.txt",
+        "nothing_makes.txt",
     ],
     visibility = ["//visibility:public"],
 )
