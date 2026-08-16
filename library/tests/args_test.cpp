@@ -471,6 +471,38 @@ TEST_F(HandsLayoutFixture, ResolveAbsoluteMissingDoesNotUseListShorthand)
     resolve_dtest_input_file(missing_abs, binary_path_).empty());
 }
 
+#ifdef _WIN32
+TEST_F(HandsLayoutFixture, ResolveDriveRelativeMissingDoesNotJoinUnderBazelDirs)
+{
+  // Drive-relative "X:foo" is not absolute, but fs::path join can discard the
+  // BUILD_* base. Missing drive-relative -f must not resolve via env joins.
+  ASSERT_GE(root_.size(), 2u);
+  ASSERT_EQ(root_[1], ':');
+
+  const std::string token =
+    "no_such_dtest_drive_rel_" +
+    std::to_string(static_cast<unsigned long long>(
+      reinterpret_cast<uintptr_t>(this)));
+  const std::string missing_drive_rel =
+    std::string(1, root_[0]) + ":" + token;
+  ASSERT_FALSE(is_dtest_absolute_path(missing_drive_rel));
+  ASSERT_FALSE(std::filesystem::exists(missing_drive_rel));
+
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_drive_rel/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(root_.c_str());
+
+  EXPECT_TRUE(
+    resolve_dtest_input_file(missing_drive_rel, binary_path_).empty());
+}
+#endif
+
 TEST(Args, AbsolutePathDetection)
 {
   EXPECT_FALSE(is_dtest_absolute_path("tmp/dtest"));

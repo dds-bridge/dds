@@ -326,6 +326,10 @@ string resolve_dtest_input_file(
     return arg;
   if (is_absolute_path(arg))
     return string();
+  // Windows drive-relative "C:foo" has a root-name; fs::path join may discard
+  // the BUILD_* / argv0 base. Only the literal path is attempted.
+  if (fs::path(arg).has_root_name())
+    return string();
 
   const string list_name = "list" + arg + ".txt";
   // Keep generic separators so cwd hits match the documented hands/listN.txt form.
@@ -338,6 +342,8 @@ string resolve_dtest_input_file(
   // shell cwd and the workspace root so relative -f paths still resolve.
   auto from_env_dir = [&](const char* env_name, const fs::path& rel) -> string
   {
+    if (rel.has_root_name() || rel.has_root_directory())
+      return string();
     const char* dir = std::getenv(env_name);
     if (dir == nullptr || dir[0] == '\0')
       return string();
@@ -467,10 +473,15 @@ void read_args(
         }
 
         cout << "Input file '" << optarg << "' not found\n";
-        cout << "Also tried that path under the current directory, "
-          "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
-          "and under the workspace root inferred from the dtest binary; "
-          "for numeric -f N, also hands/listN.txt\n";
+        // Absolute / drive-relative args only attempt the literal path.
+        if (!is_dtest_absolute_path(optarg) &&
+          !fs::path(optarg).has_root_name())
+        {
+          cout << "Also tried that path under the current directory, "
+            "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
+            "and under the workspace root inferred from the dtest binary; "
+            "for numeric -f N, also hands/listN.txt\n";
+        }
         nextToken -= 2;
         errFlag = true;
         break;
