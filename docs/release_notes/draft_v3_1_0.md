@@ -31,7 +31,9 @@ points:
 - `solve_all_boards_pbn`, `solve_all_boards_bin` — batch solving, parallelised
   across hardware threads inside the library.
 - `dealer_par` — par contracts from the dealer's perspective.
-- `initialise_static_memory` (replaces the deprecated `set_max_threads`).
+- `initialise_static_memory` (replaces the deprecated `set_max_threads`; the
+  C equivalent is spelled `InitializeStaticMemory` — the Python module uses
+  British spelling).
 
 All of these release the GIL around the native call and validate their inputs.
 Batch entry points accept an optional `max_threads`.
@@ -58,6 +60,27 @@ Batch entry points accept an optional `max_threads`.
 - Thin LTO on macOS builds, inlined hot accessors, and native WASM exception
   handling.
 
+- **New performance tooling** — utilities for comparing solver performance
+  between two commits, and for recording warm benchmarks from a live consumer.
+  The comparison below (18-core Mac) shows solver performance is back at 2.9
+  levels:
+
+```
+Summary (avg user ms)
+==============================================================================
+solver file              dtest2.9     dtest3.0      develop
+------ ------------- ------------ ------------ ------------
+solve  list100.txt           2.18        29.40         2.59
+solve  list10.txt           23.76        52.60        24.60
+solve  list1.txt             8.37        15.00         8.00
+calc   list100.txt           7.61       124.47         6.67
+calc   list10.txt           22.40       108.30        21.30
+calc   list1.txt            53.39       189.00        55.00
+------ ------------- ------------ ------------ ------------
+TOTAL  solve                 4.18        31.36         4.62
+TOTAL  calc                  9.35       123.59         8.42
+```
+
 ### Correctness fixes
 
 - **`AnalysePlay` under-counted tricks** (#156): each card was analysed against
@@ -69,8 +92,8 @@ Batch entry points accept an optional `max_threads`.
   `TransTableS::reset_memory` after memory release.
 - **Par output now names the declaring seat** when successive par contracts
   differ, in both the C++ and .NET paths.
-- Worker exceptions in parallel board solving are propagated rather than
-  terminating the process.
+- Worker exceptions in parallel board solving are reported as RETURN_UNKNOWN_FAULT 
+rather than terminating the process.
 
 ### New public C API
 
@@ -90,9 +113,11 @@ name still works and no longer influences batch parallelism.
   under `solution/`, plus Windows CI for the native build and the .NET bindings.
 - **WebAssembly** builds hermetically via Bazel's Emscripten toolchain — no
   manual `emsdk` install — with multithreading, a heap-budgeted worker cap, and
-  a browser demo (`web/`) that runs the solver entirely client-side.
-- CI now runs Linux, macOS, Windows, and WASM, under ASan, TSan, UBSan, and
-  MSan.
+  a browser demo (`web/`) that runs the solver entirely client-side. A live
+  build is deployed to <https://dds-bridge.github.io/dds/>.
+- CI covers Linux, macOS, Windows, and WASM. Linux runs ASan, TSan, UBSan,
+  and MSan; macOS runs ASan, TSan, and UBSan over `//library/tests/system/...`;
+  Windows and WASM run no sanitizers.
 - Use `bazelisk`; the Bazel version is pinned in `.bazelversion` and the
   committed `MODULE.bazel.lock` expects it.
 
@@ -112,7 +137,11 @@ name still works and no longer influences batch parallelism.
 No breaking changes for 3.0 consumers. The only deprecation is `SetMaxThreads`,
 which remains available as an alias.
 
+SolveAllBoards*/CalcAllTables* now spawn threads by default where 3.0 was sequential, 
+there are sequential alternatives as well. There is also a bug fix which changes the 
+output from AnalysePlayResults.
+
 ## Contributors
 
-@BonyJordan, @BSalita, @ed2k, @jdh8, @mortensp, @tameware, @ThorvaldAagaard,
+@BonyJordan, @BSalita, @ed2k, @jdh8, @mortensp, @sun51, @tameware, @ThorvaldAagaard,
 @tzimnoch, @wopdevries, @zzcgumn
