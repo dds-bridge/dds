@@ -93,8 +93,8 @@ void usage(
     "                   Relative paths (and '100' → hands/list100.txt) are\n" <<
     "                   resolved under the current directory, then under\n" <<
     "                   BUILD_WORKING_DIRECTORY / BUILD_WORKSPACE_DIRECTORY\n" <<
-    "                   (bazel run), else relative to the dtest binary\n" <<
-    "                   (bazel-bin/library/tests/).\n" <<
+    "                   (bazel run), else under the workspace root inferred\n" <<
+    "                   from the dtest binary (bazel-bin/library/tests/).\n" <<
     "                   (Default: input.txt)\n" <<
     "\n" <<
     "-s, --solver       One of: solve, calc, play, par, dealerpar.\n" <<
@@ -466,7 +466,7 @@ void read_args(
         cout << "Input file '" << optarg << "' not found\n";
         cout << "Also tried that path under the current directory, "
           "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
-          "and relative to the dtest binary; "
+          "and under the workspace root inferred from the dtest binary; "
           "for numeric -f N, also hands/listN.txt\n";
         nextToken -= 2;
         errFlag = true;

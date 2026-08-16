@@ -3,7 +3,9 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -387,9 +389,32 @@ TEST_F(HandsLayoutFixture, ResolveAbsoluteMissingDoesNotUseListShorthand)
   // A missing absolute -f must not fall through to hands/list{arg}.txt
   // (list shorthand concatenates the absolute path into a nested name).
   ASSERT_EQ(change_dir(original_cwd_.c_str()), 0);
-  ASSERT_TRUE(make_dir(root_ + "hands/list"));
+
+  // Pick a unique absolute path that is not present on this machine.
+  const std::string token =
+    "no_such_dtest_abs_" +
+    std::to_string(static_cast<unsigned long long>(
+      reinterpret_cast<uintptr_t>(this)));
+#ifdef _WIN32
+  const std::string missing_abs = "\\" + token;
+#else
+  const std::string missing_abs = "/" + token;
+#endif
+  ASSERT_FALSE(std::filesystem::exists(missing_abs));
+
+  // Trap file at the binary-relative list-shorthand location that a buggy
+  // fallthrough would incorrectly accept.
+  const std::filesystem::path trap =
+    std::filesystem::path(root_) / "hands" /
+    ("list" + missing_abs + ".txt");
   {
-    std::ofstream out(root_ + "hands/list/no_such_dtest_abs.txt");
+    std::error_code ec;
+    std::filesystem::create_directories(trap.parent_path(), ec);
+    ASSERT_FALSE(ec) << ec.message();
+  }
+  {
+    std::ofstream out(trap);
+    ASSERT_TRUE(out) << trap.string();
     out << "trap\n";
   }
 
@@ -399,7 +424,7 @@ TEST_F(HandsLayoutFixture, ResolveAbsoluteMissingDoesNotUseListShorthand)
   workspace.set(nullptr);
 
   EXPECT_TRUE(
-    resolve_dtest_input_file("/no_such_dtest_abs", binary_path_).empty());
+    resolve_dtest_input_file(missing_abs, binary_path_).empty());
 }
 
 TEST(Args, AbsolutePathDetection)
