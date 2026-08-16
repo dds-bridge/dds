@@ -383,10 +383,13 @@ def _workflow_job_bodies(text: str) -> dict[str, str]:
             continue
         if current is None:
             continue
-        if line.startswith("  ") or not line.strip():
-            jobs[current].append(line)
-        else:
+        # A non-indented key ends `jobs:` so later top-level mappings (e.g.
+        # `permissions:`) are not parsed as job ids or appended to the last job.
+        if line.strip() and not line.startswith(" "):
+            in_jobs = False
             current = None
+            continue
+        jobs[current].append(line)
     return {name: "\n".join(body) for name, body in jobs.items()}
 
 
@@ -405,8 +408,8 @@ def _excludes_package_pattern(line: str, package: str) -> bool:
 
     The exclusion must be quoted (`'-//pkg/...'` or `\"-//pkg/...\"`). On
     Windows CI the default shell is pwsh, which treats a bare `-//...` token as
-    a PowerShell switch and strips Bazel's `--` end-of-options marker, so
-    unquoted exclusions fail with \"Invalid options syntax\".
+    a PowerShell switch, so unquoted exclusions fail with \"Invalid options
+    syntax\".
     """
     return bool(
         re.search(
@@ -414,6 +417,15 @@ def _excludes_package_pattern(line: str, package: str) -> bool:
             line,
         )
     )
+
+
+def _has_quoted_end_of_options_marker(line: str) -> bool:
+    """True if Bazel `--` is quoted so pwsh does not swallow it.
+
+    PowerShell 7 treats a bare `--` as its own end-of-parameters token and does
+    not forward it to bazelisk. Bazel then sees `-//wasm/...` as a flag.
+    """
+    return bool(re.search(r"""['"]--['"]""", line))
 
 
 def _includes_all_packages_pattern(line: str) -> bool:
@@ -440,6 +452,19 @@ jobs:
         self.assertIn("echo native", bodies["native"])
         self.assertIn("echo wasm", bodies["wasm_web"])
         self.assertNotIn("echo wasm", bodies["native"])
+
+    def test_stops_at_next_top_level_key(self) -> None:
+        sample = """
+jobs:
+  native:
+    runs-on: windows-latest
+permissions:
+  contents: read
+"""
+        bodies = _workflow_job_bodies(sample)
+        self.assertEqual(set(bodies), {"native"})
+        self.assertIn("runs-on: windows-latest", bodies["native"])
+        self.assertNotIn("contents: read", bodies["native"])
 
 
 class TestPwshQuotedExclusionPatterns(unittest.TestCase):
@@ -468,6 +493,24 @@ class TestPwshQuotedExclusionPatterns(unittest.TestCase):
         self.assertTrue(_includes_all_packages_pattern("bazelisk fetch -- //..."))
         self.assertTrue(
             _includes_all_packages_pattern("bazelisk fetch -- '//...' '-//wasm/...'")
+        )
+
+    def test_requires_quoted_end_of_options_marker(self) -> None:
+        self.assertFalse(
+            _has_quoted_end_of_options_marker(
+                "bazelisk fetch -- '//...' '-//wasm/...' '-//web/...'"
+            ),
+            "bare -- is swallowed by pwsh and never reaches bazelisk",
+        )
+        self.assertTrue(
+            _has_quoted_end_of_options_marker(
+                "bazelisk fetch '--' '//...' '-//wasm/...' '-//web/...'"
+            )
+        )
+        self.assertTrue(
+            _has_quoted_end_of_options_marker(
+                'bazelisk fetch "--" "//..." "-//wasm/..."'
+            )
         )
 
 
@@ -527,6 +570,11 @@ class TestWindowsCiSplitsWasmWeb(unittest.TestCase):
                 self.assertTrue(
                     _includes_all_packages_pattern(line),
                     f"native {subcommand} should still cover //... : {line.strip()}",
+                )
+                self.assertTrue(
+                    _has_quoted_end_of_options_marker(line),
+                    f"native {subcommand} must quote '--' so pwsh forwards "
+                    f"it to bazelisk: {line.strip()}",
                 )
                 for package in ("wasm", "web"):
                     self.assertTrue(
