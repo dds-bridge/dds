@@ -24,7 +24,7 @@ jobs:
         run: |
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazelisk fetch -- '//...' '-//wasm/...' '-//web/...'
+            bazelisk fetch '--' '//...' '-//wasm/...' '-//web/...'
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
@@ -41,7 +41,7 @@ jobs:
         run: |
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
-            bazelisk build --config=opt --verbose_failures -- '//...' '-//wasm/...' '-//web/...'
+            bazelisk build --config=opt --verbose_failures '--' '//...' '-//wasm/...' '-//web/...'
             if ($LASTEXITCODE -eq 0) { exit 0 }
             if ($i -lt $max) {
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
@@ -54,7 +54,7 @@ jobs:
 
       # Run native tests (including Python) — no retry so real failures surface quickly
       - name: Run native tests
-        run: bazelisk test --config=opt --verbose_failures --test_output=errors -- '//...' '-//wasm/...' '-//web/...'
+        run: bazelisk test --config=opt --verbose_failures --test_output=errors '--' '//...' '-//wasm/...' '-//web/...'
 
       # .NET binding lives in CI – Windows .NET (ci_windows_dotnet.yml).
 
