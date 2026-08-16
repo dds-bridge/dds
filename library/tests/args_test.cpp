@@ -266,6 +266,30 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
     root_ + "hands/list42.txt"));
 }
 
+TEST_F(HandsLayoutFixture, ResolveNumericPrefersListOverLiteralUnderBazelWorking)
+{
+  // A workspace-root file named "42" must not win over hands/list42.txt when
+  // resolving numeric -f under BUILD_WORKING_DIRECTORY.
+  {
+    std::ofstream out(root_ + "42");
+    out << "literal-trap\n";
+  }
+
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_num_pref/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("42", "dtest"),
+    root_ + "hands/list42.txt"));
+}
+
 TEST_F(HandsLayoutFixture, ResolveLiteralRelativeUsesBazelWorkingDirectory)
 {
   // bazelisk run //library/tests:dtest -- -f hands/list42.txt must find the
@@ -331,6 +355,26 @@ TEST_F(HandsLayoutFixture, ResolveLiteralRelativeFallsBackRelativeToBinary)
 
   EXPECT_TRUE(same_path(
     resolve_dtest_input_file("hands/list42.txt", binary_path_),
+    root_ + "hands/list42.txt"));
+}
+
+TEST_F(HandsLayoutFixture, ResolveNumericPrefersListOverLiteralRelativeToBinary)
+{
+  // Workspace-root file "42" must not shadow hands/list42.txt for numeric -f
+  // when falling back via argv0.
+  {
+    std::ofstream out(root_ + "42");
+    out << "literal-trap\n";
+  }
+  ASSERT_EQ(change_dir(original_cwd_.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("42", binary_path_),
     root_ + "hands/list42.txt"));
 }
 

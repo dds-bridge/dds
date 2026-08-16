@@ -34,7 +34,7 @@ void print_options();
 ///
 /// Tries, in order: the literal path under the current working directory;
 /// `hands/list{arg}.txt` under cwd (list shorthand, intended for numeric
-/// ids such as `"100"`); the literal relative path, then that list form,
+/// ids such as `"100"`); that list form, then the literal relative path,
 /// under `BUILD_WORKING_DIRECTORY` / `BUILD_WORKSPACE_DIRECTORY` (set by
 /// `bazel run`); then those same two forms under the workspace root inferred
 /// by climbing four parents from `argv0` (the usual

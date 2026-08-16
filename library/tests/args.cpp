@@ -365,17 +365,6 @@ string resolve_dtest_input_file(
     return dir;
   };
 
-  if (const string found =
-        from_env_dir("BUILD_WORKING_DIRECTORY", arg); !found.empty())
-  {
-    return found;
-  }
-  if (const string found =
-        from_env_dir("BUILD_WORKSPACE_DIRECTORY", arg); !found.empty())
-  {
-    return found;
-  }
-
   const fs::path list_rel = fs::path("hands") / list_name;
   if (const string found =
         from_env_dir("BUILD_WORKING_DIRECTORY", list_rel); !found.empty())
@@ -388,19 +377,33 @@ string resolve_dtest_input_file(
     return found;
   }
 
+  // Prefer list shorthand under bazel dirs / argv0 before a bare relative
+  // name (so -f 42 keeps resolving to hands/list42.txt even if a file named
+  // "42" exists at the workspace root).
+  if (const string found =
+        from_env_dir("BUILD_WORKING_DIRECTORY", arg); !found.empty())
+  {
+    return found;
+  }
+  if (const string found =
+        from_env_dir("BUILD_WORKSPACE_DIRECTORY", arg); !found.empty())
+  {
+    return found;
+  }
+
   const fs::path root = workspace_root_from_argv0();
   if (root.empty())
     return string();
-
-  const string bin_literal =
-    normalize_logical_path((root / arg).string());
-  if (path_exists(bin_literal))
-    return bin_literal;
 
   const string bin_candidate =
     normalize_logical_path((root / "hands" / list_name).string());
   if (path_exists(bin_candidate))
     return bin_candidate;
+
+  const string bin_literal =
+    normalize_logical_path((root / arg).string());
+  if (path_exists(bin_literal))
+    return bin_literal;
 
   return string();
 }
