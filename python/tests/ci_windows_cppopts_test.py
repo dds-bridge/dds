@@ -401,10 +401,24 @@ def _active_bazelisk_lines(text: str, subcommand: str) -> list[str]:
 
 
 def _excludes_package_pattern(line: str, package: str) -> bool:
-    """True if a Bazel target-pattern list excludes //<package>/..."""
+    """True if a Bazel target-pattern list excludes //<package>/...
+
+    The exclusion must be quoted (`'-//pkg/...'` or `\"-//pkg/...\"`). On
+    Windows CI the default shell is pwsh, which treats a bare `-//...` token as
+    a PowerShell switch and strips Bazel's `--` end-of-options marker, so
+    unquoted exclusions fail with \"Invalid options syntax\".
+    """
     return bool(
-        re.search(rf"(?<![\w/])-//{re.escape(package)}/\.\.\.(?!\S)", line)
+        re.search(
+            rf"""(?<![\w/])['"]-//{re.escape(package)}/\.\.\.['"](?!\S)""",
+            line,
+        )
     )
+
+
+def _includes_all_packages_pattern(line: str) -> bool:
+    """True if the line includes a (optionally quoted) //... target pattern."""
+    return bool(re.search(r"""(?<![\w/])['"]?//\.\.\.['"]?(?!\S)""", line))
 
 
 class TestWorkflowJobBodies(unittest.TestCase):
@@ -426,6 +440,35 @@ jobs:
         self.assertIn("echo native", bodies["native"])
         self.assertIn("echo wasm", bodies["wasm_web"])
         self.assertNotIn("echo wasm", bodies["native"])
+
+
+class TestPwshQuotedExclusionPatterns(unittest.TestCase):
+    def test_requires_quotes_around_negative_patterns(self) -> None:
+        self.assertFalse(
+            _excludes_package_pattern(
+                "bazelisk fetch -- //... -//wasm/... -//web/...",
+                "wasm",
+            ),
+            "bare -//wasm/... is unsafe under pwsh",
+        )
+        self.assertTrue(
+            _excludes_package_pattern(
+                "bazelisk fetch -- '//...' '-//wasm/...' '-//web/...'",
+                "wasm",
+            )
+        )
+        self.assertTrue(
+            _excludes_package_pattern(
+                'bazelisk build -- "//..." "-//web/..."',
+                "web",
+            )
+        )
+
+    def test_includes_all_packages_accepts_quoted_or_bare(self) -> None:
+        self.assertTrue(_includes_all_packages_pattern("bazelisk fetch -- //..."))
+        self.assertTrue(
+            _includes_all_packages_pattern("bazelisk fetch -- '//...' '-//wasm/...'")
+        )
 
 
 class TestWindowsCiUsesOpt(unittest.TestCase):
@@ -481,16 +524,15 @@ class TestWindowsCiSplitsWasmWeb(unittest.TestCase):
                 f"native job must invoke bazelisk {subcommand}",
             )
             for line in lines:
-                self.assertRegex(
-                    line,
-                    r"(?<![\w/])//\.\.\.(?!\S)",
+                self.assertTrue(
+                    _includes_all_packages_pattern(line),
                     f"native {subcommand} should still cover //... : {line.strip()}",
                 )
                 for package in ("wasm", "web"):
                     self.assertTrue(
                         _excludes_package_pattern(line, package),
-                        f"native {subcommand} must exclude -//{package}/... : "
-                        f"{line.strip()}",
+                        f"native {subcommand} must quote '-//{package}/...' "
+                        f"for pwsh: {line.strip()}",
                     )
 
     def test_wasm_web_job_targets_only_wasm_and_web(self) -> None:
