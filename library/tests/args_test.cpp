@@ -268,7 +268,7 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
 
 TEST_F(HandsLayoutFixture, ResolveLiteralRelativeUsesBazelWorkingDirectory)
 {
-  // bazelisk run //library/tests:dtest -- -f hands/list1.txt must find the
+  // bazelisk run //library/tests:dtest -- -f hands/list42.txt must find the
   // path relative to the invoke-time shell cwd, not the runfiles tree.
   const std::string runfiles =
     std::string(::testing::TempDir()) + "dtest_hands_runfiles_lit/";
