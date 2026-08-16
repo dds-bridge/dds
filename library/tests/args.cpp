@@ -324,6 +324,8 @@ string resolve_dtest_input_file(
 {
   if (path_exists(arg))
     return arg;
+  if (is_absolute_path(arg))
+    return string();
 
   const string list_name = "list" + arg + ".txt";
   // Keep generic separators so cwd hits match the documented hands/listN.txt form.
@@ -363,18 +365,15 @@ string resolve_dtest_input_file(
     return dir;
   };
 
-  if (!is_absolute_path(arg))
+  if (const string found =
+        from_env_dir("BUILD_WORKING_DIRECTORY", arg); !found.empty())
   {
-    if (const string found =
-          from_env_dir("BUILD_WORKING_DIRECTORY", arg); !found.empty())
-    {
-      return found;
-    }
-    if (const string found =
-          from_env_dir("BUILD_WORKSPACE_DIRECTORY", arg); !found.empty())
-    {
-      return found;
-    }
+    return found;
+  }
+  if (const string found =
+        from_env_dir("BUILD_WORKSPACE_DIRECTORY", arg); !found.empty())
+  {
+    return found;
   }
 
   const fs::path list_rel = fs::path("hands") / list_name;
@@ -393,13 +392,10 @@ string resolve_dtest_input_file(
   if (root.empty())
     return string();
 
-  if (!is_absolute_path(arg))
-  {
-    const string bin_literal =
-      normalize_logical_path((root / arg).string());
-    if (path_exists(bin_literal))
-      return bin_literal;
-  }
+  const string bin_literal =
+    normalize_logical_path((root / arg).string());
+  if (path_exists(bin_literal))
+    return bin_literal;
 
   const string bin_candidate =
     normalize_logical_path((root / "hands" / list_name).string());

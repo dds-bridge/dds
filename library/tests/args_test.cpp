@@ -382,6 +382,26 @@ TEST_F(HandsLayoutFixture, ResolveRejectsDirectoryAsLiteralPath)
   EXPECT_TRUE(resolve_dtest_input_file(root_ + "hands", "dtest").empty());
 }
 
+TEST_F(HandsLayoutFixture, ResolveAbsoluteMissingDoesNotUseListShorthand)
+{
+  // A missing absolute -f must not fall through to hands/list{arg}.txt
+  // (list shorthand concatenates the absolute path into a nested name).
+  ASSERT_EQ(change_dir(original_cwd_.c_str()), 0);
+  ASSERT_TRUE(make_dir(root_ + "hands/list"));
+  {
+    std::ofstream out(root_ + "hands/list/no_such_dtest_abs.txt");
+    out << "trap\n";
+  }
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(
+    resolve_dtest_input_file("/no_such_dtest_abs", binary_path_).empty());
+}
+
 TEST(Args, AbsolutePathDetection)
 {
   EXPECT_FALSE(is_dtest_absolute_path("tmp/dtest"));
