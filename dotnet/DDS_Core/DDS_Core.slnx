@@ -14,4 +14,10 @@
     <BuildDependency Project="../../solution/dds_native.vcxproj" />
     <Platform Project="x64" />
   </Project>
+  <!-- No dds_native build dependency: the tests resolve the native library at
+       runtime via DDS_LIBRARY_PATH (see DdsNativeResolver), pointed at the
+       Bazel-built shared library. -->
+  <Project Path="../DDS_Core.Tests/DDS_Core.Tests.csproj">
+    <Platform Project="x64" />
+  </Project>
 </Solution>

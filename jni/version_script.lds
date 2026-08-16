@@ -42,9 +42,18 @@
     SolveBoard;
     SolveBoardPBN;
     dds_c_calc_dd_table;
+    dds_c_calc_dd_table_pbn;
     dds_c_calc_par;
+    dds_c_clear_tt;
+    dds_c_configure_tt;
+    dds_c_create_solvercontext;
     dds_c_create_solvercontext_default;
     dds_c_destroy_solvercontext;
+    dds_c_log_append;
+    dds_c_log_clear;
+    dds_c_reset_best_moves_lite;
+    dds_c_reset_for_solve;
+    dds_c_resize_tt;
     dds_c_solve_board;
   local:
     *;

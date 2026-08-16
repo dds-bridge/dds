@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using DDS_Core.Helpers;
+﻿using DDS_Core.Helpers;
 using DDS_Core.Native;
 
 namespace DDS_Core;
@@ -11,14 +10,35 @@ public sealed class SolverContext : IDisposable
     #region Constructors and destructors
         public SolverContext()
         {
-            Handle = DdsNative.dds_create_solvercontext_default()
-                  ?? throw new InvalidOperationException("Failed to create SolverContext.");
+            Handle = Validated(DdsNative.dds_create_solvercontext_default());
         }
 
         public SolverContext(SolverConfig config)
         {
-            Handle = DdsNative.dds_create_solvercontext(config)
-                  ?? throw new InvalidOperationException("Failed to create SolverContext.");
+            // Unpacked into scalars: the native shim is pointer-only and
+            // POD-only, so SolverConfig never crosses the ABI boundary.
+            Handle = Validated(DdsNative.dds_create_solvercontext( (int) config.TTKind
+                                                                 , config.DefaultMemoryMB
+                                                                 , config.MaximumMemoryMB));
+        }
+
+        /// <summary>
+        /// Rejects a failed native creation. The shim returns NULL on failure,
+        /// but a P/Invoke returning a SafeHandle-derived type never yields null:
+        /// the marshaller constructs an instance and stores whatever pointer came
+        /// back, so failure surfaces as IsInvalid, not as a null reference. A
+        /// `?? throw` here would never fire, leaving every later call to pass
+        /// IntPtr.Zero into the shim and quietly collect RETURN_UNKNOWN_FAULT.
+        /// </summary>
+        private static SolverContextHandle Validated(SolverContextHandle handle)
+        {
+            if (handle is null || handle.IsInvalid)
+            {
+                handle?.Dispose();
+                throw new InvalidOperationException("Failed to create SolverContext.");
+            }
+
+            return handle;
         }
 
         public void Dispose()
@@ -137,7 +157,11 @@ public sealed class SolverContext : IDisposable
     #endregion
 
     #region private methods
-        [Conditional("DEBUG")]
+        // Deliberately not [Conditional("DEBUG")]: that elided every call site in
+        // Release, so the configuration consumers actually ship returned the raw
+        // RETURN_* code and never threw, contradicting the documented contract in
+        // specs/dotnet-binding.md. The check is one integer compare on a call that
+        // has just run a search.
         private static void ThrowIfError(int result, string functionName)
         {
             if (result != (int)SolveBoardResult.NoFault)

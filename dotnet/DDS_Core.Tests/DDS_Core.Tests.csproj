@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Matches the library, so the tests exercise the framework consumers
+         actually target. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <Platforms>AnyCPU</Platforms>
+
+    <!-- Allow running on a newer major runtime when no 8.0 runtime is present.
+         Default roll-forward does not cross major versions, so a net8.0 test
+         assembly will not start on a machine that only has, say, the 10.0
+         runtime installed (the common case with a Homebrew-installed SDK).
+         Where an 8.0 runtime does exist — as on CI, which pins 8.0.x — this
+         has no effect and the tests run on 8.0 as intended. -->
+    <RollForward>Major</RollForward>
+
+    <!-- Output paths are inherited from dotnet/Directory.Build.props (Build/bin,
+         Build/int), matching the library and demo. Both are gitignored, whereas
+         the SDK-default obj/ is not; and overriding BaseIntermediateOutputPath
+         here would come too late for MSBuild (MSB3539). -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DDS_Core\DDS_Core.csproj" />
+  </ItemGroup>
+
+</Project>

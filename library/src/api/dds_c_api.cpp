@@ -92,4 +92,119 @@ DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
     }
 }
 
+DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext(int tt_kind,
+                                                      int def_mb, int max_mb)
+{
+    try {
+        SolverConfig cfg;
+        cfg.tt_kind_ = static_cast<TTKind>(tt_kind);
+        cfg.tt_mem_default_mb_ = def_mb;
+        cfg.tt_mem_maximum_mb_ = max_mb;
+        return static_cast<DDS_C_SOLVER_CTX>(dds_create_solvercontext(cfg));
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
+                                      const struct DdTableDealPBN* deal,
+                                      struct DdTableResults* results)
+{
+    if (ctx == nullptr || deal == nullptr || results == nullptr)
+        return RETURN_UNKNOWN_FAULT;
+
+    try {
+        return dds_calc_dd_table_pbn(static_cast<SolverContext*>(ctx),
+            *deal, results);
+    } catch (...) {
+        return RETURN_UNKNOWN_FAULT;
+    }
+}
+
+DLLEXPORT void dds_c_configure_tt(DDS_C_SOLVER_CTX ctx, int tt_kind,
+                                  int def_mb, int max_mb)
+{
+    if (ctx == nullptr)
+        return;
+
+    try {
+        dds_configure_tt(static_cast<SolverContext*>(ctx),
+            static_cast<TTKind>(tt_kind), def_mb, max_mb);
+    } catch (...) {
+        // Must not unwind through the C ABI boundary.
+    }
+}
+
+DLLEXPORT void dds_c_resize_tt(DDS_C_SOLVER_CTX ctx, int def_mb, int max_mb)
+{
+    if (ctx == nullptr)
+        return;
+
+    try {
+        dds_resize_tt(static_cast<SolverContext*>(ctx), def_mb, max_mb);
+    } catch (...) {
+        // Must not unwind through the C ABI boundary.
+    }
+}
+
+DLLEXPORT void dds_c_clear_tt(DDS_C_SOLVER_CTX ctx)
+{
+    if (ctx == nullptr)
+        return;
+
+    try {
+        dds_clear_tt(static_cast<SolverContext*>(ctx));
+    } catch (...) {
+        // Must not unwind through the C ABI boundary.
+    }
+}
+
+DLLEXPORT void dds_c_reset_for_solve(DDS_C_SOLVER_CTX ctx)
+{
+    if (ctx == nullptr)
+        return;
+
+    try {
+        dds_reset_for_solve(static_cast<SolverContext*>(ctx));
+    } catch (...) {
+        // Must not unwind through the C ABI boundary.
+    }
+}
+
+DLLEXPORT void dds_c_reset_best_moves_lite(DDS_C_SOLVER_CTX ctx)
+{
+    if (ctx == nullptr)
+        return;
+
+    try {
+        dds_reset_best_moves_lite(static_cast<SolverContext*>(ctx));
+    } catch (...) {
+        // Must not unwind through the C ABI boundary.
+    }
+}
+
+DLLEXPORT void dds_c_log_append(DDS_C_SOLVER_CTX ctx, const char* msg)
+{
+    if (ctx == nullptr || msg == nullptr)
+        return;
+
+    try {
+        dds_log_append(static_cast<SolverContext*>(ctx), msg);
+    } catch (...) {
+        // Must not unwind through the C ABI boundary.
+    }
+}
+
+DLLEXPORT void dds_c_log_clear(DDS_C_SOLVER_CTX ctx)
+{
+    if (ctx == nullptr)
+        return;
+
+    try {
+        dds_log_clear(static_cast<SolverContext*>(ctx));
+    } catch (...) {
+        // Must not unwind through the C ABI boundary.
+    }
+}
+
 } // extern "C"

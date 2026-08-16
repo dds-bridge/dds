@@ -191,6 +191,7 @@ bool loop_par(
 
   ParResults presp;
 
+  timer.start(number);
   for (int i = 0; i < number; i++)
   {
     for (int j = 0; j < stepsize; j++)
@@ -214,6 +215,11 @@ bool loop_par(
     print_PAR(par_list[i]);
     cout << "\n";
   }
+  timer.end();
+
+#ifdef BATCHTIMES
+  timer.print_running(number, number);
+#endif
 
   return true;
 }
