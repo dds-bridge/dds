@@ -358,35 +358,184 @@ class TestBazeliskConfigOptMatching(unittest.TestCase):
         )
 
 
+def _windows_ci_workflow_text() -> str:
+    return (
+        _repo_root() / ".github" / "workflows" / "ci_windows.yml"
+    ).read_text(encoding="utf-8")
+
+
+def _workflow_job_bodies(text: str) -> dict[str, str]:
+    """Map top-level GitHub Actions job ids under `jobs:` to their bodies."""
+    jobs: dict[str, list[str]] = {}
+    current: str | None = None
+    in_jobs = False
+    for line in text.splitlines():
+        if re.match(r"^jobs:\s*$", line):
+            in_jobs = True
+            current = None
+            continue
+        if not in_jobs:
+            continue
+        job_header = re.match(r"^  ([A-Za-z0-9_-]+):\s*$", line)
+        if job_header:
+            current = job_header.group(1)
+            jobs[current] = []
+            continue
+        if current is None:
+            continue
+        if line.startswith("  ") or not line.strip():
+            jobs[current].append(line)
+        else:
+            current = None
+    return {name: "\n".join(body) for name, body in jobs.items()}
+
+
+def _active_bazelisk_lines(text: str, subcommand: str) -> list[str]:
+    """Return non-comment lines that invoke bazelisk <subcommand>."""
+    lines: list[str] = []
+    for line in text.splitlines():
+        code = line.split("#", 1)[0]
+        if re.search(rf"bazelisk\s+{re.escape(subcommand)}\b", code):
+            lines.append(code)
+    return lines
+
+
+def _excludes_package_pattern(line: str, package: str) -> bool:
+    """True if a Bazel target-pattern list excludes //<package>/..."""
+    return bool(
+        re.search(rf"(?<![\w/])-//{re.escape(package)}/\.\.\.(?!\S)", line)
+    )
+
+
+class TestWorkflowJobBodies(unittest.TestCase):
+    def test_splits_jobs_by_id(self) -> None:
+        sample = """
+name: sample
+jobs:
+  native:
+    runs-on: windows-latest
+    steps:
+      - run: echo native
+  wasm_web:
+    runs-on: windows-latest
+    steps:
+      - run: echo wasm
+"""
+        bodies = _workflow_job_bodies(sample)
+        self.assertEqual(set(bodies), {"native", "wasm_web"})
+        self.assertIn("echo native", bodies["native"])
+        self.assertIn("echo wasm", bodies["wasm_web"])
+        self.assertNotIn("echo wasm", bodies["native"])
+
+
 class TestWindowsCiUsesOpt(unittest.TestCase):
     def test_windows_ci_passes_config_opt(self) -> None:
         """Without /O2 in DDS_CPPOPTS, CI must opt in via --config=opt."""
-        text = (
-            _repo_root() / ".github" / "workflows" / "ci_windows.yml"
-        ).read_text(encoding="utf-8")
-        self.assertTrue(
-            _bazelisk_invocation_has_config_opt(text, "build"),
-            "expected Windows CI build to use --config=opt",
-        )
-        self.assertTrue(
-            _bazelisk_invocation_has_config_opt(text, "test"),
-            "expected Windows CI test to use --config=opt",
-        )
+        text = _windows_ci_workflow_text()
+        for subcommand in ("build", "test"):
+            lines = _active_bazelisk_lines(text, subcommand)
+            self.assertTrue(lines, f"expected at least one bazelisk {subcommand}")
+            for line in lines:
+                self.assertRegex(
+                    line,
+                    r"--config=opt\b",
+                    f"expected every Windows CI {subcommand} to use --config=opt: {line.strip()}",
+                )
 
     def test_windows_ci_test_prints_failing_output(self) -> None:
         """Python test.log is not in the Windows bazel-testlogs artifact."""
-        text = (
-            _repo_root() / ".github" / "workflows" / "ci_windows.yml"
-        ).read_text(encoding="utf-8")
-        test_lines = [
-            line.split("#", 1)[0]
-            for line in text.splitlines()
-            if re.search(r"bazelisk\s+test\b", line.split("#", 1)[0])
-        ]
-        self.assertTrue(
-            any("--test_output=errors" in line for line in test_lines),
-            "expected Windows CI test to use --test_output=errors so "
-            "failing unittest output appears in the job log",
+        text = _windows_ci_workflow_text()
+        test_lines = _active_bazelisk_lines(text, "test")
+        self.assertTrue(test_lines, "expected at least one bazelisk test")
+        for line in test_lines:
+            self.assertIn(
+                "--test_output=errors",
+                line,
+                "expected every Windows CI test to use --test_output=errors so "
+                f"failing unittest output appears in the job log: {line.strip()}",
+            )
+
+
+class TestWindowsCiSplitsWasmWeb(unittest.TestCase):
+    """Keep emsdk/wasm work off the native Windows critical path."""
+
+    def test_has_parallel_native_and_wasm_web_jobs(self) -> None:
+        bodies = _workflow_job_bodies(_windows_ci_workflow_text())
+        self.assertIn(
+            "build_and_test",
+            bodies,
+            "expected a native Windows job named build_and_test",
+        )
+        self.assertIn(
+            "wasm_web",
+            bodies,
+            "expected a parallel Windows job named wasm_web for //wasm and //web",
+        )
+
+    def test_native_job_excludes_wasm_and_web_patterns(self) -> None:
+        native = _workflow_job_bodies(_windows_ci_workflow_text())["build_and_test"]
+        for subcommand in ("fetch", "build", "test"):
+            lines = _active_bazelisk_lines(native, subcommand)
+            self.assertTrue(
+                lines,
+                f"native job must invoke bazelisk {subcommand}",
+            )
+            for line in lines:
+                self.assertRegex(
+                    line,
+                    r"(?<![\w/])//\.\.\.(?!\S)",
+                    f"native {subcommand} should still cover //... : {line.strip()}",
+                )
+                for package in ("wasm", "web"):
+                    self.assertTrue(
+                        _excludes_package_pattern(line, package),
+                        f"native {subcommand} must exclude -//{package}/... : "
+                        f"{line.strip()}",
+                    )
+
+    def test_wasm_web_job_targets_only_wasm_and_web(self) -> None:
+        wasm_web = _workflow_job_bodies(_windows_ci_workflow_text())["wasm_web"]
+        for subcommand in ("fetch", "build", "test"):
+            lines = _active_bazelisk_lines(wasm_web, subcommand)
+            self.assertTrue(
+                lines,
+                f"wasm_web job must invoke bazelisk {subcommand}",
+            )
+            for line in lines:
+                self.assertRegex(
+                    line,
+                    r"(?<![\w/])//wasm/\.\.\.(?!\S)",
+                    f"wasm_web {subcommand} must include //wasm/... : {line.strip()}",
+                )
+                self.assertRegex(
+                    line,
+                    r"(?<![\w/])//web/\.\.\.(?!\S)",
+                    f"wasm_web {subcommand} must include //web/... : {line.strip()}",
+                )
+                self.assertIsNone(
+                    re.search(r"(?<![\w/-])//\.\.\.(?!\S)", line),
+                    f"wasm_web {subcommand} must not use unscoped //... : "
+                    f"{line.strip()}",
+                )
+
+    def test_job_log_artifacts_are_distinct(self) -> None:
+        text = _windows_ci_workflow_text()
+        bodies = _workflow_job_bodies(text)
+        native_artifact = re.search(
+            r"(?m)^\s+name:\s*(\S*bazel-test-logs\S*)\s*$",
+            bodies["build_and_test"],
+        )
+        wasm_artifact = re.search(
+            r"(?m)^\s+name:\s*(\S*bazel-test-logs\S*)\s*$",
+            bodies["wasm_web"],
+        )
+        self.assertIsNotNone(native_artifact, "native job must upload test logs")
+        self.assertIsNotNone(wasm_artifact, "wasm_web job must upload test logs")
+        assert native_artifact is not None and wasm_artifact is not None
+        self.assertNotEqual(
+            native_artifact.group(1),
+            wasm_artifact.group(1),
+            "parallel Windows jobs need distinct artifact names",
         )
 
 
