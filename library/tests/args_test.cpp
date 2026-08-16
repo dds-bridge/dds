@@ -264,6 +264,25 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
     root_ + "hands/list42.txt"));
 }
 
+TEST_F(HandsLayoutFixture, ResolveLiteralRelativeUsesBazelWorkingDirectory)
+{
+  // bazelisk run //library/tests:dtest -- -f hands/list1.txt must find the
+  // path relative to the invoke-time shell cwd, not the runfiles tree.
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_lit/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("hands/list42.txt", "dtest"),
+    root_ + "hands/list42.txt"));
+}
+
 TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
 {
   const std::string runfiles =
@@ -278,6 +297,38 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
 
   EXPECT_TRUE(same_path(
     resolve_dtest_input_file("42", "dtest"),
+    root_ + "hands/list42.txt"));
+}
+
+TEST_F(HandsLayoutFixture, ResolveLiteralRelativeUsesBazelWorkspaceDirectory)
+{
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_ws_lit/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(root_.c_str());
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("hands/list42.txt", "dtest"),
+    root_ + "hands/list42.txt"));
+}
+
+TEST_F(HandsLayoutFixture, ResolveLiteralRelativeFallsBackRelativeToBinary)
+{
+  // Same layout as numeric binary-relative lookup, but with an explicit path.
+  ASSERT_EQ(change_dir(original_cwd_.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("hands/list42.txt", binary_path_),
     root_ + "hands/list42.txt"));
 }
 

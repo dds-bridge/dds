@@ -90,10 +90,10 @@ void usage(
   cout <<
     "Usage: " << basename << " [options]\n\n" <<
     "-f, --file s       Input file, or the number n;\n" <<
-    "                   '100' means hands/list100.txt under the current\n" <<
-    "                   directory (or BUILD_WORKING_DIRECTORY /\n" <<
-    "                   BUILD_WORKSPACE_DIRECTORY under bazel run), else\n" <<
-    "                   relative to the dtest binary\n" <<
+    "                   Relative paths (and '100' → hands/list100.txt) are\n" <<
+    "                   resolved under the current directory, then under\n" <<
+    "                   BUILD_WORKING_DIRECTORY / BUILD_WORKSPACE_DIRECTORY\n" <<
+    "                   (bazel run), else relative to the dtest binary\n" <<
     "                   (bazel-bin/library/tests/).\n" <<
     "                   (Default: input.txt)\n" <<
     "\n" <<
@@ -333,39 +333,76 @@ string resolve_dtest_input_file(
     return cwd_candidate;
 
   // bazel run moves CWD into the runfiles tree; it exports the invoke-time
-  // shell cwd and the workspace root so we can still find hands/.
-  auto from_env_dir = [&](const char* env_name) -> string
+  // shell cwd and the workspace root so relative -f paths still resolve.
+  auto from_env_dir = [&](const char* env_name, const fs::path& rel) -> string
   {
     const char* dir = std::getenv(env_name);
     if (dir == nullptr || dir[0] == '\0')
       return string();
-    const string candidate = normalize_logical_path(
-      (fs::path(dir) / "hands" / list_name).string());
+    const string candidate =
+      normalize_logical_path((fs::path(dir) / rel).string());
     if (path_exists(candidate))
       return candidate;
     return string();
   };
 
-  if (const string found = from_env_dir("BUILD_WORKING_DIRECTORY"); !found.empty())
-    return found;
-  if (const string found = from_env_dir("BUILD_WORKSPACE_DIRECTORY"); !found.empty())
-    return found;
-
   // Climb parents in the path *string* (do not use "/../" with filesystem
   // resolution — that follows a bazel-bin symlink into the execroot and misses
   // the workspace hands/ directory). bazel-bin/library/tests/dtest → four
   // parent_path steps to the repo root.
-  fs::path dir(absolute_path_logical(argv0));
-  for (unsigned i = 0; i < 4; ++i)
+  auto workspace_root_from_argv0 = [&]() -> fs::path
   {
-    const fs::path parent = dir.parent_path();
-    if (parent.empty())
-      return string();
-    dir = parent;
+    fs::path dir(absolute_path_logical(argv0));
+    for (unsigned i = 0; i < 4; ++i)
+    {
+      const fs::path parent = dir.parent_path();
+      if (parent.empty())
+        return {};
+      dir = parent;
+    }
+    return dir;
+  };
+
+  if (!is_absolute_path(arg))
+  {
+    if (const string found =
+          from_env_dir("BUILD_WORKING_DIRECTORY", arg); !found.empty())
+    {
+      return found;
+    }
+    if (const string found =
+          from_env_dir("BUILD_WORKSPACE_DIRECTORY", arg); !found.empty())
+    {
+      return found;
+    }
+  }
+
+  const fs::path list_rel = fs::path("hands") / list_name;
+  if (const string found =
+        from_env_dir("BUILD_WORKING_DIRECTORY", list_rel); !found.empty())
+  {
+    return found;
+  }
+  if (const string found =
+        from_env_dir("BUILD_WORKSPACE_DIRECTORY", list_rel); !found.empty())
+  {
+    return found;
+  }
+
+  const fs::path root = workspace_root_from_argv0();
+  if (root.empty())
+    return string();
+
+  if (!is_absolute_path(arg))
+  {
+    const string bin_literal =
+      normalize_logical_path((root / arg).string());
+    if (path_exists(bin_literal))
+      return bin_literal;
   }
 
   const string bin_candidate =
-    normalize_logical_path((dir / "hands" / list_name).string());
+    normalize_logical_path((root / "hands" / list_name).string());
   if (path_exists(bin_candidate))
     return bin_candidate;
 
@@ -431,8 +468,8 @@ void read_args(
         }
 
         cout << "Input file '" << optarg << "' not found\n";
-        cout << "Also tried hands/list" << optarg <<
-          ".txt under the current directory, "
+        cout << "Also tried that path (and hands/list" << optarg <<
+          ".txt) under the current directory, "
           "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
           "and relative to the dtest binary\n";
         nextToken -= 2;
