@@ -1,14 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- Architecture-neutral: only the native library is RID-specific. -->
     <Platforms>AnyCPU</Platforms>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <BaseOutputPath>..\..\Build\bin\</BaseOutputPath>
+    <RootNamespace>DdTableForDeal</RootNamespace>
+    <AssemblyName>dd_table_for_deal</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

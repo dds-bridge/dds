@@ -9,9 +9,16 @@ The library exposes the full DDS functionality through idiomatic `.Net` structur
 
 The goal is to provide a stable, fast, and fully documented .NET interface to the DDS engine.
 
+It runs on **macOS, Linux, and Windows** from the same assembly — see
+[Building and loading the native library](#building-and-loading-the-native-library).
+The bindings mirror how the other language bindings work; see
+[jni_interface.md](jni_interface.md), [python_interface.md](python_interface.md),
+and [wasm_build.md](wasm_build.md).
+
 ---
 
 ## Table of Contents
+0. [Building and loading the native library](#building-and-loading-the-native-library)
 1. [Introduction](#introduction)
 2. [Legacy vs. Modern DDS API](#legacy-vs-modern-dds-api)
 3. [Basic Usage](#basic-usage)
@@ -36,6 +43,78 @@ The goal is to provide a stable, fast, and fully documented .NET interface to th
         - [Internal Error Handling](#internal-error-handling)  
     d. [Threading & Performance](#threading-performance)  
     e. [Examples](#examples)
+
+---
+
+# Building and loading the native library
+
+`DDS_Core` is a managed wrapper; the solver itself lives in one self-contained
+native library built by Bazel:
+
+```bash
+bazel build //jni:dds_shared
+```
+
+| OS      | Artifact       | Location         |
+| ------- | -------------- | ---------------- |
+| Linux   | `libdds.so`    | `bazel-bin/jni/` |
+| macOS   | `libdds.dylib` | `bazel-bin/jni/` |
+| Windows | `dds.dll`      | `bazel-bin/jni/` |
+
+Despite living under `//jni`, this is the shared native artifact for every
+binding — the JVM one uses it too.
+
+## Finding the library at runtime
+
+The binding imports the library under the single name **`dds`**; .NET's probing
+supplies the `lib` prefix and the per-OS extension, so one name resolves all
+three artifacts above. There are two ways to point it at a library:
+
+- **Default probing** — place the library where the runtime already looks (next
+  to the application, or under `runtimes/<rid>/native/` in a package). No
+  configuration needed.
+- **`DDS_LIBRARY_PATH`** — set this environment variable to the *full path* of a
+  library file to override probing. This is the counterpart of the JVM binding's
+  `-Ddds.library.path`, and is how the tests bind against a freshly-built
+  library:
+
+  ```bash
+  export DDS_LIBRARY_PATH="$(bazel info bazel-bin)/jni/libdds.dylib"
+  dotnet test dotnet/DDS_Core.Tests/
+  ```
+
+  Use `bazel info bazel-bin` rather than the `bazel-bin` symlink: that symlink is
+  configuration-dependent and moves when you build with a different `--config`.
+  If the variable is set but the library cannot be loaded, the error names the
+  path you gave rather than reporting a missing entry point later.
+
+## Example: `dd_table_for_deal`
+
+`dotnet/DdTableForDeal/` is the .NET counterpart of `examples/dd_table_for_deal`
+and `python/examples/dd_table_for_deal.py`. After building the native library and
+setting `DDS_LIBRARY_PATH` as above:
+
+```bash
+dotnet run --project dotnet/DdTableForDeal/ -- hands/example.pbn
+dotnet run --project dotnet/DdTableForDeal/ -- --vul ns hands/example.pbn
+dotnet test dotnet/DdTableForDeal.Tests/
+./dotnet/DdTableForDeal/e2e.sh          # Linux/macOS; Windows: e2e.ps1
+```
+
+## Which native symbols are used
+
+The modern context API binds the pure-C shim (`dds_c_*`, from
+`library/src/api/dds_c_api.h`); the legacy flat API binds `dll.h` directly. The
+reference-taking `dds_*` functions in `dds_api.hpp` are deliberately **not**
+used — they are not exported on Linux or macOS, and binding them is what
+previously made this wrapper Windows-only.
+
+## Requirements
+
+.NET 8.0 or later (`.NET Framework` is not supported). If you build the test
+project on a machine that has only a newer major runtime installed, note it sets
+`<RollForward>Major</RollForward>` so it still runs; the library itself targets
+`net8.0`.
 
 ---
 

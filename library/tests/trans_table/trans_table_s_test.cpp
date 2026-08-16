@@ -4,7 +4,7 @@
 // Include DDS types first
 #include <api/dll.h>
 
-// No TransTable dependencies needed in this file; remove legacy forward declarations.
+#include <trans_table/trans_table_s.hpp>
 
 namespace dds_test {
 
@@ -31,6 +31,40 @@ static void CreateTestWinRanks(unsigned short win_ranks[DDS_SUITS]) {
     win_ranks[1] = 0x6666; // Hearts
     win_ranks[2] = 0x7777; // Diamonds  
     win_ranks[3] = 0x8888; // Clubs
+}
+
+// Test that verifies that calling reset_memory() after return_all_memory()
+// is inert and does not cause a crash.
+TEST(TransTableSMemoryTest, ResetAfterReturnAllMemoryIsInert) {
+    TransTableS tt;
+
+    tt.set_memory_maximum(1);
+    tt.make_tt();
+    tt.return_all_memory();
+
+    // The guard under test. Without it this call segfaults: init_tt()
+    // dereferences pw_[0], which return_all_memory() has already freed.
+    // Reaching this line at all is the regression assertion.
+    tt.reset_memory(ResetReason::FreeMemory);
+
+    // The table is usable again once the pools are reallocated.
+    tt.make_tt();
+
+    int handLookup[15][15];
+    CreateBasicHandLookup(handLookup);
+    tt.init(handLookup);
+    tt.reset_memory(ResetReason::NewDeal);
+
+    // aggr_target entries index aggp_ (8192 = 2^13 slots), so each must be a
+    // 13-bit rank mask; a wider value reads past the array. An all-zero
+    // hand_dist matches the tree root init_tt() rebuilt, so this reaches the
+    // aggp_ indexing and the pos_search_point_ null check on the rebuilt table.
+    unsigned short aggrTarget[DDS_SUITS] = {0, 0, 0, 0};
+    int hand_dist[4] = {0, 0, 0, 0};
+    bool lowerFlag = false;
+
+    // Nothing was added, so the rebuilt table must miss rather than crash.
+    EXPECT_EQ(tt.lookup(1, 0, aggrTarget, hand_dist, 0, lowerFlag), nullptr);
 }
 
 // Test that verifies DDS constants are available
