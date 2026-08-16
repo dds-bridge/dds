@@ -53,7 +53,7 @@ jobs:
           exit 1
 
       # Run native tests (including Python) — no retry so real failures surface quickly
-      - name: Run all tests
+      - name: Run native tests
         run: bazelisk test --config=opt --verbose_failures --test_output=errors -- '//...' '-//wasm/...' '-//web/...'
 
       # .NET binding lives in CI – Windows .NET (ci_windows_dotnet.yml).
