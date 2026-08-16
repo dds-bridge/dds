@@ -468,10 +468,10 @@ void read_args(
         }
 
         cout << "Input file '" << optarg << "' not found\n";
-        cout << "Also tried that path (and hands/list" << optarg <<
-          ".txt) under the current directory, "
+        cout << "Also tried that path under the current directory, "
           "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
-          "and relative to the dtest binary\n";
+          "and relative to the dtest binary; "
+          "for numeric -f N, also hands/listN.txt\n";
         nextToken -= 2;
         errFlag = true;
         break;
