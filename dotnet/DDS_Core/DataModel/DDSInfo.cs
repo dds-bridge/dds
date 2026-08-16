@@ -11,7 +11,7 @@ namespace DDS_Core;
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
 public struct DdsInfo
 {
-    /// <summary>Major version number (e.g., 3 for 3.0.0).</summary>
+    /// <summary>Major version number (e.g., 3 for 3.1.0).</summary>
     public int Major;
 
     /// <summary>Minor version number.</summary>
@@ -20,7 +20,7 @@ public struct DdsInfo
     /// <summary>Patch version number.</summary>
     public int Patch;
 
-    /// <summary>Version string (e.g., "3.0.0"), max 10 characters.</summary>
+    /// <summary>Version string (e.g., "3.1.0"), max 10 characters.</summary>
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 10)]
     public readonly string VersionString;
 
