@@ -429,10 +429,10 @@ struct DDSInfo
 
 
 /**
- * @brief Initialise the solver's static memory.
+ * @brief Initialize the solver's static memory.
  *
  * Allocates the transposition-table memory pools, registers scheduler and
- * thread-manager state, and performs one-time lookup-table initialisation.
+ * thread-manager state, and performs one-time lookup-table initialization.
  * This does NOT control the number of worker threads — use the
  * SolveAllBoardsN / CalcAllTablesN family for per-call thread caps.
  */

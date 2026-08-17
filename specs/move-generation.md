@@ -47,7 +47,7 @@ and transposition-table hits. `Moves` is an internal component — it is not par
   void situation (0–3 hands void), 13 categories total. It indexes the statistics
   tables and the heuristic's per-situation tracking.
 - **Invariants are assertion-checked.** Public methods assume valid input and
-  prior initialisation; violations trip asserts in debug builds. The move-finding
+  prior initialization; violations trip asserts in debug builds. The move-finding
   methods signal "no move" by returning `nullptr`, not by throwing.
 - **Statistics/printing are diagnostic-only** and emit under `DDS_MOVES` /
   `DDS_MOVES_DETAILS` (see [constants-and-debug](constants-and-debug.md)); they are off the hot path in
