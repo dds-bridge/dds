@@ -5,6 +5,7 @@ from dds3 import calc_all_tables_pbn
 from dds3 import calc_dd_table
 from dds3 import calc_par
 from dds3 import calc_par_from_table
+from dds3 import initialize_static_memory
 from dds3 import module_name
 from dds3 import par
 from dds3 import SolverContext
@@ -27,6 +28,7 @@ class TestImport(unittest.TestCase):
         self.assertTrue(callable(par))
         self.assertTrue(callable(calc_par))
         self.assertTrue(callable(calc_par_from_table))
+        self.assertTrue(callable(initialize_static_memory))
         self.assertIsNotNone(SolverContext)
 
         # Verify SolverContext can be instantiated.

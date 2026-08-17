@@ -1,6 +1,6 @@
 /// @file max_threads_equivalence_test.cpp
 /// @brief Tests that the *N batch APIs honour maxThreads and stay equivalent to
-///        the auto path, plus that the rename/alias both initialise the library.
+///        the auto path, plus that the rename/alias both initialize the library.
 
 #include <gtest/gtest.h>
 #include <cstring>
@@ -102,7 +102,7 @@ TEST(MaxThreadsEquivalence, SolveAllBoardsBinNMatchesAuto)
     const FutureTricks& fa = solved_auto.solved_board[b];
     const FutureTricks& fo = solved_one.solved_board[b];
     ASSERT_EQ(fa.cards, fo.cards) << "card count differs at board=" << b;
-    // Only the first `cards` entries are meaningful; the tail is uninitialised.
+    // Only the first `cards` entries are meaningful; the tail is uninitialized.
     for (int c = 0; c < fa.cards; c++)
     {
       EXPECT_EQ(fa.suit[c], fo.suit[c]) << "suit at board=" << b << " c=" << c;
@@ -122,7 +122,7 @@ TEST(MaxThreadsEquivalence, InitializeStaticMemoryThenSolve)
   EXPECT_EQ(CalcDDtable(deal, &table), RETURN_NO_FAULT);
 }
 
-// The deprecated SetMaxThreads alias still initialises the library.
+// The deprecated SetMaxThreads alias still initializes the library.
 TEST(MaxThreadsEquivalence, DeprecatedSetMaxThreadsAliasStillWorks)
 {
   SetMaxThreads(1);
