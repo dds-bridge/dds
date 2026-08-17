@@ -32,8 +32,7 @@ points:
   across hardware threads inside the library.
 - `dealer_par` — par contracts from the dealer's perspective.
 - `initialise_static_memory` (replaces the deprecated `set_max_threads`; the
-  C equivalent is spelled `InitializeStaticMemory` — the Python module uses
-  British spelling).
+  C equivalent is spelled `InitializeStaticMemory` — the Python module currenly uses some British spelling, we plan to settle on American English throughout).
 
 All of these release the GIL around the native call and validate their inputs.
 Batch entry points accept an optional `max_threads`.
@@ -92,7 +91,7 @@ TOTAL  calc                  9.35       123.59         8.42
   `TransTableS::reset_memory` after memory release.
 - **Par output now names the declaring seat** when successive par contracts
   differ, in both the C++ and .NET paths.
-- Worker exceptions in parallel board solving are reported as RETURN_UNKNOWN_FAULT 
+- Worker exceptions in parallel board solving are reported as `RETURN_UNKNOWN_FAULT` 
 rather than terminating the process.
 
 ### New public C API
@@ -137,11 +136,11 @@ name still works and no longer influences batch parallelism.
 No breaking changes for 3.0 consumers. The only deprecation is `SetMaxThreads`,
 which remains available as an alias.
 
-SolveAllBoards*/CalcAllTables* now spawn threads by default where 3.0 was sequential, 
-there are sequential alternatives as well. There is also a bug fix which changes the 
-output from AnalysePlayResults.
+`SolveAllBoards*/CalcAllTables*` now spawn threads by default where 3.0 was sequential; 
+the `*Seq` variant opts out. There is also a bug fix which changes the 
+output from AnalysePlay*.
 
 ## Contributors
 
-@BonyJordan, @BSalita, @ed2k, @jdh8, @mortensp, @sun51, @tameware, @ThorvaldAagaard,
+@BonyJordan, @BSalita, @ed2k, @jdh8, @mortensp, @tameware, @ThorvaldAagaard,
 @tzimnoch, @wopdevries, @zzcgumn
