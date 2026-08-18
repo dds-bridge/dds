@@ -31,8 +31,8 @@ points:
 - `solve_all_boards_pbn`, `solve_all_boards_bin` — batch solving, parallelised
   across hardware threads inside the library.
 - `dealer_par` — par contracts from the dealer's perspective.
-- `initialise_static_memory` (replaces the deprecated `set_max_threads`; the
-  C equivalent is spelled `InitializeStaticMemory` — the Python module currenly uses some British spelling, we plan to settle on American English throughout).
+- `initialize_static_memory` (mirrors the C-side `SetMaxThreads` →
+  `InitializeStaticMemory` deprecation).
 
 All of these release the GIL around the native call and validate their inputs.
 Batch entry points accept an optional `max_threads`.
@@ -58,7 +58,6 @@ Batch entry points accept an optional `max_threads`.
   empty table on next use.
 - Thin LTO on macOS builds, inlined hot accessors, and native WASM exception
   handling.
-
 - **New performance tooling** — utilities for comparing solver performance
   between two commits, and for recording warm benchmarks from a live consumer.
   The comparison below (18-core Mac) shows solver performance is back at 2.9
@@ -91,8 +90,8 @@ TOTAL  calc                  9.35       123.59         8.42
   `TransTableS::reset_memory` after memory release.
 - **Par output now names the declaring seat** when successive par contracts
   differ, in both the C++ and .NET paths.
-- Worker exceptions in parallel board solving are reported as `RETURN_UNKNOWN_FAULT` 
-rather than terminating the process.
+- Worker exceptions in parallel board solving are reported as `RETURN_UNKNOWN_FAULT`
+  rather than terminating the process.
 
 ### New public C API
 
@@ -133,12 +132,15 @@ name still works and no longer influences batch parallelism.
 
 ## Compatibility
 
-No breaking changes for 3.0 consumers. The only deprecation is `SetMaxThreads`,
+No API breaks for 3.0 consumers. The only deprecation is `SetMaxThreads`,
 which remains available as an alias.
 
-`SolveAllBoards*/CalcAllTables*` now spawn threads by default where 3.0 was sequential; 
-the `*Seq` variant opts out. There is also a bug fix which changes the 
-output from AnalysePlay*.
+`SolveAllBoards*`/`CalcAllTables*` now spawn threads by default where 3.0 was
+sequential; pass `maxThreads = 1` to the `*N`/`*X` variants, or call
+`SolveAllBoardsSeq`/`SolveAllBoardsBinSeq`, to stay on one thread. The
+[incorrect results with v3 #156](https://github.com/dds-bridge/dds/issues/156)
+fix changes the trick counts returned by `AnalysePlay*`; they were previously
+under-counted.
 
 ## Contributors
 

@@ -8,7 +8,7 @@ last-updated: 2026-07-18
 
 > **Specs vs. doxygen.** Each table's exact indexing and return encoding is
 > documented inline in `lookup_tables.hpp`. This spec records what the tables are
-> collectively, their initialisation/immutability contract, and who depends on
+> collectively, their initialization/immutability contract, and who depends on
 > them.
 
 ## Purpose
@@ -34,14 +34,14 @@ inner loops of [move-generation](move-generation.md) and the search index these 
   `win_ranks[8192][14]` (bitmask of the top-N cards), and `group_data[8192]`
   (`MoveGroupType` run decomposition — up to 7 runs of adjacent ranks with their
   top card, tail sequence, full sequence, and inter-run gaps).
-- **Initialised once, eagerly, at startup.** `init_lookup_tables()` fills the
-  storage via static initialisation (`DdsLutInitGuard`), guarded by
+- **Initialized once, eagerly, at startup.** `init_lookup_tables()` fills the
+  storage via static initialization (`DdsLutInitGuard`), guarded by
   `std::call_once`. It is **thread-safe, idempotent, and a no-op after startup** —
-  explicit calls are safe but redundant. No consumer needs to initialise them.
+  explicit calls are safe but redundant. No consumer needs to initialize them.
 - **Read-only and immutable after init.** The tables are exposed as `const`
   references to fixed-size arrays, giving zero-overhead direct indexing
   (`highest_rank[aggr]`, `rel_rank[aggr][rank]`). Any thread may read them
-  concurrently; nothing mutates them post-initialisation.
+  concurrently; nothing mutates them post-initialization.
 - **`MoveGroupType` is the run-decomposition contract** consumed by move
   generation: `last_group_` (−1 for empty, up to 6), and per-group `rank_`,
   `sequence_`, `fullseq_`, and `gap_` arrays. `rank_`, `sequence_` and
