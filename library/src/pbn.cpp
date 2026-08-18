@@ -11,6 +11,7 @@
 #include <api/dds.h>
 
 auto is_card(const char cardChar) -> int;
+auto is_compass_letter(const char c) -> bool;
 
 
 auto convert_from_pbn(
@@ -22,10 +23,7 @@ auto convert_from_pbn(
       remainCards[h][s] = 0;
 
   int bp = 0;
-  while (((dealBuff[bp] != 'W') && (dealBuff[bp] != 'N') &&
-          (dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
-          (dealBuff[bp] != 'w') && (dealBuff[bp] != 'n') &&
-          (dealBuff[bp] != 'e') && (dealBuff[bp] != 's')) && (bp < 3))
+  while ((bp < 3) && !is_compass_letter(dealBuff[bp]))
     bp++;
 
   if (bp >= 3)
@@ -92,9 +90,30 @@ auto convert_from_pbn(
       hand_rel_first++;
       suitInHand = 0;
     }
+    else if (is_compass_letter(dealBuff[bp]))
+      return 0;
     bp++;
   }
   return RETURN_NO_FAULT;
+}
+
+
+auto is_compass_letter(const char c) -> bool
+{
+  switch (c)
+  {
+    case 'N':
+    case 'n':
+    case 'E':
+    case 'e':
+    case 'S':
+    case 's':
+    case 'W':
+    case 'w':
+      return true;
+    default:
+      return false;
+  }
 }
 
 

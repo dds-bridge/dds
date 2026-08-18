@@ -407,7 +407,7 @@ Common encodings are as follows
 <td><a name="Holding"></a>Holding</td><td colspan="2">A value of 16388 = 16384 + 4 is the encoding for the holding &#8220;A2&#8221; (ace and deuce).<br />The two lowest bits are always zero.</td>
 </tr>
 <tr><td colspan="3">&nbsp;</td></tr>
-<td><a name="PBN"></a>PBN</td><td colspan="2">Example:<br />W:T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K</td>
+<td><a name="PBN"></a>PBN</td><td colspan="2">Example:<br />W:T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K<br />Only the first hand has a compass letter (N/E/S/W); the other three hands follow clockwise and must not include additional directions.</td>
 </tr>
 </tbody>
 </table>

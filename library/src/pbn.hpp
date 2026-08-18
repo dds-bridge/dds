@@ -16,6 +16,7 @@
  * @brief Convert a PBN (Portable Bridge Notation) Deal string to DDS card array.
  *
  * Parses a PBN-format Deal string and fills the DDS card array with the remaining cards for each hand and suit.
+ * Only the first hand may have a compass letter (N/E/S/W); the other three hands follow clockwise and must not include additional directions.
  *
  * @param dealBuff PBN-format Deal string.
  * @param remainCards Output array for remaining cards per hand and suit.

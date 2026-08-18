@@ -76,6 +76,7 @@ pytest python/tests/test_solve_board.py::TestSolveBoard::test_solve_board_basic 
 - **TestPBNConversions**: PBN string parsing validation
   - Valid PBN format acceptance
   - Invalid seat designations
+  - Extra compass letters on later hands rejected
   - Truncated/empty string handling
 
 - **TestTrumpFilterValidation**: Trump filter parameter bounds

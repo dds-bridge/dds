@@ -198,6 +198,21 @@ class TestPBNConversions(unittest.TestCase):
         pbn = "N:AK.234.456.789TJQ W:QJ.AKQJ"  # Incomplete
         assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn)
 
+    def test_pbn_extra_seat_letters_rejected(self) -> None:
+        """Later hands may not include compass letters; only the first hand may."""
+        pbn = (
+            "N:QJ6.K652.J85.T98 E:873.J97.AT764.Q4 "
+            "S:K5.T83.KQ9.A7652 W:AT942.AQ4.32.KJ3"
+        )
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn)
+
+    def test_pbn_single_extra_seat_letter_rejected(self) -> None:
+        pbn = (
+            "N:QJ6.K652.J85.T98 W:873.J97.AT764.Q4 "
+            "K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
+        )
+        assert_raises((ValueError, RuntimeError), solve_board_pbn, pbn)
+
 
 class TestTrumpFilterValidation(unittest.TestCase):
     """Tests for trump_filter validation in calc_all_tables_pbn."""

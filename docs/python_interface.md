@@ -101,7 +101,7 @@ print(f"Tricks available: {result['score']}")
 Solves a single bridge deal using PBN (Portable Bridge Notation).
 
 **Parameters:**
-- `remain_cards` (str): PBN string (e.g., "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6")
+- `remain_cards` (str): PBN string (e.g., `"N:AK.234.456.789TJ T9432.T9.TJ2.AKQ 8765.8765.AKQ3.6 QJ.AKQJ.789.2345"`). Only the first hand has a compass letter; the other three follow clockwise with no seat prefixes.
 - `trump` (int, default=4): Trump suit (0-4)
 - `first` (int, default=0): Player to lead
 - `current_trick_suit` (tuple, default=(0,0,0)): Current trick suits
@@ -179,7 +179,7 @@ from dds3 import calc_all_tables_pbn
 
 deals = [
     "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3",
-    "N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6",
+    "N:AK.234.456.789TJ T9432.T9.TJ2.AKQ 8765.8765.AKQ3.6 QJ.AKQJ.789.2345",
 ]
 
 result = calc_all_tables_pbn(deals, mode=0)
@@ -312,13 +312,16 @@ remain_cards = [
 ```
 
 ### PBN Format
-Portable Bridge Notation format: `"N:AK.234.456.789TJQ W:QJ.AKQJ.789.234 E:T9.T9.TJ.AK S:8765.8765.AKQJ32.6"`
+Portable Bridge Notation deal string. Only the first hand has a compass letter (`N`/`E`/`S`/`W`); the other three hands follow clockwise and must not include additional directions.
 
-Format: `[Seat]:[Spades].[Hearts].[Diamonds].[Clubs]`
-- Seats: N (North), E (East), S (South), W (West)
+Example: `"N:AK.234.456.789TJ T9432.T9.TJ2.AKQ 8765.8765.AKQ3.6 QJ.AKQJ.789.2345"`
+
+Format: `[Seat]:[Spades].[Hearts].[Diamonds].[Clubs] [next hand clockwise] ...`
+- First-hand seat: N (North), E (East), S (South), or W (West)
 - Cards: 2-9, T (10), J, Q, K, A (highest)
 - Dots separate suits
 - Omitted cards belong to other players
+- Extra compass letters on later hands are rejected
 
 ## Validation and Error Handling
 
@@ -328,7 +331,7 @@ The Python interface validates all inputs:
 - Rank values: 0 or 2-14 for trick cards (`0` means unset)
 - Card bitmasks: 0..0x7FFC
 - Array dimensions: 4x4 for card arrays, 5x4 for results
-- PBN format: Must be valid PBN notation
+- PBN format: Must be valid PBN notation (first-hand compass letter only)
 
 ### Exception Handling
 - `ValueError`: Invalid input parameters (bounds, format)

@@ -17,6 +17,7 @@ filegroup(
             "parse_par_test.cpp",  # Uses GoogleTest, compiled separately
             "loop_par_test.cpp",  # Uses GoogleTest, compiled separately
             "dds_c_api_test.cpp",  # Uses GoogleTest, compiled separately
+            "pbn_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -147,6 +148,20 @@ cc_test(
     linkopts = DDS_LINKOPTS,
     local_defines = DDS_LOCAL_DEFINES,
     deps = [
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pbn_test",
+    srcs = ["pbn_test.cpp"],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
         "@googletest//:gtest_main",
     ],
 )
