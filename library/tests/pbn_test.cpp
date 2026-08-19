@@ -119,8 +119,8 @@ TEST(ConvertFromPbn, RejectsTooManyHands)
 
 TEST(ConvertFromPbn, RejectsInputLongerThanRemainCardsBuffer)
 {
-  const std::string pbn =
-      std::string(kNorthFirst) + " E:873.J97.AT764.Q4";
+  std::string pbn = "N:";
+  pbn.append(80, 'A');
   ASSERT_GT(pbn.size(), 80u);
   EXPECT_EQ(convert(pbn.c_str()), 0);
 }
