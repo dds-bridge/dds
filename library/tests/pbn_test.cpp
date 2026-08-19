@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+
 #include <api/PBN.h>
 #include <api/dll.h>
 
@@ -113,4 +115,18 @@ TEST(ConvertFromPbn, RejectsTooManyHands)
 {
   unsigned int remain[DDS_HANDS][DDS_SUITS]{};
   EXPECT_EQ(convert_from_pbn("N:AK.K.K.K    A", remain), 0);
+}
+
+TEST(ConvertFromPbn, RejectsInputLongerThanRemainCardsBuffer)
+{
+  const std::string pbn =
+      std::string(kNorthFirst) + " E:873.J97.AT764.Q4";
+  ASSERT_GT(pbn.size(), 80u);
+  EXPECT_EQ(convert(pbn.c_str()), 0);
+}
+
+TEST(ConvertFromPbn, AcceptsInputThatFitsRemainCardsBuffer)
+{
+  ASSERT_LT(std::char_traits<char>::length(kNorthFirst), 80u);
+  EXPECT_EQ(convert(kNorthFirst), RETURN_NO_FAULT);
 }

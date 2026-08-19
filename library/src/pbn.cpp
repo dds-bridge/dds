@@ -112,6 +112,10 @@ auto convert_from_pbn(
       return 0;
     bp++;
   }
+
+  if (bp >= 80)
+    return 0;
+
   return RETURN_NO_FAULT;
 }
 
