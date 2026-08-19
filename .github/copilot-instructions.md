@@ -12,7 +12,7 @@
 
 **Current State**: Work in progress towards version 3.0. The project has been refactored from the legacy 2.9.0 codebase to use modern C++ features, Bazel build system, and modular architecture.
 
-**Languages & Tools**: C++20, Bazel 7.x, GoogleTest for testing
+**Languages & Tools**: C++20, Bazel (version pinned in `.bazelversion`), GoogleTest for testing
 
 **Repository Size**: ~50 C++ source files in library/src, ~20 test files, several examples
 
@@ -24,25 +24,31 @@
 
 ```bash
 # Build everything (required before testing or running)
-bazel build //...
+bazelisk build //...
 
 # Run all tests
-bazel test //...
+bazelisk test //...
 
 # Build specific target
-bazel build //library/src:dds
+bazelisk build //library/src:dds
 
 # Run specific test
-bazel test //library/tests:dtest
+bazelisk test //library/tests:dtest
 
 # Build with optimization
-bazel build -c opt //...
+bazelisk build -c opt //...
 
 # Build with debug symbols
-bazel build -c dbg //...
+bazelisk build -c dbg //...
 
-# Build with specific flags (example: enable ASAN)
-bazel build --define=asan=true //...
+# Build with AddressSanitizer (see .bazelrc build:asan and docs/BUILD_SYSTEM.md)
+bazelisk build --config=asan //...
+
+# Build with UndefinedBehaviorSanitizer (standalone; see docs/BUILD_SYSTEM.md)
+bazelisk build --config=ubsan //...
+
+# Build with MemorySanitizer (Linux x86_64 only; see docs/BUILD_SYSTEM.md)
+bazelisk build --config=msan //...
 ```
 
 ### Build Time Expectations
@@ -57,8 +63,8 @@ Note: Times may vary significantly based on hardware and network conditions.
 ### Before Making Changes
 ALWAYS run these commands first to establish baseline:
 ```bash
-bazel build //...
-bazel test //...
+bazelisk build //...
+bazelisk test //...
 ```
 This ensures any pre-existing issues are not attributed to your changes.
 
@@ -66,8 +72,8 @@ This ensures any pre-existing issues are not attributed to your changes.
 ALWAYS validate your changes:
 ```bash
 # Build and test
-bazel build //...
-bazel test //...
+bazelisk build //...
+bazelisk test //...
 ```
 
 ## Project Layout and Architecture
@@ -171,8 +177,8 @@ bazel test //...
 ### GitHub Actions Workflows
 
 **On Every PR** (must pass before merge):
-1. **Build** - `bazel build //...` on Linux and macOS
-2. **Test** - `bazel test //...` on both platforms
+1. **Build** - `bazelisk build //...` on Linux and macOS
+2. **Test** - `bazelisk test //...` on both platforms
 3. **Lint** - clang-tidy checks (configured in `.clang-tidy`)
 
 **Workflow Files**:
@@ -191,7 +197,7 @@ If CI fails:
 3. For clang-tidy issues, run:
    ```bash
    # Generate compile_commands.json
-   bazel build //... --config=clang-tidy
+   bazelisk build //... --config=clang-tidy
    # Run clang-tidy manually
    clang-tidy library/src/your_file.cpp
    ```
@@ -200,12 +206,18 @@ If CI fails:
 
 Before finalizing changes, optionally run:
 ```bash
-# Check for memory leaks (Linux only)
-bazel build --define=asan=true //...
-bazel test --define=asan=true //...
+# Check for memory leaks (see docs/BUILD_SYSTEM.md for macOS/Linux notes)
+bazelisk build --config=asan //...
+bazelisk test --config=asan //...
+
+# Check for undefined behavior
+bazelisk test --config=ubsan //...
+
+# Check for uninitialized reads (Linux x86_64 only)
+bazelisk test --config=msan //...
 
 # Performance test with real hands
-bazel build //library/tests:dtest
+bazelisk build //library/tests:dtest
 ./bazel-bin/library/tests/dtest -f hands/list100.txt -s solve -n 4
 ```
 
@@ -266,7 +278,7 @@ bazel build //library/tests:dtest
 
 **Problem**: Bazel build hangs or is very slow
 - **Cause**: Large compilation unit or full rebuild
-- **Fix**: Use `bazel build --jobs=4` to limit parallelism, or be patient (initial builds are slow)
+- **Fix**: Use `bazelisk build --jobs=4` to limit parallelism, or be patient (initial builds are slow)
 
 **Problem**: Linker errors about multiple definitions
 - **Cause**: Inline functions in headers without `inline` keyword
@@ -276,7 +288,7 @@ bazel build //library/tests:dtest
 
 **Problem**: Tests fail with "Segmentation fault"
 - **Cause**: Usually memory management bug or uninitialized variable
-- **Fix**: Run with ASAN: `bazel test --define=asan=true //library/tests:failing_test`
+- **Fix**: Run with ASAN: `bazelisk test --config=asan //library/tests:failing_test`
 
 **Problem**: Tests fail with different results than expected
 - **Cause**: Possibly heuristic sorting or transposition table issues
@@ -286,7 +298,7 @@ bazel build //library/tests:dtest
 
 **Problem**: Performance much slower than expected
 - **Cause**: Debug build or single-threaded execution
-- **Fix**: Build with `bazel build -c opt //...` and ensure threading is enabled
+- **Fix**: Build with `bazelisk build -c opt //...` and ensure threading is enabled
 
 **Problem**: Out of memory errors
 - **Cause**: Transposition table too large
@@ -302,7 +314,7 @@ These instructions are comprehensive and tested. **Only search the codebase if**
 
 ### Making Changes
 1. **Minimal changes**: Modify only what's necessary
-2. **Test immediately**: Run `bazel test //...` after each logical change
+2. **Test immediately**: Run `bazelisk test //...` after each logical change
 3. **Follow patterns**: Match existing code style exactly
 4. **Update docs**: If changing public API, update corresponding documentation
 

@@ -6,23 +6,115 @@ on:
   workflow_dispatch: {}
 
 jobs:
+  # Native MSVC path (library, examples, Python, JNI, …). Excludes //wasm and
+  # //web so emsdk does not dominate this job's wall clock.
   build_and_test:
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
-      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
+        uses: ./.github/actions/setup-bazelisk
+
+      # Warm external deps for the native graph; retry transient network flakes.
+      - name: Prefetch external repos
+        shell: pwsh
+        run: |
+          $max = 3
+          for ($i = 1; $i -le $max; $i++) {
+            bazelisk fetch '--' '//...' '-//wasm/...' '-//web/...'
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($i -lt $max) {
+              Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              Start-Sleep -Seconds 20
+            }
+          }
+          exit 1
+
+      # Build native targets (retry: fetch flakes can still surface on first analysis).
+      # --config=opt: DDS_CPPOPTS no longer forces /O2 (that fought Bazel's /Od and
+      # triggered MSVC D9025); opt mode is how Windows keeps release-level codegen.
+      - name: Bazel build (retry on transient fetch failure)
+        shell: pwsh
+        run: |
+          $max = 3
+          for ($i = 1; $i -le $max; $i++) {
+            bazelisk build --config=opt --verbose_failures '--' '//...' '-//wasm/...' '-//web/...'
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($i -lt $max) {
+              Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
+              Start-Sleep -Seconds 20
+              # Restart server only — keep downloaded external repos / disk cache.
+              bazelisk shutdown || $true
+            }
+          }
+          exit 1
+
+      # Run native tests (including Python) — no retry so real failures surface quickly
+      - name: Run native tests
+        run: bazelisk test --config=opt --verbose_failures --test_output=errors '--' '//...' '-//wasm/...' '-//web/...'
+
+      # .NET binding lives in CI – Windows .NET (ci_windows_dotnet.yml).
+
+      - name: Upload test logs - Windows
+        if: always()
+        uses: actions/upload-artifact@v6
         with:
-          bazelisk-version: "1.29.0"
+          name: bazel-test-logs-windows
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
 
-      # Build all targets
-      - name: Build all targets
-        run: bazel build --verbose_failures //...
+  # Windows-host emsdk / wasm transition coverage (parallel with native).
+  wasm_web:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-      # Run all tests (including Python)
-      - name: Run all tests
-        run: bazel test --verbose_failures //...
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        shell: pwsh
+        run: |
+          $max = 3
+          for ($i = 1; $i -le $max; $i++) {
+            bazelisk fetch //wasm/... //web/...
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($i -lt $max) {
+              Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              Start-Sleep -Seconds 20
+            }
+          }
+          exit 1
+
+      - name: Bazel build (retry on transient fetch failure)
+        shell: pwsh
+        run: |
+          $max = 3
+          for ($i = 1; $i -le $max; $i++) {
+            bazelisk build --config=opt --verbose_failures //wasm/... //web/...
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($i -lt $max) {
+              Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
+              Start-Sleep -Seconds 20
+              bazelisk shutdown || $true
+            }
+          }
+          exit 1
+
+      - name: Run wasm and web tests
+        run: bazelisk test --config=opt --verbose_failures --test_output=errors //wasm/... //web/...
+
+      - name: Upload test logs - Windows wasm/web
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-windows-wasm-web
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30

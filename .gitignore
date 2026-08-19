@@ -5,6 +5,22 @@
 !.vscode/mcp.json
 !.vscode/tasks.json
 
+# Ignore Cursor or VS Code workspace files
+*.code-workspace
+
+# Ignore Cursor settings - For now, they are developer-specific.
+.cursor/*
+
+# Ignore Visual Studio directory and files
+.vs
+#*/.vs/*
+#*.vsidx
+*.vcxproj.user
+Build/bin
+Build/int
+obj
+.cr
+
 # Prerequisites
 *.d
 
@@ -89,3 +105,10 @@ dump.txt
 
 # Generated documentation output
 doxygen_output/
+
+# CCE (code-context-engine)
+# CCE local cache (per-machine, not for version control)
+.cce/
+# Claude Code local settings written by cce init
+.claude/settings.local.json
+/dotnet/DDS_Core/.github/copilot-instructions.md

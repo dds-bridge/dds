@@ -30,10 +30,6 @@ auto main() -> int
   char line[80];
   bool match;
 
-#if defined(__linux) || defined(__APPLE__)
-  SetMaxThreads(0);
-#endif
-
   for (int handno = 0; handno < 3; handno++)
   {
     dl.trump = trump_suit_[handno];

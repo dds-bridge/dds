@@ -9,11 +9,12 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 
+#include "deal_fanout.hpp"
 #include "scheduler.hpp"
 #include <fstream>
 #include <iomanip>
-#include <lookup_tables/lookup_tables.hpp>
 #ifdef DDS_SCHEDULER
 #include <system/time_stat_list.hpp>
 
@@ -135,7 +136,24 @@ void Scheduler::ClearTiming()
 void Scheduler::Reset()
 {
   for (int b = 0; b < MAXNOOFBOARDS; b++)
+  {
     hands[b].next = -1;
+    hands[b].repeatNo = 0;
+    hands[b].depth = 0;
+    hands[b].strength = 0;
+    hands[b].fanout = 0;
+    hands[b].thread = 0;
+    hands[b].selectFlag = 0;
+    hands[b].time = 0;
+  }
+
+  for (int g = 0; g < MAXNOOFBOARDS; g++)
+  {
+    group[g].head = -1;
+    group[g].actual = 0;
+    group[g].repeatNo = 0;
+    group[g].pred = 0;
+  }
 
   numGroups = 0;
   extraGroups = 0;
@@ -253,7 +271,7 @@ void Scheduler::MakeGroups(const Boards& bds)
     hands[b].NTflag = (strain == 4 ? 1 : 0);
     hands[b].first = dl->first;
     hands[b].strain = strain;
-    hands[b].fanout = Scheduler::Fanout(* dl);
+    hands[b].fanout = dds::internal::deal_fanout(*dl);
     // hands[b].strength = Scheduler::Strength(* dl);
 
     lp = &list[strain][key];
@@ -266,6 +284,9 @@ void Scheduler::MakeGroups(const Boards& bds)
 
       group[numGroups].strain = strain;
       group[numGroups].hash = key;
+      group[numGroups].head = -1;
+      group[numGroups].actual = 0;
+      group[numGroups].repeatNo = 0;
       numGroups++;
     }
     else
@@ -332,6 +353,9 @@ void Scheduler::FinetuneGroups()
 
       group[numGroups].strain = 5;
       group[numGroups].hash = extraGroups;
+      group[numGroups].head = -1;
+      group[numGroups].actual = 0;
+      group[numGroups].repeatNo = 0;
 
       numGroups++;
       extraGroups++;
@@ -422,6 +446,9 @@ void Scheduler::FinetuneGroups()
 
           group[numGroups].strain = 5;
           group[numGroups].hash = extraGroups;
+          group[numGroups].head = -1;
+          group[numGroups].actual = 0;
+          group[numGroups].repeatNo = 0;
 
           numGroups++;
           extraGroups++;
@@ -450,24 +477,17 @@ bool Scheduler::SameHand(
 // that they scale somewhat proportionally to other cases.
 // The strength parameter is currently not used.
 
-int SORT_SOLVE_TIMES[2][8] =
+static int SORT_SOLVE_TIMES[2][8] =
 {
   { 284000,  91000, 37000, 23000, 17000, 15000, 13000, 4000 },
   { 388000, 140000, 60000, 40000, 30000, 23000, 18000, 6000 },
 };
 
-#define SORT_SOLVE_STRENGTH_CUTOFF 0
-
-double SORT_SOLVE_STRENGTH[2][3] =
-{
-  { 1.525, 1.810, 0.0285 },
-  { 1.585, 1.940, 0.0354 }
-};
 
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_SOLVE_FANOUT[2][5] =
+static double SORT_SOLVE_FANOUT[2][5] =
 {
   { 30., 50., 0.07577, 1.515, 12. },
   { 30., 50., 0.08144, 1.629, 12. }
@@ -543,7 +563,7 @@ void Scheduler::SortSolve()
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_CALC_FANOUT[2][5] =
+static double SORT_CALC_FANOUT[2][5] =
 {
   { 30., 50., 0.07812, 1.563, 13. },
   { 30., 50., 0.07739, 1.548, 12. }
@@ -599,7 +619,7 @@ void Scheduler::SortCalc()
 // These are specific times from a 12-core PC. The hope is
 // that they scale somewhat proportionally to other cases.
 
-int SORT_TRACE_TIMES[2][8] =
+static int SORT_TRACE_TIMES[2][8] =
 {
   { 157000, 47000, 26000, 18000, 16000, 14000, 10000,  6000 },
   { 205000, 87000, 45000, 36000, 32000, 28000, 24000, 20000 },
@@ -610,7 +630,7 @@ int SORT_TRACE_TIMES[2][8] =
 // Slope between 16 and 48 incl
 // Average for 49-52
 
-double SORT_TRACE_DEPTH[2][4] =
+static double SORT_TRACE_DEPTH[2][4] =
 {
   { 0.742, 0.411, 0.0414, 1.820 },
   { 0.669, 0.428, 0.0346, 1.606 }
@@ -619,7 +639,7 @@ double SORT_TRACE_DEPTH[2][4] =
 // Lower end of linear, upper end of linear, slope of linear,
 // exponential start, coefficient.
 
-double SORT_TRACE_FANOUT[2][5] =
+static double SORT_TRACE_FANOUT[2][5] =
 {
   { 30., 50., 0.07577, 1.515, 12. },
   { 30., 50., 0.08166, 1.633, 13. }
@@ -728,35 +748,6 @@ int Scheduler::Strength(const Deal& dl) const
   if (dev >= 50) dev = 49;
 
   return dev;
-}
-
-
-int Scheduler::Fanout(const Deal& dl) const
-{
-  // The fanout for a given suit and a given player is the number
-  // of bit groups, so KT982 has 3 groups. In a given suit the
-  // maximum number over all four players is 13.
-  // A void counts as the sum of the other players' groups.
-
-  int fanout = 0;
-  int fanoutSuit, numVoids, c;
-
-  for (int h = 0; h < DDS_HANDS; h++)
-  {
-    fanoutSuit = 0;
-    numVoids = 0;
-    for (int s = 0; s < DDS_SUITS; s++)
-    {
-      c = static_cast<int>(dl.remainCards[h][s] >> 2);
-      fanoutSuit += group_data[c].last_group_ + 1;
-      if (c == 0)
-        numVoids++;
-    }
-    fanoutSuit += numVoids * fanoutSuit;
-    fanout += fanoutSuit;
-  }
-
-  return fanout;
 }
 
 
@@ -903,7 +894,7 @@ void Scheduler::EndBlockTimer()
     if (timeUser > blockMax)
       blockMax = timeUser;
 
-    if (hp->repeatNo == 0)
+    if (hp->repeatNo == 0 && timeUser > 0)
     {
       int bin = timeUser / 1000;
       timeHist[bin]++;
@@ -916,8 +907,11 @@ void Scheduler::EndBlockTimer()
 
   for (int g = 0; g < numGroups; g++)
   {
-    int head = group[g].head;
-    int NTflag = (hands[head].strain == 4 ? 1 : 0);
+    const int head = group[g].head;
+    if (head < 0 || head >= numHands)
+      continue;
+
+    const int NTflag = (hands[head].strain == 4 ? 1 : 0);
 
     TimeStat ts;
 
@@ -997,13 +991,23 @@ void Scheduler::GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const
 }
 
 
-void Scheduler::SetBoardTime(int boardIndex, int timeMs)
+void Scheduler::SetBoardTime(int boardIndex, long long time_us)
 {
   if (boardIndex < 0 || boardIndex >= MAXNOOFBOARDS) return;
   // store in the hand time field; this is a lightweight fallback
   // for when DDS_SCHEDULER isn't enabled. No locking required for
   // single-writer per-board usage pattern from the solver threads.
-  hands[boardIndex].time = timeMs;
+  hands[boardIndex].time = saturate_board_time_us(time_us);
+}
+
+auto saturate_board_time_us(long long time_us) -> int
+{
+  if (time_us <= 0)
+    return 0;
+  constexpr auto kMax = static_cast<long long>(std::numeric_limits<int>::max());
+  if (time_us >= kMax)
+    return std::numeric_limits<int>::max();
+  return static_cast<int>(time_us);
 }
 
 

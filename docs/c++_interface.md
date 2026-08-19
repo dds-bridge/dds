@@ -147,17 +147,17 @@ int main()
 Build all targets:
 
 ```bash
-bazel build //...
+bazelisk build //...
 ```
 
 Run tests:
 
 ```bash
-bazel test //...
+bazelisk test //...
 ```
 
 Build docs package:
 
 ```bash
-bazel build //:doxygen_docs
+bazelisk build //:doxygen_docs
 ```

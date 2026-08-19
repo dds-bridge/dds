@@ -123,7 +123,6 @@ class Scheduler
     void SortHands(const enum RunMode mode);
 
     int Strength(const Deal& dl) const;
-    int Fanout(const Deal& dl) const;
 
     void Reset();
 
@@ -211,14 +210,16 @@ class Scheduler
   /**
    * @brief Retrieve per-board raw times collected by the scheduler.
    *
-   * Fills outVec with pairs (boardIndex, userTimeMs) for each board in
-   * the current run. This is intended for post-run reporting.
+   * Fills outVec with pairs (boardIndex, userTimeUs) for each board in
+   * the current run. Times are wall-clock microseconds. This is intended
+   * for post-run reporting.
    */
   void GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const;
 
-  // Lightweight API to set a board's time in ms for reporting when
+  // Lightweight API to set a board's time in microseconds for reporting when
   // full DDS_SCHEDULER timing is not enabled. Thread-safe for single-writer per-board.
-  void SetBoardTime(int boardIndex, int timeMs);
+  // Values outside `[0, INT_MAX]` are saturated into `HandType::time` storage.
+  void SetBoardTime(int boardIndex, long long time_us);
 
     // Release timing storage early to avoid heavy destructor work at exit.
     void ClearTiming();
@@ -236,5 +237,8 @@ class Scheduler
 #endif
 
 };
+
+/// Saturate a microsecond duration into the `int` used by `HandType::time`.
+auto saturate_board_time_us(long long time_us) -> int;
 
 #endif

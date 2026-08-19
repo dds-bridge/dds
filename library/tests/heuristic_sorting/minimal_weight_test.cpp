@@ -17,12 +17,6 @@
  */
 class MinimalWeightTest : public ::testing::Test
 {
-protected:
-    void SetUp() override
-    {
-        // Initialize the DDS system
-        SetMaxThreads(0);
-    }
 };
 
 TEST_F(MinimalWeightTest, BasicWeightAllocCall) {

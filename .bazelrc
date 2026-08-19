@@ -1,47 +1,124 @@
 # Bazel configuration for DDS project
 
+# Skip Playwright browser tests on `bazel test //...` (network, Chromium, no-sandbox).
+# Run e2e explicitly: bazel test --test_tag_filters=e2e //web:web_e2e_tests
+# Run every test: bazelisk test --test_tag_filters= //...
+test --test_tag_filters=-e2e
+
 common --enable_platform_specific_config
+
+# Fail (don't rewrite) when MODULE.bazel.lock is missing or stale. Keeps
+# dependency resolution reproducible and stops casual builds from polluting
+# PRs with lockfile churn. After intentional MODULE.bazel changes, refresh with:
+#   bazelisk mod deps --lockfile_mode=update
+common --lockfile_mode=error
+
+# We build nothing for Android, but rules_jvm_external (the //jni Maven jar)
+# depends on rules_android, whose android_sdk_repository extension probes
+# $ANDROID_HOME while analysing *any* target. When ANDROID_HOME is exported but
+# the SDK has no platform APIs installed — as on GitHub's ubuntu runners after
+# the free-disk-space step removes the SDK — that extension hard-fails and takes
+# down unrelated builds (e.g. //wasm, //web). Pinning the var to empty makes the
+# extension emit its empty stub repo instead, which is the path non-Android
+# builds are meant to take.
+common --repo_env=ANDROID_HOME=
+
+# Java toolchain for the FFM bindings (//jni:*). JDK 25 is the hermetic remote
+# JDK shipped by rules_java 9.6.1; being >= 22 it exposes java.lang.foreign as a
+# stable (non-preview) API, so no --enable-preview is needed. These are
+# unconditional build flags (they apply to every build), but only Java compile
+# and run actions consult the Java toolchain, so they have no effect on the
+# C++/WASM/Python targets. Per-test native-access flags live on the java_test.
+build --java_language_version=25
+build --java_runtime_version=remotejdk_25
+build --tool_java_language_version=25
+build --tool_java_runtime_version=remotejdk_25
 
 # Platform-specific C++ standard flags
 build:macos --cxxopt=-std=c++20
 build:macos --host_cxxopt=-std=c++20
 build:linux --cxxopt=-std=c++20
 build:linux --host_cxxopt=-std=c++20
-build:windows --cxxopt=/std:c++20
-build:windows --host_cxxopt=/std:c++20
+# Windows MSVC C++20 comes from the patched rules_cc default_cpp_std feature
+# (see MODULE.bazel single_version_override + patches/rules_cc_msvc_default_...).
+# Do not put --cxxopt=/std:... under build:windows: enable_platform_specific_config
+# keys off the host OS, so that flag would leak into wasm transitions on Windows.
 
 # Performance optimization flags
 build:opt --compilation_mode=opt
 
 # AddressSanitizer configuration
-# Usage:
-#   Linux: bazel test --config=asan //path:target
-#   macOS: bazel test --config=asan --config=asan_macos //path:target
+# Usage: bazel test --config=asan //path:target
+# macOS uses the Xcode toolchain (build:asan_macos). See docs/BUILD_SYSTEM.md
+# ("AddressSanitizer and ThreadSanitizer (macOS)") for clang/Xcode version coupling.
+build:asan --config=asan_macos
+
 build:asan --copt=-fsanitize=address
 build:asan --linkopt=-fsanitize=address
+# Undefine _FORTIFY_SOURCE; it conflicts with ASAN instrumentation.
+build:asan --copt=-U_FORTIFY_SOURCE
 build:asan --strip=never
 build:asan --features=dbg
 build:asan --compilation_mode=dbg
-test:asan --test_timeout=120,300,900,3600
+# short=300: some small DDS solver tests need the moderate budget under
+# sanitizers; keep size="small" (no timeout="moderate") to avoid local
+# --test_verbose_timeout_warnings on fast non-sanitizer runs.
+test:asan --test_timeout=300,300,900,3600
 
-# macOS-specific AddressSanitizer runtime lookup configuration.
-# The LLVM toolchain bundles the ASAN runtime. On macOS tests run from the
-# runfiles tree, so use @loader_path-based rpaths that walk back to execroot
-# and then into external/toolchains_llvm...
-# Keep the clang major version in these paths aligned with darwin-aarch64
-# in MODULE.bazel.
-# Bazel test binaries live at different depths under bazel-out/.../bin.
-# Provide a small set of distinct @loader_path traversals to reach
-# execroot/_main/external from common test binary depths.
-build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
-build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
-build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
-build:asan_macos --linkopt=-Wl,-rpath,@loader_path/../../../../../../../../external/toolchains_llvm++llvm+llvm_toolchain_llvm/lib/clang/20/lib/darwin
+# GoogleTest headers can trigger conversion warnings on Clang; suppress them.
+# Scoped to `build` (not `test`) so the suppression also applies to plain
+# `bazel build` of test targets and tooling that compiles GoogleTest, not just
+# `bazel test`. The `build` config is inherited by `test`, `run`, etc.
+# On Linux, use -Wno-conversion for portability when the system compiler is GCC.
+build:macos --cxxopt=-Wno-character-conversion
+build:linux --cxxopt=-Wno-conversion
+# macOS AddressSanitizer must use the Xcode compiler/runtime. LLVM-instrumented
+# binaries hang with LLVM's ASAN dylib and abort with Xcode's (version mismatch).
+# Chained from build:asan; Apple toolchains do not match on Linux and are ignored.
+build:asan_macos --extra_toolchains=@local_config_apple_cc_toolchains//:all
+build:asan_macos --copt=-Wno-macro-redefined
 
 # ThreadSanitizer configuration
 # Usage: bazel test --config=tsan //path:target
+# macOS loads Xcode's compiler-rt via build:tsan_macos (rpath uses clang/N).
+# Keep N aligned with MODULE.bazel llvm_versions and installed Xcode; see
+# docs/BUILD_SYSTEM.md (sanitizer macOS section).
+build:tsan --config=tsan_macos
 build:tsan --copt=-fsanitize=thread
 build:tsan --linkopt=-fsanitize=thread
 build:tsan --strip=never
 build:tsan --features=dbg
 build:tsan --compilation_mode=dbg
+test:tsan --test_timeout=300,300,900,3600
+# Hardcoded rpath: .../lib/clang/21/... must match MODULE.bazel llvm major and Xcode.
+build:tsan_macos --linkopt=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin
+
+# UndefinedBehaviorSanitizer configuration
+# Usage: bazel test --config=ubsan //path:target
+# Standalone (not combined with asan): keeps failure attribution clear and
+# avoids macOS ASAN's Xcode-toolchain coupling. Instrumentation uses hermetic
+# LLVM; macOS loads Xcode's UBSAN runtime via build:ubsan_macos (same clang/N
+# coupling as tsan_macos — see docs/BUILD_SYSTEM.md).
+build:ubsan --config=ubsan_macos
+build:ubsan --copt=-fsanitize=undefined
+build:ubsan --linkopt=-fsanitize=undefined
+# Fail the process on the first UB report (default is to continue).
+build:ubsan --copt=-fno-sanitize-recover=undefined
+build:ubsan --strip=never
+build:ubsan --features=dbg
+build:ubsan --compilation_mode=dbg
+test:ubsan --test_timeout=300,300,900,3600
+# Hardcoded rpath: .../lib/clang/21/... must match MODULE.bazel llvm major and Xcode.
+build:ubsan_macos --linkopt=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin
+
+# MemorySanitizer configuration (Linux x86_64 only)
+# Usage: bazel test --config=msan //path:target
+# Selects @llvm_toolchain_msan (instrumented libc++ overlay) and enables the
+# toolchains_llvm `msan` feature. See docs/BUILD_SYSTEM.md (MSAN section).
+# Not supported on macOS/Windows; do not combine with asan/tsan/ubsan.
+build:msan --extra_toolchains=@llvm_toolchain_msan//:all
+build:msan --features=msan
+build:msan --strip=never
+build:msan --features=dbg
+build:msan --compilation_mode=dbg
+test:msan --test_timeout=300,300,900,3600

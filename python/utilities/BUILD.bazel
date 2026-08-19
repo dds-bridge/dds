@@ -1,0 +1,84 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+py_library(
+    name = "dd_table_for_deal_lib",
+    srcs = ["src/dd_table_for_deal.py"],
+    imports = ["src"],
+    deps = ["//python:dds3_lib"],
+)
+
+py_binary(
+    name = "dd_table_for_deal",
+    srcs = ["src/dd_table_for_deal.py"],
+    main = "src/dd_table_for_deal.py",
+    deps = [":dd_table_for_deal_lib"],
+)
+
+py_library(
+    name = "benchmark_lib",
+    srcs = ["src/benchmark.py"],
+    imports = ["src"],
+)
+
+py_binary(
+    name = "benchmark",
+    srcs = ["src/benchmark.py"],
+    main = "src/benchmark.py",
+    deps = [":benchmark_lib"],
+)
+
+# Unit + git-prep tests for benchmark.py (needs git on the host).
+py_test(
+    name = "benchmark_test",
+    size = "small",
+    main = "tests/benchmark_test.py",
+    srcs = ["tests/benchmark_test.py"],
+    deps = [":benchmark_lib"],
+    # Shells out to git. env_inherit keeps Git for Windows on PATH; local skips
+    # remote execution/caching and runs the test on the runner machine.
+    env_inherit = ["PATH"],
+    tags = ["local"],
+)
+
+py_test(
+    name = "convert_pbn_test",
+    size = "small",
+    main = "tests/test_convert_pbn.py",
+    srcs = ["tests/test_convert_pbn.py"],
+    deps = [":dd_table_for_deal_lib"],
+)
+
+py_test(
+    name = "dd_table_for_deal_par_test",
+    size = "small",
+    main = "tests/test_dd_table_for_deal_par.py",
+    srcs = ["tests/test_dd_table_for_deal_par.py"],
+    deps = [":dd_table_for_deal_lib"],
+)
+
+py_library(
+    name = "create_list_for_dtest_lib",
+    srcs = ["src/create_list_for_dtest.py"],
+    imports = ["src"],
+    visibility = ["//visibility:private"],
+    deps = ["//python:dds3_lib"],
+)
+
+py_binary(
+    name = "create_list_for_dtest",
+    srcs = ["src/create_list_for_dtest.py"],
+    main = "src/create_list_for_dtest.py",
+    visibility = ["//visibility:public"],
+    deps = [":create_list_for_dtest_lib"],
+)
+
+py_test(
+    name = "create_list_for_dtest_test",
+    size = "small",
+    main = "tests/create_list_for_dtest_test.py",
+    srcs = ["tests/create_list_for_dtest_test.py"],
+    deps = [
+        ":create_list_for_dtest_lib",
+        "//python:dds3_lib",
+    ],
+)

@@ -35,8 +35,6 @@ inline auto dds_max(FutureTricks const & fut) -> size_t
 /// @details Reproduces the original bug scenario and validates the fix.
 TEST_F(TrickThreeBugTests, test_declarer_makes_nine_tricks)
 {
-    SetMaxThreads(0);
-
     const int target = 0;
     const int solutions = 3;
     const int mode = 0;

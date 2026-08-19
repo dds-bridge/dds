@@ -1,6 +1,6 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
 load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 load("@rules_python//python:packaging.bzl", "py_wheel", "py_wheel_dist")
 
 pybind_extension(
@@ -53,6 +53,53 @@ py_library(
 py_library(
     name = "test_utils",
     srcs = ["test_utils.py"],
+)
+
+# Guard: CI workflows must invoke bazelisk rather than bare bazel.
+py_test(
+    name = "ci_bazelisk_test",
+    size = "small",
+    main = "tests/ci_bazelisk_test.py",
+    srcs = ["tests/ci_bazelisk_test.py"],
+    data = ["//.github/workflows:all_workflows"],
+)
+
+# Guard: Windows MSVC must not restate /Od or /std (D9025); C++20 comes from
+# the patched rules_cc default_cpp_std feature.
+py_test(
+    name = "ci_windows_cppopts_test",
+    size = "small",
+    main = "tests/ci_windows_cppopts_test.py",
+    srcs = ["tests/ci_windows_cppopts_test.py"],
+    data = [
+        "//:windows_cppopts_config_files",
+        "//.github/workflows:all_workflows",
+    ],
+)
+
+# Guard: MemorySanitizer config + Linux CI job stay wired together.
+py_test(
+    name = "ci_msan_test",
+    size = "small",
+    main = "tests/ci_msan_test.py",
+    srcs = ["tests/ci_msan_test.py"],
+    data = [
+        "//:msan_ci_config_files",
+        "//.github/workflows:all_workflows",
+        "//library/tests/system:parallel_boards_test_src",
+    ],
+)
+
+# Guard: WASM CI clears .bazelrc's -e2e filter so Playwright e2e tests run.
+py_test(
+    name = "ci_wasm_e2e_test",
+    size = "small",
+    main = "tests/ci_wasm_e2e_test.py",
+    srcs = ["tests/ci_wasm_e2e_test.py"],
+    data = [
+        "//:.bazelrc",
+        "//.github/workflows:all_workflows",
+    ],
 )
 
 py_test(
@@ -121,6 +168,14 @@ py_test(
 )
 
 py_test(
+    name = "analyse_test",
+    size = "small",
+    main = "tests/test_analyse.py",
+    srcs = ["tests/test_analyse.py"],
+    deps = [":dds3_lib"],
+)
+
+py_test(
     name = "type_conversions_test",
     size = "small",
     main = "tests/test_type_conversions.py",
@@ -137,6 +192,17 @@ py_test(
     main = "tests/test_calc_tables_regression.py",
     srcs = ["tests/test_calc_tables_regression.py"],
     deps = [":dds3_lib"],
+)
+
+py_test(
+    name = "solve_all_boards_test",
+    size = "small",
+    main = "tests/test_solve_all_boards.py",
+    srcs = ["tests/test_solve_all_boards.py"],
+    deps = [
+        ":dds3_lib",
+        ":test_utils",
+    ],
 )
 
 py_wheel(

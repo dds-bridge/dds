@@ -376,9 +376,12 @@ bool parse_PAR(
   const vector<string>& list,
   ParResults * par)
 {
-  if (list.size() < 9)
+  // Minimum: PAR + 4 score tokens ("NS" score / "EW" score) + 2 contract
+  // tokens. Pass-out contracts ("NS:" / "EW:") have no internal spaces, so
+  // the line has only 7 whitespace tokens; normal contracts with spaces need 9+.
+  if (list.size() < 7)
   {
-    cout << "PAR list does not have 9+ elements: " << list.size() << endl;
+    cout << "PAR list does not have 7+ elements: " << list.size() << endl;
     return false;
   }
 

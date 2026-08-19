@@ -184,16 +184,23 @@ public:
   auto MergeSort() -> void;
 
   /**
-   * @brief Invoke heuristic sorting for current move list.
+   * @brief Build a HeuristicContext snapshot from current move-gen state.
+   *
+   * Built once per move-generation call; the caller updates suit and move
+   * counts per suit iteration and dispatches via call_heuristic(ctx, weight_case).
    *
    * @param tpos Current position
-   * @param best_move Best move from search
-   * @param best_move_tt Best move from transposition table
+   * @param best_move Best move from search (must outlive the context)
+   * @param best_move_tt Best move from transposition table (must outlive the context)
    * @param thrp_rel Relative ranks per hand
+   * @param tr Bound trick track (must outlive the context). Passed explicitly
+   *           so callers cannot accidentally dereference a null Moves::trackp.
    */
-  auto call_heuristic(const Pos &tpos, const MoveType &best_move,
-                     const MoveType &best_move_tt, const RelRanksType thrp_rel[])
-      -> void;
+  auto make_heuristic_context(const Pos &tpos, const MoveType &best_move,
+                              const MoveType &best_move_tt,
+                              const RelRanksType thrp_rel[],
+                              const TrackType &tr) const
+      -> HeuristicContext;
 
   // (logging accessors removed)
 
@@ -331,6 +338,17 @@ public:
      * @return Pointer to chosen move, or nullptr if list exhausted
      */
     auto MakeNextSimple(const int trick, const int relHand) -> MoveType const *;
+    /**
+     * @brief Update TrackType state to reflect a played move.
+     *
+     * Sets trackp to &track[trick] internally before updating state.
+     *
+     * @param move Move to apply
+     * @param relHand Relative hand index within the current trick (0..3)
+     * @param trick Trick index (0..12); must be > 0 when relHand==3 (updates track[trick-1])
+     */
+    auto apply_move_to_track(const MoveType &move, const int relHand,
+                             const int trick) -> void;
 
     /**
      * @brief Advance to next move in list.

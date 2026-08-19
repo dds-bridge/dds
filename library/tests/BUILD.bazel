@@ -1,5 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
+load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 
 # Test utility sources (glob used for convenience; excludes integration/context equivalence tests)
 filegroup(
@@ -7,19 +9,35 @@ filegroup(
     srcs = glob(
         ["*.cpp", "*.hpp"],
         exclude = [
-            "itest.cpp",
             "context_equivalence.cpp",
             "calc_par_test.cpp",  # Uses GoogleTest, compiled separately
+            "test_timer_test.cpp",  # Uses GoogleTest, compiled separately
+            "args_test.cpp",  # Uses GoogleTest, compiled separately
+            "report_board_timings_test.cpp",  # Uses GoogleTest, compiled separately
+            "parse_par_test.cpp",  # Uses GoogleTest, compiled separately
+            "loop_par_test.cpp",  # Uses GoogleTest, compiled separately
+            "dds_c_api_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
 
-# Main test executable for manual invocation
+# Emscripten flags when //library/tests:dtest is built under wasm_cc_binary.
+# NODERAWFS lets Node read host hand-list paths; worker is required for pthreads.
+# EXIT_RUNTIME is off: dtest shuts the pthread pool down cleanly then process.exit.
+DTEST_LINKOPTS_WASM = select({
+    "//:build_wasm": WASM_LINKOPTS + [
+        "-sENVIRONMENT=node,worker",
+        "-sNODERAWFS=1",
+    ],
+    "//conditions:default": [],
+})
+
+# Main test executable for manual invocation (also the cc_target for //wasm:dtest_wasm)
 cc_binary(
     name = "dtest",
     srcs = [":test_sources"],
     copts = DDS_CPPOPTS,
-    linkopts = DDS_LINKOPTS,
+    linkopts = DDS_LINKOPTS + DTEST_LINKOPTS_WASM,
     local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     deps = [
         "//library/src:dds",
@@ -28,7 +46,7 @@ cc_binary(
     visibility = ["//visibility:public"],
 )
 
-# Test target for Bazel test execution (`bazel test //library/tests:all`)
+# Test target for Bazel test execution (`bazelisk test //library/tests:all`)
 # Uses testable_dds to expose internal symbols for unit testing
 cc_test(
     name = "unit_tests",
@@ -43,7 +61,10 @@ cc_test(
     ],
 )
 
-# Standalone calc_par API test
+# Standalone calc_par API test.
+# small: a few seconds normally. Sanitizer configs raise the short timeout in
+# .bazelrc so MSAN (~80s here) keeps headroom without timeout="moderate"
+# (which trips --test_verbose_timeout_warnings on fast local runs).
 cc_test(
     name = "calc_par_test",
     srcs = ["calc_par_test.cpp"],
@@ -57,4 +78,136 @@ cc_test(
     ],
 )
 
+# Exercises the pure-C shim through its own ABI, including the null guards and
+# catch-all wrappers that exist only at that boundary and would be bypassed by
+# calling the reference-taking dds_* functions directly.
+#
+# //library/src:dds is listed explicitly for readability; //library/src/api:dds_c_api
+# already depends on it. The test needs no static-memory initialization:
+# SolverContext(SolverConfig) allocates its own ThreadData, so every entry point
+# here is driven from context-owned state rather than InitializeStaticMemory().
+# A test that does need it should call InitializeStaticMemory() in a fixture, as
+# library/tests/system/context_tt_facade_test.cpp does.
+cc_test(
+    name = "dds_c_api_test",
+    srcs = ["dds_c_api_test.cpp"],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:dds_c_api",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_timer_test",
+    srcs = [
+        "test_timer_test.cpp",
+        "TestTimer.cpp",
+        "TestTimer.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "args_test",
+    srcs = [
+        "args_test.cpp",
+        "args.cpp",
+        "args.hpp",
+        "cst.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "report_board_timings_test",
+    srcs = [
+        "report_board_timings_test.cpp",
+        "report_board_timings.cpp",
+        "report_board_timings.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "parse_par_test",
+    srcs = [
+        "parse_par_test.cpp",
+        "parse.cpp",
+        "parse.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Regression: pass-out PAR deals in hands/nothing_makes.txt must parse and run.
+py_test(
+    name = "dtest_nothing_makes_test",
+    size = "small",
+    srcs = ["test_dtest_nothing_makes.py"],
+    main = "test_dtest_nothing_makes.py",
+    data = [
+        ":dtest",
+        "//hands:nothing_makes.txt",
+    ],
+)
+
+cc_test(
+    name = "loop_par_test",
+    srcs = [
+        "loop_par_test.cpp",
+        "loop.cpp",
+        "loop.hpp",
+        "compare.cpp",
+        "compare.hpp",
+        "print.cpp",
+        "print.hpp",
+        "TestTimer.cpp",
+        "TestTimer.hpp",
+        "parse.cpp",
+        "parse.hpp",
+        "dtest_parallel.cpp",
+        "dtest_parallel.hpp",
+        "report_board_timings.cpp",
+        "report_board_timings.hpp",
+        "cst.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
 

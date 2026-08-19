@@ -1,0 +1,48 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+# Verifies the shared library exports exactly the public C API (dll.h flat API
+# plus the dds_c_* shim) and that no C++-mangled symbol leaks. The expected set
+# is parsed from the headers (not the generated .lds) so a stale .lds is caught.
+# Windows uses a different export mechanism (__declspec) and a different symbol
+# dumper, so the nm-based check is scoped to Unix hosts.
+py_test(
+    name = "export_set_test",
+    size = "small",
+    srcs = ["export_set_test.py"],
+    args = [
+        "$(location //jni:dds_shared)",
+        "$(location //library/src/api:dll.h)",
+        "$(location //library/src/api:dds_c_api.h)",
+    ],
+    data = [
+        "//jni:dds_shared",
+        "//library/src/api:dll.h",
+        "//library/src/api:dds_c_api.h",
+    ],
+    deps = ["//jni:gen_export_lists_lib"],
+    target_compatible_with = select({
+        "//:build_windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+# Unit-tests the export-list generator's parser directly (header snippets in,
+# symbol set out) — independent of the linked library.
+py_test(
+    name = "gen_export_lists_test",
+    size = "small",
+    srcs = ["gen_export_lists_test.py"],
+    deps = ["//jni:gen_export_lists_lib"],
+)
+
+# Inspects the built jar directly (not the Bazel classpath) to prove java_export
+# bundled both the binding classes and the native library into the artifact a
+# Maven consumer would actually receive. Inherits dds_ffm_dist's platform
+# compatibility, so it is skipped on unsupported host os/cpu.
+py_test(
+    name = "jar_self_contained_test",
+    size = "small",
+    srcs = ["jar_self_contained_test.py"],
+    args = ["$(location //jni:dds_ffm_dist)"],
+    data = ["//jni:dds_ffm_dist"],
+)

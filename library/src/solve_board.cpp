@@ -10,23 +10,17 @@
 #include <chrono>
 
 #include "solve_board.hpp"
+#include <api/solve_board.hpp>
 #include <solver_if.hpp>
 #include <pbn.hpp>
 #include <system/memory.hpp>
+#include <system/parallel_boards.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 #include <utility/debug.h>
 
 
-ParamType param;
-
-extern System sysdep;
-extern Memory memory;
 extern Scheduler scheduler;
-
-auto solve_all_boards_n(
-  Boards const & bds,
-  SolvedBoards& solved) -> int;
 
 auto same_board(
   const Boards& bds,
@@ -34,129 +28,99 @@ auto same_board(
   const unsigned index2) -> bool;
 
 
-auto solve_single_common(
-  const int thrId,
-  const int bno) -> void
+static auto boards_from_pbn(
+  BoardsPBN const& bop,
+  Boards& bo) -> int
 {
-  FutureTricks fut;
+  bo.no_of_boards = bop.no_of_boards;
+  if (bo.no_of_boards > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
 
-  // Fallback timing: measure per-board elapsed time (ms) even when
-  // DDS_SCHEDULER isn't enabled at compile time. This allows the
-  // dtest -r/--report option to print per-board timings.
-  START_THREAD_TIMER(thrId);
-  auto t0 = std::chrono::steady_clock::now();
-  int res = SolveBoard(
-              param.bop->deals[bno],
-              param.bop->target[bno],
-              param.bop->solutions[bno],
-              param.bop->mode[bno],
-              &fut,
-              thrId);
-  auto t1 = std::chrono::steady_clock::now();
-  END_THREAD_TIMER(thrId);
-
-  // Compute elapsed milliseconds and publish to scheduler as a
-  // lightweight fallback. Scheduler will ignore or use this value
-  // when reporting if full DDS_SCHEDULER timing is not active.
-  auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-  if (dur < 0) dur = 0;
-  scheduler.SetBoardTime(bno, static_cast<int>(dur));
-
-  if (res == 1)
-    param.solvedp->solved_board[bno] = fut;
-  else
-    param.error = res;
-}
-
-
-auto copy_solve_single(const vector<int>& crossrefs) -> void
-{
-  for (unsigned i = 0; i < crossrefs.size(); i++)
+  for (int k = 0; k < bop.no_of_boards; k++)
   {
-    if (crossrefs[i] == -1)
-      continue;
+    bo.mode[k] = bop.mode[k];
+    bo.solutions[k] = bop.solutions[k];
+    bo.target[k] = bop.target[k];
+    bo.deals[k].first = bop.deals[k].first;
+    bo.deals[k].trump = bop.deals[k].trump;
 
-    START_THREAD_TIMER(thrId);
-    param.solvedp->solved_board[i] = 
-      param.solvedp->solved_board[crossrefs[i]];
-    END_THREAD_TIMER(thrId);
-  }
-}
-
-
-auto solve_chunk_common(
-  const int thrId) -> void
-{
-  int index;
-  schedType st;
-
-  while (1)
-  {
-    st = scheduler.GetNumber(thrId);
-    index = st.number;
-    if (index == -1)
-      break;
-
-    // This is not a perfect repeat detector, as the hands in
-    // a group might have declarers N, S, N, N. Then the second
-    // N would not reuse the first N. However, must reuses are
-    // reasonably adjacent, and this is just an optimization anyway.
-
-    if (st.repeatOf != -1 &&
-        param.bop->deals[index ].first ==
-        param.bop->deals[st.repeatOf].first)
+    for (int i = 0; i <= 2; i++)
     {
-      START_THREAD_TIMER(thrId);
-      param.solvedp->solved_board[index] = 
-        param.solvedp->solved_board[st.repeatOf];
-      END_THREAD_TIMER(thrId);
-      continue;
+      bo.deals[k].currentTrickSuit[i] = bop.deals[k].currentTrickSuit[i];
+      bo.deals[k].currentTrickRank[i] = bop.deals[k].currentTrickRank[i];
     }
-    else
-    {
-      solve_single_common(thrId, index);
-    }
+
+    if (convert_from_pbn(bop.deals[k].remainCards, bo.deals[k].remainCards)
+        != RETURN_NO_FAULT)
+      return RETURN_PBN_FAULT;
   }
+
+  return RETURN_NO_FAULT;
 }
 
 
 auto solve_all_boards_n(
-  Boards const & bds,
-  SolvedBoards& solved) -> int
+  Boards const& bds,
+  SolvedBoards& solved,
+  int max_threads) -> int
 {
-  param.error = 0;
-
-  if (bds.no_of_boards > MAXNOOFBOARDS)
+  const int n = bds.no_of_boards;
+  if (n > MAXNOOFBOARDS)
     return RETURN_TOO_MANY_BOARDS;
-
-  param.bop = &bds;
-  param.solvedp = &solved;
-  param.no_of_boards = bds.no_of_boards;
-
-  scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
 
   for (int k = 0; k < MAXNOOFBOARDS; k++)
     solved.solved_board[k].cards = 0;
 
+  scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
+
   START_BLOCK_TIMER;
-  
-  // Sequential execution: solve each board in order
-  // Thread ID 0 is used for all boards (single-threaded)
-  for (int bno = 0; bno < bds.no_of_boards; bno++) {
-    solve_single_common(0, bno);
-    if (param.error != 0)
-      return param.error;
-  }
-  
+
+  const int err = parallel_all_boards_n(n, max_threads,
+    [&](const int worker_id, const int bno) -> int {
+      (void)worker_id;
+
+      FutureTricks fut;
+      const auto t0 = std::chrono::steady_clock::now();
+      // Persistent per-thread context: reuses the worker's TT across boards
+      // and consecutive batch calls instead of allocating one per board.
+      const int res = solve_board(
+        dds::internal::worker_solver_context(),
+        bds.deals[bno], bds.target[bno], bds.solutions[bno],
+        bds.mode[bno], &fut);
+      auto dur = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now() - t0).count();
+      scheduler.SetBoardTime(bno, dur);
+
+      if (res == RETURN_NO_FAULT)
+        solved.solved_board[bno] = fut;
+      return res;
+    });
+
   END_BLOCK_TIMER;
 
-  solved.no_of_boards = param.no_of_boards;
+  if (err != RETURN_NO_FAULT)
+    return err;
 
-#ifdef DDS_SCHEDULER 
+  solved.no_of_boards = n;
+
+#ifdef DDS_SCHEDULER
   scheduler.PrintTiming();
 #endif
 
   return RETURN_NO_FAULT;
+}
+
+
+auto solve_all_boards_pbn_n(
+  BoardsPBN const& bop,
+  SolvedBoards& solved,
+  const int max_threads) -> int
+{
+  Boards bo;
+  const int rc = boards_from_pbn(bop, bo);
+  if (rc != RETURN_NO_FAULT)
+    return rc;
+  return solve_all_boards_n(bo, solved, max_threads);
 }
 
 
@@ -199,36 +163,29 @@ int STDCALL SolveBoardPBN(
  * @param solvedp Pointer to results for solved Boards
  * @return 1 on success, error code otherwise
  */
+int STDCALL SolveAllBoardsN(
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp,
+  int maxThreads)
+{
+  return solve_all_boards_pbn_n(* bop, * solvedp, maxThreads);
+}
+
+
 int STDCALL SolveAllBoards(
   BoardsPBN const * bop,
   SolvedBoards * solvedp)
 {
-  Boards bo;
-  bo.no_of_boards = bop->no_of_boards;
-  if (bo.no_of_boards > MAXNOOFBOARDS)
-    return RETURN_TOO_MANY_BOARDS;
+  return SolveAllBoardsN(bop, solvedp, 0);
+}
 
-  for (int k = 0; k < bop->no_of_boards; k++)
-  {
-    bo.mode[k] = bop->mode[k];
-    bo.solutions[k] = bop->solutions[k];
-    bo.target[k] = bop->target[k];
-    bo.deals[k].first = bop->deals[k].first;
-    bo.deals[k].trump = bop->deals[k].trump;
 
-    for (int i = 0; i <= 2; i++)
-    {
-      bo.deals[k].currentTrickSuit[i] = bop->deals[k].currentTrickSuit[i];
-      bo.deals[k].currentTrickRank[i] = bop->deals[k].currentTrickRank[i];
-    }
-
-    if (convert_from_pbn(bop->deals[k].remainCards, bo.deals[k].remainCards) 
-        != 1)
-      return RETURN_PBN_FAULT;
-  }
-
-  int res = solve_all_boards_n(bo, * solvedp);
-  return res;
+int STDCALL SolveAllBoardsBinN(
+  Boards const * bop,
+  SolvedBoards * solvedp,
+  int maxThreads)
+{
+  return solve_all_boards_n(* bop, * solvedp, maxThreads);
 }
 
 
@@ -236,7 +193,27 @@ int STDCALL SolveAllBoardsBin(
   Boards const * bop,
   SolvedBoards * solvedp)
 {
-  return solve_all_boards_n(* bop, * solvedp);
+  return SolveAllBoardsBinN(bop, solvedp, 0);
+}
+
+
+int STDCALL SolveAllBoardsSeq(
+  BoardsPBN const * bop,
+  SolvedBoards * solvedp)
+{
+  Boards bo;
+  const int rc = boards_from_pbn(*bop, bo);
+  if (rc != RETURN_NO_FAULT)
+    return rc;
+  return solve_all_boards_n_seq(bo, * solvedp);
+}
+
+
+int STDCALL SolveAllBoardsBinSeq(
+  Boards const * bop,
+  SolvedBoards * solvedp)
+{
+  return solve_all_boards_n_seq(* bop, * solvedp);
 }
 
 
@@ -276,6 +253,53 @@ int STDCALL SolveAllChunksBin(
     return RETURN_CHUNK_SIZE;
 
   return solve_all_boards_n(* bop, * solvedp);
+}
+
+
+auto solve_all_boards_n_seq(
+  Boards const& bds,
+  SolvedBoards& solved) -> int
+{
+  const int n = bds.no_of_boards;
+  if (n > MAXNOOFBOARDS)
+    return RETURN_TOO_MANY_BOARDS;
+
+  for (int k = 0; k < MAXNOOFBOARDS; k++)
+    solved.solved_board[k].cards = 0;
+
+  scheduler.RegisterRun(RunMode::DDS_RUN_SOLVE, bds);
+
+  int error = 0;
+
+  START_BLOCK_TIMER;
+  for (int bno = 0; bno < n && error == 0; bno++) {
+    FutureTricks fut;
+    const auto t0 = std::chrono::steady_clock::now();
+    const int res = solve_board(
+      dds::internal::worker_solver_context(),
+      bds.deals[bno], bds.target[bno], bds.solutions[bno],
+      bds.mode[bno], &fut);
+    auto dur = std::chrono::duration_cast<std::chrono::microseconds>(
+      std::chrono::steady_clock::now() - t0).count();
+    scheduler.SetBoardTime(bno, dur);
+
+    if (res == 1)
+      solved.solved_board[bno] = fut;
+    else
+      error = res;
+  }
+  END_BLOCK_TIMER;
+
+  if (error != 0)
+    return error;
+
+  solved.no_of_boards = n;
+
+#ifdef DDS_SCHEDULER
+  scheduler.PrintTiming();
+#endif
+
+  return RETURN_NO_FAULT;
 }
 
 

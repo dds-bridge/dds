@@ -14,15 +14,19 @@
 #include <api/dll.h>
 
 
-auto solve_single_common(
-  const int thrId,
-  const int bno) -> void;
+auto solve_all_boards_n(
+  Boards const& bds,
+  SolvedBoards& solved,
+  int max_threads = 0) -> int;
 
-auto copy_solve_single(
-  const std::vector<int>& crossrefs) -> void;
+auto solve_all_boards_pbn_n(
+  BoardsPBN const& bop,
+  SolvedBoards& solved,
+  int max_threads = 0) -> int;
 
-auto solve_chunk_common(
-  const int thrId) -> void;
+auto solve_all_boards_n_seq(
+  Boards const& bds,
+  SolvedBoards& solved) -> int;
 
 auto detect_solve_duplicates(
   const Boards& bds,

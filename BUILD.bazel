@@ -32,6 +32,7 @@ config_setting(
     name = "build_windows",
     constraint_values = [
         "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
     ],
 )
 
@@ -39,6 +40,7 @@ config_setting(
     name = "debug_build_windows",
     constraint_values = [
         "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
     ],
     values = {"compilation_mode": "dbg"},
 )
@@ -54,10 +56,10 @@ config_setting(
     define_values = {"scheduler": "true"},
 )
 
-# Enable DDS_TT_CONTEXT_OWNERSHIP via --define=tt_context_ownership=true
+# Enable DDS_AB_STATS via --define=ab_stats=true
 config_setting(
-    name = "tt_context_ownership",
-    define_values = {"tt_context_ownership": "true"},
+    name = "ab_stats",
+    define_values = {"ab_stats": "true"},
 )
 
 # Enable DDS_DEBUG_TT_RESET via --define=tt_reset_debug=true
@@ -66,12 +68,48 @@ config_setting(
     define_values = {"tt_reset_debug": "true"},
 )
 
-# Enable AddressSanitizer via --define=asan=true
+# Matches cc_* targets built under the wasm_cc_binary platform transition.
+# Use platform constraints (not deprecated `cpu` select) so this works
+# consistently across host OSes, including Windows.
 config_setting(
-    name = "asan",
-    define_values = {"asan": "true"},
+    name = "build_wasm",
+    constraint_values = [
+        "@platforms//cpu:wasm32",
+    ],
 )
 
+# Config surfaces for CI guards. Kept as filegroups so runfiles include the real
+# paths under the repo root, not resolved execroots.
+exports_files(
+    [
+        ".bazelrc",
+        "CPPVARIABLES.bzl",
+        "MODULE.bazel",
+        "patches/rules_cc_msvc_default_cpp_std_cxx20.patch",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+
+filegroup(
+    name = "windows_cppopts_config_files",
+    srcs = [
+        ".bazelrc",
+        "BUILD.bazel",
+        "CPPVARIABLES.bzl",
+        "MODULE.bazel",
+        "patches/rules_cc_msvc_default_cpp_std_cxx20.patch",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+
+filegroup(
+    name = "msan_ci_config_files",
+    srcs = [
+        ".bazelrc",
+        "MODULE.bazel",
+    ],
+    visibility = ["//python:__pkg__"],
+)
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
@@ -81,6 +119,11 @@ genrule(
     outs = ["doxygen_docs.zip"],
     cmd = """
       set -e
+      case "$$(uname -s)" in
+        Darwin)  PATH="/opt/homebrew/bin:/usr/local/bin:$$PATH" ;;
+        Linux)   PATH="/usr/local/bin:$$PATH" ;;
+        MINGW*|MSYS*|CYGWIN*) PATH="/usr/bin:/usr/local/bin:$$PATH" ;;
+      esac
       DOXYFILE_GEN="$(@D)/Doxyfile.generated"
       OUT_DIR="$(@D)/doxygen_output"
       OUT_ZIP="$$(pwd)/$@"

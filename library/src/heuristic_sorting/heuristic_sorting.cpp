@@ -2,66 +2,31 @@
 #include <utility/constants.h>
 #include <lookup_tables/lookup_tables.hpp>
 
-// New overload: accepts a pre-built HeuristicContext. This contains the
-// same inline logic that used to be in the previous function body.
-void call_heuristic(const HeuristicContext& context)
+// The caller passes the weight case it already knows, so nothing is
+// re-derived from the context here.
+void call_heuristic(HeuristicContext& context, const WeightCase weight_case)
 {
-  // Determine which position in trick (0=leading, 1-3=following)
-  int hand_rel = 0;
-  if (context.curr_hand != context.lead_hand) {
-    // Calculate relative position: 1, 2, or 3 based on lead hand
-    hand_rel = (context.curr_hand + 4 - context.lead_hand) % 4;
-  }
-
-  // Leading hand (hand_rel == 0) - MoveGen0 logic
-  if (hand_rel == 0) {
-    // Check if trump game with trump winner available
-    bool trump_game = (context.trump != DDS_NOTRUMP) && 
-            (context.trump >= 0 && context.trump < DDS_SUITS) &&
-            (context.tpos.winner[context.trump].rank != 0);
-      
-    if (trump_game) {
-      weight_alloc_trump0(const_cast<HeuristicContext&>(context));
-    } else {
-      weight_alloc_nt0(const_cast<HeuristicContext&>(context));
-    }
-    return;
-  }
-
-  // Following hands (hand_rel 1-3) - MoveGen123 logic
-  // Check trump game condition
-  int ftest = ((context.trump != DDS_NOTRUMP) &&
-         (context.trump >= 0 && context.trump < DDS_SUITS) &&
-         (context.tpos.winner[context.trump].rank != 0) ? 1 : 0);
-
-  // Check if current hand can follow suit (not void)
-  unsigned short ris = context.tpos.rank_in_suit[context.curr_hand][context.lead_suit];
-  bool can_follow_suit = (ris != 0);
-
-  // Calculate function index using same logic as original
-  int findex;
-  if (can_follow_suit) {
-    findex = 4 * hand_rel + ftest;
-  } else {
-    findex = 4 * hand_rel + ftest + 2;
-  }
-
-  // Following hands function dispatch table (MoveGen123 logic)
-  switch (findex) {
-    case 4:  weight_alloc_nt_notvoid1(const_cast<HeuristicContext&>(context)); break;  // hand_rel=1, can follow, no trump
-    case 5:  weight_alloc_trump_notvoid1(const_cast<HeuristicContext&>(context)); break;  // hand_rel=1, can follow, trump
-    case 6:  weight_alloc_nt_void1(const_cast<HeuristicContext&>(context)); break;  // hand_rel=1, void, no trump
-    case 7:  weight_alloc_trump_void1(const_cast<HeuristicContext&>(context)); break;  // hand_rel=1, void, trump
-    case 8:  weight_alloc_nt_notvoid2(const_cast<HeuristicContext&>(context)); break;  // hand_rel=2, can follow, no trump
-    case 9:  weight_alloc_trump_notvoid2(const_cast<HeuristicContext&>(context)); break;  // hand_rel=2, can follow, trump
-    case 10: weight_alloc_nt_void2(const_cast<HeuristicContext&>(context)); break; // hand_rel=2, void, no trump
-    case 11: weight_alloc_trump_void2(const_cast<HeuristicContext&>(context)); break; // hand_rel=2, void, trump
-    case 12: weight_alloc_combined_notvoid3(const_cast<HeuristicContext&>(context)); break; // hand_rel=3, can follow, no trump
-    case 13: weight_alloc_combined_notvoid3(const_cast<HeuristicContext&>(context)); break; // hand_rel=3, can follow, trump
-    case 14: weight_alloc_nt_void3(const_cast<HeuristicContext&>(context)); break; // hand_rel=3, void, no trump
-    case 15: weight_alloc_trump_void3(const_cast<HeuristicContext&>(context)); break; // hand_rel=3, void, trump
-    default: 
-      // Should not happen, but default to basic sorting
+  switch (weight_case) {
+    case WeightCase::Nt0:                weight_alloc_nt0(context); break;
+    case WeightCase::Trump0:             weight_alloc_trump0(context); break;
+    case WeightCase::NtNotVoid1:         weight_alloc_nt_notvoid1(context); break;
+    case WeightCase::TrumpNotVoid1:      weight_alloc_trump_notvoid1(context); break;
+    case WeightCase::NtVoid1:            weight_alloc_nt_void1(context); break;
+    case WeightCase::TrumpVoid1:         weight_alloc_trump_void1(context); break;
+    case WeightCase::NtNotVoid2:         weight_alloc_nt_notvoid2(context); break;
+    case WeightCase::TrumpNotVoid2:      weight_alloc_trump_notvoid2(context); break;
+    case WeightCase::NtVoid2:            weight_alloc_nt_void2(context); break;
+    case WeightCase::TrumpVoid2:         weight_alloc_trump_void2(context); break;
+    case WeightCase::CombinedNotVoid3:
+    case WeightCase::CombinedNotVoid3Trump:
+      weight_alloc_combined_notvoid3(context);
+      break;
+    case WeightCase::NtVoid3:            weight_alloc_nt_void3(context); break;
+    case WeightCase::TrumpVoid3:         weight_alloc_trump_void3(context); break;
+    default:
+      // Should not happen; fall back to NT leading weights so moves get
+      // deterministic ordering instead of stale/uninitialized weights.
+      weight_alloc_nt0(context);
       break;
   }
 }
@@ -672,53 +637,21 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
 
   const int partner_lh = partner[lead_hand];
   const int rho_lh = rho[lead_hand];
-  
+
   unsigned short suitCount = tpos.length[curr_hand][suit];
   int suitAdd;
 
-  if (suit == trump)
+  if (lead_suit == trump) // We pitch
   {
-    // We trump a non-trump card.
-    
-    if (tpos.length[partner_lh][lead_suit] != 0)
-    {
-      // 3rd hand will follow.
-  if ((tpos.rank_in_suit[rho_lh][lead_suit] >
-       (tpos.rank_in_suit[partner_lh][lead_suit] |
-    bit_map_rank[ctx.lead0_rank])) ||
-          ((tpos.length[rho_lh][lead_suit] == 0) &&
-           (tpos.length[rho_lh][trump] != 0)))
-      {
-        // Partner can win with a card or by ruffing.
-        suitAdd = 60 + (suitCount << 6) / 44;
-      }
-      else
-      {
-        suitAdd = -2 + (suitCount << 6) / 36;
-        // Don't ruff from Kx.
-        if ((suitCount == 2) &&
-            (tpos.second_best[suit].hand == curr_hand))
-          suitAdd += -4;
-      }
-    }
-    else if ((tpos.length[rho_lh][lead_suit] == 0) &&
-             (tpos.rank_in_suit[rho_lh][trump] >
-              tpos.rank_in_suit[partner_lh][trump]))
-    {
-      // Partner can overruff 3rd hand.
-      suitAdd = 60 + (suitCount << 6) / 44;
-    }
-  else if ((tpos.length[partner_lh][trump] == 0) &&
-       (tpos.rank_in_suit[rho_lh][lead_suit] >
-        bit_map_rank[ctx.lead0_rank]))
-    {
-      // 3rd hand has no trumps, and partner has suit winner.
-      suitAdd = 60 + (suitCount << 6) / 44;
-    }
+    if (tpos.rank_in_suit[rho_lh][lead_suit] >
+        (tpos.rank_in_suit[partner_lh][lead_suit] |
+         bit_map_rank[ctx.lead0_rank]))
+      // RHO can win.
+      suitAdd = (suitCount << 6) / 44;
     else
     {
-      suitAdd = -2 + (suitCount << 6) / 36;
-      // Don't ruff from Kx.
+      // Don't pitch from Kx.
+      suitAdd = (suitCount << 6) / 36;
       if ((suitCount == 2) &&
           (tpos.second_best[suit].hand == curr_hand))
         suitAdd += -4;
@@ -734,10 +667,10 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
     if (tpos.length[partner_lh][lead_suit] != 0)
     {
       // 3rd hand will follow.
-    if (tpos.rank_in_suit[rho_lh][lead_suit] >
-      (tpos.rank_in_suit[partner_lh][lead_suit] |
-       bit_map_rank[ctx.lead0_rank]))
-        // Partner has winning card.
+      if (tpos.rank_in_suit[rho_lh][lead_suit] >
+          (tpos.rank_in_suit[partner_lh][lead_suit] |
+           bit_map_rank[ctx.lead0_rank]))
+        // RHO can win.
         suitAdd = 60 + (suitCount << 6) / 44;
       else if ((tpos.length[rho_lh][lead_suit] == 0)
                && (tpos.length[rho_lh][trump] != 0))
@@ -758,9 +691,9 @@ void weight_alloc_trump_void1(HeuristicContext& ctx)
                  tpos.rank_in_suit[partner_lh][trump]))
       // Partner can overruff 3rd hand.
       suitAdd = 60 + (suitCount << 6) / 44;
-  else if ((tpos.length[partner_lh][trump] == 0)
-       && (tpos.rank_in_suit[rho_lh][lead_suit] >
-         bit_map_rank[ctx.lead0_rank]))
+    else if ((tpos.length[partner_lh][trump] == 0)
+             && (tpos.rank_in_suit[rho_lh][lead_suit] >
+                 bit_map_rank[ctx.lead0_rank]))
       // 3rd hand has no trumps, and partner has suit winner.
       suitAdd = 60 + (suitCount << 6) / 44;
     else
@@ -883,7 +816,7 @@ int rank_forces_ace(const HeuristicContext& ctx, const int cards4th)
   while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))
     g--;
 
-  if (! g)
+  if (g <= 0)
     return -1;
 
   // RHO's second-highest rank.
@@ -930,6 +863,13 @@ void get_top_number(const HeuristicContext& ctx, const int ris, const int prank,
   // Remove partner's card as well.
   int removed = static_cast<int>(ctx.removed_ranks[ctx.lead_suit] |
                                  bit_map_rank[prank]);
+
+  // Empty suit: last_group_ == -1; no sequence to measure.
+  if (g < 0)
+  {
+    top_number = -1;
+    return;
+  }
 
   int fullseq = mp.fullseq_[g];
 
@@ -1213,7 +1153,7 @@ void weight_alloc_trump_void2(HeuristicContext& ctx)
   MoveType* mply = ctx.mply;
 
   const int rho_lh = rho[lead_hand];
-  
+
   int suitAdd;
   const unsigned short suitCount = tpos.length[curr_hand][suit];
   const int max4th = highest_rank[tpos.rank_in_suit[rho_lh][lead_suit]];
@@ -1241,19 +1181,16 @@ void weight_alloc_trump_void2(HeuristicContext& ctx)
 
   for (int k = last_num_moves; k < num_moves; k++)
   {
-  if (ctx.move1_suit == trump &&
-    mply[k].rank < ctx.move1_rank)
+    if (ctx.move1_suit == trump &&
+        mply[k].rank < ctx.move1_rank)
     {
       // Don't underruff.
-    unsigned char aggrSuit = static_cast<unsigned char>(tpos.aggr[suit]);
-    unsigned char moveRank = static_cast<unsigned char>(mply[k].rank);
-  unsigned char relRankValue = static_cast<unsigned char>(rel_rank[aggrSuit][moveRank]);
-    int r_rank = static_cast<int>(relRankValue);
+      int r_rank = rel_rank[tpos.aggr[suit]][mply[k].rank];
       suitAdd = (suitCount << 6) / 40;
       mply[k].weight = -32 + r_rank + suitAdd;
     }
 
-  else if (ctx.high1 == 0)
+    else if (ctx.high1 == 0)
     {
       // We ruff partner's winner over 2nd hand.
       if (max4th != 0)
@@ -1418,10 +1355,7 @@ void weight_alloc_trump_void3(HeuristicContext& ctx)
     {
       for (int k = last_num_moves; k < num_moves; k++)
       {
-    int r_rank = static_cast<int>(
-      static_cast<unsigned char>(
-  rel_rank[static_cast<unsigned char>(tpos.aggr[suit])]
-             [static_cast<unsigned char>(mply[k].rank)]));
+        int r_rank = rel_rank[tpos.aggr[suit]][mply[k].rank];
         if (mply[k].rank > ctx.move2_rank)
           mply[k].weight = 33 + r_rank; // Overruff
         else
@@ -1436,10 +1370,7 @@ void weight_alloc_trump_void3(HeuristicContext& ctx)
   {
     for (int k = last_num_moves; k < num_moves; k++)
     {
-    int r_rank = static_cast<int>(
-      static_cast<unsigned char>(
-  rel_rank[static_cast<unsigned char>(tpos.aggr[suit])]
-           [static_cast<unsigned char>(mply[k].rank)]));
+      int r_rank = rel_rank[tpos.aggr[suit]][mply[k].rank];
       mply[k].weight = 33 + r_rank;
     }
   }

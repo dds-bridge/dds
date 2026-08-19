@@ -8,23 +8,25 @@ The DDS (Double Dummy Solver) library provides a Python interface for analyzing 
 
 ### Prerequisites
 - Python 3.10+ (tested with 3.10, 3.11, 3.12, 3.14)
-- Bazel 7.x
+- Bazel as pinned in [`.bazelversion`](../.bazelversion) (use
+  [bazelisk](https://github.com/bazelbuild/bazelisk), which picks it up
+  automatically)
 - C++ compiler (clang 15+ or GCC 11+)
 
 ### Build Instructions
 
 ```bash
 # Build the Python extension and Python package wrapper
-bazel build //python:dds3_lib
+bazelisk build //python:dds3_lib
 
 # Build wheel artifact
-bazel build //python:dds3_wheel_dist
+bazelisk build //python:dds3_wheel_dist
 
 # Build with optimizations
-bazel build -c opt //python:_dds3
+bazelisk build -c opt //python:_dds3
 
 # Build with debug symbols
-bazel build -c dbg //python:_dds3
+bazelisk build -c dbg //python:_dds3
 ```
 
 The compiled extension will be located at `bazel-bin/python/_dds3.so`.
@@ -38,23 +40,11 @@ For wheel packaging, the extension is also copied into the package as `dds3/_dds
 python -m venv venv
 source venv/bin/activate
 
-# Install pytest (if not already installed)
-pip install pytest
-```
-
-### Running Unit Tests
 ```bash
-# Set PYTHONPATH to include source package and top-level extension fallback
-export PYTHONPATH=python:bazel-bin/python
-
-# Run Bazel smoke test for Python bindings
-bazel test //python:python_interface_smoke_test
-
-# Or use pytest directly
-pytest python/tests/ -v
-
-# Run specific test file
-pytest python/tests/test_solve_board.py -v
+# Run all Python tests via Bazelisk (recommended)
+bazelisk test //python/...
+# Run a specific test
+bazelisk test //python:solve_board_test
 ```
 
 ### Test Coverage
@@ -228,6 +218,74 @@ print(f"Par: {par_result['par_score']}")
 print(f"Contract: {par_result['par_contracts_string']}")
 ```
 
+#### `dealer_par(table_results, dealer, vulnerable=0)`
+
+Calculates par contracts and score from the dealer's perspective (wraps `DealerPar`).
+
+**Parameters:**
+- `table_results` (dict): DD table result with key `res_table` (e.g. from `calc_dd_table`)
+- `dealer` (int): Dealer seat (0=N, 1=E, 2=S, 3=W)
+- `vulnerable` (int, default=0): Vulnerability (0=none, 1=both, 2=NS, 3=EW)
+
+**Returns:**
+- dict with keys: `score` (int), `number` (int), `contracts` (list[str], length `number`)
+
+```python
+from dds3 import calc_dd_table, dealer_par
+
+dd_result = calc_dd_table(table_deal)
+result = dealer_par(dd_result, dealer=0, vulnerable=0)
+print(result["score"], result["contracts"])
+```
+
+#### `analyse_play_pbn(remain_cards, play, trump=4, first=0, current_trick_suit=(0,0,0), current_trick_rank=(0,0,0), thread_index=0)`
+
+Returns the double-dummy trick count after each card of a played hand (wraps `AnalysePlayPBN`).
+
+**Parameters:**
+- `remain_cards` (str): Full deal in PBN format before any card of `play`
+- `play` (str): Cards played, 2 characters each (suit+rank), e.g. `"SAHK..."`
+- `trump` (int, default=4): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT)
+- `first` (int, default=0): Seat that leads (0=N, 1=E, 2=S, 3=W)
+- `current_trick_suit` / `current_trick_rank` (seq, default=(0,0,0)): Cards already in the trick
+- `thread_index` (int, default=0): Thread id
+
+**Returns:**
+- dict with keys: `number` (int), `tricks` (list[int]) — `tricks[i]` is the trick count for the side to play after `i` cards.
+
+```python
+from dds3 import analyse_play_pbn
+
+deal = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
+result = analyse_play_pbn(deal, play="S6", trump=4, first=0)
+print(result["tricks"])
+```
+
+#### `analyse_all_plays_pbn(deals)`
+
+Batched form of `analyse_play_pbn` (wraps `AnalyseAllPlaysPBN`).
+
+**Parameters:**
+- `deals` (list[dict]): Up to 200 dicts, each with `remain_cards` (str, required), `play`
+  (str, required), and optional `trump`, `first`, `current_trick_suit`, `current_trick_rank`.
+
+**Returns:**
+- list[dict]: one `{number, tricks}` dict per deal (same shape as `analyse_play_pbn`).
+
+#### `set_max_threads(user_threads=0)`
+
+Legacy thread-resource hook (wraps the **deprecated** `SetMaxThreads` C API).
+
+This does **not** control DDS's batch parallelism and is kept only for backward
+compatibility. `solve_all_boards_*` already parallelise across the machine's
+hardware threads automatically (via `solve_boards_n`) — the value passed here does
+not size that pool. `analyse_all_plays_pbn` currently runs sequentially.
+`user_threads` must be `>= 0` (`0` = auto); raises `ValueError` for negative values.
+
+For per-board concurrency from Python, create one `SolverContext` per worker thread
+and pass it to `solve_board` / `solve_board_pbn` (which release the GIL during the
+search).
+
 ## Card Representation
 
 ### Binary Format (remain_cards)
@@ -313,7 +371,7 @@ except RuntimeError as e:
 - The extension is thread-safe for most operations
 - Use `thread_index` parameter for multi-threaded solving (0-based index)
 - For batch processing, prefer `calc_all_tables_pbn` over multiple `solve_board_pbn` calls
-- Consider using optimized builds (`bazel build -c opt`) for performance-critical code
+- Consider using optimized builds (`bazelisk build -c opt`) for performance-critical code
 
 ## Building from Source
 
@@ -336,7 +394,7 @@ required.
 sudo apt-get install build-essential python3-dev
 
 # Build
-bazel build -c opt //python:_dds3
+bazelisk build -c opt //python:_dds3
 ```
 
 On Linux hosts where a pinned LLVM toolchain is configured (for example,

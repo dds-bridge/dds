@@ -1,6 +1,8 @@
 # Solve_board regression tests
 
 load("@rules_cc//cc:defs.bzl", "cc_test")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
+
 
 cc_test(
     name = "solve_board_test",
@@ -12,4 +14,21 @@ cc_test(
         "//library/src:testable_dds",
         "@googletest//:gtest_main",
     ],
+    copts = DDS_CPPOPTS,
+)
+
+# small: a few seconds normally. Sanitizer configs raise the short timeout in
+# .bazelrc so MSAN (can exceed 120s on this suite) keeps headroom without
+# timeout="moderate" (which trips --test_verbose_timeout_warnings on fast runs).
+cc_test(
+    name = "analyse_play_consistency_test",
+    size = "small",
+    srcs = [
+        "analyse_play_consistency.cpp",
+    ],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
 )

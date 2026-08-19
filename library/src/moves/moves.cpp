@@ -49,10 +49,44 @@ const MgType RegisterList[16] = {MgType::NT0,           MgType::TRUMP0,
 #define MG_REGISTER(a, b) 1;
 #endif
 
+namespace
+{
+
+// Trump-winner bit of WeightCase: never index winner[trump]
+// unless trump is a suit in [0, DDS_SUITS).
+auto trump_winner_bit(const Pos& tpos, const int trump) -> int
+{
+  return ((trump != DDS_NOTRUMP) &&
+          (trump >= 0 && trump < DDS_SUITS) &&
+          (tpos.winner[trump].rank != 0))
+           ? 1
+           : 0;
+}
+
+// Encode following-hand WeightCase: 4 * hand_rel + trump_winner + (void ? 2 : 0).
+auto weight_case_follow(const int hand_rel, const int trump_winner,
+                        const bool is_void) -> WeightCase
+{
+  return static_cast<WeightCase>(
+      4 * hand_rel + trump_winner + (is_void ? 2 : 0));
+}
+
+}  // namespace
+
 Moves::Moves() {
   // Initialize non-owning pointers to nullptr for safety
   trackp = nullptr;
   mply = nullptr;
+
+  // Scalars snapshotted by make_heuristic_context must not be indeterminate.
+  leadHand = 0;
+  currHand = 0;
+  leadSuit = 0;
+  currTrick = 0;
+  trump = DDS_NOTRUMP;
+  suit = 0;
+  numMoves = 0;
+  lastNumMoves = 0;
 
   funcName[static_cast<int>(MgType::NT0)] = "NT0";
   funcName[static_cast<int>(MgType::TRUMP0)] = "Trump0";
@@ -71,6 +105,8 @@ Moves::Moves() {
   for (int t = 0; t < 13; t++) {
     for (int h = 0; h < DDS_HANDS; h++) {
       lastCall[t][h] = MgType::SIZE;
+
+      moveList[t][h] = {};
 
       trickTable[t][h].count = 0;
       trickSuitTable[t][h].count = 0;
@@ -169,7 +205,21 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
   mply = list.move;
   for (int s = 0; s < DDS_SUITS; s++)
     trackp->lowest_win[0][s] = 0;
+  // Reset fields snapshotted by make_heuristic_context before the hoist;
+  // suit/lastNumMoves are overwritten again before each call_heuristic.
   numMoves = 0;
+  lastNumMoves = 0;
+  suit = 0;
+  leadSuit = 0;
+
+  // Leading-hand weight case, known here once instead of re-derived per
+  // suit inside the heuristic dispatcher.
+  const WeightCase lead_case = trump_winner_bit(tpos, trump)
+                                   ? WeightCase::Trump0
+                                   : WeightCase::Nt0;
+  HeuristicContext hctx =
+      make_heuristic_context(tpos, bestMove, bestMoveTT, thrp_rel,
+                             track[tricks]);
 
   for (suit = 0; suit < DDS_SUITS; suit++) {
     unsigned short ris = tpos.rank_in_suit[leadHand][suit];
@@ -200,12 +250,14 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
       g--;
     }
 
-    Moves::call_heuristic(tpos, bestMove, bestMoveTT, thrp_rel);
+    hctx.suit = suit;
+    hctx.last_num_moves = lastNumMoves;
+    hctx.num_moves = numMoves;
+    ::call_heuristic(hctx, lead_case);
   }
 
 #ifdef DDS_MOVES
-  bool ftest = ((trump != DDS_NOTRUMP) && (tpos.winner[trump].rank != 0));
-  if (ftest)
+  if (lead_case == WeightCase::Trump0)
     MG_REGISTER(MgType::TRUMP0, 0);
   else
     MG_REGISTER(MgType::NT0, 0);
@@ -235,11 +287,19 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
 
   for (int s = 0; s < DDS_SUITS; s++)
     trackp->lowest_win[handRel][s] = 0;
+  // Reset fields snapshotted by make_heuristic_context before either hoist.
+  // Follow-suit uses suit == leadSuit; the void path overwrites suit per
+  // iteration before call_heuristic.
   numMoves = 0;
+  lastNumMoves = 0;
+  suit = leadSuit;
 
-  [[maybe_unused]] int findex;
-  int ftest =
-      ((trump != DDS_NOTRUMP) && (tpos.winner[trump].rank != 0) ? 1 : 0);
+  WeightCase weight_case;
+  const int trump_winner = trump_winner_bit(tpos, trump);
+
+  // Empty best-move placeholders must outlive the hoisted context, which
+  // holds references to them.
+  const MoveType empty_move{};
 
   unsigned short ris = tpos.rank_in_suit[currHand][leadSuit];
 
@@ -263,26 +323,34 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
       g--;
     }
 
-    findex = 4 * handRel + ftest;
+    weight_case = weight_case_follow(handRel, trump_winner, /*is_void=*/false);
 #ifdef DDS_MOVES
-    MG_REGISTER(RegisterList[findex], handRel);
+    MG_REGISTER(RegisterList[static_cast<int>(weight_case)], handRel);
 #endif
 
     list.current = 0;
     list.last = numMoves - 1;
     if (numMoves == 1)
       return numMoves;
-    Moves::call_heuristic(tpos, MoveType{}, MoveType{}, nullptr);
+
+    HeuristicContext hctx =
+        make_heuristic_context(tpos, empty_move, empty_move, nullptr,
+                               track[tricks]);
+    ::call_heuristic(hctx, weight_case);
 
     Moves::MergeSort();
     return numMoves;
   }
 
-  findex = 4 * handRel + ftest + 2;
+  weight_case = weight_case_follow(handRel, trump_winner, /*is_void=*/true);
 
 #ifdef DDS_MOVES
-  MG_REGISTER(RegisterList[findex], handRel);
+  MG_REGISTER(RegisterList[static_cast<int>(weight_case)], handRel);
 #endif
+
+  HeuristicContext hctx =
+      make_heuristic_context(tpos, empty_move, empty_move, nullptr,
+                             track[tricks]);
 
   for (suit = 0; suit < DDS_SUITS; suit++) {
     ris = tpos.rank_in_suit[currHand][suit];
@@ -309,7 +377,10 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
       g--;
     }
 
-    Moves::call_heuristic(tpos, MoveType{}, MoveType{}, nullptr);
+    hctx.suit = suit;
+    hctx.last_num_moves = lastNumMoves;
+    hctx.num_moves = numMoves;
+    ::call_heuristic(hctx, weight_case);
   }
 
   list.current = 0;
@@ -368,73 +439,64 @@ auto Moves::GetLength(const int trick, const int relHand) const -> int {
   return moveList[trick][relHand].last + 1;
 }
 
-auto Moves::MakeSpecific(const MoveType &ourMply, const int trick,
-                         const int relHand) -> void {
+auto Moves::apply_move_to_track(const MoveType &move, const int relHand,
+                                const int trick) -> void {
+  assert(trick >= 0 && trick < 13 && "apply_move_to_track: trick out of range");
+  assert(relHand >= 0 && relHand < DDS_HANDS);
+  if (relHand == 3)
+    assert(trick > 0 && "apply_move_to_track: trick must be > 0 when relHand==3");
   trackp = &track[trick];
-
   if (relHand == 0) {
-    trackp->move[0].suit = ourMply.suit;
-    trackp->move[0].rank = ourMply.rank;
-    trackp->move[0].sequence = ourMply.sequence;
+    trackp->move[0].suit = move.suit;
+    trackp->move[0].rank = move.rank;
+    trackp->move[0].sequence = move.sequence;
     trackp->high[0] = 0;
-
-    trackp->lead_suit = ourMply.suit;
-  } else if (ourMply.suit == trackp->move[relHand - 1].suit) {
-    if (ourMply.rank > trackp->move[relHand - 1].rank) {
-      trackp->move[relHand].suit = ourMply.suit;
-      trackp->move[relHand].rank = ourMply.rank;
-      trackp->move[relHand].sequence = ourMply.sequence;
+    trackp->lead_suit = move.suit;
+  } else if (move.suit == trackp->move[relHand - 1].suit) {
+    if (move.rank > trackp->move[relHand - 1].rank) {
+      trackp->move[relHand].suit = move.suit;
+      trackp->move[relHand].rank = move.rank;
+      trackp->move[relHand].sequence = move.sequence;
       trackp->high[relHand] = relHand;
     } else {
       trackp->move[relHand] = trackp->move[relHand - 1];
       trackp->high[relHand] = trackp->high[relHand - 1];
     }
-  } else if (ourMply.suit == trump) {
-    trackp->move[relHand].suit = ourMply.suit;
-    trackp->move[relHand].rank = ourMply.rank;
-    trackp->move[relHand].sequence = ourMply.sequence;
+  } else if (move.suit == trump) {
+    trackp->move[relHand].suit = move.suit;
+    trackp->move[relHand].rank = move.rank;
+    trackp->move[relHand].sequence = move.sequence;
     trackp->high[relHand] = relHand;
   } else {
     trackp->move[relHand] = trackp->move[relHand - 1];
     trackp->high[relHand] = trackp->high[relHand - 1];
   }
-
-  trackp->play_suits[relHand] = ourMply.suit;
-  trackp->play_ranks[relHand] = ourMply.rank;
-
-  // When trick completes (4th card played), prepare next trick's state.
+  trackp->play_suits[relHand] = move.suit;
+  trackp->play_ranks[relHand] = move.rank;
   if (relHand == 3) {
-    TrackType *newp = &track[trick - 1];
-
-    // Winner of this trick leads the next one.
-    newp->lead_hand = (trackp->lead_hand + trackp->high[3]) % 4;
-
-    // Update removed ranks to include all cards played in this trick.
+    TrackType &newt = track[trick - 1];
+    newt.lead_hand = (trackp->lead_hand + trackp->high[3]) % 4;
     int r, s;
     for (s = 0; s < DDS_SUITS; s++)
-      newp->removed_ranks[s] = trackp->removed_ranks[s];
-
+      newt.removed_ranks[s] = trackp->removed_ranks[s];
     for (int h = 0; h < DDS_HANDS; h++) {
       r = trackp->play_ranks[h];
       s = trackp->play_suits[h];
-      newp->removed_ranks[s] |= bit_map_rank[r];
+      newt.removed_ranks[s] |= bit_map_rank[r];
     }
   }
 }
 
-auto Moves::MakeNext(const int trick, const int relHand,
-                     const unsigned short ourWinRanks[DDS_SUITS])
-    -> MoveType const * {
-  // Find moves that are >= ourWinRanks[suit], but allow one
-  // "small" move per suit to explore losing options.
-  //
-  // The lowest_win array tracks the minimum rank to try next for each suit.
-  // After trying one card below the winning threshold, subsequent cards
-  // must meet the threshold.
+auto Moves::MakeSpecific(const MoveType &ourMply, const int trick,
+                          const int relHand) -> void {
+  apply_move_to_track(ourMply, relHand, trick);
+}
 
+auto Moves::MakeNext(const int trick, const int relHand,
+                      const unsigned short ourWinRanks[DDS_SUITS])
+    -> MoveType const * {
   int *lwp = track[trick].lowest_win[relHand];
   MovePlyType &list = moveList[trick][relHand];
-  trackp = &track[trick];
 
   MoveType *currp = nullptr, *prevp;
 
@@ -466,51 +528,7 @@ auto Moves::MakeNext(const int trick, const int relHand,
       return nullptr;
   }
 
-  if (relHand == 0) {
-    trackp->move[0].suit = currp->suit;
-    trackp->move[0].rank = currp->rank;
-    trackp->move[0].sequence = currp->sequence;
-    trackp->high[0] = 0;
-
-    trackp->lead_suit = currp->suit;
-  } else if (currp->suit == trackp->move[relHand - 1].suit) {
-    if (currp->rank > trackp->move[relHand - 1].rank) {
-      trackp->move[relHand].suit = currp->suit;
-      trackp->move[relHand].rank = currp->rank;
-      trackp->move[relHand].sequence = currp->sequence;
-      trackp->high[relHand] = relHand;
-    } else {
-      trackp->move[relHand] = trackp->move[relHand - 1];
-      trackp->high[relHand] = trackp->high[relHand - 1];
-    }
-  } else if (currp->suit == trump) {
-    trackp->move[relHand].suit = currp->suit;
-    trackp->move[relHand].rank = currp->rank;
-    trackp->move[relHand].sequence = currp->sequence;
-    trackp->high[relHand] = relHand;
-  } else {
-    trackp->move[relHand] = trackp->move[relHand - 1];
-    trackp->high[relHand] = trackp->high[relHand - 1];
-  }
-
-  trackp->play_suits[relHand] = currp->suit;
-  trackp->play_ranks[relHand] = currp->rank;
-
-  if (relHand == 3) {
-    TrackType &newt = track[trick - 1];
-
-    newt.lead_hand = (trackp->lead_hand + trackp->high[3]) % 4;
-
-    int r, s;
-    for (s = 0; s < DDS_SUITS; s++)
-      newt.removed_ranks[s] = trackp->removed_ranks[s];
-
-    for (int h = 0; h < DDS_HANDS; h++) {
-      r = trackp->play_ranks[h];
-      s = trackp->play_suits[h];
-      newt.removed_ranks[s] |= bit_map_rank[r];
-    }
-  }
+  apply_move_to_track(*currp, relHand, trick);
 
   list.current++;
   return currp;
@@ -518,49 +536,13 @@ auto Moves::MakeNext(const int trick, const int relHand,
 
 auto Moves::MakeNextSimple(const int trick, const int relHand)
     -> MoveType const * {
-  // Don't worry about small moves. Why not, actually?
-
   MovePlyType &list = moveList[trick][relHand];
   if (list.current > list.last)
     return nullptr;
 
   const MoveType &curr = list.move[list.current];
 
-  trackp = &track[trick];
-
-  if (relHand == 0) {
-    trackp->move[0].suit = curr.suit;
-    trackp->move[0].rank = curr.rank;
-    trackp->move[0].sequence = curr.sequence;
-    trackp->high[0] = 0;
-
-    trackp->lead_suit = curr.suit;
-  } else if (curr.suit == trackp->move[relHand - 1].suit) {
-    if (curr.rank > trackp->move[relHand - 1].rank) {
-      trackp->move[relHand].suit = curr.suit;
-      trackp->move[relHand].rank = curr.rank;
-      trackp->move[relHand].sequence = curr.sequence;
-      trackp->high[relHand] = relHand;
-    } else {
-      trackp->move[relHand] = trackp->move[relHand - 1];
-      trackp->high[relHand] = trackp->high[relHand - 1];
-    }
-  } else if (curr.suit == trump) {
-    trackp->move[relHand].suit = curr.suit;
-    trackp->move[relHand].rank = curr.rank;
-    trackp->move[relHand].sequence = curr.sequence;
-    trackp->high[relHand] = relHand;
-  } else {
-    trackp->move[relHand] = trackp->move[relHand - 1];
-    trackp->high[relHand] = trackp->high[relHand - 1];
-  }
-
-  trackp->play_suits[relHand] = curr.suit;
-  trackp->play_ranks[relHand] = curr.rank;
-
-  if (relHand == 3) {
-    track[trick - 1].lead_hand = (trackp->lead_hand + trackp->high[3]) % 4;
-  }
+  apply_move_to_track(curr, relHand, trick);
 
   list.current++;
   return &curr;
@@ -637,37 +619,38 @@ auto Moves::Sort(const int tricks, const int relHand) -> void {
     mply[j] = tmp;                                                             \
   }
 
-/**
- * @brief Build a heuristic context and invoke heuristic sorting.
- *
- * Centralizes the construction of HeuristicContext to keep the call sites
- * consistent and avoid exposing mutable state to heuristic helpers.
- */
-auto Moves::call_heuristic(const Pos &tpos, const MoveType &best_move,
-                          const MoveType &best_move_tt,
-                          const RelRanksType thrp_rel[]) -> void {
-  // Construct context once here and call the context-taking overload.
+auto Moves::make_heuristic_context(const Pos &tpos, const MoveType &best_move,
+                                   const MoveType &best_move_tt,
+                                   const RelRanksType thrp_rel[],
+                                   const TrackType &tr) const
+    -> HeuristicContext {
   HeuristicContext context{
       tpos,  best_move, best_move_tt, thrp_rel,  mply,     numMoves, lastNumMoves,
-      trump, suit,     trackp,     currTrick, currHand, leadHand, leadSuit};
+      trump, suit,     &tr,     currTrick, currHand, leadHand, leadSuit};
 
-  // Snapshot removed_ranks into the context to avoid direct dependence on
-  // the mutable Moves::trackp buffer inside heuristic code.
-  for (int s = 0; s < DDS_SUITS; ++s) {
-    context.removed_ranks[s] = trackp ? trackp->removed_ranks[s] : 0;
+  // Snapshot removed_ranks and only those trick-card fields that are defined
+  // for the current relative hand. Earlier slots may be unpopulated (MoveGen0
+  // / hand_rel 1–2), so leave the rest at HeuristicContext's zero defaults.
+  for (int s = 0; s < DDS_SUITS; ++s)
+    context.removed_ranks[s] = tr.removed_ranks[s];
+
+  const int hand_rel =
+    (currHand == leadHand) ? 0 : (currHand + 4 - leadHand) % 4;
+  if (hand_rel >= 1)
+    context.lead0_rank = tr.move[0].rank;
+  if (hand_rel >= 2)
+  {
+    context.move1_rank = tr.move[1].rank;
+    context.move1_suit = tr.move[1].suit;
+    context.high1 = tr.high[1];
   }
-  // Snapshot minimal trick state for helper usage.
-  context.move1_rank = (trackp ? trackp->move[1].rank : 0);
-  context.high1 = (trackp ? trackp->high[1] : 0);
-  context.move1_suit = (trackp ? trackp->move[1].suit : 0);
-  // Third-hand snapshots
-  context.move2_rank = (trackp ? trackp->move[2].rank : 0);
-  context.move2_suit = (trackp ? trackp->move[2].suit : 0);
-  context.high2 = (trackp ? trackp->high[2] : 0);
-  // Leader snapshot
-  context.lead0_rank = (trackp ? trackp->move[0].rank : 0);
-
-  ::call_heuristic(context);
+  if (hand_rel >= 3)
+  {
+    context.move2_rank = tr.move[2].rank;
+    context.move2_suit = tr.move[2].suit;
+    context.high2 = tr.high[2];
+  }
+  return context;
 }
 
 /**

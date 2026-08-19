@@ -1,0 +1,192 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_cc//cc:defs.bzl", "cc_shared_library")
+load("@rules_java//java:defs.bzl", "java_library", "java_test")
+load("@rules_jvm_external//:defs.bzl", "java_export")
+load("@rules_python//python:defs.bzl", "py_library")
+
+# Single source of truth for the published Maven version. Keep in sync with the
+# module() version in MODULE.bazel; the embedded smoke test cross-checks its
+# major.minor against the library's GetDDSInfo so a gross divergence is caught.
+DDS_FFM_VERSION = "3.1.0"
+
+# Host os+cpu combinations we can package a native library for. The copy_file rule
+# that stages the library encodes <os>-<arch> in its output path, which must match the
+# arch Dds.loadEmbedded() resolves at runtime (os.arch) — so the arch is part of
+# the build config here, not hardcoded per-OS.
+[
+    config_setting(
+        name = name,
+        constraint_values = cvs,
+    )
+    for name, cvs in {
+        "macos_arm64": ["@platforms//os:osx", "@platforms//cpu:arm64"],
+        "macos_x86_64": ["@platforms//os:osx", "@platforms//cpu:x86_64"],
+        "linux_arm64": ["@platforms//os:linux", "@platforms//cpu:arm64"],
+        "linux_x86_64": ["@platforms//os:linux", "@platforms//cpu:x86_64"],
+        "windows_x86_64": ["@platforms//os:windows", "@platforms//cpu:x86_64"],
+    }.items()
+]
+
+# Export lists that constrain the shared library's ABI to the public C API.
+# Regenerate with gen_export_lists.py after changing dll.h or dds_c_api.h; the
+# checked-in .lds files are the source of truth consumed at link time.
+exports_files([
+    "version_script.lds",
+    "exported_symbols.lds",
+    "gen_export_lists.py",
+])
+
+# Importable form of the export-list generator so its parser can be unit-tested.
+py_library(
+    name = "gen_export_lists_lib",
+    srcs = ["gen_export_lists.py"],
+    imports = ["."],
+    visibility = ["//jni:__subpackages__"],
+)
+
+# One self-contained native shared library exporting the stable C ABI
+# (dll.h flat API + dds_c_* shim). All internal sub-libraries are linked in
+# statically, so the JVM's System.loadLibrary("dds") needs only this one file.
+#
+# The export set is constrained at link time on Linux (--version-script) and
+# macOS (-exported_symbols_list) from the checked-in .lds files, and asserted by
+# //jni/tests:export_set_test. Windows has no export-list branch: the DLL
+# exports whatever is marked DLLEXPORT, which is a superset of the .lds set (it
+# includes the modern dds_* context API from api/dds_api.hpp). So the exported
+# ABI is deliberately platform-dependent today. Closing that gap needs a .def
+# file generated from the same header-derived symbol set as the .lds files, plus
+# a Windows arm of export_set_test (dumpbin instead of nm) — tracked as a
+# follow-up alongside the other Windows JNI work (the jni tests are
+# target_compatible_with-excluded on Windows for the same reason).
+cc_shared_library(
+    name = "dds_shared",
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:dds_c_api",
+    ],
+    shared_lib_name = select({
+        "//:build_windows": "dds.dll",
+        "//:build_macos": "libdds.dylib",
+        "//conditions:default": "libdds.so",
+    }),
+    additional_linker_inputs = select({
+        "//:build_macos": [":exported_symbols.lds"],
+        "//:build_windows": [],
+        "//conditions:default": [":version_script.lds"],
+    }),
+    user_link_flags = select({
+        "//:build_macos": ["-Wl,-exported_symbols_list,$(location :exported_symbols.lds)"],
+        "//:build_windows": [],
+        "//conditions:default": ["-Wl,--version-script=$(location :version_script.lds)"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+# Hand-written Foreign Function & Memory (Project Panama) bindings for the shared
+# library: struct MemoryLayouts and Linker downcall handles for the dds_c_* shim
+# plus GetDDSInfo. Requires the JDK 22+ toolchain configured in .bazelrc.
+java_library(
+    name = "dds_ffm",
+    srcs = [
+        "java/org/dds/ffm/Dds.java",
+        "java/org/dds/ffm/DdsStatus.java",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Stage the host shared library under native/<os>-<arch>/ for jar embedding.
+# copy_file outputs are not configurable, so there is one per os+arch triplet
+# gated by target_compatible_with; only the host's is analysed, and its output
+# path's arch matches what Dds.loadEmbedded() looks up at runtime. copy_file is
+# shell-free, so no cp/copy toolchain assumption on any host (incl. Windows).
+# Host platform only (Phase 1) — a multi-arch fat jar is a separate follow-up.
+[
+    copy_file(
+        name = "native_in_jar_" + triplet.replace("-", "_"),
+        src = "//jni:dds_shared",
+        out = "native/" + triplet + "/" + libname,
+        target_compatible_with = cvs,
+    )
+    for triplet, libname, cvs in [
+        ("macos-aarch64", "libdds.dylib", ["@platforms//os:osx", "@platforms//cpu:arm64"]),
+        ("macos-x86_64", "libdds.dylib", ["@platforms//os:osx", "@platforms//cpu:x86_64"]),
+        ("linux-aarch64", "libdds.so", ["@platforms//os:linux", "@platforms//cpu:arm64"]),
+        ("linux-x86_64", "libdds.so", ["@platforms//os:linux", "@platforms//cpu:x86_64"]),
+        ("windows-x86_64", "dds.dll", ["@platforms//os:windows", "@platforms//cpu:x86_64"]),
+    ]
+]
+
+# Publishable Maven jar: the dds_ffm binding classes (exported, not recompiled)
+# plus the embedded native library extracted at runtime by Dds.loadEmbedded().
+# java_export also generates the runnable //jni:dds_ffm_dist.publish target
+# (supports file:// local ~/.m2). The native resource is selected by host
+# os+arch so its embedded path matches loadEmbedded()'s lookup; on any other
+# platform the target is incompatible (skipped by //...) rather than a hard
+# "no matching conditions" failure that would poison unrelated builds.
+java_export(
+    name = "dds_ffm_dist",
+    exports = [":dds_ffm"],
+    maven_coordinates = "org.dds:dds-ffm:" + DDS_FFM_VERSION,
+    resource_strip_prefix = "jni",
+    resources = select({
+        ":macos_arm64": [":native_in_jar_macos_aarch64"],
+        ":macos_x86_64": [":native_in_jar_macos_x86_64"],
+        ":linux_arm64": [":native_in_jar_linux_aarch64"],
+        ":linux_x86_64": [":native_in_jar_linux_x86_64"],
+        ":windows_x86_64": [":native_in_jar_windows_x86_64"],
+        "//conditions:default": [],
+    }),
+    target_compatible_with = select({
+        ":macos_arm64": [],
+        ":macos_x86_64": [],
+        ":linux_arm64": [],
+        ":linux_x86_64": [],
+        ":windows_x86_64": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+# End-to-end FFM smoke test: loads the shared library and solves a known deal
+# through the shim. Runs as a plain main (no JUnit dep). The shared lib is a
+# data dep; its runfiles path is passed via -Ddds.library.path, and native
+# access is enabled for the FFM downcalls. Off Windows (nm-free / dll path).
+java_test(
+    name = "dds_ffm_smoke_test",
+    size = "small",
+    srcs = ["java/org/dds/ffm/DdsSmokeTest.java"],
+    main_class = "org.dds.ffm.DdsSmokeTest",
+    use_testrunner = False,
+    data = ["//jni:dds_shared"],
+    jvm_flags = [
+        "--enable-native-access=ALL-UNNAMED",
+        "-Ddds.library.path=$(rootpath //jni:dds_shared)",
+    ],
+    deps = [":dds_ffm"],
+    target_compatible_with = select({
+        "//:build_windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+# Validates the packaging path: loads the native lib via Dds.loadEmbedded() from
+# the jar's classpath resource (depends on dds_ffm_dist, which embeds it) and
+# solves the known deal. Off Windows like the other jni tests.
+java_test(
+    name = "dds_ffm_embedded_smoke_test",
+    size = "small",
+    srcs = ["java/org/dds/ffm/DdsEmbeddedSmokeTest.java"],
+    main_class = "org.dds.ffm.DdsEmbeddedSmokeTest",
+    use_testrunner = False,
+    jvm_flags = [
+        "--enable-native-access=ALL-UNNAMED",
+        # Cross-check the coordinate's major.minor against the embedded library's
+        # GetDDSInfo so a published version can't silently misrepresent it.
+        "-Ddds.coordinate.version=" + DDS_FFM_VERSION,
+    ],
+    deps = [":dds_ffm_dist"],
+    target_compatible_with = select({
+        "//:build_windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)

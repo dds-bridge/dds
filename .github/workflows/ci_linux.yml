@@ -9,25 +9,284 @@ on:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       # 1️⃣ Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # 2️⃣ Install Bazelisk (recommended Bazel launcher)
-      - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
+      # 2️⃣ Free up disk space (LLVM toolchain ~4 GB extracted; runners ship ~14 GB free)
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
         with:
-          bazelisk-version: "1.29.0"
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
 
-      # 3️⃣ (Optional) Install Doxygen for documentation generation
+      # 3️⃣ Install Bazelisk (recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      # 4️⃣ (Optional) Install Doxygen for documentation generation
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen
 
-      # 4️⃣ Build all targets
-      - name: Build all targets
-        run: bazel build --verbose_failures //...
+      # 5️⃣ Prefetch external repos (emsdk via //..., LLVM); retry network flakes only
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch //...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
 
-      # 6️⃣ Run all tests (including Python)
+      # 6️⃣ Build all targets
+      - name: Build all targets
+        run: bazelisk build --verbose_failures //...
+
+      # 7️⃣ Build with DDS_AB_STATS (off by default; compile-gated AB counters)
+      - name: Build with ab_stats define
+        run: bazelisk build --define=ab_stats=true --verbose_failures //library/src:dds
+
+      - name: Test with ab_stats define
+        run: bazelisk test --define=ab_stats=true --verbose_failures --test_output=errors //library/tests/ab_search:ab_stats_test //library/tests/ab_search:tt_lookup_test
+
+      # 8️⃣ Build with DDS_SCHEDULER (off by default; compile-gated timing path)
+      - name: Build with scheduler define
+        run: bazelisk build --define=scheduler=true --verbose_failures //library/src:dds
+
+      # 9️⃣ Run all tests (including Python)
       - name: Run all tests
-        run: bazel test --verbose_failures //...
+        run: bazelisk test --verbose_failures //...
+
+      # 🔟 .NET binding — build and test the managed wrapper against the shared
+      #    library just built. Pinned to 8.0.x because that is what DDS_Core
+      #    targets; the test project's RollForward only matters where no 8.0
+      #    runtime exists, which is not the case here.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with: 
+          dotnet-version: "8.0.x"
+        
+      # bazel-bin is a configuration-dependent convenience symlink, so ask Bazel
+      # for it rather than hardcoding a path that a different --config would move.
+      - name: Test .NET binding
+        run: |
+          bazelisk build --verbose_failures //jni:dds_shared
+          export DDS_LIBRARY_PATH="$(bazelisk info bazel-bin)/jni/libdds.so"
+          test -f "$DDS_LIBRARY_PATH" || { echo "native library not found at $DDS_LIBRARY_PATH"; exit 1; }
+          # Both configurations: ThrowIfError is unconditional, so a regression to
+          # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
+          dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
+          dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
+          # DdTableForDeal unit helpers (no native library required).
+          dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
+          dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
+          # CLI e2e: bash drives `dotnet run` against the native library.
+          chmod +x dotnet/DdTableForDeal/e2e.sh
+          ./dotnet/DdTableForDeal/e2e.sh
+
+      # 11 Upload test logs
+      - name: Upload test logs - Linux
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  asan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=asan //library/tests/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Run tests (AddressSanitizer)
+        run: bazelisk test --config=asan --verbose_failures --test_output=errors //library/tests/...
+
+      - name: Upload ASAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-asan
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  tsan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=tsan //library/tests/system/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Run system tests (ThreadSanitizer)
+        run: bazelisk test --config=tsan --verbose_failures --test_output=errors //library/tests/system/...
+
+      - name: Upload TSAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-tsan
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  ubsan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=ubsan //library/tests/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Run tests (UndefinedBehaviorSanitizer)
+        run: bazelisk test --config=ubsan --verbose_failures --test_output=errors //library/tests/...
+
+      - name: Upload UBSAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-ubsan
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  msan:
+    # Pin to 22.04: MODULE.bazel's MSAN LLVM + instrumented libc++ overlay are
+    # the Ubuntu 22.04 builds; ubuntu-latest drift would break the overlay match.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=msan //library/tests/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Run tests (MemorySanitizer)
+        run: bazelisk test --config=msan --verbose_failures --test_output=errors //library/tests/...
+
+      - name: Upload MSAN test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-linux-msan
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30

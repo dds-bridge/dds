@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include <utility>
+#include <vector>
+
 #include <api/dll.h>
 
 /// @file loop.hpp
@@ -23,24 +26,28 @@
 /// @param deal_list Input deals in PBN format
 /// @param fut_list Expected future tricks results
 /// @param number Number of deals in test set
-/// @param stepsize Reporting frequency
+/// @param stepsize Boards per solve batch (typically `MAXNOOFBOARDS`)
+/// @param board_times When non-null, appends per-deal timings for every batch
+///        with file-relative board indices (for `dtest -r`)
 void loop_solve(
     BoardsPBN * bop,
     SolvedBoards * solvedbdp,
     DealPBN * deal_list,
     FutureTricks * fut_list,
     const int number,
-    const int stepsize);
+    const int stepsize,
+    std::vector<std::pair<int, int>>* board_times = nullptr);
 
-/// Calculate loop: execute calc_dd_table for multiple deals.
+/// Calculate loop: CalcAllTablesPBNX for the full deal list in one parallel job.
+/// Allocates its own flat deal/result buffers (unbounded X API); no legacy
+/// DdTableDealsPBN / DdTablesRes batch structs.
+/// @param deal_list Input deals in PBN format
+/// @param table_list Expected DD table results
+/// @param number Number of deals in the test set
 bool loop_calc(
-    DdTableDealsPBN * dealsp,
-    DdTablesRes * resp,
-    AllParResults * parp,
     DealPBN * deal_list,
     DdTableResults * table_list,
-    const int number,
-    const int stepsize);
+    const int number);
 
 /// PAR loop: calculate PAR scores for multiple deals.
 bool loop_par(

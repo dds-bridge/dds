@@ -19,7 +19,6 @@
 #include <system/timer_list.hpp>
 #include <trans_table/trans_table.hpp>
 
-extern System sysdep;
 extern Memory memory;
 extern Scheduler scheduler;
 
@@ -73,12 +72,8 @@ int STDCALL SolveBoard(
   int solutions,
   int mode,
   FutureTricks * futp,
-  int thrId)
+  [[maybe_unused]] int thrId)
 {
-  if (! sysdep.thread_ok(thrId))
-    return RETURN_THREAD_INDEX;
-
-  // Create an owned context for this call and delegate to the C++ overload.
   SolverContext outer_ctx;
   return solve_board(outer_ctx, dl, target, solutions, mode, futp);
 }
@@ -158,7 +153,6 @@ auto solve_board_internal(
   ctx.search().trick_nodes() = 0;
 
   thrp->lookAheadPos.hand_rel_first = hand_rel_first;
-  thrp->lookAheadPos.first[ini_depth] = dl.first;
   thrp->lookAheadPos.tricks_max = 0;
 
   MoveType mv = {0, 0, 0, 0};
@@ -195,6 +189,9 @@ auto solve_board_internal(
 
     goto SOLVER_DONE;
   }
+
+  // Validated cardCount > 4 ⇒ ini_depth >= 1; safe to index first[].
+  thrp->lookAheadPos.first[ini_depth] = dl.first;
 
 
   // ----------------------------------------------------------
@@ -809,7 +806,7 @@ auto solve_same_board(
 
 
 auto analyse_later_board(
-  const std::shared_ptr<ThreadData>& thrp,
+  SolverContext& ctx,
   const int leadHand,
   MoveType const * move,
   const int hint,
@@ -823,62 +820,67 @@ auto analyse_later_board(
   // target == -1, solutions == 1, mode == 2.
   // The function only needs to return fut.score[0].
 
-  SolverContext ctxLater{thrp};
-  int ini_depth = --ctxLater.search().ini_depth();
+  // Reuse the caller's context (and its warm transposition table) instead of
+  // constructing a fresh one with a cold TT. The hint-bounded null-window
+  // search below relies on the TT state built up by the initial solve and the
+  // preceding cards; a cold TT yields wrong (under-counted) AnalysePlay
+  // results. This mirrors the calc_dd_table fix in commit 27030ba.
+  auto thrp = ctx.thread();
+  int ini_depth = --ctx.search().ini_depth();
   int cardCount = ini_depth + 4;
   int trick = (ini_depth + 3) >> 2;
   int hand_rel_first = (48 - ini_depth) % 4;
   {
-    ctxLater.search().trick_nodes() = 0;
+    ctx.search().trick_nodes() = 0;
   }
   {
-    ctxLater.search().analysis_flag() = true;
+    ctx.search().analysis_flag() = true;
   }
   int handToPlay = HAND_ID(leadHand, hand_rel_first);
 
   {
     if (handToPlay == 0 || handToPlay == 2)
     {
-      ctxLater.search().node_type_store(0) = MAXNODE;
-      ctxLater.search().node_type_store(1) = MINNODE;
-      ctxLater.search().node_type_store(2) = MAXNODE;
-      ctxLater.search().node_type_store(3) = MINNODE;
+      ctx.search().node_type_store(0) = MAXNODE;
+      ctx.search().node_type_store(1) = MINNODE;
+      ctx.search().node_type_store(2) = MAXNODE;
+      ctx.search().node_type_store(3) = MINNODE;
     }
     else
     {
-      ctxLater.search().node_type_store(0) = MINNODE;
-      ctxLater.search().node_type_store(1) = MAXNODE;
-      ctxLater.search().node_type_store(2) = MINNODE;
-      ctxLater.search().node_type_store(3) = MAXNODE;
+      ctx.search().node_type_store(0) = MINNODE;
+      ctx.search().node_type_store(1) = MAXNODE;
+      ctx.search().node_type_store(2) = MINNODE;
+      ctx.search().node_type_store(3) = MAXNODE;
     }
   }
 
   if (hand_rel_first == 0)
   {
-    ctxLater.move_gen().make_specific(* move, trick + 1, 3);
+    ctx.move_gen().make_specific(* move, trick + 1, 3);
   unsigned short int ourWinRanks[DDS_SUITS]; // Unused here
-  make_3(&thrp->lookAheadPos, ourWinRanks, ini_depth + 1, move, ctxLater);
+  make_3(&thrp->lookAheadPos, ourWinRanks, ini_depth + 1, move, ctx);
   }
   else if (hand_rel_first == 1)
   {
-    ctxLater.move_gen().make_specific(* move, trick, 0);
+    ctx.move_gen().make_specific(* move, trick, 0);
     make_0(&thrp->lookAheadPos, ini_depth + 1, move);
   }
   else if (hand_rel_first == 2)
   {
-    ctxLater.move_gen().make_specific(* move, trick, 1);
+    ctx.move_gen().make_specific(* move, trick, 1);
     make_1(&thrp->lookAheadPos, ini_depth + 1, move);
   }
   else
   {
-    ctxLater.move_gen().make_specific(* move, trick, 2);
+    ctx.move_gen().make_specific(* move, trick, 2);
     make_2(&thrp->lookAheadPos, ini_depth + 1, move);
   }
 
   if (cardCount <= 4)
   {
     // Last trick.
-    EvalType eval = evaluate_with_context(&thrp->lookAheadPos, thrp->trump, ctxLater);
+    EvalType eval = evaluate_with_context(&thrp->lookAheadPos, thrp->trump, ctx);
     futp->score[0] = eval.tricks;
     futp->nodes = 0;
 
@@ -892,7 +894,7 @@ auto analyse_later_board(
 
 #ifdef DDS_TOP_LEVEL
   {
-    ctxLater.search().nodes() = 0;
+    ctx.search().nodes() = 0;
   }
 #endif
 
@@ -913,14 +915,14 @@ auto analyse_later_board(
 
   do
   {
-  ctxLater.reset_best_moves_lite();
+  ctx.reset_best_moves_lite();
 
     TIMER_START(TIMER_NO_AB, ini_depth);
   thrp->val = (* AB_ptr_trace_list[hand_rel_first])(
                   &thrp->lookAheadPos,
                   guess,
                   ini_depth,
-          ctxLater);
+          ctx);
     TIMER_END(TIMER_NO_AB, ini_depth);
 
 #ifdef DDS_TOP_LEVEL
@@ -938,11 +940,11 @@ auto analyse_later_board(
 
   futp->score[0] = lowerbound;
   {
-    futp->nodes = ctxLater.search().trick_nodes();
+    futp->nodes = ctx.search().trick_nodes();
   }
 
   
-  thrp->memUsed = ctxLater.trans_table()->memory_in_use() +
+  thrp->memUsed = ctx.trans_table()->memory_in_use() +
                     ThreadMemoryUsed();
 
 #ifdef DDS_TIMING
@@ -957,24 +959,24 @@ auto analyse_later_board(
   // thrp->transTable->PrintAllEntryStats(thrp->fileTTstats.GetStream());
 
   {
-  ctxLater.trans_table()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
-  ctxLater.trans_table()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_summary_suit_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_summary_entry_stats(thrp->fileTTstats.GetStream());
   }
 
   // These are for the small TT -- empty if not.
   {
-  ctxLater.trans_table()->print_node_stats(thrp->fileTTstats.GetStream());
-  ctxLater.trans_table()->print_reset_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_node_stats(thrp->fileTTstats.GetStream());
+  ctx.trans_table()->print_reset_stats(thrp->fileTTstats.GetStream());
   }
 #endif
 
 // Diagnostics are routed via the SolverContext MoveGen facade.
 #ifdef DDS_MOVES
-  ctxLater.move_gen().print_trick_stats(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_trick_stats(thrp->fileMoves.GetStream());
 #ifdef DDS_MOVES_DETAILS
-  ctxLater.move_gen().print_trick_details(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_trick_details(thrp->fileMoves.GetStream());
 #endif
-  ctxLater.move_gen().print_function_stats(thrp->fileMoves.GetStream());
+  ctx.move_gen().print_function_stats(thrp->fileMoves.GetStream());
 #endif
 
 #ifdef DDS_MEMORY_LEAKS_WIN32

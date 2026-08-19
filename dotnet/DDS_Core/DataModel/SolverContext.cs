@@ -1,0 +1,172 @@
+﻿using DDS_Core.Helpers;
+using DDS_Core.Native;
+
+namespace DDS_Core;
+
+public sealed class SolverContext : IDisposable
+{
+    public SolverContextHandle Handle { get; }
+
+    #region Constructors and destructors
+        public SolverContext()
+        {
+            Handle = Validated(DdsNative.dds_create_solvercontext_default());
+        }
+
+        public SolverContext(SolverConfig config)
+        {
+            // Unpacked into scalars: the native shim is pointer-only and
+            // POD-only, so SolverConfig never crosses the ABI boundary.
+            Handle = Validated(DdsNative.dds_create_solvercontext( (int) config.TTKind
+                                                                 , config.DefaultMemoryMB
+                                                                 , config.MaximumMemoryMB));
+        }
+
+        /// <summary>
+        /// Rejects a failed native creation. The shim returns NULL on failure,
+        /// but a P/Invoke returning a SafeHandle-derived type never yields null:
+        /// the marshaller constructs an instance and stores whatever pointer came
+        /// back, so failure surfaces as IsInvalid, not as a null reference. A
+        /// `?? throw` here would never fire, leaving every later call to pass
+        /// IntPtr.Zero into the shim and quietly collect RETURN_UNKNOWN_FAULT.
+        /// </summary>
+        private static SolverContextHandle Validated(SolverContextHandle handle)
+        {
+            if (handle is null || handle.IsInvalid)
+            {
+                handle?.Dispose();
+                throw new InvalidOperationException("Failed to create SolverContext.");
+            }
+
+            return handle;
+        }
+
+        public void Dispose()
+        {
+            Handle?.Dispose();
+            GC.SuppressFinalize(this);
+        }
+    #endregion
+
+    #region TT Management
+        public void ConfigureTT(TTKind kind, int defaultMb, int maxMb) => DdsNative.dds_configure_tt(Handle, kind, defaultMb, maxMb);
+
+        public void ResizeTT(int defaultMb, int maxMb) => DdsNative.dds_resize_tt(Handle, defaultMb, maxMb);
+
+        public void ClearTT() => DdsNative.dds_clear_tt(Handle);
+
+        public void ResetForSolve() => DdsNative.dds_reset_for_solve(Handle);
+
+        public void ResetBestMovesLite() => DdsNative.dds_reset_best_moves_lite(Handle);
+    #endregion
+
+    #region Solving
+        public int SolveBoard( in Deal dl
+                             , int target
+                             , int solutions
+                             , int mode
+                             , out FutureTricks fut)
+        {
+            var rc = DdsNative.dds_solve_board( Handle
+                                              , dl
+                                              , target
+                                              , solutions
+                                              , mode
+                                              , out fut);
+
+            ThrowIfError(rc, nameof(SolveBoard));
+            return rc;
+        }
+
+        #region CalcDdTable - Double Dummy Table and Par
+            public int CalcDdTable(in DdTableDeal table_deal, out DdTableResults table_results)
+            {
+                var rc = DdsNative.dds_calc_dd_table( Handle
+                                                , in table_deal
+                                                , out table_results);
+
+                ThrowIfError(rc, nameof(CalcDdTable));
+                return rc;
+            }
+
+            public int CalcDdTable(in DdTableDealPBN table_deal_pbn, out DdTableResults table_results)
+            {
+                var rc = DdsNative.dds_calc_dd_table_pbn( Handle
+                                                    , in table_deal_pbn
+                                                    , out table_results);
+
+                ThrowIfError(rc, nameof(CalcDdTable));
+                return rc;
+            }
+
+            /// <summary>
+            /// Calculates par score and contracts for a deal table.
+            /// </summary>
+            /// <remarks>
+            /// <para>
+            /// Computes the double dummy table for the given deal, then calculates par score
+            /// and contracts based on vulnerability.
+            /// </para>
+            /// <para>
+            /// This function is equivalent to calling <c>CalcDDtable</c> followed by
+            /// <c>Par</c> in the legacy C API.
+            /// </para>
+            /// </remarks>
+            /// <param name="table_deal">
+            /// Deal represented as card holdings for each hand.
+            /// </param>
+            /// <param name="vulnerable">
+            /// Vulnerability (0=None, 1=Both, 2=NS, 3=EW).
+            /// </param>
+            /// <param name="table_results">
+            /// Output: double dummy table results.
+            /// </param>
+            /// <param name="par_results">
+            /// Output: par score and contract strings.
+            /// </param>
+            /// <returns>
+            /// Error code (<c>RETURN_NO_FAULT</c> on success).
+            /// </returns>
+            public int CalcPar( in DdTableDeal table_deal
+                              , int vulnerable
+                              , out DdTableResults table_results
+                              , out ParResults par_results)
+            {
+                var rc = DdsNative.dds_calc_par( Handle
+                                           , in table_deal
+                                           , vulnerable
+                                           , out table_results
+                                           , out par_results);
+                ThrowIfError(rc, nameof(CalcPar));
+                return rc;
+            }
+        #endregion
+    #endregion
+
+    #region Logging
+        /// <summary>
+        /// Appends a message to the DDS log.
+        /// </summary>
+        /// <param name="message">The message to append to the log.</param>
+        public void LogAppend(string message) => DdsNative.dds_log_append(Handle, message);
+
+        /// <summary>
+        /// Clears the DDS log.
+        /// </summary>
+        public void LogClear() => DdsNative.dds_log_clear(Handle);
+    #endregion
+
+    #region private methods
+        // Deliberately not [Conditional("DEBUG")]: that elided every call site in
+        // Release, so the configuration consumers actually ship returned the raw
+        // RETURN_* code and never threw, contradicting the documented contract in
+        // specs/dotnet-binding.md. The check is one integer compare on a call that
+        // has just run a search.
+        private static void ThrowIfError(int result, string functionName)
+        {
+            if (result != (int)SolveBoardResult.NoFault)
+                throw new InvalidOperationException($"{functionName} failed with code {result}: {result.GetRCErrorMessage()}");
+        }
+    #endregion
+}
+

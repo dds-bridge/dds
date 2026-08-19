@@ -17,8 +17,12 @@
 
 #include "thread_mgr.hpp"
 
-mutex mtx;
-mutex mtxPrint;
+namespace {
+
+std::mutex mtx;
+std::mutex mtxPrint;
+
+} // namespace
 
 ThreadMgr ThreadMgr::single_instance;
 

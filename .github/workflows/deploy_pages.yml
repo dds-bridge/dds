@@ -1,0 +1,86 @@
+# .github/workflows/deploy_pages.yml
+# Build DDS Web (WASM) and publish to GitHub Pages.
+# COOP/COEP for SharedArrayBuffer come from web/coi-serviceworker.js (Pages
+# cannot set custom response headers).
+name: Deploy DDS Web to GitHub Pages
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "web/**"
+      - "library/**"
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "CPPVARIABLES.bzl"
+      - "wasm_compat.bzl"
+      - ".bazelrc"
+      - ".github/workflows/deploy_pages.yml"
+      - ".github/actions/setup-bazelisk/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch //web:dds_web_wasm; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Build and stage DDS Web site
+        run: |
+          ./web/update_wasm.sh
+          python3 web/stage_github_pages.py --out _site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

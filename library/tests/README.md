@@ -8,15 +8,15 @@ The test cases are located in the `hands` directory. Each `.txt` file in this di
 
 ### Input File Format
 
-The input files use a specific format with keywords to define the test parameters for each deal. The key components are:
+The input files use a specific format with keywords to define the test parameters for each deal. The first line is `NUMBER N`, where `N` is the count of deals in the file. Each deal is then a block of lines in this order:
 
-- **`NUMBER`**: An identifier for the test case.
-- **`PBN`**: The deal definition in Portable Bridge Notation, describing the cards held by each of the four players (North, East, South, West).
-- **`FUT`**: The expected number of future tricks for each player in different trump suits.
-- **`TABLE`**: A table representing the number of tricks that can be taken by each partnership for each of the 13 possible opening leads.
-- **`PAR`**: The par contract score for the deal, which is the best possible result achievable with optimal play from both sides.
+- **`PBN`**: Deal header with four integer fields — dealer, vulnerability, trump, and leader — followed by a quoted PBN `remainCards` string listing the cards held by each player (North, East, South, West).
+- **`FUT`**: Expected `SolveBoard` future-tricks result for the deal (card count plus suit/rank/equals/score arrays).
+- **`TABLE`**: Expected double-dummy table: 20 integers, `res_table[strain][hand]` for 5 strains (♠♥♦♣NT) × 4 seats (N/E/S/W).
+- **`PAR`**: Expected par scores and contract strings for NS and EW views.
+- **`PAR2`**: Expected dealer-par result (score plus one or more contract strings).
 - **`PLAY`**: A specific sequence of cards to be played, used to test the solver's analysis of a particular line of play.
-- **`TRACE`**: Used to test the solver's trace functionality, which details the analysis at each step of a hand.
+- **`TRACE`**: Expected `AnalysePlay` `SolvedPlay` output: initial trick count plus one integer per ply (up to DDS's internal limit). The value count need not match `PLAY`'s card count (e.g. `PLAY 52` with `TRACE 49`). Use `TRACE 0` only with `PLAY 0` (empty play line); dtest does not treat `TRACE 0` as a skip when `PLAY` lists cards.
 
 ## Usage
 

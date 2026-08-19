@@ -13,7 +13,7 @@ modernisation.
 
 There are build scripts for macOS, Linux, and Windows but I have myself only used the library on macOS.
 
-Plenty people like to use a double dummy solver for statistical analysis, typically in Python. I have added barebone Python interface to the solver.
+Plenty of people like to use a double dummy solver for statistical analysis, typically in Python. I have added a bare-bones Python interface to the solver.
 
 ### Motivation for creating version 3
 
@@ -33,11 +33,13 @@ Martin Nygren, May 2026
 
 [Python Interface](docs/python_interface.md)
 
+[DotNet Interface](docs/dotnet_interface.md)
+
 [Legacy C Interface](docs/legacy_c_api.md)
 
 [Migrating to the modern API](docs/api_migration.md)
 
-[Notes about the buidl system](docs/BUILD_SYSTEM.md)
+[Notes about the build system](docs/BUILD_SYSTEM.md)
 
 
 ## Version 3.0 Release Status

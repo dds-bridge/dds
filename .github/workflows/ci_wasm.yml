@@ -1,0 +1,84 @@
+# .github/workflows/ci_wasm.yml
+name: CI – WASM
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: {}
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # 1️⃣ Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # 2️⃣ Free disk space — LLVM 21.1.8 is ~2 GB compressed / ~5 GB extracted;
+      #    ubuntu-latest ships with Android SDK, .NET, Haskell, etc. that we don't need.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # 3️⃣ Install Bazelisk (recommended Bazel launcher)
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      # 4️⃣ Prefetch emsdk / toolchain archives (retry transient network timeouts)
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch //web/... //wasm/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      # 5️⃣ Unit tests and WASM builds (hermetic emsdk toolchain downloaded by Bazel).
+      # Empty --test_tag_filters= overrides .bazelrc's -e2e so Playwright in
+      # //web:web_system_tests actually runs (dds_mvp_e2e_test is tagged e2e).
+      - name: Test web helpers, system tests, e2e, and CalcDDtablePBN
+        run: bazelisk test --verbose_failures --test_tag_filters= //web:web_tests //web:web_system_tests //wasm:all
+
+      - name: Build WASM targets
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk build --verbose_failures //wasm:all_examples_wasm; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Build failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+              # Restart server only — keep downloaded external repos / disk cache.
+              bazelisk shutdown || true
+            fi
+          done
+          exit 1
+
+      # 6️⃣ Smoke test: run solve_board under Node.js — pass if it does not crash
+      - name: Smoke test solve_board_wasm
+        run: node bazel-bin/wasm/solve_board.js
+
+      # 7️⃣ Upload test logs
+      - name: Upload test logs - WASM
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-wasm
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30

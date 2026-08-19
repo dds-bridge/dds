@@ -3,10 +3,12 @@
 DDS_CPPOPTS = select({
     "//:build_macos": [
         "-O3",
+        "-flto=thin",
         "-mtune=generic",
         "-fPIC",
         "-Wpedantic",
         "-Wall",
+        "-Wno-character-conversion",
         "-Werror",
     ],
     "//:debug_build_macos": [
@@ -15,6 +17,7 @@ DDS_CPPOPTS = select({
         "-fPIC",
         "-Wpedantic",
         "-Wall",
+        "-Wno-character-conversion",
         "-Werror",
     ],
     "//:build_linux": [
@@ -34,27 +37,37 @@ DDS_CPPOPTS = select({
         "-Wno-character-conversion",
         "-Werror",
     ],
+    # Optimisation (/O2, /Od) and language standard (/std) come from Bazel's
+    # compilation_mode and the patched MSVC default_cpp_std (/std:c++20).
+    # Restating them here overrides the toolchain and triggers MSVC D9025.
     "//:build_windows": [
-        "/O2",
-        "/std:c++20",
         "/W4",
         "/WX",
         "/permissive-",
     ],
     "//:debug_build_windows": [
-        "/Od",
         "/Zi",
-        "/std:c++20",
         "/W4",
         "/WX",
         "/permissive-",
     ],
+    "//:build_wasm": [
+        "-O3",
+        "-flto",
+        "-std=c++20",
+        "-Wpedantic",
+        "-Wall",
+        "-Werror",
+        # -fexceptions must precede -fwasm-exceptions: the toolchain's default
+        # -fno-exceptions is otherwise not overridden at the clang frontend
+        # level by -fwasm-exceptions alone (it only selects the EH lowering
+        # mechanism, not the "exceptions enabled" toggle, in this LLVM build).
+        "-fexceptions",
+        "-fwasm-exceptions",
+    ],
     "//conditions:default": [
         "-std=c++20"
     ],
-}) + select({
-    "//:asan": ["-fsanitize=address"],
-    "//conditions:default": [],
 })
 
 DDS_LOCAL_DEFINES = select({
@@ -62,26 +75,24 @@ DDS_LOCAL_DEFINES = select({
     "//:debug_build_macos": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
+    "//:build_wasm": [],
     "//conditions:default": [],
 }) + select({
     "//:debug_all": ["DDS_DEBUG_ALL"],
     "//conditions:default": [],
 }) + select({
-    "//:tt_context_ownership": ["DDS_TT_CONTEXT_OWNERSHIP"],
+    "//:tt_reset_debug": ["DDS_DEBUG_TT_RESET"],
     "//conditions:default": [],
 }) + select({
-    "//:tt_reset_debug": ["DDS_DEBUG_TT_RESET"],
+    "//:ab_stats": ["DDS_AB_STATS"],
     "//conditions:default": [],
 })
 
 DDS_LINKOPTS = select({
-    "//:build_macos": [],
+    "//:build_macos": ["-flto=thin"],
     "//:debug_build_macos": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
-    "//conditions:default": [],
-}) + select({
-    "//:asan": ["-fsanitize=address"],
     "//conditions:default": [],
 })
 

@@ -9,6 +9,8 @@
 
 #include <cstring>
 #include <cstdio>
+#include <iomanip>
+#include <sstream>
 
 #include <calc_tables.hpp>
 #include "init.hpp"
@@ -23,20 +25,7 @@
 #include <utility/constants.h>
 #include <utility/debug.h>
 
-System sysdep(
-    &solve_chunk_common,
-    &calc_chunk_common,
-    &play_chunk_common,
-    &detect_solve_duplicates,
-    &detect_calc_duplicates,
-    &detect_play_duplicates,
-    &solve_single_common,
-    &calc_single_common,
-    &play_single_common,
-    &copy_solve_single,
-    &copy_calc_single,
-    &copy_play_single
-);
+System sysdep;
 Memory memory;
 Scheduler scheduler;
 
@@ -47,14 +36,29 @@ int _initialized = 0;
 
 
 /*
- * Set the maximum number of threads used by the solver.
+ * Initialize the solver's static memory: TT memory pools, scheduler /
+ * thread-manager state, and one-time lookup-table setup.
+ *
+ * Public API documentation is maintained in the API headers.
+ */
+void STDCALL InitializeStaticMemory()
+{
+  SetResources(0, 0);
+}
+
+
+/*
+ * Deprecated alias for InitializeStaticMemory(). The thread count is no
+ * longer meaningful (internal batch threading was removed), so the argument
+ * is ignored.
  *
  * Public API documentation is maintained in the API headers.
  */
 void STDCALL SetMaxThreads(
   int userThreads)
 {
-  SetResources(0, userThreads);
+  (void) userThreads;
+  InitializeStaticMemory();
 }
 
 
@@ -168,20 +172,6 @@ int STDCALL SetThreading(
 
 void InitDebugFiles()
 {
-#ifdef DDS_SCHEDULER
-  InitFileScheduler();
-#endif
-}
-
-
-void CloseDebugFiles()
-{
-  for (unsigned thrId = 0; thrId < memory.NumThreads(); thrId++)
-  {
-  SolverContext tmp_ctx;
-  [[maybe_unused]] auto thrp = tmp_ctx.thread();
-  thrp->close_debug_files();
-  }
 }
 
 

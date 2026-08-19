@@ -36,10 +36,9 @@ extern "C" BOOL APIENTRY DllMain(
 {
 
   if (ul_reason_for_call == DLL_PROCESS_ATTACH)
-    SetMaxThreads(0);
+    InitializeStaticMemory();
   else if (ul_reason_for_call == DLL_PROCESS_DETACH)
   {
-    CloseDebugFiles();
     FreeMemory();
 #ifdef DDS_MEMORY_LEAKS_WIN32
     _CrtDumpMemoryLeaks();
@@ -62,19 +61,38 @@ void DDSInitialize(), DDSFinalize();
 /**
  * @brief Initialize the DDS library.
  */
-void DDSInitialize(void) 
+void DDSInitialize(void)
 {
-  SetMaxThreads(0);
+  InitializeStaticMemory();
 }
 
 
 /**
  * @brief Finalize and clean up the DDS library.
  */
-void DDSFinalize(void) 
+void DDSFinalize(void)
 {
-  CloseDebugFiles();
   FreeMemory();
+}
+
+
+/**
+ * @brief Library constructor/destructor for Apple platforms.
+ *
+ * Register DDSInitialize/DDSFinalize so the library's static memory is set
+ * up automatically when the library is loaded, matching the behaviour of the
+ * Windows (DllMain) and USES_CONSTRUCTOR paths. This frees callers from having
+ * to call InitializeStaticMemory() themselves.
+ */
+static void __attribute__ ((constructor)) libInit(void)
+{
+  DDSInitialize();
+}
+
+
+static void __attribute__ ((destructor)) libFini(void)
+{
+  DDSFinalize();
 }
 
 #elif defined(USES_CONSTRUCTOR)
@@ -86,18 +104,7 @@ void DDSFinalize(void)
  */
 static void __attribute__ ((constructor)) libInit(void)
 {
-  SetMaxThreads(0);
-}
-
-
-/**
- * @brief Library destructor for platforms supporting destructor attribute.
- *
- * This function is called when the library is unloaded.
- */
-static void __attribute__ ((destructor)) libEnd(void)
-{
-  CloseDebugFiles();
+  InitializeStaticMemory();
 }
 
 #endif

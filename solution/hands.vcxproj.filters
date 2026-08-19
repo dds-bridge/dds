@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Virtuelle folders in Solution Explorer -->
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{5C8C5C3E-6E6C-4C0E-9F4E-6F9F9E3B1A11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\src">
+      <UniqueIdentifier>{9F2B7C41-2C3F-4F8E-8B77-2E4C9D8A7B22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\src\api">
+      <UniqueIdentifier>{8F4C2A1E-9C3D-4F7E-AB12-6B9F0F8E3C55}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <!-- Header-files placed in include\src\api -->
+  <ItemGroup>
+    <ClInclude Include="..\library\src\api\calc_dd_table.hpp">
+      <Filter>include\src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\library\src\api\calc_par.hpp">
+      <Filter>include\src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\library\src\api\dds.h">
+      <Filter>include\src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\library\src\api\dll.h">
+      <Filter>include\src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\library\src\api\PBN.h">
+      <Filter>include\src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\library\src\api\portab.h">
+      <Filter>include\src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\library\src\api\solve_board.hpp">
+      <Filter>include\src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\examples\hands.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\examples\hands.cpp" />
+  </ItemGroup>
+</Project>

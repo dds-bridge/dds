@@ -1,10 +1,25 @@
-load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES", "DDS_SCHEDULER_DEFINE")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 external_headers = [
     "dds.h",
     "dds.hpp",
 ]
+
+cc_library(
+    name = "ab_stats",
+    srcs = ["ab_stats.cpp"],
+    hdrs = ["ab_stats.hpp"],
+    includes = ["."],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = [
+        "//library/src:__subpackages__",
+        "//library/tests:__subpackages__",
+    ],
+    deps = ["//library/src/utility:constants"],
+)
 
 filegroup(
     name = "dds_sources",
@@ -13,7 +28,10 @@ filegroup(
         "*.hpp",
         "*.h",
     ],
-    exclude = external_headers,
+    exclude = external_headers + [
+        "ab_stats.cpp",
+        "ab_stats.hpp",
+    ],
     )
 )
 
@@ -29,7 +47,7 @@ cc_library(
     includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     visibility = ["//visibility:public"],
     include_prefix = "dds",
     deps = [
@@ -39,6 +57,7 @@ cc_library(
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
         "//library/src/system",
         "//library/src/solver_context:solver_context",
     ],
@@ -46,9 +65,13 @@ cc_library(
 
 filegroup(
     name = "testable_dds_sources",
-    srcs = glob([
-        "*.cpp",
-    ],),
+    srcs = glob(
+        ["*.cpp"],
+        exclude = ["ab_stats.cpp"],
+    ),
+    visibility = [
+        "//examples:__pkg__",
+    ],
 )
 
 filegroup(
@@ -56,6 +79,9 @@ filegroup(
     srcs = glob([
         "*.hpp", "*.h",
     ],),
+    visibility = [
+        "//examples:__pkg__",
+    ],
 )
 
 cc_library(
@@ -65,13 +91,15 @@ cc_library(
     includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",  # allow root package to wrap/export
         "//library/tests:__pkg__",
+        "//library/tests/ab_search:__pkg__",
         "//library/tests/heuristic_sorting:__pkg__",
         "//library/tests/moves:__pkg__",
+        "//library/tests/quick_tricks:__pkg__",
         "//library/tests/system:__pkg__",
         "//library/tests/utility:__pkg__",
         "//library/tests/regression/heuristic_sorting:__pkg__",
@@ -84,6 +112,7 @@ cc_library(
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
         "//library/src/system",
         "//library/src/solver_context:solver_context",
     ],
@@ -97,7 +126,7 @@ cc_library(
     includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",
@@ -110,6 +139,7 @@ cc_library(
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
         "//library/src/system:system_util_log",
         "//library/src/solver_context:solver_context_log",
     ],
@@ -122,7 +152,7 @@ cc_library(
     includes = ["."],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
-    local_defines = DDS_LOCAL_DEFINES,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
     include_prefix = "dds",
     visibility = [
         "//:__pkg__",
@@ -135,6 +165,7 @@ cc_library(
         "//library/src/heuristic_sorting",
         "//library/src/trans_table",
         "//library/src/moves:moves",
+        "//library/src:ab_stats",
         "//library/src/system:system_util_stats",
         "//library/src/solver_context:solver_context_stats",
     ],

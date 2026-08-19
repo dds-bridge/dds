@@ -551,7 +551,7 @@ auto print_hand(char title[],
   printf("%s\n", dashes);
   for (int i = 0; i < DDS_HAND_LINES; i++)
     printf("%s\n", text[i]);
-  printf("\n\n");
+  printf("\n");
 }
 
 

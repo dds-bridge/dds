@@ -64,6 +64,38 @@ auto make_3(
     const MoveType* mply,
     SolverContext& ctx) -> void;
 
+auto undo_0(
+    Pos* pos_point,
+    int depth,
+    const MoveType& mply,
+    SolverContext& ctx) -> void;
+
+auto undo_1(
+    Pos* pos_point,
+    int depth,
+    const MoveType& mply) -> void;
+
+auto undo_2(
+    Pos* pos_point,
+    int depth,
+    const MoveType& mply) -> void;
+
+auto undo_3(
+    Pos* pos_point,
+    int depth,
+    const MoveType& mply) -> void;
+
+/// Attempt the ab_search_0 transposition-table lookup.
+/// On a hit, writes win_ranks / best_move_tt, sets score_flag, and returns true.
+auto apply_ab_tt_lookup(
+    Pos* pos_point,
+    int target,
+    int depth,
+    int tricks,
+    int hand,
+    SolverContext& ctx,
+    bool& score_flag) -> bool;
+
 // Evaluate terminal position using the provided context.
 auto evaluate_with_context(
     const Pos* pos_point,

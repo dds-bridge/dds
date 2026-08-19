@@ -1,24 +1,57 @@
 #include "solver_context.hpp"
 
+#include <algorithm>
+#include <atomic>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <string>
 
 #include <api/dds.h>
+//#include <api/dds_api.hpp>
 #include <trans_table/trans_table_l.hpp>
 #include <trans_table/trans_table_s.hpp>
+#include <utility/debug.h>
+
+namespace {
+
+#if defined(DDS_TOP_LEVEL) || defined(DDS_AB_STATS) || defined(DDS_AB_HITS) || \
+    defined(DDS_TT_STATS) || defined(DDS_TIMING) || defined(DDS_MOVES)
+std::string next_debug_file_suffix()
+{
+  static std::atomic<unsigned> serial{0};
+  return std::to_string(serial.fetch_add(1, std::memory_order_relaxed)) +
+         DDS_DEBUG_SUFFIX;
+}
+#endif
+
+}  // namespace
+
+void SolverContext::bind_thread_data()
+{
+  // Ensure persistent facades like SearchContext see the bound ThreadData.
+  search_.set_thread(thr_);
+  search_.set_owner(this);
+  if (!thr_) return;
+
+  if (owns_thread_data_) {
+#if defined(DDS_TOP_LEVEL) || defined(DDS_AB_STATS) || defined(DDS_AB_HITS) || \
+    defined(DDS_TT_STATS) || defined(DDS_TIMING) || defined(DDS_MOVES)
+    thr_->init_debug_files(next_debug_file_suffix());
+#endif
+  }
+}
 
 // Owned-ThreadData constructor: allocate ThreadData as a member of the
 // SolverContext so callers can create a context at the top of the stack
 // and pass it down without a separate per-thread lookup.
 SolverContext::SolverContext(SolverConfig cfg)
-  : thr_(nullptr), cfg_(cfg)
+  : cfg_(cfg), owns_thread_data_(true)
 {
   // Create an owned ThreadData instance and keep it in thr_.
   thr_ = std::make_shared<ThreadData>();
-  // Ensure persistent facades like SearchContext see the bound ThreadData.
-  search_.set_thread(thr_);
-  search_.set_owner(this);
+  bind_thread_data();
 }
 
 auto SolverContext::trans_table() const -> TransTable*
@@ -27,117 +60,8 @@ auto SolverContext::trans_table() const -> TransTable*
   return const_cast<SolverContext*>(this)->search_.trans_table();
 }
 
-// --- SearchContext disposal helper ---
-auto SolverContext::SearchContext::dispose_trans_table() -> void
-{
-  // Simply reset the unique_ptr; logging/stats are handled by caller.
-  tt_.reset();
-}
-
-// --- SearchContext out-of-line definitions ---
-auto SolverContext::SearchContext::analysis_flag() -> bool&
-{
-  return thr_->analysisFlag;
-}
-
-auto SolverContext::SearchContext::analysis_flag() const -> bool
-{
-  return thr_->analysisFlag;
-}
-auto SolverContext::SearchContext::lowest_win(int depth, int suit) -> unsigned short& {
-  return thr_->lowestWin[depth][suit];
-}
-auto SolverContext::SearchContext::lowest_win(int depth, int suit) const -> const unsigned short& {
-  return thr_->lowestWin[depth][suit];
-}
-auto SolverContext::SearchContext::best_move(int depth) -> MoveType& {
-  return thr_->bestMove[depth];
-}
-auto SolverContext::SearchContext::best_move(int depth) const -> const MoveType& {
-  return thr_->bestMove[depth];
-}
-auto SolverContext::SearchContext::best_move_tt(int depth) -> MoveType& {
-  return thr_->bestMoveTT[depth];
-}
-auto SolverContext::SearchContext::best_move_tt(int depth) const -> const MoveType& {
-  return thr_->bestMoveTT[depth];
-}
-auto SolverContext::SearchContext::winners(int trickIndex) -> WinnersType& {
-  return thr_->winners[trickIndex];
-}
-auto SolverContext::SearchContext::winners(int trickIndex) const -> const WinnersType& {
-  return thr_->winners[trickIndex];
-}
-auto SolverContext::SearchContext::node_type_store(int hand) -> int&
-{
-  return thr_->nodeTypeStore[hand];
-}
-
-auto SolverContext::SearchContext::node_type_store(int hand) const -> const int&
-{
-  return thr_->nodeTypeStore[hand];
-}
-
-auto SolverContext::SearchContext::nodes() -> int&
-{
-  return thr_->nodes;
-}
-
-auto SolverContext::SearchContext::nodes() const -> const int&
-{
-  return thr_->nodes;
-}
-
-auto SolverContext::SearchContext::trick_nodes() -> int&
-{
-  return thr_->trickNodes;
-}
-
-auto SolverContext::SearchContext::trick_nodes() const -> const int&
-{
-  return thr_->trickNodes;
-}
-
-auto SolverContext::SearchContext::ini_depth() -> int&
-{
-  return thr_->iniDepth;
-}
-
-auto SolverContext::SearchContext::ini_depth() const -> int
-{
-  return thr_->iniDepth;
-}
-
-auto SolverContext::SearchContext::forbidden_moves() -> MoveType*
-{
-  return thr_->forbiddenMoves;
-}
-
-auto SolverContext::SearchContext::forbidden_moves() const -> const MoveType*
-{
-  return thr_->forbiddenMoves;
-}
-
-auto SolverContext::SearchContext::forbidden_move(int index) -> MoveType&
-{
-  return thr_->forbiddenMoves[index];
-}
-
-auto SolverContext::SearchContext::forbidden_move(int index) const -> const MoveType&
-{
-  return thr_->forbiddenMoves[index];
-}
-auto SolverContext::SearchContext::clear_forbidden_moves() -> void {
-  for (int k = 0; k <= 13; ++k) {
-    thr_->forbiddenMoves[k].rank = 0;
-    thr_->forbiddenMoves[k].suit = 0;
-  }
-}
-
-// New: per-context transposition table accessors
-auto SolverContext::SearchContext::maybe_trans_table() const -> TransTable* {
-  return tt_ ? tt_.get() : nullptr;
-}
+// Trivial accessors and disposal helpers are now inline in the header.
+// The lazy TT creator (large body) remains out-of-line.
 
 auto SolverContext::SearchContext::trans_table() -> TransTable* {
   if (tt_) return tt_.get();
@@ -225,7 +149,17 @@ auto SolverContext::dispose_trans_table() const -> void
 // Defaulted destructor defined out-of-line so destruction of the
 // owned std::shared_ptr<ThreadData> happens where ThreadData is a
 // complete type.
-SolverContext::~SolverContext() = default;
+SolverContext::~SolverContext()
+{
+  if (!thr_)
+    return;
+
+  // SearchContext holds its own shared_ptr; release it before testing whether
+  // this context is the last owner of ThreadData.
+  search_.set_thread({});
+  if (thr_.use_count() == 1)
+    thr_->close_debug_files();
+}
 
 auto SolverContext::reset_for_solve() const -> void
 {
@@ -266,8 +200,18 @@ auto SolverContext::clear_tt() const -> void
 #ifdef DDS_UTILITIES_LOG
   utilities().log_append("tt:clear");
 #endif
-  if (auto* tt = search_.maybe_trans_table())
-    tt->return_all_memory();
+  // Dispose the instance rather than calling return_all_memory() on it. Both
+  // free the pools — the TT destructor returns all memory — but returning the
+  // memory while keeping the object leaves a husk whose pool pointers dangle,
+  // and SearchContext::trans_table() hands that husk straight back because it
+  // only checks whether tt_ is non-null. The next lookup then reads freed
+  // memory (ASan: heap-use-after-free in TransTable{L,S}::lookup).
+  //
+  // Disposing instead makes the documented "recreates lazily on demand"
+  // behaviour real: tt_ becomes null, so the next trans_table() rebuilds from
+  // the owner's config. Nothing is lost, because the kind and memory limits
+  // live in SolverContext::cfg_, not in the TT instance.
+  dispose_trans_table();
 }
 
 auto SolverContext::resize_tt(int defMB, int maxMB) const -> void
@@ -340,9 +284,43 @@ auto SolverContext::reset_best_moves_lite() const -> void
 #endif
 }
 
+namespace dds::internal
+{
+
+namespace
+{
+
+std::atomic<std::uint64_t> g_worker_contexts_created{0};
+
+struct CountedWorkerContext
+{
+  CountedWorkerContext()
+  {
+    g_worker_contexts_created.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  SolverContext ctx;
+};
+
+}  // namespace
+
+auto worker_solver_context() -> SolverContext&
+{
+  thread_local CountedWorkerContext holder;
+  return holder.ctx;
+}
+
+auto worker_solver_contexts_created() -> std::uint64_t
+{
+  return g_worker_contexts_created.load(std::memory_order_relaxed);
+}
+
+}  // namespace dds::internal
+
 auto ThreadMemoryUsed() -> double
 {
-  // TODO:  Only needed because SolverIF wants to set it. Avoid?
+  // Fixed per-thread lookup-table memory (RelRanksType) included in memUsed
+  // reporting; legacy SolverIF uses the same accounting.
   double memUsed =
     8192 * sizeof(RelRanksType)
     / static_cast<double>(1024.);

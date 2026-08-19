@@ -26,56 +26,89 @@ static bool ab_search_2_ctx(Pos * posPoint, int target, int depth, SolverContext
 static bool ab_search_3_ctx(Pos * posPoint, int target, int depth, SolverContext& ctx);
 EvalType evaluate_with_context(Pos const * posPoint, int trump, SolverContext& ctx);
 
-// ctx-enabled helpers to keep search-state access behind the facade
-static void make_3_ctx(
-  Pos * posPoint,
-  unsigned short trickCards[DDS_SUITS],
-  const int depth,
-  MoveType const * mply,
-  SolverContext& ctx);
-
-static void undo_0_ctx(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply,
-  SolverContext& ctx);
-
-
-void make_3_simple(
-  Pos * posPoint,
-  unsigned short trickCards[DDS_SUITS],
-  const int depth,
-  MoveType const * mply,
-  SolverContext& ctx);
-
-void undo_0(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply,
-  const std::shared_ptr<ThreadData>& thrp);
-
-void undo_0_simple(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply);
-
-void undo_1(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply);
-
-void undo_2(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply);
-
-void undo_3(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply);
-
 
 const int handDelta[DDS_SUITS] = { 256, 16, 1, 0 };
+
+
+auto apply_ab_tt_lookup(
+  Pos * posPoint,
+  const int target,
+  const int depth,
+  const int tricks,
+  const int hand,
+  SolverContext& ctx,
+  bool& scoreFlag) -> bool
+{
+  [[maybe_unused]] ThreadData* thrp = ctx.thread_ptr();
+
+  int limit;
+  if (ctx.search().node_type_store(0) == MAXNODE)
+    limit = target - posPoint->tricks_max - 1;
+  else
+    limit = tricks - (target - posPoint->tricks_max - 1);
+
+  bool lowerFlag;
+  TIMER_START(TIMER_NO_LOOKUP, depth);
+  NodeCards const * cardsP =
+      ctx.trans_table()->lookup(
+        tricks, hand, posPoint->aggr, posPoint->hand_dist,
+        limit, lowerFlag);
+  TIMER_END(TIMER_NO_LOOKUP, depth);
+
+  if (!cardsP)
+    return false;
+
+#ifdef DDS_AB_HITS
+  DumpRetrieved(thrp->fileRetrieved.GetStream(),
+    * posPoint, *cardsP, target, depth);
+#endif
+
+  for (int ss = 0; ss < DDS_SUITS; ss++)
+    posPoint->win_ranks[depth][ss] =
+      win_ranks[ posPoint->aggr[ss] ]
+      [ static_cast<unsigned char>(cardsP->least_win[ss]) ];
+
+  if (cardsP->best_move_rank != 0)
+  {
+    ctx.search().best_move_tt(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
+    ctx.search().best_move_tt(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
+  }
+
+  scoreFlag = (ctx.search().node_type_store(0) == MAXNODE ? lowerFlag : ! lowerFlag);
+
+  AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
+  return true;
+}
+
+
+static void remove_card(
+  Pos * posPoint,
+  const int hand,
+  MoveType const * mply)
+{
+  int s = mply->suit;
+  int r = mply->rank;
+
+  posPoint->rank_in_suit[hand][s] &= (~bit_map_rank[r]);
+  posPoint->aggr[s] ^= bit_map_rank[r];
+  posPoint->hand_dist[hand] -= handDelta[s];
+  posPoint->length[hand][s]--;
+}
+
+
+static void restore_card(
+  Pos * posPoint,
+  const int hand,
+  const MoveType& mply)
+{
+  int s = mply.suit;
+  int r = mply.rank;
+
+  posPoint->rank_in_suit[hand][s] |= bit_map_rank[r];
+  posPoint->aggr[s] |= bit_map_rank[r];
+  posPoint->hand_dist[hand] += handDelta[s];
+  posPoint->length[hand][s]++;
+}
 
 
 bool ab_search(
@@ -90,7 +123,7 @@ bool ab_search(
      the value of the subtree is returned.
      This is a specialized AB function for hand_rel_first == 0. */
 
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
@@ -192,7 +225,7 @@ static bool ab_search_0_ctx(
      the value of the subtree is returned.
      This is a specialized AB function for hand_rel_first == 0. */
 
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int trump = thrp->trump;
   int hand = posPoint->first[depth];
   int tricks = depth >> 2;
@@ -206,44 +239,9 @@ static bool ab_search_0_ctx(
 
   if (depth >= 20)
   {
-    /* Find node that fits the suit lengths */
-    int limit;
-    if (ctx.search().node_type_store(0) == MAXNODE)
-      limit = target - posPoint->tricks_max - 1;
-    else
-      limit = tricks - (target - posPoint->tricks_max - 1);
-
-    bool lowerFlag;
-    TIMER_START(TIMER_NO_LOOKUP, depth);
-  NodeCards const * cardsP =
-      ctx.trans_table()->lookup(
-        tricks, hand, posPoint->aggr, posPoint->hand_dist,
-        limit, lowerFlag);
-    TIMER_END(TIMER_NO_LOOKUP, depth);
-
-    if (cardsP)
-    {
-#ifdef DDS_AB_HITS
-      DumpRetrieved(thrp->fileRetrieved.GetStream(), 
-        * posPoint, cardsP, target, depth);
-#endif
-
-      for (int ss = 0; ss < DDS_SUITS; ss++)
-        posPoint->win_ranks[depth][ss] =
-          win_ranks[ posPoint->aggr[ss] ]
-          [ static_cast<unsigned char>(cardsP->least_win[ss]) ];
-
-      if (cardsP->best_move_rank != 0)
-      {
-        ctx.search().best_move_tt(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
-        ctx.search().best_move_tt(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
-      }
-
-      bool scoreFlag = (ctx.search().node_type_store(0) == MAXNODE ? lowerFlag : ! lowerFlag);
-
-      AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
+    bool scoreFlag;
+    if (apply_ab_tt_lookup(posPoint, target, depth, tricks, hand, ctx, scoreFlag))
       return scoreFlag;
-    }
   }
 
   if (posPoint->tricks_max >= target)
@@ -316,44 +314,9 @@ static bool ab_search_0_ctx(
 
   if (depth < 20)
   {
-    /* Find node that fits the suit lengths */
-    int limit;
-    if (ctx.search().node_type_store(0) == MAXNODE)
-      limit = target - posPoint->tricks_max - 1;
-    else
-      limit = tricks - (target - posPoint->tricks_max - 1);
-
-    bool lowerFlag;
-    TIMER_START(TIMER_NO_LOOKUP, depth);
-  NodeCards const * cardsP =
-      ctx.trans_table()->lookup(
-        tricks, hand, posPoint->aggr, posPoint->hand_dist,
-        limit, lowerFlag);
-    TIMER_END(TIMER_NO_LOOKUP, depth);
-
-    if (cardsP)
-    {
-#ifdef DDS_AB_HITS
-      DumpRetrieved(thrp->fileRetrieved.GetStream(), 
-        * posPoint, * cardsP, target, depth);
-#endif
-
-      for (int ss = 0; ss < DDS_SUITS; ss++)
-        posPoint->win_ranks[depth][ss] =
-          win_ranks[ posPoint->aggr[ss] ]
-          [ static_cast<unsigned char>(cardsP->least_win[ss]) ];
-
-      if (cardsP->best_move_rank != 0)
-      {
-        ctx.search().best_move_tt(depth).suit = static_cast<unsigned char>(cardsP->best_move_suit);
-        ctx.search().best_move_tt(depth).rank = static_cast<unsigned char>(cardsP->best_move_rank);
-      }
-
-      bool scoreFlag = (ctx.search().node_type_store(0) == MAXNODE ? lowerFlag : ! lowerFlag);
-
-      AB_COUNT(AB_MAIN_LOOKUP, scoreFlag, depth);
+    bool scoreFlag;
+    if (apply_ab_tt_lookup(posPoint, target, depth, tricks, hand, ctx, scoreFlag))
       return scoreFlag;
-    }
   }
 
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
@@ -493,7 +456,7 @@ static bool ab_search_1_ctx(
   const int depth,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int trump = thrp->trump;
   int hand = HAND_ID(posPoint->first[depth], 1);
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
@@ -589,7 +552,9 @@ static bool ab_search_2_ctx(
   const int depth,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
+#ifdef DDS_AB_STATS
+  ThreadData* thrp = ctx.thread_ptr();
+#endif
   int hand = HAND_ID(posPoint->first[depth], 2);
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
@@ -680,7 +645,9 @@ static bool ab_search_3_ctx(
 
   unsigned short int makeWinRank[DDS_SUITS];
 
-  auto thrp = ctx.thread();
+#ifdef DDS_AB_STATS
+  ThreadData* thrp = ctx.thread_ptr();
+#endif
   int hand = HAND_ID(posPoint->first[depth], 3);
   bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
   bool value = ! success;
@@ -715,7 +682,7 @@ static bool ab_search_3_ctx(
     if (mply == NULL)
       break;
 
-  make_3_ctx(posPoint, makeWinRank, depth, mply, ctx);
+  make_3(posPoint, makeWinRank, depth, mply, ctx);
 
     ctx.search().trick_nodes()++; // As hand_rel_first == 0
 
@@ -727,7 +694,7 @@ static bool ab_search_3_ctx(
     TIMER_END(TIMER_NO_AB, depth - 1);
 
     TIMER_START(TIMER_NO_UNDO, depth);
-  undo_0_ctx(posPoint, depth, * mply, ctx);
+  undo_0(posPoint, depth, * mply, ctx);
 
     if (ctx.search().node_type_store(posPoint->first[depth - 1]) == MAXNODE)
       posPoint->tricks_max--;
@@ -766,16 +733,10 @@ void make_0(
 {
   /* First hand is not changed in next move */
   int h = posPoint->first[depth];
-  int s = mply->suit;
-  int r = mply->rank;
 
   posPoint->first[depth - 1] = h;
   posPoint->move[depth] = * mply;
-
-  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
-  posPoint->length[h][s]--;
+  remove_card(posPoint, h, mply);
 }
 
 
@@ -787,15 +748,7 @@ void make_1(
   /* First hand is not changed in next move */
   int firstHand = posPoint->first[depth];
   posPoint->first[depth - 1] = firstHand;
-
-  int h = HAND_ID(firstHand, 1);
-  int s = mply->suit;
-  int r = mply->rank;
-
-  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
-  posPoint->length[h][s]--;
+  remove_card(posPoint, HAND_ID(firstHand, 1), mply);
 }
 
 
@@ -807,15 +760,7 @@ void make_2(
   /* First hand is not changed in next move */
   int firstHand = posPoint->first[depth];
   posPoint->first[depth - 1] = firstHand;
-
-  int h = HAND_ID(firstHand, 2);
-  int s = mply->suit;
-  int r = mply->rank;
-
-  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
-  posPoint->length[h][s]--;
+  remove_card(posPoint, HAND_ID(firstHand, 2), mply);
 }
 
 
@@ -826,7 +771,7 @@ void make_3(
   MoveType const * mply,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
+  ThreadData* thrp = ctx.thread_ptr();
   int firstHand = posPoint->first[depth];
 
   const TrickDataType& data = ctx.move_gen().get_trick_data((depth + 3) >> 2);
@@ -849,78 +794,7 @@ void make_3(
       (bit_map_rank[rr] | data.best_sequence);
   }
 
-  int r = mply->rank;
-  int s = mply->suit;
-  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
-  posPoint->length[h][s]--;
-
-  // Changes that we may have to undo.
-  WinnersType * wp = &thrp->winners[ (depth + 3) >> 2];
-  wp->number = 0;
-
-  for (int st = 0; st < 4; st++)
-  {
-    if (data.play_count[st])
-    {
-      int n = wp->number;
-      wp->winner[n].suit = st;
-      wp->winner[n].winnerRank = posPoint->winner[st].rank;
-      wp->winner[n].winnerHand = posPoint->winner[st].hand;
-      wp->winner[n].secondRank = posPoint->second_best[st].rank;
-      wp->winner[n].secondHand = posPoint->second_best[st].hand;
-      wp->number++;
-
-      int aggr = posPoint->aggr[st];
-
-  posPoint->winner[st].rank = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[1][st].rank);
-  posPoint->winner[st].hand = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[1][st].hand);
-  posPoint->second_best[st].rank = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[2][st].rank);
-  posPoint->second_best[st].hand = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[2][st].hand);
-
-    }
-  }
-}
-
-
-// ctx-enabled version that records winners via the SearchContext facade
-static void make_3_ctx(
-  Pos * posPoint,
-  unsigned short trickCards[DDS_SUITS],
-  const int depth,
-  MoveType const * mply,
-  SolverContext& ctx)
-{
-  auto thrp = ctx.thread();
-  int firstHand = posPoint->first[depth];
-
-  const TrickDataType& data = ctx.move_gen().get_trick_data((depth + 3) >> 2);
-
-  posPoint->first[depth - 1] = HAND_ID(firstHand, data.rel_winner);
-  /* Defines who is first in the next move */
-
-  int h = HAND_ID(firstHand, 3);
-  /* Hand pointed to by posPoint->first will lead the next trick */
-
-  for (int suit = 0; suit < DDS_SUITS; suit++)
-    trickCards[suit] = 0;
-
-  int ss = data.best_suit;
-  if (data.play_count[ss] >= 2)
-  {
-    // Win by rank when some else played that suit, too.
-    int rr = data.best_rank;
-    trickCards[ss] = static_cast<unsigned short>
-      (bit_map_rank[rr] | data.best_sequence);
-  }
-
-  int r = mply->rank;
-  int s = mply->suit;
-  posPoint->rank_in_suit[h][s] &= (~bit_map_rank[r]);
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
-  posPoint->length[h][s]--;
+  remove_card(posPoint, h, mply);
 
   // Changes that we may have to undo.
   WinnersType * wp = &ctx.search().winners((depth + 3) >> 2);
@@ -940,48 +814,13 @@ static void make_3_ctx(
 
       int aggr = posPoint->aggr[st];
 
-      posPoint->winner[st].rank = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[1][st].rank);
-      posPoint->winner[st].hand = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[1][st].hand);
-      posPoint->second_best[st].rank = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[2][st].rank);
-      posPoint->second_best[st].hand = static_cast<unsigned char>(thrp->rel[aggr].abs_rank[2][st].hand);
+      posPoint->winner[st].rank = thrp->rel[aggr].abs_rank[1][st].rank;
+      posPoint->winner[st].hand = thrp->rel[aggr].abs_rank[1][st].hand;
+      posPoint->second_best[st].rank = thrp->rel[aggr].abs_rank[2][st].rank;
+      posPoint->second_best[st].hand = thrp->rel[aggr].abs_rank[2][st].hand;
 
     }
   }
-}
-
-
-void make_3_simple(
-  Pos * posPoint,
-  unsigned short trickCards[DDS_SUITS],
-  const int depth,
-  MoveType const * mply,
-  SolverContext& ctx)
-{
-  const TrickDataType& data = ctx.move_gen().get_trick_data((depth + 3) >> 2);
-
-  int firstHand = posPoint->first[depth];
-
-  // Leader of next trick
-  posPoint->first[depth - 1] = HAND_ID(firstHand, data.rel_winner);
-
-  for (int suit = 0; suit < DDS_SUITS; suit++)
-    trickCards[suit] = 0;
-
-  int s = data.best_suit;
-  if (data.play_count[s] >= 2)
-  {
-    // Win by rank when some else played that suit, too.
-    int r = data.best_rank;
-    trickCards[s] = static_cast<unsigned short>
-      (bit_map_rank[r] | data.best_sequence);
-  }
-
-  int h = HAND_ID(firstHand, 3);
-  int r = mply->rank;
-  s = mply->suit;
-
-  posPoint->aggr[s] ^= bit_map_rank[r];
-  posPoint->hand_dist[h] -= handDelta[s];
 }
 
 
@@ -989,46 +828,9 @@ void undo_0(
   Pos * posPoint,
   const int depth,
   const MoveType& mply,
-  const std::shared_ptr<ThreadData>& thrp)
-{
-  int h = HAND_ID(posPoint->first[depth], 3);
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-  posPoint->length[h][s]++;
-
-  // Changes that we now undo.
-  WinnersType const * wp = &thrp->winners[ (depth + 3) >> 2];
-
-  for (int n = 0; n < wp->number; n++)
-  {
-    int st = wp->winner[n].suit;
-    posPoint->winner[st].rank = wp->winner[n].winnerRank;
-    posPoint->winner[st].hand = wp->winner[n].winnerHand;
-    posPoint->second_best[st].rank = wp->winner[n].secondRank;
-    posPoint->second_best[st].hand = wp->winner[n].secondHand;
-  }
-}
-
-// ctx-enabled version that reads winners via the SearchContext facade
-static void undo_0_ctx(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply,
   SolverContext& ctx)
 {
-  // No timers here; macros not used in this helper
-  int h = HAND_ID(posPoint->first[depth], 3);
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-  posPoint->length[h][s]++;
+  restore_card(posPoint, HAND_ID(posPoint->first[depth], 3), mply);
 
   // Changes that we now undo.
   WinnersType const * wp = &ctx.search().winners((depth + 3) >> 2);
@@ -1044,33 +846,12 @@ static void undo_0_ctx(
 }
 
 
-void undo_0_simple(
-  Pos * posPoint,
-  const int depth,
-  const MoveType& mply)
-{
-  int h = HAND_ID(posPoint->first[depth], 3);
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-}
-
-
 void undo_1(
   Pos * posPoint,
   const int depth,
   const MoveType& mply)
 {
-  int h = posPoint->first[depth];
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-  posPoint->length[h][s]++;
+  restore_card(posPoint, posPoint->first[depth], mply);
 }
 
 
@@ -1079,14 +860,7 @@ void undo_2(
   const int depth,
   const MoveType& mply)
 {
-  int h = HAND_ID(posPoint->first[depth], 1);
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-  posPoint->length[h][s]++;
+  restore_card(posPoint, HAND_ID(posPoint->first[depth], 1), mply);
 }
 
 
@@ -1095,14 +869,7 @@ void undo_3(
   const int depth,
   const MoveType& mply)
 {
-  int h = HAND_ID(posPoint->first[depth], 2);
-  int s = mply.suit;
-  int r = mply.rank;
-
-  posPoint->rank_in_suit[h][s] |= bit_map_rank[r];
-  posPoint->aggr[s] |= bit_map_rank[r];
-  posPoint->hand_dist[h] += handDelta[s];
-  posPoint->length[h][s]++;
+  restore_card(posPoint, HAND_ID(posPoint->first[depth], 2), mply);
 }
 
 
@@ -1111,7 +878,6 @@ EvalType evaluate_with_context(
   const int trump,
   SolverContext& ctx)
 {
-  auto thrp = ctx.thread();
   int s, h, hmax = 0, count = 0, k = 0;
   unsigned short rmax = 0;
   EvalType eval;

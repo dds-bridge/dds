@@ -163,7 +163,7 @@ bool LaterTricksMIN(
         fprintf(stderr, "LaterTricksMIN: invalid aggr=%u (depth=%d)", aggr, depth);
         return true; // conservative fallback
       }
-      int h = ctx.thread()->rel[aggr].abs_rank[3][trump].hand;
+      int h = ctx.thread_ptr()->rel[aggr].abs_rank[3][trump].hand;
       if (h == -1)
         return true;
 
@@ -176,7 +176,7 @@ bool LaterTricksMIN(
         for (int ss = 0; ss < DDS_SUITS; ss++)
           if (depth_ok) tpos.win_ranks[depth][ss] = 0;
         if (depth_ok) tpos.win_ranks[depth][trump] = bit_map_rank[
-          static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[aggr].abs_rank[3][trump].rank)) ];
+          static_cast<int>(static_cast<unsigned char>(ctx.thread_ptr()->rel[aggr].abs_rank[3][trump].rank)) ];
         return false;
       }
     }
@@ -338,7 +338,7 @@ bool LaterTricksMAX(
         fprintf(stderr, "LaterTricksMAX: invalid aggr=%u (depth=%d)\n", aggr, depth);
         return false; // conservative fallback for MAX
       }
-      int h = ctx.thread()->rel[aggr].abs_rank[3][trump].hand;
+      int h = ctx.thread_ptr()->rel[aggr].abs_rank[3][trump].hand;
       if (h == -1)
         return false;
 
@@ -351,7 +351,7 @@ bool LaterTricksMAX(
         for (int ss = 0; ss < DDS_SUITS; ss++)
           if (depth_ok) tpos.win_ranks[depth][ss] = 0;
         if (depth_ok) tpos.win_ranks[depth][trump] = bit_map_rank[
-          static_cast<int>(static_cast<unsigned char>(ctx.thread()->rel[aggr].abs_rank[3][trump].rank)) ];
+          static_cast<int>(static_cast<unsigned char>(ctx.thread_ptr()->rel[aggr].abs_rank[3][trump].rank)) ];
         return true;
       }
     }

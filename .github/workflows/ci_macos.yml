@@ -7,7 +7,8 @@ on:
 
 jobs:
   build_and_test:
-    runs-on: macos-latest
+    runs-on: macos-26
+    timeout-minutes: 20
     steps:
       # Checkout the repository
       - name: Checkout repository
@@ -15,13 +16,30 @@ jobs:
 
       # Install Bazelisk (recommended Bazel launcher)
       - name: Setup Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: "1.29.0"
+        uses: ./.github/actions/setup-bazelisk
 
       # Install Doxygen, to generate documentation
       - name: Install Doxygen
-        run: brew install doxygen
+        run: |
+          # GitHub macOS runners ship aws/tap untrusted under Homebrew 6;
+          # untap it so brew install does not warn on every run.
+          brew untap aws/tap || true
+          brew install doxygen
+
+      # Prefetch external repos (emsdk via //..., LLVM); retry network flakes only
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch //...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
 
       # Build all targets
       - name: Build all targets
@@ -30,3 +48,85 @@ jobs:
       # Run all tests (including Python)
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
+
+      # .NET binding — this job is the only CI coverage of the AArch64 ABI, which
+      # is what the managed struct-layout tests exist to guard: a layout mismatch
+      # there corrupts results silently rather than throwing. Linux covers SysV
+      # x86-64 and Windows covers Win64, so all three ABIs are exercised.
+      # Pinned to 8.0.x to match what DDS_Core targets.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+
+      # bazel-bin is a configuration-dependent convenience symlink, so ask Bazel
+      # for it rather than hardcoding a path that a different --config would move.
+      - name: Test .NET binding
+        run: |
+          bazelisk build --verbose_failures //jni:dds_shared
+          export DDS_LIBRARY_PATH="$(bazelisk info bazel-bin)/jni/libdds.dylib"
+          test -f "$DDS_LIBRARY_PATH" || { echo "native library not found at $DDS_LIBRARY_PATH"; exit 1; }
+          # Both configurations: ThrowIfError is unconditional, so a regression to
+          # [Conditional("DEBUG")] only surfaces in Release. See dotnet-binding.md.
+          dotnet test dotnet/DDS_Core.Tests/ --verbosity normal
+          dotnet test dotnet/DDS_Core.Tests/ -c Release --verbosity normal
+          # DdTableForDeal unit helpers (no native library required).
+          dotnet test dotnet/DdTableForDeal.Tests/ --verbosity normal
+          dotnet test dotnet/DdTableForDeal.Tests/ -c Release --verbosity normal
+          # CLI e2e: bash drives `dotnet run` against the native library.
+          chmod +x dotnet/DdTableForDeal/e2e.sh
+          ./dotnet/DdTableForDeal/e2e.sh
+
+      # Upload test logs
+      - name: Upload test logs - macOS
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-macos
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  sanitizers:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch --config=asan //library/tests/system/... \
+              && bazelisk fetch --config=tsan //library/tests/system/... \
+              && bazelisk fetch --config=ubsan //library/tests/system/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Run system tests (AddressSanitizer)
+        run: bazelisk test --config=asan --verbose_failures --test_output=errors //library/tests/system/...
+
+      - name: Run system tests (ThreadSanitizer)
+        run: bazelisk test --config=tsan --verbose_failures --test_output=errors //library/tests/system/...
+
+      - name: Run system tests (UndefinedBehaviorSanitizer)
+        run: bazelisk test --config=ubsan --verbose_failures --test_output=errors //library/tests/system/...
+
+      - name: Upload sanitizer test logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bazel-test-logs-macos-sanitizers
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
