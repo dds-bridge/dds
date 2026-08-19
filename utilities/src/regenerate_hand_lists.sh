@@ -7,8 +7,23 @@
 #
 # Usage:
 #   ./utilities/src/regenerate_hand_lists.sh
+#   ./utilities/src/regenerate_hand_lists.sh --cards 5
 #   OUT_DIR=/tmp/my-lists ./utilities/src/regenerate_hand_lists.sh
 set -euo pipefail
+
+CARDS=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --cards)
+      CARDS="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      exit 1
+      ;;
+  esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -47,7 +62,7 @@ GEN="$ROOT/bazel-bin/python/utilities/create_list_for_dtest"
 for n in "${counts[@]}"; do
   out="$OUT_DIR/list${n}.txt"
   echo "Generating list${n}.txt (--seed ${n}) -> $out"
-  "$GEN" -n "$n" --seed "$n" -o "$out"
+  "$GEN" -n "$n" --seed "$n" ${CARDS:+--cards "$CARDS"} -o "$out"
 done
 
 echo "Done. Wrote ${#counts[@]} files to $OUT_DIR"
