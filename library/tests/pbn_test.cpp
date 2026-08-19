@@ -119,22 +119,25 @@ TEST(ConvertFromPbn, RejectsTooManyHands)
 
 TEST(ConvertFromPbn, RejectsInputLongerThanRemainCardsBuffer)
 {
+  constexpr auto kBufSize = sizeof(DealPBN::remainCards);
   std::string pbn = "N:";
-  pbn.append(80, 'A');
-  ASSERT_GT(pbn.size(), 80u);
+  pbn.append(kBufSize, 'A');
+  ASSERT_GT(pbn.size(), kBufSize);
   EXPECT_EQ(convert(pbn.c_str()), 0);
 }
 
 TEST(ConvertFromPbn, RejectsInputExactlyAtRemainCardsBufferLimit)
 {
+  constexpr auto kBufSize = sizeof(DealPBN::remainCards);
   std::string pbn = "N:";
-  pbn.append(78, 'A');
-  ASSERT_EQ(pbn.size(), 80u);
+  pbn.append(kBufSize - 2, 'A');
+  ASSERT_EQ(pbn.size(), kBufSize);
   EXPECT_EQ(convert(pbn.c_str()), 0);
 }
 
 TEST(ConvertFromPbn, AcceptsInputThatFitsRemainCardsBuffer)
 {
-  ASSERT_LT(std::char_traits<char>::length(kNorthFirst), 80u);
+  constexpr auto kBufSize = sizeof(DealPBN::remainCards);
+  ASSERT_LT(std::char_traits<char>::length(kNorthFirst), kBufSize);
   EXPECT_EQ(convert(kNorthFirst), RETURN_NO_FAULT);
 }

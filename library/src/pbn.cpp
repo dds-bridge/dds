@@ -9,6 +9,9 @@
 
 #include "pbn.hpp"
 #include <api/dds.h>
+#include <api/dll.h>
+
+constexpr int PbnBufferSize = static_cast<int>(sizeof(DealPBN::remainCards));
 
 auto is_card(const char cardChar) -> int;
 auto is_compass_letter(const char c) -> bool;
@@ -52,7 +55,7 @@ auto convert_from_pbn(
   int suitInHand = 0;
   int card, hand;
 
-  while ((bp < 80) && (dealBuff[bp] != '\0'))
+  while ((bp < PbnBufferSize) && (dealBuff[bp] != '\0'))
   {
     card = is_card(dealBuff[bp]);
     if (card)
@@ -113,7 +116,7 @@ auto convert_from_pbn(
     bp++;
   }
 
-  if (bp >= 80)
+  if (bp >= PbnBufferSize)
     return 0;
 
   return RETURN_NO_FAULT;
