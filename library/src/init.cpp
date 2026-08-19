@@ -36,7 +36,7 @@ int _initialized = 0;
 
 
 /*
- * Initialise the solver's static memory: TT memory pools, scheduler /
+ * Initialize the solver's static memory: TT memory pools, scheduler /
  * thread-manager state, and one-time lookup-table setup.
  *
  * Public API documentation is maintained in the API headers.

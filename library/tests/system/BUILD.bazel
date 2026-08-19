@@ -113,7 +113,7 @@ filegroup(
     visibility = ["//python:__pkg__"],
 )
 
-# max_threads override equivalence + rename/alias initialisation test
+# max_threads override equivalence + rename/alias initialization test
 cc_test(
     name = "max_threads_equivalence_test",
     size = "small",

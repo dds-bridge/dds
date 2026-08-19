@@ -7,7 +7,7 @@ load("@rules_python//python:defs.bzl", "py_library")
 # Single source of truth for the published Maven version. Keep in sync with the
 # module() version in MODULE.bazel; the embedded smoke test cross-checks its
 # major.minor against the library's GetDDSInfo so a gross divergence is caught.
-DDS_FFM_VERSION = "3.0.1"
+DDS_FFM_VERSION = "3.1.0"
 
 # Host os+cpu combinations we can package a native library for. The copy_file rule
 # that stages the library encodes <os>-<arch> in its output path, which must match the

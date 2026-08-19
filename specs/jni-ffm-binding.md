@@ -59,7 +59,7 @@ shim from [dds-public-api](dds-public-api.md), not the C++ API.
   runtime — so the arch is part of the build config, not hardcoded. Only the host
   triplet is built; a multi-arch fat jar is a deliberate follow-up.
 - **`dds_ffm_dist` is the publishable Maven artifact.** `java_export`
-  (`org.dds:dds-ffm:<DDS_FFM_VERSION>`, currently `3.0.1`) bundles the binding
+  (`org.dds:dds-ffm:<DDS_FFM_VERSION>`, currently `3.1.0`) bundles the binding
   classes (exported, not recompiled) plus the host's embedded native resource, and
   generates the runnable `//jni:dds_ffm_dist.publish` target (supports a local
   `file://` `~/.m2`). On a non-listed platform the target is *incompatible*

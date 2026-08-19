@@ -609,33 +609,33 @@ auto register_calc_par_bindings(py::module_& module) -> void
 
 auto register_analysis_bindings(py::module_& module) -> void
 {
-    // initialise_static_memory: allocate the solver's static memory pools and
-    // perform one-time lookup-table initialisation. This does NOT control the
+    // initialize_static_memory: allocate the solver's static memory pools and
+    // perform one-time lookup-table initialization. This does NOT control the
     // worker-thread count; use solve_all_boards_* (which parallelise across the
     // machine's hardware threads automatically) or one SolverContext per worker
     // thread for per-board concurrency.
     module.def(
-        "initialise_static_memory",
+        "initialize_static_memory",
         []() {
             py::gil_scoped_release release;
             InitializeStaticMemory();
         },
-        "Initialise the solver's static memory.\n\n"
+        "Initialize the solver's static memory.\n\n"
         "Allocates the transposition-table memory pools and performs one-time\n"
-        "lookup-table initialisation. This does NOT control the number of worker\n"
+        "lookup-table initialization. This does NOT control the number of worker\n"
         "threads: solve_all_boards_* parallelise across the machine's hardware\n"
         "threads automatically, and for per-board concurrency from Python you\n"
         "create one SolverContext per worker thread and pass it to solve_board /\n"
         "solve_board_pbn.");
 
-    // set_max_threads: DEPRECATED alias of initialise_static_memory. The thread
+    // set_max_threads: DEPRECATED alias of initialize_static_memory. The thread
     // count argument is ignored; retained only for backward compatibility.
     module.def(
         "set_max_threads",
         [](const int user_threads) {
             if (PyErr_WarnEx(
                     PyExc_DeprecationWarning,
-                    "set_max_threads() is deprecated; use initialise_static_memory(). "
+                    "set_max_threads() is deprecated; use initialize_static_memory(). "
                     "The user_threads argument is ignored.",
                     1) != 0) {
                 throw py::error_already_set();
@@ -644,7 +644,7 @@ auto register_analysis_bindings(py::module_& module) -> void
             SetMaxThreads(user_threads);
         },
         py::arg("user_threads") = 0,
-        "DEPRECATED: use initialise_static_memory() instead.\n\n"
+        "DEPRECATED: use initialize_static_memory() instead.\n\n"
         "Legacy thread-resource hook (wraps the deprecated SetMaxThreads C API,\n"
         "now a thin alias of InitializeStaticMemory). Calling this emits a\n"
         "DeprecationWarning.\n\n"
