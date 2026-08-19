@@ -125,6 +125,14 @@ TEST(ConvertFromPbn, RejectsInputLongerThanRemainCardsBuffer)
   EXPECT_EQ(convert(pbn.c_str()), 0);
 }
 
+TEST(ConvertFromPbn, RejectsInputExactlyAtRemainCardsBufferLimit)
+{
+  std::string pbn = "N:";
+  pbn.append(78, 'A');
+  ASSERT_EQ(pbn.size(), 80u);
+  EXPECT_EQ(convert(pbn.c_str()), 0);
+}
+
 TEST(ConvertFromPbn, AcceptsInputThatFitsRemainCardsBuffer)
 {
   ASSERT_LT(std::char_traits<char>::length(kNorthFirst), 80u);
