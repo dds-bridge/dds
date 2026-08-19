@@ -57,6 +57,9 @@ auto convert_from_pbn(
     card = is_card(dealBuff[bp]);
     if (card)
     {
+      if (hand_rel_first >= DDS_HANDS || suitInHand >= DDS_SUITS)
+        return 0;
+
       switch (first)
       {
         case 0:
@@ -85,14 +88,23 @@ auto convert_from_pbn(
             hand = hand_rel_first - 1;
       }
 
+      if (hand < 0 || hand >= DDS_HANDS)
+        return 0;
+
       remainCards[hand][suitInHand] |=
         static_cast<unsigned>((bit_map_rank[card] << 2));
 
     }
     else if (dealBuff[bp] == '.')
+    {
+      if (suitInHand >= DDS_SUITS - 1)
+        return 0;
       suitInHand++;
+    }
     else if (dealBuff[bp] == ' ')
     {
+      if (hand_rel_first >= DDS_HANDS - 1)
+        return 0;
       hand_rel_first++;
       suitInHand = 0;
     }

@@ -103,3 +103,14 @@ TEST(ConvertFromPbn, RejectsEmptyAndMissingSeatPrefixInputs)
   EXPECT_EQ(convert("N"), 0);
   EXPECT_EQ(convert("xx"), 0);
 }
+
+TEST(ConvertFromPbn, RejectsTooManySuitsInHand)
+{
+  EXPECT_EQ(convert("N:AK.K.K.K.A"), 0);
+}
+
+TEST(ConvertFromPbn, RejectsTooManyHands)
+{
+  unsigned int remain[DDS_HANDS][DDS_SUITS]{};
+  EXPECT_EQ(convert_from_pbn("N:AK.K.K.K    A", remain), 0);
+}
