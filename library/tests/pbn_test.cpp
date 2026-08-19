@@ -69,3 +69,16 @@ TEST(ConvertFromPbn, RejectsLowercaseExtraSeatLetter)
           "AT942.AQ4.32.KJ3"),
       0);
 }
+
+TEST(ConvertFromPbn, RejectsNullPointerDealBuffer)
+{
+  unsigned int remain[DDS_HANDS][DDS_SUITS]{};
+  EXPECT_EQ(convert_from_pbn(nullptr, remain), 0);
+}
+
+TEST(ConvertFromPbn, RejectsEmptyAndMissingSeatPrefixInputs)
+{
+  EXPECT_EQ(convert(""), 0);
+  EXPECT_EQ(convert("N"), 0);
+  EXPECT_EQ(convert("xx"), 0);
+}

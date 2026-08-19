@@ -18,15 +18,18 @@ auto convert_from_pbn(
   char const * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int
 {
+  if (dealBuff == nullptr)
+    return 0;
+
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
       remainCards[h][s] = 0;
 
   int bp = 0;
-  while ((bp < 3) && !is_compass_letter(dealBuff[bp]))
+  while ((bp < 3) && (dealBuff[bp] != '\0') && !is_compass_letter(dealBuff[bp]))
     bp++;
 
-  if (bp >= 3)
+  if ((bp >= 3) || (dealBuff[bp] == '\0') || (dealBuff[bp + 1] != ':'))
     return 0;
 
   int first;
