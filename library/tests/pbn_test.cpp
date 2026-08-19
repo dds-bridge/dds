@@ -76,6 +76,27 @@ TEST(ConvertFromPbn, RejectsNullPointerDealBuffer)
   EXPECT_EQ(convert_from_pbn(nullptr, remain), 0);
 }
 
+TEST(ConvertFromPbn, ClearsOutputOnNullDealBuffer)
+{
+  unsigned int remain[DDS_HANDS][DDS_SUITS]{};
+  remain[0][0] = 0xFFFF;
+  EXPECT_EQ(convert_from_pbn(nullptr, remain), 0);
+  EXPECT_EQ(remain[0][0], 0u);
+}
+
+TEST(ConvertFromPbn, ClearsOutputOnInvalidDeal)
+{
+  unsigned int remain[DDS_HANDS][DDS_SUITS]{};
+  remain[0][0] = 0xFFFF;
+  EXPECT_EQ(convert_from_pbn("xx", remain), 0);
+  EXPECT_EQ(remain[0][0], 0u);
+}
+
+TEST(ConvertFromPbn, RejectsNullOutputBuffer)
+{
+  EXPECT_EQ(convert_from_pbn(kNorthFirst, nullptr), 0);
+}
+
 TEST(ConvertFromPbn, RejectsEmptyAndMissingSeatPrefixInputs)
 {
   EXPECT_EQ(convert(""), 0);
