@@ -117,6 +117,13 @@ TEST(ConvertFromPbn, RejectsTooManyHands)
   EXPECT_EQ(convert_from_pbn("N:AK.K.K.K    A", remain), 0);
 }
 
+TEST(ConvertFromPbn, RejectsTruncatedDealWithFewerThanFourHands)
+{
+  EXPECT_EQ(convert("N:AK.QJ.T9.876"), 0);         // 1 hand
+  EXPECT_EQ(convert("N:AK.QJ.T9.876 AK.QJ.T9.876"), 0); // 2 hands
+  EXPECT_EQ(convert("N:AK.QJ.T9.876 AK.QJ.T9.876 AK.QJ.T9.876"), 0); // 3 hands
+}
+
 TEST(ConvertFromPbn, RejectsInputLongerThanRemainCardsBuffer)
 {
   constexpr auto kBufSize = sizeof(DealPBN::remainCards);

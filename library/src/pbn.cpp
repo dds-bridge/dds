@@ -119,6 +119,9 @@ auto convert_from_pbn(
   if (bp >= PbnBufferSize)
     return 0;
 
+  if (hand_rel_first != DDS_HANDS - 1)
+    return 0;
+
   return RETURN_NO_FAULT;
 }
 
