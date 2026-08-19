@@ -65,10 +65,12 @@ class DealSpec:
     cards: str  # e.g. N:AKQ.... ...
 
 
-def _deal_cards(rng: random.Random) -> str:
+def _deal_cards(rng: random.Random, *, cards_per_hand: int = 13) -> str:
     """Return a PBN remainCards string starting at North (``N:...``)."""
     deck = [(suit, rank) for suit in range(_SUITS) for rank in range(13)]
     rng.shuffle(deck)
+    total_cards = cards_per_hand * _HANDS
+    deck = deck[:total_cards]
     hands: list[list[list[str]]] = [[[] for _ in range(_SUITS)] for _ in range(_HANDS)]
     for i, (suit, rank_idx) in enumerate(deck):
         hands[i % _HANDS][suit].append(_RANKS[rank_idx])
@@ -76,14 +78,15 @@ def _deal_cards(rng: random.Random) -> str:
     for hand in hands:
         suit_strs = []
         for suit in range(_SUITS):
-            # Keep A-K-Q-... order within each suit.
             ordered = sorted(hand[suit], key=lambda r: _RANKS.index(r))
             suit_strs.append("".join(ordered))
         parts.append(".".join(suit_strs))
     return "N:" + " ".join(parts)
 
 
-def iter_deals(count: int, *, seed: int) -> Iterator[DealSpec]:
+def iter_deals(
+    count: int, *, seed: int, cards_per_hand: int = 13
+) -> Iterator[DealSpec]:
     """Yield ``count`` random deals."""
     if count <= 0:
         raise ValueError("count must be positive")
@@ -94,7 +97,7 @@ def iter_deals(count: int, *, seed: int) -> Iterator[DealSpec]:
             vul=rng.randrange(4),
             trump=rng.randrange(5),
             first=rng.randrange(4),
-            cards=_deal_cards(rng),
+            cards=_deal_cards(rng, cards_per_hand=cards_per_hand),
         )
 
 
@@ -271,17 +274,18 @@ def generate_dd_play(
     *,
     context: Any | None = None,
 ) -> str:
-    """Return a 52-card DD-optimal play string (suit+rank pairs)."""
+    """Return a DD-optimal play string (suit+rank pairs) for all cards."""
     hands = _parse_remain_cards(remain_cards)
+    total_cards = sum(len(h) for h in hands)
     play: list[str] = []
     leader = first
     trick: list[tuple[int, int]] = []
     ctx = SolverContext() if context is None else context
 
-    for _ in range(52):
+    for _ in range(total_cards):
         player = (leader + len(trick)) % 4
         if not hands[player]:
-            raise RuntimeError(f"hand {player} empty before 52 cards")
+            raise RuntimeError(f"hand {player} empty before {total_cards} cards")
 
         cur_suits = [0, 0, 0]
         cur_ranks = [0, 0, 0]
@@ -469,6 +473,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="RNG seed for reproducibility (default: 1)",
     )
     p.add_argument(
+        "--cards",
+        type=int,
+        default=13,
+        help="Number of cards in each hand (1–13, default: 13)",
+    )
+    p.add_argument(
         "-o",
         "--output",
         type=Path,
@@ -485,6 +495,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("count must be positive")
     if args.count > _MAX_DEALS:
         parser.error(f"count must not exceed {_MAX_DEALS}")
+    if args.cards < 1 or args.cards > 13:
+        parser.error("cards must be between 1 and 13 inclusive")
     return args
 
 
@@ -502,7 +514,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         stream.write(f"NUMBER {args.count} \n")
         for i, deal in enumerate(
-            iter_deals(args.count, seed=args.seed), start=1
+            iter_deals(args.count, seed=args.seed, cards_per_hand=args.cards),
+            start=1,
         ):
             if i == 1:
                 print("Generating and solving deals…", file=sys.stderr)

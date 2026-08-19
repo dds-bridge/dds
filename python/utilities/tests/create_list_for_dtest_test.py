@@ -446,5 +446,36 @@ class ParseArgsAndOutputTest(unittest.TestCase):
             self.assertIn(f"Wrote 1 deals -> {out}", err.getvalue())
 
 
+    def test_parse_args_default_cards_is_13(self):
+        args = cld._parse_args(["--seed", "1"])
+        self.assertEqual(args.cards, 13)
+
+    def test_parse_args_accepts_cards_in_valid_range(self):
+        for n in (1, 7, 13):
+            args = cld._parse_args(["--seed", "1", "--cards", str(n)])
+            self.assertEqual(args.cards, n)
+
+    def test_parse_args_rejects_cards_below_1(self):
+        with self.assertRaises(SystemExit):
+            cld._parse_args(["--seed", "1", "--cards", "0"])
+
+    def test_parse_args_rejects_cards_above_13(self):
+        with self.assertRaises(SystemExit):
+            cld._parse_args(["--seed", "1", "--cards", "14"])
+
+    def test_deal_cards_with_fewer_than_13(self):
+        rng = cld.random.Random(42)
+        pbn = cld._deal_cards(rng, cards_per_hand=5)
+        # Should start with "N:"
+        self.assertTrue(pbn.startswith("N:"))
+        hands = pbn[2:].split(" ")
+        self.assertEqual(len(hands), 4)
+        for hand in hands:
+            suits = hand.split(".")
+            self.assertEqual(len(suits), 4)
+            total_cards = sum(len(s) for s in suits)
+            self.assertEqual(total_cards, 5)
+
+
 if __name__ == "__main__":
     unittest.main()
