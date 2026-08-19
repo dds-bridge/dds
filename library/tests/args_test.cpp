@@ -290,6 +290,32 @@ TEST_F(HandsLayoutFixture, ResolveNumericPrefersListOverLiteralUnderBazelWorking
     root_ + "hands/list42.txt"));
 }
 
+TEST_F(HandsLayoutFixture, ResolvePathLikeArgDoesNotUseListShorthand)
+{
+  // A path-like -f must not probe nonsense list-shorthand candidates such as
+  // hands/listhands/list42.txt.txt when the literal path is missing.
+  const std::string trap = root_ + "hands/listhands/list42.txt.txt";
+  ASSERT_TRUE(make_dir(root_ + "hands/listhands"));
+  {
+    std::ofstream out(trap);
+    out << "trap\n";
+  }
+  std::filesystem::remove(root_ + "hands/list42.txt");
+
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_no_shorthand/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(
+    resolve_dtest_input_file("hands/list42.txt", "dtest").empty());
+}
+
 TEST_F(HandsLayoutFixture, ResolveLiteralRelativeUsesBazelWorkingDirectory)
 {
   // bazelisk run //library/tests:dtest -- -f hands/list42.txt must find the

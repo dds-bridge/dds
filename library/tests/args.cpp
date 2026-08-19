@@ -318,6 +318,21 @@ bool is_dtest_absolute_path(const string& path)
 }
 
 
+bool is_dtest_list_shorthand_arg(const string& arg)
+{
+  if (arg.empty())
+    return false;
+  for (unsigned char c : arg)
+  {
+    if (c == '/' || c == '\\')
+      return false;
+    if (!std::isdigit(c))
+      return false;
+  }
+  return true;
+}
+
+
 string resolve_dtest_input_file(
   const string& arg,
   const string& argv0)
@@ -331,12 +346,17 @@ string resolve_dtest_input_file(
   if (fs::path(arg).has_root_name())
     return string();
 
-  const string list_name = "list" + arg + ".txt";
-  // Keep generic separators so cwd hits match the documented hands/listN.txt form.
-  const string cwd_candidate =
-    (fs::path("hands") / list_name).generic_string();
-  if (path_exists(cwd_candidate))
-    return cwd_candidate;
+  const bool use_list_shorthand = is_dtest_list_shorthand_arg(arg);
+  const string list_name = use_list_shorthand ? "list" + arg + ".txt" : string();
+
+  if (use_list_shorthand)
+  {
+    // Keep generic separators so cwd hits match the documented hands/listN.txt form.
+    const string cwd_candidate =
+      (fs::path("hands") / list_name).generic_string();
+    if (path_exists(cwd_candidate))
+      return cwd_candidate;
+  }
 
   // bazel run moves CWD into the runfiles tree; it exports the invoke-time
   // shell cwd and the workspace root so relative -f paths still resolve.
@@ -371,16 +391,19 @@ string resolve_dtest_input_file(
     return dir;
   };
 
-  const fs::path list_rel = fs::path("hands") / list_name;
-  if (const string found =
-        from_env_dir("BUILD_WORKING_DIRECTORY", list_rel); !found.empty())
+  if (use_list_shorthand)
   {
-    return found;
-  }
-  if (const string found =
-        from_env_dir("BUILD_WORKSPACE_DIRECTORY", list_rel); !found.empty())
-  {
-    return found;
+    const fs::path list_rel = fs::path("hands") / list_name;
+    if (const string found =
+          from_env_dir("BUILD_WORKING_DIRECTORY", list_rel); !found.empty())
+    {
+      return found;
+    }
+    if (const string found =
+          from_env_dir("BUILD_WORKSPACE_DIRECTORY", list_rel); !found.empty())
+    {
+      return found;
+    }
   }
 
   // Prefer list shorthand under bazel dirs / argv0 before a bare relative
@@ -401,10 +424,13 @@ string resolve_dtest_input_file(
   if (root.empty())
     return string();
 
-  const string bin_candidate =
-    normalize_logical_path((root / "hands" / list_name).string());
-  if (path_exists(bin_candidate))
-    return bin_candidate;
+  if (use_list_shorthand)
+  {
+    const string bin_candidate =
+      normalize_logical_path((root / "hands" / list_name).string());
+    if (path_exists(bin_candidate))
+      return bin_candidate;
+  }
 
   const string bin_literal =
     normalize_logical_path((root / arg).string());
