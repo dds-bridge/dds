@@ -90,11 +90,11 @@ void usage(
   cout <<
     "Usage: " << basename << " [options]\n\n" <<
     "-f, --file s       Input file, or the number n;\n" <<
-    "                   '100' means hands/list100.txt under the current\n" <<
-    "                   directory (or BUILD_WORKING_DIRECTORY /\n" <<
-    "                   BUILD_WORKSPACE_DIRECTORY under bazel run), else\n" <<
-    "                   relative to the dtest binary\n" <<
-    "                   (bazel-bin/library/tests/).\n" <<
+    "                   Relative paths (and '100' → hands/list100.txt) are\n" <<
+    "                   resolved under the current directory, then under\n" <<
+    "                   BUILD_WORKING_DIRECTORY / BUILD_WORKSPACE_DIRECTORY\n" <<
+    "                   (bazel run), else under the workspace root inferred\n" <<
+    "                   from the dtest binary (bazel-bin/library/tests/).\n" <<
     "                   (Default: input.txt)\n" <<
     "\n" <<
     "-s, --solver       One of: solve, calc, play, par, dealerpar.\n" <<
@@ -309,6 +309,21 @@ string absolute_path_logical(const string& path)
   return normalize_logical_path((cwd / path).string());
 }
 
+
+bool is_dtest_list_shorthand_arg(const string& arg)
+{
+  if (arg.empty())
+    return false;
+  for (unsigned char c : arg)
+  {
+    if (c == '/' || c == '\\')
+      return false;
+    if (!std::isdigit(c))
+      return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 
@@ -324,50 +339,103 @@ string resolve_dtest_input_file(
 {
   if (path_exists(arg))
     return arg;
+  if (is_absolute_path(arg))
+    return string();
+  // Windows drive-relative "C:foo" has a root-name; fs::path join may discard
+  // the BUILD_* / argv0 base. Only the literal path is attempted.
+  if (fs::path(arg).has_root_name())
+    return string();
 
-  const string list_name = "list" + arg + ".txt";
-  // Keep generic separators so cwd hits match the documented hands/listN.txt form.
-  const string cwd_candidate =
-    (fs::path("hands") / list_name).generic_string();
-  if (path_exists(cwd_candidate))
-    return cwd_candidate;
+  const bool use_list_shorthand = is_dtest_list_shorthand_arg(arg);
+  const string list_name = use_list_shorthand ? "list" + arg + ".txt" : string();
+
+  if (use_list_shorthand)
+  {
+    // Keep generic separators so cwd hits match the documented hands/listN.txt form.
+    const string cwd_candidate =
+      (fs::path("hands") / list_name).generic_string();
+    if (path_exists(cwd_candidate))
+      return cwd_candidate;
+  }
 
   // bazel run moves CWD into the runfiles tree; it exports the invoke-time
-  // shell cwd and the workspace root so we can still find hands/.
-  auto from_env_dir = [&](const char* env_name) -> string
+  // shell cwd and the workspace root so relative -f paths still resolve.
+  auto from_env_dir = [&](const char* env_name, const fs::path& rel) -> string
   {
+    if (rel.has_root_name() || rel.has_root_directory())
+      return string();
     const char* dir = std::getenv(env_name);
     if (dir == nullptr || dir[0] == '\0')
       return string();
-    const string candidate = normalize_logical_path(
-      (fs::path(dir) / "hands" / list_name).string());
+    const string candidate =
+      normalize_logical_path((fs::path(dir) / rel).string());
     if (path_exists(candidate))
       return candidate;
     return string();
   };
 
-  if (const string found = from_env_dir("BUILD_WORKING_DIRECTORY"); !found.empty())
-    return found;
-  if (const string found = from_env_dir("BUILD_WORKSPACE_DIRECTORY"); !found.empty())
-    return found;
-
   // Climb parents in the path *string* (do not use "/../" with filesystem
   // resolution — that follows a bazel-bin symlink into the execroot and misses
   // the workspace hands/ directory). bazel-bin/library/tests/dtest → four
   // parent_path steps to the repo root.
-  fs::path dir(absolute_path_logical(argv0));
-  for (unsigned i = 0; i < 4; ++i)
+  auto workspace_root_from_argv0 = [&]() -> fs::path
   {
-    const fs::path parent = dir.parent_path();
-    if (parent.empty())
-      return string();
-    dir = parent;
+    fs::path dir(absolute_path_logical(argv0));
+    for (unsigned i = 0; i < 4; ++i)
+    {
+      const fs::path parent = dir.parent_path();
+      if (parent.empty())
+        return {};
+      dir = parent;
+    }
+    return dir;
+  };
+
+  if (use_list_shorthand)
+  {
+    const fs::path list_rel = fs::path("hands") / list_name;
+    if (const string found =
+          from_env_dir("BUILD_WORKING_DIRECTORY", list_rel); !found.empty())
+    {
+      return found;
+    }
+    if (const string found =
+          from_env_dir("BUILD_WORKSPACE_DIRECTORY", list_rel); !found.empty())
+    {
+      return found;
+    }
   }
 
-  const string bin_candidate =
-    normalize_logical_path((dir / "hands" / list_name).string());
-  if (path_exists(bin_candidate))
-    return bin_candidate;
+  // Prefer list shorthand under bazel dirs / argv0 before a bare relative
+  // name (so -f 42 keeps resolving to hands/list42.txt even if a file named
+  // "42" exists at the workspace root).
+  if (const string found =
+        from_env_dir("BUILD_WORKING_DIRECTORY", arg); !found.empty())
+  {
+    return found;
+  }
+  if (const string found =
+        from_env_dir("BUILD_WORKSPACE_DIRECTORY", arg); !found.empty())
+  {
+    return found;
+  }
+
+  const fs::path root = workspace_root_from_argv0();
+  if (root.empty())
+    return string();
+
+  if (use_list_shorthand)
+  {
+    const string bin_candidate =
+      normalize_logical_path((root / "hands" / list_name).string());
+    if (path_exists(bin_candidate))
+      return bin_candidate;
+  }
+
+  const string bin_literal =
+    normalize_logical_path((root / arg).string());
+  if (path_exists(bin_literal))
+    return bin_literal;
 
   return string();
 }
@@ -431,10 +499,15 @@ void read_args(
         }
 
         cout << "Input file '" << optarg << "' not found\n";
-        cout << "Also tried hands/list" << optarg <<
-          ".txt under the current directory, "
-          "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
-          "and relative to the dtest binary\n";
+        // Absolute / drive-relative args only attempt the literal path.
+        if (!is_dtest_absolute_path(optarg) &&
+          !fs::path(optarg).has_root_name())
+        {
+          cout << "Also tried that path under the current directory, "
+            "BUILD_WORKING_DIRECTORY, BUILD_WORKSPACE_DIRECTORY, "
+            "and under the workspace root inferred from the dtest binary; "
+            "for numeric -f N, also hands/listN.txt\n";
+        }
         nextToken -= 2;
         errFlag = true;
         break;

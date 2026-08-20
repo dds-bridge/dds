@@ -32,10 +32,14 @@ void print_options();
 
 /// Resolve `-f` / `--file` to an existing regular file.
 ///
-/// Order: (1) `arg` as a literal path; (2) `hands/list{arg}.txt` under the
-/// current working directory; (3) the same under `BUILD_WORKING_DIRECTORY` /
-/// `BUILD_WORKSPACE_DIRECTORY` (set by `bazel run`); (4) relative to the
-/// directory of `argv0` (the usual `bazel-bin/library/tests/dtest` layout).
+/// Tries, in order: the literal path under the current working directory;
+/// for purely numeric `arg` (e.g. `"100"`), `hands/list{arg}.txt` under cwd;
+/// that list form, then the literal relative path,
+/// under `BUILD_WORKING_DIRECTORY` / `BUILD_WORKSPACE_DIRECTORY` (set by
+/// `bazel run`); then those same two forms under the workspace root inferred
+/// by climbing four parents from `argv0` (the usual
+/// `bazel-bin/library/tests/dtest` layout). Absolute paths, and Windows
+/// drive-relative forms like `C:foo`, only attempt the literal path as given.
 /// Directories are not accepted (avoids treating e.g. `-f hands` as a file).
 /// @return Resolved path, or empty if no regular file is found
 std::string resolve_dtest_input_file(

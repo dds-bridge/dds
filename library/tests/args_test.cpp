@@ -3,7 +3,9 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -264,6 +266,79 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkingDirectory)
     root_ + "hands/list42.txt"));
 }
 
+TEST_F(HandsLayoutFixture, ResolveNumericPrefersListOverLiteralUnderBazelWorking)
+{
+  // A workspace-root file named "42" must not win over hands/list42.txt when
+  // resolving numeric -f under BUILD_WORKING_DIRECTORY.
+  {
+    std::ofstream out(root_ + "42");
+    out << "literal-trap\n";
+  }
+
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_num_pref/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("42", "dtest"),
+    root_ + "hands/list42.txt"));
+}
+
+TEST_F(HandsLayoutFixture, ResolvePathLikeArgDoesNotUseListShorthand)
+{
+  // A path-like -f must not probe nonsense list-shorthand candidates such as
+  // hands/listhands/list42.txt.txt when the literal path is missing.
+  const std::string trap = root_ + "hands/listhands/list42.txt.txt";
+  ASSERT_TRUE(make_dir(root_ + "hands/listhands"));
+  {
+    std::ofstream out(trap);
+    out << "trap\n";
+  }
+  {
+    std::error_code ec;
+    std::filesystem::remove(root_ + "hands/list42.txt", ec);
+    ASSERT_FALSE(ec) << ec.message();
+  }
+
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_no_shorthand/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(
+    resolve_dtest_input_file("hands/list42.txt", "dtest").empty());
+}
+
+TEST_F(HandsLayoutFixture, ResolveLiteralRelativeUsesBazelWorkingDirectory)
+{
+  // bazelisk run //library/tests:dtest -- -f hands/list42.txt must find the
+  // path relative to the invoke-time shell cwd, not the runfiles tree.
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_lit/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("hands/list42.txt", "dtest"),
+    root_ + "hands/list42.txt"));
+}
+
 TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
 {
   const std::string runfiles =
@@ -278,6 +353,58 @@ TEST_F(HandsLayoutFixture, ResolveNumericUsesBazelWorkspaceDirectory)
 
   EXPECT_TRUE(same_path(
     resolve_dtest_input_file("42", "dtest"),
+    root_ + "hands/list42.txt"));
+}
+
+TEST_F(HandsLayoutFixture, ResolveLiteralRelativeUsesBazelWorkspaceDirectory)
+{
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_runfiles_ws_lit/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(root_.c_str());
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("hands/list42.txt", "dtest"),
+    root_ + "hands/list42.txt"));
+}
+
+TEST_F(HandsLayoutFixture, ResolveLiteralRelativeFallsBackRelativeToBinary)
+{
+  // Same layout as numeric binary-relative lookup, but with an explicit path.
+  ASSERT_EQ(change_dir(original_cwd_.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("hands/list42.txt", binary_path_),
+    root_ + "hands/list42.txt"));
+}
+
+TEST_F(HandsLayoutFixture, ResolveNumericPrefersListOverLiteralRelativeToBinary)
+{
+  // Workspace-root file "42" must not shadow hands/list42.txt for numeric -f
+  // when falling back via argv0.
+  {
+    std::ofstream out(root_ + "42");
+    out << "literal-trap\n";
+  }
+  ASSERT_EQ(change_dir(original_cwd_.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(same_path(
+    resolve_dtest_input_file("42", binary_path_),
     root_ + "hands/list42.txt"));
 }
 
@@ -330,6 +457,81 @@ TEST_F(HandsLayoutFixture, ResolveRejectsDirectoryAsLiteralPath)
   EXPECT_TRUE(resolve_dtest_input_file("hands", "dtest").empty());
   EXPECT_TRUE(resolve_dtest_input_file(root_ + "hands", "dtest").empty());
 }
+
+TEST_F(HandsLayoutFixture, ResolveAbsoluteMissingDoesNotUseListShorthand)
+{
+  // A missing absolute -f must not fall through to hands/list{arg}.txt
+  // (list shorthand concatenates the absolute path into a nested name).
+  ASSERT_EQ(change_dir(original_cwd_.c_str()), 0);
+
+  // Pick a unique absolute path that is not present on this machine.
+  const std::string token =
+    "no_such_dtest_abs_" +
+    std::to_string(static_cast<unsigned long long>(
+      reinterpret_cast<uintptr_t>(this)));
+#ifdef _WIN32
+  const std::string missing_abs = "\\" + token;
+#else
+  const std::string missing_abs = "/" + token;
+#endif
+  ASSERT_FALSE(std::filesystem::exists(missing_abs));
+
+  // Trap file at the binary-relative list-shorthand location that a buggy
+  // fallthrough would incorrectly accept.
+  const std::filesystem::path trap =
+    std::filesystem::path(root_) / "hands" /
+    ("list" + missing_abs + ".txt");
+  {
+    std::error_code ec;
+    std::filesystem::create_directories(trap.parent_path(), ec);
+    ASSERT_FALSE(ec) << ec.message();
+  }
+  {
+    std::ofstream out(trap);
+    ASSERT_TRUE(out) << trap.string();
+    out << "trap\n";
+  }
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(nullptr);
+  workspace.set(nullptr);
+
+  EXPECT_TRUE(
+    resolve_dtest_input_file(missing_abs, binary_path_).empty());
+}
+
+#ifdef _WIN32
+TEST_F(HandsLayoutFixture, ResolveDriveRelativeMissingDoesNotJoinUnderBazelDirs)
+{
+  // Drive-relative "X:foo" is not absolute, but fs::path join can discard the
+  // BUILD_* base. Missing drive-relative -f must not resolve via env joins.
+  ASSERT_GE(root_.size(), 2u);
+  ASSERT_EQ(root_[1], ':');
+
+  const std::string token =
+    "no_such_dtest_drive_rel_" +
+    std::to_string(static_cast<unsigned long long>(
+      reinterpret_cast<uintptr_t>(this)));
+  const std::string missing_drive_rel =
+    std::string(1, root_[0]) + ":" + token;
+  ASSERT_FALSE(is_dtest_absolute_path(missing_drive_rel));
+  ASSERT_FALSE(std::filesystem::exists(missing_drive_rel));
+
+  const std::string runfiles =
+    std::string(::testing::TempDir()) + "dtest_hands_drive_rel/";
+  ASSERT_TRUE(make_dir(runfiles));
+  ASSERT_EQ(change_dir(runfiles.c_str()), 0);
+
+  const EnvVarGuard working("BUILD_WORKING_DIRECTORY");
+  const EnvVarGuard workspace("BUILD_WORKSPACE_DIRECTORY");
+  working.set(root_.c_str());
+  workspace.set(root_.c_str());
+
+  EXPECT_TRUE(
+    resolve_dtest_input_file(missing_drive_rel, binary_path_).empty());
+}
+#endif
 
 TEST(Args, AbsolutePathDetection)
 {
