@@ -9,26 +9,33 @@
 
 #include "pbn.hpp"
 #include <api/dds.h>
+#include <api/dll.h>
+
+constexpr int PbnBufferSize = static_cast<int>(sizeof(DealPBN::remainCards));
 
 auto is_card(const char cardChar) -> int;
+auto is_compass_letter(const char c) -> bool;
 
 
 auto convert_from_pbn(
   char const * dealBuff,
   unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int
 {
+  if (remainCards == nullptr)
+    return 0;
+
   for (int h = 0; h < DDS_HANDS; h++)
     for (int s = 0; s < DDS_SUITS; s++)
       remainCards[h][s] = 0;
 
+  if (dealBuff == nullptr)
+    return 0;
+
   int bp = 0;
-  while (((dealBuff[bp] != 'W') && (dealBuff[bp] != 'N') &&
-          (dealBuff[bp] != 'E') && (dealBuff[bp] != 'S') &&
-          (dealBuff[bp] != 'w') && (dealBuff[bp] != 'n') &&
-          (dealBuff[bp] != 'e') && (dealBuff[bp] != 's')) && (bp < 3))
+  while ((bp < 3) && (dealBuff[bp] != '\0') && !is_compass_letter(dealBuff[bp]))
     bp++;
 
-  if (bp >= 3)
+  if ((bp >= 3) || (dealBuff[bp] == '\0') || (dealBuff[bp + 1] != ':'))
     return 0;
 
   int first;
@@ -48,11 +55,14 @@ auto convert_from_pbn(
   int suitInHand = 0;
   int card, hand;
 
-  while ((bp < 80) && (dealBuff[bp] != '\0'))
+  while ((bp < PbnBufferSize) && (dealBuff[bp] != '\0'))
   {
     card = is_card(dealBuff[bp]);
     if (card)
     {
+      if (hand_rel_first >= DDS_HANDS || suitInHand >= DDS_SUITS)
+        return 0;
+
       switch (first)
       {
         case 0:
@@ -81,20 +91,57 @@ auto convert_from_pbn(
             hand = hand_rel_first - 1;
       }
 
+      if (hand < 0 || hand >= DDS_HANDS)
+        return 0;
+
       remainCards[hand][suitInHand] |=
         static_cast<unsigned>((bit_map_rank[card] << 2));
 
     }
     else if (dealBuff[bp] == '.')
+    {
+      if (suitInHand >= DDS_SUITS - 1)
+        return 0;
       suitInHand++;
+    }
     else if (dealBuff[bp] == ' ')
     {
+      if (hand_rel_first >= DDS_HANDS - 1)
+        return 0;
       hand_rel_first++;
       suitInHand = 0;
     }
+    else if (is_compass_letter(dealBuff[bp]))
+      return 0;
     bp++;
   }
+
+  if (bp >= PbnBufferSize)
+    return 0;
+
+  if (hand_rel_first != DDS_HANDS - 1)
+    return 0;
+
   return RETURN_NO_FAULT;
+}
+
+
+auto is_compass_letter(const char c) -> bool
+{
+  switch (c)
+  {
+    case 'N':
+    case 'n':
+    case 'E':
+    case 'e':
+    case 'S':
+    case 's':
+    case 'W':
+    case 'w':
+      return true;
+    default:
+      return false;
+  }
 }
 
 

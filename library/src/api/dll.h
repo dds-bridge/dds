@@ -196,7 +196,7 @@ struct Deal
  * @param first The hand to play first
  * @param currentTrickSuit Suits of cards played in the current trick
  * @param currentTrickRank Ranks of cards played in the current trick
- * @param remainCards PBN string describing remaining cards
+ * @param remainCards PBN string describing remaining cards. Only the first hand may have a compass letter (N/E/S/W); later hands follow clockwise with no extra directions.
  */
 struct DealPBN
 {
