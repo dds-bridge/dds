@@ -300,7 +300,11 @@ TEST_F(HandsLayoutFixture, ResolvePathLikeArgDoesNotUseListShorthand)
     std::ofstream out(trap);
     out << "trap\n";
   }
-  std::filesystem::remove(root_ + "hands/list42.txt");
+  {
+    std::error_code ec;
+    std::filesystem::remove(root_ + "hands/list42.txt", ec);
+    ASSERT_FALSE(ec) << ec.message();
+  }
 
   const std::string runfiles =
     std::string(::testing::TempDir()) + "dtest_hands_runfiles_no_shorthand/";

@@ -309,14 +309,6 @@ string absolute_path_logical(const string& path)
   return normalize_logical_path((cwd / path).string());
 }
 
-}  // namespace
-
-
-bool is_dtest_absolute_path(const string& path)
-{
-  return is_absolute_path(path);
-}
-
 
 bool is_dtest_list_shorthand_arg(const string& arg)
 {
@@ -330,6 +322,14 @@ bool is_dtest_list_shorthand_arg(const string& arg)
       return false;
   }
   return true;
+}
+
+}  // namespace
+
+
+bool is_dtest_absolute_path(const string& path)
+{
+  return is_absolute_path(path);
 }
 
 
