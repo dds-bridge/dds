@@ -77,6 +77,7 @@ pytest python/tests/test_solve_board.py::TestSolveBoard::test_solve_board_basic 
   - Valid PBN format acceptance
   - Invalid seat designations
   - Extra compass letters on later hands rejected
+    - Raises an error (validation fails; does not continue)
   - Truncated/empty string handling
 
 - **TestTrumpFilterValidation**: Trump filter parameter bounds
