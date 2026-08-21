@@ -62,7 +62,12 @@ GEN="$ROOT/bazel-bin/python/utilities/create_list_for_dtest"
 for n in "${counts[@]}"; do
   out="$OUT_DIR/list${n}.txt"
   echo "Generating list${n}.txt (--seed ${n}) -> $out"
-  "$GEN" -n "$n" --seed "$n" ${CARDS:+--cards "$CARDS"} -o "$out"
+  gen_args=(-n "$n" --seed "$n")
+  if [[ -n "$CARDS" ]]; then
+    gen_args+=(--cards "$CARDS")
+  fi
+  gen_args+=(-o "$out")
+  "$GEN" "${gen_args[@]}"
 done
 
 echo "Done. Wrote ${#counts[@]} files to $OUT_DIR"
