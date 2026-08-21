@@ -19,4 +19,6 @@ for CARDS in $(seq -w 1 12); do
     --cards "$CARDS"
 done
 
-mv "${PARENT_DIR}/01_cards/" "${PARENT_DIR}/01_card/"
+# Idempotent rename: replace 01_card if a previous run left it behind.
+rm -rf "${PARENT_DIR}/01_card"
+mv "${PARENT_DIR}/01_cards" "${PARENT_DIR}/01_card"
