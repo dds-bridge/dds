@@ -13,6 +13,7 @@
 #include <numeric>
 #include <vector>
 
+#include <lookup_tables/lookup_tables.hpp>
 #include <pbn.hpp>
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
@@ -32,6 +33,34 @@ auto calc_all_boards_n(
   SolvedBoards * solvedp,
   int max_threads = 0,
   bool difficulty_sort = true) -> int;
+
+namespace
+{
+
+// Match SolveBoard's remaining-trick count from remainCards alone.
+auto remaining_tricks_from_holdings(
+  unsigned int const cards[DDS_HANDS][DDS_SUITS]) -> int
+{
+  int card_count = 0;
+  for (int h = 0; h < DDS_HANDS; h++)
+  {
+    for (int s = 0; s < DDS_SUITS; s++)
+      card_count += count_table[cards[h][s] >> 2];
+  }
+
+  if (card_count % 4)
+    return ((card_count - 4) >> 2) + 2;
+  return ((card_count - 4) >> 2) + 1;
+}
+
+auto declarer_tricks_from_leader_score(
+  int remaining_tricks,
+  int leader_side_score) -> int
+{
+  return remaining_tricks - leader_side_score;
+}
+
+}  // namespace
 
 
 auto calc_single_common_internal(
@@ -65,11 +94,16 @@ auto calc_single_common_internal(
   // for calculation consistency and fixes a previous consistency bug.
   for (int k = 1; k < DDS_HANDS; k++)
   {
-    int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);
-
-    deal.first = k; // Next declarer
-
-    res = solve_same_board(ctx, deal, &fut, hint);
+    deal.first = k;
+    // Use a full solve_board per leader. solve_same_board's null-window
+    // reuse is incorrect for deals with fewer than 13 cards per hand.
+    res = solve_board(
+      ctx,
+      deal,
+      bds.target[bno],
+      bds.solutions[bno],
+      bds.mode[bno],
+      &fut);
 
     if (res == 1)
       solved.solved_board[bno].score[k] = fut.score[0];
@@ -223,6 +257,7 @@ int STDCALL CalcDDtableN(
   if (res != 1)
     return res;
 
+  const int tricks = remaining_tricks_from_holdings(tableDeal.cards);
   for (int index = 0; index < DDS_STRAINS; index++)
   {
     int strain = bo.deals[index].trump;
@@ -232,7 +267,8 @@ int STDCALL CalcDDtableN(
     for (int first = 0; first < DDS_HANDS; first++)
     {
       tablep->res_table[strain][ rho[first] ] =
-        13 - solved.solved_board[index].score[first];
+        declarer_tricks_from_leader_score(
+          tricks, solved.solved_board[index].score[first]);
     }
   }
   return RETURN_NO_FAULT;
@@ -323,6 +359,7 @@ int STDCALL CalcAllTablesN(
 
   for (int m = 0; m < dealsp->no_of_tables; m++)
   {
+    const int tricks = remaining_tricks_from_holdings(dealsp->deals[m].cards);
     for (int strainIndex = 0; strainIndex < count; strainIndex++)
     {
       int index = m * count + strainIndex;
@@ -333,7 +370,8 @@ int STDCALL CalcAllTablesN(
       for (int first = 0; first < DDS_HANDS; first++)
       {
         resp->results[m].res_table[strain][ rho[first] ] =
-          13 - solved.solved_board[index].score[first];
+          declarer_tricks_from_leader_score(
+            tricks, solved.solved_board[index].score[first]);
       }
     }
   }
@@ -416,9 +454,9 @@ auto calc_single_deal_scores(
 
   for (int k = 1; k < DDS_HANDS; k++)
   {
-    const int hint = (k == 2 ? fut.score[0] : 13 - fut.score[0]);
     deal.first = k;
-    res = solve_same_board(ctx, deal, &fut, hint);
+    // Full solve per leader: solve_same_board is wrong for partial deals.
+    res = solve_board(ctx, deal, target, solutions, mode, &fut);
     if (res != RETURN_NO_FAULT)
       return res;
     scores[k] = fut.score[0];
@@ -528,6 +566,7 @@ int STDCALL CalcAllTablesX(
 
     for (int m = 0; m < numDeals; m++)
     {
+      const int tricks = remaining_tricks_from_holdings(deals[m].cards);
       for (int strainIndex = 0; strainIndex < included; strainIndex++)
       {
         const int index = m * included + strainIndex;
@@ -535,7 +574,9 @@ int STDCALL CalcAllTablesX(
         for (int first = 0; first < DDS_HANDS; first++)
         {
           results[m].res_table[strain][rho[first]] =
-            13 - scores[static_cast<unsigned>(index)][static_cast<unsigned>(first)];
+            declarer_tricks_from_leader_score(
+              tricks,
+              scores[static_cast<unsigned>(index)][static_cast<unsigned>(first)]);
         }
       }
     }

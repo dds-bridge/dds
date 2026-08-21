@@ -83,6 +83,17 @@ cc_test(
 )
 
 cc_test(
+    name = "calc_dd_table_partial_test",
+    size = "small",
+    srcs = ["calc_dd_table_partial_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "worker_context_reuse_test",
     size = "small",
     srcs = ["worker_context_reuse_test.cpp"],
