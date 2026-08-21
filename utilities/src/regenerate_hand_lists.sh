@@ -15,6 +15,10 @@ CARDS=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cards)
+      if [[ $# -lt 2 ]]; then
+        echo "Missing value for --cards (expected 1–13)" >&2
+        exit 1
+      fi
       CARDS="$2"
       shift 2
       ;;
