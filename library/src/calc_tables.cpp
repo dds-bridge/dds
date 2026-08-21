@@ -60,6 +60,15 @@ auto declarer_tricks_from_leader_score(
   return remaining_tricks - leader_side_score;
 }
 
+// solve_same_board's null-window reuse assumes a full 13-trick deal.
+constexpr int kFullDealRemainingTricks = 13;
+
+auto is_full_thirteen_trick_deal(
+  unsigned int const cards[DDS_HANDS][DDS_SUITS]) -> bool
+{
+  return remaining_tricks_from_holdings(cards) == kFullDealRemainingTricks;
+}
+
 }  // namespace
 
 
@@ -92,18 +101,29 @@ auto calc_single_common_internal(
   // for subsequent same-board solves to ensure all declarers on the same
   // board share the same transposition table state, which is important
   // for calculation consistency and fixes a previous consistency bug.
+  const bool reuse_same_board =
+    is_full_thirteen_trick_deal(deal.remainCards);
   for (int k = 1; k < DDS_HANDS; k++)
   {
     deal.first = k;
-    // Use a full solve_board per leader. solve_same_board's null-window
-    // reuse is incorrect for deals with fewer than 13 cards per hand.
-    res = solve_board(
-      ctx,
-      deal,
-      bds.target[bno],
-      bds.solutions[bno],
-      bds.mode[bno],
-      &fut);
+    if (reuse_same_board)
+    {
+      // Fast path for full deals: null-window reuse with a partner/opponent hint.
+      const int hint =
+        (k == 2 ? fut.score[0] : kFullDealRemainingTricks - fut.score[0]);
+      res = solve_same_board(ctx, deal, &fut, hint);
+    }
+    else
+    {
+      // Partial deals: solve_same_board hints/reuse are incorrect; full solve.
+      res = solve_board(
+        ctx,
+        deal,
+        bds.target[bno],
+        bds.solutions[bno],
+        bds.mode[bno],
+        &fut);
+    }
 
     if (res == 1)
       solved.solved_board[bno].score[k] = fut.score[0];
@@ -452,11 +472,22 @@ auto calc_single_deal_scores(
     return res;
   scores[0] = fut.score[0];
 
+  const bool reuse_same_board =
+    is_full_thirteen_trick_deal(deal.remainCards);
   for (int k = 1; k < DDS_HANDS; k++)
   {
     deal.first = k;
-    // Full solve per leader: solve_same_board is wrong for partial deals.
-    res = solve_board(ctx, deal, target, solutions, mode, &fut);
+    if (reuse_same_board)
+    {
+      const int hint =
+        (k == 2 ? fut.score[0] : kFullDealRemainingTricks - fut.score[0]);
+      res = solve_same_board(ctx, deal, &fut, hint);
+    }
+    else
+    {
+      // Partial deals: solve_same_board is wrong; use a full solve per leader.
+      res = solve_board(ctx, deal, target, solutions, mode, &fut);
+    }
     if (res != RETURN_NO_FAULT)
       return res;
     scores[k] = fut.score[0];
