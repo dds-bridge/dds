@@ -476,6 +476,31 @@ class ParseArgsAndOutputTest(unittest.TestCase):
             total_cards = sum(len(s) for s in suits)
             self.assertEqual(total_cards, 5)
 
+    def test_main_with_cards_writes_play_line_with_four_times_cards(self):
+        cards_per_hand = 5
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "list_partial.txt"
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = cld.main(
+                    [
+                        "-n",
+                        "1",
+                        "--seed",
+                        "1",
+                        "--cards",
+                        str(cards_per_hand),
+                        "-o",
+                        str(out),
+                    ]
+                )
+            self.assertEqual(rc, 0)
+            play_line = next(
+                line for line in out.read_text(encoding="utf-8").splitlines()
+                if line.startswith("PLAY ")
+            )
+            self.assertRegex(play_line, rf'^PLAY {4 * cards_per_hand} "')
+
 
 if __name__ == "__main__":
     unittest.main()
