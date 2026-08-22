@@ -4,6 +4,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 
+#include <api/calc_dd_table.hpp>
 #include <api/dll.h>
 
 namespace
@@ -83,4 +84,26 @@ TEST(CalcAllTablesXPartial, OneCardPerHandUsesRemainingTricksNotThirteen)
       RETURN_NO_FAULT);
 
   expect_ns_take_all_remaining(result, /*tricks=*/1);
+}
+
+TEST(CalcDdTablePartialCpp, OneCardPerHandUsesRemainingTricksNotThirteen)
+{
+  InitializeStaticMemory();
+
+  DdTableDealPBN deal_pbn{};
+  std::strncpy(deal_pbn.cards, kOneTrickSpadesPbn, sizeof(deal_pbn.cards) - 1);
+  deal_pbn.cards[sizeof(deal_pbn.cards) - 1] = '\0';
+
+  DdTableResults table{};
+  ASSERT_EQ(calc_dd_table_pbn(deal_pbn, &table), RETURN_NO_FAULT);
+
+  for (int strain = 0; strain < DDS_STRAINS; strain++)
+    for (int hand = 0; hand < DDS_HANDS; hand++)
+    {
+      EXPECT_GE(table.res_table[strain][hand], 0);
+      EXPECT_LE(table.res_table[strain][hand], 1)
+          << "strain=" << strain << " hand=" << hand;
+    }
+
+  expect_ns_take_all_remaining(table, /*tricks=*/1);
 }

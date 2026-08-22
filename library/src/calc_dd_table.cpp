@@ -61,6 +61,7 @@ auto calc_dd_table(
         return res;
 
     // Populate result table from solved boards
+    const int tricks = remaining_tricks_from_holdings(table_deal.cards);
     for (int index = 0; index < DDS_STRAINS; index++)
     {
         int strain = bo.deals[index].trump;
@@ -68,7 +69,8 @@ auto calc_dd_table(
         for (int first = 0; first < DDS_HANDS; first++)
         {
             table_results->res_table[strain][ rho[first] ] =
-                13 - solved.solved_board[index].score[first];
+                declarer_tricks_from_leader_score(
+                    tricks, solved.solved_board[index].score[first]);
         }
     }
     return RETURN_NO_FAULT;

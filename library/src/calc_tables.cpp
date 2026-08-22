@@ -34,9 +34,6 @@ auto calc_all_boards_n(
   int max_threads = 0,
   bool difficulty_sort = true) -> int;
 
-namespace
-{
-
 // Match SolveBoard's remaining-trick count from remainCards alone.
 auto remaining_tricks_from_holdings(
   unsigned int const cards[DDS_HANDS][DDS_SUITS]) -> int
@@ -59,6 +56,9 @@ auto declarer_tricks_from_leader_score(
 {
   return remaining_tricks - leader_side_score;
 }
+
+namespace
+{
 
 // solve_same_board's null-window reuse assumes a full 13-trick deal.
 constexpr int kFullDealRemainingTricks = 13;
