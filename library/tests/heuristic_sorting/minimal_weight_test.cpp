@@ -6,6 +6,7 @@
  * without segmentation faults on minimal input data.
  */
 
+#include <cstring>
 #include <gtest/gtest.h>
 #include <iostream>
 #include "heuristic_sorting/heuristic_sorting.hpp"

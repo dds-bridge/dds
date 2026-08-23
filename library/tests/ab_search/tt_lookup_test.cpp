@@ -11,6 +11,7 @@
 #include <ab_search.hpp>
 #include <api/dds.h>
 #include <api/dll.h>
+#include <memory>
 #include <solver_context/solver_context.hpp>
 #include <system/memory.hpp>
 #include <trans_table/trans_table.hpp>

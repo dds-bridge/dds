@@ -17,9 +17,12 @@
 #include <iostream>
 #include <istream>
 #include <limits>
+#include <optional>
 #include <regex>
 #include <string>
+#include <string_view>
 #include <unordered_set>
+#include <vector>
 
 namespace dd_table_for_deal {
 namespace {

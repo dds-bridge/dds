@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <iomanip>
+#include <ios>
 #include <sstream>
 #include <string>
 #include <utility>

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <string>

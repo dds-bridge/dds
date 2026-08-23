@@ -15,6 +15,8 @@
 #include "scheduler.hpp"
 #include <fstream>
 #include <iomanip>
+#include <utility>
+#include <vector>
 #ifdef DDS_SCHEDULER
 #include <system/time_stat_list.hpp>
 

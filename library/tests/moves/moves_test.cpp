@@ -10,7 +10,9 @@
  * - Edge cases and invariant violations
  */
 
+#include <cctype>
 #include <gtest/gtest.h>
+#include <memory>
 #include <vector>
 #include <cstring>
 #include <chrono>

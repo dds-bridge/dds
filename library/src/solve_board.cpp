@@ -18,6 +18,7 @@
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 #include <utility/debug.h>
+#include <vector>
 
 
 extern Scheduler scheduler;

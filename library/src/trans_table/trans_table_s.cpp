@@ -9,10 +9,12 @@
 
 #include <array>
 #include <cstdlib>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <new>
 #include <api/dds.h>
+#include <string>
 
 #include "trans_table_s.hpp"
 

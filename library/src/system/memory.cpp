@@ -10,6 +10,7 @@
 
 #include "memory.hpp"
 #include <cstdlib>
+#include <string>
 #include <trans_table/trans_table.hpp>
 
 // After moving ThreadData ownership into SolverContext, Memory no longer

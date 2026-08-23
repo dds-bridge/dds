@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdio>
 #include <cstring>
 
 #include <api/dds_c_api.h>

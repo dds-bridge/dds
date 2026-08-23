@@ -5,6 +5,7 @@
 /// heuristics maintain expected priority and consistency across scenarios.
 
 #include <algorithm>
+#include <cstddef>
 #include <gtest/gtest.h>
 #include <vector>
 

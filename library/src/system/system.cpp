@@ -7,8 +7,11 @@
    See LICENSE and README.
 */
 
+#include <cstdio>
 #include <cstring>
+#include <string>
 #include <thread>
+#include <vector>
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
   #include <unistd.h>

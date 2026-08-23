@@ -4,6 +4,8 @@
 #include <cstring>
 
 #include <pybind11/pybind11.h>
+#include <string>
+#include <vector>
 
 namespace py = pybind11;
 

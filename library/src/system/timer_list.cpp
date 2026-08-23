@@ -13,6 +13,8 @@
 */
 
 #include "timer_list.hpp"
+#include <fstream>
+#include <ostream>
 
 
 TimerList::TimerList()
