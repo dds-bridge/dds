@@ -36,6 +36,8 @@
 #include <chrono>
 #include <cstdio>
 #include <random>
+#include <ratio>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>

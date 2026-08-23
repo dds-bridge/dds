@@ -13,6 +13,7 @@
 #include <solver_context/solver_context.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
+#include <vector>
 
 using namespace std;
 

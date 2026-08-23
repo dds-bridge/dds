@@ -10,12 +10,15 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <sstream>
 
 #include "dump.hpp"
 #include <solver_context/solver_context.hpp>
+#include <string>
 #include <trans_table/trans_table.hpp>
 #include <utility/debug.h>
+#include <vector>
 
 
 std::string PrintSuit(const unsigned short suitCode);

@@ -6,6 +6,7 @@
 #include "test_utils.hpp"
 #include <sstream>
 #include <cstring>
+#include <string>
 #include <vector>
 #include <algorithm>
 

@@ -3,6 +3,8 @@
 /// @details Tests virtual methods, polymorphism, and base class interface.
 
 // C++ standard library headers
+#include <cstdio>
+#include <fstream>
 #include <memory>
 
 // Third-party headers

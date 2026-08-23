@@ -5,6 +5,7 @@
 #include <ctime>
 #include <gtest/gtest.h>
 #include <iomanip>
+#include <ios>
 #include <limits>
 #include <regex>
 #include <sstream>

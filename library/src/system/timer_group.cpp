@@ -7,6 +7,8 @@
    See LICENSE and README.
 */
 
+#include <cstddef>
+#include <string>
 #define TIMER_DEPTH 50
 
 #include <iostream>

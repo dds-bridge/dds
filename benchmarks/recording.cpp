@@ -9,8 +9,12 @@
 #include "recording.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace dds_replay {
 

@@ -13,6 +13,7 @@
 #include "solver_if.hpp"
 #include <api/solve_board.hpp>
 #include <lookup_tables/lookup_tables.hpp>
+#include <memory>
 #include <solver_context/solver_context.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>

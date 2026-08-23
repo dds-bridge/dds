@@ -8,6 +8,7 @@
 */
 
 
+#include <cstdlib>
 #include <iostream>
 #if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
   #include <unistd.h>

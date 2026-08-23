@@ -8,9 +8,12 @@
 */
 
 
+#include <chrono>
 #include <ctime>
 #include <iostream>
 #include <iomanip>
+#include <ratio>
+#include <string>
 
 #include "TestTimer.hpp"
 

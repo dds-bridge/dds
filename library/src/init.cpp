@@ -7,9 +7,12 @@
    See LICENSE and README.
 */
 
+#include <algorithm>
 #include <cstring>
 #include <cstdio>
 #include <iomanip>
+#include <ios>
+#include <memory>
 #include <sstream>
 
 #include <calc_tables.hpp>
@@ -18,6 +21,7 @@
 #include <solve_board.hpp>
 #include <lookup_tables/lookup_tables.hpp>
 #include <solver_context/solver_context.hpp>
+#include <string>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
 #include <system/thread_mgr.hpp>
