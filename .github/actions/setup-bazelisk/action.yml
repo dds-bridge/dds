@@ -8,12 +8,21 @@ inputs:
 runs:
   using: composite
   steps:
+    # disk-cache holds compiled action outputs, which are sensitive to each
+    # job's own flags (--define=ab_stats, --config=asan, compilation_mode,
+    # etc.), so it is scoped per workflow+job to avoid one job restoring
+    # another's incompatible outputs. repository-cache holds downloaded
+    # external repos (emsdk, LLVM, ...), which are the same for every job
+    # driven by the same MODULE.bazel/WORKSPACE, so it is left unscoped and
+    # shared.
     - name: Setup Bazelisk (attempt 1)
       id: setup_bazelisk_1
       continue-on-error: true
       uses: bazel-contrib/setup-bazel@0.19.0
       with:
         bazelisk-version: ${{ inputs.bazelisk-version }}
+        disk-cache: ${{ github.workflow }}-${{ github.job }}
+        repository-cache: true
 
     - name: Setup Bazelisk (attempt 2)
       id: setup_bazelisk_2
@@ -22,6 +31,8 @@ runs:
       uses: bazel-contrib/setup-bazel@0.19.0
       with:
         bazelisk-version: ${{ inputs.bazelisk-version }}
+        disk-cache: ${{ github.workflow }}-${{ github.job }}
+        repository-cache: true
 
     # Composite run steps need an explicit shell. Use bash on Linux/macOS (pwsh
     # is not always present after free-disk-space) and pwsh on Windows.

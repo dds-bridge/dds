@@ -53,30 +53,19 @@ jobs:
       - name: Build all targets
         run: bazelisk build --verbose_failures //...
 
-      # 7️⃣ Build with DDS_AB_STATS (off by default; compile-gated AB counters)
-      - name: Build with ab_stats define
-        run: bazelisk build --define=ab_stats=true --verbose_failures //library/src:dds
-
-      - name: Test with ab_stats define
-        run: bazelisk test --define=ab_stats=true --verbose_failures --test_output=errors //library/tests/ab_search:ab_stats_test //library/tests/ab_search:tt_lookup_test
-
-      # 8️⃣ Build with DDS_SCHEDULER (off by default; compile-gated timing path)
-      - name: Build with scheduler define
-        run: bazelisk build --define=scheduler=true --verbose_failures //library/src:dds
-
-      # 9️⃣ Run all tests (including Python)
-      - name: Run all tests
-        run: bazelisk test --verbose_failures //...
-
-      # 🔟 .NET binding — build and test the managed wrapper against the shared
-      #    library just built. Pinned to 8.0.x because that is what DDS_Core
-      #    targets; the test project's RollForward only matters where no 8.0
-      #    runtime exists, which is not the case here.
+      # 7️⃣ .NET binding — build and test the managed wrapper against the shared
+      #    library just built. Kept immediately after "Build all targets" (and
+      #    before the non-default-flag builds below) since both target the
+      #    same default configuration; the flag builds mutate the active
+      #    config, so anything default-config-dependent stays on this side of
+      #    them. Pinned to 8.0.x because that is what DDS_Core targets; the
+      #    test project's RollForward only matters where no 8.0 runtime
+      #    exists, which is not the case here.
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
-        with: 
+        with:
           dotnet-version: "8.0.x"
-        
+
       # bazel-bin is a configuration-dependent convenience symlink, so ask Bazel
       # for it rather than hardcoding a path that a different --config would move.
       - name: Test .NET binding
@@ -94,6 +83,25 @@ jobs:
           # CLI e2e: bash drives `dotnet run` against the native library.
           chmod +x dotnet/DdTableForDeal/e2e.sh
           ./dotnet/DdTableForDeal/e2e.sh
+
+      # 8️⃣ Run all tests (including Python), still under the default config.
+      - name: Run all tests
+        run: bazelisk test --verbose_failures //...
+
+      # --- Non-default-flag builds below. Each mutates the active Bazel
+      # config (bazel-bin, etc.), so they are kept together and last, after
+      # everything above that depends on the default configuration.
+
+      # 9️⃣ Build with DDS_AB_STATS (off by default; compile-gated AB counters)
+      - name: Build with ab_stats define
+        run: bazelisk build --define=ab_stats=true --verbose_failures //library/src:dds
+
+      - name: Test with ab_stats define
+        run: bazelisk test --define=ab_stats=true --verbose_failures --test_output=errors //library/tests/ab_search:ab_stats_test //library/tests/ab_search:tt_lookup_test
+
+      # 🔟 Build with DDS_SCHEDULER (off by default; compile-gated timing path)
+      - name: Build with scheduler define
+        run: bazelisk build --define=scheduler=true --verbose_failures //library/src:dds
 
       # 11 Upload test logs
       - name: Upload test logs - Linux
