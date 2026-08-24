@@ -21,8 +21,10 @@
 
 extern "C" auto LLVMFuzzerInitialize(int * /*argc*/, char *** /*argv*/) -> int
 {
-  // One worker keeps runs deterministic and avoids per-input thread setup.
-  SetMaxThreads(1);
+  // SetMaxThreads() is a deprecated alias of InitializeStaticMemory() whose
+  // thread argument is ignored, so it never capped anything here. Worker
+  // counts come from each call's explicit maxThreads instead.
+  InitializeStaticMemory();
   return 0;
 }
 

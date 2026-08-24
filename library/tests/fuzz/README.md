@@ -1,7 +1,7 @@
 # Fuzz harnesses
 
-Coverage-guided fuzzing for the four DDS surfaces that consume caller- or
-file-supplied data:
+Coverage-guided fuzzing for the five DDS surfaces that consume caller- or
+file-supplied data — four single-deal entry points plus the batch table API:
 
 | Harness | Entry point | Why |
 |---|---|---|
@@ -73,6 +73,29 @@ Two details in that harness are load-bearing:
 - The fill deal holds **one card per hand**, not a full 52. This harness
   targets count and batch handling, not search depth; a full deal in every
   slot drops throughput from ~75000 executions in four minutes to ~1700.
+
+### Throughput, and why `calc_dd_table_pbn` is slow
+
+Harnesses pass an explicit `maxThreads` of 1 to the `*N` entry points. That is
+deliberate: the non-`N` variants delegate with `maxThreads = 0`, which selects
+hardware concurrency, so a single input would fan out across every core —
+wrong for a fuzzer, which gets its parallelism from running many processes.
+`SetMaxThreads()` cannot be used for this: it is a deprecated alias of
+`InitializeStaticMemory()` and ignores its argument.
+
+The consequence is that `calc_dd_table_pbn` is compute-bound. A full 52-card
+deal is 20 double dummy solves, and under coverage instrumentation on one
+worker the hardest seed in the corpus takes about 36 seconds. `-max_total_time`
+is only checked between runs, so it will not interrupt one of those. Run this
+target with an explicit per-input cap and expect low throughput:
+
+```
+bazel run --config=fuzz //library/tests/fuzz:calc_dd_table_pbn_fuzz -- \
+  library/tests/fuzz/corpus/calc_dd_table_pbn -timeout=60 -max_total_time=1800
+```
+
+The other four are fast: `par` and `pbn` reach hundreds of thousands of
+executions per minute, and `calc_all_tables` around 75000 in four minutes.
 
 ## Harness contract
 

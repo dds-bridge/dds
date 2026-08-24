@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -168,7 +169,7 @@ auto run_one(fs::path const & path) -> bool
 auto main(int argc, char ** argv) -> int
 {
   // libFuzzer calls this before the first input; the replay driver must too,
-  // or harnesses relying on it (e.g. SetMaxThreads) run unconfigured.
+  // or harnesses relying on it (e.g. InitializeStaticMemory) run unconfigured.
   LLVMFuzzerInitialize(&argc, &argv);
 
   // Degenerate inputs every harness must survive, independent of the corpus.

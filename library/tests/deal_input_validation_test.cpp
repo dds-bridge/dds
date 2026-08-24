@@ -317,6 +317,23 @@ TEST(DumpInputSafety, OutOfRangeTrickSuitAndRankAreReportedNotIndexed)
   EXPECT_EQ(SolveBoard(deal, -1, 1, 1, &fut, 0), RETURN_SUIT_OR_RANK);
 }
 
+TEST(DumpInputSafety, TrickSuitOfFourIsRejectedNotRenderedAsNoTrump)
+{
+  // 4 is a legal trump (no-trump) but not a legal trick suit. Sharing one
+  // bound between the two would render it as "N" in the dump and hide the
+  // value that was rejected.
+  Deal deal;
+  std::memset(&deal, 0, sizeof(deal));
+  deal.trump = 4;   // no-trump: legal
+  deal.first = 0;
+  deal.currentTrickSuit[0] = 4;   // not a legal suit
+  deal.currentTrickRank[0] = 5;
+
+  FutureTricks fut;
+  std::memset(&fut, 0, sizeof(fut));
+  EXPECT_EQ(SolveBoard(deal, -1, 1, 1, &fut, 0), RETURN_SUIT_OR_RANK);
+}
+
 TEST(DumpInputSafety, OutOfRangeTrumpIsReportedNotIndexed)
 {
   Deal deal;

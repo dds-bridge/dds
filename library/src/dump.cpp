@@ -278,11 +278,29 @@ namespace {
    helper falls back to the raw integer when the value is out of range, which
    is also more useful in a diagnostic than a wrong character would be. */
 
-auto suit_text(const int suit) -> std::string
+/* card_suit[] covers the five strains, but the legal range depends on which
+   field is being printed: trump may be 0..4, where 4 is no-trump, while
+   board_range_checks() accepts only 0..3 for a trick suit. Sharing one bound
+   would render an invalid trick suit of 4 as "N" and hide the rejected value,
+   so the caller supplies the bound. */
+
+auto suit_text(const int suit, const int strain_count) -> std::string
 {
-  if (suit < 0 || suit >= DDS_STRAINS)
+  if (suit < 0 || suit >= strain_count)
     return "?(" + std::to_string(suit) + ")";
   return std::string(1, static_cast<char>(card_suit[suit]));
+}
+
+/// Trump: 0..3 plus DDS_NOTRUMP.
+auto trump_text(const int trump) -> std::string
+{
+  return suit_text(trump, DDS_STRAINS);
+}
+
+/// Suit led in the current trick: no-trump is not a legal value.
+auto trick_suit_text(const int suit) -> std::string
+{
+  return suit_text(suit, DDS_SUITS);
 }
 
 auto hand_text(const int hand) -> std::string
@@ -321,7 +339,7 @@ int DumpInput(
   if (dl.trump == DDS_NOTRUMP)
     fout << "N\n";
   else
-    fout << suit_text(dl.trump) << "\n";
+    fout << trump_text(dl.trump) << "\n";
   fout << "first=" << hand_text(dl.first) << "\n";
 
   unsigned short ranks[4][4];
@@ -330,7 +348,7 @@ int DumpInput(
     if (dl.currentTrickRank[k] != 0)
     {
       fout << "index=" << k << 
-        " currentTrickSuit=" << suit_text(dl.currentTrickSuit[k]) <<
+        " currentTrickSuit=" << trick_suit_text(dl.currentTrickSuit[k]) <<
         " currentTrickRank= " << rank_text(dl.currentTrickRank[k]) << "\n";
     }
 

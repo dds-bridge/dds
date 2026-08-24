@@ -21,7 +21,10 @@
 
 extern "C" auto LLVMFuzzerInitialize(int * /*argc*/, char *** /*argv*/) -> int
 {
-  SetMaxThreads(1);
+  // SetMaxThreads() is a deprecated alias of InitializeStaticMemory() whose
+  // thread argument is ignored, so it never capped anything here. Worker
+  // counts come from each call's explicit maxThreads instead.
+  InitializeStaticMemory();
   return 0;
 }
 
@@ -43,7 +46,9 @@ extern "C" auto LLVMFuzzerTestOneInput(const uint8_t * data, size_t size) -> int
   DdTableResults table;
   std::memset(&table, 0, sizeof(table));
 
-  CalcDDtablePBN(table_deal, &table);
+  // The non-N entry point delegates with maxThreads = 0, which selects
+  // hardware concurrency; call the N variant so one input uses one worker.
+  CalcDDtablePBNN(table_deal, &table, 1);
 
   return 0;
 }

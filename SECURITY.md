@@ -9,13 +9,24 @@ or a hand a user typed in themselves.
 
 It does, however, carry **process-local solver resources** that outlive an
 individual call: a transposition table and per-thread working memory managed
-through `SetResources()` and `FreeMemory()`, a thread budget set by
-`SetMaxThreads()`, and a worker pool held in a function-local static that
-persists for the lifetime of the process. Calls are therefore not isolated
-from one another. In practice this means two things for a threat model:
-corruption caused by one call can be observed by a later one, and the memory
-and thread budgets are process-wide, so one component's `SetResources()` choice
-applies to every other user of the library in that process.
+through the legacy `SetResources()` and `FreeMemory()`, and a worker pool held
+in a function-local static that persists for the lifetime of the process.
+Calls are therefore not isolated from one another, so corruption caused by one
+call can be observed by a later one.
+
+Thread counts work differently from memory, and the distinction matters:
+
+- The legacy **memory** settings are process-wide. One component's
+  `SetResources()` choice applies to every other user of the library in the
+  same process.
+- The **worker pool** is shared process-wide, but how many of its workers a
+  given call uses is decided **per call**, by the `maxThreads` argument of the
+  `*N` and `*X` batch entry points. A value of 0 selects hardware concurrency.
+- `SetMaxThreads()` sets nothing. It is a deprecated alias of
+  `InitializeStaticMemory()` and its argument is ignored; internal batch
+  threading was removed. Do not treat it as a resource limit. In the modern
+  C++ API the embedding application controls concurrency, typically with one
+  `SolverContext` per worker thread.
 
 This matters when judging the severity of a memory-safety bug here. A defect
 reachable only from data the caller already controls, in a library running in
@@ -51,8 +62,15 @@ is uneven across entry points:
 - `CalcDDtable()`, `CalcDDtablePBN()`, `CalcAllTables*()` and the C++
   `calc_dd_table()` overloads validate the deal (`table_deal_checks()`) with
   the same three rules `SolveBoard()` enforces: rank bits in range, no
-  duplicate cards, equal card counts per hand. The batch entry points also
-  range-check `no_of_tables` against the fixed capacity of their arrays.
+  duplicate cards, equal card counts per hand.
+- `CalcAllTablesN()` and `CalcAllTablesPBNN()` additionally range-check
+  `no_of_tables` against the fixed capacity of their arrays. **`CalcAllTablesX()`
+  and `CalcAllTablesPBNX()` do not**: they exist precisely to accept an
+  arbitrary deal count, allocate for it, and guard only against integer
+  overflow. Their count is bounded by the caller, not by the library, and the
+  array must actually hold that many deals — so a caller exposing these two to
+  untrusted input must bound the count itself, both against a hostile value
+  and against memory exhaustion.
 - `convert_from_pbn()` silently ignores characters it does not recognise
   rather than rejecting the string, so a PBN deal with an invalid rank parses
   one card short. The resulting deal is now rejected downstream, but the error
@@ -76,14 +94,20 @@ whose consumers need the information to judge their own exposure.
 The library was not designed for this. If you must:
 
 1. **Validate at your boundary.** Reject deals that are not 13 cards per hand
-   and tables whose entries fall outside 0-13, before calling DDS.
+   and tables whose entries fall outside 0-13, before calling DDS. If you use
+   `CalcAllTablesX()` or `CalcAllTablesPBNX()`, bound the deal count yourself:
+   those two accept an arbitrary count by design and the library will not cap
+   it for you.
 2. **Check return codes.** Every entry point that validates returns a specific
    `RETURN_*` value rather than throwing; a caller that ignores it will treat
    an unset result structure as a real answer.
 3. **Sandbox it.** Run the solver in a separate process with memory and CPU
    limits. DDS allocates a large transposition table and its search is
    recursive, so resource exhaustion is a denial-of-service consideration
-   independent of any memory-safety bug.
+   independent of any memory-safety bug. Worker counts are chosen per call by
+   the `maxThreads` argument of the `*N` and `*X` entry points, where 0 means
+   hardware concurrency; pass an explicit cap rather than relying on
+   `SetMaxThreads()`, which is deprecated and ignores its argument.
 4. **Consider the WebAssembly build**, whose sandbox contains memory errors by
    construction.
 5. Note that `DumpInput()` writes a `dump.txt` file into the process working
@@ -93,8 +117,9 @@ The library was not designed for this. If you must:
 ## Testing and tooling
 
 The project runs AddressSanitizer, ThreadSanitizer and UndefinedBehaviorSanitizer
-in CI on Linux and macOS, and carries libFuzzer harnesses for the four
-input-handling surfaces:
+in CI on Linux and macOS, and carries libFuzzer harnesses for five
+input-handling surfaces — four single-deal entry points plus the batch table
+API:
 
 ```
 bazel test --config=asan //library/...
