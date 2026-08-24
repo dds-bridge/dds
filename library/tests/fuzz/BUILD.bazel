@@ -52,3 +52,9 @@ dds_fuzz_harness(
     src = "calc_dd_table_pbn_fuzz.cpp",
     corpus_dir = "corpus/calc_dd_table_pbn",
 )
+
+dds_fuzz_harness(
+    name = "calc_all_tables",
+    src = "calc_all_tables_fuzz.cpp",
+    corpus_dir = "corpus/calc_all_tables",
+)

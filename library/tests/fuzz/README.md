@@ -9,6 +9,7 @@ file-supplied data:
 | `calc_dd_table_pbn` | `CalcDDtablePBN()` | The full PBN-to-solver path: parse, then calculate a DD table. |
 | `solve_board` | `SolveBoard()` | The main solver, including its input validation layer. |
 | `par` | `Par()`, `SidesPar()`, `SidesParBin()`, `DealerPar()`, `DealerParBin()` | Derives contract text from a caller-supplied table into fixed-size buffers. |
+| `calc_all_tables` | `CalcAllTablesN()`, `CalcAllTablesPBNN()`, `CalcAllTablesX()` | The batch entry points, and in particular their handling of a caller-supplied deal *count*. |
 
 ## Two ways to run each harness
 
@@ -49,6 +50,26 @@ bazel run --config=fuzz --config=asan //library/tests/fuzz:solve_board_fuzz -- \
 > `bazel info --config=fuzz bazel-bin` can therefore point at a binary left
 > behind by a *different* sanitizer config, which silently reproduces (or fails
 > to reproduce) the wrong thing.
+
+### Why the batch harness exists
+
+The four single-deal harnesses drive one deal at a time, so none of them
+exercised how the batch entry points handle `no_of_tables`. That is exactly
+where `CalcAllTablesPBNN()` copied a caller-supplied count of records into a
+fixed-size local before validating it — a stack-buffer-overflow *write* that
+was found in code review rather than by fuzzing. `calc_all_tables_fuzz` covers
+that surface, and removing either count guard reproduces a crash under it.
+
+Two details in that harness are load-bearing:
+
+- Slots the input does not perturb are pre-filled with a **valid** deal.
+  `CalcAllTablesPBNN()` stops at the first slot `convert_from_pbn()` rejects,
+  so with zeroed slots the loop returns `RETURN_PBN_FAULT` immediately and
+  never reaches the boundary. The first version of this harness made that
+  mistake and did not catch the bug it was written for.
+- The fill deal holds **one card per hand**, not a full 52. This harness
+  targets count and batch handling, not search depth; a full deal in every
+  slot drops throughput from ~75000 executions in four minutes to ~1700.
 
 ## Harness contract
 
