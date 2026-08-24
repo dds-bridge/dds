@@ -43,6 +43,13 @@ bazel run --config=fuzz --config=asan //library/tests/fuzz:solve_board_fuzz -- \
   library/tests/fuzz/corpus/solve_board -runs=10000000
 ```
 
+> **Use `bazel run`, not `bazel-bin/...` directly.** `--config=fuzz`, `asan`,
+> `ubsan` and `tsan` all build with `--compilation_mode=dbg`, so they share the
+> `darwin_arm64-dbg` / `k8-dbg` output directory name. A path taken from
+> `bazel info --config=fuzz bazel-bin` can therefore point at a binary left
+> behind by a *different* sanitizer config, which silently reproduces (or fails
+> to reproduce) the wrong thing.
+
 ## Harness contract
 
 Each harness defines `LLVMFuzzerTestOneInput()` and `LLVMFuzzerInitialize()`.
@@ -69,4 +76,5 @@ harness bug as a library bug.
    `findings/README.md` so the corpus tests stay green.
 4. Once fixed, move it into the matching `corpus/` directory.
 
-`findings/` currently holds two open defects — see `findings/README.md`.
+`findings/` records what the harnesses have found, fixed and open — see
+`findings/README.md`. There are currently no open findings.

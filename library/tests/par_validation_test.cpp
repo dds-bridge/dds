@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <cstring>
+#include <string>
 #include <dds/dds.h>
 
 namespace {
@@ -224,6 +225,84 @@ TEST(ParValidation, DealerParRejectsOutOfRangeVulnerability)
     std::memset(&resp, 0, sizeof(resp));
     EXPECT_EQ(DealerPar(&tab, &resp, 0, vul), RETURN_UNKNOWN_FAULT)
       << "vulnerable = " << vul;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// DealerPar() propagates `dealer` into the par tables via pno_list[], where
+// sacrifice_as_text() used to subscript with static_cast<unsigned>(pno) --
+// turning a negative index into a multi-gigabyte offset. Found by the par
+// fuzz harness within 50000 runs, after the `vulnerable` fix above had
+// guarded one parameter of the pair and missed the other.
+// ---------------------------------------------------------------------------
+
+TEST(ParValidation, DealerParRejectsOutOfRangeDealer)
+{
+  DdTableResults const tab = legal_table();
+
+  for (int dealer : {-1, 4, 99, -2147483647})
+  {
+    ParResultsDealer resp;
+    std::memset(&resp, 0, sizeof(resp));
+    EXPECT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_UNKNOWN_FAULT)
+      << "dealer = " << dealer;
+  }
+}
+
+TEST(ParValidation, DealerParBinRejectsOutOfRangeDealer)
+{
+  DdTableResults const tab = legal_table();
+
+  for (int dealer : {-1, 4})
+  {
+    ParResultsMaster resp;
+    std::memset(&resp, 0, sizeof(resp));
+    EXPECT_EQ(DealerParBin(&tab, &resp, dealer, 0), RETURN_UNKNOWN_FAULT)
+      << "dealer = " << dealer;
+  }
+}
+
+TEST(ParValidation, AllLegalDealersAccepted)
+{
+  DdTableResults const tab = legal_table();
+
+  for (int dealer = 0; dealer <= 3; dealer++)
+  {
+    ParResultsDealer resp;
+    std::memset(&resp, 0, sizeof(resp));
+    EXPECT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_NO_FAULT)
+      << "dealer = " << dealer;
+  }
+}
+
+TEST(ParValidation, SacrificeContractTextIsWellFormed)
+{
+  // A table where sacrificing is right, so the text path that used to index
+  // NUMBER_TO_PLAYER out of bounds actually runs. No "?" placeholder should
+  // appear: that would mean an index escaped DealerPar()'s range checks.
+  DdTableResults tab;
+  std::memset(&tab, 0, sizeof(tab));
+  for (int d = 0; d < DDS_STRAINS; d++)
+  {
+    tab.res_table[d][0] = 12;
+    tab.res_table[d][1] = 1;
+    tab.res_table[d][2] = 12;
+    tab.res_table[d][3] = 1;
+  }
+
+  for (int dealer = 0; dealer <= 3; dealer++)
+  {
+    ParResultsDealer resp;
+    std::memset(&resp, 0, sizeof(resp));
+    ASSERT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_NO_FAULT);
+
+    for (int k = 0; k < resp.number; k++)
+    {
+      std::string const contract(resp.contracts[k]);
+      EXPECT_EQ(contract.find('?'), std::string::npos)
+        << "dealer " << dealer << " contract " << k << ": " << contract;
+      EXPECT_LT(contract.size(), sizeof(resp.contracts[k]));
+    }
   }
 }
 

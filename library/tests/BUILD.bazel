@@ -19,6 +19,7 @@ filegroup(
             "dds_c_api_test.cpp",  # Uses GoogleTest, compiled separately
             "pbn_test.cpp",  # Uses GoogleTest, compiled separately
             "par_validation_test.cpp",  # Uses GoogleTest, compiled separately
+            "deal_input_validation_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -70,6 +71,21 @@ cc_test(
 cc_test(
     name = "calc_par_test",
     srcs = ["calc_par_test.cpp"],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Regression tests for deal validation on the CalcDDtable* paths and for the
+# safety of DumpInput(); see deal_input_validation_test.cpp.
+cc_test(
+    name = "deal_input_validation_test",
+    srcs = ["deal_input_validation_test.cpp"],
     size = "small",
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,

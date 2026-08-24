@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <pbn.hpp>
+#include <table_deal_validate.hpp>
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
 #include <solver_if.hpp>
@@ -191,6 +192,9 @@ int STDCALL CalcDDtableN(
   DdTableResults * tablep,
   int maxThreads)
 {
+  if (int const check = table_deal_checks(tableDeal); check != RETURN_NO_FAULT)
+    return check;
+
   Deal dl;
   Boards bo;
   SolvedBoards solved;
@@ -280,6 +284,13 @@ int STDCALL CalcAllTablesN(
 
   if (count * dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
     return RETURN_TOO_MANY_TABLES;
+
+  for (int m = 0; m < dealsp->no_of_tables; m++)
+  {
+    int const check = table_deal_checks(dealsp->deals[m]);
+    if (check != RETURN_NO_FAULT)
+      return check;
+  }
 
   int ind = 0;
   int lastIndex = 0;
@@ -462,6 +473,15 @@ int STDCALL CalcAllTablesX(
     const bool want_par = (mode > -1) && (mode < 4) && (included == DDS_STRAINS);
     if (want_par && par == nullptr)
       return RETURN_UNKNOWN_FAULT;
+
+    // This path builds its board list directly rather than going through
+    // CalcDDtableN, so it needs the same deal validation.
+    for (int m = 0; m < numDeals; m++)
+    {
+      int const check = table_deal_checks(deals[m]);
+      if (check != RETURN_NO_FAULT)
+        return check;
+    }
 
     // Expand every deal×included-strain into one board list and solve in a
     // single parallel_all_boards_n job (heap-backed). This is the ddss-style

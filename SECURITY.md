@@ -35,27 +35,29 @@ is uneven across entry points:
   code. See `board_range_checks()` and `board_value_checks()` in
   `library/src/solver_if.cpp`.
 - The par entry points validate the double dummy table
-  (`par_table_checks()`, added after an out-of-range table was found to
-  overflow a fixed character buffer) but not every scalar parameter.
-- `CalcDDtable()` and `CalcDDtablePBN()` do **not** check that the four hands
-  hold equal numbers of cards, so a malformed deal can reach the search.
+  (`par_table_checks()`) and their `dealer` and `vulnerable` parameters. Both
+  checks were added after fuzzing found an out-of-range table overflowing a
+  fixed character buffer and a negative `dealer` indexing a string table.
+- `CalcDDtable()`, `CalcDDtablePBN()` and `CalcAllTables*()` validate the deal
+  (`table_deal_checks()`) with the same three rules `SolveBoard()` enforces:
+  rank bits in range, no duplicate cards, equal card counts per hand.
 - `convert_from_pbn()` silently ignores characters it does not recognise
-  rather than rejecting the string.
+  rather than rejecting the string, so a PBN deal with an invalid rank parses
+  one card short. The resulting deal is now rejected downstream, but the error
+  code says `RETURN_CARD_COUNT` rather than `RETURN_PBN_FAULT`.
 
 Callers that cannot guarantee well-formed input should validate at their own
 boundary rather than rely on the library to do it.
 
 ## Known unfixed issues
 
-Open memory-safety defects found by the fuzz harnesses are tracked, with
-reproducers and analysis, in
-[`library/tests/fuzz/findings/README.md`](library/tests/fuzz/findings/README.md).
+There are currently **no known unfixed memory-safety defects**.
 
-They are documented openly because DDS is a library whose consumers need the
-information to judge their own exposure, and because all of them are
-out-of-bounds *reads* reachable only through the input paths described above —
-not remote code execution in any supported deployment. If that assessment is
-wrong for your deployment, please tell us.
+Findings are tracked, with reproducers and analysis, in
+[`library/tests/fuzz/findings/README.md`](library/tests/fuzz/findings/README.md),
+which also records those already fixed and the reproducers kept as regression
+seeds. Open findings are documented there openly, because DDS is a library
+whose consumers need the information to judge their own exposure.
 
 ## If you expose DDS to untrusted input
 
@@ -63,8 +65,9 @@ The library was not designed for this. If you must:
 
 1. **Validate at your boundary.** Reject deals that are not 13 cards per hand
    and tables whose entries fall outside 0-13, before calling DDS.
-2. **Prefer `SolveBoard()`** over the `CalcDDtable*` entry points where you
-   have the choice: its validation is the most complete.
+2. **Check return codes.** Every entry point that validates returns a specific
+   `RETURN_*` value rather than throwing; a caller that ignores it will treat
+   an unset result structure as a real answer.
 3. **Sandbox it.** Run the solver in a separate process with memory and CPU
    limits. DDS allocates a large transposition table and its search is
    recursive, so resource exhaustion is a denial-of-service consideration

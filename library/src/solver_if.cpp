@@ -1141,6 +1141,17 @@ auto board_value_checks(
 
   for (int k = 0; k < hand_rel_first; k++)
   {
+    /* board_range_checks() only validates currentTrickSuit[k] when the
+       matching rank is non-zero, but hand_rel_first is derived from the card
+       count rather than from the trick entries, so this loop can reach an
+       entry whose suit was never checked and index remainCards out of
+       bounds. Validate it here, where it is actually used as a subscript. */
+    if (dl.currentTrickSuit[k] < 0 || dl.currentTrickSuit[k] >= DDS_SUITS)
+    {
+      DumpInput(RETURN_SUIT_OR_RANK, dl, target, solutions, mode);
+      return RETURN_SUIT_OR_RANK;
+    }
+
     unsigned short int aggrRemain = 0;
     for (int h = 0; h < DDS_HANDS; h++)
       aggrRemain |= (dl.remainCards[h][dl.currentTrickSuit[k]] >> 2);

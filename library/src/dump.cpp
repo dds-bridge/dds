@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "dump.hpp"
 #include <solver_context/solver_context.hpp>
@@ -267,6 +268,38 @@ std::string TopMove(
 }
 
 
+namespace {
+
+/* DumpInput() renders values that board_range_checks() is in the process of
+   rejecting, so they must never be used as unchecked table subscripts. Each
+   helper falls back to the raw integer when the value is out of range, which
+   is also more useful in a diagnostic than a wrong character would be. */
+
+auto suit_text(const int suit) -> std::string
+{
+  if (suit < 0 || suit >= DDS_STRAINS)
+    return "?(" + std::to_string(suit) + ")";
+  return std::string(1, static_cast<char>(card_suit[suit]));
+}
+
+auto hand_text(const int hand) -> std::string
+{
+  if (hand < 0 || hand >= DDS_HANDS)
+    return "?(" + std::to_string(hand) + ")";
+  return std::string(1, static_cast<char>(card_hand[hand]));
+}
+
+auto rank_text(const int rank) -> std::string
+{
+  constexpr int card_rank_size = 16;
+  if (rank < 0 || rank >= card_rank_size)
+    return "?(" + std::to_string(rank) + ")";
+  return std::string(1, static_cast<char>(card_rank[rank]));
+}
+
+}  // namespace
+
+
 int DumpInput(
   const int errCode, 
   const Deal& dl, 
@@ -285,8 +318,8 @@ int DumpInput(
   if (dl.trump == DDS_NOTRUMP)
     fout << "N\n";
   else
-    fout << card_suit[dl.trump] << "\n";
-  fout << "first=" << card_hand[dl.first] << "\n";
+    fout << suit_text(dl.trump) << "\n";
+  fout << "first=" << hand_text(dl.first) << "\n";
 
   unsigned short ranks[4][4];
 
@@ -294,8 +327,8 @@ int DumpInput(
     if (dl.currentTrickRank[k] != 0)
     {
       fout << "index=" << k << 
-        " currentTrickSuit=" << card_suit[dl.currentTrickSuit[k]] <<
-        " currentTrickRank= " << card_rank[dl.currentTrickRank[k]] << "\n";
+        " currentTrickSuit=" << suit_text(dl.currentTrickSuit[k]) <<
+        " currentTrickRank= " << rank_text(dl.currentTrickRank[k]) << "\n";
     }
 
   for (int h = 0; h < DDS_HANDS; h++)

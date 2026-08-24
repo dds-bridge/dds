@@ -1,142 +1,109 @@
-# Open findings
+# Findings
 
-Reproducers for defects the harnesses have found that are **not yet fixed**.
-They live here rather than in `corpus/` so the corpus-replay tests stay green;
-a fuzzing campaign will rediscover them immediately, which is expected.
+Reproducers for defects the harnesses have found that are **not yet fixed**
+live here rather than in `corpus/`, so the corpus-replay tests stay green. A
+fuzzing campaign will rediscover them immediately, which is expected.
 
-Move a file into the matching `corpus/` directory once its defect is fixed, so
-it becomes a permanent regression seed.
+When a defect is fixed, move its reproducer into the matching `corpus/`
+directory so it becomes a permanent regression seed, and record it below.
 
-## 01 — unbalanced deal reaches the search (CalcDDtable path)
+## Open findings
 
-**Reproduce**
+**None.**
 
-```
-bazel build --config=asan //library/tests/fuzz:calc_dd_table_pbn_fuzz_corpus_test
-./bazel-bin/library/tests/fuzz/calc_dd_table_pbn_fuzz_corpus_test \
-  library/tests/fuzz/findings/01_unbalanced_deal_51_cards.txt
-```
+## Open hardening items
 
-```
-AddressSanitizer: global-buffer-overflow
-READ of size 2 ... in QuickTricksPartnerHandNT / weight_alloc_trump0
-0x... is located 14248 bytes after global variable
-  '(anonymous namespace)::rel_rank_storage'
-  defined in 'library/src/lookup_tables/lookup_tables.cpp' of size 122880
-```
+These are not memory-safety defects, but they are worth knowing about.
 
-**Cause.** `CalcDDtable()` / `CalcDDtablePBN()` do not validate that the four
-hands hold equal numbers of cards. `SolveBoard()` does — `board_value_checks()`
-in `solver_if.cpp` returns `RETURN_CARD_COUNT` for exactly this — so the same
-malformed deal is rejected safely on that path and only the CalcDDtable path
-reaches the search, where the relative-rank index runs off the end of
-`rel_rank_storage`. It is an out-of-bounds *read*, not a write.
+- `convert_from_pbn()` silently ignores any character that is not a card, `.`,
+  ` ` or a compass letter (`pbn.cpp:113-116`), so a PBN string with an invalid
+  rank parses "successfully" one card short rather than being refused. Since
+  the `CalcDDtable*` paths now reject the resulting unbalanced deal, this is a
+  diagnostics problem (`RETURN_CARD_COUNT` where `RETURN_PBN_FAULT` would be
+  clearer) rather than a safety one. Tightening it needs care: PBN text from
+  files often carries trailing newlines or `\r`, which the current loop
+  tolerates, so a strict version needs an explicit whitespace allowance.
 
-**Two ways in, both from an ordinary PBN file:**
+## Fixed
 
-- `01_unbalanced_deal_51_cards.txt` contains **only legal PBN characters** and
-  is simply one card short (north's spades are `T8`, not `T98`) — the shape a
-  hand-edited or truncated PBN file naturally takes.
-- `01_unbalanced_deal_bad_rank.txt` is the same deal with a card replaced by
-  `Z`. `convert_from_pbn()` silently ignores any character that is not a card,
-  `.`, ` ` or a compass letter (`pbn.cpp:113-116`), so the invalid rank is
-  skipped and the deal is short by one card while the parser still returns
-  success.
+### 01 — unbalanced deal reached the search (CalcDDtable path)
 
-**Fix sketch.** Two independent changes, either of which closes the crash:
+`CalcDDtable()` and `CalcDDtablePBN()` did not check that the four hands held
+equal numbers of cards, so a 51-card deal reached the search and read 14248
+bytes past `rel_rank_storage` (`lookup_tables.cpp`, 122880 bytes) in
+`weight_alloc_trump0()` / `QuickTricksPartnerHandNT()`. `SolveBoard()` rejected
+the same deal via `board_value_checks()`; only the CalcDDtable path was
+exposed. Reachable from an ordinary PBN file that is short of a card — the
+reproducer contains **only legal PBN characters**.
 
-1. Validate card counts in `CalcDDtable()`, mirroring `board_value_checks()`.
-   This is the load-bearing fix, since case 1 uses only legal characters.
-2. Make `convert_from_pbn()` reject unrecognised characters instead of
-   skipping them. Do this carefully: PBN text from files often carries
-   trailing newlines or `\r`, which the current loop tolerates, so tightening
-   it needs an explicit whitespace allowance to avoid rejecting valid input.
+Fixed by `table_deal_checks()` (`library/src/table_deal_validate.hpp`), applied
+in `CalcDDtableN()`, `CalcAllTablesN()` and `CalcAllTablesX()`. It enforces the
+same three rules `SolveBoard()` already did, so nothing is rejected that the
+solver would have accepted.
 
-## 02 — `DealerPar()` does not validate `dealer`
+Seeds: `corpus/calc_dd_table_pbn/unbalanced_51_cards.txt`,
+`corpus/calc_dd_table_pbn/bad_rank.txt`.
+Tests: `library/tests/deal_input_validation_test.cpp` (`CalcTableValidation`).
 
-**Reproduce**
+### 02 — `DealerPar()` did not validate `dealer`
 
-```
-bazel build --config=asan //library/tests/fuzz:par_fuzz_corpus_test
-mkdir -p /tmp/f && cp library/tests/fuzz/findings/02_dealer_par_negative_dealer.bin /tmp/f/
-./bazel-bin/library/tests/fuzz/par_fuzz_corpus_test /tmp/f
-```
+A negative `dealer` propagated into `pno_list[]` and reached
+`sacrifice_as_text()`, where `NUMBER_TO_PLAYER[static_cast<unsigned>(pno)]`
+turned `-1` into 4294967295 and indexed a `std::string` array far out of
+bounds. The crashing input used a **legal** `res_table`; only `dealer` was out
+of range.
 
-```
-AddressSanitizer: BUS on unknown address (READ)
-    #5 sacrifice_as_text(int, int, int)
-    #6 sacrifices_as_text(...)
-    #7 DealerPar
-```
+Same class as the `vulnerable` bug fixed by hand in `2abb260e`, which guarded
+one parameter of the pair and missed the other. The fuzzer found it within
+50000 runs.
 
-**Cause.** `DealerPar()` validates its table and (since `2abb260e`) its
-`vulnerable` argument, but not `dealer`. A negative `dealer` propagates into
-`pno_list[]` and reaches `dealer_par.cpp:648`:
+Fixed by range-checking `dealer` in `DealerPar()`, and by replacing the
+`static_cast<unsigned>` subscripts with the guarded `contract_text()` and
+`player_text()` helpers — the cast is what turned a detectable bug into a wild
+read.
 
-```cpp
-return NUMBER_TO_CONTRACT[static_cast<unsigned>(no)] + "-" +
-  NUMBER_TO_PLAYER[static_cast<unsigned>(pno)] + "-" + ...
-```
+Seed: `corpus/par/regression_negative_dealer.bin`.
+Tests: `library/tests/par_validation_test.cpp` (`ParValidation`).
 
-The `static_cast<unsigned>` turns `pno == -1` into 4294967295, indexing far
-outside the `std::string` array and reading a garbage string object. The
-crashing input uses a **legal** `res_table`; only `dealer` is out of range.
+### 03 — `DumpInput()` read out of bounds while reporting invalid input
 
-**Fix sketch.** Range-check `dealer` to 0-3 in `DealerPar()` alongside the
-existing `vulnerable` check — the header already documents 0 = North .. 3 =
-West. The `static_cast<unsigned>` in `sacrifice_as_text()` is worth removing
-too: it converts a bounds bug into a wild read rather than a negative index
-that ASan or UBSan would flag more clearly.
+`board_range_checks()` correctly detected an out-of-range deal, then called
+`DumpInput()` to log it — and `DumpInput()` indexed `card_suit[5]`,
+`card_hand[4]` and `card_rank[16]` with the very values it was reporting as
+invalid (`dump.cpp:288-298`). Present in release builds, since `DumpInput()` is
+compiled in unless `DDS_NO_DUMP_ON_ERROR` is defined and the build does not
+define it.
 
-**Note.** This is the same class as the `vulnerable` bug fixed by hand in
-`2abb260e`; that fix guarded one parameter of the pair and missed the other.
-The fuzzer found it within 50000 runs.
+Fixed by the `suit_text()` / `hand_text()` / `rank_text()` helpers in
+`dump.cpp`, which fall back to printing the raw integer when the value is out
+of range — more useful in a diagnostic than a wrong character, and safe by
+construction.
 
-## 03 — `DumpInput()` reads out of bounds while reporting invalid input
+Still true, and unchanged here: `DumpInput()` writes `dump.txt` into the
+process working directory whenever input is rejected, which is surprising for a
+library. Define `DDS_NO_DUMP_ON_ERROR` to compile it out.
 
-**Reproduce**
+Seed: `corpus/solve_board/regression_out_of_range_deal.bin`.
+Tests: `library/tests/deal_input_validation_test.cpp` (`DumpInputSafety`).
 
-```
-bazel build --config=asan //library/tests/fuzz:solve_board_fuzz_corpus_test
-mkdir -p /tmp/f && cp library/tests/fuzz/findings/03_dump_input_out_of_range_deal.bin /tmp/f/
-./bazel-bin/library/tests/fuzz/solve_board_fuzz_corpus_test /tmp/f
-```
+### 04 — `board_value_checks()` indexed with an unvalidated trick suit
 
-```
-AddressSanitizer: global-buffer-overflow
-READ of size 1
-    #0 DumpInput(int, Deal const&, int, int, int)
-    #1 board_range_checks(Deal const&, int, int, int)
-    #2 solve_board_internal(...)
-    #4 SolveBoard
-```
+Found while fuzzing the fixes for 01-03. `board_range_checks()` validates
+`currentTrickSuit[k]` only when the matching `currentTrickRank[k]` is
+non-zero, but `hand_rel_first` is derived from the total card count
+(`hand_rel_first = (48 - ini_depth) % 4`, `solver_if.cpp:151`) rather than
+from the trick entries. A deal with five cards and all trick ranks zero
+therefore gives `hand_rel_first == 3`, and the loop in
+`board_value_checks()` evaluates
+`dl.remainCards[h][dl.currentTrickSuit[k]]` with a suit that was never
+checked — a stack read far out of bounds. As with 03, the crash is inside the
+validation logic itself.
 
-**Cause.** `board_range_checks()` correctly *detects* an out-of-range deal, then
-calls `DumpInput()` to log it — and `DumpInput()` indexes the character tables
-with the very values it is reporting as invalid (`dump.cpp:288-298`):
+Fixed by range-checking `currentTrickSuit[k]` inside that loop, where it is
+actually used as a subscript, rather than in `board_range_checks()` — this
+rejects only inputs that would genuinely have been read out of bounds, and
+leaves callers that pass an uninitialised suit alongside a zero rank working
+as before whenever the value is never used.
 
-```cpp
-fout << card_suit[dl.trump] << "\n";              // card_suit[DDS_STRAINS] == [5]
-fout << "first=" << card_hand[dl.first] << "\n";  // card_hand[4]
-  ... card_suit[dl.currentTrickSuit[k]]
-  ... card_rank[dl.currentTrickRank[k]]           // card_rank[16]
-```
-
-The reproducer uses `currentTrickSuit = {7,7,7}` and `currentTrickRank =
-{99,99,99}`, so `card_rank[99]` reads well past a 16-byte array. `trump` and
-`first` are indexed the same way on the lines above.
-
-**Reach.** `DumpInput()` is compiled in unless `DDS_NO_DUMP_ON_ERROR` is
-defined, and the build does not define it — so this is present in release
-builds, on the error path of the main solver entry point. Every `SolveBoard()`
-rejection with an out-of-range `trump`, `first`, `currentTrickSuit` or
-`currentTrickRank` goes through it. It is an out-of-bounds *read*.
-
-Worth noting separately: `DumpInput()` also writes `dump.txt` into the process
-working directory whenever any input is rejected, which is surprising behaviour
-for a library and is a side effect a caller cannot disable at runtime.
-
-**Fix sketch.** Bounds-check each index in `DumpInput()` before using it as a
-table subscript, printing the raw integer when it is out of range — the value
-is being reported *because* it is invalid, so it must never be trusted as an
-index. Consider also making the `dump.txt` side effect opt-in.
+Seed: `corpus/solve_board/regression_unchecked_trick_suit.bin`.
+Tests: `library/tests/deal_input_validation_test.cpp` (`DumpInputSafety`).
