@@ -1,0 +1,45 @@
+/*
+   DDS, a bridge double dummy solver.
+
+   See LICENSE and README.
+*/
+
+/// @file calc_dd_table_pbn_fuzz.cpp
+/// @brief Fuzz harness for CalcDDtablePBN().
+///
+/// This is the path a PBN file takes into the solver: text parsing followed by
+/// a full double dummy table calculation. DdTableDealPBN::cards is a fixed
+/// char[80], so the harness copies at most 79 bytes and terminates the buffer
+/// itself; handing the library a non-terminated array would be a harness bug
+/// rather than a library one.
+
+#include <cstdint>
+#include <cstddef>
+#include <cstring>
+
+#include <api/dll.h>
+
+extern "C" auto LLVMFuzzerInitialize(int * /*argc*/, char *** /*argv*/) -> int
+{
+  SetMaxThreads(1);
+  return 0;
+}
+
+extern "C" auto LLVMFuzzerTestOneInput(const uint8_t * data, size_t size) -> int
+{
+  DdTableDealPBN table_deal;
+  std::memset(&table_deal, 0, sizeof(table_deal));
+
+  size_t const n = size < sizeof(table_deal.cards) - 1
+                     ? size
+                     : sizeof(table_deal.cards) - 1;
+  std::memcpy(table_deal.cards, data, n);
+  table_deal.cards[n] = '\0';
+
+  DdTableResults table;
+  std::memset(&table, 0, sizeof(table));
+
+  CalcDDtablePBN(table_deal, &table);
+
+  return 0;
+}

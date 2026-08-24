@@ -97,6 +97,7 @@ cc_library(
         "//:__pkg__",  # allow root package to wrap/export
         "//library/tests:__pkg__",
         "//library/tests/ab_search:__pkg__",
+        "//library/tests/fuzz:__pkg__",
         "//library/tests/heuristic_sorting:__pkg__",
         "//library/tests/moves:__pkg__",
         "//library/tests/quick_tricks:__pkg__",

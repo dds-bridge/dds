@@ -1,0 +1,54 @@
+# Fuzz harnesses for the DDS input-handling surfaces.
+#
+# Each harness defines LLVMFuzzerTestOneInput() and is exposed two ways:
+#
+#   *_fuzz_corpus_test  a cc_test that replays the checked-in seed corpus
+#                       through the harness. Builds with any toolchain and
+#                       runs under --config=asan/ubsan, so the corpus works
+#                       as a regression suite in ordinary CI.
+#
+#   *_fuzz              a libFuzzer binary for actual fuzzing campaigns.
+#                       Requires --config=fuzz (hermetic LLVM; Apple's
+#                       toolchain ships no libFuzzer) and is tagged manual so
+#                       //... stays buildable without it.
+#
+# See README.md for how to run a campaign and how to triage a finding.
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load(":fuzz.bzl", "dds_fuzz_harness")
+
+package(default_visibility = ["//visibility:private"])
+
+# Replay driver: supplies main() so a harness can run without libFuzzer.
+cc_library(
+    name = "fuzz_corpus_main",
+    srcs = ["fuzz_corpus_main.cpp"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+)
+
+dds_fuzz_harness(
+    name = "pbn",
+    src = "pbn_fuzz.cpp",
+    corpus_dir = "corpus/pbn",
+)
+
+dds_fuzz_harness(
+    name = "par",
+    src = "par_fuzz.cpp",
+    corpus_dir = "corpus/par",
+)
+
+dds_fuzz_harness(
+    name = "solve_board",
+    src = "solve_board_fuzz.cpp",
+    corpus_dir = "corpus/solve_board",
+)
+
+dds_fuzz_harness(
+    name = "calc_dd_table_pbn",
+    src = "calc_dd_table_pbn_fuzz.cpp",
+    corpus_dir = "corpus/calc_dd_table_pbn",
+)
