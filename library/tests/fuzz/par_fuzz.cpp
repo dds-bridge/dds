@@ -31,6 +31,8 @@ public:
   {
     if (left_ < n)
       return false;
+    if (n == 0)
+      return true;  // memcpy's source is declared nonnull; data_ may be null.
     std::memcpy(out, data_, n);
     data_ += n;
     left_ -= n;

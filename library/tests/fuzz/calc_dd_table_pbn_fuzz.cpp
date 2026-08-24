@@ -33,7 +33,11 @@ extern "C" auto LLVMFuzzerTestOneInput(const uint8_t * data, size_t size) -> int
   size_t const n = size < sizeof(table_deal.cards) - 1
                      ? size
                      : sizeof(table_deal.cards) - 1;
-  std::memcpy(table_deal.cards, data, n);
+  // libFuzzer may pass (nullptr, 0), and memcpy's source is declared nonnull,
+  // so an empty copy from a null pointer is undefined even though it moves
+  // nothing. UBSan on glibc reports it; guard rather than rely on the libc.
+  if (n > 0)
+    std::memcpy(table_deal.cards, data, n);
   table_deal.cards[n] = '\0';
 
   DdTableResults table;
