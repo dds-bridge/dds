@@ -18,6 +18,7 @@ filegroup(
             "loop_par_test.cpp",  # Uses GoogleTest, compiled separately
             "dds_c_api_test.cpp",  # Uses GoogleTest, compiled separately
             "pbn_test.cpp",  # Uses GoogleTest, compiled separately
+            "par_validation_test.cpp",  # Uses GoogleTest, compiled separately
         ],
     ),
 )
@@ -69,6 +70,21 @@ cc_test(
 cc_test(
     name = "calc_par_test",
     srcs = ["calc_par_test.cpp"],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src:dds",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Regression tests for double dummy table validation in the par API; see
+# par_validation_test.cpp for the overflow this guards against.
+cc_test(
+    name = "par_validation_test",
+    srcs = ["par_validation_test.cpp"],
     size = "small",
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,

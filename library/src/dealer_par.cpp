@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <api/dll.h>
+#include <par_validate.hpp>
 
 using namespace std;
 
@@ -185,6 +186,14 @@ int STDCALL DealerPar(
 {
   /* dealer 0: North 1: East 2: South 3: West */
   /* vulnerable 0: None 1: Both 2: NS 3: EW */
+
+  if (int const check = par_table_checks(tablep); check != RETURN_NO_FAULT)
+    return check;
+
+  /* vulnerable indexes VUL_LOOKUP below, so it must be range-checked and
+     not merely compared against, as it is in SidesParBin(). */
+  if (vulnerable < 0 || vulnerable > 3)
+    return RETURN_UNKNOWN_FAULT;
 
   int const * vul_by_side = VUL_LOOKUP[vulnerable];
   data_type data;

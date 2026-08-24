@@ -76,6 +76,8 @@ public final class DdsStatus {
     public static final int RETURN_TOO_MANY_TABLES = -202;
     /** Chunk size is less than 1. */
     public static final int RETURN_CHUNK_SIZE = -301;
+    /** Double dummy table entry outside the range 0 to 13. */
+    public static final int RETURN_PAR_TABLE_FAULT = -401;
 
     /**
      * Symbolic name of a status code (e.g. {@code "RETURN_TRUMP_WRONG"}), or
@@ -111,6 +113,7 @@ public final class DdsStatus {
             case RETURN_NO_SUIT: return "RETURN_NO_SUIT";
             case RETURN_TOO_MANY_TABLES: return "RETURN_TOO_MANY_TABLES";
             case RETURN_CHUNK_SIZE: return "RETURN_CHUNK_SIZE";
+            case RETURN_PAR_TABLE_FAULT: return "RETURN_PAR_TABLE_FAULT";
             default: return "RETURN(" + code + ")";
         }
     }

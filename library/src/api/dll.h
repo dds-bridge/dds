@@ -152,6 +152,10 @@
 #define RETURN_CHUNK_SIZE -301
 #define TEXT_CHUNK_SIZE "Chunk size is less than 1"
 
+// Par(), SidesPar(), SidesParBin(), DealerPar(), DealerParBin()
+#define RETURN_PAR_TABLE_FAULT -401
+#define TEXT_PAR_TABLE_FAULT "Double dummy table entry outside the range 0 to 13"
+
 
 
 /**
