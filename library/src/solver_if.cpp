@@ -13,6 +13,7 @@
 #include "solver_if.hpp"
 #include <api/solve_board.hpp>
 #include <lookup_tables/lookup_tables.hpp>
+#include <memory>
 #include <solver_context/solver_context.hpp>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
@@ -728,9 +729,21 @@ auto solve_same_board(
 
   ctx.move_gen().reinit(trick, dl.first);
 
+  // ini_depth == cardCount - 4 (see solve_board). Bound the null-window
+  // search by remaining tricks so partial deals cannot report scores > 13
+  // leftovers from a full-hand upper bound.
+  const int card_count = ini_depth + 4;
+  const int remaining_tricks = (card_count % 4)
+    ? ((card_count - 4) >> 2) + 2
+    : ((card_count - 4) >> 2) + 1;
+
   int guess = hint;
+  if (guess < 0)
+    guess = 0;
+  if (guess > remaining_tricks)
+    guess = remaining_tricks;
   int lowerbound = 0;
-  int upperbound = 13;
+  int upperbound = remaining_tricks;
 
   do
   {

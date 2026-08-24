@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <functional>
 #include <thread>
 #include <vector>
 

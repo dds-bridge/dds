@@ -8,8 +8,11 @@
 */
 
 
+#include <cstddef>
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <string>
 #include <utility>
 #include <vector>
 

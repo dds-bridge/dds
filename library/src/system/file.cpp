@@ -8,6 +8,7 @@
 */
 
 #include "file.hpp"
+#include <fstream>
 
 dds::File::~File()
 {

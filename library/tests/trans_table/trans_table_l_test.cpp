@@ -1,5 +1,9 @@
+#include <algorithm>
+#include <cstdint>
+#include <cstdlib>
 #include <gtest/gtest.h>
 #include <cstring>
+#include <ios>
 
 // Include DDS types first
 #include <api/dll.h>

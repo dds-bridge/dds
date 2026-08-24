@@ -1,6 +1,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <future>
@@ -8,6 +9,7 @@
 #include <new>
 #include <stdexcept>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>

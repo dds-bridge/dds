@@ -11,12 +11,15 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 
 #include <api/dds_c_api.h>
 #include <api/dll.h>
+#include <vector>
 
 namespace dds_replay {
 

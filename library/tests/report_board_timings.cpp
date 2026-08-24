@@ -7,7 +7,11 @@
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
+#include <ios>
+#include <ostream>
 #include <sstream>
+#include <utility>
+#include <vector>
 
 namespace
 {

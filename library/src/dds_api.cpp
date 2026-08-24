@@ -7,6 +7,7 @@
 
 #include <api/dds_api.hpp>
 #include <api/calc_par.hpp>
+#include <string>
 
 // Creation
 DLLEXPORT DDS_SOLVER_CTX dds_create_solvercontext_default()

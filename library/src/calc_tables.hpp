@@ -54,3 +54,11 @@ auto detect_calc_duplicates(
   const Boards& bds,
   std::vector<int>& uniques,
   std::vector<int>& crossrefs) -> void;
+
+// Match SolveBoard's remaining-trick count from remainCards alone.
+auto remaining_tricks_from_holdings(
+  unsigned int const cards[DDS_HANDS][DDS_SUITS]) -> int;
+
+auto declarer_tricks_from_leader_score(
+  int remaining_tricks,
+  int leader_side_score) -> int;

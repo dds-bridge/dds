@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <ios>
 #include <regex>
 #include <sstream>
 #include <string>
