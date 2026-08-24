@@ -18,8 +18,11 @@
 
 #include <gtest/gtest.h>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <dds/dds.h>
+#include <dds/dds.hpp>
+#include <api/dds_c_api.h>
 
 namespace {
 
@@ -149,6 +152,128 @@ TEST(CalcTableValidation, CalcAllTablesRejectsUnbalancedDeal)
   int const filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
 
   EXPECT_EQ(CalcAllTables(&deals, -1, filter, &res, &par), RETURN_CARD_COUNT);
+}
+
+TEST(CalcTableValidation, CppOverloadRejectsUnbalancedDeal)
+{
+  // The C++ calc_dd_table() overloads build Boards directly rather than going
+  // through CalcDDtableN(), so they need the same guard.
+  DdTableDeal deal = one_suit_each();
+  deal.cards[0][0] &= ~0x4000u;
+
+  DdTableResults table;
+  std::memset(&table, 0, sizeof(table));
+  EXPECT_EQ(calc_dd_table(deal, &table), RETURN_CARD_COUNT);
+}
+
+TEST(CalcTableValidation, CppContextOverloadRejectsUnbalancedDeal)
+{
+  DdTableDeal deal = one_suit_each();
+  deal.cards[0][0] &= ~0x4000u;
+
+  DdTableResults table;
+  std::memset(&table, 0, sizeof(table));
+  SolverContext ctx;
+  EXPECT_EQ(calc_dd_table(ctx, deal, &table), RETURN_CARD_COUNT);
+}
+
+TEST(CalcTableValidation, CppPbnOverloadRejectsShortDeal)
+{
+  DdTableDealPBN const deal = pbn_deal(kShortOneCard);
+
+  DdTableResults table;
+  std::memset(&table, 0, sizeof(table));
+  EXPECT_EQ(calc_dd_table_pbn(deal, &table), RETURN_CARD_COUNT);
+}
+
+TEST(CalcTableValidation, CShimRejectsUnbalancedDeal)
+{
+  // dds_c_calc_dd_table delegates to the C++ overload guarded above.
+  DdTableDeal deal = one_suit_each();
+  deal.cards[0][0] &= ~0x4000u;
+
+  DdTableResults table;
+  std::memset(&table, 0, sizeof(table));
+
+  DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+  ASSERT_NE(ctx, nullptr);
+  EXPECT_EQ(dds_c_calc_dd_table(ctx, &deal, &table), RETURN_CARD_COUNT);
+  dds_c_destroy_solvercontext(ctx);
+}
+
+TEST(CalcTableValidation, CShimPbnRejectsShortDeal)
+{
+  DdTableDealPBN const deal = pbn_deal(kShortOneCard);
+
+  DdTableResults table;
+  std::memset(&table, 0, sizeof(table));
+
+  DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+  ASSERT_NE(ctx, nullptr);
+  EXPECT_EQ(dds_c_calc_dd_table_pbn(ctx, &deal, &table), RETURN_CARD_COUNT);
+  dds_c_destroy_solvercontext(ctx);
+}
+
+// ---------------------------------------------------------------------------
+// Table-count boundary. DdTableDeals/DdTableDealsPBN carry a fixed
+// MAXNOOFTABLES * DDS_STRAINS array, and no_of_tables was never checked
+// against it -- CalcAllTablesPBNN() copied that many records into a
+// fixed-size local before any validation ran.
+// ---------------------------------------------------------------------------
+
+TEST(CalcTableValidation, CalcAllTablesRejectsOversizedTableCount)
+{
+  DdTableDeals deals;
+  std::memset(&deals, 0, sizeof(deals));
+  deals.no_of_tables = MAXNOOFTABLES * DDS_STRAINS + 1;
+  for (int i = 0; i < MAXNOOFTABLES * DDS_STRAINS; i++)
+    deals.deals[i] = one_suit_each();
+
+  DdTablesRes res;
+  std::memset(&res, 0, sizeof(res));
+  AllParResults par;
+  std::memset(&par, 0, sizeof(par));
+  int const filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+
+  EXPECT_EQ(CalcAllTables(&deals, -1, filter, &res, &par),
+            RETURN_TOO_MANY_TABLES);
+}
+
+TEST(CalcTableValidation, CalcAllTablesRejectsNegativeTableCount)
+{
+  DdTableDeals deals;
+  std::memset(&deals, 0, sizeof(deals));
+  deals.no_of_tables = -1;
+
+  DdTablesRes res;
+  std::memset(&res, 0, sizeof(res));
+  AllParResults par;
+  std::memset(&par, 0, sizeof(par));
+  int const filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+
+  EXPECT_EQ(CalcAllTables(&deals, -1, filter, &res, &par),
+            RETURN_TOO_MANY_TABLES);
+}
+
+TEST(CalcTableValidation, CalcAllTablesPbnRejectsOversizedTableCount)
+{
+  // Before the guard this copied no_of_tables records into a fixed-size
+  // local DdTableDeals, overflowing it on the stack.
+  auto deals = std::make_unique<DdTableDealsPBN>();
+  std::memset(deals.get(), 0, sizeof(DdTableDealsPBN));
+  deals->no_of_tables = MAXNOOFTABLES * DDS_STRAINS + 64;
+  for (int i = 0; i < MAXNOOFTABLES * DDS_STRAINS; i++)
+    std::strncpy(deals->deals[i].cards, kLegalDeal,
+                 sizeof(deals->deals[i].cards) - 1);
+
+  auto res = std::make_unique<DdTablesRes>();
+  std::memset(res.get(), 0, sizeof(DdTablesRes));
+  auto par = std::make_unique<AllParResults>();
+  std::memset(par.get(), 0, sizeof(AllParResults));
+  int const filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+
+  EXPECT_EQ(CalcAllTablesPBN(deals.get(), -1, filter, res.get(), par.get()),
+            RETURN_TOO_MANY_TABLES);
 }
 
 // ---------------------------------------------------------------------------

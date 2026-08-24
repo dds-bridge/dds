@@ -9,6 +9,7 @@
 
 #include "calc_tables.hpp"
 #include <algorithm>
+#include <limits>
 #include <array>
 #include <numeric>
 #include <vector>
@@ -321,6 +322,17 @@ int STDCALL CalcAllTablesN(
      mode = 3: par calculation, vulnerability EW
          mode = -1: no par calculation */
 
+  // dealsp->deals is a fixed MAXNOOFTABLES * DDS_STRAINS array, and the
+  // capacity check below multiplies by count. Bound no_of_tables first, so
+  // that multiply cannot overflow signed int and wrap past the check, and so
+  // the per-deal loops cannot read past the array.
+  if (dealsp == nullptr)
+    return RETURN_UNKNOWN_FAULT;
+
+  if (dealsp->no_of_tables < 0 ||
+      dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
+    return RETURN_TOO_MANY_TABLES;
+
   Boards bo;
   SolvedBoards solved;
   int count = 0;
@@ -441,6 +453,16 @@ int STDCALL CalcAllTablesPBNN(
   AllParResults * presp,
   int maxThreads)
 {
+  // dls.deals and dealsp->deals both hold MAXNOOFTABLES * DDS_STRAINS
+  // entries. Bound the count before the conversion loop: unchecked, this
+  // wrote past the fixed-size local.
+  if (dealsp == nullptr)
+    return RETURN_UNKNOWN_FAULT;
+
+  if (dealsp->no_of_tables < 0 ||
+      dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
+    return RETURN_TOO_MANY_TABLES;
+
   DdTableDeals dls;
   for (int k = 0; k < dealsp->no_of_tables; k++)
     if (convert_from_pbn(dealsp->deals[k].cards, dls.deals[k].cards) != 1)
@@ -555,6 +577,11 @@ int STDCALL CalcAllTablesX(
     // Expand every deal×included-strain into one board list and solve in a
     // single parallel_all_boards_n job (heap-backed). This is the ddss-style
     // large-batch shape; legacy CalcAllTablesN remains capped at MAXNOOFTABLES.
+    // Uncapped by design (this is the large-batch path), but the product
+    // must not overflow signed int before it sizes the vectors below.
+    if (numDeals > std::numeric_limits<int>::max() / included)
+      return RETURN_TOO_MANY_TABLES;
+
     const int nboards = numDeals * included;
     std::vector<Deal> boards(static_cast<unsigned>(nboards));
     std::vector<std::array<int, DDS_HANDS>> scores(static_cast<unsigned>(nboards));

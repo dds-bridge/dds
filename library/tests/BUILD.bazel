@@ -92,6 +92,7 @@ cc_test(
     local_defines = DDS_LOCAL_DEFINES,
     deps = [
         "//library/src:dds",
+        "//library/src/api:dds_c_api",
         "@googletest//:gtest_main",
     ],
 )

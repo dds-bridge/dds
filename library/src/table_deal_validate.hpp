@@ -26,8 +26,16 @@
  *   - no card appears in more than one hand,
  *   - all four hands hold the same number of cards.
  *
- * Reachable through CalcDDtable(), CalcDDtablePBN() and CalcAllTables*(), so
- * in particular through any PBN file that is short of a card.
+ * Applied at every entry point that turns a DdTableDeal into boards: the C
+ * API's CalcDDtableN(), CalcAllTablesN() and CalcAllTablesX(), and the C++
+ * calc_dd_table(ctx, ...) overload that the context-free and PBN overloads
+ * (and the dds_c_* shims) delegate to. Reachable in particular through any
+ * PBN file that is short of a card.
+ *
+ * This checks one deal. It does not bound how *many* deals a batch entry
+ * point was given: CalcAllTablesN() and CalcAllTablesPBNN() must range-check
+ * no_of_tables against the fixed capacity of their arrays before they index
+ * or convert, which they do separately.
  *
  * @param table_deal Deal to validate.
  * @return RETURN_NO_FAULT when the deal is well formed, otherwise

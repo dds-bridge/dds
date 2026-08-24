@@ -2,10 +2,20 @@
 
 ## What DDS is, for threat-modelling purposes
 
-DDS is an **in-process library**, not a service. It opens no sockets, crosses no
-privilege boundary, and keeps no persistent state between calls. In the normal
-deployment the input is a bridge deal supplied by the calling application —
-usually that application's own data, or a hand a user typed in themselves.
+DDS is an **in-process library**, not a service. It opens no sockets and
+crosses no privilege boundary. In the normal deployment the input is a bridge
+deal supplied by the calling application — usually that application's own data,
+or a hand a user typed in themselves.
+
+It does, however, carry **process-local solver resources** that outlive an
+individual call: a transposition table and per-thread working memory managed
+through `SetResources()` and `FreeMemory()`, a thread budget set by
+`SetMaxThreads()`, and a worker pool held in a function-local static that
+persists for the lifetime of the process. Calls are therefore not isolated
+from one another. In practice this means two things for a threat model:
+corruption caused by one call can be observed by a later one, and the memory
+and thread budgets are process-wide, so one component's `SetResources()` choice
+applies to every other user of the library in that process.
 
 This matters when judging the severity of a memory-safety bug here. A defect
 reachable only from data the caller already controls, in a library running in
@@ -38,9 +48,11 @@ is uneven across entry points:
   (`par_table_checks()`) and their `dealer` and `vulnerable` parameters. Both
   checks were added after fuzzing found an out-of-range table overflowing a
   fixed character buffer and a negative `dealer` indexing a string table.
-- `CalcDDtable()`, `CalcDDtablePBN()` and `CalcAllTables*()` validate the deal
-  (`table_deal_checks()`) with the same three rules `SolveBoard()` enforces:
-  rank bits in range, no duplicate cards, equal card counts per hand.
+- `CalcDDtable()`, `CalcDDtablePBN()`, `CalcAllTables*()` and the C++
+  `calc_dd_table()` overloads validate the deal (`table_deal_checks()`) with
+  the same three rules `SolveBoard()` enforces: rank bits in range, no
+  duplicate cards, equal card counts per hand. The batch entry points also
+  range-check `no_of_tables` against the fixed capacity of their arrays.
 - `convert_from_pbn()` silently ignores characters it does not recognise
   rather than rejecting the string, so a PBN deal with an invalid rank parses
   one card short. The resulting deal is now rejected downstream, but the error

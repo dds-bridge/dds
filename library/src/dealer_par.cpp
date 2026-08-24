@@ -191,10 +191,10 @@ int STDCALL DealerPar(
     return check;
 
   /* Both parameters reach array subscripts: vulnerable indexes VUL_LOOKUP
-     below, and dealer propagates into the par tables via pno_list[]. Neither
-     can be merely compared against, as vulnerable is in SidesParBin(). */
-  if (vulnerable < 0 || vulnerable > 3)
-    return RETURN_UNKNOWN_FAULT;
+     below, and dealer propagates into the par tables via pno_list[]. */
+  if (int const check = par_vulnerable_checks(vulnerable);
+      check != RETURN_NO_FAULT)
+    return check;
 
   if (dealer < 0 || dealer > 3)
     return RETURN_UNKNOWN_FAULT;

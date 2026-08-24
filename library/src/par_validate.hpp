@@ -39,3 +39,25 @@ inline auto par_table_checks(DdTableResults const * tablep) -> int
 
   return RETURN_NO_FAULT;
 }
+
+
+/**
+ * @brief Validate the vulnerability argument shared by the par entry points.
+ *
+ * DealerPar() indexes VUL_LOOKUP with this value, so it must be range-checked
+ * there. SidesParBin() only compares against it, which is memory-safe but
+ * silently treats any out-of-range value as "none vulnerable" -- so Par() and
+ * SidesPar() would return RETURN_NO_FAULT with a result computed under the
+ * wrong vulnerability while DealerPar() rejected the same input. Both use this
+ * helper so the entry points agree.
+ *
+ * @param vulnerable 0 = None, 1 = Both, 2 = NS, 3 = EW.
+ * @return RETURN_NO_FAULT when in range, RETURN_UNKNOWN_FAULT otherwise.
+ */
+inline auto par_vulnerable_checks(int const vulnerable) -> int
+{
+  if (vulnerable < 0 || vulnerable > 3)
+    return RETURN_UNKNOWN_FAULT;
+
+  return RETURN_NO_FAULT;
+}

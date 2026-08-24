@@ -231,6 +231,10 @@ int STDCALL SidesParBin(
   if (int const check = par_table_checks(tablep); check != RETURN_NO_FAULT)
     return check;
 
+  if (int const check = par_vulnerable_checks(vulnerable);
+      check != RETURN_NO_FAULT)
+    return check;
+
   int denom_conv[5] = { 4, 0, 1, 2, 3 };
   /* Preallocate for efficiency. These hold result from last direction
   (N-S or E-W) examined. */
@@ -702,6 +706,10 @@ int STDCALL SidesParBin(
 {
 
   if (int const check = par_table_checks(tablep); check != RETURN_NO_FAULT)
+    return check;
+
+  if (int const check = par_vulnerable_checks(vulnerable);
+      check != RETURN_NO_FAULT)
     return check;
 
   int res, h, hbest[2], i, k, m, index;

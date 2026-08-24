@@ -1306,6 +1306,9 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 <tr>
 <td>-301</td><td>RETURN_CHUNK_SIZE</td><td>SolveAllChunks\*(), returned when the chunk size is < 1.</td>
 </tr>
+<tr>
+<td>-401</td><td>RETURN_PAR_TABLE_FAULT</td><td>Par(), SidesPar(), SidesParBin(), DealerPar(), DealerParBin(), returned when a double dummy table entry is outside the range 0 to 13.</td>
+</tr>
 </tbody>
 </table>
 

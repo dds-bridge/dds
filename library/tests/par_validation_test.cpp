@@ -307,6 +307,69 @@ TEST(ParValidation, SacrificeContractTextIsWellFormed)
 }
 
 // ---------------------------------------------------------------------------
+// SidesParBin() only compares against `vulnerable` rather than indexing with
+// it, so an out-of-range value was memory-safe but silently computed the par
+// result as "none vulnerable" -- and Par()/SidesPar() returned
+// RETURN_NO_FAULT while DealerPar() rejected the same input.
+// ---------------------------------------------------------------------------
+
+TEST(ParValidation, DirectEntryPointsRejectOutOfRangeVulnerability)
+{
+  DdTableResults const tab = legal_table();
+
+  for (int vul : {-1, 4, 99})
+  {
+    ParResults resp;
+    std::memset(&resp, 0, sizeof(resp));
+    EXPECT_EQ(Par(&tab, &resp, vul), RETURN_UNKNOWN_FAULT)
+      << "Par, vulnerable = " << vul;
+
+    ParResultsDealer sides[2];
+    std::memset(sides, 0, sizeof(sides));
+    EXPECT_EQ(SidesPar(&tab, sides, vul), RETURN_UNKNOWN_FAULT)
+      << "SidesPar, vulnerable = " << vul;
+
+    ParResultsMaster sides_bin[2];
+    std::memset(sides_bin, 0, sizeof(sides_bin));
+    EXPECT_EQ(SidesParBin(&tab, sides_bin, vul), RETURN_UNKNOWN_FAULT)
+      << "SidesParBin, vulnerable = " << vul;
+  }
+}
+
+TEST(ParValidation, VulnerabilityActuallyChangesTheParScore)
+{
+  // Guards against the check above being satisfied by a stub: the four legal
+  // vulnerabilities must not all produce identical output. A sacrifice table
+  // is used because that is where doubled undertricks make vulnerability
+  // change the score; a flat partscore table scores the same either way.
+  DdTableResults tab;
+  std::memset(&tab, 0, sizeof(tab));
+  for (int d = 0; d < DDS_STRAINS; d++)
+  {
+    tab.res_table[d][0] = 12;
+    tab.res_table[d][1] = 1;
+    tab.res_table[d][2] = 12;
+    tab.res_table[d][3] = 1;
+  }
+
+  std::string first;
+  bool differs = false;
+  for (int vul = 0; vul <= 3; vul++)
+  {
+    ParResults resp;
+    std::memset(&resp, 0, sizeof(resp));
+    ASSERT_EQ(Par(&tab, &resp, vul), RETURN_NO_FAULT) << "vulnerable " << vul;
+
+    std::string const score(resp.par_score[0]);
+    if (vul == 0)
+      first = score;
+    else if (score != first)
+      differs = true;
+  }
+  EXPECT_TRUE(differs) << "par score identical across all vulnerabilities";
+}
+
+// ---------------------------------------------------------------------------
 // The new code is wired into the error-message table.
 // ---------------------------------------------------------------------------
 
