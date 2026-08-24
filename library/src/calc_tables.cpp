@@ -361,8 +361,13 @@ int STDCALL CalcAllTablesN(
   }
 
   int ind = 0;
-  int lastIndex = 0;
   resp->no_of_boards = 0;
+
+  // With no deals the loop below writes no boards, and bo is an uninitialised
+  // local -- solving a board from it reads indeterminate values. Return early,
+  // matching CalcAllTablesX().
+  if (dealsp->no_of_tables == 0)
+    return RETURN_NO_FAULT;
 
   for (int m = 0; m < dealsp->no_of_tables; m++)
   {
@@ -387,12 +392,14 @@ int STDCALL CalcAllTablesN(
       bo.target[ind] = -1;
       bo.solutions[ind] = 1;
       bo.mode[ind] = 1;
-      lastIndex = ind;
       ind++;
     }
   }
 
-  bo.no_of_boards = lastIndex + 1;
+  // ind counts the boards actually written; deriving the count from a
+  // last-index variable initialised to 0 claimed one board even when none
+  // had been filled in.
+  bo.no_of_boards = ind;
 
   int res = calc_all_boards_n(&bo, &solved, maxThreads);
   if (res != 1)

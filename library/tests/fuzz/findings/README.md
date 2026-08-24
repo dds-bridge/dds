@@ -107,3 +107,27 @@ as before whenever the value is never used.
 
 Seed: `corpus/solve_board/regression_unchecked_trick_suit.bin`.
 Tests: `library/tests/deal_input_validation_test.cpp` (`DumpInputSafety`).
+
+### 05 — `CalcAllTablesN()` solved an uninitialised board when given no deals
+
+Found by the `calc_all_tables` harness on its first CI run, under
+MemorySanitizer (`zero_tables.bin`).
+
+`Boards bo;` is an uninitialised stack local. The board count was derived from
+a `lastIndex` variable initialised to 0 and only assigned inside the
+board-building loop, so `bo.no_of_boards = lastIndex + 1` claimed **one** board
+even when `no_of_tables == 0` and the loop had written none.
+`calc_all_boards_n()` then solved `bo.deals[0]`, `bo.target[0]`,
+`bo.solutions[0]` and `bo.mode[0]`, none of which had ever been written.
+
+ASan and UBSan do not see this; only MSan does, which is why it survived the
+local sweep and surfaced in CI.
+
+Fixed by returning `RETURN_NO_FAULT` early for zero deals, matching what
+`CalcAllTablesX()` already did, and by taking the board count from `ind` --
+the number of boards actually written -- rather than from a last-index
+variable that starts at a valid-looking 0.
+
+Seed: `corpus/calc_all_tables/zero_tables.bin`.
+Tests: `library/tests/deal_input_validation_test.cpp`
+(`CalcAllTablesWithZeroDealsSolvesNothing`).

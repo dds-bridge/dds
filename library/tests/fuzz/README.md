@@ -58,7 +58,10 @@ exercised how the batch entry points handle `no_of_tables`. That is exactly
 where `CalcAllTablesPBNN()` copied a caller-supplied count of records into a
 fixed-size local before validating it — a stack-buffer-overflow *write* that
 was found in code review rather than by fuzzing. `calc_all_tables_fuzz` covers
-that surface, and removing either count guard reproduces a crash under it.
+that surface, and removing either count guard reproduces a crash under it. On
+its first CI run it also found an unrelated defect of its own — see finding 05
+— which only MemorySanitizer detects, so run this harness under `--config=msan`
+on Linux as well as `--config=asan`.
 
 Two details in that harness are load-bearing:
 

@@ -255,6 +255,26 @@ TEST(CalcTableValidation, CalcAllTablesRejectsNegativeTableCount)
             RETURN_TOO_MANY_TABLES);
 }
 
+TEST(CalcTableValidation, CalcAllTablesWithZeroDealsSolvesNothing)
+{
+  // With no deals the board-building loop writes nothing, but the board count
+  // was derived from a last-index variable initialised to 0 and so claimed
+  // one board -- solving an uninitialised entry of a stack-local Boards.
+  // MemorySanitizer reports it; found by the calc_all_tables fuzz harness.
+  DdTableDeals deals;
+  std::memset(&deals, 0, sizeof(deals));
+  deals.no_of_tables = 0;
+
+  DdTablesRes res;
+  std::memset(&res, 0, sizeof(res));
+  AllParResults par;
+  std::memset(&par, 0, sizeof(par));
+  int const filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+
+  EXPECT_EQ(CalcAllTables(&deals, -1, filter, &res, &par), RETURN_NO_FAULT);
+  EXPECT_EQ(res.no_of_boards, 0);
+}
+
 TEST(CalcTableValidation, CalcAllTablesPbnRejectsOversizedTableCount)
 {
   // Before the guard this copied no_of_tables records into a fixed-size
