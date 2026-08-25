@@ -154,7 +154,7 @@
 
 // Par(), SidesPar(), SidesParBin(), DealerPar(), DealerParBin()
 #define RETURN_PAR_TABLE_FAULT -401
-#define TEXT_PAR_TABLE_FAULT "Double dummy table entry outside the range 0 to 13"
+#define TEXT_PAR_TABLE_FAULT "Missing double dummy table, or an entry outside the range 0 to 13"
 
 
 

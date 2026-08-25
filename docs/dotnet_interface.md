@@ -211,7 +211,11 @@ var ctx = new SolverContext(new SolverConfig { ... });
 ### Configuration & Resources 
 
 - **SetMaxThreads(int userThreads)**  
-  Sets the maximum number of threads used by the legacy solver backend.
+  Deprecated, and a no-op beyond initialisation: `userThreads` is ignored and
+  the internal batch threading it once configured has been removed. It is an
+  alias of `InitializeStaticMemory()`. Worker counts are chosen per call by the
+  `maxThreads` argument of the `*N` and `*X` entry points, or by the embedding
+  application in the modern API (typically one `SolverContext` per thread).
 
 - **SetThreading(int code)**   
   Selects the threading backend. Returns `1` on success.
@@ -282,8 +286,9 @@ and should be used with caution, as they may not manage resources as efficiently
 ### Configuration & Resources  
 
 - **SetMaxThreads(int userThreads)**  
-  Deprecated. This sets the maximum number of threads used by the legacy solver backend. 
-  The modern API manages threading implicitly via `SolverContext` and does not require manual configuration.
+  Deprecated, and a no-op beyond initialisation: `userThreads` is ignored, not
+  honoured as a thread limit. The modern API manages threading via
+  `SolverContext`, and the `*N`/`*X` entry points take a per-call `maxThreads`.
 
 - **SetThreading(int code)**  
   Deprecated. configures the threading backend for the legacy API. 

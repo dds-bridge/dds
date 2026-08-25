@@ -161,6 +161,36 @@ class TestCalcParFromTable(unittest.TestCase):
             self.assertTrue(isinstance(par_result, dict))
             self.assertTrue("par_score" in par_result)
 
+    def test_calc_par_from_table_invalid_table_raises_value_error(self) -> None:
+        """An out-of-range table entry is bad user input, so ValueError.
+
+        RETURN_PAR_TABLE_FAULT is returned natively by the par entry points.
+        Without it in the binding's input-validation mapping it surfaced as
+        RuntimeError, contradicting this function's documented contract.
+        """
+        for bad in (14, -1, 2000000000):
+            table = {"res_table": [[7, 6, 7, 6] for _ in range(5)]}
+            table["res_table"][2][1] = bad
+            with self.assertRaises(ValueError):
+                calc_par_from_table(table, vulnerable=0)
+
+    def test_calc_dd_table_invalid_deal_raises_value_error(self) -> None:
+        """A deal whose hands hold unequal numbers of cards is bad input.
+
+        table_deal_checks() reports it as RETURN_CARD_COUNT, which must map to
+        ValueError to match the documented "invalid card distribution" case.
+        """
+        table_deal = self._hand0_table_deal()
+        # Drop one card from north, leaving the other three hands untouched.
+        for suit in range(4):
+            if table_deal["cards"][0][suit]:
+                lowest = table_deal["cards"][0][suit] & -table_deal["cards"][0][suit]
+                table_deal["cards"][0][suit] &= ~lowest
+                break
+
+        with self.assertRaises(ValueError):
+            calc_dd_table(table_deal)
+
     def test_calc_par_from_table_invalid_vulnerability(self) -> None:
         """Test that invalid vulnerability raises ValueError."""
         table_deal = self._hand0_table_deal()

@@ -538,6 +538,37 @@ auto calc_single_deal_scores(
 }  // namespace
 
 
+namespace
+{
+
+/* The *X entry points accept an arbitrary deal count by design, so the only
+   cheap guard available is the board-count product. Run it before any
+   O(numDeals) work -- allocating, converting or validating a count that is
+   already guaranteed to be rejected is wasted effort and, for the PBN
+   variant, a memory-exhaustion path. Also reports how many strains survive
+   the filter, which the caller needs anyway. */
+auto batch_count_preflight(
+  const int numDeals,
+  int const trumpFilter[DDS_STRAINS],
+  int& included) -> int
+{
+  included = 0;
+  for (int k = 0; k < DDS_STRAINS; k++)
+    if (!trumpFilter[k])
+      included++;
+
+  if (included == 0)
+    return RETURN_NO_SUIT;
+
+  if (numDeals > std::numeric_limits<int>::max() / included)
+    return RETURN_TOO_MANY_TABLES;
+
+  return RETURN_NO_FAULT;
+}
+
+}  // namespace
+
+
 int STDCALL CalcAllTablesX(
   int numDeals,
   DdTableDeal const * deals,
@@ -560,13 +591,9 @@ int STDCALL CalcAllTablesX(
       return RETURN_UNKNOWN_FAULT;
 
     int included = 0;
-    for (int k = 0; k < DDS_STRAINS; k++)
-    {
-      if (!trumpFilter[k])
-        included++;
-    }
-    if (included == 0)
-      return RETURN_NO_SUIT;
+    if (int const check = batch_count_preflight(numDeals, trumpFilter, included);
+        check != RETURN_NO_FAULT)
+      return check;
 
     const bool want_par = (mode > -1) && (mode < 4) && (included == DDS_STRAINS);
     if (want_par && par == nullptr)
@@ -584,11 +611,7 @@ int STDCALL CalcAllTablesX(
     // Expand every deal×included-strain into one board list and solve in a
     // single parallel_all_boards_n job (heap-backed). This is the ddss-style
     // large-batch shape; legacy CalcAllTablesN remains capped at MAXNOOFTABLES.
-    // Uncapped by design (this is the large-batch path), but the product
-    // must not overflow signed int before it sizes the vectors below.
-    if (numDeals > std::numeric_limits<int>::max() / included)
-      return RETURN_TOO_MANY_TABLES;
-
+    // Overflow already ruled out by batch_count_preflight() above.
     const int nboards = numDeals * included;
     std::vector<Deal> boards(static_cast<unsigned>(nboards));
     std::vector<std::array<int, DDS_HANDS>> scores(static_cast<unsigned>(nboards));
@@ -703,6 +726,13 @@ int STDCALL CalcAllTablesPBNX(
       return RETURN_NO_FAULT;
     if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
       return RETURN_UNKNOWN_FAULT;
+
+    // Share CalcAllTablesX's preflight so a count that cannot succeed is
+    // rejected before this allocates and converts numDeals records.
+    int included = 0;
+    if (int const check = batch_count_preflight(numDeals, trumpFilter, included);
+        check != RETURN_NO_FAULT)
+      return check;
 
     std::vector<DdTableDeal> binary(static_cast<unsigned>(numDeals));
     for (int i = 0; i < numDeals; ++i)

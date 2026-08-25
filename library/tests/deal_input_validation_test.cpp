@@ -18,6 +18,9 @@
 
 #include <gtest/gtest.h>
 #include <cstring>
+#include <cstdio>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <dds/dds.h>
@@ -392,6 +395,61 @@ TEST(DumpInputSafety, UncheckedTrickSuitIsNotUsedAsSubscript)
   FutureTricks fut;
   std::memset(&fut, 0, sizeof(fut));
   EXPECT_EQ(SolveBoard(deal, 0, 3, 0, &fut, 0), RETURN_SUIT_OR_RANK);
+}
+
+TEST(CalcTableValidation, CalcAllTablesPbnXRejectsOverflowingCountWithoutAllocating)
+{
+  // numDeals * included would overflow, so the result is already decided.
+  // The preflight must run before the vector allocation and the O(numDeals)
+  // conversion loop; otherwise this either exhausts memory or reports
+  // RETURN_UNKNOWN_FAULT from a caught bad_alloc.
+  DdTableResults results;
+  std::memset(&results, 0, sizeof(results));
+  ParResults par;
+  std::memset(&par, 0, sizeof(par));
+  int const filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+
+  DdTableDealPBN one;
+  std::memset(&one, 0, sizeof(one));
+  std::strncpy(one.cards, kLegalDeal, sizeof(one.cards) - 1);
+
+  EXPECT_EQ(CalcAllTablesPBNX(2147483647, &one, -1, filter, &results, &par, 1),
+            RETURN_TOO_MANY_TABLES);
+  EXPECT_EQ(CalcAllTablesX(2147483647, nullptr, -1, filter, &results, &par, 1),
+            RETURN_UNKNOWN_FAULT);  // null array caught before the count
+}
+
+TEST(DumpInputSafety, RejectedRanksAreShownRawNotAsSentinels)
+{
+  // card_rank[] holds sentinels 'x' at 0..1 and '-' at 15, but a trick rank is
+  // only legal in 2..14. Bounding by the array size rendered a rejected rank
+  // of 1 or 15 as a sentinel character, hiding the value in dump.txt.
+  for (int bad_rank : {1, 15})
+  {
+    std::remove("dump.txt");
+
+    Deal deal;
+    std::memset(&deal, 0, sizeof(deal));
+    deal.trump = 0;
+    deal.first = 0;
+    deal.currentTrickSuit[0] = 0;
+    deal.currentTrickRank[0] = bad_rank;
+
+    FutureTricks fut;
+    std::memset(&fut, 0, sizeof(fut));
+    ASSERT_EQ(SolveBoard(deal, -1, 1, 1, &fut, 0), RETURN_SUIT_OR_RANK)
+      << "rank " << bad_rank;
+
+    std::ifstream dump("dump.txt");
+    if (!dump)
+      continue;  // DDS_NO_DUMP_ON_ERROR build: nothing to check.
+
+    std::string const text((std::istreambuf_iterator<char>(dump)),
+                           std::istreambuf_iterator<char>());
+    EXPECT_NE(text.find("?(" + std::to_string(bad_rank) + ")"), std::string::npos)
+      << "rank " << bad_rank << " not reported raw in dump.txt";
+  }
+  std::remove("dump.txt");
 }
 
 }  // namespace

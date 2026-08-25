@@ -310,10 +310,16 @@ auto hand_text(const int hand) -> std::string
   return std::string(1, static_cast<char>(card_hand[hand]));
 }
 
+/* card_rank[] has 16 entries, but indices 0, 1 and 15 hold the sentinels 'x'
+   and '-'. board_range_checks() accepts only 2..14 for a trick rank, so
+   bounding by the array size would render a rejected rank of 1 or 15 as a
+   sentinel character and hide the invalid value. Bound by the legal range. */
+
 auto rank_text(const int rank) -> std::string
 {
-  constexpr int card_rank_size = 16;
-  if (rank < 0 || rank >= card_rank_size)
+  constexpr int min_rank = 2;   // deuce
+  constexpr int max_rank = 14;  // ace
+  if (rank < min_rank || rank > max_rank)
     return "?(" + std::to_string(rank) + ")";
   return std::string(1, static_cast<char>(card_rank[rank]));
 }

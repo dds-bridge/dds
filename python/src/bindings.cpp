@@ -44,6 +44,14 @@ auto throw_on_dds_error(const int code) -> void
     case RETURN_MODE_WRONG_HI:
     case RETURN_NO_SUIT:
     case RETURN_TOO_MANY_TABLES:
+    // Deal validation on the CalcDDtable*/CalcAllTables* paths, and the par
+    // table check. All describe malformed user data, and the docstrings for
+    // calc_dd_table and the par functions promise ValueError for exactly
+    // these cases.
+    case RETURN_CARD_COUNT:
+    case RETURN_DUPLICATE_CARDS:
+    case RETURN_SUIT_OR_RANK:
+    case RETURN_PAR_TABLE_FAULT:
         throw py::value_error(error_text);
     default:
         // All other errors are treated as solver/runtime failures.
@@ -113,7 +121,8 @@ auto register_solve_bindings(py::module_& module) -> void
         "Returns:\n"
         "    dict: Result dict with keys 'nodes', 'cards', 'suit', 'rank', 'equals', 'score'.\n\n"
         "Raises:\n"
-        "    ValueError: If input validation fails (invalid suit/rank range).\n"
+        "    ValueError: If input validation fails (invalid suit/rank range,\n"
+        "        card count, or duplicate cards).\n"
         "    RuntimeError: If DDS solver returns error code.\n\n"
         "Example (with context reuse for multiple boards):\n"
         "    context = dds3.SolverContext()\n"
