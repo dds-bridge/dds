@@ -75,7 +75,10 @@ This project follows a consistent modern C++ style, inspired by Google/LLVM with
 ### Constants
 - **PascalCase**
 - Examples: `MaxIterations`, `Pi`
-- Use `ALL_CAPS` only for macros.
+- Use `ALL_CAPS` only for macros, with one exception: legacy public-API
+  constants keep their historical `ALL_CAPS` names even after being converted
+  from a macro to `constexpr` (e.g. `DDS_STRAINS`, `MAXNOOFBOARDS`,
+  `RETURN_NO_FAULT`) — renaming them would break the published API.
 
 ### Template Parameters
 - **PascalCase, short descriptive**

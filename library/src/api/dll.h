@@ -28,11 +28,14 @@
 #endif
 
 /* Version 3.1.0. Allowing for 2 digit minor versions */
-constexpr int DDS_VERSION = 30100;
+// These three stay object-like macros: this is the frozen legacy C API
+// header and external consumers conventionally test the version / limits in
+// the preprocessor (e.g. #if DDS_VERSION >= 30100, #ifdef MAXNOOFBOARDS).
+#define DDS_VERSION 30100
 
-constexpr int MAXNOOFBOARDS = 200;
+#define MAXNOOFBOARDS 200
 
-constexpr int MAXNOOFTABLES = 40;
+#define MAXNOOFTABLES 40
 
 
 // Error codes. See interface document for more detail.
@@ -40,137 +43,137 @@ constexpr int MAXNOOFTABLES = 40;
 
 // Success.
 constexpr int RETURN_NO_FAULT = 1;
-inline constexpr const char* const TEXT_NO_FAULT = "Success";
+constexpr const char* const TEXT_NO_FAULT = "Success";
 
 // Currently happens when fopen() fails or when AnalyseAllPlaysBin()
 // get a different number of Boards in its first two arguments.
 constexpr int RETURN_UNKNOWN_FAULT = -1;
-inline constexpr const char* const TEXT_UNKNOWN_FAULT = "General error";
+constexpr const char* const TEXT_UNKNOWN_FAULT = "General error";
 
 // SolveBoard()
 constexpr int RETURN_ZERO_CARDS = -2;
-inline constexpr const char* const TEXT_ZERO_CARDS = "Zero cards";
+constexpr const char* const TEXT_ZERO_CARDS = "Zero cards";
 
 // SolveBoard()
 constexpr int RETURN_TARGET_TOO_HIGH = -3;
-inline constexpr const char* const TEXT_TARGET_TOO_HIGH =
+constexpr const char* const TEXT_TARGET_TOO_HIGH =
   "Target exceeds number of tricks";
 
 // SolveBoard()
 constexpr int RETURN_DUPLICATE_CARDS = -4;
-inline constexpr const char* const TEXT_DUPLICATE_CARDS = "Cards duplicated";
+constexpr const char* const TEXT_DUPLICATE_CARDS = "Cards duplicated";
 
 // SolveBoard()
 constexpr int RETURN_TARGET_WRONG_LO = -5;
-inline constexpr const char* const TEXT_TARGET_WRONG_LO =
+constexpr const char* const TEXT_TARGET_WRONG_LO =
   "Target is less than -1";
 
 // SolveBoard()
 constexpr int RETURN_TARGET_WRONG_HI = -7;
-inline constexpr const char* const TEXT_TARGET_WRONG_HI =
+constexpr const char* const TEXT_TARGET_WRONG_HI =
   "Target is higher than 13";
 
 // SolveBoard()
 constexpr int RETURN_SOLNS_WRONG_LO = -8;
-inline constexpr const char* const TEXT_SOLNS_WRONG_LO =
+constexpr const char* const TEXT_SOLNS_WRONG_LO =
   "Solutions parameter is less than 1";
 
 // SolveBoard()
 constexpr int RETURN_SOLNS_WRONG_HI = -9;
-inline constexpr const char* const TEXT_SOLNS_WRONG_HI =
+constexpr const char* const TEXT_SOLNS_WRONG_HI =
   "Solutions parameter is higher than 3";
 
 // SolveBoard(), self-explanatory.
 constexpr int RETURN_TOO_MANY_CARDS = -10;
-inline constexpr const char* const TEXT_TOO_MANY_CARDS = "Too many cards";
+constexpr const char* const TEXT_TOO_MANY_CARDS = "Too many cards";
 
 // SolveBoard()
 constexpr int RETURN_SUIT_OR_RANK = -12;
-inline constexpr const char* const TEXT_SUIT_OR_RANK =
+constexpr const char* const TEXT_SUIT_OR_RANK =
   "currentTrickSuit or currentTrickRank has wrong data";
 
 // SolveBoard
 constexpr int RETURN_PLAYED_CARD = -13;
-inline constexpr const char* const TEXT_PLAYED_CARD =
+constexpr const char* const TEXT_PLAYED_CARD =
   "Played card also remains in a hand";
 
 // SolveBoard()
 constexpr int RETURN_CARD_COUNT = -14;
-inline constexpr const char* const TEXT_CARD_COUNT =
+constexpr const char* const TEXT_CARD_COUNT =
   "Wrong number of remaining cards in a hand";
 
 // SolveBoard()
 constexpr int RETURN_THREAD_INDEX = -15;
-inline constexpr const char* const TEXT_THREAD_INDEX =
+constexpr const char* const TEXT_THREAD_INDEX =
   "Thread index is not 0 .. maximum";
 
 // SolveBoard()
 constexpr int RETURN_MODE_WRONG_LO = -16;
-inline constexpr const char* const TEXT_MODE_WRONG_LO =
+constexpr const char* const TEXT_MODE_WRONG_LO =
   "Mode parameter is less than 0";
 
 // SolveBoard()
 constexpr int RETURN_MODE_WRONG_HI = -17;
-inline constexpr const char* const TEXT_MODE_WRONG_HI =
+constexpr const char* const TEXT_MODE_WRONG_HI =
   "Mode parameter is higher than 2";
 
 // SolveBoard()
 constexpr int RETURN_TRUMP_WRONG = -18;
-inline constexpr const char* const TEXT_TRUMP_WRONG = "Trump is not in 0 .. 4";
+constexpr const char* const TEXT_TRUMP_WRONG = "Trump is not in 0 .. 4";
 
 // SolveBoard()
 constexpr int RETURN_FIRST_WRONG = -19;
-inline constexpr const char* const TEXT_FIRST_WRONG = "First is not in 0 .. 2";
+constexpr const char* const TEXT_FIRST_WRONG = "First is not in 0 .. 2";
 
 // AnalysePlay*() family of functions.
 // (a) Less than 0 or more than 52 cards supplied.
 // (b) Invalid suit or rank supplied.
 // (c) A played card is not held by the right player.
 constexpr int RETURN_PLAY_FAULT = -98;
-inline constexpr const char* const TEXT_PLAY_FAULT = "AnalysePlay input error";
+constexpr const char* const TEXT_PLAY_FAULT = "AnalysePlay input error";
 
 // Returned from a number of places if a PBN string is faulty.
 constexpr int RETURN_PBN_FAULT = -99;
-inline constexpr const char* const TEXT_PBN_FAULT = "PBN string error";
+constexpr const char* const TEXT_PBN_FAULT = "PBN string error";
 
 // SolveBoard() and AnalysePlay*()
 constexpr int RETURN_TOO_MANY_BOARDS = -101;
-inline constexpr const char* const TEXT_TOO_MANY_BOARDS =
+constexpr const char* const TEXT_TOO_MANY_BOARDS =
   "Too many Boards requested";
 
 // Returned from multi-threading functions.
 constexpr int RETURN_THREAD_CREATE = -102;
-inline constexpr const char* const TEXT_THREAD_CREATE =
+constexpr const char* const TEXT_THREAD_CREATE =
   "Could not create threads";
 
 // Returned from multi-threading functions when something went
 // wrong while waiting for all threads to complete.
 constexpr int RETURN_THREAD_WAIT = -103;
-inline constexpr const char* const TEXT_THREAD_WAIT =
+constexpr const char* const TEXT_THREAD_WAIT =
   "Something failed waiting for thread to end";
 
 // Tried to set a multi-threading system that is not present in DLL.
 constexpr int RETURN_THREAD_MISSING = -104;
-inline constexpr const char* const TEXT_THREAD_MISSING =
+constexpr const char* const TEXT_THREAD_MISSING =
   "Multi-threading system not present";
 
 // CalcAllTables*()
 constexpr int RETURN_NO_SUIT = -201;
-inline constexpr const char* const TEXT_NO_SUIT =
+constexpr const char* const TEXT_NO_SUIT =
   "Denomination filter vector has no entries";
 
 // CalcAllTables*()
 constexpr int RETURN_TOO_MANY_TABLES = -202;
-inline constexpr const char* const TEXT_TOO_MANY_TABLES =
+constexpr const char* const TEXT_TOO_MANY_TABLES =
   "Too many DD tables requested";
 
 // SolveAllChunks*()
 constexpr int RETURN_CHUNK_SIZE = -301;
-inline constexpr const char* const TEXT_CHUNK_SIZE = "Chunk size is less than 1";
+constexpr const char* const TEXT_CHUNK_SIZE = "Chunk size is less than 1";
 
 // Par(), SidesPar(), SidesParBin(), DealerPar(), DealerParBin()
 constexpr int RETURN_PAR_TABLE_FAULT = -401;
-inline constexpr const char* const TEXT_PAR_TABLE_FAULT =
+constexpr const char* const TEXT_PAR_TABLE_FAULT =
   "Missing double dummy table, or an entry outside the range 0 to 13";
 
 

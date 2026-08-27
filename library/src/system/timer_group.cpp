@@ -16,6 +16,7 @@
 
 #include "timer_group.hpp"
 
+// Number of per-depth timer slots reserved by TimerGroup::Reset().
 constexpr int TIMER_DEPTH = 50;
 
 

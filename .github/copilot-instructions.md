@@ -232,8 +232,8 @@ bazelisk build //library/tests:dtest
 - **Member variables**: `snake_case` with trailing underscore (e.g., `data_`, `cache_size_`)
 - **Constants**: `PascalCase` (e.g., `MaxTricks`, `DefaultThreads`); legacy
   public API constants keep their historical `ALL_CAPS` names even as `constexpr`
-  (e.g., `DDS_VERSION`, `MAXNOOFBOARDS`, `RETURN_NO_FAULT`)
-- **Macros**: `ALL_CAPS` (e.g., `DLLEXPORT`, `WIN32_LEAN_AND_MEAN`)
+  (e.g., `DDS_STRAINS`, `RETURN_NO_FAULT`) — renaming would break the published API
+- **Macros**: `ALL_CAPS` (e.g., `DDS_VERSION`, `MAXNOOFBOARDS`, `DLLEXPORT`)
 
 ### Formatting
 - **Indentation**: 4 spaces (no tabs)

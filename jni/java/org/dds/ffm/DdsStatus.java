@@ -2,9 +2,9 @@
    DDS, a bridge double dummy solver.
 
    DDS status codes returned by the solver entry points. These mirror the
-   RETURN_* macros in library/src/api/dll.h one-for-one (same names and values)
-   so Java callers can compare a return code against a named constant instead of
-   a bare magic number. Keep this in sync with dll.h.
+   RETURN_* constants in library/src/api/dll.h one-for-one (same names and
+   values) so Java callers can compare a return code against a named constant
+   instead of a bare magic number. Keep this in sync with dll.h.
 
    See LICENSE and README.
 */
@@ -14,8 +14,8 @@ package org.dds.ffm;
 /**
  * Status codes returned by {@link Dds#solveBoard}, {@link Dds#calcDdTable}, and
  * {@link Dds#calcPar} (and the flat C API). Values match the {@code RETURN_*}
- * macros in {@code library/src/api/dll.h}. Not instantiable; use the constants
- * and {@link #name(int)}.
+ * constants in {@code library/src/api/dll.h}. Not instantiable; use the
+ * constants and {@link #name(int)}.
  */
 public final class DdsStatus {
 

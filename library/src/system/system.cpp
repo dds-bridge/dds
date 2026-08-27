@@ -125,9 +125,9 @@ const vector<string> DDS_SYSTEM_THREADING =
   "PPL-impl"
 };
 
-// Only a subset is referenced on any given platform (the rest sit behind
-// DDS_THREADS_* guards), so tolerate individually unused entries.
-[[maybe_unused]] constexpr int DDS_SYSTEM_THREAD_BASIC = 0;
+constexpr int DDS_SYSTEM_THREAD_BASIC = 0;
+// The backend-specific indices are only referenced under their matching
+// DDS_THREADS_* guard, so tolerate individually unused entries.
 [[maybe_unused]] constexpr int DDS_SYSTEM_THREAD_WINAPI = 1;
 [[maybe_unused]] constexpr int DDS_SYSTEM_THREAD_OPENMP = 2;
 [[maybe_unused]] constexpr int DDS_SYSTEM_THREAD_GCD = 3;
@@ -136,7 +136,7 @@ const vector<string> DDS_SYSTEM_THREADING =
 [[maybe_unused]] constexpr int DDS_SYSTEM_THREAD_TBB = 6;
 [[maybe_unused]] constexpr int DDS_SYSTEM_THREAD_STLIMPL = 7;
 [[maybe_unused]] constexpr int DDS_SYSTEM_THREAD_PPLIMPL = 8;
-[[maybe_unused]] constexpr int DDS_SYSTEM_THREAD_SIZE = 9;
+constexpr int DDS_SYSTEM_THREAD_SIZE = 9;
 
 
 System::System()
