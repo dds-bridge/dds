@@ -21,7 +21,7 @@
 #include <system/time_stat_list.hpp>
 #endif
 
-#define HASH_MAX 200
+constexpr int HASH_MAX = 200;
 
 #ifdef DDS_SCHEDULER
   #define START_BLOCK_TIMER scheduler.StartBlockTimer()

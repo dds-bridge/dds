@@ -41,8 +41,10 @@ single, authoritative definition of "how a card/hand/strain is represented" and
 - **These arrays are `extern const`** — defined once in `constants.cpp`, never
   mutated at runtime. Any capability may read them concurrently.
 - **Debug flags are compile-time, opt-in, and off by default.** Each flag in
-  `debug.h` is commented out; enabling one makes the solver emit one diagnostic
-  file per thread with a fixed name prefix (e.g. `ABstats`, `TTstats`, `timer`).
+  `debug.h` is a commented-out preprocessor macro (`#ifdef`-probed); enabling one
+  makes the solver emit one diagnostic file per thread with a fixed name prefix
+  (e.g. `ABstats`, `TTstats`, `timer`). The prefixes themselves are `constexpr`
+  string constants (`DDS_*_PREFIX`, `DDS_DEBUG_SUFFIX`), not macros.
   `DDS_DEBUG_ALL` turns on the debug.h diagnostic set it wraps (AB stats/details,
   TT stats, timing, moves, …) but **not** build-gated flags such as
   `DDS_SCHEDULER`. Because they are compile-time, a normal build carries zero

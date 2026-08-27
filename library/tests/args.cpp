@@ -43,7 +43,7 @@ struct optEntry
   unsigned numArgs;
 };
 
-#define DTEST_NUM_OPTIONS 5
+constexpr int DTEST_NUM_OPTIONS = 5;
 
 enum DtestOpt
 {

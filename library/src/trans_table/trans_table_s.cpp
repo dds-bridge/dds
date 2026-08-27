@@ -18,11 +18,11 @@
 
 #include "trans_table_s.hpp"
 
-#define NSIZE 50000
-#define WSIZE 50000
-#define NINIT 60000
-#define WINIT 170000
-#define LSIZE 200 // Per trick and first hand
+constexpr int NSIZE = 50000;
+constexpr int WSIZE = 50000;
+constexpr int NINIT = 60000;
+constexpr int WINIT = 170000;
+constexpr int LSIZE = 200; // Per trick and first hand
 
 namespace
 {

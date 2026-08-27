@@ -114,7 +114,7 @@ struct list_type
 };
 
 
-#define BIGNUM 9999
+constexpr int BIGNUM = 9999;
 
 
 void survey_scores(

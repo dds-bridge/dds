@@ -9,13 +9,14 @@
 
 #include <cstddef>
 #include <string>
-#define TIMER_DEPTH 50
 
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
 #include "timer_group.hpp"
+
+constexpr int TIMER_DEPTH = 50;
 
 
 TimerGroup::TimerGroup()

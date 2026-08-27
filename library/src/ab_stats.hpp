@@ -40,7 +40,7 @@ enum ABCountType
   AB_SIZE = 8
 };
 
-#define DDS_MAXDEPTH 49
+constexpr int DDS_MAXDEPTH = 49;
 
 
 struct ABtracker

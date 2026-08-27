@@ -230,8 +230,10 @@ bazelisk build //library/tests:dtest
 - **Functions**: `snake_case` (e.g., `solve_board()`, `calculate_moves()`)
 - **Variables**: `snake_case` (e.g., `trick_count`, `best_move`)
 - **Member variables**: `snake_case` with trailing underscore (e.g., `data_`, `cache_size_`)
-- **Constants**: `PascalCase` (e.g., `MaxTricks`, `DefaultThreads`)
-- **Macros**: `ALL_CAPS` (e.g., `DDS_VERSION`)
+- **Constants**: `PascalCase` (e.g., `MaxTricks`, `DefaultThreads`); legacy
+  public API constants keep their historical `ALL_CAPS` names even as `constexpr`
+  (e.g., `DDS_VERSION`, `MAXNOOFBOARDS`, `RETURN_NO_FAULT`)
+- **Macros**: `ALL_CAPS` (e.g., `DLLEXPORT`, `WIN32_LEAN_AND_MEAN`)
 
 ### Formatting
 - **Indentation**: 4 spaces (no tabs)
