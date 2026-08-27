@@ -111,6 +111,21 @@ test:ubsan --test_timeout=300,300,900,3600
 # Hardcoded rpath: .../lib/clang/21/... must match MODULE.bazel llvm major and Xcode.
 build:ubsan_macos --linkopt=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin
 
+# libFuzzer configuration (//library/tests/fuzz:*_fuzz)
+# Usage: bazel run --config=fuzz //library/tests/fuzz:pbn_fuzz -- -runs=100000
+# Uses the registered hermetic LLVM toolchain, which ships libclang_rt.fuzzer;
+# Apple's toolchain does not, so do not combine with --config=asan on macOS
+# (build:asan_macos switches to the Xcode toolchain). On Linux, adding
+# --config=asan gives fuzzing with memory-error detection. The corpus-replay
+# tests (//library/tests/fuzz:*_fuzz_corpus_test) need none of this and run
+# under the ordinary configs.
+build:fuzz --copt=-fsanitize=fuzzer-no-link
+build:fuzz --copt=-fno-omit-frame-pointer
+build:fuzz --linkopt=-fsanitize=fuzzer
+build:fuzz --strip=never
+build:fuzz --features=dbg
+build:fuzz --compilation_mode=dbg
+
 # MemorySanitizer configuration (Linux x86_64 only)
 # Usage: bazel test --config=msan //path:target
 # Selects @llvm_toolchain_msan (instrumented libc++ overlay) and enables the

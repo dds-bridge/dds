@@ -43,12 +43,14 @@ class TestSolveBoard(unittest.TestCase):
             "current_trick_suit": (0, 0, 0),
             "current_trick_rank": (0, 0, 0),
         }
-        # Should not raise, error handling is DDS-side
+        # This deal gives north all thirteen spades and the other hands
+        # nothing, so DDS rejects it with RETURN_CARD_COUNT. That is an
+        # input-validation error, so it surfaces as ValueError; earlier it
+        # fell through the binding's mapping to RuntimeError.
         try:
             result = solve_board(deal)
             self.assertIn("nodes", result)
-        except RuntimeError:
-            # Invalid deal may raise RuntimeError
+        except ValueError:
             pass
 
     def test_solve_board_invalid_trump(self) -> None:

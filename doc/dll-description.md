@@ -24,7 +24,7 @@ To obtain better utilization of available threads, the double dummy (DD) tables 
 
 Solving hands can be done much more quickly using one of the multi-thread alternatives for calling SolveBoard. Then a number of hands are grouped for a single call to one of the functions `SolveAllBoards`, `SolveAllBoardsBin`, `SolveAllChunksBin` and `SolveAllChunksPBN`.  The hands are then solved in parallel using the available threads.
 
-The number of threads is automatically configured by DDS on Windows, taking into account the number of processor cores and available memory.  The number of threads can be influenced using by calling `SetMaxThreads`. This function should probably always be called on Linux/Mac, with a zero argument for auto-configuration.
+The number of threads is automatically configured by DDS, taking into account the number of processor cores and available memory.  **`SetMaxThreads` no longer influences this: its argument is ignored and it is a deprecated alias of `InitializeStaticMemory()`.** Worker counts are chosen per call by the `maxThreads` argument of the `*N` and `*X` entry points, where 0 selects auto-configuration.
 
 Calling `FreeMemory` causes DDS to give up its dynamically allocated memory.
 
@@ -335,7 +335,7 @@ of the dealer.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
-<td><code><a href="#SetMaxThreads">SetMaxThreads</a></code></td><td><code>int&nbsp;userThreads</code></td><td>PBN</td><td>Used at initial start and can also be called with a request for allocating memory for a specified number of threads. Is apparently¸mandatory on Linux and Mac (optional on Windows)</td>
+<td><code><a href="#SetMaxThreads">SetMaxThreads</a></code></td><td><code>int&nbsp;userThreads</code></td><td>PBN</td><td>Deprecated alias of InitializeStaticMemory(); userThreads is ignored and it does not limit the thread count.</td>
 </tr>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr>
@@ -1201,7 +1201,7 @@ Concerning chunkSize, exactly the 21 same remarks apply as with [SolveAllChunksB
 </tbody>
 </table>
 
-SetMaxThreads returns the actual number of threads.
+SetMaxThreads returns nothing and ignores its argument; it is a deprecated alias of InitializeStaticMemory().
 
 DDS has a preferred memory size per thread, currently about 95 MB, and a maximum memory size per thread, currently about 160 MB. It will also not use more than 70% of the available memory. It will not create more threads than there are processor cores, as this will only require more memory and will not improve performance. Within these constraints, DDS auto-configures the
 number of threads.
@@ -1210,11 +1210,11 @@ DDS first detects the number of cores and the available memory. If this doesn't 
 
 DDS then checks whether a number of threads equal to the number of cores will fit within the available memory when each thread may use the maximum memory per thread. If there is not enough memory for this, DDS scales back its ambition. If there is enough memory for the preferred memory size, then DDS still creates a number of threads equal to the number of cores. If there is not even enough memory for this, DDS scales back the number of threads to fit within the memory.
 
-The user can suggest to DDS a number of threads by calling SetMaxThreads. DDS will never create more threads than requested, but it may create fewer if there is not enough memory, calculated as above. Calling SetMaxThreads is optional, not mandatory. DDS will always select a suitable number of threads on its own.
+SetMaxThreads no longer influences the thread count: its argument is ignored and internal batch threading was removed. To cap workers, pass an explicit maxThreads to the *N or *X entry points, or manage concurrency in the calling application (typically one SolverContext per thread). DDS will otherwise select a suitable number of threads on its own.
 
-It may be possible, especially on non-Windows systems, to call SetMaxThreads() actively, even though the user does not want to influence the default values. In this case, use a 0 argument.
+Calling SetMaxThreads() is harmless but has no effect beyond initialisation; InitializeStaticMemory() is the non-deprecated spelling.
 
-SetMaxThreads can be called multiple times even within the same session. So it is theoretically possible to change the number of threads dynamically. 
+SetMaxThreads can be called multiple times, but it cannot change the number of threads: use the per-call maxThreads argument instead. 
 
 It is possible to ask DDS to give up its dynamically allocated memory by calling FreeMemory. This could be useful for instance if there is a long pause where DDS is not used within a session. DDS will free its memory when the DLL detaches from the user program, so there is no need for the user to call this function before detaching.
 <a name="ReturnCodes"></a>
@@ -1305,6 +1305,9 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 </tr>
 <tr>
 <td>-301</td><td>RETURN_CHUNK_SIZE</td><td>SolveAllChunks\*(), returned when the chunk size is < 1.</td>
+</tr>
+<tr>
+<td>-401</td><td>RETURN_PAR_TABLE_FAULT</td><td>Par(), SidesPar(), SidesParBin(), DealerPar(), DealerParBin(), returned when the double dummy table pointer is null, or a table entry is outside the range 0 to 13.</td>
 </tr>
 </tbody>
 </table>

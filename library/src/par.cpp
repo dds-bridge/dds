@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include <par_validate.hpp>
 #include <pbn.hpp>
 #include <api/dds.h>
 
@@ -227,6 +228,12 @@ int STDCALL SidesParBin(
 
   /* The Par function computes the par result and contracts. */
 
+  if (int const check = par_table_checks(tablep); check != RETURN_NO_FAULT)
+    return check;
+
+  if (int const check = par_vulnerable_checks(vulnerable);
+      check != RETURN_NO_FAULT)
+    return check;
 
   int denom_conv[5] = { 4, 0, 1, 2, 3 };
   /* Preallocate for efficiency. These hold result from last direction
@@ -697,6 +704,13 @@ int STDCALL SidesParBin(
   parResultsMaster sidesRes[2],
   int vulnerable)
 {
+
+  if (int const check = par_table_checks(tablep); check != RETURN_NO_FAULT)
+    return check;
+
+  if (int const check = par_vulnerable_checks(vulnerable);
+      check != RETURN_NO_FAULT)
+    return check;
 
   int res, h, hbest[2], i, k, m, index;
   parResultsMaster parRes2[4];

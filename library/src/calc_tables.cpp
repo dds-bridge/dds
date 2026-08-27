@@ -9,12 +9,14 @@
 
 #include "calc_tables.hpp"
 #include <algorithm>
+#include <limits>
 #include <array>
 #include <numeric>
 #include <vector>
 
 #include <lookup_tables/lookup_tables.hpp>
 #include <pbn.hpp>
+#include <table_deal_validate.hpp>
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
 #include <solver_if.hpp>
@@ -245,6 +247,9 @@ int STDCALL CalcDDtableN(
   DdTableResults * tablep,
   int maxThreads)
 {
+  if (int const check = table_deal_checks(tableDeal); check != RETURN_NO_FAULT)
+    return check;
+
   Deal dl;
   Boards bo;
   SolvedBoards solved;
@@ -317,6 +322,17 @@ int STDCALL CalcAllTablesN(
      mode = 3: par calculation, vulnerability EW
          mode = -1: no par calculation */
 
+  // dealsp->deals is a fixed MAXNOOFTABLES * DDS_STRAINS array, and the
+  // capacity check below multiplies by count. Bound no_of_tables first, so
+  // that multiply cannot overflow signed int and wrap past the check, and so
+  // the per-deal loops cannot read past the array.
+  if (dealsp == nullptr)
+    return RETURN_UNKNOWN_FAULT;
+
+  if (dealsp->no_of_tables < 0 ||
+      dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
+    return RETURN_TOO_MANY_TABLES;
+
   Boards bo;
   SolvedBoards solved;
   int count = 0;
@@ -337,9 +353,21 @@ int STDCALL CalcAllTablesN(
   if (count * dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
     return RETURN_TOO_MANY_TABLES;
 
+  for (int m = 0; m < dealsp->no_of_tables; m++)
+  {
+    int const check = table_deal_checks(dealsp->deals[m]);
+    if (check != RETURN_NO_FAULT)
+      return check;
+  }
+
   int ind = 0;
-  int lastIndex = 0;
   resp->no_of_boards = 0;
+
+  // With no deals the loop below writes no boards, and bo is an uninitialised
+  // local -- solving a board from it reads indeterminate values. Return early,
+  // matching CalcAllTablesX().
+  if (dealsp->no_of_tables == 0)
+    return RETURN_NO_FAULT;
 
   for (int m = 0; m < dealsp->no_of_tables; m++)
   {
@@ -364,12 +392,14 @@ int STDCALL CalcAllTablesN(
       bo.target[ind] = -1;
       bo.solutions[ind] = 1;
       bo.mode[ind] = 1;
-      lastIndex = ind;
       ind++;
     }
   }
 
-  bo.no_of_boards = lastIndex + 1;
+  // ind counts the boards actually written; deriving the count from a
+  // last-index variable initialised to 0 claimed one board even when none
+  // had been filled in.
+  bo.no_of_boards = ind;
 
   int res = calc_all_boards_n(&bo, &solved, maxThreads);
   if (res != 1)
@@ -430,6 +460,16 @@ int STDCALL CalcAllTablesPBNN(
   AllParResults * presp,
   int maxThreads)
 {
+  // dls.deals and dealsp->deals both hold MAXNOOFTABLES * DDS_STRAINS
+  // entries. Bound the count before the conversion loop: unchecked, this
+  // wrote past the fixed-size local.
+  if (dealsp == nullptr)
+    return RETURN_UNKNOWN_FAULT;
+
+  if (dealsp->no_of_tables < 0 ||
+      dealsp->no_of_tables > MAXNOOFTABLES * DDS_STRAINS)
+    return RETURN_TOO_MANY_TABLES;
+
   DdTableDeals dls;
   for (int k = 0; k < dealsp->no_of_tables; k++)
     if (convert_from_pbn(dealsp->deals[k].cards, dls.deals[k].cards) != 1)
@@ -498,6 +538,37 @@ auto calc_single_deal_scores(
 }  // namespace
 
 
+namespace
+{
+
+/* The *X entry points accept an arbitrary deal count by design, so the only
+   cheap guard available is the board-count product. Run it before any
+   O(numDeals) work -- allocating, converting or validating a count that is
+   already guaranteed to be rejected is wasted effort and, for the PBN
+   variant, a memory-exhaustion path. Also reports how many strains survive
+   the filter, which the caller needs anyway. */
+auto batch_count_preflight(
+  const int numDeals,
+  int const trumpFilter[DDS_STRAINS],
+  int& included) -> int
+{
+  included = 0;
+  for (int k = 0; k < DDS_STRAINS; k++)
+    if (!trumpFilter[k])
+      included++;
+
+  if (included == 0)
+    return RETURN_NO_SUIT;
+
+  if (numDeals > std::numeric_limits<int>::max() / included)
+    return RETURN_TOO_MANY_TABLES;
+
+  return RETURN_NO_FAULT;
+}
+
+}  // namespace
+
+
 int STDCALL CalcAllTablesX(
   int numDeals,
   DdTableDeal const * deals,
@@ -520,21 +591,27 @@ int STDCALL CalcAllTablesX(
       return RETURN_UNKNOWN_FAULT;
 
     int included = 0;
-    for (int k = 0; k < DDS_STRAINS; k++)
-    {
-      if (!trumpFilter[k])
-        included++;
-    }
-    if (included == 0)
-      return RETURN_NO_SUIT;
+    if (int const check = batch_count_preflight(numDeals, trumpFilter, included);
+        check != RETURN_NO_FAULT)
+      return check;
 
     const bool want_par = (mode > -1) && (mode < 4) && (included == DDS_STRAINS);
     if (want_par && par == nullptr)
       return RETURN_UNKNOWN_FAULT;
 
+    // This path builds its board list directly rather than going through
+    // CalcDDtableN, so it needs the same deal validation.
+    for (int m = 0; m < numDeals; m++)
+    {
+      int const check = table_deal_checks(deals[m]);
+      if (check != RETURN_NO_FAULT)
+        return check;
+    }
+
     // Expand every deal×included-strain into one board list and solve in a
     // single parallel_all_boards_n job (heap-backed). This is the ddss-style
     // large-batch shape; legacy CalcAllTablesN remains capped at MAXNOOFTABLES.
+    // Overflow already ruled out by batch_count_preflight() above.
     const int nboards = numDeals * included;
     std::vector<Deal> boards(static_cast<unsigned>(nboards));
     std::vector<std::array<int, DDS_HANDS>> scores(static_cast<unsigned>(nboards));
@@ -649,6 +726,13 @@ int STDCALL CalcAllTablesPBNX(
       return RETURN_NO_FAULT;
     if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
       return RETURN_UNKNOWN_FAULT;
+
+    // Share CalcAllTablesX's preflight so a count that cannot succeed is
+    // rejected before this allocates and converts numDeals records.
+    int included = 0;
+    if (int const check = batch_count_preflight(numDeals, trumpFilter, included);
+        check != RETURN_NO_FAULT)
+      return check;
 
     std::vector<DdTableDeal> binary(static_cast<unsigned>(numDeals));
     for (int i = 0; i < numDeals; ++i)

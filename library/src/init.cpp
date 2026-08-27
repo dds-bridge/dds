@@ -492,6 +492,9 @@ void STDCALL ErrorMessage(int code, char line[80])
     case RETURN_CHUNK_SIZE:
       strcpy(line, TEXT_CHUNK_SIZE);
       break;
+    case RETURN_PAR_TABLE_FAULT:
+      strcpy(line, TEXT_PAR_TABLE_FAULT);
+      break;
     default:
       strcpy(line, "Not a DDS error code");
       break;

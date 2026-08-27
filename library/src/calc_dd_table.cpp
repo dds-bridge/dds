@@ -8,6 +8,7 @@
 */
 
 #include <api/calc_dd_table.hpp>
+#include <table_deal_validate.hpp>
 #include <api/dll.h>
 #include <calc_tables.hpp>
 #include <pbn.hpp>
@@ -26,6 +27,12 @@ auto calc_dd_table(
     const DdTableDeal& table_deal,
     DdTableResults* table_results) -> int
 {
+    // This overload builds Boards directly rather than going through
+    // CalcDDtableN(), so it needs the same deal validation. Both the
+    // context-free overload and calc_dd_table_pbn() delegate here.
+    if (int const check = table_deal_checks(table_deal); check != RETURN_NO_FAULT)
+        return check;
+
     Deal dl;
     Boards bo;
     SolvedBoards solved;
