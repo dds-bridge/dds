@@ -42,6 +42,12 @@ DLLEXPORT int dds_c_solve_board(DDS_C_SOLVER_CTX ctx,
                                 int target, int solutions, int mode,
                                 struct FutureTricks* futp);
 
+/* Solve a single board in PBN format. Returns a RETURN_* status code. */
+DLLEXPORT int dds_c_solve_board_pbn(DDS_C_SOLVER_CTX ctx,
+                                    const struct DealPBN* dlpbn,
+                                    int target, int solutions, int mode,
+                                    struct FutureTricks* futp);
+
 /* Compute the double dummy table for a deal. */
 DLLEXPORT int dds_c_calc_dd_table(DDS_C_SOLVER_CTX ctx,
                                   const struct DdTableDeal* deal,
@@ -53,6 +59,14 @@ DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
                              int vulnerable,
                              struct DdTableResults* results,
                              struct ParResults* par);
+
+/* Compute the par result for a PBN-format deal (computes the DD table
+   internally). */
+DLLEXPORT int dds_c_calc_par_pbn(DDS_C_SOLVER_CTX ctx,
+                                 const struct DdTableDealPBN* deal,
+                                 int vulnerable,
+                                 struct DdTableResults* results,
+                                 struct ParResults* par);
 
 /* Creation with explicit transposition-table configuration. The C++ SolverConfig
    is decomposed into scalars rather than mirrored as a struct: passing a struct
@@ -80,6 +94,49 @@ DLLEXPORT void dds_c_reset_best_moves_lite(DDS_C_SOLVER_CTX ctx);
 /* Logging passthrough. msg is a NUL-terminated UTF-8 string. */
 DLLEXPORT void dds_c_log_append(DDS_C_SOLVER_CTX ctx, const char* msg);
 DLLEXPORT void dds_c_log_clear(DDS_C_SOLVER_CTX ctx);
+
+/* Context-free utilities. These operate on already-produced data (a
+   DdTableResults/ParResultsMaster) or static library info; they need no
+   SolverContext and so take no handle. */
+
+/* Compute par from an already-computed double dummy table. */
+DLLEXPORT int dds_c_par_from_table(const struct DdTableResults* table,
+                                   int vulnerable,
+                                   struct ParResults* par);
+
+/* Compute par from both the NS and EW dealing sides' viewpoints. */
+DLLEXPORT int dds_c_sides_par(const struct DdTableResults* table,
+                              struct ParResultsDealer sides_res[2],
+                              int vulnerable);
+
+/* Compute par for a specific dealer. */
+DLLEXPORT int dds_c_dealer_par(const struct DdTableResults* table,
+                               struct ParResultsDealer* par,
+                               int dealer, int vulnerable);
+
+/* Binary (ContractType) variant of dds_c_dealer_par. */
+DLLEXPORT int dds_c_dealer_par_bin(const struct DdTableResults* table,
+                                   struct ParResultsMaster* par,
+                                   int dealer, int vulnerable);
+
+/* Binary (ContractType) variant of dds_c_sides_par. */
+DLLEXPORT int dds_c_sides_par_bin(const struct DdTableResults* table,
+                                  struct ParResultsMaster sides_res[2],
+                                  int vulnerable);
+
+/* Format a ParResultsMaster as dealer-oriented text. */
+DLLEXPORT int dds_c_convert_to_dealer_text_format(const struct ParResultsMaster* par,
+                                                  char* resp);
+
+/* Format a ParResultsMaster as sides-oriented text. */
+DLLEXPORT int dds_c_convert_to_sides_text_format(const struct ParResultsMaster* par,
+                                                 struct ParTextResults* resp);
+
+/* Query library version/build information. */
+DLLEXPORT void dds_c_get_dds_info(struct DDSInfo* info);
+
+/* Map a RETURN_* status code to its human-readable text. */
+DLLEXPORT void dds_c_error_message(int code, char line[80]);
 
 #ifdef __cplusplus
 }

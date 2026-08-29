@@ -557,6 +557,10 @@ EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
 /**
  * @brief Solve a single bridge Deal in PBN format using double dummy analysis.
  *
+ * @deprecated Use SolverContext with the solve_board_pbn(SolverContext&, ...)
+ *             overload instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
  * @param dlpbn The PBN Deal to analyze
  * @param target Target number of tricks
  * @param solutions Solution mode
@@ -564,6 +568,11 @@ EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
  * @param futp Pointer to result structure
  * @param thrId Index of thread to use
  * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which allows the transposition table and thread resources to be reused
+ * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveBoardPBN(
   struct DealPBN dlpbn,
@@ -837,6 +846,24 @@ EXTERN_C DLLEXPORT auto STDCALL CalcPar(
   struct DdTableResults * tablep,
   struct ParResults * presp) -> int;
 
+/**
+ * @brief Calculate the double dummy table and par result for a PBN Deal.
+ *
+ * @deprecated Use SolverContext with the calc_par_pbn(SolverContext&, ...)
+ *             overload instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
+ * @param tableDealPBN PBN Deal for which to calculate the table
+ * @param tablep Pointer to result table
+ * @param vulnerable Vulnerability (0 = None, 1 = Both, 2 = NS, 3 = EW)
+ * @param presp Pointer to result par information
+ * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which allows the transposition table and thread resources to be reused
+ * across calls instead of being reallocated internally on each call.
+ */
 EXTERN_C DLLEXPORT auto STDCALL CalcParPBN(
   struct DdTableDealPBN tableDealPBN,
   struct DdTableResults * tablep,

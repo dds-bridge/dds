@@ -66,6 +66,15 @@ struct DdTableDeal MakeReferenceTableDeal()
     return deal;
 }
 
+struct DealPBN MakeReferenceDealPbn()
+{
+    struct DealPBN dlpbn = {};
+    dlpbn.trump = 0;   // spades
+    dlpbn.first = 0;   // North leads
+    std::snprintf(dlpbn.remainCards, sizeof dlpbn.remainCards, "%s", kReferencePbn);
+    return dlpbn;
+}
+
 // Solve the reference board on ctx and return the trick count.
 int SolveReference(DDS_C_SOLVER_CTX ctx)
 {
@@ -85,6 +94,7 @@ int SolveReference(DDS_C_SOLVER_CTX ctx)
 TEST(DdsCApiNullHandle, IntReturningEntryPointsFailFast)
 {
     const struct Deal dl = MakeReferenceDeal();
+    const struct DealPBN dlpbn = MakeReferenceDealPbn();
     const struct DdTableDeal table_deal = MakeReferenceTableDeal();
     struct DdTableDealPBN pbn_deal = {};
     struct FutureTricks fut = {};
@@ -92,9 +102,45 @@ TEST(DdsCApiNullHandle, IntReturningEntryPointsFailFast)
     struct ParResults par = {};
 
     EXPECT_EQ(dds_c_solve_board(nullptr, &dl, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_solve_board_pbn(nullptr, &dlpbn, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table(nullptr, &table_deal, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(nullptr, &pbn_deal, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_par(nullptr, &table_deal, 0, &results, &par), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_calc_par_pbn(nullptr, &pbn_deal, 0, &results, &par), RETURN_UNKNOWN_FAULT);
+}
+
+// The context-free utilities take no handle at all; they must instead reject
+// null data pointers (the only thing they could otherwise dereference).
+TEST(DdsCApiNullHandle, ContextFreeUtilitiesRejectNullPointers)
+{
+    struct DdTableResults results = {};
+    struct ParResults par = {};
+    struct ParResultsDealer dealer_res = {};
+    struct ParResultsDealer sides_res[2] = {};
+    struct ParResultsMaster dealer_bin = {};
+    struct ParResultsMaster sides_bin[2] = {};
+    struct ParTextResults text = {};
+    char line[80] = {};
+
+    EXPECT_EQ(dds_c_par_from_table(nullptr, 0, &par), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_par_from_table(&results, 0, nullptr), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_sides_par(nullptr, sides_res, 0), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_sides_par(&results, nullptr, 0), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_dealer_par(nullptr, &dealer_res, 0, 0), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_dealer_par(&results, nullptr, 0, 0), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_dealer_par_bin(nullptr, &dealer_bin, 0, 0), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_dealer_par_bin(&results, nullptr, 0, 0), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_sides_par_bin(nullptr, sides_bin, 0), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_sides_par_bin(&results, nullptr, 0), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_convert_to_dealer_text_format(nullptr, line), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_convert_to_dealer_text_format(&dealer_bin, nullptr), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_convert_to_sides_text_format(nullptr, &text), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_convert_to_sides_text_format(&dealer_bin, nullptr), RETURN_UNKNOWN_FAULT);
+
+    // Void-returning: must return without dereferencing.
+    dds_c_get_dds_info(nullptr);
+    dds_c_error_message(RETURN_NO_FAULT, nullptr);
+    SUCCEED();
 }
 
 TEST(DdsCApiNullHandle, VoidReturningEntryPointsAreNoOps)
@@ -120,11 +166,15 @@ TEST(DdsCApiNullArgument, PointerArgumentsAreValidated)
     struct DdTableDealPBN pbn_deal = {};
     const struct DdTableDeal table_deal = MakeReferenceTableDeal();
     struct FutureTricks fut = {};
+    struct ParResults par = {};
 
     EXPECT_EQ(dds_c_solve_board(ctx, nullptr, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_solve_board_pbn(ctx, nullptr, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(ctx, nullptr, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(ctx, &pbn_deal, nullptr), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_par(ctx, &table_deal, 0, &results, nullptr), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_calc_par_pbn(ctx, nullptr, 0, &results, &par), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_calc_par_pbn(ctx, &pbn_deal, 0, &results, nullptr), RETURN_UNKNOWN_FAULT);
 
     // A null message must be ignored rather than passed through to strlen.
     dds_c_log_append(ctx, nullptr);
@@ -290,6 +340,151 @@ TEST(DdsCApiPar, ProducesNonEmptyScore)
     EXPECT_GT(std::strlen(par.par_score[0]), 0U);
 
     dds_c_destroy_solvercontext(ctx);
+}
+
+TEST(DdsCApiSolveBoard, PbnMatchesBinary)
+{
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    const struct DealPBN dlpbn = MakeReferenceDealPbn();
+    struct FutureTricks fut = {};
+    ASSERT_EQ(dds_c_solve_board_pbn(ctx, &dlpbn, -1, 1, 1, &fut), RETURN_NO_FAULT);
+    EXPECT_EQ(fut.score[0], kExpectedTricks);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+TEST(DdsCApiPar, PbnMatchesBinary)
+{
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    const struct DdTableDeal binary_deal = MakeReferenceTableDeal();
+    struct DdTableResults binary_results = {};
+    struct ParResults binary_par = {};
+    ASSERT_EQ(dds_c_calc_par(ctx, &binary_deal, 0, &binary_results, &binary_par),
+              RETURN_NO_FAULT);
+
+    struct DdTableDealPBN pbn_deal = {};
+    std::snprintf(pbn_deal.cards, sizeof pbn_deal.cards, "%s", kReferencePbn);
+    struct DdTableResults pbn_results = {};
+    struct ParResults pbn_par = {};
+    ASSERT_EQ(dds_c_calc_par_pbn(ctx, &pbn_deal, 0, &pbn_results, &pbn_par),
+              RETURN_NO_FAULT);
+
+    EXPECT_STREQ(pbn_par.par_score[0], binary_par.par_score[0]);
+    EXPECT_STREQ(pbn_par.par_score[1], binary_par.par_score[1]);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+// ---------------------------------------------------------------------------
+// Context-free utilities: no SolverContext involved, so these are exercised
+// directly against a table produced once via dds_c_calc_dd_table.
+// ---------------------------------------------------------------------------
+
+class DdsCApiParUtilities : public testing::Test {
+protected:
+    void SetUp() override
+    {
+        ctx_ = dds_c_create_solvercontext_default();
+        ASSERT_NE(ctx_, nullptr);
+
+        const struct DdTableDeal deal = MakeReferenceTableDeal();
+        ASSERT_EQ(dds_c_calc_dd_table(ctx_, &deal, &table_), RETURN_NO_FAULT);
+    }
+
+    void TearDown() override
+    {
+        dds_c_destroy_solvercontext(ctx_);
+    }
+
+    DDS_C_SOLVER_CTX ctx_ = nullptr;
+    struct DdTableResults table_ = {};
+};
+
+TEST_F(DdsCApiParUtilities, ParFromTableMatchesCalcPar)
+{
+    const struct DdTableDeal deal = MakeReferenceTableDeal();
+    struct DdTableResults results = {};
+    struct ParResults expected = {};
+    ASSERT_EQ(dds_c_calc_par(ctx_, &deal, 0, &results, &expected), RETURN_NO_FAULT);
+
+    struct ParResults par = {};
+    ASSERT_EQ(dds_c_par_from_table(&table_, 0, &par), RETURN_NO_FAULT);
+    EXPECT_STREQ(par.par_score[0], expected.par_score[0]);
+    EXPECT_STREQ(par.par_score[1], expected.par_score[1]);
+}
+
+TEST_F(DdsCApiParUtilities, SidesParProducesContracts)
+{
+    struct ParResultsDealer sides[2] = {};
+    ASSERT_EQ(dds_c_sides_par(&table_, sides, 0), RETURN_NO_FAULT);
+    EXPECT_GT(sides[0].number, 0);
+    EXPECT_GT(sides[1].number, 0);
+}
+
+TEST_F(DdsCApiParUtilities, SidesParBinProducesContracts)
+{
+    struct ParResultsMaster sides[2] = {};
+    ASSERT_EQ(dds_c_sides_par_bin(&table_, sides, 0), RETURN_NO_FAULT);
+    EXPECT_GT(sides[0].number, 0);
+    EXPECT_GT(sides[1].number, 0);
+}
+
+TEST_F(DdsCApiParUtilities, DealerParProducesContractsForEveryDealer)
+{
+    for (int dealer = 0; dealer <= 3; ++dealer) {
+        struct ParResultsDealer res = {};
+        ASSERT_EQ(dds_c_dealer_par(&table_, &res, dealer, 0), RETURN_NO_FAULT)
+            << "dealer = " << dealer;
+        EXPECT_GT(res.number, 0) << "dealer = " << dealer;
+    }
+}
+
+TEST_F(DdsCApiParUtilities, DealerParBinProducesContractsForEveryDealer)
+{
+    for (int dealer = 0; dealer <= 3; ++dealer) {
+        struct ParResultsMaster res = {};
+        ASSERT_EQ(dds_c_dealer_par_bin(&table_, &res, dealer, 0), RETURN_NO_FAULT)
+            << "dealer = " << dealer;
+        EXPECT_GT(res.number, 0) << "dealer = " << dealer;
+    }
+}
+
+TEST_F(DdsCApiParUtilities, ConvertToDealerTextFormatProducesText)
+{
+    struct ParResultsMaster res = {};
+    ASSERT_EQ(dds_c_dealer_par_bin(&table_, &res, 0, 0), RETURN_NO_FAULT);
+
+    char line[128] = {};
+    ASSERT_EQ(dds_c_convert_to_dealer_text_format(&res, line), RETURN_NO_FAULT);
+    EXPECT_GT(std::strlen(line), 0U);
+}
+
+TEST_F(DdsCApiParUtilities, ConvertToSidesTextFormatProducesText)
+{
+    struct ParResultsMaster res = {};
+    ASSERT_EQ(dds_c_dealer_par_bin(&table_, &res, 0, 0), RETURN_NO_FAULT);
+
+    struct ParTextResults text = {};
+    ASSERT_EQ(dds_c_convert_to_sides_text_format(&res, &text), RETURN_NO_FAULT);
+    EXPECT_GT(std::strlen(text.par_text[0]), 0U);
+}
+
+TEST(DdsCApiInfo, GetDDSInfoPopulatesVersion)
+{
+    struct DDSInfo info = {};
+    dds_c_get_dds_info(&info);
+    EXPECT_STREQ(info.version_string, "3.1.0");
+}
+
+TEST(DdsCApiInfo, ErrorMessageMapsKnownCode)
+{
+    char line[80] = {};
+    dds_c_error_message(RETURN_NO_FAULT, line);
+    EXPECT_STREQ(line, TEXT_NO_FAULT);
 }
 
 }  // namespace

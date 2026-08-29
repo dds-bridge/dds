@@ -53,3 +53,27 @@ auto SolveBoard(
     int solutions,
     int mode,
     FutureTricks* futp) -> int;
+
+/**
+ * @brief Solve a single deal in PBN format with explicit solver context.
+ *
+ * C++-only overload that accepts an explicit SolverContext and a PBN-format
+ * deal, allowing clients to manage solver state and resources across
+ * multiple solve operations. Converts to binary format and delegates to
+ * solve_board(SolverContext&, ...).
+ *
+ * @param ctx Solver context containing state and resources
+ * @param dlpbn Deal in PBN format to solve
+ * @param target Target number of tricks (-1 for maximum)
+ * @param solutions Solution mode (1=one, 2=all, 3=all with ranks)
+ * @param mode Solve mode (0=auto, 1-3=specific modes)
+ * @param futp Output structure for future tricks
+ * @return Error code (RETURN_NO_FAULT on success, RETURN_PBN_FAULT on parse error)
+ */
+auto solve_board_pbn(
+    SolverContext& ctx,
+    const DealPBN& dlpbn,
+    int target,
+    int solutions,
+    int mode,
+    FutureTricks* futp) -> int;

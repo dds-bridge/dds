@@ -67,6 +67,27 @@ auto calc_par(
     ParResults* par_results) -> int;
 
 /**
+ * @brief Calculate par score and contracts for a PBN-format deal table with
+ *        explicit solver context.
+ *
+ * Converts the PBN deal to binary format and delegates to
+ * calc_par(SolverContext&, ...).
+ *
+ * @param ctx Solver context for resource management and TT reuse
+ * @param table_deal_pbn Deal in PBN format
+ * @param vulnerable Vulnerability (0=None, 1=Both, 2=NS, 3=EW)
+ * @param table_results Output: double dummy table results
+ * @param par_results Output: par score and contract strings
+ * @return Error code (RETURN_NO_FAULT on success, RETURN_PBN_FAULT on parse error)
+ */
+auto calc_par_pbn(
+    SolverContext& ctx,
+    const DdTableDealPBN& table_deal_pbn,
+    int vulnerable,
+    DdTableResults* table_results,
+    ParResults* par_results) -> int;
+
+/**
  * @brief Calculate par from pre-computed double dummy table.
  *
  * When DD table is already available, this function computes only the par
