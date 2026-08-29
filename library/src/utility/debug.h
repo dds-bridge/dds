@@ -44,18 +44,18 @@
 // #define DDS_DEBUG_ALL
 
 /// @brief File extension for debug output files.
-#define DDS_DEBUG_SUFFIX ".txt"
+constexpr const char* const DDS_DEBUG_SUFFIX = ".txt";
 
 /// @brief Log data about each call to the top-level AB routine.
 /// Generates detailed information about solver entry points and parameters.
 // #define DDS_TOP_LEVEL
-#define DDS_TOP_LEVEL_PREFIX "toplevel"
+constexpr const char* const DDS_TOP_LEVEL_PREFIX = "toplevel";
 
 /// @brief Enable AB search statistics (node counts, timing, etc.).
 /// Records alpha-beta search performance metrics for optimization analysis.
 /// Enable via Bazel: --define=ab_stats=true
 // #define DDS_AB_STATS
-#define DDS_AB_STATS_PREFIX "ABstats"
+constexpr const char* const DDS_AB_STATS_PREFIX = "ABstats";
 
 /// @brief Enable detailed AB search statistics.
 /// Must be combined with DDS_AB_STATS for enhanced diagnostic output.
@@ -64,18 +64,18 @@
 /// @brief Log transposition table hits and misses.
 /// Tracks which positions are stored to and retrieved from the TT cache.
 // #define DDS_AB_HITS
-#define DDS_AB_HITS_RETRIEVED_PREFIX "retrieved"
-#define DDS_AB_HITS_STORED_PREFIX "stored"
+constexpr const char* const DDS_AB_HITS_RETRIEVED_PREFIX = "retrieved";
+constexpr const char* const DDS_AB_HITS_STORED_PREFIX = "stored";
 
 /// @brief Enable transposition table usage statistics.
 /// Reports memory efficiency and hit rates of the position cache.
 // #define DDS_TT_STATS
-#define DDS_TT_STATS_PREFIX "TTstats"
+constexpr const char* const DDS_TT_STATS_PREFIX = "TTstats";
 
 /// @brief Enable timing of AB search and related functions.
 /// Measures execution time and attempts to calculate exclusive (non-overlapping) times.
 // #define DDS_TIMING
-#define DDS_TIMING_PREFIX "timer"
+constexpr const char* const DDS_TIMING_PREFIX = "timer";
 
 /// @brief Enable detailed timing breakdown.
 /// Requires DDS_TIMING; provides per-function timing details.
@@ -84,7 +84,7 @@
 /// @brief Enable move generation quality statistics.
 /// Analyzes the effectiveness of move ordering heuristics.
 // #define DDS_MOVES
-#define DDS_MOVES_PREFIX "movestats"
+constexpr const char* const DDS_MOVES_PREFIX = "movestats";
 
 /// @brief Enable detailed move generation statistics.
 /// Requires DDS_MOVES; provides per-move-type analysis.
@@ -92,7 +92,7 @@
 
 /// @brief Enable scheduler timing (provided by build system).
 /// Logs thread pool scheduling decisions and timing.
-#define DDS_SCHEDULER_PREFIX "sched"
+constexpr const char* const DDS_SCHEDULER_PREFIX = "sched";
 
 /// @}
 

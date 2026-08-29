@@ -20,16 +20,16 @@
 #include <api/dll.h>
 
 
-#define THREADMEM_SMALL_MAX_MB 30
-#define THREADMEM_SMALL_DEF_MB 20
-#define THREADMEM_LARGE_MAX_MB 160
-#define THREADMEM_LARGE_DEF_MB 95
+constexpr int THREADMEM_SMALL_MAX_MB = 30;
+constexpr int THREADMEM_SMALL_DEF_MB = 20;
+constexpr int THREADMEM_LARGE_MAX_MB = 160;
+constexpr int THREADMEM_LARGE_DEF_MB = 95;
 
-#define MAXNODE 1
-#define MINNODE 0
+constexpr int MAXNODE = 1;
+constexpr int MINNODE = 0;
 
-#define SIMILARDEALLIMIT 5
-#define SIMILARMAXWINNODES 700000
+constexpr int SIMILARDEALLIMIT = 5;
+constexpr int SIMILARMAXWINNODES = 700000;
 
 
 /* "hand" is leading hand, "relative" is hand relative leading

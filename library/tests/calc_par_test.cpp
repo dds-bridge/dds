@@ -8,19 +8,19 @@
 #include <dds/dds.hpp>
 
 // Rank bitmask constants  (bits 2-14 for ranks 2-A)
-#define R2  0x0004
-#define R3  0x0008
-#define R4  0x0010
-#define R5  0x0020
-#define R6  0x0040
-#define R7  0x0080
-#define R8  0x0100
-#define R9  0x0200
-#define RT  0x0400
-#define RJ  0x0800
-#define RQ  0x1000
-#define RK  0x2000
-#define RA  0x4000
+constexpr int R2 = 0x0004;
+constexpr int R3 = 0x0008;
+constexpr int R4 = 0x0010;
+constexpr int R5 = 0x0020;
+constexpr int R6 = 0x0040;
+constexpr int R7 = 0x0080;
+constexpr int R8 = 0x0100;
+constexpr int R9 = 0x0200;
+constexpr int RT = 0x0400;
+constexpr int RJ = 0x0800;
+constexpr int RQ = 0x1000;
+constexpr int RK = 0x2000;
+constexpr int RA = 0x4000;
 
 class CalcParTest : public ::testing::Test
 {
