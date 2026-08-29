@@ -465,11 +465,15 @@ TEST_F(DdsCApiParUtilities, ConvertToDealerTextFormatProducesText)
 
 TEST_F(DdsCApiParUtilities, ConvertToSidesTextFormatProducesText)
 {
-    struct ParResultsMaster res = {};
-    ASSERT_EQ(dds_c_dealer_par_bin(&table_, &res, 0, 0), RETURN_NO_FAULT);
+    // ConvertToSidesTextFormat indexes its input as a 2-element array (one
+    // entry per side), so it must be fed SidesParBin's output, not a single
+    // DealerParBin result -- a single ParResultsMaster is one element short
+    // and reading the second one overruns it.
+    struct ParResultsMaster sides[2] = {};
+    ASSERT_EQ(dds_c_sides_par_bin(&table_, sides, 0), RETURN_NO_FAULT);
 
     struct ParTextResults text = {};
-    ASSERT_EQ(dds_c_convert_to_sides_text_format(&res, &text), RETURN_NO_FAULT);
+    ASSERT_EQ(dds_c_convert_to_sides_text_format(sides, &text), RETURN_NO_FAULT);
     EXPECT_GT(std::strlen(text.par_text[0]), 0U);
 }
 

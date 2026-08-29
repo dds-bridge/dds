@@ -124,12 +124,14 @@ DLLEXPORT int dds_c_sides_par_bin(const struct DdTableResults* table,
                                   struct ParResultsMaster sides_res[2],
                                   int vulnerable);
 
-/* Format a ParResultsMaster as dealer-oriented text. */
+/* Format a dds_c_dealer_par_bin() result as dealer-oriented text. */
 DLLEXPORT int dds_c_convert_to_dealer_text_format(const struct ParResultsMaster* par,
                                                   char* resp);
 
-/* Format a ParResultsMaster as sides-oriented text. */
-DLLEXPORT int dds_c_convert_to_sides_text_format(const struct ParResultsMaster* par,
+/* Format a dds_c_sides_par_bin() result (both sides) as sides-oriented text.
+   par must point to a 2-element array, one entry per side, matching
+   dds_c_sides_par_bin's output -- not a single dds_c_dealer_par_bin() result. */
+DLLEXPORT int dds_c_convert_to_sides_text_format(const struct ParResultsMaster par[2],
                                                  struct ParTextResults* resp);
 
 /* Query library version/build information. */

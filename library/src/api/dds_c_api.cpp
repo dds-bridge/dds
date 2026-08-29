@@ -333,7 +333,7 @@ DLLEXPORT int dds_c_convert_to_dealer_text_format(const struct ParResultsMaster*
     }
 }
 
-DLLEXPORT int dds_c_convert_to_sides_text_format(const struct ParResultsMaster* par,
+DLLEXPORT int dds_c_convert_to_sides_text_format(const struct ParResultsMaster par[2],
                                                  struct ParTextResults* resp)
 {
     if (par == nullptr || resp == nullptr)
