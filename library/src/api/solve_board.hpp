@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include <api/dds.h>
+#include <api/dds_data_types.hpp>
 #include <solver_context/solver_context.hpp>
 
 /**

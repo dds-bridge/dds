@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>
 
-#include <api/dds.h>
+#include <api/dds_data_types.hpp>
 //#include <api/dds_api.hpp>
 #include <trans_table/trans_table_l.hpp>
 #include <trans_table/trans_table_s.hpp>

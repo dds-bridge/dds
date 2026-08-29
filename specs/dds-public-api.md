@@ -26,10 +26,24 @@ capability defines what crosses the boundary and promises to stay stable.
 > The exact per-function contracts are in doxygen. These are the whole-surface
 > facts.
 
+- **Data model and constants are split out from the entry points.** The
+  compile-time constants and macros (bridge dimensions, `DDS_VERSION`,
+  `MAXNOOFBOARDS` / `MAXNOOFTABLES`, the `RETURN_*` / `TEXT_*` status codes,
+  `DLLEXPORT` / `STDCALL` / `EXTERN_C`) live in `dds_constants.hpp`; the plain
+  data structures live in `dds_c_data_types.h` (the six POD structs that cross
+  the pure-C shim: `Deal`, `FutureTricks`, `DdTableDeal`, `DdTableDealPBN`,
+  `DdTableResults`, `ParResults`) and `dds_data_types.hpp` (everything else —
+  the batch/PBN/par/play-trace structs, `DDSInfo`, and the internal search
+  structures). `dds_data_types.hpp` includes `dds_c_data_types.h`. Internal
+  solver code includes these headers directly; the function-declaration headers
+  (`dll.h`, `dds_api.hpp`, `dds_c_api.h`) are included only by API consumers and
+  by the API implementation files that define those symbols.
 - **Three layers, one library:**
   1. **Flat legacy C API** — `dll.h`: historical Haglund/Hein ABI
-     (`EXTERN_C DLLEXPORT … STDCALL`), kept for backward compatibility. Full
-     symbol list is in the header / doxygen, not here.
+     (`EXTERN_C DLLEXPORT … STDCALL`), kept for backward compatibility. It now
+     carries only the function declarations and pulls its types/constants from
+     `dds_constants.hpp` + `dds_data_types.hpp`. Full symbol list is in the
+     header / doxygen, not here.
   2. **Modern context C++ API** — `dds_api.hpp`: context-handle entry points
      taking `DDS_SOLVER_CTX` (= `SolverContext*`) with C++ types (`const Deal&`,
      `SolverConfig`, `TTKind`). See [solver-context](solver-context.md) and the
@@ -92,6 +106,11 @@ capability defines what crosses the boundary and promises to stay stable.
   surface). Guarded by `//library/tests:dds_c_api_test`.
 - `library/src/api/{solve_board,calc_dd_table,calc_par}.hpp`, `PBN.h`,
   `portab.h`, `dds.h` — supporting public headers (`api_definitions`).
+- `library/src/api/{dds_constants.hpp,dds_c_data_types.h,dds_data_types.hpp}` —
+  the shared constants and data model, with no function declarations.
+  `dds_constants.hpp` has its own dependency-free build target
+  (`//library/src/api:dds_constants`) so `//library/src/utility:constants` can
+  fold its bridge dimensions in without a cycle.
 - Build targets: `//library/src/api:dds_c_api`, `:api_definitions`, `//:dds`
   (façade), `//:testable_dds`, plus the logging/stats variants
   `//library/src:{testable_dds_util_log,testable_dds_util_stats}` — same sources,

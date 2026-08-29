@@ -9,18 +9,18 @@
    and ctypes a single clean, stable ABI to bind against.
 
    NOTE: the *exported symbols* are a pure C ABI, but this header is not itself
-   compilable by a C front-end: it includes <api/dll.h>, whose flat API is
-   declared with C++ trailing-return syntax (auto ... -> int). Consume the ABI
-   by binding to the compiled library's symbols (FFM/ctypes/.NET) or by parsing
-   the headers with a C++ mode (jextract); do not #include this from a C
-   translation unit.
+   compilable by a C front-end: it pulls in <api/dds_c_data_types.h>, whose
+   shared macros and bridge dimensions are C++ constexpr / trailing-return
+   constructs. Consume the ABI by binding to the compiled library's symbols
+   (FFM/ctypes/.NET) or by parsing the headers with a C++ mode (jextract); do
+   not include this from a C translation unit.
 
    See LICENSE and README.
 */
 
 #pragma once
 
-#include <api/dll.h>   /* struct Deal, FutureTricks, DdTableDeal, DdTableResults, ParResults */
+#include <api/dds_c_data_types.h>   /* struct Deal, FutureTricks, DdTableDeal, DdTableDealPBN, DdTableResults, ParResults; DLLEXPORT */
 
 #ifdef __cplusplus
 extern "C" {

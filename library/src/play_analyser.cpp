@@ -8,6 +8,7 @@
 */
 
 #include "play_analyser.hpp"
+#include <api/dll.h>
 #include <solver_if.hpp>
 #include <pbn.hpp>
 #include <solver_context/solver_context.hpp>

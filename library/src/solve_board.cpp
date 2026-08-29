@@ -11,6 +11,7 @@
 
 #include "solve_board.hpp"
 #include <api/solve_board.hpp>
+#include <api/dll.h>
 #include <solver_if.hpp>
 #include <pbn.hpp>
 #include <system/memory.hpp>

@@ -12,6 +12,7 @@
 #include <init.hpp>
 #include "solver_if.hpp"
 #include <api/solve_board.hpp>
+#include <api/dll.h>
 #include <lookup_tables/lookup_tables.hpp>
 #include <memory>
 #include <solver_context/solver_context.hpp>

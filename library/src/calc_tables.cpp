@@ -19,6 +19,7 @@
 #include <table_deal_validate.hpp>
 #include <solve_board.hpp>
 #include <api/solve_board.hpp>
+#include <api/dll.h>
 #include <solver_if.hpp>
 #include <system/deal_fanout.hpp>
 #include <system/memory.hpp>

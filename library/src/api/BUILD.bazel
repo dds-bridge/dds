@@ -11,12 +11,25 @@ exports_files(
     visibility = ["//visibility:public"],
 )
 
+# Compile-time constants and macros shared with the whole solver. Kept as its
+# own dependency-free target so //library/src/utility:constants can fold its
+# bridge dimensions in here without a dependency cycle.
+cc_library(
+    name = "dds_constants",
+    hdrs = ["dds_constants.hpp"],
+    include_prefix = "api",
+    visibility = ["//visibility:public"],
+    deps = [],
+)
+
 cc_library(
     name = "api_definitions",
     hdrs = [
         "calc_dd_table.hpp",
         "calc_par.hpp",
         "dds.h",
+        "dds_c_data_types.h",
+        "dds_data_types.hpp",
         "dll.h",
         "dds_api.hpp",
         "dds_c_api.h",
@@ -27,6 +40,7 @@ cc_library(
     include_prefix = "api",
     visibility = ["//visibility:public"],
     deps = [
+        ":dds_constants",
         "//library/src/utility:constants",
     ],
 )

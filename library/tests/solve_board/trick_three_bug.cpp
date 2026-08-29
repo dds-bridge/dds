@@ -11,6 +11,7 @@
 
 // Project headers
 #include <api/dds.h>
+#include <api/dll.h>
 
 class TrickThreeBugTests : public ::testing::Test
 {
