@@ -17,6 +17,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <string>
 
 #include <api/dds_c_api.h>
 
@@ -481,7 +482,20 @@ TEST(DdsCApiInfo, GetDDSInfoPopulatesVersion)
 {
     struct DDSInfo info = {};
     dds_c_get_dds_info(&info);
-    EXPECT_STREQ(info.version_string, "3.1.0");
+
+    // Derive the expected version from DDS_VERSION (matching the
+    // major/minor/patch decomposition GetDDSInfo itself uses) rather than a
+    // hard-coded literal, so this test keeps tracking version bumps.
+    const int major = DDS_VERSION / 10000;
+    const int minor = (DDS_VERSION - major * 10000) / 100;
+    const int patch = DDS_VERSION % 100;
+    const std::string expected_version = std::to_string(major) + "." +
+        std::to_string(minor) + "." + std::to_string(patch);
+
+    EXPECT_EQ(info.major, major);
+    EXPECT_EQ(info.minor, minor);
+    EXPECT_EQ(info.patch, patch);
+    EXPECT_STREQ(info.version_string, expected_version.c_str());
 }
 
 TEST(DdsCApiInfo, ErrorMessageMapsKnownCode)
