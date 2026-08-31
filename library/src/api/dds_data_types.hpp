@@ -128,7 +128,7 @@ struct ParResultsDealer
      score: Par score for the specified dealer hand.
      contracts:  Par contract text strings.  The first contract
        is in contracts[0], the last one in contracts[number-1].
-       The detailed text format is is given in the DLL interface
+       The detailed text format is given in the DLL interface
        document.
   */
   int number;
