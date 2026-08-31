@@ -527,7 +527,11 @@ EXTERN_C DLLEXPORT auto STDCALL SetResources(
 EXTERN_C DLLEXPORT auto STDCALL FreeMemory() -> void;
 
 /**
- * @brief Solve a single bridge Deal using double dummy analysis.
+ * @brief Solve a single bridge Deal using double dummy analysis
+ *
+ * @deprecated Use SolverContext with the SolveBoard(SolverContext&, ...)
+ *             overload instead.
+ *             See docs/api_migration.md for modern C++ API examples.
  *
  * @param dl The Deal to analyze
  * @param target Target number of tricks
@@ -536,6 +540,11 @@ EXTERN_C DLLEXPORT auto STDCALL FreeMemory() -> void;
  * @param futp Pointer to result structure
  * @param threadIndex Index of thread to use
  * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which accumulates transposition-table knowledge across calls instead of
+ * relying on the internal thread-indexed memory pools.
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
   struct Deal dl,
@@ -548,6 +557,10 @@ EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
 /**
  * @brief Solve a single bridge Deal in PBN format using double dummy analysis.
  *
+ * @deprecated Use SolverContext with the solve_board_pbn(SolverContext&, ...)
+ *             overload instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
  * @param dlpbn The PBN Deal to analyze
  * @param target Target number of tricks
  * @param solutions Solution mode
@@ -555,6 +568,11 @@ EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
  * @param futp Pointer to result structure
  * @param thrId Index of thread to use
  * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which allows the transposition table and thread resources to be reused
+ * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveBoardPBN(
   struct DealPBN dlpbn,
@@ -567,9 +585,18 @@ EXTERN_C DLLEXPORT auto STDCALL SolveBoardPBN(
 /**
  * @brief Calculate the double dummy table for a given Deal.
  *
+ * @deprecated Use SolverContext with the calc_dd_table(SolverContext&, ...)
+ *             overload instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
  * @param tableDeal Deal for which to calculate the table
  * @param tablep Pointer to result table
  * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which allows the transposition table and thread resources to be reused
+ * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcDDtable(
   struct DdTableDeal tableDeal,
@@ -577,6 +604,13 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtable(
 
 /**
  * @brief CalcDDtable with an explicit worker-thread cap.
+ *
+ * @deprecated Use SolverContext with the calc_dd_table(SolverContext&, ...)
+ *             overload instead; the modern API computes the table on the
+ *             calling thread, so per-call thread caps no longer apply -
+ *             the embedding application controls parallelism (typically one
+ *             SolverContext per worker thread).
+ *             See docs/api_migration.md for modern C++ API examples.
  *
  * @param maxThreads Maximum worker threads; <= 0 selects the automatic
  *        (hardware_concurrency) default.
@@ -589,9 +623,18 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtableN(
 /**
  * @brief Calculate the double dummy table for a PBN Deal.
  *
+ * @deprecated Use SolverContext with the calc_dd_table_pbn(SolverContext&, ...)
+ *             overload instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
  * @param tableDealPBN PBN Deal for which to calculate the table
  * @param tablep Pointer to result table
  * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which allows the transposition table and thread resources to be reused
+ * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBN(
   struct DdTableDealPBN tableDealPBN,
@@ -599,6 +642,13 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBN(
 
 /**
  * @brief CalcDDtablePBN with an explicit worker-thread cap.
+ *
+ * @deprecated Use SolverContext with the calc_dd_table_pbn(SolverContext&, ...)
+ *             overload instead; the modern API computes the table on the
+ *             calling thread, so per-call thread caps no longer apply -
+ *             the embedding application controls parallelism (typically one
+ *             SolverContext per worker thread).
+ *             See docs/api_migration.md for modern C++ API examples.
  *
  * @param maxThreads Maximum worker threads; <= 0 selects the automatic
  *        (hardware_concurrency) default.
@@ -772,12 +822,48 @@ EXTERN_C DLLEXPORT auto STDCALL Par(
   struct ParResults * presp,
   int vulnerable) -> int;
 
+/**
+ * @brief Calculate the double dummy table and par result for a given Deal.
+ *
+ * @deprecated Use SolverContext with the calc_par(SolverContext&, ...)
+ *             overload instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
+ * @param tableDeal Deal for which to calculate the table
+ * @param vulnerable Vulnerability (0 = None, 1 = Both, 2 = NS, 3 = EW)
+ * @param tablep Pointer to result table
+ * @param presp Pointer to result par information
+ * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which allows the transposition table and thread resources to be reused
+ * across calls instead of being reallocated internally on each call.
+ */
 EXTERN_C DLLEXPORT auto STDCALL CalcPar(
   struct DdTableDeal tableDeal,
   int vulnerable,
   struct DdTableResults * tablep,
   struct ParResults * presp) -> int;
 
+/**
+ * @brief Calculate the double dummy table and par result for a PBN Deal.
+ *
+ * @deprecated Use SolverContext with the calc_par_pbn(SolverContext&, ...)
+ *             overload instead.
+ *             See docs/api_migration.md for modern C++ API examples.
+ *
+ * @param tableDealPBN PBN Deal for which to calculate the table
+ * @param tablep Pointer to result table
+ * @param vulnerable Vulnerability (0 = None, 1 = Both, 2 = NS, 3 = EW)
+ * @param presp Pointer to result par information
+ * @return 1 on success, error code otherwise
+ *
+ * This function is part of the legacy C API and is maintained for backward
+ * compatibility. New code should use the modern C++ API with SolverContext,
+ * which allows the transposition table and thread resources to be reused
+ * across calls instead of being reallocated internally on each call.
+ */
 EXTERN_C DLLEXPORT auto STDCALL CalcParPBN(
   struct DdTableDealPBN tableDealPBN,
   struct DdTableResults * tablep,
