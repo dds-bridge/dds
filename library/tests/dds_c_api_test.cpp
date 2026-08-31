@@ -110,8 +110,7 @@ TEST(DdsCApiNullHandle, IntReturningEntryPointsFailFast)
     EXPECT_EQ(dds_c_calc_par_pbn(nullptr, &pbn_deal, 0, &results, &par), RETURN_UNKNOWN_FAULT);
 }
 
-// The context-free utilities take no handle at all; they must instead reject
-// null data pointers (the only thing they could otherwise dereference).
+// Context-free utilities: must reject null data pointers.
 TEST(DdsCApiNullHandle, ContextFreeUtilitiesRejectNullPointers)
 {
     struct DdTableResults results = {};
