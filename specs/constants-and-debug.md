@@ -29,7 +29,9 @@ single, authoritative definition of "how a card/hand/strain is represented" and
 - **Fixed dimensions.** `DDS_STRAINS = 5` (4 suits + NT), `DDS_HANDS = 4`,
   `DDS_SUITS = 4`, `DDS_NOTRUMP = 4`. These are `constexpr` and are treated as
   immutable across the codebase — array sizes and loop bounds everywhere assume
-  them.
+  them. They are defined in `<api/dds_constants.hpp>` (alongside the other
+  compile-time constants); `constants.h` includes it and only declares the
+  lookup tables.
 - **Hand-relationship arrays** (`lho`, `rho`, `partner`) map an absolute hand
   0–3 to its left-hand opponent / right-hand opponent / partner. Consumers rely
   on the seating convention: hands are ordered N(0)/E(1)/S(2)/W(3) going
@@ -56,8 +58,12 @@ single, authoritative definition of "how a card/hand/strain is represented" and
 
 ## Key entry points
 
-- `library/src/utility/constants.h` — dimensions, hand-relationship arrays, and
-  card lookup tables (declarations). Doxygen: group `utility_constants`.
+- `library/src/api/dds_constants.hpp` — the fixed bridge dimensions plus the
+  rest of the solver's compile-time constants and export macros. Build target:
+  `//library/src/api:dds_constants` (dependency-free).
+- `library/src/utility/constants.h` — hand-relationship arrays and card lookup
+  tables (declarations); includes `<api/dds_constants.hpp>` for the dimensions.
+  Doxygen: group `utility_constants`.
 - `library/src/utility/constants.cpp` — the single definition of the `extern const`
   tables.
 - `library/src/utility/debug.h` — compile-time diagnostic flags, their file-name

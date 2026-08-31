@@ -212,6 +212,18 @@
       <Filter>library\src\api</Filter>
     </ClInclude>
 
+    <ClInclude Include="..\library\src\api\dds_constants.hpp">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\dds_c_data_types.h">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\library\src\api\dds_data_types.hpp">
+      <Filter>library\src\api</Filter>
+    </ClInclude>
+
     <ClInclude Include="..\library\src\api\dll.h">
       <Filter>library\src\api</Filter>
     </ClInclude>

@@ -13,7 +13,7 @@
 
 #include <par_validate.hpp>
 #include <pbn.hpp>
-#include <api/dds.h>
+#include <api/dll.h>
 
 using namespace std;
 
