@@ -41,6 +41,5 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\examples\calc_par_context_example.cpp" />
-    <ClCompile Include="..\examples\hands.cpp" />
   </ItemGroup>
 </Project>

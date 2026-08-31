@@ -40,7 +40,7 @@
   <!-- ====================== -->
   <!--  INCLUDE PATHS Added   -->
   <!-- ====================== -->
-  <PropertyGroup >
+  <PropertyGroup>
     <OutDir>..\Build\bin\$(platform)\$(Configuration)\</OutDir>
     <IntDir>..\Build\int\$(platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
@@ -49,6 +49,8 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\library\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <BuildLog>
       <Path>$(IntDir)$(MSBuildProjectName).log</Path>
@@ -59,6 +61,8 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\library\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- ClCompile og ClInclude source files -->
@@ -69,7 +73,7 @@
     <ClCompile Include="..\library\src\calc_par.cpp" />
     <ClCompile Include="..\library\src\calc_tables.cpp" />
     <ClCompile Include="..\library\src\dds.cpp" />
-	<ClCompile Include="..\library\src\dds_api.cpp" />
+    <ClCompile Include="..\library\src\dds_api.cpp" />
     <ClCompile Include="..\library\src\dealer_par.cpp" />
     <ClCompile Include="..\library\src\dump.cpp" />
     <ClCompile Include="..\library\src\heuristic_sorting\heuristic_sorting.cpp" />
@@ -85,6 +89,7 @@
     <ClCompile Include="..\library\src\solver_context_adapter.cpp" />
     <ClCompile Include="..\library\src\solver_if.cpp" />
     <ClCompile Include="..\library\src\solve_board.cpp" />
+    <ClCompile Include="..\library\src\system\deal_fanout.cpp" />
     <ClCompile Include="..\library\src\system\memory.cpp" />
     <ClCompile Include="..\library\src\system\parallel_boards.cpp" />
     <ClCompile Include="..\library\src\system\scheduler.cpp" />
