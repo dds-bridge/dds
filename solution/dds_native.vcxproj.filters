@@ -148,7 +148,7 @@
       <Filter>library\src\utility</Filter>
     </ClCompile>
     <ClCompile Include="..\library\src\system\deal_fanout.cpp">
-      <Filter>library\src</Filter>
+      <Filter>library\src\system</Filter>
     </ClCompile>
   </ItemGroup>
   <!-- ========================= -->
