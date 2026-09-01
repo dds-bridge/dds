@@ -8,8 +8,7 @@
 */
 
 #include "pbn.hpp"
-#include <api/dds.h>
-#include <api/dll.h>
+#include <api/dds_data_types.hpp>
 
 constexpr int PbnBufferSize = static_cast<int>(sizeof(DealPBN::remainCards));
 

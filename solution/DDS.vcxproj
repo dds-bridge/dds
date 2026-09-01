@@ -109,6 +109,9 @@
     <ClInclude Include="..\library\src\api\calc_dd_table.hpp" />
     <ClInclude Include="..\library\src\api\calc_par.hpp" />
     <ClInclude Include="..\library\src\api\dds.h" />
+    <ClInclude Include="..\library\src\api\dds_constants.hpp" />
+    <ClInclude Include="..\library\src\api\dds_c_data_types.h" />
+    <ClInclude Include="..\library\src\api\dds_data_types.hpp" />
     <ClInclude Include="..\library\src\api\dll.h" />
     <ClInclude Include="..\library\src\api\PBN.h" />
     <ClInclude Include="..\library\src\api\portab.h" />

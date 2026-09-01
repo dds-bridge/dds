@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <iostream>
 #include <new>
-#include <api/dds.h>
+#include <api/dds_data_types.hpp>
 #include <string>
 
 #include "trans_table_s.hpp"

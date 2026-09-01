@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include <api/dds.h>
+#include <api/dds_data_types.hpp>
 #include <solver_context/solver_context.hpp>
 
 // Naming note: New C++ APIs in DDS 3 use snake_case (calc_dd_table).

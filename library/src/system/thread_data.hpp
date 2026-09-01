@@ -3,7 +3,7 @@
 
 #include <utility/debug.h>
 
-#include <api/dds.h>
+#include <api/dds_data_types.hpp>
 #include <moves/moves.hpp>
 #include <string>
 

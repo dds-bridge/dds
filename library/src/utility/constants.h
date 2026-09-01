@@ -10,15 +10,15 @@
 #pragma once
 
 /// @file constants.h
-/// @brief Utility constants and lookup tables for card representation.
+/// @brief Utility lookup tables for card representation.
 /// @defgroup utility_constants Utility Constants
 /// @{
 
-/// Global bridge game dimensions
-constexpr int DDS_STRAINS = 5;  ///< Number of strains (4 suits + no trump)
-constexpr int DDS_HANDS = 4;    ///< Number of hands (N/E/S/W)
-constexpr int DDS_SUITS = 4;    ///< Number of suits (S/H/D/C)
-constexpr int DDS_NOTRUMP = 4;  ///< No trump strain index
+/// The fixed bridge dimensions (DDS_STRAINS / DDS_HANDS / DDS_SUITS /
+/// DDS_NOTRUMP) now live in <api/dds_constants.hpp> alongside the other
+/// compile-time constants; this header only declares the card-representation
+/// lookup tables.
+#include <api/dds_constants.hpp>
 
 /// @name Hand Relationship Arrays
 /// Precomputed lookup tables for hand relationships. Each array maps

@@ -10,6 +10,7 @@
 #include <api/calc_par.hpp>
 #include <api/calc_dd_table.hpp>
 #include <api/dll.h>
+#include <pbn.hpp>
 
 auto calc_par(
     const DdTableDeal& table_deal,
@@ -43,6 +44,20 @@ auto calc_par(
 
     // Par calculation doesn't need context (pure computation on table results)
     return Par(table_results, par_results, vulnerable);
+}
+
+auto calc_par_pbn(
+    SolverContext& ctx,
+    const DdTableDealPBN& table_deal_pbn,
+    int vulnerable,
+    DdTableResults* table_results,
+    ParResults* par_results) -> int
+{
+    DdTableDeal table_deal;
+    if (convert_from_pbn(table_deal_pbn.cards, table_deal.cards) != RETURN_NO_FAULT)
+        return RETURN_PBN_FAULT;
+
+    return calc_par(ctx, table_deal, vulnerable, table_results, par_results);
 }
 
 auto calc_par_from_table(

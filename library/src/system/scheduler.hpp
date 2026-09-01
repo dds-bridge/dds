@@ -14,7 +14,7 @@
 #include <vector>
 #include <utility>
 
-#include <api/dds.h>
+#include <api/dds_data_types.hpp>
 #include <system/timer.hpp>
 // TimeStatList is required when DDS_SCHEDULER is enabled.
 #ifdef DDS_SCHEDULER

@@ -27,6 +27,7 @@
 #include <system/thread_mgr.hpp>
 #include <trans_table/trans_table.hpp>
 #include <utility/constants.h>
+#include <api/dll.h>
 #include <utility/debug.h>
 
 System sysdep;

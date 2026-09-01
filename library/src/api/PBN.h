@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <api/dll.h>
+#include <api/dds_data_types.hpp>
 
 
 /**

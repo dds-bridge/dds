@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include <api/dds.h>
+#include <api/dds_data_types.hpp>
 #include <solver_context/solver_context.hpp>
 
 // Naming note: New C++ APIs in DDS 3 use snake_case (calc_par, calc_par_from_table).
@@ -62,6 +62,27 @@ auto calc_par(
  auto calc_par(
     SolverContext& ctx,
     const DdTableDeal& table_deal,
+    int vulnerable,
+    DdTableResults* table_results,
+    ParResults* par_results) -> int;
+
+/**
+ * @brief Calculate par score and contracts for a PBN-format deal table with
+ *        explicit solver context.
+ *
+ * Converts the PBN deal to binary format and delegates to
+ * calc_par(SolverContext&, ...).
+ *
+ * @param ctx Solver context for resource management and TT reuse
+ * @param table_deal_pbn Deal in PBN format
+ * @param vulnerable Vulnerability (0=None, 1=Both, 2=NS, 3=EW)
+ * @param table_results Output: double dummy table results
+ * @param par_results Output: par score and contract strings
+ * @return Error code (RETURN_NO_FAULT on success, RETURN_PBN_FAULT on parse error)
+ */
+auto calc_par_pbn(
+    SolverContext& ctx,
+    const DdTableDealPBN& table_deal_pbn,
     int vulnerable,
     DdTableResults* table_results,
     ParResults* par_results) -> int;

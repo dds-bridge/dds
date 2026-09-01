@@ -75,6 +75,11 @@ DLLEXPORT auto dds_solve_board(DDS_SOLVER_CTX ctx, const Deal& dl, int target, i
 		futp);
 }
 
+DLLEXPORT auto dds_solve_board_pbn(DDS_SOLVER_CTX ctx, const DealPBN& dlpbn, int target, int solutions, int mode, FutureTricks* futp) -> int
+{
+	return solve_board_pbn(*ctx, dlpbn, target, solutions, mode, futp);
+}
+
 DLLEXPORT auto dds_calc_dd_table(DDS_SOLVER_CTX ctx, const DdTableDeal& table_deal, DdTableResults* table_results) -> int
 {
 	return calc_dd_table(*ctx, table_deal, table_results);
@@ -94,5 +99,15 @@ DLLEXPORT auto dds_calc_par(
 	ParResults* par_results) -> int
 {
 	return calc_par(*ctx, table_deal, vulnerable, table_results, par_results);
+}
+
+DLLEXPORT auto dds_calc_par_pbn(
+	DDS_SOLVER_CTX ctx,
+	const DdTableDealPBN& table_deal_pbn,
+	int vulnerable,
+	DdTableResults* table_results,
+	ParResults* par_results) -> int
+{
+	return calc_par_pbn(*ctx, table_deal_pbn, vulnerable, table_results, par_results);
 }
 

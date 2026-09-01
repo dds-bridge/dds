@@ -16,7 +16,7 @@
 #pragma once
 
 #include <fstream>
-#include <api/dll.h>
+#include <api/dds_data_types.hpp>
 
 /// \brief Enumeration of reasons that triggered a transposition table memory reset.
 ///
