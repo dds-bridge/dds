@@ -19,8 +19,8 @@
 #include <cstring>
 #include <string>
 
-#include <api/dds_c_api.h>
 #include <api/dds_c_data_types.h>
+#include <api/dds_c_api.h>
 
 namespace {
 
