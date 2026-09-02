@@ -90,7 +90,7 @@ void TestTimer::start(const int number)
 
 void TestTimer::end()
 {
-  time_point<Clock> user1 = Clock::now();
+  std::chrono::time_point<Clock> user1 = Clock::now();
   clock_t sys1 = clock();
 
   duration<double, std::milli> d = user1 - user0_;

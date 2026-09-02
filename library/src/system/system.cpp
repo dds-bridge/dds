@@ -26,6 +26,10 @@
 
 #include "system.hpp"
 
+using std::string;
+using std::to_string;
+using std::vector;
+
 // Boost: Disable some header warnings.
 
 #ifdef DDS_THREADS_BOOST

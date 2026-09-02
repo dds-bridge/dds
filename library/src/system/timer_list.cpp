@@ -16,6 +16,9 @@
 #include <fstream>
 #include <ostream>
 
+using std::endl;
+using std::ofstream;
+
 
 TimerList::TimerList()
 {

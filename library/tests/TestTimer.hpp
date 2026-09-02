@@ -17,7 +17,6 @@
 #include <iostream>
 
 using Clock = std::chrono::steady_clock;
-using std::chrono::time_point;
 
 /// @file TestTimer.hpp
 /// @brief High-resolution performance timing utility for tests.
@@ -44,7 +43,7 @@ class TestTimer
     int pending_hands_;     ///< Hands counted into the open start()/end() batch
     bool sys_time_known_;   ///< False when clock() is unusable (e.g. wasm32)
 
-    time_point<Clock> user0_;  ///< Wall-clock start time
+    std::chrono::time_point<Clock> user0_;  ///< Wall-clock start time
     clock_t sys0_;             ///< CPU start time
 
   public:

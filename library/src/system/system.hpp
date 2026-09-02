@@ -20,11 +20,9 @@
 
 #include <api/dds_data_types.hpp>
 
-using namespace std;
-
 typedef void (*FduplType)(
-  const Boards& bds, vector<int>& uniques, vector<int>& crossrefs);
-typedef void (*FcopyType)(const vector<int>& crossrefs);
+  const Boards& bds, std::vector<int>& uniques, std::vector<int>& crossrefs);
+typedef void (*FcopyType)(const std::vector<int>& crossrefs);
 
 
 /**
@@ -44,20 +42,20 @@ class System
 
     unsigned preferred_system_;
 
-    vector<bool> available_system_;
-  
+    std::vector<bool> available_system_;
+
     public:
 
-    string get_version(
+    std::string get_version(
       int& major,
       int& minor,
       int& patch) const;
-    string get_system(int& sys) const;
-    string get_bits(int& bits) const;
-    string get_compiler(int& comp) const;
+    std::string get_system(int& sys) const;
+    std::string get_bits(int& bits) const;
+    std::string get_compiler(int& comp) const;
     int get_cores() const;
-    string get_constructor(int& cons) const;
-    string get_threading(int& thr) const;
+    std::string get_constructor(int& cons) const;
+    std::string get_threading(int& thr) const;
     int get_memory_max() const { return sys_mem_mb_; }
     int get_num_threads() const { return num_threads_; }
 
