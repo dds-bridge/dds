@@ -13,8 +13,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 
 /**
  * @brief Thread manager for bridge double dummy solver.
@@ -28,8 +26,8 @@ class ThreadMgr
 {
   private:
 
-    vector<bool> realThreads;
-    vector<int> machineThreads;
+    std::vector<bool> realThreads;
+    std::vector<int> machineThreads;
     unsigned numRealThreads;
     unsigned numMachineThreads;
 
@@ -64,8 +62,8 @@ class ThreadMgr
     bool Release(const int MachineThrId);
 
     void Print(
-      const string& fname,
-      const string& tag) const;
+      const std::string& fname,
+      const std::string& tag) const;
 };
 
 #endif

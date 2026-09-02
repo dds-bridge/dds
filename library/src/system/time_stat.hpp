@@ -12,8 +12,6 @@
 
 #include <string>
 
-using namespace std;
-
 
 /**
  * @brief Timing statistics accumulator for bridge double dummy solver.
@@ -57,8 +55,8 @@ class TimeStat
 
     bool Used() const;
 
-    string Header() const;
-    string Line() const;
+    std::string Header() const;
+    std::string Line() const;
 };
 
 #endif

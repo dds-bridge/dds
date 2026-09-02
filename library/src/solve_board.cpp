@@ -307,8 +307,8 @@ auto solve_all_boards_n_seq(
 
 auto detect_solve_duplicates(
   const Boards& bds,
-  vector<int>& uniques,
-  vector<int>& crossrefs) -> void
+  std::vector<int>& uniques,
+  std::vector<int>& crossrefs) -> void
 {
   const unsigned nu = static_cast<unsigned>(bds.no_of_boards);
 

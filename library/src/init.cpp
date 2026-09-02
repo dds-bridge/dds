@@ -30,6 +30,14 @@
 #include <api/dll.h>
 #include <utility/debug.h>
 
+using std::left;
+using std::min;
+using std::right;
+using std::setw;
+using std::string;
+using std::stringstream;
+using std::to_string;
+
 System sysdep;
 Memory memory;
 Scheduler scheduler;

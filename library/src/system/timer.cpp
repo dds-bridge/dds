@@ -17,8 +17,13 @@
 
 #include "timer.hpp"
 
-using std::chrono::duration_cast;
-using std::chrono::microseconds;
+using std::fixed;
+using std::left;
+using std::right;
+using std::setprecision;
+using std::setw;
+using std::string;
+using std::stringstream;
 
 
 Timer::Timer()
@@ -50,16 +55,16 @@ void Timer::SetName(const string& nameIn)
 void Timer::Start()
 {
   user0 = Clock::now();
-  syst0 = clock();
+  syst0 = std::clock();
 }
 
 
 void Timer::End()
 {
-  time_point<Clock> user1 = Clock::now();
-  clock_t syst1 = clock();
+  std::chrono::time_point<Clock> user1 = Clock::now();
+  std::clock_t syst1 = std::clock();
 
-  chrono::duration<double, micro> d = user1 - user0;
+  std::chrono::duration<double, std::micro> d = user1 - user0;
   int tuser = static_cast<int>(d.count());
 
   count++;

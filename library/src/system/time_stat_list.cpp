@@ -14,6 +14,11 @@
 
 #include "time_stat_list.hpp"
 
+using std::right;
+using std::setw;
+using std::string;
+using std::stringstream;
+
 
 TimeStatList::TimeStatList()
 {
