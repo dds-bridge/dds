@@ -927,6 +927,12 @@ void Scheduler::EndBlockTimer()
 
 void Scheduler::PrintTiming() const
 {
+  using std::fixed;
+  using std::ofstream;
+  using std::setprecision;
+  using std::setw;
+  using std::string;
+
   const string fname = string(DDS_SCHEDULER_PREFIX) + DDS_DEBUG_SUFFIX;
   ofstream fout;
   fout.open(fname);
