@@ -35,7 +35,7 @@ class Timer
     long systCum;
 
     std::chrono::time_point<Clock> user0;
-    clock_t syst0;
+    std::clock_t syst0;
 
   public:
 

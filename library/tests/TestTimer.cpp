@@ -70,7 +70,7 @@ void TestTimer::set_name(const string& s)
 }
 
 
-long clock_delta_to_ms(clock_t delta)
+long clock_delta_to_ms(std::clock_t delta)
 {
   return static_cast<long>(
     (1000.0 * static_cast<double>(delta)) /
@@ -82,8 +82,8 @@ void TestTimer::start(const int number)
 {
   pending_hands_ = number;
   user0_ = Clock::now();
-  sys0_ = clock();
-  if (sys0_ == static_cast<clock_t>(-1))
+  sys0_ = std::clock();
+  if (sys0_ == static_cast<std::clock_t>(-1))
     sys_time_known_ = false;
 }
 
@@ -91,14 +91,14 @@ void TestTimer::start(const int number)
 void TestTimer::end()
 {
   std::chrono::time_point<Clock> user1 = Clock::now();
-  clock_t sys1 = clock();
+  std::clock_t sys1 = std::clock();
 
   duration<double, std::milli> d = user1 - user0_;
   const long tuser = static_cast<long>(d.count());
   long tsys = 0;
   if (sys_time_known_)
   {
-    if (sys1 == static_cast<clock_t>(-1))
+    if (sys1 == static_cast<std::clock_t>(-1))
       sys_time_known_ = false;
     else
       tsys = clock_delta_to_ms(sys1 - sys0_);

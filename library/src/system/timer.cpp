@@ -55,14 +55,14 @@ void Timer::SetName(const string& nameIn)
 void Timer::Start()
 {
   user0 = Clock::now();
-  syst0 = clock();
+  syst0 = std::clock();
 }
 
 
 void Timer::End()
 {
   std::chrono::time_point<Clock> user1 = Clock::now();
-  clock_t syst1 = clock();
+  std::clock_t syst1 = std::clock();
 
   std::chrono::duration<double, std::micro> d = user1 - user0;
   int tuser = static_cast<int>(d.count());

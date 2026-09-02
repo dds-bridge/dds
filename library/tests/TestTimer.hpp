@@ -28,7 +28,7 @@ using Clock = std::chrono::steady_clock;
 /// Convert a `clock()` tick delta to milliseconds.
 /// Uses floating-point so `1000 * ticks` cannot overflow 32-bit `long`
 /// (wasm32 batches longer than ~2.15s when CLOCKS_PER_SEC is 1e6).
-long clock_delta_to_ms(clock_t delta);
+long clock_delta_to_ms(std::clock_t delta);
 
 /// Timer for measuring test performance.
 /// Tracks both wall-clock (user) and CPU (system) time for test execution.
@@ -44,7 +44,7 @@ class TestTimer
     bool sys_time_known_;   ///< False when clock() is unusable (e.g. wasm32)
 
     std::chrono::time_point<Clock> user0_;  ///< Wall-clock start time
-    clock_t sys0_;             ///< CPU start time
+    std::clock_t sys0_;        ///< CPU start time
 
   public:
 

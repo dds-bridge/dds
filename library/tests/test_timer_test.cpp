@@ -39,7 +39,7 @@ std::int32_t wrap_i64_to_i32(const std::int64_t value)
 }
 
 /// What the old `1000 * delta` path produces when `long` is 32-bit (wasm32).
-long wrapped_i32_clock_delta_to_ms(const clock_t delta)
+long wrapped_i32_clock_delta_to_ms(const std::clock_t delta)
 {
   const auto prod =
     wrap_i64_to_i32(1000 * static_cast<std::int64_t>(delta));
@@ -48,10 +48,10 @@ long wrapped_i32_clock_delta_to_ms(const clock_t delta)
 
 /// Smallest tick count where `1000 * ticks` no longer fits in int32.
 /// Independent of CLOCKS_PER_SEC (1000 on Windows, 1e6 on POSIX/wasm).
-clock_t ticks_that_overflow_i32_multiply()
+std::clock_t ticks_that_overflow_i32_multiply()
 {
   constexpr auto kMaxI32 = std::numeric_limits<std::int32_t>::max();
-  return static_cast<clock_t>(
+  return static_cast<std::clock_t>(
     static_cast<std::int64_t>(kMaxI32) / 1000 + 1);
 }
 
@@ -78,7 +78,7 @@ TEST(TestTimer, WrapI64ToI32UsesDefinedTwosComplement)
 
 TEST(TestTimer, ClockDeltaToMsAvoids32BitOverflowForMultiSecondBatches)
 {
-  const clock_t ticks = ticks_that_overflow_i32_multiply();
+  const std::clock_t ticks = ticks_that_overflow_i32_multiply();
   const long expected_ms = static_cast<long>(
     (1000.0 * static_cast<double>(ticks)) /
     static_cast<double>(CLOCKS_PER_SEC));
