@@ -140,13 +140,32 @@ auto result = compute_area(
 - **RAII** – manage resources via destructors.
 - **Smart pointers** – prefer `std::unique_ptr` / `std::shared_ptr`.
 - **Const-correctness** – mark data/functions const where possible.
-- **No `using namespace` in headers.**
+- **Namespace `using`** – see [Namespace `using`](#namespace-using) below.
 - **C++ Core Guidelines** – [Style Guide](https://isocpp.github.io/CppCoreGuidelines/) follow naming, formatting, and layout.
 - **Enums** – use `enum class`.
 - **Functions** – keep short; extract helpers if > 20 lines.
 - **Variables** – snake_case; classes – PascalCase.
 - **Header guards** – `#pragma once` or traditional guards.
 - **Include paths** – use `<target/header.hpp>` (angle brackets) for headers from other Bazel targets; use `"header.hpp"` (quotes) only for the paired header of the current translation unit.
+
+### Namespace `using`
+- **Headers:** no namespace-scope `using namespace` (using-directives) and no
+  namespace-scope `using X::name;` (using-declarations). Fully qualify names in
+  header code (`std::string`, not `string`). Rationale: either form at namespace
+  scope leaks names into every translation unit that includes the header,
+  directly or transitively, and a later cleanup then breaks every includer that
+  had come to rely on it.
+  - A `using` inside a class or function body (e.g. inheriting constructors
+    `using Base::Base;`) is fine — it does not leak.
+  - Alias-declarations (`using Clock = std::chrono::steady_clock;`) are not
+    using-directives/declarations and are allowed; prefer placing them inside a
+    namespace rather than at global scope.
+- **`.cpp` files:** `using X::name;` for specific names is allowed and preferred
+  where it improves readability. A file-scope `using namespace` is permitted but
+  discouraged — prefer specific using-declarations, a qualified sub-namespace
+  (`using namespace std::chrono;`), or scoping the directive to a function body.
+- **Never rely on a `using` supplied by an included header.** Qualify the name,
+  or add your own using-declaration in the `.cpp`.
 
 ### Safety
 - Initialize all variables.
