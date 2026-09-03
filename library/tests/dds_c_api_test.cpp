@@ -20,6 +20,7 @@
 #include <string>
 
 #include <api/dds_c_api.h>
+#include <api/dll.h>  // full definitions for DealPBN, ParResults{Dealer,Master}, ParTextResults, DDSInfo
 
 namespace {
 

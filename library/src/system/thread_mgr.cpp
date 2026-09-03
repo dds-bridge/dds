@@ -18,6 +18,12 @@
 
 #include "thread_mgr.hpp"
 
+using std::endl;
+using std::left;
+using std::ofstream;
+using std::setw;
+using std::string;
+
 namespace {
 
 std::mutex mtx;

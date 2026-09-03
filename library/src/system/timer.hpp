@@ -12,11 +12,9 @@
 
 #include <string>
 #include <chrono>
+#include <ctime>
 
 using Clock = std::chrono::steady_clock;
-using std::chrono::time_point;
-
-using namespace std;
 
 
 /**
@@ -31,13 +29,13 @@ class Timer
 {
   private:
 
-    string name;
+    std::string name;
     unsigned int count;
     long userCum;
     long systCum;
 
-    time_point<Clock> user0;
-    clock_t syst0;
+    std::chrono::time_point<Clock> user0;
+    std::clock_t syst0;
 
   public:
 
@@ -57,7 +55,7 @@ class Timer
 
     void Reset();
 
-    void SetName(const string& nameIn);
+    void SetName(const std::string& nameIn);
 
     void Start();
 
@@ -71,11 +69,11 @@ class Timer
 
     void operator -= (const Timer& deduct);
 
-    string SumLine(
+    std::string SumLine(
       const Timer& divisor,
-      const string& bname = "") const;
+      const std::string& bname = "") const;
 
-    string DetailLine() const;
+    std::string DetailLine() const;
 };
 
 #endif

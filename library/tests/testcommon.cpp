@@ -29,6 +29,8 @@
 
 using std::cout;
 using std::endl;
+using std::left;
+using std::right;
 using std::setw;
 using std::string;
 using std::vector;

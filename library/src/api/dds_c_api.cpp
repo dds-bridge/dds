@@ -18,6 +18,7 @@
 
 #include <api/dds_c_api.h>
 #include <api/dds_api.hpp>
+#include <api/dll.h>   /* legacy Par/SidesPar/DealerPar/.../GetDDSInfo/ErrorMessage */
 
 /* This shim is the boundary between the C++ implementation and pure-C FFI
    consumers (JVM/FFM, .NET, ctypes). Two things must never cross it:

@@ -16,6 +16,13 @@
 
 #include "time_stat.hpp"
 
+using std::fixed;
+using std::right;
+using std::setprecision;
+using std::setw;
+using std::string;
+using std::stringstream;
+
 
 TimeStat::TimeStat()
 {

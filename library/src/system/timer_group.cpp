@@ -16,6 +16,13 @@
 
 #include "timer_group.hpp"
 
+using std::left;
+using std::right;
+using std::setw;
+using std::string;
+using std::stringstream;
+using std::to_string;
+
 // Number of per-depth timer slots reserved by TimerGroup::Reset().
 constexpr int TIMER_DEPTH = 50;
 
