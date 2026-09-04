@@ -56,6 +56,13 @@ auto apply_ab_tt_lookup(
         limit, lowerFlag);
   TIMER_END(TIMER_NO_LOOKUP, depth);
 
+  // Instrumentation: per-thread TT lookup/hit counters
+  if (thrp) {
+    ++thrp->tt_lookup_count;
+    if (cardsP)
+      ++thrp->tt_hit_count;
+  }
+
   if (!cardsP)
     return false;
 
