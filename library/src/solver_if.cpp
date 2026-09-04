@@ -670,6 +670,20 @@ SOLVER_DONE:
     futp->nodes = ctx.search().trick_nodes();
   }
 
+  // Print TT stats if requested
+  if (std::getenv("DDS_PRINT_TT_STATS")) {
+    ThreadData* thrp_ptr = ctx.thread_ptr();
+    if (thrp_ptr && thrp_ptr->tt_lookup_count > 0) {
+      double hit_rate = 100.0 * (double)thrp_ptr->tt_hit_count /
+                        (double)thrp_ptr->tt_lookup_count;
+      std::fprintf(stderr,
+                   "DDS_TT_STATS: lookups=%llu hits=%llu hit_rate=%.2f%%\n",
+                   (unsigned long long)thrp_ptr->tt_lookup_count,
+                   (unsigned long long)thrp_ptr->tt_hit_count,
+                   hit_rate);
+    }
+  }
+
 #ifdef DDS_MEMORY_LEAKS_WIN32
   _CrtDumpMemoryLeaks();
 #endif
@@ -809,6 +823,20 @@ auto solve_same_board(
 
   {
     futp->nodes = ctx.search().trick_nodes();
+  }
+
+  // Print TT stats if requested
+  if (std::getenv("DDS_PRINT_TT_STATS")) {
+    ThreadData* thrp_ptr = ctx.thread_ptr();
+    if (thrp_ptr && thrp_ptr->tt_lookup_count > 0) {
+      double hit_rate = 100.0 * (double)thrp_ptr->tt_hit_count /
+                        (double)thrp_ptr->tt_lookup_count;
+      std::fprintf(stderr,
+                   "DDS_TT_STATS: lookups=%llu hits=%llu hit_rate=%.2f%%\n",
+                   (unsigned long long)thrp_ptr->tt_lookup_count,
+                   (unsigned long long)thrp_ptr->tt_hit_count,
+                   hit_rate);
+    }
   }
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
