@@ -209,7 +209,7 @@ TransTableL::TransTableL()
   pages_maximum_ = 0;
   harvest_trick_ = 0;
   harvest_hand_ = 0;
-  page_stats_ = PageStats{0,0,0,0,0};
+  page_stats_ = PageStats{0,0,0,0,0,0,0};
   timestamp_ = 0;
   pool_ = nullptr;
   next_block_ = nullptr;
@@ -931,7 +931,10 @@ auto TransTableL::create_or_update(
     return;
   }
 
+  // Instrumentation: count new insertions and overwrites
+  page_stats_.num_adds_++;
   if (n == BlocksPerEntry) {
+    page_stats_.num_overwrites_++;
     if (bp->next_write_no_ >= BlocksPerEntry)
       bp->next_write_no_ = 0;
   }
