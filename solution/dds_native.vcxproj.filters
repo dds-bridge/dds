@@ -147,6 +147,9 @@
     <ClCompile Include="..\library\src\utility\constants.cpp">
       <Filter>library\src\utility</Filter>
     </ClCompile>
+    <ClCompile Include="..\library\src\system\deal_fanout.cpp">
+      <Filter>library\src\system</Filter>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= -->
   <!--     HEADER FILER I FILTERS -->

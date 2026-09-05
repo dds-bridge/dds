@@ -39,6 +39,5 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\examples\analyse_play_bin.cpp" />
-    <ClCompile Include="..\examples\hands.cpp" />
   </ItemGroup>
 </Project>
