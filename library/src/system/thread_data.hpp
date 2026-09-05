@@ -61,6 +61,9 @@ struct ThreadData
   double memUsed;
   int nodes;
   int trickNodes;
+  // TT instrumentation (per-context, single-threaded)
+  uint64_t tt_lookup_count = 0;
+  uint64_t tt_hit_count = 0;
 
   // Constant for a given hand.
   // 960 KB
