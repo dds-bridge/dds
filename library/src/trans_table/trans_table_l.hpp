@@ -142,6 +142,8 @@ class TransTableL: public TransTable
       int num_frees_;                 ///< Total deallocations
       int num_harvests_;              ///< Total harvest operations
       int last_current_;              ///< Last current page number
+      int num_adds_;                  ///< Total new entries inserted
+      int num_overwrites_;            ///< Insertions that overwrote existing entries
     };
 
     /// \brief Harvested blocks saved for potential reuse (16 bytes).

@@ -284,6 +284,8 @@ auto solve_board_internal(
   thrp->ABStats.Reset();
   thrp->ABStats.ResetCum();
 #endif
+  thrp->tt_lookup_count = 0;
+  thrp->tt_hit_count = 0;
 
 #ifdef DDS_TOP_LEVEL
   {
@@ -735,6 +737,8 @@ auto solve_same_board(
   thrp->ABStats.Reset();
   thrp->ABStats.ResetCum();
 #endif
+  thrp->tt_lookup_count = 0;
+  thrp->tt_hit_count = 0;
 
 #ifdef DDS_TOP_LEVEL
   {
@@ -933,6 +937,8 @@ auto analyse_later_board(
   thrp->ABStats.Reset();
   thrp->ABStats.ResetCum();
 #endif
+  thrp->tt_lookup_count = 0;
+  thrp->tt_hit_count = 0;
 
 #ifdef DDS_TOP_LEVEL
   {
