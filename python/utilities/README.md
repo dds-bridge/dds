@@ -58,6 +58,49 @@ bazelisk test //python/utilities:create_list_for_dtest_test
 
 See also `utilities/src/regenerate_hand_lists.sh` and `utilities/src/verify_lists.sh`.
 
+## `compare_bridge_solver`
+
+Wall-time bake-off of DDS vs [macroxue/bridge-solver](https://github.com/macroxue/bridge-solver)
+on full double-dummy tables (5 strains × 4 declarers). DDS is capped at one
+thread so the comparison matches their single-threaded `solver` process.
+
+Build their solver portably (their PGO `makefile` assumes Linux `/proc/cpuinfo`):
+
+```bash
+git clone https://github.com/macroxue/bridge-solver.git
+cd bridge-solver
+c++ -std=c++17 -O3 -o solver solver.cc
+```
+
+Then run (relative paths are resolved from the directory where you invoke bazel):
+
+```bash
+bazelisk run //python/utilities:compare_bridge_solver -- \
+  --bridge-solver ../bridge-solver/solver \
+  --deals-dir ../bridge-solver/deals/fixed \
+  --limit 25
+```
+
+Default DDS threading is 1 (fair vs their single-threaded process). For a
+multi-threaded DDS run:
+
+```bash
+bazelisk run //python/utilities:compare_bridge_solver -- \
+  --bridge-solver ../bridge-solver/solver \
+  --deals-dir ../bridge-solver/deals/fixed \
+  --limit 25 \
+  --dds-threads 8
+```
+
+`--dds-threads 0` uses all hardware threads. `--threads` is an alias.
+
+`--deals-dir` expects their deal-file layout (`deal.01`, …; `RESULTS` is ignored).
+Exit status is non-zero if any trick table mismatches.
+
+```bash
+bazelisk test //python/utilities:compare_bridge_solver_test
+```
+
 ## Tests
 
 ```bash
@@ -65,4 +108,5 @@ bazelisk test //python/utilities:benchmark_test
 bazelisk test //python/utilities:convert_pbn_test
 bazelisk test //python/utilities:dd_table_for_deal_par_test
 bazelisk test //python/utilities:create_list_for_dtest_test
+bazelisk test //python/utilities:compare_bridge_solver_test
 ```

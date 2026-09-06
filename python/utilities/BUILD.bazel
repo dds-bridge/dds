@@ -82,3 +82,25 @@ py_test(
         "//python:dds3_lib",
     ],
 )
+
+py_library(
+    name = "compare_bridge_solver_lib",
+    srcs = ["src/compare_bridge_solver.py"],
+    imports = ["src"],
+    deps = ["//python:dds3_lib"],
+)
+
+py_binary(
+    name = "compare_bridge_solver",
+    srcs = ["src/compare_bridge_solver.py"],
+    main = "src/compare_bridge_solver.py",
+    deps = [":compare_bridge_solver_lib"],
+)
+
+py_test(
+    name = "compare_bridge_solver_test",
+    size = "small",
+    main = "tests/compare_bridge_solver_test.py",
+    srcs = ["tests/compare_bridge_solver_test.py"],
+    deps = [":compare_bridge_solver_lib"],
+)
