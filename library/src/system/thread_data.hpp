@@ -6,6 +6,7 @@
 #include <api/dds_data_types.hpp>
 #include <moves/moves.hpp>
 #include <string>
+#include <cstdint>
 
 #ifdef DDS_AB_STATS
 #include "ab_stats.hpp"

@@ -242,6 +242,10 @@ class TransTable
     virtual auto print_all_suit_stats(std::ofstream& fout) const -> void = 0;
 
     /// \brief Print summary suit statistics.
+    /// \brief Get add/overwrite/harvest counters for instrumentation.
+    virtual auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void = 0;
+    virtual auto reset_op_stats() -> void = 0;
+
     virtual auto print_summary_suit_stats(std::ofstream& fout) const -> void = 0;
 
     /// \brief Print entries distribution for a specific hand.

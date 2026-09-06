@@ -470,6 +470,8 @@ auto TransTableL::return_all_memory() -> void
   page_stats_.num_frees_ = 0;
   page_stats_.num_harvests_ = 0;
   page_stats_.last_current_ = 0;
+  page_stats_.num_adds_ = 0;
+  page_stats_.num_overwrites_ = 0;
 
   TransTableL::release_tt();
 

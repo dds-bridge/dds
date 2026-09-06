@@ -7,6 +7,8 @@
    See LICENSE and README.
 */
 
+#include <cstdlib>
+#include <cstdio>
 #include <ab_search.hpp>
 #include <dump.hpp>
 #include <init.hpp>
@@ -286,6 +288,7 @@ auto solve_board_internal(
 #endif
   thrp->tt_lookup_count = 0;
   thrp->tt_hit_count = 0;
+  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
 #ifdef DDS_TOP_LEVEL
   {
@@ -683,6 +686,15 @@ SOLVER_DONE:
                    (unsigned long long)thrp_ptr->tt_lookup_count,
                    (unsigned long long)thrp_ptr->tt_hit_count,
                    hit_rate);
+      if (auto* tt = ctx.trans_table()) {
+        int adds, overwrites, harvests;
+        tt->get_op_stats(adds, overwrites, harvests);
+        double ow_rate = adds > 0 ?
+          100.0 * (double)overwrites / (double)adds : 0.0;
+        std::fprintf(stderr,
+                     "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
+                     adds, overwrites, ow_rate, harvests);
+      }
     }
   }
 
@@ -739,6 +751,7 @@ auto solve_same_board(
 #endif
   thrp->tt_lookup_count = 0;
   thrp->tt_hit_count = 0;
+  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
 #ifdef DDS_TOP_LEVEL
   {
@@ -840,6 +853,15 @@ auto solve_same_board(
                    (unsigned long long)thrp_ptr->tt_lookup_count,
                    (unsigned long long)thrp_ptr->tt_hit_count,
                    hit_rate);
+      if (auto* tt = ctx.trans_table()) {
+        int adds, overwrites, harvests;
+        tt->get_op_stats(adds, overwrites, harvests);
+        double ow_rate = adds > 0 ?
+          100.0 * (double)overwrites / (double)adds : 0.0;
+        std::fprintf(stderr,
+                     "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
+                     adds, overwrites, ow_rate, harvests);
+      }
     }
   }
 
@@ -939,6 +961,7 @@ auto analyse_later_board(
 #endif
   thrp->tt_lookup_count = 0;
   thrp->tt_hit_count = 0;
+  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
 #ifdef DDS_TOP_LEVEL
   {
