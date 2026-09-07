@@ -373,10 +373,11 @@ class TestBuildBinariesWasm(unittest.TestCase):
                 with mock.patch.object(
                     benchmark, "resolve_bazel_command", return_value="bazelisk"
                 ):
-                    labels, paths = runner.build_binaries()
+                    labels, paths, bs = runner.build_binaries()
             self.assertEqual(labels, ["wasm:develop"])
             self.assertEqual(len(paths), 1)
             self.assertEqual(paths[0].name, "dtest.js")
+            self.assertEqual(bs, [None])
             self.assertTrue(paths[0].parent.is_dir())
             self.assertIn("checkout main", err.getvalue())
             self.assertIn("//wasm:dtest_wasm", err.getvalue())
@@ -402,6 +403,97 @@ class TestParseArgs(unittest.TestCase):
         self.assertFalse(cfg.reverse)
         self.assertEqual(cfg.specs, [])
         self.assertEqual(cfg.dtest_extra, [])
+        self.assertIsNone(cfg.bridgesolver)
+        self.assertEqual(cfg.solvers, ("solve", "calc"))
+
+    def test_bridgesolver_requires_calc_solver(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(
+                ["--bridgesolver", "/tmp/solver"],
+                env={},
+            )
+        self.assertIn("-s calc", str(ctx.exception))
+
+    def test_bridgesolver_with_calc_ok(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--bridgesolver", "/tmp/solver", "-s", "calc"],
+            env={},
+        )
+        self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
+        self.assertEqual(cfg.solvers, ("calc",))
+
+    def test_bridgesolver_flag(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--bridgesolver", "/tmp/solver", "-s", "calc"],
+            env={},
+        )
+        self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
+
+    def test_bridgesolver_env(self) -> None:
+        cfg = benchmark.parse_args(
+            ["-s", "calc"],
+            env={"BRIDGESOLVER": "/env/solver"},
+        )
+        self.assertEqual(cfg.bridgesolver, Path("/env/solver"))
+
+    def test_bridgesolver_cli_overrides_env(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--bridgesolver", "/cli/solver", "-s", "calc"],
+            env={"BRIDGESOLVER": "/env/solver"},
+        )
+        self.assertEqual(cfg.bridgesolver, Path("/cli/solver"))
+
+    def test_bridgesolver_requires_value(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["--bridgesolver"], env={})
+        self.assertIn("missing value for --bridgesolver", str(ctx.exception))
+
+    def test_bridgesolver_rejects_duplicate_in_dtest_extra(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(
+                [
+                    "--bridgesolver",
+                    "/tmp/solver",
+                    "-s",
+                    "calc",
+                    "--",
+                    "--bridgesolver",
+                    "/other",
+                ],
+                env={},
+            )
+        self.assertIn("--bridgesolver", str(ctx.exception))
+        self.assertIn("dtest args", str(ctx.exception).lower())
+
+    def test_reverse_ok_with_branch_and_bridgesolver(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--reverse", "--branch", ".", "--bridgesolver", "/tmp/s", "-s", "calc"],
+            env={},
+        )
+        self.assertTrue(cfg.reverse)
+
+    def test_solver_short_and_long_flags(self) -> None:
+        for flag in ("-s", "--solver"):
+            with self.subTest(flag=flag):
+                cfg = benchmark.parse_args([flag, "calc"], env={})
+                self.assertEqual(cfg.solvers, ("calc",))
+
+    def test_solver_rejects_unknown(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["-s", "play"], env={})
+        self.assertIn("solve", str(ctx.exception))
+        self.assertIn("calc", str(ctx.exception))
+
+    def test_solver_requires_value(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["-s"], env={})
+        self.assertIn("missing value for -s", str(ctx.exception))
+
+    def test_solver_rejects_duplicate_in_dtest_extra(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["-s", "calc", "--", "-s", "solve"], env={})
+        self.assertIn("-s", str(ctx.exception))
+        self.assertIn("dtest args", str(ctx.exception).lower())
 
     def test_env_overrides(self) -> None:
         cfg = benchmark.parse_args(
@@ -555,6 +647,22 @@ class TestSummary(unittest.TestCase):
         self.assertIn("fast faster", text)
         self.assertIn("TOTAL  solve", text)
         self.assertNotIn("TOTAL  calc", text)
+
+    def test_summary_respects_solvers_filter(self) -> None:
+        rows = [
+            benchmark.ResultRow("calc", "list100.txt", 0, 1, 200.0, 1.0, 2.0, 1.0),
+        ]
+        text = benchmark.format_summary(
+            rows,
+            labels=["base"],
+            files=["list100.txt"],
+            epsilon=0.5,
+            solvers=("calc",),
+        )
+        self.assertIn("calc", text)
+        self.assertIn("TOTAL  calc", text)
+        self.assertNotIn("TOTAL  solve", text)
+        self.assertNotRegex(text, r"(?m)^solve\s")
 
     def test_separate_total_lines_per_solver(self) -> None:
         # TOTAL is avg user ms: sum(user_ms) / deals (list100 => 100).
@@ -1110,6 +1218,53 @@ class TestRunDtestWasm(unittest.TestCase):
             )
             self.assertEqual(seen["cwd"], js.resolve().parent)
             self.assertEqual(parsed.user_ms, 10.0)
+
+    def test_bridgesolver_peer_command_uses_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = root / "dtest"
+            binary.write_text("x")
+            hands = root / "list1.txt"
+            hands.write_text("hand\n")
+            solver = root / "bridge-solver"
+            solver.write_text("y")
+            runner = benchmark.BenchmarkRunner(root, benchmark.Config())
+            dds_cmd = runner.dtest_command(binary, "calc", hands)
+            bs_cmd = runner.dtest_command(
+                binary, "calc", hands, bridgesolver=solver
+            )
+            self.assertEqual(
+                dds_cmd,
+                [str(binary), "-f", str(hands.resolve()), "-s", "calc"],
+            )
+            self.assertEqual(
+                bs_cmd,
+                [
+                    str(binary),
+                    "-f",
+                    str(hands.resolve()),
+                    "-s",
+                    "calc",
+                    "--bridgesolver",
+                    str(solver.resolve()),
+                ],
+            )
+
+    def test_bridgesolver_appends_comparison_peer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dtest = root / "dtest"
+            dtest.write_text("x")
+            solver = root / "my-solver"
+            solver.write_text("y")
+            labels, paths, bs = benchmark.append_bridgesolver_peer(
+                ["develop"],
+                [dtest],
+                solver,
+            )
+            self.assertEqual(labels, ["develop", "my-solver"])
+            self.assertEqual(paths, [dtest, dtest])
+            self.assertEqual(bs, [None, solver])
 
     def test_js_resolves_relative_hands_path(self) -> None:
         # cwd for node is the wasm artifact dir; relative -f must not resolve there.

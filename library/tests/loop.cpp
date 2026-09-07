@@ -41,14 +41,26 @@ extern OptionsType options;
 extern Scheduler scheduler;
 
 
-void loop_solve(
+namespace {
+
+auto report_dds_error(const char* where, const int code) -> void
+{
+  char line[80];
+  ErrorMessage(code, line);
+  cout << where << ": " << line << " (" << code << ")\n";
+}
+
+}  // namespace
+
+
+auto loop_solve(
   BoardsPBN * bop,
   SolvedBoards * solvedbdp,
   DealPBN * deal_list,
   FutureTricks * fut_list,
   const int number,
   const int stepsize,
-  std::vector<std::pair<int, int>>* board_times)
+  std::vector<std::pair<int, int>>* board_times) -> bool
 {
 #ifdef BATCHTIMES
   cout << setw(8) << left << "Hand no." << 
@@ -82,8 +94,9 @@ void loop_solve(
     }
     if (ret != RETURN_NO_FAULT)
     {
-      cout << "loop_solve: i " << i << ", return " << ret << "\n";
-      exit(0);
+      report_dds_error("loop_solve", ret);
+      cout << "loop_solve: i " << i << "\n";
+      return false;
     }
     timer.end();
 
@@ -109,6 +122,7 @@ void loop_solve(
       cout << "\n";
       print_FUT(fut_list[i+j]);
       cout << "\n";
+      return false;
     }
   }
 
@@ -116,13 +130,14 @@ void loop_solve(
   cout << "\n";
 #endif
 
+  return true;
 }
 
 
-bool loop_calc(
+auto loop_calc(
   DealPBN * deal_list,
   DdTableResults * table_list,
-  const int number)
+  const int number) -> bool
 {
 #ifdef BATCHTIMES
   cout << setw(8) << left << "Hand no." <<
@@ -154,8 +169,8 @@ bool loop_calc(
   timer.end();
   if (ret != RETURN_NO_FAULT)
   {
-    cout << "loop_calc: CalcAllTablesPBNX return " << ret << "\n";
-    exit(0);
+    report_dds_error("loop_calc", ret);
+    return false;
   }
 
 #ifdef BATCHTIMES
@@ -172,6 +187,7 @@ bool loop_calc(
     cout << "\n";
     print_TABLE(table_list[j]);
     cout << "\n";
+    return false;
   }
 
 #ifdef BATCHTIMES
@@ -183,11 +199,11 @@ bool loop_calc(
 
 
 
-bool loop_bridgesolver(
+auto loop_bridgesolver(
   DealPBN * deal_list,
   DdTableResults * table_list,
   const int number,
-  const std::string& binary)
+  const std::string& binary) -> bool
 {
 #ifdef BATCHTIMES
   cout << setw(8) << left << "Hand no." <<
@@ -206,7 +222,7 @@ bool loop_bridgesolver(
         binary, deal_list[j].remainCards, result, &error))
     {
       cout << "loop_bridgesolver: j " << j << ": " << error << "\n";
-      exit(0);
+      return false;
     }
 
     if (compare_TABLE(result, table_list[j]))
@@ -217,6 +233,7 @@ bool loop_bridgesolver(
     cout << "\n";
     print_TABLE(table_list[j]);
     cout << "\n";
+    return false;
   }
   timer.end();
 
@@ -230,12 +247,12 @@ bool loop_bridgesolver(
 
 
 
-bool loop_par(
+auto loop_par(
   int * vul_list,
   DdTableResults * table_list,
   ParResults * par_list,
   const int number,
-  const int stepsize)
+  const int stepsize) -> bool
 {
   // This is so fast that there is no batch or multi-threaded
   // version. We run it many times just to get meaningful times.
@@ -251,9 +268,9 @@ bool loop_par(
       if ((ret = Par(&table_list[i], &presp, vul_list[i]))
           != RETURN_NO_FAULT)
       {
-        cout << "loop_par: i " << i << ", j " << j << ": " <<
-          "return " << ret << "\n";
-        exit(0);
+        report_dds_error("loop_par", ret);
+        cout << "loop_par: i " << i << ", j " << j << "\n";
+        return false;
       }
     }
 
@@ -265,6 +282,7 @@ bool loop_par(
     cout << "\n";
     print_PAR(par_list[i]);
     cout << "\n";
+    return false;
   }
   timer.end();
 
@@ -276,13 +294,13 @@ bool loop_par(
 }
 
 
-bool loop_dealerpar(
+auto loop_dealerpar(
   int * dealer_list,
   int * vul_list,
   DdTableResults * table_list,
   ParResultsDealer * dealerpar_list,
   const int number,
-  const int stepsize)
+  const int stepsize) -> bool
 {
   // This is so fast that there is no batch or multi-threaded
   // version. We run it many times just to get meaningful times.
@@ -298,9 +316,9 @@ bool loop_dealerpar(
       if ((ret = DealerPar(&table_list[i], &presp,
           dealer_list[i], vul_list[i])) != RETURN_NO_FAULT)
       {
-        cout << "loop_dealerpar: i " << i << ", j " << j << ": " <<
-          "return " << ret << "\n";
-        exit(0);
+        report_dds_error("loop_dealerpar", ret);
+        cout << "loop_dealerpar: i " << i << ", j " << j << "\n";
+        return false;
       }
     }
 
@@ -312,6 +330,7 @@ bool loop_dealerpar(
     cout << "\n";
     print_DEALERPAR(dealerpar_list[i]);
     cout << "\n";
+    return false;
   }
   timer.end();
 
@@ -323,7 +342,7 @@ bool loop_dealerpar(
 }
 
 
-bool loop_play(
+auto loop_play(
   BoardsPBN * bop,
   PlayTracesPBN * playsp,
   SolvedPlays * solvedplp,
@@ -331,7 +350,7 @@ bool loop_play(
   PlayTracePBN * play_list,
   SolvedPlay * trace_list,
   const int number,
-  const int stepsize)
+  const int stepsize) -> bool
 {
 #ifdef BATCHTIMES
   cout << setw(8) << left << "Hand no." << 
@@ -372,9 +391,9 @@ bool loop_play(
     }
     if (ret != RETURN_NO_FAULT)
     {
-      printf("loop_play i %i: Return %d\n", i, ret);
-      cout << "loop_play: i " << i << ": " << "return " << ret << "\n";
-      exit(0);
+      report_dds_error("loop_play", ret);
+      cout << "loop_play: i " << i << "\n";
+      return false;
     }
     timer.end();
 
@@ -392,6 +411,7 @@ bool loop_play(
         "Difference\n\n";
       print_double_TRACE(solvedplp->solved[j], trace_list[i+j]);
       cout << "\n";
+      return false;
     }
   }
 
@@ -401,4 +421,3 @@ bool loop_play(
 
   return true;
 }
-

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Benchmark dtest performance across one or more binaries.
 
-Runs all combinations of solver (solve, calc) and hand file
+Runs combinations of solver (solve, calc; select with -s) and hand file
 (list100/1000/…/1), largest files first. Always prints a summary. Per-run
 timing rows and build (git/bazel) output are shown transiently, then hidden
 unless the --details flag is set. Passes dtest options if given after "--".
 
 Usage:
   python/utilities/src/benchmark.py
+  python/utilities/src/benchmark.py -s calc
   python/utilities/src/benchmark.py --build
   python/utilities/src/benchmark.py -- -n 8 -r
   python/utilities/src/benchmark.py --build --binary /path/to/other/dtest
@@ -29,6 +30,7 @@ Environment:
   DETAILS    If 1, keep per-run rows and build output (default: 0, summary only)
   SYS_USER   If 1, include a sys/user column per binary in the summary
   EPSILON    For a two-binary comparison, max % diff treated as equal (default: 0.5)
+  BRIDGESOLVER  Optional path to macroxue/bridge-solver (passed to dtest calc only)
 """
 
 from __future__ import annotations
@@ -129,6 +131,8 @@ class Config:
     reverse: bool = False
     branch_binary: Path | None = None  # BRANCH env / default dtest path
     hands_dir: Path | None = None
+    bridgesolver: Path | None = None
+    solvers: tuple[str, ...] = SOLVERS
     specs: list[tuple[str, str]] = field(default_factory=list)
     dtest_extra: list[str] = field(default_factory=list)
 
@@ -152,6 +156,27 @@ def is_dds_root(root: Path) -> bool:
 def label_for_path(path: str | Path) -> str:
     name = Path(path).name
     return name if name else str(path)
+
+
+def append_bridgesolver_peer(
+    labels: list[str],
+    paths: list[Path],
+    bridgesolver: Path,
+) -> tuple[list[str], list[Path], list[Path | None]]:
+    """Append a calc peer that reuses the baseline dtest with --bridgesolver.
+
+    Returns (labels, paths, bridgesolver_by_index). The peer shares paths[0]
+    and is labeled from the bridgesolver binary name.
+    """
+    if not paths:
+        raise BenchmarkError("--bridgesolver requires a baseline dtest binary")
+    bs_by_idx: list[Path | None] = [None] * len(paths)
+    labels = list(labels)
+    paths = list(paths)
+    labels.append(label_for_path(bridgesolver))
+    paths.append(paths[0])
+    bs_by_idx.append(bridgesolver)
+    return labels, paths, bs_by_idx
 
 
 def ensure_executable(path: Path) -> None:
@@ -293,6 +318,7 @@ def format_summary(
     files: Sequence[str],
     epsilon: float,
     sys_user: bool = False,
+    solvers: Sequence[str] = SOLVERS,
 ) -> str:
     nb = len(labels)
     sums: dict[tuple[str, str, int], float] = {}
@@ -300,9 +326,9 @@ def format_summary(
     su_sums: dict[tuple[str, str, int], float] = {}
     su_counts: dict[tuple[str, str, int], int] = {}
     # Per-solver totals for overall avg user ms = sum(user_ms) / sum(deals).
-    total_user: dict[str, list[float]] = {s: [0.0] * nb for s in SOLVERS}
-    total_deals: dict[str, list[int]] = {s: [0] * nb for s in SOLVERS}
-    user_seen: dict[str, list[bool]] = {s: [False] * nb for s in SOLVERS}
+    total_user: dict[str, list[float]] = {s: [0.0] * nb for s in solvers}
+    total_deals: dict[str, list[int]] = {s: [0] * nb for s in solvers}
+    user_seen: dict[str, list[bool]] = {s: [False] * nb for s in solvers}
 
     for row in rows:
         key = (row.solver, row.file, row.bin_idx)
@@ -375,7 +401,7 @@ def format_summary(
 
     dash()
 
-    for solver in SOLVERS:
+    for solver in solvers:
         for fname in files:
             avgs: list[float | None] = []
             su_avgs: list[float | None] = []
@@ -416,7 +442,7 @@ def format_summary(
             lines.append(line)
 
     dash()
-    for solver in SOLVERS:
+    for solver in solvers:
         if not any(user_seen[solver]):
             continue
         tot = f"{'TOTAL':<6} {solver:<13}"
@@ -485,9 +511,13 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
         cfg.hands_dir = Path(env["HANDS_DIR"])
     if env.get("BRANCH"):
         cfg.branch_binary = Path(env["BRANCH"])
+    if env.get("BRIDGESOLVER"):
+        cfg.bridgesolver = Path(env["BRIDGESOLVER"])
 
     repeats_given = False
     cli_binary_given = False
+    bridgesolver_given = False
+    solver_given = False
     args = list(argv)
     i = 0
     while i < len(args):
@@ -525,6 +555,28 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
                 raise BenchmarkError("missing value for --binary")
             cfg.specs.append(("binary", args[i]))
             cli_binary_given = True
+        elif a == "--bridgesolver":
+            if bridgesolver_given:
+                raise BenchmarkError("--bridgesolver may be given only once")
+            bridgesolver_given = True
+            i += 1
+            if i >= len(args):
+                raise BenchmarkError("missing value for --bridgesolver")
+            cfg.bridgesolver = Path(args[i])
+        elif a in ("-s", "--solver"):
+            if solver_given:
+                raise BenchmarkError(f"{a} may be given only once")
+            solver_given = True
+            i += 1
+            if i >= len(args):
+                raise BenchmarkError(f"missing value for {a}")
+            val = args[i].lower()
+            if val not in SOLVERS:
+                raise BenchmarkError(
+                    f"invalid {a} value '{args[i]}' "
+                    f"(expected one of: {', '.join(SOLVERS)})"
+                )
+            cfg.solvers = (val,)
         elif a in ("--max-deals", "--max_deals", "-max-deals", "-max_deals"):
             i += 1
             if i >= len(args):
@@ -553,10 +605,28 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
     if not cli_binary_given and env.get("BINARY"):
         cfg.specs.append(("binary", env["BINARY"]))
 
-    if cfg.reverse and len(cfg.specs) < 2:
+    if cfg.bridgesolver is not None and "--bridgesolver" in cfg.dtest_extra:
+        raise BenchmarkError(
+            "--bridgesolver cannot also appear in dtest args after --"
+        )
+    if cfg.bridgesolver is not None and cfg.solvers != ("calc",):
+        raise BenchmarkError(
+            "--bridgesolver compares DDS calc vs bridge-solver; use -s calc"
+        )
+    if "-s" in cfg.dtest_extra or "--solver" in cfg.dtest_extra:
+        raise BenchmarkError(
+            "-s/--solver cannot also appear in dtest args after -- "
+            "(use benchmark's -s to select the dtest mode)"
+        )
+
+    n_bins = len(cfg.specs) if cfg.specs else 1
+    if cfg.bridgesolver is not None:
+        n_bins += 1
+    if cfg.reverse and n_bins < 2:
         raise BenchmarkError(
             "--reverse requires at least two binaries "
-            "(two or more --branch/--wasm_branch/--binary)"
+            "(two or more --branch/--wasm_branch/--binary, "
+            "or one of those with --bridgesolver)"
         )
     return cfg
 
@@ -570,6 +640,7 @@ Benchmark dtest across solver/file combinations. Always prints a summary; use
 
 Options:
   -h, --help          Show this help
+  -s, --solver NAME   Run only this dtest mode: solve or calc (default: both)
   --repeats N         Runs per combination per binary (default: 1; env: REPEATS)
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
                       (alias: --max_deals)
@@ -582,6 +653,9 @@ Options:
                       Alias: --wasm-branch. Labels appear as wasm:NAME.
   --binary PATH       Path to a prebuilt dtest binary to benchmark. Repeatable.
                       A .js path (dtest_wasm) is run via node with the sibling .wasm.
+  --bridgesolver PATH Compare DDS calc against macroxue/bridge-solver at PATH
+                      (adds a second summary column; requires -s calc).
+                      Env: BRIDGESOLVER. Do not also pass --bridgesolver after --.
   --details           Keep per-run timing rows and build (git/bazel) output
   --sys-user          Include a sys/user column per binary in the summary
                       (env: SYS_USER=1)
@@ -590,6 +664,7 @@ Options:
   --reverse           Reverse the per-repeat dispatch order of the binaries
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
+                      Do not pass -s/--solver here; use benchmark's -s instead.
 
 --branch, --wasm_branch, and --binary may be given any number of times and
 combined; the binaries are benchmarked in the order specified and the first is
@@ -601,7 +676,8 @@ rel and a "faster" note; with three or more it shows only the per-binary
 averages (no note).
 
 Environment:
-  BRANCH, BINARY, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, SYS_USER, EPSILON
+  BRANCH, BINARY, HANDS_DIR, REPEATS, MAX_DEALS, DRY_RUN, DETAILS, SYS_USER,
+  EPSILON, BRIDGESOLVER
 
 Examples:
   python/utilities/src/benchmark.py
@@ -621,6 +697,8 @@ Examples:
   python/utilities/src/benchmark.py --binary /path/to/dtest --epsilon 1
   python/utilities/src/benchmark.py --binary /path/to/dtest --reverse
   python/utilities/src/benchmark.py --repeats 5 --binary /path/to/dtest
+  python/utilities/src/benchmark.py --bridgesolver /path/to/solver -s calc
+  python/utilities/src/benchmark.py --branch . --bridgesolver /path/to/solver -s calc
   DRY_RUN=1 python/utilities/src/benchmark.py
   ./benchmark.sh"""
 
@@ -916,51 +994,78 @@ class BenchmarkRunner:
                 [git_executable(), "-C", str(self.root), "checkout", self.orig_branch]
             )
 
-    def build_binaries(self) -> tuple[list[str], list[Path]]:
+    def build_binaries(
+        self,
+    ) -> tuple[list[str], list[Path], list[Path | None]]:
         specs = list(self.cfg.specs)
         nspecs = len(specs)
         ngit = sum(1 for k, _ in specs if k in GIT_SPEC_KINDS)
 
         if nspecs == 0:
             assert self.cfg.branch_binary is not None
-            return [self.current_label()], [self.cfg.branch_binary]
+            labels = [self.current_label()]
+            paths = [self.cfg.branch_binary]
+        else:
+            reject_checkout_binary_with_branch(self.root, specs)
 
-        reject_checkout_binary_with_branch(self.root, specs)
+            if ngit > 0:
+                specs, self.orig_branch = git_prep_for_branches(self.root, specs)
 
-        if ngit > 0:
-            specs, self.orig_branch = git_prep_for_branches(self.root, specs)
+            labels = []
+            paths = []
+            for kind, val in specs:
+                if kind == "branch":
+                    t = self.new_tmp_bin()
+                    self.build_branch_binary(val, t)
+                    paths.append(t)
+                    labels.append(val)
+                elif kind == "wasm_branch":
+                    d = self.new_tmp_wasm_dir()
+                    js = self.build_wasm_branch(val, d)
+                    paths.append(js)
+                    labels.append(f"wasm:{val}")
+                else:
+                    paths.append(Path(val))
+                    labels.append(label_for_path(val))
 
-        labels: list[str] = []
-        paths: list[Path] = []
-        for kind, val in specs:
-            if kind == "branch":
-                t = self.new_tmp_bin()
-                self.build_branch_binary(val, t)
-                paths.append(t)
-                labels.append(val)
-            elif kind == "wasm_branch":
-                d = self.new_tmp_wasm_dir()
-                js = self.build_wasm_branch(val, d)
-                paths.append(js)
-                labels.append(f"wasm:{val}")
-            else:
-                paths.append(Path(val))
-                labels.append(label_for_path(val))
+            if ngit > 0:
+                self.restore_branch(False)
 
-        if ngit > 0:
-            self.restore_branch(False)
-        return labels, paths
+        bs_by_idx: list[Path | None] = [None] * len(paths)
+        if self.cfg.bridgesolver is not None:
+            labels, paths, bs_by_idx = append_bridgesolver_peer(
+                labels, paths, self.cfg.bridgesolver
+            )
+        return labels, paths, bs_by_idx
 
-    def dtest_command(self, binary: Path, solver: str, hands: Path) -> list[str]:
+    def dtest_command(
+        self,
+        binary: Path,
+        solver: str,
+        hands: Path,
+        *,
+        bridgesolver: Path | None = None,
+    ) -> list[str]:
         # Absolute -f / script so wasm runs (cwd = js parent) still resolve paths.
         hands_arg = str(hands.resolve())
         args = ["-f", hands_arg, "-s", solver, *self.cfg.dtest_extra]
+        if bridgesolver is not None:
+            args.extend(["--bridgesolver", str(bridgesolver.resolve())])
         if binary.suffix == ".js":
             return ["node", str(binary.resolve()), *args]
         return [str(binary), *args]
 
-    def run_dtest(self, binary: Path, solver: str, hands: Path) -> DtestTiming:
-        cmd = self.dtest_command(binary, solver, hands)
+    def run_dtest(
+        self,
+        binary: Path,
+        solver: str,
+        hands: Path,
+        *,
+        bridgesolver: Path | None = None,
+    ) -> DtestTiming:
+        cmd = self.dtest_command(
+            binary, solver, hands, bridgesolver=bridgesolver
+        )
         if self.cfg.dry_run:
             print(f"DRY_RUN: {' '.join(cmd)}", file=self.err)
             return DtestTiming(None, None, None, None)
@@ -1016,7 +1121,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
     runner.detect_git_branch()
 
     try:
-        labels, paths = runner.build_binaries()
+        labels, paths, bridgesolver_by_idx = runner.build_binaries()
     except BenchmarkError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
@@ -1118,8 +1223,11 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
     print(f"{'hands dir:':<12} {cfg.hands_dir}")
     print(f"{'max_deals:':<12} {cfg.max_deals}")
     print(f"{'files:':<12} {' '.join(files)}")
+    print(f"{'solvers:':<12} {' '.join(cfg.solvers)}")
     print(f"{'git branch:':<12} {runner.git_branch}")
     print(f"{'repeats:':<12} {cfg.repeats}")
+    if cfg.bridgesolver is not None:
+        print(f"{'bridgesolver:':<12} {cfg.bridgesolver}")
     if cfg.dtest_extra:
         print(f"{'dtest args:':<12} {' '.join(cfg.dtest_extra)}")
     print()
@@ -1163,22 +1271,27 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
     if not cfg.dry_run and show_run_lines:
         print_run_header()
 
-    total_runs = len(SOLVERS) * len(files) * num_bins * cfg.repeats
+    total_runs = len(cfg.solvers) * len(files) * num_bins * cfg.repeats
     run_no = 0
     results: list[ResultRow] = []
 
-    for solver in SOLVERS:
+    for solver in cfg.solvers:
         for file in files:
             hands = cfg.hands_dir / file
             for rep in range(1, cfg.repeats + 1):
                 run_label = f"{rep}/{cfg.repeats}" if cfg.repeats > 1 else "1/1"
                 for idx in order:
                     bin_path = paths[idx]
+                    bs_path = bridgesolver_by_idx[idx]
                     run_no += 1
                     if cfg.dry_run:
-                        runner.run_dtest(bin_path, solver, hands)
+                        runner.run_dtest(
+                            bin_path, solver, hands, bridgesolver=bs_path
+                        )
                         continue
-                    parsed = runner.run_dtest(bin_path, solver, hands)
+                    parsed = runner.run_dtest(
+                        bin_path, solver, hands, bridgesolver=bs_path
+                    )
                     if show_run_lines:
                         print_run_row(
                             solver,
@@ -1220,6 +1333,7 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
                 files=files,
                 epsilon=cfg.epsilon,
                 sys_user=cfg.sys_user,
+                solvers=cfg.solvers,
             )
         )
 
