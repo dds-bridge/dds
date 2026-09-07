@@ -21,6 +21,10 @@
 #include <filesystem>
 #include <system_error>
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 #include "args.hpp"
 #include "cst.hpp"
 
@@ -43,7 +47,7 @@ struct optEntry
   unsigned numArgs;
 };
 
-constexpr int DTEST_NUM_OPTIONS = 5;
+constexpr int DTEST_NUM_OPTIONS = 6;
 
 enum DtestOpt
 {
@@ -51,7 +55,8 @@ enum DtestOpt
   OPT_SOLVER = 1,
   OPT_NUMTHR = 2,
   OPT_MEMORY = 3,
-  OPT_REPORT = 4
+  OPT_REPORT = 4,
+  OPT_BRIDGESOLVER = 5
 };
 
 const optEntry optList[DTEST_NUM_OPTIONS] =
@@ -60,7 +65,8 @@ const optEntry optList[DTEST_NUM_OPTIONS] =
   {"s", "solver", 1},
   {"n", "numthr", 1},
   {"m", "memory", 1},
-  {"r", "report", 0}
+  {"r", "report", 0},
+  {"", "bridgesolver", 1}
 };
 
 const vector<string> solverList =
@@ -113,6 +119,12 @@ void usage(
     "-r, --report       Print per-deal timings in ms (two decimals) for every\n" <<
     "                   hand in the input (solve mode), longest first, plus\n" <<
     "                   a min/max/mean/median/stddev summary.\n" <<
+    "\n" <<
+    "    --bridgesolver PATH\n" <<
+    "                   Use the macroxue/bridge-solver binary at PATH instead\n" <<
+    "                   of built-in DDS for the selected -s mode. Currently\n" <<
+    "                   only -s calc is supported. Relative paths resolve\n" <<
+    "                   under BUILD_WORKING_DIRECTORY when set (bazel run).\n" <<
     "\n" <<
     endl;
 }
@@ -178,6 +190,7 @@ void SetDefaults()
   options.num_threads_ = 0;
   options.memory_mb_ = 0;
   options.report_slow_boards_ = false;
+  options.bridgesolver_path_.clear();
 }
 
 
@@ -325,6 +338,56 @@ bool is_dtest_list_shorthand_arg(const string& arg)
   return true;
 }
 
+string join_under_base(const string& base, const string& rel)
+{
+  return normalize_logical_path((fs::path(base) / rel).string());
+}
+
+/// Resolve --bridgesolver relative to bazel invoke cwd when needed.
+string resolve_bridgesolver_binary(const string& arg)
+{
+  if (arg.empty())
+    return string();
+
+  if (is_absolute_path(arg))
+    return normalize_logical_path(arg);
+
+  if (const char* working = std::getenv("BUILD_WORKING_DIRECTORY"))
+  {
+    const string candidate = join_under_base(working, arg);
+    if (path_exists(candidate))
+      return candidate;
+  }
+  if (const char* workspace = std::getenv("BUILD_WORKSPACE_DIRECTORY"))
+  {
+    const string candidate = join_under_base(workspace, arg);
+    if (path_exists(candidate))
+      return candidate;
+  }
+
+  const string cwd_candidate = normalize_logical_path(arg);
+  if (path_exists(cwd_candidate))
+    return absolute_path_logical(arg);
+
+  // Prefer BUILD_WORKING_DIRECTORY even when the file is missing, so error
+  // messages point at the invoke-time path under bazel run.
+  if (const char* working = std::getenv("BUILD_WORKING_DIRECTORY"))
+    return join_under_base(working, arg);
+  return absolute_path_logical(arg);
+}
+
+bool is_executable_file(const string& path)
+{
+  if (!path_exists(path))
+    return false;
+#ifdef _WIN32
+  (void)path;
+  return true;
+#else
+  return ::access(path.c_str(), X_OK) == 0;
+#endif
+}
+
 }  // namespace
 
 
@@ -453,6 +516,11 @@ void print_options()
     options.num_threads_ << "\n";
   cout << setw(12) << "memory" << setw(12) <<  
     options.memory_mb_ << " MB\n";
+  if (!options.bridgesolver_path_.empty())
+  {
+    cout << setw(12) << "bridgesolver" <<
+      options.bridgesolver_path_ << "\n";
+  }
   cout << "\n" << right;
 }
 
@@ -568,6 +636,10 @@ void read_args(
         options.report_slow_boards_ = true;
         break;
 
+      case OPT_BRIDGESOLVER:
+        options.bridgesolver_path_ = resolve_bridgesolver_binary(optarg);
+        break;
+
       default:
         cout << "Unknown option\n";
         errFlag = true;
@@ -577,9 +649,27 @@ void read_args(
       break;
   }
 
+  if (!errFlag && c == 0 && !options.bridgesolver_path_.empty())
+  {
+    if (options.solver_ != Solver::DTEST_SOLVER_CALC)
+    {
+      cout << "--bridgesolver currently supports only -s calc\n";
+      errFlag = true;
+    }
+    else if (!is_executable_file(options.bridgesolver_path_))
+    {
+      cout << "bridge-solver binary not found or not executable: "
+        << options.bridgesolver_path_ << "\n";
+      errFlag = true;
+    }
+  }
+
   if (errFlag || c == -1)
   {
-    cout << "Error while parsing option '" << argv[nextToken] << "'\n";
+    if (nextToken >= 0 && nextToken < argc)
+      cout << "Error while parsing option '" << argv[nextToken] << "'\n";
+    else
+      cout << "Error while parsing options\n";
     cout << "Invoke the program without arguments for help" << endl;
     exit(0);
   }

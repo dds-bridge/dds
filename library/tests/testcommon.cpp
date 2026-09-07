@@ -110,6 +110,12 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
     exit(0);
   }
 
+  if (!options.bridgesolver_path_.empty() && GIBmode)
+  {
+    cout << "--bridgesolver requires PBN+TABLE input (not GIB)\n";
+    exit(0);
+  }
+
   timer.reset();
   timer.set_name("Hand stats");
 
@@ -135,7 +141,11 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {
-    loop_calc(deal_list, table_list, number);
+    if (!options.bridgesolver_path_.empty())
+      loop_bridgesolver(
+        deal_list, table_list, number, options.bridgesolver_path_);
+    else
+      loop_calc(deal_list, table_list, number);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
   {

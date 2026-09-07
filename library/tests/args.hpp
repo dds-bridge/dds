@@ -21,6 +21,7 @@
 /// - Number of threads
 /// - Memory allocation
 /// - Slow board reporting
+/// - Optional external --bridgesolver binary (calc mode)
 
 /// Print usage information.
 /// @param base Command name for usage message

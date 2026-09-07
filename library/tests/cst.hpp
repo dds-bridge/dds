@@ -36,5 +36,7 @@ struct OptionsType
   int num_threads_;                         ///< Number of threads to use
   int memory_mb_;                           ///< Memory allocation in MB
   bool report_slow_boards_;                 ///< Report slow-executing hands
+  /// Path to macroxue/bridge-solver binary; empty means use built-in DDS.
+  std::string bridgesolver_path_;
 };
 

@@ -1,0 +1,125 @@
+/// @file bridge_solver_runner_test.cpp
+/// @brief Unit tests for PBN↔macroxue conversion and solver stdout parsing.
+
+#include <gtest/gtest.h>
+
+#include <cstring>
+#include <unistd.h>
+#include <string>
+
+#include "bridge_solver_runner.hpp"
+
+namespace
+{
+
+// deals/fixed/deal.01 from https://github.com/macroxue/bridge-solver
+constexpr const char* kDeal01Pbn =
+  "N:J75.AQT86.J.AK95 92.KJ92.T985.Q72 AKQ864.53.Q42.T3 T3.74.AK763.J864";
+
+constexpr const char* kVoidDealPbn =
+  "N:KQ3..T832.AJ9765 T96.K83.654.T843 AJ854.QT654.KJ9. 72.AJ972.AQ7.KQ2";
+
+constexpr const char* kSolverStdout =
+  "N  9  9  3  3  0.01 s 4064.0 M\n"
+  "S 11 11  2  2  0.01 s 4096.0 M\n"
+  "H  8  8  4  4  0.04 s 5440.0 M\n"
+  "D  6  6  6  6  0.05 s 5616.0 M\n"
+  "C  7  7  3  3  0.11 s 8480.0 M\n";
+
+// DDS res_table[strain][N,E,S,W]
+constexpr int kDeal01Table[DDS_STRAINS][DDS_HANDS] = {
+  {11, 2, 11, 2},  // S
+  {8, 4, 8, 4},    // H
+  {6, 6, 6, 6},    // D
+  {7, 3, 7, 3},    // C
+  {9, 3, 9, 3},    // N
+};
+
+void expect_table_eq(
+  const DdTableResults& got,
+  const int expected[DDS_STRAINS][DDS_HANDS])
+{
+  for (int strain = 0; strain < DDS_STRAINS; ++strain)
+  {
+    for (int hand = 0; hand < DDS_HANDS; ++hand)
+    {
+      EXPECT_EQ(got.res_table[strain][hand], expected[strain][hand])
+        << "strain=" << strain << " hand=" << hand;
+    }
+  }
+}
+
+}  // namespace
+
+TEST(BridgeSolverRunner, PbnToMacroxueDeal01RoundTripsSeats)
+{
+  std::string error;
+  const std::string text = pbn_to_macroxue_deal(kDeal01Pbn, &error);
+  ASSERT_FALSE(text.empty()) << error;
+  EXPECT_NE(text.find("J75 AQT86 J AK95"), std::string::npos);
+  EXPECT_NE(text.find("T3 74 AK763 J864"), std::string::npos);
+  EXPECT_NE(text.find("92 KJ92 T985 Q72"), std::string::npos);
+  EXPECT_NE(text.find("AKQ864 53 Q42 T3"), std::string::npos);
+}
+
+TEST(BridgeSolverRunner, PbnToMacroxueUsesDashForVoids)
+{
+  std::string error;
+  const std::string text = pbn_to_macroxue_deal(kVoidDealPbn, &error);
+  ASSERT_FALSE(text.empty()) << error;
+  EXPECT_NE(text.find("KQ3 - T832 AJ9765"), std::string::npos);
+  EXPECT_NE(text.find("AJ854 QT654 KJ9 -"), std::string::npos);
+}
+
+TEST(BridgeSolverRunner, PbnToMacroxueRejectsBadInput)
+{
+  std::string error;
+  EXPECT_TRUE(pbn_to_macroxue_deal("not-a-deal", &error).empty());
+  EXPECT_FALSE(error.empty());
+}
+
+TEST(BridgeSolverRunner, ParseStdoutMapsSnweToNesw)
+{
+  DdTableResults table{};
+  std::string error;
+  ASSERT_TRUE(parse_macroxue_solver_stdout(kSolverStdout, table, &error))
+    << error;
+  expect_table_eq(table, kDeal01Table);
+}
+
+TEST(BridgeSolverRunner, ParseStdoutIgnoresNoiseLines)
+{
+  const std::string noisy =
+    std::string("                          some deal art\n") + kSolverStdout;
+  DdTableResults table{};
+  std::string error;
+  ASSERT_TRUE(parse_macroxue_solver_stdout(noisy, table, &error)) << error;
+  expect_table_eq(table, kDeal01Table);
+}
+
+TEST(BridgeSolverRunner, ParseStdoutRequiresFiveStrains)
+{
+  DdTableResults table{};
+  std::string error;
+  EXPECT_FALSE(
+    parse_macroxue_solver_stdout("N  9  9  3  3  0.01 s\n", table, &error));
+  EXPECT_FALSE(error.empty());
+}
+
+TEST(BridgeSolverRunner, RunRealBinaryIfPresent)
+{
+  const char* path = "/Users/adamw/src/bridge-solver/solver";
+  if (access(path, X_OK) != 0)
+    GTEST_SKIP() << "bridge-solver binary not present";
+
+  DdTableResults table{};
+  std::string error;
+  const bool ok = run_bridge_solver_table(
+    path,
+    "N:J75.AQT86.J.AK95 92.KJ92.T985.Q72 AKQ864.53.Q42.T3 T3.74.AK763.J864",
+    table,
+    &error);
+  EXPECT_TRUE(ok) << error;
+  if (ok)
+    expect_table_eq(table, kDeal01Table);
+}

@@ -13,11 +13,13 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "loop.hpp"
 #include "TestTimer.hpp"
+#include "bridge_solver_runner.hpp"
 #include "compare.hpp"
 #include "print.hpp"
 #include "cst.hpp"
@@ -173,6 +175,53 @@ bool loop_calc(
   }
 
 #ifdef BATCHTIMES
+  cout << "\n";
+#endif
+
+  return true;
+}
+
+
+
+bool loop_bridgesolver(
+  DealPBN * deal_list,
+  DdTableResults * table_list,
+  const int number,
+  const std::string& binary)
+{
+#ifdef BATCHTIMES
+  cout << setw(8) << left << "Hand no." <<
+    setw(25) << right << "Time" << "\n";
+#endif
+
+  if (number <= 0)
+    return true;
+
+  timer.start(number);
+  for (int j = 0; j < number; j++)
+  {
+    DdTableResults result{};
+    std::string error;
+    if (!run_bridge_solver_table(
+        binary, deal_list[j].remainCards, result, &error))
+    {
+      cout << "loop_bridgesolver: j " << j << ": " << error << "\n";
+      exit(0);
+    }
+
+    if (compare_TABLE(result, table_list[j]))
+      continue;
+
+    cout << "loop_bridgesolver: j " << j << ": Difference\n\n";
+    print_TABLE(result);
+    cout << "\n";
+    print_TABLE(table_list[j]);
+    cout << "\n";
+  }
+  timer.end();
+
+#ifdef BATCHTIMES
+  timer.print_running(number, number);
   cout << "\n";
 #endif
 

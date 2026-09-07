@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -48,6 +49,13 @@ bool loop_calc(
     DealPBN * deal_list,
     DdTableResults * table_list,
     const int number);
+
+/// Like loop_calc, but runs each deal through an external macroxue bridge-solver.
+bool loop_bridgesolver(
+    DealPBN * deal_list,
+    DdTableResults * table_list,
+    const int number,
+    const std::string& binary);
 
 /// PAR loop: calculate PAR scores for multiple deals.
 bool loop_par(

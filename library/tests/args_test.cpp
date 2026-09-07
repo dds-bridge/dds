@@ -227,6 +227,100 @@ TEST(Args, UnknownMinMaxFlagsAreRejected)
   EXPECT_EXIT(read_args(4, argv_max), ::testing::ExitedWithCode(0), ".*");
 }
 
+TEST(Args, BridgesolverWithCalcSetsPath)
+{
+  const std::string input = make_temp_input_file();
+  const std::string solver =
+    std::string(::testing::TempDir()) + "fake_bridgesolver_bin";
+  {
+    std::ofstream out(solver);
+    out << "#!/bin/sh\n";
+  }
+#ifndef _WIN32
+  ASSERT_EQ(chmod(solver.c_str(), 0755), 0);
+#endif
+
+  char arg0[] = "dtest";
+  char arg_f[] = "-f";
+  char arg_s[] = "-s";
+  char arg_calc[] = "calc";
+  char arg_bs[] = "--bridgesolver";
+  char* argv[] = {
+    arg0,
+    arg_f,
+    const_cast<char*>(input.c_str()),
+    arg_s,
+    arg_calc,
+    arg_bs,
+    const_cast<char*>(solver.c_str())};
+  read_args(7, argv);
+  EXPECT_EQ(options.solver_, Solver::DTEST_SOLVER_CALC);
+  EXPECT_TRUE(same_path(options.bridgesolver_path_, solver));
+}
+
+TEST(Args, BridgesolverDefaultsEmpty)
+{
+  const std::string input = make_temp_input_file();
+  char arg0[] = "dtest";
+  char arg_f[] = "-f";
+  char arg_s[] = "-s";
+  char arg_calc[] = "calc";
+  char* argv[] = {
+    arg0, arg_f, const_cast<char*>(input.c_str()), arg_s, arg_calc};
+  read_args(5, argv);
+  EXPECT_TRUE(options.bridgesolver_path_.empty());
+}
+
+TEST(Args, BridgesolverRejectsNonCalcSolver)
+{
+  const std::string input = make_temp_input_file();
+  const std::string solver =
+    std::string(::testing::TempDir()) + "fake_bridgesolver_bin_solve";
+  {
+    std::ofstream out(solver);
+    out << "#!/bin/sh\n";
+  }
+#ifndef _WIN32
+  ASSERT_EQ(chmod(solver.c_str(), 0755), 0);
+#endif
+
+  char arg0[] = "dtest";
+  char arg_f[] = "-f";
+  char arg_s[] = "-s";
+  char arg_solve[] = "solve";
+  char arg_bs[] = "--bridgesolver";
+  char* argv[] = {
+    arg0,
+    arg_f,
+    const_cast<char*>(input.c_str()),
+    arg_s,
+    arg_solve,
+    arg_bs,
+    const_cast<char*>(solver.c_str())};
+  EXPECT_EXIT(read_args(7, argv), ::testing::ExitedWithCode(0), ".*");
+}
+
+TEST(Args, BridgesolverRejectsMissingBinary)
+{
+  const std::string input = make_temp_input_file();
+  const std::string missing =
+    std::string(::testing::TempDir()) + "no_such_bridgesolver_bin";
+  char arg0[] = "dtest";
+  char arg_f[] = "-f";
+  char arg_s[] = "-s";
+  char arg_calc[] = "calc";
+  char arg_bs[] = "--bridgesolver";
+  char* argv[] = {
+    arg0,
+    arg_f,
+    const_cast<char*>(input.c_str()),
+    arg_s,
+    arg_calc,
+    arg_bs,
+    const_cast<char*>(missing.c_str())};
+  EXPECT_EXIT(read_args(7, argv), ::testing::ExitedWithCode(0), ".*");
+}
+
 TEST(Args, ResolvePrefersLiteralExistingPath)
 {
   const std::string path = make_temp_input_file();
