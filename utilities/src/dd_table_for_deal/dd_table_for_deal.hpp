@@ -27,6 +27,10 @@ auto parse_vulnerable(std::string_view text) -> std::optional<int>;
 // Positive deal count, or nullopt if the text is not a valid positive integer.
 auto parse_limit(std::string_view text) -> std::optional<std::size_t>;
 
+// Worker-thread count for CalcDDtablePBNN: 0 = auto, >=1 = explicit cap.
+// Nullopt if the text is not a non-negative integer.
+auto parse_numthr(std::string_view text) -> std::optional<int>;
+
 // Keep the first `limit` deals when set; otherwise return deals unchanged.
 auto apply_deal_limit(
     std::vector<std::string> deals,

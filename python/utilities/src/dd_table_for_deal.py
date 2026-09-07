@@ -138,14 +138,24 @@ def _parse_limit(text: str) -> int:
     return int(text)
 
 
-def _parse_cli(argv: list[str]) -> tuple[str, int, int | None] | None:
-    """Return (deal_arg, vulnerable, limit) or None for help.
+def _parse_numthr(text: str) -> int:
+    if not text.isdigit():
+        raise ValueError(
+            "Invalid --numthr value (use a non-negative integer; 0 = auto)"
+        )
+    return int(text)
 
-    limit is None when unrestricted. Raises ValueError on bad args.
+
+def _parse_cli(argv: list[str]) -> tuple[str, int, int | None, int] | None:
+    """Return (deal_arg, vulnerable, limit, num_threads) or None for help.
+
+    limit is None when unrestricted. num_threads defaults to 0 (auto).
+    Raises ValueError on bad args.
     """
     deal: str | None = None
     vulnerable = 0
     limit: int | None = None
+    num_threads = 0
     i = 1
     while i < len(argv):
         arg = argv[i]
@@ -163,6 +173,12 @@ def _parse_cli(argv: list[str]) -> tuple[str, int, int | None] | None:
             limit = _parse_limit(argv[i + 1])
             i += 2
             continue
+        if arg in ("-n", "--numthr"):
+            if i + 1 >= len(argv):
+                raise ValueError(f"{arg} requires a non-negative integer")
+            num_threads = _parse_numthr(argv[i + 1])
+            i += 2
+            continue
         if arg.startswith("-") and arg != "-":
             raise ValueError(f"Unknown option: {arg}")
         if deal is not None:
@@ -176,13 +192,13 @@ def _parse_cli(argv: list[str]) -> tuple[str, int, int | None] | None:
         else:
             raise ValueError("missing deal argument")
 
-    return deal, vulnerable, limit
+    return deal, vulnerable, limit, num_threads
 
 
 def _print_usage(prog: str) -> None:
     print(
         f"Usage: {prog} [--vul none|both|ns|ew|0|1|2|3] [--limit N] "
-        f"<pbn_deal_or_file>\n"
+        f"[-n|--numthr N] <pbn_deal_or_file>\n"
         f"       {prog} -h | --help\n"
         "\n"
         "Calculate double-dummy tricks and par for all strains and leads.\n"
@@ -192,6 +208,9 @@ def _print_usage(prog: str) -> None:
         "  --vul              Vulnerability: none|both|ns|ew or 0|1|2|3"
         " (default: none)\n"
         "  --limit            Solve only the first N unique deals\n"
+        "  -n, --numthr       Worker threads for each table solve.\n"
+        "                     0 = auto (hardware concurrency), 1 = sequential.\n"
+        "                     (Default: 0)\n"
         "\n"
         'If stdin is not a terminal, PBN is read from stdin (all [Deal "..."] tags).\n'
         "\n"
@@ -200,6 +219,7 @@ def _print_usage(prog: str) -> None:
         f'5.A95432.7632.K6 AKJ9842.K.T8.J93"\n'
         f"  {prog} --vul ns hands/example.pbn\n"
         f"  {prog} --limit 3 hands/multi_board.pbn\n"
+        f"  {prog} -n 1 hands/example.pbn\n"
         f"  {prog} < hands/example.pbn\n",
         file=sys.stderr,
     )
@@ -476,7 +496,7 @@ def main(argv: list[str] | None = None) -> int:
         _print_usage(prog)
         return 0
 
-    input_arg, vulnerable, limit = parsed
+    input_arg, vulnerable, limit, num_threads = parsed
 
     try:
         pbn_deals = _unique_deals(_load_deals(input_arg))
@@ -497,7 +517,7 @@ def main(argv: list[str] | None = None) -> int:
     deal_count = len(pbn_deals)
     for deal_no, pbn_deal in enumerate(pbn_deals, start=1):
         try:
-            result = calc_all_tables_pbn([pbn_deal])
+            result = calc_all_tables_pbn([pbn_deal], max_threads=num_threads)
         except (ValueError, RuntimeError) as exc:
             print(f"DDS error: {exc}", file=sys.stderr)
             return 1

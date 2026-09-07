@@ -41,6 +41,7 @@ using dd_table_for_deal::extract_deal_tags;
 using dd_table_for_deal::format_par_line;
 using dd_table_for_deal::looks_like_path;
 using dd_table_for_deal::parse_limit;
+using dd_table_for_deal::parse_numthr;
 using dd_table_for_deal::parse_vulnerable;
 using dd_table_for_deal::path_is_openable;
 using dd_table_for_deal::read_pbn_stream;
@@ -193,7 +194,8 @@ auto process_deal(
     std::string const& deal,
     std::size_t deal_no,
     std::size_t deal_count,
-    int vulnerable) -> bool
+    int vulnerable,
+    int num_threads) -> bool
 {
   DdTableDealPBN tableDealPBN{};
   if (deal.size() >= sizeof(tableDealPBN.cards))
@@ -210,7 +212,7 @@ auto process_deal(
   DdTableResults table;
   char line[80];
 
-  const int res = CalcDDtablePBN(tableDealPBN, &table);
+  const int res = CalcDDtablePBNN(tableDealPBN, &table, num_threads);
   if (res != RETURN_NO_FAULT)
   {
     ErrorMessage(res, line);
@@ -239,7 +241,7 @@ static auto print_usage(const char * prog) -> void
 {
   fprintf(stderr,
           "Usage: %s [--vul none|both|ns|ew|0|1|2|3] [--limit N] "
-          "<pbn_deal_or_file>\n"
+          "[-n|--numthr N] <pbn_deal_or_file>\n"
           "       %s -h | --help\n"
           "\n"
           "Calculate double-dummy tricks and par for all strains and leads.\n"
@@ -249,6 +251,9 @@ static auto print_usage(const char * prog) -> void
           "  --vul              Vulnerability: none|both|ns|ew or 0|1|2|3"
           " (default: none)\n"
           "  --limit            Solve only the first N unique deals\n"
+          "  -n, --numthr       Worker threads for each table solve.\n"
+          "                     0 = auto (hardware concurrency), 1 = sequential.\n"
+          "                     (Default: 0)\n"
           "\n"
           "If stdin is not a terminal, PBN is read from stdin (all [Deal \"...\"] tags).\n"
           "\n"
@@ -257,7 +262,9 @@ static auto print_usage(const char * prog) -> void
           "5.A95432.7632.K6 AKJ9842.K.T8.J93\"\n"
           "  %s --vul ns hands/example.pbn\n"
           "  %s --limit 3 hands/multi_board.pbn\n"
+          "  %s -n 1 hands/example.pbn\n"
           "  %s < hands/example.pbn\n",
+          prog,
           prog,
           prog,
           prog,
@@ -271,6 +278,7 @@ auto main(int argc, char * argv[]) -> int
 {
   const char * input = nullptr;
   int vulnerable = 0;
+  int num_threads = 0;
   std::optional<std::size_t> limit;
 
   for (int i = 1; i < argc; ++i)
@@ -316,6 +324,28 @@ auto main(int argc, char * argv[]) -> int
       limit = parsed_limit;
       continue;
     }
+    if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--numthr") == 0)
+    {
+      if (i + 1 >= argc)
+      {
+        fprintf(stderr, "%s requires a non-negative integer\n", argv[i]);
+        print_usage(argv[0]);
+        return 1;
+      }
+      const char * flag = argv[i];
+      const auto parsed_numthr = parse_numthr(argv[++i]);
+      if (!parsed_numthr)
+      {
+        fprintf(stderr,
+                "Invalid %s value (use a non-negative integer; "
+                "0 = auto)\n",
+                flag);
+        print_usage(argv[0]);
+        return 1;
+      }
+      num_threads = *parsed_numthr;
+      continue;
+    }
     if (argv[i][0] == '-' && strcmp(argv[i], "-") != 0)
     {
       fprintf(stderr, "Unknown option: %s\n", argv[i]);
@@ -352,7 +382,7 @@ auto main(int argc, char * argv[]) -> int
 
   for (std::size_t i = 0; i < deals.size(); ++i)
   {
-    if (!process_deal(deals[i], i + 1, deals.size(), vulnerable))
+    if (!process_deal(deals[i], i + 1, deals.size(), vulnerable, num_threads))
       return 1;
   }
 

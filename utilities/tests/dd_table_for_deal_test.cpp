@@ -78,6 +78,23 @@ TEST(ParseLimit, RejectsNonPositiveAndNonNumeric)
 }
 
 
+TEST(ParseNumthr, AcceptsZeroAndPositiveIntegers)
+{
+  EXPECT_EQ(dd_table_for_deal::parse_numthr("0"), 0);
+  EXPECT_EQ(dd_table_for_deal::parse_numthr("1"), 1);
+  EXPECT_EQ(dd_table_for_deal::parse_numthr("8"), 8);
+}
+
+
+TEST(ParseNumthr, RejectsNegativeAndNonNumeric)
+{
+  EXPECT_FALSE(dd_table_for_deal::parse_numthr("").has_value());
+  EXPECT_FALSE(dd_table_for_deal::parse_numthr("-1").has_value());
+  EXPECT_FALSE(dd_table_for_deal::parse_numthr("3x").has_value());
+  EXPECT_FALSE(dd_table_for_deal::parse_numthr("1.5").has_value());
+}
+
+
 TEST(ApplyDealLimit, KeepsPrefixWhenLimited)
 {
   const std::vector<std::string> deals{"a", "b", "c"};

@@ -142,6 +142,25 @@ auto parse_limit(std::string_view text) -> std::optional<std::size_t>
 }
 
 
+auto parse_numthr(std::string_view text) -> std::optional<int>
+{
+  if (text.empty())
+    return std::nullopt;
+
+  int value = 0;
+  for (char ch : text)
+  {
+    if (ch < '0' || ch > '9')
+      return std::nullopt;
+    const int digit = ch - '0';
+    if (value > (std::numeric_limits<int>::max() - digit) / 10)
+      return std::nullopt;
+    value = value * 10 + digit;
+  }
+  return value;
+}
+
+
 auto apply_deal_limit(
     std::vector<std::string> deals,
     std::optional<std::size_t> limit) -> std::vector<std::string>
