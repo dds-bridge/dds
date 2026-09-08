@@ -223,8 +223,8 @@ TEST(Args, UnknownMinMaxFlagsAreRejected)
   char arg_max[] = "--max";
   char* argv_min[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_min};
   char* argv_max[] = {arg0, arg_f, const_cast<char*>(path.c_str()), arg_max};
-  EXPECT_EXIT(read_args(4, argv_min), ::testing::ExitedWithCode(0), ".*");
-  EXPECT_EXIT(read_args(4, argv_max), ::testing::ExitedWithCode(0), ".*");
+  EXPECT_EXIT(read_args(4, argv_min), ::testing::ExitedWithCode(1), ".*");
+  EXPECT_EXIT(read_args(4, argv_max), ::testing::ExitedWithCode(1), ".*");
 }
 
 TEST(Args, BridgesolverWithCalcSetsPath)
@@ -297,7 +297,7 @@ TEST(Args, BridgesolverRejectsNonCalcSolver)
     arg_solve,
     arg_bs,
     const_cast<char*>(solver.c_str())};
-  EXPECT_EXIT(read_args(7, argv), ::testing::ExitedWithCode(0), ".*");
+  EXPECT_EXIT(read_args(7, argv), ::testing::ExitedWithCode(1), ".*");
 }
 
 TEST(Args, BridgesolverRejectsMissingBinary)
@@ -318,7 +318,7 @@ TEST(Args, BridgesolverRejectsMissingBinary)
     arg_calc,
     arg_bs,
     const_cast<char*>(missing.c_str())};
-  EXPECT_EXIT(read_args(7, argv), ::testing::ExitedWithCode(0), ".*");
+  EXPECT_EXIT(read_args(7, argv), ::testing::ExitedWithCode(1), ".*");
 }
 
 TEST(Args, ResolvePrefersLiteralExistingPath)

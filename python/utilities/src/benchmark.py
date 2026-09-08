@@ -162,11 +162,14 @@ def append_bridgesolver_peer(
     labels: list[str],
     paths: list[Path],
     bridgesolver: Path,
+    *,
+    harness_dtest: Path,
 ) -> tuple[list[str], list[Path], list[Path | None]]:
-    """Append a calc peer that reuses the baseline dtest with --bridgesolver.
+    """Append a calc peer that runs ``harness_dtest --bridgesolver``.
 
-    Returns (labels, paths, bridgesolver_by_index). The peer shares paths[0]
-    and is labeled from the bridgesolver binary name.
+    Returns (labels, paths, bridgesolver_by_index). The peer uses
+    ``harness_dtest`` (must understand ``--bridgesolver``), not the baseline
+    DDS binary under test — older ``--branch`` builds may lack the flag.
     """
     if not paths:
         raise BenchmarkError("--bridgesolver requires a baseline dtest binary")
@@ -174,7 +177,7 @@ def append_bridgesolver_peer(
     labels = list(labels)
     paths = list(paths)
     labels.append(label_for_path(bridgesolver))
-    paths.append(paths[0])
+    paths.append(harness_dtest)
     bs_by_idx.append(bridgesolver)
     return labels, paths, bs_by_idx
 
@@ -655,7 +658,10 @@ Options:
                       A .js path (dtest_wasm) is run via node with the sibling .wasm.
   --bridgesolver PATH Compare DDS calc against macroxue/bridge-solver at PATH
                       (adds a second summary column; requires -s calc).
-                      Env: BRIDGESOLVER. Do not also pass --bridgesolver after --.
+                      Runs via a harness dtest built from the *current* tree
+                      (supports --bridgesolver); DDS columns still use --branch
+                      / --binary as usual. Env: BRIDGESOLVER.
+                      Do not also pass --bridgesolver after --.
   --details           Keep per-run timing rows and build (git/bazel) output
   --sys-user          Include a sys/user column per binary in the summary
                       (env: SYS_USER=1)
@@ -1033,8 +1039,34 @@ class BenchmarkRunner:
 
         bs_by_idx: list[Path | None] = [None] * len(paths)
         if self.cfg.bridgesolver is not None:
+            # Always build/copy the *current* checkout's dtest as the harness.
+            # --branch may have produced older binaries that reject --bridgesolver.
+            harness = self.new_tmp_bin()
+            if self.cfg.dry_run:
+                bazel = resolve_bazel_command()
+                print(
+                    f"DRY_RUN: (cd {self.root} && {bazel} build //library/tests:dtest)",
+                    file=self.err,
+                )
+                print(
+                    f"DRY_RUN: cp -L {self.root / DTEST_REL} {harness}",
+                    file=self.err,
+                )
+            else:
+                print(
+                    "Building current-tree dtest for --bridgesolver harness...",
+                    file=self.err,
+                )
+                self.bazel_dtest()
+                shutil.copy2(
+                    self.root / DTEST_REL, harness, follow_symlinks=True
+                )
+                ensure_executable(harness)
             labels, paths, bs_by_idx = append_bridgesolver_peer(
-                labels, paths, self.cfg.bridgesolver
+                labels,
+                paths,
+                self.cfg.bridgesolver,
+                harness_dtest=harness,
             )
         return labels, paths, bs_by_idx
 
@@ -1082,6 +1114,11 @@ class BenchmarkRunner:
         parsed = parse_dtest_output(out)
         if not dtest_timing_usable(parsed):
             print(f"warning: incomplete dtest timing output: {' '.join(cmd)}", file=self.err)
+            snippet = out.strip().splitlines()[:3]
+            if snippet:
+                print("  output:", file=self.err)
+                for line in snippet:
+                    print(f"    {line}", file=self.err)
         return parsed
 
     def detect_git_branch(self) -> None:

@@ -1255,15 +1255,20 @@ class TestRunDtestWasm(unittest.TestCase):
             root = Path(tmp)
             dtest = root / "dtest"
             dtest.write_text("x")
+            harness = root / "harness-dtest"
+            harness.write_text("h")
             solver = root / "my-solver"
             solver.write_text("y")
             labels, paths, bs = benchmark.append_bridgesolver_peer(
                 ["develop"],
                 [dtest],
                 solver,
+                harness_dtest=harness,
             )
+            # Peer must use a current-tree harness that understands
+            # --bridgesolver, not the (possibly older) baseline dtest.
             self.assertEqual(labels, ["develop", "my-solver"])
-            self.assertEqual(paths, [dtest, dtest])
+            self.assertEqual(paths, [dtest, harness])
             self.assertEqual(bs, [None, solver])
 
     def test_js_resolves_relative_hands_path(self) -> None:

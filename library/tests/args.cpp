@@ -671,7 +671,7 @@ void read_args(
     else
       cout << "Error while parsing options\n";
     cout << "Invoke the program without arguments for help" << endl;
-    exit(0);
+    exit(1);
   }
 }
 
