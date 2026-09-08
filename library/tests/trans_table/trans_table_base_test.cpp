@@ -37,8 +37,15 @@ protected:
         MockTransTable() : TransTable() {}
         
         ~MockTransTable() override = default;
-        auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override { adds = 0; overwrites = 0; harvests = 0; }
-        auto reset_op_stats() -> void override {}
+        auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
+        {
+          adds = 0;
+          overwrites = 0;
+          harvests = 0;
+        }
+        auto reset_op_stats() -> void override
+        {
+        }
 
         void init(const int handLookup[][15]) override
         {

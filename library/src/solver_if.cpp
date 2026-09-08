@@ -676,7 +676,7 @@ SOLVER_DONE:
   }
 
   // Print TT stats if requested
-  if (std::getenv("DDS_PRINT_TT_STATS")) {
+  if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && std::string(env) == "1") {
     ThreadData* thrp_ptr = ctx.thread_ptr();
     if (thrp_ptr && thrp_ptr->tt_lookup_count > 0) {
       double hit_rate = 100.0 * (double)thrp_ptr->tt_hit_count /
@@ -843,7 +843,7 @@ auto solve_same_board(
   }
 
   // Print TT stats if requested
-  if (std::getenv("DDS_PRINT_TT_STATS")) {
+  if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && std::string(env) == "1") {
     ThreadData* thrp_ptr = ctx.thread_ptr();
     if (thrp_ptr && thrp_ptr->tt_lookup_count > 0) {
       double hit_rate = 100.0 * (double)thrp_ptr->tt_hit_count /

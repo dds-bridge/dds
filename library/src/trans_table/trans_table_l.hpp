@@ -465,12 +465,14 @@ class TransTableL: public TransTable
     /// \brief Print summary suit statistics.
     ///
     /// \param fout Output stream
-    auto reset_op_stats() -> void override {
+    auto reset_op_stats() -> void override
+    {
       page_stats_.num_adds_ = 0;
       page_stats_.num_overwrites_ = 0;
       page_stats_.num_harvests_ = 0;
     }
-    auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override {
+    auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
+    {
       adds = page_stats_.num_adds_;
       overwrites = page_stats_.num_overwrites_;
       harvests = page_stats_.num_harvests_;

@@ -299,9 +299,14 @@ class TransTableS: public TransTable
     auto print_all_suit_stats(std::ofstream& /*fout*/) const -> void override
     {
     }
-    auto reset_op_stats() -> void override {}
-    auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override {
-      adds = 0; overwrites = 0; harvests = 0; // TransTableS not instrumented
+    auto reset_op_stats() -> void override
+    {
+    }
+    auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
+    {
+      adds = 0;
+      overwrites = 0;
+      harvests = 0; // TransTableS not instrumented
     }
     auto print_summary_suit_stats(std::ofstream& /*fout*/) const -> void override
     {
