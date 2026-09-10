@@ -9,6 +9,8 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <cinttypes>
+#include <cinttypes>
 #include <ab_search.hpp>
 #include <dump.hpp>
 #include <init.hpp>
@@ -676,15 +678,15 @@ SOLVER_DONE:
   }
 
   // Print TT stats if requested
-  if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && std::string(env) == "1") {
+  if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && env[0] == '1' && env[1] == '\0') {
     ThreadData* thrp_ptr = ctx.thread_ptr();
     if (thrp_ptr && thrp_ptr->tt_lookup_count > 0) {
       double hit_rate = 100.0 * (double)thrp_ptr->tt_hit_count /
                         (double)thrp_ptr->tt_lookup_count;
       std::fprintf(stderr,
-                   "DDS_TT_STATS: lookups=%llu hits=%llu hit_rate=%.2f%%\n",
-                   (unsigned long long)thrp_ptr->tt_lookup_count,
-                   (unsigned long long)thrp_ptr->tt_hit_count,
+                   "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
+                   thrp_ptr->tt_lookup_count,
+                   thrp_ptr->tt_hit_count,
                    hit_rate);
       if (auto* tt = ctx.trans_table()) {
         int adds, overwrites, harvests;
@@ -843,15 +845,15 @@ auto solve_same_board(
   }
 
   // Print TT stats if requested
-  if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && std::string(env) == "1") {
+  if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && env[0] == '1' && env[1] == '\0') {
     ThreadData* thrp_ptr = ctx.thread_ptr();
     if (thrp_ptr && thrp_ptr->tt_lookup_count > 0) {
       double hit_rate = 100.0 * (double)thrp_ptr->tt_hit_count /
                         (double)thrp_ptr->tt_lookup_count;
       std::fprintf(stderr,
-                   "DDS_TT_STATS: lookups=%llu hits=%llu hit_rate=%.2f%%\n",
-                   (unsigned long long)thrp_ptr->tt_lookup_count,
-                   (unsigned long long)thrp_ptr->tt_hit_count,
+                   "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
+                   thrp_ptr->tt_lookup_count,
+                   thrp_ptr->tt_hit_count,
                    hit_rate);
       if (auto* tt = ctx.trans_table()) {
         int adds, overwrites, harvests;
