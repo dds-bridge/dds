@@ -10,7 +10,6 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cinttypes>
-#include <cinttypes>
 #include <ab_search.hpp>
 #include <dump.hpp>
 #include <init.hpp>
@@ -174,6 +173,11 @@ auto solve_board_internal(
   if (ret != RETURN_NO_FAULT)
     return ret;
 
+  // Reset per-solve TT stats here so the SOLVER_DONE report reflects
+  // this board even when the last-trick early exit below is taken.
+  thrp->tt_lookup_count = 0;
+  thrp->tt_hit_count = 0;
+  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
   // ----------------------------------------------------------
   // Last trick, easy to solve.
@@ -288,9 +292,6 @@ auto solve_board_internal(
   thrp->ABStats.Reset();
   thrp->ABStats.ResetCum();
 #endif
-  thrp->tt_lookup_count = 0;
-  thrp->tt_hit_count = 0;
-  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
 #ifdef DDS_TOP_LEVEL
   {
@@ -680,9 +681,10 @@ SOLVER_DONE:
   // Print TT stats if requested
   if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && env[0] == '1' && env[1] == '\0') {
     ThreadData* thrp_ptr = ctx.thread_ptr();
-    if (thrp_ptr && thrp_ptr->tt_lookup_count > 0) {
-      double hit_rate = 100.0 * (double)thrp_ptr->tt_hit_count /
-                        (double)thrp_ptr->tt_lookup_count;
+    if (thrp_ptr) {
+      double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
+                        100.0 * (double)thrp_ptr->tt_hit_count /
+                        (double)thrp_ptr->tt_lookup_count : 0.0;
       std::fprintf(stderr,
                    "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
                    thrp_ptr->tt_lookup_count,
@@ -751,9 +753,6 @@ auto solve_same_board(
   thrp->ABStats.Reset();
   thrp->ABStats.ResetCum();
 #endif
-  thrp->tt_lookup_count = 0;
-  thrp->tt_hit_count = 0;
-  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
 #ifdef DDS_TOP_LEVEL
   {
@@ -847,9 +846,10 @@ auto solve_same_board(
   // Print TT stats if requested
   if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && env[0] == '1' && env[1] == '\0') {
     ThreadData* thrp_ptr = ctx.thread_ptr();
-    if (thrp_ptr && thrp_ptr->tt_lookup_count > 0) {
-      double hit_rate = 100.0 * (double)thrp_ptr->tt_hit_count /
-                        (double)thrp_ptr->tt_lookup_count;
+    if (thrp_ptr) {
+      double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
+                        100.0 * (double)thrp_ptr->tt_hit_count /
+                        (double)thrp_ptr->tt_lookup_count : 0.0;
       std::fprintf(stderr,
                    "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
                    thrp_ptr->tt_lookup_count,
@@ -961,9 +961,6 @@ auto analyse_later_board(
   thrp->ABStats.Reset();
   thrp->ABStats.ResetCum();
 #endif
-  thrp->tt_lookup_count = 0;
-  thrp->tt_hit_count = 0;
-  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
 #ifdef DDS_TOP_LEVEL
   {
