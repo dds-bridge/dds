@@ -10,6 +10,7 @@
 #include "bridge_solver_runner.hpp"
 
 #include <array>
+#include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
@@ -67,17 +68,34 @@ std::string suit_token(const std::string& holding)
   return holding.empty() ? "-" : holding;
 }
 
+int seat_letter_to_dds(char letter)
+{
+  switch (static_cast<char>(std::toupper(static_cast<unsigned char>(letter))))
+  {
+    case 'N': return 0;
+    case 'E': return 1;
+    case 'S': return 2;
+    case 'W': return 3;
+    default: return -1;
+  }
+}
+
 bool parse_pbn_hands(
   const std::string& pbn,
   std::array<std::array<std::string, DDS_SUITS>, DDS_HANDS>& hands,
   std::string* error)
 {
   const std::string trimmed = trim_copy(pbn);
-  if (trimmed.size() < 2 ||
-    (trimmed[0] != 'N' && trimmed[0] != 'n') ||
-    trimmed[1] != ':')
+  if (trimmed.size() < 2 || trimmed[1] != ':')
   {
-    set_error(error, "PBN must start with N:");
+    set_error(error, "PBN must start with a seat letter and ':'");
+    return false;
+  }
+
+  const int start_seat = seat_letter_to_dds(trimmed[0]);
+  if (start_seat < 0)
+  {
+    set_error(error, "PBN must start with N:, E:, S:, or W:");
     return false;
   }
 
@@ -88,12 +106,12 @@ bool parse_pbn_hands(
     return false;
   }
 
-  for (int seat = 0; seat < DDS_HANDS; ++seat)
+  for (int i = 0; i < DDS_HANDS; ++i)
   {
     std::array<std::string, DDS_SUITS> suits{};
     std::string cur;
     int suit = 0;
-    for (char ch : seats[static_cast<size_t>(seat)])
+    for (char ch : seats[static_cast<size_t>(i)])
     {
       if (ch == '.')
       {
@@ -114,7 +132,9 @@ bool parse_pbn_hands(
       return false;
     }
     suits[static_cast<size_t>(suit)] = cur;
-    hands[static_cast<size_t>(seat)] = suits;
+    // Hands are listed clockwise from the opening seat letter.
+    const int dds_seat = (start_seat + i) % DDS_HANDS;
+    hands[static_cast<size_t>(dds_seat)] = suits;
   }
   return true;
 }
@@ -137,6 +157,7 @@ int strain_letter_to_dds(char letter)
 bool run_solver_capture_stdout(
   const std::string& /*binary*/,
   const std::string& /*deal_path*/,
+  bool /*ignore_trump_and_lead*/,
   std::string& /*stdout_text*/,
   std::string* error)
 {
@@ -149,6 +170,7 @@ bool run_solver_capture_stdout(
 bool run_solver_capture_stdout(
   const std::string& binary,
   const std::string& deal_path,
+  bool ignore_trump_and_lead,
   std::string& stdout_text,
   std::string* error)
 {
@@ -165,8 +187,10 @@ bool run_solver_capture_stdout(
     return out;
   };
 
-  std::string cmd =
-    quote(binary) + " -i -f " + quote(deal_path) + " -m0";
+  std::string cmd = quote(binary);
+  if (ignore_trump_and_lead)
+    cmd += " -i";
+  cmd += " -f " + quote(deal_path) + " -m0";
   SECURITY_ATTRIBUTES sa{};
   sa.nLength = sizeof(sa);
   sa.bInheritHandle = TRUE;
@@ -236,6 +260,7 @@ bool run_solver_capture_stdout(
 bool run_solver_capture_stdout(
   const std::string& binary,
   const std::string& deal_path,
+  bool ignore_trump_and_lead,
   std::string& stdout_text,
   std::string* error)
 {
@@ -280,13 +305,20 @@ bool run_solver_capture_stdout(
   char arg_i[] = "-i";
   char arg_f[] = "-f";
   char arg_m0[] = "-m0";
-  char* argv[] = {
+  char* argv_ignore[] = {
     binary_mut.data(),
     arg_i,
     arg_f,
     deal_mut.data(),
     arg_m0,
     nullptr};
+  char* argv_respect[] = {
+    binary_mut.data(),
+    arg_f,
+    deal_mut.data(),
+    arg_m0,
+    nullptr};
+  char** argv = ignore_trump_and_lead ? argv_ignore : argv_respect;
 
   pid_t pid = 0;
   const int spawn_rc = posix_spawn(
@@ -330,10 +362,46 @@ bool run_solver_capture_stdout(
 
 #endif
 
+char strain_to_letter(int trump)
+{
+  static constexpr char kLetters[] = {'S', 'H', 'D', 'C', 'N'};
+  if (trump < 0 || trump >= DDS_STRAINS)
+    return '?';
+  return kLetters[trump];
+}
+
+char seat_to_letter(int first)
+{
+  static constexpr char kLetters[] = {'N', 'E', 'S', 'W'};
+  if (first < 0 || first >= DDS_HANDS)
+    return '?';
+  return kLetters[first];
+}
+
+int count_cards_in_pbn_hand0(const std::string& pbn)
+{
+  std::array<std::array<std::string, DDS_SUITS>, DDS_HANDS> hands{};
+  if (!parse_pbn_hands(pbn, hands, nullptr))
+    return -1;
+  int n = 0;
+  for (int suit = 0; suit < DDS_SUITS; ++suit)
+    n += static_cast<int>(hands[0][static_cast<size_t>(suit)].size());
+  return n;
+}
+
 }  // namespace
 
 std::string pbn_to_macroxue_deal(
   const std::string& pbn,
+  std::string* error)
+{
+  return pbn_to_macroxue_deal(pbn, /*trump=*/-1, /*first=*/-1, error);
+}
+
+std::string pbn_to_macroxue_deal(
+  const std::string& pbn,
+  const int trump,
+  const int first,
   std::string* error)
 {
   std::array<std::array<std::string, DDS_SUITS>, DDS_HANDS> hands{};
@@ -370,8 +438,16 @@ std::string pbn_to_macroxue_deal(
   std::ostringstream body;
   body << hand_line(0, 14) << '\n'   // N
        << west_east.str() << '\n'
-       << hand_line(2, 14) << '\n'   // S
-       << '\n';
+       << hand_line(2, 14) << '\n';  // S
+  if (trump >= 0 && trump < DDS_STRAINS && first >= 0 && first < DDS_HANDS)
+  {
+    body << strain_to_letter(trump) << '\n'
+         << seat_to_letter(first) << '\n';
+  }
+  else
+  {
+    body << '\n';
+  }
   return body.str();
 }
 
@@ -441,6 +517,53 @@ bool parse_macroxue_solver_stdout(
   return true;
 }
 
+bool parse_macroxue_solver_solve_stdout(
+  const std::string& text,
+  int& tricks,
+  std::string* error)
+{
+  std::istringstream in(text);
+  std::string line;
+  while (std::getline(in, line))
+  {
+    const std::string trimmed = trim_copy(line);
+    if (trimmed.empty())
+      continue;
+    const std::vector<std::string> tokens = split_ws(trimmed);
+    // Fixed-lead form: "<strain> <tricks> <time> s …" (not four SNWE counts).
+    if (tokens.size() < 3 || tokens[0].size() != 1)
+      continue;
+    if (strain_letter_to_dds(tokens[0][0]) < 0)
+      continue;
+    // Reject full-table lines where tokens[2] is another integer trick count.
+    const bool second_is_int = !tokens[2].empty() &&
+      std::all_of(tokens[2].begin(), tokens[2].end(), [](unsigned char ch) {
+        return std::isdigit(ch) != 0;
+      });
+    if (second_is_int)
+      continue;
+    try
+    {
+      size_t idx = 0;
+      tricks = std::stoi(tokens[1], &idx);
+      if (idx == tokens[1].size())
+        return true;
+    }
+    catch (...)
+    {
+    }
+  }
+  set_error(error, "macroxue solve output missing trick count");
+  return false;
+}
+
+auto leading_side_tricks_from_declarer_side(
+  const int remaining_tricks,
+  const int declarer_side_tricks) -> int
+{
+  return remaining_tricks - declarer_side_tricks;
+}
+
 bool run_bridge_solver_table(
   const std::string& binary,
   const std::string& pbn,
@@ -470,11 +593,74 @@ bool run_bridge_solver_table(
 
   std::string stdout_text;
   const bool ran = run_solver_capture_stdout(
-    binary, temp_path.string(), stdout_text, error);
+    binary, temp_path.string(), /*ignore_trump_and_lead=*/true, stdout_text, error);
   std::error_code ec;
   fs::remove(temp_path, ec);
   if (!ran)
     return false;
 
   return parse_macroxue_solver_stdout(stdout_text, out, error);
+}
+
+bool run_bridge_solver_solve(
+  const std::string& binary,
+  const std::string& pbn,
+  const int trump,
+  const int first,
+  int& leading_side_tricks,
+  std::string* error)
+{
+  if (trump < 0 || trump >= DDS_STRAINS || first < 0 || first >= DDS_HANDS)
+  {
+    set_error(error, "trump/first out of range for bridge-solver solve");
+    return false;
+  }
+
+  const int remaining = count_cards_in_pbn_hand0(pbn);
+  if (remaining < 0)
+  {
+    set_error(error, "failed to count remaining cards in PBN");
+    return false;
+  }
+
+  const std::string deal = pbn_to_macroxue_deal(pbn, trump, first, error);
+  if (deal.empty())
+    return false;
+
+  namespace fs = std::filesystem;
+  const fs::path temp_path =
+    fs::temp_directory_path() /
+    ("dds_bridgesolver_solve_" + std::to_string(
+      static_cast<unsigned long long>(
+        reinterpret_cast<uintptr_t>(&leading_side_tricks))) + ".deal");
+
+  {
+    std::ofstream file(temp_path);
+    if (!file)
+    {
+      set_error(error, "failed to write temp deal file");
+      return false;
+    }
+    file << deal;
+  }
+
+  std::string stdout_text;
+  const bool ran = run_solver_capture_stdout(
+    binary,
+    temp_path.string(),
+    /*ignore_trump_and_lead=*/false,
+    stdout_text,
+    error);
+  std::error_code ec;
+  fs::remove(temp_path, ec);
+  if (!ran)
+    return false;
+
+  int declarer_side = 0;
+  if (!parse_macroxue_solver_solve_stdout(stdout_text, declarer_side, error))
+    return false;
+
+  leading_side_tricks =
+    leading_side_tricks_from_declarer_side(remaining, declarer_side);
+  return true;
 }

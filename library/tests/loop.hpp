@@ -60,6 +60,15 @@ auto loop_bridgesolver(
     const int number,
     const std::string& binary) -> bool;
 
+/// Like loop_solve for score only: bridge-solver with deal trump/lead vs FUT scores.
+/// Card lists are not compared (external solver does not report them).
+/// @return false on runner failure or first score mismatch
+auto loop_bridgesolver_solve(
+    DealPBN * deal_list,
+    FutureTricks * fut_list,
+    const int number,
+    const std::string& binary) -> bool;
+
 /// PAR loop: calculate PAR scores for multiple deals.
 /// @return false on DDS API fault or first expected-result mismatch
 auto loop_par(

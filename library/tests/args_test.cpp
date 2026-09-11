@@ -271,11 +271,11 @@ TEST(Args, BridgesolverDefaultsEmpty)
   EXPECT_TRUE(options.bridgesolver_path_.empty());
 }
 
-TEST(Args, BridgesolverRejectsNonCalcSolver)
+TEST(Args, BridgesolverWithSolveSetsPath)
 {
   const std::string input = make_temp_input_file();
   const std::string solver =
-    std::string(::testing::TempDir()) + "fake_bridgesolver_bin_solve";
+    std::string(::testing::TempDir()) + "fake_bridgesolver_bin_ok_solve";
   {
     std::ofstream out(solver);
     out << "#!/bin/sh\n";
@@ -295,6 +295,37 @@ TEST(Args, BridgesolverRejectsNonCalcSolver)
     const_cast<char*>(input.c_str()),
     arg_s,
     arg_solve,
+    arg_bs,
+    const_cast<char*>(solver.c_str())};
+  read_args(7, argv);
+  EXPECT_EQ(options.solver_, Solver::DTEST_SOLVER_SOLVE);
+  EXPECT_TRUE(same_path(options.bridgesolver_path_, solver));
+}
+
+TEST(Args, BridgesolverRejectsNonSolveCalcSolver)
+{
+  const std::string input = make_temp_input_file();
+  const std::string solver =
+    std::string(::testing::TempDir()) + "fake_bridgesolver_bin_play";
+  {
+    std::ofstream out(solver);
+    out << "#!/bin/sh\n";
+  }
+#ifndef _WIN32
+  ASSERT_EQ(chmod(solver.c_str(), 0755), 0);
+#endif
+
+  char arg0[] = "dtest";
+  char arg_f[] = "-f";
+  char arg_s[] = "-s";
+  char arg_play[] = "play";
+  char arg_bs[] = "--bridgesolver";
+  char* argv[] = {
+    arg0,
+    arg_f,
+    const_cast<char*>(input.c_str()),
+    arg_s,
+    arg_play,
     arg_bs,
     const_cast<char*>(solver.c_str())};
   EXPECT_EXIT(read_args(7, argv), ::testing::ExitedWithCode(1), ".*");

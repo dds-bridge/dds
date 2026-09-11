@@ -131,14 +131,18 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   bool ok = true;
   if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
   {
-    ok = loop_solve(
-      &bop,
-      &solvedbdp,
-      deal_list,
-      fut_list,
-      number,
-      stepsize,
-      options.report_slow_boards_ ? &board_times : nullptr);
+    if (!options.bridgesolver_path_.empty())
+      ok = loop_bridgesolver_solve(
+        deal_list, fut_list, number, options.bridgesolver_path_);
+    else
+      ok = loop_solve(
+        &bop,
+        &solvedbdp,
+        deal_list,
+        fut_list,
+        number,
+        stepsize,
+        options.report_slow_boards_ ? &board_times : nullptr);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {

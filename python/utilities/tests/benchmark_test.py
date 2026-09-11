@@ -406,13 +406,13 @@ class TestParseArgs(unittest.TestCase):
         self.assertIsNone(cfg.bridgesolver)
         self.assertEqual(cfg.solvers, ("solve", "calc"))
 
-    def test_bridgesolver_requires_calc_solver(self) -> None:
-        with self.assertRaises(benchmark.BenchmarkError) as ctx:
-            benchmark.parse_args(
-                ["--bridgesolver", "/tmp/solver"],
-                env={},
-            )
-        self.assertIn("-s calc", str(ctx.exception))
+    def test_bridgesolver_default_solvers_ok(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--bridgesolver", "/tmp/solver"],
+            env={},
+        )
+        self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
+        self.assertEqual(cfg.solvers, ("solve", "calc"))
 
     def test_bridgesolver_with_calc_ok(self) -> None:
         cfg = benchmark.parse_args(
@@ -421,6 +421,14 @@ class TestParseArgs(unittest.TestCase):
         )
         self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
         self.assertEqual(cfg.solvers, ("calc",))
+
+    def test_bridgesolver_with_solve_ok(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--bridgesolver", "/tmp/solver", "-s", "solve"],
+            env={},
+        )
+        self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
+        self.assertEqual(cfg.solvers, ("solve",))
 
     def test_bridgesolver_flag(self) -> None:
         cfg = benchmark.parse_args(

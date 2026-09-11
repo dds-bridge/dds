@@ -246,6 +246,66 @@ auto loop_bridgesolver(
 }
 
 
+auto loop_bridgesolver_solve(
+  DealPBN * deal_list,
+  FutureTricks * fut_list,
+  const int number,
+  const std::string& binary) -> bool
+{
+#ifdef BATCHTIMES
+  cout << setw(8) << left << "Hand no." <<
+    setw(25) << right << "Time" << "\n";
+#endif
+
+  if (number <= 0)
+    return true;
+
+  timer.start(number);
+  for (int j = 0; j < number; j++)
+  {
+    int score = 0;
+    std::string error;
+    if (!run_bridge_solver_solve(
+        binary,
+        deal_list[j].remainCards,
+        deal_list[j].trump,
+        deal_list[j].first,
+        score,
+        &error))
+    {
+      cout << "loop_bridgesolver_solve: j " << j << ": " << error << "\n";
+      return false;
+    }
+
+    if (fut_list[j].cards <= 0)
+    {
+      cout << "loop_bridgesolver_solve: j " << j <<
+        ": expected FUT has no cards\n";
+      return false;
+    }
+
+    const int expected = fut_list[j].score[0];
+    if (score == expected)
+      continue;
+
+    cout << "loop_bridgesolver_solve: j " << j << ": Difference\n"
+      << "  bridge-solver leading-side tricks: " << score << "\n"
+      << "  expected FUT score[0]: " << expected << "\n\n";
+    print_FUT(fut_list[j]);
+    cout << "\n";
+    return false;
+  }
+  timer.end();
+
+#ifdef BATCHTIMES
+  timer.print_running(number, number);
+  cout << "\n";
+#endif
+
+  return true;
+}
+
+
 
 auto loop_par(
   int * vul_list,

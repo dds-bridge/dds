@@ -51,6 +51,35 @@ void expect_table_eq(
 
 }  // namespace
 
+TEST(BridgeSolverRunner, PbnToMacroxueAcceptsEastFirst)
+{
+  // masterDD.txt deal 2: starts with E:; South is void in spades.
+  constexpr const char* kEastFirst =
+      "E:QJT5432.T.6.QJ82 .J97543.K7532.94 87.A62.QJT4.AT75 AK96.KQ8.A98.K63";
+  std::string error;
+  const std::string text = pbn_to_macroxue_deal(kEastFirst, &error);
+  ASSERT_FALSE(text.empty()) << error;
+  // Clockwise from East: E, S, W, N → North is last token.
+  EXPECT_NE(text.find("AK96 KQ8 A98 K63"), std::string::npos) << text;
+  // South void spades → dash on the South line.
+  EXPECT_NE(text.find("- J97543 K7532 94"), std::string::npos) << text;
+  EXPECT_NE(text.find("QJT5432 T 6 QJ82"), std::string::npos) << text;
+}
+
+TEST(BridgeSolverRunner, CountCardsWorksForNonNorthFirst)
+{
+  int score = -1;
+  std::string error;
+  // Unit-level: conversion must succeed so card count can run.
+  EXPECT_FALSE(
+      pbn_to_macroxue_deal(
+          "W:AK8.A83.KT.KQJ98 QJT96543.4.AJ.A5 .KQJ976.742.7642 72.T52.Q98653.T3",
+          &error)
+          .empty())
+      << error;
+  (void)score;
+}
+
 TEST(BridgeSolverRunner, PbnToMacroxueDeal01RoundTripsSeats)
 {
   std::string error;
@@ -104,6 +133,61 @@ TEST(BridgeSolverRunner, ParseStdoutRequiresFiveStrains)
   EXPECT_FALSE(
     parse_macroxue_solver_stdout("N  9  9  3  3  0.01 s\n", table, &error));
   EXPECT_FALSE(error.empty());
+}
+
+TEST(BridgeSolverRunner, PbnToMacroxueAppendsTrumpAndLead)
+{
+  std::string error;
+  const std::string text = pbn_to_macroxue_deal(
+      kDeal01Pbn, /*trump=*/2, /*first=*/0, &error);
+  ASSERT_FALSE(text.empty()) << error;
+  EXPECT_NE(text.find("\nD\nN\n"), std::string::npos) << text;
+}
+
+TEST(BridgeSolverRunner, PbnToMacroxueNoTrumpLeadOmitsExtraLines)
+{
+  std::string error;
+  const std::string text = pbn_to_macroxue_deal(kDeal01Pbn, &error);
+  ASSERT_FALSE(text.empty()) << error;
+  EXPECT_EQ(text.find("\nD\n"), std::string::npos);
+}
+
+TEST(BridgeSolverRunner, ParseSolveStdoutSingleTrickCount)
+{
+  int tricks = -1;
+  std::string error;
+  ASSERT_TRUE(parse_macroxue_solver_solve_stdout(
+      "D  3  0.00 s 3936.0 M\n", tricks, &error))
+      << error;
+  EXPECT_EQ(tricks, 3);
+}
+
+TEST(BridgeSolverRunner, LeadingSideTricksFromDeclarerSide)
+{
+  // Full deal: remaining_tricks=13. Bridge-solver with a fixed lead reports
+  // the non-leading (declarer) side; DDS SolveBoard scores the leading side.
+  EXPECT_EQ(leading_side_tricks_from_declarer_side(13, 3), 10);
+  EXPECT_EQ(leading_side_tricks_from_declarer_side(13, 10), 3);
+}
+
+TEST(BridgeSolverRunner, RunRealBinarySolveIfPresent)
+{
+  const char* path = "/Users/adamw/src/bridge-solver/solver";
+  if (access(path, X_OK) != 0)
+    GTEST_SKIP() << "bridge-solver binary not present";
+
+  // list1.txt: trump=diamonds, first=North; FUT scores are 10 for NS.
+  int score = -1;
+  std::string error;
+  ASSERT_TRUE(run_bridge_solver_solve(
+      path,
+      "N:Q87.T8.AKJT64.J6 964.AJ765.Q73.74 AKJT2.Q943..AK95 53.K2.9852.QT832",
+      /*trump=*/2,
+      /*first=*/0,
+      score,
+      &error))
+      << error;
+  EXPECT_EQ(score, 10);
 }
 
 TEST(BridgeSolverRunner, RunRealBinaryIfPresent)

@@ -30,7 +30,7 @@ Environment:
   DETAILS    If 1, keep per-run rows and build output (default: 0, summary only)
   SYS_USER   If 1, include a sys/user column per binary in the summary
   EPSILON    For a two-binary comparison, max % diff treated as equal (default: 0.5)
-  BRIDGESOLVER  Optional path to macroxue/bridge-solver (passed to dtest calc only)
+  BRIDGESOLVER  Optional path to macroxue/bridge-solver (passed to dtest solve/calc)
 """
 
 from __future__ import annotations
@@ -612,10 +612,13 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
         raise BenchmarkError(
             "--bridgesolver cannot also appear in dtest args after --"
         )
-    if cfg.bridgesolver is not None and cfg.solvers != ("calc",):
-        raise BenchmarkError(
-            "--bridgesolver compares DDS calc vs bridge-solver; use -s calc"
-        )
+    if cfg.bridgesolver is not None:
+        allowed = {"solve", "calc"}
+        if not cfg.solvers or not set(cfg.solvers).issubset(allowed):
+            raise BenchmarkError(
+                "--bridgesolver compares DDS vs bridge-solver; use -s solve "
+                "and/or -s calc"
+            )
     if "-s" in cfg.dtest_extra or "--solver" in cfg.dtest_extra:
         raise BenchmarkError(
             "-s/--solver cannot also appear in dtest args after -- "
@@ -656,11 +659,11 @@ Options:
                       Alias: --wasm-branch. Labels appear as wasm:NAME.
   --binary PATH       Path to a prebuilt dtest binary to benchmark. Repeatable.
                       A .js path (dtest_wasm) is run via node with the sibling .wasm.
-  --bridgesolver PATH Compare DDS calc against macroxue/bridge-solver at PATH
-                      (adds a second summary column; requires -s calc).
-                      Runs via a harness dtest built from the *current* tree
-                      (supports --bridgesolver); DDS columns still use --branch
-                      / --binary as usual. Env: BRIDGESOLVER.
+  --bridgesolver PATH Compare DDS against macroxue/bridge-solver at PATH
+                      (adds a second summary column; requires -s solve and/or
+                      -s calc). Runs via a harness dtest built from the
+                      *current* tree (supports --bridgesolver); DDS columns
+                      still use --branch / --binary as usual. Env: BRIDGESOLVER.
                       Do not also pass --bridgesolver after --.
   --details           Keep per-run timing rows and build (git/bazel) output
   --sys-user          Include a sys/user column per binary in the summary

@@ -122,9 +122,9 @@ void usage(
     "\n" <<
     "    --bridgesolver PATH\n" <<
     "                   Use the macroxue/bridge-solver binary at PATH instead\n" <<
-    "                   of built-in DDS for the selected -s mode. Currently\n" <<
-    "                   only -s calc is supported. Relative paths resolve\n" <<
-    "                   under BUILD_WORKING_DIRECTORY when set (bazel run).\n" <<
+    "                   of built-in DDS for -s solve or -s calc. Relative\n" <<
+    "                   paths resolve under BUILD_WORKING_DIRECTORY when set\n" <<
+    "                   (bazel run).\n" <<
     "\n" <<
     endl;
 }
@@ -651,9 +651,10 @@ void read_args(
 
   if (!errFlag && c == 0 && !options.bridgesolver_path_.empty())
   {
-    if (options.solver_ != Solver::DTEST_SOLVER_CALC)
+    if (options.solver_ != Solver::DTEST_SOLVER_CALC &&
+        options.solver_ != Solver::DTEST_SOLVER_SOLVE)
     {
-      cout << "--bridgesolver currently supports only -s calc\n";
+      cout << "--bridgesolver supports only -s solve or -s calc\n";
       errFlag = true;
     }
     else if (!is_executable_file(options.bridgesolver_path_))
