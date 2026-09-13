@@ -3659,6 +3659,33 @@ test("importDealFromText loads a PBN deal into the diagram", () => {
     });
 });
 
+test("parseFirstDealFromText reads a sol-style .txt line without a seat letter", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text =
+        "T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K:65658888888843433232\n" +
+        "T98.AKQT4.K853.8 Q6532.8.AJ2.9753 AK.76532.96.QJ62 J74.J9.QT74.AKT4:66769999333376769999\n";
+    const deal = ctx.parseFirstDealFromText(text);
+    assert.equal(deal.north, "T5.K4.652.A98542");
+    assert.equal(deal.east, "K6.QJT976.QT7.Q6");
+    assert.equal(deal.south, "432.A.AKJ93.JT73");
+    assert.equal(deal.west, "AQJ987.8532.84.K");
+});
+
+test("importDealFromText loads the first sol-style deal into the diagram", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const err = ctx.importDealFromText(
+        "T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K:65658888888843433232\n"
+    );
+    assert.equal(err, "");
+    assertImportedDeal(ctx, document, {
+        north: ["T5", "K4", "652", "A98542"],
+        east: ["K6", "QJT976", "QT7", "Q6"],
+        south: ["432", "A", "AKJ93", "JT73"],
+        west: ["AQJ987", "8532", "84", "K"],
+    });
+});
+
 test("importDealFromText reports when no deal is found", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const err = ctx.importDealFromText("not a bridge deal file");

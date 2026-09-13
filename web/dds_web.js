@@ -579,7 +579,28 @@ function parseDlmBoardPayload(letters) {
 }
 
 /**
- * Extract the first deal from PBN, LIN, DLM, or dtest .txt content.
+ * Parse a sol*.txt style line: four NESW holdings, optional ":results" suffix.
+ * Example: T5.K4.652.A98542 K6.... AQJ987.8532.84.K:6565...
+ */
+function parseSolStyleDealLine(line) {
+    const beforeColon = String(line).split(":")[0].trim();
+    if (!beforeColon) {
+        return null;
+    }
+    const hands = beforeColon.split(/\s+/).filter(Boolean);
+    if (hands.length !== 4) {
+        return null;
+    }
+    for (const hand of hands) {
+        if ((hand.match(/\./g) || []).length !== 3) {
+            return null;
+        }
+    }
+    return parsePbnDealString("N:" + hands.join(" "));
+}
+
+/**
+ * Extract the first deal from PBN, LIN, DLM, dtest, or sol-style .txt content.
  * @returns {{north:string,east:string,south:string,west:string}}
  */
 function parseFirstDealFromText(text) {
@@ -621,6 +642,14 @@ function parseFirstDealFromText(text) {
     const bare = /^\s*([NESWnesw]:[^\n\r"]+)/m.exec(source);
     if (bare) {
         const deal = parsePbnDealString(bare[1].trim());
+        if (deal) {
+            return deal;
+        }
+    }
+
+    // sol10.txt-style: four NESW holdings, optional CalcTable suffix after ':'.
+    for (const line of source.split(/\r?\n/)) {
+        const deal = parseSolStyleDealLine(line);
         if (deal) {
             return deal;
         }
