@@ -39,8 +39,10 @@ auto loop_solve(
     const int stepsize,
     std::vector<std::pair<int, int>>* board_times = nullptr) -> bool;
 
-/// Calculate loop: CalcAllTablesPBNX in batches of `stepsize` deals so progress
-/// can update between batches. Uses the unbounded X API (no legacy
+/// Calculate loop: repeated CalcAllTablesPBNX calls of `stepsize` deals so
+/// dtest can update progress between chunks. Does not change the X-API
+/// single-job-per-call contract (see CalcAllTablesX); only the harness
+/// chooses smaller call sizes. Uses the unbounded X API (no legacy
 /// DdTableDealsPBN / DdTablesRes batch structs).
 /// @param deal_list Input deals in PBN format
 /// @param table_list Expected DD table results

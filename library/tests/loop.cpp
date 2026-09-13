@@ -136,8 +136,11 @@ auto loop_calc(
   const int number,
   const int stepsize) -> bool
 {
-  // Batched CalcAllTablesPBNX: each batch expands to count×strains boards in
-  // one parallel job. Batching lets print_running update between chunks.
+  // dtest harness progress only: call CalcAllTablesPBNX repeatedly with
+  // `stepsize` deals (typically MAXNOOFBOARDS). Each call still expands to
+  // count×strains boards in one parallel job — the X-API single-job contract
+  // is unchanged; we intentionally do not pass the whole file in one call so
+  // print_running can update between chunks.
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
   const int strain_count = DDS_STRAINS;
   if (number <= 0)
