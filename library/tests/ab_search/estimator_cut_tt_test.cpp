@@ -8,8 +8,10 @@
 /// shape's pattern list. The helper is tested directly; the search path stays
 /// store-free for estimator cuts.
 
+#include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <string>
 
 #include <gtest/gtest.h>
 
@@ -23,6 +25,7 @@
 #include <solver_context/solver_context.hpp>
 #include <system/memory.hpp>
 #include <trans_table/trans_table.hpp>
+#include <trans_table/trans_table_p.hpp>
 #include <utility/constants.h>
 
 extern Memory memory;
@@ -32,8 +35,44 @@ namespace {
 constexpr int kDepth = 20;  // TT lookup runs before QT
 constexpr int kHand = 0;    // North leads
 
+void set_env_var(const char* name, const char* value)
+{
+#ifdef _WIN32
+  _putenv_s(name, value != nullptr ? value : "");
+#else
+  if (value == nullptr || value[0] == '\0')
+    unsetenv(name);
+  else
+    setenv(name, value, 1);
+#endif
+}
+
+/// Restores the previous value (or absence) of an environment variable.
+struct ScopedEnv
+{
+  ScopedEnv(const char* name, const char* value) : name_(name)
+  {
+    if (const char* old = std::getenv(name)) {
+      had_old_ = true;
+      old_ = old;
+    }
+    set_env_var(name, value);
+  }
+  ~ScopedEnv()
+  {
+    set_env_var(name_, had_old_ ? old_.c_str() : nullptr);
+  }
+  const char* name_;
+  bool had_old_ = false;
+  std::string old_;
+};
+
 class EstimatorCutTtTest : public ::testing::Test {
  protected:
+  // Exact remaining-card keys are Pattern-TT specific: Small/Large ignore
+  // swapped equal-length holdings. SolverContext would honor DDS_TT_KIND.
+  ScopedEnv no_tt_kind_override_{"DDS_TT_KIND", nullptr};
+
   void SetUp() override
   {
     InitializeStaticMemory();
@@ -41,9 +80,13 @@ class EstimatorCutTtTest : public ::testing::Test {
       memory.Resize(1, DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
     }
 
-    ctx_ = std::make_unique<SolverContext>();
+    SolverConfig cfg;
+    cfg.tt_kind_ = TTKind::Pattern;
+    ctx_ = std::make_unique<SolverContext>(cfg);
     auto* thrp = ctx_->thread_ptr();
     ASSERT_NE(thrp, nullptr);
+    ASSERT_NE(nullptr, dynamic_cast<TransTableP*>(ctx_->trans_table()))
+        << "estimator-cut keys are Pattern-TT specific";
     std::memset(thrp->suit, 0, sizeof(thrp->suit));
     thrp->trump = DDS_NOTRUMP;
     std::memset(&thrp->lookAheadPos, 0, sizeof(thrp->lookAheadPos));
