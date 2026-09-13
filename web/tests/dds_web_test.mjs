@@ -3548,3 +3548,119 @@ test("handleHandSuitClick does not steal focus from a hand-card click", () => {
     // Assert
     assert.equal(focused, false);
 });
+
+const GRAND_SLAM_PBN =
+    "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765";
+const EVERYONE_3N_PBN =
+    'N:QT9.A8765432.KJ. KJ..A8765432.QT9 A8765432.QT9..KJ .KJ.QT9.A8765432';
+const LIST1_PBN =
+    "N:Q87.T8.AKJT64.J6 964.AJ765.Q73.74 AKJT2.Q943..AK95 53.K2.9852.QT832";
+const DLM_BOARD_01 =
+    "Board 01=fnbkmmincldklcfcofoiefnapm018";
+const LIN_DEAL =
+    "pn|a,b,c,d|st||md|3S27AH3489TD5JC45J,S358QKH56D4KAC3QK,S4JH2JQD2678TC678,|rh||ah|Board 1|sv|o|";
+
+function assertImportedDeal(ctx, document, expected) {
+    assert.equal(document.element("north_spades").value, expected.north[0]);
+    assert.equal(document.element("north_hearts").value, expected.north[1]);
+    assert.equal(document.element("north_diamonds").value, expected.north[2]);
+    assert.equal(document.element("north_clubs").value, expected.north[3]);
+    assert.equal(document.element("east_spades").value, expected.east[0]);
+    assert.equal(document.element("east_hearts").value, expected.east[1]);
+    assert.equal(document.element("east_diamonds").value, expected.east[2]);
+    assert.equal(document.element("east_clubs").value, expected.east[3]);
+    assert.equal(document.element("south_spades").value, expected.south[0]);
+    assert.equal(document.element("south_hearts").value, expected.south[1]);
+    assert.equal(document.element("south_diamonds").value, expected.south[2]);
+    assert.equal(document.element("south_clubs").value, expected.south[3]);
+    assert.equal(document.element("west_spades").value, expected.west[0]);
+    assert.equal(document.element("west_hearts").value, expected.west[1]);
+    assert.equal(document.element("west_diamonds").value, expected.west[2]);
+    assert.equal(document.element("west_clubs").value, expected.west[3]);
+    assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+}
+
+test("parseFirstDealFromText reads a PBN Deal tag", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText(`[Deal "${EVERYONE_3N_PBN}"]`);
+    assert.equal(deal.north, "QT9.A8765432.KJ.");
+    assert.equal(deal.east, "KJ..A8765432.QT9");
+    assert.equal(deal.south, "A8765432.QT9..KJ");
+    assert.equal(deal.west, ".KJ.QT9.A8765432");
+});
+
+test("parseFirstDealFromText uses the first PBN deal when several are present", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Deal "${LIST1_PBN}"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const deal = ctx.parseFirstDealFromText(text);
+    assert.equal(deal.north, "Q87.T8.AKJT64.J6");
+    assert.equal(deal.west, "53.K2.9852.QT832");
+});
+
+test("parseFirstDealFromText reads a dtest .txt PBN line", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text =
+        "NUMBER 1 \n" +
+        `PBN 1 0 2 0 "${LIST1_PBN}" \n` +
+        "TABLE 11 2 11 1\n";
+    const deal = ctx.parseFirstDealFromText(text);
+    assert.equal(deal.north, "Q87.T8.AKJT64.J6");
+    assert.equal(deal.east, "964.AJ765.Q73.74");
+    assert.equal(deal.south, "AKJT2.Q943..AK95");
+    assert.equal(deal.west, "53.K2.9852.QT832");
+});
+
+test("parseFirstDealFromText reads a LIN md| deal and fills the omitted hand", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText(LIN_DEAL);
+    assert.equal(deal.south, "A72.T9843.J5.J54");
+    assert.equal(deal.west, "KQ853.65.AK4.KQ3");
+    assert.equal(deal.north, "J4.QJ2.T8762.876");
+    assert.equal(deal.east, "T96.AK7.Q93.AT92");
+});
+
+test("parseFirstDealFromText uses the first LIN deal when several are present", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const second =
+        "md|3S6HKQ65432DAT32C6,SK952H87D965CAJT8,SAQJ73HAJ9DK84C32,|";
+    const deal = ctx.parseFirstDealFromText(LIN_DEAL + "\n" + second);
+    assert.equal(deal.north, "J4.QJ2.T8762.876");
+});
+
+test("parseFirstDealFromText reads the first DLM board", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        "[DOCUMENT]",
+        "From board=1",
+        "To board=2",
+        DLM_BOARD_01,
+        "Board 02=aaaaaaaeeeeeeeiiiiiiimmmmmmm000",
+    ].join("\r\n");
+    const deal = ctx.parseFirstDealFromText(text);
+    assert.equal(deal.north, "T53.AJ7.AT.AQ762");
+    assert.equal(deal.east, "AKJ9.Q.QJ65.KJT8");
+    assert.equal(deal.south, "872.T9543.K9732.");
+    assert.equal(deal.west, "Q64.K862.84.9543");
+});
+
+test("importDealFromText loads a PBN deal into the diagram", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const err = ctx.importDealFromText(`[Deal "${GRAND_SLAM_PBN}"]`);
+    assert.equal(err, "");
+    assertImportedDeal(ctx, document, {
+        north: ["AKQJ", "AKQJ", "T98", "T9"],
+        east: ["5432", "5432", "32", "432"],
+        south: ["T98", "T9", "AKQJ", "AKQJ"],
+        west: ["76", "876", "7654", "8765"],
+    });
+});
+
+test("importDealFromText reports when no deal is found", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const err = ctx.importDealFromText("not a bridge deal file");
+    assert.match(err, /deal/i);
+});

@@ -67,6 +67,10 @@
             leadTricksMapFromSolverOutput
             wasmSolveEnvironmentError
             formatSolveTimeMs
+            parseFirstDealFromText
+            importDealFromText
+            chooseDealFile
+            handleDealFileSelected
             */
 
 // It's also useful to pass the code through
@@ -386,6 +390,289 @@ function fillFormWithTestData(nesw) {
     }
 
     updateActionButtons();
+}
+
+const SUIT_LETTERS = ["S", "H", "D", "C"];
+const DIR_FROM_LETTER = { N: "north", E: "east", S: "south", W: "west" };
+const LIN_HAND_ORDER = ["south", "west", "north", "east"];
+
+/** Sort pips high-to-low using the diagram's pip order. */
+function sortPips(holding) {
+    return String(holding)
+        .toUpperCase()
+        .split("")
+        .filter((pip) => PIPS.includes(pip))
+        .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
+        .join("");
+}
+
+function normalizeHandHolding(dotted) {
+    const parts = String(dotted).split(".");
+    while (parts.length < 4) {
+        parts.push("");
+    }
+    return parts.slice(0, 4).map(sortPips).join(".");
+}
+
+function emptySuitHoldings() {
+    return { S: "", H: "", D: "", C: "" };
+}
+
+function holdingsToDotted(holdings) {
+    return SUIT_LETTERS.map((suit) => sortPips(holdings[suit] || "")).join(".");
+}
+
+function dealFromDirectionMap(byDirection) {
+    const deal = {};
+    for (const direction of DIRECTIONS) {
+        if (!byDirection[direction]) {
+            return null;
+        }
+        deal[direction] = normalizeHandHolding(byDirection[direction]);
+    }
+    return deal;
+}
+
+function completeMissingHand(byDirection) {
+    const present = DIRECTIONS.filter((direction) => byDirection[direction]);
+    if (present.length === 4) {
+        return byDirection;
+    }
+    if (present.length !== 3) {
+        return null;
+    }
+
+    const used = {};
+    for (const direction of present) {
+        const parts = byDirection[direction].split(".");
+        for (let i = 0; i < 4; i++) {
+            for (const pip of parts[i] || "") {
+                used[SUIT_LETTERS[i] + pip.toUpperCase()] = true;
+            }
+        }
+    }
+
+    const missing = DIRECTIONS.find((direction) => !byDirection[direction]);
+    const holdings = emptySuitHoldings();
+    for (let i = 0; i < 4; i++) {
+        const suit = SUIT_LETTERS[i];
+        for (const pip of PIPS) {
+            if (!used[suit + pip]) {
+                holdings[suit] += pip;
+            }
+        }
+    }
+    byDirection[missing] = holdingsToDotted(holdings);
+    return byDirection;
+}
+
+/**
+ * Parse a PBN remainCards string such as "N:AKQ.... ..." into NESW holdings.
+ * Later hands are clockwise from the first seat letter; no extra seat letters.
+ */
+function parsePbnDealString(raw) {
+    const text = String(raw).trim();
+    const match = /^([NESWnesw]):\s*(.+)$/.exec(text);
+    if (!match) {
+        return null;
+    }
+
+    const start = match[1].toUpperCase();
+    const hands = match[2].trim().split(/\s+/).filter(Boolean);
+    if (hands.length !== 4) {
+        return null;
+    }
+
+    const startIndex = "NESW".indexOf(start);
+    const byDirection = {};
+    for (let i = 0; i < 4; i++) {
+        const direction = DIR_FROM_LETTER["NESW"[(startIndex + i) % 4]];
+        const holding = normalizeHandHolding(hands[i]);
+        if (holding.replace(/\./g, "").length !== 13) {
+            return null;
+        }
+        byDirection[direction] = holding;
+    }
+    return dealFromDirectionMap(byDirection);
+}
+
+function parseLinHand(raw) {
+    const holdings = emptySuitHoldings();
+    let suit = null;
+    for (const ch of String(raw)) {
+        const upper = ch.toUpperCase();
+        if (SUIT_LETTERS.includes(upper)) {
+            suit = upper;
+            continue;
+        }
+        if (suit && PIPS.includes(upper)) {
+            holdings[suit] += upper;
+        }
+    }
+    return holdingsToDotted(holdings);
+}
+
+function parseLinDealPayload(payload) {
+    // md|<dealer-digit><hand>,<hand>,<hand>,[<hand>]
+    const body = String(payload).replace(/^\d/, "");
+    const parts = body.split(",");
+    if (parts.length < 3) {
+        return null;
+    }
+
+    const byDirection = {};
+    for (let i = 0; i < 4; i++) {
+        const raw = (parts[i] || "").trim();
+        if (!raw) {
+            continue;
+        }
+        byDirection[LIN_HAND_ORDER[i]] = parseLinHand(raw);
+    }
+    const completed = completeMissingHand(byDirection);
+    return completed ? dealFromDirectionMap(completed) : null;
+}
+
+function parseDlmBoardPayload(letters) {
+    // 26 letters a-p; each encodes owners of a fixed high/low card pair.
+    const pairs = [
+        ["SA", "SK"], ["SQ", "SJ"], ["ST", "S9"], ["S8", "S7"],
+        ["S6", "S5"], ["S4", "S3"], ["S2", "HA"],
+        ["HK", "HQ"], ["HJ", "HT"], ["H9", "H8"], ["H7", "H6"],
+        ["H5", "H4"], ["H3", "H2"],
+        ["DA", "DK"], ["DQ", "DJ"], ["DT", "D9"], ["D8", "D7"],
+        ["D6", "D5"], ["D4", "D3"], ["D2", "CA"],
+        ["CK", "CQ"], ["CJ", "CT"], ["C9", "C8"], ["C7", "C6"],
+        ["C5", "C4"], ["C3", "C2"],
+    ];
+    const firstOwner = "NNNNEEEESSSSWWWW";
+    const secondOwner = "NESWNESWNESWNESW";
+    const byDirection = {
+        north: emptySuitHoldings(),
+        east: emptySuitHoldings(),
+        south: emptySuitHoldings(),
+        west: emptySuitHoldings(),
+    };
+
+    for (let i = 0; i < 26; i++) {
+        const code = letters.charCodeAt(i) - "a".charCodeAt(0);
+        if (code < 0 || code > 15) {
+            return null;
+        }
+        const [firstCard, secondCard] = pairs[i];
+        const owners = [
+            firstOwner.charAt(code),
+            secondOwner.charAt(code),
+        ];
+        const cards = [firstCard, secondCard];
+        for (let j = 0; j < 2; j++) {
+            const direction = DIR_FROM_LETTER[owners[j]];
+            byDirection[direction][cards[j].charAt(0)] += cards[j].charAt(1);
+        }
+    }
+
+    return dealFromDirectionMap({
+        north: holdingsToDotted(byDirection.north),
+        east: holdingsToDotted(byDirection.east),
+        south: holdingsToDotted(byDirection.south),
+        west: holdingsToDotted(byDirection.west),
+    });
+}
+
+/**
+ * Extract the first deal from PBN, LIN, DLM, or dtest .txt content.
+ * @returns {{north:string,east:string,south:string,west:string}}
+ */
+function parseFirstDealFromText(text) {
+    const source = String(text == null ? "" : text);
+
+    const pbnTag = /\[Deal\s+"([^"]+)"\s*\]/i.exec(source);
+    if (pbnTag) {
+        const deal = parsePbnDealString(pbnTag[1]);
+        if (deal) {
+            return deal;
+        }
+    }
+
+    const dtestLine = /^PBN\s+\d+\s+\d+\s+\d+\s+\d+\s+"([^"]+)"/im.exec(source);
+    if (dtestLine) {
+        const deal = parsePbnDealString(dtestLine[1]);
+        if (deal) {
+            return deal;
+        }
+    }
+
+    const linMatch = /\bmd\|([^|]+)/i.exec(source);
+    if (linMatch) {
+        const deal = parseLinDealPayload(linMatch[1]);
+        if (deal) {
+            return deal;
+        }
+    }
+
+    const dlmMatch = /Board\s*\d+\s*=\s*([a-p]{26})/i.exec(source);
+    if (dlmMatch) {
+        const deal = parseDlmBoardPayload(dlmMatch[1].toLowerCase());
+        if (deal) {
+            return deal;
+        }
+    }
+
+    // Bare PBN remainCards line (no tag).
+    const bare = /^\s*([NESWnesw]:[^\n\r"]+)/m.exec(source);
+    if (bare) {
+        const deal = parsePbnDealString(bare[1].trim());
+        if (deal) {
+            return deal;
+        }
+    }
+
+    throw new Error("No PBN, LIN, DLM, or dtest deal found in the file.");
+}
+
+function importDealFromText(text) {
+    try {
+        const deal = parseFirstDealFromText(text);
+        fillFormWithTestData([
+            deal.north,
+            deal.east,
+            deal.south,
+            deal.west,
+        ]);
+        return "";
+    } catch (err) {
+        return err && err.message ? err.message : "Could not import deal.";
+    }
+}
+
+function chooseDealFile() {
+    const input = document.getElementById("import-deal-file");
+    if (!input) {
+        return;
+    }
+    input.value = "";
+    input.click();
+}
+
+async function handleDealFileSelected(input) {
+    const file = input && input.files && input.files[0];
+    if (!file) {
+        return;
+    }
+
+    const result = document.getElementById("result");
+    try {
+        const text = await file.text();
+        const err = importDealFromText(text);
+        if (err && result) {
+            result.innerHTML = err;
+        }
+    } catch (err) {
+        if (result) {
+            result.innerHTML = err && err.message
+                ? err.message
+                : "Could not read the selected file.";
+        }
+    }
 }
 
 function fillFormWithGrandSlamTestData() {
