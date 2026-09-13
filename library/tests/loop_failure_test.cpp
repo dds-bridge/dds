@@ -88,6 +88,9 @@ struct HandLists
     other.dealerpar_list = nullptr;
     other.play_list = nullptr;
     other.trace_list = nullptr;
+    // std::move leaves the source string unspecified; clear so ~HandLists
+    // cannot unlink the file now owned by *this.
+    other.path.clear();
     return *this;
   }
 
@@ -129,6 +132,31 @@ static_assert(!std::is_copy_constructible_v<HandLists>);
 static_assert(std::is_move_constructible_v<HandLists>);
 static_assert(!std::is_copy_assignable_v<HandLists>);
 static_assert(std::is_move_assignable_v<HandLists>);
+
+TEST(HandListsMove, MovedFromPathIsClearedSoDestructorDoesNotUnlinkOwnedFile)
+{
+  // Arrange: a temp file owned by a HandLists that we then move-from.
+  const std::string path =
+    std::string(::testing::TempDir()) + "handlists_move_path.txt";
+  {
+    std::ofstream out(path, std::ios::out | std::ios::trunc);
+    out << "probe\n";
+  }
+  ASSERT_TRUE(std::ifstream(path).good());
+
+  HandLists owner;
+  {
+    HandLists donor;
+    donor.path = path;
+    owner = std::move(donor);
+    // Act/Assert: moved-from path must be empty so ~HandLists cannot remove
+    // the file now owned by `owner` (std::move leaves string unspecified).
+    EXPECT_TRUE(donor.path.empty());
+    EXPECT_EQ(owner.path, path);
+  }
+  // Donor destroyed; owned file must still exist for the assignee.
+  EXPECT_TRUE(std::ifstream(path).good()) << path;
+}
 
 auto write_hands(const std::string& name, const std::string& body)
   -> std::string
