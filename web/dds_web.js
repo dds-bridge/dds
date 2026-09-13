@@ -71,6 +71,7 @@
             importDealFromText
             chooseDealFile
             handleDealFileSelected
+            setDdTableComputingDelayMs
             */
 
 // It's also useful to pass the code through
@@ -91,6 +92,7 @@ let selectedContractState = null;
 let leadTricksByCardKey = null;
 let leadTricksRequestId = 0;
 let ddTableRequestId = 0;
+let ddTableComputingTimer = null;
 let lastDdTablePbn = null;
 let solveQueue = Promise.resolve();
 let dealSolveEpoch = 0;
@@ -2518,6 +2520,7 @@ function clear_results() {
     var result = document.getElementById("result");
     var result_table = document.getElementById("result-table");
 
+    clearDdTableComputingTimer();
     lastDdTablePbn = null;
     result.innerHTML = "";
 
@@ -2527,6 +2530,63 @@ function clear_results() {
             cell.innerHTML = "";
         }
     }
+}
+
+/** Delay before showing Computing… under the DD matrix (avoids fast-solve flash). */
+let ddTableComputingDelayMs = 300;
+
+function setDdTableComputingDelayMs(ms) {
+    ddTableComputingDelayMs = ms;
+}
+
+function clearDdTableComputingTimer() {
+    if (ddTableComputingTimer != null) {
+        clearTimeout(ddTableComputingTimer);
+        ddTableComputingTimer = null;
+    }
+}
+
+function scheduleDdTableComputingMessage(requestId, result) {
+    clearDdTableComputingTimer();
+    if (ddTableComputingDelayMs <= 0) {
+        if (result) {
+            result.innerHTML = "Computing&hellip;";
+        }
+        return;
+    }
+    ddTableComputingTimer = setTimeout(() => {
+        ddTableComputingTimer = null;
+        if (requestId !== ddTableRequestId || !result) {
+            return;
+        }
+        result.innerHTML = "Computing&hellip;"; // horizontal ellipsis
+    }, ddTableComputingDelayMs);
+}
+
+/** Yield until the browser has painted the current status (needed before sync ccall). */
+function paintStatusFrame() {
+    if (typeof requestAnimationFrame === "function") {
+        return new Promise((resolve) => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(resolve);
+            });
+        });
+    }
+    return new Promise((resolve) => setTimeout(resolve, 16));
+}
+
+/**
+ * Show Computing… and wait for a paint. The WASM ccall is synchronous and
+ * blocks timers, so this must run before ccall or the message is never seen.
+ */
+async function showComputingStatus(requestId, result) {
+    clearDdTableComputingTimer();
+    if (requestId !== ddTableRequestId || !result) {
+        return false;
+    }
+    result.innerHTML = "Computing&hellip;"; // horizontal ellipsis
+    await paintStatusFrame();
+    return requestId === ddTableRequestId;
 }
 
 /** Format wall elapsed time for the status line (whole milliseconds). */
@@ -2572,15 +2632,30 @@ async function refreshDdTable() {
     }
 
     clear_results();
-    if (result) {
-        result.innerHTML = "Computing&hellip;"; // horizontal ellipsis
-    }
+    // Keep the status blank during a short grace period. Then paint Computing…
+    // before the blocking WASM ccall — timers cannot fire while ccall runs, so
+    // a delayed message alone is never visible during a long sync solve.
+    scheduleDdTableComputingMessage(requestId, result);
+    const waitStartedAt = performance.now();
 
     try {
         const module = await loadDdsModule();
         const outPtr = module._malloc(20 * 4);
 
         try {
+            const remainingMs =
+                ddTableComputingDelayMs - (performance.now() - waitStartedAt);
+            if (remainingMs > 0) {
+                await new Promise((resolve) => setTimeout(resolve, remainingMs));
+                if (requestId !== ddTableRequestId) {
+                    return;
+                }
+            }
+
+            if (!(await showComputingStatus(requestId, result))) {
+                return;
+            }
+
             const startedAt = performance.now();
             const rc = module.ccall(
                 "dds_web_calc_table",
@@ -2593,6 +2668,8 @@ async function refreshDdTable() {
             if (requestId !== ddTableRequestId) {
                 return;
             }
+
+            clearDdTableComputingTimer();
 
             if (rc !== 1) {
                 lastDdTablePbn = null;

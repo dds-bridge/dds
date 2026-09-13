@@ -234,6 +234,9 @@ function loadDdsWeb(document, extras = {}) {
         Error,
         setTimeout,
         clearTimeout,
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
         performance: {
             now() {
                 return 0;
@@ -247,6 +250,10 @@ function loadDdsWeb(document, extras = {}) {
     // covered by dedicated tests that opt into a non-zero delay.
     if (typeof context.setDealSolveDebounceMs === "function") {
         context.setDealSolveDebounceMs(0);
+    }
+    // Same for the Computing… grace period: most tests want an immediate solve.
+    if (typeof context.setDdTableComputingDelayMs === "function") {
+        context.setDdTableComputingDelayMs(0);
     }
     return context;
 }
@@ -1518,6 +1525,59 @@ test("formatSolveTimeMs rounds wall time to whole milliseconds", () => {
     assert.equal(ctx.formatSolveTimeMs(41.9), "Solved in 42 ms.");
 });
 
+test("refreshDdTable shows Computing under the matrix only after 300 ms, painted before ccall", async () => {
+    // Arrange: WASM ccall is sync and blocks timers, so Computing… must be
+    // painted before ccall — after the 300 ms grace — or the user never sees it.
+    let ccallSawComputing = false;
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(300);
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            ccallSawComputing = /Computing/i.test(
+                document.element("result").innerHTML
+            );
+            return 1;
+        },
+        getValue() {
+            return 7;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    // fillForm schedules a solve; wait for it so it does not race the Act call.
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    // Force a fresh solve (same PBN would otherwise short-circuit as cached).
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+
+    // Act
+    const solve = ctx.refreshDdTable();
+    assert.equal(document.element("result").innerHTML, "");
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(
+        document.element("result").innerHTML,
+        "",
+        "Computing… must wait for the 300 ms grace"
+    );
+
+    await solve;
+
+    // Assert
+    assert.equal(ccallSawComputing, true);
+    assert.match(document.element("result").innerHTML, /^Solved in \d+ ms\.$/);
+});
+
 test("refreshDdTable shows wall solve time in ms after a successful solve", async () => {
     // Arrange: full part-score deal; mock WASM and a clock that advances 12.4 ms.
     let clock = 1000;
@@ -1529,7 +1589,6 @@ test("refreshDdTable shows wall solve time in ms after a successful solve", asyn
             },
         },
     });
-    ctx.fillFormWithPartScoreTestData();
     ctx.loadDdsModule = async () => ({
         _malloc: () => 0,
         _free() {},
@@ -1541,6 +1600,9 @@ test("refreshDdTable shows wall solve time in ms after a successful solve", asyn
             return 7;
         },
     });
+    ctx.fillFormWithPartScoreTestData();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     // Act
     await ctx.refreshDdTable();
