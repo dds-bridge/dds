@@ -92,6 +92,8 @@ auto store_ab_tt_result(
   SolverContext& ctx,
   const unsigned short our_win_ranks[]) -> void
 {
+  [[maybe_unused]] ThreadData* thrp = ctx.thread_ptr();
+
   NodeCards first;
   if (value)
   {
@@ -142,7 +144,7 @@ auto store_ab_tt_result(
   TIMER_END(TIMER_NO_BUILD, depth);
 
 #ifdef DDS_AB_HITS
-  DumpStored(ctx.thread_ptr()->fileStored.GetStream(),
+  DumpStored(thrp->fileStored.GetStream(),
     * posPoint, ctx, first, target, depth);
 #endif
 }
