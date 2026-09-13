@@ -87,6 +87,7 @@ auto loop_solve(
     }
     if (ret != RETURN_NO_FAULT)
     {
+      timer.end();
       timer.finish_running();
       report_dds_error("loop_solve", ret);
       cout << "loop_solve: i " << i << "\n";
@@ -169,6 +170,7 @@ auto loop_calc(
       count, deals.data(), -1, filter, results.data(), nullptr, threads);
     if (ret != RETURN_NO_FAULT)
     {
+      timer.end();
       timer.finish_running();
       report_dds_error("loop_calc", ret);
       cout << "loop_calc: i " << i << "\n";
@@ -226,6 +228,7 @@ auto loop_par(
           != RETURN_NO_FAULT)
       {
         timer.end();
+        timer.finish_running();
         report_dds_error("loop_par", ret);
         cout << "loop_par: i " << i << ", j " << j << "\n";
         return false;
@@ -283,6 +286,7 @@ auto loop_dealerpar(
           dealer_list[i], vul_list[i])) != RETURN_NO_FAULT)
       {
         timer.end();
+        timer.finish_running();
         report_dds_error("loop_dealerpar", ret);
         cout << "loop_dealerpar: i " << i << ", j " << j << "\n";
         return false;
@@ -361,6 +365,7 @@ auto loop_play(
     }
     if (ret != RETURN_NO_FAULT)
     {
+      timer.end();
       timer.finish_running();
       report_dds_error("loop_play", ret);
       cout << "loop_play: i " << i << "\n";

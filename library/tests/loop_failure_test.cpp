@@ -11,6 +11,8 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 #include <api/dll.h>
 
@@ -49,7 +51,53 @@ struct HandLists
   SolvedPlay* trace_list = nullptr;
   std::string path;
 
+  HandLists() = default;
+  HandLists(const HandLists&) = delete;
+  auto operator=(const HandLists&) -> HandLists& = delete;
+
+  HandLists(HandLists&& other) noexcept
+  {
+    *this = std::move(other);
+  }
+
+  auto operator=(HandLists&& other) noexcept -> HandLists&
+  {
+    if (this == &other)
+      return *this;
+    release();
+    number = other.number;
+    gib_mode = other.gib_mode;
+    dealer_list = other.dealer_list;
+    vul_list = other.vul_list;
+    deal_list = other.deal_list;
+    fut_list = other.fut_list;
+    table_list = other.table_list;
+    par_list = other.par_list;
+    dealerpar_list = other.dealerpar_list;
+    play_list = other.play_list;
+    trace_list = other.trace_list;
+    path = std::move(other.path);
+    other.number = 0;
+    other.gib_mode = false;
+    other.dealer_list = nullptr;
+    other.vul_list = nullptr;
+    other.deal_list = nullptr;
+    other.fut_list = nullptr;
+    other.table_list = nullptr;
+    other.par_list = nullptr;
+    other.dealerpar_list = nullptr;
+    other.play_list = nullptr;
+    other.trace_list = nullptr;
+    return *this;
+  }
+
   ~HandLists()
+  {
+    release();
+  }
+
+ private:
+  auto release() -> void
   {
     free(dealer_list);
     free(vul_list);
@@ -60,10 +108,27 @@ struct HandLists
     free(dealerpar_list);
     free(play_list);
     free(trace_list);
+    dealer_list = nullptr;
+    vul_list = nullptr;
+    deal_list = nullptr;
+    fut_list = nullptr;
+    table_list = nullptr;
+    par_list = nullptr;
+    dealerpar_list = nullptr;
+    play_list = nullptr;
+    trace_list = nullptr;
     if (!path.empty())
+    {
       std::remove(path.c_str());
+      path.clear();
+    }
   }
 };
+
+static_assert(!std::is_copy_constructible_v<HandLists>);
+static_assert(std::is_move_constructible_v<HandLists>);
+static_assert(!std::is_copy_assignable_v<HandLists>);
+static_assert(std::is_move_assignable_v<HandLists>);
 
 auto write_hands(const std::string& name, const std::string& body)
   -> std::string
@@ -370,6 +435,27 @@ TEST_F(LoopFailureTest, ParStopsOnApiFaultWithoutProcessingLaterDeal)
   EXPECT_EQ(out.find("Difference"), std::string::npos);
 }
 
+TEST_F(LoopFailureTest, ParApiFaultAfterProgressClearsRunningLine)
+{
+  // First deal succeeds and prints progress; second deal's API fault must
+  // clear that line before the error text.
+  auto hands = load_hands(
+      "loop_fail_par_api_after_progress.txt",
+      two_deal_body(kDealBody, kDealBody));
+  ASSERT_EQ(hands.number, 2);
+  corrupt_table(&hands.table_list[1]);
+
+  testing::internal::CaptureStdout();
+  EXPECT_FALSE(loop_par(
+      hands.vul_list, hands.table_list, hands.par_list, 2, 1));
+  const std::string out = testing::internal::GetCapturedStdout();
+
+  EXPECT_TRUE(std::regex_search(out, std::regex(R"(1\s+\()"))) << out;
+  EXPECT_NE(out.find("loop_par: i 1"), std::string::npos) << out;
+  // finish_running emits clear+CR immediately before the error report.
+  EXPECT_NE(out.find("\033[2K\rloop_par:"), std::string::npos) << out;
+}
+
 TEST_F(LoopFailureTest, DealerParStopsOnApiFaultWithoutProcessingLaterDeal)
 {
   auto hands = load_hands(
@@ -388,4 +474,23 @@ TEST_F(LoopFailureTest, DealerParStopsOnApiFaultWithoutProcessingLaterDeal)
   EXPECT_NE(out.find("loop_dealerpar: i 0"), std::string::npos);
   EXPECT_EQ(out.find("loop_dealerpar: i 1"), std::string::npos);
   EXPECT_EQ(out.find("Difference"), std::string::npos);
+}
+
+TEST_F(LoopFailureTest, DealerParApiFaultAfterProgressClearsRunningLine)
+{
+  auto hands = load_hands(
+      "loop_fail_dealerpar_api_after_progress.txt",
+      two_deal_body(kDealBody, kDealBody));
+  ASSERT_EQ(hands.number, 2);
+  corrupt_table(&hands.table_list[1]);
+
+  testing::internal::CaptureStdout();
+  EXPECT_FALSE(loop_dealerpar(
+      hands.dealer_list, hands.vul_list, hands.table_list,
+      hands.dealerpar_list, 2, 1));
+  const std::string out = testing::internal::GetCapturedStdout();
+
+  EXPECT_TRUE(std::regex_search(out, std::regex(R"(1\s+\()"))) << out;
+  EXPECT_NE(out.find("loop_dealerpar: i 1"), std::string::npos) << out;
+  EXPECT_NE(out.find("\033[2K\rloop_dealerpar:"), std::string::npos) << out;
 }
