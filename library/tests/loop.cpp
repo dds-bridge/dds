@@ -132,53 +132,67 @@ auto loop_solve(
 auto loop_calc(
   DealPBN * deal_list,
   DdTableResults * table_list,
-  const int number) -> bool
+  const int number,
+  const int stepsize) -> bool
 {
-  // One CalcAllTablesPBNX call for the whole file: expands to number×strains
-  // boards and solves them in a single parallel job (ddss large-batch shape).
+  // Batched CalcAllTablesPBNX: each batch expands to count×strains boards in
+  // one parallel job. Batching lets print_running update between chunks.
   int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
   const int strain_count = DDS_STRAINS;
   if (number <= 0)
     return true;
-  std::vector<DdTableDealPBN> deals(static_cast<unsigned>(number));
-  std::vector<DdTableResults> results(static_cast<unsigned>(number));
-  for (int i = 0; i < number; i++)
-  {
-    std::strncpy(
-      deals[static_cast<unsigned>(i)].cards,
-      deal_list[i].remainCards,
-      sizeof(deals[0].cards));
-    deals[static_cast<unsigned>(i)].cards[sizeof(deals[0].cards) - 1] = '\0';
-  }
 
-  timer.start(number);
-  const int workload = number * strain_count;
-  const int threads = dtest_effective_threads(options.num_threads_, workload);
-  const int ret = CalcAllTablesPBNX(
-    number, deals.data(), -1, filter, results.data(), nullptr, threads);
-  timer.end();
-  if (ret != RETURN_NO_FAULT)
+  int batch = stepsize;
+  if (batch <= 0)
+    batch = number;
+
+  std::vector<DdTableDealPBN> deals(static_cast<unsigned>(batch));
+  std::vector<DdTableResults> results(static_cast<unsigned>(batch));
+
+  for (int i = 0; i < number; i += batch)
   {
-    report_dds_error("loop_calc", ret);
-    return false;
-  }
+    const int count = (i + batch > number ? number - i : batch);
+
+    for (int j = 0; j < count; j++)
+    {
+      std::strncpy(
+        deals[static_cast<unsigned>(j)].cards,
+        deal_list[i + j].remainCards,
+        sizeof(deals[0].cards));
+      deals[static_cast<unsigned>(j)].cards[sizeof(deals[0].cards) - 1] = '\0';
+    }
+
+    timer.start(count);
+    const int workload = count * strain_count;
+    const int threads = dtest_effective_threads(options.num_threads_, workload);
+    const int ret = CalcAllTablesPBNX(
+      count, deals.data(), -1, filter, results.data(), nullptr, threads);
+    if (ret != RETURN_NO_FAULT)
+    {
+      timer.finish_running();
+      report_dds_error("loop_calc", ret);
+      cout << "loop_calc: i " << i << "\n";
+      return false;
+    }
+    timer.end();
 
 #ifdef BATCHTIMES
-  timer.print_running(number, number);
+    timer.print_running(i + count, number);
 #endif
 
-  for (int j = 0; j < number; j++)
-  {
-    if (compare_TABLE(results[static_cast<unsigned>(j)], table_list[j]))
-      continue;
+    for (int j = 0; j < count; j++)
+    {
+      if (compare_TABLE(results[static_cast<unsigned>(j)], table_list[i + j]))
+        continue;
 
-    timer.finish_running();
-    cout << "loop_calc: j " << j << ": Difference\n\n";
-    print_TABLE(results[static_cast<unsigned>(j)]);
-    cout << "\n";
-    print_TABLE(table_list[j]);
-    cout << "\n";
-    return false;
+      timer.finish_running();
+      cout << "loop_calc: j " << (i + j) << ": Difference\n\n";
+      print_TABLE(results[static_cast<unsigned>(j)]);
+      cout << "\n";
+      print_TABLE(table_list[i + j]);
+      cout << "\n";
+      return false;
+    }
   }
 
 #ifdef BATCHTIMES

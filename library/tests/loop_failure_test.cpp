@@ -173,7 +173,7 @@ TEST_F(LoopFailureTest, CalcStopsOnFirstExpectedMismatchAndClearsProgress)
   ASSERT_EQ(hands.number, 2);
 
   testing::internal::CaptureStdout();
-  const bool ok = loop_calc(hands.deal_list, hands.table_list, 2);
+  const bool ok = loop_calc(hands.deal_list, hands.table_list, 2, 2);
   const std::string out = testing::internal::GetCapturedStdout();
 
   EXPECT_FALSE(ok);
@@ -182,6 +182,48 @@ TEST_F(LoopFailureTest, CalcStopsOnFirstExpectedMismatchAndClearsProgress)
   const auto diff_at = out.find("Difference");
   ASSERT_NE(diff_at, std::string::npos);
   EXPECT_NE(out.rfind("\033[2K\r", diff_at), std::string::npos);
+}
+
+TEST_F(LoopFailureTest, CalcPrintsIntermediateProgressWhenBatched)
+{
+  // Two matching deals with stepsize 1 must emit a mid-run progress tick
+  // (reached=1) before the final tick (reached=2).
+  auto hands = load_hands(
+      "loop_calc_progress.txt", two_deal_body(kDealBody, kDealBody));
+  ASSERT_EQ(hands.number, 2);
+
+  testing::internal::CaptureStdout();
+  ASSERT_TRUE(loop_calc(hands.deal_list, hands.table_list, 2, 1));
+  const std::string out = testing::internal::GetCapturedStdout();
+
+  const auto mid = out.find("1 (");
+  const auto end = out.find("2 (");
+  ASSERT_NE(mid, std::string::npos) << out;
+  ASSERT_NE(end, std::string::npos) << out;
+  EXPECT_LT(mid, end);
+  EXPECT_EQ(out.find('\n'), std::string::npos);
+}
+
+TEST_F(LoopFailureTest, CalcMismatchInLaterBatchUsesAbsoluteIndex)
+{
+  auto wrong = std::string(kDealBody);
+  const auto pos = wrong.find("TABLE 11 ");
+  ASSERT_NE(pos, std::string::npos);
+  wrong.replace(pos, std::strlen("TABLE 11 "), "TABLE 0 ");
+
+  auto hands = load_hands(
+      "loop_calc_batch_mismatch.txt",
+      two_deal_body(kDealBody, wrong));
+  ASSERT_EQ(hands.number, 2);
+
+  testing::internal::CaptureStdout();
+  const bool ok = loop_calc(hands.deal_list, hands.table_list, 2, 1);
+  const std::string out = testing::internal::GetCapturedStdout();
+
+  EXPECT_FALSE(ok);
+  EXPECT_NE(out.find("1 ("), std::string::npos) << out;
+  EXPECT_NE(out.find("loop_calc: j 1: Difference"), std::string::npos);
+  EXPECT_EQ(out.find("loop_calc: j 0:"), std::string::npos);
 }
 
 TEST_F(LoopFailureTest, PlayStopsOnFirstExpectedMismatch)

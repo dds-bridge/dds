@@ -75,7 +75,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
     stepsize = MAXNOOFBOARDS;
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
-    stepsize = MAXNOOFTABLES;
+    stepsize = MAXNOOFBOARDS;
   else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
     stepsize = MAXNOOFBOARDS;
   else if (options.solver_ == Solver::DTEST_SOLVER_PAR)
@@ -136,7 +136,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {
-    ok = loop_calc(deal_list, table_list, number);
+    ok = loop_calc(deal_list, table_list, number, stepsize);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
   {

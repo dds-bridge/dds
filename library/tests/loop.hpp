@@ -39,17 +39,19 @@ auto loop_solve(
     const int stepsize,
     std::vector<std::pair<int, int>>* board_times = nullptr) -> bool;
 
-/// Calculate loop: CalcAllTablesPBNX for the full deal list in one parallel job.
-/// Allocates its own flat deal/result buffers (unbounded X API); no legacy
-/// DdTableDealsPBN / DdTablesRes batch structs.
+/// Calculate loop: CalcAllTablesPBNX in batches of `stepsize` deals so progress
+/// can update between batches. Uses the unbounded X API (no legacy
+/// DdTableDealsPBN / DdTablesRes batch structs).
 /// @param deal_list Input deals in PBN format
 /// @param table_list Expected DD table results
 /// @param number Number of deals in the test set
+/// @param stepsize Deals per CalcAllTablesPBNX batch (typically `MAXNOOFBOARDS`)
 /// @return false on DDS API fault or first expected-result mismatch
 auto loop_calc(
     DealPBN * deal_list,
     DdTableResults * table_list,
-    const int number) -> bool;
+    const int number,
+    const int stepsize) -> bool;
 
 /// PAR loop: calculate PAR scores for multiple deals.
 /// @return false on DDS API fault or first expected-result mismatch
