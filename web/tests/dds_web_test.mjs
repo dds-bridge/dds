@@ -3684,6 +3684,20 @@ test("parseFirstDealFromText reads a LIN md| deal and fills the omitted hand", (
     assert.equal(deal.east, "T96.AK7.Q93.AT92");
 });
 
+test("parseFirstDealFromText keeps LIN hands in S,W,N,E order for every dealer digit", () => {
+    // BBO md| hands are always South, West, North, East; the leading digit is
+    // only the dealer (1=S … 4=E), not a rotation of the hand list.
+    const ctx = loadDdsWeb(createMockDocument());
+    const hands =
+        "SQ953HJ84D6CQ9843,S64HA96DT2CAKJ652,ST82HT5DAKJ743CT7,";
+    for (const dealer of ["1", "2", "3", "4"]) {
+        const deal = ctx.parseFirstDealFromText("md|" + dealer + hands);
+        assert.equal(deal.south, "Q953.J84.6.Q9843", "dealer " + dealer);
+        assert.equal(deal.west, "64.A96.T2.AKJ652", "dealer " + dealer);
+        assert.equal(deal.north, "T82.T5.AKJ743.T7", "dealer " + dealer);
+    }
+});
+
 test("parseFirstDealFromText uses the first LIN deal when several are present", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const second =
@@ -3752,4 +3766,58 @@ test("importDealFromText reports when no deal is found", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const err = ctx.importDealFromText("not a bridge deal file");
     assert.match(err, /deal/i);
+    assert.match(err, /sol/i);
+});
+
+test("refreshDdTable abandons a stale PBN after the Computing grace period", async () => {
+    // Arrange: a slow grace period so an import can change the diagram mid-wait.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    const seenPbn = [];
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall(_name, _ret, _args, args) {
+            seenPbn.push(args[0]);
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+    seenPbn.length = 0;
+
+    // Act: start a solve, then import a different deal during the grace wait.
+    const first = ctx.refreshDdTable();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    ctx.importDealFromText(
+        '[Deal "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]'
+    );
+    await first;
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    // Assert: WASM must not run for the pre-import PBN after the diagram changed.
+    assert.ok(
+        seenPbn.every((pbn) => !pbn.includes("AQ85")),
+        "stale part-score PBN must not be solved after import; saw " +
+            JSON.stringify(seenPbn)
+    );
+    assert.ok(
+        seenPbn.some((pbn) => pbn.includes("AKQJ")),
+        "imported deal should still be solved; saw " + JSON.stringify(seenPbn)
+    );
+    assert.equal(document.element("north_spades").value, "AKQJ");
 });

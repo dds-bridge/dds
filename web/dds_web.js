@@ -516,7 +516,10 @@ function parseLinHand(raw) {
 
 function parseLinDealPayload(payload) {
     // md|<dealer-digit><hand>,<hand>,<hand>,[<hand>]
-    const body = String(payload).replace(/^\d/, "");
+    // BBO lists hands in fixed South, West, North, East order. The leading
+    // digit is only the dealer (1=South, 2=West, 3=North, 4=East); it does not
+    // rotate which hand comes first in the list.
+    const body = String(payload).replace(/^[1-4]/, "");
     const parts = body.split(",");
     if (parts.length < 3) {
         return null;
@@ -657,7 +660,9 @@ function parseFirstDealFromText(text) {
         }
     }
 
-    throw new Error("No PBN, LIN, DLM, or dtest deal found in the file.");
+    throw new Error(
+        "No PBN, LIN, DLM, dtest, or sol-style deal found in the file."
+    );
 }
 
 function importDealFromText(text) {
@@ -2652,7 +2657,19 @@ async function refreshDdTable() {
                 }
             }
 
+            // An import/edit during the grace wait can change the diagram while
+            // this invocation still holds the old PBN; do not solve stale input.
+            if (handsToPbn(collectHands()) !== pbn) {
+                clearDdTableComputingTimer();
+                return;
+            }
+
             if (!(await showComputingStatus(requestId, result))) {
+                return;
+            }
+
+            if (handsToPbn(collectHands()) !== pbn) {
+                clearDdTableComputingTimer();
                 return;
             }
 
