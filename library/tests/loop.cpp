@@ -202,24 +202,34 @@ auto loop_par(
 
   ParResults presp;
 
-  timer.start(number);
   for (int i = 0; i < number; i++)
   {
+    timer.start(1);
     for (int j = 0; j < stepsize; j++)
     {
       int ret;
       if ((ret = Par(&table_list[i], &presp, vul_list[i]))
           != RETURN_NO_FAULT)
       {
+        timer.end();
         report_dds_error("loop_par", ret);
         cout << "loop_par: i " << i << ", j " << j << "\n";
         return false;
       }
     }
+    timer.end();
 
     if (compare_PAR(presp, par_list[i]))
+    {
+#ifdef BATCHTIMES
+      timer.print_running(i + 1, number);
+#endif
       continue;
+    }
 
+#ifdef BATCHTIMES
+    timer.finish_running();
+#endif
     cout << "loop_par i " << i << ": Difference\n\n";
     print_PAR(presp);
     cout << "\n";
@@ -227,10 +237,8 @@ auto loop_par(
     cout << "\n";
     return false;
   }
-  timer.end();
 
 #ifdef BATCHTIMES
-  timer.print_running(number, number);
   timer.finish_running();
 #endif
 
@@ -251,24 +259,34 @@ auto loop_dealerpar(
 
   ParResultsDealer presp;
 
-  timer.start(number);
   for (int i = 0; i < number; i++)
   {
+    timer.start(1);
     for (int j = 0; j < stepsize; j++)
     {
       int ret;
       if ((ret = DealerPar(&table_list[i], &presp,
           dealer_list[i], vul_list[i])) != RETURN_NO_FAULT)
       {
+        timer.end();
         report_dds_error("loop_dealerpar", ret);
         cout << "loop_dealerpar: i " << i << ", j " << j << "\n";
         return false;
       }
     }
+    timer.end();
 
     if (compare_DEALERPAR(presp, dealerpar_list[i]))
+    {
+#ifdef BATCHTIMES
+      timer.print_running(i + 1, number);
+#endif
       continue;
+    }
 
+#ifdef BATCHTIMES
+    timer.finish_running();
+#endif
     cout << "loop_dealerpar i " << i << ": Difference\n\n";
     print_DEALERPAR(presp);
     cout << "\n";
@@ -276,10 +294,8 @@ auto loop_dealerpar(
     cout << "\n";
     return false;
   }
-  timer.end();
 
 #ifdef BATCHTIMES
-  timer.print_running(number, number);
   timer.finish_running();
 #endif
 

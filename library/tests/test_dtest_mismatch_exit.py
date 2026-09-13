@@ -63,39 +63,49 @@ def _dtest_binary() -> Path:
     raise FileNotFoundError("library/tests/dtest[.exe]")
 
 
-# Same deal twice; intentional wrong PAR goldens so both would mismatch if
+# Same deal twice with intentional wrong goldens so both would mismatch if
 # dtest kept going past the first difference.
-_MISMATCH_HANDS = """\
-NUMBER 2 
-PBN 0 0 0 0 "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3" 
-FUT 0 
-TABLE 5 8 5 8 6 6 6 6 5 7 5 7 7 5 7 5 6 6 6 6 
-PAR "NS -999" "EW 999" "NS:EW 7N" "EW:EW 7N" 
-PAR2 "-999" "7N-EW" 
-PLAY 0 "" 
-TRACE 1 0 
-PBN 0 0 0 0 "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3" 
-FUT 0 
-TABLE 5 8 5 8 6 6 6 6 5 7 5 7 7 5 7 5 6 6 6 6 
-PAR "NS -888" "EW 888" "NS:EW 6N" "EW:EW 6N" 
-PAR2 "-888" "6N-EW" 
-PLAY 0 "" 
-TRACE 1 0 
-"""
+_DEAL = (
+    'PBN 1 0 2 0 "N:Q87.T8.AKJT64.J6 964.AJ765.Q73.74 AKJT2.Q943..AK95 '
+    '53.K2.9852.QT832" \n'
+    "FUT 10 0 3 3 2 1 2 1 2 2 0 12 6 11 14 8 4 10 6 11 8 0 0 0 8192 0 0 0 0 "
+    "1024 128 10 10 10 10 10 10 10 10 10 9 \n"
+    "TABLE 11 2 11 1 9 4 9 4 10 3 10 3 8 5 8 4 10 3 10 3 \n"
+    'PAR "NS 450" "EW -450" "NS:NS 45S" "EW:NS 45S" \n'
+    'PAR2 "450" "4S-NS+1" \n'
+    'PLAY 52 "SQS4S2S3DAD3H4D2DKD7H3D5D6DQC5D9H7H9HKH8H2HTHAHQC4CAC3C6SAS5S8S6'
+    'CKC2CJC7C9CQD4HJDJH6SKD8S7S9SJCTSTC8DTH5" \n'
+    "TRACE 49 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 "
+    "3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 \n"
+)
+
+
+def _two_deal_hands(mutate: str, replacement: str) -> str:
+    first = _DEAL.replace(mutate, replacement, 1)
+    second = _DEAL.replace(mutate, replacement, 1)
+    return "NUMBER 2 \n" + first + second
 
 
 class DtestMismatchExitTest(unittest.TestCase):
-    def test_dtest_exits_nonzero_on_first_par_mismatch(self) -> None:
+    def _run_mismatch(
+        self,
+        *,
+        solver: str,
+        hands_text: str,
+        first_marker: str,
+        second_marker: str,
+        timeout: int = 120,
+    ) -> None:
         dtest = _dtest_binary()
         with tempfile.TemporaryDirectory() as tmp:
             hands = Path(tmp) / "mismatch.txt"
-            hands.write_text(_MISMATCH_HANDS, encoding="utf-8")
+            hands.write_text(hands_text, encoding="utf-8")
             proc = subprocess.run(
-                [str(dtest), "-f", str(hands), "-s", "par", "-n", "1"],
+                [str(dtest), "-f", str(hands), "-s", solver, "-n", "1"],
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=60,
+                timeout=timeout,
             )
 
         self.assertNotEqual(
@@ -103,8 +113,51 @@ class DtestMismatchExitTest(unittest.TestCase):
             0,
             msg=f"stdout:\n{proc.stdout}\nstderr:\n{proc.stderr}",
         )
-        self.assertIn("loop_par i 0: Difference", proc.stdout)
-        self.assertNotIn("loop_par i 1:", proc.stdout)
+        self.assertIn(first_marker, proc.stdout)
+        self.assertNotIn(second_marker, proc.stdout)
+
+    def test_dtest_exits_nonzero_on_first_par_mismatch(self) -> None:
+        self._run_mismatch(
+            solver="par",
+            hands_text=_two_deal_hands('PAR "NS 450"', 'PAR "NS -999"'),
+            first_marker="loop_par i 0: Difference",
+            second_marker="loop_par i 1:",
+        )
+
+    def test_dtest_exits_nonzero_on_first_calc_mismatch(self) -> None:
+        self._run_mismatch(
+            solver="calc",
+            hands_text=_two_deal_hands("TABLE 11 ", "TABLE 0 "),
+            first_marker="loop_calc: j 0: Difference",
+            second_marker="loop_calc: j 1:",
+        )
+
+    def test_dtest_exits_nonzero_on_first_dealerpar_mismatch(self) -> None:
+        self._run_mismatch(
+            solver="dealerpar",
+            hands_text=_two_deal_hands('PAR2 "450"', 'PAR2 "999"'),
+            first_marker="loop_dealerpar i 0: Difference",
+            second_marker="loop_dealerpar i 1:",
+        )
+
+    def test_dtest_exits_nonzero_on_first_solve_mismatch(self) -> None:
+        self._run_mismatch(
+            solver="solve",
+            hands_text=_two_deal_hands(
+                "10 10 10 10 10 10 10 10 10 9",
+                "10 10 10 10 10 10 10 10 10 0",
+            ),
+            first_marker="loop_solve: i 0, j 0: Difference",
+            second_marker="loop_solve: i 1",
+        )
+
+    def test_dtest_exits_nonzero_on_first_play_mismatch(self) -> None:
+        self._run_mismatch(
+            solver="play",
+            hands_text=_two_deal_hands("TRACE 49 3 ", "TRACE 49 0 "),
+            first_marker="loop_play: i 0, j 0: Difference",
+            second_marker="loop_play: i 1",
+        )
 
 
 if __name__ == "__main__":
