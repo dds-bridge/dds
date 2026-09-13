@@ -100,7 +100,7 @@ class TransTableP : public TransTable
     auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
     {
       adds = num_adds_;
-      overwrites = num_tightens_; // tighten() updates, not evictions
+      overwrites = 0; // PatternTT has no eviction; use tightens() for in-place updates
       harvests = 0; // TransTableP has no harvest mechanism
     }
     // Instrumentation counters

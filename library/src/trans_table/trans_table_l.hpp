@@ -462,21 +462,23 @@ class TransTableL: public TransTable
     /// \param fout Output stream
     auto print_all_suit_stats(std::ofstream& fout) const -> void override;
 
-    /// \brief Print summary suit statistics.
-    ///
-    /// \param fout Output stream
+    /// \brief Reset per-solve operation counters (adds, overwrites, harvests).
     auto reset_op_stats() -> void override
     {
       page_stats_.num_adds_ = 0;
       page_stats_.num_overwrites_ = 0;
       page_stats_.num_harvests_ = 0;
     }
+    /// \brief Get per-solve operation counters for instrumentation.
     auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
     {
       adds = page_stats_.num_adds_;
       overwrites = page_stats_.num_overwrites_;
       harvests = page_stats_.num_harvests_;
     }
+    /// \brief Print summary suit statistics.
+    ///
+    /// \param fout Output stream
     auto print_summary_suit_stats(std::ofstream& fout) const -> void override;
 
     /// \brief Print entries for a specific hand distribution.
