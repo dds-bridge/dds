@@ -647,6 +647,7 @@ auto TransTableP::add(
             }
             if (stored_weight == weight && same_pattern(stored.key, pattern)) {
                 tighten(stored.cards, cards, flag);
+                ++num_overwrites_;
                 return;
             }
         }
@@ -662,6 +663,7 @@ auto TransTableP::add(
         ++tree.bucket_end[b];
     }
     ++node_count_;
+    ++num_adds_;
 }
 
 
