@@ -90,7 +90,7 @@ auto store_ab_tt_result(
   const int hand,
   const bool value,
   SolverContext& ctx,
-  const unsigned short win_ranks[]) -> void
+  const unsigned short our_win_ranks[]) -> void
 {
   NodeCards first;
   if (value)
@@ -136,7 +136,7 @@ auto store_ab_tt_result(
     tricks,
     hand,
     posPoint->aggr,
-    win_ranks,
+    our_win_ranks,
     first,
     flag);
   TIMER_END(TIMER_NO_BUILD, depth);
