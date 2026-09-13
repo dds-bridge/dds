@@ -62,7 +62,10 @@ struct ThreadData
   double memUsed;
   int nodes;
   int trickNodes;
-  // TT instrumentation (per-context, single-threaded)
+  // TT instrumentation (per-context, single-threaded).
+  // tt_lookup_count: total TT probe calls on the AB hot path.
+  // tt_hit_count: probes that returned a cached result (higher is better).
+  // hit_rate = tt_hit_count / tt_lookup_count; target: maximize.
   uint64_t tt_lookup_count = 0;
   uint64_t tt_hit_count = 0;
 

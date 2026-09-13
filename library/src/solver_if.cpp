@@ -753,6 +753,10 @@ auto solve_same_board(
   thrp->ABStats.Reset();
   thrp->ABStats.ResetCum();
 #endif
+  // Reset per-solve TT stats (keeps warm TT, resets counters only)
+  thrp->tt_lookup_count = 0;
+  thrp->tt_hit_count = 0;
+  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
 #ifdef DDS_TOP_LEVEL
   {

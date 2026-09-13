@@ -647,7 +647,7 @@ auto TransTableP::add(
             }
             if (stored_weight == weight && same_pattern(stored.key, pattern)) {
                 tighten(stored.cards, cards, flag);
-                ++num_overwrites_;
+                ++num_tightens_;
                 return;
             }
         }
