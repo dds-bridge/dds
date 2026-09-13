@@ -95,7 +95,7 @@ class TransTableP : public TransTable
     auto reset_op_stats() -> void override
     {
       num_adds_ = 0;
-      num_overwrites_ = 0;
+      num_tightens_ = 0;
     }
     auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
     {
