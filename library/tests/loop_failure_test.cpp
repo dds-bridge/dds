@@ -204,6 +204,30 @@ TEST_F(LoopFailureTest, CalcPrintsIntermediateProgressWhenBatched)
   EXPECT_EQ(out.find('\n'), std::string::npos);
 }
 
+TEST_F(LoopFailureTest, CalcGibFilePrintsIntermediateProgressWhenBatched)
+{
+  // GIB one-line-per-deal input must use the same batched progress path as
+  // NUMBER list files (e.g. sol100000.txt with stepsize MAXNOOFBOARDS).
+  const std::string gib =
+      "T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K:"
+      "65658888888843433232\n"
+      "T98.AKQT4.K853.8 Q6532.8.AJ2.9753 AK.76532.96.QJ62 J74.J9.QT74.AKT4:"
+      "66769999333376769999\n";
+  auto hands = load_hands("loop_calc_gib_progress.txt", gib);
+  ASSERT_TRUE(hands.gib_mode);
+  ASSERT_EQ(hands.number, 2);
+
+  testing::internal::CaptureStdout();
+  ASSERT_TRUE(loop_calc(hands.deal_list, hands.table_list, 2, 1));
+  const std::string out = testing::internal::GetCapturedStdout();
+
+  const auto mid = out.find("1 (");
+  const auto end = out.find("2 (");
+  ASSERT_NE(mid, std::string::npos) << out;
+  ASSERT_NE(end, std::string::npos) << out;
+  EXPECT_LT(mid, end);
+}
+
 TEST_F(LoopFailureTest, CalcMismatchInLaterBatchUsesAbsoluteIndex)
 {
   auto wrong = std::string(kDealBody);
