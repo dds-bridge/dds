@@ -243,13 +243,17 @@ TEST(WarmTtBenchmark, ContextReuseKeepsTranspositionTableWarm)
   // Fixed seed, on purpose: it is what makes this benchmark reproducible.
   // std::mt19937 is specified by the standard, so a given seed yields the same
   // sequence on every platform and library version -- so every run, on every
-  // machine, measures the same 100 deals. That matters here because the numbers
+  // machine, measures the same deals. That matters here because the numbers
   // are meant to be compared across runs (and across changes to the solver): a
   // fresh random sample each time would move the timings for reasons unrelated
   // to the code under test, and would also make any failure of the warm/cold
   // agreement check below impossible to reproduce from the failure output alone.
+  //
+  // Deal count is sized for Bazel's short (60s) timeout on slow CI hosts
+  // (notably Windows runners); keep it large enough for a stable warm/cold
+  // story, small enough that opt builds finish with headroom under 60s.
   std::mt19937 rng(20260717u);
-  constexpr int kDeals = 100;
+  constexpr int kDeals = 40;
   std::vector<Hands> deals;
   deals.reserve(kDeals);
   for (int d = 0; d < kDeals; ++d) deals.push_back(make_deal(rng));

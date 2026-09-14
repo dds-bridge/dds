@@ -158,15 +158,15 @@ survives between solves on nearly identical positions.
 bazel test -c opt //benchmarks:warm_tt_benchmark --test_output=all
 ```
 
-It values the opening leads of 100 fixed deals two ways — one `solutions=3`
+It values the opening leads of 40 fixed deals two ways — one `solutions=3`
 solve (A), versus playing each of the top-K leads and solving the result with
 `solutions=1` (B) — and runs B twice, with a fresh context per lead and with one
 context reused:
 
 ```
-[warm-TT benchmark] declarer South; opening leader West; 100 deals x {3N, 4S}
-  3N+4S      K=4 over 200 deals:  A(sol=3)=  8324.4 ms   B_cold=  7735.8 ms (0.93x A)   B_warm=  4429.1 ms (0.53x A)   warm/cold=0.57
-  3N+4S      K=6 over 200 deals:  A(sol=3)=  7644.8 ms   B_cold= 10190.7 ms (1.33x A)   B_warm=  5439.7 ms (0.71x A)   warm/cold=0.53
+[warm-TT benchmark] declarer South; opening leader West; 40 deals x {3N, 4S}
+  3N+4S      K=4 over  80 deals:  A(sol=3)=  1577.4 ms   B_cold=  1162.5 ms (0.74x A)   B_warm=   685.5 ms (0.43x A)   warm/cold=0.59
+  3N+4S      K=6 over  80 deals:  A(sol=3)=  1577.0 ms   B_cold=  1682.3 ms (1.07x A)   B_warm=   949.4 ms (0.60x A)   warm/cold=0.56
 ```
 
 Reuse roughly halves the cost of the lead-by-lead approach, which is what makes
@@ -180,5 +180,6 @@ lets the benchmark run with nothing committed alongside it.
 The timings are printed, not asserted — CI load would make that flaky. What is
 asserted is correctness: every solve succeeds and returns a card, and the warm
 and cold runs agree on every lead's score. So a change that makes TT reuse
-return a different answer fails this test, on any machine, on the same 100
-deals (the seed is fixed; see the comment on it).
+return a different answer fails this test, on any machine, on the same 40
+deals (the seed is fixed; see the comment on it). The deal count is kept small
+enough for Bazel's short (60s) timeout on slower CI hosts such as Windows.
