@@ -49,6 +49,24 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertIn("handleDealFileSelected(this)", text)
         self.assertIn(".pbn,.lin,.dlm,.txt", text)
 
+    def test_sample_deals_dropdown_replaces_three_test_deal_buttons(self) -> None:
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("fillFormWithGrandSlamTestData()", text)
+        self.assertNotIn("fillFormWithEveryoneMakes3nTestData()", text)
+        self.assertNotIn("fillFormWithPartScoreTestData()", text)
+        self.assertNotIn("NS make 7 test deal", text)
+        self.assertNotIn("Everyone makes 3N test deal", text)
+        self.assertNotIn("Part-score test deal", text)
+        self.assertRegex(
+            text,
+            r'<select[^>]*id="sample-deals"[^>]*>',
+        )
+        self.assertIn("handleSampleDealSelected(this)", text)
+        self.assertIn("Sample deals…", text)
+        self.assertIn("NS make 7", text)
+        self.assertIn("Everyone makes 3N", text)
+        self.assertIn("Part-score", text)
+
 
 class DdsWebHtmlCoiTest(unittest.TestCase):
     def test_loads_coi_serviceworker_in_head_before_app_scripts(self) -> None:

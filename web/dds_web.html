@@ -40,9 +40,14 @@
            accept=".pbn,.lin,.dlm,.txt,text/plain"
            hidden
            onchange="handleDealFileSelected(this)">
-    <button type="button" onclick="fillFormWithGrandSlamTestData()">NS make 7 test deal</button>
-    <button type="button" onclick="fillFormWithEveryoneMakes3nTestData()">Everyone makes 3N test deal</button>
-    <button type="button" onclick="fillFormWithPartScoreTestData()">Part-score test deal</button>
+    <select id="sample-deals"
+            aria-label="Sample deals"
+            onchange="handleSampleDealSelected(this)">
+        <option value="" selected disabled>Sample deals…</option>
+        <option value="grand-slam">NS make 7</option>
+        <option value="everyone-3n">Everyone makes 3N</option>
+        <option value="part-score">Part-score</option>
+    </select>
     <button type="button" onclick="rotateClockwise()">Rotate the hands clockwise</button>
 
     <br/>
