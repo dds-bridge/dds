@@ -113,6 +113,35 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+  # Hand-list harness via verify_lists.sh (all five dtest solver modes).
+  # Separate job so it runs in parallel with build_and_test / sanitizers.
+  dtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch dtest
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch //library/tests:dtest; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Regression test with all five dtest solver modes
+        run: utilities/src/verify_lists.sh hands/list100.txt
+
   asan:
     runs-on: ubuntu-latest
     timeout-minutes: 20
