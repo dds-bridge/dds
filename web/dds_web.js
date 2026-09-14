@@ -73,6 +73,7 @@
             handleDealFileSelected
             setDdTableComputingDelayMs
             invalidateActiveDdTableRequest
+            paintStatusFrame
             */
 
 // It's also useful to pass the code through
@@ -98,6 +99,7 @@ let lastDdTablePbn = null;
 let solveQueue = Promise.resolve();
 let dealSolveEpoch = 0;
 let dealSolveQueued = false;
+let dealSolvePending = false;
 // Delay WASM work after hand edits so typing on a complete deal does not
 // freeze the UI on every keystroke (sync ccall). Contract clicks stay immediate.
 let dealSolveDebounceMs = 250;
@@ -154,6 +156,7 @@ function scheduleDealSolve() {
     }
 
     dealSolveEpoch += 1;
+    dealSolvePending = true;
 
     if (dealSolveQueued) {
         return solveQueue;
@@ -164,11 +167,18 @@ function scheduleDealSolve() {
         try {
             while (true) {
                 const epoch = dealSolveEpoch;
+                dealSolvePending = false;
 
                 await refreshDdTable();
 
                 if (epoch !== dealSolveEpoch) {
-                    continue;
+                    // Invalidation alone must not restart work; only a newer
+                    // scheduleDealSolve (pending) should continue. A pending
+                    // debounce will start a fresh job when it fires.
+                    if (dealSolvePending) {
+                        continue;
+                    }
+                    break;
                 }
 
                 if (selectedContractState) {
@@ -179,7 +189,10 @@ function scheduleDealSolve() {
                 }
 
                 if (epoch !== dealSolveEpoch) {
-                    continue;
+                    if (dealSolvePending) {
+                        continue;
+                    }
+                    break;
                 }
 
                 // Release the gate only once the epoch is stable; if a schedule
@@ -189,14 +202,22 @@ function scheduleDealSolve() {
 
                 if (epoch !== dealSolveEpoch) {
                     dealSolveQueued = true;
-                    continue;
+                    if (dealSolvePending) {
+                        continue;
+                    }
+                    break;
                 }
 
                 break;
             }
         } catch (err) {
-            dealSolveQueued = false;
             throw err;
+        } finally {
+            const restart = dealSolvePending;
+            dealSolveQueued = false;
+            if (restart) {
+                void scheduleDealSolve();
+            }
         }
     });
 }
@@ -411,7 +432,7 @@ function sortPips(holding) {
 
 /**
  * True when a dotted hand has exactly four suit components of legal ranks only.
- * Does not pad, truncate, or strip illegal characters.
+ * A lone "-" is accepted as the PBN void-suit marker. Does not pad or truncate.
  */
 function isValidRawHandHolding(dotted) {
     const parts = String(dotted).split(".");
@@ -419,6 +440,9 @@ function isValidRawHandHolding(dotted) {
         return false;
     }
     for (const part of parts) {
+        if (part === "" || part === "-") {
+            continue;
+        }
         for (const ch of part) {
             if (!PIPS.includes(ch.toUpperCase())) {
                 return false;
@@ -432,8 +456,10 @@ function normalizeHandHolding(dotted) {
     if (!isValidRawHandHolding(dotted)) {
         throw new Error("Deal has a malformed hand holding.");
     }
-    const parts = String(dotted).split(".");
-    return parts.map(sortPips).join(".");
+    return String(dotted)
+        .split(".")
+        .map((part) => (part === "-" ? "" : sortPips(part)))
+        .join(".");
 }
 
 function emptySuitHoldings() {
@@ -757,6 +783,7 @@ let dealFileSelectionGeneration = 0;
 
 function invalidateActiveDdTableRequest() {
     ddTableRequestId += 1;
+    dealSolveEpoch += 1;
     clearDdTableComputingTimer();
     if (dealSolveDebounceTimer != null) {
         clearTimeout(dealSolveDebounceTimer);
@@ -2687,8 +2714,26 @@ function paintStatusFrame() {
     }
     if (typeof requestAnimationFrame === "function") {
         return new Promise((resolve) => {
+            let settled = false;
+            const done = () => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                clearTimeout(fallbackTimer);
+                resolve();
+            };
+            // If the tab hides mid-wait, the second rAF may never run.
+            const fallbackTimer = setTimeout(done, 50);
             requestAnimationFrame(() => {
-                requestAnimationFrame(resolve);
+                if (
+                    typeof document !== "undefined"
+                    && document.visibilityState === "hidden"
+                ) {
+                    done();
+                    return;
+                }
+                requestAnimationFrame(done);
             });
         });
     }

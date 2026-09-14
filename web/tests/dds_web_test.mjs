@@ -4196,3 +4196,83 @@ test("failed file import cancels a pending debounced solve", async () => {
     );
     assert.equal(ccallCount, 0, "debounced solve must not run after import failure");
 });
+
+test("importDealFromText accepts a PBN void suit marked with a dash", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const err = ctx.importDealFromText(
+        '[Deal "N:QT9.A8765432.KJ.- KJ.-.A8765432.QT9 A8765432.QT9.-.KJ -.KJ.QT9.A8765432"]'
+    );
+    assert.equal(err, "");
+    assert.equal(document.element("north_clubs").value, "");
+    assert.equal(document.element("east_hearts").value, "");
+    assert.equal(document.element("west_spades").value, "");
+});
+
+test("paintStatusFrame resolves if the tab hides before the second animation frame", async () => {
+    const document = createMockDocument();
+    document.visibilityState = "visible";
+    let frames = 0;
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            frames += 1;
+            if (frames === 1) {
+                document.visibilityState = "hidden";
+                setTimeout(cb, 0);
+                return 1;
+            }
+            // A hung second frame would block the solve queue without a fallback.
+            return 2;
+        },
+    });
+
+    await withTimeout(
+        ctx.paintStatusFrame(),
+        200,
+        "paintStatusFrame hung after the tab became hidden mid-wait"
+    );
+});
+
+test("failed file import stops an in-flight solve job from continuing", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    let ccallCount = 0;
+    ctx.loadDdsModule = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 40));
+        return {
+            _malloc: () => 0,
+            _free() {},
+            ccall() {
+                ccallCount += 1;
+                return 1;
+            },
+            getValue() {
+                return 9;
+            },
+        };
+    };
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    document.element("result-table").rows[1].cells[1].innerHTML = "9";
+    ctx.onContractSelect("north", "C");
+
+    const solve = ctx.scheduleDealSolve();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    await withTimeout(solve, 500, "solve job did not finish after import failure");
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+    assert.equal(ccallCount, 0, "solve job must not continue after import failure");
+});
