@@ -13,9 +13,11 @@ filegroup(
             "calc_par_test.cpp",  # Uses GoogleTest, compiled separately
             "test_timer_test.cpp",  # Uses GoogleTest, compiled separately
             "args_test.cpp",  # Uses GoogleTest, compiled separately
+            "compare_test.cpp",  # Uses GoogleTest, compiled separately
             "report_board_timings_test.cpp",  # Uses GoogleTest, compiled separately
             "parse_par_test.cpp",  # Uses GoogleTest, compiled separately
             "loop_par_test.cpp",  # Uses GoogleTest, compiled separately
+            "loop_failure_test.cpp",  # Uses GoogleTest, compiled separately
             "dds_c_api_test.cpp",  # Uses GoogleTest, compiled separately
             "pbn_test.cpp",  # Uses GoogleTest, compiled separately
             "par_validation_test.cpp",  # Uses GoogleTest, compiled separately
@@ -170,6 +172,23 @@ cc_test(
 )
 
 cc_test(
+    name = "compare_test",
+    srcs = [
+        "compare_test.cpp",
+        "compare.cpp",
+        "compare.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES,
+    deps = [
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "report_board_timings_test",
     srcs = [
         "report_board_timings_test.cpp",
@@ -228,10 +247,53 @@ py_test(
     ],
 )
 
+# Integration: real_main/main must exit non-zero after the first mismatch.
+py_test(
+    name = "dtest_mismatch_exit_test",
+    size = "small",
+    srcs = ["test_dtest_mismatch_exit.py"],
+    main = "test_dtest_mismatch_exit.py",
+    data = [
+        ":dtest",
+    ],
+)
+
 cc_test(
     name = "loop_par_test",
     srcs = [
         "loop_par_test.cpp",
+        "loop.cpp",
+        "loop.hpp",
+        "compare.cpp",
+        "compare.hpp",
+        "print.cpp",
+        "print.hpp",
+        "TestTimer.cpp",
+        "TestTimer.hpp",
+        "parse.cpp",
+        "parse.hpp",
+        "dtest_parallel.cpp",
+        "dtest_parallel.hpp",
+        "report_board_timings.cpp",
+        "report_board_timings.hpp",
+        "cst.hpp",
+    ],
+    size = "small",
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS,
+    local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE,
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Failure/early-return coverage across solve/calc/play/par/dealerpar loops.
+cc_test(
+    name = "loop_failure_test",
+    srcs = [
+        "loop_failure_test.cpp",
         "loop.cpp",
         "loop.hpp",
         "compare.cpp",

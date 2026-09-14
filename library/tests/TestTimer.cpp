@@ -49,6 +49,7 @@ void TestTimer::reset()
   sys_cum_ = 0;
   pending_hands_ = 0;
   sys_time_known_ = true;
+  running_line_active_ = false;
 }
 
 
@@ -127,14 +128,26 @@ void TestTimer::print_running(
   if (count_ == 0)
     return;
 
-  cout << setw(8) << reached << " (" <<
+  // Overwrite a single terminal line: clear, return to column 0, rewrite, flush.
+  cout << "\033[2K\r" << setw(8) << reached << " (" <<
     setw(6) << setprecision(1) << right << fixed <<
-      100. * reached / 
+      100. * reached /
         static_cast<float>(divisor) << "%)" <<
-    setw(15) << right << fixed << setprecision(0) << 
-      (user_cum_ - user_cum_old_) << endl;
-  
+    setw(15) << right << fixed << setprecision(0) <<
+      (user_cum_ - user_cum_old_) << std::flush;
+
   user_cum_old_ = user_cum_;
+  running_line_active_ = true;
+}
+
+
+void TestTimer::finish_running()
+{
+  if (!running_line_active_)
+    return;
+  // Erase the in-place progress line so it does not remain after the run.
+  cout << "\033[2K\r" << std::flush;
+  running_line_active_ = false;
 }
 
 

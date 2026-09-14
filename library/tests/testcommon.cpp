@@ -75,7 +75,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
     stepsize = MAXNOOFBOARDS;
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
-    stepsize = MAXNOOFTABLES;
+    stepsize = MAXNOOFBOARDS;
   else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
     stepsize = MAXNOOFBOARDS;
   else if (options.solver_ == Solver::DTEST_SOLVER_PAR)
@@ -101,13 +101,13 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
         &play_list, &trace_list) == false)
   {
     cout << "read_file failed\n";
-    exit(0);
+    return 1;
   }
 
   if (GIBmode && options.solver_ != Solver::DTEST_SOLVER_CALC)
   {
     cout << "GIB file only works with calc\n";
-    exit(0);
+    return 1;
   }
 
   timer.reset();
@@ -122,9 +122,10 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   if (options.report_slow_boards_)
     board_times.reserve(static_cast<std::size_t>(number));
 
+  bool ok = true;
   if (options.solver_ == Solver::DTEST_SOLVER_SOLVE)
   {
-    loop_solve(
+    ok = loop_solve(
       &bop,
       &solvedbdp,
       deal_list,
@@ -135,27 +136,27 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {
-    loop_calc(deal_list, table_list, number);
+    ok = loop_calc(deal_list, table_list, number, stepsize);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
   {
-    loop_play(&bop, &playsp, &solvedplp, deal_list, play_list, trace_list, 
+    ok = loop_play(&bop, &playsp, &solvedplp, deal_list, play_list, trace_list,
       number, stepsize);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_PAR)
   {
-    loop_par(vul_list, table_list, par_list, number, stepsize);
+    ok = loop_par(vul_list, table_list, par_list, number, stepsize);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_DEALERPAR)
   {
-    loop_dealerpar(dealer_list, vul_list, table_list, dealerpar_list, 
+    ok = loop_dealerpar(dealer_list, vul_list, table_list, dealerpar_list,
       number, stepsize);
   }
   else
   {
-    cout << "Unknown type " << 
+    cout << "Unknown type " <<
       static_cast<unsigned>(options.solver_) << "\n";
-    exit(0);
+    return 1;
   }
 
   timer.print_hands(cout);
@@ -193,7 +194,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   // Release heavy timing storage before program exit to avoid long destructor work.
   scheduler.ClearTiming();
 
-  return (0);
+  return ok ? 0 : 1;
 }
 
 

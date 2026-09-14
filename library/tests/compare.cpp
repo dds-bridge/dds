@@ -58,10 +58,10 @@ bool compare_TABLE(
   const DdTableResults& table1, 
   const DdTableResults& table2)
 {
-  for (int suit = 0; suit < DDS_SUITS; suit++)
+  for (int strain = 0; strain < DDS_STRAINS; strain++)
   {
     for (int pl = 0; pl < DDS_HANDS; pl++)
-      if (table1.res_table[suit][pl] != table2.res_table[suit][pl])
+      if (table1.res_table[strain][pl] != table2.res_table[strain][pl])
         return false;
   }
 

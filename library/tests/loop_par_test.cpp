@@ -106,3 +106,78 @@ TEST(LoopPar, RecordsHandCountInTimer)
   free(trace_list);
   cleanup(path);
 }
+
+
+TEST(LoopPar, StopsAndReportsOnExpectedMismatch)
+{
+  // Two mismatched deals: stopping on the first must skip the second report.
+  const std::string path =
+    std::string(::testing::TempDir()) + "loop_par_test_mismatch.txt";
+  {
+    std::ofstream out(path, std::ios::out | std::ios::trunc);
+    out << "NUMBER 2 \n"
+        << "PBN 0 0 0 0 \"N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 "
+           "AT942.AQ4.32.KJ3\" \n"
+        << "FUT 0 \n"
+        << "TABLE 5 8 5 8 6 6 6 6 5 7 5 7 7 5 7 5 6 6 6 6 \n"
+        << "PAR \"NS -999\" \"EW 999\" \"NS:EW 7N\" \"EW:EW 7N\" \n"
+        << "PAR2 \"-999\" \"7N-EW\" \n"
+        << "PLAY 0 \"\" \n"
+        << "TRACE 1 0 \n"
+        << "PBN 0 0 0 0 \"N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 "
+           "AT942.AQ4.32.KJ3\" \n"
+        << "FUT 0 \n"
+        << "TABLE 5 8 5 8 6 6 6 6 5 7 5 7 7 5 7 5 6 6 6 6 \n"
+        << "PAR \"NS -888\" \"EW 888\" \"NS:EW 6N\" \"EW:EW 6N\" \n"
+        << "PAR2 \"-888\" \"6N-EW\" \n"
+        << "PLAY 0 \"\" \n"
+        << "TRACE 1 0 \n";
+  }
+
+  int number = 0;
+  bool gib_mode = false;
+  int* dealer_list = nullptr;
+  int* vul_list = nullptr;
+  DealPBN* deal_list = nullptr;
+  FutureTricks* fut_list = nullptr;
+  DdTableResults* table_list = nullptr;
+  ParResults* par_list = nullptr;
+  ParResultsDealer* dealerpar_list = nullptr;
+  PlayTracePBN* play_list = nullptr;
+  SolvedPlay* trace_list = nullptr;
+
+  ASSERT_TRUE(read_file(
+      path,
+      number,
+      gib_mode,
+      &dealer_list,
+      &vul_list,
+      &deal_list,
+      &fut_list,
+      &table_list,
+      &par_list,
+      &dealerpar_list,
+      &play_list,
+      &trace_list));
+  ASSERT_EQ(number, 2);
+
+  timer.reset();
+  testing::internal::CaptureStdout();
+  const bool ok = loop_par(vul_list, table_list, par_list, number, 1);
+  const std::string stdout_text = testing::internal::GetCapturedStdout();
+
+  EXPECT_FALSE(ok);
+  EXPECT_NE(stdout_text.find("loop_par i 0: Difference"), std::string::npos);
+  EXPECT_EQ(stdout_text.find("loop_par i 1:"), std::string::npos);
+
+  free(dealer_list);
+  free(vul_list);
+  free(deal_list);
+  free(fut_list);
+  free(table_list);
+  free(par_list);
+  free(dealerpar_list);
+  free(play_list);
+  free(trace_list);
+  cleanup(path);
+}

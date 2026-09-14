@@ -82,12 +82,12 @@ int main(int argc, char * argv[])
   else
     cout << "dtest worker threads: " << options.num_threads_ << "\n";
 
-  real_main(argc, argv);
+  const int status = real_main(argc, argv);
 
 #if defined(__EMSCRIPTEN__)
-  dtest_emscripten_clean_exit(0);
+  dtest_emscripten_clean_exit(status);
 #else
   // Restore normal termination so destructors / atexit handlers run.
-  exit(0);
+  exit(status);
 #endif
 }

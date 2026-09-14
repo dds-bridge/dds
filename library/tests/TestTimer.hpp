@@ -42,6 +42,7 @@ class TestTimer
     long sys_cum_;          ///< Cumulative system time (milliseconds)
     int pending_hands_;     ///< Hands counted into the open start()/end() batch
     bool sys_time_known_;   ///< False when clock() is unusable (e.g. wasm32)
+    bool running_line_active_;  ///< True after print_running until finish_running
 
     std::chrono::time_point<Clock> user0_;  ///< Wall-clock start time
     std::clock_t sys0_;        ///< CPU start time
@@ -82,12 +83,15 @@ class TestTimer
     /// @param sys_ms Batch system (CPU) time in milliseconds
     void record(const int hands, const long user_ms, const long sys_ms);
 
-    /// Print timer status while running.
+    /// Print/overwrite a single in-place progress line (ANSI clear + CR).
     /// @param reached Number of iterations completed so far
     /// @param number Total number of iterations
     void print_running(
         const int reached,
         const int number);
+
+    /// End an in-place progress line by clearing it (no leftover 100% row).
+    void finish_running();
     
     /// Print basic timer summary.
     void print_basic() const;

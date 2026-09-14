@@ -170,3 +170,46 @@ TEST(TestTimer, PrintHandsRestoresStreamFormatState)
   EXPECT_EQ(out.flags(), flags_before);
   EXPECT_EQ(out.precision(), precision_before);
 }
+
+TEST(TestTimer, PrintRunningOverwritesSingleLineWithAnsi)
+{
+  TestTimer timer;
+  timer.record(1, 10, 0);
+  testing::internal::CaptureStdout();
+  timer.print_running(1, 10);
+  timer.record(1, 20, 0);
+  timer.print_running(2, 10);
+  const std::string out = testing::internal::GetCapturedStdout();
+
+  EXPECT_NE(out.find("\033[2K"), std::string::npos);
+  EXPECT_NE(out.find('\r'), std::string::npos);
+  EXPECT_NE(out.find("2 ("), std::string::npos);
+  // In-place updates must not end each progress tick with a newline.
+  EXPECT_EQ(out.find('\n'), std::string::npos);
+}
+
+TEST(TestTimer, FinishRunningClearsProgressLine)
+{
+  TestTimer timer;
+  timer.record(1, 5, 0);
+  testing::internal::CaptureStdout();
+  timer.print_running(1, 1);
+  timer.finish_running();
+  const std::string out = testing::internal::GetCapturedStdout();
+
+  // After finish, the progress line is erased (clear + CR), not kept as a
+  // finalized "100%" row above the summary.
+  ASSERT_FALSE(out.empty());
+  EXPECT_NE(out.find("\033[2K"), std::string::npos);
+  EXPECT_EQ(out.back(), '\r');
+  EXPECT_EQ(out.find('\n'), std::string::npos);
+}
+
+TEST(TestTimer, FinishRunningIsNoOpWithoutPrintRunning)
+{
+  TestTimer timer;
+  testing::internal::CaptureStdout();
+  timer.finish_running();
+  const std::string out = testing::internal::GetCapturedStdout();
+  EXPECT_TRUE(out.empty());
+}
