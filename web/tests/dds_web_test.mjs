@@ -4054,3 +4054,73 @@ test("refreshDdTable still solves when the tab is hidden", async () => {
     assert.equal(solved, true);
     assert.equal(rAFScheduled, false);
 });
+
+test("parseFirstDealFromText accepts an optional sol-style board-number prefix", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText(
+        "1. T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K:6565\n"
+    );
+    assert.equal(deal.north, "T5.K4.652.A98542");
+    assert.equal(deal.west, "AQJ987.8532.84.K");
+});
+
+test("parseFirstDealFromText rejects a LIN hand with an illegal character", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.throws(
+        () =>
+            ctx.parseFirstDealFromText(
+                "md|3SQ953HJ84D6CQ9843,S64HA96DT2CAKJ652,ST82HT5DAKJ743CT7X,|"
+            ),
+        /LIN|malformed|illegal|invalid|character/i
+    );
+});
+
+test("updateActionButtons clears a pending Computing timer from a prior solve", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    let releaseModule;
+    ctx.loadDdsModule = () =>
+        new Promise((resolve) => {
+            releaseModule = resolve;
+        });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+    document.element("result").innerHTML = "";
+
+    const first = ctx.refreshDdTable();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    // Keep the deal complete so only a debounced trailing solve is scheduled.
+    ctx.setDealSolveDebounceMs(500);
+    document.setValue("north_spades", "AQ58");
+    ctx.updateActionButtons();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assert.doesNotMatch(
+        document.element("result").innerHTML,
+        /Computing/i,
+        "stale Computing timer must not paint after a diagram edit"
+    );
+
+    releaseModule({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    await first;
+});

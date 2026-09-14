@@ -563,9 +563,14 @@ function parseLinHand(raw) {
             suit = upper;
             continue;
         }
-        if (suit && PIPS.includes(upper)) {
+        if (PIPS.includes(upper)) {
+            if (!suit) {
+                throw new Error("LIN hand has a rank before a suit.");
+            }
             holdings[suit] += upper;
+            continue;
         }
+        throw new Error("LIN hand has illegal characters.");
     }
     return holdingsToDotted(holdings);
 }
@@ -642,12 +647,14 @@ function parseDlmBoardPayload(letters) {
 /**
  * Parse a sol*.txt style line: four NESW holdings, optional ":results" suffix.
  * Example: T5.K4.652.A98542 K6.... AQJ987.8532.84.K:6565...
+ * An optional leading board number ("1. ") is accepted and ignored.
  */
 function parseSolStyleDealLine(line) {
-    const beforeColon = String(line).split(":")[0].trim();
+    let beforeColon = String(line).split(":")[0].trim();
     if (!beforeColon) {
         return null;
     }
+    beforeColon = beforeColon.replace(/^\d+\.\s*/, "");
     const hands = beforeColon.split(/\s+/).filter(Boolean);
     if (hands.length !== 4) {
         return null;
@@ -2498,6 +2505,10 @@ function updateActionButtons(activeElement) {
 
     const dealComplete = allHandsHaveThirteenCards(hands) &&
         inputIsValid(hands).length === 0;
+
+    // Any diagram change supersedes an in-flight DD-table request so a delayed
+    // Computing… timer cannot paint for the previous PBN during debounce.
+    invalidateActiveDdTableRequest();
 
     // Debounce only while the deal stays solvable so typing on a complete deal
     // does not sync-ccall on every keystroke. Incomplete/invalid edits (and the
