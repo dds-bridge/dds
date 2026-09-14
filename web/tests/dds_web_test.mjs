@@ -3769,6 +3769,128 @@ test("importDealFromText reports when no deal is found", () => {
     assert.match(err, /sol/i);
 });
 
+test("importDealFromText rejects a duplicated card without changing the diagram", () => {
+    // Arrange: SA appears in both North and East (S5 missing).
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    document.setValue("north_spades", "T");
+
+    // Act
+    const err = ctx.importDealFromText(
+        '[Deal "N:AKQJ.AKQJ.T98.T9 A432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]'
+    );
+
+    // Assert
+    assert.notEqual(err, "");
+    assert.match(err, /deal|card|duplicate/i);
+    assert.equal(document.element("north_spades").value, "T");
+});
+
+test("handleDealFileSelected imports through the file input path", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const input = {
+        files: [
+            {
+                text: async () =>
+                    '[Deal "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]',
+            },
+        ],
+    };
+
+    await ctx.handleDealFileSelected(input);
+
+    assert.equal(document.element("north_spades").value, "AKQJ");
+    assert.equal(document.element("west_clubs").value, "8765");
+    // A trailing solve may paint Computing…; import itself must not leave an error.
+    assert.doesNotMatch(
+        document.element("result").innerHTML,
+        /PBN|LIN|DLM|sol-style|Could not|duplicated/i
+    );
+});
+
+test("handleDealFileSelected reports an import error through the file input path", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.setDealSolveDebounceMs(500);
+    const input = {
+        files: [
+            {
+                text: async () => "not a bridge deal file",
+            },
+        ],
+    };
+
+    await ctx.handleDealFileSelected(input);
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+});
+
+test("handleDealFileSelected ignores a superseded slower file read", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    let releaseSlow;
+    const slowText = new Promise((resolve) => {
+        releaseSlow = resolve;
+    });
+    const slowFile = {
+        text: async () => slowText,
+    };
+    const fastFile = {
+        text: async () =>
+            '[Deal "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]',
+    };
+    const input = { files: [slowFile] };
+
+    const first = ctx.handleDealFileSelected(input);
+    input.files = [fastFile];
+    await ctx.handleDealFileSelected(input);
+    releaseSlow(
+        '[Deal "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5"]'
+    );
+    await first;
+
+    assert.equal(document.element("north_spades").value, "AKQJ");
+});
+
+test("refreshDdTable clears Computing when abandoning a stale PBN", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+
+    const first = ctx.refreshDdTable();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    // Edit mid-grace without scheduling an immediate trailing solve.
+    ctx.setDealSolveDebounceMs(500);
+    document.setValue("north_spades", "AQ8");
+    document.setValue("north_hearts", "5AK976");
+    await first;
+
+    assert.doesNotMatch(document.element("result").innerHTML, /Computing/i);
+});
+
 test("refreshDdTable abandons a stale PBN after the Computing grace period", async () => {
     // Arrange: a slow grace period so an import can change the diagram mid-wait.
     const document = createMockDocument();

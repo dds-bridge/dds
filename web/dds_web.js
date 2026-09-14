@@ -424,6 +424,37 @@ function holdingsToDotted(holdings) {
     return SUIT_LETTERS.map((suit) => sortPips(holdings[suit] || "")).join(".");
 }
 
+/** True when the four hands are 13 cards each with no duplicates (full deck). */
+function dealHasUniqueCards(deal) {
+    const seen = {};
+    for (const direction of DIRECTIONS) {
+        const holding = deal[direction];
+        if (!holding) {
+            return false;
+        }
+        const parts = holding.split(".");
+        let count = 0;
+        for (let i = 0; i < 4; i++) {
+            const suit = SUIT_LETTERS[i];
+            for (const pip of (parts[i] || "").toUpperCase()) {
+                if (!PIPS.includes(pip)) {
+                    return false;
+                }
+                const key = suit + pip;
+                if (seen[key]) {
+                    return false;
+                }
+                seen[key] = true;
+                count += 1;
+            }
+        }
+        if (count !== 13) {
+            return false;
+        }
+    }
+    return Object.keys(seen).length === 52;
+}
+
 function dealFromDirectionMap(byDirection) {
     const deal = {};
     for (const direction of DIRECTIONS) {
@@ -431,6 +462,12 @@ function dealFromDirectionMap(byDirection) {
             return null;
         }
         deal[direction] = normalizeHandHolding(byDirection[direction]);
+        if (deal[direction].replace(/\./g, "").length !== 13) {
+            return null;
+        }
+    }
+    if (!dealHasUniqueCards(deal)) {
+        throw new Error("Deal has duplicated cards.");
     }
     return deal;
 }
@@ -689,20 +726,41 @@ function chooseDealFile() {
     input.click();
 }
 
+let dealFileSelectionGeneration = 0;
+
 async function handleDealFileSelected(input) {
     const file = input && input.files && input.files[0];
     if (!file) {
         return;
     }
 
+    const selectionGeneration = ++dealFileSelectionGeneration;
     const result = document.getElementById("result");
     try {
         const text = await file.text();
+        // A newer pick (or cleared selection) supersedes this read.
+        if (
+            selectionGeneration !== dealFileSelectionGeneration
+            || !input.files
+            || input.files[0] !== file
+        ) {
+            return;
+        }
         const err = importDealFromText(text);
         if (err && result) {
             result.innerHTML = err;
+        } else if (result) {
+            // Import itself succeeded; do not leave a prior error message.
+            result.innerHTML = "";
         }
     } catch (err) {
+        if (
+            selectionGeneration !== dealFileSelectionGeneration
+            || !input.files
+            || input.files[0] !== file
+        ) {
+            return;
+        }
         if (result) {
             result.innerHTML = err && err.message
                 ? err.message
@@ -2661,6 +2719,9 @@ async function refreshDdTable() {
             // this invocation still holds the old PBN; do not solve stale input.
             if (handsToPbn(collectHands()) !== pbn) {
                 clearDdTableComputingTimer();
+                if (requestId === ddTableRequestId && result) {
+                    result.innerHTML = "";
+                }
                 return;
             }
 
@@ -2670,6 +2731,9 @@ async function refreshDdTable() {
 
             if (handsToPbn(collectHands()) !== pbn) {
                 clearDdTableComputingTimer();
+                if (requestId === ddTableRequestId && result) {
+                    result.innerHTML = "";
+                }
                 return;
             }
 
