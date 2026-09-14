@@ -95,7 +95,7 @@ class TransTableP : public TransTable
     auto reset_op_stats() -> void override
     {
       num_adds_ = 0;
-      num_tightens_ = 0;
+
     }
     auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
     {
@@ -105,7 +105,6 @@ class TransTableP : public TransTable
     }
     // Instrumentation counters
     mutable int num_adds_ = 0;
-    mutable int num_tightens_ = 0;  ///< Duplicate-pattern tighten updates (not replacement churn)
 
     auto print_summary_suit_stats(std::ofstream& fout) const -> void override;
     auto print_entries_dist(
