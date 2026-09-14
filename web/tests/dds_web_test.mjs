@@ -4124,3 +4124,75 @@ test("updateActionButtons clears a pending Computing timer from a prior solve", 
     });
     await first;
 });
+
+test("invalidateActiveDdTableRequest clears painted Computing but keeps other status", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    document.element("result").innerHTML = "Computing&hellip;";
+
+    ctx.invalidateActiveDdTableRequest();
+
+    assert.equal(document.element("result").innerHTML, "");
+
+    document.element("result").innerHTML = "Solved in 12 ms.";
+    ctx.invalidateActiveDdTableRequest();
+    assert.equal(document.element("result").innerHTML, "Solved in 12 ms.");
+
+    document.element("result").innerHTML = "No PBN, LIN, DLM, dtest, or sol-style deal found in the file.";
+    ctx.invalidateActiveDdTableRequest();
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/);
+});
+
+test("failed file import cancels a pending debounced solve", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    let ccallCount = 0;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            ccallCount += 1;
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    ccallCount = 0;
+
+    // Arm a trailing solve, then fail a file import before it fires.
+    ctx.setDealSolveDebounceMs(100);
+    document.setValue("north_spades", "AQ58");
+    ctx.updateActionButtons();
+    assert.notEqual(
+        document.element("result").innerHTML,
+        "sentinel",
+        "precondition: debounce arming does not require a status sentinel"
+    );
+
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    const statusAfterImport = document.element("result").innerHTML;
+    assert.match(statusAfterImport, /PBN|LIN|DLM|sol-style/i);
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    assert.equal(
+        document.element("result").innerHTML,
+        statusAfterImport,
+        "debounced solve must not overwrite the import error"
+    );
+    assert.equal(ccallCount, 0, "debounced solve must not run after import failure");
+});

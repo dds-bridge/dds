@@ -72,6 +72,7 @@
             chooseDealFile
             handleDealFileSelected
             setDdTableComputingDelayMs
+            invalidateActiveDdTableRequest
             */
 
 // It's also useful to pass the code through
@@ -757,6 +758,15 @@ let dealFileSelectionGeneration = 0;
 function invalidateActiveDdTableRequest() {
     ddTableRequestId += 1;
     clearDdTableComputingTimer();
+    if (dealSolveDebounceTimer != null) {
+        clearTimeout(dealSolveDebounceTimer);
+        dealSolveDebounceTimer = null;
+    }
+    const result = document.getElementById("result");
+    // Drop a painted Computing… for the abandoned request; keep solved/error text.
+    if (result && /Computing/i.test(String(result.innerHTML || ""))) {
+        result.innerHTML = "";
+    }
 }
 
 async function handleDealFileSelected(input) {
