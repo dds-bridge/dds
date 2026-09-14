@@ -550,6 +550,27 @@ test("handleSampleDealSelected ignores empty selection", () => {
     assert.equal(document.element("north_spades").value, "AK");
 });
 
+test("handleSampleDealSelected can reload the same sample after an edit", () => {
+    // Arrange: load part-score, then edit a holding so the deal no longer matches.
+    const document = createMockDocument();
+    const select = document.element("sample-deals");
+    const ctx = loadDdsWeb(document);
+    select.value = "part-score";
+    ctx.handleSampleDealSelected(select);
+    assert.equal(document.element("north_spades").value, "AQ85");
+    assert.equal(select.value, "");
+
+    document.element("north_spades").value = "A";
+
+    // Act: choose the same sample again (possible because the select reset).
+    select.value = "part-score";
+    ctx.handleSampleDealSelected(select);
+
+    // Assert
+    assert.equal(document.element("north_spades").value, "AQ85");
+    assert.equal(select.value, "");
+});
+
 test("fillFormWithTestData does not require a double-dummy button", async () => {
     // Arrange
     const document = createMockDocument();

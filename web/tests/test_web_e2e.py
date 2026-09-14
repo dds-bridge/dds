@@ -1133,6 +1133,24 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_sample_deals_can_reselect_same_option_after_edit(self) -> None:
+        """Placeholder reset must allow choosing the same sample again after edits."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            self._fill_part_score_deal(page)
+            self.assertEqual(page.locator("#north_spades").input_value(), "AQ85")
+            self.assertEqual(page.locator("#sample-deals").input_value(), "")
+
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+            self.assertEqual(page.locator("#north_spades").input_value(), "A")
+
+            self._fill_part_score_deal(page)
+            self.assertEqual(page.locator("#north_spades").input_value(), "AQ85")
+            self.assertEqual(page.locator("#sample-deals").input_value(), "")
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
 
 if __name__ == "__main__":
     unittest.main()
