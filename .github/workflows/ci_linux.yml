@@ -113,7 +113,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-  # Hand-list harness (dtest) on a fixed 100-deal file, all five solver modes.
+  # Hand-list harness via verify_lists.sh (all five dtest solver modes).
   # Separate job so it runs in parallel with build_and_test / sanitizers.
   dtest:
     runs-on: ubuntu-latest
@@ -139,13 +139,8 @@ jobs:
           done
           exit 1
 
-      - name: Run dtest on hands/list100.txt for all solvers
-        run: |
-          for s in solve calc play par dealerpar; do
-            echo "::group::dtest -s $s"
-            bazelisk run //library/tests:dtest -- -f hands/list100.txt -s "$s"
-            echo "::endgroup::"
-          done
+      - name: Regression test with all five dtest solver modes
+        run: utilities/src/verify_lists.sh hands/list100.txt
 
   asan:
     runs-on: ubuntu-latest
