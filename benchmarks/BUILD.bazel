@@ -63,7 +63,7 @@ filegroup(
 # fails if warm and cold contexts ever disagree on a score.
 cc_test(
     name = "warm_tt_benchmark",
-    size = "medium",
+    size = "small",
     srcs = ["warm_tt_benchmark.cpp"],
     copts = DDS_CPPOPTS,
     linkopts = DDS_LINKOPTS,
