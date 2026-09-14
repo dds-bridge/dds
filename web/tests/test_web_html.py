@@ -39,6 +39,16 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         for glyph in ("♠", "♥", "♦", "♣"):
             self.assertIn(glyph, text)
 
+    def test_import_deal_button_and_file_input(self) -> None:
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertIn('onclick="chooseDealFile()"', text)
+        self.assertRegex(
+            text,
+            r'<input[^>]*id="import-deal-file"[^>]*type="file"',
+        )
+        self.assertIn("handleDealFileSelected(this)", text)
+        self.assertIn(".pbn,.lin,.dlm,.txt", text)
+
 
 class DdsWebHtmlCoiTest(unittest.TestCase):
     def test_loads_coi_serviceworker_in_head_before_app_scripts(self) -> None:

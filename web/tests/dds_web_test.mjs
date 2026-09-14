@@ -234,6 +234,9 @@ function loadDdsWeb(document, extras = {}) {
         Error,
         setTimeout,
         clearTimeout,
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
         performance: {
             now() {
                 return 0;
@@ -247,6 +250,10 @@ function loadDdsWeb(document, extras = {}) {
     // covered by dedicated tests that opt into a non-zero delay.
     if (typeof context.setDealSolveDebounceMs === "function") {
         context.setDealSolveDebounceMs(0);
+    }
+    // Same for the Computing… grace period: most tests want an immediate solve.
+    if (typeof context.setDdTableComputingDelayMs === "function") {
+        context.setDdTableComputingDelayMs(0);
     }
     return context;
 }
@@ -1518,6 +1525,60 @@ test("formatSolveTimeMs rounds wall time to whole milliseconds", () => {
     assert.equal(ctx.formatSolveTimeMs(41.9), "Solved in 42 ms.");
 });
 
+test("refreshDdTable shows Computing under the matrix only after 300 ms, painted before ccall", async () => {
+    // Arrange: WASM ccall is sync and blocks timers, so Computing… must be
+    // painted before ccall — after the 300 ms grace — or the user never sees it.
+    let ccallSawComputing = false;
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(300);
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            ccallSawComputing = /Computing/i.test(
+                document.element("result").innerHTML
+            );
+            return 1;
+        },
+        getValue() {
+            return 7;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    // fillForm schedules a solve; wait for it so it does not race the Act call.
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    ccallSawComputing = false;
+    // Force a fresh solve (same PBN would otherwise short-circuit as cached).
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+
+    // Act
+    const solve = ctx.refreshDdTable();
+    assert.equal(document.element("result").innerHTML, "");
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(
+        document.element("result").innerHTML,
+        "",
+        "Computing… must wait for the 300 ms grace"
+    );
+
+    await solve;
+
+    // Assert
+    assert.equal(ccallSawComputing, true);
+    assert.match(document.element("result").innerHTML, /^Solved in \d+ ms\.$/);
+});
+
 test("refreshDdTable shows wall solve time in ms after a successful solve", async () => {
     // Arrange: full part-score deal; mock WASM and a clock that advances 12.4 ms.
     let clock = 1000;
@@ -1529,7 +1590,6 @@ test("refreshDdTable shows wall solve time in ms after a successful solve", asyn
             },
         },
     });
-    ctx.fillFormWithPartScoreTestData();
     ctx.loadDdsModule = async () => ({
         _malloc: () => 0,
         _free() {},
@@ -1541,6 +1601,9 @@ test("refreshDdTable shows wall solve time in ms after a successful solve", asyn
             return 7;
         },
     });
+    ctx.fillFormWithPartScoreTestData();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     // Act
     await ctx.refreshDdTable();
@@ -3547,4 +3610,806 @@ test("handleHandSuitClick does not steal focus from a hand-card click", () => {
 
     // Assert
     assert.equal(focused, false);
+});
+
+const GRAND_SLAM_PBN =
+    "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765";
+const EVERYONE_3N_PBN =
+    'N:QT9.A8765432.KJ. KJ..A8765432.QT9 A8765432.QT9..KJ .KJ.QT9.A8765432';
+const LIST1_PBN =
+    "N:Q87.T8.AKJT64.J6 964.AJ765.Q73.74 AKJT2.Q943..AK95 53.K2.9852.QT832";
+const DLM_BOARD_01 =
+    "Board 01=fnbkmmincldklcfcofoiefnapm018";
+const LIN_DEAL =
+    "pn|a,b,c,d|st||md|3S27AH3489TD5JC45J,S358QKH56D4KAC3QK,S4JH2JQD2678TC678,|rh||ah|Board 1|sv|o|";
+
+function assertImportedDeal(ctx, document, expected) {
+    assert.equal(document.element("north_spades").value, expected.north[0]);
+    assert.equal(document.element("north_hearts").value, expected.north[1]);
+    assert.equal(document.element("north_diamonds").value, expected.north[2]);
+    assert.equal(document.element("north_clubs").value, expected.north[3]);
+    assert.equal(document.element("east_spades").value, expected.east[0]);
+    assert.equal(document.element("east_hearts").value, expected.east[1]);
+    assert.equal(document.element("east_diamonds").value, expected.east[2]);
+    assert.equal(document.element("east_clubs").value, expected.east[3]);
+    assert.equal(document.element("south_spades").value, expected.south[0]);
+    assert.equal(document.element("south_hearts").value, expected.south[1]);
+    assert.equal(document.element("south_diamonds").value, expected.south[2]);
+    assert.equal(document.element("south_clubs").value, expected.south[3]);
+    assert.equal(document.element("west_spades").value, expected.west[0]);
+    assert.equal(document.element("west_hearts").value, expected.west[1]);
+    assert.equal(document.element("west_diamonds").value, expected.west[2]);
+    assert.equal(document.element("west_clubs").value, expected.west[3]);
+    assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
+}
+
+test("parseFirstDealFromText reads a PBN Deal tag", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText(`[Deal "${EVERYONE_3N_PBN}"]`);
+    assert.equal(deal.north, "QT9.A8765432.KJ.");
+    assert.equal(deal.east, "KJ..A8765432.QT9");
+    assert.equal(deal.south, "A8765432.QT9..KJ");
+    assert.equal(deal.west, ".KJ.QT9.A8765432");
+});
+
+test("parseFirstDealFromText uses the first PBN deal when several are present", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Deal "${LIST1_PBN}"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const deal = ctx.parseFirstDealFromText(text);
+    assert.equal(deal.north, "Q87.T8.AKJT64.J6");
+    assert.equal(deal.west, "53.K2.9852.QT832");
+});
+
+test("parseFirstDealFromText reads a dtest .txt PBN line", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text =
+        "NUMBER 1 \n" +
+        `PBN 1 0 2 0 "${LIST1_PBN}" \n` +
+        "TABLE 11 2 11 1\n";
+    const deal = ctx.parseFirstDealFromText(text);
+    assert.equal(deal.north, "Q87.T8.AKJT64.J6");
+    assert.equal(deal.east, "964.AJ765.Q73.74");
+    assert.equal(deal.south, "AKJT2.Q943..AK95");
+    assert.equal(deal.west, "53.K2.9852.QT832");
+});
+
+test("parseFirstDealFromText reads a LIN md| deal and fills the omitted hand", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText(LIN_DEAL);
+    assert.equal(deal.south, "A72.T9843.J5.J54");
+    assert.equal(deal.west, "KQ853.65.AK4.KQ3");
+    assert.equal(deal.north, "J4.QJ2.T8762.876");
+    assert.equal(deal.east, "T96.AK7.Q93.AT92");
+});
+
+test("parseFirstDealFromText keeps LIN hands in S,W,N,E order for every dealer digit", () => {
+    // BBO md| hands are always South, West, North, East; the leading digit is
+    // only the dealer (1=S … 4=E), not a rotation of the hand list.
+    const ctx = loadDdsWeb(createMockDocument());
+    const hands =
+        "SQ953HJ84D6CQ9843,S64HA96DT2CAKJ652,ST82HT5DAKJ743CT7,";
+    for (const dealer of ["1", "2", "3", "4"]) {
+        const deal = ctx.parseFirstDealFromText("md|" + dealer + hands);
+        assert.equal(deal.south, "Q953.J84.6.Q9843", "dealer " + dealer);
+        assert.equal(deal.west, "64.A96.T2.AKJ652", "dealer " + dealer);
+        assert.equal(deal.north, "T82.T5.AKJ743.T7", "dealer " + dealer);
+    }
+});
+
+test("parseFirstDealFromText uses the first LIN deal when several are present", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const second =
+        "md|3S6HKQ65432DAT32C6,SK952H87D965CAJT8,SAQJ73HAJ9DK84C32,|";
+    const deal = ctx.parseFirstDealFromText(LIN_DEAL + "\n" + second);
+    assert.equal(deal.north, "J4.QJ2.T8762.876");
+});
+
+test("parseFirstDealFromText reads the first DLM board", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        "[DOCUMENT]",
+        "From board=1",
+        "To board=2",
+        DLM_BOARD_01,
+        "Board 02=aaaaaaaeeeeeeeiiiiiiimmmmmmm000",
+    ].join("\r\n");
+    const deal = ctx.parseFirstDealFromText(text);
+    assert.equal(deal.north, "T53.AJ7.AT.AQ762");
+    assert.equal(deal.east, "AKJ9.Q.QJ65.KJT8");
+    assert.equal(deal.south, "872.T9543.K9732.");
+    assert.equal(deal.west, "Q64.K862.84.9543");
+});
+
+test("importDealFromText loads a PBN deal into the diagram", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const err = ctx.importDealFromText(`[Deal "${GRAND_SLAM_PBN}"]`);
+    assert.equal(err, "");
+    assertImportedDeal(ctx, document, {
+        north: ["AKQJ", "AKQJ", "T98", "T9"],
+        east: ["5432", "5432", "32", "432"],
+        south: ["T98", "T9", "AKQJ", "AKQJ"],
+        west: ["76", "876", "7654", "8765"],
+    });
+});
+
+test("parseFirstDealFromText reads a sol-style .txt line without a seat letter", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text =
+        "T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K:65658888888843433232\n" +
+        "T98.AKQT4.K853.8 Q6532.8.AJ2.9753 AK.76532.96.QJ62 J74.J9.QT74.AKT4:66769999333376769999\n";
+    const deal = ctx.parseFirstDealFromText(text);
+    assert.equal(deal.north, "T5.K4.652.A98542");
+    assert.equal(deal.east, "K6.QJT976.QT7.Q6");
+    assert.equal(deal.south, "432.A.AKJ93.JT73");
+    assert.equal(deal.west, "AQJ987.8532.84.K");
+});
+
+test("importDealFromText loads the first sol-style deal into the diagram", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const err = ctx.importDealFromText(
+        "T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K:65658888888843433232\n"
+    );
+    assert.equal(err, "");
+    assertImportedDeal(ctx, document, {
+        north: ["T5", "K4", "652", "A98542"],
+        east: ["K6", "QJT976", "QT7", "Q6"],
+        south: ["432", "A", "AKJ93", "JT73"],
+        west: ["AQJ987", "8532", "84", "K"],
+    });
+});
+
+test("importDealFromText reports when no deal is found", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const err = ctx.importDealFromText("not a bridge deal file");
+    assert.match(err, /deal/i);
+    assert.match(err, /sol/i);
+});
+
+test("importDealFromText rejects a duplicated card without changing the diagram", () => {
+    // Arrange: SA appears in both North and East (S5 missing).
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    document.setValue("north_spades", "T");
+
+    // Act
+    const err = ctx.importDealFromText(
+        '[Deal "N:AKQJ.AKQJ.T98.T9 A432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]'
+    );
+
+    // Assert
+    assert.notEqual(err, "");
+    assert.match(err, /deal|card|duplicate/i);
+    assert.equal(document.element("north_spades").value, "T");
+});
+
+test("handleDealFileSelected imports through the file input path", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const input = {
+        files: [
+            {
+                text: async () =>
+                    '[Deal "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]',
+            },
+        ],
+    };
+
+    await ctx.handleDealFileSelected(input);
+
+    assert.equal(document.element("north_spades").value, "AKQJ");
+    assert.equal(document.element("west_clubs").value, "8765");
+    // A trailing solve may paint Computing…; import itself must not leave an error.
+    assert.doesNotMatch(
+        document.element("result").innerHTML,
+        /PBN|LIN|DLM|sol-style|Could not|duplicated/i
+    );
+});
+
+test("handleDealFileSelected reports an import error through the file input path", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.setDealSolveDebounceMs(500);
+    const input = {
+        files: [
+            {
+                text: async () => "not a bridge deal file",
+            },
+        ],
+    };
+
+    await ctx.handleDealFileSelected(input);
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+});
+
+test("handleDealFileSelected ignores a superseded slower file read", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    let releaseSlow;
+    const slowText = new Promise((resolve) => {
+        releaseSlow = resolve;
+    });
+    const slowFile = {
+        text: async () => slowText,
+    };
+    const fastFile = {
+        text: async () =>
+            '[Deal "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]',
+    };
+    const input = { files: [slowFile] };
+
+    const first = ctx.handleDealFileSelected(input);
+    input.files = [fastFile];
+    await ctx.handleDealFileSelected(input);
+    releaseSlow(
+        '[Deal "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5"]'
+    );
+    await first;
+
+    assert.equal(document.element("north_spades").value, "AKQJ");
+});
+
+test("refreshDdTable clears Computing when abandoning a stale PBN", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+
+    const first = ctx.refreshDdTable();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    // Edit mid-grace without scheduling an immediate trailing solve.
+    ctx.setDealSolveDebounceMs(500);
+    document.setValue("north_spades", "AQ8");
+    document.setValue("north_hearts", "5AK976");
+    await first;
+
+    assert.doesNotMatch(document.element("result").innerHTML, /Computing/i);
+});
+
+test("refreshDdTable abandons a stale PBN after the Computing grace period", async () => {
+    // Arrange: a slow grace period so an import can change the diagram mid-wait.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    const seenPbn = [];
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall(_name, _ret, _args, args) {
+            seenPbn.push(args[0]);
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+    seenPbn.length = 0;
+
+    // Act: start a solve, then import a different deal during the grace wait.
+    const first = ctx.refreshDdTable();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    ctx.importDealFromText(
+        '[Deal "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]'
+    );
+    await first;
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    // Assert: WASM must not run for the pre-import PBN after the diagram changed.
+    assert.ok(
+        seenPbn.every((pbn) => !pbn.includes("AQ85")),
+        "stale part-score PBN must not be solved after import; saw " +
+            JSON.stringify(seenPbn)
+    );
+    assert.ok(
+        seenPbn.some((pbn) => pbn.includes("AKQJ")),
+        "imported deal should still be solved; saw " + JSON.stringify(seenPbn)
+    );
+    assert.equal(document.element("north_spades").value, "AKQJ");
+});
+
+test("importDealFromText rejects a hand with more than four suit components", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    document.setValue("north_spades", "T");
+
+    const err = ctx.importDealFromText(
+        '[Deal "N:AKQJ.AKQJ.T98.T9.2 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]'
+    );
+
+    assert.notEqual(err, "");
+    assert.match(err, /deal|hand|suit|invalid|malformed/i);
+    assert.equal(document.element("north_spades").value, "T");
+});
+
+test("importDealFromText rejects a hand with an illegal rank character", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    document.setValue("north_spades", "T");
+
+    // X would be stripped by sortPips, leaving a 13-card looking hand.
+    const err = ctx.importDealFromText(
+        '[Deal "N:AKQJ.AKQJ.T98X.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]'
+    );
+
+    assert.notEqual(err, "");
+    assert.match(err, /deal|hand|rank|pip|invalid|malformed/i);
+    assert.equal(document.element("north_spades").value, "T");
+});
+
+test("handleDealFileSelected keeps an import error over a stale Computing status", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    ctx.loadDdsModule = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return {
+            _malloc: () => 0,
+            _free() {},
+            ccall() {
+                return 1;
+            },
+            getValue() {
+                return 9;
+            },
+        };
+    };
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+
+    const first = ctx.refreshDdTable();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    await first;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+    assert.doesNotMatch(document.element("result").innerHTML, /Computing|Solved/i);
+});
+
+test("refreshDdTable still solves when the tab is hidden", async () => {
+    const document = createMockDocument();
+    document.visibilityState = "hidden";
+    let rAFScheduled = false;
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame() {
+            rAFScheduled = true;
+            // Never invoke the callback — hidden tabs may pause rAF.
+            return 1;
+        },
+    });
+    ctx.setDdTableComputingDelayMs(0);
+    let solved = false;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            solved = true;
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await withTimeout(
+        ctx.refreshDdTable(),
+        500,
+        "refreshDdTable hung while visibilityState was hidden"
+    );
+
+    assert.equal(solved, true);
+    assert.equal(rAFScheduled, false);
+});
+
+test("parseFirstDealFromText accepts an optional sol-style board-number prefix", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText(
+        "1. T5.K4.652.A98542 K6.QJT976.QT7.Q6 432.A.AKJ93.JT73 AQJ987.8532.84.K:6565\n"
+    );
+    assert.equal(deal.north, "T5.K4.652.A98542");
+    assert.equal(deal.west, "AQJ987.8532.84.K");
+});
+
+test("parseFirstDealFromText does not treat a leading numeric pip as a board number", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    // Without requiring whitespace after "<n>.", the "2." spade holding is
+    // mistaken for a board-number prefix and the line fails to parse.
+    const deal = ctx.parseFirstDealFromText(
+        "2543.5432.32.432 AKQJT9876.AKQJ.. .T9876.AKQJT987. ..654.AKQJT98765\n"
+    );
+    assert.equal(deal.north, "5432.5432.32.432");
+    assert.equal(deal.east, "AKQJT9876.AKQJ..");
+});
+
+test("parseFirstDealFromText rejects a LIN deal with more than four hands", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    // Four valid S,W,N,E hands plus a fifth garbage hand must not silently
+    // import only the first four.
+    const fourHands =
+        "S27AH3489TD5JC45J,S358QKH56D4KAC3QK,S4JH2JQD2678TC678,ST96HAK7DQ93CAT92";
+    const deal = ctx.parseFirstDealFromText("md|3" + fourHands + "|");
+    assert.equal(deal.north, "J4.QJ2.T8762.876");
+
+    assert.throws(
+        () =>
+            ctx.parseFirstDealFromText(
+                "md|3" + fourHands + ",SEXTRA|"
+            ),
+        /PBN|LIN|DLM|sol-style|malformed|hands/i
+    );
+});
+
+test("parseFirstDealFromText rejects a LIN hand with an illegal character", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.throws(
+        () =>
+            ctx.parseFirstDealFromText(
+                "md|3SQ953HJ84D6CQ9843,S64HA96DT2CAKJ652,ST82HT5DAKJ743CT7X,|"
+            ),
+        /LIN|malformed|illegal|invalid|character/i
+    );
+});
+
+test("updateActionButtons clears a pending Computing timer from a prior solve", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    let releaseModule;
+    ctx.loadDdsModule = () =>
+        new Promise((resolve) => {
+            releaseModule = resolve;
+        });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+    document.element("result").innerHTML = "";
+
+    const first = ctx.refreshDdTable();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    // Keep the deal complete so only a debounced trailing solve is scheduled.
+    ctx.setDealSolveDebounceMs(500);
+    document.setValue("north_spades", "AQ58");
+    ctx.updateActionButtons();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assert.doesNotMatch(
+        document.element("result").innerHTML,
+        /Computing/i,
+        "stale Computing timer must not paint after a diagram edit"
+    );
+
+    releaseModule({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    await first;
+});
+
+test("invalidateActiveDdTableRequest clears painted Computing but keeps other status", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    document.element("result").innerHTML = "Computing&hellip;";
+
+    ctx.invalidateActiveDdTableRequest();
+
+    assert.equal(document.element("result").innerHTML, "");
+
+    document.element("result").innerHTML = "Solved in 12 ms.";
+    ctx.invalidateActiveDdTableRequest();
+    assert.equal(document.element("result").innerHTML, "Solved in 12 ms.");
+
+    document.element("result").innerHTML = "No PBN, LIN, DLM, dtest, or sol-style deal found in the file.";
+    ctx.invalidateActiveDdTableRequest();
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/);
+});
+
+test("failed file import cancels a pending debounced solve", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    let ccallCount = 0;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            ccallCount += 1;
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    ccallCount = 0;
+
+    // Arm a trailing solve, then fail a file import before it fires.
+    ctx.setDealSolveDebounceMs(100);
+    document.setValue("north_spades", "AQ58");
+    ctx.updateActionButtons();
+    assert.notEqual(
+        document.element("result").innerHTML,
+        "sentinel",
+        "precondition: debounce arming does not require a status sentinel"
+    );
+
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    const statusAfterImport = document.element("result").innerHTML;
+    assert.match(statusAfterImport, /PBN|LIN|DLM|sol-style/i);
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    assert.equal(
+        document.element("result").innerHTML,
+        statusAfterImport,
+        "debounced solve must not overwrite the import error"
+    );
+    assert.equal(ccallCount, 0, "debounced solve must not run after import failure");
+});
+
+test("importDealFromText accepts a PBN void suit marked with a dash", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const err = ctx.importDealFromText(
+        '[Deal "N:QT9.A8765432.KJ.- KJ.-.A8765432.QT9 A8765432.QT9.-.KJ -.KJ.QT9.A8765432"]'
+    );
+    assert.equal(err, "");
+    assert.equal(document.element("north_clubs").value, "");
+    assert.equal(document.element("east_hearts").value, "");
+    assert.equal(document.element("west_spades").value, "");
+});
+
+test("paintStatusFrame resolves if the tab hides before the second animation frame", async () => {
+    const document = createMockDocument();
+    document.visibilityState = "visible";
+    let frames = 0;
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            frames += 1;
+            if (frames === 1) {
+                document.visibilityState = "hidden";
+                setTimeout(cb, 0);
+                return 1;
+            }
+            // A hung second frame would block the solve queue without a fallback.
+            return 2;
+        },
+    });
+
+    await withTimeout(
+        ctx.paintStatusFrame(),
+        200,
+        "paintStatusFrame hung after the tab became hidden mid-wait"
+    );
+});
+
+test("failed file import stops an in-flight solve job from continuing", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    let ccallCount = 0;
+    ctx.loadDdsModule = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 40));
+        return {
+            _malloc: () => 0,
+            _free() {},
+            ccall() {
+                ccallCount += 1;
+                return 1;
+            },
+            getValue() {
+                return 9;
+            },
+        };
+    };
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    document.element("result-table").rows[1].cells[1].innerHTML = "9";
+    ctx.onContractSelect("north", "C");
+
+    const solve = ctx.scheduleDealSolve();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    await withTimeout(solve, 500, "solve job did not finish after import failure");
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+    assert.equal(ccallCount, 0, "solve job must not continue after import failure");
+});
+
+test("invalidateActiveDdTableRequest clears dealSolvePending so a coalesced job stops", async () => {
+    // Arrange: a queued direct solve sets dealSolvePending while the worker is
+    // mid-refresh; invalidation must clear that flag or the worker continues
+    // immediately and can overwrite an import error.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    let releaseModule;
+    let ccallCount = 0;
+    ctx.loadDdsModule = () =>
+        new Promise((resolve) => {
+            releaseModule = () =>
+                resolve({
+                    _malloc: () => 0,
+                    _free() {},
+                    ccall() {
+                        ccallCount += 1;
+                        return 1;
+                    },
+                    getValue() {
+                        return 9;
+                    },
+                });
+        });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const solve = ctx.scheduleDealSolve();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    // Coalesce another direct schedule while the first refresh is still waiting.
+    ctx.scheduleDealSolve();
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    releaseModule();
+    await withTimeout(solve, 500, "solve job did not finish after invalidate");
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+    assert.equal(
+        ccallCount,
+        0,
+        "coalesced pending flag must not restart work after invalidate"
+    );
+});
+
+test("failed file import invalidates an in-flight opening-lead solve", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    document.element("result-table").rows[1].cells[1].innerHTML = "9";
+
+    let releaseLead;
+    let leadStarted = false;
+    ctx.solveOpeningLeadTricks = () =>
+        new Promise((resolve, reject) => {
+            leadStarted = true;
+            releaseLead = () => reject(new Error("stale lead failure"));
+        });
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[1].cells[1];
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(leadStarted, true);
+
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    releaseLead();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+    assert.doesNotMatch(document.element("result").innerHTML, /stale lead failure/i);
 });
