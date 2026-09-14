@@ -1557,6 +1557,7 @@ test("refreshDdTable shows Computing under the matrix only after 300 ms, painted
     ]);
     // fillForm schedules a solve; wait for it so it does not race the Act call.
     await new Promise((resolve) => setTimeout(resolve, 350));
+    ccallSawComputing = false;
     // Force a fresh solve (same PBN would otherwise short-circuit as cached).
     document.element("result-table").rows[1].cells[1].innerHTML = "";
 
@@ -4064,6 +4065,35 @@ test("parseFirstDealFromText accepts an optional sol-style board-number prefix",
     assert.equal(deal.west, "AQJ987.8532.84.K");
 });
 
+test("parseFirstDealFromText does not treat a leading numeric pip as a board number", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    // Without requiring whitespace after "<n>.", the "2." spade holding is
+    // mistaken for a board-number prefix and the line fails to parse.
+    const deal = ctx.parseFirstDealFromText(
+        "2543.5432.32.432 AKQJT9876.AKQJ.. .T9876.AKQJT987. ..654.AKQJT98765\n"
+    );
+    assert.equal(deal.north, "5432.5432.32.432");
+    assert.equal(deal.east, "AKQJT9876.AKQJ..");
+});
+
+test("parseFirstDealFromText rejects a LIN deal with more than four hands", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    // Four valid S,W,N,E hands plus a fifth garbage hand must not silently
+    // import only the first four.
+    const fourHands =
+        "S27AH3489TD5JC45J,S358QKH56D4KAC3QK,S4JH2JQD2678TC678,ST96HAK7DQ93CAT92";
+    const deal = ctx.parseFirstDealFromText("md|3" + fourHands + "|");
+    assert.equal(deal.north, "J4.QJ2.T8762.876");
+
+    assert.throws(
+        () =>
+            ctx.parseFirstDealFromText(
+                "md|3" + fourHands + ",SEXTRA|"
+            ),
+        /PBN|LIN|DLM|sol-style|malformed|hands/i
+    );
+});
+
 test("parseFirstDealFromText rejects a LIN hand with an illegal character", () => {
     const ctx = loadDdsWeb(createMockDocument());
     assert.throws(
@@ -4329,4 +4359,57 @@ test("invalidateActiveDdTableRequest clears dealSolvePending so a coalesced job 
         0,
         "coalesced pending flag must not restart work after invalidate"
     );
+});
+
+test("failed file import invalidates an in-flight opening-lead solve", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    document.element("result-table").rows[1].cells[1].innerHTML = "9";
+
+    let releaseLead;
+    let leadStarted = false;
+    ctx.solveOpeningLeadTricks = () =>
+        new Promise((resolve, reject) => {
+            leadStarted = true;
+            releaseLead = () => reject(new Error("stale lead failure"));
+        });
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return document.element("result-table").rows[1].cells[1];
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(leadStarted, true);
+
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    releaseLead();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+    assert.doesNotMatch(document.element("result").innerHTML, /stale lead failure/i);
 });

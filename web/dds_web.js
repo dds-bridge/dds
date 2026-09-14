@@ -609,7 +609,11 @@ function parseLinDealPayload(payload) {
     // rotate which hand comes first in the list.
     const body = String(payload).replace(/^[1-4]/, "");
     const parts = body.split(",");
-    if (parts.length < 3) {
+    // Trailing commas are common in BBO exports; ignore empty trailing slots.
+    while (parts.length && !String(parts[parts.length - 1]).trim()) {
+        parts.pop();
+    }
+    if (parts.length < 3 || parts.length > 4) {
         return null;
     }
 
@@ -681,7 +685,7 @@ function parseSolStyleDealLine(line) {
     if (!beforeColon) {
         return null;
     }
-    beforeColon = beforeColon.replace(/^\d+\.\s*/, "");
+    beforeColon = beforeColon.replace(/^\d+\.\s+/, "");
     const hands = beforeColon.split(/\s+/).filter(Boolean);
     if (hands.length !== 4) {
         return null;
@@ -783,6 +787,7 @@ let dealFileSelectionGeneration = 0;
 
 function invalidateActiveDdTableRequest() {
     ddTableRequestId += 1;
+    leadTricksRequestId += 1;
     dealSolveEpoch += 1;
     // Drop a coalesced direct-schedule flag so the worker does not immediately
     // continue after this invalidate; a following scheduleDealSolve() sets it
