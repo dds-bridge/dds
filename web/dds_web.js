@@ -2681,7 +2681,7 @@ function clear_results() {
     }
 }
 
-/** Delay before showing Computing… under the DD matrix (avoids fast-solve flash). */
+/** Delay before showing Computing… under the DD matrix (see refreshDdTable). */
 let ddTableComputingDelayMs = 300;
 
 function setDdTableComputingDelayMs(ms) {
@@ -2806,9 +2806,15 @@ async function refreshDdTable() {
     }
 
     clear_results();
-    // Keep the status blank during a short grace period. Then paint Computing…
-    // before the blocking WASM ccall — timers cannot fire while ccall runs, so
-    // a delayed message alone is never visible during a long sync solve.
+    // Computing… grace / pre-ccall paint tradeoff (intentional until CalcTable
+    // runs off the main thread):
+    // The WASM ccall is synchronous and blocks timers and rAF, so a timer-only
+    // Computing… message can never appear during a long solve. Painting before
+    // ccall is the only way to show status while the UI is frozen. That means
+    // uncached solves wait for any remaining grace period and briefly show
+    // Computing… even when ccall itself would be fast — a minimum-latency tax
+    // preferred over silent multi-second freezes. Module load time counts
+    // toward the grace. Tests set the delay to 0.
     scheduleDdTableComputingMessage(requestId, result);
     const waitStartedAt = performance.now();
 
