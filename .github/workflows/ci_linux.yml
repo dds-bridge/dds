@@ -113,8 +113,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-  # Hand-list harness (dtest) on a fixed 100-deal file. Separate job so it runs
-  # in parallel with build_and_test / sanitizers rather than extending that path.
+  # Hand-list harness (dtest) on a fixed 100-deal file, all five solver modes.
+  # Separate job so it runs in parallel with build_and_test / sanitizers.
   dtest:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -139,8 +139,13 @@ jobs:
           done
           exit 1
 
-      - name: Run dtest on hands/list100.txt
-        run: bazelisk run //library/tests:dtest -- -f hands/list100.txt
+      - name: Run dtest on hands/list100.txt for all solvers
+        run: |
+          for s in solve calc play par dealerpar; do
+            echo "::group::dtest -s $s"
+            bazelisk run //library/tests:dtest -- -f hands/list100.txt -s "$s"
+            echo "::endgroup::"
+          done
 
   asan:
     runs-on: ubuntu-latest
