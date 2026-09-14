@@ -4276,3 +4276,57 @@ test("failed file import stops an in-flight solve job from continuing", async ()
     assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
     assert.equal(ccallCount, 0, "solve job must not continue after import failure");
 });
+
+test("invalidateActiveDdTableRequest clears dealSolvePending so a coalesced job stops", async () => {
+    // Arrange: a queued direct solve sets dealSolvePending while the worker is
+    // mid-refresh; invalidation must clear that flag or the worker continues
+    // immediately and can overwrite an import error.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    let releaseModule;
+    let ccallCount = 0;
+    ctx.loadDdsModule = () =>
+        new Promise((resolve) => {
+            releaseModule = () =>
+                resolve({
+                    _malloc: () => 0,
+                    _free() {},
+                    ccall() {
+                        ccallCount += 1;
+                        return 1;
+                    },
+                    getValue() {
+                        return 9;
+                    },
+                });
+        });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const solve = ctx.scheduleDealSolve();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    // Coalesce another direct schedule while the first refresh is still waiting.
+    ctx.scheduleDealSolve();
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    releaseModule();
+    await withTimeout(solve, 500, "solve job did not finish after invalidate");
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+    assert.equal(
+        ccallCount,
+        0,
+        "coalesced pending flag must not restart work after invalidate"
+    );
+});

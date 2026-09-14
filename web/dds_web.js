@@ -784,6 +784,10 @@ let dealFileSelectionGeneration = 0;
 function invalidateActiveDdTableRequest() {
     ddTableRequestId += 1;
     dealSolveEpoch += 1;
+    // Drop a coalesced direct-schedule flag so the worker does not immediately
+    // continue after this invalidate; a following scheduleDealSolve() sets it
+    // again, while a debounced schedule sets it when its timer fires.
+    dealSolvePending = false;
     clearDdTableComputingTimer();
     if (dealSolveDebounceTimer != null) {
         clearTimeout(dealSolveDebounceTimer);
