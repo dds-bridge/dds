@@ -32,6 +32,7 @@ using std::setw;
 using std::left;
 using std::right;
 
+// Print per-batch running timing progress
 #define BATCHTIMES
 
 extern TestTimer timer;
