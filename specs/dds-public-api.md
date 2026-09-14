@@ -70,7 +70,7 @@ capability defines what crosses the boundary and promises to stay stable.
     isn't used today since it ships only as non-hermetic early-access
     binaries (see the header comment in `Dds.java`).
   - **.NET.** Binds the shim (`dds_c_*`) plus most of the flat `dll.h` API
-    directly (`SolveBoard`, `CalcDDtable`, `Par`, `Analyze*`, …) — see
+    directly (`SolveBoard`, `CalcDDtable`, `Par`, `Analyse*`, …) — see
     [dotnet-binding](dotnet-binding.md). Reaches the shim through
     `EntryPoint` on its P/Invokes (`dotnet/DDS_Core/Native/DdsNative.cs`),
     keeping its managed method names.

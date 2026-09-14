@@ -28,7 +28,7 @@ the C++ API.
 
 - **Two ABI layers, one library.** The modern context entry points bind the
   `dds_c_*` shim; the legacy flat API (`SolveBoard`, `CalcDDtable`, `Par`,
-  `Analyze*`, …) binds `dll.h` directly. Both come from the single native
+  `Analyse*`, …) binds `dll.h` directly. Both come from the single native
   library built by `//jni:dds_shared`. The binding does **not** use the
   reference-taking `dds_*` symbols in `dds_api.hpp`: those are not exported on
   Linux or macOS, so binding them made the wrapper Windows-only.

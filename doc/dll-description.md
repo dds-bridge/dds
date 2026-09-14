@@ -47,6 +47,8 @@ It is possible as an option to perform par calculation in `CalcAllTables` and `C
 
 The par calculation is executed using a single thread. But the calculation is very fast and its duration is negligible compared to the double dummy calculation duration.
 
+<a id="double-dummy-value-analyser-functions"></a>
+
 ### Double Dummy Value Analyzer Functions
 
 The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `AnalyseAllPlaysPBN` take the played cards in a game or games and calculate and present their double dummy values.
