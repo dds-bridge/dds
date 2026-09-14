@@ -408,12 +408,31 @@ function sortPips(holding) {
         .join("");
 }
 
-function normalizeHandHolding(dotted) {
+/**
+ * True when a dotted hand has exactly four suit components of legal ranks only.
+ * Does not pad, truncate, or strip illegal characters.
+ */
+function isValidRawHandHolding(dotted) {
     const parts = String(dotted).split(".");
-    while (parts.length < 4) {
-        parts.push("");
+    if (parts.length !== 4) {
+        return false;
     }
-    return parts.slice(0, 4).map(sortPips).join(".");
+    for (const part of parts) {
+        for (const ch of part) {
+            if (!PIPS.includes(ch.toUpperCase())) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function normalizeHandHolding(dotted) {
+    if (!isValidRawHandHolding(dotted)) {
+        throw new Error("Deal has a malformed hand holding.");
+    }
+    const parts = String(dotted).split(".");
+    return parts.map(sortPips).join(".");
 }
 
 function emptySuitHoldings() {
@@ -728,6 +747,11 @@ function chooseDealFile() {
 
 let dealFileSelectionGeneration = 0;
 
+function invalidateActiveDdTableRequest() {
+    ddTableRequestId += 1;
+    clearDdTableComputingTimer();
+}
+
 async function handleDealFileSelected(input) {
     const file = input && input.files && input.files[0];
     if (!file) {
@@ -747,8 +771,12 @@ async function handleDealFileSelected(input) {
             return;
         }
         const err = importDealFromText(text);
-        if (err && result) {
-            result.innerHTML = err;
+        if (err) {
+            // Do not let an in-flight grace/paint overwrite the import failure.
+            invalidateActiveDdTableRequest();
+            if (result) {
+                result.innerHTML = err;
+            }
         } else if (result) {
             // Import itself succeeded; do not leave a prior error message.
             result.innerHTML = "";
@@ -761,6 +789,7 @@ async function handleDealFileSelected(input) {
         ) {
             return;
         }
+        invalidateActiveDdTableRequest();
         if (result) {
             result.innerHTML = err && err.message
                 ? err.message
@@ -2628,6 +2657,13 @@ function scheduleDdTableComputingMessage(requestId, result) {
 
 /** Yield until the browser has painted the current status (needed before sync ccall). */
 function paintStatusFrame() {
+    // Hidden tabs often pause rAF; do not block the solve queue forever.
+    if (
+        typeof document !== "undefined"
+        && document.visibilityState === "hidden"
+    ) {
+        return Promise.resolve();
+    }
     if (typeof requestAnimationFrame === "function") {
         return new Promise((resolve) => {
             requestAnimationFrame(() => {

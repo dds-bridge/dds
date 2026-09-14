@@ -3943,3 +3943,114 @@ test("refreshDdTable abandons a stale PBN after the Computing grace period", asy
     );
     assert.equal(document.element("north_spades").value, "AKQJ");
 });
+
+test("importDealFromText rejects a hand with more than four suit components", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    document.setValue("north_spades", "T");
+
+    const err = ctx.importDealFromText(
+        '[Deal "N:AKQJ.AKQJ.T98.T9.2 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]'
+    );
+
+    assert.notEqual(err, "");
+    assert.match(err, /deal|hand|suit|invalid|malformed/i);
+    assert.equal(document.element("north_spades").value, "T");
+});
+
+test("importDealFromText rejects a hand with an illegal rank character", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    document.setValue("north_spades", "T");
+
+    // X would be stripped by sortPips, leaving a 13-card looking hand.
+    const err = ctx.importDealFromText(
+        '[Deal "N:AKQJ.AKQJ.T98X.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"]'
+    );
+
+    assert.notEqual(err, "");
+    assert.match(err, /deal|hand|rank|pip|invalid|malformed/i);
+    assert.equal(document.element("north_spades").value, "T");
+});
+
+test("handleDealFileSelected keeps an import error over a stale Computing status", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame(cb) {
+            return setTimeout(cb, 0);
+        },
+    });
+    ctx.setDdTableComputingDelayMs(80);
+    ctx.loadDdsModule = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return {
+            _malloc: () => 0,
+            _free() {},
+            ccall() {
+                return 1;
+            },
+            getValue() {
+                return 9;
+            },
+        };
+    };
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    document.element("result-table").rows[1].cells[1].innerHTML = "";
+
+    const first = ctx.refreshDdTable();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await ctx.handleDealFileSelected({
+        files: [{ text: async () => "not a bridge deal file" }],
+    });
+    await first;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
+    assert.doesNotMatch(document.element("result").innerHTML, /Computing|Solved/i);
+});
+
+test("refreshDdTable still solves when the tab is hidden", async () => {
+    const document = createMockDocument();
+    document.visibilityState = "hidden";
+    let rAFScheduled = false;
+    const ctx = loadDdsWeb(document, {
+        requestAnimationFrame() {
+            rAFScheduled = true;
+            // Never invoke the callback — hidden tabs may pause rAF.
+            return 1;
+        },
+    });
+    ctx.setDdTableComputingDelayMs(0);
+    let solved = false;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            solved = true;
+            return 1;
+        },
+        getValue() {
+            return 9;
+        },
+    });
+    ctx.fillFormWithTestData([
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+    await withTimeout(
+        ctx.refreshDdTable(),
+        500,
+        "refreshDdTable hung while visibilityState was hidden"
+    );
+
+    assert.equal(solved, true);
+    assert.equal(rAFScheduled, false);
+});
