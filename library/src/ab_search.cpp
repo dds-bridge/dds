@@ -82,6 +82,74 @@ auto apply_ab_tt_lookup(
 }
 
 
+auto store_ab_tt_result(
+  Pos * posPoint,
+  const int target,
+  const int depth,
+  const int tricks,
+  const int hand,
+  const bool value,
+  SolverContext& ctx,
+  const unsigned short our_win_ranks[]) -> void
+{
+  [[maybe_unused]] ThreadData* thrp = ctx.thread_ptr();
+
+  NodeCards first;
+  if (value)
+  {
+    if (ctx.search().node_type_store(0) == MAXNODE)
+    {
+      first.upper_bound = static_cast<char>(tricks + 1);
+      first.lower_bound = static_cast<char>(target - posPoint->tricks_max);
+    }
+    else
+    {
+      first.upper_bound = static_cast<char>
+                     (tricks + 1 - target + posPoint->tricks_max);
+      first.lower_bound = 0;
+    }
+  }
+  else
+  {
+    if (ctx.search().node_type_store(0) == MAXNODE)
+    {
+      first.upper_bound = static_cast<char>
+                     (target - posPoint->tricks_max - 1);
+      first.lower_bound = 0;
+    }
+    else
+    {
+      first.upper_bound = static_cast<char>(tricks + 1);
+      first.lower_bound = static_cast<char>
+                     (tricks + 1 - target + posPoint->tricks_max + 1);
+    }
+  }
+
+  first.best_move_suit = static_cast<char>(ctx.search().best_move(depth).suit);
+  first.best_move_rank = static_cast<char>(ctx.search().best_move(depth).rank);
+
+  bool flag =
+    ((ctx.search().node_type_store(hand) == MAXNODE && value) ||
+     (ctx.search().node_type_store(hand) == MINNODE && !value))
+    ? true : false;
+
+  TIMER_START(TIMER_NO_BUILD, depth);
+  ctx.trans_table()->add(
+    tricks,
+    hand,
+    posPoint->aggr,
+    our_win_ranks,
+    first,
+    flag);
+  TIMER_END(TIMER_NO_BUILD, depth);
+
+#ifdef DDS_AB_HITS
+  DumpStored(thrp->fileStored.GetStream(),
+    * posPoint, ctx, first, target, depth);
+#endif
+}
+
+
 static void remove_card(
   Pos * posPoint,
   const int hand,
@@ -383,59 +451,8 @@ static bool ab_search_0_ctx(
   }
 
 ABexit:
-  NodeCards first;
-  if (value)
-  {
-    if (ctx.search().node_type_store(0) == MAXNODE)
-    {
-      first.upper_bound = static_cast<char>(tricks + 1);
-      first.lower_bound = static_cast<char>(target - posPoint->tricks_max);
-    }
-    else
-    {
-      first.upper_bound = static_cast<char>
-                     (tricks + 1 - target + posPoint->tricks_max);
-      first.lower_bound = 0;
-    }
-  }
-  else
-  {
-    if (ctx.search().node_type_store(0) == MAXNODE)
-    {
-      first.upper_bound = static_cast<char>
-                     (target - posPoint->tricks_max - 1);
-      first.lower_bound = 0;
-    }
-    else
-    {
-      first.upper_bound = static_cast<char>(tricks + 1);
-      first.lower_bound = static_cast<char>
-                     (tricks + 1 - target + posPoint->tricks_max + 1);
-    }
-  }
-
-  first.best_move_suit = static_cast<char>(ctx.search().best_move(depth).suit);
-  first.best_move_rank = static_cast<char>(ctx.search().best_move(depth).rank);
-
-  bool flag =
-    ((ctx.search().node_type_store(hand) == MAXNODE && value) ||
-     (ctx.search().node_type_store(hand) == MINNODE && !value))
-    ? true : false;
-
-  TIMER_START(TIMER_NO_BUILD, depth);
-  ctx.trans_table()->add(
-    tricks,
-    hand,
-    posPoint->aggr,
-    posPoint->win_ranks[depth],
-    first,
-    flag);
-  TIMER_END(TIMER_NO_BUILD, depth);
-
-#ifdef DDS_AB_HITS
-  DumpStored(thrp->fileStored.GetStream(), 
-    * posPoint, ctx, first, target, depth);
-#endif
+  store_ab_tt_result(
+    posPoint, target, depth, tricks, hand, value, ctx, posPoint->win_ranks[depth]);
 
   AB_COUNT(AB_MOVE_LOOP, value, depth);
   return value;
