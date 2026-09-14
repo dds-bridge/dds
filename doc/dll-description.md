@@ -47,7 +47,7 @@ It is possible as an option to perform par calculation in `CalcAllTables` and `C
 
 The par calculation is executed using a single thread. But the calculation is very fast and its duration is negligible compared to the double dummy calculation duration.
 
-### Double Dummy Value Analyser Functions
+### Double Dummy Value Analyzer Functions
 
 The functions `AnalysePlayBin`, `AnalysePlayPBN`, `AnalyseAllPlaysBin` and `AnalyseAllPlaysPBN` take the played cards in a game or games and calculate and present their double dummy values.
 
@@ -1212,7 +1212,7 @@ DDS then checks whether a number of threads equal to the number of cores will fi
 
 SetMaxThreads no longer influences the thread count: its argument is ignored and internal batch threading was removed. To cap workers, pass an explicit maxThreads to the *N or *X entry points, or manage concurrency in the calling application (typically one SolverContext per thread). DDS will otherwise select a suitable number of threads on its own.
 
-Calling SetMaxThreads() is harmless but has no effect beyond initialisation; InitializeStaticMemory() is the non-deprecated spelling.
+Calling SetMaxThreads() is harmless but has no effect beyond initialization; InitializeStaticMemory() is the non-deprecated spelling.
 
 SetMaxThreads can be called multiple times, but it cannot change the number of threads: use the per-call maxThreads argument instead. 
 

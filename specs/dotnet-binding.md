@@ -21,14 +21,14 @@ the solver without building the C++ or writing marshalling code. Like the JVM
 binding it targets the pure-C shim from [dds-public-api](dds-public-api.md), not
 the C++ API.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-type and per-method detail is in `DDS_Core`'s doc comments and
 > `docs/dotnet_interface.md`. These are the whole-binding guarantees.
 
 - **Two ABI layers, one library.** The modern context entry points bind the
   `dds_c_*` shim; the legacy flat API (`SolveBoard`, `CalcDDtable`, `Par`,
-  `Analyse*`, …) binds `dll.h` directly. Both come from the single native
+  `Analyze*`, …) binds `dll.h` directly. Both come from the single native
   library built by `//jni:dds_shared`. The binding does **not** use the
   reference-taking `dds_*` symbols in `dds_api.hpp`: those are not exported on
   Linux or macOS, so binding them made the wrapper Windows-only.
@@ -44,7 +44,7 @@ the C++ API.
   `libdds.so`, and `dds.dll`.
 - **Library resolution is overridable.** A resolver registered from
   `DdsNative`'s static constructor — which the runtime guarantees runs before
-  that type's first P/Invoke — honours the `DDS_LIBRARY_PATH` environment
+  that type's first P/Invoke — honors the `DDS_LIBRARY_PATH` environment
   variable, falling back to default probing when it is unset. When it is set but
   unusable the failure names the attempted path rather than silently falling
   through. This is the counterpart of the JVM binding's `-Ddds.library.path` and

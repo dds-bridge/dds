@@ -1,6 +1,6 @@
 # Security Policy
 
-## What DDS is, for threat-modelling purposes
+## What DDS is, for threat-modeling purposes
 
 DDS is an **in-process library**, not a service. It opens no sockets and
 crosses no privilege boundary. In the normal deployment the input is a bridge
@@ -71,7 +71,7 @@ is uneven across entry points:
   array must actually hold that many deals — so a caller exposing these two to
   untrusted input must bound the count itself, both against a hostile value
   and against memory exhaustion.
-- `convert_from_pbn()` silently ignores characters it does not recognise
+- `convert_from_pbn()` silently ignores characters it does not recognize
   rather than rejecting the string, so a PBN deal with an invalid rank parses
   one card short. The resulting deal is now rejected downstream, but the error
   code says `RETURN_CARD_COUNT` rather than `RETURN_PBN_FAULT`.

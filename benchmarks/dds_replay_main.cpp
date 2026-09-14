@@ -75,7 +75,7 @@ auto usage() -> int
     "  --no-par        skip par calculations\n"
     "  --no-verify     do not compare results against the recording\n"
     "  --tricks        also break the report down by trick number\n"
-    "  --list          summarise the recording and exit\n");
+    "  --list          summarize the recording and exit\n");
   return 2;
 }
 

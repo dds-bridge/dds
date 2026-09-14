@@ -30,7 +30,7 @@
    Experiments with a subsumption tree (storing more specific patterns
    beneath more general ones, as bridge-solver does) trimmed the number of
    patterns visited per lookup by about 15% but made every visit slower,
-   since skipping a subtree needs its size, a dependent load that serialises
+   since skipping a subtree needs its size, a dependent load that serializes
    the scan. The flat array was faster on every workload tried.
 */
 

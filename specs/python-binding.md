@@ -7,7 +7,7 @@ last-updated: 2026-07-18
 # Python Binding
 
 > **Specs vs. doxygen / docs.** How to build, import, and call the Python API is
-> in `docs/python_interface.md`; per-function behaviour matches the underlying
+> in `docs/python_interface.md`; per-function behavior matches the underlying
 > C++ API. This spec records the packaging model, the type-conversion boundary,
 > and the context-reuse contract.
 
@@ -19,7 +19,7 @@ pybind11 native extension. It exists so Python users get double-dummy analysis
 installable wheel, without touching the C ABI directly. It wraps the modern
 context API and the flat API from [dds-public-api](dds-public-api.md).
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-function signatures are in `docs/python_interface.md`; these are the
 > whole-binding facts.
@@ -52,9 +52,9 @@ context API and the flat API from [dds-public-api](dds-public-api.md).
   distribution `dds3`, version `1.0.0`, `strip_path_prefixes = ["python/"]`)
   packages `dds3_lib` + the staged extension; `dds3_wheel_dist` produces the
   distributable `dist/`. Requires Python 3.10+.
-- **Behaviour tracks the C++ core.** The binding adds no solving logic of its own;
+- **Behavior tracks the C++ core.** The binding adds no solving logic of its own;
   the `py_test` suite exercises the main entry paths (smoke, solve, tables, par,
-  analyse, convert_pbn, context reuse) against the same core. It is coverage of
+  analyze, convert_pbn, context reuse) against the same core. It is coverage of
   the binding surface, not a claimed full parity matrix.
 
 ## Key entry points

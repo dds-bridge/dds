@@ -16,11 +16,11 @@ last-updated: 2026-07-24
 This capability is the platform and concurrency layer: it decides how many worker
 threads to use, distributes boards across them, owns per-thread scratch memory,
 provides file/timer utilities, and carries the logging/stats plumbing
-(`Utilities`). It exists to keep system- and threading-dependent behaviour in one
+(`Utilities`). It exists to keep system- and threading-dependent behavior in one
 place so the search and API layers stay portable. It is internal — not part of
 [dds-public-api](dds-public-api.md).
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Signatures live in the headers' doxygen; these are the whole-layer guarantees.
 

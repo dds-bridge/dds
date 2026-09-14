@@ -80,7 +80,7 @@ void DDSFinalize(void)
  * @brief Library constructor/destructor for Apple platforms.
  *
  * Register DDSInitialize/DDSFinalize so the library's static memory is set
- * up automatically when the library is loaded, matching the behaviour of the
+ * up automatically when the library is loaded, matching the behavior of the
  * Windows (DllMain) and USES_CONSTRUCTOR paths. This frees callers from having
  * to call InitializeStaticMemory() themselves.
  */

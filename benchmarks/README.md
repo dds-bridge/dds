@@ -42,7 +42,7 @@ bazel run -c opt //benchmarks:dds_replay -- /path/to/recording.jsonl
 Useful options:
 
 ```sh
---list                      summarise the recording without running DDS
+--list                      summarize the recording without running DDS
 --threads N                 worker threads; repeat the flag to sweep several
 --repeat N                  run N times and report the best
 --purpose play              only one kind of call (bid/lead/play/claimcheck/par)

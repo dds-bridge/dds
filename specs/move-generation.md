@@ -14,12 +14,12 @@ last-updated: 2026-07-18
 
 The `Moves` class generates and iterates the legal card plays the alpha-beta
 search explores at each trick, ordered so the most promising moves come first.
-Good ordering is what makes the search tractable: it maximises alpha-beta cutoffs
+Good ordering is what makes the search tractable: it maximizes alpha-beta cutoffs
 and transposition-table hits. `Moves` is an internal component — it is not part of
 [dds-public-api](dds-public-api.md) — consumed by the search through the [solver-context](solver-context.md)
 `MoveGenContext` facade.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-method signatures are in the header doxygen; these are the whole-object
 > guarantees.
@@ -43,7 +43,7 @@ and transposition-table hits. `Moves` is an internal component — it is not par
   per-suit winning-rank constraint (or `nullptr` when none remains),
   `MakeNextSimple()` iterates without constraints. `Purge()` removes a set of
   forbidden moves from a list.
-- **`MgType` categorises each generation call** by contract (NT vs trump) and
+- **`MgType` categorizes each generation call** by contract (NT vs trump) and
   void situation (0–3 hands void), 13 categories total. It indexes the statistics
   tables and the heuristic's per-situation tracking.
 - **Invariants are assertion-checked.** Public methods assume valid input and
@@ -53,7 +53,7 @@ and transposition-table hits. `Moves` is an internal component — it is not par
   `DDS_MOVES_DETAILS` (see [constants-and-debug](constants-and-debug.md)); they are off the hot path in
   normal builds.
 - **`testable_moves`** exposes the same sources to `//library/tests/moves/...` for
-  white-box testing; behaviour is identical to `moves`.
+  white-box testing; behavior is identical to `moves`.
 
 ## Key entry points
 

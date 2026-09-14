@@ -17,7 +17,7 @@ in a browser or Node without a native install. It is the WASM module layer that
 the [web](web.md) site and the WASM system tests consume. It exists to prove the
 core solver builds and runs correctly under Emscripten.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-target detail is in the BUILD file and `docs/wasm_build.md`; these are the
 > capability-wide facts.

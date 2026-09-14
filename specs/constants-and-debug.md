@@ -21,7 +21,7 @@ way because they all draw those definitions from here. It exists so there is a
 single, authoritative definition of "how a card/hand/strain is represented" and
 "how diagnostic output is switched on", rather than each module inventing its own.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-symbol values (e.g. the exact contents of `bit_map_rank`) live in doxygen
 > (`utility_constants` group). Only the cross-cutting conventions are recorded here.
@@ -76,6 +76,6 @@ single, authoritative definition of "how a card/hand/strain is represented" and
 - No runtime configuration of the debug flags — they are compile-time only. The
   one exception, `ab_stats`, is surfaced through the build system, not this
   capability.
-- This capability defines representations, not behaviour: it computes nothing and
+- This capability defines representations, not behavior: it computes nothing and
   owns no algorithm. Precomputed *derived* tables (bit/rank/trick tables built for
   the search) live in [lookup-tables](lookup-tables.md), not here.

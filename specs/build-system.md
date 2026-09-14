@@ -22,7 +22,7 @@ compile/link option sets in `CPPVARIABLES.bzl` / `wasm_compat.bzl` that every
 consistent — they select a platform's flags and opt into features by name rather
 than re-encoding toolchain knowledge.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Exact flag lists live in `CPPVARIABLES.bzl`; the point here is the contract, not
 > the literal strings.
@@ -36,7 +36,7 @@ than re-encoding toolchain knowledge.
   `@platforms//cpu:wasm32` (set by the `wasm_cc_binary` platform transition, not
   the host OS). Any target that wants per-platform flags does so through the
   `select()`s in `CPPVARIABLES.bzl` — it should not hand-roll `-O3`/`/O2`.
-- **Optimised builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
+- **Optimized builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
   `-Wall -Wpedantic -Werror`; Windows uses `/W4 /WX /permissive-` and takes
   `/O2`/`/Od` from Bazel's `compilation_mode` (do not restate them in
   `DDS_CPPOPTS` — that triggers MSVC D9025). macOS adds LTO at both compile and

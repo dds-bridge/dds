@@ -17,7 +17,7 @@ via a purpose-built WASM module. It demonstrates the solver in a browser and
 holds the line on the browser integration (module loading, memory marshalling,
 DOM wiring) with an automated test pyramid.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-file detail is in the BUILD file and the site sources; these are the
 > capability-wide facts.

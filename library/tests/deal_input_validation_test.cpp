@@ -38,7 +38,7 @@ constexpr char kShortOneCard[] =
     "N:QJ6.K652.J85.T8 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3";
 
 /// The same deal with a card replaced by an invalid rank. convert_from_pbn()
-/// silently skips unrecognised characters, so this also arrives one card short.
+/// silently skips unrecognized characters, so this also arrives one card short.
 constexpr char kBadRank[] =
     "N:QJ6.K652.J85.TZ8 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3";
 
@@ -261,8 +261,8 @@ TEST(CalcTableValidation, CalcAllTablesRejectsNegativeTableCount)
 TEST(CalcTableValidation, CalcAllTablesWithZeroDealsSolvesNothing)
 {
   // With no deals the board-building loop writes nothing, but the board count
-  // was derived from a last-index variable initialised to 0 and so claimed
-  // one board -- solving an uninitialised entry of a stack-local Boards.
+  // was derived from a last-index variable initialized to 0 and so claimed
+  // one board -- solving an uninitialized entry of a stack-local Boards.
   // MemorySanitizer reports it; found by the calc_all_tables fuzz harness.
   DdTableDeals deals;
   std::memset(&deals, 0, sizeof(deals));

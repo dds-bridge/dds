@@ -81,7 +81,7 @@ public final class DdsStatus {
 
     /**
      * Symbolic name of a status code (e.g. {@code "RETURN_TRUMP_WRONG"}), or
-     * {@code "RETURN(<code>)"} for an unrecognised value. Handy for assertion
+     * {@code "RETURN(<code>)"} for an unrecognized value. Handy for assertion
      * and log messages.
      */
     public static String name(int code) {

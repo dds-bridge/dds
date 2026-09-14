@@ -175,7 +175,7 @@ auto solve_known_deal(SolverContext& ctx, FutureTricks& fut) -> int
 }
 
 /// A table recreated between two solves of the same deal has not seen that
-/// deal; the next solve must initialise it again rather than run against an
+/// deal; the next solve must initialize it again rather than run against an
 /// inert (never init()-ed) cache.
 TEST(ConfigureTtApiTest, ATableRecreatedBetweenSolvesOfTheSameDealIsInitialisedAgain)
 {
@@ -305,7 +305,7 @@ TEST(ConfigureTtApiTest, ConfigureTtComparesTheEnvironmentResolvedKind)
 
 TEST(ConfigureTtApiTest, SwitchKindRecreatesTable)
 {
-  // Default context, isolated from any ambient override (override behaviour
+  // Default context, isolated from any ambient override (override behavior
   // is covered by the Environment* tests).
   ScopedEnv no_override("DDS_TT_KIND", nullptr);
   SolverContext ctx;

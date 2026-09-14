@@ -96,7 +96,7 @@ java_library(
 
 # Stage the host shared library under native/<os>-<arch>/ for jar embedding.
 # copy_file outputs are not configurable, so there is one per os+arch triplet
-# gated by target_compatible_with; only the host's is analysed, and its output
+# gated by target_compatible_with; only the host's is analyzed, and its output
 # path's arch matches what Dds.loadEmbedded() looks up at runtime. copy_file is
 # shell-free, so no cp/copy toolchain assumption on any host (incl. Windows).
 # Host platform only (Phase 1) — a multi-arch fat jar is a separate follow-up.

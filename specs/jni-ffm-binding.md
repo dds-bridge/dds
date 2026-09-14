@@ -21,7 +21,7 @@ that downcall into it. It exists so JVM consumers get the solver as an ordinary
 Maven dependency with the native library embedded in the jar. It binds the pure-C
 shim from [dds-public-api](dds-public-api.md), not the C++ API.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Class/method detail is in `Dds.java` and `docs/jni_interface.md`; these are the
 > whole-binding guarantees.

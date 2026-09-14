@@ -20,7 +20,7 @@ cards", and "decompose this holding into runs of adjacent ranks". Computing thes
 by table lookup instead of on the fly is a core performance decision — the hot
 inner loops of [move-generation](move-generation.md) and the search index these arrays directly.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-table encodings live in the header doxygen; these are the whole-capability
 > facts.

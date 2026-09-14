@@ -1,6 +1,6 @@
 /**
  * @file dispatch_findex_test.cpp
- * @brief Behaviour of WeightCase-based heuristic dispatch.
+ * @brief Behavior of WeightCase-based heuristic dispatch.
  *
  * Move generation always passes a precomputed WeightCase. This file covers the
  * dispatcher's fallback when an unrecognized case reaches call_heuristic.

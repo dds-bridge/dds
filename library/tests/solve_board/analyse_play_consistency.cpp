@@ -121,7 +121,7 @@ auto solve_max(int trump, int leader, const std::vector<Card>& cur,
 }
 
 // Core check: AnalysePlayPBN's per-card trick count must match an independent
-// SolveBoardPBN of the reconstructed position at every analysed ply.
+// SolveBoardPBN of the reconstructed position at every analyzed ply.
 auto check_self_consistency(const Hands& hands, int trump, int opening_leader,
                             const std::vector<Card>& play) -> void
 {

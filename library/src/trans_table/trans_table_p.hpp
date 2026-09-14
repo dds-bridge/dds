@@ -17,7 +17,7 @@
 
 #include <trans_table/trans_table.hpp>
 
-/// \brief Transposition table organised as shape → relative-rank patterns.
+/// \brief Transposition table organized as shape → relative-rank patterns.
 ///
 /// This implementation follows the "shape → pattern" cache of macroxue's
 /// bridge-solver. A position is keyed by its suit-length shape (plus trick

@@ -102,19 +102,19 @@ validation logic itself.
 Fixed by range-checking `currentTrickSuit[k]` inside that loop, where it is
 actually used as a subscript, rather than in `board_range_checks()` — this
 rejects only inputs that would genuinely have been read out of bounds, and
-leaves callers that pass an uninitialised suit alongside a zero rank working
+leaves callers that pass an uninitialized suit alongside a zero rank working
 as before whenever the value is never used.
 
 Seed: `corpus/solve_board/regression_unchecked_trick_suit.bin`.
 Tests: `library/tests/deal_input_validation_test.cpp` (`DumpInputSafety`).
 
-### 05 — `CalcAllTablesN()` solved an uninitialised board when given no deals
+### 05 — `CalcAllTablesN()` solved an uninitialized board when given no deals
 
 Found by the `calc_all_tables` harness on its first CI run, under
 MemorySanitizer (`zero_tables.bin`).
 
-`Boards bo;` is an uninitialised stack local. The board count was derived from
-a `lastIndex` variable initialised to 0 and only assigned inside the
+`Boards bo;` is an uninitialized stack local. The board count was derived from
+a `lastIndex` variable initialized to 0 and only assigned inside the
 board-building loop, so `bo.no_of_boards = lastIndex + 1` claimed **one** board
 even when `no_of_tables == 0` and the loop had written none.
 `calc_all_boards_n()` then solved `bo.deals[0]`, `bo.target[0]`,

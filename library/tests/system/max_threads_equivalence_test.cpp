@@ -1,5 +1,5 @@
 /// @file max_threads_equivalence_test.cpp
-/// @brief Tests that the *N batch APIs honour maxThreads and stay equivalent to
+/// @brief Tests that the *N batch APIs honor maxThreads and stay equivalent to
 ///        the auto path, plus that the rename/alias both initialize the library.
 
 #include <gtest/gtest.h>

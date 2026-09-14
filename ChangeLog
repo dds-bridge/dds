@@ -618,7 +618,7 @@ The fault has not however yet showed up as far as I know.
 A survival mechanism has been added to handle the situation if the
 transposition table becomess full: The transposition table is emptied.
 
-Before this, a full transposition table would in practise lock up 
+Before this, a full transposition table would in practice lock up 
 the program.  Therefore the present size of the transposition table 
 is quite large (393 MB) to handle the most difficult deals.
 

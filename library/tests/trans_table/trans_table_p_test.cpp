@@ -361,7 +361,7 @@ TEST_F(TransTablePTest, DifferentHandTricksOrShapeDoNotMatch)
 }
 
 // ---------------------------------------------------------------------------
-// Relative-rank pattern generalisation
+// Relative-rank pattern generalization
 // ---------------------------------------------------------------------------
 
 TEST_F(TransTablePTest, PositionDifferingOnlyInIrrelevantCardsHits)
