@@ -4,7 +4,10 @@
 //   license that can be found in the LICENSE file or at
 //   https://opensource.org/licenses/MIT
 
-// Deal-file parsers: web/dds_web_deal_import.js (load before this file).
+// Layers (load before this UI file):
+//   web/dds_web_deal_import.js — file-format parsers
+//   web/dds_web_core.js — Card / holdings / handsToPbn
+//   web/dds_web_solve.js — WASM queue / DD table / leads
 // Unit tests: web/tests/dds_web_test.mjs
 // Run with: bazelisk test //web:dds_web_js_test
 // or: python -m unittest web.tests.test_dds_web_js
@@ -23,16 +26,8 @@
             clearTestData
             rotateClockwise
             pageLoad
-            sendJSON
-            refreshDdTable
-            refreshOpeningLeadTricks
-            scheduleDealSolve
-            setDealSolveDebounceMs
-            fourthHandFillState
             updateActionButtons
-            sanitizeSuitHolding
             sanitizeHandSuitInputs
-            suitHoldingHasIllegalChars
             playIllegalInputBeep
             handleHandSuitInput
             handCardHtml
@@ -61,319 +56,18 @@
             handleResultTableKeyDown
             selectedContract
             onContractSelect
-            openingLeader
             denominationDisplayHtml
             contractStatusHtml
             updateContractStatus
-            pipFromDdsRank
-            leadTricksMapFromSolverOutput
-            wasmSolveEnvironmentError
-            formatSolveTimeMs
             importDealFromText
             chooseDealFile
             handleDealFileSelected
-            setDdTableComputingDelayMs
-            invalidateActiveDdTableRequest
-            paintStatusFrame
             */
 
 // It's also useful to pass the code through
 // https://jshint.com/ and https://jslint.com/
 
 "use strict";
-
-const DIRECTIONS = ["north", "east", "south", "west"];
-const SUITS = ["spades", "hearts", "diamonds", "clubs"];
-const PIPS = "AKQJT98765432";
-const DENOMINATIONS = ["C", "D", "H", "S", "N"];
-
-// DDS res_table strain index (S,H,D,C,N) to DDS Web table column key.
-const DENOM_TO_STRAIN = { C: 3, D: 2, H: 1, S: 0, N: 4 };
-const DIR_TO_HAND = { north: 0, east: 1, south: 2, west: 3 };
-
-let selectedContractState = null;
-let leadTricksByCardKey = null;
-let leadTricksRequestId = 0;
-let ddTableRequestId = 0;
-let ddTableComputingTimer = null;
-let lastDdTablePbn = null;
-let solveQueue = Promise.resolve();
-let dealSolveEpoch = 0;
-let dealSolveQueued = false;
-let dealSolvePending = false;
-// Delay WASM work after hand edits so typing on a complete deal does not
-// freeze the UI on every keystroke (sync ccall). Contract clicks stay immediate.
-let dealSolveDebounceMs = 250;
-let dealSolveDebounceTimer = null;
-// Track completeness so the first transition to a full deal solves immediately
-// (auto-fill / final pip), while further edits of that deal stay debounced.
-let lastDealWasComplete = false;
-
-function enqueueSolve(task) {
-    const run = solveQueue.then(task, task);
-
-    // Keep the queue alive after a rejected solve.
-    solveQueue = run.catch(() => {});
-    return run;
-}
-
-function setDealSolveDebounceMs(ms) {
-    dealSolveDebounceMs = ms;
-
-    // Disabling debounce must not leave a previously scheduled trailing solve
-    // to fire later with the old delay.
-    if (ms <= 0 && dealSolveDebounceTimer != null) {
-        clearTimeout(dealSolveDebounceTimer);
-        dealSolveDebounceTimer = null;
-    }
-}
-
-function scheduleDealSolveDebounced() {
-    if (dealSolveDebounceTimer != null) {
-        clearTimeout(dealSolveDebounceTimer);
-        dealSolveDebounceTimer = null;
-    }
-
-    if (dealSolveDebounceMs <= 0) {
-        void scheduleDealSolve();
-        return;
-    }
-
-    dealSolveDebounceTimer = setTimeout(() => {
-        dealSolveDebounceTimer = null;
-        void scheduleDealSolve();
-    }, dealSolveDebounceMs);
-}
-
-// Coalesce DD-table + lead solves onto one queued job so rapid hand edits and
-// contract clicks cannot interleave CalcDDtable with SolveBoard, and so
-// intermediate schedules do not each add a stale promise-chain callback.
-function scheduleDealSolve() {
-    // A direct schedule (contract click, etc.) supersedes a pending debounced
-    // hand-edit solve so we do not fire a redundant trailing job afterward.
-    if (dealSolveDebounceTimer != null) {
-        clearTimeout(dealSolveDebounceTimer);
-        dealSolveDebounceTimer = null;
-    }
-
-    dealSolveEpoch += 1;
-    dealSolvePending = true;
-
-    if (dealSolveQueued) {
-        return solveQueue;
-    }
-
-    dealSolveQueued = true;
-    return enqueueSolve(async () => {
-        try {
-            while (true) {
-                const epoch = dealSolveEpoch;
-                dealSolvePending = false;
-
-                await refreshDdTable();
-                if (epoch !== dealSolveEpoch) {
-                    // Invalidation alone must not restart; only a newer
-                    // scheduleDealSolve (pending) should continue. A pending
-                    // debounce will start a fresh job when it fires.
-                    if (dealSolvePending) {
-                        continue;
-                    }
-                    break;
-                }
-
-                if (selectedContractState) {
-                    await refreshOpeningLeadTricks();
-                } else if (leadTricksByCardKey) {
-                    leadTricksByCardKey = null;
-                    updateHandCardDisplays(collectHands());
-                }
-
-                // Stale+pending → another iteration; else exit (success or
-                // invalidate). Gate release lives in finally.
-                if (epoch !== dealSolveEpoch && dealSolvePending) {
-                    continue;
-                }
-                break;
-            }
-        } finally {
-            const restart = dealSolvePending;
-            dealSolveQueued = false;
-            if (restart) {
-                void scheduleDealSolve();
-            }
-        }
-    });
-}
-
-// Suit glyphs are real text in these custom tags (see dds_web.css for color).
-const SUIT_TAGS = {
-    spades: "spade-suit",
-    hearts: "heart-suit",
-    diamonds: "diamond-suit",
-    clubs: "club-suit"
-};
-
-const SUIT_GLYPHS = {
-    spades: "\u2660",
-    hearts: "\u2665",
-    diamonds: "\u2666",
-    clubs: "\u2663"
-};
-
-const PIP_NAMES = {
-    A: "ace",
-    K: "king",
-    Q: "queen",
-    J: "jack",
-    T: "ten",
-    "9": "nine",
-    "8": "eight",
-    "7": "seven",
-    "6": "six",
-    "5": "five",
-    "4": "four",
-    "3": "three",
-    "2": "two"
-};
-
-function suitLetter(suit) {
-    return suit.charAt(0).toUpperCase();
-}
-
-function suitFromLetter(letter) {
-    for (const suit of SUITS) {
-        if (suitLetter(suit) === letter) {
-            return suit;
-        }
-    }
-
-    return undefined;
-}
-
-function Card(suit, pip) {
-    if (!SUITS.includes(suit)) {
-        throw new Error("Invalid card suit: " + suit);
-    }
-
-    const normalizedPip = String(pip).toUpperCase();
-
-    if (!PIPS.includes(normalizedPip)) {
-        throw new Error("Invalid card pip: " + pip);
-    }
-
-    this.suit = suit;
-    this.pip = normalizedPip;
-}
-
-Card.prototype.key = function () {
-    return suitLetter(this.suit) + this.pip;
-};
-
-Card.prototype.toString = Card.prototype.key;
-
-Card.fromKey = function (key) {
-    if (typeof key !== "string" || key.length !== 2) {
-        throw new Error("Invalid card key: " + key);
-    }
-
-    const normalized = key.toUpperCase();
-    const suit = suitFromLetter(normalized.charAt(0));
-
-    if (!suit) {
-        throw new Error("Invalid card key: " + key);
-    }
-
-    return new Card(suit, normalized.charAt(1));
-};
-
-function cardFromKeySafe(key) {
-    try {
-        return Card.fromKey(key);
-    } catch (_err) {
-        return null;
-    }
-}
-
-Card.compare = function (left, right) {
-    return PIPS.indexOf(left.pip) - PIPS.indexOf(right.pip);
-};
-
-function suitTag(suit) {
-    return SUIT_TAGS[suit];
-}
-
-function suitSymbolHtml(suit) {
-    const tag = suitTag(suit);
-
-    return "<" + tag + ">" + SUIT_GLYPHS[suit] + "</" + tag + ">";
-}
-
-let ddsModulePromise = null;
-
-function wasmSolveEnvironmentError() {
-    if (typeof location === "undefined" || !location) {
-        return null;
-    }
-
-    if (location.protocol === "file:") {
-        return "Solving needs HTTP with cross-origin isolation. " +
-            "From the repo root run: python3 web/serve_web.py";
-    }
-
-    if (typeof SharedArrayBuffer === "undefined") {
-        return "Solving needs SharedArrayBuffer (cross-origin isolation). " +
-            "Serve responses with Cross-Origin-Opener-Policy: same-origin and " +
-            "Cross-Origin-Embedder-Policy: require-corp " +
-            "(locally: python3 web/serve_web.py).";
-    }
-
-    return null;
-}
-
-function loadDdsModule() {
-    if (typeof createDdsModule !== "function") {
-        return Promise.reject(new Error(
-            "WASM module not found. From the repo root run: ./web/update_wasm.sh"
-        ));
-    }
-
-    if (typeof ddsWebWasmBytes !== "function") {
-        return Promise.reject(new Error(
-            "WASM bytes not found. From the repo root run: ./web/update_wasm.sh"
-        ));
-    }
-
-    const envError = wasmSolveEnvironmentError();
-
-    if (envError) {
-        return Promise.reject(new Error(envError));
-    }
-
-    if (!ddsModulePromise) {
-        ddsModulePromise = createDdsModule({
-            wasmBinary: ddsWebWasmBytes()
-        }).catch((error) => {
-            // Allow retry after transient initialization failures.
-            ddsModulePromise = null;
-            throw error;
-        });
-    }
-
-    return ddsModulePromise;
-}
-
-function handsToPbn(hands) {
-    const handStrings = DIRECTIONS.map((direction) => {
-        return SUITS.map((suit) => {
-            return hands[direction]
-                .filter((card) => card.suit === suit)
-                .sort(Card.compare)
-                .map((card) => card.pip)
-                .join("");
-        }).join(".");
-    });
-    return "N:" + handStrings.join(" ");
-}
 
 function focusNorthSpades() {
     // To allow the user to quickly enter a deal
@@ -427,26 +121,6 @@ function chooseDealFile() {
 }
 
 let dealFileSelectionGeneration = 0;
-
-function invalidateActiveDdTableRequest() {
-    ddTableRequestId += 1;
-    leadTricksRequestId += 1;
-    dealSolveEpoch += 1;
-    // Drop a coalesced direct-schedule flag so the worker does not immediately
-    // continue after this invalidate; a following scheduleDealSolve() sets it
-    // again, while a debounced schedule sets it when its timer fires.
-    dealSolvePending = false;
-    clearDdTableComputingTimer();
-    if (dealSolveDebounceTimer != null) {
-        clearTimeout(dealSolveDebounceTimer);
-        dealSolveDebounceTimer = null;
-    }
-    const result = document.getElementById("result");
-    // Drop a painted Computing… for the abandoned request; keep solved/error text.
-    if (result && /Computing/i.test(String(result.innerHTML || ""))) {
-        result.innerHTML = "";
-    }
-}
 
 async function handleDealFileSelected(input) {
     const file = input && input.files && input.files[0];
@@ -649,16 +323,6 @@ function updateDeckStatus(hands) {
     }
 }
 
-function openingLeader(declarerDirection) {
-    const index = DIRECTIONS.indexOf(declarerDirection);
-
-    if (index < 0) {
-        return null;
-    }
-
-    return DIRECTIONS[(index + 1) % 4];
-}
-
 const DENOM_TO_SUIT = {
     C: "clubs",
     D: "diamonds",
@@ -725,48 +389,6 @@ function updateContractStatus() {
 
     status.innerHTML = contractStatusHtml(contract);
     status.hidden = false;
-}
-
-function pipFromDdsRank(rank) {
-    if (rank === 14) {
-        return "A";
-    }
-    if (rank === 13) {
-        return "K";
-    }
-    if (rank === 12) {
-        return "Q";
-    }
-    if (rank === 11) {
-        return "J";
-    }
-    if (rank === 10) {
-        return "T";
-    }
-    if (rank >= 2 && rank <= 9) {
-        return String(rank);
-    }
-
-    return null;
-}
-
-function leadTricksMapFromSolverOutput(out) {
-    const map = {};
-    const n = out[0] | 0;
-
-    for (let i = 0; i < n; i++) {
-        const suitIndex = out[1 + 3 * i];
-        const rank = out[1 + 3 * i + 1];
-        const score = out[1 + 3 * i + 2];
-        const suit = SUITS[suitIndex];
-        const pip = pipFromDdsRank(rank);
-
-        if (suit && pip) {
-            map[suitLetter(suit) + pip] = score;
-        }
-    }
-
-    return map;
 }
 
 function capitalize(word) {
@@ -1375,94 +997,6 @@ function clearResultCellSelection() {
     void scheduleDealSolve();
 }
 
-async function solveOpeningLeadTricks(hands, contract) {
-    const leader = openingLeader(contract.direction);
-    const trump = DENOM_TO_STRAIN[contract.denomination];
-    const first = DIR_TO_HAND[leader];
-
-    if (trump == null || first == null) {
-        throw new Error("Invalid contract for lead analysis");
-    }
-
-    const module = await loadDdsModule();
-    const pbn = handsToPbn(hands);
-    const outPtr = module._malloc((1 + 13 * 3) * 4);
-
-    try {
-        const rc = module.ccall(
-            "dds_web_solve_leads",
-            "number",
-            ["string", "number", "number", "number"],
-            [pbn, trump, first, outPtr]
-        );
-
-        if (rc !== 1) {
-            throw new Error("DDS lead solve error (code " + rc + ")");
-        }
-
-        const n = module.getValue(outPtr, "i32");
-        if (n < 0 || n > 13) {
-            throw new Error(
-                "DDS lead solve returned invalid card count (" + n + ")"
-            );
-        }
-        const out = [n];
-
-        for (let i = 0; i < n; i++) {
-            const base = outPtr + (1 + 3 * i) * 4;
-            out.push(module.getValue(base, "i32"));
-            out.push(module.getValue(base + 4, "i32"));
-            out.push(module.getValue(base + 8, "i32"));
-        }
-
-        return leadTricksMapFromSolverOutput(out);
-    } finally {
-        module._free(outPtr);
-    }
-}
-
-async function refreshOpeningLeadTricks() {
-    const requestId = ++leadTricksRequestId;
-    const contract = selectedContractState;
-    const hands = collectHands();
-
-    if (!contract || inputIsValid(hands).length) {
-        leadTricksByCardKey = null;
-        if (requestId === leadTricksRequestId) {
-            updateHandCardDisplays(hands);
-        }
-        return;
-    }
-
-    try {
-        const map = await solveOpeningLeadTricks(hands, contract);
-
-        if (requestId !== leadTricksRequestId) {
-            return;
-        }
-
-        leadTricksByCardKey = map;
-        updateHandCardDisplays(collectHands());
-    } catch (err) {
-        if (requestId !== leadTricksRequestId) {
-            return;
-        }
-
-        leadTricksByCardKey = null;
-        updateHandCardDisplays(collectHands());
-
-        const result = document.getElementById("result");
-
-        if (result) {
-            result.innerHTML = err instanceof Error
-                ? err.message
-                : err == null
-                    ? "Unknown error"
-                    : String(err);
-        }
-    }
-}
-
 function contractFromResultCell(cell) {
     if (!cell) {
         return null;
@@ -1597,63 +1131,6 @@ function updateHandCardCounts(hands) {
     }
 }
 
-function fourthHandFillState(hands) {
-    const handCounts = DIRECTIONS.map((direction) => hands[direction].length);
-    const fullHands = handCounts.filter((count) => count === 13).length;
-    const emptyHands = handCounts.filter((count) => count === 0).length;
-    const partialHands = handCounts.filter((count) => count > 0 && count < 13).length;
-
-    if (fullHands !== 3 || emptyHands !== 1 || partialHands > 0) {
-        return { canFill: false };
-    }
-
-    const emptyHand = DIRECTIONS[handCounts.indexOf(0)];
-    const usedCards = {};
-
-    for (const direction of DIRECTIONS) {
-        if (direction === emptyHand) {
-            continue;
-        }
-
-        for (const card of hands[direction]) {
-            if (!card || !SUITS.includes(card.suit) || !PIPS.includes(card.pip)) {
-                return { canFill: false };
-            }
-
-            usedCards[card.key()] = true;
-        }
-    }
-
-    // Three full hands hold 39 cards; fewer distinct keys means a duplicate,
-    // so the remaining 13 cannot be dealt to the empty hand.
-    if (Object.keys(usedCards).length !== 39) {
-        return { canFill: false };
-    }
-
-    return { canFill: true, emptyHand, usedCards };
-}
-
-function cardsToSuitHoldings(cards) {
-    const holdings = {};
-
-    for (const suit of SUITS) {
-        holdings[suit] = "";
-    }
-
-    for (const card of cards) {
-        holdings[card.suit] += card.pip;
-    }
-
-    for (const suit of SUITS) {
-        holdings[suit] = holdings[suit]
-            .split("")
-            .sort((a, b) => PIPS.indexOf(a) - PIPS.indexOf(b))
-            .join("");
-    }
-
-    return holdings;
-}
-
 function setHandInputs(direction, holdings) {
     for (const suit of SUITS) {
         document.getElementById(direction + "_" + suit).value = holdings[suit];
@@ -1745,18 +1222,6 @@ function undeployCard(card) {
     return removeCardFromAllHands(card);
 }
 
-function sortedPipInsertIndex(holding, pip) {
-    const rank = PIPS.indexOf(pip);
-
-    for (let i = 0; i < holding.length; i++) {
-        if (PIPS.indexOf(holding.charAt(i)) > rank) {
-            return i;
-        }
-    }
-
-    return holding.length;
-}
-
 function addCardToHand(direction, card) {
     if (!DIRECTIONS.includes(direction) || !card || !card.suit || !card.pip) {
         return false;
@@ -1823,10 +1288,6 @@ function applyFourthHandFill(hands, emptyHand) {
     return true;
 }
 
-function allHandsHaveThirteenCards(hands) {
-    return DIRECTIONS.every((direction) => hands[direction].length === 13);
-}
-
 function isHandInput(element) {
     if (!element) {
         return false;
@@ -1834,80 +1295,6 @@ function isHandInput(element) {
 
     for (const handElement of hand_elements()) {
         if (handElement === element) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function sanitizeSuitHolding(value, claimedKeys, suit, maxPips) {
-    if (value == null) {
-        return "";
-    }
-
-    const pips = [];
-    const seen = {};
-
-    for (const ch of String(value)) {
-        const pip = ch.toUpperCase();
-
-        if (!PIPS.includes(pip) || seen[pip]) {
-            continue;
-        }
-
-        if (claimedKeys && suit) {
-            const key = new Card(suit, pip).key();
-
-            if (claimedKeys[key]) {
-                continue;
-            }
-        }
-
-        seen[pip] = true;
-        pips.push(pip);
-    }
-
-    pips.sort((left, right) => PIPS.indexOf(left) - PIPS.indexOf(right));
-
-    if (typeof maxPips === "number" && maxPips >= 0 && pips.length > maxPips) {
-        return pips.slice(0, maxPips).join("");
-    }
-
-    return pips.join("");
-}
-
-function suitHoldingHasDuplicatePips(value) {
-    if (value == null) {
-        return false;
-    }
-
-    const seen = {};
-
-    for (const ch of String(value)) {
-        const pip = ch.toUpperCase();
-
-        if (!PIPS.includes(pip)) {
-            continue;
-        }
-
-        if (seen[pip]) {
-            return true;
-        }
-
-        seen[pip] = true;
-    }
-
-    return false;
-}
-
-function suitHoldingHasIllegalChars(value) {
-    if (value == null) {
-        return false;
-    }
-
-    for (const ch of String(value)) {
-        if (!PIPS.includes(ch.toUpperCase())) {
             return true;
         }
     }
@@ -2324,268 +1711,3 @@ function pageLoad() {
     focusNorthSpades();
 }
 
-function clear_results() {
-    var result = document.getElementById("result");
-    var result_table = document.getElementById("result-table");
-
-    clearDdTableComputingTimer();
-    lastDdTablePbn = null;
-    result.innerHTML = "";
-
-    for (var row = 1; row <= 4; row++) {
-        for (var column = 1; column <= 5; column++) {
-            var cell = result_table.rows[row].cells[column];
-            cell.innerHTML = "";
-        }
-    }
-}
-
-/** Delay before showing Computing… under the DD matrix (see refreshDdTable). */
-let ddTableComputingDelayMs = 300;
-
-function setDdTableComputingDelayMs(ms) {
-    ddTableComputingDelayMs = ms;
-}
-
-function clearDdTableComputingTimer() {
-    if (ddTableComputingTimer != null) {
-        clearTimeout(ddTableComputingTimer);
-        ddTableComputingTimer = null;
-    }
-}
-
-function scheduleDdTableComputingMessage(requestId, result) {
-    clearDdTableComputingTimer();
-    if (ddTableComputingDelayMs <= 0) {
-        if (result) {
-            result.innerHTML = "Computing&hellip;";
-        }
-        return;
-    }
-    ddTableComputingTimer = setTimeout(() => {
-        ddTableComputingTimer = null;
-        if (requestId !== ddTableRequestId || !result) {
-            return;
-        }
-        result.innerHTML = "Computing&hellip;"; // horizontal ellipsis
-    }, ddTableComputingDelayMs);
-}
-
-/** Yield until the browser has painted the current status (needed before sync ccall). */
-function paintStatusFrame() {
-    // Hidden tabs often pause rAF; do not block the solve queue forever.
-    if (
-        typeof document !== "undefined"
-        && document.visibilityState === "hidden"
-    ) {
-        return Promise.resolve();
-    }
-    if (typeof requestAnimationFrame === "function") {
-        return new Promise((resolve) => {
-            let settled = false;
-            const done = () => {
-                if (settled) {
-                    return;
-                }
-                settled = true;
-                clearTimeout(fallbackTimer);
-                resolve();
-            };
-            // If the tab hides mid-wait, the second rAF may never run.
-            const fallbackTimer = setTimeout(done, 50);
-            requestAnimationFrame(() => {
-                if (
-                    typeof document !== "undefined"
-                    && document.visibilityState === "hidden"
-                ) {
-                    done();
-                    return;
-                }
-                requestAnimationFrame(done);
-            });
-        });
-    }
-    return new Promise((resolve) => setTimeout(resolve, 16));
-}
-
-/**
- * Show Computing… and wait for a paint. The WASM ccall is synchronous and
- * blocks timers, so this must run before ccall or the message is never seen.
- */
-async function showComputingStatus(requestId, result) {
-    clearDdTableComputingTimer();
-    if (requestId !== ddTableRequestId || !result) {
-        return false;
-    }
-    result.innerHTML = "Computing&hellip;"; // horizontal ellipsis
-    await paintStatusFrame();
-    return requestId === ddTableRequestId;
-}
-
-/** Format wall elapsed time for the status line (whole milliseconds). */
-function formatSolveTimeMs(elapsedMs) {
-    return "Solved in " + Math.round(elapsedMs) + " ms.";
-}
-
-async function refreshDdTable() {
-    const requestId = ++ddTableRequestId;
-    const result = document.getElementById("result");
-    const result_table = document.getElementById("result-table");
-    const hands = collectHands();
-
-    if (!allHandsHaveThirteenCards(hands)) {
-        if (requestId === ddTableRequestId) {
-            lastDdTablePbn = null;
-            clear_results();
-        }
-        return;
-    }
-
-    const error_message = inputIsValid(hands);
-
-    if (error_message.length) {
-        if (requestId === ddTableRequestId) {
-            lastDdTablePbn = null;
-            clear_results();
-            if (result) {
-                result.innerHTML = error_message;
-            }
-        }
-        return;
-    }
-
-    const pbn = handsToPbn(hands);
-
-    if (pbn === lastDdTablePbn && ddTableLooksPopulated(result_table)) {
-        return;
-    }
-
-    if (requestId !== ddTableRequestId) {
-        return;
-    }
-
-    clear_results();
-    // Computing… grace / pre-ccall paint tradeoff (intentional until CalcTable
-    // runs off the main thread):
-    // The WASM ccall is synchronous and blocks timers and rAF, so a timer-only
-    // Computing… message can never appear during a long solve. Painting before
-    // ccall is the only way to show status while the UI is frozen. That means
-    // uncached solves wait for any remaining grace period and briefly show
-    // Computing… even when ccall itself would be fast — a minimum-latency tax
-    // preferred over silent multi-second freezes. Module load time counts
-    // toward the grace. Tests set the delay to 0.
-    scheduleDdTableComputingMessage(requestId, result);
-    const waitStartedAt = performance.now();
-
-    try {
-        const module = await loadDdsModule();
-        const outPtr = module._malloc(20 * 4);
-
-        try {
-            const remainingMs =
-                ddTableComputingDelayMs - (performance.now() - waitStartedAt);
-            if (remainingMs > 0) {
-                await new Promise((resolve) => setTimeout(resolve, remainingMs));
-                if (requestId !== ddTableRequestId) {
-                    return;
-                }
-            }
-
-            // An import/edit during the grace wait can change the diagram while
-            // this invocation still holds the old PBN; do not solve stale input.
-            if (handsToPbn(collectHands()) !== pbn) {
-                clearDdTableComputingTimer();
-                if (requestId === ddTableRequestId && result) {
-                    result.innerHTML = "";
-                }
-                return;
-            }
-
-            if (!(await showComputingStatus(requestId, result))) {
-                return;
-            }
-
-            if (handsToPbn(collectHands()) !== pbn) {
-                clearDdTableComputingTimer();
-                if (requestId === ddTableRequestId && result) {
-                    result.innerHTML = "";
-                }
-                return;
-            }
-
-            const startedAt = performance.now();
-            const rc = module.ccall(
-                "dds_web_calc_table",
-                "number",
-                ["string", "number"],
-                [pbn, outPtr]
-            );
-            const elapsedMs = performance.now() - startedAt;
-
-            if (requestId !== ddTableRequestId) {
-                return;
-            }
-
-            clearDdTableComputingTimer();
-
-            if (rc !== 1) {
-                lastDdTablePbn = null;
-                if (result) {
-                    result.innerHTML = "DDS error (code " + rc + ").";
-                }
-                return;
-            }
-
-            for (var row = 1; row <= 4; row++) {
-                for (var column = 1; column <= 5; column++) {
-                    const cell = result_table.rows[row].cells[column];
-                    const denomination = DENOMINATIONS[column - 1];
-                    const direction = DIRECTIONS[row - 1];
-                    const strain = DENOM_TO_STRAIN[denomination];
-                    const hand = DIR_TO_HAND[direction];
-                    const index = strain * 4 + hand;
-                    cell.innerHTML = module.getValue(
-                        outPtr + index * 4,
-                        "i32"
-                    );
-                }
-            }
-
-            lastDdTablePbn = pbn;
-
-            if (result) {
-                result.innerHTML = formatSolveTimeMs(elapsedMs);
-            }
-        } finally {
-            module._free(outPtr);
-        }
-    } catch (err) {
-        if (requestId !== ddTableRequestId) {
-            return;
-        }
-
-        lastDdTablePbn = null;
-        clear_results();
-        if (result) {
-            result.innerHTML = err instanceof Error
-                ? err.message
-                : err == null
-                    ? "Unknown error"
-                    : String(err);
-        }
-    }
-}
-
-function ddTableLooksPopulated(result_table) {
-    if (!result_table || !result_table.rows || !result_table.rows[1]) {
-        return false;
-    }
-
-    const cell = result_table.rows[1].cells[1];
-
-    return !!(cell && cell.innerHTML && /\d/.test(String(cell.innerHTML)));
-}
-
-function sendJSON() {
-    return refreshDdTable();
-}

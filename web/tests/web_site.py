@@ -12,6 +12,8 @@ STATIC_FILES = (
     "dds_web.css",
     "dds_web.js",
     "dds_web_deal_import.js",
+    "dds_web_core.js",
+    "dds_web_solve.js",
     "coi-serviceworker.js",
 )
 

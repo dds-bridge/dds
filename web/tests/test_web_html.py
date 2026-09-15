@@ -102,6 +102,25 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertLess(wasm_at, import_at)
         self.assertLess(import_at, app_at)
 
+    def test_loads_core_and_solve_scripts_before_dds_web_js(self) -> None:
+        # Deal model (core) and WASM/queue (solve) load before UI wiring.
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'<script\s+src="dds_web_core\.js"\s*>\s*</script>',
+        )
+        self.assertRegex(
+            text,
+            r'<script\s+src="dds_web_solve\.js"\s*>\s*</script>',
+        )
+        import_at = text.index('src="dds_web_deal_import.js"')
+        core_at = text.index('src="dds_web_core.js"')
+        solve_at = text.index('src="dds_web_solve.js"')
+        app_at = text.index('src="dds_web.js"')
+        self.assertLess(import_at, core_at)
+        self.assertLess(core_at, solve_at)
+        self.assertLess(solve_at, app_at)
+
     def test_disables_coep_credentialless_before_coi_serviceworker(self) -> None:
         # coi-serviceworker defaults to COEP: credentialless. Safari / iOS WebKit
         # (including Firefox on iPhone) do not honor that value for isolation, so

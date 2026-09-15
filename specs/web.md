@@ -34,11 +34,13 @@ DOM wiring) with an automated test pyramid.
   base flags come from `WASM_LINKOPTS` ([build-system](build-system.md)),
   including pthreads / `PTHREAD_POOL_SIZE`.
 - **The page is a static site plus JS glue.** `dds_web.html` / `dds_web.css` /
-  `dds_web.js` / `dds_web_deal_import.js` load the module (`createDdsModule`),
-  marshal a deal into WASM memory, call `dds_web_calc_table` and
-  `dds_web_solve_leads` via `ccall`, and read results with `getValue`. Deal-file
-  parsers (PBN/LIN/DLM/sol) live in `dds_web_deal_import.js`; UI and solver glue
-  stay in `dds_web.js`. `web_site` (`tests/web_site.py`) stages the site
+  `dds_web.js` / `dds_web_deal_import.js` / `dds_web_core.js` /
+  `dds_web_solve.js` load the module (`createDdsModule`), marshal a deal into
+  WASM memory, call `dds_web_calc_table` and `dds_web_solve_leads` via `ccall`,
+  and read results with `getValue`. Deal-file parsers live in
+  `dds_web_deal_import.js`; the deal model in `dds_web_core.js`; WASM queue /
+  DD table / leads in `dds_web_solve.js`; UI wiring in `dds_web.js`. `web_site`
+  (`tests/web_site.py`) stages the site
   and provides `make_isolated_http_handler` (COOP/COEP) for system/e2e tests and
   `web/serve_web.py`. Helper scripts `gen_wasm_bin_js.py`, `patch_web_wasm.py`,
   `verify_wasm_js.py` generate and sanity-check the JS/wasm glue.
@@ -93,8 +95,8 @@ DOM wiring) with an automated test pyramid.
   `web_tests` / `web_system_tests` / `web_e2e_tests` suites; `WASM_WEB_LINKOPTS`.
 - `web/dds_web_wasm.cpp` — the native WASM bridge (`dds_web_calc_table`,
   `dds_web_solve_leads`).
-- `web/{dds_web.html,dds_web.css,dds_web.js,dds_web_deal_import.js}` — the page,
-  deal-file parsers, and JS glue.
+- `web/{dds_web.html,dds_web.css,dds_web.js,dds_web_deal_import.js,dds_web_core.js,dds_web_solve.js}`
+  — the page, deal-file parsers, deal model, solver session, and UI glue.
 - `web/coi-serviceworker.js` — COOP/COEP via service worker for hosts without
   custom headers (GitHub Pages).
 - `web/stage_github_pages.py` — stage static site + `index.html` for Pages.
