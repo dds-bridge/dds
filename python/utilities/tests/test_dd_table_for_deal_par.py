@@ -67,38 +67,73 @@ class ParseVulnerableTest(unittest.TestCase):
 
 class ParseCliTest(unittest.TestCase):
     def test_deal_only_defaults_vulnerable_to_none(self) -> None:
-        deal, vulnerable, limit = _parse_cli(["prog", _EXAMPLE_DEAL])
+        deal, vulnerable, limit, num_threads = _parse_cli(["prog", _EXAMPLE_DEAL])
         self.assertEqual(deal, _EXAMPLE_DEAL)
         self.assertEqual(vulnerable, 0)
         self.assertIsNone(limit)
+        self.assertEqual(num_threads, 0)
 
     def test_vul_flag_before_deal(self) -> None:
-        deal, vulnerable, limit = _parse_cli(["prog", "--vul", "ns", _EXAMPLE_DEAL])
+        deal, vulnerable, limit, num_threads = _parse_cli(
+            ["prog", "--vul", "ns", _EXAMPLE_DEAL]
+        )
         self.assertEqual(deal, _EXAMPLE_DEAL)
         self.assertEqual(vulnerable, 2)
         self.assertIsNone(limit)
+        self.assertEqual(num_threads, 0)
 
     def test_vul_flag_after_deal(self) -> None:
-        deal, vulnerable, limit = _parse_cli(["prog", _EXAMPLE_DEAL, "--vul", "both"])
+        deal, vulnerable, limit, num_threads = _parse_cli(
+            ["prog", _EXAMPLE_DEAL, "--vul", "both"]
+        )
         self.assertEqual(deal, _EXAMPLE_DEAL)
         self.assertEqual(vulnerable, 1)
         self.assertIsNone(limit)
+        self.assertEqual(num_threads, 0)
 
     def test_limit_flag(self) -> None:
-        deal, vulnerable, limit = _parse_cli(
+        deal, vulnerable, limit, num_threads = _parse_cli(
             ["prog", "--limit", "3", _EXAMPLE_DEAL]
         )
         self.assertEqual(deal, _EXAMPLE_DEAL)
         self.assertEqual(vulnerable, 0)
         self.assertEqual(limit, 3)
+        self.assertEqual(num_threads, 0)
 
     def test_limit_and_vul_together(self) -> None:
-        deal, vulnerable, limit = _parse_cli(
+        deal, vulnerable, limit, num_threads = _parse_cli(
             ["prog", "--vul", "ns", "--limit", "1", "boards.pbn"]
         )
         self.assertEqual(deal, "boards.pbn")
         self.assertEqual(vulnerable, 2)
         self.assertEqual(limit, 1)
+        self.assertEqual(num_threads, 0)
+
+    def test_numthr_long_and_short_flags(self) -> None:
+        for flag in ("--numthr", "-n"):
+            with self.subTest(flag=flag):
+                deal, vulnerable, limit, num_threads = _parse_cli(
+                    ["prog", flag, "4", _EXAMPLE_DEAL]
+                )
+                self.assertEqual(deal, _EXAMPLE_DEAL)
+                self.assertEqual(vulnerable, 0)
+                self.assertIsNone(limit)
+                self.assertEqual(num_threads, 4)
+
+    def test_numthr_zero_means_auto(self) -> None:
+        deal, vulnerable, limit, num_threads = _parse_cli(
+            ["prog", "--numthr", "0", _EXAMPLE_DEAL]
+        )
+        self.assertEqual(deal, _EXAMPLE_DEAL)
+        self.assertEqual(num_threads, 0)
+        self.assertIsNone(limit)
+        self.assertEqual(vulnerable, 0)
+
+    def test_rejects_negative_numthr(self) -> None:
+        for bad in ("-1", "x", ""):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    _parse_cli(["prog", "--numthr", bad, _EXAMPLE_DEAL])
 
     def test_rejects_non_positive_limit(self) -> None:
         for bad in ("0", "-1", "x", ""):
@@ -127,6 +162,15 @@ class ParseCliTest(unittest.TestCase):
         with redirect_stderr(buf):
             _print_usage("prog")
         self.assertIn("--limit", buf.getvalue())
+
+    def test_usage_documents_numthr(self) -> None:
+        buf = io.StringIO()
+        with redirect_stderr(buf):
+            _print_usage("prog")
+        text = buf.getvalue()
+        self.assertIn("--numthr", text)
+        self.assertIn("-n", text)
+        self.assertIn("[-n N|--numthr N]", text)
 
     def test_rejects_unknown_flags(self) -> None:
         with self.assertRaises(ValueError):
@@ -354,6 +398,28 @@ class MainParOutputTest(unittest.TestCase):
         par_mock.assert_called_once()
         args, kwargs = par_mock.call_args
         self.assertEqual(kwargs.get("vulnerable", args[1] if len(args) > 1 else None), 3)
+
+    def test_main_passes_numthr_to_calc(self) -> None:
+        fake_tables = {
+            "tables": [{"res_table": [[0] * 4 for _ in range(5)]}],
+        }
+        fake_par = {
+            "par_score": ["NS 0", "EW 0"],
+            "par_contracts_string": ["NS:", "EW:"],
+        }
+        with mock.patch(
+            "dd_table_for_deal.calc_all_tables_pbn", return_value=fake_tables
+        ) as calc_mock, mock.patch(
+            "dd_table_for_deal.calc_par_from_table", return_value=fake_par
+        ), mock.patch(
+            "dd_table_for_deal._print_pbn_hand"
+        ), mock.patch(
+            "dd_table_for_deal._print_table"
+        ), redirect_stdout(io.StringIO()):
+            rc = main(["dd_table_for_deal", "-n", "2", _EXAMPLE_DEAL])
+
+        self.assertEqual(rc, 0)
+        calc_mock.assert_called_once_with([_EXAMPLE_DEAL], max_threads=2)
 
     def test_main_returns_error_when_par_fails(self) -> None:
         fake_tables = {

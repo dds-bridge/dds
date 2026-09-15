@@ -10,6 +10,7 @@
 #pragma once
 
 #include <iosfwd>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -26,6 +27,19 @@ auto parse_vulnerable(std::string_view text) -> std::optional<int>;
 
 // Positive deal count, or nullopt if the text is not a valid positive integer.
 auto parse_limit(std::string_view text) -> std::optional<std::size_t>;
+
+// Worker-thread count for CalcDDtablePBNN: 0 = auto, >=1 = explicit cap.
+// Nullopt if the text is not a non-negative integer.
+auto parse_numthr(std::string_view text) -> std::optional<int>;
+
+// Invoke `calc` with `table_deal` and `num_threads` (0 = auto).
+using CalcDdTablePbnNFn =
+    std::function<int(DdTableDealPBN, DdTableResults *, int)>;
+auto calc_dd_table_for_pbn_deal(
+    DdTableDealPBN table_deal,
+    int num_threads,
+    DdTableResults * table,
+    CalcDdTablePbnNFn const& calc) -> int;
 
 // Keep the first `limit` deals when set; otherwise return deals unchanged.
 auto apply_deal_limit(
