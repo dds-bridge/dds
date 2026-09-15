@@ -1,5 +1,6 @@
 /**
- * Unit tests for web/dds_web.js (Node built-in test runner).
+ * Unit tests for web/dds_web.js and web/dds_web_deal_import.js
+ * (Node built-in test runner).
  *
  * Run with:
  *    bazelisk test //web:dds_web_js_test
@@ -16,13 +17,13 @@ import { createContext, runInContext } from "node:vm";
 const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 
-function findDdsWebJsPath() {
-    if (process.env.DDS_WEB_JS && existsSync(process.env.DDS_WEB_JS)) {
-        return process.env.DDS_WEB_JS;
+function findWebJsPath(fileName, envKey) {
+    if (process.env[envKey] && existsSync(process.env[envKey])) {
+        return process.env[envKey];
     }
 
     const here = dirname(fileURLToPath(import.meta.url));
-    const adjacent = join(here, "..", "dds_web.js");
+    const adjacent = join(here, "..", fileName);
     if (existsSync(adjacent)) {
         return adjacent;
     }
@@ -31,7 +32,7 @@ function findDdsWebJsPath() {
         if (!base) {
             continue;
         }
-        for (const sub of ["web/dds_web.js", "_main/web/dds_web.js"]) {
+        for (const sub of [`web/${fileName}`, `_main/web/${fileName}`]) {
             const candidate = join(base, sub);
             if (existsSync(candidate)) {
                 return candidate;
@@ -39,7 +40,15 @@ function findDdsWebJsPath() {
         }
     }
 
-    throw new Error("dds_web.js not found");
+    throw new Error(`${fileName} not found`);
+}
+
+function findDdsWebJsPath() {
+    return findWebJsPath("dds_web.js", "DDS_WEB_JS");
+}
+
+function findDdsWebDealImportJsPath() {
+    return findWebJsPath("dds_web_deal_import.js", "DDS_WEB_DEAL_IMPORT_JS");
 }
 
 /** Reject if `promise` does not settle within `ms` (clears the timer either way). */
@@ -226,7 +235,21 @@ function createMockDocument(initialValues = {}) {
     return documentRef;
 }
 
+function loadDealImport(extras = {}) {
+    const code = readFileSync(findDdsWebDealImportJsPath(), "utf8");
+    const sandbox = {
+        console,
+        Promise,
+        Error,
+        ...extras,
+    };
+    const context = createContext(sandbox);
+    runInContext(code, context, { filename: "dds_web_deal_import.js" });
+    return context;
+}
+
 function loadDdsWeb(document, extras = {}) {
+    const importCode = readFileSync(findDdsWebDealImportJsPath(), "utf8");
     const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document,
@@ -246,6 +269,7 @@ function loadDdsWeb(document, extras = {}) {
         ...extras,
     };
     const context = createContext(sandbox);
+    runInContext(importCode, context, { filename: "dds_web_deal_import.js" });
     runInContext(code, context, { filename: "dds_web.js" });
     // Existing tests expect hand edits to schedule immediately; debounce is
     // covered by dedicated tests that opt into a non-zero delay.
@@ -995,6 +1019,7 @@ test("loadDdsModule rejects missing wasm globals", async () => {
 
 test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () => {
     // Arrange: browser opened as a local file (origin null).
+    const importCode = readFileSync(findDdsWebDealImportJsPath(), "utf8");
     const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document: createMockDocument(),
@@ -1005,6 +1030,7 @@ test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () =
         location: { protocol: "file:" },
     };
     const context = createContext(sandbox);
+    runInContext(importCode, context, { filename: "dds_web_deal_import.js" });
     runInContext(code, context, { filename: "dds_web.js" });
 
     // Act / Assert
@@ -1016,6 +1042,7 @@ test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () =
 
 test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () => {
     // Arrange: HTTPS page without cross-origin isolation (no SAB).
+    const importCode = readFileSync(findDdsWebDealImportJsPath(), "utf8");
     const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document: createMockDocument(),
@@ -1027,6 +1054,7 @@ test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () 
         SharedArrayBuffer: undefined,
     };
     const context = createContext(sandbox);
+    runInContext(importCode, context, { filename: "dds_web_deal_import.js" });
     runInContext(code, context, { filename: "dds_web.js" });
 
     // Act
@@ -3744,6 +3772,18 @@ const DLM_BOARD_01 =
     "Board 01=fnbkmmincldklcfcofoiefnapm018";
 const LIN_DEAL =
     "pn|a,b,c,d|st||md|3S27AH3489TD5JC45J,S358QKH56D4KAC3QK,S4JH2JQD2678TC678,|rh||ah|Board 1|sv|o|";
+
+test("dds_web_deal_import.js exports parseFirstDealFromText without dds_web.js", () => {
+    // Arrange / Act: load only the deal-import script.
+    const ctx = loadDealImport();
+    const deal = ctx.parseFirstDealFromText(`[Deal "${EVERYONE_3N_PBN}"]`);
+
+    // Assert: module is self-contained for file-format parsing.
+    assert.equal(deal.north, "QT9.A8765432.KJ.");
+    assert.equal(deal.east, "KJ..A8765432.QT9");
+    assert.equal(deal.south, "A8765432.QT9..KJ");
+    assert.equal(deal.west, ".KJ.QT9.A8765432");
+});
 
 function assertImportedDeal(ctx, document, expected) {
     assert.equal(document.element("north_spades").value, expected.north[0]);

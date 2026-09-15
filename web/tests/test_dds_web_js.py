@@ -56,8 +56,10 @@ class DdsWebJsTest(unittest.TestCase):
 
         test_script = rlocation("web/tests/dds_web_test.mjs")
         dds_web_js = rlocation("web/dds_web.js")
+        dds_web_deal_import_js = rlocation("web/dds_web_deal_import.js")
         env = os.environ.copy()
         env["DDS_WEB_JS"] = str(dds_web_js)
+        env["DDS_WEB_DEAL_IMPORT_JS"] = str(dds_web_deal_import_js)
         try:
             proc = subprocess.run(
                 [node, "--test", str(test_script)],

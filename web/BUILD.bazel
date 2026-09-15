@@ -104,6 +104,7 @@ py_test(
     srcs = ["tests/test_dds_web_js.py"],
     data = [
         "dds_web.js",
+        "dds_web_deal_import.js",
         "tests/dds_web_test.mjs",
     ],
 )
@@ -121,6 +122,7 @@ py_test(
         "dds_web.css",
         "dds_web.html",
         "dds_web.js",
+        "dds_web_deal_import.js",
         "gen_wasm_bin_js.py",
         "patch_web_wasm.py",
         "tests/dds_web_wasm_node.mjs",
@@ -143,6 +145,7 @@ py_test(
         "dds_web.css",
         "dds_web.html",
         "dds_web.js",
+        "dds_web_deal_import.js",
         "gen_wasm_bin_js.py",
         "patch_web_wasm.py",
     ],
