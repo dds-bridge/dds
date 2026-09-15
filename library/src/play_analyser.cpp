@@ -31,7 +31,7 @@ extern Scheduler scheduler;
 
 
 /**
- * @brief Analyze a sequence of played cards (binary format) and determine the tricks taken.
+ * @brief Analyse a sequence of played cards (binary format) and determine the tricks taken.
  *
  * This function simulates play of a bridge Deal according to the provided play trace,
  * using double dummy analysis to determine the number of tricks won at each step.
@@ -241,7 +241,7 @@ int STDCALL AnalysePlayBin(
 
 
 /**
- * @brief Analyze a sequence of played cards (PBN format) and determine the tricks taken.
+ * @brief Analyse a sequence of played cards (PBN format) and determine the tricks taken.
  *
  * This function converts a PBN-format Deal and play trace to internal format,
  * then simulates play using double dummy analysis to determine the number of tricks won.
