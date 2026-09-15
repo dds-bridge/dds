@@ -170,6 +170,7 @@ class ParseCliTest(unittest.TestCase):
         text = buf.getvalue()
         self.assertIn("--numthr", text)
         self.assertIn("-n", text)
+        self.assertIn("[-n N|--numthr N]", text)
 
     def test_rejects_unknown_flags(self) -> None:
         with self.assertRaises(ValueError):

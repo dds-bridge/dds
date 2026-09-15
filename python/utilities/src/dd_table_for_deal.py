@@ -198,7 +198,7 @@ def _parse_cli(argv: list[str]) -> tuple[str, int, int | None, int] | None:
 def _print_usage(prog: str) -> None:
     print(
         f"Usage: {prog} [--vul none|both|ns|ew|0|1|2|3] [--limit N] "
-        f"[-n|--numthr N] <pbn_deal_or_file>\n"
+        f"[-n N|--numthr N] <pbn_deal_or_file>\n"
         f"       {prog} -h | --help\n"
         "\n"
         "Calculate double-dummy tricks and par for all strains and leads.\n"

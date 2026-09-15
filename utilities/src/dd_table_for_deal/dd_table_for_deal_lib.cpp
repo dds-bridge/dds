@@ -161,6 +161,16 @@ auto parse_numthr(std::string_view text) -> std::optional<int>
 }
 
 
+auto calc_dd_table_for_pbn_deal(
+    DdTableDealPBN table_deal,
+    int num_threads,
+    DdTableResults * table,
+    CalcDdTablePbnNFn const& calc) -> int
+{
+  return calc(table_deal, table, num_threads);
+}
+
+
 auto apply_deal_limit(
     std::vector<std::string> deals,
     std::optional<std::size_t> limit) -> std::vector<std::string>

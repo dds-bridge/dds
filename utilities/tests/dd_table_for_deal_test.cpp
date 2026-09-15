@@ -83,6 +83,9 @@ TEST(ParseNumthr, AcceptsZeroAndPositiveIntegers)
   EXPECT_EQ(dd_table_for_deal::parse_numthr("0"), 0);
   EXPECT_EQ(dd_table_for_deal::parse_numthr("1"), 1);
   EXPECT_EQ(dd_table_for_deal::parse_numthr("8"), 8);
+  EXPECT_EQ(
+      dd_table_for_deal::parse_numthr("2147483647"),
+      2147483647);
 }
 
 
@@ -92,6 +95,32 @@ TEST(ParseNumthr, RejectsNegativeAndNonNumeric)
   EXPECT_FALSE(dd_table_for_deal::parse_numthr("-1").has_value());
   EXPECT_FALSE(dd_table_for_deal::parse_numthr("3x").has_value());
   EXPECT_FALSE(dd_table_for_deal::parse_numthr("1.5").has_value());
+  EXPECT_FALSE(dd_table_for_deal::parse_numthr("2147483648").has_value());
+}
+
+
+TEST(CalcDdTableForPbnDeal, ForwardsNumThreadsToSolver)
+{
+  int seen_threads = -1;
+  const auto fake_calc =
+      [&](DdTableDealPBN /*deal*/, DdTableResults * /*table*/, int num_threads)
+      {
+        seen_threads = num_threads;
+        return RETURN_NO_FAULT;
+      };
+
+  DdTableDealPBN deal{};
+  DdTableResults table{};
+
+  EXPECT_EQ(
+      dd_table_for_deal::calc_dd_table_for_pbn_deal(deal, 1, &table, fake_calc),
+      RETURN_NO_FAULT);
+  EXPECT_EQ(seen_threads, 1);
+
+  EXPECT_EQ(
+      dd_table_for_deal::calc_dd_table_for_pbn_deal(deal, 0, &table, fake_calc),
+      RETURN_NO_FAULT);
+  EXPECT_EQ(seen_threads, 0);
 }
 
 

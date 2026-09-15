@@ -37,6 +37,7 @@ namespace {
 
 using dd_table_for_deal::PBN_DEAL_MAX;
 using dd_table_for_deal::apply_deal_limit;
+using dd_table_for_deal::calc_dd_table_for_pbn_deal;
 using dd_table_for_deal::extract_deal_tags;
 using dd_table_for_deal::format_par_line;
 using dd_table_for_deal::looks_like_path;
@@ -212,7 +213,14 @@ auto process_deal(
   DdTableResults table;
   char line[80];
 
-  const int res = CalcDDtablePBNN(tableDealPBN, &table, num_threads);
+  const int res = calc_dd_table_for_pbn_deal(
+      tableDealPBN,
+      num_threads,
+      &table,
+      [](DdTableDealPBN table_deal_pbn, DdTableResults * tablep, int threads)
+      {
+        return CalcDDtablePBNN(table_deal_pbn, tablep, threads);
+      });
   if (res != RETURN_NO_FAULT)
   {
     ErrorMessage(res, line);
@@ -241,7 +249,7 @@ static auto print_usage(const char * prog) -> void
 {
   fprintf(stderr,
           "Usage: %s [--vul none|both|ns|ew|0|1|2|3] [--limit N] "
-          "[-n|--numthr N] <pbn_deal_or_file>\n"
+          "[-n N|--numthr N] <pbn_deal_or_file>\n"
           "       %s -h | --help\n"
           "\n"
           "Calculate double-dummy tricks and par for all strains and leads.\n"
