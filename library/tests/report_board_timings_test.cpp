@@ -5,6 +5,7 @@
 
 #include <iomanip>
 #include <ios>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -186,4 +187,54 @@ TEST(AppendBatchBoardTimes, PreReserveKeepsCapacityAcrossBatches)
   // Assert: no reallocation beyond the file-wide reserve.
   ASSERT_EQ(accumulated.size(), 4u);
   EXPECT_EQ(accumulated.capacity(), capacity_before);
+}
+
+TEST(AppendCalcBatchDealTimes, SumsStrainTimesIntoFileRelativeDeals)
+{
+  // Arrange: calc expands each deal to strains_per_deal scheduler boards.
+  // Batch-local strain times for two deals with 5 strains each, then a second
+  // batch of one deal remapped by file_offset.
+  std::vector<std::pair<int, int>> accumulated;
+  const std::vector<int> first_batch_strains = {
+    10, 20, 30, 40, 50,  // deal 0 -> 150
+    1, 2, 3, 4, 5,       // deal 1 -> 15
+  };
+  const std::vector<int> second_batch_strains = {
+    100, 0, 0, 0, 7,     // deal 2 -> 107
+  };
+
+  // Act
+  append_calc_batch_deal_times(
+    accumulated, first_batch_strains, /*strains_per_deal=*/5, /*file_offset=*/0);
+  append_calc_batch_deal_times(
+    accumulated, second_batch_strains, /*strains_per_deal=*/5, /*file_offset=*/2);
+
+  // Assert
+  ASSERT_EQ(accumulated.size(), 3u);
+  EXPECT_EQ(accumulated[0], (std::pair<int, int>{0, 150}));
+  EXPECT_EQ(accumulated[1], (std::pair<int, int>{1, 15}));
+  EXPECT_EQ(accumulated[2], (std::pair<int, int>{2, 107}));
+}
+
+TEST(AppendCalcBatchDealTimes, EmptyStrainTimesIsNoOp)
+{
+  std::vector<std::pair<int, int>> accumulated = {{9, 1}};
+  append_calc_batch_deal_times(
+    accumulated, {}, /*strains_per_deal=*/5, /*file_offset=*/10);
+  ASSERT_EQ(accumulated.size(), 1u);
+  EXPECT_EQ(accumulated[0], (std::pair<int, int>{9, 1}));
+}
+
+TEST(AppendCalcBatchDealTimes, SaturatesSumThatExceedsIntMax)
+{
+  std::vector<std::pair<int, int>> accumulated;
+  const int almost_max = std::numeric_limits<int>::max() - 5;
+  const std::vector<int> strains = {almost_max, 10};
+
+  append_calc_batch_deal_times(
+    accumulated, strains, /*strains_per_deal=*/2, /*file_offset=*/3);
+
+  ASSERT_EQ(accumulated.size(), 1u);
+  EXPECT_EQ(accumulated[0].first, 3);
+  EXPECT_EQ(accumulated[0].second, std::numeric_limits<int>::max());
 }

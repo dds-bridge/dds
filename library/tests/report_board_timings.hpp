@@ -31,3 +31,15 @@ void append_batch_board_times(
     std::vector<std::pair<int, int>>& accumulated,
     const std::vector<std::pair<int, int>>& batch_times,
     int file_offset);
+
+/// Append one calc-batch's per-strain timings as per-deal file indices.
+///
+/// Calc expands each deal into @p strains_per_deal boards. @p strain_times_us
+/// is a flat batch-local vector of those board times (microseconds). Each
+/// deal's time is the saturated sum of its strain boards, stored as
+/// `(deal_index_in_batch + file_offset, time_us)`.
+void append_calc_batch_deal_times(
+    std::vector<std::pair<int, int>>& accumulated,
+    const std::vector<int>& strain_times_us,
+    int strains_per_deal,
+    int file_offset);

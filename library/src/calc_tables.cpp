@@ -9,6 +9,7 @@
 
 #include "calc_tables.hpp"
 #include <algorithm>
+#include <chrono>
 #include <limits>
 #include <array>
 #include <numeric>
@@ -579,6 +580,21 @@ int STDCALL CalcAllTablesX(
   ParResults * par,
   int maxThreads)
 {
+  return calc_all_tables_x(
+    numDeals, deals, mode, trumpFilter, results, par, maxThreads, nullptr);
+}
+
+
+auto calc_all_tables_x(
+  int numDeals,
+  DdTableDeal const * deals,
+  int mode,
+  int const trumpFilter[DDS_STRAINS],
+  DdTableResults * results,
+  ParResults * par,
+  int maxThreads,
+  std::vector<int> * strain_times_us) -> int
+{
   // C ABI: exceptions must not unwind into a foreign caller (UB). Heap
   // allocations below (and parallel_all_boards_n) may throw; map any throw
   // to RETURN_UNKNOWN_FAULT.
@@ -616,6 +632,9 @@ int STDCALL CalcAllTablesX(
     const int nboards = numDeals * included;
     std::vector<Deal> boards(static_cast<unsigned>(nboards));
     std::vector<std::array<int, DDS_HANDS>> scores(static_cast<unsigned>(nboards));
+    std::vector<int> local_strain_times;
+    if (strain_times_us != nullptr)
+      local_strain_times.assign(static_cast<unsigned>(nboards), 0);
 
     int ind = 0;
     for (int m = 0; m < numDeals; m++)
@@ -663,15 +682,33 @@ int STDCALL CalcAllTablesX(
     const int err = parallel_all_boards_n(nboards, nthreads,
       [&](const int worker_id, const int bno) -> int {
         (void)worker_id;
-        return calc_single_deal_scores(
+        if (strain_times_us == nullptr)
+        {
+          return calc_single_deal_scores(
+            dds::internal::worker_solver_context(),
+            boards[static_cast<unsigned>(bno)],
+            -1, 1, 1,
+            scores[static_cast<unsigned>(bno)].data());
+        }
+
+        const auto t0 = std::chrono::steady_clock::now();
+        const int res = calc_single_deal_scores(
           dds::internal::worker_solver_context(),
           boards[static_cast<unsigned>(bno)],
           -1, 1, 1,
           scores[static_cast<unsigned>(bno)].data());
+        const auto dur = std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::steady_clock::now() - t0).count();
+        local_strain_times[static_cast<unsigned>(bno)] =
+          saturate_board_time_us(dur);
+        return res;
       },
       order.empty() ? nullptr : &order);
     if (err != RETURN_NO_FAULT)
       return err;
+
+    if (strain_times_us != nullptr)
+      *strain_times_us = std::move(local_strain_times);
 
     for (int m = 0; m < numDeals; m++)
     {
@@ -718,6 +755,21 @@ int STDCALL CalcAllTablesPBNX(
   ParResults * par,
   int maxThreads)
 {
+  return calc_all_tables_pbn_x(
+    numDeals, deals, mode, trumpFilter, results, par, maxThreads, nullptr);
+}
+
+
+auto calc_all_tables_pbn_x(
+  int numDeals,
+  DdTableDealPBN const * deals,
+  int mode,
+  int const trumpFilter[DDS_STRAINS],
+  DdTableResults * results,
+  ParResults * par,
+  int maxThreads,
+  std::vector<int> * strain_times_us) -> int
+{
   // C ABI: same catch-all contract as CalcAllTablesX / dds_c_api.cpp.
   try
   {
@@ -742,8 +794,9 @@ int STDCALL CalcAllTablesPBNX(
         return RETURN_PBN_FAULT;
     }
 
-    return CalcAllTablesX(
-      numDeals, binary.data(), mode, trumpFilter, results, par, maxThreads);
+    return calc_all_tables_x(
+      numDeals, binary.data(), mode, trumpFilter, results, par, maxThreads,
+      strain_times_us);
   }
   catch (...)
   {

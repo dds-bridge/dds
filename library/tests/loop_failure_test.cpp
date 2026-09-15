@@ -343,6 +343,27 @@ TEST_F(LoopFailureTest, CalcMismatchInLaterBatchUsesAbsoluteIndex)
   EXPECT_EQ(out.find("loop_calc: j 0:"), std::string::npos);
 }
 
+TEST_F(LoopFailureTest, CalcReportCollectsPerDealTimesAcrossBatches)
+{
+  // dtest -r for -s calc must publish one (file_index, time_us) per deal,
+  // remapping batch-local strain aggregates across stepsize chunks.
+  auto hands = load_hands(
+      "loop_calc_report_times.txt", two_deal_body(kDealBody, kDealBody));
+  ASSERT_EQ(hands.number, 2);
+
+  std::vector<std::pair<int, int>> board_times;
+  testing::internal::CaptureStdout();
+  ASSERT_TRUE(
+      loop_calc(hands.deal_list, hands.table_list, 2, 1, &board_times));
+  (void)testing::internal::GetCapturedStdout();
+
+  ASSERT_EQ(board_times.size(), 2u);
+  EXPECT_EQ(board_times[0].first, 0);
+  EXPECT_EQ(board_times[1].first, 1);
+  EXPECT_GT(board_times[0].second, 0);
+  EXPECT_GT(board_times[1].second, 0);
+}
+
 TEST_F(LoopFailureTest, PlayStopsOnFirstExpectedMismatch)
 {
   auto wrong = std::string(kDealBody);
