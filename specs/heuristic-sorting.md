@@ -21,7 +21,7 @@ because the weighting policy is intricate (position-, trump-, and
 void-situation-dependent) and is the single hottest inner-loop computation in a
 solve.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > The scoring formulas live in `doc/heuristic-sorting.md` and the code; these are
 > the facts the rest of the system relies on.
@@ -48,7 +48,7 @@ solve.
   and mutates `trackp`; heuristics read the snapshots copied into
   `HeuristicContext`.
 - **`testable_heuristic_sorting`** exposes the same sources to the heuristic-sorting
-  test packages; behaviour matches `heuristic_sorting`.
+  test packages; behavior matches `heuristic_sorting`.
 
 ## Key entry points
 

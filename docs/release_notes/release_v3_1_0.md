@@ -81,11 +81,11 @@ TOTAL  calc                  9.35       123.59         8.42
 
 ### Correctness fixes
 
-- **`AnalysePlay` under-counted tricks** (#156): each card was analysed against
+- **`AnalysePlay` under-counted tricks** (#156): each card was analyzed against
   a cold transposition table, so the hint-bounded search settled on the wrong
   bound. The play path now reuses the caller's context, matching `SolveBoard`.
 - **Move ordering and pruning corruption** from signed→unsigned casts (see
-  above) — search behaviour only, but it cost significant time.
+  above) — search behavior only, but it cost significant time.
 - **Heap-use-after-free in `clear_tt`** and a null dereference in
   `TransTableS::reset_memory` after memory release.
 - **Par output now names the declaring seat** when successive par contracts
@@ -102,7 +102,7 @@ entry points, so callers can size or opt out of the library's parallelism:
 `CalcAllTablesX`, `CalcAllTablesPBNX`, `SolveAllBoardsN`, `SolveAllBoardsBinN`,
 `SolveAllBoardsSeq`, `SolveAllBoardsBinSeq`.
 
-`SetMaxThreads` is deprecated in favour of `InitializeStaticMemory`; the old
+`SetMaxThreads` is deprecated in favor of `InitializeStaticMemory`; the old
 name still works and no longer influences batch parallelism.
 
 ### Platforms and build

@@ -364,7 +364,7 @@ int STDCALL CalcAllTablesN(
   int ind = 0;
   resp->no_of_boards = 0;
 
-  // With no deals the loop below writes no boards, and bo is an uninitialised
+  // With no deals the loop below writes no boards, and bo is an uninitialized
   // local -- solving a board from it reads indeterminate values. Return early,
   // matching CalcAllTablesX().
   if (dealsp->no_of_tables == 0)
@@ -398,7 +398,7 @@ int STDCALL CalcAllTablesN(
   }
 
   // ind counts the boards actually written; deriving the count from a
-  // last-index variable initialised to 0 claimed one board even when none
+  // last-index variable initialized to 0 claimed one board even when none
   // had been filled in.
   bo.no_of_boards = ind;
 

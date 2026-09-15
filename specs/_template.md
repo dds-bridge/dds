@@ -17,7 +17,7 @@ last-updated: <YYYY-MM-DD>
 One short paragraph: what this capability provides and to whom. Intent and the
 "why it exists" framing live here — doxygen has nowhere to put them.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-symbol signatures live in doxygen (`<doxygen-page>.html`). This section
 > records only facts that span the whole capability or that a reader cannot infer
@@ -26,7 +26,7 @@ One short paragraph: what this capability provides and to whom. Intent and the
 - Cross-cutting guarantees the code upholds today (e.g. "on failure the input is
   restored", "round-trip: write then read returns the original value").
 - Things consumers may rely on; assumptions that must remain true.
-- Non-obvious behaviours no single symbol owns (stall guards, void-type gating,
+- Non-obvious behaviors no single symbol owns (stall guards, void-type gating,
   lock-step delegation, error-type conventions).
 - Keep these current — a change that alters any guarantee here updates this
   section in the same commit. (Per-API drift is doxygen's job, not yours.)

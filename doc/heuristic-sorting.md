@@ -39,7 +39,7 @@ LHO is void and LHO has trump card(s), or
 RHO is void and RHO has trump card(s).
 If RHO has either the highest rank of the suit played by hand-to-play or the next highest rank, then there is a suitBonus change of –18.  
 
-If it is a trump contract, the suit is not trump, the own hand has a singleton, the own hand has at least one trump, partner has the highest rank in the suit and at least a suit length of 2, then there is a suitBonus change of +16.  Suits are thus favoured where the opponents have as few move alternatives as possible.
+If it is a trump contract, the suit is not trump, the own hand has a singleton, the own hand has at least one trump, partner has the highest rank in the suit and at least a suit length of 2, then there is a suitBonus change of +16.  Suits are thus favored where the opponents have as few move alternatives as possible.
 
 countLH = (suit length of LHO) * 4, if LHO is not void in the suit,
 countLH = (depth + 4), if LHO is void in the suit

@@ -711,7 +711,7 @@ auto register_analysis_bindings(py::module_& module) -> void
         py::arg("current_trick_suit") = py::make_tuple(0, 0, 0),
         py::arg("current_trick_rank") = py::make_tuple(0, 0, 0),
         py::arg("thread_index") = 0,
-        "Analyse a played deal: double-dummy trick count after each card played.\n\n"
+        "Analyze a played deal: double-dummy trick count after each card played.\n\n"
         "Wraps the DDS AnalysePlayPBN C API.\n\n"
         "Args:\n"
         "    remain_cards (str): Full deal in PBN format before any card of 'play'.\n"
@@ -792,7 +792,7 @@ auto register_analysis_bindings(py::module_& module) -> void
             return results;
         },
         py::arg("deals"),
-        "Analyse multiple played deals in one batched call.\n\n"
+        "Analyze multiple played deals in one batched call.\n\n"
         "Wraps the DDS AnalyseAllPlaysPBN C API. Note: this batch entry point\n"
         "currently solves the deals sequentially (one board at a time).\n\n"
         "Args:\n"

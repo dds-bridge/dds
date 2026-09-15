@@ -42,7 +42,7 @@ def _debug_windows_cppopts_block(cppvariables: str) -> str:
     return match.group(1)
 
 
-# MSVC optimisation-level flags that fight Bazel's compilation_mode (/Od vs /O2
+# MSVC optimization-level flags that fight Bazel's compilation_mode (/Od vs /O2
 # D9025). Broader than /Od|/O2 so /O1, /Ox, etc. cannot sneak back in.
 _MSVC_OPT_LEVEL_COPT = re.compile(r'"/O[0-9a-zA-Z]')
 
@@ -88,7 +88,7 @@ class TestWindowsMsvcCppoptsAvoidD9025(unittest.TestCase):
             self.assertRegex(
                 flag,
                 _MSVC_OPT_LEVEL_COPT,
-                f"expected {flag} to be treated as an optimisation-level override",
+                f"expected {flag} to be treated as an optimization-level override",
             )
         self.assertNotRegex(
             '"/W4"',

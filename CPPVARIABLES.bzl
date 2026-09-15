@@ -37,7 +37,7 @@ DDS_CPPOPTS = select({
         "-Wno-character-conversion",
         "-Werror",
     ],
-    # Optimisation (/O2, /Od) and language standard (/std) come from Bazel's
+    # Optimization (/O2, /Od) and language standard (/std) come from Bazel's
     # compilation_mode and the patched MSVC default_cpp_std (/std:c++20).
     # Restating them here overrides the toolchain and triggers MSVC D9025.
     # /utf-8 must stay in these arms, not a global --cxxopt: wasm-transition

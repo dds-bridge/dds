@@ -21,7 +21,7 @@ context-aware consumers are served from one library without duplicating the
 solver. Everything below the API (search, TT, scheduler) is private; this
 capability defines what crosses the boundary and promises to stay stable.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > The exact per-function contracts are in doxygen. These are the whole-surface
 > facts.

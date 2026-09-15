@@ -18,7 +18,7 @@ depth. It exists purely for performance tuning and debugging of the solver — i
 has no effect on results — and is compiled to nothing in normal builds so it never
 costs the hot path.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Method contracts are in the header doxygen; these are the capability-wide facts.
 

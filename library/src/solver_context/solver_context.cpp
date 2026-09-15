@@ -254,7 +254,7 @@ auto SolverContext::clear_tt() const -> void
   // memory (ASan: heap-use-after-free in TransTable{L,S}::lookup).
   //
   // Disposing instead makes the documented "recreates lazily on demand"
-  // behaviour real: tt_ becomes null, so the next trans_table() rebuilds from
+  // behavior real: tt_ becomes null, so the next trans_table() rebuilds from
   // the owner's config. Nothing is lost, because the kind and memory limits
   // live in SolverContext::cfg_, not in the TT instance.
   dispose_trans_table();

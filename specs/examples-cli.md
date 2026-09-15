@@ -17,7 +17,7 @@ API: how to build a deal, call the solver, and read results. They double as
 reference usage for the bindings and as the C++ programs the [wasm-emscripten](wasm-emscripten.md)
 build ports to the browser. They are demonstrations, not a supported product CLI.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-binary detail lives in the sources; these are the whole-set conventions.
 
@@ -58,6 +58,6 @@ build ports to the browser. They are demonstrations, not a supported product CLI
 
 - These are demonstrations and reference code, **not** a supported command-line
   product; input/output formats may be example-specific.
-- They add no solver behaviour of their own — they only exercise
+- They add no solver behavior of their own — they only exercise
   [dds-public-api](dds-public-api.md) / [solver-context](solver-context.md).
 - Only a subset is compiled to WASM (see [wasm-emscripten](wasm-emscripten.md)).

@@ -36,7 +36,8 @@
 <p>The functions <code>SidesParBin</code> and <code>DealerParBin</code> provide binary output of the par results, making it easy to tailor-make the output text format. Two such functions, <code>ConvertToSidesTextFormat</code> and <code>ConvertToDealerTextFormat</code>, are included as examples. </p>
 <p>It is possible as an option to perform par calculation in <code>CalcAllTables</code> and <code>CalcAllTablesPBN</code>. </p>
 <p>The par calculation is executed using a single thread. But the calculation is very fast and its duration is negligible compared to the double dummy calculation duration.</p>
-<h3 id="double-dummy-value-analyser-functions">Double Dummy Value Analyser Functions</h3>
+<a id="double-dummy-value-analyser-functions"></a>
+<h3 id="double-dummy-value-analyzer-functions">Double Dummy Value Analyzer Functions</h3>
 <p>The functions <code>AnalysePlayBin</code>, <code>AnalysePlayPBN</code>, <code>AnalyseAllPlaysBin</code> and <code>AnalyseAllPlaysPBN</code> take the played cards in a game or games and calculate and present their double dummy values.</p>
 <table>
 <thead>
@@ -1126,7 +1127,7 @@ number of threads.</p>
 <p>DDS first detects the number of cores and the available memory. If this doesn't work for some reason, it defaults to 1 thread which is allowed to use the maximum memory size per thread.</p>
 <p>DDS then checks whether a number of threads equal to the number of cores will fit within the available memory when each thread may use the maximum memory per thread. If there is not enough memory for this, DDS scales back its ambition. If there is enough memory for the preferred memory size, then DDS still creates a number of threads equal to the number of cores. If there is not even enough memory for this, DDS scales back the number of threads to fit within the memory.</p>
 <p>SetMaxThreads no longer influences the thread count: its argument is ignored and internal, global batch threading was removed. To cap workers, pass an explicit maxThreads to the *N or *X entry points, or manage concurrency in the calling application (typically one SolverContext per thread). DDS will otherwise select a suitable number of threads on its own.</p>
-<p>Calling SetMaxThreads() is harmless but has no effect beyond initialisation; InitializeStaticMemory() is the non-deprecated spelling.</p>
+<p>Calling SetMaxThreads() is harmless but has no effect beyond initialization; InitializeStaticMemory() is the non-deprecated spelling.</p>
 <p>SetMaxThreads can be called multiple times, but it cannot change the number of threads: use the per-call maxThreads argument instead.</p>
 <p>It is possible to ask DDS to give up its dynamically allocated memory by calling FreeMemory. This could be useful for instance if there is a long pause where DDS is not used within a session. DDS will free its memory when the DLL detaches from the user program, so there is no need for the user to call this function before detaching.
 <a name="ReturnCodes"></a></p>

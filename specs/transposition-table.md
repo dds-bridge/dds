@@ -20,7 +20,7 @@ consumer in a solve and the main reason reusing a [solver-context](solver-contex
 solves is worthwhile. This capability provides the abstract table interface and
 its three concrete strategies, trading memory against speed.
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Per-method signatures live in the header doxygen; these are the whole-table
 > guarantees.
@@ -115,7 +115,7 @@ its three concrete strategies, trading memory against speed.
   by default). TT ownership itself is not build-flag-gated — it is always
   instance-scoped via `SearchContext`.
 - **`testable_trans_table`** is the same sources exposed to
-  `//library/tests/trans_table/...` for white-box testing; behaviour is identical to
+  `//library/tests/trans_table/...` for white-box testing; behavior is identical to
   `trans_table`.
 
 ## Key entry points

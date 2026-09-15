@@ -20,7 +20,7 @@
  * values and formats them into fixed-size character buffers, so an entry far
  * outside the legal range overflows those buffers. CalcDDtable() always
  * produces legal tables, but the par entry points are exported and a caller
- * may hand-build or deserialise a table, so the range is checked here rather
+ * may hand-build or deserialize a table, so the range is checked here rather
  * than assumed.
  *
  * @param tablep Table to validate. May be nullptr.

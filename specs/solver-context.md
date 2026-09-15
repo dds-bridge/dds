@@ -17,11 +17,11 @@ historically global mutable state: the per-thread `ThreadData`, the transpositio
 table, search state, move generation, and logging/stats. It exists so a caller can
 create one context at the top of a call stack, drive multiple solves through it,
 and reuse the (expensive) transposition table across them — instead of relying on
-process-global state that forced serialised, non-reentrant use. It is the object
+process-global state that forced serialized, non-reentrant use. It is the object
 the modern C++ API (`dds_api.hpp`) and its C shim (`dds_c_api.h`) hand around as
 the opaque handle. See [dds-public-api](dds-public-api.md).
 
-## Behaviour & invariants
+## Behavior & invariants
 
 > Method signatures live in the header's doxygen; these are the whole-context
 > guarantees.
@@ -68,7 +68,7 @@ the opaque handle. See [dds-public-api](dds-public-api.md).
   the next `SearchContext::trans_table()` rebuilds an empty table lazily. The
   configured kind and memory limits survive, because they live in
   `SolverContext::cfg_` and not in the TT instance. Calling `return_all_memory()`
-  while keeping the object was the earlier behaviour and was **unsafe**: it left
+  while keeping the object was the earlier behavior and was **unsafe**: it left
   a husk whose pool pointers dangled, which `trans_table()` handed straight back
   because it only checks whether `tt_` is non-null — the next `lookup`/`add`
   read freed memory. `clear_tt()` and `dispose_trans_table()` now differ only in
@@ -111,6 +111,6 @@ the opaque handle. See [dds-public-api](dds-public-api.md).
 - The context does not persist across processes; the TT is in-memory only.
 - The class header still describes itself as "scaffolding … no-behavior-change
   adapter" from the migration; the instance-scoped ownership model above is the
-  current, authoritative behaviour. (A stale comment in
+  current, authoritative behavior. (A stale comment in
   `solver_context_adapter.cpp` still refers to a "ThreadData-attached" shared TT;
   the per-`SearchContext` ownership described here is what the code does.)
