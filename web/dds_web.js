@@ -171,9 +171,8 @@ function scheduleDealSolve() {
                 dealSolvePending = false;
 
                 await refreshDdTable();
-
                 if (epoch !== dealSolveEpoch) {
-                    // Invalidation alone must not restart work; only a newer
+                    // Invalidation alone must not restart; only a newer
                     // scheduleDealSolve (pending) should continue. A pending
                     // debounce will start a fresh job when it fires.
                     if (dealSolvePending) {
@@ -189,30 +188,13 @@ function scheduleDealSolve() {
                     updateHandCardDisplays(collectHands());
                 }
 
-                if (epoch !== dealSolveEpoch) {
-                    if (dealSolvePending) {
-                        continue;
-                    }
-                    break;
+                // Stale+pending → another iteration; else exit (success or
+                // invalidate). Gate release lives in finally.
+                if (epoch !== dealSolveEpoch && dealSolvePending) {
+                    continue;
                 }
-
-                // Release the gate only once the epoch is stable; if a schedule
-                // sneaks in between the check and the clear, take the flag back
-                // and loop again instead of dropping the trailing request.
-                dealSolveQueued = false;
-
-                if (epoch !== dealSolveEpoch) {
-                    dealSolveQueued = true;
-                    if (dealSolvePending) {
-                        continue;
-                    }
-                    break;
-                }
-
                 break;
             }
-        } catch (err) {
-            throw err;
         } finally {
             const restart = dealSolvePending;
             dealSolveQueued = false;
@@ -657,15 +639,10 @@ function parseDlmBoardPayload(letters) {
             return null;
         }
         const [firstCard, secondCard] = pairs[i];
-        const owners = [
-            firstOwner.charAt(code),
-            secondOwner.charAt(code),
-        ];
-        const cards = [firstCard, secondCard];
-        for (let j = 0; j < 2; j++) {
-            const direction = DIR_FROM_LETTER[owners[j]];
-            byDirection[direction][cards[j].charAt(0)] += cards[j].charAt(1);
-        }
+        const firstDirection = DIR_FROM_LETTER[firstOwner.charAt(code)];
+        byDirection[firstDirection][firstCard.charAt(0)] += firstCard.charAt(1);
+        const secondDirection = DIR_FROM_LETTER[secondOwner.charAt(code)];
+        byDirection[secondDirection][secondCard.charAt(0)] += secondCard.charAt(1);
     }
 
     return dealFromDirectionMap({
