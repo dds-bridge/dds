@@ -9,10 +9,11 @@
 
 #include "calc_tables.hpp"
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <limits>
-#include <array>
 #include <numeric>
+#include <utility>
 #include <vector>
 
 #include <lookup_tables/lookup_tables.hpp>
