@@ -68,7 +68,9 @@ auto declarer_tricks_from_leader_score(
  *
  * Same behavior as CalcAllTablesX. When @p strain_times_us is non-null, it is
  * resized to `numDeals * included_strains` and filled with microseconds spent
- * in each strain-board solve (batch-local board index order).
+ * in each strain-board solve (batch-local board index order). A successful
+ * `numDeals == 0` call clears @p strain_times_us so reused vectors cannot keep
+ * stale timings.
  */
 auto calc_all_tables_x(
   int numDeals,

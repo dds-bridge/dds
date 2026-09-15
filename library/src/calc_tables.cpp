@@ -603,7 +603,11 @@ auto calc_all_tables_x(
     if (numDeals < 0)
       return RETURN_TOO_MANY_TABLES;
     if (numDeals == 0)
+    {
+      if (strain_times_us != nullptr)
+        strain_times_us->clear();
       return RETURN_NO_FAULT;
+    }
     if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
       return RETURN_UNKNOWN_FAULT;
 
@@ -776,7 +780,11 @@ auto calc_all_tables_pbn_x(
     if (numDeals < 0)
       return RETURN_TOO_MANY_TABLES;
     if (numDeals == 0)
+    {
+      if (strain_times_us != nullptr)
+        strain_times_us->clear();
       return RETURN_NO_FAULT;
+    }
     if (deals == nullptr || results == nullptr || trumpFilter == nullptr)
       return RETURN_UNKNOWN_FAULT;
 
