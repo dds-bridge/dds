@@ -657,15 +657,10 @@ function parseDlmBoardPayload(letters) {
             return null;
         }
         const [firstCard, secondCard] = pairs[i];
-        const owners = [
-            firstOwner.charAt(code),
-            secondOwner.charAt(code),
-        ];
-        const cards = [firstCard, secondCard];
-        for (let j = 0; j < 2; j++) {
-            const direction = DIR_FROM_LETTER[owners[j]];
-            byDirection[direction][cards[j].charAt(0)] += cards[j].charAt(1);
-        }
+        const firstDirection = DIR_FROM_LETTER[firstOwner.charAt(code)];
+        byDirection[firstDirection][firstCard.charAt(0)] += firstCard.charAt(1);
+        const secondDirection = DIR_FROM_LETTER[secondOwner.charAt(code)];
+        byDirection[secondDirection][secondCard.charAt(0)] += secondCard.charAt(1);
     }
 
     return dealFromDirectionMap({
