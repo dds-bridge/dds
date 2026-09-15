@@ -116,7 +116,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         return page, errors
 
     def _fill_part_score_deal(self, page) -> None:
-        page.get_by_role("button", name="Part-score test deal").click()
+        page.get_by_label("Sample deals").select_option(label="Part-score")
 
     def _wait_for_dd_table(self, page) -> None:
         page.wait_for_function(
@@ -294,7 +294,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
-                page.get_by_role("button", name="Part-score test deal").click()
+                page.get_by_label("Sample deals").select_option(label="Part-score")
                 self._wait_for_dd_table(page)
 
                 # South / NT → West leads.
@@ -360,7 +360,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
-                page.get_by_role("button", name="Part-score test deal").click()
+                page.get_by_label("Sample deals").select_option(label="Part-score")
                 # Click South/NT immediately — cells may still be empty.
                 # td nth is among <td> only (C=0 … S=3, NT=4); not HTML cells[]
                 # which includes the direction <th> at index 0.
@@ -642,7 +642,9 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             outer_before = page.locator(".grid-outer").bounding_box()
             self.assertIsNotNone(outer_before)
 
-            page.get_by_role("button", name="Everyone makes 3N test deal").click()
+            page.get_by_label("Sample deals").select_option(
+                label="Everyone makes 3N"
+            )
             page.wait_for_function(
                 "() => document.querySelectorAll('#east_diamonds_cards .hand-card').length === 8"
             )
@@ -682,7 +684,9 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         """N/S/W 8-card suits must not spill out of their hand cells (washed-out overflow)."""
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
-            page.get_by_role("button", name="Everyone makes 3N test deal").click()
+            page.get_by_label("Sample deals").select_option(
+                label="Everyone makes 3N"
+            )
             page.wait_for_function(
                 "() => document.querySelectorAll('#north_hearts_cards .hand-card').length === 8"
             )
@@ -1129,6 +1133,24 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_sample_deals_can_reselect_same_option_after_edit(self) -> None:
+        """Placeholder reset must allow choosing the same sample again after edits."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            self._fill_part_score_deal(page)
+            self.assertEqual(page.locator("#north_spades").input_value(), "AQ85")
+            self.assertEqual(page.locator("#sample-deals").input_value(), "")
+
+            page.locator("#north_spades").fill("A")
+            page.locator("#north_spades").dispatch_event("input")
+            self.assertEqual(page.locator("#north_spades").input_value(), "A")
+
+            self._fill_part_score_deal(page)
+            self.assertEqual(page.locator("#north_spades").input_value(), "AQ85")
+            self.assertEqual(page.locator("#sample-deals").input_value(), "")
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
 
 if __name__ == "__main__":
     unittest.main()

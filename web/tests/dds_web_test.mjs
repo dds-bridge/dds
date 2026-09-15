@@ -117,6 +117,7 @@ function createMockDocument(initialValues = {}) {
     makeElement("result");
     makeElement("deck-status");
     makeElement("contract-status");
+    makeElement("sample-deals");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
     }
@@ -499,6 +500,75 @@ test("fillFormWithPartScoreTestData populates inputs", () => {
     ctx.fillFormWithPartScoreTestData();
     assert.equal(document.element("north_spades").value, "AQ85");
     assert.equal(document.element("west_clubs").value, "T5");
+});
+
+test("handleSampleDealSelected loads part-score and resets the select", () => {
+    const document = createMockDocument();
+    const select = document.element("sample-deals");
+    select.value = "part-score";
+    const ctx = loadDdsWeb(document);
+
+    ctx.handleSampleDealSelected(select);
+
+    assert.equal(document.element("north_spades").value, "AQ85");
+    assert.equal(document.element("west_clubs").value, "T5");
+    assert.equal(select.value, "");
+});
+
+test("handleSampleDealSelected loads grand-slam deal", () => {
+    const document = createMockDocument();
+    const select = document.element("sample-deals");
+    select.value = "grand-slam";
+    const ctx = loadDdsWeb(document);
+
+    ctx.handleSampleDealSelected(select);
+
+    assert.equal(document.element("north_spades").value, "AKQJ");
+    assert.equal(select.value, "");
+});
+
+test("handleSampleDealSelected loads everyone-3n deal", () => {
+    const document = createMockDocument();
+    const select = document.element("sample-deals");
+    select.value = "everyone-3n";
+    const ctx = loadDdsWeb(document);
+
+    ctx.handleSampleDealSelected(select);
+
+    assert.equal(document.element("north_spades").value, "QT9");
+    assert.equal(select.value, "");
+});
+
+test("handleSampleDealSelected ignores empty selection", () => {
+    const document = createMockDocument({ north_spades: "AK" });
+    const select = document.element("sample-deals");
+    select.value = "";
+    const ctx = loadDdsWeb(document);
+
+    ctx.handleSampleDealSelected(select);
+
+    assert.equal(document.element("north_spades").value, "AK");
+});
+
+test("handleSampleDealSelected can reload the same sample after an edit", () => {
+    // Arrange: load part-score, then edit a holding so the deal no longer matches.
+    const document = createMockDocument();
+    const select = document.element("sample-deals");
+    const ctx = loadDdsWeb(document);
+    select.value = "part-score";
+    ctx.handleSampleDealSelected(select);
+    assert.equal(document.element("north_spades").value, "AQ85");
+    assert.equal(select.value, "");
+
+    document.element("north_spades").value = "A";
+
+    // Act: choose the same sample again (possible because the select reset).
+    select.value = "part-score";
+    ctx.handleSampleDealSelected(select);
+
+    // Assert
+    assert.equal(document.element("north_spades").value, "AQ85");
+    assert.equal(select.value, "");
 });
 
 test("fillFormWithTestData does not require a double-dummy button", async () => {
@@ -2756,6 +2826,58 @@ test("result-cell-selected highlight is defined in CSS", () => {
     assert.match(css, /#result-table\s+td\.result-cell-selected\s*\{/s);
     assert.match(css, /#result-table\s+td\s*\{[^}]*cursor:\s*pointer/s);
     assert.match(css, /#result-table\s+td:focus-visible\s*\{/s);
+});
+
+test("sample-deals select uses the same background as native buttons", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    assert.match(
+        css,
+        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*background(?:-color)?:\s*#efefef/is
+    );
+});
+
+test("sample-deals select matches native toolbar button height chrome", () => {
+    // Shared toolbar rule sizes buttons and the Sample deals select together.
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    assert.match(
+        css,
+        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*box-sizing:\s*border-box/is
+    );
+    assert.match(
+        css,
+        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*height:\s*20px/is
+    );
+});
+
+test("sample-deals select uses the same border as native buttons", () => {
+    // Flat 1px solid border (no outset shadow), matching bridge-solver toolbar.
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    assert.match(
+        css,
+        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*border:\s*1px\s+solid\s+#767676/is
+    );
+});
+
+test("sample-deals select uses the same rectangular shape as native buttons", () => {
+    // appearance:none + shared radius; only the select keeps a dropdown chevron.
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    assert.match(
+        css,
+        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*appearance:\s*none/is
+    );
+    assert.match(
+        css,
+        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*border-radius:\s*2px/is
+    );
+    assert.match(css, /#sample-deals\s*\{[^}]*background-image:\s*url\(/is);
 });
 
 test("dds_web html does not cache-bust css or js with query params", () => {

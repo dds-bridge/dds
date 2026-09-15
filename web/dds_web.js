@@ -18,6 +18,7 @@
 /* exported fillFormWithGrandSlamTestData
             fillFormWithEveryoneMakes3nTestData
             fillFormWithPartScoreTestData
+            handleSampleDealSelected
             clearTestData
             rotateClockwise
             pageLoad
@@ -876,6 +877,22 @@ function fillFormWithPartScoreTestData() {
         "972..JT863.A6432",
         "K643.T8.AK742.T5"
     ]);
+}
+
+function handleSampleDealSelected(select) {
+    const loaders = {
+        "grand-slam": fillFormWithGrandSlamTestData,
+        "everyone-3n": fillFormWithEveryoneMakes3nTestData,
+        "part-score": fillFormWithPartScoreTestData
+    };
+    const load = loaders[select.value];
+    if (!load) {
+        return;
+    }
+    load();
+    // Restore the placeholder so the control reads like a button again and the
+    // same sample can be re-selected after editing.
+    select.value = "";
 }
 
 function * directions_and_suits() {

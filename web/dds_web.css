@@ -5,6 +5,32 @@
    https://opensource.org/licenses/MIT
 */
 
+/* Toolbar controls: flat 1px chrome like
+   https://macroxue.github.io/bridge-solver/web/ — Sample deals keeps a CSS
+   chevron as the only visual difference from Clear / Import / Rotate. */
+body > button[type="button"],
+#sample-deals {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #efefef;
+  color: #000;
+  border: 1px solid #767676;
+  border-radius: 2px;
+  box-sizing: border-box;
+  height: 20px;
+  padding: 0 6px;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+#sample-deals {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.45rem center;
+  background-size: 0.55rem;
+  padding-right: 1.6rem;
+}
+
 .grid-outer {
   background-color: #2196F3;
   padding: 10px;
