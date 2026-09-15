@@ -27,7 +27,7 @@ auto solve_same_board(
   FutureTricks * futp,
   const int hint) -> int;
 
-auto analyze_later_board(
+auto analyse_later_board(
   SolverContext& ctx,
   const int leadHand,
   MoveType const * move,

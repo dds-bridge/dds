@@ -38,6 +38,6 @@
     <ClInclude Include="..\examples\hands.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\analyze_play_bin.cpp" />
+    <ClCompile Include="..\examples\analyse_play_pbn.cpp" />
   </ItemGroup>
 </Project>

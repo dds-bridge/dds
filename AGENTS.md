@@ -10,8 +10,6 @@ Follow .github/instructions/cpp.instructions.md
 
 Follow .github/instructions/cpp.instructions.md
 
-Prefer American spelling in file, function, and variable names.
-
 Exceptions:
 - Match existing external or legacy APIs (for example, public C API names and types that already use a different style).
 - Do not rename unrelated legacy identifiers in the same change unless the task requires it.

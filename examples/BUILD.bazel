@@ -46,8 +46,8 @@ cc_library(
 
 # Example binaries
 cc_binary(
-    name = "analyze_all_plays_bin",
-    srcs = ["analyze_all_plays_bin.cpp"],
+    name = "analyse_all_plays_bin",
+    srcs = ["analyse_all_plays_bin.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
@@ -59,8 +59,8 @@ cc_binary(
 )
 
 cc_binary(
-    name = "analyze_all_plays_pbn",
-    srcs = ["analyze_all_plays_pbn.cpp"],
+    name = "analyse_all_plays_pbn",
+    srcs = ["analyse_all_plays_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
@@ -73,7 +73,7 @@ cc_binary(
 
 cc_binary(
     name = "AnalysePlayBin",
-    srcs = ["analyze_play_bin.cpp"],
+    srcs = ["analyse_play_bin.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS + EXAMPLES_LINKOPTS_WASM,
     local_defines = EXAMPLES_LOCAL_DEFINES,
@@ -86,8 +86,8 @@ cc_binary(
 )
 
 cc_binary(
-    name = "analyze_play_pbn",
-    srcs = ["analyze_play_pbn.cpp"],
+    name = "analyse_play_pbn",
+    srcs = ["analyse_play_pbn.cpp"],
     copts = EXAMPLES_CPPOPTS,
     linkopts = DDS_LINKOPTS,
     local_defines = EXAMPLES_LOCAL_DEFINES,
@@ -247,10 +247,10 @@ cc_binary(
 filegroup(
     name = "all_examples",
     srcs = [
-        ":analyze_all_plays_bin",
-        ":analyze_all_plays_pbn",
+        ":analyse_all_plays_bin",
+        ":analyse_all_plays_pbn",
         ":AnalysePlayBin",
-        ":analyze_play_pbn",
+        ":analyse_play_pbn",
         ":calc_all_tables",
         ":calc_all_tables_pbn",
         ":calc_dd_table",

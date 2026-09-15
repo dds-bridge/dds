@@ -30,7 +30,7 @@
     <IntDir>..\Build\int\$(platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\analyze_play_pbn.cpp" />
+    <ClCompile Include="..\examples\analyse_play_pbn.cpp" />
   </ItemGroup>
   <!-- ====================== -->
   <!--  INCLUDE PATHS Added   -->

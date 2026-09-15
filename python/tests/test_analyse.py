@@ -1,4 +1,4 @@
-"""Tests for analyse_play_pbn / analyse_all_plays_pbn (legacy British API names) and dealer_par."""
+"""Tests for analyse_play_pbn, analyse_all_plays_pbn and dealer_par."""
 
 import unittest
 
@@ -28,13 +28,13 @@ HAND0 = {
 }
 
 
-class TestAnalyzePlay(unittest.TestCase):
-    """Coverage for the published analyse_play_pbn / analyse_all_plays_pbn APIs."""
+class TestAnalysePlay(unittest.TestCase):
+    """Tests for analyse_play_pbn / analyse_all_plays_pbn."""
 
     def setUp(self) -> None:
         set_max_threads(0)
 
-    def test_analyze_play_pbn_basic(self) -> None:
+    def test_analyse_play_pbn_basic(self) -> None:
         # North leads the spade 6 in NT.
         result = analyse_play_pbn(DEAL, play="S6", trump=4, first=0)
         self.assertIn("number", result)
@@ -42,11 +42,11 @@ class TestAnalyzePlay(unittest.TestCase):
         self.assertIsInstance(result["tricks"], list)
         self.assertEqual(len(result["tricks"]), result["number"])
 
-    def test_analyze_play_pbn_odd_length(self) -> None:
+    def test_analyse_play_pbn_odd_length(self) -> None:
         with self.assertRaises(ValueError):
             analyse_play_pbn(DEAL, play="S6S", trump=4, first=0)
 
-    def test_analyze_all_plays_pbn(self) -> None:
+    def test_analyse_all_plays_pbn(self) -> None:
         deals = [
             {"remain_cards": DEAL, "play": "S6", "trump": 4, "first": 0},
             {"remain_cards": DEAL, "play": "S6", "trump": 1, "first": 0},
@@ -57,7 +57,7 @@ class TestAnalyzePlay(unittest.TestCase):
             self.assertIn("tricks", result)
             self.assertIsInstance(result["tricks"], list)
 
-    def test_analyze_all_plays_missing_play(self) -> None:
+    def test_analyse_all_plays_missing_play(self) -> None:
         with self.assertRaises(KeyError):
             analyse_all_plays_pbn([{"remain_cards": DEAL}])
 

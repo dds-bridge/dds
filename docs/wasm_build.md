@@ -53,7 +53,7 @@ Outputs are under `bazel-bin/wasm/`:
 Rules in `wasm/BUILD.bazel` wrap native binaries:
 
 - `solve_board_wasm` — solves a single board (`//examples:solve_board`)
-- `analyze_play_bin_wasm` — analyze play from binary format
+- `analyse_play_bin_wasm` — analyze play from binary format
 - `calc_dd_table_pbn_wasm` — double-dummy table from PBN
 - `dtest_wasm` — the `dtest` hand-list harness for Node (`//library/tests:dtest`)
 

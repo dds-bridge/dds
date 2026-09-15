@@ -17,7 +17,7 @@
 
 #include <calc_tables.hpp>
 #include "init.hpp"
-#include <play_analyzer.hpp>
+#include <play_analyser.hpp>
 #include <solve_board.hpp>
 #include <lookup_tables/lookup_tables.hpp>
 #include <solver_context/solver_context.hpp>

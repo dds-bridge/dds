@@ -31,7 +31,7 @@
     <IntDir>..\Build\int\$(platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\analyze_all_plays_bin.cpp" />
+    <ClCompile Include="..\examples\analyse_all_plays_bin.cpp" />
   </ItemGroup>
   <!-- ====================== -->
   <!--  INCLUDE PATHS Added   -->

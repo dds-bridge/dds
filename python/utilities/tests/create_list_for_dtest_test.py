@@ -64,7 +64,7 @@ def _check_play_self_consistency(
     first: int,
     play: str,
 ) -> None:
-    """Match analyze_play_consistency.cpp: AnalysePlay vs SolveBoard each ply."""
+    """Match analyse_play_consistency.cpp: AnalysePlay vs SolveBoard each ply."""
     hands = cld._parse_remain_cards(remain_cards)
     cards = _play_to_cards(play)
     solved = analyse_play_pbn(remain_cards, play=play, trump=trump, first=first)
