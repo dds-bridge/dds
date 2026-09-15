@@ -7,7 +7,7 @@
    See LICENSE and README.
 */
 
-#include "play_analyser.hpp"
+#include "play_analyzer.hpp"
 #include <api/dll.h>
 #include <solver_if.hpp>
 #include <pbn.hpp>
@@ -50,7 +50,7 @@ int STDCALL AnalysePlayBin(
 {
   // Create an owned context for this analysis. The same context (and its
   // transposition table) is reused for the initial solve and every subsequent
-  // analyse_later_board call, so the hint-bounded incremental searches see a
+  // analyze_later_board call, so the hint-bounded incremental searches see a
   // warm TT -- see the analogous calc_dd_table fix (commit 27030ba).
   SolverContext outer_ctx;
 
@@ -200,7 +200,7 @@ int STDCALL AnalysePlayBin(
       if (usingCurrent)
         continue;
 
-      if ((ret = analyse_later_board(ctx, dl.first, &move, hint,
+      if ((ret = analyze_later_board(ctx, dl.first, &move, hint,
         hintDir, &fut))
           != RETURN_NO_FAULT)
       {

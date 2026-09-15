@@ -87,7 +87,7 @@
     <ClCompile Include="..\library\src\pbn.cpp">
       <Filter>library\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\library\src\play_analyser.cpp">
+    <ClCompile Include="..\library\src\play_analyzer.cpp">
       <Filter>library\src</Filter>
     </ClCompile>
     <ClCompile Include="..\library\src\quick_tricks.cpp">
@@ -221,7 +221,7 @@
     <ClInclude Include="..\library\src\pbn.hpp">
       <Filter>library\src</Filter>
     </ClInclude>
-    <ClInclude Include="..\library\src\play_analyser.hpp">
+    <ClInclude Include="..\library\src\play_analyzer.hpp">
       <Filter>library\src</Filter>
     </ClInclude>
     <ClInclude Include="..\library\src\quick_tricks.hpp">

@@ -6,17 +6,17 @@
   <Folder Name="/Solution Items/">
     <File Path="Directory.Build.props" />
   </Folder>
-  <Project Path="analyse_all_plays_bin.vcxproj">
+  <Project Path="analyze_all_plays_bin.vcxproj">
     <BuildDependency Project="DDS.vcxproj" />
     <BuildDependency Project="dds_native.vcxproj" />
     <BuildDependency Project="hands.vcxproj" />
   </Project>
-  <Project Path="analyse_play_bin.vcxproj" Id="b50fce1e-c2e5-4b11-99f8-fb1a1e92197c">
+  <Project Path="analyze_play_bin.vcxproj" Id="b50fce1e-c2e5-4b11-99f8-fb1a1e92197c">
     <BuildDependency Project="DDS.vcxproj" />
     <BuildDependency Project="dds_native.vcxproj" />
     <BuildDependency Project="hands.vcxproj" />
   </Project>
-  <Project Path="analyse_play_pbn.vcxproj" Id="18b2f80d-9e3d-4f98-9fd8-42d36501c468">
+  <Project Path="analyze_play_pbn.vcxproj" Id="18b2f80d-9e3d-4f98-9fd8-42d36501c468">
     <BuildDependency Project="DDS.vcxproj" />
     <BuildDependency Project="dds_native.vcxproj" />
     <BuildDependency Project="hands.vcxproj" />

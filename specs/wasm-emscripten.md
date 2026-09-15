@@ -24,7 +24,7 @@ core solver builds and runs correctly under Emscripten.
 
 - **A curated subset of CLIs is ported.** `wasm_cc_binary` wraps three
   [examples-cli](examples-cli.md) binaries: `solve_board_wasm` (← `//examples:solve_board`),
-  `analyse_play_bin_wasm` (← `//examples:AnalysePlayBin`), and
+  `analyze_play_bin_wasm` (← `//examples:AnalysePlayBin`), and
   `calc_dd_table_pbn_wasm` (← `//examples:calc_dd_table_pbn`), each emitting a
   `.js` loader + `.wasm`. `all_examples_wasm` groups them. Separately,
   `dtest_wasm` (← `//library/tests:dtest`) ports the hand-list test harness for

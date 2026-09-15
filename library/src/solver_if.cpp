@@ -819,7 +819,7 @@ auto solve_same_board(
 }
 
 
-auto analyse_later_board(
+auto analyze_later_board(
   SolverContext& ctx,
   const int leadHand,
   MoveType const * move,
@@ -827,7 +827,7 @@ auto analyse_later_board(
   const int hintDir,
   FutureTricks * futp) -> int
 {
-  // Specialized function for PlayAnalyser for cards after the
+  // Specialized function for play analyzer for cards after the
   // opening lead. No further parameter checks! This function
   // makes heavy reuse of parameters that are already stored in
   // various places. It corresponds to:

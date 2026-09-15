@@ -1,10 +1,10 @@
-/// @file analyse_play_consistency.cpp
+/// @file analyze_play_consistency.cpp
 /// @brief Self-consistency regression tests for AnalysePlay.
 /// @details For any deal and play, the trick count AnalysePlayPBN reports after
 /// each card must equal an independent SolveBoardPBN of that same position.
 /// These two code paths share no transposition-table state, so agreement is a
 /// strong correctness check that needs no external reference solver. This guards
-/// the regression in issue #156, where analyse_later_board used a fresh (cold)
+/// the regression in issue #156, where analyze_later_board used a fresh (cold)
 /// transposition table per card and under-counted tricks.
 
 // C++ standard library headers

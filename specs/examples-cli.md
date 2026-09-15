@@ -26,8 +26,8 @@ build ports to the browser. They are demonstrations, not a supported product CLI
   - **Double-dummy tables:** `calc_dd_table`, `calc_dd_table_pbn`,
     `calc_all_tables`, `calc_all_tables_pbn`.
   - **Par scoring:** `par`, `dealer_par`.
-  - **Play analysis:** `AnalysePlayBin` (source `analyse_play_bin.cpp`),
-    `analyse_play_pbn`, `analyse_all_plays_bin`, `analyse_all_plays_pbn`.
+  - **Play analysis:** `AnalysePlayBin` (source `analyze_play_bin.cpp`),
+    `analyze_play_pbn`, `analyze_all_plays_bin`, `analyze_all_plays_pbn`.
   - **Modern context API demos:** `migration_example`,
     `calc_par_context_example`.
 - **Many entry points have PBN and binary twins.** Solve/table/play pairs often

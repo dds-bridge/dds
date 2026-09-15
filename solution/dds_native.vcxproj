@@ -83,7 +83,7 @@
     <ClCompile Include="..\library\src\moves\moves.cpp" />
     <ClCompile Include="..\library\src\par.cpp" />
     <ClCompile Include="..\library\src\pbn.cpp" />
-    <ClCompile Include="..\library\src\play_analyser.cpp" />
+    <ClCompile Include="..\library\src\play_analyzer.cpp" />
     <ClCompile Include="..\library\src\quick_tricks.cpp" />
     <ClCompile Include="..\library\src\solver_context\solver_context.cpp" />
     <ClCompile Include="..\library\src\solver_context_adapter.cpp" />
@@ -129,7 +129,7 @@
     <ClInclude Include="..\library\src\lookup_tables\lookup_tables.hpp" />
     <ClInclude Include="..\library\src\moves\moves.hpp" />
     <ClInclude Include="..\library\src\pbn.hpp" />
-    <ClInclude Include="..\library\src\play_analyser.hpp" />
+    <ClInclude Include="..\library\src\play_analyzer.hpp" />
     <ClInclude Include="..\library\src\quick_tricks.hpp" />
     <ClInclude Include="..\library\src\solver_context\solver_context.hpp" />
     <ClInclude Include="..\library\src\solver_if.hpp" />

@@ -56,6 +56,10 @@ This project follows a consistent modern C++ style, inspired by Google/LLVM with
 
 ## Naming
 
+Prefer American spelling in identifiers (files, functions, variables). Leave
+legacy public-API names that already use British spelling unchanged (for
+example `AnalysePlay*`).
+
 ### Types
 - **PascalCase**
 - Examples: `FixedArray`, `ErrorCode`, `SimulationRunner`

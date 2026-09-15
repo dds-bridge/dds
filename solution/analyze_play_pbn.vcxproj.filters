@@ -35,11 +35,9 @@
     <ClInclude Include="..\library\src\api\solve_board.hpp">
       <Filter>include\src\api</Filter>
     </ClInclude>
-    <ClInclude Include="..\examples\hands.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
+    <ClInclude Include="..\examples\hands.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\analyse_all_plays_bin.cpp" />
+    <ClCompile Include="..\examples\analyze_play_pbn.cpp" />
   </ItemGroup>
 </Project>
