@@ -28,7 +28,7 @@ Run an example:
 
 Available examples:
 - analyze_all_plays_bin, analyze_all_plays_pbn
-- AnalysePlayBin (source `analyze_play_bin.cpp`), analyze_play_pbn
+- analyze_play_bin, analyze_play_pbn
 - calc_all_tables, calc_all_tables_pbn
 - calc_dd_table, calc_dd_table_pbn
 - dd_table_for_deal (C++; Python: //python/examples:dd_table_for_deal; .NET: dotnet/DdTableForDeal)
