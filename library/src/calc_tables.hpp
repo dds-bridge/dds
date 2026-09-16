@@ -62,3 +62,35 @@ auto remaining_tricks_from_holdings(
 auto declarer_tricks_from_leader_score(
   int remaining_tricks,
   int leader_side_score) -> int;
+
+/**
+ * @brief Unbounded CalcAllTables with optional per-strain-board timings.
+ *
+ * Same behavior as CalcAllTablesX. When @p strain_times_us is non-null, it is
+ * resized to `numDeals * included_strains` and filled with microseconds spent
+ * in each strain-board solve (batch-local board index order). A successful
+ * `numDeals == 0` call clears @p strain_times_us so reused vectors cannot keep
+ * stale timings.
+ */
+auto calc_all_tables_x(
+  int numDeals,
+  DdTableDeal const * deals,
+  int mode,
+  int const trumpFilter[DDS_STRAINS],
+  DdTableResults * results,
+  ParResults * par,
+  int maxThreads,
+  std::vector<int> * strain_times_us = nullptr) -> int;
+
+/**
+ * @brief PBN variant of calc_all_tables_x.
+ */
+auto calc_all_tables_pbn_x(
+  int numDeals,
+  DdTableDealPBN const * deals,
+  int mode,
+  int const trumpFilter[DDS_STRAINS],
+  DdTableResults * results,
+  ParResults * par,
+  int maxThreads,
+  std::vector<int> * strain_times_us = nullptr) -> int;

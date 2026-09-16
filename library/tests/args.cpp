@@ -111,8 +111,10 @@ void usage(
     "                   memory via SolverConfig instead of this option.)\n" <<
     "\n" <<
     "-r, --report       Print per-deal timings in ms (two decimals) for every\n" <<
-    "                   hand in the input (solve mode), longest first, plus\n" <<
-    "                   a min/max/mean/median/stddev summary.\n" <<
+    "                   hand in the input (solve and calc modes), longest\n" <<
+    "                   first, plus a min/max/mean/median/stddev summary.\n" <<
+    "                   For calc, each deal time is the sum of its strain-\n" <<
+    "                   board solve times.\n" <<
     "\n" <<
     endl;
 }

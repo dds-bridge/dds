@@ -136,7 +136,12 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_CALC)
   {
-    ok = loop_calc(deal_list, table_list, number, stepsize);
+    ok = loop_calc(
+      deal_list,
+      table_list,
+      number,
+      stepsize,
+      options.report_slow_boards_ ? &board_times : nullptr);
   }
   else if (options.solver_ == Solver::DTEST_SOLVER_PLAY)
   {
@@ -165,15 +170,7 @@ int real_main([[maybe_unused]] int argc, [[maybe_unused]] char * argv[])
   {
     if (board_times.empty())
     {
-      if (options.solver_ == Solver::DTEST_SOLVER_CALC)
-      {
-        cout << "Per-board timing data not available for calc (use -s solve -r)."
-             << std::endl;
-      }
-      else
-      {
-        cout << "Per-board timing data not available." << std::endl;
-      }
+      cout << "Per-board timing data not available." << std::endl;
     }
     else
     {

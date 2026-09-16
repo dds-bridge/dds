@@ -48,12 +48,16 @@ auto loop_solve(
 /// @param table_list Expected DD table results
 /// @param number Number of deals in the test set
 /// @param stepsize Deals per CalcAllTablesPBNX batch (typically `MAXNOOFBOARDS`)
+/// @param board_times When non-null, appends per-deal timings for every batch
+///        with file-relative deal indices (for `dtest -r`); each deal's time
+///        is the sum of its strain-board solve times
 /// @return false on DDS API fault or first expected-result mismatch
 auto loop_calc(
     DealPBN * deal_list,
     DdTableResults * table_list,
     const int number,
-    const int stepsize) -> bool;
+    const int stepsize,
+    std::vector<std::pair<int, int>>* board_times = nullptr) -> bool;
 
 /// PAR loop: calculate PAR scores for multiple deals.
 /// @return false on DDS API fault or first expected-result mismatch

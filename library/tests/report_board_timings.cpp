@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <ios>
+#include <limits>
 #include <ostream>
 #include <sstream>
 #include <utility>
@@ -155,4 +156,35 @@ void append_batch_board_times(
   accumulated.reserve(accumulated.size() + batch_times.size());
   for (const auto& p : batch_times)
     accumulated.emplace_back(p.first + file_offset, p.second);
+}
+
+void append_calc_batch_deal_times(
+    std::vector<std::pair<int, int>>& accumulated,
+    const std::vector<int>& strain_times_us,
+    int strains_per_deal,
+    int file_offset)
+{
+  if (strains_per_deal <= 0 || strain_times_us.empty())
+    return;
+
+  const int deal_count =
+    static_cast<int>(strain_times_us.size() / static_cast<std::size_t>(strains_per_deal));
+  accumulated.reserve(accumulated.size() + static_cast<std::size_t>(deal_count));
+
+  constexpr auto kMax = static_cast<long long>(std::numeric_limits<int>::max());
+  for (int d = 0; d < deal_count; ++d)
+  {
+    long long sum_us = 0;
+    const int base = d * strains_per_deal;
+    for (int s = 0; s < strains_per_deal; ++s)
+    {
+      sum_us += strain_times_us[static_cast<std::size_t>(base + s)];
+      if (sum_us >= kMax)
+      {
+        sum_us = kMax;
+        break;
+      }
+    }
+    accumulated.emplace_back(d + file_offset, static_cast<int>(sum_us));
+  }
 }

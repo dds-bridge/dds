@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <api/dll.h>
+#include <calc_tables.hpp>
 #include <dds/dds.hpp>
 #include <system/deal_fanout.hpp>
 #include <system/parallel_boards.hpp>
@@ -102,6 +103,46 @@ TEST(CalcAllTablesPBNX, NullPointersReturnUnknownFault)
   EXPECT_EQ(
     CalcAllTablesPBNX(1, &deal, -1, nullptr, &result, nullptr, 1),
     RETURN_UNKNOWN_FAULT);
+}
+
+TEST(CalcAllTablesX, ZeroDealsClearsReusedStrainTimes)
+{
+  InitializeStaticMemory();
+  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+  std::vector<int> strain_times = {11, 22, 33};
+
+  ASSERT_EQ(
+    calc_all_tables_x(
+      /*numDeals=*/0,
+      /*deals=*/nullptr,
+      -1,
+      filter,
+      /*results=*/nullptr,
+      nullptr,
+      1,
+      &strain_times),
+    RETURN_NO_FAULT);
+  EXPECT_TRUE(strain_times.empty());
+}
+
+TEST(CalcAllTablesPBNX, ZeroDealsClearsReusedStrainTimes)
+{
+  InitializeStaticMemory();
+  int filter[DDS_STRAINS] = {0, 0, 0, 0, 0};
+  std::vector<int> strain_times = {7, 8};
+
+  ASSERT_EQ(
+    calc_all_tables_pbn_x(
+      /*numDeals=*/0,
+      /*deals=*/nullptr,
+      -1,
+      filter,
+      /*results=*/nullptr,
+      nullptr,
+      1,
+      &strain_times),
+    RETURN_NO_FAULT);
+  EXPECT_TRUE(strain_times.empty());
 }
 
 TEST(CalcAllTablesPBNX, InvalidPbnReturnsPbnFault)

@@ -23,6 +23,7 @@
 #include "cst.hpp"
 #include "dtest_parallel.hpp"
 #include "report_board_timings.hpp"
+#include <calc_tables.hpp>
 #include <solve_board.hpp>
 #include "system/scheduler.hpp"
 
@@ -135,7 +136,8 @@ auto loop_calc(
   DealPBN * deal_list,
   DdTableResults * table_list,
   const int number,
-  const int stepsize) -> bool
+  const int stepsize,
+  std::vector<std::pair<int, int>>* board_times) -> bool
 {
   // dtest harness progress only: call CalcAllTablesPBNX repeatedly with
   // `stepsize` deals (typically MAXNOOFBOARDS). Each call still expands to
@@ -170,8 +172,16 @@ auto loop_calc(
     timer.start(count);
     const int workload = count * strain_count;
     const int threads = dtest_effective_threads(options.num_threads_, workload);
-    const int ret = CalcAllTablesPBNX(
-      count, deals.data(), -1, filter, results.data(), nullptr, threads);
+    std::vector<int> strain_times;
+    const int ret = calc_all_tables_pbn_x(
+      count,
+      deals.data(),
+      -1,
+      filter,
+      results.data(),
+      nullptr,
+      threads,
+      board_times != nullptr ? &strain_times : nullptr);
     if (ret != RETURN_NO_FAULT)
     {
       timer.end();
@@ -181,6 +191,12 @@ auto loop_calc(
       return false;
     }
     timer.end();
+
+    if (board_times != nullptr)
+    {
+      append_calc_batch_deal_times(
+        *board_times, strain_times, strain_count, i);
+    }
 
 #ifdef BATCHTIMES
     timer.print_running(i + count, number);
