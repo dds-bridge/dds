@@ -76,6 +76,16 @@ llvm.toolchain(
     # When bumping these versions, also update .bazelrc build:tsan_macos rpath
     # (clang/N) and confirm Xcode ships the same major; see docs/BUILD_SYSTEM.md.
     # Keep MSAN_LLVM_VERSION / MSAN_DISTRIBUTION below on the same LLVM release.
+    # LLVM 21 ld64.lld cannot parse MacOSX 27 SDK TBD files that list
+    # arm64e.x1. Apple's ld can; last --ld-path wins over the toolchain default
+    # --ld-path=ld64.lld. Pair with .bazelrc --features=-supports_start_end_lib
+    # because Apple ld rejects lld's --start-lib/--end-lib. Scoped to this
+    # toolchain so wasm/emscripten keeps wasm-ld (do not put --ld-path in
+    # build:macos --linkopt). See docs/BUILD_SYSTEM.md (macOS SDK section).
+    extra_link_flags = {
+        "darwin-aarch64": ["--ld-path=/usr/bin/ld"],
+        "darwin-x86_64": ["--ld-path=/usr/bin/ld"],
+    },
     llvm_versions = {
         "darwin-aarch64": "21.1.8",
         "linux-x86_64": "21.1.8",

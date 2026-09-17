@@ -37,6 +37,12 @@ build --tool_java_runtime_version=remotejdk_25
 # Platform-specific C++ standard flags
 build:macos --cxxopt=-std=c++20
 build:macos --host_cxxopt=-std=c++20
+# Apple's ld (MODULE.bazel extra_link_flags --ld-path=/usr/bin/ld) does not
+# accept lld's --start-lib/--end-lib. Disabling this feature is a no-op for
+# toolchains that never advertised it (wasm/emscripten) and only skips an
+# lld grouping optimization elsewhere. Do not put --ld-path here: it would
+# leak into wasm transitions via enable_platform_specific_config.
+build:macos --features=-supports_start_end_lib
 build:linux --cxxopt=-std=c++20
 build:linux --host_cxxopt=-std=c++20
 # Windows MSVC C++20 comes from the patched rules_cc default_cpp_std feature
