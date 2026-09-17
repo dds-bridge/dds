@@ -142,7 +142,7 @@ auto stays_under(TransTable& tt, const double cap_kb) -> bool
 /// A configuration that sets only the maximum must yield a table capped at
 /// that maximum when it is created lazily; the built-in default used for the
 /// unset value may not lift the cap.
-TEST(ConfigureTtApiTest, AMaximumOnlyConfigurationIsHonouredOnLazyCreation)
+TEST(ConfigureTtApiTest, AMaximumOnlyConfigurationIsHonoredOnLazyCreation)
 {
     // Arrange
     ScopedEnv no_kind("DDS_TT_KIND", nullptr);
@@ -177,7 +177,7 @@ auto solve_known_deal(SolverContext& ctx, FutureTricks& fut) -> int
 /// A table recreated between two solves of the same deal has not seen that
 /// deal; the next solve must initialize it again rather than run against an
 /// inert (never init()-ed) cache.
-TEST(ConfigureTtApiTest, ATableRecreatedBetweenSolvesOfTheSameDealIsInitialisedAgain)
+TEST(ConfigureTtApiTest, ATableRecreatedBetweenSolvesOfTheSameDealIsInitializedAgain)
 {
     // Arrange: one solve, then a kind change and back, which recreates the table.
     ScopedEnv no_kind("DDS_TT_KIND", nullptr);

@@ -37,7 +37,7 @@ TEST(ResolveWorkerCount, CapLargerThanCountClampsToCount)
   EXPECT_EQ(resolve_worker_count(1000, 5), 5);
 }
 
-TEST(ResolveWorkerCount, CapSmallerThanCountAndHardwareIsHonoured)
+TEST(ResolveWorkerCount, CapSmallerThanCountAndHardwareIsHonored)
 {
   // A cap of 1 is always <= count and <= hardware_concurrency.
   EXPECT_EQ(resolve_worker_count(1, 8), 1);

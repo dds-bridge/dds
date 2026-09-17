@@ -78,7 +78,7 @@ the opaque handle. See [dds-public-api](dds-public-api.md).
   — even of the same cards — is treated as a new deal and runs
   `SetDealTables()`, which `init()`s the replacement table; otherwise a table
   recreated between two solves of one deal would never see the deal (inert on
-  `TransTableP`). Guarded by `ConfigureTtApiTest.ATableRecreatedBetweenSolvesOfTheSameDealIsInitialisedAgain`.
+  `TransTableP`). Guarded by `ConfigureTtApiTest.ATableRecreatedBetweenSolvesOfTheSameDealIsInitializedAgain`.
 - **Hot-path facades are value-typed and inline-friendly, with different holds.**
   `MoveGenContext` holds a raw `ThreadData*` so `move_gen()` can return a
   value-typed facade without an atomic `shared_ptr` bump on every call.

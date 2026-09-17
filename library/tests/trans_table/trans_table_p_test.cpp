@@ -1122,7 +1122,7 @@ TEST(TransTablePMemoryTest, PoolingOutgrownBlocksNeverExceedsTheMaximum)
 /// A caller that configures only the hard maximum gets exactly that maximum;
 /// the unset default limit must not be replaced by a built-in value that then
 /// floors the cap far above what was asked for.
-TEST(TransTablePMemoryTest, AMaximumSetWithoutADefaultIsHonouredAsTheCap)
+TEST(TransTablePMemoryTest, AMaximumSetWithoutADefaultIsHonoredAsTheCap)
 {
     // Arrange
     TransTableP tt;
