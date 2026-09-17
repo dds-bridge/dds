@@ -64,6 +64,17 @@ If you see runtime loader failures after a toolchain or OS change:
 2. Re-resolve Bazel toolchains (`bazelisk shutdown`, then `bazelisk clean --expunge`).
 3. Re-run `bazelisk test //...` to confirm runtime compatibility.
 
+**Xcode 27 / MacOSX 27 SDK TBD files.** The macOS 27 SDK lists `arm64e.x1` in
+system `.tbd` stubs. LLVM 21's `ld64.lld` rejects those files (`unknown
+architecture arm64e.x1`) and then reports a cascade of missing libc++ /
+libSystem symbols. Native Darwin links therefore use Apple's `/usr/bin/ld`
+via `llvm.toolchain.extra_link_flags` in `MODULE.bazel`, and `.bazelrc`
+disables Bazel's `supports_start_end_lib` feature (Apple ld does not accept
+`--start-lib` / `--end-lib`). That `--ld-path` override is toolchain-scoped
+on purpose: putting it in `build:macos --linkopt` would leak into wasm
+transitions and replace `wasm-ld`. Drop both workarounds when LLVM's Mach-O
+linker can parse `arm64e.x1` TBD targets.
+
 ### AddressSanitizer, ThreadSanitizer, UndefinedBehaviorSanitizer, and MemorySanitizer
 
 Sanitizer builds use `--config=asan`, `--config=tsan`, `--config=ubsan`, or
