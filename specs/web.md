@@ -22,7 +22,7 @@ DOM wiring) with an automated test pyramid.
 > Per-file detail is in the BUILD file and the site sources; these are the
 > capability-wide facts.
 
-- **A dedicated, modularised WASM module — not the example CLIs.** `dds_web_wasm`
+- **A dedicated, modularized WASM module — not the example CLIs.** `dds_web_wasm`
   (`wasm_cc_binary` over `dds_web_wasm_cc`, source `dds_web_wasm.cpp`,
   `threads = "emscripten"`) is built with `WASM_WEB_LINKOPTS`: `MODULARIZE=1`,
   `EXPORT_NAME=createDdsModule`, exported entries `_dds_web_calc_table` and

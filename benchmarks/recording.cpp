@@ -247,7 +247,7 @@ auto find_runfile(const std::string& logical, const std::string& argv0)
     }
   }
 
-  // Materialised runfiles tree (Linux/macOS), or a run from the workspace root.
+  // Materialized runfiles tree (Linux/macOS), or a run from the workspace root.
   std::vector<std::string> candidates;
   for (const char* var : {"TEST_SRCDIR", "RUNFILES_DIR"})
     if (const char* root = std::getenv(var))

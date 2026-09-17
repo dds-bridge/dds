@@ -2,7 +2,7 @@ load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 # Reader + replay engine for recorded DDS workloads. Split from the CLI so the
-# parsing and result-canonicalisation logic can be unit tested.
+# parsing and result-canonicalization logic can be unit tested.
 cc_library(
     name = "replay_lib",
     srcs = [
@@ -75,7 +75,7 @@ cc_test(
 )
 
 # Smoke test over a small committed recording, so the replay path (JSON parsing,
-# PBN decoding, batching, result canonicalisation, verification) stays correct
+# PBN decoding, batching, result canonicalization, verification) stays correct
 # without needing a large recording. The sample was cut from a real session.
 cc_test(
     name = "replay_test",

@@ -115,7 +115,7 @@ python game.py --boards "Camrose 1-32.pbn" --auto True \
 
 `testdata/sample-recording.jsonl` is a 6-call excerpt of the same file. It backs
 the fast `//benchmarks:replay_test` smoke test, so CI exercises the replay path
-(JSON parsing, PBN decoding, batching, result canonicalisation, verification)
+(JSON parsing, PBN decoding, batching, result canonicalization, verification)
 without spending two minutes on the full workload. Run it on its own with:
 
 ```sh

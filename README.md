@@ -1,15 +1,15 @@
 ## Introduction to DDS3
 
-DDS3 is a double dummy solver for bridge hands. It is a drop-in replacement for DDS 2.9.0 which has been the leading solver for many years, based on the initial work of Bo Haglund in 2006 and the previous modernisation by Søren Hein in 2014.  With Søren's encouragement, I have updated the official release in order to retain continuity for the user base, and I have been added as an administrator.
+DDS3 is a double dummy solver for bridge hands. It is a drop-in replacement for DDS 2.9.0 which has been the leading solver for many years, based on the initial work of Bo Haglund in 2006 and the previous modernization by Søren Hein in 2014.  With Søren's encouragement, I have updated the official release in order to retain continuity for the user base, and I have been added as an administrator.
 
 DDS3 is a double dummy solver for bridge hands. Version 3.0 uses the same
-search algorithm as version 2.x, but the source code has been modernised. The
+search algorithm as version 2.x, but the source code has been modernized. The
 project has been split into several subcomponents, each responsible for a
-specific part of the search algorithm. This modularisation makes the codebase
+specific part of the search algorithm. This modularization makes the codebase
 easier to read and reason about, which helps not only humans but also modern
 coding agents. Throughout the codebase, you will find evidence that Claude
 Code and GitHub Copilot have made significant contributions to the
-modernisation.
+modernization.
 
 There are build scripts for macOS, Linux, and Windows but I have myself only used the library on macOS.
 

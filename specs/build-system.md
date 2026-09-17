@@ -60,7 +60,7 @@ than re-encoding toolchain knowledge.
   `cc_library`; `DDS_SCHEDULER_DEFINE` is appended only where scheduler timing is
   wanted** (`local_defines = DDS_LOCAL_DEFINES + DDS_SCHEDULER_DEFINE`). Off by
   default, these add zero cost.
-- **WASM link flags are centralised** in `wasm_compat.bzl` (`WASM_LINKOPTS`):
+- **WASM link flags are centralized** in `wasm_compat.bzl` (`WASM_LINKOPTS`):
   memory growth, 256 MB initial memory, an 8 MB stack (DDS search recursion
   overflows Emscripten's 64 KB default), and `PTHREAD_POOL_SIZE=8`. WASM
   `wasm_cc_binary` targets also set `threads = "emscripten"` — see
