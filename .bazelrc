@@ -15,7 +15,7 @@ common --lockfile_mode=error
 
 # We build nothing for Android, but rules_jvm_external (the //jni Maven jar)
 # depends on rules_android, whose android_sdk_repository extension probes
-# $ANDROID_HOME while analysing *any* target. When ANDROID_HOME is exported but
+# $ANDROID_HOME while analyzing *any* target. When ANDROID_HOME is exported but
 # the SDK has no platform APIs installed — as on GitHub's ubuntu runners after
 # the free-disk-space step removes the SDK — that extension hard-fails and takes
 # down unrelated builds (e.g. //wasm, //web). Pinning the var to empty makes the

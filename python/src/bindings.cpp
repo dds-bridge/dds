@@ -623,7 +623,7 @@ auto register_analysis_bindings(py::module_& module) -> void
 {
     // initialize_static_memory: allocate the solver's static memory pools and
     // perform one-time lookup-table initialization. This does NOT control the
-    // worker-thread count; use solve_all_boards_* (which parallelise across the
+    // worker-thread count; use solve_all_boards_* (which parallelize across the
     // machine's hardware threads automatically) or one SolverContext per worker
     // thread for per-board concurrency.
     module.def(
@@ -635,7 +635,7 @@ auto register_analysis_bindings(py::module_& module) -> void
         "Initialize the solver's static memory.\n\n"
         "Allocates the transposition-table memory pools and performs one-time\n"
         "lookup-table initialization. This does NOT control the number of worker\n"
-        "threads: solve_all_boards_* parallelise across the machine's hardware\n"
+        "threads: solve_all_boards_* parallelize across the machine's hardware\n"
         "threads automatically, and for per-board concurrency from Python you\n"
         "create one SolverContext per worker thread and pass it to solve_board /\n"
         "solve_board_pbn.");

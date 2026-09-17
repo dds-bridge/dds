@@ -125,7 +125,7 @@ auto load_recording(const std::string& path, Recording& out, std::string& error)
   -> bool;
 
 // Resolve a Bazel runfile (e.g. "_main/benchmarks/testdata/x.jsonl") to a real
-// path, or "" if it cannot be found. Windows does not materialise the runfiles
+// path, or "" if it cannot be found. Windows does not materialize the runfiles
 // tree -- that would need symlinks -- so the manifest has to be consulted there.
 // `bazel test` exports the manifest location in the environment; `bazel run`
 // does not, so pass argv[0] and the manifest beside the binary will be used.
