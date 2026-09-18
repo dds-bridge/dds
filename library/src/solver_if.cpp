@@ -7,6 +7,9 @@
    See LICENSE and README.
 */
 
+#include <cstdlib>
+#include <cstdio>
+#include <cinttypes>
 #include <ab_search.hpp>
 #include <dump.hpp>
 #include <init.hpp>
@@ -170,6 +173,11 @@ auto solve_board_internal(
   if (ret != RETURN_NO_FAULT)
     return ret;
 
+  // Reset per-solve TT stats here so the SOLVER_DONE report reflects
+  // this board even when the last-trick early exit below is taken.
+  thrp->tt_lookup_count = 0;
+  thrp->tt_hit_count = 0;
+  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
   // ----------------------------------------------------------
   // Last trick, easy to solve.
@@ -670,6 +678,30 @@ SOLVER_DONE:
     futp->nodes = ctx.search().trick_nodes();
   }
 
+  // Print TT stats if requested
+  if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && env[0] == '1' && env[1] == '\0') {
+    ThreadData* thrp_ptr = ctx.thread_ptr();
+    if (thrp_ptr) {
+      double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
+                        100.0 * (double)thrp_ptr->tt_hit_count /
+                        (double)thrp_ptr->tt_lookup_count : 0.0;
+      std::fprintf(stderr,
+                   "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
+                   thrp_ptr->tt_lookup_count,
+                   thrp_ptr->tt_hit_count,
+                   hit_rate);
+      if (auto* tt = ctx.trans_table()) {
+        int adds, overwrites, harvests;
+        tt->get_op_stats(adds, overwrites, harvests);
+        double ow_rate = adds > 0 ?
+          100.0 * (double)overwrites / (double)adds : 0.0;
+        std::fprintf(stderr,
+                     "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
+                     adds, overwrites, ow_rate, harvests);
+      }
+    }
+  }
+
 #ifdef DDS_MEMORY_LEAKS_WIN32
   _CrtDumpMemoryLeaks();
 #endif
@@ -721,6 +753,10 @@ auto solve_same_board(
   thrp->ABStats.Reset();
   thrp->ABStats.ResetCum();
 #endif
+  // Reset per-solve TT stats (keeps warm TT, resets counters only)
+  thrp->tt_lookup_count = 0;
+  thrp->tt_hit_count = 0;
+  if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
 
 #ifdef DDS_TOP_LEVEL
   {
@@ -809,6 +845,30 @@ auto solve_same_board(
 
   {
     futp->nodes = ctx.search().trick_nodes();
+  }
+
+  // Print TT stats if requested
+  if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && env[0] == '1' && env[1] == '\0') {
+    ThreadData* thrp_ptr = ctx.thread_ptr();
+    if (thrp_ptr) {
+      double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
+                        100.0 * (double)thrp_ptr->tt_hit_count /
+                        (double)thrp_ptr->tt_lookup_count : 0.0;
+      std::fprintf(stderr,
+                   "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
+                   thrp_ptr->tt_lookup_count,
+                   thrp_ptr->tt_hit_count,
+                   hit_rate);
+      if (auto* tt = ctx.trans_table()) {
+        int adds, overwrites, harvests;
+        tt->get_op_stats(adds, overwrites, harvests);
+        double ow_rate = adds > 0 ?
+          100.0 * (double)overwrites / (double)adds : 0.0;
+        std::fprintf(stderr,
+                     "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
+                     adds, overwrites, ow_rate, harvests);
+      }
+    }
   }
 
 #ifdef DDS_MEMORY_LEAKS_WIN32

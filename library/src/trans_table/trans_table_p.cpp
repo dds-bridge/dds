@@ -662,6 +662,7 @@ auto TransTableP::add(
         ++tree.bucket_end[b];
     }
     ++node_count_;
+    ++num_adds_;
 }
 
 

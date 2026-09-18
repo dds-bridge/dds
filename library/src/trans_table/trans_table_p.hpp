@@ -92,6 +92,20 @@ class TransTableP : public TransTable
     auto print_all_suits(std::ofstream& fout) const -> void override;
     auto print_suit_stats(std::ofstream& fout, int trick, int hand) const -> void override;
     auto print_all_suit_stats(std::ofstream& fout) const -> void override;
+    auto reset_op_stats() -> void override
+    {
+      num_adds_ = 0;
+
+    }
+    auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
+    {
+      adds = num_adds_;
+      overwrites = 0; // PatternTT has no eviction; use tightens() for in-place updates
+      harvests = 0; // TransTableP has no harvest mechanism
+    }
+    // Instrumentation counters
+    mutable int num_adds_ = 0;
+
     auto print_summary_suit_stats(std::ofstream& fout) const -> void override;
     auto print_entries_dist(
         std::ofstream& fout, int trick, int hand, const int hand_dist[]) const -> void override;
