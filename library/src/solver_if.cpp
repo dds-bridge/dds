@@ -693,11 +693,16 @@ SOLVER_DONE:
             if (auto* tt = ctx.trans_table()) {
                 int adds, overwrites, harvests;
                 tt->get_op_stats(adds, overwrites, harvests);
-                double ow_rate = adds > 0 ?
-                    100.0 * (double)overwrites / (double)adds : 0.0;
-                std::fprintf(stderr,
-                     "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
-                     adds, overwrites, ow_rate, harvests);
+                if (adds < 0) {
+                    std::fprintf(stderr,
+                         "DDS_TT_STATS: adds=n/a overwrites=n/a overwrite_rate=n/a harvests=n/a\n");
+                } else {
+                    double ow_rate = adds > 0 ?
+                        100.0 * (double)overwrites / (double)adds : 0.0;
+                    std::fprintf(stderr,
+                         "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
+                         adds, overwrites, ow_rate, harvests);
+                }
             }
         }
     }
@@ -862,11 +867,16 @@ auto solve_same_board(
             if (auto* tt = ctx.trans_table()) {
                 int adds, overwrites, harvests;
                 tt->get_op_stats(adds, overwrites, harvests);
-                double ow_rate = adds > 0 ?
-                    100.0 * (double)overwrites / (double)adds : 0.0;
-                std::fprintf(stderr,
-                     "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
-                     adds, overwrites, ow_rate, harvests);
+                if (adds < 0) {
+                    std::fprintf(stderr,
+                         "DDS_TT_STATS: adds=n/a overwrites=n/a overwrite_rate=n/a harvests=n/a\n");
+                } else {
+                    double ow_rate = adds > 0 ?
+                        100.0 * (double)overwrites / (double)adds : 0.0;
+                    std::fprintf(stderr,
+                         "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
+                         adds, overwrites, ow_rate, harvests);
+                }
             }
         }
     }
