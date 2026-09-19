@@ -349,13 +349,13 @@ and should be used with caution, as they may not manage resources as efficiently
 
 ### Play Analysis  
 - **int AnalysePlay(Deal dl, PlayTraceBin play, ...)**  
-  analyses a play sequence for a single deal. Deprecated, but not yet implemented in the modern api.
+  analyzes a play sequence for a single deal. Deprecated, but not yet implemented in the modern api.
 
 - **int AnalysePlay(DealPBN dl, PlayTracePBN play, ...)**  
   PBN-version. Deprecated, but not yet implemented in the modern api.
 
 - **int AnalyseAllPlays(...)**  
-  analyses multiple play sequences across multiple deals. Deprecated, but not yet implemented in the modern api.
+  analyzes multiple play sequences across multiple deals. Deprecated, but not yet implemented in the modern api.
 
 ---
 

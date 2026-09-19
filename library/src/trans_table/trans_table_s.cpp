@@ -778,7 +778,7 @@ auto TransTableS::build_path(
     {
       /* Find all winning nodes that correspond to current position */
       found = false;
-      while (1)      /* Find node amongst alternatives */
+      while (1)      /* Find node among alternatives */
       {
         if ((np->win_mask_ == win_mask_[suit]) &&
             (np->order_set_ == win_order_set[suit]))

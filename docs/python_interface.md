@@ -277,7 +277,7 @@ Batched form of `analyse_play_pbn` (wraps `AnalyseAllPlaysPBN`).
 Legacy thread-resource hook (wraps the **deprecated** `SetMaxThreads` C API).
 
 This does **not** control DDS's batch parallelism and is kept only for backward
-compatibility. `solve_all_boards_*` already parallelise across the machine's
+compatibility. `solve_all_boards_*` already parallelize across the machine's
 hardware threads automatically (via `solve_boards_n`) — the value passed here does
 not size that pool. `analyse_all_plays_pbn` currently runs sequentially.
 `user_threads` must be `>= 0` (`0` = auto); raises `ValueError` for negative values.

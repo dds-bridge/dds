@@ -45,7 +45,7 @@ context API and the flat API from [dds-public-api](dds-public-api.md).
   C++ [solver-context](solver-context.md); holding one across multiple solves reuses its
   transposition table, mirroring the C++ reuse model. Guarded by
   `context_reuse_test`.
-- **Type conversions are centralised.** `converters.{cpp,hpp}` marshal Python
+- **Type conversions are centralized.** `converters.{cpp,hpp}` marshal Python
   values ↔ the C++ deal/table/par structs; the conversion contract (PBN strings,
   binary deals, table/par result shapes) is guarded by `type_conversions_test`.
 - **Wheels are built from the same package.** `dds3_wheel` (`py_wheel`,

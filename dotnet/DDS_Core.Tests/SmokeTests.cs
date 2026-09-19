@@ -3,7 +3,7 @@ using DDS_Core;
 namespace DDS_Core.Tests;
 
 /// <summary>
-/// End-to-end solving through the retargeted binding — the .NET analogue of
+/// End-to-end solving through the retargeted binding — the .NET analog of
 /// <c>DdsSmokeTest.java</c>. These are what prove the <c>dds_c_*</c> entry
 /// points actually resolve and marshal correctly on a non-Windows platform.
 /// </summary>

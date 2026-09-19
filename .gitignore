@@ -82,7 +82,7 @@ dist/
 build/
 
 #
-# Build artefacts are placed in these directories.
+# Build artifacts are placed in these directories.
 #
 bin/
 build/

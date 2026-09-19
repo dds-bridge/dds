@@ -1,6 +1,6 @@
 # Coding Agents and Coding Standards
 
-Coding agents are improving quickly, and the best tool or model for a task can change from one month to the next. This note collects coding guidance and tooling recommendations assembled during the first quarter of 2026, when most of the modernisation work for release 3.0.0 was completed.
+Coding agents are improving quickly, and the best tool or model for a task can change from one month to the next. This note collects coding guidance and tooling recommendations assembled during the first quarter of 2026, when most of the modernization work for release 3.0.0 was completed.
 
 This document does not prescribe a specific MCP server setup. MCP servers can be powerful, but they also introduce security risks, so the right deployment strategy depends on the environment.
 
