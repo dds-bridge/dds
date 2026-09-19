@@ -20,18 +20,18 @@
 auto next_quick_trick_suit(int suit, int trump) -> int;
 
 int QuickTricks(
-  Pos& tpos,
-  const int hand,
-  const int depth,
-  const int target,
-  const int trump,
-  bool& result,
-  SolverContext& ctx);
+    Pos& tpos,
+    const int hand,
+    const int depth,
+    const int target,
+    const int trump,
+    bool& result,
+    SolverContext& ctx);
 
 bool QuickTricksSecondHand(
-  Pos& tpos,
-  const int hand,
-  const int depth,
-  const int target,
-  const int trump,
-  SolverContext& ctx);
+    Pos& tpos,
+    const int hand,
+    const int depth,
+    const int target,
+    const int trump,
+    SolverContext& ctx);

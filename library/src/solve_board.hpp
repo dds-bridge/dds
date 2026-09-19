@@ -15,20 +15,20 @@
 
 
 auto solve_all_boards_n(
-  Boards const& bds,
-  SolvedBoards& solved,
-  int max_threads = 0) -> int;
+    Boards const& bds,
+    SolvedBoards& solved,
+    int max_threads = 0) -> int;
 
 auto solve_all_boards_pbn_n(
-  BoardsPBN const& bop,
-  SolvedBoards& solved,
-  int max_threads = 0) -> int;
+    BoardsPBN const& bop,
+    SolvedBoards& solved,
+    int max_threads = 0) -> int;
 
 auto solve_all_boards_n_seq(
-  Boards const& bds,
-  SolvedBoards& solved) -> int;
+    Boards const& bds,
+    SolvedBoards& solved) -> int;
 
 auto detect_solve_duplicates(
-  const Boards& bds,
-  std::vector<int>& uniques,
-  std::vector<int>& crossrefs) -> void;
+    const Boards& bds,
+    std::vector<int>& uniques,
+    std::vector<int>& crossrefs) -> void;

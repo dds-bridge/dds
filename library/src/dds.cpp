@@ -11,44 +11,44 @@
 #include <api/dll.h>
 
 #if defined(_WIN32) || defined(USES_DLLMAIN)
-  #ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN
-  #endif
-  #include <windows.h>
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h>
 #endif
 
 #ifdef _MANAGED
-  #pragma managed(push, off)
+    #pragma managed(push, off)
 #endif
 
 
 #if defined(_WIN32) || defined(USES_DLLMAIN)
 
 extern "C" BOOL APIENTRY DllMain(
-  [[maybe_unused]] HMODULE hModule,
-  DWORD ul_reason_for_call,
-  [[maybe_unused]] LPVOID lpReserved);
+    [[maybe_unused]] HMODULE hModule,
+    DWORD ul_reason_for_call,
+    [[maybe_unused]] LPVOID lpReserved);
 
 extern "C" BOOL APIENTRY DllMain(
-  HMODULE hModule,
-  DWORD ul_reason_for_call,
-  LPVOID lpReserved)
+    HMODULE hModule,
+    DWORD ul_reason_for_call,
+    LPVOID lpReserved)
 {
 
-  if (ul_reason_for_call == DLL_PROCESS_ATTACH)
-    InitializeStaticMemory();
-  else if (ul_reason_for_call == DLL_PROCESS_DETACH)
-  {
-    FreeMemory();
+    if (ul_reason_for_call == DLL_PROCESS_ATTACH)
+        InitializeStaticMemory();
+    else if (ul_reason_for_call == DLL_PROCESS_DETACH)
+    {
+        FreeMemory();
 #ifdef DDS_MEMORY_LEAKS_WIN32
-    _CrtDumpMemoryLeaks();
+        _CrtDumpMemoryLeaks();
 #endif
-  }
+    }
 
-  hModule;
-  lpReserved;
+    hModule;
+    lpReserved;
 
-  return 1;
+    return 1;
 }
 
 #elif (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) || defined(__MAC_OS_X_VERSION_MAX_ALLOWED))
@@ -63,7 +63,7 @@ void DDSInitialize(), DDSFinalize();
  */
 void DDSInitialize(void)
 {
-  InitializeStaticMemory();
+    InitializeStaticMemory();
 }
 
 
@@ -72,7 +72,7 @@ void DDSInitialize(void)
  */
 void DDSFinalize(void)
 {
-  FreeMemory();
+    FreeMemory();
 }
 
 
@@ -86,13 +86,13 @@ void DDSFinalize(void)
  */
 static void __attribute__ ((constructor)) libInit(void)
 {
-  DDSInitialize();
+    DDSInitialize();
 }
 
 
 static void __attribute__ ((destructor)) libFini(void)
 {
-  DDSFinalize();
+    DDSFinalize();
 }
 
 #elif defined(USES_CONSTRUCTOR)
@@ -104,12 +104,12 @@ static void __attribute__ ((destructor)) libFini(void)
  */
 static void __attribute__ ((constructor)) libInit(void)
 {
-  InitializeStaticMemory();
+    InitializeStaticMemory();
 }
 
 #endif
 
 #ifdef _MANAGED
-  #pragma managed(pop)
+    #pragma managed(pop)
 #endif
 

@@ -23,8 +23,8 @@
  * @return 1 if successful, 0 otherwise.
  */
 auto convert_from_pbn(
-  char const * dealBuff,
-  unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int;
+    char const * dealBuff,
+    unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int;
 
 /**
  * @brief Convert a PBN-format play trace to binary play trace.
@@ -36,5 +36,5 @@ auto convert_from_pbn(
  * @return 1 if successful, 0 otherwise.
  */
 auto convert_play_from_pbn(
-  const PlayTracePBN& playPBN,
-  PlayTraceBin& playBin) -> int;
+    const PlayTracePBN& playPBN,
+    PlayTraceBin& playBin) -> int;

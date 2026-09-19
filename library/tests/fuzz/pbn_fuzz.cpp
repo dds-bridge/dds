@@ -22,25 +22,25 @@
 
 extern "C" auto LLVMFuzzerInitialize(int * /*argc*/, char *** /*argv*/) -> int
 {
-  // Nothing to configure; defined so the corpus-replay driver links.
-  return 0;
+    // Nothing to configure; defined so the corpus-replay driver links.
+    return 0;
 }
 
 extern "C" auto LLVMFuzzerTestOneInput(const uint8_t * data, size_t size) -> int
 {
-  // PBN deal strings are bounded in practice; keep inputs in that range so
-  // the fuzzer spends its budget on parser states rather than on length.
-  if (size > 4096)
+    // PBN deal strings are bounded in practice; keep inputs in that range so
+    // the fuzzer spends its budget on parser states rather than on length.
+    if (size > 4096)
+        return 0;
+
+    // Same nonnull caveat as the memcpy in calc_dd_table_pbn_fuzz.cpp: building
+    // a string from (nullptr, 0) is undefined, so handle the empty case first.
+    std::string const deal =
+        size == 0 ? std::string()
+                            : std::string(reinterpret_cast<char const *>(data), size);
+
+    unsigned int remain_cards[DDS_HANDS][DDS_SUITS];
+    convert_from_pbn(deal.c_str(), remain_cards);
+
     return 0;
-
-  // Same nonnull caveat as the memcpy in calc_dd_table_pbn_fuzz.cpp: building
-  // a string from (nullptr, 0) is undefined, so handle the empty case first.
-  std::string const deal =
-    size == 0 ? std::string()
-              : std::string(reinterpret_cast<char const *>(data), size);
-
-  unsigned int remain_cards[DDS_HANDS][DDS_SUITS];
-  convert_from_pbn(deal.c_str(), remain_cards);
-
-  return 0;
 }

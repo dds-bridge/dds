@@ -20,44 +20,44 @@
 
 auto main() -> int
 {
-  DdTableDeals DDdeals;
-  DdTablesRes tableRes;
-  AllParResults pres;
+    DdTableDeals DDdeals;
+    DdTablesRes tableRes;
+    AllParResults pres;
 
-  int mode = 0; // No par calculation
-  int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All
-  int res;
-  char line[80];
-  bool match;
+    int mode = 0; // No par calculation
+    int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All
+    int res;
+    char line[80];
+    bool match;
 
-  DDdeals.no_of_tables = 3;
+    DDdeals.no_of_tables = 3;
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-    for (int h = 0; h < DDS_HANDS; h++)
-      for (int s = 0; s < DDS_SUITS; s++)
-        DDdeals.deals[handno].cards[h][s] = holdings_[handno][s][h];
-  }
+    for (int handno = 0; handno < 3; handno++)
+    {
+        for (int h = 0; h < DDS_HANDS; h++)
+            for (int s = 0; s < DDS_SUITS; s++)
+                DDdeals.deals[handno].cards[h][s] = holdings_[handno][s][h];
+    }
 
-  res = CalcAllTables(&DDdeals, mode, trumpFilter, &tableRes, &pres);
+    res = CalcAllTables(&DDdeals, mode, trumpFilter, &tableRes, &pres);
 
-  if (res != RETURN_NO_FAULT)
-  {
-    ErrorMessage(res, line);
-    printf("DDS error: %s\n", line);
-  }
+    if (res != RETURN_NO_FAULT)
+    {
+        ErrorMessage(res, line);
+        printf("DDS error: %s\n", line);
+    }
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-    match = compare_table(&tableRes.results[handno], handno);
+    for (int handno = 0; handno < 3; handno++)
+    {
+        match = compare_table(&tableRes.results[handno], handno);
 
-    sprintf(line,
-            "CalcDDtable, hand %d: %s\n",
-            handno + 1, (match ? "OK" : "ERROR"));
+        sprintf(line,
+                        "CalcDDtable, hand %d: %s\n",
+                        handno + 1, (match ? "OK" : "ERROR"));
 
-    print_hand(line, DDdeals.deals[handno].cards);
+        print_hand(line, DDdeals.deals[handno].cards);
 
-    print_table(&tableRes.results[handno]);
-  }
+        print_table(&tableRes.results[handno]);
+    }
 }
 

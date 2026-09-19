@@ -29,15 +29,15 @@
  */
 inline auto par_table_checks(DdTableResults const * tablep) -> int
 {
-  if (tablep == nullptr)
-    return RETURN_PAR_TABLE_FAULT;
-
-  for (int d = 0; d < DDS_STRAINS; d++)
-    for (int h = 0; h < DDS_HANDS; h++)
-      if (tablep->res_table[d][h] < 0 || tablep->res_table[d][h] > 13)
+    if (tablep == nullptr)
         return RETURN_PAR_TABLE_FAULT;
 
-  return RETURN_NO_FAULT;
+    for (int d = 0; d < DDS_STRAINS; d++)
+        for (int h = 0; h < DDS_HANDS; h++)
+            if (tablep->res_table[d][h] < 0 || tablep->res_table[d][h] > 13)
+                return RETURN_PAR_TABLE_FAULT;
+
+    return RETURN_NO_FAULT;
 }
 
 
@@ -56,8 +56,8 @@ inline auto par_table_checks(DdTableResults const * tablep) -> int
  */
 inline auto par_vulnerable_checks(int const vulnerable) -> int
 {
-  if (vulnerable < 0 || vulnerable > 3)
-    return RETURN_UNKNOWN_FAULT;
+    if (vulnerable < 0 || vulnerable > 3)
+        return RETURN_UNKNOWN_FAULT;
 
-  return RETURN_NO_FAULT;
+    return RETURN_NO_FAULT;
 }

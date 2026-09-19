@@ -20,36 +20,36 @@
 
 auto main() -> int
 {
-  DdTableDeal tableDeal;
-  DdTableResults table;
+    DdTableDeal tableDeal;
+    DdTableResults table;
 
-  int res;
-  char line[80];
-  bool match;
+    int res;
+    char line[80];
+    bool match;
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-
-    for (int h = 0; h < DDS_HANDS; h++)
-      for (int s = 0; s < DDS_SUITS; s++)
-        tableDeal.cards[h][s] = holdings_[handno][s][h];
-
-    res = CalcDDtable(tableDeal, &table);
-
-    if (res != RETURN_NO_FAULT)
+    for (int handno = 0; handno < 3; handno++)
     {
-      ErrorMessage(res, line);
-      printf("DDS error: %s\n", line);
+
+        for (int h = 0; h < DDS_HANDS; h++)
+            for (int s = 0; s < DDS_SUITS; s++)
+                tableDeal.cards[h][s] = holdings_[handno][s][h];
+
+        res = CalcDDtable(tableDeal, &table);
+
+        if (res != RETURN_NO_FAULT)
+        {
+            ErrorMessage(res, line);
+            printf("DDS error: %s\n", line);
+        }
+
+        match = compare_table(&table, handno);
+
+        sprintf(line,
+                        "CalcDDtable, hand %d: %s\n",
+                        handno + 1, (match ? "OK" : "ERROR"));
+
+        print_hand(line, tableDeal.cards);
+
+        print_table(&table);
     }
-
-    match = compare_table(&table, handno);
-
-    sprintf(line,
-            "CalcDDtable, hand %d: %s\n",
-            handno + 1, (match ? "OK" : "ERROR"));
-
-    print_hand(line, tableDeal.cards);
-
-    print_table(&table);
-  }
 }

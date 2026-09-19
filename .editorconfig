@@ -1,0 +1,10 @@
+# EditorConfig helps editors and agents match project formatting defaults.
+# C++ indentation rules are also documented in
+# .github/instructions/cpp.instructions.md.
+
+root = true
+
+[*.{c,cc,cpp,h,hh,hpp}]
+indent_style = space
+indent_size = 4
+tab_width = 4

@@ -24,14 +24,14 @@
  */
 class ThreadMgr
 {
-  private:
+    private:
 
     std::vector<bool> realThreads;
     std::vector<int> machineThreads;
     unsigned numRealThreads;
     unsigned numMachineThreads;
 
-      /**
+        /**
      * @brief Construct a new ThreadMgr object.
      *
      * Initializes thread tracking structures and prepares the manager for use.
@@ -42,7 +42,7 @@ class ThreadMgr
 
     static ThreadMgr single_instance;
 
-  public:
+    public:
 
     /**
      * @brief Destroy the ThreadMgr object and clean up resources.
@@ -62,8 +62,8 @@ class ThreadMgr
     bool Release(const int MachineThrId);
 
     void Print(
-      const std::string& fname,
-      const std::string& tag) const;
+        const std::string& fname,
+        const std::string& tag) const;
 };
 
 #endif

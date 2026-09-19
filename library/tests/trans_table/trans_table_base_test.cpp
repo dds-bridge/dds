@@ -35,13 +35,13 @@ protected:
     {
     public:
         MockTransTable() : TransTable() {}
-        
+
         ~MockTransTable() override = default;
         auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
         {
-          adds = 0;
-          overwrites = 0;
-          harvests = 0;
+            adds = 0;
+            overwrites = 0;
+            harvests = 0;
         }
         auto reset_op_stats() -> void override
         {
@@ -175,7 +175,7 @@ protected:
 TEST_F(TransTableBaseTest, ConstructorCreatesValidObject)
 {
     EXPECT_NE(baseTable.get(), nullptr);
-    
+
     // Verify initial state
     EXPECT_FALSE(baseTable->init_called_);
     EXPECT_FALSE(baseTable->tt_made_);
@@ -189,7 +189,7 @@ TEST_F(TransTableBaseTest, VirtualDestructorWorks)
     // Create through base pointer to verify virtual destructor
     std::unique_ptr<TransTable> basePtr = std::make_unique<MockTransTable>();
     EXPECT_NE(basePtr.get(), nullptr);
-    
+
     // Destructor should work properly when called through base pointer
     // This test verifies that destructor is virtual
     basePtr.reset(); // Should call derived destructor properly
@@ -200,7 +200,7 @@ TEST_F(TransTableBaseTest, VirtualDestructorWorks)
 TEST_F(TransTableBaseTest, InitMethodCallsOverride)
 {
     int handLookup[15][15] = {}; // Mock lookup table (zero-initialized)
-    
+
     EXPECT_FALSE(baseTable->init_called_);
     baseTable->init(handLookup);
     EXPECT_TRUE(baseTable->init_called_);
@@ -252,9 +252,9 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride)
     const unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
     const int hand_dist[4] = {13, 13, 13, 13};
     bool lowerFlag = true;
-    
+
     EXPECT_FALSE(baseTable->lookup_called_);
-    
+
     NodeCards const* result = baseTable->lookup(
         10, // trick
         2,  // hand
@@ -263,7 +263,7 @@ TEST_F(TransTableBaseTest, LookupMethodCallsOverride)
         8,  // limit
         lowerFlag
     );
-    
+
     EXPECT_TRUE(baseTable->lookup_called_);
     EXPECT_EQ(baseTable->last_trick_, 10);
     EXPECT_EQ(baseTable->last_hand_, 2);
@@ -277,9 +277,9 @@ TEST_F(TransTableBaseTest, AddMethodCallsOverride)
     const unsigned short aggrTarget[DDS_SUITS] = {0x1111, 0x2222, 0x3333, 0x4444};
     const unsigned short win_ranks[DDS_SUITS] = {0x5555, 0x6666, 0x7777, 0x8888};
     NodeCards nodeData;
-    
+
     EXPECT_FALSE(baseTable->add_called_);
-    
+
     baseTable->add(
         8,  // trick
         1,  // hand
@@ -288,7 +288,7 @@ TEST_F(TransTableBaseTest, AddMethodCallsOverride)
         nodeData,
         true // flag
     );
-    
+
     EXPECT_TRUE(baseTable->add_called_);
     EXPECT_EQ(baseTable->add_trick_, 8);
     EXPECT_EQ(baseTable->add_hand_, 1);
@@ -298,16 +298,16 @@ TEST_F(TransTableBaseTest, AddMethodCallsOverride)
 TEST_F(TransTableBaseTest, PrintMethodsCallOverride)
 {
     std::ofstream testFile("test_output.txt");
-    
+
     EXPECT_FALSE(baseTable->print_suits_called_);
     EXPECT_FALSE(baseTable->print_all_suits_called_);
-    
+
     baseTable->print_suits(testFile, 5, 2); // trick=5, hand=2
     EXPECT_TRUE(baseTable->print_suits_called_);
-    
+
     baseTable->print_all_suits(testFile);
     EXPECT_TRUE(baseTable->print_all_suits_called_);
-    
+
     testFile.close();
     std::remove("test_output.txt"); // Cleanup
 }
@@ -317,32 +317,32 @@ TEST_F(TransTableBaseTest, AllVirtualMethodsHaveExpectedSignatures)
 {
     // This test verifies that all expected virtual methods exist
     // and have the correct signatures by calling them through base pointer
-    
+
     std::unique_ptr<TransTable> basePtr = std::make_unique<MockTransTable>();
-    
+
     // Test that we can call all virtual methods through base pointer
     int handLookup[15][15];
     basePtr->init(handLookup);
-    
+
     basePtr->set_memory_default(64);
     basePtr->set_memory_maximum(128);
     basePtr->make_tt();
     basePtr->reset_memory(ResetReason::NewDeal);
     basePtr->return_all_memory();
-    
+
     double mem = basePtr->memory_in_use();
     EXPECT_GE(mem, 0.0); // Should return non-negative value
-    
+
     unsigned short aggrTarget[DDS_SUITS] = {0, 0, 0, 0};
     unsigned short win_ranks[DDS_SUITS] = {0, 0, 0, 0};
     int hand_dist[4] = {0, 0, 0, 0};
     bool lowerFlag = false;
     NodeCards nodeData;
-    
+
     // Should not crash when called through base pointer
     basePtr->lookup(0, 0, aggrTarget, hand_dist, 0, lowerFlag);
     basePtr->add(0, 0, aggrTarget, win_ranks, nodeData, false);
-    
+
     std::ofstream nullFile("/dev/null");
     basePtr->print_suits(nullFile, 0, 1); // trick=0, hand=1
     basePtr->print_all_suits(nullFile);
@@ -353,14 +353,14 @@ TEST_F(TransTableBaseTest, PolymorphicBehaviorWorks)
 {
     // Verify that virtual dispatch works correctly
     TransTable* basePtr = baseTable.get();
-    
+
     // Calls should go to derived class implementations
     basePtr->make_tt();
     EXPECT_TRUE(baseTable->tt_made_);
-    
+
     basePtr->return_all_memory();
     EXPECT_TRUE(baseTable->memory_returned_);
-    
+
     double memUsage = basePtr->memory_in_use();
     EXPECT_EQ(memUsage, 42.5); // Should call derived implementation
 }

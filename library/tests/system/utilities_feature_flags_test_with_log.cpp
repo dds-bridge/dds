@@ -16,7 +16,7 @@
 namespace dds {
 
 TEST(UtilitiesFeatureFlagsWithLog, LogEnabledWithDefine) {
-  EXPECT_TRUE(Utilities::log_enabled());
+    EXPECT_TRUE(Utilities::log_enabled());
 }
 
 } // namespace dds

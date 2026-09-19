@@ -19,12 +19,12 @@ namespace dds {
  */
 class File
 {
-  private:
+    private:
 
     std::string fname_;
     std::ofstream fout_;
 
-  public:
+    public:
 
     File() = default;
 

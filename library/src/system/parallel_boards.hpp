@@ -27,9 +27,9 @@
  * @return workers clamped to max(1, budget_mb / per_worker_mb)
  */
 auto clamp_workers_to_memory_budget(
-  int workers,
-  int budget_mb,
-  int per_worker_mb) -> int;
+    int workers,
+    int budget_mb,
+    int per_worker_mb) -> int;
 
 /**
  * @brief Resolve the number of worker threads to use.
@@ -70,10 +70,10 @@ auto resolve_worker_count(int max_threads, int count) -> int;
  * when hosts (notably Emscripten) tear down pthread Workers eagerly.
  */
 auto parallel_all_boards_n(
-  int count,
-  int worker_cap,
-  const std::function<int(int worker_id, int bno)>& process_board,
-  const std::vector<int>* order = nullptr) -> int;
+    int count,
+    int worker_cap,
+    const std::function<int(int worker_id, int bno)>& process_board,
+    const std::vector<int>* order = nullptr) -> int;
 
 namespace dds::internal
 {

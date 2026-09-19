@@ -24,16 +24,16 @@
 
 std::string PrintSuit(const unsigned short suitCode);
 std::string PrintSuit(
-  const unsigned short suitCode,
-  const char leastWin);
+    const unsigned short suitCode,
+    const char leastWin);
 
 std::string PrintDeal(
-  const unsigned short ranks[][DDS_SUITS],
-  const int spacing);
+    const unsigned short ranks[][DDS_SUITS],
+    const int spacing);
 
 std::string RankToDiagrams(
-  const unsigned short ranks[DDS_HANDS][DDS_SUITS],
-  const NodeCards& node);
+    const unsigned short ranks[DDS_HANDS][DDS_SUITS],
+    const NodeCards& node);
 
 std::string WinnersToText(const unsigned short win_ranks[]);
 
@@ -42,232 +42,232 @@ std::string NodeToText(const NodeCards& node);
 std::string FullNodeToText(const NodeCards& node);
 
 std::string PosToText(
-  const Pos& tpos,
-  const int target,
-  const int depth);
+    const Pos& tpos,
+    const int target,
+    const int depth);
 
 std::string TopMove(
-  const bool val,
-  const MoveType& bestMove);
+    const bool val,
+    const MoveType& bestMove);
 
 std::string DumpTopHeader(
-  const std::shared_ptr<ThreadData>& thrp,
-  const int tricks,
-  const int lower,
-  const int upper,
-  const int printMode);
+    const std::shared_ptr<ThreadData>& thrp,
+    const int tricks,
+    const int lower,
+    const int upper,
+    const int printMode);
 
 
 std::string PrintSuit(const unsigned short suitCode)
 {
-  if (! suitCode)
-    return "--";
+    if (! suitCode)
+        return "--";
 
-  std::string st;
-  for (int r = 14; r >= 2; r--)
-    if ((suitCode & bit_map_rank[r]))
-      st += static_cast<char>(card_rank[r]);
-  return st;
+    std::string st;
+    for (int r = 14; r >= 2; r--)
+        if ((suitCode & bit_map_rank[r]))
+            st += static_cast<char>(card_rank[r]);
+    return st;
 }
 
 
 std::string PrintSuit(
-  const unsigned short suitCode,
-  const char leastWin)
+    const unsigned short suitCode,
+    const char leastWin)
 {
-  if (! suitCode)
-    return "--";
+    if (! suitCode)
+        return "--";
 
-  std::string st;
-  for (int r = 14; r >= 2; r--)
-  {
-    if ((suitCode & bit_map_rank[r]))
+    std::string st;
+    for (int r = 14; r >= 2; r--)
     {
-      if (r >= 15 - leastWin)
-        st += static_cast<char>(card_rank[r]);
-      else
-        st += "x";
+        if ((suitCode & bit_map_rank[r]))
+        {
+            if (r >= 15 - leastWin)
+                st += static_cast<char>(card_rank[r]);
+            else
+                st += "x";
+        }
     }
-  }
-  return st;
+    return st;
 }
 
 
 std::string PrintDeal(
-  const unsigned short ranks[][DDS_SUITS],
-  const int spacing)
+    const unsigned short ranks[][DDS_SUITS],
+    const int spacing)
 {
-  std::stringstream ss;
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    ss << std::setw(spacing) << "" << 
-      card_suit[s] << " " <<
-      PrintSuit(ranks[0][s]) << "\n";
-  }
+    std::stringstream ss;
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+        ss << std::setw(spacing) << "" << 
+            card_suit[s] << " " <<
+            PrintSuit(ranks[0][s]) << "\n";
+    }
 
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    ss << card_suit[s] << " " <<
-      std::setw(2*spacing - 2) << std::left << PrintSuit(ranks[3][s]) <<
-      card_suit[s] << " " <<
-      PrintSuit(ranks[1][s]) << "\n";
-  }
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+        ss << card_suit[s] << " " <<
+            std::setw(2*spacing - 2) << std::left << PrintSuit(ranks[3][s]) <<
+            card_suit[s] << " " <<
+            PrintSuit(ranks[1][s]) << "\n";
+    }
 
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    ss << std::setw(spacing) << "" << 
-      card_suit[s] << " " <<
-      PrintSuit(ranks[2][s]) << "\n";
-  }
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+        ss << std::setw(spacing) << "" << 
+            card_suit[s] << " " <<
+            PrintSuit(ranks[2][s]) << "\n";
+    }
 
-  return ss.str() + "\n";
+    return ss.str() + "\n";
 }
 
 
 std::string RankToDiagrams(
-  const unsigned short ranks[DDS_HANDS][DDS_SUITS],
-  const NodeCards& node)
+    const unsigned short ranks[DDS_HANDS][DDS_SUITS],
+    const NodeCards& node)
 {
-  std::stringstream ss;
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    ss << std::setw(12) << std::left << 
-      (s == 0 ? "Sought" : "") << 
-      card_suit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
-      std::setw(12) << (s == 0 ? "Found" : "") << 
-      card_suit[s] << " " << 
-        PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
-  }
+    std::stringstream ss;
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+        ss << std::setw(12) << std::left << 
+            (s == 0 ? "Sought" : "") << 
+            card_suit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
+            std::setw(12) << (s == 0 ? "Found" : "") << 
+            card_suit[s] << " " << 
+                PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
+    }
 
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    ss << 
-      card_suit[s] << " " << std::setw(22) << std::left << PrintSuit(ranks[3][s]) <<
-      card_suit[s] << " " << std::setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
-      card_suit[s] << " " << 
-        std::setw(22) << PrintSuit(ranks[3][s], node.least_win[s]) << 
-      card_suit[s] << " " << 
-        PrintSuit(ranks[1][s], node.least_win[s]) << "\n";
-  }
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+        ss << 
+            card_suit[s] << " " << std::setw(22) << std::left << PrintSuit(ranks[3][s]) <<
+            card_suit[s] << " " << std::setw(8) << PrintSuit(ranks[1][s]) << "|    " << 
+            card_suit[s] << " " << 
+                std::setw(22) << PrintSuit(ranks[3][s], node.least_win[s]) << 
+            card_suit[s] << " " << 
+                PrintSuit(ranks[1][s], node.least_win[s]) << "\n";
+    }
 
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    ss << std::setw(12) << std::left << "" << 
-      card_suit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
-      std::setw(12) << "" << card_suit[s] << " " <<
-      PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
-  }
-  return ss.str();
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+        ss << std::setw(12) << std::left << "" << 
+            card_suit[s] << " " << std::setw(20) << PrintSuit(ranks[0][s]) << "|    " <<
+            std::setw(12) << "" << card_suit[s] << " " <<
+            PrintSuit(ranks[0][s], node.least_win[s]) << "\n";
+    }
+    return ss.str();
 }
 
 
 std::string WinnersToText(const unsigned short ourWinRanks[])
 {
-  std::stringstream ss;
-  for (int s = 0; s < DDS_SUITS; s++)
-    ss << card_suit[s] << " " << PrintSuit(ourWinRanks[s]) << "\n";
+    std::stringstream ss;
+    for (int s = 0; s < DDS_SUITS; s++)
+        ss << card_suit[s] << " " << PrintSuit(ourWinRanks[s]) << "\n";
 
-  return ss.str();
+    return ss.str();
 }
 
 
 std::string NodeToText(const NodeCards& node)
 {
-  std::stringstream ss;
-  ss << std::setw(16) << std::left << "Address" << 
-    static_cast<void const *>(&node) << "\n";
+    std::stringstream ss;
+    ss << std::setw(16) << std::left << "Address" << 
+        static_cast<void const *>(&node) << "\n";
 
-  ss << std::setw(16) << std::left << "Bounds" << 
-    static_cast<int>(node.lower_bound) << " to " <<
-    static_cast<int>(node.upper_bound) << " tricks\n";
+    ss << std::setw(16) << std::left << "Bounds" << 
+        static_cast<int>(node.lower_bound) << " to " <<
+        static_cast<int>(node.upper_bound) << " tricks\n";
 
-  ss << std::setw(16) << std::left << "Best move" << 
-    card_suit[ static_cast<int>(node.best_move_suit) ] <<
-    card_rank[ static_cast<int>(node.best_move_rank) ] << "\n";
+    ss << std::setw(16) << std::left << "Best move" << 
+        card_suit[ static_cast<int>(node.best_move_suit) ] <<
+        card_rank[ static_cast<int>(node.best_move_rank) ] << "\n";
 
-  return ss.str();
+    return ss.str();
 }
 
 
 std::string FullNodeToText(const NodeCards& node)
 
 {
-  std::stringstream ss;
-  std::vector<int> v(DDS_SUITS);
-  for (unsigned i = 0; i < DDS_SUITS; i++)
-    v[i] = 15 - static_cast<int>(node.least_win[i]);
+    std::stringstream ss;
+    std::vector<int> v(DDS_SUITS);
+    for (unsigned i = 0; i < DDS_SUITS; i++)
+        v[i] = 15 - static_cast<int>(node.least_win[i]);
 
-  ss << std::setw(16) << std::left << "Lowest used" << 
-    card_suit[0] << card_rank[v[0]] << ", " <<
-    card_suit[1] << card_rank[v[1]] << ", " <<
-    card_suit[2] << card_rank[v[2]] << ", " <<
-    card_suit[3] << card_rank[v[3]] << "\n";
+    ss << std::setw(16) << std::left << "Lowest used" << 
+        card_suit[0] << card_rank[v[0]] << ", " <<
+        card_suit[1] << card_rank[v[1]] << ", " <<
+        card_suit[2] << card_rank[v[2]] << ", " <<
+        card_suit[3] << card_rank[v[3]] << "\n";
 
-  return NodeToText(node) + ss.str();
+    return NodeToText(node) + ss.str();
 }
 
 
 std::string PosToText(
-  const Pos& tpos,
-  const int target,
-  const int depth)
+    const Pos& tpos,
+    const int target,
+    const int depth)
 {
-  std::stringstream ss;
-  ss << std::setw(16) << std::left << "Target" << target << "\n";
-  ss << std::setw(16) << "Depth" << depth << "\n";
-  ss << std::setw(16) << "tricks_max" << tpos.tricks_max << "\n";
-  ss << std::setw(16) << "First hand" << card_hand[tpos.first[depth]] << "\n";
-  ss << std::setw(16) << "Next first" << card_hand[tpos.first[depth - 1]] << "\n";
-  return ss.str();
+    std::stringstream ss;
+    ss << std::setw(16) << std::left << "Target" << target << "\n";
+    ss << std::setw(16) << "Depth" << depth << "\n";
+    ss << std::setw(16) << "tricks_max" << tpos.tricks_max << "\n";
+    ss << std::setw(16) << "First hand" << card_hand[tpos.first[depth]] << "\n";
+    ss << std::setw(16) << "Next first" << card_hand[tpos.first[depth - 1]] << "\n";
+    return ss.str();
 }
 
 
 std::string DumpTopHeader(
-  const std::shared_ptr<ThreadData>& thrp,
-  const int tricks,
-  const int lower,
-  const int upper,
-  const int printMode)
+    const std::shared_ptr<ThreadData>& thrp,
+    const int tricks,
+    const int lower,
+    const int upper,
+    const int printMode)
 {
-  // Use facade to read search-state safely (caller provides shared_ptr)
-  SolverContext ctx{ thrp };
-  std::string stext;
-  if (printMode == 0)
-  {
-    // Trying just one target.
-    stext = "Single target " + std::to_string(tricks) + ", " + "achieved";
-  }
-  else if (printMode == 1)
-  {
-    // Looking for best score.
-    stext = "Loop target " + std::to_string(tricks) + ", " +
-      "bounds " + std::to_string(lower) + " .. " + std::to_string(upper) + ", " +
-    TopMove(thrp->val, ctx.search().best_move(ctx.search().ini_depth())) + "";
-  }
-  else if (printMode == 2)
-  {
-    // Looking for other moves with best score.
-    stext = "Loop for cards with score " + std::to_string(tricks) + ", " +
-      TopMove(thrp->val, ctx.search().best_move(ctx.search().ini_depth()));
-  }
-  return stext + "\n" + std::string(stext.size(), '-') + "\n";
+    // Use facade to read search-state safely (caller provides shared_ptr)
+    SolverContext ctx{ thrp };
+    std::string stext;
+    if (printMode == 0)
+    {
+        // Trying just one target.
+        stext = "Single target " + std::to_string(tricks) + ", " + "achieved";
+    }
+    else if (printMode == 1)
+    {
+        // Looking for best score.
+        stext = "Loop target " + std::to_string(tricks) + ", " +
+            "bounds " + std::to_string(lower) + " .. " + std::to_string(upper) + ", " +
+        TopMove(thrp->val, ctx.search().best_move(ctx.search().ini_depth())) + "";
+    }
+    else if (printMode == 2)
+    {
+        // Looking for other moves with best score.
+        stext = "Loop for cards with score " + std::to_string(tricks) + ", " +
+            TopMove(thrp->val, ctx.search().best_move(ctx.search().ini_depth()));
+    }
+    return stext + "\n" + std::string(stext.size(), '-') + "\n";
 }
 
 
 std::string TopMove(
-  const bool val,
-  const MoveType& bestMove)
+    const bool val,
+    const MoveType& bestMove)
 {
-  if (val)
-  {
-    std::stringstream ss;
-    ss << "achieved with move " <<
-      card_suit[ bestMove.suit ] <<
-      card_rank[ bestMove.rank ];
-    return ss.str();
-  }
-  else
-    return "failed";
+    if (val)
+    {
+        std::stringstream ss;
+        ss << "achieved with move " <<
+            card_suit[ bestMove.suit ] <<
+            card_rank[ bestMove.rank ];
+        return ss.str();
+    }
+    else
+        return "failed";
 }
 
 
@@ -286,28 +286,28 @@ namespace {
 
 auto suit_text(const int suit, const int strain_count) -> std::string
 {
-  if (suit < 0 || suit >= strain_count)
-    return "?(" + std::to_string(suit) + ")";
-  return std::string(1, static_cast<char>(card_suit[suit]));
+    if (suit < 0 || suit >= strain_count)
+        return "?(" + std::to_string(suit) + ")";
+    return std::string(1, static_cast<char>(card_suit[suit]));
 }
 
 /// Trump: 0..3 plus DDS_NOTRUMP.
 auto trump_text(const int trump) -> std::string
 {
-  return suit_text(trump, DDS_STRAINS);
+    return suit_text(trump, DDS_STRAINS);
 }
 
 /// Suit led in the current trick: no-trump is not a legal value.
 auto trick_suit_text(const int suit) -> std::string
 {
-  return suit_text(suit, DDS_SUITS);
+    return suit_text(suit, DDS_SUITS);
 }
 
 auto hand_text(const int hand) -> std::string
 {
-  if (hand < 0 || hand >= DDS_HANDS)
-    return "?(" + std::to_string(hand) + ")";
-  return std::string(1, static_cast<char>(card_hand[hand]));
+    if (hand < 0 || hand >= DDS_HANDS)
+        return "?(" + std::to_string(hand) + ")";
+    return std::string(1, static_cast<char>(card_hand[hand]));
 }
 
 /* card_rank[] has 16 entries, but indices 0, 1 and 15 hold the sentinels 'x'
@@ -317,134 +317,134 @@ auto hand_text(const int hand) -> std::string
 
 auto rank_text(const int rank) -> std::string
 {
-  constexpr int min_rank = 2;   // deuce
-  constexpr int max_rank = 14;  // ace
-  if (rank < min_rank || rank > max_rank)
-    return "?(" + std::to_string(rank) + ")";
-  return std::string(1, static_cast<char>(card_rank[rank]));
+    constexpr int min_rank = 2;   // deuce
+    constexpr int max_rank = 14;  // ace
+    if (rank < min_rank || rank > max_rank)
+        return "?(" + std::to_string(rank) + ")";
+    return std::string(1, static_cast<char>(card_rank[rank]));
 }
 
 }  // namespace
 
 
 int DumpInput(
-  const int errCode, 
-  const Deal& dl, 
-  const int target,
-  const int solutions, 
-  const int mode)
+    const int errCode, 
+    const Deal& dl, 
+    const int target,
+    const int solutions, 
+    const int mode)
 {
 #ifndef DDS_NO_DUMP_ON_ERROR
-  std::ofstream fout;
-  fout.open("dump.txt");
+    std::ofstream fout;
+    fout.open("dump.txt");
 
-  fout << "Error code=" << errCode << "\n\n";
-  fout << "Deal data:\n";
-  fout << "trump=";
+    fout << "Error code=" << errCode << "\n\n";
+    fout << "Deal data:\n";
+    fout << "trump=";
 
-  if (dl.trump == DDS_NOTRUMP)
-    fout << "N\n";
-  else
-    fout << trump_text(dl.trump) << "\n";
-  fout << "first=" << hand_text(dl.first) << "\n";
+    if (dl.trump == DDS_NOTRUMP)
+        fout << "N\n";
+    else
+        fout << trump_text(dl.trump) << "\n";
+    fout << "first=" << hand_text(dl.first) << "\n";
 
-  unsigned short ranks[4][4];
+    unsigned short ranks[4][4];
 
-  for (int k = 0; k <= 2; k++)
-    if (dl.currentTrickRank[k] != 0)
-    {
-      fout << "index=" << k << 
-        " currentTrickSuit=" << trick_suit_text(dl.currentTrickSuit[k]) <<
-        " currentTrickRank= " << rank_text(dl.currentTrickRank[k]) << "\n";
-    }
+    for (int k = 0; k <= 2; k++)
+        if (dl.currentTrickRank[k] != 0)
+        {
+            fout << "index=" << k << 
+                " currentTrickSuit=" << trick_suit_text(dl.currentTrickSuit[k]) <<
+                " currentTrickRank= " << rank_text(dl.currentTrickRank[k]) << "\n";
+        }
 
-  for (int h = 0; h < DDS_HANDS; h++)
-    for (int s = 0; s < DDS_SUITS; s++)
-    {
-      fout << "index1=" << h << " index2=" << s <<
-        " remainCards=" << dl.remainCards[h][s] << "\n";
-      ranks[h][s] = static_cast<unsigned short>
-                    (dl.remainCards[h][s] >> 2);
-    }
+    for (int h = 0; h < DDS_HANDS; h++)
+        for (int s = 0; s < DDS_SUITS; s++)
+        {
+            fout << "index1=" << h << " index2=" << s <<
+                " remainCards=" << dl.remainCards[h][s] << "\n";
+            ranks[h][s] = static_cast<unsigned short>
+                                        (dl.remainCards[h][s] >> 2);
+        }
 
-  fout << "\ntarget=" << target << "\n";
-  fout << "solutions=" << solutions << "\n";
-  fout << "mode=" << mode << "\n\n\n";
-  fout << PrintDeal(ranks, 8);
+    fout << "\ntarget=" << target << "\n";
+    fout << "solutions=" << solutions << "\n";
+    fout << "mode=" << mode << "\n\n\n";
+    fout << PrintDeal(ranks, 8);
 
-  fout.close();
+    fout.close();
 #endif
-  return 0;
+    return 0;
 }
 
 
 void DumpTopLevel(
-  std::ofstream& fout,
-  const std::shared_ptr<ThreadData>& thrp,
-  const int tricks,
-  const int lower,
-  const int upper,
-  const int printMode)
+    std::ofstream& fout,
+    const std::shared_ptr<ThreadData>& thrp,
+    const int tricks,
+    const int lower,
+    const int upper,
+    const int printMode)
 {
-  const Pos& tpos = thrp->lookAheadPos;
-  SolverContext ctx{ thrp };
+    const Pos& tpos = thrp->lookAheadPos;
+    SolverContext ctx{ thrp };
 
-  fout << DumpTopHeader(thrp, tricks, lower, upper, printMode) << "\n";
-  fout << PrintDeal(tpos.rank_in_suit, 16);
-  fout << WinnersToText(tpos.win_ranks[ctx.search().ini_depth()]) << "\n";
-  fout << ctx.search().nodes() << " AB nodes, " <<
-    ctx.search().trick_nodes() << " trick nodes\n\n";
+    fout << DumpTopHeader(thrp, tricks, lower, upper, printMode) << "\n";
+    fout << PrintDeal(tpos.rank_in_suit, 16);
+    fout << WinnersToText(tpos.win_ranks[ctx.search().ini_depth()]) << "\n";
+    fout << ctx.search().nodes() << " AB nodes, " <<
+        ctx.search().trick_nodes() << " trick nodes\n\n";
 }
 
 
 #ifdef DDS_AB_HITS
 
 void DumpRetrieved(
-  std::ofstream& fout,
-  const Pos& tpos,
-  const NodeCards& node,
-  const int target,
-  const int depth)
+    std::ofstream& fout,
+    const Pos& tpos,
+    const NodeCards& node,
+    const int target,
+    const int depth)
 {
-  fout << "Retrieved entry\n";
-  fout << std::string(15, '-') << "\n";
-  fout << PosToText(tpos, target, depth) << "\n";
-  fout << FullNodeToText(node) << "\n";
-  fout << RankToDiagrams(tpos.rank_in_suit, node) << "\n";
+    fout << "Retrieved entry\n";
+    fout << std::string(15, '-') << "\n";
+    fout << PosToText(tpos, target, depth) << "\n";
+    fout << FullNodeToText(node) << "\n";
+    fout << RankToDiagrams(tpos.rank_in_suit, node) << "\n";
 }
 
 
 void DumpStored(
-  std::ofstream& fout,
-  const Pos& tpos,
-  const Moves& moves,
-  const NodeCards& node,
-  const int target,
-  const int depth)
+    std::ofstream& fout,
+    const Pos& tpos,
+    const Moves& moves,
+    const NodeCards& node,
+    const int target,
+    const int depth)
 {
-  fout << "Stored entry\n";
-  fout << std::string(12, '-') << "\n";
-  fout << PosToText(tpos, target, depth) << "\n";
-  fout << NodeToText(node);
-  fout << moves.TrickToText((depth >> 2) + 1) << "\n";
-  fout << PrintDeal(tpos.rank_in_suit, 16);
+    fout << "Stored entry\n";
+    fout << std::string(12, '-') << "\n";
+    fout << PosToText(tpos, target, depth) << "\n";
+    fout << NodeToText(node);
+    fout << moves.TrickToText((depth >> 2) + 1) << "\n";
+    fout << PrintDeal(tpos.rank_in_suit, 16);
 }
 
 
 void DumpStored(
-  std::ofstream& fout,
-  const Pos& tpos,
-  SolverContext& ctx,
-  const NodeCards& node,
-  const int target,
-  const int depth)
+    std::ofstream& fout,
+    const Pos& tpos,
+    SolverContext& ctx,
+    const NodeCards& node,
+    const int target,
+    const int depth)
 {
-  fout << "Stored entry\n";
-  fout << std::string(12, '-') << "\n";
-  fout << PosToText(tpos, target, depth) << "\n";
-  fout << NodeToText(node);
-  fout << ctx.move_gen().trick_to_text((depth >> 2) + 1) << "\n";
-  fout << PrintDeal(tpos.rank_in_suit, 16);
+    fout << "Stored entry\n";
+    fout << std::string(12, '-') << "\n";
+    fout << PosToText(tpos, target, depth) << "\n";
+    fout << NodeToText(node);
+    fout << ctx.move_gen().trick_to_text((depth >> 2) + 1) << "\n";
+    fout << PrintDeal(tpos.rank_in_suit, 16);
 }
 
 #endif // DDS_AB_HITS

@@ -51,8 +51,8 @@ DLLEXPORT int dds_c_solve_board_pbn(DDS_C_SOLVER_CTX ctx,
 
 /* Compute the double dummy table for a deal. */
 DLLEXPORT int dds_c_calc_dd_table(DDS_C_SOLVER_CTX ctx,
-                                  const struct DdTableDeal* deal,
-                                  struct DdTableResults* results);
+                                    const struct DdTableDeal* deal,
+                                    struct DdTableResults* results);
 
 /* Compute the par result for a deal (computes the DD table internally). */
 DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
@@ -76,16 +76,16 @@ DLLEXPORT int dds_c_calc_par_pbn(DDS_C_SOLVER_CTX ctx,
    1 = Large, 2 = Pattern (matching enum class TTKind). Returns NULL on
    failure. */
 DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext(int tt_kind,
-                                                      int def_mb, int max_mb);
+                                                        int def_mb, int max_mb);
 
 /* Compute the double dummy table from a PBN-format deal. */
 DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
-                                      const struct DdTableDealPBN* deal,
-                                      struct DdTableResults* results);
+                                        const struct DdTableDealPBN* deal,
+                                        struct DdTableResults* results);
 
 /* Transposition-table configuration. */
 DLLEXPORT void dds_c_configure_tt(DDS_C_SOLVER_CTX ctx, int tt_kind,
-                                  int def_mb, int max_mb);
+                                    int def_mb, int max_mb);
 DLLEXPORT void dds_c_resize_tt(DDS_C_SOLVER_CTX ctx, int def_mb, int max_mb);
 DLLEXPORT void dds_c_clear_tt(DDS_C_SOLVER_CTX ctx);
 
@@ -108,8 +108,8 @@ DLLEXPORT int dds_c_par_from_table(const struct DdTableResults* table,
 
 /* Compute par from both the NS and EW dealing sides' viewpoints. */
 DLLEXPORT int dds_c_sides_par(const struct DdTableResults* table,
-                              struct ParResultsDealer sides_res[2],
-                              int vulnerable);
+                                struct ParResultsDealer sides_res[2],
+                                int vulnerable);
 
 /* Compute par for a specific dealer. */
 DLLEXPORT int dds_c_dealer_par(const struct DdTableResults* table,
@@ -123,12 +123,12 @@ DLLEXPORT int dds_c_dealer_par_bin(const struct DdTableResults* table,
 
 /* Binary (ContractType) variant of dds_c_sides_par. */
 DLLEXPORT int dds_c_sides_par_bin(const struct DdTableResults* table,
-                                  struct ParResultsMaster sides_res[2],
-                                  int vulnerable);
+                                    struct ParResultsMaster sides_res[2],
+                                    int vulnerable);
 
 /* Format a dds_c_dealer_par_bin() result as dealer-oriented text. */
 DLLEXPORT int dds_c_convert_to_dealer_text_format(const struct ParResultsMaster* par,
-                                                  char* resp);
+                                                    char* resp);
 
 /* Format a dds_c_sides_par_bin() result (both sides) as sides-oriented text.
    par must point to a 2-element array, one entry per side, matching

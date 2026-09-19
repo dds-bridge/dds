@@ -34,7 +34,7 @@ long clock_delta_to_ms(std::clock_t delta);
 /// Tracks both wall-clock (user) and CPU (system) time for test execution.
 class TestTimer
 {
-  private:
+    private:
     std::string name_;      ///< Timer name for display
     long count_;            ///< Number of times started/stopped
     long user_cum_;         ///< Cumulative user time (milliseconds)
@@ -47,7 +47,7 @@ class TestTimer
     std::chrono::time_point<Clock> user0_;  ///< Wall-clock start time
     std::clock_t sys0_;        ///< CPU start time
 
-  public:
+    public:
 
     TestTimer();
     ~TestTimer();
@@ -71,7 +71,7 @@ class TestTimer
     /// Start timing an operation.
     /// @param number Number of iterations (for per-iteration reporting)
     void start(const int number = 1);
-    
+
     /// Stop timing and accumulate results.
     void end();
 
@@ -92,10 +92,10 @@ class TestTimer
 
     /// End an in-place progress line by clearing it (no leftover 100% row).
     void finish_running();
-    
+
     /// Print basic timer summary.
     void print_basic() const;
-    
+
     /// Print detailed per-hand timer results.
     /// @param out Output stream
     void print_hands(std::ostream& out = std::cout) const;

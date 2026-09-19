@@ -1294,7 +1294,7 @@ TEST(TransTablePEquivalenceTest, CutDecisionsMatchTransTableLOnSmallWorkloads)
                                 held.emplace_back(s, r);
                     // Prefer low cards so that shapes and top cards repeat often.
                     std::sort(held.begin(), held.end(),
-                              [](auto a, auto b) { return a.second < b.second; });
+                                [](auto a, auto b) { return a.second < b.second; });
                     const size_t idx = std::min(held.size() - 1,
                         static_cast<size_t>(std::uniform_int_distribution<int>(0, 5)(rng)));
                     const auto [s, r] = held[idx];

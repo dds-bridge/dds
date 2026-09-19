@@ -48,40 +48,40 @@
 /// \see NodeCards for cached position data
 class TransTableS: public TransTable
 {
-  private:
+    private:
 
     /// \brief Card entry in the small TT with win mask information.
     struct WinCard
     {
-      int order_set_;              ///< Bitmask of card orders
-      int win_mask_;               ///< Bitmask of winning ranks
-      NodeCards * first_;          ///< Pointer to cached result
-      WinCard * prev_win_;         ///< Link in win set list
-      WinCard * next_win_;         ///< Link in win set list
-      WinCard * next_;             ///< Link in position search tree
+        int order_set_;              ///< Bitmask of card orders
+        int win_mask_;               ///< Bitmask of winning ranks
+        NodeCards * first_;          ///< Pointer to cached result
+        WinCard * prev_win_;         ///< Link in win set list
+        WinCard * next_win_;         ///< Link in win set list
+        WinCard * next_;             ///< Link in position search tree
     };
 
     /// \brief Tree node for binary search on card distributions.
     struct PosSearchSmall
     {
-      WinCard * pos_search_point_; ///< Associated card entry
-      long long suit_lengths_;     ///< Card length distribution key
-      PosSearchSmall * left_;      ///< Left subtree
-      PosSearchSmall * right_;     ///< Right subtree
+        WinCard * pos_search_point_; ///< Associated card entry
+        long long suit_lengths_;     ///< Card length distribution key
+        PosSearchSmall * left_;      ///< Left subtree
+        PosSearchSmall * right_;     ///< Right subtree
     };
 
     /// \brief Aggregated targets and win masks for a given hand.
     struct TtAggr
     {
-      int aggr_ranks_[DDS_SUITS];  ///< Target tricks per suit
-      int win_mask_[DDS_SUITS];    ///< Win mask per suit
+        int aggr_ranks_[DDS_SUITS];  ///< Target tricks per suit
+        int win_mask_[DDS_SUITS];    ///< Win mask per suit
     };
 
     /// \brief Statistics about table resets.
     struct StatsResets
     {
-      int no_of_resets_;           ///< Total number of resets
-      int aggr_resets_[ResetReasonCount]; ///< Reset counts by reason
+        int no_of_resets_;           ///< Total number of resets
+        int aggr_resets_[ResetReasonCount]; ///< Reset counts by reason
     };
 
 
@@ -132,55 +132,55 @@ class TransTableS: public TransTable
     auto add_node_set() -> void;
 
     auto add_len_set(
-      int trick, 
-      int first_hand) -> void;
+        int trick, 
+        int first_hand) -> void;
 
     auto build_sop(
-      const unsigned short our_win_ranks[DDS_SUITS],
-      const unsigned short aggr_arg[DDS_SUITS],
-      const NodeCards& first,
-      long long lengths,
-      int tricks,
-      int first_hand,
-      bool flag
+        const unsigned short our_win_ranks[DDS_SUITS],
+        const unsigned short aggr_arg[DDS_SUITS],
+        const NodeCards& first,
+        long long lengths,
+        int tricks,
+        int first_hand,
+        bool flag
     ) -> void;
 
     auto build_path(
-      const int win_mask[],
-      const int win_order_set[],
-      int u_bound,
-      int l_bound,
-      char best_move_suit,
-      char best_move_rank,
-      PosSearchSmall * node_ptr,
-      bool& result
+        const int win_mask[],
+        const int win_order_set[],
+        int u_bound,
+        int l_bound,
+        char best_move_suit,
+        char best_move_rank,
+        PosSearchSmall * node_ptr,
+        bool& result
     ) -> NodeCards *;
 
     auto search_len_and_insert(
-      PosSearchSmall * root_ptr,
-      long long key,
-      bool insert_node,
-      int trick,
-      int first_hand,
-      bool& result
+        PosSearchSmall * root_ptr,
+        long long key,
+        bool insert_node,
+        int trick,
+        int first_hand,
+        bool& result
     ) -> PosSearchSmall *;
 
     auto update_sop(
-      int u_bound,
-      int l_bound,
-      char best_move_suit,
-      char best_move_rank,
-      NodeCards * node
+        int u_bound,
+        int l_bound,
+        char best_move_suit,
+        char best_move_rank,
+        NodeCards * node
     ) -> NodeCards *;
 
     auto find_sop(
-      const int order_set[],
-      int limit,
-      WinCard * node_p,
-      bool& lower_flag
+        const int order_set[],
+        int limit,
+        WinCard * node_p,
+        bool& lower_flag
     ) -> NodeCards const *;
 
-  public:
+    public:
 
     /// \brief Construct a small transposition table instance.
     ///
@@ -250,12 +250,12 @@ class TransTableS: public TransTable
     /// \param[out] lower_flag Set to true if result is a lower bound
     /// \return Cached result or nullptr
     auto lookup(
-      int trick,
-      int hand,
-      const unsigned short aggr_target[],
-      const int hand_dist[],
-      int limit,
-      bool& lower_flag
+        int trick,
+        int hand,
+        const unsigned short aggr_target[],
+        const int hand_dist[],
+        int limit,
+        bool& lower_flag
     ) -> NodeCards const * override;
 
     /// \brief Add a computed result to the transposition table.
@@ -269,12 +269,12 @@ class TransTableS: public TransTable
     /// \param first Computed result to cache
     /// \param flag True if this is a lower bound (incomplete search)
     auto add(
-      int trick,
-      int hand,
-      const unsigned short aggr_target[],
-      const unsigned short win_ranks_arg[],
-      const NodeCards& first,
-      bool flag
+        int trick,
+        int hand,
+        const unsigned short aggr_target[],
+        const unsigned short win_ranks_arg[],
+        const NodeCards& first,
+        bool flag
     ) -> void override;
 
     /// \brief No-op print implementation for small TT.
@@ -282,18 +282,18 @@ class TransTableS: public TransTable
     /// The small transposition table does not support detailed dumping.
     /// These methods are no-op implementations of the base class interface.
     auto print_suits(
-      std::ofstream& /*fout*/,
-      int /*trick*/,
-      int /*hand*/) const -> void override
+        std::ofstream& /*fout*/,
+        int /*trick*/,
+        int /*hand*/) const -> void override
     {
     }
     auto print_all_suits(std::ofstream& /*fout*/) const -> void override
     {
     }
     auto print_suit_stats(
-      std::ofstream& /*fout*/,
-      int /*trick*/,
-      int /*hand*/) const -> void override
+        std::ofstream& /*fout*/,
+        int /*trick*/,
+        int /*hand*/) const -> void override
     {
     }
     auto print_all_suit_stats(std::ofstream& /*fout*/) const -> void override
@@ -304,41 +304,41 @@ class TransTableS: public TransTable
     }
     auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
     {
-      adds = 0;
-      overwrites = 0;
-      harvests = 0; // TransTableS not instrumented
+        adds = 0;
+        overwrites = 0;
+        harvests = 0; // TransTableS not instrumented
     }
     auto print_summary_suit_stats(std::ofstream& /*fout*/) const -> void override
     {
     }
     auto print_entries_dist(
-      std::ofstream& /*fout*/,
-      int /*trick*/,
-      int /*hand*/,
-      const int /*hand_dist*/[]) const -> void override
+        std::ofstream& /*fout*/,
+        int /*trick*/,
+        int /*hand*/,
+        const int /*hand_dist*/[]) const -> void override
     {
     }
     auto print_entries_dist_and_cards(
-      std::ofstream& /*fout*/,
-      int /*trick*/,
-      int /*hand*/,
-      const unsigned short /*aggr_target*/[],
-      const int /*hand_dist*/[]) const -> void override
+        std::ofstream& /*fout*/,
+        int /*trick*/,
+        int /*hand*/,
+        const unsigned short /*aggr_target*/[],
+        const int /*hand_dist*/[]) const -> void override
     {
     }
     auto print_entries(
-      std::ofstream& /*fout*/,
-      int /*trick*/,
-      int /*hand*/) const -> void override
+        std::ofstream& /*fout*/,
+        int /*trick*/,
+        int /*hand*/) const -> void override
     {
     }
     auto print_all_entries(std::ofstream& /*fout*/) const -> void override
     {
     }
     auto print_entry_stats(
-      std::ofstream& /*fout*/,
-      int /*trick*/,
-      int /*hand*/) const -> void override
+        std::ofstream& /*fout*/,
+        int /*trick*/,
+        int /*hand*/) const -> void override
     {
     }
     auto print_all_entry_stats(std::ofstream& /*fout*/) const -> void override
@@ -353,7 +353,7 @@ class TransTableS: public TransTable
     /// Delegates to print_node_stats_impl() implementation.
     auto print_node_stats(std::ofstream& fout) const -> void override
     {
-      print_node_stats_impl(fout);
+        print_node_stats_impl(fout);
     }
 
     /// \brief Bridge to reset statistics printer.
@@ -361,7 +361,7 @@ class TransTableS: public TransTable
     /// Delegates to print_reset_stats_impl() implementation.
     auto print_reset_stats(std::ofstream& fout) const -> void override
     {
-      print_reset_stats_impl(fout);
+        print_reset_stats_impl(fout);
     }
 
     /// \brief Print node statistics from the small TT.

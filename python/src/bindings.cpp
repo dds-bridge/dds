@@ -427,7 +427,7 @@ auto register_table_bindings(py::module_& module) -> void
                 (wants_par && can_compute_par)
                     ? MAXNOOFTABLES
                     : ((included_strains > 0) ? ((MAXNOOFTABLES * DDS_STRAINS) / included_strains)
-                                              : MAXNOOFTABLES);
+                                                : MAXNOOFTABLES);
 
             // Convert list of PBN strings to DdTableDealsPBN
             const auto native_deals = dds3_python::list_to_dd_table_deals_pbn(
@@ -456,7 +456,7 @@ auto register_table_bindings(py::module_& module) -> void
             py::dict result;
             result["no_of_boards"] = tables_res.no_of_boards;
             result["tables"] = dds3_python::dd_tables_res_to_list(tables_res, native_deals.no_of_tables);
-            
+
             // Include par_results only if par was actually computed:
             // - Par computation requires mode != -1 AND all strains included
             // - This ensures AllParResults buffer (capacity MAXNOOFTABLES) won't be accessed out-of-bounds
@@ -553,7 +553,7 @@ auto register_calc_par_bindings(py::module_& module) -> void
                     &par_results);
             }
             throw_on_dds_error(code);
-            
+
             // Return both DD table and par results
             py::dict result;
             result["dd_table"] = dds3_python::dd_table_results_to_dict(table_results);

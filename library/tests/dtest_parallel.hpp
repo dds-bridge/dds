@@ -23,6 +23,6 @@ int dtest_effective_threads(int requested, int workload);
 /// @p body must return RETURN_NO_FAULT (1) on success.
 /// @return First non-success code from @p body, or RETURN_NO_FAULT.
 int dtest_run_parallel(
-  int count,
-  int requested_threads,
-  const std::function<int(int)> & body);
+    int count,
+    int requested_threads,
+    const std::function<int(int)> & body);

@@ -25,13 +25,13 @@
  */
 class TimeStatList
 {
-  private:
+    private:
 
     std::vector<TimeStat> list;
 
     std::string name;
 
-  public:
+    public:
 
     /**
      * @brief Construct a new TimeStatList object.
@@ -50,12 +50,12 @@ class TimeStatList
     void Reset();
 
     void Init(
-      const std::string& tname,
-      const unsigned len);
+        const std::string& tname,
+        const unsigned len);
 
     void Add(
-      const unsigned Pos,
-      const TimeStat& add);
+        const unsigned Pos,
+        const TimeStat& add);
 
     bool Used() const;
 

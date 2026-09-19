@@ -27,7 +27,7 @@ using Clock = std::chrono::steady_clock;
  */
 class Timer
 {
-  private:
+    private:
 
     std::string name;
     unsigned int count;
@@ -37,7 +37,7 @@ class Timer
     std::chrono::time_point<Clock> user0;
     std::clock_t syst0;
 
-  public:
+    public:
 
     /**
      * @brief Construct a new Timer object.
@@ -70,8 +70,8 @@ class Timer
     void operator -= (const Timer& deduct);
 
     std::string SumLine(
-      const Timer& divisor,
-      const std::string& bname = "") const;
+        const Timer& divisor,
+        const std::string& bname = "") const;
 
     std::string DetailLine() const;
 };

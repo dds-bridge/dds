@@ -68,26 +68,26 @@ constexpr int kMode = 0;
 // this releases the handle however the scope is left.
 class ScopedContext {
 public:
-  ScopedContext() : ctx_(dds_c_create_solvercontext_default()) {}
-  ~ScopedContext() { destroy(); }
+    ScopedContext() : ctx_(dds_c_create_solvercontext_default()) {}
+    ~ScopedContext() { destroy(); }
 
-  ScopedContext(const ScopedContext&) = delete;
-  auto operator=(const ScopedContext&) -> ScopedContext& = delete;
+    ScopedContext(const ScopedContext&) = delete;
+    auto operator=(const ScopedContext&) -> ScopedContext& = delete;
 
-  [[nodiscard]] auto get() const -> DDS_C_SOLVER_CTX { return ctx_; }
+    [[nodiscard]] auto get() const -> DDS_C_SOLVER_CTX { return ctx_; }
 
-  // Release early, so the cost of destruction lands inside the timed region
-  // rather than at the end of the enclosing scope. Idempotent.
-  auto destroy() -> void
-  {
-    if (ctx_ != nullptr) {
-      dds_c_destroy_solvercontext(ctx_);
-      ctx_ = nullptr;
+    // Release early, so the cost of destruction lands inside the timed region
+    // rather than at the end of the enclosing scope. Idempotent.
+    auto destroy() -> void
+    {
+        if (ctx_ != nullptr) {
+            dds_c_destroy_solvercontext(ctx_);
+            ctx_ = nullptr;
+        }
     }
-  }
 
 private:
-  DDS_C_SOLVER_CTX ctx_;
+    DDS_C_SOLVER_CTX ctx_;
 };
 
 // Deal 52 cards into four hands from the caller's generator. This is only as
@@ -95,16 +95,16 @@ private:
 // not from anything here. See the seeding comment in the test case below.
 auto make_deal(std::mt19937& rng) -> Hands
 {
-  std::vector<Card> deck;
-  for (int s = 0; s < 4; ++s)
-    for (int r = 2; r <= 14; ++r)
-      deck.emplace_back(s, r);
-  std::shuffle(deck.begin(), deck.end(), rng);
-  Hands hands;
-  for (int h = 0; h < 4; ++h)
-    for (int i = 0; i < 13; ++i)
-      hands[static_cast<size_t>(h)].push_back(deck[static_cast<size_t>(h * 13 + i)]);
-  return hands;
+    std::vector<Card> deck;
+    for (int s = 0; s < 4; ++s)
+        for (int r = 2; r <= 14; ++r)
+            deck.emplace_back(s, r);
+    std::shuffle(deck.begin(), deck.end(), rng);
+    Hands hands;
+    for (int h = 0; h < 4; ++h)
+        for (int i = 0; i < 13; ++i)
+            hands[static_cast<size_t>(h)].push_back(deck[static_cast<size_t>(h * 13 + i)]);
+    return hands;
 }
 
 // Build a binary Deal. With `lead` supplied, the position is the one AFTER the
@@ -113,47 +113,47 @@ auto make_deal(std::mt19937& rng) -> Hands
 auto make_position(const Hands& hands, int trump, int leader,
                    const Card* lead = nullptr) -> Deal
 {
-  Deal dl{};
-  dl.trump = trump;
-  dl.first = leader;
-  for (int h = 0; h < DDS_HANDS; ++h)
-    for (int s = 0; s < DDS_SUITS; ++s)
-      dl.remainCards[h][s] = 0;
+    Deal dl{};
+    dl.trump = trump;
+    dl.first = leader;
+    for (int h = 0; h < DDS_HANDS; ++h)
+        for (int s = 0; s < DDS_SUITS; ++s)
+            dl.remainCards[h][s] = 0;
 
-  for (int h = 0; h < DDS_HANDS; ++h) {
-    for (const auto& [s, r] : hands[static_cast<size_t>(h)]) {
-      if (lead != nullptr && h == leader && s == lead->first && r == lead->second)
-        continue;                                  // the card just led
-      dl.remainCards[h][s] |= (1u << static_cast<unsigned>(r));
+    for (int h = 0; h < DDS_HANDS; ++h) {
+        for (const auto& [s, r] : hands[static_cast<size_t>(h)]) {
+            if (lead != nullptr && h == leader && s == lead->first && r == lead->second)
+                continue;                                  // the card just led
+            dl.remainCards[h][s] |= (1u << static_cast<unsigned>(r));
+        }
     }
-  }
 
-  if (lead != nullptr) {
-    dl.currentTrickSuit[0] = lead->first;
-    dl.currentTrickRank[0] = lead->second;
-  }
-  return dl;
+    if (lead != nullptr) {
+        dl.currentTrickSuit[0] = lead->first;
+        dl.currentTrickRank[0] = lead->second;
+    }
+    return dl;
 }
 
 // Top-K candidate leads, ranked by the solutions=3 result `fut` (a stand-in for
 // an engine's NN shortlist: here simply the double-dummy-best leads).
 auto top_k_leads(const FutureTricks& fut, int k) -> std::vector<Card>
 {
-  std::vector<int> idx;
-  for (int i = 0; i < fut.cards; ++i) idx.push_back(i);
-  std::stable_sort(idx.begin(), idx.end(),
-    [&](int a, int b) { return fut.score[a] > fut.score[b]; });
-  std::vector<Card> leads;
-  for (int i = 0; i < static_cast<int>(idx.size()) && i < k; ++i)
-    leads.emplace_back(fut.suit[idx[static_cast<size_t>(i)]],
+    std::vector<int> idx;
+    for (int i = 0; i < fut.cards; ++i) idx.push_back(i);
+    std::stable_sort(idx.begin(), idx.end(),
+        [&](int a, int b) { return fut.score[a] > fut.score[b]; });
+    std::vector<Card> leads;
+    for (int i = 0; i < static_cast<int>(idx.size()) && i < k; ++i)
+        leads.emplace_back(fut.suit[idx[static_cast<size_t>(i)]],
                        fut.rank[idx[static_cast<size_t>(i)]]);
-  return leads;
+    return leads;
 }
 
 using Clock = std::chrono::steady_clock;
 auto ms_since(Clock::time_point t0) -> double
 {
-  return std::chrono::duration<double, std::milli>(Clock::now() - t0).count();
+    return std::chrono::duration<double, std::milli>(Clock::now() - t0).count();
 }
 
 struct Totals { double a = 0, b_cold = 0, b_warm = 0; int deals = 0; };
@@ -164,131 +164,131 @@ struct Totals { double a = 0, b_cold = 0, b_warm = 0; int deals = 0; };
 auto run(const std::vector<Hands>& deals, int trump, int leader, int k,
          const char* label, Totals& t) -> void
 {
-  for (size_t d = 0; d < deals.size(); ++d) {
-    const Hands& hands = deals[d];
+    for (size_t d = 0; d < deals.size(); ++d) {
+        const Hands& hands = deals[d];
 
-    // --- A: one fresh-context solutions=3 solve valuing all leads. ---
-    const Deal full = make_position(hands, trump, leader);
-    FutureTricks futA{};
-    int rcA = RETURN_UNKNOWN_FAULT;
-    {
-      const auto tA = Clock::now();
-      ScopedContext ctx_a;
-      ASSERT_NE(nullptr, ctx_a.get()) << label << " deal " << d << ": context alloc failed";
-      rcA = dds_c_solve_board(ctx_a.get(), &full, -1, 3, kMode, &futA);
-      ctx_a.destroy();
-      t.a += ms_since(tA);
+        // --- A: one fresh-context solutions=3 solve valuing all leads. ---
+        const Deal full = make_position(hands, trump, leader);
+        FutureTricks futA{};
+        int rcA = RETURN_UNKNOWN_FAULT;
+        {
+            const auto tA = Clock::now();
+            ScopedContext ctx_a;
+            ASSERT_NE(nullptr, ctx_a.get()) << label << " deal " << d << ": context alloc failed";
+            rcA = dds_c_solve_board(ctx_a.get(), &full, -1, 3, kMode, &futA);
+            ctx_a.destroy();
+            t.a += ms_since(tA);
+        }
+        ASSERT_EQ(RETURN_NO_FAULT, rcA) << label << " deal " << d << ": A solve failed";
+        // A full-deal solve always has playable cards; none would mean the solver
+        // answered something we cannot compare, not a deal worth skipping.
+        ASSERT_GT(futA.cards, 0) << label << " deal " << d << ": A returned no cards";
+
+        // Precompute the post-lead positions (excluded from the timings).
+        std::vector<Deal> positions;
+        for (const Card lead : top_k_leads(futA, k))
+            positions.push_back(make_position(hands, trump, leader, &lead));
+
+        // --- B_cold: a fresh context (cold TT) per lead. ---
+        std::vector<int> cold_scores;
+        const auto tCold = Clock::now();
+        for (const auto& pos : positions) {
+            ScopedContext ctx;
+            ASSERT_NE(nullptr, ctx.get()) << label << " deal " << d << ": context alloc failed";
+            FutureTricks fut{};
+            const int rc = dds_c_solve_board(ctx.get(), &pos, -1, 1, kMode, &fut);
+            ctx.destroy();
+            ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_cold solve failed";
+            ASSERT_GT(fut.cards, 0) << label << " deal " << d << ": B_cold returned no cards";
+            cold_scores.push_back(fut.score[0]);
+        }
+        t.b_cold += ms_since(tCold);
+
+        // --- B_warm: ONE context reused across the K leads (warm TT). ---
+        std::vector<int> warm_scores;
+        {
+            const auto tWarm = Clock::now();
+            ScopedContext ctx_w;
+            ASSERT_NE(nullptr, ctx_w.get()) << label << " deal " << d << ": context alloc failed";
+            for (const auto& pos : positions) {
+                FutureTricks fut{};
+                const int rc = dds_c_solve_board(ctx_w.get(), &pos, -1, 1, kMode, &fut);
+                ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_warm solve failed";
+                ASSERT_GT(fut.cards, 0) << label << " deal " << d << ": B_warm returned no cards";
+                warm_scores.push_back(fut.score[0]);
+            }
+            ctx_w.destroy();
+            t.b_warm += ms_since(tWarm);
+        }
+
+        // --- Correctness: warm TT reuse must not change any answer. ---
+        ASSERT_EQ(cold_scores, warm_scores)
+            << label << " deal " << d << ": warm-TT reuse changed a lead's score";
+        ++t.deals;
     }
-    ASSERT_EQ(RETURN_NO_FAULT, rcA) << label << " deal " << d << ": A solve failed";
-    // A full-deal solve always has playable cards; none would mean the solver
-    // answered something we cannot compare, not a deal worth skipping.
-    ASSERT_GT(futA.cards, 0) << label << " deal " << d << ": A returned no cards";
-
-    // Precompute the post-lead positions (excluded from the timings).
-    std::vector<Deal> positions;
-    for (const Card lead : top_k_leads(futA, k))
-      positions.push_back(make_position(hands, trump, leader, &lead));
-
-    // --- B_cold: a fresh context (cold TT) per lead. ---
-    std::vector<int> cold_scores;
-    const auto tCold = Clock::now();
-    for (const auto& pos : positions) {
-      ScopedContext ctx;
-      ASSERT_NE(nullptr, ctx.get()) << label << " deal " << d << ": context alloc failed";
-      FutureTricks fut{};
-      const int rc = dds_c_solve_board(ctx.get(), &pos, -1, 1, kMode, &fut);
-      ctx.destroy();
-      ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_cold solve failed";
-      ASSERT_GT(fut.cards, 0) << label << " deal " << d << ": B_cold returned no cards";
-      cold_scores.push_back(fut.score[0]);
-    }
-    t.b_cold += ms_since(tCold);
-
-    // --- B_warm: ONE context reused across the K leads (warm TT). ---
-    std::vector<int> warm_scores;
-    {
-      const auto tWarm = Clock::now();
-      ScopedContext ctx_w;
-      ASSERT_NE(nullptr, ctx_w.get()) << label << " deal " << d << ": context alloc failed";
-      for (const auto& pos : positions) {
-        FutureTricks fut{};
-        const int rc = dds_c_solve_board(ctx_w.get(), &pos, -1, 1, kMode, &fut);
-        ASSERT_EQ(RETURN_NO_FAULT, rc) << label << " deal " << d << ": B_warm solve failed";
-        ASSERT_GT(fut.cards, 0) << label << " deal " << d << ": B_warm returned no cards";
-        warm_scores.push_back(fut.score[0]);
-      }
-      ctx_w.destroy();
-      t.b_warm += ms_since(tWarm);
-    }
-
-    // --- Correctness: warm TT reuse must not change any answer. ---
-    ASSERT_EQ(cold_scores, warm_scores)
-      << label << " deal " << d << ": warm-TT reuse changed a lead's score";
-    ++t.deals;
-  }
 }
 
 auto report(const char* tag, int k, const Totals& t) -> void
 {
-  const double a = t.a, bc = t.b_cold, bw = t.b_warm;
-  std::printf(
-    "  %-10s K=%d over %3d deals:  A(sol=3)=%8.1f ms   "
-    "B_cold=%8.1f ms (%.2fx A)   B_warm=%8.1f ms (%.2fx A)   warm/cold=%.2f\n",
-    tag, k, t.deals, a, bc, (a > 0 ? bc / a : 0.0),
-    bw, (a > 0 ? bw / a : 0.0), (bc > 0 ? bw / bc : 0.0));
+    const double a = t.a, bc = t.b_cold, bw = t.b_warm;
+    std::printf(
+        "  %-10s K=%d over %3d deals:  A(sol=3)=%8.1f ms   "
+        "B_cold=%8.1f ms (%.2fx A)   B_warm=%8.1f ms (%.2fx A)   warm/cold=%.2f\n",
+        tag, k, t.deals, a, bc, (a > 0 ? bc / a : 0.0),
+        bw, (a > 0 ? bw / a : 0.0), (bc > 0 ? bw / bc : 0.0));
 }
 
 TEST(WarmTtBenchmark, ContextReuseKeepsTranspositionTableWarm)
 {
-  // Fixed seed, on purpose: it is what makes this benchmark reproducible.
-  // std::mt19937 is specified by the standard, so a given seed yields the same
-  // sequence on every platform and library version -- so every run, on every
-  // machine, measures the same deals. That matters here because the numbers
-  // are meant to be compared across runs (and across changes to the solver): a
-  // fresh random sample each time would move the timings for reasons unrelated
-  // to the code under test, and would also make any failure of the warm/cold
-  // agreement check below impossible to reproduce from the failure output alone.
-  //
-  // Deal count is sized for Bazel's short (60s) timeout on slow CI hosts
-  // (notably Windows runners); keep it large enough for a stable warm/cold
-  // story, small enough that opt builds finish with headroom under 60s.
-  std::mt19937 rng(20260717u);
-  constexpr int kDeals = 40;
-  std::vector<Hands> deals;
-  deals.reserve(kDeals);
-  for (int d = 0; d < kDeals; ++d) deals.push_back(make_deal(rng));
+    // Fixed seed, on purpose: it is what makes this benchmark reproducible.
+    // std::mt19937 is specified by the standard, so a given seed yields the same
+    // sequence on every platform and library version -- so every run, on every
+    // machine, measures the same deals. That matters here because the numbers
+    // are meant to be compared across runs (and across changes to the solver): a
+    // fresh random sample each time would move the timings for reasons unrelated
+    // to the code under test, and would also make any failure of the warm/cold
+    // agreement check below impossible to reproduce from the failure output alone.
+    //
+    // Deal count is sized for Bazel's short (60s) timeout on slow CI hosts
+    // (notably Windows runners); keep it large enough for a stable warm/cold
+    // story, small enough that opt builds finish with headroom under 60s.
+    std::mt19937 rng(20260717u);
+    constexpr int kDeals = 40;
+    std::vector<Hands> deals;
+    deals.reserve(kDeals);
+    for (int d = 0; d < kDeals; ++d) deals.push_back(make_deal(rng));
 
-  // Warm up process-wide one-time init so it doesn't bias the first timer.
-  {
-    const Deal w = make_position(deals[0], kStrainNT, kWest);
-    FutureTricks fut{};
-    ScopedContext ctx;
-    ASSERT_NE(nullptr, ctx.get());
-    (void) dds_c_solve_board(ctx.get(), &w, -1, 3, kMode, &fut);
-  }
+    // Warm up process-wide one-time init so it doesn't bias the first timer.
+    {
+        const Deal w = make_position(deals[0], kStrainNT, kWest);
+        FutureTricks fut{};
+        ScopedContext ctx;
+        ASSERT_NE(nullptr, ctx.get());
+        (void) dds_c_solve_board(ctx.get(), &w, -1, 3, kMode, &fut);
+    }
 
-  std::printf("\n[warm-TT benchmark] declarer South; opening leader West; "
-              "%d deals x {3N, 4S}\n", kDeals);
+    std::printf("\n[warm-TT benchmark] declarer South; opening leader West; "
+                            "%d deals x {3N, 4S}\n", kDeals);
 
-  double warm_sum = 0, cold_sum = 0;
-  for (const int k : {4, 6}) {
-    Totals nt, sp;
-    run(deals, kStrainNT,     kWest, k, "3N", nt);
-    run(deals, kStrainSpades, kWest, k, "4S", sp);
-    if (::testing::Test::HasFatalFailure()) return;
-    report("3N", k, nt);
-    report("4S", k, sp);
-    Totals both;
-    both.a = nt.a + sp.a; both.b_cold = nt.b_cold + sp.b_cold;
-    both.b_warm = nt.b_warm + sp.b_warm; both.deals = nt.deals + sp.deals;
-    report("3N+4S", k, both);
-    warm_sum += both.b_warm; cold_sum += both.b_cold;
-  }
+    double warm_sum = 0, cold_sum = 0;
+    for (const int k : {4, 6}) {
+        Totals nt, sp;
+        run(deals, kStrainNT,     kWest, k, "3N", nt);
+        run(deals, kStrainSpades, kWest, k, "4S", sp);
+        if (::testing::Test::HasFatalFailure()) return;
+        report("3N", k, nt);
+        report("4S", k, sp);
+        Totals both;
+        both.a = nt.a + sp.a; both.b_cold = nt.b_cold + sp.b_cold;
+        both.b_warm = nt.b_warm + sp.b_warm; both.deals = nt.deals + sp.deals;
+        report("3N+4S", k, both);
+        warm_sum += both.b_warm; cold_sum += both.b_cold;
+    }
 
-  // Sanity (not a timing gate): reusing a warm TT must not be materially
-  // slower than rebuilding a cold one. The real speed story is in the table.
-  EXPECT_LE(warm_sum, cold_sum * 1.25)
-    << "context reuse was unexpectedly slower than fresh contexts";
+    // Sanity (not a timing gate): reusing a warm TT must not be materially
+    // slower than rebuilding a cold one. The real speed story is in the table.
+    EXPECT_LE(warm_sum, cold_sum * 1.25)
+        << "context reuse was unexpectedly slower than fresh contexts";
 }
 
 }  // namespace
