@@ -26,12 +26,12 @@
  */
 class TimerGroup
 {
-  private:
+    private:
 
     std::vector<Timer> timers;
     std::string bname;
 
-  public:
+    public:
 
     /**
      * @brief Construct a new TimerGroup object.

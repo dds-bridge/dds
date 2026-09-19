@@ -86,8 +86,8 @@ DLLEXPORT int dds_c_solve_board_pbn(DDS_C_SOLVER_CTX ctx,
 }
 
 DLLEXPORT int dds_c_calc_dd_table(DDS_C_SOLVER_CTX ctx,
-                                  const struct DdTableDeal* deal,
-                                  struct DdTableResults* results)
+                                    const struct DdTableDeal* deal,
+                                    struct DdTableResults* results)
 {
     if (ctx == nullptr || deal == nullptr || results == nullptr)
         return RETURN_UNKNOWN_FAULT;
@@ -134,7 +134,7 @@ DLLEXPORT int dds_c_calc_par_pbn(DDS_C_SOLVER_CTX ctx,
 }
 
 DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext(int tt_kind,
-                                                      int def_mb, int max_mb)
+                                                        int def_mb, int max_mb)
 {
     try {
         SolverConfig cfg;
@@ -148,8 +148,8 @@ DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext(int tt_kind,
 }
 
 DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
-                                      const struct DdTableDealPBN* deal,
-                                      struct DdTableResults* results)
+                                        const struct DdTableDealPBN* deal,
+                                        struct DdTableResults* results)
 {
     if (ctx == nullptr || deal == nullptr || results == nullptr)
         return RETURN_UNKNOWN_FAULT;
@@ -163,7 +163,7 @@ DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
 }
 
 DLLEXPORT void dds_c_configure_tt(DDS_C_SOLVER_CTX ctx, int tt_kind,
-                                  int def_mb, int max_mb)
+                                    int def_mb, int max_mb)
 {
     if (ctx == nullptr)
         return;
@@ -266,8 +266,8 @@ DLLEXPORT int dds_c_par_from_table(const struct DdTableResults* table,
 }
 
 DLLEXPORT int dds_c_sides_par(const struct DdTableResults* table,
-                              struct ParResultsDealer sides_res[2],
-                              int vulnerable)
+                                struct ParResultsDealer sides_res[2],
+                                int vulnerable)
 {
     if (table == nullptr || sides_res == nullptr)
         return RETURN_UNKNOWN_FAULT;
@@ -308,8 +308,8 @@ DLLEXPORT int dds_c_dealer_par_bin(const struct DdTableResults* table,
 }
 
 DLLEXPORT int dds_c_sides_par_bin(const struct DdTableResults* table,
-                                  struct ParResultsMaster sides_res[2],
-                                  int vulnerable)
+                                    struct ParResultsMaster sides_res[2],
+                                    int vulnerable)
 {
     if (table == nullptr || sides_res == nullptr)
         return RETURN_UNKNOWN_FAULT;
@@ -322,7 +322,7 @@ DLLEXPORT int dds_c_sides_par_bin(const struct DdTableResults* table,
 }
 
 DLLEXPORT int dds_c_convert_to_dealer_text_format(const struct ParResultsMaster* par,
-                                                  char* resp)
+                                                    char* resp)
 {
     if (par == nullptr || resp == nullptr)
         return RETURN_UNKNOWN_FAULT;

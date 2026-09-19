@@ -24,22 +24,22 @@
 constexpr int HASH_MAX = 200;
 
 #ifdef DDS_SCHEDULER
-  #define START_BLOCK_TIMER scheduler.StartBlockTimer()
-  #define END_BLOCK_TIMER scheduler.EndBlockTimer()
-  #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
-  #define END_THREAD_TIMER(a) scheduler.EndThreadTimer(a)
+    #define START_BLOCK_TIMER scheduler.StartBlockTimer()
+    #define END_BLOCK_TIMER scheduler.EndBlockTimer()
+    #define START_THREAD_TIMER(a) scheduler.StartThreadTimer(a)
+    #define END_THREAD_TIMER(a) scheduler.EndThreadTimer(a)
 #else
-  #define START_BLOCK_TIMER
-  #define END_BLOCK_TIMER
-  #define START_THREAD_TIMER(a)
-  #define END_THREAD_TIMER(a)
+    #define START_BLOCK_TIMER
+    #define END_BLOCK_TIMER
+    #define START_THREAD_TIMER(a)
+    #define END_THREAD_TIMER(a)
 #endif
 
 
 struct schedType
 {
-  int number;
-  int repeatOf;
+    int number;
+    int repeatOf;
 };
 
 
@@ -54,186 +54,186 @@ struct schedType
  */
 class Scheduler
 {
-  private:
+    private:
 
-    struct listType
-    {
-      int first;
-      int last;
-      int length;
-    };
+        struct listType
+        {
+            int first;
+            int last;
+            int length;
+        };
 
-    struct groupType
-    {
-      int strain;
-      int hash;
-      int pred;
-      int actual;
-      int head;
-      int repeatNo;
-    };
+        struct groupType
+        {
+            int strain;
+            int hash;
+            int pred;
+            int actual;
+            int head;
+            int repeatNo;
+        };
 
-    struct sortType
-    {
-      int number;
-      int value;
-    };
+        struct sortType
+        {
+            int number;
+            int value;
+        };
 
-    struct handType
-    {
-      int next;
-      int spareKey;
-      unsigned remainCards[DDS_HANDS][DDS_SUITS];
-      int NTflag;
-      int first;
-      int strain;
-      int repeatNo;
-      int depth;
-      int strength;
-      int fanout;
-      int thread;
-      int selectFlag;
-      int time;
-    };
+        struct handType
+        {
+            int next;
+            int spareKey;
+            unsigned remainCards[DDS_HANDS][DDS_SUITS];
+            int NTflag;
+            int first;
+            int strain;
+            int repeatNo;
+            int depth;
+            int strength;
+            int fanout;
+            int thread;
+            int selectFlag;
+            int time;
+        };
 
-    handType hands[MAXNOOFBOARDS];
+        handType hands[MAXNOOFBOARDS];
 
-    groupType group[MAXNOOFBOARDS];
-    int numGroups;
-    int extraGroups;
+        groupType group[MAXNOOFBOARDS];
+        int numGroups;
+        int extraGroups;
 
-    std::atomic<int> currGroup;
+        std::atomic<int> currGroup;
 
-    listType list[DDS_SUITS + 2][HASH_MAX];
+        listType list[DDS_SUITS + 2][HASH_MAX];
 
-    sortType sortList[MAXNOOFBOARDS];
-    int sortLen;
+        sortType sortList[MAXNOOFBOARDS];
+        int sortLen;
 
-    std::vector<int> threadGroup;
-    std::vector<int> threadCurrGroup;
-    std::vector<int> threadToHand;
+        std::vector<int> threadGroup;
+        std::vector<int> threadCurrGroup;
+        std::vector<int> threadToHand;
 
-    int numThreads;
-    int numHands;
+        int numThreads;
+        int numHands;
 
-    std::vector<int> highCards;
+        std::vector<int> highCards;
 
-    void InitHighCards();
+        void InitHighCards();
 
-    void SortHands(const enum RunMode mode);
+        void SortHands(const enum RunMode mode);
 
-    int Strength(const Deal& dl) const;
+        int Strength(const Deal& dl) const;
 
-    void Reset();
+        void Reset();
 
-    std::vector<Timer> timersThread;
-    Timer timerBlock;
+        std::vector<Timer> timersThread;
+        Timer timerBlock;
 
-    void MakeGroups(const Boards& bds);
+        void MakeGroups(const Boards& bds);
 
-    void FinetuneGroups();
+        void FinetuneGroups();
 
-    bool SameHand(
-      const int hno1,
-      const int hno2) const;
+        bool SameHand(
+            const int hno1,
+            const int hno2) const;
 
-    void SortSolve(),
+        void SortSolve(),
          SortCalc(),
          SortTrace();
 
 #ifdef DDS_SCHEDULER
 
-    int timeHist[10000];
-    int timeHistNT[10000];
-    int timeHistSuit[10000];
+        int timeHist[10000];
+        int timeHistNT[10000];
+        int timeHistSuit[10000];
 
-  TimeStatList timeStrain;
-  TimeStatList timeRepeat;
-  TimeStatList timeDepth;
-  TimeStatList timeStrength;
-  TimeStatList timeFanout;
-  TimeStatList timeThread;
-  TimeStatList timeGroupActualStrain;
-  TimeStatList timeGroupPredStrain;
-  TimeStatList timeGroupDiffStrain;
+    TimeStatList timeStrain;
+    TimeStatList timeRepeat;
+    TimeStatList timeDepth;
+    TimeStatList timeStrength;
+    TimeStatList timeFanout;
+    TimeStatList timeThread;
+    TimeStatList timeGroupActualStrain;
+    TimeStatList timeGroupPredStrain;
+    TimeStatList timeGroupDiffStrain;
 
-    long long timeMax;
-    long long blockMax;
-    long long timeBlock;
+        long long timeMax;
+        long long blockMax;
+        long long timeBlock;
 
-    void InitTimes();
+        void InitTimes();
 #endif
 
-    int PredictedTime(
-      Deal& dl,
-      int number) const;
+        int PredictedTime(
+            Deal& dl,
+            int number) const;
 
 
-  public:
+    public:
 
-    /**
+        /**
      * @brief Construct a new Scheduler object.
      *
      * Initializes all internal data structures, thread and board counters, and
      * prepares the scheduler for use in parallel double dummy solving.
      */
-    Scheduler();
+        Scheduler();
 
-    /**
+        /**
      * @brief Destroy the Scheduler object and clean up resources.
      *
      * Releases all memory and performs cleanup of scheduler state.
      */
-    /**
+        /**
      * @brief Destroy the Scheduler object and clean up resources.
      *
      * Releases all memory and performs cleanup of scheduler state.
      */
-    ~Scheduler();
+        ~Scheduler();
 
-    void RegisterThreads(
-      const int n);
+        void RegisterThreads(
+            const int n);
 
-    void RegisterRun(
-      const enum RunMode mode,
-      const Boards& bds,
-      const PlayTracesBin& pl);
+        void RegisterRun(
+            const enum RunMode mode,
+            const Boards& bds,
+            const PlayTracesBin& pl);
 
-    void RegisterRun(
-      const enum RunMode mode,
-      const Boards& bds);
+        void RegisterRun(
+            const enum RunMode mode,
+            const Boards& bds);
 
-    schedType GetNumber(const int thrId);
+        schedType GetNumber(const int thrId);
 
-    int NumGroups() const;
+        int NumGroups() const;
 
-  /**
+    /**
    * @brief Retrieve per-board raw times collected by the scheduler.
    *
    * Fills outVec with pairs (boardIndex, userTimeUs) for each board in
    * the current run. Times are wall-clock microseconds. This is intended
    * for post-run reporting.
    */
-  void GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const;
+    void GetBoardTimes(std::vector<std::pair<int,int>>& outVec) const;
 
-  // Lightweight API to set a board's time in microseconds for reporting when
-  // full DDS_SCHEDULER timing is not enabled. Thread-safe for single-writer per-board.
-  // Values outside `[0, INT_MAX]` are saturated into `HandType::time` storage.
-  void SetBoardTime(int boardIndex, long long time_us);
+    // Lightweight API to set a board's time in microseconds for reporting when
+    // full DDS_SCHEDULER timing is not enabled. Thread-safe for single-writer per-board.
+    // Values outside `[0, INT_MAX]` are saturated into `HandType::time` storage.
+    void SetBoardTime(int boardIndex, long long time_us);
 
-    // Release timing storage early to avoid heavy destructor work at exit.
-    void ClearTiming();
+        // Release timing storage early to avoid heavy destructor work at exit.
+        void ClearTiming();
 
 #ifdef DDS_SCHEDULER
-    void StartThreadTimer(const int thrId);
+        void StartThreadTimer(const int thrId);
 
-    void EndThreadTimer(const int thrId);
+        void EndThreadTimer(const int thrId);
 
-    void StartBlockTimer();
+        void StartBlockTimer();
 
-    void EndBlockTimer();
+        void EndBlockTimer();
 
-    void PrintTiming() const;
+        void PrintTiming() const;
 #endif
 
 };

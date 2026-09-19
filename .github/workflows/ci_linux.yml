@@ -15,6 +15,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # Fail fast on C++ indent drift (4 spaces, no tabs). Full-tree scan against
+      # the checkout — not Bazel runfiles — so we avoid per-package source filegroups.
+      # Unit helpers also run under `bazelisk test //python:cpp_indentation_test`.
+      - name: Check C++ indentation
+        run: python3 python/tests/cpp_indentation_test.py
+
       # 2️⃣ Free up disk space (LLVM toolchain ~4 GB extracted; runners ship ~14 GB free)
       - name: Free disk space
         uses: jlumbroso/free-disk-space@v1.3.1

@@ -20,33 +20,33 @@
 
 auto main() -> int
 {
-  DdTableDealPBN tableDealPBN;
-  DdTableResults table;
+    DdTableDealPBN tableDealPBN;
+    DdTableResults table;
 
-  int res;
-  char line[80];
-  bool match;
+    int res;
+    char line[80];
+    bool match;
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-    strcpy(tableDealPBN.cards, pbn_hands_[handno]);
-
-    res = CalcDDtablePBN(tableDealPBN, &table);
-
-    if (res != RETURN_NO_FAULT)
+    for (int handno = 0; handno < 3; handno++)
     {
-      ErrorMessage(res, line);
-      printf("DDS error: %s\n", line);
+        strcpy(tableDealPBN.cards, pbn_hands_[handno]);
+
+        res = CalcDDtablePBN(tableDealPBN, &table);
+
+        if (res != RETURN_NO_FAULT)
+        {
+            ErrorMessage(res, line);
+            printf("DDS error: %s\n", line);
+        }
+
+        match = compare_table(&table, handno);
+
+        sprintf(line,
+                        "CalcDDtable, hand %d: %s\n",
+                        handno + 1, (match ? "OK" : "ERROR"));
+
+        print_pbn_hand(line, tableDealPBN.cards);
+
+        print_table(&table);
     }
-
-    match = compare_table(&table, handno);
-
-    sprintf(line,
-            "CalcDDtable, hand %d: %s\n",
-            handno + 1, (match ? "OK" : "ERROR"));
-
-    print_pbn_hand(line, tableDealPBN.cards);
-
-    print_table(&table);
-  }
 }

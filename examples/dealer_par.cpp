@@ -20,32 +20,32 @@
 
 auto main() -> int
 {
-  DdTableResults DDtable;
-  ParResultsDealer pres;
+    DdTableResults DDtable;
+    ParResultsDealer pres;
 
-  int res;
-  char line[80];
-  bool match;
+    int res;
+    char line[80];
+    bool match;
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-    set_table(&DDtable, handno);
-
-    res = DealerPar(&DDtable, &pres, dealer_hand_[handno], vulnerability_[handno]);
-
-    if (res != RETURN_NO_FAULT)
+    for (int handno = 0; handno < 3; handno++)
     {
-      ErrorMessage(res, line);
-      printf("DDS error: %s\n", line);
-    }
+        set_table(&DDtable, handno);
 
-    match = compare_dealer_par(&pres, handno);
+        res = DealerPar(&DDtable, &pres, dealer_hand_[handno], vulnerability_[handno]);
 
-    printf("DealerPar, hand %d: %s\n\n",
+        if (res != RETURN_NO_FAULT)
+        {
+            ErrorMessage(res, line);
+            printf("DDS error: %s\n", line);
+        }
+
+        match = compare_dealer_par(&pres, handno);
+
+        printf("DealerPar, hand %d: %s\n\n",
            handno + 1, (match ? "OK" : "ERROR"));
 
-    print_table(&DDtable);
+        print_table(&DDtable);
 
-    print_dealer_par(&pres);
-  }
+        print_dealer_par(&pres);
+    }
 }

@@ -20,48 +20,48 @@
 
 auto main() -> int
 {
-  DealPBN dlPBN;
-  PlayTracePBN DDplayPBN;
-  SolvedPlay solved;
+    DealPBN dlPBN;
+    PlayTracePBN DDplayPBN;
+    SolvedPlay solved;
 
-  int threadIndex = 0, res;
-  char line[80];
-  bool match;
+    int threadIndex = 0, res;
+    char line[80];
+    bool match;
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-    dlPBN.trump = trump_suit_[handno];
-    dlPBN.first = first_hand_[handno];
-
-    dlPBN.currentTrickSuit[0] = 0;
-    dlPBN.currentTrickSuit[1] = 0;
-    dlPBN.currentTrickSuit[2] = 0;
-
-    dlPBN.currentTrickRank[0] = 0;
-    dlPBN.currentTrickRank[1] = 0;
-    dlPBN.currentTrickRank[2] = 0;
-
-    strcpy(dlPBN.remainCards, pbn_hands_[handno]);
-
-    DDplayPBN.number = play_count_[handno];
-    strcpy(DDplayPBN.cards, play_sequence_[handno]);
-
-    res = AnalysePlayPBN(dlPBN, DDplayPBN, &solved, threadIndex);
-
-    if (res != RETURN_NO_FAULT)
+    for (int handno = 0; handno < 3; handno++)
     {
-      ErrorMessage(res, line);
-      printf("DDS error: %s\n", line);
+        dlPBN.trump = trump_suit_[handno];
+        dlPBN.first = first_hand_[handno];
+
+        dlPBN.currentTrickSuit[0] = 0;
+        dlPBN.currentTrickSuit[1] = 0;
+        dlPBN.currentTrickSuit[2] = 0;
+
+        dlPBN.currentTrickRank[0] = 0;
+        dlPBN.currentTrickRank[1] = 0;
+        dlPBN.currentTrickRank[2] = 0;
+
+        strcpy(dlPBN.remainCards, pbn_hands_[handno]);
+
+        DDplayPBN.number = play_count_[handno];
+        strcpy(DDplayPBN.cards, play_sequence_[handno]);
+
+        res = AnalysePlayPBN(dlPBN, DDplayPBN, &solved, threadIndex);
+
+        if (res != RETURN_NO_FAULT)
+        {
+            ErrorMessage(res, line);
+            printf("DDS error: %s\n", line);
+        }
+
+        match = compare_play(&solved, handno);
+
+        sprintf(line, "AnalysePlayPBNBin, hand %d: %s\n",
+                        handno + 1, (match ? "OK" : "ERROR"));
+
+        print_pbn_hand(line, dlPBN.remainCards);
+
+        print_pbn_play(&DDplayPBN, &solved);
     }
-
-    match = compare_play(&solved, handno);
-
-    sprintf(line, "AnalysePlayPBNBin, hand %d: %s\n",
-            handno + 1, (match ? "OK" : "ERROR"));
-
-    print_pbn_hand(line, dlPBN.remainCards);
-
-    print_pbn_play(&DDplayPBN, &solved);
-  }
 }
 

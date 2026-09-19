@@ -83,7 +83,7 @@ TEST(TransTableSBasicTest, BasicTypesWork) {
     for (int i = 0; i < DDS_SUITS; ++i) {
         testArray[i] = i * 0x1111;
     }
-    
+
     EXPECT_EQ(testArray[0], 0x0000);
     EXPECT_EQ(testArray[1], 0x1111);
     EXPECT_EQ(testArray[2], 0x2222);
@@ -94,18 +94,18 @@ TEST(TransTableSBasicTest, BasicTypesWork) {
 TEST(TransTableSBasicTest, HelperFunctionsWork) {
     int handLookup[15][15];
     CreateBasicHandLookup(handLookup);
-    
+
     // Check that lookup table has expected pattern
     EXPECT_EQ(handLookup[0][0], 0);
     EXPECT_EQ(handLookup[1][0], 1);
     EXPECT_EQ(handLookup[0][1], 1);
     EXPECT_EQ(handLookup[1][1], 2);
-    
+
     unsigned short aggrTarget[DDS_SUITS];
     CreateTestAggrTarget(aggrTarget);
     EXPECT_EQ(aggrTarget[0], 0x1111);
     EXPECT_EQ(aggrTarget[3], 0x4444);
-    
+
     unsigned short win_ranks[DDS_SUITS];
     CreateTestWinRanks(win_ranks);
     EXPECT_EQ(win_ranks[0], 0x5555);
@@ -117,11 +117,11 @@ TEST(TransTableSAdvancedTest, RelativeRankPatterns) {
     // Test that we can create relative rank patterns
     unsigned short absoluteRanks[DDS_SUITS] = {0x1F00, 0x0F80, 0x07C0, 0x03E0}; // High cards
     unsigned short relativeRanks[DDS_SUITS] = {0x001F, 0x001F, 0x001F, 0x001F}; // Relative equivalent
-    
+
     // Verify patterns are different but could represent equivalent positions
     EXPECT_NE(absoluteRanks[0], relativeRanks[0]);
     EXPECT_NE(absoluteRanks[1], relativeRanks[1]);
-    
+
     // Both should have same number of bits set (same number of cards)
     auto countBits = [](unsigned short value) -> int {
         int count = 0;
@@ -131,7 +131,7 @@ TEST(TransTableSAdvancedTest, RelativeRankPatterns) {
         }
         return count;
     };
-    
+
     EXPECT_EQ(countBits(absoluteRanks[0]), countBits(relativeRanks[0]));
     EXPECT_EQ(countBits(absoluteRanks[1]), countBits(relativeRanks[1]));
 }
@@ -141,13 +141,13 @@ TEST(TransTableSAdvancedTest, WinningRankTracking) {
     // Test different winning patterns
     unsigned short singleSuitWin[DDS_SUITS] = {0x1000, 0x0000, 0x0000, 0x0000}; // Only spades
     unsigned short multiSuitWin[DDS_SUITS] = {0x1000, 0x0800, 0x0400, 0x0200};  // One from each
-    
+
     // Verify winning patterns are correctly formed
     EXPECT_GT(singleSuitWin[0], 0);
     EXPECT_EQ(singleSuitWin[1], 0);
     EXPECT_EQ(singleSuitWin[2], 0);
     EXPECT_EQ(singleSuitWin[3], 0);
-    
+
     EXPECT_GT(multiSuitWin[0], 0);
     EXPECT_GT(multiSuitWin[1], 0);
     EXPECT_GT(multiSuitWin[2], 0);
@@ -160,16 +160,16 @@ TEST(TransTableSAdvancedTest, HandDistributionPatterns) {
     int balanced[4] = {3, 3, 3, 4};      // 3-3-3-4 distribution
     int unbalanced[4] = {7, 3, 2, 1};    // 7-3-2-1 distribution
     int voidSuit[4] = {0, 5, 4, 4};      // Void in one suit
-    
+
     // Verify distributions sum to 13
     int sum1 = balanced[0] + balanced[1] + balanced[2] + balanced[3];
     int sum2 = unbalanced[0] + unbalanced[1] + unbalanced[2] + unbalanced[3];
     int sum3 = voidSuit[0] + voidSuit[1] + voidSuit[2] + voidSuit[3];
-    
+
     EXPECT_EQ(sum1, 13);
     EXPECT_EQ(sum2, 13);
     EXPECT_EQ(sum3, 13);
-    
+
     // Test void handling
     EXPECT_EQ(voidSuit[0], 0);
     EXPECT_GT(voidSuit[1], 0);
@@ -181,7 +181,7 @@ TEST(TransTableSAdvancedTest, EdgeCaseScenarios) {
     unsigned short maxRanks[DDS_SUITS] = {0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF};
     unsigned short minRanks[DDS_SUITS] = {0x0000, 0x0000, 0x0000, 0x0000};
     unsigned short mixedRanks[DDS_SUITS] = {0xFFFF, 0x0000, 0xAAAA, 0x5555};
-    
+
     // Verify extreme values don't cause issues
     EXPECT_EQ(maxRanks[0], 0xFFFF);
     EXPECT_EQ(minRanks[0], 0x0000);
@@ -197,7 +197,7 @@ TEST(TransTableSAdvancedTest, BoundsCheckingLogic) {
         int lbound;
         bool valid;
     };
-    
+
     TestBounds testCases[] = {
         {10, 8, true},    // Valid: ubound > lbound
         {13, 0, true},    // Valid: maximum range
@@ -206,11 +206,11 @@ TEST(TransTableSAdvancedTest, BoundsCheckingLogic) {
         {14, 10, false},  // Invalid: ubound > 13
         {10, -1, false}   // Invalid: negative lbound
     };
-    
+
     for (const auto& test : testCases) {
         bool isValid = (test.ubound >= test.lbound) && 
-                      (test.ubound >= 0 && test.ubound <= 13) &&
-                      (test.lbound >= 0 && test.lbound <= 13);
+                        (test.ubound >= 0 && test.ubound <= 13) &&
+                        (test.lbound >= 0 && test.lbound <= 13);
         EXPECT_EQ(isValid, test.valid) 
             << "Bounds check failed for ubound=" << (int)test.ubound 
             << " lbound=" << (int)test.lbound;
@@ -220,14 +220,14 @@ TEST(TransTableSAdvancedTest, BoundsCheckingLogic) {
 // Test memory management scenarios
 TEST(TransTableSAdvancedTest, MemoryManagementScenarios) {
     // Test different memory scenarios without actual allocation
-    
+
     // Simulate memory limits
     struct MemoryLimits {
         int defaultMB;
         int maximumMB;
         bool shouldSucceed;
     };
-    
+
     MemoryLimits testCases[] = {
         {16, 32, true},    // Normal case
         {1, 2, true},      // Very small
@@ -235,11 +235,11 @@ TEST(TransTableSAdvancedTest, MemoryManagementScenarios) {
         {0, 0, true},      // Zero (should use defaults)
         {32, 16, false},   // Invalid: default > maximum
     };
-    
+
     for (const auto& test : testCases) {
         bool isValid = (test.defaultMB <= test.maximumMB) && 
-                      (test.defaultMB >= 0) && 
-                      (test.maximumMB >= 0);
+                        (test.defaultMB >= 0) && 
+                        (test.maximumMB >= 0);
         EXPECT_EQ(isValid, test.shouldSucceed)
             << "Memory limit check failed for default=" << test.defaultMB
             << " maximum=" << test.maximumMB;
@@ -254,7 +254,7 @@ TEST(TransTableSAdvancedTest, DataValidationLogic) {
         int bound_type;
         bool valid;
     };
-    
+
     TTEntryData testCases[] = {
         {0, 1, true},     // Valid: tricks 0-13, bound type 1-3
         {13, 3, true},    // Valid: maximum tricks, maximum bound
@@ -264,10 +264,10 @@ TEST(TransTableSAdvancedTest, DataValidationLogic) {
         {6, 0, false},    // Invalid: bound type 0
         {6, 4, false},    // Invalid: bound type > 3
     };
-    
+
     for (const auto& test : testCases) {
         bool isValid = (test.tricks >= 0 && test.tricks <= 13) &&
-                      (test.bound_type >= 1 && test.bound_type <= 3);
+                        (test.bound_type >= 1 && test.bound_type <= 3);
         EXPECT_EQ(isValid, test.valid)
             << "Data validation failed for tricks=" << (int)test.tricks
             << " bound_type=" << (int)test.bound_type;
@@ -277,27 +277,27 @@ TEST(TransTableSAdvancedTest, DataValidationLogic) {
 // Test performance characteristics without actual timing
 TEST(TransTableSAdvancedTest, PerformanceCharacteristics) {
     // Test that we can simulate performance scenarios
-    
+
     // Simulate different access patterns
     struct AccessPattern {
         int sequential_accesses;
         int random_accesses;
         double expected_efficiency; // 0.0 to 1.0
     };
-    
+
     AccessPattern patterns[] = {
         {1000, 0, 0.95},      // Highly sequential
         {500, 500, 0.70},     // Mixed
         {0, 1000, 0.50},      // Highly random
         {100, 100, 0.80},     // Small mixed
     };
-    
+
     for (const auto& pattern : patterns) {
         // Simulate efficiency calculation
         double total_accesses = pattern.sequential_accesses + pattern.random_accesses;
         double sequential_ratio = pattern.sequential_accesses / total_accesses;
         double simulated_efficiency = 0.5 + (sequential_ratio * 0.45); // Simple model
-        
+
         // Check that our model produces reasonable results
         EXPECT_GE(simulated_efficiency, 0.0);
         EXPECT_LE(simulated_efficiency, 1.0);

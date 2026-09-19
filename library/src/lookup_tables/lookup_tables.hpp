@@ -27,32 +27,32 @@
  */
 struct MoveGroupType
 {
-  /**
+    /**
    * @brief Index of the last valid group (run) in this representation.
    * 
    * Valid range: -1 (empty suit) to 6 (maximum 7 groups).
    * Groups are indexed from 0 to last_group_ (inclusive).
    */
-  int last_group_;
+    int last_group_;
 
-  /**
+    /**
    * @brief For each group g, the absolute rank (2..14) of the top card.
    * 
    * Rank encoding: 2=deuce, ..., 10=ten, 11=Jack, 12=Queen, 13=King, 14=Ace.
    * Only indices 0..last_group_ contain valid data.
    */
-  int rank_[7];
+    int rank_[7];
 
-  /**
+    /**
    * @brief For each group g, bitmask of the sequence excluding the top card.
    * 
    * This represents the "tail" of the run below the top card.
    * Example: For AKQ, top=Ace(0x1000), sequence=0x0C00 (K=0x0800 | Q=0x0400).
    * Only indices 0..last_group_ contain valid data.
    */
-  int sequence_[7];
+    int sequence_[7];
 
-  /**
+    /**
    * @brief For each group g, bitmask of the full sequence including top card.
    * 
    * This is the complete run including the top card: 
@@ -62,16 +62,16 @@ struct MoveGroupType
    * Example: For AKQ, fullseq=0x1C00 (A=0x1000 | K=0x0800 | Q=0x0400).
    * Only indices 0..last_group_ contain valid data.
    */
-  int fullseq_[7];
+    int fullseq_[7];
 
-  /**
+    /**
    * @brief For each group g (g>=1), bitmask of the gap between group g and g-1.
    * 
    * Represents the missing ranks between two consecutive runs.
    * gap[0] is not used (no gap before first group).
    * Only indices 1..last_group_ contain valid gap data.
    */
-  int gap_[7];
+    int gap_[7];
 };
 
 /**

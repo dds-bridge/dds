@@ -102,6 +102,21 @@ py_test(
     ],
 )
 
+# Guard: C++ indent helpers + CI wiring for the workspace full-tree scan
+# (.github/instructions/cpp.instructions.md). The scan itself runs in
+# ci_linux.yml via `python3 python/tests/cpp_indentation_test.py`.
+py_test(
+    name = "cpp_indentation_test",
+    size = "small",
+    main = "tests/cpp_indentation_test.py",
+    srcs = ["tests/cpp_indentation_test.py"],
+    data = [
+        "//:.bazelrc",
+        "//:CPPVARIABLES.bzl",
+        "//.github/workflows:all_workflows",
+    ],
+)
+
 py_test(
     name = "python_interface_smoke_test",
     size = "small",
@@ -219,3 +234,4 @@ py_wheel_dist(
     out = "dist",
     wheel = ":dds3_wheel",
 )
+

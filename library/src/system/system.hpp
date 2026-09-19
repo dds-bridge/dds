@@ -21,7 +21,7 @@
 #include <api/dds_data_types.hpp>
 
 typedef void (*FduplType)(
-  const Boards& bds, std::vector<int>& uniques, std::vector<int>& crossrefs);
+    const Boards& bds, std::vector<int>& uniques, std::vector<int>& crossrefs);
 typedef void (*FcopyType)(const std::vector<int>& crossrefs);
 
 
@@ -36,7 +36,7 @@ typedef void (*FcopyType)(const std::vector<int>& crossrefs);
  */
 class System
 {
-  private:
+    private:
     int num_threads_;
     int sys_mem_mb_;
 
@@ -47,9 +47,9 @@ class System
     public:
 
     std::string get_version(
-      int& major,
-      int& minor,
-      int& patch) const;
+        int& major,
+        int& minor,
+        int& patch) const;
     std::string get_system(int& sys) const;
     std::string get_bits(int& bits) const;
     std::string get_compiler(int& comp) const;
@@ -76,12 +76,12 @@ class System
     void reset();
 
     int register_params(
-      const int n_threads,
-      const int mem_usable_mb);
+        const int n_threads,
+        const int mem_usable_mb);
 
     void get_hardware(
-      int& core_count,
-      unsigned long long& kilobytes_free) const;
+        int& core_count,
+        unsigned long long& kilobytes_free) const;
 
     int prefer_threading(const unsigned code);
 };

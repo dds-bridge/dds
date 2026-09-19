@@ -49,7 +49,7 @@ EXTERN_C DLLEXPORT auto STDCALL InitializeStaticMemory() -> void;
  * compatibility. It simply forwards to InitializeStaticMemory().
  */
 EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
-  int userThreads) -> void;
+    int userThreads) -> void;
 
 /**
  * @brief Set the threading backend used by the solver.
@@ -65,7 +65,7 @@ EXTERN_C DLLEXPORT auto STDCALL SetMaxThreads(
  * instead, create one SolverContext instance per thread.
  */
 EXTERN_C DLLEXPORT auto STDCALL SetThreading(
-  int code) -> int;
+    int code) -> int;
 
 /**
  * @brief Set memory and thread resources for the solver.
@@ -81,8 +81,8 @@ EXTERN_C DLLEXPORT auto STDCALL SetThreading(
  * which provides per-instance configuration through SolverConfig.
  */
 EXTERN_C DLLEXPORT auto STDCALL SetResources(
-  int maxMemoryMB,
-  int maxThreads) -> void;
+    int maxMemoryMB,
+    int maxThreads) -> void;
 
 /**
  * @brief Free memory used by the solver.
@@ -118,12 +118,12 @@ EXTERN_C DLLEXPORT auto STDCALL FreeMemory() -> void;
  * relying on the internal thread-indexed memory pools.
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
-  struct Deal dl,
-  int target,
-  int solutions,
-  int mode,
-  struct FutureTricks * futp,
-  int threadIndex) -> int;
+    struct Deal dl,
+    int target,
+    int solutions,
+    int mode,
+    struct FutureTricks * futp,
+    int threadIndex) -> int;
 
 /**
  * @brief Solve a single bridge Deal in PBN format using double dummy analysis.
@@ -146,12 +146,12 @@ EXTERN_C DLLEXPORT auto STDCALL SolveBoard(
  * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveBoardPBN(
-  struct DealPBN dlpbn,
-  int target,
-  int solutions,
-  int mode,
-  struct FutureTricks * futp,
-  int thrId) -> int;
+    struct DealPBN dlpbn,
+    int target,
+    int solutions,
+    int mode,
+    struct FutureTricks * futp,
+    int thrId) -> int;
 
 /**
  * @brief Calculate the double dummy table for a given Deal.
@@ -170,8 +170,8 @@ EXTERN_C DLLEXPORT auto STDCALL SolveBoardPBN(
  * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcDDtable(
-  struct DdTableDeal tableDeal,
-  struct DdTableResults * tablep) -> int;
+    struct DdTableDeal tableDeal,
+    struct DdTableResults * tablep) -> int;
 
 /**
  * @brief CalcDDtable with an explicit worker-thread cap.
@@ -187,9 +187,9 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtable(
  *        (hardware_concurrency) default.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcDDtableN(
-  struct DdTableDeal tableDeal,
-  struct DdTableResults * tablep,
-  int maxThreads) -> int;
+    struct DdTableDeal tableDeal,
+    struct DdTableResults * tablep,
+    int maxThreads) -> int;
 
 /**
  * @brief Calculate the double dummy table for a PBN Deal.
@@ -208,8 +208,8 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtableN(
  * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBN(
-  struct DdTableDealPBN tableDealPBN,
-  struct DdTableResults * tablep) -> int;
+    struct DdTableDealPBN tableDealPBN,
+    struct DdTableResults * tablep) -> int;
 
 /**
  * @brief CalcDDtablePBN with an explicit worker-thread cap.
@@ -225,9 +225,9 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBN(
  *        (hardware_concurrency) default.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBNN(
-  struct DdTableDealPBN tableDealPBN,
-  struct DdTableResults * tablep,
-  int maxThreads) -> int;
+    struct DdTableDealPBN tableDealPBN,
+    struct DdTableResults * tablep,
+    int maxThreads) -> int;
 
 /**
  * @brief Calculate double dummy tables for multiple deals.
@@ -240,11 +240,11 @@ EXTERN_C DLLEXPORT auto STDCALL CalcDDtablePBNN(
  * @return 1 on success, error code otherwise
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcAllTables(
-  struct DdTableDeals const * dealsp,
-  int mode,
-  int const trumpFilter[DDS_STRAINS],
-  struct DdTablesRes * resp,
-  struct AllParResults * presp) -> int;
+    struct DdTableDeals const * dealsp,
+    int mode,
+    int const trumpFilter[DDS_STRAINS],
+    struct DdTablesRes * resp,
+    struct AllParResults * presp) -> int;
 
 /**
  * @brief CalcAllTables with an explicit worker-thread cap.
@@ -253,12 +253,12 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTables(
  *        (hardware_concurrency) default.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesN(
-  struct DdTableDeals const * dealsp,
-  int mode,
-  int const trumpFilter[DDS_STRAINS],
-  struct DdTablesRes * resp,
-  struct AllParResults * presp,
-  int maxThreads) -> int;
+    struct DdTableDeals const * dealsp,
+    int mode,
+    int const trumpFilter[DDS_STRAINS],
+    struct DdTablesRes * resp,
+    struct AllParResults * presp,
+    int maxThreads) -> int;
 
 /**
  * @brief Calculate double dummy tables for multiple PBN deals.
@@ -271,11 +271,11 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesN(
  * @return 1 on success, error code otherwise
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBN(
-  struct DdTableDealsPBN const * dealsp,
-  int mode,
-  int const trumpFilter[DDS_STRAINS],
-  struct DdTablesRes * resp,
-  struct AllParResults * presp) -> int;
+    struct DdTableDealsPBN const * dealsp,
+    int mode,
+    int const trumpFilter[DDS_STRAINS],
+    struct DdTablesRes * resp,
+    struct AllParResults * presp) -> int;
 
 /**
  * @brief CalcAllTablesPBN with an explicit worker-thread cap.
@@ -284,12 +284,12 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBN(
  *        (hardware_concurrency) default.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNN(
-  struct DdTableDealsPBN const * dealsp,
-  int mode,
-  int const trumpFilter[DDS_STRAINS],
-  struct DdTablesRes * resp,
-  struct AllParResults * presp,
-  int maxThreads) -> int;
+    struct DdTableDealsPBN const * dealsp,
+    int mode,
+    int const trumpFilter[DDS_STRAINS],
+    struct DdTablesRes * resp,
+    struct AllParResults * presp,
+    int maxThreads) -> int;
 
 /**
  * @brief Unbounded CalcAllTables: any number of deals, one parallel board job.
@@ -308,25 +308,25 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNN(
  * @param maxThreads Worker cap; <= 0 means auto
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesX(
-  int numDeals,
-  struct DdTableDeal const * deals,
-  int mode,
-  int const trumpFilter[DDS_STRAINS],
-  struct DdTableResults * results,
-  struct ParResults * par,
-  int maxThreads) -> int;
+    int numDeals,
+    struct DdTableDeal const * deals,
+    int mode,
+    int const trumpFilter[DDS_STRAINS],
+    struct DdTableResults * results,
+    struct ParResults * par,
+    int maxThreads) -> int;
 
 /**
  * @brief PBN variant of CalcAllTablesX.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNX(
-  int numDeals,
-  struct DdTableDealPBN const * deals,
-  int mode,
-  int const trumpFilter[DDS_STRAINS],
-  struct DdTableResults * results,
-  struct ParResults * par,
-  int maxThreads) -> int;
+    int numDeals,
+    struct DdTableDealPBN const * deals,
+    int mode,
+    int const trumpFilter[DDS_STRAINS],
+    struct DdTableResults * results,
+    struct ParResults * par,
+    int maxThreads) -> int;
 
 /**
  * @brief Solve multiple bridge deals in PBN format.
@@ -336,8 +336,8 @@ EXTERN_C DLLEXPORT auto STDCALL CalcAllTablesPBNX(
  * @return 1 on success, error code otherwise
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoards(
-  struct BoardsPBN const * bop,
-  struct SolvedBoards * solvedp) -> int;
+    struct BoardsPBN const * bop,
+    struct SolvedBoards * solvedp) -> int;
 
 /**
  * @brief SolveAllBoards with an explicit worker-thread cap.
@@ -346,13 +346,13 @@ EXTERN_C DLLEXPORT auto STDCALL SolveAllBoards(
  *        (hardware_concurrency) default.
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsN(
-  struct BoardsPBN const * bop,
-  struct SolvedBoards * solvedp,
-  int maxThreads) -> int;
+    struct BoardsPBN const * bop,
+    struct SolvedBoards * solvedp,
+    int maxThreads) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBin(
-  struct Boards const * bop,
-  struct SolvedBoards * solvedp) -> int;
+    struct Boards const * bop,
+    struct SolvedBoards * solvedp) -> int;
 
 /**
  * @brief SolveAllBoardsBin with an explicit worker-thread cap.
@@ -361,37 +361,37 @@ EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBin(
  *        (hardware_concurrency) default.
  */
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBinN(
-  struct Boards const * bop,
-  struct SolvedBoards * solvedp,
-  int maxThreads) -> int;
+    struct Boards const * bop,
+    struct SolvedBoards * solvedp,
+    int maxThreads) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsSeq(
-  struct BoardsPBN const * bop,
-  struct SolvedBoards * solvedp) -> int;
+    struct BoardsPBN const * bop,
+    struct SolvedBoards * solvedp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllBoardsBinSeq(
-  struct Boards const * bop,
-  struct SolvedBoards * solvedp) -> int;
+    struct Boards const * bop,
+    struct SolvedBoards * solvedp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllChunks(
-  struct BoardsPBN const * bop,
-  struct SolvedBoards * solvedp,
-  int chunkSize) -> int;
+    struct BoardsPBN const * bop,
+    struct SolvedBoards * solvedp,
+    int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllChunksBin(
-  struct Boards const * bop,
-  struct SolvedBoards * solvedp,
-  int chunkSize) -> int;
+    struct Boards const * bop,
+    struct SolvedBoards * solvedp,
+    int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SolveAllChunksPBN(
-  struct BoardsPBN const * bop,
-  struct SolvedBoards * solvedp,
-  int chunkSize) -> int;
+    struct BoardsPBN const * bop,
+    struct SolvedBoards * solvedp,
+    int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL Par(
-  struct DdTableResults const * tablep,
-  struct ParResults * presp,
-  int vulnerable) -> int;
+    struct DdTableResults const * tablep,
+    struct ParResults * presp,
+    int vulnerable) -> int;
 
 /**
  * @brief Calculate the double dummy table and par result for a given Deal.
@@ -412,10 +412,10 @@ EXTERN_C DLLEXPORT auto STDCALL Par(
  * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcPar(
-  struct DdTableDeal tableDeal,
-  int vulnerable,
-  struct DdTableResults * tablep,
-  struct ParResults * presp) -> int;
+    struct DdTableDeal tableDeal,
+    int vulnerable,
+    struct DdTableResults * tablep,
+    struct ParResults * presp) -> int;
 
 /**
  * @brief Calculate the double dummy table and par result for a PBN Deal.
@@ -436,68 +436,68 @@ EXTERN_C DLLEXPORT auto STDCALL CalcPar(
  * across calls instead of being reallocated internally on each call.
  */
 EXTERN_C DLLEXPORT auto STDCALL CalcParPBN(
-  struct DdTableDealPBN tableDealPBN,
-  struct DdTableResults * tablep,
-  int vulnerable,
-  struct ParResults * presp) -> int;
+    struct DdTableDealPBN tableDealPBN,
+    struct DdTableResults * tablep,
+    int vulnerable,
+    struct ParResults * presp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SidesPar(
-  struct DdTableResults const * tablep,
-  struct ParResultsDealer sidesRes[2],
-  int vulnerable) -> int;
+    struct DdTableResults const * tablep,
+    struct ParResultsDealer sidesRes[2],
+    int vulnerable) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL DealerPar(
-  struct DdTableResults const * tablep,
-  struct ParResultsDealer * presp,
-  int dealer,
-  int vulnerable) -> int;
+    struct DdTableResults const * tablep,
+    struct ParResultsDealer * presp,
+    int dealer,
+    int vulnerable) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL DealerParBin(
-  struct DdTableResults const * tablep,
-  struct ParResultsMaster * presp,
-  int dealer,
-  int vulnerable) -> int;
+    struct DdTableResults const * tablep,
+    struct ParResultsMaster * presp,
+    int dealer,
+    int vulnerable) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL SidesParBin(
-  struct DdTableResults const * tablep,
-  struct ParResultsMaster sidesRes[2],
-  int vulnerable) -> int;
+    struct DdTableResults const * tablep,
+    struct ParResultsMaster sidesRes[2],
+    int vulnerable) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL ConvertToDealerTextFormat(
-  struct ParResultsMaster const * pres,
-  char * resp) -> int;
+    struct ParResultsMaster const * pres,
+    char * resp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL ConvertToSidesTextFormat(
-  struct ParResultsMaster const * pres,
-  struct ParTextResults * resp) -> int;
+    struct ParResultsMaster const * pres,
+    struct ParTextResults * resp) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL AnalysePlayBin(
-  struct Deal dl,
-  struct PlayTraceBin play,
-  struct SolvedPlay * solved,
-  int thrId) -> int;
+    struct Deal dl,
+    struct PlayTraceBin play,
+    struct SolvedPlay * solved,
+    int thrId) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL AnalysePlayPBN(
-  struct DealPBN dlPBN,
-  struct PlayTracePBN playPBN,
-  struct SolvedPlay * solvedp,
-  int thrId) -> int;
+    struct DealPBN dlPBN,
+    struct PlayTracePBN playPBN,
+    struct SolvedPlay * solvedp,
+    int thrId) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL AnalyseAllPlaysBin(
-  struct Boards const * bop,
-  struct PlayTracesBin const * plp,
-  struct SolvedPlays * solvedp,
-  int chunkSize) -> int;
+    struct Boards const * bop,
+    struct PlayTracesBin const * plp,
+    struct SolvedPlays * solvedp,
+    int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL AnalyseAllPlaysPBN(
-  struct BoardsPBN const * bopPBN,
-  struct PlayTracesPBN const * plpPBN,
-  struct SolvedPlays * solvedp,
-  int chunkSize) -> int;
+    struct BoardsPBN const * bopPBN,
+    struct PlayTracesPBN const * plpPBN,
+    struct SolvedPlays * solvedp,
+    int chunkSize) -> int;
 
 EXTERN_C DLLEXPORT auto STDCALL GetDDSInfo(
-  struct DDSInfo * info) -> void;
+    struct DDSInfo * info) -> void;
 
 EXTERN_C DLLEXPORT auto STDCALL ErrorMessage(
-  int code,
-  char line[80]) -> void;
+    int code,
+    char line[80]) -> void;

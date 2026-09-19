@@ -53,193 +53,193 @@ using dd_table_for_deal::unique_deals;
 static auto stdin_is_tty() -> bool
 {
 #if defined(_WIN32)
-  return _isatty(_fileno(stdin)) != 0;
+    return _isatty(_fileno(stdin)) != 0;
 #else
-  return isatty(STDIN_FILENO) != 0;
+    return isatty(STDIN_FILENO) != 0;
 #endif
 }
 
 
 auto read_pbn_file(const std::filesystem::path& path) -> std::optional<std::string>
 {
-  std::ifstream file(path, std::ios::binary);
-  if (!file)
-  {
-    return std::nullopt;
-  }
+    std::ifstream file(path, std::ios::binary);
+    if (!file)
+    {
+        return std::nullopt;
+    }
 
-  return read_pbn_stream(file);
+    return read_pbn_stream(file);
 }
 
 
 auto read_pbn_file_workspace_relative(std::string_view path)
-    -> std::optional<std::string>
+        -> std::optional<std::string>
 {
-  if (auto text = read_pbn_file(std::filesystem::path(path)))
-  {
-    return text;
-  }
+    if (auto text = read_pbn_file(std::filesystem::path(path)))
+    {
+        return text;
+    }
 
-  // bazelisk run uses a runfiles cwd; BUILD_WORKSPACE_DIRECTORY is the repo root.
-  if (const char* workspace = std::getenv("BUILD_WORKSPACE_DIRECTORY"))
-  {
-    return read_pbn_file(std::filesystem::path(workspace) / path);
-  }
+    // bazelisk run uses a runfiles cwd; BUILD_WORKSPACE_DIRECTORY is the repo root.
+    if (const char* workspace = std::getenv("BUILD_WORKSPACE_DIRECTORY"))
+    {
+        return read_pbn_file(std::filesystem::path(workspace) / path);
+    }
 
-  return std::nullopt;
+    return std::nullopt;
 }
 
 
 auto path_openable_workspace_relative(std::string_view path) -> bool
 {
-  if (path_is_openable(path))
-    return true;
-  if (const char* workspace = std::getenv("BUILD_WORKSPACE_DIRECTORY"))
-  {
-    return path_is_openable((std::filesystem::path(workspace) / path).string());
-  }
-  return false;
+    if (path_is_openable(path))
+        return true;
+    if (const char* workspace = std::getenv("BUILD_WORKSPACE_DIRECTORY"))
+    {
+        return path_is_openable((std::filesystem::path(workspace) / path).string());
+    }
+    return false;
 }
 
 
 auto load_deals(std::string_view arg) -> std::optional<std::vector<std::string>>
 {
-  if (arg == "-")
-  {
-    const auto text = read_pbn_stream(std::cin);
-    if (!text)
+    if (arg == "-")
     {
-      // Oversized input is already reported by read_pbn_stream.
-      if (should_report_failed_stream_read(std::cin))
-        std::cerr << "Cannot read PBN from stdin\n";
-      return std::nullopt;
+        const auto text = read_pbn_stream(std::cin);
+        if (!text)
+        {
+            // Oversized input is already reported by read_pbn_stream.
+            if (should_report_failed_stream_read(std::cin))
+                std::cerr << "Cannot read PBN from stdin\n";
+            return std::nullopt;
+        }
+
+        const auto deals = extract_deal_tags(*text);
+        if (deals.empty())
+        {
+            std::cerr << "No [Deal \"...\"] tag found in stdin\n";
+            return std::nullopt;
+        }
+
+        return deals;
     }
 
-    const auto deals = extract_deal_tags(*text);
-    if (deals.empty())
+    if (const auto text = read_pbn_file_workspace_relative(arg))
     {
-      std::cerr << "No [Deal \"...\"] tag found in stdin\n";
-      return std::nullopt;
+        const auto deals = extract_deal_tags(*text);
+        if (deals.empty())
+        {
+            std::cerr << "No [Deal \"...\"] tag found in " << arg << "\n";
+            return std::nullopt;
+        }
+
+        return deals;
     }
 
-    return deals;
-  }
-
-  if (const auto text = read_pbn_file_workspace_relative(arg))
-  {
-    const auto deals = extract_deal_tags(*text);
-    if (deals.empty())
+    if (looks_like_path(arg))
     {
-      std::cerr << "No [Deal \"...\"] tag found in " << arg << "\n";
-      return std::nullopt;
+        // Missing file vs openable-but-failed (e.g. oversize already reported).
+        if (!path_openable_workspace_relative(arg))
+            std::cerr << "Cannot read file: " << arg << "\n";
+        return std::nullopt;
     }
 
-    return deals;
-  }
+    if (arg.size() >= PBN_DEAL_MAX)
+    {
+        std::cerr << "PBN deal too long (max " << (PBN_DEAL_MAX - 1)
+                            << " characters)\n";
+        return std::nullopt;
+    }
 
-  if (looks_like_path(arg))
-  {
-    // Missing file vs openable-but-failed (e.g. oversize already reported).
-    if (!path_openable_workspace_relative(arg))
-      std::cerr << "Cannot read file: " << arg << "\n";
-    return std::nullopt;
-  }
-
-  if (arg.size() >= PBN_DEAL_MAX)
-  {
-    std::cerr << "PBN deal too long (max " << (PBN_DEAL_MAX - 1)
-              << " characters)\n";
-    return std::nullopt;
-  }
-
-  return std::vector<std::string>{std::string(arg)};
+    return std::vector<std::string>{std::string(arg)};
 }
 
 
 auto print_par_or_verbose(
-    DdTableResults const * table,
-    int vulnerable) -> bool
+        DdTableResults const * table,
+        int vulnerable) -> bool
 {
-  ParResultsMaster sidesRes[2];
-  const int res = SidesParBin(table, sidesRes, vulnerable);
-  if (res != RETURN_NO_FAULT)
-  {
-    char line[80];
-    ErrorMessage(res, line);
-    fprintf(stderr, "DDS error: %s\n", line);
-    return false;
-  }
+    ParResultsMaster sidesRes[2];
+    const int res = SidesParBin(table, sidesRes, vulnerable);
+    if (res != RETURN_NO_FAULT)
+    {
+        char line[80];
+        ErrorMessage(res, line);
+        fprintf(stderr, "DDS error: %s\n", line);
+        return false;
+    }
 
-  if (const auto line = format_par_line(sidesRes))
-  {
-    printf("%s\n", line->c_str());
+    if (const auto line = format_par_line(sidesRes))
+    {
+        printf("%s\n", line->c_str());
+        return true;
+    }
+
+    ParResults par;
+    char err[80];
+    const int par_res = Par(table, &par, vulnerable);
+    if (par_res != RETURN_NO_FAULT)
+    {
+        ErrorMessage(par_res, err);
+        fprintf(stderr, "DDS error: %s\n", err);
+        return false;
+    }
+
+    print_par(&par);
     return true;
-  }
-
-  ParResults par;
-  char err[80];
-  const int par_res = Par(table, &par, vulnerable);
-  if (par_res != RETURN_NO_FAULT)
-  {
-    ErrorMessage(par_res, err);
-    fprintf(stderr, "DDS error: %s\n", err);
-    return false;
-  }
-
-  print_par(&par);
-  return true;
 }
 
 
 auto process_deal(
-    std::string const& deal,
-    std::size_t deal_no,
-    std::size_t deal_count,
-    int vulnerable,
-    int num_threads) -> bool
+        std::string const& deal,
+        std::size_t deal_no,
+        std::size_t deal_count,
+        int vulnerable,
+        int num_threads) -> bool
 {
-  DdTableDealPBN tableDealPBN{};
-  if (deal.size() >= sizeof(tableDealPBN.cards))
-  {
-    fprintf(stderr,
-            "PBN deal too long (max %zu characters)\n",
-            sizeof(tableDealPBN.cards) - 1);
-    return false;
-  }
+    DdTableDealPBN tableDealPBN{};
+    if (deal.size() >= sizeof(tableDealPBN.cards))
+    {
+        fprintf(stderr,
+                        "PBN deal too long (max %zu characters)\n",
+                        sizeof(tableDealPBN.cards) - 1);
+        return false;
+    }
 
-  std::copy_n(deal.begin(), deal.size(), tableDealPBN.cards);
-  tableDealPBN.cards[deal.size()] = '\0';
+    std::copy_n(deal.begin(), deal.size(), tableDealPBN.cards);
+    tableDealPBN.cards[deal.size()] = '\0';
 
-  DdTableResults table;
-  char line[80];
+    DdTableResults table;
+    char line[80];
 
-  const int res = calc_dd_table_for_pbn_deal(
-      tableDealPBN,
-      num_threads,
-      &table,
-      [](DdTableDealPBN table_deal_pbn, DdTableResults * tablep, int threads)
-      {
-        return CalcDDtablePBNN(table_deal_pbn, tablep, threads);
-      });
-  if (res != RETURN_NO_FAULT)
-  {
-    ErrorMessage(res, line);
-    fprintf(stderr, "DDS error: %s\n", line);
-    return false;
-  }
+    const int res = calc_dd_table_for_pbn_deal(
+            tableDealPBN,
+            num_threads,
+            &table,
+            [](DdTableDealPBN table_deal_pbn, DdTableResults * tablep, int threads)
+            {
+                return CalcDDtablePBNN(table_deal_pbn, tablep, threads);
+            });
+    if (res != RETURN_NO_FAULT)
+    {
+        ErrorMessage(res, line);
+        fprintf(stderr, "DDS error: %s\n", line);
+        return false;
+    }
 
-  if (deal_count == 1)
-    std::snprintf(line, sizeof(line), "dd_table_for_deal:\n");
-  else
-    std::snprintf(line, sizeof(line), "Deal %zu:\n", deal_no);
+    if (deal_count == 1)
+        std::snprintf(line, sizeof(line), "dd_table_for_deal:\n");
+    else
+        std::snprintf(line, sizeof(line), "Deal %zu:\n", deal_no);
 
-  print_pbn_hand(line, tableDealPBN.cards);
-  print_table(&table);
-  if (!print_par_or_verbose(&table, vulnerable))
-    return false;
-  if (deal_count > 1)
-    printf("\n");
-  return true;
+    print_pbn_hand(line, tableDealPBN.cards);
+    print_table(&table);
+    if (!print_par_or_verbose(&table, vulnerable))
+        return false;
+    if (deal_count > 1)
+        printf("\n");
+    return true;
 }
 
 }  // namespace
@@ -247,152 +247,152 @@ auto process_deal(
 
 static auto print_usage(const char * prog) -> void
 {
-  fprintf(stderr,
-          "Usage: %s [--vul none|both|ns|ew|0|1|2|3] [--limit N] "
-          "[-n N|--numthr N] <pbn_deal_or_file>\n"
-          "       %s -h | --help\n"
-          "\n"
-          "Calculate double-dummy tricks and par for all strains and leads.\n"
-          "\n"
-          "Arguments:\n"
-          "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
-          "  --vul              Vulnerability: none|both|ns|ew or 0|1|2|3"
-          " (default: none)\n"
-          "  --limit            Solve only the first N unique deals\n"
-          "  -n, --numthr       Worker threads for each table solve.\n"
-          "                     0 = auto (hardware concurrency), 1 = sequential.\n"
-          "                     (Default: 0)\n"
-          "\n"
-          "If stdin is not a terminal, PBN is read from stdin (all [Deal \"...\"] tags).\n"
-          "\n"
-          "Examples:\n"
-          "  %s \"N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 "
-          "5.A95432.7632.K6 AKJ9842.K.T8.J93\"\n"
-          "  %s --vul ns hands/example.pbn\n"
-          "  %s --limit 3 hands/multi_board.pbn\n"
-          "  %s -n 1 hands/example.pbn\n"
-          "  %s < hands/example.pbn\n",
-          prog,
-          prog,
-          prog,
-          prog,
-          prog,
-          prog,
-          prog);
+    fprintf(stderr,
+                    "Usage: %s [--vul none|both|ns|ew|0|1|2|3] [--limit N] "
+                    "[-n N|--numthr N] <pbn_deal_or_file>\n"
+                    "       %s -h | --help\n"
+                    "\n"
+                    "Calculate double-dummy tricks and par for all strains and leads.\n"
+                    "\n"
+                    "Arguments:\n"
+                    "  <pbn_deal_or_file>  DDS PBN deal string, or path to a .pbn file\n"
+                    "  --vul              Vulnerability: none|both|ns|ew or 0|1|2|3"
+                    " (default: none)\n"
+                    "  --limit            Solve only the first N unique deals\n"
+                    "  -n, --numthr       Worker threads for each table solve.\n"
+                    "                     0 = auto (hardware concurrency), 1 = sequential.\n"
+                    "                     (Default: 0)\n"
+                    "\n"
+                    "If stdin is not a terminal, PBN is read from stdin (all [Deal \"...\"] tags).\n"
+                    "\n"
+                    "Examples:\n"
+                    "  %s \"N:73.QJT.AQ54.T752 QT6.876.KJ9.AQ84 "
+                    "5.A95432.7632.K6 AKJ9842.K.T8.J93\"\n"
+                    "  %s --vul ns hands/example.pbn\n"
+                    "  %s --limit 3 hands/multi_board.pbn\n"
+                    "  %s -n 1 hands/example.pbn\n"
+                    "  %s < hands/example.pbn\n",
+                    prog,
+                    prog,
+                    prog,
+                    prog,
+                    prog,
+                    prog,
+                    prog);
 }
 
 
 auto main(int argc, char * argv[]) -> int
 {
-  const char * input = nullptr;
-  int vulnerable = 0;
-  int num_threads = 0;
-  std::optional<std::size_t> limit;
+    const char * input = nullptr;
+    int vulnerable = 0;
+    int num_threads = 0;
+    std::optional<std::size_t> limit;
 
-  for (int i = 1; i < argc; ++i)
-  {
-    if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+    for (int i = 1; i < argc; ++i)
     {
-      print_usage(argv[0]);
-      return 0;
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+        {
+            print_usage(argv[0]);
+            return 0;
+        }
+        if (strcmp(argv[i], "--vul") == 0)
+        {
+            if (i + 1 >= argc)
+            {
+                fprintf(stderr, "--vul requires a value (none|both|ns|ew or 0|1|2|3)\n");
+                print_usage(argv[0]);
+                return 1;
+            }
+            const auto vul = parse_vulnerable(argv[++i]);
+            if (!vul)
+            {
+                fprintf(stderr, "Invalid --vul value (use none|both|ns|ew or 0|1|2|3)\n");
+                print_usage(argv[0]);
+                return 1;
+            }
+            vulnerable = *vul;
+            continue;
+        }
+        if (strcmp(argv[i], "--limit") == 0)
+        {
+            if (i + 1 >= argc)
+            {
+                fprintf(stderr, "--limit requires a positive integer\n");
+                print_usage(argv[0]);
+                return 1;
+            }
+            const auto parsed_limit = parse_limit(argv[++i]);
+            if (!parsed_limit)
+            {
+                fprintf(stderr, "Invalid --limit value (use a positive integer)\n");
+                print_usage(argv[0]);
+                return 1;
+            }
+            limit = parsed_limit;
+            continue;
+        }
+        if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--numthr") == 0)
+        {
+            if (i + 1 >= argc)
+            {
+                fprintf(stderr, "%s requires a non-negative integer\n", argv[i]);
+                print_usage(argv[0]);
+                return 1;
+            }
+            const char * flag = argv[i];
+            const auto parsed_numthr = parse_numthr(argv[++i]);
+            if (!parsed_numthr)
+            {
+                fprintf(stderr,
+                                "Invalid %s value (use a non-negative integer; "
+                                "0 = auto)\n",
+                                flag);
+                print_usage(argv[0]);
+                return 1;
+            }
+            num_threads = *parsed_numthr;
+            continue;
+        }
+        if (argv[i][0] == '-' && strcmp(argv[i], "-") != 0)
+        {
+            fprintf(stderr, "Unknown option: %s\n", argv[i]);
+            print_usage(argv[0]);
+            return 1;
+        }
+        if (input != nullptr)
+        {
+            fprintf(stderr, "Only one deal argument is allowed\n");
+            print_usage(argv[0]);
+            return 1;
+        }
+        input = argv[i];
     }
-    if (strcmp(argv[i], "--vul") == 0)
-    {
-      if (i + 1 >= argc)
-      {
-        fprintf(stderr, "--vul requires a value (none|both|ns|ew or 0|1|2|3)\n");
-        print_usage(argv[0]);
-        return 1;
-      }
-      const auto vul = parse_vulnerable(argv[++i]);
-      if (!vul)
-      {
-        fprintf(stderr, "Invalid --vul value (use none|both|ns|ew or 0|1|2|3)\n");
-        print_usage(argv[0]);
-        return 1;
-      }
-      vulnerable = *vul;
-      continue;
-    }
-    if (strcmp(argv[i], "--limit") == 0)
-    {
-      if (i + 1 >= argc)
-      {
-        fprintf(stderr, "--limit requires a positive integer\n");
-        print_usage(argv[0]);
-        return 1;
-      }
-      const auto parsed_limit = parse_limit(argv[++i]);
-      if (!parsed_limit)
-      {
-        fprintf(stderr, "Invalid --limit value (use a positive integer)\n");
-        print_usage(argv[0]);
-        return 1;
-      }
-      limit = parsed_limit;
-      continue;
-    }
-    if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--numthr") == 0)
-    {
-      if (i + 1 >= argc)
-      {
-        fprintf(stderr, "%s requires a non-negative integer\n", argv[i]);
-        print_usage(argv[0]);
-        return 1;
-      }
-      const char * flag = argv[i];
-      const auto parsed_numthr = parse_numthr(argv[++i]);
-      if (!parsed_numthr)
-      {
-        fprintf(stderr,
-                "Invalid %s value (use a non-negative integer; "
-                "0 = auto)\n",
-                flag);
-        print_usage(argv[0]);
-        return 1;
-      }
-      num_threads = *parsed_numthr;
-      continue;
-    }
-    if (argv[i][0] == '-' && strcmp(argv[i], "-") != 0)
-    {
-      fprintf(stderr, "Unknown option: %s\n", argv[i]);
-      print_usage(argv[0]);
-      return 1;
-    }
-    if (input != nullptr)
-    {
-      fprintf(stderr, "Only one deal argument is allowed\n");
-      print_usage(argv[0]);
-      return 1;
-    }
-    input = argv[i];
-  }
 
-  if (input == nullptr)
-  {
-    if (!stdin_is_tty())
-      input = "-";
-    else
+    if (input == nullptr)
     {
-      print_usage(argv[0]);
-      return 1;
+        if (!stdin_is_tty())
+            input = "-";
+        else
+        {
+            print_usage(argv[0]);
+            return 1;
+        }
     }
-  }
 
-  const auto loaded = load_deals(input);
-  if (!loaded)
-  {
-    return 1;
-  }
+    const auto loaded = load_deals(input);
+    if (!loaded)
+    {
+        return 1;
+    }
 
-  const auto deals = apply_deal_limit(unique_deals(*loaded), limit);
+    const auto deals = apply_deal_limit(unique_deals(*loaded), limit);
 
-  for (std::size_t i = 0; i < deals.size(); ++i)
-  {
-    if (!process_deal(deals[i], i + 1, deals.size(), vulnerable, num_threads))
-      return 1;
-  }
+    for (std::size_t i = 0; i < deals.size(); ++i)
+    {
+        if (!process_deal(deals[i], i + 1, deals.size(), vulnerable, num_threads))
+            return 1;
+    }
 
-  return 0;
+    return 0;
 }

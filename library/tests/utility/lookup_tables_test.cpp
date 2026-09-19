@@ -33,7 +33,7 @@ TEST_F(LookupTablesTest, InitLookupTablesIdempotent) {
     init_lookup_tables();
     init_lookup_tables();
     init_lookup_tables();
-    
+
     // Should complete without any issues
     SUCCEED();
 }
@@ -65,7 +65,7 @@ TEST_F(LookupTablesTest, CountTableArray) {
                 actualCount++;
             }
         }
-        
+
         EXPECT_EQ(count_table[i], actualCount) 
             << "count_table[" << i << "] should equal actual bit count";
     }
@@ -164,7 +164,7 @@ TEST_F(LookupTablesTest, MoveGroupTypeStruct) {
     testGroup.sequence_[0] = 3;
     testGroup.fullseq_[0] = 1;
     testGroup.gap_[0] = 7;
-    
+
     EXPECT_EQ(testGroup.last_group_, 3);
     EXPECT_EQ(testGroup.rank_[0], 5);
     EXPECT_EQ(testGroup.sequence_[0], 3);
@@ -176,7 +176,7 @@ TEST_F(LookupTablesTest, GroupDataStructAccess) {
     // Test that we can access group_data array entries
     for (int i = 0; i < 10; i++) { // Test first 10 entries
     const MoveGroupType& group = group_data[i];
-        
+
         // Values should be in reasonable ranges
     // last_group_ can be -1 to indicate no groups
     EXPECT_GE(group.last_group_, -1);
@@ -193,12 +193,12 @@ TEST_F(LookupTablesTest, GroupDataStructAccess) {
 TEST_F(LookupTablesTest, InitializationPerformance) {
     // Test that initialization completes in reasonable time
     auto start = std::chrono::high_resolution_clock::now();
-    
+
     init_lookup_tables();
-    
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    
+
     // Should complete within 1 second (adjust if needed)
     EXPECT_LT(duration.count(), 1000) 
     << "init_lookup_tables should complete within 1 second";

@@ -11,9 +11,9 @@
 
 // System headers
 #if defined(DDS_MEMORY_LEAKS) && defined(_MSC_VER)
-  #define DDS_MEMORY_LEAKS_WIN32
-  #define _CRTDBG_MAP_ALLOC
-  #include <crtdbg.h>
+    #define DDS_MEMORY_LEAKS_WIN32
+    #define _CRTDBG_MAP_ALLOC
+    #include <crtdbg.h>
 #endif
 
 // Aggregator for the solver's compile-time constants and data model. The

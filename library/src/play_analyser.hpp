@@ -15,6 +15,6 @@
 
 
 void detect_play_duplicates(
-  const Boards& bds,
-  std::vector<int>& uniques,
-  std::vector<int>& crossrefs);
+    const Boards& bds,
+    std::vector<int>& uniques,
+    std::vector<int>& crossrefs);

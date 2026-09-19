@@ -9,7 +9,7 @@
 
 /*
    TimerList consists of a number of groups, one for each piece
-  of the code being timed (ab_search etc).
+    of the code being timed (ab_search etc).
 
    Each group corresponds to something that should be timed at
    multiple AB depths, i.e. cards played. The first card of a
@@ -34,7 +34,7 @@
    to be timed, so
 
    TIMER_START(TIMER_NO_AB, depth);
-  ab_search(...);
+    ab_search(...);
    TIMER_END(TIMER_NO_AB, depth);
 
    This avoids the tedious #ifdef's at every place of a timer.
@@ -52,26 +52,26 @@
 
 
 #ifdef DDS_TIMING
-  #define TIMER_START(g, a) thrp->timerList.Start(g, a)
-  #define TIMER_END(g, a) thrp->timerList.End(g, a)
+    #define TIMER_START(g, a) thrp->timerList.Start(g, a)
+    #define TIMER_END(g, a) thrp->timerList.End(g, a)
 #else
-  #define TIMER_START(g, a)
-  #define TIMER_END(g, a)
+    #define TIMER_START(g, a)
+    #define TIMER_END(g, a)
 #endif
 
 enum ABTimerType
 {
-  TIMER_NO_AB = 0,
-  TIMER_NO_MAKE = 1,
-  TIMER_NO_UNDO = 2,
-  TIMER_NO_EVALUATE = 3,
-  TIMER_NO_NEXTMOVE = 4,
-  TIMER_NO_QT = 5,
-  TIMER_NO_LT = 6,
-  TIMER_NO_MOVEGEN = 7,
-  TIMER_NO_LOOKUP = 8,
-  TIMER_NO_BUILD = 9,
-  TIMER_NO_SIZE = 10
+    TIMER_NO_AB = 0,
+    TIMER_NO_MAKE = 1,
+    TIMER_NO_UNDO = 2,
+    TIMER_NO_EVALUATE = 3,
+    TIMER_NO_NEXTMOVE = 4,
+    TIMER_NO_QT = 5,
+    TIMER_NO_LT = 6,
+    TIMER_NO_MOVEGEN = 7,
+    TIMER_NO_LOOKUP = 8,
+    TIMER_NO_BUILD = 9,
+    TIMER_NO_SIZE = 10
 };
 
 
@@ -85,38 +85,38 @@ enum ABTimerType
  */
 class TimerList
 {
-  private:
+    private:
 
-    std::vector<TimerGroup> timerGroups;
+        std::vector<TimerGroup> timerGroups;
 
-  public:
-    /**
+    public:
+        /**
      * @brief Construct a new TimerList object.
      *
      * Initializes the list of timer groups for profiling.
      */
-    TimerList();
+        TimerList();
 
-    /**
+        /**
      * @brief Destroy the TimerList object and clean up resources.
      *
      * Releases all memory and resets the timer list state.
      */
-    ~TimerList();
+        ~TimerList();
 
-    void Reset();
+        void Reset();
 
-    void Start(
-      const ABTimerType groupno,
-      const unsigned timerno);
+        void Start(
+            const ABTimerType groupno,
+            const unsigned timerno);
 
-    void End(
-      const ABTimerType groupno,
-      const unsigned timerno);
+        void End(
+            const ABTimerType groupno,
+            const unsigned timerno);
 
-    bool Used() const;
+        bool Used() const;
 
-    void PrintStats(std::ofstream& fout) const;
+        void PrintStats(std::ofstream& fout) const;
 };
 
 #endif

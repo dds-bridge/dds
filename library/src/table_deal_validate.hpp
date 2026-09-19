@@ -43,40 +43,40 @@
  */
 inline auto table_deal_checks(DdTableDeal const & table_deal) -> int
 {
-  // Ranks 2..A occupy bits 2..14; see Deal::remainCards in dll.h.
-  constexpr unsigned rank_mask = 0x7FFCu;
+    // Ranks 2..A occupy bits 2..14; see Deal::remainCards in dll.h.
+    constexpr unsigned rank_mask = 0x7FFCu;
 
-  int cards_in_hand[DDS_HANDS] = {0, 0, 0, 0};
+    int cards_in_hand[DDS_HANDS] = {0, 0, 0, 0};
 
-  for (int h = 0; h < DDS_HANDS; h++)
-  {
-    for (int s = 0; s < DDS_SUITS; s++)
-    {
-      unsigned const holding = table_deal.cards[h][s];
-
-      if ((holding & ~rank_mask) != 0)
-        return RETURN_SUIT_OR_RANK;
-
-      for (unsigned bit = holding; bit != 0; bit &= bit - 1)
-        cards_in_hand[h]++;
-    }
-  }
-
-  for (int s = 0; s < DDS_SUITS; s++)
-  {
-    unsigned seen = 0;
     for (int h = 0; h < DDS_HANDS; h++)
     {
-      unsigned const holding = table_deal.cards[h][s];
-      if ((seen & holding) != 0)
-        return RETURN_DUPLICATE_CARDS;
-      seen |= holding;
+        for (int s = 0; s < DDS_SUITS; s++)
+        {
+            unsigned const holding = table_deal.cards[h][s];
+
+            if ((holding & ~rank_mask) != 0)
+                return RETURN_SUIT_OR_RANK;
+
+            for (unsigned bit = holding; bit != 0; bit &= bit - 1)
+                cards_in_hand[h]++;
+        }
     }
-  }
 
-  for (int h = 1; h < DDS_HANDS; h++)
-    if (cards_in_hand[h] != cards_in_hand[0])
-      return RETURN_CARD_COUNT;
+    for (int s = 0; s < DDS_SUITS; s++)
+    {
+        unsigned seen = 0;
+        for (int h = 0; h < DDS_HANDS; h++)
+        {
+            unsigned const holding = table_deal.cards[h][s];
+            if ((seen & holding) != 0)
+                return RETURN_DUPLICATE_CARDS;
+            seen |= holding;
+        }
+    }
 
-  return RETURN_NO_FAULT;
+    for (int h = 1; h < DDS_HANDS; h++)
+        if (cards_in_hand[h] != cards_in_hand[0])
+            return RETURN_CARD_COUNT;
+
+    return RETURN_NO_FAULT;
 }

@@ -23,27 +23,27 @@ namespace {
 /// A legal table: trick counts per strain summing to 13 across the two sides.
 auto legal_table() -> DdTableResults
 {
-  DdTableResults tab;
-  std::memset(&tab, 0, sizeof(tab));
-  for (int d = 0; d < DDS_STRAINS; d++)
-  {
-    tab.res_table[d][0] = 7;  // North
-    tab.res_table[d][1] = 6;  // East
-    tab.res_table[d][2] = 7;  // South
-    tab.res_table[d][3] = 6;  // West
-  }
-  return tab;
+    DdTableResults tab;
+    std::memset(&tab, 0, sizeof(tab));
+    for (int d = 0; d < DDS_STRAINS; d++)
+    {
+        tab.res_table[d][0] = 7;  // North
+        tab.res_table[d][1] = 6;  // East
+        tab.res_table[d][2] = 7;  // South
+        tab.res_table[d][3] = 6;  // West
+    }
+    return tab;
 }
 
 /// A table with every entry set to `v`.
 auto uniform_table(int v) -> DdTableResults
 {
-  DdTableResults tab;
-  std::memset(&tab, 0, sizeof(tab));
-  for (int d = 0; d < DDS_STRAINS; d++)
-    for (int h = 0; h < DDS_HANDS; h++)
-      tab.res_table[d][h] = v;
-  return tab;
+    DdTableResults tab;
+    std::memset(&tab, 0, sizeof(tab));
+    for (int d = 0; d < DDS_STRAINS; d++)
+        for (int h = 0; h < DDS_HANDS; h++)
+            tab.res_table[d][h] = v;
+    return tab;
 }
 
 // ---------------------------------------------------------------------------
@@ -52,49 +52,49 @@ auto uniform_table(int v) -> DdTableResults
 
 TEST(ParValidation, ParRejectsOverflowingTable)
 {
-  DdTableResults const tab = uniform_table(2000000000);
-  ParResults resp;
-  std::memset(&resp, 0, sizeof(resp));
+    DdTableResults const tab = uniform_table(2000000000);
+    ParResults resp;
+    std::memset(&resp, 0, sizeof(resp));
 
-  EXPECT_EQ(Par(&tab, &resp, 0), RETURN_PAR_TABLE_FAULT);
+    EXPECT_EQ(Par(&tab, &resp, 0), RETURN_PAR_TABLE_FAULT);
 }
 
 TEST(ParValidation, SidesParRejectsOverflowingTable)
 {
-  DdTableResults const tab = uniform_table(2000000000);
-  ParResultsDealer sides[2];
-  std::memset(sides, 0, sizeof(sides));
+    DdTableResults const tab = uniform_table(2000000000);
+    ParResultsDealer sides[2];
+    std::memset(sides, 0, sizeof(sides));
 
-  EXPECT_EQ(SidesPar(&tab, sides, 0), RETURN_PAR_TABLE_FAULT);
-  // The pre-fix failure wrote 26 characters into this 10-byte field.
-  EXPECT_LT(std::strlen(sides[0].contracts[0]), sizeof(sides[0].contracts[0]));
+    EXPECT_EQ(SidesPar(&tab, sides, 0), RETURN_PAR_TABLE_FAULT);
+    // The pre-fix failure wrote 26 characters into this 10-byte field.
+    EXPECT_LT(std::strlen(sides[0].contracts[0]), sizeof(sides[0].contracts[0]));
 }
 
 TEST(ParValidation, SidesParBinRejectsOverflowingTable)
 {
-  DdTableResults const tab = uniform_table(2000000000);
-  ParResultsMaster sides[2];
-  std::memset(sides, 0, sizeof(sides));
+    DdTableResults const tab = uniform_table(2000000000);
+    ParResultsMaster sides[2];
+    std::memset(sides, 0, sizeof(sides));
 
-  EXPECT_EQ(SidesParBin(&tab, sides, 0), RETURN_PAR_TABLE_FAULT);
+    EXPECT_EQ(SidesParBin(&tab, sides, 0), RETURN_PAR_TABLE_FAULT);
 }
 
 TEST(ParValidation, DealerParRejectsOverflowingTable)
 {
-  DdTableResults const tab = uniform_table(2000000000);
-  ParResultsDealer resp;
-  std::memset(&resp, 0, sizeof(resp));
+    DdTableResults const tab = uniform_table(2000000000);
+    ParResultsDealer resp;
+    std::memset(&resp, 0, sizeof(resp));
 
-  EXPECT_EQ(DealerPar(&tab, &resp, 0, 0), RETURN_PAR_TABLE_FAULT);
+    EXPECT_EQ(DealerPar(&tab, &resp, 0, 0), RETURN_PAR_TABLE_FAULT);
 }
 
 TEST(ParValidation, DealerParBinRejectsOverflowingTable)
 {
-  DdTableResults const tab = uniform_table(2000000000);
-  ParResultsMaster resp;
-  std::memset(&resp, 0, sizeof(resp));
+    DdTableResults const tab = uniform_table(2000000000);
+    ParResultsMaster resp;
+    std::memset(&resp, 0, sizeof(resp));
 
-  EXPECT_EQ(DealerParBin(&tab, &resp, 0, 0), RETURN_PAR_TABLE_FAULT);
+    EXPECT_EQ(DealerParBin(&tab, &resp, 0, 0), RETURN_PAR_TABLE_FAULT);
 }
 
 // ---------------------------------------------------------------------------
@@ -103,61 +103,61 @@ TEST(ParValidation, DealerParBinRejectsOverflowingTable)
 
 TEST(ParValidation, ThirteenTricksIsAccepted)
 {
-  // 13 is the largest legal trick count and must not be rejected.
-  DdTableResults tab = legal_table();
-  tab.res_table[0][0] = 13;
-  tab.res_table[0][2] = 13;
-  tab.res_table[0][1] = 0;
-  tab.res_table[0][3] = 0;
+    // 13 is the largest legal trick count and must not be rejected.
+    DdTableResults tab = legal_table();
+    tab.res_table[0][0] = 13;
+    tab.res_table[0][2] = 13;
+    tab.res_table[0][1] = 0;
+    tab.res_table[0][3] = 0;
 
-  ParResults resp;
-  std::memset(&resp, 0, sizeof(resp));
-  EXPECT_EQ(Par(&tab, &resp, 0), RETURN_NO_FAULT);
+    ParResults resp;
+    std::memset(&resp, 0, sizeof(resp));
+    EXPECT_EQ(Par(&tab, &resp, 0), RETURN_NO_FAULT);
 }
 
 TEST(ParValidation, FourteenTricksIsRejected)
 {
-  DdTableResults tab = legal_table();
-  tab.res_table[2][1] = 14;
+    DdTableResults tab = legal_table();
+    tab.res_table[2][1] = 14;
 
-  ParResults resp;
-  std::memset(&resp, 0, sizeof(resp));
-  EXPECT_EQ(Par(&tab, &resp, 0), RETURN_PAR_TABLE_FAULT);
+    ParResults resp;
+    std::memset(&resp, 0, sizeof(resp));
+    EXPECT_EQ(Par(&tab, &resp, 0), RETURN_PAR_TABLE_FAULT);
 }
 
 TEST(ParValidation, NegativeTrickCountIsRejected)
 {
-  DdTableResults tab = legal_table();
-  tab.res_table[3][2] = -1;
+    DdTableResults tab = legal_table();
+    tab.res_table[3][2] = -1;
 
-  ParResults resp;
-  std::memset(&resp, 0, sizeof(resp));
-  EXPECT_EQ(Par(&tab, &resp, 0), RETURN_PAR_TABLE_FAULT);
+    ParResults resp;
+    std::memset(&resp, 0, sizeof(resp));
+    EXPECT_EQ(Par(&tab, &resp, 0), RETURN_PAR_TABLE_FAULT);
 }
 
 TEST(ParValidation, SingleBadEntryAnywhereIsRejected)
 {
-  // Every position is checked, not just the first.
-  for (int d = 0; d < DDS_STRAINS; d++)
-  {
-    for (int h = 0; h < DDS_HANDS; h++)
+    // Every position is checked, not just the first.
+    for (int d = 0; d < DDS_STRAINS; d++)
     {
-      DdTableResults tab = legal_table();
-      tab.res_table[d][h] = 99;
+        for (int h = 0; h < DDS_HANDS; h++)
+        {
+            DdTableResults tab = legal_table();
+            tab.res_table[d][h] = 99;
 
-      ParResults resp;
-      std::memset(&resp, 0, sizeof(resp));
-      EXPECT_EQ(Par(&tab, &resp, 0), RETURN_PAR_TABLE_FAULT)
-        << "strain " << d << ", hand " << h;
+            ParResults resp;
+            std::memset(&resp, 0, sizeof(resp));
+            EXPECT_EQ(Par(&tab, &resp, 0), RETURN_PAR_TABLE_FAULT)
+                << "strain " << d << ", hand " << h;
+        }
     }
-  }
 }
 
 TEST(ParValidation, NullTableIsRejected)
 {
-  ParResults resp;
-  std::memset(&resp, 0, sizeof(resp));
-  EXPECT_EQ(Par(nullptr, &resp, 0), RETURN_PAR_TABLE_FAULT);
+    ParResults resp;
+    std::memset(&resp, 0, sizeof(resp));
+    EXPECT_EQ(Par(nullptr, &resp, 0), RETURN_PAR_TABLE_FAULT);
 }
 
 // ---------------------------------------------------------------------------
@@ -166,48 +166,48 @@ TEST(ParValidation, NullTableIsRejected)
 
 TEST(ParValidation, LegalTableStillProducesAParResult)
 {
-  DdTableResults const tab = legal_table();
+    DdTableResults const tab = legal_table();
 
-  ParResults resp;
-  std::memset(&resp, 0, sizeof(resp));
-  ASSERT_EQ(Par(&tab, &resp, 0), RETURN_NO_FAULT);
-  EXPECT_GT(std::strlen(resp.par_score[0]), 0u);
-  EXPECT_LT(std::strlen(resp.par_score[0]), sizeof(resp.par_score[0]));
-  EXPECT_LT(std::strlen(resp.par_contracts_string[0]),
-            sizeof(resp.par_contracts_string[0]));
+    ParResults resp;
+    std::memset(&resp, 0, sizeof(resp));
+    ASSERT_EQ(Par(&tab, &resp, 0), RETURN_NO_FAULT);
+    EXPECT_GT(std::strlen(resp.par_score[0]), 0u);
+    EXPECT_LT(std::strlen(resp.par_score[0]), sizeof(resp.par_score[0]));
+    EXPECT_LT(std::strlen(resp.par_contracts_string[0]),
+                        sizeof(resp.par_contracts_string[0]));
 }
 
 TEST(ParValidation, LegalTableAcceptedByAllEntryPoints)
 {
-  DdTableResults const tab = legal_table();
+    DdTableResults const tab = legal_table();
 
-  ParResultsDealer sides[2];
-  std::memset(sides, 0, sizeof(sides));
-  EXPECT_EQ(SidesPar(&tab, sides, 0), RETURN_NO_FAULT);
+    ParResultsDealer sides[2];
+    std::memset(sides, 0, sizeof(sides));
+    EXPECT_EQ(SidesPar(&tab, sides, 0), RETURN_NO_FAULT);
 
-  ParResultsMaster sidesBin[2];
-  std::memset(sidesBin, 0, sizeof(sidesBin));
-  EXPECT_EQ(SidesParBin(&tab, sidesBin, 0), RETURN_NO_FAULT);
+    ParResultsMaster sidesBin[2];
+    std::memset(sidesBin, 0, sizeof(sidesBin));
+    EXPECT_EQ(SidesParBin(&tab, sidesBin, 0), RETURN_NO_FAULT);
 
-  ParResultsDealer dealerRes;
-  std::memset(&dealerRes, 0, sizeof(dealerRes));
-  EXPECT_EQ(DealerPar(&tab, &dealerRes, 0, 0), RETURN_NO_FAULT);
+    ParResultsDealer dealerRes;
+    std::memset(&dealerRes, 0, sizeof(dealerRes));
+    EXPECT_EQ(DealerPar(&tab, &dealerRes, 0, 0), RETURN_NO_FAULT);
 
-  ParResultsMaster dealerBin;
-  std::memset(&dealerBin, 0, sizeof(dealerBin));
-  EXPECT_EQ(DealerParBin(&tab, &dealerBin, 0, 0), RETURN_NO_FAULT);
+    ParResultsMaster dealerBin;
+    std::memset(&dealerBin, 0, sizeof(dealerBin));
+    EXPECT_EQ(DealerParBin(&tab, &dealerBin, 0, 0), RETURN_NO_FAULT);
 }
 
 TEST(ParValidation, AllLegalVulnerabilitiesAccepted)
 {
-  DdTableResults const tab = legal_table();
-  for (int vul = 0; vul <= 3; vul++)
-  {
-    ParResultsDealer resp;
-    std::memset(&resp, 0, sizeof(resp));
-    EXPECT_EQ(DealerPar(&tab, &resp, 0, vul), RETURN_NO_FAULT)
-      << "vulnerable = " << vul;
-  }
+    DdTableResults const tab = legal_table();
+    for (int vul = 0; vul <= 3; vul++)
+    {
+        ParResultsDealer resp;
+        std::memset(&resp, 0, sizeof(resp));
+        EXPECT_EQ(DealerPar(&tab, &resp, 0, vul), RETURN_NO_FAULT)
+            << "vulnerable = " << vul;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -217,15 +217,15 @@ TEST(ParValidation, AllLegalVulnerabilitiesAccepted)
 
 TEST(ParValidation, DealerParRejectsOutOfRangeVulnerability)
 {
-  DdTableResults const tab = legal_table();
+    DdTableResults const tab = legal_table();
 
-  for (int vul : {-1, 4, 99})
-  {
-    ParResultsDealer resp;
-    std::memset(&resp, 0, sizeof(resp));
-    EXPECT_EQ(DealerPar(&tab, &resp, 0, vul), RETURN_UNKNOWN_FAULT)
-      << "vulnerable = " << vul;
-  }
+    for (int vul : {-1, 4, 99})
+    {
+        ParResultsDealer resp;
+        std::memset(&resp, 0, sizeof(resp));
+        EXPECT_EQ(DealerPar(&tab, &resp, 0, vul), RETURN_UNKNOWN_FAULT)
+            << "vulnerable = " << vul;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -238,72 +238,72 @@ TEST(ParValidation, DealerParRejectsOutOfRangeVulnerability)
 
 TEST(ParValidation, DealerParRejectsOutOfRangeDealer)
 {
-  DdTableResults const tab = legal_table();
+    DdTableResults const tab = legal_table();
 
-  for (int dealer : {-1, 4, 99, -2147483647})
-  {
-    ParResultsDealer resp;
-    std::memset(&resp, 0, sizeof(resp));
-    EXPECT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_UNKNOWN_FAULT)
-      << "dealer = " << dealer;
-  }
+    for (int dealer : {-1, 4, 99, -2147483647})
+    {
+        ParResultsDealer resp;
+        std::memset(&resp, 0, sizeof(resp));
+        EXPECT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_UNKNOWN_FAULT)
+            << "dealer = " << dealer;
+    }
 }
 
 TEST(ParValidation, DealerParBinRejectsOutOfRangeDealer)
 {
-  DdTableResults const tab = legal_table();
+    DdTableResults const tab = legal_table();
 
-  for (int dealer : {-1, 4})
-  {
-    ParResultsMaster resp;
-    std::memset(&resp, 0, sizeof(resp));
-    EXPECT_EQ(DealerParBin(&tab, &resp, dealer, 0), RETURN_UNKNOWN_FAULT)
-      << "dealer = " << dealer;
-  }
+    for (int dealer : {-1, 4})
+    {
+        ParResultsMaster resp;
+        std::memset(&resp, 0, sizeof(resp));
+        EXPECT_EQ(DealerParBin(&tab, &resp, dealer, 0), RETURN_UNKNOWN_FAULT)
+            << "dealer = " << dealer;
+    }
 }
 
 TEST(ParValidation, AllLegalDealersAccepted)
 {
-  DdTableResults const tab = legal_table();
+    DdTableResults const tab = legal_table();
 
-  for (int dealer = 0; dealer <= 3; dealer++)
-  {
-    ParResultsDealer resp;
-    std::memset(&resp, 0, sizeof(resp));
-    EXPECT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_NO_FAULT)
-      << "dealer = " << dealer;
-  }
+    for (int dealer = 0; dealer <= 3; dealer++)
+    {
+        ParResultsDealer resp;
+        std::memset(&resp, 0, sizeof(resp));
+        EXPECT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_NO_FAULT)
+            << "dealer = " << dealer;
+    }
 }
 
 TEST(ParValidation, SacrificeContractTextIsWellFormed)
 {
-  // A table where sacrificing is right, so the text path that used to index
-  // NUMBER_TO_PLAYER out of bounds actually runs. No "?" placeholder should
-  // appear: that would mean an index escaped DealerPar()'s range checks.
-  DdTableResults tab;
-  std::memset(&tab, 0, sizeof(tab));
-  for (int d = 0; d < DDS_STRAINS; d++)
-  {
-    tab.res_table[d][0] = 12;
-    tab.res_table[d][1] = 1;
-    tab.res_table[d][2] = 12;
-    tab.res_table[d][3] = 1;
-  }
-
-  for (int dealer = 0; dealer <= 3; dealer++)
-  {
-    ParResultsDealer resp;
-    std::memset(&resp, 0, sizeof(resp));
-    ASSERT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_NO_FAULT);
-
-    for (int k = 0; k < resp.number; k++)
+    // A table where sacrificing is right, so the text path that used to index
+    // NUMBER_TO_PLAYER out of bounds actually runs. No "?" placeholder should
+    // appear: that would mean an index escaped DealerPar()'s range checks.
+    DdTableResults tab;
+    std::memset(&tab, 0, sizeof(tab));
+    for (int d = 0; d < DDS_STRAINS; d++)
     {
-      std::string const contract(resp.contracts[k]);
-      EXPECT_EQ(contract.find('?'), std::string::npos)
-        << "dealer " << dealer << " contract " << k << ": " << contract;
-      EXPECT_LT(contract.size(), sizeof(resp.contracts[k]));
+        tab.res_table[d][0] = 12;
+        tab.res_table[d][1] = 1;
+        tab.res_table[d][2] = 12;
+        tab.res_table[d][3] = 1;
     }
-  }
+
+    for (int dealer = 0; dealer <= 3; dealer++)
+    {
+        ParResultsDealer resp;
+        std::memset(&resp, 0, sizeof(resp));
+        ASSERT_EQ(DealerPar(&tab, &resp, dealer, 0), RETURN_NO_FAULT);
+
+        for (int k = 0; k < resp.number; k++)
+        {
+            std::string const contract(resp.contracts[k]);
+            EXPECT_EQ(contract.find('?'), std::string::npos)
+                << "dealer " << dealer << " contract " << k << ": " << contract;
+            EXPECT_LT(contract.size(), sizeof(resp.contracts[k]));
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -315,58 +315,58 @@ TEST(ParValidation, SacrificeContractTextIsWellFormed)
 
 TEST(ParValidation, DirectEntryPointsRejectOutOfRangeVulnerability)
 {
-  DdTableResults const tab = legal_table();
+    DdTableResults const tab = legal_table();
 
-  for (int vul : {-1, 4, 99})
-  {
-    ParResults resp;
-    std::memset(&resp, 0, sizeof(resp));
-    EXPECT_EQ(Par(&tab, &resp, vul), RETURN_UNKNOWN_FAULT)
-      << "Par, vulnerable = " << vul;
+    for (int vul : {-1, 4, 99})
+    {
+        ParResults resp;
+        std::memset(&resp, 0, sizeof(resp));
+        EXPECT_EQ(Par(&tab, &resp, vul), RETURN_UNKNOWN_FAULT)
+            << "Par, vulnerable = " << vul;
 
-    ParResultsDealer sides[2];
-    std::memset(sides, 0, sizeof(sides));
-    EXPECT_EQ(SidesPar(&tab, sides, vul), RETURN_UNKNOWN_FAULT)
-      << "SidesPar, vulnerable = " << vul;
+        ParResultsDealer sides[2];
+        std::memset(sides, 0, sizeof(sides));
+        EXPECT_EQ(SidesPar(&tab, sides, vul), RETURN_UNKNOWN_FAULT)
+            << "SidesPar, vulnerable = " << vul;
 
-    ParResultsMaster sides_bin[2];
-    std::memset(sides_bin, 0, sizeof(sides_bin));
-    EXPECT_EQ(SidesParBin(&tab, sides_bin, vul), RETURN_UNKNOWN_FAULT)
-      << "SidesParBin, vulnerable = " << vul;
-  }
+        ParResultsMaster sides_bin[2];
+        std::memset(sides_bin, 0, sizeof(sides_bin));
+        EXPECT_EQ(SidesParBin(&tab, sides_bin, vul), RETURN_UNKNOWN_FAULT)
+            << "SidesParBin, vulnerable = " << vul;
+    }
 }
 
 TEST(ParValidation, VulnerabilityActuallyChangesTheParScore)
 {
-  // Guards against the check above being satisfied by a stub: the four legal
-  // vulnerabilities must not all produce identical output. A sacrifice table
-  // is used because that is where doubled undertricks make vulnerability
-  // change the score; a flat partscore table scores the same either way.
-  DdTableResults tab;
-  std::memset(&tab, 0, sizeof(tab));
-  for (int d = 0; d < DDS_STRAINS; d++)
-  {
-    tab.res_table[d][0] = 12;
-    tab.res_table[d][1] = 1;
-    tab.res_table[d][2] = 12;
-    tab.res_table[d][3] = 1;
-  }
+    // Guards against the check above being satisfied by a stub: the four legal
+    // vulnerabilities must not all produce identical output. A sacrifice table
+    // is used because that is where doubled undertricks make vulnerability
+    // change the score; a flat partscore table scores the same either way.
+    DdTableResults tab;
+    std::memset(&tab, 0, sizeof(tab));
+    for (int d = 0; d < DDS_STRAINS; d++)
+    {
+        tab.res_table[d][0] = 12;
+        tab.res_table[d][1] = 1;
+        tab.res_table[d][2] = 12;
+        tab.res_table[d][3] = 1;
+    }
 
-  std::string first;
-  bool differs = false;
-  for (int vul = 0; vul <= 3; vul++)
-  {
-    ParResults resp;
-    std::memset(&resp, 0, sizeof(resp));
-    ASSERT_EQ(Par(&tab, &resp, vul), RETURN_NO_FAULT) << "vulnerable " << vul;
+    std::string first;
+    bool differs = false;
+    for (int vul = 0; vul <= 3; vul++)
+    {
+        ParResults resp;
+        std::memset(&resp, 0, sizeof(resp));
+        ASSERT_EQ(Par(&tab, &resp, vul), RETURN_NO_FAULT) << "vulnerable " << vul;
 
-    std::string const score(resp.par_score[0]);
-    if (vul == 0)
-      first = score;
-    else if (score != first)
-      differs = true;
-  }
-  EXPECT_TRUE(differs) << "par score identical across all vulnerabilities";
+        std::string const score(resp.par_score[0]);
+        if (vul == 0)
+            first = score;
+        else if (score != first)
+            differs = true;
+    }
+    EXPECT_TRUE(differs) << "par score identical across all vulnerabilities";
 }
 
 // ---------------------------------------------------------------------------
@@ -375,12 +375,12 @@ TEST(ParValidation, VulnerabilityActuallyChangesTheParScore)
 
 TEST(ParValidation, ErrorMessageDescribesTableFault)
 {
-  char line[80];
-  std::memset(line, 0, sizeof(line));
-  ErrorMessage(RETURN_PAR_TABLE_FAULT, line);
+    char line[80];
+    std::memset(line, 0, sizeof(line));
+    ErrorMessage(RETURN_PAR_TABLE_FAULT, line);
 
-  EXPECT_STREQ(line, TEXT_PAR_TABLE_FAULT);
-  EXPECT_GT(std::strlen(line), 0u);
+    EXPECT_STREQ(line, TEXT_PAR_TABLE_FAULT);
+    EXPECT_GT(std::strlen(line), 0u);
 }
 
 }  // namespace

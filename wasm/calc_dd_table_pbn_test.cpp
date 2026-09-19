@@ -14,12 +14,12 @@
 
 TEST(CalcDdTablePbnWasmTest, MatchesReferenceTables) {
 
-  for (int handno = 0; handno < 3; ++handno) {
+    for (int handno = 0; handno < 3; ++handno) {
     DdTableDealPBN deal{};
     std::strcpy(deal.cards, pbn_hands_[handno]);
 
     DdTableResults table{};
     ASSERT_EQ(CalcDDtablePBN(deal, &table), RETURN_NO_FAULT) << "hand " << handno;
     EXPECT_TRUE(compare_table(&table, handno)) << "hand " << handno;
-  }
+    }
 }

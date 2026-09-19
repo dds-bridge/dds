@@ -21,23 +21,23 @@
 */
 
 #ifdef DDS_AB_STATS
-  #define AB_COUNT(a, b, c) thrp->ABStats.IncrPos(a, b, c)
+    #define AB_COUNT(a, b, c) thrp->ABStats.IncrPos(a, b, c)
 #else
-  #define AB_COUNT(a, b, c)
+    #define AB_COUNT(a, b, c)
 #endif
 
 
 enum ABCountType
 {
-  AB_TARGET_REACHED = 0,
-  AB_DEPTH_ZERO = 1,
-  AB_QUICKTRICKS = 2,
-  AB_QUICKTRICKS_2ND = 3,
-  AB_LATERTRICKS = 4,
-  AB_MAIN_LOOKUP = 5,
-  AB_SIDE_LOOKUP = 6,
-  AB_MOVE_LOOP = 7,
-  AB_SIZE = 8
+    AB_TARGET_REACHED = 0,
+    AB_DEPTH_ZERO = 1,
+    AB_QUICKTRICKS = 2,
+    AB_QUICKTRICKS_2ND = 3,
+    AB_LATERTRICKS = 4,
+    AB_MAIN_LOOKUP = 5,
+    AB_SIDE_LOOKUP = 6,
+    AB_MOVE_LOOP = 7,
+    AB_SIZE = 8
 };
 
 constexpr int DDS_MAXDEPTH = 49;
@@ -45,11 +45,11 @@ constexpr int DDS_MAXDEPTH = 49;
 
 struct ABtracker
 {
-  int list[DDS_MAXDEPTH];
-  int sum;
-  int sumWeighted;
-  int sumCum;
-  int sumCumWeighted;
+    int list[DDS_MAXDEPTH];
+    int sum;
+    int sumWeighted;
+    int sumCum;
+    int sumCumWeighted;
 };
 
 
@@ -63,80 +63,80 @@ struct ABtracker
  */
 class ABstats
 {
-  private:
+    private:
 
-    std::string name[AB_SIZE];
+        std::string name[AB_SIZE];
 
-    // A node arises when a new move is generated.
-    // Not every move leads to an AB termination.
-    ABtracker ABnodes;
-    ABtracker ABnodesCum;
+        // A node arises when a new move is generated.
+        // Not every move leads to an AB termination.
+        ABtracker ABnodes;
+        ABtracker ABnodesCum;
 
-    // AB terminations are tracked by side and position.
-    ABtracker ABsides[2];
-    ABtracker ABplaces[AB_SIZE];
+        // AB terminations are tracked by side and position.
+        ABtracker ABsides[2];
+        ABtracker ABplaces[AB_SIZE];
 
-    void SetNames();
+        void SetNames();
 
-    void PrintHeaderPosition(std::ofstream& fout) const; 
+        void PrintHeaderPosition(std::ofstream& fout) const; 
 
-    void PrintStatsPosition(
-      std::ofstream& fout,
-      const int no,
-      const std::string& text,
-      const ABtracker& abt,
-      const ABtracker& divisor) const;
+        void PrintStatsPosition(
+            std::ofstream& fout,
+            const int no,
+            const std::string& text,
+            const ABtracker& abt,
+            const ABtracker& divisor) const;
 
-    void PrintHeaderDepth(std::ofstream& fout) const; 
+        void PrintHeaderDepth(std::ofstream& fout) const; 
 
-    void PrintStatsDepth(
-      std::ofstream& fout,
-      const int depth,
-      const int cum) const; 
+        void PrintStatsDepth(
+            std::ofstream& fout,
+            const int depth,
+            const int cum) const; 
 
-    void PrintAverageDepth(
-      std::ofstream& fout,
-      const ABtracker& ABsidesSum) const; 
+        void PrintAverageDepth(
+            std::ofstream& fout,
+            const ABtracker& ABsidesSum) const; 
 
-    void PrintHeaderDetail(std::ofstream& fout) const; 
+        void PrintHeaderDetail(std::ofstream& fout) const; 
 
-    void PrintStatsDetail(
-      std::ofstream& fout,
-      const int depth) const; 
+        void PrintStatsDetail(
+            std::ofstream& fout,
+            const int depth) const; 
 
-    void PrintSumDetail(std::ofstream& fout) const; 
+        void PrintSumDetail(std::ofstream& fout) const; 
 
-  public:
+    public:
 
-    /**
+        /**
      * @brief Construct a new ABstats object.
      *
      * Initializes the alpha-beta statistics accumulator.
      */
-    ABstats();
+        ABstats();
 
-    /**
+        /**
      * @brief Destroy the ABstats object and clean up resources.
      *
      * Releases all memory and resets the statistics state.
      */
-    ~ABstats();
+        ~ABstats();
 
-    void Reset();
+        void Reset();
 
-    void ResetCum();
+        void ResetCum();
 
-    void IncrPos(
-      const ABCountType no, 
-      const bool side, 
-      const int depth);
+        void IncrPos(
+            const ABCountType no, 
+            const bool side, 
+            const int depth);
 
-    void IncrNode(const int depth);
+        void IncrNode(const int depth);
 
-    int GetNodes() const;
+        int GetNodes() const;
 
-    int GetPosCount(int no) const;
+        int GetPosCount(int no) const;
 
-    void PrintStats(std::ofstream& fout);
+        void PrintStats(std::ofstream& fout);
 };
 

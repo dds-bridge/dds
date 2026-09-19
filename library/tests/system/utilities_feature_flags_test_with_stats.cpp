@@ -16,7 +16,7 @@
 namespace dds {
 
 TEST(UtilitiesFeatureFlagsWithStats, StatsEnabledWithDefine) {
-  EXPECT_TRUE(Utilities::stats_enabled());
+    EXPECT_TRUE(Utilities::stats_enabled());
 }
 
 } // namespace dds

@@ -21,34 +21,34 @@
 
 extern "C" auto LLVMFuzzerInitialize(int * /*argc*/, char *** /*argv*/) -> int
 {
-  // SetMaxThreads() is a deprecated alias of InitializeStaticMemory() whose
-  // thread argument is ignored, so it never capped anything here. Worker
-  // counts come from each call's explicit maxThreads instead.
-  InitializeStaticMemory();
-  return 0;
+    // SetMaxThreads() is a deprecated alias of InitializeStaticMemory() whose
+    // thread argument is ignored, so it never capped anything here. Worker
+    // counts come from each call's explicit maxThreads instead.
+    InitializeStaticMemory();
+    return 0;
 }
 
 extern "C" auto LLVMFuzzerTestOneInput(const uint8_t * data, size_t size) -> int
 {
-  // trump, first, currentTrickSuit[3], currentTrickRank[3], remainCards[4][4],
-  // plus one selector byte for target/solutions/mode.
-  Deal deal;
-  if (size < sizeof(deal) + 1)
+    // trump, first, currentTrickSuit[3], currentTrickRank[3], remainCards[4][4],
+    // plus one selector byte for target/solutions/mode.
+    Deal deal;
+    if (size < sizeof(deal) + 1)
+        return 0;
+
+    std::memcpy(&deal, data, sizeof(deal));
+    uint8_t const selector = data[sizeof(deal)];
+
+    // Cover the documented ranges and a little either side of them, so the
+    // parameter validation is exercised as well as the search.
+    int const target    = static_cast<int>(selector % 16) - 1;
+    int const solutions = static_cast<int>((selector / 16) % 5) - 1;
+    int const mode      = static_cast<int>((selector / 80) % 4) - 1;
+
+    FutureTricks fut;
+    std::memset(&fut, 0, sizeof(fut));
+
+    SolveBoard(deal, target, solutions, mode, &fut, 0);
+
     return 0;
-
-  std::memcpy(&deal, data, sizeof(deal));
-  uint8_t const selector = data[sizeof(deal)];
-
-  // Cover the documented ranges and a little either side of them, so the
-  // parameter validation is exercised as well as the search.
-  int const target    = static_cast<int>(selector % 16) - 1;
-  int const solutions = static_cast<int>((selector / 16) % 5) - 1;
-  int const mode      = static_cast<int>((selector / 80) % 4) - 1;
-
-  FutureTricks fut;
-  std::memset(&fut, 0, sizeof(fut));
-
-  SolveBoard(deal, target, solutions, mode, &fut, 0);
-
-  return 0;
 }

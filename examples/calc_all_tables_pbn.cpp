@@ -20,43 +20,43 @@
 
 auto main() -> int
 {
-  DdTableDealsPBN DDdealsPBN;
-  DdTablesRes tableRes;
-  AllParResults pres;
+    DdTableDealsPBN DDdealsPBN;
+    DdTablesRes tableRes;
+    AllParResults pres;
 
-  int mode = 0; // No par calculation
-  int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All
-  int res;
-  char line[80];
-  bool match;
+    int mode = 0; // No par calculation
+    int trumpFilter[DDS_STRAINS] = {0, 0, 0, 0, 0}; // All
+    int res;
+    char line[80];
+    bool match;
 
-  DDdealsPBN.no_of_tables = 3;
+    DDdealsPBN.no_of_tables = 3;
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-    strcpy(DDdealsPBN.deals[handno].cards, pbn_hands_[handno]);
-  }
+    for (int handno = 0; handno < 3; handno++)
+    {
+        strcpy(DDdealsPBN.deals[handno].cards, pbn_hands_[handno]);
+    }
 
-  res = CalcAllTablesPBN(&DDdealsPBN, mode, trumpFilter,
+    res = CalcAllTablesPBN(&DDdealsPBN, mode, trumpFilter,
                          &tableRes, &pres);
 
-  if (res != RETURN_NO_FAULT)
-  {
-    ErrorMessage(res, line);
-    printf("DDS error: %s\n", line);
-  }
+    if (res != RETURN_NO_FAULT)
+    {
+        ErrorMessage(res, line);
+        printf("DDS error: %s\n", line);
+    }
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-    match = compare_table(&tableRes.results[handno], handno);
+    for (int handno = 0; handno < 3; handno++)
+    {
+        match = compare_table(&tableRes.results[handno], handno);
 
-    sprintf(line,
-            "CalcDDtable, hand %d: %s\n",
-            handno + 1, (match ? "OK" : "ERROR"));
+        sprintf(line,
+                        "CalcDDtable, hand %d: %s\n",
+                        handno + 1, (match ? "OK" : "ERROR"));
 
-    print_pbn_hand(line, DDdealsPBN.deals[handno].cards);
+        print_pbn_hand(line, DDdealsPBN.deals[handno].cards);
 
-    print_table(&tableRes.results[handno]);
-  }
+        print_table(&tableRes.results[handno]);
+    }
 }
 

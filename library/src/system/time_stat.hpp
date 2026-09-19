@@ -22,13 +22,13 @@
  */
 class TimeStat
 {
-  private:
+    private:
 
     int number;
     long long cum;
     double cumsq;
 
-  public:
+    public:
 
     /**
      * @brief Construct a new TimeStat object.
@@ -48,8 +48,8 @@ class TimeStat
 
     void Set(const int timeUser);
     void Set(
-      const int timeUser,
-      const double timesq);
+        const int timeUser,
+        const double timesq);
 
     void operator += (const TimeStat& add);
 

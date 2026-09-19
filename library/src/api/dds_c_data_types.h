@@ -30,12 +30,12 @@
  */
 struct FutureTricks
 {
-  int nodes;
-  int cards;
-  int suit[13];
-  int rank[13];
-  int equals[13];
-  int score[13];
+    int nodes;
+    int cards;
+    int suit[13];
+    int rank[13];
+    int equals[13];
+    int score[13];
 };
 
 /**
@@ -49,33 +49,33 @@ struct FutureTricks
  */
 struct Deal
 {
-  int trump;
-  int first;
-  int currentTrickSuit[3];
-  int currentTrickRank[3];
-  unsigned int remainCards[DDS_HANDS][DDS_SUITS];
+    int trump;
+    int first;
+    int currentTrickSuit[3];
+    int currentTrickRank[3];
+    unsigned int remainCards[DDS_HANDS][DDS_SUITS];
 };
 
 struct DdTableDeal
 {
-  unsigned int cards[DDS_HANDS][DDS_SUITS];
+    unsigned int cards[DDS_HANDS][DDS_SUITS];
 };
 
 struct DdTableDealPBN
 {
-  char cards[80];
+    char cards[80];
 };
 
 struct DdTableResults
 {
-  int res_table[DDS_STRAINS][DDS_HANDS];
+    int res_table[DDS_STRAINS][DDS_HANDS];
 };
 
 struct ParResults
 {
-  /* index = 0 is NS view and index = 1
+    /* index = 0 is NS view and index = 1
      is EW view. By 'view' is here meant
      which side that starts the bidding. */
-  char par_score[2][16];
-  char par_contracts_string[2][128];
+    char par_score[2][16];
+    char par_contracts_string[2][128];
 };

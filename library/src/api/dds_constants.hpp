@@ -24,18 +24,18 @@
 // ---------------------------------------------------------------------------
 
 #if (defined(_WIN32) || defined(__CYGWIN__)) && ! defined(__clang__)
-  #define DLLEXPORT __declspec(dllexport)
-  #define STDCALL __stdcall
+    #define DLLEXPORT __declspec(dllexport)
+    #define STDCALL __stdcall
 #else
-  #define DLLEXPORT
-  #define STDCALL
+    #define DLLEXPORT
+    #define STDCALL
 #endif
 
 #ifdef __cplusplus
-  #define EXTERN_C extern "C"
+    #define EXTERN_C extern "C"
 #else
-  #define EXTERN_C
-  #include <stdbool.h> // make "bool" available
+    #define EXTERN_C
+    #include <stdbool.h> // make "bool" available
 #endif
 
 // ---------------------------------------------------------------------------
@@ -89,7 +89,7 @@ constexpr const char TEXT_ZERO_CARDS[] = "Zero cards";
 // SolveBoard()
 constexpr int RETURN_TARGET_TOO_HIGH = -3;
 constexpr const char TEXT_TARGET_TOO_HIGH[] =
-  "Target exceeds number of tricks";
+    "Target exceeds number of tricks";
 
 // SolveBoard()
 constexpr int RETURN_DUPLICATE_CARDS = -4;
@@ -98,22 +98,22 @@ constexpr const char TEXT_DUPLICATE_CARDS[] = "Cards duplicated";
 // SolveBoard()
 constexpr int RETURN_TARGET_WRONG_LO = -5;
 constexpr const char TEXT_TARGET_WRONG_LO[] =
-  "Target is less than -1";
+    "Target is less than -1";
 
 // SolveBoard()
 constexpr int RETURN_TARGET_WRONG_HI = -7;
 constexpr const char TEXT_TARGET_WRONG_HI[] =
-  "Target is higher than 13";
+    "Target is higher than 13";
 
 // SolveBoard()
 constexpr int RETURN_SOLNS_WRONG_LO = -8;
 constexpr const char TEXT_SOLNS_WRONG_LO[] =
-  "Solutions parameter is less than 1";
+    "Solutions parameter is less than 1";
 
 // SolveBoard()
 constexpr int RETURN_SOLNS_WRONG_HI = -9;
 constexpr const char TEXT_SOLNS_WRONG_HI[] =
-  "Solutions parameter is higher than 3";
+    "Solutions parameter is higher than 3";
 
 // SolveBoard(), self-explanatory.
 constexpr int RETURN_TOO_MANY_CARDS = -10;
@@ -122,32 +122,32 @@ constexpr const char TEXT_TOO_MANY_CARDS[] = "Too many cards";
 // SolveBoard()
 constexpr int RETURN_SUIT_OR_RANK = -12;
 constexpr const char TEXT_SUIT_OR_RANK[] =
-  "currentTrickSuit or currentTrickRank has wrong data";
+    "currentTrickSuit or currentTrickRank has wrong data";
 
 // SolveBoard
 constexpr int RETURN_PLAYED_CARD = -13;
 constexpr const char TEXT_PLAYED_CARD[] =
-  "Played card also remains in a hand";
+    "Played card also remains in a hand";
 
 // SolveBoard()
 constexpr int RETURN_CARD_COUNT = -14;
 constexpr const char TEXT_CARD_COUNT[] =
-  "Wrong number of remaining cards in a hand";
+    "Wrong number of remaining cards in a hand";
 
 // SolveBoard()
 constexpr int RETURN_THREAD_INDEX = -15;
 constexpr const char TEXT_THREAD_INDEX[] =
-  "Thread index is not 0 .. maximum";
+    "Thread index is not 0 .. maximum";
 
 // SolveBoard()
 constexpr int RETURN_MODE_WRONG_LO = -16;
 constexpr const char TEXT_MODE_WRONG_LO[] =
-  "Mode parameter is less than 0";
+    "Mode parameter is less than 0";
 
 // SolveBoard()
 constexpr int RETURN_MODE_WRONG_HI = -17;
 constexpr const char TEXT_MODE_WRONG_HI[] =
-  "Mode parameter is higher than 2";
+    "Mode parameter is higher than 2";
 
 // SolveBoard()
 constexpr int RETURN_TRUMP_WRONG = -18;
@@ -171,33 +171,33 @@ constexpr const char TEXT_PBN_FAULT[] = "PBN string error";
 // SolveBoard() and AnalysePlay*()
 constexpr int RETURN_TOO_MANY_BOARDS = -101;
 constexpr const char TEXT_TOO_MANY_BOARDS[] =
-  "Too many Boards requested";
+    "Too many Boards requested";
 
 // Returned from multi-threading functions.
 constexpr int RETURN_THREAD_CREATE = -102;
 constexpr const char TEXT_THREAD_CREATE[] =
-  "Could not create threads";
+    "Could not create threads";
 
 // Returned from multi-threading functions when something went
 // wrong while waiting for all threads to complete.
 constexpr int RETURN_THREAD_WAIT = -103;
 constexpr const char TEXT_THREAD_WAIT[] =
-  "Something failed waiting for thread to end";
+    "Something failed waiting for thread to end";
 
 // Tried to set a multi-threading system that is not present in DLL.
 constexpr int RETURN_THREAD_MISSING = -104;
 constexpr const char TEXT_THREAD_MISSING[] =
-  "Multi-threading system not present";
+    "Multi-threading system not present";
 
 // CalcAllTables*()
 constexpr int RETURN_NO_SUIT = -201;
 constexpr const char TEXT_NO_SUIT[] =
-  "Denomination filter vector has no entries";
+    "Denomination filter vector has no entries";
 
 // CalcAllTables*()
 constexpr int RETURN_TOO_MANY_TABLES = -202;
 constexpr const char TEXT_TOO_MANY_TABLES[] =
-  "Too many DD tables requested";
+    "Too many DD tables requested";
 
 // SolveAllChunks*()
 constexpr int RETURN_CHUNK_SIZE = -301;
@@ -206,7 +206,7 @@ constexpr const char TEXT_CHUNK_SIZE[] = "Chunk size is less than 1";
 // Par(), SidesPar(), SidesParBin(), DealerPar(), DealerParBin()
 constexpr int RETURN_PAR_TABLE_FAULT = -401;
 constexpr const char TEXT_PAR_TABLE_FAULT[] =
-  "Missing double dummy table, or an entry outside the range 0 to 13";
+    "Missing double dummy table, or an entry outside the range 0 to 13";
 
 // ---------------------------------------------------------------------------
 // Solver tuning constants

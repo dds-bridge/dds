@@ -49,10 +49,10 @@ TEST_F(ConstantsTest, HandRelationshipConsistency) {
     for (int i = 0; i < 4; i++) {
         // Partner of partner should be self
         EXPECT_EQ(partner[partner[i]], i);
-        
+
         // LHO of RHO should be self
         EXPECT_EQ(lho[rho[i]], i);
-        
+
         // RHO of LHO should be self  
         EXPECT_EQ(rho[lho[i]], i);
     }

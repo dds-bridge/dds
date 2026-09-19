@@ -325,18 +325,18 @@ TEST(DdsCApiDdTable, PbnTableMatchesBinaryTable)
     const struct DdTableDeal binary_deal = MakeReferenceTableDeal();
     struct DdTableResults binary_results = {};
     ASSERT_EQ(dds_c_calc_dd_table(ctx, &binary_deal, &binary_results),
-              RETURN_NO_FAULT);
+                RETURN_NO_FAULT);
 
     struct DdTableDealPBN pbn_deal = {};
     std::snprintf(pbn_deal.cards, sizeof pbn_deal.cards, "%s", kReferencePbn);
     struct DdTableResults pbn_results = {};
     ASSERT_EQ(dds_c_calc_dd_table_pbn(ctx, &pbn_deal, &pbn_results),
-              RETURN_NO_FAULT);
+                RETURN_NO_FAULT);
 
     for (int strain = 0; strain < DDS_STRAINS; ++strain)
         for (int hand = 0; hand < DDS_HANDS; ++hand)
             EXPECT_EQ(pbn_results.res_table[strain][hand],
-                      binary_results.res_table[strain][hand])
+                        binary_results.res_table[strain][hand])
                 << "res_table[" << strain << "][" << hand << "]";
 
     dds_c_destroy_solvercontext(ctx);
@@ -351,7 +351,7 @@ TEST(DdsCApiPar, ProducesNonEmptyScore)
     struct DdTableResults results = {};
     struct ParResults par = {};
     ASSERT_EQ(dds_c_calc_par(ctx, &deal, 0 /* vulnerable: none */, &results, &par),
-              RETURN_NO_FAULT);
+                RETURN_NO_FAULT);
 
     EXPECT_GT(std::strlen(par.par_score[0]), 0U);
 
@@ -380,14 +380,14 @@ TEST(DdsCApiPar, PbnMatchesBinary)
     struct DdTableResults binary_results = {};
     struct ParResults binary_par = {};
     ASSERT_EQ(dds_c_calc_par(ctx, &binary_deal, 0, &binary_results, &binary_par),
-              RETURN_NO_FAULT);
+                RETURN_NO_FAULT);
 
     struct DdTableDealPBN pbn_deal = {};
     std::snprintf(pbn_deal.cards, sizeof pbn_deal.cards, "%s", kReferencePbn);
     struct DdTableResults pbn_results = {};
     struct ParResults pbn_par = {};
     ASSERT_EQ(dds_c_calc_par_pbn(ctx, &pbn_deal, 0, &pbn_results, &pbn_par),
-              RETURN_NO_FAULT);
+                RETURN_NO_FAULT);
 
     EXPECT_STREQ(pbn_par.par_score[0], binary_par.par_score[0]);
     EXPECT_STREQ(pbn_par.par_score[1], binary_par.par_score[1]);

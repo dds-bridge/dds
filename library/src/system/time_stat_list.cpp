@@ -22,13 +22,13 @@ using std::stringstream;
 
 TimeStatList::TimeStatList()
 {
-  TimeStatList::Reset();
+    TimeStatList::Reset();
 }
 
 
 TimeStatList::~TimeStatList()
 {
-  TimeStatList::Clear();
+    TimeStatList::Clear();
 }
 
 
@@ -38,64 +38,64 @@ void TimeStatList::Reset()
 
 void TimeStatList::Clear()
 {
-  list.clear();
-  name.clear();
+    list.clear();
+    name.clear();
 }
 
 
 void TimeStatList::Init(
-  const string& tname,
-  const unsigned len)
+    const string& tname,
+    const unsigned len)
 {
-  name = tname;
-  list.resize(len);
+    name = tname;
+    list.resize(len);
 }
 
 
 void TimeStatList::Add(
-  const unsigned Pos,
-  const TimeStat& add)
+    const unsigned Pos,
+    const TimeStat& add)
 {
-  if (Pos < list.size()) {
-    list[Pos] += add;
-  } else {
-    std::cerr << "[E] TimeStatList::Add(): Pos " << Pos << " out of range, size " << list.size() << "\n";
-  }    
+    if (Pos < list.size()) {
+        list[Pos] += add;
+    } else {
+        std::cerr << "[E] TimeStatList::Add(): Pos " << Pos << " out of range, size " << list.size() << "\n";
+    }    
 }
 
 
 bool TimeStatList::Used() const
 {
-  for (unsigned i = 0; i < list.size(); i++)
-  {
-    if (list[i].Used())
-      return true;
-  }
-  return false;
+    for (unsigned i = 0; i < list.size(); i++)
+    {
+        if (list[i].Used())
+            return true;
+    }
+    return false;
 }
 
 
 string TimeStatList::List() const
 {
-  if (! TimeStatList::Used())
-    return "";
+    if (! TimeStatList::Used())
+        return "";
 
-  stringstream ss;
-  ss << name << "\n\n";
-  ss << list[0].Header();
+    stringstream ss;
+    ss << name << "\n\n";
+    ss << list[0].Header();
 
-  TimeStat tsum;
-  for (unsigned i = 0; i < list.size(); i++)
-  {
-    if (! list[i].Used())
-      continue;
+    TimeStat tsum;
+    for (unsigned i = 0; i < list.size(); i++)
+    {
+        if (! list[i].Used())
+            continue;
 
-    tsum += list[i];
-    ss << setw(5) << right << i << list[i].Line();
-  }
+        tsum += list[i];
+        ss << setw(5) << right << i << list[i].Line();
+    }
 
-  ss << setw(5) << right << "Avg" << tsum.Line() << "\n";
+    ss << setw(5) << right << "Avg" << tsum.Line() << "\n";
 
-  return ss.str();
+    return ss.str();
 }
 

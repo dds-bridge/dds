@@ -56,7 +56,7 @@
 /// Not thread-safe. Must be accessed from a single thread.
 class TransTableP : public TransTable
 {
-  public:
+    public:
     TransTableP();
     ~TransTableP() override;
 
@@ -94,14 +94,14 @@ class TransTableP : public TransTable
     auto print_all_suit_stats(std::ofstream& fout) const -> void override;
     auto reset_op_stats() -> void override
     {
-      num_adds_ = 0;
+        num_adds_ = 0;
 
     }
     auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
     {
-      adds = num_adds_;
-      overwrites = 0; // PatternTT has no eviction; use tightens() for in-place updates
-      harvests = 0; // TransTableP has no harvest mechanism
+        adds = num_adds_;
+        overwrites = 0; // PatternTT has no eviction; use tightens() for in-place updates
+        harvests = 0; // TransTableP has no harvest mechanism
     }
     // Instrumentation counters
     mutable int num_adds_ = 0;
@@ -128,7 +128,7 @@ class TransTableP : public TransTable
     /// \brief Number of distinct (trick, hand, shape) keys with stored patterns.
     auto shape_count() const -> std::size_t;
 
-  private:
+    private:
     /// Relative-rank ownership uses 2 bits per card and 4 cards per suit per
     /// word; three words cover the top twelve cards of every suit. The
     /// thirteenth card is implied by the shape and the other twelve.
@@ -205,10 +205,10 @@ class TransTableP : public TransTable
         auto insert(std::size_t at, const PatternNode& node) -> void;
     };
     static_assert(sizeof(PatternTree) % CacheLine == 0 &&
-                  sizeof(PatternTree) == TreeHeaderBytes + TreePaddingBytes,
-                  "PatternTree header must fill whole cache lines with no implicit padding");
+                    sizeof(PatternTree) == TreeHeaderBytes + TreePaddingBytes,
+                    "PatternTree header must fill whole cache lines with no implicit padding");
     static_assert(sizeof(PatternNode) == 32 && CacheLine % sizeof(PatternNode) == 0,
-                  "two PatternNodes must fit exactly in a cache line");
+                    "two PatternNodes must fit exactly in a cache line");
 
     struct ShapeSlot
     {

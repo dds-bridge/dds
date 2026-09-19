@@ -14,17 +14,17 @@
 
 
 bool LaterTricksMIN(
-  Pos& tpos,
-  const int hand,
-  const int depth,
-  const int target,
-  const int trump,
-  SolverContext& ctx);
+    Pos& tpos,
+    const int hand,
+    const int depth,
+    const int target,
+    const int trump,
+    SolverContext& ctx);
 
 bool LaterTricksMAX(
-  Pos& tpos,
-  const int hand,
-  const int depth,
-  const int target,
-  const int trump,
-  SolverContext& ctx);
+    Pos& tpos,
+    const int hand,
+    const int depth,
+    const int target,
+    const int trump,
+    SolverContext& ctx);

@@ -767,13 +767,13 @@ auto TransTableP::print_entries_dist_and_cards(
         }
         ++matched;
         lines << "  [" << static_cast<int>(stored.cards.lower_bound) << ", "
-              << static_cast<int>(stored.cards.upper_bound) << "] least_win";
+                << static_cast<int>(stored.cards.upper_bound) << "] least_win";
         for (int s = 0; s < DDS_SUITS; ++s) {
             lines << ' ' << static_cast<int>(stored.cards.least_win[s]);
         }
         lines << ' ' << owners_of(stored.key) << " best move "
-              << static_cast<int>(stored.cards.best_move_suit) << '/'
-              << static_cast<int>(stored.cards.best_move_rank) << '\n';
+                << static_cast<int>(stored.cards.best_move_suit) << '/'
+                << static_cast<int>(stored.cards.best_move_rank) << '\n';
     }
     fout << "Trick " << trick << " hand " << hand << ": " << total << " patterns, "
          << matched << " match the cards\n" << lines.str();

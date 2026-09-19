@@ -18,11 +18,11 @@
 
 
 #ifdef DDS_AB_STATS
-  #include "ab_stats.hpp"
+    #include "ab_stats.hpp"
 #endif
 
 #ifdef DDS_TIMING
-  #include <system/timer_list.hpp>
+    #include <system/timer_list.hpp>
 #endif
 
 
@@ -36,45 +36,45 @@
  */
 class Memory
 {
-  private:
-    // Per static_memory_genmove.md step one: ThreadData instances are no
-    // longer stored in a central Memory::memory vector. ThreadData will be
-    // owned/allocated by the SolverContext (as a member) and passed down to
-    // call sites. This header therefore no longer keeps per-thread pointers.
+    private:
+        // Per static_memory_genmove.md step one: ThreadData instances are no
+        // longer stored in a central Memory::memory vector. ThreadData will be
+        // owned/allocated by the SolverContext (as a member) and passed down to
+        // call sites. This header therefore no longer keeps per-thread pointers.
 
-    // Keep a lightweight record of configured thread sizes for diagnostics
-    // and reporting. This replaces the previous `memory` vector which held
-    // full ThreadData instances.
-    std::vector<std::string> threadSizes;
+        // Keep a lightweight record of configured thread sizes for diagnostics
+        // and reporting. This replaces the previous `memory` vector which held
+        // full ThreadData instances.
+        std::vector<std::string> threadSizes;
 
-  public:
+    public:
 
-    /**
+        /**
      * @brief Construct a new Memory object.
      *
      * Initializes thread-local memory tracking and prepares for allocation.
      */
-    Memory();
+        Memory();
 
-    /**
+        /**
      * @brief Destroy the Memory object and clean up resources.
      *
      * Releases all memory and performs cleanup of thread-local resources.
      */
-    ~Memory();
+        ~Memory();
 
-    void ReturnThread(const unsigned thrId);
+        void ReturnThread(const unsigned thrId);
 
-    void Resize(
-      const unsigned n,
-      const TTmemory flag,
-      const int memDefault_MB,
-      const int memMaximum_MB); // NOLINT(bugprone-easily-swappable-parameters)
+        void Resize(
+            const unsigned n,
+            const TTmemory flag,
+            const int memDefault_MB,
+            const int memMaximum_MB); // NOLINT(bugprone-easily-swappable-parameters)
 
-    unsigned NumThreads() const;
-    double MemoryInUseMB(const unsigned thrId) const;
+        unsigned NumThreads() const;
+        double MemoryInUseMB(const unsigned thrId) const;
 
-    std::string ThreadSize(const unsigned thrId) const;
+        std::string ThreadSize(const unsigned thrId) const;
 };
 
 #endif

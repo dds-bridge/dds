@@ -20,52 +20,52 @@
 
 auto main() -> int
 {
-  BoardsPBN bo;
-  SolvedBoards solved;
+    BoardsPBN bo;
+    SolvedBoards solved;
 
-  int res;
-  char line[80];
-  bool match;
+    int res;
+    char line[80];
+    bool match;
 
-  bo.no_of_boards = 3;
-  for (int handno = 0; handno < 3; handno++)
-  {
-    bo.deals[handno].trump = trump_suit_[handno];
-    bo.deals[handno].first = first_hand_[handno];
+    bo.no_of_boards = 3;
+    for (int handno = 0; handno < 3; handno++)
+    {
+        bo.deals[handno].trump = trump_suit_[handno];
+        bo.deals[handno].first = first_hand_[handno];
 
-    bo.deals[handno].currentTrickSuit[0] = 0;
-    bo.deals[handno].currentTrickSuit[1] = 0;
-    bo.deals[handno].currentTrickSuit[2] = 0;
+        bo.deals[handno].currentTrickSuit[0] = 0;
+        bo.deals[handno].currentTrickSuit[1] = 0;
+        bo.deals[handno].currentTrickSuit[2] = 0;
 
-    bo.deals[handno].currentTrickRank[0] = 0;
-    bo.deals[handno].currentTrickRank[1] = 0;
-    bo.deals[handno].currentTrickRank[2] = 0;
+        bo.deals[handno].currentTrickRank[0] = 0;
+        bo.deals[handno].currentTrickRank[1] = 0;
+        bo.deals[handno].currentTrickRank[2] = 0;
 
-    strcpy(bo.deals[handno].remainCards, pbn_hands_[handno]);
+        strcpy(bo.deals[handno].remainCards, pbn_hands_[handno]);
 
-    bo.target [handno] = -1;
-    bo.solutions[handno] = 3;
-    bo.mode [handno] = 0;
-  }
+        bo.target [handno] = -1;
+        bo.solutions[handno] = 3;
+        bo.mode [handno] = 0;
+    }
 
-  res = SolveAllBoards(&bo, &solved);
+    res = SolveAllBoards(&bo, &solved);
 
-  if (res != RETURN_NO_FAULT)
-  {
-    ErrorMessage(res, line);
-    printf("DDS error: %s\n", line);
-  }
+    if (res != RETURN_NO_FAULT)
+    {
+        ErrorMessage(res, line);
+        printf("DDS error: %s\n", line);
+    }
 
-  for (int handno = 0; handno < 3; handno++)
-  {
-    match = compare_future_tricks(&solved.solved_board[handno], handno, 3);
+    for (int handno = 0; handno < 3; handno++)
+    {
+        match = compare_future_tricks(&solved.solved_board[handno], handno, 3);
 
-    sprintf(line,
-            "SolveAllBoards, hand %d: solutions 3 %s\n",
-            handno + 1, (match ? "OK" : "ERROR"));
+        sprintf(line,
+                        "SolveAllBoards, hand %d: solutions 3 %s\n",
+                        handno + 1, (match ? "OK" : "ERROR"));
 
-    print_pbn_hand(line, bo.deals[handno].remainCards);
+        print_pbn_hand(line, bo.deals[handno].remainCards);
 
-    print_future_tricks(line, &solved.solved_board[handno]);
-  }
+        print_future_tricks(line, &solved.solved_board[handno]);
+    }
 }

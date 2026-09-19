@@ -43,174 +43,174 @@ namespace fs = std::filesystem;
 
 auto env_path(char const * name) -> std::string
 {
-  char const * value = std::getenv(name);
-  return value == nullptr ? std::string() : std::string(value);
+    char const * value = std::getenv(name);
+    return value == nullptr ? std::string() : std::string(value);
 }
 
 /// Files under a runfiles tree, if one contains `relpath` as a directory.
 auto files_from_tree(std::string const & relpath) -> std::vector<fs::path>
 {
-  std::vector<fs::path> found;
+    std::vector<fs::path> found;
 
-  for (char const * key : {"RUNFILES_DIR", "TEST_SRCDIR"})
-  {
-    std::string const root = env_path(key);
-    if (root.empty())
-      continue;
-
-    for (fs::path const & candidate :
-         {fs::path(root) / relpath, fs::path(root) / "_main" / relpath})
+    for (char const * key : {"RUNFILES_DIR", "TEST_SRCDIR"})
     {
-      std::error_code ec;
-      if (!fs::is_directory(candidate, ec))
-        continue;
+        std::string const root = env_path(key);
+        if (root.empty())
+            continue;
 
-      for (auto const & entry : fs::recursive_directory_iterator(candidate, ec))
-        if (entry.is_regular_file())
-          found.push_back(entry.path());
+        for (fs::path const & candidate :
+         {fs::path(root) / relpath, fs::path(root) / "_main" / relpath})
+        {
+            std::error_code ec;
+            if (!fs::is_directory(candidate, ec))
+                continue;
 
-      if (!found.empty())
-        return found;
+            for (auto const & entry : fs::recursive_directory_iterator(candidate, ec))
+                if (entry.is_regular_file())
+                    found.push_back(entry.path());
+
+            if (!found.empty())
+                return found;
+        }
     }
-  }
 
-  return found;
+    return found;
 }
 
 /// Files under `relpath` named by the runfiles manifest (Windows).
 auto files_from_manifest(std::string const & relpath) -> std::vector<fs::path>
 {
-  std::vector<fs::path> found;
+    std::vector<fs::path> found;
 
-  std::string const manifest = env_path("RUNFILES_MANIFEST_FILE");
-  if (manifest.empty())
+    std::string const manifest = env_path("RUNFILES_MANIFEST_FILE");
+    if (manifest.empty())
+        return found;
+
+    std::ifstream in(manifest);
+    if (!in)
+        return found;
+
+    // Manifest keys use forward slashes and may or may not carry the repo name.
+    std::string const with_repo = "_main/" + relpath + "/";
+    std::string const bare = relpath + "/";
+
+    std::string line;
+    while (std::getline(in, line))
+    {
+        if (line.empty() || line.front() == '[' || line.front() == ' ')
+            continue;
+
+        auto const space = line.find(' ');
+        if (space == std::string::npos)
+            continue;
+
+        std::string const key = line.substr(0, space);
+        std::string const value = line.substr(space + 1);
+        if (value.empty())
+            continue;
+
+        if (key.rfind(with_repo, 0) != 0 && key.rfind(bare, 0) != 0)
+            continue;
+
+        std::error_code ec;
+        if (fs::is_regular_file(value, ec))
+            found.emplace_back(value);
+    }
+
     return found;
-
-  std::ifstream in(manifest);
-  if (!in)
-    return found;
-
-  // Manifest keys use forward slashes and may or may not carry the repo name.
-  std::string const with_repo = "_main/" + relpath + "/";
-  std::string const bare = relpath + "/";
-
-  std::string line;
-  while (std::getline(in, line))
-  {
-    if (line.empty() || line.front() == '[' || line.front() == ' ')
-      continue;
-
-    auto const space = line.find(' ');
-    if (space == std::string::npos)
-      continue;
-
-    std::string const key = line.substr(0, space);
-    std::string const value = line.substr(space + 1);
-    if (value.empty())
-      continue;
-
-    if (key.rfind(with_repo, 0) != 0 && key.rfind(bare, 0) != 0)
-      continue;
-
-    std::error_code ec;
-    if (fs::is_regular_file(value, ec))
-      found.emplace_back(value);
-  }
-
-  return found;
 }
 
 /// Every file under `arg`, whether it names a runfiles directory, a plain
 /// directory, or a single file.
 auto corpus_files(std::string const & arg) -> std::vector<fs::path>
 {
-  std::vector<fs::path> found = files_from_tree(arg);
-  if (!found.empty())
+    std::vector<fs::path> found = files_from_tree(arg);
+    if (!found.empty())
+        return found;
+
+    found = files_from_manifest(arg);
+    if (!found.empty())
+        return found;
+
+    // Direct invocation from a shell, where the path is simply on disk.
+    std::error_code ec;
+    if (fs::is_directory(arg, ec))
+    {
+        for (auto const & entry : fs::recursive_directory_iterator(arg, ec))
+            if (entry.is_regular_file())
+                found.push_back(entry.path());
+    }
+    else if (fs::is_regular_file(arg, ec))
+    {
+        found.emplace_back(arg);
+    }
+
     return found;
-
-  found = files_from_manifest(arg);
-  if (!found.empty())
-    return found;
-
-  // Direct invocation from a shell, where the path is simply on disk.
-  std::error_code ec;
-  if (fs::is_directory(arg, ec))
-  {
-    for (auto const & entry : fs::recursive_directory_iterator(arg, ec))
-      if (entry.is_regular_file())
-        found.push_back(entry.path());
-  }
-  else if (fs::is_regular_file(arg, ec))
-  {
-    found.emplace_back(arg);
-  }
-
-  return found;
 }
 
 auto run_one(fs::path const & path) -> bool
 {
-  std::ifstream in(path, std::ios::binary);
-  if (!in)
-  {
-    std::fprintf(stderr, "cannot open %s\n", path.string().c_str());
-    return false;
-  }
+    std::ifstream in(path, std::ios::binary);
+    if (!in)
+    {
+        std::fprintf(stderr, "cannot open %s\n", path.string().c_str());
+        return false;
+    }
 
-  std::vector<uint8_t> const bytes(
-    (std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    std::vector<uint8_t> const bytes(
+        (std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 
-  LLVMFuzzerTestOneInput(bytes.data(), bytes.size());
-  return true;
+    LLVMFuzzerTestOneInput(bytes.data(), bytes.size());
+    return true;
 }
 
 }  // namespace
 
 auto main(int argc, char ** argv) -> int
 {
-  // libFuzzer calls this before the first input; the replay driver must too,
-  // or harnesses relying on it (e.g. InitializeStaticMemory) run unconfigured.
-  LLVMFuzzerInitialize(&argc, &argv);
+    // libFuzzer calls this before the first input; the replay driver must too,
+    // or harnesses relying on it (e.g. InitializeStaticMemory) run unconfigured.
+    LLVMFuzzerInitialize(&argc, &argv);
 
-  // Degenerate inputs every harness must survive, independent of the corpus.
-  uint8_t const zero[32] = {0};
-  uint8_t const ones[32] = {
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  LLVMFuzzerTestOneInput(nullptr, 0);
-  LLVMFuzzerTestOneInput(zero, sizeof(zero));
-  LLVMFuzzerTestOneInput(ones, sizeof(ones));
+    // Degenerate inputs every harness must survive, independent of the corpus.
+    uint8_t const zero[32] = {0};
+    uint8_t const ones[32] = {
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    LLVMFuzzerTestOneInput(nullptr, 0);
+    LLVMFuzzerTestOneInput(zero, sizeof(zero));
+    LLVMFuzzerTestOneInput(ones, sizeof(ones));
 
-  int files = 0;
-  bool ok = true;
+    int files = 0;
+    bool ok = true;
 
-  for (int i = 1; i < argc; i++)
-  {
-    std::vector<fs::path> const found = corpus_files(argv[i]);
-
-    if (found.empty())
+    for (int i = 1; i < argc; i++)
     {
-      std::fprintf(stderr, "no corpus files under: %s\n", argv[i]);
-      ok = false;
-      continue;
+        std::vector<fs::path> const found = corpus_files(argv[i]);
+
+        if (found.empty())
+        {
+            std::fprintf(stderr, "no corpus files under: %s\n", argv[i]);
+            ok = false;
+            continue;
+        }
+
+        for (fs::path const & path : found)
+        {
+            ok = run_one(path) && ok;
+            files++;
+        }
     }
 
-    for (fs::path const & path : found)
+    // A corpus that silently resolves to nothing would make this test vacuous.
+    if (argc > 1 && files == 0)
     {
-      ok = run_one(path) && ok;
-      files++;
+        std::fprintf(stderr, "corpus resolved to 0 files\n");
+        return 1;
     }
-  }
 
-  // A corpus that silently resolves to nothing would make this test vacuous.
-  if (argc > 1 && files == 0)
-  {
-    std::fprintf(stderr, "corpus resolved to 0 files\n");
-    return 1;
-  }
-
-  std::printf("replayed %d corpus file(s)\n", files);
-  return ok ? 0 : 1;
+    std::printf("replayed %d corpus file(s)\n", files);
+    return ok ? 0 : 1;
 }

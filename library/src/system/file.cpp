@@ -12,34 +12,34 @@
 
 dds::File::~File()
 {
-  Close();
+    Close();
 }
 
 void dds::File::Reset()
 {
-  Close();
-  fname_.clear();
+    Close();
+    fname_.clear();
 }
 
 void dds::File::SetName(const std::string& fname_in)
 {
-  if (fname_in == fname_)
-    return;
+    if (fname_in == fname_)
+        return;
 
-  Close();
-  fname_ = fname_in;
+    Close();
+    fname_ = fname_in;
 }
 
 std::ofstream& dds::File::GetStream()
 {
-  if (!fout_.is_open() && !fname_.empty())
-    fout_.open(fname_);
+    if (!fout_.is_open() && !fname_.empty())
+        fout_.open(fname_);
 
-  return fout_;
+    return fout_;
 }
 
 void dds::File::Close()
 {
-  if (fout_.is_open())
-    fout_.close();
+    if (fout_.is_open())
+        fout_.close();
 }

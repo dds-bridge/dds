@@ -17,208 +17,208 @@ auto is_compass_letter(const char c) -> bool;
 
 
 auto convert_from_pbn(
-  char const * dealBuff,
-  unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int
+    char const * dealBuff,
+    unsigned int remainCards[DDS_HANDS][DDS_SUITS]) -> int
 {
-  if (remainCards == nullptr)
-    return 0;
+    if (remainCards == nullptr)
+        return 0;
 
-  for (int h = 0; h < DDS_HANDS; h++)
-    for (int s = 0; s < DDS_SUITS; s++)
-      remainCards[h][s] = 0;
+    for (int h = 0; h < DDS_HANDS; h++)
+        for (int s = 0; s < DDS_SUITS; s++)
+            remainCards[h][s] = 0;
 
-  if (dealBuff == nullptr)
-    return 0;
+    if (dealBuff == nullptr)
+        return 0;
 
-  int bp = 0;
-  while ((bp < 3) && (dealBuff[bp] != '\0') && !is_compass_letter(dealBuff[bp]))
+    int bp = 0;
+    while ((bp < 3) && (dealBuff[bp] != '\0') && !is_compass_letter(dealBuff[bp]))
+        bp++;
+
+    if ((bp >= 3) || (dealBuff[bp] == '\0') || (dealBuff[bp + 1] != ':'))
+        return 0;
+
+    int first;
+    if ((dealBuff[bp] == 'N') || (dealBuff[bp] == 'n'))
+        first = 0;
+    else if ((dealBuff[bp] == 'E') || (dealBuff[bp] == 'e'))
+        first = 1;
+    else if ((dealBuff[bp] == 'S') || (dealBuff[bp] == 's'))
+        first = 2;
+    else
+        first = 3;
+
+    bp++;
     bp++;
 
-  if ((bp >= 3) || (dealBuff[bp] == '\0') || (dealBuff[bp + 1] != ':'))
-    return 0;
+    int hand_rel_first = 0;
+    int suitInHand = 0;
+    int card, hand;
 
-  int first;
-  if ((dealBuff[bp] == 'N') || (dealBuff[bp] == 'n'))
-    first = 0;
-  else if ((dealBuff[bp] == 'E') || (dealBuff[bp] == 'e'))
-    first = 1;
-  else if ((dealBuff[bp] == 'S') || (dealBuff[bp] == 's'))
-    first = 2;
-  else
-    first = 3;
-
-  bp++;
-  bp++;
-
-  int hand_rel_first = 0;
-  int suitInHand = 0;
-  int card, hand;
-
-  while ((bp < PbnBufferSize) && (dealBuff[bp] != '\0'))
-  {
-    card = is_card(dealBuff[bp]);
-    if (card)
+    while ((bp < PbnBufferSize) && (dealBuff[bp] != '\0'))
     {
-      if (hand_rel_first >= DDS_HANDS || suitInHand >= DDS_SUITS)
-        return 0;
+        card = is_card(dealBuff[bp]);
+        if (card)
+        {
+            if (hand_rel_first >= DDS_HANDS || suitInHand >= DDS_SUITS)
+                return 0;
 
-      switch (first)
-      {
-        case 0:
-          hand = hand_rel_first;
-          break;
-        case 1:
-          if (hand_rel_first == 0)
-            hand = 1;
-          else if (hand_rel_first == 3)
-            hand = 0;
-          else
-            hand = hand_rel_first + 1;
-          break;
-        case 2:
-          if (hand_rel_first == 0)
-            hand = 2;
-          else if (hand_rel_first == 1)
-            hand = 3;
-          else
-            hand = hand_rel_first - 2;
-          break;
-        default:
-          if (hand_rel_first == 0)
-            hand = 3;
-          else
-            hand = hand_rel_first - 1;
-      }
+            switch (first)
+            {
+                case 0:
+                    hand = hand_rel_first;
+                    break;
+                case 1:
+                    if (hand_rel_first == 0)
+                        hand = 1;
+                    else if (hand_rel_first == 3)
+                        hand = 0;
+                    else
+                        hand = hand_rel_first + 1;
+                    break;
+                case 2:
+                    if (hand_rel_first == 0)
+                        hand = 2;
+                    else if (hand_rel_first == 1)
+                        hand = 3;
+                    else
+                        hand = hand_rel_first - 2;
+                    break;
+                default:
+                    if (hand_rel_first == 0)
+                        hand = 3;
+                    else
+                        hand = hand_rel_first - 1;
+            }
 
-      if (hand < 0 || hand >= DDS_HANDS)
-        return 0;
+            if (hand < 0 || hand >= DDS_HANDS)
+                return 0;
 
-      remainCards[hand][suitInHand] |=
-        static_cast<unsigned>((bit_map_rank[card] << 2));
+            remainCards[hand][suitInHand] |=
+                static_cast<unsigned>((bit_map_rank[card] << 2));
 
+        }
+        else if (dealBuff[bp] == '.')
+        {
+            if (suitInHand >= DDS_SUITS - 1)
+                return 0;
+            suitInHand++;
+        }
+        else if (dealBuff[bp] == ' ')
+        {
+            if (hand_rel_first >= DDS_HANDS - 1)
+                return 0;
+            hand_rel_first++;
+            suitInHand = 0;
+        }
+        else if (is_compass_letter(dealBuff[bp]))
+            return 0;
+        bp++;
     }
-    else if (dealBuff[bp] == '.')
-    {
-      if (suitInHand >= DDS_SUITS - 1)
+
+    if (bp >= PbnBufferSize)
         return 0;
-      suitInHand++;
-    }
-    else if (dealBuff[bp] == ' ')
-    {
-      if (hand_rel_first >= DDS_HANDS - 1)
+
+    if (hand_rel_first != DDS_HANDS - 1)
         return 0;
-      hand_rel_first++;
-      suitInHand = 0;
-    }
-    else if (is_compass_letter(dealBuff[bp]))
-      return 0;
-    bp++;
-  }
 
-  if (bp >= PbnBufferSize)
-    return 0;
-
-  if (hand_rel_first != DDS_HANDS - 1)
-    return 0;
-
-  return RETURN_NO_FAULT;
+    return RETURN_NO_FAULT;
 }
 
 
 auto is_compass_letter(const char c) -> bool
 {
-  switch (c)
-  {
-    case 'N':
-    case 'n':
-    case 'E':
-    case 'e':
-    case 'S':
-    case 's':
-    case 'W':
-    case 'w':
-      return true;
-    default:
-      return false;
-  }
+    switch (c)
+    {
+        case 'N':
+        case 'n':
+        case 'E':
+        case 'e':
+        case 'S':
+        case 's':
+        case 'W':
+        case 'w':
+            return true;
+        default:
+            return false;
+    }
 }
 
 
 auto is_card(const char cardChar) -> int
 {
-  switch (cardChar)
-  {
-    case '2':
-      return 2;
-    case '3':
-      return 3;
-    case '4':
-      return 4;
-    case '5':
-      return 5;
-    case '6':
-      return 6;
-    case '7':
-      return 7;
-    case '8':
-      return 8;
-    case '9':
-      return 9;
-    case 'T':
-    case 't':
-      return 10;
-    case 'J':
-    case 'j':
-      return 11;
-    case 'Q':
-    case 'q':
-      return 12;
-    case 'K':
-    case 'k':
-      return 13;
-    case 'A':
-    case 'a':
-      return 14;
-    default:
-      return 0;
-  }
+    switch (cardChar)
+    {
+        case '2':
+            return 2;
+        case '3':
+            return 3;
+        case '4':
+            return 4;
+        case '5':
+            return 5;
+        case '6':
+            return 6;
+        case '7':
+            return 7;
+        case '8':
+            return 8;
+        case '9':
+            return 9;
+        case 'T':
+        case 't':
+            return 10;
+        case 'J':
+        case 'j':
+            return 11;
+        case 'Q':
+        case 'q':
+            return 12;
+        case 'K':
+        case 'k':
+            return 13;
+        case 'A':
+        case 'a':
+            return 14;
+        default:
+            return 0;
+    }
 }
 
 
 auto convert_play_from_pbn(
-  const PlayTracePBN& playPBN,
-  PlayTraceBin& playBin) -> int
+    const PlayTracePBN& playPBN,
+    PlayTraceBin& playBin) -> int
 {
-  const int n = playPBN.number;
+    const int n = playPBN.number;
 
-  if (n < 0 || n > 52)
-    return RETURN_PLAY_FAULT;
+    if (n < 0 || n > 52)
+        return RETURN_PLAY_FAULT;
 
-  playBin.number = n;
+    playBin.number = n;
 
-  for (int i = 0; i < 2 * n; i += 2)
-  {
-    char suit = playPBN.cards[i];
-    int s;
+    for (int i = 0; i < 2 * n; i += 2)
+    {
+        char suit = playPBN.cards[i];
+        int s;
 
-    if (suit == 's' || suit == 'S')
-      s = 0;
-    else if (suit == 'h' || suit == 'H')
-      s = 1;
-    else if (suit == 'd' || suit == 'D')
-      s = 2;
-    else if (suit == 'c' || suit == 'C')
-      s = 3;
-    else
-      return RETURN_PLAY_FAULT;
-    playBin.suit[i >> 1] = s;
+        if (suit == 's' || suit == 'S')
+            s = 0;
+        else if (suit == 'h' || suit == 'H')
+            s = 1;
+        else if (suit == 'd' || suit == 'D')
+            s = 2;
+        else if (suit == 'c' || suit == 'C')
+            s = 3;
+        else
+            return RETURN_PLAY_FAULT;
+        playBin.suit[i >> 1] = s;
 
-    int rank = is_card(playPBN.cards[i+1]);
-    if (rank == 0)
-      return RETURN_PLAY_FAULT;
+        int rank = is_card(playPBN.cards[i+1]);
+        if (rank == 0)
+            return RETURN_PLAY_FAULT;
 
-    playBin.rank[i >> 1] = rank;
-  }
-  return RETURN_NO_FAULT;
+        playBin.rank[i >> 1] = rank;
+    }
+    return RETURN_NO_FAULT;
 }
 

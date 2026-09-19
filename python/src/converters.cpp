@@ -243,7 +243,7 @@ auto future_tricks_to_dict(const FutureTricks& future_tricks) -> py::dict
     py::dict result;
     result["nodes"] = future_tricks.nodes;
     result["cards"] = future_tricks.cards;
-    
+
     // Convert arrays to tuples using loops for maintainability
     py::tuple suit(13);
     py::tuple rank(13);
