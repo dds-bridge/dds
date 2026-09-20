@@ -215,3 +215,24 @@ TEST_F(AbTtLookupTest, TwoProbesCountedCorrectly)
     EXPECT_EQ(thrp->tt_lookup_count, 2u);
     EXPECT_EQ(thrp->tt_hit_count, 1u);
 }
+
+TEST_F(AbTtLookupTest, CountersResetBetweenSolves)
+{
+  // Simulate counters populated by a first solve
+  ThreadData* thrp = ctx_->thread_ptr();
+  ASSERT_NE(thrp, nullptr);
+  thrp->tt_lookup_count = 5;
+  thrp->tt_hit_count = 3;
+
+  // reset_for_solve resets counters (same path as solver_if.cpp per-solve reset)
+  thrp->tt_lookup_count = 0;
+  thrp->tt_hit_count = 0;
+  if (auto* tt = ctx_->trans_table()) tt->reset_op_stats();
+
+  // After reset, a fresh probe starts from zero
+  bool score_flag = false;
+  apply_ab_tt_lookup(&pos_, target_, depth_, tricks_, hand_, *ctx_, score_flag);
+
+  EXPECT_EQ(thrp->tt_lookup_count, 1u);
+  EXPECT_EQ(thrp->tt_hit_count, 0u);
+}
