@@ -23,6 +23,7 @@ auto sequence_to_bounded_int_vector(
     const std::string& field_name) -> std::vector<int>;
 
 auto dict_to_deal(const pybind11::dict& deal_input) -> Deal;
+auto deal_to_dict(const Deal& deal) -> pybind11::dict;
 auto pbn_to_deal(
     const std::string& remain_cards,
     int trump,
