@@ -3,6 +3,22 @@ load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 load("@rules_python//python:packaging.bzl", "py_wheel", "py_wheel_dist")
 
+# The Deal-facing converters, exposed as sources rather than as a cc_library
+# on purpose. pybind_extension compiles its own srcs with -fvisibility=hidden
+# (pybind11_bazel build_defs.bzl); a cc_library dependency would not inherit
+# that, so dds3_python's symbols would become exported from every extension
+# .so that linked it and could interpose on each other at load time. Listing
+# the sources keeps each extension compiling its own hidden-visibility copy.
+# Public so an extension outside this repository can reuse them the same way.
+filegroup(
+    name = "converters_srcs",
+    srcs = [
+        "src/converters.cpp",
+        "src/converters.hpp",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 pybind_extension(
     name = "_dds3",
     srcs = [
