@@ -31,6 +31,19 @@ bazel_dep(name = "toolchains_llvm", version = "1.8.0")
 # Xcode CC toolchain for macOS AddressSanitizer builds (--config=asan). LLVM's ASAN
 # runtime hangs on current macOS; see .bazelrc build:asan_macos.
 bazel_dep(name = "apple_support", version = "1.24.2")
+# Xcode 27 libc++ warns for -mmacosx-version-min < 11.0 when building
+# apple_support's wrapped_clang/libtool; 1.24.2 also has a dead nodiscard
+# hasher(file) in libtool.cc. Drop these overrides when bumping past upstream
+# fixes (min-OS bump is in apple_support >= 2.8.4).
+single_version_override(
+    module_name = "apple_support",
+    version = "1.24.2",
+    patches = [
+        "//:patches/apple_support_macos_min_11.patch",
+        "//:patches/apple_support_libtool_nodiscard.patch",
+    ],
+    patch_strip = 1,
+)
 
 # WASM builds (//wasm:*, //web:dds_web_wasm). If you bump this version,
 # rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_web_wasm.py.

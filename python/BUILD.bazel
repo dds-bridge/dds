@@ -90,6 +90,18 @@ py_test(
     ],
 )
 
+# Guard: apple_support crosstool patch keeps macOS ASAN free of Xcode 27
+# libc++ -W#warnings / libtool nodiscard noise.
+py_test(
+    name = "ci_macos_asan_test",
+    size = "small",
+    main = "tests/ci_macos_asan_test.py",
+    srcs = ["tests/ci_macos_asan_test.py"],
+    data = [
+        "//:macos_asan_ci_config_files",
+    ],
+)
+
 # Guard: WASM CI clears .bazelrc's -e2e filter so Playwright e2e tests run.
 py_test(
     name = "ci_wasm_e2e_test",
