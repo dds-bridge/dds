@@ -1,0 +1,12 @@
+--- a/crosstool/libtool.cc
++++ b/crosstool/libtool.cc
+@@ -250,9 +250,6 @@
+   for (auto file : files) {
+     std::filesystem::path path = file;
+ 
+-    std::hash<std::string> hasher;
+-    hasher(file);
+-
+     std::string new_basename = path.stem();
+     new_basename.append("_");
+     new_basename.append(hash(file));

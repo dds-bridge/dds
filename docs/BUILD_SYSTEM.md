@@ -96,6 +96,11 @@ stay on the same **clang major** version (currently **21**):
 `apple_support` (`build:asan_macos`). LLVM's bundled ASAN runtime hangs at
 startup; mixing LLVM-instrumented objects with Xcode's ASAN dylib aborts with
 a version mismatch. Using Xcode for the full compile/link avoids that.
+`MODULE.bazel` patches `apple_support` 1.24.2 so its crosstool helpers build
+with `-mmacosx-version-min=11.0` (Xcode 27's libc++ warns below that) and
+without a dead `hasher(file)` nodiscard call in `libtool.cc`. Drop the patches
+when bumping to a release that includes those fixes (`>= 2.8.4` for the min-OS
+change).
 
 **TSAN (`--config=tsan`).** Code is still compiled with the hermetic LLVM
 toolchain; only the **runtime** comes from Xcode's `compiler-rt`. LLVM's TSAN

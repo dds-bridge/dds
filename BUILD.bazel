@@ -85,6 +85,8 @@ exports_files(
         ".bazelrc",
         "CPPVARIABLES.bzl",
         "MODULE.bazel",
+        "patches/apple_support_libtool_nodiscard.patch",
+        "patches/apple_support_macos_min_11.patch",
         "patches/rules_cc_msvc_default_cpp_std_cxx20.patch",
     ],
     visibility = ["//python:__pkg__"],
@@ -107,6 +109,16 @@ filegroup(
     srcs = [
         ".bazelrc",
         "MODULE.bazel",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+
+filegroup(
+    name = "macos_asan_ci_config_files",
+    srcs = [
+        "MODULE.bazel",
+        "patches/apple_support_libtool_nodiscard.patch",
+        "patches/apple_support_macos_min_11.patch",
     ],
     visibility = ["//python:__pkg__"],
 )
