@@ -17,9 +17,10 @@
 "use strict";
 
 (function (global) {
-    const DIRECTIONS = ["north", "east", "south", "west"];
+    // Shared with dds_web_deal_import.js (loaded first); keep a single definition.
+    const DIRECTIONS = global.DIRECTIONS;
     const SUITS = ["spades", "hearts", "diamonds", "clubs"];
-    const PIPS = "AKQJT98765432";
+    const PIPS = global.PIPS;
     const DENOMINATIONS = ["C", "D", "H", "S", "N"];
 
     // DDS res_table strain index (S,H,D,C,N) to DDS Web table column key.

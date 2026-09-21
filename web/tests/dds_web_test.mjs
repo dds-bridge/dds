@@ -42,22 +42,6 @@ function findWebJsPath(fileName, envKey) {
     throw new Error(`${fileName} not found`);
 }
 
-function findDdsWebJsPath() {
-    return findWebJsPath("dds_web.js", "DDS_WEB_JS");
-}
-
-function findDdsWebDealImportJsPath() {
-    return findWebJsPath("dds_web_deal_import.js", "DDS_WEB_DEAL_IMPORT_JS");
-}
-
-function findDdsWebCoreJsPath() {
-    return findWebJsPath("dds_web_core.js", "DDS_WEB_CORE_JS");
-}
-
-function findDdsWebSolveJsPath() {
-    return findWebJsPath("dds_web_solve.js", "DDS_WEB_SOLVE_JS");
-}
-
 /** Reject if `promise` does not settle within `ms` (clears the timer either way). */
 function withTimeout(promise, ms, message) {
     let timer;
@@ -242,50 +226,30 @@ function createMockDocument(initialValues = {}) {
     return documentRef;
 }
 
-function loadDealImport(extras = {}) {
-    const code = readFileSync(findDdsWebDealImportJsPath(), "utf8");
-    const sandbox = {
-        console,
-        Promise,
-        Error,
-        ...extras,
-    };
-    const context = createContext(sandbox);
-    runInContext(code, context, { filename: "dds_web_deal_import.js" });
-    return context;
-}
-
-function loadDdsWebCore(extras = {}) {
-    const code = readFileSync(findDdsWebCoreJsPath(), "utf8");
-    const sandbox = {
-        console,
-        Promise,
-        Error,
-        ...extras,
-    };
-    const context = createContext(sandbox);
-    runInContext(code, context, { filename: "dds_web_core.js" });
-    return context;
-}
-
 function runDdsWebScripts(context) {
     runInContext(
-        readFileSync(findDdsWebDealImportJsPath(), "utf8"),
+        readFileSync(
+            findWebJsPath("dds_web_deal_import.js", "DDS_WEB_DEAL_IMPORT_JS"),
+            "utf8"
+        ),
         context,
         { filename: "dds_web_deal_import.js" }
     );
     runInContext(
-        readFileSync(findDdsWebCoreJsPath(), "utf8"),
+        readFileSync(findWebJsPath("dds_web_core.js", "DDS_WEB_CORE_JS"), "utf8"),
         context,
         { filename: "dds_web_core.js" }
     );
     runInContext(
-        readFileSync(findDdsWebSolveJsPath(), "utf8"),
+        readFileSync(
+            findWebJsPath("dds_web_solve.js", "DDS_WEB_SOLVE_JS"),
+            "utf8"
+        ),
         context,
         { filename: "dds_web_solve.js" }
     );
     runInContext(
-        readFileSync(findDdsWebJsPath(), "utf8"),
+        readFileSync(findWebJsPath("dds_web.js", "DDS_WEB_JS"), "utf8"),
         context,
         { filename: "dds_web.js" }
     );
@@ -3807,21 +3771,39 @@ const DLM_BOARD_01 =
 const LIN_DEAL =
     "pn|a,b,c,d|st||md|3S27AH3489TD5JC45J,S358QKH56D4KAC3QK,S4JH2JQD2678TC678,|rh||ah|Board 1|sv|o|";
 
-test("dds_web_deal_import.js exports parseFirstDealFromText without dds_web.js", () => {
-    // Arrange / Act: load only the deal-import script.
-    const ctx = loadDealImport();
+test("runDdsWebScripts exposes parseFirstDealFromText", () => {
+    // Arrange / Act: same classic-script order as the deployed page.
+    const sandbox = {
+        document: createMockDocument(),
+        console,
+        Promise,
+        Error,
+        setTimeout,
+        clearTimeout,
+    };
+    const ctx = createContext(sandbox);
+    runDdsWebScripts(ctx);
     const deal = ctx.parseFirstDealFromText(`[Deal "${EVERYONE_3N_PBN}"]`);
 
-    // Assert: module is self-contained for file-format parsing.
+    // Assert: deal-import API is available after the full load sequence.
     assert.equal(deal.north, "QT9.A8765432.KJ.");
     assert.equal(deal.east, "KJ..A8765432.QT9");
     assert.equal(deal.south, "A8765432.QT9..KJ");
     assert.equal(deal.west, ".KJ.QT9.A8765432");
 });
 
-test("dds_web_core.js exports Card and handsToPbn without UI or solve", () => {
-    // Arrange / Act: load only the deal-model script.
-    const ctx = loadDdsWebCore();
+test("runDdsWebScripts exposes Card and handsToPbn", () => {
+    // Arrange / Act: same classic-script order as the deployed page.
+    const sandbox = {
+        document: createMockDocument(),
+        console,
+        Promise,
+        Error,
+        setTimeout,
+        clearTimeout,
+    };
+    const ctx = createContext(sandbox);
+    runDdsWebScripts(ctx);
     const card = new ctx.Card("hearts", "K");
     const pbn = ctx.handsToPbn({
         north: cardsFromKeys(ctx, ["SA", "SK", "SQ", "SJ", "ST", "S9", "S8", "S7", "S6", "S5", "S4", "S3", "S2"]),
@@ -3830,7 +3812,7 @@ test("dds_web_core.js exports Card and handsToPbn without UI or solve", () => {
         west: cardsFromKeys(ctx, ["CA", "CK", "CQ", "CJ", "CT", "C9", "C8", "C7", "C6", "C5", "C4", "C3", "C2"]),
     });
 
-    // Assert: each hand is a solid suit (dotted voids for the other three).
+    // Assert: deal-model API is available after the full load sequence.
     assert.equal(card.key(), "HK");
     assert.equal(
         pbn,
