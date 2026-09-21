@@ -19,6 +19,34 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# Test-only pybind module giving the Deal converters a direct caller.
+# deal_to_dict has no caller in dds3 -- it exists for extensions built
+# outside this repository -- so without this nothing in the test suite could
+# reach it. It takes the converters through :converters_srcs rather than by
+# naming the sources, so tests/test_converters.py also exercises the reuse
+# path that filegroup exists to provide.
+pybind_extension(
+    name = "_converters_fixture",
+    testonly = True,
+    srcs = [
+        "src/converters_fixture.cpp",
+        ":converters_srcs",
+    ],
+    copts = DDS_CPPOPTS,
+    deps = [
+        "//library/src:dds",
+    ],
+)
+
+py_test(
+    name = "converters_test",
+    size = "small",
+    main = "tests/test_converters.py",
+    srcs = ["tests/test_converters.py"],
+    data = [":_converters_fixture"],
+    imports = ["."],
+)
+
 pybind_extension(
     name = "_dds3",
     srcs = [
