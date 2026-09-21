@@ -8,7 +8,7 @@
 // Loaded before dds_web.js; exports parseFirstDealFromText on globalThis.
 
 /* eslint-env es6 */
-/* exported parseFirstDealFromText */
+/* exported DIRECTIONS PIPS parseFirstDealFromText */
 
 "use strict";
 
@@ -353,5 +353,7 @@
         );
     }
 
+    global.DIRECTIONS = DIRECTIONS;
+    global.PIPS = PIPS;
     global.parseFirstDealFromText = parseFirstDealFromText;
 })(typeof globalThis !== "undefined" ? globalThis : this);
