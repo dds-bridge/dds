@@ -123,6 +123,38 @@ auto dict_to_deal(const py::dict& deal_input) -> Deal
     return deal;
 }
 
+// The reverse of dict_to_deal, to the same dict shape docs/python_interface.md
+// documents -- so dict_to_deal(deal_to_dict(d)) round-trips for any Deal a
+// caller can legitimately hold, and deal_to_dict(dict_to_deal(dict)) does
+// too for any dict dict_to_deal accepts.
+auto deal_to_dict(const Deal& deal) -> py::dict
+{
+    py::dict result;
+    result["trump"] = deal.trump;
+    result["first"] = deal.first;
+
+    py::tuple trick_suit(3);
+    py::tuple trick_rank(3);
+    for (int i = 0; i < 3; ++i) {
+        trick_suit[i] = deal.currentTrickSuit[i];
+        trick_rank[i] = deal.currentTrickRank[i];
+    }
+    result["current_trick_suit"] = trick_suit;
+    result["current_trick_rank"] = trick_rank;
+
+    py::list remain_cards;
+    for (int hand = 0; hand < DDS_HANDS; ++hand) {
+        py::list row;
+        for (int suit = 0; suit < DDS_SUITS; ++suit) {
+            row.append(static_cast<int>(deal.remainCards[hand][suit]));
+        }
+        remain_cards.append(row);
+    }
+    result["remain_cards"] = remain_cards;
+
+    return result;
+}
+
 auto pbn_to_deal(
     const std::string& remain_cards,
     const int trump,
