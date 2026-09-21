@@ -1,0 +1,32 @@
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("@rules_python//python:defs.bzl", "py_test")
+
+# A deliberate stand-in for an extension built outside this repository: its
+# own package, reaching //python's converters only through the two public
+# targets that exist for that purpose. Nothing here names a file under
+# //python/src, so if either target's visibility is narrowed this package
+# fails to build -- which is the point, since that visibility is the
+# contract //python:converters_srcs was added to provide.
+pybind_extension(
+    name = "_converters_fixture",
+    testonly = True,
+    srcs = [
+        "converters_fixture.cpp",
+        "//python:converters_srcs",
+    ],
+    copts = DDS_CPPOPTS,
+    deps = [
+        "//python:converters_hdrs",
+        "//library/src:dds",
+    ],
+)
+
+py_test(
+    name = "converters_test",
+    size = "small",
+    main = "test_converters.py",
+    srcs = ["test_converters.py"],
+    data = [":_converters_fixture"],
+    imports = ["."],
+)

@@ -1,7 +1,26 @@
 load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 load("@rules_python//python:packaging.bzl", "py_wheel", "py_wheel_dist")
+
+# The header for :converters_srcs, on an include path a consumer outside
+# this package can actually use. The filegroup alone is not enough: an
+# extension elsewhere compiles converters.cpp from it (whose own
+# `#include "converters.hpp"` resolves next to itself, so that is fine), but
+# its own sources have no way to name the header without hardcoding
+# //python's directory layout. Headers only, so nothing is compiled or
+# exported here and the visibility reasoning below is unaffected.
+cc_library(
+    name = "converters_hdrs",
+    hdrs = ["src/converters.hpp"],
+    include_prefix = "dds3",
+    strip_include_prefix = "src",
+    deps = [
+        "//library/src:dds",
+    ],
+    visibility = ["//visibility:public"],
+)
 
 # The Deal-facing converters, exposed as sources rather than as a cc_library
 # on purpose. pybind_extension compiles its own srcs with -fvisibility=hidden
@@ -17,34 +36,6 @@ filegroup(
         "src/converters.hpp",
     ],
     visibility = ["//visibility:public"],
-)
-
-# Test-only pybind module giving the Deal converters a direct caller.
-# deal_to_dict has no caller in dds3 -- it exists for extensions built
-# outside this repository -- so without this nothing in the test suite could
-# reach it. It takes the converters through :converters_srcs rather than by
-# naming the sources, so tests/test_converters.py also exercises the reuse
-# path that filegroup exists to provide.
-pybind_extension(
-    name = "_converters_fixture",
-    testonly = True,
-    srcs = [
-        "src/converters_fixture.cpp",
-        ":converters_srcs",
-    ],
-    copts = DDS_CPPOPTS,
-    deps = [
-        "//library/src:dds",
-    ],
-)
-
-py_test(
-    name = "converters_test",
-    size = "small",
-    main = "tests/test_converters.py",
-    srcs = ["tests/test_converters.py"],
-    data = [":_converters_fixture"],
-    imports = ["."],
 )
 
 pybind_extension(

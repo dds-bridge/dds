@@ -7,14 +7,17 @@
 /// existing test suite could reach it. This module gives the converters a
 /// direct caller, which is what tests/test_converters.py drives.
 ///
-/// It takes converters.{cpp,hpp} through //python:converters_srcs rather
-/// than by naming the sources, so the test is also a working example of the
-/// reuse path that filegroup exists to provide -- if the filegroup stops
-/// being usable from outside its own package, this stops building.
+/// It lives in its own package, and reaches converters.cpp through
+/// //python:converters_srcs and converters.hpp through
+/// //python:converters_hdrs, so it consumes them exactly as an extension in
+/// another repository would: across a package boundary, through the public
+/// targets, with no path into //python's own files. That makes it a test of
+/// the reuse contract and not only of the conversion -- narrow either
+/// target's visibility and this package stops building.
 
 #include <pybind11/pybind11.h>
 
-#include "converters.hpp"
+#include <dds3/converters.hpp>
 
 namespace py = pybind11;
 
