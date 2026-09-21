@@ -1,5 +1,5 @@
 /**
- * Unit tests for web/dds_web.js (Node built-in test runner).
+ * Unit tests for DDS Web JS layers (Node built-in test runner).
  *
  * Run with:
  *    bazelisk test //web:dds_web_js_test
@@ -16,13 +16,13 @@ import { createContext, runInContext } from "node:vm";
 const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 
-function findDdsWebJsPath() {
-    if (process.env.DDS_WEB_JS && existsSync(process.env.DDS_WEB_JS)) {
-        return process.env.DDS_WEB_JS;
+function findWebJsPath(fileName, envKey) {
+    if (process.env[envKey] && existsSync(process.env[envKey])) {
+        return process.env[envKey];
     }
 
     const here = dirname(fileURLToPath(import.meta.url));
-    const adjacent = join(here, "..", "dds_web.js");
+    const adjacent = join(here, "..", fileName);
     if (existsSync(adjacent)) {
         return adjacent;
     }
@@ -31,7 +31,7 @@ function findDdsWebJsPath() {
         if (!base) {
             continue;
         }
-        for (const sub of ["web/dds_web.js", "_main/web/dds_web.js"]) {
+        for (const sub of [`web/${fileName}`, `_main/web/${fileName}`]) {
             const candidate = join(base, sub);
             if (existsSync(candidate)) {
                 return candidate;
@@ -39,7 +39,23 @@ function findDdsWebJsPath() {
         }
     }
 
-    throw new Error("dds_web.js not found");
+    throw new Error(`${fileName} not found`);
+}
+
+function findDdsWebJsPath() {
+    return findWebJsPath("dds_web.js", "DDS_WEB_JS");
+}
+
+function findDdsWebDealImportJsPath() {
+    return findWebJsPath("dds_web_deal_import.js", "DDS_WEB_DEAL_IMPORT_JS");
+}
+
+function findDdsWebCoreJsPath() {
+    return findWebJsPath("dds_web_core.js", "DDS_WEB_CORE_JS");
+}
+
+function findDdsWebSolveJsPath() {
+    return findWebJsPath("dds_web_solve.js", "DDS_WEB_SOLVE_JS");
 }
 
 /** Reject if `promise` does not settle within `ms` (clears the timer either way). */
@@ -226,8 +242,56 @@ function createMockDocument(initialValues = {}) {
     return documentRef;
 }
 
+function loadDealImport(extras = {}) {
+    const code = readFileSync(findDdsWebDealImportJsPath(), "utf8");
+    const sandbox = {
+        console,
+        Promise,
+        Error,
+        ...extras,
+    };
+    const context = createContext(sandbox);
+    runInContext(code, context, { filename: "dds_web_deal_import.js" });
+    return context;
+}
+
+function loadDdsWebCore(extras = {}) {
+    const code = readFileSync(findDdsWebCoreJsPath(), "utf8");
+    const sandbox = {
+        console,
+        Promise,
+        Error,
+        ...extras,
+    };
+    const context = createContext(sandbox);
+    runInContext(code, context, { filename: "dds_web_core.js" });
+    return context;
+}
+
+function runDdsWebScripts(context) {
+    runInContext(
+        readFileSync(findDdsWebDealImportJsPath(), "utf8"),
+        context,
+        { filename: "dds_web_deal_import.js" }
+    );
+    runInContext(
+        readFileSync(findDdsWebCoreJsPath(), "utf8"),
+        context,
+        { filename: "dds_web_core.js" }
+    );
+    runInContext(
+        readFileSync(findDdsWebSolveJsPath(), "utf8"),
+        context,
+        { filename: "dds_web_solve.js" }
+    );
+    runInContext(
+        readFileSync(findDdsWebJsPath(), "utf8"),
+        context,
+        { filename: "dds_web.js" }
+    );
+}
+
 function loadDdsWeb(document, extras = {}) {
-    const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document,
         console,
@@ -246,7 +310,7 @@ function loadDdsWeb(document, extras = {}) {
         ...extras,
     };
     const context = createContext(sandbox);
-    runInContext(code, context, { filename: "dds_web.js" });
+    runDdsWebScripts(context);
     // Existing tests expect hand edits to schedule immediately; debounce is
     // covered by dedicated tests that opt into a non-zero delay.
     if (typeof context.setDealSolveDebounceMs === "function") {
@@ -995,7 +1059,6 @@ test("loadDdsModule rejects missing wasm globals", async () => {
 
 test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () => {
     // Arrange: browser opened as a local file (origin null).
-    const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document: createMockDocument(),
         console,
@@ -1005,7 +1068,7 @@ test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () =
         location: { protocol: "file:" },
     };
     const context = createContext(sandbox);
-    runInContext(code, context, { filename: "dds_web.js" });
+    runDdsWebScripts(context);
 
     // Act / Assert
     assert.match(
@@ -1016,7 +1079,6 @@ test("wasmSolveEnvironmentError explains file:// cannot load WASM workers", () =
 
 test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () => {
     // Arrange: HTTPS page without cross-origin isolation (no SAB).
-    const code = readFileSync(findDdsWebJsPath(), "utf8");
     const sandbox = {
         document: createMockDocument(),
         console,
@@ -1027,7 +1089,7 @@ test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () 
         SharedArrayBuffer: undefined,
     };
     const context = createContext(sandbox);
-    runInContext(code, context, { filename: "dds_web.js" });
+    runDdsWebScripts(context);
 
     // Act
     const message = context.wasmSolveEnvironmentError();
@@ -3744,6 +3806,39 @@ const DLM_BOARD_01 =
     "Board 01=fnbkmmincldklcfcofoiefnapm018";
 const LIN_DEAL =
     "pn|a,b,c,d|st||md|3S27AH3489TD5JC45J,S358QKH56D4KAC3QK,S4JH2JQD2678TC678,|rh||ah|Board 1|sv|o|";
+
+test("dds_web_deal_import.js exports parseFirstDealFromText without dds_web.js", () => {
+    // Arrange / Act: load only the deal-import script.
+    const ctx = loadDealImport();
+    const deal = ctx.parseFirstDealFromText(`[Deal "${EVERYONE_3N_PBN}"]`);
+
+    // Assert: module is self-contained for file-format parsing.
+    assert.equal(deal.north, "QT9.A8765432.KJ.");
+    assert.equal(deal.east, "KJ..A8765432.QT9");
+    assert.equal(deal.south, "A8765432.QT9..KJ");
+    assert.equal(deal.west, ".KJ.QT9.A8765432");
+});
+
+test("dds_web_core.js exports Card and handsToPbn without UI or solve", () => {
+    // Arrange / Act: load only the deal-model script.
+    const ctx = loadDdsWebCore();
+    const card = new ctx.Card("hearts", "K");
+    const pbn = ctx.handsToPbn({
+        north: cardsFromKeys(ctx, ["SA", "SK", "SQ", "SJ", "ST", "S9", "S8", "S7", "S6", "S5", "S4", "S3", "S2"]),
+        east: cardsFromKeys(ctx, ["HA", "HK", "HQ", "HJ", "HT", "H9", "H8", "H7", "H6", "H5", "H4", "H3", "H2"]),
+        south: cardsFromKeys(ctx, ["DA", "DK", "DQ", "DJ", "DT", "D9", "D8", "D7", "D6", "D5", "D4", "D3", "D2"]),
+        west: cardsFromKeys(ctx, ["CA", "CK", "CQ", "CJ", "CT", "C9", "C8", "C7", "C6", "C5", "C4", "C3", "C2"]),
+    });
+
+    // Assert: each hand is a solid suit (dotted voids for the other three).
+    assert.equal(card.key(), "HK");
+    assert.equal(
+        pbn,
+        "N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432"
+    );
+    assert.equal(ctx.openingLeader("south"), "west");
+    assert.equal(ctx.pipFromDdsRank(14), "A");
+});
 
 function assertImportedDeal(ctx, document, expected) {
     assert.equal(document.element("north_spades").value, expected.north[0]);

@@ -29,6 +29,9 @@ class StageGithubPagesTest(unittest.TestCase):
                 "dds_web.html",
                 "dds_web.css",
                 "dds_web.js",
+                "dds_web_deal_import.js",
+                "dds_web_core.js",
+                "dds_web_solve.js",
                 "coi-serviceworker.js",
                 "dds_web_wasm.js",
                 "dds_web_wasm.wasm",
@@ -45,6 +48,9 @@ class StageGithubPagesTest(unittest.TestCase):
                 "dds_web.html",
                 "dds_web.css",
                 "dds_web.js",
+                "dds_web_deal_import.js",
+                "dds_web_core.js",
+                "dds_web_solve.js",
                 "coi-serviceworker.js",
                 "dds_web_wasm.js",
                 "dds_web_wasm.wasm",
@@ -76,6 +82,9 @@ class StageGithubPagesTest(unittest.TestCase):
     def test_deploy_file_list_matches_static_plus_wasm(self) -> None:
         stage = _load_stage_github_pages()
         self.assertIn("coi-serviceworker.js", stage.DEPLOY_FILES)
+        self.assertIn("dds_web_deal_import.js", stage.DEPLOY_FILES)
+        self.assertIn("dds_web_core.js", stage.DEPLOY_FILES)
+        self.assertIn("dds_web_solve.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_wasm_bin.js", stage.DEPLOY_FILES)
         self.assertNotIn("index.html", stage.DEPLOY_FILES)
 
