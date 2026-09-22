@@ -644,7 +644,7 @@ auto register_analysis_bindings(py::module_& module) -> void
     // count argument is ignored; retained only for backward compatibility.
     module.def(
         "set_max_threads",
-        [](const int user_threads) {
+        [](const int /*user_threads*/) {
             if (PyErr_WarnEx(
                     PyExc_DeprecationWarning,
                     "set_max_threads() is deprecated; use initialize_static_memory(). "
@@ -653,7 +653,7 @@ auto register_analysis_bindings(py::module_& module) -> void
                 throw py::error_already_set();
             }
             py::gil_scoped_release release;
-            SetMaxThreads(user_threads);
+            SetMaxThreads(0);
         },
         py::arg("user_threads") = 0,
         "DEPRECATED: use initialize_static_memory() instead.\n\n"
