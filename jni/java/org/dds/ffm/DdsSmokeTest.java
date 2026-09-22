@@ -63,6 +63,24 @@ public final class DdsSmokeTest {
     // parScore is char[2][16] (NS entry then EW); we read only the NS entry.
     private static final long PAR_SCORE_NS_LEN =
             Dds.PAR_RESULTS.select(PathElement.groupElement("parScore")).byteSize() / 2;
+    private static final long DEAL_PBN_TRUMP =
+            Dds.DEAL_PBN.byteOffset(PathElement.groupElement("trump"));
+    private static final long DEAL_PBN_FIRST =
+            Dds.DEAL_PBN.byteOffset(PathElement.groupElement("first"));
+    private static final long DEAL_PBN_REMAIN =
+            Dds.DEAL_PBN.byteOffset(PathElement.groupElement("remainCards"));
+    private static final long DEAL_PBN_REMAIN_LEN =
+            Dds.DEAL_PBN.select(PathElement.groupElement("remainCards")).byteSize();
+    private static final long DTDP_CARDS =
+            Dds.DD_TABLE_DEAL_PBN.byteOffset(PathElement.groupElement("cards"));
+    private static final long DTDP_CARDS_LEN =
+            Dds.DD_TABLE_DEAL_PBN.select(PathElement.groupElement("cards")).byteSize();
+
+    // Same reference board as checkSolveKnownDeal/checkCalcDdTable, in PBN
+    // format. Matches kReferencePbn in library/tests/dds_c_api_test.cpp so the
+    // JVM and C++ bindings agree on one fixture.
+    private static final String REFERENCE_PBN =
+            "N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432";
 
     public static void main(String[] args) throws Exception {
         Path library = locateLibrary();
@@ -74,6 +92,9 @@ public final class DdsSmokeTest {
             checkSolveRejectsInvalidDeal(dds, arena);
             checkCalcDdTable(dds, arena);
             checkCalcPar(dds, arena);
+            checkSolveKnownDealPbn(dds, arena);
+            checkCalcDdTablePbn(dds, arena);
+            checkCalcParPbn(dds, arena);
         }
         System.out.println("DDS FFM smoke test passed.");
     }
@@ -200,6 +221,72 @@ public final class DdsSmokeTest {
         }
     }
 
+    private static void checkSolveKnownDealPbn(Dds dds, Arena arena) {
+        // Same reference board as checkSolveKnownDeal, given as PBN instead of
+        // binary remainCards; the two entry points must agree.
+        MemorySegment dealPbn = arena.allocate(Dds.DEAL_PBN);
+        dealPbn.fill((byte) 0);
+        dealPbn.set(JAVA_INT, DEAL_PBN_TRUMP, 0); // trump = spades
+        dealPbn.set(JAVA_INT, DEAL_PBN_FIRST, 0); // first = North
+        writeCString(dealPbn, DEAL_PBN_REMAIN, DEAL_PBN_REMAIN_LEN, REFERENCE_PBN);
+
+        MemorySegment ctx = dds.createSolverContext();
+        check(!ctx.equals(MemorySegment.NULL), "createSolverContext returned NULL");
+        try {
+            MemorySegment fut = arena.allocate(Dds.FUTURE_TRICKS);
+            int rc = dds.solveBoardPbn(ctx, dealPbn, -1, 1, 1, fut);
+            check(rc == RETURN_NO_FAULT, "dds_c_solve_board_pbn returned " + rc);
+
+            int topScore = fut.get(JAVA_INT, FT_SCORE);
+            System.out.println("solve_board_pbn: score[0]=" + topScore);
+            check(topScore == 13, "expected 13 tricks, got " + topScore);
+        } finally {
+            dds.destroySolverContext(ctx);
+        }
+    }
+
+    private static void checkCalcDdTablePbn(Dds dds, Arena arena) {
+        MemorySegment tableDealPbn = arena.allocate(Dds.DD_TABLE_DEAL_PBN);
+        tableDealPbn.fill((byte) 0);
+        writeCString(tableDealPbn, DTDP_CARDS, DTDP_CARDS_LEN, REFERENCE_PBN);
+
+        MemorySegment ctx = dds.createSolverContext();
+        try {
+            MemorySegment results = arena.allocate(Dds.DD_TABLE_RESULTS);
+            int rc = dds.calcDdTablePbn(ctx, tableDealPbn, results);
+            check(rc == RETURN_NO_FAULT, "dds_c_calc_dd_table_pbn returned " + rc);
+
+            for (int i = 0; i < EXPECTED_DD_TABLE.length; i++) {
+                int got = results.get(JAVA_INT, DTR_RES_TABLE + (long) i * Integer.BYTES);
+                check(got == EXPECTED_DD_TABLE[i],
+                        "pbn resTable[" + i + "] expected " + EXPECTED_DD_TABLE[i] + ", got " + got);
+            }
+            System.out.println("calc_dd_table_pbn: 5x4 table matches expected.");
+        } finally {
+            dds.destroySolverContext(ctx);
+        }
+    }
+
+    private static void checkCalcParPbn(Dds dds, Arena arena) {
+        MemorySegment tableDealPbn = arena.allocate(Dds.DD_TABLE_DEAL_PBN);
+        tableDealPbn.fill((byte) 0);
+        writeCString(tableDealPbn, DTDP_CARDS, DTDP_CARDS_LEN, REFERENCE_PBN);
+
+        MemorySegment ctx = dds.createSolverContext();
+        try {
+            MemorySegment results = arena.allocate(Dds.DD_TABLE_RESULTS);
+            MemorySegment par = arena.allocate(Dds.PAR_RESULTS);
+            int rc = dds.calcParPbn(ctx, tableDealPbn, 0 /* vulnerable: none */, results, par);
+            check(rc == RETURN_NO_FAULT, "dds_c_calc_par_pbn returned " + rc);
+
+            String parScore = readCString(par, PAR_SCORE, PAR_SCORE_NS_LEN);
+            System.out.println("calc_par_pbn: NS par score = \"" + parScore + "\"");
+            check(!parScore.isBlank(), "calc_par_pbn NS par_score should be non-empty");
+        } finally {
+            dds.destroySolverContext(ctx);
+        }
+    }
+
     private static void setRemain(MemorySegment deal, int hand, int suit, int holding) {
         // remainCards[hand][suit], row-major with DDS_SUITS = 4 columns.
         setHolding(deal, DEAL_REMAIN, hand, suit, holding);
@@ -208,6 +295,20 @@ public final class DdsSmokeTest {
     private static void setHolding(MemorySegment struct, long base, int hand, int suit, int holding) {
         // [hand][suit] array, row-major with DDS_SUITS = 4 columns.
         struct.set(JAVA_INT, base + (long) (hand * 4 + suit) * Integer.BYTES, holding);
+    }
+
+    private static void writeCString(MemorySegment struct, long offset, long fieldLength, String value) {
+        // Write value as ASCII into a fixed-size char[] field, zero-padding the
+        // remainder so it stays NUL-terminated for readCString/native use.
+        byte[] bytes = value.getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        if (bytes.length >= fieldLength) {
+            throw new IllegalArgumentException(
+                    "value does not fit in " + fieldLength + "-byte field (with NUL terminator): " + value);
+        }
+        for (long i = 0; i < fieldLength; i++) {
+            byte b = i < bytes.length ? bytes[(int) i] : 0;
+            struct.set(JAVA_BYTE, offset + i, b);
+        }
     }
 
     private static String readCString(MemorySegment struct, long offset, long maxLength) {

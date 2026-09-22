@@ -78,6 +78,20 @@ public class Dds implements AutoCloseable {
             MemoryLayout.sequenceLayout(16, JAVA_INT).withName("cards"))
             .withName("DdTableDeal");
 
+    /** struct DealPBN — remainCards is a NUL-terminated PBN deal string. */
+    public static final MemoryLayout DEAL_PBN = MemoryLayout.structLayout(
+            JAVA_INT.withName("trump"),
+            JAVA_INT.withName("first"),
+            MemoryLayout.sequenceLayout(3, JAVA_INT).withName("currentTrickSuit"),
+            MemoryLayout.sequenceLayout(3, JAVA_INT).withName("currentTrickRank"),
+            MemoryLayout.sequenceLayout(80, JAVA_BYTE).withName("remainCards"))
+            .withName("DealPBN");
+
+    /** struct DdTableDealPBN — cards is a NUL-terminated PBN deal string. */
+    public static final MemoryLayout DD_TABLE_DEAL_PBN = MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(80, JAVA_BYTE).withName("cards"))
+            .withName("DdTableDealPBN");
+
     /** struct DdTableResults — res_table[DDS_STRAINS][DDS_HANDS] = 5x4. */
     public static final MemoryLayout DD_TABLE_RESULTS = MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(20, JAVA_INT).withName("resTable"))
@@ -114,6 +128,9 @@ public class Dds implements AutoCloseable {
     private final MethodHandle solveBoard;
     private final MethodHandle calcDdTable;
     private final MethodHandle calcPar;
+    private final MethodHandle solveBoardPbn;
+    private final MethodHandle calcDdTablePbn;
+    private final MethodHandle calcParPbn;
 
     private Dds(Arena arena, SymbolLookup lookup) {
         this.arena = arena;
@@ -129,6 +146,12 @@ public class Dds implements AutoCloseable {
         this.calcDdTable = handle(linker, lookup, "dds_c_calc_dd_table",
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
         this.calcPar = handle(linker, lookup, "dds_c_calc_par",
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS));
+        this.solveBoardPbn = handle(linker, lookup, "dds_c_solve_board_pbn",
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT, ADDRESS));
+        this.calcDdTablePbn = handle(linker, lookup, "dds_c_calc_dd_table_pbn",
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
+        this.calcParPbn = handle(linker, lookup, "dds_c_calc_par_pbn",
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS));
     }
 
@@ -276,6 +299,35 @@ public class Dds implements AutoCloseable {
             MemorySegment results, MemorySegment par) {
         try {
             return (int) calcPar.invoke(ctx, deal, vulnerable, results, par);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** Solve a single board from a PBN-format deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
+    public int solveBoardPbn(MemorySegment ctx, MemorySegment dealPbn, int target,
+            int solutions, int mode, MemorySegment futureTricks) {
+        try {
+            return (int) solveBoardPbn.invoke(ctx, dealPbn, target, solutions, mode, futureTricks);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** Compute the double dummy table for a PBN-format deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
+    public int calcDdTablePbn(MemorySegment ctx, MemorySegment dealPbn, MemorySegment results) {
+        try {
+            return (int) calcDdTablePbn.invoke(ctx, dealPbn, results);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** Compute the par result for a PBN-format deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
+    public int calcParPbn(MemorySegment ctx, MemorySegment dealPbn, int vulnerable,
+            MemorySegment results, MemorySegment par) {
+        try {
+            return (int) calcParPbn.invoke(ctx, dealPbn, vulnerable, results, par);
         } catch (Throwable t) {
             throw rethrow(t);
         }

@@ -52,7 +52,7 @@ capability defines what crosses the boundary and promises to stay stable.
      opaque `void*` handle (`DDS_C_SOLVER_CTX`); no C++ types cross the boundary.
      It forwards to layer 2 and now covers that layer's full surface: context
      lifecycle (including config-based creation), `dds_c_solve_board`,
-     `dds_c_calc_dd_table` and its `_pbn` twin, `dds_c_calc_par`, TT
+     `dds_c_calc_dd_table`, `dds_c_calc_par`, each with its `_pbn` twin, TT
      configure/resize/clear, both resets, and the logging passthroughs.
      `SolverConfig` is decomposed into scalar arguments and `TTKind` crosses as
      an `int`, so no struct is passed by value.
@@ -80,13 +80,16 @@ capability defines what crosses the boundary and promises to stay stable.
   `SetMaxThreads`/`SetResources`/`FreeMemory` instead.
 - **Integer status returns.** Solver entry points return `RETURN_*` status codes
   (success is positive/`RETURN_NO_FAULT`); `ErrorMessage` maps a code to text.
-- **PBN and binary variants are paired on the legacy layer.** Most flat `dll.h`
-  entry points have a `*PBN` twin; both compute identical results from the same
-  deal. On the modern C++ layer only `dds_calc_dd_table` has one
-  (`dds_calc_dd_table_pbn`) — `dds_solve_board` and `dds_calc_par` do not. The
-  shim mirrors the modern layer exactly: `dds_c_calc_dd_table_pbn` is its only
-  PBN twin. Agreement between each pair is asserted by
-  `//library/tests:dds_c_api_test` and by the .NET smoke tests.
+- **PBN and binary variants are paired on the legacy layer, and mirrored on the
+  modern layer and its shim.** Most flat `dll.h` entry points have a `*PBN`
+  twin; both compute identical results from the same deal. The modern C++
+  layer has the same three: `dds_solve_board_pbn`, `dds_calc_dd_table_pbn`,
+  `dds_calc_par_pbn`. The shim mirrors the modern layer exactly:
+  `dds_c_solve_board_pbn`, `dds_c_calc_dd_table_pbn`, `dds_c_calc_par_pbn`.
+  Agreement between each pair is asserted by `//library/tests:dds_c_api_test`
+  and by the .NET smoke tests; the JVM/FFM binding
+  ([jni-ffm-binding](jni-ffm-binding.md)) binds all three PBN twins alongside
+  their binary counterparts.
 - **The pinned binding export set is `dll.h` + `dds_c_api.h`.** On Linux/macOS
   the JNI shared library exports are constrained by `jni/version_script.lds` /
   `exported_symbols.lds` and checked by the export-set test. That is the *stable
