@@ -16,7 +16,7 @@ This project uses GitHub as its primary version control and collaboration platfo
   - `fix/<short_description>` for bug fixes  
   - `chore/<short_description>` for maintenance
   - `refactor/<short_description>` for refactoring
-- Branch names must be lowercase and use underscores instead of spaces. No other special characters are allowed.
+- Branch names must be lowercase and use underscores instead of spaces. The `/` category separator shown above is allowed; no other special characters are.
 
 ## Pull Request Rules
 1. **Always** open a PR for changes — no direct commits to `main`.
