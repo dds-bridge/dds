@@ -280,7 +280,8 @@ This does **not** control DDS's batch parallelism and is kept only for backward
 compatibility. `solve_all_boards_*` already parallelize across the machine's
 hardware threads automatically (via `solve_boards_n`) — the value passed here does
 not size that pool. `analyse_all_plays_pbn` currently runs sequentially.
-`user_threads` must be `>= 0` (`0` = auto); raises `ValueError` for negative values.
+`user_threads` is ignored regardless of value (including negative values) — it
+is accepted only for backward compatibility with the legacy call signature.
 
 For per-board concurrency from Python, create one `SolverContext` per worker thread
 and pass it to `solve_board` / `solve_board_pbn` (which release the GIL during the

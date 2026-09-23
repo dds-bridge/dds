@@ -1,4 +1,4 @@
-"""Tests for analyse_play_pbn, analyse_all_plays_pbn and dealer_par."""
+"""Tests for analyse_play_pbn, analyse_all_plays_pbn, dealer_par and set_max_threads."""
 
 import unittest
 
@@ -90,6 +90,23 @@ class TestDealerPar(unittest.TestCase):
         dd_table = calc_dd_table(HAND0)
         with self.assertRaises(ValueError):
             dealer_par(dd_table, dealer=0, vulnerable=9)
+
+
+class TestSetMaxThreads(unittest.TestCase):
+    """Tests for the deprecated set_max_threads() thread-resource hook.
+
+    user_threads is ignored regardless of value (see docs/python_interface.md);
+    it is accepted only for backward compatibility with the legacy call
+    signature, so a negative value must not be rejected.
+    """
+
+    def test_negative_user_threads_is_ignored_not_rejected(self) -> None:
+        with self.assertWarns(DeprecationWarning):
+            set_max_threads(-1)
+
+    def test_emits_deprecation_warning(self) -> None:
+        with self.assertWarns(DeprecationWarning):
+            set_max_threads(0)
 
 
 if __name__ == "__main__":
