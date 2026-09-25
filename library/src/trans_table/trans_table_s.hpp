@@ -302,11 +302,12 @@ class TransTableS: public TransTable
     auto reset_op_stats() -> void override
     {
     }
+    /// \brief Returns -1 for all fields: TransTableS does not track operation counts.
     auto get_op_stats(int& adds, int& overwrites, int& harvests) const -> void override
     {
-        adds = 0;
-        overwrites = 0;
-        harvests = 0; // TransTableS not instrumented
+        adds = -1;
+        overwrites = -1;
+        harvests = -1;
     }
     auto print_summary_suit_stats(std::ofstream& /*fout*/) const -> void override
     {
