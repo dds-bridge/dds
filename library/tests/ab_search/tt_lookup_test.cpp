@@ -167,3 +167,74 @@ TEST_F(AbTtLookupTest, MissDoesNotCountMainLookup)
     EXPECT_EQ(thrp->ABStats.GetPosCount(AB_MAIN_LOOKUP), 0);
 }
 #endif
+
+TEST_F(AbTtLookupTest, MissIncrementsLookupCountOnly)
+{
+    ThreadData* thrp = ctx_->thread_ptr();
+    ASSERT_NE(thrp, nullptr);
+    thrp->tt_lookup_count = 0;
+    thrp->tt_hit_count = 0;
+
+    bool score_flag = false;
+    apply_ab_tt_lookup(&pos_, target_, depth_, tricks_, hand_, *ctx_, score_flag);
+
+    EXPECT_EQ(thrp->tt_lookup_count, 1u);
+    EXPECT_EQ(thrp->tt_hit_count, 0u);
+}
+
+TEST_F(AbTtLookupTest, HitIncrementsBothCounters)
+{
+    SeedTtEntry(/*suit*/ 0, /*rank*/ 0);
+    ThreadData* thrp = ctx_->thread_ptr();
+    ASSERT_NE(thrp, nullptr);
+    thrp->tt_lookup_count = 0;
+    thrp->tt_hit_count = 0;
+
+    bool score_flag = false;
+    apply_ab_tt_lookup(&pos_, target_, depth_, tricks_, hand_, *ctx_, score_flag);
+
+    EXPECT_EQ(thrp->tt_lookup_count, 1u);
+    EXPECT_EQ(thrp->tt_hit_count, 1u);
+}
+
+TEST_F(AbTtLookupTest, TwoProbesCountedCorrectly)
+{
+    SeedTtEntry(/*suit*/ 0, /*rank*/ 0);
+    ThreadData* thrp = ctx_->thread_ptr();
+    ASSERT_NE(thrp, nullptr);
+    thrp->tt_lookup_count = 0;
+    thrp->tt_hit_count = 0;
+
+    bool score_flag = false;
+    apply_ab_tt_lookup(&pos_, target_, depth_, tricks_, hand_, *ctx_, score_flag);
+    const int other_hand = 1;
+    apply_ab_tt_lookup(&pos_, target_, depth_, tricks_, other_hand, *ctx_, score_flag);
+
+    EXPECT_EQ(thrp->tt_lookup_count, 2u);
+    EXPECT_EQ(thrp->tt_hit_count, 1u);
+}
+
+TEST_F(AbTtLookupTest, CountersStartAtZeroAndAccumulate)
+{
+    // Counters are zero-initialized in ThreadData; verify before any probe
+    ThreadData* thrp = ctx_->thread_ptr();
+    ASSERT_NE(thrp, nullptr);
+    EXPECT_EQ(thrp->tt_lookup_count, 0u);
+    EXPECT_EQ(thrp->tt_hit_count, 0u);
+
+    // After a miss, lookup increments by 1
+    bool score_flag = false;
+    apply_ab_tt_lookup(&pos_, target_, depth_, tricks_, hand_, *ctx_, score_flag);
+    EXPECT_EQ(thrp->tt_lookup_count, 1u);
+    EXPECT_EQ(thrp->tt_hit_count, 0u);
+
+    // Simulating per-solve reset (as solver_if.cpp does before each solve)
+    thrp->tt_lookup_count = 0;
+    thrp->tt_hit_count = 0;
+
+    // After reset, counters start fresh
+    SeedTtEntry(/*suit*/ 0, /*rank*/ 0);
+    apply_ab_tt_lookup(&pos_, target_, depth_, tricks_, hand_, *ctx_, score_flag);
+    EXPECT_EQ(thrp->tt_lookup_count, 1u);
+    EXPECT_EQ(thrp->tt_hit_count, 1u);
+}
