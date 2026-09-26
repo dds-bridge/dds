@@ -46,13 +46,6 @@ extern "C" {
                                              int mode,
                                              FutureTricks* futp) -> int;
 
-    EXTERN_C DLLEXPORT  auto dds_solve_board_pbn(DDS_SOLVER_CTX ctx,
-                                                 const DealPBN& dlpbn,
-                                                 int target,
-                                                 int solutions,
-                                                 int mode,
-                                                 FutureTricks* futp) -> int;
-
     EXTERN_C DLLEXPORT auto dds_calc_dd_table(
         DDS_SOLVER_CTX  ctx,
         const DdTableDeal& table_deal,
@@ -71,12 +64,5 @@ extern "C" {
         DdTableResults* table_results,
         ParResults* par_results) -> int;
 
-    EXTERN_C DLLEXPORT  auto dds_calc_par_pbn(
-        DDS_SOLVER_CTX  ctx,
-        const DdTableDealPBN& table_deal_pbn,
-        int vulnerable,
-        DdTableResults* table_results,
-        ParResults* par_results) -> int;
 
-
-} 
+}

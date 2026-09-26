@@ -78,6 +78,11 @@ public class Dds implements AutoCloseable {
             MemoryLayout.sequenceLayout(16, JAVA_INT).withName("cards"))
             .withName("DdTableDeal");
 
+    /** struct DdTableDealPBN — cards is a NUL-terminated PBN deal string. */
+    public static final MemoryLayout DD_TABLE_DEAL_PBN = MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(80, JAVA_BYTE).withName("cards"))
+            .withName("DdTableDealPBN");
+
     /** struct DdTableResults — res_table[DDS_STRAINS][DDS_HANDS] = 5x4. */
     public static final MemoryLayout DD_TABLE_RESULTS = MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(20, JAVA_INT).withName("resTable"))
@@ -114,6 +119,8 @@ public class Dds implements AutoCloseable {
     private final MethodHandle solveBoard;
     private final MethodHandle calcDdTable;
     private final MethodHandle calcPar;
+    private final MethodHandle calcDdTablePbn;
+    private final MethodHandle convertFromPbn;
 
     private Dds(Arena arena, SymbolLookup lookup) {
         this.arena = arena;
@@ -130,6 +137,10 @@ public class Dds implements AutoCloseable {
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
         this.calcPar = handle(linker, lookup, "dds_c_calc_par",
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS));
+        this.calcDdTablePbn = handle(linker, lookup, "dds_c_calc_dd_table_pbn",
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
+        this.convertFromPbn = handle(linker, lookup, "dds_c_convert_from_pbn",
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
     }
 
     private static MethodHandle handle(Linker linker, SymbolLookup lookup, String name,
@@ -276,6 +287,50 @@ public class Dds implements AutoCloseable {
             MemorySegment results, MemorySegment par) {
         try {
             return (int) calcPar.invoke(ctx, deal, vulnerable, results, par);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** Compute the double dummy table for a PBN-format deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
+    public int calcDdTablePbn(MemorySegment ctx, MemorySegment dealPbn, MemorySegment results) {
+        try {
+            return (int) calcDdTablePbn.invoke(ctx, dealPbn, results);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /**
+     * Parse a NUL-terminated PBN deal string into a binary holdings block: 16
+     * consecutive ints, row-major {@code [hand][suit]}, as laid out by
+     * {@link #DEAL}'s {@code remainCards} and {@link #DD_TABLE_DEAL}'s
+     * {@code cards}. Point {@code cards} at either field (or a slice of it) and
+     * then use the binary entry points; this is the general PBN path, which is
+     * why solve and par have no PBN variant here. The terminator must occur
+     * within the first 80 bytes of {@code pbnDeal} (79 content bytes plus
+     * terminator fits exactly). Needs no solver context.
+     * Returns a {@link DdsStatus} {@code RETURN_*} code.
+     *
+     * <p>{@code RETURN_NO_FAULT} means the string parsed, not that it describes
+     * a legal deal: an unrecognized rank is skipped rather than refused, so a
+     * typo'd rank yields a short hand and still converts — except a compass
+     * letter (N/E/S/W, either case) found after the first hand, which IS
+     * refused with {@code RETURN_PBN_FAULT} rather than skipped. The solve and
+     * table calls validate the deal and return {@code RETURN_CARD_COUNT} or
+     * {@code RETURN_DUPLICATE_CARDS}, so check their status too.
+     *
+     * <p>On {@code RETURN_PBN_FAULT} (a rejected string that reached the native
+     * parser) {@code cards} is not preserved — it is zeroed before parsing
+     * begins and may hold a partial parse. Convert into scratch storage if the
+     * destination must survive a bad string. This does not apply to a failure
+     * that never reaches the parser — a {@code RETURN_UNKNOWN_FAULT} from a
+     * {@code NULL} segment, or an exception thrown by this call before the
+     * native invocation completes — where {@code cards} is left untouched.
+     */
+    public int convertFromPbn(MemorySegment pbnDeal, MemorySegment cards) {
+        try {
+            return (int) convertFromPbn.invoke(pbnDeal, cards);
         } catch (Throwable t) {
             throw rethrow(t);
         }

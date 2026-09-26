@@ -43,12 +43,6 @@ DLLEXPORT int dds_c_solve_board(DDS_C_SOLVER_CTX ctx,
                                 int target, int solutions, int mode,
                                 struct FutureTricks* futp);
 
-/* Solve a single board in PBN format. Returns a RETURN_* status code. */
-DLLEXPORT int dds_c_solve_board_pbn(DDS_C_SOLVER_CTX ctx,
-                                    const struct DealPBN* dlpbn,
-                                    int target, int solutions, int mode,
-                                    struct FutureTricks* futp);
-
 /* Compute the double dummy table for a deal. */
 DLLEXPORT int dds_c_calc_dd_table(DDS_C_SOLVER_CTX ctx,
                                     const struct DdTableDeal* deal,
@@ -60,14 +54,6 @@ DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
                              int vulnerable,
                              struct DdTableResults* results,
                              struct ParResults* par);
-
-/* Compute the par result for a PBN-format deal (computes the DD table
-   internally). */
-DLLEXPORT int dds_c_calc_par_pbn(DDS_C_SOLVER_CTX ctx,
-                                 const struct DdTableDealPBN* deal,
-                                 int vulnerable,
-                                 struct DdTableResults* results,
-                                 struct ParResults* par);
 
 /* Creation with explicit transposition-table configuration. The C++ SolverConfig
    is decomposed into scalars rather than mirrored as a struct: passing a struct
@@ -82,6 +68,41 @@ DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext(int tt_kind,
 DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
                                         const struct DdTableDealPBN* deal,
                                         struct DdTableResults* results);
+
+/* Parse a PBN deal string into the binary holdings block that both
+   struct Deal.remainCards and struct DdTableDeal.cards use: DDS_HANDS x
+   DDS_SUITS unsigned ints, row-major ([hand][suit]), so a caller can convert
+   straight into either struct field and then use the binary entry points. Only
+   the first hand carries a compass letter (N/E/S/W); the other three follow
+   clockwise. The terminator must occur within the first 80 bytes (a string of
+   79 content bytes plus terminator fits exactly); no more than 80 bytes are
+   read. Needs no SolverContext.
+
+   This is the general PBN entry point for bindings: it is why the solve and par
+   calls have no *_pbn twin on this shim.
+
+   Returns RETURN_UNKNOWN_FAULT if either pointer is NULL -- checked before
+   pbn_deal is read at all, so on this path cards is untouched, not cleared --
+   RETURN_PBN_FAULT if a non-NULL string cannot be parsed, else RETURN_NO_FAULT.
+   Two limits matter once both pointers are non-NULL:
+
+     - RETURN_NO_FAULT means "parsed", not "describes a legal deal". A rank
+       character that is out of range or otherwise unrecognized is skipped
+       rather than refused, so a typo'd rank yields a short hand and still
+       converts -- except a compass letter (N/E/S/W, either case) found after
+       the first hand, which IS refused with RETURN_PBN_FAULT rather than
+       skipped. Deal validation lives in the entry points that consume the
+       block: they return RETURN_CARD_COUNT or RETURN_DUPLICATE_CARDS. Check
+       that status too -- a successful conversion is not a validated deal.
+       (Partial deals are legitimate, e.g. mid-trick, so this function cannot
+       count cards itself.)
+
+     - On RETURN_PBN_FAULT the output is NOT preserved: all DDS_HANDS x
+       DDS_SUITS entries are zeroed before parsing begins, so a rejected string
+       leaves the block zeroed or holding a partial parse. Convert into scratch
+       storage if the destination must survive a bad string. */
+DLLEXPORT int dds_c_convert_from_pbn(const char* pbn_deal,
+                                     unsigned int cards[DDS_HANDS][DDS_SUITS]);
 
 /* Transposition-table configuration. */
 DLLEXPORT void dds_c_configure_tt(DDS_C_SOLVER_CTX ctx, int tt_kind,

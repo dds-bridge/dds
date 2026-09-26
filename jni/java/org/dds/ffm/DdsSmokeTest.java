@@ -63,6 +63,18 @@ public final class DdsSmokeTest {
     // parScore is char[2][16] (NS entry then EW); we read only the NS entry.
     private static final long PAR_SCORE_NS_LEN =
             Dds.PAR_RESULTS.select(PathElement.groupElement("parScore")).byteSize() / 2;
+    private static final long DEAL_REMAIN_LEN =
+            Dds.DEAL.select(PathElement.groupElement("remainCards")).byteSize();
+    private static final long DTDP_CARDS =
+            Dds.DD_TABLE_DEAL_PBN.byteOffset(PathElement.groupElement("cards"));
+    private static final long DTDP_CARDS_LEN =
+            Dds.DD_TABLE_DEAL_PBN.select(PathElement.groupElement("cards")).byteSize();
+
+    // Same reference board as checkSolveKnownDeal/checkCalcDdTable, in PBN
+    // format. Matches kReferencePbn in library/tests/dds_c_api_test.cpp so the
+    // JVM and C++ bindings agree on one fixture.
+    private static final String REFERENCE_PBN =
+            "N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432";
 
     public static void main(String[] args) throws Exception {
         Path library = locateLibrary();
@@ -74,6 +86,9 @@ public final class DdsSmokeTest {
             checkSolveRejectsInvalidDeal(dds, arena);
             checkCalcDdTable(dds, arena);
             checkCalcPar(dds, arena);
+            checkCalcDdTablePbn(dds, arena);
+            checkConvertFromPbn(dds, arena);
+            checkConvertFromPbnRejectsMalformedString(dds, arena);
         }
         System.out.println("DDS FFM smoke test passed.");
     }
@@ -200,6 +215,68 @@ public final class DdsSmokeTest {
         }
     }
 
+    private static void checkCalcDdTablePbn(Dds dds, Arena arena) {
+        MemorySegment tableDealPbn = arena.allocate(Dds.DD_TABLE_DEAL_PBN);
+        tableDealPbn.fill((byte) 0);
+        writeCString(tableDealPbn, DTDP_CARDS, DTDP_CARDS_LEN, REFERENCE_PBN);
+
+        MemorySegment ctx = dds.createSolverContext();
+        try {
+            MemorySegment results = arena.allocate(Dds.DD_TABLE_RESULTS);
+            int rc = dds.calcDdTablePbn(ctx, tableDealPbn, results);
+            check(rc == RETURN_NO_FAULT, "dds_c_calc_dd_table_pbn returned " + rc);
+
+            for (int i = 0; i < EXPECTED_DD_TABLE.length; i++) {
+                int got = results.get(JAVA_INT, DTR_RES_TABLE + (long) i * Integer.BYTES);
+                check(got == EXPECTED_DD_TABLE[i],
+                        "pbn resTable[" + i + "] expected " + EXPECTED_DD_TABLE[i] + ", got " + got);
+            }
+            System.out.println("calc_dd_table_pbn: 5x4 table matches expected.");
+        } finally {
+            dds.destroySolverContext(ctx);
+        }
+    }
+
+    private static void checkConvertFromPbn(Dds dds, Arena arena) {
+        // The general PBN path for bindings, and the replacement for the
+        // withdrawn dds_c_solve_board_pbn: parse the PBN string straight into a
+        // binary Deal's remainCards, set the already-binary fields, then use the
+        // binary solve. Must reproduce checkSolveKnownDeal's 13 tricks.
+        MemorySegment deal = arena.allocate(Dds.DEAL);
+        deal.fill((byte) 0);
+        deal.set(JAVA_INT, DEAL_TRUMP, 0); // trump = spades
+        deal.set(JAVA_INT, DEAL_FIRST, 0); // first = North
+
+        MemorySegment pbn = arena.allocateFrom(REFERENCE_PBN);
+        int convertRc = dds.convertFromPbn(pbn, deal.asSlice(DEAL_REMAIN, DEAL_REMAIN_LEN));
+        check(convertRc == RETURN_NO_FAULT, "dds_c_convert_from_pbn returned " + convertRc);
+
+        MemorySegment ctx = dds.createSolverContext();
+        check(!ctx.equals(MemorySegment.NULL), "createSolverContext returned NULL");
+        try {
+            MemorySegment fut = arena.allocate(Dds.FUTURE_TRICKS);
+            int rc = dds.solveBoard(ctx, deal, -1, 1, 1, fut);
+            check(rc == RETURN_NO_FAULT, "solve_board on converted deal returned " + rc);
+
+            int topScore = fut.get(JAVA_INT, FT_SCORE);
+            System.out.println("convert_from_pbn + solve_board: score[0]=" + topScore);
+            check(topScore == 13, "expected 13 tricks, got " + topScore);
+        } finally {
+            dds.destroySolverContext(ctx);
+        }
+    }
+
+    private static void checkConvertFromPbnRejectsMalformedString(Dds dds, Arena arena) {
+        MemorySegment cards = arena.allocate(Dds.DD_TABLE_DEAL);
+        MemorySegment pbn = arena.allocateFrom("xx");
+        int rc = dds.convertFromPbn(pbn, cards);
+        System.out.println("convert_from_pbn(malformed): rc=" + rc + " (" + DdsStatus.name(rc) + ")");
+        // Pin the mapped code, not just "not success": turning the parser's bare
+        // 0 into RETURN_PBN_FAULT is the shim's only added behavior here.
+        check(rc == DdsStatus.RETURN_PBN_FAULT,
+                "expected RETURN_PBN_FAULT, got " + DdsStatus.name(rc));
+    }
+
     private static void setRemain(MemorySegment deal, int hand, int suit, int holding) {
         // remainCards[hand][suit], row-major with DDS_SUITS = 4 columns.
         setHolding(deal, DEAL_REMAIN, hand, suit, holding);
@@ -208,6 +285,20 @@ public final class DdsSmokeTest {
     private static void setHolding(MemorySegment struct, long base, int hand, int suit, int holding) {
         // [hand][suit] array, row-major with DDS_SUITS = 4 columns.
         struct.set(JAVA_INT, base + (long) (hand * 4 + suit) * Integer.BYTES, holding);
+    }
+
+    private static void writeCString(MemorySegment struct, long offset, long fieldLength, String value) {
+        // Write value as ASCII into a fixed-size char[] field, zero-padding the
+        // remainder so it stays NUL-terminated for readCString/native use.
+        byte[] bytes = value.getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        if (bytes.length >= fieldLength) {
+            throw new IllegalArgumentException(
+                    "value does not fit in " + fieldLength + "-byte field (with NUL terminator): " + value);
+        }
+        for (long i = 0; i < fieldLength; i++) {
+            byte b = i < bytes.length ? bytes[(int) i] : 0;
+            struct.set(JAVA_BYTE, offset + i, b);
+        }
     }
 
     private static String readCString(MemorySegment struct, long offset, long maxLength) {

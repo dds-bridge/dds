@@ -42,9 +42,9 @@ _SolveBoardPBN
 _dds_c_calc_dd_table
 _dds_c_calc_dd_table_pbn
 _dds_c_calc_par
-_dds_c_calc_par_pbn
 _dds_c_clear_tt
 _dds_c_configure_tt
+_dds_c_convert_from_pbn
 _dds_c_convert_to_dealer_text_format
 _dds_c_convert_to_sides_text_format
 _dds_c_create_solvercontext
@@ -63,4 +63,3 @@ _dds_c_resize_tt
 _dds_c_sides_par
 _dds_c_sides_par_bin
 _dds_c_solve_board
-_dds_c_solve_board_pbn
