@@ -77,9 +77,11 @@ and ctypes can all bind to:
 
 The shim covers the modern API's full surface: context lifecycle (default and
 config-based creation, destroy), `dds_c_solve_board`, `dds_c_calc_dd_table` and
-its `_pbn` twin, `dds_c_calc_par`, transposition-table configure/resize/clear,
-both resets, and the logging passthroughs. The Java bindings here use a subset;
-the .NET binding uses all of it ([dotnet_interface.md](dotnet_interface.md)).
+its `_pbn` twin, `dds_c_calc_par`, `dds_c_convert_from_pbn`,
+transposition-table configure/resize/clear, both resets, and the logging
+passthroughs. The Java bindings here use a subset; the .NET binding uses all of
+it except `dds_c_convert_from_pbn`
+([dotnet_interface.md](dotnet_interface.md)).
 The flat legacy C API from `dll.h` (`SolveBoard`, `CalcDDtable`, `GetDDSInfo`,
 `ErrorMessage`, …) is exported unchanged and is also callable from FFM.
 
@@ -93,8 +95,8 @@ non-hermetic early-access binaries, and the generated output is just plain
 exposes:
 
 - Public `MemoryLayout` constants matching the C structs: `DEAL`,
-  `FUTURE_TRICKS`, `DD_TABLE_DEAL`, `DD_TABLE_RESULTS`, `PAR_RESULTS`,
-  `DDS_INFO`.
+  `FUTURE_TRICKS`, `DD_TABLE_DEAL`, `DD_TABLE_DEAL_PBN`, `DD_TABLE_RESULTS`,
+  `PAR_RESULTS`, `DDS_INFO`.
 - Typed downcall wrappers for the shim functions plus `getDdsInfo`. These
   return an `int` [`DdsStatus`](../jni/java/org/dds/ffm/DdsStatus.java)
   `RETURN_*` code (`RETURN_NO_FAULT == 1` on success); compare against the named

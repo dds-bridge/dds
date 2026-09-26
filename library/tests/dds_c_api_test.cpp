@@ -379,6 +379,48 @@ TEST(DdsCApiConvertFromPbn, RejectsMalformedStringWithPbnFault)
     EXPECT_EQ(dds_c_convert_from_pbn("xx", cards), RETURN_PBN_FAULT);
 }
 
+// Success means "parsed", not "legal deal". The parser skips characters it does
+// not recognize, so a bad rank silently yields a short hand; the deal is then
+// refused by the binary entry point on card count, which is where deal
+// validation lives (see library/tests/deal_input_validation_test.cpp, where the
+// same layering is pinned for the legacy CalcDDtablePBN path). A caller must
+// therefore check the solve/table status, not just the conversion status.
+TEST(DdsCApiConvertFromPbn, UnrecognizedRankParsesButDealIsRefusedOnCardCount)
+{
+    // The reference deal with North's '2' of spades replaced by 'X'.
+    const char* const pbn_with_bad_rank =
+        "N:AKQJT9876543X... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432";
+
+    struct DdTableDeal deal = {};
+    EXPECT_EQ(dds_c_convert_from_pbn(pbn_with_bad_rank, deal.cards), RETURN_NO_FAULT);
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct DdTableResults results = {};
+    EXPECT_EQ(dds_c_calc_dd_table(ctx, &deal, &results), RETURN_CARD_COUNT);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+// On failure the output is not preserved: the parser zeroes all 16 entries
+// before it validates anything, so converting in place into a live deal
+// destroys the previous holdings. Pinned so the header's warning stays true.
+TEST(DdsCApiConvertFromPbn, FailureClobbersTheOutputBlock)
+{
+    unsigned int cards[DDS_HANDS][DDS_SUITS];
+    for (auto& hand : cards)
+        for (auto& suit : hand)
+            suit = 0xFFFFFFFFU;
+
+    ASSERT_EQ(dds_c_convert_from_pbn("xx", cards), RETURN_PBN_FAULT);
+
+    for (int hand = 0; hand < DDS_HANDS; ++hand)
+        for (int suit = 0; suit < DDS_SUITS; ++suit)
+            EXPECT_EQ(cards[hand][suit], 0U)
+                << "cards[" << hand << "][" << suit << "] after a failed parse";
+}
+
 // The replacement path for the withdrawn dds_c_solve_board_pbn: convert, fill
 // the binary Deal's remaining (already-binary) fields, then solve.
 TEST(DdsCApiConvertFromPbn, ConvertedDealSolvesLikeTheBinaryFixture)

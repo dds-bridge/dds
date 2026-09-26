@@ -74,12 +74,27 @@ DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
    DDS_SUITS unsigned ints, row-major ([hand][suit]), so a caller can convert
    straight into either struct field and then use the binary entry points. Only
    the first hand carries a compass letter (N/E/S/W); the other three follow
-   clockwise. Needs no SolverContext. Returns RETURN_NO_FAULT, RETURN_PBN_FAULT
-   if the string is malformed, or RETURN_UNKNOWN_FAULT if either pointer is
-   NULL.
+   clockwise. The string must be shorter than 80 bytes including its terminator;
+   no more than that is read. Needs no SolverContext.
 
    This is the general PBN entry point for bindings: it is why the solve and par
-   calls have no *_pbn twin on this shim. */
+   calls have no *_pbn twin on this shim.
+
+   Returns RETURN_UNKNOWN_FAULT if either pointer is NULL, RETURN_PBN_FAULT if
+   the string cannot be parsed, else RETURN_NO_FAULT. Two limits matter:
+
+     - RETURN_NO_FAULT means "parsed", not "describes a legal deal". Characters
+       that are neither a rank nor '.' nor ' ' are skipped rather than refused,
+       so a typo'd rank yields a short hand and still converts. Deal validation
+       lives in the entry points that consume the block: they return
+       RETURN_CARD_COUNT or RETURN_DUPLICATE_CARDS. Check that status too --
+       a successful conversion is not a validated deal. (Partial deals are
+       legitimate, e.g. mid-trick, so this function cannot count cards itself.)
+
+     - On failure the output is NOT preserved: all DDS_HANDS x DDS_SUITS entries
+       are zeroed before parsing begins, so a failed call leaves the block
+       zeroed or holding a partial parse. Convert into scratch storage if the
+       destination must survive a bad string. */
 DLLEXPORT int dds_c_convert_from_pbn(const char* pbn_deal,
                                      unsigned int cards[DDS_HANDS][DDS_SUITS]);
 

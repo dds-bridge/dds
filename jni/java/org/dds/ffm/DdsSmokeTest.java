@@ -271,7 +271,10 @@ public final class DdsSmokeTest {
         MemorySegment pbn = arena.allocateFrom("xx");
         int rc = dds.convertFromPbn(pbn, cards);
         System.out.println("convert_from_pbn(malformed): rc=" + rc + " (" + DdsStatus.name(rc) + ")");
-        check(rc != RETURN_NO_FAULT, "malformed PBN should not convert, got " + DdsStatus.name(rc));
+        // Pin the mapped code, not just "not success": turning the parser's bare
+        // 0 into RETURN_PBN_FAULT is the shim's only added behavior here.
+        check(rc == DdsStatus.RETURN_PBN_FAULT,
+                "expected RETURN_PBN_FAULT, got " + DdsStatus.name(rc));
     }
 
     private static void setRemain(MemorySegment deal, int hand, int suit, int holding) {

@@ -1,7 +1,7 @@
 ---
 capability: dds-public-api
 owners: [api]
-last-updated: 2026-07-19
+last-updated: 2026-09-26
 ---
 
 # DDS Public API
@@ -94,12 +94,19 @@ capability defines what crosses the boundary and promises to stay stable.
   `dds_c_calc_dd_table_pbn` is the sole surviving twin: it shipped in v3.1.0 and
   is bound by .NET, so it stays for compatibility. `dds_c_solve_board_pbn` and
   `dds_c_calc_par_pbn` (and their `dds_*` layer-2 counterparts) were withdrawn
-  before ever shipping in favour of the converter. The C++ `solve_board_pbn` /
-  `calc_par_pbn` overloads remain as header-level convenience for C++ consumers
-  and for the batch/analyse paths — they carry no ABI cost. Converter/twin
-  agreement and the converter's own contract are asserted by
-  `//library/tests:dds_c_api_test`, and end-to-end by
-  `//jni:dds_ffm_smoke_test`.
+  in favour of the converter before any tagged release carried them. Note that
+  `DDS_VERSION` / `DDS_FFM_VERSION` are not bumped between tags, so pre-release
+  `develop` builds cannot be told apart by version: only a tagged release is a
+  meaningful ABI reference point. The C++ `solve_board_pbn` / `calc_par_pbn`
+  overloads survive as non-exported static-link conveniences for in-tree C++
+  callers (today only `configure_tt_api_test`; `calc_par_pbn` has no caller at
+  all). Neither is `DLLEXPORT`, so neither appears in any export list on any
+  platform and neither carries ABI cost — the batch and analyse paths call
+  `convert_from_pbn` directly rather than going through them.
+  `//library/tests:dds_c_api_test` asserts converter/twin agreement and the
+  converter's contract, including that a successful parse is not a validated
+  deal and that a failed parse does not preserve the output block;
+  `//jni:dds_ffm_smoke_test` covers the same path end to end.
 - **The pinned binding export set is `dll.h` + `dds_c_api.h`.** On Linux/macOS
   the JNI shared library exports are constrained by `jni/version_script.lds` /
   `exported_symbols.lds` and checked by the export-set test. That is the *stable

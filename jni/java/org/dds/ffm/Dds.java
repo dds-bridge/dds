@@ -307,8 +307,19 @@ public class Dds implements AutoCloseable {
      * {@link #DEAL}'s {@code remainCards} and {@link #DD_TABLE_DEAL}'s
      * {@code cards}. Point {@code cards} at either field (or a slice of it) and
      * then use the binary entry points; this is the general PBN path, which is
-     * why solve and par have no PBN variant here. Needs no solver context.
+     * why solve and par have no PBN variant here. The string must be shorter
+     * than 80 bytes including its terminator. Needs no solver context.
      * Returns a {@link DdsStatus} {@code RETURN_*} code.
+     *
+     * <p>{@code RETURN_NO_FAULT} means the string parsed, not that it describes
+     * a legal deal: unrecognized characters are skipped rather than refused, so
+     * a typo'd rank yields a short hand and still converts. The solve and table
+     * calls validate the deal and return {@code RETURN_CARD_COUNT} or
+     * {@code RETURN_DUPLICATE_CARDS}, so check their status too.
+     *
+     * <p>On failure {@code cards} is not preserved — it is zeroed before parsing
+     * begins and may hold a partial parse. Convert into scratch storage if the
+     * destination must survive a bad string.
      */
     public int convertFromPbn(MemorySegment pbnDeal, MemorySegment cards) {
         try {
