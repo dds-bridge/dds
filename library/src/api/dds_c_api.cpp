@@ -19,6 +19,7 @@
 #include <api/dds_c_api.h>
 #include <api/dds_api.hpp>
 #include <api/dll.h>   /* legacy Par/SidesPar/DealerPar/.../GetDDSInfo/ErrorMessage */
+#include <api/PBN.h>   /* convert_from_pbn */
 
 /* This shim is the boundary between the C++ implementation and pure-C FFI
    consumers (JVM/FFM, .NET, ctypes). Two things must never cross it:
@@ -69,22 +70,6 @@ DLLEXPORT int dds_c_solve_board(DDS_C_SOLVER_CTX ctx,
     }
 }
 
-DLLEXPORT int dds_c_solve_board_pbn(DDS_C_SOLVER_CTX ctx,
-                                    const struct DealPBN* dlpbn,
-                                    int target, int solutions, int mode,
-                                    struct FutureTricks* futp)
-{
-    if (ctx == nullptr || dlpbn == nullptr || futp == nullptr)
-        return RETURN_UNKNOWN_FAULT;
-
-    try {
-        return dds_solve_board_pbn(static_cast<SolverContext*>(ctx),
-            *dlpbn, target, solutions, mode, futp);
-    } catch (...) {
-        return RETURN_UNKNOWN_FAULT;
-    }
-}
-
 DLLEXPORT int dds_c_calc_dd_table(DDS_C_SOLVER_CTX ctx,
                                     const struct DdTableDeal* deal,
                                     struct DdTableResults* results)
@@ -116,23 +101,6 @@ DLLEXPORT int dds_c_calc_par(DDS_C_SOLVER_CTX ctx,
     }
 }
 
-DLLEXPORT int dds_c_calc_par_pbn(DDS_C_SOLVER_CTX ctx,
-                                 const struct DdTableDealPBN* deal,
-                                 int vulnerable,
-                                 struct DdTableResults* results,
-                                 struct ParResults* par)
-{
-    if (ctx == nullptr || deal == nullptr || results == nullptr || par == nullptr)
-        return RETURN_UNKNOWN_FAULT;
-
-    try {
-        return dds_calc_par_pbn(static_cast<SolverContext*>(ctx),
-            *deal, vulnerable, results, par);
-    } catch (...) {
-        return RETURN_UNKNOWN_FAULT;
-    }
-}
-
 DLLEXPORT DDS_C_SOLVER_CTX dds_c_create_solvercontext(int tt_kind,
                                                         int def_mb, int max_mb)
 {
@@ -157,6 +125,25 @@ DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
     try {
         return dds_calc_dd_table_pbn(static_cast<SolverContext*>(ctx),
             *deal, results);
+    } catch (...) {
+        return RETURN_UNKNOWN_FAULT;
+    }
+}
+
+DLLEXPORT int dds_c_convert_from_pbn(const char* pbn_deal,
+                                     unsigned int cards[DDS_HANDS][DDS_SUITS])
+{
+    if (pbn_deal == nullptr || cards == nullptr)
+        return RETURN_UNKNOWN_FAULT;
+
+    try {
+        /* convert_from_pbn reports success as RETURN_NO_FAULT but failure as a
+           bare 0, which is not a RETURN_* code; map it to RETURN_PBN_FAULT so
+           every status this shim returns is one. */
+        if (convert_from_pbn(pbn_deal, cards) != RETURN_NO_FAULT)
+            return RETURN_PBN_FAULT;
+
+        return RETURN_NO_FAULT;
     } catch (...) {
         return RETURN_UNKNOWN_FAULT;
     }

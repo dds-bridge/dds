@@ -78,15 +78,6 @@ public class Dds implements AutoCloseable {
             MemoryLayout.sequenceLayout(16, JAVA_INT).withName("cards"))
             .withName("DdTableDeal");
 
-    /** struct DealPBN — remainCards is a NUL-terminated PBN deal string. */
-    public static final MemoryLayout DEAL_PBN = MemoryLayout.structLayout(
-            JAVA_INT.withName("trump"),
-            JAVA_INT.withName("first"),
-            MemoryLayout.sequenceLayout(3, JAVA_INT).withName("currentTrickSuit"),
-            MemoryLayout.sequenceLayout(3, JAVA_INT).withName("currentTrickRank"),
-            MemoryLayout.sequenceLayout(80, JAVA_BYTE).withName("remainCards"))
-            .withName("DealPBN");
-
     /** struct DdTableDealPBN — cards is a NUL-terminated PBN deal string. */
     public static final MemoryLayout DD_TABLE_DEAL_PBN = MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(80, JAVA_BYTE).withName("cards"))
@@ -128,9 +119,8 @@ public class Dds implements AutoCloseable {
     private final MethodHandle solveBoard;
     private final MethodHandle calcDdTable;
     private final MethodHandle calcPar;
-    private final MethodHandle solveBoardPbn;
     private final MethodHandle calcDdTablePbn;
-    private final MethodHandle calcParPbn;
+    private final MethodHandle convertFromPbn;
 
     private Dds(Arena arena, SymbolLookup lookup) {
         this.arena = arena;
@@ -147,12 +137,10 @@ public class Dds implements AutoCloseable {
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
         this.calcPar = handle(linker, lookup, "dds_c_calc_par",
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS));
-        this.solveBoardPbn = handle(linker, lookup, "dds_c_solve_board_pbn",
-                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT, ADDRESS));
         this.calcDdTablePbn = handle(linker, lookup, "dds_c_calc_dd_table_pbn",
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
-        this.calcParPbn = handle(linker, lookup, "dds_c_calc_par_pbn",
-                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS));
+        this.convertFromPbn = handle(linker, lookup, "dds_c_convert_from_pbn",
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
     }
 
     private static MethodHandle handle(Linker linker, SymbolLookup lookup, String name,
@@ -304,16 +292,6 @@ public class Dds implements AutoCloseable {
         }
     }
 
-    /** Solve a single board from a PBN-format deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
-    public int solveBoardPbn(MemorySegment ctx, MemorySegment dealPbn, int target,
-            int solutions, int mode, MemorySegment futureTricks) {
-        try {
-            return (int) solveBoardPbn.invoke(ctx, dealPbn, target, solutions, mode, futureTricks);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-    }
-
     /** Compute the double dummy table for a PBN-format deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
     public int calcDdTablePbn(MemorySegment ctx, MemorySegment dealPbn, MemorySegment results) {
         try {
@@ -323,11 +301,18 @@ public class Dds implements AutoCloseable {
         }
     }
 
-    /** Compute the par result for a PBN-format deal. Returns a {@link DdsStatus} {@code RETURN_*} code. */
-    public int calcParPbn(MemorySegment ctx, MemorySegment dealPbn, int vulnerable,
-            MemorySegment results, MemorySegment par) {
+    /**
+     * Parse a NUL-terminated PBN deal string into a binary holdings block: 16
+     * consecutive ints, row-major {@code [hand][suit]}, as laid out by
+     * {@link #DEAL}'s {@code remainCards} and {@link #DD_TABLE_DEAL}'s
+     * {@code cards}. Point {@code cards} at either field (or a slice of it) and
+     * then use the binary entry points; this is the general PBN path, which is
+     * why solve and par have no PBN variant here. Needs no solver context.
+     * Returns a {@link DdsStatus} {@code RETURN_*} code.
+     */
+    public int convertFromPbn(MemorySegment pbnDeal, MemorySegment cards) {
         try {
-            return (int) calcParPbn.invoke(ctx, dealPbn, vulnerable, results, par);
+            return (int) convertFromPbn.invoke(pbnDeal, cards);
         } catch (Throwable t) {
             throw rethrow(t);
         }

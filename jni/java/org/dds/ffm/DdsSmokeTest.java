@@ -63,14 +63,8 @@ public final class DdsSmokeTest {
     // parScore is char[2][16] (NS entry then EW); we read only the NS entry.
     private static final long PAR_SCORE_NS_LEN =
             Dds.PAR_RESULTS.select(PathElement.groupElement("parScore")).byteSize() / 2;
-    private static final long DEAL_PBN_TRUMP =
-            Dds.DEAL_PBN.byteOffset(PathElement.groupElement("trump"));
-    private static final long DEAL_PBN_FIRST =
-            Dds.DEAL_PBN.byteOffset(PathElement.groupElement("first"));
-    private static final long DEAL_PBN_REMAIN =
-            Dds.DEAL_PBN.byteOffset(PathElement.groupElement("remainCards"));
-    private static final long DEAL_PBN_REMAIN_LEN =
-            Dds.DEAL_PBN.select(PathElement.groupElement("remainCards")).byteSize();
+    private static final long DEAL_REMAIN_LEN =
+            Dds.DEAL.select(PathElement.groupElement("remainCards")).byteSize();
     private static final long DTDP_CARDS =
             Dds.DD_TABLE_DEAL_PBN.byteOffset(PathElement.groupElement("cards"));
     private static final long DTDP_CARDS_LEN =
@@ -92,9 +86,9 @@ public final class DdsSmokeTest {
             checkSolveRejectsInvalidDeal(dds, arena);
             checkCalcDdTable(dds, arena);
             checkCalcPar(dds, arena);
-            checkSolveKnownDealPbn(dds, arena);
             checkCalcDdTablePbn(dds, arena);
-            checkCalcParPbn(dds, arena);
+            checkConvertFromPbn(dds, arena);
+            checkConvertFromPbnRejectsMalformedString(dds, arena);
         }
         System.out.println("DDS FFM smoke test passed.");
     }
@@ -221,30 +215,6 @@ public final class DdsSmokeTest {
         }
     }
 
-    private static void checkSolveKnownDealPbn(Dds dds, Arena arena) {
-        // Same reference board as checkSolveKnownDeal, given as PBN instead of
-        // binary remainCards; the two entry points must agree.
-        MemorySegment dealPbn = arena.allocate(Dds.DEAL_PBN);
-        dealPbn.fill((byte) 0);
-        dealPbn.set(JAVA_INT, DEAL_PBN_TRUMP, 0); // trump = spades
-        dealPbn.set(JAVA_INT, DEAL_PBN_FIRST, 0); // first = North
-        writeCString(dealPbn, DEAL_PBN_REMAIN, DEAL_PBN_REMAIN_LEN, REFERENCE_PBN);
-
-        MemorySegment ctx = dds.createSolverContext();
-        check(!ctx.equals(MemorySegment.NULL), "createSolverContext returned NULL");
-        try {
-            MemorySegment fut = arena.allocate(Dds.FUTURE_TRICKS);
-            int rc = dds.solveBoardPbn(ctx, dealPbn, -1, 1, 1, fut);
-            check(rc == RETURN_NO_FAULT, "dds_c_solve_board_pbn returned " + rc);
-
-            int topScore = fut.get(JAVA_INT, FT_SCORE);
-            System.out.println("solve_board_pbn: score[0]=" + topScore);
-            check(topScore == 13, "expected 13 tricks, got " + topScore);
-        } finally {
-            dds.destroySolverContext(ctx);
-        }
-    }
-
     private static void checkCalcDdTablePbn(Dds dds, Arena arena) {
         MemorySegment tableDealPbn = arena.allocate(Dds.DD_TABLE_DEAL_PBN);
         tableDealPbn.fill((byte) 0);
@@ -267,24 +237,41 @@ public final class DdsSmokeTest {
         }
     }
 
-    private static void checkCalcParPbn(Dds dds, Arena arena) {
-        MemorySegment tableDealPbn = arena.allocate(Dds.DD_TABLE_DEAL_PBN);
-        tableDealPbn.fill((byte) 0);
-        writeCString(tableDealPbn, DTDP_CARDS, DTDP_CARDS_LEN, REFERENCE_PBN);
+    private static void checkConvertFromPbn(Dds dds, Arena arena) {
+        // The general PBN path for bindings, and the replacement for the
+        // withdrawn dds_c_solve_board_pbn: parse the PBN string straight into a
+        // binary Deal's remainCards, set the already-binary fields, then use the
+        // binary solve. Must reproduce checkSolveKnownDeal's 13 tricks.
+        MemorySegment deal = arena.allocate(Dds.DEAL);
+        deal.fill((byte) 0);
+        deal.set(JAVA_INT, DEAL_TRUMP, 0); // trump = spades
+        deal.set(JAVA_INT, DEAL_FIRST, 0); // first = North
+
+        MemorySegment pbn = arena.allocateFrom(REFERENCE_PBN);
+        int convertRc = dds.convertFromPbn(pbn, deal.asSlice(DEAL_REMAIN, DEAL_REMAIN_LEN));
+        check(convertRc == RETURN_NO_FAULT, "dds_c_convert_from_pbn returned " + convertRc);
 
         MemorySegment ctx = dds.createSolverContext();
+        check(!ctx.equals(MemorySegment.NULL), "createSolverContext returned NULL");
         try {
-            MemorySegment results = arena.allocate(Dds.DD_TABLE_RESULTS);
-            MemorySegment par = arena.allocate(Dds.PAR_RESULTS);
-            int rc = dds.calcParPbn(ctx, tableDealPbn, 0 /* vulnerable: none */, results, par);
-            check(rc == RETURN_NO_FAULT, "dds_c_calc_par_pbn returned " + rc);
+            MemorySegment fut = arena.allocate(Dds.FUTURE_TRICKS);
+            int rc = dds.solveBoard(ctx, deal, -1, 1, 1, fut);
+            check(rc == RETURN_NO_FAULT, "solve_board on converted deal returned " + rc);
 
-            String parScore = readCString(par, PAR_SCORE, PAR_SCORE_NS_LEN);
-            System.out.println("calc_par_pbn: NS par score = \"" + parScore + "\"");
-            check(!parScore.isBlank(), "calc_par_pbn NS par_score should be non-empty");
+            int topScore = fut.get(JAVA_INT, FT_SCORE);
+            System.out.println("convert_from_pbn + solve_board: score[0]=" + topScore);
+            check(topScore == 13, "expected 13 tricks, got " + topScore);
         } finally {
             dds.destroySolverContext(ctx);
         }
+    }
+
+    private static void checkConvertFromPbnRejectsMalformedString(Dds dds, Arena arena) {
+        MemorySegment cards = arena.allocate(Dds.DD_TABLE_DEAL);
+        MemorySegment pbn = arena.allocateFrom("xx");
+        int rc = dds.convertFromPbn(pbn, cards);
+        System.out.println("convert_from_pbn(malformed): rc=" + rc + " (" + DdsStatus.name(rc) + ")");
+        check(rc != RETURN_NO_FAULT, "malformed PBN should not convert, got " + DdsStatus.name(rc));
     }
 
     private static void setRemain(MemorySegment deal, int hand, int suit, int holding) {
