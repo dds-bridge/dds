@@ -262,6 +262,18 @@ cc_test(
     ],
 )
 
+# Integration tests for DDS_PRINT_TT_STATS output (#397)
+cc_test(
+    name = "tt_print_stats_test",
+    size = "small",
+    srcs = ["tt_print_stats_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # Transposition table sharing tests
 # DISABLED: Tests for SolverContext TT sharing (incomplete API)
 cc_test(
