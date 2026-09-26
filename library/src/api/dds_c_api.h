@@ -83,13 +83,16 @@ DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
    Returns RETURN_UNKNOWN_FAULT if either pointer is NULL, RETURN_PBN_FAULT if
    the string cannot be parsed, else RETURN_NO_FAULT. Two limits matter:
 
-     - RETURN_NO_FAULT means "parsed", not "describes a legal deal". Characters
-       that are neither a rank nor '.' nor ' ' are skipped rather than refused,
-       so a typo'd rank yields a short hand and still converts. Deal validation
-       lives in the entry points that consume the block: they return
-       RETURN_CARD_COUNT or RETURN_DUPLICATE_CARDS. Check that status too --
-       a successful conversion is not a validated deal. (Partial deals are
-       legitimate, e.g. mid-trick, so this function cannot count cards itself.)
+     - RETURN_NO_FAULT means "parsed", not "describes a legal deal". A rank
+       character that is out of range or otherwise unrecognized is skipped
+       rather than refused, so a typo'd rank yields a short hand and still
+       converts -- except a compass letter (N/E/S/W, either case) found after
+       the first hand, which IS refused with RETURN_PBN_FAULT rather than
+       skipped. Deal validation lives in the entry points that consume the
+       block: they return RETURN_CARD_COUNT or RETURN_DUPLICATE_CARDS. Check
+       that status too -- a successful conversion is not a validated deal.
+       (Partial deals are legitimate, e.g. mid-trick, so this function cannot
+       count cards itself.)
 
      - On failure the output is NOT preserved: all DDS_HANDS x DDS_SUITS entries
        are zeroed before parsing begins, so a failed call leaves the block

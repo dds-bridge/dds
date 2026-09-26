@@ -312,9 +312,11 @@ public class Dds implements AutoCloseable {
      * Returns a {@link DdsStatus} {@code RETURN_*} code.
      *
      * <p>{@code RETURN_NO_FAULT} means the string parsed, not that it describes
-     * a legal deal: unrecognized characters are skipped rather than refused, so
-     * a typo'd rank yields a short hand and still converts. The solve and table
-     * calls validate the deal and return {@code RETURN_CARD_COUNT} or
+     * a legal deal: an unrecognized rank is skipped rather than refused, so a
+     * typo'd rank yields a short hand and still converts — except a compass
+     * letter (N/E/S/W, either case) found after the first hand, which IS
+     * refused with {@code RETURN_PBN_FAULT} rather than skipped. The solve and
+     * table calls validate the deal and return {@code RETURN_CARD_COUNT} or
      * {@code RETURN_DUPLICATE_CARDS}, so check their status too.
      *
      * <p>On failure {@code cards} is not preserved — it is zeroed before parsing

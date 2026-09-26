@@ -403,6 +403,21 @@ TEST(DdsCApiConvertFromPbn, UnrecognizedRankParsesButDealIsRefusedOnCardCount)
     dds_c_destroy_solvercontext(ctx);
 }
 
+// Not every unrecognized character is skipped the same way: a compass letter
+// (N/E/S/W, either case) after the first hand is explicitly refused, unlike an
+// unrecognized rank (see UnrecognizedRankParsesButDealIsRefusedOnCardCount).
+TEST(DdsCApiConvertFromPbn, RejectsCompassLetterAfterFirstHand)
+{
+    // The reference deal with the '.' between South's spades and hearts
+    // replaced by 'N'.
+    const char* const pbn_with_stray_compass_letter =
+        "N:AKQJT98765432... .AKQJT98765432.. N.AKQJT98765432. ...AKQJT98765432";
+    unsigned int cards[DDS_HANDS][DDS_SUITS] = {};
+
+    EXPECT_EQ(dds_c_convert_from_pbn(pbn_with_stray_compass_letter, cards),
+                RETURN_PBN_FAULT);
+}
+
 // On failure the output is not preserved: the parser zeroes all 16 entries
 // before it validates anything, so converting in place into a live deal
 // destroys the previous holdings. Pinned so the header's warning stays true.
