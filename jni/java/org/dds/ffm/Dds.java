@@ -307,8 +307,9 @@ public class Dds implements AutoCloseable {
      * {@link #DEAL}'s {@code remainCards} and {@link #DD_TABLE_DEAL}'s
      * {@code cards}. Point {@code cards} at either field (or a slice of it) and
      * then use the binary entry points; this is the general PBN path, which is
-     * why solve and par have no PBN variant here. The string must be shorter
-     * than 80 bytes including its terminator. Needs no solver context.
+     * why solve and par have no PBN variant here. The terminator must occur
+     * within the first 80 bytes of {@code pbnDeal} (79 content bytes plus
+     * terminator fits exactly). Needs no solver context.
      * Returns a {@link DdsStatus} {@code RETURN_*} code.
      *
      * <p>{@code RETURN_NO_FAULT} means the string parsed, not that it describes
@@ -319,9 +320,13 @@ public class Dds implements AutoCloseable {
      * table calls validate the deal and return {@code RETURN_CARD_COUNT} or
      * {@code RETURN_DUPLICATE_CARDS}, so check their status too.
      *
-     * <p>On failure {@code cards} is not preserved — it is zeroed before parsing
+     * <p>On {@code RETURN_PBN_FAULT} (a rejected string that reached the native
+     * parser) {@code cards} is not preserved — it is zeroed before parsing
      * begins and may hold a partial parse. Convert into scratch storage if the
-     * destination must survive a bad string.
+     * destination must survive a bad string. This does not apply to a failure
+     * that never reaches the parser — a {@code RETURN_UNKNOWN_FAULT} from a
+     * {@code NULL} segment, or an exception thrown by this call before the
+     * native invocation completes — where {@code cards} is left untouched.
      */
     public int convertFromPbn(MemorySegment pbnDeal, MemorySegment cards) {
         try {

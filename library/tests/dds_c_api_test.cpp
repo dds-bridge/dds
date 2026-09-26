@@ -418,9 +418,60 @@ TEST(DdsCApiConvertFromPbn, RejectsCompassLetterAfterFirstHand)
                 RETURN_PBN_FAULT);
 }
 
+// The clobbering guarantee only applies once the string has actually reached
+// the parser: a null pbn_deal is rejected by the shim's own guard before
+// convert_from_pbn runs, so an existing cards block is left completely alone
+// rather than zeroed.
+TEST(DdsCApiConvertFromPbn, NullPbnDealDoesNotTouchTheOutputBlock)
+{
+    unsigned int cards[DDS_HANDS][DDS_SUITS];
+    for (auto& hand : cards)
+        for (auto& suit : hand)
+            suit = 0xFFFFFFFFU;
+
+    ASSERT_EQ(dds_c_convert_from_pbn(nullptr, cards), RETURN_UNKNOWN_FAULT);
+
+    for (int hand = 0; hand < DDS_HANDS; ++hand)
+        for (int suit = 0; suit < DDS_SUITS; ++suit)
+            EXPECT_EQ(cards[hand][suit], 0xFFFFFFFFU)
+                << "cards[" << hand << "][" << suit << "] after a null pbn_deal";
+}
+
+// The 80-byte scan window is inclusive: a string whose NUL terminator falls at
+// byte 79 (80 bytes total, matching sizeof(DealPBN::remainCards)) is valid --
+// see library/tests/pbn_test.cpp's AcceptsInputThatFitsRemainCardsBuffer /
+// RejectsInputExactlyAtRemainCardsBufferLimit for the exact boundary. Trailing
+// junk characters are silently skipped like any other unrecognized character,
+// so padding the reference deal out to that length must still parse and solve
+// identically.
+TEST(DdsCApiConvertFromPbn, AcceptsStringWithTerminatorAtByte79)
+{
+    std::string pbn = kReferencePbn;
+    ASSERT_LT(pbn.size(), 79U);
+    pbn.append(79U - pbn.size(), 'z');
+    ASSERT_EQ(pbn.size(), 79U);
+
+    struct Deal dl = {};
+    dl.trump = 0;
+    dl.first = 0;
+    ASSERT_EQ(dds_c_convert_from_pbn(pbn.c_str(), dl.remainCards), RETURN_NO_FAULT);
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct FutureTricks fut = {};
+    ASSERT_EQ(dds_c_solve_board(ctx, &dl, -1, 1, 1, &fut), RETURN_NO_FAULT);
+    EXPECT_EQ(fut.score[0], kExpectedTricks);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
 // On failure the output is not preserved: the parser zeroes all 16 entries
 // before it validates anything, so converting in place into a live deal
 // destroys the previous holdings. Pinned so the header's warning stays true.
+// (This applies once the string reaches the parser -- see
+// NullPbnDealDoesNotTouchTheOutputBlock for the null-input case, which does
+// not.)
 TEST(DdsCApiConvertFromPbn, FailureClobbersTheOutputBlock)
 {
     unsigned int cards[DDS_HANDS][DDS_SUITS];
