@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  # Dependabot's github-actions ecosystem only scans .github/workflows for a
+  # given `directory` — it does not recurse into composite actions elsewhere,
+  # so the pin in setup-bazelisk/action.yml needs its own entry.
+  - package-ecosystem: "github-actions"
+    directory: "/.github/actions/setup-bazelisk"
+    schedule:
+      interval: "weekly"

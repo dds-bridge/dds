@@ -13,7 +13,7 @@ jobs:
     steps:
       # 1️⃣ Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Fail fast on C++ indent drift (4 spaces, no tabs). Full-tree scan against
       # the checkout — not Bazel runfiles — so we avoid per-package source filegroups.
@@ -23,9 +23,9 @@ jobs:
 
       # 2️⃣ Free up disk space (LLVM toolchain ~4 GB extracted; runners ship ~14 GB free)
       - name: Free disk space
-        uses: jlumbroso/free-disk-space@v1.3.1
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
-          tool-cache: false
+          preinstalled-runtimes: false
           android: true
           dotnet: true
           haskell: true
@@ -68,7 +68,7 @@ jobs:
       #    test project's RollForward only matters where no 8.0 runtime
       #    exists, which is not the case here.
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "8.0.x"
 
@@ -112,7 +112,7 @@ jobs:
       # 11 Upload test logs
       - name: Upload test logs - Linux
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bazel-test-logs-linux
           path: bazel-testlogs/
@@ -126,7 +126,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Bazelisk
         uses: ./.github/actions/setup-bazelisk
@@ -153,12 +153,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free disk space
-        uses: jlumbroso/free-disk-space@v1.3.1
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
-          tool-cache: false
+          preinstalled-runtimes: false
           android: true
           dotnet: true
           haskell: true
@@ -187,7 +187,7 @@ jobs:
 
       - name: Upload ASAN test logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bazel-test-logs-linux-asan
           path: bazel-testlogs/
@@ -199,12 +199,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free disk space
-        uses: jlumbroso/free-disk-space@v1.3.1
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
-          tool-cache: false
+          preinstalled-runtimes: false
           android: true
           dotnet: true
           haskell: true
@@ -233,7 +233,7 @@ jobs:
 
       - name: Upload TSAN test logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bazel-test-logs-linux-tsan
           path: bazel-testlogs/
@@ -245,12 +245,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free disk space
-        uses: jlumbroso/free-disk-space@v1.3.1
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
-          tool-cache: false
+          preinstalled-runtimes: false
           android: true
           dotnet: true
           haskell: true
@@ -279,7 +279,7 @@ jobs:
 
       - name: Upload UBSAN test logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bazel-test-logs-linux-ubsan
           path: bazel-testlogs/
@@ -293,12 +293,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free disk space
-        uses: jlumbroso/free-disk-space@v1.3.1
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
-          tool-cache: false
+          preinstalled-runtimes: false
           android: true
           dotnet: true
           haskell: true
@@ -327,7 +327,7 @@ jobs:
 
       - name: Upload MSAN test logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bazel-test-logs-linux-msan
           path: bazel-testlogs/
