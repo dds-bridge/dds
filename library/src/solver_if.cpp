@@ -28,6 +28,51 @@ extern Memory memory;
 extern Scheduler scheduler;
 
 
+namespace {
+
+/// Prints the DDS_TT_STATS summary to stderr when DDS_PRINT_TT_STATS=1 is
+/// set. Shared by solve_board_internal(), solve_same_board(), and
+/// analyse_later_board() so the format/sentinel handling (including
+/// TransTableS's "n/a" op-stats case) can't drift between the three call
+/// sites. Callers are responsible for resetting tt_lookup_count/
+/// tt_hit_count and the TT's own op-stats before the work being reported on.
+auto print_tt_stats(const SolverContext& ctx) -> void
+{
+    auto* env = std::getenv("DDS_PRINT_TT_STATS");
+    if (!(env && env[0] == '1' && env[1] == '\0'))
+        return;
+
+    ThreadData* thrp_ptr = ctx.thread_ptr();
+    if (!thrp_ptr)
+        return;
+
+    double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
+                                        100.0 * (double)thrp_ptr->tt_hit_count /
+                                        (double)thrp_ptr->tt_lookup_count : 0.0;
+    std::fprintf(stderr,
+           "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
+           thrp_ptr->tt_lookup_count,
+           thrp_ptr->tt_hit_count,
+           hit_rate);
+    if (auto* tt = ctx.trans_table()) {
+        int adds, overwrites, harvests;
+        tt->get_op_stats(adds, overwrites, harvests);
+        if (adds < 0) {
+            std::fprintf(stderr,
+                 "DDS_TT_STATS: adds=n/a overwrites=n/a overwrite_rate=n/a harvests=n/a\n");
+        } else {
+            double ow_rate = adds > 0 ?
+                100.0 * (double)overwrites / (double)adds : 0.0;
+            std::fprintf(stderr,
+                 "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
+                 adds, overwrites, ow_rate, harvests);
+        }
+    }
+}
+
+} // namespace
+
+
 auto board_range_checks(
     const Deal& dl,
     const int target,
@@ -679,33 +724,7 @@ SOLVER_DONE:
     }
 
     // Print TT stats if requested
-    if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && env[0] == '1' && env[1] == '\0') {
-        ThreadData* thrp_ptr = ctx.thread_ptr();
-        if (thrp_ptr) {
-            double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
-                                                100.0 * (double)thrp_ptr->tt_hit_count /
-                                                (double)thrp_ptr->tt_lookup_count : 0.0;
-            std::fprintf(stderr,
-                   "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
-                   thrp_ptr->tt_lookup_count,
-                   thrp_ptr->tt_hit_count,
-                   hit_rate);
-            if (auto* tt = ctx.trans_table()) {
-                int adds, overwrites, harvests;
-                tt->get_op_stats(adds, overwrites, harvests);
-                if (adds < 0) {
-                    std::fprintf(stderr,
-                         "DDS_TT_STATS: adds=n/a overwrites=n/a overwrite_rate=n/a harvests=n/a\n");
-                } else {
-                    double ow_rate = adds > 0 ?
-                        100.0 * (double)overwrites / (double)adds : 0.0;
-                    std::fprintf(stderr,
-                         "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
-                         adds, overwrites, ow_rate, harvests);
-                }
-            }
-        }
-    }
+    print_tt_stats(ctx);
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
     _CrtDumpMemoryLeaks();
@@ -853,33 +872,7 @@ auto solve_same_board(
     }
 
     // Print TT stats if requested
-    if (auto* env = std::getenv("DDS_PRINT_TT_STATS"); env && env[0] == '1' && env[1] == '\0') {
-        ThreadData* thrp_ptr = ctx.thread_ptr();
-        if (thrp_ptr) {
-            double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
-                                                100.0 * (double)thrp_ptr->tt_hit_count /
-                                                (double)thrp_ptr->tt_lookup_count : 0.0;
-            std::fprintf(stderr,
-                   "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
-                   thrp_ptr->tt_lookup_count,
-                   thrp_ptr->tt_hit_count,
-                   hit_rate);
-            if (auto* tt = ctx.trans_table()) {
-                int adds, overwrites, harvests;
-                tt->get_op_stats(adds, overwrites, harvests);
-                if (adds < 0) {
-                    std::fprintf(stderr,
-                         "DDS_TT_STATS: adds=n/a overwrites=n/a overwrite_rate=n/a harvests=n/a\n");
-                } else {
-                    double ow_rate = adds > 0 ?
-                        100.0 * (double)overwrites / (double)adds : 0.0;
-                    std::fprintf(stderr,
-                         "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
-                         adds, overwrites, ow_rate, harvests);
-                }
-            }
-        }
-    }
+    print_tt_stats(ctx);
 
 #ifdef DDS_MEMORY_LEAKS_WIN32
     _CrtDumpMemoryLeaks();
@@ -888,49 +881,6 @@ auto solve_same_board(
     return RETURN_NO_FAULT;
 }
 
-
-namespace {
-
-/// Prints the DDS_TT_STATS summary to stderr when DDS_PRINT_TT_STATS=1 is
-/// set, exactly matching the per-solve report in solve_board_internal() and
-/// solve_same_board() (including TransTableS's "n/a" op-stats case).
-/// Callers are responsible for resetting tt_lookup_count/tt_hit_count and
-/// the TT's own op-stats before the work being reported on.
-auto print_tt_stats(const SolverContext& ctx) -> void
-{
-    auto* env = std::getenv("DDS_PRINT_TT_STATS");
-    if (!(env && env[0] == '1' && env[1] == '\0'))
-        return;
-
-    ThreadData* thrp_ptr = ctx.thread_ptr();
-    if (!thrp_ptr)
-        return;
-
-    double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
-                                        100.0 * (double)thrp_ptr->tt_hit_count /
-                                        (double)thrp_ptr->tt_lookup_count : 0.0;
-    std::fprintf(stderr,
-           "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
-           thrp_ptr->tt_lookup_count,
-           thrp_ptr->tt_hit_count,
-           hit_rate);
-    if (auto* tt = ctx.trans_table()) {
-        int adds, overwrites, harvests;
-        tt->get_op_stats(adds, overwrites, harvests);
-        if (adds < 0) {
-            std::fprintf(stderr,
-                 "DDS_TT_STATS: adds=n/a overwrites=n/a overwrite_rate=n/a harvests=n/a\n");
-        } else {
-            double ow_rate = adds > 0 ?
-                100.0 * (double)overwrites / (double)adds : 0.0;
-            std::fprintf(stderr,
-                 "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
-                 adds, overwrites, ow_rate, harvests);
-        }
-    }
-}
-
-} // namespace
 
 auto analyse_later_board(
     SolverContext& ctx,
