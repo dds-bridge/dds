@@ -305,11 +305,12 @@ public class Dds implements AutoCloseable {
      * Parse a NUL-terminated PBN deal string into a binary holdings block: 16
      * consecutive ints, row-major {@code [hand][suit]}, as laid out by
      * {@link #DEAL}'s {@code remainCards} and {@link #DD_TABLE_DEAL}'s
-     * {@code cards}. Point {@code cards} at either field (or a slice of it) and
-     * then use the binary entry points; this is the general PBN path, which is
-     * why solve and par have no PBN variant here. The terminator must occur
-     * within the first 80 bytes of {@code pbnDeal} (79 content bytes plus
-     * terminator fits exactly). Needs no solver context.
+     * {@code cards}. Point {@code cards} at either field (or a slice of it),
+     * then call {@link #solveBoard} or {@link #calcPar} directly with the
+     * result — this is the general PBN path, which is why those two have no
+     * PBN variant here. The terminator must occur within the first 80 bytes of
+     * {@code pbnDeal} (79 content bytes plus terminator fits exactly). Needs no
+     * solver context.
      * Returns a {@link DdsStatus} {@code RETURN_*} code.
      *
      * <p>{@code RETURN_NO_FAULT} means the string parsed, not that it describes

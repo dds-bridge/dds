@@ -78,8 +78,10 @@ DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
    79 content bytes plus terminator fits exactly); no more than 80 bytes are
    read. Needs no SolverContext.
 
-   This is the general PBN entry point for bindings: it is why the solve and par
-   calls have no *_pbn twin on this shim.
+   This is the general PBN entry point for bindings: a PBN-based caller converts
+   once with this function, then calls dds_c_solve_board or dds_c_calc_par
+   directly with the result -- which is why those two have no *_pbn twin on
+   this shim.
 
    Returns RETURN_UNKNOWN_FAULT if either pointer is NULL -- checked before
    pbn_deal is read at all, so on this path cards is untouched, not cleared --
