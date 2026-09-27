@@ -81,6 +81,11 @@ inline constexpr double TtPercentile = 0.9;
 /// \see NodeCards for cached position data
 class TransTableL: public TransTable
 {
+    // White-box access for op-stats unit tests: the public interface has no
+    // way to fill a WinBlock to BlocksPerEntry capacity, so the
+    // full-block-replacement test seeds WinBlock/WinMatch state directly.
+    friend class TransTableLOpStatsTest;
+
     private:
 
         /// \brief A cached position match in the transposition table (52 bytes).

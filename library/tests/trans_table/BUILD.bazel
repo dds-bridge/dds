@@ -26,6 +26,7 @@ cc_test(
         "trans_table_base_test.cpp",
         "trans_table_s_test.cpp",
         "trans_table_l_test.cpp",
+        "trans_table_l_op_stats_test.cpp",
         "trans_table_p_test.cpp",
     ],
     deps = [
