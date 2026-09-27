@@ -889,6 +889,49 @@ auto solve_same_board(
 }
 
 
+namespace {
+
+/// Prints the DDS_TT_STATS summary to stderr when DDS_PRINT_TT_STATS=1 is
+/// set, exactly matching the per-solve report in solve_board_internal() and
+/// solve_same_board() (including TransTableS's "n/a" op-stats case).
+/// Callers are responsible for resetting tt_lookup_count/tt_hit_count and
+/// the TT's own op-stats before the work being reported on.
+auto print_tt_stats(const SolverContext& ctx) -> void
+{
+    auto* env = std::getenv("DDS_PRINT_TT_STATS");
+    if (!(env && env[0] == '1' && env[1] == '\0'))
+        return;
+
+    ThreadData* thrp_ptr = ctx.thread_ptr();
+    if (!thrp_ptr)
+        return;
+
+    double hit_rate = thrp_ptr->tt_lookup_count > 0 ?
+                                        100.0 * (double)thrp_ptr->tt_hit_count /
+                                        (double)thrp_ptr->tt_lookup_count : 0.0;
+    std::fprintf(stderr,
+           "DDS_TT_STATS: lookups=%" PRIu64 " hits=%" PRIu64 " hit_rate=%.2f%%\n",
+           thrp_ptr->tt_lookup_count,
+           thrp_ptr->tt_hit_count,
+           hit_rate);
+    if (auto* tt = ctx.trans_table()) {
+        int adds, overwrites, harvests;
+        tt->get_op_stats(adds, overwrites, harvests);
+        if (adds < 0) {
+            std::fprintf(stderr,
+                 "DDS_TT_STATS: adds=n/a overwrites=n/a overwrite_rate=n/a harvests=n/a\n");
+        } else {
+            double ow_rate = adds > 0 ?
+                100.0 * (double)overwrites / (double)adds : 0.0;
+            std::fprintf(stderr,
+                 "DDS_TT_STATS: adds=%d overwrites=%d overwrite_rate=%.2f%% harvests=%d\n",
+                 adds, overwrites, ow_rate, harvests);
+        }
+    }
+}
+
+} // namespace
+
 auto analyse_later_board(
     SolverContext& ctx,
     const int leadHand,
@@ -910,6 +953,14 @@ auto analyse_later_board(
     // preceding cards; a cold TT yields wrong (under-counted) AnalysePlay
     // results. This mirrors the calc_dd_table fix in commit 27030ba.
     auto thrp = ctx.thread();
+
+    // AnalysePlayBin reuses the caller's warm TT. Reset only instrumentation
+    // counters here so this call gets an independent TT report without
+    // discarding cached search results (see the warm-context comment above).
+    thrp->tt_lookup_count = 0;
+    thrp->tt_hit_count = 0;
+    if (auto* tt = ctx.trans_table()) tt->reset_op_stats();
+
     int ini_depth = --ctx.search().ini_depth();
     int cardCount = ini_depth + 4;
     int trick = (ini_depth + 3) >> 2;
@@ -967,6 +1018,8 @@ auto analyse_later_board(
         EvalType eval = evaluate_with_context(&thrp->lookAheadPos, thrp->trump, ctx);
         futp->score[0] = eval.tricks;
         futp->nodes = 0;
+
+        print_tt_stats(ctx);
 
         return RETURN_NO_FAULT;
     }
@@ -1066,6 +1119,8 @@ auto analyse_later_board(
 #ifdef DDS_MEMORY_LEAKS_WIN32
     _CrtDumpMemoryLeaks();
 #endif
+
+    print_tt_stats(ctx);
 
     return RETURN_NO_FAULT;
 }
