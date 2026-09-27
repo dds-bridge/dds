@@ -20,7 +20,7 @@
 #include <string>
 
 #include <api/dds_c_api.h>
-#include <api/dll.h>  // full definitions for DealPBN, ParResults{Dealer,Master}, ParTextResults, DDSInfo
+#include <api/dll.h>  // full definitions for ParResults{Dealer,Master}, ParTextResults, DDSInfo
 
 namespace {
 
@@ -68,15 +68,6 @@ struct DdTableDeal MakeReferenceTableDeal()
     return deal;
 }
 
-struct DealPBN MakeReferenceDealPbn()
-{
-    struct DealPBN dlpbn = {};
-    dlpbn.trump = 0;   // spades
-    dlpbn.first = 0;   // North leads
-    std::snprintf(dlpbn.remainCards, sizeof dlpbn.remainCards, "%s", kReferencePbn);
-    return dlpbn;
-}
-
 // Solve the reference board on ctx and return the trick count.
 int SolveReference(DDS_C_SOLVER_CTX ctx)
 {
@@ -96,7 +87,6 @@ int SolveReference(DDS_C_SOLVER_CTX ctx)
 TEST(DdsCApiNullHandle, IntReturningEntryPointsFailFast)
 {
     const struct Deal dl = MakeReferenceDeal();
-    const struct DealPBN dlpbn = MakeReferenceDealPbn();
     const struct DdTableDeal table_deal = MakeReferenceTableDeal();
     struct DdTableDealPBN pbn_deal = {};
     struct FutureTricks fut = {};
@@ -104,11 +94,9 @@ TEST(DdsCApiNullHandle, IntReturningEntryPointsFailFast)
     struct ParResults par = {};
 
     EXPECT_EQ(dds_c_solve_board(nullptr, &dl, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
-    EXPECT_EQ(dds_c_solve_board_pbn(nullptr, &dlpbn, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table(nullptr, &table_deal, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(nullptr, &pbn_deal, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_par(nullptr, &table_deal, 0, &results, &par), RETURN_UNKNOWN_FAULT);
-    EXPECT_EQ(dds_c_calc_par_pbn(nullptr, &pbn_deal, 0, &results, &par), RETURN_UNKNOWN_FAULT);
 }
 
 // Context-free utilities: must reject null data pointers.
@@ -167,15 +155,11 @@ TEST(DdsCApiNullArgument, PointerArgumentsAreValidated)
     struct DdTableDealPBN pbn_deal = {};
     const struct DdTableDeal table_deal = MakeReferenceTableDeal();
     struct FutureTricks fut = {};
-    struct ParResults par = {};
 
     EXPECT_EQ(dds_c_solve_board(ctx, nullptr, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
-    EXPECT_EQ(dds_c_solve_board_pbn(ctx, nullptr, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(ctx, nullptr, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(ctx, &pbn_deal, nullptr), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_par(ctx, &table_deal, 0, &results, nullptr), RETURN_UNKNOWN_FAULT);
-    EXPECT_EQ(dds_c_calc_par_pbn(ctx, nullptr, 0, &results, &par), RETURN_UNKNOWN_FAULT);
-    EXPECT_EQ(dds_c_calc_par_pbn(ctx, &pbn_deal, 0, &results, nullptr), RETURN_UNKNOWN_FAULT);
 
     // A null message must be ignored rather than passed through to strlen.
     dds_c_log_append(ctx, nullptr);
@@ -358,39 +342,192 @@ TEST(DdsCApiPar, ProducesNonEmptyScore)
     dds_c_destroy_solvercontext(ctx);
 }
 
-TEST(DdsCApiSolveBoard, PbnMatchesBinary)
+// ---------------------------------------------------------------------------
+// PBN conversion. dds_c_convert_from_pbn exposes the parser itself, so a
+// binding can turn a PBN string into the binary holdings block shared by
+// struct Deal.remainCards and struct DdTableDeal.cards and then use the binary
+// entry points. It needs no SolverContext.
+// ---------------------------------------------------------------------------
+
+TEST(DdsCApiConvertFromPbn, ProducesTheBinaryReferenceHoldings)
 {
+    const struct DdTableDeal expected = MakeReferenceTableDeal();
+    unsigned int cards[DDS_HANDS][DDS_SUITS] = {};
+
+    ASSERT_EQ(dds_c_convert_from_pbn(kReferencePbn, cards), RETURN_NO_FAULT);
+
+    for (int hand = 0; hand < DDS_HANDS; ++hand)
+        for (int suit = 0; suit < DDS_SUITS; ++suit)
+            EXPECT_EQ(cards[hand][suit], expected.cards[hand][suit])
+                << "cards[" << hand << "][" << suit << "]";
+}
+
+TEST(DdsCApiConvertFromPbn, RejectsNullArguments)
+{
+    unsigned int cards[DDS_HANDS][DDS_SUITS] = {};
+
+    EXPECT_EQ(dds_c_convert_from_pbn(nullptr, cards), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_convert_from_pbn(kReferencePbn, nullptr), RETURN_UNKNOWN_FAULT);
+}
+
+// A malformed string must surface as RETURN_PBN_FAULT, not as the parser's raw
+// 0: every other entry point here returns a RETURN_* code.
+TEST(DdsCApiConvertFromPbn, RejectsMalformedStringWithPbnFault)
+{
+    unsigned int cards[DDS_HANDS][DDS_SUITS] = {};
+
+    EXPECT_EQ(dds_c_convert_from_pbn("xx", cards), RETURN_PBN_FAULT);
+}
+
+// Success means "parsed", not "legal deal". The parser skips characters it does
+// not recognize, so a bad rank silently yields a short hand; the deal is then
+// refused by the binary entry point on card count, which is where deal
+// validation lives (see library/tests/deal_input_validation_test.cpp, where the
+// same layering is pinned for the legacy CalcDDtablePBN path). A caller must
+// therefore check the solve/table status, not just the conversion status.
+TEST(DdsCApiConvertFromPbn, UnrecognizedRankParsesButDealIsRefusedOnCardCount)
+{
+    // The reference deal with North's '2' of spades replaced by 'X'.
+    const char* const pbn_with_bad_rank =
+        "N:AKQJT9876543X... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432";
+
+    struct DdTableDeal deal = {};
+    EXPECT_EQ(dds_c_convert_from_pbn(pbn_with_bad_rank, deal.cards), RETURN_NO_FAULT);
+
     DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
     ASSERT_NE(ctx, nullptr);
 
-    const struct DealPBN dlpbn = MakeReferenceDealPbn();
+    struct DdTableResults results = {};
+    EXPECT_EQ(dds_c_calc_dd_table(ctx, &deal, &results), RETURN_CARD_COUNT);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+// Not every unrecognized character is skipped the same way: a compass letter
+// (N/E/S/W, either case) after the first hand is explicitly refused, unlike an
+// unrecognized rank (see UnrecognizedRankParsesButDealIsRefusedOnCardCount).
+TEST(DdsCApiConvertFromPbn, RejectsCompassLetterAfterFirstHand)
+{
+    // The reference deal with the '.' between South's spades and hearts
+    // replaced by 'N'.
+    const char* const pbn_with_stray_compass_letter =
+        "N:AKQJT98765432... .AKQJT98765432.. N.AKQJT98765432. ...AKQJT98765432";
+    unsigned int cards[DDS_HANDS][DDS_SUITS] = {};
+
+    EXPECT_EQ(dds_c_convert_from_pbn(pbn_with_stray_compass_letter, cards),
+                RETURN_PBN_FAULT);
+}
+
+// The clobbering guarantee only applies once the string has actually reached
+// the parser: a null pbn_deal is rejected by the shim's own guard before
+// convert_from_pbn runs, so an existing cards block is left completely alone
+// rather than zeroed.
+TEST(DdsCApiConvertFromPbn, NullPbnDealDoesNotTouchTheOutputBlock)
+{
+    unsigned int cards[DDS_HANDS][DDS_SUITS];
+    for (auto& hand : cards)
+        for (auto& suit : hand)
+            suit = 0xFFFFFFFFU;
+
+    ASSERT_EQ(dds_c_convert_from_pbn(nullptr, cards), RETURN_UNKNOWN_FAULT);
+
+    for (int hand = 0; hand < DDS_HANDS; ++hand)
+        for (int suit = 0; suit < DDS_SUITS; ++suit)
+            EXPECT_EQ(cards[hand][suit], 0xFFFFFFFFU)
+                << "cards[" << hand << "][" << suit << "] after a null pbn_deal";
+}
+
+// The 80-byte scan window is inclusive: a string whose NUL terminator falls at
+// byte 79 (80 bytes total, matching sizeof(DealPBN::remainCards)) is valid --
+// see library/tests/pbn_test.cpp's AcceptsInputThatFitsRemainCardsBuffer /
+// RejectsInputExactlyAtRemainCardsBufferLimit for the exact boundary. Trailing
+// junk characters are silently skipped like any other unrecognized character,
+// so padding the reference deal out to that length must still parse and solve
+// identically.
+TEST(DdsCApiConvertFromPbn, AcceptsStringWithTerminatorAtByte79)
+{
+    std::string pbn = kReferencePbn;
+    ASSERT_LT(pbn.size(), 79U);
+    pbn.append(79U - pbn.size(), 'z');
+    ASSERT_EQ(pbn.size(), 79U);
+
+    struct Deal dl = {};
+    dl.trump = 0;
+    dl.first = 0;
+    ASSERT_EQ(dds_c_convert_from_pbn(pbn.c_str(), dl.remainCards), RETURN_NO_FAULT);
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
     struct FutureTricks fut = {};
-    ASSERT_EQ(dds_c_solve_board_pbn(ctx, &dlpbn, -1, 1, 1, &fut), RETURN_NO_FAULT);
+    ASSERT_EQ(dds_c_solve_board(ctx, &dl, -1, 1, 1, &fut), RETURN_NO_FAULT);
     EXPECT_EQ(fut.score[0], kExpectedTricks);
 
     dds_c_destroy_solvercontext(ctx);
 }
 
-TEST(DdsCApiPar, PbnMatchesBinary)
+// On failure the output is not preserved: the parser zeroes all 16 entries
+// before it validates anything, so converting in place into a live deal
+// destroys the previous holdings. Pinned so the header's warning stays true.
+// (This applies once the string reaches the parser -- see
+// NullPbnDealDoesNotTouchTheOutputBlock for the null-input case, which does
+// not.)
+TEST(DdsCApiConvertFromPbn, FailureClobbersTheOutputBlock)
+{
+    unsigned int cards[DDS_HANDS][DDS_SUITS];
+    for (auto& hand : cards)
+        for (auto& suit : hand)
+            suit = 0xFFFFFFFFU;
+
+    ASSERT_EQ(dds_c_convert_from_pbn("xx", cards), RETURN_PBN_FAULT);
+
+    for (int hand = 0; hand < DDS_HANDS; ++hand)
+        for (int suit = 0; suit < DDS_SUITS; ++suit)
+            EXPECT_EQ(cards[hand][suit], 0U)
+                << "cards[" << hand << "][" << suit << "] after a failed parse";
+}
+
+// The replacement path for the withdrawn dds_c_solve_board_pbn: convert, fill
+// the binary Deal's remaining (already-binary) fields, then solve.
+TEST(DdsCApiConvertFromPbn, ConvertedDealSolvesLikeTheBinaryFixture)
+{
+    struct Deal dl = {};
+    dl.trump = 0;   // spades
+    dl.first = 0;   // North leads
+    ASSERT_EQ(dds_c_convert_from_pbn(kReferencePbn, dl.remainCards), RETURN_NO_FAULT);
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct FutureTricks fut = {};
+    ASSERT_EQ(dds_c_solve_board(ctx, &dl, -1, 1, 1, &fut), RETURN_NO_FAULT);
+    EXPECT_EQ(fut.score[0], kExpectedTricks);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+// Cross-check the converter against the one surviving PBN twin: feeding the
+// converted holdings to the binary table call must match the twin exactly.
+TEST(DdsCApiConvertFromPbn, ConvertedTableDealMatchesThePbnTwin)
 {
     DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
     ASSERT_NE(ctx, nullptr);
 
-    const struct DdTableDeal binary_deal = MakeReferenceTableDeal();
-    struct DdTableResults binary_results = {};
-    struct ParResults binary_par = {};
-    ASSERT_EQ(dds_c_calc_par(ctx, &binary_deal, 0, &binary_results, &binary_par),
-                RETURN_NO_FAULT);
+    struct DdTableDeal converted = {};
+    ASSERT_EQ(dds_c_convert_from_pbn(kReferencePbn, converted.cards), RETURN_NO_FAULT);
+    struct DdTableResults converted_results = {};
+    ASSERT_EQ(dds_c_calc_dd_table(ctx, &converted, &converted_results), RETURN_NO_FAULT);
 
     struct DdTableDealPBN pbn_deal = {};
     std::snprintf(pbn_deal.cards, sizeof pbn_deal.cards, "%s", kReferencePbn);
-    struct DdTableResults pbn_results = {};
-    struct ParResults pbn_par = {};
-    ASSERT_EQ(dds_c_calc_par_pbn(ctx, &pbn_deal, 0, &pbn_results, &pbn_par),
-                RETURN_NO_FAULT);
+    struct DdTableResults twin_results = {};
+    ASSERT_EQ(dds_c_calc_dd_table_pbn(ctx, &pbn_deal, &twin_results), RETURN_NO_FAULT);
 
-    EXPECT_STREQ(pbn_par.par_score[0], binary_par.par_score[0]);
-    EXPECT_STREQ(pbn_par.par_score[1], binary_par.par_score[1]);
+    for (int strain = 0; strain < DDS_STRAINS; ++strain)
+        for (int hand = 0; hand < DDS_HANDS; ++hand)
+            EXPECT_EQ(converted_results.res_table[strain][hand],
+                        twin_results.res_table[strain][hand])
+                << "res_table[" << strain << "][" << hand << "]";
 
     dds_c_destroy_solvercontext(ctx);
 }

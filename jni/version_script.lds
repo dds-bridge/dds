@@ -44,9 +44,9 @@
     dds_c_calc_dd_table;
     dds_c_calc_dd_table_pbn;
     dds_c_calc_par;
-    dds_c_calc_par_pbn;
     dds_c_clear_tt;
     dds_c_configure_tt;
+    dds_c_convert_from_pbn;
     dds_c_convert_to_dealer_text_format;
     dds_c_convert_to_sides_text_format;
     dds_c_create_solvercontext;
@@ -65,7 +65,6 @@
     dds_c_sides_par;
     dds_c_sides_par_bin;
     dds_c_solve_board;
-    dds_c_solve_board_pbn;
   local:
     *;
 };
