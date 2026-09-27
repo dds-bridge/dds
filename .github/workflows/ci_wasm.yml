@@ -13,14 +13,14 @@ jobs:
     steps:
       # 1️⃣ Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # 2️⃣ Free disk space — LLVM 21.1.8 is ~2 GB compressed / ~5 GB extracted;
       #    ubuntu-latest ships with Android SDK, .NET, Haskell, etc. that we don't need.
       - name: Free disk space
-        uses: jlumbroso/free-disk-space@v1.3.1
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
-          tool-cache: false
+          preinstalled-runtimes: false
           android: true
           dotnet: true
           haskell: true
@@ -76,7 +76,7 @@ jobs:
       # 7️⃣ Upload test logs
       - name: Upload test logs - WASM
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bazel-test-logs-wasm
           path: bazel-testlogs/
