@@ -32,3 +32,17 @@ cc_test(
     ],
     copts = DDS_CPPOPTS,
 )
+
+# Tests for analyse_later_board's TT counter reset/report (#379 item 4).
+cc_test(
+    name = "analyse_later_board_tt_stats_test",
+    size = "small",
+    srcs = [
+        "analyse_later_board_tt_stats_test.cpp",
+    ],
+    deps = [
+        "//library/src:testable_dds",
+        "@googletest//:gtest_main",
+    ],
+    copts = DDS_CPPOPTS,
+)
