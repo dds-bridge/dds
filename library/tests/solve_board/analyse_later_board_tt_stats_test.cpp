@@ -150,17 +150,79 @@ auto extract_hit_counts(const std::string& captured) -> std::vector<long long>
     return counts;
 }
 
-/// Pulls every "adds=<n>" value out of captured DDS_TT_STATS lines (never
-/// matches the "adds=n/a" TransTableS case), in the order they were printed.
-auto extract_adds_counts(const std::string& captured) -> std::vector<long long>
+/// The "adds/overwrites/harvests" values from one printed DDS_TT_STATS
+/// op-stats line (never present for TransTableS, which prints "n/a").
+struct OpStats
 {
-    std::vector<long long> counts;
-    const std::regex re(R"(DDS_TT_STATS: adds=(\d+))");
-    auto it = std::sregex_iterator(captured.begin(), captured.end(), re);
-    const auto end = std::sregex_iterator();
-    for (; it != end; ++it)
-        counts.push_back(std::stoll((*it)[1].str()));
-    return counts;
+    long long adds = -1;
+    long long overwrites = -1;
+    long long harvests = -1;
+};
+
+/// Parses the single op-stats line out of captured DDS_TT_STATS output.
+auto extract_op_stats(const std::string& captured, OpStats& out) -> bool
+{
+    const std::regex re(
+        R"(DDS_TT_STATS: adds=(\d+) overwrites=(\d+) overwrite_rate=[\d.]+% harvests=(\d+))");
+    std::smatch match;
+    if (!std::regex_search(captured, match, re))
+        return false;
+    out.adds = std::stoll(match[1].str());
+    out.overwrites = std::stoll(match[2].str());
+    out.harvests = std::stoll(match[3].str());
+    return true;
+}
+
+/// Builds a fresh context, runs the opening solve, then makes the first
+/// analyse_later_board call, and reports the op-stats that call printed.
+/// The call parameters (leadHand, move, hint, hintDir) are derived exactly
+/// as play_analyser.cpp's AnalysePlayBin loop derives them for its first
+/// played card (trick 1, card 1: usingCurrent is false, card != 4, so
+/// hintDir=0 and hint = numTricks - fut.score[0]).
+///
+/// When manual_pre_reset is true, the TT's op-stats are additionally reset
+/// by hand immediately before the call, so the caller can compare against
+/// the case where only analyse_later_board's own reset is in play.
+void run_later_board_op_stats(bool manual_pre_reset, int& adds_before, OpStats& stats)
+{
+    Deal dl{};
+    ASSERT_EQ(convert_from_pbn(kComplexDealPbn, dl.remainCards), RETURN_NO_FAULT);
+    dl.trump = DDS_NOTRUMP;
+    dl.first = kNorth;
+
+    SolverContext ctx;
+    FutureTricks fut{};
+    testing::internal::CaptureStderr();
+    const int solve_res = solve_board_internal(ctx, dl, -1, 1, 1, &fut);
+    (void)testing::internal::GetCapturedStderr();  // discard the opening-lead report
+    ASSERT_EQ(solve_res, RETURN_NO_FAULT);
+
+    TransTable* tt = ctx.trans_table();
+    ASSERT_NE(tt, nullptr);
+    int overwrites_before = -1;
+    int harvests_before = -1;
+    tt->get_op_stats(adds_before, overwrites_before, harvests_before);
+
+    const int ini_depth = ctx.search().ini_depth();
+    const int num_tricks = ((ini_depth + 3) >> 2) + 1;
+
+    // North's first play-trace card: the Queen of spades, a card North
+    // genuinely holds in kComplexDealPbn ("QJ6.K652.J85.T98").
+    MoveType move{};
+    move.suit = kSpades;
+    move.rank = 12;
+    move.sequence = 12;
+    const int hint = num_tricks - fut.score[0];
+    const int hint_dir = 0;
+
+    if (manual_pre_reset)
+        tt->reset_op_stats();
+
+    testing::internal::CaptureStderr();
+    const int res = analyse_later_board(ctx, dl.first, &move, hint, hint_dir, &fut);
+    const std::string captured = testing::internal::GetCapturedStderr();
+    ASSERT_EQ(res, RETURN_NO_FAULT);
+    ASSERT_TRUE(extract_op_stats(captured, stats)) << "captured stderr:\n" << captured;
 }
 
 }  // namespace
@@ -172,24 +234,12 @@ auto extract_adds_counts(const std::string& captured) -> std::vector<long long>
 /// and confirm the printed counts could not possibly include them. This is
 /// independent of search shape/move ordering.
 ///
-/// There is no public setter for the TT's own op-stats (adds/overwrites/
-/// harvests), so those can't be poisoned the same way -- but adds only ever
-/// increments within a table's lifetime, so capturing the real, substantial
-/// "adds" count the opening 52-card solve leaves behind (via a direct
-/// get_op_stats() call, forcing DDS_TT_KIND=large so the count is a real
-/// number rather than TransTableS's "n/a") gives the same kind of
-/// deterministic proof: if analyse_later_board's reset were missing, its
-/// own printed "adds" could never be smaller than that baseline.
-///
-/// The call parameters (leadHand, move, hint, hintDir) for the very first
-/// analyse_later_board call after the opening lead are derived exactly as
-/// play_analyser.cpp's AnalysePlayBin loop derives them for its first
-/// played card (trick 1, card 1: usingCurrent is false, card != 4, so
-/// hintDir=0 and hint = numTricks - fut.score[0]), rather than driving the
-/// full public API, so the sentinels can be injected at the right moment.
-TEST(AnalyseLaterBoardTtStatsTest, ResetsCountersIndependentlyOfPriorSolve)
+/// The call parameters (leadHand, move, hint, hintDir) are derived as in
+/// run_later_board_op_stats() above, rather than driving the full public
+/// API, so the sentinels can be injected at the right moment.
+TEST(AnalyseLaterBoardTtStatsTest, ResetsLookupAndHitCountersIndependentlyOfPriorSolve)
 {
-    ScopedEnv kind("DDS_TT_KIND", "large");
+    ScopedEnv no_kind("DDS_TT_KIND", nullptr);
     ScopedEnv print_stats("DDS_PRINT_TT_STATS", "1");
 
     Deal dl{};
@@ -200,17 +250,9 @@ TEST(AnalyseLaterBoardTtStatsTest, ResetsCountersIndependentlyOfPriorSolve)
     SolverContext ctx;
     FutureTricks fut{};
     testing::internal::CaptureStderr();
-    ASSERT_EQ(solve_board_internal(ctx, dl, -1, 1, 1, &fut), RETURN_NO_FAULT);
+    const int solve_res = solve_board_internal(ctx, dl, -1, 1, 1, &fut);
     (void)testing::internal::GetCapturedStderr();  // discard the opening-lead report
-
-    int adds_before = -1, overwrites_before = -1, harvests_before = -1;
-    TransTable* tt = ctx.trans_table();
-    ASSERT_NE(tt, nullptr);
-    tt->get_op_stats(adds_before, overwrites_before, harvests_before);
-    const std::string adds_precondition_msg =
-        "expected the opening 52-card solve to have inserted a substantial "
-        "number of TT entries; got adds=";
-    ASSERT_GT(adds_before, 100) << adds_precondition_msg << adds_before;
+    ASSERT_EQ(solve_res, RETURN_NO_FAULT);
 
     const int ini_depth = ctx.search().ini_depth();
     const int num_tricks = ((ini_depth + 3) >> 2) + 1;
@@ -238,10 +280,8 @@ TEST(AnalyseLaterBoardTtStatsTest, ResetsCountersIndependentlyOfPriorSolve)
 
     const auto lookups = extract_lookup_counts(captured);
     const auto hits = extract_hit_counts(captured);
-    const auto adds = extract_adds_counts(captured);
     ASSERT_EQ(lookups.size(), 1u) << "captured stderr:\n" << captured;
     ASSERT_EQ(hits.size(), 1u) << "captured stderr:\n" << captured;
-    ASSERT_EQ(adds.size(), 1u) << "captured stderr:\n" << captured;
 
     const std::string lookup_reset_failure_msg =
         "analyse_later_board's printed lookup count appears to carry over "
@@ -254,13 +294,55 @@ TEST(AnalyseLaterBoardTtStatsTest, ResetsCountersIndependentlyOfPriorSolve)
         "stale value from the preceding solve instead of resetting; "
         "captured stderr:\n";
     EXPECT_LT(hits[0], kSentinelThreshold) << hit_reset_failure_msg << captured;
+}
+
+/// There is no public setter for the TT's own op-stats (adds/overwrites/
+/// harvests), so they can't be poisoned with a sentinel the way the lookup
+/// and hit counters are. Instead this compares two runs that are identical
+/// except for who resets the op-stats: one relies only on
+/// analyse_later_board's own entry reset, the other also resets by hand
+/// right before the call. The opening solve and the later-board search are
+/// deterministic, so if analyse_later_board really resets, both runs print
+/// exactly the same adds/overwrites/harvests. If it did not, the first run
+/// would print the opening solve's leftover counts plus the call's own,
+/// which can never equal the second run's (the leftover is asserted to be
+/// substantial). Unlike comparing against the opening solve's total, this
+/// does not depend on how much work the later search happens to do.
+///
+/// DDS_TT_KIND=large is forced so the counts are real numbers rather than
+/// TransTableS's "n/a".
+TEST(AnalyseLaterBoardTtStatsTest, ResetsTtOpStatsIndependentlyOfPriorSolve)
+{
+    ScopedEnv kind("DDS_TT_KIND", "large");
+    ScopedEnv print_stats("DDS_PRINT_TT_STATS", "1");
+
+    int adds_before_internal = -1;
+    OpStats internal_reset_only;
+    ASSERT_NO_FATAL_FAILURE(
+        run_later_board_op_stats(false, adds_before_internal, internal_reset_only));
+
+    int adds_before_manual = -1;
+    OpStats manual_reset_too;
+    ASSERT_NO_FATAL_FAILURE(
+        run_later_board_op_stats(true, adds_before_manual, manual_reset_too));
+
+    const std::string adds_precondition_msg =
+        "expected the opening 52-card solve to have inserted a substantial "
+        "number of TT entries; got adds=";
+    ASSERT_GT(adds_before_internal, 100) << adds_precondition_msg << adds_before_internal;
+    ASSERT_EQ(adds_before_internal, adds_before_manual)
+        << "the two runs must start from identical opening solves";
 
     const std::string op_stats_reset_failure_msg =
-        "analyse_later_board's printed adds count is not smaller than the "
-        "baseline captured right after the opening solve, which is only "
-        "possible if the TT's op-stats were not reset before this call; "
-        "captured stderr:\n";
-    EXPECT_LT(adds[0], adds_before) << op_stats_reset_failure_msg << captured;
+        "analyse_later_board's printed op-stats differ from a run where the "
+        "op-stats were also reset by hand right before the call, which "
+        "means analyse_later_board did not reset them itself";
+    EXPECT_EQ(internal_reset_only.adds, manual_reset_too.adds)
+        << op_stats_reset_failure_msg;
+    EXPECT_EQ(internal_reset_only.overwrites, manual_reset_too.overwrites)
+        << op_stats_reset_failure_msg;
+    EXPECT_EQ(internal_reset_only.harvests, manual_reset_too.harvests)
+        << op_stats_reset_failure_msg;
 }
 
 /// Drives the full 52-card forced play-out through the real, public
