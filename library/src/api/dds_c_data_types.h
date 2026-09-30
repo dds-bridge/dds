@@ -41,7 +41,7 @@ struct FutureTricks
 /**
  * @brief Represents a bridge Deal for double dummy analysis.
  *
- * @param trump The trump suit (0 = NT, 1 = Spades, ...)
+ * @param trump The trump suit (0 = Spades, 1 = Hearts, 2 = Diamonds, 3 = Clubs, 4 = NoTrump)
  * @param first The hand to play first (0 = N, 1 = E, ...)
  * @param currentTrickSuit Suits of cards played in the current trick
  * @param currentTrickRank Ranks of cards played in the current trick
