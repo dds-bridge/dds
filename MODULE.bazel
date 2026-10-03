@@ -105,6 +105,18 @@ llvm.toolchain(
         "darwin-x86_64": ["--ld-path=/usr/bin/ld"],
         "linux-x86_64": ["--ld-path=/usr/bin/ld"],
     },
+    # GNU ld resolves static archives in command-line order (lld does not),
+    # and the toolchain places -l:libunwind.a among the early link flags,
+    # before the libc++abi.a that needs _Unwind_*. Repeat the runtime archives
+    # in dependency order at the end of the link; a repeated static archive
+    # only supplies still-undefined symbols, so nothing is linked twice.
+    extra_link_libs = {
+        "linux-x86_64": [
+            "-l:libc++.a",
+            "-l:libc++abi.a",
+            "-l:libunwind.a",
+        ],
+    },
     llvm_versions = {
         "darwin-aarch64": "21.1.8",
         "linux-x86_64": "21.1.8",
