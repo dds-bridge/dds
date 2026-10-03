@@ -1,11 +1,12 @@
+// pybind11 must be included before any standard header; see converters.hpp.
+#include <pybind11/pybind11.h>
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <string>
-
-#include <pybind11/pybind11.h>
 
 #include <api/calc_par.hpp>
 #include <dds/dds.hpp>

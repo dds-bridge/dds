@@ -1,9 +1,12 @@
 #pragma once
 
+// pybind11 (and through it Python.h) must come before any standard header:
+// pyconfig.h defines _POSIX_C_SOURCE, which clashes with glibc's value on
+// newer distributions if <features.h> was already included (issue #406).
+#include <pybind11/pytypes.h>
+
 #include <string>
 #include <vector>
-
-#include <pybind11/pytypes.h>
 
 #include <dds/dds.hpp>
 
