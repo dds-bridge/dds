@@ -95,9 +95,15 @@ llvm.toolchain(
     # because Apple ld rejects lld's --start-lib/--end-lib. Scoped to this
     # toolchain so wasm/emscripten keeps wasm-ld (do not put --ld-path in
     # build:macos --linkopt). See docs/BUILD_SYSTEM.md (macOS SDK section).
+    # Linux uses the host's GNU ld for the same reason in a different guise:
+    # the upstream LLVM Linux archive's ld.lld needs libxml2.so.2, which
+    # Ubuntu 26.04 and other libxml2 >= 2.14 distros no longer ship. The
+    # msan toolchain below keeps ld.lld (its CI job is pinned to 22.04).
+    # See docs/BUILD_SYSTEM.md (Linux linker section).
     extra_link_flags = {
         "darwin-aarch64": ["--ld-path=/usr/bin/ld"],
         "darwin-x86_64": ["--ld-path=/usr/bin/ld"],
+        "linux-x86_64": ["--ld-path=/usr/bin/ld"],
     },
     llvm_versions = {
         "darwin-aarch64": "21.1.8",

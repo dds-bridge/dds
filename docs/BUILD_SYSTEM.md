@@ -75,6 +75,32 @@ on purpose: putting it in `build:macos --linkopt` would leak into wasm
 transitions and replace `wasm-ld`. Drop both workarounds when LLVM's Mach-O
 linker can parse `arm64e.x1` TBD targets.
 
+### Linux linker (GNU ld)
+
+The upstream `LLVM-<version>-Linux-X64` archive that `toolchains_llvm`
+downloads ships an `ld.lld` that is dynamically linked against
+`libxml2.so.2`. libxml2 2.14 changed its soname to `libxml2.so.16`, and
+distributions on it (Ubuntu 26.04, Arch, Fedora rawhide, ...) no longer
+provide `.so.2`, so `ld.lld` fails to start with `error while loading shared
+libraries: libxml2.so.2`. Native Linux links therefore use the host's GNU
+`ld` (`/usr/bin/ld`) through the same toolchain-scoped
+`llvm.toolchain.extra_link_flags` mechanism as macOS, and `.bazelrc`
+disables `supports_start_end_lib` on Linux because GNU ld does not accept
+`--start-lib` / `--end-lib`. Compilation is unaffected; clang and libc++ still
+come from the LLVM archive.
+
+Consequences:
+
+- Linux hosts need **binutils** installed (`/usr/bin/ld`). It is present
+  wherever `build-essential` / a C development toolchain is; minimal
+  containers may need `apt-get install binutils` or `dnf install binutils`.
+- `--config=msan` uses its own toolchain (`llvm_toolchain_msan`) and keeps
+  `ld.lld`; its CI job is pinned to Ubuntu 22.04, which still ships
+  `libxml2.so.2`.
+
+Drop the Linux override once the LLVM Linux archive no longer needs a host
+`libxml2.so.2` (or the project moves to a statically linked LLVM).
+
 ### AddressSanitizer, ThreadSanitizer, UndefinedBehaviorSanitizer, and MemorySanitizer
 
 Sanitizer builds use `--config=asan`, `--config=tsan`, `--config=ubsan`, or
