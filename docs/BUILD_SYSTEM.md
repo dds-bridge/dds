@@ -89,6 +89,12 @@ disables `supports_start_end_lib` on Linux because GNU ld does not accept
 `--start-lib` / `--end-lib`. Compilation is unaffected; clang and libc++ still
 come from the LLVM archive.
 
+GNU ld also resolves static archives strictly in command-line order, unlike
+lld. `toolchains_llvm` places `-l:libunwind.a` among the early link flags,
+before the `libc++abi.a` that needs `_Unwind_*`, so `MODULE.bazel` repeats
+`libc++.a`, `libc++abi.a` and `libunwind.a` (in that order) via
+`extra_link_libs` at the end of every Linux link.
+
 Consequences:
 
 - Linux hosts need **binutils** installed (`/usr/bin/ld`). It is present
