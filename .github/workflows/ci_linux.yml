@@ -8,7 +8,7 @@ on:
 
 jobs:
   build_and_test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       # 1️⃣ Checkout the repository
@@ -122,7 +122,7 @@ jobs:
   # Hand-list harness via verify_lists.sh (all five dtest solver modes).
   # Separate job so it runs in parallel with build_and_test / sanitizers.
   dtest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - name: Checkout repository
@@ -149,7 +149,7 @@ jobs:
         run: utilities/src/verify_lists.sh hands/list100.txt
 
   asan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - name: Checkout repository
@@ -195,7 +195,7 @@ jobs:
           retention-days: 30
 
   tsan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - name: Checkout repository
@@ -241,7 +241,7 @@ jobs:
           retention-days: 30
 
   ubsan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - name: Checkout repository
