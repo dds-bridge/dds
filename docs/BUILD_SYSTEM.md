@@ -112,8 +112,9 @@ Drop the Linux override once the LLVM Linux archive no longer needs a host
 Because no sysroot is configured, Linux builds compile against the host's
 glibc headers and link with the host's GNU ld. The downloaded clang also needs
 glibc ≥ 2.34 and libstdc++ from gcc ≥ 12 (`GLIBCXX_3.4.30`) just to start,
-so RHEL 8/9 and their clones are not supported; RHEL 10, current Fedora,
-Debian 12+ and Ubuntu 22.04+ are.
+so RHEL 8/9 and their clones are not supported. RHEL 10 and current Fedora
+are tested in CI; Debian 12+ and Ubuntu 22.04+ are expected to work (inferred
+from the same symbol versions, not tested).
 
 `.github/workflows/ci_linux_distros.yml` builds and tests `//library/...`
 and `//python/...` in `fedora:latest` (newest glibc) and `almalinux:10`
@@ -124,13 +125,17 @@ distribution in `.github/scripts/install_distro_deps.sh`; to reproduce a
 failure locally:
 
 ```bash
-docker run --rm -it -v "$PWD:/src" -w /src fedora:latest bash
-# inside the container:
-.github/scripts/install_distro_deps.sh
+# --platform: there is no linux-aarch64 LLVM toolchain, so arm64 hosts (Apple
+# silicon) must run the amd64 image under emulation, which is slow.
+docker run --rm -it --platform linux/amd64 -v "$PWD:/src" -w /src fedora:latest bash
+# inside the container (bazelisk pinned to the version CI uses):
+bash .github/scripts/install_distro_deps.sh
 curl -fsSL -o /usr/local/bin/bazelisk \
-  https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+  https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-amd64
 chmod +x /usr/local/bin/bazelisk
-bazelisk test //library/... //python/...
+# --symlink_prefix=/ stops Bazel replacing the host checkout's bazel-*
+# symlinks with paths that only exist inside the container.
+bazelisk test --symlink_prefix=/ //library/... //python/...
 ```
 
 ### AddressSanitizer, ThreadSanitizer, UndefinedBehaviorSanitizer, and MemorySanitizer

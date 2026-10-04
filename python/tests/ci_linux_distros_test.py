@@ -63,20 +63,28 @@ class TestDistroCaching(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertRegex(action, r"(?m)^  disk-cache:\s*$")
         self.assertEqual(
-            len(re.findall(r"disk-cache:\s*\$\{\{\s*inputs\.disk-cache\s*==\s*'false'", action)),
+            len(
+                re.findall(
+                    r"disk-cache:\s*\$\{\{\s*inputs\.disk-cache\s*==\s*'false'\s*&&\s*'false'\s*\|\|",
+                    action,
+                )
+            ),
             2,
             "both setup-bazel attempts must respect the disk-cache input",
         )
 
 
 class TestDistroPackages(unittest.TestCase):
-    def test_git_is_installed_before_checkout(self) -> None:
+    def test_workflow_runs_install_script_after_checkout(self) -> None:
         text = _workflow()
-        install_git = text.find("name: Install git")
         checkout = text.find("uses: actions/checkout@")
-        self.assertNotEqual(install_git, -1)
+        install = re.search(
+            r"(?m)^\s+run:\s*bash\s+\.github/scripts/install_distro_deps\.sh\s*$", text
+        )
         self.assertNotEqual(checkout, -1)
-        self.assertLess(install_git, checkout)
+        self.assertIsNotNone(install, "workflow must run install_distro_deps.sh")
+        assert install is not None
+        self.assertLess(checkout, install.start())
 
     def test_script_installs_gnu_ld_because_linux_links_use_it(self) -> None:
         module = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")

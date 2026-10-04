@@ -35,23 +35,15 @@ jobs:
       run:
         shell: bash
     steps:
-      # actions/checkout needs git in the container, otherwise it falls back to
-      # a REST tarball without .git (some //python tests drive git). The rest
-      # of the packages come from the repo's script, after checkout.
-      - name: Install git
-        run: |
-          if command -v dnf >/dev/null; then dnf -y install git-core
-          elif command -v apt-get >/dev/null; then apt-get update && apt-get install -y --no-install-recommends git ca-certificates
-          elif command -v pacman >/dev/null; then pacman -Sy --noconfirm --needed git
-          elif command -v zypper >/dev/null; then zypper --non-interactive install git-core
-          else echo "no supported package manager found" >&2; exit 1
-          fi
-
+      # The base images have no git, so actions/checkout downloads a REST
+      # tarball (no .git) instead of cloning. Nothing in this scope reads
+      # .git; the git binary that some //python tests need comes from the
+      # script below.
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install host packages
-        run: .github/scripts/install_distro_deps.sh
+        run: bash .github/scripts/install_distro_deps.sh
 
       # No jlumbroso/free-disk-space: inside a container it would free nothing
       # on the runner. The LLVM toolchain (~4 GB) plus this scope fits in the
@@ -81,6 +73,11 @@ jobs:
 
       - name: Build and test
         run: bazelisk test --verbose_failures --test_output=errors //library/... //python/...
+
+      # Record headroom: there is no free-disk-space step (see above).
+      - name: Report disk usage
+        if: always()
+        run: df -h / "$HOME"
 
       - name: Sanitize artifact name
         if: always()

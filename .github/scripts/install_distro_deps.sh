@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Install the host packages a minimal distro container needs to build and test
 # DDS with Bazel. Used by .github/workflows/ci_linux_distros.yml, where it runs
-# as root before actions/checkout (which needs git to produce a real clone).
+# as root right after actions/checkout (a REST tarball, since the base images
+# have no git); also usable for local reproduction (docs/BUILD_SYSTEM.md).
 #
 # Everything else (Bazel, clang/libc++, Python 3.14, JDK) is downloaded by
 # Bazel. The host supplies only:
@@ -44,4 +45,5 @@ case " ${ID:-} ${ID_LIKE:-} " in
         ;;
 esac
 
-ldd --version | head -n 1
+# sed reads all input; head could exit first and SIGPIPE ldd under pipefail.
+ldd --version | sed -n 1p
