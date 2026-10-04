@@ -5,6 +5,13 @@ inputs:
     description: Bazelisk version to install
     required: false
     default: "1.29.0"
+  disk-cache:
+    description: >-
+      "true" (default) caches compiled action outputs per workflow+job; "false"
+      disables it, for jobs whose outputs depend on undeclared host inputs
+      (e.g. distro containers compiling against the host's glibc headers).
+    required: false
+    default: "true"
 runs:
   using: composite
   steps:
@@ -14,14 +21,14 @@ runs:
     # another's incompatible outputs. repository-cache holds downloaded
     # external repos (emsdk, LLVM, ...), which are the same for every job
     # driven by the same MODULE.bazel/WORKSPACE, so it is left unscoped and
-    # shared.
+    # shared. Callers can turn the disk cache off with disk-cache: "false".
     - name: Setup Bazelisk (attempt 1)
       id: setup_bazelisk_1
       continue-on-error: true
       uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
       with:
         bazelisk-version: ${{ inputs.bazelisk-version }}
-        disk-cache: ${{ github.workflow }}-${{ github.job }}
+        disk-cache: ${{ inputs.disk-cache == 'false' && 'false' || format('{0}-{1}', github.workflow, github.job) }}
         repository-cache: true
 
     - name: Setup Bazelisk (attempt 2)
@@ -31,7 +38,7 @@ runs:
       uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
       with:
         bazelisk-version: ${{ inputs.bazelisk-version }}
-        disk-cache: ${{ github.workflow }}-${{ github.job }}
+        disk-cache: ${{ inputs.disk-cache == 'false' && 'false' || format('{0}-{1}', github.workflow, github.job) }}
         repository-cache: true
 
     # Composite run steps need an explicit shell. Use bash on Linux/macOS (pwsh

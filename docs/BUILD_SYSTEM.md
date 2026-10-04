@@ -107,6 +107,32 @@ Consequences:
 Drop the Linux override once the LLVM Linux archive no longer needs a host
 `libxml2.so.2` (or the project moves to a statically linked LLVM).
 
+### Linux host requirements and distro CI
+
+Because no sysroot is configured, Linux builds compile against the host's
+glibc headers and link with the host's GNU ld. The downloaded clang also needs
+glibc ≥ 2.34 and libstdc++ from gcc ≥ 12 (`GLIBCXX_3.4.30`) just to start,
+so RHEL 8/9 and their clones are not supported; RHEL 10, current Fedora,
+Debian 12+ and Ubuntu 22.04+ are.
+
+`.github/workflows/ci_linux_distros.yml` builds and tests `//library/...`
+and `//python/...` in `fedora:latest` (newest glibc) and `almalinux:10`
+(oldest supported RHEL) containers on every PR. Its Bazel disk cache is off:
+host headers are not declared action inputs, so a cache hit could hide a
+header change. The packages a minimal container needs are listed per
+distribution in `.github/scripts/install_distro_deps.sh`; to reproduce a
+failure locally:
+
+```bash
+docker run --rm -it -v "$PWD:/src" -w /src fedora:latest bash
+# inside the container:
+.github/scripts/install_distro_deps.sh
+curl -fsSL -o /usr/local/bin/bazelisk \
+  https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+chmod +x /usr/local/bin/bazelisk
+bazelisk test //library/... //python/...
+```
+
 ### AddressSanitizer, ThreadSanitizer, UndefinedBehaviorSanitizer, and MemorySanitizer
 
 Sanitizer builds use `--config=asan`, `--config=tsan`, `--config=ubsan`, or

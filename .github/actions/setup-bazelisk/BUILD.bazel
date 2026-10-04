@@ -1,0 +1,4 @@
+exports_files(
+    ["action.yml"],
+    visibility = ["//python:__pkg__"],
+)
