@@ -74,6 +74,16 @@ class TestDistroCaching(unittest.TestCase):
         )
 
 
+    def test_setup_bazelisk_provides_bazelisk_name_in_bare_containers(self) -> None:
+        """setup-bazel installs Bazelisk as `bazel`; only runner images ship `bazelisk`."""
+        action = (
+            _repo_root() / ".github" / "actions" / "setup-bazelisk" / "action.yml"
+        ).read_text(encoding="utf-8")
+        self.assertRegex(
+            action,
+            r'if ! command -v bazelisk\b[\s\S]*?ln -s "\$bazel_path" "\$\(dirname "\$bazel_path"\)/bazelisk"',
+        )
+
 class TestDistroPackages(unittest.TestCase):
     def test_workflow_runs_install_script_after_checkout(self) -> None:
         text = _workflow()

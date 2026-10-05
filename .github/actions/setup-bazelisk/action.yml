@@ -41,6 +41,19 @@ runs:
         disk-cache: ${{ inputs.disk-cache == 'false' && 'false' || format('{0}-{1}', github.workflow, github.job) }}
         repository-cache: true
 
+    # setup-bazel installs Bazelisk under the name `bazel`. GitHub's runner
+    # images also ship a `bazelisk`, but bare job containers (e.g.
+    # ci_linux_distros.yml) do not, so add that name next to setup-bazel's
+    # copy. Bazelisk behaves the same under either name.
+    - name: Expose Bazelisk as bazelisk
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        if ! command -v bazelisk >/dev/null; then
+          bazel_path="$(command -v bazel)"
+          ln -s "$bazel_path" "$(dirname "$bazel_path")/bazelisk"
+        fi
+
     # Composite run steps need an explicit shell. Use bash on Linux/macOS (pwsh
     # is not always present after free-disk-space) and pwsh on Windows.
     - name: Verify Bazelisk installation
