@@ -57,7 +57,7 @@ class TestDistroCaching(unittest.TestCase):
             r'uses:\s*\./\.github/actions/setup-bazelisk\s*\n\s+with:\s*\n\s+disk-cache:\s*"false"',
         )
 
-    def test_setup_bazelisk_honours_disk_cache_false(self) -> None:
+    def test_setup_bazelisk_honors_disk_cache_false(self) -> None:
         action = (
             _repo_root() / ".github" / "actions" / "setup-bazelisk" / "action.yml"
         ).read_text(encoding="utf-8")
@@ -106,6 +106,7 @@ class TestDistroPackages(unittest.TestCase):
         for family, headers in (
             ("dnf", "glibc-devel"),
             ("apt-get", "libc6-dev"),
+            ("pacman", "glibc"),
             ("zypper", "glibc-devel"),
         ):
             with self.subTest(family=family):
