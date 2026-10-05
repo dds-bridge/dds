@@ -1,7 +1,7 @@
 ---
 capability: build-system
 owners: [//, CPPVARIABLES.bzl, wasm_compat.bzl]
-last-updated: 2026-08-09
+last-updated: 2026-10-04
 ---
 
 # Build System
@@ -70,6 +70,14 @@ than re-encoding toolchain knowledge.
   plus the JVM rules for [jni-ffm-binding](jni-ffm-binding.md)). Toolchains are hermetic
   (LLVM via `toolchains_llvm`, Emscripten via `emsdk`). Exact versions live in the
   file and drift; do not hard-code them elsewhere.
+- **Linux builds are hermetic except for the host C runtime and linker.** No
+  sysroot is configured: Linux compiles use the host's glibc headers and crt
+  files, and link with the host's GNU `ld` (`/usr/bin/ld`, via
+  `extra_link_flags` in `MODULE.bazel`; `--config=msan` keeps `ld.lld`). The
+  downloaded clang itself needs glibc ≥ 2.34 and `GLIBCXX_3.4.30` (libstdc++
+  from gcc ≥ 12), so RHEL 8/9 and their clones are unsupported. Host-header
+  drift is covered by `.github/workflows/ci_linux_distros.yml`; see
+  `docs/BUILD_SYSTEM.md` ("Linux host requirements and distro CI").
 - **`//:dds`** is the public façade library (re-exports `//library/src:dds`);
   **`//:testable_dds`** re-exports the test-visible variant to the test packages
   only. **`//:doxygen_docs`** is a manual, local-only developer target that needs

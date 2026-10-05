@@ -1,0 +1,4 @@
+exports_files(
+    ["install_distro_deps.sh"],
+    visibility = ["//python:__pkg__"],
+)

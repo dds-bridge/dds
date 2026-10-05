@@ -5,23 +5,30 @@ inputs:
     description: Bazelisk version to install
     required: false
     default: "1.29.0"
+  disk-cache:
+    description: caches compiled action outputs per workflow+job when enabled
+    required: false
+    default: "true"
 runs:
   using: composite
   steps:
+    #
+    # Bazelisk is DDS's canonical way to manage Bazel versions.
+    #
     # disk-cache holds compiled action outputs, which are sensitive to each
     # job's own flags (--define=ab_stats, --config=asan, compilation_mode,
     # etc.), so it is scoped per workflow+job to avoid one job restoring
     # another's incompatible outputs. repository-cache holds downloaded
     # external repos (emsdk, LLVM, ...), which are the same for every job
     # driven by the same MODULE.bazel/WORKSPACE, so it is left unscoped and
-    # shared.
+    # shared. Callers can turn the disk cache off with disk-cache: "false".
     - name: Setup Bazelisk (attempt 1)
       id: setup_bazelisk_1
       continue-on-error: true
       uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
       with:
         bazelisk-version: ${{ inputs.bazelisk-version }}
-        disk-cache: ${{ github.workflow }}-${{ github.job }}
+        disk-cache: ${{ inputs.disk-cache == 'false' && 'false' || format('{0}-{1}', github.workflow, github.job) }}
         repository-cache: true
 
     - name: Setup Bazelisk (attempt 2)
@@ -31,8 +38,21 @@ runs:
       uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
       with:
         bazelisk-version: ${{ inputs.bazelisk-version }}
-        disk-cache: ${{ github.workflow }}-${{ github.job }}
+        disk-cache: ${{ inputs.disk-cache == 'false' && 'false' || format('{0}-{1}', github.workflow, github.job) }}
         repository-cache: true
+
+    # setup-bazel installs Bazelisk under the name `bazel`. GitHub's runner
+    # images also ship a `bazelisk`, but bare job containers (e.g.
+    # ci_linux_distros.yml) do not, so add that name next to setup-bazel's
+    # copy. Bazelisk behaves the same under either name.
+    - name: Expose Bazelisk as bazelisk
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        if ! command -v bazelisk >/dev/null; then
+          bazel_path="$(command -v bazel)"
+          ln -s "$bazel_path" "$(dirname "$bazel_path")/bazelisk"
+        fi
 
     # Composite run steps need an explicit shell. Use bash on Linux/macOS (pwsh
     # is not always present after free-disk-space) and pwsh on Windows.

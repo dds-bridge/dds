@@ -1,0 +1,96 @@
+# .github/workflows/ci_linux_distros.yml
+#
+# Build and test the C++ library and Python extension inside other Linux
+# distributions' containers. The toolchain is hermetic (clang/libc++ from
+# toolchains_llvm, Python from rules_python) but no sysroot is configured, so
+# every compile uses the host's glibc headers and every link the host's GNU ld.
+# Those are what these jobs vary (issue #406 was a glibc 2.43 header clash).
+#
+#   fedora:latest  newest glibc on a mainstream distro (leading edge for RHEL)
+#   almalinux:10   RHEL 10 ABI, glibc 2.39: the oldest RHEL the downloaded
+#                  clang runs on (RHEL 8/9 lack GLIBC_2.29 / GLIBCXX_3.4.30)
+#
+# Scope is //library/... //python/...: the targets compiled against host
+# headers. WASM (own sysroot), Java (hermetic JDK), .NET and Doxygen are not
+# distro-sensitive and stay in ci_linux.yml / ci_wasm.yml.
+name: CI – Linux distros
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: {}
+
+jobs:
+  distro:
+    name: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["fedora:latest", "almalinux:10"]
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    timeout-minutes: 45
+    # Containers default to sh; the steps below and setup-bazelisk use bash.
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # The base images have no git, so actions/checkout downloads a REST
+      # tarball (no .git) instead of cloning. Nothing in this scope reads
+      # .git; the git binary that some //python tests need comes from the
+      # script below.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install host packages
+        run: bash .github/scripts/install_distro_deps.sh
+
+      # No jlumbroso/free-disk-space: inside a container it would free nothing
+      # on the runner. The LLVM toolchain (~4 GB) plus this scope fits in the
+      # ~14 GB a fresh runner has free.
+      #
+      # Disk cache off: cached objects are keyed on declared inputs only, and
+      # the host glibc headers are not declared, so a hit could hide exactly
+      # the header drift these jobs exist to catch.
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+        with:
+          disk-cache: "false"
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch //library/... //python/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Build and test
+        run: bazelisk test --verbose_failures --test_output=errors //library/... //python/...
+
+      # Record headroom: there is no free-disk-space step (see above).
+      - name: Report disk usage
+        if: always()
+        run: df -h / "$HOME"
+
+      - name: Sanitize artifact name
+        if: always()
+        id: artifact
+        run: echo "name=bazel-test-logs-${IMAGE//[:\/]/-}" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE: ${{ matrix.image }}
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
