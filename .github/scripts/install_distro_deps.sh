@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install the host packages a minimal distro container needs to build and test
-# DDS with Bazel. Used by .github/workflows/ci_linux_distros.yml, where it runs
+# DDS with Bazelisk. Used by .github/workflows/ci_linux_distros.yml, where it runs
 # as root right after actions/checkout (a REST tarball, since the base images
 # have no git); also usable for local reproduction (docs/BUILD_SYSTEM.md).
 #

@@ -6,15 +6,15 @@ inputs:
     required: false
     default: "1.29.0"
   disk-cache:
-    description: >-
-      "true" (default) caches compiled action outputs per workflow+job; "false"
-      disables it, for jobs whose outputs depend on undeclared host inputs
-      (e.g. distro containers compiling against the host's glibc headers).
+    description: caches compiled action outputs per workflow+job when enabled
     required: false
     default: "true"
 runs:
   using: composite
   steps:
+    #
+    # Bazelisk is DDS's canonical way to manage Bazel versions.
+    #
     # disk-cache holds compiled action outputs, which are sensitive to each
     # job's own flags (--define=ab_stats, --config=asan, compilation_mode,
     # etc.), so it is scoped per workflow+job to avoid one job restoring
