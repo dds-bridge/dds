@@ -96,9 +96,11 @@ card-by-card play for that contract, with mid-trick solves for legal cards.
   [wasm-emscripten](wasm-emscripten.md) can use pthreads via
   [system-concurrency](system-concurrency.md).
 - **Selecting a DD-table cell enters play mode.** `dds_web_play.js` owns play
-  state (history, trick score, undo, contract-relative badges). Legal cards are
-  scored via `dds_web_solve_plays`; opening-lead numerals reuse
-  `dds_web_solve_leads`. Deal entry is locked until Edit hands / exitPlay.
+  state (history, trick score, undo, contract-relative badges). Legal cards —
+  including the opening lead with an empty current trick — are scored via
+  `refreshPlayTricks` → `solvePlayPosition` → `dds_web_solve_plays`.
+  `dds_web_solve_leads` remains a thin empty-trick wrapper for direct callers
+  (tests / smoke). Deal entry is locked until Edit hands / exitPlay.
 
 ## Key entry points
 
