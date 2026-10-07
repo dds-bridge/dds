@@ -212,7 +212,7 @@
         const n = module.getValue(outPtr, "i32");
         if (n < 0 || n > 13) {
             throw new Error(
-                "DDS lead solve returned invalid card count (" + n + ")"
+                "DDS solve returned invalid card count (" + n + ")"
             );
         }
         const out = [n];

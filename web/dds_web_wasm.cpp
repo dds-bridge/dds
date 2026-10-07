@@ -96,7 +96,7 @@ void write_expanded_leads(const FutureTricks& fut, int* out_leads)
 
 // Validate up to three already-played cards in the current trick.
 // Empty slots are (suit=0, rank=0). A filled slot needs suit 0..3 and rank
-// 2..14. Slots must be dense from the front (no gaps).
+// 2..14. Slots must be dense from the front (no gaps) and unique.
 auto trick_cards_valid(
         int suit0, int rank0, int suit1, int rank1, int suit2, int rank2)
         -> bool
@@ -119,8 +119,35 @@ auto trick_cards_valid(
         if (suits[i] < 0 || suits[i] > 3 || ranks[i] < 2 || ranks[i] > 14) {
             return false;
         }
+        for (int j = 0; j < i; ++j) {
+            if (suits[j] == suits[i] && ranks[j] == ranks[i]) {
+                return false;
+            }
+        }
     }
     return true;
+}
+
+auto trick_slot_count(int rank0, int rank1, int rank2) -> int
+{
+    return (rank0 != 0 ? 1 : 0) + (rank1 != 0 ? 1 : 0) + (rank2 != 0 ? 1 : 0);
+}
+
+// Holding bitmasks store ranks in bits 2..14; >> 2 yields the card bitset.
+auto remaining_card_count(
+        unsigned int const remain_cards[DDS_HANDS][DDS_SUITS]) -> int
+{
+    int n = 0;
+    for (int h = 0; h < DDS_HANDS; ++h) {
+        for (int s = 0; s < DDS_SUITS; ++s) {
+            unsigned bits = remain_cards[h][s] >> 2;
+            while (bits != 0u) {
+                n += static_cast<int>(bits & 1u);
+                bits >>= 1;
+            }
+        }
+    }
+    return n;
 }
 }  // namespace
 
@@ -233,6 +260,18 @@ auto dds_web_solve_plays(
 
     if (convert_from_pbn(pbn, dl.remainCards) != RETURN_NO_FAULT) {
         return RETURN_PBN_FAULT;
+    }
+
+    // solve_board derives trick depth from remaining card count, so the
+    // populated trick slots must match (52 - remaining) % 4 or we would solve
+    // a different position than the caller requested.
+    const int remaining = remaining_card_count(dl.remainCards);
+    if (remaining < 0 || remaining > 52) {
+        return RETURN_UNKNOWN_FAULT;
+    }
+    const int expected_trick = (52 - remaining) % 4;
+    if (trick_slot_count(rank0, rank1, rank2) != expected_trick) {
+        return RETURN_UNKNOWN_FAULT;
     }
 
     SolverContext& ctx = web_leads_context();

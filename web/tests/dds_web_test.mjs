@@ -2330,6 +2330,37 @@ test("solveOpeningLeadTricks rejects a negative lead count from WASM", async () 
     );
 });
 
+test("readExpandedLeads error does not say lead solve for play path", async () => {
+    // Arrange: shared reader used by solvePlayPosition; message must be generic.
+    const ctx = loadDdsWeb(createMockDocument());
+    const heap = new Int32Array(1);
+    heap[0] = 14;
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall: () => 1,
+        getValue(ptr) {
+            return heap[(ptr / 4) | 0] ?? 0;
+        },
+    });
+    const state = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+
+    // Act / Assert
+    await assert.rejects(
+        () => ctx.solvePlayPosition(state),
+        (err) => {
+            assert.match(String(err.message), /DDS solve returned invalid card count/);
+            assert.doesNotMatch(String(err.message), /lead solve/);
+            return true;
+        }
+    );
+});
+
 test("solveOpeningLeadTricks accepts a full 13-lead buffer from WASM", async () => {
     const ctx = loadDdsWeb(createMockDocument());
     const heap = new Int32Array(1 + 13 * 3);
@@ -4890,6 +4921,39 @@ test("targetTricksFromCell parses numeric cell text", () => {
     const ctx = loadDdsWeb(createMockDocument());
     assert.equal(ctx.targetTricksFromCell({ textContent: "9", innerHTML: "9" }), 9);
     assert.equal(ctx.targetTricksFromCell({ textContent: "", innerHTML: "<br>" }), null);
+});
+
+test("startPlay does not nest scheduleDealSolve", () => {
+    // applyResultCellSelection / the deal-solve worker already schedule; a
+    // nested call from startPlay doubles the opening-position SolveBoard.
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document);
+    let scheduled = 0;
+    // Assign after load so we overwrite the real scheduleDealSolve export.
+    ctx.scheduleDealSolve = () => {
+        scheduled += 1;
+        return Promise.resolve();
+    };
+
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    assert.equal(scheduled, 0);
 });
 
 test("startPlay and exitPlay toggle play chrome and trick status", () => {

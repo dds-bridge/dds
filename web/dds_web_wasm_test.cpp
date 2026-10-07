@@ -254,6 +254,17 @@ TEST(DdsWebWasmTest, SolvePlaysRejectsPartialTrickCards) {
             RETURN_UNKNOWN_FAULT);
 }
 
+TEST(DdsWebWasmTest, SolvePlaysRejectsTrickSlotOnFullDealPbn) {
+    int out[40]{};
+    // Full 52-card PBN with a populated trick slot: solve_board would ignore
+    // the slot (depth from card count), so reject rather than silent mismatch.
+    EXPECT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScore, 4, 3, /*suit0=*/0, /*rank0=*/13, 0, 0, 0, 0,
+                    out),
+            RETURN_UNKNOWN_FAULT);
+}
+
 TEST(DdsWebWasmTest, SolvePlaysEmptyTrickMatchesSolveLeads) {
     int leads[40]{};
     int plays[40]{};
@@ -272,6 +283,38 @@ TEST(DdsWebWasmTest, SolvePlaysEmptyTrickMatchesSolveLeads) {
 // Original West: K643.T8.AK742.T5 → without ♠K: 643.T8.AK742.T5
 constexpr char kPbnPartScoreAfterSk[] =
         "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 643.T8.AK742.T5";
+
+// After ♠K and ♠A are in the trick (neither remains in holdings).
+constexpr char kPbnPartScoreAfterSkSa[] =
+        "N:Q85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 643.T8.AK742.T5";
+
+TEST(DdsWebWasmTest, SolvePlaysRejectsEmptyTrickOnPartialDealPbn) {
+    int out[40]{};
+    // 51-card remaining PBN with empty trick slots: one card is "missing" from
+    // holdings but not declared in the trick — also a silent wrong position.
+    EXPECT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScoreAfterSk, 4, 3, 0, 0, 0, 0, 0, 0, out),
+            RETURN_UNKNOWN_FAULT);
+}
+
+TEST(DdsWebWasmTest, SolvePlaysRejectsDuplicateTrickCards) {
+    int out[40]{};
+    // Card count matches two trick slots, but both slots name the same card.
+    EXPECT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScoreAfterSkSa,
+                    4,
+                    3,
+                    /*suit0=*/0,
+                    /*rank0=*/13,
+                    /*suit1=*/0,
+                    /*rank1=*/13,
+                    0,
+                    0,
+                    out),
+            RETURN_UNKNOWN_FAULT);
+}
 
 TEST(DdsWebWasmTest, SolvePlaysMidTrickReturnsFollowerLegalCards) {
     // West led ♠K; North is next and holds ♠AQ85 so must follow spade.

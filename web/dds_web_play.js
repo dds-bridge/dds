@@ -509,9 +509,10 @@
         });
         setPlayModeChrome(true);
         renderPlayUi();
-        if (typeof global.scheduleDealSolve === "function") {
-            void global.scheduleDealSolve();
-        }
+        // Do not schedule here: applyResultCellSelection already schedules, and
+        // the in-flight deal-solve worker calls refreshPlayTricks right after
+        // ensurePlayForSelectedContract. Nesting scheduleDealSolve would solve
+        // the same opening position a second time.
         return true;
     }
 
