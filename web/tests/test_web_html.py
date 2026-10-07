@@ -131,10 +131,17 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertIn('id="play-bar"', text)
         self.assertIn('id="trick-status"', text)
+        self.assertIn('id="play-score"', text)
         self.assertIn('onclick="exitPlay()"', text)
         self.assertIn('onclick="undoPlay()"', text)
         self.assertIn('onclick="undoTrickPlay()"', text)
         self.assertIn("Click a cell to play out that contract", text)
+        # Trick totals live in the diagram NW corner next to the hands.
+        nw = text.index('grid-filler-nw')
+        score = text.index('id="play-score"')
+        ne = text.index('grid-filler-ne')
+        self.assertLess(nw, score)
+        self.assertLess(score, ne)
 
     def test_disables_coep_credentialless_before_coi_serviceworker(self) -> None:
         # coi-serviceworker defaults to COEP: credentialless. Safari / iOS WebKit

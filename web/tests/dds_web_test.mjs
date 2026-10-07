@@ -4913,6 +4913,8 @@ test("startPlay and exitPlay toggle play chrome and trick status", () => {
     assert.equal(document.body.classList.contains("playing"), true);
     assert.equal(document.element("play-bar").hidden, false);
     assert.equal(document.element("trick-status").hidden, false);
+    assert.equal(document.element("play-score").hidden, false);
+    assert.equal(document.element("play-score").textContent, "NS 0 – EW 0");
     assert.equal(document.element("deck-status").hidden, true);
 
     ctx.playState.pendingDiffs = { SK: 0 };
@@ -4941,4 +4943,48 @@ test("handCardHtml marks legal play cards as playable in play mode", () => {
     assert.match(html, /hand-card-playable/);
     assert.match(html, /diff-zero/);
     assert.match(html, />=<\/span>/);
+});
+
+test("play score stays NS 0 until a trick completes, then updates", () => {
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    assert.equal(document.element("play-score").hidden, false);
+    assert.equal(document.element("play-score").textContent, "NS 0 – EW 0");
+
+    // Incomplete trick: West SK, North SA, East ST — still 0–0.
+    ctx.playState.pendingDiffs = { SK: 0 };
+    ctx.tryPlayCard("west", "SK", false);
+    ctx.playState.pendingDiffs = { SA: 0 };
+    ctx.tryPlayCard("north", "SA", false);
+    ctx.playState.pendingDiffs = { ST: 0 };
+    ctx.tryPlayCard("east", "ST", false);
+    assert.equal(document.element("play-score").textContent, "NS 0 – EW 0");
+
+    // Fourth card completes the trick; North's ace wins → NS 1.
+    ctx.playState.pendingDiffs = { S2: 0 };
+    ctx.tryPlayCard("south", "S2", false);
+    assert.equal(document.element("play-score").textContent, "NS 1 – EW 0");
 });

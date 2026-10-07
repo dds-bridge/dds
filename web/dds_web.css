@@ -342,8 +342,18 @@ td {
 }
 
 #play-score {
-  font-weight: 600;
-  margin: 0.35rem 0 0;
+  font-size: 0.55em;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.grid-item.grid-filler-nw {
+  align-items: flex-start;
+  display: flex;
+  font-size: 30px;
+  justify-content: flex-start;
 }
 
 .trick-status {

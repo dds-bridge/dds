@@ -61,7 +61,6 @@
         Drag a highlighted card onto the trick (or click it).
         Each card shows how the contract ends (=, +N, –N) with best play.
     </p>
-    <div id="play-score" hidden aria-live="polite"></div>
 
     <br/>
     <br/>
@@ -96,7 +95,12 @@
             <span class="hand-suit"><club-suit>♣</club-suit><span id="west_clubs_cards" class="hand-holding"></span><input id="west_clubs" class="hand-suit-input" name="west clubs" aria-label="West clubs" type="text" autocomplete="off" spellcheck="false"></span><br>
             <div id="west-card-count" class="hand-card-count" aria-live="polite" hidden></div>
         </div>
-        <div class="grid-item grid-filler grid-filler-nw" aria-hidden="true"></div>
+        <div class="grid-item grid-filler grid-filler-nw">
+            <div id="play-score"
+                 hidden
+                 aria-live="polite"
+                 aria-label="Tricks won"></div>
+        </div>
         <div class="grid-item grid-filler grid-filler-ne">
             <div id="contract-status" hidden></div>
         </div>
