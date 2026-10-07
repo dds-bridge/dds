@@ -371,12 +371,37 @@
         }
     }
 
+    function capitalizeSeat(seat) {
+        return seat.charAt(0).toUpperCase() + seat.slice(1);
+    }
+
+    function trickCardAriaLabel(seat, play) {
+        if (!play) {
+            return "";
+        }
+        const card = Card.fromKey(play.key);
+        const suitName = card.suit.replace(/s$/, "");
+        const pipNames = global.PIP_NAMES || {};
+        const pipName = pipNames[card.pip] || card.pip;
+        return capitalizeSeat(seat) + " " + suitName + " " + pipName;
+    }
+
     function trickCardHtml(play) {
         if (!play) {
             return "";
         }
         const card = Card.fromKey(play.key);
         return global.suitSymbolHtml(card.suit) + escapePlayHtml(card.pip);
+    }
+
+    function trickSeatCellHtml(seatClass, seat, play) {
+        if (!play) {
+            return "<div class=\"" + seatClass + " trick-card\" hidden></div>";
+        }
+        return "<div class=\"" + seatClass + " trick-card\" aria-label=\"" +
+            escapePlayHtml(trickCardAriaLabel(seat, play)) + "\">" +
+            trickCardHtml(play) +
+            "</div>";
     }
 
     function escapePlayHtml(value) {
@@ -395,6 +420,11 @@
         if (!el) {
             return;
         }
+        if (typeof el.setAttribute === "function") {
+            el.setAttribute("aria-live", "polite");
+            el.setAttribute("role", "status");
+            el.setAttribute("aria-label", "Current trick");
+        }
         const replay = replayPlayState(state);
         const shown = replay.trick.length ? replay.trick : replay.lastTrick;
         const bySeat = { north: null, east: null, south: null, west: null };
@@ -402,10 +432,10 @@
             bySeat[play.seat] = play;
         }
         el.innerHTML =
-            "<div class=\"trick-n trick-card\">" + trickCardHtml(bySeat.north) + "</div>" +
-            "<div class=\"trick-w trick-card\">" + trickCardHtml(bySeat.west) + "</div>" +
-            "<div class=\"trick-e trick-card\">" + trickCardHtml(bySeat.east) + "</div>" +
-            "<div class=\"trick-s trick-card\">" + trickCardHtml(bySeat.south) + "</div>";
+            trickSeatCellHtml("trick-n", "north", bySeat.north) +
+            trickSeatCellHtml("trick-w", "west", bySeat.west) +
+            trickSeatCellHtml("trick-e", "east", bySeat.east) +
+            trickSeatCellHtml("trick-s", "south", bySeat.south);
     }
 
     function renderPlayScore(state) {

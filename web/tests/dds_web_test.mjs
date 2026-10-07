@@ -66,6 +66,7 @@ function createMockDocument(initialValues = {}) {
             className: "",
             selectionStart: 0,
             selectionEnd: 0,
+            attributes: {},
             classList: {
                 add(name) {
                     const classes = new Set(
@@ -91,6 +92,14 @@ function createMockDocument(initialValues = {}) {
             setSelectionRange(start, end = start) {
                 this.selectionStart = start;
                 this.selectionEnd = end;
+            },
+            setAttribute(name, value) {
+                this.attributes[name] = String(value);
+            },
+            getAttribute(name) {
+                return Object.prototype.hasOwnProperty.call(this.attributes, name)
+                    ? this.attributes[name]
+                    : null;
             },
             addEventListener(type, listener) {
                 const typeListeners = elementListeners.get(type) ?? [];
@@ -4943,6 +4952,46 @@ test("handCardHtml marks legal play cards as playable in play mode", () => {
     assert.match(html, /hand-card-playable/);
     assert.match(html, /diff-zero/);
     assert.match(html, />=<\/span>/);
+});
+
+test("renderTrickStatus labels occupied seats and hides empty ones", () => {
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    ctx.playState.pendingDiffs = { SK: 0 };
+    ctx.tryPlayCard("west", "SK", false);
+    ctx.playState.pendingDiffs = { SA: 0 };
+    ctx.tryPlayCard("north", "SA", false);
+
+    const html = document.element("trick-status").innerHTML;
+    assert.match(html, /aria-label="West spade king"/);
+    assert.match(html, /aria-label="North spade ace"/);
+    // Empty East/South seats are present but hidden from AT / layout.
+    assert.match(html, /trick-e[^>]*hidden/);
+    assert.match(html, /trick-s[^>]*hidden/);
+    assert.equal(document.element("trick-status").getAttribute("aria-live"), "polite");
 });
 
 test("exitPlay clears the selected contract so Edit hands stays in edit mode", async () => {
