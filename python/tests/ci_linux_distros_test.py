@@ -149,6 +149,12 @@ class TestDistroPackages(unittest.TestCase):
         self.assertIn('"linux-x86_64": ["--ld-path=/usr/bin/ld"]', module)
         self.assertRegex(_install_script(), r"(?m)^common=\([^)]*\bbinutils\b")
 
+    def test_pacman_skips_seccomp_sandbox_that_fails_under_emulation(self) -> None:
+        """pacman 7's downloader seccomp filter fails (error 22) under amd64 emulation."""
+        self.assertRegex(
+            _install_script(), r"(?m)^\s+pacman\b[^\n]*\s--disable-sandbox-syscalls\b"
+        )
+
     def test_script_installs_glibc_headers_for_each_family(self) -> None:
         script = _install_script()
         for family, headers in (
