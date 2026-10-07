@@ -502,6 +502,13 @@
                 typeof global.collectHands === "function") {
             global.updateHandCardDisplays(global.collectHands());
         }
+        // Clear the DD-table selection so a following scheduleDealSolve does
+        // not call ensurePlayForSelectedContract and re-enter play (Edit hands).
+        if (global.selectedContractState &&
+                typeof global.clearResultCellSelection === "function") {
+            global.clearResultCellSelection();
+            return;
+        }
         if (typeof global.scheduleDealSolve === "function") {
             void global.scheduleDealSolve();
         }

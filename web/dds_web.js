@@ -419,11 +419,37 @@ function escapeHtml(value) {
         .replace(/'/g, "&#39;");
 }
 
-function handCardAriaLabel(direction, card) {
+function playResultAriaText(badge) {
+    if (badge == null || badge === undefined) {
+        return "";
+    }
+    const text = String(badge);
+    if (text === "=") {
+        return "equals";
+    }
+    if (text.charAt(0) === "+") {
+        return "plus " + text.slice(1);
+    }
+    if (text.charAt(0) === "\u2013" || text.charAt(0) === "-") {
+        return "minus " + text.slice(1);
+    }
+    return text;
+}
+
+function handCardAriaLabel(direction, card, options) {
     const suitName = card.suit.replace(/s$/, "");
     const pipName = PIP_NAMES[card.pip] || card.pip;
+    let label = capitalize(direction) + " " + suitName + " " + pipName;
 
-    return capitalize(direction) + " " + suitName + " " + pipName;
+    if (options && options.playable) {
+        label += "; playable";
+        const result = playResultAriaText(options.result);
+        if (result) {
+            label += ", result " + result;
+        }
+    }
+
+    return label;
 }
 
 function handCardTrickBadgeClass(badge) {
@@ -461,12 +487,17 @@ function handCardHtml(direction, card, index, leadTricks) {
         : "";
     const draggable = !isPlayMode() || playable ? "true" : "false";
 
+    const aria = handCardAriaLabel(direction, card, {
+        playable: playable,
+        result: hasTricks ? leadTricks : null,
+    });
+
     return "<button type=\"button\" class=\"" + classes + "\" draggable=\"" +
         draggable + "\"" +
         " data-direction=\"" + escapeHtml(direction) + "\"" +
         " data-card=\"" + escapeHtml(card.key()) + "\"" +
         " data-index=\"" + escapeHtml(index) + "\"" +
-        " aria-label=\"" + escapeHtml(handCardAriaLabel(direction, card)) + "\">" +
+        " aria-label=\"" + escapeHtml(aria) + "\">" +
         escapeHtml(card.pip) +
         badge +
         "</button>";

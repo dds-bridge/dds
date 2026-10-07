@@ -4945,6 +4945,79 @@ test("handCardHtml marks legal play cards as playable in play mode", () => {
     assert.match(html, />=<\/span>/);
 });
 
+test("exitPlay clears the selected contract so Edit hands stays in edit mode", async () => {
+    // Arrange: play mode with a selected contract; scheduleDealSolve would
+    // otherwise call ensurePlayForSelectedContract and re-enter play.
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document);
+    ctx.refreshDdTable = async () => {};
+    ctx.refreshPlayTricks = async () => {};
+    ctx.solvePlayPosition = async () => ({ SK: 0 });
+
+    const southNt = document.element("result-table").rows[3].cells[5];
+    southNt.innerHTML = "6";
+    southNt.textContent = "6";
+    ctx.fillFormWithPartScoreTestData();
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return southNt;
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(ctx.isPlayMode(), true);
+    assert.ok(ctx.selectedContract());
+
+    // Act: Edit hands
+    ctx.exitPlay();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    // Assert: stay out of play; contract cell no longer selected.
+    assert.equal(ctx.isPlayMode(), false);
+    assert.equal(ctx.selectedContract(), null);
+    assert.equal(document.element("north_spades").disabled, false);
+    assert.equal(southNt.classList.contains("result-cell-selected"), false);
+});
+
+test("handCardHtml aria-label includes playable state and contract result", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.playState = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    ctx.playState.pendingDiffs = { SK: 0, HT: 1, S6: -2 };
+
+    const equals = ctx.handCardHtml("west", new ctx.Card("spades", "K"), 0, "=");
+    assert.match(equals, /aria-label="[^"]*playable[^"]*equals[^"]*"/i);
+
+    const plus = ctx.handCardHtml("west", new ctx.Card("hearts", "T"), 0, "+1");
+    assert.match(plus, /aria-label="[^"]*playable[^"]*plus 1[^"]*"/i);
+
+    const minus = ctx.handCardHtml("west", new ctx.Card("spades", "6"), 1, "\u20132");
+    assert.match(minus, /aria-label="[^"]*playable[^"]*minus 2[^"]*"/i);
+});
+
 test("play score stays NS 0 until a trick completes, then updates", () => {
     const document = createMockDocument({
         north_spades: "AQ85",
