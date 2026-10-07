@@ -590,7 +590,13 @@ class TestWindowsCiSplitsWasmWeb(unittest.TestCase):
 
     def test_native_job_excludes_wasm_and_web_patterns(self) -> None:
         native = _workflow_job_bodies(_windows_ci_workflow_text())["build_and_test"]
-        for subcommand in ("fetch", "build", "test"):
+        # Prefetch/fetch is intentionally omitted: repository-cache covers
+        # downloads and a standalone fetch adds a cold analysis pass.
+        self.assertFalse(
+            _active_bazelisk_lines(native, "fetch"),
+            "native job must not waste wall clock on a standalone bazelisk fetch",
+        )
+        for subcommand in ("build", "test"):
             lines = _active_bazelisk_lines(native, subcommand)
             self.assertTrue(
                 lines,
@@ -615,7 +621,11 @@ class TestWindowsCiSplitsWasmWeb(unittest.TestCase):
 
     def test_wasm_web_job_targets_only_wasm_and_web(self) -> None:
         wasm_web = _workflow_job_bodies(_windows_ci_workflow_text())["wasm_web"]
-        for subcommand in ("fetch", "build", "test"):
+        self.assertFalse(
+            _active_bazelisk_lines(wasm_web, "fetch"),
+            "wasm_web job must not waste wall clock on a standalone bazelisk fetch",
+        )
+        for subcommand in ("build", "test"):
             lines = _active_bazelisk_lines(wasm_web, subcommand)
             self.assertTrue(
                 lines,
@@ -656,6 +666,84 @@ class TestWindowsCiSplitsWasmWeb(unittest.TestCase):
             native_artifact.group(1),
             wasm_artifact.group(1),
             "parallel Windows jobs need distinct artifact names",
+        )
+
+
+class TestWindowsCiSpeedGuards(unittest.TestCase):
+    """Keep CI – Windows build_and_test reliably under the 20-minute budget."""
+
+    def test_does_not_prefetch_external_repos(self) -> None:
+        text = _windows_ci_workflow_text()
+        self.assertNotRegex(
+            text,
+            r"(?im)^\s*-\s*name:\s*Prefetch external repos\s*$",
+            "standalone prefetch duplicates repository-cache and costs 1–2 minutes",
+        )
+
+    def test_build_and_test_share_one_step_without_server_restart(self) -> None:
+        """Fold build+test into one step so analysis stays warm (item 5)."""
+        for job_id in ("build_and_test", "wasm_web"):
+            body = _workflow_job_bodies(_windows_ci_workflow_text())[job_id]
+            self.assertRegex(
+                body,
+                r"(?im)^\s*-\s*name:\s*Bazel build and test",
+                f"{job_id} should fold build+test into one named step",
+            )
+            # Retries may shut down before another *build* attempt; the
+            # successful path must go straight into test on the same server.
+            self.assertRegex(
+                body,
+                r"(?is)# Same server as the successful build[^\n]*\n\s*bazelisk\s+test\b",
+                f"{job_id} must run test on the same Bazel server as build",
+            )
+
+    def test_skips_disk_cache_save_on_pull_requests(self) -> None:
+        """PR post-cache uploads can take ~6 minutes and trip the 20m timeout."""
+        text = _windows_ci_workflow_text()
+        self.assertRegex(
+            text,
+            r"cache-save:\s*\$\{\{\s*github\.event_name\s*!=\s*'pull_request'\s*\}\}",
+        )
+
+    def test_pushes_to_default_branches_warm_the_disk_cache(self) -> None:
+        """PRs restore cache; develop/main pushes must save it (cache-save false on PR)."""
+        text = _windows_ci_workflow_text()
+        # Locate the top-level `on:` block without catastrophic backtracking.
+        on_match = re.search(r"(?m)^on:\s*\n((?:[ \t].*\n|\n)*)", text)
+        self.assertIsNotNone(on_match, "expected a top-level on: trigger block")
+        assert on_match is not None
+        on_block = on_match.group(1)
+        self.assertRegex(on_block, r"(?m)^\s+push:\s*$")
+        self.assertRegex(
+            on_block,
+            r"(?m)^\s+branches:\s*\[[^\]]*develop[^\]]*\]",
+        )
+        self.assertRegex(
+            on_block,
+            r"(?m)^\s+branches:\s*\[[^\]]*main[^\]]*\]",
+        )
+
+    def test_optional_buildbuddy_remote_cache_is_wired(self) -> None:
+        text = _windows_ci_workflow_text()
+        self.assertRegex(
+            text,
+            r"remote\.buildbuddy\.io",
+            "Windows CI should offer BuildBuddy remote cache when the API key secret is set",
+        )
+        self.assertRegex(
+            text,
+            r"BUILDBUDDY_API_KEY",
+        )
+
+    def test_setup_bazelisk_exposes_cache_save_input(self) -> None:
+        action = (
+            _repo_root() / ".github" / "actions" / "setup-bazelisk" / "action.yml"
+        ).read_text(encoding="utf-8")
+        self.assertRegex(action, r"(?m)^  cache-save:\s*$")
+        self.assertEqual(
+            len(re.findall(r"cache-save:\s*\$\{\{\s*inputs\.cache-save\s*\}\}", action)),
+            2,
+            "both setup-bazel attempts must honor the cache-save input",
         )
 
 
