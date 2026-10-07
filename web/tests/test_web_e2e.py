@@ -320,7 +320,8 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                 )
                 badge = west_sk.locator(".hand-card-tricks")
                 self.assertEqual(badge.count(), 1)
-                self.assertRegex(badge.inner_text(), r"^(=|\+\d+|[\u2013-]\d+)$")
+                # South NT makes 6; SK lead scores 5 EW tricks → declarer +2.
+                self.assertEqual(badge.inner_text(), "+2")
 
                 self.assertEqual(
                     page.locator(
@@ -328,6 +329,24 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     ).count(),
                     0,
                 )
+
+                # Mid-trick: after SK, North must follow; SA is a known legal card.
+                west_sk.click()
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                      '#north_spades_cards .hand-card-playable').length > 0"""
+                )
+                north_sa = page.locator(
+                    '#north_spades_cards .hand-card[data-card="SA"]'
+                )
+                self.assertIn(
+                    "hand-card-playable",
+                    north_sa.get_attribute("class") or "",
+                )
+                sa_badge = north_sa.locator(".hand-card-tricks")
+                self.assertEqual(sa_badge.count(), 1)
+                # Same contract: SA holds for +2 versus the 6-trick target.
+                self.assertEqual(sa_badge.inner_text(), "+2")
                 self.assertTrue(page.locator("#play-bar").is_visible())
                 self.assertTrue(page.locator("#trick-status").is_visible())
                 self.assertEqual(errors, [])

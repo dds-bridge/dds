@@ -4923,6 +4923,58 @@ test("targetTricksFromCell parses numeric cell text", () => {
     assert.equal(ctx.targetTricksFromCell({ textContent: "", innerHTML: "<br>" }), null);
 });
 
+test("undoPlay invalidates in-flight play solves so stale results cannot apply", async () => {
+    // Arrange: play mode with one slow solve; do not schedule replacements so
+    // only the stale request can complete.
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document);
+    let releaseSolve;
+    const blocked = new Promise((resolve) => {
+        releaseSolve = resolve;
+    });
+    ctx.solvePlayPosition = async () => {
+        await blocked;
+        return { SK: 0 };
+    };
+    ctx.scheduleDealSolve = () => Promise.resolve();
+
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    void ctx.refreshPlayTricks();
+    const staleId = ctx.leadTricksRequestId;
+
+    ctx.playState.pendingDiffs = { SK: 0 };
+    assert.equal(ctx.tryPlayCard("west", "SK", false), true);
+    ctx.undoPlay();
+    assert.ok(ctx.leadTricksRequestId > staleId);
+    assert.equal(ctx.playState.history.length, 0);
+    assert.equal(ctx.playState.pendingDiffs, null);
+
+    // Act: stale solve finishes after undo.
+    releaseSolve();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    // Assert: must not repaint badges or append via auto-play.
+    assert.equal(ctx.playState.history.length, 0);
+    assert.equal(ctx.playState.pendingDiffs, null);
+});
+
 test("startPlay does not nest scheduleDealSolve", () => {
     // applyResultCellSelection / the deal-solve worker already schedule; a
     // nested call from startPlay doubles the opening-position SolveBoard.

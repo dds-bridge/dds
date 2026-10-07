@@ -560,6 +560,11 @@
         }
         playState.pendingDiffs = null;
         renderPlayUi();
+        // Bump before scheduling so an in-flight solve for the prior history
+        // cannot repaint badges or auto-play onto the new position (undo race).
+        if (typeof global.leadTricksRequestId === "number") {
+            global.leadTricksRequestId += 1;
+        }
         if (typeof global.scheduleDealSolve === "function") {
             void global.scheduleDealSolve();
         }
