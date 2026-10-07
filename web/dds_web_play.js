@@ -596,8 +596,7 @@
     }
 
     // Platform undo may emit beforeinput historyUndo when an editing host is
-    // focused. Play mode usually has none; � emit beforeinput historyUndo when an editing host is
-    // focused. Play mode usually has none; ⌘/Ctrl-Z is the supported path.
+    // focused. Play mode usually has none; Cmd/Ctrl-Z is the supported path.
     function handlePlayHistoryUndo(event) {
         if (!isPlayMode() || !event || event.inputType !== "historyUndo") {
             return;
