@@ -10,10 +10,10 @@
 /* eslint-env es6 */
 /* exported nextDirection prevDirection winningPlay formatPlayDiff
             playDiffFromSolverScore createPlayState replayPlayState
-            solverPositionFromPlay appendPlay undoLastChoice undoCurrentTrick
+            solverPositionFromPlay appendPlay undoLastChoice
             playDiffMapFromSolverOutput isLegalPlayCard ddsRankFromPip
             remainingCardsForSeat playState startPlay exitPlay tryPlayCard
-            undoPlay undoTrickPlay renderPlayUi isPlayMode
+            undoPlay renderPlayUi isPlayMode
             playBadgeMapFromPending targetTricksFromCell */
 
 "use strict";
@@ -271,16 +271,6 @@
         state.autoPlay = false;
     }
 
-    function undoCurrentTrick(state) {
-        if (state.history.length === 0) {
-            return;
-        }
-        const trickStart = Math.floor((state.history.length - 1) / 4) * 4;
-        state.history.length = trickStart;
-        state.pendingDiffs = null;
-        state.autoPlay = false;
-    }
-
     function playDiffMapFromSolverOutput(out, context) {
         const scores = leadTricksMapFromSolverOutput(out);
         const map = {};
@@ -454,12 +444,8 @@
 
     function updateUndoButtons(state) {
         const undoBtn = document.getElementById("undo-play");
-        const undoTrickBtn = document.getElementById("undo-trick");
         if (undoBtn) {
             undoBtn.disabled = !state.history.some((p) => !p.auto);
-        }
-        if (undoTrickBtn) {
-            undoTrickBtn.disabled = state.history.length === 0;
         }
     }
 
@@ -595,14 +581,6 @@
         afterPlayChange();
     }
 
-    function undoTrickPlay() {
-        if (!playState) {
-            return;
-        }
-        undoCurrentTrick(playState);
-        afterPlayChange();
-    }
-
     function applyAutoPlayIfForced() {
         if (!playState || !playState.pendingDiffs || !playState.autoPlay) {
             return false;
@@ -625,7 +603,6 @@
     global.solverPositionFromPlay = solverPositionFromPlay;
     global.appendPlay = appendPlay;
     global.undoLastChoice = undoLastChoice;
-    global.undoCurrentTrick = undoCurrentTrick;
     global.playDiffMapFromSolverOutput = playDiffMapFromSolverOutput;
     global.isLegalPlayCard = isLegalPlayCard;
     global.ddsRankFromPip = ddsRankFromPip;
@@ -634,7 +611,6 @@
     global.exitPlay = exitPlay;
     global.tryPlayCard = tryPlayCard;
     global.undoPlay = undoPlay;
-    global.undoTrickPlay = undoTrickPlay;
     global.renderPlayUi = renderPlayUi;
     global.isPlayMode = isPlayMode;
     global.playBadgeMapFromPending = playBadgeMapFromPending;

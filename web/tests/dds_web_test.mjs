@@ -132,7 +132,6 @@ function createMockDocument(initialValues = {}) {
     makeElement("play-hint");
     makeElement("play-score");
     makeElement("undo-play");
-    makeElement("undo-trick");
     makeElement("edit-hands");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
@@ -4866,22 +4865,12 @@ test("appendPlay and undoLastChoice remove auto plays together", () => {
     assert.equal(state.history.length, 0);
 });
 
-test("undoCurrentTrick rewinds to trick start", () => {
+test("play mode exposes card undo but not undo-trick APIs", () => {
     const ctx = loadDdsWeb(createMockDocument());
-    const state = ctx.createPlayState({
-        hands: partScoreHands(ctx),
-        declarer: "south",
-        denomination: "N",
-        targetTricks: 6,
-    });
-    state.history = [
-        { seat: "west", key: "SK", auto: false },
-        { seat: "north", key: "SA", auto: false },
-        { seat: "east", key: "ST", auto: false },
-    ];
-
-    ctx.undoCurrentTrick(state);
-    assert.equal(state.history.length, 0);
+    assert.equal(typeof ctx.undoPlay, "function");
+    assert.equal(typeof ctx.undoLastChoice, "function");
+    assert.equal(ctx.undoTrickPlay, undefined);
+    assert.equal(ctx.undoCurrentTrick, undefined);
 });
 
 test("playDiffMapFromSolverOutput converts scores to contract diffs", () => {

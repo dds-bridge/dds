@@ -134,7 +134,8 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertIn('id="play-score"', text)
         self.assertIn('onclick="exitPlay()"', text)
         self.assertIn('onclick="undoPlay()"', text)
-        self.assertIn('onclick="undoTrickPlay()"', text)
+        self.assertNotIn('id="undo-trick"', text)
+        self.assertNotIn('onclick="undoTrickPlay()"', text)
         self.assertIn("Click a cell to play out that contract", text)
         # Trick totals live in the diagram NW corner next to the hands.
         nw = text.index('grid-filler-nw')
