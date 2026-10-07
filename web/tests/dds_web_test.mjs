@@ -5018,6 +5018,32 @@ test("handCardHtml marks legal play cards as playable in play mode", () => {
     assert.match(html, />=<\/span>/);
 });
 
+test("handCardHtml disables non-playable cards in play mode only", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const king = new ctx.Card("spades", "K");
+    const queen = new ctx.Card("spades", "Q");
+
+    // Edit mode: every card stays an enabled control.
+    assert.doesNotMatch(ctx.handCardHtml("west", king, 0), /\sdisabled\b/);
+
+    ctx.playState = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    ctx.playState.pendingDiffs = { SK: 0 };
+
+    const playable = ctx.handCardHtml("west", king, 0, "=");
+    assert.match(playable, /hand-card-playable/);
+    assert.doesNotMatch(playable, /\sdisabled\b/);
+
+    const blocked = ctx.handCardHtml("west", queen, 1);
+    assert.doesNotMatch(blocked, /hand-card-playable/);
+    assert.match(blocked, /\sdisabled(?:\s|=|>)/);
+});
+
 test("renderTrickStatus omits empty seat cells so no blank card chrome shows", () => {
     const document = createMockDocument({
         north_spades: "AQ85",

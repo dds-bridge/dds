@@ -468,8 +468,8 @@ function handCardTrickBadgeClass(badge) {
 
 function handCardHtml(direction, card, index, leadTricks) {
     const hasTricks = leadTricks != null && leadTricks !== undefined;
-    const playable = typeof isPlayMode === "function" &&
-        isPlayMode() &&
+    const inPlay = typeof isPlayMode === "function" && isPlayMode();
+    const playable = inPlay &&
         typeof isLegalPlayCard === "function" &&
         isLegalPlayCard(playState, direction, card.key());
     let classes = "hand-card";
@@ -485,7 +485,10 @@ function handCardHtml(direction, card, index, leadTricks) {
             escapeHtml(leadTricks) +
             "</span>"
         : "";
-    const draggable = !isPlayMode() || playable ? "true" : "false";
+    const draggable = !inPlay || playable ? "true" : "false";
+    // In play mode, illegal cards must not remain keyboard-focusable enabled
+    // buttons; edit-mode cards and legal plays stay enabled.
+    const disabledAttr = inPlay && !playable ? " disabled" : "";
 
     const aria = handCardAriaLabel(direction, card, {
         playable: playable,
@@ -494,6 +497,7 @@ function handCardHtml(direction, card, index, leadTricks) {
 
     return "<button type=\"button\" class=\"" + classes + "\" draggable=\"" +
         draggable + "\"" +
+        disabledAttr +
         " data-direction=\"" + escapeHtml(direction) + "\"" +
         " data-card=\"" + escapeHtml(card.key()) + "\"" +
         " data-index=\"" + escapeHtml(index) + "\"" +
