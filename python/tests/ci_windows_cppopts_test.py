@@ -785,6 +785,18 @@ class TestWindowsCiSpeedGuards(unittest.TestCase):
             r"cache-save:\s*\$\{\{\s*github\.event_name\s*!=\s*'pull_request'\s*\}\}",
         )
 
+    def test_push_jobs_allow_extra_time_for_cache_save(self) -> None:
+        """Cache-warming pushes need headroom beyond the 20m PR budget."""
+        for job_id in ("build_and_test", "wasm_web"):
+            body = _workflow_job_bodies(_windows_ci_workflow_text())[job_id]
+            self.assertRegex(
+                body,
+                r"timeout-minutes:\s*\$\{\{\s*"
+                r"github\.event_name\s*==\s*'pull_request'\s*&&\s*20\s*\|\|\s*30"
+                r"\s*\}\}",
+                f"{job_id} should keep 20m for PRs but allow 30m when cache-save runs",
+            )
+
     def test_pushes_to_default_branches_warm_the_disk_cache(self) -> None:
         """PRs restore cache; develop/main pushes must save it (cache-save false on PR)."""
         text = _windows_ci_workflow_text()

@@ -14,7 +14,8 @@ jobs:
   # //web so emsdk does not dominate this job's wall clock.
   build_and_test:
     runs-on: windows-latest
-    timeout-minutes: 20
+    # PRs stay at 20m; pushes that save the disk cache need ~6m more headroom.
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 20 || 30 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -84,7 +85,8 @@ jobs:
   # Windows-host emsdk / wasm transition coverage (parallel with native).
   wasm_web:
     runs-on: windows-latest
-    timeout-minutes: 20
+    # PRs stay at 20m; pushes that save the disk cache need ~6m more headroom.
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 20 || 30 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
