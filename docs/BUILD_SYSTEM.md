@@ -113,16 +113,32 @@ Because no sysroot is configured, Linux builds compile against the host's
 glibc headers and link with the host's GNU ld. The downloaded clang also needs
 glibc ≥ 2.34 and libstdc++ from gcc ≥ 12 (`GLIBCXX_3.4.30`) just to start,
 so RHEL 8/9 and their clones are not supported. RHEL 10 and current Fedora
-are tested in CI; Debian 12+ and Ubuntu 22.04+ are expected to work (inferred
-from the same symbol versions, not tested).
+are tested on every PR, and rolling Fedora, Arch, openSUSE and Debian weekly;
+Debian 12+ and Ubuntu 22.04+ are expected to work (inferred from the same
+symbol versions, not tested).
 
 `.github/workflows/ci_linux_distros.yml` builds and tests `//library/...`
 and `//python/...` in `fedora:latest` (newest glibc) and `almalinux:10`
 (oldest supported RHEL) containers on every PR. Its Bazel disk cache is off:
 host headers are not declared action inputs, so a cache hit could hide a
-header change. The packages a minimal container needs are listed per
-distribution in `.github/scripts/install_distro_deps.sh`; to reproduce a
-failure locally:
+header change.
+
+`.github/workflows/ci_linux_distros_rolling.yml` runs the same job every
+Monday at 06:00 UTC against `fedora:rawhide`, `archlinux:latest`,
+`opensuse/tumbleweed` and `debian:testing`. These rolling distributions take
+new glibc and binutils releases first, so a failure there is an early warning
+for the next Fedora or Ubuntu release, not a regression in recent PRs; it never
+runs on pull requests. GitHub notifies only the user who last changed its
+`cron` line (or who last re-enabled it), and disables scheduled workflows
+after 60 days without repository activity until someone re-enables them, so
+check the Actions tab after a quiet spell. Both workflows can also be started
+by hand, and `ci_linux_distros.yml` accepts an `images` input (a JSON array
+such as `["debian:stable"]`) to try another image that meets the floor above
+(glibc ≥ 2.34 and `GLIBCXX_3.4.30`) from a family that
+`install_distro_deps.sh` supports (dnf, apt, pacman or zypper).
+
+The packages a minimal container needs are listed per distribution in
+`.github/scripts/install_distro_deps.sh`; to reproduce a failure locally:
 
 ```bash
 # --platform: there is no linux-aarch64 LLVM toolchain, so arm64 hosts (Apple

@@ -13,12 +13,29 @@
 # Scope is //library/... //python/...: the targets compiled against host
 # headers. WASM (own sysroot), Java (hermetic JDK), .NET and Doxygen are not
 # distro-sensitive and stay in ci_linux.yml / ci_wasm.yml.
+#
+# The images input replaces the two images listed above: ci_linux_distros_rolling.yml
+# calls this workflow weekly with rolling distros, and a manual run can name
+# other supported images (a JSON array, e.g. ["debian:stable"]; see
+# docs/BUILD_SYSTEM.md for the host floor).
 name: CI – Linux distros
 
 on:
   pull_request:
     branches: [main, develop]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      images:
+        description: JSON array of container images (empty = the PR matrix)
+        required: false
+        type: string
+        default: ""
+  workflow_call:
+    inputs:
+      images:
+        description: JSON array of container images
+        required: true
+        type: string
 
 jobs:
   distro:
@@ -26,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ["fedora:latest", "almalinux:10"]
+        image: ${{ fromJSON(inputs.images || '["fedora:latest", "almalinux:10"]') }}
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
     timeout-minutes: 45

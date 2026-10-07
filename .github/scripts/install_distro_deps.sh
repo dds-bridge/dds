@@ -34,7 +34,10 @@ case " ${ID:-} ${ID_LIKE:-} " in
         rm -rf /var/lib/apt/lists/*
         ;;
     *" arch "*)
-        pacman -Syu --noconfirm --needed "${common[@]}" python glibc which
+        # pacman 7 sandboxes its downloader with a seccomp filter, which fails
+        # (error 22) where seccomp is unavailable, e.g. amd64 emulation on
+        # Apple silicon. The container is throwaway, so skip that part.
+        pacman -Syu --noconfirm --needed --disable-sandbox-syscalls "${common[@]}" python glibc which
         ;;
     *" suse "* | *" opensuse "*)
         zypper --non-interactive install "${common[@]}" python3 glibc-devel which

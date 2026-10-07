@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -26,6 +27,12 @@ def _workflow() -> str:
     )
 
 
+def _rolling_workflow() -> str:
+    return (
+        _repo_root() / ".github" / "workflows" / "ci_linux_distros_rolling.yml"
+    ).read_text(encoding="utf-8")
+
+
 def _install_script() -> str:
     return (_repo_root() / ".github" / "scripts" / "install_distro_deps.sh").read_text(
         encoding="utf-8"
@@ -34,9 +41,15 @@ def _install_script() -> str:
 
 class TestDistroMatrix(unittest.TestCase):
     def test_matrix_covers_newest_glibc_and_oldest_supported_rhel(self) -> None:
+        """The PR matrix is the fallback when no images input is given."""
         text = _workflow()
-        self.assertRegex(text, r'(?m)^\s+image:\s*\[[^\]]*"fedora:latest"')
-        self.assertRegex(text, r'(?m)^\s+image:\s*\[[^\]]*"almalinux:10"')
+        default = re.search(
+            r"(?m)^\s+image:\s*\$\{\{\s*fromJSON\(inputs\.images\s*\|\|\s*'(\[[^']*\])'\)\s*\}\}",
+            text,
+        )
+        self.assertIsNotNone(default, "matrix must default to the PR images")
+        assert default is not None
+        self.assertEqual(json.loads(default.group(1)), ["fedora:latest", "almalinux:10"])
         self.assertRegex(text, r"(?m)^\s+container:\s*\$\{\{\s*matrix\.image\s*\}\}")
 
     def test_one_distro_failure_does_not_cancel_the_others(self) -> None:
@@ -47,6 +60,41 @@ class TestDistroMatrix(unittest.TestCase):
             _workflow(),
             r"bazelisk\s+test\b[^\n]*//library/\.\.\.[^\n]*//python/\.\.\.",
         )
+
+
+class TestRollingDistros(unittest.TestCase):
+    """Rolling distros run weekly through the same job, never on pull requests."""
+
+    def test_runs_weekly_and_on_demand_only(self) -> None:
+        text = _rolling_workflow()
+        self.assertRegex(text, r'(?m)^\s+- cron:\s*"0 6 \* \* 1"')
+        self.assertRegex(text, r"(?m)^  workflow_dispatch:")
+        self.assertNotRegex(text, r"(?m)^  (pull_request\w*|push):")
+        self.assertNotRegex(text, r"(?m)^on:[ \t]*[^\s#]")
+
+    def test_reuses_the_distro_job(self) -> None:
+        self.assertRegex(
+            _rolling_workflow(),
+            r"(?m)^\s+uses:\s*\./\.github/workflows/ci_linux_distros\.yml\s*$",
+        )
+        self.assertRegex(_workflow(), r"(?m)^  workflow_call:\s*\n\s+inputs:\s*\n\s+images:")
+
+    def test_rolling_images_cover_each_package_manager(self) -> None:
+        """Tier 1 only runs the dnf branch; the weekly run exercises the others."""
+        package_managers = {
+            "fedora:rawhide": "dnf",
+            "archlinux:latest": "pacman",
+            "opensuse/tumbleweed": "zypper",
+            "debian:testing": "apt-get",
+        }
+        images = re.search(r"(?m)^\s+images:\s*'(\[[^']*\])'\s*$", _rolling_workflow())
+        self.assertIsNotNone(images)
+        assert images is not None
+        self.assertEqual(json.loads(images.group(1)), list(package_managers))
+        script = _install_script()
+        for image, manager in package_managers.items():
+            with self.subTest(image=image):
+                self.assertRegex(script, rf"(?m)^\s+{re.escape(manager)}\s")
 
 
 class TestDistroCaching(unittest.TestCase):

@@ -1,0 +1,27 @@
+# .github/workflows/ci_linux_distros_rolling.yml
+#
+# Weekly early warning for host-header and toolchain drift: runs the
+# ci_linux_distros.yml job against rolling distributions, which pick up new
+# glibc and binutils releases weeks or months before Fedora stable or an
+# Ubuntu LTS. Issue #406 (glibc 2.43) would have shown up here first.
+#
+#   fedora:rawhide       next Fedora, and the leading edge for RHEL
+#   archlinux:latest     newest upstream glibc and binutils
+#   opensuse/tumbleweed  rolling zypper family
+#   debian:testing       next Debian stable, and the base of the next Ubuntu
+#
+# These distros break on their schedule, not ours, so this never runs on pull
+# requests. A failure here is a heads-up to fix before it reaches a stable
+# release, not a regression in the PR that last ran.
+name: CI – Linux rolling distros
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  rolling:
+    uses: ./.github/workflows/ci_linux_distros.yml
+    with:
+      images: '["fedora:rawhide", "archlinux:latest", "opensuse/tumbleweed", "debian:testing"]'
