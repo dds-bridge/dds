@@ -4954,7 +4954,7 @@ test("handCardHtml marks legal play cards as playable in play mode", () => {
     assert.match(html, />=<\/span>/);
 });
 
-test("renderTrickStatus labels occupied seats and hides empty ones", () => {
+test("renderTrickStatus omits empty seat cells so no blank card chrome shows", () => {
     const document = createMockDocument({
         north_spades: "AQ85",
         north_hearts: "AK976",
@@ -4979,7 +4979,11 @@ test("renderTrickStatus labels occupied seats and hides empty ones", () => {
         },
     });
 
+    // Arrange / Act: enter play with no cards yet — four empty seat shells
+    // would otherwise paint as white bars in the center.
     assert.equal(ctx.startPlay("south", "N", 6), true);
+    assert.equal(document.element("trick-status").innerHTML, "");
+
     ctx.playState.pendingDiffs = { SK: 0 };
     ctx.tryPlayCard("west", "SK", false);
     ctx.playState.pendingDiffs = { SA: 0 };
@@ -4988,10 +4992,17 @@ test("renderTrickStatus labels occupied seats and hides empty ones", () => {
     const html = document.element("trick-status").innerHTML;
     assert.match(html, /aria-label="West spade king"/);
     assert.match(html, /aria-label="North spade ace"/);
-    // Empty East/South seats are present but hidden from AT / layout.
-    assert.match(html, /trick-e[^>]*hidden/);
-    assert.match(html, /trick-s[^>]*hidden/);
+    // Empty East/South seats must not be in the DOM (no blank card boxes).
+    assert.doesNotMatch(html, /trick-e/);
+    assert.doesNotMatch(html, /trick-s/);
     assert.equal(document.element("trick-status").getAttribute("aria-live"), "polite");
+});
+
+test("trick-status CSS hides empty card shells", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    assert.match(css, /\.trick-status\s+\.trick-card:empty/);
+    assert.match(css, /\.trick-status\s+\.trick-card\[hidden\]/);
 });
 
 test("exitPlay clears the selected contract so Edit hands stays in edit mode", async () => {

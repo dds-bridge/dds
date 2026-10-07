@@ -384,6 +384,12 @@ td {
   text-align: center;
 }
 
+/* Defense if an empty shell slips into the DOM (start of play / mid-trick). */
+.trick-status .trick-card:empty,
+.trick-status .trick-card[hidden] {
+  display: none !important;
+}
+
 .hand-card.hand-card-playable {
   background: #eef6ff;
   border-color: #99c;

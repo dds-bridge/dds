@@ -395,8 +395,10 @@
     }
 
     function trickSeatCellHtml(seatClass, seat, play) {
+        // Omit empty seats entirely — a hidden empty .trick-card still paints
+        // white bordered boxes in the center before the first card is played.
         if (!play) {
-            return "<div class=\"" + seatClass + " trick-card\" hidden></div>";
+            return "";
         }
         return "<div class=\"" + seatClass + " trick-card\" aria-label=\"" +
             escapePlayHtml(trickCardAriaLabel(seat, play)) + "\">" +
