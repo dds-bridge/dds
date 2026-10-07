@@ -137,8 +137,9 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertNotIn('onclick="undoPlay()"', text)
         self.assertNotIn('id="undo-trick"', text)
         self.assertNotIn('onclick="undoTrickPlay()"', text)
-        # Last-choice undo is keyboard/menu only (no Undo / Undo trick buttons).
-        self.assertIn("Undo with Edit", text)
+        # Last-choice undo is ⌘/Ctrl-Z only (no Undo buttons; Edit → Undo needs
+        # an editable host, which play mode does not keep focused).
+        self.assertNotRegex(text, r"Edit\s*→\s*Undo|Edit\s*-\s*Undo")
         self.assertRegex(text, r"⌘/Ctrl-Z|Ctrl-Z")
         self.assertIn("Click a cell to play out that contract", text)
         # Trick totals live in the diagram NW corner next to the hands.

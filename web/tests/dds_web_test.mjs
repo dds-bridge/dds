@@ -4875,7 +4875,7 @@ test("play mode exposes undo APIs without an Undo button", () => {
     assert.equal(ctx.document.getElementById("undo-play"), null);
 });
 
-test("pageLoad wires play undo to Cmd/Ctrl-Z and Edit menu historyUndo", () => {
+test("pageLoad wires play undo to Cmd/Ctrl-Z and beforeinput historyUndo", () => {
     const document = createMockDocument();
     const types = [];
     const original = document.addEventListener.bind(document);
@@ -4992,7 +4992,7 @@ test("Shift-Cmd/Ctrl-Z does not undo play (redo chord)", () => {
     assert.equal(ctx.playState.history.length, 1);
 });
 
-test("Edit menu historyUndo undoes the last play choice", () => {
+test("beforeinput historyUndo undoes the last play choice when emitted", () => {
     const document = createMockDocument({
         north_spades: "AQ85",
         north_hearts: "AK976",
