@@ -131,7 +131,6 @@ function createMockDocument(initialValues = {}) {
     makeElement("play-bar");
     makeElement("play-hint");
     makeElement("play-score");
-    makeElement("undo-play");
     makeElement("edit-hands");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
@@ -4865,12 +4864,192 @@ test("appendPlay and undoLastChoice remove auto plays together", () => {
     assert.equal(state.history.length, 0);
 });
 
-test("play mode exposes card undo but not undo-trick APIs", () => {
+test("play mode exposes undo APIs without an Undo button", () => {
     const ctx = loadDdsWeb(createMockDocument());
     assert.equal(typeof ctx.undoPlay, "function");
     assert.equal(typeof ctx.undoLastChoice, "function");
+    assert.equal(typeof ctx.handlePlayUndoKeyDown, "function");
+    assert.equal(typeof ctx.handlePlayHistoryUndo, "function");
     assert.equal(ctx.undoTrickPlay, undefined);
     assert.equal(ctx.undoCurrentTrick, undefined);
+    assert.equal(ctx.document.getElementById("undo-play"), null);
+});
+
+test("pageLoad wires play undo to Cmd/Ctrl-Z and Edit menu historyUndo", () => {
+    const document = createMockDocument();
+    const types = [];
+    const original = document.addEventListener.bind(document);
+    document.addEventListener = (type, listener) => {
+        types.push(type);
+        return original(type, listener);
+    };
+    const ctx = loadDdsWeb(document);
+    ctx.pageLoad();
+    assert.ok(types.includes("keydown"), "pageLoad listens for keydown");
+    assert.ok(types.includes("beforeinput"), "pageLoad listens for beforeinput");
+});
+
+test("Cmd/Ctrl-Z undoes the last play choice in play mode", () => {
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+        solvePlayPosition() {
+            return Promise.resolve({ SK: 0 });
+        },
+    });
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    ctx.playState.pendingDiffs = { SK: 0 };
+    assert.equal(ctx.tryPlayCard("west", "SK", false), true);
+    assert.equal(ctx.playState.history.length, 1);
+
+    let prevented = false;
+    ctx.handlePlayUndoKeyDown({
+        key: "z",
+        metaKey: true,
+        ctrlKey: false,
+        shiftKey: false,
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, true);
+    assert.equal(ctx.playState.history.length, 0);
+
+    ctx.playState.pendingDiffs = { SK: 0 };
+    assert.equal(ctx.tryPlayCard("west", "SK", false), true);
+    prevented = false;
+    ctx.handlePlayUndoKeyDown({
+        key: "z",
+        metaKey: false,
+        ctrlKey: true,
+        shiftKey: false,
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, true);
+    assert.equal(ctx.playState.history.length, 0);
+});
+
+test("Shift-Cmd/Ctrl-Z does not undo play (redo chord)", () => {
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    ctx.playState.pendingDiffs = { SK: 0 };
+    assert.equal(ctx.tryPlayCard("west", "SK", false), true);
+
+    let prevented = false;
+    ctx.handlePlayUndoKeyDown({
+        key: "z",
+        metaKey: true,
+        ctrlKey: false,
+        shiftKey: true,
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, false);
+    assert.equal(ctx.playState.history.length, 1);
+});
+
+test("Edit menu historyUndo undoes the last play choice", () => {
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    ctx.playState.pendingDiffs = { SK: 0 };
+    assert.equal(ctx.tryPlayCard("west", "SK", false), true);
+
+    let prevented = false;
+    ctx.handlePlayHistoryUndo({
+        inputType: "historyUndo",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, true);
+    assert.equal(ctx.playState.history.length, 0);
+});
+
+test("play undo shortcuts are ignored outside play mode", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    let prevented = false;
+    ctx.handlePlayUndoKeyDown({
+        key: "z",
+        metaKey: true,
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, false);
+    prevented = false;
+    ctx.handlePlayHistoryUndo({
+        inputType: "historyUndo",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, false);
 });
 
 test("playDiffMapFromSolverOutput converts scores to contract diffs", () => {

@@ -404,7 +404,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     0,
                 )
 
-                page.locator("#undo-play").click()
+                page.keyboard.press("ControlOrMeta+z")
                 page.wait_for_function(
                     """() => document.querySelector(
                       '#west_spades_cards .hand-card[data-card="SK"]')"""

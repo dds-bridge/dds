@@ -329,11 +329,6 @@ td {
   display: none !important;
 }
 
-#play-bar .undo-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
 #play-hint {
   color: #444;
   font-size: 0.95rem;

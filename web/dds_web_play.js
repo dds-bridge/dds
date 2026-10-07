@@ -13,7 +13,8 @@
             solverPositionFromPlay appendPlay undoLastChoice
             playDiffMapFromSolverOutput isLegalPlayCard ddsRankFromPip
             remainingCardsForSeat playState startPlay exitPlay tryPlayCard
-            undoPlay renderPlayUi isPlayMode
+            undoPlay handlePlayUndoKeyDown handlePlayHistoryUndo
+            renderPlayUi isPlayMode
             playBadgeMapFromPending targetTricksFromCell */
 
 "use strict";
@@ -442,13 +443,6 @@
             (done ? " (final)" : "");
     }
 
-    function updateUndoButtons(state) {
-        const undoBtn = document.getElementById("undo-play");
-        if (undoBtn) {
-            undoBtn.disabled = !state.history.some((p) => !p.auto);
-        }
-    }
-
     function handsForDisplay(state) {
         const out = {};
         for (const direction of DIRECTIONS) {
@@ -463,7 +457,6 @@
         }
         renderTrickStatus(playState);
         renderPlayScore(playState);
-        updateUndoButtons(playState);
         if (typeof global.updateHandCardDisplays === "function") {
             global.leadTricksByCardKey = playBadgeMapFromPending(
                 playState.pendingDiffs
@@ -581,6 +574,39 @@
         afterPlayChange();
     }
 
+    function isPlayUndoShortcut(event) {
+        if (!event || event.shiftKey) {
+            return false;
+        }
+        const key = event.key;
+        if (!key || String(key).toLowerCase() !== "z") {
+            return false;
+        }
+        return !!(event.metaKey || event.ctrlKey);
+    }
+
+    function handlePlayUndoKeyDown(event) {
+        if (!isPlayMode() || !isPlayUndoShortcut(event)) {
+            return;
+        }
+        if (typeof event.preventDefault === "function") {
+            event.preventDefault();
+        }
+        undoPlay();
+    }
+
+    // Edit → Undo (and some browsers' platform undo) emit beforeinput with
+    // inputType historyUndo when an editing host is focused.
+    function handlePlayHistoryUndo(event) {
+        if (!isPlayMode() || !event || event.inputType !== "historyUndo") {
+            return;
+        }
+        if (typeof event.preventDefault === "function") {
+            event.preventDefault();
+        }
+        undoPlay();
+    }
+
     function applyAutoPlayIfForced() {
         if (!playState || !playState.pendingDiffs || !playState.autoPlay) {
             return false;
@@ -611,6 +637,8 @@
     global.exitPlay = exitPlay;
     global.tryPlayCard = tryPlayCard;
     global.undoPlay = undoPlay;
+    global.handlePlayUndoKeyDown = handlePlayUndoKeyDown;
+    global.handlePlayHistoryUndo = handlePlayHistoryUndo;
     global.renderPlayUi = renderPlayUi;
     global.isPlayMode = isPlayMode;
     global.playBadgeMapFromPending = playBadgeMapFromPending;

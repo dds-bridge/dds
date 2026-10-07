@@ -1870,6 +1870,12 @@ function pageLoad() {
     document.addEventListener("dragend", handleCardDragEnd);
     document.addEventListener("click", handleResultTableClick);
     document.addEventListener("keydown", handleResultTableKeyDown);
+    if (typeof handlePlayUndoKeyDown === "function") {
+        document.addEventListener("keydown", handlePlayUndoKeyDown);
+    }
+    if (typeof handlePlayHistoryUndo === "function") {
+        document.addEventListener("beforeinput", handlePlayHistoryUndo);
+    }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
     updateActionButtons();
     focusNorthSpades();
