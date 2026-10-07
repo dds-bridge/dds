@@ -46,7 +46,14 @@ jobs:
       matrix:
         image: ${{ fromJSON(inputs.images || '["fedora:latest", "almalinux:10"]') }}
     runs-on: ubuntu-latest
-    container: ${{ matrix.image }}
+    container:
+      image: ${{ matrix.image }}
+      # Some images (opensuse/tumbleweed) declare no PATH. The runner builds
+      # each step's PATH from the image's declared one plus any directories
+      # actions add (setup-bazel adds Bazelisk's), so without this every step
+      # after setup-bazel loses /usr/bin and fails with "bash: not found".
+      env:
+        PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     timeout-minutes: 45
     # Containers default to sh; the steps below and setup-bazelisk use bash.
     defaults:

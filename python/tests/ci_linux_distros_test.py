@@ -50,7 +50,16 @@ class TestDistroMatrix(unittest.TestCase):
         self.assertIsNotNone(default, "matrix must default to the PR images")
         assert default is not None
         self.assertEqual(json.loads(default.group(1)), ["fedora:latest", "almalinux:10"])
-        self.assertRegex(text, r"(?m)^\s+container:\s*\$\{\{\s*matrix\.image\s*\}\}")
+        self.assertRegex(
+            text, r"(?m)^\s+container:\s*\n\s+image:\s*\$\{\{\s*matrix\.image\s*\}\}"
+        )
+
+    def test_container_declares_path_for_images_that_do_not(self) -> None:
+        """opensuse/tumbleweed sets no PATH; actions that add to PATH then hide /usr/bin."""
+        path = re.search(r"(?m)^\s+env:\s*\n\s+PATH:\s*(\S+)\s*$", _workflow())
+        self.assertIsNotNone(path, "job container must set PATH")
+        assert path is not None
+        self.assertIn("/usr/bin", path.group(1).split(":"))
 
     def test_one_distro_failure_does_not_cancel_the_others(self) -> None:
         self.assertRegex(_workflow(), r"(?m)^\s+fail-fast:\s*false\s*$")
