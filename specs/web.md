@@ -1,7 +1,7 @@
 ---
 capability: web
 owners: [web]
-last-updated: 2026-08-10
+last-updated: 2026-10-07
 ---
 
 # DDS Web
@@ -15,7 +15,8 @@ last-updated: 2026-08-10
 DDS Web is a browser page that runs the double-dummy solver entirely client-side
 via a purpose-built WASM module. It demonstrates the solver in a browser and
 holds the line on the browser integration (module loading, memory marshalling,
-DOM wiring) with an automated test pyramid.
+DOM wiring) with an automated test pyramid. Selecting a DD-table cell enters
+card-by-card play for that contract, with mid-trick solves for legal cards.
 
 ## Behavior & invariants
 
@@ -25,23 +26,29 @@ DOM wiring) with an automated test pyramid.
 - **A dedicated, modularized WASM module — not the example CLIs.** `dds_web_wasm`
   (`wasm_cc_binary` over `dds_web_wasm_cc`, source `dds_web_wasm.cpp`,
   `threads = "emscripten"`) is built with `WASM_WEB_LINKOPTS`: `MODULARIZE=1`,
-  `EXPORT_NAME=createDdsModule`, exported entries `_dds_web_calc_table` and
-  `_dds_web_solve_leads` (plus `_malloc`/`_free`),
+  `EXPORT_NAME=createDdsModule`, exported entries `_dds_web_calc_table`,
+  `_dds_web_solve_leads`, and `_dds_web_solve_plays` (plus `_malloc`/`_free`),
   `EXPORTED_RUNTIME_METHODS=['ccall','getValue']`, and
   `ENVIRONMENT=web,worker,node`. This is distinct from
   [wasm-emscripten](wasm-emscripten.md)'s example ports — DDS Web wants a small
-  callable surface for the DD table and opening-lead analysis, not a CLI. Shared
-  base flags come from `WASM_LINKOPTS` ([build-system](build-system.md)),
-  including pthreads / `PTHREAD_POOL_SIZE`.
+  callable surface for the DD table, opening leads, and mid-trick play
+  analysis, not a CLI. Shared base flags come from `WASM_LINKOPTS`
+  ([build-system](build-system.md)), including pthreads / `PTHREAD_POOL_SIZE`.
+  `dds_web_solve_leads` is a thin wrapper over `dds_web_solve_plays` with an
+  empty current trick; `dds_web_solve_plays` accepts up to three already-played
+  trick cards and requires the populated-slot count to match
+  `(52 − remaining holdings) % 4`.
 - **The page is a static site plus JS glue.** `dds_web.html` / `dds_web.css` /
   `dds_web.js` / `dds_web_deal_import.js` / `dds_web_core.js` /
-  `dds_web_solve.js` load the module (`createDdsModule`), marshal a deal into
-  WASM memory, call `dds_web_calc_table` and `dds_web_solve_leads` via `ccall`,
-  and read results with `getValue`. Deal-file parsers live in
-  `dds_web_deal_import.js`; the deal model in `dds_web_core.js`; WASM queue /
-  DD table / leads in `dds_web_solve.js`; UI wiring in `dds_web.js`. `web_site`
-  (`tests/web_site.py`) stages the site
-  and provides `make_isolated_http_handler` (COOP/COEP) for system/e2e tests and
+  `dds_web_solve.js` / `dds_web_play.js` load the module (`createDdsModule`),
+  marshal a deal into WASM memory, call `dds_web_calc_table` /
+  `dds_web_solve_leads` / `dds_web_solve_plays` via `ccall`, and read results
+  with `getValue`. Deal-file parsers live in `dds_web_deal_import.js`; the deal
+  model in `dds_web_core.js`; WASM queue / DD table / leads / play-position
+  solves in `dds_web_solve.js`; play state and trick UI in `dds_web_play.js`;
+  UI wiring in `dds_web.js`. Script order is import → core → solve → play →
+  app. `web_site` (`tests/web_site.py`) stages the site and provides
+  `make_isolated_http_handler` (COOP/COEP) for system/e2e tests and
   `web/serve_web.py`. Helper scripts `gen_wasm_bin_js.py`, `patch_web_wasm.py`,
   `verify_wasm_js.py` generate and sanity-check the JS/wasm glue.
 - **Browser solves require cross-origin isolation.** Pthread WASM needs
@@ -73,20 +80,25 @@ DOM wiring) with an automated test pyramid.
   CLIs. If an emsdk upgrade moves that line, update the regex and the note in
   `docs/wasm_build.md`.
 - **The module holds two session-scoped `SolverContext`s for its lifetime.**
-  `dds_web_calc_table` and `dds_web_solve_leads` (`web/dds_web_wasm.cpp`) each
-  use a dedicated lazily-initialized `static SolverContext` — table vs leads —
-  so CalcDDtable worker pools cannot disturb SolveBoard (and vice versa) when
-  the UI auto-fills the table then analyzes leads. Each context reuses its
-  transposition table across calls in that module instance, calling
-  `reset_for_solve()` between deals to recycle the TT memory pool without
-  freeing the underlying allocation. This mirrors a WASM module instance's own
-  lifetime (one `WebAssembly.Memory`, static constructors run once) instead of
-  allocating a fresh [solver-context](solver-context.md) per call. Because each
-  context is shared across calls on that path, it is **not safe for concurrent
-  solves on the same entry** — a future move to Web Workers would need one
-  context per worker. The DD-table path itself remains sequential over strains;
-  batch/multi-hand APIs under [wasm-emscripten](wasm-emscripten.md) can use
-  pthreads via [system-concurrency](system-concurrency.md).
+  `dds_web_calc_table` and the leads/plays path (`web/dds_web_wasm.cpp`) each
+  use a dedicated lazily-initialized `static SolverContext` — table vs
+  leads/plays — so CalcDDtable worker pools cannot disturb SolveBoard (and
+  vice versa) when the UI auto-fills the table then analyzes leads or play
+  positions. Each context reuses its transposition table across calls in that
+  module instance, calling `reset_for_solve()` between deals to recycle the TT
+  memory pool without freeing the underlying allocation. This mirrors a WASM
+  module instance's own lifetime (one `WebAssembly.Memory`, static constructors
+  run once) instead of allocating a fresh [solver-context](solver-context.md)
+  per call. Because each context is shared across calls on that path, it is
+  **not safe for concurrent solves on the same entry** — a future move to Web
+  Workers would need one context per worker. The DD-table path itself remains
+  sequential over strains; batch/multi-hand APIs under
+  [wasm-emscripten](wasm-emscripten.md) can use pthreads via
+  [system-concurrency](system-concurrency.md).
+- **Selecting a DD-table cell enters play mode.** `dds_web_play.js` owns play
+  state (history, trick score, undo, contract-relative badges). Legal cards are
+  scored via `dds_web_solve_plays`; opening-lead numerals reuse
+  `dds_web_solve_leads`. Deal entry is locked until Edit hands / exitPlay.
 
 ## Key entry points
 
@@ -94,9 +106,10 @@ DOM wiring) with an automated test pyramid.
   (`dds_web_wasm_test`, py_tests, `dds_web_e2e_test`), and the
   `web_tests` / `web_system_tests` / `web_e2e_tests` suites; `WASM_WEB_LINKOPTS`.
 - `web/dds_web_wasm.cpp` — the native WASM bridge (`dds_web_calc_table`,
-  `dds_web_solve_leads`).
-- `web/{dds_web.html,dds_web.css,dds_web.js,dds_web_deal_import.js,dds_web_core.js,dds_web_solve.js}`
-  — the page, deal-file parsers, deal model, solver session, and UI glue.
+  `dds_web_solve_leads`, `dds_web_solve_plays`).
+- `web/{dds_web.html,dds_web.css,dds_web.js,dds_web_deal_import.js,dds_web_core.js,dds_web_solve.js,dds_web_play.js}`
+  — the page, deal-file parsers, deal model, solver session, play state, and UI
+  glue.
 - `web/coi-serviceworker.js` — COOP/COEP via service worker for hosts without
   custom headers (GitHub Pages).
 - `web/stage_github_pages.py` — stage static site + `index.html` for Pages.
@@ -105,8 +118,9 @@ DOM wiring) with an automated test pyramid.
 
 ## Known gaps / non-goals
 
-- **Not a full bridge app** — focused on deal entry, DD table, and lead analysis,
-  not the complete solver API.
+- **Not a full bridge app** — focused on deal entry, DD table, lead analysis, and
+  card-by-card play for a selected contract; not the complete solver API
+  (bidding, matchpoints UI, multi-table sessions, etc.).
 - The e2e tier needs network on first run (Chromium download) and is excluded from
   the fast `web_tests` suite.
 - Site/module build mechanics that overlap with WASM builds are documented once in
