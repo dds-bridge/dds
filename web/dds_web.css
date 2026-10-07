@@ -313,6 +313,96 @@ td {
   white-space: nowrap;
 }
 
+#play-bar {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  max-width: 1100px;
+}
+
+#play-bar[hidden],
+#play-hint[hidden],
+#play-score[hidden],
+#trick-status[hidden] {
+  display: none !important;
+}
+
+#play-bar .undo-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#play-hint {
+  color: #444;
+  font-size: 0.95rem;
+  margin: 0.4rem 0 0;
+  max-width: 1100px;
+}
+
+#play-score {
+  font-weight: 600;
+  margin: 0.35rem 0 0;
+}
+
+.trick-status {
+  display: grid;
+  font-family: monospace;
+  font-size: 0.85em;
+  gap: 0.35rem 0.5rem;
+  grid-template-areas:
+    ". n ."
+    "w . e"
+    ". s .";
+  grid-template-columns: repeat(3, minmax(2.2rem, auto));
+  justify-items: center;
+  line-height: 1.2;
+}
+
+.trick-status .trick-n { grid-area: n; }
+.trick-status .trick-w { grid-area: w; }
+.trick-status .trick-e { grid-area: e; }
+.trick-status .trick-s { grid-area: s; }
+
+.trick-status .trick-card {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  min-width: 2rem;
+  padding: 0.1rem 0.25rem;
+  text-align: center;
+}
+
+.hand-card.hand-card-playable {
+  background: #eef6ff;
+  border-color: #99c;
+  cursor: grab;
+}
+
+.hand-card.hand-card-playable:hover,
+.hand-card.hand-card-playable:focus-visible {
+  background: #d8ebff;
+  border-color: #678;
+}
+
+.hand-card-tricks.diff-plus,
+.hand-card-tricks.diff-zero {
+  color: #080;
+}
+
+.hand-card-tricks.diff-minus {
+  color: #c00;
+}
+
+body.playing .hand-suit-input {
+  pointer-events: none;
+}
+
+body.playing #deck-status {
+  display: none;
+}
+
 /* Suit glyphs are DOM text; .hand-card sets color: inherit so nested/sibling
    pips stay black even when the suit glyph is red. */
 spade-suit,

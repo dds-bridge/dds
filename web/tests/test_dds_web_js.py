@@ -59,11 +59,13 @@ class DdsWebJsTest(unittest.TestCase):
         dds_web_deal_import_js = rlocation("web/dds_web_deal_import.js")
         dds_web_core_js = rlocation("web/dds_web_core.js")
         dds_web_solve_js = rlocation("web/dds_web_solve.js")
+        dds_web_play_js = rlocation("web/dds_web_play.js")
         env = os.environ.copy()
         env["DDS_WEB_JS"] = str(dds_web_js)
         env["DDS_WEB_DEAL_IMPORT_JS"] = str(dds_web_deal_import_js)
         env["DDS_WEB_CORE_JS"] = str(dds_web_core_js)
         env["DDS_WEB_SOLVE_JS"] = str(dds_web_solve_js)
+        env["DDS_WEB_PLAY_JS"] = str(dds_web_play_js)
         try:
             proc = subprocess.run(
                 [node, "--test", str(test_script)],

@@ -116,8 +116,15 @@ function createMockDocument(initialValues = {}) {
     makeElement("valid-pips");
     makeElement("result");
     makeElement("deck-status");
+    makeElement("trick-status");
     makeElement("contract-status");
     makeElement("sample-deals");
+    makeElement("play-bar");
+    makeElement("play-hint");
+    makeElement("play-score");
+    makeElement("undo-play");
+    makeElement("undo-trick");
+    makeElement("edit-hands");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
     }
@@ -189,8 +196,28 @@ function createMockDocument(initialValues = {}) {
         },
     });
 
+    const body = {
+        className: "",
+        classList: {
+            add(name) {
+                const classes = new Set(body.className.split(/\s+/).filter(Boolean));
+                classes.add(name);
+                body.className = [...classes].join(" ");
+            },
+            remove(name) {
+                const classes = new Set(body.className.split(/\s+/).filter(Boolean));
+                classes.delete(name);
+                body.className = [...classes].join(" ");
+            },
+            contains(name) {
+                return body.className.split(/\s+/).includes(name);
+            },
+        },
+    };
+
     const documentRef = {
         activeElement: null,
+        body,
         addEventListener(type, listener) {
             const typeListeners = listeners.get(type) ?? [];
             typeListeners.push(listener);
@@ -247,6 +274,11 @@ function runDdsWebScripts(context) {
         ),
         context,
         { filename: "dds_web_solve.js" }
+    );
+    runInContext(
+        readFileSync(findWebJsPath("dds_web_play.js", "DDS_WEB_PLAY_JS"), "utf8"),
+        context,
+        { filename: "dds_web_play.js" }
     );
     runInContext(
         readFileSync(findWebJsPath("dds_web.js", "DDS_WEB_JS"), "utf8"),
@@ -643,19 +675,22 @@ test("withTimeout propagates rejection from the wrapped promise", async () => {
     );
 });
 
-test("updateActionButtons finishes dd table before opening-lead refresh", async () => {
+test("updateActionButtons finishes dd table before play-position refresh", async () => {
     // Arrange: a selected contract must not race CalcDDtable vs SolveBoard.
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
     const order = [];
+    const southNt = document.element("result-table").rows[3].cells[5];
+    southNt.innerHTML = "6";
+    southNt.textContent = "6";
 
     ctx.refreshDdTable = async () => {
         order.push("dd-start");
         await new Promise((resolve) => setTimeout(resolve, 30));
         order.push("dd-end");
     };
-    ctx.refreshOpeningLeadTricks = async () => {
-        order.push("leads");
+    ctx.refreshPlayTricks = async () => {
+        order.push("play");
     };
 
     ctx.fillFormWithPartScoreTestData();
@@ -663,11 +698,11 @@ test("updateActionButtons finishes dd table before opening-lead refresh", async 
     await ctx.scheduleDealSolve();
     order.length = 0;
 
-    const leadsDone = new Promise((resolve, reject) => {
-        const refreshLeads = ctx.refreshOpeningLeadTricks;
-        ctx.refreshOpeningLeadTricks = async () => {
+    const playDone = new Promise((resolve, reject) => {
+        const refreshPlay = ctx.refreshPlayTricks;
+        ctx.refreshPlayTricks = async () => {
             try {
-                await refreshLeads();
+                await refreshPlay();
                 resolve();
             } catch (err) {
                 reject(err);
@@ -678,33 +713,36 @@ test("updateActionButtons finishes dd table before opening-lead refresh", async 
     ctx.handleResultTableClick({
         target: {
             closest() {
-                return document.element("result-table").rows[3].cells[5];
+                return southNt;
             },
         },
     });
     await withTimeout(
-        leadsDone,
+        playDone,
         1000,
-        "timed out waiting for refreshOpeningLeadTricks"
+        "timed out waiting for refreshPlayTricks"
     );
 
-    // Assert: contract click runs DD then leads in one job.
-    assert.deepEqual(order, ["dd-start", "dd-end", "leads"]);
+    // Assert: contract click runs DD then play scores in one job.
+    assert.deepEqual(order, ["dd-start", "dd-end", "play"]);
 });
 
-test("contract selection waits for an in-flight dd table before lead refresh", async () => {
+test("contract selection waits for an in-flight dd table before play refresh", async () => {
     // Arrange
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
     const order = [];
+    const southNt = document.element("result-table").rows[3].cells[5];
+    southNt.innerHTML = "6";
+    southNt.textContent = "6";
 
     ctx.refreshDdTable = async () => {
         order.push("dd-start");
         await new Promise((resolve) => setTimeout(resolve, 40));
         order.push("dd-end");
     };
-    ctx.refreshOpeningLeadTricks = async () => {
-        order.push("leads");
+    ctx.refreshPlayTricks = async () => {
+        order.push("play");
     };
 
     // Act: start auto-solve, then select a contract before it finishes.
@@ -712,38 +750,41 @@ test("contract selection waits for an in-flight dd table before lead refresh", a
     ctx.handleResultTableClick({
         target: {
             closest() {
-                return document.element("result-table").rows[3].cells[5];
+                return southNt;
             },
         },
     });
     await new Promise((resolve) => setTimeout(resolve, 120));
 
-    // Assert: coalesced jobs still run DD before leads; obsolete jobs no-op.
+    // Assert: coalesced jobs still run DD before play; obsolete jobs no-op.
     assert.ok(order.indexOf("dd-start") >= 0);
     assert.ok(order.indexOf("dd-end") >= 0);
-    assert.equal(order[order.length - 1], "leads");
-    assert.ok(order.lastIndexOf("dd-end") < order.lastIndexOf("leads"));
+    assert.equal(order[order.length - 1], "play");
+    assert.ok(order.lastIndexOf("dd-end") < order.lastIndexOf("play"));
 });
 
-test("rapid scheduleDealSolve coalesces to one trailing leads refresh", async () => {
+test("rapid scheduleDealSolve coalesces to one trailing play refresh", async () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
-    let leads = 0;
+    let play = 0;
     let dd = 0;
+    const southNt = document.element("result-table").rows[3].cells[5];
+    southNt.innerHTML = "6";
+    southNt.textContent = "6";
 
     ctx.refreshDdTable = async () => {
         dd += 1;
         await new Promise((resolve) => setTimeout(resolve, 20));
     };
-    ctx.refreshOpeningLeadTricks = async () => {
-        leads += 1;
+    ctx.refreshPlayTricks = async () => {
+        play += 1;
     };
 
     ctx.fillFormWithPartScoreTestData();
     ctx.handleResultTableClick({
         target: {
             closest() {
-                return document.element("result-table").rows[3].cells[5];
+                return southNt;
             },
         },
     });
@@ -751,7 +792,7 @@ test("rapid scheduleDealSolve coalesces to one trailing leads refresh", async ()
     ctx.scheduleDealSolve();
     await new Promise((resolve) => setTimeout(resolve, 120));
 
-    assert.equal(leads, 1);
+    assert.equal(play, 1);
     assert.ok(dd >= 1);
 });
 
@@ -1530,26 +1571,22 @@ test("updateActionButtons auto-solves when every hand has 13 cards", async () =>
     assert.equal(refreshed, 1);
 });
 
-test("hand edit clears lead-trick badges before the next lead solve finishes", async () => {
-    // Arrange: selected contract with lead numerals, then a slow follow-up solve.
+test("hand edit exits play and clears play badges", async () => {
+    // Arrange: play mode with badges, then edit a holding (exits play).
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
     ctx.refreshDdTable = async () => {};
 
-    let leadCalls = 0;
-    let resolveSecondSolve;
-    ctx.solveOpeningLeadTricks = () => {
-        leadCalls += 1;
-        if (leadCalls === 1) {
-            return Promise.resolve({ SK: 7, HA: 5 });
-        }
-        return new Promise((resolve) => {
-            resolveSecondSolve = resolve;
-        });
+    let playCalls = 0;
+    ctx.solvePlayPosition = () => {
+        playCalls += 1;
+        return Promise.resolve({ SK: 0, HA: -1 });
     };
 
     ctx.fillFormWithPartScoreTestData();
     const cell = document.element("result-table").rows[3].cells[5]; // South / NT
+    cell.innerHTML = "6";
+    cell.textContent = "6";
     ctx.handleResultTableClick({
         target: {
             closest() {
@@ -1558,16 +1595,22 @@ test("hand edit clears lead-trick badges before the next lead solve finishes", a
         },
     });
     await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(ctx.isPlayMode(), true);
     assert.match(
         document.element("west_spades_cards").innerHTML,
         /hand-card-tricks/
     );
 
-    // Act: edit a holding while a contract is still selected.
+    // Act: edit a holding — deal entry changes leave play mode.
+    document.element("north_spades").value = "AQ8";
+    ctx.updateActionButtons();
+    // Play mode locks inputs; simulate Edit hands then edit.
+    ctx.exitPlay();
     document.element("north_spades").value = "AQ8";
     ctx.updateActionButtons();
 
-    // Assert: stale numerals are gone immediately (before the next solve settles).
+    // Assert: play badges are gone after exiting play.
+    assert.equal(ctx.isPlayMode(), false);
     assert.doesNotMatch(
         document.element("west_spades_cards").innerHTML,
         /hand-card-tricks/
@@ -1576,10 +1619,7 @@ test("hand edit clears lead-trick badges before the next lead solve finishes", a
         document.element("west_hearts_cards").innerHTML,
         /hand-card-tricks/
     );
-
-    if (typeof resolveSecondSolve === "function") {
-        resolveSecondSolve({ SK: 6 });
-    }
+    assert.ok(playCalls >= 1);
     await new Promise((resolve) => setTimeout(resolve, 0));
 });
 
@@ -2507,20 +2547,20 @@ test("handleResultTableClick moves the highlight to the newly clicked cell", () 
     assert.equal(selected.denomination, "N");
 });
 
-test("switching contracts clears lead-trick badges before the next lead solve finishes", async () => {
-    // Arrange: first contract has numerals; switch while a follow-up solve is slow.
+test("switching contracts restarts play and clears prior play badges", async () => {
+    // Arrange: first contract has badges; switch while a follow-up solve is slow.
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
     ctx.refreshDdTable = async () => {};
 
-    let leadCalls = 0;
+    let playCalls = 0;
     let resolveSecondSolve;
-    const contractsSeen = [];
-    ctx.solveOpeningLeadTricks = (_hands, contract) => {
-        leadCalls += 1;
-        contractsSeen.push({ ...contract });
-        if (leadCalls === 1) {
-            return Promise.resolve({ SK: 7, HA: 5 });
+    const targetsSeen = [];
+    ctx.solvePlayPosition = (state) => {
+        playCalls += 1;
+        targetsSeen.push(state.targetTricks);
+        if (playCalls === 1) {
+            return Promise.resolve({ SK: 0, HA: -1 });
         }
         return new Promise((resolve) => {
             resolveSecondSolve = resolve;
@@ -2530,6 +2570,10 @@ test("switching contracts clears lead-trick badges before the next lead solve fi
     ctx.fillFormWithPartScoreTestData();
     const southNt = document.element("result-table").rows[3].cells[5];
     const northClubs = document.element("result-table").rows[1].cells[1];
+    southNt.innerHTML = "6";
+    southNt.textContent = "6";
+    northClubs.innerHTML = "5";
+    northClubs.textContent = "5";
 
     ctx.handleResultTableClick({
         target: {
@@ -2553,24 +2597,21 @@ test("switching contracts clears lead-trick badges before the next lead solve fi
         },
     });
 
-    // Assert: old numerals are gone immediately; selection already moved.
+    // Assert: selection moved; prior badges cleared until the new solve settles.
     assert.equal(ctx.selectedContract().direction, "north");
     assert.equal(ctx.selectedContract().denomination, "C");
+    assert.equal(ctx.playState.targetTricks, 5);
     assert.doesNotMatch(
         document.element("west_spades_cards").innerHTML,
         /hand-card-tricks/
     );
-    assert.doesNotMatch(
-        document.element("west_hearts_cards").innerHTML,
-        /hand-card-tricks/
-    );
 
     if (typeof resolveSecondSolve === "function") {
-        resolveSecondSolve({ CK: 4 });
+        resolveSecondSolve({ CK: 1 });
     }
     await new Promise((resolve) => setTimeout(resolve, 0));
-    assert.ok(contractsSeen.length >= 1);
-    assert.equal(contractsSeen[0].direction, "south");
+    assert.ok(targetsSeen.length >= 1);
+    assert.equal(targetsSeen[0], 6);
 });
 
 test("handleResultTableClick clears selection when the selected cell is clicked again", () => {
@@ -3522,7 +3563,7 @@ test("result table lives in the hand diagram southeast corner", () => {
     // Hint sits above the table inside the SE cell.
     assert.match(
         afterSe,
-        /class="[^"]*result-table-hint[^"]*"[^>]*>Click to set declarer and denomination</
+        /class="[^"]*result-table-hint[^"]*"[^>]*>Click a cell to play out that contract</
     );
     assert.match(
         afterSe,
@@ -4560,7 +4601,7 @@ test("invalidateActiveDdTableRequest clears dealSolvePending so a coalesced job 
     );
 });
 
-test("failed file import invalidates an in-flight opening-lead solve", async () => {
+test("failed file import invalidates an in-flight play-position solve", async () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document, {
         requestAnimationFrame(cb) {
@@ -4586,12 +4627,12 @@ test("failed file import invalidates an in-flight opening-lead solve", async () 
     await new Promise((resolve) => setTimeout(resolve, 80));
     document.element("result-table").rows[1].cells[1].innerHTML = "9";
 
-    let releaseLead;
-    let leadStarted = false;
-    ctx.solveOpeningLeadTricks = () =>
+    let releasePlay;
+    let playStarted = false;
+    ctx.solvePlayPosition = () =>
         new Promise((resolve, reject) => {
-            leadStarted = true;
-            releaseLead = () => reject(new Error("stale lead failure"));
+            playStarted = true;
+            releasePlay = () => reject(new Error("stale play failure"));
         });
     ctx.handleResultTableClick({
         target: {
@@ -4601,14 +4642,303 @@ test("failed file import invalidates an in-flight opening-lead solve", async () 
         },
     });
     await new Promise((resolve) => setTimeout(resolve, 40));
-    assert.equal(leadStarted, true);
+    assert.equal(playStarted, true);
+    assert.equal(ctx.isPlayMode(), true);
 
     await ctx.handleDealFileSelected({
         files: [{ text: async () => "not a bridge deal file" }],
     });
-    releaseLead();
+    releasePlay();
     await new Promise((resolve) => setTimeout(resolve, 40));
 
     assert.match(document.element("result").innerHTML, /PBN|LIN|DLM|sol-style/i);
-    assert.doesNotMatch(document.element("result").innerHTML, /stale lead failure/i);
+    assert.doesNotMatch(document.element("result").innerHTML, /stale play failure/i);
+});
+
+test("nextDirection and prevDirection walk NESW clockwise", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+
+    assert.equal(ctx.nextDirection("north"), "east");
+    assert.equal(ctx.nextDirection("east"), "south");
+    assert.equal(ctx.nextDirection("south"), "west");
+    assert.equal(ctx.nextDirection("west"), "north");
+    assert.equal(ctx.prevDirection("north"), "west");
+    assert.equal(ctx.prevDirection("west"), "south");
+});
+
+test("winningPlay prefers higher rank then trump", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const trick = [
+        { seat: "west", key: "S2" },
+        { seat: "north", key: "SA" },
+        { seat: "east", key: "HK" },
+        { seat: "south", key: "H3" },
+    ];
+
+    assert.equal(ctx.winningPlay(trick, null).seat, "north");
+    assert.equal(ctx.winningPlay(trick, "H").seat, "east");
+});
+
+test("formatPlayDiff renders equals plus and minus", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+
+    assert.equal(ctx.formatPlayDiff(0), "=");
+    assert.equal(ctx.formatPlayDiff(2), "+2");
+    assert.equal(ctx.formatPlayDiff(-3), "\u20133");
+});
+
+test("playDiffFromSolverScore projects declarer total vs target", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+
+    // South declares; West to play; EW side-to-play score 7 of 13 remaining;
+    // no tricks cashed yet; target 9 → declarer gets 6 → diff -3.
+    assert.equal(
+        ctx.playDiffFromSolverScore({
+            declarer: "south",
+            seatToPlay: "west",
+            nsTricks: 0,
+            ewTricks: 0,
+            remainingTricks: 13,
+            sideToPlayScore: 7,
+            targetTricks: 9,
+        }),
+        -3
+    );
+
+    // After NS took 2; North to play; NS score 5 of 11 remaining; target 9 →
+    // projected 7 → diff -2.
+    assert.equal(
+        ctx.playDiffFromSolverScore({
+            declarer: "south",
+            seatToPlay: "north",
+            nsTricks: 2,
+            ewTricks: 0,
+            remainingTricks: 11,
+            sideToPlayScore: 5,
+            targetTricks: 9,
+        }),
+        -2
+    );
+});
+
+function partScoreHands(ctx) {
+    // Matches fillFormWithPartScoreTestData / kPbnPartScore.
+    return {
+        north: cardsFromKeys(ctx, [
+            "SA", "SQ", "S8", "S5", "HA", "HK", "H9", "H7", "H6", "D5", "CJ", "C8", "C7",
+        ]),
+        east: cardsFromKeys(ctx, [
+            "SJ", "ST", "HQ", "HJ", "H5", "H4", "H3", "H2", "DQ", "D9", "CK", "CQ", "C9",
+        ]),
+        south: cardsFromKeys(ctx, [
+            "S9", "S7", "S2", "DJ", "DT", "D8", "D6", "D3", "CA", "C6", "C4", "C3", "C2",
+        ]),
+        west: cardsFromKeys(ctx, [
+            "SK", "S6", "S4", "S3", "HT", "H8", "DA", "DK", "D7", "D4", "D2", "CT", "C5",
+        ]),
+    };
+}
+
+test("createPlayState starts with opening leader and empty history", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const hands = partScoreHands(ctx);
+
+    const state = ctx.createPlayState({
+        hands,
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+
+    assert.equal(state.leadSeat, "west");
+    assert.equal(state.declarer, "south");
+    assert.equal(state.denomination, "N");
+    assert.equal(state.targetTricks, 6);
+    assert.equal(state.trumpLetter, null);
+    assert.equal(state.history.length, 0);
+    const replay = ctx.replayPlayState(state);
+    assert.equal(replay.seat, "west");
+    assert.equal(replay.nsTricks, 0);
+    assert.equal(replay.ewTricks, 0);
+    assert.equal(replay.trick.length, 0);
+});
+
+test("replayPlayState advances seat and scores completed tricks", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    state.history = [
+        { seat: "west", key: "SK", auto: false },
+        { seat: "north", key: "SA", auto: false },
+        { seat: "east", key: "ST", auto: false },
+        { seat: "south", key: "S2", auto: false },
+        { seat: "north", key: "HA", auto: false },
+    ];
+
+    const replay = ctx.replayPlayState(state);
+    assert.equal(replay.nsTricks, 1);
+    assert.equal(replay.ewTricks, 0);
+    assert.equal(replay.seat, "east");
+    assert.equal(replay.trick.length, 1);
+    assert.equal(replay.trick[0].key, "HA");
+});
+
+test("solverPositionFromPlay strips played and current-trick cards", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    state.history = [{ seat: "west", key: "SK", auto: false }];
+
+    const pos = ctx.solverPositionFromPlay(state);
+    assert.equal(pos.first, 3); // West led
+    assert.equal(pos.trickSuits.join(","), "0,0,0");
+    assert.equal(pos.trickRanks.join(","), "13,0,0");
+    assert.equal(pos.seatToPlay, "north");
+    assert.equal(
+        pos.remainingHands.west.some((c) => c.key() === "SK"),
+        false
+    );
+    assert.match(pos.pbn, /643\.T8\.AK742\.T5/);
+});
+
+test("appendPlay and undoLastChoice remove auto plays together", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+
+    ctx.appendPlay(state, "west", "SK", false);
+    ctx.appendPlay(state, "north", "SA", true);
+    assert.equal(state.history.length, 2);
+
+    ctx.undoLastChoice(state);
+    assert.equal(state.history.length, 0);
+});
+
+test("undoCurrentTrick rewinds to trick start", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    state.history = [
+        { seat: "west", key: "SK", auto: false },
+        { seat: "north", key: "SA", auto: false },
+        { seat: "east", key: "ST", auto: false },
+    ];
+
+    ctx.undoCurrentTrick(state);
+    assert.equal(state.history.length, 0);
+});
+
+test("playDiffMapFromSolverOutput converts scores to contract diffs", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const out = [2, 0, 14, 7, 0, 12, 6]; // SA → 7, SQ → 6 for side to play (EW)
+
+    const map = ctx.playDiffMapFromSolverOutput(out, {
+        declarer: "south",
+        seatToPlay: "west",
+        nsTricks: 0,
+        ewTricks: 0,
+        remainingTricks: 13,
+        targetTricks: 6,
+    });
+
+    // EW 7 → NS 6 → diff 0; EW 6 → NS 7 → diff +1
+    assert.equal(map.SA, 0);
+    assert.equal(map.SQ, 1);
+});
+
+test("isLegalPlayCard requires seat to play and pending diff", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    state.pendingDiffs = { SK: 0, HT: -1 };
+
+    assert.equal(ctx.isLegalPlayCard(state, "west", "SK"), true);
+    assert.equal(ctx.isLegalPlayCard(state, "west", "SA"), false);
+    assert.equal(ctx.isLegalPlayCard(state, "north", "SK"), false);
+});
+
+test("targetTricksFromCell parses numeric cell text", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(ctx.targetTricksFromCell({ textContent: "9", innerHTML: "9" }), 9);
+    assert.equal(ctx.targetTricksFromCell({ textContent: "", innerHTML: "<br>" }), null);
+});
+
+test("startPlay and exitPlay toggle play chrome and trick status", () => {
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    assert.equal(ctx.isPlayMode(), true);
+    assert.equal(document.body.classList.contains("playing"), true);
+    assert.equal(document.element("play-bar").hidden, false);
+    assert.equal(document.element("trick-status").hidden, false);
+    assert.equal(document.element("deck-status").hidden, true);
+
+    ctx.playState.pendingDiffs = { SK: 0 };
+    assert.equal(ctx.tryPlayCard("west", "SK", false), true);
+    assert.match(document.element("trick-status").innerHTML, /K/);
+    assert.equal(ctx.playState.history.length, 1);
+
+    ctx.exitPlay();
+    assert.equal(ctx.isPlayMode(), false);
+    assert.equal(document.body.classList.contains("playing"), false);
+    assert.equal(document.element("deck-status").hidden, false);
+});
+
+test("handCardHtml marks legal play cards as playable in play mode", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.playState = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    ctx.playState.pendingDiffs = { SK: 0 };
+
+    const html = ctx.handCardHtml("west", new ctx.Card("spades", "K"), 0, "=");
+    assert.match(html, /hand-card-playable/);
+    assert.match(html, /diff-zero/);
+    assert.match(html, />=<\/span>/);
 });

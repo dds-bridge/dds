@@ -93,6 +93,35 @@ void write_expanded_leads(const FutureTricks& fut, int* out_leads)
     }
     out_leads[0] = n;
 }
+
+// Validate up to three already-played cards in the current trick.
+// Empty slots are (suit=0, rank=0). A filled slot needs suit 0..3 and rank
+// 2..14. Slots must be dense from the front (no gaps).
+auto trick_cards_valid(
+        int suit0, int rank0, int suit1, int rank1, int suit2, int rank2)
+        -> bool
+{
+    const int suits[3] = {suit0, suit1, suit2};
+    const int ranks[3] = {rank0, rank1, rank2};
+    bool seen_empty = false;
+    for (int i = 0; i < 3; ++i) {
+        const bool empty = ranks[i] == 0;
+        if (empty) {
+            if (suits[i] != 0) {
+                return false;
+            }
+            seen_empty = true;
+            continue;
+        }
+        if (seen_empty) {
+            return false;
+        }
+        if (suits[i] < 0 || suits[i] > 3 || ranks[i] < 2 || ranks[i] > 14) {
+            return false;
+        }
+    }
+    return true;
+}
 }  // namespace
 
 #if !defined(__EMSCRIPTEN__)
@@ -162,14 +191,25 @@ auto dds_web_calc_table(const char* pbn, int* out_table) -> int
     return RETURN_NO_FAULT;
 }
 
-// Solves all opening leads from `first` in `trump`.
+// Solves legal cards for the side to play from a position that may already
+// have 0..3 cards in the current trick.
+// `pbn` is remaining holdings only (cards in the current trick removed).
 // out_leads[0] = n; then n triples (suit, rank, score) with FutureTricks
 // equals bitmasks expanded to one triple per physical card.
-// suit 0..3 = S,H,D,C; rank 2..14; score = tricks for the side on lead.
+// suit 0..3 = S,H,D,C; rank 2..14; score = tricks for the side to play.
 // n is capped at 13. Caller must provide at least 1 + 13*3 ints.
 EMSCRIPTEN_KEEPALIVE
-auto dds_web_solve_leads(
-        const char* pbn, int trump, int first, int* out_leads) -> int
+auto dds_web_solve_plays(
+        const char* pbn,
+        int trump,
+        int first,
+        int suit0,
+        int rank0,
+        int suit1,
+        int rank1,
+        int suit2,
+        int rank2,
+        int* out_leads) -> int
 {
     if (pbn == nullptr || out_leads == nullptr) {
         return RETURN_UNKNOWN_FAULT;
@@ -177,16 +217,19 @@ auto dds_web_solve_leads(
     if (trump < 0 || trump > 4 || first < 0 || first > 3) {
         return RETURN_UNKNOWN_FAULT;
     }
+    if (!trick_cards_valid(suit0, rank0, suit1, rank1, suit2, rank2)) {
+        return RETURN_UNKNOWN_FAULT;
+    }
 
     Deal dl{};
     dl.trump = trump;
     dl.first = first;
-    dl.currentTrickSuit[0] = 0;
-    dl.currentTrickSuit[1] = 0;
-    dl.currentTrickSuit[2] = 0;
-    dl.currentTrickRank[0] = 0;
-    dl.currentTrickRank[1] = 0;
-    dl.currentTrickRank[2] = 0;
+    dl.currentTrickSuit[0] = suit0;
+    dl.currentTrickSuit[1] = suit1;
+    dl.currentTrickSuit[2] = suit2;
+    dl.currentTrickRank[0] = rank0;
+    dl.currentTrickRank[1] = rank1;
+    dl.currentTrickRank[2] = rank2;
 
     if (convert_from_pbn(pbn, dl.remainCards) != RETURN_NO_FAULT) {
         return RETURN_PBN_FAULT;
@@ -204,6 +247,15 @@ auto dds_web_solve_leads(
 
     write_expanded_leads(fut, out_leads);
     return RETURN_NO_FAULT;
+}
+
+// Solves all opening leads from `first` in `trump` (empty current trick).
+EMSCRIPTEN_KEEPALIVE
+auto dds_web_solve_leads(
+        const char* pbn, int trump, int first, int* out_leads) -> int
+{
+    return dds_web_solve_plays(
+            pbn, trump, first, 0, 0, 0, 0, 0, 0, out_leads);
 }
 
 }  // extern "C"

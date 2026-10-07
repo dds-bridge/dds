@@ -9,7 +9,7 @@ load("//:wasm_compat.bzl", "WASM_LINKOPTS")
 WASM_WEB_LINKOPTS = WASM_LINKOPTS + [
     "-sMODULARIZE=1",
     "-sEXPORT_NAME=createDdsModule",
-    "-sEXPORTED_FUNCTIONS=['_dds_web_calc_table','_dds_web_solve_leads','_malloc','_free']",
+    "-sEXPORTED_FUNCTIONS=['_dds_web_calc_table','_dds_web_solve_leads','_dds_web_solve_plays','_malloc','_free']",
     "-sEXPORTED_RUNTIME_METHODS=['ccall','getValue']",
     "-sENVIRONMENT=web,worker,node",
 ]
@@ -107,6 +107,7 @@ py_test(
         "dds_web_deal_import.js",
         "dds_web_core.js",
         "dds_web_solve.js",
+        "dds_web_play.js",
         "tests/dds_web_test.mjs",
     ],
 )
@@ -127,6 +128,7 @@ py_test(
         "dds_web_deal_import.js",
         "dds_web_core.js",
         "dds_web_solve.js",
+        "dds_web_play.js",
         "gen_wasm_bin_js.py",
         "patch_web_wasm.py",
         "tests/dds_web_wasm_node.mjs",
@@ -152,6 +154,7 @@ py_test(
         "dds_web_deal_import.js",
         "dds_web_core.js",
         "dds_web_solve.js",
+        "dds_web_play.js",
         "gen_wasm_bin_js.py",
         "patch_web_wasm.py",
     ],

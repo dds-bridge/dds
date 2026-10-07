@@ -16,6 +16,17 @@
 extern "C" int dds_web_calc_table(const char* pbn, int* out_table);
 extern "C" int dds_web_solve_leads(
         const char* pbn, int trump, int first, int* out_leads);
+extern "C" int dds_web_solve_plays(
+        const char* pbn,
+        int trump,
+        int first,
+        int suit0,
+        int rank0,
+        int suit1,
+        int rank1,
+        int suit2,
+        int rank2,
+        int* out_leads);
 extern "C" void dds_web_test_write_expanded_leads(
         const FutureTricks* fut, int* out_leads);
 extern "C" void dds_web_test_context_tt_config(
@@ -210,6 +221,96 @@ TEST(DdsWebWasmTest, ExpandedLeadsIgnoresEqualsBitsAtOrAboveRepresentative) {
     ASSERT_EQ(out[0], 2);
     EXPECT_EQ(out[2], 13);  // king once
     EXPECT_EQ(out[5], 12);  // queen only
+}
+
+TEST(DdsWebWasmTest, SolvePlaysRejectsNullPointers) {
+    int out[40]{};
+    EXPECT_EQ(
+            dds_web_solve_plays(
+                    nullptr, 4, 3, 0, 0, 0, 0, 0, 0, out),
+            RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScore, 4, 3, 0, 0, 0, 0, 0, 0, nullptr),
+            RETURN_UNKNOWN_FAULT);
+}
+
+TEST(DdsWebWasmTest, SolvePlaysRejectsPartialTrickCards) {
+    int out[40]{};
+    // Rank without a prior suit slot filled is invalid.
+    EXPECT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScore, 4, 3, 0, 0, 0, 13, 0, 0, out),
+            RETURN_UNKNOWN_FAULT);
+    // Suit set with rank 0 is invalid.
+    EXPECT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScore, 4, 3, 0, 0, 1, 0, 0, 0, out),
+            RETURN_UNKNOWN_FAULT);
+    // Rank out of 2..14.
+    EXPECT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScore, 4, 3, 0, 1, 0, 0, 0, 0, out),
+            RETURN_UNKNOWN_FAULT);
+}
+
+TEST(DdsWebWasmTest, SolvePlaysEmptyTrickMatchesSolveLeads) {
+    int leads[40]{};
+    int plays[40]{};
+    ASSERT_EQ(dds_web_solve_leads(kPbnPartScore, 4, 3, leads), RETURN_NO_FAULT);
+    ASSERT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScore, 4, 3, 0, 0, 0, 0, 0, 0, plays),
+            RETURN_NO_FAULT);
+    ASSERT_EQ(plays[0], leads[0]);
+    for (int i = 0; i < 1 + 3 * leads[0]; ++i) {
+        EXPECT_EQ(plays[i], leads[i]) << "index " << i;
+    }
+}
+
+// Remaining cards after West's opening ♠K vs South NT on the part-score deal.
+// Original West: K643.T8.AK742.T5 → without ♠K: 643.T8.AK742.T5
+constexpr char kPbnPartScoreAfterSk[] =
+        "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 643.T8.AK742.T5";
+
+TEST(DdsWebWasmTest, SolvePlaysMidTrickReturnsFollowerLegalCards) {
+    // West led ♠K; North is next and holds ♠AQ85 so must follow spade.
+    int out[40]{};
+    ASSERT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScoreAfterSk,
+                    /*trump=*/4,
+                    /*first=*/3,  // West led
+                    /*suit0=*/0,
+                    /*rank0=*/13,  // ♠K
+                    0,
+                    0,
+                    0,
+                    0,
+                    out),
+            RETURN_NO_FAULT);
+
+    const int n = out[0];
+    ASSERT_GE(n, 1);
+    ASSERT_LE(n, 4);  // North has four spades
+
+    for (int i = 0; i < n; ++i) {
+        EXPECT_EQ(out[1 + 3 * i], 0) << "must follow spade; index " << i;
+        EXPECT_GE(out[1 + 3 * i + 1], 2);
+        EXPECT_LE(out[1 + 3 * i + 1], 14);
+    }
+}
+
+TEST(DdsWebWasmTest, SolvePlaysWorksAfterCalcTableOnSharedSession) {
+    int table[20]{};
+    ASSERT_EQ(dds_web_calc_table(kPbnPartScore, table), RETURN_NO_FAULT);
+
+    int out[40]{};
+    ASSERT_EQ(
+            dds_web_solve_plays(
+                    kPbnPartScoreAfterSk, 4, 3, 0, 13, 0, 0, 0, 0, out),
+            RETURN_NO_FAULT);
+    EXPECT_GE(out[0], 1);
 }
 
 TEST(DdsWebWasmTest, ExpandedLeadsHardCapsAtThirteenCards) {

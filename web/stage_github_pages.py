@@ -18,6 +18,7 @@ DEPLOY_FILES = (
     "dds_web_deal_import.js",
     "dds_web_core.js",
     "dds_web_solve.js",
+    "dds_web_play.js",
     "coi-serviceworker.js",
     "dds_web_wasm.js",
     "dds_web_wasm.wasm",
