@@ -33,9 +33,10 @@ on:
   workflow_call:
     inputs:
       images:
-        description: JSON array of container images
-        required: true
+        description: JSON array of container images (empty = the PR matrix)
+        required: false
         type: string
+        default: ""
 
 jobs:
   distro:
