@@ -239,8 +239,11 @@ auto dds_web_solve_plays(
     ctx.reset_for_solve();
 
     FutureTricks fut{};
+    // Mode 1 always scores, including forced singleton plays. Mode 0 would
+    // return sentinel -2 when solutions!=3; we use solutions=3 (all cards) but
+    // still prefer mode 1 so UI contract diffs never see that sentinel.
     const int res = solve_board(ctx, dl, /*target=*/-1, /*solutions=*/3,
-                                                            /*mode=*/0, &fut);
+                                                            /*mode=*/1, &fut);
     if (res != RETURN_NO_FAULT) {
         return res;
     }

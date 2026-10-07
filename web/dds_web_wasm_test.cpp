@@ -313,6 +313,36 @@ TEST(DdsWebWasmTest, SolvePlaysWorksAfterCalcTableOnSharedSession) {
     EXPECT_GE(out[0], 1);
 }
 
+// West led ♠K; North holds only ♠A so the play is forced. Mode 0 would return
+// sentinel score -2 when solutions!=3; play badges need a real trick count.
+constexpr char kPbnForcedNorthSpadeAce[] =
+        "N:A.AKQJT9.AKQ.JT9 QJT9.876.876.876 8765.543.543.Q32 432.2.JT92.AK54";
+
+TEST(DdsWebWasmTest, SolvePlaysForcedCardReturnsRealScore) {
+    int out[40]{};
+    ASSERT_EQ(
+            dds_web_solve_plays(
+                    kPbnForcedNorthSpadeAce,
+                    /*trump=*/4,
+                    /*first=*/3,
+                    /*suit0=*/0,
+                    /*rank0=*/13,
+                    0,
+                    0,
+                    0,
+                    0,
+                    out),
+            RETURN_NO_FAULT);
+
+    ASSERT_EQ(out[0], 1);
+    EXPECT_EQ(out[1], 0);   // spade
+    EXPECT_EQ(out[2], 14);  // ace
+    // Not the mode-0 "no alternatives" sentinel; a scored trick count for UI diffs.
+    EXPECT_NE(out[3], -2);
+    EXPECT_GE(out[3], 0);
+    EXPECT_LE(out[3], 13);
+}
+
 TEST(DdsWebWasmTest, ExpandedLeadsHardCapsAtThirteenCards) {
     // One representative with equals for ranks 2-13 expands to 13 cards; a second
     // FutureTricks entry must not write past the caller buffer (1 + 13*3).
