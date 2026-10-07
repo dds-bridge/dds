@@ -517,7 +517,14 @@
     }
 
     function exitPlay() {
+        // Even before play starts, a pending DD-cell click must be cleared so
+        // load/clear/rotate (which call exitPlay) cannot later enter play on a
+        // different deal via ensurePlayForSelectedContract.
         if (!playState) {
+            if (global.selectedContractState &&
+                    typeof global.clearResultCellSelection === "function") {
+                global.clearResultCellSelection();
+            }
             return;
         }
         playState = null;

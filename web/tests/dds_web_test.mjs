@@ -5069,6 +5069,38 @@ test("trick-status CSS hides empty card shells", () => {
     assert.match(css, /\.trick-status\s+\.trick-card\[hidden\]/);
 });
 
+test("exitPlay clears a pending contract even when play has not started", () => {
+    // Arrange: user clicked a DD cell before it had a trick count (no play yet).
+    const document = createMockDocument({
+        north_spades: "AQ85",
+        north_hearts: "AK976",
+        north_diamonds: "5",
+        north_clubs: "J87",
+        east_spades: "JT",
+        east_hearts: "QJ5432",
+        east_diamonds: "Q9",
+        east_clubs: "KQ9",
+        south_spades: "972",
+        south_hearts: "",
+        south_diamonds: "JT863",
+        south_clubs: "A6432",
+        west_spades: "K643",
+        west_hearts: "T8",
+        west_diamonds: "AK742",
+        west_clubs: "T5",
+    });
+    const ctx = loadDdsWeb(document);
+    ctx.selectedContractState = { direction: "south", denomination: "N" };
+    assert.equal(ctx.isPlayMode(), false);
+
+    // Act: deal clear/load/rotate calls exitPlay while playState is still null.
+    ctx.exitPlay();
+
+    // Assert: pending selection must not survive onto the next deal.
+    assert.equal(ctx.selectedContract(), null);
+    assert.equal(ctx.selectedContractState, null);
+});
+
 test("exitPlay clears the selected contract so Edit hands stays in edit mode", async () => {
     // Arrange: play mode with a selected contract; scheduleDealSolve would
     // otherwise call ensurePlayForSelectedContract and re-enter play.
