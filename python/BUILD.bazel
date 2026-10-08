@@ -153,6 +153,19 @@ py_test(
     ],
 )
 
+# Guard: native Darwin/Linux links route through the host linker, not the
+# hermetic lld (macOS 27 SDK .tbd parsing; Linux ld.lld needs libxml2.so.2),
+# and macOS keeps requesting ThinLTO (-flto=thin) at compile and link time.
+py_test(
+    name = "ci_macos_native_linker_test",
+    size = "small",
+    main = "tests/ci_macos_native_linker_test.py",
+    srcs = ["tests/ci_macos_native_linker_test.py"],
+    data = [
+        "//:macos_native_linker_config_files",
+    ],
+)
+
 # Guard: WASM CI clears .bazelrc's -e2e filter so Playwright e2e tests run.
 py_test(
     name = "ci_wasm_e2e_test",

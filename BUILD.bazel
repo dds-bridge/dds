@@ -123,6 +123,16 @@ filegroup(
     visibility = ["//python:__pkg__"],
 )
 
+filegroup(
+    name = "macos_native_linker_config_files",
+    srcs = [
+        ".bazelrc",
+        "CPPVARIABLES.bzl",
+        "MODULE.bazel",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 genrule(

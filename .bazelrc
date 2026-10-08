@@ -44,7 +44,11 @@ build:macos --host_cxxopt=-std=c++20
 # leak into wasm transitions via enable_platform_specific_config.
 build:macos --features=-supports_start_end_lib
 # Same for GNU ld on Linux (MODULE.bazel extra_link_flags; ld.lld from the LLVM
-# archive needs libxml2.so.2, missing on Ubuntu 26.04 and newer distros).
+# archive needs libxml2.so.2, missing on Ubuntu 26.04 and newer distros). This
+# also lightly affects --config=msan's own ld.lld (llvm_toolchain_msan keeps
+# ld.lld and does advertise this feature, unlike wasm/emscripten above) —
+# --features applies build-wide, not per toolchain instance — but it only
+# costs an lld grouping optimization there, not correctness.
 build:linux --features=-supports_start_end_lib
 build:linux --cxxopt=-std=c++20
 build:linux --host_cxxopt=-std=c++20
