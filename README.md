@@ -14,8 +14,10 @@ modernization.
 Version 3.1 builds on that core. The headline changes for consumers are new
 **.NET** and **Java** bindings, a much larger **Python** surface, batch solving
 that is parallel by default, search performance back at 2.9 parity, and
-double-dummy correctness fixes. Existing 3.0 code continues to work unchanged.
-See the [3.1.0 release notes](docs/release_notes/release_v3_1_0.md) for details.
+double-dummy correctness fixes. Existing 3.0 APIs remain source-compatible;
+batch calls now parallelize by default, and corrected `AnalysePlay*` results may
+differ from 3.0. See the [3.1.0 release notes](docs/release_notes/release_v3_1_0.md)
+for details.
 
 There are build scripts for macOS, Linux, and Windows but I have myself only used the library on macOS.
 
@@ -60,9 +62,9 @@ Current baseline for this branch (`MODULE.bazel` version `3.1.0`):
 
 - C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 21.1.8 for
     `darwin-aarch64`, `linux-x86_64`, and `windows-x86_64`.
-- Language bindings: C++, Python (`dds3`), .NET (`DDS_Core`), and Java (FFM /
-    Project Panama on JDK 22+). A hermetic WASM build and browser demo live under
-    `web/` (deployed at <https://dds-bridge.github.io/dds/>).
+- Language bindings: C++, the legacy C API, Python (`dds3`), .NET (`DDS_Core`),
+    and Java (FFM / Project Panama on JDK 22+). A hermetic WASM build and browser
+    demo live under `web/` (deployed at <https://dds-bridge.github.io/dds/>).
 - Batch entry points (`SolveAllBoards*`, `CalcAllTables*`) parallelize inside the
     library by default; sequential and thread-count variants are available.
 - Full non-ASAN validation passes with `bazelisk test //...`.
