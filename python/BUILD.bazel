@@ -108,6 +108,7 @@ py_test(
     srcs = ["tests/ci_windows_cppopts_test.py"],
     data = [
         "//:windows_cppopts_config_files",
+        "//.github/actions/setup-bazelisk:action.yml",
         "//.github/workflows:all_workflows",
     ],
 )

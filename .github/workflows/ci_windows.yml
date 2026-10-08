@@ -3,6 +3,10 @@ name: CI – Windows
 on:
   pull_request:
     branches: [main, develop]
+  # Merges to default branches save the Bazel disk cache that PRs restore
+  # (PRs set cache-save: false so their post-step stays short).
+  push:
+    branches: [main, develop]
   workflow_dispatch: {}
 
 jobs:
@@ -10,51 +14,62 @@ jobs:
   # //web so emsdk does not dominate this job's wall clock.
   build_and_test:
     runs-on: windows-latest
-    timeout-minutes: 20
+    # PRs stay at 20m; pushes that save the disk cache need ~6m more headroom.
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 20 || 30 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Bazelisk
         uses: ./.github/actions/setup-bazelisk
+        with:
+          # PRs restore but do not save: cold builds already take ~10–14m, and
+          # uploading the disk cache has cancelled jobs past the 20m budget.
+          cache-save: ${{ github.event_name != 'pull_request' }}
 
-      # Warm external deps for the native graph; retry transient network flakes.
-      - name: Prefetch external repos
+      # Optional BuildBuddy remote cache (item 3). When the repo secret is set,
+      # cold MSVC compiles hit a shared cache; when unset this step is a no-op.
+      - name: Configure BuildBuddy remote cache
         shell: pwsh
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
-          $max = 3
-          for ($i = 1; $i -le $max; $i++) {
-            bazelisk fetch '--' '//...' '-//wasm/...' '-//web/...'
-            if ($LASTEXITCODE -eq 0) { exit 0 }
-            if ($i -lt $max) {
-              Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
-              Start-Sleep -Seconds 20
-            }
+          if (-not $env:BUILDBUDDY_API_KEY) {
+            Write-Host "BUILDBUDDY_API_KEY unset; skipping remote cache."
+            exit 0
           }
-          exit 1
+          $bazelrc = Join-Path $HOME ".bazelrc"
+          @"
+          # Added by CI – Windows (remote cache).
+          common --remote_cache=grpcs://remote.buildbuddy.io
+          common --remote_timeout=30
+          common --remote_header=x-buildbuddy-api-key=$env:BUILDBUDDY_API_KEY
+          "@ | Out-File -FilePath $bazelrc -Append -Encoding utf8
 
-      # Build native targets (retry: fetch flakes can still surface on first analysis).
+      # Build then test in one step so the Bazel server (and analysis cache)
+      # stays warm. No standalone fetch: repository-cache covers downloads;
+      # build retries handle transient fetch flakes.
       # --config=opt: DDS_CPPOPTS no longer forces /O2 (that fought Bazel's /Od and
       # triggered MSVC D9025); opt mode is how Windows keeps release-level codegen.
-      - name: Bazel build (retry on transient fetch failure)
+      - name: Bazel build and test
         shell: pwsh
         run: |
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
             bazelisk build --config=opt --verbose_failures '--' '//...' '-//wasm/...' '-//web/...'
-            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($LASTEXITCODE -eq 0) { break }
             if ($i -lt $max) {
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
               Start-Sleep -Seconds 20
               # Restart server only — keep downloaded external repos / disk cache.
               bazelisk shutdown || $true
+            } else {
+              exit 1
             }
           }
-          exit 1
-
-      # Run native tests (including Python) — no retry so real failures surface quickly
-      - name: Run native tests
-        run: bazelisk test --config=opt --verbose_failures --test_output=errors '--' '//...' '-//wasm/...' '-//web/...'
+          # Same server as the successful build — do not shut down here.
+          bazelisk test --config=opt --verbose_failures --test_output=errors '--' '//...' '-//wasm/...' '-//web/...'
+          exit $LASTEXITCODE
 
       # .NET binding lives in CI – Windows .NET (ci_windows_dotnet.yml).
 
@@ -70,45 +85,52 @@ jobs:
   # Windows-host emsdk / wasm transition coverage (parallel with native).
   wasm_web:
     runs-on: windows-latest
-    timeout-minutes: 20
+    # PRs stay at 20m; pushes that save the disk cache need ~6m more headroom.
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 20 || 30 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Bazelisk
         uses: ./.github/actions/setup-bazelisk
+        with:
+          cache-save: ${{ github.event_name != 'pull_request' }}
 
-      - name: Prefetch external repos
+      - name: Configure BuildBuddy remote cache
         shell: pwsh
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
-          $max = 3
-          for ($i = 1; $i -le $max; $i++) {
-            bazelisk fetch //wasm/... //web/...
-            if ($LASTEXITCODE -eq 0) { exit 0 }
-            if ($i -lt $max) {
-              Write-Host "Fetch failed (attempt $i/$max). Retrying in 20s..."
-              Start-Sleep -Seconds 20
-            }
+          if (-not $env:BUILDBUDDY_API_KEY) {
+            Write-Host "BUILDBUDDY_API_KEY unset; skipping remote cache."
+            exit 0
           }
-          exit 1
+          $bazelrc = Join-Path $HOME ".bazelrc"
+          @"
+          # Added by CI – Windows (remote cache).
+          common --remote_cache=grpcs://remote.buildbuddy.io
+          common --remote_timeout=30
+          common --remote_header=x-buildbuddy-api-key=$env:BUILDBUDDY_API_KEY
+          "@ | Out-File -FilePath $bazelrc -Append -Encoding utf8
 
-      - name: Bazel build (retry on transient fetch failure)
+      - name: Bazel build and test
         shell: pwsh
         run: |
           $max = 3
           for ($i = 1; $i -le $max; $i++) {
             bazelisk build --config=opt --verbose_failures //wasm/... //web/...
-            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($LASTEXITCODE -eq 0) { break }
             if ($i -lt $max) {
               Write-Host "Build failed (attempt $i/$max). Retrying in 20s..."
               Start-Sleep -Seconds 20
               bazelisk shutdown || $true
+            } else {
+              exit 1
             }
           }
-          exit 1
-
-      - name: Run wasm and web tests
-        run: bazelisk test --config=opt --verbose_failures --test_output=errors //wasm/... //web/...
+          # Same server as the successful build — do not shut down here.
+          bazelisk test --config=opt --verbose_failures --test_output=errors //wasm/... //web/...
+          exit $LASTEXITCODE
 
       - name: Upload test logs - Windows wasm/web
         if: always()
