@@ -39,6 +39,57 @@ class TestMsanBazelConfig(unittest.TestCase):
             "expected test:msan timeouts like the other sanitizer configs",
         )
 
+    def test_sanitizer_test_timeouts_are_strictly_increasing(self) -> None:
+        """--test_timeout is (short, moderate, long, eternal); values must escalate.
+
+        Small solver tests need short=300 under sanitizers (default moderate
+        budget) without timeout="moderate", which warns on fast local runs.
+        Duplicate short/moderate values collapse the hierarchy.
+        """
+        bazelrc = (_repo_root() / ".bazelrc").read_text(encoding="utf-8")
+        configs = ("asan", "tsan", "ubsan", "msan")
+        pattern = re.compile(
+            r"(?m)^test:(%s)\s+--test_timeout=(\d+),(\d+),(\d+),(\d+)\s*$"
+            % "|".join(configs)
+        )
+        found = {
+            match.group(1): tuple(int(match.group(i)) for i in range(2, 6))
+            for match in pattern.finditer(bazelrc)
+        }
+        self.assertEqual(
+            set(found),
+            set(configs),
+            "expected --test_timeout for asan, tsan, ubsan, and msan",
+        )
+        timeout_values = set(found.values())
+        self.assertEqual(
+            len(timeout_values),
+            1,
+            f"expected identical four-value --test_timeout across sanitizers, got {found}",
+        )
+        for name, timeouts in found.items():
+            short, moderate, long, eternal = timeouts
+            self.assertGreaterEqual(
+                short,
+                300,
+                f"test:{name} short timeout must keep sanitizer headroom for size=small",
+            )
+            self.assertLess(
+                short,
+                moderate,
+                f"test:{name} short must be < moderate ({timeouts})",
+            )
+            self.assertLess(
+                moderate,
+                long,
+                f"test:{name} moderate must be < long ({timeouts})",
+            )
+            self.assertLess(
+                long,
+                eternal,
+                f"test:{name} long must be < eternal ({timeouts})",
+            )
+
     def test_module_defines_msan_toolchain_with_instrumented_libcxx(self) -> None:
         module = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
         self.assertIn(
