@@ -59,7 +59,13 @@ class TestMsanBazelConfig(unittest.TestCase):
         self.assertEqual(
             set(found),
             set(configs),
-            "expected identical four-value --test_timeout for asan/tsan/ubsan/msan",
+            "expected --test_timeout for asan, tsan, ubsan, and msan",
+        )
+        timeout_values = set(found.values())
+        self.assertEqual(
+            len(timeout_values),
+            1,
+            f"expected identical four-value --test_timeout across sanitizers, got {found}",
         )
         for name, timeouts in found.items():
             short, moderate, long, eternal = timeouts
