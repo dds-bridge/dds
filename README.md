@@ -11,9 +11,17 @@ coding agents. Throughout the codebase, you will find evidence that Claude
 Code and GitHub Copilot have made significant contributions to the
 modernization.
 
+Version 3.1 builds on that core. The headline changes for consumers are new
+**.NET** and **Java** bindings, a much larger **Python** surface, batch solving
+that is parallel by default, search performance back at 2.9 parity, and
+double-dummy correctness fixes. Existing 3.0 APIs remain source-compatible;
+batch calls now parallelize by default, and corrected `AnalysePlay*` results may
+differ from 3.0. See the [3.1.0 release notes](docs/release_notes/release_v3_1_0.md)
+for details.
+
 There are build scripts for macOS, Linux, and Windows but I have myself only used the library on macOS.
 
-Plenty of people like to use a double dummy solver for statistical analysis, typically in Python. I have added a bare-bones Python interface to the solver.
+Plenty of people like to use a double dummy solver for statistical analysis, typically in Python. I have added a bare-bones Python interface to the solver; version 3.1 expands that surface substantially.
 
 ### Motivation for creating version 3
 
@@ -27,7 +35,7 @@ To address these issues, and also take advantage of modern C++ features, I had t
 
 Martin Nygren, May 2026
 
-## Version 3.0 Documentation
+## Version 3.1 Documentation
 
 [C++ Interface](docs/c++_interface.md)
 
@@ -35,19 +43,30 @@ Martin Nygren, May 2026
 
 [DotNet Interface](docs/dotnet_interface.md)
 
+[Java / FFM Interface](docs/jni_interface.md)
+
 [Legacy C Interface](docs/legacy_c_api.md)
 
 [Migrating to the modern API](docs/api_migration.md)
 
+[WebAssembly build](docs/wasm_build.md)
+
 [Notes about the build system](docs/BUILD_SYSTEM.md)
 
+[Release notes for 3.1.0](docs/release_notes/release_v3_1_0.md)
 
-## Version 3.0 Release Status
 
-Current baseline for this branch:
+## Version 3.1 Release Status
 
-- C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 20.1.8 for
-    `darwin-aarch64` and LLVM 21.1.8 for `linux-x86_64`.
+Current baseline for this branch (`MODULE.bazel` version `3.1.0`):
+
+- C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 21.1.8 for
+    `darwin-aarch64`, `linux-x86_64`, and `windows-x86_64`.
+- Language bindings: C++, the legacy C API, Python (`dds3`), .NET (`DDS_Core`),
+    and Java (FFM / Project Panama on JDK 22+). A hermetic WASM build and browser
+    demo live under `web/` (deployed at <https://dds-bridge.github.io/dds/>).
+- Batch entry points (`SolveAllBoards*`, `CalcAllTables*`) parallelize inside the
+    library by default; sequential and thread-count variants are available.
 - Full non-ASAN validation passes with `bazelisk test //...`.
 - Doxygen docs target is available as a manual developer target (`//:doxygen_docs`)
     and requires `doxygen` and `zip` on `PATH`.
@@ -55,4 +74,3 @@ Current baseline for this branch:
 ## 2.9 Documentation
 
 You can find the original [README](doc/README_2_9_0.md) and descriptions of the search algorithm in the doc folder.
-
