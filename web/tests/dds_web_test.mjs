@@ -64,6 +64,7 @@ function createMockDocument(initialValues = {}) {
             disabled: false,
             hidden: false,
             className: "",
+            style: {},
             selectionStart: 0,
             selectionEnd: 0,
             attributes: {},
@@ -310,8 +311,14 @@ function loadDdsWeb(document, extras = {}) {
                 return 0;
             },
         },
+        window: {
+            addEventListener() {},
+        },
         ...extras,
     };
+    if (!sandbox.window) {
+        sandbox.window = { addEventListener() {} };
+    }
     const context = createContext(sandbox);
     runDdsWebScripts(context);
     // Existing tests expect hand edits to schedule immediately; debounce is
@@ -3770,6 +3777,202 @@ test("center undeployed pips share dealt hand-card spacing", () => {
     // No center-only spacing override — undeployed cards match dealt pips.
     assert.doesNotMatch(css, /#deck-status\s+\.hand-card\s*\{[^}]*margin/s);
     assert.doesNotMatch(css, /#deck-status\s+\.hand-card\s*\{[^}]*padding/s);
+});
+
+function mockCenterDeckLayout({
+    clientWidth,
+    paddingLeft = "20px",
+    paddingRight = "0.25rem",
+    rowScrollWidths,
+    hidden = false,
+    // Extra fixed px that does not shrink with font-size (simulates 1px borders).
+    fixedOverflowPx = 0,
+}) {
+    let fontPx = 30;
+    const baseWidths = rowScrollWidths.slice();
+    const deck = {
+        id: "deck-status",
+        hidden,
+        style: {
+            get fontSize() {
+                return fontPx === 30 ? "" : fontPx + "px";
+            },
+            set fontSize(value) {
+                fontPx = value === "" || value == null
+                    ? 30
+                    : parseFloat(value) || 30;
+            },
+        },
+        querySelectorAll(selector) {
+            if (selector !== ".deck-suit-row") {
+                return [];
+            }
+            const scale = fontPx / 30;
+            return baseWidths.map((scrollWidth) => ({
+                scrollWidth: scrollWidth * scale + fixedOverflowPx,
+            }));
+        },
+    };
+    const center = {
+        className: "grid-item grid-filler grid-filler-center",
+        clientWidth,
+    };
+    const document = createMockDocument();
+    const realGet = document.getElementById.bind(document);
+    document.getElementById = (id) => {
+        if (id === "deck-status") {
+            return deck;
+        }
+        return realGet(id);
+    };
+    document.querySelector = (selector) => {
+        if (selector === ".grid-filler-center") {
+            return center;
+        }
+        return null;
+    };
+    return {
+        document,
+        deck,
+        getComputedStyle() {
+            return { paddingLeft, paddingRight };
+        },
+    };
+}
+
+test("fitCenterDeckCards shrinks deck font when suit rows overflow the center cell", () => {
+    // Arrange: center content box is narrower than the longest undeployed row.
+    const layout = mockCenterDeckLayout({
+        clientWidth: 220,
+        paddingLeft: "20px",
+        paddingRight: "4px",
+        rowScrollWidths: [400, 350, 300, 280],
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitCenterDeckCards();
+
+    // Assert: scale ≈ 30 * (220 - 20 - 4) / 400 = 14.7px (fits on first pass).
+    const size = parseFloat(layout.deck.style.fontSize);
+    assert.ok(Number.isFinite(size), "font-size set on #deck-status");
+    assert.ok(size < 30, "center cards shrink below the seat default");
+    assert.ok(size > 10, "center cards remain readable");
+    assert.ok(Math.abs(size - 14.7) < 0.2, `expected ~14.7px, got ${size}`);
+});
+
+test("fitCenterDeckCards applies a second pass when fixed chrome still overflows", () => {
+    // Arrange: after a proportional shrink, non-scaling borders still spill.
+    const layout = mockCenterDeckLayout({
+        clientWidth: 220,
+        paddingLeft: "20px",
+        paddingRight: "4px",
+        rowScrollWidths: [400],
+        fixedOverflowPx: 20,
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitCenterDeckCards();
+
+    // Assert: second pass pulls further under the single-pass 14.7px estimate.
+    const size = parseFloat(layout.deck.style.fontSize);
+    assert.ok(size < 14.7, `second pass should shrink below 14.7px, got ${size}`);
+    assert.ok(size >= 10);
+});
+
+test("fitCenterDeckCards restores full size when rows fit the center cell", () => {
+    // Arrange
+    const layout = mockCenterDeckLayout({
+        clientWidth: 400,
+        paddingLeft: "20px",
+        paddingRight: "4px",
+        rowScrollWidths: [200, 180],
+    });
+    layout.deck.style.fontSize = "12px";
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitCenterDeckCards();
+
+    // Assert: clear inline size so CSS 30px applies again.
+    assert.equal(layout.deck.style.fontSize, "");
+});
+
+test("fitCenterDeckCards skips shrinking while the undeployed deck is hidden", () => {
+    // Arrange
+    const layout = mockCenterDeckLayout({
+        clientWidth: 220,
+        rowScrollWidths: [400],
+        hidden: true,
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitCenterDeckCards();
+
+    // Assert
+    assert.equal(layout.deck.style.fontSize, "");
+});
+
+test("updateDeckStatus refits center cards after rewriting the undeployed strip", () => {
+    // Arrange
+    const layout = mockCenterDeckLayout({
+        clientWidth: 220,
+        paddingLeft: "20px",
+        paddingRight: "4px",
+        rowScrollWidths: [400],
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+    const emptyHands = {
+        north: [],
+        east: [],
+        south: [],
+        west: [],
+    };
+
+    // Act
+    ctx.updateDeckStatus(emptyHands);
+
+    // Assert: innerHTML rewrite then fit — overflow forces a smaller font.
+    assert.match(layout.deck.innerHTML, /deck-suit-row/);
+    const size = parseFloat(layout.deck.style.fontSize);
+    assert.ok(size < 30);
+});
+
+test("pageLoad listens for window resize to refit center cards", () => {
+    // Arrange
+    const document = createMockDocument();
+    const resizeListeners = [];
+    const ctx = loadDdsWeb(document, {
+        window: {
+            addEventListener(type, listener) {
+                resizeListeners.push({ type, listener });
+            },
+        },
+    });
+
+    // Act
+    ctx.pageLoad();
+
+    // Assert
+    assert.ok(
+        resizeListeners.some(
+            (entry) =>
+                entry.type === "resize" && entry.listener === ctx.fitCenterDeckCards
+        ),
+        "pageLoad wires window resize to fitCenterDeckCards"
+    );
 });
 
 test("hand-card pips show a light outline affordance for clickability", () => {

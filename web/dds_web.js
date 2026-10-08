@@ -35,6 +35,7 @@
             undeployedCardHtml
             handHoldingHtml
             escapeHtml
+            fitCenterDeckCards
             updateHandCardDisplays
             addCardToHand
             removeCardFromHand
@@ -326,11 +327,72 @@ function deckStatusHtml(hands) {
     }).join("");
 }
 
+const CENTER_DECK_FONT_PX = 30;
+
+function centerDeckRowOverflow(deckStatus) {
+    let needed = 0;
+
+    for (const row of deckStatus.querySelectorAll(".deck-suit-row")) {
+        needed = Math.max(needed, row.scrollWidth || 0);
+    }
+
+    return needed;
+}
+
+function fitCenterDeckCards() {
+    const deckStatus = document.getElementById("deck-status");
+
+    if (!deckStatus) {
+        return;
+    }
+
+    // Prefer clearing any prior shrink so a hidden or roomy deck returns to the
+    // CSS seat size (30px) instead of keeping a stale inline font-size.
+    deckStatus.style.fontSize = "";
+
+    if (deckStatus.hidden) {
+        return;
+    }
+
+    const center = typeof document.querySelector === "function"
+        ? document.querySelector(".grid-filler-center")
+        : null;
+
+    if (!center || typeof getComputedStyle !== "function") {
+        return;
+    }
+
+    const style = getComputedStyle(center);
+    const available = center.clientWidth -
+        (parseFloat(style.paddingLeft) || 0) -
+        (parseFloat(style.paddingRight) || 0);
+
+    if (!(available > 0) || typeof deckStatus.querySelectorAll !== "function") {
+        return;
+    }
+
+    let fontPx = CENTER_DECK_FONT_PX;
+
+    // Up to two passes: em chrome scales with font-size, but 1px borders do not,
+    // so a single proportional shrink can still overhang by a few pixels.
+    for (let pass = 0; pass < 2; pass++) {
+        const needed = centerDeckRowOverflow(deckStatus);
+
+        if (!(needed > available)) {
+            return;
+        }
+
+        fontPx = Math.max(10, fontPx * (available / needed));
+        deckStatus.style.fontSize = fontPx + "px";
+    }
+}
+
 function updateDeckStatus(hands) {
     const deckStatus = document.getElementById("deck-status");
 
     if (deckStatus) {
         deckStatus.innerHTML = deckStatusHtml(hands);
+        fitCenterDeckCards();
     }
 }
 
@@ -1877,6 +1939,9 @@ function pageLoad() {
         document.addEventListener("beforeinput", handlePlayHistoryUndo);
     }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
+    if (typeof window !== "undefined" && window.addEventListener) {
+        window.addEventListener("resize", fitCenterDeckCards);
+    }
     updateActionButtons();
     focusNorthSpades();
 }
