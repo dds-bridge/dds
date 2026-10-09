@@ -187,7 +187,7 @@ bazelisk test //jni:dds_ffm_embedded_smoke_test  # loadEmbedded() from the jar
 ## Packaging & local install
 
 `//jni:dds_ffm_dist` is a `java_export` producing a Maven-coordinate jar,
-`org.dds:dds-ffm:3.1.0`, that **embeds the host-platform native library** under
+`org.dds:dds-ffm:3.1.1`, that **embeds the host-platform native library** under
 `native/<os>-<arch>/` — so a consumer needs only the jar and
 `Dds.loadEmbedded()`, no separate `.so`/`.dylib`/`.dll` to locate.
 
@@ -200,14 +200,14 @@ bazelisk run //jni:dds_ffm_dist.publish \
 ```
 
 This deposits the main jar plus `-sources`, `-javadoc`, and the generated POM
-under `org/dds/dds-ffm/3.1.0/`. Another project on the same machine can then
+under `org/dds/dds-ffm/3.1.1/`. Another project on the same machine can then
 depend on it:
 
 ```kotlin
-implementation("org.dds:dds-ffm:3.1.0")   // Gradle
+implementation("org.dds:dds-ffm:3.1.1")   // Gradle
 ```
 ```xml
-<dependency><groupId>org.dds</groupId><artifactId>dds-ffm</artifactId><version>3.1.0</version></dependency>
+<dependency><groupId>org.dds</groupId><artifactId>dds-ffm</artifactId><version>3.1.1</version></dependency>
 ```
 
 The bundled native library is **host-platform only** — the jar built on macOS
