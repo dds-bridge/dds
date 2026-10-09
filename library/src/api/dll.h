@@ -27,8 +27,8 @@
   #include <stdbool.h> // make "bool" available
 #endif
 
-/* Version 3.1.0. Allowing for 2 digit minor versions */
-#define DDS_VERSION 30100
+/* Version 3.1.1. Allowing for 2 digit minor versions */
+#define DDS_VERSION 30101
 
 #define MAXNOOFBOARDS 200
 
