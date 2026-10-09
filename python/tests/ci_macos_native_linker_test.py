@@ -92,15 +92,19 @@ class TestNativeLinkerOverride(unittest.TestCase):
             "expected build:linux to disable supports_start_end_lib",
         )
 
-    def test_macos_keeps_thin_lto_at_compile_and_link(self) -> None:
+    def test_macos_requests_thin_lto_flags_at_compile_and_link(self) -> None:
         """Swapping ld64.lld for Apple's native ld risks -flto=thin silently
 
         becoming a no-op: classic ld64 needed an explicit -lto_library plugin
         flag to do LTO, which this change does not supply. Verified on Xcode
         27.0 / macOS 26.6.2 that Apple's current linker has LTO support built
-        in (see docs/BUILD_SYSTEM.md), but nothing else catches a future
-        regression, so guard that the flag itself is still requested at both
-        compile and link time for macOS.
+        in (see docs/BUILD_SYSTEM.md).
+
+        This only guards that the flag itself is still requested at both
+        compile and link time for macOS — it cannot detect a future linker
+        that keeps accepting -flto=thin but silently stops doing cross-TU
+        optimization with it. See docs/BUILD_SYSTEM.md for the manual
+        `LTO support using:` banner check that covers that gap.
         """
         cppvariables = (_repo_root() / "CPPVARIABLES.bzl").read_text(encoding="utf-8")
         cppopts = re.search(

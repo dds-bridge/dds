@@ -70,12 +70,17 @@ than re-encoding toolchain knowledge.
   plus the JVM rules for [jni-ffm-binding](jni-ffm-binding.md)). Toolchains are hermetic
   (LLVM via `toolchains_llvm`, Emscripten via `emsdk`). Exact versions live in the
   file and drift; do not hard-code them elsewhere.
-- **macOS builds are hermetic except for the linker.** Native Darwin links use
-  the host's `/usr/bin/ld` (Apple's own linker, via `extra_link_flags` in
-  `MODULE.bazel`), not the hermetic `ld64.lld` — the hermetic one can't parse
-  newer macOS SDKs' `.tbd` files; see `docs/BUILD_SYSTEM.md` ("Xcode 27 /
-  MacOSX 27 SDK TBD files"). Compilation still comes entirely from the
-  hermetic LLVM toolchain.
+- **The default macOS toolchain is hermetic except for the linker.** Native
+  Darwin links use the host's `/usr/bin/ld` (Apple's own linker, via
+  `extra_link_flags` in `MODULE.bazel`), not the hermetic `ld64.lld` — the
+  hermetic one can't parse newer macOS SDKs' `.tbd` files; see
+  `docs/BUILD_SYSTEM.md` ("Xcode 27 / MacOSX 27 SDK TBD files"). Compilation
+  under this default toolchain still comes entirely from the hermetic LLVM
+  toolchain. **Exception:** `--config=asan` switches macOS compilation itself
+  (not just the link) to the installed Xcode toolchain
+  (`local_config_apple_cc_toolchains`), because LLVM's bundled ASAN runtime
+  hangs at startup; see `docs/BUILD_SYSTEM.md` ("Clang / Xcode version
+  coupling").
 - **Linux builds are hermetic except for the host C runtime and linker.** No
   sysroot is configured: Linux compiles use the host's glibc headers and crt
   files, and link with the host's GNU `ld` (`/usr/bin/ld`, via
