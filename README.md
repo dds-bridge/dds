@@ -58,7 +58,7 @@ Martin Nygren, May 2026
 
 ## Version 3.1 Release Status
 
-Current baseline for this branch (`MODULE.bazel` version `3.1.0`):
+Current baseline for this branch (`MODULE.bazel` version `3.1.1`):
 
 - C++ toolchain uses `bazel-contrib/toolchains_llvm` pinned to LLVM 21.1.8 for
     `darwin-aarch64`, `linux-x86_64`, and `windows-x86_64`.
