@@ -70,14 +70,15 @@ than re-encoding toolchain knowledge.
   plus the JVM rules for [jni-ffm-binding](jni-ffm-binding.md)). Toolchains are hermetic
   (LLVM via `toolchains_llvm`, Emscripten via `emsdk`). Exact versions live in the
   file and drift; do not hard-code them elsewhere.
-- **The default macOS toolchain is hermetic except for the linker.** Native
-  Darwin links use the host's `/usr/bin/ld` (Apple's own linker, via
-  `extra_link_flags` in `MODULE.bazel`), not the hermetic `ld64.lld` — the
-  hermetic one can't parse newer macOS SDKs' `.tbd` files; see
-  `docs/BUILD_SYSTEM.md` ("Xcode 27 / MacOSX 27 SDK TBD files"). Compilation
-  under this default toolchain still comes entirely from the hermetic LLVM
-  toolchain. **Exception:** `--config=asan` switches macOS compilation itself
-  (not just the link) to the installed Xcode toolchain
+- **The default macOS toolchain's compiler binary is hermetic (LLVM via
+  `toolchains_llvm`), but the installed macOS SDK and the linker are host
+  inputs.** Compilation reads the host-installed SDK's headers and `.tbd`
+  stubs, and native Darwin links use the host's `/usr/bin/ld` (Apple's own
+  linker, via `extra_link_flags` in `MODULE.bazel`) rather than the hermetic
+  `ld64.lld` — the hermetic linker can't parse newer macOS SDKs' `.tbd`
+  files; see `docs/BUILD_SYSTEM.md` ("Xcode 27 / MacOSX 27 SDK TBD files").
+  **Exception:** `--config=asan` goes further and switches macOS compilation
+  itself (not just the SDK/link) to the installed Xcode toolchain
   (`local_config_apple_cc_toolchains`), because LLVM's bundled ASAN runtime
   hangs at startup; see `docs/BUILD_SYSTEM.md` ("Clang / Xcode version
   coupling").
@@ -111,7 +112,7 @@ than re-encoding toolchain knowledge.
   `default_cpp_std` from `/std:c++17` to `/std:c++20` (wired in `MODULE.bazel`).
 - `patches/apple_support_macos_min_11.patch`,
   `patches/apple_support_libtool_nodiscard.patch` — Xcode 27 crosstool-helper
-  fixes for `apple_support` 1.24.2 (wired via `single_version_override` in
+  fixes for `apple_support` (wired via `single_version_override` in
   `MODULE.bazel`); see `docs/BUILD_SYSTEM.md`.
 - `wasm_compat.bzl` — `WASM_LINKOPTS`.
 - `MODULE.bazel` — the Bazel module and its `bazel_dep` graph (including
