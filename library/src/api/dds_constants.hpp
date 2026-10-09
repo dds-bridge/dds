@@ -56,11 +56,11 @@ constexpr int DDS_NOTRUMP = 4;  ///< No trump strain index
 // Legacy C API version and capacity limits
 // ---------------------------------------------------------------------------
 
-/* Version 3.1.0. Allowing for 2 digit minor versions */
+/* Version 3.1.1. Allowing for 2 digit minor versions */
 // These three stay object-like macros: this is the frozen legacy C API surface
 // and external consumers conventionally test the version / limits in the
 // preprocessor (e.g. #if DDS_VERSION >= 30100, #ifdef MAXNOOFBOARDS).
-#define DDS_VERSION 30100
+#define DDS_VERSION 30101
 
 #define MAXNOOFBOARDS 200
 
