@@ -30,6 +30,7 @@
     global.dealSolveDebounceMs = 250;
     global.dealSolveDebounceTimer = null;
     global.lastDealWasComplete = false;
+    global.lastDealWasFull = false;
     global.ddsModulePromise = null;
     global.ddTableComputingDelayMs = 300;
 
@@ -608,18 +609,29 @@
                     return;
                 }
 
-                for (var row = 1; row <= 4; row++) {
-                    for (var column = 1; column <= 5; column++) {
-                        const cell = result_table.rows[row].cells[column];
-                        const denomination = DENOMINATIONS[column - 1];
-                        const direction = DIRECTIONS[row - 1];
-                        const strain = DENOM_TO_STRAIN[denomination];
-                        const hand = DIR_TO_HAND[direction];
-                        const index = strain * 4 + hand;
-                        cell.innerHTML = module.getValue(
-                            outPtr + index * 4,
+                const remainingTricks = hands[DIRECTIONS[0]].length;
+                const seatOnLead = typeof global.dealIsPartial === "function" &&
+                    global.dealIsPartial(hands);
+
+                for (var column = 1; column <= 5; column++) {
+                    const denomination = DENOMINATIONS[column - 1];
+                    const strain = DENOM_TO_STRAIN[denomination];
+                    const declarerTricksForStrain = [0, 1, 2, 3].map(
+                        (seat) => module.getValue(
+                            outPtr + (strain * 4 + seat) * 4,
                             "i32"
-                        );
+                        )
+                    );
+
+                    for (var row = 1; row <= 4; row++) {
+                        const cell = result_table.rows[row].cells[column];
+                        const direction = DIRECTIONS[row - 1];
+                        cell.innerHTML = global.ddMatrixCellTricks({
+                            seatHand: DIR_TO_HAND[direction],
+                            remainingTricks,
+                            declarerTricksForStrain,
+                            seatOnLead,
+                        });
                     }
                 }
 

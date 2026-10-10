@@ -149,9 +149,16 @@
         return out;
     }
 
-    function createPlayState({ hands, declarer, denomination, targetTricks }) {
+    function createPlayState({
+        hands,
+        declarer,
+        denomination,
+        targetTricks,
+        leadSeat,
+    }) {
         const trumpLetter = denomination === "N" ? null : denomination;
         const dealTricks = (hands[DIRECTIONS[0]] || []).length;
+        const resolvedLead = leadSeat || openingLeader(declarer);
         return {
             hands: cloneHands(hands),
             declarer,
@@ -160,7 +167,7 @@
             targetTricks: Number(targetTricks),
             // Partial deals have no contract; badge absolute side-to-play tricks.
             absoluteSideTricks: dealTricks > 0 && dealTricks < 13,
-            leadSeat: openingLeader(declarer),
+            leadSeat: resolvedLead,
             history: [],
             pendingDiffs: null,
             autoPlay: true,
@@ -483,7 +490,7 @@
         }
     }
 
-    function startPlay(declarer, denomination, targetTricks) {
+    function startPlay(declarer, denomination, targetTricks, leadSeat) {
         if (
             typeof global.collectHands !== "function" ||
             typeof global.inputIsValid !== "function"
@@ -503,6 +510,7 @@
             declarer,
             denomination,
             targetTricks,
+            leadSeat,
         });
         setPlayModeChrome(true);
         renderPlayUi();

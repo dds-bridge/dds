@@ -11,7 +11,8 @@
 /* exported DIRECTIONS SUITS PIPS DENOMINATIONS DENOM_TO_STRAIN DIR_TO_HAND
             Card handsToPbn openingLeader pipFromDdsRank leadTricksMapFromSolverOutput
             fourthHandFillState cardsToSuitHoldings sortedPipInsertIndex
-            allHandsHaveEqualCardCounts sanitizeSuitHolding
+            allHandsHaveEqualCardCounts dealIsPartial dealIsFull
+            ddMatrixCellTricks sanitizeSuitHolding
             suitHoldingHasDuplicatePips suitHoldingHasIllegalChars */
 
 "use strict";
@@ -277,6 +278,38 @@
         );
     }
 
+    /** Equal hand lengths from 1..12 — solvable, but not a full-deal contract. */
+    function dealIsPartial(hands) {
+        const count = (hands[DIRECTIONS[0]] || []).length;
+        return count >= 1 && count <= 12 && allHandsHaveEqualCardCounts(hands);
+    }
+
+    /** Equal hand lengths of 13 — a complete deal that can define a contract. */
+    function dealIsFull(hands) {
+        return (hands[DIRECTIONS[0]] || []).length === 13 &&
+            allHandsHaveEqualCardCounts(hands);
+    }
+
+    /**
+     * Map a CalcDDtable cell into the value shown in the Web matrix.
+     * Full deals: tricks for that seat as declarer (LHO on lead).
+     * Partial deals: tricks for that seat's side when that seat is on lead
+     * (remainingTricks minus RHO's declarer-side tricks).
+     */
+    function ddMatrixCellTricks({
+        seatHand,
+        remainingTricks,
+        declarerTricksForStrain,
+        seatOnLead,
+    }) {
+        if (!seatOnLead) {
+            return declarerTricksForStrain[seatHand];
+        }
+
+        const rho = (seatHand + 3) % 4;
+        return remainingTricks - declarerTricksForStrain[rho];
+    }
+
     function sanitizeSuitHolding(value, claimedKeys, suit, maxPips) {
         if (value == null) {
             return "";
@@ -374,6 +407,9 @@
     global.cardsToSuitHoldings = cardsToSuitHoldings;
     global.sortedPipInsertIndex = sortedPipInsertIndex;
     global.allHandsHaveEqualCardCounts = allHandsHaveEqualCardCounts;
+    global.dealIsPartial = dealIsPartial;
+    global.dealIsFull = dealIsFull;
+    global.ddMatrixCellTricks = ddMatrixCellTricks;
     global.sanitizeSuitHolding = sanitizeSuitHolding;
     global.suitHoldingHasDuplicatePips = suitHoldingHasDuplicatePips;
     global.suitHoldingHasIllegalChars = suitHoldingHasIllegalChars;
