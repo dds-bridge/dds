@@ -37,6 +37,7 @@
             escapeHtml
             fitCenterDeckCards
             fitSouthHandCards
+            fitEastHandCards
             fitDiagramFonts
             updateHandCardDisplays
             addCardToHand
@@ -441,26 +442,35 @@ function fitCenterDeckCards() {
     );
 }
 
-function fitSouthHandCards() {
-    const south = typeof document.querySelector === "function"
-        ? document.querySelector(".hand-south")
+function fitSeatHandCards(seatSelector) {
+    const hand = typeof document.querySelector === "function"
+        ? document.querySelector(seatSelector)
         : null;
 
-    if (!south) {
+    if (!hand) {
         return;
     }
 
     fitFontToContentWidth(
-        south,
-        contentBoxWidth(south),
+        hand,
+        contentBoxWidth(hand),
         ".hand-suit",
         SEAT_FONT_PX
     );
 }
 
+function fitSouthHandCards() {
+    fitSeatHandCards(".hand-south");
+}
+
+function fitEastHandCards() {
+    fitSeatHandCards(".hand-east");
+}
+
 function fitDiagramFonts() {
     fitCenterDeckCards();
     fitSouthHandCards();
+    fitEastHandCards();
 }
 
 function updateDeckStatus(hands) {
@@ -783,6 +793,7 @@ function updateHandCardDisplays(hands) {
     }
 
     fitSouthHandCards();
+    fitEastHandCards();
 }
 
 function onHandCardClick(direction, card) {

@@ -4110,7 +4110,8 @@ test("pageLoad listens for window resize to refit diagram fonts", () => {
     );
 });
 
-function mockSouthHandLayout({
+function mockSeatHandLayout({
+    seat,
     clientWidth,
     paddingLeft = "20px",
     paddingRight = "20px",
@@ -4121,8 +4122,9 @@ function mockSouthHandLayout({
 }) {
     let fontPx = 30;
     const baseWidths = rowScrollWidths.slice();
-    const south = {
-        className: "grid-item hand-south",
+    const seatClass = "hand-" + seat;
+    const hand = {
+        className: "grid-item " + seatClass,
         clientWidth,
         style: {
             maxWidth: "",
@@ -4150,26 +4152,37 @@ function mockSouthHandLayout({
         },
     };
     const document = createMockDocument(initialValues);
+    const seats = {};
+    seats[seat] = hand;
     document.querySelector = (selector) => {
-        if (selector === ".hand-south") {
-            return south;
+        if (selector === "." + seatClass) {
+            return hand;
         }
         return null;
     };
     return {
         document,
-        south,
+        hand,
+        ...seats,
         available:
             clientWidth -
             (parseFloat(paddingLeft) || 0) -
             (parseFloat(paddingRight) || 0),
         getComputedStyle(element) {
-            if (element === south) {
+            if (element === hand) {
                 return { paddingLeft, paddingRight };
             }
             return { paddingLeft: "0px", paddingRight: "0px" };
         },
     };
+}
+
+function mockSouthHandLayout(options) {
+    return mockSeatHandLayout({ ...options, seat: "south" });
+}
+
+function mockEastHandLayout(options) {
+    return mockSeatHandLayout({ ...options, seat: "east" });
 }
 
 test("fitSouthHandCards shrinks font when suit rows overflow the south cell", () => {
@@ -4277,6 +4290,111 @@ test("updateHandCardDisplays refits south after rewriting holdings", () => {
     // Assert
     const size = parseFloat(layout.south.style.fontSize);
     assert.ok(size < 30, "updateHandCardDisplays must refit south holdings");
+});
+
+test("fitEastHandCards shrinks font when suit rows overflow the east cell", () => {
+    // Arrange
+    const layout = mockEastHandLayout({
+        clientWidth: 220,
+        rowScrollWidths: [400, 350, 300, 280],
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitEastHandCards();
+
+    // Assert: available = 180; scale ≈ 13.5px with no fixed chrome.
+    const size = parseFloat(layout.east.style.fontSize);
+    assert.ok(Number.isFinite(size), "font-size set on .hand-east");
+    assert.ok(size < 30, "east cards shrink below the seat default");
+    assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
+});
+
+test("fitEastHandCards solves font size so fixed chrome still fits", () => {
+    // Arrange
+    const layout = mockEastHandLayout({
+        clientWidth: 220,
+        rowScrollWidths: [400],
+        fixedOverflowPx: 20,
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitEastHandCards();
+
+    // Assert
+    const size = parseFloat(layout.east.style.fontSize);
+    assert.ok(size < 13.5, `should shrink below pure proportional 13.5px, got ${size}`);
+    const needed = layout.east.querySelectorAll(".hand-suit")[0].scrollWidth;
+    assert.ok(
+        needed <= layout.available + 0.5,
+        `east row must not spill past the window edge, needed=${needed}`
+    );
+});
+
+test("fitEastHandCards clips when fixed chrome alone exceeds the east cell", () => {
+    // Arrange
+    const layout = mockEastHandLayout({
+        clientWidth: 60,
+        rowScrollWidths: [400],
+        fixedOverflowPx: 40,
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitEastHandCards();
+
+    // Assert
+    assert.equal(layout.east.style.maxWidth, "20px");
+    assert.equal(layout.east.style.overflowX, "hidden");
+});
+
+test("fitEastHandCards restores full size when rows fit the east cell", () => {
+    // Arrange
+    const layout = mockEastHandLayout({
+        clientWidth: 400,
+        rowScrollWidths: [200, 180],
+    });
+    layout.east.style.fontSize = "12px";
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitEastHandCards();
+
+    // Assert
+    assert.equal(layout.east.style.fontSize, "");
+});
+
+test("updateHandCardDisplays refits east after rewriting holdings", () => {
+    // Arrange
+    const layout = mockEastHandLayout({
+        clientWidth: 220,
+        rowScrollWidths: [400],
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+    const emptyHands = {
+        north: [],
+        east: [],
+        south: [],
+        west: [],
+    };
+
+    // Act
+    ctx.updateHandCardDisplays(emptyHands);
+
+    // Assert
+    const size = parseFloat(layout.east.style.fontSize);
+    assert.ok(size < 30, "updateHandCardDisplays must refit east holdings");
 });
 
 test("hand-card pips show a light outline affordance for clickability", () => {
