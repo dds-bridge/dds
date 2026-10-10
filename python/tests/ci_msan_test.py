@@ -21,13 +21,13 @@ def _repo_root(start: Path | None = None) -> Path:
 
 
 def _toolchains_llvm_bazel_dep_version(module_bazel: str) -> str:
-    match = re.search(
-        r'bazel_dep\(\s*name\s*=\s*"toolchains_llvm"\s*,\s*version\s*=\s*"([^"]+)"',
-        module_bazel,
-    )
-    if match is None:
-        raise AssertionError('expected bazel_dep(... name = "toolchains_llvm" ...)')
-    return match.group(1)
+    for match in re.finditer(r"bazel_dep\(\s*([^)]*)\)", module_bazel):
+        body = match.group(1)
+        name = re.search(r'name\s*=\s*"toolchains_llvm"', body)
+        version = re.search(r'version\s*=\s*"([^"]+)"', body)
+        if name and version:
+            return version.group(1)
+    raise AssertionError('expected bazel_dep(... name = "toolchains_llvm" ...)')
 
 
 def _has_toolchains_llvm_override(module_bazel: str) -> bool:
@@ -155,6 +155,12 @@ class TestMsanBazelConfig(unittest.TestCase):
             _has_toolchains_llvm_override(module),
             "toolchains_llvm no longer needs an archive_override pin",
         )
+
+    def test_toolchains_llvm_bazel_dep_version_tolerates_reordered_args(
+        self,
+    ) -> None:
+        sample = 'bazel_dep(version = "1.11.2", name = "toolchains_llvm")'
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
 
     def test_has_toolchains_llvm_override_detects_same_line_args(self) -> None:
         sample = (
