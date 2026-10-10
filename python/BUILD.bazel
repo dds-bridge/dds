@@ -155,7 +155,10 @@ py_test(
 
 # Guard: native Darwin/Linux links route through the host linker, not the
 # hermetic lld (macOS 27 SDK .tbd parsing; Linux ld.lld needs libxml2.so.2),
-# and macOS keeps requesting ThinLTO (-flto=thin) at compile and link time.
+# and macOS CPPVARIABLES.bzl still requests the ThinLTO flags (-flto=thin) at
+# compile and link time. That last check only guards flag presence, not that
+# the linker actually performs cross-TU optimization with them — see the
+# test's docstring.
 py_test(
     name = "ci_macos_native_linker_test",
     size = "small",
