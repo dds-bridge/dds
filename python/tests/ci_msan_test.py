@@ -38,7 +38,8 @@ def _has_toolchains_llvm_override(module_bazel: str) -> bool:
     after the opening "(".
     """
     for call in re.finditer(
-        r"(?:archive_override|single_version_override|git_override)\(\s*([^)]*)\)",
+        r"(?:archive_override|git_override|local_path_override"
+        r"|multiple_version_override|single_version_override)\(\s*([^)]*)\)",
         module_bazel,
     ):
         if re.search(r'module_name\s*=\s*"toolchains_llvm"', call.group(1)):
@@ -179,6 +180,26 @@ single_version_override(
 )
 """
         self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_local_path_override(self) -> None:
+        sample = """
+local_path_override(
+    module_name = "toolchains_llvm",
+    path = "../toolchains_llvm",
+)
+"""
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_multiple_version_override(
+        self,
+    ) -> None:
+        sample = """
+multiple_version_override(
+    module_name = "toolchains_llvm",
+    versions = ["1.9.0", "1.11.2"],
+)
+"""
+        self.assertTrue(_has_toolchains_llvm_override(sample))
 
 
 class TestMsanLinuxCi(unittest.TestCase):
