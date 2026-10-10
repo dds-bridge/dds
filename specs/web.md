@@ -1,7 +1,7 @@
 ---
 capability: web
 owners: [web]
-last-updated: 2026-10-07
+last-updated: 2026-10-10
 ---
 
 # DDS Web
@@ -16,7 +16,8 @@ DDS Web is a browser page that runs the double-dummy solver entirely client-side
 via a purpose-built WASM module. It demonstrates the solver in a browser and
 holds the line on the browser integration (module loading, memory marshalling,
 DOM wiring) with an automated test pyramid. Selecting a DD-table cell enters
-card-by-card play for that contract, with mid-trick solves for legal cards.
+card-by-card play (full deal: that contract; partial deal: that seat on lead),
+with mid-trick solves for legal cards.
 
 ## Behavior & invariants
 
@@ -95,13 +96,20 @@ card-by-card play for that contract, with mid-trick solves for legal cards.
   sequential over strains; batch/multi-hand APIs under
   [wasm-emscripten](wasm-emscripten.md) can use pthreads via
   [system-concurrency](system-concurrency.md).
-- **Selecting a DD-table cell enters play mode.** `dds_web_play.js` owns play
-  state (history, trick score, undo via ⌘/Ctrl-Z, contract-relative badges).
-  Legal cards —
-  including the opening lead with an empty current trick — are scored via
-  `refreshPlayTricks` → `solvePlayPosition` → `dds_web_solve_plays`.
-  `dds_web_solve_leads` remains a thin empty-trick wrapper for direct callers
-  (tests / smoke). Deal entry is locked until Edit hands / exitPlay.
+- **Selecting a DD-table cell enters play mode.** Behavior depends on whether
+  the deal is full (13 cards per hand) or partial (equal shorter hands):
+  - **Full deal:** the cell is a contract (declarer × strain). Play starts with
+    that declarer's LHO on lead. Card badges are contract-relative
+    (`formatPlayDiff` over/under the selected target).
+  - **Partial deal:** there is no contract. The cell's column seat is placed on
+    lead in that strain. Card badges are absolute side-to-play trick totals
+    (solver remaining score plus tricks already won by that side).
+  `dds_web_play.js` owns play state (history, trick score, undo via ⌘/Ctrl-Z,
+  and the badge mode above). Legal cards — including the opening lead with an
+  empty current trick — are scored via `refreshPlayTricks` →
+  `solvePlayPosition` → `dds_web_solve_plays`. `dds_web_solve_leads` remains a
+  thin empty-trick wrapper for direct callers (tests / smoke). Deal entry is
+  locked until Edit hands / exitPlay.
 
 ## Key entry points
 
@@ -122,8 +130,9 @@ card-by-card play for that contract, with mid-trick solves for legal cards.
 ## Known gaps / non-goals
 
 - **Not a full bridge app** — focused on deal entry, DD table, lead analysis, and
-  card-by-card play for a selected contract; not the complete solver API
-  (bidding, matchpoints UI, multi-table sessions, etc.).
+  card-by-card play from a selected DD-table cell (contract or on-lead seat);
+  not the complete solver API (bidding, matchpoints UI, multi-table sessions,
+  etc.).
 - The e2e tier needs network on first run (Chromium download) and is excluded from
   the fast `web_tests` suite.
 - Site/module build mechanics that overlap with WASM builds are documented once in
