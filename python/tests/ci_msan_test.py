@@ -20,24 +20,38 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
-def _iter_call_bodies(call_names: tuple[str, ...], text: str) -> list[str]:
-    """Yield the argument-list text of each top-level call to call_names.
+_IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+def _skip_ws(text: str, i: int, n: int) -> int:
+    while i < n and text[i] in " \t\r\n":
+        i += 1
+    return i
+
+
+def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, str]]:
+    """Yield the {keyword: string value} args of each top-level call.
 
     A single linear scan tracks string-literal and "#" comment state across
-    the whole text, so a call name is only recognized outside both — a
-    commented-out "bazel_dep(...)" line is correctly ignored, rather than a
-    plain regex search finding the name text inside the comment and reading
-    its (ignored-by-Bazel) args as if they were live. Whitespace between the
-    name and "(" is tolerated ("archive_override (..." is valid Starlark).
-    The same running state continues through each matched call's body: a
-    ")" inside a string, comment, or nested call (e.g. select(...)) never
-    ends the body early, and "#" comment text is dropped from the returned
-    body (string contents are kept verbatim) so a commented-out assignment
-    inside the call's own args can't be mistaken by a caller's regex for a
-    live one.
+    the whole text, so a call name — and each "identifier = value" pair
+    inside its body — is only recognized outside both. This matters beyond
+    just truncation: a plain regex search over body *text* (even with
+    comments stripped) still matches an unrelated argument's *string value*
+    that happens to contain assignment-shaped text, e.g.
+    `patch_cmds = ['historically name = "toolchains_llvm", ...']` — a
+    bazel_dep for a different module would be misread as the toolchains_llvm
+    one. Parsing real "identifier = value" pairs only at the call's
+    top-level parenthesis depth, with identifier-matching paused for every
+    character inside a string or comment, makes that impossible: nothing
+    inside a string literal is ever offered to the identifier matcher.
+    Only simple `identifier = "string"` / `identifier = 'string'`
+    assignments are captured (list/nested-call values are skipped over for
+    paren balancing but not parsed), which is everything every caller here
+    needs. Whitespace between a call name and "(" is tolerated
+    ("archive_override (..." is valid Starlark).
     """
     sorted_names = sorted(call_names, key=len, reverse=True)
-    bodies: list[str] = []
+    results: list[dict[str, str]] = []
     i = 0
     n = len(text)
     in_string: str | None = None
@@ -69,9 +83,7 @@ def _iter_call_bodies(call_names: tuple[str, ...], text: str) -> list[str]:
         paren_index = None
         for name in sorted_names:
             if text.startswith(name, i):
-                j = i + len(name)
-                while j < n and text[j] in " \t\r\n":
-                    j += 1
+                j = _skip_ws(text, i + len(name), n)
                 if j < n and text[j] == "(":
                     matched_name = name
                     paren_index = j
@@ -81,65 +93,79 @@ def _iter_call_bodies(call_names: tuple[str, ...], text: str) -> list[str]:
             continue
         i = paren_index + 1
         depth = 1
-        body_chars: list[str] = []
+        kwargs: dict[str, str] = {}
         while i < n and depth > 0:
-            bch = text[i]
+            ch = text[i]
             if in_comment:
-                if bch == "\n":
+                if ch == "\n":
                     in_comment = False
                 i += 1
                 continue
             if in_string:
-                body_chars.append(bch)
-                if bch == "\\":
-                    i += 1
-                    if i < n:
-                        body_chars.append(text[i])
-                elif bch == in_string:
+                if ch == "\\":
+                    i += 2
+                    continue
+                if ch == in_string:
                     in_string = None
                 i += 1
                 continue
-            if bch == "#":
+            if ch == "#":
                 in_comment = True
                 i += 1
                 continue
-            if bch in "\"'":
-                in_string = bch
-                body_chars.append(bch)
+            if ch in "\"'":
+                in_string = ch
                 i += 1
                 continue
-            if bch == "(":
+            if ch == "(":
                 depth += 1
-                body_chars.append(bch)
                 i += 1
                 continue
-            if bch == ")":
+            if ch == ")":
                 depth -= 1
-                if depth > 0:
-                    body_chars.append(bch)
                 i += 1
                 continue
-            body_chars.append(bch)
+            if depth == 1:
+                m = _IDENT_RE.match(text, i)
+                if m:
+                    ident = m.group(0)
+                    j = _skip_ws(text, m.end(), n)
+                    if j < n and text[j] == "=" and text[j : j + 2] != "==":
+                        j = _skip_ws(text, j + 1, n)
+                        if j < n and text[j] in "\"'":
+                            quote = text[j]
+                            k = j + 1
+                            value_chars = []
+                            while k < n and text[k] != quote:
+                                if text[k] == "\\" and k + 1 < n:
+                                    value_chars.append(text[k + 1])
+                                    k += 2
+                                    continue
+                                value_chars.append(text[k])
+                                k += 1
+                            kwargs[ident] = "".join(value_chars)
+                            i = k + 1
+                            continue
+                    i = m.end()
+                    continue
             i += 1
-        bodies.append("".join(body_chars))
-    return bodies
+        results.append(kwargs)
+    return results
 
 
 def _toolchains_llvm_bazel_dep_version(module_bazel: str) -> str:
-    for body in _iter_call_bodies(("bazel_dep",), module_bazel):
-        name = re.search(r'name\s*=\s*"toolchains_llvm"', body)
-        version = re.search(r'version\s*=\s*"([^"]+)"', body)
-        if name and version:
-            return version.group(1)
+    for kwargs in _iter_call_kwargs(("bazel_dep",), module_bazel):
+        if kwargs.get("name") == "toolchains_llvm" and "version" in kwargs:
+            return kwargs["version"]
     raise AssertionError('expected bazel_dep(... name = "toolchains_llvm" ...)')
 
 
 def _has_toolchains_llvm_override(module_bazel: str) -> bool:
     """True if any override pins toolchains_llvm to a specific commit/archive.
 
-    Matches each override call's full argument body regardless of argument
-    order or formatting, rather than assuming module_name is the first line
-    after the opening "(".
+    Matches each override call's keyword args regardless of argument order
+    or formatting, rather than assuming module_name is the first line after
+    the opening "(".
     """
     override_names = (
         "archive_override",
@@ -148,8 +174,8 @@ def _has_toolchains_llvm_override(module_bazel: str) -> bool:
         "multiple_version_override",
         "single_version_override",
     )
-    for body in _iter_call_bodies(override_names, module_bazel):
-        if re.search(r'module_name\s*=\s*"toolchains_llvm"', body):
+    for kwargs in _iter_call_kwargs(override_names, module_bazel):
+        if kwargs.get("module_name") == "toolchains_llvm":
             return True
     return False
 
@@ -299,6 +325,21 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
 )"""
         self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
 
+    def test_toolchains_llvm_bazel_dep_version_ignores_fake_assignment_in_string(
+        self,
+    ) -> None:
+        """Assignment-shaped text inside an unrelated string value for a
+
+        different module's bazel_dep must not be read as real args.
+        """
+        sample = """bazel_dep(
+    name = "rules_cc",
+    version = "0.2.26",
+    patch_cmds = ['historically name = "toolchains_llvm", version = "9.9.9"'],
+)"""
+        with self.assertRaises(AssertionError):
+            _toolchains_llvm_bazel_dep_version(sample)
+
     def test_has_toolchains_llvm_override_detects_same_line_args(self) -> None:
         sample = (
             'archive_override(module_name = "toolchains_llvm", '
@@ -353,6 +394,20 @@ single_version_override(
     # module_name = "toolchains_llvm" (old pin, no longer used)
     module_name = "apple_support",
     version = "2.10.1",
+)"""
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_fake_assignment_in_string(
+        self,
+    ) -> None:
+        """Assignment-shaped text inside an unrelated string value for a
+
+        different module's override must not be read as real args.
+        """
+        sample = """single_version_override(
+    module_name = "apple_support",
+    version = "2.10.1",
+    patch_cmds = ['the module_name = "toolchains_llvm" override is legacy'],
 )"""
         self.assertFalse(_has_toolchains_llvm_override(sample))
 
