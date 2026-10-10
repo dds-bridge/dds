@@ -372,15 +372,16 @@ function fitCenterDeckCards() {
     }
 
     let fontPx = CENTER_DECK_FONT_PX;
+    // Sub-pixel slack: float remeasure can leave needed a hair above available.
+    const fitEpsilonPx = 0.5;
 
-    // Up to two passes: em chrome scales with font-size, but 1px borders do not,
-    // so a single proportional shrink can still overhang by a few pixels.
-    // No readability floor: at extreme narrow widths we keep scaling so rows
-    // still fit the center cell instead of spilling into East.
-    for (let pass = 0; pass < 2; pass++) {
+    // Remeasure until rows fit. Em chrome scales with font-size, but 1px borders
+    // do not, so a single proportional shrink can still overhang; keep iterating
+    // (bounded) with no readability floor so extreme narrow widths still fit.
+    for (let pass = 0; pass < 8; pass++) {
         const needed = centerDeckRowOverflow(deckStatus);
 
-        if (!(needed > available)) {
+        if (!(needed > available + fitEpsilonPx)) {
             return;
         }
 

@@ -3787,6 +3787,7 @@ function mockCenterDeckLayout({
     hidden = false,
     // Extra fixed px that does not shrink with font-size (simulates 1px borders).
     fixedOverflowPx = 0,
+    initialValues = {},
 }) {
     let fontPx = 30;
     const baseWidths = rowScrollWidths.slice();
@@ -3798,9 +3799,12 @@ function mockCenterDeckLayout({
                 return fontPx === 30 ? "" : fontPx + "px";
             },
             set fontSize(value) {
-                fontPx = value === "" || value == null
-                    ? 30
-                    : parseFloat(value) || 30;
+                if (value === "" || value == null) {
+                    fontPx = 30;
+                    return;
+                }
+                const parsed = parseFloat(value);
+                fontPx = Number.isFinite(parsed) ? parsed : 30;
             },
         },
         querySelectorAll(selector) {
@@ -3817,7 +3821,7 @@ function mockCenterDeckLayout({
         className: "grid-item grid-filler grid-filler-center",
         clientWidth,
     };
-    const document = createMockDocument();
+    const document = createMockDocument(initialValues);
     const realGet = document.getElementById.bind(document);
     document.getElementById = (id) => {
         if (id === "deck-status") {
@@ -3834,6 +3838,10 @@ function mockCenterDeckLayout({
     return {
         document,
         deck,
+        available:
+            clientWidth -
+            (parseFloat(paddingLeft) || 0) -
+            (parseFloat(paddingRight) || 0),
         getComputedStyle() {
             return { paddingLeft, paddingRight };
         },
@@ -3863,8 +3871,9 @@ test("fitCenterDeckCards shrinks deck font when suit rows overflow the center ce
     assert.ok(Math.abs(size - 14.7) < 0.2, `expected ~14.7px, got ${size}`);
 });
 
-test("fitCenterDeckCards applies a second pass when fixed chrome still overflows", () => {
+test("fitCenterDeckCards keeps iterating until fixed chrome fits the center", () => {
     // Arrange: after a proportional shrink, non-scaling borders still spill.
+    // Two passes leave ~198px needed for available=196; more passes must fit.
     const layout = mockCenterDeckLayout({
         clientWidth: 220,
         paddingLeft: "20px",
@@ -3879,10 +3888,14 @@ test("fitCenterDeckCards applies a second pass when fixed chrome still overflows
     // Act
     ctx.fitCenterDeckCards();
 
-    // Assert: second pass pulls further under the single-pass 14.7px estimate.
+    // Assert: final row width fits the content box (not merely "smaller font").
     const size = parseFloat(layout.deck.style.fontSize);
-    assert.ok(size < 14.7, `second pass should shrink below 14.7px, got ${size}`);
-    assert.ok(size > 0);
+    assert.ok(size < 14.7, `should shrink below the single-pass 14.7px, got ${size}`);
+    const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
+    assert.ok(
+        needed <= layout.available + 0.5,
+        `row must fit after fixed-chrome passes, needed=${needed} available=${layout.available}`
+    );
 });
 
 test("fitCenterDeckCards scales below 10px when the center is extremely narrow", () => {
@@ -3945,6 +3958,55 @@ test("fitCenterDeckCards skips shrinking while the undeployed deck is hidden", (
 
     // Assert
     assert.equal(layout.deck.style.fontSize, "");
+});
+
+test("exitPlay refits center cards after a narrow resize during play", () => {
+    // Arrange: enter play (hides deck), resize while hidden clears the fit, then
+    // exit — unhide must refit so rows do not reappear at the full 30px size.
+    const layout = mockCenterDeckLayout({
+        clientWidth: 64,
+        paddingLeft: "20px",
+        paddingRight: "4px",
+        rowScrollWidths: [400],
+        initialValues: {
+            north_spades: "AQ85",
+            north_hearts: "AK976",
+            north_diamonds: "5",
+            north_clubs: "J87",
+            east_spades: "JT",
+            east_hearts: "QJ5432",
+            east_diamonds: "Q9",
+            east_clubs: "KQ9",
+            south_spades: "972",
+            south_hearts: "",
+            south_diamonds: "JT863",
+            south_clubs: "A6432",
+            west_spades: "K643",
+            west_hearts: "T8",
+            west_diamonds: "AK742",
+            west_clubs: "T5",
+        },
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+    assert.equal(layout.deck.hidden, true);
+
+    // Act: simulate resize during play, then leave play mode.
+    ctx.fitCenterDeckCards();
+    assert.equal(layout.deck.style.fontSize, "");
+    ctx.exitPlay();
+
+    // Assert
+    assert.equal(layout.deck.hidden, false);
+    const size = parseFloat(layout.deck.style.fontSize);
+    assert.ok(size < 10, `exitPlay must refit below full size, got ${size}`);
+    const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
+    assert.ok(needed <= layout.available, `needed=${needed} available=${layout.available}`);
 });
 
 test("updateDeckStatus refits center cards after rewriting the undeployed strip", () => {
