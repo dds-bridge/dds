@@ -21,39 +21,77 @@ def _repo_root(start: Path | None = None) -> Path:
 
 
 def _iter_call_bodies(call_names: tuple[str, ...], text: str) -> list[str]:
-    """Yield the argument-list text of each call to any name in call_names.
+    """Yield the argument-list text of each top-level call to call_names.
 
-    A plain `[^)]*)` regex stops at the first ")" even when it occurs inside
-    a string literal, a "#" comment, or a nested call (e.g. select(...)),
-    truncating the body before later args like module_name/version. This
-    scans character-by-character instead, tracking string/comment state and
-    paren depth so the body always spans to its real matching ")".
+    A single linear scan tracks string-literal and "#" comment state across
+    the whole text, so a call name is only recognized outside both — a
+    commented-out "bazel_dep(...)" line is correctly ignored, rather than a
+    plain regex search finding the name text inside the comment and reading
+    its (ignored-by-Bazel) args as if they were live. The same running state
+    continues through each matched call's body, so a ")" inside a string,
+    comment, or nested call (e.g. select(...)) never ends the body early —
+    it always spans to its real matching ")".
     """
-    pattern = re.compile(r"(?:%s)\(" % "|".join(re.escape(n) for n in call_names))
-    bodies = []
-    for start_match in pattern.finditer(text):
-        i = start_match.end()
+    sorted_names = sorted(call_names, key=len, reverse=True)
+    bodies: list[str] = []
+    i = 0
+    n = len(text)
+    in_string: str | None = None
+    in_comment = False
+    while i < n:
+        ch = text[i]
+        if in_comment:
+            if ch == "\n":
+                in_comment = False
+            i += 1
+            continue
+        if in_string:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == in_string:
+                in_string = None
+            i += 1
+            continue
+        if ch == "#":
+            in_comment = True
+            i += 1
+            continue
+        if ch in "\"'":
+            in_string = ch
+            i += 1
+            continue
+        matched_name = next(
+            (
+                name
+                for name in sorted_names
+                if text.startswith(name, i) and text[i + len(name) : i + len(name) + 1] == "("
+            ),
+            None,
+        )
+        if matched_name is None:
+            i += 1
+            continue
+        i += len(matched_name) + 1
         depth = 1
-        in_string: str | None = None
-        in_comment = False
         body_start = i
-        while i < len(text) and depth > 0:
-            ch = text[i]
+        while i < n and depth > 0:
+            bch = text[i]
             if in_comment:
-                if ch == "\n":
+                if bch == "\n":
                     in_comment = False
             elif in_string:
-                if ch == "\\":
+                if bch == "\\":
                     i += 1
-                elif ch == in_string:
+                elif bch == in_string:
                     in_string = None
-            elif ch == "#":
+            elif bch == "#":
                 in_comment = True
-            elif ch in "\"'":
-                in_string = ch
-            elif ch == "(":
+            elif bch in "\"'":
+                in_string = bch
+            elif bch == "(":
                 depth += 1
-            elif ch == ")":
+            elif bch == ")":
                 depth -= 1
             i += 1
         bodies.append(text[body_start : i - 1])
@@ -215,6 +253,14 @@ class TestMsanBazelConfig(unittest.TestCase):
 )"""
         self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
 
+    def test_toolchains_llvm_bazel_dep_version_ignores_commented_out_call(
+        self,
+    ) -> None:
+        sample = """# bazel_dep(name = "toolchains_llvm", version = "9.9.9")
+bazel_dep(name = "toolchains_llvm", version = "1.11.2")
+"""
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
     def test_has_toolchains_llvm_override_detects_same_line_args(self) -> None:
         sample = (
             'archive_override(module_name = "toolchains_llvm", '
@@ -239,6 +285,15 @@ archive_override(
     strip_prefix = "toolchains_llvm-abc123",
 )"""
         self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_commented_out_call(
+        self,
+    ) -> None:
+        sample = (
+            '# archive_override(module_name = "toolchains_llvm", '
+            'strip_prefix = "x")\n'
+        )
+        self.assertFalse(_has_toolchains_llvm_override(sample))
 
     def test_has_toolchains_llvm_override_ignores_other_modules(self) -> None:
         sample = """
