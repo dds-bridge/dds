@@ -412,6 +412,11 @@
                 cell.innerHTML = "";
             }
         }
+
+        if (typeof global.updateResultTableHint === "function" &&
+                typeof global.collectHands === "function") {
+            global.updateResultTableHint(global.collectHands());
+        }
     }
 
     /** Delay before showing Computing… under the DD matrix (see refreshDdTable). */
@@ -636,6 +641,10 @@
                 }
 
                 lastDdTablePbn = pbn;
+
+                if (typeof global.updateResultTableHint === "function") {
+                    global.updateResultTableHint(hands);
+                }
 
                 if (result) {
                     result.innerHTML = global.formatSolveTimeMs(elapsedMs);

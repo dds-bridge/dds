@@ -2700,6 +2700,24 @@ test("contractStatusHtml shows on-lead wording for partial deals", () => {
     assert.match(html, /aria-label="Spades; North on lead"/);
 });
 
+test("updateResultTableHint is hidden when the matrix is unsolved", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    const hint = document.element("result-table-hint");
+    hint.hidden = false;
+    hint.textContent = "Click a cell to play out that contract";
+
+    ctx.updateResultTableHint(ctx.collectHands());
+
+    assert.equal(hint.hidden, true);
+    assert.equal(hint.textContent, "");
+});
+
 test("updateResultTableHint describes lead selection for partial deals", () => {
     const document = createMockDocument({
         north_spades: "A",
@@ -2709,21 +2727,40 @@ test("updateResultTableHint describes lead selection for partial deals", () => {
     });
     const ctx = loadDdsWeb(document);
     const hint = document.element("result-table-hint");
-    hint.textContent = "Click a cell to play out that contract";
+    // Matrix must be populated before the click-to-lead hint is shown.
+    document.element("result-table").rows[1].cells[1].innerHTML = "1";
 
-    ctx.updateActionButtons();
+    ctx.updateResultTableHint(ctx.collectHands());
 
+    assert.equal(hint.hidden, false);
     assert.equal(
         hint.textContent,
         "Click a cell to place the corresponding player on lead"
     );
 
     ctx.fillFormWithPartScoreTestData();
-    ctx.updateActionButtons();
+    document.element("result-table").rows[1].cells[1].innerHTML = "7";
+    ctx.updateResultTableHint(ctx.collectHands());
+    assert.equal(hint.hidden, false);
     assert.equal(
         hint.textContent,
         "Click a cell to play out that contract"
     );
+});
+
+test("clear_results hides the matrix hint", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const hint = document.element("result-table-hint");
+    document.element("result-table").rows[1].cells[1].innerHTML = "7";
+    hint.hidden = false;
+    hint.textContent = "Click a cell to play out that contract";
+
+    ctx.clear_results();
+
+    assert.equal(hint.hidden, true);
+    assert.equal(hint.textContent, "");
+    assert.equal(document.element("result-table").rows[1].cells[1].innerHTML, "");
 });
 
 test("editing a full deal down to a partial deal switches to lead-on-click mode", async () => {
@@ -2735,10 +2772,12 @@ test("editing a full deal down to a partial deal switches to lead-on-click mode"
     ctx.solvePlayPosition = async () => ({ SK: 0 });
     const hint = document.element("result-table-hint");
     const southNt = document.element("result-table").rows[3].cells[5];
+    ctx.fillFormWithPartScoreTestData();
+    // fillForm clears the matrix; restore digits so play can start and the hint shows.
     southNt.innerHTML = "6";
     southNt.textContent = "6";
-    ctx.fillFormWithPartScoreTestData();
-    ctx.updateActionButtons();
+    document.element("result-table").rows[1].cells[1].innerHTML = "7";
+    ctx.updateResultTableHint(ctx.collectHands());
     ctx.handleResultTableClick({
         target: {
             closest() {
@@ -2749,6 +2788,7 @@ test("editing a full deal down to a partial deal switches to lead-on-click mode"
     await new Promise((resolve) => setTimeout(resolve, 20));
     assert.equal(ctx.isPlayMode(), true);
     assert.equal(ctx.playState.leadSeat, "west");
+    assert.equal(hint.hidden, false);
     assert.equal(
         hint.textContent,
         "Click a cell to play out that contract"
@@ -2760,10 +2800,13 @@ test("editing a full deal down to a partial deal switches to lead-on-click mode"
     document.setValue("east_clubs", "KQ"); // was "KQ9"
     document.setValue("south_spades", "97"); // was "972"
     document.setValue("west_clubs", "T"); // was "T5"
+    // refreshDdTable is stubbed; keep a digit so the lead hint can appear.
+    document.element("result-table").rows[1].cells[1].innerHTML = "1";
     ctx.updateActionButtons();
 
     // Assert: treated like a fresh partial deal — lead hint, no leftover contract.
     assert.equal(ctx.selectedContract(), null);
+    assert.equal(hint.hidden, false);
     assert.equal(
         hint.textContent,
         "Click a cell to place the corresponding player on lead"
@@ -2819,6 +2862,8 @@ test("leaving a full deal clears a pending cell selection for a fresh partial", 
 
     // Assert: selection does not carry over; next click is a fresh lead choice.
     assert.equal(ctx.selectedContract(), null);
+    document.element("result-table").rows[1].cells[1].innerHTML = "1";
+    ctx.updateResultTableHint(ctx.collectHands());
     assert.equal(
         document.element("result-table-hint").textContent,
         "Click a cell to place the corresponding player on lead"
@@ -3983,7 +4028,7 @@ test("result table lives in the hand diagram southeast corner", () => {
     // Hint sits above the table inside the SE cell.
     assert.match(
         afterSe,
-        /class="[^"]*result-table-hint[^"]*"[^>]*>Click a cell to play out that contract</
+        /id="result-table-hint"[^>]*class="[^"]*result-table-hint[^"]*"[^>]*\bhidden\b/
     );
     assert.match(
         afterSe,

@@ -550,7 +550,20 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             self.assertLessEqual(metrics["tableRight"], metrics["seRight"] + 1.0)
             self.assertLessEqual(metrics["tableBottom"], metrics["seBottom"] + 1.0)
 
+            # Unsolved matrix: no click-hint above the table.
             hint = page.locator(".result-table-hint")
+            self.assertTrue(hint.is_hidden())
+            hint_inside_se = page.evaluate(
+                """() => {
+                const se = document.querySelector('.grid-filler-se');
+                return se.contains(document.querySelector('.result-table-hint'));
+              }"""
+            )
+            self.assertTrue(hint_inside_se)
+
+            page.get_by_label("Sample deals").select_option(label="Part-score")
+            self._wait_for_dd_table(page)
+            self.assertTrue(hint.is_visible())
             self.assertEqual(
                 hint.inner_text(), "Click a cell to play out that contract"
             )
@@ -560,17 +573,12 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                   .getBoundingClientRect();
                 const table = document.getElementById('result-table')
                   .getBoundingClientRect();
-                const se = document.querySelector('.grid-filler-se');
                 return {
                   hintBottom: hint.bottom,
                   tableTop: table.top,
-                  hintInsideSe: se.contains(
-                    document.querySelector('.result-table-hint')
-                  ),
                 };
               }"""
             )
-            self.assertTrue(hint_layout["hintInsideSe"])
             self.assertLessEqual(
                 hint_layout["hintBottom"], hint_layout["tableTop"] + 1.0
             )

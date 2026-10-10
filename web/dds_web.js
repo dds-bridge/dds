@@ -573,7 +573,18 @@ function updateResultTableHint(hands) {
         return;
     }
 
+    const table = document.getElementById("result-table");
+    const populated = typeof ddTableLooksPopulated === "function" &&
+        ddTableLooksPopulated(table);
+
+    if (!populated) {
+        hint.hidden = true;
+        hint.textContent = "";
+        return;
+    }
+
     const partial = typeof dealIsPartial === "function" && dealIsPartial(hands);
+    hint.hidden = false;
     hint.textContent = partial
         ? RESULT_TABLE_HINT_LEAD
         : RESULT_TABLE_HINT_CONTRACT;
