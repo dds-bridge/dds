@@ -21,6 +21,7 @@ def _repo_root(start: Path | None = None) -> Path:
 
 
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+_POSITIONAL_KEY = "__positional__"
 
 
 def _skip_ws(text: str, i: int, n: int) -> int:
@@ -108,6 +109,14 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
     paren balancing but not parsed), which is everything every caller here
     needs. Whitespace between a call name and "(" is tolerated
     ("archive_override (..." is valid Starlark).
+
+    Bazel's `*_override`/`bazel_dep` APIs all accept their first argument
+    (module_name / name) positionally — a bare top-level string before any
+    "identifier =" is stored under `_POSITIONAL_KEY`, letting callers treat
+    it as that first parameter. "Top-level" also tracks `[...]`/`{...}`
+    nesting (not just parens), so a string that's an *element* of a list
+    value (e.g. inside `urls = [...]`) is never mistaken for a positional
+    call argument.
     """
     sorted_names = sorted(call_names, key=len, reverse=True)
     results: list[dict[str, str]] = []
@@ -136,13 +145,22 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
             continue
         i = paren_index + 1
         depth = 1
+        bracket_depth = 0
+        brace_depth = 0
         kwargs: dict[str, str] = {}
         while i < n and depth > 0:
             ch = text[i]
             if ch == "#":
                 i = _skip_comment(text, i, n)
                 continue
+            at_top = depth == 1 and bracket_depth == 0 and brace_depth == 0
             if ch in "\"'":
+                if at_top and _POSITIONAL_KEY not in kwargs:
+                    end, value = _skip_string(text, i, n)
+                    if value is not None:
+                        kwargs[_POSITIONAL_KEY] = value
+                    i = end
+                    continue
                 i, _ = _skip_string(text, i, n)
                 continue
             if ch == "(":
@@ -153,7 +171,23 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 depth -= 1
                 i += 1
                 continue
-            if depth == 1 and _is_identifier_boundary(text, i):
+            if ch == "[":
+                bracket_depth += 1
+                i += 1
+                continue
+            if ch == "]":
+                bracket_depth -= 1
+                i += 1
+                continue
+            if ch == "{":
+                brace_depth += 1
+                i += 1
+                continue
+            if ch == "}":
+                brace_depth -= 1
+                i += 1
+                continue
+            if at_top and _is_identifier_boundary(text, i):
                 m = _IDENT_RE.match(text, i)
                 if m:
                     ident = m.group(0)
@@ -175,7 +209,8 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
 
 def _toolchains_llvm_bazel_dep_version(module_bazel: str) -> str:
     for kwargs in _iter_call_kwargs(("bazel_dep",), module_bazel):
-        if kwargs.get("name") == "toolchains_llvm" and "version" in kwargs:
+        name = kwargs.get("name") or kwargs.get(_POSITIONAL_KEY)
+        if name == "toolchains_llvm" and "version" in kwargs:
             return kwargs["version"]
     raise AssertionError('expected bazel_dep(... name = "toolchains_llvm" ...)')
 
@@ -183,9 +218,9 @@ def _toolchains_llvm_bazel_dep_version(module_bazel: str) -> str:
 def _has_toolchains_llvm_override(module_bazel: str) -> bool:
     """True if any override pins toolchains_llvm to a specific commit/archive.
 
-    Matches each override call's keyword args regardless of argument order
-    or formatting, rather than assuming module_name is the first line after
-    the opening "(".
+    Matches each override call's keyword or first-positional module_name
+    argument regardless of argument order or formatting, rather than
+    assuming module_name is the first line after the opening "(".
     """
     override_names = (
         "archive_override",
@@ -195,7 +230,8 @@ def _has_toolchains_llvm_override(module_bazel: str) -> bool:
         "single_version_override",
     )
     for kwargs in _iter_call_kwargs(override_names, module_bazel):
-        if kwargs.get("module_name") == "toolchains_llvm":
+        module_name = kwargs.get("module_name") or kwargs.get(_POSITIONAL_KEY)
+        if module_name == "toolchains_llvm":
             return True
     return False
 
@@ -315,6 +351,16 @@ class TestMsanBazelConfig(unittest.TestCase):
         sample = 'bazel_dep(version = "1.11.2", name = "toolchains_llvm")'
         self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
 
+    def test_toolchains_llvm_bazel_dep_version_accepts_positional_name(
+        self,
+    ) -> None:
+        """bazel_dep's name is positional too: bazel_dep("toolchains_llvm",
+
+        version = ...) is valid Starlark.
+        """
+        sample = 'bazel_dep("toolchains_llvm", version = "1.11.2")'
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
     def test_toolchains_llvm_bazel_dep_version_survives_an_earlier_paren(
         self,
     ) -> None:
@@ -397,6 +443,34 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
             'strip_prefix = "toolchains_llvm-abc123")'
         )
         self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_positional_module_name(
+        self,
+    ) -> None:
+        """The override APIs accept module_name as their first positional
+
+        argument; archive_override("toolchains_llvm", ...) is as real an
+        override as the keyword form.
+        """
+        sample = (
+            'archive_override("toolchains_llvm", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_positional_string_in_list(
+        self,
+    ) -> None:
+        """A bare string that is an *element* of a list value (not the
+
+        call's own first positional argument) must not be read as
+        module_name.
+        """
+        sample = """archive_override(
+    module_name = "apple_support",
+    urls = ["toolchains_llvm"],
+)"""
+        self.assertFalse(_has_toolchains_llvm_override(sample))
 
     def test_has_toolchains_llvm_override_detects_reordered_args(self) -> None:
         sample = """
