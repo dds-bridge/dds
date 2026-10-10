@@ -7,7 +7,8 @@
 // Layers (load before this UI file):
 //   web/dds_web_deal_import.js — file-format parsers
 //   web/dds_web_core.js — Card / holdings / handsToPbn
-//   web/dds_web_solve.js — WASM queue / DD table / leads
+//   web/dds_web_solve.js — WASM queue / DD table / play solves
+//   web/dds_web_play.js — card-by-card play state / trick UI
 // Unit tests: web/tests/dds_web_test.mjs
 // Run with: bazelisk test //web:dds_web_js_test
 // or: python -m unittest web.tests.test_dds_web_js
@@ -56,6 +57,7 @@
             handleResultTableKeyDown
             selectedContract
             onContractSelect
+            ensurePlayForSelectedContract
             denominationDisplayHtml
             contractStatusHtml
             updateContractStatus
@@ -76,6 +78,9 @@ function focusNorthSpades() {
 }
 
 function fillFormWithTestData(nesw) {
+    if (typeof exitPlay === "function") {
+        exitPlay();
+    }
     clear_results();
 
     var holdings = [];
@@ -232,6 +237,9 @@ function * hand_elements() {
 }
 
 function clearTestData() {
+    if (typeof exitPlay === "function") {
+        exitPlay();
+    }
     clear_results();
 
     for (const element of hand_elements()) {
@@ -243,6 +251,9 @@ function clearTestData() {
 }
 
 function rotateClockwise() {
+    if (typeof exitPlay === "function") {
+        exitPlay();
+    }
     clear_results();
 
     var hands = [];
@@ -408,27 +419,89 @@ function escapeHtml(value) {
         .replace(/'/g, "&#39;");
 }
 
-function handCardAriaLabel(direction, card) {
+function playResultAriaText(badge) {
+    if (badge == null || badge === undefined) {
+        return "";
+    }
+    const text = String(badge);
+    if (text === "=") {
+        return "equals";
+    }
+    if (text.charAt(0) === "+") {
+        return "plus " + text.slice(1);
+    }
+    if (text.charAt(0) === "\u2013" || text.charAt(0) === "-") {
+        return "minus " + text.slice(1);
+    }
+    return text;
+}
+
+function handCardAriaLabel(direction, card, options) {
     const suitName = card.suit.replace(/s$/, "");
     const pipName = PIP_NAMES[card.pip] || card.pip;
+    let label = capitalize(direction) + " " + suitName + " " + pipName;
 
-    return capitalize(direction) + " " + suitName + " " + pipName;
+    if (options && options.playable) {
+        label += "; playable";
+        const result = playResultAriaText(options.result);
+        if (result) {
+            label += ", result " + result;
+        }
+    }
+
+    return label;
+}
+
+function handCardTrickBadgeClass(badge) {
+    const text = String(badge);
+    if (text === "=") {
+        return " hand-card-tricks diff-zero";
+    }
+    if (text.charAt(0) === "+") {
+        return " hand-card-tricks diff-plus";
+    }
+    if (text.charAt(0) === "\u2013" || text.charAt(0) === "-") {
+        return " hand-card-tricks diff-minus";
+    }
+    return " hand-card-tricks";
 }
 
 function handCardHtml(direction, card, index, leadTricks) {
     const hasTricks = leadTricks != null && leadTricks !== undefined;
-    const classes = hasTricks ? "hand-card hand-card-with-tricks" : "hand-card";
+    const inPlay = typeof isPlayMode === "function" && isPlayMode();
+    const playable = inPlay &&
+        typeof isLegalPlayCard === "function" &&
+        isLegalPlayCard(playState, direction, card.key());
+    let classes = "hand-card";
+    if (hasTricks) {
+        classes += " hand-card-with-tricks";
+    }
+    if (playable) {
+        classes += " hand-card-playable";
+    }
     const badge = hasTricks
-        ? "<span class=\"hand-card-tricks\" aria-hidden=\"true\">" +
+        ? "<span class=\"" + handCardTrickBadgeClass(leadTricks).trim() +
+            "\" aria-hidden=\"true\">" +
             escapeHtml(leadTricks) +
             "</span>"
         : "";
+    const draggable = !inPlay || playable ? "true" : "false";
+    // In play mode, illegal cards must not remain keyboard-focusable enabled
+    // buttons; edit-mode cards and legal plays stay enabled.
+    const disabledAttr = inPlay && !playable ? " disabled" : "";
 
-    return "<button type=\"button\" class=\"" + classes + "\" draggable=\"true\"" +
+    const aria = handCardAriaLabel(direction, card, {
+        playable: playable,
+        result: hasTricks ? leadTricks : null,
+    });
+
+    return "<button type=\"button\" class=\"" + classes + "\" draggable=\"" +
+        draggable + "\"" +
+        disabledAttr +
         " data-direction=\"" + escapeHtml(direction) + "\"" +
         " data-card=\"" + escapeHtml(card.key()) + "\"" +
         " data-index=\"" + escapeHtml(index) + "\"" +
-        " aria-label=\"" + escapeHtml(handCardAriaLabel(direction, card)) + "\">" +
+        " aria-label=\"" + escapeHtml(aria) + "\">" +
         escapeHtml(card.pip) +
         badge +
         "</button>";
@@ -572,8 +645,10 @@ function updateHandCardDisplays(hands) {
     }
 }
 
-function onHandCardClick(_direction, _card) {
-    // Hook for a future play-through PR; intentionally a no-op for now.
+function onHandCardClick(direction, card) {
+    if (typeof isPlayMode === "function" && isPlayMode()) {
+        tryPlayCard(direction, card.key(), false);
+    }
 }
 
 function handleHandCardMouseDown(_event) {
@@ -661,6 +736,10 @@ function centerDropElement(element) {
         return null;
     }
 
+    if (typeof isPlayMode === "function" && isPlayMode()) {
+        return element.closest("#trick-status, .grid-filler-center");
+    }
+
     return element.closest("#deck-status, .grid-filler-center");
 }
 
@@ -697,6 +776,16 @@ function handleCardDragStart(event) {
     }
 
     const sourceDirection = button.getAttribute("data-direction");
+
+    if (typeof isPlayMode === "function" && isPlayMode()) {
+        if (!isLegalPlayCard(playState, sourceDirection, key)) {
+            if (event.preventDefault) {
+                event.preventDefault();
+            }
+            return;
+        }
+    }
+
     const payload = {
         key: key,
         sourceDirection: sourceDirection || null,
@@ -742,6 +831,21 @@ function handleCardDragOver(event) {
     const center = centerDropElement(event.target);
 
     if (center) {
+        if (typeof isPlayMode === "function" && isPlayMode()) {
+            const legal = isLegalPlayCard(
+                playState,
+                payload.sourceDirection,
+                payload.key
+            );
+            if (!legal) {
+                if (event.dataTransfer) {
+                    event.dataTransfer.dropEffect = "none";
+                }
+                clearActiveDropTarget();
+                return;
+            }
+        }
+
         if (event.preventDefault) {
             event.preventDefault();
         }
@@ -751,6 +855,14 @@ function handleCardDragOver(event) {
         }
 
         setActiveDropTarget(center);
+        return;
+    }
+
+    if (typeof isPlayMode === "function" && isPlayMode()) {
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "none";
+        }
+        clearActiveDropTarget();
         return;
     }
 
@@ -813,10 +925,19 @@ function handleCardDrop(event) {
     const center = centerDropElement(event.target);
 
     if (center) {
+        if (typeof isPlayMode === "function" && isPlayMode()) {
+            tryPlayCard(payload.sourceDirection, payload.key, false);
+            return;
+        }
+
         if (undeployCard(card)) {
             updateActionButtons();
         }
 
+        return;
+    }
+
+    if (typeof isPlayMode === "function" && isPlayMode()) {
         return;
     }
 
@@ -908,6 +1029,11 @@ function handleHandCardClick(event) {
         event.preventDefault();
     }
 
+    if (typeof isPlayMode === "function" && isPlayMode()) {
+        onHandCardClick(direction, card);
+        return;
+    }
+
     const index = indexAttr == null ? -1 : parseInt(indexAttr, 10);
     const input = document.getElementById(direction + "_" + card.suit);
 
@@ -926,8 +1052,46 @@ function selectedContract() {
     return selectedContractState;
 }
 
-function onContractSelect(_direction, _denomination) {
-    // Hook for play-through / UI that needs the chosen contract.
+function ensurePlayForSelectedContract() {
+    const contract = selectedContractState;
+
+    if (!contract) {
+        return false;
+    }
+
+    const cell = resultCellForContract(contract.direction, contract.denomination);
+    const target = typeof targetTricksFromCell === "function"
+        ? targetTricksFromCell(cell)
+        : null;
+
+    if (target == null) {
+        return false;
+    }
+
+    if (typeof isPlayMode === "function" && isPlayMode() && playState &&
+            playState.declarer === contract.direction &&
+            playState.denomination === contract.denomination &&
+            playState.targetTricks === target) {
+        return true;
+    }
+
+    if (typeof startPlay === "function") {
+        return startPlay(contract.direction, contract.denomination, target);
+    }
+
+    return false;
+}
+
+function onContractSelect(direction, denomination) {
+    if (!direction || !denomination) {
+        if (typeof exitPlay === "function") {
+            exitPlay();
+        }
+        return;
+    }
+
+    // Table may still be computing; start once the cell has a trick count.
+    ensurePlayForSelectedContract();
 }
 
 function clearResultCellSelectionHighlight() {
@@ -1706,6 +1870,12 @@ function pageLoad() {
     document.addEventListener("dragend", handleCardDragEnd);
     document.addEventListener("click", handleResultTableClick);
     document.addEventListener("keydown", handleResultTableKeyDown);
+    if (typeof handlePlayUndoKeyDown === "function") {
+        document.addEventListener("keydown", handlePlayUndoKeyDown);
+    }
+    if (typeof handlePlayHistoryUndo === "function") {
+        document.addEventListener("beforeinput", handlePlayHistoryUndo);
+    }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
     updateActionButtons();
     focusNorthSpades();

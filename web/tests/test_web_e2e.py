@@ -290,7 +290,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_http_opening_lead_tricks_appear_on_leader_cards(self) -> None:
+    def test_http_play_mode_badges_appear_on_leader_cards(self) -> None:
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
@@ -305,23 +305,23 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     page.evaluate("() => selectedContract()"),
                     {"direction": "south", "denomination": "N"},
                 )
+                page.wait_for_function("() => isPlayMode() === true")
                 page.wait_for_function(
                     """() => document.querySelectorAll(
-                      '#west_spades_cards .hand-card-tricks').length > 0"""
+                      '#west_spades_cards .hand-card-playable').length > 0"""
                 )
 
                 west_sk = page.locator(
                     '#west_spades_cards .hand-card[data-card="SK"]'
                 )
                 self.assertIn(
-                    "hand-card-with-tricks",
+                    "hand-card-playable",
                     west_sk.get_attribute("class") or "",
                 )
-                tricks = west_sk.locator(".hand-card-tricks")
-                self.assertEqual(tricks.count(), 1)
-                score = int(tricks.inner_text())
-                self.assertGreaterEqual(score, 0)
-                self.assertLessEqual(score, 13)
+                badge = west_sk.locator(".hand-card-tricks")
+                self.assertEqual(badge.count(), 1)
+                # South NT makes 6; SK lead scores 5 EW tricks → declarer +2.
+                self.assertEqual(badge.inner_text(), "+2")
 
                 self.assertEqual(
                     page.locator(
@@ -329,64 +329,89 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     ).count(),
                     0,
                 )
-                # Stickiness: numerals must survive a short settle period and a
-                # leader-card click (caret placement re-renders holdings).
-                page.wait_for_timeout(2000)
-                self.assertGreater(
-                    page.locator(
-                        "#west_spades_cards .hand-card-tricks"
-                    ).count(),
-                    0,
-                    msg=f"tricks vanished; result={page.locator('#result').inner_text()!r}",
+
+                # Mid-trick: after SK, North must follow; SA is a known legal card.
+                west_sk.click()
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                      '#north_spades_cards .hand-card-playable').length > 0"""
                 )
-                page.locator(
-                    '#west_spades_cards .hand-card[data-card="SK"]'
-                ).click()
-                page.wait_for_timeout(500)
-                self.assertGreater(
-                    page.locator(
-                        "#west_spades_cards .hand-card-tricks"
-                    ).count(),
-                    0,
-                    msg=f"tricks lost after card click; result={page.locator('#result').inner_text()!r}",
+                north_sa = page.locator(
+                    '#north_spades_cards .hand-card[data-card="SA"]'
                 )
+                self.assertIn(
+                    "hand-card-playable",
+                    north_sa.get_attribute("class") or "",
+                )
+                sa_badge = north_sa.locator(".hand-card-tricks")
+                self.assertEqual(sa_badge.count(), 1)
+                # Same contract: SA holds for +2 versus the 6-trick target.
+                self.assertEqual(sa_badge.inner_text(), "+2")
+                self.assertTrue(page.locator("#play-bar").is_visible())
+                self.assertTrue(page.locator("#trick-status").is_visible())
                 self.assertEqual(errors, [])
             finally:
                 page.close()
 
-    def test_http_opening_lead_tricks_when_contract_clicked_during_dd(self) -> None:
+    def test_http_play_mode_when_contract_clicked_during_dd(self) -> None:
         """Selecting a contract while the table is still computing must still
-        show lead-trick numerals after both solves finish."""
+        enter play mode after the DD cell fills."""
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
                 page.get_by_label("Sample deals").select_option(label="Part-score")
                 # Click South/NT immediately — cells may still be empty.
-                # td nth is among <td> only (C=0 … S=3, NT=4); not HTML cells[]
-                # which includes the direction <th> at index 0.
                 page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
                 self.assertEqual(
                     page.evaluate("() => selectedContract()"),
                     {"direction": "south", "denomination": "N"},
                 )
                 page.wait_for_function(
-                    """() => document.querySelectorAll(
-                      '#west_spades_cards .hand-card-tricks').length > 0""",
+                    """() => isPlayMode() === true && document.querySelectorAll(
+                      '#west_spades_cards .hand-card-playable').length > 0""",
                     timeout=120_000,
                 )
                 self._wait_for_dd_table(page)
-                page.wait_for_timeout(1500)
-                self.assertGreater(
-                    page.locator(
-                        "#west_spades_cards .hand-card-tricks"
-                    ).count(),
-                    0,
-                    msg=f"tricks missing after race; result={page.locator('#result').inner_text()!r}",
-                )
                 self.assertEqual(errors, [])
             finally:
                 page.close()
 
+    def test_http_drag_playable_card_onto_trick_then_undo(self) -> None:
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                page.get_by_label("Sample deals").select_option(label="Part-score")
+                self._wait_for_dd_table(page)
+                page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
+                page.wait_for_function(
+                    """() => document.querySelectorAll(
+                      '#west_spades_cards .hand-card-playable').length > 0"""
+                )
+
+                page.locator(
+                    '#west_spades_cards .hand-card[data-card="SK"]'
+                ).drag_to(page.locator("#trick-status"))
+                page.wait_for_function(
+                    """() => {
+                      const trick = document.getElementById('trick-status');
+                      return trick && /K/.test(trick.innerHTML);
+                    }"""
+                )
+                self.assertEqual(
+                    page.locator(
+                        '#west_spades_cards .hand-card[data-card="SK"]'
+                    ).count(),
+                    0,
+                )
+
+                page.keyboard.press("ControlOrMeta+z")
+                page.wait_for_function(
+                    """() => document.querySelector(
+                      '#west_spades_cards .hand-card[data-card="SK"]')"""
+                )
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
     def test_result_table_cell_click_selects_contract_and_highlights(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
@@ -527,7 +552,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
 
             hint = page.locator(".result-table-hint")
             self.assertEqual(
-                hint.inner_text(), "Click to set declarer and denomination"
+                hint.inner_text(), "Click a cell to play out that contract"
             )
             hint_layout = page.evaluate(
                 """() => {

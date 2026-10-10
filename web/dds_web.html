@@ -50,6 +50,15 @@
     </select>
     <button type="button" onclick="rotateClockwise()">Rotate the hands clockwise</button>
 
+    <div id="play-bar" hidden>
+        <button type="button" id="edit-hands" onclick="exitPlay()">Edit hands</button>
+    </div>
+    <p id="play-hint" hidden>
+        Drag a highlighted card onto the trick (or click it).
+        Each card shows how the contract ends (=, +N, –N) with best play.
+        Undo with ⌘/Ctrl-Z.
+    </p>
+
     <br/>
     <br/>
 
@@ -83,7 +92,12 @@
             <span class="hand-suit"><club-suit>♣</club-suit><span id="west_clubs_cards" class="hand-holding"></span><input id="west_clubs" class="hand-suit-input" name="west clubs" aria-label="West clubs" type="text" autocomplete="off" spellcheck="false"></span><br>
             <div id="west-card-count" class="hand-card-count" aria-live="polite" hidden></div>
         </div>
-        <div class="grid-item grid-filler grid-filler-nw" aria-hidden="true"></div>
+        <div class="grid-item grid-filler grid-filler-nw">
+            <div id="play-score"
+                 hidden
+                 aria-live="polite"
+                 aria-label="Tricks won"></div>
+        </div>
         <div class="grid-item grid-filler grid-filler-ne">
             <div id="contract-status" hidden></div>
         </div>
@@ -91,10 +105,16 @@
             <div id="deck-status"
                  role="group"
                  aria-label="Cards not yet entered in the diagram"></div>
+            <div id="trick-status"
+                 class="trick-status"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Current trick"
+                 hidden></div>
         </div>
         <div class="grid-item grid-filler grid-filler-sw" aria-hidden="true"></div>
         <div class="grid-item grid-filler grid-filler-se">
-            <div class="result-table-hint">Click to set declarer and denomination</div>
+            <div class="result-table-hint">Click a cell to play out that contract</div>
             <table id="result-table"
                    cellspacing="2"
                    cellpadding="2"
@@ -150,6 +170,7 @@
     <script src="dds_web_deal_import.js"></script>
     <script src="dds_web_core.js"></script>
     <script src="dds_web_solve.js"></script>
+    <script src="dds_web_play.js"></script>
     <script src="dds_web.js"></script>
 </body>
 </html>

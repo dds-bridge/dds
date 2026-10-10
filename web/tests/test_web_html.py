@@ -102,8 +102,8 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertLess(wasm_at, import_at)
         self.assertLess(import_at, app_at)
 
-    def test_loads_core_and_solve_scripts_before_dds_web_js(self) -> None:
-        # Deal model (core) and WASM/queue (solve) load before UI wiring.
+    def test_loads_core_solve_and_play_scripts_before_dds_web_js(self) -> None:
+        # Deal model (core), WASM/queue (solve), then play state before UI.
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertRegex(
             text,
@@ -113,13 +113,41 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
             text,
             r'<script\s+src="dds_web_solve\.js"\s*>\s*</script>',
         )
+        self.assertRegex(
+            text,
+            r'<script\s+src="dds_web_play\.js"\s*>\s*</script>',
+        )
         import_at = text.index('src="dds_web_deal_import.js"')
         core_at = text.index('src="dds_web_core.js"')
         solve_at = text.index('src="dds_web_solve.js"')
+        play_at = text.index('src="dds_web_play.js"')
         app_at = text.index('src="dds_web.js"')
         self.assertLess(import_at, core_at)
         self.assertLess(core_at, solve_at)
-        self.assertLess(solve_at, app_at)
+        self.assertLess(solve_at, play_at)
+        self.assertLess(play_at, app_at)
+
+    def test_play_mode_controls_and_trick_status(self) -> None:
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertIn('id="play-bar"', text)
+        self.assertIn('id="trick-status"', text)
+        self.assertIn('id="play-score"', text)
+        self.assertIn('onclick="exitPlay()"', text)
+        self.assertNotIn('id="undo-play"', text)
+        self.assertNotIn('onclick="undoPlay()"', text)
+        self.assertNotIn('id="undo-trick"', text)
+        self.assertNotIn('onclick="undoTrickPlay()"', text)
+        # Last-choice undo is ⌘/Ctrl-Z only (no Undo buttons; Edit → Undo needs
+        # an editable host, which play mode does not keep focused).
+        self.assertNotRegex(text, r"Edit\s*→\s*Undo|Edit\s*-\s*Undo")
+        self.assertRegex(text, r"⌘/Ctrl-Z|Ctrl-Z")
+        self.assertIn("Click a cell to play out that contract", text)
+        # Trick totals live in the diagram NW corner next to the hands.
+        nw = text.index('grid-filler-nw')
+        score = text.index('id="play-score"')
+        ne = text.index('grid-filler-ne')
+        self.assertLess(nw, score)
+        self.assertLess(score, ne)
 
     def test_disables_coep_credentialless_before_coi_serviceworker(self) -> None:
         # coi-serviceworker defaults to COEP: credentialless. Safari / iOS WebKit

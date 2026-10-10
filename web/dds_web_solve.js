@@ -4,8 +4,8 @@
 //   license that can be found in the LICENSE file or at
 //   https://opensource.org/licenses/MIT
 
-// Solver session for DDS Web: queue, WASM load, DD table, opening leads.
-// Loaded after dds_web_core.js and before dds_web.js (UI).
+// Solver session for DDS Web: queue, WASM load, DD table, play-position solves.
+// Loaded after dds_web_core.js and before dds_web_play.js / dds_web.js.
 
 /* eslint-env es6 */
 /* exported scheduleDealSolve setDealSolveDebounceMs invalidateActiveDdTableRequest
@@ -105,8 +105,15 @@
                         break;
                     }
 
-                    if (selectedContractState) {
-                        await global.refreshOpeningLeadTricks();
+                    // Contract may have been chosen before the DD cell filled.
+                    if (selectedContractState &&
+                            typeof global.ensurePlayForSelectedContract === "function") {
+                        global.ensurePlayForSelectedContract();
+                    }
+
+                    if (typeof global.isPlayMode === "function" &&
+                            global.isPlayMode()) {
+                        await global.refreshPlayTricks();
                     } else if (leadTricksByCardKey) {
                         leadTricksByCardKey = null;
                         global.updateHandCardDisplays(global.collectHands());
@@ -201,6 +208,25 @@
         }
     }
 
+    function readExpandedLeads(module, outPtr) {
+        const n = module.getValue(outPtr, "i32");
+        if (n < 0 || n > 13) {
+            throw new Error(
+                "DDS solve returned invalid card count (" + n + ")"
+            );
+        }
+        const out = [n];
+
+        for (let i = 0; i < n; i++) {
+            const base = outPtr + (1 + 3 * i) * 4;
+            out.push(module.getValue(base, "i32"));
+            out.push(module.getValue(base + 4, "i32"));
+            out.push(module.getValue(base + 8, "i32"));
+        }
+
+        return out;
+    }
+
     async function solveOpeningLeadTricks(hands, contract) {
         const leader = openingLeader(contract.direction);
         const trump = DENOM_TO_STRAIN[contract.denomination];
@@ -226,24 +252,105 @@
                 throw new Error("DDS lead solve error (code " + rc + ")");
             }
 
-            const n = module.getValue(outPtr, "i32");
-            if (n < 0 || n > 13) {
-                throw new Error(
-                    "DDS lead solve returned invalid card count (" + n + ")"
-                );
-            }
-            const out = [n];
-
-            for (let i = 0; i < n; i++) {
-                const base = outPtr + (1 + 3 * i) * 4;
-                out.push(module.getValue(base, "i32"));
-                out.push(module.getValue(base + 4, "i32"));
-                out.push(module.getValue(base + 8, "i32"));
-            }
-
-            return leadTricksMapFromSolverOutput(out);
+            return leadTricksMapFromSolverOutput(readExpandedLeads(module, outPtr));
         } finally {
             module._free(outPtr);
+        }
+    }
+
+    async function solvePlayPosition(state) {
+        const pos = global.solverPositionFromPlay(state);
+        const trump = DENOM_TO_STRAIN[state.denomination];
+
+        if (trump == null || pos.first == null) {
+            throw new Error("Invalid play position");
+        }
+
+        const module = await global.loadDdsModule();
+        const outPtr = module._malloc((1 + 13 * 3) * 4);
+
+        try {
+            const rc = module.ccall(
+                "dds_web_solve_plays",
+                "number",
+                [
+                    "string", "number", "number",
+                    "number", "number", "number", "number", "number", "number",
+                    "number",
+                ],
+                [
+                    pos.pbn,
+                    trump,
+                    pos.first,
+                    pos.trickSuits[0],
+                    pos.trickRanks[0],
+                    pos.trickSuits[1],
+                    pos.trickRanks[1],
+                    pos.trickSuits[2],
+                    pos.trickRanks[2],
+                    outPtr,
+                ]
+            );
+
+            if (rc !== 1) {
+                throw new Error("DDS play solve error (code " + rc + ")");
+            }
+
+            const out = readExpandedLeads(module, outPtr);
+            return global.playDiffMapFromSolverOutput(out, {
+                declarer: state.declarer,
+                seatToPlay: pos.seatToPlay,
+                nsTricks: pos.nsTricks,
+                ewTricks: pos.ewTricks,
+                remainingTricks: pos.remainingTricks,
+                targetTricks: state.targetTricks,
+            });
+        } finally {
+            module._free(outPtr);
+        }
+    }
+
+    async function refreshPlayTricks() {
+        const requestId = ++leadTricksRequestId;
+        const state = global.playState;
+
+        if (!state || state.history.length >= 52) {
+            if (requestId === leadTricksRequestId && state) {
+                state.pendingDiffs = null;
+                global.renderPlayUi();
+            }
+            return;
+        }
+
+        try {
+            const map = await global.solvePlayPosition(state);
+
+            if (requestId !== leadTricksRequestId || global.playState !== state) {
+                return;
+            }
+
+            state.pendingDiffs = map;
+            global.renderPlayUi();
+            if (typeof global.applyAutoPlayIfForced === "function") {
+                global.applyAutoPlayIfForced();
+            }
+        } catch (err) {
+            if (requestId !== leadTricksRequestId || global.playState !== state) {
+                return;
+            }
+
+            state.pendingDiffs = null;
+            global.renderPlayUi();
+
+            const result = document.getElementById("result");
+
+            if (result) {
+                result.innerHTML = err instanceof Error
+                    ? err.message
+                    : err == null
+                        ? "Unknown error"
+                        : String(err);
+            }
         }
     }
 
@@ -563,6 +670,8 @@
     global.invalidateActiveDdTableRequest = invalidateActiveDdTableRequest;
     global.solveOpeningLeadTricks = solveOpeningLeadTricks;
     global.refreshOpeningLeadTricks = refreshOpeningLeadTricks;
+    global.solvePlayPosition = solvePlayPosition;
+    global.refreshPlayTricks = refreshPlayTricks;
     global.clear_results = clear_results;
     global.setDdTableComputingDelayMs = setDdTableComputingDelayMs;
     global.clearDdTableComputingTimer = clearDdTableComputingTimer;
