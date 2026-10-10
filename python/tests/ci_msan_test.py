@@ -27,10 +27,14 @@ def _iter_call_bodies(call_names: tuple[str, ...], text: str) -> list[str]:
     the whole text, so a call name is only recognized outside both — a
     commented-out "bazel_dep(...)" line is correctly ignored, rather than a
     plain regex search finding the name text inside the comment and reading
-    its (ignored-by-Bazel) args as if they were live. The same running state
-    continues through each matched call's body, so a ")" inside a string,
-    comment, or nested call (e.g. select(...)) never ends the body early —
-    it always spans to its real matching ")".
+    its (ignored-by-Bazel) args as if they were live. Whitespace between the
+    name and "(" is tolerated ("archive_override (..." is valid Starlark).
+    The same running state continues through each matched call's body: a
+    ")" inside a string, comment, or nested call (e.g. select(...)) never
+    ends the body early, and "#" comment text is dropped from the returned
+    body (string contents are kept verbatim) so a commented-out assignment
+    inside the call's own args can't be mistaken by a caller's regex for a
+    live one.
     """
     sorted_names = sorted(call_names, key=len, reverse=True)
     bodies: list[str] = []
@@ -61,40 +65,63 @@ def _iter_call_bodies(call_names: tuple[str, ...], text: str) -> list[str]:
             in_string = ch
             i += 1
             continue
-        matched_name = next(
-            (
-                name
-                for name in sorted_names
-                if text.startswith(name, i) and text[i + len(name) : i + len(name) + 1] == "("
-            ),
-            None,
-        )
+        matched_name = None
+        paren_index = None
+        for name in sorted_names:
+            if text.startswith(name, i):
+                j = i + len(name)
+                while j < n and text[j] in " \t\r\n":
+                    j += 1
+                if j < n and text[j] == "(":
+                    matched_name = name
+                    paren_index = j
+                    break
         if matched_name is None:
             i += 1
             continue
-        i += len(matched_name) + 1
+        i = paren_index + 1
         depth = 1
-        body_start = i
+        body_chars: list[str] = []
         while i < n and depth > 0:
             bch = text[i]
             if in_comment:
                 if bch == "\n":
                     in_comment = False
-            elif in_string:
+                i += 1
+                continue
+            if in_string:
+                body_chars.append(bch)
                 if bch == "\\":
                     i += 1
+                    if i < n:
+                        body_chars.append(text[i])
                 elif bch == in_string:
                     in_string = None
-            elif bch == "#":
+                i += 1
+                continue
+            if bch == "#":
                 in_comment = True
-            elif bch in "\"'":
+                i += 1
+                continue
+            if bch in "\"'":
                 in_string = bch
-            elif bch == "(":
+                body_chars.append(bch)
+                i += 1
+                continue
+            if bch == "(":
                 depth += 1
-            elif bch == ")":
+                body_chars.append(bch)
+                i += 1
+                continue
+            if bch == ")":
                 depth -= 1
+                if depth > 0:
+                    body_chars.append(bch)
+                i += 1
+                continue
+            body_chars.append(bch)
             i += 1
-        bodies.append(text[body_start : i - 1])
+        bodies.append("".join(body_chars))
     return bodies
 
 
@@ -261,6 +288,17 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
 """
         self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
 
+    def test_toolchains_llvm_bazel_dep_version_ignores_commented_out_version(
+        self,
+    ) -> None:
+        """A stale version in a comment inside the call must not win."""
+        sample = """bazel_dep(
+    name = "toolchains_llvm",
+    # version = "9.9.9" (stale)
+    version = "1.11.2",
+)"""
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
     def test_has_toolchains_llvm_override_detects_same_line_args(self) -> None:
         sample = (
             'archive_override(module_name = "toolchains_llvm", '
@@ -303,6 +341,29 @@ single_version_override(
 )
 """
         self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_commented_module_name(
+        self,
+    ) -> None:
+        """A comment mentioning toolchains_llvm in an apple_support override
+
+        is not itself a toolchains_llvm override.
+        """
+        sample = """single_version_override(
+    # module_name = "toolchains_llvm" (old pin, no longer used)
+    module_name = "apple_support",
+    version = "2.10.1",
+)"""
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_tolerates_whitespace_before_paren(
+        self,
+    ) -> None:
+        sample = (
+            'archive_override (module_name = "toolchains_llvm", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
 
     def test_has_toolchains_llvm_override_detects_local_path_override(self) -> None:
         sample = """
