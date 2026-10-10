@@ -3882,7 +3882,31 @@ test("fitCenterDeckCards applies a second pass when fixed chrome still overflows
     // Assert: second pass pulls further under the single-pass 14.7px estimate.
     const size = parseFloat(layout.deck.style.fontSize);
     assert.ok(size < 14.7, `second pass should shrink below 14.7px, got ${size}`);
-    assert.ok(size >= 10);
+    assert.ok(size > 0);
+});
+
+test("fitCenterDeckCards scales below 10px when the center is extremely narrow", () => {
+    // Arrange: at a 10px floor the longest row would still be ~133px wide, but
+    // only 40px of content box remains — overflow into East unless we go lower.
+    const layout = mockCenterDeckLayout({
+        clientWidth: 64,
+        paddingLeft: "20px",
+        paddingRight: "4px",
+        rowScrollWidths: [400],
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitCenterDeckCards();
+
+    // Assert: available = 40; scale ≈ 30 * 40 / 400 = 3px.
+    const size = parseFloat(layout.deck.style.fontSize);
+    assert.ok(size < 10, `must shrink below the old 10px floor, got ${size}`);
+    assert.ok(Math.abs(size - 3) < 0.2, `expected ~3px, got ${size}`);
+    const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
+    assert.ok(needed <= 40, `row must fit the center content box, needed=${needed}`);
 });
 
 test("fitCenterDeckCards restores full size when rows fit the center cell", () => {

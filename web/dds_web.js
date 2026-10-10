@@ -375,6 +375,8 @@ function fitCenterDeckCards() {
 
     // Up to two passes: em chrome scales with font-size, but 1px borders do not,
     // so a single proportional shrink can still overhang by a few pixels.
+    // No readability floor: at extreme narrow widths we keep scaling so rows
+    // still fit the center cell instead of spilling into East.
     for (let pass = 0; pass < 2; pass++) {
         const needed = centerDeckRowOverflow(deckStatus);
 
@@ -382,7 +384,10 @@ function fitCenterDeckCards() {
             return;
         }
 
-        fontPx = Math.max(10, fontPx * (available / needed));
+        fontPx = fontPx * (available / needed);
+        if (!(fontPx > 0)) {
+            return;
+        }
         deckStatus.style.fontSize = fontPx + "px";
     }
 }
