@@ -75,6 +75,24 @@ on purpose: putting it in `build:macos --linkopt` would leak into wasm
 transitions and replace `wasm-ld`. Drop both workarounds when LLVM's Mach-O
 linker can parse `arm64e.x1` TBD targets.
 
+Switching the macOS link driver away from `ld64.lld` risks the
+`-flto=thin` invariant (see specs/build-system.md): classic `ld64` needed an
+explicit `-lto_library` plugin flag to perform LTO, which nothing here
+supplies. Verified on Xcode 27.0 / macOS 26.6.2 with
+`bazelisk build --linkopt=-Wl,-v //path:target` on a real target — plain
+`bazelisk build -s`/`-v` only print Bazel's own subcommand/log output and
+never reach the linker's own banner, so `-Wl,-v` is needed to make clang
+forward `-v` to the linker itself: Apple's linker reports `ld-27037.1` with
+`LTO support using: LLVM version 21.0.0` built in, so ThinLTO still runs
+through `/usr/bin/ld` without `-lto_library` on this linker generation.
+`python/tests/ci_macos_native_linker_test.py` only guards that `-flto=thin`
+stays requested in `CPPVARIABLES.bzl`; it cannot detect a future Xcode linker
+that keeps accepting the flag but silently stops doing cross-TU optimization
+with it (the build would still succeed; only the optimization would quietly
+go away). Re-check with `bazelisk build --linkopt=-Wl,-v //path:target` on a
+link action and look for `LTO support using:` in the linker's own stderr
+banner after any Xcode upgrade that touches the macOS linker.
+
 ### Linux linker (GNU ld)
 
 The upstream `LLVM-<version>-Linux-X64` archive that `toolchains_llvm`

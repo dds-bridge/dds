@@ -1,7 +1,7 @@
 ---
 capability: build-system
 owners: [//, CPPVARIABLES.bzl, wasm_compat.bzl]
-last-updated: 2026-10-05
+last-updated: 2026-10-08
 ---
 
 # Build System
@@ -70,6 +70,18 @@ than re-encoding toolchain knowledge.
   plus the JVM rules for [jni-ffm-binding](jni-ffm-binding.md)). Toolchains are hermetic
   (LLVM via `toolchains_llvm`, Emscripten via `emsdk`). Exact versions live in the
   file and drift; do not hard-code them elsewhere.
+- **The default macOS toolchain's compiler binary is hermetic (LLVM via
+  `toolchains_llvm`), but the installed macOS SDK and the linker are host
+  inputs.** Compilation reads the host-installed SDK's headers and `.tbd`
+  stubs, and native Darwin links use the host's `/usr/bin/ld` (Apple's own
+  linker, via `extra_link_flags` in `MODULE.bazel`) rather than the hermetic
+  `ld64.lld` — the hermetic linker can't parse newer macOS SDKs' `.tbd`
+  files; see `docs/BUILD_SYSTEM.md` ("Xcode 27 / MacOSX 27 SDK TBD files").
+  **Exception:** `--config=asan` goes further and switches macOS compilation
+  itself (not just the SDK/link) to the installed Xcode toolchain
+  (`local_config_apple_cc_toolchains`), because LLVM's bundled ASAN runtime
+  hangs at startup; see `docs/BUILD_SYSTEM.md` ("Clang / Xcode version
+  coupling").
 - **Linux builds are hermetic except for the host C runtime and linker.** No
   sysroot is configured: Linux compiles use the host's glibc headers and crt
   files, and link with the host's GNU `ld` (`/usr/bin/ld`, via
@@ -98,6 +110,10 @@ than re-encoding toolchain knowledge.
   `DDS_SCHEDULER_DEFINE`.
 - `patches/rules_cc_msvc_default_cpp_std_cxx20.patch` — raises MSVC
   `default_cpp_std` from `/std:c++17` to `/std:c++20` (wired in `MODULE.bazel`).
+- `patches/apple_support_macos_min_11.patch`,
+  `patches/apple_support_libtool_nodiscard.patch` — Xcode 27 crosstool-helper
+  fixes for `apple_support` (wired via `single_version_override` in
+  `MODULE.bazel`); see `docs/BUILD_SYSTEM.md`.
 - `wasm_compat.bzl` — `WASM_LINKOPTS`.
 - `MODULE.bazel` — the Bazel module and its `bazel_dep` graph (including
   `@llvm_toolchain_msan` for MemorySanitizer).
