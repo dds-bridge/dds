@@ -550,7 +550,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             self.assertLessEqual(metrics["tableRight"], metrics["seRight"] + 1.0)
             self.assertLessEqual(metrics["tableBottom"], metrics["seBottom"] + 1.0)
 
-            # Unsolved matrix: no click-hint above the table.
+            # Unsolved matrix (file://): no click-hint above the table.
             hint = page.locator(".result-table-hint")
             self.assertTrue(hint.is_hidden())
             hint_inside_se = page.evaluate(
@@ -560,28 +560,6 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
               }"""
             )
             self.assertTrue(hint_inside_se)
-
-            page.get_by_label("Sample deals").select_option(label="Part-score")
-            self._wait_for_dd_table(page)
-            self.assertTrue(hint.is_visible())
-            self.assertEqual(
-                hint.inner_text(), "Click a cell to play out that contract"
-            )
-            hint_layout = page.evaluate(
-                """() => {
-                const hint = document.querySelector('.result-table-hint')
-                  .getBoundingClientRect();
-                const table = document.getElementById('result-table')
-                  .getBoundingClientRect();
-                return {
-                  hintBottom: hint.bottom,
-                  tableTop: table.top,
-                };
-              }"""
-            )
-            self.assertLessEqual(
-                hint_layout["hintBottom"], hint_layout["tableTop"] + 1.0
-            )
             self.assertEqual(errors, [])
         finally:
             page.close()
@@ -1333,9 +1311,30 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     msg="HTTP must decode HTML as UTF-8 so suit glyphs are not mojibake",
                 )
                 self.assertEqual(page.locator("#double-dummy-it").count(), 0)
+                hint = page.locator(".result-table-hint")
+                self.assertTrue(hint.is_hidden())
                 self._fill_part_score_deal(page)
                 self._wait_for_dd_table(page)
                 self._assert_part_score_table(page)
+                self.assertTrue(hint.is_visible())
+                self.assertEqual(
+                    hint.inner_text(), "Click a cell to play out that contract"
+                )
+                hint_layout = page.evaluate(
+                    """() => {
+                    const hint = document.querySelector('.result-table-hint')
+                      .getBoundingClientRect();
+                    const table = document.getElementById('result-table')
+                      .getBoundingClientRect();
+                    return {
+                      hintBottom: hint.bottom,
+                      tableTop: table.top,
+                    };
+                  }"""
+                )
+                self.assertLessEqual(
+                    hint_layout["hintBottom"], hint_layout["tableTop"] + 1.0
+                )
                 self.assertEqual(errors, [])
             finally:
                 page.close()
@@ -1354,6 +1353,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     return cell && cell.textContent.trim() === '';
                   }"""
                 )
+                self.assertTrue(page.locator(".result-table-hint").is_hidden())
                 self.assertEqual(errors, [])
             finally:
                 page.close()
