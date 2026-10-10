@@ -339,6 +339,17 @@ function centerDeckRowOverflow(deckStatus) {
     return needed;
 }
 
+function clearCenterDeckFitStyles(deckStatus) {
+    deckStatus.style.fontSize = "";
+    deckStatus.style.maxWidth = "";
+    deckStatus.style.overflowX = "";
+}
+
+function clipCenterDeckToAvailable(deckStatus, available) {
+    deckStatus.style.maxWidth = available + "px";
+    deckStatus.style.overflowX = "hidden";
+}
+
 function fitCenterDeckCards() {
     const deckStatus = document.getElementById("deck-status");
 
@@ -347,8 +358,8 @@ function fitCenterDeckCards() {
     }
 
     // Prefer clearing any prior shrink so a hidden or roomy deck returns to the
-    // CSS seat size (30px) instead of keeping a stale inline font-size.
-    deckStatus.style.fontSize = "";
+    // CSS seat size (30px) instead of keeping a stale inline fit.
+    clearCenterDeckFitStyles(deckStatus);
 
     if (deckStatus.hidden) {
         return;
@@ -371,25 +382,39 @@ function fitCenterDeckCards() {
         return;
     }
 
-    let fontPx = CENTER_DECK_FONT_PX;
     // Sub-pixel slack: float remeasure can leave needed a hair above available.
     const fitEpsilonPx = 0.5;
+    const neededFull = centerDeckRowOverflow(deckStatus);
 
-    // Remeasure until rows fit. Em chrome scales with font-size, but 1px borders
-    // do not, so a single proportional shrink can still overhang; keep iterating
-    // (bounded) with no readability floor so extreme narrow widths still fit.
-    for (let pass = 0; pass < 8; pass++) {
-        const needed = centerDeckRowOverflow(deckStatus);
+    if (!(neededFull > available + fitEpsilonPx)) {
+        return;
+    }
 
-        if (!(needed > available + fitEpsilonPx)) {
-            return;
-        }
+    // 1px card borders do not scale with font-size. Probe near-zero font to
+    // estimate that fixed chrome, then solve for the font that fits in one shot
+    // (proportional iteration converges too slowly near the fixed floor).
+    deckStatus.style.fontSize = "0.01px";
+    const fixedPx = centerDeckRowOverflow(deckStatus);
+    const scalablePx = neededFull - fixedPx;
 
-        fontPx = fontPx * (available / needed);
-        if (!(fontPx > 0)) {
-            return;
-        }
-        deckStatus.style.fontSize = fontPx + "px";
+    if (!(fixedPx <= available + fitEpsilonPx) || !(scalablePx > 0)) {
+        clearCenterDeckFitStyles(deckStatus);
+        clipCenterDeckToAvailable(deckStatus, available);
+        return;
+    }
+
+    const fontPx = CENTER_DECK_FONT_PX * (available - fixedPx) / scalablePx;
+
+    if (!(fontPx > 0)) {
+        clearCenterDeckFitStyles(deckStatus);
+        clipCenterDeckToAvailable(deckStatus, available);
+        return;
+    }
+
+    deckStatus.style.fontSize = fontPx + "px";
+
+    if (centerDeckRowOverflow(deckStatus) > available + fitEpsilonPx) {
+        clipCenterDeckToAvailable(deckStatus, available);
     }
 }
 

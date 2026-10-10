@@ -3795,6 +3795,8 @@ function mockCenterDeckLayout({
         id: "deck-status",
         hidden,
         style: {
+            maxWidth: "",
+            overflowX: "",
             get fontSize() {
                 return fontPx === 30 ? "" : fontPx + "px";
             },
@@ -3871,9 +3873,9 @@ test("fitCenterDeckCards shrinks deck font when suit rows overflow the center ce
     assert.ok(Math.abs(size - 14.7) < 0.2, `expected ~14.7px, got ${size}`);
 });
 
-test("fitCenterDeckCards keeps iterating until fixed chrome fits the center", () => {
-    // Arrange: after a proportional shrink, non-scaling borders still spill.
-    // Two passes leave ~198px needed for available=196; more passes must fit.
+test("fitCenterDeckCards solves font size so fixed chrome still fits", () => {
+    // Arrange: pure proportional shrink leaves ~216px needed for available=196
+    // because 20px of borders do not scale; the closed-form fit must land inside.
     const layout = mockCenterDeckLayout({
         clientWidth: 220,
         paddingLeft: "20px",
@@ -3894,7 +3896,7 @@ test("fitCenterDeckCards keeps iterating until fixed chrome fits the center", ()
     const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
     assert.ok(
         needed <= layout.available + 0.5,
-        `row must fit after fixed-chrome passes, needed=${needed} available=${layout.available}`
+        `row must fit with fixed chrome, needed=${needed} available=${layout.available}`
     );
 });
 
@@ -3920,6 +3922,53 @@ test("fitCenterDeckCards scales below 10px when the center is extremely narrow",
     assert.ok(Math.abs(size - 3) < 0.2, `expected ~3px, got ${size}`);
     const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
     assert.ok(needed <= 40, `row must fit the center content box, needed=${needed}`);
+});
+
+test("fitCenterDeckCards accounts for per-card fixed borders at extreme width", () => {
+    // Arrange: 13 cards × 2px borders ≈ 26px fixed; available=30 leaves little
+    // scalable room — proportional passes converge too slowly without a closed form.
+    const layout = mockCenterDeckLayout({
+        clientWidth: 54,
+        paddingLeft: "20px",
+        paddingRight: "4px",
+        rowScrollWidths: [400],
+        fixedOverflowPx: 26,
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitCenterDeckCards();
+
+    // Assert
+    const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
+    assert.ok(
+        needed <= layout.available + 0.5,
+        `must fit with real fixed-border cost, needed=${needed} available=${layout.available}`
+    );
+    assert.equal(layout.deck.style.overflowX, "");
+});
+
+test("fitCenterDeckCards clips when fixed chrome alone exceeds the center", () => {
+    // Arrange: non-scaling chrome wider than the content box — font cannot fit.
+    const layout = mockCenterDeckLayout({
+        clientWidth: 54,
+        paddingLeft: "20px",
+        paddingRight: "4px",
+        rowScrollWidths: [400],
+        fixedOverflowPx: 40,
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    // Act
+    ctx.fitCenterDeckCards();
+
+    // Assert: clip fallback keeps painted overflow inside the center cell.
+    assert.equal(layout.deck.style.maxWidth, "30px");
+    assert.equal(layout.deck.style.overflowX, "hidden");
 });
 
 test("fitCenterDeckCards restores full size when rows fit the center cell", () => {
