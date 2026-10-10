@@ -20,6 +20,32 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
+def _toolchains_llvm_bazel_dep_version(module_bazel: str) -> str:
+    match = re.search(
+        r'bazel_dep\(\s*name\s*=\s*"toolchains_llvm"\s*,\s*version\s*=\s*"([^"]+)"',
+        module_bazel,
+    )
+    if match is None:
+        raise AssertionError('expected bazel_dep(... name = "toolchains_llvm" ...)')
+    return match.group(1)
+
+
+def _has_toolchains_llvm_override(module_bazel: str) -> bool:
+    """True if any override pins toolchains_llvm to a specific commit/archive.
+
+    Matches each override call's full argument body regardless of argument
+    order or formatting, rather than assuming module_name is the first line
+    after the opening "(".
+    """
+    for call in re.finditer(
+        r"(?:archive_override|single_version_override|git_override)\(\s*([^)]*)\)",
+        module_bazel,
+    ):
+        if re.search(r'module_name\s*=\s*"toolchains_llvm"', call.group(1)):
+            return True
+    return False
+
+
 class TestMsanBazelConfig(unittest.TestCase):
     def test_bazelrc_defines_msan_config(self) -> None:
         bazelrc = (_repo_root() / ".bazelrc").read_text(encoding="utf-8")
@@ -109,23 +135,50 @@ class TestMsanBazelConfig(unittest.TestCase):
         )
 
     def test_module_pins_toolchains_llvm_past_unused_stdlib_fix(self) -> None:
-        """BCR 1.8.0 emits unused -stdlib=libc++; -Werror breaks Linux builds.
+        """BCR 1.8.0 emitted unused -stdlib=libc++, breaking Linux -Werror builds.
 
-        toolchains_llvm #791 drops the redundant flag. Until BCR ships a release
-        that includes it, MODULE.bazel must archive_override past that commit.
+        toolchains_llvm#791 dropped the redundant flag; it shipped in the 1.9.0
+        release, so a plain bazel_dep replaces the archive_override this
+        project used to carry to pin a specific pre-release commit.
         """
         module = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
-        self.assertRegex(
-            module,
-            r'archive_override\(\s*\n\s*module_name\s*=\s*"toolchains_llvm"',
-            "expected archive_override for toolchains_llvm until BCR > 1.8.0",
+        version = tuple(
+            int(p) for p in _toolchains_llvm_bazel_dep_version(module).split(".")
         )
-        # Merge commit of bazel-contrib/toolchains_llvm#791.
-        self.assertIn(
-            "c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c",
-            module,
-            "toolchains_llvm override must include the unused -stdlib=libc++ fix",
+        self.assertGreaterEqual(
+            version,
+            (1, 9, 0),
+            "toolchains_llvm must stay >= 1.9.0 (drops unused -stdlib=libc++, #791)",
         )
+        self.assertFalse(
+            _has_toolchains_llvm_override(module),
+            "toolchains_llvm no longer needs an archive_override pin",
+        )
+
+    def test_has_toolchains_llvm_override_detects_same_line_args(self) -> None:
+        sample = (
+            'archive_override(module_name = "toolchains_llvm", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_reordered_args(self) -> None:
+        sample = """
+archive_override(
+    strip_prefix = "toolchains_llvm-abc123",
+    module_name = "toolchains_llvm",
+)
+"""
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_other_modules(self) -> None:
+        sample = """
+single_version_override(
+    module_name = "apple_support",
+    version = "2.10.1",
+)
+"""
+        self.assertFalse(_has_toolchains_llvm_override(sample))
 
 
 class TestMsanLinuxCi(unittest.TestCase):
