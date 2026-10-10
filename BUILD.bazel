@@ -121,6 +121,18 @@ filegroup(
     visibility = ["//python:__pkg__"],
 )
 
+# Globbed (not enumerated) so a future PR that reintroduces a retired
+# patches/*.patch file automatically lands it in these runfiles too, letting
+# ci_macos_asan_test's existence checks see it.
+filegroup(
+    name = "macos_asan_ci_config_files",
+    srcs = glob(["patches/*.patch"]) + [
+        ".bazelrc",
+        "MODULE.bazel",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 genrule(

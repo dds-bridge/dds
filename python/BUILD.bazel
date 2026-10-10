@@ -150,8 +150,7 @@ py_test(
     main = "tests/ci_macos_asan_test.py",
     srcs = ["tests/ci_macos_asan_test.py"],
     data = [
-        "//:.bazelrc",
-        "//:MODULE.bazel",
+        "//:macos_asan_ci_config_files",
     ],
 )
 

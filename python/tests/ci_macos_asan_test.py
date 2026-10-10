@@ -21,6 +21,19 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
+def _has_apple_support_override(module_bazel: str) -> bool:
+    """True if any single_version_override targets apple_support.
+
+    Matches each override call's full argument body regardless of argument
+    order or whether module_name shares a line with the opening "(", instead
+    of assuming module_name is the first line after "single_version_override(".
+    """
+    for call in re.finditer(r"single_version_override\(\s*([^)]*)\)", module_bazel):
+        if re.search(r'module_name\s*=\s*"apple_support"', call.group(1)):
+            return True
+    return False
+
+
 class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
     def test_module_pins_apple_support_past_xcode27_crosstool_fixes(self) -> None:
         """apple_support < 2.8.4 needs -mmacosx-version-min=11.0 and a dead
@@ -41,9 +54,8 @@ class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
             (2, 8, 4),
             "apple_support must stay >= 2.8.4 (Xcode 27 ASAN crosstool fixes)",
         )
-        self.assertNotRegex(
-            module,
-            r'single_version_override\(\s*\n\s*module_name\s*=\s*"apple_support"',
+        self.assertFalse(
+            _has_apple_support_override(module),
             "apple_support no longer needs a single_version_override/patches",
         )
 
@@ -57,6 +69,31 @@ class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
             (root / "patches" / "apple_support_libtool_nodiscard.patch").exists(),
             "libtool nodiscard patch is obsolete once apple_support >= 2.8.4 is pinned",
         )
+
+    def test_has_apple_support_override_detects_same_line_args(self) -> None:
+        sample = (
+            'single_version_override(module_name = "apple_support", version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_reordered_args(self) -> None:
+        sample = """
+single_version_override(
+    patches = ["//:patches/apple_support_macos_min_11.patch"],
+    version = "1.24.2",
+    module_name = "apple_support",
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_ignores_other_modules(self) -> None:
+        sample = """
+single_version_override(
+    module_name = "rules_cc",
+    version = "0.2.26",
+)
+"""
+        self.assertFalse(_has_apple_support_override(sample))
 
 
 if __name__ == "__main__":
