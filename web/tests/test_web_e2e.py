@@ -980,6 +980,150 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_east_hand_shrinks_instead_of_overflowing_window(self) -> None:
+        """When the diagram narrows, East holdings shrink instead of extending past the right edge."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#east_spades").fill("AKQJT98765432")
+            page.locator("#east_spades").dispatch_event("input")
+            page.set_viewport_size({"width": 1280, "height": 900})
+            page.wait_for_function(
+                """() => {
+                  const east = document.querySelector('.hand-east');
+                  return parseFloat(getComputedStyle(east).fontSize) < 30;
+                }"""
+            )
+            wide = page.evaluate(
+                """() => {
+                  const east = document.querySelector('.hand-east');
+                  const last = document.querySelector(
+                    '.hand-east .hand-card[data-card="S2"]'
+                  );
+                  return {
+                    handFont: parseFloat(getComputedStyle(east).fontSize),
+                    cardFont: parseFloat(getComputedStyle(last).fontSize),
+                  };
+                }"""
+            )
+
+            page.set_viewport_size({"width": 720, "height": 900})
+            page.wait_for_function(
+                """(wideFont) => {
+                  const east = document.querySelector('.hand-east');
+                  return parseFloat(getComputedStyle(east).fontSize) < wideFont - 0.25;
+                }""",
+                arg=wide["handFont"],
+            )
+            narrow = page.evaluate(
+                """() => {
+                  const last = document.querySelector(
+                    '.hand-east .hand-card[data-card="S2"]'
+                  );
+                  const east = document.querySelector('.hand-east');
+                  const lastBox = last.getBoundingClientRect();
+                  return {
+                    lastRight: lastBox.right,
+                    windowRight: window.innerWidth,
+                    handFont: parseFloat(getComputedStyle(east).fontSize),
+                    cardFont: parseFloat(getComputedStyle(last).fontSize),
+                  };
+                }"""
+            )
+
+            self.assertLess(
+                narrow["handFont"],
+                wide["handFont"],
+                msg="narrow window must shrink the East hand font",
+            )
+            self.assertLess(
+                narrow["cardFont"],
+                wide["cardFont"],
+                msg="narrow window must shrink East card pips",
+            )
+            self.assertLessEqual(
+                narrow["lastRight"],
+                narrow["windowRight"] - 1,
+                msg="shrunk East spade row must not run past the window edge",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
+    def test_south_hand_shrinks_instead_of_covering_contract_matrix(self) -> None:
+        """When the diagram narrows, South holdings shrink instead of covering SE."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            # One full suit in South makes the holding wider than a narrow south cell.
+            page.locator("#south_spades").fill("AKQJT98765432")
+            page.locator("#south_spades").dispatch_event("input")
+            page.set_viewport_size({"width": 1280, "height": 900})
+            # Full-suit South already shrinks under the 1100px diagram cap; wait
+            # until that wide fit settles before recording the baseline.
+            page.wait_for_function(
+                """() => {
+                  const south = document.querySelector('.hand-south');
+                  return parseFloat(getComputedStyle(south).fontSize) < 30;
+                }"""
+            )
+            wide = page.evaluate(
+                """() => {
+                  const south = document.querySelector('.hand-south');
+                  const last = document.querySelector(
+                    '.hand-south .hand-card[data-card="S2"]'
+                  );
+                  return {
+                    handFont: parseFloat(getComputedStyle(south).fontSize),
+                    cardFont: parseFloat(getComputedStyle(last).fontSize),
+                  };
+                }"""
+            )
+
+            page.set_viewport_size({"width": 720, "height": 900})
+            # Wide fit is already < 30px; wait for a further shrink on narrow.
+            page.wait_for_function(
+                """(wideFont) => {
+                  const south = document.querySelector('.hand-south');
+                  return parseFloat(getComputedStyle(south).fontSize) < wideFont - 0.25;
+                }""",
+                arg=wide["handFont"],
+            )
+            narrow = page.evaluate(
+                """() => {
+                  const last = document.querySelector(
+                    '.hand-south .hand-card[data-card="S2"]'
+                  );
+                  const matrix = document.getElementById('result-table');
+                  const south = document.querySelector('.hand-south');
+                  const lastBox = last.getBoundingClientRect();
+                  const matrixBox = matrix.getBoundingClientRect();
+                  return {
+                    lastRight: lastBox.right,
+                    matrixLeft: matrixBox.left,
+                    handFont: parseFloat(getComputedStyle(south).fontSize),
+                    cardFont: parseFloat(getComputedStyle(last).fontSize),
+                  };
+                }"""
+            )
+
+            self.assertLess(
+                narrow["handFont"],
+                wide["handFont"],
+                msg="narrow window must shrink the South hand font",
+            )
+            self.assertLess(
+                narrow["cardFont"],
+                wide["cardFont"],
+                msg="narrow window must shrink South card pips",
+            )
+            self.assertLessEqual(
+                narrow["lastRight"],
+                narrow["matrixLeft"] - 1,
+                msg="shrunk South spade row must not run into the contract matrix",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_undeployed_cards_match_dealt_hand_card_chrome(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:

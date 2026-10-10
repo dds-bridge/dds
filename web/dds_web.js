@@ -36,6 +36,9 @@
             handHoldingHtml
             escapeHtml
             fitCenterDeckCards
+            fitSouthHandCards
+            fitEastHandCards
+            fitDiagramFonts
             updateHandCardDisplays
             addCardToHand
             removeCardFromHand
@@ -327,27 +330,87 @@ function deckStatusHtml(hands) {
     }).join("");
 }
 
-const CENTER_DECK_FONT_PX = 30;
+const SEAT_FONT_PX = 30;
+const FIT_EPSILON_PX = 0.5;
 
-function centerDeckRowOverflow(deckStatus) {
+function maxRowScrollWidth(root, rowSelector) {
     let needed = 0;
 
-    for (const row of deckStatus.querySelectorAll(".deck-suit-row")) {
+    if (!root || typeof root.querySelectorAll !== "function") {
+        return 0;
+    }
+
+    for (const row of root.querySelectorAll(rowSelector)) {
         needed = Math.max(needed, row.scrollWidth || 0);
     }
 
     return needed;
 }
 
-function clearCenterDeckFitStyles(deckStatus) {
-    deckStatus.style.fontSize = "";
-    deckStatus.style.maxWidth = "";
-    deckStatus.style.overflowX = "";
+function contentBoxWidth(element) {
+    if (!element || typeof getComputedStyle !== "function") {
+        return 0;
+    }
+
+    const style = getComputedStyle(element);
+
+    return element.clientWidth -
+        (parseFloat(style.paddingLeft) || 0) -
+        (parseFloat(style.paddingRight) || 0);
 }
 
-function clipCenterDeckToAvailable(deckStatus, available) {
-    deckStatus.style.maxWidth = available + "px";
-    deckStatus.style.overflowX = "hidden";
+function clearFitStyles(element) {
+    element.style.fontSize = "";
+    element.style.maxWidth = "";
+    element.style.overflowX = "";
+}
+
+function clipElementToAvailable(element, available) {
+    element.style.maxWidth = available + "px";
+    element.style.overflowX = "hidden";
+}
+
+function fitFontToContentWidth(element, available, rowSelector, baseFontPx) {
+    // Prefer clearing any prior shrink so a roomy box returns to the CSS seat
+    // size instead of keeping a stale inline fit.
+    clearFitStyles(element);
+
+    if (!(available > 0)) {
+        return;
+    }
+
+    const neededFull = maxRowScrollWidth(element, rowSelector);
+
+    if (!(neededFull > available + FIT_EPSILON_PX)) {
+        return;
+    }
+
+    // 1px card borders do not scale with font-size. Probe near-zero font to
+    // estimate that fixed chrome, then solve for the font that fits in one shot
+    // (proportional iteration converges too slowly near the fixed floor).
+    element.style.fontSize = "0.01px";
+    const fixedPx = maxRowScrollWidth(element, rowSelector);
+    const scalablePx = neededFull - fixedPx;
+
+    if (!(fixedPx <= available + FIT_EPSILON_PX) || !(scalablePx > 0)) {
+        clearFitStyles(element);
+        clipElementToAvailable(element, available);
+        return;
+    }
+
+    const fontPx = baseFontPx * (available - fixedPx) / scalablePx;
+
+    if (!(fontPx > 0)) {
+        clearFitStyles(element);
+        clipElementToAvailable(element, available);
+        return;
+    }
+
+    element.style.fontSize = fontPx + "px";
+
+    if (maxRowScrollWidth(element, rowSelector) > available + FIT_EPSILON_PX) {
+        clipElementToAvailable(element, available);
+    }
 }
 
 function fitCenterDeckCards() {
@@ -357,9 +420,7 @@ function fitCenterDeckCards() {
         return;
     }
 
-    // Prefer clearing any prior shrink so a hidden or roomy deck returns to the
-    // CSS seat size (30px) instead of keeping a stale inline fit.
-    clearCenterDeckFitStyles(deckStatus);
+    clearFitStyles(deckStatus);
 
     if (deckStatus.hidden) {
         return;
@@ -369,53 +430,51 @@ function fitCenterDeckCards() {
         ? document.querySelector(".grid-filler-center")
         : null;
 
-    if (!center || typeof getComputedStyle !== "function") {
+    if (!center) {
         return;
     }
 
-    const style = getComputedStyle(center);
-    const available = center.clientWidth -
-        (parseFloat(style.paddingLeft) || 0) -
-        (parseFloat(style.paddingRight) || 0);
+    fitFontToContentWidth(
+        deckStatus,
+        contentBoxWidth(center),
+        ".deck-suit-row",
+        SEAT_FONT_PX
+    );
+}
 
-    if (!(available > 0) || typeof deckStatus.querySelectorAll !== "function") {
+function fitSeatHandCards(seatSelector) {
+    const hand = typeof document.querySelector === "function"
+        ? document.querySelector(seatSelector)
+        : null;
+
+    if (!hand) {
         return;
     }
 
-    // Sub-pixel slack: float remeasure can leave needed a hair above available.
-    const fitEpsilonPx = 0.5;
-    const neededFull = centerDeckRowOverflow(deckStatus);
+    // Clear clip/maxWidth before measuring: an earlier narrow fit's inline
+    // maxWidth would otherwise keep clientWidth stuck at the clipped size.
+    clearFitStyles(hand);
 
-    if (!(neededFull > available + fitEpsilonPx)) {
-        return;
-    }
+    fitFontToContentWidth(
+        hand,
+        contentBoxWidth(hand),
+        ".hand-suit",
+        SEAT_FONT_PX
+    );
+}
 
-    // 1px card borders do not scale with font-size. Probe near-zero font to
-    // estimate that fixed chrome, then solve for the font that fits in one shot
-    // (proportional iteration converges too slowly near the fixed floor).
-    deckStatus.style.fontSize = "0.01px";
-    const fixedPx = centerDeckRowOverflow(deckStatus);
-    const scalablePx = neededFull - fixedPx;
+function fitSouthHandCards() {
+    fitSeatHandCards(".hand-south");
+}
 
-    if (!(fixedPx <= available + fitEpsilonPx) || !(scalablePx > 0)) {
-        clearCenterDeckFitStyles(deckStatus);
-        clipCenterDeckToAvailable(deckStatus, available);
-        return;
-    }
+function fitEastHandCards() {
+    fitSeatHandCards(".hand-east");
+}
 
-    const fontPx = CENTER_DECK_FONT_PX * (available - fixedPx) / scalablePx;
-
-    if (!(fontPx > 0)) {
-        clearCenterDeckFitStyles(deckStatus);
-        clipCenterDeckToAvailable(deckStatus, available);
-        return;
-    }
-
-    deckStatus.style.fontSize = fontPx + "px";
-
-    if (centerDeckRowOverflow(deckStatus) > available + fitEpsilonPx) {
-        clipCenterDeckToAvailable(deckStatus, available);
-    }
+function fitDiagramFonts() {
+    fitCenterDeckCards();
+    fitSouthHandCards();
+    fitEastHandCards();
 }
 
 function updateDeckStatus(hands) {
@@ -736,6 +795,9 @@ function updateHandCardDisplays(hands) {
             }
         }
     }
+
+    fitSouthHandCards();
+    fitEastHandCards();
 }
 
 function onHandCardClick(direction, card) {
@@ -1971,7 +2033,7 @@ function pageLoad() {
     }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
     if (typeof window !== "undefined" && window.addEventListener) {
-        window.addEventListener("resize", fitCenterDeckCards);
+        window.addEventListener("resize", fitDiagramFonts);
     }
     updateActionButtons();
     focusNorthSpades();
