@@ -36,30 +36,36 @@ def _skip_comment(text: str, i: int, n: int) -> int:
     return i
 
 
-def _skip_string(text: str, i: int, n: int) -> tuple[int, str | None]:
+def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
     """Return (end_index, value) for the string literal starting at text[i].
 
-    Handles Starlark triple-quoted strings as a single opaque unit (value
-    is None — never needed as a captured kwarg value here, and critically,
-    none of its content — including a quote character that would otherwise
-    look like the end of a single-quoted string — is scanned character by
-    character for a fake nested call). Ordinary quoted strings are handled
-    with backslash escapes (value is the unescaped content).
+    Handles Starlark triple-quoted strings as a single opaque unit — the
+    closing delimiter is matched as the 3-character sequence, never a
+    single quote character, so none of the content in between (including
+    an embedded quote that would otherwise look like the end of an
+    ordinary string) is ever scanned character by character for a fake
+    nested call — while still extracting its value just like an ordinary
+    quoted string, so a (valid, if unusual) triple-quoted keyword value is
+    captured rather than silently dropped. Both forms handle backslash
+    escapes (value is the unescaped content).
     """
     quote = text[i]
     if text[i : i + 3] == quote * 3:
         delim = quote * 3
         j = i + 3
+        chars: list[str] = []
         while j < n:
-            if text[j] == "\\":
+            if text[j] == "\\" and j + 1 < n:
+                chars.append(text[j + 1])
                 j += 2
                 continue
             if text[j : j + 3] == delim:
-                return j + 3, None
+                return j + 3, "".join(chars)
+            chars.append(text[j])
             j += 1
-        return n, None
+        return n, "".join(chars)
     j = i + 1
-    chars: list[str] = []
+    chars = []
     while j < n:
         if text[j] == "\\" and j + 1 < n:
             chars.append(text[j + 1])
@@ -157,8 +163,7 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
             if ch in "\"'":
                 if at_top and _POSITIONAL_KEY not in kwargs:
                     end, value = _skip_string(text, i, n)
-                    if value is not None:
-                        kwargs[_POSITIONAL_KEY] = value
+                    kwargs[_POSITIONAL_KEY] = value
                     i = end
                     continue
                 i, _ = _skip_string(text, i, n)
@@ -196,8 +201,7 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                         j = _skip_ws(text, j + 1, n)
                         if j < n and text[j] in "\"'":
                             end, value = _skip_string(text, j, n)
-                            if value is not None:
-                                kwargs[ident] = value
+                            kwargs[ident] = value
                             i = end
                             continue
                     i = m.end()
@@ -454,6 +458,19 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
         """
         sample = (
             'archive_override("toolchains_llvm", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_triple_quoted_module_name(
+        self,
+    ) -> None:
+        """A triple-quoted keyword value is valid Starlark and must still
+
+        be extracted, not silently treated as absent.
+        """
+        sample = (
+            'archive_override(module_name = """toolchains_llvm""", '
             'strip_prefix = "toolchains_llvm-abc123")'
         )
         self.assertTrue(_has_toolchains_llvm_override(sample))
