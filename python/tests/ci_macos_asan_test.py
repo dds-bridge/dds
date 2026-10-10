@@ -21,6 +21,16 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
+def _apple_support_bazel_dep_version(module_bazel: str) -> str:
+    for match in re.finditer(r"bazel_dep\(\s*([^)]*)\)", module_bazel):
+        body = match.group(1)
+        name = re.search(r'name\s*=\s*"apple_support"', body)
+        version = re.search(r'version\s*=\s*"([^"]+)"', body)
+        if name and version:
+            return version.group(1)
+    raise AssertionError('expected bazel_dep(... name = "apple_support" ...)')
+
+
 def _has_apple_support_override(module_bazel: str) -> bool:
     """True if any override pins apple_support to a specific commit/version set.
 
@@ -48,12 +58,9 @@ class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
         this project used to carry.
         """
         module = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
-        dep = re.search(
-            r'bazel_dep\(\s*name\s*=\s*"apple_support"\s*,\s*version\s*=\s*"([^"]+)"',
-            module,
+        version = tuple(
+            int(p) for p in _apple_support_bazel_dep_version(module).split(".")
         )
-        self.assertIsNotNone(dep, "expected a direct apple_support bazel_dep")
-        version = tuple(int(p) for p in dep.group(1).split("."))
         self.assertGreaterEqual(
             version,
             (2, 8, 4),
@@ -74,6 +81,12 @@ class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
             (root / "patches" / "apple_support_libtool_nodiscard.patch").exists(),
             "libtool nodiscard patch is obsolete once apple_support >= 2.8.4 is pinned",
         )
+
+    def test_apple_support_bazel_dep_version_tolerates_reordered_args(
+        self,
+    ) -> None:
+        sample = 'bazel_dep(version = "2.10.1", name = "apple_support")'
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
 
     def test_has_apple_support_override_detects_same_line_args(self) -> None:
         sample = (
