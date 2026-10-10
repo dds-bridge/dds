@@ -101,9 +101,10 @@ with mid-trick solves for legal cards.
   - **Full deal:** the cell is a contract (declarer × strain). Play starts with
     that declarer's LHO on lead. Card badges are contract-relative
     (`formatPlayDiff` over/under the selected target).
-  - **Partial deal:** there is no contract. The cell's column seat is placed on
-    lead in that strain. Card badges are absolute side-to-play trick totals
-    (solver remaining score plus tricks already won by that side).
+  - **Partial deal:** there is no contract. The cell's row seat is placed on
+    lead in that strain (columns are strains). Card badges are absolute
+    side-to-play trick totals (solver remaining score plus tricks already won
+    by that side).
   `dds_web_play.js` owns play state (history, trick score, undo via ⌘/Ctrl-Z,
   and the badge mode above). Legal cards — including the opening lead with an
   empty current trick — are scored via `refreshPlayTricks` →
