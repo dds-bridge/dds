@@ -35,6 +35,7 @@
             undeployedCardHtml
             handHoldingHtml
             escapeHtml
+            fitCenterDeckCards
             updateHandCardDisplays
             addCardToHand
             removeCardFromHand
@@ -326,11 +327,103 @@ function deckStatusHtml(hands) {
     }).join("");
 }
 
+const CENTER_DECK_FONT_PX = 30;
+
+function centerDeckRowOverflow(deckStatus) {
+    let needed = 0;
+
+    for (const row of deckStatus.querySelectorAll(".deck-suit-row")) {
+        needed = Math.max(needed, row.scrollWidth || 0);
+    }
+
+    return needed;
+}
+
+function clearCenterDeckFitStyles(deckStatus) {
+    deckStatus.style.fontSize = "";
+    deckStatus.style.maxWidth = "";
+    deckStatus.style.overflowX = "";
+}
+
+function clipCenterDeckToAvailable(deckStatus, available) {
+    deckStatus.style.maxWidth = available + "px";
+    deckStatus.style.overflowX = "hidden";
+}
+
+function fitCenterDeckCards() {
+    const deckStatus = document.getElementById("deck-status");
+
+    if (!deckStatus) {
+        return;
+    }
+
+    // Prefer clearing any prior shrink so a hidden or roomy deck returns to the
+    // CSS seat size (30px) instead of keeping a stale inline fit.
+    clearCenterDeckFitStyles(deckStatus);
+
+    if (deckStatus.hidden) {
+        return;
+    }
+
+    const center = typeof document.querySelector === "function"
+        ? document.querySelector(".grid-filler-center")
+        : null;
+
+    if (!center || typeof getComputedStyle !== "function") {
+        return;
+    }
+
+    const style = getComputedStyle(center);
+    const available = center.clientWidth -
+        (parseFloat(style.paddingLeft) || 0) -
+        (parseFloat(style.paddingRight) || 0);
+
+    if (!(available > 0) || typeof deckStatus.querySelectorAll !== "function") {
+        return;
+    }
+
+    // Sub-pixel slack: float remeasure can leave needed a hair above available.
+    const fitEpsilonPx = 0.5;
+    const neededFull = centerDeckRowOverflow(deckStatus);
+
+    if (!(neededFull > available + fitEpsilonPx)) {
+        return;
+    }
+
+    // 1px card borders do not scale with font-size. Probe near-zero font to
+    // estimate that fixed chrome, then solve for the font that fits in one shot
+    // (proportional iteration converges too slowly near the fixed floor).
+    deckStatus.style.fontSize = "0.01px";
+    const fixedPx = centerDeckRowOverflow(deckStatus);
+    const scalablePx = neededFull - fixedPx;
+
+    if (!(fixedPx <= available + fitEpsilonPx) || !(scalablePx > 0)) {
+        clearCenterDeckFitStyles(deckStatus);
+        clipCenterDeckToAvailable(deckStatus, available);
+        return;
+    }
+
+    const fontPx = CENTER_DECK_FONT_PX * (available - fixedPx) / scalablePx;
+
+    if (!(fontPx > 0)) {
+        clearCenterDeckFitStyles(deckStatus);
+        clipCenterDeckToAvailable(deckStatus, available);
+        return;
+    }
+
+    deckStatus.style.fontSize = fontPx + "px";
+
+    if (centerDeckRowOverflow(deckStatus) > available + fitEpsilonPx) {
+        clipCenterDeckToAvailable(deckStatus, available);
+    }
+}
+
 function updateDeckStatus(hands) {
     const deckStatus = document.getElementById("deck-status");
 
     if (deckStatus) {
         deckStatus.innerHTML = deckStatusHtml(hands);
+        fitCenterDeckCards();
     }
 }
 
@@ -1877,6 +1970,9 @@ function pageLoad() {
         document.addEventListener("beforeinput", handlePlayHistoryUndo);
     }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
+    if (typeof window !== "undefined" && window.addEventListener) {
+        window.addEventListener("resize", fitCenterDeckCards);
+    }
     updateActionButtons();
     focusNorthSpades();
 }

@@ -917,6 +917,69 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_center_undeployed_cards_shrink_on_narrow_window(self) -> None:
+        """When the diagram narrows, center pips shrink instead of covering East."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.set_viewport_size({"width": 1280, "height": 900})
+            wide = page.evaluate(
+                """() => {
+                  const last = document.querySelector(
+                    '#deck-status .deck-suit-row .hand-card[data-card="S2"]'
+                  );
+                  const deck = document.getElementById('deck-status');
+                  return {
+                    cardFont: parseFloat(getComputedStyle(last).fontSize),
+                    deckFont: parseFloat(getComputedStyle(deck).fontSize),
+                  };
+                }"""
+            )
+
+            page.set_viewport_size({"width": 720, "height": 900})
+            # Refit runs on resize; wait until layout reflects the narrower width.
+            page.wait_for_function(
+                """() => {
+                  const deck = document.getElementById('deck-status');
+                  return parseFloat(getComputedStyle(deck).fontSize) < 30;
+                }"""
+            )
+            narrow = page.evaluate(
+                """() => {
+                  const last = document.querySelector(
+                    '#deck-status .deck-suit-row .hand-card[data-card="S2"]'
+                  );
+                  const east = document.querySelector('.hand-east');
+                  const deck = document.getElementById('deck-status');
+                  const lastBox = last.getBoundingClientRect();
+                  const eastBox = east.getBoundingClientRect();
+                  return {
+                    lastRight: lastBox.right,
+                    eastLeft: eastBox.left,
+                    cardFont: parseFloat(getComputedStyle(last).fontSize),
+                    deckFont: parseFloat(getComputedStyle(deck).fontSize),
+                  };
+                }"""
+            )
+
+            self.assertLess(
+                narrow["deckFont"],
+                wide["deckFont"],
+                msg="narrow window must shrink undeployed center cards",
+            )
+            self.assertLess(
+                narrow["cardFont"],
+                wide["cardFont"],
+                msg="narrow window must shrink center card pips",
+            )
+            self.assertLessEqual(
+                narrow["lastRight"],
+                narrow["eastLeft"] - 1,
+                msg="shrunk undeployed spade row must not run into East",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_undeployed_cards_match_dealt_hand_card_chrome(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:

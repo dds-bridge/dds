@@ -350,6 +350,11 @@
         const deck = document.getElementById("deck-status");
         if (deck) {
             deck.hidden = !!active;
+            // Resize while playing clears the fit and returns early (deck hidden).
+            // Refit when leaving play so undeployed rows do not reappear at 30px.
+            if (!active && typeof global.fitCenterDeckCards === "function") {
+                global.fitCenterDeckCards();
+            }
         }
 
         for (const direction of DIRECTIONS) {
