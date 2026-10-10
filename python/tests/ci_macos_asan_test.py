@@ -22,13 +22,18 @@ def _repo_root(start: Path | None = None) -> Path:
 
 
 def _has_apple_support_override(module_bazel: str) -> bool:
-    """True if any single_version_override targets apple_support.
+    """True if any override pins apple_support to a specific commit/version set.
 
     Matches each override call's full argument body regardless of argument
-    order or whether module_name shares a line with the opening "(", instead
-    of assuming module_name is the first line after "single_version_override(".
+    order or formatting, rather than assuming module_name is the first line
+    after the opening "(", and covers all five Bazel module override
+    directives, not just single_version_override.
     """
-    for call in re.finditer(r"single_version_override\(\s*([^)]*)\)", module_bazel):
+    for call in re.finditer(
+        r"(?:archive_override|git_override|local_path_override"
+        r"|multiple_version_override|single_version_override)\(\s*([^)]*)\)",
+        module_bazel,
+    ):
         if re.search(r'module_name\s*=\s*"apple_support"', call.group(1)):
             return True
     return False
@@ -94,6 +99,35 @@ single_version_override(
 )
 """
         self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_archive_override(self) -> None:
+        sample = """
+archive_override(
+    module_name = "apple_support",
+    urls = ["https://example.com/apple_support.tar.gz"],
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_local_path_override(self) -> None:
+        sample = """
+local_path_override(
+    module_name = "apple_support",
+    path = "../apple_support",
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_multiple_version_override(
+        self,
+    ) -> None:
+        sample = """
+multiple_version_override(
+    module_name = "apple_support",
+    versions = ["1.24.2", "2.10.1"],
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
 
 
 if __name__ == "__main__":
