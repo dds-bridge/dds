@@ -20,6 +20,283 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
+_IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+_POSITIONAL_KEY = "__positional__"
+
+
+def _skip_ws(text: str, i: int, n: int) -> int:
+    while i < n and text[i] in " \t\r\n":
+        i += 1
+    return i
+
+
+def _skip_comment(text: str, i: int, n: int) -> int:
+    while i < n and text[i] != "\n":
+        i += 1
+    return i
+
+
+_SIMPLE_ESCAPES = {
+    "\\": "\\",
+    "'": "'",
+    '"': '"',
+    "a": "\a",
+    "b": "\b",
+    "f": "\f",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
+    "v": "\v",
+}
+_HEX_DIGITS = "0123456789abcdefABCDEF"
+_OCTAL_DIGITS = "01234567"
+
+
+def _decode_escape(text: str, j: int, n: int) -> tuple[int, str]:
+    """Decode one backslash escape starting at text[j] == "\\".
+
+    Returns (new_j, decoded_text) for Starlark's string-literal escapes:
+    the simple single-character escapes (\\n, \\t, \\\\, ...), up to 3
+    octal digits, exactly two hex digits after \\x, and the \\uXXXX /
+    \\UXXXXXXXX Unicode code point forms (exactly 4 / 8 hex digits).
+    Discarding the backslash and keeping the next character literally —
+    the previous behavior here — decodes "\\x61pple_support" (a valid
+    Starlark escape for "apple_support") to the wrong string
+    "x61pple_support", letting an escaped module_name bypass the override
+    guard; "\\u0061pple_support" was the same bug for Unicode escapes. An
+    escape this doesn't recognize is left as a literal backslash + next
+    character.
+    """
+    if j + 1 >= n:
+        return j + 1, "\\"
+    c = text[j + 1]
+    if c in _SIMPLE_ESCAPES:
+        return j + 2, _SIMPLE_ESCAPES[c]
+    if c == "x":
+        hex_digits = text[j + 2 : j + 4]
+        if len(hex_digits) == 2 and all(d in _HEX_DIGITS for d in hex_digits):
+            return j + 4, chr(int(hex_digits, 16))
+        return j + 2, "x"
+    if c in ("u", "U"):
+        width = 4 if c == "u" else 8
+        hex_digits = text[j + 2 : j + 2 + width]
+        if len(hex_digits) == width and all(d in _HEX_DIGITS for d in hex_digits):
+            return j + 2 + width, chr(int(hex_digits, 16))
+        return j + 2, c
+    if c in _OCTAL_DIGITS:
+        k = j + 1
+        digits = ""
+        while k < n and len(digits) < 3 and text[k] in _OCTAL_DIGITS:
+            digits += text[k]
+            k += 1
+        return k, chr(int(digits, 8))
+    return j + 2, "\\" + c
+
+
+def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
+    """Return (end_index, value) for the string literal starting at text[i].
+
+    Handles Starlark triple-quoted strings as a single opaque unit — the
+    closing delimiter is matched as the 3-character sequence, never a
+    single quote character, so none of the content in between (including
+    an embedded quote that would otherwise look like the end of an
+    ordinary string) is ever scanned character by character for a fake
+    nested call — while still extracting its value just like an ordinary
+    quoted string, so a (valid, if unusual) triple-quoted keyword value is
+    captured rather than silently dropped. Both forms decode backslash
+    escapes via _decode_escape() (value is the unescaped content).
+    """
+    quote = text[i]
+    if text[i : i + 3] == quote * 3:
+        delim = quote * 3
+        j = i + 3
+        chars: list[str] = []
+        while j < n:
+            if text[j] == "\\" and j + 1 < n:
+                j, decoded = _decode_escape(text, j, n)
+                chars.append(decoded)
+                continue
+            if text[j : j + 3] == delim:
+                return j + 3, "".join(chars)
+            chars.append(text[j])
+            j += 1
+        return n, "".join(chars)
+    j = i + 1
+    chars = []
+    while j < n:
+        if text[j] == "\\" and j + 1 < n:
+            j, decoded = _decode_escape(text, j, n)
+            chars.append(decoded)
+            continue
+        if text[j] == quote:
+            return j + 1, "".join(chars)
+        chars.append(text[j])
+        j += 1
+    return n, "".join(chars)
+
+
+def _is_identifier_boundary(text: str, i: int) -> bool:
+    """True unless the character before i could continue an identifier.
+
+    Rejects matching a call/keyword name in the middle of a longer
+    identifier (e.g. "legacy_bazel_dep(" or "bazel_depfoo(") and rejects a
+    qualified/attribute call (e.g. "extensions.bazel_dep(") by also
+    treating a preceding "." as non-boundary.
+    """
+    if i == 0:
+        return True
+    prev = text[i - 1]
+    return not (prev.isalnum() or prev == "_" or prev == ".")
+
+
+def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, str]]:
+    """Yield the {keyword: string value} args of each top-level call.
+
+    A single linear scan recognizes a call name, and each "identifier =
+    value" pair inside its body, only at a genuine identifier boundary and
+    only outside strings/comments. This matters beyond just truncation: a
+    plain regex search over body *text* (even with comments stripped)
+    still matches an unrelated argument's *string value* that happens to
+    contain assignment-shaped text, e.g.
+    `patch_cmds = ['historically name = "toolchains_llvm", ...']` — a
+    bazel_dep for a different module would be misread as the toolchains_llvm
+    one. Parsing real "identifier = value" pairs only at the call's
+    top-level parenthesis depth, with identifier-matching paused for every
+    character inside a string or comment (string/comment skipping is a
+    single jump via _skip_string/_skip_comment, not a per-character toggle,
+    so a triple-quoted string's content — including embedded quote
+    characters — is never scanned as code), makes that impossible: nothing
+    inside a string literal or comment is ever offered to the identifier
+    matcher. Only simple `identifier = "string"` / `identifier = 'string'`
+    assignments are captured (list/nested-call values are skipped over for
+    paren balancing but not parsed), which is everything every caller here
+    needs. Whitespace between a call name and "(" is tolerated
+    ("archive_override (..." is valid Starlark).
+
+    Bazel's `*_override`/`bazel_dep` APIs all accept their first argument
+    (module_name / name) positionally — a bare top-level string before any
+    "identifier =" is stored under `_POSITIONAL_KEY`, letting callers treat
+    it as that first parameter. "Top-level" also tracks `[...]`/`{...}`
+    nesting (not just parens), so a string that's an *element* of a list
+    value (e.g. inside `urls = [...]`) is never mistaken for a positional
+    call argument.
+    """
+    sorted_names = sorted(call_names, key=len, reverse=True)
+    results: list[dict[str, str]] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if ch == "#":
+            i = _skip_comment(text, i, n)
+            continue
+        if ch in "\"'":
+            i, _ = _skip_string(text, i, n)
+            continue
+        matched_name = None
+        paren_index = None
+        if _is_identifier_boundary(text, i):
+            for name in sorted_names:
+                if text.startswith(name, i):
+                    j = _skip_ws(text, i + len(name), n)
+                    if j < n and text[j] == "(":
+                        matched_name = name
+                        paren_index = j
+                        break
+        if matched_name is None:
+            i += 1
+            continue
+        i = paren_index + 1
+        depth = 1
+        bracket_depth = 0
+        brace_depth = 0
+        kwargs: dict[str, str] = {}
+        while i < n and depth > 0:
+            ch = text[i]
+            if ch == "#":
+                i = _skip_comment(text, i, n)
+                continue
+            at_top = depth == 1 and bracket_depth == 0 and brace_depth == 0
+            if ch in "\"'":
+                if at_top and _POSITIONAL_KEY not in kwargs:
+                    end, value = _skip_string(text, i, n)
+                    kwargs[_POSITIONAL_KEY] = value
+                    i = end
+                    continue
+                i, _ = _skip_string(text, i, n)
+                continue
+            if ch == "(":
+                depth += 1
+                i += 1
+                continue
+            if ch == ")":
+                depth -= 1
+                i += 1
+                continue
+            if ch == "[":
+                bracket_depth += 1
+                i += 1
+                continue
+            if ch == "]":
+                bracket_depth -= 1
+                i += 1
+                continue
+            if ch == "{":
+                brace_depth += 1
+                i += 1
+                continue
+            if ch == "}":
+                brace_depth -= 1
+                i += 1
+                continue
+            if at_top and _is_identifier_boundary(text, i):
+                m = _IDENT_RE.match(text, i)
+                if m:
+                    ident = m.group(0)
+                    j = _skip_ws(text, m.end(), n)
+                    if j < n and text[j] == "=" and text[j : j + 2] != "==":
+                        j = _skip_ws(text, j + 1, n)
+                        if j < n and text[j] in "\"'":
+                            end, value = _skip_string(text, j, n)
+                            kwargs[ident] = value
+                            i = end
+                            continue
+                    i = m.end()
+                    continue
+            i += 1
+        results.append(kwargs)
+    return results
+
+
+def _toolchains_llvm_bazel_dep_version(module_bazel: str) -> str:
+    for kwargs in _iter_call_kwargs(("bazel_dep",), module_bazel):
+        name = kwargs.get("name") or kwargs.get(_POSITIONAL_KEY)
+        if name == "toolchains_llvm" and "version" in kwargs:
+            return kwargs["version"]
+    raise AssertionError('expected bazel_dep(... name = "toolchains_llvm" ...)')
+
+
+def _has_toolchains_llvm_override(module_bazel: str) -> bool:
+    """True if any override pins toolchains_llvm to a specific commit/archive.
+
+    Matches each override call's keyword or first-positional module_name
+    argument regardless of argument order or formatting, rather than
+    assuming module_name is the first line after the opening "(".
+    """
+    override_names = (
+        "archive_override",
+        "git_override",
+        "local_path_override",
+        "multiple_version_override",
+        "single_version_override",
+    )
+    for kwargs in _iter_call_kwargs(override_names, module_bazel):
+        module_name = kwargs.get("module_name") or kwargs.get(_POSITIONAL_KEY)
+        if module_name == "toolchains_llvm":
+            return True
+    return False
+
+
 class TestMsanBazelConfig(unittest.TestCase):
     def test_bazelrc_defines_msan_config(self) -> None:
         bazelrc = (_repo_root() / ".bazelrc").read_text(encoding="utf-8")
@@ -109,23 +386,298 @@ class TestMsanBazelConfig(unittest.TestCase):
         )
 
     def test_module_pins_toolchains_llvm_past_unused_stdlib_fix(self) -> None:
-        """BCR 1.8.0 emits unused -stdlib=libc++; -Werror breaks Linux builds.
+        """BCR 1.8.0 emitted unused -stdlib=libc++, breaking Linux -Werror builds.
 
-        toolchains_llvm #791 drops the redundant flag. Until BCR ships a release
-        that includes it, MODULE.bazel must archive_override past that commit.
+        toolchains_llvm#791 dropped the redundant flag; it shipped in the 1.9.0
+        release, so a plain bazel_dep replaces the archive_override this
+        project used to carry to pin a specific pre-release commit.
         """
         module = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
-        self.assertRegex(
-            module,
-            r'archive_override\(\s*\n\s*module_name\s*=\s*"toolchains_llvm"',
-            "expected archive_override for toolchains_llvm until BCR > 1.8.0",
+        version = tuple(
+            int(p) for p in _toolchains_llvm_bazel_dep_version(module).split(".")
         )
-        # Merge commit of bazel-contrib/toolchains_llvm#791.
-        self.assertIn(
-            "c3ac93f5c61cb78487765d2e81e7485ad3f8bf2c",
-            module,
-            "toolchains_llvm override must include the unused -stdlib=libc++ fix",
+        self.assertGreaterEqual(
+            version,
+            (1, 9, 0),
+            "toolchains_llvm must stay >= 1.9.0 (drops unused -stdlib=libc++, #791)",
         )
+        self.assertFalse(
+            _has_toolchains_llvm_override(module),
+            "toolchains_llvm no longer needs an archive_override pin",
+        )
+
+    def test_toolchains_llvm_bazel_dep_version_tolerates_reordered_args(
+        self,
+    ) -> None:
+        sample = 'bazel_dep(version = "1.11.2", name = "toolchains_llvm")'
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_accepts_positional_name(
+        self,
+    ) -> None:
+        """bazel_dep's name is positional too: bazel_dep("toolchains_llvm",
+
+        version = ...) is valid Starlark.
+        """
+        sample = 'bazel_dep("toolchains_llvm", version = "1.11.2")'
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_survives_an_earlier_paren(
+        self,
+    ) -> None:
+        """A ")" inside a leading comment must not truncate the call body."""
+        sample = """bazel_dep(
+    # see upstream fix (closes #791)
+    version = "1.11.2",
+    name = "toolchains_llvm",
+)"""
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_ignores_commented_out_call(
+        self,
+    ) -> None:
+        sample = """# bazel_dep(name = "toolchains_llvm", version = "9.9.9")
+bazel_dep(name = "toolchains_llvm", version = "1.11.2")
+"""
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_ignores_commented_out_version(
+        self,
+    ) -> None:
+        """A stale version in a comment inside the call must not win."""
+        sample = """bazel_dep(
+    name = "toolchains_llvm",
+    # version = "9.9.9" (stale)
+    version = "1.11.2",
+)"""
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_ignores_fake_assignment_in_string(
+        self,
+    ) -> None:
+        """Assignment-shaped text inside an unrelated string value for a
+
+        different module's bazel_dep must not be read as real args.
+        """
+        sample = """bazel_dep(
+    name = "rules_cc",
+    version = "0.2.26",
+    patch_cmds = ['historically name = "toolchains_llvm", version = "9.9.9"'],
+)"""
+        with self.assertRaises(AssertionError):
+            _toolchains_llvm_bazel_dep_version(sample)
+
+    def test_toolchains_llvm_bazel_dep_version_ignores_fake_call_in_triple_quote(
+        self,
+    ) -> None:
+        """A fake bazel_dep(...) inside a triple-quoted string -- even one
+
+        with an odd number of embedded quote characters before it, which
+        would desync a naive per-quote toggle -- must stay opaque.
+        """
+        sample = '''"""
+Note: the old pin "mentioned here used
+bazel_dep(name = "toolchains_llvm", version = "9.9.9")
+"""
+bazel_dep(name = "toolchains_llvm", version = "1.11.2")
+'''
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_rejects_identifier_substring(
+        self,
+    ) -> None:
+        """"bazel_dep" appearing inside a longer identifier, or as a
+
+        qualified/attribute call, is not a real bazel_dep call.
+        """
+        for sample in (
+            'legacy_bazel_dep(name = "toolchains_llvm", version = "9.9.9")',
+            'bazel_depfoo(name = "toolchains_llvm", version = "9.9.9")',
+            'extensions.bazel_dep(name = "toolchains_llvm", version = "9.9.9")',
+        ):
+            with self.assertRaises(AssertionError):
+                _toolchains_llvm_bazel_dep_version(sample)
+
+    def test_has_toolchains_llvm_override_detects_same_line_args(self) -> None:
+        sample = (
+            'archive_override(module_name = "toolchains_llvm", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_positional_module_name(
+        self,
+    ) -> None:
+        """The override APIs accept module_name as their first positional
+
+        argument; archive_override("toolchains_llvm", ...) is as real an
+        override as the keyword form.
+        """
+        sample = (
+            'archive_override("toolchains_llvm", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_triple_quoted_module_name(
+        self,
+    ) -> None:
+        """A triple-quoted keyword value is valid Starlark and must still
+
+        be extracted, not silently treated as absent.
+        """
+        sample = (
+            'archive_override(module_name = """toolchains_llvm""", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_decodes_hex_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\x74 is a valid Starlark hex escape for "t"; the decoded value
+
+        must still be compared, not the raw escape text.
+        """
+        sample = (
+            'archive_override(module_name = "\\x74oolchains_llvm", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_decodes_unicode_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\u0074 is a valid Starlark 4-hex-digit Unicode escape for "t";
+
+        the decoded value must still be compared, not the raw escape text.
+        """
+        sample = (
+            'archive_override(module_name = "\\u0074oolchains_llvm", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_decodes_big_unicode_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\U00000074 is a valid Starlark 8-hex-digit Unicode escape for
+
+        "t"; the decoded value must still be compared, not the raw escape
+        text.
+        """
+        sample = (
+            'archive_override(module_name = "\\U00000074oolchains_llvm", '
+            'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_positional_string_in_list(
+        self,
+    ) -> None:
+        """A bare string that is an *element* of a list value (not the
+
+        call's own first positional argument) must not be read as
+        module_name.
+        """
+        sample = """archive_override(
+    module_name = "apple_support",
+    urls = ["toolchains_llvm"],
+)"""
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_reordered_args(self) -> None:
+        sample = """
+archive_override(
+    strip_prefix = "toolchains_llvm-abc123",
+    module_name = "toolchains_llvm",
+)
+"""
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_survives_an_earlier_paren(self) -> None:
+        """A ")" inside a leading comment must not truncate the call body."""
+        sample = """archive_override(
+    # pin past #791 (unreleased fix)
+    module_name = "toolchains_llvm",
+    strip_prefix = "toolchains_llvm-abc123",
+)"""
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_commented_out_call(
+        self,
+    ) -> None:
+        sample = (
+            '# archive_override(module_name = "toolchains_llvm", '
+            'strip_prefix = "x")\n'
+        )
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_other_modules(self) -> None:
+        sample = """
+single_version_override(
+    module_name = "apple_support",
+    version = "2.10.1",
+)
+"""
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_commented_module_name(
+        self,
+    ) -> None:
+        """A comment mentioning toolchains_llvm in an apple_support override
+
+        is not itself a toolchains_llvm override.
+        """
+        sample = """single_version_override(
+    # module_name = "toolchains_llvm" (old pin, no longer used)
+    module_name = "apple_support",
+    version = "2.10.1",
+)"""
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_fake_assignment_in_string(
+        self,
+    ) -> None:
+        """Assignment-shaped text inside an unrelated string value for a
+
+        different module's override must not be read as real args.
+        """
+        sample = """single_version_override(
+    module_name = "apple_support",
+    version = "2.10.1",
+    patch_cmds = ['the module_name = "toolchains_llvm" override is legacy'],
+)"""
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_tolerates_whitespace_before_paren(
+        self,
+    ) -> None:
+        sample = (
+            'archive_override (module_name = "toolchains_llvm", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_local_path_override(self) -> None:
+        sample = """
+local_path_override(
+    module_name = "toolchains_llvm",
+    path = "../toolchains_llvm",
+)
+"""
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_multiple_version_override(
+        self,
+    ) -> None:
+        sample = """
+multiple_version_override(
+    module_name = "toolchains_llvm",
+    versions = ["1.9.0", "1.11.2"],
+)
+"""
+        self.assertTrue(_has_toolchains_llvm_override(sample))
 
 
 class TestMsanLinuxCi(unittest.TestCase):

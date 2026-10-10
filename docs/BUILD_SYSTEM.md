@@ -220,11 +220,6 @@ libc++ overlay (`libcxx_url` / `libcxx_sha256` in `MODULE.bazel`) built against
 the same Ubuntu 22.04 LLVM release as `MSAN_LLVM_VERSION`. Keep those pins
 aligned when bumping LLVM. Do not combine MSAN with ASAN/TSAN/UBSAN.
 
-`MODULE.bazel` currently `archive_override`s `toolchains_llvm` past BCR 1.8.0
-to include [#791](https://github.com/bazel-contrib/toolchains_llvm/pull/791)
-(drops unused `-stdlib=libc++` that breaks Linux `-Werror` builds). Drop the
-override when BCR publishes a release that includes that fix.
-
 **When upgrading LLVM or Xcode**, update all coupled paths together:
 
 1. Bump `llvm_versions` in `MODULE.bazel` (and run
