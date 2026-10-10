@@ -245,7 +245,10 @@
             seatToPlay: replay.seat,
             nsTricks: replay.nsTricks,
             ewTricks: replay.ewTricks,
-            remainingTricks: 13 - replay.nsTricks - replay.ewTricks,
+            remainingTricks:
+                state.hands[DIRECTIONS[0]].length -
+                replay.nsTricks -
+                replay.ewTricks,
         };
     }
 

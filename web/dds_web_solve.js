@@ -504,7 +504,7 @@
         const result_table = document.getElementById("result-table");
         const hands = global.collectHands();
 
-        if (!global.allHandsHaveThirteenCards(hands)) {
+        if (!global.allHandsHaveEqualCardCounts(hands)) {
             if (requestId === ddTableRequestId) {
                 lastDdTablePbn = null;
                 global.clear_results();

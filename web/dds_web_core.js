@@ -11,7 +11,7 @@
 /* exported DIRECTIONS SUITS PIPS DENOMINATIONS DENOM_TO_STRAIN DIR_TO_HAND
             Card handsToPbn openingLeader pipFromDdsRank leadTricksMapFromSolverOutput
             fourthHandFillState cardsToSuitHoldings sortedPipInsertIndex
-            allHandsHaveThirteenCards sanitizeSuitHolding
+            allHandsHaveEqualCardCounts sanitizeSuitHolding
             suitHoldingHasDuplicatePips suitHoldingHasIllegalChars */
 
 "use strict";
@@ -264,8 +264,17 @@
         return holding.length;
     }
 
-    function allHandsHaveThirteenCards(hands) {
-        return DIRECTIONS.every((direction) => hands[direction].length === 13);
+    /** True when every seat holds the same card count in 1..13 (legal DDS shape). */
+    function allHandsHaveEqualCardCounts(hands) {
+        const count = (hands[DIRECTIONS[0]] || []).length;
+
+        if (count < 1 || count > 13) {
+            return false;
+        }
+
+        return DIRECTIONS.every(
+            (direction) => (hands[direction] || []).length === count
+        );
     }
 
     function sanitizeSuitHolding(value, claimedKeys, suit, maxPips) {
@@ -364,7 +373,7 @@
     global.fourthHandFillState = fourthHandFillState;
     global.cardsToSuitHoldings = cardsToSuitHoldings;
     global.sortedPipInsertIndex = sortedPipInsertIndex;
-    global.allHandsHaveThirteenCards = allHandsHaveThirteenCards;
+    global.allHandsHaveEqualCardCounts = allHandsHaveEqualCardCounts;
     global.sanitizeSuitHolding = sanitizeSuitHolding;
     global.suitHoldingHasDuplicatePips = suitHoldingHasDuplicatePips;
     global.suitHoldingHasIllegalChars = suitHoldingHasIllegalChars;

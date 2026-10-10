@@ -464,7 +464,73 @@ test("inputIsValid rejects incomplete deal", () => {
             south: [],
             west: [],
         })),
-        "Please enter 13 cards per hand."
+        "Please enter the same number of cards in each hand (1-13)."
+    );
+});
+
+test("inputIsValid rejects unequal hand lengths", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(
+        ctx.inputIsValid(handsFromKeys(ctx, {
+            north: ["SA", "SK"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        })),
+        "Please enter the same number of cards in each hand (1-13)."
+    );
+});
+
+test("inputIsValid accepts equal short hands from 1 to 13", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(
+        ctx.inputIsValid(handsFromKeys(ctx, {
+            north: ["SA"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        })),
+        ""
+    );
+    assert.equal(
+        ctx.inputIsValid(handsFromKeys(ctx, {
+            north: ["SA", "SK", "SQ", "SJ", "ST"],
+            east: ["HA", "HK", "HQ", "HJ", "HT"],
+            south: ["DA", "DK", "DQ", "DJ", "DT"],
+            west: ["CA", "CK", "CQ", "CJ", "CT"],
+        })),
+        ""
+    );
+});
+
+test("allHandsHaveEqualCardCounts is true for equal counts 1-13", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(
+        ctx.allHandsHaveEqualCardCounts(handsFromKeys(ctx, {
+            north: ["SA"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        })),
+        true
+    );
+    assert.equal(
+        ctx.allHandsHaveEqualCardCounts(handsFromKeys(ctx, {
+            north: ["SA"],
+            east: [],
+            south: [],
+            west: [],
+        })),
+        false
+    );
+    assert.equal(
+        ctx.allHandsHaveEqualCardCounts(handsFromKeys(ctx, {
+            north: [],
+            east: [],
+            south: [],
+            west: [],
+        })),
+        false
     );
 });
 
@@ -1663,6 +1729,36 @@ test("refreshDdTable clears the results table when the deal is incomplete", () =
     // Assert
     assert.equal(cell.innerHTML, "");
     assert.equal(document.element("result").innerHTML, "");
+});
+
+test("refreshDdTable solves when all hands have the same short card count", async () => {
+    // Arrange: one card each is a legal DDS position (equal counts, not only 13).
+    let ccallCount = 0;
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            ccallCount += 1;
+            return 1;
+        },
+        getValue() {
+            return 1;
+        },
+    });
+
+    // Act
+    await ctx.refreshDdTable();
+
+    // Assert
+    assert.equal(ccallCount, 1);
+    assert.match(document.element("result").innerHTML, /^Solved in \d+ ms\.$/);
 });
 
 test("formatSolveTimeMs rounds wall time to whole milliseconds", () => {
@@ -5506,11 +5602,37 @@ test("solverPositionFromPlay strips played and current-trick cards", () => {
     assert.equal(pos.trickSuits.join(","), "0,0,0");
     assert.equal(pos.trickRanks.join(","), "13,0,0");
     assert.equal(pos.seatToPlay, "north");
+    assert.equal(pos.remainingTricks, 13);
     assert.equal(
         pos.remainingHands.west.some((c) => c.key() === "SK"),
         false
     );
     assert.match(pos.pbn, /643\.T8\.AK742\.T5/);
+});
+
+test("solverPositionFromPlay remainingTricks matches equal short deal length", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: handsFromKeys(ctx, {
+            north: ["SA", "HA"],
+            east: ["SK", "HK"],
+            south: ["SQ", "HQ"],
+            west: ["SJ", "HJ"],
+        }),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 1,
+    });
+
+    assert.equal(ctx.solverPositionFromPlay(state).remainingTricks, 2);
+
+    state.history = [
+        { seat: "west", key: "SJ", auto: false },
+        { seat: "north", key: "SA", auto: false },
+        { seat: "east", key: "SK", auto: false },
+        { seat: "south", key: "SQ", auto: false },
+    ];
+    assert.equal(ctx.solverPositionFromPlay(state).remainingTricks, 1);
 });
 
 test("appendPlay and undoLastChoice remove auto plays together", () => {

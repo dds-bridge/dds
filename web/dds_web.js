@@ -1914,7 +1914,7 @@ function updateActionButtons(activeElement) {
 
     updateHandCardDisplays(hands);
 
-    const dealComplete = allHandsHaveThirteenCards(hands) &&
+    const dealComplete = allHandsHaveEqualCardCounts(hands) &&
         inputIsValid(hands).length === 0;
 
     // Any diagram change supersedes an in-flight DD-table request so a delayed
@@ -1958,13 +1958,17 @@ function collectHands() {
 function inputIsValid(hands) {
     const deck = {};
     const duplicates = [];
+    const counts = DIRECTIONS.map(
+        (direction) => (hands[direction] || []).length
+    );
+    const count = counts[0];
 
-    for (const direction of Object.keys(hands)) {
+    if (count < 1 || count > 13 || !counts.every((n) => n === count)) {
+        return "Please enter the same number of cards in each hand (1-13).";
+    }
+
+    for (const direction of DIRECTIONS) {
         const hand = hands[direction];
-
-        if (hand.length != 13) {
-            return "Please enter 13 cards per hand.";
-        }
 
         for (const card of hand) {
             if (!PIPS.includes(card.pip)) {
