@@ -58,12 +58,15 @@ def _decode_escape(text: str, j: int, n: int) -> tuple[int, str]:
 
     Returns (new_j, decoded_text) for Starlark's string-literal escapes:
     the simple single-character escapes (\\n, \\t, \\\\, ...), up to 3
-    octal digits, and exactly two hex digits after \\x. Discarding the
-    backslash and keeping the next character literally — the previous
-    behavior here — decodes "\\x61pple_support" (a valid Starlark escape
-    for "apple_support") to the wrong string "x61pple_support", letting an
-    escaped module_name bypass the override guard. An escape this doesn't
-    recognize is left as a literal backslash + next character.
+    octal digits, exactly two hex digits after \\x, and the \\uXXXX /
+    \\UXXXXXXXX Unicode code point forms (exactly 4 / 8 hex digits).
+    Discarding the backslash and keeping the next character literally —
+    the previous behavior here — decodes "\\x61pple_support" (a valid
+    Starlark escape for "apple_support") to the wrong string
+    "x61pple_support", letting an escaped module_name bypass the override
+    guard; "\\u0061pple_support" was the same bug for Unicode escapes. An
+    escape this doesn't recognize is left as a literal backslash + next
+    character.
     """
     if j + 1 >= n:
         return j + 1, "\\"
@@ -75,6 +78,12 @@ def _decode_escape(text: str, j: int, n: int) -> tuple[int, str]:
         if len(hex_digits) == 2 and all(d in _HEX_DIGITS for d in hex_digits):
             return j + 4, chr(int(hex_digits, 16))
         return j + 2, "x"
+    if c in ("u", "U"):
+        width = 4 if c == "u" else 8
+        hex_digits = text[j + 2 : j + 2 + width]
+        if len(hex_digits) == width and all(d in _HEX_DIGITS for d in hex_digits):
+            return j + 2 + width, chr(int(hex_digits, 16))
+        return j + 2, c
     if c in _OCTAL_DIGITS:
         k = j + 1
         digits = ""
@@ -459,6 +468,33 @@ bazel_dep(name = "apple_support", version = "2.10.1")
         """
         sample = (
             'single_version_override(module_name = "\\x61pple_support", '
+            'version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_decodes_unicode_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\u0061 is a valid Starlark 4-hex-digit Unicode escape for "a";
+
+        the decoded value must still be compared, not the raw escape text.
+        """
+        sample = (
+            'single_version_override(module_name = "\\u0061pple_support", '
+            'version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_decodes_big_unicode_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\U00000061 is a valid Starlark 8-hex-digit Unicode escape for
+
+        "a"; the decoded value must still be compared, not the raw escape
+        text.
+        """
+        sample = (
+            'single_version_override(module_name = "\\U00000061pple_support", '
             'version = "1.24.2")'
         )
         self.assertTrue(_has_apple_support_override(sample))
