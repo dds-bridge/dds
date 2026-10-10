@@ -5858,6 +5858,62 @@ test("playDiffMapFromSolverOutput converts scores to contract diffs", () => {
     assert.equal(map.SQ, 1);
 });
 
+test("playDiffMapFromSolverOutput keeps absolute side tricks for partial deals", () => {
+    // Partial deals have no contract; badges show tricks for the side if that
+    // card is led, not +/−/= versus a double-dummy target.
+    const ctx = loadDdsWeb(createMockDocument());
+    const out = [2, 0, 14, 3, 0, 12, 2]; // SA → 3, SQ → 2
+
+    const map = ctx.playDiffMapFromSolverOutput(out, {
+        declarer: "south",
+        seatToPlay: "west",
+        nsTricks: 0,
+        ewTricks: 0,
+        remainingTricks: 5,
+        targetTricks: 2,
+        absoluteSideTricks: true,
+    });
+
+    assert.equal(map.SA, 3);
+    assert.equal(map.SQ, 2);
+});
+
+test("createPlayState uses absolute side-trick badges for short deals", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const short = ctx.createPlayState({
+        hands: handsFromKeys(ctx, {
+            north: ["SA"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        }),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 1,
+    });
+    assert.equal(short.absoluteSideTricks, true);
+
+    const full = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    assert.equal(full.absoluteSideTricks, false);
+});
+
+test("playBadgeMapFromPending shows absolute numerals for partial deals", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+
+    const absolute = ctx.playBadgeMapFromPending({ SA: 3, SQ: 2 }, true);
+    assert.equal(absolute.SA, "3");
+    assert.equal(absolute.SQ, "2");
+
+    const relative = ctx.playBadgeMapFromPending({ SA: 0, SQ: 1 }, false);
+    assert.equal(relative.SA, "=");
+    assert.equal(relative.SQ, "+1");
+});
+
 test("isLegalPlayCard requires seat to play and pending diff", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const state = ctx.createPlayState({

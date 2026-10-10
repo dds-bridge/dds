@@ -304,6 +304,7 @@
                 ewTricks: pos.ewTricks,
                 remainingTricks: pos.remainingTricks,
                 targetTricks: state.targetTricks,
+                absoluteSideTricks: !!state.absoluteSideTricks,
             });
         } finally {
             module._free(outPtr);

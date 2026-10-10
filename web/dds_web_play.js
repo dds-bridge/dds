@@ -151,12 +151,15 @@
 
     function createPlayState({ hands, declarer, denomination, targetTricks }) {
         const trumpLetter = denomination === "N" ? null : denomination;
+        const dealTricks = (hands[DIRECTIONS[0]] || []).length;
         return {
             hands: cloneHands(hands),
             declarer,
             denomination,
             trumpLetter,
             targetTricks: Number(targetTricks),
+            // Partial deals have no contract; badge absolute side-to-play tricks.
+            absoluteSideTricks: dealTricks > 0 && dealTricks < 13,
             leadSeat: openingLeader(declarer),
             history: [],
             pendingDiffs: null,
@@ -279,15 +282,19 @@
         const scores = leadTricksMapFromSolverOutput(out);
         const map = {};
         for (const key of Object.keys(scores)) {
-            map[key] = playDiffFromSolverScore({
-                declarer: context.declarer,
-                seatToPlay: context.seatToPlay,
-                nsTricks: context.nsTricks,
-                ewTricks: context.ewTricks,
-                remainingTricks: context.remainingTricks,
-                sideToPlayScore: scores[key],
-                targetTricks: context.targetTricks,
-            });
+            if (context.absoluteSideTricks) {
+                map[key] = scores[key];
+            } else {
+                map[key] = playDiffFromSolverScore({
+                    declarer: context.declarer,
+                    seatToPlay: context.seatToPlay,
+                    nsTricks: context.nsTricks,
+                    ewTricks: context.ewTricks,
+                    remainingTricks: context.remainingTricks,
+                    sideToPlayScore: scores[key],
+                    targetTricks: context.targetTricks,
+                });
+            }
         }
         return map;
     }
@@ -321,13 +328,15 @@
         return Number(text);
     }
 
-    function playBadgeMapFromPending(pendingDiffs) {
+    function playBadgeMapFromPending(pendingDiffs, absoluteSideTricks) {
         if (!pendingDiffs) {
             return null;
         }
         const map = {};
         for (const key of Object.keys(pendingDiffs)) {
-            map[key] = formatPlayDiff(pendingDiffs[key]);
+            map[key] = absoluteSideTricks
+                ? String(pendingDiffs[key])
+                : formatPlayDiff(pendingDiffs[key]);
         }
         return map;
     }
@@ -467,7 +476,8 @@
         renderPlayScore(playState);
         if (typeof global.updateHandCardDisplays === "function") {
             global.leadTricksByCardKey = playBadgeMapFromPending(
-                playState.pendingDiffs
+                playState.pendingDiffs,
+                playState.absoluteSideTricks
             );
             global.updateHandCardDisplays(handsForDisplay(playState));
         }
