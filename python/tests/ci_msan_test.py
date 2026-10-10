@@ -29,22 +29,81 @@ def _skip_ws(text: str, i: int, n: int) -> int:
     return i
 
 
+def _skip_comment(text: str, i: int, n: int) -> int:
+    while i < n and text[i] != "\n":
+        i += 1
+    return i
+
+
+def _skip_string(text: str, i: int, n: int) -> tuple[int, str | None]:
+    """Return (end_index, value) for the string literal starting at text[i].
+
+    Handles Starlark triple-quoted strings as a single opaque unit (value
+    is None — never needed as a captured kwarg value here, and critically,
+    none of its content — including a quote character that would otherwise
+    look like the end of a single-quoted string — is scanned character by
+    character for a fake nested call). Ordinary quoted strings are handled
+    with backslash escapes (value is the unescaped content).
+    """
+    quote = text[i]
+    if text[i : i + 3] == quote * 3:
+        delim = quote * 3
+        j = i + 3
+        while j < n:
+            if text[j] == "\\":
+                j += 2
+                continue
+            if text[j : j + 3] == delim:
+                return j + 3, None
+            j += 1
+        return n, None
+    j = i + 1
+    chars: list[str] = []
+    while j < n:
+        if text[j] == "\\" and j + 1 < n:
+            chars.append(text[j + 1])
+            j += 2
+            continue
+        if text[j] == quote:
+            return j + 1, "".join(chars)
+        chars.append(text[j])
+        j += 1
+    return n, "".join(chars)
+
+
+def _is_identifier_boundary(text: str, i: int) -> bool:
+    """True unless the character before i could continue an identifier.
+
+    Rejects matching a call/keyword name in the middle of a longer
+    identifier (e.g. "legacy_bazel_dep(" or "bazel_depfoo(") and rejects a
+    qualified/attribute call (e.g. "extensions.bazel_dep(") by also
+    treating a preceding "." as non-boundary.
+    """
+    if i == 0:
+        return True
+    prev = text[i - 1]
+    return not (prev.isalnum() or prev == "_" or prev == ".")
+
+
 def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, str]]:
     """Yield the {keyword: string value} args of each top-level call.
 
-    A single linear scan tracks string-literal and "#" comment state across
-    the whole text, so a call name — and each "identifier = value" pair
-    inside its body — is only recognized outside both. This matters beyond
-    just truncation: a plain regex search over body *text* (even with
-    comments stripped) still matches an unrelated argument's *string value*
-    that happens to contain assignment-shaped text, e.g.
+    A single linear scan recognizes a call name, and each "identifier =
+    value" pair inside its body, only at a genuine identifier boundary and
+    only outside strings/comments. This matters beyond just truncation: a
+    plain regex search over body *text* (even with comments stripped)
+    still matches an unrelated argument's *string value* that happens to
+    contain assignment-shaped text, e.g.
     `patch_cmds = ['historically name = "toolchains_llvm", ...']` — a
     bazel_dep for a different module would be misread as the toolchains_llvm
     one. Parsing real "identifier = value" pairs only at the call's
     top-level parenthesis depth, with identifier-matching paused for every
-    character inside a string or comment, makes that impossible: nothing
-    inside a string literal is ever offered to the identifier matcher.
-    Only simple `identifier = "string"` / `identifier = 'string'`
+    character inside a string or comment (string/comment skipping is a
+    single jump via _skip_string/_skip_comment, not a per-character toggle,
+    so a triple-quoted string's content — including embedded quote
+    characters — is never scanned as code), makes that impossible: nothing
+    inside a string literal or comment is ever offered to the identifier
+    matcher. Only simple `identifier = "string"` / `identifier = 'string'`
     assignments are captured (list/nested-call values are skipped over for
     paren balancing but not parsed), which is everything every caller here
     needs. Whitespace between a call name and "(" is tolerated
@@ -54,40 +113,24 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
     results: list[dict[str, str]] = []
     i = 0
     n = len(text)
-    in_string: str | None = None
-    in_comment = False
     while i < n:
         ch = text[i]
-        if in_comment:
-            if ch == "\n":
-                in_comment = False
-            i += 1
-            continue
-        if in_string:
-            if ch == "\\":
-                i += 2
-                continue
-            if ch == in_string:
-                in_string = None
-            i += 1
-            continue
         if ch == "#":
-            in_comment = True
-            i += 1
+            i = _skip_comment(text, i, n)
             continue
         if ch in "\"'":
-            in_string = ch
-            i += 1
+            i, _ = _skip_string(text, i, n)
             continue
         matched_name = None
         paren_index = None
-        for name in sorted_names:
-            if text.startswith(name, i):
-                j = _skip_ws(text, i + len(name), n)
-                if j < n and text[j] == "(":
-                    matched_name = name
-                    paren_index = j
-                    break
+        if _is_identifier_boundary(text, i):
+            for name in sorted_names:
+                if text.startswith(name, i):
+                    j = _skip_ws(text, i + len(name), n)
+                    if j < n and text[j] == "(":
+                        matched_name = name
+                        paren_index = j
+                        break
         if matched_name is None:
             i += 1
             continue
@@ -96,26 +139,11 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
         kwargs: dict[str, str] = {}
         while i < n and depth > 0:
             ch = text[i]
-            if in_comment:
-                if ch == "\n":
-                    in_comment = False
-                i += 1
-                continue
-            if in_string:
-                if ch == "\\":
-                    i += 2
-                    continue
-                if ch == in_string:
-                    in_string = None
-                i += 1
-                continue
             if ch == "#":
-                in_comment = True
-                i += 1
+                i = _skip_comment(text, i, n)
                 continue
             if ch in "\"'":
-                in_string = ch
-                i += 1
+                i, _ = _skip_string(text, i, n)
                 continue
             if ch == "(":
                 depth += 1
@@ -125,7 +153,7 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 depth -= 1
                 i += 1
                 continue
-            if depth == 1:
+            if depth == 1 and _is_identifier_boundary(text, i):
                 m = _IDENT_RE.match(text, i)
                 if m:
                     ident = m.group(0)
@@ -133,18 +161,10 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                     if j < n and text[j] == "=" and text[j : j + 2] != "==":
                         j = _skip_ws(text, j + 1, n)
                         if j < n and text[j] in "\"'":
-                            quote = text[j]
-                            k = j + 1
-                            value_chars = []
-                            while k < n and text[k] != quote:
-                                if text[k] == "\\" and k + 1 < n:
-                                    value_chars.append(text[k + 1])
-                                    k += 2
-                                    continue
-                                value_chars.append(text[k])
-                                k += 1
-                            kwargs[ident] = "".join(value_chars)
-                            i = k + 1
+                            end, value = _skip_string(text, j, n)
+                            if value is not None:
+                                kwargs[ident] = value
+                            i = end
                             continue
                     i = m.end()
                     continue
@@ -339,6 +359,37 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
 )"""
         with self.assertRaises(AssertionError):
             _toolchains_llvm_bazel_dep_version(sample)
+
+    def test_toolchains_llvm_bazel_dep_version_ignores_fake_call_in_triple_quote(
+        self,
+    ) -> None:
+        """A fake bazel_dep(...) inside a triple-quoted string -- even one
+
+        with an odd number of embedded quote characters before it, which
+        would desync a naive per-quote toggle -- must stay opaque.
+        """
+        sample = '''"""
+Note: the old pin "mentioned here used
+bazel_dep(name = "toolchains_llvm", version = "9.9.9")
+"""
+bazel_dep(name = "toolchains_llvm", version = "1.11.2")
+'''
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_rejects_identifier_substring(
+        self,
+    ) -> None:
+        """"bazel_dep" appearing inside a longer identifier, or as a
+
+        qualified/attribute call, is not a real bazel_dep call.
+        """
+        for sample in (
+            'legacy_bazel_dep(name = "toolchains_llvm", version = "9.9.9")',
+            'bazel_depfoo(name = "toolchains_llvm", version = "9.9.9")',
+            'extensions.bazel_dep(name = "toolchains_llvm", version = "9.9.9")',
+        ):
+            with self.assertRaises(AssertionError):
+                _toolchains_llvm_bazel_dep_version(sample)
 
     def test_has_toolchains_llvm_override_detects_same_line_args(self) -> None:
         sample = (
