@@ -575,7 +575,7 @@ function updateResultTableHint(hands) {
 
     const table = document.getElementById("result-table");
     const populated = typeof ddTableLooksPopulated === "function" &&
-        ddTableLooksPopulated(table);
+        ddTableLooksPopulated(table, hands);
 
     if (!populated) {
         hint.hidden = true;

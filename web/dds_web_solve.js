@@ -536,7 +536,8 @@
 
         const pbn = global.handsToPbn(hands);
 
-        if (pbn === lastDdTablePbn && global.ddTableLooksPopulated(result_table)) {
+        if (pbn === lastDdTablePbn &&
+                global.ddTableLooksPopulated(result_table, hands)) {
             return;
         }
 
@@ -671,14 +672,29 @@
         }
     }
 
-    function ddTableLooksPopulated(result_table) {
+    function ddTableLooksPopulated(result_table, hands) {
         if (!result_table || !result_table.rows || !result_table.rows[1]) {
             return false;
         }
 
         const cell = result_table.rows[1].cells[1];
 
-        return !!(cell && cell.innerHTML && /\d/.test(String(cell.innerHTML)));
+        if (!(cell && cell.innerHTML && /\d/.test(String(cell.innerHTML)))) {
+            return false;
+        }
+
+        // Digits alone are not enough: an edit can leave stale numerals during
+        // the deal-solve debounce. Require the table's PBN cache key to match
+        // the current deal before treating results as current/clickable.
+        if (lastDdTablePbn == null) {
+            return false;
+        }
+
+        if (hands != null && typeof global.handsToPbn === "function") {
+            return global.handsToPbn(hands) === lastDdTablePbn;
+        }
+
+        return true;
     }
 
     function sendJSON() {

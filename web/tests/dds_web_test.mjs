@@ -2718,6 +2718,53 @@ test("updateResultTableHint is hidden when the matrix is unsolved", () => {
     assert.equal(hint.textContent, "");
 });
 
+test("updateResultTableHint hides when matrix digits are stale for current PBN", () => {
+    // Arrange: solved partial deal — digits match lastDdTablePbn.
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    const hint = document.element("result-table-hint");
+    document.element("result-table").rows[1].cells[1].innerHTML = "1";
+    ctx.lastDdTablePbn = ctx.handsToPbn(ctx.collectHands());
+    ctx.updateResultTableHint(ctx.collectHands());
+    assert.equal(hint.hidden, false);
+
+    // Act: edit without changing hand lengths; digits remain but cache key is stale.
+    document.setValue("north_spades", "K");
+    ctx.updateResultTableHint(ctx.collectHands());
+
+    // Assert: do not advertise clickable results for an unsolved deal.
+    assert.equal(hint.hidden, true);
+    assert.equal(hint.textContent, "");
+});
+
+test("ddTableLooksPopulated requires digits and a matching PBN cache key", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    const table = document.element("result-table");
+    const hands = ctx.collectHands();
+
+    assert.equal(ctx.ddTableLooksPopulated(table, hands), false);
+
+    table.rows[1].cells[1].innerHTML = "1";
+    assert.equal(ctx.ddTableLooksPopulated(table, hands), false);
+
+    ctx.lastDdTablePbn = ctx.handsToPbn(hands);
+    assert.equal(ctx.ddTableLooksPopulated(table, hands), true);
+
+    document.setValue("north_spades", "K");
+    assert.equal(ctx.ddTableLooksPopulated(table, ctx.collectHands()), false);
+});
+
 test("updateResultTableHint describes lead selection for partial deals", () => {
     const document = createMockDocument({
         north_spades: "A",
@@ -2729,6 +2776,7 @@ test("updateResultTableHint describes lead selection for partial deals", () => {
     const hint = document.element("result-table-hint");
     // Matrix must be populated before the click-to-lead hint is shown.
     document.element("result-table").rows[1].cells[1].innerHTML = "1";
+    ctx.lastDdTablePbn = ctx.handsToPbn(ctx.collectHands());
 
     ctx.updateResultTableHint(ctx.collectHands());
 
@@ -2740,6 +2788,7 @@ test("updateResultTableHint describes lead selection for partial deals", () => {
 
     ctx.fillFormWithPartScoreTestData();
     document.element("result-table").rows[1].cells[1].innerHTML = "7";
+    ctx.lastDdTablePbn = ctx.handsToPbn(ctx.collectHands());
     ctx.updateResultTableHint(ctx.collectHands());
     assert.equal(hint.hidden, false);
     assert.equal(
@@ -2777,6 +2826,7 @@ test("editing a full deal down to a partial deal switches to lead-on-click mode"
     southNt.innerHTML = "6";
     southNt.textContent = "6";
     document.element("result-table").rows[1].cells[1].innerHTML = "7";
+    ctx.lastDdTablePbn = ctx.handsToPbn(ctx.collectHands());
     ctx.updateResultTableHint(ctx.collectHands());
     ctx.handleResultTableClick({
         target: {
@@ -2800,8 +2850,9 @@ test("editing a full deal down to a partial deal switches to lead-on-click mode"
     document.setValue("east_clubs", "KQ"); // was "KQ9"
     document.setValue("south_spades", "97"); // was "972"
     document.setValue("west_clubs", "T"); // was "T5"
-    // refreshDdTable is stubbed; keep a digit so the lead hint can appear.
+    // refreshDdTable is stubbed; simulate a solved matrix for the new deal.
     document.element("result-table").rows[1].cells[1].innerHTML = "1";
+    ctx.lastDdTablePbn = ctx.handsToPbn(ctx.collectHands());
     ctx.updateActionButtons();
 
     // Assert: treated like a fresh partial deal — lead hint, no leftover contract.
@@ -2863,6 +2914,7 @@ test("leaving a full deal clears a pending cell selection for a fresh partial", 
     // Assert: selection does not carry over; next click is a fresh lead choice.
     assert.equal(ctx.selectedContract(), null);
     document.element("result-table").rows[1].cells[1].innerHTML = "1";
+    ctx.lastDdTablePbn = ctx.handsToPbn(ctx.collectHands());
     ctx.updateResultTableHint(ctx.collectHands());
     assert.equal(
         document.element("result-table-hint").textContent,
