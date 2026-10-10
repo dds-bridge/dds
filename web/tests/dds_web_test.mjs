@@ -133,6 +133,7 @@ function createMockDocument(initialValues = {}) {
     makeElement("play-hint");
     makeElement("play-score");
     makeElement("edit-hands");
+    makeElement("result-table-hint");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
     }
@@ -464,7 +465,73 @@ test("inputIsValid rejects incomplete deal", () => {
             south: [],
             west: [],
         })),
-        "Please enter 13 cards per hand."
+        "Please enter the same number of cards in each hand (1-13)."
+    );
+});
+
+test("inputIsValid rejects unequal hand lengths", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(
+        ctx.inputIsValid(handsFromKeys(ctx, {
+            north: ["SA", "SK"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        })),
+        "Please enter the same number of cards in each hand (1-13)."
+    );
+});
+
+test("inputIsValid accepts equal short hands from 1 to 13", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(
+        ctx.inputIsValid(handsFromKeys(ctx, {
+            north: ["SA"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        })),
+        ""
+    );
+    assert.equal(
+        ctx.inputIsValid(handsFromKeys(ctx, {
+            north: ["SA", "SK", "SQ", "SJ", "ST"],
+            east: ["HA", "HK", "HQ", "HJ", "HT"],
+            south: ["DA", "DK", "DQ", "DJ", "DT"],
+            west: ["CA", "CK", "CQ", "CJ", "CT"],
+        })),
+        ""
+    );
+});
+
+test("allHandsHaveEqualCardCounts is true for equal counts 1-13", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(
+        ctx.allHandsHaveEqualCardCounts(handsFromKeys(ctx, {
+            north: ["SA"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        })),
+        true
+    );
+    assert.equal(
+        ctx.allHandsHaveEqualCardCounts(handsFromKeys(ctx, {
+            north: ["SA"],
+            east: [],
+            south: [],
+            west: [],
+        })),
+        false
+    );
+    assert.equal(
+        ctx.allHandsHaveEqualCardCounts(handsFromKeys(ctx, {
+            north: [],
+            east: [],
+            south: [],
+            west: [],
+        })),
+        false
     );
 });
 
@@ -1665,6 +1732,118 @@ test("refreshDdTable clears the results table when the deal is incomplete", () =
     assert.equal(document.element("result").innerHTML, "");
 });
 
+test("refreshDdTable solves when all hands have the same short card count", async () => {
+    // Arrange: one card each is a legal DDS position (equal counts, not only 13).
+    let ccallCount = 0;
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            ccallCount += 1;
+            return 1;
+        },
+        getValue() {
+            return 1;
+        },
+    });
+
+    // Act
+    await ctx.refreshDdTable();
+
+    // Assert
+    assert.equal(ccallCount, 1);
+    assert.match(document.element("result").innerHTML, /^Solved in \d+ ms\.$/);
+});
+
+test("ddMatrixCellTricks shows seat-on-lead tricks for partial deals", () => {
+    // CalcDDtable stores tricks for the declaring side with LHO on lead.
+    // For a partial deal the matrix row is the leader; invert via RHO declarer.
+    const ctx = loadDdsWeb(createMockDocument());
+    // Asymmetric declarer tricks so on-lead ≠ declarer for the same seat.
+    // N/E/S/W = 4,2,3,2 with 5 tricks left.
+    const declarer = [4, 2, 3, 2];
+
+    assert.equal(
+        ctx.ddMatrixCellTricks({
+            seatHand: 0, // North on lead → NS = 5 - West(declarer 2)
+            remainingTricks: 5,
+            declarerTricksForStrain: declarer,
+            seatOnLead: true,
+        }),
+        3
+    );
+    assert.equal(
+        ctx.ddMatrixCellTricks({
+            seatHand: 1, // East on lead → EW = 5 - North(declarer 4)
+            remainingTricks: 5,
+            declarerTricksForStrain: declarer,
+            seatOnLead: true,
+        }),
+        1
+    );
+    assert.equal(
+        ctx.ddMatrixCellTricks({
+            seatHand: 0,
+            remainingTricks: 5,
+            declarerTricksForStrain: declarer,
+            seatOnLead: false,
+        }),
+        4
+    );
+});
+
+test("refreshDdTable fills partial-deal cells for the row seat on lead", async () => {
+    // Arrange: 5 cards each. Mock CalcDDtable declarer values per strain/hand.
+    // N,E,S,W declarer = 4,2,3,2 → North-on-lead = 5-2 = 3 (not declarer 4).
+    const declarerTable = new Array(20).fill(0);
+    for (let strain = 0; strain < 5; strain++) {
+        declarerTable[strain * 4 + 0] = 4;
+        declarerTable[strain * 4 + 1] = 2;
+        declarerTable[strain * 4 + 2] = 3;
+        declarerTable[strain * 4 + 3] = 2;
+    }
+    const document = createMockDocument({
+        north_spades: "AKQJ5",
+        east_hearts: "AKQJ5",
+        south_diamonds: "AKQJ5",
+        west_clubs: "AKQJ5",
+    });
+    const ctx = loadDdsWeb(document);
+    ctx.loadDdsModule = async () => ({
+        _malloc: () => 0,
+        _free() {},
+        ccall() {
+            return 1;
+        },
+        getValue(ptr) {
+            // refreshDdTable reads outPtr + index * 4 with outPtr from malloc(0).
+            const index = (ptr / 4) | 0;
+            return declarerTable[index] ?? 0;
+        },
+    });
+
+    // Act
+    await ctx.refreshDdTable();
+
+    // Assert: North/clubs shows tricks with North on lead, not North as declarer.
+    assert.equal(
+        String(document.element("result-table").rows[1].cells[1].innerHTML),
+        "3"
+    );
+    // East/clubs: East on lead → 5 - North declarer 4 = 1 (not declarer 2).
+    assert.equal(
+        String(document.element("result-table").rows[2].cells[1].innerHTML),
+        "1"
+    );
+});
+
 test("formatSolveTimeMs rounds wall time to whole milliseconds", () => {
     const ctx = loadDdsWeb(createMockDocument());
 
@@ -2509,6 +2688,225 @@ test("contractStatusHtml uses NT and South when South declares notrump", () => {
     assert.match(html, /aria-label="Notrump; South declares"/);
 });
 
+test("contractStatusHtml shows on-lead wording for partial deals", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const html = ctx.contractStatusHtml(
+        { direction: "north", denomination: "S" },
+        { onLead: true }
+    );
+
+    assert.match(html, /class="contract-status-by"[^>]*>lead</);
+    assert.match(html, /class="contract-status-declarer"[^>]*>N</);
+    assert.match(html, /aria-label="Spades; North on lead"/);
+});
+
+test("updateResultTableHint is hidden when the matrix is unsolved", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    const hint = document.element("result-table-hint");
+    hint.hidden = false;
+    hint.textContent = "Click a cell to play out that contract";
+
+    ctx.updateResultTableHint(ctx.collectHands());
+
+    assert.equal(hint.hidden, true);
+    assert.equal(hint.textContent, "");
+});
+
+test("updateResultTableHint describes lead selection for partial deals", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    const hint = document.element("result-table-hint");
+    // Matrix must be populated before the click-to-lead hint is shown.
+    document.element("result-table").rows[1].cells[1].innerHTML = "1";
+
+    ctx.updateResultTableHint(ctx.collectHands());
+
+    assert.equal(hint.hidden, false);
+    assert.equal(
+        hint.textContent,
+        "Click a cell to place the corresponding player on lead"
+    );
+
+    ctx.fillFormWithPartScoreTestData();
+    document.element("result-table").rows[1].cells[1].innerHTML = "7";
+    ctx.updateResultTableHint(ctx.collectHands());
+    assert.equal(hint.hidden, false);
+    assert.equal(
+        hint.textContent,
+        "Click a cell to play out that contract"
+    );
+});
+
+test("clear_results hides the matrix hint", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const hint = document.element("result-table-hint");
+    document.element("result-table").rows[1].cells[1].innerHTML = "7";
+    hint.hidden = false;
+    hint.textContent = "Click a cell to play out that contract";
+
+    ctx.clear_results();
+
+    assert.equal(hint.hidden, true);
+    assert.equal(hint.textContent, "");
+    assert.equal(document.element("result-table").rows[1].cells[1].innerHTML, "");
+});
+
+test("editing a full deal down to a partial deal switches to lead-on-click mode", async () => {
+    // Arrange: full deal with a selected contract (South declares NT → West leads).
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.refreshDdTable = async () => {};
+    ctx.refreshPlayTricks = async () => {};
+    ctx.solvePlayPosition = async () => ({ SK: 0 });
+    const hint = document.element("result-table-hint");
+    const southNt = document.element("result-table").rows[3].cells[5];
+    ctx.fillFormWithPartScoreTestData();
+    // fillForm clears the matrix; restore digits so play can start and the hint shows.
+    southNt.innerHTML = "6";
+    southNt.textContent = "6";
+    document.element("result-table").rows[1].cells[1].innerHTML = "7";
+    ctx.updateResultTableHint(ctx.collectHands());
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return southNt;
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(ctx.isPlayMode(), true);
+    assert.equal(ctx.playState.leadSeat, "west");
+    assert.equal(hint.hidden, false);
+    assert.equal(
+        hint.textContent,
+        "Click a cell to play out that contract"
+    );
+
+    // Act: Edit hands, then remove one card from each seat (12 each).
+    ctx.exitPlay();
+    document.setValue("north_diamonds", ""); // was "5"
+    document.setValue("east_clubs", "KQ"); // was "KQ9"
+    document.setValue("south_spades", "97"); // was "972"
+    document.setValue("west_clubs", "T"); // was "T5"
+    // refreshDdTable is stubbed; keep a digit so the lead hint can appear.
+    document.element("result-table").rows[1].cells[1].innerHTML = "1";
+    ctx.updateActionButtons();
+
+    // Assert: treated like a fresh partial deal — lead hint, no leftover contract.
+    assert.equal(ctx.selectedContract(), null);
+    assert.equal(hint.hidden, false);
+    assert.equal(
+        hint.textContent,
+        "Click a cell to place the corresponding player on lead"
+    );
+    assert.equal(
+        document.element("result-table").rows[1].cells[1].getAttribute("aria-label"),
+        "Clubs; North on lead"
+    );
+
+    // Clicking North/spades puts North on lead (not East as North's LHO).
+    const northSpades = document.element("result-table").rows[1].cells[4];
+    northSpades.innerHTML = "1";
+    northSpades.textContent = "1";
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return northSpades;
+            },
+        },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(ctx.isPlayMode(), true);
+    assert.equal(ctx.playState.leadSeat, "north");
+    assert.equal(ctx.playState.absoluteSideTricks, true);
+});
+
+test("leaving a full deal clears a pending cell selection for a fresh partial", () => {
+    // Arrange: full deal with a cell chosen before play could start (empty target).
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.refreshDdTable = async () => {};
+    const southNt = document.element("result-table").rows[3].cells[5];
+    southNt.innerHTML = "";
+    southNt.textContent = "";
+    ctx.fillFormWithPartScoreTestData();
+    ctx.updateActionButtons();
+    ctx.handleResultTableClick({
+        target: {
+            closest() {
+                return southNt;
+            },
+        },
+    });
+    assert.equal(ctx.selectedContract()?.direction, "south");
+    assert.equal(ctx.isPlayMode(), false);
+
+    // Act: edit down to 12 cards each (partial).
+    document.setValue("north_diamonds", "");
+    document.setValue("east_clubs", "KQ");
+    document.setValue("south_spades", "97");
+    document.setValue("west_clubs", "T");
+    ctx.updateActionButtons();
+
+    // Assert: selection does not carry over; next click is a fresh lead choice.
+    assert.equal(ctx.selectedContract(), null);
+    document.element("result-table").rows[1].cells[1].innerHTML = "1";
+    ctx.updateResultTableHint(ctx.collectHands());
+    assert.equal(
+        document.element("result-table-hint").textContent,
+        "Click a cell to place the corresponding player on lead"
+    );
+    assert.equal(southNt.classList.contains("result-cell-selected"), false);
+});
+
+test("ensurePlayForSelectedContract puts the clicked seat on lead for partial deals", () => {
+    const document = createMockDocument({
+        north_spades: "AK",
+        east_hearts: "AK",
+        south_diamonds: "AK",
+        west_clubs: "AK",
+    });
+    const ctx = loadDdsWeb(document);
+    // North / spades cell shows 1 trick; click means North on lead, not East.
+    document.element("result-table").rows[1].cells[4].textContent = "1";
+    ctx.selectedContractState = { direction: "north", denomination: "S" };
+
+    assert.equal(ctx.ensurePlayForSelectedContract(), true);
+    assert.equal(ctx.isPlayMode(), true);
+    assert.equal(ctx.playState.leadSeat, "north");
+    assert.equal(ctx.playState.absoluteSideTricks, true);
+});
+
+test("createPlayState respects an explicit leadSeat", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: handsFromKeys(ctx, {
+            north: ["SA"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        }),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 1,
+        leadSeat: "south",
+    });
+
+    assert.equal(state.leadSeat, "south");
+});
+
 test("updateContractStatus hides the NE panel when no contract is selected", () => {
     // Arrange
     const document = createMockDocument();
@@ -2830,6 +3228,28 @@ test("pageLoad makes result data cells keyboard-operable buttons", () => {
     assert.notEqual(table.rows[0].cells[1].tabIndex, 0);
     assert.equal(table.rows[0].cells[1].getAttribute("role"), null);
     assert.notEqual(table.rows[1].cells[0].tabIndex, 0);
+});
+
+test("result cell aria-labels describe on-lead for partial deals", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document);
+    const table = document.element("result-table");
+    ctx.pageLoad();
+    ctx.updateActionButtons();
+
+    assert.equal(
+        table.rows[1].cells[1].getAttribute("aria-label"),
+        "Clubs; North on lead"
+    );
+    assert.equal(
+        table.rows[3].cells[5].getAttribute("aria-label"),
+        "Notrump; South on lead"
+    );
 });
 
 test("handleResultTableKeyDown selects a contract on Enter", () => {
@@ -3608,7 +4028,7 @@ test("result table lives in the hand diagram southeast corner", () => {
     // Hint sits above the table inside the SE cell.
     assert.match(
         afterSe,
-        /class="[^"]*result-table-hint[^"]*"[^>]*>Click a cell to play out that contract</
+        /id="result-table-hint"[^>]*class="[^"]*result-table-hint[^"]*"[^>]*\bhidden\b/
     );
     assert.match(
         afterSe,
@@ -5506,11 +5926,37 @@ test("solverPositionFromPlay strips played and current-trick cards", () => {
     assert.equal(pos.trickSuits.join(","), "0,0,0");
     assert.equal(pos.trickRanks.join(","), "13,0,0");
     assert.equal(pos.seatToPlay, "north");
+    assert.equal(pos.remainingTricks, 13);
     assert.equal(
         pos.remainingHands.west.some((c) => c.key() === "SK"),
         false
     );
     assert.match(pos.pbn, /643\.T8\.AK742\.T5/);
+});
+
+test("solverPositionFromPlay remainingTricks matches equal short deal length", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: handsFromKeys(ctx, {
+            north: ["SA", "HA"],
+            east: ["SK", "HK"],
+            south: ["SQ", "HQ"],
+            west: ["SJ", "HJ"],
+        }),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 1,
+    });
+
+    assert.equal(ctx.solverPositionFromPlay(state).remainingTricks, 2);
+
+    state.history = [
+        { seat: "west", key: "SJ", auto: false },
+        { seat: "north", key: "SA", auto: false },
+        { seat: "east", key: "SK", auto: false },
+        { seat: "south", key: "SQ", auto: false },
+    ];
+    assert.equal(ctx.solverPositionFromPlay(state).remainingTricks, 1);
 });
 
 test("appendPlay and undoLastChoice remove auto plays together", () => {
@@ -5734,6 +6180,123 @@ test("playDiffMapFromSolverOutput converts scores to contract diffs", () => {
     // EW 7 → NS 6 → diff 0; EW 6 → NS 7 → diff +1
     assert.equal(map.SA, 0);
     assert.equal(map.SQ, 1);
+});
+
+test("playDiffMapFromSolverOutput keeps absolute side tricks for partial deals", () => {
+    // Partial deals have no contract; badges show the side's projected total
+    // (already won + remaining if that card is played), not +/−/= vs a target.
+    const ctx = loadDdsWeb(createMockDocument());
+    const out = [2, 0, 14, 3, 0, 12, 2]; // SA → 3, SQ → 2 remaining
+
+    const opening = ctx.playDiffMapFromSolverOutput(out, {
+        declarer: "south",
+        seatToPlay: "west",
+        nsTricks: 0,
+        ewTricks: 0,
+        remainingTricks: 5,
+        targetTricks: 2,
+        absoluteSideTricks: true,
+    });
+    assert.equal(opening.SA, 3);
+    assert.equal(opening.SQ, 2);
+
+    // After EW won 1; remaining scores still 3/2 → projected totals 4/3.
+    const mid = ctx.playDiffMapFromSolverOutput(out, {
+        declarer: "south",
+        seatToPlay: "west",
+        nsTricks: 0,
+        ewTricks: 1,
+        remainingTricks: 4,
+        targetTricks: 2,
+        absoluteSideTricks: true,
+    });
+    assert.equal(mid.SA, 4);
+    assert.equal(mid.SQ, 3);
+});
+
+test("playDealCardCount and isPlayHistoryComplete use the deal size", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: handsFromKeys(ctx, {
+            north: ["SA", "HA"],
+            east: ["SK", "HK"],
+            south: ["SQ", "HQ"],
+            west: ["SJ", "HJ"],
+        }),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 1,
+        leadSeat: "west",
+    });
+
+    assert.equal(ctx.playDealCardCount(state), 8);
+    assert.equal(ctx.isPlayHistoryComplete(state), false);
+
+    state.history = new Array(8).fill(null).map((_, i) => ({
+        seat: ["west", "north", "east", "south"][i % 4],
+        key: "XX",
+        auto: false,
+    }));
+    assert.equal(ctx.isPlayHistoryComplete(state), true);
+});
+
+test("renderPlayScore marks final when all partial-deal cards are played", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    assert.equal(ctx.startPlay("south", "N", 1, "west"), true);
+    ctx.playState.history = [
+        { seat: "west", key: "CA", auto: false },
+        { seat: "north", key: "SA", auto: false },
+        { seat: "east", key: "HA", auto: false },
+        { seat: "south", key: "DA", auto: false },
+    ];
+    ctx.renderPlayUi();
+    assert.match(document.element("play-score").textContent, /\(final\)/);
+});
+
+test("createPlayState uses absolute side-trick badges for short deals", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const short = ctx.createPlayState({
+        hands: handsFromKeys(ctx, {
+            north: ["SA"],
+            east: ["HA"],
+            south: ["DA"],
+            west: ["CA"],
+        }),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 1,
+    });
+    assert.equal(short.absoluteSideTricks, true);
+
+    const full = ctx.createPlayState({
+        hands: partScoreHands(ctx),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 6,
+    });
+    assert.equal(full.absoluteSideTricks, false);
+});
+
+test("playBadgeMapFromPending shows absolute numerals for partial deals", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+
+    const absolute = ctx.playBadgeMapFromPending({ SA: 3, SQ: 2 }, true);
+    assert.equal(absolute.SA, "3");
+    assert.equal(absolute.SQ, "2");
+
+    const relative = ctx.playBadgeMapFromPending({ SA: 0, SQ: 1 }, false);
+    assert.equal(relative.SA, "=");
+    assert.equal(relative.SQ, "+1");
 });
 
 test("isLegalPlayCard requires seat to play and pending diff", () => {

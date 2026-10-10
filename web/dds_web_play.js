@@ -14,7 +14,7 @@
             playDiffMapFromSolverOutput isLegalPlayCard ddsRankFromPip
             remainingCardsForSeat playState startPlay exitPlay tryPlayCard
             undoPlay handlePlayUndoKeyDown handlePlayHistoryUndo
-            renderPlayUi isPlayMode
+            renderPlayUi isPlayMode playDealCardCount isPlayHistoryComplete
             playBadgeMapFromPending targetTricksFromCell */
 
 "use strict";
@@ -149,15 +149,25 @@
         return out;
     }
 
-    function createPlayState({ hands, declarer, denomination, targetTricks }) {
+    function createPlayState({
+        hands,
+        declarer,
+        denomination,
+        targetTricks,
+        leadSeat,
+    }) {
         const trumpLetter = denomination === "N" ? null : denomination;
+        const dealTricks = (hands[DIRECTIONS[0]] || []).length;
+        const resolvedLead = leadSeat || openingLeader(declarer);
         return {
             hands: cloneHands(hands),
             declarer,
             denomination,
             trumpLetter,
             targetTricks: Number(targetTricks),
-            leadSeat: openingLeader(declarer),
+            // Partial deals have no contract; badge absolute side-to-play tricks.
+            absoluteSideTricks: dealTricks > 0 && dealTricks < 13,
+            leadSeat: resolvedLead,
             history: [],
             pendingDiffs: null,
             autoPlay: true,
@@ -245,7 +255,10 @@
             seatToPlay: replay.seat,
             nsTricks: replay.nsTricks,
             ewTricks: replay.ewTricks,
-            remainingTricks: 13 - replay.nsTricks - replay.ewTricks,
+            remainingTricks:
+                state.hands[DIRECTIONS[0]].length -
+                replay.nsTricks -
+                replay.ewTricks,
         };
     }
 
@@ -272,19 +285,46 @@
         state.autoPlay = false;
     }
 
+    function playDealCardCount(state) {
+        if (!state || !state.hands) {
+            return 0;
+        }
+
+        let total = 0;
+
+        for (const direction of DIRECTIONS) {
+            total += (state.hands[direction] || []).length;
+        }
+
+        return total;
+    }
+
+    function isPlayHistoryComplete(state) {
+        return !!state && state.history.length >= playDealCardCount(state);
+    }
+
     function playDiffMapFromSolverOutput(out, context) {
         const scores = leadTricksMapFromSolverOutput(out);
         const map = {};
         for (const key of Object.keys(scores)) {
-            map[key] = playDiffFromSolverScore({
-                declarer: context.declarer,
-                seatToPlay: context.seatToPlay,
-                nsTricks: context.nsTricks,
-                ewTricks: context.ewTricks,
-                remainingTricks: context.remainingTricks,
-                sideToPlayScore: scores[key],
-                targetTricks: context.targetTricks,
-            });
+            if (context.absoluteSideTricks) {
+                // Solver score is remaining tricks for the side to play; add
+                // tricks already won so the badge is the projected side total.
+                const won = isNs(context.seatToPlay)
+                    ? context.nsTricks
+                    : context.ewTricks;
+                map[key] = won + scores[key];
+            } else {
+                map[key] = playDiffFromSolverScore({
+                    declarer: context.declarer,
+                    seatToPlay: context.seatToPlay,
+                    nsTricks: context.nsTricks,
+                    ewTricks: context.ewTricks,
+                    remainingTricks: context.remainingTricks,
+                    sideToPlayScore: scores[key],
+                    targetTricks: context.targetTricks,
+                });
+            }
         }
         return map;
     }
@@ -318,13 +358,15 @@
         return Number(text);
     }
 
-    function playBadgeMapFromPending(pendingDiffs) {
+    function playBadgeMapFromPending(pendingDiffs, absoluteSideTricks) {
         if (!pendingDiffs) {
             return null;
         }
         const map = {};
         for (const key of Object.keys(pendingDiffs)) {
-            map[key] = formatPlayDiff(pendingDiffs[key]);
+            map[key] = absoluteSideTricks
+                ? String(pendingDiffs[key])
+                : formatPlayDiff(pendingDiffs[key]);
         }
         return map;
     }
@@ -442,7 +484,7 @@
             return;
         }
         const replay = replayPlayState(state);
-        const done = state.history.length >= 52;
+        const done = isPlayHistoryComplete(state);
         el.textContent =
             "NS " + replay.nsTricks + " – EW " + replay.ewTricks +
             (done ? " (final)" : "");
@@ -464,13 +506,14 @@
         renderPlayScore(playState);
         if (typeof global.updateHandCardDisplays === "function") {
             global.leadTricksByCardKey = playBadgeMapFromPending(
-                playState.pendingDiffs
+                playState.pendingDiffs,
+                playState.absoluteSideTricks
             );
             global.updateHandCardDisplays(handsForDisplay(playState));
         }
     }
 
-    function startPlay(declarer, denomination, targetTricks) {
+    function startPlay(declarer, denomination, targetTricks, leadSeat) {
         if (
             typeof global.collectHands !== "function" ||
             typeof global.inputIsValid !== "function"
@@ -490,6 +533,7 @@
             declarer,
             denomination,
             targetTricks,
+            leadSeat,
         });
         setPlayModeChrome(true);
         renderPlayUi();
@@ -634,6 +678,8 @@
     global.solverPositionFromPlay = solverPositionFromPlay;
     global.appendPlay = appendPlay;
     global.undoLastChoice = undoLastChoice;
+    global.playDealCardCount = playDealCardCount;
+    global.isPlayHistoryComplete = isPlayHistoryComplete;
     global.playDiffMapFromSolverOutput = playDiffMapFromSolverOutput;
     global.isLegalPlayCard = isLegalPlayCard;
     global.ddsRankFromPip = ddsRankFromPip;

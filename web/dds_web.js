@@ -65,6 +65,7 @@
             denominationDisplayHtml
             contractStatusHtml
             updateContractStatus
+            updateResultTableHint
             importDealFromText
             chooseDealFile
             handleDealFileSelected
@@ -515,23 +516,27 @@ function denominationDisplayHtml(denomination) {
     return suitSymbolHtml(suit);
 }
 
-function contractStatusHtml(contract) {
+function contractStatusHtml(contract, options) {
     const denomHtml = denominationDisplayHtml(contract.denomination);
     const denomName = DENOM_ARIA_NAMES[contract.denomination];
-    const declarer = contract.direction;
+    const seat = contract.direction;
+    const onLead = !!(options && options.onLead);
 
-    if (!DIRECTIONS.includes(declarer) || !denomHtml || !denomName) {
+    if (!DIRECTIONS.includes(seat) || !denomHtml || !denomName) {
         return "";
     }
 
-    const declarerLetter = declarer.charAt(0).toUpperCase();
-    const declarerName = capitalize(declarer);
-    const aria = denomName + "; " + declarerName + " declares";
+    const seatLetter = seat.charAt(0).toUpperCase();
+    const seatName = capitalize(seat);
+    const relation = onLead ? "lead" : "by";
+    const aria = onLead
+        ? denomName + "; " + seatName + " on lead"
+        : denomName + "; " + seatName + " declares";
 
     return "<div class=\"contract-status-panel\" aria-label=\"" + aria + "\">" +
         "<div class=\"contract-status-denom\">" + denomHtml + "</div>" +
-        "<div class=\"contract-status-by\">by</div>" +
-        "<div class=\"contract-status-declarer\">" + declarerLetter + "</div>" +
+        "<div class=\"contract-status-by\">" + relation + "</div>" +
+        "<div class=\"contract-status-declarer\">" + seatLetter + "</div>" +
         "</div>";
 }
 
@@ -550,8 +555,39 @@ function updateContractStatus() {
         return;
     }
 
-    status.innerHTML = contractStatusHtml(contract);
+    const onLead = typeof dealIsPartial === "function" &&
+        dealIsPartial(collectHands());
+    status.innerHTML = contractStatusHtml(contract, { onLead });
     status.hidden = false;
+}
+
+const RESULT_TABLE_HINT_CONTRACT =
+    "Click a cell to play out that contract";
+const RESULT_TABLE_HINT_LEAD =
+    "Click a cell to place the corresponding player on lead";
+
+function updateResultTableHint(hands) {
+    const hint = document.getElementById("result-table-hint");
+
+    if (!hint) {
+        return;
+    }
+
+    const table = document.getElementById("result-table");
+    const populated = typeof ddTableLooksPopulated === "function" &&
+        ddTableLooksPopulated(table);
+
+    if (!populated) {
+        hint.hidden = true;
+        hint.textContent = "";
+        return;
+    }
+
+    const partial = typeof dealIsPartial === "function" && dealIsPartial(hands);
+    hint.hidden = false;
+    hint.textContent = partial
+        ? RESULT_TABLE_HINT_LEAD
+        : RESULT_TABLE_HINT_CONTRACT;
 }
 
 function capitalize(word) {
@@ -1223,15 +1259,28 @@ function ensurePlayForSelectedContract() {
         return false;
     }
 
-    if (typeof isPlayMode === "function" && isPlayMode() && playState &&
-            playState.declarer === contract.direction &&
-            playState.denomination === contract.denomination &&
-            playState.targetTricks === target) {
+    const hands = collectHands();
+    const partial = typeof dealIsPartial === "function" && dealIsPartial(hands);
+    const leadSeat = partial ? contract.direction : null;
+    const samePlay = typeof isPlayMode === "function" && isPlayMode() &&
+        playState &&
+        playState.denomination === contract.denomination &&
+        playState.targetTricks === target &&
+        (partial
+            ? playState.leadSeat === contract.direction
+            : playState.declarer === contract.direction);
+
+    if (samePlay) {
         return true;
     }
 
     if (typeof startPlay === "function") {
-        return startPlay(contract.direction, contract.denomination, target);
+        return startPlay(
+            contract.direction,
+            contract.denomination,
+            target,
+            leadSeat
+        );
     }
 
     return false;
@@ -1336,14 +1385,44 @@ function contractFromResultCell(cell) {
     };
 }
 
-function resultCellAriaLabel(direction, denomination) {
+function resultCellAriaLabel(direction, denomination, onLead) {
     const denomName = DENOM_ARIA_NAMES[denomination];
 
     if (!DIRECTIONS.includes(direction) || !denomName) {
         return "";
     }
 
-    return denomName + "; " + capitalize(direction) + " declares";
+    return denomName + "; " + capitalize(direction) +
+        (onLead ? " on lead" : " declares");
+}
+
+function updateResultTableCellLabels(hands) {
+    const table = document.getElementById("result-table");
+
+    if (!table || !table.rows) {
+        return;
+    }
+
+    const onLead = typeof dealIsPartial === "function" && dealIsPartial(hands);
+
+    for (let row = 1; row <= 4; row++) {
+        for (let column = 1; column <= 5; column++) {
+            const cell = table.rows[row] && table.rows[row].cells[column];
+
+            if (!cell || typeof cell.setAttribute !== "function") {
+                continue;
+            }
+
+            cell.setAttribute(
+                "aria-label",
+                resultCellAriaLabel(
+                    DIRECTIONS[row - 1],
+                    DENOMINATIONS[column - 1],
+                    onLead
+                )
+            );
+        }
+    }
 }
 
 function enhanceResultTableCells() {
@@ -1369,7 +1448,7 @@ function enhanceResultTableCells() {
                 cell.setAttribute("role", "button");
                 cell.setAttribute(
                     "aria-label",
-                    resultCellAriaLabel(direction, denomination)
+                    resultCellAriaLabel(direction, denomination, false)
                 );
             }
         }
@@ -1902,8 +1981,27 @@ function updateActionButtons(activeElement) {
         hands = collectHands();
     }
 
+    // Leaving a complete 13-card deal drops contract/play selection so a later
+    // partial is handled like a diagram entered from scratch (lead-on-click).
+    const fullDeal = typeof dealIsFull === "function" && dealIsFull(hands);
+    if (lastDealWasFull && !fullDeal) {
+        if (typeof isPlayMode === "function" && isPlayMode() &&
+                typeof exitPlay === "function") {
+            exitPlay();
+        } else if (selectedContractState) {
+            clearResultCellSelectionHighlight();
+            selectedContractState = null;
+            leadTricksRequestId += 1;
+            leadTricksByCardKey = null;
+        }
+    }
+    lastDealWasFull = fullDeal;
+
     updateDeckStatus(hands);
     updateHandCardCounts(hands);
+    updateResultTableHint(hands);
+    updateResultTableCellLabels(hands);
+    updateContractStatus();
 
     // Drop cached lead numerals immediately on any hand change so a slow
     // follow-up solve cannot leave stale badges on screen.
@@ -1914,7 +2012,7 @@ function updateActionButtons(activeElement) {
 
     updateHandCardDisplays(hands);
 
-    const dealComplete = allHandsHaveThirteenCards(hands) &&
+    const dealComplete = allHandsHaveEqualCardCounts(hands) &&
         inputIsValid(hands).length === 0;
 
     // Any diagram change supersedes an in-flight DD-table request so a delayed
@@ -1958,13 +2056,17 @@ function collectHands() {
 function inputIsValid(hands) {
     const deck = {};
     const duplicates = [];
+    const counts = DIRECTIONS.map(
+        (direction) => (hands[direction] || []).length
+    );
+    const count = counts[0];
 
-    for (const direction of Object.keys(hands)) {
+    if (count < 1 || count > 13 || !counts.every((n) => n === count)) {
+        return "Please enter the same number of cards in each hand (1-13).";
+    }
+
+    for (const direction of DIRECTIONS) {
         const hand = hands[direction];
-
-        if (hand.length != 13) {
-            return "Please enter 13 cards per hand.";
-        }
 
         for (const card of hand) {
             if (!PIPS.includes(card.pip)) {
