@@ -3,14 +3,17 @@ module(
     version = "3.1.1"
 )
 
-bazel_dep(name = "rules_cc", version = "0.2.18")
+bazel_dep(name = "rules_cc", version = "0.2.26")
 # MSVC default_cpp_std is hardcoded to /std:c++17 in rules_cc. Raise it to
 # /std:c++20 so googletest and every Windows cc_* compile match the project
 # baseline without restating /std in DDS_CPPOPTS (D9025) or build:windows
 # --cxxopt (which would leak into wasm transitions on Windows hosts).
+# Pinned to >= 0.2.19 because apple_support >= 2.x requires
+# @rules_cc//cc/toolchains:legacy_tool.bzl, absent before 0.2.19; bumped to
+# 0.2.26 (apple_support's own requested version) to match it directly.
 single_version_override(
     module_name = "rules_cc",
-    version = "0.2.18",
+    version = "0.2.26",
     patches = ["//:patches/rules_cc_msvc_default_cpp_std_cxx20.patch"],
     patch_strip = 1,
 )
@@ -30,20 +33,11 @@ bazel_dep(name = "toolchains_llvm", version = "1.8.0")
 
 # Xcode CC toolchain for macOS AddressSanitizer builds (--config=asan). LLVM's ASAN
 # runtime hangs on current macOS; see .bazelrc build:asan_macos.
-bazel_dep(name = "apple_support", version = "1.24.2")
-# Xcode 27 libc++ warns for -mmacosx-version-min < 11.0 when building
-# apple_support's wrapped_clang/libtool; 1.24.2 also has a dead nodiscard
-# hasher(file) in libtool.cc. Drop these overrides when bumping past upstream
-# fixes (min-OS bump is in apple_support >= 2.8.4).
-single_version_override(
-    module_name = "apple_support",
-    version = "1.24.2",
-    patches = [
-        "//:patches/apple_support_macos_min_11.patch",
-        "//:patches/apple_support_libtool_nodiscard.patch",
-    ],
-    patch_strip = 1,
-)
+# >= 2.8.4 is required: it fixed Xcode 27 libc++ warning for
+# -mmacosx-version-min < 11.0 in wrapped_clang/libtool, and a dead nodiscard
+# hasher(file) call in libtool.cc, which this project used to carry as
+# single_version_override patches (see git history prior to this version bump).
+bazel_dep(name = "apple_support", version = "2.10.1")
 
 # WASM builds (//wasm:*, //web:dds_web_wasm). If you bump this version,
 # rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_web_wasm.py.

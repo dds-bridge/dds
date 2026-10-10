@@ -85,8 +85,6 @@ exports_files(
         ".bazelrc",
         "CPPVARIABLES.bzl",
         "MODULE.bazel",
-        "patches/apple_support_libtool_nodiscard.patch",
-        "patches/apple_support_macos_min_11.patch",
         "patches/rules_cc_msvc_default_cpp_std_cxx20.patch",
     ],
     visibility = ["//python:__pkg__"],
@@ -114,20 +112,22 @@ filegroup(
 )
 
 filegroup(
-    name = "macos_asan_ci_config_files",
-    srcs = [
-        "MODULE.bazel",
-        "patches/apple_support_libtool_nodiscard.patch",
-        "patches/apple_support_macos_min_11.patch",
-    ],
-    visibility = ["//python:__pkg__"],
-)
-
-filegroup(
     name = "macos_native_linker_config_files",
     srcs = [
         ".bazelrc",
         "CPPVARIABLES.bzl",
+        "MODULE.bazel",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+
+# Globbed (not enumerated) so a future PR that reintroduces a retired
+# patches/*.patch file automatically lands it in these runfiles too, letting
+# ci_macos_asan_test's existence checks see it.
+filegroup(
+    name = "macos_asan_ci_config_files",
+    srcs = glob(["patches/*.patch"]) + [
+        ".bazelrc",
         "MODULE.bazel",
     ],
     visibility = ["//python:__pkg__"],

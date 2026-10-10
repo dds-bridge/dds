@@ -1,7 +1,7 @@
 ---
 capability: build-system
 owners: [//, CPPVARIABLES.bzl, wasm_compat.bzl]
-last-updated: 2026-10-08
+last-updated: 2026-10-10
 ---
 
 # Build System
@@ -110,10 +110,6 @@ than re-encoding toolchain knowledge.
   `DDS_SCHEDULER_DEFINE`.
 - `patches/rules_cc_msvc_default_cpp_std_cxx20.patch` — raises MSVC
   `default_cpp_std` from `/std:c++17` to `/std:c++20` (wired in `MODULE.bazel`).
-- `patches/apple_support_macos_min_11.patch`,
-  `patches/apple_support_libtool_nodiscard.patch` — Xcode 27 crosstool-helper
-  fixes for `apple_support` (wired via `single_version_override` in
-  `MODULE.bazel`); see `docs/BUILD_SYSTEM.md`.
 - `wasm_compat.bzl` — `WASM_LINKOPTS`.
 - `MODULE.bazel` — the Bazel module and its `bazel_dep` graph (including
   `@llvm_toolchain_msan` for MemorySanitizer).

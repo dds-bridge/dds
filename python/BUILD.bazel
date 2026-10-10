@@ -141,8 +141,9 @@ py_test(
     ],
 )
 
-# Guard: apple_support crosstool patch keeps macOS ASAN free of Xcode 27
-# libc++ -W#warnings / libtool nodiscard noise.
+# Guard: apple_support stays pinned past the release that fixed Xcode 27
+# libc++ -W#warnings / libtool nodiscard noise in its ASAN crosstool helpers,
+# without the patches that release made obsolete.
 py_test(
     name = "ci_macos_asan_test",
     size = "small",
