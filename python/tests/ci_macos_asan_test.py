@@ -71,12 +71,13 @@ def _apple_support_bazel_dep_version(module_bazel: str) -> str:
 
 
 def _has_apple_support_override(module_bazel: str) -> bool:
-    """True if any override pins apple_support to a specific commit/version set.
+    """True if any Bazel module override directive targets apple_support.
 
-    Matches each override call's full argument body regardless of argument
-    order or formatting, rather than assuming module_name is the first line
-    after the opening "(", and covers all five Bazel module override
-    directives, not just single_version_override.
+    Covers all five override directives (archive_override, git_override,
+    local_path_override, multiple_version_override, single_version_override)
+    — not just single_version_override — and matches each call's full
+    argument body regardless of argument order or formatting, rather than
+    assuming module_name is the first line after the opening "(".
     """
     override_names = (
         "archive_override",
@@ -180,6 +181,16 @@ single_version_override(
 archive_override(
     module_name = "apple_support",
     urls = ["https://example.com/apple_support.tar.gz"],
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_git_override(self) -> None:
+        sample = """
+git_override(
+    module_name = "apple_support",
+    remote = "https://github.com/bazelbuild/apple_support",
+    commit = "abc123",
 )
 """
         self.assertTrue(_has_apple_support_override(sample))
