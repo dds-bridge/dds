@@ -37,6 +37,54 @@ def _skip_comment(text: str, i: int, n: int) -> int:
     return i
 
 
+_SIMPLE_ESCAPES = {
+    "\\": "\\",
+    "'": "'",
+    '"': '"',
+    "a": "\a",
+    "b": "\b",
+    "f": "\f",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
+    "v": "\v",
+}
+_HEX_DIGITS = "0123456789abcdefABCDEF"
+_OCTAL_DIGITS = "01234567"
+
+
+def _decode_escape(text: str, j: int, n: int) -> tuple[int, str]:
+    """Decode one backslash escape starting at text[j] == "\\".
+
+    Returns (new_j, decoded_text) for Starlark's string-literal escapes:
+    the simple single-character escapes (\\n, \\t, \\\\, ...), up to 3
+    octal digits, and exactly two hex digits after \\x. Discarding the
+    backslash and keeping the next character literally — the previous
+    behavior here — decodes "\\x61pple_support" (a valid Starlark escape
+    for "apple_support") to the wrong string "x61pple_support", letting an
+    escaped module_name bypass the override guard. An escape this doesn't
+    recognize is left as a literal backslash + next character.
+    """
+    if j + 1 >= n:
+        return j + 1, "\\"
+    c = text[j + 1]
+    if c in _SIMPLE_ESCAPES:
+        return j + 2, _SIMPLE_ESCAPES[c]
+    if c == "x":
+        hex_digits = text[j + 2 : j + 4]
+        if len(hex_digits) == 2 and all(d in _HEX_DIGITS for d in hex_digits):
+            return j + 4, chr(int(hex_digits, 16))
+        return j + 2, "x"
+    if c in _OCTAL_DIGITS:
+        k = j + 1
+        digits = ""
+        while k < n and len(digits) < 3 and text[k] in _OCTAL_DIGITS:
+            digits += text[k]
+            k += 1
+        return k, chr(int(digits, 8))
+    return j + 2, "\\" + c
+
+
 def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
     """Return (end_index, value) for the string literal starting at text[i].
 
@@ -47,8 +95,8 @@ def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
     ordinary string) is ever scanned character by character for a fake
     nested call — while still extracting its value just like an ordinary
     quoted string, so a (valid, if unusual) triple-quoted keyword value is
-    captured rather than silently dropped. Both forms handle backslash
-    escapes (value is the unescaped content).
+    captured rather than silently dropped. Both forms decode backslash
+    escapes via _decode_escape() (value is the unescaped content).
     """
     quote = text[i]
     if text[i : i + 3] == quote * 3:
@@ -57,8 +105,8 @@ def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
         chars: list[str] = []
         while j < n:
             if text[j] == "\\" and j + 1 < n:
-                chars.append(text[j + 1])
-                j += 2
+                j, decoded = _decode_escape(text, j, n)
+                chars.append(decoded)
                 continue
             if text[j : j + 3] == delim:
                 return j + 3, "".join(chars)
@@ -69,8 +117,8 @@ def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
     chars = []
     while j < n:
         if text[j] == "\\" and j + 1 < n:
-            chars.append(text[j + 1])
-            j += 2
+            j, decoded = _decode_escape(text, j, n)
+            chars.append(decoded)
             continue
         if text[j] == quote:
             return j + 1, "".join(chars)
@@ -398,6 +446,19 @@ bazel_dep(name = "apple_support", version = "2.10.1")
         """
         sample = (
             'single_version_override(module_name = """apple_support""", '
+            'version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_decodes_hex_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\x61 is a valid Starlark hex escape for "a"; the decoded value
+
+        must still be compared, not the raw escape text.
+        """
+        sample = (
+            'single_version_override(module_name = "\\x61pple_support", '
             'version = "1.24.2")'
         )
         self.assertTrue(_has_apple_support_override(sample))
