@@ -21,15 +21,282 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
-def _has_apple_support_override(module_bazel: str) -> bool:
-    """True if any single_version_override targets apple_support.
+_IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+_POSITIONAL_KEY = "__positional__"
 
-    Matches each override call's full argument body regardless of argument
-    order or whether module_name shares a line with the opening "(", instead
-    of assuming module_name is the first line after "single_version_override(".
+
+def _skip_ws(text: str, i: int, n: int) -> int:
+    while i < n and text[i] in " \t\r\n":
+        i += 1
+    return i
+
+
+def _skip_comment(text: str, i: int, n: int) -> int:
+    while i < n and text[i] != "\n":
+        i += 1
+    return i
+
+
+_SIMPLE_ESCAPES = {
+    "\\": "\\",
+    "'": "'",
+    '"': '"',
+    "a": "\a",
+    "b": "\b",
+    "f": "\f",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
+    "v": "\v",
+}
+_HEX_DIGITS = "0123456789abcdefABCDEF"
+_OCTAL_DIGITS = "01234567"
+
+
+def _decode_escape(text: str, j: int, n: int) -> tuple[int, str]:
+    """Decode one backslash escape starting at text[j] == "\\".
+
+    Returns (new_j, decoded_text) for Starlark's string-literal escapes:
+    the simple single-character escapes (\\n, \\t, \\\\, ...), up to 3
+    octal digits, exactly two hex digits after \\x, and the \\uXXXX /
+    \\UXXXXXXXX Unicode code point forms (exactly 4 / 8 hex digits).
+    Discarding the backslash and keeping the next character literally —
+    the previous behavior here — decodes "\\x61pple_support" (a valid
+    Starlark escape for "apple_support") to the wrong string
+    "x61pple_support", letting an escaped module_name bypass the override
+    guard; "\\u0061pple_support" was the same bug for Unicode escapes. An
+    escape this doesn't recognize is left as a literal backslash + next
+    character.
     """
-    for call in re.finditer(r"single_version_override\(\s*([^)]*)\)", module_bazel):
-        if re.search(r'module_name\s*=\s*"apple_support"', call.group(1)):
+    if j + 1 >= n:
+        return j + 1, "\\"
+    c = text[j + 1]
+    if c in _SIMPLE_ESCAPES:
+        return j + 2, _SIMPLE_ESCAPES[c]
+    if c == "x":
+        hex_digits = text[j + 2 : j + 4]
+        if len(hex_digits) == 2 and all(d in _HEX_DIGITS for d in hex_digits):
+            return j + 4, chr(int(hex_digits, 16))
+        return j + 2, "x"
+    if c in ("u", "U"):
+        width = 4 if c == "u" else 8
+        hex_digits = text[j + 2 : j + 2 + width]
+        if len(hex_digits) == width and all(d in _HEX_DIGITS for d in hex_digits):
+            return j + 2 + width, chr(int(hex_digits, 16))
+        return j + 2, c
+    if c in _OCTAL_DIGITS:
+        k = j + 1
+        digits = ""
+        while k < n and len(digits) < 3 and text[k] in _OCTAL_DIGITS:
+            digits += text[k]
+            k += 1
+        return k, chr(int(digits, 8))
+    return j + 2, "\\" + c
+
+
+def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
+    """Return (end_index, value) for the string literal starting at text[i].
+
+    Handles Starlark triple-quoted strings as a single opaque unit — the
+    closing delimiter is matched as the 3-character sequence, never a
+    single quote character, so none of the content in between (including
+    an embedded quote that would otherwise look like the end of an
+    ordinary string) is ever scanned character by character for a fake
+    nested call — while still extracting its value just like an ordinary
+    quoted string, so a (valid, if unusual) triple-quoted keyword value is
+    captured rather than silently dropped. Both forms decode backslash
+    escapes via _decode_escape() (value is the unescaped content).
+    """
+    quote = text[i]
+    if text[i : i + 3] == quote * 3:
+        delim = quote * 3
+        j = i + 3
+        chars: list[str] = []
+        while j < n:
+            if text[j] == "\\" and j + 1 < n:
+                j, decoded = _decode_escape(text, j, n)
+                chars.append(decoded)
+                continue
+            if text[j : j + 3] == delim:
+                return j + 3, "".join(chars)
+            chars.append(text[j])
+            j += 1
+        return n, "".join(chars)
+    j = i + 1
+    chars = []
+    while j < n:
+        if text[j] == "\\" and j + 1 < n:
+            j, decoded = _decode_escape(text, j, n)
+            chars.append(decoded)
+            continue
+        if text[j] == quote:
+            return j + 1, "".join(chars)
+        chars.append(text[j])
+        j += 1
+    return n, "".join(chars)
+
+
+def _is_identifier_boundary(text: str, i: int) -> bool:
+    """True unless the character before i could continue an identifier.
+
+    Rejects matching a call/keyword name in the middle of a longer
+    identifier (e.g. "legacy_bazel_dep(" or "bazel_depfoo(") and rejects a
+    qualified/attribute call (e.g. "extensions.bazel_dep(") by also
+    treating a preceding "." as non-boundary.
+    """
+    if i == 0:
+        return True
+    prev = text[i - 1]
+    return not (prev.isalnum() or prev == "_" or prev == ".")
+
+
+def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, str]]:
+    """Yield the {keyword: string value} args of each top-level call.
+
+    A single linear scan recognizes a call name, and each "identifier =
+    value" pair inside its body, only at a genuine identifier boundary and
+    only outside strings/comments. This matters beyond just truncation: a
+    plain regex search over body *text* (even with comments stripped)
+    still matches an unrelated argument's *string value* that happens to
+    contain assignment-shaped text, e.g.
+    `patch_cmds = ['historically name = "apple_support", ...']` — a
+    bazel_dep for a different module would be misread as the apple_support
+    one. Parsing real "identifier = value" pairs only at the call's
+    top-level parenthesis depth, with identifier-matching paused for every
+    character inside a string or comment (string/comment skipping is a
+    single jump via _skip_string/_skip_comment, not a per-character toggle,
+    so a triple-quoted string's content — including embedded quote
+    characters — is never scanned as code), makes that impossible: nothing
+    inside a string literal or comment is ever offered to the identifier
+    matcher. Only simple `identifier = "string"` / `identifier = 'string'`
+    assignments are captured (list/nested-call values are skipped over for
+    paren balancing but not parsed), which is everything every caller here
+    needs. Whitespace between a call name and "(" is tolerated
+    ("archive_override (..." is valid Starlark).
+
+    Bazel's `*_override`/`bazel_dep` APIs all accept their first argument
+    (module_name / name) positionally — a bare top-level string before any
+    "identifier =" is stored under `_POSITIONAL_KEY`, letting callers treat
+    it as that first parameter. "Top-level" also tracks `[...]`/`{...}`
+    nesting (not just parens), so a string that's an *element* of a list
+    value (e.g. inside `urls = [...]`) is never mistaken for a positional
+    call argument.
+    """
+    sorted_names = sorted(call_names, key=len, reverse=True)
+    results: list[dict[str, str]] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if ch == "#":
+            i = _skip_comment(text, i, n)
+            continue
+        if ch in "\"'":
+            i, _ = _skip_string(text, i, n)
+            continue
+        matched_name = None
+        paren_index = None
+        if _is_identifier_boundary(text, i):
+            for name in sorted_names:
+                if text.startswith(name, i):
+                    j = _skip_ws(text, i + len(name), n)
+                    if j < n and text[j] == "(":
+                        matched_name = name
+                        paren_index = j
+                        break
+        if matched_name is None:
+            i += 1
+            continue
+        i = paren_index + 1
+        depth = 1
+        bracket_depth = 0
+        brace_depth = 0
+        kwargs: dict[str, str] = {}
+        while i < n and depth > 0:
+            ch = text[i]
+            if ch == "#":
+                i = _skip_comment(text, i, n)
+                continue
+            at_top = depth == 1 and bracket_depth == 0 and brace_depth == 0
+            if ch in "\"'":
+                if at_top and _POSITIONAL_KEY not in kwargs:
+                    end, value = _skip_string(text, i, n)
+                    kwargs[_POSITIONAL_KEY] = value
+                    i = end
+                    continue
+                i, _ = _skip_string(text, i, n)
+                continue
+            if ch == "(":
+                depth += 1
+                i += 1
+                continue
+            if ch == ")":
+                depth -= 1
+                i += 1
+                continue
+            if ch == "[":
+                bracket_depth += 1
+                i += 1
+                continue
+            if ch == "]":
+                bracket_depth -= 1
+                i += 1
+                continue
+            if ch == "{":
+                brace_depth += 1
+                i += 1
+                continue
+            if ch == "}":
+                brace_depth -= 1
+                i += 1
+                continue
+            if at_top and _is_identifier_boundary(text, i):
+                m = _IDENT_RE.match(text, i)
+                if m:
+                    ident = m.group(0)
+                    j = _skip_ws(text, m.end(), n)
+                    if j < n and text[j] == "=" and text[j : j + 2] != "==":
+                        j = _skip_ws(text, j + 1, n)
+                        if j < n and text[j] in "\"'":
+                            end, value = _skip_string(text, j, n)
+                            kwargs[ident] = value
+                            i = end
+                            continue
+                    i = m.end()
+                    continue
+            i += 1
+        results.append(kwargs)
+    return results
+
+
+def _apple_support_bazel_dep_version(module_bazel: str) -> str:
+    for kwargs in _iter_call_kwargs(("bazel_dep",), module_bazel):
+        name = kwargs.get("name") or kwargs.get(_POSITIONAL_KEY)
+        if name == "apple_support" and "version" in kwargs:
+            return kwargs["version"]
+    raise AssertionError('expected bazel_dep(... name = "apple_support" ...)')
+
+
+def _has_apple_support_override(module_bazel: str) -> bool:
+    """True if any Bazel module override directive targets apple_support.
+
+    Covers all five override directives (archive_override, git_override,
+    local_path_override, multiple_version_override, single_version_override)
+    — not just single_version_override — and matches each call's keyword
+    or first-positional module_name argument regardless of argument order
+    or formatting, rather than assuming module_name is the first line
+    after the opening "(".
+    """
+    override_names = (
+        "archive_override",
+        "git_override",
+        "local_path_override",
+        "multiple_version_override",
+        "single_version_override",
+    )
+    for kwargs in _iter_call_kwargs(override_names, module_bazel):
+        module_name = kwargs.get("module_name") or kwargs.get(_POSITIONAL_KEY)
+        if module_name == "apple_support":
             return True
     return False
 
@@ -43,12 +310,9 @@ class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
         this project used to carry.
         """
         module = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
-        dep = re.search(
-            r'bazel_dep\(\s*name\s*=\s*"apple_support"\s*,\s*version\s*=\s*"([^"]+)"',
-            module,
+        version = tuple(
+            int(p) for p in _apple_support_bazel_dep_version(module).split(".")
         )
-        self.assertIsNotNone(dep, "expected a direct apple_support bazel_dep")
-        version = tuple(int(p) for p in dep.group(1).split("."))
         self.assertGreaterEqual(
             version,
             (2, 8, 4),
@@ -70,11 +334,184 @@ class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
             "libtool nodiscard patch is obsolete once apple_support >= 2.8.4 is pinned",
         )
 
+    def test_apple_support_bazel_dep_version_tolerates_reordered_args(
+        self,
+    ) -> None:
+        sample = 'bazel_dep(version = "2.10.1", name = "apple_support")'
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_accepts_positional_name(
+        self,
+    ) -> None:
+        """bazel_dep's name is positional too: bazel_dep("apple_support",
+
+        version = ...) is valid Starlark.
+        """
+        sample = 'bazel_dep("apple_support", version = "2.10.1")'
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_survives_an_earlier_paren(
+        self,
+    ) -> None:
+        """A ")" inside a leading comment must not truncate the call body."""
+        sample = """bazel_dep(
+    # fixes Xcode 27 crosstool warnings (see docs)
+    version = "2.10.1",
+    name = "apple_support",
+)"""
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_ignores_commented_out_call(
+        self,
+    ) -> None:
+        sample = """# bazel_dep(name = "apple_support", version = "9.9.9")
+bazel_dep(name = "apple_support", version = "2.10.1")
+"""
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_ignores_commented_out_version(
+        self,
+    ) -> None:
+        """A stale version in a comment inside the call must not win."""
+        sample = """bazel_dep(
+    name = "apple_support",
+    # version = "9.9.9" (stale)
+    version = "2.10.1",
+)"""
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_ignores_fake_assignment_in_string(
+        self,
+    ) -> None:
+        """Assignment-shaped text inside an unrelated string value for a
+
+        different module's bazel_dep must not be read as real args.
+        """
+        sample = """bazel_dep(
+    name = "rules_cc",
+    version = "0.2.26",
+    patch_cmds = ['historically name = "apple_support", version = "9.9.9"'],
+)"""
+        with self.assertRaises(AssertionError):
+            _apple_support_bazel_dep_version(sample)
+
+    def test_apple_support_bazel_dep_version_ignores_fake_call_in_triple_quote(
+        self,
+    ) -> None:
+        """A fake bazel_dep(...) inside a triple-quoted string -- even one
+
+        with an odd number of embedded quote characters before it, which
+        would desync a naive per-quote toggle -- must stay opaque.
+        """
+        sample = '''"""
+Note: the old pin "mentioned here used
+bazel_dep(name = "apple_support", version = "9.9.9")
+"""
+bazel_dep(name = "apple_support", version = "2.10.1")
+'''
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_rejects_identifier_substring(
+        self,
+    ) -> None:
+        """"bazel_dep" appearing inside a longer identifier, or as a
+
+        qualified/attribute call, is not a real bazel_dep call.
+        """
+        for sample in (
+            'legacy_bazel_dep(name = "apple_support", version = "9.9.9")',
+            'bazel_depfoo(name = "apple_support", version = "9.9.9")',
+            'extensions.bazel_dep(name = "apple_support", version = "9.9.9")',
+        ):
+            with self.assertRaises(AssertionError):
+                _apple_support_bazel_dep_version(sample)
+
     def test_has_apple_support_override_detects_same_line_args(self) -> None:
         sample = (
             'single_version_override(module_name = "apple_support", version = "1.24.2")'
         )
         self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_positional_module_name(
+        self,
+    ) -> None:
+        """The override APIs accept module_name as their first positional
+
+        argument; archive_override("apple_support", ...) is as real an
+        override as the keyword form.
+        """
+        sample = (
+            'archive_override("apple_support", '
+            'urls = ["https://example.com/apple_support.tar.gz"])'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_triple_quoted_module_name(
+        self,
+    ) -> None:
+        """A triple-quoted keyword value is valid Starlark and must still
+
+        be extracted, not silently treated as absent.
+        """
+        sample = (
+            'single_version_override(module_name = """apple_support""", '
+            'version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_decodes_hex_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\x61 is a valid Starlark hex escape for "a"; the decoded value
+
+        must still be compared, not the raw escape text.
+        """
+        sample = (
+            'single_version_override(module_name = "\\x61pple_support", '
+            'version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_decodes_unicode_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\u0061 is a valid Starlark 4-hex-digit Unicode escape for "a";
+
+        the decoded value must still be compared, not the raw escape text.
+        """
+        sample = (
+            'single_version_override(module_name = "\\u0061pple_support", '
+            'version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_decodes_big_unicode_escape_in_module_name(
+        self,
+    ) -> None:
+        """\\U00000061 is a valid Starlark 8-hex-digit Unicode escape for
+
+        "a"; the decoded value must still be compared, not the raw escape
+        text.
+        """
+        sample = (
+            'single_version_override(module_name = "\\U00000061pple_support", '
+            'version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_ignores_positional_string_in_list(
+        self,
+    ) -> None:
+        """A bare string that is an *element* of a list value (not the
+
+        call's own first positional argument) must not be read as
+        module_name.
+        """
+        sample = """archive_override(
+    module_name = "rules_cc",
+    urls = ["apple_support"],
+)"""
+        self.assertFalse(_has_apple_support_override(sample))
 
     def test_has_apple_support_override_detects_reordered_args(self) -> None:
         sample = """
@@ -86,6 +523,22 @@ single_version_override(
 """
         self.assertTrue(_has_apple_support_override(sample))
 
+    def test_has_apple_support_override_survives_an_earlier_paren(self) -> None:
+        """A ")" inside a leading comment must not truncate the call body."""
+        sample = """single_version_override(
+    # pin past the Xcode 27 fixes (see docs)
+    module_name = "apple_support",
+    version = "1.24.2",
+)"""
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_ignores_commented_out_call(self) -> None:
+        sample = (
+            '# archive_override(module_name = "apple_support", '
+            'strip_prefix = "x")\n'
+        )
+        self.assertFalse(_has_apple_support_override(sample))
+
     def test_has_apple_support_override_ignores_other_modules(self) -> None:
         sample = """
 single_version_override(
@@ -94,6 +547,79 @@ single_version_override(
 )
 """
         self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_ignores_commented_module_name(
+        self,
+    ) -> None:
+        """A comment mentioning apple_support in a rules_cc override is not
+
+        itself an apple_support override.
+        """
+        sample = """single_version_override(
+    # module_name = "apple_support" (old pin, no longer used)
+    module_name = "rules_cc",
+    version = "0.2.26",
+)"""
+        self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_ignores_fake_assignment_in_string(
+        self,
+    ) -> None:
+        """Assignment-shaped text inside an unrelated string value for a
+
+        different module's override must not be read as real args.
+        """
+        sample = """single_version_override(
+    module_name = "rules_cc",
+    version = "0.2.26",
+    patch_cmds = ['the module_name = "apple_support" override is legacy'],
+)"""
+        self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_tolerates_whitespace_before_paren(
+        self,
+    ) -> None:
+        sample = 'archive_override (module_name = "apple_support", strip_prefix = "x")'
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_archive_override(self) -> None:
+        sample = """
+archive_override(
+    module_name = "apple_support",
+    urls = ["https://example.com/apple_support.tar.gz"],
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_git_override(self) -> None:
+        sample = """
+git_override(
+    module_name = "apple_support",
+    remote = "https://github.com/bazelbuild/apple_support",
+    commit = "abc123",
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_local_path_override(self) -> None:
+        sample = """
+local_path_override(
+    module_name = "apple_support",
+    path = "../apple_support",
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_multiple_version_override(
+        self,
+    ) -> None:
+        sample = """
+multiple_version_override(
+    module_name = "apple_support",
+    versions = ["1.24.2", "2.10.1"],
+)
+"""
+        self.assertTrue(_has_apple_support_override(sample))
 
 
 if __name__ == "__main__":
