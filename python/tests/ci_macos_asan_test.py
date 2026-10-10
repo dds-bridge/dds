@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Guard that macOS ASAN crosstool helpers do not trip Xcode 27 libc++ warnings."""
+"""Guard that apple_support stays past the release that fixed Xcode 27 ASAN
+crosstool warnings, without re-adding the patches that release made obsolete.
+"""
 
 from __future__ import annotations
 
@@ -14,74 +16,46 @@ def _repo_root(start: Path | None = None) -> Path:
     # tree where //MODULE.bazel and other data deps live.
     here = (start or Path(__file__)).absolute()
     for parent in here.parents:
-        if (parent / "MODULE.bazel").is_file() and (
-            parent / "patches" / "apple_support_macos_min_11.patch"
-        ).is_file():
+        if (parent / "MODULE.bazel").is_file() and (parent / ".bazelrc").is_file():
             return parent
     raise AssertionError("could not locate repository root from test file path")
 
 
 class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
-    def test_module_patches_apple_support_for_xcode27_crosstool(self) -> None:
-        """ASAN uses apple_support wrapped_clang/libtool.
-
-        Xcode 27's libc++ emits -W#warnings for -mmacosx-version-min < 11.0, and
-        apple_support 1.24.2's libtool.cc has a dead nodiscard hasher call. Keep
-        the single_version_override patches until we bump past those fixes
-        (upstream >= 2.8.4 for the min-OS bump).
+    def test_module_pins_apple_support_past_xcode27_crosstool_fixes(self) -> None:
+        """apple_support < 2.8.4 needs -mmacosx-version-min=11.0 and a dead
+        nodiscard hasher(file) call patched out of its wrapped_clang/libtool
+        crosstool helpers (used by --config=asan). Both are fixed upstream as
+        of 2.8.4, so a plain bazel_dep replaces the single_version_override
+        this project used to carry.
         """
         module = (_repo_root() / "MODULE.bazel").read_text(encoding="utf-8")
-        self.assertRegex(
+        dep = re.search(
+            r'bazel_dep\(\s*name\s*=\s*"apple_support"\s*,\s*version\s*=\s*"([^"]+)"',
             module,
-            r'bazel_dep\(\s*name\s*=\s*"apple_support"',
-            "expected a direct apple_support bazel_dep for ASAN",
         )
-        self.assertRegex(
+        self.assertIsNotNone(dep, "expected a direct apple_support bazel_dep")
+        version = tuple(int(p) for p in dep.group(1).split("."))
+        self.assertGreaterEqual(
+            version,
+            (2, 8, 4),
+            "apple_support must stay >= 2.8.4 (Xcode 27 ASAN crosstool fixes)",
+        )
+        self.assertNotRegex(
             module,
             r'single_version_override\(\s*\n\s*module_name\s*=\s*"apple_support"',
-            "expected single_version_override for apple_support crosstool patches",
-        )
-        override = re.search(
-            r'single_version_override\(\s*\n\s*module_name\s*=\s*"apple_support"'
-            r".*?\)",
-            module,
-            flags=re.DOTALL,
-        )
-        self.assertIsNotNone(override, "could not locate apple_support override block")
-        block = override.group(0)
-        self.assertIn(
-            "apple_support_macos_min_11.patch",
-            block,
-            "override must raise crosstool -mmacosx-version-min to 11.0",
-        )
-        self.assertIn(
-            "apple_support_libtool_nodiscard.patch",
-            block,
-            "override must drop the dead libtool hasher(file) nodiscard call",
+            "apple_support no longer needs a single_version_override/patches",
         )
 
-    def test_apple_support_patches_raise_min_os_and_drop_dead_hasher(self) -> None:
+    def test_apple_support_patches_were_removed(self) -> None:
         root = _repo_root()
-        min_os = (root / "patches" / "apple_support_macos_min_11.patch").read_text(
-            encoding="utf-8"
+        self.assertFalse(
+            (root / "patches" / "apple_support_macos_min_11.patch").exists(),
+            "min-OS patch is obsolete once apple_support >= 2.8.4 is pinned",
         )
-        libtool = (
-            root / "patches" / "apple_support_libtool_nodiscard.patch"
-        ).read_text(encoding="utf-8")
-        self.assertRegex(
-            min_os,
-            r"(?m)^-\s*-mmacosx-version-min=10\.15\s*\\?\s*$",
-            "min-OS patch must remove the pre-Big-Sur deployment target",
-        )
-        self.assertRegex(
-            min_os,
-            r"(?m)^\+\s*-mmacosx-version-min=11\.0\s*\\?\s*$",
-            "min-OS patch must set -mmacosx-version-min=11.0 for Xcode 27 libc++",
-        )
-        self.assertIn(
-            "-    hasher(file);",
-            libtool,
-            "libtool patch must remove the dead nodiscard hasher(file) call",
+        self.assertFalse(
+            (root / "patches" / "apple_support_libtool_nodiscard.patch").exists(),
+            "libtool nodiscard patch is obsolete once apple_support >= 2.8.4 is pinned",
         )
 
 
