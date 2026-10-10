@@ -14,7 +14,7 @@
             playDiffMapFromSolverOutput isLegalPlayCard ddsRankFromPip
             remainingCardsForSeat playState startPlay exitPlay tryPlayCard
             undoPlay handlePlayUndoKeyDown handlePlayHistoryUndo
-            renderPlayUi isPlayMode
+            renderPlayUi isPlayMode playDealCardCount isPlayHistoryComplete
             playBadgeMapFromPending targetTricksFromCell */
 
 "use strict";
@@ -285,12 +285,35 @@
         state.autoPlay = false;
     }
 
+    function playDealCardCount(state) {
+        if (!state || !state.hands) {
+            return 0;
+        }
+
+        let total = 0;
+
+        for (const direction of DIRECTIONS) {
+            total += (state.hands[direction] || []).length;
+        }
+
+        return total;
+    }
+
+    function isPlayHistoryComplete(state) {
+        return !!state && state.history.length >= playDealCardCount(state);
+    }
+
     function playDiffMapFromSolverOutput(out, context) {
         const scores = leadTricksMapFromSolverOutput(out);
         const map = {};
         for (const key of Object.keys(scores)) {
             if (context.absoluteSideTricks) {
-                map[key] = scores[key];
+                // Solver score is remaining tricks for the side to play; add
+                // tricks already won so the badge is the projected side total.
+                const won = isNs(context.seatToPlay)
+                    ? context.nsTricks
+                    : context.ewTricks;
+                map[key] = won + scores[key];
             } else {
                 map[key] = playDiffFromSolverScore({
                     declarer: context.declarer,
@@ -461,7 +484,7 @@
             return;
         }
         const replay = replayPlayState(state);
-        const done = state.history.length >= 52;
+        const done = isPlayHistoryComplete(state);
         el.textContent =
             "NS " + replay.nsTricks + " – EW " + replay.ewTricks +
             (done ? " (final)" : "");
@@ -655,6 +678,8 @@
     global.solverPositionFromPlay = solverPositionFromPlay;
     global.appendPlay = appendPlay;
     global.undoLastChoice = undoLastChoice;
+    global.playDealCardCount = playDealCardCount;
+    global.isPlayHistoryComplete = isPlayHistoryComplete;
     global.playDiffMapFromSolverOutput = playDiffMapFromSolverOutput;
     global.isLegalPlayCard = isLegalPlayCard;
     global.ddsRankFromPip = ddsRankFromPip;

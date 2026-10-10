@@ -6183,12 +6183,12 @@ test("playDiffMapFromSolverOutput converts scores to contract diffs", () => {
 });
 
 test("playDiffMapFromSolverOutput keeps absolute side tricks for partial deals", () => {
-    // Partial deals have no contract; badges show tricks for the side if that
-    // card is led, not +/−/= versus a double-dummy target.
+    // Partial deals have no contract; badges show the side's projected total
+    // (already won + remaining if that card is played), not +/−/= vs a target.
     const ctx = loadDdsWeb(createMockDocument());
-    const out = [2, 0, 14, 3, 0, 12, 2]; // SA → 3, SQ → 2
+    const out = [2, 0, 14, 3, 0, 12, 2]; // SA → 3, SQ → 2 remaining
 
-    const map = ctx.playDiffMapFromSolverOutput(out, {
+    const opening = ctx.playDiffMapFromSolverOutput(out, {
         declarer: "south",
         seatToPlay: "west",
         nsTricks: 0,
@@ -6197,9 +6197,70 @@ test("playDiffMapFromSolverOutput keeps absolute side tricks for partial deals",
         targetTricks: 2,
         absoluteSideTricks: true,
     });
+    assert.equal(opening.SA, 3);
+    assert.equal(opening.SQ, 2);
 
-    assert.equal(map.SA, 3);
-    assert.equal(map.SQ, 2);
+    // After EW won 1; remaining scores still 3/2 → projected totals 4/3.
+    const mid = ctx.playDiffMapFromSolverOutput(out, {
+        declarer: "south",
+        seatToPlay: "west",
+        nsTricks: 0,
+        ewTricks: 1,
+        remainingTricks: 4,
+        targetTricks: 2,
+        absoluteSideTricks: true,
+    });
+    assert.equal(mid.SA, 4);
+    assert.equal(mid.SQ, 3);
+});
+
+test("playDealCardCount and isPlayHistoryComplete use the deal size", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const state = ctx.createPlayState({
+        hands: handsFromKeys(ctx, {
+            north: ["SA", "HA"],
+            east: ["SK", "HK"],
+            south: ["SQ", "HQ"],
+            west: ["SJ", "HJ"],
+        }),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 1,
+        leadSeat: "west",
+    });
+
+    assert.equal(ctx.playDealCardCount(state), 8);
+    assert.equal(ctx.isPlayHistoryComplete(state), false);
+
+    state.history = new Array(8).fill(null).map((_, i) => ({
+        seat: ["west", "north", "east", "south"][i % 4],
+        key: "XX",
+        auto: false,
+    }));
+    assert.equal(ctx.isPlayHistoryComplete(state), true);
+});
+
+test("renderPlayScore marks final when all partial-deal cards are played", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "A",
+        south_diamonds: "A",
+        west_clubs: "A",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    assert.equal(ctx.startPlay("south", "N", 1, "west"), true);
+    ctx.playState.history = [
+        { seat: "west", key: "CA", auto: false },
+        { seat: "north", key: "SA", auto: false },
+        { seat: "east", key: "HA", auto: false },
+        { seat: "south", key: "DA", auto: false },
+    ];
+    ctx.renderPlayUi();
+    assert.match(document.element("play-score").textContent, /\(final\)/);
 });
 
 test("createPlayState uses absolute side-trick badges for short deals", () => {

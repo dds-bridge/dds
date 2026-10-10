@@ -316,7 +316,9 @@
         const requestId = ++leadTricksRequestId;
         const state = global.playState;
 
-        if (!state || state.history.length >= 52) {
+        if (!state ||
+                (typeof global.isPlayHistoryComplete === "function" &&
+                    global.isPlayHistoryComplete(state))) {
             if (requestId === leadTricksRequestId && state) {
                 state.pendingDiffs = null;
                 global.renderPlayUi();
