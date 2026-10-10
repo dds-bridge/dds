@@ -21,9 +21,48 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
+def _iter_call_bodies(call_names: tuple[str, ...], text: str) -> list[str]:
+    """Yield the argument-list text of each call to any name in call_names.
+
+    A plain `[^)]*)` regex stops at the first ")" even when it occurs inside
+    a string literal, a "#" comment, or a nested call (e.g. select(...)),
+    truncating the body before later args like module_name/version. This
+    scans character-by-character instead, tracking string/comment state and
+    paren depth so the body always spans to its real matching ")".
+    """
+    pattern = re.compile(r"(?:%s)\(" % "|".join(re.escape(n) for n in call_names))
+    bodies = []
+    for start_match in pattern.finditer(text):
+        i = start_match.end()
+        depth = 1
+        in_string: str | None = None
+        in_comment = False
+        body_start = i
+        while i < len(text) and depth > 0:
+            ch = text[i]
+            if in_comment:
+                if ch == "\n":
+                    in_comment = False
+            elif in_string:
+                if ch == "\\":
+                    i += 1
+                elif ch == in_string:
+                    in_string = None
+            elif ch == "#":
+                in_comment = True
+            elif ch in "\"'":
+                in_string = ch
+            elif ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            i += 1
+        bodies.append(text[body_start : i - 1])
+    return bodies
+
+
 def _apple_support_bazel_dep_version(module_bazel: str) -> str:
-    for match in re.finditer(r"bazel_dep\(\s*([^)]*)\)", module_bazel):
-        body = match.group(1)
+    for body in _iter_call_bodies(("bazel_dep",), module_bazel):
         name = re.search(r'name\s*=\s*"apple_support"', body)
         version = re.search(r'version\s*=\s*"([^"]+)"', body)
         if name and version:
@@ -39,12 +78,15 @@ def _has_apple_support_override(module_bazel: str) -> bool:
     after the opening "(", and covers all five Bazel module override
     directives, not just single_version_override.
     """
-    for call in re.finditer(
-        r"(?:archive_override|git_override|local_path_override"
-        r"|multiple_version_override|single_version_override)\(\s*([^)]*)\)",
-        module_bazel,
-    ):
-        if re.search(r'module_name\s*=\s*"apple_support"', call.group(1)):
+    override_names = (
+        "archive_override",
+        "git_override",
+        "local_path_override",
+        "multiple_version_override",
+        "single_version_override",
+    )
+    for body in _iter_call_bodies(override_names, module_bazel):
+        if re.search(r'module_name\s*=\s*"apple_support"', body):
             return True
     return False
 
@@ -88,6 +130,17 @@ class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
         sample = 'bazel_dep(version = "2.10.1", name = "apple_support")'
         self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
 
+    def test_apple_support_bazel_dep_version_survives_an_earlier_paren(
+        self,
+    ) -> None:
+        """A ")" inside a leading comment must not truncate the call body."""
+        sample = """bazel_dep(
+    # fixes Xcode 27 crosstool warnings (see docs)
+    version = "2.10.1",
+    name = "apple_support",
+)"""
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
     def test_has_apple_support_override_detects_same_line_args(self) -> None:
         sample = (
             'single_version_override(module_name = "apple_support", version = "1.24.2")'
@@ -102,6 +155,15 @@ single_version_override(
     module_name = "apple_support",
 )
 """
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_survives_an_earlier_paren(self) -> None:
+        """A ")" inside a leading comment must not truncate the call body."""
+        sample = """single_version_override(
+    # pin past the Xcode 27 fixes (see docs)
+    module_name = "apple_support",
+    version = "1.24.2",
+)"""
         self.assertTrue(_has_apple_support_override(sample))
 
     def test_has_apple_support_override_ignores_other_modules(self) -> None:
