@@ -981,7 +981,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_east_hand_shrinks_instead_of_overflowing_window(self) -> None:
-        """When the diagram narrows, East holdings shrink instead of past the right edge."""
+        """When the diagram narrows, East holdings shrink instead of extending past the right edge."""
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             page.locator("#east_spades").fill("AKQJT98765432")

@@ -4121,11 +4121,13 @@ function mockSeatHandLayout({
     initialValues = {},
 }) {
     let fontPx = 30;
+    let laidOutWidth = clientWidth;
+    const padLeft = parseFloat(paddingLeft) || 0;
+    const padRight = parseFloat(paddingRight) || 0;
     const baseWidths = rowScrollWidths.slice();
     const seatClass = "hand-" + seat;
     const hand = {
         className: "grid-item " + seatClass,
-        clientWidth,
         style: {
             maxWidth: "",
             overflowX: "",
@@ -4140,6 +4142,14 @@ function mockSeatHandLayout({
                 const parsed = parseFloat(value);
                 fontPx = Number.isFinite(parsed) ? parsed : 30;
             },
+        },
+        // Inline maxWidth (clip fallback) constrains layout width like a browser.
+        get clientWidth() {
+            const max = parseFloat(this.style.maxWidth);
+            if (this.style.maxWidth !== "" && Number.isFinite(max)) {
+                return max + padLeft + padRight;
+            }
+            return laidOutWidth;
         },
         querySelectorAll(selector) {
             if (selector !== ".hand-suit") {
@@ -4164,10 +4174,12 @@ function mockSeatHandLayout({
         document,
         hand,
         ...seats,
-        available:
-            clientWidth -
-            (parseFloat(paddingLeft) || 0) -
-            (parseFloat(paddingRight) || 0),
+        get available() {
+            return laidOutWidth - padLeft - padRight;
+        },
+        setClientWidth(width) {
+            laidOutWidth = width;
+        },
         getComputedStyle(element) {
             if (element === hand) {
                 return { paddingLeft, paddingRight };
@@ -4353,6 +4365,35 @@ test("fitEastHandCards clips when fixed chrome alone exceeds the east cell", () 
     // Assert
     assert.equal(layout.east.style.maxWidth, "20px");
     assert.equal(layout.east.style.overflowX, "hidden");
+});
+
+test("fitEastHandCards recovers after clip when the cell widens", () => {
+    // Arrange: first fit clips at an extremely narrow width.
+    const layout = mockEastHandLayout({
+        clientWidth: 60,
+        rowScrollWidths: [400],
+        fixedOverflowPx: 40,
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+    ctx.fitEastHandCards();
+    assert.equal(layout.east.style.maxWidth, "20px");
+
+    // Act: viewport/cell grows — must clear the stale clip before measuring.
+    layout.setClientWidth(220);
+    ctx.fitEastHandCards();
+
+    // Assert: no longer permanently clipped; fits the wider content box.
+    assert.equal(layout.east.style.maxWidth, "");
+    assert.equal(layout.east.style.overflowX, "");
+    const size = parseFloat(layout.east.style.fontSize);
+    assert.ok(size < 30, `expected a fitted font below 30px, got ${size}`);
+    const needed = layout.east.querySelectorAll(".hand-suit")[0].scrollWidth;
+    assert.ok(
+        needed <= layout.available + 0.5,
+        `widened east row must fit, needed=${needed} available=${layout.available}`
+    );
 });
 
 test("fitEastHandCards restores full size when rows fit the east cell", () => {

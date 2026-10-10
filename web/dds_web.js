@@ -451,6 +451,10 @@ function fitSeatHandCards(seatSelector) {
         return;
     }
 
+    // Clear clip/maxWidth before measuring: an earlier narrow fit's inline
+    // maxWidth would otherwise keep clientWidth stuck at the clipped size.
+    clearFitStyles(hand);
+
     fitFontToContentWidth(
         hand,
         contentBoxWidth(hand),
