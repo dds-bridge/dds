@@ -371,6 +371,25 @@
         return map;
     }
 
+    const PLAY_HINT_CONTRACT =
+        "Drag a highlighted card onto the trick (or click it). " +
+        "Each card shows how the contract ends (=, +N, –N) with best play and defense. " +
+        "Undo with ⌘/Ctrl-Z.";
+    const PLAY_HINT_PARTIAL =
+        "Drag a highlighted card onto the trick (or click it). " +
+        "Each card shows that side's trick total with best play and defense. " +
+        "Undo with ⌘/Ctrl-Z.";
+
+    function updatePlayHint() {
+        const hint = document.getElementById("play-hint");
+        if (!hint) {
+            return;
+        }
+        hint.textContent = playState && playState.absoluteSideTricks
+            ? PLAY_HINT_PARTIAL
+            : PLAY_HINT_CONTRACT;
+    }
+
     function setPlayModeChrome(active) {
         const body = typeof document !== "undefined" ? document.body : null;
         if (body && body.classList) {
@@ -379,6 +398,10 @@
             } else {
                 body.classList.remove("playing");
             }
+        }
+
+        if (active) {
+            updatePlayHint();
         }
 
         const ids = ["play-bar", "play-hint", "play-score", "trick-status"];
