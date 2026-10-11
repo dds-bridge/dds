@@ -63,9 +63,13 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         )
         self.assertIn("handleSampleDealSelected(this)", text)
         self.assertIn("Sample deals…", text)
-        self.assertIn("NS make 7", text)
-        self.assertIn("Everyone makes 3N", text)
-        self.assertIn("Part-score", text)
+        # Deal labels/values come from SAMPLE_DEALS at pageLoad, not hard-coded HTML.
+        self.assertNotIn('value="ns_make_7"', text)
+        self.assertNotIn('value="everyone_makes_3N"', text)
+        self.assertNotIn('value="part_score"', text)
+        self.assertNotIn("NS make 7", text)
+        self.assertNotIn("Everyone makes 3N", text)
+        self.assertNotIn(">Part-score<", text)
 
 
 class DdsWebHtmlCoiTest(unittest.TestCase):
@@ -126,6 +130,20 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertLess(core_at, solve_at)
         self.assertLess(solve_at, play_at)
         self.assertLess(play_at, app_at)
+
+    def test_loads_sample_deals_script_before_dds_web_js(self) -> None:
+        # SAMPLE_DEALS is pure data; load before UI so handleSampleDealSelected
+        # can read it.
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'<script\s+src="dds_web_sample_deals\.js"\s*>\s*</script>',
+        )
+        play_at = text.index('src="dds_web_play.js"')
+        samples_at = text.index('src="dds_web_sample_deals.js"')
+        app_at = text.index('src="dds_web.js"')
+        self.assertLess(play_at, samples_at)
+        self.assertLess(samples_at, app_at)
 
     def test_play_mode_controls_and_trick_status(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")

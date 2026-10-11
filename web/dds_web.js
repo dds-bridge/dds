@@ -9,6 +9,7 @@
 //   web/dds_web_core.js — Card / holdings / handsToPbn
 //   web/dds_web_solve.js — WASM queue / DD table / play solves
 //   web/dds_web_play.js — card-by-card play state / trick UI
+//   web/dds_web_sample_deals.js — SAMPLE_DEALS (from hands/*.pbn via gen_sample_deals_js.py)
 // Unit tests: web/tests/dds_web_test.mjs
 // Run with: bazelisk test //web:dds_web_js_test
 // or: python -m unittest web.tests.test_dds_web_js
@@ -20,11 +21,7 @@
 //     Environment: browser
 
 /* eslint-env es6 */
-/* exported fillFormWithGrandSlamTestData
-            fillFormWithEveryoneMakes3nTestData
-            fillFormWithPartScoreTestData
-            handleSampleDealSelected
-            clearTestData
+/* exported clearTestData
             rotateClockwise
             pageLoad
             updateActionButtons
@@ -69,6 +66,9 @@
             importDealFromText
             chooseDealFile
             handleDealFileSelected
+            fillFormWithTestData
+            handleSampleDealSelected
+            populateSampleDealsSelect
             */
 
 // It's also useful to pass the code through
@@ -101,6 +101,48 @@ function fillFormWithTestData(nesw) {
     }
 
     updateActionButtons();
+}
+
+function handleSampleDealSelected(select) {
+    const sample = SAMPLE_DEALS[select.value];
+    if (!sample) {
+        return;
+    }
+    // SAMPLE_DEALS.pbn is generated from hands/*.pbn; reuse the import parser.
+    const deal = parseFirstDealFromText(`[Deal "${sample.pbn}"]`);
+    fillFormWithTestData([
+        deal.north,
+        deal.east,
+        deal.south,
+        deal.west,
+    ]);
+    // Restore the placeholder so the control reads like a button again and the
+    // same sample can be re-selected after editing.
+    select.value = "";
+}
+
+function populateSampleDealsSelect() {
+    const select = document.getElementById("sample-deals");
+    if (!select) {
+        return;
+    }
+    // Rebuild from SAMPLE_DEALS so the menu tracks the data file.
+    while (select.options.length > 0) {
+        select.remove(0);
+    }
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Sample deals…";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+    for (const id of Object.keys(SAMPLE_DEALS)) {
+        const deal = SAMPLE_DEALS[id];
+        const option = document.createElement("option");
+        option.value = id;
+        option.textContent = deal.name;
+        select.appendChild(option);
+    }
 }
 
 // Deal-format parsers (PBN/LIN/DLM/sol) live in dds_web_deal_import.js and
@@ -176,49 +218,6 @@ async function handleDealFileSelected(input) {
                 : "Could not read the selected file.";
         }
     }
-}
-
-function fillFormWithGrandSlamTestData() {
-    fillFormWithTestData([
-        "AKQJ.AKQJ.T98.T9",
-        "5432.5432.32.432",
-        "T98.T9.AKQJ.AKQJ",
-        "76.876.7654.8765"
-    ]);
-}
-
-function fillFormWithEveryoneMakes3nTestData() {
-    fillFormWithTestData([
-        "QT9.A8765432.KJ.",
-        "KJ..A8765432.QT9",
-        "A8765432.QT9..KJ",
-        ".KJ.QT9.A8765432"
-    ]);
-}
-
-function fillFormWithPartScoreTestData() {
-    fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5"
-    ]);
-}
-
-function handleSampleDealSelected(select) {
-    const loaders = {
-        "grand-slam": fillFormWithGrandSlamTestData,
-        "everyone-3n": fillFormWithEveryoneMakes3nTestData,
-        "part-score": fillFormWithPartScoreTestData
-    };
-    const load = loaders[select.value];
-    if (!load) {
-        return;
-    }
-    load();
-    // Restore the placeholder so the control reads like a button again and the
-    // same sample can be re-selected after editing.
-    select.value = "";
 }
 
 function * directions_and_suits() {
@@ -2111,6 +2110,7 @@ function inputIsValid(hands) {
 
 function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
+    populateSampleDealsSelect();
 
     for (const element of hand_elements()) {
         element.addEventListener("input", handleHandSuitInput);

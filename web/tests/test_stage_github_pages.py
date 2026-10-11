@@ -33,6 +33,7 @@ class StageGithubPagesTest(unittest.TestCase):
                 "dds_web_core.js",
                 "dds_web_solve.js",
                 "dds_web_play.js",
+                "dds_web_sample_deals.js",
                 "coi-serviceworker.js",
                 "dds_web_wasm.js",
                 "dds_web_wasm.wasm",
@@ -53,6 +54,7 @@ class StageGithubPagesTest(unittest.TestCase):
                 "dds_web_core.js",
                 "dds_web_solve.js",
                 "dds_web_play.js",
+                "dds_web_sample_deals.js",
                 "coi-serviceworker.js",
                 "dds_web_wasm.js",
                 "dds_web_wasm.wasm",
@@ -88,6 +90,7 @@ class StageGithubPagesTest(unittest.TestCase):
         self.assertIn("dds_web_core.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_solve.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_play.js", stage.DEPLOY_FILES)
+        self.assertIn("dds_web_sample_deals.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_wasm_bin.js", stage.DEPLOY_FILES)
         self.assertNotIn("index.html", stage.DEPLOY_FILES)
 
