@@ -15,15 +15,15 @@
 
 (function (global) {
     global.SAMPLE_DEALS = {
-        "grand-slam": {
+        "ns_make_7": {
             name: "NS make 7",
             pbn: "N:AKQJ.AKQJ.T98.T9 5432.5432.32.432 T98.T9.AKQJ.AKQJ 76.876.7654.8765"
         },
-        "everyone-3n": {
+        "everyone_makes_3N": {
             name: "Everyone makes 3N",
             pbn: "N:QT9.A8765432.KJ. KJ..A8765432.QT9 A8765432.QT9..KJ .KJ.QT9.A8765432"
         },
-        "part-score": {
+        "part_score": {
             name: "Part-score",
             pbn: "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5"
         }

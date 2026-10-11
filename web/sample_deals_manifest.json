@@ -1,16 +1,13 @@
 [
   {
-    "id": "grand-slam",
     "name": "NS make 7",
     "file": "hands/ns_make_7.pbn"
   },
   {
-    "id": "everyone-3n",
     "name": "Everyone makes 3N",
     "file": "hands/everyone_makes_3N.pbn"
   },
   {
-    "id": "part-score",
     "name": "Part-score",
     "file": "hands/part_score.pbn"
   }

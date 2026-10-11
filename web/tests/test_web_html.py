@@ -64,9 +64,9 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertIn("handleSampleDealSelected(this)", text)
         self.assertIn("Sample deals…", text)
         # Deal labels/values come from SAMPLE_DEALS at pageLoad, not hard-coded HTML.
-        self.assertNotIn('value="grand-slam"', text)
-        self.assertNotIn('value="everyone-3n"', text)
-        self.assertNotIn('value="part-score"', text)
+        self.assertNotIn('value="ns_make_7"', text)
+        self.assertNotIn('value="everyone_makes_3N"', text)
+        self.assertNotIn('value="part_score"', text)
         self.assertNotIn("NS make 7", text)
         self.assertNotIn("Everyone makes 3N", text)
         self.assertNotIn(">Part-score<", text)

@@ -50,6 +50,11 @@ def extract_deal_string(pbn_text: str) -> str:
     return match.group(1)
 
 
+def sample_id_from_file(rel_path: str) -> str:
+    """SAMPLE_DEALS key / <option value> from the PBN basename (no .pbn)."""
+    return Path(rel_path).stem
+
+
 def load_samples_from_manifest(
     manifest: list[dict], repo_root: Path
 ) -> list[dict]:
@@ -63,7 +68,7 @@ def load_samples_from_manifest(
         pbn = extract_deal_string(path.read_text(encoding="utf-8"))
         samples.append(
             {
-                "id": entry["id"],
+                "id": sample_id_from_file(rel),
                 "name": entry["name"],
                 "pbn": pbn,
             }

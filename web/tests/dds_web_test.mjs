@@ -480,7 +480,7 @@ test("deck status puts each suit in its own row wrapper", () => {
 test("handsToPbn formats part-score deal", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     const pbn = ctx.handsToPbn(ctx.collectHands());
     assert.equal(
         pbn,
@@ -599,7 +599,7 @@ test("inputIsValid rejects duplicate cards", () => {
 test("inputIsValid accepts part-score deal", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
 });
 
@@ -667,18 +667,18 @@ test("rotateClockwise shifts holdings west to north", () => {
     assert.equal(document.element("east_spades").value, "A");
 });
 
-test("loadSampleDeal part-score populates inputs", () => {
+test("loadSampleDeal part_score populates inputs", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     assert.equal(document.element("north_spades").value, "AQ85");
     assert.equal(document.element("west_clubs").value, "T5");
 });
 
-test("handleSampleDealSelected loads part-score and resets the select", () => {
+test("handleSampleDealSelected loads part_score and resets the select", () => {
     const document = createMockDocument();
     const select = document.element("sample-deals");
-    select.value = "part-score";
+    select.value = "part_score";
     const ctx = loadDdsWeb(document);
 
     ctx.handleSampleDealSelected(select);
@@ -688,10 +688,10 @@ test("handleSampleDealSelected loads part-score and resets the select", () => {
     assert.equal(select.value, "");
 });
 
-test("handleSampleDealSelected loads grand-slam deal", () => {
+test("handleSampleDealSelected loads ns_make_7 deal", () => {
     const document = createMockDocument();
     const select = document.element("sample-deals");
-    select.value = "grand-slam";
+    select.value = "ns_make_7";
     const ctx = loadDdsWeb(document);
 
     ctx.handleSampleDealSelected(select);
@@ -700,10 +700,10 @@ test("handleSampleDealSelected loads grand-slam deal", () => {
     assert.equal(select.value, "");
 });
 
-test("handleSampleDealSelected loads everyone-3n deal", () => {
+test("handleSampleDealSelected loads everyone_makes_3N deal", () => {
     const document = createMockDocument();
     const select = document.element("sample-deals");
-    select.value = "everyone-3n";
+    select.value = "everyone_makes_3N";
     const ctx = loadDdsWeb(document);
 
     ctx.handleSampleDealSelected(select);
@@ -728,7 +728,7 @@ test("handleSampleDealSelected can reload the same sample after an edit", () => 
     const document = createMockDocument();
     const select = document.element("sample-deals");
     const ctx = loadDdsWeb(document);
-    select.value = "part-score";
+    select.value = "part_score";
     ctx.handleSampleDealSelected(select);
     assert.equal(document.element("north_spades").value, "AQ85");
     assert.equal(select.value, "");
@@ -736,7 +736,7 @@ test("handleSampleDealSelected can reload the same sample after an edit", () => 
     document.element("north_spades").value = "A";
 
     // Act: choose the same sample again (possible because the select reset).
-    select.value = "part-score";
+    select.value = "part_score";
     ctx.handleSampleDealSelected(select);
 
     // Assert
@@ -754,7 +754,7 @@ test("fillFormWithTestData does not require a double-dummy button", async () => 
     };
 
     // Act
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     // Assert: loading a complete deal auto-refreshes the table (no button to focus).
@@ -806,7 +806,7 @@ test("updateActionButtons finishes dd table before play-position refresh", async
         order.push("play");
     };
 
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     // Drain fillForm's auto-solve so a late dd-end cannot land after we clear.
     await ctx.scheduleDealSolve();
     order.length = 0;
@@ -859,7 +859,7 @@ test("contract selection waits for an in-flight dd table before play refresh", a
     };
 
     // Act: start auto-solve, then select a contract before it finishes.
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     ctx.handleResultTableClick({
         target: {
             closest() {
@@ -893,7 +893,7 @@ test("rapid scheduleDealSolve coalesces to one trailing play refresh", async () 
         play += 1;
     };
 
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     ctx.handleResultTableClick({
         target: {
             closest() {
@@ -931,7 +931,7 @@ test("rapid scheduleDealSolve does not enqueue one queue job per call", async ()
     ctx.refreshOpeningLeadTricks = async () => {};
 
     // fillForm → updateActionButtons → scheduleDealSolve (one queue job).
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     await new Promise((resolve) => setTimeout(resolve, 20));
     assert.equal(enqueued, 1);
     assert.equal(ddRuns, 1);
@@ -969,7 +969,7 @@ test("subsequent edits of a still-complete deal are debounced", async () => {
     ctx.refreshDdTable = async () => {
         ddRuns += 1;
     };
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     await new Promise((resolve) => setTimeout(resolve, 80));
     assert.equal(ddRuns, 1);
     ddRuns = 0;
@@ -1013,7 +1013,7 @@ test("disabling debounce cancels a pending debounced solve", async () => {
     ctx.refreshDdTable = async () => {
         ddRuns += 1;
     };
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(ddRuns, 1);
     ddRuns = 0;
@@ -1038,7 +1038,7 @@ test("contract selection still schedules a deal solve immediately", async () => 
     ctx.refreshDdTable = async () => {
         ddRuns += 1;
     };
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     // fillForm completes the deal, which schedules immediately (not debounced).
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(ddRuns, 1);
@@ -1081,7 +1081,7 @@ test("completing the fourth hand manually schedules a solve immediately", async 
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
     ctx.setDealSolveDebounceMs(200);
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     await new Promise((resolve) => setTimeout(resolve, 250));
 
     document.setValue("south_spades", "97"); // was 972; now 12 cards in South
@@ -1108,7 +1108,7 @@ test("breaking a complete deal clears DD results immediately despite debounce", 
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
     ctx.setDealSolveDebounceMs(200);
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     await new Promise((resolve) => setTimeout(resolve, 250));
 
     document.element("result").innerHTML = "Solved in 12 ms.";
@@ -1270,9 +1270,9 @@ test("pageLoad fills sample-deals select from SAMPLE_DEALS", () => {
 test("SAMPLE_DEALS entries have name and PBN deal string", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const expected = {
-        "grand-slam": "NS make 7",
-        "everyone-3n": "Everyone makes 3N",
-        "part-score": "Part-score",
+        "ns_make_7": "NS make 7",
+        "everyone_makes_3N": "Everyone makes 3N",
+        "part_score": "Part-score",
     };
 
     for (const [id, name] of Object.entries(expected)) {
@@ -1290,19 +1290,19 @@ test("SAMPLE_DEALS entries have name and PBN deal string", () => {
     }
 });
 
-test("loadSampleDeal grand-slam populates inputs", () => {
+test("loadSampleDeal ns_make_7 populates inputs", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
-    loadSampleDeal(ctx, "grand-slam");
+    loadSampleDeal(ctx, "ns_make_7");
     assert.equal(document.element("north_spades").value, "AKQJ");
     assert.equal(document.element("east_clubs").value, "432");
     assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
 });
 
-test("loadSampleDeal everyone-3n populates inputs", () => {
+test("loadSampleDeal everyone_makes_3N populates inputs", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
-    loadSampleDeal(ctx, "everyone-3n");
+    loadSampleDeal(ctx, "everyone_makes_3N");
     assert.equal(document.element("north_hearts").value, "A8765432");
     assert.equal(document.element("west_spades").value, "");
     assert.equal(ctx.inputIsValid(ctx.collectHands()), "");
@@ -1746,7 +1746,7 @@ test("updateActionButtons auto-solves when every hand has 13 cards", async () =>
     ctx.refreshDdTable = () => {
         refreshed += 1;
     };
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(refreshed, 1);
 });
@@ -1763,7 +1763,7 @@ test("hand edit exits play and clears play badges", async () => {
         return Promise.resolve({ SK: 0, HA: -1 });
     };
 
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     const cell = document.element("result-table").rows[3].cells[5]; // South / NT
     cell.innerHTML = "6";
     cell.textContent = "6";
@@ -2029,7 +2029,7 @@ test("refreshDdTable shows wall solve time in ms after a successful solve", asyn
             return 7;
         },
     });
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     await new Promise((resolve) => setTimeout(resolve, 0));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -2885,7 +2885,7 @@ test("updateResultTableHint describes lead selection for partial deals", () => {
         "Click a cell to place the corresponding player on lead"
     );
 
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     document.element("result-table").rows[1].cells[1].innerHTML = "7";
     ctx.lastDdTablePbn = ctx.handsToPbn(ctx.collectHands());
     ctx.updateResultTableHint(ctx.collectHands());
@@ -2920,7 +2920,7 @@ test("editing a full deal down to a partial deal switches to lead-on-click mode"
     ctx.solvePlayPosition = async () => ({ SK: 0 });
     const hint = document.element("result-table-hint");
     const southNt = document.element("result-table").rows[3].cells[5];
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     // fillForm clears the matrix; restore digits so play can start and the hint shows.
     southNt.innerHTML = "6";
     southNt.textContent = "6";
@@ -2991,7 +2991,7 @@ test("leaving a full deal clears a pending cell selection for a fresh partial", 
     const southNt = document.element("result-table").rows[3].cells[5];
     southNt.innerHTML = "";
     southNt.textContent = "";
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     ctx.updateActionButtons();
     ctx.handleResultTableClick({
         target: {
@@ -3161,7 +3161,7 @@ test("switching contracts restarts play and clears prior play badges", async () 
         });
     };
 
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     const southNt = document.element("result-table").rows[3].cells[5];
     const northClubs = document.element("result-table").rows[1].cells[1];
     southNt.innerHTML = "6";
@@ -3258,7 +3258,7 @@ test("clearing contract ignores an in-flight opening-lead solve", async () => {
     let resolveSolve;
     let tricksPassedToHolding = null;
 
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     ctx.scheduleDealSolve = () => Promise.resolve();
     ctx.handleResultTableClick({
         target: {
@@ -6079,7 +6079,7 @@ test("playDiffFromSolverScore projects declarer total vs target", () => {
 });
 
 function partScoreHands(ctx) {
-    // Matches SAMPLE_DEALS["part-score"].pbn / kPbnPartScore.
+    // Matches SAMPLE_DEALS["part_score"].pbn / kPbnPartScore.
     return {
         north: cardsFromKeys(ctx, [
             "SA", "SQ", "S8", "S5", "HA", "HK", "H9", "H7", "H6", "D5", "CJ", "C8", "C7",
@@ -6838,7 +6838,7 @@ test("exitPlay clears the selected contract so Edit hands stays in edit mode", a
     const southNt = document.element("result-table").rows[3].cells[5];
     southNt.innerHTML = "6";
     southNt.textContent = "6";
-    loadSampleDeal(ctx, "part-score");
+    loadSampleDeal(ctx, "part_score");
     ctx.handleResultTableClick({
         target: {
             closest() {
