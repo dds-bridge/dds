@@ -68,6 +68,7 @@
             handleDealFileSelected
             fillFormWithTestData
             handleSampleDealSelected
+            populateSampleDealsSelect
             */
 
 // It's also useful to pass the code through
@@ -111,6 +112,30 @@ function handleSampleDealSelected(select) {
     // Restore the placeholder so the control reads like a button again and the
     // same sample can be re-selected after editing.
     select.value = "";
+}
+
+function populateSampleDealsSelect() {
+    const select = document.getElementById("sample-deals");
+    if (!select) {
+        return;
+    }
+    // Rebuild from SAMPLE_DEALS so the menu tracks the data file.
+    while (select.options.length > 0) {
+        select.remove(0);
+    }
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Sample deals…";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+    for (const id of Object.keys(SAMPLE_DEALS)) {
+        const deal = SAMPLE_DEALS[id];
+        const option = document.createElement("option");
+        option.value = id;
+        option.textContent = deal.name;
+        select.appendChild(option);
+    }
 }
 
 // Deal-format parsers (PBN/LIN/DLM/sol) live in dds_web_deal_import.js and
@@ -2078,6 +2103,7 @@ function inputIsValid(hands) {
 
 function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
+    populateSampleDealsSelect();
 
     for (const element of hand_elements()) {
         element.addEventListener("input", handleHandSuitInput);

@@ -112,6 +112,14 @@ function createMockDocument(initialValues = {}) {
                     listener({ ...event, target: element });
                 }
             },
+            options: [],
+            appendChild(child) {
+                this.options.push(child);
+                return child;
+            },
+            remove(index) {
+                this.options.splice(index, 1);
+            },
         };
         store.set(id, element);
         return element;
@@ -236,6 +244,15 @@ function createMockDocument(initialValues = {}) {
             for (const listener of listeners.get(type) ?? []) {
                 listener(event);
             }
+        },
+        createElement(tagName) {
+            return {
+                tagName: String(tagName).toUpperCase(),
+                value: "",
+                textContent: "",
+                disabled: false,
+                selected: false,
+            };
         },
         getElementById(id) {
             return store.get(id) ?? null;
@@ -1226,30 +1243,44 @@ test("sample deals live in dds_web_sample_deals.js not dds_web.js", () => {
     assert.match(app, /SAMPLE_DEALS/);
 });
 
-test("SAMPLE_DEALS names match the HTML option labels", () => {
-    // Arrange
+test("pageLoad fills sample-deals select from SAMPLE_DEALS", () => {
+    // Arrange: HTML keeps only the placeholder; options come from SAMPLE_DEALS.
+    const document = createMockDocument();
+    const select = document.element("sample-deals");
+    select.innerHTML =
+        '<option value="" selected disabled>Sample deals…</option>';
+    const ctx = loadDdsWeb(document);
+
+    // Act
+    ctx.pageLoad();
+
+    // Assert: one option per SAMPLE_DEALS entry, plus the placeholder.
+    const ids = Object.keys(ctx.SAMPLE_DEALS);
+    assert.equal(select.options.length, ids.length + 1);
+    assert.equal(select.options[0].value, "");
+    assert.equal(select.options[0].textContent, "Sample deals…");
+    for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+        const option = select.options[i + 1];
+        assert.equal(option.value, id);
+        assert.equal(option.textContent, ctx.SAMPLE_DEALS[id].name);
+    }
+});
+
+test("SAMPLE_DEALS entries have name and four hands", () => {
     const ctx = loadDdsWeb(createMockDocument());
-    const here = dirname(fileURLToPath(import.meta.url));
-    const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
     const expected = {
         "grand-slam": "NS make 7",
         "everyone-3n": "Everyone makes 3N",
         "part-score": "Part-score",
     };
 
-    // Assert: each sample has a display name matching its <option> text.
     for (const [id, name] of Object.entries(expected)) {
         const deal = ctx.SAMPLE_DEALS[id];
         assert.equal(typeof deal, "object");
         assert.equal(deal.name, name);
         assert.equal(Array.isArray(deal.hands), true);
         assert.equal(deal.hands.length, 4);
-        assert.match(
-            html,
-            new RegExp(
-                `<option\\s+value="${id}">${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</option>`
-            )
-        );
     }
 });
 

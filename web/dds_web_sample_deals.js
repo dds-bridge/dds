@@ -5,8 +5,8 @@
 //   https://opensource.org/licenses/MIT
 
 // Sample-deal holdings for the DDS Web dropdown. Pure data; loaded before
-// dds_web.js. Keys match <option value="...">; name matches option label;
-// hands are NESW dotted holdings.
+// dds_web.js. Keys become <option value="...">; name is the option label;
+// hands are NESW dotted holdings. pageLoad builds the select from this map.
 
 /* eslint-env es6 */
 /* exported SAMPLE_DEALS */
