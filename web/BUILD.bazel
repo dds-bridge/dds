@@ -108,6 +108,7 @@ py_test(
         "dds_web_core.js",
         "dds_web_solve.js",
         "dds_web_play.js",
+        "dds_web_sample_deals.js",
         "tests/dds_web_test.mjs",
     ],
 )
@@ -129,6 +130,7 @@ py_test(
         "dds_web_core.js",
         "dds_web_solve.js",
         "dds_web_play.js",
+        "dds_web_sample_deals.js",
         "gen_wasm_bin_js.py",
         "patch_web_wasm.py",
         "tests/dds_web_wasm_node.mjs",
@@ -155,6 +157,7 @@ py_test(
         "dds_web_core.js",
         "dds_web_solve.js",
         "dds_web_play.js",
+        "dds_web_sample_deals.js",
         "gen_wasm_bin_js.py",
         "patch_web_wasm.py",
     ],

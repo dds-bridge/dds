@@ -15,6 +15,7 @@ STATIC_FILES = (
     "dds_web_core.js",
     "dds_web_solve.js",
     "dds_web_play.js",
+    "dds_web_sample_deals.js",
     "coi-serviceworker.js",
 )
 

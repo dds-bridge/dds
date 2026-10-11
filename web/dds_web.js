@@ -9,6 +9,8 @@
 //   web/dds_web_core.js — Card / holdings / handsToPbn
 //   web/dds_web_solve.js — WASM queue / DD table / play solves
 //   web/dds_web_play.js — card-by-card play state / trick UI
+// After this UI file:
+//   web/dds_web_sample_deals.js — Sample deals dropdown loaders
 // Unit tests: web/tests/dds_web_test.mjs
 // Run with: bazelisk test //web:dds_web_js_test
 // or: python -m unittest web.tests.test_dds_web_js
@@ -20,11 +22,7 @@
 //     Environment: browser
 
 /* eslint-env es6 */
-/* exported fillFormWithGrandSlamTestData
-            fillFormWithEveryoneMakes3nTestData
-            fillFormWithPartScoreTestData
-            handleSampleDealSelected
-            clearTestData
+/* exported clearTestData
             rotateClockwise
             pageLoad
             updateActionButtons
@@ -69,6 +67,7 @@
             importDealFromText
             chooseDealFile
             handleDealFileSelected
+            fillFormWithTestData
             */
 
 // It's also useful to pass the code through
@@ -176,49 +175,6 @@ async function handleDealFileSelected(input) {
                 : "Could not read the selected file.";
         }
     }
-}
-
-function fillFormWithGrandSlamTestData() {
-    fillFormWithTestData([
-        "AKQJ.AKQJ.T98.T9",
-        "5432.5432.32.432",
-        "T98.T9.AKQJ.AKQJ",
-        "76.876.7654.8765"
-    ]);
-}
-
-function fillFormWithEveryoneMakes3nTestData() {
-    fillFormWithTestData([
-        "QT9.A8765432.KJ.",
-        "KJ..A8765432.QT9",
-        "A8765432.QT9..KJ",
-        ".KJ.QT9.A8765432"
-    ]);
-}
-
-function fillFormWithPartScoreTestData() {
-    fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5"
-    ]);
-}
-
-function handleSampleDealSelected(select) {
-    const loaders = {
-        "grand-slam": fillFormWithGrandSlamTestData,
-        "everyone-3n": fillFormWithEveryoneMakes3nTestData,
-        "part-score": fillFormWithPartScoreTestData
-    };
-    const load = loaders[select.value];
-    if (!load) {
-        return;
-    }
-    load();
-    // Restore the placeholder so the control reads like a button again and the
-    // same sample can be re-selected after editing.
-    select.value = "";
 }
 
 function * directions_and_suits() {

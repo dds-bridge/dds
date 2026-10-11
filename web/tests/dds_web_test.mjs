@@ -294,6 +294,14 @@ function runDdsWebScripts(context) {
         context,
         { filename: "dds_web.js" }
     );
+    runInContext(
+        readFileSync(
+            findWebJsPath("dds_web_sample_deals.js", "DDS_WEB_SAMPLE_DEALS_JS"),
+            "utf8"
+        ),
+        context,
+        { filename: "dds_web_sample_deals.js" }
+    );
 }
 
 function loadDdsWeb(document, extras = {}) {
@@ -1189,6 +1197,25 @@ test("wasmSolveEnvironmentError explains missing SharedArrayBuffer headers", () 
 test("wasmSolveEnvironmentError is null in non-browser sandboxes", () => {
     const ctx = loadDdsWeb(createMockDocument());
     assert.equal(ctx.wasmSolveEnvironmentError(), null);
+});
+
+test("sample deals live in dds_web_sample_deals.js not dds_web.js", () => {
+    // Arrange
+    const samples = readFileSync(
+        findWebJsPath("dds_web_sample_deals.js", "DDS_WEB_SAMPLE_DEALS_JS"),
+        "utf8"
+    );
+    const app = readFileSync(findWebJsPath("dds_web.js", "DDS_WEB_JS"), "utf8");
+
+    // Assert: holdings and loaders belong in the sample-deals layer.
+    assert.match(samples, /AQ85\.AK976\.5\.J87/);
+    assert.match(samples, /AKQJ\.AKQJ\.T98\.T9/);
+    assert.match(samples, /QT9\.A8765432\.KJ\./);
+    assert.match(samples, /fillFormWithPartScoreTestData/);
+    assert.match(samples, /handleSampleDealSelected/);
+    assert.doesNotMatch(app, /AQ85\.AK976\.5\.J87/);
+    assert.doesNotMatch(app, /fillFormWithPartScoreTestData/);
+    assert.doesNotMatch(app, /handleSampleDealSelected/);
 });
 
 test("fillFormWithGrandSlamTestData populates inputs", () => {
