@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include <api/dds_c_api.h>
+
 #include "recording.hpp"
 
 namespace dds_replay {
@@ -61,7 +63,8 @@ public:
     auto operator=(const ReplayEngine&) -> ReplayEngine& = delete;
 
     // Issue every call once, in recorded order. When `verify` is set, each
-    // result is compared against the recording.
+    // result is compared against the recording. Solver/context failures are
+    // always recorded in `mismatches`, even when `verify` is false.
     auto run(const std::vector<Call>& calls, bool verify) -> ReplayStats;
 
     auto threads() const -> int { return threads_; }
@@ -72,6 +75,13 @@ private:
     int threads_;
     int dds_mode_;
 };
+
+// Create a solver context into `ctx` when it is null. Returns false if creation
+// fails (allocation / construction error), leaving `ctx` null. Exposed for
+// testing so the failure path can be exercised without forcing OOM.
+auto ensure_solver_context(
+    DDS_C_SOLVER_CTX& ctx,
+    DDS_C_SOLVER_CTX (*create)() = &dds_c_create_solvercontext_default) -> bool;
 
 // Convert a PBN deal ("N:AK3.Q42... ...") into DDS remainCards bitmaps.
 // Exposed for testing. Returns false on malformed input.

@@ -107,6 +107,14 @@ auto pbn_to_remain_cards(const std::string& pbn, unsigned int remain[4][4])
     return hands_seen == 4;
 }
 
+auto ensure_solver_context(DDS_C_SOLVER_CTX& ctx,
+                           DDS_C_SOLVER_CTX (*create)()) -> bool
+{
+    if (ctx == nullptr)
+        ctx = create();
+    return ctx != nullptr;
+}
+
 auto describe_mismatch(const ResultMap& expected, const ResultMap& actual)
     -> std::string
 {
@@ -180,8 +188,8 @@ public:
 
         if (n_ <= 1) {
             // Single-threaded: reuse one context directly, no handoff cost.
-            if (solo_ == nullptr)
-                solo_ = dds_c_create_solvercontext_default();
+            if (!ensure_solver_context(solo_))
+                return false;
             for (size_t i = 0; i < deals.size(); ++i) {
                 if (dds_c_solve_board(solo_, &deals[i], target, solutions, mode,
                                                             &out[i]) != RETURN_NO_FAULT)
@@ -214,7 +222,8 @@ private:
     auto worker_loop() -> void
     {
         // One context per worker, created once and kept warm for the whole replay.
-        DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+        DDS_C_SOLVER_CTX ctx = nullptr;
+        const bool have_ctx = ensure_solver_context(ctx);
         unsigned long long seen = 0;
 
         for (;;) {
@@ -229,13 +238,19 @@ private:
             lock.unlock();
 
             if (deals != nullptr && out != nullptr) {
-                for (;;) {
-                    const size_t i = next_.fetch_add(1, std::memory_order_relaxed);
-                    if (i >= deals->size())
-                        break;
-                    if (dds_c_solve_board(ctx, &(*deals)[i], target, solutions, mode,
-                                                                &(*out)[i]) != RETURN_NO_FAULT)
-                        ok_.store(false, std::memory_order_relaxed);
+                if (!have_ctx) {
+                    ok_.store(false, std::memory_order_relaxed);
+                } else {
+                    for (;;) {
+                        const size_t i =
+                            next_.fetch_add(1, std::memory_order_relaxed);
+                        if (i >= deals->size())
+                            break;
+                        if (dds_c_solve_board(ctx, &(*deals)[i], target,
+                                solutions, mode, &(*out)[i])
+                            != RETURN_NO_FAULT)
+                            ok_.store(false, std::memory_order_relaxed);
+                    }
                 }
             }
 
@@ -348,8 +363,10 @@ auto ReplayEngine::run(const std::vector<Call>& calls, bool verify)
             bool solved_ok = ok;
 
             if (!ok) {
-                if (verify)
-                    stats.mismatches.push_back({call.seq, call.purpose, "DDS error"});
+                // Solver/context failures are not result-comparison noise: report
+                // them even under --no-verify so a timing run cannot exit 0 after
+                // every solve failed (e.g. context creation returned null).
+                stats.mismatches.push_back({call.seq, call.purpose, "DDS error"});
             } else if (call.solutions == 1) {
                 // Only the best and worst trick counts for the side to play. A board
                 // with no cards is a solver fault, not a 0 to index blindly.
@@ -358,9 +375,8 @@ auto ReplayEngine::run(const std::vector<Call>& calls, bool verify)
                     if (fut.cards <= 0) { no_cards = true; break; }
                 if (no_cards) {
                     solved_ok = false;
-                    if (verify)
-                        stats.mismatches.push_back(
-                            {call.seq, call.purpose, "DDS returned a board with no cards"});
+                    stats.mismatches.push_back(
+                        {call.seq, call.purpose, "DDS returned a board with no cards"});
                 } else {
                     std::vector<int>& mx = actual["max"];
                     std::vector<int>& mn = actual["min"];
@@ -422,17 +438,16 @@ auto ReplayEngine::run(const std::vector<Call>& calls, bool verify)
             const int rc2 = (rc1 == RETURN_NO_FAULT) ? SidesParBin(&table, sides, v) : rc1;
             elapsed = seconds_since(t0);
 
-            if (verify) {
-                if (rc2 != RETURN_NO_FAULT)
-                    stats.mismatches.push_back(
-                        {call.seq, "par", "DDS error " + std::to_string(rc2)});
-                else if (sides[0].score != call.par_result)
-                    // Same shape as describe_mismatch's line, so par regressions read
-                    // like solve regressions in the report.
-                    stats.mismatches.push_back(
-                        {call.seq, "par",
-             "recorded [" + std::to_string(call.par_result) +
-             "] vs replayed [" + std::to_string(sides[0].score) + "]"});
+            if (rc2 != RETURN_NO_FAULT) {
+                stats.mismatches.push_back(
+                    {call.seq, "par", "DDS error " + std::to_string(rc2)});
+            } else if (verify && sides[0].score != call.par_result) {
+                // Same shape as describe_mismatch's line, so par regressions read
+                // like solve regressions in the report.
+                stats.mismatches.push_back(
+                    {call.seq, "par",
+         "recorded [" + std::to_string(call.par_result) +
+         "] vs replayed [" + std::to_string(sides[0].score) + "]"});
             }
         }
 
