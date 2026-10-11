@@ -9,7 +9,7 @@
 //   web/dds_web_core.js — Card / holdings / handsToPbn
 //   web/dds_web_solve.js — WASM queue / DD table / play solves
 //   web/dds_web_play.js — card-by-card play state / trick UI
-//   web/dds_web_sample_deals.js — SAMPLE_DEALS holdings map
+//   web/dds_web_sample_deals.js — SAMPLE_DEALS (from hands/*.pbn via gen_sample_deals_js.py)
 // Unit tests: web/tests/dds_web_test.mjs
 // Run with: bazelisk test //web:dds_web_js_test
 // or: python -m unittest web.tests.test_dds_web_js
@@ -104,11 +104,18 @@ function fillFormWithTestData(nesw) {
 }
 
 function handleSampleDealSelected(select) {
-    const deal = SAMPLE_DEALS[select.value];
-    if (!deal) {
+    const sample = SAMPLE_DEALS[select.value];
+    if (!sample) {
         return;
     }
-    fillFormWithTestData(deal.hands);
+    // SAMPLE_DEALS.pbn is generated from hands/*.pbn; reuse the import parser.
+    const deal = parseFirstDealFromText(`[Deal "${sample.pbn}"]`);
+    fillFormWithTestData([
+        deal.north,
+        deal.east,
+        deal.south,
+        deal.west,
+    ]);
     // Restore the placeholder so the control reads like a button again and the
     // same sample can be re-selected after editing.
     select.value = "";

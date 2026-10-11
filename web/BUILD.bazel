@@ -78,6 +78,21 @@ py_test(
 )
 
 py_test(
+    name = "gen_sample_deals_js_test",
+    size = "small",
+    main = "tests/test_gen_sample_deals_js.py",
+    srcs = ["tests/test_gen_sample_deals_js.py"],
+    data = [
+        "dds_web_sample_deals.js",
+        "gen_sample_deals_js.py",
+        "sample_deals_manifest.json",
+        "//hands:everyone_makes_3N.pbn",
+        "//hands:ns_make_7.pbn",
+        "//hands:part_score.pbn",
+    ],
+)
+
+py_test(
     name = "dds_web_html_test",
     size = "small",
     main = "tests/test_web_html.py",
@@ -178,6 +193,7 @@ test_suite(
         ":dds_web_html_test",
         ":dds_web_js_test",
         ":dds_web_wasm_test",
+        ":gen_sample_deals_js_test",
         ":stage_github_pages_test",
         ":wasm_scripts_test",
     ],

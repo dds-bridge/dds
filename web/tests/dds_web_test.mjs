@@ -1267,7 +1267,7 @@ test("pageLoad fills sample-deals select from SAMPLE_DEALS", () => {
     }
 });
 
-test("SAMPLE_DEALS entries have name and four hands", () => {
+test("SAMPLE_DEALS entries have name and PBN deal string", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const expected = {
         "grand-slam": "NS make 7",
@@ -1279,8 +1279,14 @@ test("SAMPLE_DEALS entries have name and four hands", () => {
         const deal = ctx.SAMPLE_DEALS[id];
         assert.equal(typeof deal, "object");
         assert.equal(deal.name, name);
-        assert.equal(Array.isArray(deal.hands), true);
-        assert.equal(deal.hands.length, 4);
+        assert.equal(typeof deal.pbn, "string");
+        assert.match(deal.pbn, /^N:/);
+        assert.equal(deal.hands, undefined);
+        const parsed = ctx.parseFirstDealFromText(`[Deal "${deal.pbn}"]`);
+        assert.equal(typeof parsed.north, "string");
+        assert.equal(typeof parsed.east, "string");
+        assert.equal(typeof parsed.south, "string");
+        assert.equal(typeof parsed.west, "string");
     }
 });
 
@@ -6073,7 +6079,7 @@ test("playDiffFromSolverScore projects declarer total vs target", () => {
 });
 
 function partScoreHands(ctx) {
-    // Matches SAMPLE_DEALS["part-score"] / kPbnPartScore.
+    // Matches SAMPLE_DEALS["part-score"].pbn / kPbnPartScore.
     return {
         north: cardsFromKeys(ctx, [
             "SA", "SQ", "S8", "S5", "HA", "HK", "H9", "H7", "H6", "D5", "CJ", "C8", "C7",
