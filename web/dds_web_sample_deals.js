@@ -4,20 +4,16 @@
 //   license that can be found in the LICENSE file or at
 //   https://opensource.org/licenses/MIT
 
-// Sample deals for the DDS Web dropdown. Loaded after dds_web.js so
-// fillFormWithTestData is available when a sample is selected.
-// Only handleSampleDealSelected is exported; holdings stay private.
+// Sample-deal holdings for the DDS Web dropdown. Pure data; loaded before
+// dds_web.js. Keys match <option value="..."> in dds_web.html (NESW dotted).
 
 /* eslint-env es6 */
-/* exported handleSampleDealSelected */
+/* exported SAMPLE_DEALS */
 
 "use strict";
 
 (function (global) {
-    const fillFormWithTestData = global.fillFormWithTestData;
-
-    // Keys match <option value="..."> in dds_web.html (NESW dotted holdings).
-    const SAMPLE_DEALS = {
+    global.SAMPLE_DEALS = {
         "grand-slam": [
             "AKQJ.AKQJ.T98.T9",
             "5432.5432.32.432",
@@ -37,17 +33,4 @@
             "K643.T8.AK742.T5"
         ]
     };
-
-    function handleSampleDealSelected(select) {
-        const nesw = SAMPLE_DEALS[select.value];
-        if (!nesw) {
-            return;
-        }
-        fillFormWithTestData(nesw);
-        // Restore the placeholder so the control reads like a button again and the
-        // same sample can be re-selected after editing.
-        select.value = "";
-    }
-
-    global.handleSampleDealSelected = handleSampleDealSelected;
 })(typeof globalThis !== "undefined" ? globalThis : window);

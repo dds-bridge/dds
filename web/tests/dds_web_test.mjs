@@ -290,17 +290,17 @@ function runDdsWebScripts(context) {
         { filename: "dds_web_play.js" }
     );
     runInContext(
-        readFileSync(findWebJsPath("dds_web.js", "DDS_WEB_JS"), "utf8"),
-        context,
-        { filename: "dds_web.js" }
-    );
-    runInContext(
         readFileSync(
             findWebJsPath("dds_web_sample_deals.js", "DDS_WEB_SAMPLE_DEALS_JS"),
             "utf8"
         ),
         context,
         { filename: "dds_web_sample_deals.js" }
+    );
+    runInContext(
+        readFileSync(findWebJsPath("dds_web.js", "DDS_WEB_JS"), "utf8"),
+        context,
+        { filename: "dds_web.js" }
     );
 }
 
@@ -1214,19 +1214,16 @@ test("sample deals live in dds_web_sample_deals.js not dds_web.js", () => {
     );
     const app = readFileSync(findWebJsPath("dds_web.js", "DDS_WEB_JS"), "utf8");
 
-    // Assert: holdings and the select handler belong in the sample-deals layer;
-    // per-deal fill helpers are not exported globals.
+    // Assert: the sample-deals file is data only; the select handler is UI glue.
     assert.match(samples, /SAMPLE_DEALS/);
     assert.match(samples, /AQ85\.AK976\.5\.J87/);
     assert.match(samples, /AKQJ\.AKQJ\.T98\.T9/);
     assert.match(samples, /QT9\.A8765432\.KJ\./);
-    assert.match(samples, /handleSampleDealSelected/);
-    assert.doesNotMatch(samples, /fillFormWithPartScoreTestData/);
-    assert.doesNotMatch(samples, /fillFormWithGrandSlamTestData/);
-    assert.doesNotMatch(samples, /fillFormWithEveryoneMakes3nTestData/);
-    assert.doesNotMatch(samples, /global\.fillFormWith(?:GrandSlam|Everyone|PartScore)/);
+    assert.doesNotMatch(samples, /handleSampleDealSelected/);
+    assert.doesNotMatch(samples, /fillFormWithTestData/);
     assert.doesNotMatch(app, /AQ85\.AK976\.5\.J87/);
-    assert.doesNotMatch(app, /handleSampleDealSelected/);
+    assert.match(app, /handleSampleDealSelected/);
+    assert.match(app, /SAMPLE_DEALS/);
 });
 
 test("loadSampleDeal grand-slam populates inputs", () => {

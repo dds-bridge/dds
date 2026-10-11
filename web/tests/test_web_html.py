@@ -127,17 +127,19 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertLess(solve_at, play_at)
         self.assertLess(play_at, app_at)
 
-    def test_loads_sample_deals_script_after_dds_web_js(self) -> None:
-        # Sample deals live in dds_web_sample_deals.js so dds_web.js stays
-        # focused on UI glue; load after fillFormWithTestData exists.
+    def test_loads_sample_deals_script_before_dds_web_js(self) -> None:
+        # SAMPLE_DEALS is pure data; load before UI so handleSampleDealSelected
+        # can read it.
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertRegex(
             text,
             r'<script\s+src="dds_web_sample_deals\.js"\s*>\s*</script>',
         )
-        app_at = text.index('src="dds_web.js"')
+        play_at = text.index('src="dds_web_play.js"')
         samples_at = text.index('src="dds_web_sample_deals.js"')
-        self.assertLess(app_at, samples_at)
+        app_at = text.index('src="dds_web.js"')
+        self.assertLess(play_at, samples_at)
+        self.assertLess(samples_at, app_at)
 
     def test_play_mode_controls_and_trick_status(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")

@@ -9,8 +9,7 @@
 //   web/dds_web_core.js — Card / holdings / handsToPbn
 //   web/dds_web_solve.js — WASM queue / DD table / play solves
 //   web/dds_web_play.js — card-by-card play state / trick UI
-// After this UI file:
-//   web/dds_web_sample_deals.js — Sample deals dropdown loaders
+//   web/dds_web_sample_deals.js — SAMPLE_DEALS holdings map
 // Unit tests: web/tests/dds_web_test.mjs
 // Run with: bazelisk test //web:dds_web_js_test
 // or: python -m unittest web.tests.test_dds_web_js
@@ -68,6 +67,7 @@
             chooseDealFile
             handleDealFileSelected
             fillFormWithTestData
+            handleSampleDealSelected
             */
 
 // It's also useful to pass the code through
@@ -100,6 +100,17 @@ function fillFormWithTestData(nesw) {
     }
 
     updateActionButtons();
+}
+
+function handleSampleDealSelected(select) {
+    const nesw = SAMPLE_DEALS[select.value];
+    if (!nesw) {
+        return;
+    }
+    fillFormWithTestData(nesw);
+    // Restore the placeholder so the control reads like a button again and the
+    // same sample can be re-selected after editing.
+    select.value = "";
 }
 
 // Deal-format parsers (PBN/LIN/DLM/sol) live in dds_web_deal_import.js and
