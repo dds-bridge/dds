@@ -5068,6 +5068,88 @@ test("parseFirstDealFromText reads a PBN Deal tag", () => {
     assert.equal(deal.west, ".KJ.QT9.A8765432");
 });
 
+test("parseFirstDealFromText accepts equal short PBN hands", () => {
+    // Arrange / Act: one card each (partial deal the solver already accepts).
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText(
+        '[Deal "N:A... .K.. ..Q. ...J"]'
+    );
+
+    // Assert
+    assert.equal(deal.north, "A...");
+    assert.equal(deal.east, ".K..");
+    assert.equal(deal.south, "..Q.");
+    assert.equal(deal.west, "...J");
+});
+
+test("parseFirstDealFromText accepts a multi-card partial PBN deal", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText(
+        '[Deal "N:AK.Q.. .JT.9. ..87.6 ...543"]'
+    );
+
+    assert.equal(deal.north, "AK.Q..");
+    assert.equal(deal.east, ".JT.9.");
+    assert.equal(deal.south, "..87.6");
+    assert.equal(deal.west, "...543");
+});
+
+test("parseFirstDealFromText rejects unequal-length PBN hands", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+
+    assert.throws(
+        () => ctx.parseFirstDealFromText('[Deal "N:A... .K.. ..Q. ..."]'),
+        /equal|length|card/i
+    );
+});
+
+test("importDealFromText loads a partial PBN deal into the diagram", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+
+    const err = ctx.importDealFromText('[Deal "N:A... .K.. ..Q. ...J"]');
+
+    assert.equal(err, "");
+    assertImportedDeal(ctx, document, {
+        north: ["A", "", "", ""],
+        east: ["", "K", "", ""],
+        south: ["", "", "Q", ""],
+        west: ["", "", "", "J"],
+    });
+});
+
+test("parseFirstDealFromText accepts equal short LIN hands", () => {
+    // Arrange / Act: four one-card hands in fixed S,W,N,E order.
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText("md|3SA,HK,DQ,CJ|");
+
+    // Assert
+    assert.equal(deal.south, "A...");
+    assert.equal(deal.west, ".K..");
+    assert.equal(deal.north, "..Q.");
+    assert.equal(deal.east, "...J");
+});
+
+test("parseFirstDealFromText accepts equal short sol-style hands", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const deal = ctx.parseFirstDealFromText("A... .K.. ..Q. ...J\n");
+
+    assert.equal(deal.north, "A...");
+    assert.equal(deal.east, ".K..");
+    assert.equal(deal.south, "..Q.");
+    assert.equal(deal.west, "...J");
+});
+
+test("parseFirstDealFromText rejects omitted-hand LIN for partial deals", () => {
+    // Full-deck fourth-hand completion cannot infer a short equal fourth hand.
+    const ctx = loadDdsWeb(createMockDocument());
+
+    assert.throws(
+        () => ctx.parseFirstDealFromText("md|3SA,HK,DQ,|"),
+        /omitted hand|13-card|full/i
+    );
+});
+
 test("parseFirstDealFromText uses the first PBN deal when several are present", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const text = [

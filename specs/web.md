@@ -44,11 +44,12 @@ with mid-trick solves for legal cards.
   `dds_web_solve.js` / `dds_web_play.js` load the module (`createDdsModule`),
   marshal a deal into WASM memory, call `dds_web_calc_table` /
   `dds_web_solve_leads` / `dds_web_solve_plays` via `ccall`, and read results
-  with `getValue`. Deal-file parsers live in `dds_web_deal_import.js`; the deal
-  model in `dds_web_core.js`; WASM queue / DD table / leads / play-position
-  solves in `dds_web_solve.js`; play state and trick UI in `dds_web_play.js`;
-  UI wiring in `dds_web.js`. Script order is import → core → solve → play →
-  app. `web_site` (`tests/web_site.py`) stages the site and provides
+  with `getValue`. Deal-file parsers live in `dds_web_deal_import.js` (PBN and
+  related formats accept equal-length hands of 1–13 cards, not only a full
+  deck); the deal model in `dds_web_core.js`; WASM queue / DD table / leads /
+  play-position solves in `dds_web_solve.js`; play state and trick UI in
+  `dds_web_play.js`; UI wiring in `dds_web.js`. Script order is import → core →
+  solve → play → app. `web_site` (`tests/web_site.py`) stages the site and provides
   `make_isolated_http_handler` (COOP/COEP) for system/e2e tests and
   `web/serve_web.py`. Helper scripts `gen_wasm_bin_js.py`, `patch_web_wasm.py`,
   `verify_wasm_js.py` generate and sanity-check the JS/wasm glue.
