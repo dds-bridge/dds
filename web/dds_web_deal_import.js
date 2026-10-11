@@ -150,6 +150,16 @@
             return null;
         }
 
+        // Omitted-hand completion fills the remainder of a full deck. That only
+        // yields equal lengths when the three present hands are 13 cards each.
+        for (const direction of present) {
+            if (handCardCount(byDirection[direction]) !== 13) {
+                throw new Error(
+                    "LIN omitted-hand completion requires three full 13-card hands."
+                );
+            }
+        }
+
         const used = {};
         for (const direction of present) {
             const parts = byDirection[direction].split(".");
