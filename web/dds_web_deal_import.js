@@ -69,9 +69,17 @@
         return SUIT_LETTERS.map((suit) => sortPips(holdings[suit] || "")).join(".");
     }
 
-    /** True when the four hands are 13 cards each with no duplicates (full deck). */
+    function handCardCount(dotted) {
+        return String(dotted).replace(/\./g, "").length;
+    }
+
+    /**
+     * True when the four hands share one length in 1..13 and use distinct cards.
+     * Full deals are the special case of length 13 (52 unique cards).
+     */
     function dealHasUniqueCards(deal) {
         const seen = {};
+        let expected = null;
         for (const direction of DIRECTIONS) {
             const holding = deal[direction];
             if (!holding) {
@@ -93,23 +101,39 @@
                     count += 1;
                 }
             }
-            if (count !== 13) {
+            if (count < 1 || count > 13) {
+                return false;
+            }
+            if (expected == null) {
+                expected = count;
+            } else if (count !== expected) {
                 return false;
             }
         }
-        return Object.keys(seen).length === 52;
+        return Object.keys(seen).length === expected * 4;
     }
 
     function dealFromDirectionMap(byDirection) {
         const deal = {};
+        let expected = null;
         for (const direction of DIRECTIONS) {
             if (!byDirection[direction]) {
                 return null;
             }
             deal[direction] = normalizeHandHolding(byDirection[direction]);
-            if (deal[direction].replace(/\./g, "").length !== 13) {
-                return null;
+            const count = handCardCount(deal[direction]);
+            if (expected == null) {
+                expected = count;
+            } else if (count !== expected) {
+                throw new Error(
+                    "Deal hands must have the same number of cards (1-13)."
+                );
             }
+        }
+        if (expected < 1 || expected > 13) {
+            throw new Error(
+                "Deal hands must have the same number of cards (1-13)."
+            );
         }
         if (!dealHasUniqueCards(deal)) {
             throw new Error("Deal has duplicated cards.");
@@ -171,11 +195,7 @@
         const byDirection = {};
         for (let i = 0; i < 4; i++) {
             const direction = DIR_FROM_LETTER["NESW"[(startIndex + i) % 4]];
-            const holding = normalizeHandHolding(hands[i]);
-            if (holding.replace(/\./g, "").length !== 13) {
-                return null;
-            }
-            byDirection[direction] = holding;
+            byDirection[direction] = normalizeHandHolding(hands[i]);
         }
         return dealFromDirectionMap(byDirection);
     }
