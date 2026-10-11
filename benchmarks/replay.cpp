@@ -247,7 +247,7 @@ private:
                         if (i >= deals->size())
                             break;
                         if (dds_c_solve_board(ctx, &(*deals)[i], target,
-                                              solutions, mode, &(*out)[i])
+                                solutions, mode, &(*out)[i])
                             != RETURN_NO_FAULT)
                             ok_.store(false, std::memory_order_relaxed);
                     }
