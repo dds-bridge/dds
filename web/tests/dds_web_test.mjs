@@ -1226,6 +1226,33 @@ test("sample deals live in dds_web_sample_deals.js not dds_web.js", () => {
     assert.match(app, /SAMPLE_DEALS/);
 });
 
+test("SAMPLE_DEALS names match the HTML option labels", () => {
+    // Arrange
+    const ctx = loadDdsWeb(createMockDocument());
+    const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
+    const expected = {
+        "grand-slam": "NS make 7",
+        "everyone-3n": "Everyone makes 3N",
+        "part-score": "Part-score",
+    };
+
+    // Assert: each sample has a display name matching its <option> text.
+    for (const [id, name] of Object.entries(expected)) {
+        const deal = ctx.SAMPLE_DEALS[id];
+        assert.equal(typeof deal, "object");
+        assert.equal(deal.name, name);
+        assert.equal(Array.isArray(deal.hands), true);
+        assert.equal(deal.hands.length, 4);
+        assert.match(
+            html,
+            new RegExp(
+                `<option\\s+value="${id}">${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</option>`
+            )
+        );
+    }
+});
+
 test("loadSampleDeal grand-slam populates inputs", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);

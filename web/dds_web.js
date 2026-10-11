@@ -103,11 +103,11 @@ function fillFormWithTestData(nesw) {
 }
 
 function handleSampleDealSelected(select) {
-    const nesw = SAMPLE_DEALS[select.value];
-    if (!nesw) {
+    const deal = SAMPLE_DEALS[select.value];
+    if (!deal) {
         return;
     }
-    fillFormWithTestData(nesw);
+    fillFormWithTestData(deal.hands);
     // Restore the placeholder so the control reads like a button again and the
     // same sample can be re-selected after editing.
     select.value = "";
