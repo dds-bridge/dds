@@ -142,16 +142,28 @@ def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
     return n, "".join(chars)
 
 
-def _followed_by_concat(text: str, i: int, n: int) -> bool:
-    """True if the next non-whitespace character at/after i is "+".
+def _is_complete_literal(text: str, i: int, n: int) -> bool:
+    """True if the string literal ending at i is a whole call argument.
 
-    A string literal immediately followed by "+" is only part of a larger
-    concatenated expression ("a" + b, or "a" + "b") — the literal just
-    captured is not the argument's whole value, so the caller must not
-    treat it as the resolved value.
+    Skips whitespace and "#" comments (repeatedly, so a comment followed
+    by more whitespace/another comment is all consumed) after the
+    literal. The literal is the argument's complete, resolved value only
+    if what follows is "," (ending this argument) or ")" (ending the
+    call) — anything else, including "+" (concatenation, even across an
+    intervening comment), "[" (slicing), "%" (string formatting), "."
+    (a method call), or any other operator, means the literal is merely a
+    fragment of a larger expression whose true value can't be read back
+    from the source text.
     """
-    j = _skip_ws(text, i, n)
-    return j < n and text[j] == "+"
+    j = i
+    while True:
+        skipped = _skip_ws(text, j, n)
+        if skipped < n and text[skipped] == "#":
+            skipped = _skip_comment(text, skipped, n)
+        if skipped == j:
+            break
+        j = skipped
+    return j < n and text[j] in ",)"
 
 
 def _is_identifier_boundary(text: str, i: int) -> bool:
@@ -240,7 +252,7 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 if at_top and _POSITIONAL_KEY not in kwargs:
                     end, value = _skip_string(text, i, n)
                     kwargs[_POSITIONAL_KEY] = (
-                        _UNRESOLVED if _followed_by_concat(text, end, n) else value
+                        value if _is_complete_literal(text, end, n) else _UNRESOLVED
                     )
                     i = end
                     continue
@@ -280,9 +292,9 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                         if rhs_start < n and text[rhs_start] in "\"'":
                             end, value = _skip_string(text, rhs_start, n)
                             kwargs[ident] = (
-                                _UNRESOLVED
-                                if _followed_by_concat(text, end, n)
-                                else value
+                                value
+                                if _is_complete_literal(text, end, n)
+                                else _UNRESOLVED
                             )
                             i = end
                             continue
@@ -653,6 +665,48 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
         """
         sample = (
             'archive_override(module_name = "toolchains_" + "llvm", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_fails_closed_on_concat_split_by_comment(
+        self,
+    ) -> None:
+        """A comment between the first fragment and the "+" must not hide
+
+        the concatenation: the literal still isn't the whole argument.
+        """
+        sample = """archive_override(
+    module_name = "toolchains_"  # fixes a typo below
+    + "llvm",
+    strip_prefix = "x",
+)"""
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_fails_closed_on_sliced_module_name(
+        self,
+    ) -> None:
+        """A slice expression is a literal followed by "[...]", not a
+
+        complete argument by itself; the literal alone must not be
+        mistaken for the slice's actual result.
+        """
+        sample = (
+            'archive_override(module_name = "xtoolchains_llvm"[1:], '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_fails_closed_on_percent_formatted_module_name(
+        self,
+    ) -> None:
+        """A "%"-formatted literal is a template, not the resolved value;
+
+        "toolchains_%s" % "llvm" resolves to "toolchains_llvm" but the
+        literal "toolchains_%s" alone must not be mistaken for it.
+        """
+        sample = (
+            'archive_override(module_name = "toolchains_%s" % "llvm", '
             'strip_prefix = "x")'
         )
         self.assertTrue(_has_toolchains_llvm_override(sample))
