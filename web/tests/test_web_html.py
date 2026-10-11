@@ -141,7 +141,8 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         # an editable host, which play mode does not keep focused).
         self.assertNotRegex(text, r"Edit\s*→\s*Undo|Edit\s*-\s*Undo")
         self.assertRegex(text, r"⌘/Ctrl-Z|Ctrl-Z")
-        self.assertIn("Click a cell to play out that contract", text)
+        self.assertIn('id="result-table-hint"', text)
+        self.assertRegex(text, r'id="result-table-hint"[^>]*\bhidden\b')
         # Trick totals live in the diagram NW corner next to the hands.
         nw = text.index('grid-filler-nw')
         score = text.index('id="play-score"')
