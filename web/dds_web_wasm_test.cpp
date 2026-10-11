@@ -113,7 +113,7 @@ TEST(DdsWebWasmTest, FillsFlatStrainHandTableAcrossReuse) {
     }
 }
 
-// Part-score deal from the DDS Web page (fillFormWithPartScoreTestData).
+// Part-score deal from the DDS Web Sample deals dropdown.
 constexpr char kPbnPartScore[] =
         "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5";
 

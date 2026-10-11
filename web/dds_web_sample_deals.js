@@ -6,64 +6,48 @@
 
 // Sample deals for the DDS Web dropdown. Loaded after dds_web.js so
 // fillFormWithTestData is available when a sample is selected.
+// Only handleSampleDealSelected is exported; holdings stay private.
 
 /* eslint-env es6 */
-/* exported fillFormWithGrandSlamTestData
-            fillFormWithEveryoneMakes3nTestData
-            fillFormWithPartScoreTestData
-            handleSampleDealSelected */
+/* exported handleSampleDealSelected */
 
 "use strict";
 
 (function (global) {
     const fillFormWithTestData = global.fillFormWithTestData;
 
-    function fillFormWithGrandSlamTestData() {
-        fillFormWithTestData([
+    // Keys match <option value="..."> in dds_web.html (NESW dotted holdings).
+    const SAMPLE_DEALS = {
+        "grand-slam": [
             "AKQJ.AKQJ.T98.T9",
             "5432.5432.32.432",
             "T98.T9.AKQJ.AKQJ",
             "76.876.7654.8765"
-        ]);
-    }
-
-    function fillFormWithEveryoneMakes3nTestData() {
-        fillFormWithTestData([
+        ],
+        "everyone-3n": [
             "QT9.A8765432.KJ.",
             "KJ..A8765432.QT9",
             "A8765432.QT9..KJ",
             ".KJ.QT9.A8765432"
-        ]);
-    }
-
-    function fillFormWithPartScoreTestData() {
-        fillFormWithTestData([
+        ],
+        "part-score": [
             "AQ85.AK976.5.J87",
             "JT.QJ5432.Q9.KQ9",
             "972..JT863.A6432",
             "K643.T8.AK742.T5"
-        ]);
-    }
+        ]
+    };
 
     function handleSampleDealSelected(select) {
-        const loaders = {
-            "grand-slam": fillFormWithGrandSlamTestData,
-            "everyone-3n": fillFormWithEveryoneMakes3nTestData,
-            "part-score": fillFormWithPartScoreTestData
-        };
-        const load = loaders[select.value];
-        if (!load) {
+        const nesw = SAMPLE_DEALS[select.value];
+        if (!nesw) {
             return;
         }
-        load();
+        fillFormWithTestData(nesw);
         // Restore the placeholder so the control reads like a button again and the
         // same sample can be re-selected after editing.
         select.value = "";
     }
 
-    global.fillFormWithGrandSlamTestData = fillFormWithGrandSlamTestData;
-    global.fillFormWithEveryoneMakes3nTestData =
-        fillFormWithEveryoneMakes3nTestData;
-    global.fillFormWithPartScoreTestData = fillFormWithPartScoreTestData;
     global.handleSampleDealSelected = handleSampleDealSelected;
 })(typeof globalThis !== "undefined" ? globalThis : window);
