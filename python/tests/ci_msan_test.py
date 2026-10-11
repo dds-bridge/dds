@@ -259,6 +259,14 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 i, _ = _skip_string(text, i, n)
                 continue
             if ch == "(":
+                # A "(" at the top level, not preceded by "ident =", opens
+                # a parenthesized positional expression (e.g. the first
+                # argument written as ("a" + "b")) rather than a literal
+                # or a bare variable reference; mark it unresolved before
+                # descending into it, the same as any other non-literal
+                # positional value.
+                if at_top and _POSITIONAL_KEY not in kwargs:
+                    kwargs[_POSITIONAL_KEY] = _UNRESOLVED
                 depth += 1
                 i += 1
                 continue
@@ -652,6 +660,21 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
         as a variable reference.
         """
         sample = 'archive_override(target, strip_prefix = "x")'
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_fails_closed_on_parenthesized_positional_module_name(
+        self,
+    ) -> None:
+        """A parenthesized expression passed as the first positional
+
+        argument (e.g. ("toolchains_" + "llvm")) can't be read back as a
+        literal from the source text either; it must fail closed the
+        same as any other non-literal positional value, not be silently
+        skipped while descending into the parens.
+        """
+        sample = (
+            'archive_override(("toolchains_" + "llvm"), strip_prefix = "x")'
+        )
         self.assertTrue(_has_toolchains_llvm_override(sample))
 
     def test_has_toolchains_llvm_override_fails_closed_on_concatenated_module_name(
