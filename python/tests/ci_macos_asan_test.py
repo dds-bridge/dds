@@ -23,6 +23,13 @@ def _repo_root(start: Path | None = None) -> Path:
 
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _POSITIONAL_KEY = "__positional__"
+# Sentinel for a module_name/name argument whose value is a variable
+# reference or a string concatenation rather than a single literal, so the
+# true value can't be read back from the source text. Treated as a possible
+# match by every caller here (fail closed) rather than silently absent,
+# since the latter would let a real override on the guarded module slip
+# through whenever its target is computed instead of written as a literal.
+_UNRESOLVED = object()
 
 
 def _skip_ws(text: str, i: int, n: int) -> int:
@@ -136,6 +143,18 @@ def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
     return n, "".join(chars)
 
 
+def _followed_by_concat(text: str, i: int, n: int) -> bool:
+    """True if the next non-whitespace character at/after i is "+".
+
+    A string literal immediately followed by "+" is only part of a larger
+    concatenated expression ("a" + b, or "a" + "b") — the literal just
+    captured is not the argument's whole value, so the caller must not
+    treat it as the resolved value.
+    """
+    j = _skip_ws(text, i, n)
+    return j < n and text[j] == "+"
+
+
 def _is_identifier_boundary(text: str, i: int) -> bool:
     """True unless the character before i could continue an identifier.
 
@@ -221,7 +240,9 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
             if ch in "\"'":
                 if at_top and _POSITIONAL_KEY not in kwargs:
                     end, value = _skip_string(text, i, n)
-                    kwargs[_POSITIONAL_KEY] = value
+                    kwargs[_POSITIONAL_KEY] = (
+                        _UNRESOLVED if _followed_by_concat(text, end, n) else value
+                    )
                     i = end
                     continue
                 i, _ = _skip_string(text, i, n)
@@ -256,12 +277,33 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                     ident = m.group(0)
                     j = _skip_ws(text, m.end(), n)
                     if j < n and text[j] == "=" and text[j : j + 2] != "==":
-                        j = _skip_ws(text, j + 1, n)
-                        if j < n and text[j] in "\"'":
-                            end, value = _skip_string(text, j, n)
-                            kwargs[ident] = value
+                        rhs_start = _skip_ws(text, j + 1, n)
+                        if rhs_start < n and text[rhs_start] in "\"'":
+                            end, value = _skip_string(text, rhs_start, n)
+                            kwargs[ident] = (
+                                _UNRESOLVED
+                                if _followed_by_concat(text, end, n)
+                                else value
+                            )
                             i = end
                             continue
+                        # A non-literal right-hand side (a variable
+                        # reference, a function call, ...) can't be read
+                        # back from the source text. Fail closed: mark it
+                        # unresolved rather than leaving it absent, which
+                        # would read identically to the argument never
+                        # having been given at all.
+                        kwargs[ident] = _UNRESOLVED
+                        i = rhs_start
+                        continue
+                    # Not "ident = ...": a bare identifier is a variable
+                    # used as a value. If it's the first value-shaped
+                    # token in the call, it's being passed as the first
+                    # positional argument; fail closed the same way as a
+                    # non-literal keyword value, rather than silently
+                    # dropping it.
+                    if _POSITIONAL_KEY not in kwargs:
+                        kwargs[_POSITIONAL_KEY] = _UNRESOLVED
                     i = m.end()
                     continue
             i += 1
@@ -285,7 +327,12 @@ def _has_apple_support_override(module_bazel: str) -> bool:
     — not just single_version_override — and matches each call's keyword
     or first-positional module_name argument regardless of argument order
     or formatting, rather than assuming module_name is the first line
-    after the opening "(".
+    after the opening "(". Fails closed (returns True) for an override
+    whose module_name/name is a variable reference or a string
+    concatenation — _UNRESOLVED — since the real text that will resolve
+    to at runtime can't be read back from the source, and treating that
+    the same as "not apple_support" would let a real override on a
+    computed target slip past this guard undetected.
     """
     override_names = (
         "archive_override",
@@ -296,7 +343,7 @@ def _has_apple_support_override(module_bazel: str) -> bool:
     )
     for kwargs in _iter_call_kwargs(override_names, module_bazel):
         module_name = kwargs.get("module_name") or kwargs.get(_POSITIONAL_KEY)
-        if module_name == "apple_support":
+        if module_name == "apple_support" or module_name is _UNRESOLVED:
             return True
     return False
 
@@ -496,6 +543,43 @@ bazel_dep(name = "apple_support", version = "2.10.1")
         sample = (
             'single_version_override(module_name = "\\U00000061pple_support", '
             'version = "1.24.2")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_fails_closed_on_keyword_variable_module_name(
+        self,
+    ) -> None:
+        """module_name set to a variable reference can't be read back from
+
+        the source text; the guard must fail closed (treat it as a
+        possible apple_support override) rather than silently treating
+        the override as targeting some other module.
+        """
+        sample = 'archive_override(module_name = target, strip_prefix = "x")'
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_fails_closed_on_positional_variable_module_name(
+        self,
+    ) -> None:
+        """Same as the keyword case, but module_name is passed positionally
+
+        as a variable reference.
+        """
+        sample = 'archive_override(target, strip_prefix = "x")'
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_fails_closed_on_concatenated_module_name(
+        self,
+    ) -> None:
+        """module_name assembled via string concatenation has no single
+
+        literal value in the source text; only the first fragment
+        ("apple_") would be captured by a naive literal-only parser, which
+        must not be mistaken for the whole, real value.
+        """
+        sample = (
+            'archive_override(module_name = "apple_" + "support", '
+            'strip_prefix = "x")'
         )
         self.assertTrue(_has_apple_support_override(sample))
 
