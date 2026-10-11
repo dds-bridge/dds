@@ -6,12 +6,14 @@
 /// benchmark check: the recorded results were produced by a real session, so
 /// any change that alters a trick count shows up here.
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <string>
 #include <vector>
 
+#include <api/dds_c_api.h>
 #include <gtest/gtest.h>
 
 #include "recording.hpp"
@@ -22,6 +24,55 @@ namespace {
 using dds_replay::Call;
 using dds_replay::Recording;
 using dds_replay::ReplayEngine;
+
+auto create_returns_null() -> DDS_C_SOLVER_CTX { return nullptr; }
+
+auto create_returns_sentinel() -> DDS_C_SOLVER_CTX
+{
+    return reinterpret_cast<DDS_C_SOLVER_CTX>(static_cast<uintptr_t>(0x1));
+}
+
+TEST(Replay, EnsureSolverContextRejectsNullCreate)
+{
+    // Arrange
+    DDS_C_SOLVER_CTX ctx = nullptr;
+
+    // Act
+    const bool ok = dds_replay::ensure_solver_context(ctx, create_returns_null);
+
+    // Assert: allocation failure must not leave a usable handle.
+    EXPECT_FALSE(ok);
+    EXPECT_EQ(nullptr, ctx);
+}
+
+TEST(Replay, EnsureSolverContextKeepsExistingHandle)
+{
+    // Arrange: already-warm context must not be replaced, even if create fails.
+    DDS_C_SOLVER_CTX existing =
+        reinterpret_cast<DDS_C_SOLVER_CTX>(static_cast<uintptr_t>(0x2));
+    DDS_C_SOLVER_CTX ctx = existing;
+
+    // Act
+    const bool ok = dds_replay::ensure_solver_context(ctx, create_returns_null);
+
+    // Assert
+    EXPECT_TRUE(ok);
+    EXPECT_EQ(existing, ctx);
+}
+
+TEST(Replay, EnsureSolverContextAdoptsCreatedHandle)
+{
+    // Arrange
+    DDS_C_SOLVER_CTX ctx = nullptr;
+
+    // Act
+    const bool ok =
+        dds_replay::ensure_solver_context(ctx, create_returns_sentinel);
+
+    // Assert
+    EXPECT_TRUE(ok);
+    EXPECT_EQ(create_returns_sentinel(), ctx);
+}
 
 auto sample_path() -> std::string
 {

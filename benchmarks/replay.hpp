@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include <api/dds_c_api.h>
+
 #include "recording.hpp"
 
 namespace dds_replay {
@@ -72,6 +74,13 @@ private:
     int threads_;
     int dds_mode_;
 };
+
+// Create a solver context into `ctx` when it is null. Returns false if creation
+// fails (allocation / construction error), leaving `ctx` null. Exposed for
+// testing so the failure path can be exercised without forcing OOM.
+auto ensure_solver_context(
+    DDS_C_SOLVER_CTX& ctx,
+    DDS_C_SOLVER_CTX (*create)() = &dds_c_create_solvercontext_default) -> bool;
 
 // Convert a PBN deal ("N:AK3.Q42... ...") into DDS remainCards bitmaps.
 // Exposed for testing. Returns false on malformed input.

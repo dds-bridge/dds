@@ -107,6 +107,14 @@ auto pbn_to_remain_cards(const std::string& pbn, unsigned int remain[4][4])
     return hands_seen == 4;
 }
 
+auto ensure_solver_context(DDS_C_SOLVER_CTX& ctx,
+                           DDS_C_SOLVER_CTX (*create)()) -> bool
+{
+    if (ctx == nullptr)
+        ctx = create();
+    return ctx != nullptr;
+}
+
 auto describe_mismatch(const ResultMap& expected, const ResultMap& actual)
     -> std::string
 {
@@ -180,8 +188,8 @@ public:
 
         if (n_ <= 1) {
             // Single-threaded: reuse one context directly, no handoff cost.
-            if (solo_ == nullptr)
-                solo_ = dds_c_create_solvercontext_default();
+            if (!ensure_solver_context(solo_))
+                return false;
             for (size_t i = 0; i < deals.size(); ++i) {
                 if (dds_c_solve_board(solo_, &deals[i], target, solutions, mode,
                                                             &out[i]) != RETURN_NO_FAULT)
@@ -214,7 +222,8 @@ private:
     auto worker_loop() -> void
     {
         // One context per worker, created once and kept warm for the whole replay.
-        DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+        DDS_C_SOLVER_CTX ctx = nullptr;
+        const bool have_ctx = ensure_solver_context(ctx);
         unsigned long long seen = 0;
 
         for (;;) {
@@ -229,13 +238,19 @@ private:
             lock.unlock();
 
             if (deals != nullptr && out != nullptr) {
-                for (;;) {
-                    const size_t i = next_.fetch_add(1, std::memory_order_relaxed);
-                    if (i >= deals->size())
-                        break;
-                    if (dds_c_solve_board(ctx, &(*deals)[i], target, solutions, mode,
-                                                                &(*out)[i]) != RETURN_NO_FAULT)
-                        ok_.store(false, std::memory_order_relaxed);
+                if (!have_ctx) {
+                    ok_.store(false, std::memory_order_relaxed);
+                } else {
+                    for (;;) {
+                        const size_t i =
+                            next_.fetch_add(1, std::memory_order_relaxed);
+                        if (i >= deals->size())
+                            break;
+                        if (dds_c_solve_board(ctx, &(*deals)[i], target,
+                                              solutions, mode, &(*out)[i])
+                            != RETURN_NO_FAULT)
+                            ok_.store(false, std::memory_order_relaxed);
+                    }
                 }
             }
 
