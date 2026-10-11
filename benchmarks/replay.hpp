@@ -63,7 +63,8 @@ public:
     auto operator=(const ReplayEngine&) -> ReplayEngine& = delete;
 
     // Issue every call once, in recorded order. When `verify` is set, each
-    // result is compared against the recording.
+    // result is compared against the recording. Solver/context failures are
+    // always recorded in `mismatches`, even when `verify` is false.
     auto run(const std::vector<Call>& calls, bool verify) -> ReplayStats;
 
     auto threads() const -> int { return threads_; }

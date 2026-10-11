@@ -74,6 +74,31 @@ TEST(Replay, EnsureSolverContextAdoptsCreatedHandle)
     EXPECT_EQ(create_returns_sentinel(), ctx);
 }
 
+// --no-verify skips result comparison, but a solver/context failure must still
+// surface so the CLI can exit non-zero instead of reporting a clean timing run.
+TEST(Replay, SolverErrorsAreReportedEvenWhenVerifyIsOff)
+{
+    // Arrange: legal holdings, illegal leader -> SolveBoard rejects the deal.
+    Call call;
+    call.kind = Call::Kind::Solve;
+    call.seq = 42;
+    call.purpose = "bid";
+    call.strain_i = 1;
+    call.leader_i = 99;
+    call.solutions = 1;
+    call.hands_pbn = {"N:A.A.A.A 2.2.2.2 3.3.3.3 4.4.4.4"};
+
+    ReplayEngine engine(/*threads=*/1, /*dds_mode=*/1);
+
+    // Act
+    const dds_replay::ReplayStats stats = engine.run({call}, /*verify=*/false);
+
+    // Assert
+    ASSERT_EQ(1u, stats.mismatches.size());
+    EXPECT_EQ(42, stats.mismatches[0].seq);
+    EXPECT_EQ("DDS error", stats.mismatches[0].why);
+}
+
 auto sample_path() -> std::string
 {
     const std::string p = dds_replay::find_runfile(
