@@ -16,6 +16,53 @@ import { createContext, runInContext } from "node:vm";
 const DIRECTIONS = ["north", "east", "south", "west"];
 const SUITS = ["spades", "hearts", "diamonds", "clubs"];
 
+/** Compact PBN remainCards for the part-score sample deal. */
+const PART_SCORE_PBN =
+    "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5";
+
+/** Same deal with West empty (three-hand fixture used by incomplete-deal tests). */
+const THREE_HANDS_PART_SCORE_PBN =
+    "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 ...";
+
+/**
+ * Expand a PBN remainCards string into createMockDocument field values.
+ * Does not validate uniqueness or equal hand lengths (tests may need partial deals).
+ */
+function fieldsFromPbn(pbn) {
+    const text = String(pbn).trim();
+    const match = /^([NESW]):\s*(.+)$/i.exec(text);
+    if (!match) {
+        throw new Error(`fieldsFromPbn: expected N:/E:/S:/W: deal, got ${JSON.stringify(pbn)}`);
+    }
+    const startIndex = "NESW".indexOf(match[1].toUpperCase());
+    const hands = match[2].trim().split(/\s+/).filter(Boolean);
+    if (hands.length !== 4) {
+        throw new Error(`fieldsFromPbn: need 4 hands, got ${hands.length}`);
+    }
+    const out = {};
+    for (let i = 0; i < 4; i++) {
+        const direction = DIRECTIONS[(startIndex + i) % 4];
+        const parts = hands[i].split(".");
+        if (parts.length !== 4) {
+            throw new Error(
+                `fieldsFromPbn: hand ${i} must have 4 suit holdings, got ${hands[i]}`
+            );
+        }
+        for (let s = 0; s < 4; s++) {
+            out[`${direction}_${SUITS[s]}`] = parts[s] === "-" ? "" : parts[s];
+        }
+    }
+    return out;
+}
+
+/** Four dotted NESW holdings from a PBN remainCards string (for fillFormWithTestData). */
+function neswFromPbn(pbn) {
+    const fields = fieldsFromPbn(pbn);
+    return DIRECTIONS.map((direction) =>
+        SUITS.map((suit) => fields[`${direction}_${suit}`]).join(".")
+    );
+}
+
 function findWebJsPath(fileName, envKey) {
     if (process.env[envKey] && existsSync(process.env[envKey])) {
         return process.env[envKey];
@@ -52,6 +99,9 @@ function withTimeout(promise, ms, message) {
 }
 
 function createMockDocument(initialValues = {}) {
+    if (typeof initialValues === "string") {
+        initialValues = fieldsFromPbn(initialValues);
+    }
     const store = new Map();
     const listeners = new Map();
 
@@ -380,25 +430,55 @@ function handsFromKeys(ctx, hands) {
 }
 
 function threeHandsPartScoreDocument() {
-    return createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "",
-        west_hearts: "",
-        west_diamonds: "",
-        west_clubs: "",
-    });
+    return createMockDocument(THREE_HANDS_PART_SCORE_PBN);
 }
+
+test("fieldsFromPbn expands remainCards into suit field values", () => {
+    // Arrange / Act
+    const fields = fieldsFromPbn(PART_SCORE_PBN);
+
+    // Assert
+    assert.equal(fields.north_spades, "AQ85");
+    assert.equal(fields.north_hearts, "AK976");
+    assert.equal(fields.north_diamonds, "5");
+    assert.equal(fields.north_clubs, "J87");
+    assert.equal(fields.east_spades, "JT");
+    assert.equal(fields.south_hearts, "");
+    assert.equal(fields.west_clubs, "T5");
+});
+
+test("neswFromPbn returns four dotted holdings for fillFormWithTestData", () => {
+    // Arrange / Act
+    const nesw = neswFromPbn(PART_SCORE_PBN);
+
+    // Assert
+    assert.deepEqual(nesw, [
+        "AQ85.AK976.5.J87",
+        "JT.QJ5432.Q9.KQ9",
+        "972..JT863.A6432",
+        "K643.T8.AK742.T5",
+    ]);
+});
+
+test("fieldsFromPbn accepts void-suit dash and rotated start seat", () => {
+    // Arrange / Act
+    const fields = fieldsFromPbn("E:JT.-.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5 AQ85.AK976.5.J87");
+
+    // Assert: first hand is East; "-" becomes an empty holding.
+    assert.equal(fields.east_spades, "JT");
+    assert.equal(fields.east_hearts, "");
+    assert.equal(fields.north_spades, "AQ85");
+});
+
+test("createMockDocument accepts a compact PBN deal string", () => {
+    // Arrange / Act
+    const document = createMockDocument(PART_SCORE_PBN);
+
+    // Assert
+    assert.equal(document.element("north_spades").value, "AQ85");
+    assert.equal(document.element("south_hearts").value, "");
+    assert.equal(document.element("west_diamonds").value, "AK742");
+});
 
 test("Card converts between named suits and compact keys", () => {
     // Arrange / Act
@@ -482,10 +562,7 @@ test("handsToPbn formats part-score deal", () => {
     const ctx = loadDdsWeb(document);
     loadSampleDeal(ctx, "part_score");
     const pbn = ctx.handsToPbn(ctx.collectHands());
-    assert.equal(
-        pbn,
-        "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5"
-    );
+    assert.equal(pbn, PART_SCORE_PBN);
 });
 
 test("inputIsValid rejects incomplete deal", () => {
@@ -1977,12 +2054,7 @@ test("refreshDdTable shows Computing under the matrix only after 300 ms, painted
             return 7;
         },
     });
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     // fillForm schedules a solve; wait for it so it does not race the Act call.
     await new Promise((resolve) => setTimeout(resolve, 350));
     ccallSawComputing = false;
@@ -4588,24 +4660,7 @@ test("exitPlay refits center cards after a narrow resize during play", () => {
         paddingLeft: "20px",
         paddingRight: "4px",
         rowScrollWidths: [400],
-        initialValues: {
-            north_spades: "AQ85",
-            north_hearts: "AK976",
-            north_diamonds: "5",
-            north_clubs: "J87",
-            east_spades: "JT",
-            east_hearts: "QJ5432",
-            east_diamonds: "Q9",
-            east_clubs: "KQ9",
-            south_spades: "972",
-            south_hearts: "",
-            south_diamonds: "JT863",
-            south_clubs: "A6432",
-            west_spades: "K643",
-            west_hearts: "T8",
-            west_diamonds: "AK742",
-            west_clubs: "T5",
-        },
+        initialValues: PART_SCORE_PBN,
     });
     const ctx = loadDdsWeb(layout.document, {
         getComputedStyle: layout.getComputedStyle,
@@ -5443,9 +5498,7 @@ test("handleDealFileSelected ignores a superseded slower file read", async () =>
     const first = ctx.handleDealFileSelected(input);
     input.files = [fastFile];
     await ctx.handleDealFileSelected(input);
-    releaseSlow(
-        '[Deal "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5"]'
-    );
+    releaseSlow(`[Deal "${PART_SCORE_PBN}"]`);
     await first;
 
     assert.equal(document.element("north_spades").value, "AKQJ");
@@ -5469,12 +5522,7 @@ test("refreshDdTable clears Computing when abandoning a stale PBN", async () => 
             return 9;
         },
     });
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     await new Promise((resolve) => setTimeout(resolve, 120));
     document.element("result-table").rows[1].cells[1].innerHTML = "";
 
@@ -5510,12 +5558,7 @@ test("refreshDdTable abandons a stale PBN after the Computing grace period", asy
             return 9;
         },
     });
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     await new Promise((resolve) => setTimeout(resolve, 120));
     document.element("result-table").rows[1].cells[1].innerHTML = "";
     seenPbn.length = 0;
@@ -5592,12 +5635,7 @@ test("handleDealFileSelected keeps an import error over a stale Computing status
             },
         };
     };
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     await new Promise((resolve) => setTimeout(resolve, 120));
     document.element("result-table").rows[1].cells[1].innerHTML = "";
 
@@ -5637,12 +5675,7 @@ test("refreshDdTable still solves when the tab is hidden", async () => {
             return 9;
         },
     });
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     await withTimeout(
         ctx.refreshDdTable(),
         500,
@@ -5715,12 +5748,7 @@ test("updateActionButtons clears a pending Computing timer from a prior solve", 
         new Promise((resolve) => {
             releaseModule = resolve;
         });
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     await new Promise((resolve) => setTimeout(resolve, 120));
     document.element("result-table").rows[1].cells[1].innerHTML = "";
     document.element("result").innerHTML = "";
@@ -5789,12 +5817,7 @@ test("failed file import cancels a pending debounced solve", async () => {
             return 9;
         },
     });
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     await new Promise((resolve) => setTimeout(resolve, 80));
     ccallCount = 0;
 
@@ -5883,12 +5906,7 @@ test("failed file import stops an in-flight solve job from continuing", async ()
             },
         };
     };
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     document.element("result-table").rows[1].cells[1].innerHTML = "9";
     ctx.onContractSelect("north", "C");
 
@@ -5931,12 +5949,7 @@ test("invalidateActiveDdTableRequest clears dealSolvePending so a coalesced job 
                     },
                 });
         });
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     const solve = ctx.scheduleDealSolve();
@@ -5975,12 +5988,7 @@ test("failed file import invalidates an in-flight play-position solve", async ()
             return 9;
         },
     });
-    ctx.fillFormWithTestData([
-        "AQ85.AK976.5.J87",
-        "JT.QJ5432.Q9.KQ9",
-        "972..JT863.A6432",
-        "K643.T8.AK742.T5",
-    ]);
+    ctx.fillFormWithTestData(neswFromPbn(PART_SCORE_PBN));
     await new Promise((resolve) => setTimeout(resolve, 80));
     document.element("result-table").rows[1].cells[1].innerHTML = "9";
 
@@ -6079,21 +6087,20 @@ test("playDiffFromSolverScore projects declarer total vs target", () => {
 });
 
 function partScoreHands(ctx) {
-    // Matches SAMPLE_DEALS["part_score"].pbn / kPbnPartScore.
-    return {
-        north: cardsFromKeys(ctx, [
-            "SA", "SQ", "S8", "S5", "HA", "HK", "H9", "H7", "H6", "D5", "CJ", "C8", "C7",
-        ]),
-        east: cardsFromKeys(ctx, [
-            "SJ", "ST", "HQ", "HJ", "H5", "H4", "H3", "H2", "DQ", "D9", "CK", "CQ", "C9",
-        ]),
-        south: cardsFromKeys(ctx, [
-            "S9", "S7", "S2", "DJ", "DT", "D8", "D6", "D3", "CA", "C6", "C4", "C3", "C2",
-        ]),
-        west: cardsFromKeys(ctx, [
-            "SK", "S6", "S4", "S3", "HT", "H8", "DA", "DK", "D7", "D4", "D2", "CT", "C5",
-        ]),
-    };
+    // Matches SAMPLE_DEALS["part_score"].pbn / PART_SCORE_PBN.
+    const fields = fieldsFromPbn(PART_SCORE_PBN);
+    const suitLetter = { spades: "S", hearts: "H", diamonds: "D", clubs: "C" };
+    const hands = {};
+    for (const direction of DIRECTIONS) {
+        const keys = [];
+        for (const suit of SUITS) {
+            for (const pip of fields[`${direction}_${suit}`]) {
+                keys.push(suitLetter[suit] + pip);
+            }
+        }
+        hands[direction] = cardsFromKeys(ctx, keys);
+    }
+    return hands;
 }
 
 test("createPlayState starts with opening leader and empty history", () => {
@@ -6235,24 +6242,7 @@ test("pageLoad wires play undo to Cmd/Ctrl-Z and beforeinput historyUndo", () =>
 });
 
 test("Cmd/Ctrl-Z undoes the last play choice in play mode", () => {
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document, {
         scheduleDealSolve() {
             return Promise.resolve();
@@ -6296,24 +6286,7 @@ test("Cmd/Ctrl-Z undoes the last play choice in play mode", () => {
 });
 
 test("Shift-Cmd/Ctrl-Z does not undo play (redo chord)", () => {
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document, {
         scheduleDealSolve() {
             return Promise.resolve();
@@ -6338,24 +6311,7 @@ test("Shift-Cmd/Ctrl-Z does not undo play (redo chord)", () => {
 });
 
 test("beforeinput historyUndo undoes the last play choice when emitted", () => {
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document, {
         scheduleDealSolve() {
             return Promise.resolve();
@@ -6556,24 +6512,7 @@ test("targetTricksFromCell parses numeric cell text", () => {
 test("undoPlay invalidates in-flight play solves so stale results cannot apply", async () => {
     // Arrange: play mode with one slow solve; do not schedule replacements so
     // only the stale request can complete.
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document);
     let releaseSolve;
     const blocked = new Promise((resolve) => {
@@ -6608,24 +6547,7 @@ test("undoPlay invalidates in-flight play solves so stale results cannot apply",
 test("startPlay does not nest scheduleDealSolve", () => {
     // applyResultCellSelection / the deal-solve worker already schedule; a
     // nested call from startPlay doubles the opening-position SolveBoard.
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document);
     let scheduled = 0;
     // Assign after load so we overwrite the real scheduleDealSolve export.
@@ -6687,24 +6609,7 @@ test("startPlay shows absolute trick-total play hint for a partial deal", () => 
 });
 
 test("startPlay and exitPlay toggle play chrome and trick status", () => {
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document, {
         scheduleDealSolve() {
             return Promise.resolve();
@@ -6775,24 +6680,7 @@ test("handCardHtml disables non-playable cards in play mode only", () => {
 });
 
 test("renderTrickStatus omits empty seat cells so no blank card chrome shows", () => {
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document, {
         scheduleDealSolve() {
             return Promise.resolve();
@@ -6827,24 +6715,7 @@ test("trick-status CSS hides empty card shells", () => {
 
 test("exitPlay clears a pending contract even when play has not started", () => {
     // Arrange: user clicked a DD cell before it had a trick count (no play yet).
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document);
     ctx.selectedContractState = { direction: "south", denomination: "N" };
     assert.equal(ctx.isPlayMode(), false);
@@ -6860,24 +6731,7 @@ test("exitPlay clears a pending contract even when play has not started", () => 
 test("exitPlay clears the selected contract so Edit hands stays in edit mode", async () => {
     // Arrange: play mode with a selected contract; scheduleDealSolve would
     // otherwise call ensurePlayForSelectedContract and re-enter play.
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document);
     ctx.refreshDdTable = async () => {};
     ctx.refreshPlayTricks = async () => {};
@@ -6931,24 +6785,7 @@ test("handCardHtml aria-label includes playable state and contract result", () =
 });
 
 test("play score stays NS 0 until a trick completes, then updates", () => {
-    const document = createMockDocument({
-        north_spades: "AQ85",
-        north_hearts: "AK976",
-        north_diamonds: "5",
-        north_clubs: "J87",
-        east_spades: "JT",
-        east_hearts: "QJ5432",
-        east_diamonds: "Q9",
-        east_clubs: "KQ9",
-        south_spades: "972",
-        south_hearts: "",
-        south_diamonds: "JT863",
-        south_clubs: "A6432",
-        west_spades: "K643",
-        west_hearts: "T8",
-        west_diamonds: "AK742",
-        west_clubs: "T5",
-    });
+    const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document, {
         scheduleDealSolve() {
             return Promise.resolve();
