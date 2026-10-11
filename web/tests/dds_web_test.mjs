@@ -6638,6 +6638,54 @@ test("startPlay does not nest scheduleDealSolve", () => {
     assert.equal(scheduled, 0);
 });
 
+test("startPlay shows contract-relative play hint for a full deal", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    loadSampleDeal(ctx, "part_score");
+    const hint = document.element("play-hint");
+    hint.textContent = "stale";
+
+    assert.equal(ctx.startPlay("south", "N", 6), true);
+
+    assert.match(hint.textContent, /contract ends/);
+    assert.match(hint.textContent, /=\s*,\s*\+N/);
+    assert.match(hint.textContent, /best play and defense/);
+    assert.match(hint.textContent, /⌘\/Ctrl-Z|Ctrl-Z/);
+    assert.doesNotMatch(hint.textContent, /side'?s trick total|trick total/i);
+});
+
+test("startPlay shows absolute trick-total play hint for a partial deal", () => {
+    const document = createMockDocument({
+        north_spades: "A",
+        east_hearts: "K",
+        south_diamonds: "Q",
+        west_clubs: "J",
+    });
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    const hint = document.element("play-hint");
+    hint.textContent =
+        "Drag a highlighted card onto the trick (or click it). " +
+        "Each card shows how the contract ends (=, +N, –N) with best play and defense. " +
+        "Undo with ⌘/Ctrl-Z.";
+
+    assert.equal(ctx.startPlay("north", "S", 1, "north"), true);
+    assert.equal(ctx.playState.absoluteSideTricks, true);
+
+    assert.match(hint.textContent, /trick total/i);
+    assert.match(hint.textContent, /best play and defense/);
+    assert.doesNotMatch(hint.textContent, /contract ends/);
+    assert.doesNotMatch(hint.textContent, /\+N/);
+    assert.match(hint.textContent, /⌘\/Ctrl-Z|Ctrl-Z/);
+});
+
 test("startPlay and exitPlay toggle play chrome and trick status", () => {
     const document = createMockDocument({
         north_spades: "AQ85",
