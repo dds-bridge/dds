@@ -259,18 +259,20 @@ def _match_parenthesized_call(
     result can be called immediately, so "(archive_override)(...)" is a
     valid call equivalent to "archive_override(...)" — but it doesn't
     match a bare "name(" call textually, letting this scanner's direct
-    matching be bypassed by wrapping the name in parens. Returns
-    (matched_name, call_paren_index); matched_name is None if this
-    position isn't that pattern.
+    matching be bypassed by wrapping the name in parens. Comments are
+    tolerated around every token here too, the same as Starlark itself
+    ignores them: "(archive_override # note\n)(...)" is just as valid.
+    Returns (matched_name, call_paren_index); matched_name is None if
+    this position isn't that pattern.
     """
-    j = _skip_ws(text, i + 1, n)
+    j = _skip_ws_and_comments(text, i + 1, n)
     if not _is_identifier_boundary(text, j):
         return None, 0
     for name in sorted_names:
         if text.startswith(name, j):
-            k = _skip_ws(text, j + len(name), n)
+            k = _skip_ws_and_comments(text, j + len(name), n)
             if k < n and text[k] == ")":
-                k = _skip_ws(text, k + 1, n)
+                k = _skip_ws_and_comments(text, k + 1, n)
                 if k < n and text[k] == "(":
                     return name, k
     return None, 0
@@ -1024,6 +1026,21 @@ archive_override(
             'urls = ["x"])'
         )
         self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_parenthesized_call_with_comment(
+        self,
+    ) -> None:
+        """Starlark ignores comments; a comment between the grouped
+
+        callable name and the closing paren -- (archive_override #
+        note\\n)(...) -- must not hide this call from the same
+        detection that handles the plain "(name)(" form.
+        """
+        sample = (
+            '(archive_override # note\n'
+            ')(module_name = "apple_support", strip_prefix = "x")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
 
     def test_has_apple_support_override_detects_git_override(self) -> None:
         sample = """
