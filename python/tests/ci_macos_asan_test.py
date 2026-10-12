@@ -143,18 +143,13 @@ def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
     return n, "".join(chars)
 
 
-def _is_complete_literal(text: str, i: int, n: int) -> bool:
-    """True if the string literal ending at i is a whole call argument.
+def _skip_ws_and_comments(text: str, i: int, n: int) -> int:
+    """Skip whitespace and "#" comments, repeatedly, starting at i.
 
-    Skips whitespace and "#" comments (repeatedly, so a comment followed
-    by more whitespace/another comment is all consumed) after the
-    literal. The literal is the argument's complete, resolved value only
-    if what follows is "," (ending this argument) or ")" (ending the
-    call) — anything else, including "+" (concatenation, even across an
-    intervening comment), "[" (slicing), "%" (string formatting), "."
-    (a method call), or any other operator, means the literal is merely a
-    fragment of a larger expression whose true value can't be read back
-    from the source text.
+    A single _skip_ws() stops at the first "#"; this loops so a comment
+    followed by more whitespace (its trailing newline, a blank line, or
+    another comment) is all consumed, landing on the next real token
+    regardless of how it's laid out across lines.
     """
     j = i
     while True:
@@ -164,6 +159,21 @@ def _is_complete_literal(text: str, i: int, n: int) -> bool:
         if skipped == j:
             break
         j = skipped
+    return j
+
+
+def _is_complete_literal(text: str, i: int, n: int) -> bool:
+    """True if the string literal ending at i is a whole call argument.
+
+    Skips whitespace and comments after the literal. The literal is the
+    argument's complete, resolved value only if what follows is ","
+    (ending this argument) or ")" (ending the call) — anything else,
+    including "+" (concatenation, even across an intervening comment),
+    "[" (slicing), "%" (string formatting), "." (a method call), or any
+    other operator, means the literal is merely a fragment of a larger
+    expression whose true value can't be read back from the source text.
+    """
+    j = _skip_ws_and_comments(text, i, n)
     return j < n and text[j] in ",)"
 
 
@@ -307,7 +317,7 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                     ident = m.group(0)
                     j = _skip_ws(text, m.end(), n)
                     if j < n and text[j] == "=" and text[j : j + 2] != "==":
-                        rhs_start = _skip_ws(text, j + 1, n)
+                        rhs_start = _skip_ws_and_comments(text, j + 1, n)
                         if rhs_start < n and text[rhs_start] in "\"'":
                             end, value = _skip_string(text, rhs_start, n)
                             kwargs[ident] = (
@@ -454,6 +464,22 @@ bazel_dep(name = "apple_support", version = "2.10.1")
     name = "apple_support",
     # version = "9.9.9" (stale)
     version = "2.10.1",
+)"""
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_skips_comment_after_equals(
+        self,
+    ) -> None:
+        """A comment between "=" and the literal on the next line is valid
+
+        Starlark formatting; it must be skipped, not mistaken for a
+        non-literal RHS that leaves the version unresolved.
+        """
+        sample = """bazel_dep(
+    name = "apple_support",
+    version =
+    # pinned past the Xcode 27 fixes
+    "2.10.1",
 )"""
         self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
 
@@ -740,6 +766,23 @@ single_version_override(
     version = "0.2.26",
 )
 """
+        self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_skips_comment_between_equals_and_value(
+        self,
+    ) -> None:
+        """A comment between "=" and the literal on the next line is valid
+
+        Starlark formatting; it must be skipped, not mistaken for a
+        non-literal RHS that falsely trips the guard for an override on
+        some other module.
+        """
+        sample = """archive_override(
+    module_name =
+    # pin past Xcode 27 fixes
+    "rules_cc",
+    strip_prefix = "x",
+)"""
         self.assertFalse(_has_apple_support_override(sample))
 
     def test_has_apple_support_override_ignores_commented_module_name(
