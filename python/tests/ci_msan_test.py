@@ -275,6 +275,12 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 i += 1
                 continue
             if ch == "[":
+                # Same reasoning as the "(" branch above: a top-level "["
+                # not preceded by "ident =" opens a list expression (e.g.
+                # the first argument written as ["a"][0]) used as the
+                # first positional argument.
+                if at_top and _POSITIONAL_KEY not in kwargs:
+                    kwargs[_POSITIONAL_KEY] = _UNRESOLVED
                 bracket_depth += 1
                 i += 1
                 continue
@@ -283,6 +289,10 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 i += 1
                 continue
             if ch == "{":
+                # Same reasoning again, for a dict/set expression opening
+                # the first positional argument.
+                if at_top and _POSITIONAL_KEY not in kwargs:
+                    kwargs[_POSITIONAL_KEY] = _UNRESOLVED
                 brace_depth += 1
                 i += 1
                 continue
@@ -674,6 +684,31 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
         """
         sample = (
             'archive_override(("toolchains_" + "llvm"), strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_fails_closed_on_list_positional_module_name(
+        self,
+    ) -> None:
+        """A list expression passed as the first positional argument (e.g.
+
+        ["toolchains_llvm"][0]) can't be read back as a literal from the
+        source text either; it must fail closed, not be silently skipped
+        while descending into the list.
+        """
+        sample = 'archive_override(["toolchains_llvm"][0], strip_prefix = "x")'
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_fails_closed_on_dict_positional_module_name(
+        self,
+    ) -> None:
+        """Same as the list case, but for a dict expression opening the
+
+        first positional argument.
+        """
+        sample = (
+            'archive_override({"toolchains_llvm": 1}.keys()[0], '
+            'strip_prefix = "x")'
         )
         self.assertTrue(_has_toolchains_llvm_override(sample))
 
