@@ -191,6 +191,32 @@ def _is_identifier_boundary(text: str, i: int) -> bool:
     return not (prev.isalnum() or prev == "_" or prev == ".")
 
 
+def _match_parenthesized_call(
+    text: str, i: int, n: int, sorted_names: list[str]
+) -> tuple[str | None, int]:
+    """Match "(" name ")(" starting at text[i] == "(".
+
+    Grouping parens around any expression are legal Starlark, and the
+    result can be called immediately, so "(archive_override)(...)" is a
+    valid call equivalent to "archive_override(...)" — but it doesn't
+    match a bare "name(" call textually, letting this scanner's direct
+    matching be bypassed by wrapping the name in parens. Returns
+    (matched_name, call_paren_index); matched_name is None if this
+    position isn't that pattern.
+    """
+    j = _skip_ws(text, i + 1, n)
+    if not _is_identifier_boundary(text, j):
+        return None, 0
+    for name in sorted_names:
+        if text.startswith(name, j):
+            k = _skip_ws(text, j + len(name), n)
+            if k < n and text[k] == ")":
+                k = _skip_ws(text, k + 1, n)
+                if k < n and text[k] == "(":
+                    return name, k
+    return None, 0
+
+
 def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, str]]:
     """Yield the {keyword: string value} args of each top-level call.
 
@@ -245,6 +271,10 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                         matched_name = name
                         paren_index = j
                         break
+        if matched_name is None and ch == "(":
+            matched_name, paren_index = _match_parenthesized_call(
+                text, i, n, sorted_names
+            )
         if matched_name is None:
             i += 1
             continue
@@ -827,6 +857,34 @@ archive_override(
 )
 """
         self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_parenthesized_callable_indirection(
+        self,
+    ) -> None:
+        """Grouping parens around any expression are legal Starlark, and
+
+        the result can be called immediately: (archive_override)(...) is
+        a valid call equivalent to archive_override(...), but doesn't
+        match a bare "name(" call textually.
+        """
+        sample = (
+            '(archive_override)(module_name = "apple_support", '
+            'urls = ["https://example.com/apple_support.tar.gz"])'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_rejects_longer_identifier_in_parens(
+        self,
+    ) -> None:
+        """"(archive_override_foo)(...)" must not be misread as a
+
+        parenthesized reference to archive_override.
+        """
+        sample = (
+            '(archive_override_foo)(module_name = "apple_support", '
+            'urls = ["x"])'
+        )
+        self.assertFalse(_has_apple_support_override(sample))
 
     def test_has_apple_support_override_detects_git_override(self) -> None:
         sample = """
