@@ -150,6 +150,57 @@ def _skip_string(text: str, i: int, n: int) -> tuple[int, str]:
     return n, "".join(chars)
 
 
+def _is_raw_string_start(text: str, i: int, n: int) -> bool:
+    """True if text[i] starts a raw string literal: "r"/"R" + quote."""
+    return i + 1 < n and text[i] in "rR" and text[i + 1] in "\"'"
+
+
+def _skip_raw_string(text: str, i: int, n: int) -> tuple[int, str]:
+    """Return (end_index, value) for the raw string starting at text[i].
+
+    text[i] is the delimiter quote itself (the caller has already
+    consumed the "r"/"R" prefix). Per the Starlark spec, a raw string
+    processes backslash escapes only enough to let a literal quote
+    appear inside it: a backslash immediately followed by the delimiter
+    quote denotes a literal quote character (the string continues, not
+    ending there) — every other backslash, including one before a
+    newline, is kept completely literal rather than decoded, unlike an
+    ordinary string's _decode_escape(). Only single-quote delimiters are
+    handled (no triple-quoted raw strings), matching the forms actually
+    seen in MODULE.bazel.
+    """
+    quote = text[i]
+    j = i + 1
+    chars: list[str] = []
+    while j < n:
+        if text[j] == "\\" and j + 1 < n and text[j + 1] == quote:
+            chars.append(quote)
+            j += 2
+            continue
+        if text[j] == quote:
+            return j + 1, "".join(chars)
+        chars.append(text[j])
+        j += 1
+    return n, "".join(chars)
+
+
+def _skip_any_string(text: str, i: int, n: int) -> tuple[int, str]:
+    """Return (end_index, value) for the string literal starting at text[i],
+
+    recognizing an optional "r"/"R" raw-string prefix before dispatching
+    to _skip_raw_string() or _skip_string(). A caller that needs to
+    recognize whether a token *is* a string literal (as opposed to
+    skipping over one already known to start exactly at i) uses this
+    instead of _skip_string() directly, so a raw literal like
+    r"toolchains_llvm" is never misread as a bare identifier reference —
+    which fails closed on this guard just like any other unresolved
+    value, wrongly blocking a completely unrelated module's override.
+    """
+    if _is_raw_string_start(text, i, n):
+        return _skip_raw_string(text, i + 1, n)
+    return _skip_string(text, i, n)
+
+
 def _skip_ws_and_comments(text: str, i: int, n: int) -> int:
     """Skip whitespace and "#" comments, repeatedly, starting at i.
 
@@ -207,18 +258,20 @@ def _match_parenthesized_call(
     result can be called immediately, so "(archive_override)(...)" is a
     valid call equivalent to "archive_override(...)" — but it doesn't
     match a bare "name(" call textually, letting this scanner's direct
-    matching be bypassed by wrapping the name in parens. Returns
-    (matched_name, call_paren_index); matched_name is None if this
-    position isn't that pattern.
+    matching be bypassed by wrapping the name in parens. Comments are
+    tolerated around every token here too, the same as Starlark itself
+    ignores them: "(archive_override # note\n)(...)" is just as valid.
+    Returns (matched_name, call_paren_index); matched_name is None if
+    this position isn't that pattern.
     """
-    j = _skip_ws(text, i + 1, n)
+    j = _skip_ws_and_comments(text, i + 1, n)
     if not _is_identifier_boundary(text, j):
         return None, 0
     for name in sorted_names:
         if text.startswith(name, j):
-            k = _skip_ws(text, j + len(name), n)
+            k = _skip_ws_and_comments(text, j + len(name), n)
             if k < n and text[k] == ")":
-                k = _skip_ws(text, k + 1, n)
+                k = _skip_ws_and_comments(text, k + 1, n)
                 if k < n and text[k] == "(":
                     return name, k
     return None, 0
@@ -296,15 +349,15 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 i = _skip_comment(text, i, n)
                 continue
             at_top = depth == 1 and bracket_depth == 0 and brace_depth == 0
-            if ch in "\"'":
+            if ch in "\"'" or _is_raw_string_start(text, i, n):
                 if at_top and _POSITIONAL_KEY not in kwargs:
-                    end, value = _skip_string(text, i, n)
+                    end, value = _skip_any_string(text, i, n)
                     kwargs[_POSITIONAL_KEY] = (
                         value if _is_complete_literal(text, end, n) else _UNRESOLVED
                     )
                     i = end
                     continue
-                i, _ = _skip_string(text, i, n)
+                i, _ = _skip_any_string(text, i, n)
                 continue
             if ch == "(":
                 # A "(" at the top level, not preceded by "ident =", opens
@@ -355,8 +408,11 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                     j = _skip_ws(text, m.end(), n)
                     if j < n and text[j] == "=" and text[j : j + 2] != "==":
                         rhs_start = _skip_ws_and_comments(text, j + 1, n)
-                        if rhs_start < n and text[rhs_start] in "\"'":
-                            end, value = _skip_string(text, rhs_start, n)
+                        if rhs_start < n and (
+                            text[rhs_start] in "\"'"
+                            or _is_raw_string_start(text, rhs_start, n)
+                        ):
+                            end, value = _skip_any_string(text, rhs_start, n)
                             kwargs[ident] = (
                                 value
                                 if _is_complete_literal(text, end, n)
@@ -689,6 +745,21 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
         )
         self.assertFalse(_has_toolchains_llvm_override(sample))
 
+    def test_has_toolchains_llvm_override_detects_parenthesized_call_with_comment(
+        self,
+    ) -> None:
+        """Starlark ignores comments; a comment between the grouped
+
+        callable name and the closing paren -- (archive_override #
+        note\\n)(...) -- must not hide this call from the same
+        detection that handles the plain "(name)(" form.
+        """
+        sample = (
+            '(archive_override # note\n'
+            ')(module_name = "toolchains_llvm", strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
     def test_has_toolchains_llvm_override_detects_triple_quoted_module_name(
         self,
     ) -> None:
@@ -934,6 +1005,58 @@ single_version_override(
     version = "2.10.1",
 )
 """
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_raw_string_for_other_module(
+        self,
+    ) -> None:
+        """r"apple_support" is a valid Starlark raw string literal; it must
+
+        be recognized as the complete, resolved literal "apple_support"
+        rather than misread as a non-literal (bare identifier "r" + a
+        separate quoted string), which would fail closed and incorrectly
+        block a valid override on a completely unrelated module.
+        """
+        sample = 'archive_override(module_name = r"apple_support", strip_prefix = "x")'
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_raw_string_module_name(
+        self,
+    ) -> None:
+        """A raw string literal is still a real override when it does
+
+        name toolchains_llvm.
+        """
+        sample = (
+            'archive_override(module_name = r"toolchains_llvm", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_raw_string_positional_module_name(
+        self,
+    ) -> None:
+        """A raw string literal is recognized in the first-positional form
+
+        too, not just as a keyword value.
+        """
+        sample = 'archive_override(r"toolchains_llvm", strip_prefix = "x")'
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_decodes_escaped_quote_in_raw_string(
+        self,
+    ) -> None:
+        """Starlark raw strings still give backslash-quote special meaning
+
+        (a literal quote, string continues) even though every other
+        backslash is kept completely literal; r"toolchains_\\"llvm" (an
+        embedded quote) is a different string from "toolchains_llvm" and
+        must not be mistaken for a toolchains_llvm override.
+        """
+        sample = (
+            'archive_override(module_name = r"toolchains_\\"llvm", '
+            'strip_prefix = "x")'
+        )
         self.assertFalse(_has_toolchains_llvm_override(sample))
 
     def test_has_toolchains_llvm_override_skips_comment_between_equals_and_value(
