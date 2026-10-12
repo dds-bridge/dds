@@ -64,19 +64,27 @@ def _decode_escape(text: str, j: int, n: int) -> tuple[int, str]:
 
     Returns (new_j, decoded_text) for Starlark's string-literal escapes:
     the simple single-character escapes (\\n, \\t, \\\\, ...), up to 3
-    octal digits, exactly two hex digits after \\x, and the \\uXXXX /
-    \\UXXXXXXXX Unicode code point forms (exactly 4 / 8 hex digits).
+    octal digits, exactly two hex digits after \\x, the \\uXXXX /
+    \\UXXXXXXXX Unicode code point forms (exactly 4 / 8 hex digits), and
+    a line continuation — a backslash immediately followed by an actual
+    LF or CRLF line break in the source, which Starlark drops entirely
+    (unlike "\\n", the two-character escape for a newline *value*).
     Discarding the backslash and keeping the next character literally —
     the previous behavior here — decodes "\\x61pple_support" (a valid
     Starlark escape for "apple_support") to the wrong string
     "x61pple_support", letting an escaped module_name bypass the override
-    guard; "\\u0061pple_support" was the same bug for Unicode escapes. An
-    escape this doesn't recognize is left as a literal backslash + next
-    character.
+    guard; "\\u0061pple_support" was the same bug for Unicode escapes, and
+    a module_name literal split across two source lines by a trailing
+    backslash was the same bug for a line continuation. An escape this
+    doesn't recognize is left as a literal backslash + next character.
     """
     if j + 1 >= n:
         return j + 1, "\\"
     c = text[j + 1]
+    if c == "\r" and j + 2 < n and text[j + 2] == "\n":
+        return j + 3, ""
+    if c == "\n":
+        return j + 2, ""
     if c in _SIMPLE_ESCAPES:
         return j + 2, _SIMPLE_ESCAPES[c]
     if c == "x":
@@ -731,6 +739,31 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
         sample = (
             'archive_override(module_name = "\\U00000074oolchains_llvm", '
             'strip_prefix = "toolchains_llvm-abc123")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_decodes_line_continuation_in_module_name(
+        self,
+    ) -> None:
+        """A backslash immediately followed by an actual newline in the
+
+        source is a line continuation that Starlark drops entirely, not
+        the two-character "\\n" escape for a newline value; the module
+        name spans two source lines but still resolves to one literal.
+        """
+        sample = (
+            'archive_override(module_name = "toolchains_\\\n'
+            'llvm", strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_decodes_crlf_line_continuation_in_module_name(
+        self,
+    ) -> None:
+        """Same as the LF case, but for a CRLF line ending."""
+        sample = (
+            'archive_override(module_name = "toolchains_\\\r\n'
+            'llvm", strip_prefix = "x")'
         )
         self.assertTrue(_has_toolchains_llvm_override(sample))
 
