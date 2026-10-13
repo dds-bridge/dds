@@ -166,13 +166,29 @@ def _skip_raw_string(text: str, i: int, n: int) -> tuple[int, str]:
     quote denotes a literal quote character (the string continues, not
     ending there) — every other backslash, including one before a
     newline, is kept completely literal rather than decoded, unlike an
-    ordinary string's _decode_escape(). Only single-quote delimiters are
-    handled (no triple-quoted raw strings), matching the forms actually
-    seen in MODULE.bazel.
+    ordinary string's _decode_escape(). Handles a triple-quote delimiter
+    the same way _skip_string() does — matched as the 3-character
+    sequence, so e.g. r\"\"\"rules_cc\"\"\" is a real literal, not merely
+    skipped until the first lone quote (which would stop one character
+    too early and leave the rest unparsed as code).
     """
     quote = text[i]
+    if text[i : i + 3] == quote * 3:
+        delim = quote * 3
+        j = i + 3
+        chars: list[str] = []
+        while j < n:
+            if text[j] == "\\" and j + 1 < n and text[j + 1] == quote:
+                chars.append(quote)
+                j += 2
+                continue
+            if text[j : j + 3] == delim:
+                return j + 3, "".join(chars)
+            chars.append(text[j])
+            j += 1
+        return n, "".join(chars)
     j = i + 1
-    chars: list[str] = []
+    chars = []
     while j < n:
         if text[j] == "\\" and j + 1 < n and text[j + 1] == quote:
             chars.append(quote)
@@ -519,6 +535,17 @@ class TestAppleSupportAsanCrosstoolWarnings(unittest.TestCase):
         self,
     ) -> None:
         sample = 'bazel_dep(version = "2.10.1", name = "apple_support")'
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_accepts_raw_triple_quoted_name(
+        self,
+    ) -> None:
+        """name = r\"\"\"apple_support\"\"\" is a valid Starlark raw
+
+        triple-quoted literal; it must resolve to the complete literal
+        rather than stopping at the first lone quote.
+        """
+        sample = 'bazel_dep(name = r"""apple_support""", version = "2.10.1")'
         self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
 
     def test_apple_support_bazel_dep_version_accepts_positional_name(
@@ -921,6 +948,35 @@ single_version_override(
         too, not just as a keyword value.
         """
         sample = 'archive_override(r"apple_support", strip_prefix = "x")'
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_ignores_raw_triple_quoted_for_other_module(
+        self,
+    ) -> None:
+        """r\"\"\"rules_cc\"\"\" is a valid Starlark raw triple-quoted literal;
+
+        it must resolve to the complete literal "rules_cc" rather than
+        stopping at the first lone quote (which would leave the value
+        unresolved and fail closed, incorrectly blocking a valid
+        override on a completely unrelated module).
+        """
+        sample = (
+            'archive_override(module_name = r"""rules_cc""", '
+            'strip_prefix = "x")'
+        )
+        self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_raw_triple_quoted_module_name(
+        self,
+    ) -> None:
+        """A raw triple-quoted literal is still a real override when it
+
+        does name apple_support.
+        """
+        sample = (
+            'archive_override(module_name = r"""apple_support""", '
+            'strip_prefix = "x")'
+        )
         self.assertTrue(_has_apple_support_override(sample))
 
     def test_has_apple_support_override_decodes_escaped_quote_in_raw_string(
