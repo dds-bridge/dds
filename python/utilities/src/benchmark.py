@@ -2,13 +2,15 @@
 """Benchmark dtest performance across one or more binaries.
 
 Runs combinations of solver (solve, calc; select with -s) and hand file
-(list100/1000/…/1), largest files first. Always prints a summary. Per-run
-timing rows and build (git/bazel) output are shown transiently, then hidden
-unless the --details flag is set. Passes dtest options if given after "--".
+(list100/1000/…/1), largest files first — or a single file via -f/--file.
+Always prints a summary. Per-run timing rows and build (git/bazel) output are
+shown transiently, then hidden unless the --details flag is set. Passes dtest
+options if given after "--".
 
 Usage:
   python/utilities/src/benchmark.py
   python/utilities/src/benchmark.py -s calc
+  python/utilities/src/benchmark.py -f hands/part_score.pbn -s calc
   python/utilities/src/benchmark.py --build
   python/utilities/src/benchmark.py -- -n 8 -r
   python/utilities/src/benchmark.py --build --binary /path/to/other/dtest
@@ -131,6 +133,7 @@ class Config:
     reverse: bool = False
     branch_binary: Path | None = None  # BRANCH env / default dtest path
     hands_dir: Path | None = None
+    hand_file: Path | None = None  # -f / --file; replaces list10^n matrix
     bridgesolver: Path | None = None
     solvers: tuple[str, ...] = SOLVERS
     specs: list[tuple[str, str]] = field(default_factory=list)
@@ -217,6 +220,27 @@ def select_hand_files(hands_dir: Path, max_deals: int) -> list[str]:
         )
     candidates.sort(key=lambda t: t[0], reverse=True)
     return [name for _, name in candidates]
+
+
+def resolve_benchmark_hands(cfg: Config) -> list[Path]:
+    """Return the hand-file paths to benchmark (one path when -f is set)."""
+    if cfg.hands_dir is None:
+        raise BenchmarkError("hands_dir is required")
+    if cfg.hand_file is not None:
+        raw = cfg.hand_file
+        if raw.is_file():
+            return [raw]
+        # Match dtest's numeric shorthand: -f N → hands/listN.txt
+        token = str(raw)
+        if re.fullmatch(r"[0-9]+", token):
+            candidate = cfg.hands_dir / f"list{token}.txt"
+            if candidate.is_file():
+                return [candidate]
+        raise BenchmarkError(f"hand file not found: {raw}")
+    return [
+        cfg.hands_dir / name
+        for name in select_hand_files(cfg.hands_dir, cfg.max_deals)
+    ]
 
 
 def deals_from_hand_file(name: str) -> int | None:
@@ -521,6 +545,7 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
     cli_binary_given = False
     bridgesolver_given = False
     solver_given = False
+    hand_file_given = False
     args = list(argv)
     i = 0
     while i < len(args):
@@ -536,6 +561,14 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
             if i >= len(args):
                 raise BenchmarkError("missing value for --repeats")
             cfg.repeats = _parse_positive_int(args[i], "repeats")
+        elif a in ("-f", "--file"):
+            if hand_file_given:
+                raise BenchmarkError(f"{a} may be given only once")
+            hand_file_given = True
+            i += 1
+            if i >= len(args):
+                raise BenchmarkError(f"missing value for {a}")
+            cfg.hand_file = Path(args[i])
         elif a == "--branch":
             i += 1
             if i >= len(args):
@@ -624,6 +657,11 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
             "-s/--solver cannot also appear in dtest args after -- "
             "(use benchmark's -s to select the dtest mode)"
         )
+    if "-f" in cfg.dtest_extra or "--file" in cfg.dtest_extra:
+        raise BenchmarkError(
+            "-f/--file cannot also appear in dtest args after -- "
+            "(use benchmark's -f to select the hand file)"
+        )
 
     n_bins = len(cfg.specs) if cfg.specs else 1
     if cfg.bridgesolver is not None:
@@ -647,9 +685,13 @@ Benchmark dtest across solver/file combinations. Always prints a summary; use
 Options:
   -h, --help          Show this help
   -s, --solver NAME   Run only this dtest mode: solve or calc (default: both)
+  -f, --file PATH     Benchmark this hand file only (forwarded as dtest -f).
+                      Replaces the default list10^n.txt matrix. Numeric PATH N
+                      resolves to HANDS_DIR/listN.txt like dtest. Do not also
+                      pass -f/--file after --.
   --repeats N         Runs per combination per binary (default: 1; env: REPEATS)
   --max-deals N       Include list10^n.txt files with 10^n <= N (default: 100; env: MAX_DEALS)
-                      (alias: --max_deals)
+                      (alias: --max_deals; ignored when -f/--file is set)
   --build             Build dtest for the current checkout (bazelisk build //library/tests:dtest)
   --branch NAME       Git branch to build and benchmark ("." means the current branch).
                       Repeatable. Each named branch is checked out, dtest is built and
@@ -673,7 +715,8 @@ Options:
   --reverse           Reverse the per-repeat dispatch order of the binaries
   --                  End benchmark options; remaining args are passed to dtest
                       (e.g. -- -n 8 -r for 8 threads and slow-board report)
-                      Do not pass -s/--solver here; use benchmark's -s instead.
+                      Do not pass -s/--solver or -f/--file here; use benchmark's
+                      -s / -f instead.
 
 --branch, --wasm_branch, and --binary may be given any number of times and
 combined; the binaries are benchmarked in the order specified and the first is
@@ -693,6 +736,8 @@ Examples:
   python/utilities/src/benchmark.py --build
   python/utilities/src/benchmark.py -- -n 8
   python/utilities/src/benchmark.py --repeats 3 -- -n 4 -r
+  python/utilities/src/benchmark.py -f hands/part_score.pbn -s calc
+  python/utilities/src/benchmark.py -f 100 -- -n 8
   python/utilities/src/benchmark.py --branch develop
   python/utilities/src/benchmark.py --branch develop --branch opus-two-percent
   python/utilities/src/benchmark.py --branch develop --branch opus-two-percent --branch fastest
@@ -1183,10 +1228,11 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
         cfg.build = False
 
     try:
-        files = select_hand_files(cfg.hands_dir, cfg.max_deals)
+        hand_paths = resolve_benchmark_hands(cfg)
     except BenchmarkError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
+    files = [p.name for p in hand_paths]
 
     if cfg.build:
         if cfg.dry_run:
@@ -1239,9 +1285,9 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
 
     order = run_order(num_bins, reverse=cfg.reverse)
 
-    for f in files:
-        if not (cfg.hands_dir / f).is_file():
-            print(f"error: hand file not found: {cfg.hands_dir / f}", file=sys.stderr)
+    for hands_path in hand_paths:
+        if not hands_path.is_file():
+            print(f"error: hand file not found: {hands_path}", file=sys.stderr)
             return 1
 
     print("DDS dtest benchmark")
@@ -1261,8 +1307,9 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
     if cfg.sys_user:
         print(f"{'sys-user:':<12} on")
     print(f"{'hands dir:':<12} {cfg.hands_dir}")
-    print(f"{'max_deals:':<12} {cfg.max_deals}")
-    print(f"{'files:':<12} {' '.join(files)}")
+    if cfg.hand_file is None:
+        print(f"{'max_deals:':<12} {cfg.max_deals}")
+    print(f"{'files:':<12} {' '.join(str(p) for p in hand_paths)}")
     print(f"{'solvers:':<12} {' '.join(cfg.solvers)}")
     print(f"{'git branch:':<12} {runner.git_branch}")
     print(f"{'repeats:':<12} {cfg.repeats}")
@@ -1316,8 +1363,8 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
     results: list[ResultRow] = []
 
     for solver in cfg.solvers:
-        for file in files:
-            hands = cfg.hands_dir / file
+        for hands in hand_paths:
+            file = hands.name
             for rep in range(1, cfg.repeats + 1):
                 run_label = f"{rep}/{cfg.repeats}" if cfg.repeats > 1 else "1/1"
                 for idx in order:

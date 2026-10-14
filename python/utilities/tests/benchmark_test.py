@@ -48,6 +48,50 @@ class TestSelectHandFiles(unittest.TestCase):
             self.assertIn("no list10^n.txt", str(ctx.exception))
 
 
+class TestResolveBenchmarkHands(unittest.TestCase):
+    def test_hand_file_uses_that_path_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            hands = Path(tmp)
+            custom = hands / "custom.txt"
+            custom.write_text("x\n")
+            (hands / "list1.txt").write_text("x\n")
+            (hands / "list10.txt").write_text("x\n")
+            cfg = benchmark.Config(hands_dir=hands, hand_file=custom, max_deals=100)
+            paths = benchmark.resolve_benchmark_hands(cfg)
+            self.assertEqual(paths, [custom])
+
+    def test_hand_file_numeric_shorthand_uses_listN(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            hands = Path(tmp)
+            target = hands / "list100.txt"
+            target.write_text("x\n")
+            (hands / "list1.txt").write_text("x\n")
+            cfg = benchmark.Config(
+                hands_dir=hands, hand_file=Path("100"), max_deals=1
+            )
+            paths = benchmark.resolve_benchmark_hands(cfg)
+            self.assertEqual(paths, [target])
+
+    def test_hand_file_missing_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            hands = Path(tmp)
+            cfg = benchmark.Config(
+                hands_dir=hands, hand_file=Path("missing.txt"), max_deals=100
+            )
+            with self.assertRaises(benchmark.BenchmarkError) as ctx:
+                benchmark.resolve_benchmark_hands(cfg)
+            self.assertIn("not found", str(ctx.exception).lower())
+
+    def test_without_hand_file_selects_list_matrix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            hands = Path(tmp)
+            (hands / "list1.txt").write_text("x\n")
+            (hands / "list10.txt").write_text("x\n")
+            cfg = benchmark.Config(hands_dir=hands, max_deals=10)
+            paths = benchmark.resolve_benchmark_hands(cfg)
+            self.assertEqual(paths, [hands / "list10.txt", hands / "list1.txt"])
+
+
 class TestParseDtestOutput(unittest.TestCase):
     def test_full_output(self) -> None:
         out = (
@@ -404,6 +448,7 @@ class TestParseArgs(unittest.TestCase):
         self.assertEqual(cfg.specs, [])
         self.assertEqual(cfg.dtest_extra, [])
         self.assertIsNone(cfg.bridgesolver)
+        self.assertIsNone(cfg.hand_file)
         self.assertEqual(cfg.solvers, ("solve", "calc"))
 
     def test_bridgesolver_default_solvers_ok(self) -> None:
@@ -502,6 +547,33 @@ class TestParseArgs(unittest.TestCase):
             benchmark.parse_args(["-s", "calc", "--", "-s", "solve"], env={})
         self.assertIn("-s", str(ctx.exception))
         self.assertIn("dtest args", str(ctx.exception).lower())
+
+    def test_hand_file_short_and_long_flags(self) -> None:
+        for flag in ("-f", "--file"):
+            with self.subTest(flag=flag):
+                cfg = benchmark.parse_args([flag, "hands/custom.txt"], env={})
+                self.assertEqual(cfg.hand_file, Path("hands/custom.txt"))
+
+    def test_hand_file_requires_value(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["-f"], env={})
+        self.assertIn("missing value for -f", str(ctx.exception))
+
+    def test_hand_file_only_once(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["-f", "a.txt", "--file", "b.txt"], env={})
+        self.assertIn("only once", str(ctx.exception))
+
+    def test_hand_file_rejects_duplicate_in_dtest_extra(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["-f", "a.txt", "--", "-f", "b.txt"], env={})
+        self.assertIn("-f", str(ctx.exception))
+        self.assertIn("dtest args", str(ctx.exception).lower())
+
+    def test_hand_file_rejects_long_form_in_dtest_extra(self) -> None:
+        with self.assertRaises(benchmark.BenchmarkError) as ctx:
+            benchmark.parse_args(["-f", "a.txt", "--", "--file", "b.txt"], env={})
+        self.assertIn("--file", str(ctx.exception))
 
     def test_env_overrides(self) -> None:
         cfg = benchmark.parse_args(
@@ -1386,6 +1458,53 @@ class TestDryRunMain(unittest.TestCase):
                         env={"DRY_RUN": "1", "HANDS_DIR": str(root / "hands")},
                     )
             self.assertEqual(rc, 0)
+
+    def test_dry_run_hand_file_skips_list_matrix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "library" / "tests").mkdir(parents=True)
+            (root / "hands").mkdir()
+            (root / "MODULE.bazel").write_text('module(name = "dds")\n')
+            (root / "library" / "tests" / "BUILD.bazel").write_text("#\n")
+            (root / "hands" / "list1.txt").write_text("x\n")
+            (root / "hands" / "list10.txt").write_text("x\n")
+            custom = root / "hands" / "custom.txt"
+            custom.write_text("x\n")
+            fake_bin = root / "fake_dtest"
+            fake_bin.write_text("#!/bin/sh\nexit 0\n")
+            fake_bin.chmod(0o755)
+            out = io.StringIO()
+            seen_hands: list[Path] = []
+            real_run = benchmark.BenchmarkRunner.run_dtest
+
+            def spy_run(self, binary, solver, hands, **kwargs):  # type: ignore[no-untyped-def]
+                seen_hands.append(Path(hands))
+                return real_run(self, binary, solver, hands, **kwargs)
+
+            with mock.patch("benchmark.Path.cwd", return_value=root):
+                with mock.patch("sys.stdout", out), mock.patch("sys.stderr"):
+                    with mock.patch.object(
+                        benchmark.BenchmarkRunner, "run_dtest", spy_run
+                    ):
+                        rc = benchmark.main(
+                            [
+                                "--binary",
+                                str(fake_bin),
+                                "-s",
+                                "calc",
+                                "-f",
+                                str(custom),
+                            ],
+                            env={
+                                "DRY_RUN": "1",
+                                "HANDS_DIR": str(root / "hands"),
+                            },
+                        )
+            self.assertEqual(rc, 0)
+            self.assertEqual(seen_hands, [custom])
+            self.assertIn("custom.txt", out.getvalue())
+            self.assertNotIn("list1.txt", out.getvalue())
+            self.assertNotIn("list10.txt", out.getvalue())
 
 
 if __name__ == "__main__":
