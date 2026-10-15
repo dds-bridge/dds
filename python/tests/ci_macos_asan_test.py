@@ -383,8 +383,8 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
         if ch == "#":
             i = _skip_comment(text, i, n)
             continue
-        if ch in "\"'":
-            i, _ = _skip_string(text, i, n)
+        if ch in "\"'" or _is_raw_string_start(text, i, n):
+            i, _ = _skip_any_string(text, i, n)
             continue
         matched_name = None
         paren_index = None
@@ -470,7 +470,7 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 m = _IDENT_RE.match(text, i)
                 if m:
                     ident = m.group(0)
-                    j = _skip_ws(text, m.end(), n)
+                    j = _skip_ws_and_comments(text, m.end(), n)
                     if j < n and text[j] == "=" and text[j : j + 2] != "==":
                         rhs_start = _skip_ws_and_comments(text, j + 1, n)
                         if rhs_start < n and (
@@ -673,6 +673,24 @@ bazel_dep(name = "apple_support", version = "2.10.1")
     version =
     # pinned past the Xcode 27 fixes
     "2.10.1",
+)"""
+        self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
+
+    def test_apple_support_bazel_dep_version_skips_comment_between_keyword_and_equals(
+        self,
+    ) -> None:
+        """A comment between the keyword and "=" is valid Starlark
+
+        formatting (same as between "=" and the value); it must be
+        skipped so the keyword is still recognized as "name", not
+        misread as a bare positional identifier that leaves the real
+        name argument unresolved.
+        """
+        sample = """bazel_dep(
+    name
+    # pinned past the Xcode 27 fixes
+    = "apple_support",
+    version = "2.10.1",
 )"""
         self.assertEqual(_apple_support_bazel_dep_version(sample), "2.10.1")
 
@@ -1098,6 +1116,25 @@ single_version_override(
         )
         self.assertFalse(_has_apple_support_override(sample))
 
+    def test_has_apple_support_override_ignores_raw_string_outside_recognized_call(
+        self,
+    ) -> None:
+        """A raw string literal outside any recognized call must be
+
+        skipped using the raw-aware dispatcher, the same as inside a
+        call body; otherwise its contents are fed to the ordinary
+        escape decoder, which raises on sequences that are only valid
+        because the "r" prefix makes them literal (e.g. "\\U12345678"
+        is not a valid 8-hex-digit Unicode escape, and "\\e" is not a
+        recognized simple escape either), spuriously failing a guard
+        that doesn't even apply to this unrelated statement.
+        """
+        sample = (
+            'SDK_PATH = r"C:\\U12345678\\emsdk"\n'
+            'archive_override(module_name = "rules_cc", strip_prefix = "x")'
+        )
+        self.assertFalse(_has_apple_support_override(sample))
+
     def test_has_apple_support_override_skips_comment_between_equals_and_value(
         self,
     ) -> None:
@@ -1112,6 +1149,25 @@ single_version_override(
     # pin past Xcode 27 fixes
     "rules_cc",
     strip_prefix = "x",
+)"""
+        self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_skips_comment_between_keyword_and_equals(
+        self,
+    ) -> None:
+        """A comment between the keyword and "=" is valid Starlark
+
+        formatting; it must be skipped so "module_name" is still
+        recognized as that keyword, not misread as a bare positional
+        identifier -- which would fail closed and falsely trip the
+        guard even though the real module_name names a different,
+        unrelated module.
+        """
+        sample = """local_path_override(
+    module_name
+    # note
+    = "emsdk",
+    path = "../emsdk",
 )"""
         self.assertFalse(_has_apple_support_override(sample))
 
