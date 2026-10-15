@@ -31,6 +31,24 @@ _POSITIONAL_KEY = "__positional__"
 _UNRESOLVED = object()
 
 
+def _add_positional(kwargs: dict, value: object) -> None:
+    """Record a newly-seen top-level positional argument, in call order.
+
+    Bazel's APIs here accept more than one leading parameter
+    positionally — not just the first (e.g. bazel_dep's name *and*
+    version) — so every caller needs all of them, by index, not just
+    whichever arrived first. Appending (instead of the previous "only
+    the first" guard) keeps them in the order they appeared.
+    """
+    kwargs.setdefault(_POSITIONAL_KEY, []).append(value)
+
+
+def _positional(kwargs: dict, index: int) -> object | None:
+    """Return the positional argument at index, or None if fewer were given."""
+    values = kwargs.get(_POSITIONAL_KEY, [])
+    return values[index] if index < len(values) else None
+
+
 def _skip_ws(text: str, i: int, n: int) -> int:
     while i < n and text[i] in " \t\r\n":
         i += 1
@@ -159,17 +177,19 @@ def _skip_raw_string(text: str, i: int, n: int) -> tuple[int, str]:
     """Return (end_index, value) for the raw string starting at text[i].
 
     text[i] is the delimiter quote itself (the caller has already
-    consumed the "r"/"R" prefix). Per the Starlark spec, a raw string
-    processes backslash escapes only enough to let a literal quote
-    appear inside it: a backslash immediately followed by the delimiter
-    quote denotes a literal quote character (the string continues, not
-    ending there) — every other backslash, including one before a
-    newline, is kept completely literal rather than decoded, unlike an
-    ordinary string's _decode_escape(). Handles a triple-quote delimiter
-    the same way _skip_string() does — matched as the 3-character
-    sequence, so e.g. r\"\"\"toolchains_llvm\"\"\" is a real literal, not
-    merely skipped until the first lone quote (which would stop one
-    character too early and leave the rest unparsed as code).
+    consumed the "r"/"R" prefix). Per the Starlark spec (and matching
+    real Python raw-string behavior, which it mirrors here), a raw
+    string gives a backslash exactly one special power: letting a
+    literal quote appear without ending the string. Whether a quote
+    that follows a run of backslashes is that kind of escaped quote
+    depends on the run's *parity* — r"foo\\" (an even, here zero-after-
+    pairing, run) ends normally with two literal backslashes in the
+    value, while r"foo\"" (an odd run) does not end there; the quote is
+    part of the value, and — unlike an ordinary string's
+    _decode_escape() — the backslash stays in the value too, exactly as
+    written. Handles a triple-quote delimiter the same way _skip_string()
+    does — matched as the 3-character sequence once any escaped quote
+    immediately before it has been accounted for the same way.
     """
     quote = text[i]
     if text[i : i + 3] == quote * 3:
@@ -177,9 +197,18 @@ def _skip_raw_string(text: str, i: int, n: int) -> tuple[int, str]:
         j = i + 3
         chars: list[str] = []
         while j < n:
-            if text[j] == "\\" and j + 1 < n and text[j + 1] == quote:
-                chars.append(quote)
-                j += 2
+            if text[j] == "\\":
+                k = j
+                while k < n and text[k] == "\\":
+                    k += 1
+                run = text[j:k]
+                if k < n and text[k] == quote and len(run) % 2 == 1:
+                    chars.append(run)
+                    chars.append(quote)
+                    j = k + 1
+                    continue
+                chars.append(run)
+                j = k
                 continue
             if text[j : j + 3] == delim:
                 return j + 3, "".join(chars)
@@ -189,9 +218,18 @@ def _skip_raw_string(text: str, i: int, n: int) -> tuple[int, str]:
     j = i + 1
     chars = []
     while j < n:
-        if text[j] == "\\" and j + 1 < n and text[j + 1] == quote:
-            chars.append(quote)
-            j += 2
+        if text[j] == "\\":
+            k = j
+            while k < n and text[k] == "\\":
+                k += 1
+            run = text[j:k]
+            if k < n and text[k] == quote and len(run) % 2 == 1:
+                chars.append(run)
+                chars.append(quote)
+                j = k + 1
+                continue
+            chars.append(run)
+            j = k
             continue
         if text[j] == quote:
             return j + 1, "".join(chars)
@@ -268,28 +306,36 @@ def _is_identifier_boundary(text: str, i: int) -> bool:
 def _match_parenthesized_call(
     text: str, i: int, n: int, sorted_names: list[str]
 ) -> tuple[str | None, int]:
-    """Match "(" name ")(" starting at text[i] == "(".
+    """Match one or more layers of "(" name ")" grouping, starting at
+    text[i] == "(", followed by the real call's "(".
 
-    Grouping parens around any expression are legal Starlark, and the
-    result can be called immediately, so "(archive_override)(...)" is a
-    valid call equivalent to "archive_override(...)" — but it doesn't
-    match a bare "name(" call textually, letting this scanner's direct
-    matching be bypassed by wrapping the name in parens. Comments are
-    tolerated around every token here too, the same as Starlark itself
-    ignores them: "(archive_override # note\n)(...)" is just as valid.
-    Returns (matched_name, call_paren_index); matched_name is None if
-    this position isn't that pattern.
+    Grouping parens around any expression are legal Starlark and nest
+    arbitrarily, and the result can still be called immediately, so
+    "((archive_override))(...)" is just as valid a call as the single-
+    layer "(archive_override)(...)" — but neither matches a bare
+    "name(" call textually, letting this scanner's direct matching be
+    bypassed by wrapping the name in one or more layers of parens.
+    Comments are tolerated around every token here too, the same as
+    Starlark itself ignores them: "(archive_override # note\n)(...)" is
+    just as valid. Returns (matched_name, call_paren_index);
+    matched_name is None if this position isn't that pattern.
     """
-    j = _skip_ws_and_comments(text, i + 1, n)
-    if not _is_identifier_boundary(text, j):
+    depth = 0
+    j = i
+    while j < n and text[j] == "(":
+        depth += 1
+        j = _skip_ws_and_comments(text, j + 1, n)
+    if depth == 0 or not _is_identifier_boundary(text, j):
         return None, 0
     for name in sorted_names:
         if text.startswith(name, j):
             k = _skip_ws_and_comments(text, j + len(name), n)
-            if k < n and text[k] == ")":
+            closed = 0
+            while closed < depth and k < n and text[k] == ")":
+                closed += 1
                 k = _skip_ws_and_comments(text, k + 1, n)
-                if k < n and text[k] == "(":
-                    return name, k
+            if closed == depth and k < n and text[k] == "(":
+                return name, k
     return None, 0
 
 
@@ -317,13 +363,15 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
     needs. Whitespace between a call name and "(" is tolerated
     ("archive_override (..." is valid Starlark).
 
-    Bazel's `*_override`/`bazel_dep` APIs all accept their first argument
-    (module_name / name) positionally — a bare top-level string before any
-    "identifier =" is stored under `_POSITIONAL_KEY`, letting callers treat
-    it as that first parameter. "Top-level" also tracks `[...]`/`{...}`
-    nesting (not just parens), so a string that's an *element* of a list
-    value (e.g. inside `urls = [...]`) is never mistaken for a positional
-    call argument.
+    Bazel's `*_override`/`bazel_dep` APIs accept their leading arguments
+    (module_name / name, and for bazel_dep also version) positionally —
+    every bare top-level value before any "identifier =" is appended, in
+    order, to the list under `_POSITIONAL_KEY` (see `_add_positional`),
+    letting callers read any of them by index (`_positional`), not just
+    the first. "Top-level" also tracks `[...]`/`{...}` nesting (not just
+    parens), so a string that's an *element* of a list value (e.g.
+    inside `urls = [...]`) is never mistaken for a positional call
+    argument.
     """
     sorted_names = sorted(call_names, key=len, reverse=True)
     results: list[dict[str, str]] = []
@@ -366,10 +414,11 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 continue
             at_top = depth == 1 and bracket_depth == 0 and brace_depth == 0
             if ch in "\"'" or _is_raw_string_start(text, i, n):
-                if at_top and _POSITIONAL_KEY not in kwargs:
+                if at_top:
                     end, value = _skip_any_string(text, i, n)
-                    kwargs[_POSITIONAL_KEY] = (
-                        value if _is_complete_literal(text, end, n) else _UNRESOLVED
+                    _add_positional(
+                        kwargs,
+                        value if _is_complete_literal(text, end, n) else _UNRESOLVED,
                     )
                     i = end
                     continue
@@ -377,13 +426,13 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 continue
             if ch == "(":
                 # A "(" at the top level, not preceded by "ident =", opens
-                # a parenthesized positional expression (e.g. the first
+                # a parenthesized positional expression (e.g. an
                 # argument written as ("a" + "b")) rather than a literal
                 # or a bare variable reference; mark it unresolved before
                 # descending into it, the same as any other non-literal
                 # positional value.
-                if at_top and _POSITIONAL_KEY not in kwargs:
-                    kwargs[_POSITIONAL_KEY] = _UNRESOLVED
+                if at_top:
+                    _add_positional(kwargs, _UNRESOLVED)
                 depth += 1
                 i += 1
                 continue
@@ -394,10 +443,9 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
             if ch == "[":
                 # Same reasoning as the "(" branch above: a top-level "["
                 # not preceded by "ident =" opens a list expression (e.g.
-                # the first argument written as ["a"][0]) used as the
-                # first positional argument.
-                if at_top and _POSITIONAL_KEY not in kwargs:
-                    kwargs[_POSITIONAL_KEY] = _UNRESOLVED
+                # an argument written as ["a"][0]).
+                if at_top:
+                    _add_positional(kwargs, _UNRESOLVED)
                 bracket_depth += 1
                 i += 1
                 continue
@@ -407,9 +455,9 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                 continue
             if ch == "{":
                 # Same reasoning again, for a dict/set expression opening
-                # the first positional argument.
-                if at_top and _POSITIONAL_KEY not in kwargs:
-                    kwargs[_POSITIONAL_KEY] = _UNRESOLVED
+                # a positional argument.
+                if at_top:
+                    _add_positional(kwargs, _UNRESOLVED)
                 brace_depth += 1
                 i += 1
                 continue
@@ -446,13 +494,10 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
                         i = rhs_start
                         continue
                     # Not "ident = ...": a bare identifier is a variable
-                    # used as a value. If it's the first value-shaped
-                    # token in the call, it's being passed as the first
-                    # positional argument; fail closed the same way as a
-                    # non-literal keyword value, rather than silently
-                    # dropping it.
-                    if _POSITIONAL_KEY not in kwargs:
-                        kwargs[_POSITIONAL_KEY] = _UNRESOLVED
+                    # used as a value, passed positionally; fail closed
+                    # the same way as a non-literal keyword value, rather
+                    # than silently dropping it.
+                    _add_positional(kwargs, _UNRESOLVED)
                     i = m.end()
                     continue
             i += 1
@@ -461,10 +506,24 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
 
 
 def _toolchains_llvm_bazel_dep_version(module_bazel: str) -> str:
+    """Return the pinned toolchains_llvm bazel_dep version.
+
+    bazel_dep's first two parameters, name and version, are both
+    allowed positionally (bazel_dep("toolchains_llvm", "1.11.2")), not
+    just name; _positional(kwargs, 1) reads version there the same way
+    _positional(kwargs, 0) already reads name, rather than assuming
+    version is only ever given as a keyword.
+    """
     for kwargs in _iter_call_kwargs(("bazel_dep",), module_bazel):
-        name = kwargs.get("name") or kwargs.get(_POSITIONAL_KEY)
-        if name == "toolchains_llvm" and "version" in kwargs:
-            return kwargs["version"]
+        name = kwargs.get("name")
+        if name is None:
+            name = _positional(kwargs, 0)
+        if name == "toolchains_llvm":
+            version = kwargs.get("version")
+            if version is None:
+                version = _positional(kwargs, 1)
+            if version is not None and version is not _UNRESOLVED:
+                return version
     raise AssertionError('expected bazel_dep(... name = "toolchains_llvm" ...)')
 
 
@@ -489,7 +548,9 @@ def _has_toolchains_llvm_override(module_bazel: str) -> bool:
         "single_version_override",
     )
     for kwargs in _iter_call_kwargs(override_names, module_bazel):
-        module_name = kwargs.get("module_name") or kwargs.get(_POSITIONAL_KEY)
+        module_name = kwargs.get("module_name")
+        if module_name is None:
+            module_name = _positional(kwargs, 0)
         if module_name == "toolchains_llvm" or module_name is _UNRESOLVED:
             return True
     return False
@@ -629,6 +690,17 @@ class TestMsanBazelConfig(unittest.TestCase):
         version = ...) is valid Starlark.
         """
         sample = 'bazel_dep("toolchains_llvm", version = "1.11.2")'
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_accepts_positional_version(
+        self,
+    ) -> None:
+        """version is also allowed positionally, as bazel_dep's second
+
+        argument: bazel_dep("toolchains_llvm", "1.11.2") is valid
+        Starlark, not just the keyword form.
+        """
+        sample = 'bazel_dep("toolchains_llvm", "1.11.2")'
         self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
 
     def test_toolchains_llvm_bazel_dep_version_survives_an_earlier_paren(
@@ -786,6 +858,53 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
             ')(module_name = "toolchains_llvm", strip_prefix = "x")'
         )
         self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_doubly_parenthesized_call(
+        self,
+    ) -> None:
+        """Grouping parens nest arbitrarily in Starlark; two layers --
+
+        ((archive_override))(...) -- are just as valid a call as one,
+        and must not bypass the same detection that handles the
+        single-layer "(name)(" form.
+        """
+        sample = (
+            '((archive_override))(module_name = "toolchains_llvm", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_triply_parenthesized_call(
+        self,
+    ) -> None:
+        """Same as the double-layer case, but with three layers."""
+        sample = (
+            '(((archive_override)))(module_name = "toolchains_llvm", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_doubly_parenthesized_other_module(
+        self,
+    ) -> None:
+        sample = (
+            '((archive_override))(module_name = "apple_support", '
+            'strip_prefix = "x")'
+        )
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_rejects_longer_identifier_in_nested_parens(
+        self,
+    ) -> None:
+        """"((archive_override_foo))(...)" must not be misread as a
+
+        doubly-parenthesized reference to archive_override.
+        """
+        sample = (
+            '((archive_override_foo))(module_name = "toolchains_llvm", '
+            'strip_prefix = "x")'
+        )
+        self.assertFalse(_has_toolchains_llvm_override(sample))
 
     def test_has_toolchains_llvm_override_detects_triple_quoted_module_name(
         self,
@@ -1111,6 +1230,37 @@ single_version_override(
         """
         sample = (
             'archive_override(module_name = r"toolchains_\\"llvm", '
+            'strip_prefix = "x")'
+        )
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ends_raw_string_at_even_backslash_run(
+        self,
+    ) -> None:
+        """An even run of backslashes immediately before the closing quote
+
+        (here two) pairs up and does not escape it; the raw string ends
+        normally there, with both backslashes kept literally in the
+        value, so the argument after it (module_name) is parsed
+        correctly rather than being swallowed into a runaway string.
+        """
+        sample = (
+            'archive_override(strip_prefix = r"toolchains_llvm\\\\", '
+            'module_name = "rules_cc")'
+        )
+        self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_continues_raw_string_at_odd_backslash_run(
+        self,
+    ) -> None:
+        """An odd run of backslashes immediately before a quote (here
+
+        three) still escapes it, same as a single backslash; the string
+        does not end there and both the backslashes and the quote stay
+        literally in the value.
+        """
+        sample = (
+            'archive_override(module_name = r"toolchains_llvm\\\\\\"x", '
             'strip_prefix = "x")'
         )
         self.assertFalse(_has_toolchains_llvm_override(sample))
