@@ -269,28 +269,36 @@ def _is_identifier_boundary(text: str, i: int) -> bool:
 def _match_parenthesized_call(
     text: str, i: int, n: int, sorted_names: list[str]
 ) -> tuple[str | None, int]:
-    """Match "(" name ")(" starting at text[i] == "(".
+    """Match one or more layers of "(" name ")" grouping, starting at
+    text[i] == "(", followed by the real call's "(".
 
-    Grouping parens around any expression are legal Starlark, and the
-    result can be called immediately, so "(archive_override)(...)" is a
-    valid call equivalent to "archive_override(...)" — but it doesn't
-    match a bare "name(" call textually, letting this scanner's direct
-    matching be bypassed by wrapping the name in parens. Comments are
-    tolerated around every token here too, the same as Starlark itself
-    ignores them: "(archive_override # note\n)(...)" is just as valid.
-    Returns (matched_name, call_paren_index); matched_name is None if
-    this position isn't that pattern.
+    Grouping parens around any expression are legal Starlark and nest
+    arbitrarily, and the result can still be called immediately, so
+    "((archive_override))(...)" is just as valid a call as the single-
+    layer "(archive_override)(...)" — but neither matches a bare
+    "name(" call textually, letting this scanner's direct matching be
+    bypassed by wrapping the name in one or more layers of parens.
+    Comments are tolerated around every token here too, the same as
+    Starlark itself ignores them: "(archive_override # note\n)(...)" is
+    just as valid. Returns (matched_name, call_paren_index);
+    matched_name is None if this position isn't that pattern.
     """
-    j = _skip_ws_and_comments(text, i + 1, n)
-    if not _is_identifier_boundary(text, j):
+    depth = 0
+    j = i
+    while j < n and text[j] == "(":
+        depth += 1
+        j = _skip_ws_and_comments(text, j + 1, n)
+    if depth == 0 or not _is_identifier_boundary(text, j):
         return None, 0
     for name in sorted_names:
         if text.startswith(name, j):
             k = _skip_ws_and_comments(text, j + len(name), n)
-            if k < n and text[k] == ")":
+            closed = 0
+            while closed < depth and k < n and text[k] == ")":
+                closed += 1
                 k = _skip_ws_and_comments(text, k + 1, n)
-                if k < n and text[k] == "(":
-                    return name, k
+            if closed == depth and k < n and text[k] == "(":
+                return name, k
     return None, 0
 
 
@@ -1097,6 +1105,53 @@ archive_override(
             ')(module_name = "apple_support", strip_prefix = "x")'
         )
         self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_doubly_parenthesized_call(
+        self,
+    ) -> None:
+        """Grouping parens nest arbitrarily in Starlark; two layers --
+
+        ((archive_override))(...) -- are just as valid a call as one,
+        and must not bypass the same detection that handles the
+        single-layer "(name)(" form.
+        """
+        sample = (
+            '((archive_override))(module_name = "apple_support", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_triply_parenthesized_call(
+        self,
+    ) -> None:
+        """Same as the double-layer case, but with three layers."""
+        sample = (
+            '(((archive_override)))(module_name = "apple_support", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_ignores_doubly_parenthesized_other_module(
+        self,
+    ) -> None:
+        sample = (
+            '((archive_override))(module_name = "rules_cc", '
+            'strip_prefix = "x")'
+        )
+        self.assertFalse(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_rejects_longer_identifier_in_nested_parens(
+        self,
+    ) -> None:
+        """"((archive_override_foo))(...)" must not be misread as a
+
+        doubly-parenthesized reference to archive_override.
+        """
+        sample = (
+            '((archive_override_foo))(module_name = "apple_support", '
+            'strip_prefix = "x")'
+        )
+        self.assertFalse(_has_apple_support_override(sample))
 
     def test_has_apple_support_override_detects_git_override(self) -> None:
         sample = """
